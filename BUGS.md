@@ -2715,7 +2715,7 @@ the most on-brand thing this register contains.
   and returns `bundledTool(...) == nil`, which is also true when the copy silently
   failed. It reports green for the wrong reason.
 
-### T7 · Two ways the mutation harness can report a clean result it has not earned — OPEN
+### T7 · Two ways the mutation harness can report a clean result it has not earned — FIXED
 *(2026-08-09 third review; the tool for finding unfalsifiable checks, twice unfalsifiable itself)*
 
 - **The "matched exactly once" guard is vacuous.** `re.subn(..., count=1)` returns
@@ -2728,6 +2728,24 @@ the most on-brand thing this register contains.
   done, so a mutant whose pattern stops matching after a refactor is skipped
   forever. Every later run prints `26 mutants, 26 already recorded, 0 to run`
   and a clean bill of health for a catalogue it stopped applying.
+
+**Fix:** count matches with `findall` *before* substituting and treat anything
+other than exactly one as NOT-APPLIED, naming the count; and treat only
+`SURVIVED`/`killed` as recorded, so NOT-APPLIED, INVALID and MISMATCH are retried
+on the next run and listed loudly at the end under "NOT EVALUATED — no verdict,
+not a clean result".
+
+The first change immediately caught the live case it was written for:
+
+```
+[1/1] logic/R23-readOutline-bound   NOT-APPLIED   pattern matched 2 sites — ambiguous
+```
+
+The catalogue now carries **two** mutants there, anchored to their functions'
+return types — `R19-readOutline-bound` and `R23-copyOutline-bound`. Both are
+killed. Until now the log asserted this bound was covered while `copyOutline`'s
+mirror had never been perturbed once, which is precisely the code R23 exists
+because it was missing.
 
 ### H2 · leptonica ships with no licence, and the count cannot notice — OPEN
 *(2026-08-09 third review; a compliance defect in a public download)*

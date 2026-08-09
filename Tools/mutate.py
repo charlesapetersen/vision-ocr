@@ -74,8 +74,18 @@ CONSTANTS = [
 # Single-token logic edits in code written to close a defect. Each one undoes a
 # specific decision the register records, so each SHOULD be caught.
 OPERATORS = [
-    ("SearchableWriter.swift", "guard depth < maximumOutlineDepth, budget > 0 else { return nil }",
-     "guard depth < 4_000_000, budget > 0 else { return nil }", "R23-readOutline-bound"),
+    # Two sites, identical text: readOutline's convert and copyOutline's
+    # rebuild. One pattern covered both and silently mutated only the first, so
+    # R23's own mirror — the whole point of R23 — was never perturbed (T7). Each
+    # is now anchored to its function's return type.
+    ("SearchableWriter.swift",
+     "-> OutlineItem? {\n            guard depth < maximumOutlineDepth, budget > 0 else { return nil }",
+     "-> OutlineItem? {\n            guard depth < 4_000_000, budget > 0 else { return nil }",
+     "R19-readOutline-bound"),
+    ("SearchableWriter.swift",
+     "-> PDFOutline? {\n            guard depth < maximumOutlineDepth, budget > 0 else { return nil }",
+     "-> PDFOutline? {\n            guard depth < 4_000_000, budget > 0 else { return nil }",
+     "R23-copyOutline-bound"),
     ("SearchableWriter.swift", "guard !isSameVisualLine(me, other, in: box) else { continue }",
      "if false { continue }", "C20-headroom-sameline"),
     ("SearchableWriter.swift", "guard isSameVisualLine(me, other, in: box) else { continue }",
@@ -158,8 +168,13 @@ def run(argv=None):
         print(f"\n{len(mutants)} mutants")
         return 0
 
+    # Only a real verdict counts as done. Treating any logged row as recorded
+    # meant a mutant whose pattern stopped matching after a refactor was skipped
+    # for ever, and every later run printed a clean bill of health for a
+    # catalogue it had quietly stopped applying (T7).
+    VERDICTS = ("SURVIVED", "killed")
     done = {} if args.rerun else already_done()
-    todo = [m for m in mutants if m["id"] not in done]
+    todo = [m for m in mutants if done.get(m["id"]) not in VERDICTS]
     print(f"{len(mutants)} mutants, {len(mutants) - len(todo)} already recorded, "
           f"{len(todo)} to run — about {len(todo) * 3} minutes")
 
@@ -200,11 +215,19 @@ def run(argv=None):
         for i, m in enumerate(todo, 1):
             path = os.path.join(work, "Sources", m["file"])
             original = open(path).read()
-            mutated, n = re.subn(m["pattern"], m["replacement"], original, count=1)
-            if n != 1:
-                print(f"[{i}/{len(todo)}] {m['id']:52s} NOT-APPLIED")
-                record(m["id"], "NOT-APPLIED", 0, "pattern did not match exactly once")
+            # Count first. `subn(..., count=1)` returns at most 1, so testing its
+            # result only ever caught *zero* matches — a pattern hitting two
+            # sites mutated the first and reported a normal verdict. That was
+            # live: the R23 pattern matched readOutline's bound AND copyOutline's
+            # identical one, so the log claimed coverage of a bound that had
+            # never been perturbed (T7).
+            hits = len(re.findall(m["pattern"], original))
+            if hits != 1:
+                why = "pattern matched nothing" if hits == 0 else f"pattern matched {hits} sites — ambiguous"
+                print(f"[{i}/{len(todo)}] {m['id']:52s} NOT-APPLIED   {why}")
+                record(m["id"], "NOT-APPLIED", 0, why)
                 continue
+            mutated, _ = re.subn(m["pattern"], m["replacement"], original, count=1)
 
             open(path, "w").write(mutated)
             started = time.time()
@@ -251,10 +274,18 @@ def run(argv=None):
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
-    survivors = [k for k, v in already_done().items() if v == "SURVIVED"]
+    final = already_done()
+    survivors = [k for k, v in final.items() if v == "SURVIVED"]
+    unevaluated = [k for k, v in final.items() if v not in ("SURVIVED", "killed")]
     print(f"\n{len(survivors)} survivor(s)")
-    for s in survivors:
-        print(f"   {s}")
+    for k in survivors:
+        print(f"   {k}")
+    if unevaluated:
+        # Loud, because a mutant that never ran is not evidence of anything and
+        # must not be read as one.
+        print(f"\n{len(unevaluated)} mutant(s) NOT EVALUATED — no verdict, not a clean result:")
+        for k in unevaluated:
+            print(f"   {k}: {final[k]}")
     return 0
 
 

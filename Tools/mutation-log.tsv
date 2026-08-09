@@ -42,3 +42,6 @@ logic/R24-safeInt-finite	INVALID	81	did not compile
 logic/R24-safeInt-finite	killed	80	exit 133, no FAIL line: ./run_tests.sh: line 23: 53707 Trace/BPT trap: 5       "./$B
 logic/bundle-arch-check	killed	114	1 check(s): …and the bundled lookup refuses it too
 logic/bundle-arch-endianness	killed	115	1 check(s): a binary for this machine is recognised
+logic/R23-readOutline-bound	NOT-APPLIED	0	pattern matched 2 sites — ambiguous
+logic/R19-readOutline-bound	killed	113	1 check(s): reading a 4,000-level outline returns instead of overflowing the stack
+logic/R23-copyOutline-bound	killed	112	2 check(s): copying a 4,000-level outline does not kill the worker; …and the outline still lands in the output, truncated
