@@ -2151,7 +2151,7 @@ property is stated without the clock instead: *when the call returns, the list i
 still empty*. No blocking implementation satisfies that at any speed. With the
 blocking version restored it fails with `4000 files already listed`.
 
-### U21 · `isCommitted` is cleared before the digital-text alert, so an in-flight import lands in a frozen batch — OPEN
+### U21 · `isCommitted` is cleared before the digital-text alert, so an in-flight import lands in a frozen batch — FIXED
 *(2026-08-09 second review; U19's flag and U20's async import, interacting)*
 
 `Sources/Model.swift:636`. `start()` freezes `let candidates = files`, runs the
@@ -2178,6 +2178,33 @@ That is U1 for the third time, and the second time this evening.
 flight, and **nothing reads it** — `grep -rn isImporting Sources Tests Tools`
 returns the declaration, two writes and two test assertions. `canStart` does not
 mention it, so Start is available while a folder is still being walked.
+
+**Fix, in two parts.** `isPreflighting` is cleared by a `defer` at the end of the
+completion, so it covers the decision and not merely the scan — four of the five
+branches hand off to `run()`, which sets `isRunning` synchronously, so
+`isCommitted` never dips false between them. And `canStart` now includes
+`!isImporting`, which is what that flag was published for.
+
+**The reason this shipped is that the decision step was untestable**, so there is
+now a seam: `digitalTextDecisionForTesting` stands in for the modal `NSAlert`,
+which a headless suite cannot drive. A check installs it, records `isCommitted`
+at the moment the decision is asked for, and returns `.cancel`. Restoring the
+early clear turns it red:
+
+```
+FAIL the batch is still committed when the alert goes up — isCommitted was Optional(false)
+```
+
+Adding a test seam to production code is a real cost. It is worth it here
+because the alternative is an invariant that can only be checked by reading, and
+this defect is what reading it produced.
+
+Three further checks cover `canStart` against `isImporting`, and one confirms the
+fixture is genuinely born-digital — without which the pre-flight takes the
+`digital.isEmpty` branch and never reaches the alert, and the whole block would
+have passed while testing nothing. It did exactly that on the first run: a
+one-line fixture is not enough text for `hasDigitalText`, and the diagnostic
+check is what caught it rather than a green suite.
 
 ---
 

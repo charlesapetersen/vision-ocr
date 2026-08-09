@@ -385,7 +385,13 @@ final class OCRModel: ObservableObject {
     /// `guard` that each had to be remembered separately when C17 added a state.
     var isCommitted: Bool { isRunning || isPreflighting }
 
-    var canStart: Bool { !files.isEmpty && !isCommitted && destinationReady }
+    var canStart: Bool {
+        // `isImporting` too: a folder drop is walked off the main actor (U20),
+        // and Start was available during the walk, so the batch could be frozen
+        // while files were still arriving. The flag was published for this and
+        // nothing read it (U21).
+        !files.isEmpty && !isCommitted && !isImporting && destinationReady
+    }
 
     // MARK: - The drop box
 
@@ -487,6 +493,16 @@ final class OCRModel: ObservableObject {
 
     /// What to do about inputs that already carry real digital text.
     enum DigitalTextChoice { case ocrAnyway, skipThem, useExisting, cancel }
+
+    /// Stands in for the modal alert, so the decision step can be tested.
+    ///
+    /// `askAboutDigitalText` runs an `NSAlert`, which a headless suite cannot
+    /// drive — and U21 is precisely a defect in what is true *while that alert
+    /// is up*, so leaving it untestable is how U21 got shipped. A test sets this,
+    /// records the state it is called with, and returns a decision. Nil in the
+    /// app, always.
+    nonisolated(unsafe) static var digitalTextDecisionForTesting:
+        ((_ digital: [URL], _ total: Int) -> DigitalTextChoice)?
 
     /// Writes a PDF's own embedded text out, instead of OCRing a picture of it.
     ///
@@ -633,10 +649,26 @@ final class OCRModel: ObservableObject {
             let digital = Self.filesWithDigitalText(in: candidates, password: password)
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
-                self.isPreflighting = false
+                // Cleared when the DECISION is over, not when the scan is.
+                // `askAboutDigitalText` below runs a modal NSAlert, and
+                // main-queue work executes behind one — NSModalPanelRunLoopMode
+                // is in the main run loop's mode set, which was checked rather
+                // than assumed. So clearing the flag first left isCommitted
+                // false while the alert was up, and U20's async import appended
+                // to a batch that had already been frozen: "Done — 1 of 1
+                // succeeded" over a list of 301, which is U1 for the third time
+                // (U21).
+                //
+                // `defer`, because four of the five branches below hand off to
+                // `run()`, which sets isRunning synchronously — so isCommitted
+                // never goes false between the two — and the fifth has to clear
+                // it on the way out.
+                defer { self.isPreflighting = false }
                 guard !digital.isEmpty else { self.run(candidates, binary: binary); return }
 
-                switch self.askAboutDigitalText(digital, of: candidates.count) {
+                let choice = Self.digitalTextDecisionForTesting?(digital, candidates.count)
+                    ?? self.askAboutDigitalText(digital, of: candidates.count)
+                switch choice {
                 case .ocrAnyway:
                     self.run(candidates, binary: binary)
                 case .useExisting:

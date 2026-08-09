@@ -1932,7 +1932,92 @@ do {
         m.isPreflighting = false
         check("…and the batch is editable again once the pre-flight ends",
               !m.isCommitted)
+
+        // U21. Start must also be unavailable while a folder is still being
+        // walked. isImporting was published by U20 for exactly this and nothing
+        // read it, so the batch could be frozen with files still arriving.
+        m.files = [a]
+        m.isRunning = false
+        m.isPreflighting = false
+        m.besideOriginal = true
+        check("Start is available with a settled list", m.canStart)
+        m.isImporting = true
+        check("…and unavailable while an import is in flight", !m.canStart)
+        m.isImporting = false
+        check("…and available again once it lands", m.canStart)
     }
+    resetPrefs()
+}
+
+print("\nthe batch stays frozen while the alert is up")
+
+do {
+    // U21. start() froze the batch, ran the pre-flight, then cleared
+    // isPreflighting BEFORE putting up the modal alert. Main-queue work runs
+    // behind a modal NSAlert, so U20's async import completed into a batch that
+    // had already been decided — "Done — 1 of 1 succeeded" over a list of 301.
+    //
+    // The alert cannot run in a headless suite, which is how this shipped. The
+    // seam records what was true at the moment the decision was asked for.
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("u21-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer {
+        try? FileManager.default.removeItem(at: dir)
+        OCRModel.digitalTextDecisionForTesting = nil
+    }
+    let digital = dir.appendingPathComponent("born-digital.pdf")
+    // 26 lines a page, matching the C17 fixture: hasDigitalText wants a real
+    // paragraph, and one line is not enough to read as born-digital.
+    makeDigitalPDF(at: digital, lines: (1...26).map {
+        "Line \($0) of ordinary running prose, long enough to be a real paragraph."
+    })
+
+    d.set(true, forKey: Prefs.warnDigitalText)
+    d.set(Prefs.Mode.searchablePDF.rawValue, forKey: Prefs.mode)
+    d.set(true, forKey: Prefs.rebuildImages)
+
+    check("the fixture is seen as born-digital, or the alert never comes",
+          Flattener.hasDigitalText(digital))
+    check("warnDigitalText is on for this block",
+          d.bool(forKey: Prefs.warnDigitalText))
+    check("mac-ocr resolves, or start() bails before the pre-flight",
+          Runner.resolveBinary() != nil)
+
+    var committedAtDecision: Bool?
+    var preflightingAtDecision: Bool?
+    let asked = DispatchSemaphore(value: 0)
+    let m = MainActor.assumeIsolated { OCRModel() }
+    OCRModel.digitalTextDecisionForTesting = { _, _ in
+        MainActor.assumeIsolated {
+            committedAtDecision = m.isCommitted
+            preflightingAtDecision = m.isPreflighting
+        }
+        asked.signal()
+        return .cancel                      // nothing runs; we only want the state
+    }
+
+    MainActor.assumeIsolated {
+        m.besideOriginal = true
+        _ = m.add([digital])
+        check("the fixture is in the list", m.files.count == 1, "\(m.files.count)")
+        check("Start is available", m.canStart)
+        m.start()
+    }
+    let started = Date()
+    while committedAtDecision == nil, Date().timeIntervalSince(started) < 30 {
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+    }
+
+    check("the pre-flight reached the decision", committedAtDecision != nil,
+          "never asked")
+    check("the batch is still committed when the alert goes up",
+          committedAtDecision == true,
+          "isCommitted was \(String(describing: committedAtDecision)) — an import "
+          + "completing here lands in a batch already frozen")
+    check("…because isPreflighting is still set", preflightingAtDecision == true)
+    check("…and it is cleared once the decision is made",
+          MainActor.assumeIsolated { !m.isPreflighting && !m.isCommitted })
     resetPrefs()
 }
 
