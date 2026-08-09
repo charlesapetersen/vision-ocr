@@ -19,8 +19,11 @@ struct ContentView: View {
 
     private var mode: Prefs.Mode { Prefs.Mode(rawValue: modeRaw) ?? .searchablePDF }
 
+    @State private var update: Updater.Release?
+
     var body: some View {
         VStack(spacing: 14) {
+            if let update { updateBanner(update) }
             dropBox
             destinationRow
             actionRow
@@ -29,6 +32,17 @@ struct ContentView: View {
         }
         .padding(16)
         .frame(minWidth: 520, minHeight: 520)
+        .task {
+            // Three seconds after the window appears, not during launch: an
+            // update check must never be between someone and their first drop.
+            // Failures are silent by design — see Updater.
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            Updater.check { result in
+                if case .available(let release) = result {
+                    DispatchQueue.main.async { update = release }
+                }
+            }
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView(runInProgress: model.isCommitted) { model.reloadDestination() }
         }
@@ -50,6 +64,43 @@ struct ContentView: View {
     }
 
     // MARK: - Drop box
+
+    /// Shown only when there is something to say. No "you are up to date"
+    /// banner: an app that congratulates itself for being unchanged is noise.
+    @ViewBuilder
+    private func updateBanner(_ release: Updater.Release) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.down.circle.fill")
+                .foregroundStyle(.tint)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Vision OCR \(release.version) is available")
+                    .font(.callout).fontWeight(.medium)
+                Text("You have \(Updater.currentVersion).")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            Button("What's New") { NSWorkspace.shared.open(release.url) }
+                .buttonStyle(.link).font(.caption)
+            Button("Download") { NSWorkspace.shared.open(release.url) }
+            Button {
+                UserDefaults.standard.set(release.version, forKey: Prefs.skippedVersion)
+                update = nil
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Skip \(release.version). You will be told about the version after it.")
+            .accessibilityLabel("Skip version \(release.version)")
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.10)))
+        .overlay(RoundedRectangle(cornerRadius: 8)
+            .strokeBorder(Color.accentColor.opacity(0.35), lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Update available: Vision OCR \(release.version)")
+    }
 
     private var dropBox: some View {
         ZStack {

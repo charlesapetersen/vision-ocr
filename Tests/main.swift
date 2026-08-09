@@ -1949,6 +1949,75 @@ do {
     resetPrefs()
 }
 
+print("\ntelling a new version from an old one")
+
+do {
+    // The classic way an updater goes quiet is string comparison: "1.10.0" is
+    // newer than "1.9.0" and sorts before it alphabetically, so the check stops
+    // working at exactly the release where it starts mattering.
+    check("a later patch is newer", Updater.isNewer("1.5.2", than: "1.5.1"))
+    check("a later minor is newer", Updater.isNewer("1.6.0", than: "1.5.9"))
+    check("a later major is newer", Updater.isNewer("2.0.0", than: "1.99.99"))
+    check("1.10.0 is newer than 1.9.0, which string order gets wrong",
+          Updater.isNewer("1.10.0", than: "1.9.0"))
+    check("the same version is not newer", !Updater.isNewer("1.5.1", than: "1.5.1"))
+    check("an older version is not newer", !Updater.isNewer("1.5.0", than: "1.5.1"))
+    check("missing components count as zero", !Updater.isNewer("1.5", than: "1.5.0")
+              && !Updater.isNewer("1.5.0", than: "1.5"))
+    check("a longer but equal version is not newer", !Updater.isNewer("1.5.0.0", than: "1.5"))
+
+    // Parsing. A half-understood response must never become "an update exists".
+    let good = """
+    {"tag_name":"v1.9.0","html_url":"https://example.com/r/1.9.0","body":"notes","draft":false,"prerelease":false}
+    """.data(using: .utf8)!
+    let parsed = Updater.release(from: good)
+    check("a well-formed release parses", parsed?.version == "1.9.0", String(describing: parsed))
+    check("…with the v stripped and the page kept",
+          parsed?.url.absoluteString == "https://example.com/r/1.9.0")
+
+    check("a draft is not an offer", Updater.release(from: """
+    {"tag_name":"v2.0.0","html_url":"https://example.com/x","draft":true}
+    """.data(using: .utf8)!) == nil)
+    check("a prerelease is not an offer", Updater.release(from: """
+    {"tag_name":"v2.0.0","html_url":"https://example.com/x","prerelease":true}
+    """.data(using: .utf8)!) == nil)
+    check("a tag that is not a version is refused", Updater.release(from: """
+    {"tag_name":"nightly","html_url":"https://example.com/x"}
+    """.data(using: .utf8)!) == nil)
+    check("junk is refused rather than guessed at",
+          Updater.release(from: Data("not json".utf8)) == nil
+          && Updater.release(from: Data()) == nil)
+    check("a release with no url is refused", Updater.release(from: """
+    {"tag_name":"v2.0.0"}
+    """.data(using: .utf8)!) == nil)
+
+    // What gets announced.
+    let newer = Updater.Release(version: "9.9.9", url: URL(string: "https://x")!, notes: "")
+    check("a newer version is announced",
+          Updater.shouldAnnounce(newer, current: "1.0.0", skipped: nil))
+    check("…unless it is the one that was skipped",
+          !Updater.shouldAnnounce(newer, current: "1.0.0", skipped: "9.9.9"))
+    check("…but skipping one version does not silence the next",
+          Updater.shouldAnnounce(newer, current: "1.0.0", skipped: "9.9.8"))
+    check("an older release is never announced",
+          !Updater.shouldAnnounce(Updater.Release(version: "0.1", url: URL(string: "https://x")!,
+                                                  notes: ""), current: "1.0.0", skipped: nil))
+
+    // Rate limiting, including the clock going backwards — which must not
+    // disable checking for ever (R30's lesson, in a different file).
+    let now = Date(timeIntervalSince1970: 1_000_000)
+    check("a check is due when there has never been one",
+          Updater.isDue(now: now, last: 0, enabled: true))
+    check("…and not again straight away",
+          !Updater.isDue(now: now, last: now.timeIntervalSince1970 - 60, enabled: true))
+    check("…but is a day later",
+          Updater.isDue(now: now, last: now.timeIntervalSince1970 - 90_000, enabled: true))
+    check("a clock that jumped backwards does not disable checking for ever",
+          Updater.isDue(now: now, last: now.timeIntervalSince1970 + 100_000, enabled: true))
+    check("and nothing is due when the setting is off",
+          !Updater.isDue(now: now, last: 0, enabled: false))
+}
+
 print("\nwhat each file's row shows")
 
 do {
@@ -4404,6 +4473,26 @@ do {
           Prefs.allKeys.contains(Prefs.outputFolder)
             && Prefs.allKeys.contains(Prefs.languages)
             && Prefs.allKeys.contains(Prefs.binaryPath))
+    // R6 was four keys missing from this list. Naming them one at a time is how
+    // that happened, so assert the whole set instead: every `static let` in
+    // Prefs that names a key must be here, or be one of the two deliberate
+    // exceptions with their reasons written down.
+    do {
+        let declared = Set([
+            Prefs.mode, Prefs.outputFolder, Prefs.besideOriginal, Prefs.openWhenDone,
+            Prefs.binaryPath, Prefs.textFormat, Prefs.fast, Prefs.languages,
+            Prefs.languageCorrection, Prefs.confidence, Prefs.pdfDPIAuto, Prefs.pdfDPI,
+            Prefs.password, Prefs.customWords, Prefs.minTextHeightOn, Prefs.minTextHeight,
+            Prefs.warnDigitalText, Prefs.rebuildImages, Prefs.rebuildMode, Prefs.useJBIG2,
+            Prefs.concurrency, Prefs.checkForUpdates, Prefs.skippedVersion,
+            Prefs.lastUpdateCheck,
+        ])
+        let missing = declared.subtracting(Prefs.allKeys)
+        check("every declared preference key is in allKeys",
+              missing.isEmpty, "missing: \(missing.sorted().joined(separator: ", "))")
+        check("…and the migration marker is deliberately not",
+              !Prefs.allKeys.contains(Prefs.migratedFromOldName))
+    }
 
     // Simulate the pre-rename install, then a first launch under the new name.
     old.set("/Users/someone/Scans", forKey: Prefs.outputFolder)

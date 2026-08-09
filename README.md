@@ -62,8 +62,20 @@ tells you exactly which one and why.
 
 #### Is my document sent anywhere?
 
-No. Recognition happens on your Mac using Apple's built-in text recognition. The
-app has no network code in it at all. It works with the Wi-Fi off.
+**No.** Recognition happens on your Mac using Apple's built-in text recognition.
+Your documents, their text, their names and their contents never leave your
+machine, and OCR works perfectly with the Wi-Fi off.
+
+The app makes exactly one kind of network request, and it is not about your
+documents: **once a day it asks GitHub whether a newer version exists.** That
+request sends nothing about you — no identifiers, no usage data, no file names —
+and it never installs anything by itself; it just shows a banner with a link.
+Turn it off in **Settings ▸ Behaviour ▸ Check for new versions** and the app
+makes no network requests at all.
+
+*(Earlier versions of this page said the app had "no network code in it at all".
+That stopped being true when update checking was added in 1.6.0, so the sentence
+was rewritten rather than left to quietly mislead.)*
 
 #### macOS says it can't verify the app
 

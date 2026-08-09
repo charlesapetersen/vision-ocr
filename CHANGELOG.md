@@ -12,6 +12,44 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.6.0 — 2026-08-09
+
+**You can watch a batch happen now.** Each file in the list carries its own
+state: a dotted circle while it waits, a spinner while it works — with the stage
+underneath, *"Rebuilding page 29 of 372"* — a green tick when it lands, a red
+triangle if it fails. The count above the list keeps score: *"78 files · 12
+done, 3 running"*.
+
+Most of that was already being measured and simply never shown. The model has
+tracked a per-file stage all along; nothing displayed it. Until now a long batch
+told you nothing about the files already finished, or which of them failed,
+until the whole thing was over.
+
+Four shapes rather than four colours, because colour alone is not available to
+everyone, and each row reads its state to VoiceOver — *"…, in progress,
+Rebuilding page 29 of 372"*.
+
+**The app can now tell you when there is a new version.** Once a day it asks
+GitHub whether one exists and, if so, shows a banner with *What's New* and
+*Download*. It does not install anything by itself: replacing a running app
+bundle properly is Sparkle's job, Sparkle wants a signing identity this app does
+not have, and an app that silently replaced itself would drop you back into the
+Gatekeeper dialog with no warning.
+
+**This is the app's first network request, and the README has been corrected
+rather than left to mislead.** It used to say the app had "no network code in it
+at all". That is no longer true. What remains true, and is the part that
+matters: your documents, their names and their contents never leave your Mac.
+The update check sends no identifiers and no usage data, and
+**Settings ▸ Behaviour ▸ Check for new versions** turns it off completely.
+
+Also fixed: `run_tests.sh` compiled a hand-written list of source files while
+`build.sh` globbed, so a new file could compile into the app and not into the
+suite — the checks would have gone green over code they had never seen. It globs
+now.
+
+527 checks, up from 501.
+
 ## 1.5.1 — 2026-08-09
 
 **A licence that should have been in 1.5.0.** The disk image bundles leptonica,

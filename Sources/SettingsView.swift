@@ -44,6 +44,9 @@ struct SettingsView: View {
     @AppStorage(Prefs.rebuildMode) private var rebuildModeRaw =
         Flattener.Mode.auto.rawValue
 
+    @AppStorage(Prefs.checkForUpdates) private var checkForUpdates = true
+    @State private var updateStatus = ""
+
     // Behaviour
     @AppStorage(Prefs.openWhenDone) private var openWhenDone = true
     @AppStorage(Prefs.binaryPath) private var binaryPath = ""
@@ -323,6 +326,42 @@ struct SettingsView: View {
                   + "lower it if OCR is competing with other work.")
 
             Toggle("Open the output folder when finished", isOn: $openWhenDone)
+
+            // Stated in full rather than as a bare toggle: this is the only
+            // thing in the app that touches the network, and someone who chose
+            // it partly because nothing leaves their Mac deserves to read
+            // exactly what does.
+            Toggle("Check for new versions", isOn: $checkForUpdates)
+                .help("Asks GitHub once a day whether a newer version exists. "
+                      + "Sends nothing about you or your documents — no "
+                      + "identifiers, no telemetry — and never installs "
+                      + "anything on its own.")
+            Row("", labelWidth) {
+                Text("The only network request this app makes. Your documents "
+                     + "never leave your Mac either way.")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button("Check Now") {
+                    updateStatus = "Checking…"
+                    Updater.check(force: true) { result in
+                        DispatchQueue.main.async {
+                            switch result {
+                            case .available(let r): updateStatus = "\(r.version) is available"
+                            case .upToDate: updateStatus = "Up to date (\(Updater.currentVersion))"
+                            case .failed(let why): updateStatus = "Could not check — \(why)"
+                            }
+                        }
+                    }
+                }
+                .buttonStyle(.link).font(.caption)
+            }
+            if !updateStatus.isEmpty {
+                Row("", labelWidth) {
+                    Text(updateStatus).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                }
+            }
 
             Row("mac-ocr path", labelWidth) {
                 TextField(Runner.resolveBinary() ?? "not found", text: $binaryPath)

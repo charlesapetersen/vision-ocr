@@ -13,11 +13,19 @@ cd "$(dirname "$0")"
 BIN="build/tests"
 mkdir -p build
 
+# Every source except App.swift, by glob rather than by name. It used to be a
+# hand-written list, so a new file compiled into the app (build.sh globs) and
+# not into the suite — the checks would go green over code they had never seen.
+# App.swift stays out because its @main collides with Tests/main.swift.
+SOURCES=()
+for f in Sources/*.swift; do
+  [ "$(basename "$f")" = "App.swift" ] && continue
+  SOURCES+=("$f")
+done
+
 swiftc -o "$BIN" \
   -target "$(uname -m)-apple-macos13.0" \
-  Sources/Prefs.swift Sources/Runner.swift Sources/Flattener.swift \
-  Sources/SearchableWriter.swift Sources/JBIG2.swift Sources/Model.swift \
-  Sources/ContentView.swift Sources/SettingsView.swift \
+  "${SOURCES[@]}" \
   Tests/main.swift
 
 "./$BIN"

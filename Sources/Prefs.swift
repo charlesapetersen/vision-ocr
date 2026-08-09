@@ -47,6 +47,11 @@ enum Prefs {
     static let openWhenDone      = "openWhenDone"
     static let binaryPath        = "binaryPath"
 
+    // Update checking. The only keys in here that cause network traffic.
+    static let checkForUpdates   = "checkForUpdates"
+    static let lastUpdateCheck   = "lastUpdateCheck"
+    static let skippedVersion    = "skippedVersion"
+
     static let textFormat        = "textFormat"
 
     static let fast              = "fast"
@@ -162,6 +167,7 @@ enum Prefs {
         fast, languages, languageCorrection, confidence, pdfDPIAuto, pdfDPI,
         password, customWords, minTextHeightOn, minTextHeight,
         warnDigitalText, rebuildImages, rebuildMode, useJBIG2, concurrency,
+        checkForUpdates, skippedVersion, lastUpdateCheck,
     ]
 
     /// Set once the pre-rename settings have been brought across. Deliberately
@@ -202,6 +208,14 @@ enum Prefs {
             besideOriginal: false,
             openWhenDone: true,
             binaryPath: "",
+
+            // On by default: an app distributed outside the App Store has no
+            // other way to say "the thing that lost your table rows is fixed".
+            // Off is one checkbox away, and documented in the README rather
+            // than buried.
+            checkForUpdates: true,
+            lastUpdateCheck: 0.0,
+            skippedVersion: "",
 
             textFormat: TextFormat.text.rawValue,
 
