@@ -622,6 +622,20 @@ enum SearchableWriter {
         return clipped.isNull || clipped.isEmpty ? pageBox : clipped
     }
 
+    /// How far apart two same-text observations may sit vertically and still be
+    /// one observation reported twice, as a fraction of the box height.
+    ///
+    /// 0.3 rather than 1.0. The duplicates this exists for — `auto`'s
+    /// partitioned pass emitting a line twice — are co-located to within
+    /// rounding, so the tolerance only has to survive sub-point jitter. A whole
+    /// line height instead reached the adjacent row: D3 measured 295 of 14,782
+    /// adjacent horizontally-overlapping pairs across the corpus at a pitch
+    /// below 0.6 of a box height, and this test is the looser `< 1.0` (C22).
+    ///
+    /// Below 0.3 of a box height two rows would have to overlap by seventy per
+    /// cent, which is not typesetting — it is the same line reported twice.
+    static var duplicateBaselineFraction: CGFloat = 0.3
+
     /// Removes observations that repeat the same text in the same place.
     ///
     /// The recogniser can report a line twice — mac-ocr's `auto` strategy is
@@ -637,7 +651,19 @@ enum SearchableWriter {
                 let dx = abs(other.boundingBox.x - line.boundingBox.x) * box.width
                 let dy = abs(other.boundingBox.y - line.boundingBox.y) * box.height
                 let h = max(line.boundingBox.height * box.height, 1)
-                return dx < h && dy < h
+                // Vertically this has to mean "on top of", not "near". A twin
+                // from `auto`'s partitioned pass sits at the same y to within
+                // rounding; a full line height of tolerance also swallowed the
+                // NEXT ROW, because Vision's boxes carry ascender and descender
+                // space, so ordinary 12 pt leading inside a 13 pt box satisfied
+                // it. A column repeating a figure lost every row after the
+                // first, silently — this is the one line-dropping path in the
+                // writer that produces no `Unplaced` (C22).
+                //
+                // Horizontally a full line height stays: that half was always
+                // about telling a running head from the body text under it, and
+                // it was never the problem.
+                return dx < h && dy < h * duplicateBaselineFraction
             }
             if !isDuplicate { kept.append(line) }
         }

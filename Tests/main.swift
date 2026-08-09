@@ -3889,6 +3889,68 @@ do {
 // the words weld, and the check for that runs first so a silently-ineffective
 // guard cannot pass.
 
+print("\nrepeated text in a column is not a duplicate")
+
+do {
+    // C22. `deduplicated` drops an observation repeating an already-kept one's
+    // text within one line height in BOTH axes. The horizontal half is free in
+    // an aligned column — identical text has identical width, so identical left
+    // edges — and the vertical half is satisfied by two DIFFERENT ROWS whenever
+    // the row pitch is smaller than the box height, which is ordinary typesetting:
+    // Vision's boxes include ascender and descender space, so a 12 pt leading
+    // inside a 13 pt box qualifies.
+    //
+    // It is the only line-dropping path in the writer that reports nothing: the
+    // drop happens in compose before draw, so there is no Unplaced, no `skipped`,
+    // produced == expected, and the file publishes as succeeded.
+    let box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    func row(_ text: String, atPointsFromTop y: Double, heightPoints h: Double = 13,
+             xFraction: Double = 0.20) -> SearchableWriter.Observation {
+        SearchableWriter.Observation(
+            boundingBox: SearchableWriter.BoundingBox(
+                x: xFraction, y: y / 792.0, width: 0.12, height: h / 792.0),
+            text: text, confidence: 1.0)
+    }
+
+    // A pay table: the same figure on four consecutive rows, 12 pt apart, in
+    // boxes 13 pt tall. Every row after the first was being deleted.
+    let table = (0..<4).map { row("1,000", atPointsFromTop: 300 + Double($0) * 12) }
+    let keptTable = SearchableWriter.deduplicated(table, in: box)
+    check("four rows of a column repeating one figure all survive",
+          keptTable.count == 4, "kept \(keptTable.count) of 4")
+
+    // Tighter still — 10 pt leading in a 13 pt box, which is what archival
+    // typescript looks like.
+    let tight = (0..<3).map { row("Ibid.", atPointsFromTop: 400 + Double($0) * 10) }
+    check("…and at a 10 pt leading in a 13 pt box",
+          SearchableWriter.deduplicated(tight, in: box).count == 3,
+          "kept \(SearchableWriter.deduplicated(tight, in: box).count) of 3")
+
+    // C4 is why this function exists and must keep working: mac-ocr's `auto`
+    // strategy emits the same line twice, and the twin sits on top of the
+    // original, not a row below it.
+    let exactTwin = [row("the text", atPointsFromTop: 500),
+                     row("the text", atPointsFromTop: 500)]
+    check("an exact duplicate is still dropped",
+          SearchableWriter.deduplicated(exactTwin, in: box).count == 1,
+          "kept \(SearchableWriter.deduplicated(exactTwin, in: box).count) of 2")
+
+    // Rounding between the two passes moves it by a fraction of a point.
+    let jittered = [row("the text", atPointsFromTop: 500),
+                    row("the text", atPointsFromTop: 500.4)]
+    check("…as is one that differs only by rounding",
+          SearchableWriter.deduplicated(jittered, in: box).count == 1,
+          "kept \(SearchableWriter.deduplicated(jittered, in: box).count) of 2")
+
+    // And the original reason for the horizontal half: a running head that
+    // repeats a phrase from the body is not a duplicate.
+    let head = [row("The Nature of Managerial Work", atPointsFromTop: 60, xFraction: 0.20),
+                row("The Nature of Managerial Work", atPointsFromTop: 60, xFraction: 0.62)]
+    check("the same words elsewhere on the line are not a duplicate",
+          SearchableWriter.deduplicated(head, in: box).count == 2,
+          "kept \(SearchableWriter.deduplicated(head, in: box).count) of 2")
+}
+
 print("\nadjacent fragments of one line keep their space")
 
 do {

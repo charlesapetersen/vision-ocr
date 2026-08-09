@@ -829,7 +829,7 @@ by breaking the 90% of pages that are not turned at all.
 No text-layer geometry was touched, so invariant 3's four properties are not in
 play; the text-layer checks pass unchanged.
 
-### C22 · `deduplicated` deletes a distinct line whose text repeats in a tightly-set row — OPEN
+### C22 · `deduplicated` deletes a distinct line whose text repeats in a tightly-set row — FIXED
 *(2026-08-09 second review; pre-existing, and the only unreported line-drop in the writer)*
 
 `Sources/SearchableWriter.swift:640`. `deduplicated` drops an observation that
@@ -859,6 +859,27 @@ loses `61,511.92` and two rows reading `Stock option`.
 The intent is sound and stays — C4 exists because `auto`'s partitioned pass
 really does emit the same line twice, and that duplicate sits essentially on top
 of its twin. The threshold is what is wrong.
+
+**Fix:** the vertical test becomes `dy < h * duplicateBaselineFraction` (0.3).
+A twin from the partitioned pass is co-located to within rounding, so the
+tolerance only has to survive sub-point jitter; below 0.3 of a box height two
+rows would have to overlap by seventy per cent, which is not typesetting. The
+horizontal half keeps its full line height — that was always about telling a
+running head from the body text under it, and it was never the problem.
+
+Reproduced first, with four rows of a column repeating one figure at 12 pt
+leading in 13 pt boxes: **kept 2 of 4**. Five checks now cover both directions —
+the column survives, a 10 pt leading in a 13 pt box survives, and an exact twin,
+a twin differing only by rounding, and a running head repeating a body phrase all
+still behave as C4 requires.
+
+**Corpus, all 232 documents:** 232/232 process, word retention mean 99.76 →
+99.78 (4 better, 0 worse), line-end 99.55 → 99.56 (1 better, 0 worse),
+line-start 99.71 → 99.72 (1 better, 0 worse). **Nothing regressed on any
+measure.** The corpus is weak evidence *for* this fix rather than against it: it
+samples three pages a document, so an aligned column of repeated figures is
+rarely in the sample. The unit checks are the evidence that the defect is gone;
+the corpus is the evidence that closing it broke nothing.
 
 ## Robustness and correctness of reporting
 
