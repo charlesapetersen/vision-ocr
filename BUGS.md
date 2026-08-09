@@ -6,14 +6,25 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Eleven are open**, all from the 2026-08-09 adversarial review: C19, C20, C21,
-R23, R24, R25, R26, R27, U18, U19, U20. Fourteen were claimed; a skeptic pass that
-defaulted to refuting killed three, and those measurements are kept as R28 because
-they are worth more than the claims were. One entry is a *reopening*: U18 is U5's
-hazard, still live, because the bound was placed after the call it was meant to
-bound. Two more are the same shape — R23 is R19's recursion bound missing from its
-mirror function, and R24 is an `Int` overflow trap inside R20's own crash guard.
-Fixing a thing and fixing the thing next to it are still different acts.
+**Nothing is open.** The eleven raised by the 2026-08-09 adversarial review —
+C19, C20, C21, R23, R24, R25, R26, R27, U18, U19, U20 — are all `FIXED`, each
+with a test that was watched failing first. Fourteen were claimed; a skeptic pass
+that defaulted to refuting killed three, and those measurements are kept as R28
+because they are worth more than the claims were.
+
+Three of the eleven were a fix that stopped one line short of the code beside
+it: U18 is U5's hazard still live, because the bound was placed after the call it
+was meant to bound; R23 is R19's recursion bound missing from its mirror
+function; R24 is an `Int` overflow trap inside R20's own crash guard. Fixing a
+thing and fixing the thing next to it are still different acts.
+
+**Three tests in this round did not bite when first written**, and each is
+recorded where it happened rather than quietly corrected: R25's depth fixture
+(CoreGraphics walks the shallower branch first, so the case cannot be built),
+U20's timing bound (4,000 files walk faster than any threshold, so the property
+had to be restated without the clock), and C20's selection probe (twice — one
+fixed row missed a one-point run, then the scan ran into the neighbour's box).
+A test written after the fix and never seen red is a test that proves nothing.
 
 The four raised by the 2026-08-08 corpus run — C17, D1, D2 and D3 — are all closed, and
 closing D1 meant replacing the corpus rather than re-wording a sentence. D2's

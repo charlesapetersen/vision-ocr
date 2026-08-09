@@ -12,6 +12,54 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.2.0 — 2026-08-09
+
+**Eleven defects, from an adversarial review of 1.1.0.** Four finders over all
+nine source files, then a skeptic pass that defaulted to refuting. Fourteen
+claims, eleven survived; the three that did not are kept as BUGS.md R28, because
+what killed them is worth more than they were — PDFKit buffers a document at
+init (a 66 MB PDF still parsed page 40 correctly after being truncated to nine
+bytes on disk), and mac-ocr does not touch its `-o` destination until one write
+at the very end.
+
+**Scans with a page the app could not read no longer publish quietly** (C19).
+"Use Existing Text" appended an empty string for every page with no text layer,
+and in a page-break-joined file that is invisible — a 300-page book with a
+30-page scanned appendix published 270 pages with a green tick. Those pages are
+now named in the log and marked in the file itself, at the point where they
+would have been. A blank leaf is still not reported as a loss.
+
+**Line ends on dense scans, again** (C20). `headroom` and `rightLimit` disagreed
+about what counts as one visual line, and a fragment pair in the band between
+their two answers was shrunk *and* crushed at once — worst case a run drawn
+0.71 pt tall against a natural 9.04. Over the 84-document corpus, line-end
+selectability goes from a mean of 98.90 to **99.58 with 27 documents better and
+none worse**, while line-start, word retention, text-layer offset and vertical
+collisions are all unchanged. There is one definition of "the same line" now.
+
+**Three crashes that took the whole batch with them.** The megapixel guard added
+in 1.0 to prevent a crash overflowed `Int` and trapped inside itself (R24); the
+outline copier had neither of the bounds its mirror function has, so a deeply
+nested outline was a SIGBUS (R23); and a page whose forms share one resources
+dictionary made the image scan do 13 million lookups where 61 would do (R25).
+
+**Smaller, but each one bit every time it happened.** A file named `text.pdf`
+failed deterministically, because it collided with the pipeline's own scratch
+name (R27). The "page too large" refusal told you to change a setting that
+cannot affect it (R26). Dropping a folder walked the whole tree on the main
+thread, so a big or network-mounted folder froze the window with no way out
+(U20). Files could still be added, and the output folder still changed, during
+the pre-flight — after the batch had been frozen — which brought back the "3 of
+3 succeeded" over a list of four that U1 was supposed to have ended (U19). And
+the login-shell lookup's three-second timeout sat *after* the call it was meant
+to bound, so a wedged shell still hung the app for ever (U18).
+
+**Bookmarks on sideways pages** land in the right place: a half-specified
+destination on a quarter-turned page kept the coordinate it had invented rather
+than the one it was given, sending the reader to the foot of the page (C21).
+
+418 checks, up from 357.
+
 ## 1.1.0 — 2026-08-08
 
 **Renamed to Vision OCR.** The old name described the window; the new one
