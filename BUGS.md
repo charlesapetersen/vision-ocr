@@ -2459,7 +2459,7 @@ found a new defect, which is worth recording as plainly as a defect would be:
   The fixture is a saturated yellow figure with paler detail inside it, and the
   assertion is that the router sends it to JPEG rather than to 1 bit.
 
-### T4 · Three checks written for 1.2.0 that cannot fail — OPEN
+### T4 · Three checks written for 1.2.0 that cannot fail — FIXED
 *(2026-08-09 second review. Three more of these, in one evening, after the round that added them was watching for exactly this.)*
 
 Each was written to guard a 1.2.0 fix, each passes, and none of them can go red.
@@ -2490,6 +2490,28 @@ timing bound, C20's probe twice). The pattern is now unmistakable enough to name
 something adjacent to the property rather than the property.** The two U20
 entries here were both written in the same sitting as a third that *is*
 discriminating, so the discipline was applied unevenly within one block.
+
+**Fixed, and each replacement was watched failing.**
+
+- The main-thread check records `Thread.isMainThread` **inside the completion**
+  and asserts the recorded value, so it is false if the completion never runs.
+- "the completion really did land later" is replaced by "the completion had not
+  arrived before the pump loop started", which sets a flag on the first pump
+  iteration. Reverting `add(_:then:)` to the synchronous form turns it red —
+  `returned in 0.169s, finished in 0.17s` — where the old arithmetic comparison
+  passed.
+- The login-shell block gains three checks that actually enter `askLoginShell`,
+  by pointing `SHELL` at a script that echoes a real path and asking for a tool
+  name that is in none of the three prefixes: one for a plain answer, one for a
+  path **delivered in chunks with pauses**, which is what the rewritten
+  accumulate-and-latch loop exists for, and one for an answer that is not
+  runnable. Making the loop drop its accumulated tail turns the first two red.
+  The old check is kept but renamed to what it measures — the prefix scan.
+
+One honest note on the first: reverting to a *synchronous* completion still
+passes it, and correctly so. A synchronous call from the main thread is on the
+main thread; the property is delivery-on-main, and that is what it now tests.
+The asynchrony is the second check's job.
 
 ### H1 · Four pieces of housekeeping — FIXED
 - **`ocrAllPages` and `strategy` deleted.** Flags of mac-ocr's `searchable-pdf`

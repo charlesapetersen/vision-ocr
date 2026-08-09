@@ -2046,7 +2046,15 @@ do {
     let m = MainActor.assumeIsolated { OCRModel() }
     var result: OCRModel.AddResult?
     let started = Date()
-    MainActor.assumeIsolated { m.add([root]) { result = $0 } }
+    // Recorded INSIDE the completion. Reading Thread.isMainThread at the call
+    // site asserts nothing: the suite's top-level code is the main thread
+    // unconditionally, so it was true before the completion ran, after it ran,
+    // and if it never ran at all (T4).
+    var onMain: Bool?
+    var pumped = false
+    MainActor.assumeIsolated {
+        m.add([root]) { onMain = Thread.isMainThread; result = $0 }
+    }
     let returnedAfter = Date().timeIntervalSince(started)
 
     // The whole property, stated without reference to the clock: when the call
@@ -2065,20 +2073,27 @@ do {
 
     // Pump the main runloop until the completion lands, the way an app would.
     while result == nil, Date().timeIntervalSince(started) < 60 {
+        pumped = true                    // the completion had not arrived yet
         RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
     }
     let total = Date().timeIntervalSince(started)
 
     check("the completion arrives", result != nil,
           String(format: "waited %.2fs", total))
-    check("…on the main thread", Thread.isMainThread)
+    check("…on the main thread", onMain == true,
+          "recorded \(String(describing: onMain)) inside the completion")
     check("…with every file in the tree",
           MainActor.assumeIsolated { m.files.count } == leafCount,
           "\(MainActor.assumeIsolated { m.files.count }) of \(leafCount)")
     check("…and the importing flag is cleared",
           MainActor.assumeIsolated { !m.isImporting })
-    check("the completion really did land later than the call returned",
-          total > returnedAfter,
+    // Not `total > returnedAfter`: both come from the same base in straight-line
+    // program order with three check() calls between them, so it is arithmetic,
+    // not evidence, and a synchronous implementation satisfies it (T4). What a
+    // synchronous implementation cannot do is make the pump loop run at all — it
+    // would have delivered before the loop was reached.
+    check("the completion had not arrived before the pump loop started",
+          pumped,
           String(format: "returned in %.3fs, finished in %.2fs", returnedAfter, total))
 
     // Same answer as the blocking form, which is the thing that must not change.
@@ -4590,14 +4605,49 @@ do {
     check("…and exactly now is not in the future either",
           Runner.secondsUntil(DispatchTime.now()) == 0)
 
-    // The bound must not have been bought by making the normal case slow.
+    // T4. This block covered only the timeout-and-return-nil path. The check
+    // that claimed to cover the success path timed `locateTool("mac-ocr")`, and
+    // locateTool tries /opt/homebrew/bin first — where mac-ocr is — so
+    // askLoginShell was never entered and it timed three stat calls. The read
+    // accumulation and sawEOF latching that U18 newly wrote had no coverage at
+    // all, for exactly the population U18 was written for: people whose mac-ocr
+    // is NOT in those three prefixes.
+    //
+    // A shell that answers with a real path, for a tool name that is in none of
+    // the prefixes, so the lookup has to go through askLoginShell.
+    let answering = shell("answering", "echo /bin/ls")
+    setenv("SHELL", answering, 1)
+    Runner.forgetToolPaths()
+    let found = Runner.locateTool("definitely-not-a-real-tool-u18-success")
+    check("a login shell that answers is believed",
+          found == "/bin/ls", String(describing: found))
+
+    // The same, delivered in pieces with a pause: the loop has to accumulate
+    // across several reads rather than assume one wakeup carries everything.
+    let dribbling = shell("dribbling",
+                          "printf '/bin/'\nsleep 0.3\nprintf 'ls'\nsleep 0.2\necho")
+    setenv("SHELL", dribbling, 1)
+    Runner.forgetToolPaths()
+    let assembled = Runner.locateTool("definitely-not-a-real-tool-u18-chunks")
+    check("…and a path arriving in chunks is reassembled, not truncated",
+          assembled == "/bin/ls", String(describing: assembled))
+
+    // A shell that answers with something unusable must still be refused.
+    let nonsense = shell("nonsense", "echo /no/such/binary/at/all")
+    setenv("SHELL", nonsense, 1)
+    Runner.forgetToolPaths()
+    check("a path that is not runnable is not believed",
+          Runner.locateTool("definitely-not-a-real-tool-u18-bogus") == nil)
+
+    // And the prefix scan itself stays fast. Renamed: it measures the three
+    // stat calls, which is worth holding, but it is not a test of the shell.
     setenv("SHELL", realShell ?? "/bin/zsh", 1)
     Runner.forgetToolPaths()
     let t = Date()
     _ = Runner.locateTool("mac-ocr")
     let normal = Date().timeIntervalSince(t)
-    check("a real shell still answers promptly", normal < 2,
-          String(format: "cold lookup took %.3fs", normal))
+    check("a tool in a standard prefix is found without a shell at all",
+          normal < 2, String(format: "prefix scan took %.3fs", normal))
 }
 
 resetPrefs()
