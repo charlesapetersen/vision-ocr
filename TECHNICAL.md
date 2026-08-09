@@ -9,16 +9,19 @@ tests cover.
 
 - macOS 13 or later
 - Xcode command line tools (to build)
-- `mac-ocr` on the machine:
+- `mac-ocr` **to build a disk image**: `npm install -g mac-ocr`. `build.sh --dmg`
+  copies it into `Contents/Resources` and refuses to package without it, since an
+  image lacking the engine would send its user back to the Terminal.
 
-  ```sh
-  npm install -g mac-ocr
-  ```
+  At runtime the app resolves the engine in this order: the explicit Settings
+  path, then its own bundled copy, then `/opt/homebrew/bin`, `/usr/local/bin`
+  and `/opt/local/bin`, then a login shell. The bundled copy sits above Homebrew
+  deliberately — it is the version the corpus figures were measured against, and
+  anyone wanting a different one can say so in Settings. (A GUI app launched from
+  Finder doesn't inherit your shell's `PATH`, which is why the search exists at
+  all.)
 
-  The app looks in `/opt/homebrew/bin`, `/usr/local/bin` and `/opt/local/bin`,
-  then falls back to asking your login shell. If it still can't find it, set the
-  path in Settings. (A GUI app launched from Finder doesn't inherit your shell's
-  `PATH`, which is why it has to look.)
+  Not vendored into the repo: 2.4 MB of binary in git costs every clone forever.
 
 ## Build
 
@@ -173,7 +176,7 @@ finished, and an explicit `mac-ocr` path.
 ./run_tests.sh
 ```
 
-449 checks, two to four minutes, because it runs real OCR rather than mocking it.
+453 checks, two to four minutes, because it runs real OCR rather than mocking it.
 It builds image-only PDFs and puts them through the actual pipeline — including
 `OCRModel.makeSearchablePDF`, which is deliberately internal so the tests exercise
 the real function rather than a replica of it.

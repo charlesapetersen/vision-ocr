@@ -50,10 +50,22 @@ problem, skip a redundant rasterise round-trip, and eliminate the bug class that
 produced C6, R2, R3, R16 and R17 — all subprocess-management faults, none of them
 OCR faults.
 
-**Decided against for now.** Keeping mac-ocr means someone else tracks Vision's
-revisions and language lists, and the current arrangement is validated across the
-corpus. Revisit only if mac-ocr stops being maintained or starts getting in the
-way.
+**Decided against for now, and the case got weaker on 2026-08-09.** The strongest
+argument for it was never code tidiness — it was that using this app required
+installing Homebrew, then Node, then an npm package, in a Terminal. Bundling the
+`mac-ocr` binary into the app removed that entirely, for an hour's work and no
+change to the recogniser, so **every corpus figure stayed valid**. Doing it the
+other way would have invalidated all 232 documents' measurements and made every
+subsequent difference an open question: ours, or Vision's?
+
+What remains is the code-simplification argument, which is real — it would delete
+most of `Runner.swift` and the bug class behind C6, R2, R3, R16, R17, U18 and R30,
+all subprocess faults and none of them OCR faults — but it now has to justify a
+fresh 232-document baseline on its own. Keeping mac-ocr also means someone else
+tracks Vision's revisions and language lists.
+
+Revisit if mac-ocr stops being maintained, or if a Vision feature we want is not
+exposed through it.
 
 ### Preserving annotations
 The document outline now survives (R19). Annotations do not, and were explicitly

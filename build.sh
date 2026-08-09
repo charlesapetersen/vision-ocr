@@ -85,7 +85,51 @@ else
   echo "    (skipped — app will use the generic icon)"
 fi
 
+# The recognition engine travels with the app.
+#
+# mac-ocr is a universal Mach-O linking only system frameworks, so it needs
+# neither Homebrew nor node at runtime — verified with `env -i`. Bundling it is
+# the difference between "download and drag" and "open Terminal, install
+# Homebrew, install Node, install a package". MIT, Copyright (c) Hiroki Osame;
+# the licence is copied in beside it.
+#
+# Taken from wherever this machine has it rather than vendored into the repo: a
+# 2.4 MB binary in git costs every clone forever, and a --dmg build that cannot
+# find it should fail loudly rather than quietly ship the old Terminal
+# instructions.
+echo "==> Bundling mac-ocr"
+MACOCR=""
+for candidate in \
+  "/opt/homebrew/lib/node_modules/mac-ocr/bin/mac-ocr" \
+  "/usr/local/lib/node_modules/mac-ocr/bin/mac-ocr" \
+  "$(command -v mac-ocr 2>/dev/null || true)"; do
+  [ -n "$candidate" ] && [ -x "$candidate" ] && { MACOCR="$candidate"; break; }
+done
+
+if [ -n "$MACOCR" ]; then
+  # Resolve a symlink (npm's bin/ is one) so we copy the executable itself.
+  MACOCR="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$MACOCR")"
+  cp "$MACOCR" "$APP/Contents/Resources/mac-ocr"
+  chmod +x "$APP/Contents/Resources/mac-ocr"
+  LICENSE_SRC="$(dirname "$(dirname "$MACOCR")")/LICENSE"
+  [ -f "$LICENSE_SRC" ] && cp "$LICENSE_SRC" "$APP/Contents/Resources/mac-ocr-LICENSE"
+  echo "    $("$APP/Contents/Resources/mac-ocr" --version) from $MACOCR"
+  echo "    $(lipo -archs "$APP/Contents/Resources/mac-ocr")"
+elif [ "$DMG" = 1 ]; then
+  echo "mac-ocr not found, and a disk image without it would send its user to" >&2
+  echo "the Terminal. Install it (npm install -g mac-ocr) and build again." >&2
+  exit 1
+else
+  echo "    (not found — this build will fall back to Homebrew or the login shell)"
+fi
+
 echo "==> Signing (ad hoc)"
+# Inside out: a nested executable has to be signed before the bundle that
+# contains it, or the outer signature is computed over an unsigned helper and
+# the app is rejected as damaged.
+if [ -f "$APP/Contents/Resources/mac-ocr" ]; then
+  codesign --force --sign - "$APP/Contents/Resources/mac-ocr"
+fi
 codesign --force --sign - --identifier "$BUNDLE_ID" "$APP"
 
 echo "==> Built $APP"
@@ -141,5 +185,22 @@ if [ "$DMG" = 1 ]; then
   # icon and fails on copy, which is exactly the shape of failure this project
   # keeps meeting.
   hdiutil verify -quiet "$DMG_PATH"
+
+  # The claim this image makes is "no Terminal needed". Check it: mount the
+  # image and run the engine out of it with an empty environment, so neither
+  # Homebrew nor node is on PATH. If that works here it works on a machine that
+  # has never had either.
+  MP="$(mktemp -d)"
+  hdiutil attach -quiet -nobrowse -readonly -mountpoint "$MP" "$DMG_PATH"
+  ENGINE="$MP/$APP_NAME.app/Contents/Resources/mac-ocr"
+  if [ -x "$ENGINE" ] && VER=$(env -i PATH=/usr/bin:/bin "$ENGINE" --version 2>&1); then
+    echo "==> Engine in the image answers with no PATH: mac-ocr $VER"
+  else
+    hdiutil detach -quiet "$MP"; rmdir "$MP"
+    echo "the bundled engine did not run from the image with an empty PATH" >&2
+    exit 1
+  fi
+  hdiutil detach -quiet "$MP"; rmdir "$MP"
+
   echo "==> Built $DMG_PATH ($(du -h "$DMG_PATH" | cut -f1))"
 fi

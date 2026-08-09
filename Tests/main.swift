@@ -4655,6 +4655,40 @@ do {
           holderTime.map { String(format: "returned in %.2fs", $0) }
               ?? "never returned — EOF needs every writer to close")
 
+    // The engine ships inside the app now, so the lookup has to see it. In the
+    // suite Bundle.main.resourceURL is the directory holding the test binary,
+    // which is a faithful stand-in: same API, same isRunnable check.
+    if let res = Bundle.main.resourceURL {
+        let fake = res.appendingPathComponent("bundled-tool-probe")
+        try? "#!/bin/sh\nexit 0\n".write(to: fake, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755],
+                                               ofItemAtPath: fake.path)
+        defer { try? FileManager.default.removeItem(at: fake) }
+
+        check("a helper inside the bundle is found",
+              Runner.bundledTool("bundled-tool-probe") == fake.path,
+              String(describing: Runner.bundledTool("bundled-tool-probe")))
+        check("…and a name that is not there is not invented",
+              Runner.bundledTool("no-such-bundled-tool") == nil)
+
+        // Order: the bundled copy must win over Homebrew, so a machine with an
+        // older or newer mac-ocr installed still runs what was measured.
+        Runner.forgetToolPaths()
+        check("the bundled copy is preferred to one on PATH",
+              Runner.locateTool("bundled-tool-probe") == fake.path,
+              String(describing: Runner.locateTool("bundled-tool-probe")))
+        Runner.forgetToolPaths()
+
+        // A non-executable file of the right name must not be mistaken for one.
+        let dud = res.appendingPathComponent("bundled-dud-probe")
+        try? "not executable".write(to: dud, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o644],
+                                               ofItemAtPath: dud.path)
+        defer { try? FileManager.default.removeItem(at: dud) }
+        check("…and a non-executable of the right name is not believed",
+              Runner.bundledTool("bundled-dud-probe") == nil)
+    }
+
     // R30. The helper the bound is built on: unsigned DispatchTime subtraction
     // underflows to ~584 years if taken in the wrong direction, which would turn
     // "past the deadline" into "essentially forever".

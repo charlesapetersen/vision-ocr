@@ -44,8 +44,31 @@ enum Runner {
             // Checked live, not cached: the user can point this anywhere.
             return isRunnable(override) ? override : nil
         }
-        // Standard prefixes, then a login shell for nvm/asdf/custom prefixes.
+        // The copy inside the app, then the standard prefixes, then a login
+        // shell for nvm/asdf/custom prefixes.
         return locateTool("mac-ocr")
+    }
+
+    /// The copy of a helper shipped inside the app bundle, if there is one.
+    ///
+    /// `mac-ocr` is a 2.4 MB universal Mach-O that links nothing but system
+    /// frameworks — verified by running it under `env -i` with Homebrew and node
+    /// off PATH — so it can simply travel with the app. Before this, using Vision
+    /// OCR meant installing Homebrew, then Node, then an npm package, in a
+    /// Terminal, before the app would do anything at all. For the audience the
+    /// README now addresses that was the whole barrier.
+    ///
+    /// MIT, Copyright (c) Hiroki Osame; the licence travels in
+    /// `Contents/Resources/mac-ocr-LICENSE`.
+    ///
+    /// Deliberately *below* the Settings override and *above* Homebrew: the
+    /// bundled copy is the version this release's corpus figures were measured
+    /// against, so it is what the app should use unless someone says otherwise.
+    /// Anyone wanting a newer one can point Settings at it.
+    static func bundledTool(_ name: String) -> String? {
+        guard let dir = Bundle.main.resourceURL else { return nil }
+        let path = dir.appendingPathComponent(name).path
+        return isRunnable(path) ? path : nil
     }
 
     /// Finds any helper tool the same way, for the same reason: a Finder-launched
@@ -60,10 +83,12 @@ enum Runner {
         if let cached = discovered[name] { cacheLock.unlock(); return cached }
         cacheLock.unlock()
 
-        var found: String?
-        for prefix in ["/opt/homebrew/bin/", "/usr/local/bin/", "/opt/local/bin/"] {
-            let path = prefix + name
-            if isRunnable(path) { found = path; break }
+        var found: String? = bundledTool(name)
+        if found == nil {
+            for prefix in ["/opt/homebrew/bin/", "/usr/local/bin/", "/opt/local/bin/"] {
+                let path = prefix + name
+                if isRunnable(path) { found = path; break }
+            }
         }
         if found == nil { found = askLoginShell(for: name) }
 

@@ -13,43 +13,32 @@ It can also just hand you the plain text, if that's what you're after.
 
 Free, open source, and it runs entirely on your Mac — **nothing you scan is ever
 uploaded anywhere.** Requires macOS 13 (Ventura) or later. Works on both Apple
-Silicon and Intel Macs.
+Silicon and Intel Macs. No setup beyond dragging it to Applications.
 
 ---
 
-## Setting it up
-
-There are two pieces: the app, and the recognition engine it drives. The second
-part needs the Terminal once. It's two lines, and you never have to touch it
-again.
-
-### 1. Install the app
+## Installing it
 
 1. Download the disk image from the [latest
    release](https://github.com/charlesapetersen/vision-ocr/releases/latest).
-2. Open it, and drag **Vision OCR** onto the **Applications** folder shortcut.
-3. The first time you open it, macOS will say it *"cannot verify the developer"*.
-   That's expected — see [the first-launch note](#macos-says-it-cant-verify-the-developer)
-   below for the two clicks that get past it.
+2. Open it and drag **Vision OCR** onto the **Applications** folder shortcut.
+3. The first time you open it, macOS will say it *"cannot verify the
+   developer"*. That's expected — see [the first-launch
+   note](#macos-says-it-cant-verify-the-developer) below for the two clicks that
+   get past it.
 
-### 2. Install the recognition engine
+That's all. **There is no Terminal step.** The recognition engine ships inside
+the app.
 
-Vision OCR reads pages using `mac-ocr`, a free tool that talks to the text
-recognition built into macOS. Open **Terminal** (⌘Space, type "Terminal") and
-paste these two lines, pressing Return after each:
+> Earlier versions asked you to install Homebrew, then Node, then an npm package
+> before the app would do anything. If you did that, you can leave it alone —
+> the app now uses its own copy either way, and you can point **Settings ▸
+> Behaviour ▸ mac-ocr path** at yours if you'd rather.
 
-```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && brew install node
-npm install -g mac-ocr
-```
-
-The first line installs Homebrew and Node, which `mac-ocr` needs. If you already
-have Node, you only need the second line. Then quit and reopen Vision OCR.
-
-> **Why isn't this just built in?** Because `mac-ocr` is someone else's tool and
-> bundling it would mean shipping a copy that goes stale. The app looks for it
-> automatically in the usual places; if you ever move it, you can point at it
-> directly in Settings.
+> **Optional, and only if you want smaller files.** Searchable PDFs can be
+> compressed with JBIG2, which makes them roughly a third the size. That needs
+> two more tools, and without them the app simply writes slightly larger files:
+> `brew install jbig2enc qpdf`.
 
 ## Using it
 
@@ -92,9 +81,10 @@ Vision OCR.
 
 #### It says it can't find mac-ocr
 
-The app looks in the standard places, then asks your shell. If it still comes up
-empty, find it by running `which mac-ocr` in Terminal, then paste that path into
-**Settings ▸ Behaviour ▸ mac-ocr path**.
+It shouldn't — the engine is inside the app. If you see this, the copy in the
+app bundle is missing or has been quarantined; re-downloading usually fixes it.
+Failing that, `npm install -g mac-ocr` and point **Settings ▸ Behaviour ▸
+mac-ocr path** at the result.
 
 #### How accurate is it?
 
@@ -166,6 +156,12 @@ it), [HANDOFF.md](HANDOFF.md) (design decisions and lessons already paid for),
 [BUGS.md](BUGS.md) (every defect with its evidence),
 [TODO.md](TODO.md), [FEATURES.md](FEATURES.md) and
 [CHANGELOG.md](CHANGELOG.md).
+
+## Credits
+
+Recognition is Apple's Vision framework, reached through
+[mac-ocr](https://github.com/privatenumber/mac-ocr) by Hiroki Osame, a copy of
+which ships inside the app under its MIT licence.
 
 *(The app was called Vision Reader GUI before 1.1.0. Your settings carry over
 automatically.)*

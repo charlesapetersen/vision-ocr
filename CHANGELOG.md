@@ -12,6 +12,45 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.4.0 — 2026-08-09
+
+**There is no Terminal step any more.** The recognition engine ships inside the
+app. Download, drag to Applications, open — that is the whole of it.
+
+Until now the README asked a non-technical reader to install Homebrew, then
+Node, then an npm package before the app would do anything at all, which was the
+single largest barrier to using it. `mac-ocr` turns out to be a 2.4 MB universal
+Mach-O linking nothing but system frameworks — verified by running it under
+`env -i` with Homebrew and node off `PATH` — so it simply travels with the app.
+MIT, Copyright (c) Hiroki Osame; the licence ships beside it and the README
+credits it.
+
+The engine is resolved in this order: the explicit Settings path, the bundled
+copy, the Homebrew prefixes, then a login shell. **The bundled copy sits above
+Homebrew on purpose** — it is the version this release's corpus figures were
+measured against. Anyone who wants a different one can point Settings at it, and
+an existing Homebrew install is left alone.
+
+`build.sh --dmg` now refuses to package without the engine, and then proves the
+claim rather than asserting it: it mounts the finished image and runs the engine
+out of it with an empty environment. A build that cannot do that fails.
+
+*Choosing this over calling Vision directly was the point.* Direct Vision would
+delete most of the subprocess code and the whole bug class behind seven register
+entries — but it changes the recogniser, which would invalidate all 232
+documents' measurements. Bundling removed the barrier without touching a single
+number. FEATURES.md records the reasoning.
+
+**Optional extras stay optional.** JBIG2 compression still wants `jbig2enc` and
+`qpdf`; without them the app writes slightly larger files and says nothing else
+about it.
+
+Also: `Tools/mutate.py`, which puts a defect back mechanically and checks that
+something goes red. Nine checks in this project's history could not fail, and
+every one was found by hand.
+
+453 checks, up from 449. The disk image is 2.1 MB, up from 964 KB.
+
 ## 1.3.0 — 2026-08-09
 
 **A second review, run against 1.2.0 minutes after it shipped, found seven more
