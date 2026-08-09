@@ -12,6 +12,51 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.3.0 — 2026-08-09
+
+**A second review, run against 1.2.0 minutes after it shipped, found seven more
+defects — five of them in the code and tests written to fix the previous
+eleven.** That is this project's oldest recorded pattern and it has now happened
+twice in one evening. All five register entries are closed.
+
+**The test corpus nearly tripled, and the numbers held.** It was 84 documents
+drawn from the previous five years of a Zotero library; it is now **232**, drawn
+from the whole of it, with 79% of the new material older than that window and
+reaching back to 2013. The scanned-only gate rejected 429 born-digital, 40
+photographed and 4 with no page image to find them. Across the new documents:
+148/148 process, median 100% line-start, line-end and word retention — within
+0.05 of the material the app was calibrated on. The figures describe the app,
+not the sample. See [CORPUS-2026-08-09.md](CORPUS-2026-08-09.md).
+
+That corpus is also what made **C22** findable, and it is the one users will
+notice: a page with the same text repeated in an aligned column — a table of
+figures, a ditto column, a run of *Ibid.* — **lost every row after the first
+from the text layer**, and published with a green tick. `deduplicated` treated
+the next row down as a duplicate whenever the row pitch was smaller than the box
+height, which is ordinary typesetting. It was the only line-dropping path in the
+writer that reported nothing.
+
+**Two crashes that took the whole batch.** `saturation` sized its buffer from the
+raw page box, outside every guard added in 1.2.0 — a legal `MediaBox [0 0
+1000000000000 1000000000000]` killed the process with SIGTRAP (R29). And 1.2.0's
+own bug register had recorded that case as *measured and ruled out*; the
+measurement used `[0 0 1e300 1e300]`, which PDFKit rejects for **syntax**, not
+size. The entry is corrected in place.
+
+**Smaller.** The batch stopped being frozen while the "this PDF already has
+text" alert was up, so a folder still being imported could land in a job that had
+already been decided — "Done — 1 of 1 succeeded" over a list of 301 (U21). And
+1.2.0's new timeout used the wall clock in a file that documents why not, so an
+NTP step mid-probe could make the app decide mac-ocr was missing for the rest of
+the session (R30).
+
+**Three checks written in 1.2.0 could not fail** (T4) — one read
+`Thread.isMainThread` outside the closure it was testing, one compared two
+clocks sampled in program order, and one never entered the function it claimed
+to cover. All three are rewritten and each replacement was watched failing.
+
+449 checks, up from 418.
+
 ## 1.2.0 — 2026-08-09
 
 **Eleven defects, from an adversarial review of 1.1.0.** Four finders over all

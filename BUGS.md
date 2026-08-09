@@ -6,14 +6,17 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Five are open**, from a second review run against 1.2.0 minutes after it
-shipped: C22, R29, R30, U21, T4. **Five of the seven findings behind them are in
-code or tests written during the round that closed the previous eleven** — R29 is
-the hole R24 left and wrongly recorded as measured, R30 is U18 reaching for the
+**Nothing is open.** Two reviews ran against this codebase on 2026-08-09, the
+second against the release the first produced. It found seven more defects, and
+**five of the seven were in code or tests written during the first** — R29 is the
+hole R24 left and then wrongly recorded as measured, R30 is U18 reaching for the
 wall clock in a file that documents why not, U21 is U19's flag and U20's async
-import interacting, and T4 is three checks from that round that cannot fail. This
-register has said for a year that every pass finds defects in the previous pass's
-code; it has now said it twice in one evening.
+import interacting, and T4 is three checks from that round that could not fail.
+This register has claimed for a year that every pass finds defects in the
+previous pass's code. It demonstrated it twice in one evening.
+
+C22, R29, R30, U21 and T4 are all `FIXED`, each with a check that was watched
+failing first.
 
 The eleven raised by the first 2026-08-09 review — C19, C20, C21, R23, R24, R25,
 R26, R27, U18, U19, U20 — are `FIXED`, each with a test that was watched failing
