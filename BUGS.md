@@ -2709,6 +2709,11 @@ drift guard is not a behavioural test.** It cannot tell you 1.5 is the right
 headroom factor. The corpus is what validates these values; this only stops one
 of them moving in passing with a green suite as reassurance.
 
+**Second campaign, after the third review's fixes: 27 mutants, 25 killed, two
+survivors — the same two, both correct.** Every gap the first campaign found is
+closed, and the catalogue grew by the two mutants T7's ambiguity had been hiding
+plus two for the bundled-tool architecture check.
+
 **Two survivors are correct and stay.** `maximumPageMegapixels` 400 → 40,000 is
 a safety ceiling with deliberate slack, 19x the largest page in the corpus;
 pinning it would assert a number rather than a property, and its *behaviour* is

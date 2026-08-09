@@ -146,7 +146,10 @@ def already_done():
 
 
 def record(mid, verdict, seconds, detail):
-    new = not os.path.exists(LOG)
+    # Empty counts as new, not just absent. Truncating the log to start a fresh
+    # campaign (`: > Tools/mutation-log.tsv`) left it headerless, so the first
+    # record looked like the header to anything reading it with `tail -n +2`.
+    new = not os.path.exists(LOG) or os.path.getsize(LOG) == 0
     with open(LOG, "a") as fh:
         if new:
             fh.write("mutant\tverdict\tseconds\tdetail\n")

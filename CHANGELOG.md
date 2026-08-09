@@ -12,6 +12,47 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.5.1 — 2026-08-09
+
+**A licence that should have been in 1.5.0.** The disk image bundles leptonica,
+2.2 MB of BSD-2-Clause code, and shipped it with no copyright notice — the
+licence copier counted *packages it had looked at* rather than notices it had
+written, so the reassuring "licences for 12 package(s)" was structurally
+incapable of noticing. All twelve are now covered, leptonica's text is carried
+verbatim, and a package without a notice stops the build.
+
+**The first-launch instructions were wrong** (U22). Every release since this repo
+went public told people to Control-click the app and choose Open. **macOS 15
+removed that**, so on any current version the dialog offers only *Move to Trash*
+and *Done* — the one instruction between a new user and a working app named a
+button that does not exist. The README now describes the route that works:
+System Settings ▸ Privacy & Security ▸ **Open Anyway**.
+
+**Three build defects that could have shipped a broken app.** A failed bundling
+audit left the rejected binaries in place while the build printed "not bundled"
+and signed them — and since the app prefers its bundled copy over Homebrew, it
+would have used them. A failed disk-image verification could lose the diagnostic
+explaining why, and leave the rejected image on disk. Both fixed, plus a mount
+leak found by grep afterwards.
+
+None of this changes what the app does. It changes what can go wrong between the
+source and your Mac.
+
+**And three controls, because the honest answer to "why do fixes keep producing
+bugs" is that three of the four causes had no mechanical check.**
+`Tools/fault-inject.sh` breaks things on purpose — a no-op `install_name_tool`, a
+failing `hdiutil detach` — and asserts the build notices; it was written before
+the fixes so it could be watched catching them. `Tools/mutate.py` was repaired:
+its "matched exactly once" guard was vacuous, and its first act afterwards was to
+reveal that a bound it claimed to cover had never been perturbed. And
+CONTRIBUTING now requires a sibling sweep before closing anything, which
+immediately found a defect the nine-finding review had missed.
+
+Second mutation campaign: 27 mutants, 25 killed, two survivors, both documented
+as correct.
+
+478 checks, up from 473.
+
 ## 1.5.0 — 2026-08-09
 
 **Compression is included now too, so there is nothing left to install.** 1.4.0
