@@ -1218,7 +1218,7 @@ disagreeing is the keep-rule, not recursion. The suite already builds the
 4,000-level fixture at `Tests/main.swift:1992` and hands it to `readOutline`
 alone at `:2006` — `copyOutline` is never given a deep or cyclic outline.
 
-### R24 · The megapixel guard's own `Int` arithmetic traps before it can refuse — OPEN
+### R24 · The megapixel guard's own `Int` arithmetic traps before it can refuse — FIXED
 *(2026-08-09 review; the API assumption was tested, not assumed)*
 
 `Sources/Flattener.swift:391`. R20 added `maximumPageMegapixels` so an impossible
@@ -1254,6 +1254,38 @@ Three traps on the same input:
 
 An arithmetic-overflow trap is not a catchable `Failure`. This is R20's own
 failure mode, inside R20's own fix.
+
+**Fix**, in two layers rather than at each multiplication:
+
+- **Reject the implausible where it is read.** `maximumDeclaredImageSide`
+  (200,000 px — a 26-inch sheet at 7,700 DPI) bounds `/Width` and `/Height` in
+  the XObject walk, along with `> 0`. A declaration past that is corruption or
+  hostility, not a scan, and skipping it means no arithmetic downstream can
+  overflow.
+- **Decide in Double, convert once.** `flatten` computes the rendered size and
+  the megapixel comparison in Double and converts only after the value is known
+  to be in range. `safeInt` saturates instead of trapping for anything
+  non-finite or out of `Int`'s range.
+
+Guarded by five checks, all of which need a **child process** — a trap cannot be
+caught in-process, and a check that asserts "this must not take the process
+down" cannot be the thing that takes it down. The suite re-runs its own binary
+with `--probe-hostile-page` and inspects `terminationReason`. Before: the two
+overflow fixtures killed the child. After: all pass, and "a merely enormous page
+is still refused, not rendered" holds the guard to its job.
+
+Two things measured while fixing it, both worth keeping:
+
+- **An absurd `MediaBox` is not a route to the same trap.** `saturation` and
+  `fullBox` also size buffers from the page box with an unguarded `Int(_:)`, but
+  CoreGraphics refuses to open a document with `MediaBox [0 0 1e300 1e300]` at
+  all — `PDFDocument(url:)` returns nil and `flatten` throws `unreadable`. The
+  check is in the suite as a boundary, not as a regression guard: it passed
+  before this fix too.
+- **The limit is now exact.** The old comparison floor-divided by a million
+  first, so a page of 400,999,999 px counted as 400 MP and was allowed. It is
+  now compared against `400 × 1_000_000` directly. The corpus's largest page is
+  21.5 MP, so nothing real moves.
 
 ### R25 · `largestImage`'s Form XObject walk has a depth cap but no visited set — OPEN
 *(2026-08-09 review; measured)*

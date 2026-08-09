@@ -7,6 +7,26 @@ import PDFKit
 // accepts, by building each one and running it for real against a generated
 // scanned PDF. Run with ./run_tests.sh.
 
+// A trap is not catchable, so a check that asserts "this must not take the
+// process down" cannot make the call itself — it would take the suite down with
+// it. These modes re-run this same binary on one hostile file and the caller
+// inspects how the child exited. See R24.
+if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--probe-hostile-page" {
+    let url = URL(fileURLWithPath: CommandLine.arguments[2])
+    _ = Flattener.hasDigitalText(url)
+    if let page = PDFDocument(url: url)?.page(at: 0) {
+        _ = Flattener.largestImage(of: page)
+        _ = Flattener.nativeDPI(of: page)
+        _ = Flattener.rebuildDPI(of: page)
+        _ = Flattener.pageIsAnImage(page)
+    }
+    let out = url.deletingLastPathComponent().appendingPathComponent("probe-out.pdf")
+    // Must throw a Failure, not trap. Either outcome is a clean exit; the point
+    // is that we reach this line at all.
+    do { _ = try Flattener.flatten(url, to: out, mode: .blackAndWhite) } catch {}
+    exit(0)
+}
+
 var failures = 0
 var checks = 0
 
@@ -3747,6 +3767,106 @@ do {
         return Date().timeIntervalSince(t) < 0.05
     }(), "a negative result must not re-shell every time")
     check("the cache still finds the real binary", Runner.resolveBinary() != nil)
+}
+
+print("\nhostile page dimensions")
+
+do {
+    // R24. R20 added maximumPageMegapixels so an impossible page is refused
+    // rather than crashing the process "taking every other file in flight with
+    // it". But the guard multiplies in signed Int, and Swift traps on Int
+    // overflow — the trap fires before the comparison. /Width and /Height are
+    // whatever the file declares; nothing cross-checks them against the stream.
+    let dir = tmp.appendingPathComponent("hostile-\(UUID().uuidString)")
+    try! FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+    /// A structurally valid one-page PDF whose image XObject declares the given
+    /// dimensions. The stream is three bytes; that is the point.
+    func hostilePDF(named name: String, width: String, height: String,
+                    mediaBox: String = "0 0 612 792") -> URL {
+        let bodies = [
+            "<</Type/Catalog/Pages 2 0 R>>",
+            "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+            "<</Type/Page/Parent 2 0 R/MediaBox[\(mediaBox)]"
+                + "/Resources<</XObject<</Im0 4 0 R>>>>/Contents 5 0 R>>",
+            "<</Type/XObject/Subtype/Image/Width \(width)/Height \(height)"
+                + "/ColorSpace/DeviceGray/BitsPerComponent 8/Length 3>>\nstream\nabc\nendstream",
+            "<</Length 1>>\nstream\n \nendstream",
+        ]
+        var out = "%PDF-1.4\n"
+        var offsets: [Int] = []
+        for (i, body) in bodies.enumerated() {
+            offsets.append(out.utf8.count)
+            out += "\(i + 1) 0 obj\n\(body)\nendobj\n"
+        }
+        let startxref = out.utf8.count
+        out += "xref\n0 \(bodies.count + 1)\n0000000000 65535 f \n"
+        for off in offsets { out += String(format: "%010d 00000 n \n", off) }
+        out += "trailer\n<</Size \(bodies.count + 1)/Root 1 0 R>>\n"
+            + "startxref\n\(startxref)\n%%EOF\n"
+        let url = dir.appendingPathComponent(name)
+        try! out.write(to: url, atomically: true, encoding: .ascii)
+        return url
+    }
+
+    /// Runs the risky calls in a child so a trap fails the check instead of
+    /// killing the suite. Returns nil if the child died on a signal.
+    func probeSurvives(_ pdf: URL) -> Bool {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
+        p.arguments = ["--probe-hostile-page", pdf.path]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        do { try p.run() } catch { return false }
+        p.waitUntilExit()
+        return p.terminationReason == .exit && p.terminationStatus == 0
+    }
+
+    // The file has to be readable, or the walk is never reached and the check
+    // proves nothing.
+    let overflow = hostilePDF(named: "overflow.pdf",
+                              width: "4000000000", height: "4000000000")
+    check("the hostile fixture is a PDF the app will actually open",
+          PDFDocument(url: overflow)?.pageCount == 1)
+
+    check("declared dimensions that overflow Int do not kill the process",
+          probeSurvives(overflow),
+          "Int(w) * Int(h) is 1.6e19 against an Int.max of 9.2e18")
+
+    // Fits in Int, so it clears line 833, and then rebuildDPI reports ~4.1e8 DPI
+    // and the multiplication *inside* the guard overflows instead.
+    check("a declaration that overflows only inside the guard does not either",
+          probeSurvives(hostilePDF(named: "inguard.pdf",
+                                   width: "3500000000", height: "1")),
+          "the trap fires inside the check meant to refuse the page")
+
+    check("a negative declared dimension does not either",
+          probeSurvives(hostilePDF(named: "negative.pdf",
+                                   width: "-4000000000", height: "8")))
+
+    // Same class, different input: `saturation` and `fullBox` size their buffers
+    // from the page box rather than from a declared image, so a MediaBox the
+    // file invented reaches the same unguarded `Int(_:)`.
+    check("an absurd MediaBox does not kill the process either",
+          probeSurvives(hostilePDF(named: "hugebox.pdf", width: "8", height: "8",
+                                   mediaBox: "0 0 1e300 1e300")),
+          "saturation/flatten size buffers from the page box")
+
+    // And the guard still does its job for a page that is merely enormous.
+    let big = hostilePDF(named: "big.pdf", width: "200000", height: "200000")
+    var refused = false
+    if PDFDocument(url: big)?.page(at: 0) != nil {
+        do {
+            _ = try Flattener.flatten(big, to: dir.appendingPathComponent("o.pdf"),
+                                      mode: .blackAndWhite)
+        } catch {
+            refused = "\(error)".contains("pageTooLarge")
+                || error.localizedDescription.contains("MP limit")
+        }
+    }
+    check("a merely enormous page is still refused, not rendered", refused)
+
+    try? FileManager.default.removeItem(at: dir)
 }
 
 do {

@@ -118,6 +118,23 @@ enum Flattener {
     /// all 4,992 corpus pages: none exceed 100 MP.
     static let maximumPageMegapixels = 400
 
+    /// The largest `/Width` or `/Height` worth believing from an image XObject.
+    /// Those are declarations, not measurements: `CGPDFInteger` is 64-bit, the
+    /// stream behind them can be three bytes, and nothing cross-checks the two.
+    /// 200,000 px is a 26-inch sheet at 7,700 DPI — past anything real, and
+    /// small enough that the product of two of them cannot overflow `Int` (R24).
+    static let maximumDeclaredImageSide = 200_000
+
+    /// `Int(_:)` traps for a Double that is not finite or is outside `Int`'s
+    /// range. Every dimension in this file descends from a number some document
+    /// declared, so the conversion is never safe on its own (R24).
+    static func safeInt(_ value: Double) -> Int {
+        guard value.isFinite else { return 0 }
+        if value >= 9.0e18 { return Int(9.0e18) }
+        if value <= -9.0e18 { return Int(-9.0e18) }
+        return Int(value)
+    }
+
     enum Failure: LocalizedError {
         case unreadable
         case cannotWrite
@@ -380,19 +397,34 @@ enum Flattener {
             // rebuildDPI.
             let dpi = rebuildDPI(of: page)
             let scale = dpi / 72.0
-            let width = max(Int((box.width * scale).rounded()), 1)
-            let height = max(Int((box.height * scale).rounded()), 1)
+
+            // Decide in Double and convert only once the value is known to be
+            // small enough. `Int(_:)` traps for a Double outside Int's range,
+            // and both the box and the scale descend from numbers the file
+            // declared — so the conversion itself was a crash on a malformed
+            // page, before any guard could look at it (R24).
+            let wide = (box.width * scale).rounded()
+            let high = (box.height * scale).rounded()
+            guard wide.isFinite, high.isFinite, wide >= 1, high >= 1 else {
+                throw Failure.pageFailed(page: index + 1, of: count)
+            }
 
             // Before allocating, not after: renderGrey asks for width * height
             // bytes and an array that cannot be allocated crashes the process
             // rather than throwing, which would take every concurrent file with
             // it. See maximumPageMegapixels — this refuses rather than
             // downscaling, because the policy here is fidelity.
-            let megapixels = (width * height) / 1_000_000
-            guard megapixels <= maximumPageMegapixels else {
-                throw Failure.pageTooLarge(page: index + 1, megapixels: megapixels,
-                                           dpi: Int(dpi.rounded()))
+            //
+            // In Double as well, for the same reason: multiplying the two in Int
+            // overflowed and trapped *inside the guard meant to prevent exactly
+            // this crash*.
+            guard wide * high <= Double(maximumPageMegapixels) * 1_000_000 else {
+                throw Failure.pageTooLarge(page: index + 1,
+                                           megapixels: safeInt(wide * high / 1_000_000),
+                                           dpi: safeInt(dpi.rounded()))
             }
+            let width = max(Int(wide), 1)
+            let height = max(Int(high), 1)
 
             guard let grey = renderGrey(page, box: box, scale: scale,
                                         width: width, height: height,
@@ -829,9 +861,18 @@ enum Flattener {
                 switch String(cString: subtype) {
                 case "Image":
                     var w: CGPDFInteger = 0, h: CGPDFInteger = 0
-                    if CGPDFDictionaryGetInteger(streamDict, "Width", &w),
-                       CGPDFDictionaryGetInteger(streamDict, "Height", &h),
-                       Int(w) * Int(h) > found.width * found.height {
+                    // /Width and /Height are whatever the file declares —
+                    // CGPDFInteger is 64-bit and nothing cross-checks them
+                    // against the stream, which can be three bytes. Reject the
+                    // implausible here so no arithmetic downstream can overflow
+                    // (R24), rather than at each place that multiplies them.
+                    guard CGPDFDictionaryGetInteger(streamDict, "Width", &w),
+                          CGPDFDictionaryGetInteger(streamDict, "Height", &h),
+                          w > 0, h > 0,
+                          w <= CGPDFInteger(maximumDeclaredImageSide),
+                          h <= CGPDFInteger(maximumDeclaredImageSide)
+                    else { return true }
+                    if Int(w) * Int(h) > found.width * found.height {
                         found.width = Int(w); found.height = Int(h)
                     }
                 case "Form":
