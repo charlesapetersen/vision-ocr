@@ -123,6 +123,25 @@ else
   echo "    (not found — this build will fall back to Homebrew or the login shell)"
 fi
 
+# The compression tools, and everything they link.
+#
+# Optional in a way mac-ocr is not: without them the app writes Flate-compressed
+# pages, which work identically and are about three times the size. Bundling
+# them means "smaller files" stops being a thing you have to visit Homebrew for.
+#
+# Unlike mac-ocr these are NOT self-contained — jbig2 pulls in leptonica and its
+# image codecs, qpdf pulls in libqpdf and OpenSSL — so the closure is copied and
+# every install name rewritten to @loader_path. And unlike mac-ocr they are
+# single-architecture, because Homebrew builds for the machine it is on: a disk
+# image built on Apple Silicon carries arm64-only copies. Runner.bundledTool
+# reads the Mach-O header and ignores a slice it cannot run, so an Intel Mac
+# falls through to Homebrew exactly as before rather than failing at exec.
+echo "==> Bundling the compression tools"
+LIBDIR="$APP/Contents/Resources/lib"
+python3 Tools/bundle-libs.py "$APP" jbig2 qpdf || {
+  echo "    (not bundled — the app will look for them on PATH)"
+}
+
 echo "==> Signing (ad hoc)"
 # Inside out: a nested executable has to be signed before the bundle that
 # contains it, or the outer signature is computed over an unsigned helper and
@@ -130,6 +149,13 @@ echo "==> Signing (ad hoc)"
 if [ -f "$APP/Contents/Resources/mac-ocr" ]; then
   codesign --force --sign - "$APP/Contents/Resources/mac-ocr"
 fi
+# Dylibs before the executables that load them, executables before the bundle.
+if [ -d "$APP/Contents/Resources/lib" ]; then
+  find "$APP/Contents/Resources/lib" -name '*.dylib' -exec codesign --force --sign - {} \;
+fi
+for helper in jbig2 qpdf; do
+  [ -f "$APP/Contents/Resources/$helper" ] && codesign --force --sign - "$APP/Contents/Resources/$helper"
+done
 codesign --force --sign - --identifier "$BUNDLE_ID" "$APP"
 
 echo "==> Built $APP"
@@ -192,14 +218,19 @@ if [ "$DMG" = 1 ]; then
   # has never had either.
   MP="$(mktemp -d)"
   hdiutil attach -quiet -nobrowse -readonly -mountpoint "$MP" "$DMG_PATH"
-  ENGINE="$MP/$APP_NAME.app/Contents/Resources/mac-ocr"
-  if [ -x "$ENGINE" ] && VER=$(env -i PATH=/usr/bin:/bin "$ENGINE" --version 2>&1); then
-    echo "==> Engine in the image answers with no PATH: mac-ocr $VER"
-  else
-    hdiutil detach -quiet "$MP"; rmdir "$MP"
-    echo "the bundled engine did not run from the image with an empty PATH" >&2
-    exit 1
-  fi
+  RES="$MP/$APP_NAME.app/Contents/Resources"
+  # mac-ocr is required; the compression tools are checked only if bundled,
+  # since a build on a machine without them is legitimate.
+  for tool in mac-ocr jbig2 qpdf; do
+    [ "$tool" = "mac-ocr" ] || [ -x "$RES/$tool" ] || continue
+    if VER=$(env -i PATH=/usr/bin:/bin "$RES/$tool" --version 2>&1 | head -1); then
+      echo "==> $tool runs from the image with no PATH: $VER"
+    else
+      hdiutil detach -quiet "$MP"; rmdir "$MP"
+      echo "$tool did not run from the image with an empty PATH: $VER" >&2
+      exit 1
+    fi
+  done
   hdiutil detach -quiet "$MP"; rmdir "$MP"
 
   echo "==> Built $DMG_PATH ($(du -h "$DMG_PATH" | cut -f1))"

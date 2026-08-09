@@ -12,8 +12,8 @@ It can also just hand you the plain text, if that's what you're after.
 ### [⬇︎ Download Vision OCR](https://github.com/charlesapetersen/vision-ocr/releases/latest)
 
 Free, open source, and it runs entirely on your Mac — **nothing you scan is ever
-uploaded anywhere.** Requires macOS 13 (Ventura) or later. Works on both Apple
-Silicon and Intel Macs. No setup beyond dragging it to Applications.
+uploaded anywhere.** Requires macOS 13 (Ventura) or later, on an Apple Silicon
+or Intel Mac. No setup beyond dragging it to Applications.
 
 ---
 
@@ -27,18 +27,17 @@ Silicon and Intel Macs. No setup beyond dragging it to Applications.
    note](#macos-says-it-cant-verify-the-developer) below for the two clicks that
    get past it.
 
-That's all. **There is no Terminal step.** The recognition engine ships inside
-the app.
+That's all. **There is no Terminal step, and nothing to install alongside it.**
+Everything the app needs — reading the page, and compressing the result — ships
+inside it.
 
 > Earlier versions asked you to install Homebrew, then Node, then an npm package
 > before the app would do anything. If you did that, you can leave it alone —
 > the app now uses its own copy either way, and you can point **Settings ▸
 > Behaviour ▸ mac-ocr path** at yours if you'd rather.
 
-> **Optional, and only if you want smaller files.** Searchable PDFs can be
-> compressed with JBIG2, which makes them roughly a third the size. That needs
-> two more tools, and without them the app simply writes slightly larger files:
-> `brew install jbig2enc qpdf`.
+Searchable PDFs are compressed automatically, which makes them roughly a third
+the size — the tools for that are inside the app too.
 
 ## Using it
 
@@ -157,11 +156,27 @@ it), [HANDOFF.md](HANDOFF.md) (design decisions and lessons already paid for),
 [TODO.md](TODO.md), [FEATURES.md](FEATURES.md) and
 [CHANGELOG.md](CHANGELOG.md).
 
+#### Are the files it makes big?
+
+Not usually. A searchable PDF is normally about the same size as what you put
+in, because the pages are compressed as it works. On an Intel Mac the
+compression step isn't included and files come out roughly three times larger —
+they work identically, just take more disk. Installing it separately fixes that:
+`brew install jbig2enc qpdf`.
+
 ## Credits
 
 Recognition is Apple's Vision framework, reached through
-[mac-ocr](https://github.com/privatenumber/mac-ocr) by Hiroki Osame, a copy of
-which ships inside the app under its MIT licence.
+[mac-ocr](https://github.com/privatenumber/mac-ocr) by Hiroki Osame. Compression
+is [jbig2enc](https://github.com/agl/jbig2enc) and
+[qpdf](https://github.com/qpdf/qpdf), with leptonica and the usual image codecs
+behind them. All ship inside the app under their own licences, which travel with
+it in `Contents/Resources/third-party-licences` — permissive throughout: MIT,
+Apache-2.0, BSD and 0BSD.
+
+JBIG2 is a published ISO standard whose encoder carries a notice that its
+methods may be patented in some countries; jbig2enc's own `PATENTS` file is
+shipped verbatim rather than summarised here.
 
 *(The app was called Vision Reader GUI before 1.1.0. Your settings carry over
 automatically.)*

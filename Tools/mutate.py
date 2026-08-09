@@ -93,6 +93,12 @@ OPERATORS = [
      "self.isPreflighting = false", "U21-committed-across-alert"),
     ("Runner.swift", "guard deadline > now else { return 0 }",
      "guard true else { return 0 }", "R30-monotonic-underflow"),
+    # The bundled compression tools are single-architecture, so this check is
+    # what keeps an arm64-only jbig2 from being handed to an Intel Mac.
+    ("Runner.swift", "return isRunnable(path) && containsNativeSlice(path) ? path : nil",
+     "return isRunnable(path) ? path : nil", "bundle-arch-check"),
+    ("Runner.swift", "case 0xcffa_edfe, 0xcefa_edfe:                     // little-endian file\n            return word(4, bigEndian: false) == native",
+     "case 0xcffa_edfe, 0xcefa_edfe:\n            return word(4, bigEndian: true) == native", "bundle-arch-endianness"),
 ]
 
 

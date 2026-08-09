@@ -68,7 +68,61 @@ enum Runner {
     static func bundledTool(_ name: String) -> String? {
         guard let dir = Bundle.main.resourceURL else { return nil }
         let path = dir.appendingPathComponent(name).path
-        return isRunnable(path) ? path : nil
+        return isRunnable(path) && containsNativeSlice(path) ? path : nil
+    }
+
+    /// Whether a Mach-O at this path has code for the architecture we are
+    /// running on. True for anything that is not a recognisable Mach-O, since a
+    /// shell wrapper is a perfectly good tool and this cannot judge it.
+    ///
+    /// `isExecutableFile` does not look at architecture: it says yes to an
+    /// arm64-only binary on an Intel Mac, which then fails at `exec` with an
+    /// error no user can act on. That is not hypothetical here — the bundled
+    /// compression tools come from Homebrew, which builds for the machine it is
+    /// installed on, so a disk image built on Apple Silicon carries arm64-only
+    /// copies of `jbig2` and `qpdf`. On an Intel Mac they must be invisible, so
+    /// the search falls through to Homebrew exactly as it did before.
+    static func containsNativeSlice(_ path: String) -> Bool {
+        guard let handle = FileHandle(forReadingAtPath: path) else { return false }
+        defer { try? handle.close() }
+        guard let head = try? handle.read(upToCount: 4096), head.count >= 8 else { return false }
+
+        #if arch(arm64)
+        let native: UInt32 = 0x0100_000c        // CPU_TYPE_ARM64
+        #else
+        let native: UInt32 = 0x0100_0007        // CPU_TYPE_X86_64
+        #endif
+
+        func word(_ offset: Int, bigEndian: Bool) -> UInt32? {
+            guard offset + 4 <= head.count else { return nil }
+            let b = head[head.startIndex + offset ..< head.startIndex + offset + 4]
+            let v = b.reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }        // big-endian read
+            return bigEndian ? v : v.byteSwapped
+        }
+        guard let magic = word(0, bigEndian: true) else { return false }
+
+        // `magic` was read big-endian, so these are the ON-DISK byte orders.
+        // A Mach-O stores its magic in the file's own order: every Mac is
+        // little-endian, so 0xFEEDFACF lands on disk as CF FA ED FE and reads
+        // back here as 0xCFFAEDFE. Getting this the wrong way round made the
+        // check reject the very binary it was running as.
+        switch magic {
+        case 0xcffa_edfe, 0xcefa_edfe:                     // little-endian file
+            return word(4, bigEndian: false) == native
+        case 0xfeed_facf, 0xfeed_face:                     // big-endian file
+            return word(4, bigEndian: true) == native
+        case 0xcafe_babe, 0xcafe_babf:                     // fat; entries are big-endian
+            let wide = magic == 0xcafe_babf
+            guard let count = word(4, bigEndian: true), count < 64 else { return false }
+            let stride = wide ? 32 : 20
+            for i in 0..<Int(count) {
+                if word(8 + i * stride, bigEndian: true) == native { return true }
+            }
+            return false
+        default:
+            // Not a Mach-O — a script, most likely. Nothing to object to.
+            return true
+        }
     }
 
     /// Finds any helper tool the same way, for the same reason: a Finder-launched

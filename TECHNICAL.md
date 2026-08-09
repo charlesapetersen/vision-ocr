@@ -23,6 +23,21 @@ tests cover.
 
   Not vendored into the repo: 2.4 MB of binary in git costs every clone forever.
 
+- `jbig2enc` and `qpdf` for the compression route, bundled the same way by
+  `Tools/bundle-libs.py` — but they are not self-contained the way mac-ocr is.
+  `jbig2` links leptonica and its image codecs, `qpdf` links libqpdf and
+  OpenSSL, so the script walks the dependency closure, copies it to
+  `Contents/Resources/lib`, and rewrites every install name to `@loader_path`.
+  It fails the build rather than shipping something that still points at
+  `/opt/homebrew`, and it strips any `LC_RPATH` into Homebrew so the bundle
+  cannot behave differently on a machine that happens to have it.
+
+  **These are single-architecture**, because Homebrew builds for the machine it
+  is on: an image built on Apple Silicon carries arm64-only copies.
+  `Runner.containsNativeSlice` reads the Mach-O header, so on an Intel Mac the
+  bundled copies are invisible and the search falls through to Homebrew exactly
+  as before. Without them the app takes the Flate route and writes larger files.
+
 ## Build
 
 ```sh
@@ -176,7 +191,7 @@ finished, and an explicit `mac-ocr` path.
 ./run_tests.sh
 ```
 
-453 checks, two to four minutes, because it runs real OCR rather than mocking it.
+473 checks, two to four minutes, because it runs real OCR rather than mocking it.
 It builds image-only PDFs and puts them through the actual pipeline — including
 `OCRModel.makeSearchablePDF`, which is deliberately internal so the tests exercise
 the real function rather than a replica of it.

@@ -4760,6 +4760,59 @@ do {
           holderTime.map { String(format: "returned in %.2fs", $0) }
               ?? "never returned — EOF needs every writer to close")
 
+    // The compression tools are bundled too, and unlike mac-ocr they come from
+    // Homebrew single-architecture. isExecutableFile says yes to an arm64-only
+    // binary on an Intel Mac, which then dies at exec with a message no user can
+    // act on — so the bundled lookup reads the Mach-O header.
+    do {
+        let dir = tmp.appendingPathComponent("arch-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        // This test binary, built for the machine running it.
+        check("a binary for this machine is recognised",
+              Runner.containsNativeSlice(CommandLine.arguments[0]))
+
+        // The other slice of a universal binary, on its own. /bin/ls is
+        // universal on every supported macOS; thin it to the architecture we are
+        // NOT, and the answer must be no.
+        #if arch(arm64)
+        let foreign = "x86_64"
+        #else
+        let foreign = "arm64"
+        #endif
+        let thinned = dir.appendingPathComponent("foreign")
+        let lipo = Process()
+        lipo.executableURL = URL(fileURLWithPath: "/usr/bin/lipo")
+        lipo.arguments = ["/bin/ls", "-thin", foreign, "-output", thinned.path]
+        lipo.standardError = FileHandle.nullDevice
+        try? lipo.run(); lipo.waitUntilExit()
+        if lipo.terminationStatus == 0 {
+            check("a binary for the other architecture is refused",
+                  !Runner.containsNativeSlice(thinned.path),
+                  "a \(foreign)-only Mach-O must not look runnable here")
+            check("…and the bundled lookup refuses it too", {
+                guard let res = Bundle.main.resourceURL else { return true }
+                let planted = res.appendingPathComponent("foreign-arch-probe")
+                try? FileManager.default.removeItem(at: planted)
+                try? FileManager.default.copyItem(at: thinned, to: planted)
+                defer { try? FileManager.default.removeItem(at: planted) }
+                return Runner.bundledTool("foreign-arch-probe") == nil
+            }())
+        } else {
+            check("lipo could thin /bin/ls, or this check proves nothing", false,
+                  "could not build a foreign-architecture fixture")
+        }
+
+        // A shell script is a perfectly good tool and cannot be judged this way.
+        let script = dir.appendingPathComponent("wrapper.sh")
+        try? "#!/bin/sh\nexit 0\n".write(to: script, atomically: true, encoding: .utf8)
+        check("a script is not rejected for not being a Mach-O",
+              Runner.containsNativeSlice(script.path))
+        check("…and a file too short to have a header is refused",
+              !Runner.containsNativeSlice("/dev/null"))
+    }
+
     // The engine ships inside the app now, so the lookup has to see it. In the
     // suite Bundle.main.resourceURL is the directory holding the test binary,
     // which is a faithful stand-in: same API, same isRunnable check.

@@ -12,6 +12,45 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.5.0 — 2026-08-09
+
+**Compression is included now too, so there is nothing left to install.** 1.4.0
+put the recognition engine inside the app; this puts the tools that make the
+output small in as well. Searchable PDFs come out about a third the size, with
+no Homebrew, no Terminal, nothing.
+
+Harder than bundling the engine, and worth writing down why. `mac-ocr` links
+nothing but system frameworks, so it could simply be copied. `jbig2` pulls in
+leptonica and its image codecs; `qpdf` pulls in libqpdf and OpenSSL. Copying the
+executables alone yields binaries that die at launch looking for
+`/opt/homebrew/…`, on precisely the machines that do not have it.
+`Tools/bundle-libs.py` walks the dependency closure — 15 files, 13.7 MB — copies
+it into `Contents/Resources/lib`, and rewrites every install name to
+`@loader_path`. It refuses to finish if anything still points at Homebrew or at
+an unrewritten `@rpath`, and it strips any `LC_RPATH` into Homebrew so the
+bundle cannot behave one way on the machine that built it and another
+everywhere else.
+
+**Apple Silicon only, deliberately and safely.** Homebrew builds for the machine
+it is on, so an image built on Apple Silicon carries arm64-only copies of these
+two. `isExecutableFile` cannot tell — it says yes to an arm64 binary on an Intel
+Mac, which then dies at `exec` with a message nobody can act on. So
+`Runner.containsNativeSlice` reads the Mach-O header, and on an Intel Mac the
+bundled copies are simply invisible: the search falls through to Homebrew
+exactly as before, and without it the app writes Flate-compressed pages that
+work identically and are about three times the size. An Intel user is no worse
+off than in 1.4.0.
+
+Licences for all twelve bundled packages travel in
+`Contents/Resources/third-party-licences` — MIT, Apache-2.0, BSD and 0BSD
+throughout. jbig2enc's `PATENTS` notice is copied verbatim rather than
+summarised: JBIG2 is a published ISO standard whose encoder records that its
+methods may be patented in some countries.
+
+The disk image is 8.3 MB, up from 2.1 MB.
+
+473 checks, up from 468.
+
 ## 1.4.0 — 2026-08-09
 
 **There is no Terminal step any more.** The recognition engine ships inside the
