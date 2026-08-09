@@ -3866,6 +3866,25 @@ do {
     }
     check("a merely enormous page is still refused, not rendered", refused)
 
+    // R26. The refusal used to say "Set an explicit PDF render DPI in Settings
+    // to process it at a lower resolution." That control becomes mac-ocr's
+    // --pdf-dpi for the recognition pass, which flatten throws before reaching;
+    // Flattener never reads Prefs at all. Following the advice produced a
+    // byte-identical refusal.
+    let message = Flattener.Failure
+        .pageTooLarge(page: 1, megapixels: 443, dpi: 800)
+        .errorDescription ?? ""
+    check("the refusal still names the page, its size and its DPI",
+          message.contains("Page 1") && message.contains("443")
+              && message.contains("800") && message.contains("400"))
+    check("the refusal does not point at the render-DPI setting",
+          !message.lowercased().contains("render dpi")
+              || message.contains("does not"),
+          message)
+    check("the refusal names the control that does let the file through",
+          message.contains("Rebuild page images first"),
+          message)
+
     try? FileManager.default.removeItem(at: dir)
 }
 

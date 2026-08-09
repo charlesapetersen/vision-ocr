@@ -1340,7 +1340,7 @@ identity-only. The depth key costs one `Int` per dictionary and removes the
 question, which is why it is there. If someone later finds the fixture that
 splits them, it belongs here.
 
-### R26 · `pageTooLarge` tells the user to change a setting that cannot reach the rebuild — OPEN
+### R26 · `pageTooLarge` tells the user to change a setting that cannot reach the rebuild — FIXED
 *(2026-08-09 review; confirmed by grep — the setting genuinely is not wired here)*
 
 `Sources/Flattener.swift:143`. The refusal reads "Set an explicit PDF render DPI
@@ -1362,6 +1362,20 @@ defect is that the one setting that does let the file through — turning off
 `Model.swift:915` so `flatten` never runs — is never mentioned.
 
 No test touches `pageTooLarge`.
+
+**Fix:** the message now names the control that works and explicitly kills the
+one that does not — "turn off *Rebuild page images first* in Settings. The PDF
+render DPI setting does not affect this step." The numbers stay; only the remedy
+changed.
+
+Checked before writing it, rather than swapping one wrong instruction for
+another: `wantJBIG2 = rebuild && settings.useJBIG2 && …` at `Model.swift:904`,
+so `rebuild` gates the JBIG2 route as well. Turning that one toggle off makes
+both halves of `mustStrip || wantJBIG2` false and `flatten` never runs — the
+advice is sufficient on its own, with no second step about JBIG2.
+
+Three checks on `errorDescription`: the page, size and DPI are still named; the
+render-DPI setting is not offered as the remedy; and the rebuild toggle is.
 
 ### R27 · An input named `text.pdf` fails every time, deterministically — OPEN
 *(2026-08-09 review; the JBIG2 half confirmed, the Flate half refuted — see below)*

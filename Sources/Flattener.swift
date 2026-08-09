@@ -153,12 +153,21 @@ enum Flattener {
                 return "Page \(page) of \(total) could not be rendered, "
                     + "so the rebuild would have been missing a page."
             case .pageTooLarge(let page, let megapixels, let dpi):
-                // Named numbers, because the useful response is to lower the
-                // render DPI in Settings, and that needs to be obvious.
+                // Named numbers, so the size and where it came from are visible.
+                //
+                // The remedy has to be one that works. This used to send the
+                // user to "PDF render DPI", which is a real control with a
+                // convincing name and no effect here: it becomes mac-ocr's
+                // --pdf-dpi for the recognition pass, and this throws long
+                // before that runs. Flattener reads nothing from Prefs — the
+                // rebuild resolution is always the page's own. The only setting
+                // that lets the file through is the one that stops the rebuild
+                // happening at all (R26).
                 return "Page \(page) would rebuild to \(megapixels) megapixels at "
                     + "its own \(dpi) DPI, past the \(maximumPageMegapixels) MP limit. "
-                    + "Nothing was written. Set an explicit PDF render DPI in "
-                    + "Settings to process it at a lower resolution."
+                    + "Nothing was written. To process this file, turn off "
+                    + "\"Rebuild page images first\" in Settings. The PDF render "
+                    + "DPI setting does not affect this step."
             }
         }
     }
