@@ -6,8 +6,16 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** Every entry is `FIXED` or `WONTFIX` with a reason. The four
-raised by the 2026-08-08 corpus run — C17, D1, D2 and D3 — are all closed, and
+**Eleven are open**, all from the 2026-08-09 adversarial review: C19, C20, C21,
+R23, R24, R25, R26, R27, U18, U19, U20. Fourteen were claimed; a skeptic pass that
+defaulted to refuting killed three, and those measurements are kept as R28 because
+they are worth more than the claims were. One entry is a *reopening*: U18 is U5's
+hazard, still live, because the bound was placed after the call it was meant to
+bound. Two more are the same shape — R23 is R19's recursion bound missing from its
+mirror function, and R24 is an `Int` overflow trap inside R20's own crash guard.
+Fixing a thing and fixing the thing next to it are still different acts.
+
+The four raised by the 2026-08-08 corpus run — C17, D1, D2 and D3 — are all closed, and
 closing D1 meant replacing the corpus rather than re-wording a sentence. D2's
 remainder became C18: the newspaper line-end weakness has a cause, a fix, and a
 fourth text-layer property nobody knew was load-bearing. Everything else is `FIXED` or `WONTFIX` with a
@@ -612,6 +620,99 @@ dictate. It bites: with `reserveEms` set to 0 the words weld, and that is checke
 **This is the fourth property of the text layer**, and CLAUDE.md invariant 3 now
 says so. It had been holding by accident for the life of the project.
 
+### C19 · "Use Existing Text" silently writes an empty section for a page with no text — OPEN
+*(2026-08-09 review; confirmed by reading the code and the routing that reaches it)*
+
+`Sources/Model.swift:450`. `writeEmbeddedText` appends
+`doc.page(at: i)?.string ?? ""` for every page. A page that yields nil — a scanned
+plate in an otherwise born-digital book, or a page PDFKit cannot parse — becomes an
+empty string, and in a `"\n\n"`-joined body that is indistinguishable from a page
+break. The only guard is that the *whole* body is non-empty, so one page with text
+is enough to publish the file and report `✓ used the PDF's own text; no OCR was
+run`.
+
+The routing makes this the expected shape rather than an exotic one.
+`Flattener.hasDigitalText` samples at most four pages at `(i+1)*total/5` and needs
+only `digital * 2 > sampled`, so a mostly-born-digital document with a scanned
+appendix is flagged as digital; `askAboutDigitalText` then makes "Use Existing
+Text" the **default** button whenever mode is `.text` and format is `.text`.
+
+Invariant 1: the run drops content and reports nothing. Unlike the all-scan case
+there is no `Failure.noTextFound` to catch it, because the other pages carry the
+body past the guard.
+
+The three tests at `Tests/main.swift:3408`, `:3416` and `:3423` cover an
+all-digital round-trip, extracting twice, and an all-scan file failing loudly.
+None uses a document where only *some* pages lack text.
+
+### C20 · `headroom` and `rightLimit` disagree about "the same line", crushing runs to sub-point height — OPEN
+*(2026-08-09 review; measured on the corpus, not reasoned)*
+
+`Sources/SearchableWriter.swift:618`. The two mirror functions classify a
+neighbouring fragment by drawn-baseline distance using incompatible tests:
+
+| | same-line test |
+|---|---|
+| `rightLimit` (651-652) | `abs(dBaseline) < min(myHeight, otherHeight) * 0.4` — ~3.6 pt for 9 pt text |
+| `headroom` (617-620) | horizontal overlap `> 1` pt **and** `gap > 0.5` pt |
+
+Everything in the band `0.5 pt < dBaseline < 0.4 * min(h)` satisfies both, so one
+fragment pair is simultaneously shrunk by the reserve (correct, it is the same
+line) and crushed by the ceiling (wrong, it is treated as a vertical neighbour).
+The band is easy to land in: `drawnBaseline = boxBottom + 0.22 * h`, so two
+fragments sharing one true baseline differ by `0.78 * descent` whenever one has a
+descender and the other does not. C18's own overlap tolerance is what opens the
+door — it established that Vision's boxes "routinely overlap by a point or two",
+and overlaps in (1, 2] pt clear `headroom`'s `> 1` test.
+
+Measured by replaying both functions over real recognition output for
+`testdocs/magazineArticle/HarpersMagazine-1938-05-0019577.pdf` (10 pages): **eight
+observations across four pages** have `headroom`'s `nearest` set by a neighbour
+that `rightLimit` calls the same visual line. Worst case, "Ily names" against
+"synonymous with highly" — boxes overlapping 1.91 pt, baselines 1.06 pt apart —
+gives `ceiling = 1.06/1.5 = 0.71 pt` against a natural `height * 0.86` of 9.04 pt.
+`draw` then caps the size at `0.71/0.25 = 2.83` against a `widthSize` near 10, so
+the run is drawn at roughly a quarter of its box width and 0.71 pt tall.
+
+That is invariant 3's third property — runs span the ink — and it is exactly the
+line-end selectability C18 exists to protect. It hides from the corpus scores
+because a run that short cannot weld two words together, so `words=` stays clean
+and only the line-end column moves.
+
+The existing guard cannot see it: "adjacent fragments of one line keep their
+space" builds every fragment through `func frag` at a fixed `y: 0.30` and
+`height: 0.022`, so every pair has `gap == 0` and `headroom` never participates.
+
+### C21 · A half-specified outline destination on a quarter-turned page keeps the fabricated coordinate — OPEN
+*(2026-08-09 review; confirmed by tracing the transform both ways)*
+
+`Sources/SearchableWriter.swift:397` and the mirror at `:494`. When PDFKit reports
+only one member of a destination point — the `/FitH` case, which R19 measured at
+276 against 80 fully-specified across the corpus — both `readOutline` and
+`copyOutline` substitute `0` for the missing member, call `mapToOutput`, then keep
+only the member that was originally specified.
+
+That is sound while the transform is axis-aligned. At `/Rotate 90` and `/Rotate
+270` it is not: `Flattener.fullBox` swaps the dimensions, so for MediaBox
+`[0 0 612 792]` at 270 the transform is `(x,y) -> (792 - y, x)` and at 90 it is
+`(x,y) -> (y, 612 - x)`. The kept axis is then computed **from the substituted
+zero**, and the one coordinate the destination actually carried lands in the
+member that gets discarded.
+
+A `/FitH 700` bookmark on a 270-rotated plate page yields `moved = (92, 0)`, so
+`top = 0` and the published bookmark is `/XYZ null 0 null` — the viewer scrolls to
+the foot of the page, which is the symptom R19 fixed for the `/XYZ 0 0` case. The
+heading's real output position, `x = 92`, was computed two lines earlier and
+thrown away. At 90 the same substitution gives `top = 612`: benign-looking, and
+equally unrelated to the source coordinate. The clamp at `:440-441` does not fire,
+because 0 and 612 are both on the page.
+
+Low severity only because it needs a rotated page *and* an outline entry pointing
+into it. The three `mapToOutput` checks at `Tests/main.swift:1934-1962` all pass
+fully-specified points, and the 90-degree one asserts only that the result stays
+on the page; "half-specified destination keeps the half it has" at `:2062` hands
+`JBIG2.assemble` a hand-built `OutlineItem` and never reaches `mapToOutput`.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED
@@ -1093,6 +1194,167 @@ every page through `Flattener.jpeg` — forcing greyscale onto the text pages th
 real routing sends to 1-bit. It compared greyscale-everything against per-page
 routing, not capped against uncapped.
 
+### R23 · `copyOutline`'s `rebuild()` has neither bound its mirror has — OPEN
+*(2026-08-09 review; confirmed by reading both functions side by side)*
+
+`Sources/SearchableWriter.swift:480`. `readOutline.convert` is bounded twice over
+— `depth < maximumOutlineDepth` (32) and a shared `budget = 20_000` — because, per
+its own doc comment, ~1,200 levels exhausts the 512 KB OperationQueue worker stack
+and "killed the whole process with SIGBUS, taking every other file in the batch
+down with it and publishing nothing". `copyOutline`'s `rebuild()` is the mirror
+function on the Flate route and has **neither**: it recurses once per level over
+`node.numberOfChildren` with no depth parameter and no entry budget.
+
+The asymmetry is self-concealing. `Model.swift:1129-1131` gates the call on
+`!outline.isEmpty`, and `readOutline` satisfies that for a 4,000-level chain
+precisely *by truncating it at 32* — so the truncation that hides the depth is
+what licenses the unbounded pass. `copyOutline` then walks `src.outlineRoot`, the
+untruncated tree.
+
+A cyclic outline, the case `budget` exists for, does not terminate at all.
+
+R19 bounded `readOutline` only; the adjacent bullet about the two routes
+disagreeing is the keep-rule, not recursion. The suite already builds the
+4,000-level fixture at `Tests/main.swift:1992` and hands it to `readOutline`
+alone at `:2006` — `copyOutline` is never given a deep or cyclic outline.
+
+### R24 · The megapixel guard's own `Int` arithmetic traps before it can refuse — OPEN
+*(2026-08-09 review; the API assumption was tested, not assumed)*
+
+`Sources/Flattener.swift:391`. R20 added `maximumPageMegapixels` so an impossible
+page is refused rather than crashing the process and "taking every other file in
+flight with it". But the guard computes `width * height` in signed `Int`, and
+Swift **traps** on `Int` multiplication overflow — the trap fires before the
+comparison it guards.
+
+The dimensions are corruption- or attacker-controlled. `rebuildDPI` puts no upper
+bound on the DPI it will trust (unlike `pageIsAnImage`, which caps at 1400 for
+exactly this reason — but applies the cap to `largestImage`'s *return value*, so
+it cannot protect the multiplication inside it), and the DPI comes from the
+`/Width` integer declared in an image XObject dictionary, never cross-checked
+against the stream.
+
+Verified rather than assumed: a hand-built PDF declaring `/Width 4000000000
+/Height 4000000000` is accepted by CoreGraphics — `CGPDFDictionaryGetInteger`
+returns true with 4,000,000,000 for both keys, since `CGPDFInteger` is a 64-bit
+long and nothing clamps — and PDFKit opens the file with a non-nil `pageRef`. So
+`Flattener.open`, `page.pageRef` and `cgPage.dictionary` all succeed and the walk
+reaches the stream dictionary, where `Int(w) * Int(h)` is 1.6e19 against an
+`Int.max` of 9.22e18.
+
+Three traps on the same input:
+
+- `:833` `Int(w) * Int(h) > found.width * found.height` — reached from the C17
+  pre-flight, which runs over every file when Start is pressed, so this one kills
+  the batch before a single page is rendered.
+- `:391` the guard itself. Independently reachable without `:833` tripping:
+  `/Width 3500000000 /Height 1` gives a product that fits, `rebuildDPI` then
+  reports ~4.1e8 DPI, and `width * height` inside the guard overflows.
+- `:383-384` `Int(Double)` traps for a scaled dimension outside `Int`'s range.
+
+An arithmetic-overflow trap is not a catchable `Failure`. This is R20's own
+failure mode, inside R20's own fix.
+
+### R25 · `largestImage`'s Form XObject walk has a depth cap but no visited set — OPEN
+*(2026-08-09 review; measured)*
+
+`Sources/Flattener.swift:851`. `walk` recurses into every Form XObject's
+`/Resources`, guarded only by `depth < 4`, and keeps no record of what it has
+already visited. When several forms point at the same `/Resources` dictionary —
+including the page's own, which some producers emit — the same dictionary is
+re-walked once per referring form at every level: `N + N² + N³ + N⁴` block
+invocations instead of `N`.
+
+Measured: a PDF with 60 Form XObjects whose `/Resources` is an indirect reference
+to the page's own dictionary blew past **4,000,000 callbacks** before the probe
+was aborted, against the 61 entries the page actually contains (the closed form is
+13,179,660 for N = 60). CoreGraphics resolves the indirect reference and hands
+back the shared dictionary every time.
+
+The depth cap bounds recursion but not breadth. `walk` runs once per page from
+`rebuildDPI` inside `flatten`'s loop and on up to four pages per file in the
+pre-flight, each callback doing a `String(cString:)` allocation, so a long
+document stalls with the progress bar frozen and no way to tell it from a hang.
+
+The register's only XObject entry is the opposite defect — `nativeDPI` *not*
+recursing into forms — with no note of a sharing or cycle hazard. No test nests or
+shares form resources.
+
+### R26 · `pageTooLarge` tells the user to change a setting that cannot reach the rebuild — OPEN
+*(2026-08-09 review; confirmed by grep — the setting genuinely is not wired here)*
+
+`Sources/Flattener.swift:143`. The refusal reads "Set an explicit PDF render DPI
+in Settings to process it at a lower resolution." No such control reaches this
+code. `rg 'Prefs|UserDefaults|Snapshot' Sources/Flattener.swift` returns nothing,
+`flatten` takes no DPI parameter, and the render resolution is always
+`rebuildDPI(of: page)`, which reads only the page's own largest image.
+`Prefs.pdfDPI` is consumed at exactly one place — `Runner.swift:185-186`, where it
+becomes mac-ocr's `--pdf-dpi` for a recognition pass that `flatten` throws before
+ever reaching.
+
+The advice is convincing because the control exists and is even labelled "PDF
+render DPI" in `SettingsView.swift:158-172`. It is inert. A user who follows it
+gets a byte-identical refusal.
+
+The refusal *itself* is deliberate and stays (R13: fidelity, no downscale). The
+defect is that the one setting that does let the file through — turning off
+"Rebuild page images first", which makes `mustStrip || wantJBIG2` false at
+`Model.swift:915` so `flatten` never runs — is never mentioned.
+
+No test touches `pageTooLarge`.
+
+### R27 · An input named `text.pdf` fails every time, deterministically — OPEN
+*(2026-08-09 review; the JBIG2 half confirmed, the Flate half refuted — see below)*
+
+`Sources/Model.swift:917`. The rebuilt page images keep the input's own file name
+inside the scratch directory, while the pipeline's intermediates use fixed
+literals in that same directory: `staged.pdf`, `text.pdf`, `images.pdf`,
+`outlined.pdf`. Nothing checks for the collision.
+
+For an input called `text.pdf`, `visible` and `textLayer` are one path. `compose`
+reads and writes it, the layer-page gate at `:1063-1068` passes, and then `:1073`
+`try? FileManager.default.removeItem(at: visible)` **deletes the text layer it is
+about to merge**. `JBIG2.overlay` hands qpdf a `--overlay` path that no longer
+exists, qpdf exits non-zero, and the file is reported failed with a raw qpdf
+message that has nothing to do with its contents. Also `Text.pdf` and `TEXT.pdf`,
+since `NSTemporaryDirectory` sits on the case-insensitive system volume.
+
+**The Flate `staged.pdf` variant was claimed and is refuted.** `compose` reads its
+source through `Flattener.open`, and PDFKit buffers the whole file at init — a
+66 MB PDF still parsed a fresh page correctly after being truncated to 9 bytes on
+disk — so composing a file onto itself produces correct output, not a
+plausible-but-wrong one. `images.pdf` and `outlined.pdf` are harmless too, because
+`visible` is spent by the time either is written.
+
+No test drives `makeSearchablePDF` with an input named after one of the four
+literals.
+
+### R28 · Three claims from the 2026-08-09 review that did not survive — NO DEFECT
+*(recorded because the measurements are worth more than the claims were)*
+
+- **"Image inputs rebuild onto their own source."** The path collision is real:
+  for an image input `wrapImage` writes `scratch/<stem>.pdf`, `file` is reassigned
+  to it, and `rebuilt` resolves to the same path. The claimed harm rested on
+  `PDFDocument(url:)` being lazily mapped, and it is not. A 66 MB PDF opened
+  through PDFKit and then **truncated to 9 bytes on disk** still returned the
+  correct text for page 40, never touched before the truncation. PDFKit buffers at
+  init, so `flatten` renders every page from memory and writes a correct rebuild
+  over its own source. Latent fragility — it breaks the day PDFKit switches to
+  `NSDataReadingMappedIfSafe` — not a live defect. Worth a comment, not a fix.
+- **"Extract Text destroys a previous good output on cancel"** (raised twice, by
+  two different lenses). Refuted against the real mac-ocr 1.1.1. It does not open
+  or truncate the `-o` destination while it works: with a sentinel already at the
+  path, polling every 0.25 s showed it unchanged for the whole of a ten-second run
+  and replaced in one step at completion; SIGTERM six seconds into a longer run
+  left the sentinel byte-for-byte intact; `--format jsonl` behaves identically. The
+  `createFileAtPath:contents:attributes:` symbol found by `strings` is that single
+  end-of-run whole-buffer write, and one `write(2)` of a modest buffer to a local
+  file is not interrupted by the SIGKILL `stop` sends two seconds after SIGTERM.
+
+  The staging asymmetry is real, is recorded in ARCHITECTURE.md, and is not a
+  defect on the evidence available: a successful re-run replacing the previous
+  output is what `publish` does on the searchable path too.
+
 ---
 
 ## The interface
@@ -1355,6 +1617,107 @@ One wart, left alone: `splitList` splits custom words on spaces, so
 "St Antony's College" becomes three `-w` flags. The help text says
 space-separated and the preview shows it honestly, so the UI is not lying —
 it is a limitation of the field, not a bug.
+
+### U18 · `askLoginShell`'s three-second bound sits *after* the unbounded read — OPEN
+*(2026-08-09 review; U5 recorded this as FIXED and the ordering was never checked)*
+
+`Sources/Runner.swift:101`. U5 bounded the login-shell lookup "because this runs
+on the main thread", and named the hazard exactly: a slow network mount in a
+profile, an interactive prompt, a wedged NFS home. But:
+
+```swift
+let data = pipe.fileHandleForReading.readDataToEndOfFile()   // :101
+if !wait(for: p, upTo: 3) { stop(p); return nil }            // :102
+```
+
+`readDataToEndOfFile()` blocks in `read(2)` until **every writer on the pipe
+closes**. If the login shell never exits, it never returns, `wait` is never
+reached, and `stop(p)` is never called. The three-second bound guards code that
+only runs once the thing it was protecting against has already resolved itself.
+
+The codebase states this hazard against itself twice and never applied it here:
+R2's poll loop, and the comment at `Runner.swift:260-262` — "`readDataToEndOfFile`
+is out — it returns only when every writer closes, and the writers include any
+grandchild that inherited stderr". The grandchild variant applies here too: a
+`.zshrc` that backgrounds anything inheriting stdout holds the write end open
+after the shell itself exits.
+
+Reached on the main actor from `OCRModel.start()` (`Model.swift:510`) and from the
+Settings panel's body (`SettingsView.swift:284`, `:328`, `:340`, `:357`), so the
+window stops redrawing and Cancel is unclickable. Force-quit is the only exit.
+Because the call never returns, the memo cache is never written, so there is no
+second chance on the next attempt either.
+
+Reachable whenever mac-ocr, jbig2 or qpdf sits outside the three hard-coded
+prefixes — nvm, asdf, a custom prefix. The negative cache at `:70-72` does not
+help; it is populated after the read.
+
+The `tool lookup` block in `Tests/main.swift` times cache hits and negative
+caching only.
+
+### U19 · Every batch-mutating control stays live during the C17 pre-flight — OPEN
+*(2026-08-09 review; this is U1 again, by a route U1's fix does not cover)*
+
+`Sources/Model.swift:404`. `add()` refuses only while `isRunning`, and
+`ContentView` gates Add…, Clear List, Remove, the mode picker and both destination
+controls on `model.isRunning` alone (`:89`, `:116`, `:119`, `:147`, `:173`, `:190`,
+`:217`).
+
+C17 inserted an asynchronous pre-flight between the click on Start and the batch
+existing: `start()` freezes `let candidates = files`, sets `isPreflighting = true`,
+and dispatches a per-file `PDFDocument` scan to a global queue (`:534-539`).
+`isRunning` is not set until `run()` at `:637`. Throughout that window the batch
+contents are already frozen and the entire UI is unlocked. `canStart` was updated
+for the new flag (`:376`); the guard in `add()` and the seven `.disabled(...)`
+modifiers were not.
+
+Under the registered defaults — mode `searchablePDF`, `rebuildImages` true,
+`warnDigitalText` true — the pre-flight always runs, and C17 moved it off the main
+actor precisely because it is slow enough to freeze a 78-file batch.
+
+Three ways it bites, in the same window:
+
+- Drop a fourth file: `add()` accepts it, the header says four, the batch runs
+  three, and the summary reads "Done — 3 of 3 succeeded" over a list of four with
+  no output on disk for the fourth. That is U1 verbatim.
+- Press Clear List: the list empties, the frozen batch still runs, and outputs are
+  published for files the user just removed.
+- Untick "Save beside each original": `destinationReady` goes false, but `run()`
+  reads the destination late (`:622`) and never re-checks it, so `uniqueOutputs`
+  falls back to `folder ?? file.deletingLastPathComponent()` (`:815-816`) and the
+  whole batch is written beside the originals, into a folder the user never chose.
+
+C17's register entry says only that Start shows "Checking…" and is disabled. The
+add-refusal test at `Tests/main.swift:1848-1867` fakes `m.isRunning = true`;
+nothing exercises `isPreflighting`.
+
+### U20 · Dropping a folder walks it recursively on the main actor — OPEN
+*(2026-08-09 review; the same class U5 and C17 already fixed elsewhere)*
+
+`Sources/Model.swift:96`. `filesInFolder` builds a `FileManager.enumerator` over
+the whole subtree, materialises every URL with `compactMap`, filters, and sorts
+with `localizedStandardCompare` — the collated comparison, the expensive kind.
+`collectInputFiles` additionally fetches `.isDirectoryKey` per top-level URL
+(`:70`).
+
+All of it runs on the main thread: `resolveDroppedURLs` delivers with
+`group.notify(queue: .main)` (`:52`), `OCRModel` is `@MainActor` (`:232-233`), and
+`add` calls `collectInputFiles` synchronously. The Add… panel reaches the same
+code with `canChooseDirectories = true` (`ContentView.swift:383`), and the drop box
+advertises "Images and folders work too".
+
+`.skipsPackageDescendants` prunes bundles; nothing bounds depth or count. On a
+scanned-archive folder of tens of thousands of files, or any folder on a mounted
+share where each directory read is a round trip, the window stops redrawing, the
+drop highlight stays lit, and nothing responds until the walk finishes — no
+progress, no way to abort, because the main thread is what is blocked. On a
+stalled mount it does not return.
+
+U5 moved `askLoginShell` off the main thread and C17 moved the digital-text scan
+off the main actor for exactly this reason. The import path never got the same
+treatment. `Tests/main.swift:923-955` tests `collectInputFiles` for correctness
+only — unsupported types, dedupe, folder expansion, ordering, case — never on a
+large or slow tree.
 
 ---
 
