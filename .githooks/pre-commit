@@ -1,0 +1,61 @@
+#!/bin/bash
+# Refuses a commit whose tests do not pass. See CONTRIBUTING.md.
+#
+# This exists because the project has repeatedly shipped regressions inside
+# fixes for other bugs. Skipping it is a deliberate act:  git commit --no-verify
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+# A GUI-launched shell has almost no PATH, and so does a git hook invoked from
+# some editors — swiftc and mac-ocr both go missing and the run reports nonsense.
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+staged=$(git diff --cached --name-only)
+[ -z "$staged" ] && exit 0
+
+touches_sources=$(echo "$staged" | grep -c '^Sources/' || true)
+touches_tests=$(echo "$staged"   | grep -c '^Tests/'   || true)
+touches_bugs=$(echo "$staged"    | grep -c '^BUGS.md$' || true)
+
+if [ "$touches_sources" -gt 0 ] && [ "$touches_tests" -eq 0 ] && [ "$touches_bugs" -eq 0 ]; then
+  echo "note: Sources/ changed with no test and no BUGS.md entry."
+  echo "      A fix without a test that fails without it is not finished — see CONTRIBUTING.md."
+  echo "      Continuing; this is a warning, not a refusal."
+fi
+
+# Docs-only commits do not need four minutes of real OCR. Anything that can
+# change behaviour does: sources, tests, the build or test scripts, the tools.
+if ! echo "$staged" | grep -qE '^(Sources/|Tests/|Tools/|build\.sh|run_tests\.sh)'; then
+  echo "pre-commit: no code staged, skipping the suite."
+  exit 0
+fi
+
+if ! command -v swiftc >/dev/null 2>&1; then
+  echo "pre-commit: swiftc not on PATH, cannot verify. Refusing." >&2
+  exit 1
+fi
+
+echo "pre-commit: running ./run_tests.sh (2-4 minutes; it runs real OCR)…"
+log=$(mktemp -t vrg-precommit)
+if ! ./run_tests.sh >"$log" 2>&1; then
+  echo >&2
+  echo "pre-commit: TESTS FAILED — commit refused." >&2
+  echo >&2
+  grep -E 'FAIL|error:' "$log" | head -20 >&2
+  echo >&2
+  echo "full output: $log" >&2
+  exit 1
+fi
+tail -2 "$log" | tr -d '\n'; echo
+rm -f "$log"
+
+# The suite compiles the views but never instantiates one, so a UI change needs
+# the real build too.
+if echo "$staged" | grep -qE '^Sources/(App|ContentView|SettingsView)\.swift$'; then
+  echo "pre-commit: UI changed, building the app…"
+  if ! ./build.sh >/dev/null 2>&1; then
+    echo "pre-commit: ./build.sh FAILED — commit refused." >&2
+    exit 1
+  fi
+  echo "pre-commit: app builds."
+fi

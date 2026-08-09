@@ -1,0 +1,15 @@
+# Build products
+build/
+
+# Test corpus: 302 MB of copyrighted PDFs (books, journal articles, newspapers)
+# sampled from a personal Zotero library. Deliberately NOT committed — it is
+# third-party material and has no business in a public repository. The manifest
+# is committed, so the corpus can be reassembled from a Zotero library with
+# tools/sample-zotero.py.
+testdocs/*
+!testdocs/README.md
+!testdocs/manifest.tsv
+!testdocs/manifest-*.tsv
+
+.DS_Store
+*.swp
