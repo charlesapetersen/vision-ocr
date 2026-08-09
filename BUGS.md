@@ -1224,7 +1224,7 @@ every page through `Flattener.jpeg` — forcing greyscale onto the text pages th
 real routing sends to 1-bit. It compared greyscale-everything against per-page
 routing, not capped against uncapped.
 
-### R23 · `copyOutline`'s `rebuild()` has neither bound its mirror has — OPEN
+### R23 · `copyOutline`'s `rebuild()` has neither bound its mirror has — FIXED
 *(2026-08-09 review; confirmed by reading both functions side by side)*
 
 `Sources/SearchableWriter.swift:480`. `readOutline.convert` is bounded twice over
@@ -1247,6 +1247,33 @@ R19 bounded `readOutline` only; the adjacent bullet about the two routes
 disagreeing is the keep-rule, not recursion. The suite already builds the
 4,000-level fixture at `Tests/main.swift:1992` and hands it to `readOutline`
 alone at `:2006` — `copyOutline` is never given a deep or cyclic outline.
+
+**Fix:** `rebuild` takes a `depth` and shares `maximumOutlineDepth` and the same
+20,000-entry budget as `convert`. The same two bounds, the same numbers, in the
+mirror function that should always have had them.
+
+Reproduced by handing the suite's existing 4,000-level fixture to `copyOutline`
+instead of `readOutline`. Two things were needed to make it bite, and both are
+why it went unnoticed:
+
+- **On an `OperationQueue` worker**, because the 512 KB worker stack is what
+  makes the depth fatal. The main thread's 8 MB survives it, so a test written
+  the obvious way would have passed against the bug.
+- **In a child process**, because a stack overflow is a signal, not an error. The
+  suite re-runs its own binary with `--probe-deep-outline` and reads
+  `terminationReason`.
+
+With the bound removed: `terminationReason=2 status=10` — an uncaught SIGBUS,
+which is precisely the failure R19's doc comment describes and which would take
+every other file in the batch with it.
+
+A further check confirms the deep fixture still passes Model's
+`!readOutline(...).isEmpty` gate, so the path really is reachable, and one more
+confirms the outline is still written — bounded, not abandoned. Losing a
+pathological outline costs nothing; losing the batch costs everything in it.
+
+No geometry code was touched, so invariant 3 is not in play here; "the outline
+survives and the text layer is unharmed" passes unchanged.
 
 ### R24 · The megapixel guard's own `Int` arithmetic traps before it can refuse — FIXED
 *(2026-08-09 review; the API assumption was tested, not assumed)*

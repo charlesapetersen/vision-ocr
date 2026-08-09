@@ -475,9 +475,20 @@ enum SearchableWriter {
               let root = src.outlineRoot, root.numberOfChildren > 0,
               let dst = PDFDocument(url: composed), dst.pageCount > 0 else { return false }
 
+        // The same two bounds `readOutline` has, for the same reason and with the
+        // same numbers (R23). This is the Flate route's mirror of that function
+        // and it had neither, which was hidden by the way it is reached: Model
+        // gates the call on `!readOutline(...).isEmpty`, and readOutline satisfies
+        // that for a 4,000-level chain precisely *by truncating it at 32* — so
+        // the truncation that concealed the depth is what licensed the unbounded
+        // pass over the untruncated tree.
+        var budget = 20_000            // total entries, against a cyclic outline
+
         /// Rebuilds one node against the destination's pages, matched by index.
         /// Page count is 1:1 through the pipeline, so the index is the mapping.
-        func rebuild(_ node: PDFOutline) -> PDFOutline? {
+        func rebuild(_ node: PDFOutline, depth: Int) -> PDFOutline? {
+            guard depth < maximumOutlineDepth, budget > 0 else { return nil }
+            budget -= 1
             let copy = PDFOutline()
             copy.label = node.label
             if let source = node.destination, let page = source.page,
@@ -502,7 +513,8 @@ enum SearchableWriter {
             }
             var kept = 0
             for i in 0..<node.numberOfChildren {
-                guard let child = node.child(at: i), let built = rebuild(child) else { continue }
+                guard let child = node.child(at: i),
+                      let built = rebuild(child, depth: depth + 1) else { continue }
                 copy.insertChild(built, at: kept)
                 kept += 1
             }
@@ -512,7 +524,8 @@ enum SearchableWriter {
                 ? copy : nil
         }
 
-        guard let newRoot = rebuild(root), newRoot.numberOfChildren > 0 else { return false }
+        guard let newRoot = rebuild(root, depth: 0),
+              newRoot.numberOfChildren > 0 else { return false }
         dst.outlineRoot = newRoot
         return dst.write(to: out)
     }

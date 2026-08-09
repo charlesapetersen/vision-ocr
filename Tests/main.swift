@@ -27,6 +27,22 @@ if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--probe-hostil
     exit(0)
 }
 
+// R23. copyOutline recurses once per outline level, and the stack that matters
+// is the 512 KB of an OperationQueue worker — which is where the pipeline calls
+// it from. Overflowing it is a SIGBUS, so this runs in a child too.
+if CommandLine.arguments.count == 5, CommandLine.arguments[1] == "--probe-deep-outline" {
+    let src = URL(fileURLWithPath: CommandLine.arguments[2])
+    let composed = URL(fileURLWithPath: CommandLine.arguments[3])
+    let out = URL(fileURLWithPath: CommandLine.arguments[4])
+    let queue = OperationQueue()
+    queue.maxConcurrentOperationCount = 1
+    queue.addOperation {
+        _ = SearchableWriter.copyOutline(from: src, of: composed, to: out)
+    }
+    queue.waitUntilAllOperationsAreFinished()
+    exit(0)
+}
+
 var failures = 0
 var checks = 0
 
@@ -2121,6 +2137,42 @@ do {
     check("reading a 4,000-level outline returns instead of overflowing the stack",
           depth(items) <= SearchableWriter.maximumOutlineDepth,
           "depth \(depth(items))")
+
+    // R23. readOutline is only half of it. copyOutline is the same walk on the
+    // Flate route and had neither bound — and the asymmetry hid itself, because
+    // Model gates the call on `!readOutline(...).isEmpty` and readOutline
+    // satisfies that for this very fixture by truncating it at 32. The
+    // truncation that conceals the depth is what licensed the unbounded pass.
+    //
+    // In a child, on an OperationQueue worker: the 512 KB worker stack is what
+    // makes the depth fatal, and a SIGBUS cannot be caught in-process.
+    let composed = dir.appendingPathComponent("composed.pdf")
+    makeScannedPDF(at: composed, lines: ["DEEP OUTLINE"])
+    let outlined = dir.appendingPathComponent("outlined.pdf")
+
+    check("the deep fixture still passes Model's gate, which is why this is reachable",
+          !SearchableWriter.readOutline(from: src).isEmpty)
+
+    let probe = Process()
+    probe.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
+    probe.arguments = ["--probe-deep-outline", src.path, composed.path, outlined.path]
+    probe.standardOutput = FileHandle.nullDevice
+    probe.standardError = FileHandle.nullDevice
+    var survived = false
+    do {
+        try probe.run()
+        probe.waitUntilExit()
+        survived = probe.terminationReason == .exit && probe.terminationStatus == 0
+    } catch { survived = false }
+    check("copying a 4,000-level outline does not kill the worker",
+          survived,
+          "terminationReason=\(probe.terminationReason.rawValue) status=\(probe.terminationStatus)")
+
+    // Bounded, not abandoned: the outline is still copied, just truncated, and
+    // the OCR it is attached to is never at risk.
+    check("…and the outline still lands in the output, truncated",
+          PDFDocument(url: outlined)?.outlineRoot?.numberOfChildren ?? 0 > 0,
+          "no outline written")
 }
 
 // MARK: - Every destination form, not just the convenient one
