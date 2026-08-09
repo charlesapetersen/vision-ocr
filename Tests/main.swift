@@ -3769,6 +3769,49 @@ do {
     check("the cache still finds the real binary", Runner.resolveBinary() != nil)
 }
 
+print("\nan input named after a scratch intermediate")
+
+do {
+    // R27. The rebuilt page images keep the input's own name inside the scratch
+    // directory, while the intermediates use fixed literals in that same
+    // directory: staged.pdf, text.pdf, images.pdf, outlined.pdf. For an input
+    // called text.pdf, `visible` and `textLayer` are one path — compose writes
+    // the layer over the rebuild, and then the JBIG2 branch deletes `visible`,
+    // which is the layer it is about to merge. qpdf is handed a --overlay file
+    // that no longer exists and the file fails, deterministically, for a reason
+    // that has nothing to do with its contents.
+    guard let binary = Runner.resolveBinary() else {
+        check("mac-ocr is available for the reserved-name checks", false)
+        exit(1)
+    }
+    check("JBIG2 is available, so the route this bites on is live",
+          JBIG2.isAvailable, "install jbig2enc and qpdf to cover R27")
+
+    for stem in ["text", "staged", "images", "outlined"] {
+        let dir = tmp.appendingPathComponent("reserved-\(stem)-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let src = dir.appendingPathComponent("\(stem).pdf")
+        makeScannedPDF(at: src, lines: ["RESERVED NAME \(stem.uppercased())"])
+        let out = dir.appendingPathComponent("\(stem).ocr.pdf")
+
+        var outcome: Runner.Result.Outcome?
+        var message = ""
+        OCRModel.makeSearchablePDF(
+            file: src, binary: binary, output: out,
+            rebuild: true, rebuildMode: .auto, password: nil,
+            control: RunControl(), progress: { _, _ in },
+            report: { o, m in outcome = o; message = m })
+
+        check("an input named \(stem).pdf still succeeds",
+              outcome == .succeeded, message)
+        check("…and \(stem).ocr.pdf has a text layer",
+              embeddedText(of: out).contains("RESERVED NAME"),
+              embeddedText(of: out).isEmpty ? "<none>" : embeddedText(of: out))
+    }
+}
+
 print("\nhostile page dimensions")
 
 do {

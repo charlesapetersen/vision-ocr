@@ -1377,7 +1377,7 @@ advice is sufficient on its own, with no second step about JBIG2.
 Three checks on `errorDescription`: the page, size and DPI are still named; the
 render-DPI setting is not offered as the remedy; and the rebuild toggle is.
 
-### R27 · An input named `text.pdf` fails every time, deterministically — OPEN
+### R27 · An input named `text.pdf` fails every time, deterministically — FIXED
 *(2026-08-09 review; the JBIG2 half confirmed, the Flate half refuted — see below)*
 
 `Sources/Model.swift:917`. The rebuilt page images keep the input's own file name
@@ -1402,6 +1402,33 @@ plausible-but-wrong one. `images.pdf` and `outlined.pdf` are harmless too, becau
 
 No test drives `makeSearchablePDF` with an input named after one of the four
 literals.
+
+**Fix:** the four fixed intermediates moved to a `work/` subdirectory of the
+scratch. Nothing named after the user's file is ever written there, so no input
+name can collide with one.
+
+Separating them by *directory* rather than renaming them, because renaming only
+moves the collision: the rebuild keeps the input's own name, and a dropped image
+called `rebuilt.png` is wrapped to `rebuilt.pdf` in the same place. One boundary
+kills the class; a better set of names would only shrink it.
+
+Reproduced first, exactly as described:
+
+```
+FAIL an input named text.pdf still succeeds — Merging the text layer failed:
+qpdf: open /var/folders/…/mac-ocr-gui-1F932633…/text.pdf: No such file or directory
+```
+
+The same run confirms R28's refutation of the Flate variant from the other side:
+`staged.pdf`, `images.pdf` and `outlined.pdf` all passed before the fix as well
+as after. Only `text.pdf` was ever broken.
+
+Guarded by four checks, one per reserved name, each running the real
+`makeSearchablePDF` on the JBIG2 route and then confirming the published file
+has a text layer — a success that published a blank layer would otherwise look
+identical. The image-input variant (`text.png` wrapped to `text.pdf`) is covered
+by construction rather than by a check: the suite has no image fixture helper,
+and after this change no wrapped image can land on an intermediate's path.
 
 ### R28 · Three claims from the 2026-08-09 review that did not survive — NO DEFECT
 *(recorded because the measurements are worth more than the claims were)*

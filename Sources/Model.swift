@@ -875,8 +875,18 @@ final class OCRModel: ObservableObject {
         let scratch = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("mac-ocr-gui-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: scratch) }
+
+        // The pipeline's own intermediates live in here, and nothing named after
+        // the user's file ever does. They used to share `scratch` with the
+        // rebuild, which keeps the input's own name — so an input called
+        // text.pdf *was* the text layer, and the JBIG2 branch deleted the layer
+        // it was about to merge (R27). Separating them by directory kills the
+        // whole class rather than one name: renaming the intermediates would
+        // only move the collision, since a dropped image called rebuilt.png is
+        // wrapped to rebuilt.pdf in the same place.
+        let work = scratch.appendingPathComponent("work")
         do {
-            try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
         } catch {
             report(.failed, "Could not create a working directory: \(error.localizedDescription)")
             return
@@ -988,7 +998,7 @@ final class OCRModel: ObservableObject {
 
         // 3. Write the PDF. The destination was reserved up front, so two inputs
         //    with the same base name cannot collide here.
-        let staged = scratch.appendingPathComponent("staged.pdf")
+        let staged = work.appendingPathComponent("staged.pdf")
 
         // Read the expected page count now, while everything still exists. The
         // scratch intermediates get deleted as they're spent, so asking later
@@ -1035,7 +1045,7 @@ final class OCRModel: ObservableObject {
             if wantJBIG2, encoded.count == expected,
                encoded.count == bitmaps.count, let qpdf = JBIG2.merger {
                 usedJBIG2 = true
-                let textLayer = scratch.appendingPathComponent("text.pdf")
+                let textLayer = work.appendingPathComponent("text.pdf")
                 unplaced = try SearchableWriter.compose(
                     visible: visible, observations: byPage, to: textLayer,
                     drawImages: false, password: password,
@@ -1072,7 +1082,7 @@ final class OCRModel: ObservableObject {
                 // thing in scratch.
                 try? FileManager.default.removeItem(at: visible)
 
-                let imagesOnly = scratch.appendingPathComponent("images.pdf")
+                let imagesOnly = work.appendingPathComponent("images.pdf")
                 // Into the catalogue here, not through PDFKit afterwards:
                 // qpdf --overlay keeps this file's catalogue, and a PDFKit
                 // rewrite would re-encode every image stream and throw the
@@ -1125,7 +1135,7 @@ final class OCRModel: ObservableObject {
             // Only for the Flate route — the JBIG2 route already wrote the
             // outline into the assembled catalogue above, and running PDFKit over
             // it here would undo the compression that route exists for.
-            let outlined = scratch.appendingPathComponent("outlined.pdf")
+            let outlined = work.appendingPathComponent("outlined.pdf")
             if !usedJBIG2, !outline.isEmpty,
                SearchableWriter.copyOutline(from: inputFile, of: staged, to: outlined,
                                             password: password),
