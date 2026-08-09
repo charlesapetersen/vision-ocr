@@ -110,10 +110,19 @@ enum Runner {
         _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK)
         var data = Data()
         var buffer = [UInt8](repeating: 0, count: 4 * 1024)
-        let deadline = Date().addingTimeInterval(3)
+        // Monotonic, for the reason `wait(for:upTo:)` gives eight lines below its
+        // own deadline: a wall clock steps in both directions and both are wrong
+        // here. Forward — an NTP correction, or waking from sleep, which moves
+        // `Date()` and not `DispatchTime` — abandons a healthy shell mid-probe,
+        // and `locateTool` then memoises the absence for the whole session, so
+        // every later mac-ocr, jbig2 and qpdf lookup returns nil without
+        // re-probing. Backward extends the bound that exists to keep the main
+        // thread responsive. This function reached for `Date()` while the file
+        // it lives in already documented why not (R30).
+        let deadline = DispatchTime.now() + 3
         var sawEOF = false
         while true {
-            let remaining = deadline.timeIntervalSinceNow
+            let remaining = secondsUntil(deadline)
             if remaining <= 0 { break }
             var descriptor = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
             let ready = poll(&descriptor, 1, Int32(min(remaining * 1000, 200)))
@@ -421,6 +430,17 @@ enum Runner {
     /// here: a jump forward abandons a perfectly healthy child on its next
     /// iteration, and a jump back extends a wait that is supposed to be bounded.
     @discardableResult
+    /// Seconds left until a monotonic deadline, never negative.
+    ///
+    /// `DispatchTime` subtraction is unsigned, so the difference has to be taken
+    /// in the direction that cannot wrap and the past-deadline case handled
+    /// explicitly — the obvious expression underflows to 584 years (R30).
+    static func secondsUntil(_ deadline: DispatchTime) -> Double {
+        let now = DispatchTime.now()
+        guard deadline > now else { return 0 }
+        return Double(deadline.uptimeNanoseconds - now.uptimeNanoseconds) / 1_000_000_000
+    }
+
     static func wait(for process: Process, upTo seconds: Double) -> Bool {
         let deadline = DispatchTime.now() + seconds
         while process.isRunning, DispatchTime.now() < deadline { usleep(20_000) }

@@ -1699,7 +1699,7 @@ The link between the two — that `saturation` uses the helper — is carried by
 the trap check alone. That is the honest description; a check asserting the call
 directly would need the buffer size observable from outside.
 
-### R30 · `askLoginShell`'s three-second bound is on the wall clock — OPEN
+### R30 · `askLoginShell`'s three-second bound is on the wall clock — FIXED
 *(2026-08-09 second review; introduced by U18, against advice written in the same file)*
 
 `Sources/Runner.swift:113`. U18's new poll loop bounds itself with
@@ -1722,6 +1722,20 @@ backward step extends the bound that exists to keep the main thread responsive.
 Low, and honestly so: the exposure window is the ~90 ms the call takes (measured
 0.095 s for mac-ocr, 0.105 s for `ls`). It is a one-line defect in a file that
 already documents the correct answer.
+
+**Fix:** `DispatchTime.now() + 3`, with the remaining time from a new
+`secondsUntil(_:)`. `Date()` no longer appears anywhere in `Runner.swift` outside
+prose.
+
+The helper exists rather than the arithmetic being inlined because
+`DispatchTime` subtraction is **unsigned**, so the obvious expression underflows
+past the deadline instead of going negative — turning "time is up" into "584
+years left", which is worse than the wall clock ever was. Three checks cover it,
+and removing the guard produces exactly that:
+
+```
+FAIL a deadline already past reports zero, not an underflow — 18446744072.709553
+```
 
 ---
 

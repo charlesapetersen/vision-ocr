@@ -4578,6 +4578,18 @@ do {
           holderTime.map { String(format: "returned in %.2fs", $0) }
               ?? "never returned — EOF needs every writer to close")
 
+    // R30. The helper the bound is built on: unsigned DispatchTime subtraction
+    // underflows to ~584 years if taken in the wrong direction, which would turn
+    // "past the deadline" into "essentially forever".
+    check("a deadline in the future reports the time remaining",
+          abs(Runner.secondsUntil(DispatchTime.now() + 2.0) - 2.0) < 0.05,
+          "\(Runner.secondsUntil(DispatchTime.now() + 2.0))")
+    check("a deadline already past reports zero, not an underflow",
+          Runner.secondsUntil(DispatchTime.now() - 1.0) == 0,
+          "\(Runner.secondsUntil(DispatchTime.now() - 1.0))")
+    check("…and exactly now is not in the future either",
+          Runner.secondsUntil(DispatchTime.now()) == 0)
+
     // The bound must not have been bought by making the normal case slow.
     setenv("SHELL", realShell ?? "/bin/zsh", 1)
     Runner.forgetToolPaths()
