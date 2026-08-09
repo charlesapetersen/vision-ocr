@@ -1842,6 +1842,23 @@ to `-force` and cannot abort the script; and a disk image that fails its own
 verification is **deleted**, so nothing that looks shippable survives a failed
 build. The success path got the same `-force` fallback.
 
+**And the step turned out to be intermittently wrong, which only showed up by
+using it.** One release build failed verifying `jbig2` from the image, on tools
+that ran cleanly three times immediately afterwards: a freshly attached image is
+not always ready to `exec` from the instant `hdiutil attach` returns. The check
+now retries up to three times with a second between, and reports when it had to
+— which it did on the very next build (`jbig2 needed 1 retry — the mount was not
+ready`), confirming the race rather than leaving it a theory. A verification that
+fails intermittently teaches people to re-run builds until they pass, which is
+the opposite of its purpose.
+
+Worth recording how nearly this was missed: the failing build's diagnostic was
+filtered out by the `grep` being used to watch the build, because the success
+line says "runs from the image" and the failure says "did **not** run from the
+image". zsh then gave the pipeline `grep`'s exit status, so the surrounding
+command carried on as though the build had worked. Filtering build output hides
+exactly the line you need.
+
 **The sibling sweep found one more, which the review had not reported.** Asking
 "who else mounts without cleanup?" showed the mount point had no `trap`: any
 failure between `hdiutil attach` and the detach leaks it, which is this same

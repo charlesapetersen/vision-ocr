@@ -246,7 +246,18 @@ if [ "$DMG" = 1 ]; then
   # since a build on a machine without them is legitimate.
   for tool in mac-ocr jbig2 qpdf; do
     [ "$tool" = "mac-ocr" ] || [ -x "$RES/$tool" ] || continue
-    if VER=$(env -i PATH=/usr/bin:/bin "$RES/$tool" --version 2>&1 | head -1); then
+    # Retried, briefly. A freshly attached image is not always ready to exec
+    # from the instant `hdiutil attach` returns, and one release build failed
+    # here on a tool that ran fine three times immediately afterwards. A
+    # verification step that fails intermittently teaches people to re-run
+    # builds until they pass, which is the opposite of what it is for.
+    VER=""; attempt=0
+    while [ "$attempt" -lt 3 ]; do
+      if VER=$(env -i PATH=/usr/bin:/bin "$RES/$tool" --version 2>&1 | head -1); then break; fi
+      attempt=$((attempt+1)); sleep 1
+    done
+    if [ "$attempt" -lt 3 ]; then
+      [ "$attempt" -gt 0 ] && echo "    ($tool needed $attempt retry/retries — the mount was not ready)"
       echo "==> $tool runs from the image with no PATH: $VER"
     else
       # Say why FIRST. Detach returns 16 when Disk Arbitration still holds a

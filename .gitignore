@@ -18,3 +18,7 @@ Tools/mutation-out/
 # jbig2 writes output.NNNN/output.sym into the working directory
 output.[0-9]*
 output.sym
+
+# Python bytecode from the tools
+__pycache__/
+*.pyc
