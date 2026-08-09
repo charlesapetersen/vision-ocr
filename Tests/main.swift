@@ -3889,6 +3889,111 @@ do {
 // the words weld, and the check for that runs first so a silently-ineffective
 // guard cannot pass.
 
+print("\ncalibrated constants have not drifted")
+
+do {
+    // T5. Tools/mutate.py moved each of these far enough to change behaviour and
+    // re-ran the suite. Six survived — nothing went red — so the values the doc
+    // comments describe as *measured* were not pinned by anything.
+    //
+    // Be clear about what this block is and is not. It is a **drift guard**, not
+    // a behavioural test: it cannot tell you 1.5 is the right headroom factor.
+    // What validates these values is the corpus, and what this stops is one of
+    // them being changed in passing, months from now, with a green suite as
+    // reassurance. Overclaiming here would be the exact mistake T4 records.
+    //
+    // Changing one deliberately means changing it here too, and re-running
+    // Tools/score-corpus.swift over testdocs/ — 232 documents, about 16 minutes
+    // — because that is the evidence, not this.
+    check("baselineFraction is the calibrated 0.22",
+          SearchableWriter.baselineFraction == 0.22,
+          "\(SearchableWriter.baselineFraction); re-measure with Tools/probe-text-offset.swift")
+    check("headroomFactor is the calibrated 1.5",
+          SearchableWriter.headroomFactor == 1.5,
+          "\(SearchableWriter.headroomFactor); 0.95 scored 80-83% line selection against 84-91%")
+    check("reserveEms is the calibrated 0.25",
+          SearchableWriter.reserveEms == 0.25,
+          "\(SearchableWriter.reserveEms); 0 welds adjacent words — C18's fourth property")
+    check("minimumVertical is the calibrated 0.25",
+          SearchableWriter.minimumVertical == 0.25,
+          "\(SearchableWriter.minimumVertical); 0.5 bottomed line-end out at 71% on newsprint")
+    check("sameLineBaselineFraction is the calibrated 0.4",
+          SearchableWriter.sameLineBaselineFraction == 0.4,
+          "\(SearchableWriter.sameLineBaselineFraction)")
+    check("duplicateBaselineFraction is the calibrated 0.3",
+          SearchableWriter.duplicateBaselineFraction == 0.3,
+          "\(SearchableWriter.duplicateBaselineFraction)")
+    check("the DPI floor is the calibrated 150",
+          Flattener.minimumPlausibleScanDPI == 150,
+          "\(Flattener.minimumPlausibleScanDPI); below it a logo's DPI is not the page's")
+    check("the fallback rebuild DPI is 300",
+          Flattener.fallbackRebuildDPI == 300,
+          "\(Flattener.fallbackRebuildDPI)")
+    check("the picture ink threshold is the calibrated 0.15",
+          Flattener.pictureInkThreshold == 0.15,
+          "\(Flattener.pictureInkThreshold); text pages measured 6-8.4%")
+
+    // reserveEms is the one the harness proved was *doubly* unguarded: the
+    // fragment checks below set it themselves, so they exercise the mechanism
+    // and say nothing about the shipped value. Restore it if a check left it
+    // moved, so this block cannot be fooled by ordering.
+    SearchableWriter.reserveEms = 0.25
+}
+
+print("\nresolution decisions the corpus rests on")
+
+do {
+    // Behavioural cover for two constants the drift guard only pins by value.
+    // A page whose largest image is a small logo must NOT be rebuilt at the
+    // logo's resolution — C14: a 595x841 pt page rebuilt as 16x23 px, page count
+    // still matching, reported as success.
+    let dir = tmp.appendingPathComponent("dpi-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    let logoPage = dir.appendingPathComponent("logo.pdf")
+    var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    if let ctx = CGContext(logoPage as CFURL, mediaBox: &box, nil) {
+        ctx.beginPDFPage(nil)
+        ctx.setFillColor(NSColor.white.cgColor); ctx.fill(box)
+        // A 40x40 px image drawn 200 pt wide: ~14 DPI, far below the floor.
+        if let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 40, pixelsHigh: 40,
+                                      bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false,
+                                      isPlanar: false, colorSpaceName: .deviceRGB,
+                                      bytesPerRow: 0, bitsPerPixel: 0),
+           let cg = rep.cgImage {
+            ctx.draw(cg, in: CGRect(x: 40, y: 700, width: 200, height: 60))
+        }
+        ctx.endPDFPage(); ctx.closePDF()
+    }
+    if let page = PDFDocument(url: logoPage)?.page(at: 0) {
+        let native = Flattener.nativeDPI(of: page) ?? -1
+        check("the fixture's largest image really is below the floor",
+              native < Flattener.minimumPlausibleScanDPI && native > 0,
+              String(format: "native %.1f DPI", native))
+        check("a page whose only image is a logo rebuilds at the fallback, not the logo's DPI",
+              Flattener.rebuildDPI(of: page) == Flattener.fallbackRebuildDPI,
+              String(format: "%.1f, wanted %.0f",
+                     Flattener.rebuildDPI(of: page), Flattener.fallbackRebuildDPI))
+    }
+}
+
+print("\nsafeInt cannot be handed something that traps")
+
+do {
+    // T5. Mutating `guard value.isFinite` to `guard true` survived: nothing
+    // reached safeInt with a non-finite value, because flatten checks that
+    // first. The guard is defence in depth for a general-purpose helper, so it
+    // is tested where it lives rather than only through a caller that happens
+    // to protect it.
+    check("a NaN yields zero rather than trapping", Flattener.safeInt(Double.nan) == 0)
+    check("an infinity yields zero", Flattener.safeInt(Double.infinity) == 0
+              && Flattener.safeInt(-Double.infinity) == 0)
+    check("a value past Int's range saturates", Flattener.safeInt(1e30) == Int(9.0e18)
+              && Flattener.safeInt(-1e30) == Int(-9.0e18))
+    check("an ordinary value is unchanged", Flattener.safeInt(1234.7) == 1234)
+}
+
 print("\nrepeated text in a column is not a duplicate")
 
 do {

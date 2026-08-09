@@ -1,3 +1,42 @@
 mutant	verdict	seconds	detail
 logic/R30-monotonic-underflow	killed	89	0 check(s): 
 logic/R30-monotonic-underflow	killed	88	exit 133, no FAIL line: ./run_tests.sh: line 23: 36191 Trace/BPT trap: 5       "./$B
+const/baselineFraction	killed	93	1 check(s): a short fragment keeps most of its width next to a neighbour
+const/headroomFactor	SURVIVED	92	453/453 passed
+const/reserveEms	SURVIVED	92	453/453 passed
+const/minimumVertical	killed	94	1 check(s): a fragment whose neighbour differs only by a descender still spans its box
+const/sameLineBaselineFraction	killed	95	1 check(s): a fragment whose neighbour differs only by a descender still spans its box
+const/duplicateBaselineFraction	killed	96	2 check(s): four rows of a column repeating one figure all survive; …and at a 10 pt leading in a 13 pt box
+const/maximumOutlineDepth	killed	93	3 check(s): the depth limit is far below the stack and far above any real outline; copying a 4,000-level outline does not kill the worker; …and the outline still lands in the output, truncated
+const/pictureInkThreshold	SURVIVED	93	453/453 passed
+const/pictureToneThreshold	killed	95	3 check(s): a picture page goes greyscale; …and a DCT stream alongside it; bit depths match their filters
+const/pictureSaturationThreshold	killed	95	1 check(s): the fixture is genuinely coloured
+const/minimumPlausibleScanDPI	SURVIVED	94	453/453 passed
+const/fallbackRebuildDPI	SURVIVED	92	453/453 passed
+const/minimumScanPixelWidth	killed	113	2 check(s): rebuildDPI refuses it and falls back; the page's text survives the rebuild
+const/maximumPageMegapixels	SURVIVED	114	453/453 passed
+const/maximumDeclaredImageSide	killed	106	1 check(s): declared dimensions that overflow Int do not kill the process
+const/maximumThumbnailEdge	killed	514	1 check(s): a MediaBox whose thumbnail would overflow Int does not trap
+logic/R23-readOutline-bound	killed	114	1 check(s): reading a 4,000-level outline returns instead of overflowing the stack
+logic/C20-headroom-sameline	killed	113	1 check(s): a fragment whose neighbour differs only by a descender still spans its box
+logic/C20-rightlimit-sameline	killed	115	1 check(s): …and its runs still have real geometry
+logic/R24-safeInt-finite	SURVIVED	115	453/453 passed
+logic/R25-depth-aware-prune	SURVIVED	114	453/453 passed
+logic/U19-add-guard	killed	115	2 check(s): a file offered during the pre-flight is refused too; …and the list is unchanged
+logic/U21-committed-across-alert	killed	116	2 check(s): the batch is still committed when the alert goes up; …because isPreflighting is still set
+const/headroomFactor	SURVIVED	113	453/453 passed
+const/reserveEms	SURVIVED	113	453/453 passed
+const/pictureInkThreshold	SURVIVED	112	453/453 passed
+const/minimumPlausibleScanDPI	SURVIVED	112	453/453 passed
+const/fallbackRebuildDPI	SURVIVED	91	453/453 passed
+const/headroomFactor	killed	112	1 check(s): headroomFactor is the calibrated 1.5
+const/headroomFactor	killed	112	1 check(s): headroomFactor is the calibrated 1.5
+const/reserveEms	killed	113	1 check(s): reserveEms is the calibrated 0.25
+const/pictureInkThreshold	killed	113	1 check(s): the picture ink threshold is the calibrated 0.15
+const/minimumPlausibleScanDPI	killed	114	1 check(s): the DPI floor is the calibrated 150
+const/fallbackRebuildDPI	killed	92	1 check(s): the fallback rebuild DPI is 300
+const/maximumPageMegapixels	SURVIVED	115	468/468 passed
+logic/R24-safeInt-finite	INVALID	82	did not compile
+logic/R25-depth-aware-prune	SURVIVED	112	468/468 passed
+logic/R24-safeInt-finite	INVALID	81	did not compile
+logic/R24-safeInt-finite	killed	80	exit 133, no FAIL line: ./run_tests.sh: line 23: 53707 Trace/BPT trap: 5       "./$B

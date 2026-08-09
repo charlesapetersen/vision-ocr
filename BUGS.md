@@ -6,7 +6,10 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** Two reviews ran against this codebase on 2026-08-09, the
+**Nothing is open.** T5 records the first mutation campaign: sixteen mutants
+killed, six gaps found and closed, two survivors kept with reasons.
+
+Two reviews ran against this codebase on 2026-08-09, the
 second against the release the first produced. It found seven more defects, and
 **five of the seven were in code or tests written during the first** — R29 is the
 hole R24 left and then wrongly recorded as measured, R30 is U18 reaching for the
@@ -2536,6 +2539,72 @@ One honest note on the first: reverting to a *synchronous* completion still
 passes it, and correctly so. A synchronous call from the main thread is on the
 main thread; the property is delivery-on-main, and that is what it now tests.
 The asynchrony is the second check's job.
+
+### T5 · Six calibrated constants nothing checked, found mechanically — FIXED
+*(2026-08-09. The first campaign of `Tools/mutate.py`, which exists because nine checks in this register could not fail.)*
+
+Twenty-four mutants: each a calibrated constant moved far enough to change
+behaviour, or a guard from a specific fix undone. **Sixteen killed, six survived
+that should not have, two survived legitimately.**
+
+The six gaps, all of the same shape — a value the doc comment calls *measured*,
+with nothing asserting it:
+
+| constant | moved to | what the register says it costs |
+|---|---|---|
+| `headroomFactor` | 1.5 → 0.95 | line selection 84-91% → 80-83% on archival material |
+| `reserveEms` | 0.25 → 0 | adjacent words weld: `valuablestudy` — C18's fourth property |
+| `pictureInkThreshold` | 0.15 → 0.9 | halftones thresholded to blotches |
+| `minimumPlausibleScanDPI` | 150 → 10 | a logo's DPI taken for the page's — C14 |
+| `fallbackRebuildDPI` | 300 → 72 | untrusted pages rebuilt at a quarter the resolution |
+| `baselineFraction` | *killed* | (caught, by the fragment checks) |
+
+**`reserveEms` is the one worth dwelling on.** C18's entry says: "It bites: with
+`reserveEms` set to 0 the words weld, and that is checked *first*, so a
+silently-ineffective guard cannot pass." That is true of the *mechanism* and
+false of the *shipped value* — the check sets `reserveEms` itself before each
+case, so it proves welding happens at 0 and says nothing about the default being
+0.25. Someone could ship `reserveEms = 0` and the suite stays green. The C18
+sentence was accurate about what it tested and misleading about what that
+protected, which is T4's pattern in the project's most carefully documented
+invariant.
+
+**Fix:** a drift-guard block asserting each calibrated value, with the cost of
+changing it in the failure message and a pointer to the tool that re-measures
+it. Plus behavioural cover where it was cheap: a page whose only image is a logo
+must rebuild at the fallback rather than at 14 DPI, and `safeInt` is now tested
+where it lives — NaN, both infinities, past `Int`'s range — rather than only
+through a caller that guards it first.
+
+Stated plainly, because overclaiming here would be the same mistake again: **the
+drift guard is not a behavioural test.** It cannot tell you 1.5 is the right
+headroom factor. The corpus is what validates these values; this only stops one
+of them moving in passing with a green suite as reassurance.
+
+**Two survivors are correct and stay.** `maximumPageMegapixels` 400 → 40,000 is
+a safety ceiling with deliberate slack, 19x the largest page in the corpus;
+pinning it would assert a number rather than a property, and its *behaviour* is
+already covered by the refusal check. `R25`'s depth-aware pruning survives for
+the reason R25 already records — CoreGraphics walks the shallower branch first in
+every arrangement tried, so the case cannot be built. The harness independently
+confirming a limitation this register had already written down is the outcome
+that gives the rest of it credibility.
+
+**The harness was wrong twice before it was right, and both are recorded in its
+own docstring.**
+
+- It used `git worktree add --detach HEAD`, so it tested the last commit. It
+  reported all six gaps as still-surviving against checks written to kill them
+  that were sitting uncommitted three feet away — `453/453 passed` when the
+  suite had 468 checks. It copies the working tree now, runs a baseline first,
+  and flags any mutant whose run reports a different check count.
+- Its "did not compile" test matched bare `error:`, so a mutant that **trapped
+  at runtime** — printing `Fatal error: Double value cannot be converted to Int`
+  — was scored INVALID rather than killed. Wrong in the direction that flatters
+  the suite. It matches a compile-error pattern now.
+
+A tool for detecting instruments that lie, lying twice in its first hour, is
+the most on-brand thing this register contains.
 
 ### H1 · Four pieces of housekeeping — FIXED
 - **`ocrAllPages` and `strategy` deleted.** Flags of mac-ocr's `searchable-pdf`

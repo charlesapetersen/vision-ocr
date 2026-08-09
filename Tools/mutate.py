@@ -24,10 +24,19 @@ promptly"). Several suites at once make those flaky, and a flaky check reports a
 mutant as KILLED when the suite merely tripped over the load — a false negative
 in the one tool whose job is finding false negatives.
 
-Runs in a throwaway git worktree, so the working tree is never touched and an
-interrupted run leaves nothing behind. Results append to Tools/mutation-log.tsv;
-re-running skips mutants already recorded, so a campaign can be stopped and
-resumed.
+Runs against a **copy of the working tree**, so the tree itself is never touched
+and an interrupted run leaves nothing behind. It copies what is on disk, not
+`HEAD`: the first version used `git worktree add --detach HEAD` and cheerfully
+reported eight survivors against the previous commit while the checks written to
+kill them sat uncommitted three feet away. A tool that silently measures
+something other than what you are holding is worse than no tool.
+
+The baseline is run first and must be green; every verdict is relative to it, and
+a mutant whose run reports a different number of checks than the baseline is
+flagged rather than believed.
+
+Results append to Tools/mutation-log.tsv; re-running skips mutants already
+recorded, so a campaign can be stopped and resumed.
 """
 import argparse, json, os, re, shutil, subprocess, sys, time
 
@@ -71,8 +80,11 @@ OPERATORS = [
      "if false { continue }", "C20-headroom-sameline"),
     ("SearchableWriter.swift", "guard isSameVisualLine(me, other, in: box) else { continue }",
      "if false { continue }", "C20-rightlimit-sameline"),
+    # `guard true else` is a compile error in Swift, so the removal has to be
+    # spelled as a no-op branch. The first attempt was recorded INVALID, which is
+    # the harness reporting honestly rather than scoring an untested mutant.
     ("Flattener.swift", "guard value.isFinite else { return 0 }",
-     "guard true else { return 0 }", "R24-safeInt-finite"),
+     "if !value.isFinite && false { return 0 }", "R24-safeInt-finite"),
     ("Flattener.swift", "if let seen = walkedAt[identity], seen <= depth { return }",
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",
@@ -145,15 +157,38 @@ def run(argv=None):
     print(f"{len(mutants)} mutants, {len(mutants) - len(todo)} already recorded, "
           f"{len(todo)} to run — about {len(todo) * 3} minutes")
 
-    work = os.path.join(REPO, "..", "vision-ocr-mutants")
-    work = os.path.abspath(work)
-    subprocess.run(["git", "-C", REPO, "worktree", "remove", "--force", work],
-                   capture_output=True)
-    r = subprocess.run(["git", "-C", REPO, "worktree", "add", "-q", "--detach", work, "HEAD"],
-                       capture_output=True, text=True)
+    # A copy of what is on disk right now. Not `git worktree add HEAD`: that
+    # tests the last commit, which is not what anyone means by "does my suite
+    # catch this".  testdocs is 1.2 GB and the suite builds its own fixtures.
+    work = os.path.abspath(os.path.join(REPO, "..", "vision-ocr-mutants"))
+    shutil.rmtree(work, ignore_errors=True)
+    os.makedirs(work)
+    r = subprocess.run(["rsync", "-a",
+                        "--exclude", ".git", "--exclude", "build",
+                        "--exclude", "testdocs", "--exclude", "Tools/mutation-out",
+                        REPO + "/", work + "/"], capture_output=True, text=True)
     if r.returncode != 0:
-        print("could not create the worktree:", r.stderr, file=sys.stderr)
+        print("could not copy the tree:", r.stderr, file=sys.stderr)
         return 2
+
+    def suite(where):
+        proc = subprocess.run(["./run_tests.sh"], cwd=where, capture_output=True, text=True)
+        out = proc.stdout + proc.stderr
+        total = None
+        for line in out.splitlines():
+            t = line.strip()
+            if t.endswith("passed") and "/" in t:
+                try: total = int(t.split("/")[1].split()[0])
+                except ValueError: pass
+        return proc, out, total
+
+    print("baseline:", end=" ", flush=True)
+    _, base_out, baseline = suite(work)
+    if baseline is None or "FAIL" in base_out:
+        print("the suite is not green before mutating; fix that first", file=sys.stderr)
+        shutil.rmtree(work, ignore_errors=True)
+        return 2
+    print(f"{baseline} checks, green")
 
     try:
         for i, m in enumerate(todo, 1):
@@ -167,20 +202,27 @@ def run(argv=None):
 
             open(path, "w").write(mutated)
             started = time.time()
-            proc = subprocess.run(["./run_tests.sh"], cwd=work,
-                                  capture_output=True, text=True)
+            proc, out, total = suite(work)
             took = time.time() - started
             open(path, "w").write(original)
-
-            out = proc.stdout + proc.stderr
             # Kept for triage: a verdict without the output behind it is the
             # same kind of unfalsifiable claim this tool exists to find.
             os.makedirs(os.path.join(REPO, "Tools", "mutation-out"), exist_ok=True)
             safe = m["id"].replace("/", "_")
             with open(os.path.join(REPO, "Tools", "mutation-out", safe + ".log"), "w") as fh:
                 fh.write(f"exit={proc.returncode}\n\n{out}")
-            if "error:" in out and "passed" not in out:
+            # A *compile* error, specifically. Matching bare "error:" mislabelled
+            # a mutant that trapped at runtime — the trap prints "Fatal error:
+            # Double value cannot be converted to Int" — as INVALID, i.e. scored
+            # a genuine kill as "the mutation was malformed". Wrong in the
+            # direction that flatters the suite.
+            if re.search(r"\.swift:\d+:\d+: error:", out):
                 verdict, detail = "INVALID", "did not compile"
+            elif proc.returncode == 0 and total != baseline:
+                # The mutant compiled and the suite passed, but a different
+                # number of checks ran — so this is not the suite we calibrated
+                # against and the verdict means nothing.
+                verdict, detail = "MISMATCH", f"{total} checks, baseline was {baseline}"
             elif proc.returncode == 0:
                 verdict = "SURVIVED"
                 detail = next((l.strip() for l in out.splitlines()
@@ -201,8 +243,7 @@ def run(argv=None):
                   flush=True)
             record(m["id"], verdict, took, detail)
     finally:
-        subprocess.run(["git", "-C", REPO, "worktree", "remove", "--force", work],
-                       capture_output=True)
+        shutil.rmtree(work, ignore_errors=True)
 
     survivors = [k for k, v in already_done().items() if v == "SURVIVED"]
     print(f"\n{len(survivors)} survivor(s)")

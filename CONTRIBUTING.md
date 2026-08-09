@@ -92,11 +92,28 @@ your head — several agents with different lenses, each finding verified by a
 second agent trying to refute it. Every such pass on this codebase has found real
 defects, including in code written minutes earlier.
 
+## 4a. Let the machine put the defect back
+
+Section 2 says to reintroduce the defect and watch the test fail. Nine checks in
+`BUGS.md` could not fail, and every one was found by doing that by hand — which
+is the part a person forgets. So:
+
+```sh
+python3 Tools/mutate.py --only <substring>   # after changing a constant or a guard
+python3 Tools/mutate.py                      # the whole catalogue, ~70 min
+```
+
+Add a mutant when you add a constant or a guard worth protecting. A survivor is
+either a gap in the checks or a value nothing depends on, and T5 records how to
+tell those apart — two of the current survivors are correct and documented as
+such.
+
 ## 5. Verification gates, in order of cost
 
 | when | what |
 |---|---|
 | every commit | `./run_tests.sh` in full — enforced by the pre-commit hook |
+| a new constant or guard | a mutant in `Tools/mutate.py`, and watch it get killed |
 | any UI change | `./build.sh` (the suite compiles the views but does not run them) |
 | `SearchableWriter` / `Flattener` / `JBIG2` | the three invariant-3 probes, before and after |
 | anything geometry- or routing-related | `Tools/score-corpus.swift` over `testdocs/` |
