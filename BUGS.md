@@ -675,7 +675,7 @@ scanned plate appended — including one confirming `hasDigitalText` still flags
 the file, since that is what makes this the default route and the silence
 dangerous.
 
-### C20 · `headroom` and `rightLimit` disagree about "the same line", crushing runs to sub-point height — OPEN
+### C20 · `headroom` and `rightLimit` disagree about "the same line", crushing runs to sub-point height — FIXED
 *(2026-08-09 review; measured on the corpus, not reasoned)*
 
 `Sources/SearchableWriter.swift:618`. The two mirror functions classify a
@@ -712,6 +712,46 @@ and only the line-end column moves.
 The existing guard cannot see it: "adjacent fragments of one line keep their
 space" builds every fragment through `func frag` at a fixed `y: 0.30` and
 `height: 0.022`, so every pair has `gap == 0` and `headroom` never participates.
+
+**Fix:** one `isSameVisualLine` predicate, used by both functions. There were two
+definitions and the band between them was classified as *both*; a single one
+cannot disagree with itself. `sameLineBaselineFraction` (0.4 of the shorter box's
+height) is `rightLimit`'s rule, kept because it is the measured one — the shorter
+height, not the taller, is what stops a display numeral claiming a body line two
+rows away.
+
+**Measured over the whole 84-document corpus, before and after** — the gate
+CONTRIBUTING requires for anything geometric, with the comparison binary built
+from the previous commit:
+
+| property | before | after |
+|---|---|---|
+| line-end selectability | mean 98.90 | **99.58** — 27 documents better, **0 worse** |
+| line-start selectability | mean 99.69 | 99.69 — unchanged |
+| word retention | mean 99.74 | 99.79 — 4 better, 0 worse |
+| text-layer offset | median −0.10, max 0.10 | unchanged; one document moved |
+| runs colliding vertically | 74 of 5,564 pairs | **74** — identical |
+
+All four properties of invariant 3 hold, and the one the defect attacked improved
+without costing any of the others. Biggest movers on line-end: 93→100, 94→100,
+95→100. 84/84 still process.
+
+**The unit test took three attempts to bite, and both failures are the kind this
+register exists to record.**
+
+1. The first probe measured selectable width at one fixed row. A crushed run is
+   about a point tall, so the probe missed it entirely and reported `0.000` for
+   the fixed build too — a check that fails in both directions is not a check.
+   It scans rows now.
+2. The second scanned x as far as `0.400`, but the *neighbour* fragment starts at
+   `0.39755`. Any hit there is the neighbour's text, so the probe called the line
+   fully covered however badly the first run was crushed. It stops at `0.390`.
+
+With the guard removed, the finished check reports `selectable only to 0.135 of
+the page; its box ends at 0.400` — the run reaching barely a ninth of its box.
+Note that "the two words do not weld" passes either way, which is exactly the
+self-concealment described above: a run that short cannot weld, so `words=` stays
+clean and only line-end moves.
 
 ### C21 · A half-specified outline destination on a quarter-turned page keeps the fabricated coordinate — FIXED
 *(2026-08-09 review; confirmed by tracing the transform both ways)*

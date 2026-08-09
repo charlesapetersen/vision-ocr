@@ -3892,6 +3892,73 @@ do {
               !got.contains("\(tiny)following"), got.prefix(40).description)
     }
 
+    // C20. The band where headroom and rightLimit used to disagree. Two
+    // fragments of ONE visual line whose drawn baselines differ only because one
+    // has descenders and the other does not: 0.78 x the height difference, about
+    // 1.9 pt here. rightLimit called that the same line (under 0.4 x the shorter
+    // height); headroom called it a vertical neighbour (over 0.5 pt, with more
+    // than 1 pt of horizontal overlap). Both fired, so the pair was shrunk by the
+    // reserve — correct — and crushed by the ceiling — not.
+    //
+    // Note the existing checks above cannot see this: `frag` gives every
+    // fragment the same y and height, so their baselines are identical, the gap
+    // is 0, and headroom sits out.
+    func band(_ text: String, x: Double, width w: Double, height h: Double)
+        -> SearchableWriter.Observation {
+        SearchableWriter.Observation(
+            boundingBox: SearchableWriter.BoundingBox(x: x, y: 0.30, width: w, height: h),
+            text: text, confidence: 1.0)
+    }
+    // 0.0130 x 792 = 10.3 pt with descenders; 0.0100 x 792 = 7.9 pt without.
+    // Baselines differ by 0.78 x 2.4 = 1.9 pt: over headroom's 0.5, under
+    // rightLimit's 0.4 x 7.9 = 3.2. Boxes overlap by 1.5 pt, clearing the `> 1`.
+    let descender = band("typographic", x: 0.10, width: 0.30, height: 0.0130)
+    let ascender  = band("measurable", x: 0.39755, width: 0.20, height: 0.0100)
+
+    let bandOut = dir.appendingPathComponent("band.pdf")
+    try? SearchableWriter.compose(visible: page, observations: [1: [descender, ascender]],
+                                  to: bandOut, drawImages: false)
+
+    // How far right the first fragment is actually selectable. Its box ends at
+    // x = 0.40; crushed to a quarter width it stops around 0.175.
+    // Scanning the rows too, not guessing one: a crushed run is barely a point
+    // tall, so a probe at a fixed height can miss it entirely and report 0.000
+    // for both the broken and the fixed build — which is a test that cannot fail
+    // in the useful direction.
+    // Stopping short of 0.39755, where the SECOND fragment starts: scanning
+    // into it means any hit there is the neighbour's text, and the probe reports
+    // the line as fully covered however badly the first run was crushed. That is
+    // how the first version of this check passed against the bug.
+    var reach = 0.0
+    var reachedText = ""
+    if let doc = PDFDocument(url: bandOut), let pg = doc.page(at: 0) {
+        let b = pg.bounds(for: .mediaBox)
+        for step in stride(from: 0.10, through: 0.390, by: 0.005) {
+            var hit = false
+            for row in stride(from: 0.290, through: 0.330, by: 0.002) {
+                let r = CGRect(x: b.minX + b.width * step, y: b.maxY - b.height * row,
+                               width: b.width * 0.004, height: b.height * 0.004)
+                let got = (pg.selection(for: r)?.string ?? "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !got.isEmpty { hit = true; reachedText = got; break }
+            }
+            if hit { reach = step }
+        }
+    }
+    check("a fragment whose neighbour differs only by a descender still spans its box",
+          reach > 0.34,
+          String(format: "selectable only to %.3f of the page; its box ends at 0.400, "
+                 + "last hit '%@'", reach, reachedText))
+
+    // And the other three properties still hold for the same pair.
+    let bandText = (PDFDocument(url: bandOut)?.string ?? "")
+        .replacingOccurrences(of: "\n", with: " ")
+    check("…and the two words do not weld",
+          !bandText.contains("typographicmeasurable"), bandText.prefix(60).description)
+    check("…and both fragments are still there",
+          bandText.contains("typographic") && bandText.contains("measurable"),
+          bandText.prefix(60).description)
+
     // A tall element must not treat a body line a row away as its own
     // neighbour. Baselines differ by far more than the shorter height.
     let headline = SearchableWriter.Observation(

@@ -662,6 +662,37 @@ enum SearchableWriter {
         return bottom + h * baselineFraction
     }
 
+    /// How far two drawn baselines may differ and still be one visual line, as a
+    /// fraction of the shorter box's height.
+    ///
+    /// The shorter of the two, not the taller: a tall display numeral must not
+    /// be able to claim a body line two rows away — that was measured, and it is
+    /// why `rightLimit` uses `min`.
+    static var sameLineBaselineFraction: CGFloat = 0.4
+
+    /// Whether two observations are fragments of **one visual line**.
+    ///
+    /// One definition, because there were two and they disagreed (C20).
+    /// `rightLimit` called a neighbour same-line below `0.4 · min(height)`;
+    /// `headroom` called one a *vertical* neighbour above 0.5 pt with more than
+    /// 1 pt of horizontal overlap. Everything in the band between — and two
+    /// fragments sharing a true baseline land there whenever one has a descender
+    /// and the other does not, about 1.7 pt on 10 pt text — satisfied both. Such
+    /// a pair was shrunk by the reserve (right, it is one line) *and* crushed by
+    /// the ceiling (wrong) at the same time. Measured on the Harper's 1938
+    /// corpus page: eight observations across four pages, worst case a run drawn
+    /// 0.71 pt tall against a natural 9.04 pt, at a quarter of its box width.
+    ///
+    /// C18's overlap tolerance is what opened the door: it established that
+    /// Vision's fragment boxes routinely overlap by a point or two, and an
+    /// overlap in (1, 2] pt clears `headroom`'s `> 1` test.
+    private static func isSameVisualLine(_ a: Observation, _ b: Observation,
+                                         in box: CGRect) -> Bool {
+        let tolerance = min(a.boundingBox.height * box.height,
+                            b.boundingBox.height * box.height) * sameLineBaselineFraction
+        return abs(drawnBaseline(a, in: box) - drawnBaseline(b, in: box)) < tolerance
+    }
+
     private static func headroom(for position: Int, among lines: [Observation],
                                  in box: CGRect) -> CGFloat {
         func baseline(_ o: Observation) -> CGFloat { drawnBaseline(o, in: box) }
@@ -680,6 +711,10 @@ enum SearchableWriter {
             // those as vertical neighbours crushed the font to a couple of points.
             let (left, right) = span(other)
             guard min(myRight, right) - max(myLeft, left) > 1 else { continue }
+            // A fragment of my own line is rightLimit's business, not mine.
+            // These two used to answer that question differently, and a pair in
+            // the band between the two answers got both treatments (C20).
+            guard !isSameVisualLine(me, other, in: box) else { continue }
             let gap = abs(baseline(other) - mine)
             if gap > 0.5 { nearest = min(nearest, gap) }
         }
@@ -707,13 +742,10 @@ enum SearchableWriter {
 
         var nearest = CGFloat.greatestFiniteMagnitude
         for (i, other) in lines.enumerated() where i != position {
-            let otherHeight = other.boundingBox.height * box.height
-            // Baselines, and the SHORTER of the two heights. Box bottoms plus
-            // `max` made one tall element claim body rows up to five away as
-            // its own line: a 28 pt display numeral surrendered 30% of its box
-            // to a 10 pt line in the next column, one row up. Measured.
-            let tolerance = min(myHeight, otherHeight) * 0.4
-            guard abs(drawnBaseline(other, in: box) - myBaseline) < tolerance else { continue }
+            // Baselines, and the SHORTER of the two heights — see
+            // `sameLineBaselineFraction`. The same predicate `headroom` uses, so
+            // the two cannot drift apart again (C20).
+            guard isSameVisualLine(me, other, in: box) else { continue }
 
             // Anything starting to the right of MY LEFT edge is after me on this
             // line. The test used to be `>= myRight - 0.5`, which is a cliff:
