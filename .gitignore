@@ -14,3 +14,7 @@ testdocs/*
 .DS_Store
 *.swp
 Tools/mutation-out/
+
+# jbig2 writes output.NNNN/output.sym into the working directory
+output.[0-9]*
+output.sym
