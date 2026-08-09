@@ -1846,7 +1846,7 @@ itself.)*
   but `OCRModel` owns those values in memory and wrote them straight back on the
   next change, undoing the reset for the next launch too.
 
-### U8 · Accessibility — MOSTLY FIXED
+### U8 · Accessibility — FIXED
 A dedicated review pass (which took four attempts to run — it died on the
 session limit three times) found the UI was largely opaque to VoiceOver.
 

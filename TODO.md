@@ -11,20 +11,14 @@ promoted, or it does not and should be deleted.
 
 ---
 
+**The VoiceOver announcements have now been heard** (2026-08-09) and they work —
+the last item that could only be settled by a person at a real session. U16 is
+closed in full, and `BUGS.md` U8 no longer has a remainder.
+
 **This file is empty of code work.** The 1.0 punchlist is closed (BUGS.md C16,
 R21, R22, T3, H1, U13–U16), and the three interface questions that could only be
 answered by a running app have been answered — in a headless VM, off-screen. They
 passed, and the run found U17, which was worse than any of them.
-
-## Still not verified
-
-- [ ] **The VoiceOver announcements have never been heard.** U16 posts
-      `.announcementRequested` at batch start, at each file landing and at the
-      summary. The suite cannot assert any of it — the test binary has no `NSApp`
-      — and the VM pass deliberately skipped it. What needs a real session: that
-      the summary is not swallowed mid-sentence, and that a 78-file batch is
-      informative rather than a wall of speech. If it is the latter, announce
-      only failures per file and keep the summary.
 
 ## Smaller, and genuinely optional
 

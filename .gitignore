@@ -13,3 +13,4 @@ testdocs/*
 
 .DS_Store
 *.swp
+Tools/mutation-out/
