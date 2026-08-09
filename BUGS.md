@@ -6,7 +6,15 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** T5 records the first mutation campaign: sixteen mutants
+**Five are open** from a third review, this one over the 868 lines the bundling
+and mutation work added after 1.3.0: R31, R32, T6, T7, H2. Nine claims, **nine
+confirmed, none refuted** — the verifier built an `otool` shim and ran the real
+scripts rather than reading them. Five of the nine are in code written the same
+day, which is the third consecutive round to find that, and T6 is the third
+consecutive round to add checks that cannot fail *while looking for checks that
+cannot fail*.
+
+T5 records the first mutation campaign: sixteen mutants
 killed, six gaps found and closed, two survivors kept with reasons.
 
 Two reviews ran against this codebase on 2026-08-09, the
@@ -1764,6 +1772,55 @@ and removing the guard produces exactly that:
 FAIL a deadline already past reports zero, not an underflow — 18446744072.709553
 ```
 
+### R31 · A failed bundling audit leaves the broken helpers in the bundle, and the build says the opposite — OPEN
+*(2026-08-09 third review; introduced same day by the 1.5.0 bundling)*
+
+`Tools/bundle-libs.py:183` and `build.sh:141`. The audit runs *after* everything
+has been copied and relocated. On failure it prints "still linked against
+Homebrew" and returns 1 — and **removes nothing**. `build.sh` then swallows that
+exit code with `|| { echo "    (not bundled — the app will look for them on
+PATH)"; }` and carries on, signing the very binaries the script just declared
+unusable.
+
+The message is the exact inverse of what shipped. The tools *are* in the bundle,
+and `locateTool` consults `bundledTool` **before** `/opt/homebrew/bin`, so the
+app prefers the broken copy over a working Homebrew one. Neither screen catches
+it: `isRunnable` is exists + not-a-directory + executable bit, and
+`containsNativeSlice` only asks for an arm64 slice. A dyld-broken arm64 Mach-O
+passes both.
+
+Reproduced under execution, not read: with a no-op `install_name_tool` shim on
+PATH the real script printed `still linked against Homebrew:` with 8 entries and
+exited 1, and `find` showed both helpers, all 13 dylibs and all 17 licence files
+still in `Contents/Resources`. Replaying build.sh's `||` handler and signing
+block then printed `(not bundled — the app will look for them on PATH)` followed
+by `Resources/jbig2 present after a "not bundled" build? YES`.
+
+The consequence chain was traced the same way. `JBIG2.isAvailable` is a presence
+test, so it is true; `wantJBIG2` is on by default; `JBIG2.encode` throws on a
+non-zero exit and a dyld-aborted child exits 134; `Model.swift:1126` turns that
+into `report(.failed, "Could not rebuild page images: …")` with no Flate
+fallback. Every document on the searchable route fails, on a machine where 1.4.0
+worked, with a build log that said the tools were not bundled.
+
+One handler covers two very different exits: "the tool is not installed"
+(benign, and what the message was written for) and "the audit failed" (fatal).
+
+### R32 · The DMG verification's failure path can swallow its own diagnostic and leaves the rejected image — OPEN
+*(2026-08-09 third review, plus one instance found by hand)*
+
+`build.sh:229`. On a failed verification the else branch runs `hdiutil detach`
+**before** printing why. `detach` returns 16 when Spotlight or Disk Arbitration
+still holds a freshly-mounted volume (reproduced), and under `set -e` that kills
+the script at that line: nothing is printed, and the build dies with a bare
+non-zero status. The rejected disk image is also left on disk, looking
+shippable.
+
+The mount leak is not hypothetical: `Vision OCR.dmg` was found **still attached**
+from the 10:33 build, with a stale mount point at
+`/private/var/folders/…/tmp.9siZBblc8S`. Detaching it by hand is what surfaced
+this.
+
 ---
 
 ## The interface
@@ -2640,6 +2697,62 @@ own docstring.**
 
 A tool for detecting instruments that lie, lying twice in its first hour, is
 the most on-brand thing this register contains.
+
+### T6 · Three checks written for the bundling that cannot fail — OPEN
+*(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*
+
+- **`Tests/main.swift:4767` — the fat branch is never reached.** Every fixture is
+  a *thin* Mach-O, so the universal branch of `containsNativeSlice` — the one the
+  bundled `mac-ocr` actually takes — has no coverage. Break the `fat_arch`
+  stride or the `8 + i * stride` offset and the suite stays green while
+  `bundledTool("mac-ocr")` returns nil on every Mac.
+- **`Tests/main.swift:4835` — the precedence check passes either way.** It plants
+  a probe in the bundle and asserts `locateTool` finds it, but the probe name
+  exists nowhere else, so hoisting the Homebrew loop above `bundledTool` — a
+  plausible refactor — cannot fail it.
+- **`Tests/main.swift:4794` — the planted fixture is not verified.** The only
+  check that kills the `bundle-arch-check` mutant copies a fixture with `try?`
+  and returns `bundledTool(...) == nil`, which is also true when the copy silently
+  failed. It reports green for the wrong reason.
+
+### T7 · Two ways the mutation harness can report a clean result it has not earned — OPEN
+*(2026-08-09 third review; the tool for finding unfalsifiable checks, twice unfalsifiable itself)*
+
+- **The "matched exactly once" guard is vacuous.** `re.subn(..., count=1)` returns
+  at most 1, so `if n != 1` only catches *zero* matches. A pattern matching two
+  sites mutates the first and reports a normal verdict. This is live: the R23
+  mutant's pattern matches `readOutline`'s bound **and** `copyOutline`'s identical
+  one, so the log asserts coverage of a bound that has never been perturbed —
+  and `copyOutline` is the mirror R23 exists because it was missing.
+- **NOT-APPLIED counts as recorded.** `already_done()` treats any logged row as
+  done, so a mutant whose pattern stops matching after a refactor is skipped
+  forever. Every later run prints `26 mutants, 26 already recorded, 0 to run`
+  and a clean bill of health for a catalogue it stopped applying.
+
+### H2 · leptonica ships with no licence, and the count cannot notice — OPEN
+*(2026-08-09 third review; a compliance defect in a public download)*
+
+`Tools/bundle-libs.py:104`. `copy_licences` adds a formula to `seen` *before*
+looking for any licence file and returns `sorted(seen)`, so the reassuring
+`licences for 12 package(s)` counts **formulae encountered**, not notices
+written. A formula whose keg root holds no LICENSE/COPYING/COPYRIGHT contributes
+nothing and is still counted. `LICENCE_NAMES` is defined at line 31 and never
+used — the fallback the author intended is simply absent.
+
+Measured: the shipped 1.5.0 bundle carries notices for **11** of the 12
+formulae. Missing is **leptonica** — 2.2 MB of BSD-2-Clause code in
+`Contents/Resources/lib/libleptonica.6.dylib`. Its Homebrew keg contains no
+licence file at all (`find … -iname '*licen*' -o -iname '*copying*'` returns
+nothing), which is why the copier found none.
+
+BSD-2-Clause clause 2 requires reproducing the copyright notice in the materials
+accompanying a binary redistribution, so every disk image since 1.5.0 has been
+out of compliance — while the build printed a number that looked right and the
+module docstring listed leptonica among the licences that travel with the
+binaries.
+
+The number is the real defect: it is structurally unable to drop when a notice
+goes missing, so the next formula without one fails silently too.
 
 ### H1 · Four pieces of housekeeping — FIXED
 - **`ocrAllPages` and `strategy` deleted.** Flags of mac-ocr's `searchable-pdf`
