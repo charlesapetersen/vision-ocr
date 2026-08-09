@@ -1405,11 +1405,16 @@ and switching the text format would have written JSON into the `.txt` path
 locks. Its tool re-probe is suppressed mid-run too, since workers are resolving
 those same paths and it can block the main thread on a login shell.
 
-### U5 · `askLoginShell` could freeze the app — FIXED
+### U5 · `askLoginShell` could freeze the app — FIXED *(the bound it added did not work; see U18)*
 No timeout, on the main thread, from both `start()` and the Settings body. A
 login shell that blocks — a slow network mount in a profile, an interactive
 prompt, a wedged NFS home — froze the app with no way out. Bounded at three
 seconds against a normal ~85 ms.
+
+**The bound was placed after the blocking call and never fired.** The diagnosis
+above is right and the remedy was in the wrong order; U18 records the measurement
+and the real fix. Counting this as FIXED for a year is the argument for testing
+the timeout rather than reading it.
 
 ### U6 · The progress bar showed a number nobody measured — FIXED
 Extract Text, the default mode, reported a flat `0.5` for the whole of a
@@ -1618,7 +1623,7 @@ One wart, left alone: `splitList` splits custom words on spaces, so
 space-separated and the preview shows it honestly, so the UI is not lying —
 it is a limitation of the field, not a bug.
 
-### U18 · `askLoginShell`'s three-second bound sits *after* the unbounded read — OPEN
+### U18 · `askLoginShell`'s three-second bound sits *after* the unbounded read — FIXED
 *(2026-08-09 review; U5 recorded this as FIXED and the ordering was never checked)*
 
 `Sources/Runner.swift:101`. U5 bounded the login-shell lookup "because this runs
@@ -1654,6 +1659,26 @@ help; it is populated after the read.
 
 The `tool lookup` block in `Tests/main.swift` times cache hits and negative
 caching only.
+
+**Fix:** the read is now the same bounded, non-blocking `poll` loop this file
+already uses for the child's stderr and for R2's stdout — the third place in
+`Runner.swift` to need it. No EOF inside three seconds means something still
+holds the pipe, so `stop(p)` takes the whole process group (which collects the
+backgrounded grandchild too) and the lookup gives up.
+
+Guarded by two checks that drive the real hazard through a real shell:
+`SHELL` is pointed at a script that never exits, and at one that exits
+immediately while a `sleep` it backgrounded keeps stdout open. Both hang the old
+code — the lookup runs on a background queue with the test's own 20-second
+timeout, because a suite that hangs is worse than one that fails. Before:
+`FAIL … never returned` for both. After: both return in about three seconds. A
+third check holds the normal path to under two seconds, so the bound cannot be
+bought by making the ordinary case slow.
+
+**A consequence worth knowing:** a shell that would have answered in four seconds
+now yields nil, and `locateTool` caches that absence until `forgetToolPaths()`.
+That is what U5 said the behaviour was; it is now actually true. The escape is
+the explicit mac-ocr path in Settings.
 
 ### U19 · Every batch-mutating control stays live during the C17 pre-flight — OPEN
 *(2026-08-09 review; this is U1 again, by a route U1's fix does not cover)*

@@ -3749,6 +3749,75 @@ do {
     check("the cache still finds the real binary", Runner.resolveBinary() != nil)
 }
 
+do {
+    // U18. U5 bounded this lookup at three seconds "because this runs on the main
+    // thread", but put the bound *after* `readDataToEndOfFile()`, which returns
+    // only when every writer on the pipe closes. A login shell that never exits
+    // never reaches the bound. The two shells below are the two shapes: one that
+    // hangs outright, and one that exits immediately while a background job it
+    // started keeps the write end of stdout open.
+    let dir = FileManager.default.temporaryDirectory
+        .appendingPathComponent("u18-\(UUID().uuidString)")
+    try! FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    func shell(_ name: String, _ body: String) -> String {
+        let url = dir.appendingPathComponent(name)
+        try! "#!/bin/bash\n\(body)\n".write(to: url, atomically: true, encoding: .utf8)
+        try! FileManager.default.setAttributes([.posixPermissions: 0o755],
+                                               ofItemAtPath: url.path)
+        return url.path
+    }
+
+    // Never exits. The wedged-NFS / interactive-prompt case U5 named.
+    let wedged = shell("wedged", "sleep 300")
+    // Exits at once, but `sleep` inherited stdout and holds it open — the
+    // grandchild variant Runner.swift:260 already documents for the child's stderr.
+    let holder = shell("holder", "sleep 300 &\nexit 0")
+
+    let realShell = ProcessInfo.processInfo.environment["SHELL"]
+    defer {
+        if let realShell { setenv("SHELL", realShell, 1) } else { unsetenv("SHELL") }
+        Runner.forgetToolPaths()
+    }
+
+    // Off the main thread with our own timeout: without the fix this call never
+    // returns, and a suite that hangs is worse than one that fails.
+    func lookupTime(using shellPath: String) -> Double? {
+        setenv("SHELL", shellPath, 1)
+        Runner.forgetToolPaths()
+        let done = DispatchSemaphore(value: 0)
+        let started = Date()
+        DispatchQueue.global().async {
+            _ = Runner.locateTool("definitely-not-a-real-tool-u18")
+            done.signal()
+        }
+        guard done.wait(timeout: .now() + 20) == .success else { return nil }
+        return Date().timeIntervalSince(started)
+    }
+
+    let wedgedTime = lookupTime(using: wedged)
+    check("a login shell that never exits cannot hang the lookup",
+          wedgedTime != nil && wedgedTime! < 10,
+          wedgedTime.map { String(format: "returned in %.2fs", $0) }
+              ?? "never returned — the bound is still behind the read")
+
+    let holderTime = lookupTime(using: holder)
+    check("a background job holding stdout cannot hang the lookup",
+          holderTime != nil && holderTime! < 10,
+          holderTime.map { String(format: "returned in %.2fs", $0) }
+              ?? "never returned — EOF needs every writer to close")
+
+    // The bound must not have been bought by making the normal case slow.
+    setenv("SHELL", realShell ?? "/bin/zsh", 1)
+    Runner.forgetToolPaths()
+    let t = Date()
+    _ = Runner.locateTool("mac-ocr")
+    let normal = Date().timeIntervalSince(t)
+    check("a real shell still answers promptly", normal < 2,
+          String(format: "cold lookup took %.3fs", normal))
+}
+
 resetPrefs()
 print("\n\(checks - failures)/\(checks) passed")
 exit(failures == 0 ? 0 : 1)

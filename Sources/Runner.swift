@@ -98,7 +98,39 @@ enum Runner {
         // network mount in a profile, an interactive prompt, a wedged NFS home)
         // froze the whole app with no way out. Three seconds is far longer than
         // the ~85 ms this normally takes.
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        //
+        // The bound has to cover the *read* (U18). It used to be a
+        // `readDataToEndOfFile()` placed before `wait(for:upTo:)`, and that
+        // returns only when every writer on the pipe closes — so a shell that
+        // never exited never reached the timeout meant to catch it, and neither
+        // did a shell that exited while a background job it started kept stdout
+        // open. Same reasoning as the child's stderr drain below, and R2's read
+        // loop; this is the third place in this file to need it.
+        let fd = pipe.fileHandleForReading.fileDescriptor
+        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK)
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 4 * 1024)
+        let deadline = Date().addingTimeInterval(3)
+        var sawEOF = false
+        while true {
+            let remaining = deadline.timeIntervalSinceNow
+            if remaining <= 0 { break }
+            var descriptor = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+            let ready = poll(&descriptor, 1, Int32(min(remaining * 1000, 200)))
+            if ready < 0 { if errno == EINTR { continue }; break }
+            if ready == 0 { continue }
+            let n = buffer.withUnsafeMutableBytes { read(fd, $0.baseAddress, $0.count) }
+            if n == 0 { sawEOF = true; break }
+            if n < 0 { if errno == EAGAIN || errno == EINTR { continue }; break }
+            data.append(contentsOf: buffer[0..<n])
+        }
+        // No EOF inside the bound means something is still holding the pipe. The
+        // answer is not worth waiting for, and `stop` takes the whole group so a
+        // backgrounded grandchild goes with it.
+        guard sawEOF else {
+            stop(p)
+            return nil
+        }
         if !wait(for: p, upTo: 3) {
             stop(p)
             return nil
