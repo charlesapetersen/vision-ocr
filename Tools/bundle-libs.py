@@ -83,8 +83,47 @@ def formula_of(path):
     return os.path.join(marker, rest[0], rest[1]) if len(rest) >= 2 else None
 
 
+# Packages whose Homebrew keg ships no licence file. The text has to come from
+# somewhere, so it lives here, verbatim from the project's own source, rather
+# than being silently omitted — which is what happened to leptonica in every
+# disk image from 1.5.0 until H2 (BSD-2-Clause clause 2 requires reproducing the
+# notice in a binary redistribution).
+VENDORED_LICENCES = {
+    "leptonica": """Copyright (C) 2001-2020 Leptonica.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials
+   provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+""",
+}
+
+
 def copy_licences(paths, dest):
-    seen = set()
+    """Returns the formulae for which a notice was actually written.
+
+    Not the formulae *encountered*: the count printed at the end used to be the
+    latter, so it could not drop when a notice went missing, and leptonica
+    shipped unnoticed in every image from 1.5.0 (H2).
+    """
+    seen, written = set(), set()
     for p in paths:
         formula = formula_of(p)
         if not formula or formula in seen:
@@ -95,13 +134,18 @@ def copy_licences(paths, dest):
             if entry.upper().startswith(("LICENSE", "COPYING", "COPYRIGHT")):
                 shutil.copy2(os.path.join(formula, entry),
                              os.path.join(dest, f"{name}-{entry}"))
+                written.add(formula)
+        if formula not in written and name in VENDORED_LICENCES:
+            with open(os.path.join(dest, f"{name}-LICENSE"), "w") as fh:
+                fh.write(VENDORED_LICENCES[name])
+            written.add(formula)
         # jbig2enc's patent notice travels verbatim; summarising it is not ours
         # to do.
         for root, _, files in os.walk(os.path.join(formula, "share", "doc")):
             for f in files:
                 if "PATENT" in f.upper():
                     shutil.copy2(os.path.join(root, f), os.path.join(dest, f"{name}-{f}"))
-    return sorted(seen)
+    return sorted(written), sorted(seen - written)
 
 
 def main(argv):
@@ -119,7 +163,7 @@ def main(argv):
         found = shutil.which(tool, path=f"{HOMEBREW}/bin:/usr/local/bin:/opt/local/bin")
         if not found:
             print(f"    {tool}: not installed", file=sys.stderr)
-            return 1
+            return 1        # benign: build.sh carries on without them
         binaries[tool] = real(found)
 
     everything = set()
@@ -139,20 +183,32 @@ def main(argv):
         os.chmod(dst, 0o755)
         placed[src] = dst
 
+    def rewrite(*args):
+        """install_name_tool, with its exit code actually looked at.
+
+        Discarding it via capture_output was how a relocation could fail while
+        the copy stayed in the bundle and the build reported success (R31).
+        """
+        r = subprocess.run(["install_name_tool", *args], capture_output=True, text=True)
+        if r.returncode != 0:
+            failures.append(" ".join(args[:2]) + ": " + r.stderr.strip().splitlines()[-1:][0]
+                            if r.stderr.strip() else " ".join(args[:2]))
+        return r.returncode == 0
+
+    failures = []
+
     # Relocate. An executable's libraries sit in lib/ beside it; a library's
     # neighbours sit next to itself. @loader_path means "relative to whoever is
     # doing the loading", which is right in both cases.
     for src, dst in placed.items():
         is_tool = os.path.dirname(dst) == resources
-        subprocess.run(["install_name_tool", "-id", os.path.basename(dst), dst],
-                       capture_output=True)
+        rewrite("-id", os.path.basename(dst), dst)
         for recorded, dep in dependencies(src):
             if dep not in placed:
                 continue
             prefix = "@loader_path/lib/" if is_tool else "@loader_path/"
             new = prefix + os.path.basename(placed[dep])
-            subprocess.run(["install_name_tool", "-change", recorded, new, dst],
-                           capture_output=True)
+            rewrite("-change", recorded, new, dst)
         # An LC_RPATH pointing into Homebrew would let a machine that HAS
         # Homebrew load those copies instead of ours, so the bundle would behave
         # differently on the developer's machine than on anyone else's.
@@ -160,14 +216,23 @@ def main(argv):
         for line in out.splitlines():
             line = line.strip()
             if line.startswith("path ") and HOMEBREW in line:
-                subprocess.run(["install_name_tool", "-delete_rpath",
-                                line.split("path ")[1].split(" (")[0], dst],
-                               capture_output=True)
+                rewrite("-delete_rpath", line.split("path ")[1].split(" (")[0], dst)
 
-    formulae = copy_licences(everything, notices)
+    # Declared before the licence check, which contributes to it.
+    stale = []
+
+    formulae, unlicensed = copy_licences(everything, notices)
+    if unlicensed:
+        # Redistributing a binary with no notice is a compliance failure, so it
+        # stops the build rather than printing a number that looks right.
+        for f in unlicensed:
+            print(f"    no licence found for {os.path.basename(os.path.dirname(f))} ({f})",
+                  file=sys.stderr)
+        print("    add its text to VENDORED_LICENCES in Tools/bundle-libs.py",
+              file=sys.stderr)
+        stale.append("missing licence")
 
     # Verify rather than assume: nothing may still point at Homebrew.
-    stale = []
     for dst in placed.values():
         out = subprocess.run(["otool", "-L", dst], capture_output=True, text=True).stdout
         for line in out.splitlines()[1:]:
@@ -176,11 +241,25 @@ def main(argv):
             # less obvious: it fails only on a machine without the library.
             if HOMEBREW in lib or lib.startswith("@rpath/"):
                 stale.append(f"{os.path.basename(dst)} -> {lib}")
+    if failures:
+        stale = [f"install_name_tool failed: {f}" for f in failures] + stale
+
     if stale:
-        print("    still linked against Homebrew:", file=sys.stderr)
+        # Take back everything that was copied. Leaving it meant build.sh's
+        # handler printed "not bundled" over a bundle that contained broken
+        # helpers — and locateTool prefers the bundled copy, so the app used
+        # them in preference to a working Homebrew install (R31).
+        for dst in placed.values():
+            try: os.remove(dst)
+            except OSError: pass
+        shutil.rmtree(libdir, ignore_errors=True)
+        shutil.rmtree(notices, ignore_errors=True)
+        print("    bundling failed; removed what had been copied:", file=sys.stderr)
         for s in stale[:8]:
             print("      " + s, file=sys.stderr)
-        return 1
+        # 3, not 1: build.sh treats "not installed" (1) as benign and this as
+        # fatal. One exit code for both was the other half of R31.
+        return 3
 
     size = sum(os.path.getsize(d) for d in placed.values()) / 1e6
     archs = subprocess.run(["lipo", "-archs", placed[binaries[tools[0]]]],

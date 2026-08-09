@@ -137,10 +137,22 @@ fi
 # reads the Mach-O header and ignores a slice it cannot run, so an Intel Mac
 # falls through to Homebrew exactly as before rather than failing at exec.
 echo "==> Bundling the compression tools"
-LIBDIR="$APP/Contents/Resources/lib"
-python3 Tools/bundle-libs.py "$APP" jbig2 qpdf || {
-  echo "    (not bundled — the app will look for them on PATH)"
-}
+# Two different failures, two exit codes. 1 is "not installed on this machine",
+# which is benign — the app looks on PATH and writes larger files. 3 is "the
+# audit rejected what I copied", which is fatal: the copies are gone, but
+# continuing would sign and ship an app whose bundled helpers are broken, and
+# locateTool prefers the bundled copy over a working Homebrew one. One handler
+# for both printed "not bundled" over exactly that (R31).
+set +e
+python3 Tools/bundle-libs.py "$APP" jbig2 qpdf
+bundle_rc=$?
+set -e
+case "$bundle_rc" in
+  0) ;;
+  1) echo "    (not installed — the app will look for them on PATH)" ;;
+  *) echo "bundling failed its own audit (exit $bundle_rc); refusing to build" >&2
+     exit 1 ;;
+esac
 
 echo "==> Signing (ad hoc)"
 # Inside out: a nested executable has to be signed before the bundle that
@@ -226,12 +238,22 @@ if [ "$DMG" = 1 ]; then
     if VER=$(env -i PATH=/usr/bin:/bin "$RES/$tool" --version 2>&1 | head -1); then
       echo "==> $tool runs from the image with no PATH: $VER"
     else
-      hdiutil detach -quiet "$MP"; rmdir "$MP"
+      # Say why FIRST. Detach returns 16 when Disk Arbitration still holds a
+      # freshly mounted volume, and under `set -e` that killed the script on
+      # this line — losing the diagnostic that explains the whole failure (R32).
       echo "$tool did not run from the image with an empty PATH: $VER" >&2
+      hdiutil detach -quiet "$MP" 2>/dev/null || hdiutil detach -force -quiet "$MP" 2>/dev/null || true
+      rmdir "$MP" 2>/dev/null || true
+      # And take the image with it: a disk image that failed its own
+      # verification must not be left on disk looking shippable.
+      rm -f "$DMG_PATH"
       exit 1
     fi
   done
-  hdiutil detach -quiet "$MP"; rmdir "$MP"
+  # Never leave the image attached: a leaked mount was found still holding
+  # "Vision OCR.dmg" hours after a build (R32).
+  hdiutil detach -quiet "$MP" 2>/dev/null || hdiutil detach -force -quiet "$MP" 2>/dev/null || true
+  rmdir "$MP" 2>/dev/null || true
 
   echo "==> Built $DMG_PATH ($(du -h "$DMG_PATH" | cut -f1))"
 fi

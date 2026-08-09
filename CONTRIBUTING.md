@@ -108,12 +108,50 @@ either a gap in the checks or a value nothing depends on, and T5 records how to
 tell those apart — two of the current survivors are correct and documented as
 such.
 
+## 4b. Sweep the siblings before you call it fixed
+
+The register's most repeated shape is a fix that closed one *instance* of a
+defect and left its twin. R24 bounded `flatten`'s buffer and missed
+`saturation`, which sized one from the same page box — R29. R19 bounded
+`readOutline` and missed `copyOutline`, its own mirror — R23. C20 was two
+functions holding different definitions of one idea.
+
+Every one would have been caught by a single grep. So before closing anything,
+ask *who else does this* and write the answer in the commit:
+
+```sh
+rg -n 'fullBox|box\.width \*'      Sources/    # who else sizes from a page box
+rg -n 'Int\(.*\.rounded\(\)\)'  Sources/    # who else converts a Double
+rg -n 'func .*depth: Int'            Sources/    # who else recurses with a bound
+```
+
+If a sibling exists, either fix it in the same commit or say in `BUGS.md` why it
+is not affected. "I only looked at the reported line" is how R23, R29 and C20
+each became a second entry.
+
+## 4c. Make the failure path actually fail
+
+R31, R32 and H2 were all careful code in branches that only run when something
+else goes wrong — and nothing ever made it go wrong, so none had ever executed.
+The reviewers found R31 by putting a no-op `install_name_tool` on `PATH`.
+
+```sh
+./Tools/fault-inject.sh          # every case
+./Tools/fault-inject.sh relocate # one
+```
+
+Add a case whenever you add an error branch, and **watch it fail first**. The
+`detach_fails` case is the warning: its first version broke only half of what it
+needed to, so the branch never ran and it passed while testing nothing.
+
 ## 5. Verification gates, in order of cost
 
 | when | what |
 |---|---|
 | every commit | `./run_tests.sh` in full — enforced by the pre-commit hook |
 | a new constant or guard | a mutant in `Tools/mutate.py`, and watch it get killed |
+| a new error branch | a case in `Tools/fault-inject.sh`, and watch it fail first |
+| any fix | the sibling sweep in 4b, with the answer in the commit |
 | any UI change | `./build.sh` (the suite compiles the views but does not run them) |
 | `SearchableWriter` / `Flattener` / `JBIG2` | the three invariant-3 probes, before and after |
 | anything geometry- or routing-related | `Tools/score-corpus.swift` over `testdocs/` |

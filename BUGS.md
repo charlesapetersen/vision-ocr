@@ -1772,7 +1772,7 @@ and removing the guard produces exactly that:
 FAIL a deadline already past reports zero, not an underflow — 18446744072.709553
 ```
 
-### R31 · A failed bundling audit leaves the broken helpers in the bundle, and the build says the opposite — OPEN
+### R31 · A failed bundling audit leaves the broken helpers in the bundle, and the build says the opposite — FIXED
 *(2026-08-09 third review; introduced same day by the 1.5.0 bundling)*
 
 `Tools/bundle-libs.py:183` and `build.sh:141`. The audit runs *after* everything
@@ -1806,7 +1806,18 @@ worked, with a build log that said the tools were not bundled.
 One handler covers two very different exits: "the tool is not installed"
 (benign, and what the message was written for) and "the audit failed" (fatal).
 
-### R32 · The DMG verification's failure path can swallow its own diagnostic and leaves the rejected image — OPEN
+**Fix:** every `install_name_tool` return code is now checked instead of
+discarded; on any failure the script **removes everything it copied** before
+returning, so the bundle cannot be left holding rejected binaries; and it exits
+**3** for an audit failure against **1** for "not installed", which `build.sh`
+now distinguishes — 1 prints a note and continues, anything else stops the build.
+
+Guarded by `Tools/fault-inject.sh relocate` and `build_continues`, which put a
+no-op `install_name_tool` on `PATH` and run the real script. Written *before* the
+fix, they reproduced both halves exactly: `exited 1 but left 15 copied file(s)
+in the bundle` and `audit failure exited 1; build.sh treats 1 as benign`.
+
+### R32 · The DMG verification's failure path can swallow its own diagnostic and leaves the rejected image — FIXED
 *(2026-08-09 third review, plus one instance found by hand)*
 
 `build.sh:229`. On a failed verification the else branch runs `hdiutil detach`
@@ -1820,6 +1831,18 @@ The mount leak is not hypothetical: `Vision OCR.dmg` was found **still attached*
 from the 10:33 build, with a stale mount point at
 `/private/var/folders/…/tmp.9siZBblc8S`. Detaching it by hand is what surfaced
 this.
+
+**Fix:** the diagnostic is printed **before** the detach; the detach falls back
+to `-force` and cannot abort the script; and a disk image that fails its own
+verification is **deleted**, so nothing that looks shippable survives a failed
+build. The success path got the same `-force` fallback.
+
+Guarded by `Tools/fault-inject.sh detach_fails`. That case is worth reading as a
+cautionary tale in its own right: **the first version could not fail.** It shimmed
+only `detach`, so verification succeeded, the failure branch never ran, and the
+check passed while testing nothing — the T6 shape, in a case written to prevent
+exactly that. It now shims `attach` to yield an empty mount *and* `detach` to
+fail, and against the unfixed code it reports `exited 16 with no diagnostic`.
 
 ---
 
@@ -2747,7 +2770,7 @@ killed. Until now the log asserted this bound was covered while `copyOutline`'s
 mirror had never been perturbed once, which is precisely the code R23 exists
 because it was missing.
 
-### H2 · leptonica ships with no licence, and the count cannot notice — OPEN
+### H2 · leptonica ships with no licence, and the count cannot notice — FIXED
 *(2026-08-09 third review; a compliance defect in a public download)*
 
 `Tools/bundle-libs.py:104`. `copy_licences` adds a formula to `seen` *before*
@@ -2771,6 +2794,17 @@ binaries.
 
 The number is the real defect: it is structurally unable to drop when a notice
 goes missing, so the next formula without one fails silently too.
+
+**Fix:** `copy_licences` returns the formulae for which a notice was actually
+**written**, plus those for which none was found; a formula in the closure with
+no notice now **stops the build**. leptonica's BSD-2-Clause text — taken verbatim
+from the project's own source, since its Homebrew keg genuinely has none — lives
+in a `VENDORED_LICENCES` table so the gap is filled rather than tolerated.
+
+The shipped image now carries 18 notice files covering all 12 packages, and the
+count is of notices written rather than formulae seen. Guarded by
+`Tools/fault-inject.sh missing_licence`, which failed against the code as
+shipped in 1.5.0 — `leptonica is bundled with no licence notice`.
 
 ### H1 · Four pieces of housekeeping — FIXED
 - **`ocrAllPages` and `strategy` deleted.** Flags of mac-ocr's `searchable-pdf`
