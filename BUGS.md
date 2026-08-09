@@ -1811,7 +1811,7 @@ now yields nil, and `locateTool` caches that absence until `forgetToolPaths()`.
 That is what U5 said the behaviour was; it is now actually true. The escape is
 the explicit mac-ocr path in Settings.
 
-### U19 · Every batch-mutating control stays live during the C17 pre-flight — OPEN
+### U19 · Every batch-mutating control stays live during the C17 pre-flight — FIXED
 *(2026-08-09 review; this is U1 again, by a route U1's fix does not cover)*
 
 `Sources/Model.swift:404`. `add()` refuses only while `isRunning`, and
@@ -1846,6 +1846,27 @@ Three ways it bites, in the same window:
 C17's register entry says only that Start shows "Checking…" and is disabled. The
 add-refusal test at `Tests/main.swift:1848-1867` fakes `m.isRunning = true`;
 nothing exercises `isPreflighting`.
+
+**Fix:** one `isCommitted` flag — `isRunning || isPreflighting` — used by
+`add()`'s guard, by `canStart`, by the drop target, and by all seven
+`.disabled(...)` modifiers, including the Settings sheet's `runInProgress`.
+The bug was not any one of those sites; it was that C17 added a state and eight
+separate places each had to remember it. One derived flag is the thing that
+cannot be half-updated next time.
+
+`run()` now re-checks `destinationReady` as well. The file list is frozen at the
+click and the destination is read at `run()`, so the two halves of the batch
+definition were taken at different moments: unticking "Save beside each original"
+during the pre-flight left `destinationReady` false while `uniqueOutputs` fell
+back to `file.deletingLastPathComponent()`, writing the whole batch beside the
+originals and into no folder the user had chosen. It now refuses and says so.
+
+Guarded by five checks that drive `isPreflighting` directly. Verified to bite by
+putting the old `guard !isRunning` back: `FAIL a file offered during the
+pre-flight is refused too` and `FAIL …and the list is unchanged — 2`.
+
+Note that "Start stays disabled" passes either way — `canStart` was the one site
+C17 *did* update, which is precisely why the rest went unnoticed.
 
 ### U20 · Dropping a folder walks it recursively on the main actor — OPEN
 *(2026-08-09 review; the same class U5 and C17 already fixed elsewhere)*

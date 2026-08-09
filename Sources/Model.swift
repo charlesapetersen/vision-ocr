@@ -373,7 +373,19 @@ final class OCRModel: ObservableObject {
     /// Writing beside each original needs no folder; anything else does.
     var destinationReady: Bool { besideOriginal || outputFolder != nil }
 
-    var canStart: Bool { !files.isEmpty && !isRunning && !isPreflighting && destinationReady }
+    /// True from the moment Start freezes the batch until the run is over.
+    ///
+    /// `isRunning` is not that moment. C17's pre-flight sits between the click
+    /// and `run()`, and `start()` captures `let candidates = files` before
+    /// dispatching it — so for the whole of "Checking…" the batch contents were
+    /// already decided while `isRunning` was still false and every control that
+    /// edits them was still live. That is U1 again by another route (U19).
+    ///
+    /// One flag, because the bug was seven `.disabled(model.isRunning)` and one
+    /// `guard` that each had to be remembered separately when C17 added a state.
+    var isCommitted: Bool { isRunning || isPreflighting }
+
+    var canStart: Bool { !files.isEmpty && !isCommitted && destinationReady }
 
     // MARK: - The drop box
 
@@ -401,7 +413,9 @@ final class OCRModel: ObservableObject {
     /// two open.
     @discardableResult
     func add(_ urls: [URL]) -> AddResult {
-        guard !isRunning else { return .refusedRunInProgress }
+        // isCommitted, not isRunning: the batch is frozen from the click, not
+        // from the moment the first subprocess starts (U19).
+        guard !isCommitted else { return .refusedRunInProgress }
         let result = collectInputFiles(from: urls, existing: files)
         files.append(contentsOf: result.files)
         return .added(ignored: result.ignored)
@@ -654,6 +668,22 @@ final class OCRModel: ObservableObject {
     /// reports as one batch.
     private func run(_ batch: [URL], binary: String, readingTextFrom extract: Set<URL> = []) {
         guard !batch.isEmpty, !isRunning else { return }
+
+        // Re-checked here, not only at the click. The file list is frozen when
+        // Start is pressed but the destination is read at this point, so the two
+        // halves of the batch definition were taken at different moments — and
+        // unticking "Save beside each original" during the pre-flight left
+        // destinationReady false while `uniqueOutputs` quietly fell back to
+        // `file.deletingLastPathComponent()`, writing the whole batch beside the
+        // originals instead of into a folder the user never chose (U19).
+        guard destinationReady else {
+            isPreflighting = false
+            log.append(LogLine(
+                text: "Nothing was written: choose an output folder, or turn on "
+                    + "\"Save beside each original\".",
+                kind: .failure))
+            return
+        }
         let destination = besideOriginal ? nil : outputFolder
         let control = RunControl()
         self.control = control

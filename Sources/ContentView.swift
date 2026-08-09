@@ -30,7 +30,7 @@ struct ContentView: View {
         .padding(16)
         .frame(minWidth: 520, minHeight: 520)
         .sheet(isPresented: $showSettings) {
-            SettingsView(runInProgress: model.isRunning) { model.reloadDestination() }
+            SettingsView(runInProgress: model.isCommitted) { model.reloadDestination() }
         }
         // Finder can hand us files two ways the drop box never sees: dragged onto
         // the Dock icon, and "Open With". Info.plist has always advertised both.
@@ -86,7 +86,7 @@ struct ContentView: View {
             }
         }
         .frame(minHeight: 180)
-        .onDrop(of: [.fileURL], isTargeted: model.isRunning ? .constant(false) : $isTargeted) {
+        .onDrop(of: [.fileURL], isTargeted: model.isCommitted ? .constant(false) : $isTargeted) {
             providers in
             load(providers)
             return true
@@ -113,10 +113,10 @@ struct ContentView: View {
                 // the list on screen shows five.
                 Button("Add…") { chooseFiles() }
                     .buttonStyle(.link).font(.caption)
-                    .disabled(model.isRunning)
+                    .disabled(model.isCommitted)
                 Button("Clear List") { model.clearFiles(); ignoredNotice = nil }
                     .buttonStyle(.link).font(.caption)
-                    .disabled(model.isRunning)
+                    .disabled(model.isCommitted)
                     .help("Empties the list. The log is kept — it is the only "
                           + "record of what happened to the last batch.")
             }
@@ -144,7 +144,7 @@ struct ContentView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
-                            .disabled(model.isRunning)
+                            .disabled(model.isCommitted)
                             .accessibilityLabel("Remove \(url.lastPathComponent)")
                         }
                         .padding(.horizontal, 10)
@@ -170,7 +170,7 @@ struct ContentView: View {
                 Toggle("Save beside each original", isOn: $model.besideOriginal)
                     .toggleStyle(.checkbox)
                     .font(.caption)
-                    .disabled(model.isRunning)
+                    .disabled(model.isCommitted)
             }
 
             HStack(spacing: 8) {
@@ -187,7 +187,7 @@ struct ContentView: View {
                                      : (model.outputFolder == nil ? .secondary : .primary))
                 Spacer(minLength: 6)
                 Button("Choose…") { chooseOutputFolder() }
-                    .disabled(model.besideOriginal || model.isRunning)
+                    .disabled(model.besideOriginal || model.isCommitted)
             }
             .padding(8)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
@@ -214,7 +214,7 @@ struct ContentView: View {
             // A hard width is what made the action row unable to shrink at the
             // 520 pt minimum; everything else in it is already unshrinkable.
             .frame(minWidth: 170, idealWidth: 240, maxWidth: 240)
-            .disabled(model.isRunning)
+            .disabled(model.isCommitted)
             .help(mode.blurb)
 
             Spacer()

@@ -1887,6 +1887,27 @@ do {
         if case .added = m.add([b]) { acceptedAfter = true }
         check("…and it is accepted again once the run ends", acceptedAfter)
         check("…arriving in the list", m.files.count == 2, "\(m.files.count)")
+
+        // U19. isRunning is not the moment the batch is frozen. C17 put an
+        // asynchronous pre-flight between the click and run(), and start()
+        // captures the file list before dispatching it — so for the whole of
+        // "Checking…" the contents were decided while every control that edits
+        // them was still live. Same defect, one state earlier.
+        m.files = [a]
+        m.isRunning = false
+        m.isPreflighting = true
+
+        check("the batch counts as committed during the pre-flight", m.isCommitted)
+        var refusedDuringPreflight = false
+        if case .refusedRunInProgress = m.add([b]) { refusedDuringPreflight = true }
+        check("a file offered during the pre-flight is refused too",
+              refusedDuringPreflight)
+        check("…and the list is unchanged", m.files.count == 1, "\(m.files.count)")
+        check("…and Start stays disabled", !m.canStart)
+
+        m.isPreflighting = false
+        check("…and the batch is editable again once the pre-flight ends",
+              !m.isCommitted)
     }
     resetPrefs()
 }
