@@ -6,7 +6,9 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** The third review's five — R31, R32, T6, T7, H2 — are all
+**Nothing is open.** U23 and T8 close the fourth of the four ways this register
+kept producing defects from its own fixes; the other three got controls in the
+same round. The third review's five — R31, R32, T6, T7, H2 — are all
 `FIXED`, and the round added three controls aimed at the *shapes* rather than
 the instances: `Tools/fault-inject.sh` (execute the error branches),
 `Tools/mutate.py`'s own repair (T7), and the sibling sweep in CONTRIBUTING 4b,
@@ -2160,6 +2162,60 @@ not.
 **Not notarizing is a decision, not an omission.** It would cost a paid
 Developer ID, and it is the only remaining way to remove this step entirely.
 Recorded here so the next person does not treat the dialog as a defect.
+
+### U23 · `remove` and `clearFiles` were guarded only by the view — FIXED
+*(2026-08-09, found by applying CONTRIBUTING 4b to U19 — the sibling sweep, one round after it was written)*
+
+`Sources/Model.swift`. `add` carries an explicit note that its guard belongs in
+the **model**, "because there are three ways in — the button, the drop zone, and
+files handed over by Finder — and gating only the button left the other two
+open." That was U1's lesson. `remove` and `clearFiles` mutate the same batch and
+were guarded only by `.disabled(model.isCommitted)` in `ContentView`.
+
+Not user-reachable today: the two buttons really are disabled, so the view
+covers it. It is a latent defect rather than a live one, and worth fixing
+anyway, because the model's own stated contract is that the guard lives here —
+and the next door (a menu item, a shortcut, an Open-With handler, a future
+scripting surface) would bypass a view modifier exactly as U1's drop zone did.
+
+Both now refuse while `isCommitted` and return a `Bool` saying whether they
+acted.
+
+### T8 · The states-by-doors cross product, for the fourth way fixes cause bugs — FIXED
+*(2026-08-09. The other three shapes got controls; this is the fourth.)*
+
+The register's fourth mechanism is **two changes that are each correct alone**.
+U19 introduced `isCommitted` and gated `add` on it. U20 added an async import
+whose completion checks the same flag. Neither was wrong, and U21 happened
+anyway: the property they both depended on — *from the click until the run ends,
+the batch cannot change* — was written down nowhere, so each feature checked it
+at its own moment, and a moment existed that neither had considered.
+
+Reasoning about pairs of features does not scale and did not work. Enumerating
+does. The suite now walks **every state from the click onwards × every door into
+the batch**, which is finite, small, and indifferent to which two features
+interact:
+
+|            | add | remove | clearFiles |
+|---|---|---|---|
+| pre-flighting | ✓ | ✓ | ✓ |
+| deciding      | ✓ | ✓ | ✓ |
+| running       | ✓ | ✓ | ✓ |
+
+Plus the inverse — all three doors must still *work* when nothing is committed —
+because otherwise an app that did nothing at all would satisfy the table.
+
+The **"deciding" row is the point**. U21 was a state that existed in behaviour
+and in no flag; a table cannot enumerate a state nobody has named, so naming it
+is forced by writing the table. Removing the two new guards turns six of the
+twelve red.
+
+The remaining structural improvement, recorded rather than done: `isRunning` and
+`isPreflighting` are two booleans describing one lifecycle, which is four
+representable states for three real ones. A single `phase` enum would make the
+state space explicit and make a new state impossible to forget, since it would
+not compile until placed. That is a refactor of live UI state and deserves its
+own round with the GUI checks, not a footnote to this one.
 
 ### U12 · Settings input validation — NO DEFECT
 Recorded because it was checked properly and found clean, which is worth knowing

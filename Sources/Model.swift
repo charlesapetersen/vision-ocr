@@ -472,7 +472,17 @@ final class OCRModel: ObservableObject {
         }
     }
 
-    func remove(_ url: URL) { files.removeAll { $0 == url } }
+    /// Guarded here, not only in the view, for the reason `add` gives above: a
+    /// committed batch must be immutable through **every** door, and a view
+    /// modifier only closes the one door that exists today. `add` was written
+    /// that way after U1; `remove` and `clearFiles` were not, and the sibling
+    /// sweep in CONTRIBUTING 4b is what noticed (U23).
+    @discardableResult
+    func remove(_ url: URL) -> Bool {
+        guard !isCommitted else { return false }
+        files.removeAll { $0 == url }
+        return true
+    }
 
     /// The whole log as text, for the Copy button.
     var logText: String { log.map(\.text).joined(separator: "\n") }
@@ -480,8 +490,11 @@ final class OCRModel: ObservableObject {
     /// Empties the file list. **Not** the log: it is the only record of which
     /// files failed and where the outputs went, and clearing the list to queue
     /// the next batch is a normal thing to do straight after reading it.
-    func clearFiles() {
+    @discardableResult
+    func clearFiles() -> Bool {
+        guard !isCommitted else { return false }
         files.removeAll()
+        return true
     }
 
     /// Empties the log, separately and deliberately.

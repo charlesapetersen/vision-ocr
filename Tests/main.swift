@@ -1949,6 +1949,72 @@ do {
     resetPrefs()
 }
 
+print("\nevery door into a committed batch is shut")
+
+do {
+    // U23, and the control for the fourth way fixes produce bugs: two changes
+    // that are each correct alone. U19 gave the model `isCommitted` and gated
+    // `add` on it; U20 added an async import that also checks it. Neither was
+    // wrong, and U21 still happened, because the *property* — "from the click
+    // until the run ends the batch cannot change" — lived in no single place
+    // and each feature checked it at its own moment.
+    //
+    // So enumerate instead of reasoning: every state from the click onwards,
+    // crossed with every way to mutate the batch. A cross product is finite and
+    // small, and it does not care which pair of features happens to interact.
+    // It is also what catches a state nobody represented — U21 was exactly that,
+    // a "deciding" state that existed in behaviour and in no flag.
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("doors-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let one = dir.appendingPathComponent("one.pdf")
+    let two = dir.appendingPathComponent("two.pdf")
+    makeScannedPDF(at: one, lines: ["ONE"])
+    makeScannedPDF(at: two, lines: ["TWO"])
+
+    // Every state in which the batch is committed and therefore frozen.
+    let committedStates: [(String, @MainActor (OCRModel) -> Void)] = [
+        ("pre-flighting", { $0.isPreflighting = true }),
+        ("running", { $0.isRunning = true }),
+        // The state U21 was about: the scan is over, the alert is up, the batch
+        // was decided at the click. Represented now, so it can be enumerated.
+        ("deciding", { $0.isPreflighting = true; $0.isRunning = false }),
+    ]
+
+    // Every door. `mutate` returns true if the batch actually changed.
+    let doors: [(String, @MainActor (OCRModel) -> Bool)] = [
+        ("add", { m in let before = m.files; _ = m.add([two]); return m.files != before }),
+        ("remove", { m in let before = m.files; m.remove(one); return m.files != before }),
+        ("clearFiles", { m in let before = m.files; m.clearFiles(); return m.files != before }),
+    ]
+
+    for (stateName, enter) in committedStates {
+        for (doorName, mutate) in doors {
+            MainActor.assumeIsolated {
+                let m = OCRModel()
+                m.besideOriginal = true
+                _ = m.add([one])
+                enter(m)
+                check("\(doorName) cannot change a committed batch (\(stateName))",
+                      !mutate(m), "the batch changed while \(stateName)")
+            }
+        }
+    }
+
+    // And the same doors must still work when nothing is committed, or the
+    // guards above would be satisfied by an app that does nothing at all.
+    MainActor.assumeIsolated {
+        let m = OCRModel()
+        m.besideOriginal = true
+        _ = m.add([one])
+        check("…and add still works when idle", { _ = m.add([two]); return m.files.count == 2 }())
+        check("…and remove still works when idle", { m.remove(one); return m.files.count == 1 }())
+        check("…and clearFiles still works when idle", { m.clearFiles(); return m.files.isEmpty }())
+    }
+    resetPrefs()
+}
+
 print("\nthe batch stays frozen while the alert is up")
 
 do {

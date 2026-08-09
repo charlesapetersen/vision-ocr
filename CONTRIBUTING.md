@@ -144,6 +144,23 @@ Add a case whenever you add an error branch, and **watch it fail first**. The
 `detach_fails` case is the warning: its first version broke only half of what it
 needed to, so the branch never ran and it passed while testing nothing.
 
+## 4d. Enumerate states against doors, do not reason about pairs
+
+The fourth way this project produces defects is two changes that are each
+correct alone. U19 gated the batch on a new flag; U20 added an async import that
+checked it; U21 was the moment neither had thought about. Reasoning about which
+features might interact does not scale — there is no list of pairs.
+
+Enumerating does. When a property must hold across a lifecycle, write the table:
+every state on one axis, every way of violating it on the other, and assert the
+cross product. See "every door into a committed batch is shut" in
+`Tests/main.swift`. It is finite, it does not care which two features collide,
+and it forces you to *name* every state — which is what would have caught U21,
+whose "deciding" state existed in behaviour and in no flag.
+
+Add the inverse row too: the doors must still work when the property does not
+apply, or an app that does nothing satisfies the table.
+
 ## 5. Verification gates, in order of cost
 
 | when | what |
@@ -152,6 +169,7 @@ needed to, so the branch never ran and it passed while testing nothing.
 | a new constant or guard | a mutant in `Tools/mutate.py`, and watch it get killed |
 | a new error branch | a case in `Tools/fault-inject.sh`, and watch it fail first |
 | any fix | the sibling sweep in 4b, with the answer in the commit |
+| a property spanning a lifecycle | the states-by-doors table in 4d |
 | any UI change | `./build.sh` (the suite compiles the views but does not run them) |
 | `SearchableWriter` / `Flattener` / `JBIG2` | the three invariant-3 probes, before and after |
 | anything geometry- or routing-related | `Tools/score-corpus.swift` over `testdocs/` |
