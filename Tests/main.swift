@@ -1949,6 +1949,61 @@ do {
     resetPrefs()
 }
 
+print("\nwhat each file's row shows")
+
+do {
+    // The per-file status the list draws. It lives in the model rather than in
+    // the view body because run_tests.sh compiles the views and never
+    // instantiates one — logic in a View is logic no check can reach, which is
+    // how the UI has historically gone untested (U13, U15, U17 all needed a VM).
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("rows-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let a = dir.appendingPathComponent("a.pdf")
+    let b = dir.appendingPathComponent("b.pdf")
+    makeScannedPDF(at: a, lines: ["A"]); makeScannedPDF(at: b, lines: ["B"])
+
+    MainActor.assumeIsolated {
+        let m = OCRModel()
+        m.besideOriginal = true
+        _ = m.add([a, b])
+
+        check("a queued file is pending", m.status(url: a) == .pending)
+        check("…and says so", m.statusDescription(url: a) == "waiting")
+
+        m.inFlight = [a]
+        check("a file in flight is running", m.status(url: a).isRunning)
+        check("…with no stage yet, it still reads as in progress",
+              m.statusDescription(url: a) == "in progress")
+
+        m.stages[a] = ("Rebuilding page 3 of 12", 0.25)
+        check("…and carries its stage once there is one",
+              m.status(url: a) == .running("Rebuilding page 3 of 12"),
+              m.statusDescription(url: a))
+        check("…which is what the row shows",
+              m.statusDescription(url: a) == "in progress, Rebuilding page 3 of 12")
+
+        // The other file is untouched by any of that.
+        check("a file not in flight is unaffected", m.status(url: b) == .pending)
+
+        m.inFlight = []
+        m.outcomes[a] = .succeeded
+        m.outcomes[b] = .failed
+        check("a finished file shows its outcome", m.status(url: a) == .succeeded)
+        check("…and a failed one shows failure", m.status(url: b) == .failed)
+        check("…spoken as done and failed",
+              m.statusDescription(url: a) == "done" && m.statusDescription(url: b) == "failed")
+
+        // Running beats a recorded outcome: re-running a file that failed last
+        // time must not still show a cross while it is working.
+        m.inFlight = [b]
+        check("a re-run file shows as running, not as its old outcome",
+              m.status(url: b).isRunning, String(describing: m.status(url: b)))
+    }
+    resetPrefs()
+}
+
 print("\nevery door into a committed batch is shut")
 
 do {

@@ -100,11 +100,31 @@ struct ContentView: View {
                            : "\(model.files.count) file\(model.files.count == 1 ? "" : "s") queued.")
     }
 
+    /// Pending, running, done, failed. Deliberately four distinguishable shapes
+    /// and not four colours: colour alone is not available to everyone, which is
+    /// the same reason the log lines carry a glyph (U8).
+    @ViewBuilder
+    private func statusIcon(_ status: OCRModel.FileStatus) -> some View {
+        switch status {
+        case .pending:
+            Image(systemName: "circle.dotted").foregroundStyle(.tertiary)
+        case .running:
+            ProgressView().controlSize(.mini)
+        case .succeeded:
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+        case .failed:
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+        case .cancelled:
+            Image(systemName: "minus.circle").foregroundStyle(.secondary)
+        }
+    }
+
     private var fileList: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("\(model.files.count) file\(model.files.count == 1 ? "" : "s")")
+                Text(listHeading)
                     .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityLabel(listHeading)
                 if let notice = ignoredNotice {
                     Text("· \(notice)").font(.caption).foregroundStyle(.orange)
                 }
@@ -130,14 +150,34 @@ struct ContentView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(model.files, id: \.self) { url in
+                        let status = model.status(url: url)
                         HStack(spacing: 6) {
-                            Text(url.lastPathComponent)
-                                .lineLimit(1).truncationMode(.middle)
-                                // The leaf name alone cannot distinguish two
-                                // scan.pdfs from different folders — the case R4
-                                // exists for — and the path was only in a
-                                // tooltip, which is mouse-only.
-                                .accessibilityLabel(url.path)
+                            statusIcon(status)
+                                .frame(width: 14, height: 14)
+                                .accessibilityHidden(true)   // the row says it
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(url.lastPathComponent)
+                                    .lineLimit(1).truncationMode(.middle)
+                                    .foregroundStyle(status == .pending && model.isRunning
+                                                     ? .secondary : .primary)
+                                // The stage this file is at. The model has
+                                // carried this all along and nothing ever showed
+                                // it per file — on a long book "Rebuilding page
+                                // 40 of 300" is the difference between working
+                                // and hung.
+                                if case .running(let stage) = status, let stage {
+                                    Text(stage)
+                                        .font(.caption2).foregroundStyle(.secondary)
+                                        .lineLimit(1).truncationMode(.middle)
+                                }
+                            }
+                            // The leaf name alone cannot distinguish two
+                            // scan.pdfs from different folders — the case R4
+                            // exists for — and the path was only in a
+                            // tooltip, which is mouse-only.
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(url.path)
+                            .accessibilityValue(model.statusDescription(url: url))
                             Spacer(minLength: 4)
                             Button {
                                 model.remove(url)
@@ -147,6 +187,8 @@ struct ContentView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(model.isCommitted)
+                            .opacity(model.isCommitted ? 0 : 1)   // no dead controls
+                            .accessibilityHidden(model.isCommitted)
                             .accessibilityLabel("Remove \(url.lastPathComponent)")
                         }
                         .padding(.horizontal, 10)
@@ -329,6 +371,19 @@ struct ContentView: View {
     private var resultsHeading: String {
         let failed = model.log.filter { $0.kind == .failure }.count
         return failed > 0 ? "Results — \(failed) problem\(failed == 1 ? "" : "s")" : "Results"
+    }
+
+    /// "78 files" when idle; "78 files · 12 done, 3 running" while working, so
+    /// the count above the list answers "how far along is this" without the user
+    /// counting ticks.
+    private var listHeading: String {
+        let n = model.files.count
+        let base = "\(n) file\(n == 1 ? "" : "s")"
+        guard model.isRunning else { return base }
+        let done = model.files.filter { model.status(url: $0) != .pending
+                                        && !model.status(url: $0).isRunning }.count
+        let running = model.files.filter { model.status(url: $0).isRunning }.count
+        return "\(base) · \(done) done, \(running) running"
     }
 
     private var startBlockedReason: String? {

@@ -2217,6 +2217,39 @@ state space explicit and make a new state impossible to forget, since it would
 not compile until placed. That is a refactor of live UI state and deserves its
 own round with the GUI checks, not a footnote to this one.
 
+### U24 · The file list said nothing about progress — FIXED
+*(2026-08-09, asked for. Not a defect so much as an absence, recorded because the data was already there.)*
+
+While a batch ran, the list showed names and nothing else. Progress was one
+overall bar and a caption; per-file outcomes appeared only *after* the run, in a
+pane that replaces the bar. On a 78-file batch that means the thing you are
+watching tells you nothing about the sixty files already finished, and nothing
+about which of them failed until it is over.
+
+The model was already carrying everything needed. `inFlight` has the files being
+worked on and `stages` has a per-file label — "Rebuilding page 29 of 372" — that
+**nothing had ever displayed**. Only the outcome was missing.
+
+Now: a status column (dotted circle / spinner / green tick / red triangle /
+cancelled dash), the live stage under the name of any file in flight, and a
+header that counts — "3 files · 1 done, 2 running". The remove buttons hide
+rather than sit dead during a run.
+
+Four shapes, not four colours: colour alone is not available to everyone, which
+is why the log lines already carry glyphs (U8). Each row's accessibility value
+is its status, so VoiceOver reads "…, in progress, Rebuilding page 29 of 372".
+
+**The logic lives in the model, not the view.** `status(url:)` and
+`statusDescription(url:)` are on `OCRModel` because `run_tests.sh` compiles the
+views and never instantiates one — logic in a `View` body is logic no check can
+reach, which is why U13, U15 and U17 all needed a VM to find. Ten checks cover
+it, including that a file re-run after failing shows as *running* rather than
+keeping its old cross.
+
+Verified on screen, not only by compiling: a real three-document run, captured
+mid-flight with two spinners and one tick, and again at the end with three
+ticks.
+
 ### U12 · Settings input validation — NO DEFECT
 Recorded because it was checked properly and found clean, which is worth knowing
 next time someone wonders.

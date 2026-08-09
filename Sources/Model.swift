@@ -285,6 +285,49 @@ final class OCRModel: ObservableObject {
     /// finished. Names are for display; identity is the URL.
     @Published var stages: [URL: (label: String, fraction: Double)] = [:]
 
+    /// How each file of the current batch ended, for the row it sits on.
+    ///
+    /// The log already records this, but only as text and only in a pane that
+    /// appears *after* the run. On a 78-file batch that means the list you are
+    /// watching says nothing about the sixty files already finished.
+    @Published var outcomes: [URL: Runner.Result.Outcome] = [:]
+
+    /// What to draw beside a file. One place, in the model, because the suite
+    /// compiles the views but never instantiates one — logic left in a `View`
+    /// body is logic no check can reach.
+    enum FileStatus: Equatable {
+        case pending            // queued, not started
+        case running(String?)   // in flight, with the stage label if there is one
+        case succeeded
+        case failed
+        case cancelled
+
+        var isRunning: Bool { if case .running = self { return true }; return false }
+    }
+
+    func status(url file: URL) -> FileStatus {
+        // In flight wins over a recorded outcome: a file re-run in a later batch
+        // is running now, whatever happened to it last time.
+        if inFlight.contains(file) { return .running(stages[file]?.label) }
+        switch outcomes[file] {
+        case .succeeded: return .succeeded
+        case .failed: return .failed
+        case .cancelled: return .cancelled
+        case nil: return .pending
+        }
+    }
+
+    /// Spoken and shown. Keep it short — VoiceOver reads it per row.
+    func statusDescription(url file: URL) -> String {
+        switch status(url: file) {
+        case .pending: return "waiting"
+        case .running(let stage): return stage.map { "in progress, \($0)" } ?? "in progress"
+        case .succeeded: return "done"
+        case .failed: return "failed"
+        case .cancelled: return "cancelled"
+        }
+    }
+
     /// Overall fraction across the batch, counting partial work on the files
     /// currently running.
     var overallFraction: Double {
@@ -794,6 +837,10 @@ final class OCRModel: ObservableObject {
         completed = 0
         total = batch.count
         inFlight = []
+        // Only this batch's files: a list still showing last run's ticks beside
+        // files that have not started again would be a lie about the present.
+        outcomes = [:]
+        stages = [:]
 
         // The log used to open with the pipeline's steps — the mac-ocr command
         // line, the rebuild, the JBIG2 merge. That is a developer's view of the
@@ -1362,6 +1409,10 @@ final class OCRModel: ObservableObject {
         guard isRunning else { return }
         let name = file.lastPathComponent
         inFlight.removeAll { $0 == file }
+        // Before `completed`, so a view recomputing on either one never sees a
+        // file that is neither in flight nor finished.
+        outcomes[file] = outcome
+        stages[file] = nil
         completed += 1
 
         switch outcome {
