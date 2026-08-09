@@ -6,9 +6,18 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** The eleven raised by the 2026-08-09 adversarial review —
-C19, C20, C21, R23, R24, R25, R26, R27, U18, U19, U20 — are all `FIXED`, each
-with a test that was watched failing first. Fourteen were claimed; a skeptic pass
+**Five are open**, from a second review run against 1.2.0 minutes after it
+shipped: C22, R29, R30, U21, T4. **Five of the seven findings behind them are in
+code or tests written during the round that closed the previous eleven** — R29 is
+the hole R24 left and wrongly recorded as measured, R30 is U18 reaching for the
+wall clock in a file that documents why not, U21 is U19's flag and U20's async
+import interacting, and T4 is three checks from that round that cannot fail. This
+register has said for a year that every pass finds defects in the previous pass's
+code; it has now said it twice in one evening.
+
+The eleven raised by the first 2026-08-09 review — C19, C20, C21, R23, R24, R25,
+R26, R27, U18, U19, U20 — are `FIXED`, each with a test that was watched failing
+first. Fourteen were claimed; a skeptic pass
 that defaulted to refuting killed three, and those measurements are kept as R28
 because they are worth more than the claims were.
 
@@ -820,6 +829,37 @@ by breaking the 90% of pages that are not turned at all.
 No text-layer geometry was touched, so invariant 3's four properties are not in
 play; the text-layer checks pass unchanged.
 
+### C22 · `deduplicated` deletes a distinct line whose text repeats in a tightly-set row — OPEN
+*(2026-08-09 second review; pre-existing, and the only unreported line-drop in the writer)*
+
+`Sources/SearchableWriter.swift:640`. `deduplicated` drops an observation that
+repeats an already-kept one's text within one line height **in both axes**:
+`dx < h && dy < h`, where `h` is the candidate's own box height and `dy` is the
+distance between the two boxes' tops — the row pitch.
+
+So the test is satisfied by two *different rows* whenever the source is set
+closer than its boxes are tall. That is not hypothetical: D3 measured 74 of 5,564
+adjacent horizontally-overlapping pairs across the old corpus sitting at a pitch
+below 0.6 x the upper box's height, in 23 of 84 documents — and the widened
+corpus puts it at 295 of 14,782. `deduplicated`'s threshold is the looser
+`pitch < 1.0 x height`, so it fires at least that often. The horizontal half is
+free in an aligned column: identical text has identical width, so identical left
+edges.
+
+The drop happens in `compose` before `draw` is ever reached, so there is no
+`Unplaced`, `skipped` stays empty, `produced == expected` holds, and the file
+publishes as `.succeeded`. **Every other line-dropping path in the writer reports
+its reason and fails the file. This one is silent** — invariant 1, in the one
+place the register has never looked.
+
+Measured on real Vision output: a 20-row table with `1,000` repeated loses 11-14
+observations per page at leadings of 11 to 14 pt. In the corpus, `Casey_1954`
+loses `61,511.92` and two rows reading `Stock option`.
+
+The intent is sound and stays — C4 exists because `auto`'s partitioned pass
+really does emit the same line twice, and that duplicate sits essentially on top
+of its twin. The threshold is what is wrong.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED
@@ -1410,12 +1450,18 @@ is still refused, not rendered" holds the guard to its job.
 
 Two things measured while fixing it, both worth keeping:
 
-- **An absurd `MediaBox` is not a route to the same trap.** `saturation` and
-  `fullBox` also size buffers from the page box with an unguarded `Int(_:)`, but
-  CoreGraphics refuses to open a document with `MediaBox [0 0 1e300 1e300]` at
-  all — `PDFDocument(url:)` returns nil and `flatten` throws `unreadable`. The
-  check is in the suite as a boundary, not as a regression guard: it passed
-  before this fix too.
+- ~~**An absurd `MediaBox` is not a route to the same trap.**~~ **This was
+  wrong, and R29 is the defect it missed.** The claim rested on one fixture,
+  `MediaBox [0 0 1e300 1e300]`, which `PDFDocument(url:)` does return nil for —
+  but *because `1e300` is not valid PDF real syntax*, not because of its
+  magnitude. The measurement tested the parser, not the guard. A plain-integer
+  box is legal PDF and parses fine: `[0 0 100000 100000]`, `[0 0 15000000
+  15000000]` and even `[0 0 1000000000000 1000000000000]` all open with a live
+  `pageRef` and `bounds(for: .mediaBox)` reporting the declared size verbatim.
+  `saturation` then sizes its own buffer from that raw box and traps. Recorded
+  here rather than silently deleted: this is the fifth entry in this register to
+  turn out wrong as written, and the failure mode was believing a single
+  negative fixture.
 - **The limit is now exact.** The old comparison floor-divided by a million
   first, so a page of 400,999,999 px counted as 400 MP and was allowed. It is
   now compared against `400 × 1_000_000` directly. The corpus's largest page is
@@ -1589,6 +1635,65 @@ and after this change no wrapped image can land on an intermediate's path.
   The staging asymmetry is real, is recorded in ARCHITECTURE.md, and is not a
   defect on the evidence available: a successful re-run replacing the previous
   output is what `publish` does on the searchable path too.
+
+### R29 · `saturation` allocates from the raw page box, outside every guard R24 added — OPEN
+*(2026-08-09 second review; R24's own blind spot, and R24's disproof of it was wrong)*
+
+`Sources/Flattener.swift:725`. R24 made `flatten`'s render sizing safe by
+deciding in Double and refusing past 400 MP. That guard measures the **rendered**
+size — `box x dpi/72` — not the page box. `Flattener.saturation` independently
+re-derives its own buffer from the raw box at a fixed 40 DPI:
+
+```swift
+let w = max(Int(box.width * scale), 1), h = max(Int(box.height * scale), 1)
+var buffer = [UInt8](repeating: 255, count: w * h * 4)      // no bound at all
+```
+
+The bypass is `rebuildDPI`: it returns the largest image's implied DPI whenever
+that image is at least `minimumScanPixelWidth` (600 px), so a huge box carrying
+a small image yields a *tiny* scale, the render is small, and R24's guard passes
+— and then `saturation` sizes off the unscaled box.
+
+Confirmed by running the repo's own `Flattener` unmodified against hand-built
+files:
+
+- `MediaBox [0 0 100000 100000]` with one 700x700 image: `largestImage` reports
+  700 px, `rebuildDPI` returns 0.504, the render is 700x700 and clears the 400 MP
+  guard — then peak RSS hits **274 MB** for a 490 KB page, which is the
+  8000x8000x4 saturation buffer.
+- `MediaBox [0 0 1000000000000 1000000000000]`: **exit 133, SIGTRAP**, and under
+  lldb the stop is `frame #0 Flattener.saturation(of:)` — the `Int` overflow of
+  `w * h * 4`. Uncatchable, so it takes the whole batch, which is verbatim the
+  harm R24's own comment says the guard exists to prevent.
+
+Reached only on the `.auto` route (`mode == .auto` gates `isPicture`), which is
+the shipped default. **The R24 check never exercises it**: `--probe-hostile-page`
+calls `flatten(..., mode: .blackAndWhite)`, so `saturation` is skipped and the
+"absurd MediaBox" case has been passing without running the code it names.
+
+### R30 · `askLoginShell`'s three-second bound is on the wall clock — OPEN
+*(2026-08-09 second review; introduced by U18, against advice written in the same file)*
+
+`Sources/Runner.swift:113`. U18's new poll loop bounds itself with
+`Date().addingTimeInterval(3)` and `deadline.timeIntervalSinceNow`. Three hundred
+lines below, `Runner.wait(for:upTo:)` uses `DispatchTime.now()`, and its doc
+comment states the rule being broken here in as many words:
+
+> Monotonic, not `Date()`. A wall clock goes backwards and forwards — an NTP
+> step, or a laptop waking from sleep — and either direction is wrong here: a
+> jump forward abandons a perfectly healthy child on its next iteration, and a
+> jump back extends a wait that is supposed to be bounded.
+
+Both halves apply, and the same function uses the monotonic form eight lines
+later. A forward step breaks the loop with `sawEOF == false`, so a healthy shell
+is killed and `locateTool` **memoises the absence for the session** — every later
+`resolveBinary`, `JBIG2.encoder` and `JBIG2.merger` returns nil without
+re-probing, silently downgrading every searchable run to the Flate route. A
+backward step extends the bound that exists to keep the main thread responsive.
+
+Low, and honestly so: the exposure window is the ~90 ms the call takes (measured
+0.095 s for mac-ocr, 0.105 s for `ls`). It is a one-line defect in a file that
+already documents the correct answer.
 
 ---
 
@@ -2018,6 +2123,34 @@ property is stated without the clock instead: *when the call returns, the list i
 still empty*. No blocking implementation satisfies that at any speed. With the
 blocking version restored it fails with `4000 files already listed`.
 
+### U21 · `isCommitted` is cleared before the digital-text alert, so an in-flight import lands in a frozen batch — OPEN
+*(2026-08-09 second review; U19's flag and U20's async import, interacting)*
+
+`Sources/Model.swift:636`. `start()` freezes `let candidates = files`, runs the
+pre-flight, then sets `isPreflighting = false` **before** calling
+`askAboutDigitalText`, which puts up a modal `NSAlert`. For the whole time that
+alert is on screen, `isRunning` is false and `isPreflighting` is false, so
+`isCommitted` is false — and U20's `add(_:then:)` completion, whose only defence
+is `guard !self.isCommitted`, happily appends to a batch that was decided before
+the alert appeared.
+
+The load-bearing assumption was checked rather than assumed: main-queue work
+*does* run behind a modal alert. `NSModalPanelRunLoopMode` is in the main run
+loop's mode set, a `DispatchQueue.main.async` block fires inside
+`CFRunLoopRunInMode(.modalPanel)`, and — the real test — an `asyncAfter` block
+scheduled before `runModal()` ran while the alert was up and dismissed it with
+`NSApp.abortModal()`.
+
+So: drop a 300-file folder, press Start, answer the alert, and the run processes
+the one frozen file while the list shows 301. `finishUp` logs
+**"Done — 1 of 1 succeeded"** over 301 rows with nothing on disk for 300 of them.
+That is U1 for the third time, and the second time this evening.
+
+`isImporting` was published by U20 precisely so the UI could know an import is in
+flight, and **nothing reads it** — `grep -rn isImporting Sources Tests Tools`
+returns the declaration, two writes and two test assertions. `canStart` does not
+mention it, so Start is available while a folder is still being walked.
+
 ---
 
 ## The corpus itself
@@ -2256,6 +2389,38 @@ found a new defect, which is worth recording as plainly as a defect would be:
   text, and is thresholded to blotches — 99% of one real page was lost that way.
   The fixture is a saturated yellow figure with paler detail inside it, and the
   assertion is that the router sends it to JPEG rather than to 1 bit.
+
+### T4 · Three checks written for 1.2.0 that cannot fail — OPEN
+*(2026-08-09 second review. Three more of these, in one evening, after the round that added them was watching for exactly this.)*
+
+Each was written to guard a 1.2.0 fix, each passes, and none of them can go red.
+
+- **`Tests/main.swift:4448` — U18's "a real shell still answers promptly".** It
+  times `Runner.locateTool("mac-ocr")`, but `locateTool` checks
+  `/opt/homebrew/bin/` first and mac-ocr is there, so `askLoginShell` is never
+  entered and the check times three `stat` calls. The other two checks in that
+  block both drive the *failure* path via a name that does not exist. **Nothing
+  in 418 checks reaches a successful login-shell lookup**, so the read
+  accumulation and `sawEOF` latching that U18 newly wrote have no coverage at
+  all — for exactly the population U18 was written for, whose mac-ocr is *not* in
+  those three prefixes.
+- **`Tests/main.swift:1981` — U20's "…on the main thread".** It evaluates
+  `Thread.isMainThread` in the suite's own top-level scope, not inside the
+  completion. `check` takes a plain `Bool`, so this is true before the completion
+  runs, after it runs, and if it never runs. Deliver the completion on a global
+  queue and it still passes.
+- **`Tests/main.swift:1987` — U20's "the completion really did land later".** It
+  compares two `Date()` samples taken in program order with three `check()` calls
+  between them. `total > returnedAfter` is arithmetic, not evidence; a fully
+  synchronous implementation satisfies it.
+
+The register already carried three of these (T1's fixture, the crop-box test) and
+round one added three more that had to be rewritten before they bit (R25, U20's
+timing bound, C20's probe twice). The pattern is now unmistakable enough to name:
+**a check written after the fix, and never watched failing, tends to assert
+something adjacent to the property rather than the property.** The two U20
+entries here were both written in the same sitting as a third that *is*
+discriminating, so the discipline was applied unevenly within one block.
 
 ### H1 · Four pieces of housekeeping — FIXED
 - **`ocrAllPages` and `strategy` deleted.** Flags of mac-ocr's `searchable-pdf`
