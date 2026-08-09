@@ -23,7 +23,15 @@ if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--probe-hostil
     let out = url.deletingLastPathComponent().appendingPathComponent("probe-out.pdf")
     // Must throw a Failure, not trap. Either outcome is a clean exit; the point
     // is that we reach this line at all.
-    do { _ = try Flattener.flatten(url, to: out, mode: .blackAndWhite) } catch {}
+    //
+    // BOTH modes. This ran .blackAndWhite only, and `isPicture` — and so
+    // `saturation`, which sizes its own buffer from the raw page box — is gated
+    // on `mode == .auto` at Flattener.swift:456. So "an absurd MediaBox does not
+    // kill the process" passed without ever executing the code it named. .auto
+    // is the shipped default (R29).
+    for mode in [Flattener.Mode.auto, .blackAndWhite] {
+        do { _ = try Flattener.flatten(url, to: out, mode: mode) } catch {}
+    }
     exit(0)
 }
 
@@ -4189,13 +4197,59 @@ do {
           probeSurvives(hostilePDF(named: "negative.pdf",
                                    width: "-4000000000", height: "8")))
 
-    // Same class, different input: `saturation` and `fullBox` size their buffers
-    // from the page box rather than from a declared image, so a MediaBox the
-    // file invented reaches the same unguarded `Int(_:)`.
-    check("an absurd MediaBox does not kill the process either",
-          probeSurvives(hostilePDF(named: "hugebox.pdf", width: "8", height: "8",
-                                   mediaBox: "0 0 1e300 1e300")),
-          "saturation/flatten size buffers from the page box")
+    // R29. The original check here used `1e300`, and PDFDocument does reject
+    // that — but because `1e300` is not valid PDF real syntax, not because of
+    // its magnitude. It tested the parser. A plain-integer box is legal PDF and
+    // opens fine, reporting its declared size verbatim, which is why the
+    // fixtures below are integers.
+    check("an unparseable MediaBox is still refused by CoreGraphics",
+          PDFDocument(url: hostilePDF(named: "hugebox.pdf", width: "8", height: "8",
+                                      mediaBox: "0 0 1e300 1e300")) == nil,
+          "the 1e300 fixture is a parser test, not a magnitude test")
+
+    // The bypass: a huge box carrying a *small* image. largestImage reports 700
+    // px, rebuildDPI trusts it, the render is 700x700 and clears the 400 MP
+    // guard — and then saturation sizes off the unscaled box.
+    let bigBox = hostilePDF(named: "bigbox.pdf", width: "700", height: "700",
+                            mediaBox: "0 0 100000 100000")
+    check("a plain-integer huge MediaBox really does open",
+          PDFDocument(url: bigBox)?.page(at: 0)
+              .map { Int($0.bounds(for: .mediaBox).width) } == 100000,
+          "if this stops opening, the two checks below stop meaning anything")
+    check("…and does not exhaust memory in the picture-routing thumbnail",
+          probeSurvives(bigBox),
+          "saturation sized 8000x8000x4 from the raw box")
+
+    // That probe alone cannot fail on this machine — 8000x8000x4 is 256 MB,
+    // which a Mac survives. Assert the bound directly, where it is checkable.
+    let huge = Flattener.thumbnailSize(for: CGRect(x: 0, y: 0,
+                                                   width: 100_000, height: 100_000))
+    check("the routing thumbnail is bounded on a huge page",
+          (huge?.width ?? .max) <= Flattener.maximumThumbnailEdge
+              && (huge?.height ?? .max) <= Flattener.maximumThumbnailEdge,
+          "got \(huge?.width ?? -1)x\(huge?.height ?? -1)")
+    check("…and its buffer therefore cannot overflow Int",
+          (huge?.width ?? .max) * (huge?.height ?? .max) * 4 > 0)
+
+    // A real page must be untouched by the bound: Letter at 40 DPI is 340x440.
+    let letter = Flattener.thumbnailSize(for: CGRect(x: 0, y: 0, width: 612, height: 792))
+    check("a Letter page still gets its 40 DPI thumbnail",
+          letter?.width == 340 && letter?.height == 440,
+          "got \(letter?.width ?? -1)x\(letter?.height ?? -1), wanted 340x440")
+    // The largest sheet in the corpus is nowhere near the cap either.
+    let eSize = Flattener.thumbnailSize(for: CGRect(x: 0, y: 0, width: 33 * 72, height: 44 * 72))
+    check("…as does a 33x44in E-size sheet",
+          eSize?.width == 1320 && eSize?.height == 1760,
+          "got \(eSize?.width ?? -1)x\(eSize?.height ?? -1)")
+
+    check("a degenerate box yields no thumbnail rather than a bad one",
+          Flattener.thumbnailSize(for: CGRect(x: 0, y: 0, width: 0, height: 100)) == nil
+              && Flattener.thumbnailSize(for: CGRect(x: 0, y: 0, width: CGFloat.nan, height: 10)) == nil)
+
+    check("a MediaBox whose thumbnail would overflow Int does not trap",
+          probeSurvives(hostilePDF(named: "trapbox.pdf", width: "700", height: "700",
+                                   mediaBox: "0 0 1000000000000 1000000000000")),
+          "w * h * 4 in saturation")
 
     // And the guard still does its job for a page that is merely enormous.
     let big = hostilePDF(named: "big.pdf", width: "200000", height: "200000")

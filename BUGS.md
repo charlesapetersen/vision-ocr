@@ -1636,7 +1636,7 @@ and after this change no wrapped image can land on an intermediate's path.
   defect on the evidence available: a successful re-run replacing the previous
   output is what `publish` does on the searchable path too.
 
-### R29 · `saturation` allocates from the raw page box, outside every guard R24 added — OPEN
+### R29 · `saturation` allocates from the raw page box, outside every guard R24 added — FIXED
 *(2026-08-09 second review; R24's own blind spot, and R24's disproof of it was wrong)*
 
 `Sources/Flattener.swift:725`. R24 made `flatten`'s render sizing safe by
@@ -1670,6 +1670,34 @@ Reached only on the `.auto` route (`mode == .auto` gates `isPicture`), which is
 the shipped default. **The R24 check never exercises it**: `--probe-hostile-page`
 calls `flatten(..., mode: .blackAndWhite)`, so `saturation` is skipped and the
 "absurd MediaBox" case has been passing without running the code it names.
+
+**Fix:** the sizing moves into `thumbnailSize(for:)`, which refuses a
+non-finite or empty box and caps the longest edge at `maximumThumbnailEdge`
+(4,000 px, so the buffer cannot exceed 64 MB). A page would have to be 100
+inches on a side at 40 DPI to be resized by that — past the 200-inch ceiling
+PDF ≤1.5 puts on a page box at all — so no real document is affected. The probe
+now runs **both** modes, so `.auto` and therefore `saturation` is actually
+executed.
+
+**How the checks divide, stated plainly because T4 is about exactly this.**
+Reintroducing the bug makes one of the five fail, not all five, and that is
+expected rather than a weakness:
+
+- `a MediaBox whose thumbnail would overflow Int does not trap` is the
+  discriminating one. With the raw sizing back it fails; the child dies on
+  SIGTRAP inside `saturation`.
+- `the routing thumbnail is bounded on a huge page`, the Letter and E-size
+  checks and the degenerate-box check test `thumbnailSize`'s contract. They keep
+  passing when the bug is reintroduced, because reintroducing it *bypasses* the
+  helper rather than breaking it. They are there so the bound cannot be widened
+  or the no-magnify rule broken without a red check.
+- `…does not exhaust memory in the picture-routing thumbnail` passes either way
+  on a machine that can absorb a 256 MB allocation. It is a boundary, not a
+  guard, and is labelled as one in the source.
+
+The link between the two — that `saturation` uses the helper — is carried by
+the trap check alone. That is the honest description; a check asserting the call
+directly would need the buffer size observable from outside.
 
 ### R30 · `askLoginShell`'s three-second bound is on the wall clock — OPEN
 *(2026-08-09 second review; introduced by U18, against advice written in the same file)*

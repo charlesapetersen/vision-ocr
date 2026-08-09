@@ -714,14 +714,42 @@ enum Flattener {
         return Double(mid) / Double(grey.count)
     }
 
+    /// The longest edge the routing thumbnail may have.
+    ///
+    /// At 40 DPI a page would have to be **100 inches** on a side to reach this,
+    /// which is past the 200-inch ceiling PDF ≤1.5 imposes on a page box at all
+    /// and far past any archival sheet — so no real document is resized by it.
+    /// What it bounds is the unreal ones: 4,000 px caps the buffer at 64 MB (R29).
+    static let maximumThumbnailEdge = 4_000
+
+    /// Pixel size of the routing thumbnail for a page box, and the scale that
+    /// produces it. Nil when the box is not a usable rectangle.
+    ///
+    /// Separate from `saturation` so the bound can be asserted directly. R24
+    /// bounded `flatten`'s *render*, which is the box scaled by the page's own
+    /// DPI; this is the box scaled by a **fixed** 40 DPI, and the two diverge
+    /// exactly when a huge box carries a small image — `rebuildDPI` then returns
+    /// a tiny DPI, the render is small and passes R24's guard, and this one was
+    /// still sized off the raw box. At `[0 0 1000000000000 1000000000000]`,
+    /// `w * h * 4` overflowed `Int` and took the process down with SIGTRAP (R29).
+    static func thumbnailSize(for box: CGRect) -> (width: Int, height: Int, scale: CGFloat)? {
+        guard box.width.isFinite, box.height.isFinite,
+              box.width > 0, box.height > 0 else { return nil }
+        let longest = max(box.width, box.height)
+        // Never magnify: a small page keeps its 40 DPI thumbnail.
+        let scale: CGFloat = min(40.0 / 72.0, CGFloat(maximumThumbnailEdge) / longest)
+        let w = max(min(safeInt(box.width * scale), maximumThumbnailEdge), 1)
+        let h = max(min(safeInt(box.height * scale), maximumThumbnailEdge), 1)
+        return (w, h, scale)
+    }
+
     /// Mean saturation from a small RGB thumbnail. Cheap: the page is redrawn at
     /// about 40 DPI purely to ask whether there is colour on it.
     static func saturation(of page: PDFPage) -> Double {
         // The same area flatten rebuilds, so the routing signal describes the
         // page that actually gets written.
         let box = fullBox(of: page)
-        let scale = 40.0 / 72.0
-        let w = max(Int(box.width * scale), 1), h = max(Int(box.height * scale), 1)
+        guard let (w, h, scale) = thumbnailSize(for: box) else { return 0 }
         var buffer = [UInt8](repeating: 255, count: w * h * 4)
         let ok = buffer.withUnsafeMutableBytes { raw -> Bool in
             guard let ctx = CGContext(
