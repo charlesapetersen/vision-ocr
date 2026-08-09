@@ -36,7 +36,9 @@ struct ContentView: View {
         // the Dock icon, and "Open With". Info.plist has always advertised both.
         .onReceive(NotificationCenter.default.publisher(for: .visionOCROpenFiles)) { message in
             guard let urls = message.userInfo?["urls"] as? [URL], !urls.isEmpty else { return }
-            note(model.add(urls))
+            // Dock and "Open With" can hand over a folder as readily as a file,
+            // so this is the expanding form too (U20).
+            model.add(urls) { note($0) }
         }
         // "Not added — a run is in progress" describes a condition that ends.
         .onChange(of: model.isRunning) { running in
@@ -381,7 +383,9 @@ struct ContentView: View {
     private func load(_ providers: [NSItemProvider]) {
         resolveDroppedURLs(providers) { urls in
             guard !urls.isEmpty else { return }
-            note(model.add(urls))
+            // The expanding form: a dropped folder is walked off the main actor
+            // so the window keeps drawing while it happens (U20).
+            model.add(urls) { note($0) }
         }
     }
 
@@ -393,7 +397,8 @@ struct ContentView: View {
         panel.message = "Choose PDFs or images to OCR"
         panel.prompt = "Add"
         if panel.runModal() == .OK {
-            note(model.add(panel.urls))
+            // canChooseDirectories is true, so this can be a whole tree too.
+            model.add(panel.urls) { note($0) }
         }
     }
 

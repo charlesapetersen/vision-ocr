@@ -1868,7 +1868,7 @@ pre-flight is refused too` and `FAIL …and the list is unchanged — 2`.
 Note that "Start stays disabled" passes either way — `canStart` was the one site
 C17 *did* update, which is precisely why the rest went unnoticed.
 
-### U20 · Dropping a folder walks it recursively on the main actor — OPEN
+### U20 · Dropping a folder walks it recursively on the main actor — FIXED
 *(2026-08-09 review; the same class U5 and C17 already fixed elsewhere)*
 
 `Sources/Model.swift:96`. `filesInFolder` builds a `FileManager.enumerator` over
@@ -1895,6 +1895,24 @@ off the main actor for exactly this reason. The import path never got the same
 treatment. `Tests/main.swift:923-955` tests `collectInputFiles` for correctness
 only — unsupported types, dedupe, folder expansion, ordering, case — never on a
 large or slow tree.
+
+**Fix:** `add(_:then:)` does the expansion on a background queue and returns
+immediately; the completion lands on the main actor. All three ways in — the
+drop box, Add…, and files handed over by Finder — use it. The synchronous `add`
+stays for callers that already hold an expanded list, and for the tests.
+
+The dedupe deliberately happens *after* the hop, against `self.files` as it
+stands at that instant rather than against a snapshot taken before the walk, so
+two overlapping drops cannot each miss the other's files. `isCommitted` is
+re-checked there too: Start can have been pressed while the tree was being read.
+
+**The obvious test does not work, and the reason is worth recording.** A timing
+bound needs a tree slow enough to be slow on every machine, and 4,000 files walk
+in well under any threshold such a check could use — with the walk deliberately
+put back on the main thread, "returned in under 0.25 s" still passed. The
+property is stated without the clock instead: *when the call returns, the list is
+still empty*. No blocking implementation satisfies that at any speed. With the
+blocking version restored it fails with `4000 files already listed`.
 
 ---
 

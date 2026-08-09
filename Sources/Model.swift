@@ -421,6 +421,51 @@ final class OCRModel: ObservableObject {
         return .added(ignored: result.ignored)
     }
 
+    /// True while a drop or an Add… is being expanded off the main actor.
+    @Published var isImporting = false
+
+    /// The same as `add`, with the directory walk moved off the main actor.
+    ///
+    /// `add` is `@MainActor` and `filesInFolder` enumerates a whole subtree,
+    /// materialises every URL, filters it and then sorts with
+    /// `localizedStandardCompare` — the collated comparison. On a scanned-archive
+    /// folder of tens of thousands of files, or any folder on a mounted share
+    /// where each directory read is a round trip, that ran on the main thread
+    /// with the drop highlight still lit and nothing able to respond, including
+    /// Cancel. On a stalled mount it did not return at all (U20).
+    ///
+    /// The expansion happens on a background queue; the cheap part — deduplicating
+    /// against what is already listed — happens back on the main actor against
+    /// the *current* list rather than a snapshot, so two overlapping drops cannot
+    /// each miss the other's files.
+    ///
+    /// U5 and C17 moved the login-shell lookup and the digital-text scan off the
+    /// main thread for exactly this reason. The import path never got it.
+    func add(_ urls: [URL], then completion: @escaping (AddResult) -> Void) {
+        guard !isCommitted else { completion(.refusedRunInProgress); return }
+        isImporting = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            // No `existing:` here — this pass is only the expensive expansion.
+            let expanded = collectInputFiles(from: urls)
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    self.isImporting = false
+                    // Re-checked: Start can have been pressed while we walked.
+                    guard !self.isCommitted else {
+                        completion(.refusedRunInProgress)
+                        return
+                    }
+                    // Cheap now — nothing left to expand, so this is a dedupe
+                    // against the list as it stands at this instant.
+                    let result = collectInputFiles(from: expanded.files,
+                                                   existing: self.files)
+                    self.files.append(contentsOf: result.files)
+                    completion(.added(ignored: expanded.ignored + result.ignored))
+                }
+            }
+        }
+    }
+
     func remove(_ url: URL) { files.removeAll { $0 == url } }
 
     /// The whole log as text, for the Copy button.

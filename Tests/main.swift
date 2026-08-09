@@ -1912,6 +1912,75 @@ do {
     resetPrefs()
 }
 
+print("\nimporting a folder does not block the main actor")
+
+do {
+    // U20. add(_:) is @MainActor and filesInFolder enumerates a whole subtree,
+    // materialises every URL, filters and then sorts with localizedStandardCompare.
+    // On a big tree — or any folder on a stalled mount — that ran on the main
+    // thread with the drop highlight lit and nothing able to respond.
+    resetPrefs()
+    let root = tmp.appendingPathComponent("bigtree-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: root) }
+    // Wide and deep enough to take real time, without writing real PDFs: the
+    // walk is what is being measured, not the reading.
+    let leafCount = 4_000
+    for i in 0..<20 {
+        let sub = root.appendingPathComponent("dir\(String(format: "%02d", i))")
+        try! FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
+        for j in 0..<(leafCount / 20) {
+            FileManager.default.createFile(
+                atPath: sub.appendingPathComponent("scan\(j).pdf").path, contents: Data())
+        }
+    }
+
+    let m = MainActor.assumeIsolated { OCRModel() }
+    var result: OCRModel.AddResult?
+    let started = Date()
+    MainActor.assumeIsolated { m.add([root]) { result = $0 } }
+    let returnedAfter = Date().timeIntervalSince(started)
+
+    // The whole property, stated without reference to the clock: when the call
+    // comes back, the work has not been done yet. A timing bound would need a
+    // tree big enough to be slow on every machine — 4,000 files walk in well
+    // under the threshold any such check could use — and would still be a
+    // guess. "The list is not populated yet" cannot be satisfied by a blocking
+    // implementation at any speed.
+    check("the walk has not happened by the time the call returns",
+          MainActor.assumeIsolated { m.files.isEmpty },
+          "\(MainActor.assumeIsolated { m.files.count }) files already listed")
+    check("…and an import is flagged as in flight",
+          MainActor.assumeIsolated { m.isImporting })
+    check("…and it came back promptly",
+          returnedAfter < 0.25, String(format: "returned in %.3fs", returnedAfter))
+
+    // Pump the main runloop until the completion lands, the way an app would.
+    while result == nil, Date().timeIntervalSince(started) < 60 {
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+    }
+    let total = Date().timeIntervalSince(started)
+
+    check("the completion arrives", result != nil,
+          String(format: "waited %.2fs", total))
+    check("…on the main thread", Thread.isMainThread)
+    check("…with every file in the tree",
+          MainActor.assumeIsolated { m.files.count } == leafCount,
+          "\(MainActor.assumeIsolated { m.files.count }) of \(leafCount)")
+    check("…and the importing flag is cleared",
+          MainActor.assumeIsolated { !m.isImporting })
+    check("the completion really did land later than the call returned",
+          total > returnedAfter,
+          String(format: "returned in %.3fs, finished in %.2fs", returnedAfter, total))
+
+    // Same answer as the blocking form, which is the thing that must not change.
+    let n = MainActor.assumeIsolated { OCRModel() }
+    _ = MainActor.assumeIsolated { n.add([root]) }
+    check("the expanding form agrees with the synchronous one",
+          MainActor.assumeIsolated { n.files.count } == leafCount,
+          "\(MainActor.assumeIsolated { n.files.count })")
+    resetPrefs()
+}
+
 // MARK: - The progress bar does not invent a number
 
 // Extract Text is the default mode and has no intra-file progress to report —
