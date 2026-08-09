@@ -713,7 +713,7 @@ The existing guard cannot see it: "adjacent fragments of one line keep their
 space" builds every fragment through `func frag` at a fixed `y: 0.30` and
 `height: 0.022`, so every pair has `gap == 0` and `headroom` never participates.
 
-### C21 · A half-specified outline destination on a quarter-turned page keeps the fabricated coordinate — OPEN
+### C21 · A half-specified outline destination on a quarter-turned page keeps the fabricated coordinate — FIXED
 *(2026-08-09 review; confirmed by tracing the transform both ways)*
 
 `Sources/SearchableWriter.swift:397` and the mirror at `:494`. When PDFKit reports
@@ -742,6 +742,32 @@ into it. The three `mapToOutput` checks at `Tests/main.swift:1934-1962` all pass
 fully-specified points, and the 90-degree one asserts only that the result stays
 on the page; "half-specified destination keeps the half it has" at `:2062` hands
 `JBIG2.assemble` a hand-built `OutlineItem` and never reaches `mapToOutput`.
+
+**Fix:** `mapSingleAxis` asks the transform which output axis the specified
+source axis actually drives — `x' = a·x + c·y + tx`, `y' = b·x + d·y + ty`, so a
+source y contributes `c` to x' and `d` to y' — and keeps that one. The other
+member stays unspecified rather than carrying a value derived from a substituted
+zero. Under a quarter turn a `/FitH` becomes a horizontal destination, which is
+what the geometry means. Both routes use it: `readOutline` and `copyOutline`.
+
+Reproduced by putting the old rule back, and the numbers are exactly what the
+diagnosis predicted:
+
+```
+FAIL /FitH on a 90-rotated page  — kept top=612.0, the real coordinate is x=700
+FAIL /FitH on a 270-rotated page — kept top=0.0,   the real coordinate is x=92
+```
+
+`top=0.0` is `/XYZ null 0 null`: the foot of the page, which is the symptom R19
+fixed for the `/XYZ 0 0` case, arriving again by a different route.
+
+Nine checks, including two that hold the unrotated behaviour still — a `/FitH`
+stays vertical and lands within 2 pt of where it did, and a `/FitV` stays
+horizontal — because the risk in a change like this is fixing the quarter turns
+by breaking the 90% of pages that are not turned at all.
+
+No text-layer geometry was touched, so invariant 3's four properties are not in
+play; the text-layer checks pass unchanged.
 
 ## Robustness and correctness of reporting
 

@@ -394,10 +394,17 @@ enum SearchableWriter {
                     // y=700 falls off the top of a 612-tall box entirely. Copied
                     // verbatim, the bookmark lands hundreds of points from its
                     // heading and no guard fires, because nothing is out of range.
-                    let moved = mapToOutput(CGPoint(x: hasX ? p.x : 0,
-                                                    y: hasY ? p.y : 0), on: page)
-                    if hasX { left = moved.x }
-                    if hasY { top = moved.y }
+                    if hasX && hasY {
+                        let moved = mapToOutput(p, on: page)
+                        left = moved.x
+                        top = moved.y
+                    } else {
+                        // Only one member is real. Keep the output axis it
+                        // actually lands on, which is not its own under a
+                        // quarter turn (C21).
+                        (left, top) = mapSingleAxis(hasX ? p.x : p.y,
+                                                    isVertical: !hasX, on: page)
+                    }
                 }
             }
             // Keep entries that point nowhere. Real outlines are full of them —
@@ -444,6 +451,41 @@ enum SearchableWriter {
         // silently ignore it, which looks identical to a bookmark that works.
         return CGPoint(x: min(max(moved.x, 0), box.width),
                        y: min(max(moved.y, 0), box.height))
+    }
+
+    /// Where a *single* specified destination coordinate lands, when the other
+    /// member is unspecified.
+    ///
+    /// PDFKit collapses `/FitH 700` into a point whose x is
+    /// `kPDFDestinationUnspecifiedValue`, and R19 measured 276 of those against
+    /// 80 fully-specified across the corpus — so this is the common case, not the
+    /// exotic one. Substituting 0 for the missing member and keeping `moved.y` is
+    /// correct only while the transform is axis-aligned. At `/Rotate 90` and
+    /// `/Rotate 270` the axes swap: `moved.y` becomes a function of the
+    /// substituted zero, and the one coordinate the destination actually carried
+    /// lands in `moved.x`, where it was being discarded. A `/FitH` on a
+    /// 270-rotated plate came out as `/XYZ null 0 null` — the foot of the page,
+    /// which is the symptom R19 fixed for the `/XYZ 0 0` case (C21).
+    ///
+    /// Returns whichever output axis the source axis really drives; the other is
+    /// nil and stays unspecified. Under a quarter turn a `/FitH` becomes a
+    /// horizontal destination, which is what the geometry means.
+    static func mapSingleAxis(_ value: CGFloat, isVertical: Bool,
+                              on page: PDFPage) -> (left: CGFloat?, top: CGFloat?) {
+        guard let cgPage = page.pageRef else {
+            return isVertical ? (nil, value) : (value, nil)
+        }
+        let box = Flattener.fullBox(of: page)
+        let t = cgPage.getDrawingTransform(
+            .mediaBox, rect: CGRect(origin: .zero, size: box.size),
+            rotate: 0, preserveAspectRatio: true)
+        // x' = a·x + c·y + tx,  y' = b·x + d·y + ty. So a source y contributes
+        // c to x' and d to y'; a source x contributes a and b.
+        let towardsX = isVertical ? t.c : t.a
+        let towardsY = isVertical ? t.d : t.b
+        let moved = mapToOutput(CGPoint(x: isVertical ? 0 : value,
+                                        y: isVertical ? value : 0), on: page)
+        return abs(towardsY) >= abs(towardsX) ? (nil, moved.y) : (moved.x, nil)
     }
 
     /// Copies the source document's outline onto a finished file, in place.
@@ -502,11 +544,20 @@ enum SearchableWriter {
                 let hasX = p.x.isFinite && p.x != kPDFDestinationUnspecifiedValue
                 let hasY = p.y.isFinite && p.y != kPDFDestinationUnspecifiedValue
                 if hasX || hasY {
-                    let moved = mapToOutput(CGPoint(x: hasX ? p.x : 0,
-                                                    y: hasY ? p.y : 0), on: page)
+                    let placed: (left: CGFloat?, top: CGFloat?)
+                    if hasX && hasY {
+                        let moved = mapToOutput(p, on: page)
+                        placed = (moved.x, moved.y)
+                    } else {
+                        placed = mapSingleAxis(hasX ? p.x : p.y,
+                                               isVertical: !hasX, on: page)
+                    }
+                    // The member this axis does not drive stays unspecified,
+                    // rather than carrying a value derived from a substituted 0.
                     copy.destination = PDFDestination(
                         page: target,
-                        at: CGPoint(x: hasX ? moved.x : p.x, y: hasY ? moved.y : p.y))
+                        at: CGPoint(x: placed.left ?? CGFloat(kPDFDestinationUnspecifiedValue),
+                                    y: placed.top ?? CGFloat(kPDFDestinationUnspecifiedValue)))
                 } else {
                     copy.destination = PDFDestination(page: target, at: p)
                 }

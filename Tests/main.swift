@@ -2089,6 +2089,51 @@ do {
               "\(moved), wanted about (540, 92)")
     }
 
+    // C21. A /FitH carries only y, and PDFKit reports the other member as
+    // kPDFDestinationUnspecifiedValue. R19 counted 276 of those against 80
+    // fully-specified across the corpus, so this is the common shape. The old
+    // code substituted 0 for the missing member and kept `moved.y` — sound while
+    // the transform is axis-aligned, wrong at 90 and 270 where the axes swap:
+    // `moved.y` becomes a function of the substituted zero and the real
+    // coordinate lands in `moved.x` and was thrown away.
+    for rotation in [90, 270] {
+        guard let p = page(dir.appendingPathComponent("fith\(rotation).pdf"),
+                           box: CGRect(x: 0, y: 0, width: 612, height: 792),
+                           rotation: rotation) else { continue }
+        let placed = SearchableWriter.mapSingleAxis(700, isVertical: true, on: p)
+        let full = SearchableWriter.mapToOutput(CGPoint(x: 0, y: 700), on: p)
+
+        check("a /FitH on a \(rotation)-rotated page keeps a horizontal destination",
+              placed.left != nil && placed.top == nil,
+              "left=\(String(describing: placed.left)) top=\(String(describing: placed.top))")
+        check("…carrying the coordinate the page actually turned it into",
+              placed.left.map { abs($0 - full.x) < 0.5 } ?? false,
+              "\(String(describing: placed.left)) against \(full.x)")
+        // The old behaviour, stated so a regression is unmistakable: it kept
+        // moved.y, which at 270 is the substituted zero — the foot of the page.
+        check("…and not the value derived from the substituted zero",
+              placed.top == nil,
+              "kept top=\(String(describing: placed.top)), which is /XYZ null 0 null again")
+    }
+
+    // Unrotated, the same call must still behave exactly as before.
+    if let p = page(dir.appendingPathComponent("fith0.pdf"),
+                    box: CGRect(x: 0, y: 0, width: 612, height: 792), rotation: 0) {
+        let placed = SearchableWriter.mapSingleAxis(700, isVertical: true, on: p)
+        check("a /FitH on an unrotated page is still vertical",
+              placed.top != nil && placed.left == nil,
+              "left=\(String(describing: placed.left)) top=\(String(describing: placed.top))")
+        check("…and lands where it did before",
+              placed.top.map { abs($0 - 700) < 2 } ?? false,
+              String(describing: placed.top))
+
+        // And a /FitV — only x — stays horizontal on an unrotated page.
+        let vertical = SearchableWriter.mapSingleAxis(72, isVertical: false, on: p)
+        check("a /FitV on an unrotated page is still horizontal",
+              vertical.left != nil && vertical.top == nil,
+              "left=\(String(describing: vertical.left))")
+    }
+
     // A media box with a non-zero origin is republished at the origin.
     if let p = page(dir.appendingPathComponent("shift.pdf"),
                     box: CGRect(x: 100, y: 100, width: 612, height: 792), rotation: 0) {
