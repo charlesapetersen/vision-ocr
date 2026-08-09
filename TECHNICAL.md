@@ -81,17 +81,24 @@ The remaining poppler gap is its own gap heuristics on a handful of lines.
 
 ## Measured on real scans
 
-Over **84 scanned documents** from a personal Zotero library — 8 item types × 4
+Over **232 scanned documents** from a personal Zotero library — 8 item types × 4
 eras, every one verified to be an actual scan rather than a born-digital export:
 
 | | |
 |---|---|
-| process successfully | 84 / 84 |
-| line-start selectability | median 100% |
-| line-end selectability | median 100% (worst 91%) |
-| word retention | median 100% (worst 97%) |
+| process successfully | 232 / 232 |
+| line-start selectability | median 100% (mean 99.71, worst 91%) |
+| line-end selectability | median 100% (mean 99.55, worst 91%) |
+| word retention | median 100% (mean 99.76, worst 97%) |
 | text-layer offset | median 0.10, max 0.10 |
-| source line tightness | 1.33% of adjacent line pairs set closer than their boxes |
+| source line tightness | 2.00% of adjacent line pairs set closer than their boxes |
+
+The corpus was widened from 84 on 2026-08-09, and the reason is worth stating:
+the original draw was capped at attachments added in the previous five years,
+which is arbitrary, and it left the majority of the library ineligible. Removing
+the cap brought in 148 documents, 79% of them older than that window. **The
+figures did not move** — the new material scores within 0.05 of the old on every
+measure. See [CORPUS-2026-08-09.md](CORPUS-2026-08-09.md).
 
 The worst cases are 1920s–40s newspaper clippings and scanned typescript, which
 is what you would expect — and they were worse still (71% and 94%) until C18

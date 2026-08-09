@@ -1,12 +1,18 @@
 # Test corpus
 
-**84 documents, every one of them a scan**, sampled from the Zotero library and
+**232 documents, every one of them a scan**, sampled from the Zotero library and
 stratified into 32 buckets: 8 item types x 4 eras (pre-1960, 1960-1999, 2000+,
-undated), 3 per bucket where the library has them. 397 MB.
+undated), up to 6 per bucket where the library has them. 1.2 GB.
+
+Widened from 84 on 2026-08-09 by removing an arbitrary five-year recency bound
+on the draw; 79% of the new material predates it, reaching back to 2013. The
+figures did not move — see [../CORPUS-2026-08-09.md](../CORPUS-2026-08-09.md),
+which is the answer to "do these numbers describe the app or the sample".
 
 **Only scans.** `Tools/sample-zotero.py` classifies every candidate and keeps
-the ones whose pages are actually images of paper; building this corpus it
-rejected 275 born-digital PDFs, 23 shot by hand, and 2 with no page image at all.
+the ones whose pages are actually images of paper; the two draws behind this
+corpus rejected 704 born-digital PDFs, 63 shot by hand, and 6 with no page image
+at all.
 `manuscript` and `letter` are excluded as item types — in this library those are
 archival photographs and finding aids, which are Archive Processor's material.
 
@@ -18,11 +24,12 @@ is an easy problem. See BUGS.md D1 and ../CORPUS-2026-08-08.md.
 
 ## Where it currently stands
 
-84/84 process successfully · median 100% line-start and line-end selectability
+232/232 process successfully · median 100% line-start and line-end selectability
 (worst 91% and 91%) · median 100% word retention (worst 97%) · median 0.10
-text-layer offset, max 0.10 · source line tightness 1.33% (74 of 5,564 adjacent
-pairs set closer than their boxes, in 23 documents — a property of the material,
-not of the text layer this app writes).
+text-layer offset, max 0.10 · source line tightness 2.00% (295 of 14,782 adjacent
+pairs set closer than their boxes — a property of the material, not of the text
+layer this app writes, and higher than before because the wider draw reaches
+further back into tightly-set printing).
 
 `manifest.tsv` lists type, era, local file, the Zotero item key, and the measured
 result for each document. The key, not the source path: the manifest is committed

@@ -1,85 +1,233 @@
 type	era	file	zotero_key	result	pages	line_starts	line_ends	offset	overlap	words	seconds
+book	mid	book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf	A5XTIXES	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/123	words=100%	5s
+book	mid	book/Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press.pdf	KYL3A8W2	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/73	words=100%	2s
+book	mid	book/Friedman_1962_Capitalism and freedom_University of Chicago Press.pdf	VZ2KA5DP	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/78	words=100%	2s
 book	mid	book/Gowan and Demos - 1964 - The education and guidance of the ablest.pdf	PPR4TAUH	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/50	words=100%	2s
 book	mid	book/Mintzberg - 1973 - The nature of managerial work.pdf	CHNYABXG	OK	3p	start=100%	end=100%	off=-0.10	overlap=14/80	words=100%	3s
-book	mid	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	6RNTFJJG	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/72	words=100%	5s
+book	mid	book/Morgan_1975_American Slavery, American Freedom_Norton.pdf	6RNTFJJG	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/72	words=100%	4s
+book	mid	book/Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press.pdf	NNDHUXB9	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/44	words=100%	4s
+book	mid	book/Noble_1977_America by design.pdf	PVQVY5X5	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/82	words=100%	3s
+book	mid	book/Shows and Burton - 1972 - Microeconomics.pdf	Y8E6CG5H	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/88	words=100%	2s
+book	new	book/Boltanski_2006_On justification_Princeton University Press.pdf	4FUSAX3Q	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/26	words=100%	4s
+book	new	book/Countryman - 2006 - Up south  civil rights and Black power in Philadelphia.pdf	XB8ZBCH7	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/86	words=100%	3s
+book	new	book/Himanen_2001_The hacker ethic and the spirit of the information age_Random House.pdf	N4WRPT8R	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/56	words=100%	2s
+book	new	book/Ibson_2006_Picturing men.pdf	MAPHZVS4	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/10	words=100%	1s
+book	new	book/Keyssar_2000_The Right to Vote_Basic Books.pdf	E9VRGM3A	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/54	words=100%	5s
 book	new	book/LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press.pdf	ID9VBZTV	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/24	words=100%	3s
+book	new	book/Mudge_2018_Leftism Reinvented_Harvard University Press.pdf	H5YMGATV	OK	3p	start=100%	end=100%	off=-0.10	overlap=8/79	words=100%	2s
 book	new	book/Westad_2005_The Global Cold War_Cambridge University Press.pdf	F7MIAN7V	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/43	words=100%	4s
 book	new	book/_2010_New Materialisms_Duke University Press.pdf	VU5CTF2C	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/2	words=100%	4s
-book	old	book/Casey_1954_1954 pay almanac,.pdf	PGYUSQFG	OK	3p	start=100%	end=98%	off=-0.10	overlap=0/130	words=99%	3s
+book	old	book/Berle_1940_New directions in the new world,_Harper.pdf	S2BIDC5C	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/93	words=100%	3s
+book	old	book/Casey_1954_1954 pay almanac,.pdf	PGYUSQFG	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/130	words=99%	3s
+book	old	book/Hayek_1978_The constitution of liberty_University of Chicago Press.pdf	Z9TNHCIT	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/87	words=100%	4s
+book	old	book/JAH Review.pdf	ZR2487QI	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/98	words=100%	4s
+book	old	book/Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press.pdf	UXVGVWQX	OK	3p	start=100%	end=100%	off=-0.10	overlap=20/58	words=99%	4s
+book	old	book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	H27ZNJIY	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/60	words=100%	3s
 book	old	book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	MFQM28CR	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/71	words=100%	3s
 book	old	book/Schumpeter_1955_Imperialism ; Social classes_World.pdf	ZPQRHR3N	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/82	words=100%	3s
-book	unk	book/Guilford_Psychometric Methods.pdf	DMJ8JGPP	OK	3p	start=100%	end=98%	off=-0.10	overlap=0/140	words=100%	3s
+book	old	book/UN-OCred.pdf	F9CZH3IY	OK	3p	start=100%	end=100%	off=-0.10	overlap=2/38	words=100%	2s
+book	unk	book/Guilford_Psychometric Methods.pdf	DMJ8JGPP	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/140	words=100%	3s
+bookSection	mid	bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	K8FB4BND	OK	3p	start=100%	end=100%	off=-0.10	overlap=20/31	words=100%	4s
+bookSection	mid	bookSection/Findlay_1992_Stanford Industrial Park_University of California Press.pdf	6SHF68DT	OK	3p	start=99%	end=98%	off=+0.00	overlap=0/90	words=99%	3s
+bookSection	mid	bookSection/Gregory-Huddleston_1994_Culture conflict with growth_University Press of America.pdf	3PWF7WXQ	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/48	words=100%	4s
 bookSection	mid	bookSection/Hobsbawm and Ranger - 1992 - The Invention of tradition.pdf	GC8SBK7S	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/115	words=100%	3s
+bookSection	mid	bookSection/Kristol_1962_SOCIAL SCIENCES AND LAW_.pdf	I298LFX8	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/19	words=100%	4s
 bookSection	mid	bookSection/National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1.pdf	42YAYKMS	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/93	words=100%	3s
+bookSection	mid	bookSection/Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_.pdf	7QB5SY85	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/113	words=100%	3s
 bookSection	mid	bookSection/Schaar, handwritten notes.pdf	FLNWUTPG	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/24	words=99%	4s
-bookSection	new	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	NHH6CIA8	OK	3p	start=100%	end=98%	off=-0.10	overlap=0/89	words=100%	3s
+bookSection	mid	bookSection/Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds.pdf	ZMXPD97K	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/105	words=100%	3s
+bookSection	new	bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	NHH6CIA8	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/89	words=100%	3s
 bookSection	new	bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	FQC4BJIC	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/106	words=100%	3s
 bookSection	new	bookSection/Falasca-Zamponi_2004_The »Culture« of Personality.pdf	EMQV5VUK	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/88	words=100%	3s
+bookSection	new	bookSection/Geiger et al_2018_American higher education in the postwar era, 1945-1970.pdf	FRG238SY	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/91	words=100%	3s
+bookSection	new	bookSection/Gilroy - 2000 - Getting In.pdf	LRWYLPL2	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/77	words=100%	2s
+bookSection	new	bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	KNV8EFQ2	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/12	words=100%	4s
+bookSection	new	bookSection/Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press.pdf	69A4I36A	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/38	words=100%	4s
+bookSection	new	bookSection/Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49).pdf	9NPEIN5Q	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/98	words=100%	3s
+bookSection	new	bookSection/Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press.pdf	3JE58BTZ	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/31	words=100%	4s
 bookSection	old	bookSection/Canby_1915_Current Literature and the Colleges_Harper & Brothers.pdf	NT6IVBA2	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/77	words=100%	2s
+bookSection	old	bookSection/Canby_1929_Comment on Several Subjects.pdf	55RBFQCN	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/40	words=100%	2s
+bookSection	old	bookSection/Kazin_1955_The Writer and the .pdf	SC37ZNRI	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/67	words=100%	2s
+bookSection	old	bookSection/Lloyd-Jones_Smith_1938_Selection and Admissions.pdf	GYEFBP9D	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/85	words=100%	2s
+bookSection	old	bookSection/Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co.pdf	RXNWRNPM	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/112	words=100%	3s
 bookSection	old	bookSection/Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press.pdf	WNS6M728	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/78	words=99%	3s
+bookSection	old	bookSection/O'Brien_1955_The Area of Admissions in Higher Education_.pdf	P9I7Q9H3	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/111	words=100%	3s
+bookSection	old	bookSection/_1945_Postwar Economic Policy and Planning_.pdf	99F9KFP6	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/112	words=100%	4s
 bookSection	old	bookSection/full chapter.pdf	9SES9H42	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/13	words=100%	1s
 bookSection	unk	bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	CSXKHDZ5	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/91	words=100%	2s
-document	mid	document/Galison_1998_Trading Zone_.pdf	CDQNWPYZ	OK	3p	start=100%	end=99%	off=-0.10	overlap=4/83	words=100%	6s
+document	mid	document/1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	5UGPEBHJ	OK	3p	start=100%	end=97%	off=-0.10	overlap=16/51	words=100%	3s
+document	mid	document/Galison_1998_Trading Zone_.pdf	CDQNWPYZ	OK	3p	start=100%	end=99%	off=-0.10	overlap=4/83	words=100%	5s
+document	mid	document/Riesman_1964_From inner-directed to other- directed_.pdf	PNCTVRRD	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/88	words=100%	3s
 document	mid	document/Riesman_1964_The New Education_.pdf	7ZCID6C5	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/67	words=100%	2s
-document	mid	document/_1960_Organization and operation of the Small Business Administration_.pdf	DJ35B8WP	OK	3p	start=100%	end=99%	off=-0.10	overlap=2/102	words=100%	3s
+document	mid	document/Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_.pdf	8F9DZMX2	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/105	words=100%	4s
+document	mid	document/_1960_Organization and operation of the Small Business Administration_.pdf	DJ35B8WP	OK	3p	start=100%	end=100%	off=-0.10	overlap=2/102	words=100%	3s
+document	mid	document/_1973_Committee Against Racism_.pdf	X4WJA99G	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/209	words=100%	6s
+document	mid	document/_1979_Ideology of American Neo-Conservatism_.pdf	EP88UIT9	OK	3p	start=100%	end=100%	off=-0.10	overlap=3/129	words=100%	4s
+document	mid	document/w5093.pdf	NF2ISQRI	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/42	words=99%	3s
+document	new	document/2008_Hoagland oral history.pdf	JZ89J7P4	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/105	words=100%	3s
 document	new	document/2008_McIntyre oral history.pdf	KWLNTVQ4	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/103	words=100%	3s
-document	new	document/2013 - Silicon Valley Program Transcript.pdf	AYK93MUN	OK	3p	start=100%	end=98%	off=+0.00	overlap=0/73	words=99%	2s
+document	new	document/2013 - Silicon Valley Program Transcript.pdf	AYK93MUN	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/73	words=99%	2s
+document	new	document/2015_Gibbs oral history.pdf	GTUQD3AM	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/42	words=100%	2s
+document	new	document/2017_Bunnell oral history, athletics.pdf	F94K9FKN	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/46	words=100%	2s
+document	new	document/2024 - Class Action lawsuit re need blind admissions.pdf	V8R6HGVR	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/68	words=100%	2s
+document	new	document/Geiger oral history.pdf	RJZY5MBM	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/43	words=100%	2s
 document	new	document/Lyons oral history.pdf	HG4GMFH4	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/44	words=100%	3s
+document	new	document/Nogales oral history.pdf	6PLPPAIM	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/44	words=100%	2s
+document	old	document/1881 - Harry Wilcox.pdf	HEI23RVC	OK	3p	start=100%	end=97%	off=-0.10	overlap=9/25	words=100%	1s
 document	old	document/Atkinson_1939_Atkinson on firings_.pdf	VA66SSKM	OK	3p	start=100%	end=100%	off=-0.10	overlap=18/120	words=100%	4s
-document	old	document/RIESMAN_1942_American Law Institute Proceedings_.pdf	SQFT3B9F	OK	3p	start=100%	end=98%	off=-0.10	overlap=0/77	words=100%	6s
-document	old	document/_1953_99 Cong_.pdf	6LXC8GLV	OK	3p	start=100%	end=98%	off=-0.10	overlap=2/64	words=99%	8s
+document	old	document/Ford_1941_Speech_.pdf	HFBJCR52	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/79	words=100%	3s
+document	old	document/RIESMAN_1942_American Law Institute Proceedings_.pdf	SQFT3B9F	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/77	words=100%	6s
+document	old	document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	W79FA9FB	OK	3p	start=100%	end=98%	off=+0.00	overlap=1/81	words=99%	2s
+document	old	document/_1939_Former students to Board re Merriam_.pdf	9GABJHES	OK	3p	start=100%	end=98%	off=-0.10	overlap=14/58	words=100%	3s
+document	old	document/_1953_99 Cong_ 2.pdf	2D52P9K2	OK	3p	start=99%	end=99%	off=-0.10	overlap=3/41	words=99%	8s
+document	old	document/_1953_99 Cong_.pdf	6LXC8GLV	OK	3p	start=100%	end=99%	off=-0.10	overlap=2/64	words=99%	8s
+document	old	document/_1953_Conspicuous Production_.pdf	VSU4H585	OK	3p	start=100%	end=100%	off=-0.10	overlap=2/63	words=100%	6s
+document	unk	document/(F) Dickens.pdf	2WNR2ZDU	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/110	words=100%	3s
+document	unk	document/Freud_Fetishism.pdf	2DHPAR4A	OK	3p	start=98%	end=98%	off=-0.10	overlap=1/60	words=99%	3s
 document	unk	document/Henry Morgenthau papers.pdf	XFUJCHZX	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/61	words=100%	2s
-document	unk	document/Herbert Marks papers.pdf	5WDBA9BL	OK	3p	start=100%	end=95%	off=-0.10	overlap=3/73	words=100%	2s
-document	unk	document/October_2,_1960_(Page_24_of_25.pdf	9T65VIX6	OK	1p	start=98%	end=96%	off=-0.10	overlap=3/34	words=99%	2s
+document	unk	document/Herbert Marks papers.pdf	5WDBA9BL	OK	3p	start=100%	end=100%	off=-0.10	overlap=3/73	words=100%	2s
+document	unk	document/Intellectual History Newsletter -- Forum on Menand.pdf	4DIX8S6B	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/81	words=100%	3s
+document	unk	document/October_2,_1960_(Page_24_of_25.pdf	9T65VIX6	OK	1p	start=98%	end=97%	off=-0.10	overlap=3/34	words=99%	2s
+document	unk	document/Senate, Democratic Leadership.pdf	YMT8EGL6	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/72	words=100%	2s
+document	unk	document/Stiglitz1975(onPasinetti1974).pdf	D4CD2SNI	OK	3p	start=100%	end=99%	off=+0.00	overlap=0/48	words=99%	4s
+document	unk	document/ppf_description.pdf	URI9KA94	OK	3p	start=100%	end=100%	off=-0.10	overlap=2/105	words=100%	3s
+journalArticle	mid	journalArticle/Albanese_1997_Senate Will Examine Stock Option Bill.pdf	XPKDUM55	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/35	words=100%	3s
+journalArticle	mid	journalArticle/Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review.pdf	XSFA9TNC	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/97	words=100%	6s
+journalArticle	mid	journalArticle/Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_.pdf	CYFSXX9I	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/121	words=100%	3s
 journalArticle	mid	journalArticle/Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks.pdf	76AM8HZN	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/107	words=100%	2s
+journalArticle	mid	journalArticle/Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State.pdf	XR53IW2D	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/69	words=100%	4s
+journalArticle	mid	journalArticle/Riesman_1976_Thoughts on the Graduate Experience_Change.pdf	4DV7NVSD	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/91	words=100%	7s
 journalArticle	mid	journalArticle/Robin_Stephens_1996_Against the Grain_Social Text.pdf	6FFIJR6R	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/103	words=100%	5s
 journalArticle	mid	journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf	87XHPLJ4	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/78	words=100%	6s
+journalArticle	mid	journalArticle/_1985_Issue 2_New Perspectives.pdf	NRTCBAZ3	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/112	words=100%	3s
+journalArticle	new	journalArticle/Baker_2000_The Supply-Side Effect of a Stock Market Crash.pdf	MWEAPWZT	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/97	words=100%	5s
 journalArticle	new	journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf	IK73NU4R	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/92	words=100%	3s
+journalArticle	new	journalArticle/Crystal_2000_Option grants leave CEOs with sinking feeling.pdf	7L4I566U	OK	1p	start=98%	end=98%	off=-0.10	overlap=0/7	words=99%	2s
+journalArticle	new	journalArticle/Donahue - 2001 - Time to Get Serious About Talent Management.pdf	CXCW97QP	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/31	words=100%	4s
 journalArticle	new	journalArticle/Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors.pdf	S3CKLBBQ	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/126	words=100%	5s
+journalArticle	new	journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	MPKKVEI6	OK	3p	start=100%	end=99%	off=+0.00	overlap=0/81	words=99%	4s
 journalArticle	new	journalArticle/Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY.pdf	ULKMCI8H	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/77	words=100%	4s
-journalArticle	old	journalArticle/Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43).pdf	4FSY3Z2A	OK	3p	start=100%	end=99%	off=-0.10	overlap=1/133	words=100%	5s
-journalArticle	old	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	IDESW58B	OK	3p	start=100%	end=99%	off=-0.10	overlap=0/28	words=100%	5s
-journalArticle	old	journalArticle/Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review.pdf	SHAQH875	OK	3p	start=100%	end=99%	off=+0.00	overlap=0/99	words=100%	4s
-journalArticle	unk	journalArticle/Eyal-Cohen - Why Is Small Business the Chief Business of Congress.pdf	4P73M37F	OK	3p	start=100%	end=98%	off=-0.10	overlap=1/99	words=100%	3s
+journalArticle	new	journalArticle/Wells_2015_A Long View of Shareholder Power.pdf	RLPXEI89	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/121	words=100%	3s
+journalArticle	new	journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	CU369P4U	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/125	words=100%	2s
+journalArticle	old	journalArticle/1935_Title Page.pdf	2L2S5PIW	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/17	words=100%	2s
+journalArticle	old	journalArticle/1944_Options picking up.pdf	YYD9P62W	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/28	words=99%	3s
+journalArticle	old	journalArticle/McWilliams_1933_Provincialism_The Frontier and Midland.pdf	WKXP35ZR	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/49	words=99%	3s
+journalArticle	old	journalArticle/Merriam_1920_Daughter of Pan_The Montanan (The Frontier).pdf	FNZ5SABS	OK	1p	start=100%	end=100%	off=-0.10	overlap=5/29	words=100%	1s
+journalArticle	old	journalArticle/Price_1958_The Small Business Tax Revision of 1958.pdf	A7UTD67Z	OK	3p	start=100%	end=99%	off=-0.10	overlap=1/112	words=100%	3s
+journalArticle	old	journalArticle/Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43).pdf	4FSY3Z2A	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/133	words=100%	5s
+journalArticle	old	journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	IDESW58B	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/28	words=100%	5s
+journalArticle	old	journalArticle/Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review.pdf	SHAQH875	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/99	words=100%	4s
+journalArticle	old	journalArticle/Ripley_1889_The Teaching of the English Language and Literature_Education.pdf	3MJEQMIN	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/112	words=100%	3s
+journalArticle	unk	journalArticle/Borges_The Lottery in Babylon.pdf	VL9G94BE	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/108	words=100%	3s
+journalArticle	unk	journalArticle/Burke - The Expansion of American Higher Education.pdf	DT93B2BF	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/31	words=100%	3s
+journalArticle	unk	journalArticle/Eyal-Cohen - Why Is Small Business the Chief Business of Congress.pdf	4P73M37F	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/99	words=100%	3s
+journalArticle	unk	journalArticle/Har - THE NECKLACE OF KALI..pdf	8E5XYJEQ	OK	1p	start=100%	end=99%	off=-0.10	overlap=0/25	words=99%	3s
 journalArticle	unk	journalArticle/Lemieux et al. - Performance Pay and Wage Inequality.pdf	QITMNVR3	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/101	words=100%	5s
-journalArticle	unk	journalArticle/Lowell - The Government of Dependencies.pdf	39JLW6NX	OK	3p	start=100%	end=99%	off=-0.10	overlap=3/123	words=100%	3s
-magazineArticle	mid	magazineArticle/Astin__The Challenge of Open Admissions by Alexander W_UNZ.org.pdf	SCG9JNXP	OK	3p	start=100%	end=99%	off=+0.00	overlap=1/68	words=100%	6s
-magazineArticle	mid	magazineArticle/Lemann, Nicholas_1977_Success In America_Washington Monthly.pdf	YWJI3CFY	OK	3p	start=100%	end=99%	off=-0.10	overlap=0/75	words=99%	4s
+journalArticle	unk	journalArticle/Lowell - The Government of Dependencies.pdf	39JLW6NX	OK	3p	start=100%	end=100%	off=-0.10	overlap=3/123	words=100%	3s
+journalArticle	unk	journalArticle/Scott_TK_The Scientific Selection of Salesmen.pdf	76KZDWB9	OK	3p	start=100%	end=99%	off=-0.10	overlap=5/71	words=99%	7s
+journalArticle	unk	journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	IE57PVS9	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/111	words=100%	3s
+journalArticle	unk	journalArticle/oster - Engagement of Anne Foster To Tucson Man Announced.pdf	NPEC9L48	OK	1p	start=95%	end=95%	off=+0.00	overlap=3/34	words=99%	6s
+magazineArticle	mid	magazineArticle/Astin__The Challenge of Open Admissions by Alexander W_UNZ.org.pdf	SCG9JNXP	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/68	words=100%	5s
+magazineArticle	mid	magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	95SSTEEB	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/68	words=100%	6s
+magazineArticle	mid	magazineArticle/Lemann, Nicholas_1977_Success In America_Washington Monthly.pdf	YWJI3CFY	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/75	words=99%	4s
+magazineArticle	mid	magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	N73AE6W5	OK	2p	start=100%	end=100%	off=-0.10	overlap=2/45	words=99%	3s
 magazineArticle	mid	magazineArticle/Peters_1989_Tilting at Windmilss_Washington Monthly.pdf	5DJFR6VV	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/47	words=100%	4s
+magazineArticle	mid	magazineArticle/Sherman_1986_elite institutions_The Public Interest; New York.pdf	43KXKB93	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/141	words=100%	4s
+magazineArticle	mid	magazineArticle/Stone_1965_England’s Revolution_The New York Review of Books.pdf	PBNT66E9	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/130	words=100%	5s
+magazineArticle	mid	magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	58FGKT9T	OK	1p	start=100%	end=100%	off=-0.10	overlap=0/11	words=100%	2s
+magazineArticle	mid	magazineArticle/_1977_What We're About_Washington Monthly.pdf	7B2M9TKF	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/67	words=99%	4s
 magazineArticle	new	magazineArticle/Davis_2005_Optimism of the Will_Nation.pdf	CZXWUIQR	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/59	words=100%	4s
 magazineArticle	new	magazineArticle/Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	ESZAV774	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/133	words=99%	4s
-magazineArticle	new	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	NA3Z5R9S	OK	2p	start=100%	end=98%	off=-0.10	overlap=0/23	words=100%	2s
-magazineArticle	old	magazineArticle/HarpersMagazine-1938-05-0019577.pdf	6R4HEGKP	OK	3p	start=100%	end=98%	off=-0.10	overlap=1/93	words=100%	4s
-magazineArticle	old	magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	RXY5HXAE	OK	3p	start=100%	end=99%	off=-0.10	overlap=0/43	words=99%	4s
-magazineArticle	old	magazineArticle/Part Two.pdf	JB54ZK6W	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/90	words=100%	3s
-magazineArticle	unk	magazineArticle/Black_0000_The Scandal of Educational Testing.pdf	A4N4ZLW7	OK	3p	start=99%	end=99%	off=-0.10	overlap=0/58	words=99%	6s
-newspaperArticle	mid	newspaperArticle/1976_Results of Trading in Stock Options.pdf	XHC8DFQH	OK	1p	start=100%	end=93%	off=-0.10	overlap=0/7	words=97%	2s
-newspaperArticle	mid	newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	ZFGYH3QL	OK	3p	start=100%	end=99%	off=-0.10	overlap=0/16	words=100%	3s
+magazineArticle	new	magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	NA3Z5R9S	OK	2p	start=100%	end=100%	off=-0.10	overlap=0/23	words=100%	2s
+magazineArticle	new	magazineArticle/Glazer_2003_Kith and Kin_Commentary; New York.pdf	ZHMF3MQK	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/42	words=99%	4s
+magazineArticle	new	magazineArticle/Kelly_2014_Orders of Magnitude_TLS.pdf	IHNQZB8F	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/70	words=100%	6s
+magazineArticle	old	magazineArticle/1947_Corporation Tax Study Due By House Body.pdf	F3ITGLZW	OK	3p	start=100%	end=98%	off=+0.00	overlap=0/25	words=99%	2s
+magazineArticle	old	magazineArticle/Bullitt_1959_The Future American Class System_Horizon.pdf	S3M9L4XB	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/56	words=100%	3s
+magazineArticle	old	magazineArticle/HarpersMagazine-1938-05-0019577.pdf	6R4HEGKP	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/93	words=100%	4s
+magazineArticle	old	magazineArticle/Lasky et al. - 1949 - Letters from readers.pdf	NZDF2QFM	OK	3p	start=100%	end=100%	off=-0.10	overlap=1/71	words=100%	4s
+magazineArticle	old	magazineArticle/Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York.pdf	EQ9UENB9	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/58	words=100%	5s
+magazineArticle	old	magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf	RXY5HXAE	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/43	words=99%	4s
+magazineArticle	old	magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	SI6FSRCB	OK	2p	start=99%	end=99%	off=-0.10	overlap=0/62	words=100%	3s
+magazineArticle	old	magazineArticle/Part Two.pdf	JB54ZK6W	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/90	words=100%	2s
+magazineArticle	old	magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	BUCZ7UT4	OK	3p	start=99%	end=99%	off=-0.10	overlap=0/59	words=100%	4s
+magazineArticle	unk	magazineArticle/Black_0000_The Scandal of Educational Testing.pdf	A4N4ZLW7	OK	3p	start=99%	end=99%	off=-0.10	overlap=0/58	words=99%	5s
+newspaperArticle	mid	newspaperArticle/1976_Results of Trading in Stock Options.pdf	XHC8DFQH	OK	1p	start=100%	end=100%	off=-0.10	overlap=0/7	words=97%	2s
+newspaperArticle	mid	newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	QRWKIFME	OK	1p	start=100%	end=100%	off=-0.10	overlap=0/40	words=100%	2s
+newspaperArticle	mid	newspaperArticle/JOURNAL_1969_Giving the Boss a Raise_Wall Street Journal (1923 - Current file); New York, N.Y..pdf	BKGWP4HF	OK	1p	start=100%	end=100%	off=-0.10	overlap=1/49	words=100%	3s
+newspaperArticle	mid	newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	ZFGYH3QL	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/16	words=100%	3s
+newspaperArticle	mid	newspaperArticle/___ 2.pdf	Z66WXZZS	OK	1p	start=100%	end=100%	off=+0.00	overlap=0/4	words=100%	2s
+newspaperArticle	mid	newspaperArticle/___ 3.pdf	K6LFQD3H	OK	1p	start=95%	end=94%	off=-0.10	overlap=12/47	words=99%	7s
+newspaperArticle	mid	newspaperArticle/___ 4.pdf	PN9A9M6F	OK	1p	start=98%	end=98%	off=-0.10	overlap=0/40	words=99%	3s
+newspaperArticle	mid	newspaperArticle/___ 5.pdf	SMB5YHKI	OK	1p	start=99%	end=98%	off=-0.10	overlap=3/12	words=99%	3s
 newspaperArticle	mid	newspaperArticle/___.pdf	FWQD3XKR	OK	1p	start=96%	end=95%	off=-0.10	overlap=5/26	words=99%	6s
 newspaperArticle	new	newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	93N2MWUE	OK	1p	start=100%	end=100%	off=-0.10	overlap=0/15	words=100%	3s
 newspaperArticle	new	newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	S424476F	OK	1p	start=100%	end=100%	off=-0.10	overlap=0/36	words=100%	1s
 newspaperArticle	new	newspaperArticle/Zipkin_2000_Management.pdf	S3RVZ7KK	OK	2p	start=100%	end=100%	off=-0.10	overlap=0/23	words=100%	4s
-newspaperArticle	old	newspaperArticle/_1926_Clapp defends Cox_Billings Gazette.pdf	RVTI3E78	OK	1p	start=91%	end=91%	off=-0.10	overlap=0/18	words=98%	2s
-newspaperArticle	old	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	8F3T2R46	OK	1p	start=95%	end=93%	off=-0.10	overlap=2/15	words=98%	3s
-newspaperArticle	old	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	DGDZXH38	OK	1p	start=95%	end=93%	off=-0.10	overlap=3/38	words=99%	3s
+newspaperArticle	old	newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	BE3GFDQY	OK	1p	start=100%	end=99%	off=-0.10	overlap=5/39	words=99%	2s
+newspaperArticle	old	newspaperArticle/_1926_Clapp defends Cox_Billings Gazette.pdf	RVTI3E78	OK	1p	start=91%	end=91%	off=-0.10	overlap=0/18	words=99%	2s
+newspaperArticle	old	newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf	8F3T2R46	OK	1p	start=95%	end=94%	off=+0.00	overlap=2/15	words=99%	3s
+newspaperArticle	old	newspaperArticle/_1926_English dept summer school_Havre Daily News Promoter.pdf	PRHK8QKI	OK	1p	start=97%	end=96%	off=-0.10	overlap=4/26	words=99%	3s
+newspaperArticle	old	newspaperArticle/_1928_Creative writing a featured course at Summer School_Helena Daily Independent.pdf	77HJ3DZT	OK	1p	start=93%	end=92%	off=+0.00	overlap=4/31	words=99%	8s
+newspaperArticle	old	newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf	C8XXAI5M	OK	1p	start=94%	end=92%	off=-0.10	overlap=6/16	words=99%	5s
+newspaperArticle	old	newspaperArticle/_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake.pdf	ZHJUPFTI	OK	1p	start=100%	end=100%	off=-0.10	overlap=5/36	words=99%	3s
+newspaperArticle	old	newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	DGDZXH38	OK	1p	start=95%	end=95%	off=-0.10	overlap=3/38	words=99%	3s
+newspaperArticle	old	newspaperArticle/_1950_Comic_Independent Record.pdf	Z25RPU7Q	OK	1p	start=96%	end=95%	off=+0.00	overlap=1/14	words=99%	2s
+report	mid	report/Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research.pdf	8MM8T2R6	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/73	words=100%	3s
+report	mid	report/Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research.pdf	7A56RC49	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/47	words=100%	2s
 report	mid	report/Temin_1997_The American Business Elite in Historical Perspective.pdf	TPTTIAVD	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/37	words=100%	2s
-report	mid	report/_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports.pdf	UERNX757	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/45	words=100%	3s
+report	mid	report/_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports.pdf	N92J7H8B	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/72	words=99%	2s
+report	mid	report/_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports.pdf	D7N7G6SE	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/36	words=100%	3s
+report	mid	report/_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports.pdf	VJ4CKFLK	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/23	words=100%	2s
+report	mid	report/_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports.pdf	LRCIZ96A	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/32	words=100%	2s
+report	mid	report/_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports.pdf	UERNX757	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/45	words=100%	2s
 report	mid	report/_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports.pdf	6PDV2CX5	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/86	words=100%	2s
+report	new	report/AI 2027.pdf	ZNQQJCST	OK	3p	start=100%	end=98%	off=-0.10	overlap=0/97	words=100%	3s
 report	new	report/Autor et al_2020_Extending the Race between Education and Technology.pdf	EQBUKYYW	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/38	words=100%	3s
 report	new	report/Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ.pdf	EKBMNICV	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/33	words=100%	2s
+report	new	report/w7787 2.pdf	JJDU7CH2	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/60	words=100%	2s
 report	new	report/w7787.pdf	CR72NDRB	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/60	words=100%	2s
+report	old	report/1957_Allied Chemical & Dye Corporation Annual Report -- 1957.pdf	I6KYQMPV	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/50	words=98%	2s
+report	old	report/1958_CiT Financial Corporation Annual Report -- 1958.pdf	XEILLJVE	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/39	words=100%	2s
+report	old	report/1958_E.pdf	T5YVM54I	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/69	words=100%	2s
 report	old	report/1958_General Foods Corporation Annual Report -- 1958.pdf	953TDXLG	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/38	words=99%	2s
+report	old	report/1958_The Anaconda Company Annual Report -- 1958.pdf	C4X2FIUY	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/28	words=99%	2s
 report	old	report/1958_The Goodyear Tire & Rubber Company Annual Report -- 1958.pdf	XE3ZKQN3	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/56	words=100%	2s
 report	old	report/_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports.pdf	SCEQIAUR	OK	3p	start=100%	end=100%	off=-0.10	overlap=0/74	words=100%	2s
+report	old	report/_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports.pdf	VF32CLSM	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/51	words=100%	2s
+report	old	report/_1958_Small Business Investment Act_.pdf	4NQPST2X	OK	3p	start=100%	end=100%	off=-0.10	overlap=18/103	words=100%	3s
+thesis	mid	thesis/Anderson_1997_Legacy of the American Frontier_California State University, Fresno.pdf	4NQE4A6W	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/28	words=100%	2s
+thesis	mid	thesis/Doermann_1967_The market for college education in the United States.pdf	J93C9CI2	OK	3p	start=100%	end=100%	off=-0.10	overlap=17/86	words=100%	3s
 thesis	mid	thesis/MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University.pdf	ZKFCPWJ7	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/56	words=100%	2s
+thesis	mid	thesis/PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign.pdf	224VKNIP	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/16	words=100%	2s
+thesis	mid	thesis/Robertson_1990_Organizational adaptation to environmental change_Stanford University copy.pdf	S65QDAPV	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/40	words=100%	2s
 thesis	mid	thesis/Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California.pdf	SDV9C42W	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/60	words=100%	2s
-thesis	mid	thesis/WITTE_1978_Democracy, Authority and Alienation in Work_Yale University.pdf	K835DIVK	OK	3p	start=100%	end=94%	off=+0.00	overlap=1/65	words=100%	2s
+thesis	mid	thesis/TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign.pdf	JSXPUYGA	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/48	words=99%	2s
+thesis	mid	thesis/TROTMAN - 1976 - Race, Iq, and the Middle-Class..pdf	HTHFYYU3	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/25	words=99%	3s
+thesis	mid	thesis/WITTE_1978_Democracy, Authority and Alienation in Work_Yale University.pdf	K835DIVK	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/65	words=100%	2s
+thesis	new	thesis/Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm.pdf	V8HD2WAY	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/61	words=100%	2s
+thesis	new	thesis/Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972.pdf	GHJEJLJR	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/71	words=100%	3s
 thesis	new	thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf	SRZU4U95	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/59	words=100%	3s
-thesis	new	thesis/Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po.pdf	78ZKX83G	OK	3p	start=100%	end=98%	off=+0.00	overlap=0/76	words=100%	3s
+thesis	new	thesis/Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po.pdf	78ZKX83G	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/76	words=100%	3s
+thesis	new	thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf	ASA8688W	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/60	words=100%	2s
 thesis	new	thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	2CAFVZP2	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/22	words=100%	1s
-thesis	old	thesis/CARTWRIGHT_Legislation Against Discrimination in Employment in New York State.pdf	TRNWY26M	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/61	words=100%	3s
-thesis	old	thesis/Corson_Current practices in student guidance and personnel administration in liberal.pdf	EUZMR3QC	OK	3p	start=100%	end=96%	off=+0.00	overlap=0/59	words=99%	3s
+thesis	new	thesis/Wu - 2003 - Employee stock option design and valuation.pdf	WEX7TBZA	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/59	words=100%	2s
+thesis	new	thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	U78HTE5Y	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/15	words=99%	2s
+thesis	new	thesis/Zheng - 2003 - Six -month -one -day employee stock option reprici.pdf	Q3MGNQH4	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/50	words=100%	2s
+thesis	old	thesis/CARTWRIGHT_Legislation Against Discrimination in Employment in New York State.pdf	TRNWY26M	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/61	words=100%	2s
+thesis	old	thesis/Clark_The graphic rating scale at Northwestern University.pdf	PAWKNXM8	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/31	words=99%	3s
+thesis	old	thesis/Corson_Current practices in student guidance and personnel administration in liberal.pdf	EUZMR3QC	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/59	words=100%	3s
 thesis	old	thesis/DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa.pdf	4JTCPJYP	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/32	words=100%	2s
+thesis	old	thesis/DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas.pdf	VNPL89VU	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/31	words=100%	2s
+thesis	old	thesis/ERICKSON - 1952 - The Taxation of Investment Companies in the United States.pdf	RV7N6BYN	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/48	words=100%	2s
+thesis	old	thesis/GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University.pdf	DT9BYQDM	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/45	words=100%	2s
+thesis	old	thesis/Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California.pdf	IQ37NWC5	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/61	words=100%	2s
+thesis	old	thesis/Ries_Marshall_1955_web.pdf	DJF9R2DP	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/57	words=100%	2s
+thesis	unk	thesis/BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning.pdf	HSS3GANL	OK	3p	start=100%	end=100%	off=+0.00	overlap=1/52	words=99%	2s
+thesis	unk	thesis/CAMFIELD_Psychologists at War.pdf	8RC43YKN	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/61	words=100%	2s
+thesis	unk	thesis/GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities.pdf	4D82BKTW	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/49	words=100%	2s
+thesis	unk	thesis/GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling.pdf	M2GZBYQW	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/59	words=100%	2s
 thesis	unk	thesis/Ho_Useful fiction.pdf	3ZFA7AP9	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/55	words=100%	2s
-thesis	unk	thesis/Jensen_The rise of an African-American Left.pdf	WFK86I3H	OK	3p	start=100%	end=93%	off=+0.00	overlap=4/67	words=99%	3s
+thesis	unk	thesis/Jensen_The rise of an African-American Left.pdf	WFK86I3H	OK	3p	start=100%	end=96%	off=+0.00	overlap=4/67	words=100%	2s
+thesis	unk	thesis/NAYLOR_Arthur E.pdf	7EQ3GHIH	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/46	words=99%	2s
+thesis	unk	thesis/PRICE_A History of the American College Personnel Association.pdf	LESVYNE5	OK	3p	start=100%	end=100%	off=+0.00	overlap=3/58	words=100%	2s
 thesis	unk	thesis/Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967.pdf	WCETGQKM	OK	3p	start=100%	end=100%	off=+0.00	overlap=0/67	words=100%	3s

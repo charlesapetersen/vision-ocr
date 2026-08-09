@@ -98,7 +98,7 @@ empty, find it by running `which mac-ocr` in Terminal, then paste that path into
 
 #### How accurate is it?
 
-On a test set of 84 real scanned documents — books, newspapers, journals and
+On a test set of 232 real scanned documents — books, newspapers, journals and
 typescripts from the 1900s to today — every one processed successfully, and in
 the typical document **100% of the words** came back selectable and in the right
 place. The hardest material is dense 1920s–40s newsprint and carbon-copy
