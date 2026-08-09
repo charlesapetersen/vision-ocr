@@ -6,9 +6,14 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Five are open** from a third review, this one over the 868 lines the bundling
-and mutation work added after 1.3.0: R31, R32, T6, T7, H2. Nine claims, **nine
-confirmed, none refuted** — the verifier built an `otool` shim and ran the real
+**Nothing is open.** The third review's five — R31, R32, T6, T7, H2 — are all
+`FIXED`, and the round added three controls aimed at the *shapes* rather than
+the instances: `Tools/fault-inject.sh` (execute the error branches),
+`Tools/mutate.py`'s own repair (T7), and the sibling sweep in CONTRIBUTING 4b,
+which immediately found a mount leak the review had missed.
+
+That review covered the 868 lines the bundling and mutation work added after
+1.3.0. Nine claims, **nine confirmed, none refuted** — the verifier built an `otool` shim and ran the real
 scripts rather than reading them. Five of the nine are in code written the same
 day, which is the third consecutive round to find that, and T6 is the third
 consecutive round to add checks that cannot fail *while looking for checks that
@@ -1837,6 +1842,14 @@ to `-force` and cannot abort the script; and a disk image that fails its own
 verification is **deleted**, so nothing that looks shippable survives a failed
 build. The success path got the same `-force` fallback.
 
+**The sibling sweep found one more, which the review had not reported.** Asking
+"who else mounts without cleanup?" showed the mount point had no `trap`: any
+failure between `hdiutil attach` and the detach leaks it, which is this same
+defect reached by a different route. A `trap release_mount EXIT` now covers the
+whole section, idempotently. Stated plainly — **no fault case exercises it**; a
+contrived one would be worse than saying so. It is defence in depth found by a
+grep, which is what CONTRIBUTING 4b is for.
+
 Guarded by `Tools/fault-inject.sh detach_fails`. That case is worth reading as a
 cautionary tale in its own right: **the first version could not fail.** It shimmed
 only `detach`, so verification succeeded, the failure branch never ran, and the
@@ -2721,7 +2734,7 @@ own docstring.**
 A tool for detecting instruments that lie, lying twice in its first hour, is
 the most on-brand thing this register contains.
 
-### T6 · Three checks written for the bundling that cannot fail — OPEN
+### T6 · Three checks written for the bundling that cannot fail — FIXED
 *(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*
 
 - **`Tests/main.swift:4767` — the fat branch is never reached.** Every fixture is

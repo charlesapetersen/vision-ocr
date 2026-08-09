@@ -4773,6 +4773,49 @@ do {
         check("a binary for this machine is recognised",
               Runner.containsNativeSlice(CommandLine.arguments[0]))
 
+        // T6. Every other fixture here is a THIN Mach-O, so the fat branch — the
+        // one the bundled universal mac-ocr actually takes — had no coverage at
+        // all. Break the fat_arch stride or the 8 + i * stride offset and
+        // bundledTool returns nil on every Mac, silently, with the suite green.
+        // Built with lipo rather than borrowing /bin/ls, so the fixture is ours
+        // and cannot change under us.
+        // Fused from THIS binary plus the other slice of /bin/ls. Not from
+        // /bin/ls alone: it is `x86_64 arm64e`, with no plain arm64 to thin, so
+        // the obvious construction produces nothing — which the "really has both
+        // slices" guard below caught rather than letting the next check pass on
+        // a missing file.
+        let slices = dir.appendingPathComponent("universal")
+        func lipo(_ args: [String]) {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/lipo")
+            p.arguments = args
+            p.standardError = FileHandle.nullDevice
+            try? p.run(); p.waitUntilExit()
+        }
+        #if arch(arm64)
+        let otherSlice = "x86_64"
+        #else
+        let otherSlice = "arm64e"
+        #endif
+        lipo(["/bin/ls", "-thin", otherSlice, "-output", dir.appendingPathComponent("x").path])
+        lipo(["-create", CommandLine.arguments[0],
+              dir.appendingPathComponent("x").path, "-output", slices.path])
+
+        let archs = { () -> String in
+            let p = Process(); let pipe = Pipe()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/lipo")
+            p.arguments = ["-archs", slices.path]
+            p.standardOutput = pipe; p.standardError = FileHandle.nullDevice
+            try? p.run(); p.waitUntilExit()
+            return String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(),
+                          as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        }()
+        check("the universal fixture really has both slices, or the next check proves nothing",
+              archs.contains("arm64") && archs.contains("x86_64"), archs)
+        check("a universal binary is recognised through the fat header",
+              Runner.containsNativeSlice(slices.path),
+              "the fat branch is what the bundled mac-ocr takes")
+
         // The other slice of a universal binary, on its own. /bin/ls is
         // universal on every supported macOS; thin it to the architecture we are
         // NOT, and the answer must be no.
@@ -4791,14 +4834,21 @@ do {
             check("a binary for the other architecture is refused",
                   !Runner.containsNativeSlice(thinned.path),
                   "a \(foreign)-only Mach-O must not look runnable here")
-            check("…and the bundled lookup refuses it too", {
-                guard let res = Bundle.main.resourceURL else { return true }
+            // T6. The fixture has to be confirmed present, or a failed copy
+            // makes `bundledTool == nil` true for the wrong reason and this is
+            // the only check that kills the bundle-arch-check mutant.
+            if let res = Bundle.main.resourceURL {
                 let planted = res.appendingPathComponent("foreign-arch-probe")
                 try? FileManager.default.removeItem(at: planted)
                 try? FileManager.default.copyItem(at: thinned, to: planted)
                 defer { try? FileManager.default.removeItem(at: planted) }
-                return Runner.bundledTool("foreign-arch-probe") == nil
-            }())
+                check("the foreign-architecture fixture was planted, or the next check proves nothing",
+                      FileManager.default.isExecutableFile(atPath: planted.path),
+                      planted.path)
+                check("…and the bundled lookup refuses it too",
+                      Runner.bundledTool("foreign-arch-probe") == nil,
+                      String(describing: Runner.bundledTool("foreign-arch-probe")))
+            }
         } else {
             check("lipo could thin /bin/ls, or this check proves nothing", false,
                   "could not build a foreign-architecture fixture")
@@ -4831,10 +4881,43 @@ do {
 
         // Order: the bundled copy must win over Homebrew, so a machine with an
         // older or newer mac-ocr installed still runs what was measured.
+        //
+        // T6. Asserting only that the bundled probe is found proves nothing
+        // about ORDER, because the probe name exists nowhere else — hoist the
+        // prefix loop above bundledTool and the check still passes. A decoy the
+        // prefix scan would reach is what makes it a precedence test. The three
+        // hard-coded prefixes are not writable, so the decoy goes where the
+        // login-shell fallback looks: SHELL is pointed at a script that answers
+        // with it, which is the last resort in the same search.
+        let decoy = dir.appendingPathComponent("decoy-tool")
+        try? "#!/bin/sh\nexit 0\n".write(to: decoy, atomically: true, encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755],
+                                               ofItemAtPath: decoy.path)
+        let answering = dir.appendingPathComponent("answers-with-decoy")
+        try? "#!/bin/bash\necho \(decoy.path)\n".write(to: answering, atomically: true,
+                                                          encoding: .utf8)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755],
+                                               ofItemAtPath: answering.path)
+        let realShellForOrder = ProcessInfo.processInfo.environment["SHELL"]
+        setenv("SHELL", answering.path, 1)
         Runner.forgetToolPaths()
-        check("the bundled copy is preferred to one on PATH",
+
+        check("the decoy is reachable by the fallback, or the next check proves nothing",
+              FileManager.default.isExecutableFile(atPath: decoy.path))
+        check("the bundled copy is preferred to one the search would otherwise find",
               Runner.locateTool("bundled-tool-probe") == fake.path,
-              String(describing: Runner.locateTool("bundled-tool-probe")))
+              "got \(String(describing: Runner.locateTool("bundled-tool-probe"))), "
+              + "decoy at \(decoy.path)")
+
+        // And with no bundled copy, the same search does reach the decoy — so
+        // the check above is about precedence rather than the decoy being
+        // unreachable.
+        Runner.forgetToolPaths()
+        check("…and without a bundled copy the search reaches the decoy",
+              Runner.locateTool("no-bundled-copy-of-this") == decoy.path,
+              String(describing: Runner.locateTool("no-bundled-copy-of-this")))
+
+        if let realShellForOrder { setenv("SHELL", realShellForOrder, 1) } else { unsetenv("SHELL") }
         Runner.forgetToolPaths()
 
         // A non-executable file of the right name must not be mistaken for one.

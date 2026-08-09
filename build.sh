@@ -229,6 +229,17 @@ if [ "$DMG" = 1 ]; then
   # Homebrew nor node is on PATH. If that works here it works on a machine that
   # has never had either.
   MP="$(mktemp -d)"
+  # A trap, not just tidy exits. The sibling sweep in CONTRIBUTING 4b asked who
+  # else mounts without one: every failure between here and the detach below
+  # leaks the mount, which is R32's leak reached by a different route. Idempotent
+  # on purpose — the explicit detaches stay, for ordering, and running twice is
+  # a no-op.
+  release_mount() {
+    [ -n "${MP:-}" ] || return 0
+    hdiutil detach -quiet "$MP" 2>/dev/null || hdiutil detach -force -quiet "$MP" 2>/dev/null || true
+    rmdir "$MP" 2>/dev/null || true
+  }
+  trap release_mount EXIT
   hdiutil attach -quiet -nobrowse -readonly -mountpoint "$MP" "$DMG_PATH"
   RES="$MP/$APP_NAME.app/Contents/Resources"
   # mac-ocr is required; the compression tools are checked only if bundled,
