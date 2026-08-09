@@ -439,20 +439,54 @@ final class OCRModel: ObservableObject {
     /// Page breaks are a blank line, which is what `mac-ocr --format text`
     /// produces between pages, so a downstream script does not need to care
     /// which route produced the file.
+    /// Returns the 1-based numbers of pages that contributed nothing **and had
+    /// something to contribute** — an image with no text layer, which is content
+    /// OCR could have recovered and this route silently skipped (C19).
+    ///
+    /// A page with neither text nor an image is a genuinely blank leaf and is not
+    /// reported: crying loss over the blank verso of a chapter opener would train
+    /// people to ignore the warning that matters.
+    @discardableResult
     nonisolated static func writeEmbeddedText(
         from input: URL, to output: URL, password: String?
-    ) throws {
+    ) throws -> [Int] {
         guard let doc = Flattener.open(input, password: password) else {
             throw Failure.unreadable
         }
         var pages: [String] = []
+        var skipped: [Int] = []
+        // Real extracted text, ignoring the markers below. The guard at the end
+        // has to be "did we get anything out of this file", and once markers are
+        // written into the body they would otherwise satisfy it on their own —
+        // turning the all-scan refusal into a file full of apologies.
+        var foundText = false
         for i in 0..<doc.pageCount {
-            pages.append(doc.page(at: i)?.string ?? "")
+            guard let page = doc.page(at: i) else {
+                // Unreadable page. Nothing to extract and no way to tell what was
+                // there, which is exactly the case invariant 1 is about.
+                skipped.append(i + 1)
+                pages.append("[page \(i + 1): could not be read — no text extracted]")
+                continue
+            }
+            let text = page.string ?? ""
+            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               Flattener.pageIsAnImage(page) {
+                // The marker goes in the file, not only in the log. A run that
+                // drops thirty pages of appendix must not produce an artifact
+                // that reads as complete — a downstream script never sees the
+                // log line, and the gap between two "\n\n" is invisible.
+                skipped.append(i + 1)
+                pages.append("[page \(i + 1): image with no text layer — "
+                             + "not OCR'd, re-run in Searchable PDF mode to read it]")
+            } else {
+                if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    foundText = true
+                }
+                pages.append(text)
+            }
         }
         let body = pages.joined(separator: "\n\n")
-        guard !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw Failure.noTextFound
-        }
+        guard foundText else { throw Failure.noTextFound }
         // Staged and moved, like every other write here: invariant 2 applies to
         // this path too, and it is the one that overwrites a previous result.
         let scratch = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -460,6 +494,7 @@ final class OCRModel: ObservableObject {
         defer { try? FileManager.default.removeItem(at: scratch) }
         try body.write(to: scratch, atomically: true, encoding: .utf8)
         try publish(scratch, to: output)
+        return skipped
     }
 
     enum Failure: LocalizedError {
@@ -755,8 +790,23 @@ final class OCRModel: ObservableObject {
                         .appendingPathComponent(
                             file.deletingPathExtension().lastPathComponent + "." + textExt)
                     do {
-                        try Self.writeEmbeddedText(from: file, to: target, password: password)
-                        report(.succeeded, "used the PDF's own text; no OCR was run")
+                        let skipped = try Self.writeEmbeddedText(
+                            from: file, to: target, password: password)
+                        if skipped.isEmpty {
+                            report(.succeeded, "used the PDF's own text; no OCR was run")
+                        } else {
+                            // Invariant 1: this path can drop a page, so it says
+                            // which. The file carries the same note in place.
+                            let list = skipped.count > 6
+                                ? skipped.prefix(6).map(String.init).joined(separator: ", ")
+                                    + " and \(skipped.count - 6) more"
+                                : skipped.map(String.init).joined(separator: ", ")
+                            report(.succeeded,
+                                   "used the PDF's own text; no OCR was run — but "
+                                   + "\(skipped.count) page\(skipped.count == 1 ? "" : "s") "
+                                   + "(\(list)) carry an image with no text and were "
+                                   + "not read. Re-run in Searchable PDF mode for those.")
+                        }
                     } catch {
                         report(.failed, error.localizedDescription)
                     }

@@ -620,7 +620,7 @@ dictate. It bites: with `reserveEms` set to 0 the words weld, and that is checke
 **This is the fourth property of the text layer**, and CLAUDE.md invariant 3 now
 says so. It had been holding by accident for the life of the project.
 
-### C19 · "Use Existing Text" silently writes an empty section for a page with no text — OPEN
+### C19 · "Use Existing Text" silently writes an empty section for a page with no text — FIXED
 *(2026-08-09 review; confirmed by reading the code and the routing that reaches it)*
 
 `Sources/Model.swift:450`. `writeEmbeddedText` appends
@@ -644,6 +644,36 @@ body past the guard.
 The three tests at `Tests/main.swift:3408`, `:3416` and `:3423` cover an
 all-digital round-trip, extracting twice, and an all-scan file failing loudly.
 None uses a document where only *some* pages lack text.
+
+**Fix:** `writeEmbeddedText` returns the 1-based numbers of the pages that
+contributed nothing *and had something to contribute*, and the caller names them
+in the log. The report is not only in the log: the output file carries
+
+```
+[page 4: image with no text layer — not OCR'd, re-run in Searchable PDF mode to read it]
+```
+
+where the page would have been. A log line is invisible to a script and to
+anyone reading the `.txt` a week later, and the whole defect is that the artifact
+looks complete. The gap is now in the artifact.
+
+**A page with no text and no image is not reported.** `Flattener.pageIsAnImage`
+is the discriminator, the same one C17 leans on: an empty leaf or a blank verso
+is not a loss, and warning about those would train people to ignore the warning
+that matters.
+
+**The fix broke the all-scan refusal, and the existing test caught it.** With
+markers in the body, `body.isEmpty` was never true again, so a pure scan stopped
+throwing `noTextFound` and published a file of apologies — a new instance of
+exactly this defect, introduced by its own fix, which is the pattern this
+register keeps recording. The guard now tests whether any *real* text was
+extracted, not whether the body is non-empty. `FAIL extracting from a scan fails
+loudly rather than writing nothing` is what caught it.
+
+Guarded by six checks built on a mixed fixture — three born-digital pages plus a
+scanned plate appended — including one confirming `hasDigitalText` still flags
+the file, since that is what makes this the default route and the silence
+dangerous.
 
 ### C20 · `headroom` and `rightLimit` disagree about "the same line", crushing runs to sub-point height — OPEN
 *(2026-08-09 review; measured on the corpus, not reasoned)*

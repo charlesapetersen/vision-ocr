@@ -3445,6 +3445,54 @@ do {
     catch { refused = true }
     check("extracting from a scan fails loudly rather than writing nothing", refused)
 
+    // C19. The dangerous shape is neither of the two above: a document that is
+    // *mostly* born-digital with some scanned pages in it. hasDigitalText samples
+    // at most four pages and needs only a majority, so such a file is flagged as
+    // digital and "Use Existing Text" is the default button — and every scanned
+    // page then contributes "" to a "\n\n"-joined body, indistinguishable from a
+    // page break. The whole-body guard passes because the digital pages carry it.
+    let mixedURL = dir.appendingPathComponent("mostly-digital.pdf")
+    if let mixed = PDFDocument(url: digital), let scanned = PDFDocument(url: scan),
+       let plate = scanned.page(at: 0) {
+        mixed.insert(plate, at: mixed.pageCount)     // an image-only appendix page
+        mixed.write(to: mixedURL)
+    }
+    let mixedDoc = PDFDocument(url: mixedURL)
+    check("the mixed fixture is digital pages plus one image-only page",
+          mixedDoc?.pageCount == 4
+              && (mixedDoc?.page(at: 3)?.string ?? "")
+                  .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+          "pages=\(mixedDoc?.pageCount ?? -1)")
+
+    // And it is routed here, which is what makes the silence dangerous.
+    check("…and hasDigitalText still flags it, so this is the default route",
+          Flattener.hasDigitalText(mixedURL))
+
+    let mixedOut = dir.appendingPathComponent("mostly-digital.txt")
+    let dropped = (try? OCRModel.writeEmbeddedText(from: mixedURL, to: mixedOut,
+                                                   password: nil)) ?? []
+    let mixedText = (try? String(contentsOf: mixedOut, encoding: .utf8)) ?? ""
+
+    check("the digital pages are still extracted",
+          mixedText.contains("Line 1 of ordinary running prose"))
+    check("the page that contributed nothing is reported",
+          dropped == [4], String(describing: dropped))
+    check("…and the output file says so where the page would have been",
+          mixedText.contains("page 4") && mixedText.lowercased().contains("not"),
+          mixedText.suffix(120).description)
+
+    // A genuinely blank page is not a loss and must not be reported as one.
+    let blankURL = dir.appendingPathComponent("with-blank.pdf")
+    if let withBlank = PDFDocument(url: digital) {
+        withBlank.insert(PDFPage(), at: withBlank.pageCount)
+        withBlank.write(to: blankURL)
+    }
+    let blankOut = dir.appendingPathComponent("with-blank.txt")
+    let blankDropped = (try? OCRModel.writeEmbeddedText(from: blankURL, to: blankOut,
+                                                        password: nil)) ?? [-1]
+    check("an empty page carrying no image is not reported as dropped",
+          blankDropped.isEmpty, String(describing: blankDropped))
+
     // 7. It is a warning, not a lock: the setting exists and defaults to asking.
     d.removeObject(forKey: Prefs.warnDigitalText)
     Prefs.register()
