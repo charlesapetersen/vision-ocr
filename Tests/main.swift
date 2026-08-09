@@ -3869,6 +3869,153 @@ do {
     try? FileManager.default.removeItem(at: dir)
 }
 
+print("\nshared form resources")
+
+do {
+    // R25. `walk` recurses into every Form XObject's /Resources, bounded only by
+    // depth < 4, and keeps no record of what it has already visited. A form
+    // whose /Resources is an indirect reference to the page's own — an
+    // imposition and Ghostscript-rewrite pattern — makes the same dictionary
+    // re-walked once per referring form at every level: N + N² + N³ + N⁴ block
+    // invocations instead of N. The depth cap bounds recursion, not breadth.
+    let dir = tmp.appendingPathComponent("sharedres-\(UUID().uuidString)")
+    try! FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    let forms = 60          // 60 + 60² + 60³ + 60⁴ = 13,179,660 against 61 real entries
+    let firstForm = 6
+    var names = (0..<forms).map { "/F\($0) \(firstForm + $0) 0 R" }.joined()
+    names += "/Im0 \(firstForm + forms) 0 R"
+
+    var bodies = [
+        "<</Type/Catalog/Pages 2 0 R>>",
+        "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+        "<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources 5 0 R/Contents 4 0 R>>",
+        "<</Length 1>>\nstream\n \nendstream",
+        "<</XObject<<\(names)>>>>",                       // the one shared dictionary
+    ]
+    for _ in 0..<forms {
+        // /Resources points back at object 5 — the dictionary that lists every
+        // one of these forms.
+        bodies.append("<</Type/XObject/Subtype/Form/BBox[0 0 10 10]"
+                      + "/Resources 5 0 R/Length 0>>\nstream\n\nendstream")
+    }
+    bodies.append("<</Type/XObject/Subtype/Image/Width 1000/Height 1000"
+                  + "/ColorSpace/DeviceGray/BitsPerComponent 8/Length 3>>\nstream\nabc\nendstream")
+
+    var out = "%PDF-1.4\n"
+    var offsets: [Int] = []
+    for (i, body) in bodies.enumerated() {
+        offsets.append(out.utf8.count)
+        out += "\(i + 1) 0 obj\n\(body)\nendobj\n"
+    }
+    let startxref = out.utf8.count
+    out += "xref\n0 \(bodies.count + 1)\n0000000000 65535 f \n"
+    for off in offsets { out += String(format: "%010d 00000 n \n", off) }
+    out += "trailer\n<</Size \(bodies.count + 1)/Root 1 0 R>>\n"
+        + "startxref\n\(startxref)\n%%EOF\n"
+    let url = dir.appendingPathComponent("shared.pdf")
+    try! out.write(to: url, atomically: true, encoding: .ascii)
+
+    let page = PDFDocument(url: url)?.page(at: 0)
+    check("the shared-resources fixture opens", page != nil)
+
+    if let page {
+        // Bounded, on a background thread: unfixed this is tens of millions of
+        // callbacks, each allocating a String, and a suite that appears to hang
+        // is worse than one that fails.
+        var found: (dpi: Double, pixelWidth: Int)?
+        let done = DispatchSemaphore(value: 0)
+        let started = Date()
+        DispatchQueue.global().async {
+            found = Flattener.largestImage(of: page)
+            done.signal()
+        }
+        let finished = done.wait(timeout: .now() + 25) == .success
+        let elapsed = Date().timeIntervalSince(started)
+
+        check("60 forms sharing one Resources dictionary do not fan out",
+              finished && elapsed < 2,
+              finished ? String(format: "took %.2fs", elapsed)
+                       : "did not finish in 25s — N^4 over a shared dictionary")
+
+        // The pruning must not cost the answer: the image is still there to find.
+        check("…and the image on the page is still found",
+              finished && found?.pixelWidth == 1000,
+              String(describing: found))
+    }
+
+    // The pruning has to be depth-aware, and this is what proves it. A plain
+    // "have I seen this dictionary" set gets it wrong: dictionary S is reached
+    // first down the long chain, at a depth where the cap stops its subtree
+    // being explored, and marking it seen there turns away the short path that
+    // would have explored it. The image sits three levels under S, so only the
+    // short path can reach it:
+    //
+    //   page(0) ─ long(1) ─ B ─ S(2) ─ E ─ (3) ─ F ─ image at 4   past the cap
+    //           └ short ─────── S(1) ─ E ─ (2) ─ F ─ image at 3   in range
+    //
+    // Which sibling is walked first is CGPDFDictionaryApplyBlock's business, and
+    // it is not alphabetical — measured on this fixture it yields ["Z", "A"].
+    // So build it both ways round and require both: whichever order the
+    // framework uses, one of the two puts the long chain first, and identity-only
+    // pruning loses that one's image.
+    func depthFixture(named name: String, longKey: String, shortKey: String) -> URL {
+        let bodies = [
+            "<</Type/Catalog/Pages 2 0 R>>",
+            "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+            "<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources 5 0 R/Contents 4 0 R>>",
+            "<</Length 1>>\nstream\n \nendstream",
+            // 5: the page's resources, holding both routes to S
+            "<</XObject<</\(longKey) 6 0 R/\(shortKey) 9 0 R>>>>",
+            // 6: first form of the long chain → 7
+            "<</Type/XObject/Subtype/Form/BBox[0 0 10 10]/Resources 7 0 R/Length 0>>\nstream\n\nendstream",
+            // 7: → form B
+            "<</XObject<</B 8 0 R>>>>",
+            // 8: form B → S, reaching it at depth 2
+            "<</Type/XObject/Subtype/Form/BBox[0 0 10 10]/Resources 10 0 R/Length 0>>\nstream\n\nendstream",
+            // 9: the short route → S, reaching it at depth 1
+            "<</Type/XObject/Subtype/Form/BBox[0 0 10 10]/Resources 10 0 R/Length 0>>\nstream\n\nendstream",
+            // 10: S, the shared dictionary
+            "<</XObject<</E 11 0 R>>>>",
+            "<</Type/XObject/Subtype/Form/BBox[0 0 10 10]/Resources 12 0 R/Length 0>>\nstream\n\nendstream",
+            "<</XObject<</F 13 0 R>>>>",
+            "<</Type/XObject/Subtype/Form/BBox[0 0 10 10]/Resources 14 0 R/Length 0>>\nstream\n\nendstream",
+            // 14: where the image actually lives
+            "<</XObject<</Im0 15 0 R>>>>",
+            "<</Type/XObject/Subtype/Image/Width 777/Height 777"
+                + "/ColorSpace/DeviceGray/BitsPerComponent 8/Length 3>>\nstream\nabc\nendstream",
+        ]
+        var body = "%PDF-1.4\n"
+        var offs: [Int] = []
+        for (i, b) in bodies.enumerated() {
+            offs.append(body.utf8.count)
+            body += "\(i + 1) 0 obj\n\(b)\nendobj\n"
+        }
+        let start = body.utf8.count
+        body += "xref\n0 \(bodies.count + 1)\n0000000000 65535 f \n"
+        for off in offs { body += String(format: "%010d 00000 n \n", off) }
+        body += "trailer\n<</Size \(bodies.count + 1)/Root 1 0 R>>\n"
+            + "startxref\n\(start)\n%%EOF\n"
+        let url = dir.appendingPathComponent(name)
+        try! body.write(to: url, atomically: true, encoding: .ascii)
+        return url
+    }
+
+    // Both orderings, because which sibling CGPDFDictionaryApplyBlock hands back
+    // first is not ours to choose. This is a guard that pruning does not lose an
+    // image reachable by two routes of different lengths — it is *not* a
+    // discriminating test of the depth-awareness itself. See R25: in every
+    // arrangement tried, CoreGraphics walked the shallower branch first, which
+    // is exactly the order in which identity-only pruning would also be correct.
+    for (name, long, short) in [("depth-az.pdf", "A", "Z"), ("depth-za.pdf", "Z", "A")] {
+        let page = PDFDocument(url: depthFixture(named: name, longKey: long,
+                                                 shortKey: short))?.page(at: 0)
+        check("an image reachable by two routes survives pruning (/\(long) long)",
+              page.flatMap { Flattener.largestImage(of: $0) }?.pixelWidth == 777)
+    }
+}
+
 do {
     // U18. U5 bounded this lookup at three seconds "because this runs on the main
     // thread", but put the bound *after* `readDataToEndOfFile()`, which returns

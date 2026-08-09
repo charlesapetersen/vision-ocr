@@ -1287,7 +1287,7 @@ Two things measured while fixing it, both worth keeping:
   now compared against `400 × 1_000_000` directly. The corpus's largest page is
   21.5 MP, so nothing real moves.
 
-### R25 · `largestImage`'s Form XObject walk has a depth cap but no visited set — OPEN
+### R25 · `largestImage`'s Form XObject walk has a depth cap but no visited set — FIXED
 *(2026-08-09 review; measured)*
 
 `Sources/Flattener.swift:851`. `walk` recurses into every Form XObject's
@@ -1311,6 +1311,34 @@ document stalls with the progress bar frozen and no way to tell it from a hang.
 The register's only XObject entry is the opposite defect — `nativeDPI` *not*
 recursing into forms — with no note of a sharing or cycle hazard. No test nests or
 shares form resources.
+
+**Fix:** `walk` records the shallowest depth at which it has walked each
+`/Resources` dictionary and skips a repeat visit at the same depth or deeper.
+Identity is the resolved dictionary pointer, which is safe here because
+CoreGraphics resolves an indirect reference to the same pointer every time —
+that is what makes the pruning work at all, and the fan-out check would still be
+red if it did not.
+
+Guarded by the 60-form fixture: **5.09 s before, under 2 s after**, for a page
+with 61 real entries. A second check confirms the pruning does not cost the
+answer — the image on that page is still found.
+
+**Depth-awareness is reasoned, not measured, and that is worth being explicit
+about.** Keying on identity alone is wrong in principle: a dictionary first
+reached down a long chain has its own children cut off by the depth cap, and
+marking it seen there would turn away a later, shallower path that could explore
+them. I could not build a fixture that demonstrates it. In every arrangement
+tried — varying the key names, and varying the object numbers the keys point at
+— `CGPDFDictionaryApplyBlock` handed back the branch leading to the *shallower*
+route first, which is precisely the order in which identity-only pruning is also
+correct. The traversal was instrumented to confirm this rather than inferred from
+the results.
+
+So the two "reachable by two routes" checks in the suite are regression guards
+against pruning losing an image; neither discriminates depth-aware from
+identity-only. The depth key costs one `Int` per dictionary and removes the
+question, which is why it is there. If someone later finds the fixture that
+splits them, it belongs here.
 
 ### R26 · `pageTooLarge` tells the user to change a setting that cannot reach the rebuild — OPEN
 *(2026-08-09 review; confirmed by grep — the setting genuinely is not wired here)*

@@ -842,8 +842,28 @@ enum Flattener {
         final class Largest { var width = 0; var height = 0 }
         let largest = Largest()
 
+        // A form's /Resources is frequently an indirect reference to the page's
+        // own, and forms on one page routinely share a single dictionary. The
+        // depth cap below bounds recursion but not breadth, so without this the
+        // same dictionary is re-walked once per referring form at every level —
+        // N + N² + N³ + N⁴ block invocations instead of N. Measured at 60 forms:
+        // 5.09 s for a page with 61 real entries (R25).
+        // The shallowest depth each dictionary has been walked at, not merely
+        // whether it has been. A plain visited set would be wrong: a dictionary
+        // first reached at depth 3 has its own children cut off by the depth cap,
+        // and a later path arriving at depth 1 — which *would* explore them —
+        // must not be turned away by the earlier, poorer visit.
+        var walkedAt: [UnsafeRawPointer: Int] = [:]
+
         func walk(_ resources: CGPDFDictionaryRef, depth: Int) {
             guard depth < 4 else { return }
+            // Identity, not contents: CoreGraphics resolves an indirect
+            // reference to the same dictionary pointer every time, which is what
+            // makes this work. CGPDFDictionaryRef is an opaque pointer with no
+            // Swift-visible conversion, hence the bitcast.
+            let identity = unsafeBitCast(resources, to: UnsafeRawPointer.self)
+            if let seen = walkedAt[identity], seen <= depth { return }
+            walkedAt[identity] = depth
             var xobjects: CGPDFDictionaryRef?
             guard CGPDFDictionaryGetDictionary(resources, "XObject", &xobjects),
                   let xobjects else { return }
