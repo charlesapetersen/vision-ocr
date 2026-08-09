@@ -2016,6 +2016,41 @@ is mid-sentence on). The per-file announcement is suppressed for the file that
 ends the batch, since the summary follows a moment later; without that, a
 single-file run said three things about one document.
 
+### U22 · The first-launch instructions described a bypass macOS had removed — FIXED
+*(2026-08-09, found by the user hitting it, which is how it should have been found sooner)*
+
+`README.md`. Every release since the repo went public told a downloader to
+**Control-click the app and choose Open**. macOS 15 removed that bypass for apps
+that fail notarization, and on macOS 15 and later the dialog offers only *Move to
+Trash* and *Done*. There is no Open button to click.
+
+So the one instruction standing between a new user and a working app named a
+control that does not exist, on every current version of macOS. Reported from a
+macOS 26.6 machine.
+
+Reproduced on our own build rather than taken on trust: a copy was given a
+`com.apple.quarantine` attribute exactly as a browser sets it, and
+
+- `spctl -a -t exec` → **rejected**
+- `codesign -v --deep --strict` → **passes**
+
+so the signature is sound and it is notarization that fails. Clearing the
+attribute (`xattr -dr com.apple.quarantine`) and opening it launched the app with
+no prompt at all, which confirms Gatekeeper enforces the verdict only on
+quarantined files.
+
+**Fix:** the README now describes the route that works — Done, then System
+Settings ▸ Privacy & Security ▸ **Open Anyway**, then open again — and says
+explicitly that the Control-click shortcut has been removed, because that
+advice is everywhere and users will otherwise assume the app is broken. It also
+notes that the Open Anyway line only appears just after a blocked attempt and
+lapses after about an hour, which is the other way this looks broken when it is
+not.
+
+**Not notarizing is a decision, not an omission.** It would cost a paid
+Developer ID, and it is the only remaining way to remove this step entirely.
+Recorded here so the next person does not treat the dialog as a defect.
+
 ### U12 · Settings input validation — NO DEFECT
 Recorded because it was checked properly and found clean, which is worth knowing
 next time someone wonders.

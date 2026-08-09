@@ -22,10 +22,9 @@ or Intel Mac. No setup beyond dragging it to Applications.
 1. Download the disk image from the [latest
    release](https://github.com/charlesapetersen/vision-ocr/releases/latest).
 2. Open it and drag **Vision OCR** onto the **Applications** folder shortcut.
-3. The first time you open it, macOS will say it *"cannot verify the
-   developer"*. That's expected — see [the first-launch
-   note](#macos-says-it-cant-verify-the-developer) below for the two clicks that
-   get past it.
+3. The first time you open it, macOS will refuse and say it *"could not verify"*
+   the app. That's expected, and [getting past
+   it](#macos-says-it-cant-verify-the-app) takes about fifteen seconds.
 
 That's all. **There is no Terminal step, and nothing to install alongside it.**
 Everything the app needs — reading the page, and compressing the result — ships
@@ -66,17 +65,29 @@ tells you exactly which one and why.
 No. Recognition happens on your Mac using Apple's built-in text recognition. The
 app has no network code in it at all. It works with the Wi-Fi off.
 
-#### macOS says it "can't verify the developer"
+#### macOS says it can't verify the app
 
-This app isn't signed with a paid Apple Developer certificate, so macOS treats it
-as coming from an unknown developer. To open it anyway:
+You'll see a dialog headed *"Vision OCR" Not Opened*, offering only **Move to
+Trash** and **Done**. Nothing is wrong with the download. The app isn't
+registered with Apple's paid notarization service, so macOS refuses it the first
+time on principle.
 
-**Control-click** (or right-click) the app in your Applications folder and choose
-**Open**, then click **Open** in the dialog. You only do this once.
+1. Click **Done**.
+2. Open **System Settings ▸ Privacy & Security** and scroll down to **Security**.
+3. There'll be a line saying *"VisionOCR" was blocked to protect your Mac*. Click
+   **Open Anyway** beside it, and authenticate.
+4. Open the app again. It will ask once more; click **Open**.
 
-If the dialog doesn't offer an Open button, go to **System Settings ▸ Privacy &
-Security**, scroll down, and click **Open Anyway** next to the message about
-Vision OCR.
+That's it, permanently — macOS remembers.
+
+**Don't look for a Control-click → Open shortcut.** Older instructions all over
+the internet say to right-click the app and choose Open. macOS 15 removed that
+bypass; on macOS 15 and later it does nothing for an app in this position. System
+Settings is the route.
+
+If the **Open Anyway** line isn't there, it's because it only appears just after
+a blocked attempt and lapses after about an hour. Try opening the app again,
+then go straight back to Settings.
 
 #### It says it can't find mac-ocr
 
