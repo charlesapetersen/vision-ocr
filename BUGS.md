@@ -2250,6 +2250,118 @@ Verified on screen, not only by compiling: a real three-document run, captured
 mid-flight with two spinners and one tick, and again at the end with three
 ticks.
 
+### U25 · Three defects in one 255-file run — FIXED
+*(2026-08-09, reported from a real batch of 255 documents. One screenshot, three
+separate bugs, and the report itself is what made them visible.)*
+
+The run finished, said **3 problems**, and there was one bad file. Everything
+below came out of that.
+
+**a. The count counted log lines, not files.** `problemCount` filtered
+`log` for failures, and one failed file emits several — the failure, the
+diagnostic, the "not written" note. So a single broadsheet reported as three
+problems, and a user with one thing to fix went looking for three. It counts
+files now: `outcomes.values.filter { $0 == .failed }.count`, which cannot exceed
+the number of files by construction.
+
+**b. Problems were wherever they happened to fall.** The report is the log in
+order, so on a 255-file run the one failure sat somewhere around line 700 with
+254 successes above it. Now `logFailuresFirst` puts failures at the top with the
+rest following, and the pane scrolls to the first one when it appears. Ordering,
+not filtering — the successes are still all there, underneath.
+
+**c. The file itself: pages the recogniser refuses.** The real defect. The
+document is a 63 MB scan of newspaper broadsheets — page 5 is **44.4 × 77
+inches**. mac-ocr renders PDF pages at 300 DPI and refuses anything over 200
+megapixels; that page is 308 MP, and page 2 is exactly the 250 MP quoted in the
+error. The app rebuilds pages up to *400* MP, so it happily did all the rebuild
+work and then handed the recogniser something it would not read. Every page,
+lost, after the expensive part.
+
+`Flattener.recogniserDPICeiling(for:)` now measures the largest page and returns
+the DPI that fits — 236 for this document — and `recognitionArguments` takes the
+lower of that and whatever was asked for.
+
+Three things that took a second pass to get right:
+
+- **The ceiling must belong to the document, not to a default.** The first
+  version compared against 300 and returned nil when 300 was fine. A 30 × 40
+  poster is 108 MP at 300 and 432 MP at 600, so with 600 explicitly chosen there
+  was no ceiling to clamp with and the file failed anyway. It now reports the
+  document's own limit and the caller decides whether it binds.
+- **A ceiling only ever lowers.** Taking the minimum, never the ceiling
+  outright, so a deliberately low DPI is not raised to meet a limit.
+- **It applies to an explicitly chosen DPI too.** The first version deferred to
+  one — "an explicit choice is theirs to get wrong". Wrong here: the cost is not
+  a worse text layer, it is *no* text layer, which is invariant 1. One place
+  decides the DPI now, so there is never a second `--pdf-dpi` for the engine's
+  argument parser to break the tie on.
+
+Verified end to end on the file itself, through `OCRModel.start()` and not just
+the engine: at 300 DPI it reproduces the user's exact error after page 1; with
+the ceiling it produces a 9-page searchable PDF carrying 73,946 characters,
+first line "The Negro's Stake In America's Future".
+
+**d. And the reason it looked hung.** Also from that screenshot: 254 of 255 done
+with one broadsheet still grinding is 99.6% complete, and 99.6% of a progress bar
+is a full progress bar. The heading said "1 running" and the bar said finished,
+and the bar is what you read from across the room — so the app appeared to have
+hung on a file that was working normally. `overallFraction` now holds back a
+visible sliver until the batch is genuinely over.
+
+Nine checks. Two of them were written wrong first and are worth recording: one
+asserted `< 0.98` against a model whose `total` was 0 — green, and testing
+nothing, the exact T6 shape — because `add()` refuses paths that do not exist;
+the other multiplied a 30 × 40 page as 30 × 60 and failed a correct fix. Suspect
+the instrument.
+
+### U26 · Eight defects in the update checker and the progress UI — FIXED
+*(2026-08-09, adversarial review of U24/U25's own code. The fourth round in a row
+where a review of a fix found defects in it.)*
+
+**The update check described the machine it ran on.** `Updater` is this app's
+only network code, and the README promises the request sends nothing about you.
+It sent two headers nobody wrote: CFNetwork fills in `User-Agent` with the app
+build and the exact Darwin kernel version — the machine's precise macOS point
+release — and `Accept-Language` from the user's `AppleLanguages` list, measured
+changing to `he-IL,he;q=0.9` when that list changes. With the source IP, a stable
+per-machine fingerprint, sent daily. Both are pinned to constants now.
+
+**A failed check spent the whole day's allowance.** The clock was stamped before
+the result was looked at, so one launch on a train used the day's only automatic
+check — and someone whose first launch is reliably the offline one would never
+be told about a fix at all. A failure now costs fifteen minutes; only a real
+answer spends the interval.
+
+**"Check Now" answered about the skip, not about reality.** A forced check ran
+through `shouldAnnounce`, so after skipping 1.6.0 the button said "Up to date"
+on a version visible on the releases page, and the skip could never be undone.
+Forced checks compare versions and nothing else.
+
+**Row state outlived the rows.** `remove` and `clearFiles` left `outcomes` and
+`stages` behind, so a file dropped in again wore the previous run's green tick
+before it had done anything. The required sibling sweep then found the third
+per-file collection this fix had missed — `skipped`, which is reset when a run
+*starts*, so a stale value showed in exactly the gap where someone is deciding
+what to run. `renamedOutputs` and `resolvedOutputs` were checked and are clean:
+both are replaced wholesale each run.
+
+**A file that kept its own text had no status of its own.** It is not a success
+and not a failure; it now has `FileStatus.skipped`, its own glyph, and the
+VoiceOver phrasing "skipped — it kept its own text".
+
+**Two checks that could not fail.** One "verified" a preference by asserting
+against the constant it had just set; it reads `UserDefaults` now. The other
+compared `Prefs.allKeys` to a hand-copied list in the test — a duplicate of the
+thing under test, which agrees with it by construction and would keep agreeing
+after a key was dropped. It greps the keys out of `Sources/Prefs.swift` instead.
+
+**And eleven row-status checks that never ran the code they describe.** Every
+one set `inFlight` and `outcomes` by hand. Recording could have stopped entirely
+and all eleven would have stayed green. The real 8-file batch now asserts that
+every row says "succeeded" when the summary does, and the list-editing checks
+drive `remove` and `clearFiles` for real.
+
 ### U12 · Settings input validation — NO DEFECT
 Recorded because it was checked properly and found clean, which is worth knowing
 next time someone wonders.

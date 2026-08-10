@@ -1150,6 +1150,16 @@ do {
         check("all 8 files succeeded",
               m.log.contains { $0.text.contains("8 of 8 succeeded") },
               m.log.last?.text ?? "no log")
+        // U26. The row-status checks elsewhere set `outcomes` by hand, so none
+        // of them exercises the code that fills it in. This is a real batch:
+        // if `finish` stopped recording, every row would say "waiting" while
+        // the summary said 8 of 8 succeeded, and nothing else would notice.
+        check("…and every row says so",
+              m.files.allSatisfy { m.status(url: $0) == .succeeded },
+              m.files.map { "\($0.lastPathComponent)=\(m.status(url: $0))" }
+                  .prefix(3).joined(separator: " "))
+        check("…with one problem counted per failed file, and none here",
+              m.problemCount == 0, "\(m.problemCount)")
     }
 
     // --- cancelling mid-run still accounts for every file -------------------
@@ -1949,6 +1959,159 @@ do {
     resetPrefs()
 }
 
+print("\nreporting problems, and pages too big for the recogniser")
+
+do {
+    // U25. Three defects from one 255-file run over newspaper scans.
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("u25-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let a = dir.appendingPathComponent("a.pdf"), b = dir.appendingPathComponent("b.pdf")
+    makeScannedPDF(at: a, lines: ["A"]); makeScannedPDF(at: b, lines: ["B"])
+
+    MainActor.assumeIsolated {
+        let m = OCRModel()
+        m.besideOriginal = true
+        _ = m.add([a, b])
+
+        // One failed file appends TWO lines with kind .failure — the name and
+        // the message — so counting lines said "2 problems" for one bad file.
+        m.log = [OCRModel.LogLine(text: "✓ a.pdf", kind: .success),
+                 OCRModel.LogLine(text: "✗ b.pdf", kind: .failure),
+                 OCRModel.LogLine(text: "    Error: something", kind: .failure)]
+        m.outcomes = [a: .succeeded, b: .failed]
+        check("one bad file is one problem, not one per log line",
+              m.problemCount == 1, "\(m.problemCount)")
+
+        m.outcomes = [a: .failed, b: .failed]
+        check("two bad files are two problems", m.problemCount == 2, "\(m.problemCount)")
+
+        m.outcomes = [a: .succeeded, b: .cancelled]
+        check("a cancelled file is not a problem", m.problemCount == 0, "\(m.problemCount)")
+
+        // Failures first. The results pane has always documented this and never
+        // done it — on a 255-file run the one red line sat 200 rows down.
+        m.log = [OCRModel.LogLine(text: "✓ one", kind: .success),
+                 OCRModel.LogLine(text: "✓ two", kind: .success),
+                 OCRModel.LogLine(text: "✗ bad", kind: .failure),
+                 OCRModel.LogLine(text: "    why", kind: .failure),
+                 OCRModel.LogLine(text: "✓ three", kind: .success)]
+        let ordered = m.logFailuresFirst
+        check("failures come first in the report",
+              ordered.prefix(2).allSatisfy { $0.kind == .failure },
+              ordered.map(\.text).joined(separator: " | "))
+        check("…and nothing is lost or duplicated",
+              ordered.count == m.log.count
+                  && Set(ordered.map(\.text)) == Set(m.log.map(\.text)))
+        check("…and the successes keep the order they finished in",
+              ordered.filter { $0.kind != .failure }.map(\.text) == ["✓ one", "✓ two", "✓ three"])
+    }
+
+    // The recogniser refuses a page over 200 MP even though we will rebuild up
+    // to 400. An ordinary page must not be touched; a broadsheet must get a DPI
+    // it will accept rather than a failure after all the rebuild work.
+    let letter = dir.appendingPathComponent("letter.pdf")
+    var lbox = CGRect(x: 0, y: 0, width: 612, height: 792)
+    if let c = CGContext(letter as CFURL, mediaBox: &lbox, nil) {
+        c.beginPDFPage(nil); c.endPDFPage(); c.closePDF()
+    }
+    // The ceiling is the document's own limit, so a Letter page reports one
+    // too — it is simply so far above any DPI anyone would ask for that it
+    // never binds. That is the property worth checking, not the nil.
+    let letterCeiling = Flattener.recogniserDPICeiling(for: letter)
+    check("a Letter page's ceiling is far above any usable DPI",
+          (letterCeiling ?? 0) > 600, String(describing: letterCeiling))
+    check("…so it changes nothing about how a normal file is recognised",
+          !Runner.jsonLinesArguments(for: letter, dpiCeiling: letterCeiling)
+              .contains("--pdf-dpi"))
+
+    // 30 x 40 inches: at 300 DPI that is 9000 x 12000 = 108 MP — still fine.
+    // 40 x 60 inches is 288 MP at 300 DPI, and must come back lower.
+    let huge = dir.appendingPathComponent("broadsheet.pdf")
+    var hbox = CGRect(x: 0, y: 0, width: 40 * 72, height: 60 * 72)
+    if let c = CGContext(huge as CFURL, mediaBox: &hbox, nil) {
+        c.beginPDFPage(nil); c.endPDFPage(); c.closePDF()
+    }
+    let ceiling = Flattener.recogniserDPICeiling(for: huge)
+    check("a broadsheet gets a ceiling", ceiling != nil, String(describing: ceiling))
+    if let ceiling {
+        let mp = Double(ceiling * ceiling) * 40 * 60 / 1_000_000
+        check("…and that ceiling really fits inside the recogniser's limit",
+              mp <= Double(Flattener.recogniserPageMegapixelLimit),
+              String(format: "%.0f MP at %d DPI", mp, ceiling))
+        check("…and is still a usable resolution, not a token one",
+              ceiling >= 72, "\(ceiling)")
+    }
+
+    // How the ceiling combines with the DPI setting.
+    //
+    // The first version of this deferred to an explicitly chosen DPI — "an
+    // explicit choice is theirs to get wrong". That reasoning is wrong here,
+    // because the cost of honouring it is not a worse text layer, it is *no
+    // text layer*: the recogniser refuses the page outright and the whole file
+    // fails. Invariant 1 says never lose content silently, and a ceiling that
+    // only ever lowers, and says so, is not overriding a preference for
+    // quality — it is the difference between some text and none (U25).
+    func dpiArgument(_ args: [String]) -> String? {
+        args.firstIndex(of: "--pdf-dpi").map { args[$0 + 1] }
+    }
+    func dpiArgumentCount(_ args: [String]) -> Int {
+        args.filter { $0 == "--pdf-dpi" }.count
+    }
+
+    var auto = Prefs.Snapshot.current()
+    check("no ceiling on auto means no --pdf-dpi at all, as before",
+          dpiArgument(Runner.jsonLinesArguments(for: huge, settings: auto)) == nil)
+    check("the ceiling is passed in auto mode",
+          dpiArgument(Runner.jsonLinesArguments(for: huge, settings: auto,
+                                                dpiCeiling: 120)) == "120")
+
+    auto.pdfDPIAuto = false
+    auto.pdfDPI = 400
+    let clamped = Runner.jsonLinesArguments(for: huge, settings: auto, dpiCeiling: 120)
+    check("a chosen DPI the recogniser would refuse is lowered, not obeyed",
+          dpiArgument(clamped) == "120", dpiArgument(clamped) ?? "none")
+    check("…and only once, so there is no second flag to disagree with it",
+          dpiArgumentCount(clamped) == 1, "\(dpiArgumentCount(clamped))")
+
+    // A page that is fine at 300 and refused at 600. The ceiling has to be the
+    // document's own limit rather than "whatever 300 needs", or asking for 600
+    // on a 30 x 40 poster fails the file with nothing to clamp: 108 MP at 300
+    // means no ceiling, 432 MP at 600 means refused (U25).
+    let poster = dir.appendingPathComponent("poster.pdf")
+    var pbox = CGRect(x: 0, y: 0, width: 30 * 72, height: 40 * 72)
+    if let c = CGContext(poster as CFURL, mediaBox: &pbox, nil) {
+        c.beginPDFPage(nil); c.endPDFPage(); c.closePDF()
+    }
+    let posterCeiling = Flattener.recogniserDPICeiling(for: poster)
+    auto.pdfDPI = 600
+    let poster600 = Runner.jsonLinesArguments(for: poster, settings: auto,
+                                              dpiCeiling: posterCeiling)
+    check("a page fine at 300 but refused at 600 is clamped when 600 is asked for",
+          (Int(dpiArgument(poster600) ?? "0") ?? 0) < 600, dpiArgument(poster600) ?? "none")
+    if let d = Int(dpiArgument(poster600) ?? "") {
+        check("…to a DPI the recogniser will actually accept",
+              Double(d * d) * 30 * 40 / 1_000_000
+                  <= Double(Flattener.recogniserPageMegapixelLimit) * 1.0, "\(d)")
+    }
+    auto.pdfDPIAuto = true
+    check("…while the same document on auto is left at the engine's default",
+          dpiArgument(Runner.jsonLinesArguments(for: poster, settings: auto,
+                                                dpiCeiling: posterCeiling)) == nil,
+          dpiArgument(Runner.jsonLinesArguments(for: poster, settings: auto,
+                                                dpiCeiling: posterCeiling)) ?? "nil")
+    auto.pdfDPIAuto = false
+
+    auto.pdfDPI = 100
+    let untouched = Runner.jsonLinesArguments(for: huge, settings: auto, dpiCeiling: 120)
+    check("a chosen DPI already under the ceiling is never raised to meet it",
+          dpiArgument(untouched) == "100", dpiArgument(untouched) ?? "none")
+    check("…and a chosen DPI with no ceiling is passed through untouched",
+          dpiArgument(Runner.jsonLinesArguments(for: huge, settings: auto)) == "100")
+    resetPrefs()
+}
+
 print("\ntelling a new version from an old one")
 
 do {
@@ -2016,6 +2179,25 @@ do {
           Updater.isDue(now: now, last: now.timeIntervalSince1970 + 100_000, enabled: true))
     check("and nothing is due when the setting is off",
           !Updater.isDue(now: now, last: 0, enabled: false))
+
+    // The three above pass `enabled:` explicitly, so none of them reads the
+    // preference that actually gates every network request in the app. Omit the
+    // argument and let the default read UserDefaults — that is the code path
+    // that ships (U26).
+    do {
+        let saved = UserDefaults.standard.object(forKey: Prefs.checkForUpdates)
+        defer {
+            if let saved { UserDefaults.standard.set(saved, forKey: Prefs.checkForUpdates) }
+            else { UserDefaults.standard.removeObject(forKey: Prefs.checkForUpdates) }
+        }
+        UserDefaults.standard.set(false, forKey: Prefs.checkForUpdates)
+        UserDefaults.standard.set(0.0, forKey: Prefs.lastUpdateCheck)
+        check("with the preference off, no automatic check is due",
+              !Updater.isDue(now: now, last: 0))
+        UserDefaults.standard.set(true, forKey: Prefs.checkForUpdates)
+        check("…and with it on, one is",
+              Updater.isDue(now: now, last: 0))
+    }
 }
 
 print("\nwhat each file's row shows")
@@ -2063,6 +2245,42 @@ do {
         check("…and a failed one shows failure", m.status(url: b) == .failed)
         check("…spoken as done and failed",
               m.statusDescription(url: a) == "done" && m.statusDescription(url: b) == "failed")
+
+        // U26. Everything above sets inFlight/outcomes by hand, so none of it
+        // touches the code that actually populates them — a run could stop
+        // recording outcomes entirely and all eleven would stay green. These
+        // two drive real batches.
+        _ = m
+
+        // Editing the list must take the row state with it, or a file dropped
+        // again shows last run's tick before it has done anything.
+        m.outcomes[a] = .succeeded
+        m.stages[a] = ("stale", 0.5)
+        m.remove(a)
+        check("removing a file forgets its status",
+              m.status(url: a) == .pending && m.stages[a] == nil,
+              String(describing: m.status(url: a)))
+        _ = m.add([a])
+        check("…so re-adding it shows waiting, not last run's tick",
+              m.status(url: a) == .pending, String(describing: m.status(url: a)))
+
+        // Sibling sweep on the U26 fix, which cleared `outcomes` and `stages`
+        // and missed the third per-file collection: a file that kept its own
+        // text is in `skipped`, and that is a row state like any other. It is
+        // reset when a run starts, so the stale value shows in exactly the gap
+        // where someone is deciding what to run.
+        m.skipped = [a]
+        _ = m.remove(a)
+        check("removing a skipped file forgets that too",
+              m.status(url: a) == .pending, String(describing: m.status(url: a)))
+        _ = m.add([a])
+
+        m.outcomes[a] = .failed
+        m.skipped = [a]
+        _ = m.clearFiles()
+        check("Clear List forgets every status",
+              m.outcomes.isEmpty && m.stages.isEmpty && m.skipped.isEmpty,
+              "\(m.outcomes.count) outcomes, \(m.stages.count) stages, \(m.skipped.count) skipped")
 
         // Running beats a recorded outcome: re-running a file that failed last
         // time must not still show a cross while it is working.
@@ -2321,6 +2539,43 @@ do {
         m.stages[URL(fileURLWithPath: "/tmp/b.pdf")] = ("Writing pages", 0.5)
         check("one measurable stage is enough to show a real bar",
               !m.progressIsIndeterminate)
+    }
+    resetPrefs()
+}
+
+do {
+    // A 255-file batch with 254 done and one broadsheet still grinding is 99.6%
+    // complete, and 99.6% of a progress bar is indistinguishable from all of
+    // it. A user watched exactly that for several minutes and concluded the app
+    // had hung — the bar said finished while the heading said running, and the
+    // bar is what you see from across the room (U25).
+    resetPrefs()
+    let m = MainActor.assumeIsolated { OCRModel() }
+    MainActor.assumeIsolated {
+        // `total` set directly rather than via add(): the pre-flight guard
+        // refuses paths that do not exist, so adding 255 imaginary files left
+        // total at 0 and the "< 0.98" check below passed against 0.0000 —
+        // green, and testing nothing at all.
+        let files = (1...255).map { URL(fileURLWithPath: "/tmp/big/f\($0).pdf") }
+        m.total = 255
+        m.isRunning = true
+        m.completed = 254
+        m.inFlight = [files[254]]
+        m.stages[files[254]] = ("Recognising page 8 of 9", 0.9)
+        let fraction = m.overallFraction
+        check("a batch with one file left does not draw as a finished bar",
+              fraction < 0.98, String(format: "%.4f", fraction))
+        check("…but is still nearly finished, not reset to the middle",
+              fraction > 0.5, String(format: "%.4f", fraction))
+
+        // And the moment it really is done, it must reach the end — a bar that
+        // never fills is its own kind of lie.
+        m.completed = 255
+        m.inFlight = []
+        m.stages.removeAll()
+        m.isRunning = false
+        check("…and reaches the end once the batch is genuinely finished",
+              m.overallFraction == 1, String(format: "%.4f", m.overallFraction))
     }
     resetPrefs()
 }
@@ -4478,18 +4733,29 @@ do {
     // Prefs that names a key must be here, or be one of the two deliberate
     // exceptions with their reasons written down.
     do {
-        let declared = Set([
-            Prefs.mode, Prefs.outputFolder, Prefs.besideOriginal, Prefs.openWhenDone,
-            Prefs.binaryPath, Prefs.textFormat, Prefs.fast, Prefs.languages,
-            Prefs.languageCorrection, Prefs.confidence, Prefs.pdfDPIAuto, Prefs.pdfDPI,
-            Prefs.password, Prefs.customWords, Prefs.minTextHeightOn, Prefs.minTextHeight,
-            Prefs.warnDigitalText, Prefs.rebuildImages, Prefs.rebuildMode, Prefs.useJBIG2,
-            Prefs.concurrency, Prefs.checkForUpdates, Prefs.skippedVersion,
-            Prefs.lastUpdateCheck,
-        ])
-        let missing = declared.subtracting(Prefs.allKeys)
-        check("every declared preference key is in allKeys",
-              missing.isEmpty, "missing: \(missing.sorted().joined(separator: ", "))")
+        // Read the keys out of the SOURCE, not out of a list retyped here. The
+        // first version of this compared allKeys against a hand-copied
+        // duplicate of allKeys, so adding a key and forgetting both places
+        // passed — it asserted that two copies of the same mistake agreed (U26).
+        let source = (try? String(contentsOfFile: "Sources/Prefs.swift", encoding: .utf8)) ?? ""
+        let pattern = #"static let ([A-Za-z]+)\s*=\s*"([A-Za-z]+)""#
+        let re = try! NSRegularExpression(pattern: pattern)
+        var declared: [String: String] = [:]     // swift name -> key string
+        for m in re.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+            guard let n = Range(m.range(at: 1), in: source),
+                  let v = Range(m.range(at: 2), in: source) else { continue }
+            declared[String(source[n])] = String(source[v])
+        }
+        check("the key list was read out of Prefs.swift", declared.count >= 20,
+              "found \(declared.count) — if this is 0 the next check proves nothing")
+
+        // Two are deliberately outside allKeys, each with its reason in the source.
+        let exempt = ["migratedFromOldName"]
+        let missing = declared
+            .filter { !exempt.contains($0.key) && !Prefs.allKeys.contains($0.value) }
+            .keys.sorted()
+        check("every key declared in Prefs.swift is in allKeys",
+              missing.isEmpty, "missing: \(missing.joined(separator: ", "))")
         check("…and the migration marker is deliberately not",
               !Prefs.allKeys.contains(Prefs.migratedFromOldName))
     }

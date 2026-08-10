@@ -110,23 +110,58 @@ enum Updater {
 
         var request = URLRequest(url: releasesAPI, timeoutInterval: 15)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        // No cookies, no credentials, nothing identifying beyond what any HTTP
-        // client sends.
         request.httpShouldHandleCookies = false
 
+        // Pinned, not inherited. CFNetwork fills in two headers of its own
+        // unless told otherwise, and both describe the person rather than the
+        // request: `Accept-Language` is built from their AppleLanguages list —
+        // measured changing to `he-IL,he;q=0.9` when that list changes — and
+        // `User-Agent` carries the app build and the exact Darwin kernel
+        // version, i.e. the machine's precise macOS point release. Together
+        // with the source IP that is a stable per-machine fingerprint, sent
+        // daily, by an app whose README promises the request "sends nothing
+        // about you". GitHub requires *a* User-Agent, so send a constant one
+        // (U26).
+        request.setValue("VisionOCR", forHTTPHeaderField: "User-Agent")
+        request.setValue("en", forHTTPHeaderField: "Accept-Language")
+
         session.dataTask(with: request) { data, response, error in
-            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Prefs.lastUpdateCheck)
+            /// A failure costs fifteen minutes, not a day. Stamping the clock
+            /// before looking at the result meant one launch on a train spent
+            /// the day's only automatic check, and a user whose first launch is
+            /// reliably the offline one would never be told about a fix at all
+            /// (U26). A real answer still spends the full interval.
+            func spend(_ seconds: TimeInterval) {
+                UserDefaults.standard.set(Date().timeIntervalSince1970 - interval + seconds,
+                                          forKey: Prefs.lastUpdateCheck)
+            }
+            let retryAfterFailure: TimeInterval = 15 * 60
+
             if let error {
+                spend(retryAfterFailure)
                 completion(.failed(error.localizedDescription)); return
             }
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                spend(retryAfterFailure)
                 completion(.failed("GitHub replied \((response as? HTTPURLResponse)?.statusCode ?? 0)"))
                 return
             }
             guard let data, let found = release(from: data) else {
+                spend(retryAfterFailure)
                 completion(.failed("could not read the release list")); return
             }
-            completion(shouldAnnounce(found) ? .available(found) : .upToDate)
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Prefs.lastUpdateCheck)
+
+            // A forced check answers about reality, not about what was skipped.
+            // Otherwise "Check Now" says "Up to date" on a version the user can
+            // see on the releases page, and the skip is unreachable once made
+            // (U26).
+            if force {
+                completion(isNewer(found.version, than: currentVersion)
+                           ? .available(found) : .upToDate)
+            } else {
+                completion(shouldAnnounce(found) ? .available(found) : .upToDate)
+            }
         }.resume()
     }
 }

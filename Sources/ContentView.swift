@@ -167,6 +167,8 @@ struct ContentView: View {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
         case .cancelled:
             Image(systemName: "minus.circle").foregroundStyle(.secondary)
+        case .skipped:
+            Image(systemName: "arrow.turn.down.right").foregroundStyle(.secondary)
         }
     }
 
@@ -391,7 +393,7 @@ struct ContentView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 1) {
-                        ForEach(model.log) { line in
+                        ForEach(model.logFailuresFirst) { line in
                             Text(line.text)
                                 .font(.callout)
                                 .foregroundStyle(line.color)
@@ -408,7 +410,14 @@ struct ContentView: View {
                     .textSelection(.enabled)
                 }
                 .onChange(of: model.log.count) { _ in
-                    if let last = model.log.last { proxy.scrollTo(last.id, anchor: .bottom) }
+                    // To the top when there is a problem: failures are listed
+                    // first now, and scrolling to the newest success would hide
+                    // the thing worth reading. Otherwise follow the run.
+                    if let first = model.logFailuresFirst.first, model.problemCount > 0 {
+                        proxy.scrollTo(first.id, anchor: .top)
+                    } else if let last = model.log.last {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    }
                 }
             }
             .frame(minHeight: 90)
@@ -420,7 +429,7 @@ struct ContentView: View {
     }
 
     private var resultsHeading: String {
-        let failed = model.log.filter { $0.kind == .failure }.count
+        let failed = model.problemCount        // files, not log lines
         return failed > 0 ? "Results — \(failed) problem\(failed == 1 ? "" : "s")" : "Results"
     }
 

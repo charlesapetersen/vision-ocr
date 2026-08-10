@@ -118,6 +118,51 @@ enum Flattener {
     /// all 4,992 corpus pages: none exceed 100 MP.
     static let maximumPageMegapixels = 400
 
+    /// The most megapixels mac-ocr will render a PDF page to before refusing.
+    ///
+    /// Its own limit, not ours, and **lower than ours** — we refuse past 400 MP
+    /// (`maximumPageMegapixels`), it refuses past 200. So a page we happily
+    /// rebuild can be one it will not read, and the run fails at recognition
+    /// with "PDF page at 300 DPI would render to 250 megapixels (max 200 MP)"
+    /// after all the rebuild work is done. Taken from that message rather than
+    /// from documentation, because that message is what the shipped binary
+    /// actually enforces (U25).
+    static let recogniserPageMegapixelLimit = 200
+
+    /// The highest `--pdf-dpi` at which every page of this document stays inside
+    /// the recogniser's limit, or nil if no page is near it.
+    ///
+    /// Returned so the caller can ask for a DPI that works instead of letting
+    /// the default fail: a slightly coarser render of one enormous broadsheet is
+    /// worth more than no text at all, and it changes nothing for the documents
+    /// that were never close.
+    static func recogniserDPICeiling(for url: URL, password: String? = nil) -> Int? {
+        guard let doc = open(url, password: password) else { return nil }
+        var lowest = Int.max
+        for i in 0..<doc.pageCount {
+            guard let page = doc.page(at: i) else { continue }
+            let box = fullBox(of: page)
+            let inches = (box.width / 72.0) * (box.height / 72.0)
+            guard inches > 0, inches.isFinite else { continue }
+            // pixels = inches² × dpi², so dpi = sqrt(limit / inches²).
+            let ceiling = (Double(recogniserPageMegapixelLimit) * 1_000_000 / inches).squareRoot()
+            // A little under, because the limit is a refusal and rounding at the
+            // boundary would still fail.
+            lowest = min(lowest, safeInt(ceiling * 0.98))
+        }
+        // 72 is the floor mac-ocr itself accepts; below that there is nothing
+        // useful to ask for and the document simply cannot be read.
+        //
+        // Nil means "nothing to measure" — no pages, or a file PDFKit could not
+        // open — never "fine at some particular DPI". Comparing against a
+        // default here is what made a 30 x 40 poster fail at a requested 600:
+        // it needs no ceiling at 300, so none was reported, so nothing clamped
+        // the 600 the recogniser then refused. Deciding *whether* the ceiling
+        // binds is the caller's job, and `recognitionArguments` does it by
+        // taking the lower of this and what was asked for (U25).
+        return lowest == Int.max ? nil : max(lowest, 72)
+    }
+
     /// The largest `/Width` or `/Height` worth believing from an image XObject.
     /// Those are declarations, not measurements: `CGPDFInteger` is 64-bit, the
     /// stream behind them can be three bytes, and nothing cross-checks the two.

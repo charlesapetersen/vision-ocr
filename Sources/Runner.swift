@@ -288,7 +288,12 @@ enum Runner {
     }
 
     /// Recognition options, identical whatever we ask mac-ocr to produce.
-    static func recognitionArguments(_ settings: Prefs.Snapshot = .current()) -> [String] {
+    /// The DPI mac-ocr renders PDF pages at when told nothing. Kept here so the
+    /// ceiling is computed against the same number the engine would have used.
+    static let recogniserDefaultDPI = 300
+
+    static func recognitionArguments(_ settings: Prefs.Snapshot = .current(),
+                                     dpiCeiling: Int? = nil) -> [String] {
         var args: [String] = []
 
         if settings.fast { args.append("--fast") }
@@ -302,8 +307,19 @@ enum Runner {
 
         if settings.confidence > 0 { args += ["-c", trimNumber(settings.confidence)] }
 
-        if !settings.pdfDPIAuto {
-            args += ["--pdf-dpi", String(clamp(settings.pdfDPI, 72, 600))]
+        // The one place that decides the render DPI, so there can never be two
+        // --pdf-dpi flags disagreeing about it.
+        //
+        // A ceiling only ever lowers. Raising a deliberately low DPI to meet a
+        // limit would be absurd, and obeying a high one the recogniser will
+        // refuse costs the whole file's text rather than some of its quality
+        // (U25). Auto mode still omits the flag entirely when nothing forces
+        // it, leaving the engine's own default alone.
+        let requested = settings.pdfDPIAuto ? recogniserDefaultDPI
+                                            : clamp(settings.pdfDPI, 72, 600)
+        let effective = min(requested, dpiCeiling ?? requested)
+        if !settings.pdfDPIAuto || effective < requested {
+            args += ["--pdf-dpi", String(effective)]
         }
 
         if !settings.password.isEmpty { args += ["--password", settings.password] }
@@ -330,8 +346,13 @@ enum Runner {
     /// page is recognised. That streaming is what lets a 200-page book report
     /// progress instead of sitting silent for minutes.
     static func jsonLinesArguments(for file: URL,
-                                   settings: Prefs.Snapshot = .current()) -> [String] {
-        [file.path, "--format", "jsonl"] + recognitionArguments(settings)
+                                   settings: Prefs.Snapshot = .current(),
+                                   dpiCeiling: Int? = nil) -> [String] {
+        // The ceiling goes through `recognitionArguments`, which owns the DPI
+        // decision, rather than being appended here — two --pdf-dpi flags whose
+        // precedence depends on the engine's argument parser is not something
+        // this app should be relying on (U25).
+        [file.path, "--format", "jsonl"] + recognitionArguments(settings, dpiCeiling: dpiCeiling)
     }
 
     /// Runs mac-ocr and hands back each stdout line as it arrives.
