@@ -2451,6 +2451,56 @@ The worst-affected document is the case for the feature rather than against it
 blue-black, its paper is cream, and there is an archivist's **red pencil "452"**
 in the corner that every previous version rendered grey.
 
+### U28 · Three defects in the colour work's own code — FIXED
+*(2026-08-10, adversarial review of F1 and the confidence copy, asked for. Sixth
+round running where reviewing a change found defects inside it.)*
+
+**A predicate extracted "so the prose can be checked" that nothing checked.**
+`willRebuild` was added to make the Settings panel's claim about *which* files
+get rebuilt verifiable. Six checks asserted against it — and no production code
+ever called it. `processOne` still evaluated its own copy of the condition, so
+changing that copy would leave all six green while the panel went back to
+lying. This is precisely U26's `Prefs.allKeys` shape: a duplicate of the thing
+under test, agreeing with it by construction. `processOne` now calls it.
+
+**The memory bound was right by luck and documented by a false derivation.**
+The comment said "a colour render is four bytes a pixel where grey is one, so a
+quarter of the page limit keeps peak memory unchanged", and BUGS.md and the
+commit message repeated it. Both halves are wrong: the grey buffer is still
+alive when the RGBA one is allocated, and both are copied again into a 24-bit
+bitmap rep, a JPEG, and a decoded CGImage on the way into the PDF context.
+
+Measured peak RSS on one 64.8 MP page, two builds differing only in the colour
+decision: **356 MB grey, 1,261 MB colour** — 5.5 against 19.5 bytes per pixel, a
+ratio of 3.5. The 100 MP bound survives review, but for a different reason than
+the one recorded: it peaks near 1.95 GB, and a 400 MP grey page — which
+`maximumPageMegapixels` has always permitted — peaks near 2.20 GB, so colour
+cannot reach a high-water mark grey could not. Both measurements are now
+constants and `colourBoundIsWithinTheGreyOne` checks the inequality, so raising
+either limit without re-measuring fails.
+
+**Nothing guarded the row stride.** `jpegRGB` packs RGBA into a 24-bit
+`NSBitmapImageRep` at `bytesPerRow: width * 3`, which AppKit is free to ignore
+and pad. It does not — verified at 417, 418, 419 and 421 px, none a multiple of
+four — but a padded stride would skew every row progressively, and a sheared
+page is still a coloured page, so every saturation check would have stayed green
+while the output turned to diagonal mush.
+
+The check written for it was **worthless twice before it worked**, which is the
+part worth recording:
+
+- Version one sampled two corners of a two-block pattern. A deliberately padded
+  stride passed it: a one-pixel-per-row shear leaves a big red block still
+  reddish in the top-left corner.
+- Version two compared whole pages but used 24 narrow wedges, and read 20.6 on
+  *correct* code — resampling a high-frequency pattern, not a shear. Six wide
+  wedges read 4.3–6.2 correct against 111–113 sheared.
+
+Also caught in review and not a defect: the probe that first read the rebuilt
+pages as blank was sampling with the y-axis inverted — bitmap row 0 is the
+visual top while CG's drawing origin is bottom-left. The originals sampled white
+at the same coordinates, which is what said "instrument, not code".
+
 ### U12 · Settings input validation — NO DEFECT
 Recorded because it was checked properly and found clean, which is worth knowing
 next time someone wonders.

@@ -5008,9 +5008,21 @@ do {
           Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, pixels: underBound))
     check("…and past it gives the colour up rather than the four-byte allocation",
           !Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, pixels: overBound))
-    check("the bound is a quarter of the grey one, so peak memory is unchanged",
-          Flattener.maximumColourPageMegapixels * 4 == Flattener.maximumPageMegapixels,
-          "\(Flattener.maximumColourPageMegapixels) vs \(Flattener.maximumPageMegapixels)")
+    // This check replaces one that asserted the bound was "a quarter of the grey
+    // one, so peak memory is unchanged". Both halves were false: the grey buffer
+    // is still alive when the RGBA one is allocated, and both are copied again
+    // into a bitmap rep, a JPEG and a decoded CGImage. Measured peak RSS on a
+    // 64.8 MP page: 356 MB grey, 1,261 MB colour. What the bound has to satisfy
+    // is that colour cannot reach a high-water mark grey could not already.
+    check("the colour bound's worst case stays inside the grey one's",
+          Flattener.colourBoundIsWithinTheGreyOne,
+          String(format: "colour %.2f GB vs grey %.2f GB",
+                 Double(Flattener.maximumColourPageMegapixels)
+                    * Flattener.measuredColourBytesPerPixel / 1000,
+                 Double(Flattener.maximumPageMegapixels)
+                    * Flattener.measuredGreyBytesPerPixel / 1000))
+    check("…and the colour path is still recorded as the more expensive one",
+          Flattener.measuredColourBytesPerPixel > Flattener.measuredGreyBytesPerPixel)
     check("a grey page is never promoted to colour, whatever its size",
           !Flattener.shouldKeepColour(mode: .auto, saturation: 0, pixels: 1000))
     check("…and colour is Automatic's decision alone",
@@ -5059,6 +5071,75 @@ do {
                              as: UTF8.self)
         check("…while a page not marked colour still declares DeviceGray",
               greyRaw.contains("/DeviceGray"), "did not")
+    }
+
+    // Row stride. `jpegRGB` packs RGBA into a 24-bit rep at bytesPerRow =
+    // width * 3, which AppKit is free to ignore and pad to its own alignment.
+    // If it did, the tight three-byte copy would skew every row progressively.
+    //
+    // The first version of this sampled two corners of a two-block pattern and
+    // was worthless: a one-pixel-per-row shear leaves a big red block still
+    // reddish in the top-left, so a deliberately padded stride passed it. What
+    // catches a shear is comparing the whole page against the original, which
+    // is also the property actually wanted — the rebuild should look like the
+    // page it rebuilt.
+    func meanChannelDifference(_ a: URL, _ b: URL) -> Double? {
+        func sample(_ url: URL) -> ([UInt8], Int, Int)? {
+            guard let d = PDFDocument(url: url), let p = d.page(at: 0) else { return nil }
+            let box = p.bounds(for: .mediaBox)
+            let w = 48, h = max(Int(48 * box.height / box.width), 1)
+            guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8,
+                                      bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return nil }
+            ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+            ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+            ctx.scaleBy(x: CGFloat(w) / box.width, y: CGFloat(w) / box.width)
+            p.draw(with: .mediaBox, to: ctx)
+            guard let raw = ctx.data else { return nil }
+            let buf = UnsafeBufferPointer(start: raw.bindMemory(to: UInt8.self,
+                                                                capacity: w * h * 4),
+                                          count: w * h * 4)
+            return (Array(buf), w, h)
+        }
+        guard let (x, w1, h1) = sample(a), let (y, w2, h2) = sample(b),
+              w1 == w2, h1 == h2 else { return nil }
+        var total = 0.0, n = 0
+        for i in stride(from: 0, to: min(x.count, y.count), by: 4) {
+            for c in 0..<3 { total += abs(Double(x[i + c]) - Double(y[i + c])); n += 1 }
+        }
+        return n > 0 ? total / Double(n) : nil
+    }
+
+    for pointWidth in [100.0, 100.25, 100.5, 101.0] {
+        let src = dir.appendingPathComponent("stride-\(pointWidth).pdf")
+        var sbox = CGRect(x: 0, y: 0, width: pointWidth, height: 120)
+        guard let c = CGContext(src as CFURL, mediaBox: &sbox, nil) else { continue }
+        c.beginPDFPage(nil)
+        // Diagonal wedges, not blocks: every row differs from its neighbours, so
+        // a shear of even one pixel per row shows up as a large difference.
+        for i in 0..<6 {
+            c.setFillColor(CGColor(red: Double(i % 3) / 2, green: Double((i / 3) % 2),
+                                   blue: Double((i + 1) % 2), alpha: 1))
+            c.fill(CGRect(x: pointWidth * Double(i) / 6.0, y: 0,
+                          width: pointWidth / 6.0, height: 120))
+        }
+        c.endPDFPage(); c.closePDF()
+
+        let out = dir.appendingPathComponent("stride-out-\(pointWidth).pdf")
+        _ = try? Flattener.flatten(src, to: out, mode: .auto)
+        let pixelsWide = Int((sbox.width * Flattener.fallbackRebuildDPI / 72).rounded())
+        guard let diff = meanChannelDifference(src, out) else {
+            check("the stride fixture at \(pointWidth) pt rebuilds", false, "unreadable")
+            continue
+        }
+        check("at \(pixelsWide) px wide the rebuild still looks like the original",
+              // Correct code measures 4.3-6.2 here; a stride padded by one
+              // pixel measures 111-113. Twenty sits between them with room on
+              // both sides, and the first fixture — 24 narrow wedges rather
+              // than 6 wide ones — was rejected for reading 20.6 on correct
+              // code purely from resampling a high-frequency pattern.
+              diff < 20, String(format: "mean channel difference %.1f", diff))
     }
 
     // The panel's prose has now been wrong about this twice — "only applied to

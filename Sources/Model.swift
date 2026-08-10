@@ -1235,8 +1235,15 @@ final class OCRModel: ObservableObject {
 
         // Rebuild when there's an old text layer to strip, and also whenever
         // JBIG2 is wanted — it needs the per-page bitmaps.
-        let mustStrip = rebuild && Flattener.hasEmbeddedText(file, password: password)
-        if mustStrip || wantJBIG2 {
+        // Through `willRebuild`, not a copy of its condition. It was a copy —
+        // extracted "so the prose can be checked", asserted against by six
+        // checks, and called by nothing. A predicate the product does not use
+        // is a duplicate of the thing under test that agrees with it by
+        // construction: change the line below and every one of those checks
+        // stays green while the Settings panel goes back to lying. U26 had this
+        // exact shape with `Prefs.allKeys`.
+        if Self.willRebuild(hasEmbeddedText: Flattener.hasEmbeddedText(file, password: password),
+                            rebuild: rebuild, settings: settings, mode: rebuildMode) {
             let rebuilt = scratch.appendingPathComponent(file.lastPathComponent)
             if wantJBIG2 {
                 try? FileManager.default.createDirectory(at: pngDir,

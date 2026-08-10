@@ -122,14 +122,37 @@ enum Flattener {
 
     /// The most megapixels a page may be before its colour is given up.
     ///
-    /// A quarter of `maximumPageMegapixels`, and that is the whole derivation: a
-    /// colour render is RGBA, four bytes a pixel where grey is one, so this
-    /// keeps the peak allocation per page exactly what it was when every page
-    /// was rendered grey. Above it the page still rebuilds — in grey, as it
-    /// always did — because a coarser rendering of a big plate is a quality
-    /// loss, while a failed 1.6 GB allocation takes down every file running
-    /// alongside it.
-    static let maximumColourPageMegapixels = maximumPageMegapixels / 4
+    /// Above it the page still rebuilds — in grey, as it always did — because a
+    /// coarser rendering of one big plate is a quality loss, while a failed
+    /// two-gigabyte allocation takes down every file running alongside it.
+    ///
+    /// **Derived from measurement, not from arithmetic.** The first version of
+    /// this said "a colour render is four bytes a pixel where grey is one, so a
+    /// quarter keeps peak memory unchanged", which is wrong twice over: the grey
+    /// buffer is still alive when the RGBA one is allocated, and both are then
+    /// copied into a 24-bit bitmap rep, a JPEG, and a decoded CGImage on the way
+    /// into the PDF. Measured peak RSS on one 64.8 MP page: **356 MB grey,
+    /// 1,261 MB colour** — 5.5 and 19.5 bytes per pixel, a ratio of 3.5, not 4.
+    ///
+    /// What makes 100 defensible is that it lands *below* a ceiling this app
+    /// already lived with: 100 MP of colour peaks near 1.95 GB, and a 400 MP
+    /// grey page — which `maximumPageMegapixels` has always allowed — peaks near
+    /// 2.20 GB. So colour cannot reach a high-water mark grey could not.
+    /// `colourBoundIsWithinTheGreyOne` checks that, so raising either constant
+    /// without re-measuring fails rather than quietly doubling the worst case.
+    static let maximumColourPageMegapixels = 100
+
+    /// Peak process bytes per pixel on each rebuild path, measured rather than
+    /// reasoned about — see `maximumColourPageMegapixels`. Re-measure if the
+    /// encoding path changes; they are here so the bound can be checked.
+    static let measuredGreyBytesPerPixel = 5.5
+    static let measuredColourBytesPerPixel = 19.5
+
+    /// Whether the colour bound's worst case stays inside the grey one's.
+    static var colourBoundIsWithinTheGreyOne: Bool {
+        Double(maximumColourPageMegapixels) * measuredColourBytesPerPixel
+            <= Double(maximumPageMegapixels) * measuredGreyBytesPerPixel
+    }
 
     /// The most megapixels mac-ocr will render a PDF page to before refusing.
     ///
@@ -533,8 +556,9 @@ enum Flattener {
             // detector could *see* the colour, since saturation is one of the
             // three signals that route the page here, and then threw it away.
             //
-            // Bounded by megapixels because the render is four times the memory.
-            // Over the bound the page rebuilds grey, exactly as it used to.
+            // Bounded by megapixels because the colour path costs ~3.5x the
+            // peak memory of the grey one, measured. Over the bound the page
+            // rebuilds grey, exactly as it used to.
             let wantColour = !useBilevel
                 && shouldKeepColour(mode: mode, saturation: sat, pixels: wide * high)
 
@@ -728,8 +752,9 @@ enum Flattener {
     }
 
     /// 8-bit RGBA render of one page, for the pages that have colour worth
-    /// keeping. Four bytes a pixel against `renderGrey`'s one, which is why
-    /// `maximumColourPageMegapixels` exists.
+    /// keeping. Four bytes a pixel against `renderGrey`'s one — and the grey
+    /// buffer is still alive alongside it, which is half of why
+    /// `maximumColourPageMegapixels` exists and is measured rather than derived.
     ///
     /// Identical to `renderGrey` in every other respect, deliberately: same
     /// drawing transform, same white fill, same fallback. Rotation and cropping
