@@ -148,15 +148,27 @@ struct SettingsView: View {
                           + "Blank lets Vision decide.")
             }
 
-            Row("Min. confidence", labelWidth) {
+            Row("Uncertain text", labelWidth) {
                 Slider(value: $confidence, in: 0...1)
-                    .accessibilityLabel("Minimum confidence")
-                    .accessibilityValue(String(format: "%.2f", confidence))
-                Text(String(format: "%.2f", confidence))
-                    .font(.system(.caption, design: .monospaced))
-                    .frame(width: 32, alignment: .trailing)
+                    .accessibilityLabel("What to do with uncertain text")
+                    .accessibilityValue(Prefs.confidenceReadout(confidence))
+                Text(Prefs.confidenceReadout(confidence))
+                    .font(.caption)
+                    .frame(width: 96, alignment: .trailing)
+                    .foregroundStyle(confidence > 0 ? .primary : .secondary)
             }
-            .help("Discards text recognized below this confidence. 0 keeps everything.")
+            .help("Vision scores how sure it is of every word it reads. Keeping "
+                  + "everything is usually right for a scan: a rough guess at a "
+                  + "smudged word is still something you can search for, and a "
+                  + "wrong guess is rarely worse than a gap. Move this right and "
+                  + "anything scored below the mark is thrown away instead.")
+
+            // Only once it has been moved, so it costs nothing at the default.
+            if let warning = Prefs.confidenceWarning(confidence) {
+                Text(warning)
+                    .font(.caption2).foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             Row("PDF render DPI", labelWidth) {
                 Toggle("Auto", isOn: $pdfDPIAuto).toggleStyle(.checkbox)
@@ -223,9 +235,10 @@ struct SettingsView: View {
                     .help("mac-ocr adds its text layer on top of any existing one, which "
                           + "makes copied text come out doubled. Rebuilding the pages as "
                           + "images first means Vision's OCR is the only text in the result. "
-                          + "Note the rebuild also re-encodes the pages, in the format "
-                          + "chosen below. "
-                          + "Only applied to files that already contain text.")
+                          + "The rebuild re-encodes every page it touches, in the format "
+                          + "chosen below — black and white or grey, never colour. It runs "
+                          + "on files that already contain text, and on all of them when "
+                          + "JBIG2 is on below, since JBIG2 needs the pages as bitmaps.")
 
                 if rebuildImages {
                     Toggle("Ask first if a PDF already has selectable text",
@@ -243,9 +256,11 @@ struct SettingsView: View {
                 if rebuildMode.canUseJBIG2 {
                     Toggle("Compress with JBIG2 (about a third the size)", isOn: $useJBIG2)
                         .help("Lossless JBIG2 instead of the Flate that CoreGraphics writes: "
-                              + "same pixels at the same resolution, roughly a third the bytes. "
-                              + "Needs jbig2enc and qpdf; without them the app falls back "
-                              + "silently.")
+                              + "the same bitmap at the same resolution, in roughly a third "
+                              + "the bytes. It can only encode black-and-white pages, so "
+                              + "switching it on rebuilds every page — including ones that "
+                              + "would otherwise have been left exactly as they came in. "
+                              + "Turn it off to keep a colour original in colour.")
                     if useJBIG2, rebuildImages, !JBIG2.isAvailable {
                         Text("Not installed — falling back to Flate. Install with: "
                              + JBIG2.installHint)

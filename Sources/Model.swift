@@ -721,6 +721,31 @@ final class OCRModel: ObservableObject {
 
     /// The sentence the user has to answer. Separate from the alert so the
     /// wording is testable without an `NSAlert` on screen.
+    /// Whether JBIG2 encoding will be attempted, which also decides whether the
+    /// pages get re-rendered even when there is no text layer to strip.
+    nonisolated static func wantsJBIG2(rebuild: Bool, settings: Prefs.Snapshot,
+                                       mode: Flattener.Mode,
+                                       available: Bool = JBIG2.isAvailable) -> Bool {
+        rebuild && settings.useJBIG2 && mode.canUseJBIG2 && available
+    }
+
+    /// Whether this file's pages will be re-rendered — the question the Settings
+    /// panel answers in prose, extracted so the prose can be checked.
+    ///
+    /// The panel used to say the rebuild was "only applied to files that already
+    /// contain text", which is what the code does when JBIG2 is off and simply
+    /// untrue when it is on: JBIG2 is a bilevel codec and needs the pages as
+    /// bitmaps, so switching on a *compression* option quietly re-renders every
+    /// page — and re-rendering is what turns a colour scan grey.
+    nonisolated static func willRebuild(hasEmbeddedText: Bool, rebuild: Bool,
+                                        settings: Prefs.Snapshot,
+                                        mode: Flattener.Mode,
+                                        jbig2Available: Bool = JBIG2.isAvailable) -> Bool {
+        let mustStrip = rebuild && hasEmbeddedText
+        return mustStrip || wantsJBIG2(rebuild: rebuild, settings: settings,
+                                       mode: mode, available: jbig2Available)
+    }
+
     nonisolated static func digitalTextWarning(for digital: [URL], of total: Int) -> String {
         let names = digital.prefix(5).map(\.lastPathComponent).joined(separator: "\n• ")
         let more = digital.count > 5 ? "\n• …and \(digital.count - 5) more" : ""
@@ -1201,10 +1226,8 @@ final class OCRModel: ObservableObject {
         //
         //    `rebuild` gates JBIG2 as well: wanting bitmaps is not permission to
         //    re-render pages the user asked us to leave alone.
-        let wantJBIG2 = rebuild
-            && settings.useJBIG2
-            && rebuildMode.canUseJBIG2
-            && JBIG2.isAvailable
+        let wantJBIG2 = Self.wantsJBIG2(rebuild: rebuild, settings: settings,
+                                        mode: rebuildMode)
         var visible = file
         var bitmaps: [Flattener.RebuiltPage] = []
         var encoded: [JBIG2.Page] = []

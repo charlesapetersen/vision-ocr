@@ -4821,6 +4821,160 @@ do {
 // OCR moves it — and without a migration everyone silently loses their output
 // folder, language list and mac-ocr path on a release that only changed a name.
 
+print("\nsaying what the confidence setting means")
+
+do {
+    // "Min. confidence — 0.00" is a label, a number and no information: no
+    // units, no direction, and nothing about what happens to the text on the
+    // wrong side of it. The readout has to answer the question someone
+    // actually has, which at the default is "so is this doing anything?".
+    check("the default says what the default does, not '0.00'",
+          Prefs.confidenceReadout(0) == "keep everything",
+          Prefs.confidenceReadout(0))
+    check("…and never shows a bare decimal at any position",
+          !stride(from: 0.0, through: 1.0, by: 0.05)
+              .map(Prefs.confidenceReadout)
+              .contains { $0.first?.isNumber == true },
+          Prefs.confidenceReadout(0.35))
+    check("a raised threshold says which way the discarding runs",
+          Prefs.confidenceReadout(0.4) == "drop below 40%",
+          Prefs.confidenceReadout(0.4))
+    check("…in whole percent, because a scan is not a measurement",
+          Prefs.confidenceReadout(0.355) == "drop below 36%",
+          Prefs.confidenceReadout(0.355))
+    check("the top of the slider is 100%, not 1",
+          Prefs.confidenceReadout(1) == "drop below 100%",
+          Prefs.confidenceReadout(1))
+
+    // The consequence is invisible in the output, so it is stated on the panel
+    // rather than in a tooltip nobody hovers.
+    check("no warning at the default, where there is nothing to warn about",
+          Prefs.confidenceWarning(0) == nil,
+          Prefs.confidenceWarning(0) ?? "nil")
+    check("a warning the moment it is raised at all",
+          Prefs.confidenceWarning(0.01) != nil)
+    check("…that says the words go missing, not that they are 'discarded'",
+          (Prefs.confidenceWarning(0.4) ?? "").contains("missing")
+            && (Prefs.confidenceWarning(0.4) ?? "").contains("nothing to show"),
+          Prefs.confidenceWarning(0.4) ?? "nil")
+    check("…and names the same percentage the readout does",
+          (Prefs.confidenceWarning(0.4) ?? "").contains("40%"),
+          Prefs.confidenceWarning(0.4) ?? "nil")
+
+    // The label has to fit the panel's fixed 116pt label column, which is what
+    // "Discard uncertain text" would not do — it would silently truncate.
+    let label = "Uncertain text"
+    let width = (label as NSString).size(withAttributes: [
+        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)]).width
+    check("the row label fits the label column without truncating",
+          width <= 116, String(format: "%.0f pt", width))
+
+    // …and so must the readout itself, in the 96pt column beside the slider.
+    // Truncation is the failure mode for a phrase where a number used to be:
+    // "keep everyth…" is worse than the 0.00 it replaced.
+    let caption = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+    var widest = 0.0, widestText = ""
+    for step in stride(from: 0.0, through: 1.0, by: 0.01) {
+        let text = Prefs.confidenceReadout(step)
+        let w = (text as NSString).size(withAttributes: [.font: caption]).width
+        if w > widest { widest = w; widestText = text }
+    }
+    check("the widest readout the slider can produce fits its column",
+          widest <= 96, String(format: "\"%@\" is %.0f pt", widestText, widest))
+}
+
+print("\nwhat the rebuild does, and to which files")
+
+do {
+    // The Settings panel used to say the rebuild is "only applied to files that
+    // already contain text". True with JBIG2 off, false with it on — and it is
+    // on by default. JBIG2 is a bilevel codec, so it needs every page as a
+    // bitmap, which means switching on a *compression* option re-renders pages
+    // that had nothing wrong with them.
+    resetPrefs()
+    var s = Prefs.Snapshot.current()
+
+    s.useJBIG2 = false
+    check("with JBIG2 off, an untouched file really is left alone",
+          !OCRModel.willRebuild(hasEmbeddedText: false, rebuild: true, settings: s,
+                                mode: .auto, jbig2Available: true))
+    check("…while one carrying an old text layer is rebuilt, which is the point",
+          OCRModel.willRebuild(hasEmbeddedText: true, rebuild: true, settings: s,
+                               mode: .auto, jbig2Available: true))
+
+    s.useJBIG2 = true
+    check("with JBIG2 on, every file is rebuilt, text layer or not",
+          OCRModel.willRebuild(hasEmbeddedText: false, rebuild: true, settings: s,
+                               mode: .auto, jbig2Available: true))
+    check("…unless the codec is not installed, where it falls back and leaves it",
+          !OCRModel.willRebuild(hasEmbeddedText: false, rebuild: true, settings: s,
+                                mode: .auto, jbig2Available: false))
+    check("…and not in Grayscale, which JBIG2 cannot encode",
+          !OCRModel.willRebuild(hasEmbeddedText: false, rebuild: true, settings: s,
+                                mode: .grayscale, jbig2Available: true))
+    check("turning the rebuild off turns it off, whatever JBIG2 says",
+          !OCRModel.willRebuild(hasEmbeddedText: true, rebuild: false, settings: s,
+                                mode: .auto, jbig2Available: true))
+
+    // And what the rebuild costs: there is no colour path through it at all.
+    // `render` draws into a DeviceGray context, so every mode discards colour —
+    // Auto only chooses between 1-bit and grey. Worth pinning, because the
+    // saturation signal exists to *detect* colour, which reads as if colour
+    // were preserved somewhere.
+    let dir = tmp.appendingPathComponent("colour-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let colour = dir.appendingPathComponent("colour.pdf")
+    var cbox = CGRect(x: 0, y: 0, width: 612, height: 792)
+    if let c = CGContext(colour as CFURL, mediaBox: &cbox, nil) {
+        c.beginPDFPage(nil)
+        for (i, col) in [CGColor(red: 0.9, green: 0.1, blue: 0.1, alpha: 1),
+                         CGColor(red: 0.1, green: 0.5, blue: 0.9, alpha: 1),
+                         CGColor(red: 0.95, green: 0.75, blue: 0.05, alpha: 1)].enumerated() {
+            c.setFillColor(col)
+            c.fill(CGRect(x: 60, y: 400 + CGFloat(i) * 90, width: 480, height: 84))
+        }
+        c.endPDFPage(); c.closePDF()
+    }
+
+    /// Mean saturation of a rendered page. 0 means nothing coloured survived.
+    func saturation(of url: URL) -> Double {
+        guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return -1 }
+        let box = page.bounds(for: .mediaBox)
+        let w = 120, h = Int(120 * box.height / box.width)
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8,
+                                  bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return -1 }
+        ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+        ctx.scaleBy(x: CGFloat(w) / box.width, y: CGFloat(w) / box.width)
+        page.draw(with: .mediaBox, to: ctx)
+        guard let data = ctx.data else { return -1 }
+        let px = data.bindMemory(to: UInt8.self, capacity: w * h * 4)
+        var total = 0.0
+        for i in stride(from: 0, to: w * h * 4, by: 4) {
+            let r = Double(px[i]), g = Double(px[i + 1]), b = Double(px[i + 2])
+            let mx = max(r, g, b), mn = min(r, g, b)
+            total += mx > 0 ? (mx - mn) / mx : 0
+        }
+        return total / Double(w * h)
+    }
+
+    check("the fixture is genuinely coloured, or the checks below prove nothing",
+          saturation(of: colour) > 0.1, String(format: "%.3f", saturation(of: colour)))
+
+    for mode in Flattener.Mode.allCases {
+        let out = dir.appendingPathComponent("out-\(mode.rawValue).pdf")
+        _ = try? Flattener.flatten(colour, to: out, mode: mode, password: nil,
+                                   pngDirectory: nil, isCancelled: { false },
+                                   progress: { _, _ in }, onPage: nil)
+        check("rebuilding as \(mode.label) keeps no colour — there is no colour path",
+              saturation(of: out) == 0, String(format: "%.3f", saturation(of: out)))
+    }
+    try? FileManager.default.removeItem(at: dir)
+    resetPrefs()
+}
+
 print("\nsettings survive the rename")
 
 do {

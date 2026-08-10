@@ -252,4 +252,33 @@ enum Prefs {
             concurrency: defaultConcurrency,
         ])
     }
+
+    // MARK: - Saying what a setting means
+
+    /// Plain-language readout for the confidence threshold.
+    ///
+    /// The slider read "0.00", which is three problems at once: the number has
+    /// no units, it does not say which direction is *more*, and it says nothing
+    /// about what happens to the text on the wrong side of it. At the default it
+    /// now answers the only question a reader actually has — it keeps
+    /// everything — and once moved it says which way the discarding runs.
+    static func confidenceReadout(_ value: Double) -> String {
+        value <= 0 ? "keep everything"
+                   : "drop below \(Int((min(value, 1) * 100).rounded()))%"
+    }
+
+    /// What raising it costs, or nil at the default, where it costs nothing.
+    ///
+    /// Shown on the panel rather than hidden in a tooltip, because the cost is
+    /// invisible in the result: discarded words leave no gap, no marker and no
+    /// note in the report, so a page comes back looking complete with words
+    /// missing from the text underneath it. Someone who does not know that is
+    /// exactly the person who should not be moving this slider.
+    static func confidenceWarning(_ value: Double) -> String? {
+        guard value > 0 else { return nil }
+        return "Words Vision is less than \(Int((min(value, 1) * 100).rounded()))% "
+            + "sure of will be missing from the finished text, with nothing to "
+            + "show where they were."
+    }
+
 }
