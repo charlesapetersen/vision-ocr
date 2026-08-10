@@ -573,6 +573,24 @@ final class OCRModel: ObservableObject {
         log.filter { $0.kind == .failure } + log.filter { $0.kind != .failure }
     }
 
+    /// Which line the results pane should bring into view when the log changes.
+    enum LogAnchor { case newest, firstProblem }
+
+    /// While the run is going, follow the newest line: that is the live record
+    /// of what is happening, and it is what someone watching a long batch is
+    /// reading. Only once it is over does the pane jump to the top, where the
+    /// failures now are.
+    ///
+    /// The first version of this pinned to the first problem whenever there was
+    /// one, which sounds right and is not: on a 255-file run where file 3
+    /// fails, each of the remaining 252 files appends a line, and every one of
+    /// them yanks the view back to the top. The log would stop following the
+    /// run at the moment it became most worth following (U25).
+    var logAnchor: LogAnchor {
+        if isRunning { return .newest }
+        return problemCount > 0 ? .firstProblem : .newest
+    }
+
     /// Empties the file list. **Not** the log: it is the only record of which
     /// files failed and where the outputs went, and clearing the list to queue
     /// the next batch is a normal thing to do straight after reading it.
@@ -890,7 +908,12 @@ final class OCRModel: ObservableObject {
         // files that have not started again would be a lie about the present.
         outcomes = [:]
         stages = [:]
-        skipped = []
+        // …but only for the files in *this* batch. `skipThem` sets `skipped`
+        // and then calls straight into here, so clearing the whole set wiped
+        // the mark two lines after it was made and U26's skipped glyph could
+        // never appear at all. Subtracting the batch keeps that mark while
+        // still clearing anything stale about a file that is running now.
+        skipped.subtract(batch)
 
         // The log used to open with the pipeline's steps — the mac-ocr command
         // line, the rebuild, the JBIG2 merge. That is a developer's view of the

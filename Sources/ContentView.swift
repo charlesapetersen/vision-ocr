@@ -409,16 +409,11 @@ struct ContentView: View {
                     // of a 40-file run meant copying them one at a time.
                     .textSelection(.enabled)
                 }
-                .onChange(of: model.log.count) { _ in
-                    // To the top when there is a problem: failures are listed
-                    // first now, and scrolling to the newest success would hide
-                    // the thing worth reading. Otherwise follow the run.
-                    if let first = model.logFailuresFirst.first, model.problemCount > 0 {
-                        proxy.scrollTo(first.id, anchor: .top)
-                    } else if let last = model.log.last {
-                        proxy.scrollTo(last.id, anchor: .bottom)
-                    }
-                }
+                .onChange(of: model.log.count) { _ in scrollLog(proxy) }
+                // …and again when the run ends, which is when the anchor moves
+                // to the problems and usually when the last line has already
+                // been appended.
+                .onChange(of: model.isRunning) { _ in scrollLog(proxy) }
             }
             .frame(minHeight: 90)
             .background(RoundedRectangle(cornerRadius: 6)
@@ -426,6 +421,19 @@ struct ContentView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Results")
+    }
+
+    /// Follows the model's decision rather than making one here: a `View` body
+    /// is the one place in this app no check can reach.
+    private func scrollLog(_ proxy: ScrollViewProxy) {
+        switch model.logAnchor {
+        case .firstProblem:
+            if let first = model.logFailuresFirst.first {
+                proxy.scrollTo(first.id, anchor: .top)
+            }
+        case .newest:
+            if let last = model.log.last { proxy.scrollTo(last.id, anchor: .bottom) }
+        }
     }
 
     private var resultsHeading: String {

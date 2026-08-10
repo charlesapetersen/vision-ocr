@@ -2362,6 +2362,37 @@ and all eleven would have stayed green. The real 8-file batch now asserts that
 every row says "succeeded" when the summary does, and the list-editing checks
 drive `remove` and `clearFiles` for real.
 
+### U27 · Three defects in U25 and U26's own code — FIXED
+*(2026-08-09, adversarial review of the branch before merging it. The fifth round
+running where reviewing a fix found defects inside it. This is not bad luck; it is
+what the process is for.)*
+
+**The results pane stopped following the run at the moment it mattered.** U25's
+own change: with failures listed first, the pane scrolled to the first problem
+whenever there was one. On a 255-file run where file 3 fails, each of the
+remaining 252 files appends a line and every one of them yanks the view back to
+the top. The log becomes unreadable exactly when someone is watching it because
+something went wrong. It follows the newest line while the run is going and
+jumps to the problems when it ends — and the decision is a property on the
+model, `logAnchor`, because a `View` body is the one place in this app no check
+can reach.
+
+**U26's skipped status could never appear.** `skipThem` sets `skipped` and then
+calls `run`, whose first act is to clear every per-file collection — including
+that one, two lines later. The glyph, the state and the VoiceOver phrasing were
+all unreachable, and the eleven row-status checks set the state by hand, so
+nothing noticed. `run` now subtracts the batch instead of emptying the set, and
+a real two-file batch — one born-digital, one scanned, answered "Skip Those" —
+asserts the skipped row says so afterwards while the other says "done".
+
+**A prerelease made the updater poll ninety-six times a day.** `release(from:)`
+returned nil both for a response it could not read and for one it read
+perfectly that had nothing to offer, and `check` treats nil as failure — which
+now means a fifteen-minute retry (U26). So a repo whose latest release happened
+to be a prerelease would be checked every quarter hour, for ever, by an app
+whose README promises one request a day. Parsing has three outcomes now, and
+only the unreadable one is a failure.
+
 ### U12 · Settings input validation — NO DEFECT
 Recorded because it was checked properly and found clean, which is worth knowing
 next time someone wonders.

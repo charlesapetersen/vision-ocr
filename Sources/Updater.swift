@@ -62,19 +62,43 @@ enum Updater {
         return false
     }
 
-    /// Pulls a release out of GitHub's JSON. Returns nil for anything it does
-    /// not fully understand, because a half-read response must not become a
-    /// notification claiming an update exists.
-    static func release(from data: Data) -> Release? {
+    /// What a response turned out to be.
+    ///
+    /// Three outcomes, not two. "Could not read this" and "read it fine, there
+    /// is nothing to offer" look identical if both are nil, and `check` has to
+    /// treat them differently: an unreadable response is a failure worth
+    /// retrying in fifteen minutes, while a prerelease at the top of the list
+    /// is a complete and correct answer. Collapsing them meant a repo whose
+    /// latest release was a prerelease got checked ninety-six times a day, by
+    /// an app whose README promises one.
+    enum Parsed: Equatable {
+        case offer(Release)
+        case notAnOffer      // understood completely; a draft, a prerelease
+        case unreadable      // truncated, not JSON, missing what it needs
+    }
+
+    /// Pulls a release out of GitHub's JSON. Refuses anything it does not fully
+    /// understand, because a half-read response must not become a notification
+    /// claiming an update exists.
+    static func parse(_ data: Data) -> Parsed {
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let tag = root["tag_name"] as? String,
               let page = root["html_url"] as? String,
-              let url = URL(string: page) else { return nil }
-        // Drafts and prereleases are not offers.
-        if root["draft"] as? Bool == true || root["prerelease"] as? Bool == true { return nil }
+              let url = URL(string: page) else { return .unreadable }
+        // Drafts and prereleases are not offers — but they are answers.
+        if root["draft"] as? Bool == true || root["prerelease"] as? Bool == true {
+            return .notAnOffer
+        }
         let version = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
-        guard !version.isEmpty, version.first?.isNumber == true else { return nil }
-        return Release(version: version, url: url, notes: root["body"] as? String ?? "")
+        guard !version.isEmpty, version.first?.isNumber == true else { return .unreadable }
+        return .offer(Release(version: version, url: url,
+                              notes: root["body"] as? String ?? ""))
+    }
+
+    /// The offer alone, for callers that do not care why there is not one.
+    static func release(from data: Data) -> Release? {
+        if case .offer(let r) = parse(data) { return r }
+        return nil
     }
 
     /// Whether an automatic check is due. Forced checks ignore all of this.
@@ -146,7 +170,16 @@ enum Updater {
                 completion(.failed("GitHub replied \((response as? HTTPURLResponse)?.statusCode ?? 0)"))
                 return
             }
-            guard let data, let found = release(from: data) else {
+            let found: Release
+            switch parse(data ?? Data()) {
+            case .offer(let r):
+                found = r
+            case .notAnOffer:
+                // A complete answer. Spend the full interval and say so.
+                UserDefaults.standard.set(Date().timeIntervalSince1970,
+                                          forKey: Prefs.lastUpdateCheck)
+                completion(.upToDate); return
+            case .unreadable:
                 spend(retryAfterFailure)
                 completion(.failed("could not read the release list")); return
             }

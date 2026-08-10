@@ -2150,6 +2150,31 @@ do {
     check("junk is refused rather than guessed at",
           Updater.release(from: Data("not json".utf8)) == nil
           && Updater.release(from: Data()) == nil)
+    // A prerelease is a *successful* check with nothing to offer, and a
+    // truncated response is a failure. `release(from:)` returns nil for both,
+    // and `check` treats nil as failure — which spends fifteen minutes and
+    // tries again, for ever, on a repo whose latest release happens to be a
+    // prerelease. Ninety-six requests a day from an app that promises one, and
+    // the promise is the point (U25 review).
+    check("a prerelease parses as a real answer with nothing to offer",
+          Updater.parse(Data("""
+          {"tag_name":"v9.9.9","html_url":"https://x/y","prerelease":true}
+          """.utf8)) == .notAnOffer)
+    check("a draft is a real answer too",
+          Updater.parse(Data("""
+          {"tag_name":"v9.9.9","html_url":"https://x/y","draft":true}
+          """.utf8)) == .notAnOffer)
+    check("…while a truncated response is unreadable, not an answer",
+          Updater.parse(Data("not json".utf8)) == .unreadable)
+    check("…and so is JSON with no tag in it",
+          Updater.parse(Data("{}".utf8)) == .unreadable)
+    check("a real release still parses as an offer",
+          Updater.parse(Data("""
+          {"tag_name":"v9.9.9","html_url":"https://x/y","body":"notes"}
+          """.utf8)) == .offer(Updater.Release(version: "9.9.9",
+                                               url: URL(string: "https://x/y")!,
+                                               notes: "notes")))
+
     check("a release with no url is refused", Updater.release(from: """
     {"tag_name":"v2.0.0"}
     """.data(using: .utf8)!) == nil)
@@ -2426,6 +2451,70 @@ do {
     check("…because isPreflighting is still set", preflightingAtDecision == true)
     check("…and it is cleared once the decision is made",
           MainActor.assumeIsolated { !m.isPreflighting && !m.isCommitted })
+    OCRModel.digitalTextDecisionForTesting = nil
+    resetPrefs()
+}
+
+do {
+    // "Skip Those" has to leave a visible mark on the rows it skipped.
+    //
+    // U26 added `FileStatus.skipped` for this and it could never appear:
+    // `skipThem` sets `skipped`, then calls `run`, whose first act is to clear
+    // every per-file collection — including that one, two lines later. The
+    // glyph was unreachable and the eleven row-status checks all set the state
+    // by hand, so nothing noticed. Two real files, one born-digital and one
+    // scanned, so there is something left to run.
+    resetPrefs()
+    d.set(true, forKey: Prefs.warnDigitalText)
+    d.set(false, forKey: Prefs.openWhenDone)
+    d.set(Prefs.Mode.searchablePDF.rawValue, forKey: Prefs.mode)
+
+    let dir = tmp.appendingPathComponent("skip-status-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let born = dir.appendingPathComponent("born-digital.pdf")
+    // 26 lines a page: hasDigitalText wants a real paragraph, and one line does
+    // not read as born-digital.
+    makeDigitalPDF(at: born, lines: (1...26).map {
+        "Line \($0) of ordinary running prose, long enough to be a real paragraph."
+    })
+    let scan = dir.appendingPathComponent("scanned.pdf")
+    makeScannedPDF(at: scan, lines: ["A scan that still needs recognising"])
+
+    check("the skip-status fixture is born-digital, or the alert never comes",
+          Flattener.hasDigitalText(born))
+    check("mac-ocr resolves, or start() bails before the pre-flight",
+          Runner.resolveBinary() != nil)
+
+    OCRModel.digitalTextDecisionForTesting = { _, _ in .skipThem }
+    final class SkipHolder: @unchecked Sendable { var model: OCRModel? }
+    let holder = SkipHolder()
+    var ready = false
+    Task { @MainActor in
+        let m = OCRModel()
+        m.besideOriginal = false
+        m.outputFolder = dir
+        _ = m.add([born, scan])
+        holder.model = m
+        m.start()
+        ready = true
+    }
+    _ = pump(until: { ready }, seconds: 5)
+    let done = pump(until: {
+        MainActor.assumeIsolated { holder.model.map { !$0.isRunning && $0.completed > 0 } ?? false }
+    }, seconds: 120)
+    check("the skip-those batch runs the file that was left", done)
+
+    MainActor.assumeIsolated {
+        guard let m = holder.model else { check("model exists", false); return }
+        check("the skipped file's row says so, and keeps saying so after the run",
+              m.status(url: born) == .skipped, String(describing: m.status(url: born)))
+        check("…and the file that did run shows as done, not skipped",
+              m.status(url: scan) == .succeeded, String(describing: m.status(url: scan)))
+        check("…and VoiceOver has something true to read out",
+              m.statusDescription(url: born).contains("skipped"),
+              m.statusDescription(url: born))
+    }
+    OCRModel.digitalTextDecisionForTesting = nil
     resetPrefs()
 }
 
@@ -2567,6 +2656,26 @@ do {
               fraction < 0.98, String(format: "%.4f", fraction))
         check("…but is still nearly finished, not reset to the middle",
               fraction > 0.5, String(format: "%.4f", fraction))
+
+        // The results pane must keep following a running batch even after
+        // something has failed. Pinning to the problem the moment one appears
+        // means the other 252 files each yank the view back to the top.
+        m.log.append(OCRModel.LogLine(text: "✗ f3.pdf", kind: .failure))
+        m.outcomes[URL(fileURLWithPath: "/tmp/big/f3.pdf")] = .failed
+        m.log.append(OCRModel.LogLine(text: "✓ f4.pdf", kind: .success))
+        check("a live run keeps following the newest line despite a failure",
+              m.logAnchor == .newest, String(describing: m.logAnchor))
+        m.isRunning = false
+        check("…and jumps to the problem once the run is over",
+              m.logAnchor == .firstProblem, String(describing: m.logAnchor))
+        check("…which is the failure, not whatever finished last",
+              m.logFailuresFirst.first?.text == "✗ f3.pdf",
+              m.logFailuresFirst.first?.text ?? "none")
+        m.outcomes.removeAll()
+        check("a clean finished run just shows the end of the log",
+              m.logAnchor == .newest, String(describing: m.logAnchor))
+        m.log.removeAll()
+        m.isRunning = true
 
         // And the moment it really is done, it must reach the end — a bar that
         // never fills is its own kind of lie.
