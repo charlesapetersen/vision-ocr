@@ -58,15 +58,34 @@ out of our way. Revisit only if it stops being either.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 357 checks, ~2-4 minutes (it runs real OCR)
+./run_tests.sh        # 614 checks, ~2-4 minutes (it runs real OCR)
 ```
 
-Requirements: macOS 13+, Xcode command line tools, and
+Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
+`mac-ocr`, `jbig2` and `qpdf` are bundled into the app by `Tools/bundle-libs.py`
+and travel in `Contents/Resources`. Homebrew copies are still used if you point
+Settings at one. Intel is not supported: the bundled compressors are arm64-only
+and `Runner.containsNativeSlice` makes them invisible rather than failing at
+`exec`.
 
-```sh
-npm install -g mac-ocr        # required
-brew install jbig2enc qpdf    # optional: compression. Falls back silently.
+**Never rebuild while someone is running `build/VisionOCR.app`.** `build.sh`
+rewrites and re-signs that bundle in place, and macOS kills any process running
+from it with `SIGKILL (Code Signature Invalid)` the moment it needs to page in
+something that no longer matches the signature. This cost a whole debugging
+session on 2026-08-10: a 255-file batch died three minutes in, the user
+reasonably reported it as "half the PDFs failed", and the same files all passed
+on retry. The only trace is in `~/Library/Logs/DiagnosticReports/` — the app
+itself leaves no crash report, but its helpers do:
+
 ```
+08:36:39  SIGKILL (Code Signature Invalid)  Invalid Page
+    path: .../VisionOCR.app/Contents/Resources/jbig2
+```
+
+If someone wants to test while you work, install a separate copy with
+`./build.sh --install` and leave `/Applications/VisionOCR.app` alone. And if a
+batch fails in a way you cannot reproduce, check those reports before believing
+the failure was real.
 
 ## Where the risk lives
 
@@ -80,7 +99,14 @@ Three files hold nearly all the subtlety. Everything else is plumbing.
   height by a *vertical* squash in the text matrix — that separation is what makes
   all three possible at once. Don't "simplify" it without re-measuring all three.
 - **`Sources/Flattener.swift`** — re-renders pages, and decides per page between
-  1-bit and greyscale. That decision has destroyed content twice: once because a
+  1-bit, grey and (since 1.7.0) colour. Three signals route that decision: ink
+  coverage, continuous tone, and saturation. The colour path is the newest and
+  least worn: it is bounded by `maximumColourPageMegapixels`, whose value is
+  **measured, not derived** (colour peaks at 19.5 bytes per pixel against grey's
+  5.5 — re-measure if the encoding path changes), and it is the only path that
+  produces a three-channel JPEG, which `JBIG2.assemble` must declare
+  `/DeviceRGB`. A colour stream labelled `/DeviceGray` renders as static and no
+  reader reports it. That decision has destroyed content twice: once because a
   fixed threshold of 186 is wrong for any paper that isn't bright white (now Otsu
   per page), once because ink coverage is *blind to pale colour* — pure yellow has
   luminance 226, so a tinted figure scored ~0% ink and was thresholded to blotches,
@@ -90,6 +116,15 @@ Three files hold nearly all the subtlety. Everything else is plumbing.
 
 ## Lessons that cost real time
 
+- **Every adversarial review finds real defects in the code of the review before
+  it — six rounds running as of 2026-08-10, without exception.** Round four found
+  eight defects in round three's work; the review of those found three more; the
+  review of *those* found three more again, one of which was a predicate extracted
+  specifically so a claim could be checked, asserted against by six checks, and
+  called by no production code — a duplicate of the thing under test, agreeing
+  with itself by construction. **Budget a review round after every fix round, and
+  expect it to find something.** The corollary is that "I fixed it and the tests
+  pass" is not the end of the work; it is the middle.
 - **Test the whole function, not its parts.** A regression broke *every* run for a
   while because the tests covered `Flattener`, `JBIG2` and `SearchableWriter`
   separately, and my end-to-end "verification" used a hand-written replica of the
@@ -148,9 +183,18 @@ Two things the second pass learned the hard way, both worth carrying forward:
 
 ## Where things stand
 
-Everything in `BUGS.md` is `FIXED` or `WONTFIX`, and `TODO.md` holds no code work
-— only four things that need a person in front of a running app. `FEATURES.md` is
-ideas. The suite is at 357 checks, `main` is pushed, and 1.1.0 is tagged.
+Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT`, and `TODO.md` holds
+no code work — only things that need a person in front of a running app.
+`FEATURES.md` is ideas. The suite is at **614 checks**, `main` is pushed, and
+**1.7.0** is tagged and released with a DMG.
+
+**The last release was verified against the whole library, not just the suite.**
+1.7.0 was run over 255 documents through `OCRModel.start()` at the app's own
+default concurrency: 255 succeeded, none failed, 12.6 million characters
+recovered, 23 minutes, peak RSS 3.35 GB. Fifteen came back with colour. Two pages
+across the whole set render blank, and both are blank in the original. That run
+is worth repeating before any release that touches `Flattener` — it costs less
+than half an hour and it is the only evidence that covers what the suite cannot.
 
 Things you would otherwise have to rediscover:
 
@@ -180,6 +224,18 @@ word retention.
 `git worktree add -q --detach /tmp/before <commit>`. You will want it, and
 reconstructing "before" afterwards is disproportionately annoying.
 
+**Suspect the instrument first — it is right more often than not.** In the
+2026-08-10 session alone: a corpus probe read every rebuilt page as blank (the
+y-axis was inverted — a bitmap's row 0 is the visual *top*, while CG's drawing
+origin is bottom-left, and the *originals* sampled white at the same coordinates,
+which is what gave it away); a `strings` grep said a fix was missing from a
+shipped binary (Swift does not emit `static func` names as strings — use `nm`,
+and the same grep missed a literal because the em dash did not survive the
+shell); a shell probe silently tested nothing because **zsh arrays are
+1-indexed**, so `${files[0]}` is empty; and a page-similarity check read 20.6 on
+*correct* code purely from resampling a high-frequency fixture. Before believing
+a measurement, run it against a known-good input and check it says so.
+
 **Four probes of mine crashed or lied during one session**, all the same few
 causes. If a probe misbehaves, check these before suspecting the code:
 `String(format:)` with `%@` or `%s` and a Swift `String` crashes; stdout is
@@ -205,8 +261,9 @@ order, how the announcements sound, and the Settings sheet on a short display.
 
 ## Corpus
 
-`testdocs/` holds **84 documents, every one of them a scan** (8 item types x 4
-eras) used to measure the searchable pipeline across books, newspapers,
+`testdocs/` holds **232 documents, every one of them a scan** (8 item types x 4
+eras; widened from 84 in 2026-08 by dropping an arbitrary five-year recency
+bound — 79% of the new material is older and none of the figures moved) used to measure the searchable pipeline across books, newspapers,
 magazines, journals, theses and reports, old and new. **It is not committed** —
 it is third-party copyrighted material. `testdocs/manifest.tsv` records what was
 sampled *and each document's scores*; `Tools/sample-zotero.py` rebuilds an

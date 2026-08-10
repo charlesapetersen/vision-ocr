@@ -15,7 +15,13 @@ promoted, or it does not and should be deleted.
 the last item that could only be settled by a person at a real session. U16 is
 closed in full, and `BUGS.md` U8 no longer has a remainder.
 
-**This file is empty of code work.** The 1.0 punchlist is closed (BUGS.md C16,
+**Worth doing before the next release that touches `Flattener`** (added
+2026-08-10, not started): re-run the 255-document library end to end and diff the
+outcome against 1.7.0's — 255/255, 12.6M characters, 15 colour documents, peak
+3.35 GB. The harness pattern is in `HANDOFF.md`; it takes 23 minutes and is the
+only check that covers what the suite cannot. Nothing else here is code work.
+
+**This file is otherwise empty of code work.** The 1.0 punchlist is closed (BUGS.md C16,
 R21, R22, T3, H1, U13–U16), and the three interface questions that could only be
 answered by a running app have been answered — in a headless VM, off-screen. They
 passed, and the run found U17, which was worse than any of them.
