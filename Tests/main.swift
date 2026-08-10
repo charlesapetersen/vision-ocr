@@ -4963,14 +4963,119 @@ do {
     check("the fixture is genuinely coloured, or the checks below prove nothing",
           saturation(of: colour) > 0.1, String(format: "%.3f", saturation(of: colour)))
 
+    // Automatic keeps it; the two modes that are instructions rather than
+    // questions do what they were told.
     for mode in Flattener.Mode.allCases {
         let out = dir.appendingPathComponent("out-\(mode.rawValue).pdf")
         _ = try? Flattener.flatten(colour, to: out, mode: mode, password: nil,
                                    pngDirectory: nil, isCancelled: { false },
                                    progress: { _, _ in }, onPage: nil)
-        check("rebuilding as \(mode.label) keeps no colour — there is no colour path",
-              saturation(of: out) == 0, String(format: "%.3f", saturation(of: out)))
+        let sat = saturation(of: out)
+        if mode == .auto {
+            check("Automatic keeps a colour page in colour",
+                  sat > 0.1, String(format: "%.3f", sat))
+        } else {
+            check("\(mode.label) is an instruction, and discards colour as asked",
+                  sat == 0, String(format: "%.3f", sat))
+        }
     }
+
+    // The colour path must not reach pages that have no colour in them. A page
+    // of ordinary text stays 1-bit — the whole size argument for Automatic —
+    // and a grey halftone stays a grey JPEG rather than paying three channels
+    // for one channel's worth of information.
+    let textPage = dir.appendingPathComponent("text.pdf")
+    makeScannedPDF(at: textPage, lines: (1...24).map {
+        "Line \($0) of ordinary black text on white paper, nothing coloured here."
+    })
+    let textPNGs = dir.appendingPathComponent("text-pngs")
+    try? FileManager.default.createDirectory(at: textPNGs, withIntermediateDirectories: true)
+    let textPages = (try? Flattener.flatten(textPage,
+                                            to: dir.appendingPathComponent("text-out.pdf"),
+                                            mode: .auto, pngDirectory: textPNGs)) ?? []
+    check("a plain text page still rebuilds 1-bit, not as a colour JPEG",
+          !textPages.isEmpty && textPages.allSatisfy {
+              if case .bilevel = $0.content { return !$0.isColour }
+              return false
+          },
+          textPages.map { "\($0.isColour)" }.joined(separator: ","))
+
+    // The bound, checked as a decision rather than by allocating the page it
+    // describes. Four bytes a pixel is why it exists.
+    let underBound = Double(Flattener.maximumColourPageMegapixels) * 1_000_000 - 1
+    let overBound = Double(Flattener.maximumColourPageMegapixels) * 1_000_000 + 1
+    check("a colourful page inside the memory bound keeps its colour",
+          Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, pixels: underBound))
+    check("…and past it gives the colour up rather than the four-byte allocation",
+          !Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, pixels: overBound))
+    check("the bound is a quarter of the grey one, so peak memory is unchanged",
+          Flattener.maximumColourPageMegapixels * 4 == Flattener.maximumPageMegapixels,
+          "\(Flattener.maximumColourPageMegapixels) vs \(Flattener.maximumPageMegapixels)")
+    check("a grey page is never promoted to colour, whatever its size",
+          !Flattener.shouldKeepColour(mode: .auto, saturation: 0, pixels: 1000))
+    check("…and colour is Automatic's decision alone",
+          !Flattener.shouldKeepColour(mode: .grayscale, saturation: 0.3, pixels: 1000)
+            && !Flattener.shouldKeepColour(mode: .blackAndWhite, saturation: 0.3, pixels: 1000))
+    check("the threshold is the same one that routes the page here",
+          !Flattener.shouldKeepColour(mode: .auto,
+                                      saturation: Flattener.pictureSaturationThreshold,
+                                      pixels: 1000)
+            && Flattener.shouldKeepColour(mode: .auto,
+                                          saturation: Flattener.pictureSaturationThreshold + 0.001,
+                                          pixels: 1000))
+
+    // And the half that renders as noise if it is wrong: a three-channel stream
+    // in the JBIG2 merge has to be declared /DeviceRGB. Nothing reports this —
+    // the page simply draws as static.
+    let cpngs = dir.appendingPathComponent("colour-pngs")
+    try? FileManager.default.createDirectory(at: cpngs, withIntermediateDirectories: true)
+    let cpages = (try? Flattener.flatten(colour,
+                                         to: dir.appendingPathComponent("colour-rebuilt.pdf"),
+                                         mode: .auto, pngDirectory: cpngs)) ?? []
+    check("the colour page comes back marked as colour",
+          cpages.count == 1 && cpages[0].isColour,
+          cpages.map { "\($0.isColour)" }.joined(separator: ","))
+    if let first = cpages.first, case .jpeg(let j) = first.content {
+        let merged = dir.appendingPathComponent("colour-merged.pdf")
+        let page = JBIG2.Page(stream: .jpeg(j), pixelWidth: first.pixelWidth,
+                              pixelHeight: first.pixelHeight, boxSize: first.boxSize,
+                              isColour: true)
+        do { try JBIG2.assemble([page], to: merged) } catch {
+            check("the colour page assembles", false, error.localizedDescription)
+        }
+        let raw = String(decoding: (try? Data(contentsOf: merged)) ?? Data(), as: UTF8.self)
+        check("the merged stream declares DeviceRGB, not DeviceGray",
+              raw.contains("/DeviceRGB") && !raw.contains("/DeviceGray"),
+              raw.contains("/DeviceGray") ? "declared /DeviceGray" : "declared neither")
+        check("…and the merged page is still coloured when drawn",
+              saturation(of: merged) > 0.1,
+              String(format: "%.3f", saturation(of: merged)))
+        // A grey page through the same merge must keep saying DeviceGray.
+        let greyMerged = dir.appendingPathComponent("grey-merged.pdf")
+        let greyPage = JBIG2.Page(stream: .jpeg(j), pixelWidth: first.pixelWidth,
+                                  pixelHeight: first.pixelHeight, boxSize: first.boxSize)
+        try? JBIG2.assemble([greyPage], to: greyMerged)
+        let greyRaw = String(decoding: (try? Data(contentsOf: greyMerged)) ?? Data(),
+                             as: UTF8.self)
+        check("…while a page not marked colour still declares DeviceGray",
+              greyRaw.contains("/DeviceGray"), "did not")
+    }
+
+    // The panel's prose has now been wrong about this twice — "only applied to
+    // files that already contain text", then "never colour" written the same
+    // day colour arrived. These tie the words to the behaviour, so the next
+    // change to one fails on the other.
+    check("Automatic's blurb mentions colour, because Automatic keeps colour",
+          Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, pixels: 1000)
+            == Flattener.Mode.auto.blurb.lowercased().contains("colour"),
+          Flattener.Mode.auto.blurb)
+    check("…and Grayscale's does not promise what Grayscale does not do",
+          !Flattener.shouldKeepColour(mode: .grayscale, saturation: 0.3, pixels: 1000)
+            && !Flattener.Mode.grayscale.blurb.lowercased().contains("keeps colour"),
+          Flattener.Mode.grayscale.blurb)
+    check("no mode's blurb is empty, since one is always on screen",
+          Flattener.Mode.allCases.allSatisfy { !$0.blurb.isEmpty && !$0.label.isEmpty })
+
     try? FileManager.default.removeItem(at: dir)
     resetPrefs()
 }

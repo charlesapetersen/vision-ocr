@@ -236,9 +236,9 @@ struct SettingsView: View {
                           + "makes copied text come out doubled. Rebuilding the pages as "
                           + "images first means Vision's OCR is the only text in the result. "
                           + "The rebuild re-encodes every page it touches, in the format "
-                          + "chosen below — black and white or grey, never colour. It runs "
-                          + "on files that already contain text, and on all of them when "
-                          + "JBIG2 is on below, since JBIG2 needs the pages as bitmaps.")
+                          + "chosen below. It runs on files that already contain text, and "
+                          + "on all of them when JBIG2 is on below, since JBIG2 needs the "
+                          + "pages as bitmaps.")
 
                 if rebuildImages {
                     Toggle("Ask first if a PDF already has selectable text",
@@ -260,7 +260,8 @@ struct SettingsView: View {
                               + "the bytes. It can only encode black-and-white pages, so "
                               + "switching it on rebuilds every page — including ones that "
                               + "would otherwise have been left exactly as they came in. "
-                              + "Turn it off to keep a colour original in colour.")
+                              + "Pages it cannot encode, like photographs and colour plates, "
+                              + "are kept as JPEG alongside it.")
                     if useJBIG2, rebuildImages, !JBIG2.isAvailable {
                         Text("Not installed — falling back to Flate. Install with: "
                              + JBIG2.installHint)

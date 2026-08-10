@@ -14,11 +14,13 @@ let pngs = tmp.appendingPathComponent("p")
 try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
 let pages = (try? Flattener.flatten(input, to: tmp.appendingPathComponent("o.pdf"),
                                     mode: .auto, pngDirectory: pngs)) ?? []
-var bi = 0, gs = 0, bytes = 0
+var bi = 0, gs = 0, col = 0, bytes = 0
 for p in pages {
     switch p.content {
     case .bilevel(let u): bi += 1; bytes += (try? Data(contentsOf: u).count) ?? 0
-    case .jpeg(let u): gs += 1; bytes += (try? Data(contentsOf: u).count) ?? 0
+    case .jpeg(let u):
+        if p.isColour { col += 1 } else { gs += 1 }
+        bytes += (try? Data(contentsOf: u).count) ?? 0
     }
 }
-print("\(label)\tbilevel=\(bi) greyscale=\(gs)\t\(bytes/max(pages.count,1)/1024) KB/page")
+print("\(label)\tbilevel=\(bi) greyscale=\(gs) colour=\(col)\t\(bytes/max(pages.count,1)/1024) KB/page\tbytes=\(bytes)\tpages=\(pages.count)")

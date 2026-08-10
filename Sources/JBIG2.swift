@@ -25,7 +25,9 @@ enum JBIG2 {
         enum Stream {
             /// JBIG2 bitmap: 1 bit, /JBIG2Decode.
             case jbig2(URL)
-            /// Greyscale JPEG: 8 bit, /DCTDecode.
+            /// JPEG: 8 bit, /DCTDecode. One component or three — `isColour` on
+            /// the page says which, and the stream dictionary has to agree or
+            /// the viewer reads three channels as one and renders noise.
             case jpeg(URL)
 
             var url: URL {
@@ -38,6 +40,8 @@ enum JBIG2 {
         let pixelWidth: Int
         let pixelHeight: Int
         let boxSize: CGSize
+        /// True when `stream` is a three-channel JPEG.
+        var isColour = false
     }
 
     enum Failure: LocalizedError {
@@ -224,10 +228,15 @@ enum JBIG2 {
             case .jbig2: (filter, bits) = ("/JBIG2Decode", 1)
             case .jpeg: (filter, bits) = ("/DCTDecode", 8)
             }
+            // /DeviceGray was hardcoded here, which was true of every stream
+            // this ever wrote until Automatic started keeping colour pages in
+            // colour. A three-channel JPEG declared as one channel is not an
+            // error any reader reports — it just draws the page as noise.
+            let space = page.isColour ? "/DeviceRGB" : "/DeviceGray"
             try beginObject(imageObject(i))
             try write("""
             << /Type /XObject /Subtype /Image /Width \(page.pixelWidth) \
-            /Height \(page.pixelHeight) /ColorSpace /DeviceGray \
+            /Height \(page.pixelHeight) /ColorSpace \(space) \
             /BitsPerComponent \(bits) /Filter \(filter) /Length \(bytes.count) >>
             stream\n
             """)

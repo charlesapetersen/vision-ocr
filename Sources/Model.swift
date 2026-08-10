@@ -1271,7 +1271,10 @@ final class OCRModel: ObservableObject {
                         case .jpeg(let jpeg):
                             encoded.append(JBIG2.Page(
                                 stream: .jpeg(jpeg), pixelWidth: page.pixelWidth,
-                                pixelHeight: page.pixelHeight, boxSize: page.boxSize))
+                                pixelHeight: page.pixelHeight, boxSize: page.boxSize,
+                                // Carried through, or the merge declares a
+                                // three-channel stream as /DeviceGray.
+                                isColour: page.isColour))
                         }
                     } : nil)
                 visible = rebuilt

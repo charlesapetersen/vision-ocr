@@ -2393,6 +2393,64 @@ to be a prerelease would be checked every quarter hour, for ever, by an app
 whose README promises one request a day. Parsing has three outcomes now, and
 only the unreadable one is a failure.
 
+### F1 · Automatic could see colour and threw it away — FIXED
+*(2026-08-09, asked for. Recorded here rather than in FEATURES.md because the
+part that made it a defect is that the information was already in hand.)*
+
+The rebuild had three modes and none of them could produce a colour page:
+`renderGrey` draws into a `CGColorSpaceCreateDeviceGray` context, so Automatic
+chose between 1-bit and *grey*, Black & white was 1-bit, and Grayscale was grey.
+Measured on a colour fixture: input saturation 0.25, output 0.0000 in all three.
+
+What makes it worse than a missing feature: **saturation is one of the three
+signals that route a page away from 1-bit in the first place.** The detector
+looked at the page, correctly concluded "this has colour in it, thresholding
+would destroy it" — and then rendered it grey. The one mode whose job is to work
+out what a page needs had already worked it out and discarded the answer.
+
+Automatic now keeps a colour page in colour. Black & white and Grayscale are
+instructions rather than questions and still do exactly what they say.
+
+Three things this touched that were not obvious from the change itself:
+
+- **The JBIG2 merge hardcoded `/ColorSpace /DeviceGray`.** True of every stream
+  it had ever written. A three-channel JPEG declared as one channel is not an
+  error any reader reports — the page just draws as static. Checked both ways
+  now, including that a page *not* marked colour still says `/DeviceGray`.
+- **A colour render is four bytes a pixel where grey is one.** The existing
+  400 MP page limit exists because a failed allocation crashes the process and
+  takes every concurrent file with it, so colour gets a quarter of that budget
+  and a page past it rebuilds grey exactly as it used to. Peak memory per page
+  is unchanged. The bound is checked as a decision, not by allocating 100 MP.
+- **`saturation` was being measured twice** on every illustrated page — once
+  inside `isPicture`, once for this — so it is measured once and passed in.
+
+Verified end to end on the shipped defaults, which is the path through the
+JBIG2 merge: a colour scan in at 0.2536 saturation comes back at 0.2547 with
+its text layer intact.
+
+**Corpus effect, measured rather than argued about**, because the worry was
+archival typescripts — yellowed paper has real saturation, and pages that were
+grey JPEGs becoming colour ones would inflate exactly the material this app is
+mostly used on. All 232 documents, 827 sampled pages, scored twice from two
+builds differing only in this decision:
+
+| | grey only | with colour |
+|---|---|---|
+| total | 300.1 MB | 301.8 MB (**+0.56%**) |
+| per page | 354.4 KB | 356.4 KB |
+
+3.4% of pages route to colour, across 5.2% of documents; the worst single
+document grows 14.9%. **No document's 1-bit page count changed at all**, which
+is the number that mattered: colour can only reach pages already routed to
+JPEG, so the compression argument for plain text is untouched by construction
+and now by measurement.
+
+The worst-affected document is the case for the feature rather than against it
+— an 1891 typescript whose four sampled pages all went colour. Its ink is faded
+blue-black, its paper is cream, and there is an archivist's **red pencil "452"**
+in the corner that every previous version rendered grey.
+
 ### U12 · Settings input validation — NO DEFECT
 Recorded because it was checked properly and found clean, which is worth knowing
 next time someone wonders.

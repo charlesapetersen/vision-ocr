@@ -16,16 +16,18 @@ import PDFKit
 enum Flattener {
 
     enum Mode: String, CaseIterable, Identifiable {
-        /// Per page: 1-bit for text, greyscale for anything that looks like a
-        /// picture. The default, because a single global choice is wrong either
-        /// way — forcing 1-bit destroys halftones, forcing greyscale makes a
-        /// text-only book several times larger than it needs to be.
+        /// Per page: 1-bit for text, grey for a halftone, colour for anything
+        /// with real colour in it. The default, because a single global choice
+        /// is wrong every way — forcing 1-bit destroys halftones, forcing grey
+        /// throws away colour plates, and forcing either onto a text-only book
+        /// makes it several times larger than it needs to be.
         case auto
         /// 1-bit everywhere. Scanned text compresses far better this way than as
         /// JPEG (~110 KB/page vs ~1 MB/page at 300 DPI), and OCR is unaffected.
         case blackAndWhite
-        /// 8-bit JPEG everywhere. Much larger, but keeps photographs and
-        /// halftones looking like photographs.
+        /// 8-bit grey JPEG everywhere, colour included — an instruction, not a
+        /// question. Much larger than 1-bit, and the mode to pick when you want
+        /// a colour original rendered grey on purpose.
         case grayscale
 
         var id: String { rawValue }
@@ -38,9 +40,9 @@ enum Flattener {
         }
         var blurb: String {
             switch self {
-            case .auto: return "1-bit text pages, greyscale illustrations."
+            case .auto: return "1-bit text pages, grey halftones, colour kept where it is."
             case .blackAndWhite: return "Smallest. Flattens photographs to blotches."
-            case .grayscale: return "Much larger, but preserves photographs."
+            case .grayscale: return "Much larger. Keeps photographs, renders colour grey."
             }
         }
         /// JBIG2 is a bilevel codec, so only these modes can produce pages for it.
@@ -117,6 +119,17 @@ enum Flattener {
     /// 600 DPI — so it does not reject real archival material. Measured across
     /// all 4,992 corpus pages: none exceed 100 MP.
     static let maximumPageMegapixels = 400
+
+    /// The most megapixels a page may be before its colour is given up.
+    ///
+    /// A quarter of `maximumPageMegapixels`, and that is the whole derivation: a
+    /// colour render is RGBA, four bytes a pixel where grey is one, so this
+    /// keeps the peak allocation per page exactly what it was when every page
+    /// was rendered grey. Above it the page still rebuilds — in grey, as it
+    /// always did — because a coarser rendering of a big plate is a quality
+    /// loss, while a failed 1.6 GB allocation takes down every file running
+    /// alongside it.
+    static let maximumColourPageMegapixels = maximumPageMegapixels / 4
 
     /// The most megapixels mac-ocr will render a PDF page to before refusing.
     ///
@@ -380,13 +393,18 @@ enum Flattener {
         enum Content {
             /// 1-bit PNG, ready for jbig2enc.
             case bilevel(URL)
-            /// Already-encoded greyscale JPEG, embedded as-is.
+            /// Already-encoded JPEG, embedded as-is. Grey for a halftone,
+            /// RGB for a page with real colour in it — `isColour` says which,
+            /// because the JBIG2 merge has to declare the right colour space
+            /// and a colour stream labelled /DeviceGray renders as garbage.
             case jpeg(URL)
         }
         let content: Content
         let pixelWidth: Int
         let pixelHeight: Int
         let boxSize: CGSize
+        /// True when `content` is a three-channel JPEG.
+        var isColour = false
     }
 
     /// Rebuilds `source` into `destination` as image-only pages.
@@ -498,19 +516,47 @@ enum Flattener {
             // for a JPEG.
             let threshold = otsuThreshold(of: grey)
             var useBilevel = mode != .grayscale
+            // Measured once and used twice: as one of the three picture signals,
+            // and to decide whether the picture it found is a colour one.
+            let sat = mode == .auto ? saturation(of: page) : 0
             if useBilevel, mode == .auto,
                isPicture(page, grey: grey, width: width, height: height,
-                         threshold: threshold) {
+                         threshold: threshold, saturation: sat) {
                 useBilevel = false
             }
+
+            // A page with real colour in it keeps its colour, in Automatic only.
+            //
+            // Black & white is an instruction and Grayscale is an instruction;
+            // Automatic is the one that is supposed to work out what the page
+            // needs, and until now its answer for a colour plate was grey — the
+            // detector could *see* the colour, since saturation is one of the
+            // three signals that route the page here, and then threw it away.
+            //
+            // Bounded by megapixels because the render is four times the memory.
+            // Over the bound the page rebuilds grey, exactly as it used to.
+            let wantColour = !useBilevel
+                && shouldKeepColour(mode: mode, saturation: sat, pixels: wide * high)
 
             // Encoded once, whichever way it goes. The JPEG bytes are reused for
             // the stream file below rather than encoded a second time.
             var jpegBytes: Data?
+            var isColour = false
             let image: CGImage?
             if useBilevel {
                 image = bilevelImage(from: grey, width: width, height: height,
                                      threshold: threshold)
+            } else if wantColour,
+                      let rgba = renderRGB(page, box: box, scale: scale,
+                                           width: width, height: height, from: .mediaBox),
+                      let encoded = jpegRGB(from: rgba, width: width, height: height,
+                                            quality: pictureJPEGQuality) {
+                // Falls through to grey if either step fails rather than failing
+                // the page: colour is an improvement on grey, not a requirement,
+                // and there is a correct grey rendering already in hand.
+                jpegBytes = encoded.data
+                image = encoded.image
+                isColour = true
             } else {
                 let encoded = jpeg(from: grey, width: width, height: height,
                                    quality: pictureJPEGQuality)
@@ -558,7 +604,8 @@ enum Flattener {
                     }
                     if true {
                         let entry = RebuiltPage(content: .jpeg(jpeg), pixelWidth: width,
-                                                pixelHeight: height, boxSize: box.size)
+                                                pixelHeight: height, boxSize: box.size,
+                                                isColour: isColour)
                         rebuilt.append(entry)
                         try onPage?(entry)
                     }
@@ -669,6 +716,84 @@ enum Flattener {
         return ok ? buffer : nil
     }
 
+    /// Whether a page already routed away from 1-bit should keep its colour.
+    ///
+    /// Extracted from `flatten` so the megapixel bound can be checked without
+    /// allocating the page it describes — a check that has to render 100 MP to
+    /// find out is a check nobody runs.
+    static func shouldKeepColour(mode: Mode, saturation: Double, pixels: Double) -> Bool {
+        guard mode == .auto else { return false }
+        guard saturation > pictureSaturationThreshold else { return false }
+        return pixels <= Double(maximumColourPageMegapixels) * 1_000_000
+    }
+
+    /// 8-bit RGBA render of one page, for the pages that have colour worth
+    /// keeping. Four bytes a pixel against `renderGrey`'s one, which is why
+    /// `maximumColourPageMegapixels` exists.
+    ///
+    /// Identical to `renderGrey` in every other respect, deliberately: same
+    /// drawing transform, same white fill, same fallback. Rotation and cropping
+    /// are the part that has silently produced blank pages before, and having
+    /// two ways to draw a page is how the two drift.
+    static func renderRGB(
+        _ page: PDFPage, box: CGRect, scale: CGFloat, width: Int, height: Int,
+        from pdfBox: CGPDFBox = .mediaBox
+    ) -> [UInt8]? {
+        var buffer = [UInt8](repeating: 255, count: width * height * 4)
+        let ok = buffer.withUnsafeMutableBytes { raw -> Bool in
+            guard let ctx = CGContext(
+                data: raw.baseAddress, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: width * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            ctx.setFillColor(gray: 1, alpha: 1)
+            ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+
+            guard let cgPage = page.pageRef else {
+                ctx.scaleBy(x: scale, y: scale)
+                page.draw(with: pdfBox == .cropBox ? .cropBox : .mediaBox, to: ctx)
+                return true
+            }
+            ctx.scaleBy(x: scale, y: scale)
+            ctx.concatenate(cgPage.getDrawingTransform(
+                pdfBox, rect: CGRect(origin: .zero, size: box.size),
+                rotate: 0, preserveAspectRatio: true))
+            ctx.drawPDFPage(cgPage)
+            return true
+        }
+        return ok ? buffer : nil
+    }
+
+    /// JPEG-encode an RGBA buffer as three-channel colour, giving back the bytes
+    /// and an image over them — the colour twin of `jpeg(from:)`.
+    ///
+    /// The alpha channel is dropped here rather than left to the encoder. Every
+    /// pixel is opaque (the buffer starts as opaque white and the page is drawn
+    /// over it), so there is nothing to composite, and a 24-bit representation
+    /// is what the PDF stream declares: three components, /DeviceRGB.
+    static func jpegRGB(
+        from rgba: [UInt8], width: Int, height: Int, quality: Double
+    ) -> (data: Data, image: CGImage)? {
+        guard width > 0, height > 0, rgba.count >= width * height * 4 else { return nil }
+        guard let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
+            bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: width * 3, bitsPerPixel: 24)
+        else { return nil }
+        guard let dest = rep.bitmapData else { return nil }
+        for pixel in 0..<(width * height) {
+            dest[pixel * 3]     = rgba[pixel * 4]
+            dest[pixel * 3 + 1] = rgba[pixel * 4 + 1]
+            dest[pixel * 3 + 2] = rgba[pixel * 4 + 2]
+        }
+        guard let data = rep.representation(using: .jpeg,
+                                            properties: [.compressionFactor: quality]),
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+        else { return nil }
+        return (data, image)
+    }
+
     /// Otsu's threshold: the split that best separates the page's two tonal
     /// populations, paper and ink.
     ///
@@ -738,12 +863,17 @@ enum Flattener {
                 toneFraction(of: grey, threshold: t), saturation(of: page), Int(t))
     }
 
+    /// `saturation` may be passed in when the caller has already measured it.
+    /// The signal costs a second render of the page, and `flatten` needs the
+    /// number anyway to decide between a grey JPEG and a colour one — measuring
+    /// it twice per illustrated page was pure waste.
     static func isPicture(_ page: PDFPage, grey: [UInt8],
-                          width: Int, height: Int, threshold: UInt8) -> Bool {
+                          width: Int, height: Int, threshold: UInt8,
+                          saturation precomputed: Double? = nil) -> Bool {
         if inkCoverage(of: grey, width: width, height: height,
                        threshold: threshold) > pictureInkThreshold { return true }
         if toneFraction(of: grey, threshold: threshold) > pictureToneThreshold { return true }
-        return saturation(of: page) > pictureSaturationThreshold
+        return (precomputed ?? saturation(of: page)) > pictureSaturationThreshold
     }
 
     /// Fraction of pixels that are neither near-white nor near-black. Text is
