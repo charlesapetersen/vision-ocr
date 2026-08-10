@@ -75,7 +75,11 @@ makes no network requests at all.
 
 *(Earlier versions of this page said the app had "no network code in it at all".
 That stopped being true when update checking was added in 1.6.0, so the sentence
-was rewritten rather than left to quietly mislead.)*
+was rewritten rather than left to quietly mislead. And "sends nothing about you"
+was itself not quite true in 1.6.0: the system's networking layer had filled in
+two headers nobody wrote, carrying the exact macOS point release and the Mac's
+language list. Neither was intended, both were removed in 1.6.1, and the claim
+above holds from that version on.)*
 
 #### macOS says it can't verify the app
 
