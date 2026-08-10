@@ -167,6 +167,8 @@ struct ContentView: View {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
         case .cancelled:
             Image(systemName: "minus.circle").foregroundStyle(.secondary)
+        case .skipped:
+            Image(systemName: "arrow.turn.down.right").foregroundStyle(.secondary)
         }
     }
 
@@ -391,7 +393,7 @@ struct ContentView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 1) {
-                        ForEach(model.log) { line in
+                        ForEach(model.logFailuresFirst) { line in
                             Text(line.text)
                                 .font(.callout)
                                 .foregroundStyle(line.color)
@@ -407,9 +409,11 @@ struct ContentView: View {
                     // of a 40-file run meant copying them one at a time.
                     .textSelection(.enabled)
                 }
-                .onChange(of: model.log.count) { _ in
-                    if let last = model.log.last { proxy.scrollTo(last.id, anchor: .bottom) }
-                }
+                .onChange(of: model.log.count) { _ in scrollLog(proxy) }
+                // …and again when the run ends, which is when the anchor moves
+                // to the problems and usually when the last line has already
+                // been appended.
+                .onChange(of: model.isRunning) { _ in scrollLog(proxy) }
             }
             .frame(minHeight: 90)
             .background(RoundedRectangle(cornerRadius: 6)
@@ -419,8 +423,21 @@ struct ContentView: View {
         .accessibilityLabel("Results")
     }
 
+    /// Follows the model's decision rather than making one here: a `View` body
+    /// is the one place in this app no check can reach.
+    private func scrollLog(_ proxy: ScrollViewProxy) {
+        switch model.logAnchor {
+        case .firstProblem:
+            if let first = model.logFailuresFirst.first {
+                proxy.scrollTo(first.id, anchor: .top)
+            }
+        case .newest:
+            if let last = model.log.last { proxy.scrollTo(last.id, anchor: .bottom) }
+        }
+    }
+
     private var resultsHeading: String {
-        let failed = model.log.filter { $0.kind == .failure }.count
+        let failed = model.problemCount        // files, not log lines
         return failed > 0 ? "Results — \(failed) problem\(failed == 1 ? "" : "s")" : "Results"
     }
 

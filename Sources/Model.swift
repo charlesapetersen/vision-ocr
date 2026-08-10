@@ -292,6 +292,9 @@ final class OCRModel: ObservableObject {
     /// watching says nothing about the sixty files already finished.
     @Published var outcomes: [URL: Runner.Result.Outcome] = [:]
 
+    /// Files the user chose to leave alone at the digital-text prompt.
+    @Published var skipped: Set<URL> = []
+
     /// What to draw beside a file. One place, in the model, because the suite
     /// compiles the views but never instantiates one — logic left in a `View`
     /// body is logic no check can reach.
@@ -301,6 +304,11 @@ final class OCRModel: ObservableObject {
         case succeeded
         case failed
         case cancelled
+        /// Left out of the batch by "Skip Those", because it already had text.
+        /// Its own state rather than `pending`: those files sit in the list for
+        /// ever afterwards showing the waiting glyph and speaking "waiting",
+        /// which describes something that is never going to happen (U26).
+        case skipped
 
         var isRunning: Bool { if case .running = self { return true }; return false }
     }
@@ -313,7 +321,7 @@ final class OCRModel: ObservableObject {
         case .succeeded: return .succeeded
         case .failed: return .failed
         case .cancelled: return .cancelled
-        case nil: return .pending
+        case nil: return skipped.contains(file) ? .skipped : .pending
         }
     }
 
@@ -325,6 +333,7 @@ final class OCRModel: ObservableObject {
         case .succeeded: return "done"
         case .failed: return "failed"
         case .cancelled: return "cancelled"
+        case .skipped: return "skipped — it kept its own text"
         }
     }
 
@@ -333,7 +342,17 @@ final class OCRModel: ObservableObject {
     var overallFraction: Double {
         guard total > 0 else { return 0 }
         let partial = stages.values.reduce(0) { $0 + min(max($1.fraction, 0), 1) }
-        return min((Double(completed) + partial) / Double(total), 1)
+        let raw = (Double(completed) + partial) / Double(total)
+        // Hold back a visible sliver while anything is still running.
+        //
+        // 254 of 255 files done is 99.6% complete and draws as a full bar. That
+        // is arithmetically honest and practically a lie: someone watching a
+        // 63 MB broadsheet grind through recognition saw a finished bar for
+        // several minutes and concluded the app had hung. The bar is the thing
+        // you read from across the room, so it must not say "finished" until it
+        // is (U25).
+        let stillWorking = isRunning && (completed < total || !inFlight.isEmpty)
+        return stillWorking ? min(raw, 0.97) : min(raw, 1)
     }
 
     /// True when there is genuinely nothing to report, so the bar should be
@@ -524,11 +543,53 @@ final class OCRModel: ObservableObject {
     func remove(_ url: URL) -> Bool {
         guard !isCommitted else { return false }
         files.removeAll { $0 == url }
+        // With it: a file removed and dropped again showed last run's tick
+        // before it had done anything this time (U26).
+        outcomes[url] = nil
+        stages[url] = nil
+        skipped.remove(url)          // a row state like any other (U25 sweep)
         return true
     }
 
     /// The whole log as text, for the Copy button.
     var logText: String { log.map(\.text).joined(separator: "\n") }
+
+    /// How many files had a problem — **files, not log lines**.
+    ///
+    /// The heading counted lines with `kind == .failure`, and a failure appends
+    /// two of them (the name, then the message), so one bad file read as "2
+    /// problems" and a run with one failure plus a stray line read as three.
+    /// Counting outcomes makes it one per file by construction (U25).
+    var problemCount: Int { outcomes.values.filter { $0 == .failed }.count }
+
+    /// The log with failures first, which is what the doc comment on the
+    /// results pane has always claimed and the code never did — it rendered
+    /// `log` in arrival order, so on a 255-file run the one red entry sat two
+    /// hundred rows down a scroll view. A failure you have to hunt for is not
+    /// reporting (U25).
+    ///
+    /// Stable within each group: the order files finished in is information.
+    var logFailuresFirst: [LogLine] {
+        log.filter { $0.kind == .failure } + log.filter { $0.kind != .failure }
+    }
+
+    /// Which line the results pane should bring into view when the log changes.
+    enum LogAnchor { case newest, firstProblem }
+
+    /// While the run is going, follow the newest line: that is the live record
+    /// of what is happening, and it is what someone watching a long batch is
+    /// reading. Only once it is over does the pane jump to the top, where the
+    /// failures now are.
+    ///
+    /// The first version of this pinned to the first problem whenever there was
+    /// one, which sounds right and is not: on a 255-file run where file 3
+    /// fails, each of the remaining 252 files appends a line, and every one of
+    /// them yanks the view back to the top. The log would stop following the
+    /// run at the moment it became most worth following (U25).
+    var logAnchor: LogAnchor {
+        if isRunning { return .newest }
+        return problemCount > 0 ? .firstProblem : .newest
+    }
 
     /// Empties the file list. **Not** the log: it is the only record of which
     /// files failed and where the outputs went, and clearing the list to queue
@@ -537,6 +598,11 @@ final class OCRModel: ObservableObject {
     func clearFiles() -> Bool {
         guard !isCommitted else { return false }
         files.removeAll()
+        // The log is deliberately kept — it is the record of the last batch —
+        // but the per-row state is about *these* rows, and there are none.
+        outcomes.removeAll()
+        stages.removeAll()
+        skipped.removeAll()
         return true
     }
 
@@ -731,6 +797,7 @@ final class OCRModel: ObservableObject {
                     self.run(candidates, binary: binary, readingTextFrom: Set(digital))
                 case .skipThem:
                     let rest = candidates.filter { !digital.contains($0) }
+                    self.skipped = Set(digital)
                     let skipped = "Skipped \(digital.count) file(s) that already had "
                         + "selectable text; their own text is kept."
                     guard !rest.isEmpty else {
@@ -841,6 +908,12 @@ final class OCRModel: ObservableObject {
         // files that have not started again would be a lie about the present.
         outcomes = [:]
         stages = [:]
+        // …but only for the files in *this* batch. `skipThem` sets `skipped`
+        // and then calls straight into here, so clearing the whole set wiped
+        // the mark two lines after it was made and U26's skipped glyph could
+        // never appear at all. Subtracting the batch keeps that mark while
+        // still clearing anything stale about a file that is running now.
+        skipped.subtract(batch)
 
         // The log used to open with the pipeline's steps — the mac-ocr command
         // line, the rebuild, the JBIG2 merge. That is a developer's view of the
@@ -1200,7 +1273,13 @@ final class OCRModel: ObservableObject {
         var launched: Process?
         let ocr = Runner.runStreaming(
             binary: binary,
-            arguments: Runner.jsonLinesArguments(for: visible, settings: settings),
+            // A page we are willing to rebuild can still be one mac-ocr refuses
+            // to render — its limit is 200 MP against our 400 — and finding out
+            // after the rebuild means the whole file fails. Ask for a DPI that
+            // fits when it does not (U25).
+            arguments: Runner.jsonLinesArguments(
+                for: visible, settings: settings,
+                dpiCeiling: Flattener.recogniserDPICeiling(for: visible, password: password)),
             onLine: { line in
                 jsonLines.append(line)
                 let done = jsonLines.count
