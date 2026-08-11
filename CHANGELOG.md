@@ -12,6 +12,72 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.8.0 — 2026-08-11
+
+**A scanned book that came out twenty-one times larger than it went in now comes
+out smaller than it went in.** A 600-page 1964 monograph arrived as 33 MB and
+this app turned it into 709 MB. Every page of it was plain text, and every page
+was being written as a full-resolution colour photograph.
+
+The cause was the paper. Cream book stock has real colour in it — measured
+across that book, a saturation of 0.078 to 0.089 against a threshold of 0.06 —
+so the "is there colour on this page?" test said yes on every page, while the
+two tests that ask whether a page is text said, clearly and correctly, that it
+was. Worse, that one number was charged twice: it took each page off the
+black-and-white route *and* gave it three colour channels instead of one.
+
+Colour is now measured against the page's own paper rather than against grey.
+Cream paper reads as no colour at all; a coloured illustration on that same
+cream page still reads as colour, because it was never the paper's colour. The
+book above now comes out at 28 MB. Nothing about genuinely coloured pages
+changed — one page in the test corpus moved *to* colour, correctly, because it
+carries handwritten blue-ink corrections that the yellowed paper had been
+masking. See BUGS.md R33.
+
+**Pages with photographs on them are now stored in layers, and are three to five
+times smaller.** A page that mixes text with a picture used to be written as one
+big JPEG, which is the wrong shape for it: the text wants to be sharp and the
+picture wants to be smooth, and one image cannot be both. Such a page is now
+stored as three — the text as a full-resolution stencil, the picture behind it,
+and the ink colour — which is how library and commercial scanning software has
+done it for years.
+
+Text on those pages is *sharper* than before, not softer, because it no longer
+goes through a photographic compressor. Measured over the test corpus: 40 MB of
+picture pages down to 8 MB.
+
+**New setting: Photo detail.** Because the trade this makes is real, it is a
+choice rather than something done to your files quietly. Under Searchable PDF ▸
+Photo detail:
+
+- **Maximum** — photographs keep every pixel.
+- **Balanced** *(default)* — photographs keep half their resolution, which on a
+  printed halftone is very hard to tell from the original, at about a third the
+  size.
+- **Smallest files** — a third of their resolution, noticeably soft up close, at
+  about a fifth the size.
+
+**Text is stored at full resolution whichever you choose.** This setting only
+ever affects pictures, and nothing is cropped or dropped at any level.
+
+Also in this release: JPEG 2000 was investigated as a replacement for the
+picture-page codec and rejected on measurement — Apple's encoder targets a fixed
+compression ratio rather than a quality level, so 88–98% of pages came out worse
+than they do today. The reasoning and the numbers are in BUGS.md R34, along with
+the measurement error that made it look promising at first.
+
+## 1.7.0 — 2026-08-10
+
+**Colour pages stay in colour.** Automatic previously answered "grey" for a
+colour plate — it could see the colour, since saturation is one of the three
+signals that route a page away from black-and-white, and then discarded it. Such
+pages now keep their colour, bounded by a measured memory limit
+(`maximumColourPageMegapixels`) above which they rebuild grey as before.
+
+*This entry was reconstructed on 2026-08-11 from HANDOFF.md and the register: the
+release was tagged and shipped without a changelog entry, and a gap is worse than
+a late entry.*
+
 ## 1.6.0 — 2026-08-09
 
 **You can watch a batch happen now.** Each file in the list carries its own

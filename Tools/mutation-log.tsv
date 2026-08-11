@@ -27,3 +27,4 @@ logic/bundle-arch-check	killed	94	1 check(s): …and the bundled lookup refuses 
 logic/bundle-arch-endianness	killed	94	1 check(s): a binary for this machine is recognised
 const/minimumPaperFraction	killed	108	2 check(s): a cream-paper text page does not read as colour; …and rebuilds 1-bit, not as a colour JPEG
 const/paperLuminanceFloor	killed	108	3 check(s): a full-bleed tinted plate keeps its colour, not corrected away; …and not invented on a page that has none; …and not believed from a 5% margin
+logic/mrc-stencil-polarity	killed	143	1 check(s): …and the stencil is the right way round

@@ -1374,6 +1374,88 @@ final class OCRModel: ObservableObject {
             if wantJBIG2, encoded.count == expected,
                encoded.count == bitmaps.count, let qpdf = JBIG2.merger {
                 usedJBIG2 = true
+
+                // Re-layer the picture pages now that the recogniser has said
+                // where the words are.
+                //
+                // This has to happen here and not in `flatten`, which runs
+                // before OCR and so does not yet know. The alternative — running
+                // the recogniser inside `flatten` — would recognise every
+                // document twice, and the whole point of doing this after the
+                // fact is that the boxes already exist.
+                //
+                // Every failure is a no-op that leaves the page's existing JPEG
+                // in place. MRC is an improvement on a working page, never a
+                // requirement, and a page that costs more is a far better
+                // outcome than one that fails or draws wrong.
+                if let jb = JBIG2.encoder,
+                   let source = Flattener.open(inputFile, password: password) {
+                    var relayered = 0, savedBytes = 0
+                    for index in encoded.indices {
+                        if control.isCancelled { break }
+                        // Grey picture pages only. A colour page is three
+                        // channels and its layers have not been measured; a
+                        // bilevel page is already cheaper than MRC could be.
+                        guard case .jpeg(let existing) = encoded[index].stream,
+                              !encoded[index].isColour,
+                              let page = source.page(at: index),
+                              let boxes = byPage[index + 1]?.map({ $0.boundingBox }),
+                              !boxes.isEmpty else { continue }
+                        let before = (try? Data(contentsOf: existing).count) ?? 0
+                        guard let layers = Flattener.mrcLayers(
+                            for: page, boxes: boxes, into: pngDir,
+                            stem: String(format: "m%05d", index + 1),
+                            backgroundDownsample: settings.photoDetail.downsample)
+                        else { continue }
+                        let stencil = pngDir.appendingPathComponent(
+                            String(format: "m%05d.jbig2", index + 1))
+                        do {
+                            try control.adopting { register in
+                                try JBIG2.encode(png: layers.mask, to: stencil,
+                                                 using: jb, register: register)
+                            }
+                        } catch {
+                            for u in [layers.mask, layers.background, layers.foreground,
+                                      stencil] {
+                                try? FileManager.default.removeItem(at: u)
+                            }
+                            continue
+                        }
+                        try? FileManager.default.removeItem(at: layers.mask)
+                        let after = [stencil, layers.background, layers.foreground]
+                            .reduce(0) { $0 + ((try? Data(contentsOf: $1).count) ?? 0) }
+                        // Three layers are not always cheaper than one image —
+                        // a page of dense halftone with a caption under it can
+                        // come out larger. Keep whichever is smaller rather than
+                        // assuming, and say so in the log.
+                        guard after < before else {
+                            for u in [stencil, layers.background, layers.foreground] {
+                                try? FileManager.default.removeItem(at: u)
+                            }
+                            continue
+                        }
+                        encoded[index] = JBIG2.Page(
+                            stream: .mrc(JBIG2.Page.MRC(
+                                mask: stencil,
+                                background: layers.background,
+                                foreground: layers.foreground,
+                                backgroundWidth: layers.backgroundWidth,
+                                backgroundHeight: layers.backgroundHeight,
+                                foregroundWidth: layers.foregroundWidth,
+                                foregroundHeight: layers.foregroundHeight)),
+                            pixelWidth: encoded[index].pixelWidth,
+                            pixelHeight: encoded[index].pixelHeight,
+                            boxSize: encoded[index].boxSize)
+                        try? FileManager.default.removeItem(at: existing)
+                        relayered += 1
+                        savedBytes += before - after
+                    }
+                    if relayered > 0 {
+                        progress("Layered \(relayered) picture page"
+                                 + "\(relayered == 1 ? "" : "s"), saving \(savedBytes / 1024) KB",
+                                 layerShare(0, 1))
+                    }
+                }
                 let textLayer = work.appendingPathComponent("text.pdf")
                 unplaced = try SearchableWriter.compose(
                     visible: visible, observations: byPage, to: textLayer,
@@ -1417,7 +1499,7 @@ final class OCRModel: ObservableObject {
                 // rewrite would re-encode every image stream and throw the
                 // compression away. See BUGS.md R19.
                 try JBIG2.assemble(encoded, outline: outline, to: imagesOnly)
-                for page in encoded { try? FileManager.default.removeItem(at: page.stream.url) }
+                for page in encoded { for u in page.stream.urls { try? FileManager.default.removeItem(at: u) } }
                 // Registered so Cancel can interrupt the merge, which is the slow
                 // step on a large book and used to leave Cancel looking dead.
                 try control.adopting { register in

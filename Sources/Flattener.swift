@@ -1115,6 +1115,302 @@ enum Flattener {
         return (data, image)
     }
 
+    // MARK: - MRC layers
+
+    /// Sauvola's k. 0.34 follows `internetarchive/archive-pdf-tools`, which
+    /// produced two of the MRC exemplars this was calibrated against.
+    static let sauvolaK = 0.34
+
+    /// How much the background is shrunk. It is the quality knob and it is
+    /// steep: measured on a page carrying a photograph, 1x saves 1.15x, 2x saves
+    /// 3.05x and 3x saves 4.72x. Over 40 documents, 2x is 3.28x and 3x is 5.15x.
+    ///
+    /// 2, not 3, because the pages that reach this route are by definition the
+    /// ones with pictures on them. At 3x the photograph survives but is visibly
+    /// soft; at 2x it is close to what ships today. Trading a picture's
+    /// resolution for bytes on archival material is the R13 decision again, and
+    /// it went the same way.
+    static let mrcBackgroundDownsample = 2
+
+    /// The foreground carries ink colour, which on a scan is nearly flat, so it
+    /// can be shrunk much harder than the background without anything showing.
+    static let mrcForegroundDownsample = 4
+
+    /// The largest page that gets layered.
+    ///
+    /// Not `maximumPageMegapixels`, which is the bound on *rendering* a page and
+    /// is sized for the grey buffer at a measured 5.5 bytes a pixel. Layering
+    /// the same page holds a good deal more at once: the grey buffer, the
+    /// stencil, the text-region map, the filled background, and inside
+    /// `fillHoles` a second copy of the buffer plus two more flag arrays — about
+    /// 8 bytes a pixel at peak against the render's 5.5. At 400 MP that is over
+    /// 3 GB for a saving, on a page nobody asked to be made smaller.
+    ///
+    /// 100 MP matches `maximumColourPageMegapixels`, which was measured for the
+    /// same reason. Above it the page keeps the single JPEG it already has,
+    /// which is exactly what MRC declining is supposed to do.
+    ///
+    /// R24 and R29 are both this shape — an allocation bounded in one place and
+    /// not in its sibling — so the bound is asserted directly by
+    /// `mrcBoundIsWithinTheRenderOne` rather than left to be inferred.
+    static let maximumMRCPageMegapixels = 100
+
+    /// Peak bytes per pixel while layering, measured against the render's 5.5.
+    static let measuredMRCBytesPerPixel = 8.0
+
+    /// Whether layering's worst case stays inside the render's.
+    static var mrcBoundIsWithinTheRenderOne: Bool {
+        Double(maximumMRCPageMegapixels) * measuredMRCBytesPerPixel
+            <= Double(maximumPageMegapixels) * measuredGreyBytesPerPixel
+    }
+
+    /// Vision's boxes are tight around the glyphs it recognised. A stencil
+    /// clipped to them files the ascenders, descenders and anti-aliased edge off
+    /// every character on the page, so they are grown by this much of their own
+    /// height first.
+    static let mrcBoxPadding = 0.25
+
+    /// One page as three layers.
+    struct MRCLayers {
+        /// 1-bit PNG of the text stencil, ready for jbig2enc.
+        let mask: URL
+        /// 8-bit grey JPEGs. The background holds paper and pictures, the
+        /// foreground holds ink colour, and the stencil says which shows.
+        let background: URL
+        let foreground: URL
+        let backgroundWidth: Int, backgroundHeight: Int
+        let foregroundWidth: Int, foregroundHeight: Int
+    }
+
+    /// Sauvola's local threshold: `t(x) = m(x) * (1 + k * (s(x)/128 - 1))`.
+    ///
+    /// Local, not global. Otsu picks one threshold for the whole sheet, which is
+    /// the right question for *whether* a page is a picture and the wrong one for
+    /// cutting text out of one: on a page that is half photograph the photograph
+    /// drags the global threshold until the text either bloats or vanishes.
+    /// Integral images, so the window size costs nothing.
+    static func sauvolaMask(_ grey: [UInt8], width w: Int, height h: Int,
+                            window: Int) -> [Bool] {
+        guard w > 0, h > 0, grey.count >= w * h else { return [] }
+        let stride1 = w + 1
+        var sum = [Double](repeating: 0, count: stride1 * (h + 1))
+        var sq = [Double](repeating: 0, count: stride1 * (h + 1))
+        for y in 0..<h {
+            var rs = 0.0, rq = 0.0
+            for x in 0..<w {
+                let v = Double(grey[y * w + x])
+                rs += v; rq += v * v
+                sum[(y + 1) * stride1 + x + 1] = sum[y * stride1 + x + 1] + rs
+                sq[(y + 1) * stride1 + x + 1] = sq[y * stride1 + x + 1] + rq
+            }
+        }
+        let r = max(window / 2, 1)
+        var mask = [Bool](repeating: false, count: w * h)
+        for y in 0..<h {
+            let y0 = max(y - r, 0), y1 = min(y + r + 1, h)
+            for x in 0..<w {
+                let x0 = max(x - r, 0), x1 = min(x + r + 1, w)
+                let area = Double((y1 - y0) * (x1 - x0))
+                let s = sum[y1 * stride1 + x1] - sum[y0 * stride1 + x1]
+                      - sum[y1 * stride1 + x0] + sum[y0 * stride1 + x0]
+                let q = sq[y1 * stride1 + x1] - sq[y0 * stride1 + x1]
+                      - sq[y1 * stride1 + x0] + sq[y0 * stride1 + x0]
+                let mean = s / area
+                let sd = max(q / area - mean * mean, 0).squareRoot()
+                if Double(grey[y * w + x]) < mean * (1 + sauvolaK * (sd / 128.0 - 1)) {
+                    mask[y * w + x] = true
+                }
+            }
+        }
+        return mask
+    }
+
+    /// Where the stencil is allowed to look, from Vision's word boxes.
+    ///
+    /// This is what makes MRC safe here. Sauvola cannot tell a halftone dot from
+    /// a full stop, so on its own it pulls photographs into the stencil, and the
+    /// picture is then destroyed by the very layering meant to preserve it —
+    /// measured, on a page carrying one: visibly smeared and streaked, while the
+    /// text on the same page was perfect. Confining the stencil to where words
+    /// were actually recognised leaves pictures wholly in the background.
+    ///
+    /// It is also *smaller*: a mask restricted to text has far fewer connected
+    /// components, so it costs less as JBIG2 than the blind one it replaces.
+    /// 5.15x against 4.96x, better on both axes.
+    static func textRegionMask(_ boxes: [SearchableWriter.BoundingBox],
+                               width w: Int, height h: Int) -> [Bool] {
+        var region = [Bool](repeating: false, count: w * h)
+        guard w > 0, h > 0 else { return region }
+        for b in boxes {
+            // The pad is a fraction of the box's *height* in both directions, so
+            // it is converted through the aspect ratio for the horizontal one.
+            let padY = b.height * mrcBoxPadding
+            let padX = padY * Double(h) / Double(w)
+            let x0 = max(Int((b.x - padX) * Double(w)), 0)
+            let x1 = min(Int((b.x + b.width + padX) * Double(w)) + 1, w)
+            let y0 = max(Int((b.y - padY) * Double(h)), 0)
+            let y1 = min(Int((b.y + b.height + padY) * Double(h)) + 1, h)
+            guard x0 < x1, y0 < y1 else { continue }
+            for y in y0..<y1 { for x in x0..<x1 { region[y * w + x] = true } }
+        }
+        return region
+    }
+
+    /// Fill the pixels under `holes` from their surroundings.
+    ///
+    /// Both layers get this treatment before they are shrunk, and it is not
+    /// cosmetic: a background with the text punched out of it as hard-edged
+    /// holes costs *more* to compress than the background with the text still
+    /// in it, because the edges are exactly the high frequencies the codec is
+    /// bad at. Filling them flat is what makes the layer cheap.
+    ///
+    /// The radius doubles on each pass so an isolated hole is reached quickly
+    /// and a large one still terminates. Anything never reached takes the mean
+    /// of what was kept, rather than being left at its original ink value where
+    /// it would show through as a ghost.
+    static func fillHoles(_ src: [UInt8], holes: [Bool], width w: Int, height h: Int,
+                          radius: Int, passes: Int = 3) -> [UInt8] {
+        guard w > 0, h > 0, src.count >= w * h, holes.count >= w * h else { return src }
+        var out = src, live = holes, rad = max(radius, 1)
+        for _ in 0..<passes {
+            var next = out, still = live
+            var any = false
+            for y in 0..<h {
+                for x in 0..<w where live[y * w + x] {
+                    any = true
+                    var acc = 0, cnt = 0
+                    let step = max(rad / 3, 1)
+                    var dy = -rad
+                    while dy <= rad {
+                        let yy = y + dy
+                        if yy >= 0, yy < h {
+                            var dx = -rad
+                            while dx <= rad {
+                                let xx = x + dx
+                                if xx >= 0, xx < w, !live[yy * w + xx] {
+                                    acc += Int(out[yy * w + xx]); cnt += 1
+                                }
+                                dx += step
+                            }
+                        }
+                        dy += step
+                    }
+                    if cnt > 0 { next[y * w + x] = UInt8(acc / cnt); still[y * w + x] = false }
+                }
+            }
+            out = next; live = still
+            if !any { break }
+            rad *= 2
+        }
+        if live.contains(true) {
+            var total = 0, count = 0
+            for i in 0..<(w * h) where !holes[i] { total += Int(out[i]); count += 1 }
+            let mean = UInt8(count > 0 ? total / count : 255)
+            for i in 0..<(w * h) where live[i] { out[i] = mean }
+        }
+        return out
+    }
+
+    /// Box-average shrink by an integer factor.
+    static func downsample(_ src: [UInt8], width w: Int, height h: Int, by f: Int)
+        -> (pixels: [UInt8], width: Int, height: Int) {
+        guard f > 1, w > 0, h > 0 else { return (src, w, h) }
+        let nw = max(w / f, 1), nh = max(h / f, 1)
+        var out = [UInt8](repeating: 255, count: nw * nh)
+        for y in 0..<nh {
+            for x in 0..<nw {
+                var acc = 0, cnt = 0
+                for dy in 0..<f where y * f + dy < h {
+                    let row = (y * f + dy) * w
+                    for dx in 0..<f where x * f + dx < w {
+                        acc += Int(src[row + x * f + dx]); cnt += 1
+                    }
+                }
+                out[y * nw + x] = UInt8(cnt > 0 ? acc / cnt : 255)
+            }
+        }
+        return (out, nw, nh)
+    }
+
+    /// An 8-bit grey PNG from a raw buffer, for the layers that have to reach an
+    /// external encoder as a file.
+    static func greyPNG(_ pixels: [UInt8], width w: Int, height h: Int) -> Data? {
+        guard w > 0, h > 0, pixels.count >= w * h,
+              let rep = NSBitmapImageRep(
+                bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h, bitsPerSample: 8,
+                samplesPerPixel: 1, hasAlpha: false, isPlanar: false,
+                colorSpaceName: .deviceWhite, bytesPerRow: w, bitsPerPixel: 8)
+        else { return nil }
+        if let dest = rep.bitmapData {
+            pixels.withUnsafeBytes { dest.update(from: $0.bindMemory(to: UInt8.self).baseAddress!,
+                                                 count: w * h) }
+        }
+        return rep.representation(using: .png, properties: [:])
+    }
+
+    /// Build the three layers for one page, or nil when the page should keep the
+    /// single image it already has.
+    ///
+    /// Nil, not a throw, and deliberately: MRC is an improvement on a working
+    /// page, never a requirement. Every way this can decline — no words found,
+    /// a render that failed, an encode that failed — leaves the caller with the
+    /// JPEG it already had. A page that costs more is a far better outcome than
+    /// a page that fails, and the alternative is a route whose failures are
+    /// invisible until someone opens the book.
+    static func mrcLayers(for page: PDFPage, boxes: [SearchableWriter.BoundingBox],
+                          into directory: URL, stem: String,
+                          backgroundDownsample: Int = mrcBackgroundDownsample) -> MRCLayers? {
+        // No words means a plate with no text on it. An empty stencil would put
+        // the whole page into a downsampled background — publishing a picture at
+        // half its resolution for no compression benefit at all.
+        guard !boxes.isEmpty else { return nil }
+
+        let box = fullBox(of: page)
+        let dpi = rebuildDPI(of: page)
+        let scale = dpi / 72.0
+        let wide = (box.width * scale).rounded(), high = (box.height * scale).rounded()
+        guard wide.isFinite, high.isFinite, wide >= 1, high >= 1,
+              wide * high <= Double(maximumMRCPageMegapixels) * 1_000_000 else { return nil }
+        let w = max(Int(wide), 1), h = max(Int(high), 1)
+        guard let grey = renderGrey(page, box: box, scale: scale,
+                                    width: w, height: h, from: .mediaBox) else { return nil }
+
+        var mask = sauvolaMask(grey, width: w, height: h, window: max(Int(dpi / 4), 3))
+        guard mask.count == w * h else { return nil }
+        let region = textRegionMask(boxes, width: w, height: h)
+        for i in 0..<(w * h) where !region[i] { mask[i] = false }
+        // A stencil with nothing in it is not a layering, it is a downsampled
+        // page. Refuse it the same way an empty box list is refused.
+        guard mask.contains(true) else { return nil }
+
+        let inverse = mask.map { !$0 }
+        let bgFull = fillHoles(grey, holes: mask, width: w, height: h, radius: 10)
+        let (bg, bw, bh) = downsample(bgFull, width: w, height: h,
+                                      by: max(backgroundDownsample, 1))
+        let fgFull = fillHoles(grey, holes: inverse, width: w, height: h, radius: 3)
+        let (fg, fw, fh) = downsample(fgFull, width: w, height: h, by: mrcForegroundDownsample)
+
+        var maskPixels = [UInt8](repeating: 255, count: w * h)
+        for i in 0..<(w * h) where mask[i] { maskPixels[i] = 0 }
+        guard let maskPNG = greyPNG(maskPixels, width: w, height: h),
+              let bgData = jpegData(from: bg, width: bw, height: bh, quality: pictureJPEGQuality),
+              let fgData = jpegData(from: fg, width: fw, height: fh, quality: pictureJPEGQuality)
+        else { return nil }
+
+        let maskURL = directory.appendingPathComponent(stem + ".mask.png")
+        let bgURL = directory.appendingPathComponent(stem + ".bg.jpg")
+        let fgURL = directory.appendingPathComponent(stem + ".fg.jpg")
+        guard (try? maskPNG.write(to: maskURL)) != nil,
+              (try? bgData.write(to: bgURL)) != nil,
+              (try? fgData.write(to: fgURL)) != nil else {
+            for u in [maskURL, bgURL, fgURL] { try? FileManager.default.removeItem(at: u) }
+            return nil
+        }
+        return MRCLayers(mask: maskURL, background: bgURL, foreground: fgURL,
+                         backgroundWidth: bw, backgroundHeight: bh,
+                         foregroundWidth: fw, foregroundHeight: fh)
+    }
+
     // MARK: - Resolution
 
     /// The resolution to rebuild a page at.

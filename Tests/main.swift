@@ -87,6 +87,31 @@ try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: t
 defer { try? FileManager.default.removeItem(at: tmp) }
 
 /// An image-only PDF: no embedded text, so anything we read back came from OCR.
+/// Fraction of a given page that is not paper, rendered through PDFKit.
+///
+/// Page count cannot tell a working image filter from a broken one — a stream a
+/// reader cannot decode still opens, it is simply blank — and it equally cannot
+/// tell an MRC stencil the right way round from one inverted, which floods the
+/// sheet instead of emptying it. This can do both.
+func inkFractionMRC(of url: URL, page index: Int) -> Double {
+    guard let doc = PDFDocument(url: url), let page = doc.page(at: index) else { return -1 }
+    let box = page.bounds(for: .mediaBox)
+    guard box.width > 0, box.height > 0 else { return -1 }
+    let w = 200, h = max(1, Int(200 * box.height / box.width))
+    guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8,
+                              bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
+                              bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return -1 }
+    ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+    ctx.scaleBy(x: CGFloat(w) / box.width, y: CGFloat(h) / box.height)
+    page.draw(with: .mediaBox, to: ctx)
+    guard let data = ctx.data else { return -1 }
+    let px = data.bindMemory(to: UInt8.self, capacity: w * h)
+    var dark = 0
+    for i in 0..<(w * h) where px[i] < 224 { dark += 1 }
+    return Double(dark) / Double(w * h)
+}
+
 /// A scanned page of ordinary black text on paper of a given colour.
 ///
 /// `paper` is what separates an archival scan from a born-digital page: real
@@ -590,6 +615,99 @@ do {
               "\(PDFDocument(url: assembled)?.pageCount ?? -1)")
         let raw = String(decoding: (try? Data(contentsOf: assembled)) ?? Data(),
                          as: UTF8.self)
+        // MARK: MRC — three layers on one page
+        //
+        // The stencil is an /SMask, and its polarity is the thing that cannot be
+        // reasoned out: JBIG2 codes ink as 1, an /SMask reads 1 as opaque, but
+        // PDF presents the decoded bitmap as DeviceGray where 1 is white. Both
+        // readings are defensible from the specification and only one draws the
+        // right picture, so it is pinned by rendering. Inverted, the foreground
+        // shows everywhere *except* the text and the page comes out nearly
+        // solid — which is what the ink bounds below catch.
+        let mrcDir = dir.appendingPathComponent("mrc")
+        try? FileManager.default.createDirectory(at: mrcDir, withIntermediateDirectories: true)
+        if let jb = JBIG2.encoder,
+           let doc = PDFDocument(url: darkPage), let dpage = doc.page(at: 0) {
+            // Boxes covering the top half only, so the bottom stays in the
+            // background — the shape of a page with a picture on it.
+            let boxes = (0..<6).map { i in
+                SearchableWriter.BoundingBox(x: 0.1, y: 0.05 + Double(i) * 0.06,
+                                             width: 0.8, height: 0.045)
+            }
+            if let layers = Flattener.mrcLayers(for: dpage, boxes: boxes,
+                                                into: mrcDir, stem: "t") {
+                let stencil = mrcDir.appendingPathComponent("t.jbig2")
+                try? JBIG2.encode(png: layers.mask, to: stencil, using: jb)
+                let size = Flattener.fullBox(of: dpage).size
+                let scale = Flattener.rebuildDPI(of: dpage) / 72.0
+                let pw = Int((size.width * scale).rounded())
+                let ph = Int((size.height * scale).rounded())
+                let mrcPage = JBIG2.Page(
+                    stream: .mrc(JBIG2.Page.MRC(
+                        mask: stencil, background: layers.background,
+                        foreground: layers.foreground,
+                        backgroundWidth: layers.backgroundWidth,
+                        backgroundHeight: layers.backgroundHeight,
+                        foregroundWidth: layers.foregroundWidth,
+                        foregroundHeight: layers.foregroundHeight)),
+                    pixelWidth: pw, pixelHeight: ph, boxSize: size)
+
+                // Mixed with a bilevel page on purpose: the two need different
+                // numbers of objects, which is what broke the old `3 + i * 3`
+                // arithmetic and would write an xref describing the wrong layout.
+                let bilevelFirst = streams.first { if case .jbig2 = $0.stream { return true }
+                                                   return false }
+                let mixed = (bilevelFirst.map { [$0, mrcPage] } ?? [mrcPage])
+                let mrcPDF = dir.appendingPathComponent("mrc-page.pdf")
+                do { try JBIG2.assemble(mixed, to: mrcPDF) }
+                catch { check("the MRC page assembles", false, error.localizedDescription) }
+
+                let mraw = String(decoding: (try? Data(contentsOf: mrcPDF)) ?? Data(),
+                                  as: UTF8.self)
+                check("an MRC page writes three image XObjects",
+                      mraw.components(separatedBy: "/Subtype /Image").count - 1
+                        == (bilevelFirst == nil ? 3 : 4),
+                      "\(mraw.components(separatedBy: "/Subtype /Image").count - 1)")
+                check("…the foreground carries an /SMask", mraw.contains("/SMask"))
+                check("…and the stencil is inverted for it",
+                      mraw.contains("/Decode \(JBIG2.maskDecode)"))
+                check("…and the page draws both layers",
+                      mraw.contains("/Im0 Do") && mraw.contains("/Im1 Do"))
+                check("…and it opens with every page present",
+                      PDFDocument(url: mrcPDF)?.pageCount == mixed.count,
+                      "\(PDFDocument(url: mrcPDF)?.pageCount ?? -1)")
+
+                // The polarity check. A correct page has ink on it but is mostly
+                // paper; an inverted stencil paints the foreground over
+                // everything the text is *not*, which floods the sheet.
+                let ink = inkFractionMRC(of: mrcPDF, page: mixed.count - 1)
+                check("…and the stencil is the right way round",
+                      ink > 0.01 && ink < 0.60, String(format: "%.3f ink", ink))
+            } else {
+                check("the MRC fixture produces layers", false, "mrcLayers returned nil")
+            }
+        }
+        // The allocation bound, checked as a decision rather than by allocating
+        // the page it describes. R24 bounded one allocation and left its sibling
+        // unbounded (R29); layering is that sibling for `flatten`'s render,
+        // holding about 8 bytes a pixel against the render's 5.5.
+        check("layering's worst case stays inside the render's",
+              Flattener.mrcBoundIsWithinTheRenderOne,
+              String(format: "MRC %.2f GB vs render %.2f GB",
+                     Double(Flattener.maximumMRCPageMegapixels)
+                        * Flattener.measuredMRCBytesPerPixel / 1000,
+                     Double(Flattener.maximumPageMegapixels)
+                        * Flattener.measuredGreyBytesPerPixel / 1000))
+        check("…and layering is recorded as the more expensive per pixel",
+              Flattener.measuredMRCBytesPerPixel > Flattener.measuredGreyBytesPerPixel)
+
+        // No words means no layering: a plate would otherwise be published at a
+        // fraction of its resolution for no benefit.
+        if let doc = PDFDocument(url: darkPage), let dpage = doc.page(at: 0) {
+            check("a page with no recognised words is not layered",
+                  Flattener.mrcLayers(for: dpage, boxes: [], into: mrcDir, stem: "e") == nil)
+        }
+
         check("it carries a JBIG2 stream", raw.contains("/JBIG2Decode"))
         check("…and a DCT stream alongside it", raw.contains("/DCTDecode"))
         check("bit depths match their filters",
@@ -655,9 +773,11 @@ do {
             }
         }
         check("every page encodes", encoded.count == bitmaps.count)
-        let streamBytes = encoded.reduce(0) {
-            $0 + (((try? FileManager.default.attributesOfItem(atPath: $1.stream.url.path)[.size]
-                    as? Int) ?? 0) ?? 0)
+        let streamBytes = encoded.reduce(0) { total, page in
+            total + page.stream.urls.reduce(0) { sum, u in
+                sum + (((try? FileManager.default.attributesOfItem(atPath: u.path)[.size]
+                         as? Int) ?? 0) ?? 0)
+            }
         }
         check("the JBIG2 streams are non-empty", streamBytes > 0, "\(streamBytes) bytes")
 

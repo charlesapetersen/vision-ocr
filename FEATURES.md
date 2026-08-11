@@ -15,9 +15,10 @@ parked for exactly that reason.
 
 ## Likely worth doing
 
-### MRC layering for mixed pages — measured at 5.15x, prototype working
-*(investigated 2026-08-11; `Tools/score-mrc.swift` is the prototype and the
-measurement. Segmentation is solved; what remains is pipeline order.)*
+### MRC layering for mixed pages — SHIPPED in 1.8.0
+*(investigated and shipped 2026-08-11. `Tools/score-mrc.swift` is the prototype
+the design came from and remains the way to re-measure it. Kept here rather than
+deleted because the reasoning below is what the shipped defaults rest on.)*
 
 Mixed Raster Content stores a page as three layers: a full-resolution 1-bit
 stencil of the text (JBIG2), a background holding paper and pictures
@@ -68,17 +69,23 @@ publishing a plate at a third of its resolution.
 **The background downsample is the real quality knob**, and it is steep. On the
 photograph page: 1x gives 1.15x compression, 2x gives 3.05x, 3x gives 4.72x.
 Across 40 documents: 2x gives 3.28x, 3x gives 5.15x. At 3x the photograph is
-intact but soft; at 2x it is close to today's. Since the pages that reach this
-route are the ones with pictures on them, the honest default is probably 2x, or a
-per-page choice driven by how much picture content lies outside the text boxes —
-paper needs no resolution at all, a halftone does.
+intact but soft; at 2x it is close to today's.
+
+Shipped as a setting rather than a decision made for the user — **Searchable PDF
+▸ Photo detail**, defaulting to Balanced (2x). The pages this applies to are the
+ones with pictures on them, so a default of Maximum would be a refusal to choose
+rather than an answer, and R13's "fidelity wins" is satisfied by the fact that
+Maximum is one click away and text is full resolution at every level. The
+per-page alternative — choosing the factor from how much picture content lies
+outside the text boxes, since paper needs no resolution and a halftone does — is
+still the better answer and is not built.
 
 Note also that PSNR is useless here and says the opposite of the truth — it reads
 20–29 dB for MRC against 37–42 dB for today's JPEG on pages where MRC looks
 better, because it punishes a smoothed background and is blind to text edges
 being exact. Judge this one by looking at pages.
 
-**What remains is pipeline order, and it is the whole cost of shipping this.**
+**Pipeline order was the cost of shipping it, and it is paid.**
 `flatten` runs before `mac-ocr`, so at the moment the layers would be built it
 does not yet know where the words are. The prototype sidesteps this by running
 the recogniser itself, once per page, which the app must not do — it already runs

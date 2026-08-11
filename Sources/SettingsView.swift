@@ -41,6 +41,10 @@ struct SettingsView: View {
     @AppStorage(Prefs.rebuildImages) private var rebuildImages = true
     @AppStorage(Prefs.warnDigitalText) private var warnDigitalText = true
     @AppStorage(Prefs.useJBIG2) private var useJBIG2 = true
+    @AppStorage(Prefs.photoDetail) private var photoDetailRaw = Prefs.PhotoDetail.balanced.rawValue
+    private var photoDetail: Prefs.PhotoDetail {
+        Prefs.PhotoDetail(rawValue: photoDetailRaw) ?? .balanced
+    }
     @AppStorage(Prefs.rebuildMode) private var rebuildModeRaw =
         Flattener.Mode.auto.rawValue
 
@@ -266,6 +270,32 @@ struct SettingsView: View {
                         Text("Not installed — falling back to Flate. Install with: "
                              + JBIG2.installHint)
                             .font(.caption2).foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    // Only meaningful when there is a JBIG2 stencil to layer
+                    // against, which is why it sits inside this branch.
+                    if useJBIG2 {
+                        Row("Photo detail", labelWidth) {
+                            Picker("", selection: $photoDetailRaw) {
+                                ForEach(Prefs.PhotoDetail.allCases) {
+                                    Text($0.label).tag($0.rawValue)
+                                }
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.segmented)
+                            .help("On a page that has both text and a picture, the two are "
+                                  + "stored separately: the text as a full-resolution "
+                                  + "stencil, the picture behind it. **This setting only "
+                                  + "affects the picture — text is stored at full "
+                                  + "resolution whichever you choose, and nothing is ever "
+                                  + "cropped or dropped.**\n\n"
+                                  + Prefs.PhotoDetail.allCases.map {
+                                      "\($0.label): \($0.blurb)"
+                                  }.joined(separator: "\n\n"))
+                        }
+                        Text(photoDetail.blurb)
+                            .font(.caption2).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }

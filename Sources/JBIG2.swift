@@ -29,12 +29,41 @@ enum JBIG2 {
             /// the page says which, and the stream dictionary has to agree or
             /// the viewer reads three channels as one and renders noise.
             case jpeg(URL)
+            /// Three layers: a background holding paper and pictures, a
+            /// foreground holding ink colour, and a 1-bit JBIG2 stencil that
+            /// says where the foreground shows. The reader paints the
+            /// background, then the foreground through the stencil as an
+            /// `/SMask`. See `Flattener.mrcLayers`.
+            case mrc(MRC)
 
-            var url: URL {
+            /// Every file this stream owns, so the caller can clean up without
+            /// knowing which kind it is. This was `url` returning one file, and
+            /// an MRC page would have leaked the two it did not name.
+            var urls: [URL] {
                 switch self {
-                case .jbig2(let u), .jpeg(let u): return u
+                case .jbig2(let u), .jpeg(let u): return [u]
+                case .mrc(let m): return [m.mask, m.background, m.foreground]
                 }
             }
+
+            /// How many image XObjects the page needs. Object numbers are
+            /// assigned from this, so a wrong answer here writes a broken xref.
+            var imageCount: Int {
+                switch self {
+                case .jbig2, .jpeg: return 1
+                case .mrc: return 3
+                }
+            }
+        }
+
+        /// The three encoded layers. `mask` is already a JBIG2 stream, not a
+        /// PNG — it goes through `encode` exactly like a bilevel page does.
+        struct MRC {
+            let mask: URL
+            let background: URL
+            let foreground: URL
+            let backgroundWidth: Int, backgroundHeight: Int
+            let foregroundWidth: Int, foregroundHeight: Int
         }
         let stream: Stream
         let pixelWidth: Int
@@ -77,6 +106,20 @@ enum JBIG2 {
     static var installHint: String {
         "brew install jbig2enc qpdf"
     }
+
+    /// The `/Decode` array on an MRC stencil.
+    ///
+    /// JBIG2 codes ink as 1. An `/SMask` reads 1 as opaque, so on that reading
+    /// no inversion is needed — but PDF's JBIG2Decode filter presents the
+    /// decoded bitmap as a DeviceGray image, where 1 is *white*, and the mask
+    /// then makes the foreground show everywhere except the text. `[1 0]`
+    /// flips it back.
+    ///
+    /// Established by rendering a page and looking at it, not by reading the
+    /// specification — the two readings above are each defensible from the text
+    /// and only one of them draws the right picture. `maskDecodeIsInverted`
+    /// is the check that holds it.
+    static let maskDecode = "[ 1 0 ]"
 
     // MARK: - Encoding
 
@@ -170,12 +213,27 @@ enum JBIG2 {
             try write("\(number) 0 obj\n")
         }
 
-        // 1 = catalog, 2 = page tree, then three objects per page, then — if
-        // there is an outline — its root followed by one object per entry.
-        func pageObject(_ i: Int) -> Int { 3 + i * 3 }
-        func contentObject(_ i: Int) -> Int { 3 + i * 3 + 1 }
-        func imageObject(_ i: Int) -> Int { 3 + i * 3 + 2 }
-        let afterPages = 3 + pages.count * 3
+        // 1 = catalog, 2 = page tree, then each page's objects, then — if there
+        // is an outline — its root followed by one object per entry.
+        //
+        // Assigned in a pass rather than computed with arithmetic. It used to be
+        // `3 + i * 3`, which was correct only while every page needed exactly
+        // three objects; an MRC page needs five, and one such page anywhere in a
+        // book would have shifted every later number while the xref went on
+        // describing the old layout. That produces a file that opens and is
+        // wrong, which is the failure mode this file exists to avoid.
+        var pageObjects: [Int] = [], contentObjects: [Int] = [], imageObjects: [[Int]] = []
+        var nextObject = 3
+        for page in pages {
+            pageObjects.append(nextObject); nextObject += 1
+            contentObjects.append(nextObject); nextObject += 1
+            let count = page.stream.imageCount
+            imageObjects.append(Array(nextObject..<(nextObject + count)))
+            nextObject += count
+        }
+        func pageObject(_ i: Int) -> Int { pageObjects[i] }
+        func contentObject(_ i: Int) -> Int { contentObjects[i] }
+        let afterPages = nextObject
 
         // Flattened depth-first, so every entry knows its own object number and
         // its parent's before anything is written. /Prev, /Next, /First and /Last
@@ -183,7 +241,10 @@ enum JBIG2 {
         let flat = flatten(outline, from: afterPages + 1, parent: afterPages,
                            pageCount: pages.count)
         let outlineRoot = flat.isEmpty ? nil : afterPages
-        let objectCount = (2 + pages.count * 3) + (flat.isEmpty ? 0 : 1 + flat.count)
+        // From the assignment pass, not recomputed: `nextObject` already counted
+        // every page's objects including the variable number of images, and a
+        // second formula here is a second thing to get wrong.
+        let objectCount = (afterPages - 1) + (flat.isEmpty ? 0 : 1 + flat.count)
 
         try write("%PDF-1.4\n")
         try emit(Data([0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]))      // binary marker
@@ -204,44 +265,91 @@ enum JBIG2 {
                 throw Failure.badPageBox(page: i + 1, size: page.boxSize)
             }
 
+            let objects = imageObjects[i]
+            // One name per image, so the page's /XObject dictionary and its
+            // content stream cannot disagree about which is which.
+            let names = objects.indices.map { "/Im\($0)" }
+            let resources = zip(names, objects)
+                .map { "\($0) \($1) 0 R" }.joined(separator: " ")
+
             try beginObject(pageObject(i))
             try write("""
             << /Type /Page /Parent 2 0 R /MediaBox [ 0 0 \(w) \(h) ] \
             /Resources << /ProcSet [ /PDF /ImageB ] \
-            /XObject << /Im0 \(imageObject(i)) 0 R >> >> \
+            /XObject << \(resources) >> >> \
             /Contents \(contentObject(i)) 0 R >>
             endobj\n
             """)
 
-            // Scale the unit image square to the page box.
-            let content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
+            // Scale the unit image square to the page box. An MRC page draws
+            // twice: the background, then the foreground over it — the stencil
+            // is not drawn, it is the foreground's /SMask.
+            let content: String
+            switch page.stream {
+            case .mrc:
+                content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
+                        + "q \(w) 0 0 \(h) 0 0 cm /Im1 Do Q\n"
+            case .jbig2, .jpeg:
+                content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
+            }
             try beginObject(contentObject(i))
             try write("<< /Length \(content.utf8.count) >>\nstream\n\(content)endstream\nendobj\n")
 
-            // An unreadable or empty stream would otherwise become a blank page
-            // with no complaint — silent data loss in the middle of a book.
-            guard let bytes = try? Data(contentsOf: page.stream.url), !bytes.isEmpty else {
-                throw Failure.encoderFailed("page \(i + 1) produced no image data")
+            /// One image XObject. An unreadable or empty stream would otherwise
+            /// become a blank page with no complaint — silent data loss in the
+            /// middle of a book.
+            func writeImage(_ number: Int, from url: URL, width: Int, height: Int,
+                            filter: String, bits: Int, space: String,
+                            smask: Int? = nil, decode: String? = nil) throws {
+                guard let bytes = try? Data(contentsOf: url), !bytes.isEmpty else {
+                    throw Failure.encoderFailed("page \(i + 1) produced no image data")
+                }
+                try beginObject(number)
+                try write("""
+                << /Type /XObject /Subtype /Image /Width \(width) \
+                /Height \(height) /ColorSpace \(space) \
+                /BitsPerComponent \(bits) /Filter \(filter) \
+                \(decode.map { "/Decode \($0) " } ?? "")\
+                \(smask.map { "/SMask \($0) 0 R " } ?? "")/Length \(bytes.count) >>
+                stream\n
+                """)
+                try emit(bytes)
+                try write("\nendstream\nendobj\n")
             }
-            let (filter, bits): (String, Int)
-            switch page.stream {
-            case .jbig2: (filter, bits) = ("/JBIG2Decode", 1)
-            case .jpeg: (filter, bits) = ("/DCTDecode", 8)
-            }
+
             // /DeviceGray was hardcoded here, which was true of every stream
             // this ever wrote until Automatic started keeping colour pages in
             // colour. A three-channel JPEG declared as one channel is not an
             // error any reader reports — it just draws the page as noise.
             let space = page.isColour ? "/DeviceRGB" : "/DeviceGray"
-            try beginObject(imageObject(i))
-            try write("""
-            << /Type /XObject /Subtype /Image /Width \(page.pixelWidth) \
-            /Height \(page.pixelHeight) /ColorSpace \(space) \
-            /BitsPerComponent \(bits) /Filter \(filter) /Length \(bytes.count) >>
-            stream\n
-            """)
-            try emit(bytes)
-            try write("\nendstream\nendobj\n")
+            switch page.stream {
+            case .jbig2(let u):
+                try writeImage(objects[0], from: u, width: page.pixelWidth,
+                               height: page.pixelHeight, filter: "/JBIG2Decode",
+                               bits: 1, space: space)
+            case .jpeg(let u):
+                try writeImage(objects[0], from: u, width: page.pixelWidth,
+                               height: page.pixelHeight, filter: "/DCTDecode",
+                               bits: 8, space: space)
+            case .mrc(let m):
+                // Written in the order the objects were numbered: background,
+                // foreground, then the stencil the foreground points at.
+                try writeImage(objects[0], from: m.background,
+                               width: m.backgroundWidth, height: m.backgroundHeight,
+                               filter: "/DCTDecode", bits: 8, space: "/DeviceGray")
+                try writeImage(objects[1], from: m.foreground,
+                               width: m.foregroundWidth, height: m.foregroundHeight,
+                               filter: "/DCTDecode", bits: 8, space: "/DeviceGray",
+                               smask: objects[2])
+                // The stencil, at full page resolution. /Decode [1 0] because
+                // JBIG2 codes ink as 1 while an /SMask reads 1 as opaque and 0
+                // as transparent — without the inversion the foreground would
+                // show everywhere *except* the text. Verified by rendering, not
+                // by reading the specification.
+                try writeImage(objects[2], from: m.mask, width: page.pixelWidth,
+                               height: page.pixelHeight, filter: "/JBIG2Decode",
+                               bits: 1, space: "/DeviceGray", decode: maskDecode)
+            }
         }
 
         // The outline, after the pages so the page objects keep their numbering.

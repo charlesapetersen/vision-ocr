@@ -33,6 +33,54 @@ enum Prefs {
         }
     }
 
+    /// How much resolution a photograph keeps on a page that also has text.
+    ///
+    /// These pages are stored as three layers: the text as a full-resolution
+    /// stencil, and the picture behind it. The text is unaffected by this
+    /// setting at every level — it is always stored at full resolution — so what
+    /// is being traded is picture detail against file size, and nothing else.
+    ///
+    /// The numbers in `blurb` are measured, not estimated: a page carrying a
+    /// photograph, and a 40-document sample for the aggregate. See FEATURES.md.
+    enum PhotoDetail: String, CaseIterable, Identifiable {
+        case maximum, balanced, smallest
+
+        var id: String { rawValue }
+
+        /// The factor the picture layer is shrunk by.
+        var downsample: Int {
+            switch self {
+            case .maximum: return 1
+            case .balanced: return 2
+            case .smallest: return 3
+            }
+        }
+
+        var label: String {
+            switch self {
+            case .maximum: return "Maximum"
+            case .balanced: return "Balanced"
+            case .smallest: return "Smallest files"
+            }
+        }
+
+        var blurb: String {
+            switch self {
+            case .maximum:
+                return "Photographs keep every pixel. Files are about 15% smaller "
+                     + "than before — the saving comes from the text, not the picture."
+            case .balanced:
+                return "Photographs keep half their resolution, which on a printed "
+                     + "halftone is hard to tell from the original. Files are about "
+                     + "a third the size."
+            case .smallest:
+                return "Photographs keep a third of their resolution and look "
+                     + "noticeably soft up close, though nothing is lost from them. "
+                     + "Files are about a fifth the size."
+            }
+        }
+    }
+
     enum TextFormat: String, CaseIterable, Identifiable {
         case text, json, jsonl
         var id: String { rawValue }
@@ -83,6 +131,7 @@ enum Prefs {
     static let rebuildImages     = "rebuildImages"
     static let rebuildMode       = "rebuildMode"
     static let useJBIG2          = "useJBIG2"
+    static let photoDetail       = "photoDetail"
 
     static let concurrency       = "concurrency"
 
@@ -123,6 +172,7 @@ enum Prefs {
         var textFormat: TextFormat
         var besideOriginal: Bool
         var useJBIG2: Bool
+        var photoDetail: PhotoDetail
 
         var fast: Bool
         var languages: String
@@ -143,6 +193,8 @@ enum Prefs {
                     ?? .text,
                 besideOriginal: d.bool(forKey: Prefs.besideOriginal),
                 useJBIG2: d.bool(forKey: Prefs.useJBIG2),
+                photoDetail: PhotoDetail(rawValue: d.string(forKey: Prefs.photoDetail) ?? "")
+                    ?? .balanced,
                 fast: d.bool(forKey: Prefs.fast),
                 languages: d.string(forKey: Prefs.languages) ?? "",
                 languageCorrection: d.bool(forKey: Prefs.languageCorrection),
@@ -166,7 +218,7 @@ enum Prefs {
         mode, outputFolder, besideOriginal, openWhenDone, binaryPath, textFormat,
         fast, languages, languageCorrection, confidence, pdfDPIAuto, pdfDPI,
         password, customWords, minTextHeightOn, minTextHeight,
-        warnDigitalText, rebuildImages, rebuildMode, useJBIG2, concurrency,
+        warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck,
     ]
 
@@ -248,6 +300,13 @@ enum Prefs {
             // CoreGraphics' Flate silently when jbig2enc/qpdf aren't installed.
             useJBIG2: true,
 
+            // Balanced, not Maximum. The pages this applies to are the ones with
+            // pictures on them, so the default has to be a real answer rather
+            // than a refusal to choose — and half resolution on a printed
+            // halftone is very hard to tell from the original, while costing a
+            // third of the bytes. Maximum is one click away for anyone who wants
+            // the pixels, and the text is full resolution at every level.
+            photoDetail: PhotoDetail.balanced.rawValue,
 
             concurrency: defaultConcurrency,
         ])

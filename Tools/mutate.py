@@ -69,6 +69,9 @@ CONSTANTS = [
     # all, which is the 709 MB behaviour restored.
     ("Flattener.swift", "paperLuminanceFloor", "176.0", "10.0"),
     ("Flattener.swift", "minimumPaperFraction", "0.15", "0.99"),
+    # Layering holds ~8 bytes a pixel against the render's 5.5, so it needs its
+    # own bound. R29 is what happens when a sibling allocation does not get one.
+    ("Flattener.swift", "maximumMRCPageMegapixels", "100", "40000"),
     ("Flattener.swift", "minimumPlausibleScanDPI", "150", "10"),
     ("Flattener.swift", "fallbackRebuildDPI", "300", "72"),
     ("Flattener.swift", "minimumScanPixelWidth", "600", "10"),
@@ -101,6 +104,14 @@ OPERATORS = [
     # the harness reporting honestly rather than scoring an untested mutant.
     ("Flattener.swift", "guard value.isFinite else { return 0 }",
      "if !value.isFinite && false { return 0 }", "R24-safeInt-finite"),
+    # MRC. The stencil polarity cannot be reasoned out from the specification —
+    # inverted, the foreground shows everywhere except the text and the page
+    # floods solid, which no page count can see. In OPERATORS rather than
+    # CONSTANTS because the constant pattern anchors on \b, which cannot match
+    # after a closing quote: the first attempt was recorded NOT-APPLIED, the
+    # harness declining to score a mutant it had not actually planted.
+    ("JBIG2.swift", 'static let maskDecode = "[ 1 0 ]"',
+     'static let maskDecode = "[ 0 1 ]"', "mrc-stencil-polarity"),
     ("Flattener.swift", "if let seen = walkedAt[identity], seen <= depth { return }",
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",

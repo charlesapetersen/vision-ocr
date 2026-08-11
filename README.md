@@ -36,7 +36,11 @@ inside it.
 > Behaviour ▸ mac-ocr path** at yours if you'd rather.
 
 Searchable PDFs are compressed automatically, which makes them roughly a third
-the size — the tools for that are inside the app too.
+the size — the tools for that are inside the app too. Pages that mix text with a
+photograph are stored in layers, so the text stays sharp while the picture
+compresses: those pages come out three to five times smaller. How much detail
+photographs keep is yours to choose under **Settings ▸ Photo detail**; text is
+stored at full resolution whichever you pick.
 
 ## Using it
 
