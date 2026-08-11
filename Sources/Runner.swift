@@ -655,6 +655,14 @@ enum Runner {
             var note: String?
             if rebuilding, d.bool(forKey: Prefs.useJBIG2), how.canUseJBIG2 {
                 if let encoder = JBIG2.encoder, let merger = JBIG2.merger {
+                    // Layering happens between recognition and compression, and
+                    // is worth naming: it is the step the Photo detail setting
+                    // controls, and a user who changed that setting should be
+                    // able to see where it lands.
+                    let detail = Prefs.PhotoDetail(
+                        rawValue: d.string(forKey: Prefs.photoDetail) ?? "") ?? .balanced
+                    steps.append("store text and pictures separately on pages that "
+                                 + "have both (\(detail.label.lowercased()) photo detail)")
                     steps.append("compress each page with \(leaf(encoder)) "
                                  + "and merge with \(leaf(merger))")
                 } else {

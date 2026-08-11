@@ -409,6 +409,19 @@ do {
           pipeline.contains("jbig2") || pipeline.contains("JBIG2 compression is on"),
           pipeline)
     check("the preview still names the output", pipeline.contains("[name].ocr.pdf"), pipeline)
+    // The layering step is the one the Photo detail setting controls, and a
+    // preview that omits it describes an app that no longer exists. It is also
+    // the step that changes what a photograph looks like, so it is exactly the
+    // one a user checking this panel would want to find.
+    check("…and the layering step, with the detail level it will use",
+          pipeline.contains("store text and pictures separately")
+            && pipeline.contains("balanced"),
+          pipeline)
+    d.set(Prefs.PhotoDetail.smallest.rawValue, forKey: Prefs.photoDetail)
+    let atSmallest = Runner.previewLines(binary: binary, file: sample, outputFolder: nil)
+        .joined(separator: "\n")
+    check("…which follows the setting rather than being hardcoded",
+          atSmallest.contains("smallest files"), atSmallest)
     resetPrefs()
 }
 

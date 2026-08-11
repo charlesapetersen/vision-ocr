@@ -284,7 +284,8 @@ struct SettingsView: View {
                             }
                             .labelsHidden()
                             .pickerStyle(.segmented)
-                            .help("On a page that has both text and a picture, the two are "
+                            .help("\(photoDetail.label): \(photoDetail.blurb)\n\n"
+                                  + "On a page that has both text and a picture, the two are "
                                   + "stored separately: the text as a full-resolution "
                                   + "stencil, the picture behind it. **This setting only "
                                   + "affects the picture — text is stored at full "
@@ -294,9 +295,6 @@ struct SettingsView: View {
                                       "\($0.label): \($0.blurb)"
                                   }.joined(separator: "\n\n"))
                         }
-                        Text(photoDetail.blurb)
-                            .font(.caption2).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
@@ -436,7 +434,14 @@ struct SettingsView: View {
     /// that hard-codes the name it is supposed to be verifying cannot verify it.
     private var commandPreview: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("COMMAND")
+            // "COMMAND" was the wrong word for what this is. Only one of its
+            // lines is a command; the rest is a numbered description of the
+            // pipeline, and two of them are the only place the app explains why
+            // Start is disabled or why compression was skipped. Labelling that
+            // COMMAND tells the person who most needs it that it is not for
+            // them — and this app's whole claim is that there is no Terminal
+            // step.
+            Text("WHAT WILL HAPPEN")
                 .font(.caption2).bold().kerning(0.6)
                 .foregroundStyle(.secondary)
             Text(Runner.previewLines(binary: Runner.resolveBinary() ?? "mac-ocr",
