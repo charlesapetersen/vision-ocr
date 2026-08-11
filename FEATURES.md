@@ -15,8 +15,65 @@ parked for exactly that reason.
 
 ## Likely worth doing
 
+### MRC layering for mixed pages — measured at 4.96x, blocked on segmentation
+*(investigated 2026-08-11; `Tools/score-mrc.swift` is the prototype and the
+measurement)*
+
+Mixed Raster Content stores a page as three layers: a full-resolution 1-bit
+stencil of the text (JBIG2), a background holding paper and pictures
+(downsampled, JPEG or JPX), and a foreground holding ink colour. The reader
+paints the background, then the foreground through the stencil as an `/SMask`.
+
+**What the commercial tools actually do**, measured from 275 MRC files in the
+user's own library — 52 of 60 sampled were produced by ABBYY FineReader: *they
+route per page exactly as this app does.* Plain text pages go to 1-bit JBIG2 and
+are not layered at all (8–23 KB/page); only pages that genuinely mix text with
+pictures get three layers. Saval 2014, an illustrated book, is the inverse: 305
+layered pages to 36 bilevel ones.
+
+That kills the framing this was first considered under. MRC is **not** a
+replacement for the 1-bit route and not a size win over it — on a 600-page text
+book, MRC costs 55 KB/page against 1-bit's 48. It is a replacement for the single
+large JPEG that *mixed* pages currently get, and there the measurement is strong:
+
+**48 real picture pages from the corpus: 40,010 KB today, 8,069 KB as MRC —
+4.96x.** Text in the reconstruction is visually indistinguishable from the
+source at 1:1, and arguably crisper than today's JPEG, because the edges come
+from a full-resolution stencil rather than a DCT quantiser.
+
+**What blocks it is segmentation, and the prototype shows exactly how.** Sauvola
+thresholding (k=0.34, window dpi/4, following `internetarchive/archive-pdf-tools`)
+marks halftone dots as text. The photograph on `Findlay_1992` p21 is then cut out
+of the background, blur-filled, and painted back from a 3x-downsampled
+foreground: **visibly smeared**, while the text on the same page is perfect. A
+naive segmenter does not fail gracefully on the exact pages MRC exists for.
+
+Note also that PSNR is useless here and says the opposite of the truth — it reads
+20–29 dB for MRC against 37–42 dB for today's JPEG on pages where MRC looks
+better, because it punishes a smoothed background and is blind to text edges
+being exact. Judge this one by looking at pages.
+
+**The way through is already in the app.** archive-pdf-tools drives its mask from
+hOCR — it uses the OCR result to know where text is. This app has the same signal
+and better: Vision returns word bounding boxes, which `SearchableWriter` already
+consumes to place the text layer. Restricting the stencil to inside those boxes
+leaves photographs wholly in the background, untouched, which is precisely the
+failure above. The cost is pipeline order — `flatten` currently runs before
+`mac-ocr`, so the layers would have to be built in a second pass once the
+recognition is back, or the routing decision deferred.
+
+Worth doing, and worth doing properly rather than quickly: an MRC page that
+misplaces its stencil damages the picture silently, which is invariant 1
+territory. Prerequisites, in order: OCR-driven masking; a corpus check that no
+page loses picture detail; and a decision on the background codec, since R34
+found ImageIO's JPEG 2000 unusable and OpenJPEG 1.5–2x better than JPEG at
+matched fidelity, which would mean bundling it.
+
 ### Per-page DPI control for picture pages
-Photocopies routed to greyscale cost 720–920 KB/page. Capping their resolution
+Photocopies routed to greyscale cost 720–920 KB/page. Fewer pages take that route
+since R33 — cream paper was promoting whole books to the colour path, and the
+corpus went from 24 RGB pages to 18 and from 520 bilevel to 523 — but the figure
+itself still holds for the pages that genuinely land there. Capping their resolution
 would cut that substantially. **Parked deliberately** — the decision recorded in
 `BUGS.md` R13 is that fidelity wins, and a silent downscale is precisely the
 "publishing something plausible" that invariant 1 forbids. It becomes worth doing

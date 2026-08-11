@@ -5013,6 +5013,28 @@ do {
               > Flattener.pictureSaturationThreshold,
           String(format: "%.4f",
                  Flattener.saturation(of: PDFDocument(url: colour)!.page(at: 0)!)))
+    // Across the range of stock archival material is actually printed on, not
+    // just the one shade that produced the bug report. The concern this answers
+    // is that the correction's per-channel gain grows with the tint, so a strong
+    // one could in principle amplify the residual on neutral ink past the
+    // threshold — arithmetically 0.118 per pixel for pure black on cream. It
+    // does not happen, because at 40 DPI almost every text pixel is a blend of
+    // ink and paper.
+    for (name, paper) in [
+        ("tan", NSColor(calibratedRed: 0.90, green: 0.83, blue: 0.70, alpha: 1)),
+        ("manila", NSColor(calibratedRed: 0.88, green: 0.78, blue: 0.58, alpha: 1)),
+        ("legal-pad yellow", NSColor(calibratedRed: 1.00, green: 0.98, blue: 0.55, alpha: 1)),
+        ("ochre", NSColor(calibratedRed: 0.85, green: 0.70, blue: 0.35, alpha: 1)),
+    ] {
+        let stock = dir.appendingPathComponent("stock-\(name.replacingOccurrences(of: " ", with: "-")).pdf")
+        makeScannedPDF(at: stock, lines: (1...22).map {
+            "Line \($0) of ordinary black text on \(name) book paper."
+        }, paper: paper)
+        let s = Flattener.saturation(of: PDFDocument(url: stock)!.page(at: 0)!)
+        check("…and on \(name) stock too, however strong the tint",
+              s <= Flattener.pictureSaturationThreshold, String(format: "%.4f", s))
+    }
+
     // The correction must not eat a real colour cast. A page that is *all*
     // image has no paper on it, so there is nothing to white-balance against —
     // and measuring "paper" from the image itself would neutralise exactly the

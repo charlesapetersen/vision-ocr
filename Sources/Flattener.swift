@@ -1033,11 +1033,16 @@ enum Flattener {
     /// page still scores, because it was never the paper colour. A page with no
     /// paper on it is left uncorrected.
     ///
-    /// Neutral ink over cream picks up a small opposite cast from the correction
-    /// (0.118 per pixel in the worst case measured), which is why this is a mean
-    /// over the page and not a maximum: at the 11% ink coverage of a text page
-    /// that contributes about 0.013, and a page inky enough for it to matter is
-    /// already a picture by `pictureInkThreshold`.
+    /// Neutral ink over tinted paper picks up a small opposite cast from the
+    /// correction — 0.118 per pixel for pure black on cream, arithmetically —
+    /// which is why this is a mean over the page and not a maximum. In practice
+    /// it stays far below even that, because the signal is measured on a 40 DPI
+    /// thumbnail where almost every text pixel is a blend of ink and paper and
+    /// so lies between the two chromaticities rather than at the neutral end.
+    /// Measured on a sweep of stocks from white through cream, tan, manila and
+    /// legal-pad yellow to a strong ochre, all with black text: **0.000 to
+    /// 0.008**, against a threshold of 0.06. The correction does not weaken as
+    /// the tint gets stronger, which was the thing worth checking.
     static func saturation(ofRGBA buffer: [UInt8], width: Int, height: Int) -> Double {
         let pixels = width * height
         guard pixels > 0, buffer.count >= pixels * 4 else { return 0 }
