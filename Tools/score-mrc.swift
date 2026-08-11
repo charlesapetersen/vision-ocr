@@ -33,8 +33,8 @@ import PDFKit
 // of the exemplars on hand: Sauvola with a dpi/4 window, background downsampled
 // 3x, foreground 3x, holes filled from their surroundings before downsampling.
 let sauvolaK = 0.34
-let bgDownsample = 3
-let fgDownsample = 3
+let bgDownsample = Int(ProcessInfo.processInfo.environment["MRC_BG"] ?? "3") ?? 3
+let fgDownsample = Int(ProcessInfo.processInfo.environment["MRC_FG"] ?? "3") ?? 3
 
 /// Sauvola's local threshold: t(x) = m(x) * (1 + k * (s(x)/128 - 1)).
 ///
@@ -75,6 +75,60 @@ func sauvolaMask(_ grey: [UInt8], width w: Int, height h: Int, window: Int) -> [
         }
     }
     return mask
+}
+
+/// Vision's word boxes for a rendered page, normalised with a top-left origin.
+///
+/// This is the whole point of the exercise. Sauvola on its own cannot tell a
+/// halftone dot from a full stop, so it pulls photographs into the stencil and
+/// the picture is then destroyed by the very layering meant to preserve it.
+/// `archive-pdf-tools` solves this by driving its mask from hOCR; this app has
+/// the same signal and does not have to guess at it.
+func ocrBoxes(forPNG url: URL) -> [(x: Double, y: Double, w: Double, h: Double)] {
+    guard let bin = Runner.resolveBinary() else { return [] }
+    let p = Process()
+    p.executableURL = URL(fileURLWithPath: bin)
+    p.arguments = [url.path, "--format", "jsonl"]
+    let out = Pipe()
+    p.standardOutput = out
+    p.standardError = FileHandle.nullDevice
+    guard (try? p.run()) != nil else { return [] }
+    let data = out.fileHandleForReading.readDataToEndOfFile()
+    p.waitUntilExit()
+    struct Box: Decodable { let x, y, width, height: Double }
+    struct Obs: Decodable { let boundingBox: Box }
+    struct Line: Decodable { let observations: [Obs] }
+    var boxes: [(Double, Double, Double, Double)] = []
+    for line in String(decoding: data, as: UTF8.self).split(separator: "\n") {
+        guard let d = line.data(using: .utf8),
+              let l = try? JSONDecoder().decode(Line.self, from: d) else { continue }
+        for o in l.observations {
+            boxes.append((o.boundingBox.x, o.boundingBox.y, o.boundingBox.width, o.boundingBox.height))
+        }
+    }
+    return boxes.map { (x: $0.0, y: $0.1, w: $0.2, h: $0.3) }
+}
+
+/// Where the stencil is allowed to look. Everything outside stays in the
+/// background untouched, which is what keeps a photograph intact.
+///
+/// Padded by a quarter of each box's height: Vision's boxes are tight around the
+/// glyphs it recognised, and a stencil clipped to them shaves ascenders,
+/// descenders and the anti-aliased edge — which reads as text that has been
+/// lightly filed down, on every page.
+func textRegions(_ boxes: [(x: Double, y: Double, w: Double, h: Double)],
+                 width w: Int, height h: Int) -> [Bool] {
+    var region = [Bool](repeating: false, count: w * h)
+    for b in boxes {
+        let pad = b.h * 0.25
+        let x0 = max(Int((b.x - pad * Double(h) / Double(w)) * Double(w)), 0)
+        let x1 = min(Int(((b.x + b.w) + pad * Double(h) / Double(w)) * Double(w)) + 1, w)
+        let y0 = max(Int((b.y - pad) * Double(h)), 0)
+        let y1 = min(Int((b.y + b.h + pad) * Double(h)) + 1, h)
+        guard x0 < x1, y0 < y1 else { continue }
+        for y in y0..<y1 { for x in x0..<x1 { region[y * w + x] = true } }
+    }
+    return region
 }
 
 /// Fill the pixels under `holes` from their surroundings, so the layer has no
@@ -239,7 +293,26 @@ for path in CommandLine.arguments.dropFirst() {
                                            quality: Flattener.pictureJPEGQuality)
         else { continue }
 
-        let mask = sauvolaMask(grey, width: w, height: h, window: max(Int(dpi / 4), 3))
+        var mask = sauvolaMask(grey, width: w, height: h, window: max(Int(dpi / 4), 3))
+
+        // Confine the stencil to where Vision found words, unless MRC_BLIND is
+        // set — which reproduces the naive version, for comparison.
+        var boxCount = 0
+        if ProcessInfo.processInfo.environment["MRC_BLIND"] == nil {
+            let pngURL = tmp.appendingPathComponent("ocr.png")
+            if let png = greyPNG(grey, width: w, height: h),
+               (try? png.write(to: pngURL)) != nil {
+                let boxes = ocrBoxes(forPNG: pngURL)
+                boxCount = boxes.count
+                // No words at all means a plate with no text on it. An empty
+                // region list would blank the stencil and put everything in a
+                // downsampled background, so fall back to no layering rather
+                // than publish a page at a third of its resolution.
+                if boxes.isEmpty { continue }
+                let region = textRegions(boxes, width: w, height: h)
+                for j in 0..<(w * h) where !region[j] { mask[j] = false }
+            }
+        }
         guard let maskBytes = jbig2Bytes(mask, width: w, height: h) else { continue }
 
         let inv = mask.map { !$0 }
@@ -290,11 +363,11 @@ for path in CommandLine.arguments.dropFirst() {
         }
 
         totals.now += now.count; totals.mrc += mrc; totals.pages += 1
-        print(String(format: "%@\t%d\t%dx%d\t%d\t%d\t%d\t%d\t%d\t%.2fx\t%.2f\t%.2f",
+        print(String(format: "%@\t%d\t%dx%d\t%d\t%d\t%d\t%d\t%d\t%.2fx\t%.2f\t%.2f\t%d",
                      url.lastPathComponent, i + 1, w, h, now.count / 1024,
                      maskBytes / 1024, bgD.count / 1024, fgD.count / 1024, mrc / 1024,
                      Double(now.count) / Double(max(mrc, 1)),
-                     psnr(grey, recon), psnr(grey, nowRecon)))
+                     psnr(grey, recon), psnr(grey, nowRecon), boxCount))
         fflush(stdout)
     }
 }

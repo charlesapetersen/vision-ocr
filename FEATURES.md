@@ -15,9 +15,9 @@ parked for exactly that reason.
 
 ## Likely worth doing
 
-### MRC layering for mixed pages — measured at 4.96x, blocked on segmentation
+### MRC layering for mixed pages — measured at 5.15x, prototype working
 *(investigated 2026-08-11; `Tools/score-mrc.swift` is the prototype and the
-measurement)*
+measurement. Segmentation is solved; what remains is pipeline order.)*
 
 Mixed Raster Content stores a page as three layers: a full-resolution 1-bit
 stencil of the text (JBIG2), a background holding paper and pictures
@@ -41,33 +41,62 @@ large JPEG that *mixed* pages currently get, and there the measurement is strong
 source at 1:1, and arguably crisper than today's JPEG, because the edges come
 from a full-resolution stencil rather than a DCT quantiser.
 
-**What blocks it is segmentation, and the prototype shows exactly how.** Sauvola
-thresholding (k=0.34, window dpi/4, following `internetarchive/archive-pdf-tools`)
-marks halftone dots as text. The photograph on `Findlay_1992` p21 is then cut out
-of the background, blur-filled, and painted back from a 3x-downsampled
-foreground: **visibly smeared**, while the text on the same page is perfect. A
-naive segmenter does not fail gracefully on the exact pages MRC exists for.
+**Segmentation was the blocker and it is solved.** Sauvola alone (k=0.34, window
+dpi/4, following `internetarchive/archive-pdf-tools`) marks halftone dots as
+text: the photograph on `Findlay_1992` p21 gets cut out of the background,
+blur-filled, and repainted from a 3x downsample — **visibly smeared**, while the
+text on the same page is perfect. A blind segmenter fails on exactly the pages
+MRC exists for.
+
+Confining the stencil to Vision's word boxes fixes it, and costs nothing:
+
+| stencil | ratio | the photograph |
+|---|---|---|
+| Sauvola everywhere | 4.96x | smeared, streaked |
+| **inside Vision's word boxes** | **5.15x** | intact |
+
+Better on *both* axes, which is worth understanding rather than just banking: a
+mask restricted to text has far fewer connected components, so it costs less as
+JBIG2, and the background keeps the smooth picture content that it compresses
+well. Boxes are padded by a quarter of their height — Vision's are tight around
+the glyphs, and a stencil clipped to them files the ascenders and anti-aliased
+edges off every character on the page.
+
+A page where Vision finds no words at all falls back to no layering rather than
+publishing a plate at a third of its resolution.
+
+**The background downsample is the real quality knob**, and it is steep. On the
+photograph page: 1x gives 1.15x compression, 2x gives 3.05x, 3x gives 4.72x.
+Across 40 documents: 2x gives 3.28x, 3x gives 5.15x. At 3x the photograph is
+intact but soft; at 2x it is close to today's. Since the pages that reach this
+route are the ones with pictures on them, the honest default is probably 2x, or a
+per-page choice driven by how much picture content lies outside the text boxes —
+paper needs no resolution at all, a halftone does.
 
 Note also that PSNR is useless here and says the opposite of the truth — it reads
 20–29 dB for MRC against 37–42 dB for today's JPEG on pages where MRC looks
 better, because it punishes a smoothed background and is blind to text edges
 being exact. Judge this one by looking at pages.
 
-**The way through is already in the app.** archive-pdf-tools drives its mask from
-hOCR — it uses the OCR result to know where text is. This app has the same signal
-and better: Vision returns word bounding boxes, which `SearchableWriter` already
-consumes to place the text layer. Restricting the stencil to inside those boxes
-leaves photographs wholly in the background, untouched, which is precisely the
-failure above. The cost is pipeline order — `flatten` currently runs before
-`mac-ocr`, so the layers would have to be built in a second pass once the
-recognition is back, or the routing decision deferred.
+**What remains is pipeline order, and it is the whole cost of shipping this.**
+`flatten` runs before `mac-ocr`, so at the moment the layers would be built it
+does not yet know where the words are. The prototype sidesteps this by running
+the recogniser itself, once per page, which the app must not do — it already runs
+`mac-ocr` over the whole document and paying for recognition twice is not a
+trade worth making. So the page images have to be built in two stages: `flatten`
+emits the picture pages as it does now, `mac-ocr` runs, and the MRC layers are
+assembled afterwards from the boxes plus a re-render. That is a real change to
+`Model.makeSearchablePDF`'s orchestration and to `JBIG2.assemble`, which grows
+from one image XObject per page to three plus an `/SMask`.
 
-Worth doing, and worth doing properly rather than quickly: an MRC page that
-misplaces its stencil damages the picture silently, which is invariant 1
-territory. Prerequisites, in order: OCR-driven masking; a corpus check that no
-page loses picture detail; and a decision on the background codec, since R34
-found ImageIO's JPEG 2000 unusable and OpenJPEG 1.5–2x better than JPEG at
-matched fidelity, which would mean bundling it.
+Still worth doing properly rather than quickly. An MRC page that misplaces its
+stencil damages the picture silently, which is invariant 1 territory, and the
+failure is invisible to a page count. Remaining before it ships: the two-stage
+pipeline; a corpus check that no page loses picture detail, judged by eye rather
+than by PSNR; a default for the background downsample; and a decision on the
+background codec, since R34 found ImageIO's JPEG 2000 unusable as a quality
+target while OpenJPEG is 1.5–2x better than JPEG at matched fidelity — which
+would mean bundling it alongside `jbig2` and `qpdf`.
 
 ### Per-page DPI control for picture pages
 Photocopies routed to greyscale cost 720–920 KB/page. Fewer pages take that route
