@@ -2020,6 +2020,42 @@ Two things worth keeping from the attempt:
   about layering; it wants measuring across the corpus before anything is done
   about it.
 
+### R36 · Bundling OpenJPEG for the background layer — WONTFIX *(decided: 1.19x)*
+R34 rejected ImageIO's JPEG 2000 because its `compressionFactor` is a ratio
+rather than a quality target, and noted that OpenJPEG — which has real rate
+control, including `-q` in dB — was **1.5–2x better than JPEG at matched
+fidelity**. That number was the reason this stayed open. It does not survive
+contact with the layer it would actually apply to.
+
+The 1.5–2x was measured on *whole pages*, before MRC existed. A whole page is
+grainy and high-frequency, which is where a wavelet beats a DCT. The MRC
+background has had the text lifted out of it, the holes filled flat, and the
+whole thing halved — it is smooth, and smooth is what DCT is already good at.
+
+Measured on **ten real background layers** taken out of the pipeline, each
+encoded as JPEG at the shipping quality and then by OpenJPEG at the lowest `-q`
+that matched or beat that page's PSNR:
+
+| | JPEG | OpenJPEG at matched fidelity |
+|---|---|---|
+| ten backgrounds | 496 KB | 418 KB |
+| | | **1.19x** |
+
+Two of the ten came out *larger* than JPEG (0.99x, 0.91x). The 1.19x is also
+generous to OpenJPEG: the `-q` grid steps 2 dB, so the matched points overshoot
+JPEG's fidelity by 0.1–1.9 dB and OpenJPEG is credited with bytes it spent on
+quality JPEG never had.
+
+The background is roughly 40–60% of a layered page, so 1.19x there is about
+1.09x on the file. **Against that:** a third bundled helper and its dylib chain
+through `Tools/bundle-libs.py`, another licence to carry, another
+single-architecture binary for `containsNativeSlice` to police, a PDF 1.5 header
+for `/JPXDecode`, and a new way for a page to fail. Not worth 9%.
+
+The lesson is R34's, again and in the same session: a codec measurement is only
+valid for the content it was taken on. Both times the number looked good on one
+kind of image and evaporated on the kind that mattered.
+
 ---
 
 ## The interface

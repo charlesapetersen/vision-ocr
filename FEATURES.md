@@ -123,7 +123,8 @@ Shipped as a setting rather than a decision made for the user — **Searchable P
 ▸ Photo detail**, defaulting to Balanced (2x). The pages this applies to are the
 ones with pictures on them, so a default of Maximum would be a refusal to choose
 rather than an answer, and R13's "fidelity wins" is satisfied by the fact that
-Maximum is one click away and text is full resolution at every level. The
+Maximum is one click away and text is full resolution at every level.
+
 The per-page alternative — choosing the factor from how much picture content
 lies outside the text boxes — was built and reverted: no threshold separates the
 two populations on the boxes the pipeline actually produces. **BUGS.md R35** has
@@ -150,9 +151,7 @@ stencil damages the picture silently, which is invariant 1 territory, and the
 failure is invisible to a page count. Remaining before it ships: the two-stage
 pipeline; a corpus check that no page loses picture detail, judged by eye rather
 than by PSNR; a default for the background downsample; and a decision on the
-background codec, since R34 found ImageIO's JPEG 2000 unusable as a quality
-target while OpenJPEG is 1.5–2x better than JPEG at matched fidelity — which
-would mean bundling it alongside `jbig2` and `qpdf`.
+background codec, now settled against JPEG 2000 in R36.
 
 ### Per-page DPI control for picture pages
 Photocopies routed to greyscale cost 720–920 KB/page. Fewer pages take that route
