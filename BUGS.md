@@ -1876,6 +1876,107 @@ check passed while testing nothing — the T6 shape, in a case written to preven
 exactly that. It now shims `attach` to yield an empty mount *and* `detach` to
 fail, and against the unfixed code it reports `exited 16 with no diagnostic`.
 
+### R33 · Cream paper promotes every text page to colour: 33 MB in, 709 MB out — FIXED
+*(2026-08-11; reported from a user's own 600-page 1964 monograph)*
+
+A scanned book went in at 33 MB and came out at **709 MB** — 21x, 600 pages,
+every one of them a full-resolution three-channel JPEG at 1.18 MB. 706 MB of the
+709 MB is image streams.
+
+The pages are plain text. Measured across the book, **ink coverage 0.099–0.114**
+(threshold 0.15) and **tone fraction 0.008–0.012** (threshold 0.12) — both
+signals say "text" on every page, unambiguously. Only saturation fired, at
+**0.078–0.089** against a threshold of 0.06, because the paper is cream.
+
+Then the same number was charged twice, because one constant gated two
+decisions: `isPicture` took the page off the 1-bit route, and
+`shouldKeepColour` — reading the same `pictureSaturationThreshold` — promoted it
+from one channel to three. Measured on five real pages from the book:
+
+| mode | route | per page |
+|---|---|---|
+| Automatic, as shipped | RGB JPEG | 1,185 KB |
+| Grayscale | grey JPEG | 322 KB |
+| Black & white | 1-bit JBIG2 | **48 KB** |
+
+24.7x. The 1-bit rendering was checked by eye and is clean — nothing about these
+pages needed the picture route at all.
+
+**The threshold could not be moved to fix it.** Over the corpus the six
+wrongly-promoted text pages spanned saturation 0.061–0.113 and the eighteen
+genuinely coloured pages spanned 0.061–0.303. The two populations overlap almost
+exactly, because a mean cannot distinguish a faint tint spread over a whole sheet
+from a strong colour in one corner of it. Any threshold that saves the text pages
+loses real colour. This is worth stating because raising the constant was the
+obvious fix and it is the wrong one.
+
+**Fix:** `saturation` now white-balances the page to its own paper before
+measuring — `paperColour` takes the mean of every pixel above
+`paperLuminanceFloor`, and each channel is divided by it (von Kries, scaled so
+the brightest channel is unchanged). Cream paper becomes neutral and scores
+nothing; an illustration on that same cream page still scores, because it was
+never the paper colour. A page with less than `minimumPaperFraction` of paper on
+it is left uncorrected, so a full-bleed plate does not get its real cast
+neutralised by a "paper" measured from the plate itself.
+
+**Corpus, 642 pages over 232 documents:** saturation-only promotions 6 → 3,
+RGB routes 24 → 18, 1-bit 520 → 523. Seven pages moved to a cheaper route and
+none moved wrongly to a dearer one. One page did move grey → RGB —
+`Ford_1941_Speech_` p2 — and that is correct: it carries handwritten blue-ink
+corrections and a coloured stamp, which the yellowed paper had been masking. The
+three remaining promotions were each opened and looked at; all three are
+genuinely coloured (an 1881 handwritten ledger photographed in colour, and two
+pages with coloured print).
+
+Two mutants guard it. `const/paperLuminanceFloor` **survived its first run** —
+dropping the floor to 10.0 makes every dark pixel count as paper, which defeats
+`minimumPaperFraction` and lets the correction neutralise a real cast, and
+nothing tested that. The full-bleed check now exists and both mutants are killed.
+
+### R34 · JPEG 2000 for picture pages — WONTFIX *(decided: measured, it loses)*
+Investigated because a library MRC scan of the same material was 6x smaller.
+`Tools/score-picture-codec.swift` is the measurement; it stays in the tree
+because the conclusion depends on it.
+
+**Rejected on two independent grounds, both measured over 120 corpus picture
+pages.**
+
+First, **ImageIO's JPEG 2000 `compressionFactor` is a compression ratio, not a
+quality target.** Its output is a near-constant 0.0725 bytes/pixel at q0.20
+across pages of wildly different content, where JPEG's varies 37.6x with the
+page as a quality-targeted encoder should. So one constant cannot hold fidelity
+steady: pages land anywhere between 23 dB and 52 dB. At every rate tried,
+88–98% of picture pages came out *below* the fidelity the app already ships,
+median −10.7 to −19.1 dB. Under the only safe rule — take JPX only where it is
+no worse *and* smaller — it wins on 3–12 pages in 120 and saves 0.1–1.6%.
+
+Second, and the reason the investigation started from a false premise: the
+document that motivated it was a library MRC scan **whose image layer was
+already JPEG 2000**. Re-encoding JPX content with JPX reproduces its own
+artifacts cheaply, so JPX looked far better than it is. Isolating that one
+variable, same method, same encoder:
+
+| source page | JPEG q0.60 | JPX q0.20 |
+|---|---|---|
+| source layer *is* JPX | 1395 KB / 42.90 dB | 899 KB / **+1.52 dB** |
+| source layer is DCT | 1128 KB / 41.41 dB | 379 KB / **−9.91 dB** |
+| source layer is DCT | 8431 KB / 40.86 dB | 2640 KB / **−11.27 dB** |
+
+This is the project's most repeated lesson arriving in a new costume: the
+instrument was measuring the source's codec, not the codec under test.
+
+**The format is not what fails — Apple's encoder is.** With real rate control,
+OpenJPEG at *matched* fidelity gets 373 KB against libjpeg's 736 KB, and 3,640 KB
+against 5,450 KB, on those same unbiased pages. So JPEG 2000 is genuinely
+1.5–2x better here and would need a bundled encoder to reach. That is a
+different proposition from the one rejected above, and it belongs with the MRC
+work in FEATURES.md rather than here.
+
+The abandoned implementation is kept as
+`../vision-ocr-jpx-picture-pages-20260811-abandoned-wip.patch`: it was complete
+and green at 626 checks, with red→green proven for every check and four mutants
+killed, before the corpus said not to ship it.
+
 ---
 
 ## The interface

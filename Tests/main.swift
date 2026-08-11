@@ -87,7 +87,13 @@ try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: t
 defer { try? FileManager.default.removeItem(at: tmp) }
 
 /// An image-only PDF: no embedded text, so anything we read back came from OCR.
-func makeScannedPDF(at url: URL, lines: [String]) {
+/// A scanned page of ordinary black text on paper of a given colour.
+///
+/// `paper` is what separates an archival scan from a born-digital page: real
+/// book stock is cream, and measured on a 1964 monograph it carries a mean
+/// saturation of 0.08 — above `pictureSaturationThreshold`, while its ink
+/// coverage and tone fraction both say plainly that it is text.
+func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white) {
     let w = 1224, h = 1584
     guard let rep = NSBitmapImageRep(
         bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
@@ -97,7 +103,7 @@ func makeScannedPDF(at url: URL, lines: [String]) {
 
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = ctx
-    NSColor.white.setFill()
+    paper.setFill()
     NSRect(x: 0, y: 0, width: w, height: h).fill()
     let attrs: [NSAttributedString.Key: Any] = [
         .font: NSFont(name: "Helvetica", size: 44) ?? NSFont.systemFont(ofSize: 44),
@@ -4962,6 +4968,107 @@ do {
 
     check("the fixture is genuinely coloured, or the checks below prove nothing",
           saturation(of: colour) > 0.1, String(format: "%.3f", saturation(of: colour)))
+
+    // MARK: Aged paper is not a colour page
+    //
+    // A 600-page 1964 monograph came out of this app at 709 MB against a 33 MB
+    // original — every page a full-resolution three-channel JPEG. Ink coverage
+    // (0.11) and tone fraction (0.009) both said "text" on every one of them.
+    // Only saturation fired, at 0.078-0.089 against a 0.06 threshold, because
+    // the paper is cream. That one signal then did two jobs: it took the page
+    // off the 1-bit route *and* promoted it to three channels, so the same 0.02
+    // was charged twice. Measured on five real pages: 1,185 KB/page as shipped,
+    // 48 KB/page as 1-bit — and the 1-bit rendering is clean.
+    //
+    // The signal cannot be rescued by moving the threshold. Over the corpus the
+    // six wrongly-promoted text pages span saturation 0.061-0.113 and the
+    // eighteen genuinely coloured ones span 0.061-…: the two populations
+    // overlap almost exactly. So the measure itself has to change — saturation
+    // is now measured relative to the page's own paper rather than to grey.
+    let cream = dir.appendingPathComponent("cream.pdf")
+    makeScannedPDF(at: cream, lines: (1...22).map {
+        "Line \($0) of ordinary black text on aged cream book paper."
+    }, paper: NSColor(calibratedRed: 0.96, green: 0.93, blue: 0.86, alpha: 1))
+    let creamSat = Flattener.saturation(of: PDFDocument(url: cream)!.page(at: 0)!)
+    check("a cream-paper text page does not read as colour",
+          creamSat <= Flattener.pictureSaturationThreshold,
+          String(format: "%.4f vs threshold %.2f", creamSat,
+                 Flattener.pictureSaturationThreshold))
+    // The whole point is that it stays on the cheap route, so assert the route
+    // and not merely the number that feeds it.
+    let cpngs2 = dir.appendingPathComponent("cream-pngs")
+    try? FileManager.default.createDirectory(at: cpngs2, withIntermediateDirectories: true)
+    let creamPages = (try? Flattener.flatten(cream,
+                                             to: dir.appendingPathComponent("cream-out.pdf"),
+                                             mode: .auto, pngDirectory: cpngs2)) ?? []
+    check("…and rebuilds 1-bit, not as a colour JPEG",
+          !creamPages.isEmpty && creamPages.allSatisfy {
+              if case .bilevel = $0.content { return !$0.isColour }
+              return false
+          },
+          creamPages.map { "\($0.content) colour=\($0.isColour)" }.joined(separator: ","))
+    // Both directions, or a measure that always returns zero would pass.
+    check("…while a page with real colour on it is still detected",
+          Flattener.saturation(of: PDFDocument(url: colour)!.page(at: 0)!)
+              > Flattener.pictureSaturationThreshold,
+          String(format: "%.4f",
+                 Flattener.saturation(of: PDFDocument(url: colour)!.page(at: 0)!)))
+    // The correction must not eat a real colour cast. A page that is *all*
+    // image has no paper on it, so there is nothing to white-balance against —
+    // and measuring "paper" from the image itself would neutralise exactly the
+    // colour we are trying to detect. `paperLuminanceFloor` is what prevents
+    // that, and it survived a mutation to 10.0 until this check existed: with
+    // every dark pixel counted as paper, `minimumPaperFraction` is satisfied by
+    // any page at all and the guard stops guarding.
+    let fullBleed = dir.appendingPathComponent("full-bleed.pdf")
+    var fbox = CGRect(x: 0, y: 0, width: 612, height: 792)
+    if let c = CGContext(fullBleed as CFURL, mediaBox: &fbox, nil) {
+        c.beginPDFPage(nil)
+        // A sepia plate covering the sheet, mid-tone so nothing clears the
+        // paper floor. Strongly tinted, and none of it is paper.
+        for i in 0..<40 {
+            let t = CGFloat(i) / 40
+            c.setFillColor(CGColor(red: 0.55 + t * 0.22, green: 0.36 + t * 0.16,
+                                   blue: 0.16 + t * 0.08, alpha: 1))
+            c.fill(CGRect(x: 0, y: CGFloat(i) * 792 / 40, width: 612, height: 792 / 40 + 1))
+        }
+        c.endPDFPage(); c.closePDF()
+    }
+    let bleedSat = Flattener.saturation(of: PDFDocument(url: fullBleed)!.page(at: 0)!)
+    check("a full-bleed tinted plate keeps its colour, not corrected away",
+          bleedSat > Flattener.pictureSaturationThreshold,
+          String(format: "%.4f vs threshold %.2f", bleedSat,
+                 Flattener.pictureSaturationThreshold))
+    // …and the mechanism behind it, on buffers rather than through a render.
+    func rgba(_ r: UInt8, _ g: UInt8, _ b: UInt8, count: Int) -> [UInt8] {
+        var out: [UInt8] = []
+        out.reserveCapacity(count * 4)
+        for _ in 0..<count { out.append(contentsOf: [r, g, b, 255]) }
+        return out
+    }
+    let creamBuf = rgba(245, 237, 219, count: 400)
+    check("paper is found on a page that has paper",
+          Flattener.paperColour(ofRGBA: creamBuf, width: 20, height: 20) != nil)
+    // Mid-tone sepia: every pixel below the floor, so there is no paper here.
+    let sepiaBuf = rgba(150, 100, 45, count: 400)
+    check("…and not invented on a page that has none",
+          Flattener.paperColour(ofRGBA: sepiaBuf, width: 20, height: 20) == nil)
+    // A page that is mostly plate with a thin white margin: too little paper to
+    // believe, which is what minimumPaperFraction is for.
+    var mostlyPlate = rgba(150, 100, 45, count: 380)
+    mostlyPlate.append(contentsOf: rgba(250, 250, 250, count: 20))   // 5% margin
+    check("…and not believed from a 5% margin",
+          Flattener.paperColour(ofRGBA: mostlyPlate, width: 20, height: 20) == nil)
+
+    // A plain white scan must not move: it had no tint to correct for.
+    let plainWhite = dir.appendingPathComponent("plain-white.pdf")
+    makeScannedPDF(at: plainWhite, lines: (1...22).map {
+        "Line \($0) of ordinary black text on plain white paper."
+    })
+    let plainSat = Flattener.saturation(of: PDFDocument(url: plainWhite)!.page(at: 0)!)
+    check("…and a white-paper page still reads as no colour at all",
+          plainSat <= Flattener.pictureSaturationThreshold,
+          String(format: "%.4f", plainSat))
 
     // Automatic keeps it; the two modes that are instructions rather than
     // questions do what they were told.

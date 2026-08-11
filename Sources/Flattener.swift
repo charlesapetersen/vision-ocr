@@ -80,8 +80,27 @@ enum Flattener {
     /// a tinted isobar figure lost 99.1% of its visible content.
     static let pictureToneThreshold = 0.12
 
-    /// And any real colour means a page is not plain text.
+    /// And any real colour means a page is not plain text — where "colour" means
+    /// colour the page's own paper does not already have. See `saturation`.
     static let pictureSaturationThreshold = 0.06
+
+    /// A pixel this bright is paper rather than ink, for the purpose of working
+    /// out what colour the paper is.
+    ///
+    /// 176 is 69% of white. Cream book stock measures 219–245 per channel and
+    /// clears it comfortably; text ink on the same page sits under 90. The value
+    /// only has to separate the two populations on a page that *has* two, and it
+    /// is not finely balanced — anything from about 140 to 200 selects the same
+    /// paper on the corpus.
+    static let paperLuminanceFloor = 176.0
+
+    /// …and this much of the page has to be paper before its colour is believed.
+    ///
+    /// Below it there is no paper to speak of — a full-bleed photograph, a dark
+    /// cover — and correcting for a "paper" measured from the brightest corner of
+    /// a photograph would neutralise a real colour cast. Such pages keep the
+    /// uncorrected measure, which is the behaviour that shipped.
+    static let minimumPaperFraction = 0.15
 
     /// Below this, the largest embedded image is *not* the page's scan — it is a
     /// logo, a rule or a figure on a born-digital page — and rebuilding at its
@@ -967,13 +986,80 @@ enum Flattener {
             return true
         }
         guard ok else { return 0 }
+        return saturation(ofRGBA: buffer, width: w, height: h)
+    }
+
+    /// The colour of the page's own paper, or nil when the page has no credible
+    /// paper on it. The mean of every pixel bright enough to be paper.
+    ///
+    /// Split out so it can be asserted directly, and because the "no paper here"
+    /// answer is a real one that the caller has to handle rather than a failure.
+    static func paperColour(ofRGBA buffer: [UInt8], width: Int, height: Int)
+        -> (r: Double, g: Double, b: Double)? {
+        let pixels = width * height
+        guard pixels > 0, buffer.count >= pixels * 4 else { return nil }
+        var sr = 0.0, sg = 0.0, sb = 0.0, n = 0
+        for i in stride(from: 0, to: pixels * 4, by: 4) {
+            let r = Double(buffer[i]), g = Double(buffer[i + 1]), b = Double(buffer[i + 2])
+            guard 0.299 * r + 0.587 * g + 0.114 * b >= paperLuminanceFloor else { continue }
+            sr += r; sg += g; sb += b; n += 1
+        }
+        guard n > 0, Double(n) / Double(pixels) >= minimumPaperFraction else { return nil }
+        return (sr / Double(n), sg / Double(n), sb / Double(n))
+    }
+
+    /// How much colour is on the page, measured against the page's **own paper**
+    /// rather than against grey.
+    ///
+    /// Measuring against grey is what this used to do, and it cost a user a
+    /// 600-page 1964 monograph: 33 MB in, 709 MB out, every page a
+    /// full-resolution three-channel JPEG. Cream book stock has genuine
+    /// saturation — 0.078 to 0.089 measured across that book, against a 0.06
+    /// threshold — so every page read as "coloured" while its ink coverage
+    /// (0.11) and tone fraction (0.009) both said plainly that it was text. The
+    /// same number was then charged twice, because one constant gates both
+    /// `isPicture` and `shouldKeepColour`: the page lost the 1-bit route *and*
+    /// gained two channels. 1,185 KB/page against 48 KB/page as 1-bit.
+    ///
+    /// Moving the threshold cannot fix it. Over the corpus the wrongly-promoted
+    /// text pages span 0.061–0.113 and the genuinely coloured ones span
+    /// 0.061–0.31: the populations overlap, because a mean cannot tell a faint
+    /// tint spread over the whole sheet from a strong colour in one corner of it.
+    ///
+    /// So the page is white-balanced to its own paper first — a von Kries
+    /// correction, each channel divided by the paper's — and the same
+    /// saturation measure is then taken on the corrected pixels. Cream paper
+    /// becomes neutral and scores nothing; an illustration on that same cream
+    /// page still scores, because it was never the paper colour. A page with no
+    /// paper on it is left uncorrected.
+    ///
+    /// Neutral ink over cream picks up a small opposite cast from the correction
+    /// (0.118 per pixel in the worst case measured), which is why this is a mean
+    /// over the page and not a maximum: at the 11% ink coverage of a text page
+    /// that contributes about 0.013, and a page inky enough for it to matter is
+    /// already a picture by `pictureInkThreshold`.
+    static func saturation(ofRGBA buffer: [UInt8], width: Int, height: Int) -> Double {
+        let pixels = width * height
+        guard pixels > 0, buffer.count >= pixels * 4 else { return 0 }
+        var kr = 1.0, kg = 1.0, kb = 1.0
+        if let paper = paperColour(ofRGBA: buffer, width: width, height: height) {
+            let peak = max(paper.r, max(paper.g, paper.b))
+            // Scaled so the brightest channel is unchanged: this removes the
+            // paper's cast without lightening or darkening the page, so the
+            // measure stays comparable to the one the threshold was set against.
+            if peak > 0, paper.r > 0, paper.g > 0, paper.b > 0 {
+                kr = peak / paper.r; kg = peak / paper.g; kb = peak / paper.b
+            }
+        }
         var total = 0.0
-        for i in stride(from: 0, to: buffer.count, by: 4) {
-            let r = Double(buffer[i]), g = Double(buffer[i+1]), b = Double(buffer[i+2])
+        for i in stride(from: 0, to: pixels * 4, by: 4) {
+            let r = Double(buffer[i]) * kr
+            let g = Double(buffer[i + 1]) * kg
+            let b = Double(buffer[i + 2]) * kb
             let hi = max(r, max(g, b)), lo = min(r, min(g, b))
             if hi > 0 { total += (hi - lo) / hi }
         }
-        return total / Double(w * h)
+        return total / Double(pixels)
     }
 
     /// Fraction of the page that would be ink once thresholded. Text sits at

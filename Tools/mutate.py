@@ -63,6 +63,12 @@ CONSTANTS = [
     ("Flattener.swift", "pictureInkThreshold", "0.15", "0.9"),
     ("Flattener.swift", "pictureToneThreshold", "0.12", "0.9"),
     ("Flattener.swift", "pictureSaturationThreshold", "0.06", "0.9"),
+    # The paper-colour estimate. Drop the floor and every dark pixel counts as
+    # paper, so the "paper" is the page mean and the correction removes whatever
+    # cast the *content* had; raise the fraction and the correction never runs at
+    # all, which is the 709 MB behaviour restored.
+    ("Flattener.swift", "paperLuminanceFloor", "176.0", "10.0"),
+    ("Flattener.swift", "minimumPaperFraction", "0.15", "0.99"),
     ("Flattener.swift", "minimumPlausibleScanDPI", "150", "10"),
     ("Flattener.swift", "fallbackRebuildDPI", "300", "72"),
     ("Flattener.swift", "minimumScanPixelWidth", "600", "10"),

@@ -25,3 +25,5 @@ logic/U21-committed-across-alert	killed	94	2 check(s): the batch is still commit
 logic/R30-monotonic-underflow	killed	89	exit 133, no FAIL line: ./run_tests.sh: line 23: 84883 Trace/BPT trap: 5       "./$B
 logic/bundle-arch-check	killed	94	1 check(s): …and the bundled lookup refuses it too
 logic/bundle-arch-endianness	killed	94	1 check(s): a binary for this machine is recognised
+const/minimumPaperFraction	killed	108	2 check(s): a cream-paper text page does not read as colour; …and rebuilds 1-bit, not as a colour JPEG
+const/paperLuminanceFloor	killed	108	3 check(s): a full-bleed tinted plate keeps its colour, not corrected away; …and not invented on a page that has none; …and not believed from a 5% margin
