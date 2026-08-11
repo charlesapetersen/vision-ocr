@@ -1977,6 +1977,49 @@ The abandoned implementation is kept as
 and green at 626 checks, with red→green proven for every check and four mutants
 killed, before the corpus said not to ship it.
 
+### R35 · Per-page background downsample — WONTFIX *(decided: no threshold exists)*
+Built, measured, reverted. The idea: Photo detail is a promise about
+*photographs*, so a layered page whose background is only paper could be shrunk
+much harder for free, and only pages carrying a picture need honour the setting.
+
+**The measured ceiling is real and large.** Forcing every layered page to 6x
+across seven documents: 6,150 KB → 3,535 KB, 1.74x. One document went from
+792 KB — larger than its own 285 KB input — to 281 KB.
+
+**But no threshold separates the two populations on real data.** The detector
+measures continuous tone outside the text regions, as the highest of 64 tiles
+rather than an average — averaging hides a postage-stamp photograph on a blank
+sheet, which is the exact page that must not be shrunk. Measured standalone it
+looked clean: paper-only pages 0.0000–0.0126, picture pages 0.0955 upward, a gap
+of six times.
+
+That gap was an artifact of the instrument. Fed the boxes the *pipeline* actually
+produces, the same measure returns a continuum — 0.0206, 0.0279, 0.0474, 0.0482,
+0.0512, 0.0992, … 0.6983 — with no gap anywhere. The standalone tool ran the
+recogniser over a full-resolution PNG and got dense boxes; the pipeline runs it
+once over the rebuilt document and gets fewer, so text Vision did not box counts
+as background tone.
+
+**And the detector is right to count it.** Unboxed text really is in the
+background, and shrinking the background really would blur it. The signal is not
+broken; there are simply few pages where every line is boxed. At a threshold safe
+enough to never crush a photograph, it fired on **0 of 25** pages — all cost, no
+benefit.
+
+Two things worth keeping from the attempt:
+
+- **The 6x ceiling belongs to the user, not to a heuristic.** What the ceiling
+  measurement actually shows is that the Photo detail scale stops too early:
+  Smallest files is 3x, and 6x is another 1.74x. That is a labelled choice
+  someone can make about their own archive, which is the R13 shape, and it needs
+  no detector at all.
+- **The app can inflate an already-compact scan** — `Lipset_Luethy_1955`
+  285 KB → 792 KB, `Marth_1982` 145 KB → 361 KB, `_1958_Executive Pay`
+  442 KB → 797 KB. Rebuilding at native DPI and re-encoding loses to an input
+  that was already efficiently compressed. That is its own defect and is not
+  about layering; it wants measuring across the corpus before anything is done
+  about it.
+
 ---
 
 ## The interface

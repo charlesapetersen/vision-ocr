@@ -15,6 +15,54 @@ parked for exactly that reason.
 
 ## Likely worth doing
 
+### Make words hyphenated across a line break searchable
+*(requested 2026-08-11)*
+
+A word broken over two lines is stored as Vision read it — `merito-` at the end
+of one line and `cracy` at the start of the next — so searching the finished PDF
+for `meritocracy` finds nothing. On archival material set in narrow columns that
+is a lot of words, and they are disproportionately the long, specific ones people
+actually search for.
+
+**The trade is already decided by the person who asked for it:** search matters
+more than selection fidelity here. Selecting across the break may hand back the
+two halves separately, or the whole word on the first line and the tail again on
+the second. That is acceptable; silently unfindable text is not.
+
+Mechanisms, cheapest first:
+
+- **Join in the text layer only.** Where a line ends in a hyphen and the next
+  begins lower-case, write the joined word invisibly over the first fragment's
+  ink and write the tail as it is. Search finds the whole word; extraction gains
+  a duplicated tail. Smallest change, and the duplication is visible in
+  `Tools/score-corpus.swift`'s word-retention column, so it can be measured
+  rather than guessed at.
+- **Join and suppress the tail.** No duplication, but the second half stops
+  being selectable at all — which is a content-loss shape, and invariant 1 is
+  unforgiving about those even when a user asked for it.
+- **Both spellings.** Joined word *and* the two fragments, all invisible. Search
+  finds everything; extraction gets the most noise.
+
+**What makes this harder than it looks** is that it lands in `SearchableWriter`,
+whose four properties already fight each other (CLAUDE.md invariant 3), and one
+of them — runs keeping a gap from the next fragment on their own line — was found
+to be holding *by accident*. A joined word is wider than the fragment it is drawn
+over, so it pushes directly on the property that broke last time. Any attempt
+needs all four probes re-measured before and after, not just the search result.
+
+Not every trailing hyphen is a break, either: `well-known` at a line end is one
+word already, and a rule that joins it produces `wellknown`, which is worse than
+what we have. The usual discrimination is a dictionary check, which this app does
+not have and should not grow; the cheap approximation is to join only when the
+tail is lower-case and the joined form is not itself hyphenated elsewhere in the
+document.
+
+Should be a setting, defaulting **on** — the failure mode of joining is a slightly
+noisier text layer, and the failure mode of not joining is a document that cannot
+be found.
+
+
+
 ### MRC layering for mixed pages — SHIPPED in 1.8.0
 *(investigated and shipped 2026-08-11. `Tools/score-mrc.swift` is the prototype
 the design came from and remains the way to re-measure it. Kept here rather than
@@ -76,9 +124,10 @@ Shipped as a setting rather than a decision made for the user — **Searchable P
 ones with pictures on them, so a default of Maximum would be a refusal to choose
 rather than an answer, and R13's "fidelity wins" is satisfied by the fact that
 Maximum is one click away and text is full resolution at every level. The
-per-page alternative — choosing the factor from how much picture content lies
-outside the text boxes, since paper needs no resolution and a halftone does — is
-still the better answer and is not built.
+The per-page alternative — choosing the factor from how much picture content
+lies outside the text boxes — was built and reverted: no threshold separates the
+two populations on the boxes the pipeline actually produces. **BUGS.md R35** has
+the numbers, and the two findings that came out of it.
 
 Note also that PSNR is useless here and says the opposite of the truth — it reads
 20–29 dB for MRC against 37–42 dB for today's JPEG on pages where MRC looks
