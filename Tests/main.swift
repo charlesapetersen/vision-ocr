@@ -1591,6 +1591,74 @@ do {
     let rp = PDFDocument(url: rotated)?.page(at: 0)
     check("rotation is preserved in the file", rp?.rotation == 270, "\(rp?.rotation ?? -1)")
 
+    // MRC on a quarter-turned page. Invariant 5: a fixture without a rotated
+    // page is structurally blind to geometry bugs, and this route has two
+    // geometries that must agree — the stencil is built from Vision's boxes,
+    // which are normalised to the *rebuilt* page (upright, dimensions swapped),
+    // while the layers are rendered from the *source* page (sideways, with the
+    // rotation applied during render). If those disagree the stencil lands at
+    // ninety degrees to the text: every glyph stays in the background and the
+    // foreground paints a band of ink across the page. Nothing else here would
+    // notice, because the page count and the text layer would both be correct.
+    if let jb = JBIG2.encoder, let rpage = rp {
+        let rbox = Flattener.fullBox(of: rpage)
+        let rscale = Flattener.rebuildDPI(of: rpage) / 72.0
+        let rw = Int((rbox.width * rscale).rounded()), rh = Int((rbox.height * rscale).rounded())
+        // The box is derived from where the ink actually is rather than guessed,
+        // for the same reason Vision's would be: on a quarter-turned page the
+        // text is not where the unrotated coordinates say it is, and a guessed
+        // box that misses produces an empty stencil — which would look like a
+        // passing test of nothing.
+        var rboxes: [SearchableWriter.BoundingBox] = []
+        if let g = Flattener.renderGrey(rpage, box: rbox, scale: rscale,
+                                        width: rw, height: rh, from: .mediaBox) {
+            var minX = rw, maxX = 0, minY = rh, maxY = 0
+            for y in 0..<rh {
+                for x in 0..<rw where g[y * rw + x] < 128 {
+                    minX = min(minX, x); maxX = max(maxX, x)
+                    minY = min(minY, y); maxY = max(maxY, y)
+                }
+            }
+            if minX <= maxX, minY <= maxY {
+                rboxes = [SearchableWriter.BoundingBox(
+                    x: Double(minX) / Double(rw), y: Double(minY) / Double(rh),
+                    width: Double(maxX - minX + 1) / Double(rw),
+                    height: Double(maxY - minY + 1) / Double(rh))]
+            }
+        }
+        check("the rotated fixture has findable ink, or the checks below prove nothing",
+              !rboxes.isEmpty)
+        let rdir = dir.appendingPathComponent("mrc")
+        try? FileManager.default.createDirectory(at: rdir, withIntermediateDirectories: true)
+        if let layers = Flattener.mrcLayers(for: rpage, boxes: rboxes,
+                                            into: rdir, stem: "r") {
+            let st = rdir.appendingPathComponent("r.jbig2")
+            try? JBIG2.encode(png: layers.mask, to: st, using: jb)
+            let out = dir.appendingPathComponent("rotated-mrc.pdf")
+            try? JBIG2.assemble([JBIG2.Page(
+                stream: .mrc(JBIG2.Page.MRC(
+                    mask: st, background: layers.background, foreground: layers.foreground,
+                    backgroundWidth: layers.backgroundWidth,
+                    backgroundHeight: layers.backgroundHeight,
+                    foregroundWidth: layers.foregroundWidth,
+                    foregroundHeight: layers.foregroundHeight)),
+                pixelWidth: rw, pixelHeight: rh, boxSize: rbox.size)], to: out)
+            check("a rotated page layers into a PDF that opens",
+                  PDFDocument(url: out)?.pageCount == 1)
+            // The published page must keep the reader-facing shape, not the raw
+            // one — a stencil applied in the wrong geometry shows up here first.
+            let pb = PDFDocument(url: out)?.page(at: 0)?.bounds(for: .mediaBox) ?? .zero
+            check("…at the size a reader sees, not the unrotated one",
+                  Int(pb.width) == Int(rbox.width) && Int(pb.height) == Int(rbox.height),
+                  "\(Int(pb.width))x\(Int(pb.height)) vs \(Int(rbox.width))x\(Int(rbox.height))")
+            let rink = inkFractionMRC(of: out, page: 0)
+            check("…and it is neither blank nor flooded",
+                  rink > 0.005 && rink < 0.60, String(format: "%.3f ink", rink))
+        } else {
+            check("the rotated page produces layers", false, "mrcLayers returned nil")
+        }
+    }
+
     // displayBox swaps the dimensions for a quarter turn.
     let display = rp.map { Flattener.displayBox(of: $0) } ?? .zero
     let raw = rp?.bounds(for: .mediaBox) ?? .zero
