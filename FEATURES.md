@@ -15,8 +15,9 @@ parked for exactly that reason.
 
 ## Likely worth doing
 
-### Make words hyphenated across a line break searchable
-*(requested 2026-08-11)*
+### Make words hyphenated across a line break searchable — SHIPPED
+*(requested and shipped 2026-08-11. Kept because the reasoning below is what the
+shipped guards rest on.)*
 
 A word broken over two lines is stored as Vision read it — `merito-` at the end
 of one line and `cracy` at the start of the next — so searching the finished PDF
@@ -57,9 +58,30 @@ not have and should not grow; the cheap approximation is to join only when the
 tail is lower-case and the joined form is not itself hyphenated elsewhere in the
 document.
 
-Should be a setting, defaulting **on** — the failure mode of joining is a slightly
-noisier text layer, and the failure mode of not joining is a document that cannot
-be found.
+Shipped as **Settings ▸ Searchable PDF ▸ Find words broken across two lines**,
+defaulting on, taking the first of the three mechanisms above: the joined word is
+written over the head fragment and the tail is left where it is.
+
+Two guards came out of measurement rather than design, and both matter:
+
+- **Same column.** Joining by vertical adjacency alone produced `adminis+put`,
+  `bipar+put`, `mi+appears` and `that+cerning` on real two-column pages — the
+  next entry in reading order is often the next line of the *other* column at a
+  similar height. Requiring the two spans to share 60% of the narrower one rules
+  the class out; it cut 185 joins to 118 across eight documents and removed
+  almost all of the wrong ones.
+- **A left-margin test was tried and removed.** A continuation is mid-sentence
+  and should sit on the margin, so requiring that looked principled — and changed
+  nothing at all on the corpus, 118 joins before and after. An unmeasured
+  constant that does nothing is what `ocrAllPages` was, so it is not in the tree.
+
+Two wrong joins survive on one poor-quality page where Vision's own reading order
+is wrong. They add noise; they remove nothing, which is what keeps this outside
+invariant 1.
+
+Invariant 3 re-measured across eight documents with 118 joins firing:
+line-start, line-end, text offset, vertical overlap and word retention all
+**identical** to the digit.
 
 
 

@@ -12,6 +12,33 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.9.0 — 2026-08-11
+
+**Words broken across a line can be searched for.** A word split by a line break
+is read as two pieces — *merito-* at the end of one line and *cracy* at the start
+of the next — so searching the finished PDF for *meritocracy* found nothing. In
+narrow columns that is a lot of words, and they tend to be the long, specific
+ones actually worth searching for.
+
+The whole word is now also written into the first line, so a search finds it. The
+cost is that the second half appears twice if you copy the text out; nothing is
+removed either way. On by default, and switchable under **Settings ▸ Searchable
+PDF ▸ Find words broken across two lines**.
+
+It is careful about what counts as a break. An upper-case continuation is left
+alone, so *Smith-* / *Jones* stays two names. A figure after the hyphen is left
+alone, so *pages 3-* / *7* stays a range. And the continuation has to be in the
+same column: joining by vertical position alone welded words to fragments of
+unrelated ones on two-column pages, which is worse than the hyphen it replaced.
+
+What it cannot do is tell a broken word from a real compound, so *self-* /
+*criticism* becomes *selfcriticism* in the first line. Both halves remain
+searchable on their own, and telling the two cases apart needs a dictionary this
+app does not have.
+
+Measured over eight documents with 118 joins firing: line-start and line-end
+selectability, text offset, vertical overlap and word retention all unchanged.
+
 ## 1.8.0 — 2026-08-11
 
 **A scanned book that came out twenty-one times larger than it went in now comes

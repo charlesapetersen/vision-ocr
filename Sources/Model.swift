@@ -1460,6 +1460,7 @@ final class OCRModel: ObservableObject {
                 unplaced = try SearchableWriter.compose(
                     visible: visible, observations: byPage, to: textLayer,
                     drawImages: false, password: password,
+                    joinHyphenated: settings.joinHyphenated,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Writing text layer \(d) of \(t)",
                                                  layerShare(d, t)) })
@@ -1509,9 +1510,13 @@ final class OCRModel: ObservableObject {
                 try? FileManager.default.removeItem(at: imagesOnly)
                 try? FileManager.default.removeItem(at: textLayer)
             } else {
+                // The Flate route. Same setting, or a user who turned joining on
+                // would get it only when jbig2 and qpdf happened to be present —
+                // the sibling-site mistake R23, R29 and C20 are all made of.
                 unplaced = try SearchableWriter.compose(
                     visible: visible, observations: byPage, to: staged,
                     password: password,
+                    joinHyphenated: settings.joinHyphenated,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Writing pages \(d) of \(t)",
                                                  layerShare(d, t)) })

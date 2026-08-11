@@ -425,6 +425,107 @@ do {
     resetPrefs()
 }
 
+// MARK: - Words broken across a line
+
+print("\nrejoining hyphenated words")
+
+do {
+    // Two stacked lines, the first ending in a hyphen. Boxes are what the rule
+    // reads, so they have to be laid out like real lines: same column, the
+    // second one line-height below the first.
+    func line(_ text: String, y: Double, x: Double = 0.1,
+              width: Double = 0.8, height: Double = 0.04) -> SearchableWriter.Observation {
+        SearchableWriter.Observation(
+            boundingBox: SearchableWriter.BoundingBox(x: x, y: y, width: width, height: height),
+            text: text, confidence: 1)
+    }
+    let box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    func joined(_ lines: [SearchableWriter.Observation]) -> [String] {
+        SearchableWriter.joiningHyphenatedWords(lines, in: box).map(\.text)
+    }
+
+    check("a word broken over two lines is rejoined on the first",
+          joined([line("the conditions of the merito-", y: 0.20),
+                  line("cracy have been described", y: 0.25)])
+            == ["the conditions of the meritocracy", "cracy have been described"],
+          joined([line("the conditions of the merito-", y: 0.20),
+                  line("cracy have been described", y: 0.25)]).joined(separator: " | "))
+
+    // Nothing is removed — that is what keeps this outside invariant 1.
+    check("…and the tail is left where it was, not moved or dropped",
+          joined([line("merito-", y: 0.20), line("cracy and so on", y: 0.25)]).count == 2
+            && joined([line("merito-", y: 0.20),
+                       line("cracy and so on", y: 0.25)])[1] == "cracy and so on")
+
+    check("a Unicode hyphen counts too, which is most of an old scan",
+          joined([line("merito\u{2010}", y: 0.20), line("cracy", y: 0.25)])[0] == "meritocracy")
+
+    check("an upper-case tail is left alone — Smith- / Jones is two names",
+          joined([line("Smith-", y: 0.20), line("Jones wrote", y: 0.25)])[0] == "Smith-")
+
+    check("a figure after the hyphen is not a broken word",
+          joined([line("pages 3-", y: 0.20), line("7 of the report", y: 0.25)])[0] == "pages 3-")
+
+    check("a line that is only a dash is not a candidate",
+          joined([line("-", y: 0.20), line("continued", y: 0.25)])[0] == "-")
+
+    // Fragments beside each other are one visual line; joining across that gap
+    // would weld two words that are simply next to each other on the page.
+    check("two fragments on the same visual line are not joined",
+          joined([line("merito-", y: 0.20, x: 0.1, width: 0.3),
+                  line("cracy", y: 0.20, x: 0.5, width: 0.3)])[0] == "merito-")
+
+    // The next entry in reading order can be the top of the next column.
+    check("a continuation too far below is not joined",
+          joined([line("merito-", y: 0.20), line("cracy", y: 0.80)])[0] == "merito-")
+
+    // Measured, not imagined: joining by vertical adjacency alone produced
+    // `adminis+put`, `bipar+put`, `mi+appears` and `that+cerning` on real
+    // two-column pages — a real word welded to a fragment of an unrelated one,
+    // which is worse than the hyphen it replaced. Columns do not overlap.
+    check("a continuation in the next column is not joined",
+          joined([line("merito-", y: 0.20, x: 0.05, width: 0.40),
+                  line("cracy", y: 0.24, x: 0.55, width: 0.40)])[0] == "merito-")
+    check("…while the same column, slightly ragged, still joins",
+          joined([line("merito-", y: 0.20, x: 0.05, width: 0.40),
+                  line("cracy and so on", y: 0.24, x: 0.05, width: 0.36)])[0] == "meritocracy")
+
+    check("…nor one above it",
+          joined([line("merito-", y: 0.60), line("cracy", y: 0.20)])[0] == "merito-")
+
+    // Only the alphabetic run is taken, so punctuation stays on its own line.
+    check("only the word is taken from the tail, not the rest of the line",
+          joined([line("merito-", y: 0.20), line("cracy, he wrote,", y: 0.25)])[0]
+            == "meritocracy")
+
+    // And the whole point: it has to be findable in a real PDF.
+    if JBIG2.encoder != nil || true {
+        let dir = tmp.appendingPathComponent("hyphen")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let src = dir.appendingPathComponent("src.pdf")
+        makeScannedPDF(at: src, lines: ["the conditions of the merito-",
+                                        "cracy have been described"])
+        let obs = [1: [line("the conditions of the merito-", y: 0.20),
+                       line("cracy have been described", y: 0.25)]]
+        let on = dir.appendingPathComponent("on.pdf")
+        _ = try? SearchableWriter.compose(visible: src, observations: obs, to: on,
+                                          drawImages: false, joinHyphenated: true)
+        let off = dir.appendingPathComponent("off.pdf")
+        _ = try? SearchableWriter.compose(visible: src, observations: obs, to: off,
+                                          drawImages: false, joinHyphenated: false)
+        let onText = PDFDocument(url: on)?.string ?? ""
+        let offText = PDFDocument(url: off)?.string ?? ""
+        check("the finished PDF can be searched for the whole word",
+              onText.contains("meritocracy"), onText.replacingOccurrences(of: "\n", with: "⏎"))
+        // Both directions, or a check that always passed would prove nothing.
+        check("…and cannot be, with the setting off",
+              !offText.contains("meritocracy"),
+              offText.replacingOccurrences(of: "\n", with: "⏎"))
+        check("…while the tail is still there either way",
+              onText.contains("cracy") && offText.contains("cracy"))
+    }
+}
+
 // MARK: - Forced re-OCR
 
 // Feeding this app an already-OCR'd PDF must redo the recognition rather than

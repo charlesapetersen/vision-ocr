@@ -133,6 +133,9 @@ enum Prefs {
     static let useJBIG2          = "useJBIG2"
     static let photoDetail       = "photoDetail"
 
+    /// Rejoin a word a line break split in two, so it can be searched for.
+    static let joinHyphenated    = "joinHyphenated"
+
     static let concurrency       = "concurrency"
 
     /// How many files to OCR at once.
@@ -173,6 +176,7 @@ enum Prefs {
         var besideOriginal: Bool
         var useJBIG2: Bool
         var photoDetail: PhotoDetail
+        var joinHyphenated: Bool
 
         var fast: Bool
         var languages: String
@@ -195,6 +199,7 @@ enum Prefs {
                 useJBIG2: d.bool(forKey: Prefs.useJBIG2),
                 photoDetail: PhotoDetail(rawValue: d.string(forKey: Prefs.photoDetail) ?? "")
                     ?? .balanced,
+                joinHyphenated: d.bool(forKey: Prefs.joinHyphenated),
                 fast: d.bool(forKey: Prefs.fast),
                 languages: d.string(forKey: Prefs.languages) ?? "",
                 languageCorrection: d.bool(forKey: Prefs.languageCorrection),
@@ -218,7 +223,8 @@ enum Prefs {
         mode, outputFolder, besideOriginal, openWhenDone, binaryPath, textFormat,
         fast, languages, languageCorrection, confidence, pdfDPIAuto, pdfDPI,
         password, customWords, minTextHeightOn, minTextHeight,
-        warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail, concurrency,
+        warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail,
+        joinHyphenated, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck,
     ]
 
@@ -307,6 +313,13 @@ enum Prefs {
             // third of the bytes. Maximum is one click away for anyone who wants
             // the pixels, and the text is full resolution at every level.
             photoDetail: PhotoDetail.balanced.rawValue,
+
+            // On by default. The failure mode of joining is a slightly noisier
+            // extracted text — the tail of the word appears twice — and the
+            // failure mode of not joining is a document whose long words cannot
+            // be found at all. In narrow-column archival material that is most
+            // of the words worth searching for.
+            joinHyphenated: true,
 
             concurrency: defaultConcurrency,
         ])

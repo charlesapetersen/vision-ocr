@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** U23 and T8 close the fourth of the four ways this register
+**One open: R37.** U23 and T8 close the fourth of the four ways this register
 kept producing defects from its own fixes; the other three got controls in the
 same round. The third review's five — R31, R32, T6, T7, H2 — are all
 `FIXED`, and the round added three controls aimed at the *shapes* rather than
@@ -2055,6 +2055,38 @@ for `/JPXDecode`, and a new way for a page to fail. Not worth 9%.
 The lesson is R34's, again and in the same session: a codec measurement is only
 valid for the content it was taken on. Both times the number looked good on one
 kind of image and evaporated on the kind that mattered.
+
+### R37 · Small documents come out larger than they went in — OPEN
+*(measured 2026-08-11, 40 corpus documents through `OCRModel.makeSearchablePDF`)*
+
+Across the corpus the app does what it says: **134.3 MB in, 75.0 MB out, 1.79x**.
+But that average hides a clean split by input size, and on one side of it the
+app reliably makes files bigger.
+
+| input | grew | that cohort, overall |
+|---|---|---|
+| under 300 KB | 3/4 | **1.43x larger** |
+| 300 KB – 1 MB | 6/9 | **1.37x larger** |
+| 1–5 MB | 5/17 | 1.92x smaller |
+| over 5 MB | 1/10 | 1.93x smaller |
+
+Worst cases: 110 KB → 249 KB over three pages (2.26x), 704 KB → 1,543 KB over 64
+(2.19x), 747 KB → 1,495 KB over 46 (2.00x).
+
+**Not diagnosed, and deliberately not guessed at.** A searchable copy is bound to
+cost something a bare scan does not — the text layer is the product — so some
+growth is correct and the question is how much of this is that. The plausible
+causes, none yet separated: an input already compressed harder than this app
+re-encodes it; a rebuild at native DPI where the source was stored at a lower
+one; a text layer disproportionate to a short document; or `rebuildDPI` reading
+a resolution the page does not really have.
+
+What it is **not** is the layering work — the split is visible on documents with
+no layered pages at all.
+
+The right first step is to separate the text layer's bytes from the image
+layer's, per document, and see which side the growth is on. Until that is done
+there is nothing here to fix, only something to explain.
 
 ---
 

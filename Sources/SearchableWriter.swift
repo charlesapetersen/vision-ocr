@@ -201,6 +201,7 @@ enum SearchableWriter {
         drawImages: Bool = true,
         password: String? = nil,
         minimumConfidence: Double = 0,
+        joinHyphenated: Bool = true,
         isCancelled: () -> Bool = { false },
         progress: (Int, Int) -> Void = { _, _ in }
     ) throws -> [Unplaced] {
@@ -293,6 +294,10 @@ enum SearchableWriter {
                 .filter { $0.confidence >= minimumConfidence
                     && !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
             lines = deduplicated(lines, in: region)
+            // After dedup, so a line reported twice cannot be joined to its own
+            // twin, and before the geometry helpers below, which read the text
+            // only through its box.
+            if joinHyphenated { lines = joiningHyphenatedWords(lines, in: region) }
             for (position, observation) in lines.enumerated() {
                 if let reason = draw(observation, in: region,
                                      ceiling: headroom(for: position, among: lines, in: region),
@@ -669,6 +674,121 @@ enum SearchableWriter {
         }
         return kept
     }
+
+    // MARK: - Words broken across a line
+
+    /// The characters a typesetter may break a word with.
+    ///
+    /// Not just `-`: archival scans are full of the Unicode hyphen (U+2010) and
+    /// the non-breaking one (U+2011), and Vision reports what it sees. A rule
+    /// that only knew about ASCII would silently do nothing on exactly the older
+    /// material this app exists for.
+    static let breakHyphens: Set<Character> = ["-", "\u{2010}", "\u{2011}", "\u{00AD}"]
+
+    /// Rejoins a word a line break split in two, so the whole word can be found.
+    ///
+    /// A word broken over two lines reaches the text layer as Vision read it —
+    /// `merito-` ending one line and `cracy` beginning the next — so searching
+    /// the finished PDF for `meritocracy` finds nothing. In narrow columns that
+    /// is a lot of words, and they are disproportionately the long specific ones
+    /// people search for.
+    ///
+    /// The joined word is written **over the first fragment**, and the tail is
+    /// left where it is. So the tail is extractable twice: once inside the
+    /// joined word and once on its own line. That is deliberate and it is the
+    /// trade this feature is: a duplicated tail is noise in extracted text,
+    /// while an unfindable word is a document that cannot be searched. Nothing
+    /// is removed, which keeps this outside invariant 1 entirely — no path here
+    /// can drop text, only add it.
+    ///
+    /// Geometry is untouched. `draw` fits each run to its own box by choosing a
+    /// font size, so a longer string means narrower glyphs in the same
+    /// rectangle; every measurement invariant 3 cares about — where the run
+    /// starts, how wide it is, its baseline, its height — is unchanged.
+    ///
+    /// Conservative about what counts as a break:
+    ///
+    /// - the tail must start lower-case, so `Smith-` / `Jones` stays apart;
+    /// - the tail's first word must be alphabetic, so a hyphen followed by a
+    ///   figure or a bullet is left alone;
+    /// - the head must have something before the hyphen, so a line that is only
+    ///   a dash — a rule, an em-dash used as punctuation — is not a candidate;
+    /// - the two lines must be *consecutive in reading order and vertically
+    ///   adjacent*, not merely one after the other in the array.
+    ///
+    /// What it cannot do is tell a broken word from a real compound: `well-`
+    /// followed by `known` becomes `wellknown`. That needs a dictionary this app
+    /// does not have and should not grow. The damage is bounded — the joined
+    /// form is added, both fragments remain, and a search for `well` still
+    /// matches inside `wellknown` — so it is accepted rather than guessed at.
+    static func joiningHyphenatedWords(_ lines: [Observation], in box: CGRect) -> [Observation] {
+        guard lines.count > 1 else { return lines }
+        var out = lines
+        for i in 0..<(out.count - 1) {
+            let head = out[i].text
+            guard let last = head.last, breakHyphens.contains(last) else { continue }
+            let stem = String(head.dropLast())
+            // Something must precede the hyphen, and it must end in a letter —
+            // `page 3-` is a range, not a broken word.
+            guard let stemLast = stem.last, stemLast.isLetter else { continue }
+
+            // The next line in reading order, which is the next entry only when
+            // the two are on different visual lines. A line split into fragments
+            // side by side would otherwise join across the gap.
+            let tailLine = out[i + 1]
+            guard !isSameVisualLine(out[i], tailLine, in: box) else { continue }
+            // Below, not above or far away: Vision returns reading order, but a
+            // multi-column page can put the next entry at the top of the next
+            // column, and joining across that is joining two unrelated words.
+            let drop = drawnBaseline(out[i], in: box) - drawnBaseline(tailLine, in: box)
+            let pitch = max(out[i].boundingBox.height * box.height, 1)
+            guard drop > 0, drop < pitch * maximumJoinPitch else { continue }
+
+            // Same column. Vertical adjacency alone is not enough and this was
+            // measured, not imagined: on a two-column page the next entry in
+            // reading order is often the next line of the *other* column at a
+            // similar height, and joining across produced `adminis+put`,
+            // `bipar+put`, `mi+appears`, `that+cerning` — a real word welded to
+            // a fragment of an unrelated one, which is worse than the hyphen it
+            // replaced. Columns do not overlap horizontally, so requiring the
+            // two spans to share most of their width rules the whole class out.
+            let headLeft = out[i].boundingBox.x, headRight = headLeft + out[i].boundingBox.width
+            let tailLeft = tailLine.boundingBox.x
+            let tailRight = tailLeft + tailLine.boundingBox.width
+            let shared = min(headRight, tailRight) - max(headLeft, tailLeft)
+            let narrower = min(out[i].boundingBox.width, tailLine.boundingBox.width)
+            guard narrower > 0, shared / narrower >= minimumColumnOverlap else { continue }
+
+
+            let tail = tailLine.text
+            guard let firstScalar = tail.first, firstScalar.isLowercase else { continue }
+            let word = tail.prefix { $0.isLetter }
+            guard !word.isEmpty else { continue }
+
+            out[i] = Observation(boundingBox: out[i].boundingBox,
+                                 text: stem + word,
+                                 confidence: out[i].confidence)
+        }
+        return out
+    }
+
+    /// How far below a line its continuation may sit, in multiples of the line's
+    /// own height, before the pair stops being consecutive lines of one column.
+    ///
+    /// 2.5 covers ordinary leading and a paragraph break; it does not reach the
+    /// top of the next column, which on any real page is a whole column height
+    /// away and usually *above* rather than below.
+    static var maximumJoinPitch: CGFloat = 2.5
+
+    /// How much of their width two lines must share before they count as being
+    /// in the same column.
+    ///
+    /// 0.6, which a two-column layout cannot satisfy across the gutter and which
+    /// ordinary consecutive lines clear easily — a short last line of a paragraph
+    /// still sits inside the column above it, so the *narrower* span is the
+    /// denominator rather than the wider one.
+    static var minimumColumnOverlap: Double = 0.6
+
 
     /// How tall this line's glyphs may be before they collide with the nearest
     /// line above or below.

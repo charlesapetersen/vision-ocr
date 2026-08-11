@@ -41,6 +41,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.rebuildImages) private var rebuildImages = true
     @AppStorage(Prefs.warnDigitalText) private var warnDigitalText = true
     @AppStorage(Prefs.useJBIG2) private var useJBIG2 = true
+    @AppStorage(Prefs.joinHyphenated) private var joinHyphenated = true
     @AppStorage(Prefs.photoDetail) private var photoDetailRaw = Prefs.PhotoDetail.balanced.rawValue
     private var photoDetail: Prefs.PhotoDetail {
         Prefs.PhotoDetail(rawValue: photoDetailRaw) ?? .balanced
@@ -256,6 +257,18 @@ struct SettingsView: View {
                               + "if you are deliberately re-OCRing files whose embedded "
                               + "text is broken.")
                 }
+
+                Toggle("Find words broken across two lines", isOn: $joinHyphenated)
+                    .help("A word split by a line break is read as two pieces — "
+                          + "\u{201C}merito-\u{201D} at the end of one line and "
+                          + "\u{201C}cracy\u{201D} at the start of the next — so searching "
+                          + "the finished PDF for \u{201C}meritocracy\u{201D} finds nothing. "
+                          + "In narrow columns that is a lot of words, and they tend to be "
+                          + "the long, specific ones worth searching for.\n\n"
+                          + "With this on, the whole word is also written into the first "
+                          + "line, so a search finds it. The cost is that the second half "
+                          + "appears twice if you copy the text out. Nothing is removed "
+                          + "either way.")
 
                 if rebuildMode.canUseJBIG2 {
                     Toggle("Compress with JBIG2 (about a third the size)", isOn: $useJBIG2)
