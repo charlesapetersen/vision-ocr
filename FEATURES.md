@@ -83,6 +83,46 @@ Invariant 3 re-measured across eight documents with 118 joins firing:
 line-start, line-end, text offset, vertical overlap and word retention all
 **identical** to the digit.
 
+**Two cases it does not cover, both deliberate and both extendable.**
+
+*Across a page break* is not implemented: `joiningHyphenatedWords` is called once
+per page with only that page's lines, so the last line of one page cannot see the
+first line of the next. `compose` does hold `byPage` for the whole document and
+iterates in order, so it could look ahead — it simply does not.
+
+*Across a column break* is actively refused by the same-column guard. A word
+broken at the foot of one column and continued at the head of the next is a real
+case in two-column setting, and it is excluded because the guard could not tell
+it from the `adminis+put` failures the guard exists to stop.
+
+**Both were built, measured and reverted on 2026-08-11.** The rule was the
+stricter one — head at the foot of its column, tail at the head of a column to
+its right, or at the top of the next page — and it was correct in the unit
+tests, ten of them, including the mid-column pairs it had to keep refusing.
+
+On real documents it produced nothing worth having:
+
+| | joins |
+|---|---|
+| same column (shipped) | 342 |
+| across a column | 2, **both wrong** — `that+that`, `provides+flags` |
+| across a page | 0 |
+
+The precondition data explains it. Instrumenting the candidate test rather than
+the outcome, one Congressional report offered **six** hyphenated line-ends in the
+whole document and **none of them at the foot of a page**. That is not a bug: a
+typesetter avoids breaking a word across a page boundary, so the case the feature
+exists for barely occurs. And joining across a column without real column
+detection — which this does not have — finds the wrong line.
+
+One thing the attempt did establish, and it is worth keeping: `edgeOfColumn` at
+0.18 admitted nothing at all, because the deepest hyphenated line measured sat at
+0.82 of the page and `1 - 0.18` is exactly 0.82. Page margins are larger than
+they look. Any future attempt should set that constant from the measured depth of
+the last text line, not from an estimate, and should judge itself by reading the
+joins rather than by counting them — the aggregate scores did not move for the
+good joins or the bad ones, and only the listing showed which was which.
+
 
 
 ### MRC layering for mixed pages — SHIPPED in 1.8.0
