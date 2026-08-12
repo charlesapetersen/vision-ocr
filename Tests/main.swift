@@ -5077,6 +5077,94 @@ do {
     resetPrefs()
 }
 
+// MARK: - Recognition languages come from the machine
+
+print("\nrecognition languages this Mac actually has")
+
+do {
+    resetPrefs()
+    // Not a mock. The whole point of this feature is that the list comes from
+    // the installed macOS through the installed binary; a fixture list would
+    // test a hand-written copy of the answer against itself (T4's shape).
+    let accurate = Runner.availableLanguages(fast: false)
+    let quick = Runner.availableLanguages(fast: true)
+    if accurate.isEmpty {
+        print("  skipped — mac-ocr not resolvable (\(JBIG2.installHint))")
+    } else {
+        check("the accurate recognizer reports a plausible list",
+              accurate.count >= 5 && accurate.contains("en-US"),
+              "\(accurate.count): \(accurate.prefix(6).joined(separator: ","))")
+        check("…every entry looks like a BCP-47 code",
+              accurate.allSatisfy { $0.contains("-") && !$0.contains(" ") && $0.count <= 12 },
+              accurate.filter { !$0.contains("-") }.joined(separator: ","))
+        // The finding that makes this feature worth more than a convenience:
+        // fast recognition supports a strict subset, so ticking Fast can
+        // invalidate a language that was working.
+        check("fast recognition reports a subset, not the same list",
+              !quick.isEmpty && quick.count < accurate.count
+                && Set(quick).isSubset(of: Set(accurate)),
+              "fast \(quick.count) of \(accurate.count)")
+
+        check("a code the machine has is not reported unsupported",
+              Runner.unsupportedLanguages(in: "en-US", fast: false).isEmpty)
+        check("…and a code it does not have is",
+              Runner.unsupportedLanguages(in: "xx-XX", fast: false) == ["xx-XX"],
+              Runner.unsupportedLanguages(in: "xx-XX", fast: false).joined(separator: ","))
+        check("…case does not decide it",
+              Runner.unsupportedLanguages(in: "EN-us", fast: false).isEmpty)
+        check("…and the list is split the same way the command line splits it",
+              Runner.unsupportedLanguages(in: "en-US, xx-XX", fast: false) == ["xx-XX"],
+              Runner.unsupportedLanguages(in: "en-US, xx-XX", fast: false)
+                .joined(separator: ","))
+
+        // The Fast interaction, stated as a check rather than as a comment.
+        if let onlyAccurate = accurate.first(where: { !quick.contains($0) }) {
+            check("a language available only to the accurate recognizer is flagged under Fast",
+                  Runner.unsupportedLanguages(in: onlyAccurate, fast: false).isEmpty
+                    && Runner.unsupportedLanguages(in: onlyAccurate, fast: true)
+                        == [onlyAccurate],
+                  onlyAccurate)
+        } else {
+            check("the two lists differ, or the Fast check proves nothing", false)
+        }
+
+        // Blank is "let Vision decide" and must never be reported as a problem.
+        check("blank is not an unsupported language",
+              Runner.unsupportedLanguages(in: "", fast: false).isEmpty
+                && Runner.unsupportedLanguages(in: "  ,  ", fast: false).isEmpty)
+
+        check("the picker labels a code with its language name",
+              SettingsView.languageLabel("ja-JP").contains("ja-JP")
+                && SettingsView.languageLabel("ja-JP").count > "ja-JP".count,
+              SettingsView.languageLabel("ja-JP"))
+        check("…and an unknown code still labels as itself",
+              SettingsView.languageLabel("zz") == "zz"
+                || SettingsView.languageLabel("zz").contains("zz"),
+              SettingsView.languageLabel("zz"))
+    }
+
+    // The bounded capture the language list rides on is the same one tool
+    // lookup uses, so its bound is exercised here too rather than only through
+    // a shell.
+    check("a command that does not exist captures nothing",
+          Runner.captureBounded("/nonexistent/binary", []) == nil)
+    check("a command that fails captures nothing",
+          Runner.captureBounded("/bin/sh", ["-c", "echo out; exit 3"]) == nil)
+    check("…and one that succeeds captures its stdout",
+          Runner.captureBounded("/bin/sh", ["-c", "echo hello"])?
+            .trimmingCharacters(in: .whitespacesAndNewlines) == "hello")
+    // U18. The bound has to cover the read, not just the wait: a child that
+    // exits while a grandchild holds stdout open must not hang the caller.
+    let began = DispatchTime.now()
+    let held = Runner.captureBounded(
+        "/bin/sh", ["-c", "(sleep 30 &) ; echo partial"], seconds: 1)
+    let took = Double(DispatchTime.now().uptimeNanoseconds &- began.uptimeNanoseconds) / 1e9
+    check("a background job holding stdout cannot hang the capture",
+          took < 5, String(format: "%.1fs, returned %@", took,
+                           held == nil ? "nil" : "a value"))
+    resetPrefs()
+}
+
 // MARK: - The written run report
 
 print("\nthe written run report")

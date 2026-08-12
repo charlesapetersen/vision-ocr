@@ -153,8 +153,15 @@ enum Runner {
     }
 
     /// Forgets the cache, for when the user installs something mid-session.
+    ///
+    /// Takes the language lists with it: they were read *from* a binary, and
+    /// pointing Settings at a different one can change the answer. A sibling
+    /// left behind here would be R23's shape exactly.
     static func forgetToolPaths() {
-        cacheLock.lock(); discovered.removeAll(); cacheLock.unlock()
+        cacheLock.lock()
+        discovered.removeAll()
+        languageLists.removeAll()
+        cacheLock.unlock()
     }
 
     private static let cacheLock = NSLock()
@@ -164,27 +171,42 @@ enum Runner {
 
     private static func askLoginShell(for name: String) -> String? {
         let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
+        guard let out = captureBounded(shell, ["-lc", "command -v \(name)"]) else { return nil }
+        let path = out.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !path.isEmpty, isRunnable(path) else { return nil }
+        return path
+    }
+
+    /// Runs a short command on the main thread and hands back its stdout, or
+    /// nil if it failed, hung or was not exec'able.
+    ///
+    /// Bounded, because callers run it from the main thread — `locateTool` from
+    /// `start()` and from the Settings panel's body. A login shell that blocks
+    /// (a slow network mount in a profile, an interactive prompt, a wedged NFS
+    /// home) froze the whole app with no way out. Three seconds is far longer
+    /// than the ~85 ms these normally take.
+    ///
+    /// **The bound has to cover the read** (U18). It used to be a
+    /// `readDataToEndOfFile()` placed before `wait(for:upTo:)`, and that returns
+    /// only when every writer on the pipe closes — so a shell that never exited
+    /// never reached the timeout meant to catch it, and neither did a shell that
+    /// exited while a background job it started kept stdout open. Same reasoning
+    /// as the child's stderr drain below, and R2's read loop.
+    ///
+    /// It was the third copy of that loop in this file when `languages` wanted a
+    /// fourth. One copy, two callers: the alternative is a bound that gets fixed
+    /// in one place and left wrong in another, which is the shape of R23, R29
+    /// and C20.
+    static func captureBounded(_ executable: String, _ arguments: [String],
+                               seconds: Double = 3) -> String? {
         let p = Process()
-        p.executableURL = URL(fileURLWithPath: shell)
-        p.arguments = ["-lc", "command -v \(name)"]
+        p.executableURL = URL(fileURLWithPath: executable)
+        p.arguments = arguments
         let pipe = Pipe()
         p.standardOutput = pipe
         p.standardError = FileHandle.nullDevice
         do { try p.run() } catch { return nil }
 
-        // Bounded, because this runs on the main thread — from `start()` and
-        // from the Settings panel's body. A login shell that blocks (a slow
-        // network mount in a profile, an interactive prompt, a wedged NFS home)
-        // froze the whole app with no way out. Three seconds is far longer than
-        // the ~85 ms this normally takes.
-        //
-        // The bound has to cover the *read* (U18). It used to be a
-        // `readDataToEndOfFile()` placed before `wait(for:upTo:)`, and that
-        // returns only when every writer on the pipe closes — so a shell that
-        // never exited never reached the timeout meant to catch it, and neither
-        // did a shell that exited while a background job it started kept stdout
-        // open. Same reasoning as the child's stderr drain below, and R2's read
-        // loop; this is the third place in this file to need it.
         let fd = pipe.fileHandleForReading.fileDescriptor
         _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK)
         var data = Data()
@@ -198,7 +220,7 @@ enum Runner {
         // re-probing. Backward extends the bound that exists to keep the main
         // thread responsive. This function reached for `Date()` while the file
         // it lives in already documented why not (R30).
-        let deadline = DispatchTime.now() + 3
+        let deadline = DispatchTime.now() + seconds
         var sawEOF = false
         while true {
             let remaining = secondsUntil(deadline)
@@ -219,15 +241,63 @@ enum Runner {
             stop(p)
             return nil
         }
-        if !wait(for: p, upTo: 3) {
+        if !wait(for: p, upTo: seconds) {
             stop(p)
             return nil
         }
         guard p.terminationStatus == 0 else { return nil }
-        let path = String(decoding: data, as: UTF8.self)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !path.isEmpty, isRunnable(path) else { return nil }
-        return path
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    /// The recognition languages this Mac actually supports, in the order
+    /// `mac-ocr` lists them — which is Vision's own priority order.
+    ///
+    /// The app has never called this subcommand, so `-l` took BCP-47 codes typed
+    /// from memory. The cost of getting one wrong is not what FEATURES.md
+    /// assumed. Measured: `mac-ocr` exits **64** with
+    /// `Unsupported recognition language: xx-XX`, so a wrong code does not
+    /// silently do nothing — it fails **every file in the batch**, one after
+    /// another, and the run produces no output at all.
+    ///
+    /// **Fast recognition supports far fewer**, which is the sharp edge here:
+    /// 6 languages against 30 on macOS 26.6, so ticking "Fast" with `ja-JP`,
+    /// `ru-RU`, `zh-Hans` or any of twenty-four others set turns a working
+    /// configuration into a batch where nothing succeeds. Nothing in the app
+    /// said so.
+    ///
+    /// Cached per recognizer: the answer depends only on the macOS version and
+    /// the binary, neither of which changes while the app runs. `forgetToolPaths`
+    /// clears it, because pointing Settings at a different binary can change it.
+    static func availableLanguages(fast: Bool) -> [String] {
+        cacheLock.lock()
+        if let cached = languageLists[fast] { cacheLock.unlock(); return cached }
+        cacheLock.unlock()
+
+        var found: [String] = []
+        if let binary = resolveBinary(),
+           let out = captureBounded(binary, fast ? ["languages", "--fast"] : ["languages"]) {
+            found = out.split(whereSeparator: \.isNewline)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+        }
+        cacheLock.lock()
+        languageLists[fast] = found
+        cacheLock.unlock()
+        return found
+    }
+
+    private static var languageLists: [Bool: [String]] = [:]
+
+    /// The codes in `list` this Mac will refuse, given the recognizer in use.
+    ///
+    /// Empty when the language list could not be read at all — an empty answer
+    /// there means "we do not know", and reporting every code as unsupported
+    /// because the probe failed would be worse than saying nothing.
+    static func unsupportedLanguages(in list: String, fast: Bool) -> [String] {
+        let available = availableLanguages(fast: fast)
+        guard !available.isEmpty else { return [] }
+        let known = Set(available.map { $0.lowercased() })
+        return splitList(list).filter { !known.contains($0.lowercased()) }
     }
 
     // MARK: - Building the command

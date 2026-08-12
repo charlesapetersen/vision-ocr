@@ -152,6 +152,50 @@ struct SettingsView: View {
                 TextField("blank = automatic", text: $languages)
                     .help("BCP-47 codes in priority order, e.g. en-US, ja-JP. "
                           + "Blank lets Vision decide.")
+                // Populated from `mac-ocr languages`, so it lists what this
+                // macOS actually recognises rather than what someone remembers.
+                Menu("Add") {
+                    let available = Runner.availableLanguages(fast: fast)
+                    if available.isEmpty {
+                        Text("Can't read the language list")
+                    } else {
+                        ForEach(available, id: \.self) { code in
+                            Button(Self.languageLabel(code)) { append(language: code) }
+                                .disabled(Runner.splitList(languages)
+                                            .contains { $0.caseInsensitiveCompare(code)
+                                                         == .orderedSame })
+                        }
+                    }
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .accessibilityLabel("Add a recognition language")
+            }
+            // Not decoration. A code this Mac does not recognise is not ignored:
+            // mac-ocr exits 64 with "Unsupported recognition language", so every
+            // file in the batch fails and the run produces nothing. Ticking Fast
+            // is the common way to arrive here — it supports 6 languages against
+            // the accurate recognizer's 30, so a working setting stops working
+            // with no other sign.
+            if !unsupportedLanguages.isEmpty {
+                Row("", labelWidth) {
+                    Label {
+                        Text(unsupportedLanguages.count == 1
+                             ? "\(unsupportedLanguages[0]) is not available"
+                                + (fast ? " to fast recognition on this Mac." : " on this Mac.")
+                             : "\(unsupportedLanguages.joined(separator: ", ")) are not available"
+                                + (fast ? " to fast recognition on this Mac." : " on this Mac."))
+                            + Text(" Every file would fail. ")
+                            + Text(fast ? "Turn off Fast, or pick from the Add menu."
+                                        : "Pick from the Add menu.")
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                }
             }
 
             Row("Uncertain text", labelWidth) {
@@ -513,6 +557,30 @@ struct SettingsView: View {
     }
 
     // MARK: - Helpers
+
+    /// The codes the current recognizer would refuse. Recomputed with `fast`,
+    /// which is the whole point: the warning has to appear the moment the Fast
+    /// toggle invalidates a language, not on the next run.
+    private var unsupportedLanguages: [String] {
+        Runner.unsupportedLanguages(in: languages, fast: fast)
+    }
+
+    /// `Japanese — ja-JP`. The code stays visible because it is what is stored,
+    /// what the command preview shows and what a bug report will quote.
+    static func languageLabel(_ code: String) -> String {
+        let name = Locale.current.localizedString(forIdentifier: code)
+            ?? Locale.current.localizedString(forLanguageCode: String(code.prefix(2)))
+        guard let name, !name.isEmpty else { return code }
+        return "\(name) — \(code)"
+    }
+
+    /// Appends to the priority list, preserving order and separator style.
+    private func append(language code: String) {
+        let existing = Runner.splitList(languages)
+        guard !existing.contains(where: { $0.caseInsensitiveCompare(code) == .orderedSame })
+        else { return }
+        languages = (existing + [code]).joined(separator: ", ")
+    }
 
     private func chooseBinary() {
         let panel = NSOpenPanel()

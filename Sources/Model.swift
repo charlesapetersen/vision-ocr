@@ -954,6 +954,27 @@ final class OCRModel: ObservableObject {
         // confused.
         runStarted = Date()
         runStartedMonotonic = DispatchTime.now()
+
+        // Said once, up front, because the alternative is finding out 255 times.
+        // An unsupported `-l` code is not ignored: mac-ocr exits 64 with
+        // "Unsupported recognition language" and every file in the batch fails.
+        // The usual way to get here is ticking Fast, which drops the list from
+        // 30 languages to 6. Settings warns at the point of the mistake; this is
+        // for the run that was already configured before anyone read that.
+        let unsupported = Runner.unsupportedLanguages(
+            in: UserDefaults.standard.string(forKey: Prefs.languages) ?? "",
+            fast: UserDefaults.standard.bool(forKey: Prefs.fast))
+        if !unsupported.isEmpty {
+            log.append(LogLine(
+                text: "\(unsupported.joined(separator: ", ")) "
+                    + (unsupported.count == 1 ? "is" : "are")
+                    + " not a recognition language this Mac supports"
+                    + (UserDefaults.standard.bool(forKey: Prefs.fast)
+                       ? " with Fast on" : "")
+                    + " — every file will fail. Settings ▸ Recognition ▸ Languages.",
+                kind: .failure))
+        }
+
         announce(batch.count == 1
                  ? "Started OCR on \(batch[0].lastPathComponent)."
                  : "Started OCR on \(batch.count) files.")

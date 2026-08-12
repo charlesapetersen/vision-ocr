@@ -293,11 +293,43 @@ as an *explicit setting* with a measured default and a clear label, not as a
 default behaviour. Needs the cap to exist inside `flatten` before it can be
 measured honestly (the first attempt to measure it produced a broken instrument).
 
-### Recognition language selection that reflects the machine
-`-l` takes BCP-47 codes typed by hand. mac-ocr's `languages` subcommand lists
-what the installed macOS actually supports, and the app never calls it. A picker
-populated from that list would stop users guessing at codes that silently do
-nothing.
+### Recognition language selection that reflects the machine — SHIPPED
+*(shipped 2026-08-12. Kept because the premise recorded here was wrong, and the
+correction is the reason the feature is worth more than the convenience it was
+filed as.)*
+
+`-l` took BCP-47 codes typed by hand. mac-ocr's `languages` subcommand lists what
+the installed macOS actually supports, and the app never called it. A picker
+populated from that list would stop users guessing at codes that ~~silently do
+nothing~~ **fail the entire batch**.
+
+That strikethrough is the finding. Measured: `mac-ocr` exits **64** with
+`Unsupported recognition language: xx-XX`, per file, so a mistyped code does not
+degrade the run — it produces no output at all, once for every document in it.
+
+And the sharp edge nobody had looked for: **the two recognizers do not support
+the same languages.** On macOS 26.6 the accurate one lists 30 and `--fast`
+lists 6 — a strict subset. So ticking **Fast**, which reads as a
+speed-for-accuracy trade, silently invalidates any of twenty-four languages
+including Japanese, Russian, Chinese, Korean and Arabic, and turns a working
+configuration into a batch where every file fails. Nothing in the app said so,
+and no entry in this register had noticed.
+
+Shipped as three things rather than one, because the picker alone would not have
+caught the Fast case:
+
+- **Settings ▸ Recognition ▸ Languages ▸ Add**, listing what this Mac has, by
+  language name and code, respecting the Fast toggle and greying out codes
+  already in the list.
+- **A warning under the field** naming any code the current recognizer would
+  refuse, and saying what will happen — recomputed with `fast`, so it appears the
+  moment the toggle invalidates a language rather than on the next run.
+- **A line at the top of the run log**, for the batch that was configured before
+  anyone read the warning. It travels into the run report.
+
+An empty language list means the probe failed, and is treated as "we do not
+know" rather than "nothing is supported" — reporting every code as unsupported
+because `mac-ocr` could not be resolved would be worse than saying nothing.
 
 ### A way to see what went wrong, after the fact
 The log is in-memory and dies with the window. For a long batch over archival
