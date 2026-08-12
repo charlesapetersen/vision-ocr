@@ -355,6 +355,12 @@ struct SettingsView: View {
                                 }
                             }
                             .labelsHidden()
+                            // `labelsHidden()` hides the label from VoiceOver as
+                            // well as from the eye, and the row's "Photo detail"
+                            // text is a sibling rather than the control's label.
+                            // Every other picker in this file carries one; this
+                            // was the omission.
+                            .accessibilityLabel("Photo detail")
                             .pickerStyle(.segmented)
                             .help("\(photoDetail.label): \(photoDetail.blurb)\n\n"
                                   + "On a page that has both text and a picture, the two are "

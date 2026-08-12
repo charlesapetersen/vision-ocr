@@ -141,16 +141,30 @@ Photo detail level, cross-column hyphen joining, JPEG 2000 for picture pages
       buttons land where they read. Done locally by pressing Tab and reading
       `AXFocusedUIElement`, which needs no VM and no pixel diffing.
 
-- [ ] **What that walk could not settle: whether the controls are named for
-      VoiceOver.** Three different attribute reads gave three different answers —
-      AppleScript's `description` returns the *role* description, `AXDescription`
-      is absent on the toggles, and `AXAttributedDescription` came back while the
-      probe was visibly failing to advance focus. So the question is open, not
-      answered in either direction, and it should not be recorded as either.
-      This is what the VM harness exists for, or a person with VoiceOver actually
-      running for two minutes. Do not trust a scripted read of it: this file
-      already records three instruments that lied about the interface, and this
-      would have been a fourth.
+- [x] **Settled 2026-08-12, and not the way it was framed.** The question was
+      "are the controls named for VoiceOver", and it had defeated three runtime
+      attribute reads. It is answerable from the source, which is not a scripted
+      read of the interface: a control either carries a name or it does not, and
+      only two constructs leave one without — `labelsHidden()`, which hides the
+      label from VoiceOver as well as from the eye, and a `Button` whose label is
+      a bare `Image(systemName:)`, from which SwiftUI derives nothing.
+
+      **One control was unnamed: the Photo detail picker.** Every other picker in
+      `SettingsView` carries a label; that one was an omission, not a decision.
+      Fixed, with a check that scans both view files and requires every control
+      of those two shapes to carry a name.
+
+      **A second "finding" was mine, not the code's.** The per-file remove button
+      was reported unnamed and was not — its `.accessibilityLabel` sits four
+      lines below the ten-line window that was read, after `.disabled` and
+      `.opacity`. That is the fourth instrument to mislead about this interface
+      and the first one that was simply me not reading far enough. The scanner
+      that replaced it attributes each modifier chain to its own control, which
+      is what the ten-line window failed to do.
+
+      **What this does not establish is how any of it sounds.** It establishes
+      that no control is anonymous, which is the part that was in doubt. Hearing
+      it still wants a person or the VM.
 
 - [ ] **The tab-order walk is still by hand.** `Tools/vm-gui-check.sh` covers
       U13, U15 and U17 — nine checks, one command. The tab order is not in it:

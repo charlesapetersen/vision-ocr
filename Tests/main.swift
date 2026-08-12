@@ -2812,6 +2812,97 @@ do {
     resetPrefs()
 }
 
+print("\nevery control VoiceOver cannot name from its own label has one")
+
+do {
+    // The question "are the controls named for VoiceOver" sat open from
+    // 2026-08-09, and three different runtime attribute reads gave three
+    // different answers — AppleScript's `description` returns the *role*,
+    // `AXDescription` is absent on toggles, and `AXAttributedDescription` came
+    // back while the probe was visibly failing to advance focus. TODO.md's
+    // conclusion was to distrust a scripted read of the interface.
+    //
+    // The source is not a scripted read of the interface. A control either
+    // carries a name or it does not, and two constructs are known to leave one
+    // without: `labelsHidden()`, which hides the label from VoiceOver as well as
+    // from the eye, and a `Button` whose label is a bare `Image(systemName:)`,
+    // from which SwiftUI derives nothing. Both are found by reading the file.
+    //
+    // What this does NOT establish is how any of it *sounds*. It establishes
+    // that no control is anonymous, which is the part that was in doubt.
+    // Each control owns the lines from where it is introduced to where the next
+    // one is, and its modifiers are looked for only in there. A fixed window
+    // either way does not work: the first version used plus or minus eight
+    // lines, and in a stack of two pickers three lines apart the unlabelled one
+    // saw its neighbour's `.accessibilityLabel` and was scored as named. The
+    // self-test below caught that; on the real files it would have been a
+    // silently clean result.
+    func controlsMissingNames(_ path: String) -> (missing: [String], labelled: Int) {
+        let source = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
+        let lines = source.components(separatedBy: "\n")
+        let starters = ["Picker(", "Toggle(", "Button(", "Button {", "Slider(",
+                        "Stepper(", "TextField(", "Menu(", "SecureField("]
+        var starts: [Int] = []
+        for (i, line) in lines.enumerated() where starters.contains(where: line.contains) {
+            starts.append(i)
+        }
+        var missing: [String] = []
+        var labelled = 0
+        for (n, start) in starts.enumerated() {
+            let end = n + 1 < starts.count ? starts[n + 1] : lines.count
+            let chunk = Array(lines[start..<end])
+            let text = chunk.joined(separator: "\n")
+            // The two constructs that leave a control with no name of its own.
+            // `Label("Settings", systemImage:)` names itself and is not one of
+            // them — but the test for it has to ignore `.accessibilityLabel(`,
+            // which also contains "Label(", or every *correctly named* icon
+            // button is excluded from the scan and the result looks clean
+            // because nothing was examined. The "has controls of this shape"
+            // check below is what caught that.
+            let withoutA11y = text.replacingOccurrences(of: ".accessibilityLabel(",
+                                                        with: ".␣(")
+            let hidesLabel = text.contains(".labelsHidden()")
+            let iconOnly = text.contains("label:") && text.contains("Image(systemName:")
+                && !withoutA11y.contains("Label(")
+            guard hidesLabel || iconOnly else { continue }
+            if text.contains(".accessibilityLabel(") || text.contains(".accessibilityHidden(true)") {
+                labelled += 1
+            } else {
+                missing.append("\((path as NSString).lastPathComponent):\(start + 1) "
+                               + lines[start].trimmingCharacters(in: .whitespaces))
+            }
+        }
+        return (missing, labelled)
+    }
+
+    // The scanner has to be shown to work before its silence means anything.
+    // A scanner that matched nothing would report a perfectly clean interface.
+    let synthetic = tmp.appendingPathComponent("synthetic-view-\(UUID().uuidString).swift")
+    try? """
+    Picker("", selection: $a) { Text("x") }
+        .labelsHidden()
+        .accessibilityLabel("Named picker")
+    Picker("", selection: $b) { Text("y") }
+        .labelsHidden()
+    """.write(to: synthetic, atomically: true, encoding: .utf8)
+    let probe = controlsMissingNames(synthetic.path)
+    check("the scanner sees a labelled hidden-label control as labelled",
+          probe.labelled == 1, "\(probe.labelled)")
+    check("…and an unlabelled one as missing",
+          probe.missing.count == 1, probe.missing.joined(separator: " | "))
+    try? FileManager.default.removeItem(at: synthetic)
+
+    for file in ["Sources/ContentView.swift", "Sources/SettingsView.swift"] {
+        let r = controlsMissingNames(file)
+        check("\((file as NSString).lastPathComponent) has controls of this shape to check",
+              r.labelled + r.missing.count >= 3,
+              "\(r.labelled + r.missing.count) found")
+        check("…and every one of them is named",
+              r.missing.isEmpty, r.missing.joined(separator: " | "))
+    }
+    resetPrefs()
+}
+
 print("\ntelling a new version from an old one")
 
 do {
