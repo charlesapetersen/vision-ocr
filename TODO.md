@@ -11,31 +11,31 @@ promoted, or it does not and should be deleted.
 
 ---
 
-**The VoiceOver announcements have now been heard** (2026-08-09) and they work —
-the last item that could only be settled by a person at a real session. U16 is
-closed in full, and `BUGS.md` U8 no longer has a remainder.
+## What is actually left, as of 1.10.0
 
-**Worth doing before the next release that touches `Flattener`** (added
-2026-08-10, not started): re-run the 255-document library end to end and diff the
-outcome against 1.7.0's — 255/255, 12.6M characters, 15 colour documents, peak
-3.35 GB. The harness pattern is in `HANDOFF.md`; it takes 23 minutes and is the
-only check that covers what the suite cannot. Nothing else here is code work.
+**One open defect — `BUGS.md` R39**, and it is the next piece of work. It is
+listed in full below. **One question that needs a person** — whether the controls
+are named for VoiceOver. **One feature cycle** — R35's second attempt. Everything
+else in this file is closed, and the closed items are kept with their reasoning
+rather than deleted.
 
-**This file is otherwise empty of code work.** The 1.0 punchlist is closed (BUGS.md C16,
-R21, R22, T3, H1, U13–U16), and the three interface questions that could only be
-answered by a running app have been answered — in a headless VM, off-screen. They
-passed, and the run found U17, which was worse than any of them.
+**Superseded, and worth saying so rather than quietly dropping.** This file used
+to open with "re-run the 255-document library and diff against 1.7.0's figures".
+That set cannot be reconstructed (Zotero holds 16,079 PDFs) and the baseline is
+now the 232-document `testdocs` run through `Tools/score-gate.swift`, recorded in
+`HANDOFF.md` with both columns. It also used to say the file was "empty of code
+work", which R39 makes false.
 
-## Out of the full-corpus gate run (2026-08-12)
+**The VoiceOver announcements have been heard** (2026-08-09) and they work — U16
+is closed in full and `BUGS.md` U8 has no remainder. That is *announcements*;
+whether the individual controls carry names is the separate open question below.
+
+## Out of the full-corpus gate run (2026-08-12) — all closed
 
 The gate ran: **232 documents, 232 succeeded, 0 failed, 232 outputs**, 34.2M
 characters, 23 documents carrying colour, **1,198 MB in → 1,039 MB out**, 78
 minutes at concurrency 6. Nothing dropped, nothing failed — which is what the
-gate exists to establish.
-
-It also surfaced work. **None of the following is done.** The fix in the first
-item was written, validated against the corpus and then reverted deliberately,
-so what is below is a specification rather than a diff.
+gate exists to establish. It also surfaced work, and that work is now done:
 
 - [x] **R38 — done 2026-08-12.** `pictureInkMinimumTone` (0.03) gates the ink
       branch; `BUGS.md` R38 is `FIXED` and carries the evidence. The

@@ -436,15 +436,30 @@ An empty language list means the probe failed, and is treated as "we do not
 know" rather than "nothing is supported" — reporting every code as unsupported
 because `mac-ocr` could not be resolved would be worse than saying nothing.
 
-### A way to see what went wrong, after the fact
+### A way to see what went wrong, after the fact — SHIPPED in 1.10.0
 The log is in-memory and dies with the window. For a long batch over archival
 material, a written run report — inputs, outputs, per-file outcome, the settings
 used — is the difference between "something failed last night" and knowing which
 document and why. Small to build, and it makes every future bug report better.
 
-### Retry the failures from a finished batch
+Shipped as `~/Library/Logs/VisionOCR/Run <stamp>.txt`, on by default, with a
+Show Reports button under **Settings ▸ Behaviour**. Two things worth keeping from
+building it: the report is the log *plus* the context the log lacks rather than a
+second rendering of the same facts, because a second view that derives the same
+state a second way is how U25 happened; and the settings it reports are
+enumerated against `Prefs.Snapshot` with a `Mirror`, so a setting added to the
+app and forgotten here fails the checks instead of quietly making every later
+report wrong about how its documents were made.
+
+### Retry the failures from a finished batch — SHIPPED in 1.10.0
 A 78-document run where four files failed currently means re-dropping four files
 by hand. The model already knows which they were.
+
+Shipped as **Retry N Failed** in the results pane. It narrows the list to the
+failures first so the window shows what is about to happen, takes their order
+from `files` rather than from the `outcomes` dictionary, and goes through
+`start()` so the C17 digital-text warning still applies. It is the seventh row in
+the states-by-doors table.
 
 ## Plausible, with real caveats
 
@@ -512,11 +527,18 @@ for a reason that does not hold, and the two measurements above are what a next
 attempt should start from rather than repeat.
 
 
-### Batch presets
+### Batch presets — SHIPPED
 "Newspaper", "typescript", "photograph" as named bundles of the routing and
 recognition settings. Cheap to build, but it should follow evidence: the corpus
 already shows per-era differences, and presets ought to encode measured settings
 rather than guesses.
+
+Shipped as `Prefs.Preset` — Newspaper, Typescript, Photographs, Book scan — and
+the condition above is what the implementation is built around: every value cites
+where it came from, and **where nothing has been measured the preset leaves the
+setting alone** rather than inventing a number to look complete. A preset writes
+into the ordinary settings and keeps no "currently using preset X" state of its
+own, because a setting that only looks live is what `ocrAllPages` turned into.
 
 ## Parked, with the reason
 
