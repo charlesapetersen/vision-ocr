@@ -12,6 +12,26 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.10.1 — 2026-08-12
+
+**A very large sheet could fail instead of being read.** Vision refuses to render
+a page above 200 megapixels, so this app works out the highest resolution each
+document can be recognised at and asks for that instead of letting the whole file
+fail. On Automatic that safeguard could not do its job: it was comparing against
+the wrong number, and a page whose safe limit landed between 300 DPI and its own
+resolution was handed over unprotected. A 20 × 30 inch sheet scanned at 600 DPI
+came back as an error rather than as text. Now fixed (BUGS.md R39).
+
+Nothing else changes. No document in the 232-item test library is affected — the
+safeguard only speaks up for sheets far larger than a book page — so the output
+of every file this app has processed is exactly as it was.
+
+**And a correction to 1.10.0's release note**, which suggested setting Page DPI
+to 300 for very high-resolution scans. Measured properly afterwards, over 52
+documents and 4,140 pages: **Automatic recovers more text than any fixed value**,
+and 300 makes more than half of those documents worse. The note is struck through
+below. Leave Page DPI on Automatic.
+
 ## 1.10.0 — 2026-08-12
 
 **Files that used to come out bigger now come out smaller.** Some scans grew when
@@ -24,14 +44,20 @@ several read more crisply than before.
 **One honest caveat, found straight after release and written up as BUGS.md
 R39.** Across the whole library the recognised text changed by −0.05%, and most
 documents gained. But one book lost 2.7% of its text, concentrated on about a
-dozen pages, and the cause is not the change above: on scans rebuilt at 400 DPI
-or more, Vision recovers far less text than it does at 300, and this app's
-Automatic setting leaves the choice of resolution to the recogniser, which picks
-the page's own. The pages that moved to black-and-white crossed that cliff
-sooner than they used to. The cliff was always there and is being fixed
-separately; if you are processing very high-resolution scans and want the old
-behaviour for now, set **Settings ▸ Recognition ▸ Page DPI** to 300 explicitly
-rather than leaving it on Automatic.
+dozen pages, and the cause is not the change above: on some high-resolution
+scans Vision recovers less text than it would at a lower rendering resolution,
+and Automatic leaves that choice to the recogniser. The pages that moved to
+black-and-white met that behaviour more often than they used to.
+
+~~If you are processing very high-resolution scans and want the old behaviour
+for now, set **Settings ▸ Recognition ▸ Page DPI** to 300 explicitly rather than
+leaving it on Automatic.~~ **That advice was withdrawn in 1.10.1 and it was
+wrong on average.** Measured afterwards over 52 documents and 4,140 pages,
+Automatic recovers *more* text than any fixed value — 300 costs 0.17% overall
+and makes 26 of 52 documents worse, and the gap is widest on exactly the
+high-resolution scans the advice was aimed at. Setting 300 helps a particular
+document here and there and hurts more of them than it helps; leave it on
+Automatic unless you have measured your own material.
 
 The cause was a page of dense small type being mistaken for a photograph. The app
 decides per page whether to store it as sharp black-and-white or as a photographic

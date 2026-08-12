@@ -185,8 +185,8 @@ Two things the second pass learned the hard way, both worth carrying forward:
 
 Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT`, and `TODO.md` holds
 no code work — only things that need a person in front of a running app.
-`FEATURES.md` is ideas. The suite is at **758 checks**, `main` is pushed, and
-**1.10.0** is tagged and released with a DMG.
+`FEATURES.md` is ideas. The suite is at **765 checks**, `main` is pushed, and
+**1.10.1** is tagged and released with a DMG.
 
 **1.10.0 closed the queue agreed on 2026-08-12.** Four items shipped — R38, the
 written run report, the language picker, retry-the-failures — and three were
@@ -195,6 +195,16 @@ settled by measurement rather than by code: the picture-page DPI cap
 governs the other 320), annotations (**not shipped**, but the recorded blocker
 was disproved and the real one found), and the full-corpus gate (**run**, twice).
 Only item 8, R35's second attempt, is left, and it was always its own cycle.
+
+**1.10.1 closed R39, and the way it closed is the point.** The entry proposed
+sending an explicit recognition DPI instead of letting mac-ocr choose. Measured
+over 52 documents and 4,140 pages, that is *worse at every value tried* — and
+worst in the high-resolution band where it was predicted to win. The real defect
+was underneath: the DPI ceiling could not bind on Automatic because it was being
+compared against a constant that the code's own comment wrongly described as the
+engine's default. **Two features were also declined on measurement in the same
+session** — the picture-page DPI cap and deskew — and in both cases the argument
+for building them was sound and the measurement said no.
 
 **What the 2026-08-12 session should have taught the next one.** Six separate
 times, a measurement was wrong and the wrong conclusion was nearly recorded as
