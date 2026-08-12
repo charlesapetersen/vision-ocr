@@ -160,11 +160,15 @@ entirely. The things most likely to be worth changing:
 
 | | |
 |---|---|
-| **Languages** | Tell it what language the document is in — it helps a lot |
-| **Fast mode** | About 2.5× quicker, slightly less accurate. Good for a rough pass |
+| **Languages** | Tell it what language the document is in — it helps a lot. Use **Add** to pick from what your Mac supports; a code it doesn't recognise fails every file |
+| **Fast mode** | About 2.5× quicker, slightly less accurate. Good for a rough pass — but it supports far fewer languages, and Settings will say so if that affects yours |
 | **Files at once** | Lower this if OCR is making the rest of your Mac sluggish |
 | **Uncertain text** | Leave it on "keep everything" unless you know why you want less. Raising it deletes words without saying where |
 | **Rebuild as** | Automatic handles a mixed book on its own — plain pages come back small, photographs stay photographs, and colour stays colour. The other two are for forcing one treatment on everything |
+| **Write a report** | On by default. Each finished batch leaves a text file in `~/Library/Logs/VisionOCR` saying what happened to every document, so a run that went wrong overnight can still be read the next morning |
+
+If some files fail, the results pane offers **Retry N Failed** — it runs just
+those, without your having to find them again.
 
 ## Something's wrong / I have an idea
 

@@ -12,6 +12,52 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.10.0 — 2026-08-12
+
+**Files that used to come out bigger now come out smaller.** Some scans grew when
+this app processed them — one book went from 16 MB to 156 MB, more than nine
+times its original size, and it was not alone. Across the whole 232-document test
+library the output was 1,039 MB against 1,198 MB going in; it is now **792 MB**.
+Nothing was traded away for that: the pages this affects lose no detail, and
+several of them read more crisply than before.
+
+The cause was a page of dense small type being mistaken for a photograph. The app
+decides per page whether to store it as sharp black-and-white or as a photographic
+image, and one of the three things it looks at is how much ink is on the page. A
+broadsheet of eight-point classifieds, or a book of close-set footnotes, is a
+great deal of ink — so those pages were being given a photographic layer on top of
+the black-and-white one, carrying nothing the sharp version did not already have.
+Heavy ink now has to be corroborated by actual photographic tone before a page
+takes that route (BUGS.md R38). Real pictures are unaffected: they were checked
+page by page at full size, and the two riskiest — a newspaper comic strip and a
+dense title spread — are clean.
+
+**A written record of every batch.** The results pane has always shown what
+happened to each file, and always lost it when the window closed. Vision OCR now
+writes a report for each finished run to `~/Library/Logs/VisionOCR`: every input,
+where its output went, what happened to it, the settings that produced it and how
+long it took. For an overnight run over material that may not be re-scannable,
+that is the difference between "something failed last night" and knowing which
+document and why. On by default, with a **Show Reports** button under
+**Settings ▸ Behaviour**. Your password is never written into it.
+
+**Retry just the files that failed.** A run that leaves four failures out of
+seventy-eight used to mean finding those four and dragging them in again. The
+results pane now offers **Retry N Failed**, which narrows the list to exactly
+those files and runs them. The previous run's record is safe in its report.
+
+**The language list now comes from your Mac.** The Languages field took BCP-47
+codes typed from memory, and a code your Mac does not recognise does not quietly
+do nothing — it fails *every file in the batch*. There is now an **Add** menu
+listing the languages this Mac actually supports, by name, and a warning under
+the field naming any code that will fail before you start the run.
+
+This matters most for one combination nothing warned about: **"Fast" supports far
+fewer languages than the normal recogniser** — six against thirty on macOS 26.6.
+Turning it on with Japanese, Russian, Chinese, Korean, Arabic or twenty others
+selected turned a working setup into a run where nothing succeeded, with no
+indication why. It says so now, the moment you tick the box.
+
 ## 1.9.0 — 2026-08-11
 
 **Words broken across a line can be searched for.** A word split by a line break

@@ -281,17 +281,52 @@ pipeline; a corpus check that no page loses picture detail, judged by eye rather
 than by PSNR; a default for the background downsample; and a decision on the
 background codec, now settled against JPEG 2000 in R36.
 
-### Per-page DPI control for picture pages
+### Per-page DPI control for picture pages — DECLINED
+*(measured 2026-08-12. It would be a second knob for something Photo detail
+already controls, and it would disagree with it on 71% of the pages it appears
+to govern.)*
+
 Photocopies routed to greyscale cost 720–920 KB/page. Fewer pages take that route
 since R33 — cream paper was promoting whole books to the colour path, and the
-corpus went from 24 RGB pages to 18 and from 520 bilevel to 523 — but the figure
-itself still holds for the pages that genuinely land there. Capping their resolution
-would cut that substantially. **Parked deliberately** — the decision recorded in
-`BUGS.md` R13 is that fidelity wins, and a silent downscale is precisely the
-"publishing something plausible" that invariant 1 forbids. It becomes worth doing
-as an *explicit setting* with a measured default and a clear label, not as a
-default behaviour. Needs the cap to exist inside `flatten` before it can be
-measured honestly (the first attempt to measure it produced a broken instrument).
+corpus went from 24 RGB pages to 18 and from 520 bilevel to 523 — and fewer again
+since R38. Capping their resolution would cut that substantially. **Parked
+deliberately** — the decision recorded in `BUGS.md` R13 is that fidelity wins, and
+a silent downscale is precisely the "publishing something plausible" that
+invariant 1 forbids. It becomes worth doing as an *explicit setting* with a
+measured default and a clear label, not as a default behaviour.
+
+**Measured at `flatten`, over all 232 documents — 452 picture pages against 2,842
+bilevel ones**, re-rendering each picture page at the capped scale and encoding
+at the shipped quality, which is the operation a cap would perform rather than an
+estimate of it:
+
+| | picture-page bytes | saved |
+|---|---|---|
+| uncapped | 274.9 MB | — |
+| 300 DPI | 240.5 MB | 12.5% |
+| 200 DPI | 179.8 MB | 34.6% |
+| 150 DPI | 144.4 MB | 47.5% |
+
+**And that table is the wrong number, for the reason this register keeps
+recording.** It measures the stage where `flatten` emits a JPEG — but MRC
+layering runs *afterwards*, re-renders the page at full resolution, and replaces
+that JPEG whenever the three layers come out smaller. Counted in the gate's own
+output: **320 of the 449 picture pages in the finished corpus are MRC pages**,
+across 49 documents. Only **129** are still the single JPEG a `flatten` cap would
+govern.
+
+So a cap in `flatten` would deliver roughly a quarter of the table above, and on
+the other 71% of picture pages the resolution is already set by **Photo detail**,
+which downsamples the MRC background by 2x or 3x. Two settings, presented as
+independent, controlling the same property on overlapping and unstated subsets of
+pages — that is a worse interface than the one knob that exists, whatever it
+saves.
+
+**If picture pages should be smaller, that belongs in Photo detail**, as a
+further level or a wider range, measured on the final bytes rather than on
+`flatten`'s intermediate. R34, R35 and R36 were each declined for measuring a
+stage the pipeline goes on to override; this is the fourth, and the first one
+caught before the code was written rather than after.
 
 ### Recognition language selection that reflects the machine — SHIPPED
 *(shipped 2026-08-12. Kept because the premise recorded here was wrong, and the

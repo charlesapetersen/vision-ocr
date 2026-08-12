@@ -79,38 +79,39 @@ Agreed with the user at the end of the 2026-08-12 session. Items 1–2 are gates
 the next release; 3–7 are the feature backlog promoted out of FEATURES.md; 8 is
 its own cycle.
 
-1. [ ] **Finish the full-corpus gate.** A 232-document run through
-       `OCRModel.makeSearchablePDF` was started and did not finish before the
-       session ended; the harness is `scratchpad/big/main.swift`, rebuilt with
-       the usual `Tools/` pattern, and it prints succeeded/failed, characters,
-       colour documents and bytes.
-       **It is 232 documents from `testdocs`, not the 255-document library set
-       the 1.7.0 figures come from** — that set is not reconstructable from the
-       repo (Zotero holds 16,079 PDFs), so the numbers are comparable in kind
-       and not directly diffable. Either accept that and record a new baseline,
-       or reconstruct the 255 from `testdocs/manifest.tsv` and
-       `Tools/sample-zotero.py` first. This is the gate 1.8.0 and 1.9.0 both
-       shipped past.
+1. [x] **The full-corpus gate ran, twice** — once to establish the baseline
+       (2026-08-12, before R38) and once against this release. The harness is
+       `Tools/score-gate.swift`. Second run: **232 documents, 232 succeeded,
+       0 failed, 232 outputs, 34.15M characters, 23 colour, 1,198 MB in →
+       792 MB out (0.66x), 75 minutes.** Recorded in `HANDOFF.md`.
 
 2. [ ] **Settle whether the controls are named for VoiceOver**, then review and
        release. See the open item below — use the Tart VM (`archive-gui-runner`,
        present and stopped) and `Tools/vm-gui-check.sh`, not a scripted
        accessibility read from the host.
 
-3. [ ] **Per-page DPI control for picture pages.** FEATURES.md has the entry and
-       BUGS.md R13 the constraint: it becomes worth doing as an *explicit
-       setting* with a measured default and a clear label, never as a default
-       behaviour.
+3. [x] **Per-page DPI control for picture pages — declined 2026-08-12**, with
+       the measurement in FEATURES.md. It would govern only 129 of the 449
+       picture pages in the finished corpus; the other 320 are MRC pages whose
+       resolution **Photo detail** already sets. Two settings for one property,
+       disagreeing on 71% of the pages either appears to control. If picture
+       pages should be smaller, that belongs in Photo detail.
 
-4. [ ] **A written run report.** The log is in-memory and dies with the window.
-       Cheapest item here and every later bug report improves because of it.
+4. [x] **A written run report — shipped 2026-08-12.**
+       `~/Library/Logs/VisionOCR`, on by default.
 
-5. [ ] **Recognition language picker** populated from `mac-ocr languages`, which
-       the app never calls, instead of hand-typed BCP-47 codes.
+5. [x] **Recognition language picker — shipped 2026-08-12**, and it found more
+       than a convenience: an unsupported code fails every file in the batch,
+       and Fast supports 6 languages against the accurate recognizer's 30.
 
-6. [ ] **Retry the failures from a finished batch.**
+6. [x] **Retry the failures from a finished batch — shipped 2026-08-12.**
 
-7. [ ] **Preserving annotations.**
+7. [x] **Preserving annotations — investigated 2026-08-12, not shipped.** 21 of
+       232 corpus documents carry a reader's own marks, so the case for it is
+       real; the recorded blocker (coordinate remapping) is not — 0 box
+       mismatches. The actual blocker is that `PDFDocument.write(to:)`
+       re-encodes every JBIG2 stream. FEATURES.md has the numbers and the route
+       a real attempt would take.
 
 8. [ ] **R35, second attempt** — a per-page background factor that works. See
        FEATURES.md for what failed and the three untried signals; the

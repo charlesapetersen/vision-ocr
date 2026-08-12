@@ -58,7 +58,7 @@ out of our way. Revisit only if it stops being either.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 614 checks, ~2-4 minutes (it runs real OCR)
+./run_tests.sh        # 758 checks, ~2-4 minutes (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -185,11 +185,16 @@ Two things the second pass learned the hard way, both worth carrying forward:
 
 Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT`, and `TODO.md` holds
 no code work — only things that need a person in front of a running app.
-`FEATURES.md` is ideas. The suite is at **614 checks**, `main` is pushed, and
-**1.9.0** is tagged and released with a DMG, as is 1.8.0. Four commits sit on
-`main` beyond the 1.9.0 tag — batch presets, two archived features, the tab-order
-walk, and a fix to the measurement tools — none of which has been released. The
-next release should carry them.
+`FEATURES.md` is ideas. The suite is at **758 checks**, `main` is pushed, and
+**1.10.0** is tagged and released with a DMG.
+
+**1.10.0 closed the queue agreed on 2026-08-12.** Four items shipped — R38, the
+written run report, the language picker, retry-the-failures — and three were
+settled by measurement rather than by code: the picture-page DPI cap
+(**declined**: it would govern 129 of 449 picture pages, and Photo detail already
+governs the other 320), annotations (**not shipped**, but the recorded blocker
+was disproved and the real one found), and the full-corpus gate (**run**, twice).
+Only item 8, R35's second attempt, is left, and it was always its own cycle.
 
 **What the 2026-08-12 session should have taught the next one.** Six separate
 times, a measurement was wrong and the wrong conclusion was nearly recorded as
@@ -219,20 +224,47 @@ you expected.
 **1.7.0** is tagged and released with a DMG.
 
 **The last release was verified against the whole library, not just the suite.**
-**The baseline is the 232-document `testdocs` run, as of 2026-08-12.** Produced
-by `Tools/score-gate.swift`, which is the harness to use — see its header for why
-a serial one is worthless:
+**The baseline is the 232-document `testdocs` run.** Produced by
+`Tools/score-gate.swift`, which is the harness to use — see its header for why a
+serial one is worthless:
 
 ```
-232 documents · 232 succeeded · 0 failed · 232 outputs
-34,167,177 characters · 23 documents carrying colour
-1,198 MB in -> 1,039 MB out (1.15x) · 78 minutes at concurrency 6
+                        2026-08-12, pre-R38    2026-08-12, at 1.10.0
+documents                            232                      232
+succeeded / failed                 232/0                    232/0
+outputs                              232                      232
+characters                    34,167,177               34,148,681
+documents carrying colour             23                       23
+1,198 MB in ->                  1,039 MB                   792 MB
+                                 (1.15x)                  (0.66x)
+minutes at concurrency 6              78                       75
 ```
+
+**The output is now smaller than the input, where it used to be larger.** That
+is R38: 247 MB, a quarter of the corpus, was greyscale backgrounds under JBIG2
+stencils that carried nothing the stencil did not already have.
+
+**The 18,496 characters (0.054%) are not a loss of text, and the direction is
+not uniform.** Pages that moved from a grey JPEG to 1-bit are recognised from a
+different rendering, so per-document counts move both ways: measured on the same
+binary before and after, a 1926 broadsheet gained 1,012 characters (+36.5%) and
+a 1950 comic page lost 51 (−1.9%), while documents whose routing did not change
+— Findlay, Ehrenreich — are identical to the character.
 
 Run it before any release that touches `Flattener`, `SearchableWriter` or
 `JBIG2`. It is the only evidence that covers what the suite cannot, and both
 1.8.0 and 1.9.0 shipped without it — the run that finally happened found R38, a
 document inflating 9.45x.
+
+**One thing the gate log shows that is not yet explained.** Several hundred
+`Error (NNNN): Unexpected EOF in JBIG2 stream` lines appear during a run, ~2 per
+affected page. It is **not** introduced by R38 — the same message appears in a
+sampled routing sweep taken before the change was applied — and it does not
+damage the output: `Boltanski_2006`, the most affected document, renders 203 of
+203 pages with ink on them, and rendering both its source and its output
+directly produces no such message. It is emitted somewhere in the pipeline that
+reads a JBIG2-bearing *input*, and it has not been pinned down further. Worth
+knowing before someone spends a session on it believing it is new.
 
 *Do not diff those figures against the 1.7.0 ones below.* They are different
 corpora: 232 `testdocs` documents against 255 from the Zotero library, and that
