@@ -9,6 +9,11 @@
 // builds every candidate from that one buffer, so nothing here can be an
 // artefact of what codec the source happened to use.
 //
+// The stencil here is Sauvola-only. The shipped route confines it to Vision's
+// word boxes, which is both smaller and safer (FEATURES.md); MRC_BLIND=1 keeps
+// the blind version for comparison, and it is what the smeared-photograph
+// measurement came from.
+//
 // What the commercial tools do, for reference — measured from 275 MRC files in a
 // real library, 52 of 60 sampled produced by ABBYY FineReader: they route per
 // page exactly as this app does. Plain text pages go to 1-bit JBIG2 and are not
@@ -29,12 +34,21 @@ import CoreGraphics
 import Foundation
 import PDFKit
 
-// Layer parameters follow internetarchive/archive-pdf-tools, which produced two
-// of the exemplars on hand: Sauvola with a dpi/4 window, background downsampled
-// 3x, foreground 3x, holes filled from their surroundings before downsampling.
-let sauvolaK = 0.34
-let bgDownsample = Int(ProcessInfo.processInfo.environment["MRC_BG"] ?? "3") ?? 3
-let fgDownsample = Int(ProcessInfo.processInfo.environment["MRC_FG"] ?? "3") ?? 3
+// Layer parameters come from `Flattener`, so this measures what the app actually
+// does rather than what it did when the tool was written. They were originally
+// hardcoded at 3 and 3 — following internetarchive/archive-pdf-tools, which
+// produced two of the exemplars on hand — and the shipped values then moved to 2
+// and 4 without the tool following. A tool that silently measures something
+// other than what you are holding is worse than no tool; `mutate.py`'s own
+// docstring says so about itself, and it applies here.
+//
+// MRC_BG and MRC_FG override them, which is how the downsample sweep behind the
+// Photo detail settings was run.
+let sauvolaK = Flattener.sauvolaK
+let bgDownsample = Int(ProcessInfo.processInfo.environment["MRC_BG"] ?? "")
+    ?? Flattener.mrcBackgroundDownsample
+let fgDownsample = Int(ProcessInfo.processInfo.environment["MRC_FG"] ?? "")
+    ?? Flattener.mrcForegroundDownsample
 
 /// Sauvola's local threshold: t(x) = m(x) * (1 + k * (s(x)/128 - 1)).
 ///

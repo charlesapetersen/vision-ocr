@@ -48,7 +48,13 @@ func jpxData(from grey: [UInt8], width: Int, height: Int, quality: Double) -> Da
     return rep.representation(using: .jpeg2000, properties: [.compressionFactor: quality])
 }
 
-let candidates: [Double] = [0.20, 0.30, 0.40, 0.50, 0.60]
+/// Both sweeps R34 quotes, in one run.
+///
+/// It shipped carrying only the second of them, which meant re-running it could
+/// not reproduce the register's own figures — the "88–98% of pages come out
+/// below the shipping fidelity" line comes from the low rates, and the
+/// "1.19x on real background layers" comparison from the high ones.
+let candidates: [Double] = [0.08, 0.10, 0.13, 0.16, 0.20, 0.30, 0.40, 0.50, 0.60]
 
 /// Peak signal-to-noise between the source buffer and a re-decoded encode.
 /// Infinity for an identical buffer, which never happens with a lossy codec but
