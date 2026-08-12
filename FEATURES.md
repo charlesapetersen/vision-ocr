@@ -108,12 +108,32 @@ On real documents it produced nothing worth having:
 | across a column | 2, **both wrong** — `that+that`, `provides+flags` |
 | across a page | 0 |
 
-The precondition data explains it. Instrumenting the candidate test rather than
-the outcome, one Congressional report offered **six** hyphenated line-ends in the
-whole document and **none of them at the foot of a page**. That is not a bug: a
-typesetter avoids breaking a word across a page boundary, so the case the feature
-exists for barely occurs. And joining across a column without real column
-detection — which this does not have — finds the wrong line.
+**The first explanation offered for that was wrong, and the correction matters
+more than the original claim.** The reverting commit said the case barely occurs
+because typesetters avoid breaking a word across a page boundary. That was
+inferred from three documents and 134 pages, and it is false.
+
+Measured properly — 45 documents, 1,225 pages, counting pages whose lowest text
+line ends in a hyphen — **29 pages do, 2.37% of them, spread across 11 of the 45
+documents**. The three documents used for the original test contain **twelve**
+such pages between them (7 of 69, 3 of 31, 2 of 30). The implementation found
+none of the twelve.
+
+So cross-page joining failed because the code was wrong, not because the case is
+rare, and the revert should be read as "not yet working" rather than "not worth
+having". A page in forty is a real rate on long documents, and the words broken
+that way are the same long ones the same-column join exists for.
+
+The cross-column half is a different verdict and the evidence points the other
+way: it did not miss its cases, it admitted two and both were wrong. That is a
+precision problem with no column detection behind it, and more corpus would add
+wrong joins rather than right ones.
+
+Where to start next time: instrument the *candidates*, not the joins. The
+original attempt printed a line only when a join succeeded, so zero output read
+as "no opportunities" when it meant "twelve opportunities, all rejected" — and
+the rejection reason was never printed. Print, for every hyphenated line-end,
+which candidates were considered and which guard turned each one away.
 
 One thing the attempt did establish, and it is worth keeping: `edgeOfColumn` at
 0.18 admitted nothing at all, because the deepest hyphenated line measured sat at
