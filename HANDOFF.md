@@ -196,15 +196,24 @@ governs the other 320), annotations (**not shipped**, but the recorded blocker
 was disproved and the real one found), and the full-corpus gate (**run**, twice).
 Only item 8, R35's second attempt, is left, and it was always its own cycle.
 
+**The 2026-08-12 queue is now closed in full, including item 8.** R35's second
+attempt was measured and refused: still a continuum over 320 layered pages, and
+the page a "safe" threshold would have shrunk hardest is a photomicrograph of an
+integrated circuit that reads as paper because it is bimodal. The prize was
+0.55% of the corpus. **Three features were declined on measurement in this
+session and none on argument** — the picture-page DPI cap, deskew, and R35 —
+which is the pattern worth carrying: each had a sound case, and each was refused
+by a number or by looking at a page.
+
 **1.10.1 closed R39, and the way it closed is the point.** The entry proposed
 sending an explicit recognition DPI instead of letting mac-ocr choose. Measured
 over 52 documents and 4,140 pages, that is *worse at every value tried* — and
 worst in the high-resolution band where it was predicted to win. The real defect
 was underneath: the DPI ceiling could not bind on Automatic because it was being
 compared against a constant that the code's own comment wrongly described as the
-engine's default. **Two features were also declined on measurement in the same
-session** — the picture-page DPI cap and deskew — and in both cases the argument
-for building them was sound and the measurement said no.
+engine's default. The lesson generalises past this entry: of the four things
+attempted after 1.10.0, three were refused by measurement and the one that
+shipped was not the fix that had been written down.
 
 **What the 2026-08-12 session should have taught the next one.** Six separate
 times, a measurement was wrong and the wrong conclusion was nearly recorded as
