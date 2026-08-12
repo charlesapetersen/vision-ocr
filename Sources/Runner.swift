@@ -358,12 +358,26 @@ enum Runner {
     }
 
     /// Recognition options, identical whatever we ask mac-ocr to produce.
-    /// The DPI mac-ocr renders PDF pages at when told nothing. Kept here so the
-    /// ceiling is computed against the same number the engine would have used.
+    /// What to assume the engine will render at when nothing better is known.
+    ///
+    /// **This is not mac-ocr's default, and it was documented as though it
+    /// were.** `mac-ocr ocr --help` says `--pdf-dpi` defaults to *"auto (derived
+    /// from embedded image resolution; falls back to 144)"*. The comment here
+    /// used to read "the DPI mac-ocr renders PDF pages at when told nothing",
+    /// and the ceiling arithmetic below was built on that claim — so on
+    /// Automatic the ceiling could only ever bind when it fell below 300, and a
+    /// sheet needing a ceiling of 565 was handed to an engine about to use 600.
+    /// Measured: a 20x30 inch page declaring 12000x18000 is refused outright,
+    /// "216 megapixels (max 200 MP)" (R39).
+    ///
+    /// It survives as the fallback for a document whose own resolution cannot be
+    /// read — a born-digital file, where the engine uses 144 and no ceiling
+    /// binds anyway.
     static let recogniserDefaultDPI = 300
 
     static func recognitionArguments(_ settings: Prefs.Snapshot = .current(),
-                                     dpiCeiling: Int? = nil) -> [String] {
+                                     dpiCeiling: Int? = nil,
+                                     engineAutoDPI: Int? = nil) -> [String] {
         var args: [String] = []
 
         if settings.fast { args.append("--fast") }
@@ -383,13 +397,26 @@ enum Runner {
         // A ceiling only ever lowers. Raising a deliberately low DPI to meet a
         // limit would be absurd, and obeying a high one the recogniser will
         // refuse costs the whole file's text rather than some of its quality
-        // (U25). Auto mode still omits the flag entirely when nothing forces
-        // it, leaving the engine's own default alone.
-        let requested = settings.pdfDPIAuto ? recogniserDefaultDPI
+        // (U25). Auto mode still omits the flag entirely when nothing forces it,
+        // leaving the engine's own choice alone — and the corpus says that is
+        // the right thing to do: over 52 documents and 4,140 pages, every fixed
+        // value tried was worse than Automatic, including a ceiling (R39).
+        //
+        // **What Automatic is compared against is the engine's own choice, not
+        // 300.** `engineAutoDPI` is the resolution mac-ocr will derive from the
+        // page's images. Comparing against a constant is what left the ceiling
+        // unable to bind above 300 while the engine went to 600 and refused the
+        // page (R39).
+        let requested = settings.pdfDPIAuto ? (engineAutoDPI ?? recogniserDefaultDPI)
                                             : clamp(settings.pdfDPI, 72, 600)
         let effective = min(requested, dpiCeiling ?? requested)
         if !settings.pdfDPIAuto || effective < requested {
-            args += ["--pdf-dpi", String(effective)]
+            // mac-ocr accepts 72-600 and rejects anything outside it, and both
+            // ends are reachable here: `engineAutoDPI` is whatever the scan
+            // happens to be, so a small page at 1200 DPI can put `effective`
+            // above 600 even after the ceiling has lowered it. Clamping down is
+            // always safe — it renders smaller than the ceiling allows.
+            args += ["--pdf-dpi", String(clamp(effective, 72, 600))]
         }
 
         if !settings.password.isEmpty { args += ["--password", settings.password] }
@@ -417,12 +444,15 @@ enum Runner {
     /// progress instead of sitting silent for minutes.
     static func jsonLinesArguments(for file: URL,
                                    settings: Prefs.Snapshot = .current(),
-                                   dpiCeiling: Int? = nil) -> [String] {
+                                   dpiCeiling: Int? = nil,
+                                   engineAutoDPI: Int? = nil) -> [String] {
         // The ceiling goes through `recognitionArguments`, which owns the DPI
         // decision, rather than being appended here — two --pdf-dpi flags whose
         // precedence depends on the engine's argument parser is not something
         // this app should be relying on (U25).
-        [file.path, "--format", "jsonl"] + recognitionArguments(settings, dpiCeiling: dpiCeiling)
+        [file.path, "--format", "jsonl"]
+            + recognitionArguments(settings, dpiCeiling: dpiCeiling,
+                                   engineAutoDPI: engineAutoDPI)
     }
 
     /// Runs mac-ocr and hands back each stdout line as it arrives.

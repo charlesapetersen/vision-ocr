@@ -223,6 +223,30 @@ enum Flattener {
     /// the default fail: a slightly coarser render of one enormous broadsheet is
     /// worth more than no text at all, and it changes nothing for the documents
     /// that were never close.
+    /// The resolution mac-ocr will choose for this document when it is told
+    /// nothing — the highest resolution any page's own largest image implies.
+    ///
+    /// **Not `recogniserDefaultDPI`.** `mac-ocr ocr --help` says `--pdf-dpi`
+    /// defaults to *"auto (derived from embedded image resolution; falls back to
+    /// 144)"*, and this app assumed 300 for years. The difference is not
+    /// academic: the whole point of `recogniserDPICeiling` is to ask for a
+    /// resolution the engine will accept, and comparing the ceiling against 300
+    /// when the engine is about to use 600 leaves the ceiling unable to bind on
+    /// exactly the sheets it was written for (R39).
+    ///
+    /// Nil when no page carries an image at all — a born-digital file, where the
+    /// engine falls back to 144 and no ceiling in practice binds.
+    static func engineAutoDPI(for url: URL, password: String? = nil) -> Int? {
+        guard let doc = open(url, password: password) else { return nil }
+        var highest = 0.0
+        for i in 0..<doc.pageCount {
+            guard let page = doc.page(at: i), let dpi = nativeDPI(of: page),
+                  dpi.isFinite, dpi > 0 else { continue }
+            highest = max(highest, dpi)
+        }
+        return highest > 0 ? safeInt(highest.rounded()) : nil
+    }
+
     static func recogniserDPICeiling(for url: URL, password: String? = nil) -> Int? {
         guard let doc = open(url, password: password) else { return nil }
         var lowest = Int.max

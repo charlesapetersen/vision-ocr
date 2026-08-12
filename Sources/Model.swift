@@ -1427,7 +1427,8 @@ final class OCRModel: ObservableObject {
             // fits when it does not (U25).
             arguments: Runner.jsonLinesArguments(
                 for: visible, settings: settings,
-                dpiCeiling: Flattener.recogniserDPICeiling(for: visible, password: password)),
+                dpiCeiling: Flattener.recogniserDPICeiling(for: visible, password: password),
+                engineAutoDPI: Flattener.engineAutoDPI(for: visible, password: password)),
             onLine: { line in
                 jsonLines.append(line)
                 let done = jsonLines.count

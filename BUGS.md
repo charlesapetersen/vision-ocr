@@ -6,9 +6,9 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**One open: R39**, found after 1.10.0 shipped by attributing R38's character
-delta — recognition is handed a resolution Vision fails at, on Automatic, which
-is the default. R38 itself is `FIXED`. U23 and T8 close the fourth of the four ways this register
+**Nothing open.** R39 — the last one, found after 1.10.0 shipped — is `FIXED`,
+and the fix it originally proposed was measured and refuted before a different,
+real defect was found underneath it. U23 and T8 close the fourth of the four ways this register
 kept producing defects from its own fixes; the other three got controls in the
 same round. The third review's five — R31, R32, T6, T7, H2 — are all
 `FIXED`, and the round added three controls aimed at the *shapes* rather than
@@ -2217,10 +2217,11 @@ unaffected by this change. That was predicted the other way round from
 arithmetic, and the prediction was wrong; a fixture written for a threshold has
 to control the number the threshold reads.
 
-### R39 · Recognition is handed a resolution Vision fails at — OPEN
-*(found 2026-08-12, after 1.10.0 shipped, by attributing R38's character delta)*
+### R39 · The recogniser's DPI ceiling cannot bind on Automatic — FIXED
+*(found 2026-08-12 after 1.10.0 shipped; the fix it proposed was measured and
+refuted, and a different, real defect was found underneath it)*
 
-**`Runner.recogniserDefaultDPI` is 300, and its doc comment says that is "the DPI
+**`Runner.recogniserDefaultDPI` is 300, and its doc comment said that is "the DPI
 mac-ocr renders PDF pages at when told nothing". It is not.** `mac-ocr ocr
 --help`:
 
@@ -2229,49 +2230,72 @@ mac-ocr renders PDF pages at when told nothing". It is not.** `mac-ocr ocr
                       embedded image resolution; falls back to 144)
 ```
 
-So when **Page DPI** is on Automatic — the default — and no ceiling binds,
-`recognitionArguments` omits the flag on purpose, believing the engine will use
-300. The engine instead renders at the page's own resolution, which for an
-archival scan is 400–600 DPI, and **Vision's recognition collapses there.**
+The entry originally recorded this as a recognition-quality defect and proposed
+sending the DPI explicitly. **That proposal was wrong, and the measurement that
+refuted it is the more useful half of this entry.**
 
-Measured on `Boltanski_2006` p88, rebuilt 1-bit at its native 526 DPI and handed
-to the recogniser at a range of resolutions:
+**What was measured.** A whole-document harness — flatten each document exactly
+as the pipeline does, then recognise the rebuilt PDF several times, varying the
+DPI through `Prefs.Snapshot` so it exercises `Runner.recognitionArguments` rather
+than a replica. Over a **stratified sample of 52 documents and 4,140 pages**,
+covering every band of rebuild resolution:
 
-| `--pdf-dpi` | 144 | 200 | 300 | 400 | 526 | auto |
-|---|---|---|---|---|---|---|
-| 1-bit | 3,153 | **4,928** | 3,046 | 923 | 924 | 924 |
-| grey | 730 | 3,214 | **3,291** | 3,217 | 1,296 | — |
+| setting | characters | vs Automatic | documents made worse |
+|---|---|---|---|
+| **Automatic** | **9,211,708** | — | — |
+| 150 | 9,104,413 | −1.16% | 31 |
+| 200 | 9,151,792 | −0.65% | 22 |
+| 250 | 9,132,784 | −0.86% | 31 |
+| 300 | 9,196,138 | −0.17% | 26 |
+| 400 | 9,186,345 | −0.28% | 27 |
 
-An explicit 300 recovers **3.3x** the text that Automatic does on that page, and
-200 recovers 5.3x. The `auto` column is identical to the 526 column, which is
-what confirms where the default lands.
+A *ceiling* — lower only, never raise, which is this codebase's own pattern — was
+evaluated too and is also worse: −0.12% at 300, −0.08% at 400.
 
-**Consequence, and how it was found.** In the finished documents p88 went from
-3,761 characters to 927 across the 1.10.0 change. The page renders clean at 1:1
-both ways — this is not a rendering fault — and the grey route survives to 400
-DPI where the 1-bit route has already collapsed at 400. R38 moved that page from
-grey to 1-bit, so it crossed the cliff. **R38 did not create this; it walked more
-pages into it.** Corpus-wide the release is −18,496 characters (−0.054%), and
-Boltanski alone accounts for −27,393 of that, meaning the other 231 documents net
-*gained* about 8,900.
+**Automatic wins, and it wins hardest exactly where the hypothesis said it would
+lose.** In the `>450 DPI` band, every fixed value is worse than letting the
+engine choose: 150 −1.12%, 200 −0.60%, 250 −0.69%, 300 −0.46%, 400 −0.29%.
+`TROTMAN 1976` at 602 DPI reads 139,699 characters on Automatic and 136,603 at
+an explicit 300. The `Boltanski_2006` page that started this — 3,046 characters
+at 300 against 924 on Automatic — is a genuine tail case and not a rule, and one
+page was never enough to change a default that governs every document.
 
-**What is not established, and must be before anything changes.** Whether always
-sending an explicit DPI is a net win across the corpus. A single-page harness was
-built for it and is **not faithful** — extracting a page and rebuilding it does
-not reproduce the whole-document character counts (p88 grey reads 1,296 extracted
-against 3,761 in the document), because `rebuildDPI` reads the largest embedded
-image and extraction changes it. Any figure from that harness describes a
-different input. The instrument to use is `Tools/score-gate.swift` over the whole
-corpus, twice.
+**The real defect, found while measuring the wrong one.** `recogniserDPICeiling`
+exists because mac-ocr refuses a page over 200 MP while this app rebuilds up to
+400 (U25). On Automatic the flag was only sent when the ceiling fell **below
+300**, because 300 was what the code believed the engine would otherwise use. A
+sheet whose ceiling lands between 300 and its own resolution therefore got no
+flag at all, and the engine rendered at the page's resolution and refused it.
 
-*The fix that is probably right*, and deliberately not applied without that
-evidence: when `pdfDPIAuto` is set, send `--pdf-dpi` explicitly rather than
-omitting it, since the constant the code already computes is the value it
-believes it is getting. That is a one-line change to `recognitionArguments` that
-alters the recognised text of **every document**, which is why it needs a corpus
-run and not a good argument. Correct the doc comment on
-`recogniserDefaultDPI` in the same commit — the ceiling arithmetic is built on a
-claim about the engine that is false.
+Reproduced rather than argued: a 20 x 30 inch page carrying an image declaring
+12,000 x 18,000 has a native 600 DPI and a ceiling of 565, and the app sent no
+flag. mac-ocr:
+
+```
+Error: PDF page at 600 DPI would render to 216 megapixels (max 200 MP).
+```
+
+With the fix it sends `--pdf-dpi 565` and the page renders. **This is the case
+U25 was written for and did not cover** — U25 fixed it for an explicitly chosen
+DPI and left Automatic resting on the false claim about the engine.
+
+**The fix.** `Flattener.engineAutoDPI(for:)` reports the resolution mac-ocr will
+actually derive — the highest any page's largest image implies, nil for a
+born-digital file where the engine falls back to 144. `recognitionArguments`
+compares the ceiling against *that* on Automatic instead of against 300, and
+clamps what it sends into mac-ocr's accepted 72–600, which is newly reachable
+because a small page scanned at 1200 DPI can leave the lowered value above 600.
+
+**Automatic is otherwise untouched, which the corpus requires.** Checked rather
+than assumed: across all 232 documents, **zero** have an engine choice above
+their ceiling, so the flag is sent for none of them and the 1.10.0 gate figures
+still describe the output exactly. No gate re-run was needed, and that is a
+stronger answer than one — it is a statement about every document rather than
+about a total.
+
+`Tools/mutate.py` gained `logic/R39-auto-vs-engine`, which restores the
+comparison against the constant; killed by two checks. The doc comment on
+`recogniserDefaultDPI` now says what the constant is actually for.
 
 ---
 

@@ -2718,7 +2718,10 @@ do {
                   <= Double(Flattener.recogniserPageMegapixelLimit) * 1.0, "\(d)")
     }
     auto.pdfDPIAuto = true
-    check("…while the same document on auto is left at the engine's default",
+    // "Left alone" rather than "left at 300": this fixture carries no image, so
+    // the engine derives nothing and falls back to 144, which no ceiling here
+    // binds. R39 is about the case where it *can* derive something.
+    check("…while the same document on auto is left to the engine's own choice",
           dpiArgument(Runner.jsonLinesArguments(for: poster, settings: auto,
                                                 dpiCeiling: posterCeiling)) == nil,
           dpiArgument(Runner.jsonLinesArguments(for: poster, settings: auto,
@@ -2731,6 +2734,81 @@ do {
           dpiArgument(untouched) == "100", dpiArgument(untouched) ?? "none")
     check("…and a chosen DPI with no ceiling is passed through untouched",
           dpiArgument(Runner.jsonLinesArguments(for: huge, settings: auto)) == "100")
+
+    // MARK: R39 — what Automatic is measured against
+    //
+    // The ceiling could only ever bind on Automatic when it fell below 300,
+    // because the code compared it against a constant it believed was the
+    // engine's default. `mac-ocr ocr --help` says the default is "auto (derived
+    // from embedded image resolution; falls back to 144)". So a sheet needing a
+    // ceiling of 565 was handed to an engine about to render at 600, and the
+    // engine refused the page: "216 megapixels (max 200 MP)" — verified by
+    // running it, not inferred.
+    //
+    // A 20x30 inch page carrying an image that declares 12000x18000 is that
+    // case exactly. `largestImage` reads the declared /Width and /Height, so the
+    // fixture costs a 1-bit buffer rather than 216 megapixels of storage.
+    let sheet = dir.appendingPathComponent("bigsheet.pdf")
+    var sbox = CGRect(x: 0, y: 0, width: 20 * 72, height: 30 * 72)
+    if let c = CGContext(sheet as CFURL, mediaBox: &sbox, nil) {
+        let px = 12_000, py = 18_000, rowBytes = (12_000 + 7) / 8
+        let bits = [UInt8](repeating: 0xFF, count: rowBytes * py)
+        if let provider = CGDataProvider(data: Data(bits) as CFData),
+           let image = CGImage(width: px, height: py, bitsPerComponent: 1, bitsPerPixel: 1,
+                               bytesPerRow: rowBytes, space: CGColorSpaceCreateDeviceGray(),
+                               bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
+                               decode: nil, shouldInterpolate: false, intent: .defaultIntent) {
+            let d = withUnsafeBytes(of: &sbox) { Data($0) } as CFData
+            c.beginPDFPage([kCGPDFContextMediaBox as String: d] as CFDictionary)
+            c.draw(image, in: sbox)
+            c.endPDFPage()
+        }
+        c.closePDF()
+    }
+    let sheetEngine = Flattener.engineAutoDPI(for: sheet)
+    let sheetCeiling = Flattener.recogniserDPICeiling(for: sheet)
+    check("the big-sheet fixture declares its own resolution, or nothing below proves anything",
+          sheetEngine == 600, String(describing: sheetEngine))
+    check("…and it needs a ceiling that is nonetheless well above 300",
+          (sheetCeiling ?? 0) > 300 && (sheetCeiling ?? 0) < 600,
+          String(describing: sheetCeiling))
+    // The bug, and the check that could not fail before the fix: with the old
+    // code `requested` was 300, the ceiling of 565 did not lower it, and no flag
+    // was sent at all.
+    auto.pdfDPIAuto = true
+    let sheetArgs = Runner.jsonLinesArguments(for: sheet, settings: auto,
+                                              dpiCeiling: sheetCeiling,
+                                              engineAutoDPI: sheetEngine)
+    check("on Automatic, a ceiling below the engine's own choice is sent",
+          dpiArgument(sheetArgs) == sheetCeiling.map(String.init),
+          dpiArgument(sheetArgs) ?? "no flag")
+    if let d = Int(dpiArgument(sheetArgs) ?? "") {
+        check("…and what is sent really fits the recogniser's limit",
+              Double(d * d) * 20 * 30 / 1_000_000
+                  <= Double(Flattener.recogniserPageMegapixelLimit), "\(d) DPI")
+    }
+
+    // The other half, and the one that protects what the corpus established:
+    // Automatic beat every fixed value over 52 documents and 4,140 pages, so a
+    // document the engine can already handle must still be left alone.
+    check("on Automatic, a ceiling above the engine's own choice sends nothing",
+          dpiArgument(Runner.jsonLinesArguments(for: letter, settings: auto,
+                                                dpiCeiling: 1_400,
+                                                engineAutoDPI: 300)) == nil)
+    check("…and a document with no embedded image to derive from sends nothing either",
+          Flattener.engineAutoDPI(for: poster) == nil
+            && dpiArgument(Runner.jsonLinesArguments(for: poster, settings: auto,
+                                                     dpiCeiling: posterCeiling,
+                                                     engineAutoDPI: nil)) == nil,
+          String(describing: Flattener.engineAutoDPI(for: poster)))
+
+    // mac-ocr rejects anything outside 72–600, and both ends are reachable:
+    // `engineAutoDPI` is whatever the scan happens to be, so a small page at
+    // 1200 DPI puts the lowered value above 600 unless it is clamped.
+    let clampedHigh = Runner.jsonLinesArguments(for: letter, settings: auto,
+                                                dpiCeiling: 800, engineAutoDPI: 1_200)
+    check("a lowered DPI still outside the recogniser's range is clamped into it",
+          dpiArgument(clampedHigh) == "600", dpiArgument(clampedHigh) ?? "no flag")
     resetPrefs()
 }
 

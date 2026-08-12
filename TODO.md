@@ -13,18 +13,17 @@ promoted, or it does not and should be deleted.
 
 ## What is actually left, as of 1.10.0
 
-**One open defect — `BUGS.md` R39**, and it is the next piece of work. It is
-listed in full below. **One question that needs a person** — whether the controls
-are named for VoiceOver. **One feature cycle** — R35's second attempt. Everything
-else in this file is closed, and the closed items are kept with their reasoning
-rather than deleted.
+**Nothing open in `BUGS.md`.** What is left here is **one question that needs a
+person** — whether the controls are named for VoiceOver — and **one feature
+cycle**, R35's second attempt. Everything else is closed, and the closed items
+are kept with their reasoning rather than deleted.
 
 **Superseded, and worth saying so rather than quietly dropping.** This file used
 to open with "re-run the 255-document library and diff against 1.7.0's figures".
 That set cannot be reconstructed (Zotero holds 16,079 PDFs) and the baseline is
 now the 232-document `testdocs` run through `Tools/score-gate.swift`, recorded in
 `HANDOFF.md` with both columns. It also used to say the file was "empty of code
-work", which R39 makes false.
+work", which R39 made false for as long as R39 was open.
 
 **The VoiceOver announcements have been heard** (2026-08-09) and they work — U16
 is closed in full and `BUGS.md` U8 has no remainder. That is *announcements*;
@@ -122,17 +121,17 @@ its own cycle.
 Photo detail level, cross-column hyphen joining, JPEG 2000 for picture pages
 (R34), OpenJPEG for the background layer (R36).
 
-## Out of 1.10.0, found after it shipped
+## Out of 1.10.0, found after it shipped — closed
 
-- [ ] **R39 — recognition is handed a resolution Vision fails at.** On
-      Automatic, which is the default, the app omits `--pdf-dpi` believing
-      mac-ocr defaults to 300; it defaults to the page's own resolution, and
-      recognition collapses above ~300 DPI. Measured on one page: 3,046
-      characters at an explicit 300 against 924 on Automatic. `BUGS.md` R39 has
-      the table and, more importantly, what is **not** established — the
-      single-page harness built for it is unfaithful and must not be used to
-      choose the constant. This needs two full gate runs, and it changes the
-      recognised text of every document, so it is its own release.
+- [x] **R39 — done 2026-08-12.** Not the fix the entry proposed. Sending an
+      explicit DPI was measured over 52 documents and 4,140 pages and is
+      **worse** than Automatic at every value tried, including as a ceiling, and
+      worse most clearly in the high-DPI band where it was predicted to win. The
+      real defect underneath was that the ceiling could not bind on Automatic at
+      all, because it was compared against an assumed engine default of 300;
+      a 20x30 inch sheet at 600 DPI was handed to an engine that refuses it.
+      Fixed, reproduced first, and **zero of 232 corpus documents change**, so
+      the 1.10.0 gate figures still stand.
 
 ## Smaller, and genuinely optional
 
