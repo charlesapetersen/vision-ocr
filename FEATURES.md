@@ -345,11 +345,66 @@ by hand. The model already knows which they were.
 
 
 ### Preserving annotations
+*(investigated 2026-08-12. Not shipped. The reasoning below was wrong in the
+part that mattered, and the real blocker is somewhere else entirely.)*
+
 The document outline now survives (R19). Annotations do not, and were explicitly
-scoped out: links, highlights and form fields are a much larger surface, each
-with its own coordinate space to remap onto rebuilt pages. Worth reconsidering if
-a real document turns up where the annotations matter more than the risk of
+scoped out: links, highlights and form fields are a much larger surface, ~~each
+with its own coordinate space to remap onto rebuilt pages~~. Worth reconsidering
+if a real document turns up where the annotations matter more than the risk of
 misplacing them.
+
+**A real document turned up. Twenty-one of them.** Counted across all 232 corpus
+documents: **117 carry annotations, 4,867 in total.** Most of that is platform
+furniture — 3,991 `Link` annotations, and 96 documents carry nothing else, which
+is what a JSTOR or ProQuest delivery wrapper leaves behind. But **21 documents
+carry a reader's own marks**: 508 highlights, 176 underlines, 125 stamps, 31 ink
+strokes, 16 sticky notes, 3 free text. Those are somebody's scholarship, and
+this app currently discards them without a word.
+
+**The recorded blocker is not real.** Measured on two annotated documents,
+comparing each source page against the page this app produced for it:
+**0 media-box mismatches, 0 rotation mismatches, and 0 pages whose crop box
+differs from the media box.** There is no coordinate space to remap. The rebuild
+already preserves the page box exactly, because `kCGPDFContextMediaBox` and
+`JBIG2.Page.boxSize` were made to (invariant 4). Annotation rectangles can be
+copied verbatim.
+
+**The actual blocker is the writer.** `PDFDocument.write(to:)` re-encodes every
+image stream in the file:
+
+| | JBIG2 streams | bytes |
+|---|---|---|
+| our output | 15 | 839 KB |
+| after PDFKit rewrites it | **0** | **2,260 KB (2.69x)** |
+
+Every JBIG2 stream became Flate. On a second document, 13 JBIG2 streams became
+Flate for 1.39x. So the one-line implementation — open our output with PDFKit,
+copy the annotations across, save — undoes the compression the whole pipeline
+exists for. The text layer and the outline survive it; the images do not.
+
+**What a real attempt looks like**, now that both of those are known:
+
+- The annotations have to be written by something that does not re-serialise the
+  file. That means either extending `JBIG2.assemble`, which already hand-writes
+  the page dictionaries and would grow an `/Annots` array, or a qpdf JSON pass.
+  Either way the appearance streams (`/AP` → form XObjects) have to be copied
+  with their resources and renumbered, which is object-graph work in exactly the
+  code `JBIG2.swift`'s own header warns about.
+- **Copy the markup subset, and report the rest.** Highlight, Underline,
+  StrikeOut, Squiggly, Ink, Text, FreeText, Square and Circle are self-contained
+  and page-local. Link needs destination remapping, Widget needs the AcroForm,
+  and Popup needs its parent. Invariant 1 says an annotation that is dropped must
+  be counted and named in the log, not silently lost — which is what happens
+  today for all of them.
+- `Stamp` did not copy even through PDFKit — 20 of 121 and 11 of 81 were refused,
+  because a stamp is nothing but its appearance stream. It is the case that
+  proves the `/AP` work is not optional.
+
+Still not scheduled: it is a substantial piece of hand-written PDF on documents
+where a misplaced highlight is a misrepresentation. But it is no longer parked
+for a reason that does not hold, and the two measurements above are what a next
+attempt should start from rather than repeat.
 
 
 ### Batch presets
