@@ -133,9 +133,32 @@ something else rather than sold a setting.
 
 ## Likely worth doing
 
-### A per-page background factor that actually works — second attempt
-*(first attempt built and reverted 2026-08-11, BUGS.md R35; kept here because the
-prize is real and the reason it failed is specific)*
+### A per-page background factor — DECLINED after a second attempt
+*(first attempt built and reverted 2026-08-11; second attempt measured and
+refused 2026-08-12. BUGS.md R35 has both. Kept because the reason it failed the
+second time is different from the first and worth not rediscovering.)*
+
+**The second attempt is refused, and the prize was the smaller half of why.**
+Re-measured on 320 layered pages after R38 — which removed the dense-text pages
+that produced the first attempt's continuum — the detector is *still* a
+continuum, largest gap 0.027 across the whole range. There is a low cluster, and
+a threshold at 0.10 looked safe with Findlay's photographs nearly three times
+above it.
+
+Then the pages it fires on were read, as this entry has always said to do. The
+largest single saving is a **photomicrograph of an integrated circuit** scoring
+0.0932 — under the threshold — and 6x visibly softens its traces and destroys the
+caption under it. Continuous tone is the wrong axis: a bimodal picture, which is
+what line art, technical diagrams and engravings are, has almost none and reads
+as paper.
+
+And the prize is about **0.55% of the corpus** at a safe threshold, bounded by
+roughly 1% even for a perfect detector, because every MRC background together is
+only 5.0% of the output. The 1.74x below was the prize for destroying pictures.
+
+A third attempt would need a signal for *detail worth preserving* — high-frequency
+energy in the filled background — rather than for tone. The text below is the
+first attempt's reasoning, kept intact.
 
 A layered page whose background is paper rather than a picture can be shrunk far
 harder for nothing — Photo detail is a promise about *photographs*, and such a

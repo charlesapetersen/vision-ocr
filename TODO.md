@@ -112,10 +112,13 @@ its own cycle.
        re-encodes every JBIG2 stream. FEATURES.md has the numbers and the route
        a real attempt would take.
 
-8. [ ] **R35, second attempt** — a per-page background factor that works. See
-       FEATURES.md for what failed and the three untried signals; the
-       `Flattener.largestImage` one sidesteps the failure mode rather than
-       tuning around it. Review and release separately if it lands.
+8. [x] **R35, second attempt — measured and refused 2026-08-12.** Re-measured
+       after R38 on 320 layered pages (25 the first time): still a continuum,
+       largest gap 0.027. A threshold at 0.10 looked safe until the pages it
+       fires on were read — the largest saving is a photomicrograph of an
+       integrated circuit scoring 0.0932, and 6x degrades it visibly. Tone is
+       structurally blind to bimodal pictures. The prize is 0.55% of the corpus,
+       bounded near 1% even for a perfect detector. `BUGS.md` R35 has it.
 
 **Declined this session, with reasons recorded:** PDF/A, Direct Vision, a 6x
 Photo detail level, cross-column hyphen joining, JPEG 2000 for picture pages

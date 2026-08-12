@@ -1979,7 +1979,59 @@ The abandoned implementation is kept as
 and green at 626 checks, with red→green proven for every check and four mutants
 killed, before the corpus said not to ship it.
 
-### R35 · Per-page background downsample — WONTFIX *(decided: no threshold exists; worth another attempt with a better signal — see FEATURES.md)*
+### R35 · Per-page background downsample — WONTFIX *(twice: no threshold exists, and the signal is structurally blind to a whole class of picture)*
+
+**Second attempt, 2026-08-12 — refuted again, for a new and better reason.** The
+first verdict was reached before R38, which has since moved 66 of the corpus's
+98 ink-only picture pages off the picture route. Those are dense-text pages, and
+they are exactly where "unboxed text counts as background tone" came from — so
+the continuum might have become a gap. Nobody had looked, and looking was cheap.
+
+*It is still a continuum.* Re-measured on the pipeline's own boxes over **320
+layered pages** (against 25 the first time), the detector runs smoothly from
+0.000 to 1.000 with a largest gap anywhere of **0.027**. R38 did not separate the
+populations.
+
+*But there is now a low cluster*, and a threshold at 0.10 fires on 52 of the 320
+with what looks like a wide margin — Findlay's photographs score 0.2865–0.5691,
+nearly three times higher. That is where the first attempt would have stopped and
+shipped.
+
+**Reading which pages it fires on kills it.** The page with the single largest
+saving — `_1963_Fairchild Camera` p4, 301 KB — is a **photomicrograph of an
+integrated circuit**, and it scores **0.0932**: below the threshold, and shrunk
+6x it is visibly degraded, the fine traces softening together and the caption
+beneath it destroyed.
+
+**The reason is structural, and it is not a threshold that can be tuned.** The
+detector measures *continuous tone*, and a photomicrograph of a circuit is
+essentially bimodal — black traces on white — so it has almost none, and reads as
+indistinguishable from paper. Line art, technical diagrams, engravings and
+high-contrast plates all sit in that class. This is R38's own finding seen from
+the other side: low tone means a page is genuinely bimodal, which is exactly when
+1-bit is lossless **for text** — and exactly when a *picture* is still full of
+detail worth keeping. The two conclusions share a premise and diverge on what the
+ink means.
+
+**And the prize does not justify pushing further.** Measured properly this time:
+every MRC background in the corpus together is **39.4 MB of a 792 MB output, 5.0%**.
+A threshold at 0.10 saves 4.35 MB — **0.55% of the corpus** — and 0.05 saves
+0.40%. Even a *perfect* detector is bounded by about 1%, because the safe
+population is a fraction of a layer that is itself a twentieth of the output.
+The first attempt's 1.74x was the prize for destroying pictures; this is the
+prize for not destroying them, and it is not worth a rule that can misrepresent
+an archival document.
+
+**What a third attempt would need**, if the prize ever grows: a signal for
+*detail worth preserving* rather than for continuous tone — high-frequency energy
+in the filled background, which a photomicrograph has in abundance and flat paper
+does not. Tone is the wrong axis, and no amount of tuning moves it onto the right
+one.
+
+---
+
+#### The first attempt, 2026-08-11
+
 Built, measured, reverted. The idea: Photo detail is a promise about
 *photographs*, so a layered page whose background is only paper could be shrunk
 much harder for free, and only pages carrying a picture need honour the setting.
