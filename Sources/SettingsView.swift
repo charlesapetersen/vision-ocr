@@ -235,6 +235,20 @@ struct SettingsView: View {
                     Spacer()
                 }
             case .searchablePDF:
+                // A starting point, not a mode. Applying one writes ordinary
+                // settings, which stay visible and editable below — there is no
+                // "currently using X" state to drift out of sync with them.
+                Row("Start from", labelWidth) {
+                    ForEach(Prefs.Preset.allCases) { preset in
+                        Button(preset.label) { preset.apply() }
+                            .help(preset.blurb + "\n\nSets the options below; "
+                                  + "everything stays editable afterwards. Your "
+                                  + "languages, output folder and file handling "
+                                  + "are not touched.")
+                    }
+                    Spacer()
+                }
+
                 Toggle("Rebuild page images first, discarding any old text layer",
                        isOn: $rebuildImages)
                     .help("mac-ocr adds its text layer on top of any existing one, which "

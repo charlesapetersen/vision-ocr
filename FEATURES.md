@@ -319,11 +319,6 @@ with its own coordinate space to remap onto rebuilt pages. Worth reconsidering i
 a real document turns up where the annotations matter more than the risk of
 misplacing them.
 
-### PDF/A output
-An obvious ask for an archival tool. It would mean embedding an ICC profile,
-fully embedding fonts, and adding XMP metadata — and the text layer's font
-handling would need re-examining, which is the most delicate part of the
-codebase. Only worth it if something downstream actually requires PDF/A.
 
 ### Batch presets
 "Newspaper", "typescript", "photograph" as named bundles of the routing and
@@ -332,6 +327,22 @@ already shows per-era differences, and presets ought to encode measured settings
 rather than guesses.
 
 ## Parked, with the reason
+
+### PDF/A output — ARCHIVED
+An obvious ask for an archival tool. It would mean embedding an ICC profile,
+fully embedding fonts, and adding XMP metadata — and the text layer's font
+handling would need re-examining, which is the most delicate part of the
+codebase. Only worth it if something downstream actually requires PDF/A.
+
+**Archived 2026-08-12. Not doing it.** Nothing downstream requires it, and the
+cost is not the ICC profile or the XMP — it is that full font embedding forces
+the text layer's font handling open, which is the most delicate code here
+(invariant 3's four properties, one of which was found holding by accident).
+That is a lot of exposure for a compliance badge nobody has asked for. The
+output is already self-contained and the text-layer fonts are invisible.
+
+Revisit only if a specific repository refuses a non-PDF/A deposit.
+
 
 ### Direct Vision instead of the mac-ocr subprocess — ARCHIVED
 Measured and written up in `HANDOFF.md`: mac-ocr is one invocation per file, and

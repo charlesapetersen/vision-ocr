@@ -655,6 +655,67 @@ do {
           OCRModel.sizeNote(from: small, to: big))
 }
 
+// MARK: - Batch presets
+
+print("\npresets")
+
+do {
+    resetPrefs()
+    let d = UserDefaults.standard
+
+    // The property that matters: a preset sets what the material implies and
+    // leaves the user's own choices alone. A preset that reset where files are
+    // written, or which languages to recognise, would be a trap.
+    d.set("/Users/someone/Archive", forKey: Prefs.outputFolder)
+    d.set("fr-FR, la", forKey: Prefs.languages)
+    d.set(9, forKey: Prefs.concurrency)
+    d.set("/opt/custom/mac-ocr", forKey: Prefs.binaryPath)
+    for preset in Prefs.Preset.allCases { preset.apply() }
+    check("a preset leaves the output folder alone",
+          d.string(forKey: Prefs.outputFolder) == "/Users/someone/Archive")
+    check("…and the languages", d.string(forKey: Prefs.languages) == "fr-FR, la")
+    check("…and how many files run at once", d.integer(forKey: Prefs.concurrency) == 9)
+    check("…and the recogniser path",
+          d.string(forKey: Prefs.binaryPath) == "/opt/custom/mac-ocr")
+
+    // Every preset has to leave the app in a state it can actually run in.
+    for preset in Prefs.Preset.allCases {
+        resetPrefs(); Prefs.register()
+        preset.apply()
+        let snap = Prefs.Snapshot.current()
+        check("\(preset.label) produces a runnable configuration",
+              Flattener.Mode(rawValue: d.string(forKey: Prefs.rebuildMode) ?? "") != nil
+                && snap.confidence >= 0 && snap.confidence <= 1)
+    }
+
+    // They must actually differ, or they are four buttons doing one thing.
+    resetPrefs(); Prefs.register()
+    Prefs.Preset.photographs.apply()
+    let photoDetail = d.string(forKey: Prefs.photoDetail)
+    Prefs.Preset.newspaper.apply()
+    check("presets differ from one another where the material differs",
+          d.string(forKey: Prefs.photoDetail) != photoDetail,
+          "photographs \(photoDetail ?? "nil") vs newspaper "
+            + "\(d.string(forKey: Prefs.photoDetail) ?? "nil")")
+
+    // Photographs is the one preset that spends bytes on pictures.
+    resetPrefs(); Prefs.register()
+    Prefs.Preset.photographs.apply()
+    check("Photographs keeps picture detail at maximum",
+          d.string(forKey: Prefs.photoDetail) == Prefs.PhotoDetail.maximum.rawValue)
+
+    // keysWritten is the list the first check above relies on; if a preset
+    // writes a key that is not in it, that check silently stops covering it.
+    resetPrefs()
+    let before = Prefs.allKeys.filter { d.object(forKey: $0) != nil }
+    Prefs.Preset.newspaper.apply()
+    let touched = Prefs.allKeys.filter { d.object(forKey: $0) != nil && !before.contains($0) }
+    check("a preset writes only the keys it declares",
+          Set(touched).isSubset(of: Prefs.Preset.keysWritten),
+          Set(touched).subtracting(Prefs.Preset.keysWritten).sorted().joined(separator: ", "))
+    resetPrefs()
+}
+
 // MARK: - Forced re-OCR
 
 // Feeding this app an already-OCR'd PDF must redo the recognition rather than

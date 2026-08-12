@@ -28,6 +28,23 @@ passed, and the run found U17, which was worse than any of them.
 
 ## Smaller, and genuinely optional
 
+- [x] **The tab order was walked on 2026-08-12** and it is sound: 22 stops
+      through the settings sheet in visual order — Recognition, Searchable PDF,
+      Behaviour — no trap, no unreachable control, and the four new preset
+      buttons land where they read. Done locally by pressing Tab and reading
+      `AXFocusedUIElement`, which needs no VM and no pixel diffing.
+
+- [ ] **What that walk could not settle: whether the controls are named for
+      VoiceOver.** Three different attribute reads gave three different answers —
+      AppleScript's `description` returns the *role* description, `AXDescription`
+      is absent on the toggles, and `AXAttributedDescription` came back while the
+      probe was visibly failing to advance focus. So the question is open, not
+      answered in either direction, and it should not be recorded as either.
+      This is what the VM harness exists for, or a person with VoiceOver actually
+      running for two minutes. Do not trust a scripted read of it: this file
+      already records three instruments that lied about the interface, and this
+      would have been a fourth.
+
 - [ ] **The tab-order walk is still by hand.** `Tools/vm-gui-check.sh` covers
       U13, U15 and U17 — nine checks, one command. The tab order is not in it:
       it needs `AppleKeyboardUIMode` set in the guest and reads focus rings out

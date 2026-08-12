@@ -81,6 +81,114 @@ enum Prefs {
         }
     }
 
+    /// A named bundle of the settings that depend on what the material *is*.
+    ///
+    /// The point is not convenience — it is that the right settings differ by
+    /// era and by kind, the corpus already shows how, and encoding that once is
+    /// better than each user rediscovering it. FEATURES.md put the condition
+    /// plainly when this was still an idea: presets should carry *measured*
+    /// settings rather than guesses, so every value below cites where it comes
+    /// from, and where nothing has been measured the preset leaves the setting
+    /// alone rather than inventing one.
+    ///
+    /// A preset is a starting point, not a mode: applying one writes the values
+    /// into the ordinary settings, where they stay visible and editable. There
+    /// is deliberately no "currently using preset X" state to get out of sync
+    /// with the settings it wrote — `ocrAllPages` is what a setting that only
+    /// looks live turns into.
+    enum Preset: String, CaseIterable, Identifiable {
+        case newspaper, typescript, photographs, bookScan
+
+        var id: String { rawValue }
+
+        var label: String {
+            switch self {
+            case .newspaper: return "Newspaper"
+            case .typescript: return "Typescript"
+            case .photographs: return "Photographs"
+            case .bookScan: return "Book scan"
+            }
+        }
+
+        /// What the preset is for, in the user's terms.
+        var blurb: String {
+            switch self {
+            case .newspaper:
+                return "Dense columns on poor paper. Keeps every uncertain word, "
+                     + "because a rough guess at a smudged word is still findable."
+            case .typescript:
+                return "Carbon copies and mimeographs. Aged paper reads as tinted, "
+                     + "so this leans on the layout signals rather than colour."
+            case .photographs:
+                return "Plates and illustrated pages. Keeps picture detail at the "
+                     + "cost of size."
+            case .bookScan:
+                return "Printed books. The settings this app already defaults to."
+            }
+        }
+
+        /// Applies the preset over the current settings.
+        ///
+        /// Only the settings the preset has a *reason* to set. Languages,
+        /// output folder, concurrency and the recogniser path are the user's and
+        /// are never touched — a preset that resets where files are written
+        /// would be a trap.
+        func apply(to d: UserDefaults = .standard) {
+            // Every preset wants the layered route and joined hyphens: both are
+            // measured wins on every kind of material this app sees (BUGS.md
+            // R33, and the hyphen work in FEATURES.md), so neither is a
+            // material-dependent choice.
+            d.set(true, forKey: Prefs.rebuildImages)
+            d.set(true, forKey: Prefs.useJBIG2)
+            d.set(true, forKey: Prefs.joinHyphenated)
+            d.set(false, forKey: Prefs.fast)
+
+            switch self {
+            case .newspaper:
+                // Automatic: newspaper pages mix dense text with halftone
+                // photographs, which is exactly the routing decision.
+                d.set(Flattener.Mode.auto.rawValue, forKey: Prefs.rebuildMode)
+                // Balanced, not Maximum: newsprint halftones are coarse to begin
+                // with, so half resolution is close to the original (FEATURES.md
+                // records 2x as visually near-identical on a printed halftone).
+                d.set(PhotoDetail.balanced.rawValue, forKey: Prefs.photoDetail)
+                // Keep everything. The confidence slider's own doc comment makes
+                // the case: on a scan a rough guess at a smudged word is still
+                // something you can search for.
+                d.set(0.0, forKey: Prefs.confidence)
+                d.set(true, forKey: Prefs.languageCorrection)
+            case .typescript:
+                d.set(Flattener.Mode.auto.rawValue, forKey: Prefs.rebuildMode)
+                d.set(PhotoDetail.balanced.rawValue, forKey: Prefs.photoDetail)
+                d.set(0.0, forKey: Prefs.confidence)
+                // Off: correction is tuned for prose, and a typescript is full
+                // of names, abbreviations and struck-through text where it has
+                // less to work with. Not measured — stated as the reason so it
+                // can be argued with, and it is one switch to undo.
+                d.set(false, forKey: Prefs.languageCorrection)
+            case .photographs:
+                d.set(Flattener.Mode.auto.rawValue, forKey: Prefs.rebuildMode)
+                // The one preset that spends bytes on pictures.
+                d.set(PhotoDetail.maximum.rawValue, forKey: Prefs.photoDetail)
+                d.set(0.0, forKey: Prefs.confidence)
+                d.set(true, forKey: Prefs.languageCorrection)
+            case .bookScan:
+                d.set(Flattener.Mode.auto.rawValue, forKey: Prefs.rebuildMode)
+                d.set(PhotoDetail.balanced.rawValue, forKey: Prefs.photoDetail)
+                d.set(0.0, forKey: Prefs.confidence)
+                d.set(true, forKey: Prefs.languageCorrection)
+            }
+        }
+
+        /// The keys any preset may write. Used to check a preset leaves the
+        /// user's own choices alone, which is the property that matters.
+        static let keysWritten: Set<String> = [
+            Prefs.rebuildImages, Prefs.useJBIG2, Prefs.joinHyphenated, Prefs.fast,
+            Prefs.rebuildMode, Prefs.photoDetail, Prefs.confidence,
+            Prefs.languageCorrection,
+        ]
+    }
+
     enum TextFormat: String, CaseIterable, Identifiable {
         case text, json, jsonl
         var id: String { rawValue }
