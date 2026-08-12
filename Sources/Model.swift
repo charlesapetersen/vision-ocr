@@ -1594,6 +1594,12 @@ final class OCRModel: ObservableObject {
     /// a compression that can alter digits in an archival document. It is a
     /// result to state plainly, so nobody has to wonder.
     nonisolated static func sizeNote(from input: URL, to output: URL) -> String {
+        // PDF in, PDF out, or the comparison is meaningless. The drop box also
+        // takes jpg, png, heic and tiff, and a photograph wrapped into a
+        // searchable PDF is *always* bigger than the photograph — saying the
+        // original "used a stronger compression" would be both wrong and
+        // baffling, since the user never chose a compression at all.
+        guard input.pathExtension.lowercased() == "pdf" else { return "" }
         func bytes(_ url: URL) -> Int? {
             (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? Int
         }

@@ -638,6 +638,14 @@ do {
           OCRModel.sizeNote(from: small, to: similar))
     check("…and a copy that shrank stays quiet",
           OCRModel.sizeNote(from: small, to: smaller).isEmpty)
+    // The drop box takes images too, and a photograph wrapped into a searchable
+    // PDF is always larger than the photograph. Blaming that on the original's
+    // compression would be wrong and baffling.
+    let photo = file("scan.jpg", bytes: 100_000)
+    check("…and an image input is never reported as growth",
+          OCRModel.sizeNote(from: photo, to: big).isEmpty,
+          OCRModel.sizeNote(from: photo, to: big))
+
     check("…and a missing file is not reported as growth",
           OCRModel.sizeNote(from: dir.appendingPathComponent("gone.pdf"), to: big).isEmpty)
     // The note names both figures, because "larger" without them is a worry
