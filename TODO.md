@@ -37,45 +37,17 @@ It also surfaced work. **None of the following is done.** The fix in the first
 item was written, validated against the corpus and then reverted deliberately,
 so what is below is a specification rather than a diff.
 
-- [ ] **R38 — dense bilevel type is routed to the picture path and inflates
-      catastrophically.** Four documents come out *bigger*: `Boltanski_2006`
-      **16 MB → 156 MB (9.45x)**, `Noble_1977` 17 MB → 87 MB (5.0x),
-      `_1950_Comic` 3.48x, `_1926_Clapp` 3.20x.
+- [x] **R38 — done 2026-08-12.** `pictureInkMinimumTone` (0.03) gates the ink
+      branch; `BUGS.md` R38 is `FIXED` and carries the evidence. The
+      specification here said "four documents"; the sweep says **66 of the 98
+      ink-only picture pages across the corpus flip**, `Noble_1977` entirely and
+      `Boltanski_2006` but for its two covers. Six pages spanning the risk space
+      were compared at 1:1 before it landed.
 
-      *Cause.* Boltanski's source stores each 47 MP page as bilevel JBIG2 at
-      ~150 KB. Our output gives those pages a JBIG2 stencil **plus** a 13 MP
-      greyscale DCT background at ~1.7 MB, carrying nothing the stencil does not
-      already have. They reach the picture route on **ink coverage alone** —
-      0.26 against the 0.15 threshold — while the other two signals say text
-      emphatically: tone 0.013, saturation 0.0000. `isPicture` ORs its three
-      signals, so one overrides two.
-
-      *Fix, validated but not applied.* Require corroborating tone before ink
-      alone counts: add `pictureInkMinimumTone` (0.03) and gate the ink branch
-      on it. Measured separation across the corpus's ink-triggered pages — real
-      pictures **0.071–0.145** (Findlay's photograph, Black, Ehrenreich, Marth),
-      dense bilevel type **0.0017–0.0247** (all four inflating documents). The
-      threshold sits in the gap. Confirmed by re-running the classifier: those
-      four move to 1-bit, the picture pages all stay pictures.
-
-      *Why it is safe, checked rather than argued.* The picture route exists
-      because thresholding destroys an **unresolved** halftone. Low tone means
-      the page is genuinely bimodal, which is exactly when 1-bit is lossless.
-      The two riskiest pages — a newspaper comic and a title spread — were
-      rendered at 1-bit and are clean. Boltanski's 96%-ink cover keeps its
-      picture routing (tone 0.0527) either way.
-
-      Wants: failing test first, a mutant on the new constant, a corpus re-run
-      confirming those four shrink and nothing else moves, and a `BUGS.md`
-      entry.
-
-- [ ] **R37's scale is wrong and should be corrected in the same pass.** It says
-      "134.3 MB in, 75.0 MB out, 1.79x" and "15 of 40 grew". That was a
-      `head -40` of a `find`, not a sample. The full corpus is **1.15x**, with
-      **91 of 232 grown (39%)** and a worst case of 9.45x rather than 2.26x. The
-      entry's *diagnosis* — symbol-mode JBIG2 in the inputs — still holds for the
-      cases it examined. Its scale does not, and R38 is a second and larger cause
-      it missed.
+- [x] **R37's scale was already corrected in `BUGS.md`** — the entry opens by
+      saying the `head -40` figures were a biased sample and gives the
+      full-corpus ones (1,198 MB → 1,039 MB, 1.15x, 91 of 232 grown, worst case
+      9.45x). Nothing left to do here.
 
 - [x] **Baseline decided 2026-08-12: the 232-document `testdocs` run**, recorded
       in `HANDOFF.md`. The 1.7.0 figures are kept as history and are explicitly

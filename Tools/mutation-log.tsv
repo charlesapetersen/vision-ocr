@@ -32,3 +32,4 @@ const/edgeOfPage	killed	120	3 check(s): a word carried over a page break is join
 const/minimumColumnOverlap	killed	126	2 check(s): a continuation in a barely-overlapping neighbouring column is refused; a continuation in the next column is not joined
 const/sizeNoteRatio	killed	121	2 check(s): a copy well over the original says so; …and the note carries both sizes
 const/continuationCandidates	killed	123	1 check(s): compose looks past the folio and running head to join across a page
+logic/R38-ink-needs-tone	killed	126	3 check(s): heavy ink with no tone is text, not a picture; …and tone below the minimum does not rescue it; flatten sends dense type to the 1-bit route

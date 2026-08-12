@@ -72,6 +72,12 @@ CONSTANTS = [
     # Flattener — routing, resolution and the crash guards
     ("Flattener.swift", "pictureInkThreshold", "0.15", "0.9"),
     ("Flattener.swift", "pictureToneThreshold", "0.12", "0.9"),
+    # R38's gate. 0.0, not a large value: the defect it closes is the gate being
+    # *absent*, and setting the minimum to zero is exactly the absent gate —
+    # every ink-triggered page becomes a picture again, including the four that
+    # inflated up to 9.45x. A large value tests the opposite failure and the
+    # catalogue wants the one the register records.
+    ("Flattener.swift", "pictureInkMinimumTone", "0.03", "0.0"),
     ("Flattener.swift", "pictureSaturationThreshold", "0.06", "0.9"),
     # The paper-colour estimate. Drop the floor and every dark pixel counts as
     # paper, so the "paper" is the page mean and the correction removes whatever
@@ -122,6 +128,12 @@ OPERATORS = [
     # harness declining to score a mutant it had not actually planted.
     ("JBIG2.swift", 'static let maskDecode = "[ 1 0 ]"',
      'static let maskDecode = "[ 0 1 ]"', "mrc-stencil-polarity"),
+    # R38. The gate itself, not its constant. The drift guard in T5 kills any
+    # edit to `pictureInkMinimumTone` for free — it asserts the literal — so a
+    # constant mutant proves nothing about whether anything *reads* it. This one
+    # plants the original defect: ink alone routes a page to pictures again.
+    ("Flattener.swift", "if tone > pictureInkMinimumTone,\n           inkCoverage(",
+     "if true,\n           inkCoverage(", "R38-ink-needs-tone"),
     ("Flattener.swift", "if let seen = walkedAt[identity], seen <= depth { return }",
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",

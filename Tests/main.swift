@@ -1020,6 +1020,125 @@ do {
     resetPrefs()
 }
 
+// MARK: - R38: heavy ink is not on its own a picture
+
+print("\ndense bilevel type is routed to 1-bit, not to the picture path")
+
+/// A page built from exact 8-bit grey values, so ink and tone are *set* rather
+/// than hoped for. `NSColor(calibratedWhite:)` does not put the byte you asked
+/// for into the buffer — the dark-page fixture above asks for 0.45 grey over
+/// half the sheet and measures `ink=0.0000`, because the value it lands on is
+/// above the page's own Otsu split. A fixture for a threshold has to control the
+/// number the threshold reads.
+func makeGreyValuePDF(at url: URL, inkFraction: Double,
+                      toneFraction: Double, toneValue: UInt8 = 128) {
+    let w = 1224, h = 1584
+    var buffer = [UInt8](repeating: 255, count: w * h)
+    let inkRows = Int(Double(h) * inkFraction)
+    for y in 0..<inkRows { for x in 0..<w { buffer[y * w + x] = 0 } }
+    let toneRows = Int(Double(h) * toneFraction)
+    for y in inkRows..<min(inkRows + toneRows, h) {
+        for x in 0..<w { buffer[y * w + x] = toneValue }
+    }
+    guard let provider = CGDataProvider(data: Data(buffer) as CFData),
+          let cg = CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 8,
+                           bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
+                           bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
+                           decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+    else { return }
+    var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
+    pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
+}
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("r38-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    /// The three signals plus the verdict, read through the shipped call.
+    func signals(inkFraction: Double, toneFraction: Double, toneValue: UInt8 = 128)
+        -> (ink: Double, tone: Double, picture: Bool)? {
+        let url = dir.appendingPathComponent("f-\(inkFraction)-\(toneFraction)-\(toneValue).pdf")
+        makeGreyValuePDF(at: url, inkFraction: inkFraction,
+                         toneFraction: toneFraction, toneValue: toneValue)
+        guard let page = PDFDocument(url: url)?.page(at: 0) else { return nil }
+        let box = Flattener.fullBox(of: page)
+        let scale = Flattener.rebuildDPI(of: page) / 72.0
+        let w = max(Int(box.width * scale), 1), h = max(Int(box.height * scale), 1)
+        guard let grey = Flattener.renderGrey(page, box: box, scale: scale,
+                                              width: w, height: h, from: .mediaBox)
+        else { return nil }
+        let t = Flattener.otsuThreshold(of: grey)
+        let s = Flattener.pictureSignals(page, grey: grey, width: w, height: h)
+        return (s.ink, s.tone,
+                Flattener.isPicture(page, grey: grey, width: w, height: h, threshold: t))
+    }
+
+    // A 2x2 over the conjunction: ink above its threshold in every row, tone
+    // stepped across `pictureInkMinimumTone` and then across
+    // `pictureToneThreshold`. Each row kills a different mutant, which is the
+    // point of writing it as a table rather than as one assertion:
+    //
+    //   no tone      — deleting the tone gate leaves this a picture (the R38 bug)
+    //   2% tone      — moving pictureInkMinimumTone down to 0.01 leaves this a picture
+    //   6% tone      — deleting the ink branch, or raising the constant to 0.1,
+    //                  makes this text; the tone branch alone cannot save it (0.06 < 0.12)
+    //   20% tone     — tone decides on its own, with or without the ink branch
+    if let dense = signals(inkFraction: 0.25, toneFraction: 0.0) {
+        check("the dense-type fixture really is heavy ink with no tone",
+              dense.ink > Flattener.pictureInkThreshold
+                && dense.tone <= Flattener.pictureInkMinimumTone,
+              String(format: "ink %.4f tone %.4f", dense.ink, dense.tone))
+        check("heavy ink with no tone is text, not a picture", !dense.picture,
+              String(format: "ink %.4f tone %.4f", dense.ink, dense.tone))
+    } else { check("the dense-type fixture builds", false) }
+
+    if let faint = signals(inkFraction: 0.25, toneFraction: 0.02) {
+        check("…and tone below the minimum does not rescue it", !faint.picture,
+              String(format: "ink %.4f tone %.4f", faint.ink, faint.tone))
+    } else { check("the faint-tone fixture builds", false) }
+
+    if let corroborated = signals(inkFraction: 0.25, toneFraction: 0.06) {
+        // The load-bearing row. Tone here is *below* pictureToneThreshold, so
+        // the tone branch cannot be what routes it — only the ink branch can,
+        // which is what makes this the check that the ink branch still works.
+        check("the corroborated fixture's tone is below the tone threshold on its own",
+              corroborated.tone > Flattener.pictureInkMinimumTone
+                && corroborated.tone < Flattener.pictureToneThreshold,
+              String(format: "tone %.4f", corroborated.tone))
+        check("heavy ink WITH corroborating tone is still a picture", corroborated.picture,
+              String(format: "ink %.4f tone %.4f", corroborated.ink, corroborated.tone))
+    } else { check("the corroborated fixture builds", false) }
+
+    if let toneOnly = signals(inkFraction: 0.25, toneFraction: 0.20) {
+        check("continuous tone still decides on its own", toneOnly.picture,
+              String(format: "ink %.4f tone %.4f", toneOnly.ink, toneOnly.tone))
+    } else { check("the tone-only fixture builds", false) }
+
+    // End to end through `flatten`, not just through the predicate. The
+    // predicate is what changed, but `flatten` is what publishes — and this
+    // project has shipped a fix whose only test called a replica of the
+    // pipeline rather than the pipeline.
+    let densePDF = dir.appendingPathComponent("dense.pdf")
+    makeGreyValuePDF(at: densePDF, inkFraction: 0.25, toneFraction: 0.0)
+    let cor = dir.appendingPathComponent("corroborated.pdf")
+    makeGreyValuePDF(at: cor, inkFraction: 0.25, toneFraction: 0.06)
+    func routed(_ src: URL, _ sub: String) -> [String] {
+        let out = dir.appendingPathComponent(sub)
+        try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+        let pages = (try? Flattener.flatten(src, to: dir.appendingPathComponent("\(sub).pdf"),
+                                            mode: .auto, pngDirectory: out)) ?? []
+        return pages.map { if case .bilevel = $0.content { return "bilevel" } else { return "jpeg" } }
+    }
+    check("flatten sends dense type to the 1-bit route", routed(densePDF, "d") == ["bilevel"],
+          routed(densePDF, "d2").joined(separator: ","))
+    check("…and keeps the corroborated page on the picture route",
+          routed(cor, "c") == ["jpeg"], routed(cor, "c2").joined(separator: ","))
+    resetPrefs()
+}
+
 // MARK: - JBIG2 compression
 
 print("\nJBIG2 compression of the page images")
@@ -4984,6 +5103,12 @@ do {
     check("the picture ink threshold is the calibrated 0.15",
           Flattener.pictureInkThreshold == 0.15,
           "\(Flattener.pictureInkThreshold); text pages measured 6-8.4%")
+    check("the ink branch's minimum tone is the calibrated 0.03",
+          Flattener.pictureInkMinimumTone == 0.03,
+          "\(Flattener.pictureInkMinimumTone); R38 — pictures 0.071-0.145, dense type 0.0017-0.0247")
+    check("…and it sits below the tone threshold it corroborates",
+          Flattener.pictureInkMinimumTone < Flattener.pictureToneThreshold,
+          "\(Flattener.pictureInkMinimumTone) vs \(Flattener.pictureToneThreshold)")
 
     // reserveEms is the one the harness proved was *doubly* unguarded: the
     // fragment checks below set it themselves, so they exercise the mechanism

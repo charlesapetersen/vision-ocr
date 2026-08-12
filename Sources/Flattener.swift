@@ -80,6 +80,38 @@ enum Flattener {
     /// a tinted isobar figure lost 99.1% of its visible content.
     static let pictureToneThreshold = 0.12
 
+    /// …but heavy ink on its own is not enough. A page routed to the picture
+    /// path by ink coverage alone must also carry *some* continuous tone.
+    ///
+    /// R38. Dense bilevel type — a broadsheet page, a page of 8-point footnotes,
+    /// a comic strip — reads as heavy ink while both other signals say text
+    /// emphatically, and `isPicture` ORs its signals so one overrode two. Those
+    /// pages then got a JBIG2 stencil *plus* a greyscale DCT background carrying
+    /// nothing the stencil did not already have. Measured on the 232-document
+    /// corpus: `Boltanski_2006` came out **16 MB → 156 MB (9.45x)**, `Noble_1977`
+    /// 17 MB → 87 MB (5.0x), a 1950 comic page 3.48x, a 1926 broadsheet 3.20x.
+    ///
+    /// 0.03 sits in a wide measured gap between the two populations, taken over
+    /// every ink-triggered page in the corpus:
+    ///
+    /// | | tone |
+    /// |---|---|
+    /// | real pictures (Findlay, Black, Ehrenreich, Marth) | 0.0709–0.1453 |
+    /// | dense bilevel type (the four inflating documents) | 0.0017–0.0247 |
+    ///
+    /// **Why this is safe rather than merely smaller.** The picture route exists
+    /// because thresholding destroys an *unresolved* halftone, and an unresolved
+    /// halftone is precisely what puts pixels between paper and ink. Low tone
+    /// means the page is genuinely bimodal, which is exactly the case where 1-bit
+    /// loses nothing. The two riskiest pages this moves — a newspaper comic and a
+    /// dense title spread — were rendered at 1-bit and read clean.
+    ///
+    /// Only the *ink* branch is gated. Tone and saturation still route a page to
+    /// pictures on their own, so the tinted-figure case the tone threshold exists
+    /// for (and the pale-colour case behind `pictureSaturationThreshold`) is
+    /// untouched: both of those fire on pages whose ink coverage is near zero.
+    static let pictureInkMinimumTone = 0.03
+
     /// And any real colour means a page is not plain text — where "colour" means
     /// colour the page's own paper does not already have. See `saturation`.
     static let pictureSaturationThreshold = 0.06
@@ -891,10 +923,11 @@ enum Flattener {
             decode: nil, shouldInterpolate: false, intent: .defaultIntent)
     }
 
-    /// Is this page a picture rather than text? Any one of three signals is
-    /// enough, because each misses cases the others catch:
+    /// Is this page a picture rather than text? Three signals, because each
+    /// misses cases the others catch:
     ///
-    ///  - heavy ink: dark scans and coarse halftones;
+    ///  - heavy ink: dark scans and coarse halftones — but only when some
+    ///    continuous tone corroborates it, see `pictureInkMinimumTone` (R38);
     ///  - continuous tone: photographs and tinted figures, which can be *lighter*
     ///    than text and so invisible to an ink-coverage test;
     ///  - colour: a coloured page is never plain text, and thresholding it is
@@ -914,9 +947,13 @@ enum Flattener {
     static func isPicture(_ page: PDFPage, grey: [UInt8],
                           width: Int, height: Int, threshold: UInt8,
                           saturation precomputed: Double? = nil) -> Bool {
-        if inkCoverage(of: grey, width: width, height: height,
+        let tone = toneFraction(of: grey, threshold: threshold)
+        if tone > pictureToneThreshold { return true }
+        // Heavy ink, but only with corroborating tone. R38 — dense bilevel type
+        // is heavy ink and nothing else, and 1-bit is what it wants.
+        if tone > pictureInkMinimumTone,
+           inkCoverage(of: grey, width: width, height: height,
                        threshold: threshold) > pictureInkThreshold { return true }
-        if toneFraction(of: grey, threshold: threshold) > pictureToneThreshold { return true }
         return (precomputed ?? saturation(of: page)) > pictureSaturationThreshold
     }
 

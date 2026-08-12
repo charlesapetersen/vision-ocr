@@ -6,7 +6,8 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**One open: R38**, found by the first full-corpus gate run in three releases. U23 and T8 close the fourth of the four ways this register
+**Nothing open.** R38 — found by the first full-corpus gate run in three releases
+— is `FIXED`. U23 and T8 close the fourth of the four ways this register
 kept producing defects from its own fixes; the other three got controls in the
 same round. The third review's five — R31, R32, T6, T7, H2 — are all
 `FIXED`, and the round added three controls aimed at the *shapes* rather than
@@ -2121,9 +2122,8 @@ finished run, with both figures and the reason. Threshold 1.25x, because a
 searchable copy always costs something the original did not carry and reporting
 every three per cent would be noise; the real cases ran 1.35x to 2.26x.
 
-### R38 · Dense bilevel type is routed to the picture path — OPEN
-*(found 2026-08-12 by the first full-corpus gate run; fix specified and validated,
-deliberately not applied — see TODO.md)*
+### R38 · Dense bilevel type is routed to the picture path — FIXED
+*(found 2026-08-12 by the first full-corpus gate run; fixed 2026-08-12)*
 
 Four documents come out of this app **larger than they went in, by multiples**:
 
@@ -2147,23 +2147,74 @@ were the two covers (100%) and a halftone map spread". Densely-inked bilevel typ
 at 26% was not in that corpus, and the constant has no way to tell it from a
 plate.
 
-**Fix, validated against the corpus and not applied.** Require corroborating tone
-before ink alone counts: `pictureInkMinimumTone` at 0.03, gating the ink branch.
-The separation is measured, not assumed — across the corpus's ink-triggered
-pages, real pictures score **0.071–0.145** (Findlay's photograph, Black,
-Ehrenreich, Marth) and dense bilevel type scores **0.0017–0.0247** (all four
-documents above). Re-running the classifier with the gate in place moves those
-four to 1-bit and leaves every picture page a picture.
+**The fix.** Require corroborating tone before ink alone counts:
+`pictureInkMinimumTone` at 0.03, gating the ink branch. Tone and saturation each
+still route a page to pictures on their own, so the two cases the other
+thresholds exist for — the tinted isobar figure, the pale-colour page — are
+untouched; both of those fire on pages whose ink coverage is near zero.
 
-**Why 1-bit is safe here, checked rather than argued.** The picture route exists
-because thresholding destroys an *unresolved* halftone — one whose dots have
-blurred into greys. Low tone means the page is genuinely bimodal, which is
-exactly the case where 1-bit is lossless. The two riskiest pages, a newspaper
-comic and a title spread, were rendered at 1-bit and are clean. Boltanski's
-96%-ink cover keeps its picture routing either way (tone 0.0527).
+The separation is measured, not assumed. Re-measured independently before
+applying, over every ink-triggered page in the corpus:
 
-Wants, before it lands: the failing test first, a mutant on the new constant, a
-corpus re-run confirming those four shrink and nothing else moves.
+| | tone |
+|---|---|
+| real pictures — Findlay p16/21/28/29/38/39, Black, Ehrenreich, Marth | **0.0709–0.1453** |
+| dense bilevel type — the four inflating documents | **0.0007–0.0290** |
+
+**The scale of the change is much larger than the specification said, and that
+is the finding worth carrying.** The entry as written implied four documents.
+A sampled sweep of all 232 — four pages each, 827 pages — says **148 pages route
+to the picture path today, 98 of them on ink alone, and 66 of those 98 flip to
+1-bit.** Whole documents move: `Noble_1977` has 361 picture pages and **all 361**
+flip; `Boltanski_2006` has 203 and **201** flip, keeping only its two covers
+(front tone 0.0527, back 0.1128). Roughly forty documents are affected, not four.
+The spec's own validation had looked only at the pages it already suspected —
+the same shape as R37's `head -40`, one entry later.
+
+**Why 1-bit is safe here, checked by looking rather than argued.** The picture
+route exists because thresholding destroys an *unresolved* halftone — one whose
+dots have blurred into greys. Low tone means the page is genuinely bimodal, which
+is exactly the case where 1-bit is lossless. Six pages spanning the risk space
+were rendered both ways at 1:1 and compared:
+
+- the three flipped pages with the **highest** tone, i.e. closest to the new
+  boundary — `_1973_Other 67` p4 (0.0290, dense TV listings), `Riesman_1976` p3
+  (0.0283, 600 DPI book type), `Merriam_1913` p1 (0.0275, 1913 newsprint
+  columns): all pure text, all crisper at 1-bit than through the DCT;
+- the **highest-ink** page in the corpus, `_1967_Fairchild` p2 at 0.9502 — a
+  black cover, and the two renderings are indistinguishable;
+- the two the specification named as riskiest, `_1950_Comic` p1 (line art with
+  hatching, structure intact) and `Boltanski_2006` p68 (the "heavy ink" is
+  largely gutter shadow across a 47 MP spread).
+
+`Noble_1977` needs no page-by-page judgement: its maximum tone over 361 pages is
+**0.0030**, and Otsu clamps to 90 on every one of them, which is the signature of
+a source that is already pure bilevel. Thresholding it is close to the identity.
+
+**The residual risk, named rather than left implicit.** A *small* photograph on
+a dense text page contributes tone in proportion to its area, so one covering a
+few per cent of the sheet can land under 0.03 and be thresholded. That page was
+only ever protected by accident — it needed the surrounding text to be dense
+enough to clear 0.15 ink, which ordinary text at 6–8% never does — so the change
+narrows a protection that was incidental, not one that was designed. No page in
+the corpus exhibits it; the gate run is what would catch one.
+
+**Checks.** Four fixtures built from exact 8-bit grey values, a 2x2 over the
+conjunction: heavy ink with no tone (text), with 2% tone (text), with 6% tone —
+below `pictureToneThreshold`, so only the ink branch can route it — (picture),
+and with 20% tone (picture, on tone alone). Plus both ends end-to-end through
+`flatten`. `Tools/mutate.py` gained `logic/R38-ink-needs-tone`, which plants the
+original defect rather than editing the constant: the T5 drift guard asserts the
+literal 0.03 and would kill a constant mutant for free, proving nothing about
+whether any code reads it. Killed, by three checks.
+
+The fixtures had to set pixel bytes directly. The suite's existing dark-page
+fixture asks `NSColor(calibratedWhite: 0.45)` for half the sheet and measures
+`ink=0.0000` — the value it actually lands on is above the page's own Otsu split,
+so that fixture reaches the picture route through *tone*, not ink, and is
+unaffected by this change. That was predicted the other way round from
+arithmetic, and the prediction was wrong; a fixture written for a threshold has
+to control the number the threshold reads.
 
 ---
 
