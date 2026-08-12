@@ -947,6 +947,13 @@ final class OCRModel: ObservableObject {
         // for them will look. What the window shows is progress, and afterwards
         // what happened to each file.
         log = []
+        // Both clocks. The wall clock is what a person reads off a report —
+        // "which run was this?" — and the monotonic one is what the elapsed
+        // time has to come from, because an overnight batch is exactly when a
+        // clock adjustment lands and R30 is what happens when the two are
+        // confused.
+        runStarted = Date()
+        runStartedMonotonic = DispatchTime.now()
         announce(batch.count == 1
                  ? "Started OCR on \(batch[0].lastPathComponent)."
                  : "Started OCR on \(batch.count) files.")
@@ -1002,6 +1009,13 @@ final class OCRModel: ObservableObject {
                 text: summary + ".",
                 kind: bad > 0 ? .failure : (stopped > 0 ? .info : .success)))
             self.announce(summary + ".", important: true)
+
+            // The written report, last — so the log it copies is complete,
+            // including the summary line above. Writing it before that point
+            // would produce a report of a run that had not finished.
+            self.writeReport(batch: batch, settings: settings,
+                             rebuildImages: needsRebuild, rebuildMode: rebuildMode,
+                             concurrency: limit, destination: destination)
 
             if ok > 0,
                UserDefaults.standard.bool(forKey: Prefs.openWhenDone),
@@ -1624,6 +1638,55 @@ final class OCRModel: ObservableObject {
 
     /// Running totals for the batch in flight. Main-actor only.
     private var tally: (succeeded: Int, failed: Int, cancelled: Int) = (0, 0, 0)
+
+    /// When the batch in flight began, on both clocks. See `run(_:binary:)`.
+    private var runStarted: Date?
+    private var runStartedMonotonic: DispatchTime?
+
+    /// Where the last finished batch's report was written, if one was.
+    /// Published so the results pane can offer to reveal it.
+    @Published var lastReport: URL?
+
+    /// Writes the run report, and says in the log what it did.
+    ///
+    /// Never throws and never fails the batch: the documents are already
+    /// written and a missing report is not a lost page. But it does not fail
+    /// *silently* either — the point of the feature is knowing what happened,
+    /// and a report that was not written while the log claims one exists is the
+    /// same shape as the bug it fixes.
+    private func writeReport(batch: [URL], settings: Prefs.Snapshot,
+                             rebuildImages: Bool, rebuildMode: Flattener.Mode,
+                             concurrency: Int, destination: URL?) {
+        lastReport = nil
+        guard UserDefaults.standard.bool(forKey: Prefs.writeRunReport) else { return }
+        let finished = Date()
+        let elapsed = runStartedMonotonic.map {
+            Double(DispatchTime.now().uptimeNanoseconds &- $0.uptimeNanoseconds) / 1_000_000_000
+        } ?? 0
+        let context = RunReport.Context(
+            version: Updater.currentVersion,
+            started: runStarted ?? finished,
+            finished: finished,
+            elapsed: elapsed,
+            settings: settings,
+            rebuildImages: rebuildImages,
+            rebuildMode: rebuildMode,
+            concurrency: concurrency,
+            destination: destination,
+            inputs: batch,
+            outcomes: outcomes,
+            skipped: skipped.intersection(batch),
+            log: log.map(\.text))
+        switch RunReport.write(context) {
+        case .success(let url):
+            lastReport = url
+            log.append(LogLine(text: "Run report: \(url.path)", kind: .info))
+        case .failure(let error):
+            log.append(LogLine(
+                text: "Couldn't write the run report: \(error.localizedDescription)",
+                kind: .failure))
+        }
+    }
 
     /// Wraps up the batch. Held as a closure so it captures the batch's
     /// destination and size, and runs exactly once — when the last file lands.

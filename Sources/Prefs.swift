@@ -244,6 +244,14 @@ enum Prefs {
     /// Rejoin a word a line break split in two, so it can be searched for.
     static let joinHyphenated    = "joinHyphenated"
 
+    /// Write a record of each finished batch to `~/Library/Logs/VisionOCR`.
+    ///
+    /// On by default. The log this copies is in-memory and dies with the
+    /// window, so without it "something failed last night" is all anyone can
+    /// say about an overnight run over material that may not be re-scannable.
+    /// A few kilobytes of text per batch, in the directory macOS keeps logs in.
+    static let writeRunReport    = "writeRunReport"
+
     static let concurrency       = "concurrency"
 
     /// How many files to OCR at once.
@@ -332,7 +340,7 @@ enum Prefs {
         fast, languages, languageCorrection, confidence, pdfDPIAuto, pdfDPI,
         password, customWords, minTextHeightOn, minTextHeight,
         warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail,
-        joinHyphenated, concurrency,
+        joinHyphenated, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck,
     ]
 
@@ -428,6 +436,11 @@ enum Prefs {
             // be found at all. In narrow-column archival material that is most
             // of the words worth searching for.
             joinHyphenated: true,
+
+            // On by default. The cost is a few kilobytes of text per batch in
+            // the directory macOS already keeps logs in; the benefit is that a
+            // failure discovered the next morning can be identified at all.
+            writeRunReport: true,
 
             concurrency: defaultConcurrency,
         ])

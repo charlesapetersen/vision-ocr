@@ -76,6 +76,11 @@ func resetPrefs() {
     // and `runModal()` in a headless test binary hangs the run instead of
     // failing it. The default is asserted separately, from the registered value.
     d.set(false, forKey: Prefs.warnDigitalText)
+    // Nor litter ~/Library/Logs on the machine running the suite. Several tests
+    // drive a real batch through `start()`, and this pref defaults to on; the
+    // one test that checks the report turns it back on and cleans up after
+    // itself. The default is asserted separately, from the registered value.
+    d.set(false, forKey: Prefs.writeRunReport)
 }
 resetPrefs()
 
@@ -4992,6 +4997,15 @@ do {
     d.set("nonsense-mode", forKey: Prefs.mode)
     check("an unparseable stored mode falls back to the default",
           Prefs.Snapshot.current().mode == .searchablePDF)
+
+    // Read from the registration domain, not from `resetPrefs`, which turns
+    // this one off so the suite does not write into ~/Library/Logs. Asserting
+    // the value the suite itself set would test nothing (T4).
+    let registered = UserDefaults.standard.volatileDomain(
+        forName: UserDefaults.registrationDomain)
+    check("the run report is written by default",
+          registered[Prefs.writeRunReport] as? Bool == true,
+          "\(String(describing: registered[Prefs.writeRunReport]))")
     resetPrefs()
 }
 
@@ -5010,6 +5024,9 @@ do {
     }
     makeScannedPDF(at: inDir.appendingPathComponent("one.pdf"), lines: ["A single page"])
     d.set(false, forKey: Prefs.openWhenDone)
+    // The one place the report is exercised end to end, through the real
+    // `finishUp`. Cleaned up below.
+    d.set(true, forKey: Prefs.writeRunReport)
 
     final class Box: @unchecked Sendable { var model: OCRModel? }
     let box = Box()
@@ -5039,7 +5056,143 @@ do {
         // What it must still carry: the outcome, and where the file went.
         check("it does say what happened", text.contains("Done —"), text)
         check("…and where the output went", text.contains(outDir.lastPathComponent), text)
+        // The report is written by the same `finishUp` and names itself in the
+        // log, so a run that wrote one and a run that did not are told apart
+        // from the record rather than from the filesystem.
+        check("…and where the run report went",
+              text.contains("Run report: ") && m.lastReport != nil, text)
+        if let report = m.lastReport {
+            check("the run report exists on disk",
+                  FileManager.default.fileExists(atPath: report.path), report.path)
+            let body = (try? String(contentsOf: report, encoding: .utf8)) ?? ""
+            check("…and it carries the whole log",
+                  body.contains("Done —") && body.contains("one.pdf"),
+                  body.prefix(200).description)
+            check("…and the settings that produced it",
+                  body.contains("Searchable PDF") && body.contains("Files at once"),
+                  body.prefix(400).description)
+            try? FileManager.default.removeItem(at: report)
+        }
     }
+    resetPrefs()
+}
+
+// MARK: - The written run report
+
+print("\nthe written run report")
+
+do {
+    resetPrefs()
+    let a = URL(fileURLWithPath: "/tmp/a.pdf"), b = URL(fileURLWithPath: "/tmp/b.pdf")
+    let c = URL(fileURLWithPath: "/tmp/c.pdf"), e = URL(fileURLWithPath: "/tmp/e.pdf")
+    var snapshot = Prefs.Snapshot.current()
+    // Every optional row switched on, so the coverage check below is exercising
+    // the rows rather than the conditions that hide them.
+    snapshot.password = "hunter2"
+    snapshot.customWords = "Boltanski"
+    snapshot.confidence = 0.4
+    snapshot.minTextHeightOn = true
+    snapshot.minTextHeight = 0.02
+    snapshot.mode = .searchablePDF
+    let context = RunReport.Context(
+        version: "9.9.9",
+        started: Date(timeIntervalSince1970: 1_760_000_000),
+        finished: Date(timeIntervalSince1970: 1_760_003_671),
+        elapsed: 3671,
+        settings: snapshot,
+        rebuildImages: true, rebuildMode: .auto, concurrency: 6,
+        destination: URL(fileURLWithPath: "/tmp/out"),
+        inputs: [a, b, c, e],
+        outcomes: [a: .succeeded, b: .failed, c: .cancelled],
+        skipped: [e],
+        log: ["✓ a.pdf", "✗ b.pdf", "    it broke"])
+    let text = RunReport.text(context)
+
+    check("the report names the version", text.contains("Vision OCR 9.9.9"))
+    check("…and both timestamps", text.contains("Started   ") && text.contains("Finished  "))
+    check("…and the elapsed time, from the monotonic reading",
+          text.contains("1h 01m 11s"), RunReport.duration(3671))
+    // Counted from `outcomes`, the source the results pane counts. U25 is what
+    // happens when a second view of the same state derives it a second way.
+    check("…and one line per outcome kind",
+          text.contains("4 files — 1 succeeded, 1 failed, 1 cancelled, 1 skipped"),
+          text.split(separator: "\n").first { $0.contains("files —") }.map(String.init) ?? "")
+    check("…counting files offered, not files that ran", text.contains("4 files"))
+    check("…and it lists the failures by path before anything else",
+          text.range(of: "Failed\n  /tmp/b.pdf") != nil
+            && text.range(of: "Failed")!.lowerBound < text.range(of: "Settings")!.lowerBound)
+    check("…and the log verbatim, in arrival order",
+          text.contains("✓ a.pdf") && text.contains("✗ b.pdf")
+            && text.range(of: "✓ a.pdf")!.lowerBound < text.range(of: "✗ b.pdf")!.lowerBound)
+    // A report is a file people mail to whoever is helping them.
+    check("the password is never in the report",
+          !text.contains("hunter2") && text.contains("Password") && text.contains("(set)"))
+
+    // CONTRIBUTING 4d — enumerate, do not reason about pairs. A setting added
+    // to `Snapshot` and forgotten here makes every later report quietly wrong
+    // about how its documents were produced, and nothing afterwards can tell.
+    let fields = Mirror(reflecting: snapshot).children.compactMap(\.label)
+    check("the snapshot has fields to check", fields.count >= 16, "\(fields.count)")
+    let unmapped = fields.filter { RunReport.reportedBySnapshotField[$0] == nil }
+    check("every setting in the snapshot is mapped to a report row",
+          unmapped.isEmpty, unmapped.joined(separator: ", "))
+    let rows = RunReport.settingsRows(context)
+    let labels = Set(rows.map(\.0))
+    let missing = Set(fields.compactMap { RunReport.reportedBySnapshotField[$0] })
+        .subtracting(labels)
+    check("…and every mapped row is actually emitted",
+          missing.isEmpty, missing.sorted().joined(separator: ", "))
+    let unexplained = labels.subtracting(RunReport.reportedBySnapshotField.values)
+        .subtracting(RunReport.rowsOutsideTheSnapshot)
+    check("…and no row reports something the map does not explain",
+          unexplained.isEmpty, unexplained.sorted().joined(separator: ", "))
+
+    // Extract Text hides the searchable-PDF rows, which must not make the
+    // report claim a JBIG2 setting shaped a text extraction.
+    var textMode = context
+    textMode.settings.mode = .text
+    let textRows = Set(RunReport.settingsRows(textMode).map(\.0))
+    check("a text run does not report searchable-PDF settings",
+          !textRows.contains("JBIG2 compression") && !textRows.contains("Photo detail"),
+          textRows.sorted().joined(separator: ", "))
+
+    check("durations keep seconds at every scale",
+          RunReport.duration(61) == "1m 01s" && RunReport.duration(12) == "12s"
+            && RunReport.duration(3600) == "1h 00m 00s",
+          "\(RunReport.duration(61)) / \(RunReport.duration(12)) / \(RunReport.duration(3600))")
+    check("a negative elapsed cannot produce a negative duration",
+          RunReport.duration(-5) == "0s", RunReport.duration(-5))
+    check("the file name sorts chronologically and has no colons",
+          RunReport.fileName(for: context.finished).hasPrefix("Run 20")
+            && !RunReport.fileName(for: context.finished).contains(":"),
+          RunReport.fileName(for: context.finished))
+
+    // CONTRIBUTING 4c — make the failure path actually fail. A report that
+    // could not be written must say so, not return quietly.
+    let dir = tmp.appendingPathComponent("report-\(UUID().uuidString)")
+    switch RunReport.write(context, to: dir) {
+    case .success(let url):
+        check("a report writes to a directory that does not exist yet",
+              FileManager.default.fileExists(atPath: url.path), url.path)
+        check("…and reads back byte for byte",
+              (try? String(contentsOf: url, encoding: .utf8)) == text)
+    case .failure(let error):
+        check("a report writes to a directory that does not exist yet", false,
+              error.localizedDescription)
+    }
+    // A regular file where the directory should be: createDirectory fails, and
+    // the caller has to be told rather than left to assume.
+    let blocked = tmp.appendingPathComponent("blocked-\(UUID().uuidString)")
+    try? Data("not a directory".utf8).write(to: blocked)
+    switch RunReport.write(context, to: blocked) {
+    case .success(let url):
+        check("a report that cannot be written reports the failure", false,
+              "wrote to \(url.path)")
+    case .failure:
+        check("a report that cannot be written reports the failure", true)
+    }
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.removeItem(at: blocked)
     resetPrefs()
 }
 

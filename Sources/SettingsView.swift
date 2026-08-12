@@ -54,6 +54,7 @@ struct SettingsView: View {
 
     // Behaviour
     @AppStorage(Prefs.openWhenDone) private var openWhenDone = true
+    @AppStorage(Prefs.writeRunReport) private var writeRunReport = true
     @AppStorage(Prefs.binaryPath) private var binaryPath = ""
     @AppStorage(Prefs.concurrency) private var concurrency = Prefs.defaultConcurrency
 
@@ -397,6 +398,28 @@ struct SettingsView: View {
                   + "lower it if OCR is competing with other work.")
 
             Toggle("Open the output folder when finished", isOn: $openWhenDone)
+
+            Toggle("Write a report for each finished batch", isOn: $writeRunReport)
+                .help("A text file listing every input, where its output went, "
+                      + "what happened to it and the settings that produced it. "
+                      + "Written to ~/Library/Logs/VisionOCR. The results pane "
+                      + "keeps the same information only until the window closes.")
+            Row("", labelWidth) {
+                Text(verbatim: RunReport.directory.path)
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button("Show Reports") {
+                    // Create it first: revealing a folder that does not exist
+                    // yet does nothing at all, and "nothing happened" is the
+                    // worst answer a button can give.
+                    try? FileManager.default.createDirectory(
+                        at: RunReport.directory, withIntermediateDirectories: true)
+                    NSWorkspace.shared.open(RunReport.directory)
+                }
+                .disabled(!writeRunReport)
+            }
 
             // Stated in full rather than as a bare toggle: this is the only
             // thing in the app that touches the network, and someone who chose
