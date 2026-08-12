@@ -34,15 +34,63 @@ measured page yields 3,046 characters at an explicit 300 DPI against 924. This i
 the cheapest large win available and it is already specified. Nothing else on
 this list should be started first.
 
-**2. Deskew, and the rest of image preparation.** `grep -i skew Sources/` returns
-nothing. Every commercial engine straightens a page before reading it, because a
-2° rotation smears a line across the horizontal projection every layout step
-depends on, and thresholding a skewed scan is worse still. This app rebuilds
-pages and never straightens them. On the material this corpus is made of —
-photocopies, microfilm, tightly-bound books photographed at an angle — this is
-plausibly the largest accuracy gain left after R39, and unlike most of this list
-it is self-contained: it happens inside `Flattener`, before recognition, and the
-gate can measure it in characters. Despeckle and border removal belong with it.
+**2. ~~Deskew~~ — DECLINED, measured 2026-08-12.** This was ranked second here on
+argument, and the argument was wrong in both halves. It is left in place rather
+than deleted because the reasoning is the same shape as the "Vision can't read
+sideways text" episode in `HANDOFF.md`, where a whole feature was built for an
+inferred weakness that a direct test disproved.
+
+*First half: does the recogniser care?* Mostly not. Rendering the same page at a
+range of angles — one sampling at the angle, drawn through a rotated CTM, so
+there is no resampling on one side of the comparison and not the other:
+
+| degrees | 0 | 0.25 | 0.5 | 1.0 | 1.5 | 2.0 | 3.0 |
+|---|---|---|---|---|---|---|---|
+| Merriam 1913, 300 DPI, clean | 4,677 | 4,756 | 4,835 | 4,671 | 4,722 | 4,662 | 4,499 |
+| Newsday 1973, 300 DPI | 3,326 | 3,327 | 3,327 | 3,328 | 3,324 | 3,319 | 3,329 |
+| Clapp 1926, 200 DPI newsprint | 2,746 | 2,494 | 2,111 | 2,047 | 1,967 | 2,286 | 2,541 |
+| Creative 1928, 200 DPI | 12,243 | 11,475 | 10,195 | 11,454 | 10,689 | 10,850 | 11,841 |
+
+Clean material is flat. Degraded low-DPI newsprint loses up to 28% — but in a
+**U-shape that recovers by 3°**, which is Vision's line grouping flipping between
+interpretations, not blur. (The first version of this measurement compared a
+pixel-exact 0° copy against interpolated rotations and was measuring its own
+interpolation.)
+
+*Second half: how skewed is the corpus?* Barely. A projection-profile estimator,
+which plants a known angle and checks it recovers it on every run, over 176 of
+the 232 documents and 633 pages:
+
+| pages | share |
+|---|---|
+| below 0.25° — no measurable loss | **89.9%** |
+| 0.25–0.5° | 7.0% |
+| 0.5–1.5° — the worst band | **2.8%** |
+| over 1.5° | 0.3% |
+
+Median page skew is **0.10°**, p95 is 0.36°, and the worst document in the corpus
+is a single 1881 letter at 2.00°. These are library scans from flatbed and
+planetary scanners, and they are already straight.
+
+*So the prize is roughly 0.5–1% of corpus characters*, concentrated in about 3%
+of pages, and against that:
+
+- **The estimator failed its own self-test on 55 of 232 documents** — 24%. An
+  estimator that cannot validate itself on a quarter of the corpus must not be
+  allowed to rotate archival pages.
+- A wrong estimate on a page that was straight moves it *out* of the 0.1° flat
+  zone and *into* the 0.5–1.5° worst band. The failure mode of this feature is
+  causing the exact damage it exists to prevent.
+- Rotating the published page alters the user's document, which is R13's
+  territory.
+
+**The one version worth keeping in mind** sidesteps the third objection
+entirely: deskew *only the image handed to the recogniser*, and publish the page
+exactly as scanned. The user's document is untouched, so there is no fidelity
+question at all — it becomes purely a question of whether the estimate is right,
+and the answer today is "on 76% of documents". Revisit if a better estimator
+turns up, or if a document arrives that is visibly crooked and reads badly.
+Despeckle and border removal were not measured and are not claimed either way.
 
 **3. Columns, reading order and tables.** There is no column model. The nearest
 thing is `minimumColumnOverlap`, a *guard* that refuses a hyphen join when two
