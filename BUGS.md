@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** R37 is diagnosed and answered. U23 and T8 close the fourth of the four ways this register
+**One open: R38**, found by the first full-corpus gate run in three releases. U23 and T8 close the fourth of the four ways this register
 kept producing defects from its own fixes; the other three got controls in the
 same round. The third review's five — R31, R32, T6, T7, H2 — are all
 `FIXED`, and the round added three controls aimed at the *shapes* rather than
@@ -2070,9 +2070,16 @@ kind of image and evaporated on the kind that mattered.
 ### R37 · Small documents come out larger than they went in — FIXED *(reported, not compressed away)*
 *(measured 2026-08-11, 40 corpus documents through `OCRModel.makeSearchablePDF`)*
 
-Across the corpus the app does what it says: **134.3 MB in, 75.0 MB out, 1.79x**.
-But that average hides a clean split by input size, and on one side of it the
-app reliably makes files bigger.
+**The figures first recorded here were from a biased sample and are corrected
+below.** They came from a `head -40` of a `find` over `testdocs` — not a sample,
+just whatever the filesystem enumerated first — and said "134.3 MB in, 75.0 MB
+out, 1.79x, 15 of 40 grew". The first full-corpus run says **1,198 MB in,
+1,039 MB out, 1.15x, and 91 of 232 grew (39%)**, with a worst case of **9.45x**
+against the 2.26x quoted below. The diagnosis in this entry still holds for the
+cases it examined; its scale never did, and it missed R38 entirely.
+
+On the sampled cohort the app did what it says, and that split by input size is
+still the shape of it:
 
 | input | grew | that cohort, overall |
 |---|---|---|
@@ -2113,6 +2120,50 @@ wrong was that it happened **silently**. `Model.sizeNote` now says so on the
 finished run, with both figures and the reason. Threshold 1.25x, because a
 searchable copy always costs something the original did not carry and reporting
 every three per cent would be noise; the real cases ran 1.35x to 2.26x.
+
+### R38 · Dense bilevel type is routed to the picture path — OPEN
+*(found 2026-08-12 by the first full-corpus gate run; fix specified and validated,
+deliberately not applied — see TODO.md)*
+
+Four documents come out of this app **larger than they went in, by multiples**:
+
+| document | in | out | |
+|---|---|---|---|
+| `Boltanski_2006` | 16 MB | **156 MB** | **9.45x** |
+| `Noble_1977` | 17 MB | 87 MB | 5.0x |
+| `_1950_Comic` | 477 KB | 1,661 KB | 3.48x |
+| `_1926_Clapp` | 540 KB | 1,730 KB | 3.20x |
+
+**Cause.** Boltanski's source stores each 47 MP page as bilevel JBIG2 at ~150 KB
+— 3.6 MB for the lot. Our output gives those pages a JBIG2 stencil **plus** a
+13 MP greyscale DCT background at ~1.7 MB each, carrying nothing the stencil does
+not already have. They reach the picture route on **ink coverage alone**, 0.26
+against the 0.15 threshold, while the other two signals say text emphatically:
+tone 0.013, saturation 0.0000. `isPicture` ORs its three signals, so one
+overrides two.
+
+`pictureInkThreshold` was calibrated on a corpus where "the only pages above 15%
+were the two covers (100%) and a halftone map spread". Densely-inked bilevel type
+at 26% was not in that corpus, and the constant has no way to tell it from a
+plate.
+
+**Fix, validated against the corpus and not applied.** Require corroborating tone
+before ink alone counts: `pictureInkMinimumTone` at 0.03, gating the ink branch.
+The separation is measured, not assumed — across the corpus's ink-triggered
+pages, real pictures score **0.071–0.145** (Findlay's photograph, Black,
+Ehrenreich, Marth) and dense bilevel type scores **0.0017–0.0247** (all four
+documents above). Re-running the classifier with the gate in place moves those
+four to 1-bit and leaves every picture page a picture.
+
+**Why 1-bit is safe here, checked rather than argued.** The picture route exists
+because thresholding destroys an *unresolved* halftone — one whose dots have
+blurred into greys. Low tone means the page is genuinely bimodal, which is
+exactly the case where 1-bit is lossless. The two riskiest pages, a newspaper
+comic and a title spread, were rendered at 1-bit and are clean. Boltanski's
+96%-ink cover keeps its picture routing either way (tone 0.0527).
+
+Wants, before it lands: the failing test first, a mutant on the new constant, a
+corpus re-run confirming those four shrink and nothing else moves.
 
 ---
 

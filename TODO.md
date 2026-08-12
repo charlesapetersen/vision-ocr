@@ -77,7 +77,12 @@ so what is below is a specification rather than a diff.
       cases it examined. Its scale does not, and R38 is a second and larger cause
       it missed.
 
-- [ ] **Decide what the baseline is.** The 1.7.0 figures come from a
+- [x] **Baseline decided 2026-08-12: the 232-document `testdocs` run**, recorded
+      in `HANDOFF.md`. The 1.7.0 figures are kept as history and are explicitly
+      not comparable — different corpus, and the 255-document set cannot be
+      reconstructed. Superseded text follows for the reasoning.
+
+- [x] ~~**Decide what the baseline is.**~~ The 1.7.0 figures come from a
       255-document library set that cannot be reconstructed from the repo
       (Zotero holds 16,079 PDFs). Either adopt the 232-document `testdocs` run
       as the new baseline and record it in `HANDOFF.md`, or rebuild the 255 from
@@ -85,7 +90,10 @@ so what is below is a specification rather than a diff.
       "23 minutes" and "78 minutes" are not comparable and neither are the
       character counts.
 
-- [ ] **Promote the concurrent gate harness into `Tools/`.** A serial loop over
+- [x] **Promoted 2026-08-12 as `Tools/score-gate.swift`**, with the reasoning
+      below in its header so nobody rediscovers it.
+
+- [x] ~~**Promote the concurrent gate harness into `Tools/`.**~~ A serial loop over
       `makeSearchablePDF` projected **9.1 hours**; driving `OCRModel.start()` at
       the app's own concurrency did the same work in **78 minutes**. The serial
       version measures a configuration the app never runs and its timing number

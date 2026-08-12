@@ -219,12 +219,31 @@ you expected.
 **1.7.0** is tagged and released with a DMG.
 
 **The last release was verified against the whole library, not just the suite.**
-1.7.0 was run over 255 documents through `OCRModel.start()` at the app's own
-default concurrency: 255 succeeded, none failed, 12.6 million characters
-recovered, 23 minutes, peak RSS 3.35 GB. Fifteen came back with colour. Two pages
-across the whole set render blank, and both are blank in the original. That run
-is worth repeating before any release that touches `Flattener` — it costs less
-than half an hour and it is the only evidence that covers what the suite cannot.
+**The baseline is the 232-document `testdocs` run, as of 2026-08-12.** Produced
+by `Tools/score-gate.swift`, which is the harness to use — see its header for why
+a serial one is worthless:
+
+```
+232 documents · 232 succeeded · 0 failed · 232 outputs
+34,167,177 characters · 23 documents carrying colour
+1,198 MB in -> 1,039 MB out (1.15x) · 78 minutes at concurrency 6
+```
+
+Run it before any release that touches `Flattener`, `SearchableWriter` or
+`JBIG2`. It is the only evidence that covers what the suite cannot, and both
+1.8.0 and 1.9.0 shipped without it — the run that finally happened found R38, a
+document inflating 9.45x.
+
+*Do not diff those figures against the 1.7.0 ones below.* They are different
+corpora: 232 `testdocs` documents against 255 from the Zotero library, and that
+255-document set is not reconstructable (the library holds 16,079 PDFs). The
+1.7.0 line is kept as history, not as a comparison.
+
+**1.7.0's run, for the record.** 255 documents through `OCRModel.start()` at the
+app's own default concurrency: 255 succeeded, none failed, 12.6 million
+characters recovered, 23 minutes, peak RSS 3.35 GB. Fifteen came back with
+colour. Two pages across the whole set render blank, and both are blank in the
+original.
 
 Things you would otherwise have to rediscover:
 
