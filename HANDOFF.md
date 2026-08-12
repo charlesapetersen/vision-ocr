@@ -186,6 +186,36 @@ Two things the second pass learned the hard way, both worth carrying forward:
 Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT`, and `TODO.md` holds
 no code work — only things that need a person in front of a running app.
 `FEATURES.md` is ideas. The suite is at **614 checks**, `main` is pushed, and
+**1.9.0** is tagged and released with a DMG, as is 1.8.0. Four commits sit on
+`main` beyond the 1.9.0 tag — batch presets, two archived features, the tab-order
+walk, and a fix to the measurement tools — none of which has been released. The
+next release should carry them.
+
+**What the 2026-08-12 session should have taught the next one.** Six separate
+times, a measurement was wrong and the wrong conclusion was nearly recorded as
+fact. They are all the same shape and worth reading as one lesson:
+
+- A codec looked 1.5–2x better because it was measured on whole pages rather
+  than on the background layers it would actually encode (R36); and earlier,
+  because the source page's own layer was already in that codec (R34).
+- A per-page detector looked cleanly separable because it was fed boxes from a
+  standalone tool rather than the ones the pipeline produces (R35).
+- Cross-page hyphen joining looked unnecessary because the instrumentation
+  printed successes rather than candidates, so twelve rejected opportunities
+  read as none.
+- `edgeOfPage` at 0.18 admitted nothing because the boundary landed exactly on
+  the measured depth of a last line — a guessed constant, not a measured one.
+- Two mutants survived while appearing to test something: one fixture's columns
+  overlapped *negatively*, so any non-negative floor refused them; one test
+  bypassed the wiring that the constant actually controlled.
+- An accessibility read gave three different answers from three attributes,
+  the last while the probe was failing to advance focus.
+
+The pattern: **the instrument agreed with the hypothesis, so it was not
+questioned.** CONTRIBUTING 3 already says to suspect the instrument; what this
+session adds is that the moment to suspect it hardest is when it tells you what
+you expected.
+
 **1.7.0** is tagged and released with a DMG.
 
 **The last release was verified against the whole library, not just the suite.**

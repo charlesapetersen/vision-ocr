@@ -26,6 +26,54 @@ R21, R22, T3, H1, U13–U16), and the three interface questions that could only 
 answered by a running app have been answered — in a headless VM, off-screen. They
 passed, and the run found U17, which was worse than any of them.
 
+## The queue, in the order it was decided (2026-08-12)
+
+Agreed with the user at the end of the 2026-08-12 session. Items 1–2 are gates on
+the next release; 3–7 are the feature backlog promoted out of FEATURES.md; 8 is
+its own cycle.
+
+1. [ ] **Finish the full-corpus gate.** A 232-document run through
+       `OCRModel.makeSearchablePDF` was started and did not finish before the
+       session ended; the harness is `scratchpad/big/main.swift`, rebuilt with
+       the usual `Tools/` pattern, and it prints succeeded/failed, characters,
+       colour documents and bytes.
+       **It is 232 documents from `testdocs`, not the 255-document library set
+       the 1.7.0 figures come from** — that set is not reconstructable from the
+       repo (Zotero holds 16,079 PDFs), so the numbers are comparable in kind
+       and not directly diffable. Either accept that and record a new baseline,
+       or reconstruct the 255 from `testdocs/manifest.tsv` and
+       `Tools/sample-zotero.py` first. This is the gate 1.8.0 and 1.9.0 both
+       shipped past.
+
+2. [ ] **Settle whether the controls are named for VoiceOver**, then review and
+       release. See the open item below — use the Tart VM (`archive-gui-runner`,
+       present and stopped) and `Tools/vm-gui-check.sh`, not a scripted
+       accessibility read from the host.
+
+3. [ ] **Per-page DPI control for picture pages.** FEATURES.md has the entry and
+       BUGS.md R13 the constraint: it becomes worth doing as an *explicit
+       setting* with a measured default and a clear label, never as a default
+       behaviour.
+
+4. [ ] **A written run report.** The log is in-memory and dies with the window.
+       Cheapest item here and every later bug report improves because of it.
+
+5. [ ] **Recognition language picker** populated from `mac-ocr languages`, which
+       the app never calls, instead of hand-typed BCP-47 codes.
+
+6. [ ] **Retry the failures from a finished batch.**
+
+7. [ ] **Preserving annotations.**
+
+8. [ ] **R35, second attempt** — a per-page background factor that works. See
+       FEATURES.md for what failed and the three untried signals; the
+       `Flattener.largestImage` one sidesteps the failure mode rather than
+       tuning around it. Review and release separately if it lands.
+
+**Declined this session, with reasons recorded:** PDF/A, Direct Vision, a 6x
+Photo detail level, cross-column hyphen joining, JPEG 2000 for picture pages
+(R34), OpenJPEG for the background layer (R36).
+
 ## Smaller, and genuinely optional
 
 - [x] **The tab order was walked on 2026-08-12** and it is sound: 22 stops
