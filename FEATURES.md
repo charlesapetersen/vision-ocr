@@ -13,6 +13,76 @@ parked for exactly that reason.
 
 ---
 
+## The gap to commercial OCR, ranked
+
+*(written 2026-08-12, at 1.10.0, after the queue agreed that day was closed.
+Asked as: what would it take to be as good as ABBYY? Grounded in what this app
+verifiably does not do — each absence below was confirmed by grep, not
+remembered.)*
+
+The honest summary first: **this app is not behind on rigour.** It is validated
+against a 232-document corpus through the shipped pipeline, its text layer beats
+the obvious alternative 99.8% to 64% on word retention, and its per-page routing
+matches what ABBYY's own output does — measured from 275 MRC files in the user's
+library, 52 of 60 sampled produced by FineReader, and *they route per page
+exactly as this does*. The gap is not quality of engineering. It is **layout
+analysis**, and secondarily image preparation.
+
+**1. Recover the text already being lost (R39).** Not a feature. On Automatic —
+the default — recognition runs at a resolution where Vision collapses, and one
+measured page yields 3,046 characters at an explicit 300 DPI against 924. This is
+the cheapest large win available and it is already specified. Nothing else on
+this list should be started first.
+
+**2. Deskew, and the rest of image preparation.** `grep -i skew Sources/` returns
+nothing. Every commercial engine straightens a page before reading it, because a
+2° rotation smears a line across the horizontal projection every layout step
+depends on, and thresholding a skewed scan is worse still. This app rebuilds
+pages and never straightens them. On the material this corpus is made of —
+photocopies, microfilm, tightly-bound books photographed at an angle — this is
+plausibly the largest accuracy gain left after R39, and unlike most of this list
+it is self-contained: it happens inside `Flattener`, before recognition, and the
+gate can measure it in characters. Despeckle and border removal belong with it.
+
+**3. Columns, reading order and tables.** There is no column model. The nearest
+thing is `minimumColumnOverlap`, a *guard* that refuses a hyphen join when two
+lines do not share a column — it detects that two spans disagree, it does not
+segment the page. Everything downstream inherits Vision's reading order, which
+FEATURES.md already records going wrong on poor pages, and cross-column
+hyphenation was abandoned because there was no column detection to hang it on.
+This is what makes copying a two-column page produce interleaved nonsense, and it
+is the single biggest *functional* difference from FineReader. It is also the
+most work: a real segmenter, plus a decision about what to do when it is wrong on
+an irreplaceable document.
+
+**4. Show uncertain words instead of deleting them.** The confidence slider's
+only action is to throw text away, and the panel says so honestly. Commercial
+tools do the opposite — they surface low-confidence words for a human to confirm.
+For archival work where the operator is the same person who owns the documents,
+a review pass over the doubtful words would recover more than any threshold can.
+
+**5. Structure tags.** No `/StructTreeRoot`, no `/MarkInfo`. The output is a
+picture with invisible text over it, which is searchable but not *navigable* — a
+screen reader gets a wall of text with no headings, and reflow is impossible.
+This is the accessibility half of what PDF/A was declined for, and it does not
+require the font embedding that made PDF/A too expensive.
+
+**6. More export formats.** Text and searchable PDF. DOCX and EPUB are what
+people ask commercial OCR for, and both need (3) first — an export without
+reading order is worse than no export.
+
+**7. A watched folder or a command line.** The GUI batch is the only way in.
+Cheap, and it is what turns this from an application into part of a workflow.
+
+**What is not closable, and should be said plainly.** Recognition of degraded
+19th-century type, Fraktur, and heavy tabular material is the engine's, and the
+engine is Vision. ABBYY's advantage there is decades of per-character classifiers
+with dictionary feedback, and no amount of work in this repository changes it.
+The decision recorded in HANDOFF — keep mac-ocr, do not reimplement Vision — is
+also a decision to accept that ceiling. It is the right trade for this app's
+purpose, but it is a ceiling, and anyone who needs Fraktur should be told to use
+something else rather than sold a setting.
+
 ## Likely worth doing
 
 ### A per-page background factor that actually works — second attempt
