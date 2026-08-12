@@ -15,6 +15,37 @@ parked for exactly that reason.
 
 ## Likely worth doing
 
+### A per-page background factor that actually works — second attempt
+*(first attempt built and reverted 2026-08-11, BUGS.md R35; kept here because the
+prize is real and the reason it failed is specific)*
+
+A layered page whose background is paper rather than a picture can be shrunk far
+harder for nothing — Photo detail is a promise about *photographs*, and such a
+page has none for it to be about. The first attempt measured tone outside the
+text regions, as the highest of 64 tiles, and it failed for a reason worth
+knowing: fed the boxes the pipeline actually produces, the paper and picture
+populations form a continuum with no gap. Vision does not box every line, and
+text it leaves unboxed reads as background tone — correctly, since unboxed text
+really is in the background and really would blur.
+
+**Two things to carry into any second attempt.**
+
+The prize is smaller than R35 first claimed. Its 1.74x ceiling was measured by
+forcing 6x on every layered page including photographs, and a photograph at 6x
+is destroyed. The honest prize is 1.74x *on paper-background pages only*.
+
+And the signal has to be something other than tone-outside-text. The obvious
+candidates, none tried: local variance in the filled background after the text
+is lifted out (paper is flat, a halftone is not, and the fill makes the
+comparison fair); or the fraction of the background that survives a heavy blur
+unchanged; or simply whether the *source page* carried an embedded image at all,
+which `Flattener.largestImage` already answers and which no amount of unboxed
+text can confuse.
+
+Judge any attempt by reading which pages it fires on, not by the aggregate — the
+first one looked clean at 0.0000–0.0126 against 0.0955 on standalone boxes and
+was a continuum on real ones.
+
 ### Make words hyphenated across a line break searchable — SHIPPED
 *(requested and shipped 2026-08-11. Kept because the reasoning below is what the
 shipped guards rest on.)*

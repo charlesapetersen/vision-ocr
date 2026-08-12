@@ -1977,7 +1977,7 @@ The abandoned implementation is kept as
 and green at 626 checks, with red→green proven for every check and four mutants
 killed, before the corpus said not to ship it.
 
-### R35 · Per-page background downsample — WONTFIX *(decided: no threshold exists)*
+### R35 · Per-page background downsample — WONTFIX *(decided: no threshold exists; worth another attempt with a better signal — see FEATURES.md)*
 Built, measured, reverted. The idea: Photo detail is a promise about
 *photographs*, so a layered page whose background is only paper could be shrunk
 much harder for free, and only pages carrying a picture need honour the setting.
@@ -2008,11 +2008,22 @@ benefit.
 
 Two things worth keeping from the attempt:
 
-- **The 6x ceiling belongs to the user, not to a heuristic.** What the ceiling
-  measurement actually shows is that the Photo detail scale stops too early:
-  Smallest files is 3x, and 6x is another 1.74x. That is a labelled choice
-  someone can make about their own archive, which is the R13 shape, and it needs
-  no detector at all.
+- **The 6x ceiling is not what it looked like, and the correction matters for
+  anyone reopening this.** The figure above was taken by forcing 6x on *every*
+  layered page, photographs included — and rendered, a photograph at 6x is
+  destroyed: on `Findlay_1992` p21 the trees, buildings and texture go to a
+  blur, while the text stays perfect because it comes from the stencil. 57 KB
+  at 2x against 21 KB at 6x, and the picture is no longer a photograph of a
+  specific place.
+  So 1.74x is **not** the prize for a working per-page rule. It is the prize for
+  destroying pictures. A correct rule would apply 6x only where the background
+  is paper, and would win 1.74x *on those pages alone* — worth having, but a
+  smaller number than this entry first implied, and the smaller number is the
+  one to justify the work against.
+  Offering 6x as a user setting was considered on the strength of the original
+  figure and **declined** once the page was looked at: FEATURES.md's bar is that
+  a feature which could plausibly misrepresent a document is not worth its
+  convenience. The scale stays at three levels.
 - **The app can inflate an already-compact scan** — `Lipset_Luethy_1955`
   285 KB → 792 KB, `Marth_1982` 145 KB → 361 KB, `_1958_Executive Pay`
   442 KB → 797 KB. Rebuilding at native DPI and re-encoding loses to an input
