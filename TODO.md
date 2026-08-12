@@ -26,6 +26,73 @@ R21, R22, T3, H1, U13–U16), and the three interface questions that could only 
 answered by a running app have been answered — in a headless VM, off-screen. They
 passed, and the run found U17, which was worse than any of them.
 
+## Out of the full-corpus gate run (2026-08-12)
+
+The gate ran: **232 documents, 232 succeeded, 0 failed, 232 outputs**, 34.2M
+characters, 23 documents carrying colour, **1,198 MB in → 1,039 MB out**, 78
+minutes at concurrency 6. Nothing dropped, nothing failed — which is what the
+gate exists to establish.
+
+It also surfaced work. **None of the following is done.** The fix in the first
+item was written, validated against the corpus and then reverted deliberately,
+so what is below is a specification rather than a diff.
+
+- [ ] **R38 — dense bilevel type is routed to the picture path and inflates
+      catastrophically.** Four documents come out *bigger*: `Boltanski_2006`
+      **16 MB → 156 MB (9.45x)**, `Noble_1977` 17 MB → 87 MB (5.0x),
+      `_1950_Comic` 3.48x, `_1926_Clapp` 3.20x.
+
+      *Cause.* Boltanski's source stores each 47 MP page as bilevel JBIG2 at
+      ~150 KB. Our output gives those pages a JBIG2 stencil **plus** a 13 MP
+      greyscale DCT background at ~1.7 MB, carrying nothing the stencil does not
+      already have. They reach the picture route on **ink coverage alone** —
+      0.26 against the 0.15 threshold — while the other two signals say text
+      emphatically: tone 0.013, saturation 0.0000. `isPicture` ORs its three
+      signals, so one overrides two.
+
+      *Fix, validated but not applied.* Require corroborating tone before ink
+      alone counts: add `pictureInkMinimumTone` (0.03) and gate the ink branch
+      on it. Measured separation across the corpus's ink-triggered pages — real
+      pictures **0.071–0.145** (Findlay's photograph, Black, Ehrenreich, Marth),
+      dense bilevel type **0.0017–0.0247** (all four inflating documents). The
+      threshold sits in the gap. Confirmed by re-running the classifier: those
+      four move to 1-bit, the picture pages all stay pictures.
+
+      *Why it is safe, checked rather than argued.* The picture route exists
+      because thresholding destroys an **unresolved** halftone. Low tone means
+      the page is genuinely bimodal, which is exactly when 1-bit is lossless.
+      The two riskiest pages — a newspaper comic and a title spread — were
+      rendered at 1-bit and are clean. Boltanski's 96%-ink cover keeps its
+      picture routing (tone 0.0527) either way.
+
+      Wants: failing test first, a mutant on the new constant, a corpus re-run
+      confirming those four shrink and nothing else moves, and a `BUGS.md`
+      entry.
+
+- [ ] **R37's scale is wrong and should be corrected in the same pass.** It says
+      "134.3 MB in, 75.0 MB out, 1.79x" and "15 of 40 grew". That was a
+      `head -40` of a `find`, not a sample. The full corpus is **1.15x**, with
+      **91 of 232 grown (39%)** and a worst case of 9.45x rather than 2.26x. The
+      entry's *diagnosis* — symbol-mode JBIG2 in the inputs — still holds for the
+      cases it examined. Its scale does not, and R38 is a second and larger cause
+      it missed.
+
+- [ ] **Decide what the baseline is.** The 1.7.0 figures come from a
+      255-document library set that cannot be reconstructed from the repo
+      (Zotero holds 16,079 PDFs). Either adopt the 232-document `testdocs` run
+      as the new baseline and record it in `HANDOFF.md`, or rebuild the 255 from
+      `testdocs/manifest.tsv` and `Tools/sample-zotero.py` first. Until then,
+      "23 minutes" and "78 minutes" are not comparable and neither are the
+      character counts.
+
+- [ ] **Promote the concurrent gate harness into `Tools/`.** A serial loop over
+      `makeSearchablePDF` projected **9.1 hours**; driving `OCRModel.start()` at
+      the app's own concurrency did the same work in **78 minutes**. The serial
+      version measures a configuration the app never runs and its timing number
+      is worthless. Two things the harness must keep: `warnDigitalText` off, or
+      the digital-text modal hangs a headless run forever; and reading the
+      output PDFs at the end rather than trusting the outcome enum.
+
 ## The queue, in the order it was decided (2026-08-12)
 
 Agreed with the user at the end of the 2026-08-12 session. Items 1–2 are gates on
