@@ -64,6 +64,18 @@ enum Recogniser {
         return (try? request.supportedRecognitionLanguages()) ?? []
     }
 
+    /// The codes in `list` this Mac will refuse, given the recognizer in use.
+    ///
+    /// Empty when the language list could not be read at all — that means "we do
+    /// not know", and reporting every code as unsupported because the probe
+    /// failed would be a warning that fires hardest when it knows least.
+    static func unsupportedLanguages(in list: String, fast: Bool) -> [String] {
+        let available = supportedLanguages(fast: fast)
+        guard !available.isEmpty else { return [] }
+        let known = Set(available.map { $0.lowercased() })
+        return Runner.splitList(list).filter { !known.contains($0.lowercased()) }
+    }
+
     /// Every page of a document, in the shape `SearchableWriter` consumes.
     ///
     /// **Recognises the bitmaps `flatten` already produced**, when there are
@@ -192,8 +204,16 @@ enum Recogniser {
         let body: String
         switch settings.textFormat {
         case .text:
+            // The `==> path (page n/N) <==` banner only when there is more than
+            // one page. Verified against the binary rather than assumed: a
+            // single-page file gets no banner, a two-page file gets one per page.
+            // Emitting it unconditionally put the file's whole path into a
+            // one-page .txt, which the word-spacing check noticed by counting
+            // every path component as a word.
             body = out.map { p in
-                "==> \(file.path) (page \(p.page)/\(out.count)) <==\n" + p.text
+                out.count > 1
+                    ? "==> \(file.path) (page \(p.page)/\(out.count)) <==\n" + p.text
+                    : p.text
             }.joined(separator: "\n") + "\n"
         case .json:
             let data = try JSONSerialization.data(withJSONObject: out.map(object),
@@ -240,7 +260,19 @@ enum Recogniser {
     /// refusal, `recogniserDPICeiling` and R39 unnecessary rather than merely
     /// unfortunate.
     static func render(_ page: PDFPage, settings: Prefs.Snapshot) -> CGImage? {
-        let box = Flattener.fullBox(of: page)
+        // **The crop box, not the whole sheet.** `SearchableWriter.compose` maps
+        // observations from the crop box into the sub-rectangle where the crop
+        // lands on the published media-box page, because that is what mac-ocr
+        // rendered — CoreGraphics draws a page's *display* box by default.
+        // Rendering the media box here instead would normalise the boxes to a
+        // different rectangle and compose would map them a second time, putting
+        // the invisible text off the ink on every cropped page. Two of the
+        // crop-box checks caught exactly that.
+        //
+        // `displayBox` falls back to the media box when a page has no crop box,
+        // which is 44 of the 78 corpus documents and every rebuilt file — so for
+        // almost everything the two are the same rectangle.
+        let box = Flattener.displayBox(of: page)
         let dpi = settings.pdfDPIAuto ? Flattener.rebuildDPI(of: page)
                                       : Double(settings.pdfDPI)
         let scale = dpi / 72.0
@@ -250,13 +282,48 @@ enum Recogniser {
         else { return nil }
         let w = max(Int(wide), 1), h = max(Int(high), 1)
         guard let grey = Flattener.renderGrey(page, box: box, scale: scale,
-                                              width: w, height: h, from: .mediaBox),
+                                              width: w, height: h, from: .cropBox),
               let provider = CGDataProvider(data: Data(grey) as CFData)
         else { return nil }
         return CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 8,
                        bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
                        bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
                        decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+    }
+
+    /// The configured request, built where it can be asserted.
+    ///
+    /// Separate from `recognise` on purpose. The suite used to have forty checks
+    /// on the argument list this app handed a CLI, and every one of them lost its
+    /// subject when recognition came in-process. What those checks were really
+    /// protecting is that **a setting the panel offers actually reaches the
+    /// engine** — the failure `ocrAllPages` is named for, a setting that looked
+    /// live and could not affect anything. A request object's properties are
+    /// readable, so that property is still enumerable rather than merely
+    /// plausible; see "every recognition setting reaches the request".
+    static func makeRequest(_ settings: Prefs.Snapshot) -> VNRecognizeTextRequest {
+        let request = VNRecognizeTextRequest()
+        request.revision = revision
+        request.recognitionLevel = settings.fast ? .fast : .accurate
+        request.usesLanguageCorrection = settings.languageCorrection
+
+        let languages = Runner.splitList(settings.languages)
+        if !languages.isEmpty { request.recognitionLanguages = languages }
+        // Set explicitly, and only when no language was named. Leaving it unset
+        // is not the same as leaving it alone: with no languages given Vision
+        // falls back to its own default list rather than detecting, so an
+        // untouched settings panel would have quietly stopped detecting the
+        // language — a divergence from every figure the corpus was measured
+        // with. mac-ocr sets `automaticallyDetectsLanguage = languages.isEmpty`
+        // and this matches it.
+        request.automaticallyDetectsLanguage = languages.isEmpty
+
+        let words = Runner.splitList(settings.customWords)
+        if !words.isEmpty { request.customWords = words }
+        if settings.minTextHeightOn, settings.minTextHeight > 0 {
+            request.minimumTextHeight = Float(settings.minTextHeight)
+        }
+        return request
     }
 
     /// One page's recognised text, in the shape the rest of the pipeline already
@@ -270,26 +337,7 @@ enum Recogniser {
     /// conventions.
     static func recognise(_ image: CGImage, orientation: CGImagePropertyOrientation = .up,
                           settings: Prefs.Snapshot) throws -> [SearchableWriter.Observation] {
-        let request = VNRecognizeTextRequest()
-        request.revision = revision
-        request.recognitionLevel = settings.fast ? .fast : .accurate
-        request.usesLanguageCorrection = settings.languageCorrection
-        let languages = Runner.splitList(settings.languages)
-        if !languages.isEmpty { request.recognitionLanguages = languages }
-        // Set explicitly, and only when no language was named. Leaving it unset
-        // is not the same as leaving it alone: with no languages given Vision
-        // falls back to its own default list rather than detecting, so an
-        // untouched settings panel would have quietly stopped detecting the
-        // language — a divergence from every figure the corpus was measured
-        // with. mac-ocr sets `automaticallyDetectsLanguage = languages.isEmpty`
-        // and this matches it.
-        request.automaticallyDetectsLanguage = languages.isEmpty
-        let words = Runner.splitList(settings.customWords)
-        if !words.isEmpty { request.customWords = words }
-        if settings.minTextHeightOn, settings.minTextHeight > 0 {
-            request.minimumTextHeight = Float(settings.minTextHeight)
-        }
-
+        let request = makeRequest(settings)
         // Orientation, not `.up`. A photograph from a phone stores its pixels
         // sideways and says so in an EXIF tag, and
         // `CGImageSourceCreateImageAtIndex` hands back the stored pixels

@@ -201,7 +201,6 @@ enum Prefs {
     static let outputFolder      = "outputFolder"
     static let besideOriginal    = "besideOriginal"
     static let openWhenDone      = "openWhenDone"
-    static let binaryPath        = "binaryPath"
 
     // Update checking. The only keys in here that cause network traffic.
     static let checkForUpdates   = "checkForUpdates"
@@ -336,7 +335,7 @@ enum Prefs {
     /// costs: `resetAll()` omitted four keys, so a reset silently left them set.
     /// One list, three readers.
     static let allKeys: [String] = [
-        mode, outputFolder, besideOriginal, openWhenDone, binaryPath, textFormat,
+        mode, outputFolder, besideOriginal, openWhenDone, textFormat,
         fast, languages, languageCorrection, confidence, pdfDPIAuto, pdfDPI,
         password, customWords, minTextHeightOn, minTextHeight,
         warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail,
@@ -381,7 +380,6 @@ enum Prefs {
             mode: Mode.searchablePDF.rawValue,
             besideOriginal: false,
             openWhenDone: true,
-            binaryPath: "",
 
             // On by default: an app distributed outside the App Store has no
             // other way to say "the thing that lost your table rows is fixed".

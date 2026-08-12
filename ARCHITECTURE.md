@@ -20,13 +20,13 @@ shared.
    expands folders, filters by `supportedExtensions` and dedupes by standardized
    path.
 2. **Start** — [`OCRModel.start()`](Sources/Model.swift#L234), on the main actor:
-   resolves `mac-ocr`, sizes an `OperationQueue` from `Prefs.concurrency`, builds
+   sizes an `OperationQueue` from `Prefs.concurrency`, builds
    a [`Prefs.Snapshot`](Sources/Prefs.swift#L105) of every per-file setting,
    reserves collision-free paths with
    [`uniqueOutputs`](Sources/Model.swift#L391), records which of those had to be
    renamed, installs the `finishUp` closure, and enqueues one operation per file.
 3. **Per file**, on a worker thread. Text mode stops here:
-   [`Runner.run`](Sources/Runner.swift#L389) hands mac-ocr the user's destination
+   [`Recogniser.extract`](Sources/Recogniser.swift) writes to the user's destination
    path directly — **no staging**, unlike the searchable path.
 
 Searchable mode continues, in a scratch directory under `NSTemporaryDirectory()`,
@@ -69,7 +69,7 @@ The single most confusable thing in the codebase, and the source of C7.
 
 | | box | who uses it | why |
 |---|---|---|---|
-| [`displayBox`](Sources/Flattener.swift#L388) | **crop** | `compose` | What a viewer shows, and — measured — what mac-ocr renders. Observations come back relative to it. |
+| [`displayBox`](Sources/Flattener.swift#L388) | **crop** | `compose` | What a viewer shows, and what `Recogniser.render` renders on the non-rebuild path. Observations come back relative to it. |
 | [`fullBox`](Sources/Flattener.swift#L403) | **media** | `flatten` | The whole sheet. A rebuild that kept only the crop would silently discard what lies outside it. |
 
 They never disagree destructively, because the rebuilt file carries only a media
@@ -89,7 +89,7 @@ drift apart.
 2. **Page-count verification is weak by construction.** `produced == expected`
    cannot see a page that rendered blank, or a text layer shorter than the images
    on the JBIG2 route. A recogniser that skipped a page *is* now caught, by
-   `SearchableWriter.missingPages` (C12) — mac-ocr emits a record per page even
+   `SearchableWriter.missingPages` (C12) — the recogniser records every page it visits even
    when blank, so a missing record is a skip. Anything else that can drop content
    still needs its own report: that is invariant 1, and it is what C1, C8, C9 and
    C12 were all about.
@@ -101,7 +101,7 @@ drift apart.
    twice — a fixed threshold on non-white paper, and ink coverage being blind to
    pale colour. Three signals now feed it, and the tone and saturation ones exist
    because coverage alone was wrong.
-5. **Cancellation crosses four process boundaries** — mac-ocr, jbig2, qpdf, and any
+5. **Cancellation crosses three process boundaries** — jbig2, qpdf, and any
    grandchild holding a pipe. `Runner.stop` escalates SIGTERM → SIGKILL, and both
    reach the child's *process group*, which Foundation makes it the leader of —
    so descendants do go down with it (R21). `kill(pid, …)` would reach one
@@ -160,7 +160,7 @@ If something ever does drive it directly, these are the things that would bite:
 - **Failure is reported, never published.** Three gates guard `publish`, and the
   `report` callback is called exactly once per file with `.succeeded`, `.failed`
   or `.cancelled`. A `.failed` always carries a message (R17).
-- **`Runner.resolveBinary()` shells out** to a login shell if `mac-ocr` is not in
+- **`Runner.locateTool` shells out** to a login shell if a tool is not in
   the three standard prefixes, and memoises the result. Call
   `Runner.forgetToolPaths()` if the host installs tools mid-session.
 

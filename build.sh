@@ -85,46 +85,19 @@ else
   echo "    (skipped — app will use the generic icon)"
 fi
 
-# The recognition engine travels with the app.
+# The recognition engine used to travel with the app: a 2.4 MB copy of mac-ocr
+# in Contents/Resources, bundled precisely so that using this app did not mean
+# installing Homebrew, then Node, then an npm package, in a Terminal.
 #
-# mac-ocr is a universal Mach-O linking only system frameworks, so it needs
-# neither Homebrew nor node at runtime — verified with `env -i`. Bundling it is
-# the difference between "download and drag" and "open Terminal, install
-# Homebrew, install Node, install a package". MIT, Copyright (c) Hiroki Osame;
-# the licence is copied in beside it.
-#
-# Taken from wherever this machine has it rather than vendored into the repo: a
-# 2.4 MB binary in git costs every clone forever, and a --dmg build that cannot
-# find it should fail loudly rather than quietly ship the old Terminal
-# instructions.
-echo "==> Bundling mac-ocr"
-MACOCR=""
-for candidate in \
-  "/opt/homebrew/lib/node_modules/mac-ocr/bin/mac-ocr" \
-  "/usr/local/lib/node_modules/mac-ocr/bin/mac-ocr" \
-  "$(command -v mac-ocr 2>/dev/null || true)"; do
-  [ -n "$candidate" ] && [ -x "$candidate" ] && { MACOCR="$candidate"; break; }
-done
-
-if [ -n "$MACOCR" ]; then
-  # Resolve a symlink (npm's bin/ is one) so we copy the executable itself.
-  MACOCR="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$MACOCR")"
-  cp "$MACOCR" "$APP/Contents/Resources/mac-ocr"
-  chmod +x "$APP/Contents/Resources/mac-ocr"
-  LICENSE_SRC="$(dirname "$(dirname "$MACOCR")")/LICENSE"
-  [ -f "$LICENSE_SRC" ] && cp "$LICENSE_SRC" "$APP/Contents/Resources/mac-ocr-LICENSE"
-  echo "    $("$APP/Contents/Resources/mac-ocr" --version) from $MACOCR"
-  echo "    $(lipo -archs "$APP/Contents/Resources/mac-ocr")"
-elif [ "$DMG" = 1 ]; then
-  echo "mac-ocr not found, and a disk image without it would send its user to" >&2
-  echo "the Terminal. Install it (npm install -g mac-ocr) and build again." >&2
-  exit 1
-else
-  echo "    (not found — this build will fall back to Homebrew or the login shell)"
+# It is gone. Recognition calls Vision directly (Sources/Recogniser.swift), so
+# there is nothing to bundle, nothing to find, and nothing to keep in step with
+# a corpus baseline. The MIT licence still travels with the app because three of
+# the request's options were got right by reading mac-ocr's source — see the
+# credit in Recogniser.swift.
+if [ -f "Resources/mac-ocr-LICENSE" ]; then
+  cp "Resources/mac-ocr-LICENSE" "$APP/Contents/Resources/mac-ocr-LICENSE"
 fi
 
-# The compression tools, and everything they link.
-#
 # Optional in a way mac-ocr is not: without them the app writes Flate-compressed
 # pages, which work identically and are about three times the size. Bundling
 # them means "smaller files" stops being a thing you have to visit Homebrew for.
@@ -158,9 +131,6 @@ echo "==> Signing (ad hoc)"
 # Inside out: a nested executable has to be signed before the bundle that
 # contains it, or the outer signature is computed over an unsigned helper and
 # the app is rejected as damaged.
-if [ -f "$APP/Contents/Resources/mac-ocr" ]; then
-  codesign --force --sign - "$APP/Contents/Resources/mac-ocr"
-fi
 # Dylibs before the executables that load them, executables before the bundle.
 if [ -d "$APP/Contents/Resources/lib" ]; then
   find "$APP/Contents/Resources/lib" -name '*.dylib' -exec codesign --force --sign - {} \;
@@ -242,10 +212,10 @@ if [ "$DMG" = 1 ]; then
   trap release_mount EXIT
   hdiutil attach -quiet -nobrowse -readonly -mountpoint "$MP" "$DMG_PATH"
   RES="$MP/$APP_NAME.app/Contents/Resources"
-  # mac-ocr is required; the compression tools are checked only if bundled,
-  # since a build on a machine without them is legitimate.
-  for tool in mac-ocr jbig2 qpdf; do
-    [ "$tool" = "mac-ocr" ] || [ -x "$RES/$tool" ] || continue
+  # Checked only if bundled, since a build on a machine without them is
+  # legitimate — the app falls back to CoreGraphics' Flate.
+  for tool in jbig2 qpdf; do
+    [ -x "$RES/$tool" ] || continue
     # Retried, briefly. A freshly attached image is not always ready to exec
     # from the instant `hdiutil attach` returns, and one release build failed
     # here on a tool that ran fine three times immediately afterwards. A

@@ -31,9 +31,10 @@ Everything the app needs — reading the page, and compressing the result — sh
 inside it.
 
 > Earlier versions asked you to install Homebrew, then Node, then an npm package
-> before the app would do anything. If you did that, you can leave it alone —
-> the app now uses its own copy either way, and you can point **Settings ▸
-> Behaviour ▸ mac-ocr path** at yours if you'd rather.
+> before the app would do anything, and later versions carried a copy of that
+> program inside them. Neither is true now: recognition is Apple's own Vision
+> framework, called directly. If you installed anything for an older version you
+> can remove it.
 
 Searchable PDFs are compressed automatically, which makes them roughly a third
 the size — the tools for that are inside the app too. Pages that mix text with a
@@ -109,12 +110,13 @@ If the **Open Anyway** line isn't there, it's because it only appears just after
 a blocked attempt and lapses after about an hour. Try opening the app again,
 then go straight back to Settings.
 
-#### It says it can't find mac-ocr
+#### Recognition looks wrong for my language
 
-It shouldn't — the engine is inside the app. If you see this, the copy in the
-app bundle is missing or has been quarantined; re-downloading usually fixes it.
-Failing that, `npm install -g mac-ocr` and point **Settings ▸ Behaviour ▸
-mac-ocr path** at the result.
+Use **Settings ▸ Recognition ▸ Languages ▸ Add** to pick from what your Mac
+supports. A code it doesn't recognise fails every file, and Settings says so
+before you start. Note that **Fast supports far fewer languages** than the normal
+recogniser.
+
 
 #### How accurate is it?
 
@@ -203,7 +205,8 @@ they work identically, just take more disk. Installing it separately fixes that:
 ## Credits
 
 Recognition is Apple's Vision framework, reached through
-[mac-ocr](https://github.com/privatenumber/mac-ocr) by Hiroki Osame. Compression
+[mac-ocr](https://github.com/privatenumber/mac-ocr) by Hiroki Osame, whose source
+settled three details of how Vision is called here. Compression
 is [jbig2enc](https://github.com/agl/jbig2enc) and
 [qpdf](https://github.com/qpdf/qpdf), with leptonica and the usual image codecs
 behind them. All ship inside the app under their own licences, which travel with

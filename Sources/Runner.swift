@@ -1,14 +1,17 @@
 import Foundation
 
-/// Locates the mac-ocr binary and runs it once per input file.
+/// Finds the compression tools, and the process handling they need.
 ///
-/// One process per file rather than one process for all of them: mac-ocr goes
-/// silent when its output is piped, so per-file invocation is the only way to
-/// report real progress, and it lets one bad PDF fail without taking the rest
-/// of the batch down with it.
+/// This file used to exist because recognition shelled out to `mac-ocr`, and
+/// most of it was about launching, bounding, streaming and killing that child —
+/// the source of C6, R2, R3, R16, R17, R21, R22, U18 and R30. Recognition is
+/// now in-process (`Recogniser`), and what is left is what `jbig2` and `qpdf`
+/// still need: finding them on a PATH a Finder-launched app does not have,
+/// refusing one built for the wrong architecture, and a bounded read that
+/// cannot hang the main thread.
 enum Runner {
 
-    // MARK: - Finding the binary
+    // MARK: - Finding the tools
 
     /// A GUI app launched from Finder gets a bare PATH (/usr/bin:/bin:...), so
     /// the Homebrew/npm install of mac-ocr is *not* on it. Look in the places
@@ -33,20 +36,6 @@ enum Runner {
         guard fm.fileExists(atPath: path, isDirectory: &isDirectory),
               !isDirectory.boolValue else { return false }
         return fm.isExecutableFile(atPath: path)
-    }
-
-    /// Resolved path to mac-ocr, or nil if it can't be found.
-    /// An explicit path in settings always wins.
-    static func resolveBinary() -> String? {
-        let override = (UserDefaults.standard.string(forKey: Prefs.binaryPath) ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if !override.isEmpty {
-            // Checked live, not cached: the user can point this anywhere.
-            return isRunnable(override) ? override : nil
-        }
-        // The copy inside the app, then the standard prefixes, then a login
-        // shell for nvm/asdf/custom prefixes.
-        return locateTool("mac-ocr")
     }
 
     /// The copy of a helper shipped inside the app bundle, if there is one.
@@ -153,21 +142,14 @@ enum Runner {
     }
 
     /// Forgets the cache, for when the user installs something mid-session.
-    ///
-    /// Takes the language lists with it: they were read *from* a binary, and
-    /// pointing Settings at a different one can change the answer. A sibling
-    /// left behind here would be R23's shape exactly.
     static func forgetToolPaths() {
         cacheLock.lock()
         discovered.removeAll()
-        languageLists.removeAll()
         cacheLock.unlock()
     }
 
     private static let cacheLock = NSLock()
     private static var discovered: [String: String?] = [:]
-
-    private static func askLoginShell() -> String? { askLoginShell(for: "mac-ocr") }
 
     private static func askLoginShell(for name: String) -> String? {
         let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
@@ -249,392 +231,6 @@ enum Runner {
         return String(decoding: data, as: UTF8.self)
     }
 
-    /// The recognition languages this Mac actually supports, in the order
-    /// `mac-ocr` lists them — which is Vision's own priority order.
-    ///
-    /// The app has never called this subcommand, so `-l` took BCP-47 codes typed
-    /// from memory. The cost of getting one wrong is not what FEATURES.md
-    /// assumed. Measured: `mac-ocr` exits **64** with
-    /// `Unsupported recognition language: xx-XX`, so a wrong code does not
-    /// silently do nothing — it fails **every file in the batch**, one after
-    /// another, and the run produces no output at all.
-    ///
-    /// **Fast recognition supports far fewer**, which is the sharp edge here:
-    /// 6 languages against 30 on macOS 26.6, so ticking "Fast" with `ja-JP`,
-    /// `ru-RU`, `zh-Hans` or any of twenty-four others set turns a working
-    /// configuration into a batch where nothing succeeds. Nothing in the app
-    /// said so.
-    ///
-    /// Cached per recognizer: the answer depends only on the macOS version and
-    /// the binary, neither of which changes while the app runs. `forgetToolPaths`
-    /// clears it, because pointing Settings at a different binary can change it.
-    static func availableLanguages(fast: Bool) -> [String] {
-        cacheLock.lock()
-        if let cached = languageLists[fast] { cacheLock.unlock(); return cached }
-        cacheLock.unlock()
-
-        var found: [String] = []
-        if let binary = resolveBinary(),
-           let out = captureBounded(binary, fast ? ["languages", "--fast"] : ["languages"]) {
-            found = out.split(whereSeparator: \.isNewline)
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty }
-        }
-        cacheLock.lock()
-        languageLists[fast] = found
-        cacheLock.unlock()
-        return found
-    }
-
-    private static var languageLists: [Bool: [String]] = [:]
-
-    /// The codes in `list` this Mac will refuse, given the recognizer in use.
-    ///
-    /// Empty when the language list could not be read at all — an empty answer
-    /// there means "we do not know", and reporting every code as unsupported
-    /// because the probe failed would be worse than saying nothing.
-    static func unsupportedLanguages(in list: String, fast: Bool) -> [String] {
-        let available = availableLanguages(fast: fast)
-        guard !available.isEmpty else { return [] }
-        let known = Set(available.map { $0.lowercased() })
-        return splitList(list).filter { !known.contains($0.lowercased()) }
-    }
-
-    // MARK: - Building the command
-
-    /// Builds the argument list for one input file in **Extract Text** mode.
-    /// `outputFolder` is ignored when the "beside the original" pref is set.
-    ///
-    /// `explicitOutputFile` overrides both and is what the batch path always
-    /// passes, because `uniqueOutputs` has already resolved a distinct
-    /// destination for every input — two files called `scan.pdf` in different
-    /// folders would otherwise write to one place.
-    ///
-    /// There was an `explicitOutputDir` here too, for a caller that hands mac-ocr
-    /// a temporary copy rather than the user's own file. It never had one: the
-    /// searchable pipeline does not go through `arguments` at all, so the
-    /// parameter was a correct, tested override for a caller that did not exist.
-    /// Deleted rather than kept — dead options are how `ocrAllPages` survived
-    /// for months looking live.
-    ///
-    /// `settings` is snapshotted once per batch on the main actor. It defaults to
-    /// reading the live values so tools and tests stay terse, but the batch path
-    /// always passes one — reading `UserDefaults` per file on a worker thread is
-    /// what let a mid-run settings change apply to some files and not others.
-    ///
-    /// **There is deliberately no searchable-PDF form.** mac-ocr's own
-    /// `searchable-pdf` subcommand has zero call sites in this app and always
-    /// has — see HANDOFF.md for why we write the text layer ourselves — so the
-    /// branch that used to build it here described a command that never ran, as
-    /// did the `--ocr-all-pages` and `--ocr-strategy` flags, which belong to
-    /// that subcommand and to nothing else. `Model.makeSearchablePDF` is the
-    /// searchable pipeline; it asks mac-ocr for recognition only, through
-    /// `jsonLinesArguments`.
-    static func arguments(
-        for file: URL,
-        outputFolder: URL?,
-        explicitOutputFile: URL? = nil,
-        settings: Prefs.Snapshot = .current()
-    ) -> [String] {
-        var args = [file.path]
-
-        // --- where the result goes -------------------------------------------
-        // '[name]' is a mac-ocr template placeholder for the input's base name.
-        // Without it, a directory target yields "scan.pdf.txt" rather than
-        // "scan.txt".
-        let beside = settings.besideOriginal
-        let format = settings.textFormat
-        args += ["--format", format.rawValue]
-        if let explicitOutputFile {
-            // A concrete path, not mac-ocr's '[name]' template: two inputs
-            // with the same base name would otherwise write to one file.
-            args += ["-o", explicitOutputFile.path]
-        } else {
-            let dir = beside ? "[dir]" : (outputFolder?.path ?? "[dir]")
-            args += ["-o", "\(dir)/[name].\(format.fileExtension)"]
-        }
-
-        return args + recognitionArguments(settings)
-    }
-
-    /// Recognition options, identical whatever we ask mac-ocr to produce.
-    /// What to assume the engine will render at when nothing better is known.
-    ///
-    /// **This is not mac-ocr's default, and it was documented as though it
-    /// were.** `mac-ocr ocr --help` says `--pdf-dpi` defaults to *"auto (derived
-    /// from embedded image resolution; falls back to 144)"*. The comment here
-    /// used to read "the DPI mac-ocr renders PDF pages at when told nothing",
-    /// and the ceiling arithmetic below was built on that claim — so on
-    /// Automatic the ceiling could only ever bind when it fell below 300, and a
-    /// sheet needing a ceiling of 565 was handed to an engine about to use 600.
-    /// Measured: a 20x30 inch page declaring 12000x18000 is refused outright,
-    /// "216 megapixels (max 200 MP)" (R39).
-    ///
-    /// It survives as the fallback for a document whose own resolution cannot be
-    /// read — a born-digital file, where the engine uses 144 and no ceiling
-    /// binds anyway.
-    static let recogniserDefaultDPI = 300
-
-    static func recognitionArguments(_ settings: Prefs.Snapshot = .current(),
-                                     dpiCeiling: Int? = nil,
-                                     engineAutoDPI: Int? = nil) -> [String] {
-        var args: [String] = []
-
-        if settings.fast { args.append("--fast") }
-
-        // Repeatable -l, one per language. Accepts commas, spaces or newlines.
-        for lang in splitList(settings.languages) {
-            args += ["-l", lang]
-        }
-
-        if !settings.languageCorrection { args.append("--no-language-correction") }
-
-        if settings.confidence > 0 { args += ["-c", trimNumber(settings.confidence)] }
-
-        // The one place that decides the render DPI, so there can never be two
-        // --pdf-dpi flags disagreeing about it.
-        //
-        // A ceiling only ever lowers. Raising a deliberately low DPI to meet a
-        // limit would be absurd, and obeying a high one the recogniser will
-        // refuse costs the whole file's text rather than some of its quality
-        // (U25). Auto mode still omits the flag entirely when nothing forces it,
-        // leaving the engine's own choice alone — and the corpus says that is
-        // the right thing to do: over 52 documents and 4,140 pages, every fixed
-        // value tried was worse than Automatic, including a ceiling (R39).
-        //
-        // **What Automatic is compared against is the engine's own choice, not
-        // 300.** `engineAutoDPI` is the resolution mac-ocr will derive from the
-        // page's images. Comparing against a constant is what left the ceiling
-        // unable to bind above 300 while the engine went to 600 and refused the
-        // page (R39).
-        let requested = settings.pdfDPIAuto ? (engineAutoDPI ?? recogniserDefaultDPI)
-                                            : clamp(settings.pdfDPI, 72, 600)
-        let effective = min(requested, dpiCeiling ?? requested)
-        if !settings.pdfDPIAuto || effective < requested {
-            // mac-ocr accepts 72-600 and rejects anything outside it, and both
-            // ends are reachable here: `engineAutoDPI` is whatever the scan
-            // happens to be, so a small page at 1200 DPI can put `effective`
-            // above 600 even after the ceiling has lowered it. Clamping down is
-            // always safe — it renders smaller than the ceiling allows.
-            args += ["--pdf-dpi", String(clamp(effective, 72, 600))]
-        }
-
-        if !settings.password.isEmpty { args += ["--password", settings.password] }
-
-        for word in splitList(settings.customWords) {
-            args += ["-w", word]
-        }
-
-        if settings.minTextHeightOn, settings.minTextHeight > 0 {
-            args += ["--min-text-height", trimNumber(settings.minTextHeight)]
-        }
-
-        return args
-    }
-
-    /// Asks for Vision's observations as JSON, which is all we need from mac-ocr
-    /// when this app writes the searchable PDF itself.
-    static func jsonArguments(for file: URL, jsonOut: URL,
-                              settings: Prefs.Snapshot = .current()) -> [String] {
-        [file.path, "--format", "json", "-o", jsonOut.path] + recognitionArguments(settings)
-    }
-
-    /// Same, but as JSON Lines on stdout: one object per page, emitted as each
-    /// page is recognised. That streaming is what lets a 200-page book report
-    /// progress instead of sitting silent for minutes.
-    static func jsonLinesArguments(for file: URL,
-                                   settings: Prefs.Snapshot = .current(),
-                                   dpiCeiling: Int? = nil,
-                                   engineAutoDPI: Int? = nil) -> [String] {
-        // The ceiling goes through `recognitionArguments`, which owns the DPI
-        // decision, rather than being appended here — two --pdf-dpi flags whose
-        // precedence depends on the engine's argument parser is not something
-        // this app should be relying on (U25).
-        [file.path, "--format", "jsonl"]
-            + recognitionArguments(settings, dpiCeiling: dpiCeiling,
-                                   engineAutoDPI: engineAutoDPI)
-    }
-
-    /// Runs mac-ocr and hands back each stdout line as it arrives.
-    ///
-    /// `Runner.run` discards stdout and only returns on exit, so it can't report
-    /// progress. This reads incrementally instead.
-    static func runStreaming(
-        binary: String,
-        arguments: [String],
-        onLine: @escaping (String) -> Void,
-        wasCancelled: () -> Bool = { false },
-        register: (Process) -> Void
-    ) -> Result {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: binary)
-        process.arguments = arguments
-        let out = Pipe(), err = Pipe()
-        process.standardOutput = out
-        process.standardError = err
-        process.standardInput = FileHandle.nullDevice
-
-        do { try process.run() } catch {
-            return Result(file: URL(fileURLWithPath: arguments.first ?? ""), outcome: .failed,
-                          message: "Could not launch mac-ocr: \(error.localizedDescription)")
-        }
-        register(process)
-
-        // Drain stderr on a separate queue so a chatty run can't fill the pipe
-        // and deadlock while we're reading stdout.
-        //
-        // Behind a lock: the drain outlives the wait below when it times out, and
-        // reading a plain `var` written on another queue was a real data race
-        // (ThreadSanitizer-confirmed) that also lost the error message.
-        final class ErrorBox: @unchecked Sendable {
-            private let lock = NSLock()
-            private var value = Data()
-            func append(_ bytes: Data) { lock.lock(); value.append(bytes); lock.unlock() }
-            var text: String {
-                lock.lock(); defer { lock.unlock() }
-                return String(decoding: value, as: UTF8.self)
-            }
-        }
-        let errorBox = ErrorBox()
-        let errQueue = DispatchQueue(label: "mac-ocr-stderr")
-        let errDone = DispatchSemaphore(value: 0)
-
-        // A DispatchSource rather than a poll loop. `readDataToEndOfFile` is out
-        // — it returns only when every writer closes, and the writers include
-        // any grandchild that inherited stderr, which parked the drain for ever
-        // on the cancelled path and stranded a thread and a pipe per cancelled
-        // file. But the poll loop that replaced it woke every 200 ms for the
-        // whole life of the run purely to notice a stop flag: with a dozen files
-        // in flight that is sixty wakeups a second doing nothing. A read source
-        // is genuinely idle until bytes arrive, and `cancel()` replaces the flag.
-        let efd = err.fileHandleForReading.fileDescriptor
-        _ = fcntl(efd, F_SETFL, fcntl(efd, F_GETFL, 0) | O_NONBLOCK)
-        let errSource = DispatchSource.makeReadSource(fileDescriptor: efd, queue: errQueue)
-        errSource.setEventHandler {
-            var chunk = [UInt8](repeating: 0, count: 16 * 1024)
-            while true {
-                let n = chunk.withUnsafeMutableBytes { read(efd, $0.baseAddress, $0.count) }
-                if n > 0 { errorBox.append(Data(chunk[0..<n])); continue }
-                if n == 0 { errSource.cancel(); return }   // EOF: every writer closed
-                if errno == EINTR { continue }
-                if errno == EAGAIN { return }              // drained; wait for more
-                errSource.cancel()
-                return
-            }
-        }
-        // Runs once, whichever cancels first — EOF above or the defer below.
-        errSource.setCancelHandler { errDone.signal() }
-        errSource.resume()
-        // However this call returns, the drain goes with it — and it is finished
-        // touching the descriptor before it does. Cancellation is asynchronous,
-        // `err`'s descriptor closes when this scope ends, and a handler still
-        // in `read()` on a closed descriptor is undefined behaviour. The queue
-        // is serial, so a sync barrier is the whole of the fix.
-        defer {
-            errSource.cancel()
-            errQueue.sync { }
-        }
-
-        // Poll rather than `availableData`. `availableData` blocks in read(2)
-        // until a byte arrives or every writer closes, and the writers include
-        // any grandchild that inherited stdout — so a child that exits promptly
-        // while leaving a descendant holding the pipe used to keep this loop
-        // parked long after Cancel, with the cancel already spent. Verified: a
-        // child exiting immediately but leaving a `sleep 8` on stdout, cancelled
-        // at 1.0 s, returned after 8.28 s reporting success.
-        //
-        // With a timeout the loop wakes regularly, notices the cancellation and
-        // leaves, and the pipe is abandoned rather than waited on.
-        let fd = out.fileHandleForReading.fileDescriptor
-        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK)
-
-        var pending = Data()
-        var buffer = [UInt8](repeating: 0, count: 64 * 1024)
-        var cancelledMidRead = false
-
-        readLoop: while true {
-            if wasCancelled() { cancelledMidRead = true; break }
-
-            var descriptor = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
-            let ready = poll(&descriptor, 1, 200)      // ms: how long a cancel waits
-            if ready < 0 {
-                if errno == EINTR { continue }
-                break
-            }
-            if ready == 0 { continue }                  // timed out; re-check cancel
-
-            let n = buffer.withUnsafeMutableBytes { read(fd, $0.baseAddress, $0.count) }
-            if n == 0 { break }                         // EOF: every writer closed
-            if n < 0 {
-                if errno == EAGAIN || errno == EINTR { continue }
-                break
-            }
-            pending.append(contentsOf: buffer[0..<n])
-            while let nl = pending.firstIndex(of: 0x0A) {
-                let line = pending[pending.startIndex..<nl]
-                pending.removeSubrange(pending.startIndex...nl)
-                if !line.isEmpty { onLine(String(decoding: line, as: UTF8.self)) }
-            }
-        }
-        if !cancelledMidRead, !pending.isEmpty {
-            onLine(String(decoding: pending, as: UTF8.self))
-        }
-
-        let file = URL(fileURLWithPath: arguments.first ?? "")
-        if cancelledMidRead {
-            // Don't wait on it: the reason we are here is that something in the
-            // process tree is not going away on its own.
-            stop(process)
-            _ = errDone.wait(timeout: .now() + 1)
-            return Result(file: file, outcome: .cancelled, message: "Cancelled.")
-        }
-
-        // Bounded, so a child that ignores SIGTERM cannot wedge the batch here
-        // either — this was a second unbounded wait on the same path.
-        var exited = wait(for: process, upTo: 5)
-        if !exited {
-            stop(process)
-            exited = !process.isRunning
-        }
-        _ = errDone.wait(timeout: .now() + 5)
-        let errorText = errorBox.text.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // `terminationStatus` raises an ObjC exception if the child has not
-        // exited, and an ObjC exception in Swift is not catchable — it aborts the
-        // process. Both waits above are best-effort by construction, so the
-        // status may simply not exist yet. Say what actually happened instead of
-        // reading a value that isn't there.
-        guard exited else {
-            return Result(file: file, outcome: .failed,
-                          message: errorText.isEmpty
-                              ? "mac-ocr stopped responding and could not be terminated."
-                              : errorText)
-        }
-
-        if process.terminationStatus == 0 { return Result(file: file, outcome: .succeeded, message: "") }
-        if process.terminationReason == .uncaughtSignal, wasCancelled() {
-            return Result(file: file, outcome: .cancelled, message: "Cancelled.")
-        }
-        // A child we killed ourselves prints nothing, so the stderr box is empty
-        // and the run used to be reported as a bare "failed" with no message.
-        return Result(file: file, outcome: .failed,
-                      message: errorText.isEmpty
-                          ? "mac-ocr exited with code \(process.terminationStatus)."
-                          : errorText)
-    }
-
-    /// Waits for a process, but not forever. True if it exited in time.
-    ///
-    /// Monotonic, not `Date()`. A wall clock goes backwards and forwards — an
-    /// NTP step, or a laptop waking from sleep — and either direction is wrong
-    /// here: a jump forward abandons a perfectly healthy child on its next
-    /// iteration, and a jump back extends a wait that is supposed to be bounded.
-    @discardableResult
-    /// Seconds left until a monotonic deadline, never negative.
-    ///
-    /// `DispatchTime` subtraction is unsigned, so the difference has to be taken
-    /// in the direction that cannot wrap and the past-deadline case handled
-    /// explicitly — the obvious expression underflows to 584 years (R30).
     static func secondsUntil(_ deadline: DispatchTime) -> Double {
         let now = DispatchTime.now()
         guard deadline > now else { return 0 }
@@ -720,10 +316,9 @@ enum Runner {
     /// shells out to two further binaries, was not shown at all, so the setting
     /// most likely to be wrong (the tool paths, U9) could not be checked against
     /// the one place in the UI that exists for checking settings.
-    static func previewLines(binary: String, file: URL, outputFolder: URL?) -> [String] {
+    static func previewLines(file: URL, outputFolder: URL?) -> [String] {
         let d = UserDefaults.standard
         let mode = Prefs.Mode(rawValue: d.string(forKey: Prefs.mode) ?? "") ?? .searchablePDF
-        let shown = (binary as NSString).lastPathComponent
         func leaf(_ path: String) -> String { (path as NSString).lastPathComponent }
 
         var lines: [String] = []
@@ -737,8 +332,10 @@ enum Runner {
 
         switch mode {
         case .text:
-            lines.append(preview(binary: shown,
-                                 arguments: arguments(for: file, outputFolder: outputFolder)))
+            let format = Prefs.TextFormat(rawValue: d.string(forKey: Prefs.textFormat) ?? "")
+                ?? .text
+            lines.append("1. recognise the text with Vision")
+            lines.append("2. write it as \(format.fileExtension) → [name].\(format.fileExtension)")
         case .searchablePDF:
             var steps: [String] = []
             let rebuilding = d.bool(forKey: Prefs.rebuildImages)
@@ -747,11 +344,14 @@ enum Runner {
                 steps.append("rebuild pages as \(how.label.lowercased()) images "
                              + "(drops any existing text layer)")
             }
-            steps.append(preview(binary: shown, arguments: jsonLinesArguments(for: file)))
+            steps.append("recognise the text with Vision"
+                         + (rebuilding ? " from those page images" : ""))
             steps.append("write the invisible text layer")
 
-            // The compression step is two more binaries, found the same awkward
-            // way mac-ocr is. Name them, or say plainly that they are missing.
+            // The compression step is two binaries, found the awkward way that
+            // mac-ocr used to be. Name them, or say plainly that they are
+            // missing — they are now the only external programs this app runs,
+            // and the only ones whose absence changes what happens.
             var note: String?
             if rebuilding, d.bool(forKey: Prefs.useJBIG2), how.canUseJBIG2 {
                 if let encoder = JBIG2.encoder, let merger = JBIG2.merger {
@@ -781,20 +381,18 @@ enum Runner {
     }
 
     /// A shell-quoted preview of the command, for the log and the settings panel.
-    static func preview(binary: String, arguments: [String]) -> String {
-        ([binary] + arguments).map { arg in
-            arg.rangeOfCharacter(from: CharacterSet(charactersIn: " '\"\\$`")) == nil
-                ? arg
-                : "'" + arg.replacingOccurrences(of: "'", with: #"'\''"#) + "'"
-        }.joined(separator: " ")
-    }
-
     // MARK: - Running
 
+    /// How one file ended, and what to say about it.
+    ///
+    /// Named for a subprocess that no longer exists — recognition is in-process
+    /// now — but the type is the pipeline's own per-file outcome and is used by
+    /// the model, the row statuses and the run report. Kept where it is rather
+    /// than moved for the sake of the name.
     struct Result {
         let file: URL
         let outcome: Outcome
-        /// stderr from mac-ocr — where it reports what went wrong.
+        /// What went wrong, in the words the user is shown.
         let message: String
 
         /// Cancelling is kept apart from failing: the user asking to stop isn't
@@ -806,97 +404,6 @@ enum Runner {
 
     /// Runs mac-ocr for one file. Blocking; call from a background queue.
     /// `register` hands back the Process so a cancel can terminate it.
-    static func run(
-        binary: String,
-        file: URL,
-        outputFolder: URL?,
-        explicitOutputFile: URL? = nil,
-        argumentsOverride: [String]? = nil,
-        settings: Prefs.Snapshot = .current(),
-        wasCancelled: () -> Bool = { false },
-        register: (Process) -> Void
-    ) -> Result {
-        let args = argumentsOverride
-            ?? arguments(for: file, outputFolder: outputFolder,
-                         explicitOutputFile: explicitOutputFile,
-                         settings: settings)
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: binary)
-        p.arguments = args
-
-        let errPipe = Pipe()
-        p.standardError = errPipe
-        // -o writes the file, so stdout is empty in normal use; discard it so a
-        // chatty run can never fill the pipe buffer and deadlock the process.
-        p.standardOutput = FileHandle.nullDevice
-        p.standardInput = FileHandle.nullDevice
-
-        do {
-            try p.run()
-        } catch {
-            return Result(file: file, outcome: .failed,
-                          message: "Could not launch mac-ocr: \(error.localizedDescription)")
-        }
-        register(p)
-
-        // Bounded and cancellable, exactly as runStreaming is (R2). This path —
-        // Extract Text, the default mode — kept an unbounded
-        // `readDataToEndOfFile()` followed by an unbounded `waitUntilExit()` with
-        // no cancellation check, so a child that ignored SIGTERM, or a descendant
-        // holding stderr, wedged the worker for good with Cancel already spent.
-        //
-        // Read before waiting either way: waiting first would deadlock on a full
-        // pipe.
-        let errFD = errPipe.fileHandleForReading.fileDescriptor
-        _ = fcntl(errFD, F_SETFL, fcntl(errFD, F_GETFL, 0) | O_NONBLOCK)
-        var errData = Data()
-        var buffer = [UInt8](repeating: 0, count: 16 * 1024)
-        var cancelledMidRead = false
-        while true {
-            if wasCancelled() { cancelledMidRead = true; break }
-            var descriptor = pollfd(fd: errFD, events: Int16(POLLIN), revents: 0)
-            let ready = poll(&descriptor, 1, 200)
-            if ready < 0 { if errno == EINTR { continue }; break }
-            if ready == 0 { continue }
-            let n = buffer.withUnsafeMutableBytes { read(errFD, $0.baseAddress, $0.count) }
-            if n == 0 { break }
-            if n < 0 { if errno == EAGAIN || errno == EINTR { continue }; break }
-            errData.append(contentsOf: buffer[0..<n])
-        }
-
-        let stderr = String(decoding: errData, as: UTF8.self)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if cancelledMidRead {
-            stop(p)
-            return Result(file: file, outcome: .cancelled, message: "Cancelled.")
-        }
-
-        var exited = wait(for: p, upTo: 5)
-        if !exited { stop(p); exited = !p.isRunning }
-        // Not readable until it has actually exited — see runStreaming.
-        guard exited else {
-            return Result(file: file, outcome: .failed,
-                          message: stderr.isEmpty
-                              ? "mac-ocr stopped responding and could not be terminated."
-                              : stderr)
-        }
-
-        if p.terminationStatus == 0 {
-            return Result(file: file, outcome: .succeeded, message: stderr)
-        }
-        // terminate() sends SIGTERM, which surfaces here as an uncaught signal —
-        // but so does a crash. Only call it cancelled if we actually cancelled;
-        // otherwise a batch where every file crashed read as if the user stopped it.
-        if p.terminationReason == .uncaughtSignal, wasCancelled() {
-            return Result(file: file, outcome: .cancelled, message: "Cancelled.")
-        }
-        return Result(file: file, outcome: .failed,
-                      message: stderr.isEmpty
-                          ? "mac-ocr exited with code \(p.terminationStatus)."
-                          : stderr)
-    }
-
     // MARK: - Helpers
 
     /// Splits a comma / whitespace / newline separated field into clean items.

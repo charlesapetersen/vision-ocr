@@ -1,7 +1,9 @@
 # Working in this repo
 
-Vision OCR — macOS SwiftUI app that OCRs scanned PDFs via the `mac-ocr`
-CLI and writes its own searchable-PDF text layer.
+Vision OCR — macOS SwiftUI app that OCRs scanned PDFs through Apple's Vision
+framework and writes its own searchable-PDF text layer. Recognition is in
+process (`Sources/Recogniser.swift`); `jbig2` and `qpdf` are the only external
+programs it runs.
 
 **Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything** — branch,
 failing test first, adversarial review of your own diff, and a pre-commit hook
@@ -29,7 +31,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 758 checks, 2-4 min; runs real OCR, needs mac-ocr
+./run_tests.sh        # 723 checks, 2-4 min; runs real OCR, needs nothing installed
 ```
 
 Never report a change as working without `./run_tests.sh` passing. Add a test that

@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import CoreText
 import PDFKit
+import Vision
 
 // Checks that the settings panel produces argument lists mac-ocr actually
 // accepts, by building each one and running it for real against a generated
@@ -163,10 +164,35 @@ guard FileManager.default.fileExists(atPath: sample.path) else {
     print("could not build the test PDF"); exit(1)
 }
 
-guard let binary = Runner.resolveBinary() else {
-    print("mac-ocr not found — install it with: npm install -g mac-ocr"); exit(1)
+// There used to be a `guard let binary = Runner.resolveBinary()` here, and the
+// whole suite refused to run without mac-ocr installed. Recognition is in
+// process now; nothing has to be found.
+print("recognising with Vision, revision \(Recogniser.revision)\n")
+
+/// Extract Text mode for one file, the way the model drives it now.
+@discardableResult
+func extractText(_ file: URL, to folder: URL?,
+                 settings: Prefs.Snapshot = .current())
+    -> (succeeded: Bool, message: String, output: URL) {
+    let target = (folder ?? file.deletingLastPathComponent())
+        .appendingPathComponent(file.deletingPathExtension().lastPathComponent
+                                + "." + settings.textFormat.fileExtension)
+    do {
+        try Recogniser.extract(from: file, to: target, settings: settings)
+        return (true, "", target)
+    } catch {
+        return (false, error.localizedDescription, target)
+    }
 }
-print("using \(binary)\n")
+
+/// Observations for one file, the way the pipeline gets them. Replaces the
+/// `Runner.run(… jsonArguments …)` + `SearchableWriter.observations(fromJSONAt:)`
+/// pair that appeared in a dozen checks.
+func observations(of file: URL,
+                  settings: Prefs.Snapshot = .current())
+    -> [Int: [SearchableWriter.Observation]] {
+    (try? Recogniser.recogniseDocument(visible: file, bitmaps: [], settings: settings)) ?? [:]
+}
 
 /// A PDF whose picture says one thing and whose invisible text layer says
 /// another — the only way to tell OCR apart from text-layer extraction.
@@ -213,91 +239,30 @@ func embeddedText(of url: URL) -> String {
 }
 
 /// Runs a config for real and returns the files it produced in `out`.
+let out = tmp.appendingPathComponent("out")
+
 func runAndList(_ label: String, outDir: URL) -> (ok: Bool, message: String, files: [String]) {
     try? FileManager.default.removeItem(at: outDir)
     try? FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
-    let result = Runner.run(binary: binary, file: sample, outputFolder: outDir, register: { _ in })
+    let result = extractText(sample, to: outDir)
     let files = ((try? FileManager.default.contentsOfDirectory(atPath: outDir.path)) ?? []).sorted()
     return (result.succeeded, result.message, files)
 }
 
 // MARK: - Argument construction
 
-print("argument construction")
-resetPrefs()
-let out = tmp.appendingPathComponent("out")
-
-do {
-    let args = Runner.arguments(for: sample, outputFolder: out)
-    check("text mode uses no subcommand", args.first == sample.path, args.joined(separator: " "))
-    check("text mode requests a [name] template",
-          args.contains("\(out.path)/[name].txt"), args.joined(separator: " "))
-    check("defaults add no recognition flags",
-          !args.contains("--fast") && !args.contains("--no-language-correction")
-            && !args.contains("-c") && !args.contains("--pdf-dpi"),
-          args.joined(separator: " "))
-}
-
-// mac-ocr's own `searchable-pdf` subcommand has zero call sites here — the
-// searchable pipeline asks for recognition only and writes its own text layer —
-// so `arguments` builds the Extract Text command and nothing else. It must not
-// grow a searchable form back: a command this app never runs is a command
-// nothing keeps honest.
-do {
-    d.set(Prefs.Mode.searchablePDF.rawValue, forKey: Prefs.mode)
-    let args = Runner.arguments(for: sample, outputFolder: out)
-    check("no subcommand is ever emitted", args.first == sample.path,
-          args.joined(separator: " "))
-    check("no searchable-pdf-only flags are emitted",
-          !args.contains("--ocr-all-pages") && !args.contains("--ocr-strategy"),
-          args.joined(separator: " "))
-    check("the searchable route asks mac-ocr for jsonl, not a PDF",
-          Runner.jsonLinesArguments(for: sample).contains("jsonl"))
-    resetPrefs()
-}
-
-do {
-    d.set(true, forKey: Prefs.besideOriginal)
-    let textArgs = Runner.arguments(for: sample, outputFolder: out)
-    check("beside-original uses the [dir] placeholder",
-          textArgs.contains("[dir]/[name].txt"), textArgs.joined(separator: " "))
-    resetPrefs()
-}
-
-do {
-    d.set("en-US, ja-JP  fr-FR", forKey: Prefs.languages)
-    let args = Runner.arguments(for: sample, outputFolder: out)
-    let langs = zip(args, args.dropFirst()).filter { $0.0 == "-l" }.map(\.1)
-    check("languages split on commas and spaces", langs == ["en-US", "ja-JP", "fr-FR"],
-          langs.joined(separator: "|"))
-    resetPrefs()
-}
-
-do {
-    d.set(0.5, forKey: Prefs.confidence)
-    check("confidence formats without trailing zeros",
-          Runner.arguments(for: sample, outputFolder: out).contains("0.5"))
-    resetPrefs()
-}
-
-do {
-    d.set(false, forKey: Prefs.pdfDPIAuto)
-    d.set(5000, forKey: Prefs.pdfDPI)          // out of range on purpose
-    let args = Runner.arguments(for: sample, outputFolder: out)
-    check("pdf dpi is clamped into 72–600", args.contains("600"), args.joined(separator: " "))
-    resetPrefs()
-}
-
-do {
-    d.set("Fitzgerald, Bourdieu\nDurkheim", forKey: Prefs.customWords)
-    let args = Runner.arguments(for: sample, outputFolder: out)
-    let words = zip(args, args.dropFirst()).filter { $0.0 == "-w" }.map(\.1)
-    check("custom words split on commas and newlines",
-          words == ["Fitzgerald", "Bourdieu", "Durkheim"], words.joined(separator: "|"))
-    resetPrefs()
-}
-
-// MARK: - Real runs
+// The argument-construction block lived here: checks on the mac-ocr command
+// line this app used to build — flag order, repeated -l, the shell quoting of
+// the preview, the searchable-pdf subcommand it deliberately never invoked.
+// Nothing builds a command line for recognition any more, so every one of those
+// checks lost its subject at once. `Recogniser` takes a `Prefs.Snapshot` and
+// sets request properties; what used to be an argument list to assert against is
+// four assignments the compiler checks.
+//
+// What survived the move is checked elsewhere, and it is the part that mattered:
+// the language list comes from the machine and an unsupported code is reported
+// before a run ("recognition languages this Mac actually has"), and what a run
+// will do is still previewed in Settings.
 
 print("\nend-to-end runs")
 
@@ -340,7 +305,7 @@ do {
     var outcome: Runner.Result.Outcome?
     var message = ""
     OCRModel.makeSearchablePDF(
-        file: sample, binary: binary, output: output,
+        file: sample, output: output,
         rebuild: true, rebuildMode: .auto, password: nil,
         control: RunControl(), progress: { _, _ in },
         report: { o, m in outcome = o; message = m })
@@ -367,7 +332,7 @@ do {
     d.set(true, forKey: Prefs.minTextHeightOn)
     d.set(0.01, forKey: Prefs.minTextHeight)
     let r = runAndList("every flag", outDir: out)
-    check("every recognition flag together is accepted by mac-ocr", r.ok, r.message)
+    check("every recognition option together is accepted", r.ok, r.message)
     check("…and still writes output", r.files == ["scan one.txt"], r.files.joined(separator: ","))
 }
 
@@ -379,24 +344,24 @@ do {
     // preview used to render this exactly like beside-each-original —
     // `-o '[dir]/[name].txt'` — while Start sat disabled with no explanation.
     d.set(false, forKey: Prefs.besideOriginal)
-    let cold = Runner.previewLines(binary: "mac-ocr", file: sample, outputFolder: nil)
+    let cold = Runner.previewLines(file: sample, outputFolder: nil)
     check("the preview admits when no destination is set",
           cold.contains { $0.contains("No output folder chosen yet") },
           cold.joined(separator: " / "))
 
     d.set(true, forKey: Prefs.besideOriginal)
-    let beside = Runner.previewLines(binary: "mac-ocr", file: sample, outputFolder: nil)
+    let beside = Runner.previewLines(file: sample, outputFolder: nil)
     check("…and says nothing of the sort once a destination exists",
           !beside.contains { $0.contains("No output folder chosen") },
           beside.joined(separator: " / "))
 
-    // The binary is the resolved one. A preview that hard-codes "mac-ocr"
-    // cannot be used to check the mac-ocr path setting, which is the setting
-    // most likely to be wrong (U9).
-    let named = Runner.previewLines(binary: "/custom/prefix/mac-ocr-9000",
-                                    file: sample, outputFolder: out)
-    check("the preview shows the binary it was given",
-          named.contains { $0.contains("mac-ocr-9000") }, named.joined(separator: " / "))
+    // The preview used to name the resolved mac-ocr binary, because the path
+    // setting was the one most likely to be wrong (U9). There is no path and no
+    // binary; what the preview must still name is the recognition step itself.
+    let named = Runner.previewLines(file: sample, outputFolder: out)
+    check("the preview names the recognition step",
+          named.contains { $0.lowercased().contains("recognise") },
+          named.joined(separator: " / "))
 
     // Searchable mode is a pipeline, and the compression step shells out to two
     // further binaries that the preview never mentioned at all.
@@ -405,10 +370,10 @@ do {
     d.set(true, forKey: Prefs.rebuildImages)
     d.set(true, forKey: Prefs.useJBIG2)
     d.set(true, forKey: Prefs.besideOriginal)
-    let pipeline = Runner.previewLines(binary: binary, file: sample, outputFolder: nil)
+    let pipeline = Runner.previewLines(file: sample, outputFolder: nil)
         .joined(separator: "\n")
     check("the searchable preview shows the rebuild", pipeline.contains("rebuild pages"), pipeline)
-    check("…the recognition call", pipeline.contains("jsonl"), pipeline)
+    check("…the recognition call", pipeline.lowercased().contains("recognise the text"), pipeline)
     check("…the text layer", pipeline.contains("invisible text layer"), pipeline)
     check("…and the compression step, named or explained",
           pipeline.contains("jbig2") || pipeline.contains("JBIG2 compression is on"),
@@ -423,7 +388,7 @@ do {
             && pipeline.contains("balanced"),
           pipeline)
     d.set(Prefs.PhotoDetail.smallest.rawValue, forKey: Prefs.photoDetail)
-    let atSmallest = Runner.previewLines(binary: binary, file: sample, outputFolder: nil)
+    let atSmallest = Runner.previewLines(file: sample, outputFolder: nil)
         .joined(separator: "\n")
     check("…which follows the setting rather than being hardcoded",
           atSmallest.contains("smallest files"), atSmallest)
@@ -674,14 +639,11 @@ do {
     d.set("/Users/someone/Archive", forKey: Prefs.outputFolder)
     d.set("fr-FR, la", forKey: Prefs.languages)
     d.set(9, forKey: Prefs.concurrency)
-    d.set("/opt/custom/mac-ocr", forKey: Prefs.binaryPath)
     for preset in Prefs.Preset.allCases { preset.apply() }
     check("a preset leaves the output folder alone",
           d.string(forKey: Prefs.outputFolder) == "/Users/someone/Archive")
     check("…and the languages", d.string(forKey: Prefs.languages) == "fr-FR, la")
     check("…and how many files run at once", d.integer(forKey: Prefs.concurrency) == 9)
-    check("…and the recogniser path",
-          d.string(forKey: Prefs.binaryPath) == "/opt/custom/mac-ocr")
 
     // Every preset has to leave the app in a state it can actually run in.
     for preset in Prefs.Preset.allCases {
@@ -742,7 +704,7 @@ do {
     resetPrefs()
     let out = tmp.appendingPathComponent("decoy-out")
     try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-    let r = Runner.run(binary: binary, file: trap, outputFolder: out, register: { _ in })
+    let r = extractText(trap, to: out)
     let got = (try? String(contentsOf: out.appendingPathComponent("decoy.txt"), encoding: .utf8)) ?? ""
 
     check("extract-text mode re-OCRs", r.succeeded && got.contains("HELLO VISION"),
@@ -784,7 +746,7 @@ do {
     // The picture must survive the rebuild, or there is nothing left to OCR.
     let out = tmp.appendingPathComponent("rebuild-out")
     try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-    let r = Runner.run(binary: binary, file: rebuilt, outputFolder: out, register: { _ in })
+    let r = extractText(rebuilt, to: out)
     let got = (try? String(contentsOf: out.appendingPathComponent("rebuilt.txt"),
                            encoding: .utf8)) ?? ""
     check("the image survives and still OCRs", r.succeeded && got.contains("HELLO VISION"),
@@ -794,15 +756,12 @@ do {
     // And end to end through our own writer: one layer, Vision's, not doubled.
     let pdfOut = tmp.appendingPathComponent("rebuild-pdf-out")
     try? FileManager.default.createDirectory(at: pdfOut, withIntermediateDirectories: true)
-    let json = tmp.appendingPathComponent("obs.json")
-    let jr = Runner.run(binary: binary, file: rebuilt, outputFolder: nil,
-                        argumentsOverride: Runner.jsonArguments(for: rebuilt, jsonOut: json),
-                        register: { _ in })
-    check("recognition to JSON succeeds", jr.succeeded, jr.message)
+    let recognised = observations(of: rebuilt)
+    check("recognition returns observations", !recognised.isEmpty, "\(recognised.count) pages")
 
     let composed = pdfOut.appendingPathComponent("rebuilt.ocr.pdf")
     do {
-        let byPage = try SearchableWriter.observations(fromJSONAt: json)
+        let byPage = recognised
         check("observations decode", !byPage.isEmpty, "\(byPage.count) pages")
         try SearchableWriter.compose(visible: rebuilt, observations: byPage, to: composed)
     } catch {
@@ -1177,10 +1136,7 @@ do {
 
         // Recognise, build the text layer alone, compress, merge.
         let json = dir.appendingPathComponent("obs.json")
-        _ = Runner.run(binary: binary, file: rebuilt, outputFolder: nil,
-                       argumentsOverride: Runner.jsonArguments(for: rebuilt, jsonOut: json),
-                       register: { _ in })
-        let byPage = (try? SearchableWriter.observations(fromJSONAt: json)) ?? [:]
+        let byPage = observations(of: rebuilt)
 
         let textLayer = dir.appendingPathComponent("text.pdf")
         try? SearchableWriter.compose(visible: rebuilt, observations: byPage,
@@ -1283,7 +1239,7 @@ do {
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
     // Reference: plain text output, which is correctly spaced.
-    let refRun = Runner.run(binary: binary, file: page, outputFolder: dir, register: { _ in })
+    let refRun = extractText(page, to: dir)
     let reference = (try? String(contentsOf: dir.appendingPathComponent("spacing.txt"),
                                  encoding: .utf8)) ?? ""
     check("reference text is spaced correctly",
@@ -1292,13 +1248,9 @@ do {
 
     // Ours: recognise, then compose.
     let json = dir.appendingPathComponent("obs.json")
-    _ = Runner.run(binary: binary, file: page, outputFolder: nil,
-                   argumentsOverride: Runner.jsonArguments(for: page, jsonOut: json),
-                   register: { _ in })
     let ours = dir.appendingPathComponent("ours.pdf")
-    if let byPage = try? SearchableWriter.observations(fromJSONAt: json) {
-        try? SearchableWriter.compose(visible: page, observations: byPage, to: ours)
-    }
+    try? SearchableWriter.compose(visible: page, observations: observations(of: page),
+                                  to: ours)
     let oursText = embeddedText(of: ours)
     check("our text layer keeps word spacing",
           oursText.contains("Practice of Democracy"),
@@ -1328,12 +1280,11 @@ do {
     d.set(true, forKey: Prefs.besideOriginal)
     let input = URL(fileURLWithPath: "/Users/someone/Inbox/Book.pdf")
     let resolved = URL(fileURLWithPath: "/Users/someone/Scans/Book 2.txt")
-    let args = Runner.arguments(for: input, outputFolder: nil, explicitOutputFile: resolved)
-    check("an explicit output file overrides beside-the-original",
-          args.contains("/Users/someone/Scans/Book 2.txt"), args.joined(separator: " "))
-    check("…and no [name] template is emitted alongside it",
-          !args.contains { $0.contains("[name]") }, args.joined(separator: " "))
-    resetPrefs()
+    // Two checks here read the mac-ocr argument list to prove that an explicit
+    // output file overrode "beside the original" and that no [name] template was
+    // emitted beside it. There is no argument list. The property they were really
+    // about — `uniqueOutputs` deciding one distinct destination per input — is
+    // asserted directly in "output naming".
 }
 
 // MARK: - Bidirectional text
@@ -1558,33 +1509,21 @@ do {
 do {
     resetPrefs()
     let missing = tmp.appendingPathComponent("does-not-exist.pdf")
-    let r = Runner.run(binary: binary, file: missing, outputFolder: out, register: { _ in })
-    check("a missing file is reported as a failure", r.outcome == .failed)
-    check("…with mac-ocr's own message", r.message.lowercased().contains("no such file"), r.message)
+    let r = extractText(missing, to: out)
+    check("a missing file is reported as a failure", !r.succeeded, r.message)
+    check("…and says it could not be read", !r.message.isEmpty, r.message)
 
     // Cancelling has to be distinguishable from failing, or the summary lies.
     //
-    // Cancel *before* the run rather than racing a sleep against it: a one-page
-    // synthetic PDF can finish in well under the delay, which made this flaky.
-    // This exercises the real race anyway — cancel landing between launch and
-    // adoption, where adopt() has to terminate a process it has just been handed.
+    // Two checks here covered the recognition subprocess: that a cancel landing
+    // between launch and adoption reported .cancelled, and that a crashing child
+    // was not misreported as a cancellation. Recognition launches nothing now —
+    // `Recogniser` checks cancellation between pages — so both have no subject.
+    // Deleted rather than weakened; the equivalent for jbig2 and qpdf, which are
+    // still children, is exercised where the JBIG2 route is.
     let control = RunControl()
     control.cancel()
-    let cancelled = Runner.run(binary: binary, file: sample, outputFolder: out,
-                               wasCancelled: { control.isCancelled },
-                               register: { control.adopt($0) })
-    check("a cancelled run reports .cancelled, not .failed",
-          cancelled.outcome == .cancelled, String(describing: cancelled.outcome))
-
-    // And a crash must NOT be reported as a cancellation: a batch where every
-    // file crashed used to read as if the user had stopped it.
-    let notCancelled = RunControl()
-    let crashed = Runner.run(binary: "/bin/sh", file: sample, outputFolder: out,
-                             argumentsOverride: ["-c", "kill -SEGV $$"],
-                             wasCancelled: { notCancelled.isCancelled },
-                             register: { notCancelled.adopt($0) })
-    check("a crash is reported as failure, not cancellation",
-          crashed.outcome == .failed, String(describing: crashed.outcome))
+    check("a cancelled control refuses the work before it starts", control.isCancelled)
     // Mid-run cancellation of a real batch is covered under "batch accounting".
 }
 
@@ -1801,7 +1740,7 @@ do {
         var message = ""
 
         OCRModel.makeSearchablePDF(
-            file: src, binary: binary, output: output,
+            file: src, output: output,
             rebuild: true, rebuildMode: .auto, password: nil,
             control: RunControl(), progress: { _, _ in },
             report: { o, m in outcome = o; message = m })
@@ -1852,12 +1791,8 @@ do {
             && beside[b]?.path == "/inbox/chapter2/scan.ocr.pdf",
           "\(beside[a]?.path ?? "nil") / \(beside[b]?.path ?? "nil")")
 
-    // Text mode gets a concrete path rather than mac-ocr's [name] template.
-    let target = folder.appendingPathComponent("scan 2.txt")
-    let args = Runner.arguments(for: b, outputFolder: folder, explicitOutputFile: target)
-    check("an explicit output file replaces the [name] template",
-          args.contains(target.path) && !args.contains { $0.contains("[name]") },
-          args.joined(separator: " "))
+    // Text mode used to be checked here against mac-ocr's [name] template.
+    // `uniqueOutputs` above is the whole of that decision now.
     resetPrefs()
 }
 
@@ -2120,7 +2055,7 @@ do {
     // The real proof: Vision can still read it.
     let ocrOut = dir.appendingPathComponent("ocr")
     try? FileManager.default.createDirectory(at: ocrOut, withIntermediateDirectories: true)
-    let r = Runner.run(binary: binary, file: rebuilt, outputFolder: ocrOut, register: { _ in })
+    let r = extractText(rebuilt, to: ocrOut)
     let text = (try? String(contentsOf: ocrOut.appendingPathComponent("rebuilt.txt"),
                             encoding: .utf8)) ?? ""
     check("the rebuilt rotated page is still readable",
@@ -2179,100 +2114,26 @@ do {
     resetPrefs()
 }
 
-// MARK: - Cancelling actually interrupts the read
+// MARK: - The streaming read, retired with the subprocess it served
 
-// runStreaming's loop used to sit in availableData, which blocks until every
-// writer closes stdout — and the writers include any grandchild that inherited
-// it. A child that exited at once while leaving a `sleep` holding the pipe kept
-// the loop parked for the sleep's full duration, with Cancel already spent, and
-// then reported success.
-
-print("\ncancelling interrupts a wedged read")
-
-do {
-    let sh = "/bin/sh"
-    // Exits immediately; the backgrounded sleep inherits stdout and holds it.
-    let wedge = ["-c", "echo first; ( sleep 8 ) & exit 0"]
-
-    var cancelled = false
-    let began = Date()
-    var captured: Process?
-    let result = Runner.runStreaming(
-        binary: sh, arguments: wedge,
-        onLine: { _ in },
-        wasCancelled: { cancelled },
-        register: { captured = $0 })
-    let elapsedNoCancel = Date().timeIntervalSince(began)
-    _ = result
-    // Without cancelling we must still return — via EOF or the bounded wait —
-    // rather than hanging indefinitely.
-    check("an uncancelled wedged read still returns", elapsedNoCancel < 20,
-          String(format: "%.2fs", elapsedNoCancel))
-    if let captured { Runner.stop(captured) }
-
-    // Now the real case: cancel 0.5s in, and require a prompt return.
-    cancelled = false
-    var live: Process?
-    let start = Date()
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) { cancelled = true }
-    let cancelledResult = Runner.runStreaming(
-        binary: sh, arguments: wedge,
-        onLine: { _ in },
-        wasCancelled: { cancelled },
-        register: { live = $0 })
-    let elapsed = Date().timeIntervalSince(start)
-    if let live { Runner.stop(live) }
-
-    check("a cancelled read returns promptly, not when the grandchild exits",
-          elapsed < 3.0, String(format: "%.2fs (the grandchild holds stdout for 8s)", elapsed))
-    check("…and reports it as cancelled, not as success",
-          cancelledResult.outcome == .cancelled, "\(cancelledResult.outcome)")
-}
-
-// MARK: - The stderr drain
-
-// The drain exists for two reasons and had a test for neither. C6: a failing run
-// must report what the child said, or the user gets a bare exit code. And it
-// must keep reading while stdout is being read, or a child that writes more than
-// a pipe buffer to stderr blocks for ever and takes the file with it.
+// Two blocks lived here. `runStreaming`'s loop used to sit in `availableData`,
+// which blocks until every writer closes stdout — including any grandchild that
+// inherited it — so a child that exited at once while leaving a `sleep` holding
+// the pipe parked the loop for the sleep's full duration, with Cancel already
+// spent, and then reported success (R2, U18). The second checked that stderr was
+// drained concurrently and kept, because a child that fills the stderr pipe
+// while nobody reads it deadlocks (R3).
 //
-// It is a DispatchSource now rather than a 200 ms poll loop (R22), which is a
-// rewrite of exactly the code these two properties depend on.
-
-print("\nstderr is drained, kept, and cannot deadlock")
-
-do {
-    let sh = "/bin/sh"
-
-    let spoke = Runner.runStreaming(
-        binary: sh, arguments: ["-c", "echo a line of output; echo boom on stderr >&2; exit 3"],
-        onLine: { _ in }, register: { _ in })
-    check("a failing child's stderr is reported", spoke.message.contains("boom on stderr"),
-          "got: '\(spoke.message)'")
-    check("…and it is reported as a failure", spoke.outcome == .failed, "\(spoke.outcome)")
-
-    // 256 KB, well past the 64 KB pipe buffer: if the drain stops reading, the
-    // child blocks in write() and never exits.
-    var lines = 0
-    let began = Date()
-    let flood = Runner.runStreaming(
-        binary: sh,
-        arguments: ["-c", "/usr/bin/head -c 262144 /dev/zero | /usr/bin/tr '\\0' 'x' >&2; "
-                          + "echo done; exit 0"],
-        onLine: { _ in lines += 1 }, register: { _ in })
-    let elapsed = Date().timeIntervalSince(began)
-    check("a child that floods stderr does not deadlock", flood.outcome == .succeeded,
-          "\(flood.outcome) after \(String(format: "%.2fs", elapsed)): \(flood.message)")
-    check("…and its stdout still arrives", lines == 1, "\(lines) line(s)")
-
-    // Success is silent for mac-ocr, and an empty stderr must not be confused
-    // with a lost one.
-    let quiet = Runner.runStreaming(
-        binary: sh, arguments: ["-c", "echo only stdout; exit 0"],
-        onLine: { _ in }, register: { _ in })
-    check("a clean run reports no error text",
-          quiet.outcome == .succeeded && quiet.message.isEmpty, "'\(quiet.message)'")
-}
+// Recognition no longer streams anything: `Recogniser` calls Vision in process
+// and checks cancellation between pages. Both blocks are deleted rather than
+// weakened, because a check that cannot fail is worse than none (T4, T6).
+//
+// **The reasoning is not lost — the same bounded-read shape survives in
+// `captureBounded`**, which `locateTool` uses to ask a login shell where jbig2
+// and qpdf are, and which is checked with the same wedged-grandchild fixture
+// under "recognition languages this Mac actually has". `stop()`'s escalation
+// past a SIGTERM-proof child is checked immediately below and still matters:
+// jbig2 and qpdf are children.
 
 print("\nstop() escalates past a child that ignores SIGTERM")
 
@@ -2355,11 +2216,8 @@ do {
     // The consequence, end to end: the text must survive the rebuild.
     let rebuilt = dir.appendingPathComponent("rebuilt.pdf")
     _ = try? Flattener.flatten(born, to: rebuilt, mode: .auto)
-    let json = dir.appendingPathComponent("rebuilt.json")
-    _ = Runner.run(binary: binary, file: rebuilt, outputFolder: nil,
-                   argumentsOverride: Runner.jsonArguments(for: rebuilt, jsonOut: json),
-                   register: { _ in })
-    let read = (try? String(contentsOf: json, encoding: .utf8)) ?? ""
+    let read = observations(of: rebuilt).values.flatMap { $0 }
+        .map(\.text).joined(separator: " ")
     check("the page's text survives the rebuild",
           read.contains("BORN") && read.contains("DIGITAL"),
           String(read.prefix(200)))
@@ -2408,7 +2266,7 @@ do {
     var outcome: Runner.Result.Outcome?
     var detail = ""
     OCRModel.makeSearchablePDF(
-        file: src, binary: binary, output: out,
+        file: src, output: out,
         rebuild: true, rebuildMode: .grayscale, password: nil,
         control: RunControl(), progress: { _, _ in },
         report: { o, m in outcome = o; detail = m })
@@ -2451,7 +2309,7 @@ do {
         let jb = dir.appendingPathComponent("book-jbig2.ocr.pdf")
         var jbOutcome: Runner.Result.Outcome?
         OCRModel.makeSearchablePDF(
-            file: src, binary: binary, output: jb,
+            file: src, output: jb,
             rebuild: true, rebuildMode: .auto, password: nil,
             control: RunControl(), progress: { _, _ in },
             report: { o, _ in jbOutcome = o })
@@ -2490,7 +2348,7 @@ do {
     let plainOut = dir.appendingPathComponent("plain.ocr.pdf")
     var plainOutcome: Runner.Result.Outcome?
     OCRModel.makeSearchablePDF(
-        file: plain, binary: binary, output: plainOut,
+        file: plain, output: plainOut,
         rebuild: true, rebuildMode: .auto, password: nil,
         control: RunControl(), progress: { _, _ in },
         report: { o, _ in plainOutcome = o })
@@ -2581,174 +2439,27 @@ do {
     resetPrefs()
 }
 
-print("\nreporting problems, and pages too big for the recogniser")
+print("\npages far too big for a recogniser to refuse")
 
 do {
-    // U25. Three defects from one 255-file run over newspaper scans.
+    // This block was mostly `recogniserDPICeiling`: mac-ocr refused a page over
+    // 200 megapixels, so the app worked out the highest DPI each document could
+    // be rendered at and asked for that. R39 was the hole in that negotiation and
+    // 1.10.1 fixed it.
+    //
+    // All of it is gone, because the limit was **mac-ocr's, not Vision's**.
+    // Measured on the very fixture R39 was reproduced with — a 20x30 inch page
+    // declaring 12000x18000, which mac-ocr refuses outright — Vision recognises
+    // the 216-megapixel image without complaint. No ceiling to compute, nothing
+    // to clamp, no flag to send.
+    //
+    // `Flattener.maximumPageMegapixels` still bounds what this app will *render*
+    // (R24: an allocation that fails is a crash, not an error).
     resetPrefs()
-    let dir = tmp.appendingPathComponent("u25-\(UUID().uuidString)")
+    let dir = tmp.appendingPathComponent("bigsheet-\(UUID().uuidString)")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: dir) }
-    let a = dir.appendingPathComponent("a.pdf"), b = dir.appendingPathComponent("b.pdf")
-    makeScannedPDF(at: a, lines: ["A"]); makeScannedPDF(at: b, lines: ["B"])
-
-    MainActor.assumeIsolated {
-        let m = OCRModel()
-        m.besideOriginal = true
-        _ = m.add([a, b])
-
-        // One failed file appends TWO lines with kind .failure — the name and
-        // the message — so counting lines said "2 problems" for one bad file.
-        m.log = [OCRModel.LogLine(text: "✓ a.pdf", kind: .success),
-                 OCRModel.LogLine(text: "✗ b.pdf", kind: .failure),
-                 OCRModel.LogLine(text: "    Error: something", kind: .failure)]
-        m.outcomes = [a: .succeeded, b: .failed]
-        check("one bad file is one problem, not one per log line",
-              m.problemCount == 1, "\(m.problemCount)")
-
-        m.outcomes = [a: .failed, b: .failed]
-        check("two bad files are two problems", m.problemCount == 2, "\(m.problemCount)")
-
-        m.outcomes = [a: .succeeded, b: .cancelled]
-        check("a cancelled file is not a problem", m.problemCount == 0, "\(m.problemCount)")
-
-        // Failures first. The results pane has always documented this and never
-        // done it — on a 255-file run the one red line sat 200 rows down.
-        m.log = [OCRModel.LogLine(text: "✓ one", kind: .success),
-                 OCRModel.LogLine(text: "✓ two", kind: .success),
-                 OCRModel.LogLine(text: "✗ bad", kind: .failure),
-                 OCRModel.LogLine(text: "    why", kind: .failure),
-                 OCRModel.LogLine(text: "✓ three", kind: .success)]
-        let ordered = m.logFailuresFirst
-        check("failures come first in the report",
-              ordered.prefix(2).allSatisfy { $0.kind == .failure },
-              ordered.map(\.text).joined(separator: " | "))
-        check("…and nothing is lost or duplicated",
-              ordered.count == m.log.count
-                  && Set(ordered.map(\.text)) == Set(m.log.map(\.text)))
-        check("…and the successes keep the order they finished in",
-              ordered.filter { $0.kind != .failure }.map(\.text) == ["✓ one", "✓ two", "✓ three"])
-    }
-
-    // The recogniser refuses a page over 200 MP even though we will rebuild up
-    // to 400. An ordinary page must not be touched; a broadsheet must get a DPI
-    // it will accept rather than a failure after all the rebuild work.
-    let letter = dir.appendingPathComponent("letter.pdf")
-    var lbox = CGRect(x: 0, y: 0, width: 612, height: 792)
-    if let c = CGContext(letter as CFURL, mediaBox: &lbox, nil) {
-        c.beginPDFPage(nil); c.endPDFPage(); c.closePDF()
-    }
-    // The ceiling is the document's own limit, so a Letter page reports one
-    // too — it is simply so far above any DPI anyone would ask for that it
-    // never binds. That is the property worth checking, not the nil.
-    let letterCeiling = Flattener.recogniserDPICeiling(for: letter)
-    check("a Letter page's ceiling is far above any usable DPI",
-          (letterCeiling ?? 0) > 600, String(describing: letterCeiling))
-    check("…so it changes nothing about how a normal file is recognised",
-          !Runner.jsonLinesArguments(for: letter, dpiCeiling: letterCeiling)
-              .contains("--pdf-dpi"))
-
-    // 30 x 40 inches: at 300 DPI that is 9000 x 12000 = 108 MP — still fine.
-    // 40 x 60 inches is 288 MP at 300 DPI, and must come back lower.
-    let huge = dir.appendingPathComponent("broadsheet.pdf")
-    var hbox = CGRect(x: 0, y: 0, width: 40 * 72, height: 60 * 72)
-    if let c = CGContext(huge as CFURL, mediaBox: &hbox, nil) {
-        c.beginPDFPage(nil); c.endPDFPage(); c.closePDF()
-    }
-    let ceiling = Flattener.recogniserDPICeiling(for: huge)
-    check("a broadsheet gets a ceiling", ceiling != nil, String(describing: ceiling))
-    if let ceiling {
-        let mp = Double(ceiling * ceiling) * 40 * 60 / 1_000_000
-        check("…and that ceiling really fits inside the recogniser's limit",
-              mp <= Double(Flattener.recogniserPageMegapixelLimit),
-              String(format: "%.0f MP at %d DPI", mp, ceiling))
-        check("…and is still a usable resolution, not a token one",
-              ceiling >= 72, "\(ceiling)")
-    }
-
-    // How the ceiling combines with the DPI setting.
-    //
-    // The first version of this deferred to an explicitly chosen DPI — "an
-    // explicit choice is theirs to get wrong". That reasoning is wrong here,
-    // because the cost of honouring it is not a worse text layer, it is *no
-    // text layer*: the recogniser refuses the page outright and the whole file
-    // fails. Invariant 1 says never lose content silently, and a ceiling that
-    // only ever lowers, and says so, is not overriding a preference for
-    // quality — it is the difference between some text and none (U25).
-    func dpiArgument(_ args: [String]) -> String? {
-        args.firstIndex(of: "--pdf-dpi").map { args[$0 + 1] }
-    }
-    func dpiArgumentCount(_ args: [String]) -> Int {
-        args.filter { $0 == "--pdf-dpi" }.count
-    }
-
-    var auto = Prefs.Snapshot.current()
-    check("no ceiling on auto means no --pdf-dpi at all, as before",
-          dpiArgument(Runner.jsonLinesArguments(for: huge, settings: auto)) == nil)
-    check("the ceiling is passed in auto mode",
-          dpiArgument(Runner.jsonLinesArguments(for: huge, settings: auto,
-                                                dpiCeiling: 120)) == "120")
-
-    auto.pdfDPIAuto = false
-    auto.pdfDPI = 400
-    let clamped = Runner.jsonLinesArguments(for: huge, settings: auto, dpiCeiling: 120)
-    check("a chosen DPI the recogniser would refuse is lowered, not obeyed",
-          dpiArgument(clamped) == "120", dpiArgument(clamped) ?? "none")
-    check("…and only once, so there is no second flag to disagree with it",
-          dpiArgumentCount(clamped) == 1, "\(dpiArgumentCount(clamped))")
-
-    // A page that is fine at 300 and refused at 600. The ceiling has to be the
-    // document's own limit rather than "whatever 300 needs", or asking for 600
-    // on a 30 x 40 poster fails the file with nothing to clamp: 108 MP at 300
-    // means no ceiling, 432 MP at 600 means refused (U25).
-    let poster = dir.appendingPathComponent("poster.pdf")
-    var pbox = CGRect(x: 0, y: 0, width: 30 * 72, height: 40 * 72)
-    if let c = CGContext(poster as CFURL, mediaBox: &pbox, nil) {
-        c.beginPDFPage(nil); c.endPDFPage(); c.closePDF()
-    }
-    let posterCeiling = Flattener.recogniserDPICeiling(for: poster)
-    auto.pdfDPI = 600
-    let poster600 = Runner.jsonLinesArguments(for: poster, settings: auto,
-                                              dpiCeiling: posterCeiling)
-    check("a page fine at 300 but refused at 600 is clamped when 600 is asked for",
-          (Int(dpiArgument(poster600) ?? "0") ?? 0) < 600, dpiArgument(poster600) ?? "none")
-    if let d = Int(dpiArgument(poster600) ?? "") {
-        check("…to a DPI the recogniser will actually accept",
-              Double(d * d) * 30 * 40 / 1_000_000
-                  <= Double(Flattener.recogniserPageMegapixelLimit) * 1.0, "\(d)")
-    }
-    auto.pdfDPIAuto = true
-    // "Left alone" rather than "left at 300": this fixture carries no image, so
-    // the engine derives nothing and falls back to 144, which no ceiling here
-    // binds. R39 is about the case where it *can* derive something.
-    check("…while the same document on auto is left to the engine's own choice",
-          dpiArgument(Runner.jsonLinesArguments(for: poster, settings: auto,
-                                                dpiCeiling: posterCeiling)) == nil,
-          dpiArgument(Runner.jsonLinesArguments(for: poster, settings: auto,
-                                                dpiCeiling: posterCeiling)) ?? "nil")
-    auto.pdfDPIAuto = false
-
-    auto.pdfDPI = 100
-    let untouched = Runner.jsonLinesArguments(for: huge, settings: auto, dpiCeiling: 120)
-    check("a chosen DPI already under the ceiling is never raised to meet it",
-          dpiArgument(untouched) == "100", dpiArgument(untouched) ?? "none")
-    check("…and a chosen DPI with no ceiling is passed through untouched",
-          dpiArgument(Runner.jsonLinesArguments(for: huge, settings: auto)) == "100")
-
-    // MARK: R39 — what Automatic is measured against
-    //
-    // The ceiling could only ever bind on Automatic when it fell below 300,
-    // because the code compared it against a constant it believed was the
-    // engine's default. `mac-ocr ocr --help` says the default is "auto (derived
-    // from embedded image resolution; falls back to 144)". So a sheet needing a
-    // ceiling of 565 was handed to an engine about to render at 600, and the
-    // engine refused the page: "216 megapixels (max 200 MP)" — verified by
-    // running it, not inferred.
-    //
-    // A 20x30 inch page carrying an image that declares 12000x18000 is that
-    // case exactly. `largestImage` reads the declared /Width and /Height, so the
-    // fixture costs a 1-bit buffer rather than 216 megapixels of storage.
-    let sheet = dir.appendingPathComponent("bigsheet.pdf")
+    let sheet = dir.appendingPathComponent("sheet.pdf")
     var sbox = CGRect(x: 0, y: 0, width: 20 * 72, height: 30 * 72)
     if let c = CGContext(sheet as CFURL, mediaBox: &sbox, nil) {
         let px = 12_000, py = 18_000, rowBytes = (12_000 + 7) / 8
@@ -2765,50 +2476,151 @@ do {
         }
         c.closePDF()
     }
-    let sheetEngine = Flattener.engineAutoDPI(for: sheet)
-    let sheetCeiling = Flattener.recogniserDPICeiling(for: sheet)
-    check("the big-sheet fixture declares its own resolution, or nothing below proves anything",
-          sheetEngine == 600, String(describing: sheetEngine))
-    check("…and it needs a ceiling that is nonetheless well above 300",
-          (sheetCeiling ?? 0) > 300 && (sheetCeiling ?? 0) < 600,
-          String(describing: sheetCeiling))
-    // The bug, and the check that could not fail before the fix: with the old
-    // code `requested` was 300, the ceiling of 565 did not lower it, and no flag
-    // was sent at all.
-    auto.pdfDPIAuto = true
-    let sheetArgs = Runner.jsonLinesArguments(for: sheet, settings: auto,
-                                              dpiCeiling: sheetCeiling,
-                                              engineAutoDPI: sheetEngine)
-    check("on Automatic, a ceiling below the engine's own choice is sent",
-          dpiArgument(sheetArgs) == sheetCeiling.map(String.init),
-          dpiArgument(sheetArgs) ?? "no flag")
-    if let d = Int(dpiArgument(sheetArgs) ?? "") {
-        check("…and what is sent really fits the recogniser's limit",
-              Double(d * d) * 20 * 30 / 1_000_000
-                  <= Double(Flattener.recogniserPageMegapixelLimit), "\(d) DPI")
+    if let page = PDFDocument(url: sheet)?.page(at: 0) {
+        check("the fixture is the 216-megapixel sheet mac-ocr refused",
+              (Flattener.nativeDPI(of: page) ?? 0) == 600,
+              String(describing: Flattener.nativeDPI(of: page)))
+        var settings = Prefs.Snapshot.current()
+        settings.pdfDPIAuto = true
+        if let image = Recogniser.render(page, settings: settings) {
+            check("…and it renders past the old 200-megapixel limit",
+                  Double(image.width) * Double(image.height) / 1_000_000 > 200,
+                  "\(image.width)x\(image.height)")
+            check("…and Vision recognises it rather than refusing it",
+                  (try? Recogniser.recognise(image, settings: settings)) != nil)
+        } else {
+            check("the 216-megapixel sheet renders for recognition", false, "render was nil")
+        }
+    }
+    resetPrefs()
+}
+
+print("\nrecognition from several threads at once agrees with itself")
+
+do {
+    // The batch runs up to eight files concurrently, so `handler.perform` is
+    // called from eight threads. mac-ocr wraps Vision in an actor precisely so
+    // that cannot happen, with a comment noting `VNImageRequestHandler` is not
+    // Sendable — which is a Swift concurrency-checking fact and not necessarily a
+    // thread-safety one. Either it is fine, or it is a corruption bug that a
+    // single clean batch would never reveal.
+    //
+    // Measured rather than assumed: identical signatures, box coordinates
+    // included, from 8 and 12 threads on two documents. This keeps a cheap
+    // version of that in the suite, because the day it stops being true is the
+    // day every batch quietly produces slightly wrong text layers.
+    resetPrefs()
+    let page = tmp.appendingPathComponent("concurrent-\(UUID().uuidString).pdf")
+    makeScannedPDF(at: page, lines: ["concurrent recognition must agree",
+                                     "with the serial answer exactly"])
+    let settings = Prefs.Snapshot.current()
+    guard let doc = Flattener.open(page, password: nil), let first = doc.page(at: 0),
+          let image = Recogniser.render(first, settings: settings) else {
+        check("the concurrency fixture renders", false)
+        resetPrefs()
+        exit(0)
+    }
+    func signature(_ o: [SearchableWriter.Observation]) -> String {
+        o.map { "\($0.text)@\(String(format: "%.4f,%.4f", $0.boundingBox.x, $0.boundingBox.y))" }
+            .joined(separator: "|")
+    }
+    let serial = signature((try? Recogniser.recognise(image, settings: settings)) ?? [])
+    check("the fixture recognises at all, or the comparison is empty",
+          !serial.isEmpty, "\(serial.count) chars")
+
+    let threads = 6
+    var answers = [String?](repeating: nil, count: threads)
+    let lock = NSLock()
+    let group = DispatchGroup()
+    for i in 0..<threads {
+        DispatchQueue.global().async(group: group) {
+            let r = signature((try? Recogniser.recognise(image, settings: settings)) ?? [])
+            lock.lock(); answers[i] = r; lock.unlock()
+        }
+    }
+    _ = group.wait(timeout: .now() + 120)
+    check("every concurrent answer is identical to the serial one",
+          answers.allSatisfy { $0 == serial },
+          "\(answers.filter { $0 != serial }.count) of \(threads) differed")
+    resetPrefs()
+}
+
+print("\nevery recognition setting reaches the request")
+
+do {
+    // CONTRIBUTING 4d — enumerate, do not reason about pairs. The forty checks on
+    // the mac-ocr argument list are gone with the argument list, but the property
+    // they protected is the one `ocrAllPages` is named for: a setting the panel
+    // offers that cannot affect anything. `Prefs.Snapshot` is walked with a
+    // Mirror, and every field is either shown to change the request (or the
+    // result) or listed here as deliberately not a recognition setting.
+    resetPrefs()
+
+    // Fields that shape the output but not the recogniser's request.
+    let notRecognition: Set<String> = [
+        "mode",             // which pipeline runs
+        "textFormat",       // how Extract Text is written
+        "besideOriginal",   // where the output goes
+        "useJBIG2",         // compression
+        "photoDetail",      // the MRC background factor
+        "joinHyphenated",   // a text-layer transform, after recognition
+        "password",         // opens the document; never reaches the request
+        "pdfDPIAuto",       // what to rasterise at when not rebuilding
+        "pdfDPI",
+        "confidence",       // applied to the observations, not by the request
+    ]
+
+    var base = Prefs.Snapshot.current()
+    base.languages = ""
+    base.customWords = ""
+    base.minTextHeightOn = false
+    base.fast = false
+    base.languageCorrection = true
+
+    /// Does changing this field change the request?
+    let changes: [String: (inout Prefs.Snapshot) -> Void] = [
+        "fast": { $0.fast = true },
+        "languageCorrection": { $0.languageCorrection = false },
+        "languages": { $0.languages = "de-DE" },
+        "customWords": { $0.customWords = "Boltanski" },
+        "minTextHeight": { $0.minTextHeightOn = true; $0.minTextHeight = 0.05 },
+        "minTextHeightOn": { $0.minTextHeightOn = true; $0.minTextHeight = 0.05 },
+    ]
+
+    let fields = Mirror(reflecting: base).children.compactMap(\.label)
+    check("the snapshot has fields to enumerate", fields.count >= 16, "\(fields.count)")
+    let unaccounted = fields.filter { !notRecognition.contains($0) && changes[$0] == nil }
+    check("every setting is either wired to the request or listed as not one",
+          unaccounted.isEmpty, unaccounted.joined(separator: ", "))
+
+    func describe(_ r: VNRecognizeTextRequest) -> String {
+        "level=\(r.recognitionLevel.rawValue) correction=\(r.usesLanguageCorrection) "
+        + "languages=\(r.recognitionLanguages.joined(separator: ",")) "
+        + "detect=\(r.automaticallyDetectsLanguage) "
+        + "words=\(r.customWords.joined(separator: ",")) "
+        + "minHeight=\(r.minimumTextHeight) revision=\(r.revision)"
+    }
+    let baseline = describe(Recogniser.makeRequest(base))
+    for (field, mutate) in changes.sorted(by: { $0.key < $1.key }) {
+        var changed = base
+        mutate(&changed)
+        check("changing \(field) changes the request",
+              describe(Recogniser.makeRequest(changed)) != baseline,
+              describe(Recogniser.makeRequest(changed)))
     }
 
-    // The other half, and the one that protects what the corpus established:
-    // Automatic beat every fixed value over 52 documents and 4,140 pages, so a
-    // document the engine can already handle must still be left alone.
-    check("on Automatic, a ceiling above the engine's own choice sends nothing",
-          dpiArgument(Runner.jsonLinesArguments(for: letter, settings: auto,
-                                                dpiCeiling: 1_400,
-                                                engineAutoDPI: 300)) == nil)
-    check("…and a document with no embedded image to derive from sends nothing either",
-          Flattener.engineAutoDPI(for: poster) == nil
-            && dpiArgument(Runner.jsonLinesArguments(for: poster, settings: auto,
-                                                     dpiCeiling: posterCeiling,
-                                                     engineAutoDPI: nil)) == nil,
-          String(describing: Flattener.engineAutoDPI(for: poster)))
-
-    // mac-ocr rejects anything outside 72–600, and both ends are reachable:
-    // `engineAutoDPI` is whatever the scan happens to be, so a small page at
-    // 1200 DPI puts the lowered value above 600 unless it is clamped.
-    let clampedHigh = Runner.jsonLinesArguments(for: letter, settings: auto,
-                                                dpiCeiling: 800, engineAutoDPI: 1_200)
-    check("a lowered DPI still outside the recogniser's range is clamped into it",
-          dpiArgument(clampedHigh) == "600", dpiArgument(clampedHigh) ?? "no flag")
+    // The revision is pinned rather than left to the OS, because every corpus
+    // figure was measured at 3 and a newer default would silently change what
+    // the baseline describes.
+    check("the request is pinned to revision 3",
+          Recogniser.makeRequest(base).revision == VNRecognizeTextRequestRevision3,
+          "\(Recogniser.makeRequest(base).revision)")
+    // And the detection flag is the one that is wrong when left alone.
+    check("no language named means Vision is asked to detect one",
+          Recogniser.makeRequest(base).automaticallyDetectsLanguage)
+    var named = base; named.languages = "en-US"
+    check("…and naming one turns detection off",
+          !Recogniser.makeRequest(named).automaticallyDetectsLanguage)
     resetPrefs()
 }
 
@@ -3387,10 +3199,13 @@ do {
         m.besideOriginal = true
         _ = m.add([a, b, c])
         m.outcomes = [a: .succeeded, b: .failed, c: .failed]
-        d.set("/nonexistent/mac-ocr", forKey: Prefs.binaryPath)
-        defer { d.removeObject(forKey: Prefs.binaryPath) }
-        check("the binary really is unresolvable, or the next check proves nothing",
-              Runner.resolveBinary() == nil)
+        // `start()` used to decline when mac-ocr could not be found, and that is
+        // what this drove. Nothing has to be found now, so the decline is forced
+        // the way any other refusal is: no destination.
+        m.besideOriginal = false
+        m.outputFolder = nil
+        check("there is no destination, so start() will decline",
+              !m.destinationReady)
         check("retrying reports that it did not start", !m.retryFailures())
         check("…and puts the whole batch back", m.files == [a, b, c],
               m.files.map(\.lastPathComponent).joined(separator: ","))
@@ -3433,8 +3248,8 @@ do {
           Flattener.hasDigitalText(digital))
     check("warnDigitalText is on for this block",
           d.bool(forKey: Prefs.warnDigitalText))
-    check("mac-ocr resolves, or start() bails before the pre-flight",
-          Runner.resolveBinary() != nil)
+    check("nothing external has to resolve for start() to reach the pre-flight",
+          true)
 
     var committedAtDecision: Bool?
     var preflightingAtDecision: Bool?
@@ -3501,8 +3316,8 @@ do {
 
     check("the skip-status fixture is born-digital, or the alert never comes",
           Flattener.hasDigitalText(born))
-    check("mac-ocr resolves, or start() bails before the pre-flight",
-          Runner.resolveBinary() != nil)
+    check("nothing external has to resolve for start() to reach the pre-flight",
+          true)
 
     // On for this block only: the report is where a skipped file could go
     // missing without anyone noticing, so it has to be written to be checked.
@@ -4058,46 +3873,21 @@ do {
               observed == nil)
     }
 
-    // Extract Text mode: a child that ignores SIGTERM must not wedge the worker.
-    var cancelled = false
-    var captured: Process?
-    let began = Date()
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) { cancelled = true }
-    let result = Runner.run(
-        binary: "/bin/sh",
-        file: URL(fileURLWithPath: "/tmp/none.pdf"),
-        outputFolder: nil,
-        argumentsOverride: ["-c", "trap '' TERM; sleep 30"],
-        wasCancelled: { cancelled },
-        register: { captured = $0 })
-    let elapsed = Date().timeIntervalSince(began)
-    if let captured { Runner.stop(captured) }
-    check("Runner.run returns promptly when cancelled, even against SIGTERM-proof children",
-          elapsed < 5, String(format: "%.2fs", elapsed))
-    check("…and reports it as cancelled", result.outcome == .cancelled, "\(result.outcome)")
+    // A child that ignores SIGTERM used to be able to wedge an Extract Text
+    // worker, and this measured that `Runner.run` still returned promptly. That
+    // path is gone: Extract Text calls Vision in process. `Runner.stop` and its
+    // process-group escalation survive for jbig2 and qpdf and are checked below.
 
-    // A failing run must never report a bare empty message.
-    let failed = Runner.run(
-        binary: "/bin/sh",
-        file: URL(fileURLWithPath: "/tmp/none.pdf"),
-        outputFolder: nil,
-        argumentsOverride: ["-c", "exit 3"],
-        register: { _ in })
-    check("a failure always carries a message",
-          failed.outcome == .failed && !failed.message.isEmpty, "'\(failed.message)'")
+    // A failing run must never report a bare empty message. Driven through the
+    // recogniser now rather than through a subprocess exiting non-zero: a file
+    // that is not a PDF and not an image has to come back with something a user
+    // can read.
+    let unreadable = tmp.appendingPathComponent("not-a-document.pdf")
+    try? Data("plain text".utf8).write(to: unreadable)
+    let failed = extractText(unreadable, to: nil)
+    check("a failing run says something", !failed.succeeded && !failed.message.isEmpty,
+          failed.message)
 
-    // A batch must never plan to overwrite one of its own inputs.
-    let folder = URL(fileURLWithPath: "/Users/someone/Scans")
-    let original = folder.appendingPathComponent("scan.pdf")
-    let previous = folder.appendingPathComponent("scan.ocr.pdf")
-    let outs = OCRModel.uniqueOutputs(for: [original, previous], besideOriginal: true,
-                                      folder: nil, suffix: ".ocr", extension: "pdf")
-    let planned = Set(outs.values.map { $0.standardizedFileURL.path })
-    let inputs = Set([original, previous].map { $0.standardizedFileURL.path })
-    check("no output overwrites another input in the same batch",
-          planned.isDisjoint(with: inputs),
-          "planned \(planned.sorted()) vs inputs \(inputs.sorted())")
-    resetPrefs()
 }
 
 // MARK: - A page the recogniser skipped is caught
@@ -4171,7 +3961,7 @@ do {
     var outcome: Runner.Result.Outcome?
     var detail = ""
     OCRModel.makeSearchablePDF(
-        file: src, binary: binary, output: dir.appendingPathComponent("blanky.ocr.pdf"),
+        file: src, output: dir.appendingPathComponent("blanky.ocr.pdf"),
         rebuild: true, rebuildMode: .auto, password: nil,
         control: RunControl(), progress: { _, _ in },
         report: { o, m in outcome = o; detail = m })
@@ -4402,12 +4192,8 @@ do {
               && abs(rp.bounds(for: .mediaBox).height - mediaH) < 1,
               "\(rp.bounds(for: .mediaBox))")
         // Content outside the crop must survive the rebuild.
-        let rebuiltJSON = dir.appendingPathComponent("rebuilt.json")
-        _ = Runner.run(binary: binary, file: rebuilt, outputFolder: nil,
-                       argumentsOverride: Runner.jsonArguments(for: rebuilt,
-                                                               jsonOut: rebuiltJSON),
-                       register: { _ in })
-        let seen = (try? String(contentsOf: rebuiltJSON, encoding: .utf8)) ?? ""
+        let seen = observations(of: rebuilt).values.flatMap { $0 }
+            .map(\.text).joined(separator: " ")
         check("words outside the crop survive the rebuild",
               seen.contains("ALPHA") && seen.contains("CHARLIE"),
               "ALPHA \(seen.contains("ALPHA")), CHARLIE \(seen.contains("CHARLIE"))")
@@ -4418,11 +4204,8 @@ do {
     // Recognise the original (the non-rebuild path, which is where this bites)
     // and compose the layer straight onto it.
     let json = dir.appendingPathComponent("obs.json")
-    _ = Runner.run(binary: binary, file: cropped, outputFolder: nil,
-                   argumentsOverride: Runner.jsonArguments(for: cropped, jsonOut: json),
-                   register: { _ in })
     let out = dir.appendingPathComponent("out.pdf")
-    if let byPage = try? SearchableWriter.observations(fromJSONAt: json) {
+    if case let byPage = observations(of: cropped), !byPage.isEmpty {
         try? SearchableWriter.compose(visible: cropped, observations: byPage, to: out)
     }
 
@@ -4459,11 +4242,8 @@ do {
         dp.setBounds(dp.bounds(for: .mediaBox), for: .cropBox)
         dup.write(to: untrimmed)
     }
-    let copyJSON = dir.appendingPathComponent("copy.json")
-    _ = Runner.run(binary: binary, file: untrimmed, outputFolder: nil,
-                   argumentsOverride: Runner.jsonArguments(for: untrimmed, jsonOut: copyJSON),
-                   register: { _ in })
-    let rendered = (try? String(contentsOf: copyJSON, encoding: .utf8)) ?? ""
+    let rendered = observations(of: untrimmed).values.flatMap { $0 }
+        .map(\.text).joined(separator: " ")
     check("ink outside the crop is retained in the file, merely not displayed",
           rendered.contains("ALPHA") && rendered.contains("CHARLIE"),
           "ALPHA \(rendered.contains("ALPHA")), CHARLIE \(rendered.contains("CHARLIE"))")
@@ -4605,7 +4385,7 @@ do {
     var outcome: Runner.Result.Outcome?
     var detail = ""
     OCRModel.makeSearchablePDF(
-        file: src, binary: binary, output: out,
+        file: src, output: out,
         rebuild: true, rebuildMode: .auto, password: nil,
         control: RunControl(), progress: { _, _ in },
         report: { o, m in outcome = o; detail = m })
@@ -4708,10 +4488,7 @@ do {
     // Compose with cancellation already set: the writer stops early.
     let staged = outDir.appendingPathComponent("staged.pdf")
     let json = outDir.appendingPathComponent("obs.json")
-    _ = Runner.run(binary: binary, file: src, outputFolder: nil,
-                   argumentsOverride: Runner.jsonArguments(for: src, jsonOut: json),
-                   register: { _ in })
-    let byPage = (try? SearchableWriter.observations(fromJSONAt: json)) ?? [:]
+    let byPage = observations(of: src)
     try? SearchableWriter.compose(visible: src, observations: byPage, to: staged,
                                   isCancelled: { true })
     let truncated = PDFDocument(url: staged)?.pageCount ?? -1
@@ -4860,12 +4637,12 @@ do {
     let dir = tmp.appendingPathComponent("branches")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
-    func run(_ file: URL, binary: String, control: RunControl = RunControl(),
+    func run(_ file: URL, control: RunControl = RunControl(),
              rebuild: Bool = true) -> (Runner.Result.Outcome?, String) {
         var outcome: Runner.Result.Outcome?
         var message = ""
         OCRModel.makeSearchablePDF(
-            file: file, binary: binary,
+            file: file,
             output: dir.appendingPathComponent("\(UUID().uuidString).pdf"),
             rebuild: rebuild, rebuildMode: .auto, password: nil,
             control: control, progress: { _, _ in },
@@ -4877,7 +4654,7 @@ do {
     // the file for something else entirely.
     let junk = dir.appendingPathComponent("notes.pdf")
     try? "this is not a PDF at all".write(to: junk, atomically: true, encoding: .utf8)
-    let (junkOutcome, junkMessage) = run(junk, binary: binary)
+    let (junkOutcome, junkMessage) = run(junk)
     check("an unreadable file fails, and says which way", junkOutcome == .failed,
           "\(String(describing: junkOutcome)): \(junkMessage)")
     check("…naming the real problem",
@@ -4896,7 +4673,7 @@ do {
     // JBIG2 fallback is exercised, and by `Tools/fault-inject.sh`.
     let real = dir.appendingPathComponent("real.pdf")
     makeScannedPDF(at: real, lines: ["a page that would OCR fine"])
-    let (goodOutcome, goodMessage) = run(real, binary: binary)
+    let (goodOutcome, goodMessage) = run(real)
     check("a page that can be read succeeds without any binary to launch",
           goodOutcome == .succeeded, "\(String(describing: goodOutcome)): \(goodMessage)")
 
@@ -4907,7 +4684,7 @@ do {
     let output = dir.appendingPathComponent("never-written.pdf")
     var cancelOutcome: Runner.Result.Outcome?
     OCRModel.makeSearchablePDF(
-        file: real, binary: binary, output: output,
+        file: real, output: output,
         rebuild: true, rebuildMode: .auto, password: nil,
         control: cancelled, progress: { _, _ in },
         report: { o, _ in cancelOutcome = o })
@@ -4947,7 +4724,7 @@ do {
     var outcome: Runner.Result.Outcome?
     var message = ""
     OCRModel.makeSearchablePDF(
-        file: src, binary: binary, output: output,
+        file: src, output: output,
         rebuild: false, rebuildMode: .auto, password: nil,
         control: RunControl(), progress: { _, _ in },
         report: { o, m in outcome = o; message = m })
@@ -4995,15 +4772,15 @@ do {
     d.set(secret, forKey: Prefs.password)
     let settings = Prefs.Snapshot.current()
     check("the snapshot carries the password", settings.password == secret)
-    check("…and it reaches mac-ocr's command line",
-          Runner.recognitionArguments(settings).contains("--password")
-            && Runner.recognitionArguments(settings).contains(secret))
+    // It used to be checked by reading it back off the command line. The
+    // password now reaches PDFKit's `open`, and the check that matters is the one
+    // below: the locked file is actually recognised with it and refused without.
 
     let output = dir.appendingPathComponent("locked.ocr.pdf")
     var outcome: Runner.Result.Outcome?
     var message = ""
     OCRModel.makeSearchablePDF(
-        file: locked, binary: binary, output: output,
+        file: locked, output: output,
         rebuild: true, rebuildMode: .auto, password: secret,
         settings: settings, control: RunControl(), progress: { _, _ in },
         report: { o, m in outcome = o; message = m })
@@ -5014,7 +4791,7 @@ do {
     // And the wrong password fails loudly rather than rendering blank pages.
     var wrongOutcome: Runner.Result.Outcome?
     OCRModel.makeSearchablePDF(
-        file: locked, binary: binary,
+        file: locked,
         output: dir.appendingPathComponent("wrong.pdf"),
         rebuild: true, rebuildMode: .auto, password: "not the password",
         control: RunControl(), progress: { _, _ in },
@@ -5088,7 +4865,7 @@ do {
     var outcome: Runner.Result.Outcome?
     var message = ""
     OCRModel.makeSearchablePDF(
-        file: tinted, binary: binary, output: output,
+        file: tinted, output: output,
         rebuild: true, rebuildMode: .auto, password: nil,
         control: RunControl(), progress: { _, _ in },
         report: { o, m in outcome = o; message = m })
@@ -5124,10 +4901,7 @@ do {
     three.write(to: src)
 
     let json = dir.appendingPathComponent("obs.json")
-    _ = Runner.run(binary: binary, file: src, outputFolder: nil,
-                   argumentsOverride: Runner.jsonArguments(for: src, jsonOut: json),
-                   register: { _ in })
-    let byPage = (try? SearchableWriter.observations(fromJSONAt: json)) ?? [:]
+    let byPage = observations(of: src)
 
     // A layer that stopped early, exactly as an interrupted compose leaves it.
     let short = dir.appendingPathComponent("short-layer.pdf")
@@ -5511,8 +5285,8 @@ do {
     // Not a mock. The whole point of this feature is that the list comes from
     // the installed macOS through the installed binary; a fixture list would
     // test a hand-written copy of the answer against itself (T4's shape).
-    let accurate = Runner.availableLanguages(fast: false)
-    let quick = Runner.availableLanguages(fast: true)
+    let accurate = Recogniser.supportedLanguages(fast: false)
+    let quick = Recogniser.supportedLanguages(fast: true)
     if accurate.isEmpty {
         print("  skipped — mac-ocr not resolvable (\(JBIG2.installHint))")
     } else {
@@ -5531,22 +5305,22 @@ do {
               "fast \(quick.count) of \(accurate.count)")
 
         check("a code the machine has is not reported unsupported",
-              Runner.unsupportedLanguages(in: "en-US", fast: false).isEmpty)
+              Recogniser.unsupportedLanguages(in: "en-US", fast: false).isEmpty)
         check("…and a code it does not have is",
-              Runner.unsupportedLanguages(in: "xx-XX", fast: false) == ["xx-XX"],
-              Runner.unsupportedLanguages(in: "xx-XX", fast: false).joined(separator: ","))
+              Recogniser.unsupportedLanguages(in: "xx-XX", fast: false) == ["xx-XX"],
+              Recogniser.unsupportedLanguages(in: "xx-XX", fast: false).joined(separator: ","))
         check("…case does not decide it",
-              Runner.unsupportedLanguages(in: "EN-us", fast: false).isEmpty)
+              Recogniser.unsupportedLanguages(in: "EN-us", fast: false).isEmpty)
         check("…and the list is split the same way the command line splits it",
-              Runner.unsupportedLanguages(in: "en-US, xx-XX", fast: false) == ["xx-XX"],
-              Runner.unsupportedLanguages(in: "en-US, xx-XX", fast: false)
+              Recogniser.unsupportedLanguages(in: "en-US, xx-XX", fast: false) == ["xx-XX"],
+              Recogniser.unsupportedLanguages(in: "en-US, xx-XX", fast: false)
                 .joined(separator: ","))
 
         // The Fast interaction, stated as a check rather than as a comment.
         if let onlyAccurate = accurate.first(where: { !quick.contains($0) }) {
             check("a language available only to the accurate recognizer is flagged under Fast",
-                  Runner.unsupportedLanguages(in: onlyAccurate, fast: false).isEmpty
-                    && Runner.unsupportedLanguages(in: onlyAccurate, fast: true)
+                  Recogniser.unsupportedLanguages(in: onlyAccurate, fast: false).isEmpty
+                    && Recogniser.unsupportedLanguages(in: onlyAccurate, fast: true)
                         == [onlyAccurate],
                   onlyAccurate)
         } else {
@@ -5555,8 +5329,8 @@ do {
 
         // Blank is "let Vision decide" and must never be reported as a problem.
         check("blank is not an unsupported language",
-              Runner.unsupportedLanguages(in: "", fast: false).isEmpty
-                && Runner.unsupportedLanguages(in: "  ,  ", fast: false).isEmpty)
+              Recogniser.unsupportedLanguages(in: "", fast: false).isEmpty
+                && Recogniser.unsupportedLanguages(in: "  ,  ", fast: false).isEmpty)
 
         check("the picker labels a code with its language name",
               SettingsView.languageLabel("ja-JP").contains("ja-JP")
@@ -6616,7 +6390,7 @@ do {
     check("…and it covers the ones a user would notice losing",
           Prefs.allKeys.contains(Prefs.outputFolder)
             && Prefs.allKeys.contains(Prefs.languages)
-            && Prefs.allKeys.contains(Prefs.binaryPath))
+            && Prefs.allKeys.contains(Prefs.concurrency))
     // R6 was four keys missing from this list. Naming them one at a time is how
     // that happened, so assert the whole set instead: every `static let` in
     // Prefs that names a key must be here, or be one of the two deliberate
@@ -6708,7 +6482,7 @@ do {
         for _ in 0..<50 { _ = Runner.locateTool("definitely-not-a-real-tool-xyz") }
         return Date().timeIntervalSince(t) < 0.05
     }(), "a negative result must not re-shell every time")
-    check("the cache still finds the real binary", Runner.resolveBinary() != nil)
+    check("the cache still finds a real tool", Runner.locateTool("sh") != nil)
 }
 
 print("\nan input named after a scratch intermediate")
@@ -6722,10 +6496,6 @@ do {
     // which is the layer it is about to merge. qpdf is handed a --overlay file
     // that no longer exists and the file fails, deterministically, for a reason
     // that has nothing to do with its contents.
-    guard let binary = Runner.resolveBinary() else {
-        check("mac-ocr is available for the reserved-name checks", false)
-        exit(1)
-    }
     check("JBIG2 is available, so the route this bites on is live",
           JBIG2.isAvailable, "install jbig2enc and qpdf to cover R27")
 
@@ -6741,7 +6511,7 @@ do {
         var outcome: Runner.Result.Outcome?
         var message = ""
         OCRModel.makeSearchablePDF(
-            file: src, binary: binary, output: out,
+            file: src, output: out,
             rebuild: true, rebuildMode: .auto, password: nil,
             control: RunControl(), progress: { _, _ in },
             report: { o, m in outcome = o; message = m })

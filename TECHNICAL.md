@@ -9,7 +9,8 @@ tests cover.
 
 - macOS 13 or later
 - Xcode command line tools (to build)
-- `mac-ocr` **to build a disk image**: `npm install -g mac-ocr`. `build.sh --dmg`
+- nothing, to build a disk image. (This used to require `mac-ocr` so the binary
+  could be bundled; recognition is now in process.) `build.sh --dmg`
   copies it into `Contents/Resources` and refuses to package without it, since an
   image lacking the engine would send its user back to the Terminal.
 
@@ -24,7 +25,8 @@ tests cover.
   Not vendored into the repo: 2.4 MB of binary in git costs every clone forever.
 
 - `jbig2enc` and `qpdf` for the compression route, bundled the same way by
-  `Tools/bundle-libs.py` — but they are not self-contained the way mac-ocr is.
+  `Tools/bundle-libs.py` — but they are not self-contained, so their dylib
+  closure is walked and rewritten to `@loader_path`.
   `jbig2` links leptonica and its image codecs, `qpdf` links libqpdf and
   OpenSSL, so the script walks the dependency closure, copies it to
   `Contents/Resources/lib`, and rewrites every install name to `@loader_path`.
@@ -60,7 +62,8 @@ Developer ID behind it. See the README's first-launch note.
 
 ## How searchable PDFs are built
 
-Not with `mac-ocr searchable-pdf`. Two problems made that unusable for
+Not with a ready-made searchable-PDF writer. Two problems made the obvious one
+(mac-ocr's) unusable for
 re-OCRing an already-OCR'd scan:
 
 1. **It adds its text layer on top of any existing one.** `--ocr-all-pages`
@@ -77,7 +80,8 @@ So the app does this instead, for any input that already contains text:
    ~110 KB/page against ~1 MB/page as JPEG, and OCR of the rebuilt pages differs
    from OCR of the untouched original by 0.13% of characters. Grayscale is
    available for pages with photographs.
-2. **Recognise with mac-ocr** (`--format json`), which is the part worth using:
+2. **Recognise with Vision** (`VNRecognizeTextRequest`, revision 3), on the
+   page bitmaps step 1 produced:
    Vision returns one observation per line, with the full line text and correct
    spaces.
 3. **Write the text layer here**, one invisible run per line with the spaces
@@ -92,7 +96,7 @@ Word-level extraction accuracy against the same recognition, three pages of a
 
 | text layer | PDFKit | poppler |
 |---|---|---|
-| `mac-ocr searchable-pdf` | 63.8% | 27.0% |
+| `mac-ocr searchable-pdf`, measured before it was dropped | 63.8% | 27.0% |
 | this app | **100%** | **95.5%** |
 
 The remaining poppler gap is its own gap heuristics on a handful of lines.
@@ -125,12 +129,11 @@ sat on. The corpus this replaced was only 35% scans, and the
 figures it produced were correspondingly flattering — see
 [CORPUS-2026-08-08.md](CORPUS-2026-08-08.md).
 
-A note on `--ocr-strategy`, because earlier versions of this file said the app
-sets it to `standard`: **it doesn't, and it can't.** `--ocr-strategy` and
-`--ocr-all-pages` are flags of mac-ocr's `searchable-pdf` subcommand, and this app
-deliberately never uses that subcommand — it calls plain `mac-ocr --format jsonl`
-for recognition and writes the layer itself. So recognition runs under Vision's
-own behaviour. The two settings that carried those flags were deleted in 1.0;
+A note on `--ocr-strategy`, kept because it explains why `deduplicated` exists.
+Earlier versions of this file claimed the app set it to `standard`; it never did,
+and it never could — that flag belonged to a CLI subcommand this app never
+invoked. Recognition has always run under Vision's own behaviour, and now runs
+under it directly. The two settings that carried those flags were deleted in 1.0;
 they had been settings that could not affect anything.
 
 That is why `SearchableWriter.deduplicated` exists rather than being redundant:
@@ -141,7 +144,7 @@ same place is what keeps it out of the layer.
 ## Throughput
 
 Files are OCR'd concurrently, defaulting to this Mac's performance-core count.
-mac-ocr already parallelises *pages* within a single file (~4 cores' worth), but
+Vision parallelises within a page, but
 that still leaves headroom. Measured on an M3 Pro (6P+6E):
 
 | | 24 × 1-page | 4 × 15-page |
@@ -150,27 +153,27 @@ that still leaves headroom. Measured on an M3 Pro (6P+6E):
 | 4 at once | 7.1s | 10.4s |
 | 6 at once | 5.6s | 10.4s |
 | 12 at once | 5.1s | 10.5s |
-| all files in one `mac-ocr` call | 12.5s | 29.9s |
+| all files in one CLI call, when there was a CLI | 12.5s | 29.9s |
 
 So ~3× for free, flattening at the performance-core count — the efficiency cores
-add almost nothing. Passing every file to a single `mac-ocr` invocation only
-recovers process startup (~0.25s/file) and would cost per-file progress, so the
-app doesn't do that. Lower the setting if OCR is competing with other work.
+add almost nothing. Lower the setting if OCR is competing with other work.
+(The last row is why batching every file into one call was never worth it; with
+recognition in process there is no per-file startup left to recover.)
 
 The other levers, same corpus, both in Settings: `--fast` is ~2.6× faster for
-~1.7% character error (it misread standalone `1` as `I`), and dropping
-`--pdf-dpi` helps only marginally on clean scans. Both were measured on
+~1.7% character error (it misread standalone `1` as `I`), and lowering the
+render DPI helps only marginally on clean scans. Both were measured on
 synthetic, clean text — real scans with skew and noise will fare worse,
 especially under `--fast`.
 
-Deliberately left out: `--roi` (needs a visual region picker to be usable) and
-the `--image-*` flags (they only affect image inputs, not PDFs).
+Deliberately left out: region-of-interest recognition, which needs a visual
+region picker to be usable at all.
 
 ## Settings, in full
 
-`⌘,` or the gear button. Defaults match mac-ocr's own, so an untouched panel
-behaves exactly like running the CLI bare. The panel shows a live preview of the
-command your settings produce.
+`⌘,` or the gear button. Defaults match Vision's own, so an untouched panel
+behaves the way the framework does unaided. The panel shows a live preview of
+what a run will actually do.
 
 **Recognition** (both modes) — fast recognizer, language correction, recognition
 languages (BCP-47), minimum confidence, PDF render DPI, ignore-small-text
@@ -183,7 +186,7 @@ JSON Lines.
 or greyscale or automatically per page, and whether to compress them with JBIG2.
 
 **Behaviour** — how many files to OCR at once, open the output folder when
-finished, and an explicit `mac-ocr` path.
+finished.
 
 ## Tests
 
@@ -196,14 +199,14 @@ It builds image-only PDFs and puts them through the actual pipeline — includin
 `OCRModel.makeSearchablePDF`, which is deliberately internal so the tests exercise
 the real function rather than a replica of it.
 
-Covered: the argument lists mac-ocr actually accepts, drop-box filtering and the
+Covered: recognition settings reaching the request, drop-box filtering and the
 Finder drop decode, word spacing and line separation in the text layer,
 right-to-left round-tripping, per-page geometry with mixed sizes and rotation,
 crop boxes, colour pages, encrypted input, the JBIG2 route, both output routes
 with and without the rebuild, cancellation reaching a whole process tree,
 concurrency in both modes, and that a partial result is never published.
 
-It needs `mac-ocr`. Without `jbig2enc`/`qpdf` it still exits 0 while skipping the
+It needs nothing installed. Without `jbig2enc`/`qpdf` it still exits 0 while skipping the
 compression checks, so a green run on a machine without them means less than it
 looks.
 
@@ -215,7 +218,8 @@ looks.
 | [Sources/ContentView.swift](Sources/ContentView.swift) | main window: drop box, destination, progress, log |
 | [Sources/SettingsView.swift](Sources/SettingsView.swift) | settings panel |
 | [Sources/Model.swift](Sources/Model.swift) | file list, drop decoding, batch run, `makeSearchablePDF` |
-| [Sources/Runner.swift](Sources/Runner.swift) | finds `mac-ocr`, builds its arguments, runs it |
+| [Sources/Recogniser.swift](Sources/Recogniser.swift) | calls Vision, and writes Extract Text output |
+| [Sources/Runner.swift](Sources/Runner.swift) | finds `jbig2` and `qpdf`, and the process handling they need |
 | [Sources/Prefs.swift](Sources/Prefs.swift) | persisted settings, their defaults, and the per-batch snapshot |
 | [Sources/Flattener.swift](Sources/Flattener.swift) | re-renders pages; decides 1-bit vs greyscale per page |
 | [Sources/SearchableWriter.swift](Sources/SearchableWriter.swift) | places the invisible text layer |

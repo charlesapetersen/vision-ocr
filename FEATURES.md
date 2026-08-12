@@ -629,39 +629,41 @@ output is already self-contained and the text-layer fonts are invisible.
 Revisit only if a specific repository refuses a non-PDF/A deposit.
 
 
-### Direct Vision instead of the mac-ocr subprocess — ARCHIVED
-Measured and written up in `HANDOFF.md`: mac-ocr is one invocation per file, and
-~2,430 of 2,960 non-UI lines are already ours. Calling `VNRecognizeTextRequest`
-directly would delete most of `Runner.swift`, remove the `PATH`-discovery
-problem, skip a redundant rasterise round-trip, and eliminate the bug class that
-produced C6, R2, R3, R16 and R17 — all subprocess-management faults, none of them
-OCR faults.
+### Direct Vision instead of the mac-ocr subprocess — SHIPPED
+*(archived twice, then done. Kept in full because the reasons for keeping the
+dependency were good ones and the reason they stopped applying is specific.)*
 
-**Decided against for now, and the case got weaker on 2026-08-09.** The strongest
-argument for it was never code tidiness — it was that using this app required
-installing Homebrew, then Node, then an npm package, in a Terminal. Bundling the
-`mac-ocr` binary into the app removed that entirely, for an hour's work and no
-change to the recogniser, so **every corpus figure stayed valid**. Doing it the
-other way would have invalidated all 232 documents' measurements and made every
-subsequent difference an open question: ours, or Vision's?
+Archived on 2026-08-12 with the note that "the only argument left is code
+simplification, and it has to buy a fresh 232-document baseline to collect".
+Shipped the same day, once that turned out to be false on both counts.
 
-What remains is the code-simplification argument, which is real — it would delete
-most of `Runner.swift` and the bug class behind C6, R2, R3, R16, R17, U18 and R30,
-all subprocess faults and none of them OCR faults — but it now has to justify a
-fresh 232-document baseline on its own. Keeping mac-ocr also means someone else
-tracks Vision's revisions and language lists.
+**What changed the verdict.** R39 — recognition being handed a resolution Vision
+fails at, and a DPI ceiling that could not bind — existed *only* because the app
+handed a PDF to something that re-rasterised it. The 200-megapixel limit that
+whole apparatus negotiated around was mac-ocr's own guard, not Vision's: Vision
+takes a 216-megapixel image without complaint. And the axis-aligned
+`boundingBox` the CLI emits is a lossy view of the quadrilateral Vision returns,
+which is why `SearchableWriter` places every run with a zero rotation term.
 
-Revisit if mac-ocr stops being maintained, or if a Vision feature we want is not
-exposed through it.
+**And the baseline objection was answerable rather than fatal.** Both engines
+over a stratified 52 documents and 4,140 pages: 9,211,704 characters against
+9,254,956, **+0.47%**. 163,060 matched observations with no orientation
+disagreement. That took an afternoon, not a fresh corpus.
 
-**Archived 2026-08-12.** Not doing it. The only argument left is code
-simplification, and it has to buy a fresh 232-document baseline to collect —
-every corpus figure this project relies on was measured through mac-ocr, and
-replacing the recogniser makes each later difference an open question: ours, or
-Vision's? Bundling the binary already took away the reason a user would care.
-The revisit conditions stand: mac-ocr going unmaintained, or a Vision feature
-that is not exposed through it.
+**What it cost:** `Runner` from 918 lines to 426, the whole
+`recogniserDPICeiling`/`engineAutoDPI` apparatus deleted, the mac-ocr argument
+builders and streaming reader deleted with the checks that covered them, and the
+Settings panel's binary-path field gone. **What it bought:** no bundled 2.4 MB
+binary, nothing to install, no rasterisation this app does not control, and
+access to per-word geometry (`VNRecognizedText.boundingBox(for:)`) which the CLI
+never exposed and which is what the text layer wants next.
 
+**Three options were got right by reading mac-ocr's source** rather than by
+testing, each a silent divergence from what the corpus was measured with: EXIF
+orientation, `automaticallyDetectsLanguage`, and `confidence` coming from the
+observation rather than the top candidate. Prior art was cheaper than the
+fixtures. MIT, Copyright (c) Hiroki Osame; the licence still ships and
+`Recogniser.swift` carries the credit.
 
 ### Symbol-mode JBIG2
 Compresses several times harder than the generic coding used now. **Never.** It

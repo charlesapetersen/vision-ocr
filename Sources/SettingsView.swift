@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// The settings panel: mac-ocr's recognition flags, plus where to find it.
+/// The settings panel: the recognition options Vision takes, plus what to do
+/// with the result.
 /// Laid out to fit on one page without scrolling — help text lives in tooltips
 /// rather than caption lines so nothing ends up below the fold.
 struct SettingsView: View {
@@ -55,7 +56,6 @@ struct SettingsView: View {
     // Behaviour
     @AppStorage(Prefs.openWhenDone) private var openWhenDone = true
     @AppStorage(Prefs.writeRunReport) private var writeRunReport = true
-    @AppStorage(Prefs.binaryPath) private var binaryPath = ""
     @AppStorage(Prefs.concurrency) private var concurrency = Prefs.defaultConcurrency
 
     private var mode: Prefs.Mode { Prefs.Mode(rawValue: modeRaw) ?? .searchablePDF }
@@ -152,10 +152,10 @@ struct SettingsView: View {
                 TextField("blank = automatic", text: $languages)
                     .help("BCP-47 codes in priority order, e.g. en-US, ja-JP. "
                           + "Blank lets Vision decide.")
-                // Populated from `mac-ocr languages`, so it lists what this
+                // Asked of Vision directly, so it lists what this
                 // macOS actually recognises rather than what someone remembers.
                 Menu("Add") {
-                    let available = Runner.availableLanguages(fast: fast)
+                    let available = Recogniser.supportedLanguages(fast: fast)
                     if available.isEmpty {
                         Text("Can't read the language list")
                     } else {
@@ -172,7 +172,7 @@ struct SettingsView: View {
                 .accessibilityLabel("Add a recognition language")
             }
             // Not decoration. A code this Mac does not recognise is not ignored:
-            // mac-ocr exits 64 with "Unsupported recognition language", so every
+            // Vision refuses an unsupported language outright, so every
             // file in the batch fails and the run produces nothing. Ticking Fast
             // is the common way to arrive here — it supports 6 languages against
             // the accurate recognizer's 30, so a working setting stops working
@@ -296,7 +296,7 @@ struct SettingsView: View {
 
                 Toggle("Rebuild page images first, discarding any old text layer",
                        isOn: $rebuildImages)
-                    .help("mac-ocr adds its text layer on top of any existing one, which "
+                    .help("A second text layer on top of an existing one, which "
                           + "makes copied text come out doubled. Rebuilding the pages as "
                           + "images first means Vision's OCR is the only text in the result. "
                           + "The rebuild re-encodes every page it touches, in the format "
@@ -402,26 +402,6 @@ struct SettingsView: View {
         }
     }
 
-    /// What to say under the mac-ocr path field.
-    private var binaryStatus: String {
-        let typed = binaryPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        if typed.isEmpty {
-            return Runner.resolveBinary().map { "Found automatically at \($0)" }
-                ?? "Not found — install with: npm install -g mac-ocr"
-        }
-        var isDirectory: ObjCBool = false
-        if !FileManager.default.fileExists(atPath: typed, isDirectory: &isDirectory) {
-            return "There is nothing at that path."
-        }
-        if isDirectory.boolValue {
-            return "That is a folder. Point this at the mac-ocr program itself."
-        }
-        if !Runner.isRunnable(typed) {
-            return "That file is not executable, so it cannot be run."
-        }
-        return "Using this path instead of the automatic one."
-    }
-
     // MARK: - Behaviour
 
     private var behaviourSection: some View {
@@ -507,20 +487,47 @@ struct SettingsView: View {
                 }
             }
 
-            Row("mac-ocr path", labelWidth) {
-                TextField(Runner.resolveBinary() ?? "not found", text: $binaryPath)
-                    .accessibilityLabel("Path to the mac-ocr program")
-                Button("Choose…") { chooseBinary() }
+            // Stated in full rather than as a bare toggle: this is the only
+            // thing in the app that touches the network, and someone who chose
+            // it partly because nothing leaves their Mac deserves to read
+            // exactly what does.
+            Toggle("Check for new versions", isOn: $checkForUpdates)
+                .help("Asks GitHub once a day whether a newer version exists. "
+                      + "Sends nothing about you or your documents — no "
+                      + "identifiers, no telemetry — and never installs "
+                      + "anything on its own.")
+            Row("", labelWidth) {
+                Text("The only network request this app makes. Your documents "
+                     + "never leave your Mac either way.")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button("Check Now") {
+                    updateStatus = "Checking…"
+                    Updater.check(force: true) { result in
+                        DispatchQueue.main.async {
+                            switch result {
+                            case .available(let r): updateStatus = "\(r.version) is available"
+                            case .upToDate: updateStatus = "Up to date (\(Updater.currentVersion))"
+                            case .failed(let why): updateStatus = "Could not check — \(why)"
+                            }
+                        }
+                    }
+                }
+                .buttonStyle(.link).font(.caption)
             }
-            .help("Leave blank to find it automatically.")
+            if !updateStatus.isEmpty {
+                Row("", labelWidth) {
+                    Text(updateStatus).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                }
+            }
 
-            // Say what is actually true of the path typed in. The old caption
-            // read "Using this path instead of the automatic one" even when the
-            // path was a directory or a non-executable file and nothing could
-            // run — which is the one case the user needs told.
-            Text(binaryStatus)
-                .font(.caption2)
-                .foregroundStyle(Runner.resolveBinary() == nil ? .red : .secondary)
+            // The mac-ocr path field used to sit here, with a caption saying
+            // whether what you typed could actually be run. Recognition no
+            // longer runs anything: there is no path to get wrong, and nothing
+            // to install. The compression tools are still located the same
+            // awkward way, and the preview below names them.
         }
     }
 
@@ -544,8 +551,7 @@ struct SettingsView: View {
             Text("WHAT WILL HAPPEN")
                 .font(.caption2).bold().kerning(0.6)
                 .foregroundStyle(.secondary)
-            Text(Runner.previewLines(binary: Runner.resolveBinary() ?? "mac-ocr",
-                                     file: URL(fileURLWithPath: "/…/scan.pdf"),
+            Text(Runner.previewLines(file: URL(fileURLWithPath: "/…/scan.pdf"),
                                      outputFolder: savedOutputFolder)
                     .joined(separator: "\n"))
                 .font(.system(.caption2, design: .monospaced))
@@ -568,7 +574,7 @@ struct SettingsView: View {
     /// which is the whole point: the warning has to appear the moment the Fast
     /// toggle invalidates a language, not on the next run.
     private var unsupportedLanguages: [String] {
-        Runner.unsupportedLanguages(in: languages, fast: fast)
+        Recogniser.unsupportedLanguages(in: languages, fast: fast)
     }
 
     /// `Japanese — ja-JP`. The code stays visible because it is what is stored,
@@ -586,16 +592,6 @@ struct SettingsView: View {
         guard !existing.contains(where: { $0.caseInsensitiveCompare(code) == .orderedSame })
         else { return }
         languages = (existing + [code]).joined(separator: ", ")
-    }
-
-    private func chooseBinary() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.showsHiddenFiles = true
-        panel.message = "Select the mac-ocr executable"
-        panel.prompt = "Use"
-        if panel.runModal() == .OK, let url = panel.url { binaryPath = url.path }
     }
 
     private func resetAll() {

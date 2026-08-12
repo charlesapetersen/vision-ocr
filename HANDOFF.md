@@ -12,45 +12,63 @@ Two modes: extract text, or produce a searchable PDF.
 
 ## The one non-obvious design decision
 
-**mac-ocr is used for recognition only. This app writes the searchable PDF itself.**
+**This app does its own recognition and writes its own searchable PDF.**
 
-mac-ocr's own `searchable-pdf` writer has two defects that made it unusable here:
+It used to shell out to [mac-ocr](https://github.com/privatenumber/mac-ocr) for
+the recognition half. That dependency was deliberate, defended twice, and
+archived twice — and then removed, because the reasons for keeping it stopped
+being true. Both halves of the history are worth having.
 
-1. It adds its text layer *on top of* any existing one, so re-OCRing an
-   already-OCR'd scan yields doubled text (measured: 2,683 → 5,401 characters).
-2. Its layer positions each word as a separate run without real space characters,
-   so extractors must infer word gaps and miss many. Word-level accuracy against
-   the same recognition was 64% (PDFKit) and 27% (poppler); this app's layer gets
-   99.8% and 97%.
+**Why the text layer was always ours.** mac-ocr's own `searchable-pdf` writer has
+two defects that made it unusable here: it adds its layer *on top of* any
+existing one, so re-OCRing an already-OCR'd scan yields doubled text (measured:
+2,683 → 5,401 characters); and it positions each word as a separate run without
+real space characters, so extractors must infer word gaps and miss many. Word
+accuracy against the same recognition was 64% (PDFKit) and 27% (poppler); this
+app's layer gets 99.8% and 97%.
 
-So the searchable pipeline is: rebuild pages as images (which is what removes an
-old text layer) → recognise with `mac-ocr --format jsonl` → write the invisible
-text layer here → compress with jbig2enc → merge with `qpdf --overlay`.
+**Why the recognition became ours too.** The archived entry said the only
+remaining argument was code tidiness. That was wrong, and two things settled it:
 
-### How much of mac-ocr is left, and why we keep it
+- **R39 was a defect that existed only because of the handover.** `flatten`
+  rendered every page to a `CGImage`, wrote them into a PDF, and handed that PDF
+  to a process that re-opened and re-rasterised it at a resolution we did not
+  control. `recogniserDPICeiling`, `engineAutoDPI` and half of U25 were about
+  negotiating with a rasteriser we were already doing the work of, and the
+  200-megapixel refusal they negotiated around was **mac-ocr's, not Vision's** —
+  Vision accepts a 216-megapixel image without complaint.
+- **The geometry was being thrown away.** mac-ocr emits an axis-aligned
+  `boundingBox`; Vision returns a quadrilateral, and per-character ranges on
+  request. `SearchableWriter` places every run with a zero rotation term because
+  a rotated one cannot be derived from a rectangle, and every one of invariant
+  3's calibrated constants exists because the writer is fitting a string into a
+  box rather than following measured characters.
 
-**One invocation per file, and nothing else.** `mac-ocr <file> --format jsonl`
-plus recognition flags. Of its three subcommands we use one; `searchable-pdf` has
-zero call sites by design, which makes `--ocr-strategy` and `--ocr-all-pages` dead
-(they belong to that subcommand), along with `languages`, `--merge`, `--roi` and
-the `--image-*` family. Everything else — the page rebuild, the routing, the text
-layer, the compression, the assembly, the verification — is ours: roughly 2,430 of
-the 2,960 non-UI lines, with `Runner.swift` the only part that exists because we
-shell out.
+**How the switch was justified**, since the objection was always that every
+corpus figure had been measured through mac-ocr. Both engines were run over a
+stratified 52 documents and 4,140 pages: **9,211,704 characters against
+9,254,956, +0.47%.** Geometry was checked separately and mattered more — Vision
+reports boxes bottom-left, this codebase is top-left, and a wrong flip gives a
+layer that extracts perfectly and highlights the wrong line. **163,060 matched
+observations, no orientation disagreement** that survives matching on text unique
+to its page.
 
-That thinness is worth knowing, because it invites a tempting idea: mac-ocr is
-itself a thin CLI over Vision, we already rasterise pages ourselves, and calling
-`VNRecognizeTextRequest` directly would delete most of `Runner.swift`, remove the
-`PATH`-discovery problem, skip a redundant rasterise round-trip, and eliminate a
-whole bug class — **C6, R2, R3, R16, R17, R21 and R22 were all
-subprocess-management faults, not OCR ones.** That is seven of them now, which is
-the strongest argument on this side of the question.
+**Three of the request's options came from reading mac-ocr's source**, not from
+testing, and each was a silent divergence from what the baseline was measured
+with: EXIF orientation is read and passed to the handler;
+`automaticallyDetectsLanguage` is set to `languages.isEmpty` (leaving it unset is
+not leaving it alone); and `confidence` is the *observation's*, not the top
+candidate's. MIT, Copyright (c) Hiroki Osame — the licence still travels in
+`Contents/Resources/mac-ocr-LICENSE` for that reason, and `Recogniser.swift`
+carries the credit.
 
-**Decided: don't.** Keeping mac-ocr means someone else tracks Vision's revisions,
-language lists and API churn, and the current arrangement is validated across the
-84-document corpus. The dependency is thin enough to be a choice rather than a
-constraint, and the choice is to keep it — provided it stays maintained and stays
-out of our way. Revisit only if it stops being either.
+**What is left of the subprocess machinery, and why.** `jbig2` and `qpdf` are
+still children, so `Runner` still finds them on a PATH a Finder-launched app does
+not have, refuses one built for the wrong architecture, and keeps the bounded
+read that cannot hang the main thread. It went from 918 lines to 426. The bug
+class did not vanish with the dependency — C6, R2, R3, R16, R17, R21, R22, U18
+and R30 were all subprocess faults — but the long-running, streaming,
+cancellable one is gone, and that is where the complexity was.
 
 ## Build, test, run
 
@@ -62,11 +80,10 @@ out of our way. Revisit only if it stops being either.
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
-`mac-ocr`, `jbig2` and `qpdf` are bundled into the app by `Tools/bundle-libs.py`
-and travel in `Contents/Resources`. Homebrew copies are still used if you point
-Settings at one. Intel is not supported: the bundled compressors are arm64-only
-and `Runner.containsNativeSlice` makes them invisible rather than failing at
-`exec`.
+recognition is Vision, in process, and `jbig2` and `qpdf` are bundled into the
+app by `Tools/bundle-libs.py` and travel in `Contents/Resources`. Intel is not
+supported: the bundled compressors are arm64-only and
+`Runner.containsNativeSlice` makes them invisible rather than failing at `exec`.
 
 **Never rebuild while someone is running `build/VisionOCR.app`.** `build.sh`
 rewrites and re-signs that bundle in place, and macOS kills any process running

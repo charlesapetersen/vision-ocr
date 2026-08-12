@@ -832,15 +832,6 @@ final class OCRModel: ObservableObject {
     func start(note: String? = nil) {
         guard !files.isEmpty, !isRunning, !isPreflighting else { return }
 
-        guard let binary = Runner.resolveBinary() else {
-            log = [LogLine(
-                text: "Can't find the mac-ocr command. Install it with "
-                    + "\"npm install -g mac-ocr\", then reopen this app — "
-                    + "or point Settings at the binary directly.",
-                kind: .failure)]
-            return
-        }
-
         // Two different wrongs, both worth stopping for.
         //
         // Searchable PDF + rebuild *destroys* the existing text (C17). Extract
@@ -852,7 +843,7 @@ final class OCRModel: ObservableObject {
         let willDiscardText = mode == .searchablePDF && d.bool(forKey: Prefs.rebuildImages)
         let couldReadInstead = mode == .text
         guard willDiscardText || couldReadInstead, d.bool(forKey: Prefs.warnDigitalText) else {
-            run(files, binary: binary, note: note)
+            run(files, note: note)
             return
         }
 
@@ -880,17 +871,16 @@ final class OCRModel: ObservableObject {
                 // it on the way out.
                 defer { self.isPreflighting = false }
                 guard !digital.isEmpty else {
-                    self.run(candidates, binary: binary, note: note); return
+                    self.run(candidates, note: note); return
                 }
 
                 let choice = Self.digitalTextDecisionForTesting?(digital, candidates.count)
                     ?? self.askAboutDigitalText(digital, of: candidates.count)
                 switch choice {
                 case .ocrAnyway:
-                    self.run(candidates, binary: binary, note: note)
+                    self.run(candidates, note: note)
                 case .useExisting:
-                    self.run(candidates, binary: binary,
-                             readingTextFrom: Set(digital), note: note)
+                    self.run(candidates, readingTextFrom: Set(digital), note: note)
                 case .skipThem:
                     let rest = candidates.filter { !digital.contains($0) }
                     self.skipped = Set(digital)
@@ -901,7 +891,7 @@ final class OCRModel: ObservableObject {
                                                 kind: .info))
                         return
                     }
-                    self.run(rest, binary: binary, note: note, leftOut: digital)
+                    self.run(rest, note: note, leftOut: digital)
                     self.log.append(LogLine(text: skipped, kind: .info))
                 case .cancel:
                     self.log.append(LogLine(text: "Start cancelled — nothing was changed.",
@@ -962,9 +952,8 @@ final class OCRModel: ObservableObject {
     /// out instead of OCRing them — the Extract Text answer to C17's problem.
     /// They still travel through the same queue, tally and log, so a mixed batch
     /// reports as one batch.
-    private func run(_ batch: [URL], binary: String,
-                     readingTextFrom extract: Set<URL> = [], note: String? = nil,
-                     leftOut: [URL] = []) {
+    private func run(_ batch: [URL], readingTextFrom extract: Set<URL> = [],
+                     note: String? = nil, leftOut: [URL] = []) {
         guard !batch.isEmpty, !isRunning else { return }
 
         // Re-checked here, not only at the click. The file list is frozen when
@@ -1060,8 +1049,8 @@ final class OCRModel: ObservableObject {
         // Read from `settings`, not from UserDefaults again: every per-file
         // setting travels in the snapshot, and a second reader of the same key
         // is how a mid-batch change came to apply to some files and not others.
-        let unsupported = Runner.unsupportedLanguages(in: settings.languages,
-                                                      fast: settings.fast)
+        let unsupported = Recogniser.unsupportedLanguages(in: settings.languages,
+                                                         fast: settings.fast)
         if !unsupported.isEmpty {
             log.append(LogLine(
                 text: "\(unsupported.joined(separator: ", ")) "
@@ -1151,7 +1140,7 @@ final class OCRModel: ObservableObject {
 
                 if isSearchable {
                     Self.makeSearchablePDF(
-                        file: file, binary: binary,
+                        file: file,
                         output: outputs[file] ?? file.deletingLastPathComponent()
                             .appendingPathComponent(
                                 file.deletingPathExtension().lastPathComponent + ".ocr.pdf"),
@@ -1286,7 +1275,6 @@ final class OCRModel: ObservableObject {
     /// end. Testing only its parts let a regression ship that failed every run.
     nonisolated static func makeSearchablePDF(
         file inputFile: URL,
-        binary: String,
         output: URL,
         rebuild: Bool,
         rebuildMode: Flattener.Mode,
