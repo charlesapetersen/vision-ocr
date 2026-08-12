@@ -311,7 +311,29 @@ by hand. The model already knows which they were.
 
 ## Plausible, with real caveats
 
-### Direct Vision instead of the mac-ocr subprocess
+
+### Preserving annotations
+The document outline now survives (R19). Annotations do not, and were explicitly
+scoped out: links, highlights and form fields are a much larger surface, each
+with its own coordinate space to remap onto rebuilt pages. Worth reconsidering if
+a real document turns up where the annotations matter more than the risk of
+misplacing them.
+
+### PDF/A output
+An obvious ask for an archival tool. It would mean embedding an ICC profile,
+fully embedding fonts, and adding XMP metadata — and the text layer's font
+handling would need re-examining, which is the most delicate part of the
+codebase. Only worth it if something downstream actually requires PDF/A.
+
+### Batch presets
+"Newspaper", "typescript", "photograph" as named bundles of the routing and
+recognition settings. Cheap to build, but it should follow evidence: the corpus
+already shows per-era differences, and presets ought to encode measured settings
+rather than guesses.
+
+## Parked, with the reason
+
+### Direct Vision instead of the mac-ocr subprocess — ARCHIVED
 Measured and written up in `HANDOFF.md`: mac-ocr is one invocation per file, and
 ~2,430 of 2,960 non-UI lines are already ours. Calling `VNRecognizeTextRequest`
 directly would delete most of `Runner.swift`, remove the `PATH`-discovery
@@ -336,26 +358,14 @@ tracks Vision's revisions and language lists.
 Revisit if mac-ocr stops being maintained, or if a Vision feature we want is not
 exposed through it.
 
-### Preserving annotations
-The document outline now survives (R19). Annotations do not, and were explicitly
-scoped out: links, highlights and form fields are a much larger surface, each
-with its own coordinate space to remap onto rebuilt pages. Worth reconsidering if
-a real document turns up where the annotations matter more than the risk of
-misplacing them.
+**Archived 2026-08-12.** Not doing it. The only argument left is code
+simplification, and it has to buy a fresh 232-document baseline to collect —
+every corpus figure this project relies on was measured through mac-ocr, and
+replacing the recogniser makes each later difference an open question: ours, or
+Vision's? Bundling the binary already took away the reason a user would care.
+The revisit conditions stand: mac-ocr going unmaintained, or a Vision feature
+that is not exposed through it.
 
-### PDF/A output
-An obvious ask for an archival tool. It would mean embedding an ICC profile,
-fully embedding fonts, and adding XMP metadata — and the text layer's font
-handling would need re-examining, which is the most delicate part of the
-codebase. Only worth it if something downstream actually requires PDF/A.
-
-### Batch presets
-"Newspaper", "typescript", "photograph" as named bundles of the routing and
-recognition settings. Cheap to build, but it should follow evidence: the corpus
-already shows per-era differences, and presets ought to encode measured settings
-rather than guesses.
-
-## Parked, with the reason
 
 ### Symbol-mode JBIG2
 Compresses several times harder than the generic coding used now. **Never.** It
