@@ -95,7 +95,8 @@ broken at the foot of one column and continued at the head of the next is a real
 case in two-column setting, and it is excluded because the guard could not tell
 it from the `adminis+put` failures the guard exists to stop.
 
-**Both were built, measured and reverted on 2026-08-11.** The rule was the
+**Cross-page now ships; cross-column stays out.** (First attempt built, measured
+and reverted; second attempt found the actual bug and works.) The rule was the
 stricter one — head at the foot of its column, tail at the head of a column to
 its right, or at the top of the next page — and it was correct in the unit
 tests, ten of them, including the mid-column pairs it had to keep refusing.
@@ -128,6 +129,20 @@ The cross-column half is a different verdict and the evidence points the other
 way: it did not miss its cases, it admitted two and both were wrong. That is a
 precision problem with no column detection behind it, and more corpus would add
 wrong joins rather than right ones.
+
+**What was actually wrong, found on the second attempt by doing exactly that.**
+The code offered the next page's *topmost* line as the only continuation — and
+the topmost thing on a page is the folio or the running head. The trace shows it
+plainly: `reject: tail not lower-case (6130)` and
+`reject: tail not lower-case (CONGRESSIONAL )`. Both refusals are correct; with
+one candidate on offer the refusal ended the search instead of looking past the
+furniture. Offering the next page's first three lines fixes it — each still put
+through every guard, so the folio and the running head are still refused and the
+body text underneath is found.
+
+Result: **11 cross-page joins** against the ~12 opportunities the corpus
+predicted for those documents, with same-page joins unchanged at exactly 342.
+Invariant 3 identical across eight documents.
 
 Where to start next time: instrument the *candidates*, not the joins. The
 original attempt printed a line only when a join succeeded, so zero output read

@@ -483,6 +483,15 @@ do {
     // `adminis+put`, `bipar+put`, `mi+appears` and `that+cerning` on real
     // two-column pages — a real word welded to a fragment of an unrelated one,
     // which is worse than the hyphen it replaced. Columns do not overlap.
+    // A near-miss, not a clean miss: two columns whose boxes just touch still
+    // share a little width, and a floor of zero would let them join. The
+    // clean-miss fixture below cannot catch that — its overlap is negative, so
+    // any non-negative floor refuses it and the guard looks tested when it is
+    // not. This is what let `minimumColumnOverlap` survive its first mutant.
+    check("a continuation in a barely-overlapping neighbouring column is refused",
+          joined([line("merito-", y: 0.20, x: 0.05, width: 0.46),
+                  line("cracy", y: 0.24, x: 0.48, width: 0.46)])[0] == "merito-")
+
     check("a continuation in the next column is not joined",
           joined([line("merito-", y: 0.20, x: 0.05, width: 0.40),
                   line("cracy", y: 0.24, x: 0.55, width: 0.40)])[0] == "merito-")
@@ -492,6 +501,82 @@ do {
 
     check("…nor one above it",
           joined([line("merito-", y: 0.60), line("cracy", y: 0.20)])[0] == "merito-")
+
+    // MARK: across a page break
+    //
+    // Not a rare case, though the first attempt at it concluded so: measured over
+    // 45 documents and 1,225 pages, 29 pages — 2.37%, in 11 of the 45 — end on a
+    // hyphenated line. The three documents that attempt was tested against held
+    // twelve such pages and it joined none, which was read as the case being rare
+    // instead of the code being wrong.
+    //
+    // What it was actually doing wrong is the first check below: it offered only
+    // the next page's *topmost* line, which is the folio or the running head, so
+    // every candidate failed the lower-case test and the search stopped there
+    // rather than looking past the furniture.
+    func joinedOver(_ lines: [SearchableWriter.Observation],
+                    _ next: [SearchableWriter.Observation]) -> [String] {
+        SearchableWriter.joiningHyphenatedWords(lines, in: box, continuation: next).map(\.text)
+    }
+    check("a word carried over a page break is joined past the running head",
+          joinedOver([line("and he questioned the conven-", y: 0.86)],
+                     [line("6130", y: 0.03),
+                      line("CONGRESSIONAL RECORD", y: 0.05),
+                      line("tions of his day", y: 0.10)])[0]
+            == "and he questioned the conventions")
+    check("…and when the body text is the very first line",
+          joinedOver([line("merito-", y: 0.86)], [line("cracy and so on", y: 0.06)])[0]
+            == "meritocracy")
+    check("…but not to a folio alone, with no body text offered",
+          joinedOver([line("merito-", y: 0.86)],
+                     [line("6130", y: 0.03), line("RUNNING HEAD", y: 0.05)])[0] == "merito-")
+    check("…and not when the head is mid-page",
+          joinedOver([line("merito-", y: 0.40)], [line("cracy", y: 0.06)])[0] == "merito-")
+    check("…and not to a line partway down the next page",
+          joinedOver([line("merito-", y: 0.86)], [line("cracy", y: 0.58)])[0] == "merito-")
+    check("…and the last page, with nothing after it, is left alone",
+          joinedOver([line("merito-", y: 0.86)], [])[0] == "merito-")
+    // The measured page geometry this rests on: the deepest hyphenated line seen
+    // sat at 0.82 of the page, and an earlier guess of 0.18 put the boundary at
+    // exactly 0.82, so nothing ever qualified.
+    check("the page-edge band clears the measured depth of a last line",
+          1 - SearchableWriter.edgeOfPage < 0.82,
+          String(format: "boundary %.2f", 1 - SearchableWriter.edgeOfPage))
+
+    // Through `compose`, not straight into the function.
+    //
+    // The checks above hand the continuation lines in directly, which tests the
+    // rule and not the wiring that feeds it — and the wiring is where the bug
+    // was. `compose` is what decides how many of the next page's lines to offer,
+    // and offering one is exactly the defect: the folio and the running head sit
+    // above the body text, so a single candidate is always furniture.
+    // `const/continuationCandidates` survived its mutant until this existed.
+    do {
+        let dir = tmp.appendingPathComponent("crosspage")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let src = dir.appendingPathComponent("two.pdf")
+        var pbox = CGRect(x: 0, y: 0, width: 612, height: 792)
+        if let c = CGContext(src as CFURL, mediaBox: &pbox, nil) {
+            for _ in 0..<2 { c.beginPDFPage(nil); c.endPDFPage() }
+            c.closePDF()
+        }
+        // Page 2 opens with a folio and a running head, as a real book does.
+        let obs: [Int: [SearchableWriter.Observation]] = [
+            1: [line("and he questioned the conven-", y: 0.86)],
+            2: [line("6130", y: 0.03, x: 0.05, width: 0.08),
+                line("CONGRESSIONAL RECORD", y: 0.05, x: 0.2, width: 0.6),
+                line("tions of his day and after", y: 0.11)],
+        ]
+        let out = dir.appendingPathComponent("joined.pdf")
+        _ = try? SearchableWriter.compose(visible: src, observations: obs, to: out,
+                                          drawImages: false, joinHyphenated: true)
+        let text = PDFDocument(url: out)?.string ?? ""
+        check("compose looks past the folio and running head to join across a page",
+              text.contains("conventions"),
+              text.replacingOccurrences(of: "\n", with: "⏎").prefix(90).description)
+        check("…and the folio and running head are still in the text layer",
+              text.contains("6130") && text.contains("CONGRESSIONAL"))
+    }
 
     // Only the alphabetic run is taken, so punctuation stays on its own line.
     check("only the word is taken from the tail, not the rest of the line",
@@ -524,6 +609,42 @@ do {
         check("…while the tail is still there either way",
               onText.contains("cracy") && offText.contains("cracy"))
     }
+}
+
+// MARK: - Saying so when the copy is larger than the original
+
+print("\nreporting a copy larger than its original")
+
+do {
+    let dir = tmp.appendingPathComponent("sizenote")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    func file(_ name: String, bytes: Int) -> URL {
+        let u = dir.appendingPathComponent(name)
+        try? Data(repeating: 0x41, count: bytes).write(to: u)
+        return u
+    }
+    let small = file("small.pdf", bytes: 100_000)
+    let big = file("big.pdf", bytes: 250_000)
+    let similar = file("similar.pdf", bytes: 105_000)
+    let smaller = file("smaller.pdf", bytes: 40_000)
+
+    check("a copy well over the original says so",
+          OCRModel.sizeNote(from: small, to: big).contains("larger than the original"),
+          OCRModel.sizeNote(from: small, to: big))
+    // A searchable copy always costs something the original did not carry, so
+    // reporting every few per cent would be noise rather than information.
+    check("…a copy barely over it stays quiet",
+          OCRModel.sizeNote(from: small, to: similar).isEmpty,
+          OCRModel.sizeNote(from: small, to: similar))
+    check("…and a copy that shrank stays quiet",
+          OCRModel.sizeNote(from: small, to: smaller).isEmpty)
+    check("…and a missing file is not reported as growth",
+          OCRModel.sizeNote(from: dir.appendingPathComponent("gone.pdf"), to: big).isEmpty)
+    // The note names both figures, because "larger" without them is a worry
+    // rather than a fact.
+    check("…and the note carries both sizes",
+          OCRModel.sizeNote(from: small, to: big).contains("KB"),
+          OCRModel.sizeNote(from: small, to: big))
 }
 
 // MARK: - Forced re-OCR

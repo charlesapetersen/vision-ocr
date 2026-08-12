@@ -36,8 +36,39 @@ What it cannot do is tell a broken word from a real compound, so *self-* /
 searchable on their own, and telling the two cases apart needs a dictionary this
 app does not have.
 
-Measured over eight documents with 118 joins firing: line-start and line-end
-selectability, text offset, vertical overlap and word retention all unchanged.
+**Words broken across a page break are joined too.** A word split at the foot of
+one page and continued at the top of the next is now found the same way. This
+took two attempts, and the first one is worth recording: it joined nothing and
+that was read as the case being rare. It is not — measured across 45 documents
+and 1,225 pages, **29 pages, 2.37%, end on a hyphenated line**. The code was
+offering the next page's topmost line as the only continuation, and the topmost
+thing on a page is the page number or the running head. It now offers the first
+few lines and looks past the furniture.
+
+Words broken across a *column* break are deliberately left alone. Joining those
+needs to know where the columns are, which this app does not, and the attempt
+welded real words to fragments of unrelated ones.
+
+Measured over eight documents with 353 joins firing — 342 within a page, 11
+across one: line-start and line-end selectability, text offset, vertical overlap
+and word retention all unchanged.
+
+**A copy that comes out larger than the original now says so.** It is uncommon
+and it is not a fault, but it was silent, which made it look like one. Across 40
+test documents this app is 1.79x smaller overall — 134 MB in, 75 MB out — but 15
+of the 40 grew, all of them small files to begin with.
+
+The reason, chased down rather than guessed: those originals were compressed with
+*symbol-mode* JBIG2, which reuses one picture of a letter everywhere that letter
+appears. It is dramatically smaller — 17 KB against our 95 KB on one page — and
+it is the technique behind the photocopiers that silently changed digits in
+scanned documents. This app will not use it on your archives. Everything else
+was ruled out first: the text layer is a twelfth of the file, nothing is
+rendered at a higher resolution than the original, and our black-and-white page
+carries the same amount of ink as theirs to three decimal places.
+
+So the finished run now tells you, with both sizes and the reason, rather than
+leaving you to notice.
 
 ## 1.8.0 — 2026-08-11
 

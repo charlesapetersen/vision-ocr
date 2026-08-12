@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**One open: R37.** U23 and T8 close the fourth of the four ways this register
+**Nothing is open.** R37 is diagnosed and answered. U23 and T8 close the fourth of the four ways this register
 kept producing defects from its own fixes; the other three got controls in the
 same round. The third review's five — R31, R32, T6, T7, H2 — are all
 `FIXED`, and the round added three controls aimed at the *shapes* rather than
@@ -2056,7 +2056,7 @@ The lesson is R34's, again and in the same session: a codec measurement is only
 valid for the content it was taken on. Both times the number looked good on one
 kind of image and evaporated on the kind that mattered.
 
-### R37 · Small documents come out larger than they went in — OPEN
+### R37 · Small documents come out larger than they went in — FIXED *(reported, not compressed away)*
 *(measured 2026-08-11, 40 corpus documents through `OCRModel.makeSearchablePDF`)*
 
 Across the corpus the app does what it says: **134.3 MB in, 75.0 MB out, 1.79x**.
@@ -2073,20 +2073,35 @@ app reliably makes files bigger.
 Worst cases: 110 KB → 249 KB over three pages (2.26x), 704 KB → 1,543 KB over 64
 (2.19x), 747 KB → 1,495 KB over 46 (2.00x).
 
-**Not diagnosed, and deliberately not guessed at.** A searchable copy is bound to
-cost something a bare scan does not — the text layer is the product — so some
-growth is correct and the question is how much of this is that. The plausible
-causes, none yet separated: an input already compressed harder than this app
-re-encodes it; a rebuild at native DPI where the source was stored at a lower
-one; a text layer disproportionate to a short document; or `rebuildDPI` reading
-a resolution the page does not really have.
+**Diagnosed, by elimination and then by measurement.**
 
-What it is **not** is the layering work — the split is visible on documents with
-no layered pages at all.
+*Not the text layer.* Splitting each output's bytes: on the worst case the text
+layer is 29 KB of a 249 KB file. Growth is essentially all image bytes —
+201 KB against an input of 110 KB.
 
-The right first step is to separate the text layer's bytes from the image
-layer's, per document, and see which side the growth is on. Until that is done
-there is nothing here to fix, only something to explain.
+*Not resolution.* `rebuildDPI` never exceeds `nativeDPI` on any of the 40
+documents; nothing is upsampled.
+
+*Not a missing warning.* `hasDigitalText` returns false on the growers, but
+correctly — `pageIsAnImage` is true, because they are scans carrying an existing
+OCR layer rather than born-digital files.
+
+*Not a noisier threshold.* Rendered at the source's own DPI, our bilevel page
+carries the same ink to three decimal places — **0.0974 against 0.0973** — and
+the two are indistinguishable at 1:1.
+
+**It is the encoder, and the difference is deliberate.** These inputs were
+compressed with **symbol-mode JBIG2**, which pools repeated glyph shapes.
+Measured on one page at 4300x6000: **17 KB theirs, 95 KB ours**. Symbol mode is
+what this project refuses on purpose — it is the mechanism behind the Xerox
+scanners that silently swapped digits, and FEATURES.md records that as `Never`.
+
+So there is nothing here to fix by compressing harder: the only route to those
+numbers is a compression that can alter digits in an archival document. What was
+wrong was that it happened **silently**. `Model.sizeNote` now says so on the
+finished run, with both figures and the reason. Threshold 1.25x, because a
+searchable copy always costs something the original did not carry and reporting
+every three per cent would be noise; the real cases ran 1.35x to 2.26x.
 
 ---
 

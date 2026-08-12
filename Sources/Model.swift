@@ -1570,8 +1570,51 @@ final class OCRModel: ObservableObject {
             report(.failed, error.localizedDescription)
             return
         }
-        report(.succeeded, "")
+        report(.succeeded, sizeNote(from: inputFile, to: output))
     }
+
+    /// A note when the searchable copy came out **larger** than the original.
+    ///
+    /// Measured across 40 corpus documents, the app is 1.79x smaller overall
+    /// (134.3 MB in, 75.0 MB out) — but 15 of the 40 grew, and the split is by
+    /// input size: under 1 MB, 9 of 13 grew. That surprised the person it
+    /// happened to, and a surprise on an archival tool is worth a sentence.
+    ///
+    /// Diagnosed rather than guessed at (BUGS.md R37). The growth is entirely in
+    /// the images — on the worst case the text layer is 29 KB of a 249 KB file —
+    /// and it is not resolution or a noisy threshold: rendered at the source's
+    /// own DPI, our bilevel page carries the same ink to three decimal places
+    /// (0.0974 against 0.0973) and is indistinguishable at 1:1. What differs is
+    /// the encoder. Such inputs were compressed with **symbol-mode JBIG2**,
+    /// which pools repeated glyph shapes and which this app refuses on purpose —
+    /// it is the mechanism behind the Xerox scanners that silently swapped
+    /// digits. Measured on one such page at 4300x6000: 17 KB theirs, 95 KB ours.
+    ///
+    /// So this is not a defect to fix by compressing harder; the alternative is
+    /// a compression that can alter digits in an archival document. It is a
+    /// result to state plainly, so nobody has to wonder.
+    nonisolated static func sizeNote(from input: URL, to output: URL) -> String {
+        func bytes(_ url: URL) -> Int? {
+            (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? Int
+        }
+        guard let before = bytes(input), let after = bytes(output),
+              before > 0, after > before else { return "" }
+        // A hair over is not worth a sentence; the searchable copy carries a
+        // text layer the original did not have, and that is the product.
+        guard Double(after) / Double(before) >= sizeNoteRatio else { return "" }
+        return String(format: "the searchable copy is larger than the original "
+                      + "(%@ from %@) — the original used a stronger compression "
+                      + "than this app will apply to a scan",
+                      ByteCountFormatter.string(fromByteCount: Int64(after), countStyle: .file),
+                      ByteCountFormatter.string(fromByteCount: Int64(before), countStyle: .file))
+    }
+
+    /// How much larger the copy has to be before it is worth saying so.
+    ///
+    /// 1.25: a searchable copy always costs something the original did not carry,
+    /// and reporting every 3% would be noise. The cases this exists for ran
+    /// 1.35x to 2.26x.
+    nonisolated static let sizeNoteRatio = 1.25
 
     /// Running totals for the batch in flight. Main-actor only.
     private var tally: (succeeded: Int, failed: Int, cancelled: Int) = (0, 0, 0)

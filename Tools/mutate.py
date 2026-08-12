@@ -59,6 +59,16 @@ CONSTANTS = [
     ("SearchableWriter.swift", "sameLineBaselineFraction", "0.4", "0.05"),
     ("SearchableWriter.swift", "duplicateBaselineFraction", "0.3", "1.0"),
     ("SearchableWriter.swift", "maximumOutlineDepth", "32", "4000"),
+    # Rejoining words broken across a line. edgeOfPage was guessed at 0.18 and
+    # admitted nothing — the deepest hyphenated line measured sits at 0.82 and
+    # 1 - 0.18 is exactly 0.82 — so it is now measured, and worth guarding.
+    ("SearchableWriter.swift", "edgeOfPage", "0.25", "0.02"),
+    # -1.0, not 0.0: two columns do not merely fail to overlap, they overlap
+    # *negatively*, so a floor of zero still refuses them and the mutant
+    # survived while testing nothing.
+    ("SearchableWriter.swift", "minimumColumnOverlap", "0.6", "-1.0"),
+    ("SearchableWriter.swift", "continuationCandidates", "3", "1"),
+    ("Model.swift", "sizeNoteRatio", "1.25", "99.0"),
     # Flattener — routing, resolution and the crash guards
     ("Flattener.swift", "pictureInkThreshold", "0.15", "0.9"),
     ("Flattener.swift", "pictureToneThreshold", "0.12", "0.9"),
