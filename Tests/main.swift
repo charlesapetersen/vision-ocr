@@ -4798,12 +4798,21 @@ do {
           junkMessage.lowercased().contains("pdf") || junkMessage.lowercased().contains("image"),
           junkMessage)
 
-    // A binary that cannot be launched must fail the file, not the batch.
+    // There used to be a check here that an unlaunchable mac-ocr failed the file
+    // rather than the batch. Recognition no longer launches anything, so the
+    // check has no subject: `Recogniser` calls Vision in process. Deleted rather
+    // than weakened into something that passes without testing anything — a
+    // check that cannot fail is what T4 and T6 are about.
+    //
+    // The property it protected still has an owner. jbig2 and qpdf are still
+    // subprocesses, and a missing or unlaunchable one must degrade to the
+    // CoreGraphics route rather than fail the file; that is covered where the
+    // JBIG2 fallback is exercised, and by `Tools/fault-inject.sh`.
     let real = dir.appendingPathComponent("real.pdf")
     makeScannedPDF(at: real, lines: ["a page that would OCR fine"])
-    let (badBinaryOutcome, badBinaryMessage) = run(real, binary: "/nonexistent/mac-ocr")
-    check("an unlaunchable binary is a failure, not a crash",
-          badBinaryOutcome == .failed, badBinaryMessage)
+    let (goodOutcome, goodMessage) = run(real, binary: binary)
+    check("a page that can be read succeeds without any binary to launch",
+          goodOutcome == .succeeded, "\(String(describing: goodOutcome)): \(goodMessage)")
 
     // Cancel before anything starts: reported as cancelled, never as failed,
     // and nothing is published. R14 was exactly this mistake on one route.

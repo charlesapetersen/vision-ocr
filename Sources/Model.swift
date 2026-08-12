@@ -1193,25 +1193,26 @@ final class OCRModel: ObservableObject {
                     return
                 }
 
-                // No fraction: Runner.run is one blocking call with nothing to
-                // report from inside it. Claiming 0.5 pinned the bar at exactly
-                // half for the whole of a single-file run, which reads as a
-                // stall. An indeterminate bar is the honest shape.
+                // No fraction: recognition of a whole file reports nothing
+                // useful part-way for the single-page images this mode is
+                // usually given. Claiming 0.5 pinned the bar at exactly half
+                // for the whole of a single-file run, which reads as a stall.
+                // An indeterminate bar is the honest shape.
                 note("Recognising", -1)
-                var launched: Process?
-                let result = Runner.run(
-                    binary: binary,
-                    file: file,
-                    outputFolder: destination,
-                    explicitOutputFile: outputs[file],
-                    settings: settings,
-                    wasCancelled: { control.isCancelled },
-                    register: { process in
-                        launched = process
-                        control.adopt(process)
-                    })
-                if let launched { control.release(launched) }
-                report(result.outcome, result.message)
+                let target = outputs[file] ?? destination?
+                    .appendingPathComponent(
+                        file.deletingPathExtension().lastPathComponent + "." + textExt)
+                    ?? file.deletingLastPathComponent().appendingPathComponent(
+                        file.deletingPathExtension().lastPathComponent + "." + textExt)
+                do {
+                    try Recogniser.extract(from: file, to: target, settings: settings,
+                                           password: password,
+                                           isCancelled: { control.isCancelled })
+                    if control.isCancelled { report(.cancelled, "Cancelled.") }
+                    else { report(.succeeded, "") }
+                } catch {
+                    report(.failed, error.localizedDescription)
+                }
             }
         }
 
@@ -1347,6 +1348,10 @@ final class OCRModel: ObservableObject {
         var bitmaps: [Flattener.RebuiltPage] = []
         var encoded: [JBIG2.Page] = []
         let pngDir = scratch.appendingPathComponent("pages")
+        // Bilevel PNGs that jbig2enc has already consumed and recognition has
+        // still to read. Only these: the JPEGs in the same directory are the
+        // picture pages' actual streams and the assembly reads them later.
+        var spentBitmaps: [URL] = []
 
         // Rebuild when there's an old text layer to strip, and also whenever
         // JBIG2 is wanted — it needs the per-page bitmaps.
@@ -1360,14 +1365,18 @@ final class OCRModel: ObservableObject {
         if Self.willRebuild(hasEmbeddedText: Flattener.hasEmbeddedText(file, password: password),
                             rebuild: rebuild, settings: settings, mode: rebuildMode) {
             let rebuilt = scratch.appendingPathComponent(file.lastPathComponent)
-            if wantJBIG2 {
-                try? FileManager.default.createDirectory(at: pngDir,
-                                                         withIntermediateDirectories: true)
-            }
+            // Always, not only for JBIG2. The page bitmaps are what recognition
+            // reads now, so the pixels drawn onto the page are exactly the
+            // pixels Vision is given — no second rasterisation by anyone, at
+            // any resolution, which is the whole of R39 removed rather than
+            // worked around. The CoreGraphics route pays one PNG per page for
+            // it, on a fallback that only runs when jbig2/qpdf are missing.
+            try? FileManager.default.createDirectory(at: pngDir,
+                                                     withIntermediateDirectories: true)
             do {
                 bitmaps = try Flattener.flatten(
                     file, to: rebuilt, mode: rebuildMode, password: password,
-                    pngDirectory: wantJBIG2 ? pngDir : nil,
+                    pngDirectory: pngDir,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Rebuilding page \(d) of \(t)", rebuildShare(d, t)) },
                     // Compress and discard each page as it is produced. Holding
@@ -1386,7 +1395,12 @@ final class OCRModel: ObservableObject {
                                 try JBIG2.encode(png: png, to: out, using: jb,
                                                  register: register)
                             }
-                            try? FileManager.default.removeItem(at: png)
+                            // Not deleted here any more: recognition has still
+                            // to read it. It goes once the observations are in
+                            // hand, which costs ~110 KB a page of scratch until
+                            // then — 60 MB on a 600-page book, and no longer
+                            // "for nothing".
+                            spentBitmaps.append(png)
                             encoded.append(JBIG2.Page(
                                 stream: .jbig2(out), pixelWidth: page.pixelWidth,
                                 pixelHeight: page.pixelHeight, boxSize: page.boxSize))
@@ -1410,36 +1424,32 @@ final class OCRModel: ObservableObject {
         }
         if control.isCancelled { report(.cancelled, "Cancelled."); return }
 
-        // 2. Recognise it. Coordinates must come from the same pages we draw.
-        //
-        //    Streamed as JSON Lines rather than one buffered JSON blob: mac-ocr
-        //    emits a page at a time, which is the only progress signal available
-        //    for what is the longest phase of a long document.
-        let pageTotal = PDFPageCount(visible)
-        var jsonLines: [String] = []
+        // 2. Recognise it. Coordinates must come from the same pages we draw —
+        //    and now they provably do: the bitmaps `flatten` produced are the
+        //    images Vision reads, rather than a PDF re-rasterised by something
+        //    else at a resolution of its own choosing. That round trip is what
+        //    R39 was, and what U25's DPI negotiation existed to survive.
+        let pageTotal = bitmaps.isEmpty ? PDFPageCount(visible) : bitmaps.count
         progress("Recognising page 0 of \(max(pageTotal, 0))", ocrShare(0, pageTotal))
-        var launched: Process?
-        let ocr = Runner.runStreaming(
-            binary: binary,
-            // A page we are willing to rebuild can still be one mac-ocr refuses
-            // to render — its limit is 200 MP against our 400 — and finding out
-            // after the rebuild means the whole file fails. Ask for a DPI that
-            // fits when it does not (U25).
-            arguments: Runner.jsonLinesArguments(
-                for: visible, settings: settings,
-                dpiCeiling: Flattener.recogniserDPICeiling(for: visible, password: password),
-                engineAutoDPI: Flattener.engineAutoDPI(for: visible, password: password)),
-            onLine: { line in
-                jsonLines.append(line)
-                let done = jsonLines.count
-                progress("Recognising page \(done) of \(max(pageTotal, done))",
-                         ocrShare(done, pageTotal))
-            },
-            wasCancelled: { control.isCancelled },
-            register: { process in launched = process; control.adopt(process) })
-        if let launched { control.release(launched) }
-        guard ocr.succeeded else { report(ocr.outcome, ocr.message); return }
+        let byPage: [Int: [SearchableWriter.Observation]]
+        do {
+            byPage = try Recogniser.recogniseDocument(
+                visible: visible, bitmaps: bitmaps, settings: settings,
+                password: password,
+                isCancelled: { control.isCancelled },
+                onPage: { done, total in
+                    progress("Recognising page \(done) of \(max(total, done))",
+                             ocrShare(done, total))
+                })
+        } catch {
+            report(.failed, "Could not recognise the pages: \(error.localizedDescription)")
+            return
+        }
         if control.isCancelled { report(.cancelled, "Cancelled."); return }
+        // The bilevel bitmaps have been read and compressed; nothing wants them
+        // again. Deliberately not the whole directory — the picture pages' JPEGs
+        // sit beside them and are the streams the assembly is about to embed.
+        for png in spentBitmaps { try? FileManager.default.removeItem(at: png) }
 
         // 3. Write the PDF. The destination was reserved up front, so two inputs
         //    with the same base name cannot collide here.
@@ -1455,12 +1465,12 @@ final class OCRModel: ObservableObject {
         }
 
         do {
-            let byPage = try SearchableWriter.observations(fromJSONLines: jsonLines)
-
             // A page the recogniser never reported would compose as a page with
-            // no text, pass the page-count check, and publish as a success. The
-            // recogniser emits a record per page even when a page is blank, so a
-            // gap here means a page was skipped, not that it was empty.
+            // no text, pass the page-count check, and publish as a success.
+            // `recogniseDocument` records every page it visits, empty array and
+            // all, so a gap here means a page was skipped rather than blank —
+            // which is now a bug in our own loop rather than in a subprocess's
+            // output, and is still worth refusing to publish over.
             let missing = SearchableWriter.missingPages(in: byPage, of: pageTotal)
             if !missing.isEmpty {
                 let shown = missing.prefix(5).map(String.init).joined(separator: ", ")
