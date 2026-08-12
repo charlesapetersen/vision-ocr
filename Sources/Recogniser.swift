@@ -23,6 +23,25 @@ import CoreGraphics
 /// Recognition itself is unchanged — this is the same Vision, at the same
 /// revision, with the same options — and that is the property the corpus
 /// baseline depends on.
+///
+/// **Three of those options were got right by reading `mac-ocr`'s source rather
+/// than by testing** (MIT, Copyright (c) Hiroki Osame; the licence travels in
+/// `Contents/Resources/mac-ocr-LICENSE`). Each was a silent divergence from the
+/// behaviour every corpus figure was measured with:
+///
+///  - EXIF orientation is read and passed to the request handler. An attempt to
+///    build a fixture for this locally could not get an orientation flag to
+///    stick through `sips` or `CGImageDestination`, so the prior art settled in
+///    minutes what a test could not.
+///  - `automaticallyDetectsLanguage` is set to `languages.isEmpty`. Leaving it
+///    unset is not the same as leaving it alone.
+///  - `confidence` is the *observation's*, not the top candidate's. They are
+///    different numbers, and the threshold and the JSON field both reported the
+///    former.
+///
+/// Their per-word geometry — `VNRecognizedText.boundingBox(for:)` over
+/// whitespace-separated tokens — is the capability this app's text layer would
+/// want next, and is not reachable through the CLI's output at all.
 enum Recogniser {
 
     /// Pinned, not left to default. `mac-ocr` reports `requestRevision: 3` in
@@ -133,12 +152,22 @@ enum Recogniser {
                                    observations: try recognise(image, settings: settings)))
             }
         } else {
-            // An image input, which the drop box accepts alongside PDFs.
+            // An image input, which the drop box accepts alongside PDFs. This
+            // is the only path where EXIF orientation exists to be honoured —
+            // the PDF pages above are rendered by us and have none.
             guard let source = CGImageSourceCreateWithURL(file as CFURL, nil),
                   let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
             else { throw SearchableWriter.Failure.unreadableSource }
-            out.append(PageOut(page: 1, width: image.width, height: image.height,
-                               observations: try recognise(image, settings: settings)))
+            let orientation = exifOrientation(of: source)
+            // Reported in display space, so a sideways photograph does not
+            // describe itself with its width and height swapped.
+            let sideways = [.left, .leftMirrored, .right, .rightMirrored]
+                .contains(orientation)
+            out.append(PageOut(page: 1,
+                               width: sideways ? image.height : image.width,
+                               height: sideways ? image.width : image.height,
+                               observations: try recognise(image, orientation: orientation,
+                                                           settings: settings)))
         }
 
         func object(_ p: PageOut) -> [String: Any] {
@@ -178,6 +207,16 @@ enum Recogniser {
             }.joined(separator: "\n") + "\n"
         }
         try Data(body.utf8).write(to: target, options: .atomic)
+    }
+
+    /// The EXIF orientation an image file declares, or `.up`.
+    static func exifOrientation(of source: CGImageSource) -> CGImagePropertyOrientation {
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil)
+                as? [CFString: Any],
+              let raw = properties[kCGImagePropertyOrientation] as? UInt32,
+              let orientation = CGImagePropertyOrientation(rawValue: raw)
+        else { return .up }
+        return orientation
     }
 
     /// The bitmap `flatten` wrote for a page, decoded.
@@ -229,7 +268,7 @@ enum Recogniser {
     /// placement constant was calibrated against. Flipping here rather than at
     /// the call site keeps the one conversion in the one place that knows both
     /// conventions.
-    static func recognise(_ image: CGImage,
+    static func recognise(_ image: CGImage, orientation: CGImagePropertyOrientation = .up,
                           settings: Prefs.Snapshot) throws -> [SearchableWriter.Observation] {
         let request = VNRecognizeTextRequest()
         request.revision = revision
@@ -237,13 +276,34 @@ enum Recogniser {
         request.usesLanguageCorrection = settings.languageCorrection
         let languages = Runner.splitList(settings.languages)
         if !languages.isEmpty { request.recognitionLanguages = languages }
+        // Set explicitly, and only when no language was named. Leaving it unset
+        // is not the same as leaving it alone: with no languages given Vision
+        // falls back to its own default list rather than detecting, so an
+        // untouched settings panel would have quietly stopped detecting the
+        // language — a divergence from every figure the corpus was measured
+        // with. mac-ocr sets `automaticallyDetectsLanguage = languages.isEmpty`
+        // and this matches it.
+        request.automaticallyDetectsLanguage = languages.isEmpty
         let words = Runner.splitList(settings.customWords)
         if !words.isEmpty { request.customWords = words }
         if settings.minTextHeightOn, settings.minTextHeight > 0 {
             request.minimumTextHeight = Float(settings.minTextHeight)
         }
 
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        // Orientation, not `.up`. A photograph from a phone stores its pixels
+        // sideways and says so in an EXIF tag, and
+        // `CGImageSourceCreateImageAtIndex` hands back the stored pixels
+        // without applying it. Vision reads rotated text anyway, so the
+        // *strings* survive — but the boxes would be in the stored frame, which
+        // is wrong for anything that positions text by them.
+        //
+        // Found by reading mac-ocr's own source rather than by testing: it
+        // reads `kCGImagePropertyOrientation` and passes it to the handler, and
+        // an attempt to build a fixture here could not get an EXIF flag to
+        // stick through `sips` or `CGImageDestination`. Prior art was cheaper
+        // than the fixture.
+        let handler = VNImageRequestHandler(cgImage: image, orientation: orientation,
+                                            options: [:])
         try handler.perform([request])
 
         var out: [SearchableWriter.Observation] = []
@@ -253,7 +313,12 @@ enum Recogniser {
             // option, and the setting's contract is that anything below the mark
             // is discarded. `> 0` because the default keeps everything and an
             // observation at exactly 0 confidence is still text on the page.
-            if settings.confidence > 0, Double(candidate.confidence) < settings.confidence {
+            // The *observation's* confidence, not the candidate's. They are
+            // different numbers, and mac-ocr filtered and reported on the
+            // observation — so a user's existing threshold has to keep meaning
+            // what it meant, and the `confidence` field in the JSON has to keep
+            // reporting the same quantity.
+            if settings.confidence > 0, Double(observation.confidence) < settings.confidence {
                 continue
             }
             let box = observation.boundingBox
@@ -264,7 +329,7 @@ enum Recogniser {
                     width: box.size.width,
                     height: box.size.height),
                 text: candidate.string,
-                confidence: Double(candidate.confidence)))
+                confidence: Double(observation.confidence)))
         }
         return out
     }

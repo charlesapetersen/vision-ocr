@@ -2812,6 +2812,92 @@ do {
     resetPrefs()
 }
 
+print("\na photograph that says it is sideways is read as sideways")
+
+do {
+    // Recognition honours EXIF orientation. In the searchable pipeline this
+    // cannot arise — those bitmaps are CGImages this app drew — but Extract Text
+    // takes image files, and `CGImageSourceCreateImageAtIndex` hands back the
+    // stored pixels with the flag unapplied.
+    //
+    // Vision reads rotated text either way, so the *strings* survive and no
+    // character count can see the fault. What breaks is the geometry: the boxes
+    // come back in the stored frame. So this checks the boxes, not the text.
+    //
+    // The fixture defeated two instruments before it worked. `sips -g
+    // orientation` and `mdls` both report nothing for a file that plainly
+    // carries the tag — which read as "the flag would not stick" and nearly
+    // closed the question as untestable. `CGImageSourceCopyPropertiesAtIndex`
+    // sees it perfectly.
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("exif-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    // Text drawn sideways, so the stored pixels need a quarter turn to read.
+    let w = 900, h = 1200
+    let upright = dir.appendingPathComponent("sideways.jpg")
+    if let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
+                                  bitsPerSample: 8, samplesPerPixel: 1, hasAlpha: false,
+                                  isPlanar: false, colorSpaceName: .deviceWhite,
+                                  bytesPerRow: w, bitsPerPixel: 8),
+       let ctx = NSGraphicsContext(bitmapImageRep: rep) {
+        NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = ctx
+        NSColor.white.setFill(); NSRect(x: 0, y: 0, width: w, height: h).fill()
+        let t = NSAffineTransform()
+        t.translateX(by: CGFloat(w), yBy: 0)
+        t.rotate(byDegrees: 90)
+        t.concat()
+        ("ORIENTATION" as NSString).draw(
+            at: NSPoint(x: 120, y: 300),
+            withAttributes: [.font: NSFont.systemFont(ofSize: 72),
+                             .foregroundColor: NSColor.black])
+        NSGraphicsContext.current?.flushGraphics(); NSGraphicsContext.restoreGraphicsState()
+        try? rep.representation(using: .jpeg, properties: [:])?.write(to: upright)
+    }
+
+    // Stamp orientation 6 — "rotate 90° clockwise to display" — the way a phone
+    // camera does.
+    let flagged = dir.appendingPathComponent("flagged.jpg")
+    if let source = CGImageSourceCreateWithURL(upright as CFURL, nil),
+       let type = CGImageSourceGetType(source),
+       let dest = CGImageDestinationCreateWithURL(flagged as CFURL, type, 1, nil) {
+        var props = (CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]) ?? [:]
+        props[kCGImagePropertyOrientation] = 6
+        CGImageDestinationAddImageFromSource(dest, source, 0, props as CFDictionary)
+        _ = CGImageDestinationFinalize(dest)
+    }
+
+    guard let source = CGImageSourceCreateWithURL(flagged as CFURL, nil),
+          let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+        check("the orientation fixture was written", false)
+        resetPrefs()
+        exit(0)
+    }
+    check("the fixture really carries an orientation flag, or nothing below means anything",
+          Recogniser.exifOrientation(of: source) == .right,
+          "\(Recogniser.exifOrientation(of: source).rawValue)")
+
+    let settings = Prefs.Snapshot.current()
+    let ignored = (try? Recogniser.recognise(image, orientation: .up, settings: settings)) ?? []
+    let honoured = (try? Recogniser.recognise(image, orientation: .right,
+                                              settings: settings)) ?? []
+    check("Vision finds the text whichever way it is told to read it",
+          !ignored.isEmpty && !honoured.isEmpty,
+          "ignored \(ignored.count), honoured \(honoured.count)")
+    // A line of text is wider than it is tall once the page is the right way up.
+    // Ignoring the flag leaves it in the stored frame, where it is the reverse.
+    if let a = ignored.first, let b = honoured.first {
+        check("ignoring the flag leaves the line standing on end",
+              a.boundingBox.height > a.boundingBox.width,
+              String(format: "%.3f x %.3f", a.boundingBox.width, a.boundingBox.height))
+        check("…and honouring it lays the line down",
+              b.boundingBox.width > b.boundingBox.height,
+              String(format: "%.3f x %.3f", b.boundingBox.width, b.boundingBox.height))
+    }
+    resetPrefs()
+}
+
 print("\nevery control VoiceOver cannot name from its own label has one")
 
 do {
