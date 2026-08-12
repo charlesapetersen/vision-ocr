@@ -18,8 +18,20 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 this app processed them — one book went from 16 MB to 156 MB, more than nine
 times its original size, and it was not alone. Across the whole 232-document test
 library the output was 1,039 MB against 1,198 MB going in; it is now **792 MB**.
-Nothing was traded away for that: the pages this affects lose no detail, and
-several of them read more crisply than before.
+The pages this affects lose no detail — they were checked at full size, and
+several read more crisply than before.
+
+**One honest caveat, found straight after release and written up as BUGS.md
+R39.** Across the whole library the recognised text changed by −0.05%, and most
+documents gained. But one book lost 2.7% of its text, concentrated on about a
+dozen pages, and the cause is not the change above: on scans rebuilt at 400 DPI
+or more, Vision recovers far less text than it does at 300, and this app's
+Automatic setting leaves the choice of resolution to the recogniser, which picks
+the page's own. The pages that moved to black-and-white crossed that cliff
+sooner than they used to. The cliff was always there and is being fixed
+separately; if you are processing very high-resolution scans and want the old
+behaviour for now, set **Settings ▸ Recognition ▸ Page DPI** to 300 explicitly
+rather than leaving it on Automatic.
 
 The cause was a page of dense small type being mistaken for a photograph. The app
 decides per page whether to store it as sharp black-and-white or as a photographic

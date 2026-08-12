@@ -122,6 +122,18 @@ its own cycle.
 Photo detail level, cross-column hyphen joining, JPEG 2000 for picture pages
 (R34), OpenJPEG for the background layer (R36).
 
+## Out of 1.10.0, found after it shipped
+
+- [ ] **R39 — recognition is handed a resolution Vision fails at.** On
+      Automatic, which is the default, the app omits `--pdf-dpi` believing
+      mac-ocr defaults to 300; it defaults to the page's own resolution, and
+      recognition collapses above ~300 DPI. Measured on one page: 3,046
+      characters at an explicit 300 against 924 on Automatic. `BUGS.md` R39 has
+      the table and, more importantly, what is **not** established — the
+      single-page harness built for it is unfaithful and must not be used to
+      choose the constant. This needs two full gate runs, and it changes the
+      recognised text of every document, so it is its own release.
+
 ## Smaller, and genuinely optional
 
 - [x] **The tab order was walked on 2026-08-12** and it is sound: 22 stops

@@ -6,8 +6,9 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing open.** R38 — found by the first full-corpus gate run in three releases
-— is `FIXED`. U23 and T8 close the fourth of the four ways this register
+**One open: R39**, found after 1.10.0 shipped by attributing R38's character
+delta — recognition is handed a resolution Vision fails at, on Automatic, which
+is the default. R38 itself is `FIXED`. U23 and T8 close the fourth of the four ways this register
 kept producing defects from its own fixes; the other three got controls in the
 same round. The third review's five — R31, R32, T6, T7, H2 — are all
 `FIXED`, and the round added three controls aimed at the *shapes* rather than
@@ -2215,6 +2216,62 @@ so that fixture reaches the picture route through *tone*, not ink, and is
 unaffected by this change. That was predicted the other way round from
 arithmetic, and the prediction was wrong; a fixture written for a threshold has
 to control the number the threshold reads.
+
+### R39 · Recognition is handed a resolution Vision fails at — OPEN
+*(found 2026-08-12, after 1.10.0 shipped, by attributing R38's character delta)*
+
+**`Runner.recogniserDefaultDPI` is 300, and its doc comment says that is "the DPI
+mac-ocr renders PDF pages at when told nothing". It is not.** `mac-ocr ocr
+--help`:
+
+```
+--pdf-dpi <pdf-dpi>   PDF rendering DPI: 'auto' (default, derived from
+                      embedded image resolution; falls back to 144)
+```
+
+So when **Page DPI** is on Automatic — the default — and no ceiling binds,
+`recognitionArguments` omits the flag on purpose, believing the engine will use
+300. The engine instead renders at the page's own resolution, which for an
+archival scan is 400–600 DPI, and **Vision's recognition collapses there.**
+
+Measured on `Boltanski_2006` p88, rebuilt 1-bit at its native 526 DPI and handed
+to the recogniser at a range of resolutions:
+
+| `--pdf-dpi` | 144 | 200 | 300 | 400 | 526 | auto |
+|---|---|---|---|---|---|---|
+| 1-bit | 3,153 | **4,928** | 3,046 | 923 | 924 | 924 |
+| grey | 730 | 3,214 | **3,291** | 3,217 | 1,296 | — |
+
+An explicit 300 recovers **3.3x** the text that Automatic does on that page, and
+200 recovers 5.3x. The `auto` column is identical to the 526 column, which is
+what confirms where the default lands.
+
+**Consequence, and how it was found.** In the finished documents p88 went from
+3,761 characters to 927 across the 1.10.0 change. The page renders clean at 1:1
+both ways — this is not a rendering fault — and the grey route survives to 400
+DPI where the 1-bit route has already collapsed at 400. R38 moved that page from
+grey to 1-bit, so it crossed the cliff. **R38 did not create this; it walked more
+pages into it.** Corpus-wide the release is −18,496 characters (−0.054%), and
+Boltanski alone accounts for −27,393 of that, meaning the other 231 documents net
+*gained* about 8,900.
+
+**What is not established, and must be before anything changes.** Whether always
+sending an explicit DPI is a net win across the corpus. A single-page harness was
+built for it and is **not faithful** — extracting a page and rebuilding it does
+not reproduce the whole-document character counts (p88 grey reads 1,296 extracted
+against 3,761 in the document), because `rebuildDPI` reads the largest embedded
+image and extraction changes it. Any figure from that harness describes a
+different input. The instrument to use is `Tools/score-gate.swift` over the whole
+corpus, twice.
+
+*The fix that is probably right*, and deliberately not applied without that
+evidence: when `pdfDPIAuto` is set, send `--pdf-dpi` explicitly rather than
+omitting it, since the constant the code already computes is the value it
+believes it is getting. That is a one-line change to `recognitionArguments` that
+alters the recognised text of **every document**, which is why it needs a corpus
+run and not a good argument. Correct the doc comment on
+`recogniserDefaultDPI` in the same commit — the ceiling arithmetic is built on a
+claim about the engine that is false.
 
 ---
 
