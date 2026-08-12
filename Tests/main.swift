@@ -2976,6 +2976,16 @@ do {
         ("add", { m in let before = m.files; _ = m.add([two]); return m.files != before }),
         ("remove", { m in let before = m.files; m.remove(one); return m.files != before }),
         ("clearFiles", { m in let before = m.files; m.clearFiles(); return m.files != before }),
+        // The seventh door. `retryFailures` replaces `files` wholesale, which is
+        // the most destructive mutation of the three above, and it is reachable
+        // from a button that is visible whenever the last run left a failure —
+        // including while the next run is in flight.
+        ("retryFailures", { m in
+            m.outcomes[one] = .failed
+            let before = m.files
+            _ = m.retryFailures()
+            return m.files != before
+        }),
     ]
 
     for (stateName, enter) in committedStates {
@@ -3000,6 +3010,117 @@ do {
         check("…and add still works when idle", { _ = m.add([two]); return m.files.count == 2 }())
         check("…and remove still works when idle", { m.remove(one); return m.files.count == 1 }())
         check("…and clearFiles still works when idle", { m.clearFiles(); return m.files.isEmpty }())
+    }
+    resetPrefs()
+}
+
+print("\nretrying the failures from a finished batch")
+
+do {
+    // The model already knows which files failed; without this a four-file
+    // failure out of seventy-eight means re-dropping four files by hand.
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("retry-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let a = dir.appendingPathComponent("a.pdf"), b = dir.appendingPathComponent("b.pdf")
+    let c = dir.appendingPathComponent("c.pdf")
+    for u in [a, b, c] { makeScannedPDF(at: u, lines: [u.lastPathComponent]) }
+
+    MainActor.assumeIsolated {
+        let m = OCRModel()
+        m.besideOriginal = true
+        _ = m.add([a, b, c])
+        check("nothing to retry before a run", m.failedFiles.isEmpty && !m.canRetryFailures)
+
+        m.outcomes = [a: .succeeded, b: .failed, c: .failed]
+        check("the failures are the failures", m.failedFiles == [b, c],
+              m.failedFiles.map(\.lastPathComponent).joined(separator: ","))
+        // `outcomes` is a dictionary. Taking the order from it would shuffle the
+        // retry against the first run's log, which is what you read them side
+        // by side for.
+        m.outcomes = [c: .failed, b: .failed, a: .succeeded]
+        check("…in list order, not dictionary order", m.failedFiles == [b, c],
+              m.failedFiles.map(\.lastPathComponent).joined(separator: ","))
+        check("…and retrying is offered", m.canRetryFailures)
+
+        // A cancelled file is not a failed one: it did not fail, it was stopped,
+        // and sweeping it into a retry would restart work the user cancelled.
+        m.outcomes = [a: .succeeded, b: .cancelled, c: .failed]
+        check("a cancelled file is not retried", m.failedFiles == [c],
+              m.failedFiles.map(\.lastPathComponent).joined(separator: ","))
+    }
+
+    // The whole thing end to end, with a file that really cannot be read.
+    let broken = dir.appendingPathComponent("broken.pdf")
+    try? Data("not a pdf at all".utf8).write(to: broken)
+    let outDir = dir.appendingPathComponent("out")
+    try? FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
+
+    final class Box2: @unchecked Sendable { var model: OCRModel? }
+    let box = Box2()
+    var started = false
+    Task { @MainActor in
+        let m = OCRModel()
+        m.besideOriginal = false
+        m.outputFolder = outDir
+        _ = m.add([a, broken])
+        box.model = m
+        m.start()
+        started = true
+    }
+    _ = pump(until: { started }, seconds: 5)
+    _ = pump(until: { MainActor.assumeIsolated { box.model?.isRunning == true } }, seconds: 30)
+    _ = pump(until: { MainActor.assumeIsolated { box.model?.isRunning == false } }, seconds: 180)
+
+    var retried = false
+    MainActor.assumeIsolated {
+        guard let m = box.model else { check("the retry model exists", false); return }
+        check("the unreadable file failed, or the retry has nothing to work on",
+              m.failedFiles == [broken],
+              m.failedFiles.map(\.lastPathComponent).joined(separator: ","))
+        check("…and the good one did not", m.outcomes[a] == .succeeded,
+              String(describing: m.outcomes[a]))
+        retried = m.retryFailures()
+        check("retrying starts a run", retried)
+        // The list narrows to what is about to happen, so the window is not
+        // showing three files while one runs.
+        check("…over the failures alone", m.files == [broken],
+              m.files.map(\.lastPathComponent).joined(separator: ","))
+        // U26's shape: a row that keeps showing a verdict from a run that is
+        // over, describing something that is not going to happen again.
+        check("…and the old verdicts are cleared", m.outcomes[a] == nil)
+    }
+    if retried {
+        _ = pump(until: { MainActor.assumeIsolated { box.model?.isRunning == false } },
+                 seconds: 180)
+        MainActor.assumeIsolated {
+            guard let m = box.model else { return }
+            let text = m.log.map(\.text).joined(separator: "\n")
+            check("the retry's log says why it is running",
+                  text.contains("Retrying 1 file that failed"), text.prefix(120).description)
+            check("…and it failed again, since nothing about the file changed",
+                  m.failedFiles == [broken],
+                  m.failedFiles.map(\.lastPathComponent).joined(separator: ","))
+            check("…and it can be retried again", m.canRetryFailures)
+        }
+    }
+
+    // The note is a parameter, not model state. A stored one survives every
+    // path that declines to run and reappears heading an unrelated batch.
+    MainActor.assumeIsolated {
+        let m = OCRModel()
+        m.besideOriginal = true
+        _ = m.add([a])
+        m.outcomes = [a: .failed]
+        m.isRunning = true                      // start() will decline
+        check("a declined retry does not run", !m.retryFailures())
+        m.isRunning = false
+        m.outcomes = [:]
+        _ = m.add([b])
+        check("…and leaves no retry note behind for the next batch",
+              !m.log.map(\.text).joined().contains("Retrying"),
+              m.log.map(\.text).joined(separator: " | "))
     }
     resetPrefs()
 }

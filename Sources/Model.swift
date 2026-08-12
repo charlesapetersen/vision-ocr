@@ -455,6 +455,56 @@ final class OCRModel: ObservableObject {
         !files.isEmpty && !isCommitted && !isImporting && destinationReady
     }
 
+    /// The files the last batch failed on, in list order.
+    ///
+    /// Order matters and is not arbitrary: `files` is the order the user added
+    /// them, and a retry that reshuffled them would make the second run's log
+    /// hard to line up against the first. `outcomes` is a dictionary and has no
+    /// order of its own, which is exactly the trap.
+    var failedFiles: [URL] { files.filter { outcomes[$0] == .failed } }
+
+    /// Retrying is not "start again". A four-file failure out of seventy-eight
+    /// currently means re-dropping four files by hand, and the model already
+    /// knows which they were.
+    ///
+    /// Gated on the same flag as everything else that mutates a batch. Every
+    /// door into a committed batch is shut by `isCommitted`, and adding a
+    /// seventh door with its own condition is precisely how U19, U20 and U21
+    /// happened — the states-by-doors table in `Tests/main.swift` has a row for
+    /// this one.
+    var canRetryFailures: Bool {
+        !isCommitted && !isImporting && destinationReady && !failedFiles.isEmpty
+    }
+
+    /// Runs the last batch's failures again, and nothing else.
+    ///
+    /// Deliberately goes through `start()`'s pre-flight rather than straight to
+    /// `run`: the digital-text warning (C17) applies to a retried file exactly
+    /// as it did the first time, and a path that skipped it would be a way to
+    /// discard real text without being asked. The pre-flight reads `files`, so
+    /// the list is narrowed to the failures first — which is also what the user
+    /// sees, so the window agrees with what is about to happen.
+    @discardableResult
+    func retryFailures() -> Bool {
+        guard canRetryFailures else { return false }
+        let retry = failedFiles
+        // The note goes through `start`, because `run` clears the log as its
+        // first act and a line written here would vanish. The previous run's
+        // record is not lost with it — the report on disk is what that batch
+        // left behind, which is the first time clearing the log has been safe.
+        files = retry
+        // Their old verdicts are about the previous run. Left in place, the rows
+        // would show ✗ while the files sat waiting, and `failedFiles` would
+        // still list them after a successful retry (U26's shape: a status that
+        // describes something that is no longer going to happen).
+        outcomes.removeAll()
+        stages.removeAll()
+        skipped.subtract(retry)
+        start(note: "Retrying \(retry.count) file\(retry.count == 1 ? "" : "s") "
+                  + "that failed in the previous run.")
+        return true
+    }
+
     // MARK: - The drop box
 
     /// What happened to a set of dropped or chosen files.
@@ -761,7 +811,12 @@ final class OCRModel: ObservableObject {
             + "If the existing text is broken, re-OCRing is the right thing to do."
     }
 
-    func start() {
+    /// `note`, when there is one, is the first line of the run log: why this
+    /// batch exists, when it is not simply "the user pressed Start". Passed
+    /// through rather than stored on the model — a stored one survives every
+    /// path that declines to run (no binary, the pre-flight cancelled) and
+    /// reappears as the header of an unrelated batch later.
+    func start(note: String? = nil) {
         guard !files.isEmpty, !isRunning, !isPreflighting else { return }
 
         guard let binary = Runner.resolveBinary() else {
@@ -784,7 +839,7 @@ final class OCRModel: ObservableObject {
         let willDiscardText = mode == .searchablePDF && d.bool(forKey: Prefs.rebuildImages)
         let couldReadInstead = mode == .text
         guard willDiscardText || couldReadInstead, d.bool(forKey: Prefs.warnDigitalText) else {
-            run(files, binary: binary)
+            run(files, binary: binary, note: note)
             return
         }
 
@@ -811,15 +866,18 @@ final class OCRModel: ObservableObject {
                 // never goes false between the two — and the fifth has to clear
                 // it on the way out.
                 defer { self.isPreflighting = false }
-                guard !digital.isEmpty else { self.run(candidates, binary: binary); return }
+                guard !digital.isEmpty else {
+                    self.run(candidates, binary: binary, note: note); return
+                }
 
                 let choice = Self.digitalTextDecisionForTesting?(digital, candidates.count)
                     ?? self.askAboutDigitalText(digital, of: candidates.count)
                 switch choice {
                 case .ocrAnyway:
-                    self.run(candidates, binary: binary)
+                    self.run(candidates, binary: binary, note: note)
                 case .useExisting:
-                    self.run(candidates, binary: binary, readingTextFrom: Set(digital))
+                    self.run(candidates, binary: binary,
+                             readingTextFrom: Set(digital), note: note)
                 case .skipThem:
                     let rest = candidates.filter { !digital.contains($0) }
                     self.skipped = Set(digital)
@@ -830,7 +888,7 @@ final class OCRModel: ObservableObject {
                                                 kind: .info))
                         return
                     }
-                    self.run(rest, binary: binary)
+                    self.run(rest, binary: binary, note: note)
                     self.log.append(LogLine(text: skipped, kind: .info))
                 case .cancel:
                     self.log.append(LogLine(text: "Start cancelled — nothing was changed.",
@@ -891,7 +949,8 @@ final class OCRModel: ObservableObject {
     /// out instead of OCRing them — the Extract Text answer to C17's problem.
     /// They still travel through the same queue, tally and log, so a mixed batch
     /// reports as one batch.
-    private func run(_ batch: [URL], binary: String, readingTextFrom extract: Set<URL> = []) {
+    private func run(_ batch: [URL], binary: String,
+                     readingTextFrom extract: Set<URL> = [], note: String? = nil) {
         guard !batch.isEmpty, !isRunning else { return }
 
         // Re-checked here, not only at the click. The file list is frozen when
@@ -947,6 +1006,11 @@ final class OCRModel: ObservableObject {
         // for them will look. What the window shows is progress, and afterwards
         // what happened to each file.
         log = []
+        // Why this batch exists, when it is not simply "the user pressed Start".
+        // Passed in by `retryFailures` through `start`. A parameter rather than
+        // model state, so a path that declines to run cannot leave it behind to
+        // head an unrelated batch later.
+        if let note { log.append(LogLine(text: note, kind: .info)) }
         // Both clocks. The wall clock is what a person reads off a report —
         // "which run was this?" — and the monotonic one is what the elapsed
         // time has to come from, because an overnight batch is exactly when a

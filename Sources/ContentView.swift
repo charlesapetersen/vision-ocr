@@ -380,6 +380,20 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 Text(resultsHeading).font(.caption).foregroundStyle(.secondary)
                 Spacer()
+                // Only when there is something to retry, and only when it could
+                // actually run. A four-file failure out of seventy-eight
+                // otherwise means re-dropping four files by hand, and the model
+                // already knows which they were.
+                if let retryTitle {
+                    Button(retryTitle) { model.retryFailures() }
+                        .buttonStyle(.link).font(.caption)
+                        .disabled(!model.canRetryFailures)
+                        .help("Runs the files that failed again, and nothing else. "
+                              + "The list narrows to those files first, so the window "
+                              + "shows what is about to happen. The previous run's "
+                              + "record is in its report.")
+                        .accessibilityLabel(retryTitle)
+                }
                 Button("Copy") {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(model.logText, forType: .string)
@@ -434,6 +448,15 @@ struct ContentView: View {
         case .newest:
             if let last = model.log.last { proxy.scrollTo(last.id, anchor: .bottom) }
         }
+    }
+
+    /// Nil when there is nothing to retry, so the button simply is not there.
+    /// A separate property because the interpolation inside a `Button` label
+    /// inside the results pane's stack put the type checker over its budget.
+    private var retryTitle: String? {
+        let n = model.failedFiles.count
+        guard n > 0 else { return nil }
+        return "Retry \(n) Failed"
     }
 
     private var resultsHeading: String {
