@@ -117,7 +117,10 @@ enum RunReport {
 
         out += "Settings\n"
         for (label, value) in settingsRows(c) {
-            out += "  " + label.padding(toLength: max(22, label.count), withPad: " ",
+            // `+ 2`, not `max(22, count)`: a label longer than the column would
+            // otherwise be padded to its own length, which is no padding, and
+            // the value would run straight into it.
+            out += "  " + label.padding(toLength: max(22, label.count + 2), withPad: " ",
                                         startingAt: 0) + value + "\n"
         }
         out += "\n"
@@ -205,6 +208,25 @@ enum RunReport {
     static let rowsOutsideTheSnapshot: Set<String> =
         ["Files at once", "Rebuild page images"]
 
+    /// A path in `dir` that nothing is using, ` 2`, ` 3`… if the plain one is
+    /// taken. The name has one-second resolution, and an atomic write to a name
+    /// already in use replaces what was there — so two short batches finishing
+    /// in the same second would lose the first report without a word.
+    /// `uniqueOutputs` does the same thing for the documents themselves.
+    static func unusedPath(in dir: URL, for date: Date) -> URL {
+        let name = fileName(for: date)
+        let base = (name as NSString).deletingPathExtension
+        var url = dir.appendingPathComponent(name)
+        var n = 2
+        // Bounded: a directory with a thousand reports for one second is not a
+        // situation to keep spinning on.
+        while FileManager.default.fileExists(atPath: url.path), n < 1000 {
+            url = dir.appendingPathComponent("\(base) \(n).txt")
+            n += 1
+        }
+        return url
+    }
+
     /// Writes the report and hands back where it went, or what stopped it.
     ///
     /// A `Result`, not an optional and not a silent no-op: the caller has to
@@ -213,9 +235,9 @@ enum RunReport {
     static func write(_ c: Context, to directory: URL? = nil)
         -> Result<URL, Error> {
         let dir = directory ?? self.directory
-        let url = dir.appendingPathComponent(fileName(for: c.finished))
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let url = unusedPath(in: dir, for: c.finished)
             try Data(text(c).utf8).write(to: url, options: .atomic)
             return .success(url)
         } catch {

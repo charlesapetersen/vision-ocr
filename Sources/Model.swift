@@ -488,6 +488,14 @@ final class OCRModel: ObservableObject {
     func retryFailures() -> Bool {
         guard canRetryFailures else { return false }
         let retry = failedFiles
+        // Put back if the run does not happen. `canRetryFailures` cannot see
+        // every reason `start` declines — a binary that has gone missing since
+        // the last batch is one — and without this the user is left holding a
+        // list narrowed to the failures, with every verdict erased and only a
+        // line in the log. Restoring is three lines; reasoning about which
+        // refusals are possible is how U21 happened.
+        let previousFiles = files
+        let previousOutcomes = outcomes
         // The note goes through `start`, because `run` clears the log as its
         // first act and a line written here would vanish. The previous run's
         // record is not lost with it — the report on disk is what that batch
@@ -502,6 +510,11 @@ final class OCRModel: ObservableObject {
         skipped.subtract(retry)
         start(note: "Retrying \(retry.count) file\(retry.count == 1 ? "" : "s") "
                   + "that failed in the previous run.")
+        guard isCommitted else {
+            files = previousFiles
+            outcomes = previousOutcomes
+            return false
+        }
         return true
     }
 
@@ -888,7 +901,7 @@ final class OCRModel: ObservableObject {
                                                 kind: .info))
                         return
                     }
-                    self.run(rest, binary: binary, note: note)
+                    self.run(rest, binary: binary, note: note, leftOut: digital)
                     self.log.append(LogLine(text: skipped, kind: .info))
                 case .cancel:
                     self.log.append(LogLine(text: "Start cancelled — nothing was changed.",
@@ -950,7 +963,8 @@ final class OCRModel: ObservableObject {
     /// They still travel through the same queue, tally and log, so a mixed batch
     /// reports as one batch.
     private func run(_ batch: [URL], binary: String,
-                     readingTextFrom extract: Set<URL> = [], note: String? = nil) {
+                     readingTextFrom extract: Set<URL> = [], note: String? = nil,
+                     leftOut: [URL] = []) {
         guard !batch.isEmpty, !isRunning else { return }
 
         // Re-checked here, not only at the click. The file list is frozen when
@@ -1019,26 +1033,6 @@ final class OCRModel: ObservableObject {
         runStarted = Date()
         runStartedMonotonic = DispatchTime.now()
 
-        // Said once, up front, because the alternative is finding out 255 times.
-        // An unsupported `-l` code is not ignored: mac-ocr exits 64 with
-        // "Unsupported recognition language" and every file in the batch fails.
-        // The usual way to get here is ticking Fast, which drops the list from
-        // 30 languages to 6. Settings warns at the point of the mistake; this is
-        // for the run that was already configured before anyone read that.
-        let unsupported = Runner.unsupportedLanguages(
-            in: UserDefaults.standard.string(forKey: Prefs.languages) ?? "",
-            fast: UserDefaults.standard.bool(forKey: Prefs.fast))
-        if !unsupported.isEmpty {
-            log.append(LogLine(
-                text: "\(unsupported.joined(separator: ", ")) "
-                    + (unsupported.count == 1 ? "is" : "are")
-                    + " not a recognition language this Mac supports"
-                    + (UserDefaults.standard.bool(forKey: Prefs.fast)
-                       ? " with Fast on" : "")
-                    + " — every file will fail. Settings ▸ Recognition ▸ Languages.",
-                kind: .failure))
-        }
-
         announce(batch.count == 1
                  ? "Started OCR on \(batch[0].lastPathComponent)."
                  : "Started OCR on \(batch.count) files.")
@@ -1055,6 +1049,28 @@ final class OCRModel: ObservableObject {
             ?? .auto
         let besideOriginal = self.besideOriginal
         let password = settings.password.isEmpty ? nil : settings.password
+
+        // Said once, up front, because the alternative is finding out 255 times.
+        // An unsupported `-l` code is not ignored: mac-ocr exits 64 with
+        // "Unsupported recognition language" and every file in the batch fails.
+        // The usual way to get here is ticking Fast, which drops the list from
+        // 30 languages to 6. Settings warns at the point of the mistake; this is
+        // for the run that was already configured before anyone read that.
+        //
+        // Read from `settings`, not from UserDefaults again: every per-file
+        // setting travels in the snapshot, and a second reader of the same key
+        // is how a mid-batch change came to apply to some files and not others.
+        let unsupported = Runner.unsupportedLanguages(in: settings.languages,
+                                                      fast: settings.fast)
+        if !unsupported.isEmpty {
+            log.append(LogLine(
+                text: "\(unsupported.joined(separator: ", ")) "
+                    + (unsupported.count == 1 ? "is" : "are")
+                    + " not a recognition language this Mac supports"
+                    + (settings.fast ? " with Fast on" : "")
+                    + " — every file will fail. Settings ▸ Recognition ▸ Languages.",
+                kind: .failure))
+        }
 
         let textExt = settings.textFormat.fileExtension
         let outputSuffix = isSearchable ? ".ocr" : ""
@@ -1098,7 +1114,7 @@ final class OCRModel: ObservableObject {
             // The written report, last — so the log it copies is complete,
             // including the summary line above. Writing it before that point
             // would produce a report of a run that had not finished.
-            self.writeReport(batch: batch, settings: settings,
+            self.writeReport(batch: batch, leftOut: leftOut, settings: settings,
                              rebuildImages: needsRebuild, rebuildMode: rebuildMode,
                              concurrency: limit, destination: destination)
 
@@ -1739,7 +1755,7 @@ final class OCRModel: ObservableObject {
     /// *silently* either — the point of the feature is knowing what happened,
     /// and a report that was not written while the log claims one exists is the
     /// same shape as the bug it fixes.
-    private func writeReport(batch: [URL], settings: Prefs.Snapshot,
+    private func writeReport(batch: [URL], leftOut: [URL], settings: Prefs.Snapshot,
                              rebuildImages: Bool, rebuildMode: Flattener.Mode,
                              concurrency: Int, destination: URL?) {
         lastReport = nil
@@ -1758,9 +1774,15 @@ final class OCRModel: ObservableObject {
             rebuildMode: rebuildMode,
             concurrency: concurrency,
             destination: destination,
-            inputs: batch,
+            // `batch` is what ran; "Skip Those" hands `run` the remainder and
+            // keeps the skipped ones out of it. Counting only `batch` would let
+            // a report say "10 files, 10 succeeded" about a drop of fourteen —
+            // an omission of exactly the shape invariant 1 forbids. Passed in
+            // rather than read off `self.skipped`, which also holds marks from
+            // earlier runs.
+            inputs: batch + leftOut,
             outcomes: outcomes,
-            skipped: skipped.intersection(batch),
+            skipped: Set(leftOut),
             log: log.map(\.text))
         switch RunReport.write(context) {
         case .success(let url):

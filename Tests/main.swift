@@ -3122,6 +3122,27 @@ do {
               !m.log.map(\.text).joined().contains("Retrying"),
               m.log.map(\.text).joined(separator: " | "))
     }
+
+    // `canRetryFailures` cannot see every reason `start` declines. Point the
+    // binary somewhere that does not exist and it declines *after*
+    // `retryFailures` has narrowed the list and erased the verdicts, which
+    // would leave the user holding neither.
+    MainActor.assumeIsolated {
+        let m = OCRModel()
+        m.besideOriginal = true
+        _ = m.add([a, b, c])
+        m.outcomes = [a: .succeeded, b: .failed, c: .failed]
+        d.set("/nonexistent/mac-ocr", forKey: Prefs.binaryPath)
+        defer { d.removeObject(forKey: Prefs.binaryPath) }
+        check("the binary really is unresolvable, or the next check proves nothing",
+              Runner.resolveBinary() == nil)
+        check("retrying reports that it did not start", !m.retryFailures())
+        check("…and puts the whole batch back", m.files == [a, b, c],
+              m.files.map(\.lastPathComponent).joined(separator: ","))
+        check("…with its verdicts intact", m.outcomes[a] == .succeeded
+                && m.outcomes[b] == .failed && m.outcomes[c] == .failed,
+              "\(m.outcomes.count) outcomes")
+    }
     resetPrefs()
 }
 
@@ -3228,6 +3249,9 @@ do {
     check("mac-ocr resolves, or start() bails before the pre-flight",
           Runner.resolveBinary() != nil)
 
+    // On for this block only: the report is where a skipped file could go
+    // missing without anyone noticing, so it has to be written to be checked.
+    d.set(true, forKey: Prefs.writeRunReport)
     OCRModel.digitalTextDecisionForTesting = { _, _ in .skipThem }
     final class SkipHolder: @unchecked Sendable { var model: OCRModel? }
     let holder = SkipHolder()
@@ -3256,6 +3280,22 @@ do {
         check("…and VoiceOver has something true to read out",
               m.statusDescription(url: born).contains("skipped"),
               m.statusDescription(url: born))
+
+        // "Skip Those" hands `run` the remainder, so a report counting only
+        // what ran would say "1 file, 1 succeeded" about a drop of two. The
+        // omission is invisible afterwards, which is what invariant 1 is about.
+        if let report = m.lastReport,
+           let body = try? String(contentsOf: report, encoding: .utf8) {
+            check("the report counts the files that were skipped, not just the ones that ran",
+                  body.contains("2 files") && body.contains("1 skipped"),
+                  body.split(separator: "\n").first { $0.contains("files —") }
+                      .map(String.init) ?? body.prefix(120).description)
+            check("…and names the skipped one in its log",
+                  body.contains("Skipped 1 file"), body.prefix(400).description)
+            try? FileManager.default.removeItem(at: report)
+        } else {
+            check("the skip-those run wrote a report", false)
+        }
     }
     OCRModel.digitalTextDecisionForTesting = nil
     resetPrefs()
@@ -5375,6 +5415,34 @@ do {
           RunReport.fileName(for: context.finished).hasPrefix("Run 20")
             && !RunReport.fileName(for: context.finished).contains(":"),
           RunReport.fileName(for: context.finished))
+
+    // Every label is followed by at least one space, whatever its length. The
+    // padding used to be to `max(22, label.count)`, which for a long label is
+    // no padding at all and runs the value straight into it.
+    let widest = RunReport.settingsRows(context).max { $0.0.count < $1.0.count }?.0 ?? ""
+    var stretched = context
+    stretched.destination = URL(fileURLWithPath: "/tmp/x")
+    check("the settings column always leaves a gap",
+          RunReport.text(context).split(separator: "\n")
+            .filter { $0.hasPrefix("  ") && $0.contains(widest) }
+            .allSatisfy { $0.contains(widest + "  ") || $0.contains(widest + " ") },
+          "widest label: \(widest) (\(widest.count))")
+
+    // One-second resolution plus an atomic write means the second of two short
+    // batches finishing in the same second would replace the first's report
+    // with no word about it. `uniqueOutputs` solves the same problem for the
+    // documents; this is that, for the record of them.
+    let clash = tmp.appendingPathComponent("clash-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: clash, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: clash) }
+    var written: [URL] = []
+    for _ in 0..<3 {
+        if case .success(let u) = RunReport.write(context, to: clash) { written.append(u) }
+    }
+    check("three reports finishing in the same second are three files",
+          Set(written.map(\.lastPathComponent)).count == 3
+            && (try? FileManager.default.contentsOfDirectory(atPath: clash.path))?.count == 3,
+          written.map(\.lastPathComponent).joined(separator: " | "))
 
     // CONTRIBUTING 4c — make the failure path actually fail. A report that
     // could not be written must say so, not return quietly.
