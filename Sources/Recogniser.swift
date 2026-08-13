@@ -489,11 +489,21 @@ enum Recogniser {
     ///
     /// **A bound on silence, not on the run.** A 600-page book is legitimately
     /// many minutes of work, so a total deadline long enough to be safe would
-    /// never fire on anything. Generous — a single 200-megapixel page can take
-    /// tens of seconds and being wrong here costs the whole document a second
-    /// pass in-process, while being slow costs only a wedged helper's timeout,
-    /// which cancelling already interrupts.
-    static let helperStallSeconds = 300.0
+    /// never fire on anything.
+    ///
+    /// **It has to cover the *first* page**, which is the longest this can wait
+    /// with nothing having arrived, and that is the arithmetic R44 got wrong at
+    /// 300s. Measured on this corpus, recognition costs roughly 0.36s per
+    /// megapixel — a 4.9 MP book page in 1.77s — and
+    /// `Flattener.maximumPageMegapixels` lets a **400 MP** page through, so the
+    /// worst legitimate first page is on the order of 144s. 300s left a factor of
+    /// two against an estimate taken from ordinary book pages.
+    ///
+    /// The two errors are not symmetric, which is why this is generous rather
+    /// than tight. Too long costs only later detection of a genuinely wedged
+    /// helper, and cancelling interrupts the wait anyway. Too short throws away a
+    /// page that was working and sends the whole document round again in-process.
+    static let helperStallSeconds = 900.0
 
     /// Whether a batch is worth giving helper processes at all.
     ///

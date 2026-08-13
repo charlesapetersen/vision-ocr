@@ -81,6 +81,12 @@ enum RunReport {
         /// and the same batch taking two and a half, and afterwards there is
         /// nothing else in the report that would say which one happened.
         var recognitionInHelpers: Bool
+        /// How many files gave up on their helper and recognised in the app
+        /// instead. **This is what makes the row above true rather than merely
+        /// intended** (R41): a helper that is present and fails on every file
+        /// used to be reported as "helper processes" over a batch that ran
+        /// entirely in-process.
+        var recognitionFallbacks: Int
         var destination: URL?
         /// Input order, as dropped.
         var inputs: [URL]
@@ -150,8 +156,12 @@ enum RunReport {
                         ? "beside each original"
                         : (c.destination?.path ?? "(none)")))
         rows.append(("Files at once", "\(c.concurrency)"))
-        rows.append(("Recognition runs in",
-                     c.recognitionInHelpers ? "helper processes" : "the app itself"))
+        rows.append(("Recognition runs in", {
+            guard c.recognitionInHelpers else { return "the app itself" }
+            guard c.recognitionFallbacks > 0 else { return "helper processes" }
+            return "helper processes — \(c.recognitionFallbacks) file(s) fell back "
+                + "to the app, which is slower"
+        }()))
 
         if c.settings.mode == .searchablePDF {
             rows.append(("Rebuild page images", c.rebuildImages

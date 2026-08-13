@@ -147,8 +147,12 @@ enum Deskew {
     /// Sheared, not rotated: shifting each point by `x * tan(θ)` is the same
     /// projection a rotation would give, without resampling the image once per
     /// angle. For the angles this searches the difference is far below a pixel.
+    /// No `height` parameter: the bin range comes from the sheared values
+    /// themselves, so the shear cannot push points off either end of the
+    /// histogram. It used to take one and never read it, which invited the
+    /// opposite reading — that the bins were page-relative (R45).
     static func alignmentScore(_ points: [(x: Double, y: Double)],
-                               degrees: Double, height: Int) -> Double {
+                               degrees: Double) -> Double {
         guard !points.isEmpty else { return 0 }
         let slope = tan(degrees * .pi / 180)
         // One bin per pixel row. The range is taken from the sheared values
@@ -189,18 +193,18 @@ enum Deskew {
     /// The page's skew, or nil if the page will not say.
     static func estimate(grey: [UInt8], width: Int, height: Int) -> Estimate? {
         let points = baselinePoints(grey: grey, width: width, height: height)
-        return estimate(points: points, height: height)
+        return estimate(points: points)
     }
 
     /// The same, from a point cloud already extracted — which is what makes the
     /// self-test cheap enough to run on every page.
-    static func estimate(points: [(x: Double, y: Double)], height: Int) -> Estimate? {
+    static func estimate(points: [(x: Double, y: Double)]) -> Estimate? {
         guard points.count >= minimumSamples else { return nil }
 
         var scores: [(degrees: Double, score: Double)] = []
         var degrees = -searchDegrees
         while degrees <= searchDegrees + 1e-9 {
-            scores.append((degrees, alignmentScore(points, degrees: degrees, height: height)))
+            scores.append((degrees, alignmentScore(points, degrees: degrees)))
             degrees += coarseStep
         }
         guard let best = scores.max(by: { $0.score < $1.score }) else { return nil }
@@ -217,7 +221,7 @@ enum Deskew {
         var fine = best
         var d = best.degrees - coarseStep
         while d <= best.degrees + coarseStep + 1e-9 {
-            let score = alignmentScore(points, degrees: d, height: height)
+            let score = alignmentScore(points, degrees: d)
             if score > fine.score { fine = (d, score) }
             d += fineStep
         }
@@ -239,21 +243,20 @@ enum Deskew {
     /// a page with no line rhythm, and that shows up identically either way.
     /// `Tools/score-skew.swift` plants at the pixel level as well, on a sample,
     /// to check this shortcut does not flatter itself.
-    static func selfTest(points: [(x: Double, y: Double)], height: Int,
-                         measured: Double) -> Bool {
+    static func selfTest(points: [(x: Double, y: Double)], measured: Double) -> Bool {
         // Minus, to match the shear above: transforming the cloud by
         // `y - x·tan(p)` is what moves the recovered angle by *plus* p.
         let slope = tan(plantedDegrees * .pi / 180)
         let planted = points.map { (x: $0.x, y: $0.y - $0.x * slope) }
-        guard let recovered = estimate(points: planted, height: height) else { return false }
+        guard let recovered = estimate(points: planted) else { return false }
         return abs(recovered.degrees - (measured + plantedDegrees)) <= plantedTolerance
     }
 
     /// Measure and validate in one call. nil means "leave this page alone".
     static func trustworthyEstimate(grey: [UInt8], width: Int, height: Int) -> Estimate? {
         let points = baselinePoints(grey: grey, width: width, height: height)
-        guard let estimate = estimate(points: points, height: height),
-              selfTest(points: points, height: height, measured: estimate.degrees)
+        guard let estimate = estimate(points: points),
+              selfTest(points: points, measured: estimate.degrees)
         else { return nil }
         return estimate
     }

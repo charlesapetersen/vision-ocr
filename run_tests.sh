@@ -33,11 +33,21 @@ swiftc -o "$BIN" \
 # would quietly pass over a helper that does not compile — the shape of failure
 # the SOURCES glob above exists to prevent. Kept to Recogniser's own closure so
 # a mismatch with build.sh's list is a compile error here first.
+# Checked explicitly rather than left to `set -e`: aborting here used to make the
+# pre-commit hook report "TESTS FAILED" over a suite that had never run, which
+# names the wrong cause (R43). The refusal is right; the diagnosis was not.
 HELPER="build/visionocr-recognise"
-swiftc -o "$HELPER" \
+if ! swiftc -o "$HELPER" \
   -target "$(uname -m)-apple-macos13.0" \
   Sources/Prefs.swift Sources/Runner.swift Sources/Recogniser.swift \
   Sources/SearchableWriter.swift Sources/Flattener.swift Sources/JBIG2.swift \
-  Helper/main.swift
+  Helper/main.swift; then
+  echo >&2
+  echo "run_tests: the recognition helper did not compile." >&2
+  echo "           The suite did NOT run — the helper checks have nothing to test," >&2
+  echo "           and the parity check is the only thing holding the helper and" >&2
+  echo "           the app to the same observations. Fix Helper/main.swift." >&2
+  exit 1
+fi
 
 VISIONOCR_HELPER="$PWD/$HELPER" "./$BIN"

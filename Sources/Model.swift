@@ -1104,6 +1104,9 @@ final class OCRModel: ObservableObject {
 
         tally = (0, 0, 0)
         stages = [:]
+        // Per batch, like `tally`: a count left over from the last run would
+        // describe the wrong batch in this run's report (R41).
+        recognitionFallbacks = 0
         finishUp = { [weak self] in
             guard let self else { return }
             self.isRunning = false
@@ -1133,6 +1136,7 @@ final class OCRModel: ObservableObject {
                              concurrency: limit,
                              recognitionInHelpers: useHelper
                                  && Recogniser.helperPath() != nil,
+                             recognitionFallbacks: self.recognitionFallbacks,
                              destination: destination)
 
             if ok > 0,
@@ -1165,12 +1169,13 @@ final class OCRModel: ObservableObject {
                         self?.stages[file] = (label, fraction)
                     }
                 }
-                // Said once per file at most, and only when something the user
-                // would want to know went differently — today, that recognition
-                // fell back out of its helper process and the batch is running
-                // slower than it should.
-                let notice: (String) -> Void = { text in
+                // Said once per file at most: recognition fell back out of its
+                // helper process, so this file was done the slow way. Counted as
+                // well as logged, because the run report has to describe what
+                // happened rather than what was configured (R41).
+                let fellBack: (String) -> Void = { text in
                     DispatchQueue.main.async {
+                        self?.recognitionFallbacks += 1
                         self?.log.append(LogLine(
                             text: "\(file.lastPathComponent): \(text)", kind: .info))
                     }
@@ -1185,7 +1190,7 @@ final class OCRModel: ObservableObject {
                         rebuild: needsRebuild, rebuildMode: rebuildMode,
                         password: password, settings: settings,
                         control: control, useHelper: useHelper,
-                        progress: note, notice: notice, report: report)
+                        progress: note, fellBack: fellBack, report: report)
                     return
                 }
 
@@ -1326,8 +1331,12 @@ final class OCRModel: ObservableObject {
         /// it would only pay Vision's ~0.20s start-up twice.
         useHelper: Bool = false,
         progress: @escaping (String, Double) -> Void,
-        /// Something worth telling the user that is not this file's outcome.
-        notice: @escaping (String) -> Void = { _ in },
+        /// Called when recognition gave up on its helper process and did the
+        /// document in-process instead (R40). Named for that one event rather
+        /// than being a general "notice" channel, because the run report counts
+        /// these — and a second, unrelated use of a general channel would
+        /// silently inflate that count (R41).
+        fellBack: @escaping (String) -> Void = { _ in },
         report: @escaping (Runner.Result.Outcome, String) -> Void
     ) {
         // Shares of the wall clock, measured on a 22-page run: rebuilding and
@@ -1483,7 +1492,7 @@ final class OCRModel: ObservableObject {
                                  ocrShare(done, total))
                     },
                     register: register,
-                    onFallback: notice)
+                    onFallback: fellBack)
             }
         } catch {
             // A cancellation surfaces here as a throw, exactly as it does from the
@@ -1798,6 +1807,12 @@ final class OCRModel: ObservableObject {
     /// Running totals for the batch in flight. Main-actor only.
     private var tally: (succeeded: Int, failed: Int, cancelled: Int) = (0, 0, 0)
 
+    /// How many files in this batch gave up on their helper process and
+    /// recognised in the app instead (R40's fallback). Counted so the run report
+    /// can say what *happened* rather than what was configured — a helper that is
+    /// present and broken used to be reported as though it had been used (R41).
+    private var recognitionFallbacks = 0
+
     /// When the batch in flight began, on both clocks. See `run(_:binary:)`.
     private var runStarted: Date?
     private var runStartedMonotonic: DispatchTime?
@@ -1816,7 +1831,7 @@ final class OCRModel: ObservableObject {
     private func writeReport(batch: [URL], leftOut: [URL], settings: Prefs.Snapshot,
                              rebuildImages: Bool, rebuildMode: Flattener.Mode,
                              concurrency: Int, recognitionInHelpers: Bool,
-                             destination: URL?) {
+                             recognitionFallbacks: Int, destination: URL?) {
         lastReport = nil
         guard UserDefaults.standard.bool(forKey: Prefs.writeRunReport) else { return }
         let finished = Date()
@@ -1833,6 +1848,7 @@ final class OCRModel: ObservableObject {
             rebuildMode: rebuildMode,
             concurrency: concurrency,
             recognitionInHelpers: recognitionInHelpers,
+            recognitionFallbacks: recognitionFallbacks,
             destination: destination,
             // `batch` is what ran; "Skip Those" hands `run` the remainder and
             // keeps the skipped ones out of it. Counting only `batch` would let

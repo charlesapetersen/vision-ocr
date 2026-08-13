@@ -6,9 +6,11 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** R40 — batch throughput falling when recognition came
-in-process, because Vision does not parallelise across concurrent requests in
-one process — is `FIXED`: recognition runs in a helper process per file again,
+**Nothing is open.** R41–R45 came out of an adversarial review of R40's own diff
+and are all `FIXED` — the ninth round running in which reviewing the previous
+round's code found real defects in it. R40 — batch throughput falling when
+recognition came in-process, because Vision does not parallelise across concurrent
+requests in one process — is `FIXED`: recognition runs in a helper process per file again,
 and the helper compiles the app's own `Recogniser.recognise` so the observations
 are identical by construction rather than by agreement. R39 is `FIXED`,
 and the fix it originally proposed was measured and refuted before a different,
@@ -2467,6 +2469,82 @@ three timings that were polluted while this entry was being written.
 
 ---
 
+### R41 · A run report could say recognition used helper processes when every file fell back — FIXED
+*(found 2026-08-13 by reviewing R40's own diff)*
+
+`recognitionInHelpers` was `useHelper && helperPath() != nil`, evaluated when the
+report is written. That records the **intent**, not what happened. A helper that
+is present but fails on every file — the exact case R40's fallback exists for —
+produced a report reading `Recognition runs in: helper processes` over a batch
+that ran entirely in-process at 2.5x the time.
+
+The run report exists so that "something was slow last night" can be answered
+afterwards, over material that may not be re-scannable. `settingsRows`' own doc
+comment says a setting forgotten there makes every later report quietly wrong
+about how its documents were produced; this was that, for the one property R40
+added. Nothing was lost, but the report misdescribed the run.
+
+**Fixed** by counting the fallbacks and reporting them: `helper processes`,
+`helper processes — 3 file(s) fell back to the app`, or `the app itself`. The
+callback that reports a fallback is now named `fellBack` rather than the general
+`notice`, so a second use of the log channel cannot inflate the count — which is
+the sibling this fix had to close, not just the instance.
+
+### R42 · Two fault-injection checks judged one run and described another — FIXED
+*(found 2026-08-13 in the same review; the checks were written the day before)*
+
+Three of R40's helper-failure checks called `run(fakeHelper(...))` **twice** —
+once in the condition and once in the detail message — so each launched two
+processes and reported the second while judging the first. Worse, the `short` and
+`garbled` cases passed *different scripts* to the two calls (one had `exit 0`, the
+other did not). A case that ever became intermittent would print a message
+describing a run that had not failed.
+
+Not a product defect, and recorded anyway: this register's most repeated lesson is
+that the instrument is wrong more often than the code, and a check that describes
+the wrong run is an instrument that lies while passing. **Fixed** by running once
+and reusing the result.
+
+### R43 · `run_tests.sh` blamed the suite when the helper would not compile — FIXED
+*(found 2026-08-13 in the same review)*
+
+`run_tests.sh` builds `visionocr-recognise` after the test binary, under `set -e`.
+A helper that does not compile aborted the script before a single check ran, and
+the pre-commit hook reported **`TESTS FAILED — commit refused`**. The refusal is
+right; the diagnosis names the wrong thing, and this project has lost time
+repeatedly to a message that points away from the cause (R21 named the wrong
+mechanism entirely). **Fixed**: the compile is checked explicitly and says that
+the helper did not build and that the helper checks cannot run.
+
+### R44 · The helper's stall bound did not cover a maximal first page — FIXED
+*(found 2026-08-13 in the same review; reasoned from measurement, not reproduced)*
+
+`helperStallSeconds` bounds silence, and `lastMoved` starts at launch — so the
+bound also has to cover the **first** page, which is the slowest thing that can
+happen before any progress arrives. It was 300s. Measured on this corpus,
+recognition runs at roughly 0.36s per megapixel (a 4.9 MP book page in 1.77s), and
+`Flattener.maximumPageMegapixels` lets a 400 MP page through: **~144s**, which is
+under the bound but only by 2x, and the estimate is from ordinary book pages
+rather than from a 400 MP sheet.
+
+The consequence was mild — a killed helper falls back and the file still succeeds,
+just slowly — which is why this is a bound raised on arithmetic rather than a
+defect reproduced. **Fixed**: 900s, with the arithmetic recorded on the constant.
+Being too generous costs only later detection of a genuinely wedged helper, and
+cancelling already interrupts the wait; being too tight throws away a page that was
+working.
+
+### R45 · `alignmentScore` carried a `height` parameter nothing used — FIXED
+*(found 2026-08-13 in the same review)*
+
+`Tools/score-skew.swift`'s projection score took a `height` and never read it —
+the bin range is derived from the sheared values themselves, deliberately, so the
+shear cannot push points off the end of the histogram. A reader would reasonably
+assume the bins were page-relative, which is the opposite of the property that
+makes the score comparable across angles. Threaded through `estimate` and
+`selfTest` as well. **Fixed**: removed from all three.
+
+---
 ## The interface
 
 The GUI got no review attention during the period when this was going to become

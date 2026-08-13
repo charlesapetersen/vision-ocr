@@ -2992,32 +2992,31 @@ do {
         return nil
     }
 
+    // Each of these runs **once**, and the condition and the message come from
+    // that one run. They used to call `run` twice — judging one process and
+    // describing another, in two cases with different scripts — so an
+    // intermittent case would have printed a message about a run that had not
+    // failed (R42).
+    let exited = run(fakeHelper("exits", "exit 7"))
     check("a helper that exits non-zero is refused",
-          failed(run(fakeHelper("exits", "exit 7")))?.contains("code 7") == true,
-          failed(run(fakeHelper("exits", "exit 7"))) ?? "it succeeded")
+          failed(exited)?.contains("code 7") == true, failed(exited) ?? "it succeeded")
 
     // Invariant 1, at the point the gap is visible. A short dictionary here
     // would compose as a document with untexted pages and publish.
+    let short = run(fakeHelper("short", """
+        printf '{"observations":[]}' > "$out/0.json"
+        echo 0
+        exit 0
+        """))
     check("a helper that returns fewer pages than it was given is refused",
-          failed(run(fakeHelper("short", """
-              printf '{"observations":[]}' > "$out/0.json"
-              echo 0
-              exit 0
-              """)))?.contains("page 2 of 2") == true,
-          failed(run(fakeHelper("short", """
-              printf '{"observations":[]}' > "$out/0.json"
-              echo 0
-              """))) ?? "it succeeded")
+          failed(short)?.contains("page 2 of 2") == true, failed(short) ?? "it succeeded")
 
+    let garbled = run(fakeHelper("garbled", """
+        printf 'not json at all' > "$out/0.json"
+        printf 'not json at all' > "$out/1.json"
+        """))
     check("a helper whose output cannot be parsed is refused",
-          failed(run(fakeHelper("garbled", """
-              printf 'not json at all' > "$out/0.json"
-              printf 'not json at all' > "$out/1.json"
-              """)))?.contains("page 1") == true,
-          failed(run(fakeHelper("garbled", """
-              printf 'not json' > "$out/0.json"
-              printf 'not json' > "$out/1.json"
-              """))) ?? "it succeeded")
+          failed(garbled)?.contains("page 1") == true, failed(garbled) ?? "it succeeded")
 
     // The bound is on silence, not on the run: a real book is minutes of work.
     let stalledStart = DispatchTime.now()
@@ -5859,7 +5858,7 @@ do {
         elapsed: 3671,
         settings: snapshot,
         rebuildImages: true, rebuildMode: .auto, concurrency: 6,
-        recognitionInHelpers: true,
+        recognitionInHelpers: true, recognitionFallbacks: 0,
         destination: URL(fileURLWithPath: "/tmp/out"),
         inputs: [a, b, c, e],
         outcomes: [a: .succeeded, b: .failed, c: .cancelled],
@@ -5898,6 +5897,28 @@ do {
     inTheApp.recognitionInHelpers = false
     check("…and says the slow way when that is what happened",
           RunReport.text(inTheApp).contains("the app itself"))
+
+    // R41. The row used to be derived from the *configuration*, so a helper that
+    // was present and failed on every file produced a report saying "helper
+    // processes" over a batch that ran entirely in-process at 2.5x the time.
+    // A report that misdescribes how its documents were produced is the thing
+    // `settingsRows`' own doc comment exists to prevent.
+    var withFallbacks = context
+    withFallbacks.recognitionFallbacks = 3
+    let fallbackText = RunReport.text(withFallbacks)
+    check("a run whose helpers failed says so, rather than claiming them",
+          fallbackText.contains("3 file(s) fell back"),
+          fallbackText.split(separator: "\n").first { $0.contains("Recognition runs in") }
+            .map(String.init) ?? "absent")
+    check("…and a clean helper run is not made to look like a fallback",
+          !RunReport.text(context).contains("fell back"))
+    // The inverse row: fallbacks cannot resurrect a run that never used helpers.
+    var neither = context
+    neither.recognitionInHelpers = false
+    neither.recognitionFallbacks = 3
+    check("…and a run that never used a helper still says the app itself",
+          RunReport.text(neither).contains("the app itself")
+            && !RunReport.text(neither).contains("fell back"))
 
     // CONTRIBUTING 4d — enumerate, do not reason about pairs. A setting added
     // to `Snapshot` and forgotten here makes every later report quietly wrong

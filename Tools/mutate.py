@@ -99,7 +99,7 @@ CONSTANTS = [
     # working, which sends every document round a second time in-process and
     # hands back exactly the 2.5x R40 exists to remove. The parity check notices,
     # because it asserts recognition did *not* fall back.
-    ("Recogniser.swift", "helperStallSeconds", "300.0", "0.001"),
+    ("Recogniser.swift", "helperStallSeconds", "900.0", "0.001"),
 ]
 
 # Single-token logic edits in code written to close a defect. Each one undoes a
