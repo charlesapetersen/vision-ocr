@@ -61,9 +61,16 @@ def build_classifier():
     work = tempfile.mkdtemp()
     shutil.copy2(os.path.join(REPO, "Tools", "classify-source.swift"),
                  os.path.join(work, "main.swift"))
-    sources = [os.path.join(REPO, "Sources", f) for f in (
-        "Prefs.swift", "Runner.swift", "Flattener.swift", "SearchableWriter.swift",
-        "JBIG2.swift", "Model.swift", "ContentView.swift", "SettingsView.swift")]
+    # Globbed, not listed. This was a hand-written list and it went stale the
+    # moment the app grew a file: by 2026-08-13 it was missing Recogniser.swift,
+    # RunReport.swift and Updater.swift, and the classifier had simply stopped
+    # compiling — so this script, and anything built on it, failed at the first
+    # step. `run_tests.sh` globs for exactly this reason and says so (R48).
+    # App.swift stays out: its @main collides with classify-source's top level.
+    sources = sorted(
+        os.path.join(REPO, "Sources", f)
+        for f in os.listdir(os.path.join(REPO, "Sources"))
+        if f.endswith(".swift") and f != "App.swift")
     arch = subprocess.run(["uname", "-m"], capture_output=True, text=True).stdout.strip()
     cmd = ["swiftc", "-O", "-o", out, "-target", f"{arch}-apple-macos13.0"] \
         + sources + [os.path.join(work, "main.swift")]

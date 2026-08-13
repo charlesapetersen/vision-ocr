@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** R41–R47 came out of an adversarial review of R40's own diff
+**Nothing is open.** R41–R48 came out of an adversarial review of R40's own diff
 and are all `FIXED` — the ninth round running in which reviewing the previous
 round's code found real defects in it. R40 — batch throughput falling when
 recognition came in-process, because Vision does not parallelise across concurrent
@@ -2468,6 +2468,31 @@ one-document run is the wrong answer, and is the same class of mistake as the
 three timings that were polluted while this entry was being written.
 
 ---
+
+### R48 · `sample-zotero.py` could not build its classifier — FIXED
+*(found 2026-08-13 by running it; broken since the direct-Vision migration)*
+
+`build_classifier` compiled a **hand-written list** of eight source files. The app
+has more than eight, and the list went stale the moment it grew one: by the time
+anyone ran it again the list was missing `Recogniser.swift`, `RunReport.swift` and
+`Updater.swift`, and the compile failed with `cannot find 'RunReport' in scope`.
+
+So the script that **rebuilds the test corpus** — the thing `HANDOFF.md` points at
+for reconstructing `testdocs/`, which is not committed — had been unable to run
+since before 1.11.0, and nothing said so because nothing ran it.
+
+This is the defect `run_tests.sh` already fixed in its own copy, with the reason
+written on it: *"It used to be a hand-written list, so a new file compiled into the
+app (build.sh globs) and not into the suite — the checks would go green over code
+they had never seen."* The same mistake, one directory over, found only because the
+library sweep needed the classifier and actually invoked it.
+
+**Fixed** by globbing `Sources/*.swift` less `App.swift`, matching `run_tests.sh`.
+The sibling sweep (CONTRIBUTING 4b) asks who else hard-codes a source list:
+`build.sh` globs for the app and lists explicitly for the helper — deliberately,
+since the helper is a deliberate subset and a wrong entry there is a compile error
+in `run_tests.sh` first — and every `Tools/` harness is invoked with its list on
+the command line by whoever runs it, so there is no third copy to rot.
 
 ### R47 · A new check could have ended the suite instead of failing — FIXED
 *(found 2026-08-13 reviewing the engine-assumption checks, before they were

@@ -13,23 +13,16 @@ promoted, or it does not and should be deleted.
 
 ## What is actually left
 
-1.11.0 is **tagged but not published**, which is the first item. After that:
 `FEATURES.md`'s two layout items were both built or measured and both refused, so
 the feature backlog is down to item 7 (a watched folder or command line), which
 nobody has asked for.
 
-1. **Publish the 1.11.0 release.** The tag exists; the GitHub release does not.
-   This is not tidiness — `Updater.releasesAPI` polls
-   `/releases/latest`, so until a release exists **every user stays on 1.10.1 and
-   is never offered 1.11.0**, which is the version with the throughput fix in it.
-   Every previous release carries a `Vision OCR.dmg` asset and this one should
-   too: `./build.sh --dmg` (which implies `--universal`, and runs its own
-   verification — it mounts the image and executes every bundled helper under
-   `env -i`, including `visionocr-recognise --version`), then `gh release create
-   v1.11.0` with the CHANGELOG entry and that asset. Needs the owner's say-so:
-   it offers an update to everyone running the app.
+**1.11.0 is published** — released 2026-08-13 with a universal `Vision OCR.dmg`,
+which the build's own verification exercised by mounting the image and running
+every bundled helper under `env -i`, `visionocr-recognise --version` included.
+`Updater.releasesAPI` now returns it, so users on 1.10.1 are offered the upgrade.
 
-2. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
+1. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
    work, and probably its own session. Specified below. It was waiting on
    throughput, and throughput is now better than the figure it was waiting for.
 
