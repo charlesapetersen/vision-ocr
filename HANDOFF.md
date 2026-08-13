@@ -229,9 +229,20 @@ Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT` — R40 closed on
 rather than by a test failing. **1.11.0 is released**, gate and all.
 
 `TODO.md` holds two pieces of work, in order: **preserve annotations through
-re-OCR** (specified in full, and the library sweep is blocked on it because 9% of
-the library carries a reader's own marks), then the **Zotero library sweep**
-itself. Plus one thing that needs a person in front of a running app.
+re-OCR**, then the **Zotero library sweep**. Plus one thing that needs a person in
+front of a running app.
+
+The sweep's survey has run — 15,901 attachments, **1,164 re-OCR candidates holding
+11.6 GB, about 10 GB reclaimable**, artifacts in
+`~/Claude/vision-ocr-sweep-2026-08-13/` and deliberately outside this public repo.
+**Nothing has been written to the library.** Annotations come first because
+**108 of those candidates carry a reader's own marks** and re-OCR discards them
+without a word — but that is 9%, so 1,053 files can be swept before annotation
+preservation lands and 111 have to wait for it. Two operational facts before
+anything is written: **Zotero sync is configured** and 22,676 attachments carry a
+`storageHash`, so replacing files behind Zotero's back means a bulk re-upload and
+a sync conflict can put the server's copy back over the new one; and Zotero is
+usually running.
 
 `FEATURES.md` is down to **one live idea** — a watched folder or command line.
 Everything else is shipped, archived, or declined on measurement: deskew twice,
