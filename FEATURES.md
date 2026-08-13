@@ -777,6 +777,72 @@ misrepresentation that no count would catch, so the pages carrying marks get
 rendered and compared.
 
 
+### Clickable footnote and endnote links
+*(raised 2026-08-13. **Research first, and not started.** What follows is one
+hour of looking, recorded so the next hour does not repeat it.)*
+
+Make a footnote marker in the body clickable, so a reader lands on the note in the
+backmatter. For a historian reading a scanned monograph this is the difference
+between following an argument and losing it, and no OCR tool does it.
+
+**Mechanically it is an annotation, which this project is about to learn how to
+write anyway.** A footnote link is a `/Link` annotation with a `/Dest` pointing at
+a page and position. That is the *same machinery* as `TODO.md` item 1, annotation
+preservation — and the two measurements that unblock that unblock this: PDFKit's
+`write(to:)` inflates our JBIG2 output 1.5x–4.1x and is unusable, while qpdf
+round-trips byte-identically and its JSON is editable. **Do item 1 first.** It
+builds the object-graph plumbing this needs, and doing them in the other order
+means writing that plumbing twice.
+
+**Prior art, local, and better than expected.** The suite already has both halves
+the owner suspected:
+
+- `ArchiveProcessor/macOS/Sources/ArchiveProcessor/OCR/LLMTextClient.swift` is
+  already the multi-route abstraction — Local Agent CLI, then an
+  OpenAI-compatible gateway, then a direct provider (Anthropic, Gemini, Mistral,
+  OpenAI), with an explicit precedence order. It was itself extracted from four
+  byte-identical duplicated call paths, so extracting it again is a known move.
+- **`packages/ArchiveCore` already is the shared library** the owner wondered
+  about creating — it has `Corpus`, `Links`, `PDF`, `Tags` and `Thumbnails`
+  modules. `LLMTextClient` simply has not been moved into it yet. (`Links` is
+  durable links to archive items, not PDF-internal links — different thing, same
+  word.)
+
+**Prior art, external: thin.** A search turned up manual routes (Acrobat's
+Tools ▸ Edit PDF ▸ Link, drawn by hand per link), authoring-side solutions that
+generate links before the PDF exists (InDesign, Word's References menu), and
+generic PDF libraries that can *write* a link once you know both endpoints. **No
+tool that finds footnote pairs in a scanned book.** That is the interesting part
+and it appears to be unclaimed.
+
+**Does it need an LLM? Genuinely unclear, and worth an hour before assuming yes.**
+Split the problem:
+
+- *Finding markers in the body* looks geometric, not semantic. A superscript is a
+  small glyph on a raised baseline, and this app already has per-observation boxes
+  and font sizes — it is better placed than a generic tool to spot one. A regex on
+  the text alone would drown in page numbers and dates; the geometry is what
+  disambiguates.
+- *Finding the notes* is a section-detection problem: a run of pages of
+  small type beginning `1.` or `1 `, usually under a heading.
+- **The mapping is the hard part**, and it is where an LLM might earn its place.
+  Notes usually restart at 1 per chapter, so marker 7 in chapter 3 must find the
+  seventh note under "Chapter 3" — which needs to know where chapters begin. The
+  outline helps when there is one (11 of the corpus's 78 documents had one).
+  Whether heuristics get most of the way is exactly what the research hour is for.
+
+**What would make it worth building**: a measurement of how many books in the
+library actually have separated notes *and* a detectable chapter structure. If it
+is 15%, this is a curiosity; if it is most monographs, it is the most useful thing
+on this list. Nobody has counted, and `Tools/` is the place to count it.
+
+**What would sink it**: a wrong link is worse than no link. A reader sent to note
+7 of the wrong chapter has been misinformed by the tool, silently, in a document
+they trust. Whatever the mechanism, it needs the same shape of verification the
+annotation work has — sample, render, and look — plus an abstention path, because
+a book whose structure cannot be read confidently should get no links at all
+rather than plausible ones.
+
 ### Batch presets — SHIPPED
 "Newspaper", "typescript", "photograph" as named bundles of the routing and
 recognition settings. Cheap to build, but it should follow evidence: the corpus

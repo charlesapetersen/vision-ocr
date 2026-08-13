@@ -6,7 +6,9 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** R41–R48 came out of an adversarial review of R40's own diff
+**Two open, both reported by the user on 2026-08-13 and both in the settings panel: U29** (the updates block is pasted twice) and **U30** (the preset buttons give no sign they did anything). Neither affects a document.
+
+R41–R48 came out of an adversarial review of R40's own diff
 and are all `FIXED` — the ninth round running in which reviewing the previous
 round's code found real defects in it. R40 — batch throughput falling when
 recognition came in-process, because Vision does not parallelise across concurrent
@@ -2627,6 +2629,51 @@ makes the score comparable across angles. Threaded through `estimate` and
 The GUI got no review attention during the period when this was going to become
 a headless backend. When that reversed, three adversarial passes over it found
 fourteen defects — **two of them regressions introduced by the pass before**.
+
+### U29 · The whole updates block is in Settings twice — OPEN
+*(reported by the user 2026-08-13; confirmed by reading the source, not yet fixed)*
+
+`SettingsView.swift` lines **453–488 and 489–524 are byte-identical** — 36 of 36
+lines, after stripping. Not a stray duplicated toggle: the entire updates block is
+pasted twice, comment and all. The "Check for new versions" toggle, its `.help`,
+the "The only network request this app makes" caption, the **Check Now** button,
+and the status row all appear a second time.
+
+Both toggles bind `$checkForUpdates`, so they agree and nothing behaves wrongly —
+which is why it survived. It is a paste, and the fix is to delete the second copy.
+
+**The suite would not have caught it and still would not.** The accessibility
+scanner checks that every control *carries* a name; nothing checks that no two
+controls carry the *same* name. That check is the more valuable half of this
+entry: a duplicated control is a paste error, and a settings panel is exactly
+where one hides. Add it with the fix.
+
+### U30 · The "Start from" preset buttons give no sign they did anything — OPEN
+*(reported by the user 2026-08-13: "it's not clear what clicking any of the 'start
+from' buttons does. They don't seem to stay clicked")*
+
+`SettingsView.swift:286` — `Button(preset.label) { preset.apply() }`. The button
+writes six or seven settings and returns. Nothing moves that the eye is on, no
+control reports the change, and the only explanation is a `.help` tooltip, which
+is mouse-only and unreachable by keyboard — the same objection U8 already recorded
+against putting an explanation in a tooltip.
+
+**They do not stay clicked on purpose, and that part should not change.**
+`Prefs.Preset.apply` says why: a preset writes into the ordinary settings and
+keeps no "currently using preset X" state, "because a setting that only looks live
+is what `ocrAllPages` turned into." Sticky state would be a second source of truth
+for values the panel below already owns, and it would go stale the moment anyone
+touched one of them.
+
+So the defect is **feedback, not state**. The button changed six settings and said
+nothing. Options, cheapest first: say what happened in a line under the row
+("Newspaper: 6 settings changed"); or briefly mark the rows whose values moved,
+which also teaches what the preset *is*. Either keeps the settings as the single
+source of truth.
+
+Worth noting the shape: the reasoning behind the design was recorded, correct, and
+still produced a control a user could not read. A decision being right is not the
+same as it being legible.
 
 ### U1 · A green "40 of 40 succeeded" over a list of 43 files — FIXED
 The batch-level version of invariant 1, and the worst of these.
