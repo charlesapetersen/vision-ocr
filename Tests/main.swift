@@ -3094,6 +3094,191 @@ do {
     check("the suite's own helper is back", Recogniser.helperPath() != nil)
 }
 
+print("\nthe engine assumptions two declined features rest on")
+
+// Labelled so the fixture guard below can give up on *this block* rather than on
+// the process. It called `exit()` first, which would have ended the whole suite
+// at this point — skipping every later check and the final summary with it, and
+// reporting a green run over a few hundred checks that never executed (R47).
+assumptions: do {
+    // **These do not test this app. They test Vision**, and they exist because
+    // two user-visible qualities of this product are the engine's rather than
+    // this codebase's, and nothing else here would notice if either stopped
+    // holding:
+    //
+    //  - **Reading order.** `SearchableWriter.compose` draws observations in the
+    //    order Vision returns them and never sorts. Multi-column pages come out
+    //    readable because Vision puts them that way. `FEATURES.md` item 3 —
+    //    columns and reading order — was declined on exactly this, measured over
+    //    54 corpus pages at a median interleaving of 1.0.
+    //  - **Skew tolerance.** Recognition is flat across ±3° and the reported
+    //    quads tilt with the page. `FEATURES.md` item 2 — deskew — was declined
+    //    twice on exactly this, the second time after building the thing and
+    //    measuring it losing text.
+    //
+    // Both were measured once, in a session, and used to refuse work. Neither was
+    // *held*. A macOS update that changed Vision's line grouping would degrade
+    // both silently, and the only place it would surface is the corpus gate, as a
+    // character-count drift indistinguishable from the 23 characters that moved
+    // in the 1.11.0 run and could not be localised (R46).
+    //
+    // **If one of these fails, this app is probably not broken.** An assumption
+    // about the recogniser stopped holding, and the two declined features should
+    // be re-opened and re-measured with `Tools/score-reading-order.swift` and
+    // `Tools/score-skew.swift`. Reading it as a defect in `SearchableWriter` is
+    // R21's shape and the most expensive mistake this register records.
+    let dir = tmp.appendingPathComponent("engine-assumptions")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+    let left = ["The first column begins here", "and carries several lines of",
+                "ordinary prose so that the",
+                "recogniser has a real block of", "text to group rather than a",
+                "handful of stray words on an",
+                "otherwise empty sheet of paper", "which it would read quite",
+                "differently and teach us less."]
+    let right = ["The second column sits beside", "the first across a wide gutter",
+                 "and says something different",
+                 "so that the two can never be", "confused for one another when",
+                 "the order they arrive in is",
+                 "what the checking code counts", "before deciding whether this",
+                 "page was read down or across."]
+
+    /// The two-column fixture, rasterised once at `degrees` straight from the
+    /// vector content — one resampling however it is turned, so a skewed
+    /// rendering is not also a blurrier one. That conflation is what made the
+    /// first deskew measurement report a loss that was its own doing.
+    func render(degrees: Double) -> CGImage? {
+        let pageBox = CGRect(x: 0, y: 0, width: 612, height: 792)
+        let pdf = dir.appendingPathComponent("columns.pdf")
+        var box = pageBox
+        guard let c = CGContext(pdf as CFURL, mediaBox: &box, nil) else { return nil }
+        c.beginPDFPage(nil)
+        c.setFillColor(CGColor(gray: 1, alpha: 1))
+        c.fill(pageBox)
+        let font = CTFontCreateWithName("Helvetica" as CFString, 15, nil)
+        for (column, lines) in [(CGFloat(60), left), (CGFloat(332), right)] {
+            var y: CGFloat = 700
+            for line in lines {
+                let attributed = NSAttributedString(string: line, attributes: [
+                    .font: font, .foregroundColor: CGColor(gray: 0, alpha: 1)])
+                c.textPosition = CGPoint(x: column, y: y)
+                CTLineDraw(CTLineCreateWithAttributedString(attributed), c)
+                y -= 26
+            }
+        }
+        c.endPDFPage(); c.closePDF()
+
+        guard let page = PDFDocument(url: pdf)?.page(at: 0) else { return nil }
+        let scale = 200.0 / 72.0
+        let w = pageBox.width * scale, h = pageBox.height * scale
+        let radians = degrees * .pi / 180
+        let wide = abs(w * cos(radians)) + abs(h * sin(radians))
+        let high = abs(w * sin(radians)) + abs(h * cos(radians))
+        let W = Int(wide.rounded()), H = Int(high.rounded())
+        guard let ctx = CGContext(data: nil, width: W, height: H, bitsPerComponent: 8,
+                                  bytesPerRow: W, space: CGColorSpaceCreateDeviceGray(),
+                                  bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return nil }
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: W, height: H))
+        ctx.translateBy(x: wide / 2, y: high / 2)
+        ctx.rotate(by: radians)
+        ctx.translateBy(x: -w / 2, y: -h / 2)
+        ctx.scaleBy(x: scale, y: scale)
+        guard let cgPage = page.pageRef else { return nil }
+        ctx.concatenate(cgPage.getDrawingTransform(
+            .mediaBox, rect: CGRect(origin: .zero, size: pageBox.size),
+            rotate: 0, preserveAspectRatio: true))
+        ctx.drawPDFPage(cgPage)
+        return ctx.makeImage()
+    }
+
+    var plain = Prefs.Snapshot.current()
+    plain.languages = ""; plain.customWords = ""; plain.minTextHeightOn = false
+    plain.fast = false; plain.languageCorrection = true; plain.confidence = 0
+
+    guard let straight = render(degrees: 0),
+          let observations = try? Recogniser.recognise(straight, settings: plain)
+    else {
+        check("the two-column fixture recognised", false, "it did not")
+        break assumptions
+    }
+
+    // Not vacuous: without this the ordering checks below pass over an empty or
+    // near-empty page, which is the shape of the duplicate-of-the-thing-under-test
+    // an earlier review round found agreeing with itself by construction.
+    check("the two-column fixture produced enough lines to order",
+          observations.count >= 12, "\(observations.count) observations")
+
+    // The gutter runs from x=280 to x=332 of 612 — 8.5% of the page, far wider
+    // than any word space.
+    let gutterLow = 280.0 / 612.0, gutterHigh = 332.0 / 612.0
+    var lastLeft = -1, firstRight = Int.max, crossing = 0
+    for (position, o) in observations.enumerated() {
+        let l = o.boundingBox.x, r = o.boundingBox.x + o.boundingBox.width
+        if l < gutterLow && r > gutterHigh { crossing += 1; continue }
+        if r <= gutterHigh { lastLeft = max(lastLeft, position) }
+        if l >= gutterLow { firstRight = min(firstRight, position) }
+    }
+
+    // The property `compose` inherits whole, since it never sorts.
+    check("ENGINE ASSUMPTION: Vision returns the left column before the right",
+          lastLeft >= 0 && firstRight < Int.max && lastLeft < firstRight,
+          "last left at \(lastLeft), first right at "
+            + (firstRight == Int.max ? "none" : "\(firstRight)")
+            + " — if this fails, re-open FEATURES.md item 3; the app did not change")
+    check("ENGINE ASSUMPTION: no line is welded across the gutter",
+          crossing == 0,
+          "\(crossing) observation(s) span both columns — reordering could not "
+            + "repair this, the halves are already one string")
+
+    // Skew. A generous band on purpose: Vision's line grouping genuinely flips
+    // between interpretations, so a real page measured +2.0° at −2.73% while
+    // +3.0° came back +0.08%. A tight bound here would be flaky, and a flaky
+    // check in this position is worse than none at all.
+    let straightCharacters = observations.reduce(0) { $0 + $1.text.count }
+    check("the fixture recovered enough text to compare", straightCharacters > 200,
+          "\(straightCharacters) characters")
+    // Vision directly, not through `Recogniser.recognise`, for the one reason
+    // that justifies bypassing the app's own function: the property under test is
+    // the *quadrilateral*, and `recognise` deliberately throws it away — it
+    // reduces each observation to an axis-aligned box because that is what the
+    // text layer places. The request is still `Recogniser.makeRequest`, so this
+    // asks Vision exactly what the app asks it.
+    if let tilted = render(degrees: 2.0) {
+        let request = Recogniser.makeRequest(plain)
+        let handler = VNImageRequestHandler(cgImage: tilted, orientation: .up, options: [:])
+        try? handler.perform([request])
+        let raw = (request.results ?? []).compactMap { $0 as? VNRecognizedTextObservation }
+        let skewedCharacters = raw.reduce(0) { $0 + ($1.topCandidates(1).first?.string.count ?? 0) }
+
+        check("ENGINE ASSUMPTION: a 2° page reads about as well as a straight one",
+              Double(skewedCharacters) >= Double(straightCharacters) * 0.8,
+              "\(skewedCharacters) against \(straightCharacters) — if this fails, "
+                + "re-open FEATURES.md item 2; deskew was declined because this held")
+
+        // The sharper half, and the one the refusal actually rests on: Vision is
+        // not *tolerating* the tilt, it is reporting it. The corners come back
+        // rotated with the page, which is why a deskew step has nothing left to
+        // win and can only add a resampling.
+        let aspect = Double(tilted.width) / Double(tilted.height)
+        var angles: [Double] = []
+        for o in raw {
+            let dx = (Double(o.bottomRight.x) - Double(o.bottomLeft.x)) * aspect
+            let dy = Double(o.bottomRight.y) - Double(o.bottomLeft.y)
+            if dx != 0 || dy != 0 { angles.append(atan2(dy, dx) * 180 / .pi) }
+        }
+        let sorted = angles.sorted()
+        let median = sorted.isEmpty ? Double.nan : sorted[sorted.count / 2]
+        check("ENGINE ASSUMPTION: the reported quads tilt with the page",
+              abs(median - 2.0) <= 0.75,
+              "median quad angle \(String(format: "%.2f", median))° for a 2.0° page "
+                + "— if this fails, re-open FEATURES.md item 2")
+    } else {
+        check("the skewed fixture rendered", false, "it did not")
+    }
+}
+
 print("\na photograph that says it is sideways is read as sideways")
 
 do {

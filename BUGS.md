@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** R41–R46 came out of an adversarial review of R40's own diff
+**Nothing is open.** R41–R47 came out of an adversarial review of R40's own diff
 and are all `FIXED` — the ninth round running in which reviewing the previous
 round's code found real defects in it. R40 — batch throughput falling when
 recognition came in-process, because Vision does not parallelise across concurrent
@@ -2468,6 +2468,26 @@ one-document run is the wrong answer, and is the same class of mistake as the
 three timings that were polluted while this entry was being written.
 
 ---
+
+### R47 · A new check could have ended the suite instead of failing — FIXED
+*(found 2026-08-13 reviewing the engine-assumption checks, before they were
+committed; never ran in this state)*
+
+The two-column fixture's guard called `exit(failures == 0 ? 0 : 1)` when the
+fixture failed to recognise. That is top-level code in the middle of the file, so
+it would have ended the **whole process** there — skipping every later check and
+the final summary with them. The run would have reported a green exit over a few
+hundred checks that never executed, which is worse than a red one and is the exact
+shape of the "passed while testing nothing" failures this register keeps
+collecting.
+
+`guard` needs a way out and there is no function to return from, which is how the
+`exit` got written. **Fixed** with a labelled `do` and `break assumptions`, so a
+broken fixture costs one failed check and nothing else.
+
+Recorded rather than quietly fixed for the same reason R42 is: a suite that can
+stop early without saying so is an instrument that lies while passing, and this one
+was introduced by the very change that exists to stop assumptions going unchecked.
 
 ### R46 · The helper's output was not byte-reproducible — FIXED
 *(found 2026-08-13 while explaining a 23-character difference in the corpus gate)*
