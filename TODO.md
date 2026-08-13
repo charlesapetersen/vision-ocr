@@ -274,6 +274,49 @@ full, only in part:
 same basename under two keys; the 108/111 discrepancy is roughly three such
 collisions. Match on the full path when it matters.)*
 
+### The photographed material splits cleanly in two
+
+1,001 documents, 5.09 GB, and they are **not one population**. Split by when they
+entered Zotero, which the PDF metadata confirms is also a split by *workflow*:
+
+| | Robinson-Montana | Random Photograph |
+|---|---|---|
+| files | **815** | **186** |
+| size | **4.18 GB** | **0.92 GB** |
+| pages | 7,513 (median 4) | 2,308 (median 5) |
+| per page | 583 KB | 416 KB |
+| **unsearchable** | **801 (98%)** | 52 (28%) |
+| added | 2013–14 only | 2015–2025, spread |
+| made by | Acrobat 11 image conversion (560), ImageMagick 6.7.1 (88) | FineReader (100) |
+| types | document 328, letter 191, book 137, journalArticle 121, manuscript 20 | book 53, journalArticle 52, document 29, newspaper 21 |
+
+**Robinson-Montana** is one archival campaign: two years, one bulk image→PDF
+pipeline, archival types (document, letter, manuscript), 26% of it undated, and
+**98% of it cannot be searched at all** — 801 files, 4.14 GB. The long captures in
+the library are all here: Cox Letters at 149pp, Robinson's correspondence at 122pp
+twice, his notes at 112 and 99.
+
+**Random Photograph** is what the name says — occasional captures over a decade,
+mostly of *published* material (book and journalArticle excerpts, median 5 pages),
+and **72% of it already has a text layer**. It is a much smaller opportunity.
+
+Manifests: `robinson-montana-material.txt` and `random-photograph-material.txt`
+beside the survey.
+
+**Neither is a sweep candidate** — the sweep is about scans that are oversized for
+their type, and these are excluded by the classifier by design. They are recorded
+here because the survey found something the sweep was not looking for: **4.14 GB
+and ~7,400 pages of a historian's archival photography that is invisible to
+search.** That is a bigger prize than the 10 GB of disk the sweep reclaims, and it
+is a different piece of work.
+
+**Before anyone starts it, one honest gap**: every accuracy figure this project
+quotes was measured on *scans*. `classify-source` excludes photographed material
+from the corpus deliberately (D1), so there is **no measurement** of how this app
+performs on hand-held photographs under archive lighting — and deskew, which would
+have been the obvious lever, is refused. OCR a dozen of the Robinson papers and
+look at them before committing to 801.
+
 ### Where the artifacts are
 
 **Not in this repo** — they are paths into a private library and this repository
