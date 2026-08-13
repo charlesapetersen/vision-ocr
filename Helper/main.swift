@@ -110,6 +110,14 @@ let pages = manifest.hasSuffix("\n")
 
 let output = URL(fileURLWithPath: outputPath, isDirectory: true)
 let encoder = JSONEncoder()
+// **Sorted, so two runs of this helper on one page produce identical bytes**
+// (R46). Without it `JSONEncoder` emits a dictionary's keys in an order that
+// varies between processes, and every file differed between two runs while the
+// decoded observations were identical to the last digit. Nothing read the bytes,
+// so nothing was wrong — but "is the helper's output the same as last time" is a
+// question this project asks of everything else it writes, and it could not be
+// asked here. Cheap, and it makes `cmp` a usable instrument.
+encoder.outputFormatting = .sortedKeys
 
 for (index, line) in pages.enumerated() {
     let path = String(line)

@@ -130,17 +130,32 @@ final class Harness: NSObject, NSApplicationDelegate {
         // Read the products, not just the tally: page count is not sufficient
         // verification and neither is an outcome enum.
         var chars = 0, colour = 0, outs = 0, bytes = 0
+        // Per document as well as in total, written beside the outputs. The
+        // 2026-08-13 run came back 23 characters short of the previous one out of
+        // 34.2 million — 1 part in 1.5 million, with every direct comparison of
+        // the two routes exact — and it could not be localised, because a single
+        // total says only that something moved somewhere. A diff of two of these
+        // files names the document in one command.
+        var perDocument: [(String, Int, Int)] = []
         if let e = FileManager.default.enumerator(at: outDir, includingPropertiesForKeys: nil) {
             for case let u as URL in e where u.pathExtension.lowercased() == "pdf" {
                 outs += 1
-                bytes += (try? Data(contentsOf: u).count) ?? 0
-                if let doc = PDFDocument(url: u) { chars += doc.string?.count ?? 0 }
+                let size = (try? Data(contentsOf: u).count) ?? 0
+                bytes += size
+                let these = PDFDocument(url: u)?.string?.count ?? 0
+                chars += these
+                perDocument.append((u.lastPathComponent, these, size))
                 if let raw = try? Data(contentsOf: u),
                    String(decoding: raw.prefix(4_000_000), as: UTF8.self).contains("/DeviceRGB") {
                     colour += 1
                 }
             }
         }
+        let breakdown = outDir.appendingPathComponent("per-document.tsv")
+        try? Data((["file\tcharacters\tbytes"]
+                   + perDocument.sorted { $0.0 < $1.0 }.map { "\($0.0)\t\($0.1)\t\($0.2)" })
+                  .joined(separator: "\n").appending("\n").utf8)
+            .write(to: breakdown, options: .atomic)
         print("""
 
         === RESULT ===
@@ -154,6 +169,7 @@ final class Harness: NSObject, NSApplicationDelegate {
           minutes      \(minutes)
         === 1.7.0 baseline: 255 ok, 0 failed, 12.6M chars, 15 colour, 23 min ===
         === note: 232 testdocs, NOT the 255-document library set ===
+        === per-document characters and bytes: \(breakdown.path) ===
         """)
         fflush(stdout)
         NSApp.terminate(nil)

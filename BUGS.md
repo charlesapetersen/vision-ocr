@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** R41–R45 came out of an adversarial review of R40's own diff
+**Nothing is open.** R41–R46 came out of an adversarial review of R40's own diff
 and are all `FIXED` — the ninth round running in which reviewing the previous
 round's code found real defects in it. R40 — batch throughput falling when
 recognition came in-process, because Vision does not parallelise across concurrent
@@ -2468,6 +2468,36 @@ one-document run is the wrong answer, and is the same class of mistake as the
 three timings that were polluted while this entry was being written.
 
 ---
+
+### R46 · The helper's output was not byte-reproducible — FIXED
+*(found 2026-08-13 while explaining a 23-character difference in the corpus gate)*
+
+`JSONEncoder` was used without `.sortedKeys`, so it emitted each observation's
+keys in an order that varies **between processes**. Two runs of the helper over
+the same twelve page images produced twelve files that `cmp` reported as different
+and whose decoded observations were identical to the last digit — same text, same
+confidences, same four box components, same total byte count.
+
+So nothing was wrong with the output, and that is the point: **the question could
+not be asked.** "Is what this wrote the same as last time" is asked of everything
+else this pipeline produces — the gate's own baseline is quoted as "output
+byte-identical" — and the one new thing that writes a file could not answer it.
+Found only because a 23-character gate delta sent me looking for
+non-determinism, and this is what a search for non-determinism turned up instead.
+
+**Fixed** with `encoder.outputFormatting = .sortedKeys`. It also means `cmp` is now
+a usable instrument on helper output, which is how the next question of this shape
+gets answered in one command.
+
+**The 23 characters remain unexplained**, and are recorded rather than attributed.
+Out of 34,204,971 that is 1 part in 1.5 million, with 232 of 232 succeeding and the
+output unchanged at 792 MB. Everything directly comparable was exact: the two
+routes agree to the last digit on every page tested, and two helper processes agree
+on every page tested. What the count measures is PDFKit's extraction from the 232
+published PDFs, so a difference of this size could sit in whitespace synthesis on a
+single page. `Tools/score-gate.swift` now writes a per-document breakdown next to
+the outputs, so the next comparison localises it in one `diff` instead of leaving a
+total that says only that something moved somewhere.
 
 ### R41 · A run report could say recognition used helper processes when every file fell back — FIXED
 *(found 2026-08-13 by reviewing R40's own diff)*

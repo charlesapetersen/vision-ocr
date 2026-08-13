@@ -231,14 +231,18 @@ last, and one thing that needs a person in front of a running app. `FEATURES.md`
 is ideas. The suite is at **790 checks**, and it **needs nothing installed to
 run**, including the suite — the mac-ocr dependency is gone.
 
-**The released version is 1.10.1. `main` is 1.11.0 and is not released yet —
-one measurement short.** The direct-Vision migration is complete and correct (the
-gate says 232 of 232, output byte-identical at 792 MB, recognised text up 0.16%),
-and R40 — the 187-minutes-against-75 throughput regression it caused — is
-**fixed**. What has not happened is the gate re-run that proves the minutes came
-back. `TODO.md` item 1 is that run and the exact bar it has to clear; it was
-deferred on 2026-08-13 because the machine had a backup and another project's
-build on it, and a polluted timing is worth less than no timing.
+**The released version is 1.11.0, tagged 2026-08-13.** The direct-Vision
+migration and R40's fix both shipped in it. The gate that released it:
+**232 of 232, 0 failed, 34,204,948 characters, 792 MB, 48 minutes** — against a
+75-minute baseline and the 187 that held the release back, and measured on a busy
+machine, so 48 is a ceiling on the time rather than a best case.
+
+**One thing in that run is unexplained and is recorded, not waved at**: the
+character count is 23 lower than the previous gate's, out of 34.2 million. Every
+direct comparison of the two recognition routes is exact to the last digit, and
+two helper processes agree byte for byte. `BUGS.md` R46 has what was checked; the
+gate now writes a per-document breakdown so the next comparison localises a
+difference of this size instead of leaving a total.
 
 **How R40 was fixed, in one paragraph.** Recognition runs in a helper process
 per file again — `Helper/main.swift`, built as `visionocr-recognise` and bundled

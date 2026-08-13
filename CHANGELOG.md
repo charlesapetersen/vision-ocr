@@ -12,21 +12,29 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
-## 1.11.0 — UNRELEASED
+## 1.11.0 — 2026-08-13
 
-> **Not shipped yet — one measurement outstanding.** Everything below is on
-> `main` with the suite green at 790 checks. The throughput regression that held
-> this release, `BUGS.md` R40, is **fixed**: recognition runs in a helper process
-> per file again, so the parallelism a batch used to get is back, and the helper
-> compiles the app's own recognition code so the text is identical rather than
-> merely similar (786 observations over 12 corpus pages, matching to the last
-> digit, on both the 1-bit and the colour route).
->
-> What is outstanding is the **232-document gate re-run**, which measures the
-> thing R40 is about and needs a machine with nothing else on it — three timings
-> during R40's diagnosis were wrong because something else was running. Ship this
-> entry once that run reports its minutes back near 75 with 232 of 232 and the
-> bytes unmoved.
+**The batch speed is back, and then some.** The 232-document release gate:
+
+```
+                     1.10.1    1.11.0 before    1.11.0 shipped
+                   (baseline)   the R40 fix
+documents / ok        232/232       232/232         232/232
+characters         34,148,681    34,204,971      34,204,948
+output               792 MB        792 MB          792 MB
+minutes                  75           187              48
+```
+
+48 minutes against a 75-minute baseline, and against the 187 that held this
+release back — measured on a machine that was *not* idle, so it is a floor rather
+than a best case. Recognition now runs in a small helper program of Vision OCR's
+own, one per file being processed; `BUGS.md` R40 has the reasoning and the
+measurements behind every choice in it.
+
+*The 23-character difference is recorded rather than explained* — 1 part in 1.5
+million, with every direct comparison of the two routes exact to the last digit.
+R46 has what was checked and what the gate now records so the next one can be
+localised.
 
 **Nothing to install, and nothing bundled to go stale.** Vision OCR used to carry
 a copy of a command-line program called mac-ocr inside it to do the recognition —
@@ -66,7 +74,7 @@ Under the hood this removed about 500 lines whose only purpose was talking to
 another program, and the settings panel loses its "mac-ocr path" field — there is
 no path to get wrong.
 
-**One cost, found and then fixed before release rather than after.** Recognising
+**One cost, found and fixed before release rather than after.** Recognising
 a large batch got slower — Vision hands one request most of the machine and makes
 concurrent requests wait, where the old arrangement ran a separate program per
 file. A 232-document run went from 75 minutes to 187. Single documents were never

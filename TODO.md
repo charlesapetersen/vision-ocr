@@ -13,19 +13,33 @@ promoted, or it does not and should be deleted.
 
 ## What is actually left
 
-Two pieces of work, in this order:
+**One piece of work.** 1.11.0 shipped on 2026-08-13 with the gate at 232/232 and
+48 minutes, and `FEATURES.md`'s two layout items — deskew and columns — were both
+built or measured and both refused, so the feature backlog is down to item 7 (a
+watched folder or command line), which nobody has asked for.
 
-1. **Re-run the 232-document gate, then ship 1.11.0.** R40 is built and the suite
-   is green; what is left is the measurement that proves the throughput came
-   back, and it needs a quiet machine. Specified below.
-2. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
-   work, and probably its own session. Specified below.
+1. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
+   work, and probably its own session. Specified below. It was waiting on
+   throughput, and throughput is now better than the figure it was waiting for.
 
 **One question still needs a person and does not block either**: whether the
 controls *sound* right under VoiceOver. That no control is anonymous is settled
 and guarded by a check; hearing it is not the same claim.
 
-## 1. The gate re-run, and 1.11.0 (the only thing before release)
+## The gate that released 1.11.0 — done 2026-08-13
+
+**232 of 232, 0 failed, 232 outputs, 34,204,948 characters, 23 documents carrying
+colour, 792 MB out, 48 minutes at concurrency 6.** Run with `VISIONOCR_HELPER`
+pointed at a built helper, and the harness said so in its second line — read that
+line before believing any future run's minutes, because a gate without a helper
+measures the 187-minute configuration and looks exactly like a fast one.
+
+The bar was 232/232, bytes unmoved from 792 MB, and minutes back near 75. All met;
+the time beat the baseline because the helper is handed a bitmap rather than a PDF,
+so nothing re-rasterises what this app already drew. The 23-character shortfall
+against the previous run is unexplained and recorded in `BUGS.md` R46.
+
+## The old specification, kept for the commands
 
 **R40 is fixed** — `Helper/main.swift`, bundled as `visionocr-recognise`, one
 helper process per file, compiling the app's own `Recogniser.recognise` so the
