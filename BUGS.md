@@ -6,7 +6,10 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing open.** R39 — the last one, found after 1.10.0 shipped — is `FIXED`,
+**One open: R40** — batch throughput fell when recognition came in-process,
+because Vision does not parallelise across concurrent requests in one process.
+Correctness is unaffected and the gate proves it; the fix is specified in
+`TODO.md` and 1.11.0 is deliberately unreleased until it lands. R39 is `FIXED`,
 and the fix it originally proposed was measured and refuted before a different,
 real defect was found underneath it. U23 and T8 close the fourth of the four ways this register
 kept producing defects from its own fixes; the other three got controls in the
@@ -2348,6 +2351,55 @@ about a total.
 `Tools/mutate.py` gained `logic/R39-auto-vs-engine`, which restores the
 comparison against the constant; killed by two checks. The doc comment on
 `recogniserDefaultDPI` now says what the constant is actually for.
+
+### R40 · Batch throughput fell when recognition came in-process — OPEN
+*(found 2026-08-12 by the corpus gate, before 1.11.0 was released; the fix is
+decided and specified in TODO.md)*
+
+**The gate is 187 minutes against a 75-minute baseline.** Everything else it
+measures is unchanged or better — 232 of 232 succeeded, 0 failed, output
+byte-identical at 792 MB, characters **up 0.16%** (34,204,971 against
+34,148,681) — so this is throughput alone, and it is not a correctness fault.
+
+**Measured, not inferred.** Like-for-like on the same 12 documents at the app's
+own concurrency: **3 minutes through the mac-ocr subprocess, 5 through direct
+Vision.** At concurrency 1 the same subset takes 8 minutes, so in-process
+concurrency is buying 1.6x where the subprocess arrangement bought about three.
+
+**The cause is that Vision recognition does not parallelise across concurrent
+requests inside one process.** Thirty-six page images, one process:
+
+| threads | time | speedup |
+|---|---|---|
+| 1 | 22.5s | — |
+| 2 | 21.5s | 1.05x |
+| 4 | 21.1s | 1.07x |
+| 6 | 20.8s | **1.08x** |
+
+One request already saturates whatever Vision uses; further requests queue. The
+~3x that TECHNICAL.md attributes to running files concurrently came from mac-ocr
+being **one process per file** — process-level parallelism, which threads cannot
+recover.
+
+**Two of my own claims were wrong on the way here, and both are the same
+mistake.** A single-document head-to-head measured 37.2s direct against
+mac-ocr's 39.8s and I reported "no regression" — that is the one configuration
+where the difference cannot appear, because there is no concurrency in it. And
+when the gate looked slow I proposed parallelising *pages within* a document;
+measured, that is 1.0x, for exactly the reason above. Both were caught by
+measuring the thing the pipeline actually does, which is this register's oldest
+lesson.
+
+**The fix, decided with the user: a pool of helper processes.** Specified in
+`TODO.md`. It is deliberately not a return to mac-ocr — the helper takes a
+bitmap we rendered and hands back observations, so there is no PDF handed over,
+no rasterisation we do not control, no DPI negotiation, and the quads and
+per-word boxes the CLI could never expose stay available.
+
+**1.11.0 is not released.** The work is on `main` with the suite green and the
+gate's correctness figures recorded, and the changelog entry is marked
+unreleased, because shipping a 2.5x batch regression is not worth doing when the
+fix is specified and the next task after it is a sweep of a 16,079-file library.
 
 ---
 

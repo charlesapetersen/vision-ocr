@@ -128,14 +128,17 @@ OPERATORS = [
     # harness declining to score a mutant it had not actually planted.
     ("JBIG2.swift", 'static let maskDecode = "[ 1 0 ]"',
      'static let maskDecode = "[ 0 1 ]"', "mrc-stencil-polarity"),
-    # R39. Automatic must be compared against what the engine will actually do,
-    # not against a constant. Reverting this one restores the exact defect: the
-    # ceiling stops binding above 300, and a 20x30 sheet at 600 DPI is handed to
-    # an engine that refuses it outright.
-    ("Runner.swift",
-     "let requested = settings.pdfDPIAuto ? (engineAutoDPI ?? recogniserDefaultDPI)",
-     "let requested = settings.pdfDPIAuto ? recogniserDefaultDPI",
-     "R39-auto-vs-engine"),
+    # R39's mutant lived here, and it is gone with the code it perturbed: the
+    # DPI negotiation existed only to talk to a subprocess that re-rasterised our
+    # PDF, and recognition is in process now. Its replacement is the language
+    # detection flag, which is the one request property where *leaving it alone*
+    # is wrong — with no language named, Vision falls back to a default list
+    # instead of detecting, which no character count on English material would
+    # notice.
+    ("Recogniser.swift",
+     "request.automaticallyDetectsLanguage = languages.isEmpty",
+     "request.automaticallyDetectsLanguage = false",
+     "detects-language-when-none-named"),
     # R38. The gate itself, not its constant. The drift guard in T5 kills any
     # edit to `pictureInkMinimumTone` for free — it asserts the literal — so a
     # constant mutant proves nothing about whether anything *reads* it. This one

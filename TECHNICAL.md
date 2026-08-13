@@ -194,7 +194,7 @@ finished.
 ./run_tests.sh
 ```
 
-758 checks, two to four minutes, because it runs real OCR rather than mocking it.
+739 checks, two to four minutes, because it runs real OCR rather than mocking it.
 It builds image-only PDFs and puts them through the actual pipeline — including
 `OCRModel.makeSearchablePDF`, which is deliberately internal so the tests exercise
 the real function rather than a replica of it.

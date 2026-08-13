@@ -99,28 +99,15 @@ func sauvolaMask(_ grey: [UInt8], width w: Int, height h: Int, window: Int) -> [
 /// `archive-pdf-tools` solves this by driving its mask from hOCR; this app has
 /// the same signal and does not have to guess at it.
 func ocrBoxes(forPNG url: URL) -> [(x: Double, y: Double, w: Double, h: Double)] {
-    guard let bin = Runner.resolveBinary() else { return [] }
-    let p = Process()
-    p.executableURL = URL(fileURLWithPath: bin)
-    p.arguments = [url.path, "--format", "jsonl"]
-    let out = Pipe()
-    p.standardOutput = out
-    p.standardError = FileHandle.nullDevice
-    guard (try? p.run()) != nil else { return [] }
-    let data = out.fileHandleForReading.readDataToEndOfFile()
-    p.waitUntilExit()
-    struct Box: Decodable { let x, y, width, height: Double }
-    struct Obs: Decodable { let boundingBox: Box }
-    struct Line: Decodable { let observations: [Obs] }
-    var boxes: [(Double, Double, Double, Double)] = []
-    for line in String(decoding: data, as: UTF8.self).split(separator: "\n") {
-        guard let d = line.data(using: .utf8),
-              let l = try? JSONDecoder().decode(Line.self, from: d) else { continue }
-        for o in l.observations {
-            boxes.append((o.boundingBox.x, o.boundingBox.y, o.boundingBox.width, o.boundingBox.height))
-        }
-    }
-    return boxes.map { (x: $0.0, y: $0.1, w: $0.2, h: $0.3) }
+    // In process. This used to spawn mac-ocr on the PNG; with the dependency gone
+    // it asks Vision directly, which is also what the pipeline does — so the
+    // boxes this prototype reasons about are the boxes the app would get.
+    guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+          let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+          let observations = try? Recogniser.recognise(image, settings: .current())
+    else { return [] }
+    return observations.map { (x: $0.boundingBox.x, y: $0.boundingBox.y,
+                              w: $0.boundingBox.width, h: $0.boundingBox.height) }
 }
 
 /// Where the stencil is allowed to look. Everything outside stays in the

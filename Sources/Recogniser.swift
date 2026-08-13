@@ -44,6 +44,22 @@ import CoreGraphics
 /// want next, and is not reachable through the CLI's output at all.
 enum Recogniser {
 
+    /// Recognition's own failures, kept apart from `SearchableWriter`'s so a
+    /// cancellation is never mistaken for a broken file.
+    enum Failure: LocalizedError, Equatable {
+        case cancelled
+        case unreadablePage(Int)
+
+        var errorDescription: String? {
+            switch self {
+            case .cancelled: return "Cancelled."
+            case .unreadablePage(let n):
+                return "Page \(n) could not be prepared for recognition. It may be "
+                    + "larger than this app will render."
+            }
+        }
+    }
+
     /// Pinned, not left to default. `mac-ocr` reports `requestRevision: 3` in
     /// its output, so every figure in this project's corpus was measured at
     /// revision 3; letting a future macOS pick a newer one would silently make
@@ -103,13 +119,19 @@ enum Recogniser {
     ) throws -> [Int: [SearchableWriter.Observation]] {
         var byPage: [Int: [SearchableWriter.Observation]] = [:]
 
+        // Cancellation **throws** rather than returning what it has. Returning a
+        // short dictionary hands the caller something that looks like a finished
+        // document, and `compose` would publish a text layer missing its last
+        // pages — invariant 1's exact shape. `makeSearchablePDF` catches this and
+        // asks the control whether it was a cancellation before calling it a
+        // failure, which is the same idiom the flatten step already uses.
         if !bitmaps.isEmpty {
             let total = bitmaps.count
             for (index, page) in bitmaps.enumerated() {
-                if isCancelled() { return byPage }
+                if isCancelled() { throw Failure.cancelled }
                 onPage(index, total)
                 guard let image = loadImage(page) else {
-                    throw SearchableWriter.Failure.unreadableSource
+                    throw Failure.unreadablePage(index + 1)
                 }
                 byPage[index + 1] = try recognise(image, settings: settings)
             }
@@ -122,11 +144,11 @@ enum Recogniser {
         }
         let total = doc.pageCount
         for index in 0..<total {
-            if isCancelled() { return byPage }
+            if isCancelled() { throw Failure.cancelled }
             onPage(index, total)
             guard let page = doc.page(at: index) else { continue }
             guard let image = render(page, settings: settings) else {
-                throw SearchableWriter.Failure.unreadableSource
+                throw Failure.unreadablePage(index + 1)
             }
             byPage[index + 1] = try recognise(image, settings: settings)
         }
@@ -157,9 +179,9 @@ enum Recogniser {
 
         if let doc = Flattener.open(file, password: password), doc.pageCount > 0 {
             for index in 0..<doc.pageCount {
-                if isCancelled() { return }
+                if isCancelled() { throw Failure.cancelled }
                 guard let page = doc.page(at: index), let image = render(page, settings: settings)
-                else { throw SearchableWriter.Failure.unreadableSource }
+                else { throw Failure.unreadablePage(index + 1) }
                 out.append(PageOut(page: index + 1, width: image.width, height: image.height,
                                    observations: try recognise(image, settings: settings)))
             }

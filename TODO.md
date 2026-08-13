@@ -11,23 +11,76 @@ promoted, or it does not and should be deleted.
 
 ---
 
-## What is actually left, as of 1.10.0
+## What is actually left
 
-**Nothing open in `BUGS.md`.** What is left here is **one question that needs a
-person** — whether the controls are named for VoiceOver — and **one feature
-cycle**, R35's second attempt. Everything else is closed, and the closed items
-are kept with their reasoning rather than deleted.
+Two pieces of work, in this order, both decided with the user:
 
-**Superseded, and worth saying so rather than quietly dropping.** This file used
-to open with "re-run the 255-document library and diff against 1.7.0's figures".
-That set cannot be reconstructed (Zotero holds 16,079 PDFs) and the baseline is
-now the 232-document `testdocs` run through `Tools/score-gate.swift`, recorded in
-`HANDOFF.md` with both columns. It also used to say the file was "empty of code
-work", which R39 made false for as long as R39 was open.
+1. **R40 — put recognition in a pool of helper processes.** The only thing
+   standing between `main` and a 1.11.0 release. Specified below.
+2. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
+   work, and probably its own session. Specified below.
 
-**The VoiceOver announcements have been heard** (2026-08-09) and they work — U16
-is closed in full and `BUGS.md` U8 has no remainder. That is *announcements*;
-whether the individual controls carry names is the separate open question below.
+**One question still needs a person and does not block either**: whether the
+controls *sound* right under VoiceOver. That no control is anonymous is settled
+and guarded by a check; hearing it is not the same claim.
+
+## 1. R40 — recognition in helper processes (decided, not started)
+
+`BUGS.md` R40 has the measurements. The short version: **Vision does not
+parallelise across concurrent requests inside one process** — 1.08x at six
+threads on thirty-six page images — so the ~3x that batch concurrency used to buy
+came from mac-ocr being one process per file. The corpus gate is 187 minutes
+against 75, with correctness unchanged.
+
+**What to build.** A small helper executable, ours, bundled beside `jbig2` and
+`qpdf`. It takes a page bitmap and the recognition settings, and returns
+observations. `Recogniser` keeps its current API and grows a pool of N helpers,
+N being the existing `Prefs.concurrency`.
+
+**Why this is not a return to mac-ocr**, and the distinction is the whole point:
+
+- It is handed a **bitmap we rendered**, not a PDF. Nothing re-rasterises
+  anything, so R39 cannot come back and `recogniserDPICeiling` stays deleted.
+- The protocol is ours, so the quads and per-word boxes
+  (`VNRecognizedText.boundingBox(for:)`) that the CLI never exposed remain
+  available — which is what the text layer wants next.
+- It is a pure function: image in, observations out. No streaming, no progress
+  parsing, no cancellation mid-stream. The subprocess bug class that produced C6,
+  R2, R3, R16, R17, R21, R22, U18 and R30 is mostly about the *long-running
+  streaming* child, and this is not one.
+
+**What it must keep from what exists.** The in-process path stays as the fallback
+for a single file and for when the helper cannot be found, because a missing
+helper must degrade rather than fail (the JBIG2 route's precedent). The settings
+enumeration check must cover the helper's argument encoding the way it now covers
+the request. `Runner.captureBounded` is the bounded-read to reuse rather than
+writing a fourth copy.
+
+**How to know it worked.** The gate, at 232 documents: characters and bytes must
+not move from 34,204,971 / 792 MB, and the time must come back toward 75 minutes.
+Measure with **nothing else running** — three of this session's timings were
+polluted by a test suite or a mutation run sharing the machine, which is how the
+1.7x was first mistaken for 2.5x and how a single-document comparison was
+mistaken for "no regression" at all.
+
+## 2. The Zotero library sweep (deferred, last)
+
+Agreed 2026-08-12 as the final task, after all feature work, probably its own
+session. The user's own library, 16,079 PDFs.
+
+- **Find files larger than they should be** for their page count and item type.
+  R37 and R38 are the background: symbol-mode JBIG2 in the *inputs* makes some
+  sources tiny, and dense bilevel type used to inflate catastrophically. The
+  measure wants to be per-page bytes against the item type, not raw size.
+- **Re-OCR and replace those files**, moving the originals into a folder in
+  `~/Downloads` for the user to check before anything is discarded. Nothing is
+  deleted.
+- **Separate the photographed items from the scanned ones**, and produce a
+  spreadsheet of those — name, item type, file size — for review rather than
+  acting on them. `Tools/classify-source.swift` already exists for exactly this
+  distinction and is what the corpus gate uses to keep photographs out.
+- Throughput is why this waits for R40: at 1.7-2.5x, a library this size is hours
+  of avoidable difference.
 
 ## Out of the full-corpus gate run (2026-08-12) — all closed
 

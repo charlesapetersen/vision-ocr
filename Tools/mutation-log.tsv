@@ -34,3 +34,4 @@ const/sizeNoteRatio	killed	121	2 check(s): a copy well over the original says so
 const/continuationCandidates	killed	123	1 check(s): compose looks past the folio and running head to join across a page
 logic/R38-ink-needs-tone	killed	126	3 check(s): heavy ink with no tone is text, not a picture; …and tone below the minimum does not rescue it; flatten sends dense type to the 1-bit route
 logic/R39-auto-vs-engine	killed	123	2 check(s): on Automatic, a ceiling below the engine's own choice is sent; a lowered DPI still outside the recogniser's range is clamped into it
+logic/detects-language-when-none-named	killed	118	1 check(s): no language named means Vision is asked to detect one

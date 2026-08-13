@@ -2495,6 +2495,72 @@ do {
     resetPrefs()
 }
 
+print("\nthe revision we pin is the revision Vision uses")
+
+do {
+    // `Recogniser.revision` is pinned to 3 because that is what the corpus was
+    // measured at, and the Extract Text JSON reports that constant in its
+    // `requestRevision` field. Reporting what we *asked for* rather than what
+    // happened would be a claim rather than evidence — so check that Vision
+    // honours the pin instead of assuming it.
+    resetPrefs()
+    let page = tmp.appendingPathComponent("revision-\(UUID().uuidString).pdf")
+    makeScannedPDF(at: page, lines: ["a line to recognise"])
+    let settings = Prefs.Snapshot.current()
+    guard let doc = Flattener.open(page, password: nil), let first = doc.page(at: 0),
+          let image = Recogniser.render(first, settings: settings) else {
+        check("the revision fixture renders", false); resetPrefs(); exit(0)
+    }
+    let request = Recogniser.makeRequest(settings)
+    let handler = VNImageRequestHandler(cgImage: image, options: [:])
+    try? handler.perform([request])
+    let observed = (request.results as? [VNRecognizedTextObservation] ?? [])
+        .map(\.requestRevision)
+    check("the fixture recognised something, or there is no revision to read",
+          !observed.isEmpty, "\(observed.count) observations")
+    check("every observation reports the revision we pinned",
+          observed.allSatisfy { $0 == Recogniser.revision },
+          "saw \(Set(observed).sorted()), pinned \(Recogniser.revision)")
+    resetPrefs()
+}
+
+print("\ncancelling recognition is a cancellation, not a short document")
+
+do {
+    // Returning the pages recognised so far would hand `compose` something that
+    // looks like a finished document and publish a text layer missing its last
+    // pages — invariant 1's shape, and invisible to a page count.
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("cancel-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    // Three pages, so there is something left to cancel after the first.
+    let multi = dir.appendingPathComponent("three.pdf")
+    let single = dir.appendingPathComponent("one.pdf")
+    makeScannedPDF(at: single, lines: ["a page of text to recognise"])
+    if let src = PDFDocument(url: single), let p0 = src.page(at: 0) {
+        let doc = PDFDocument()
+        for i in 0..<3 { doc.insert(p0.copy() as! PDFPage, at: i) }
+        doc.write(to: multi)
+    }
+    var seen = 0
+    do {
+        _ = try Recogniser.recogniseDocument(
+            visible: multi, bitmaps: [], settings: .current(),
+            isCancelled: { seen >= 1 },          // cancel after the first page
+            onPage: { done, _ in seen = max(seen, done) })
+        check("a cancelled recognition throws rather than returning a partial map", false,
+              "it returned")
+    } catch let error as Recogniser.Failure {
+        check("a cancelled recognition throws rather than returning a partial map",
+              error == .cancelled || "\(error)" == "cancelled", "\(error)")
+    } catch {
+        check("a cancelled recognition throws rather than returning a partial map",
+              false, "\(error)")
+    }
+    resetPrefs()
+}
+
 print("\nrecognition from several threads at once agrees with itself")
 
 do {

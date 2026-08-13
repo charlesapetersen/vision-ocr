@@ -1430,6 +1430,9 @@ final class OCRModel: ObservableObject {
                              ocrShare(done, total))
                 })
         } catch {
+            // A cancellation surfaces here as a throw, exactly as it does from the
+            // rebuild above, and is a cancellation rather than a broken file.
+            if control.isCancelled { report(.cancelled, "Cancelled."); return }
             report(.failed, "Could not recognise the pages: \(error.localizedDescription)")
             return
         }

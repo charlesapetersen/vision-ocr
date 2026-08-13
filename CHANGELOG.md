@@ -12,7 +12,57 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
-## 1.10.1 — 2026-08-12
+## 1.11.0 — UNRELEASED
+
+> **Not shipped, deliberately.** Everything below is on `main` with the suite
+> green and the full-corpus gate passed on correctness — 232 of 232, output
+> byte-identical, recognised text up 0.16%. It is held because the same gate
+> measured **187 minutes against 75**: Vision does not parallelise across
+> concurrent requests inside one process (1.08x at six threads), so the
+> parallelism the removed subprocess provided was process-level. The fix is
+> decided and specified — a pool of small helper processes of our own — and is
+> `BUGS.md` R40. Ship this entry when that lands, with the timing restored.
+
+**Nothing to install, and nothing bundled to go stale.** Vision OCR used to carry
+a copy of a command-line program called mac-ocr inside it to do the recognition —
+2.4 MB of someone else's binary, which earlier versions asked you to install
+yourself in a Terminal. It now calls Apple's Vision framework directly. If you
+installed anything for an older version, you can remove it.
+
+This is mostly invisible, and deliberately so: **the recognised text is the same
+text.** Both routes were run over 52 documents and 4,140 pages before the change
+was made — 9,211,704 characters against 9,254,956, a difference of +0.47% in
+favour of the new one. Speed is the same too, within a couple of seconds on a
+62-page book.
+
+What it fixes, and why it was worth doing:
+
+- **A very large sheet no longer needs a special case.** 1.10.1 fixed a
+  safeguard that kept pages inside a 200-megapixel limit. That limit belonged to
+  the program that has just been removed, not to Vision — which reads a
+  216-megapixel page without complaint. The safeguard and the arithmetic behind
+  it are gone.
+- **The page that is read is now exactly the page that is written.** The app used
+  to render each page, save it into a PDF, and hand that PDF to another program,
+  which rendered it *again* at a resolution of its own choosing. That round trip
+  was the cause of the 1.10.1 bug. It no longer happens.
+- **A photograph that says it is sideways is now read as sideways.** Image files
+  carry a rotation flag that was being ignored when extracting text; the text came
+  out right but the word positions did not.
+- **Language detection works as intended again** when you have not named a
+  language, which is the default.
+
+Under the hood this removed about 500 lines whose only purpose was talking to
+another program, and the settings panel loses its "mac-ocr path" field — there is
+no path to get wrong.
+
+**One cost, and it is why this is not shipped yet.** Recognising a large batch is
+slower — Vision hands one request most of the machine and makes concurrent
+requests wait, where the old arrangement ran a separate program per file. A
+232-document run went from 75 minutes to 187. Single documents are unaffected.
+This is being fixed before release, not after.
+
+
 
 **A very large sheet could fail instead of being read.** Vision refuses to render
 a page above 200 megapixels, so this app works out the highest resolution each

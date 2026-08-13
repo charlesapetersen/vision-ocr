@@ -30,7 +30,6 @@ if CommandLine.arguments.count > 4,
    let v = Double(CommandLine.arguments[4]) { SearchableWriter.minimumVertical = CGFloat(v) }
 if CommandLine.arguments.count > 5,
    let g = Double(CommandLine.arguments[5]) { SearchableWriter.reserveEms = CGFloat(g) }
-guard let binary = Runner.resolveBinary() else { fail("no mac-ocr") }
 guard let doc = PDFDocument(url: src), doc.pageCount > 0 else { fail("cannot open source") }
 
 // Up to 3 pages spread through the document, skipping the cover.
@@ -46,7 +45,7 @@ var outcome = "?"
 var message = ""
 let began = Date()
 OCRModel.makeSearchablePDF(
-    file: input, binary: binary, output: out,
+    file: input, output: out,
     rebuild: true, rebuildMode: .auto, password: nil,
     control: RunControl(), progress: { _, _ in },
     report: { o, m in outcome = "\(o)"; message = m })
@@ -57,16 +56,17 @@ guard result.pageCount == sample.pageCount else {
     fail("page count \(result.pageCount) != \(sample.pageCount)")
 }
 
-// Independent reference OCR of the finished file.
-let refJSON = work.appendingPathComponent("ref.json")
-let r = Runner.run(binary: binary, file: out, outputFolder: nil,
-                   argumentsOverride: [out.path, "--format", "json", "-o", refJSON.path]
-                       + Runner.recognitionArguments(),
-                   register: { _ in })
-guard r.succeeded, let data = try? Data(contentsOf: refJSON),
-      let pages = try? JSONDecoder().decode([P].self, from: data) else {
-    fail("reference OCR failed")
+// Independent reference recognition of the finished file, in process. This used
+// to shell out to mac-ocr for a second opinion; with the dependency gone the
+// reference is `Recogniser` reading the published PDF back, which is still an
+// independent read of the *output* rather than a reuse of the observations that
+// produced it — that independence is the point, not the process boundary.
+guard let byPage = try? Recogniser.recogniseDocument(visible: out, bitmaps: [],
+                                                    settings: .current()) else {
+    fail("reference recognition failed")
 }
+let pages = byPage.sorted { $0.key < $1.key }
+    .map { (page: $0.key, observations: $0.value) }
 
 var startOK = 0, startTotal = 0, endOK = 0, endTotal = 0
 var offsets: [Double] = [], overlaps = 0, overlapPairs = 0

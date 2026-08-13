@@ -14,7 +14,7 @@ defer { try? FileManager.default.removeItem(at: work) }
 Prefs.register(); UserDefaults.standard.set(false, forKey: Prefs.openWhenDone)
 if CommandLine.arguments.count > 3,
    let f = Double(CommandLine.arguments[3]) { SearchableWriter.headroomFactor = CGFloat(f) }
-guard let binary = Runner.resolveBinary(), let doc = PDFDocument(url: src), doc.pageCount > 0
+guard let doc = PDFDocument(url: src), doc.pageCount > 0
 else { print("\(label)\tFAIL"); exit(0) }
 let idx = doc.pageCount <= 3 ? Array(0..<doc.pageCount) : [1, doc.pageCount/2, doc.pageCount*3/4]
 let s = PDFDocument()
@@ -22,20 +22,20 @@ for i in idx { if let p = doc.page(at: i) { s.insert(p, at: s.pageCount) } }
 let input = work.appendingPathComponent("in.pdf"); _ = s.write(to: input)
 let out = work.appendingPathComponent("out.pdf")
 var ok = false
-OCRModel.makeSearchablePDF(file: input, binary: binary, output: out, rebuild: true,
+OCRModel.makeSearchablePDF(file: input, output: out, rebuild: true,
     rebuildMode: .auto, password: nil, control: RunControl(), progress: { _, _ in },
     report: { o, _ in ok = (o == .succeeded) })
 guard ok, let res = PDFDocument(url: out) else { print("\(label)\tFAIL"); exit(0) }
-let js = work.appendingPathComponent("r.json")
-_ = Runner.run(binary: binary, file: out, outputFolder: nil,
-    argumentsOverride: [out.path, "--format", "json", "-o", js.path] + Runner.recognitionArguments(),
-    register: { _ in })
-guard let d = try? Data(contentsOf: js),
-      let pages = try? JSONDecoder().decode([P].self, from: d) else { print("\(label)\tFAIL"); exit(0) }
+// Independent reference recognition of the finished file, through the same
+// in-process path the app uses. This used to shell out to mac-ocr; the
+// dependency is gone and `Recogniser` is the reference now.
+guard let byPage = try? Recogniser.recogniseDocument(visible: out, bitmaps: [],
+                                                    settings: .current())
+else { print("\(label)\tFAIL"); exit(0) }
 var expected = 0, extracted = 0
-for pg in pages {
-    guard let page = res.page(at: pg.page - 1) else { continue }
-    expected += pg.observations.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }.count
+for (number, observations) in byPage.sorted(by: { $0.key < $1.key }) {
+    guard let page = res.page(at: number - 1) else { continue }
+    expected += observations.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }.count
     extracted += (page.string ?? "").components(separatedBy: "\n")
         .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count
 }

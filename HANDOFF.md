@@ -76,7 +76,7 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 758 checks, ~2-4 minutes (it runs real OCR)
+./run_tests.sh        # 739 checks, ~2-4 minutes (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -202,8 +202,19 @@ Two things the second pass learned the hard way, both worth carrying forward:
 
 Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT`, and `TODO.md` holds
 no code work — only things that need a person in front of a running app.
-`FEATURES.md` is ideas. The suite is at **765 checks**, `main` is pushed, and
-**1.10.1** is tagged and released with a DMG.
+`FEATURES.md` is ideas. The suite is at **739 checks**, `main` is pushed, and it
+**needs nothing installed to run**, including the suite — the mac-ocr dependency
+is gone.
+
+**The released version is 1.10.1. `main` is 1.11.0 and is deliberately not
+released.** The direct-Vision migration is complete and correct — the gate says
+232 of 232, output byte-identical at 792 MB, recognised text up 0.16% — but the
+same gate took **187 minutes against 75**, because Vision does not parallelise
+across concurrent requests inside one process (measured: 1.08x at six threads).
+The parallelism the subprocess provided was process-level. `BUGS.md` R40 has the
+measurements and `TODO.md` has the agreed fix: a pool of small helper processes of
+our own, taking a bitmap rather than a PDF, so none of what the migration bought
+is given back. **Do that, re-run the gate, then ship 1.11.0.**
 
 **1.10.0 closed the queue agreed on 2026-08-12.** Four items shipped — R38, the
 written run report, the language picker, retry-the-failures — and three were
@@ -232,9 +243,19 @@ engine's default. The lesson generalises past this entry: of the four things
 attempted after 1.10.0, three were refused by measurement and the one that
 shipped was not the fix that had been written down.
 
-**What the 2026-08-12 session should have taught the next one.** Six separate
-times, a measurement was wrong and the wrong conclusion was nearly recorded as
-fact. They are all the same shape and worth reading as one lesson:
+**The lesson the 2026-08-12 session kept relearning, in its sharpest form.**
+Twice in the direct-Vision work I reported a conclusion from a measurement that
+could not have shown the effect: "no throughput regression", from a
+single-document comparison with no concurrency in it; and "parallelising pages
+will fix it", when pages within a document parallelise at 1.0x. Both were caught
+by measuring the thing the pipeline actually does. Add to that an EXIF fixture I
+declared impossible to build because `sips` and `mdls` do not report the tag —
+the reader the app uses saw it perfectly — and an accessibility "defect" that was
+a label four lines below the ten-line window I read. **The instrument is wrong
+more often than the code, and it is most convincing when it agrees with you.**
+
+**Earlier that same session, six separate times**, a measurement was wrong and the
+wrong conclusion was nearly recorded as fact. They are all the same shape and worth reading as one lesson:
 
 - A codec looked 1.5–2x better because it was measured on whole pages rather
   than on the background layers it would actually encode (R36); and earlier,

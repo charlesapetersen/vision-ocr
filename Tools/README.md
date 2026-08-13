@@ -84,8 +84,8 @@ vncdotool -s 127.0.0.1::PORT -p PASS capture shot.png   # ~/.tart-mirror/vncenv
 vncdotool -s 127.0.0.1::PORT -p PASS move X Y click 1   # input bypasses guest TCC
 ```
 
-Requires `npm install -g mac-ocr` inside the guest, and
-`defaults write -g AppleKeyboardUIMode -int 3` for the tab walk.
+Requires nothing installed in the guest — recognition is Vision, in process —
+except `defaults write -g AppleKeyboardUIMode -int 3` for the tab walk.
 
 **Read state with `CGWindowListCopyWindowInfo`, filtered by pid, not with
 screenshots.** VNC hands back stale frames — a capture taken four seconds after a
