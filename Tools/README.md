@@ -101,6 +101,46 @@ windows while the app had four); a virtiofs mount serving a 90-minute-old
 prompt on the VM's screen silently eating every keystroke, which produced a
 clean, entirely fictitious tab-order result.
 
+## Measuring layout: skew and reading order
+
+Both of these were written to decide a feature, and both decided against it. They
+are kept because the instruments are validated and the next person to have the
+idea should start from a working one.
+
+**`score-skew.swift`** — how crooked a page is, from its own text lines. Carries
+the estimator itself, deliberately: the app does not deskew, so putting it in
+`Sources/` would ship dead code. Three modes, and the first is the one that
+matters.
+
+- `--validate` plants angles **in the pixels**, re-measures, and reports the
+  error. Not in its own point cloud — a self-test that reuses the search it is
+  testing flatters itself. It found the sign inverted on the first run, with the
+  magnitude right, which would have doubled every page's skew. The 0.0° control
+  passed throughout: zero has no sign.
+- `--summary` sweeps a corpus and prints the distribution, counting the pages it
+  **abstained** on rather than dropping them.
+- `--recover` / `--recover-render` recognise each page before and after
+  correcting it, and count characters. Use `--recover-render`: it folds the
+  rotation into the render so each side is sampled from the vector source exactly
+  once. `--recover` rotates the finished bitmap, which samples "after" twice and
+  charges the difference to deskew — it reported −1.33% where the fair
+  comparison reported +0.26% on the same interim rows.
+
+**`score-reading-order.swift`** — whether Vision's order is wrong on
+multi-column pages. Two modes, and they exist because the obvious one has a hole.
+
+- default: column bands from the observations' own x-coverage, then *switches*
+  (consecutive observations landing in different bands) and *interleaving*
+  (switches ÷ column breaks; 1.0 is perfect).
+- `--gutter`: bands from the **ink** instead. This is the mode to trust. If
+  Vision welds lines across a gutter, the observations span both columns, the
+  default mode sees no gap, and files the page as single-column — excluding the
+  one defect worth finding by the act of looking for it.
+
+Neither metric can tell a table from prose, and the corpus pages that score worst
+are a four-column table and a table of contents, both read *correctly*. Render the
+worst pages and look at them before believing a score.
+
 ## Two traps in this environment
 
 **Backgrounded shell commands run with essentially no `PATH`.** `basename`, `cut`

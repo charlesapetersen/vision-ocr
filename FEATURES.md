@@ -28,6 +28,15 @@ library, 52 of 60 sampled produced by FineReader, and *they route per page
 exactly as this does*. The gap is not quality of engineering. It is **layout
 analysis**, and secondarily image preparation.
 
+**That summary was written on argument, and the argument did not survive
+measurement.** Both of the layout-analysis items below — deskew and columns —
+were built or measured on 2026-08-13 and both were refused by their own numbers:
+correcting skew *loses* text at every angle, and Vision already returns
+multi-column pages in reading order with 0.19% of observations crossing a gutter.
+The remaining gap is the engine's recognition of degraded type, which is the one
+thing listed here that no work in this repository can close. Read the entries, not
+this paragraph.
+
 **1. ~~Recover the text already being lost (R39).~~ DONE — shipped in 1.10.1.**
 Left in place because the ranking below was written against it and because *how*
 it closed is the useful part. It did not close the way this entry proposed:
@@ -39,8 +48,9 @@ underneath — the DPI ceiling could not bind on Automatic, because it was compa
 against a constant the code's own comment wrongly described as the engine's
 default. `BUGS.md` R39.
 
-**2. ~~Deskew~~ — DECLINED, measured 2026-08-12.** This was ranked second here on
-argument, and the argument was wrong in both halves. It is left in place rather
+**2. ~~Deskew~~ — DECLINED twice, measured 2026-08-12 and again 2026-08-13.**
+Ranked second here on argument; the argument was wrong in both halves, and when
+the one surviving version of it was actually built and measured it lost text. It is left in place rather
 than deleted because the reasoning is the same shape as the "Vision can't read
 sideways text" episode in `HANDOFF.md`, where a whole feature was built for an
 inferred weakness that a direct test disproved.
@@ -89,24 +99,140 @@ of pages, and against that:
 - Rotating the published page alters the user's document, which is R13's
   territory.
 
-**The one version worth keeping in mind** sidesteps the third objection
+**The one version worth keeping in mind** sidestepped the third objection
 entirely: deskew *only the image handed to the recogniser*, and publish the page
 exactly as scanned. The user's document is untouched, so there is no fidelity
 question at all — it becomes purely a question of whether the estimate is right,
-and the answer today is "on 76% of documents". Revisit if a better estimator
-turns up, or if a document arrives that is visibly crooked and reads badly.
+and the answer then was "on 76% of documents".
+
+#### That version was built and measured on 2026-08-13. It is refused too, and this time the estimator was not the problem.
+
+Both objections that survived the first pass were answered, and the feature still
+lost:
+
+**A better estimator was built and validated.** `Tools/score-skew.swift` carries
+it. Baseline points are the bottom pixel of each vertical ink run — which reduces
+a photograph to its outline instead of letting it shout over the caption — and
+the projection is a shear rather than a rotation, so no angle costs a resampling.
+It abstains rather than guessing. Validated by planting angles **in the pixels**,
+not in its own point cloud: over 40 attempts on corpus pages, **100% correct when
+it spoke**, median error **0.020°**, worst 0.110°, abstaining on 5. Against the
+previous estimator's 24% silent failure rate, this is the instrument the first
+attempt lacked.
+
+*It also failed with the magnitude right and the sign inverted on the first run* —
+every planted angle came back mirrored, which would have **doubled** every page's
+skew rather than removing it. Caught only by the pixel-level plant. The 0.0°
+control passed throughout, because zero has no sign: a control that proves
+nothing, which is worth remembering next time one looks reassuring.
+
+**The library was swept, not just the corpus.** A 1-in-16 sample of the user's
+16,087 PDFs — 1,006 documents, 2,557 pages measured, 229 abstained:
+
+| pages | share |
+|---|---|
+| below 0.25° | **95.6%** |
+| 0.25–0.5° | 2.5% |
+| 0.5–1.5° | 1.4% |
+| over 1.5° | 0.4% |
+
+Median 0.000°, p95 0.220°, worst 3.0°. **36 documents carry a page at 0.5° or
+worse**, so crooked pages do exist — this is not a claim that they do not. It is
+straighter than the 232-document corpus looked (89.9% below 0.25° there), which
+is itself a mark against the old estimator.
+
+**Then the 36 crooked documents were deskewed and re-recognised.** Characters
+recovered, with the correction folded into the *render* so each side is sampled
+from the vector source exactly once:
+
+| measured skew | pages | before | after | delta | better/worse |
+|---|---|---|---|---|---|
+| < 0.25° (control) | 79 | 177,040 | 176,298 | **−0.42%** | 20/25 |
+| 0.25–0.5° | 23 | 61,710 | 61,814 | **+0.17%** | 12/8 |
+| 0.5–1.0° | 37 | 84,270 | 82,991 | **−1.52%** | 13/20 |
+| ≥ 1.0° | 17 | 20,061 | 19,613 | **−2.23%** | 5/11 |
+
+**Deskewing loses text, and loses more the more crooked the page is.** Subtracting
+the control row as a floor still leaves −1.10% at 0.5–1.0° and −1.81% at ≥1.0°.
+The corrections were *right* — the estimator re-run on each corrected page reports
+a residual of ~0.000° — so this is not a correction that missed. Vision is simply
+already robust to a degree of skew, and resampling glyph edges costs more than
+aligning the baselines gains. That is the same shape as the angle table above,
+where clean material was flat across every angle tried.
+
+**One measurement in this was wrong on the way, in the direction that flattered
+the feature's opponent.** The first run rotated the already-rendered bitmap, so
+"before" was sampled once and "after" twice, and it charged the extra resampling
+to deskew: −1.33% overall. Folding the rotation into the render moved the interim
+to +0.26% and the full run to the table above. Both instruments agree on the
+verdict; only one of them was measuring the right thing, and the agreement is not
+what makes the answer trustworthy.
+
+**And the thing that would have to change to collect even a positive result.** A
+page recognised at a corrected angle returns boxes in the *rotated* frame, and the
+published page is unrotated — so every observation would need mapping back, and a
+line 200pt wide at 1° gains ~3.5pt of box height on a ~12pt line. That breaks
+invariant 3's vertical non-overlap on exactly the pages the feature is for, unless
+`SearchableWriter` gains a real rotation term. It places every run with a zero
+rotation term today. That is the most delicate code in the project, with four
+properties that fight each other and one of them found holding by accident. Not
+for 0.5% of characters, and certainly not for −1.5%.
+
+**Do not reopen this without a new argument.** Two independent estimators, a
+library-wide distribution, and a like-for-like recovery measurement all point the
+same way. What would change it: evidence that a *different* recogniser benefits,
+or a document that is visibly crooked and demonstrably reads badly — in which case
+measure that document, not the idea.
 Despeckle and border removal were not measured and are not claimed either way.
 
-**3. Columns, reading order and tables.** There is no column model. The nearest
-thing is `minimumColumnOverlap`, a *guard* that refuses a hyphen join when two
-lines do not share a column — it detects that two spans disagree, it does not
-segment the page. Everything downstream inherits Vision's reading order, which
-FEATURES.md already records going wrong on poor pages, and cross-column
-hyphenation was abandoned because there was no column detection to hang it on.
-This is what makes copying a two-column page produce interleaved nonsense, and it
-is the single biggest *functional* difference from FineReader. It is also the
-most work: a real segmenter, plus a decision about what to do when it is wrong on
-an irreplaceable document.
+**3. ~~Columns, reading order and tables~~ — DECLINED, measured 2026-08-13.**
+There is no column model, and that part is true: the nearest thing is
+`minimumColumnOverlap`, a *guard* that refuses a hyphen join when two lines do
+not share a column, and `SearchableWriter.compose` draws observations in the
+order Vision returned them and never sorts. So reading order really is inherited
+whole.
+
+**What was wrong is the next sentence — the one that said this makes copying a
+two-column page produce interleaved nonsense.** It does not. This entry called it
+"the single biggest functional difference from FineReader" and it was never
+measured. `Tools/score-reading-order.swift` measures it four ways, and all four
+say the same thing.
+
+*Vision keeps columns to themselves.* Gutters detected from the **ink** rather
+than from Vision's own output — deliberately, because bands derived from the
+observations would file a page whose lines were welded across the gutter as
+single-column and hide the only defect worth finding. Over 638 corpus pages, 59
+with a real gutter: **5 observations of 2,674 cross one, 0.19%.**
+
+*And it returns them in reading order.* Over 54 multi-column pages: median
+interleaving **1.0**, where 1.0 is one hand-off per column break and perfect.
+83.3% already ordered. 35 inversions within a column across 3,560 lines.
+
+*Read directly, on a genuine two-column journal page* (Sanders 2001, Academy of
+Management Journal): the running head, then the **whole left column top to
+bottom, 57 observations in monotonic y order**, then the whole right column. One
+hand-off. The text reads as continuous prose.
+
+**The pages that score worst are pages that must not be touched.** Of the nine
+scoring above 1.5, the top two are a four-column table in the 1956 NYSE report and
+the third is a *table of contents* — titles on the left, page numbers on the
+right. Vision reads each table row across, and each contents entry with its own
+page number, which is **correct**: the row and the entry are the semantic units. A
+column-wise sort would separate every heading from its number and every table cell
+from its row. Both were read by rendering the page, which is the only way this
+distinction is visible — the metric cannot tell a table from prose, and it was
+built knowing that.
+
+So the feature is not merely unnecessary, it is **net negative as specified**: the
+work would buy nothing on the pages it was aimed at and damage tabular material,
+which this corpus is full of. The one thing measurement does support is a *guard*:
+if reordering is ever attempted, it must abstain on tables, and nothing in the
+metric distinguishes them.
+
+**What would reopen it**: a document where the extracted order is demonstrably
+wrong — measure that document rather than the idea. Reading order coming out of a
+different recogniser would also change the answer, since all of the above is a
+property of Vision, not of this app.
 
 **4, 5 and 6 — ARCHIVED 2026-08-13**, at the owner's decision, and recorded
 rather than deleted so nobody re-proposes them as new. They were: *show uncertain
@@ -120,8 +246,8 @@ not what this app is for. Do not reopen without a document that needs one.
 
 **7. A watched folder or a command line.** The GUI batch is the only way in.
 Cheap, and it is what turns this from an application into part of a workflow.
-**The one still live on this list**, now that 1 is done, 2 is declined, 4–6 are
-archived and 3 is the long road.
+**The only live entry left on this list** — 1 is done, 2 and 3 are declined on
+measurement, and 4–6 are archived.
 
 **What is not closable, and should be said plainly.** Recognition of degraded
 19th-century type, Fraktur, and heavy tabular material is the engine's, and the
