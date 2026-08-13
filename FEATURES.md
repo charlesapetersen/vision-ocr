@@ -752,10 +752,29 @@ exists for. The text layer and the outline survive it; the images do not.
   because a stamp is nothing but its appearance stream. It is the case that
   proves the `/AP` work is not optional.
 
-Still not scheduled: it is a substantial piece of hand-written PDF on documents
-where a misplaced highlight is a misrepresentation. But it is no longer parked
-for a reason that does not hold, and the two measurements above are what a next
-attempt should start from rather than repeat.
+**Promoted to `TODO.md` on 2026-08-13, and the cost turned out to be smaller than
+this entry assumed.** Three things settled it:
+
+- **The library needs it.** 91 of a 1,006-document sample carry a reader's own
+  mark — **9.0%, 4,903 marks**, one file holding 227 — which is ~1,400 files.
+  Identical to the corpus rate (9.1%), so it is the library, not the sample. The
+  Zotero sweep is blocked on it: without this it either skips a tenth of the
+  library or destroys scholarship.
+- **The recorded blocker is real, and now a number.** `PDFDocument.write(to:)`
+  over this app's own JBIG2 output inflates it 1.52x–4.08x — Hayek 35.42 →
+  144.68 MB, Boltanski 24.38 → 82.89. Text survives to the character; only size
+  is lost, and size is the whole point of the sweep.
+- **But qpdf is not PDFKit.** A plain qpdf round-trip of that same 25,565,129-byte
+  output returns **25,565,129 bytes**, and so does a full
+  `--json-output=2` / `--json-input` round-trip. So the object graph can be edited
+  with qpdf doing the objects, the streams and the xref — and "a substantial piece
+  of hand-written PDF", which is what this entry called the cost, is not needed at
+  all.
+
+The mechanism, the named hard parts, the v1 scope and the verification bar are in
+`TODO.md` item 1. The bar is the point: a highlight forty points out of place is a
+misrepresentation that no count would catch, so the pages carrying marks get
+rendered and compared.
 
 
 ### Batch presets — SHIPPED

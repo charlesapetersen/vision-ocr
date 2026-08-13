@@ -22,9 +22,130 @@ which the build's own verification exercised by mounting the image and running
 every bundled helper under `env -i`, `visionocr-recognise --version` included.
 `Updater.releasesAPI` now returns it, so users on 1.10.1 are offered the upgrade.
 
-1. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
+1. **Preserve annotations through re-OCR.** Newly promoted 2026-08-13 and
+   specified below. **The library sweep is blocked on it**: 9% of the library
+   carries a reader's own marks and re-OCR discards every one without a word, so
+   the sweep either skips a tenth of the library or destroys somebody's
+   scholarship. Neither is acceptable.
+
+2. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
    work, and probably its own session. Specified below. It was waiting on
    throughput, and throughput is now better than the figure it was waiting for.
+
+## 1. Preserving annotations through re-OCR (decided, specified, not started)
+
+Promoted out of `FEATURES.md` on 2026-08-13. That entry has the history and the
+corpus counts; this is what to build.
+
+### Why it is now blocking
+
+Measured over a 1-in-16 sample of the library — 1,006 documents:
+**91 carry a reader's own mark (9.0%), 4,903 marks in total**, the heaviest single
+file holding 227. That extrapolates to roughly **1,400 files**. It matches the
+corpus rate exactly (21 of 232, 9.1%), so it is a property of this library rather
+than of a sample.
+
+The rebuild drops every one of them. Until this exists, any file with marks has to
+be excluded from the sweep by hand.
+
+### What is already measured — do not re-derive these
+
+1. **PDFKit is not the route, and this is now a number rather than an assertion.**
+   `PDFDocument.write(to:)` over this app's own JBIG2 output inflates it:
+   Hayek 35.42 → 144.68 MB (4.08x), Boltanski 24.38 → 82.89 (3.40x),
+   Countryman 25.30 → 57.91 (2.29x), Schwaller 33.52 → 50.88 (1.52x). Text is
+   preserved to the character, so the whole loss is size — and size is the entire
+   point of the sweep. `FEATURES.md` recorded this as the blocker and was right;
+   it was worth measuring because the *previous* blocker in that entry was wrong.
+
+2. **qpdf is size-safe.** A plain `qpdf in.pdf out.pdf` round-trip of a
+   25,565,129-byte JBIG2 output gives back **25,565,129 bytes**. The JBIG2 streams
+   survive a qpdf rewrite — which is already why the pipeline can merge the text
+   layer with `qpdf --overlay` *after* compression.
+
+3. **qpdf's JSON is size-safe too, and is the editing surface.**
+   `--json-output=2 --json-stream-data=file --json-stream-prefix=…` then
+   `--json-input` reproduces the same 25,565,129 bytes. For a 203-page book the
+   JSON is 437 KB with 820 stream files. qpdf therefore does the object plumbing,
+   the streams and the xref — which is exactly the "substantial piece of
+   hand-written PDF" that `FEATURES.md` called the cost, and it is not needed.
+
+4. **No coordinate remapping.** Measured in the earlier investigation: 0 media-box
+   mismatches, 0 rotation mismatches, 0 pages whose crop box differs from the
+   media box. The rebuild preserves the page box exactly because
+   `kCGPDFContextMediaBox` is set per page (invariant 4). Page *i* of the output
+   is page *i* of the source.
+
+5. Copying `/AP` directly should beat PDFKit on the case PDFKit failed — **stamps,
+   20 of 121 refused**, because a stamp is nothing but its appearance stream.
+
+### The mechanism
+
+- `qpdf --json-output=2 --json-stream-data=file` over both the staged output and
+  the original input.
+- For each source page's `/Annots`, copy the **transitive closure** into the
+  output's object table under fresh IDs: the annotation dictionary, its `/AP`
+  (the `/N`, `/D`, `/R` sub-dictionaries and their form XObjects), each form's
+  `/Resources`, and everything those reference.
+- Rewrite every reference inside a copied object to its new ID.
+- Append the new IDs to the output page's `/Annots`, creating it if absent.
+- `qpdf --json-input` to rebuild.
+
+### The hard parts, named so they are not discovered late
+
+- **The closure must be transitive and cycle-safe.** `/Popup` points at an
+  annotation that points back through `/Parent`. Track visited objects by source
+  ID. A reference whose target was not copied must be **removed**, never left
+  dangling.
+- **Stream data lives in separate files** under `--json-stream-data=file`; a
+  copied stream needs its file carried across and its `datafile` key repointed.
+- **Object IDs collide between the two documents.** Renumber everything copied;
+  never reuse a source ID.
+- **`/P` (the annotation's page back-reference)** must point at the *output's*
+  page object.
+- **Do not copy `Widget`.** Form fields are not a reader's marks and they drag in
+  the whole `/AcroForm` graph. A deliberate exclusion, and it must be reported.
+- **`Link` is platform furniture** — 3,991 of the corpus's 4,867 annotations, left
+  behind by JSTOR and ProQuest wrappers. v1 drops them, and says how many.
+
+**v1 copies a reader's own marks and nothing else**: Highlight, Underline,
+StrikeOut, Squiggly, Text, FreeText, Ink, Stamp, Square, Circle, Polygon,
+PolyLine, Caret, FileAttachment. **Every annotation not copied is reported by type
+and page** — invariant 1 applies to a reader's marks as much as to a line of text.
+
+### The verification bar, which is the part not to cut
+
+- **Count**: every mark of a copied type in the source appears in the output, per
+  page. A shortfall fails the file and nothing is published.
+- **Geometry**: each copied mark's `/Rect` matches the source's. The page boxes
+  are identical, so assert *exact* equality and find out rather than allowing a
+  tolerance that hides a systematic shift.
+- **Rendered.** The pages carrying marks, drawn from source and from output at the
+  same scale and compared. A highlight forty points low passes both checks above
+  and misrepresents somebody's scholarship. This is the check that makes the
+  feature defensible; without it, do not ship.
+- **Size**: the output must still be smaller than the input, or the sweep has no
+  reason to touch the file at all.
+- A fixture carrying at least one of every copied type, **including a Stamp** —
+  the case PDFKit could not do, and therefore the one most likely to be wrong.
+
+### Where it goes
+
+A step between `JBIG2.overlay` and `publish`, taking the staged file and the
+original input. **It must be able to fail without failing the document**: if the
+transplant cannot be verified, publish nothing and report it, because a file whose
+marks were silently dropped is worse than a file left alone. For the sweep, an
+unverifiable transplant means that candidate is skipped and listed.
+
+Behind a setting, default off for ordinary runs — it costs two qpdf passes and
+only matters when the input has marks — and forced on for the sweep.
+
+### What would make this unnecessary
+
+Nothing found. Unlike deskew and columns this is **not** waiting on a measurement
+that might refuse it; the measurements above all say it is buildable. It is
+ordinary work with an unusually high verification bar, because the failure mode is
+misrepresenting a reader's own marks on a document that may not be re-scannable.
 
 ## The engine's competence is guarded — done 2026-08-13
 
@@ -109,7 +230,7 @@ not built because it needs a bound on helpers shared across the whole batch,
 where today the count is `Prefs.concurrency` by construction and needs no pool.
 Worth doing only if someone is waiting on single big books.
 
-## 2. The Zotero library sweep (deferred, last)
+## 2. The Zotero library sweep (deferred, last — blocked on item 1)
 
 Agreed 2026-08-12 as the final task, after all feature work, probably its own
 session. The user's own library, 16,079 PDFs.
