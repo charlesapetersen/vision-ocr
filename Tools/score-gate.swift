@@ -9,7 +9,17 @@
 //   mkdir -p /tmp/h && cp Tools/score-gate.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/gate -target "$(uname -m)-apple-macos13.0" \
 //     $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
-//   /tmp/gate testdocs /tmp/gateout
+//   swiftc -O -o /tmp/visionocr-recognise -target "$(uname -m)-apple-macos13.0" \
+//     Sources/{Prefs,Runner,Recogniser,SearchableWriter,Flattener,JBIG2}.swift \
+//     Helper/main.swift
+//   VISIONOCR_HELPER=/tmp/visionocr-recognise /tmp/gate testdocs /tmp/gateout
+//
+// **Build the helper and point at it, or the timing means nothing** (R40).
+// Recognition runs in helper processes because Vision does not parallelise
+// across concurrent requests inside one process; without one this harness
+// silently falls back to in-process recognition and measures the 187-minute
+// configuration while looking exactly like a 75-minute one. It says which it is
+// doing in its opening line — read that line before believing the minutes.
 //
 // **Run it through `start()`, never in a serial loop over `makeSearchablePDF`.**
 // A serial version was tried and projected **9.1 hours** for work this does in
@@ -74,6 +84,24 @@ final class Harness: NSObject, NSApplicationDelegate {
         model = OCRModel()
         _ = model.add(files)
         print("documents: \(model.files.count) (found \(total))  concurrency: \(Prefs.defaultConcurrency)")
+        // Stated, not assumed, and stated as what this run will actually *do*
+        // rather than as what is available. A run without the helper is a
+        // different measurement — same correctness, 2.5x the minutes — and the
+        // two are indistinguishable from the output otherwise. The first version
+        // of this line reported the helper as present and said nothing about
+        // whether the batch would reach for it, which on a one-document run is
+        // exactly the wrong answer: `helperIsWorthIt` declines below two files.
+        let concurrency = max(1, min(d.integer(forKey: Prefs.concurrency), Prefs.maxConcurrency))
+        let wanted = Recogniser.helperIsWorthIt(concurrency: concurrency,
+                                                files: model.files.count)
+        switch (wanted, Recogniser.helperPath()) {
+        case (true, .some(let path)): print("recognition: helper processes (\(path))")
+        case (true, .none):
+            print("recognition: IN-PROCESS — no helper found, expect ~2.5x the time")
+        case (false, _):
+            print("recognition: in-process — this batch is too small to overlap "
+                  + "(\(model.files.count) file(s) at \(concurrency) at a time)")
+        }
         fflush(stdout)
         started = Date()
         model.start()

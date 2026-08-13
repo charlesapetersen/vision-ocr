@@ -13,10 +13,11 @@ promoted, or it does not and should be deleted.
 
 ## What is actually left
 
-Two pieces of work, in this order, both decided with the user:
+Two pieces of work, in this order:
 
-1. **R40 — put recognition in a pool of helper processes.** The only thing
-   standing between `main` and a 1.11.0 release. Specified below.
+1. **Re-run the 232-document gate, then ship 1.11.0.** R40 is built and the suite
+   is green; what is left is the measurement that proves the throughput came
+   back, and it needs a quiet machine. Specified below.
 2. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
    work, and probably its own session. Specified below.
 
@@ -24,44 +25,49 @@ Two pieces of work, in this order, both decided with the user:
 controls *sound* right under VoiceOver. That no control is anonymous is settled
 and guarded by a check; hearing it is not the same claim.
 
-## 1. R40 — recognition in helper processes (decided, not started)
+## 1. The gate re-run, and 1.11.0 (the only thing before release)
 
-`BUGS.md` R40 has the measurements. The short version: **Vision does not
-parallelise across concurrent requests inside one process** — 1.08x at six
-threads on thirty-six page images — so the ~3x that batch concurrency used to buy
-came from mac-ocr being one process per file. The corpus gate is 187 minutes
-against 75, with correctness unchanged.
+**R40 is fixed** — `Helper/main.swift`, bundled as `visionocr-recognise`, one
+helper process per file, compiling the app's own `Recogniser.recognise` so the
+observations are identical by construction. `BUGS.md` R40 has the design, the
+measurements behind every choice in it, and what is deliberately *not* covered.
+The suite is at **790 checks** and green, including exact parity between the two
+routes on both a 1-bit page and a colour JPEG page.
 
-**What to build.** A small helper executable, ours, bundled beside `jbig2` and
-`qpdf`. It takes a page bitmap and the recognition settings, and returns
-observations. `Recogniser` keeps its current API and grows a pool of N helpers,
-N being the existing `Prefs.concurrency`.
+**What is left is one run**, and it is the only claim not yet backed by a
+measurement:
 
-**Why this is not a return to mac-ocr**, and the distinction is the whole point:
+```sh
+mkdir -p /tmp/h && cp Tools/score-gate.swift /tmp/h/main.swift
+swiftc -O -o /tmp/gate -target "$(uname -m)-apple-macos13.0" \
+  $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
+swiftc -O -o /tmp/visionocr-recognise -target "$(uname -m)-apple-macos13.0" \
+  Sources/{Prefs,Runner,Recogniser,SearchableWriter,Flattener,JBIG2}.swift \
+  Helper/main.swift
+VISIONOCR_HELPER=/tmp/visionocr-recognise /tmp/gate testdocs /tmp/gateout
+```
 
-- It is handed a **bitmap we rendered**, not a PDF. Nothing re-rasterises
-  anything, so R39 cannot come back and `recogniserDPICeiling` stays deleted.
-- The protocol is ours, so the quads and per-word boxes
-  (`VNRecognizedText.boundingBox(for:)`) that the CLI never exposed remain
-  available — which is what the text layer wants next.
-- It is a pure function: image in, observations out. No streaming, no progress
-  parsing, no cancellation mid-stream. The subprocess bug class that produced C6,
-  R2, R3, R16, R17, R21, R22, U18 and R30 is mostly about the *long-running
-  streaming* child, and this is not one.
+**Read its second line before believing its minutes.** The harness now prints
+whether the run will actually use helpers, because a gate without one measures
+the 187-minute configuration and looks exactly like a 75-minute one.
 
-**What it must keep from what exists.** The in-process path stays as the fallback
-for a single file and for when the helper cannot be found, because a missing
-helper must degrade rather than fail (the JBIG2 route's precedent). The settings
-enumeration check must cover the helper's argument encoding the way it now covers
-the request. `Runner.captureBounded` is the bounded-read to reuse rather than
-writing a fourth copy.
+**The bar:** 232 of 232, characters and bytes unmoved from **34,204,971 / 792 MB**
+— those are correctness and must not move at all — and the minutes back near
+**75** from 187. Run it with **nothing else on the machine**: three timings during
+R40's diagnosis were polluted by a suite or a mutation run sharing it, and the
+run was deferred on 2026-08-13 for exactly that reason (a backup and another
+project's build were live).
 
-**How to know it worked.** The gate, at 232 documents: characters and bytes must
-not move from 34,204,971 / 792 MB, and the time must come back toward 75 minutes.
-Measure with **nothing else running** — three of this session's timings were
-polluted by a test suite or a mutation run sharing the machine, which is how the
-1.7x was first mistaken for 2.5x and how a single-document comparison was
-mistaken for "no regression" at all.
+If the minutes come back and nothing else moved, tag 1.11.0 and lift the banner
+at the top of `CHANGELOG.md`.
+
+**A measured follow-up this leaves on the table, deliberately.** Pages *within*
+one document parallelise at 1.0x in-process but would parallelise across helper
+processes just as files do — so a single large book, which today gets no helper
+at all, could go ~2.2x faster by splitting its page list across N of them. It was
+not built because it needs a bound on helpers shared across the whole batch,
+where today the count is `Prefs.concurrency` by construction and needs no pool.
+Worth doing only if someone is waiting on single big books.
 
 ## 2. The Zotero library sweep (deferred, last)
 

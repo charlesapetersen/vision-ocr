@@ -28,4 +28,16 @@ swiftc -o "$BIN" \
   "${SOURCES[@]}" \
   Tests/main.swift
 
-"./$BIN"
+# The recognition helper (R40), built the same way build.sh builds it and handed
+# to the suite by path. Without this the helper checks have nothing to run and
+# would quietly pass over a helper that does not compile — the shape of failure
+# the SOURCES glob above exists to prevent. Kept to Recogniser's own closure so
+# a mismatch with build.sh's list is a compile error here first.
+HELPER="build/visionocr-recognise"
+swiftc -o "$HELPER" \
+  -target "$(uname -m)-apple-macos13.0" \
+  Sources/Prefs.swift Sources/Runner.swift Sources/Recogniser.swift \
+  Sources/SearchableWriter.swift Sources/Flattener.swift Sources/JBIG2.swift \
+  Helper/main.swift
+
+VISIONOCR_HELPER="$PWD/$HELPER" "./$BIN"

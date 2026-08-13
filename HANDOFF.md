@@ -5,10 +5,12 @@ Read this, then [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, then
 
 ## What this is
 
-**Vision OCR** — a small SwiftUI front end for
-[mac-ocr](https://github.com/privatenumber/mac-ocr), which runs OCR through Apple's
-Vision framework. Drag PDFs onto the window, pick an output folder, click Start.
-Two modes: extract text, or produce a searchable PDF.
+**Vision OCR** — a small SwiftUI app that OCRs scanned PDFs through Apple's
+Vision framework and writes its own searchable-PDF text layer. Drag PDFs onto the
+window, pick an output folder, click Start. Two modes: extract text, or produce a
+searchable PDF. Recognition happens in a helper process of the app's own
+(`visionocr-recognise`), for the reason R40 records; `jbig2` and `qpdf` are the
+only other programs it runs, and both ship inside the bundle.
 
 ## The one non-obvious design decision
 
@@ -76,14 +78,20 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 739 checks, ~2-4 minutes (it runs real OCR)
+./run_tests.sh        # 790 checks, ~2-4 minutes (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
-recognition is Vision, in process, and `jbig2` and `qpdf` are bundled into the
-app by `Tools/bundle-libs.py` and travel in `Contents/Resources`. Intel is not
-supported: the bundled compressors are arm64-only and
+recognition is Vision, called from a helper this repo builds
+(`visionocr-recognise`, from `Helper/main.swift`), and that helper plus `jbig2`
+and `qpdf` are bundled into the app and travel in `Contents/Resources`. Intel is
+not supported: the bundled compressors are arm64-only and
 `Runner.containsNativeSlice` makes them invisible rather than failing at `exec`.
+
+`run_tests.sh` builds the helper too and points the suite at it with
+`VISIONOCR_HELPER`. Without that the helper checks would pass over a helper that
+does not compile, which is the same shape of blindness the `Sources/*.swift` glob
+in that script exists to prevent.
 
 **Never rebuild while someone is running `build/VisionOCR.app`.** `build.sh`
 rewrites and re-signs that bundle in place, and macOS kills any process running
@@ -197,24 +205,55 @@ Two things the second pass learned the hard way, both worth carrying forward:
   Hoffman's line-separation score from 100% to 94% — because the score's
   denominator went from 3 recognised lines to 139. Check the absolute counts
   before believing a regression.
+- **Measure the premise before building on it, even when the register is sure.**
+  R40's fix rests entirely on separate *processes* parallelising where threads do
+  not, and the evidence for that was mac-ocr's history rather than a number. It
+  cost one command to check — 12 page images, 14.00s in one process against 6.28s
+  across six, 2.23x — and the whole design would have been void if the answer had
+  been 1.0x. The same run also settled the shape of the thing: a process pays
+  ~0.23s before it can recognise anything, which is 19% of a page and nothing at
+  all of a document, and that is the entire reason the helper is per-file rather
+  than per-page.
+- **An instrument that reports availability instead of use is not an
+  instrument.** The gate's new "recognition:" line first printed that a helper
+  *existed*, which on a one-document run is the wrong answer — `helperIsWorthIt`
+  declines below two files, so it would have said "helper processes" over a run
+  that used none. It reports the decision now. The 187-minute configuration and
+  the 75-minute one are indistinguishable from a gate's output otherwise, which
+  is precisely how a 2.5x regression reached a release candidate.
 
 ## Where things stand
 
-Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT`, and `TODO.md` holds
-no code work — only things that need a person in front of a running app.
-`FEATURES.md` is ideas. The suite is at **739 checks**, `main` is pushed, and it
-**needs nothing installed to run**, including the suite — the mac-ocr dependency
-is gone.
+Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT` — R40, the last one
+open, closed on 2026-08-13. `TODO.md` holds no code work: one **measurement**
+(the gate re-run that releases 1.11.0), the Zotero library sweep that was always
+last, and one thing that needs a person in front of a running app. `FEATURES.md`
+is ideas. The suite is at **790 checks**, and it **needs nothing installed to
+run**, including the suite — the mac-ocr dependency is gone.
 
-**The released version is 1.10.1. `main` is 1.11.0 and is deliberately not
-released.** The direct-Vision migration is complete and correct — the gate says
-232 of 232, output byte-identical at 792 MB, recognised text up 0.16% — but the
-same gate took **187 minutes against 75**, because Vision does not parallelise
-across concurrent requests inside one process (measured: 1.08x at six threads).
-The parallelism the subprocess provided was process-level. `BUGS.md` R40 has the
-measurements and `TODO.md` has the agreed fix: a pool of small helper processes of
-our own, taking a bitmap rather than a PDF, so none of what the migration bought
-is given back. **Do that, re-run the gate, then ship 1.11.0.**
+**The released version is 1.10.1. `main` is 1.11.0 and is not released yet —
+one measurement short.** The direct-Vision migration is complete and correct (the
+gate says 232 of 232, output byte-identical at 792 MB, recognised text up 0.16%),
+and R40 — the 187-minutes-against-75 throughput regression it caused — is
+**fixed**. What has not happened is the gate re-run that proves the minutes came
+back. `TODO.md` item 1 is that run and the exact bar it has to clear; it was
+deferred on 2026-08-13 because the machine had a backup and another project's
+build on it, and a polluted timing is worth less than no timing.
+
+**How R40 was fixed, in one paragraph.** Recognition runs in a helper process
+per file again — `Helper/main.swift`, built as `visionocr-recognise` and bundled
+beside `jbig2` and `qpdf`. It is **not** the mac-ocr dependency returning: it is
+handed bitmaps this app rendered rather than a PDF, so R39 cannot come back, and
+it **compiles the app's own `Recogniser.recognise`** rather than reimplementing
+it, which is the only reason the corpus baseline still describes the pipeline.
+It is never authoritative about failure — absent, broken, silent, or returning
+fewer pages than it was given, every one of those falls back to recognising
+in-process and says so in the log, so the worst a helper bug can cost is time.
+`BUGS.md` R40 has the measurements behind every choice, including why it is one
+helper per *document* (Vision's first request in a process costs ~0.20s; per page
+that is 19%, per document it is nothing) and why there is no pool object (at most
+`Prefs.concurrency` files run at once and each holds at most one helper, so the
+process count is the setting, by construction).
 
 **1.10.0 closed the queue agreed on 2026-08-12.** Four items shipped — R38, the
 written run report, the language picker, retry-the-failures — and three were

@@ -25,7 +25,11 @@ fi
 
 # Docs-only commits do not need four minutes of real OCR. Anything that can
 # change behaviour does: sources, tests, the build or test scripts, the tools.
-if ! echo "$staged" | grep -qE '^(Sources/|Tests/|Tools/|build\.sh|run_tests\.sh)'; then
+# Helper/ is in the list because R40 put shipped code there: it builds
+# visionocr-recognise, which does the recognition for every batch. A change to
+# it that skipped the suite would skip the parity check that is the only thing
+# holding the helper and the app to the same observations.
+if ! echo "$staged" | grep -qE '^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)'; then
   echo "pre-commit: no code staged, skipping the suite."
   exit 0
 fi

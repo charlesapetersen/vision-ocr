@@ -14,14 +14,19 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## 1.11.0 — UNRELEASED
 
-> **Not shipped, deliberately.** Everything below is on `main` with the suite
-> green and the full-corpus gate passed on correctness — 232 of 232, output
-> byte-identical, recognised text up 0.16%. It is held because the same gate
-> measured **187 minutes against 75**: Vision does not parallelise across
-> concurrent requests inside one process (1.08x at six threads), so the
-> parallelism the removed subprocess provided was process-level. The fix is
-> decided and specified — a pool of small helper processes of our own — and is
-> `BUGS.md` R40. Ship this entry when that lands, with the timing restored.
+> **Not shipped yet — one measurement outstanding.** Everything below is on
+> `main` with the suite green at 790 checks. The throughput regression that held
+> this release, `BUGS.md` R40, is **fixed**: recognition runs in a helper process
+> per file again, so the parallelism a batch used to get is back, and the helper
+> compiles the app's own recognition code so the text is identical rather than
+> merely similar (786 observations over 12 corpus pages, matching to the last
+> digit, on both the 1-bit and the colour route).
+>
+> What is outstanding is the **232-document gate re-run**, which measures the
+> thing R40 is about and needs a machine with nothing else on it — three timings
+> during R40's diagnosis were wrong because something else was running. Ship this
+> entry once that run reports its minutes back near 75 with 232 of 232 and the
+> bytes unmoved.
 
 **Nothing to install, and nothing bundled to go stale.** Vision OCR used to carry
 a copy of a command-line program called mac-ocr inside it to do the recognition —
@@ -32,8 +37,13 @@ installed anything for an older version, you can remove it.
 This is mostly invisible, and deliberately so: **the recognised text is the same
 text.** Both routes were run over 52 documents and 4,140 pages before the change
 was made — 9,211,704 characters against 9,254,956, a difference of +0.47% in
-favour of the new one. Speed is the same too, within a couple of seconds on a
-62-page book.
+favour of the new one.
+
+*(An earlier draft of this entry also said speed was unchanged, "within a couple
+of seconds on a 62-page book". That was measured on one document at a time, which
+is the one arrangement where the difference cannot show up. Recognising a **batch**
+did get slower, by a lot, and the paragraph at the end of this entry is what came
+of finding out.)*
 
 What it fixes, and why it was worth doing:
 
@@ -56,11 +66,22 @@ Under the hood this removed about 500 lines whose only purpose was talking to
 another program, and the settings panel loses its "mac-ocr path" field — there is
 no path to get wrong.
 
-**One cost, and it is why this is not shipped yet.** Recognising a large batch is
-slower — Vision hands one request most of the machine and makes concurrent
-requests wait, where the old arrangement ran a separate program per file. A
-232-document run went from 75 minutes to 187. Single documents are unaffected.
-This is being fixed before release, not after.
+**One cost, found and then fixed before release rather than after.** Recognising
+a large batch got slower — Vision hands one request most of the machine and makes
+concurrent requests wait, where the old arrangement ran a separate program per
+file. A 232-document run went from 75 minutes to 187. Single documents were never
+affected.
+
+The fix keeps everything above and gets the speed back: **Vision OCR now runs
+recognition in a small helper program of its own, one per file being processed.**
+It is not the old dependency returning. It is ours, it ships inside the app with
+nothing to install, and it is handed page images this app has already drawn —
+never a PDF for something else to re-render, which is what caused the bug 1.10.1
+had to fix. If it is ever missing or goes wrong, the app simply recognises the
+document itself and says so in the log; nothing fails and nothing is lost.
+
+Measured before it was built: the same twelve page images take 14.0 seconds in one
+process and 6.3 seconds across six. Inside one process, six at a time saves 8%.
 
 
 

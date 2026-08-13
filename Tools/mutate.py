@@ -94,6 +94,12 @@ CONSTANTS = [
     ("Flattener.swift", "maximumPageMegapixels", "400", "40000"),
     ("Flattener.swift", "maximumDeclaredImageSide", "200_000", "20_000_000_000"),
     ("Flattener.swift", "maximumThumbnailEdge", "4_000", "4_000_000"),
+    # R40. The bound on a silent helper. Made small rather than large: the
+    # failure worth guarding is the app giving up on a helper that is merely
+    # working, which sends every document round a second time in-process and
+    # hands back exactly the 2.5x R40 exists to remove. The parity check notices,
+    # because it asserts recognition did *not* fall back.
+    ("Recogniser.swift", "helperStallSeconds", "300.0", "0.001"),
 ]
 
 # Single-token logic edits in code written to close a defect. Each one undoes a
@@ -135,6 +141,12 @@ OPERATORS = [
     # is wrong — with no language named, Vision falls back to a default list
     # instead of detecting, which no character count on English material would
     # notice.
+    # R40. Which batches get helper processes. Widened rather than removed: a
+    # helper for a single file is the case the measurement rejected — it pays
+    # Vision's ~0.20s start-up twice and overlaps with nothing — and "always on"
+    # is the mistake a reader of this code is most likely to make.
+    ("Recogniser.swift", "concurrency > 1 && files > 1", "concurrency > 0 && files > 0",
+     "R40-helper-eligibility"),
     ("Recogniser.swift",
      "request.automaticallyDetectsLanguage = languages.isEmpty",
      "request.automaticallyDetectsLanguage = false",

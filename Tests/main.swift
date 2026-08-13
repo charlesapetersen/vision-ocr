@@ -2690,6 +2690,411 @@ do {
     resetPrefs()
 }
 
+print("\nevery recognition setting reaches the helper")
+
+do {
+    // The sibling of the block above, and it exists for the same reason. R40
+    // moved recognition into a helper process, so there are now two ways for a
+    // setting the panel offers to fail to reach the engine: not being put on the
+    // request, and not surviving the handover to the process that builds it.
+    // `ocrAllPages` is what the first one looks like; this is the second.
+    resetPrefs()
+    var base = Prefs.Snapshot.current()
+    base.languages = ""
+    base.customWords = ""
+    base.minTextHeightOn = false
+    base.fast = false
+    base.languageCorrection = true
+    base.confidence = 0
+
+    // Every field the request check enumerates, **plus confidence** — which is
+    // deliberately listed there as "not a recognition setting" because it is
+    // applied to the observations rather than by the request. That makes it
+    // exactly the one a handover could drop without any request-level check
+    // noticing, and a helper that dropped it would hand back text the user had
+    // set a threshold to discard.
+    let helperChanges: [String: (inout Prefs.Snapshot) -> Void] = [
+        "fast": { $0.fast = true },
+        "languageCorrection": { $0.languageCorrection = false },
+        "languages": { $0.languages = "de-DE" },
+        "customWords": { $0.customWords = "Boltanski" },
+        "minTextHeight": { $0.minTextHeightOn = true; $0.minTextHeight = 0.05 },
+        "minTextHeightOn": { $0.minTextHeightOn = true; $0.minTextHeight = 0.05 },
+        "confidence": { $0.confidence = 0.4 },
+    ]
+
+    func describeRequest(_ r: VNRecognizeTextRequest) -> String {
+        "level=\(r.recognitionLevel.rawValue) correction=\(r.usesLanguageCorrection) "
+        + "languages=\(r.recognitionLanguages.joined(separator: ",")) "
+        + "detect=\(r.automaticallyDetectsLanguage) "
+        + "words=\(r.customWords.joined(separator: ",")) "
+        + "minHeight=\(r.minimumTextHeight) revision=\(r.revision)"
+    }
+
+    let baseArguments = Recogniser.helperArguments(base)
+    for (field, mutate) in helperChanges.sorted(by: { $0.key < $1.key }) {
+        var changed = base
+        mutate(&changed)
+        check("changing \(field) changes the helper's arguments",
+              Recogniser.helperArguments(changed) != baseArguments,
+              Recogniser.helperArguments(changed).joined(separator: " "))
+
+        // Changing them is not enough — the far side has to read back the same
+        // engine. This compares the *request the helper would build*, which is
+        // the thing the corpus baseline is a measurement of.
+        guard let back = Recogniser.helperSettings(from: Recogniser.helperArguments(changed))
+        else {
+            check("\(field) survives the round trip through the arguments", false,
+                  "the arguments did not parse")
+            continue
+        }
+        check("\(field) survives the round trip through the arguments",
+              describeRequest(Recogniser.makeRequest(back))
+                  == describeRequest(Recogniser.makeRequest(changed))
+                  && back.confidence == changed.confidence,
+              describeRequest(Recogniser.makeRequest(back)) + " conf=\(back.confidence)")
+    }
+
+    // The two list fields carry whatever the user typed, so a value is allowed
+    // to look like a flag. Pairwise parsing is what makes that safe, and this is
+    // the check that keeps it pairwise.
+    var awkward = base
+    awkward.languages = "--fast"
+    awkward.customWords = "--manifest --out"
+    let parsedAwkward = Recogniser.helperSettings(from: Recogniser.helperArguments(awkward))
+    check("a setting whose value looks like a flag survives",
+          parsedAwkward?.languages == "--fast"
+              && parsedAwkward?.customWords == "--manifest --out",
+          "\(parsedAwkward?.languages ?? "nil") / \(parsedAwkward?.customWords ?? "nil")")
+
+    // Malformed input returns nil rather than a half-filled settings object: the
+    // helper then exits, and the app recognises the document itself. Guessing at
+    // a missing field would mean recognising with settings nobody chose.
+    check("an odd number of arguments is refused",
+          Recogniser.helperSettings(from: ["--fast"]) == nil)
+    check("a value where a flag should be is refused",
+          Recogniser.helperSettings(from: ["--fast", "1", "oops", "1"]) == nil)
+    check("a missing setting is refused",
+          Recogniser.helperSettings(from: ["--fast", "1"]) == nil)
+    check("a non-numeric confidence is refused",
+          Recogniser.helperSettings(
+            from: Recogniser.helperArguments(base).map { $0 == "0.0" ? "yes" : $0 }) == nil)
+    check("a full argument list is accepted",
+          Recogniser.helperSettings(from: Recogniser.helperArguments(base)) != nil)
+    resetPrefs()
+}
+
+print("\na helper is only worth it when there is something to overlap with")
+
+do {
+    // The decision `start()` makes. Checked here rather than by driving a batch,
+    // because as an inlined condition it was reachable only through the whole
+    // model — and a decision nothing can reach is a decision nothing checks.
+    check("a batch of several files at several at a time uses helpers",
+          Recogniser.helperIsWorthIt(concurrency: 6, files: 12))
+    check("two files at two at a time is already worth it",
+          Recogniser.helperIsWorthIt(concurrency: 2, files: 2))
+    // Both inverse rows (CONTRIBUTING 4d): the property must also switch *off*,
+    // or "always yes" would satisfy the table.
+    check("one file is not, however high the concurrency",
+          !Recogniser.helperIsWorthIt(concurrency: 12, files: 1))
+    check("…nor many files with the concurrency turned down to one",
+          !Recogniser.helperIsWorthIt(concurrency: 1, files: 255))
+    check("…nor an empty batch", !Recogniser.helperIsWorthIt(concurrency: 6, files: 0))
+}
+
+print("\nthe helper recognises exactly what the app would")
+
+do {
+    // The property the whole change rests on. R40's fix is only safe because the
+    // helper compiles `Recogniser.recognise` — the app's own function — rather
+    // than reimplementing it, and this is what says so out loud: the same
+    // bitmaps, through the same entry point, both ways, compared field by field.
+    // "Both routes agree" is the only evidence that the corpus figures measured
+    // before this change still describe the pipeline after it.
+    let dir = tmp.appendingPathComponent("r40-parity")
+    try? FileManager.default.removeItem(at: dir)
+    let pngs = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["The helper and the app", "must agree exactly",
+                                       "including digits 1234567890"])
+    let rebuilt = dir.appendingPathComponent("rebuilt.pdf")
+    let bitmaps = (try? Flattener.flatten(source, to: rebuilt, mode: .blackAndWhite,
+                                          pngDirectory: pngs)) ?? []
+    check("the parity fixture rebuilt", !bitmaps.isEmpty, "\(bitmaps.count)")
+
+    let settings = Prefs.Snapshot.current()
+    check("the suite was given a helper to test",
+          Recogniser.helperPath() != nil,
+          "VISIONOCR_HELPER is unset or does not point at a runnable file")
+
+    var fellBack: [String] = []
+    let viaHelper = try? Recogniser.recogniseDocument(
+        visible: rebuilt, bitmaps: bitmaps, settings: settings, useHelper: true,
+        onFallback: { fellBack.append($0) })
+    // Without this the comparison below would pass by testing the in-process
+    // path against itself — the shape of the duplicate-of-the-thing-under-test
+    // that an earlier review round found agreeing with itself by construction.
+    check("recognition went to the helper rather than falling back",
+          fellBack.isEmpty, fellBack.joined(separator: "; "))
+
+    let inProcess = try? Recogniser.recogniseDocument(
+        visible: rebuilt, bitmaps: bitmaps, settings: settings, useHelper: false)
+
+    check("both routes returned the same pages",
+          viaHelper?.keys.sorted() == inProcess?.keys.sorted(),
+          "\(viaHelper?.keys.sorted() ?? []) vs \(inProcess?.keys.sorted() ?? [])")
+    check("the helper found something to compare", (viaHelper?[1]?.count ?? 0) > 0,
+          "\(viaHelper?[1]?.count ?? 0) observations")
+
+    var differences = 0, compared = 0
+    for page in (inProcess ?? [:]).keys.sorted() {
+        let mine = inProcess?[page] ?? [], theirs = viaHelper?[page] ?? []
+        if mine.count != theirs.count { differences += 1; continue }
+        for (a, b) in zip(mine, theirs) {
+            compared += 1
+            if a.text != b.text || a.confidence != b.confidence
+                || a.boundingBox.x != b.boundingBox.x
+                || a.boundingBox.y != b.boundingBox.y
+                || a.boundingBox.width != b.boundingBox.width
+                || a.boundingBox.height != b.boundingBox.height { differences += 1 }
+        }
+    }
+    // Exactly equal, not nearly. The boxes are doubles that went through JSON,
+    // and "close enough" here would be a licence for the text layer to drift.
+    check("every observation matches to the last digit",
+          differences == 0 && compared > 0, "\(differences) of \(compared) differ")
+
+    // **And again down the colour route.** The check above only ever sees
+    // 1-bit PNGs, and the other thing `flatten` emits is a three-channel JPEG —
+    // 23 of the 232 corpus documents carry one. It is the same `loadImage` on
+    // both sides, so this should hold by construction; "should hold by
+    // construction" is what the corpus gate keeps disproving, and a decode that
+    // differed on colour would move the text layer on exactly the pages whose
+    // geometry is hardest to eyeball.
+    let colourDir = dir.appendingPathComponent("colour")
+    let colourPNGs = colourDir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: colourPNGs, withIntermediateDirectories: true)
+    let colourSource = colourDir.appendingPathComponent("plate.pdf")
+    var plateBox = CGRect(x: 0, y: 0, width: 612, height: 792)
+    if let c = CGContext(colourSource as CFURL, mediaBox: &plateBox, nil) {
+        c.beginPDFPage(nil)
+        c.setFillColor(CGColor(gray: 1, alpha: 1))
+        c.fill(plateBox)
+        let font = CTFontCreateWithName("Helvetica" as CFString, 22, nil)
+        var y: CGFloat = 720
+        for line in ["Parity across the colour route", "must hold as it does in 1-bit",
+                     "digits 1234567890 and more words"] {
+            let attributed = NSAttributedString(string: line, attributes: [
+                .font: font, .foregroundColor: CGColor(gray: 0, alpha: 1)])
+            c.textPosition = CGPoint(x: 60, y: y)
+            CTLineDraw(CTLineCreateWithAttributedString(attributed), c)
+            y -= 34
+        }
+        // Continuous tone, which is what sends a page down the picture path.
+        for x in stride(from: 0, to: 552, by: 1) {
+            for band in 0..<3 {
+                let t = Double(x) / 552.0
+                c.setFillColor(CGColor(red: t, green: 0.4 + 0.3 * Double(band),
+                                       blue: 1 - t, alpha: 1))
+                c.fill(CGRect(x: 30 + CGFloat(x), y: 120 + CGFloat(band) * 150,
+                              width: 1, height: 148))
+            }
+        }
+        c.endPDFPage(); c.closePDF()
+    }
+    let colourBitmaps = (try? Flattener.flatten(
+        colourSource, to: colourDir.appendingPathComponent("rebuilt.pdf"),
+        mode: .auto, pngDirectory: colourPNGs)) ?? []
+    // Without this the comparison below would be a second bilevel run wearing a
+    // different name.
+    check("the colour fixture really routed to a JPEG page",
+          colourBitmaps.contains { if case .jpeg = $0.content { return true }; return false },
+          colourBitmaps.map { if case .jpeg = $0.content { return "jpeg" } else { return "bilevel" } }
+            .joined(separator: ", "))
+
+    var colourFellBack: [String] = []
+    let colourHelper = try? Recogniser.recogniseDocument(
+        visible: colourDir.appendingPathComponent("rebuilt.pdf"), bitmaps: colourBitmaps,
+        settings: settings, useHelper: true, onFallback: { colourFellBack.append($0) })
+    let colourInProcess = try? Recogniser.recogniseDocument(
+        visible: colourDir.appendingPathComponent("rebuilt.pdf"), bitmaps: colourBitmaps,
+        settings: settings, useHelper: false)
+    check("the colour page went to the helper too", colourFellBack.isEmpty,
+          colourFellBack.joined(separator: "; "))
+
+    var colourDifferences = 0, colourCompared = 0
+    for page in (colourInProcess ?? [:]).keys.sorted() {
+        let mine = colourInProcess?[page] ?? [], theirs = colourHelper?[page] ?? []
+        if mine.count != theirs.count { colourDifferences += 1; continue }
+        for (a, b) in zip(mine, theirs) {
+            colourCompared += 1
+            if a.text != b.text || a.confidence != b.confidence
+                || a.boundingBox.x != b.boundingBox.x
+                || a.boundingBox.y != b.boundingBox.y
+                || a.boundingBox.width != b.boundingBox.width
+                || a.boundingBox.height != b.boundingBox.height { colourDifferences += 1 }
+        }
+    }
+    check("a JPEG page decodes to the same observations both ways",
+          colourDifferences == 0 && colourCompared > 0,
+          "\(colourDifferences) of \(colourCompared) differ")
+}
+
+print("\na helper that misbehaves costs time, never content")
+
+do {
+    // CONTRIBUTING 4c — the error branches only exist if something makes them
+    // run. Each of these is a helper that fails in a different way, and the
+    // property under test is the same one every time: the app notices, and it
+    // never accepts a short answer. R40's helper is deliberately not
+    // authoritative about failure, so all of these must degrade to recognising
+    // in-process rather than failing a file.
+    let dir = tmp.appendingPathComponent("r40-faults")
+    try? FileManager.default.removeItem(at: dir)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+    func fakeHelper(_ name: String, _ body: String) -> String {
+        let url = dir.appendingPathComponent("\(name).sh")
+        // $2 is the manifest and $4 the output directory: the app always passes
+        // --manifest and --out first, which is what makes these scripts short.
+        try? Data("#!/bin/bash\nout=\"$4\"\n\(body)\n".utf8).write(to: url)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755],
+                                               ofItemAtPath: url.path)
+        return url.path
+    }
+
+    // Two page images that exist, so nothing fails for the wrong reason.
+    let pngs = dir.appendingPathComponent("pages")
+    try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["fault injection"])
+    _ = try? Flattener.flatten(source, to: dir.appendingPathComponent("r.pdf"),
+                               mode: .blackAndWhite, pngDirectory: pngs)
+    let images = ((try? FileManager.default.contentsOfDirectory(
+        at: pngs, includingPropertiesForKeys: nil)) ?? [])
+        .filter { $0.pathExtension == "png" }.sorted { $0.path < $1.path }
+    let two = images.isEmpty ? [] : [images[0], images[0]]
+    check("the fault-injection fixture has page images", !two.isEmpty, "\(images.count)")
+
+    let settings = Prefs.Snapshot.current()
+    func run(_ helper: String, stall: Double = 300,
+             cancelled: Bool = false) -> Result<[Int: [SearchableWriter.Observation]], Error> {
+        Result { try Recogniser.recogniseViaHelper(
+            images: two, settings: settings, helper: helper, stallSeconds: stall,
+            isCancelled: { cancelled }) }
+    }
+
+    func failed(_ result: Result<[Int: [SearchableWriter.Observation]], Error>) -> String? {
+        if case .failure(let error) = result { return error.localizedDescription }
+        return nil
+    }
+
+    check("a helper that exits non-zero is refused",
+          failed(run(fakeHelper("exits", "exit 7")))?.contains("code 7") == true,
+          failed(run(fakeHelper("exits", "exit 7"))) ?? "it succeeded")
+
+    // Invariant 1, at the point the gap is visible. A short dictionary here
+    // would compose as a document with untexted pages and publish.
+    check("a helper that returns fewer pages than it was given is refused",
+          failed(run(fakeHelper("short", """
+              printf '{"observations":[]}' > "$out/0.json"
+              echo 0
+              exit 0
+              """)))?.contains("page 2 of 2") == true,
+          failed(run(fakeHelper("short", """
+              printf '{"observations":[]}' > "$out/0.json"
+              echo 0
+              """))) ?? "it succeeded")
+
+    check("a helper whose output cannot be parsed is refused",
+          failed(run(fakeHelper("garbled", """
+              printf 'not json at all' > "$out/0.json"
+              printf 'not json at all' > "$out/1.json"
+              """)))?.contains("page 1") == true,
+          failed(run(fakeHelper("garbled", """
+              printf 'not json' > "$out/0.json"
+              printf 'not json' > "$out/1.json"
+              """))) ?? "it succeeded")
+
+    // The bound is on silence, not on the run: a real book is minutes of work.
+    let stalledStart = DispatchTime.now()
+    let stalled = run(fakeHelper("stalls", "sleep 30"), stall: 1)
+    let stalledSeconds = Double(DispatchTime.now().uptimeNanoseconds
+                                - stalledStart.uptimeNanoseconds) / 1e9
+    check("a helper that goes silent is given up on",
+          failed(stalled)?.contains("stopped responding") == true,
+          failed(stalled) ?? "it succeeded")
+    check("…and is not waited out", stalledSeconds < 15, "\(stalledSeconds)s")
+
+    // Noise on stdout moves a progress bar wrongly and nothing else. This is the
+    // property that separates this protocol from mac-ocr's, where the page count
+    // came from counting streamed lines and a garbled one lost a page.
+    let noisy = run(fakeHelper("noisy", """
+        echo "starting up, which is not a page number"
+        printf '{"observations":[]}' > "$out/0.json"
+        echo 0
+        echo "-1"
+        echo "9999"
+        printf '{"observations":[]}' > "$out/1.json"
+        echo 1
+        """))
+    check("junk on the helper's stdout does not lose a page",
+          (try? noisy.get())?.keys.sorted() == [1, 2],
+          "\((try? noisy.get())?.keys.sorted() ?? [])")
+
+    // Cancelling must not be read as a broken helper: falling back would send
+    // the whole document round again in-process, which is the opposite of what
+    // the user asked for.
+    let cancelled = run(fakeHelper("fine", """
+        printf '{"observations":[]}' > "$out/0.json"
+        printf '{"observations":[]}' > "$out/1.json"
+        """), cancelled: true)
+    check("cancelling throws a cancellation, not a helper failure",
+          { if case .failure(let e) = cancelled { return e as? Recogniser.Failure == .cancelled }
+            return false }(),
+          failed(cancelled) ?? "it succeeded")
+
+    // U2. A child the app forgets is a child that outlives a quit.
+    let control = RunControl()
+    var seen = 0
+    _ = try? control.adopting { register in
+        _ = try Recogniser.recogniseViaHelper(
+            images: two, settings: settings, helper: fakeHelper("adopted", """
+                printf '{"observations":[]}' > "$out/0.json"
+                printf '{"observations":[]}' > "$out/1.json"
+                """),
+            register: { process in seen += 1; register(process) })
+    }
+    check("the helper is adopted so a quit can stop it", seen == 1, "\(seen)")
+    check("…and released again, so a batch does not accumulate them",
+          control.adoptedCount == 0, "\(control.adoptedCount)")
+
+    // And the whole point: a broken helper is slower, not fatal. Same call the
+    // pipeline makes, with the override pointed at a helper that always fails.
+    let saved = ProcessInfo.processInfo.environment["VISIONOCR_HELPER"]
+    setenv("VISIONOCR_HELPER", fakeHelper("always-fails", "exit 9"), 1)
+    check("a broken helper is found and used", Recogniser.helperPath() != nil)
+    var told: [String] = []
+    let recovered = try? Recogniser.recogniseDocument(
+        visible: dir.appendingPathComponent("r.pdf"),
+        bitmaps: (try? Flattener.flatten(source, to: dir.appendingPathComponent("r2.pdf"),
+                                         mode: .blackAndWhite, pngDirectory: pngs)) ?? [],
+        settings: settings, useHelper: true, onFallback: { told.append($0) })
+    check("a document whose helper fails is still recognised",
+          (recovered?[1]?.isEmpty == false), "\(recovered?[1]?.count ?? -1) observations")
+    check("…and the fallback says so rather than going quiet",
+          told.count == 1 && told[0].contains("code 9"), told.joined(separator: "; "))
+
+    setenv("VISIONOCR_HELPER", "/nonexistent/visionocr-recognise", 1)
+    check("an override that names nothing runnable finds no helper",
+          Recogniser.helperPath() == nil)
+    if let saved { setenv("VISIONOCR_HELPER", saved, 1) } else { unsetenv("VISIONOCR_HELPER") }
+    check("the suite's own helper is back", Recogniser.helperPath() != nil)
+}
+
 print("\na photograph that says it is sideways is read as sideways")
 
 do {
@@ -5454,6 +5859,7 @@ do {
         elapsed: 3671,
         settings: snapshot,
         rebuildImages: true, rebuildMode: .auto, concurrency: 6,
+        recognitionInHelpers: true,
         destination: URL(fileURLWithPath: "/tmp/out"),
         inputs: [a, b, c, e],
         outcomes: [a: .succeeded, b: .failed, c: .cancelled],
@@ -5480,6 +5886,18 @@ do {
     // A report is a file people mail to whoever is helping them.
     check("the password is never in the report",
           !text.contains("hunter2") && text.contains("Password") && text.contains("(set)"))
+
+    // R40. Two runs of the same files with the same settings can differ by 2.5x
+    // in wall clock depending on this alone, and nothing else in the report
+    // would say which one it was.
+    check("the report says where recognition ran",
+          text.contains("Recognition runs in") && text.contains("helper processes"),
+          text.split(separator: "\n").first { $0.contains("Recognition runs in") }
+            .map(String.init) ?? "absent")
+    var inTheApp = context
+    inTheApp.recognitionInHelpers = false
+    check("…and says the slow way when that is what happened",
+          RunReport.text(inTheApp).contains("the app itself"))
 
     // CONTRIBUTING 4d — enumerate, do not reason about pairs. A setting added
     // to `Snapshot` and forgotten here makes every later report quietly wrong

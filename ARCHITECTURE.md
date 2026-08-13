@@ -43,9 +43,24 @@ from [`makeSearchablePDF`](Sources/Model.swift#L438):
    This is what removes an old text layer. The `onPage` callback runs
    [`JBIG2.encode`](Sources/JBIG2.swift#L75) immediately and deletes the PNG, so
    bitmaps don't accumulate.
-6. **Recognise** — [`Runner.runStreaming`](Sources/Runner.swift#L199) with
-   `--format jsonl`. One page per line as it arrives; that stream is the only
-   progress signal a 200-page book gives.
+6. **Recognise** — [`Recogniser.recogniseDocument`](Sources/Recogniser.swift),
+   over the bitmaps step 5 just wrote. Two routes, and they produce identical
+   observations because they run the same function:
+   - **In a helper process** (`recogniseViaHelper` → `visionocr-recognise`) when
+     the batch has something to overlap with, which is `helperIsWorthIt`: more
+     than one file, more than one at a time. The helper gets a manifest of
+     bitmap paths, writes one JSON file of observations per page, and prints each
+     page index as it finishes. That index stream is *only* the progress signal —
+     what gets published is read back from the files and checked page by page, so
+     a garbled line moves a progress bar and cannot lose a page. This is R40: one
+     process per file, because Vision does not parallelise across concurrent
+     requests inside one.
+   - **In this process**, page by page, otherwise — a single-file batch, no
+     helper in the bundle, or a helper that failed. Any helper trouble falls back
+     here and says so in the log; the helper is never authoritative about failure.
+
+   Either way `Recogniser.recognise` is the one implementation, and cancellation
+   **throws** rather than returning a short dictionary.
 7. **Write the layer** —
    [`SearchableWriter.compose`](Sources/SearchableWriter.swift#L123), via
    [`deduplicated`](Sources/SearchableWriter.swift#L267),

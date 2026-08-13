@@ -975,13 +975,26 @@ final class OCRModel: ObservableObject {
         let control = RunControl()
         self.control = control
 
-        // mac-ocr already parallelises pages inside one file, but that leaves
-        // cores idle; running several files at once is ~3x faster. An
-        // OperationQueue rather than a TaskGroup because Runner.run blocks on
-        // waitUntilExit, and blocking Swift-concurrency's cooperative threads
-        // is exactly what it asks you not to do.
+        // Running several files at once is ~3x faster than one at a time. An
+        // OperationQueue rather than a TaskGroup because the per-file work
+        // blocks on children, and blocking Swift-concurrency's cooperative
+        // threads is exactly what it asks you not to do.
         let limit = max(1, min(UserDefaults.standard.integer(forKey: Prefs.concurrency),
                                Prefs.maxConcurrency))
+
+        // **Where the ~3x actually comes from.** It was never threads: Vision
+        // does not parallelise across concurrent requests inside one process
+        // (1.08x at six), so while recognition ran in-process this queue bought
+        // almost nothing and the corpus gate took 187 minutes against 75. It is
+        // process-level parallelism, and R40 puts it back by giving each file's
+        // recognition its own helper process. At most one helper per file in
+        // flight, so this queue's limit is also the helper count.
+        //
+        // Not worth it for a batch that cannot be concurrent: with one file, or
+        // with the setting turned down to one, there is nothing to overlap with
+        // and the helper would only pay Vision's ~0.20s start-up a second time.
+        let useHelper = Recogniser.helperIsWorthIt(concurrency: limit,
+                                                   files: batch.count)
         let opQueue = OperationQueue()
         opQueue.maxConcurrentOperationCount = limit
         opQueue.qualityOfService = .userInitiated
@@ -1061,6 +1074,18 @@ final class OCRModel: ObservableObject {
                 kind: .failure))
         }
 
+        // Said once for the batch, not once per file — a 255-file run would
+        // otherwise carry 255 copies of it. A build with no helper in it still
+        // works; it is just back to the throughput R40 is about, and going
+        // quiet about that is how a 2.5x regression shipped unnoticed once.
+        if useHelper, Recogniser.helperPath() == nil {
+            log.append(LogLine(
+                text: "The recognition helper is missing from this build, so "
+                    + "recognition cannot use more than one core at a time and "
+                    + "this batch will take considerably longer.",
+                kind: .info))
+        }
+
         let textExt = settings.textFormat.fileExtension
         let outputSuffix = isSearchable ? ".ocr" : ""
         let outputExt = isSearchable ? "pdf" : textExt
@@ -1105,7 +1130,10 @@ final class OCRModel: ObservableObject {
             // would produce a report of a run that had not finished.
             self.writeReport(batch: batch, leftOut: leftOut, settings: settings,
                              rebuildImages: needsRebuild, rebuildMode: rebuildMode,
-                             concurrency: limit, destination: destination)
+                             concurrency: limit,
+                             recognitionInHelpers: useHelper
+                                 && Recogniser.helperPath() != nil,
+                             destination: destination)
 
             if ok > 0,
                UserDefaults.standard.bool(forKey: Prefs.openWhenDone),
@@ -1137,6 +1165,16 @@ final class OCRModel: ObservableObject {
                         self?.stages[file] = (label, fraction)
                     }
                 }
+                // Said once per file at most, and only when something the user
+                // would want to know went differently — today, that recognition
+                // fell back out of its helper process and the batch is running
+                // slower than it should.
+                let notice: (String) -> Void = { text in
+                    DispatchQueue.main.async {
+                        self?.log.append(LogLine(
+                            text: "\(file.lastPathComponent): \(text)", kind: .info))
+                    }
+                }
 
                 if isSearchable {
                     Self.makeSearchablePDF(
@@ -1146,7 +1184,8 @@ final class OCRModel: ObservableObject {
                                 file.deletingPathExtension().lastPathComponent + ".ocr.pdf"),
                         rebuild: needsRebuild, rebuildMode: rebuildMode,
                         password: password, settings: settings,
-                        control: control, progress: note, report: report)
+                        control: control, useHelper: useHelper,
+                        progress: note, notice: notice, report: report)
                     return
                 }
 
@@ -1281,7 +1320,14 @@ final class OCRModel: ObservableObject {
         password: String?,
         settings: Prefs.Snapshot = .current(),
         control: RunControl,
+        /// Whether recognition may go to a helper process (R40). Decided by the
+        /// batch rather than here: a helper buys process-level parallelism, and
+        /// with one file in the batch there is nothing to be parallel *with* —
+        /// it would only pay Vision's ~0.20s start-up twice.
+        useHelper: Bool = false,
         progress: @escaping (String, Double) -> Void,
+        /// Something worth telling the user that is not this file's outcome.
+        notice: @escaping (String) -> Void = { _ in },
         report: @escaping (Runner.Result.Outcome, String) -> Void
     ) {
         // Shares of the wall clock, measured on a 22-page run: rebuilding and
@@ -1419,16 +1465,26 @@ final class OCRModel: ObservableObject {
         //    R39 was, and what U25's DPI negotiation existed to survive.
         let pageTotal = bitmaps.isEmpty ? PDFPageCount(visible) : bitmaps.count
         progress("Recognising page 0 of \(max(pageTotal, 0))", ocrShare(0, pageTotal))
-        let byPage: [Int: [SearchableWriter.Observation]]
+        // `var` only because `adopting` takes a closure and Swift will not let one
+        // initialise a `let` declared outside it. Assigned exactly once.
+        var byPage: [Int: [SearchableWriter.Observation]] = [:]
         do {
-            byPage = try Recogniser.recogniseDocument(
-                visible: visible, bitmaps: bitmaps, settings: settings,
-                password: password,
-                isCancelled: { control.isCancelled },
-                onPage: { done, total in
-                    progress("Recognising page \(done) of \(max(total, done))",
-                             ocrShare(done, total))
-                })
+            // `adopting`, not a bare `adopt`: the helper is a child, and quitting
+            // the app must not leave it running (U2). One adoption for one
+            // process, released structurally on the way out — the pairing the
+            // JBIG2 route had to learn after leaking one per page.
+            try control.adopting { register in
+                byPage = try Recogniser.recogniseDocument(
+                    visible: visible, bitmaps: bitmaps, settings: settings,
+                    password: password, useHelper: useHelper,
+                    isCancelled: { control.isCancelled },
+                    onPage: { done, total in
+                        progress("Recognising page \(done) of \(max(total, done))",
+                                 ocrShare(done, total))
+                    },
+                    register: register,
+                    onFallback: notice)
+            }
         } catch {
             // A cancellation surfaces here as a throw, exactly as it does from the
             // rebuild above, and is a cancellation rather than a broken file.
@@ -1759,7 +1815,8 @@ final class OCRModel: ObservableObject {
     /// same shape as the bug it fixes.
     private func writeReport(batch: [URL], leftOut: [URL], settings: Prefs.Snapshot,
                              rebuildImages: Bool, rebuildMode: Flattener.Mode,
-                             concurrency: Int, destination: URL?) {
+                             concurrency: Int, recognitionInHelpers: Bool,
+                             destination: URL?) {
         lastReport = nil
         guard UserDefaults.standard.bool(forKey: Prefs.writeRunReport) else { return }
         let finished = Date()
@@ -1775,6 +1832,7 @@ final class OCRModel: ObservableObject {
             rebuildImages: rebuildImages,
             rebuildMode: rebuildMode,
             concurrency: concurrency,
+            recognitionInHelpers: recognitionInHelpers,
             destination: destination,
             // `batch` is what ran; "Skip Those" hands `run` the remainder and
             // keeps the skipped ones out of it. Counting only `batch` would let

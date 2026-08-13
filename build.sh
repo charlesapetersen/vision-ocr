@@ -72,6 +72,38 @@ else
     Sources/*.swift
 fi
 
+# The recognition helper (R40). Vision does not parallelise across concurrent
+# requests inside one process — 1.08x at six threads — so a batch can only use
+# more than one core by using more than one process. This is that process: it
+# takes page bitmaps the app rendered and hands back observations.
+#
+# It compiles the app's own Sources/Recogniser.swift, deliberately. The corpus
+# baseline depends on the helper and the app recognising identically, and the
+# only way to guarantee that is for there to be one implementation. The file
+# list is the transitive closure Recogniser needs and nothing more — no views,
+# no model, so no SwiftUI in a command-line binary.
+HELPER_NAME="visionocr-recognise"
+HELPER_SOURCES=(
+  Sources/Prefs.swift Sources/Runner.swift Sources/Recogniser.swift
+  Sources/SearchableWriter.swift Sources/Flattener.swift Sources/JBIG2.swift
+  Helper/main.swift
+)
+HELPER="$APP/Contents/Resources/$HELPER_NAME"
+if [ "$UNIVERSAL" = 1 ]; then
+  echo "==> Compiling the recognition helper (universal: arm64 + x86_64)"
+  HELPER_SLICES=()
+  for slice in arm64 x86_64; do
+    swiftc -O -target "$slice-apple-macos13.0" \
+      -o "$BUILD_DIR/$HELPER_NAME.$slice" "${HELPER_SOURCES[@]}"
+    HELPER_SLICES+=("$BUILD_DIR/$HELPER_NAME.$slice")
+  done
+  lipo -create "${HELPER_SLICES[@]}" -output "$HELPER"
+  rm -f "${HELPER_SLICES[@]}"
+else
+  echo "==> Compiling the recognition helper ($ARCH)"
+  swiftc -O -target "$ARCH-apple-macos13.0" -o "$HELPER" "${HELPER_SOURCES[@]}"
+fi
+
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
@@ -135,7 +167,7 @@ echo "==> Signing (ad hoc)"
 if [ -d "$APP/Contents/Resources/lib" ]; then
   find "$APP/Contents/Resources/lib" -name '*.dylib' -exec codesign --force --sign - {} \;
 fi
-for helper in jbig2 qpdf; do
+for helper in jbig2 qpdf "$HELPER_NAME"; do
   [ -f "$APP/Contents/Resources/$helper" ] && codesign --force --sign - "$APP/Contents/Resources/$helper"
 done
 codesign --force --sign - --identifier "$BUNDLE_ID" "$APP"
@@ -214,7 +246,7 @@ if [ "$DMG" = 1 ]; then
   RES="$MP/$APP_NAME.app/Contents/Resources"
   # Checked only if bundled, since a build on a machine without them is
   # legitimate — the app falls back to CoreGraphics' Flate.
-  for tool in jbig2 qpdf; do
+  for tool in jbig2 qpdf "$HELPER_NAME"; do
     [ -x "$RES/$tool" ] || continue
     # Retried, briefly. A freshly attached image is not always ready to exec
     # from the instant `hdiutil attach` returns, and one release build failed

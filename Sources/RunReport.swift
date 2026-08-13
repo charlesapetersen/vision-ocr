@@ -76,6 +76,11 @@ enum RunReport {
         var rebuildImages: Bool
         var rebuildMode: Flattener.Mode
         var concurrency: Int
+        /// Whether recognition was set up to run in helper processes (R40).
+        /// Recorded because it is the difference between a batch taking an hour
+        /// and the same batch taking two and a half, and afterwards there is
+        /// nothing else in the report that would say which one happened.
+        var recognitionInHelpers: Bool
         var destination: URL?
         /// Input order, as dropped.
         var inputs: [URL]
@@ -145,6 +150,8 @@ enum RunReport {
                         ? "beside each original"
                         : (c.destination?.path ?? "(none)")))
         rows.append(("Files at once", "\(c.concurrency)"))
+        rows.append(("Recognition runs in",
+                     c.recognitionInHelpers ? "helper processes" : "the app itself"))
 
         if c.settings.mode == .searchablePDF {
             rows.append(("Rebuild page images", c.rebuildImages
@@ -206,7 +213,7 @@ enum RunReport {
     /// Rows that report something outside the snapshot, so the coverage check
     /// does not read them as unexplained.
     static let rowsOutsideTheSnapshot: Set<String> =
-        ["Files at once", "Rebuild page images"]
+        ["Files at once", "Rebuild page images", "Recognition runs in"]
 
     /// A path in `dir` that nothing is using, ` 2`, ` 3`… if the plain one is
     /// taken. The name has one-second resolution, and an atomic write to a name

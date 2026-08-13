@@ -6,10 +6,11 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**One open: R40** — batch throughput fell when recognition came in-process,
-because Vision does not parallelise across concurrent requests in one process.
-Correctness is unaffected and the gate proves it; the fix is specified in
-`TODO.md` and 1.11.0 is deliberately unreleased until it lands. R39 is `FIXED`,
+**Nothing is open.** R40 — batch throughput falling when recognition came
+in-process, because Vision does not parallelise across concurrent requests in
+one process — is `FIXED`: recognition runs in a helper process per file again,
+and the helper compiles the app's own `Recogniser.recognise` so the observations
+are identical by construction rather than by agreement. R39 is `FIXED`,
 and the fix it originally proposed was measured and refuted before a different,
 real defect was found underneath it. U23 and T8 close the fourth of the four ways this register
 kept producing defects from its own fixes; the other three got controls in the
@@ -2352,9 +2353,10 @@ about a total.
 comparison against the constant; killed by two checks. The doc comment on
 `recogniserDefaultDPI` now says what the constant is actually for.
 
-### R40 · Batch throughput fell when recognition came in-process — OPEN
-*(found 2026-08-12 by the corpus gate, before 1.11.0 was released; the fix is
-decided and specified in TODO.md)*
+### R40 · Batch throughput fell when recognition came in-process — FIXED
+*(found 2026-08-12 by the corpus gate, before 1.11.0 was released; fixed
+2026-08-12 by putting recognition back into a process per file — see "The fix,
+as built" at the end of this entry)*
 
 **The gate is 187 minutes against a 75-minute baseline.** Everything else it
 measures is unchanged or better — 232 of 232 succeeded, 0 failed, output
@@ -2390,16 +2392,78 @@ measured, that is 1.0x, for exactly the reason above. Both were caught by
 measuring the thing the pipeline actually does, which is this register's oldest
 lesson.
 
-**The fix, decided with the user: a pool of helper processes.** Specified in
-`TODO.md`. It is deliberately not a return to mac-ocr — the helper takes a
-bitmap we rendered and hands back observations, so there is no PDF handed over,
-no rasterisation we do not control, no DPI negotiation, and the quads and
-per-word boxes the CLI could never expose stay available.
+**The fix, decided with the user: a pool of helper processes.** It is
+deliberately not a return to mac-ocr — the helper takes a bitmap we rendered and
+hands back observations, so there is no PDF handed over, no rasterisation we do
+not control, no DPI negotiation, and the quads and per-word boxes the CLI could
+never expose stay available.
 
-**1.11.0 is not released.** The work is on `main` with the suite green and the
-gate's correctness figures recorded, and the changelog entry is marked
-unreleased, because shipping a 2.5x batch regression is not worth doing when the
-fix is specified and the next task after it is a sweep of a 16,079-file library.
+---
+
+#### The fix, as built
+
+`Helper/main.swift` builds `visionocr-recognise`, bundled beside `jbig2` and
+`qpdf`. It reads a manifest of page bitmaps, writes one JSON file of
+observations per page, and prints each page's index as it finishes.
+
+**It compiles the app's own `Recogniser.recognise`.** Not a copy — the same
+source file, in the helper's file list in `build.sh`. Every character count in
+the corpus baseline depends on the helper and the app doing identically the same
+thing, and one implementation is the only way to guarantee that. The suite
+checks it anyway, on both routes `flatten` can produce: **786 observations over
+12 corpus pages and every observation on a 1-bit page and a three-channel JPEG
+page match to the last digit** — text, confidence, and all four box components,
+which are doubles that have been through JSON.
+
+**One helper per document, not per page**, and that is a measurement rather than
+a preference. A process costs ~0.03s to launch and Vision ~0.20s to answer its
+first request — isolated on the same page in the same process: 1.400s, then
+1.238s, 1.211s, 1.157s. Per page that 0.23s is 19% of a typical page and would
+hand back a fifth of what this change is for; per document it is 0.23s against
+minutes.
+
+**The pool needs no pool.** `start()` already runs at most `Prefs.concurrency`
+files at once and each holds at most one helper, so the process count *is* the
+setting, by construction. `helperIsWorthIt` declines below two files or a
+concurrency of one, where there is nothing to overlap with and the only effect
+would be paying Vision's start-up twice.
+
+**Process-level parallelism was re-measured before any of this was built**,
+because the whole design rests on it and the evidence for it was mac-ocr's
+history rather than a number: the same 12 page images take **14.00s in one
+process and 6.28s across six — 2.23x**, against the 1.08x six threads buy inside
+one process.
+
+**The helper is never authoritative about failure.** Every way it can go wrong —
+absent, unstartable, exits non-zero, goes silent, returns unparseable output,
+returns *fewer pages than it was given* — throws, and the app recognises the
+document itself and says so in the log. So the worst a bug in the helper can
+cost is time; it cannot fail a file that would otherwise succeed, and it cannot
+publish a document with pages missing. The one exception is cancellation, which
+must not fall back: redoing the work in-process is the opposite of what the user
+asked for, and a helper killed by a cancel exits non-zero, which is why the
+cancellation is checked *before* the exit status.
+
+Six of those paths are exercised by fake helpers in the suite rather than
+reasoned about (CONTRIBUTING 4c), and the three that guard content were put back
+as defects and watched to fail first: dropping `--confidence` from the argument
+list, skipping a missing page result instead of refusing it, and a helper
+returning one observation fewer than the app. Each was caught by exactly the
+check written for it and nothing else moved.
+
+**What is *not* covered, deliberately.** Extract Text and the no-rebuild route
+still recognise in-process. Both render pages in memory, so a helper would have
+to encode and write every page first; neither is the default, and neither is
+what the corpus gate or the library sweep exercises. Recorded here rather than
+left to be discovered.
+
+**The register's own lesson, applied to the instrument.** `Tools/score-gate.swift`
+now prints whether the run it is about to do will use helpers, because a gate
+without one measures the 187-minute configuration while looking exactly like a
+75-minute one. The first version of that line reported the helper as *available*
+and said nothing about whether the batch would reach for it — which on a
+one-document run is the wrong answer, and is the same class of mistake as the
+three timings that were polluted while this entry was being written.
 
 ---
 

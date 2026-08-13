@@ -160,7 +160,45 @@ exec /usr/bin/hdiutil "$@"')"
   fi
 }
 
-FAULTS="relocate build_continues missing_licence detach_fails"
+# R40. The recognition helper is compiled by build.sh out of the app's own
+# sources. Both halves matter and only one of them is obvious:
+#
+#  - A helper that will not compile must STOP the build. An app with no helper
+#    still works — recognition falls back into the app — so this is precisely
+#    the failure that ships quietly, and shipping it costs the 2.5x that R40
+#    exists to remove.
+#  - The inverse row (CONTRIBUTING 4d): a clean build must actually produce a
+#    helper that RUNS. A case that only checks the sabotaged build would pass on
+#    a build.sh that had stopped emitting a helper at all.
+fault_helper() {
+  local name="build.sh stops when the recognition helper will not compile"
+  sandbox
+  cp "$SB/Helper/main.swift" "$SB/Helper/main.swift.good"
+  printf '\nlet brokenOnPurpose: Int = "not an Int"\n' >> "$SB/Helper/main.swift"
+  local out rc
+  out="$(cd "$SB" && ./build.sh 2>&1)"; rc=$?
+  if [ "$rc" -eq 0 ]; then
+    bad "$name" "build.sh exited 0 with a helper that does not compile"
+  else
+    ok "$name"
+  fi
+
+  name="…and a clean build leaves a helper that runs with no environment"
+  mv "$SB/Helper/main.swift.good" "$SB/Helper/main.swift"
+  out="$(cd "$SB" && ./build.sh 2>&1)"; rc=$?
+  local h="$SB/build/VisionOCR.app/Contents/Resources/visionocr-recognise"
+  if [ "$rc" -ne 0 ]; then
+    bad "$name" "the restored build failed: $(tail -1 <<<"$out")"
+  elif [ ! -x "$h" ]; then
+    bad "$name" "no helper in Contents/Resources"
+  elif ! env -i PATH=/usr/bin:/bin "$h" --version 2>&1 | grep -q "revision"; then
+    bad "$name" "the bundled helper did not answer --version"
+  else
+    ok "$name"
+  fi
+}
+
+FAULTS="relocate build_continues missing_licence detach_fails helper"
 
 if [ "${1:-}" = "--list" ]; then
   for f in $FAULTS; do echo "  $f"; done; exit 0

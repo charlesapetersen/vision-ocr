@@ -126,14 +126,20 @@ enum SearchableWriter {
         let observations: [Observation]
     }
 
-    struct Observation: Decodable {
+    /// **`Encodable` as well, because the recognition helper writes these.**
+    /// R40's helper process recognises a page and hands the observations back as
+    /// JSON, and the app decodes them into this same type — so the two halves of
+    /// that round trip are one declaration rather than two that agree today.
+    /// `Codable`'s synthesis is what keeps them in step: a field added here
+    /// appears on both sides or on neither.
+    struct Observation: Codable {
         let boundingBox: BoundingBox
         let text: String
         let confidence: Double
     }
 
     /// Normalised to the page, with a top-left origin.
-    struct BoundingBox: Decodable {
+    struct BoundingBox: Codable {
         let x, y, width, height: Double
     }
 

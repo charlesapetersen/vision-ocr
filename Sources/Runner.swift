@@ -159,6 +159,51 @@ enum Runner {
         return path
     }
 
+    /// How a `drain` ended. Only `.eof` means the child said everything it had.
+    enum DrainOutcome { case eof, stopped, timedOut, failed }
+
+    /// Reads a pipe until EOF, a caller's stop, or a deadline — without ever
+    /// blocking past that deadline.
+    ///
+    /// **The one copy of this loop.** It used to be inlined in
+    /// `captureBounded`, which was itself written to replace the third copy of
+    /// the same thing; R40's helper wanted a fourth, so it was lifted out
+    /// instead. The subtleties it carries are all paid for: the read has to be
+    /// inside the bound (U18 — a `readDataToEndOfFile` before a `wait` returns
+    /// only when every writer on the pipe closes, so a shell that never exited
+    /// never reached the timeout meant to catch it), `EINTR` and `EAGAIN` are
+    /// resumptions rather than failures, and the poll is capped at 200 ms so a
+    /// stop is noticed promptly however far away the deadline is.
+    ///
+    /// `deadline` is a closure, not a value, because the two callers want
+    /// different clocks from the same loop: `captureBounded` wants a fixed
+    /// bound on the whole exchange, and the recognition helper wants a *stall*
+    /// bound that moves forward every time a page lands — a 600-page book is
+    /// legitimately minutes of work, and a total deadline long enough for it
+    /// would not catch a hang at all.
+    ///
+    /// Sets the descriptor non-blocking itself, so no caller can forget to.
+    static func drain(_ fd: Int32,
+                      deadline: () -> DispatchTime,
+                      shouldStop: () -> Bool = { false },
+                      onChunk: (ArraySlice<UInt8>) -> Void) -> DrainOutcome {
+        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK)
+        var buffer = [UInt8](repeating: 0, count: 4 * 1024)
+        while true {
+            if shouldStop() { return .stopped }
+            let remaining = secondsUntil(deadline())
+            if remaining <= 0 { return .timedOut }
+            var descriptor = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+            let ready = poll(&descriptor, 1, Int32(min(remaining * 1000, 200)))
+            if ready < 0 { if errno == EINTR { continue }; return .failed }
+            if ready == 0 { continue }
+            let n = buffer.withUnsafeMutableBytes { read(fd, $0.baseAddress, $0.count) }
+            if n == 0 { return .eof }
+            if n < 0 { if errno == EAGAIN || errno == EINTR { continue }; return .failed }
+            onChunk(buffer[0..<n])
+        }
+    }
+
     /// Runs a short command on the main thread and hands back its stdout, or
     /// nil if it failed, hung or was not exec'able.
     ///
@@ -190,36 +235,24 @@ enum Runner {
         do { try p.run() } catch { return nil }
 
         let fd = pipe.fileHandleForReading.fileDescriptor
-        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK)
         var data = Data()
-        var buffer = [UInt8](repeating: 0, count: 4 * 1024)
-        // Monotonic, for the reason `wait(for:upTo:)` gives eight lines below its
-        // own deadline: a wall clock steps in both directions and both are wrong
+        // Monotonic, for the reason `wait(for:upTo:)` gives below its own
+        // deadline: a wall clock steps in both directions and both are wrong
         // here. Forward — an NTP correction, or waking from sleep, which moves
         // `Date()` and not `DispatchTime` — abandons a healthy shell mid-probe,
         // and `locateTool` then memoises the absence for the whole session, so
-        // every later mac-ocr, jbig2 and qpdf lookup returns nil without
-        // re-probing. Backward extends the bound that exists to keep the main
-        // thread responsive. This function reached for `Date()` while the file
-        // it lives in already documented why not (R30).
+        // every later jbig2 and qpdf lookup returns nil without re-probing.
+        // Backward extends the bound that exists to keep the main thread
+        // responsive. This function reached for `Date()` while the file it lives
+        // in already documented why not (R30).
         let deadline = DispatchTime.now() + seconds
-        var sawEOF = false
-        while true {
-            let remaining = secondsUntil(deadline)
-            if remaining <= 0 { break }
-            var descriptor = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
-            let ready = poll(&descriptor, 1, Int32(min(remaining * 1000, 200)))
-            if ready < 0 { if errno == EINTR { continue }; break }
-            if ready == 0 { continue }
-            let n = buffer.withUnsafeMutableBytes { read(fd, $0.baseAddress, $0.count) }
-            if n == 0 { sawEOF = true; break }
-            if n < 0 { if errno == EAGAIN || errno == EINTR { continue }; break }
-            data.append(contentsOf: buffer[0..<n])
+        let outcome = drain(fd, deadline: { deadline }) { chunk in
+            data.append(contentsOf: chunk)
         }
         // No EOF inside the bound means something is still holding the pipe. The
         // answer is not worth waiting for, and `stop` takes the whole group so a
         // backgrounded grandchild goes with it.
-        guard sawEOF else {
+        guard outcome == .eof else {
             stop(p)
             return nil
         }
