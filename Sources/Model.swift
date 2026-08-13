@@ -1575,11 +1575,29 @@ final class OCRModel: ObservableObject {
                     var relayered = 0, savedBytes = 0
                     for index in encoded.indices {
                         if control.isCancelled { break }
-                        // Grey picture pages only. A colour page is three
-                        // channels and its layers have not been measured; a
-                        // bilevel page is already cheaper than MRC could be.
+                        // Any picture page, grey or colour. A bilevel page is
+                        // already cheaper than MRC could be and is skipped.
+                        //
+                        // R49. Colour pages were excluded here because their
+                        // layers had not been measured, and that exclusion was
+                        // the whole of a 14x inflation: an Internet Archive scan
+                        // of a 1971 monograph renders with its paper at luminance
+                        // 148 and a grey-green cast, which reads as colour on the
+                        // page, so all 568 text pages were kept in colour — and
+                        // colour was exactly the case that could not be layered.
+                        // 31 MB in, 437 MB out, every page a full-resolution
+                        // three-channel JPEG.
+                        //
+                        // Layering is the right answer rather than re-routing
+                        // those pages: whether that scan's cast is paper or ink
+                        // cannot be told from its luminance histogram — measured,
+                        // a flat-tinted plate with a dark subject on it is
+                        // indistinguishable from it on every tonal signal — so a
+                        // detector change would have to guess. This does not
+                        // guess. It keeps the page's colour, keeps its text at
+                        // full resolution in the stencil, and is taken only when
+                        // it is measurably smaller.
                         guard case .jpeg(let existing) = encoded[index].stream,
-                              !encoded[index].isColour,
                               let page = source.page(at: index),
                               let boxes = byPage[index + 1]?.map({ $0.boundingBox }),
                               !boxes.isEmpty else { continue }
@@ -1587,7 +1605,8 @@ final class OCRModel: ObservableObject {
                         guard let layers = Flattener.mrcLayers(
                             for: page, boxes: boxes, into: pngDir,
                             stem: String(format: "m%05d", index + 1),
-                            backgroundDownsample: settings.photoDetail.downsample)
+                            backgroundDownsample: settings.photoDetail.downsample,
+                            inColour: encoded[index].isColour)
                         else { continue }
                         let stencil = pngDir.appendingPathComponent(
                             String(format: "m%05d.jbig2", index + 1))
@@ -1624,10 +1643,14 @@ final class OCRModel: ObservableObject {
                                 backgroundWidth: layers.backgroundWidth,
                                 backgroundHeight: layers.backgroundHeight,
                                 foregroundWidth: layers.foregroundWidth,
-                                foregroundHeight: layers.foregroundHeight)),
+                                foregroundHeight: layers.foregroundHeight,
+                                // The layers', not the page's: a colour page
+                                // whose colour render failed is layered in grey.
+                                isColour: layers.isColour)),
                             pixelWidth: encoded[index].pixelWidth,
                             pixelHeight: encoded[index].pixelHeight,
-                            boxSize: encoded[index].boxSize)
+                            boxSize: encoded[index].boxSize,
+                            isColour: encoded[index].isColour)
                         try? FileManager.default.removeItem(at: existing)
                         relayered += 1
                         savedBytes += before - after

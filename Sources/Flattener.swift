@@ -1177,12 +1177,47 @@ enum Flattener {
     struct MRCLayers {
         /// 1-bit PNG of the text stencil, ready for jbig2enc.
         let mask: URL
-        /// 8-bit grey JPEGs. The background holds paper and pictures, the
-        /// foreground holds ink colour, and the stencil says which shows.
+        /// JPEGs, grey or three-channel as `isColour` says. The background holds
+        /// paper and pictures, the foreground holds ink colour, and the stencil
+        /// says which shows.
         let background: URL
         let foreground: URL
         let backgroundWidth: Int, backgroundHeight: Int
         let foregroundWidth: Int, foregroundHeight: Int
+        /// True when the two tone layers are three-channel. The assembled stream
+        /// dictionary has to agree: a three-channel JPEG declared /DeviceGray
+        /// draws as noise, and nothing reports it.
+        var isColour = false
+    }
+
+    /// Peak bytes per pixel while layering a *colour* page.
+    ///
+    /// Colour layering holds, at peak: the grey render the stencil comes from (1),
+    /// the RGBA render (4), the stencil, the text-region map and its inverse (3),
+    /// the channel plane being worked on and its filled copy (2), and inside
+    /// `fillHoles` a second copy of that plane plus two flag arrays (4) — about 14.
+    /// The three planes are taken and released one at a time, which is why this is
+    /// not three times the grey figure. The downsampled layers are small by
+    /// construction.
+    ///
+    /// **19.0 is that sum rounded up, not a measured peak RSS** — unlike
+    /// `measuredGreyBytesPerPixel` and `measuredColourBytesPerPixel`, which were
+    /// measured. It is deliberately above the arithmetic so the bound it feeds is
+    /// conservative, and it is named for what it is. The bound holds either way and
+    /// with room: the page is separately capped at `maximumColourPageMegapixels`
+    /// before it can ever be a colour page at all.
+    static let statedColourMRCBytesPerPixel = 19.0
+
+    /// Whether colour layering's worst case stays inside the render's, the same
+    /// property `mrcBoundIsWithinTheRenderOne` asserts for the grey route.
+    ///
+    /// It is bounded twice over, which is why the constant did not have to move:
+    /// a page only reaches colour layering by having been kept in colour, and
+    /// `shouldKeepColour` already refuses anything over
+    /// `maximumColourPageMegapixels` — the same 100.
+    static var colourMRCBoundIsWithinTheRenderOne: Bool {
+        Double(maximumMRCPageMegapixels) * statedColourMRCBytesPerPixel
+            <= Double(maximumPageMegapixels) * measuredGreyBytesPerPixel
     }
 
     /// Sauvola's local threshold: `t(x) = m(x) * (1 + k * (s(x)/128 - 1))`.
@@ -1360,9 +1395,17 @@ enum Flattener {
     /// JPEG it already had. A page that costs more is a far better outcome than
     /// a page that fails, and the alternative is a route whose failures are
     /// invisible until someone opens the book.
+    ///
+    /// `inColour` layers the page's three channels instead of its luminance, for
+    /// a page Automatic decided to keep in colour. It is the same decomposition
+    /// run once per channel — deliberately, rather than a colour-specific
+    /// algorithm: `fillHoles` and `downsample` are the two pieces whose constants
+    /// were measured, and reusing them per plane keeps that calibration rather
+    /// than inventing a second version of it to re-measure.
     static func mrcLayers(for page: PDFPage, boxes: [SearchableWriter.BoundingBox],
                           into directory: URL, stem: String,
-                          backgroundDownsample: Int = mrcBackgroundDownsample) -> MRCLayers? {
+                          backgroundDownsample: Int = mrcBackgroundDownsample,
+                          inColour: Bool = false) -> MRCLayers? {
         // No words means a plate with no text on it. An empty stencil would put
         // the whole page into a downsampled background — publishing a picture at
         // half its resolution for no compression benefit at all.
@@ -1387,18 +1430,71 @@ enum Flattener {
         guard mask.contains(true) else { return nil }
 
         let inverse = mask.map { !$0 }
-        let bgFull = fillHoles(grey, holes: mask, width: w, height: h, radius: 10)
-        let (bg, bw, bh) = downsample(bgFull, width: w, height: h,
-                                      by: max(backgroundDownsample, 1))
-        let fgFull = fillHoles(grey, holes: inverse, width: w, height: h, radius: 3)
-        let (fg, fw, fh) = downsample(fgFull, width: w, height: h, by: mrcForegroundDownsample)
 
+        // The stencil is the same either way: it comes from the luminance render,
+        // so a colour page's text is cut out exactly as a grey one's is.
         var maskPixels = [UInt8](repeating: 255, count: w * h)
         for i in 0..<(w * h) where mask[i] { maskPixels[i] = 0 }
-        guard let maskPNG = greyPNG(maskPixels, width: w, height: h),
-              let bgData = jpegData(from: bg, width: bw, height: bh, quality: pictureJPEGQuality),
-              let fgData = jpegData(from: fg, width: fw, height: fh, quality: pictureJPEGQuality)
-        else { return nil }
+        guard let maskPNG = greyPNG(maskPixels, width: w, height: h) else { return nil }
+
+        let bw: Int, bh: Int, fw: Int, fh: Int
+        let bgData: Data, fgData: Data
+        if inColour {
+            // Falls back to the grey layering rather than failing the page if the
+            // colour render does not come back: layering in colour is an
+            // improvement on layering, which is itself an improvement on the
+            // single JPEG. Nothing here is a requirement.
+            guard let rgba = renderRGB(page, box: box, scale: scale,
+                                       width: w, height: h, from: .mediaBox) else {
+                return mrcLayers(for: page, boxes: boxes, into: directory, stem: stem,
+                                 backgroundDownsample: backgroundDownsample,
+                                 inColour: false)
+            }
+            var background: [UInt8] = [], foreground: [UInt8] = []
+            var sizes: (bw: Int, bh: Int, fw: Int, fh: Int) = (0, 0, 0, 0)
+            for channel in 0..<3 {
+                // One plane at a time, and released before the next is taken, so
+                // three channels do not mean three times the peak.
+                var plane = [UInt8](repeating: 0, count: w * h)
+                for i in 0..<(w * h) { plane[i] = rgba[i * 4 + channel] }
+                let filledBG = fillHoles(plane, holes: mask, width: w, height: h, radius: 10)
+                let (bgPlane, pbw, pbh) = downsample(filledBG, width: w, height: h,
+                                                     by: max(backgroundDownsample, 1))
+                let filledFG = fillHoles(plane, holes: inverse, width: w, height: h, radius: 3)
+                let (fgPlane, pfw, pfh) = downsample(filledFG, width: w, height: h,
+                                                     by: mrcForegroundDownsample)
+                if channel == 0 {
+                    sizes = (pbw, pbh, pfw, pfh)
+                    background = [UInt8](repeating: 255, count: pbw * pbh * 4)
+                    foreground = [UInt8](repeating: 255, count: pfw * pfh * 4)
+                }
+                // A channel that came back a different size would interleave
+                // garbage into the other two rather than fail, so it is checked
+                // instead of assumed.
+                guard (pbw, pbh, pfw, pfh) == sizes else { return nil }
+                for i in 0..<(pbw * pbh) { background[i * 4 + channel] = bgPlane[i] }
+                for i in 0..<(pfw * pfh) { foreground[i * 4 + channel] = fgPlane[i] }
+            }
+            (bw, bh, fw, fh) = sizes
+            guard let bg = jpegRGB(from: background, width: bw, height: bh,
+                                   quality: pictureJPEGQuality)?.data,
+                  let fg = jpegRGB(from: foreground, width: fw, height: fh,
+                                   quality: pictureJPEGQuality)?.data
+            else { return nil }
+            bgData = bg; fgData = fg
+        } else {
+            let bgFull = fillHoles(grey, holes: mask, width: w, height: h, radius: 10)
+            let (bg, gbw, gbh) = downsample(bgFull, width: w, height: h,
+                                            by: max(backgroundDownsample, 1))
+            let fgFull = fillHoles(grey, holes: inverse, width: w, height: h, radius: 3)
+            let (fg, gfw, gfh) = downsample(fgFull, width: w, height: h,
+                                            by: mrcForegroundDownsample)
+            bw = gbw; bh = gbh; fw = gfw; fh = gfh
+            guard let b = jpegData(from: bg, width: bw, height: bh, quality: pictureJPEGQuality),
+                  let f = jpegData(from: fg, width: fw, height: fh, quality: pictureJPEGQuality)
+            else { return nil }
+            bgData = b; fgData = f
+        }
 
         let maskURL = directory.appendingPathComponent(stem + ".mask.png")
         let bgURL = directory.appendingPathComponent(stem + ".bg.jpg")
@@ -1411,7 +1507,8 @@ enum Flattener {
         }
         return MRCLayers(mask: maskURL, background: bgURL, foreground: fgURL,
                          backgroundWidth: bw, backgroundHeight: bh,
-                         foregroundWidth: fw, foregroundHeight: fh)
+                         foregroundWidth: fw, foregroundHeight: fh,
+                         isColour: inColour)
     }
 
     // MARK: - Resolution

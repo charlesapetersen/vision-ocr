@@ -293,6 +293,45 @@ something else rather than sold a setting.
 
 ## Likely worth doing
 
+### A spatial signal for the picture detector — NOT STARTED
+*(specified 2026-08-13 out of R49, which needed it and did not have it.)*
+
+The three picture signals — ink coverage, tone fraction, saturation — are all
+**histogram** statistics, and R49 established by measurement that a histogram
+cannot answer the question they are being asked. A page of text and a tinted plate
+with a subject on it are the same histogram:
+
+| | brightMean / darkMean | brightFraction |
+|---|---|---|
+| low-key text page (`Blacks in the City`) | 3.002–3.458 | 0.896–0.924 |
+| flat sepia field, dark subject on 12% | 2.917 | 0.880 |
+| flat ochre field, dark subject on 10% | 2.459 | 0.900 |
+
+What tells them apart is **shape**: thresholded text is thousands of small
+components of similar height, arranged in rows; a subject is one or a few large
+ones. A connected-component pass over the routing thumbnail would give component
+count, a median bounding-box size, and how well the boxes line up into rows —
+cheap, since the thumbnail is about 210x350.
+
+**What it would unlock.** Two things this repo has already refused for want of it:
+
+1. **R49's paper detector.** A scan exposed low (paper at luminance 148, nothing
+   above 176) has its tinted paper read as colour on the page, and the correction
+   that exists for tinted stock never runs. The fix is to find the paper anyway;
+   the reason it was refused is that "the bright class is paper" cannot be
+   distinguished from "the bright class is a plate" tonally. With a shape signal it
+   can, and the fallback becomes safe.
+2. **R35's per-page background factor**, refused twice because "tone is
+   structurally blind to bimodal pictures" — a photomicrograph scoring 0.0932 sits
+   inside the text population. That is the same blindness from the other side.
+
+**Do not do it as part of a size fix.** R49 tried, and the detour cost more than
+the fix that shipped. It wants its own cycle, its own corpus pass over the 449
+picture pages, and a threshold sitting in a gap that has been *looked at* rather
+than assumed — the two histogram discriminators tried in R49 both had a
+plausible-looking gap on the corpus and an overlap the corpus did not contain.
+Synthesise the adversarial cases; the corpus alone will not produce them.
+
 ### A per-page background factor — DECLINED after a second attempt
 *(first attempt built and reverted 2026-08-11; second attempt measured and
 refused 2026-08-12. BUGS.md R35 has both. Kept because the reason it failed the

@@ -127,13 +127,69 @@ enum Prefs {
             }
         }
 
-        /// Applies the preset over the current settings.
+        /// Applies the preset over the current settings, and reports which
+        /// settings actually moved.
         ///
         /// Only the settings the preset has a *reason* to set. Languages,
         /// output folder, concurrency and the recogniser path are the user's and
         /// are never touched — a preset that resets where files are written
         /// would be a trap.
-        func apply(to d: UserDefaults = .standard) {
+        ///
+        /// U30 is the return value. The button wrote six or seven settings and
+        /// said nothing: nothing moved that the eye was on, and the only
+        /// explanation was a `.help` tooltip, which is mouse-only — the objection
+        /// U8 already recorded against explaining anything in a tooltip.
+        ///
+        /// What it reports is what *changed*, not what it wrote. Those differ,
+        /// and the difference is the useful part: clicking Book scan on a
+        /// default panel changes nothing, and "settings already matched" is a
+        /// better answer to "did that do anything?" than a list of seven
+        /// settings that were already set that way.
+        ///
+        /// This deliberately does not make the button stick. `Preset` keeps no
+        /// "currently using X" state, because a setting that only looks live is
+        /// what `ocrAllPages` turned into: it would be a second source of truth
+        /// for values the panel below already owns, and it would go stale the
+        /// moment anyone touched one of them. The defect was feedback, not state.
+        @discardableResult
+        func apply(to d: UserDefaults = .standard) -> [String] {
+            // Snapshotted before anything is written, and compared by
+            // description rather than by `isEqual:` — these are Bool, String and
+            // Double read back as `Any?`, where nil (never set) has to compare
+            // unequal to a written value rather than crash or silently match.
+            let before = Preset.keysWritten.reduce(into: [String: String]()) {
+                $0[$1] = String(describing: d.object(forKey: $1))
+            }
+            write(to: d)
+            return Preset.keysWritten
+                .filter { before[$0] != String(describing: d.object(forKey: $0)) }
+                .compactMap { Preset.settingLabels[$0] }
+                .sorted()
+        }
+
+        /// One line of feedback for the panel, in the user's terms.
+        func summary(afterChanging changed: [String]) -> String {
+            guard !changed.isEmpty else {
+                return "\(label) applied — your settings already matched."
+            }
+            return "\(label) applied — changed "
+                + changed.joined(separator: ", ") + "."
+        }
+
+        /// The label each written key wears in the panel below, so the line
+        /// points at controls the user can actually see and check.
+        static let settingLabels: [String: String] = [
+            Prefs.rebuildImages: "Rebuild page images",
+            Prefs.useJBIG2: "Compress with JBIG2",
+            Prefs.joinHyphenated: "Find words broken across two lines",
+            Prefs.fast: "Fast",
+            Prefs.rebuildMode: "Rebuild as",
+            Prefs.photoDetail: "Photo detail",
+            Prefs.confidence: "Uncertain text",
+            Prefs.languageCorrection: "Language correction",
+        ]
+
+        private func write(to d: UserDefaults) {
             // Every preset wants the layered route and joined hyphens: both are
             // measured wins on every kind of material this app sees (BUGS.md
             // R33, and the hyphen work in FEATURES.md), so neither is a

@@ -52,6 +52,10 @@ struct SettingsView: View {
 
     @AppStorage(Prefs.checkForUpdates) private var checkForUpdates = true
     @State private var updateStatus = ""
+    /// What the last "Start from" button did. View state, not a setting: it
+    /// describes an action that happened, and must not become a "currently using
+    /// preset X" flag — see `Prefs.Preset.apply`.
+    @State private var presetSummary = ""
 
     // Behaviour
     @AppStorage(Prefs.openWhenDone) private var openWhenDone = true
@@ -285,13 +289,41 @@ struct SettingsView: View {
                 // "currently using X" state to drift out of sync with them.
                 Row("Start from", labelWidth) {
                     ForEach(Prefs.Preset.allCases) { preset in
-                        Button(preset.label) { preset.apply() }
+                        Button(preset.label) {
+                            let summary = preset.summary(afterChanging: preset.apply())
+                            presetSummary = summary
+                            // Written *and* spoken. A line in the panel is
+                            // readable but not announced, so on its own it
+                            // answers U30 for the eye and leaves the button just
+                            // as silent for VoiceOver — which is the half of U8's
+                            // objection that is about being reachable at all.
+                            NSAccessibility.post(
+                                element: NSApp as Any,
+                                notification: .announcementRequested,
+                                userInfo: [.announcement: summary,
+                                           .priority: NSAccessibilityPriorityLevel.high.rawValue])
+                        }
                             .help(preset.blurb + "\n\nSets the options below; "
                                   + "everything stays editable afterwards. Your "
                                   + "languages, output folder and file handling "
                                   + "are not touched.")
                     }
                     Spacer()
+                }
+                // U30 · the buttons used to write six or seven settings and give
+                // no sign they had done anything. Deliberately a line in the
+                // panel and not a tooltip: a tooltip is mouse-only, which is the
+                // objection U8 already recorded. It names the settings that
+                // actually moved, so it doubles as an explanation of what the
+                // preset *is* — and it says so plainly when nothing moved, which
+                // is the honest answer for a preset the panel already matched.
+                if !presetSummary.isEmpty {
+                    Row("", labelWidth) {
+                        Text(presetSummary)
+                            .font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                    }
                 }
 
                 Toggle("Rebuild page images first, discarding any old text layer",
@@ -449,42 +481,6 @@ struct SettingsView: View {
                     NSWorkspace.shared.open(RunReport.directory)
                 }
                 .disabled(!writeRunReport)
-            }
-
-            // Stated in full rather than as a bare toggle: this is the only
-            // thing in the app that touches the network, and someone who chose
-            // it partly because nothing leaves their Mac deserves to read
-            // exactly what does.
-            Toggle("Check for new versions", isOn: $checkForUpdates)
-                .help("Asks GitHub once a day whether a newer version exists. "
-                      + "Sends nothing about you or your documents — no "
-                      + "identifiers, no telemetry — and never installs "
-                      + "anything on its own.")
-            Row("", labelWidth) {
-                Text("The only network request this app makes. Your documents "
-                     + "never leave your Mac either way.")
-                    .font(.caption2).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer()
-                Button("Check Now") {
-                    updateStatus = "Checking…"
-                    Updater.check(force: true) { result in
-                        DispatchQueue.main.async {
-                            switch result {
-                            case .available(let r): updateStatus = "\(r.version) is available"
-                            case .upToDate: updateStatus = "Up to date (\(Updater.currentVersion))"
-                            case .failed(let why): updateStatus = "Could not check — \(why)"
-                            }
-                        }
-                    }
-                }
-                .buttonStyle(.link).font(.caption)
-            }
-            if !updateStatus.isEmpty {
-                Row("", labelWidth) {
-                    Text(updateStatus).font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                }
             }
 
             // Stated in full rather than as a bare toggle: this is the only

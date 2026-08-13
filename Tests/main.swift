@@ -680,6 +680,66 @@ do {
     check("a preset writes only the keys it declares",
           Set(touched).isSubset(of: Prefs.Preset.keysWritten),
           Set(touched).subtracting(Prefs.Preset.keysWritten).sorted().joined(separator: ", "))
+
+    // U30 · the button has to say what it did.
+    //
+    // Every key a preset may write needs a label, because the summary is built
+    // with `compactMap` — a key with no label is dropped from the line in
+    // silence, so the feedback would quietly under-report exactly as the button
+    // used to say nothing at all.
+    let unlabelled = Prefs.Preset.keysWritten
+        .filter { Prefs.Preset.settingLabels[$0] == nil }.sorted()
+    check("every setting a preset writes has a label for the summary",
+          unlabelled.isEmpty, unlabelled.joined(separator: ", "))
+    check("…and no label names a key no preset writes",
+          Set(Prefs.Preset.settingLabels.keys) == Prefs.Preset.keysWritten,
+          Set(Prefs.Preset.settingLabels.keys)
+              .symmetricDifference(Prefs.Preset.keysWritten).sorted().joined(separator: ", "))
+    // The line is only useful if the names in it are the names on screen. A label
+    // that no longer matches its control sends the user looking for a setting that
+    // is not there, and nothing else would notice: the summary would still read
+    // perfectly well.
+    let panelSource = (try? String(contentsOfFile: "Sources/SettingsView.swift",
+                                   encoding: .utf8)) ?? ""
+    let absent = Prefs.Preset.settingLabels.values
+        .filter { !panelSource.contains($0) }.sorted()
+    check("…and every label is text the settings panel actually shows",
+          !panelSource.isEmpty && absent.isEmpty,
+          panelSource.isEmpty ? "could not read SettingsView.swift"
+                              : absent.joined(separator: " | "))
+
+    // Applied over settings it disagrees with, it reports what moved.
+    resetPrefs(); Prefs.register()
+    Prefs.Preset.photographs.apply()
+    let movedToNewspaper = Prefs.Preset.newspaper.apply()
+    check("a preset reports the settings it changed",
+          movedToNewspaper.contains(Prefs.Preset.settingLabels[Prefs.photoDetail]!),
+          movedToNewspaper.joined(separator: ", "))
+    check("…and the summary names them in the user's terms",
+          Prefs.Preset.newspaper.summary(afterChanging: movedToNewspaper)
+              .contains("Photo detail"),
+          Prefs.Preset.newspaper.summary(afterChanging: movedToNewspaper))
+
+    // Applied twice, the second click moved nothing — and has to say so rather
+    // than list seven settings it did not change. This is the check that fails
+    // if `apply` ever reports what it *wrote* instead of what changed.
+    let secondClick = Prefs.Preset.newspaper.apply()
+    check("…and reports nothing changed when the settings already matched",
+          secondClick.isEmpty, secondClick.joined(separator: ", "))
+    check("…saying so in words rather than falling silent",
+          Prefs.Preset.newspaper.summary(afterChanging: secondClick)
+              .contains("already matched"),
+          Prefs.Preset.newspaper.summary(afterChanging: secondClick))
+
+    // And it still does not become sticky state: nothing anywhere records which
+    // preset was last applied. That is the property `apply`'s comment defends,
+    // and a "currently using X" key is what would break it.
+    resetPrefs(); Prefs.register()
+    Prefs.Preset.typescript.apply()
+    let names = Prefs.allKeys.filter { d.object(forKey: $0) != nil }
+    check("applying a preset records no 'currently using' state",
+          !names.contains { $0.lowercased().contains("preset") },
+          names.filter { $0.lowercased().contains("preset") }.joined(separator: ", "))
     resetPrefs()
 }
 
@@ -787,6 +847,71 @@ do {
 print("\nautomatic per-page image mode")
 
 /// A page dark enough to read as a picture rather than text.
+/// Mean colour of a rendered page, for checking that colour survived a route.
+///
+/// R49 needed this and the grey `inkFractionMRC` could not do it: a three-channel
+/// stream declared `/DeviceGray` draws as garbage, and garbage lands inside any
+/// ink-fraction band you would think to write. A page whose red channel is
+/// supposed to dominate is a claim the mistake cannot satisfy.
+func meanRGBOfRendered(_ url: URL, page index: Int) -> (r: Double, g: Double, b: Double)? {
+    guard let doc = PDFDocument(url: url), let page = doc.page(at: index) else { return nil }
+    let box = page.bounds(for: .mediaBox)
+    guard box.width > 0, box.height > 0 else { return nil }
+    let w = 200, h = max(1, Int(200 * box.height / box.width))
+    var buf = [UInt8](repeating: 0, count: w * h * 4)
+    let ok = buf.withUnsafeMutableBytes { raw -> Bool in
+        guard let ctx = CGContext(data: raw.baseAddress, width: w, height: h,
+                                  bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+        else { return false }
+        ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+        ctx.scaleBy(x: CGFloat(w) / box.width, y: CGFloat(h) / box.height)
+        page.draw(with: .mediaBox, to: ctx)
+        return true
+    }
+    guard ok else { return nil }
+    var sr = 0.0, sg = 0.0, sb = 0.0
+    for i in stride(from: 0, to: w * h * 4, by: 4) {
+        sr += Double(buf[i]); sg += Double(buf[i + 1]); sb += Double(buf[i + 2])
+    }
+    let n = Double(w * h)
+    return (sr / n, sg / n, sb / n)
+}
+
+/// A page with real colour on it *and* text-shaped marks: a plate with a caption,
+/// which is the shape colour MRC layering exists for. The red is strong and
+/// deliberate — it is what proves the colour arrived, and in the right channel.
+func makeColourPlatePDF(at url: URL) {
+    var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
+    let w = 1224, h = 1584
+    guard let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
+        bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+        let ctx = NSGraphicsContext(bitmapImageRep: rep) else { return }
+    NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = ctx
+    NSColor.white.setFill(); NSRect(x: 0, y: 0, width: w, height: h).fill()
+    // The plate: a strongly red field over the lower two-thirds.
+    NSColor(deviceRed: 0.80, green: 0.12, blue: 0.10, alpha: 1).setFill()
+    NSRect(x: 100, y: 120, width: w - 200, height: h - 700).fill()
+    // The caption: black text-shaped bars across the top, where the stencil goes.
+    NSColor.black.setFill()
+    for row in 0..<8 {
+        var x = 140.0
+        while x < Double(w) - 200 {
+            let run = Double(20 + (row * 7 + Int(x) % 37) % 60)
+            NSRect(x: x, y: Double(h - 200 - row * 40), width: run, height: 14).fill()
+            x += run + 16
+        }
+    }
+    NSGraphicsContext.current?.flushGraphics(); NSGraphicsContext.restoreGraphicsState()
+    guard let cg = rep.cgImage else { return }
+    pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
+}
+
 func makeDarkPDF(at url: URL) {
     var box = CGRect(x: 0, y: 0, width: 612, height: 792)
     guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
@@ -951,6 +1076,116 @@ do {
                 let ink = inkFractionMRC(of: mrcPDF, page: mixed.count - 1)
                 check("…and the stencil is the right way round",
                       ink > 0.01 && ink < 0.60, String(format: "%.3f ink", ink))
+                // R49 · the same page layered in colour.
+                //
+                // Colour pages were excluded from layering, and that exclusion
+                // was the whole of a 14x inflation on an Internet Archive scan
+                // whose grey-green paper reads as colour: 568 text pages each
+                // kept as a full-resolution three-channel JPEG, 31 MB in and
+                // 437 MB out.
+                //
+                // The thing that cannot be reasoned out is the colour space. A
+                // three-channel JPEG declared /DeviceGray is not an error any
+                // reader reports — it draws the page as noise — so both the
+                // declaration and the rendering are checked.
+                let colourPlate = tmp.appendingPathComponent("mrc-colour-plate.pdf")
+                makeColourPlatePDF(at: colourPlate)
+                let cdoc = PDFDocument(url: colourPlate)
+                let cpage = cdoc?.page(at: 0)
+                // The fixture's own premise: the source really is red. Without
+                // this the channel check below could pass on a page that never
+                // had colour on it.
+                let sourceRGB = meanRGBOfRendered(colourPlate, page: 0)
+                check("the colour fixture is actually red",
+                      (sourceRGB.map { $0.r - $0.b } ?? 0) > 25,
+                      sourceRGB.map { String(format: "r %.0f b %.0f", $0.r, $0.b) } ?? "nil")
+                // Boxes over the caption bars only, so the plate stays in the
+                // background — a plate with a caption, which is the shape this is
+                // for.
+                let cboxes = (0..<8).map { i in
+                    SearchableWriter.BoundingBox(x: 0.10, y: 0.06 + Double(i) * 0.025,
+                                                 width: 0.78, height: 0.020)
+                }
+                if let cpage,
+                   let colourLayers = Flattener.mrcLayers(
+                    for: cpage, boxes: cboxes, into: mrcDir, stem: "c", inColour: true) {
+                    check("layering a colour page reports colour layers",
+                          colourLayers.isColour)
+                    // Three channels in the file, not just in the flag.
+                    for (which, url) in [("background", colourLayers.background),
+                                         ("foreground", colourLayers.foreground)] {
+                        let samples = (try? Data(contentsOf: url))
+                            .flatMap { NSBitmapImageRep(data: $0)?.samplesPerPixel }
+                        check("…and the \(which) really carries three of them",
+                              samples == 3, "\(samples.map(String.init) ?? "unreadable")")
+                    }
+
+                    let cStencil = mrcDir.appendingPathComponent("c.jbig2")
+                    try? JBIG2.encode(png: colourLayers.mask, to: cStencil, using: jb)
+                    let csize = Flattener.fullBox(of: cpage).size
+                    let cscale = Flattener.rebuildDPI(of: cpage) / 72.0
+                    let cPage = JBIG2.Page(
+                        stream: .mrc(JBIG2.Page.MRC(
+                            mask: cStencil, background: colourLayers.background,
+                            foreground: colourLayers.foreground,
+                            backgroundWidth: colourLayers.backgroundWidth,
+                            backgroundHeight: colourLayers.backgroundHeight,
+                            foregroundWidth: colourLayers.foregroundWidth,
+                            foregroundHeight: colourLayers.foregroundHeight,
+                            isColour: colourLayers.isColour)),
+                        pixelWidth: Int((csize.width * cscale).rounded()),
+                        pixelHeight: Int((csize.height * cscale).rounded()),
+                        boxSize: csize, isColour: true)
+                    let cPDF = dir.appendingPathComponent("mrc-colour.pdf")
+                    do { try JBIG2.assemble([cPage], to: cPDF) }
+                    catch { check("the colour MRC page assembles", false,
+                                  error.localizedDescription) }
+                    let craw = String(decoding: (try? Data(contentsOf: cPDF)) ?? Data(),
+                                      as: UTF8.self)
+                    check("a colour MRC page declares /DeviceRGB tone layers",
+                          craw.components(separatedBy: "/ColorSpace /DeviceRGB").count - 1 == 2,
+                          "\(craw.components(separatedBy: "/ColorSpace /DeviceRGB").count - 1)")
+                    // The stencil stays one channel whatever the tone layers are:
+                    // it is a bilevel mask, not a colour image.
+                    check("…while its stencil stays /DeviceGray",
+                          craw.components(separatedBy: "/ColorSpace /DeviceGray").count - 1 == 1,
+                          "\(craw.components(separatedBy: "/ColorSpace /DeviceGray").count - 1)")
+                    check("…and still writes three image XObjects",
+                          craw.components(separatedBy: "/Subtype /Image").count - 1 == 3,
+                          "\(craw.components(separatedBy: "/Subtype /Image").count - 1)")
+                    // And it draws, with its colour in the right channel.
+                    //
+                    // This is the check that catches a three-channel stream
+                    // declared /DeviceGray, and it has to be a *colour* check: the
+                    // garbage such a page draws lands comfortably inside any
+                    // ink-fraction band, so the grey measurement passes on it. A
+                    // red plate whose red channel still leads does not.
+                    let cink = inkFractionMRC(of: cPDF, page: 0)
+                    check("…and the layered colour page still has ink and paper both",
+                          cink > 0.01 && cink < 0.60, String(format: "%.3f ink", cink))
+                    if let out = meanRGBOfRendered(cPDF, page: 0), let src = sourceRGB {
+                        check("…and its red survives the layering, in the red channel",
+                              out.r - out.b > 25,
+                              String(format: "r %.0f g %.0f b %.0f", out.r, out.g, out.b))
+                        // Not merely "some red": the cast has to resemble the
+                        // source's rather than being a coincidence of garbage.
+                        check("…at roughly the source's strength",
+                              abs((out.r - out.b) - (src.r - src.b)) < 40,
+                              String(format: "layered %.0f vs source %.0f",
+                                     out.r - out.b, src.r - src.b))
+                    } else {
+                        check("the layered colour page renders", false, "nil")
+                    }
+
+                    // The grey route must not have picked up the colour space on
+                    // the way past: the two are distinguished by the layers' own
+                    // flag, not the page's.
+                    check("a grey MRC page still declares no /DeviceRGB",
+                          !mraw.contains("/ColorSpace /DeviceRGB"))
+                } else {
+                    check("the colour MRC fixture produces layers", false,
+                          "mrcLayers(inColour:) returned nil")
+                }
             } else {
                 check("the MRC fixture produces layers", false, "mrcLayers returned nil")
             }
@@ -968,6 +1203,18 @@ do {
                         * Flattener.measuredGreyBytesPerPixel / 1000))
         check("…and layering is recorded as the more expensive per pixel",
               Flattener.measuredMRCBytesPerPixel > Flattener.measuredGreyBytesPerPixel)
+        // R49 · and the same property for colour layering, which holds three
+        // planes where the grey route holds one. R24/R29's shape again: a bound
+        // asserted in one place and left to be inferred in its sibling.
+        check("colour layering's worst case stays inside the render's too",
+              Flattener.colourMRCBoundIsWithinTheRenderOne,
+              String(format: "colour MRC %.2f GB vs render %.2f GB",
+                     Double(Flattener.maximumMRCPageMegapixels)
+                        * Flattener.statedColourMRCBytesPerPixel / 1000,
+                     Double(Flattener.maximumPageMegapixels)
+                        * Flattener.measuredGreyBytesPerPixel / 1000))
+        check("…and colour layering is recorded as the more expensive of the two",
+              Flattener.statedColourMRCBytesPerPixel > Flattener.measuredMRCBytesPerPixel)
 
         // No words means no layering: a plate would otherwise be published at a
         // fraction of its resolution for no benefit.
@@ -3390,11 +3637,16 @@ do {
     // saw its neighbour's `.accessibilityLabel` and was scored as named. The
     // self-test below caught that; on the real files it would have been a
     // silently clean result.
+    // Shared by both scanners below. It was local to the first one, and a second
+    // copy in the second would be free to drift: a starter added to one list and
+    // not the other silently narrows one scan while the other still looks
+    // thorough.
+    let starters = ["Picker(", "Toggle(", "Button(", "Button {", "Slider(",
+                    "Stepper(", "TextField(", "Menu(", "SecureField("]
+
     func controlsMissingNames(_ path: String) -> (missing: [String], labelled: Int) {
         let source = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
         let lines = source.components(separatedBy: "\n")
-        let starters = ["Picker(", "Toggle(", "Button(", "Button {", "Slider(",
-                        "Stepper(", "TextField(", "Menu(", "SecureField("]
         var starts: [Int] = []
         for (i, line) in lines.enumerated() where starters.contains(where: line.contains) {
             starts.append(i)
@@ -3452,6 +3704,91 @@ do {
               "\(r.labelled + r.missing.count) found")
         check("…and every one of them is named",
               r.missing.isEmpty, r.missing.joined(separator: " | "))
+    }
+
+    // U29 · and no two of them carry the *same* name.
+    //
+    // The scanner above asserts that every control of the two anonymous shapes
+    // carries a name. Nothing asserted that a name appears once, and that is the
+    // shape a paste error takes: the entire updates block was in SettingsView
+    // twice — 36 lines for 36, comment and all — and survived because both
+    // copies bound the same state, so nothing misbehaved. A settings panel is
+    // exactly where a duplicated control hides, because the duplicate looks like
+    // a control that belongs there.
+    //
+    // The name is the first string literal on the line that introduces the
+    // control, or the `.accessibilityLabel` of one that has no visible label.
+    func firstStringLiteral(in text: String) -> String? {
+        guard let open = text.firstIndex(of: "\"") else { return nil }
+        var out = ""
+        var i = text.index(after: open)
+        while i < text.endIndex {
+            let c = text[i]
+            if c == "\\" {
+                // Skip the escaped character rather than letting a \" end the
+                // literal early.
+                i = text.index(after: i)
+                if i < text.endIndex { out.append(text[i]); i = text.index(after: i) }
+                continue
+            }
+            if c == "\"" { return out }
+            out.append(c)
+            i = text.index(after: i)
+        }
+        return nil
+    }
+
+    func duplicateControlNames(_ path: String) -> (dupes: [String], named: Int) {
+        let source = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
+        let lines = source.components(separatedBy: "\n")
+        var starts: [Int] = []
+        for (i, line) in lines.enumerated() where starters.contains(where: line.contains) {
+            starts.append(i)
+        }
+        var seen: [String: [Int]] = [:]
+        for (n, start) in starts.enumerated() {
+            let end = n + 1 < starts.count ? starts[n + 1] : lines.count
+            let chunk = lines[start..<end].joined(separator: "\n")
+            // An empty literal is a deliberately label-less control — the shape
+            // the scanner above covers — so it is not a name and cannot collide.
+            var name = firstStringLiteral(in: lines[start])
+            if name?.isEmpty ?? true,
+               let marker = chunk.range(of: ".accessibilityLabel(") {
+                name = firstStringLiteral(in: String(chunk[marker.upperBound...]))
+            }
+            guard let name, !name.isEmpty else { continue }
+            seen[name, default: []].append(start + 1)
+        }
+        let dupes = seen.filter { $0.value.count > 1 }
+            .map { "\($0.key) at line\($0.value.count == 1 ? "" : "s") "
+                   + $0.value.map(String.init).joined(separator: ", ") }
+            .sorted()
+        return (dupes, seen.count)
+    }
+
+    // Shown to bite before its silence is allowed to mean anything — the same
+    // discipline the scanner above needed, and for the same reason.
+    let twinned = tmp.appendingPathComponent("twinned-view-\(UUID().uuidString).swift")
+    try? """
+    Toggle("Check for new versions", isOn: $a)
+    Button("Check Now") { }
+    Toggle("Check for new versions", isOn: $a)
+    Button("Something else") { }
+    """.write(to: twinned, atomically: true, encoding: .utf8)
+    let twins = duplicateControlNames(twinned.path)
+    check("the duplicate-name scanner sees a name used twice",
+          twins.dupes.count == 1 && twins.dupes[0].contains("Check for new versions"),
+          twins.dupes.joined(separator: " | "))
+    check("…and does not report the names used once",
+          twins.named == 3, "\(twins.named) distinct names")
+    try? FileManager.default.removeItem(at: twinned)
+
+    for file in ["Sources/ContentView.swift", "Sources/SettingsView.swift"] {
+        let d = duplicateControlNames(file)
+        check("\((file as NSString).lastPathComponent) has named controls to check",
+              d.named >= 3, "\(d.named) named")
+        check("…and no two of them share a name",
+              d.dupes.isEmpty, d.dupes.joined(separator: " | "))
     }
     resetPrefs()
 }

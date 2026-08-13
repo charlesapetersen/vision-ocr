@@ -15,12 +15,21 @@ promoted, or it does not and should be deleted.
 
 `FEATURES.md`'s two layout items were both built or measured and both refused, so
 the feature backlog is down to item 7 (a watched folder or command line), which
-nobody has asked for.
+nobody has asked for — plus **a spatial signal for the picture detector**, newly
+specified out of R49 and the one genuinely new idea here. Two things this repo has
+already refused (R35's per-page background factor, R49's paper detector) were both
+refused for want of it, so it unblocks more than it costs.
 
-**1.11.0 is published** — released 2026-08-13 with a universal `Vision OCR.dmg`,
-which the build's own verification exercised by mounting the image and running
-every bundled helper under `env -i`, `visionocr-recognise --version` included.
-`Updater.releasesAPI` now returns it, so users on 1.10.1 are offered the upgrade.
+**1.12.0 is published** — released 2026-08-13 with R49, U29 and U30. R49 is the
+one worth reading: a 568-page scan went in at 31 MB and came out at 437 MB because
+colour pages were the single page kind that could not be layered, and the detector
+had routed every page into exactly that case. The entry also records a detector fix
+that was built, measured over the corpus *and a set of synthesised adversarial
+plates*, and then refused — the corpus alone showed a clean gap that did not exist.
+
+**1.11.0** was released the same day with a universal `Vision OCR.dmg`, which the
+build's own verification exercised by mounting the image and running every bundled
+helper under `env -i`, `visionocr-recognise --version` included.
 
 1. **Preserve annotations through re-OCR.** Newly promoted 2026-08-13 and
    specified below. **The library sweep is blocked on it**: 9% of the library
@@ -273,6 +282,33 @@ full, only in part:
 *(That split was computed by matching basenames, and Zotero storage can hold the
 same basename under two keys; the 108/111 discrepancy is roughly three such
 collisions. Match on the full path when it matters.)*
+
+### Robinson–Montana: archived and deleted — done 2026-08-13
+
+**Complete. Do not re-propose it.** 668 items exported with Zotero's own
+*Zotero RDF + Export Files*, packed as a 3.95 GB zip with a restore guide, a
+field-level provenance dump and SHA-256 sums, and moved to cloud storage.
+**666 items and 681 files then deleted from the library — 3.98 GB freed.** The
+owner kept two by choice; both are in the archive as well.
+
+Three things from it worth carrying:
+
+- **The re-import was tested, not assumed** — imported into a throwaway Zotero
+  library with its own data directory: 668 items, all types matching, 163 notes,
+  **0 field values lost**, archival provenance intact. Collection membership does
+  not survive a flat RDF import (230 collections), which is what the provenance
+  dump is for.
+- **Zotero's local API cannot do this.** Its `rdf_zotero` carries rich metadata
+  but **no file references at all**, so an archive built from it would restore as
+  records and empty stubs. The GUI exporter is the only faithful route.
+- **`cp -al` plus an in-place write silently corrupts the source.** Staging the
+  archive with hard links and then doctoring a manifest in a test copy rewrote the
+  staged original through the shared inode, and the shipped zip carried a manifest
+  whose every path read `/nonexistent/deleted-library/…`. The round-trip test
+  *passed*, because the fake paths tripped the "originals are gone" fallback added
+  an hour earlier, which verified by hash and reported success. **A safety net
+  masked the defect it sat beside.** Caught only by diffing the zip against the
+  working copy; the rebuild now asserts that equality before zipping.
 
 ### The photographed material splits cleanly in two
 

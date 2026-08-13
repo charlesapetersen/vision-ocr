@@ -64,6 +64,13 @@ enum JBIG2 {
             let foreground: URL
             let backgroundWidth: Int, backgroundHeight: Int
             let foregroundWidth: Int, foregroundHeight: Int
+            /// Whether the two tone layers are three-channel. Carried on the
+            /// layers rather than read off `Page.isColour`, because those are
+            /// different facts: `isColour` describes the single JPEG a page had
+            /// before it was layered, and a colour page whose colour render
+            /// failed is layered in grey. Reading the page's flag would then
+            /// declare /DeviceRGB over one-channel streams and draw noise.
+            var isColour = false
         }
         let stream: Stream
         let pixelWidth: Int
@@ -332,14 +339,18 @@ enum JBIG2 {
                                height: page.pixelHeight, filter: "/DCTDecode",
                                bits: 8, space: space)
             case .mrc(let m):
+                // The tone layers follow the layers' own flag, not the page's.
+                // See MRC.isColour — they disagree when a colour page's colour
+                // render failed and it was layered in grey instead.
+                let toneSpace = m.isColour ? "/DeviceRGB" : "/DeviceGray"
                 // Written in the order the objects were numbered: background,
                 // foreground, then the stencil the foreground points at.
                 try writeImage(objects[0], from: m.background,
                                width: m.backgroundWidth, height: m.backgroundHeight,
-                               filter: "/DCTDecode", bits: 8, space: "/DeviceGray")
+                               filter: "/DCTDecode", bits: 8, space: toneSpace)
                 try writeImage(objects[1], from: m.foreground,
                                width: m.foregroundWidth, height: m.foregroundHeight,
-                               filter: "/DCTDecode", bits: 8, space: "/DeviceGray",
+                               filter: "/DCTDecode", bits: 8, space: toneSpace,
                                smask: objects[2])
                 // The stencil, at full page resolution. /Decode [1 0] because
                 // JBIG2 codes ink as 1 while an /SMask reads 1 as opaque and 0

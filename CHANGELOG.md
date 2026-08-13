@@ -12,6 +12,54 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## 1.12.0 — 2026-08-13
+
+**A 568-page scan went in at 31 MB and came out at 437 MB. It now comes out at
+64 MB, with a byte-identical text layer.**
+
+```
+                        in      1.11.0 out    1.12.0 out
+Blacks in the City    31 MB        437 MB         64 MB
+                                   (14.0x)        (2.17x)
+text layer                    1,458,486 B    1,458,486 B — identical
+pages layered                            0     548 of 568
+```
+
+Colour pages were the one kind that could not be stored in layers, and this file
+was read as coloured on every page, so every page was kept as a single
+full-resolution three-channel JPEG — 669 KB where three layers cost 110 KB. The
+layered page renders indistinguishably from the flat one (mean RGB 141.1/142.2/129.1
+against 140.5/141.7/128.6) and the text does not move at all.
+
+Layering keeps the page's colour and keeps its text at full resolution in the 1-bit
+stencil, and it is still taken only when it is measurably smaller — 20 of the 568
+pages declined it and kept the JPEG they had.
+
+**What this does not fix.** The reason those pages were called coloured in the first
+place is that the scan is exposed low: its paper renders at luminance 148 with a
+grey-green cast and never reaches the threshold the paper detector uses, so the
+white-balance correction that exists for tinted stock never runs and the paper's own
+colour is read as colour on the page. The detector is unchanged, deliberately —
+`BUGS.md` R49 records the fix that was built for it, measured, and refused, because
+a page of text and a tinted plate with a subject on it are the same luminance
+histogram. For a text-only book, **Black & white** remains both smaller and correct:
+this file is 25 MB that way, under its own original.
+
+Colour layering costs about 2.5x the time of grey layering per page (3.2 s against
+1.25 s on a 6 MP page) for about 15% more bytes than grey.
+
+**Also fixed**, both reported by the user and both in the settings panel: the entire
+updates block appeared **twice** (`U29`) — 36 identical lines, harmless because both
+copies bound the same state, which is why it survived — and the **Start from** preset
+buttons gave no sign they had done anything (`U30`). They now say what changed
+("Newspaper applied — changed Photo detail, Uncertain text"), announce it to
+VoiceOver rather than hiding it in a mouse-only tooltip, and say so plainly when a
+preset changed nothing. They still do not stay clicked, which is deliberate and now
+has a test holding it.
+
+The suite gained the check that would have caught `U29` and did not exist: no two
+controls in a view may carry the same name.
+
 ## 1.11.0 — 2026-08-13
 
 **The batch speed is back, and then some.** The 232-document release gate:

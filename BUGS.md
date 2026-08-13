@@ -6,7 +6,13 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Two open, both reported by the user on 2026-08-13 and both in the settings panel: U29** (the updates block is pasted twice) and **U30** (the preset buttons give no sign they did anything). Neither affects a document.
+**Nothing is open.** **R49** — a 568-page scan going in at 31 MB and out at **437 MB**, because
+colour pages were the one kind that could not be layered — is `FIXED`, and its entry
+records a detector fix that was built, measured and **refused**: the page's own
+luminance histogram cannot tell tinted paper from a tinted plate, and the
+measurement that shows it is worth keeping. **U29** (the updates block was pasted
+twice in the settings panel) and **U30** (the preset buttons gave no sign they had
+done anything) were both reported by the user on 2026-08-13 and are both `FIXED`.
 
 R41–R48 came out of an adversarial review of R40's own diff
 and are all `FIXED` — the ninth round running in which reviewing the previous
@@ -2473,6 +2479,103 @@ three timings that were polluted while this entry was being written.
 
 ---
 
+### R49 · 31 MB in, 437 MB out — the one page kind that could not be layered — FIXED
+*(reported by the user 2026-08-13 on `Blacks in the City`, an Internet Archive scan
+of a 1971 monograph: 568 pages, **31,296,790 bytes in and 437,028,194 out, 14.0x**.
+Black & white mode on the same file gives 25,284,288 — smaller than the original.)*
+
+**What the file is.** The input is a mixed-raster IA scan: per page a low-resolution
+JPX background, a full-resolution JPX foreground, and a 1-bit JBIG2 `/SMask` that
+stencils one over the other. 55 KB/page. The output is one full-resolution
+three-channel JPEG per page at quality 0.6 — **769 KB/page**, no layering.
+
+**Why every page came out in colour.** The page renders with its paper at luminance
+**128–175, maximum 173**. Nothing reaches `paperLuminanceFloor` (176), so
+`paperColour` returns nil, the von Kries correction that exists for exactly this
+kind of tinted stock never runs, and the grey-green cast of the paper is then read
+as colour *on* the page: saturation **0.088–0.124** against a 0.06 threshold, on
+every page sampled. One constant gates both `isPicture` and `shouldKeepColour`, so
+the page lost the 1-bit route *and* gained two channels — the same double charge
+recorded on `saturation(ofRGBA:)` for the 1964 monograph, arriving through a
+different door. That fix was right; it was gated behind a paper detector this
+document fails.
+
+**Verified as the file, not the render.** `pdftoppm` and this app's own `renderGrey`
+agree to within 2 levels on p41 (both mean 141, both max ≤ 174, both 0.0000 of the
+page at or above 176), and both JPX decoders agree the background layer really is a
+grey-green field at mean (149, 151, 136). The scan is exposed low. Rendering it is
+not the defect — and my own first reading of two side-by-side renders as
+*disagreeing* was wrong, corrected by measuring them.
+
+**The fix is that colour pages can now be layered.** `Model.swift` excluded them —
+*"A colour page is three channels and its layers have not been measured"* — and that
+exclusion was the whole inflation, because the detector had routed every page into
+exactly the case layering could not handle. `Flattener.mrcLayers(inColour:)` runs the
+same decomposition per channel, reusing `fillHoles` and `downsample` unchanged so
+their measured constants still hold, and `JBIG2.assemble` declares `/DeviceRGB` for
+the two tone layers from a flag on **the layers**, not on the page: a colour page
+whose colour render fails is layered in grey, and reading the page's flag would
+declare three channels over one-channel streams and draw the sheet as noise.
+
+Layering keeps the page's colour, keeps its text at full resolution in the stencil,
+and `Model` already refuses it unless it is measurably smaller (`after < before`),
+so this can only reduce a file.
+
+**Measured end to end through `OCRModel.start()`**, not reasoned about:
+**437,028,194 bytes to 67,859,061 — 6.44x** on the reported file, 568 of 568 pages,
+548 of them layered and 20 declining it. The text layer is **byte-identical**
+(1,458,486 bytes both ways, `cmp` clean), and the rendered page is
+indistinguishable: mean RGB (141.1, 142.2, 129.1) layered against
+(140.5, 141.7, 128.6) flat, same luminance percentiles to within 1 level. Per page
+the three layers cost 110-129 KB against the single JPEG's 669 KB.
+
+The output's structure is now the input's: a background at half resolution, a
+foreground at a quarter, and a full-resolution 1-bit stencil over both — which is
+what the Internet Archive original does, and it is a fair check on the shape of the
+fix that the two agree. It is still 2.17x the original's 31 MB, and the remaining
+gap is the tone layers: ours cost 78-91 KB a page where IA's cost 5.8 KB, because
+JPEG 2000 on a near-flat field beats JPEG heavily. That is `FEATURES.md`'s R34/R36,
+both already declined, and it is not what this entry changes.
+
+**A detector fix was built, measured and refused — this is the part worth keeping.**
+The obvious repair is to find the paper anyway: try the absolute floor, and on a page
+where it finds nothing, take the bright class of the page's own Otsu split. It works
+on this book (saturation 0.10 → 0.025, and 1,174 corpus pages sampled with **zero**
+routing changes, because the fallback can only engage on 4 of them). It is still
+wrong, and the reason is not a threshold that needs moving:
+
+| | brightMean / darkMean | brightFraction |
+|---|---|---|
+| the book, low-key text (7 pages) | 3.002–3.458 | 0.896–0.924 |
+| a flat sepia field with a dark subject on 12% of it | 2.917 | 0.880 |
+| a flat ochre field with a dark subject on 10% of it | 2.459 | 0.900 |
+| `Riesman_1954`, a genuinely low-contrast scan | 1.363–1.635 | 0.668–0.775 |
+| the full-bleed sepia ramp the suite already guards | 1.157 | 0.511 |
+
+A page of text and a tinted plate with a subject on it are **the same histogram**: a
+large flat-ish tinted field with a dark minority. Both candidate discriminators put
+the plates on the book's side of the line, and the implemented version was already
+neutralising their colour — the very failure `paperLuminanceFloor` exists to prevent,
+which the suite's gentler *ramp* fixture does not catch. What separates text from a
+subject is **spatial** — many small marks in lines, against one connected region —
+and nothing in the tonal signals sees it.
+
+Two further traps found on the way, both instrument rather than code. The white point
+is not a discriminator either: the corpus holds a document at **161** that must not be
+corrected, *below* the 170–183 of the one that must. And normalising the *tone* signal
+by the white point flips 9 corpus pages to 1-bit, among them three handwritten
+manuscripts and a 1941 typescript — the destructive direction, and the reason
+`pictureInkMinimumTone`'s own note says erring low is the safe way.
+
+So the detector is untouched, deliberately — `Flattener` keeps the routing code it
+had. A file may still be routed to colour when it did not need to be; it will now be
+*layered* when that happens, which is the outcome that was missing.
+
+**What would actually settle it** is a spatial signal — connected-component sizes over
+the thresholded page, where text is thousands of small components and a subject is one
+large one. That is the measurement the refused fix wanted and did not have, and it is
+worth doing before anyone tries the paper detector again. `FEATURES.md` carries it.
+
 ### R48 · `sample-zotero.py` could not build its classifier — FIXED
 *(found 2026-08-13 by running it; broken since the direct-Vision migration)*
 
@@ -2630,8 +2733,8 @@ The GUI got no review attention during the period when this was going to become
 a headless backend. When that reversed, three adversarial passes over it found
 fourteen defects — **two of them regressions introduced by the pass before**.
 
-### U29 · The whole updates block is in Settings twice — OPEN
-*(reported by the user 2026-08-13; confirmed by reading the source, not yet fixed)*
+### U29 · The whole updates block is in Settings twice — FIXED
+*(reported by the user 2026-08-13; confirmed by reading the source; fixed 2026-08-13)*
 
 `SettingsView.swift` lines **453–488 and 489–524 are byte-identical** — 36 of 36
 lines, after stripping. Not a stray duplicated toggle: the entire updates block is
@@ -2648,7 +2751,17 @@ controls carry the *same* name. That check is the more valuable half of this
 entry: a duplicated control is a paste error, and a settings panel is exactly
 where one hides. Add it with the fix.
 
-### U30 · The "Start from" preset buttons give no sign they did anything — OPEN
+**Fixed** by deleting the second copy, and the check was added — the more valuable
+half. `duplicateControlNames` reads each control's visible label, or the
+`.accessibilityLabel` of one that has none, and requires no name to appear twice in
+a file. Shown to bite before being trusted, in both directions: against the
+pre-fix file it reports exactly `Check for new versions` and `Check Now`, and after
+the deletion the two view files hold **41 named controls with no name used twice**.
+The two scanners now share one `starters` list rather than each keeping a copy,
+because a starter added to one and not the other would narrow one scan while the
+other still looked thorough.
+
+### U30 · The "Start from" preset buttons give no sign they did anything — FIXED
 *(reported by the user 2026-08-13: "it's not clear what clicking any of the 'start
 from' buttons does. They don't seem to stay clicked")*
 
@@ -2674,6 +2787,34 @@ source of truth.
 Worth noting the shape: the reasoning behind the design was recorded, correct, and
 still produced a control a user could not read. A decision being right is not the
 same as it being legible.
+
+**Fixed** the first way, and the state stayed out of it. `Preset.apply` now returns
+the settings that **changed**, and the panel shows one line: *"Newspaper applied —
+changed Photo detail, Uncertain text."*
+
+Reporting what changed rather than what was written is the part worth keeping.
+They differ, and the difference is the useful half: clicking **Book scan** on a
+default panel writes seven settings and moves none of them, and *"your settings
+already matched"* answers "did that do anything?" honestly, where a list of seven
+untouched settings would not. A test applies a preset twice and requires the second
+click to report nothing — which is the check that fails if this ever goes back to
+reporting what it wrote.
+
+**It is spoken as well as written.** A line in the panel is readable but not
+announced, so on its own it answers the defect for the eye and leaves the button
+exactly as silent for VoiceOver — half of U8's objection is that a tooltip cannot be
+*reached*, not just that it is mouse-only. The button posts an
+`announcementRequested` with the same sentence.
+
+Two checks guard the line itself: every key a preset may write has a label (the
+summary is built with `compactMap`, so a key without one is dropped in silence and
+the feedback under-reports exactly as the button used to say nothing), and every
+label is text `SettingsView` actually shows — a label that drifts from its control
+sends the user looking for a setting that is not there, and the summary would still
+read perfectly well.
+
+Still no sticky state, and a check now holds that: after applying a preset, no
+defaults key contains "preset".
 
 ### U1 · A green "40 of 40 succeeded" over a list of 43 files — FIXED
 The batch-level version of invariant 1, and the worst of these.

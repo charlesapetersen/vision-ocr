@@ -39,7 +39,10 @@ inside it.
 Searchable PDFs are compressed automatically, which makes them roughly a third
 the size — the tools for that are inside the app too. Pages that mix text with a
 photograph are stored in layers, so the text stays sharp while the picture
-compresses: those pages come out three to five times smaller. How much detail
+compresses: those pages come out three to five times smaller. Colour pages are
+layered too, keeping their colour — before 1.12.0 they were the one kind that could
+not be, and on a 568-page scan the app read as coloured throughout, that was the
+difference between **64 MB and 437 MB** for the same text. How much detail
 photographs keep is yours to choose under **Settings ▸ Photo detail**; text is
 stored at full resolution whichever you pick.
 

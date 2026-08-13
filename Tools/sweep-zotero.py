@@ -24,11 +24,11 @@ without it:
     worse, so these are never candidates however large they are.
   - **photographed** — a different problem. Reported for review, never acted on.
 
-The library query and the classifier build are imported from `sample-zotero.py`
-rather than copied; two copies of "which attachments are PDFs" would drift, and
-this register has R23, R29 and C20 to show for that. Its `classify()` is *not*
-reused, because it keeps only the verdict and throws away the page count this
-tool exists to divide by.
+The **classifier build** is imported from `sample-zotero.py` rather than copied;
+two copies of how a scan is recognised would drift, and this register has R23, R29
+and C20 to show for that. Its `classify()` is *not* reused, because it keeps only
+the verdict and throws away the page count this tool exists to divide by — and its
+`QUERY` is not reused either, for the reason on `QUERY` below (R50).
 """
 import argparse, concurrent.futures as cf, csv, importlib.util
 import os, shutil, sqlite3, statistics, subprocess, sys, tempfile
@@ -44,6 +44,28 @@ FLOOR_BYTES_PER_PAGE = 150 * 1024
 # How far above its own item type's median a scan has to sit to be called out.
 # A ratio, because the types differ by more than a constant would survive.
 OUTLIER_RATIO = 3.0
+
+
+# **This file's own, not `sample-zotero.py`'s.** That one INNER JOINs the parent
+# item, correctly, because it stratifies by item type and an attachment with no
+# parent has no type to stratify by. Importing it here silently excluded every
+# standalone attachment — 181 of them, 0.50 GB — and one was Robinson-Montana
+# material that consequently missed the cold-storage archive (R50). A *sweep* has
+# to see everything the library holds, so this LEFT JOINs and files the parentless
+# ones under a pseudo-type of their own.
+QUERY = """
+SELECT COALESCE(it.typeName, '(standalone attachment)'),
+       COALESCE(substr(dv.value, 1, 4), '?') AS yr,
+       ia.path, ai.key, COALESCE(i.dateAdded, ai.dateAdded)
+FROM itemAttachments ia
+JOIN items ai ON ai.itemID = ia.itemID
+LEFT JOIN items i ON i.itemID = ia.parentItemID
+LEFT JOIN itemTypes it ON it.itemTypeID = i.itemTypeID
+LEFT JOIN itemData id ON id.itemID = i.itemID AND id.fieldID =
+      (SELECT fieldID FROM fields WHERE fieldName = 'date')
+LEFT JOIN itemDataValues dv ON dv.valueID = id.valueID
+WHERE ia.contentType = 'application/pdf' AND ia.path LIKE 'storage:%';
+"""
 
 
 def sampler():
@@ -107,11 +129,12 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         copy = os.path.join(tmp, "z.sqlite")
         shutil.copy2(db, copy)
-        rows = sqlite3.connect(copy).execute(zs.QUERY).fetchall()
+        rows = sqlite3.connect(copy).execute(QUERY).fetchall()
 
-    # Every PDF attachment, whatever its item type. `sample-zotero.py` filters to
-    # the types worth *sampling*; a sweep that skipped a type would leave a blind
-    # spot in someone's library rather than in a corpus.
+    # Every PDF attachment, whatever its item type — including the ones with no
+    # parent item at all. This comment claimed exactly that while the imported
+    # query quietly made it false, which is how R50 happened: an assertion in a
+    # comment is not a property of the code.
     records = {}
     for typ, yr, path, key, added in rows:
         if not path.startswith("storage:"):
