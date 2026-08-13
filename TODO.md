@@ -29,55 +29,35 @@ nobody has asked for.
    v1.11.0` with the CHANGELOG entry and that asset. Needs the owner's say-so:
    it offers an update to everyone running the app.
 
-2. **Guard the two properties that are the engine's, not ours.** Newly identified
-   2026-08-13 and specified below.
-
-3. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
+2. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
    work, and probably its own session. Specified below. It was waiting on
    throughput, and throughput is now better than the figure it was waiting for.
 
-## 2. The engine's competence is load-bearing and unguarded
+## The engine's competence is guarded — done 2026-08-13
 
-**Two of this app's user-visible qualities are Vision's, not this codebase's, and
-nothing in 793 checks asserts either.**
+Deskew and columns were both refused because **Vision** is good at them, not
+because this codebase is: `compose` never sorts, so reading order is inherited
+whole, and recognition is flat across ±3° with the quads tilting to match. Neither
+was held by anything. Six checks now hold both, over a generated two-column
+fixture rasterised once from vector at whatever angle is asked for:
 
-- **Reading order.** `SearchableWriter.compose` draws observations in the order
-  Vision returns them and never sorts. Two-column pages come out in reading order
-  because Vision puts them that way — measured 2026-08-13, median interleaving
-  1.0, 0.19% of observations crossing a physical gutter. `FEATURES.md` item 3 was
-  declined on exactly this.
-- **Skew tolerance.** Recognition is flat across ±3° and the reported quads tilt
-  with the page. `FEATURES.md` item 2 was declined twice on exactly this.
+```
+ENGINE ASSUMPTION: Vision returns the left column before the right
+ENGINE ASSUMPTION: no line is welded across the gutter
+ENGINE ASSUMPTION: a 2° page reads about as well as a straight one
+ENGINE ASSUMPTION: the reported quads tilt with the page
+```
 
-Both were *measured* and both were used to refuse work. Neither is *held*. A
-macOS update that changed Vision's line grouping would degrade both silently, and
-the only place it would surface is the corpus gate, as a character-count drift —
-which is the same signal that moved by 23 characters in the run that released
-1.11.0 and could not be localised (R46).
+The skew band is loose (80%) on purpose — line grouping flips between
+interpretations, so a real page read −2.73% at +2.0° and +0.08% at +3.0°, and a
+flaky check here would be worse than none. Both were watched failing: reversing
+the observations fails the ordering check, and planting 6° fails the quad check at
+a median of 6.10°.
 
-**What to build.** Two checks in the suite, over generated fixtures, both cheap:
-
-- a two-column fixture, recognised, asserting every left-column observation is
-  returned before every right-column one;
-- the same fixture rendered at ~2°, asserting recovered characters stay within a
-  generous band of the 0° rendering — generous because Vision's line grouping
-  genuinely flips between interpretations (a +2.0° reading came back −2.73% while
-  +3.0° came back +0.08%), so a tight bound would be flaky and a flaky check in
-  this position is worse than none.
-
-**The failure message is half the work.** These do not fail because this app
-broke; they fail because an assumption about the engine stopped holding. Say so in
-the check's own text, or the next person spends a session looking for a defect in
-`SearchableWriter` — which is R21's shape, and the most expensive mistake this
-register records.
-
-`Tools/score-reading-order.swift` and `Tools/score-skew.swift` already carry the
-instruments and the thresholds; this is the cheap standing version of what they
-did once.
-
-**One question still needs a person and does not block either**: whether the
-controls *sound* right under VoiceOver. That no control is anonymous is settled
-and guarded by a check; hearing it is not the same claim.
+**They are named ENGINE ASSUMPTION and say "the app did not change" in their
+failure detail.** If one goes red, re-open the `FEATURES.md` entry and re-measure
+with `Tools/score-reading-order.swift` and `Tools/score-skew.swift`; do not go
+looking for a defect in `SearchableWriter`.
 
 ## The gate that released 1.11.0 — done 2026-08-13
 
