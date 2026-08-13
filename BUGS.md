@@ -1981,7 +1981,9 @@ different proposition from the one rejected above, and it belongs with the MRC
 work in FEATURES.md rather than here.
 
 The abandoned implementation is kept as
-`../vision-ocr-jpx-picture-pages-20260811-abandoned-wip.patch`: it was complete
+`~/Claude/Long term storage/Preserved Worktrees/vision-ocr-jpx-picture-pages-20260811-abandoned-wip.patch`
+(moved there 2026-08-13 from `../`, to keep `~/Claude/` itself clean — the path has spaces, so quote it):
+it was complete
 and green at 626 checks, with red→green proven for every check and four mutants
 killed, before the corpus said not to ship it.
 
