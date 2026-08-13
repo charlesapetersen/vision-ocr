@@ -154,6 +154,39 @@ from the vector source exactly once:
 
 **Deskewing loses text, and loses more the more crooked the page is.** Subtracting
 the control row as a floor still leaves −1.10% at 0.5–1.0° and −1.81% at ≥1.0°.
+
+#### Why, and it is the part that should stop this being proposed a third time: **Vision already handles skew itself.**
+
+Measured on a two-column journal page, each angle rendered once from the vector
+source so no row pays for a second resampling:
+
+| planted | characters | vs 0° | the quad angle Vision reports |
+|---|---|---|---|
+| −3.0° | 5,203 | +0.02% | **−2.93°** |
+| −2.0° | 5,204 | +0.04% | **−1.94°** |
+| −1.0° | 5,206 | +0.08% | −0.75° |
+| 0.0° | 5,202 | — | 0.00° |
+| +1.0° | 5,203 | +0.02% | **+0.71°** |
+| +2.0° | 5,060 | −2.73% | **+2.05°** |
+| +3.0° | 5,206 | +0.08% | **+3.01°** |
+
+Two facts, and it is the pair that matters. **Recognition is flat across ±3°** —
+the two dips are not monotonic in angle, so they are line-grouping interpretation
+flipping rather than degradation; 3° reads as well as 0°. **And the quads come back
+rotated with the page**, tracking the planted angle to within ~0.07°:
+`VNRecognizedTextObservation` is a `VNRectangleObservation` with four corners, and
+those corners tilt. It is not tolerating skew by accident, it is working in the
+page's own frame.
+
+So there is nothing left for a deskew step to win. The baselines are already found
+at their real angle, and all a rotation can add is a resampling of the glyph edges
+— which is precisely the cost that grows with angle in the table above this one.
+
+*What this does not establish* is the implementation: whether Vision rotates
+internally or its line-finding is rotation-invariant cannot be told apart from
+outside, and is not worth telling apart. Either way the skew is handled before this
+app could help. `Tools/score-skew.swift` carries the instrument if someone wants to
+re-run it against a future OS.
 The corrections were *right* — the estimator re-run on each corrected page reports
 a residual of ~0.000° — so this is not a correction that missed. Vision is simply
 already robust to a degree of skew, and resampling glyph edges costs more than
