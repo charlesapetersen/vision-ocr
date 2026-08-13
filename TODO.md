@@ -13,14 +13,67 @@ promoted, or it does not and should be deleted.
 
 ## What is actually left
 
-**One piece of work.** 1.11.0 shipped on 2026-08-13 with the gate at 232/232 and
-48 minutes, and `FEATURES.md`'s two layout items — deskew and columns — were both
-built or measured and both refused, so the feature backlog is down to item 7 (a
-watched folder or command line), which nobody has asked for.
+1.11.0 is **tagged but not published**, which is the first item. After that:
+`FEATURES.md`'s two layout items were both built or measured and both refused, so
+the feature backlog is down to item 7 (a watched folder or command line), which
+nobody has asked for.
 
-1. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
+1. **Publish the 1.11.0 release.** The tag exists; the GitHub release does not.
+   This is not tidiness — `Updater.releasesAPI` polls
+   `/releases/latest`, so until a release exists **every user stays on 1.10.1 and
+   is never offered 1.11.0**, which is the version with the throughput fix in it.
+   Every previous release carries a `Vision OCR.dmg` asset and this one should
+   too: `./build.sh --dmg` (which implies `--universal`, and runs its own
+   verification — it mounts the image and executes every bundled helper under
+   `env -i`, including `visionocr-recognise --version`), then `gh release create
+   v1.11.0` with the CHANGELOG entry and that asset. Needs the owner's say-so:
+   it offers an update to everyone running the app.
+
+2. **Guard the two properties that are the engine's, not ours.** Newly identified
+   2026-08-13 and specified below.
+
+3. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
    work, and probably its own session. Specified below. It was waiting on
    throughput, and throughput is now better than the figure it was waiting for.
+
+## 2. The engine's competence is load-bearing and unguarded
+
+**Two of this app's user-visible qualities are Vision's, not this codebase's, and
+nothing in 793 checks asserts either.**
+
+- **Reading order.** `SearchableWriter.compose` draws observations in the order
+  Vision returns them and never sorts. Two-column pages come out in reading order
+  because Vision puts them that way — measured 2026-08-13, median interleaving
+  1.0, 0.19% of observations crossing a physical gutter. `FEATURES.md` item 3 was
+  declined on exactly this.
+- **Skew tolerance.** Recognition is flat across ±3° and the reported quads tilt
+  with the page. `FEATURES.md` item 2 was declined twice on exactly this.
+
+Both were *measured* and both were used to refuse work. Neither is *held*. A
+macOS update that changed Vision's line grouping would degrade both silently, and
+the only place it would surface is the corpus gate, as a character-count drift —
+which is the same signal that moved by 23 characters in the run that released
+1.11.0 and could not be localised (R46).
+
+**What to build.** Two checks in the suite, over generated fixtures, both cheap:
+
+- a two-column fixture, recognised, asserting every left-column observation is
+  returned before every right-column one;
+- the same fixture rendered at ~2°, asserting recovered characters stay within a
+  generous band of the 0° rendering — generous because Vision's line grouping
+  genuinely flips between interpretations (a +2.0° reading came back −2.73% while
+  +3.0° came back +0.08%), so a tight bound would be flaky and a flaky check in
+  this position is worse than none.
+
+**The failure message is half the work.** These do not fail because this app
+broke; they fail because an assumption about the engine stopped holding. Say so in
+the check's own text, or the next person spends a session looking for a defect in
+`SearchableWriter` — which is R21's shape, and the most expensive mistake this
+register records.
+
+`Tools/score-reading-order.swift` and `Tools/score-skew.swift` already carry the
+instruments and the thresholds; this is the cheap standing version of what they
+did once.
 
 **One question still needs a person and does not block either**: whether the
 controls *sound* right under VoiceOver. That no control is anonymous is settled
