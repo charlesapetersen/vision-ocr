@@ -28,11 +28,16 @@ library, 52 of 60 sampled produced by FineReader, and *they route per page
 exactly as this does*. The gap is not quality of engineering. It is **layout
 analysis**, and secondarily image preparation.
 
-**1. Recover the text already being lost (R39).** Not a feature. On Automatic —
-the default — recognition runs at a resolution where Vision collapses, and one
-measured page yields 3,046 characters at an explicit 300 DPI against 924. This is
-the cheapest large win available and it is already specified. Nothing else on
-this list should be started first.
+**1. ~~Recover the text already being lost (R39).~~ DONE — shipped in 1.10.1.**
+Left in place because the ranking below was written against it and because *how*
+it closed is the useful part. It did not close the way this entry proposed:
+sending an explicit recognition DPI was measured over 52 documents and 4,140
+pages and is **worse than Automatic at every value tried**, and worst in the
+high-resolution band where this entry predicted it would win. The 3,046-against-924
+page was real and the diagnosis drawn from it was wrong. The actual defect was
+underneath — the DPI ceiling could not bind on Automatic, because it was compared
+against a constant the code's own comment wrongly described as the engine's
+default. `BUGS.md` R39.
 
 **2. ~~Deskew~~ — DECLINED, measured 2026-08-12.** This was ranked second here on
 argument, and the argument was wrong in both halves. It is left in place rather
@@ -103,24 +108,20 @@ is the single biggest *functional* difference from FineReader. It is also the
 most work: a real segmenter, plus a decision about what to do when it is wrong on
 an irreplaceable document.
 
-**4. Show uncertain words instead of deleting them.** The confidence slider's
-only action is to throw text away, and the panel says so honestly. Commercial
-tools do the opposite — they surface low-confidence words for a human to confirm.
-For archival work where the operator is the same person who owns the documents,
-a review pass over the doubtful words would recover more than any threshold can.
-
-**5. Structure tags.** No `/StructTreeRoot`, no `/MarkInfo`. The output is a
-picture with invisible text over it, which is searchable but not *navigable* — a
-screen reader gets a wall of text with no headings, and reflow is impossible.
-This is the accessibility half of what PDF/A was declined for, and it does not
-require the font embedding that made PDF/A too expensive.
-
-**6. More export formats.** Text and searchable PDF. DOCX and EPUB are what
-people ask commercial OCR for, and both need (3) first — an export without
-reading order is worse than no export.
+**4, 5 and 6 — ARCHIVED 2026-08-13**, at the owner's decision, and recorded
+rather than deleted so nobody re-proposes them as new. They were: *show uncertain
+words instead of deleting them* (a review pass over low-confidence text, which is
+what commercial tools do instead of thresholding); *structure tags*
+(`/StructTreeRoot` and `/MarkInfo`, the accessibility half of what PDF/A was
+declined for — searchable but not navigable); and *more export formats* (DOCX and
+EPUB, both of which needed (3) first anyway, since an export without reading
+order is worse than no export). None was refused on measurement; they are simply
+not what this app is for. Do not reopen without a document that needs one.
 
 **7. A watched folder or a command line.** The GUI batch is the only way in.
 Cheap, and it is what turns this from an application into part of a workflow.
+**The one still live on this list**, now that 1 is done, 2 is declined, 4–6 are
+archived and 3 is the long road.
 
 **What is not closable, and should be said plainly.** Recognition of degraded
 19th-century type, Fraktur, and heavy tabular material is the engine's, and the

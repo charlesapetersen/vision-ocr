@@ -13,14 +13,11 @@ enum Runner {
 
     // MARK: - Finding the tools
 
-    /// A GUI app launched from Finder gets a bare PATH (/usr/bin:/bin:...), so
-    /// the Homebrew/npm install of mac-ocr is *not* on it. Look in the places
-    /// it actually lands instead of trusting the environment.
-    static let searchPaths = [
-        "/opt/homebrew/bin/mac-ocr",          // Homebrew, Apple silicon
-        "/usr/local/bin/mac-ocr",             // Homebrew (Intel) and npm -g default
-        "/opt/local/bin/mac-ocr",             // MacPorts
-    ]
+    // `searchPaths` used to sit here: three hard-coded `mac-ocr` install
+    // prefixes, left behind when that dependency was removed and read by
+    // nothing. `locateTool` has its own list of prefixes and always did. Deleted
+    // rather than left as scenery — a constant naming a program this app no
+    // longer runs is a false lead for whoever greps for it next.
 
     /// Whether a path names something we could actually execute.
     ///
