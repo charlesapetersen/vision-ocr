@@ -78,7 +78,7 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 790 checks, ~2-4 minutes (it runs real OCR)
+./run_tests.sh        # 799 checks, ~2-4 minutes (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -224,12 +224,30 @@ Two things the second pass learned the hard way, both worth carrying forward:
 
 ## Where things stand
 
-Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT` — R40, the last one
-open, closed on 2026-08-13. `TODO.md` holds no code work: one **measurement**
-(the gate re-run that releases 1.11.0), the Zotero library sweep that was always
-last, and one thing that needs a person in front of a running app. `FEATURES.md`
-is ideas. The suite is at **790 checks**, and it **needs nothing installed to
-run**, including the suite — the mac-ocr dependency is gone.
+Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT` — R40 closed on
+2026-08-13, and R41–R48 with it, every one of them found by reviewing that work
+rather than by a test failing. **1.11.0 is released**, gate and all.
+
+`TODO.md` holds two pieces of work, in order: **preserve annotations through
+re-OCR** (specified in full, and the library sweep is blocked on it because 9% of
+the library carries a reader's own marks), then the **Zotero library sweep**
+itself. Plus one thing that needs a person in front of a running app.
+
+`FEATURES.md` is down to **one live idea** — a watched folder or command line.
+Everything else is shipped, archived, or declined on measurement: deskew twice,
+columns once, and both refusals are now *held* by checks rather than remembered
+(see "the engine's competence" below). The suite is at **799 checks** and it
+**needs nothing installed to run** — the mac-ocr dependency is gone.
+
+**Two of this app's qualities are Vision's, not this codebase's**, and that is
+worth knowing before reading either refusal. `compose` never sorts, so reading
+order is inherited whole; and recognition is flat across ±3° with the reported
+quads tilting to match, so there is nothing for a deskew step to win. Six checks
+named `ENGINE ASSUMPTION` now hold both. **If one of those goes red, this app
+probably did not break** — an assumption about the recogniser stopped holding, and
+the answer is to re-open the `FEATURES.md` entry and re-measure with
+`Tools/score-reading-order.swift` and `Tools/score-skew.swift`, not to go looking
+for a defect in `SearchableWriter`.
 
 **The released version is 1.11.0, tagged 2026-08-13.** The direct-Vision
 migration and R40's fix both shipped in it. The gate that released it:
