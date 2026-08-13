@@ -230,7 +230,63 @@ not built because it needs a bound on helpers shared across the whole batch,
 where today the count is `Prefs.concurrency` by construction and needs no pool.
 Worth doing only if someone is waiting on single big books.
 
-## 2. The Zotero library sweep (deferred, last — blocked on item 1)
+## 2. The Zotero library sweep — step 1 done 2026-08-13, steps 2-4 pending
+
+### What the survey found
+
+`Tools/sweep-zotero.py` over the whole library, read-only. **15,901 attachments**:
+
+| verdict | files |
+|---|---|
+| scanned | 9,106 |
+| born-digital | 5,679 |
+| photographed | 1,001 |
+| no page image / unreadable | 115 |
+
+Per-page cost, median over each kind: **scanned 83 KB/page** (36.3 GB across 9,106
+files), **born-digital 23 KB/page** (9.3 GB across 5,679). Born-digital files are
+*not* candidates at any size — re-OCR would replace good text with worse — but
+they were measured because the size question was asked, and a handful are
+extraordinary: five sit above 1.4 MB/page, the worst a 3-page document at
+2,960 KB/page. Those are image-heavy exports, not scans, and want a different
+tool.
+
+Per-page median by item type, over scans only, is in the log; it ranges from
+newspaperArticle at 286 KB/page down to thesis at 40.
+
+**1,164 re-OCR candidates** — scanned, ≥3x their own item type's median, and
+≥150 KB/page. They hold **11.6 GB** and would give back roughly **10.0 GB**. The
+extremes are single-page newspaper clippings scanned at absurd resolution: the
+worst is one page at 50 MB, 341x its type's median. By page count: 166 are 1 page,
+653 are 2–10, 304 are 11–100, 41 are over 100.
+
+### The split that decides the order
+
+**108 of the 1,164 candidates carry a reader's own marks — 9.3%**, the same rate
+as the library at large and as the corpus. So the sweep is **not** blocked in
+full, only in part:
+
+- **1,053 files, 10.2 GB held, ~8.9 GB reclaimable** — safe to sweep as soon as
+  the mechanics of step 3 exist.
+- **111 files, 1.3 GB held, ~1.1 GB reclaimable** — must wait for item 1.
+
+*(That split was computed by matching basenames, and Zotero storage can hold the
+same basename under two keys; the 108/111 discrepancy is roughly three such
+collisions. Match on the full path when it matters.)*
+
+### Where the artifacts are
+
+**Not in this repo** — they are paths into a private library and this repository
+is public. `~/Claude/vision-ocr-sweep-2026-08-13/`: `survey.tsv` (all 15,901 rows),
+`survey.log`, `candidates.txt`, `candidates-with-reader-marks.tsv`. Re-runnable
+with `python3 Tools/sweep-zotero.py` in about 50 minutes.
+
+### Steps 2-4, still to do
+
+Step 2 is the review with the owner — done for the aggregate, not for the list.
+Steps 3 and 4 are below and **nothing has been written to the library**.
+
+## The original specification (steps 3 and 4)
 
 Agreed 2026-08-12 as the final task, after all feature work, probably its own
 session. The user's own library, 16,079 PDFs.
