@@ -20,9 +20,11 @@ specified out of R49 and the one genuinely new idea here. Two things this repo h
 already refused (R35's per-page background factor, R49's paper detector) were both
 refused for want of it, so it unblocks more than it costs.
 
-**1.12.0 is written but NOT released** — no tag, no DMG, no GitHub release. The
-version in `Info.plist` is bumped and `CHANGELOG.md` has its entry; the release
-itself is still to do, and is waiting on the tone-layer work below. R49 is the one
+**1.12.0 IS released** — tag `v1.12.0` at `0dcca38`, a universal `Vision OCR.dmg`, and
+a GitHub release published 2026-08-14T01:56Z. This paragraph said the opposite for most
+of a day, and the sentence was believed twice before anyone ran `gh release list`; a
+`git tag | tail` reads *lexically*, so v1.10.0, v1.11.0 and v1.12.0 sort **before**
+v1.4.0 and a tail shows none of them. Ask the forge, not the prose. R49 is the one
 worth reading: a 568-page scan went in at 31 MB and came out at 437 MB because
 colour pages were the single page kind that could not be layered, and the detector
 had routed every page into exactly that case. The entry also records a detector fix
