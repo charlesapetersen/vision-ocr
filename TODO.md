@@ -47,15 +47,38 @@ carry at all — the remaining 4 MB over the original, and `FEATURES.md` has the
 build's own verification exercised by mounting the image and running every bundled
 helper under `env -i`, `visionocr-recognise --version` included.
 
-1. **Preserve annotations through re-OCR.** Newly promoted 2026-08-13 and
-   specified below. **The library sweep is blocked on it**: 9% of the library
-   carries a reader's own marks and re-OCR discards every one without a word, so
-   the sweep either skips a tenth of the library or destroys somebody's
-   scholarship. Neither is acceptable.
+**The order, agreed with the owner 2026-08-13 after 1.12.0's work:**
 
-2. **The Zotero library sweep.** Explicitly the *last* thing, after all feature
-   work, and probably its own session. Specified below. It was waiting on
-   throughput, and throughput is now better than the figure it was waiting for.
+1. **Move `isPicture` after recognition** — promoted to next. It is the other half
+   of R50 and the last thing standing between this app and files smaller than a good
+   mixed-raster original. It still runs *before* recognition, so it has only the
+   page's histogram, which R49 measured as unable to tell text from a tinted plate.
+   That is why a 568-page text book carries tone layers on 522 pages it should not
+   carry at all — about 4 MB over its original. `FEATURES.md`'s spatial-signal entry
+   has the route; R50's own signal (ink outside recognised words) is the proof the
+   structural question is answerable once the boxes exist.
+
+2. **Preserve annotations through re-OCR.** Specified below, not started. **The
+   library sweep is blocked on it**: 9% of the library carries a reader's own marks
+   and re-OCR discards every one without a word, so the sweep either skips a tenth
+   of the library or destroys somebody's scholarship. Neither is acceptable.
+
+3. **Clickable footnote and endnote links.** `FEATURES.md` has it, recorded
+   research-first. Deliberately *after* annotations: it is the same `/Link`-annotation
+   object-graph plumbing, and doing it first means writing that twice.
+
+4. **The Zotero library sweep.** Explicitly the *last* thing, after all feature work,
+   and probably its own session. Specified below. Fix `BUGS.md` R54 before step 2
+   reads the survey's per-type numbers.
+
+**A watched folder or command line is dropped** — 2026-08-13, at the owner's
+direction. It was `FEATURES.md` item 7 and nobody had asked for it.
+
+**VoiceOver is closed** — 2026-08-13, at the owner's direction. Every control carries
+a name and the one omission (the Photo detail picker) was fixed on 2026-08-12 with a
+scanner that holds it; the suite now also refuses two controls sharing a name (U29).
+What was never done is *hearing* it in the VM, and that is accepted rather than
+outstanding.
 
 ## 1. Preserving annotations through re-OCR (decided, specified, not started)
 
@@ -455,10 +478,13 @@ its own cycle.
        0 failed, 232 outputs, 34.15M characters, 23 colour, 1,198 MB in →
        792 MB out (0.66x), 75 minutes.** Recorded in `HANDOFF.md`.
 
-2. [ ] **Settle whether the controls are named for VoiceOver**, then review and
-       release. See the open item below — use the Tart VM (`archive-gui-runner`,
-       present and stopped) and `Tools/vm-gui-check.sh`, not a scripted
-       accessibility read from the host.
+2. [x] **Settle whether the controls are named for VoiceOver — done 2026-08-12**,
+       and **closed as a question 2026-08-13** at the owner's direction. It is
+       answerable from the source and was: one control was unnamed, the Photo detail
+       picker, and it was fixed. Listening to it in the Tart VM was never done and is
+       now accepted rather than outstanding. This entry said "then review and
+       release" and outlasted two releases saying it, which is the shape of stale
+       bookkeeping worth noticing.
 
 3. [x] **Per-page DPI control for picture pages — declined 2026-08-12**, with
        the measurement in FEATURES.md. It would govern only 129 of the 449
@@ -540,7 +566,9 @@ Photo detail level, cross-column hyphen joining, JPEG 2000 for picture pages
       that no control is anonymous, which is the part that was in doubt. Hearing
       it still wants a person or the VM.
 
-- [ ] **The tab-order walk is still by hand.** `Tools/vm-gui-check.sh` covers
+- [ ] **The tab-order walk is still by hand.** *(Accepted 2026-08-13 with the rest
+      of the VoiceOver question; left here because it is a real gap, not because it
+      is queued.)* `Tools/vm-gui-check.sh` covers
       U13, U15 and U17 — nine checks, one command. The tab order is not in it:
       it needs `AppleKeyboardUIMode` set in the guest and reads focus rings out
       of pixel diffs between captures, which is a lot of machinery for a property

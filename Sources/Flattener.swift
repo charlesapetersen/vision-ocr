@@ -1185,11 +1185,25 @@ enum Flattener {
     /// it lands at 0.153 or above, and 0.08 leaves a factor of two below the
     /// nearest one.
     ///
-    /// **The one case it misses**, recorded because it will come up: a *pale* line
-    /// drawing reads 0.0000, because Otsu puts light grey on the paper side and it
-    /// is therefore not ink at all. It is also the mildest case — softening a pale
-    /// drawing is the least of the losses available here — and it is the reason
-    /// this only ever changes resolution and never discards a layer.
+    /// **What it misses — two cases, both recorded because they will come up.** The
+    /// signal is ink, so anything whose luminance sits near the paper/ink boundary
+    /// is invisible to it:
+    ///
+    /// - a *pale* line drawing reads **0.0000**, because Otsu puts light grey on the
+    ///   paper side and it is therefore not ink at all;
+    /// - a **flat mid-luminance colour field** reads **0.0365**. Measured on a flat
+    ///   red plate: it renders at luminance 96–111 while Otsu on that page lands at
+    ///   **106**, so half the plate is above the threshold. This is why the suite
+    ///   builds a *tonal* plate to test the picture case, and why that fixture must
+    ///   not be "simplified" back to a flat one — it would assert the limitation
+    ///   instead of the behaviour.
+    ///
+    /// Neither is alarming, because this only ever changes *resolution*: the worst
+    /// it can do is soften something, never remove it. A flat field also loses
+    /// nothing to a downsample, so the second miss is self-cancelling in the common
+    /// case; what would actually suffer is a detailed colour image with no dark
+    /// tones. `PhotoDetail.maximum` is honoured in full for exactly this reason —
+    /// see the `keepEveryPixel` guard in `mrcLayers`.
     static let textPageInkOutsideThreshold = 0.08
 
     /// What a page of nothing but text shrinks its tone layers to.
@@ -1289,18 +1303,26 @@ enum Flattener {
     /// Colour layering holds, at peak: the grey render the stencil comes from (1),
     /// the RGBA render (4), the stencil, the text-region map and its inverse (3),
     /// the channel plane being worked on and its filled copy (2), and inside
-    /// `fillHoles` a second copy of that plane plus two flag arrays (4) — about 14.
+    /// `fillHoles` a second copy of that plane plus two flag arrays (4) — 14 so far.
     /// The three planes are taken and released one at a time, which is why this is
-    /// not three times the grey figure. The downsampled layers are small by
-    /// construction.
+    /// not three times the grey figure.
     ///
-    /// **19.0 is that sum rounded up, not a measured peak RSS** — unlike
+    /// **The interleaved output layer is not always small.** An earlier version of
+    /// this comment said the downsampled layers were "small by construction", which
+    /// is true at every Photo detail level except the one that matters:
+    /// `PhotoDetail.maximum` is a factor of **1**, `downsample` returns its input
+    /// unchanged, and the interleaved RGBA background is then a full-resolution
+    /// 4 B/px buffer with `jpegRGB`'s 24-bit representation another 3 on top of it.
+    /// That is 21, not 14. Found by reviewing this code rather than by running out
+    /// of memory, which is the good way to find it.
+    ///
+    /// **22.0 is that sum rounded up, not a measured peak RSS** — unlike
     /// `measuredGreyBytesPerPixel` and `measuredColourBytesPerPixel`, which were
     /// measured. It is deliberately above the arithmetic so the bound it feeds is
-    /// conservative, and it is named for what it is. The bound holds either way and
-    /// with room: the page is separately capped at `maximumColourPageMegapixels`
-    /// before it can ever be a colour page at all.
-    static let statedColourMRCBytesPerPixel = 19.0
+    /// conservative, and it is named for what it is. The bound still holds, and the
+    /// page is separately capped at `maximumColourPageMegapixels` before it can ever
+    /// be a colour page at all.
+    static let statedColourMRCBytesPerPixel = 22.0
 
     /// Whether colour layering's worst case stays inside the render's, the same
     /// property `mrcBoundIsWithinTheRenderOne` asserts for the grey route.
@@ -1529,15 +1551,28 @@ enum Flattener {
         // R50. A page whose ink is all text has nothing in its tone layers worth
         // full resolution, so both are shrunk far harder. See
         // `textPageInkOutsideThreshold` for why this is asked here and not in
-        // `isPicture`, and for what it misses.
+        // `isPicture`, and for the two page kinds it misses.
         //
         // `max` rather than a replacement: the caller's factor is a floor, so a
         // page that *does* carry a picture is never shrunk harder than the setting
         // asked for. On a page with no picture, Photo detail is governing a
         // photograph that is not there.
-        let allText = inkOutsideText(grey, region: region, width: w, height: h,
-                                     threshold: otsuThreshold(of: grey))
-            < textPageInkOutsideThreshold
+        //
+        // **Except when the caller asked for every pixel.** `PhotoDetail.maximum`
+        // is a factor of 1, and it promises "photographs keep every pixel" — an
+        // instruction, in the sense `Flattener.Mode` already uses the word, where
+        // Black & white and Grayscale are instructions and Automatic is the one
+        // that works out what the page needs. This signal has two recorded misses,
+        // and one of them — a pale line drawing — is a picture it reads as text, so
+        // honouring the instruction is what keeps the miss from costing that user
+        // resolution they explicitly asked to keep. Found by reviewing this diff:
+        // the first version applied the shrink at every setting, so Maximum stored
+        // such a page at an eighth of its resolution with no way to override it.
+        let keepEveryPixel = backgroundDownsample <= 1
+        let allText = !keepEveryPixel
+            && inkOutsideText(grey, region: region, width: w, height: h,
+                              threshold: otsuThreshold(of: grey))
+                < textPageInkOutsideThreshold
         let bgFactor = allText
             ? max(backgroundDownsample, textPageBackgroundDownsample) : backgroundDownsample
         let fgFactor = allText

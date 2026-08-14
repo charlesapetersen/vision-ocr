@@ -6,7 +6,17 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** **R49** — a 568-page scan going in at 31 MB and out at **437 MB**,
+**One open, and it is not in the app: R54**, a pooling bug in `Tools/sweep-zotero.py`
+that makes its per-type medians and its "GB reclaimable" figure untrustworthy for 181
+parentless attachments. It matters only when the library sweep runs, which is
+scheduled last.
+
+**R51–R53 came out of a review of R49 and R50's own diff and are all `FIXED`** — the
+tenth round running in which reviewing the previous round's code found real defects in
+it. One of them, R52, was a page stored at an eighth of the resolution its user had
+explicitly asked to keep.
+
+**R49** — a 568-page scan going in at 31 MB and out at **437 MB**,
 because colour pages were the one kind that could not be layered — is `FIXED`, and
 **R50** finishes the job: the file now lands at **35,379,516 bytes, 1.13x its
 original**, down 12.4x, with a byte-identical text layer. R49's entry records a
@@ -2480,6 +2490,83 @@ one-document run is the wrong answer, and is the same class of mistake as the
 three timings that were polluted while this entry was being written.
 
 ---
+
+### R54 · `sweep-zotero.py` pools 181 parentless attachments into one pseudo-type — OPEN
+*(found 2026-08-13 reviewing the commit it arrived in; not in the app, and not urgent
+— the library sweep it serves is scheduled last)*
+
+The survey's `LEFT JOIN` onto the parent item leaves attachments with no parent
+carrying a null item type, and they are then grouped together. **181 files** land in
+that pseudo-type. The per-type median that the outlier test and the "GB reclaimable"
+estimate are both computed from is therefore taken over heterogeneous material for
+those files — which is exactly the pooling the tool's own comment says the item types
+cannot survive.
+
+It does not corrupt anything and it does not touch a document. It makes two numbers in
+the survey wrong by an unknown amount for 181 of 15,901 attachments. Fix it before
+step 2 of the sweep reads those numbers, not before the release.
+
+### R53 · R50's own doc comment recorded one miss where there are two — FIXED
+*(found 2026-08-13 reviewing R50's diff)*
+
+`textPageInkOutsideThreshold` said "**The one case it misses**" and described only the
+pale line drawing, while this register's R50 entry recorded two and
+`Tests/main.swift` points *at that constant* as the place the second one — a flat
+mid-luminance colour field — is written down. The comment was written before the
+second miss was measured and was not brought forward with it.
+
+Stale as such comments go, except for what the cross-reference is holding: it is the
+reason the suite's picture fixture is deliberately *tonal* rather than flat. A future
+reader simplifying that fixture back to a flat colour plate would produce a test that
+asserts the limitation instead of the behaviour, and passes. **Fixed** by recording
+both misses on the constant, with the measurement, and by saying on the fixture why
+it is the shape it is.
+
+### R52 · Photo detail = Maximum was silently overridden on any page read as text — FIXED
+*(found 2026-08-13 reviewing R50's diff, before release)*
+
+R50 shrinks a text page's tone layers with `max(callerFactor, 8)`, on the reasoning
+that Photo detail governs photographs and a page with no photograph has none to
+govern. That reasoning is right for three of the four levels and wrong for the fourth.
+
+`PhotoDetail.maximum` is a factor of **1** and its blurb promises "photographs keep
+every pixel". Under `max(1, 8)` a page the ink signal read as all-text was stored at
+**an eighth of its resolution**, with no way to override it — and the signal has two
+recorded misses, one of which (a pale line drawing, scoring 0.0000) is a picture read
+as text. So the one setting a user picks *because* they care about every pixel was the
+one setting that could lose them resolution on the case the signal gets wrong.
+
+**Fixed** by honouring it: at a caller factor of 1 the text-page shrink does not
+apply at all. This is `Flattener.Mode`'s existing doctrine — Black & white and
+Grayscale are instructions, Automatic is the one that works out what the page needs —
+applied to Photo detail, where Maximum is the instruction. The guard is deliberately
+narrow: Balanced and below still shrink text pages, and a test holds both halves.
+
+Reproduced first, both ways: with the guard removed the Maximum fixture stores a
+1224-pixel-wide page at **153 pixels** and the two new checks fail, while the Balanced
+check still passes.
+
+### R51 · Colour layering's stated memory figure omitted its own output buffers — FIXED
+*(found 2026-08-13 reviewing R49's diff)*
+
+`statedColourMRCBytesPerPixel` was 19.0, and the accounting written on it — grey
+render, RGBA render, stencil, region, inverse, the working plane and its filled copy,
+and `fillHoles`'s transients — came to about 14, with the note that "the downsampled
+layers are small by construction".
+
+They are, at every Photo detail level except the one that matters. **`PhotoDetail.maximum`
+is a factor of 1**, `downsample` returns its input unchanged, and the interleaved RGBA
+background is then a **full-resolution 4 bytes a pixel** with `jpegRGB`'s 24-bit
+representation another 3 on top. The real figure is **21**, not 14, and the constant
+feeds `colourMRCBoundIsWithinTheRenderOne` — a guard, so understating it weakens the
+thing it exists to check. At 100 MP the bound had ~4% headroom rather than the ~14% it
+appeared to have, times the number of files in flight.
+
+**Fixed** by correcting the arithmetic and the constant to **22.0**. The bound still
+holds (100 MP x 22 = 2,200 against the render's 400 MP x 5.5 = 2,200), and colour
+layering is additionally capped by `maximumColourPageMegapixels` before a page can be
+a colour page at all. Found by reading the code rather than by running out of memory,
+which is the good way to find it.
 
 ### R50 · The tone layers, not the stencil, were what kept a layered file large — FIXED
 *(found 2026-08-13 by asking why R49's output was still 2.17x its original, when the

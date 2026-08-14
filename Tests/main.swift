@@ -1338,6 +1338,48 @@ do {
             }
         }
 
+        // Photo detail = Maximum is an instruction, and the text-page shrink must
+        // not override it.
+        //
+        // Found by reviewing this diff, not by a user losing a page: the first
+        // version applied the shrink at every setting, so a page the ink signal
+        // reads as all-text was stored at an eighth of its resolution even when the
+        // user had asked to keep every pixel. That matters because the signal has
+        // two recorded misses and one of them, a pale line drawing, is a picture
+        // read as text — see `textPageInkOutsideThreshold`.
+        if let doc = PDFDocument(url: textPage), let tpage = doc.page(at: 0) {
+            let tboxes = (0..<10).map { i in
+                SearchableWriter.BoundingBox(x: 0.10, y: 0.06 + Double(i) * 0.07,
+                                             width: 0.80, height: 0.05)
+            }
+            let size = Flattener.fullBox(of: tpage).size
+            let scale = Flattener.rebuildDPI(of: tpage) / 72.0
+            let fullW = Int((size.width * scale).rounded())
+            if let l = Flattener.mrcLayers(for: tpage, boxes: tboxes, into: mrcDir,
+                                           stem: "r50max",
+                                           backgroundDownsample: Prefs.PhotoDetail.maximum.downsample,
+                                           inColour: true) {
+                check("a text page at Photo detail Maximum keeps every pixel",
+                      l.backgroundWidth >= fullW,
+                      "\(l.backgroundWidth) wide of \(fullW) at 1x")
+                check("…and its foreground is not shrunk past the default either",
+                      l.foregroundWidth >= fullW / Flattener.mrcForegroundDownsample,
+                      "\(l.foregroundWidth) wide of \(fullW) at 1x")
+            } else {
+                check("the Maximum fixture layers", false, "mrcLayers returned nil")
+            }
+            // …while the level below it still gets the saving, so the guard is
+            // narrow rather than a way of turning the whole rule off.
+            if let l = Flattener.mrcLayers(for: tpage, boxes: tboxes, into: mrcDir,
+                                           stem: "r50bal",
+                                           backgroundDownsample: Prefs.PhotoDetail.balanced.downsample,
+                                           inColour: true) {
+                check("…but Balanced still shrinks a text page",
+                      l.backgroundWidth <= fullW / Flattener.textPageBackgroundDownsample + 1,
+                      "\(l.backgroundWidth) wide of \(fullW) at 1x")
+            }
+        }
+
         // No words means no layering: a plate would otherwise be published at a
         // fraction of its resolution for no benefit.
         if let doc = PDFDocument(url: darkPage), let dpage = doc.page(at: 0) {

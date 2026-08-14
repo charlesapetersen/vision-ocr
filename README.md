@@ -209,8 +209,9 @@ they work identically, just take more disk. Installing it separately fixes that:
 
 ## Credits
 
-Recognition is Apple's Vision framework, reached through
-[mac-ocr](https://github.com/privatenumber/mac-ocr) by Hiroki Osame, whose source
+Recognition is Apple's Vision framework, called directly. It used to be reached
+through [mac-ocr](https://github.com/privatenumber/mac-ocr) by Hiroki Osame, and
+although 1.11.0 removed that dependency the credit stands: reading its source
 settled three details of how Vision is called here. Compression
 is [jbig2enc](https://github.com/agl/jbig2enc) and
 [qpdf](https://github.com/qpdf/qpdf), with leptonica and the usual image codecs
