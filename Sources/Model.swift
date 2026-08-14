@@ -1511,6 +1511,10 @@ final class OCRModel: ObservableObject {
         //    with the same base name cannot collide here.
         let staged = work.appendingPathComponent("staged.pdf")
 
+        // Carried out of the annotation step and onto the success line, because that is
+        // what the run report keeps. See the transplant call below.
+        var marksNote: String?
+
         // Read the expected page count now, while everything still exists. The
         // scratch intermediates get deleted as they're spent, so asking later
         // returned -1 for a file that had just been removed.
@@ -1782,13 +1786,24 @@ final class OCRModel: ObservableObject {
             // than a file left alone. The catch below reports it and returns, so
             // nothing is published and the input is untouched.
             if settings.preserveAnnotations {
+                // `file`, not `inputFile`: an image input was wrapped into a PDF above,
+                // and qpdf cannot read a PNG. Passing the original made every image
+                // input fail the whole conversion once this setting was on — over a
+                // transplant that could never have had anything to do.
+                //
                 // Not named `report`: that is the outcome callback, and shadowing it
                 // here would silently redirect the failure paths below.
                 let marks = try Annotations.transplant(
-                    from: inputFile, into: finished, password: password,
-                    qpdf: JBIG2.merger, scratch: work)
+                    from: file, into: finished, password: password,
+                    qpdf: JBIG2.merger, scratch: work,
+                    isCancelled: { control.isCancelled }, register: control.adopt)
                 if marks.copiedTotal > 0 || marks.droppedTotal > 0 {
                     progress(marks.summary, layerShare(1, 1))
+                    // And onto the outcome, which is what reaches the run report. A
+                    // status line is cleared the moment the file finishes, so "left
+                    // 3,991 Links" was unrecoverable a second after it was said — thin
+                    // for something invariant 1 requires to be reported.
+                    marksNote = marks.summary
                 }
                 // The transplant rewrites the file through qpdf, so the page count is
                 // established again rather than assumed to have survived.
@@ -1810,7 +1825,8 @@ final class OCRModel: ObservableObject {
             report(.failed, error.localizedDescription)
             return
         }
-        report(.succeeded, sizeNote(from: inputFile, to: output))
+        report(.succeeded, [sizeNote(from: inputFile, to: output), marksNote]
+                             .compactMap { $0 }.joined(separator: " — "))
     }
 
     /// A note when the searchable copy came out **larger** than the original.

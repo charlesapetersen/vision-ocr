@@ -75,7 +75,11 @@ func render(_ page: PDFPage, scale: CGFloat, withAnnotations: Bool) -> (data: [U
         ctx.setFillColor(gray: 1, alpha: 1)
         ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
         ctx.scaleBy(x: scale, y: scale)
-        ctx.translateBy(x: -box.minX, y: -box.minY)
+        // No translate by the box origin. `PDFPage.draw(with: .mediaBox, to:)` already
+        // maps that box onto the context, so subtracting the origin here shifted the
+        // page a second time — on `Cohen_1990` page 6, whose media box starts at
+        // y = -24.69, that halved the measured coverage of the one highlight on it and
+        // left the verdict one thousandth away from being skipped as "draws nothing".
         if withAnnotations {
             page.draw(with: .mediaBox, to: ctx)
         } else {
@@ -176,8 +180,17 @@ for index in 0..<source.pageCount {
         if let inSource, let inOutput {
             drift = max(abs(inSource.cx - inOutput.cx), abs(inSource.cy - inOutput.cy))
         }
-        if inSource == nil || inOutput == nil {
-            verdict = "SKIP off page"
+        if inSource == nil {
+            // The source's own rectangle falls outside its own page: nothing to compare
+            // against, and not the output's fault.
+            verdict = "SKIP the source rectangle is off its own page"
+        } else if inOutput == nil {
+            // **A failure, not a skip.** This is what a rotated page produced before the
+            // transplant learned to refuse one: the carried rectangle lands outside the
+            // rebuilt page, so the mark is *gone*. Counting that as "skipped" is how a
+            // fixture with three provably lost highlights reported 0 failures.
+            verdict = "FAIL the carried rectangle is off the rebuilt page"
+            failures += 1
         } else if inSource!.coverage < 0.01 {
             // Nothing to compare against. A zero-area annotation, or one whose
             // appearance draws nothing in the original either.

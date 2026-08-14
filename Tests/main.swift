@@ -8355,8 +8355,12 @@ do {
         (.link, "Link"), (.widget, "Widget"),
     ]
     var expectedCopied = 0
+    // Marks go on the two *unrotated* pages only. The third page is rotated, per
+    // CLAUDE.md invariant 5, and a rotated page carrying a mark is now refused outright —
+    // so leaving them spread across all three turned this fixture into a test of the
+    // refusal. The refusal has its own fixture below.
     for (i, kind) in kinds.enumerated() {
-        guard let page = built.page(at: i % 3) else { continue }
+        guard let page = built.page(at: i % 2) else { continue }
         let mark = PDFAnnotation(bounds: CGRect(x: 40 + Double(i % 4) * 90,
                                                 y: 80 + Double(i / 4) * 120,
                                                 width: 70, height: 30),
@@ -8424,29 +8428,110 @@ do {
         check("every carried mark sits exactly where it was",
               moved.isEmpty, moved.prefix(3).joined(separator: "; "))
 
-        // A second transplant onto the same file must not double the marks. The sweep
-        // may retry a document, and a retry that duplicates somebody's highlights is
-        // its own kind of misrepresentation.
+        // A second transplant onto an already-transplanted file **fails**, and that is
+        // worth pinning because it is not what the first version of this comment claimed.
+        // It said the marks would simply be carried twice. They are not: the verification
+        // counts every copied-subtype mark present on the rebuilt page, so the ones
+        // already there make the count disagree and the document is refused. Better than
+        // duplicating somebody's highlights, and the pipeline calls this once per staged
+        // rebuild anyway — but a sweep that ever retries in place needs to know it gets a
+        // failure rather than a quiet doubling.
         let firstTotal = report?.copiedTotal ?? 0
-        let again = try? Annotations.transplant(from: annotated, into: rebuilt,
-                                                password: nil, qpdf: qpdf, scratch: dir)
+        var secondRefused = false
+        do {
+            _ = try Annotations.transplant(from: annotated, into: rebuilt, password: nil,
+                                           qpdf: qpdf, scratch: dir)
+        } catch { secondRefused = true }
         let total = (PDFDocument(url: rebuilt)?.pageCount ?? 0) > 0
             ? (0..<PDFDocument(url: rebuilt)!.pageCount).reduce(0) {
                   $0 + (PDFDocument(url: rebuilt)!.page(at: $1)?.annotations
                           .filter { Annotations.copiedSubtypes.contains("/" + ($0.type ?? "")) }
                           .count ?? 0) }
             : -1
-        // Documented behaviour, not an accident: transplanting twice *does* carry the
-        // marks twice, because the transplant is defined against the original and has
-        // no way to know a mark it is about to copy is already a copy of itself. The
-        // pipeline only ever calls it once per file, on a freshly staged rebuild. This
-        // check pins the number so that if the sweep ever retries in place, the
-        // duplication is a failing test rather than a discovery.
-        check("a second transplant is not idempotent, and the pipeline calls it once",
-              again == nil || total == firstTotal * 2,
-              "\(total) marks after two transplants of \(firstTotal)")
+        check("transplanting twice is refused rather than doubling the marks",
+              secondRefused, "second transplant did not throw")
+        check("…and the file still carries exactly one copy of each",
+              total == firstTotal, "\(total) marks, expected \(firstTotal)")
     } else {
         check("qpdf is present for the annotation checks", false, "skipped: no qpdf")
+    }
+
+    // MARK: The two defects an adversarial review of this feature's own first commit found
+    //
+    // Both were invisible to the checks that shipped with it, for the same reason: the
+    // geometry check compared the copied `/Rect` against the *source* `/Rect`, so it
+    // agreed with itself by construction and could not see that the rebuilt page's
+    // coordinate space was not the source's. CONTRIBUTING §4b names this shape.
+    if let qpdf = JBIG2.merger {
+        // 1. A rotated page. `Flattener.boxSize` bakes rotation into the raster and swaps
+        //    width and height, so a mark copied verbatim onto one can land off the sheet
+        //    — measured on this very fixture before the fix: the highlight vanished.
+        //    Refused rather than corrected, and the refusal is what is asserted.
+        let rotated = dir.appendingPathComponent("rotated.pdf")
+        let spun = PDFDocument()
+        for (i, rotation) in [0, 90].enumerated() {
+            let page = PDFPage()
+            page.setBounds(CGRect(x: 0, y: 0, width: 612, height: 792), for: .mediaBox)
+            page.rotation = rotation
+            let mark = PDFAnnotation(bounds: CGRect(x: 40, y: 700, width: 200, height: 20),
+                                     forType: .highlight, withProperties: nil)
+            mark.color = .yellow
+            page.addAnnotation(mark)
+            spun.insert(page, at: i)
+        }
+        _ = spun.write(to: rotated)
+        let spunRebuild = dir.appendingPathComponent("rotated-rebuilt.pdf")
+        let spunPNGs = dir.appendingPathComponent("rotated-pngs")
+        try? FileManager.default.createDirectory(at: spunPNGs, withIntermediateDirectories: true)
+        _ = try? Flattener.flatten(rotated, to: spunRebuild, mode: .auto,
+                                   pngDirectory: spunPNGs)
+        var rotationRefused = false
+        do {
+            _ = try Annotations.transplant(from: rotated, into: spunRebuild, password: nil,
+                                           qpdf: qpdf, scratch: dir)
+        } catch { rotationRefused = "\(error)".contains("rotatedPage") }
+        check("a mark on a rotated page is refused, not moved to the wrong place",
+              rotationRefused)
+        // …and the file it would have been written into is untouched by the attempt.
+        check("…and the rebuilt file is left alone when it is refused",
+              (PDFDocument(url: spunRebuild)?.page(at: 0)?.annotations.count ?? -1) == 0)
+
+        // 2. A media box that does not start at the origin. `boxSize` moves it to (0,0),
+        //    so every page-space coordinate has to move with it. Measured on
+        //    `Cohen_1990_Making a New Deal` page 6 (media box `[0 -24.69 408 588]`)
+        //    before the fix: the highlight landed 24.7 points low, a line and a half.
+        //    105 of 233 corpus documents have an offset box.
+        let offset = dir.appendingPathComponent("offset.pdf")
+        let shifted = PDFDocument()
+        let shiftedPage = PDFPage()
+        // The same shape as Cohen's: origin below zero.
+        shiftedPage.setBounds(CGRect(x: 0, y: -24.69, width: 408, height: 588),
+                              for: .mediaBox)
+        let shiftedMark = PDFAnnotation(bounds: CGRect(x: 40, y: 80, width: 200, height: 20),
+                                        forType: .highlight, withProperties: nil)
+        shiftedMark.color = .yellow
+        shiftedPage.addAnnotation(shiftedMark)
+        shifted.insert(shiftedPage, at: 0)
+        _ = shifted.write(to: offset)
+        let offsetRebuild = dir.appendingPathComponent("offset-rebuilt.pdf")
+        let offsetPNGs = dir.appendingPathComponent("offset-pngs")
+        try? FileManager.default.createDirectory(at: offsetPNGs, withIntermediateDirectories: true)
+        _ = try? Flattener.flatten(offset, to: offsetRebuild, mode: .auto,
+                                   pngDirectory: offsetPNGs)
+        let sourceRect = shiftedMark.bounds
+        var carriedRect: CGRect?
+        if (try? Annotations.transplant(from: offset, into: offsetRebuild, password: nil,
+                                        qpdf: qpdf, scratch: dir)) != nil {
+            carriedRect = PDFDocument(url: offsetRebuild)?.page(at: 0)?.annotations.first?.bounds
+        }
+        // The mark must move *up* by the box's own offset, into the rebuilt page's space.
+        // Asserting the shift rather than equality is the whole point: equality is what
+        // the broken version asserted, and it passed.
+        check("a mark on an offset media box is translated into the rebuilt page's space",
+              carriedRect != nil
+                  && abs((carriedRect!.minY - sourceRect.minY) - 24.69) < 0.02,
+              "moved \(carriedRect.map { $0.minY - sourceRect.minY } ?? -999) points, "
+                  + "expected 24.69")
     }
 
     // The indirect-`/Rect` case, which is a regression test for a real defect.
