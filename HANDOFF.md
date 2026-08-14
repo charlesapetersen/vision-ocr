@@ -78,7 +78,7 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 799 checks, ~2-4 minutes (it runs real OCR)
+./run_tests.sh        # 836 checks, ~2-4 minutes (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -175,6 +175,45 @@ Three files hold nearly all the subtlety. Everything else is plumbing.
   headline accuracy figures were quoted for months off a corpus that was 65%
   material this app is not for, and nothing about the numbers looked wrong (D1).
 
+### Four ways I was wrong about the same question in one session (2026-08-13)
+
+R49 and R50 are a single question — *is there a picture on this page?* — asked four
+times. It is worth reading the sequence rather than only the answer, because three of
+the four looked right at the point where it would have been tempting to ship.
+
+1. **A relative paper floor.** Find the paper on a low-key scan by taking the bright
+   class of its own Otsu split. Zero routing changes across 1,174 corpus pages, and
+   the fallback could only engage on 4 of them. It was still wrong: **synthesised
+   adversarial plates** — a flat ochre field with a dark subject on 10% of it — score
+   2.46 against the low-key text page's 3.00, and the version I had already written
+   was neutralising their colour. *The corpus showed a clean gap that did not exist,
+   because the corpus did not contain the adversary.*
+2. **The white point.** Cannot discriminate: the corpus holds a document at 161 that
+   must **not** be corrected, below the 170–183 of the one that must.
+3. **Rate-distortion — measure the harm of shrinking.** A 5 dB gap on the first four
+   pages, and a complete overlap across 91 real corpus pages (text median 27 dB,
+   photographs 25–35). The reason is worth keeping: **PSNR punishes losing grain**,
+   and losing grain is exactly the loss nobody minds. The metric could not tell "lost
+   paper texture" from "lost picture". A refinement that excluded the stencilled
+   pixels changed the median by 0.4 dB — the glyphs are only ~8% of a page.
+4. **Ink outside the recognised words.** Works, and is nearly free. **The reason the
+   first three failed is that they were all statistics of the page, taken where only
+   the histogram was available.** This one is structural and is taken after
+   recognition. It is still a threshold on a *continuum*, not a gap, and it ships on
+   a different argument: both directions of being wrong are mild.
+
+**What to take from it.** Two things. Synthesise the adversarial case — the corpus is
+not adversarial, and twice in one session it certified a separation that a
+hand-built counter-example destroyed. And when a signal fails, ask *what it is
+actually measuring* before reaching for a threshold: attempts 1 and 3 both failed for
+a nameable reason, and the name is what pointed at attempt 4.
+
+Also, for the record, two instrument failures inside this work: a nearest-neighbour
+upsampler made the error non-monotonic in the downsample factor and I nearly read that
+as a property of the pages; and a backgrounded shell loop silently processed **8 of 99
+pages** because `pdfinfo` and `cut` are not on the PATH there — which `CLAUDE.md`
+warns about in as many words.
+
 ## How to work the bug list
 
 `BUGS.md` is the record: each entry has its location, the input that triggers it,
@@ -224,13 +263,43 @@ Two things the second pass learned the hard way, both worth carrying forward:
 
 ## Where things stand
 
-Everything in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT` — R40 closed on
-2026-08-13, and R41–R48 with it, every one of them found by reviewing that work
-rather than by a test failing. **1.11.0 is released**, gate and all.
+**1.12.0 is released**, tagged and on GitHub with its DMG, gate and all. Everything
+in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT` except **R54**, which is a pooling
+bug in `Tools/sweep-zotero.py` rather than in the app and is only read by the sweep,
+scheduled last.
 
-`TODO.md` holds two pieces of work, in order: **preserve annotations through
-re-OCR**, then the **Zotero library sweep**. Plus one thing that needs a person in
-front of a running app.
+**1.12.0 in one line: a 568-page scan that went in at 31 MB and out at 437 MB now
+comes out at 35 MB, with a byte-identical text layer.** R49 and R50 are the two
+halves of that and both are worth reading before touching `Flattener`. R51–R53 came
+out of reviewing their diff — the tenth consecutive round in which reviewing the
+previous round's code found real defects in it, and one of them (R52) was storing a
+page at an eighth of the resolution its user had explicitly asked to keep.
+
+**The one thing to understand about the size work**, because it will shape the next
+piece: `isPicture` runs *before* recognition and therefore has only the page's own
+luminance histogram, and R49 established by measurement that a histogram **cannot**
+separate text from a tinted plate — a flat ochre plate with a dark subject on it
+scores identically to a page of type on every tonal signal tried. R50 sidestepped it
+rather than solving it, by asking a *structural* question at a later point in the
+pipeline where Vision's word boxes exist: ink that is not inside any recognised word
+is not text. That signal is 0.0000 on text pages and 0.971–0.993 on plates, and it
+cost nothing to compute. **The remaining prize is moving `isPicture` itself after
+recognition**, which is why it is now first in `TODO.md`.
+
+**The order of work, agreed with the owner 2026-08-13:**
+
+1. **Move `isPicture` after recognition** — the other half of R50, and the last thing
+   between this app and files smaller than a good mixed-raster original.
+2. **Preserve annotations through re-OCR** — specified in `TODO.md`, not started, and
+   the sweep is blocked on it.
+3. **Clickable footnote and endnote links** — deliberately after annotations; same
+   object-graph plumbing.
+4. **The Zotero library sweep** — last, and fix R54 before step 2 reads its numbers.
+
+**Dropped or closed by decision, not by neglect:** a watched folder or command line
+is dropped; the VoiceOver question is closed (every control is named and the one
+omission was fixed — what was never done is *hearing* it in the VM, and that is
+accepted). Do not re-open either as though it were an oversight.
 
 The sweep's survey has run — 15,901 attachments, **1,164 re-OCR candidates holding
 11.6 GB, about 10 GB reclaimable**, artifacts in
@@ -244,11 +313,13 @@ anything is written: **Zotero sync is configured** and 22,676 attachments carry 
 a sync conflict can put the server's copy back over the new one; and Zotero is
 usually running.
 
-`FEATURES.md` is down to **one live idea** — a watched folder or command line.
-Everything else is shipped, archived, or declined on measurement: deskew twice,
-columns once, and both refusals are now *held* by checks rather than remembered
-(see "the engine's competence" below). The suite is at **799 checks** and it
-**needs nothing installed to run** — the mac-ocr dependency is gone.
+`FEATURES.md` holds **two live ideas**: the spatial signal for the picture detector
+(half-answered by R50, and the open half is priority 1 above) and clickable footnote
+links. Everything else is shipped, archived, or declined on measurement: deskew twice,
+columns once, per-page background factor twice, JPEG 2000 twice, and the refusals are
+*held* by checks rather than remembered (see "the engine's competence" below). The
+suite is at **836 checks** and it **needs nothing installed to run** — the mac-ocr
+dependency is gone.
 
 **Two of this app's qualities are Vision's, not this codebase's**, and that is
 worth knowing before reading either refusal. `compose` never sorts, so reading
@@ -358,16 +429,31 @@ you expected.
 serial one is worthless:
 
 ```
-                        2026-08-12, pre-R38    2026-08-12, at 1.10.0
-documents                            232                      232
-succeeded / failed                 232/0                    232/0
-outputs                              232                      232
-characters                    34,167,177               34,148,681
-documents carrying colour             23                       23
-1,198 MB in ->                  1,039 MB                   792 MB
-                                 (1.15x)                  (0.66x)
-minutes at concurrency 6              78                       75
+                      pre-R38    at 1.10.0    at 1.11.0    at 1.12.0
+documents                 232          232          232          232
+succeeded / failed      232/0        232/0        232/0        232/0
+outputs                   232          232          232          232
+characters         34,167,177   34,148,681   34,204,948   34,204,951
+carrying colour            23           23           23           23
+1,198 MB in ->        1,039 MB       792 MB       739 MB       721 MB
+                       (1.15x)      (0.66x)      (0.62x)      (0.60x)
+minutes at conc. 6         78           75           48           51
 ```
+
+**Read 1.12.0's column per document, not just in total.** The total moved 792 → 721
+MB, but the useful fact is the distribution: **209 of the 232 documents are
+byte-for-byte identical, not one is larger**, and every photograph-heavy document —
+`Ibson_2006_Picturing men` at 19,144,682 both ways, `Noble_1977`, `Schwaller`,
+`Boltanski`, `Ehrenreich`, `Findlay`, `Marth` — is unchanged to the byte. The 23 that
+shrank are the low-contrast typescripts the picture detector misroutes:
+`Ford_1941_Speech` to 0.200 of its size, `Riesman_1954` from 7.32 MB to 1.98. A
+corpus total would have hidden all of that, which is why the gate writes
+`per-document.tsv`.
+
+*(The 51 minutes is not comparable to 1.11.0's 48: that run shared the machine with
+a second gate and several probes. Colour layering does genuinely cost about 2.5x grey
+layering per layered page, which matters for an hours-long sweep and not for one
+file.)*
 
 **The output is now smaller than the input, where it used to be larger.** That
 is R38: 247 MB, a quarter of the corpus, was greyscale backgrounds under JBIG2
