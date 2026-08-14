@@ -13,37 +13,23 @@ promoted, or it does not and should be deleted.
 
 ## What is actually left
 
-`FEATURES.md`'s two layout items were both built or measured and both refused, so
-the feature backlog is down to item 7 (a watched folder or command line), which
-nobody has asked for — plus **a spatial signal for the picture detector**, newly
-specified out of R49 and the one genuinely new idea here. Two things this repo has
-already refused (R35's per-page background factor, R49's paper detector) were both
-refused for want of it, so it unblocks more than it costs.
+**One thing, and it is not an optimisation: a shape signal for the picture detector.**
+`FEATURES.md` has it. Everything else in the feature backlog is either shipped or
+refused with its numbers, and **two open defects now depend on that one signal** — R56
+(a pale drawing erased by the 1-bit route) and R57 (a tonal plate blobbed by it). It also
+unblocks three things already refused for want of it: R35's per-page background factor,
+R49's paper detector, and item 1 below.
 
-**1.12.0 IS released** — tag `v1.12.0` at `0dcca38`, a universal `Vision OCR.dmg`, and
-a GitHub release published 2026-08-14T01:56Z. This paragraph said the opposite for most
-of a day, and the sentence was believed twice before anyone ran `gh release list`; a
-`git tag | tail` reads *lexically*, so v1.10.0, v1.11.0 and v1.12.0 sort **before**
-v1.4.0 and a tail shows none of them. Ask the forge, not the prose. R49 is the one
-worth reading: a 568-page scan went in at 31 MB and came out at 437 MB because
-colour pages were the single page kind that could not be layered, and the detector
-had routed every page into exactly that case. The entry also records a detector fix
-that was built, measured over the corpus *and a set of synthesised adversarial
-plates*, and then refused — the corpus alone showed a clean gap that did not exist.
-
-**The tone layers were the open question and R50 closed it.** The file is now
-**35,379,516 bytes — 1.13x its original, down 12.4x from 437 MB** — with a
-byte-identical text layer, and it needs no setting: a page whose ink all falls inside
-recognised words has nothing in its tone layers worth full resolution, and that is
-decided per page. 522 of the book's pages shrink, its 8 photogravure plates do not.
-The 232-document gate is **721 MB against 792 at 1.11.0**, 232 of 232, with 209
-documents unchanged, none larger, and every photograph-heavy document identical to
-the byte. `BUGS.md` R50.
-
-**What is left of it** is `isPicture`, which is a different decision and still runs
-before recognition, so it still has only the page's histogram to go on. That is why
-this book carries tone layers on 522 pages that a correctly-routed book would not
-carry at all — the remaining 4 MB over the original, and `FEATURES.md` has the route.
+**1.12.0 IS released** — tag `v1.12.0` at `0dcca38`, a universal `Vision OCR.dmg`, and a
+GitHub release published 2026-08-14T01:56Z. This paragraph said the opposite for most of
+a day, and the claim was repeated without being checked; `git tag | tail` reads
+*lexically*, so v1.10.0, v1.11.0 and v1.12.0 sort **before** v1.4.0 and a tail shows none
+of them. Ask the forge, not the prose. What it carries is R49 — a 568-page scan going in
+at 31 MB and out at 437 MB, because colour was the one page kind that could not be
+layered — and **R50**, which closed the rest: the file lands at **35,379,516 bytes, 1.13x
+its original, down 12.4x**, with a byte-identical text layer and no setting to choose. The
+232-document gate is **721 MB against 792 at 1.11.0**, 232 of 232, 209 documents
+unchanged, none larger.
 
 **1.11.0** was released the same day with a universal `Vision OCR.dmg`, which the
 build's own verification exercised by mounting the image and running every bundled
@@ -89,10 +75,14 @@ helper under `env -i`, `visionocr-recognise --version` included.
    round four. Once a page can be told to carry no picture *structurally*, this
    optimisation is a small change on top of it and should be taken.
 
-2. **Preserve annotations through re-OCR.** Specified below, not started. **The
-   library sweep is blocked on it**: 9% of the library carries a reader's own marks
-   and re-OCR discards every one without a word, so the sweep either skips a tenth
-   of the library or destroys somebody's scholarship. Neither is acceptable.
+2. **Preserve annotations through re-OCR — BUILT AND VERIFIED 2026-08-14.**
+   `Sources/Annotations.swift`, behind *Keep highlights and notes* (off by default),
+   between the outline step and `publish`. The full verification bar was met on
+   `Hyman_2012_Rethinking the Postwar Corporation`, which is the document the
+   specification cited for the case PDFKit could not do: **121 of 121 marks carried,
+   including all 20 stamps**, every `/Rect` exactly equal, **0 of 121 moved** by
+   `Tools/score-annotations.swift`, and 2.57 MB out against a 3.50 MB original. 15
+   checks in the suite. **The sweep's annotation block is lifted.**
 
 3. **Clickable footnote and endnote links.** `FEATURES.md` has it, recorded
    research-first. Deliberately *after* annotations: it is the same `/Link`-annotation
@@ -158,10 +148,41 @@ one-document curiosity:
   corpus; and the survey's **1,001 `photographed` files** — the 815 Robinson-Montana
   and 186 Random Photograph — are outside the sweep on that verdict.
 
-## 1. Preserving annotations through re-OCR (decided, specified, not started)
+## 1. Preserving annotations through re-OCR — DONE 2026-08-14
 
-Promoted out of `FEATURES.md` on 2026-08-13. That entry has the history and the
-corpus counts; this is what to build.
+Built as specified, with three deviations worth naming, and the specification is kept
+below because its verification bar is the reason the feature is trustworthy.
+
+**Deviations from the spec as written:**
+
+- **`/Line` was added to the copied set.** It was missing from the list here, between
+  `/Polygon` and `/PolyLine`, and the omission reads as accidental: an arrow drawn
+  beside a paragraph is a reader's mark by any reading of the phrase.
+- **`/Rect` can be an indirect reference**, which the spec did not anticipate and which
+  the first implementation got wrong — two of fourteen annotations on page 11 of the
+  spec's own example document carry theirs as `890 0 R`. The count check caught it (14
+  found against 12 expected) because the unreadable ones were copied without being
+  recorded. A rectangle that cannot be resolved now **fails the document** rather than
+  being skipped, and `Annotations.resolvesIndirectRectangles` pins the resolver.
+- **The rendered check compares centroids, not coverage.** A `/Highlight` is
+  Multiply-blended, so its footprint legitimately shrinks over a 1-bit rebuild — the
+  glyph pixels under it are pure black there and Multiply leaves them unchanged, where
+  on the grey original their anti-aliased edges shift. Measured: 14 highlights at
+  0.41–0.54 against 0.54–0.71, all correct. Comparing coverage called a perfect
+  transplant a failure; comparing where the mark's ink sits does not. Opaque marks
+  agreed to three decimals throughout.
+
+**What it measured, on the spec's own example:** 121 of 121 marks carried including all
+20 stamps, every rectangle exactly equal, 0 of 121 moved, 15 pages unchanged, 2.57 MB
+against a 3.50 MB original.
+
+**Still true and worth knowing:** transplanting twice carries the marks twice. The
+transplant is defined against the original and cannot tell a mark it is about to copy
+from one already copied, so the pipeline calls it exactly once per staged rebuild. A
+test pins the number rather than leaving it to be discovered by a sweep that retries in
+place.
+
+### The specification, as written before it was built
 
 ### Why it is now blocking
 

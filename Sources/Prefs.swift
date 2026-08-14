@@ -299,6 +299,21 @@ enum Prefs {
     /// Rejoin a word a line break split in two, so it can be searched for.
     static let joinHyphenated    = "joinHyphenated"
 
+    /// Carry a reader's highlights, notes and ink onto the rebuilt file.
+    ///
+    /// **Off by default, deliberately.** It costs three extra qpdf passes over the
+    /// finished document — the original, the rebuild, and the result read back to check
+    /// it — and it only does anything at all for a document somebody has marked up.
+    /// Measured over a 1-in-16 library sample, that is 9.0% of documents. Charging every
+    /// run for the ninth is the wrong default.
+    ///
+    /// The other half of the reason is the failure mode. When this is on, a document
+    /// whose marks cannot be carried *and verified* fails rather than publishing —
+    /// because a file whose highlights moved misrepresents somebody's reading of it. That
+    /// is the right trade for a re-OCR sweep over a library of marked-up scholarship, and
+    /// the wrong one to impose on someone converting a receipt.
+    static let preserveAnnotations = "preserveAnnotations"
+
     /// Write a record of each finished batch to `~/Library/Logs/VisionOCR`.
     ///
     /// On by default. The log this copies is in-memory and dies with the
@@ -348,6 +363,7 @@ enum Prefs {
         var useJBIG2: Bool
         var photoDetail: PhotoDetail
         var joinHyphenated: Bool
+        var preserveAnnotations: Bool
 
         var fast: Bool
         var languages: String
@@ -371,6 +387,7 @@ enum Prefs {
                 photoDetail: PhotoDetail(rawValue: d.string(forKey: Prefs.photoDetail) ?? "")
                     ?? .balanced,
                 joinHyphenated: d.bool(forKey: Prefs.joinHyphenated),
+                preserveAnnotations: d.bool(forKey: Prefs.preserveAnnotations),
                 fast: d.bool(forKey: Prefs.fast),
                 languages: d.string(forKey: Prefs.languages) ?? "",
                 languageCorrection: d.bool(forKey: Prefs.languageCorrection),
@@ -395,7 +412,7 @@ enum Prefs {
         fast, languages, languageCorrection, confidence, pdfDPIAuto, pdfDPI,
         password, customWords, minTextHeightOn, minTextHeight,
         warnDigitalText, rebuildImages, rebuildMode, useJBIG2, photoDetail,
-        joinHyphenated, writeRunReport, concurrency,
+        joinHyphenated, preserveAnnotations, writeRunReport, concurrency,
         checkForUpdates, skippedVersion, lastUpdateCheck,
     ]
 

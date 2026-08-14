@@ -43,6 +43,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.warnDigitalText) private var warnDigitalText = true
     @AppStorage(Prefs.useJBIG2) private var useJBIG2 = true
     @AppStorage(Prefs.joinHyphenated) private var joinHyphenated = true
+    @AppStorage(Prefs.preserveAnnotations) private var preserveAnnotations = false
     @AppStorage(Prefs.photoDetail) private var photoDetailRaw = Prefs.PhotoDetail.balanced.rawValue
     private var photoDetail: Prefs.PhotoDetail {
         Prefs.PhotoDetail(rawValue: photoDetailRaw) ?? .balanced
@@ -348,6 +349,23 @@ struct SettingsView: View {
                               + "if you are deliberately re-OCRing files whose embedded "
                               + "text is broken.")
                 }
+
+                Toggle("Keep highlights and notes", isOn: $preserveAnnotations)
+                    .help("Rebuilding a page turns it into an image, and a highlight or a "
+                          + "margin note is not part of the page — it hangs off it as a "
+                          + "separate object. So the rebuild drops every one of them. "
+                          + "About one document in eleven in a working library carries a "
+                          + "reader\u{2019}s own marks.\n\n"
+                          + "With this on they are carried onto the finished file and then "
+                          + "checked: every mark counted, and every one\u{2019}s position "
+                          + "compared against the original. If any of that cannot be "
+                          + "verified the file is not written at all, because a highlight "
+                          + "that has quietly moved misrepresents what somebody marked.\n\n"
+                          + "Off by default: it costs three extra passes over the finished "
+                          + "document and does nothing for a document nobody has marked "
+                          + "up. Form fields, and the links that library download wrappers "
+                          + "leave behind, are deliberately not carried — the run log says "
+                          + "what was left.")
 
                 Toggle("Find words broken across two lines", isOn: $joinHyphenated)
                     .help("A word split by a line break is read as two pieces — "

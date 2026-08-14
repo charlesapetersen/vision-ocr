@@ -609,6 +609,11 @@ enum Recogniser {
         return Prefs.Snapshot(
             mode: .searchablePDF, textFormat: .text, besideOriginal: false,
             useJBIG2: false, photoDetail: .balanced, joinHyphenated: false,
+            // The helper recognises bitmaps and never sees a PDF's object graph, so
+            // carrying annotations is not its business — and the helper's argument list
+            // is the app's contract with it, so a setting that cannot reach it is
+            // written false rather than threaded through.
+            preserveAnnotations: false,
             fast: fast, languages: languages, languageCorrection: correction,
             confidence: confidence, pdfDPIAuto: true, pdfDPI: 0, password: "",
             customWords: words, minTextHeightOn: minOn, minTextHeight: minHeight)

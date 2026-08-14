@@ -76,6 +76,15 @@ from [`makeSearchablePDF`](Sources/Model.swift#L438):
 9. **Three gates, then publish** — not cancelled, `produced == expected` pages,
    and no unplaced lines. Only then
    [`publish`](Sources/Model.swift#L420) moves the staged file into place.
+9a. **Carry the reader's marks**, when *Keep highlights and notes* is on —
+   [`Annotations.transplant`](Sources/Annotations.swift), between the outline step
+   and `publish`. Three qpdf passes: the original and the staged file to JSON, the
+   marks' object graphs copied across with fresh ids, and the result read back to
+   check every mark's count and rectangle per page. **Last on purpose** — running
+   the PDFKit outline rewrite *after* it would re-encode every appearance stream
+   just carried, which is the 4.08x inflation that ruled PDFKit out as the
+   mechanism. A failure here fails the document rather than publishing marks it
+   cannot vouch for.
 10. [`finish`](Sources/Model.swift#L702) → `finishUp` when `completed == total`.
 
 ## Two page boxes, deliberately kept apart

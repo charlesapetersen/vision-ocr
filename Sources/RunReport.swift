@@ -169,6 +169,8 @@ enum RunReport {
             rows.append(("JBIG2 compression", c.settings.useJBIG2 ? "on" : "off"))
             rows.append(("Photo detail", c.settings.photoDetail.label))
             rows.append(("Join broken words", c.settings.joinHyphenated ? "on" : "off"))
+            rows.append(("Keep highlights and notes",
+                         c.settings.preserveAnnotations ? "on" : "off"))
         }
 
         rows.append(("Recognition", c.settings.fast ? "fast" : "accurate"))
@@ -208,6 +210,7 @@ enum RunReport {
         "useJBIG2": "JBIG2 compression",
         "photoDetail": "Photo detail",
         "joinHyphenated": "Join broken words",
+        "preserveAnnotations": "Keep highlights and notes",
         "fast": "Recognition",
         "languages": "Languages",
         "languageCorrection": "Language correction",

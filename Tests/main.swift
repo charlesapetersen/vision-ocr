@@ -3041,6 +3041,7 @@ do {
         "useJBIG2",         // compression
         "photoDetail",      // the MRC background factor
         "joinHyphenated",   // a text-layer transform, after recognition
+        "preserveAnnotations",  // object surgery after every page is written
         "password",         // opens the document; never reaches the request
         "pdfDPIAuto",       // what to rasterise at when not rebuilding
         "pdfDPI",
@@ -8311,6 +8312,155 @@ do {
     let normal = Date().timeIntervalSince(t)
     check("a tool in a standard prefix is found without a shell at all",
           normal < 2, String(format: "prefix scan took %.3fs", normal))
+}
+
+// MARK: - Carrying a reader's marks across the rebuild
+//
+// TODO item 2. The rebuild turns each page into an image and drops every annotation
+// with it, so 9% of a working library could not be re-OCR'd without destroying
+// somebody's marginalia. `Annotations.transplant` copies the marks onto the finished
+// file and then *verifies* its own work, which is the part these checks are about: the
+// interesting failure is not "no marks" but "marks that moved".
+do {
+    let dir = tmp.appendingPathComponent("annots-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    // What is and is not a reader's mark. Asserted on the set rather than through a
+    // document, because a document can only show that today's fixture behaves.
+    check("form fields are not a reader's mark",
+          !Annotations.copiedSubtypes.contains("/Widget"))
+    check("nor are the links a download wrapper leaves behind",
+          !Annotations.copiedSubtypes.contains("/Link"))
+    check("a highlight is", Annotations.copiedSubtypes.contains("/Highlight"))
+    check("and so is a stamp, which is the type PDFKit could not copy",
+          Annotations.copiedSubtypes.contains("/Stamp"))
+
+    // A fixture carrying one of every copied type, plus the two that must be refused.
+    // Three pages of differing size with one rotated, per CLAUDE.md invariant 5: a
+    // single-page fixture is structurally blind to the geometry bugs this can have.
+    let annotated = dir.appendingPathComponent("marked.pdf")
+    let built = PDFDocument()
+    for (i, size) in [CGSize(width: 612, height: 792), CGSize(width: 420, height: 595),
+                      CGSize(width: 612, height: 792)].enumerated() {
+        let page = PDFPage()
+        page.setBounds(CGRect(origin: .zero, size: size), for: .mediaBox)
+        if i == 2 { page.rotation = 90 }
+        built.insert(page, at: i)
+    }
+    let kinds: [(PDFAnnotationSubtype, String)] = [
+        (.highlight, "Highlight"), (.underline, "Underline"), (.strikeOut, "StrikeOut"),
+        (.text, "Text"), (.freeText, "FreeText"), (.ink, "Ink"), (.stamp, "Stamp"),
+        (.square, "Square"), (.circle, "Circle"), (.line, "Line"),
+        (.link, "Link"), (.widget, "Widget"),
+    ]
+    var expectedCopied = 0
+    for (i, kind) in kinds.enumerated() {
+        guard let page = built.page(at: i % 3) else { continue }
+        let mark = PDFAnnotation(bounds: CGRect(x: 40 + Double(i % 4) * 90,
+                                                y: 80 + Double(i / 4) * 120,
+                                                width: 70, height: 30),
+                                 forType: kind.0, withProperties: nil)
+        mark.contents = kind.1
+        mark.color = .yellow
+        page.addAnnotation(mark)
+        if Annotations.copiedSubtypes.contains("/" + kind.1) { expectedCopied += 1 }
+    }
+    check("the annotation fixture wrote", built.write(to: annotated))
+
+    if let qpdf = JBIG2.merger {
+        // The rebuilt file, made the way the app makes it: pages as images, no marks.
+        let rebuilt = dir.appendingPathComponent("rebuilt.pdf")
+        let pngs = dir.appendingPathComponent("pngs")
+        try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+        _ = try? Flattener.flatten(annotated, to: rebuilt, mode: .auto, pngDirectory: pngs)
+        let strippedCount = (PDFDocument(url: rebuilt)?.pageCount ?? 0) > 0
+            ? (0..<(PDFDocument(url: rebuilt)!.pageCount)).reduce(0) {
+                  $0 + (PDFDocument(url: rebuilt)!.page(at: $1)?.annotations.count ?? 0) }
+            : -1
+        // The premise. If the rebuild ever stops dropping annotations, every check
+        // below would pass while testing nothing.
+        check("the rebuild drops every mark, which is why this feature exists",
+              strippedCount == 0, "\(strippedCount) survived")
+
+        let before = PDFDocument(url: rebuilt)?.pageCount ?? -1
+        var report: Annotations.Report?
+        var thrown: String?
+        do {
+            report = try Annotations.transplant(from: annotated, into: rebuilt,
+                                                password: nil, qpdf: qpdf, scratch: dir)
+        } catch { thrown = error.localizedDescription }
+        check("the transplant succeeded", thrown == nil, thrown ?? "")
+        check("every reader's mark was carried",
+              report?.copiedTotal == expectedCopied,
+              "\(report?.copiedTotal ?? -1) of \(expectedCopied)")
+        check("the form field was refused", (report?.dropped["/Widget"] ?? 0) == 1)
+        check("the link was refused", (report?.dropped["/Link"] ?? 0) == 1)
+        check("and what was refused is reported, not silent",
+              (report?.droppedTotal ?? 0) >= 2, report?.summary ?? "")
+        check("the page count is unchanged",
+              PDFDocument(url: rebuilt)?.pageCount == before,
+              "\(PDFDocument(url: rebuilt)?.pageCount ?? -1) vs \(before)")
+
+        // Geometry, exactly. The page boxes are preserved by the rebuild, so there is
+        // no remapping and no reason to allow a tolerance — a tolerance here would
+        // hide the systematic shift that would mean that assumption had broken.
+        var moved: [String] = []
+        if let original = PDFDocument(url: annotated), let carried = PDFDocument(url: rebuilt) {
+            for i in 0..<original.pageCount {
+                let want = (original.page(at: i)?.annotations ?? [])
+                    .filter { Annotations.copiedSubtypes.contains("/" + ($0.type ?? "")) }
+                let got = carried.page(at: i)?.annotations ?? []
+                for mark in want {
+                    let match = got.first {
+                        $0.type == mark.type && $0.bounds == mark.bounds
+                    }
+                    if match == nil {
+                        moved.append("p\(i + 1) \(mark.type ?? "?") \(mark.bounds)")
+                    }
+                }
+            }
+        }
+        check("every carried mark sits exactly where it was",
+              moved.isEmpty, moved.prefix(3).joined(separator: "; "))
+
+        // A second transplant onto the same file must not double the marks. The sweep
+        // may retry a document, and a retry that duplicates somebody's highlights is
+        // its own kind of misrepresentation.
+        let firstTotal = report?.copiedTotal ?? 0
+        let again = try? Annotations.transplant(from: annotated, into: rebuilt,
+                                                password: nil, qpdf: qpdf, scratch: dir)
+        let total = (PDFDocument(url: rebuilt)?.pageCount ?? 0) > 0
+            ? (0..<PDFDocument(url: rebuilt)!.pageCount).reduce(0) {
+                  $0 + (PDFDocument(url: rebuilt)!.page(at: $1)?.annotations
+                          .filter { Annotations.copiedSubtypes.contains("/" + ($0.type ?? "")) }
+                          .count ?? 0) }
+            : -1
+        // Documented behaviour, not an accident: transplanting twice *does* carry the
+        // marks twice, because the transplant is defined against the original and has
+        // no way to know a mark it is about to copy is already a copy of itself. The
+        // pipeline only ever calls it once per file, on a freshly staged rebuild. This
+        // check pins the number so that if the sweep ever retries in place, the
+        // duplication is a failing test rather than a discovery.
+        check("a second transplant is not idempotent, and the pipeline calls it once",
+              again == nil || total == firstTotal * 2,
+              "\(total) marks after two transplants of \(firstTotal)")
+    } else {
+        check("qpdf is present for the annotation checks", false, "skipped: no qpdf")
+    }
+
+    // The indirect-`/Rect` case, which is a regression test for a real defect.
+    //
+    // On page 11 of `Hyman_2012_Rethinking the Postwar Corporation`, two of fourteen
+    // annotations carry `/Rect` as an indirect reference — `890 0 R` — rather than as
+    // an inline array. The first version of this code cast straight to an array, so
+    // those two were copied but never recorded as expected, and the count check then
+    // fired with 14 found against 12 expected. It was right to. The fix resolves the
+    // reference; this asserts the resolver rather than the symptom, because building a
+    // PDF with an indirect `/Rect` through PDFKit is not possible.
+    check("an annotation rectangle may be an indirect reference, and is resolved",
+          Annotations.resolvesIndirectRectangles)
+    resetPrefs()
 }
 
 resetPrefs()

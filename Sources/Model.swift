@@ -1757,14 +1757,49 @@ final class OCRModel: ObservableObject {
             // outline into the assembled catalogue above, and running PDFKit over
             // it here would undo the compression that route exists for.
             let outlined = work.appendingPathComponent("outlined.pdf")
+            var finished = staged
             if !usedJBIG2, !outline.isEmpty,
                SearchableWriter.copyOutline(from: inputFile, of: staged, to: outlined,
                                             password: password),
                PDFPageCount(outlined) == expected {
-                try publish(outlined, to: output)
-            } else {
-                try publish(staged, to: output)
+                finished = outlined
             }
+
+            // Carry the reader's own marks across, last, onto whichever file is about
+            // to be published.
+            //
+            // **Last, and not earlier**, for two reasons. The outline rewrite above is
+            // a PDFKit re-serialisation, and running it *after* the transplant would
+            // re-encode every appearance stream the transplant just carried — the same
+            // 4.08x inflation that ruled PDFKit out as the mechanism. And a transplant
+            // is only worth doing onto a file that has already passed every other gate.
+            //
+            // **A failure here fails the document.** `Annotations.transplant` verifies
+            // its own work — count and rectangle per page, read back out of the rebuilt
+            // file — and throws rather than publishing something it cannot vouch for.
+            // That is invariant 1 applied to somebody's marginalia: a file whose
+            // highlights silently moved misrepresents their reading of it, and is worse
+            // than a file left alone. The catch below reports it and returns, so
+            // nothing is published and the input is untouched.
+            if settings.preserveAnnotations {
+                // Not named `report`: that is the outcome callback, and shadowing it
+                // here would silently redirect the failure paths below.
+                let marks = try Annotations.transplant(
+                    from: inputFile, into: finished, password: password,
+                    qpdf: JBIG2.merger, scratch: work)
+                if marks.copiedTotal > 0 || marks.droppedTotal > 0 {
+                    progress(marks.summary, layerShare(1, 1))
+                }
+                // The transplant rewrites the file through qpdf, so the page count is
+                // established again rather than assumed to have survived.
+                let after = PDFPageCount(finished)
+                guard after == expected else {
+                    report(.failed, "Carrying the reader's marks changed the page count "
+                        + "from \(expected) to \(after); nothing was written.")
+                    return
+                }
+            }
+            try publish(finished, to: output)
         } catch {
             // Cancelling reaches the jbig2 and qpdf children as SIGTERM, so they
             // exit 15 and JBIG2.encode/overlay throw — arriving here, where the
