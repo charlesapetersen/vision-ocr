@@ -23,7 +23,9 @@ Read its header before planning anything. Update it in the same commit as any fi
 with their costs and the reasons some are parked, and
 [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a
 whole-codebase review sweep, including findings not yet fixed and areas not yet
-covered.
+covered. **[HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md) is where to start** — it
+has the fix order, what is deliberately withheld from release, and which
+instruments not to trust.
 
 *(This paragraph read "nothing open" for a day after four entries were opened, which
 is exactly the sentence a new reader trusts most. If you close or open an entry,

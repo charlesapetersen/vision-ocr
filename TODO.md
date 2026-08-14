@@ -11,6 +11,13 @@ promoted, or it does not and should be deleted.
 
 ---
 
+## Start here
+
+**[HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md)** — the 2026-08-14 review sweep's fix order,
+the release decision waiting on the owner, and the three invariant-3 instruments that cannot
+currently be trusted. `REVIEW-2026-08-14.md` is the evidence behind it. Neither is superseded
+by anything below.
+
 ## What is actually left
 
 **One thing, and it is not an optimisation: a shape signal for the picture detector.**
