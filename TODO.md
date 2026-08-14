@@ -20,12 +20,28 @@ specified out of R49 and the one genuinely new idea here. Two things this repo h
 already refused (R35's per-page background factor, R49's paper detector) were both
 refused for want of it, so it unblocks more than it costs.
 
-**1.12.0 is published** — released 2026-08-13 with R49, U29 and U30. R49 is the
-one worth reading: a 568-page scan went in at 31 MB and came out at 437 MB because
+**1.12.0 is written but NOT released** — no tag, no DMG, no GitHub release. The
+version in `Info.plist` is bumped and `CHANGELOG.md` has its entry; the release
+itself is still to do, and is waiting on the tone-layer work below. R49 is the one
+worth reading: a 568-page scan went in at 31 MB and came out at 437 MB because
 colour pages were the single page kind that could not be layered, and the detector
 had routed every page into exactly that case. The entry also records a detector fix
 that was built, measured over the corpus *and a set of synthesised adversarial
 plates*, and then refused — the corpus alone showed a clean gap that did not exist.
+
+**The tone layers were the open question and R50 closed it.** The file is now
+**35,379,516 bytes — 1.13x its original, down 12.4x from 437 MB** — with a
+byte-identical text layer, and it needs no setting: a page whose ink all falls inside
+recognised words has nothing in its tone layers worth full resolution, and that is
+decided per page. 522 of the book's pages shrink, its 8 photogravure plates do not.
+The 232-document gate is **721 MB against 792 at 1.11.0**, 232 of 232, with 209
+documents unchanged, none larger, and every photograph-heavy document identical to
+the byte. `BUGS.md` R50.
+
+**What is left of it** is `isPicture`, which is a different decision and still runs
+before recognition, so it still has only the page's histogram to go on. That is why
+this book carries tone layers on 522 pages that a correctly-routed book would not
+carry at all — the remaining 4 MB over the original, and `FEATURES.md` has the route.
 
 **1.11.0** was released the same day with a universal `Vision OCR.dmg`, which the
 build's own verification exercised by mounting the image and running every bundled

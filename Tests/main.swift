@@ -1216,6 +1216,128 @@ do {
         check("…and colour layering is recorded as the more expensive of the two",
               Flattener.statedColourMRCBytesPerPixel > Flattener.measuredMRCBytesPerPixel)
 
+        // MARK: R50 — a page whose ink is all text shrinks its tone layers
+        //
+        // The signal is structural, not statistical: ink that is not inside any
+        // recognised word is not text. `isPicture` cannot ask this because it runs
+        // before recognition; layering can, because it runs after.
+        //
+        // Asserted on buffers first, where the answer is known by construction,
+        // because the page-level checks below can only show that *something*
+        // changed.
+        let inkW = 40, inkH = 40
+        var allPaper = [UInt8](repeating: 255, count: inkW * inkH)
+        var wordRegion = [Bool](repeating: false, count: inkW * inkH)
+        // A block of "text": ink, inside the region Vision reported.
+        for y in 4..<12 { for x in 4..<36 { allPaper[y * inkW + x] = 20; wordRegion[y * inkW + x] = true } }
+        check("ink that is all inside the words reads as no picture",
+              Flattener.inkOutsideText(allPaper, region: wordRegion,
+                                       width: inkW, height: inkH, threshold: 128) == 0,
+              String(format: "%.4f", Flattener.inkOutsideText(allPaper, region: wordRegion,
+                                                              width: inkW, height: inkH,
+                                                              threshold: 128)))
+        // The same page with a figure on it: ink nowhere near a word.
+        var withFigure = allPaper
+        for y in 20..<32 { for x in 8..<32 { withFigure[y * inkW + x] = 30 } }
+        let figureScore = Flattener.inkOutsideText(withFigure, region: wordRegion,
+                                                   width: inkW, height: inkH, threshold: 128)
+        check("…while ink outside them does not",
+              figureScore > Flattener.textPageInkOutsideThreshold,
+              String(format: "%.4f vs threshold %.2f", figureScore,
+                     Flattener.textPageInkOutsideThreshold))
+        // A blank page has no picture on it, and must not divide by zero deciding so.
+        check("…and a page with no ink at all is not a picture",
+              Flattener.inkOutsideText([UInt8](repeating: 255, count: inkW * inkH),
+                                       region: wordRegion, width: inkW, height: inkH,
+                                       threshold: 128) == 0)
+        // The scan's own dark edge is not content. Ink only in the outer sixteenth
+        // must not count, or every page of a book with dark scan borders reads as
+        // carrying a picture — which is what happened before the margin existed.
+        var borderOnly = [UInt8](repeating: 255, count: inkW * inkH)
+        for x in 0..<inkW { borderOnly[x] = 0; borderOnly[(inkH - 1) * inkW + x] = 0 }
+        for y in 0..<inkH { borderOnly[y * inkW] = 0; borderOnly[y * inkW + inkW - 1] = 0 }
+        check("…and a dark scan edge is not a picture either",
+              Flattener.inkOutsideText(borderOnly, region: wordRegion,
+                                       width: inkW, height: inkH, threshold: 128) == 0)
+
+        // And the layers it produces. A text page's tone layers must come out at
+        // the shrunk size; a page with a picture must not.
+        if let doc = PDFDocument(url: textPage), let tpage = doc.page(at: 0) {
+            // Boxes over the text, which is all this fixture has.
+            let tboxes = (0..<10).map { i in
+                SearchableWriter.BoundingBox(x: 0.10, y: 0.06 + Double(i) * 0.07,
+                                             width: 0.80, height: 0.05)
+            }
+            if let l = Flattener.mrcLayers(for: tpage, boxes: tboxes, into: mrcDir,
+                                           stem: "r50text", inColour: true) {
+                let size = Flattener.fullBox(of: tpage).size
+                let scale = Flattener.rebuildDPI(of: tpage) / 72.0
+                let fullW = Int((size.width * scale).rounded())
+                // Shrunk by the text-page factor, not the default one.
+                check("a text page's background is shrunk by the text-page factor",
+                      l.backgroundWidth <= fullW / Flattener.textPageBackgroundDownsample + 1,
+                      "\(l.backgroundWidth) wide of \(fullW) at 1x")
+                check("…and its foreground harder still",
+                      l.foregroundWidth <= fullW / Flattener.textPageForegroundDownsample + 1,
+                      "\(l.foregroundWidth) wide of \(fullW) at 1x")
+            } else {
+                check("the text fixture layers", false, "mrcLayers returned nil")
+            }
+        }
+        // The picture case: a halftone plate under a caption. Its background must
+        // stay at the caller's factor.
+        //
+        // The fixture is a *tonal* plate, not a flat colour one, and that is the
+        // point rather than convenience. `makeColourPlatePDF`'s flat red renders at
+        // luminance 96–111 while Otsu on that page lands at 106, so half the plate
+        // sits above the ink threshold and an ink-based signal cannot see it at all
+        // — measured, and recorded on `textPageInkOutsideThreshold` as the case this
+        // rule misses. A real halftone spans the range and is seen. Using the flat
+        // fixture here would assert the limitation instead of the behaviour.
+        let tonalPlate = tmp.appendingPathComponent("r50-tonal-plate.pdf")
+        var tpBox = CGRect(x: 0, y: 0, width: 612, height: 792)
+        if let c = CGContext(tonalPlate as CFURL, mediaBox: &tpBox, nil) {
+            c.beginPDFPage(nil)
+            c.setFillColor(CGColor(red: 0.99, green: 0.98, blue: 0.96, alpha: 1))
+            c.fill(tpBox)
+            // Caption bars across the top fifth, where the boxes go.
+            c.setFillColor(CGColor(gray: 0.05, alpha: 1))
+            for row in 0..<6 {
+                var x = 70.0
+                while x < 520 {
+                    let run = Double(14 + (row * 5 + Int(x) % 23) % 40)
+                    c.fill(CGRect(x: x, y: 700 - Double(row) * 14, width: run, height: 6))
+                    x += run + 8
+                }
+            }
+            // The plate: a tonal ramp through the darks, as a halftone has.
+            for i in 0..<60 {
+                let t = CGFloat(i) / 60
+                c.setFillColor(CGColor(red: 0.08 + t * 0.7, green: 0.10 + t * 0.66,
+                                       blue: 0.14 + t * 0.6, alpha: 1))
+                c.fill(CGRect(x: 90, y: 120 + CGFloat(i) * 8, width: 430, height: 9))
+            }
+            c.endPDFPage(); c.closePDF()
+        }
+        if let cdoc = PDFDocument(url: tonalPlate), let cp = cdoc.page(at: 0) {
+            let capOnly = (0..<6).map { i in
+                SearchableWriter.BoundingBox(x: 0.11, y: 0.10 + Double(i) * 0.0177,
+                                            width: 0.74, height: 0.012)
+            }
+            if let l = Flattener.mrcLayers(for: cp, boxes: capOnly, into: mrcDir,
+                                           stem: "r50plate", backgroundDownsample: 2,
+                                           inColour: true) {
+                let size = Flattener.fullBox(of: cp).size
+                let scale = Flattener.rebuildDPI(of: cp) / 72.0
+                let fullW = Int((size.width * scale).rounded())
+                check("a page carrying a picture keeps the background it was asked for",
+                      l.backgroundWidth > fullW / Flattener.textPageBackgroundDownsample + 1,
+                      "\(l.backgroundWidth) wide of \(fullW) at 1x")
+            } else {
+                check("the plate fixture layers", false, "mrcLayers returned nil")
+            }
+        }
+
         // No words means no layering: a plate would otherwise be published at a
         // fraction of its resolution for no benefit.
         if let doc = PDFDocument(url: darkPage), let dpage = doc.page(at: 0) {

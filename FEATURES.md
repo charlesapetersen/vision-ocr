@@ -293,8 +293,27 @@ something else rather than sold a setting.
 
 ## Likely worth doing
 
-### A spatial signal for the picture detector — NOT STARTED
-*(specified 2026-08-13 out of R49, which needed it and did not have it.)*
+### A spatial signal for the picture detector — PARTLY ANSWERED, and the rest still open
+*(specified 2026-08-13 out of R49; **R50 answered the easier half the same day** and
+the note below is what is left.)*
+
+**What R50 settled.** Choosing the *background resolution* does not need a picture
+detector at all. It happens after recognition, so it can ask whether any ink falls
+outside the recognised words — a structural question, not a statistical one — and
+text pages score 0.0000 against 0.971–0.993 for plates. That took the reported file
+from 68 MB to 35 MB with every photograph-heavy corpus document byte-for-byte
+unchanged. `BUGS.md` R50 has it.
+
+**What is still open** is the harder half, and R50 does not touch it: `isPicture`
+itself, which decides between the 1-bit route and the picture route, still runs
+*before* recognition and so still has only the histogram. That is the decision R49
+could not fix and R35 could not fix, and it is the one that would take this file
+below its original rather than 13% above it — a text page routed to 1-bit costs
+44 KB where a layered one costs 46, but a *correctly* routed book would not be
+carrying tone layers on 522 pages at all. Moving `isPicture` after recognition, or
+giving it the connected-component signal below, is the remaining prize.
+
+---
 
 The three picture signals — ink coverage, tone fraction, saturation — are all
 **histogram** statistics, and R49 established by measurement that a histogram

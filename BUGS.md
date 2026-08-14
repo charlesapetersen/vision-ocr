@@ -6,11 +6,13 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing is open.** **R49** — a 568-page scan going in at 31 MB and out at **437 MB**, because
-colour pages were the one kind that could not be layered — is `FIXED`, and its entry
-records a detector fix that was built, measured and **refused**: the page's own
-luminance histogram cannot tell tinted paper from a tinted plate, and the
-measurement that shows it is worth keeping. **U29** (the updates block was pasted
+**Nothing is open.** **R49** — a 568-page scan going in at 31 MB and out at **437 MB**,
+because colour pages were the one kind that could not be layered — is `FIXED`, and
+**R50** finishes the job: the file now lands at **35,379,516 bytes, 1.13x its
+original**, down 12.4x, with a byte-identical text layer. R49's entry records a
+detector fix that was built, measured and **refused** — the page's own luminance
+histogram cannot tell tinted paper from a tinted plate — and R50 records the signal
+that *does* work and why it was available all along. **U29** (the updates block was pasted
 twice in the settings panel) and **U30** (the preset buttons gave no sign they had
 done anything) were both reported by the user on 2026-08-13 and are both `FIXED`.
 
@@ -2478,6 +2480,116 @@ one-document run is the wrong answer, and is the same class of mistake as the
 three timings that were polluted while this entry was being written.
 
 ---
+
+### R50 · The tone layers, not the stencil, were what kept a layered file large — FIXED
+*(found 2026-08-13 by asking why R49's output was still 2.17x its original, when the
+original also carries page colour and a text layer)*
+
+**The accounting, over all 568 pages of the same book, against the Internet
+Archive's own mixed-raster scan of it:**
+
+| | 1-bit stencil (the text) | tone layers (paper and pictures) |
+|---|---|---|
+| the IA original | 21.74 MB (39.2 KB/page) | **4.26 MB** (3.8 KB each) |
+| R49's output | 21.20 MB (39.6 KB/page) | **40.67 MB** (37.3 KB each) |
+
+The stencil was already *better* than theirs and the text layer was already
+identical. **The entire 36 MB of excess was the two tone layers**, and 36.4 of the
+36.6 MB difference is accounted for by them alone — nothing else contributed.
+
+**It is not the codec.** The obvious suspect is JPEG against the original's JPEG
+2000, and re-encoding IA's own decoded layers as JPEG at the shipping quality does
+look damning — their 852-byte background costs 18,609 bytes, their 4,914-byte
+foreground costs 211,286. But R36 already measured OpenJPEG on ten *real* MRC
+backgrounds at matched fidelity and got 1.19x, and both numbers are true at once:
+IA is not matching fidelity. They spend **0.0013 bytes a pixel** on a background
+where this app spends 0.024 — eighteen times more. Their background is a coarse
+colour wash, and on a page of text that is all a background needs to be.
+
+**So the fix is resolution, per page, and only where there is no picture.** A page
+whose ink is all text has nothing in its tone layers worth full resolution:
+
+| | background | foreground | page |
+|---|---|---|---|
+| 2x / 4x, which shipped | 36,383 B | 23,894 B | 99,130 B |
+| 8x / 16x | 4,374 B | 3,108 B | **46,332 B** |
+
+At which point the stencil is 81% of the page and the tone layers are 7.5 KB against
+the Internet Archive's 5.8 — the right neighbourhood, rather than a number pushed
+until it hurt.
+
+**The signal, and why it was available all along.** `isPicture` runs *before*
+recognition, so it has only the page's own histogram — and R49 established by
+measurement that a histogram cannot separate text from a tinted plate. Layering runs
+*after* recognition, where Vision's word boxes exist, so it can ask a structural
+question instead of a statistical one: **ink that is not inside any recognised word
+is not text.** It costs nothing; the boxes and the render are already in hand.
+
+| | ink outside the words |
+|---|---|
+| text pages (`Blacks` 41, 163, 244, 520; a synthetic text page) | 0.0000–0.0003 |
+| 91 real corpus pages, median | 0.017 |
+| a line chart under a paragraph | 0.153 |
+| a seal covering 1% of the sheet | 0.250 |
+| a photograph covering 8% | 0.694 |
+| full-page photogravure plates (`Blacks` 78, 300, 301, 303) | 0.971–0.993 |
+
+**It is a threshold on a continuum, not a gap.** Across the 91 corpus pages the
+values run smoothly from 0 to 0.97, and that is stated rather than dressed up. What
+makes 0.08 shippable is that *both* ways of being wrong are mild — a page wrongly
+held at fine resolution costs bytes and nothing else, and a page wrongly shrunk has
+its figure **softened, never removed**. That is the difference from the three
+signals refused before it, where being wrong meant thresholding a photograph to
+1-bit or deleting it. The nearest hazard sits at 0.153, a factor of two above.
+
+**What it misses**, recorded because it will come up. The signal is ink, so anything
+whose luminance sits near the paper/ink boundary is invisible to it:
+
+- a *pale* line drawing reads 0.0000, because Otsu counts light grey as paper;
+- a **flat mid-luminance colour field** does too. Measured on a synthetic plate of
+  flat red: it renders at luminance 96–111 while Otsu on that page lands at **106**,
+  so half the plate is above the threshold and the page scores 0.0365. The suite
+  builds a *tonal* plate for this reason, and the reason is written on the fixture so
+  the next person does not "simplify" it back.
+
+Neither is alarming, and the reason is that this rule only ever changes *resolution*.
+The worst it can do is soften something; it cannot remove it. A flat colour field is
+also the one thing that loses nothing to a downsample, so the second miss is
+self-cancelling in the common case — what would actually suffer is a detailed colour
+image with no dark tones in it, which is why the honest bound on this is "softens a
+rare kind of plate", not "is always right".
+
+Corroborating that bound: across the 232-document gate, **every photograph-heavy
+document came out byte for byte identical**, so on real material the signal is not
+firing where it should not.
+
+**Measured end to end.**
+
+```
+                        in       R49 out        R50 out
+Blacks in the City    31 MB    68 MB (2.17x)  35 MB (1.13x)
+text layer                  1,458,486 B    1,458,486 B — identical, cmp clean
+pages layered                    548 of 568     548 of 568
+  at 8x / 16x                            0            522
+  at 2x / 4x (pictures)                548              8
+```
+
+**The 232-document gate, which is where the safety is:** 232 of 232 succeeded,
+0 failed, **721 MB against R49's 739 and the 1.11.0 baseline's 792**, characters
+34,204,951 against 34,204,969, colour documents 23 either way. Per document,
+**209 of 232 are unchanged and not one grew.**
+
+**Every photograph-heavy document in the corpus came out byte for byte identical** —
+`Ibson_2006_Picturing men` 19,144,682 both ways, `Noble_1977` 22,503,820, `Schwaller`
+19,538,396, `Boltanski_2006` 25,565,129, and `Ehrenreich`, `Findlay`, `Marth` and a
+1950 newspaper comic the same. `Countryman` moved 1.3%, on its text pages.
+
+**And it fixes R49's underlying complaint for other documents too.** The documents
+that shrank are the low-contrast typescripts and manuscripts the saturation detector
+misroutes to the picture path: `Ford_1941_Speech` to 0.200 of its size,
+`Atkinson_1939` 0.244, **`Riesman_1954` 7.32 MB to 1.98**, `Jane Stanford 1891`
+0.330. Those are the same defect as R49 seen in the corpus, and layering them
+properly costs them nothing.
 
 ### R49 · 31 MB in, 437 MB out — the one page kind that could not be layered — FIXED
 *(reported by the user 2026-08-13 on `Blacks in the City`, an Internet Archive scan

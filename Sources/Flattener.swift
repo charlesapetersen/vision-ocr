@@ -1139,6 +1139,100 @@ enum Flattener {
     /// can be shrunk much harder than the background without anything showing.
     static let mrcForegroundDownsample = 4
 
+    // MARK: - Pages whose ink is all text
+    //
+    // R50. The tone layers, not the stencil, are what keeps a layered file above
+    // the size of a good mixed-raster original. Measured over 568 pages against
+    // the Internet Archive's own scan of the same book: our stencils cost
+    // **21.2 MB against their 21.7**, and our tone layers **40.7 MB against their
+    // 4.3**. The stencil is already right; the tone layers are carried at a
+    // fidelity paper does not need.
+    //
+    // On a page that is nothing but text, the background holds paper and the
+    // foreground holds one nearly-flat ink colour, so both can be shrunk far
+    // harder than `mrcBackgroundDownsample` allows without anything visible
+    // changing. On a page carrying a picture they cannot. So the question is which
+    // kind of page this is — and that question has a cheap, honest answer at this
+    // point in the pipeline that it does not have earlier.
+
+    /// How much of a page's ink Vision found no words for.
+    ///
+    /// **Why this works where three other signals failed.** `isPicture` runs
+    /// before recognition, so it has only the page's own histogram, and a
+    /// histogram cannot tell text from a tinted plate — R49 measured that, twice
+    /// over. This runs *after* recognition, where the word boxes exist, so it can
+    /// ask a structural question instead of a statistical one: ink that is not
+    /// inside any recognised word is, by construction, not text.
+    ///
+    /// Measured. Text pages sit at zero and pictures sit two orders of magnitude
+    /// above them:
+    ///
+    /// | | ink outside the words |
+    /// |---|---|
+    /// | text pages (`Blacks in the City` 41, 163, 244; a synthetic text page) | 0.0000 |
+    /// | 91 real corpus pages, median | 0.017 |
+    /// | a line chart under a paragraph | 0.153 |
+    /// | a seal covering 1% of the sheet | 0.250 |
+    /// | a photograph covering 8% | 0.694 |
+    /// | full-page photogravure plates (`Blacks` 78, 300, 301, 303) | 0.971–0.993 |
+    ///
+    /// **It is a threshold on a continuum, not a gap, and that is stated rather
+    /// than dressed up.** Across the 91 corpus pages the values run smoothly from
+    /// 0 to 0.97. What makes 0.08 defensible is not a hole in the distribution but
+    /// that *both* ways of being wrong are mild — a page wrongly held at fine
+    /// resolution costs bytes and nothing else, and a page wrongly shrunk has its
+    /// figure softened, never removed. Every hazard that could be constructed for
+    /// it lands at 0.153 or above, and 0.08 leaves a factor of two below the
+    /// nearest one.
+    ///
+    /// **The one case it misses**, recorded because it will come up: a *pale* line
+    /// drawing reads 0.0000, because Otsu puts light grey on the paper side and it
+    /// is therefore not ink at all. It is also the mildest case — softening a pale
+    /// drawing is the least of the losses available here — and it is the reason
+    /// this only ever changes resolution and never discards a layer.
+    static let textPageInkOutsideThreshold = 0.08
+
+    /// What a page of nothing but text shrinks its tone layers to.
+    ///
+    /// 8 and 16, measured on `Blacks in the City` page 41 (1899x3138 at 360 DPI),
+    /// against the 2 and 4 that ship for pages with pictures on them:
+    ///
+    /// | | background | foreground | page |
+    /// |---|---|---|---|
+    /// | 2x / 4x | 36,383 B | 23,894 B | 99,130 B |
+    /// | 8x / 16x | 4,374 B | 3,108 B | **46,332 B** |
+    ///
+    /// At which point the 1-bit stencil is 81% of the page and the tone layers are
+    /// 7.5 KB — the Internet Archive's own are 5.8 KB, so this is the right
+    /// neighbourhood rather than a number pushed until it hurt. Rendered at 100
+    /// DPI beside the 2x/4x version, the text page is indistinguishable.
+    static let textPageBackgroundDownsample = 8
+    static let textPageForegroundDownsample = 16
+
+    /// The fraction of the page's ink that falls outside `region`.
+    ///
+    /// The outer sixteenth is ignored on every side. A scan carries the dark edge
+    /// of the platen and the shadow in the gutter, which is ink by any threshold
+    /// and is not content — on `Blacks in the City` it is most of the ink outside
+    /// the words, and counting it put every text page in the book above any
+    /// threshold worth setting.
+    static func inkOutsideText(_ grey: [UInt8], region: [Bool],
+                               width w: Int, height h: Int, threshold: UInt8) -> Double {
+        guard w > 0, h > 0, grey.count >= w * h, region.count >= w * h else { return 1 }
+        let mx = w / 16, my = h / 16
+        let x1 = max(w - mx, mx + 1), y1 = max(h - my, my + 1)
+        var outside = 0, total = 0
+        for y in my..<min(y1, h) {
+            let row = y * w
+            for x in mx..<min(x1, w) where grey[row + x] < threshold {
+                total += 1
+                if !region[row + x] { outside += 1 }
+            }
+        }
+        // No ink at all is a blank page, and a blank page has no picture on it.
+        return total > 0 ? Double(outside) / Double(total) : 0
+    }
+
     /// The largest page that gets layered.
     ///
     /// Not `maximumPageMegapixels`, which is the bound on *rendering* a page and
@@ -1405,6 +1499,7 @@ enum Flattener {
     static func mrcLayers(for page: PDFPage, boxes: [SearchableWriter.BoundingBox],
                           into directory: URL, stem: String,
                           backgroundDownsample: Int = mrcBackgroundDownsample,
+                          foregroundDownsample: Int = mrcForegroundDownsample,
                           inColour: Bool = false) -> MRCLayers? {
         // No words means a plate with no text on it. An empty stencil would put
         // the whole page into a downsampled background — publishing a picture at
@@ -1431,6 +1526,23 @@ enum Flattener {
 
         let inverse = mask.map { !$0 }
 
+        // R50. A page whose ink is all text has nothing in its tone layers worth
+        // full resolution, so both are shrunk far harder. See
+        // `textPageInkOutsideThreshold` for why this is asked here and not in
+        // `isPicture`, and for what it misses.
+        //
+        // `max` rather than a replacement: the caller's factor is a floor, so a
+        // page that *does* carry a picture is never shrunk harder than the setting
+        // asked for. On a page with no picture, Photo detail is governing a
+        // photograph that is not there.
+        let allText = inkOutsideText(grey, region: region, width: w, height: h,
+                                     threshold: otsuThreshold(of: grey))
+            < textPageInkOutsideThreshold
+        let bgFactor = allText
+            ? max(backgroundDownsample, textPageBackgroundDownsample) : backgroundDownsample
+        let fgFactor = allText
+            ? max(foregroundDownsample, textPageForegroundDownsample) : foregroundDownsample
+
         // The stencil is the same either way: it comes from the luminance render,
         // so a colour page's text is cut out exactly as a grey one's is.
         var maskPixels = [UInt8](repeating: 255, count: w * h)
@@ -1448,6 +1560,7 @@ enum Flattener {
                                        width: w, height: h, from: .mediaBox) else {
                 return mrcLayers(for: page, boxes: boxes, into: directory, stem: stem,
                                  backgroundDownsample: backgroundDownsample,
+                                 foregroundDownsample: foregroundDownsample,
                                  inColour: false)
             }
             var background: [UInt8] = [], foreground: [UInt8] = []
@@ -1459,10 +1572,10 @@ enum Flattener {
                 for i in 0..<(w * h) { plane[i] = rgba[i * 4 + channel] }
                 let filledBG = fillHoles(plane, holes: mask, width: w, height: h, radius: 10)
                 let (bgPlane, pbw, pbh) = downsample(filledBG, width: w, height: h,
-                                                     by: max(backgroundDownsample, 1))
+                                                     by: max(bgFactor, 1))
                 let filledFG = fillHoles(plane, holes: inverse, width: w, height: h, radius: 3)
                 let (fgPlane, pfw, pfh) = downsample(filledFG, width: w, height: h,
-                                                     by: mrcForegroundDownsample)
+                                                     by: max(fgFactor, 1))
                 if channel == 0 {
                     sizes = (pbw, pbh, pfw, pfh)
                     background = [UInt8](repeating: 255, count: pbw * pbh * 4)
@@ -1485,10 +1598,10 @@ enum Flattener {
         } else {
             let bgFull = fillHoles(grey, holes: mask, width: w, height: h, radius: 10)
             let (bg, gbw, gbh) = downsample(bgFull, width: w, height: h,
-                                            by: max(backgroundDownsample, 1))
+                                            by: max(bgFactor, 1))
             let fgFull = fillHoles(grey, holes: inverse, width: w, height: h, radius: 3)
             let (fg, gfw, gfh) = downsample(fgFull, width: w, height: h,
-                                            by: mrcForegroundDownsample)
+                                            by: max(fgFactor, 1))
             bw = gbw; bh = gbh; fw = gfw; fh = gfh
             guard let b = jpegData(from: bg, width: bw, height: bh, quality: pictureJPEGQuality),
                   let f = jpegData(from: fg, width: fw, height: fh, quality: pictureJPEGQuality)

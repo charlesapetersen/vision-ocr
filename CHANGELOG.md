@@ -15,38 +15,55 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 ## 1.12.0 — 2026-08-13
 
 **A 568-page scan went in at 31 MB and came out at 437 MB. It now comes out at
-64 MB, with a byte-identical text layer.**
+35 MB — 1.13x its original — with a byte-identical text layer.**
 
 ```
                         in      1.11.0 out    1.12.0 out
-Blacks in the City    31 MB        437 MB         64 MB
-                                   (14.0x)        (2.17x)
+Blacks in the City    31 MB        437 MB         35 MB
+                                   (14.0x)        (1.13x)
 text layer                    1,458,486 B    1,458,486 B — identical
 pages layered                            0     548 of 568
 ```
 
-Colour pages were the one kind that could not be stored in layers, and this file
-was read as coloured on every page, so every page was kept as a single
-full-resolution three-channel JPEG — 669 KB where three layers cost 110 KB. The
-layered page renders indistinguishably from the flat one (mean RGB 141.1/142.2/129.1
-against 140.5/141.7/128.6) and the text does not move at all.
+Two fixes, and the second is the one that closed the gap. **`BUGS.md` R49**: colour
+pages were the one kind that could not be stored in layers, so a file the app read
+as coloured throughout kept every page as a full-resolution three-channel JPEG.
+**R50**: even layered, the file was still 2.17x its original, and the whole excess
+was the two tone layers — the 1-bit stencil that carries the text already matched
+the Internet Archive's own scan of the same book to within 2%, while our tone layers
+cost **40.7 MB against their 4.3**.
+
+**Pages whose ink is all text now shrink their tone layers, automatically.** There is
+no new setting and nothing to choose: a page with no picture on it has nothing in its
+background worth full resolution, and the app can now tell, because layering happens
+*after* recognition and ink that falls outside every recognised word is not text.
+Text pages drop from 60 KB of tone layers to 7.5 KB; pages carrying pictures are left
+exactly as they were.
+
+On the 232-document gate: **721 MB against 792 at 1.11.0**, 232 of 232 succeeded,
+characters unmoved, and **209 of the 232 documents byte-for-byte unchanged with not
+one larger.** Every photograph-heavy document in it is identical — `Picturing men`,
+`America by design`, `Boltanski`, `Findlay`, `Ehrenreich` — while the low-contrast
+typescripts that the picture detector misroutes came down hard: a 1941 speech to a
+fifth of its size, `Riesman 1954` from 7.3 MB to 2.0.
 
 Layering keeps the page's colour and keeps its text at full resolution in the 1-bit
 stencil, and it is still taken only when it is measurably smaller — 20 of the 568
-pages declined it and kept the JPEG they had.
+pages declined it and kept the JPEG they had. On the book, 522 pages now carry
+shrunk tone layers and 8 — the photogravure plates — carry them at full resolution,
+decided per page and without being asked.
 
-**What this does not fix.** The reason those pages were called coloured in the first
-place is that the scan is exposed low: its paper renders at luminance 148 with a
-grey-green cast and never reaches the threshold the paper detector uses, so the
-white-balance correction that exists for tinted stock never runs and the paper's own
-colour is read as colour on the page. The detector is unchanged, deliberately —
-`BUGS.md` R49 records the fix that was built for it, measured, and refused, because
-a page of text and a tinted plate with a subject on it are the same luminance
-histogram. For a text-only book, **Black & white** remains both smaller and correct:
-this file is 25 MB that way, under its own original.
+**What this does not fix.** The reason those pages were called coloured at all is
+that the scan is exposed low: its paper renders at luminance 148 with a grey-green
+cast and never reaches the threshold the paper detector uses, so the white-balance
+correction that exists for tinted stock never runs. That detector is unchanged,
+deliberately — R49 records the fix built for it, measured, and refused, because a
+page of text and a tinted plate with a subject on it are the same luminance
+histogram. The file is now smaller than it would be if the detector were right, so
+the defect costs bytes rather than mattering.
 
-Colour layering costs about 2.5x the time of grey layering per page (3.2 s against
-1.25 s on a 6 MP page) for about 15% more bytes than grey.
+Colour layering costs about 2.5x the time of grey layering per page for about 15%
+more bytes than grey.
 
 **Also fixed**, both reported by the user and both in the settings panel: the entire
 updates block appeared **twice** (`U29`) — 36 identical lines, harmless because both
