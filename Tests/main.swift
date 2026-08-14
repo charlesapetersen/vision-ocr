@@ -8314,6 +8314,62 @@ do {
           normal < 2, String(format: "prefix scan took %.3fs", normal))
 }
 
+// MARK: - publish, which is the step that touches the user's disk
+//
+// Three defects found by review, all in the one function invariant 2 is about.
+do {
+    let dir = tmp.appendingPathComponent("publish-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let fm = FileManager.default
+
+    func staged(_ contents: String) -> URL {
+        let url = dir.appendingPathComponent("staged-\(UUID().uuidString).pdf")
+        try? Data(contents.utf8).write(to: url)
+        return url
+    }
+
+    // A folder at the destination must stop the publish. `fileExists` is true for a
+    // directory and `replaceItemAt` removes it *recursively* — a folder called
+    // `scan.ocr.pdf` was deleted with its contents, and publish returned success.
+    let folder = dir.appendingPathComponent("looks-like-output.pdf")
+    try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
+    let treasure = folder.appendingPathComponent("someone's thesis.docx")
+    try? Data("irreplaceable".utf8).write(to: treasure)
+    var refusedFolder = false
+    do { try OCRModel.publish(staged("new"), to: folder) } catch { refusedFolder = true }
+    check("publishing onto a folder is refused", refusedFolder)
+    check("…and the folder's contents are still there",
+          (try? Data(contentsOf: treasure)) != nil)
+
+    // Replacing an existing file still works, and really replaces it.
+    let existing = dir.appendingPathComponent("out.pdf")
+    try? Data("old".utf8).write(to: existing)
+    try? OCRModel.publish(staged("new"), to: existing)
+    check("publishing over an existing file replaces it",
+          String(data: (try? Data(contentsOf: existing)) ?? Data(), encoding: .utf8) == "new")
+
+    // Publishing over an existing file goes through a sibling of the *destination*, not
+    // straight from scratch, and leaves nothing behind.
+    let siblings = (try? FileManager.default.contentsOfDirectory(atPath: dir.path))?
+        .filter { $0.hasPrefix(".visionocr-publish-") } ?? []
+    check("…and leaves no scratch beside the user's file",
+          siblings.isEmpty, siblings.joined(separator: ", "))
+
+    // **The cross-volume case is deliberately not tested here.** `replaceItemAt` requires
+    // both items on one volume, and the staged file is always in the boot volume's
+    // temporary directory — so an output folder on an external drive worked once and then
+    // failed the whole batch with POSIX 18. Reproducing that needs a second real volume,
+    // and mounting and ejecting a RAM disk inside a suite the pre-commit hook runs on
+    // every commit is too much machinery pointed at the developer's own machine. It was
+    // verified by hand on an HFS+ RAM disk, before and after, and REVIEW-2026-08-14.md
+    // records the numbers. What the suite holds instead is the property that makes the fix
+    // work: the replacement happens through a sibling of the destination, which is
+    // same-volume by construction.
+
+    resetPrefs()
+}
+
 // MARK: - Carrying a reader's marks across the rebuild
 //
 // TODO item 2. The rebuild turns each page into an image and drops every annotation

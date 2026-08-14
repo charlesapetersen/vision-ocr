@@ -759,10 +759,16 @@ final class OCRModel: ObservableObject {
 
     enum Failure: LocalizedError {
         case unreadable, noTextFound
+        /// The destination path is a folder. `replaceItemAt` would delete it and
+        /// everything in it, and report success.
+        case destinationIsFolder(String)
         var errorDescription: String? {
             switch self {
             case .unreadable: return "Could not open that PDF to read its text."
             case .noTextFound: return "That PDF turned out to have no extractable text after all."
+            case .destinationIsFolder(let name):
+                return "\u{201C}\(name)\u{201D} is a folder, so nothing was written "
+                     + "\u{2014} publishing over it would have deleted it."
             }
         }
     }
@@ -1299,12 +1305,53 @@ final class OCRModel: ObservableObject {
     /// Internal rather than private for the same reason `makeSearchablePDF` is:
     /// this is the step that touches the user's disk, invariant 2 is about
     /// exactly this step, and it had no test of its own.
+    /// Two things this has to get right, and it got both wrong.
+    ///
+    /// **`replaceItemAt` needs both items on one volume**, and `staged` is always in
+    /// `NSTemporaryDirectory()` — the boot volume. So an output folder on an external
+    /// drive or a network share worked the first time and failed every time afterwards,
+    /// with POSIX 18 (`EXDEV`) surfacing as "The file couldn't be saved in the folder".
+    /// Correcting a setting and pressing Start again failed the whole batch. Fixed by
+    /// moving the staged file next to its destination *first*, so the atomic replacement
+    /// happens within one volume — which is what keeps invariant 2 ("build into scratch,
+    /// publish only on success") true for a destination anywhere.
+    ///
+    /// **And `fileExists` is true for a directory**, which `replaceItemAt` then removes
+    /// recursively: a directory named `scan.ocr.pdf` was destroyed, and publish returned
+    /// success. Nothing in the pipeline aims at a directory — `uniqueOutputs` compares
+    /// output paths against each other, never against what is on disk — but silently
+    /// deleting a folder that was never OCR output is not a thing to leave to luck.
     nonisolated static func publish(_ staged: URL, to output: URL) throws {
         let fm = FileManager.default
-        if fm.fileExists(atPath: output.path) {
-            _ = try fm.replaceItemAt(output, withItemAt: staged)
-        } else {
+        var isDirectory: ObjCBool = false
+        let exists = fm.fileExists(atPath: output.path, isDirectory: &isDirectory)
+        if exists, isDirectory.boolValue {
+            throw Failure.destinationIsFolder(output.lastPathComponent)
+        }
+        guard exists else {
             try fm.moveItem(at: staged, to: output)
+            return
+        }
+        // A sibling of the destination, so the replacement is same-volume whatever volume
+        // that is. The name cannot collide with a real output: `uniqueOutputs` never
+        // produces one with this prefix.
+        let sibling = output.deletingLastPathComponent()
+            .appendingPathComponent(".visionocr-publish-\(UUID().uuidString)")
+        do {
+            try fm.moveItem(at: staged, to: sibling)
+        } catch {
+            // The destination's own directory is not writable, or the volume is full.
+            // Nothing has been touched, so the previous output survives — which is the
+            // half of invariant 2 that matters most here.
+            throw error
+        }
+        do {
+            _ = try fm.replaceItemAt(output, withItemAt: sibling)
+        } catch {
+            // Put the staged file back where the caller left it, so a retry has
+            // something to publish and no scratch is orphaned beside the user's file.
+            try? fm.moveItem(at: sibling, to: staged)
+            throw error
         }
     }
 
@@ -1818,6 +1865,15 @@ final class OCRModel: ObservableObject {
                     return
                 }
             }
+            // Last thing before the user's disk is touched.
+            //
+            // The gate above is several seconds earlier on a long document: `copyOutline`
+            // is a full PDFKit re-serialisation at about 13 ms a page, and the annotation
+            // transplant adds three qpdf passes. Measured, a cancel landing in that window
+            // published the file and reported **succeeded** — so "failure is reported,
+            // never published" and "three gates, then publish" were both false. This does
+            // not shorten the window, it stops it from ending in a publish.
+            if control.isCancelled { report(.cancelled, "Cancelled."); return }
             try publish(finished, to: output)
         } catch {
             // Cancelling reaches the jbig2 and qpdf children as SIGTERM, so they

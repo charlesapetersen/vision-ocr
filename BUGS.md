@@ -2517,6 +2517,46 @@ three timings that were polluted while this entry was being written.
 
 ---
 
+### R59 · `publish` failed onto another volume, and deleted a folder it was aimed at — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A2.1 and A2.3)*
+
+`publish` is the one step that touches the user's disk, and invariant 2 is about exactly
+this step. Two defects in eight lines.
+
+**Every re-run of a batch onto another volume failed.** `replaceItemAt` requires both items
+on one volume, and the staged file is always in `NSTemporaryDirectory()` — the boot volume.
+So an output folder on an external drive or a network share worked the *first* time, when
+`publish` took the `moveItem` branch (Foundation copies across devices), and failed every
+time afterwards. Verified first-hand: `NSPOSIXErrorDomain 18` (`EXDEV`), surfacing as "The
+file couldn't be saved in the folder", against the same call succeeding on the boot volume.
+Correcting a setting and pressing Start again failed the entire batch, with a message
+naming neither the cause nor a remedy. **Fixed** by moving the staged file to a sibling of
+its *destination* first, so the atomic replacement is same-volume whatever volume that is;
+a failed replacement puts the staged file back so a retry has something to publish.
+Verified: three consecutive publishes onto an HFS+ RAM disk, each replacing the last, no
+scratch left beside the file.
+
+**And a folder at the destination was deleted, recursively, with success reported.**
+`fileExists(atPath:)` is true for a directory and `replaceItemAt` then removes it. A folder
+named like an output, holding a file, was destroyed. Nothing in the pipeline aims at a
+directory — `uniqueOutputs` compares output paths against each other, never against what is
+on disk — so this needed a coincidence, but silently deleting something that was never OCR
+output is not a thing to leave to luck. **Fixed**: it refuses, and says the name.
+
+**Also fixed, from A2.2: a cancel could be observed and the file published anyway.** The
+last gate sat several seconds before `publish` on a long document — `copyOutline` is a full
+PDFKit re-serialisation at ~13 ms a page, and the annotation transplant adds three qpdf
+passes — and a cancel landing in that window published the file and reported **succeeded**.
+Measured at 0.38 s on 19 pages, 0.73 s on 57, so about 7 s on a 568-page book. A check
+immediately before `publish` does not shorten the window; it stops it ending in a publish.
+The existing cancel test only cancelled *before* a run started, so the window was untested.
+
+**Still open from the same finding:** `Recogniser.extract` checks cancellation only at the
+top of each page and writes **straight to the user's destination with no staging**, so a
+cancel during the last page finishes it, replaces the previous output, and then reports
+`.cancelled`. The log says one thing and the disk says another. Text mode has no staging at
+all, which is the real fix and a larger one. `REVIEW-2026-08-14.md` A2.2 carries it.
+
 ### R58 · Two review rounds on the annotation transplant, and both found marks in the wrong place — FIXED, third round unrun
 *(2026-08-14. Recorded as one entry because the defects are one story: every single one
 was an assumption about the PDF format that the feature's own checks could not see.)*
