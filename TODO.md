@@ -11,6 +11,13 @@ promoted, or it does not and should be deleted.
 
 ---
 
+## Two standing decisions, 2026-08-14
+
+- **No release until more of the recorded bugs are fixed.** 1.13.0 is deferred by the owner;
+  R59's `publish` fixes ride along with whatever ships next rather than going out alone.
+- **The annotation feature is held for more work** — see item 2 below. Off by default on `main`,
+  unadvertised, needing a third review round and the A8.1 test.
+
 ## Start here
 
 **[HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md)** — the 2026-08-14 review sweep's fix order,
@@ -82,7 +89,11 @@ helper under `env -i`, `visionocr-recognise --version` included.
    round four. Once a page can be told to carry no picture *structurally*, this
    optimisation is a small change on top of it and should be taken.
 
-2. **Preserve annotations through re-OCR — BUILT AND VERIFIED 2026-08-14.**
+2. **Preserve annotations through re-OCR — BUILT, VERIFIED, AND HELD FOR MORE WORK
+   (owner decision, 2026-08-14).** It stays on `main`, off by default, and is **not** advertised
+   in a release until it has had a **third adversarial review round** — rounds one and two each
+   found marks landing in the wrong coordinate space — and the **A8.1 test**, because nothing
+   currently proves the setting gates the feature. Do not treat it as done.
    `Sources/Annotations.swift`, behind *Keep highlights and notes* (off by default),
    between the outline step and `publish`. The full verification bar was met on
    `Hyman_2012_Rethinking the Postwar Corporation`, which is the document the

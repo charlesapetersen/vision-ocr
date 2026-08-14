@@ -2634,9 +2634,12 @@ no fixture in this repo can reach them. That is CLAUDE.md invariant 5's lesson a
 from a new direction: a fixture is not blind only to what it omits, but to what its
 *writer* cannot produce.
 
-**A third round has not been run, and the feature is deliberately not in a release yet.**
-Two consecutive rounds each found content-integrity defects; the base rate says a third
-would too. It is on `main`, off by default.
+**Held for more work by owner decision, 2026-08-14.** A third round has not been run, and the
+feature is **not** to go into a release until it has had one — two consecutive rounds each found
+content-integrity defects, and the base rate says a third would too. It also needs the test
+`REVIEW-2026-08-14.md` A8.1 names: **nothing currently proves the setting gates the feature**, so
+if `if settings.preserveAnnotations` were inverted or deleted, all 23 checks here would still
+pass. It is on `main`, off by default, and unadvertised.
 
 ### R56 · `isPicture` is blind to pale marks, and the 1-bit route erases them — OPEN
 *(found 2026-08-13 building the adversarial fixtures TODO item 1's measurement asked
