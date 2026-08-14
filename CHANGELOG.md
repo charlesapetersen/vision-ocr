@@ -77,6 +77,19 @@ has a test holding it.
 The suite gained the check that would have caught `U29` and did not exist: no two
 controls in a view may carry the same name.
 
+**Known, not fixed, and not new in this release.** Two ways Automatic can route a
+page wrongly were found while measuring something else, and both destroy what is on
+it. `BUGS.md` R56: a **pale drawing** — faded ink, light pencil, a wash — can be too
+light to count as ink and too light to count as continuous tone, in which case the
+page is treated as text and the drawing is rendered as blank paper. `BUGS.md` R57: a
+**continuous-tone plate covering roughly a fifth of a page** can miss both routing
+thresholds at once and come out as a solid black area. Both are present in 1.11.0 and
+earlier; neither is caused by anything in this release. **If a document matters and
+carries pale artwork, compare the output against the original**, or use Grayscale,
+which routes nothing to 1-bit and cannot do either of these things. A luminance test
+for the first was built and refused on measurement — the entries carry the numbers
+and what a real fix needs.
+
 ## 1.11.0 — 2026-08-13
 
 **The batch speed is back, and then some.** The 232-document release gate:
