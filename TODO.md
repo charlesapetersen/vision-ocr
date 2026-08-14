@@ -49,14 +49,43 @@ helper under `env -i`, `visionocr-recognise --version` included.
 
 **The order, agreed with the owner 2026-08-13 after 1.12.0's work:**
 
-1. **Move `isPicture` after recognition** — promoted to next. It is the other half
-   of R50 and the last thing standing between this app and files smaller than a good
-   mixed-raster original. It still runs *before* recognition, so it has only the
-   page's histogram, which R49 measured as unable to tell text from a tinted plate.
-   That is why a 568-page text book carries tone layers on 522 pages it should not
-   carry at all — about 4 MB over its original. `FEATURES.md`'s spatial-signal entry
-   has the route; R50's own signal (ink outside recognised words) is the proof the
-   structural question is answerable once the boxes exist.
+1. **Move `isPicture` after recognition — MEASURED AND REFUSED FOR NOW, 2026-08-13.**
+   Not on its prize, which is real, but because building the instrument for it found
+   **two content-destroying defects in the shipped routing** (`BUGS.md` R56 and R57),
+   and this optimisation would make the worse of them more common.
+
+   **The prize, measured, and TODO's own two numbers were wrong.** This entry said
+   "about 4 MB over its original" while the old specification below said "a text page
+   routed to 1-bit costs 44 KB where a layered one costs 46" — implying ~1 MB. Neither
+   was measured at the published stage. `Tools/score-text-route.swift` now does, using
+   `mrcLayers` for one route and Black & white `flatten` for the other, both shipped
+   code. On `Blacks in the City`:
+
+   | page | inkOutsideText | layered | 1-bit | delta |
+   |---|---|---|---|---|
+   | 41, 163, 244 (text) | 0.0000 | 45–54 KB | 38–46 KB | **−8.2 KB/page** |
+   | 78, 300, 301, 303 (plates) | 0.971–0.993 | 88–109 KB | 7–15 KB | −81 to −97 KB |
+
+   So **8.2 KB a page**, or ~4.3 MB over that book's 522 text pages — 12% of the
+   finished file. The "44 vs 46 KB" line was simply stale; the stencil barely grows,
+   so nearly the whole tone-layer cost is saved. The prize is worth having.
+
+   **Why it is refused anyway.** The plate rows above are the hazard in plain sight:
+   1-bit is 8x smaller there *because it destroys the photogravure*. The whole feature
+   therefore rests on the discriminator, and it would use `inkOutsideText`, **whose two
+   recorded misses are both pictures read as text** — a pale line drawing at 0.0000 and
+   a flat mid-luminance plate at 0.0365. Under R50 those misses cost sharpness. Under a
+   routing change they cost the picture. R56 is that miss, rendered: a pale drawing is
+   **erased** by the current 1-bit route, and this optimisation would send more pages
+   down it. Trading a latent content-destruction defect for 8.2 KB a page is the wrong
+   way round.
+
+   **What unblocks it** is R56, and R56 converges with R57 on one unbuilt instrument:
+   shape, not luminance. A luminance signal for the blind zone was built and refused
+   over four rounds — the numbers are in R56 and the estimator is in
+   `Tools/score-threshold-loss.swift` with a self-test, so round five starts from
+   round four. Once a page can be told to carry no picture *structurally*, this
+   optimisation is a small change on top of it and should be taken.
 
 2. **Preserve annotations through re-OCR.** Specified below, not started. **The
    library sweep is blocked on it**: 9% of the library carries a reader's own marks

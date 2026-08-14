@@ -293,9 +293,37 @@ something else rather than sold a setting.
 
 ## Likely worth doing
 
-### A spatial signal for the picture detector — PARTLY ANSWERED, and the rest still open
-*(specified 2026-08-13 out of R49; **R50 answered the easier half the same day** and
-the note below is what is left.)*
+### A spatial signal for the picture detector — PARTLY ANSWERED, and now the only route left
+*(specified 2026-08-13 out of R49; **R50 answered the easier half the same day**;
+**promoted 2026-08-13 from "likely worth doing" to the thing two open defects both
+depend on** — see the block immediately below.)*
+
+**It is no longer an optimisation. R56 and R57 are content-destruction defects in the
+shipped routing, and this is what closes both.** R56: a pale line drawing scores the
+same ink, tone and saturation as a blank text page, so `isPicture` says text and the
+1-bit route **erases** it — rendered, not argued. R57: a continuous-tone plate over a
+fifth of a page misses `pictureInkThreshold` (0.147 vs 0.15) and `pictureToneThreshold`
+(0.102 vs 0.12) simultaneously and comes out a solid black blob that swallows a line of
+text.
+
+**A luminance signal was tried for R56 and refused over four rounds** — the table is in
+`BUGS.md` R56 and the estimator is in `Tools/score-threshold-loss.swift` with a
+self-test. It fails for a reason that is itself an argument for shape: the blind zone
+holds pale drawings (keep), decorative shading (harmless to lose) and **show-through
+from the reverse of the sheet** (desirable to lose), and no luminance statistic
+separates those. Shape does: strokes are long and curved, show-through is text-shaped
+blobs in rows, shading is rectangles, and a blobbed plate is one enormous component.
+
+Also settled, so the next attempt does not re-derive it: **`TODO.md` item 1's size
+optimisation is refused until this exists** — it would route more text pages to 1-bit
+using `inkOutsideText`, whose recorded miss *is* R56 — and its prize is now measured at
+**8.2 KB a page** (≈4.3 MB, 12%, on `Blacks in the City`), not the 4 MB and 1 MB that
+entry claimed in two different places. `Tools/score-text-route.swift` measures it.
+
+`Tools/make-plate-fixtures.swift` builds the six adversarial pages this all rests on —
+pale drawing, flat mid-luminance colour, tonal plate, coarse halftone, text-only and
+red-ink text. The corpus does not contain them, which is what this entry said from the
+start.
 
 **What R50 settled.** Choosing the *background resolution* does not need a picture
 detector at all. It happens after recognition, so it can ask whether any ink falls

@@ -6,12 +6,25 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Two open, and neither is in the app.** **R54**, a pooling bug in
-`Tools/sweep-zotero.py` that makes its per-type medians and its "GB reclaimable"
-figure untrustworthy for 181 parentless attachments; it matters only when the library
-sweep runs, which is scheduled last. And **R55**, `classify-source` calling an
-upright-scanner capture `photographed`, which is the gate deciding what the corpus
-and the sweep are allowed to contain.
+**Four open, and two of them destroy content.**
+
+**R56 and R57 are in the app, on the default route.** R56: a pale line drawing is
+**erased** by the 1-bit route, because it scores the same ink, tone and saturation as a
+page with nothing on it but text — no routing signal has a term for the zone it sits in.
+R57: a continuous-tone plate over a fifth of a page misses *both* routing gates at once
+(ink 0.147 against 0.15, tone 0.102 against 0.12) and comes out a solid black blob that
+swallows a line of text. Both were found by the adversarial fixtures in
+`Tools/make-plate-fixtures.swift`, both are **rendered rather than argued**, and both
+converge on the one unbuilt instrument `FEATURES.md` specifies: shape, not luminance. A
+luminance signal was built for R56 and refused over four measured rounds. Neither is
+fixed, and `TODO.md` item 1's size optimisation is refused until R56 closes, because it
+would make R56 more common for a measured 8.2 KB a page.
+
+**R54 and R55 are not in the app.** R54, a pooling bug in `Tools/sweep-zotero.py` that
+makes its per-type medians and its "GB reclaimable" figure untrustworthy for 181
+parentless attachments; it matters only when the library sweep runs, which is scheduled
+last. And R55, `classify-source` calling an upright-scanner capture `photographed`,
+which is the gate deciding what the corpus and the sweep are allowed to contain.
 
 **R51–R53 came out of a review of R49 and R50's own diff and are all `FIXED`** — the
 tenth round running in which reviewing the previous round's code found real defects in
@@ -2492,6 +2505,146 @@ one-document run is the wrong answer, and is the same class of mistake as the
 three timings that were polluted while this entry was being written.
 
 ---
+
+### R56 · `isPicture` is blind to pale marks, and the 1-bit route erases them — OPEN
+*(found 2026-08-13 building the adversarial fixtures TODO item 1's measurement asked
+for. **In the app, on the default route, and it destroys content** — the only entry in
+this register found by a fixture rather than by a document.)*
+
+A page of type with a **pale line drawing** on it — luminance 200 on cream stock —
+comes out of `Flattener.flatten` in Automatic mode with **the drawing gone**. Not
+softened, not blurred: erased to paper, with the text beside it intact.
+`Tools/make-plate-fixtures.swift` builds it, and the rendered before and after are
+what this entry rests on.
+
+**Why nothing notices.** The three routing signals read, against the same page with
+nothing but text on it:
+
+|  | ink | tone | sat |
+|---|---|---|---|
+| text only | 0.025 | 0.004 | 0.000 |
+| **the same page + a pale drawing** | **0.025** | **0.004** | 0.001 |
+
+Identical, and it is arithmetic rather than luck. Otsu lands at 130. `inkCoverage`
+counts pixels *below* 130, and the drawing is at 200. `toneFraction` counts a band of
+**±45 around** the threshold — [85, 175] — and 200 is above it. `saturation` is
+measured against the page's own paper and the drawing is grey. So the drawing falls in
+a **blind zone from `threshold + 45` up to the paper**, which on this page is luminance
+175–247, and no signal has any term for it. `isPicture` returns false, the page is
+thresholded, and every pixel above 130 becomes paper.
+
+**This is invariant 1.** "Never lose content silently. Every path that can drop a
+page, a line or a text layer must report it." Nothing is reported here, and the output
+is a plausible page — which is the failure mode the invariant names as worse than a
+loud one.
+
+**How it went unseen for so long, which is the part worth keeping.** The case is
+already in this register. R50 measured it — "a *pale* line drawing reads **0.0000**,
+because Otsu puts light grey on the paper side and it is therefore not ink at all" —
+and dismissed it in the next sentence: "Neither is alarming, because this only ever
+changes *resolution*: the worst it can do is soften something, never remove it." That
+is **true of R50 and false of `isPicture`**. R50's signal picks a downsample factor, so
+its misses cost sharpness; the identical blind spot in `isPicture` picks a *codec*, and
+1-bit has no way to express a pale mark. Two entries knew about the blind zone, each
+reasoned about its own consequence, and nobody joined them. The lesson is not "measure
+more" — it is that **the same miss is a different defect in front of a different
+decision**, so a signal's known misses have to be re-examined against every caller,
+not once.
+
+**A luminance signal for it was built, measured over four rounds, and REFUSED. It
+lives in `Tools/score-threshold-loss.swift`** — not in `Sources/`, because the app does
+not use it and `Flattener` would be carrying dead code, which is the same call
+`score-skew.swift` records for the deskew estimator. It carries a self-test that runs
+on every invocation and pins each property below.
+
+`contentLostToThreshold` is the fraction of the page that the threshold will call paper
+while being too far below the paper's own level to be paper. Each round looked right
+until the corpus was read, and the fixtures were reassuring in three of the four:
+
+| round | change | fixture: text / halftone / **pale drawing** | corpus 1-bit pages |
+|---|---|---|---|
+| 1 | pale fraction, mean − 2sd | 0.0081 / 0.0166 / **0.0236** | continuum 0→0.0918, no gap; 24% of text pages above the fixture |
+| 2 | exclude pale pixels *near ink* | 0.0000 / 0.0001 / **0.0158** | — |
+| 3 | paper level from the **mode**, spread from the peak's clean upper side | 0.0000 / 0.0001 / **0.0182** | p50 0.0000, p90 0.0238, max 0.4232 |
+| 4 | require the mark to be **thin** | 0.0000 / 0.0001 / **0.0180** | p50 0.0000, p90 0.0130, p95 0.0324, max 0.2577 |
+
+Round 1's confound was **anti-aliased glyph edge**, which scales with how much type a
+page carries — its top hits were dense text and a page of handwriting. Round 2 fixed
+that: edge is always beside ink, and a drawing is surrounded by paper. Round 3 was
+needed because a *large* pale area is part of the bright class, so it drags the mean
+down and inflates the spread until it excludes itself. Round 4's target was the largest
+remaining hit — a ProQuest metadata page whose **alternating grey table bands scored
+0.4232**, and which at 1-bit loses the banding and **not one word**.
+
+**What refuses it is round 4's remaining hits.** `Doermann_1967` p19, at 0.2577, is a
+1967 typescript whose pale content is **show-through from the reverse of the sheet** —
+thin, away from ink, and an artefact the threshold is *right* to erase. So the blind
+zone holds three kinds of thing and luminance cannot separate them:
+
+| what is in the blind zone | what should happen |
+|---|---|
+| a pale drawing | **keep it** — this is R56 |
+| decorative table shading | losing it is harmless |
+| show-through from the reverse | **losing it is desirable** |
+
+The two commonest of the three are the two you want deleted, so any threshold here
+decides the case it exists for wrongly. 9.1% of 1-bit corpus pages score above the
+fixture, and the ones that do are mostly right as they are. **This is R35's refusal a
+third time, from a new direction**, and it is recorded rather than tuned.
+
+**What it converges on.** Both R56 and R57 now point at the same unbuilt instrument,
+for independent reasons: shape. Drawing strokes are long and curved, show-through is
+text-shaped blobs in rows, decorative shading is rectangles, and a blobbed plate is one
+huge component. `FEATURES.md`'s spatial-signal entry proposed exactly this, and it now
+has two defects arguing for it and four rounds of evidence that the cheap alternatives
+do not work. It is still the remaining prize, and it still wants its own cycle.
+
+**Nothing is shipped for this, and one thing is deliberately NOT shipped**: TODO item
+1's size optimisation, which would move *more* text pages onto the 1-bit route using
+`inkOutsideText` — whose recorded miss is precisely this pale drawing. That would turn a
+latent defect into a common one for a measured 8.2 KB a page. Refused until R56 closes;
+`TODO.md` has the arithmetic.
+
+### R57 · a continuous-tone plate can miss both routing thresholds at once — OPEN
+*(found 2026-08-13 alongside R56, from the same fixtures. **Realism not established** —
+read the caveat.)*
+
+The `tonal-plate` fixture — a smooth gradient with a dark subject on it, over the lower
+third of a text page — routes to **1-bit**, and comes out a **solid black blob that
+also swallows the last line of text above it**. Rendered, and it is exactly what
+`pictureInkThreshold`'s own comment predicts: "a picture misrouted to 1-bit is
+destroyed."
+
+It misses both gates, narrowly and simultaneously: **ink 0.147 against 0.15**, **tone
+0.102 against 0.12**, saturation 0.011 because the plate is grey. Neither constant is
+wrong for what it was calibrated on — both were measured on pages a picture
+*dominates* — and a plate covering a fifth of the sheet clears neither.
+
+**The caveat, stated because it decides what to do.** This fixture is a *clean*
+synthetic gradient, which is the case that minimises `toneFraction`: a real scanned
+photograph carries grain, and grain is precisely what lands in the tone band. So the
+fixture may be sitting in a gap that real material does not occupy, and that is the
+same mistake R49 made twice in the other direction — "a plausible-looking gap on the
+corpus and an overlap the corpus did not contain."
+
+**So this is not fixed by moving a constant.** Raising `pictureInkThreshold` or
+lowering `pictureToneThreshold` would re-open R38, whose measured cost was
+`Boltanski_2006` going 16 MB → 156 MB (9.45x). What the case actually wants is the
+signal FEATURES.md already specifies and this entry now has a second reason for: a
+**connected-component** pass, where a solid blob is one large component and text is
+thousands of small ones in rows.
+
+**The band is not empty on real material.** Measured over 441 corpus pages, three sit
+in it on the 1-bit route — `Ehrenreich_2000` p9 (ink 0.145, tone 0.106),
+`HarpersMagazine-1938` p4 (0.139, 0.094) and p7 (0.143, 0.096) — and 71 pages are
+within reach of one gate or the other. So the fixture is not sitting in a gap the corpus
+lacks, which was the worry this entry was written with. Those three have **not** been
+rendered and compared; that is the next step, and until it happens the honest statement
+is that real pages occupy the band, not that they are being damaged.
+
+R56's refused luminance signal is no help here either: requiring a mark to be *thin*
+drops this fixture from 0.0931 to **0.0024**, because a tonal plate is precisely not
+thin. Two defects, one instrument, and it is shape.
 
 ### R55 · `classify-source` calls an upright-scanner capture `photographed` — OPEN
 *(found 2026-08-13 running the gate over the one document the owner asked to add to
