@@ -80,6 +80,53 @@ scanner that holds it; the suite now also refuses two controls sharing a name (U
 What was never done is *hearing* it in the VM, and that is accepted rather than
 outstanding.
 
+## One document added to the corpus by hand — done 2026-08-13
+
+*Why?*, anon., 1954, National Foremen's Institute — a pamphlet whose subheads and
+cartoons are printed in **red ink**, requested by the owner as a test case for the
+decision R49 and R50 both turned on: colour on paper that is not a photograph. The
+corpus had no document of that kind that anyone picked deliberately. It is in as
+`testdocs/book/1954 - Why.pdf` (attachment key `9232Z7B5`), **outside** the
+stratified draw — its `book`/`old` bucket already held its 9 — and
+`testdocs/README.md` says so.
+
+It earns its place. Measured on its sampled pages, a text pamphlet routes to the
+**picture** path on three of four, two different ways:
+
+| page | ink | tone | sat | routed |
+|---|---|---|---|---|
+| 2 | 0.276 | 0.192 | **0.178** | picture, kept in **colour** |
+| 6 | 0.094 | **0.164** | 0.043 | picture, greyscale |
+
+The red ink alone clears `pictureSaturationThreshold`; the scan's 111 DPI, where
+type is mostly anti-aliased edge, clears `pictureToneThreshold`. `score-corpus`:
+`OK 3p start=99% end=99% off=-0.10 overlap=0/21 words=100%`, which moves no median
+and no worst case. **The corpus is 233 documents; every byte and character total
+quoted anywhere else is a 232-document figure and stays labelled as one.**
+
+**It failed the gate, and the gate was wrong — `BUGS.md` R55.** `classify-source`
+called it `photographed` on a 0.169 illumination gradient against a 0.16 threshold.
+It is an upright-scanner capture: the gradient is a diagonal ramp that is the *same
+on every page* to within 1.5 luminance levels, which is a fixed lighting rig and not
+a pair of hands. **The owner narrowed the categorisation on 2026-08-13 — only
+hand-held photographs are `photographed`** — and ruled this one a scan.
+
+### What R55 leaves to do, and it is not small
+
+The gate decides what the corpus and the sweep may contain, so this is not a
+one-document curiosity:
+
+- **Measure the consistency discriminator before touching the threshold.** A rig
+  repeats and hands do not, so the per-page *agreement* of the gradient is the
+  signal the owner's definition actually wants — not its size. Deskew and columns
+  were both refused on measurement; this gets the same treatment, over known
+  hand-held material (Random Photograph, 186 files, FineReader-made) against known
+  mechanical material, before `classify-source` changes.
+- **Then two populations need re-reading, not re-assuming.** `sample-zotero.py`
+  keeps only `scanned`, so no upright-scanner material has ever been drawn into the
+  corpus; and the survey's **1,001 `photographed` files** — the 815 Robinson-Montana
+  and 186 Random Photograph — are outside the sweep on that verdict.
+
 ## 1. Preserving annotations through re-OCR (decided, specified, not started)
 
 Promoted out of `FEATURES.md` on 2026-08-13. That entry has the history and the

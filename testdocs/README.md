@@ -1,8 +1,9 @@
 # Test corpus
 
-**232 documents, every one of them a scan**, sampled from the Zotero library and
-stratified into 32 buckets: 8 item types x 4 eras (pre-1960, 1960-1999, 2000+,
-undated), up to 6 per bucket where the library has them. 1.2 GB.
+**233 documents, every one of them a scan**: 232 sampled from the Zotero library
+and stratified into 32 buckets — 8 item types x 4 eras (pre-1960, 1960-1999,
+2000+, undated), up to 6 per bucket where the library has them — **plus one added
+by hand**, which is outside the draw and described below. 1.2 GB.
 
 Widened from 84 on 2026-08-09 by removing an arbitrary five-year recency bound
 on the draw; 79% of the new material predates it, reaching back to 2013. The
@@ -22,7 +23,45 @@ accuracy figures off it for months, and nothing about them looked wrong, because
 born-digital documents score perfectly — OCR of a clean rendering of digital text
 is an easy problem. See BUGS.md D1 and ../CORPUS-2026-08-08.md.
 
+## The one document added by hand
+
+`book/1954 - Why.pdf` — *Why?*, anon., 1954, National Foremen's Institute (Zotero
+attachment key `9232Z7B5`), added 2026-08-13 at the owner's request. Its `book`/`old`
+bucket already held its 9, so this is an addition **outside the stratified draw**
+and not a 10th sample; `sample-zotero.py` will not produce it.
+
+It is here because the corpus had **no document anyone picked deliberately** for
+the decision R49 and R50 both turned on: colour on paper that is not a photograph.
+This one is a 1954 pamphlet whose subheads and cartoons are printed in red ink, and
+it exercises that routing three ways at once — measured, on its sampled pages:
+
+| page | ink | tone | sat | routed |
+|---|---|---|---|---|
+| 2 | 0.276 | 0.192 | **0.178** | picture, **kept in colour** |
+| 6 | 0.094 | **0.164** | 0.043 | picture, greyscale |
+
+The red ink alone clears `pictureSaturationThreshold` (0.06), and the scan's own
+resolution — 111 DPI, where type is mostly anti-aliased edge — clears
+`pictureToneThreshold` (0.12). So a text pamphlet routes to the picture path on
+three of its four sampled pages. That is the `isPicture` case TODO item 1 is about,
+and this document is the fixture for it.
+
+**Its `classify-source` verdict is `photographed`, and that verdict is wrong.**
+The gate reads a median illumination gradient of 0.169 against a 0.16 threshold.
+The document is an upright-scanner capture of an open booklet, and the gradient is
+a smooth diagonal ramp — 182 at top-left to 219 at bottom-right, centre exactly
+between — that is **the same on every sampled page**, which is a fixed lighting rig
+rather than a hand-held frame. Saturation is 0.041, and the pages are rectilinear
+with no perspective or page curl. Ruled a scan by the owner on 2026-08-13, with the
+categorisation narrowed to *hand-held* photographs; `BUGS.md` R55 carries what that
+means for the gate and for the survey's 1,001 "photographed" files.
+
 ## Where it currently stands
+
+The figures below are the **232-document** run; the hand-added document scores
+`start=99% end=99% off=-0.10 overlap=0/21 words=100%`, which moves no median and no
+worst case, but the byte and character *totals* quoted elsewhere are 232-document
+figures and stay labelled as such.
 
 232/232 process successfully · median 100% line-start and line-end selectability
 (worst 91% and 91%) · median 100% word retention (worst 97%) · median 0.10

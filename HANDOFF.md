@@ -424,7 +424,9 @@ you expected.
 **1.7.0** is tagged and released with a DMG.
 
 **The last release was verified against the whole library, not just the suite.**
-**The baseline is the 232-document `testdocs` run.** Produced by
+**The baseline is the 232-document `testdocs` run** — the corpus is now 233, and the
+column figures below are deliberately *not* restated for it: a document added on
+2026-08-13 cannot change what four earlier runs measured. Produced by
 `Tools/score-gate.swift`, which is the harness to use — see its header for why a
 serial one is worthless:
 
@@ -557,9 +559,15 @@ order, how the announcements sound, and the Settings sheet on a short display.
 
 ## Corpus
 
-`testdocs/` holds **232 documents, every one of them a scan** (8 item types x 4
-eras; widened from 84 in 2026-08 by dropping an arbitrary five-year recency
-bound — 79% of the new material is older and none of the figures moved) used to measure the searchable pipeline across books, newspapers,
+`testdocs/` holds **233 documents, every one of them a scan** — 232 from the
+stratified draw (8 item types x 4 eras; widened from 84 in 2026-08 by dropping an
+arbitrary five-year recency bound — 79% of the new material is older and none of the
+figures moved) **plus one added by hand on 2026-08-13** at the owner's request: a
+1954 pamphlet printed in red ink, which is the corpus's only deliberately chosen
+instance of colour on paper that is not a photograph, and which routes to the
+picture path on three of its four sampled pages. **Every gate figure in this file is
+a 232-document figure** and stays labelled as one; `testdocs/README.md` has that
+document's own scores and the `classify-source` anomaly (R55) that came with it. Used to measure the searchable pipeline across books, newspapers,
 magazines, journals, theses and reports, old and new. **It is not committed** —
 it is third-party copyrighted material. `testdocs/manifest.tsv` records what was
 sampled *and each document's scores*; `Tools/sample-zotero.py` rebuilds an

@@ -15,12 +15,24 @@ directory:
 mkdir -p /tmp/h && cp Tools/score-corpus.swift /tmp/h/main.swift
 swiftc -O -o /tmp/score -target "$(uname -m)-apple-macos13.0" \
   Sources/Prefs.swift Sources/Runner.swift Sources/Flattener.swift \
-  Sources/SearchableWriter.swift Sources/JBIG2.swift Sources/Model.swift \
+  Sources/Recogniser.swift Sources/SearchableWriter.swift Sources/JBIG2.swift \
+  Sources/RunReport.swift Sources/Updater.swift Sources/Model.swift \
   Sources/ContentView.swift Sources/SettingsView.swift /tmp/h/main.swift
 ```
 
-The small `pdf-*` utilities only need `Sources/Flattener.swift` (or nothing at
-all); the scorers need the full set because they call `OCRModel.makeSearchablePDF`.
+The scorers need the full set because they call `OCRModel.makeSearchablePDF`. **This
+list drifts**, and the failure is a wall of cascading type errors in a source file
+you did not touch rather than a plain "no such symbol": omitting `Recogniser.swift`
+reports `cannot find 'Recogniser' in scope` in `Model.swift`, and omitting
+`SearchableWriter.swift` — which `Flattener` needs for `SearchableWriter.BoundingBox` —
+reports `cannot convert value of type 'Duration' to expected argument type 'Int'`
+inside `mrcLayers`. If a compile fails in code you have not edited, suspect a missing
+source before the code. Three sources were added since this command was written
+(`Recogniser` for R40, `RunReport` and `Updater` for 1.10.0) and each broke it.
+
+`Sources/App.swift` stays out — its `@main` collides with the tool's top-level code.
+The small `pdf-*` utilities need less: `pdf-extract-pages.swift` compiles alone, and
+the ones that call `Flattener` need `Sources/SearchableWriter.swift` with it.
 
 ## What each one measures
 

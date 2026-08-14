@@ -6,10 +6,12 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**One open, and it is not in the app: R54**, a pooling bug in `Tools/sweep-zotero.py`
-that makes its per-type medians and its "GB reclaimable" figure untrustworthy for 181
-parentless attachments. It matters only when the library sweep runs, which is
-scheduled last.
+**Two open, and neither is in the app.** **R54**, a pooling bug in
+`Tools/sweep-zotero.py` that makes its per-type medians and its "GB reclaimable"
+figure untrustworthy for 181 parentless attachments; it matters only when the library
+sweep runs, which is scheduled last. And **R55**, `classify-source` calling an
+upright-scanner capture `photographed`, which is the gate deciding what the corpus
+and the sweep are allowed to contain.
 
 **R51–R53 came out of a review of R49 and R50's own diff and are all `FIXED`** — the
 tenth round running in which reviewing the previous round's code found real defects in
@@ -2490,6 +2492,66 @@ one-document run is the wrong answer, and is the same class of mistake as the
 three timings that were polluted while this entry was being written.
 
 ---
+
+### R55 · `classify-source` calls an upright-scanner capture `photographed` — OPEN
+*(found 2026-08-13 running the gate over the one document the owner asked to add to
+the corpus; not in the app — it is the gate that decides what the corpus and the
+sweep may contain)*
+
+`classify-source` verdicts `photographed` when the median illumination gradient
+exceeds 0.16. *Why?* (1954, National Foremen's Institute) comes back **0.169** and is
+excluded — and it is a scan. **The owner's ruling, 2026-08-13: only hand-held
+photographs are `photographed`.** An upright or planetary scanner capture is a scan.
+
+**What the signal is actually measuring.** Not vignetting. The 3x3 paper-luminance
+blocks are a smooth diagonal ramp, and the same ramp on every sampled page:
+
+|  | left | centre | right |
+|---|---|---|---|
+| top | 182.5 | 193.3 | 201.2 |
+| middle | 186.8 | 198.3 | 206.2 |
+| bottom | 202.9 | 212.2 | 219.6 |
+
+*(page 7; pages 4, 6 and 9 are within 1.5 of these, page 2 is brighter throughout)*
+
+A hand-held frame is dark in the **corners** and bright in the centre, and it varies
+frame to frame because the hands and the lamp move. This is monotonic corner to
+corner, its centre block sits exactly between the extremes, and **five pages agree to
+within 1.5 luminance levels** — a fixed light source off the axis of a fixed sensor.
+Saturation is 0.041 (the classifier's own comment calls near-neutral the flatbed
+tell), and the pages are rectilinear with no perspective and no page curl. Rendered
+and read: an open booklet on an upright scanner.
+
+Cropping the outer sixteenth — the inset `Flattener.inkOutsideText` already applies,
+on the recorded grounds that a scan's platen edge and gutter shadow "is not content" —
+takes the median from 0.169 to **0.124**, and the outer eighth takes it to 0.099. That
+is *not* the diagnosis, though, and an earlier draft of this entry had it wrong: the
+crop lowers the number only because a linear ramp's extremes live at its edges. The
+gradient is across the whole sheet.
+
+**What it costs, and why this is not a one-document curiosity.** The threshold is
+doing a job nobody asked it to do: it separates *evenly lit* from *unevenly lit*, and
+the owner's definition needs *hand-held* separated from *mechanical*. Those differ
+exactly on upright-scanner material. Two consequences, neither yet measured:
+
+- **The corpus gate has been excluding it.** `sample-zotero.py` keeps only `scanned`,
+  so however much upright-scanner material the library holds, none of it has ever
+  been drawn — and the corpus's stated property is "every one of them a scan".
+- **The survey's 1,001 `photographed` files are not all photographs.** That figure
+  splits Robinson-Montana (815) from Random Photograph (186) and is what puts both
+  outside the sweep. Robinson-Montana's own metadata says Acrobat 11 image conversion
+  and ImageMagick, which describes the wrapper and not the capture.
+
+**The discriminator this suggests, unbuilt and unmeasured:** the *consistency* of the
+gradient across sampled pages rather than its size. A rig repeats; hands do not. The
+five pages here agree to 1.5 levels, and that is a number a hand-held set should not
+be able to produce. **Do not change the threshold on this document alone** — it wants
+the same treatment deskew and columns got: measure it over known hand-held material
+(Random Photograph, 186 files, FineReader-made) against known mechanical material
+before touching the gate that decides what everything else is allowed to measure.
+
+*Why?* is in the corpus regardless, by the owner's ruling, with the anomaly recorded
+in `testdocs/README.md` beside it.
 
 ### R54 · `sweep-zotero.py` pools 181 parentless attachments into one pseudo-type — OPEN
 *(found 2026-08-13 reviewing the commit it arrived in; not in the app, and not urgent
