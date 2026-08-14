@@ -84,9 +84,13 @@ cancellable one is gone, and that is where the complexity was.
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
 recognition is Vision, called from a helper this repo builds
 (`visionocr-recognise`, from `Helper/main.swift`), and that helper plus `jbig2`
-and `qpdf` are bundled into the app and travel in `Contents/Resources`. Intel is
-not supported: the bundled compressors are arm64-only and
-`Runner.containsNativeSlice` makes them invisible rather than failing at `exec`.
+and `qpdf` are bundled into the app and travel in `Contents/Resources`. **Intel is
+supported, with a caveat** — the bundled compressors are arm64-only and
+`Runner.containsNativeSlice` makes them invisible rather than failing at `exec`, so an
+Intel Mac falls through to Homebrew (`brew install jbig2enc qpdf`) exactly as before;
+without them the compression step is skipped and files come out roughly three times
+larger. This paragraph said "Intel is not supported", which `README.md`, `TECHNICAL.md`
+and `build.sh`'s own comment all contradict.
 
 `run_tests.sh` builds the helper too and points the suite at it with
 `VISIONOCR_HELPER`. Without that the helper checks would pass over a helper that
@@ -220,10 +224,13 @@ warns about in as many words.
 the consequence, and whether it was verified by running code or only reasoned
 about.
 
-**Nothing is open.** Every entry is `FIXED` or `WONTFIX` with its reasoning
-recorded, including three decisions that went against the obvious fix: C5, R9
-and R13. `TODO.md` holds one thing that needs a person (the VoiceOver
-announcements have never been *heard*) and one optional idea.
+**Four entries are open, and two of them destroy content on the default route** —
+R56 (a pale drawing erased, not softened) and R57 (a tonal plate as a black blob), plus
+R54 and R55, which are in the tooling rather than the app. Everything else is `FIXED` or
+`WONTFIX` with its reasoning recorded, including three decisions that went against the
+obvious fix: C5, R9 and R13. `TODO.md` holds an ordered four-item queue, and
+`REVIEW-2026-08-14.md` holds a whole-codebase review sweep with findings not yet fixed
+and areas not yet covered.
 
 For each: reproduce it with a harness from `Tools/` first, fix, re-measure, then
 update the entry in `BUGS.md` with the fix and its evidence. Run `./run_tests.sh`
@@ -263,10 +270,12 @@ Two things the second pass learned the hard way, both worth carrying forward:
 
 ## Where things stand
 
-**1.12.0 is released**, tagged and on GitHub with its DMG, gate and all. Everything
-in `BUGS.md` is `FIXED`, `WONTFIX` or `NO DEFECT` except **R54**, which is a pooling
-bug in `Tools/sweep-zotero.py` rather than in the app and is only read by the sweep,
-scheduled last.
+**1.12.0 is released**, tagged and on GitHub with its DMG, gate and all — and its
+release notes carry an appended known-issues section, because **two of the four open
+defects are in the app on the default route**. R56: a pale drawing is *erased* rather
+than softened. R57: a continuous-tone plate over about a fifth of a page can come out a
+solid black blob. Both are in 1.11.0 and earlier too; Grayscale mode is unaffected. R54
+and R55 are in the tooling (`sweep-zotero.py`, `classify-source`) rather than the app.
 
 **1.12.0 in one line: a 568-page scan that went in at 31 MB and out at 437 MB now
 comes out at 35 MB, with a byte-identical text layer.** R49 and R50 are the two
@@ -288,12 +297,18 @@ recognition**, which is why it is now first in `TODO.md`.
 
 **The order of work, agreed with the owner 2026-08-13:**
 
-1. **Move `isPicture` after recognition** — the other half of R50, and the last thing
-   between this app and files smaller than a good mixed-raster original.
-2. **Preserve annotations through re-OCR** — specified in `TODO.md`, not started, and
-   the sweep is blocked on it.
-3. **Clickable footnote and endnote links** — deliberately after annotations; same
-   object-graph plumbing.
+1. ~~Move `isPicture` after recognition~~ — **measured and refused 2026-08-13.** The
+   prize is real (8.2 KB a page, ~4.3 MB and 12% on the R49 book) but it would route
+   *more* pages to 1-bit using `inkOutsideText`, whose recorded miss **is** R56. Blocked
+   on the shape signal in `FEATURES.md`; `TODO.md` item 1 has the arithmetic.
+2. ~~Preserve annotations through re-OCR~~ — **built and verified 2026-08-14.**
+   `Sources/Annotations.swift`, behind *Keep highlights and notes* (off by default).
+   121 of 121 marks carried on the specification's own document including all 20 stamps,
+   0 moved. **The sweep's annotation block is lifted.** `BUGS.md` R58 — and note it is
+   deliberately **not in a release**: two adversarial rounds each found marks landing in
+   the wrong coordinate space, and a third has not been run.
+3. **Clickable footnote and endnote links** — not started. Same `/Link` object-graph
+   plumbing as the annotation transplant, so it should reuse `Annotations.swift`.
 4. **The Zotero library sweep** — last, and fix R54 before step 2 reads its numbers.
 
 **Dropped or closed by decision, not by neglect:** a watched folder or command line
@@ -304,10 +319,11 @@ accepted). Do not re-open either as though it were an oversight.
 The sweep's survey has run — 15,901 attachments, **1,164 re-OCR candidates holding
 11.6 GB, about 10 GB reclaimable**, artifacts in
 `~/Claude/vision-ocr-sweep-2026-08-13/` and deliberately outside this public repo.
-**Nothing has been written to the library.** Annotations come first because
-**108 of those candidates carry a reader's own marks** and re-OCR discards them
-without a word — but that is 9%, so 1,053 files can be swept before annotation
-preservation lands and 111 have to wait for it. Two operational facts before
+**Nothing has been written to the library.** **108 of those candidates carry a reader's
+own marks** and re-OCR used to discard them without a word — which is why annotations
+came first, and they have now landed, so that block is lifted for all of them. (The
+108-vs-111 discrepancy in the older figures is about three basename-vs-path collisions;
+`TODO.md` carries the explanation.) Two operational facts before
 anything is written: **Zotero sync is configured** and 22,676 attachments carry a
 `storageHash`, so replacing files behind Zotero's back means a bulk re-upload and
 a sync conflict can put the server's copy back over the new one; and Zotero is
@@ -331,8 +347,9 @@ the answer is to re-open the `FEATURES.md` entry and re-measure with
 `Tools/score-reading-order.swift` and `Tools/score-skew.swift`, not to go looking
 for a defect in `SearchableWriter`.
 
-**The released version is 1.11.0, tagged 2026-08-13.** The direct-Vision
-migration and R40's fix both shipped in it. The gate that released it:
+**The released version is 1.12.0**, tagged 2026-08-13 — see "Where things stand" above.
+The paragraph below is kept for **1.11.0's** gate figures, which are the ones the
+direct-Vision migration and R40's fix were measured against. The gate that released it:
 **232 of 232, 0 failed, 34,204,948 characters, 792 MB, 48 minutes** — against a
 75-minute baseline and the 187 that held the release back, and measured on a busy
 machine, so 48 is a ceiling on the time rather than a best case.
@@ -496,10 +513,11 @@ original.
 
 Things you would otherwise have to rediscover:
 
-**The environment this was verified on.** macOS 26.6, Swift 6.3.3, `mac-ocr`
-1.1.1, `qpdf` 12.3.2, `jbig2enc` present (the binary is called `jbig2`, not
-`jbig2enc` — `JBIG2.encoder` looks for the former). The corpus is 302 MB, 78
-documents, 4,992 pages, 11 of which carry an outline.
+**The environment this was verified on.** macOS 26.6, Swift 6.3.3, `qpdf` 12.3.2,
+`jbig2enc` present (the binary is called `jbig2`, not `jbig2enc` — `JBIG2.encoder` looks
+for the former). No `mac-ocr`: it was removed in 1.11.0 and recognition is this app's own
+Vision helper. The corpus is **1.2 GB, 233 documents** — 232 from the stratified draw plus
+one added by hand — of which 11 carry an outline.
 
 **How to measure anything.** Every tool in `Tools/` compiles against the real
 sources — see `Tools/README.md`. A full corpus score is:
@@ -507,16 +525,20 @@ sources — see `Tools/README.md`. A full corpus score is:
 ```sh
 mkdir -p /tmp/h && cp Tools/score-corpus.swift /tmp/h/main.swift
 swiftc -O -o /tmp/score -target "$(uname -m)-apple-macos13.0" \
-  Sources/Prefs.swift Sources/Runner.swift Sources/Flattener.swift \
-  Sources/SearchableWriter.swift Sources/JBIG2.swift Sources/Model.swift \
-  Sources/ContentView.swift Sources/SettingsView.swift /tmp/h/main.swift
+  $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
 find testdocs -name '*.pdf' -print0 | while IFS= read -r -d '' d; do
   /tmp/score "$d" "$(basename "$d" .pdf)"; done
 ```
 
+`$(ls Sources/*.swift | grep -v App.swift)` rather than a hand-kept list, deliberately:
+the enumerated version in this file omitted four sources and had not compiled for four
+releases. `App.swift` is the only exclusion, because its `@main` collides with a tool's
+top-level code.
+
 That takes 20–40 minutes and is the strongest evidence available. It last ran
-78/78 OK, median 100% line-start and line-end, median 0.00 offset, median 100%
-word retention.
+**232/232 OK**, median 100% line-start and line-end, median **0.10** offset, median 100%
+word retention — `testdocs/manifest.tsv` holds the per-document rows and is the authority.
+*(This said 78/78 and 0.00 offset, from the pre-2026-08-09 corpus.)*
 
 **For a before/after on anything geometric**, make the comparison binary first:
 `git worktree add -q --detach /tmp/before <commit>`. You will want it, and
@@ -580,14 +602,18 @@ That gate is new, and it exists because the corpus this replaced was
 project quoted its accuracy figures off it (BUGS.md D1). Item type says what a
 document *is* and nothing about how the PDF was made.
 
-Current state, measured through the shipped pipeline over all 84:
+Current state, measured through the shipped pipeline over the **232-document** draw
+*(the figures below were 84-document ones for several releases — the corpus was widened
+on 2026-08-09 and this paragraph was not)*:
 
-**84/84 process successfully**, median 100% line-start and line-end
-selectability, median 100% word retention, median 0.10 text-layer offset (max
-0.10). Source line tightness — how much of this material is set closer than its
-own line boxes — is 1.33% (74 of 5,564 adjacent pairs, in 23 documents); that is
-a difficulty rating for the corpus, **not** a measure of our text layer, which is
-what `score-line-separation` is for. See BUGS.md D3.
+**232/232 process successfully**, median 100% line-start and line-end selectability
+(worst 91% and 91%), median 100% word retention (worst 97%), median 0.10 text-layer
+offset (max 0.10). Source line tightness — how much of this material is set closer than
+its own line boxes — is **2.00% (295 of 14,782 adjacent pairs)**; that is a difficulty
+rating for the corpus, **not** a measure of our text layer, which is what
+`score-line-separation` is for. It is higher than the old figure because the wider draw
+reaches further back into tightly-set printing. See BUGS.md D3, and
+`testdocs/README.md`, which is the authority.
 
 **The tail is worse than the old corpus implied, and that is the point.**
 Born-digital documents score perfectly — OCR of a clean rendering of digital

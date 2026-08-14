@@ -15,11 +15,19 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in three files: [BUGS.md](BUGS.md) is the defect register (nothing
-open; three decisions went against the obvious fix and say why — update it in the
-same commit as any fix), [TODO.md](TODO.md) is decided-but-undone work, and
-[FEATURES.md](FEATURES.md) is ideas with their costs and the reasons some are
-parked.
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **four
+entries are open and two of them destroy content on the default route**: R56 (a pale
+drawing is erased, not softened) and R57 (a tonal plate can come out a black blob).
+Read its header before planning anything. Update it in the same commit as any fix.
+[TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas
+with their costs and the reasons some are parked, and
+[REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a
+whole-codebase review sweep, including findings not yet fixed and areas not yet
+covered.
+
+*(This paragraph read "nothing open" for a day after four entries were opened, which
+is exactly the sentence a new reader trusts most. If you close or open an entry,
+correct it here in the same commit.)*
 
 Install the hook once per clone:
 

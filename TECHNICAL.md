@@ -9,20 +9,24 @@ tests cover.
 
 - macOS 13 or later
 - Xcode command line tools (to build)
-- nothing, to build a disk image. (This used to require `mac-ocr` so the binary
-  could be bundled; recognition is now in process.) `build.sh --dmg`
-  copies it into `Contents/Resources` and refuses to package without it, since an
-  image lacking the engine would send its user back to the Terminal.
+- nothing extra, to build a disk image. This used to require `mac-ocr` so its binary
+  could be bundled; **mac-ocr is gone** — recognition is Vision, called from a helper
+  this repo builds (`Helper/main.swift` → `visionocr-recognise`), which runs **in its own
+  process per file** whenever the batch has something to overlap (`helperIsWorthIt`:
+  more than one file, more than one at a time). That is R40, and getting recognition
+  *out* of process is the whole point of it. There is no engine binary to resolve, and no
+  Settings path for one.
 
-  At runtime the app resolves the engine in this order: the explicit Settings
-  path, then its own bundled copy, then `/opt/homebrew/bin`, `/usr/local/bin`
-  and `/opt/local/bin`, then a login shell. The bundled copy sits above Homebrew
-  deliberately — it is the version the corpus figures were measured against, and
-  anyone wanting a different one can say so in Settings. (A GUI app launched from
-  Finder doesn't inherit your shell's `PATH`, which is why the search exists at
-  all.)
+  What `build.sh --dmg` does bundle is that helper plus `jbig2` and `qpdf`, into
+  `Contents/Resources`, and it verifies them by mounting the finished image and running
+  each one under `env -i`. Its refusals are slice verification (`lipo -archs`), the
+  `bundle-libs.py` audit, and that mounted-image check.
 
-  Not vendored into the repo: 2.4 MB of binary in git costs every clone forever.
+  At runtime `Runner.locateTool` resolves `jbig2` and `qpdf` in this order: the app's own
+  bundled copy, then `/opt/homebrew/bin`, `/usr/local/bin` and `/opt/local/bin`, then a
+  login shell. The bundled copy sits first deliberately — it is the version the corpus
+  figures were measured against. (A GUI app launched from Finder doesn't inherit your
+  shell's `PATH`, which is why the search exists at all.)
 
 - `jbig2enc` and `qpdf` for the compression route, bundled the same way by
   `Tools/bundle-libs.py` — but they are not self-contained, so their dylib
@@ -136,10 +140,13 @@ invoked. Recognition has always run under Vision's own behaviour, and now runs
 under it directly. The two settings that carried those flags were deleted in 1.0;
 they had been settings that could not affect anything.
 
-That is why `SearchableWriter.deduplicated` exists rather than being redundant:
-`auto`'s partitioned pass can emit the same line twice (measured on a book page:
-8,462 characters against 7,941), and dropping a repeat of the same text in the
-same place is what keeps it out of the layer.
+That is also why `SearchableWriter.deduplicated` exists — and why it is now **inert**.
+`auto`'s partitioned pass could emit the same line twice (measured on a book page: 8,462
+characters against 7,941), and that pass was a mac-ocr CLI behaviour which no longer
+runs. Measured on 2026-08-14 over 233 corpus documents × 3 pages: it removes **zero**
+observations. `ARCHITECTURE.md` is right that deleting it would break nothing; this
+paragraph used to say the opposite, and the two files contradicted each other on
+precisely the question "can I delete this".
 
 ## Throughput
 
@@ -194,7 +201,7 @@ finished.
 ./run_tests.sh
 ```
 
-739 checks, two to four minutes, because it runs real OCR rather than mocking it.
+862 checks, two to four minutes, because it runs real OCR rather than mocking it.
 It builds image-only PDFs and puts them through the actual pipeline — including
 `OCRModel.makeSearchablePDF`, which is deliberately internal so the tests exercise
 the real function rather than a replica of it.

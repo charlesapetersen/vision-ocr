@@ -781,8 +781,21 @@ the states-by-doors table.
 ## Plausible, with real caveats
 
 
-### Preserving annotations
-*(investigated 2026-08-12. Not shipped. The reasoning below was wrong in the
+### Preserving annotations — BUILT 2026-08-14; everything below predates it
+
+> **Superseded.** Built as `Sources/Annotations.swift`, behind *Keep highlights and
+> notes*, off by default: 121 of 121 marks carried on the specification's own document
+> including all 20 stamps, 0 moved. `BUGS.md` R58 has the evidence and the three things
+> the specification did not anticipate. **It is deliberately not in a release yet** —
+> two adversarial rounds each found marks landing in the wrong coordinate space, and a
+> third has not been run.
+>
+> Two sentences below are now false and would mislead: *"this app currently discards
+> them without a word"* — it carries them, and reports by type what it left behind — and
+> *"the Zotero sweep is blocked on it"*, which is lifted. Where the text says "TODO.md
+> item 1" it means annotations; TODO's ordered item 1 is now `isPicture`.
+
+*(investigated 2026-08-12. Not shipped at the time. The reasoning below was wrong in the
 part that mattered, and the real blocker is somewhere else entirely.)*
 
 The document outline now survives (R19). Annotations do not, and were explicitly

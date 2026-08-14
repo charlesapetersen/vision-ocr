@@ -14,21 +14,23 @@ directory:
 ```sh
 mkdir -p /tmp/h && cp Tools/score-corpus.swift /tmp/h/main.swift
 swiftc -O -o /tmp/score -target "$(uname -m)-apple-macos13.0" \
-  Sources/Prefs.swift Sources/Runner.swift Sources/Flattener.swift \
-  Sources/Recogniser.swift Sources/SearchableWriter.swift Sources/JBIG2.swift \
-  Sources/RunReport.swift Sources/Updater.swift Sources/Model.swift \
-  Sources/ContentView.swift Sources/SettingsView.swift /tmp/h/main.swift
+  $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
 ```
 
-The scorers need the full set because they call `OCRModel.makeSearchablePDF`. **This
-list drifts**, and the failure is a wall of cascading type errors in a source file
+`$(ls Sources/*.swift | grep -v App.swift)` rather than a hand-kept list, because **the
+enumerated version drifted four times and each drift cost someone a debugging session**:
+`Recogniser.swift` (R40), `RunReport.swift` and `Updater.swift` (1.10.0), and
+`Annotations.swift` (the annotation transplant). `App.swift` is the only exclusion — its
+`@main` collides with a tool's top-level code. The paragraph below is kept because the
+*failure shape* is worth knowing. **This list drifts**, and the failure is a wall of cascading type errors in a source file
 you did not touch rather than a plain "no such symbol": omitting `Recogniser.swift`
 reports `cannot find 'Recogniser' in scope` in `Model.swift`, and omitting
 `SearchableWriter.swift` — which `Flattener` needs for `SearchableWriter.BoundingBox` —
 reports `cannot convert value of type 'Duration' to expected argument type 'Int'`
 inside `mrcLayers`. If a compile fails in code you have not edited, suspect a missing
 source before the code. Three sources were added since this command was written
-(`Recogniser` for R40, `RunReport` and `Updater` for 1.10.0) and each broke it.
+(`Recogniser` for R40, `RunReport` and `Updater` for 1.10.0, `Annotations` for the
+annotation transplant) and each broke it.
 
 `Sources/App.swift` stays out — its `@main` collides with the tool's top-level code.
 The small `pdf-*` utilities need less: `pdf-extract-pages.swift` compiles alone, and
@@ -52,6 +54,13 @@ the ones that call `Flattener` need `Sources/SearchableWriter.swift` with it.
 | `pdf-embedded-text.swift` | Whole-document embedded text. Use to prove OCR happened rather than a text layer being read back. |
 | `sample-zotero.py` | Rebuild the test corpus from a Zotero library. **Classifies every candidate and keeps only scans** — item type says what a document is, not how the PDF was made, and without that gate the corpus came out 65% material this app is not for (D1). |
 | `classify-source.swift` | scanned / born-digital / photographed, per file, from page-image geometry, text density, saturation and an illumination gradient. The gate `sample-zotero.py` uses, and the same page-image test the app uses before discarding anyone's text (C17). |
+| `score-mrc.swift` | What MRC layering would cost per picture page, with the reconstruction's PSNR beside the size. Carries its own Sauvola — see the header. |
+| `score-picture-codec.swift` | Codec comparison for the pages that take the picture route. |
+| `score-text-route.swift` | Published bytes of a text page **both ways** — layered vs 1-bit — using shipped code for each. The measurement that priced TODO item 1 at 8.2 KB/page. |
+| `score-threshold-loss.swift` | How much a page would lose to the 1-bit threshold. **Carries a refused signal** (BUGS.md R56) with a self-test that runs on every invocation; round five of that work starts here. |
+| `score-annotations.swift` | Did a reader's marks land where they were? Renders both files and compares each mark's *footprint centroid* — not its coverage, which the header explains. |
+| `make-plate-fixtures.swift` | Builds the six synthetic adversarial pages the corpus cannot produce: pale drawing, flat mid-luminance colour, tonal plate, coarse halftone, text-only, red-ink text. R56 and R57 came out of these. |
+| `sweep-zotero.py` | The library-wide size survey. **R54 is open against it.** |
 | `vm-gui-check.sh` | The interface checks that need a running app — U13, U15, U17 — in a headless VM. Exit 0 pass / 1 fail / 3 could-not-run. |
 | `probe-window-reopen.swift` | Can the window be got back after it is closed mid-run? Exit 0 = yes. The one thing in this project that could not be settled by reading. **Does not compile against `Sources/`** — it is a standalone app, and its restore body is a copy of `AppDelegate.showMainWindow` that has to be kept in step. |
 

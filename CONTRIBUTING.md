@@ -80,8 +80,11 @@ Read `git diff` as though you are trying to reject it. Minimum questions:
 - **Invariant 1.** Can this path drop a page, a line or a text layer without
   saying so? Page count is not sufficient verification.
 - **What did I just break?** Which other property depends on what I changed?
-  `SearchableWriter` has three that fight each other; re-measure all three
-  (CLAUDE.md invariant 3).
+  `SearchableWriter` has **four** that fight each other; re-measure all four
+  (CLAUDE.md invariant 3). This said "three" for a long time, and the fourth — a run
+  keeping a gap from the next fragment *on its own line* — is the one with the worst
+  history: it had been holding by accident, and when it broke, words welded
+  (`valuablestudy`). Sending a maintainer to check three is sending them past it.
 - **Is my new code the risky kind?** Hand-written PDF, process handling, and
   anything with a `static var` have each produced defects here.
 - **Does the register still tell the truth?** Four BUGS.md entries turned out to
@@ -171,7 +174,7 @@ apply, or an app that does nothing satisfies the table.
 | any fix | the sibling sweep in 4b, with the answer in the commit |
 | a property spanning a lifecycle | the states-by-doors table in 4d |
 | any UI change | `./build.sh` (the suite compiles the views but does not run them) |
-| `SearchableWriter` / `Flattener` / `JBIG2` | the three invariant-3 probes, before and after |
+| `SearchableWriter` / `Flattener` / `JBIG2` | **all four** invariant-3 probes, before and after — CLAUDE.md names them |
 | anything geometry- or routing-related | `Tools/score-corpus.swift` over `testdocs/` |
 
 Install the hook once per clone:

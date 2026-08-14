@@ -4,8 +4,9 @@ The call path, where the risk sits, and what the tests do and don't cover.
 Read [HANDOFF.md](HANDOFF.md) first for *why* the design is what it is, and
 [CLAUDE.md](CLAUDE.md) for the invariants. This file is the map.
 
-~3,400 lines of Swift in [Sources/](Sources/), a 2,300-line test script in
-[Tests/main.swift](Tests/main.swift), 13 measurement tools in [Tools/](Tools/).
+~10,400 lines of Swift in [Sources/](Sources/), an 8,600-line test script in
+[Tests/main.swift](Tests/main.swift), and 28 measurement tools and scripts in
+[Tools/](Tools/) — which its own README indexes only 16 of.
 
 Line numbers below were correct when written and drift with every edit — they are
 a hint, not an address. Search for the symbol name.
@@ -27,7 +28,11 @@ shared.
    renamed, installs the `finishUp` closure, and enqueues one operation per file.
 3. **Per file**, on a worker thread. Text mode stops here:
    [`Recogniser.extract`](Sources/Recogniser.swift) writes to the user's destination
-   path directly — **no staging**, unlike the searchable path.
+   path with `Data(options: .atomic)` — a temp-and-rename rather than the searchable
+   path's stage-verify-publish. The other text-mode route,
+   [`writeEmbeddedText`](Sources/Model.swift#L752), *does* stage and call `publish`.
+   The gap that matters is not atomicity but cancellation: see
+   [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) A2.2.
 
 Searchable mode continues, in a scratch directory under `NSTemporaryDirectory()`,
 from [`makeSearchablePDF`](Sources/Model.swift#L438):
@@ -39,10 +44,17 @@ from [`makeSearchablePDF`](Sources/Model.swift#L438):
    [`fullBox`](Sources/Flattener.swift#L403) →
    [`rebuildDPI`](Sources/Flattener.swift#L636) → `renderGrey` →
    [`otsuThreshold`](Sources/Flattener.swift#L464) →
-   [`isPicture`](Sources/Flattener.swift#L525) → a 1-bit PNG or a greyscale JPEG.
+   [`isPicture`](Sources/Flattener.swift#L525) → a 1-bit PNG, or a JPEG that is
+   **grey or three-channel colour** (`RebuiltPage.isColour`, since 1.7.0).
    This is what removes an old text layer. The `onPage` callback runs
    [`JBIG2.encode`](Sources/JBIG2.swift#L75) immediately and deletes the PNG, so
    bitmaps don't accumulate.
+
+   A picture page is later **re-layered** by
+   [`Flattener.mrcLayers`](Sources/Flattener.swift#L1521) — a 1-bit stencil confined to
+   Vision's word boxes plus two downsampled tone layers — which happens after step 6
+   because it needs the word boxes. R35, R38 and R49–R53 all live there, and neither it
+   nor the colour route appeared anywhere in this map until 2026-08-14.
 6. **Recognise** — [`Recogniser.recogniseDocument`](Sources/Recogniser.swift),
    over the bitmaps step 5 just wrote. Two routes, and they produce identical
    observations because they run the same function:
@@ -104,12 +116,13 @@ drift apart.
 
 ## Where the risk concentrates
 
-1. **[`SearchableWriter.draw`](Sources/SearchableWriter.swift#L328)** — three
+1. **[`SearchableWriter.draw`](Sources/SearchableWriter.swift#L328)** — **four**
    properties must hold at once (word spacing survives extraction, runs don't
-   overlap vertically, runs span the ink) and each has been broken by a fix to
-   another. Width comes from font *size*, height from a *vertical squash* in the
-   text matrix; that separation is the whole trick. Re-measure all three after any
-   change (invariant 3).
+   overlap vertically, runs span the ink, and runs keep a gap from the next fragment
+   on their own line) and each has been broken by a fix to another. Width comes from
+   font *size*, height from a *vertical squash* in the text matrix; that separation is
+   the whole trick. Re-measure all **four** after any change (invariant 3) — this file
+   said "three" and omitted the fourth, which is the one with the worst history.
 2. **Page-count verification is weak by construction.** `produced == expected`
    cannot see a page that rendered blank, or a text layer shorter than the images
    on the JBIG2 route. A recogniser that skipped a page *is* now caught, by
@@ -135,14 +148,22 @@ drift apart.
 
 The OCR pipeline is separable from the UI, which is how every tool in
 [Tools/](Tools/) and the whole test suite drive it. Verified, not assumed — these
-six build as a library with no view sources present at all:
+**ten** build as a library with no view sources present at all:
 
 ```sh
 swiftc -O -emit-library -o libocr.dylib \
   -target "$(uname -m)-apple-macos13.0" \
   Sources/Prefs.swift Sources/Runner.swift Sources/Flattener.swift \
-  Sources/SearchableWriter.swift Sources/JBIG2.swift Sources/Model.swift
+  Sources/Recogniser.swift Sources/SearchableWriter.swift Sources/JBIG2.swift \
+  Sources/Annotations.swift Sources/RunReport.swift Sources/Updater.swift \
+  Sources/Model.swift
 ```
+
+**This list drifts, and it drifted for four releases.** It said six, and the four
+missing (`Recogniser` for R40, `RunReport` and `Updater` for 1.10.0, `Annotations` for
+the annotation transplant) each broke the command in a way that reports as an error in
+a file you did not touch. If a build fails in code you have not edited, suspect a
+missing source before the code.
 
 `Model.swift` does import SwiftUI and `OCRModel` is a `@MainActor
 ObservableObject`, but the pipeline entry point is `nonisolated` and does not
@@ -155,13 +176,18 @@ and deliberately internal-not-private so callers can drive the real function:
 
 ```swift
 OCRModel.makeSearchablePDF(
-    file: input, binary: macOCRPath, output: destination,
+    file: input, output: destination,
     rebuild: true, rebuildMode: .auto, password: nil,
     settings: .current(),          // or a Prefs.Snapshot you build yourself
     control: RunControl(),         // cancellation; one per batch
+    useHelper: true,               // the helper route of step 6; false stays in-process
     progress: { label, fraction in ... },
+    fellBack: { note in ... },     // said once if recognition left its helper
     report:   { outcome, message in ... })
 ```
+
+*(The `binary:` parameter and `macOCRPath` are gone — mac-ocr was removed in 1.11.0 —
+and `useHelper` is the parameter that selects the route step 6 describes.)*
 
 Embedding it in another application was considered and **declined** — Archive
 Processor produces a different kind of PDF, so there was nothing to integrate.
@@ -172,8 +198,8 @@ several defects here.
 If something ever does drive it directly, these are the things that would bite:
 
 - **It reads `UserDefaults`.** `Prefs.Snapshot.current()` does, and so does
-  `Runner.resolveBinary()`. Build a `Snapshot` explicitly rather than relying on
-  the defaults domain if the host has its own configuration.
+  `Runner.previewLines`. Build a `Snapshot` explicitly rather than relying on the
+  defaults domain if the host has its own configuration.
 - **Concurrency is the caller's.** `makeSearchablePDF` is blocking and
   thread-safe with respect to other calls — that is what C8 fixed — so run it on
   whatever queue you like. `Prefs.maxConcurrency` and `Prefs.defaultConcurrency`
@@ -190,15 +216,17 @@ If something ever does drive it directly, these are the things that would bite:
 
 ## What the tests don't cover
 
-357 checks, 2–4 minutes, real OCR. The gaps listed here through 1.0 — the failure
+862 checks, 2–4 minutes, real OCR. The gaps listed here through 1.0 — the failure
 and cancel branches, `publish`, encrypted PDFs, `rebuild: false`, `previewLines`,
 concurrent *searchable* runs, and colour pages — are all covered now (BUGS.md
 T3). What remains:
 
-- **`otsuThreshold` / `inkCoverage` / `toneFraction` are not tested in
-  isolation.** They are exercised through `flatten` and through the colour
-  fixture, which is where they matter, but a calibration change would not be
-  caught by a unit assertion because there isn't one.
+- ~~`otsuThreshold` / `inkCoverage` / `toneFraction` are not tested in isolation.~~
+  **No longer true**, and it was the gap this list existed to name: `Tests/main.swift`
+  builds synthetic grey-value PDFs and asserts the signals directly against their
+  constants, with a table whose every row is named for the mutant it kills.
+  `mutation-log.tsv` shows `const/pictureInkThreshold` and `const/pictureToneThreshold`
+  both killed.
 - **Nothing drives the real `makeSearchablePDF` into producing a short text
   layer** (C16). The guard's predicate and the hazard it defends against are both
   tested; the wiring between them is reasoned.
@@ -208,8 +236,9 @@ T3). What remains:
 - Deleting `deduplicated` breaks nothing, because the recognition path doesn't
   emit the duplicates it exists to remove.
 
-The suite exits 0 without jbig2/qpdf installed, silently skipping ~18 checks — so
-"all green" on a machine without them means less than it looks.
+The suite exits 0 without jbig2/qpdf installed, silently skipping roughly **76**
+checks — so "all green" on a machine without them means considerably less than it
+looks. (This said ~18, which is the number the sentence exists to convey.)
 
 It does now compile `ContentView.swift` and `SettingsView.swift`, even though
 nothing instantiates a view, so a change that breaks only the UI fails the test
@@ -223,19 +252,17 @@ collides with the test script's top-level code.
   find prose anywhere claiming "lower means shorter", it is wrong, and the thing
   to correct is the prose. Aligning the code to that sentence would invert a
   corpus-calibrated constant and cost line separation everywhere.
-- **`Runner.arguments` builds the Extract Text command and nothing else.** There
-  is no searchable-PDF form and there should not be one: mac-ocr's
-  `searchable-pdf` subcommand has zero call sites here by design, so a builder
-  for it would describe a command nothing runs and nothing keeps honest. The
-  settings that only that subcommand takes — `ocrAllPages`, `strategy` — were
-  deleted for 1.0 (H1).
+- **The `Runner.arguments` / `explicitOutputDir` / `explicitOutputFile` /
+  `Runner.resolveBinary` entries that used to sit here are gone**, along with the
+  symbols: mac-ocr was removed in 1.11.0 and recognition is this app's own. The
+  *lesson* they carried is worth keeping — a builder for a command nothing runs, and a
+  parameter only the tests exercise, are both things nothing keeps honest, which is why
+  `ocrAllPages` and `strategy` were deleted for 1.0 (H1). What still reads
+  `UserDefaults` outside `Prefs.Snapshot.current()` is `Runner.previewLines`.
 - **`Flattener.pictureJPEGQuality` is a constant, not a setting** (0.6). Nothing
   in Settings reaches it, so there is no user-facing size control for picture
   pages. R13 decided that is fine: the policy is fidelity, so `flatten` refuses a
   page it cannot render rather than shrinking it.
-- **`explicitOutputDir` has no production caller.** `Runner.arguments` takes it
-  and the tests exercise it; the batch path passes `explicitOutputFile` instead.
-  See TODO.md.
 - **The outline is carried by two different mechanisms, on purpose.** The Flate
   route rebuilds it with PDFKit; the JBIG2 route writes it into the assembled
   catalogue before the qpdf merge, because a PDFKit rewrite would re-encode the
