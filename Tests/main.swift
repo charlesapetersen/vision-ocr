@@ -8545,6 +8545,38 @@ do {
     // PDF with an indirect `/Rect` through PDFKit is not possible.
     check("an annotation rectangle may be an indirect reference, and is resolved",
           Annotations.resolvesIndirectRectangles)
+
+    // The three cases a PDFKit fixture cannot express, each of which was a live defect
+    // found by review rather than by a test. `/Rotate` and `/MediaBox` are *inheritable*
+    // and qpdf does not push them down; geometry arrays may be indirect. All three were
+    // silently wrong, and the worst — an indirect `/QuadPoints` left in the old coordinate
+    // space while `/Rect` moved — drew a highlight 24.69 points from the words it marked
+    // while every check passed.
+    check("a page inherits /Rotate and /MediaBox from its /Pages node",
+          Annotations.resolvesInheritedPageAttributes)
+    check("geometry behind an indirect reference is translated, not skipped",
+          Annotations.translatesIndirectGeometry)
+
+    // And the adoption is paired. An unpaired adopt leaked one file descriptor per qpdf
+    // pass for the whole batch — R15's shape at a new site, and measured at 204 open
+    // descriptors for 200 documents, against Foundation's ceiling of about 2,560. The
+    // library this feature exists to sweep is roughly 16,000 documents.
+    if let qpdf = JBIG2.merger {
+        let control = RunControl()
+        let plain = dir.appendingPathComponent("unmarked.pdf")
+        let bare = PDFDocument()
+        let barePage = PDFPage()
+        barePage.setBounds(CGRect(x: 0, y: 0, width: 300, height: 300), for: .mediaBox)
+        bare.insert(barePage, at: 0)
+        _ = bare.write(to: plain)
+        let staged = dir.appendingPathComponent("unmarked-staged.pdf")
+        try? FileManager.default.copyItem(at: plain, to: staged)
+        _ = try? Annotations.transplant(from: plain, into: staged, password: nil,
+                                        qpdf: qpdf, scratch: dir,
+                                        adopting: { body in try control.adopting(body) })
+        check("every qpdf pass releases its adopted child",
+              control.adoptedCount == 0, "\(control.adoptedCount) still adopted")
+    }
     resetPrefs()
 }
 

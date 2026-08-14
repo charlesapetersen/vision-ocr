@@ -170,17 +170,35 @@ for index in 0..<source.pageCount {
     let sourceBox = sourcePage.bounds(for: .mediaBox)
     let outputBox = outputPage.bounds(for: .mediaBox)
 
+    // Pair each source mark with the output mark that claims to be it, by subtype and
+    // order. **The output must be measured with the output's OWN rectangle**, not the
+    // source's: the rebuild moves an offset media box to the origin, so the same words sit
+    // at different coordinates in the two files. Measuring the output through the source's
+    // rectangle made this tool fail a correctly-carried mark on `Cohen_1990` (0.709
+    // against 0.000, "absent from the output") while passing genuinely misplaced ones —
+    // an instrument that was inverted for exactly the 105 of 233 corpus documents it was
+    // most needed on.
+    var outputMarks = outputPage.annotations.filter { copied.contains($0.type ?? "") }
     for mark in marks {
         checked += 1
         let rect = mark.bounds
+        // Same subtype, first unclaimed one, in order.
+        let paired = outputMarks.firstIndex { $0.type == mark.type }
+        let outputRect = paired.map { outputMarks[$0].bounds }
+        if let paired { outputMarks.remove(at: paired) }
         let inSource = footprint(sWith, sWithout, in: rect, pageBox: sourceBox, scale: scale)
-        let inOutput = footprint(oWith, oWithout, in: rect, pageBox: outputBox, scale: scale)
+        let inOutput = outputRect.flatMap {
+            footprint(oWith, oWithout, in: $0, pageBox: outputBox, scale: scale)
+        }
         let verdict: String
         var drift = 0.0
         if let inSource, let inOutput {
             drift = max(abs(inSource.cx - inOutput.cx), abs(inSource.cy - inOutput.cy))
         }
-        if inSource == nil {
+        if outputRect == nil {
+            verdict = "FAIL no mark of that type in the output"
+            failures += 1
+        } else if inSource == nil {
             // The source's own rectangle falls outside its own page: nothing to compare
             // against, and not the output's fault.
             verdict = "SKIP the source rectangle is off its own page"

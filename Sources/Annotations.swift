@@ -66,8 +66,12 @@ enum Annotations {
     /// of the corpus's 4,867 annotations are links left behind by JSTOR and ProQuest
     /// wrappers, pointing at session URLs that have long since expired. v1 drops them.
     ///
-    /// Both exclusions are *reported* rather than silent, which is invariant 1 applied
-    /// to a reader's marks: the caller is told what was left behind, by type and page.
+    /// Both exclusions are *reported* rather than silent **on any document that has marks
+    /// to carry** — the caller is told what was left behind, by type. On a document with
+    /// no copyable marks at all the probe returns early and says nothing, which is
+    /// deliberate: "left 3,991 Links" on every JSTOR download would bury the one line that
+    /// matters on the file that does have marks. Two comments here used to contradict each
+    /// other about this; this is the resolution.
     static let copiedSubtypes: Set<String> = [
         "/Highlight", "/Underline", "/StrikeOut", "/Squiggly", "/Text", "/FreeText",
         "/Ink", "/Stamp", "/Square", "/Circle", "/Polygon", "/PolyLine", "/Caret",
@@ -162,6 +166,14 @@ enum Annotations {
         /// 0. Resolving `4 1 R` as `4 0 R` would graft an unrelated object into a
         /// mark's graph, so it is refused instead.
         case unsupportedGeneration(page: Int, reference: String)
+        /// A geometry array that cannot be read as numbers. A mark whose position cannot
+        /// be established is not published.
+        case unreadableGeometry(key: String)
+        /// An appearance stream's bytes could not be carried — a full scratch volume, a
+        /// permissions fault. Refusing just that object would leave an `/AP` with no
+        /// `/N`, which a viewer draws as nothing while every count and rectangle check
+        /// passes, so the document fails instead.
+        case appearanceStreamLost
 
         var errorDescription: String? {
             switch self {
@@ -202,6 +214,12 @@ enum Annotations {
             case .unsupportedGeneration(let page, let reference):
                 return "Page \(page) refers to \(reference), and only generation 0 "
                      + "objects can be carried; nothing was written."
+            case .unreadableGeometry(let key):
+                return "Could not read a mark's \(key) as coordinates, so where it sits "
+                     + "could not be established; nothing was written."
+            case .appearanceStreamLost:
+                return "A mark's appearance could not be carried across, so it would have "
+                     + "been published as an empty outline; nothing was written."
             }
         }
     }
@@ -214,7 +232,10 @@ enum Annotations {
     /// `{"stream": {"dict": …, "datafile": …}}`. A reference is the *string* `"N 0 R"`,
     /// which is why every rewrite below is a string substitution on a known pattern
     /// rather than a type change: qpdf will read back exactly what it wrote.
-    private struct Document {
+    /// Internal rather than private so `pageTree` can be asserted directly from a
+    /// hand-built object table — the inherited-attribute cases cannot be expressed
+    /// through PDFKit, so a fixture cannot reach them.
+    struct Document {
         var header: [String: Any]
         var objects: [String: Any]
         let url: URL
@@ -298,29 +319,61 @@ enum Annotations {
         }
     }
 
-    /// Move every page-space number in a copied annotation graph by `dx`, `dy`.
+    /// Move every page-space number in a copied annotation by `dx`, `dy`, **resolving
+    /// indirection and writing the result out as plain numbers.**
     ///
-    /// Applied by key name, because a PDF number carries no units and there is no other
-    /// way to tell a coordinate from a colour component or a border width. The keys are
-    /// listed on `pageSpaceGeometryKeys`, with the reason `/BBox` and `/Matrix` are not
-    /// among them.
-    private static func translated(_ value: Any, key: String?,
-                                   dx: Double, dy: Double) -> Any {
-        func shiftPairs(_ array: [Any]) -> [Any] {
-            array.enumerated().map { index, element in
-                guard let number = element as? NSNumber else { return element }
-                return number.doubleValue + (index % 2 == 0 ? dx : dy)
+    /// The first version only handled a direct array of direct numbers, and PDF permits
+    /// three other shapes that all appeared in testing:
+    ///
+    /// - an **indirect array** (`/QuadPoints 12 0 R`). Left untranslated, and this was the
+    ///   worst of the three: a viewer draws a text-markup annotation from `/QuadPoints`,
+    ///   not `/Rect`, so the highlight rendered 24.69 pt from the words it marked while
+    ///   the `/Rect` check passed and the run reported success.
+    /// - an **indirect `/Rect`**, which the file's own doc comment already documents in
+    ///   the wild (Hyman page 11 carries `890 0 R`). Left untranslated it tripped the
+    ///   geometry check — loud, but it refused a document that should have worked.
+    /// - an **indirect number inside a direct array**, which deformed the rectangle
+    ///   rather than moving it, because three of four numbers shifted.
+    ///
+    /// So the array is resolved out of the *source* document and emitted inline. Inlining
+    /// is deliberate: it costs a few bytes, removes any question of a shared array object
+    /// being translated twice, and makes the copied mark self-contained. Returns nil when
+    /// the geometry cannot be read at all, which the caller turns into a refusal — a mark
+    /// whose position cannot be established is not published.
+    private static func translatedGeometry(_ value: Any, key: String, from: Document,
+                                           dx: Double, dy: Double) -> Any?? {
+        func numbers(_ raw: [Any]) -> [Double]? {
+            var out: [Double] = []
+            for element in raw {
+                if let n = element as? NSNumber { out.append(n.doubleValue); continue }
+                if let id = Document.id(ofReference: element),
+                   let n = from.body(id)?["value"] as? NSNumber {
+                    out.append(n.doubleValue); continue
+                }
+                return nil
             }
+            return out
         }
-        if let key, pageSpaceGeometryKeys.contains(key), let array = value as? [Any] {
-            return shiftPairs(array)
+        func shift(_ values: [Double]) -> [Any] {
+            values.enumerated().map { $0.element + ($0.offset % 2 == 0 ? dx : dy) }
         }
-        if let key, nestedPageSpaceGeometryKeys.contains(key), let outer = value as? [Any] {
-            return outer.map { inner in
-                (inner as? [Any]).map { shiftPairs($0) as Any } ?? inner
+        if pageSpaceGeometryKeys.contains(key) {
+            guard let raw = from.resolveArray(value), let values = numbers(raw) else {
+                return .some(nil)
             }
+            return shift(values)
         }
-        return value
+        if nestedPageSpaceGeometryKeys.contains(key) {
+            guard let outer = from.resolveArray(value) else { return .some(nil) }
+            var result: [Any] = []
+            for element in outer {
+                guard let inner = from.resolveArray(element), let values = numbers(inner)
+                else { return .some(nil) }
+                result.append(shift(values))
+            }
+            return result
+        }
+        return nil          // not a geometry key; the caller rewrites it normally
     }
 
     /// Every page object id, in reading order.
@@ -331,21 +384,78 @@ enum Annotations {
     /// until the stack ran out, on a file this app is expected to reject rather than
     /// crash on.
     private static func pageOrder(_ document: Document) -> [Int] {
+        pageTree(document).map { $0.id }
+    }
+
+    /// One page, with the attributes it may have inherited already resolved.
+    struct Page {
+        let id: Int
+        /// Quarter-turns, normalised to 0/90/180/270.
+        let rotation: Int
+        /// `[llx, lly, urx, ury]`, or nil when the document declares none anywhere.
+        let mediaBox: [Double]?
+    }
+
+    /// Every page, in reading order, **with `/Rotate` and `/MediaBox` resolved down the
+    /// page tree.**
+    ///
+    /// Both are *inheritable* page attributes, and reading them off the page dictionary
+    /// alone is wrong — which was a live defect: qpdf's `--json-output` does not push
+    /// inherited attributes down, and says so in its own header
+    /// (`pushedinheritedpageresources: false`). So a document that puts `/Rotate 90` on
+    /// the `/Pages` node instead of on the page — same rendering, and PDFKit and
+    /// CoreGraphics both resolve it, so `flatten` really does rebuild the page swapped —
+    /// sailed straight past the rotation refusal and had its marks copied into the wrong
+    /// frame. Verified both ways on the same page: `/Rotate` on the page threw, `/Rotate`
+    /// on the parent carried. The same hole gave an inherited offset `/MediaBox` a
+    /// translation of zero.
+    ///
+    /// Resolved here rather than at each use, because the walk is the only place that
+    /// knows the ancestor chain, and it was already throwing it away.
+    static func pageTree(_ document: Document) -> [Page] {
         guard let trailer = document.objects["trailer"] as? [String: Any],
               let value = trailer["value"] as? [String: Any],
               let rootID = Document.id(ofReference: value["/Root"] ?? ""),
               let root = document.dictionary(rootID),
               let pagesID = Document.id(ofReference: root["/Pages"] ?? "") else { return [] }
-        var pages: [Int] = []
+        var pages: [Page] = []
         var seen = Set<Int>()
-        func walk(_ id: Int) {
+
+        /// A number that may itself be behind a reference. `/Rotate 9 0 R` is legal, and
+        /// the sibling reader for `/MediaBox` already resolved indirection while this one
+        /// did not — CONTRIBUTING §4b, inside one function.
+        func number(_ value: Any?) -> Double? {
+            guard let value else { return nil }
+            if let n = value as? NSNumber { return n.doubleValue }
+            if let id = Document.id(ofReference: value),
+               let n = document.body(id)?["value"] as? NSNumber { return n.doubleValue }
+            return nil
+        }
+        func box(_ value: Any?) -> [Double]? {
+            guard let raw = document.resolveArray(value), raw.count == 4 else { return nil }
+            let numbers = raw.compactMap { number($0) }
+            return numbers.count == 4 ? numbers : nil
+        }
+
+        func walk(_ id: Int, rotation: Int, mediaBox: [Double]?) {
             guard seen.insert(id).inserted, let node = document.dictionary(id) else { return }
-            if node["/Type"] as? String == "/Page" { pages.append(id); return }
+            // A node's own value wins over what it inherited; otherwise it passes the
+            // inherited one down unchanged.
+            let ownRotation = number(node["/Rotate"]).map { Int($0) }
+            let effectiveRotation = ((((ownRotation ?? rotation) % 360) + 360) % 360)
+            let effectiveBox = box(node["/MediaBox"]) ?? mediaBox
+            if node["/Type"] as? String == "/Page" {
+                pages.append(Page(id: id, rotation: effectiveRotation,
+                                  mediaBox: effectiveBox))
+                return
+            }
             for kid in document.resolveArray(node["/Kids"]) ?? [] {
-                if let kidID = Document.id(ofReference: kid) { walk(kidID) }
+                if let kidID = Document.id(ofReference: kid) {
+                    walk(kidID, rotation: effectiveRotation, mediaBox: effectiveBox)
+                }
             }
         }
-        walk(pagesID)
+        walk(pagesID, rotation: 0, mediaBox: nil)
         return pages
     }
 
@@ -388,16 +498,117 @@ enum Annotations {
         return second.rect(of: other) == nil
     }
 
+    /// Does the page walk resolve `/Rotate` and `/MediaBox` inherited from a `/Pages`
+    /// node, and follow an indirect `/Rotate`?
+    ///
+    /// Asserted on a hand-built object table for the same reason
+    /// `resolvesIndirectRectangles` is: **PDFKit cannot write an inherited page
+    /// attribute**, so no fixture built in this repo can reach the case — and the case was
+    /// a live defect. qpdf does not push inherited attributes down (its own header says
+    /// `pushedinheritedpageresources: false`), so reading `/Rotate` off the page
+    /// dictionary saw nothing, and a document with `/Rotate 90` on its `/Pages` node had
+    /// marks copied into a frame whose width and height had been swapped.
+    static var resolvesInheritedPageAttributes: Bool {
+        // Two pages under a /Pages node that carries both attributes. The second page
+        // overrides the rotation; the first inherits it.
+        let objects: [String: Any] = [
+            "trailer": ["value": ["/Root": "1 0 R"]],
+            "obj:1 0 R": ["value": ["/Type": "/Catalog", "/Pages": "2 0 R"]],
+            "obj:2 0 R": ["value": ["/Type": "/Pages", "/Kids": ["3 0 R", "4 0 R"],
+                                    "/Rotate": "5 0 R",              // indirect, too
+                                    "/MediaBox": [0, -24.69, 408, 588]]],
+            "obj:3 0 R": ["value": ["/Type": "/Page"]],
+            "obj:4 0 R": ["value": ["/Type": "/Page", "/Rotate": 0]],
+            "obj:5 0 R": ["value": 90],
+        ]
+        let document = Document(header: [:], objects: objects,
+                                url: URL(fileURLWithPath: "/"),
+                                streamDirectory: URL(fileURLWithPath: "/"))
+        let pages = pageTree(document)
+        guard pages.count == 2 else { return false }
+        // Inherited, through an indirect reference.
+        guard pages[0].rotation == 90 else { return false }
+        // A page's own value overrides what it would inherit.
+        guard pages[1].rotation == 0 else { return false }
+        // And the box is inherited by both.
+        guard pages[0].mediaBox == [0, -24.69, 408, 588],
+              pages[1].mediaBox == [0, -24.69, 408, 588] else { return false }
+        return true
+    }
+
+    /// Does the geometry translation follow indirection, and refuse what it cannot read?
+    ///
+    /// The third case a PDFKit fixture cannot express, and the most dangerous of the three
+    /// when it was wrong: an **indirect `/QuadPoints`** was left in the source's
+    /// coordinate space while `/Rect` was translated. A viewer draws a text-markup
+    /// annotation from `/QuadPoints`, so the highlight rendered 24.69 pt from the words it
+    /// marked, with the rectangle check passing and the run reporting success.
+    static var translatesIndirectGeometry: Bool {
+        let objects: [String: Any] = [
+            "obj:1 0 R": ["value": [10.0, 20.0, 30.0, 40.0]],   // an indirect /QuadPoints
+            "obj:2 0 R": ["value": 20.0],                        // an indirect number
+            "obj:3 0 R": ["value": "not an array"],
+        ]
+        let document = Document(header: [:], objects: objects,
+                                url: URL(fileURLWithPath: "/"),
+                                streamDirectory: URL(fileURLWithPath: "/"))
+        func shifted(_ value: Any, _ key: String) -> [Double]? {
+            guard let outer = translatedGeometry(value, key: key, from: document,
+                                                 dx: 1, dy: 2),
+                  let inner = outer, let array = inner as? [Any] else { return nil }
+            return array.compactMap { ($0 as? NSNumber)?.doubleValue }
+        }
+        // An indirect array is resolved and translated.
+        guard shifted("1 0 R", "/QuadPoints") == [11, 22, 31, 42] else { return false }
+        // An indirect number inside a direct array is resolved, not left behind — leaving
+        // it deformed the rectangle rather than moving it.
+        guard shifted([10.0, "2 0 R", 30.0, 40.0], "/Rect") == [11, 22, 31, 42] else {
+            return false
+        }
+        // Geometry that cannot be read at all is a refusal, not a guess: `.some(nil)`.
+        guard let unreadable = translatedGeometry("3 0 R", key: "/Rect", from: document,
+                                                  dx: 1, dy: 2), unreadable == nil
+        else { return false }
+        // A key that is not geometry is left for the ordinary rewrite: nil.
+        guard translatedGeometry([1.0, 2.0], key: "/Matrix", from: document,
+                                 dx: 1, dy: 2) == nil else { return false }
+        return true
+    }
+
     // MARK: - Running qpdf
 
-    /// `register` hands the child to the batch's `RunControl`, exactly as the jbig2 and
-    /// qpdf children on the compression route are handed over.
+    /// Run one qpdf pass, handing the child to the batch so Cancel can reach it.
     ///
-    /// Without it these three full-document passes were uninterruptible: Cancel could not
-    /// reach them, and quitting the app orphaned them. `Runner.stop` escalates SIGTERM to
-    /// SIGKILL against the child's *process group*, which is the mechanism R21 exists for.
+    /// **`adopting`, not `adopt`, and this is R15 at a new site.** The first version took a
+    /// bare `register` closure and never released, so every pass leaked an adopted
+    /// `Process` for the whole batch — measured, 200 documents held **204 open file
+    /// descriptors** against 4, exactly linear, and Foundation's ceiling is around 2,560.
+    /// The library this feature exists to sweep is roughly 16,000 documents, so it would
+    /// have died about an eighth of the way in. `Sources/Model.swift` carries the same
+    /// warning a few hundred lines above the call site, about one child per *page*.
+    ///
+    /// `RunControl.adopting` remembers one process and releases it on the way out, which
+    /// is why the pairing lives here — around a single pass — rather than around
+    /// `transplant`, which launches up to five.
     private static func run(_ qpdf: String, _ arguments: [String], stage: String,
-                            register: ((Process) -> Void)?) throws {
+                            adopting: Adopting?) throws {
+        guard let adopting else {
+            return try launch(qpdf, arguments, stage: stage, register: { _ in })
+        }
+        try adopting { register in
+            try launch(qpdf, arguments, stage: stage, register: register)
+        }
+    }
+
+    /// How a caller lends its process-adoption scope. `RunControl.adopting` is generic, so
+    /// it is passed as a closure that specialises it.
+    typealias Adopting = (((Process) -> Void) throws -> Void) throws -> Void
+
+    /// `register` is non-optional and non-escaping so the closure `RunControl.adopting`
+    /// hands over can be passed straight through: an *optional* closure parameter is
+    /// implicitly escaping in Swift, which the adoption scope's closure is not.
+    private static func launch(_ qpdf: String, _ arguments: [String], stage: String,
+                               register: (Process) -> Void) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: qpdf)
         process.arguments = arguments
@@ -410,7 +621,7 @@ enum Annotations {
         // Read before waiting: a pipe that fills up blocks the child forever, and
         // qpdf is chatty about warnings on the files this app is given.
         try process.run()
-        register?(process)
+        register(process)
         let data = errors.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
         // qpdf exits 3 for warnings — "operation succeeded with warnings" — and those
@@ -446,7 +657,7 @@ enum Annotations {
     static func transplant(from source: URL, into staged: URL, password: String?,
                            qpdf: String?, scratch: URL,
                            isCancelled: () -> Bool = { false },
-                           register: ((Process) -> Void)? = nil) throws -> Report {
+                           adopting: Adopting? = nil) throws -> Report {
         guard let qpdf else { throw Failure.qpdfMissing }
         let work = scratch.appendingPathComponent("annots-\(UUID().uuidString)")
         let sourceStreams = work.appendingPathComponent("src")
@@ -491,7 +702,7 @@ enum Annotations {
         var probeArguments = ["--json-output=2", "--json-stream-data=none"]
         probeArguments += [source.path, probeJSON.path]
         try run(qpdf, withPassword(probeArguments), stage: "looking for marks",
-                register: register)
+                adopting: adopting)
         let probe = try read(probeJSON, streamDirectory: work)
         var anyMarks = false
         for pageID in pageOrder(probe) {
@@ -523,19 +734,20 @@ enum Annotations {
                                "--json-stream-prefix=" + sourceStreams.path + "/s",
                                source.path, sourceJSON.path]
         try run(qpdf, withPassword(sourceArguments), stage: "reading the original",
-                register: register)
+                adopting: adopting)
         if isCancelled() { throw Failure.cancelled }
         try run(qpdf, ["--json-output=2", "--json-stream-data=file",
                        "--json-stream-prefix=" + stagedStreams.path + "/s",
                        staged.path, stagedJSON.path],
-                stage: "reading the rebuilt file", register: register)
+                stage: "reading the rebuilt file", adopting: adopting)
         if isCancelled() { throw Failure.cancelled }
 
         let from = try read(sourceJSON, streamDirectory: sourceStreams)
         var into = try read(stagedJSON, streamDirectory: stagedStreams)
 
-        let sourcePages = pageOrder(from)
+        let sourceTree = pageTree(from)
         let stagedPages = pageOrder(into)
+        let sourcePages = sourceTree.map { $0.id }
         guard sourcePages.count == stagedPages.count else {
             throw Failure.pageCountChanged(before: sourcePages.count, after: stagedPages.count)
         }
@@ -555,7 +767,8 @@ enum Annotations {
         /// What each copied annotation should look like afterwards, for the checks.
         var expected: [(page: Int, subtype: String, rect: [Double])] = []
 
-        for (index, sourcePage) in sourcePages.enumerated() {
+        for (index, page) in sourceTree.enumerated() {
+            let sourcePage = page.id
             let stagedPage = stagedPages[index]
             guard let sourceDictionary = from.dictionary(sourcePage),
                   let annots = from.resolveArray(sourceDictionary["/Annots"]),
@@ -574,28 +787,24 @@ enum Annotations {
             // `flatten` bakes rotation into the raster, so the rebuilt page's user space
             // is not the source's. Refused rather than guessed at — see the type's doc
             // comment. A rotated page carrying nothing we would copy is not a problem.
-            let rotation = ((((sourceDictionary["/Rotate"] as? NSNumber)?.intValue ?? 0)
-                             % 360) + 360) % 360
-            if rotation != 0, wantedHere > 0 {
-                throw Failure.rotatedPage(page: index + 1, rotation: rotation,
+            //
+            // `page.rotation`, not the page dictionary's own `/Rotate`: it is inheritable,
+            // and reading it off the page missed every document that sets it on the
+            // `/Pages` node instead.
+            if page.rotation != 0, wantedHere > 0 {
+                throw Failure.rotatedPage(page: index + 1, rotation: page.rotation,
                                           marks: wantedHere)
             }
 
             // …and it moves the media box to the origin, so every page-space coordinate
             // in a copied mark moves with it. Zero for most documents; -24.69 points on
             // `Cohen_1990` page 6, which is a line and a half.
+            // `page.mediaBox` is likewise the inherited-resolved one: a box declared only
+            // on the `/Pages` node used to give a translation of zero.
             var dx = 0.0, dy = 0.0
-            if let box = from.resolveArray(sourceDictionary["/MediaBox"]), box.count == 4 {
-                let numbers = box.compactMap { element -> Double? in
-                    if let n = element as? NSNumber { return n.doubleValue }
-                    if let id = Document.id(ofReference: element),
-                       let n = from.body(id)?["value"] as? NSNumber { return n.doubleValue }
-                    return nil
-                }
-                if numbers.count == 4 {
-                    dx = -min(numbers[0], numbers[2])
-                    dy = -min(numbers[1], numbers[3])
-                }
+            if let box = page.mediaBox {
+                dx = -min(box[0], box[2])
+                dy = -min(box[1], box[3])
             }
 
             var carried: [String] = []
@@ -618,11 +827,19 @@ enum Annotations {
                 // Copy the transitive closure, then point the copy at this document's
                 // page rather than the original's.
                 var mapping: [Int: Int] = [:]
+                var copyFailure: Failure?
                 let newID = copy(annotationID, from: from, into: &into, mapping: &mapping,
                                  nextID: &nextID, report: &report,
                                  stagedPage: stagedPage, sourcePages: Set(sourcePages),
-                                 dx: dx, dy: dy)
-                guard let newID else { continue }
+                                 dx: dx, dy: dy, failure: &copyFailure)
+                // A failure inside the copy fails the document. It used to be a flag that
+                // `copy` returned before ever reading, so the reference was merely pruned
+                // — which published a stamp with an empty `/AP`, drawn as nothing, with
+                // every count and rectangle check passing. Verified by fault injection.
+                if let copyFailure { throw copyFailure }
+                // And a mark that could not be copied for any other reason is a mark that
+                // would never reach `expected`, so no later check could notice it missing.
+                guard let newID else { throw Failure.appearanceStreamLost }
                 carried.append(Document.reference(newID))
                 report.copied[subtype, default: 0] += 1
                 // A mark whose rectangle cannot be read cannot be checked, and an
@@ -656,7 +873,7 @@ enum Annotations {
         }
         try data.write(to: editedJSON)
         try run(qpdf, ["--json-input", editedJSON.path, rebuilt.path],
-                stage: "writing the annotated file", register: register)
+                stage: "writing the annotated file", adopting: adopting)
         if isCancelled() { throw Failure.cancelled }
 
         // MARK: The verification bar
@@ -672,7 +889,7 @@ enum Annotations {
         try run(qpdf, ["--json-output=2", "--json-stream-data=file",
                        "--json-stream-prefix=" + verifyStreams.path + "/s",
                        rebuilt.path, verifyJSON.path],
-                stage: "checking the annotated file", register: register)
+                stage: "checking the annotated file", adopting: adopting)
         let check = try read(verifyJSON, streamDirectory: verifyStreams)
         let checkPages = pageOrder(check)
         guard checkPages.count == stagedPages.count else {
@@ -747,7 +964,8 @@ enum Annotations {
     private static func copy(_ id: Int, from: Document, into: inout Document,
                              mapping: inout [Int: Int], nextID: inout Int,
                              report: inout Report, stagedPage: Int,
-                             sourcePages: Set<Int>, dx: Double, dy: Double) -> Int? {
+                             sourcePages: Set<Int>, dx: Double, dy: Double,
+                             failure: inout Failure?) -> Int? {
         if let already = mapping[id] { return already }
         guard let body = from.body(id) else { return nil }
         let newID = nextID
@@ -769,7 +987,8 @@ enum Annotations {
                 guard let copied = copy(referenced, from: from, into: &into,
                                         mapping: &mapping, nextID: &nextID,
                                         report: &report, stagedPage: stagedPage,
-                                        sourcePages: sourcePages, dx: dx, dy: dy) else {
+                                        sourcePages: sourcePages, dx: dx, dy: dy,
+                                        failure: &failure) else {
                     report.prunedReferences += 1
                     return nil
                 }
@@ -778,11 +997,19 @@ enum Annotations {
             if let dictionary = value as? [String: Any] {
                 var out: [String: Any] = [:]
                 for (k, v) in dictionary {
-                    if let rewritten = rewrite(v, key: k) {
-                        // Page-space coordinates move with the page's origin. Applied
-                        // here, on the copy, so the source is never mutated.
-                        out[k] = translated(rewritten, key: k, dx: dx, dy: dy)
+                    // Geometry first, and resolved out of the source rather than
+                    // rewritten: following the reference generically would copy the array
+                    // object into the output and leave its numbers in the old space.
+                    if let geometry = translatedGeometry(v, key: k, from: from,
+                                                         dx: dx, dy: dy) {
+                        guard let usable = geometry else {
+                            failure = .unreadableGeometry(key: k)
+                            return nil
+                        }
+                        out[k] = usable
+                        continue
                     }
+                    if let rewritten = rewrite(v, key: k) { out[k] = rewritten }
                 }
                 return out
             }
@@ -795,7 +1022,6 @@ enum Annotations {
             return value
         }
 
-        var failedStream = false
         var newBody: [String: Any] = [:]
         if let value = body["value"] {
             newBody["value"] = rewrite(value, key: nil) ?? NSNull()
@@ -826,11 +1052,10 @@ enum Annotations {
                     // the key rather than recording a failure — so a second path to the
                     // same object allocated a fresh id and walked it again, while
                     // children already copied kept references to the abandoned one.
-                    failedStream = true
+                    failure = .appearanceStreamLost
                     return nil
                 }
             }
-            if failedStream { return nil }
             newBody["stream"] = newStream
         } else {
             return nil

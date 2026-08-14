@@ -1796,7 +1796,11 @@ final class OCRModel: ObservableObject {
                 let marks = try Annotations.transplant(
                     from: file, into: finished, password: password,
                     qpdf: JBIG2.merger, scratch: work,
-                    isCancelled: { control.isCancelled }, register: control.adopt)
+                    isCancelled: { control.isCancelled },
+                    // `adopting`, not `adopt`: the pairing is what releases the child.
+                    // An unpaired adopt here leaked one descriptor per qpdf pass for the
+                    // whole batch — R15's shape, and fatal on a library-sized sweep.
+                    adopting: { body in try control.adopting(body) })
                 if marks.copiedTotal > 0 || marks.droppedTotal > 0 {
                     progress(marks.summary, layerShare(1, 1))
                     // And onto the outcome, which is what reaches the run report. A
@@ -1825,8 +1829,11 @@ final class OCRModel: ObservableObject {
             report(.failed, error.localizedDescription)
             return
         }
-        report(.succeeded, [sizeNote(from: inputFile, to: output), marksNote]
-                             .compactMap { $0 }.joined(separator: " — "))
+        // `filter { !$0.isEmpty }`, not `compactMap`: `sizeNote` returns an empty string
+        // rather than nil unless the copy grew, so joining on it put a leading " — " in
+        // front of the message every ordinary run showed the user.
+        report(.succeeded, [sizeNote(from: inputFile, to: output), marksNote ?? ""]
+                             .filter { !$0.isEmpty }.joined(separator: " — "))
     }
 
     /// A note when the searchable copy came out **larger** than the original.

@@ -6,7 +6,9 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Four open, and two of them destroy content.**
+**Four open, and two of them destroy content. R58 is `FIXED` but its feature is
+deliberately unreleased** — the annotation transplant, after two adversarial rounds that
+each found marks landing in the wrong place. The third round is unrun.
 
 **R56 and R57 are in the app, on the default route.** R56: a pale line drawing is
 **erased** by the 1-bit route, because it scores the same ink, tone and saturation as a
@@ -1218,6 +1220,15 @@ outline**, and none of them kept it.
 **Annotations are not copied and will not be.** Links, highlights and form fields
 are a far larger surface, each with its own coordinate space to remap, and nothing
 downstream depends on them.
+
+> **Superseded 2026-08-14.** A reader's marks *are* carried now —
+> `Sources/Annotations.swift`, behind *Keep highlights and notes*, off by default. The
+> sentence above was right about the size of the surface and wrong about the conclusion:
+> 9% of a working library carries somebody's marginalia, which made the sweep impossible
+> rather than merely incomplete. It was also right about the coordinate space, and that
+> is the part this entry deserves credit for — two review rounds found that the rebuilt
+> page's space is *not* always the source's, and both defects were exactly the remapping
+> this sentence predicted. See R58.
 
 The two output routes need different mechanisms, because CoreGraphics cannot write
 an outline at all:
@@ -2505,6 +2516,87 @@ one-document run is the wrong answer, and is the same class of mistake as the
 three timings that were polluted while this entry was being written.
 
 ---
+
+### R58 · Two review rounds on the annotation transplant, and both found marks in the wrong place — FIXED, third round unrun
+*(2026-08-14. Recorded as one entry because the defects are one story: every single one
+was an assumption about the PDF format that the feature's own checks could not see.)*
+
+`Annotations.transplant` carries a reader's marks onto the rebuilt file. It was built
+against `TODO.md`'s specification, verified on the document that specification cites —
+**121 of 121 marks including all 20 stamps, 0 moved** — and then adversarially reviewed
+twice. Each round rejected it, with numbers.
+
+**Round one: the rebuilt page is not always in the source's coordinate space.**
+`Flattener.boxSize` returns `CGRect(origin: .zero, …)` and swaps width and height for a
+quarter-turn, so copying `/Rect` verbatim is only correct when the box already starts at
+the origin and the page is not rotated.
+
+| case | what happened | reach |
+|---|---|---|
+| offset media box | mark landed **24.7 pt low** — `Cohen_1990` p6, box `[0 -24.69 408 588]` | **105 of 233** documents |
+| rotated page | mark landed **off the sheet, gone** — measured at 90° and 270° | 475 of 16,987 pages |
+
+**Why the checks could not see it: they compared the copied `/Rect` against the source
+`/Rect`.** That agrees with itself by construction — CONTRIBUTING §4b's shape, written
+into the very feature whose specification demanded a rendered check *because* counting is
+not enough. The offset is now corrected by translating every page-space geometry array;
+rotation is **refused**, because correcting it means reaching every geometry array plus
+each appearance stream's `/Matrix`, and no marked corpus document has a rotated page
+carrying a mark.
+
+Round one also found: image inputs failed the whole conversion (the call site passed the
+original rather than the wrapped PDF, and qpdf cannot read a PNG); an inline `/Annots`
+dictionary and a non-zero generation reference were both silently skipped, and a skipped
+mark never entered `expected`, so no check could notice; `mapping[id] = nil` *removes* the
+key in Swift rather than recording a failure; the three qpdf passes were unadoptable, so
+Cancel could not reach them; and the report went to a status line cleared the instant the
+file finished.
+
+**Round two, on round one's fix, found four more — and this is the ninth consecutive
+round in this register where reviewing the previous round's code found real defects in
+it.**
+
+- **`/Rotate` and `/MediaBox` are inheritable, and qpdf does not push them down** — its
+  own header says `pushedinheritedpageresources: false`. So a document with `/Rotate 90`
+  on its `/Pages` node sailed past the brand-new rotation refusal and had its marks copied
+  into a swapped frame. Verified both ways on one page: on the page it threw, on the
+  parent it carried. The offset box had the same hole.
+- **Geometry behind an indirect reference was left in the old space.** The worst shape was
+  an indirect `/QuadPoints` with a direct `/Rect`: a viewer draws text markup from
+  `/QuadPoints`, so the highlight rendered 24.69 pt from the words it marked **while the
+  rectangle check passed**. An indirect number inside a direct array *deformed* the
+  rectangle instead of moving it.
+- **The `failedStream` flag was dead code** — `return nil` executed before it was ever
+  read — so a lost appearance stream published a stamp with an empty `/AP`, drawn as
+  nothing, reported as carried. Found by fault injection, not by reading.
+- **The adoption was unpaired: R15 verbatim, at a new site.** Measured at **204 open file
+  descriptors for 200 documents**, linear, against Foundation's ceiling near 2,560 — so a
+  sweep of the ~16,000-document library it exists for would have died an eighth of the way
+  in. `Model.swift` carries that exact warning a few hundred lines above the call site.
+- And the independent pixel checker was **inverted for offset boxes**: it measured the
+  output through the *source's* rectangle, so it failed a correctly-carried mark and
+  passed misplaced ones — on precisely the 105 documents it was most needed for.
+
+**One measurement I reported was wrong, and the reason is worth keeping.** "Cohen offset
+case: drift 0.001" was measured on a `pdf-extract-pages` extract, and **PDFKit normalises
+the media box to the origin when it writes** — so the extract had lost the very property
+under test. Extract with `qpdf --pages` when the geometry *is* the question. Re-measured
+on the real page: `/Rect` 83.48 → 108.17 and `/QuadPoints` 108.64 → 133.33, both exactly
++24.69, drift 0.002.
+
+**What holds now:** 858 checks; 121 of 121 on the specification's document; the offset case
+correct on a file that still has its offset; rotation, inline annotations, non-zero
+generations, unreadable geometry and lost appearance streams all refusing the document
+rather than publishing it. Three properties are asserted directly against hand-built
+object tables — `resolvesIndirectRectangles`, `resolvesInheritedPageAttributes`,
+`translatesIndirectGeometry` — because **PDFKit cannot express any of the three cases**, so
+no fixture in this repo can reach them. That is CLAUDE.md invariant 5's lesson arriving
+from a new direction: a fixture is not blind only to what it omits, but to what its
+*writer* cannot produce.
+
+**A third round has not been run, and the feature is deliberately not in a release yet.**
+Two consecutive rounds each found content-integrity defects; the base rate says a third
+would too. It is on `main`, off by default.
 
 ### R56 · `isPicture` is blind to pale marks, and the 1-bit route erases them — OPEN
 *(found 2026-08-13 building the adversarial fixtures TODO item 1's measurement asked
