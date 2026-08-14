@@ -42,7 +42,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 836 checks, 2-4 min; runs real OCR, needs nothing installed
+./run_tests.sh        # 862 checks, 2-4 min; runs real OCR, needs nothing installed
 ```
 
 Never report a change as working without `./run_tests.sh` passing. Add a test that
@@ -61,10 +61,23 @@ fails without the fix.
 3. **The text layer must satisfy four properties at once**: word spacing survives
    extraction, runs don't overlap vertically, runs span the ink, and **runs keep
    a gap from the next fragment on their own line**. Each has been broken by a
-   fix to another. Re-measure all of them (`Tools/score-line-separation.swift`,
-   `Tools/probe-line-edges.swift`, `Tools/probe-text-offset.swift`, and the
-   `words=` column of `Tools/score-corpus.swift`) after any change to
-   `SearchableWriter`.
+   fix to another. Re-measure all of them after any change to `SearchableWriter` —
+   **but fix an instrument first, because three of the four named here cannot
+   currently be trusted** (`REVIEW-2026-08-14.md` A6.1, measured over 233 documents):
+
+   - `Tools/score-line-separation.swift` divides PDFKit *lines* by Vision
+     *fragments* and **can move opposite to the property it names** — 87% to 87%
+     across a change from no runaway line to a 2,139-character one.
+   - `Tools/probe-line-edges.swift` is behaviourally identical to `score-corpus`'s
+     own `start=`/`end=` columns on 48 of 48 documents, so the four instruments are
+     really three.
+   - `Tools/probe-text-offset.swift`'s printed *range* is ~1.7% artifact (it locks
+     onto a common word on the line below); its median is sound.
+   - the `words=` column of `Tools/score-corpus.swift` is the one that holds — but
+     `score-corpus` prints `OK` for a document it measured nothing on.
+
+   And **the procedure is not executable as written**: two of those probes take a
+   JSON of observations that nothing in `Tools/` produces any more.
 
    The fourth was found late and had been holding **by accident**. Vision splits
    one visual line into fragments side by side; nothing writes a space character
@@ -103,5 +116,5 @@ version control at the time they had to be reconstructed from memory.
 
 ## Not committed
 
-`testdocs/` — 302 MB of third-party copyrighted PDFs. `testdocs/manifest.tsv` and
+`testdocs/` — 1.2 GB of third-party copyrighted PDFs, 233 of them. `testdocs/manifest.tsv` and
 `Tools/sample-zotero.py` let it be rebuilt from a Zotero library.
