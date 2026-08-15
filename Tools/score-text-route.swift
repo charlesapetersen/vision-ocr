@@ -50,7 +50,7 @@ guard let jbig2 = JBIG2.encoder else {
     FileHandle.standardError.write(Data("jbig2 not found; nothing to measure\n".utf8))
     exit(3)
 }
-Prefs.register()
+Prefs.register(migrate: false)
 let settings = Prefs.Snapshot.current()
 
 let work = URL(fileURLWithPath: NSTemporaryDirectory())

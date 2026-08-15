@@ -486,7 +486,7 @@ final class Harness: NSObject, NSApplicationDelegate {
         }
 
         let d = UserDefaults.standard
-        Prefs.register()
+        Prefs.register(migrate: false)
         // No modal can be allowed to stop a headless run: the digital-text
         // warning is exactly the prompt that would sit there for nine hours.
         d.set(false, forKey: Prefs.warnDigitalText)

@@ -1176,6 +1176,13 @@ enum Flattener {
     /// steep: measured on a page carrying a photograph, 1x saves 1.15x, 2x saves
     /// 3.05x and 3x saves 4.72x. Over 40 documents, 2x is 3.28x and 3x is 5.15x.
     ///
+    /// **Those last two are superseded.** They came from the instrument BUGS.md T15
+    /// was about, which never applied R50's all-text shrink; re-measured over 74
+    /// corpus picture pages, 2x is **4.37x** and 3x is **6.66x**, and at 1x three
+    /// layers cost *more* than one image on 31 of the 74 — see `FEATURES.md`. Left
+    /// in place rather than rewritten because the per-page photograph figures above
+    /// are still the ones that chose the value.
+    ///
     /// 2, not 3, because the pages that reach this route are by definition the
     /// ones with pictures on them. At 3x the photograph survives but is visibly
     /// soft; at 2x it is close to what ships today. Trading a picture's
@@ -1463,6 +1470,13 @@ enum Flattener {
     /// It is also *smaller*: a mask restricted to text has far fewer connected
     /// components, so it costs less as JBIG2 than the blind one it replaces.
     /// 5.15x against 4.96x, better on both axes.
+    ///
+    /// **Re-measured over 74 corpus picture pages (T15), and the "smaller" half is
+    /// the solid one**: the confined stencil is 1.33x smaller in total and *never*
+    /// larger on a single page. The page-total pair above is superseded — a blind
+    /// run also skips R50's shrink and layers colour pages in grey, so most of any
+    /// whole-sample gap is not confinement at all. On the 26 pages where the two
+    /// differ in exactly one way it is 1.07x. `FEATURES.md` has both columns.
     static func textRegionMask(_ boxes: [SearchableWriter.BoundingBox],
                                width w: Int, height h: Int) -> [Bool] {
         // The guard first. `[Bool](repeating:count:)` was being asked for `w * h`

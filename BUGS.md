@@ -4726,6 +4726,288 @@ adversarial review round, after two that each found marks landing in the wrong c
 — is still outstanding, and `score-annotations` only became trustworthy on rotated pages in T12,
 which is the instrument that round would use.)*
 
+### T15 · `score-mrc` mirrored the layering instead of calling it, and the five drifts did not all push the same way — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A12.3, which named four
+divergences. A fifth was found while fixing it. Every figure below was measured by compiling both
+versions and running them over the same pages.)*
+
+The tool reimplemented `Flattener.mrcLayers` — Sauvola, the text-region mask, the hole fill, the
+downsample — and read two constants from `Flattener` while doing it, which is what made the copy
+look maintained. **Reading the constants is not running the code.** The header even carried the
+right principle, *"a tool that silently measures something other than what you are holding is
+worse than no tool"*, over the 200 lines those constants feed.
+
+**1 · No R50 all-text shrink.** The copy downsampled at 2 and 4 always; shipped `mrcLayers`
+raises those to 8 and 16 whenever `inkOutsideText < 0.08`. On the pages where that fires, the
+tool's tone layers were an order of magnitude too large. Same 11 picture pages of
+`testdocs/book`, old tool against new:
+
+```
+                     old mrcKB   new mrcKB   overstated   old ratio  new ratio
+1954 - Why      p4          66        22.2      43.8 KB       4.06x     12.13x
+1954 - Why      p6          60        20.2      39.8 KB       3.90x     11.75x
+Guilford        p5          82        28.6      53.4 KB       4.81x     13.84x
+Riesman         p9         302        65.9     236.1 KB       2.35x     11.66x
+Riesman         p13        237        52.4     184.6 KB       2.65x     12.98x
+Riesman         p19        232        49.5     182.5 KB       2.90x     14.62x
+Ibson           p88         54        54.4         same       4.33x      4.33x
+Ibson          p132         65        65.1         same       3.99x      4.00x
+Ibson          p198         61        61.3         same       4.06x      4.06x
+UN-OCred        p21         91        91.5         same       3.20x      3.20x
+UN-OCred        p31         89        89.7         same       3.42x      3.42x
+```
+
+**Then over the whole corpus, 233 documents and the same 72 pages both versions measured.**
+R50's shrink fires on **38 of the 72** — just over half the picture route:
+
+```
+                                    old          new       factor
+tone layers, those 38 pages     6,306 KB       431 KB       14.6x
+   per page                                              10.5-18.3x, median 15.3
+mrcKB overstated per page                          39.8-439.0 KB, median 179.4
+layered total, all 72 pages    18,759 KB    13,115 KB      43% too high
+today's total, all 72 pages    61,181 KB    62,306 KB
+ratio                              3.26x        4.75x
+```
+
+The per-page tone-layer factor **brackets and widens A12.3's 14.18–16.95x**, and the worst page
+(`Williams_1958` p1, 439.0 KB) is well past its 245.7 KB upper bound. The tone layers alone on
+`Riesman` p9: old 203 + 54 KB, new 15.5 + 4.3 KB.
+
+**A12.3's "identical on genuine picture pages" is nearly right and not quite.** On the 34 pages
+the shrink does not touch, the two agree to within −2.0 to +1.4 KB on the 24 **grey** ones — but
+on the 10 **colour** ones the old tool's MRC came out **5.7 to 38.2 KB smaller**, 233 KB in total,
+because it layered them in grey. So the copy's two biggest misses pushed in *opposite* directions:
+MRC looked dearer than it is on every all-text page and cheaper than it is on every colour
+picture page.
+
+**And the ±2 KB on the grey pages is not rounding — it is the boxes.** Box counts differ on
+**18 of those 24 pages**, by up to 30 (`October_2,_1960` p1: 245 → 226; `___ 3.pdf` p1: 722 →
+752), because two things about the recognition were wrong at once and both are fixed here: the
+tool read the *raw grey render written as a PNG* where the app recognises `flatten`'s own JPEG,
+and it asked Vision with `languageCorrection: false` (divergence 5 below). Which of the two moved
+more is unmeasured; the sizes it moves are under 2 KB, and the stencil it moves is three quarters
+of the pages.
+
+**2 · No colour route.** `mrcLayers` has taken `inColour:` since R49, and the tool did not pass
+it — so on a page Automatic keeps in colour, *both* columns described a grey artefact nothing
+publishes. **18 of the 74 sampled picture pages are colour**, and today's page was understated on
+every one of them, by 15.6 to 112.0 KB, 1,096 KB in total. `Riesman` p9: today's page is a
+769.0 KB colour JPEG, and the tool called it 710 KB grey — it understated the page by 59 KB and
+overstated its MRC by 236 KB in the same row.
+
+**3 · A 60 MP gate.** A bare literal, where the render's bound is
+`maximumPageMegapixels` (400) and the layering's is `maximumMRCPageMegapixels` (100). It belonged
+to neither, and A3.1 is open against those two constants. **Not hypothetical: it dropped 2 of the
+74 sampled picture pages**, silently, and they are the two largest JPEGs in the corpus —
+`oster - Engagement of Anne Foster…` p1 at 60.44 MP and 12,589.8 KB, and `___.pdf` p1 at 64.84 MP
+and 14,076.5 KB. Between them **26.0 MiB — 30% of what the 74 sampled picture pages weigh today** —
+missing from a measurement whose subject is how many bytes this saves.
+
+**4 · No empty-stencil refusal.** `mrcLayers` returns nil when the confined mask has nothing in
+it; the copy layered anyway and reported the result, which is a page the app declines to layer
+counted as layered.
+
+**5 · Found while fixing it: it recognised with a different Vision request than the app.**
+`Prefs.Snapshot.current()` on a tool's own empty preferences domain returns
+`languageCorrection: false`, where every shipped run has it **true** — so the boxes were Vision's
+answer to a question the pipeline does not ask, and the stencil was cut from them.
+`Prefs.register()` first, which `make-observations` and `score-line-separation` already did.
+
+**And then that fix had a defect of its own, found by reviewing this diff — the only change here
+that touches `Sources/`.** `Prefs.register()` calls `migrateFromPreviousName()`, which copies every
+setting out of `com.cp1.VisionReaderGUI` **and removes it from there** (A4.3, deliberately). A tool
+has no bundle identifier, so its `UserDefaults.standard` is a plist named after the *process* — so
+a measurement run would consume the user's pre-rename migration and file it in `score-mrc.plist`,
+where the app will never look. The next real launch would find nothing to migrate. A4.3's harm
+through a door A4.3 did not consider.
+
+Nothing was lost here — that domain holds only AppKit window frames on this machine — but the
+plists are real and predate today: `bin-score-corpus.plist` and `bin-score-line-separation.plist`
+have carried `migratedFromVisionReaderGUI = 1` since 2026-08-14, because `score-corpus` and
+`score-line-separation` were already calling `register()`. Two runs of one tool also race on that
+single file, which is the `tests.plist` hazard CLAUDE.md names.
+
+**Fixed with `Prefs.register(migrate: Bool = true)`.** The app migrates; **every tool passes
+`false`**, and the registration itself is in-memory, so a tool now writes no preferences at all.
+Four checks in the suite: it imports nothing, it leaves the old domain intact, it does not set the
+marker, and it still registers the shipped defaults — that last one because without it divergence
+5 comes straight back.
+
+**Fixed by calling `Flattener.mrcLayers` and reading the three files it wrote.** The reconstruction
+for the PSNR column now comes from the published mask PNG and the two JPEGs rather than from the
+buffers they were made out of — a check that compares the copy against the source it came from
+agrees with itself. Verified by eye as well as by number, on `MRC_DUMP` output: the 8x/16x all-text
+page reconstructs as sharp type on flat paper at 15.4 KB against the JPEG's 223.3, and a colour
+page keeps its plate.
+
+**What is deliberately still local.** `MRC_BLIND=1`, which layers with an *unconfined* Sauvola
+stencil. That is the measurement FEATURES.md's smeared-photograph row came from and it must stay
+reproducible, so it is composed out of `Flattener.sauvolaMask`, `fillHoles` and `downsample`
+rather than reimplementing any of them — the only difference from the shipped route is the one
+line of confinement it omits. It prints a banner saying so, and R50's shrink is not applied there
+because the signal it depends on is the region blind mode throws away.
+
+**Two reporting defects fixed with it.** The row printed **12 fields under an 11-column header**
+— a trailing box count with no name, which is the shape `score-corpus`'s 10-field SKIP row under a
+9-column header had in the very commit that removed its tenth column. Rows are now built as an
+array and checked against the header, and a mis-sized row is a refusal (exit 5) rather than a
+column nobody can name. And all four of the tool's refusals were a bare `continue`, so a page the
+app would decline to layer left no trace at all; each now prints a row with its reason in a `note`
+column, which is invariant 1 inside the instrument — T9's shape in `score-gate`.
+
+**The self-test is the part that holds.** It runs on every invocation, refuses to measure anything
+if it fails (exit 4), and goes through `measure` rather than around it, so a mirrored layering
+reintroduced where the delegation sits has to fail it. **Two fixtures, because one covers only
+half of R50's rule:**
+
+- **all-text** — type on paper at luminance 115. `tone 0.984`, `sat 0.000`,
+  `inkOutsideText 0.0000`, so it routes as a picture on tone alone and its ink is all text. **That
+  is R50's own population and the one case `make-plate-fixtures` does not build**: the Internet
+  Archive scan whose 568 text pages took the picture route because their paper carried a cast.
+  Paper 100 through 130 all give tone > 0.98 and it becomes a text page somewhere between 130 and
+  148, so the fixture is not finely balanced. Asserts the 8x/16x shrink *fires*.
+- **colour plate** — the same type on cream stock with a saturated block on it. Routes as a
+  picture on *saturation* (`sat 0.192` against 0.06), `shouldKeepColour` keeps it, and its ink is
+  mostly outside the words. Asserts the colour render, `jpegRGB`, the three-plane read-back, and
+  the shrink **not** firing.
+
+Both were watched failing, as CONTRIBUTING §2 requires. Three mutants, each a real defect this
+entry is about, put back one line at a time:
+
+```
+mirrored layering (no R50, the old algorithm)
+  an all-text page takes R50's background shrink — 2.0x, expected 8x
+  an all-text page takes R50's foreground shrink — 4.0x, expected 16x
+  the colour fixture keeps its colour — it was layered and compared in grey
+
+wantColour = false (divergence 2, deleted outright)
+  the colour fixture keeps its colour — it was layered and compared in grey —
+    ink 0.282 tone 0.006 sat 0.192 otsu 161 (tone must clear 0.12 or sat 0.06)
+
+the shrink applied unconditionally
+  a picture page keeps the caller's background factor — 8.0x, expected 2x
+  a picture page keeps the caller's foreground factor — 16.1x, expected 4x
+```
+
+**The second of those three is why there are two fixtures.** With one, deleting the colour route
+from `measure` — the very divergence above — left the self-test green while silently regrading 18
+corpus pages from colour to grey. That was found by an adversarial review of this diff, which
+built the mutant and ran it; it is the difference between a self-test that reads well and one that
+bites.
+
+*(The blind path at 2 and 4 reproduces the old tool's numbers on `grey-110` — 48.8 / 19.2 / 78.3
+KB against 48 / 19 / 78 — which is a second confirmation that what the old default path measured
+was the unshrunk artefact.)*
+
+**Four more defects the review of this diff found in the rewrite itself**, all fixed here:
+
+- **`planes` returned an all-255 buffer when `CGContext` could not be made**, so a PSNR could have
+  been computed against a white page and printed as a measurement. §3's own trap, inside the code
+  written to check other code's numbers. Returns nil now.
+- **A fifth refusal counted a page twice and printed no row.** "Would not JPEG-encode" was set
+  *after* `isPictureRoute`, so such a page incremented `refused`, then `pages`, then `declined`,
+  and folded a zero into two totals. It is terminal now, before the picture test.
+- **It required `jbig2` and not `qpdf`.** The app reaches `mrcLayers` only inside
+  `if wantJBIG2, …, let qpdf = JBIG2.merger`, so on a machine without qpdf it publishes **no**
+  layered pages and any ratio here would describe a route that machine cannot take. §4b's question
+  asked of the guard the fix had just added.
+- **`decline("declined")` named none of `mrcLayers`' four nil paths.** Two are visible from
+  outside — the megapixel gate and an empty box list — and are named; the rest says so plainly
+  rather than implying a cause.
+
+**And one thing the fix got wrong in `FEATURES.md`, which is recorded there in full**: the first
+version of the confinement correction claimed confinement is "1.35x better, not 1.04x". That was
+the whole-sample page total, **84% of which is R50's shrink** rather than confinement, because
+blind mode differs from the shipped route in three ways and not one. On the 26 pages where the two
+differ in exactly one way it is 1.07x, so the figure that was being corrected had been right in
+magnitude all along.
+
+**Sibling sweep (§4b): who else transcribes a shipped structure?** `grep -n 'Prefs.Snapshot('
+Tools/` found two more tools doing it, and both had stopped compiling — T16. `score-picture-codec`
+was checked and is sound: it uses `maximumPageMegapixels` and excludes colour pages rather than
+mis-measuring them, which is what A12.3 meant by "gets the two things `score-mrc` gets wrong".
+
+**Two things the repaired instrument found that were nobody's finding yet**, both in
+`FEATURES.md` now:
+
+- **At `PhotoDetail.maximum`, three layers cost more than one image on 31 of 74 picture pages**,
+  and `makeSearchablePDF`'s `after < before` keeps the JPEG on each. That rule was written as a
+  precaution and had never been shown doing anything. It is a consequence of R52: Maximum sets
+  `keepEveryPixel`, which suppresses R50's shrink, so the background is carried at full
+  resolution by instruction.
+- **Balanced and Smallest files are byte-identical on any all-text page.** R50's shrink is a
+  floor, so `max(2, 8)` and `max(3, 8)` are both 8 and the Photo detail setting can only move a
+  page that carries a genuine picture. `MRC_BG=2` and `MRC_BG=3` both give 15.4 KB on the
+  self-test fixture. Not a defect — it is the floor behaving as documented — but it was not
+  written down anywhere, and "the setting does nothing on this page" is the kind of thing a user
+  report arrives about.
+
+### T16 · Nothing checked that a tool compiles, and two had not since the annotation transplant — FIXED
+*(found 2026-08-15 by writing `Tools/check-tools-compile.sh` while fixing T15, and running it for
+the first time.)*
+
+C25 found `score-text-route` had **never compiled in any commit** and closed it by removing the
+bad line. It did not close the door: `run_tests.sh` compiles `Sources/` and `Helper/`, the hook
+runs the suite when `Tools/` is staged, and **nothing anywhere compiled a tool**. Six of twenty-four
+failed on the first run of the new script: **four were the script's own fault and two were real.**
+
+**`score-skew` and `score-reading-order` have not built since 2026-08-14.** Both construct
+`Prefs.Snapshot` by hand — three literals between them — and `9684c3f`, the annotation transplant,
+added `preserveAnnotations` to the struct:
+
+```
+score-skew.swift:497: error: missing argument for parameter 'preserveAnnotations' in call
+score-skew.swift:558: error: missing argument for parameter 'preserveAnnotations' in call
+score-reading-order.swift:120: error: missing argument for parameter 'preserveAnnotations' in call
+```
+
+Confirmed by bisection rather than inferred: type-checked at `9684c3f~1` in a worktree, where it
+builds clean. Twenty-two commits, eleven days, two instruments — one of which is the evidence
+behind `FEATURES.md`'s refusal of deskew and the other behind its reading-order item — and the
+symptom would have been C25's exact one, a compile error in a file the next maintainer had not
+touched.
+
+**Fixed the way T15 was**: `Prefs.register()` then `Prefs.Snapshot.current()`, so the tool asks
+for the shipped defaults instead of transcribing them and cannot break again on a new field. Every
+field `Recogniser.recognise` reads is identical either way — `fast` false, `languageCorrection`
+true, no languages, no custom words, no minimum height, confidence 0 — and both tools were rebuilt
+with `-O` and run afterwards, not merely type-checked: `score-skew --recover` and
+`--recover-render` both measure `Friedman_1962` p2 at +0.530°, and `score-reading-order --gutter`
+reports on it.
+
+**The four false failures were the script's, and both causes are recorded because the next version
+of it will want them.** `probe-line-edges`, `probe-text-offset` and `probe-line-coverage` are
+*standalone* — they declare their own `Box`, which collides with `SettingsView`'s when compiled
+against `Sources/`; and `probe-window-reopen` is `@main` with `-parse-as-library`, where renaming
+it to `main.swift` is itself what makes `@main` illegal. Each tool is now type-checked alone first
+and retried against `Sources/` only if that fails, and **when both attempts fail both sets of
+errors are printed, labelled** — the first version overwrote one log with the other and then showed
+a standalone tool a wall of errors in `SettingsView.swift`, which `Tools/README.md` warns is the
+signature of a *missing source*. No list has to be kept in step.
+
+`swiftc -typecheck`, not `-O`: 7 seconds a tool against 25, and it catches the whole class both
+C25 and this entry are in. It does **not** catch a link failure, which is stated in the script's
+header rather than left to be discovered. The hook checks only the *staged* tools — seconds — and
+the whole set is 26 seconds on demand.
+
+**Three defects in the checker itself, all found by an adversarial review of the diff that added
+it, and the first would have refused this very commit.**
+
+1. **`"${ARRAY[@]}"` under `set -u` on bash 3.2 is a fatal "unbound variable" when the array is
+   empty.** macOS ships 3.2.57. A run naming only Swift tools died on the empty Python array and
+   vice versa — and the hook builds exactly that argument list, three `.swift` and no `.py`, for
+   this commit. It would have printed `ok` for every tool and then `a staged tool does not build —
+   commit refused`. Every array expansion is guarded by a count now.
+2. **`wait -n` does not exist in bash 3.2 either**, and the `|| wait` fallback barriered on every
+   child while the counter dropped by one, so after the first batch the run was serial while the
+   banner said "6 at a time". Replaced with a `jobs -pr` poll: the full set went from **1m 59s to
+   25.6s at 478% CPU**, which is the measurement that proves the pool was not running.
+3. **A broken shell script passed, because nothing checked the shell tools** — including this one.
+   `bash -n` on `Tools/*.sh` is now part of the run, and it is the check that would have caught
+   defect 1 before it reached the hook. `py_compile` and `bash -n` are both syntax-only and the
+   header says so: a Python body of `return no_such_function(1)` compiles clean.
+
 ---
 ## The interface
 

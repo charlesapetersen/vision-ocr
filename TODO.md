@@ -32,7 +32,7 @@ below.
 
 ### Where the fix order got to
 
-**Twenty-five of the sweep's findings are fixed and merged, and the suite is at 1042
+**Twenty-five of the sweep's findings are fixed and merged, and the suite is at 1046
 checks.** The list of the first twenty-three is in
 **[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md)**; the two since are `BUGS.md` T14 and C25,
 in **[HANDOFF-2026-08-15-day.md](HANDOFF-2026-08-15-day.md)**, which is the live status.
@@ -51,10 +51,13 @@ not run at all; `CLAUDE.md` now carries the procedure as five commands that work
 
 **What is left:**
 
-1. **The rest of `Tools/`** — `A12.3` (`score-mrc`'s tone layers are 14–17x, which affects
-   `FEATURES.md`'s 4.96x), `A12.4` (the corpus gate re-implements `pageIsAnImage` and
-   admitted the two documents the app calls born-digital), `R54`, and the remainder of
-   `A12.8`. `R55` needs its own measurement campaign first.
+1. **The rest of `Tools/`** — `A12.3` is done (`BUGS.md` T15: the tool calls
+   `Flattener.mrcLayers` now instead of mirroring it, and `FEATURES.md`'s 4.96x was not just
+   stale, it was the *blind* segmenter's figure). So is the tools-compile gate that came out
+   of it (`T16`), which found two more tools that had not built since 2026-08-14. Remaining:
+   `A12.4` (the corpus gate re-implements `pageIsAnImage` and admitted the two documents the
+   app calls born-digital), `R54`, and the remainder of `A12.8`. `R55` needs its own
+   measurement campaign first.
 2. **`A1.2`, then `A1.1`, then `C23`** — that order, because A1.1's only viable fix triples
    the sliver population A1.2 is about. Plus `A1.3`, `A1.4`, `A2.4`, `A3.1` in its narrower
    form, `A13.4`, the residue of `A10.6`, and `A11.8`.

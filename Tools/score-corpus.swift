@@ -22,7 +22,7 @@ func fail(_ why: String) -> Never {
     exit(0)
 }
 
-Prefs.register()
+Prefs.register(migrate: false)
 UserDefaults.standard.set(false, forKey: Prefs.openWhenDone)
 if CommandLine.arguments.count > 3,
    let f = Double(CommandLine.arguments[3]) { SearchableWriter.headroomFactor = CGFloat(f) }

@@ -115,11 +115,16 @@ func samplePages(_ document: PDFDocument) -> [Int] {
         .map { min(max($0, 0), count - 1) }
 }
 
-let settings = Prefs.Snapshot(
-    mode: .searchablePDF, textFormat: .text, besideOriginal: false, useJBIG2: false,
-    photoDetail: .balanced, joinHyphenated: false, fast: false, languages: "",
-    languageCorrection: true, confidence: 0.0, pdfDPIAuto: true, pdfDPI: 0,
-    password: "", customWords: "", minTextHeightOn: false, minTextHeight: 0.0)
+// The shipped defaults, asked for rather than transcribed. This was a
+// hand-written `Prefs.Snapshot(...)` literal, and it stopped compiling the moment
+// the struct grew `preserveAnnotations` in `9684c3f` — so **this tool has not
+// built since 2026-08-14**, verified by type-checking it at `9684c3f~1` where it
+// does. C25's shape, found by `Tools/check-tools-compile.sh`, which exists because
+// of C25. Every field `Recogniser.recognise` reads is identical either way:
+// `fast` false, `languageCorrection` true, no languages, no custom words, no
+// minimum height, confidence 0.
+Prefs.register(migrate: false)
+let settings = Prefs.Snapshot.current()
 
 if gutter {
     // **Ground truth from the pixels, not from Vision's grouping.**

@@ -198,7 +198,64 @@ fault_helper() {
   fi
 }
 
-FAULTS="relocate build_continues missing_licence detach_fails helper"
+# `score-mrc` refuses to measure anything without jbig2 or qpdf, because the app
+# only layers pages on the JBIG2 route — a ratio measured without them describes a
+# route the machine cannot take. Neither refusal can be reached by editing PATH:
+# `Runner.locateTool` checks `/opt/homebrew/bin` and friends by absolute path, on
+# purpose (a GUI-launched app has almost no PATH). So the only way to watch these
+# branches fail is to make the binary unrunnable, which is what this does — and puts
+# it back, including on failure, which is what the trap is for.
+#
+# CONTRIBUTING §4c: an error branch nothing has ever executed is not a safeguard.
+# R31, R32 and H2 were all careful code in branches that had never run.
+fault_mrc_refuses() {
+  local name tool restored=0
+  tool="$(command -v jbig2 || true)"
+  if [ -z "$tool" ]; then
+    say "jbig2 is not installed, so there is nothing to take away — skipping."
+    return
+  fi
+  sandbox
+  # Build the tool inside the sandbox, so nothing here touches build/.
+  mkdir -p "$SB/h" && cp "$SB/Tools/score-mrc.swift" "$SB/h/main.swift"
+  local sources=()
+  for f in "$SB"/Sources/*.swift; do
+    [ "$(basename "$f")" = "App.swift" ] && continue
+    sources+=("$f")
+  done
+  if ! swiftc -O -o "$SB/score-mrc" -target "$(uname -m)-apple-macos13.0" \
+       "${sources[@]}" "$SB/h/main.swift" >"$SB/build.log" 2>&1; then
+    bad "score-mrc builds" "$(grep -m1 'error:' "$SB/build.log" || echo 'see build.log')"
+    return
+  fi
+
+  # Restore on every exit path, not just the happy one: leaving a user's jbig2
+  # non-executable would silently take the app's JBIG2 route away.
+  restore() { [ "$restored" -eq 0 ] && chmod +x "$tool" 2>/dev/null; restored=1; }
+  trap 'restore' EXIT INT TERM
+
+  name="score-mrc refuses to measure with jbig2 unrunnable"
+  chmod -x "$tool"
+  local out rc
+  out="$("$SB/score-mrc" 2>&1)"; rc=$?
+  restore
+  trap - EXIT INT TERM
+  if [ "$rc" -eq 3 ] && grep -q "jbig2 is not on PATH" <<<"$out"; then
+    ok "$name"
+  else
+    bad "$name" "exit $rc, said: $(head -1 <<<"$out")"
+  fi
+
+  name="…and measures again once it is back"
+  out="$("$SB/score-mrc" 2>&1)"; rc=$?
+  if [ "$rc" -eq 0 ] && grep -q "picture pages" <<<"$out"; then
+    ok "$name"
+  else
+    bad "$name" "exit $rc after restoring jbig2, said: $(tail -1 <<<"$out")"
+  fi
+}
+
+FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses"
 
 if [ "${1:-}" = "--list" ]; then
   for f in $FAULTS; do echo "  $f"; done; exit 0

@@ -36,6 +36,33 @@ annotation transplant) and each broke it.
 The small `pdf-*` utilities need less: `pdf-extract-pages.swift` compiles alone, and
 the ones that call `Flattener` need `Sources/SearchableWriter.swift` with it.
 
+## Checking they all still build
+
+```sh
+Tools/check-tools-compile.sh              # every tool, about 26 seconds
+Tools/check-tools-compile.sh score-mrc    # one, by name — seconds
+```
+
+**Nothing asked this question until C25**, and the answer was three times no.
+`score-text-route` had never compiled in any commit while three documents cited its
+output; then this script found that the annotation transplant had silently broken
+`score-skew` and `score-reading-order` on 2026-08-14 by adding a field to a struct
+both had transcribed by hand (T16). A tool nobody has run this month is
+indistinguishable from a tool that cannot run at all, and the paragraph above about
+"a wall of cascading type errors in a file you did not touch" is what that looks
+like from the inside.
+
+The pre-commit hook runs it over the *staged* tools only, which is seconds. It
+type-checks rather than builds — `swiftc -typecheck` is 7 seconds a tool against 25
+for `-O`, and it catches the whole class C25 and T16 were in. It does not catch a
+link failure, so a tool that has just grown a dependency still wants one real build.
+
+The Python and shell checks are **syntax only**: `py_compile` passes a body of
+`return no_such_function(1)`, and `bash -n` passes a command that does not exist. They
+are worth having and they are not a substitute for running the thing. Three defects in
+the checker's own first version are recorded in T16, including one that would have
+refused the commit that introduced it.
+
 ## What each one measures
 
 | tool | question it answers |
@@ -62,13 +89,14 @@ what "four invariant-3 instruments" invited.
 | `pdf-embedded-text.swift` | Whole-document embedded text. Use to prove OCR happened rather than a text layer being read back. |
 | `sample-zotero.py` | Rebuild the test corpus from a Zotero library. **Classifies every candidate and keeps only scans** — item type says what a document is, not how the PDF was made, and without that gate the corpus came out 65% material this app is not for (D1). |
 | `classify-source.swift` | scanned / born-digital / photographed, per file, from page-image geometry, text density, saturation and an illumination gradient. The gate `sample-zotero.py` uses, and the same page-image test the app uses before discarding anyone's text (C17). |
-| `score-mrc.swift` | What MRC layering would cost per picture page, with the reconstruction's PSNR beside the size. Carries its own Sauvola — see the header. |
+| `score-mrc.swift` | What MRC layering costs per picture page, with the reconstruction's PSNR beside the size, and which of the two the app would publish. **Calls `Flattener.mrcLayers` and reads the three files it wrote** — it used to mirror it, and the copy had drifted five ways, *not all in the same direction* (T15). **Carries a self-test that runs on every invocation** (exit 4) over two fixtures, one for each half of R50's rule and one of them colour. Refuses to run without `jbig2` **or `qpdf`** (exit 3), because the app only layers on the JBIG2 route. `MRC_BLIND=1` is the one layering still written here, and it exists because it is *not* what the app does — it differs in three ways, so only its `maskKB` column compares like for like. |
 | `score-picture-codec.swift` | Codec comparison for the pages that take the picture route. |
 | `score-text-route.swift` | Published bytes of a text page **both ways** — layered vs 1-bit — using shipped code for each. The measurement that priced TODO item 1 at 8.2 KB/page. |
 | `score-threshold-loss.swift` | How much a page would lose to the 1-bit threshold. **Carries a refused signal** (BUGS.md R56) with a self-test that runs on every invocation; round five of that work starts here. |
 | `score-annotations.swift` | Did a reader's marks land where they were? Renders both files and compares each mark's *footprint centroid* — not its coverage, which the header explains. |
 | `make-plate-fixtures.swift` | Builds the six synthetic adversarial pages the corpus cannot produce: pale drawing, flat mid-luminance colour, tonal plate, coarse halftone, text-only, red-ink text. R56 and R57 came out of these. |
 | `sweep-zotero.py` | The library-wide size survey. **R54 is open against it.** |
+| `check-tools-compile.sh` | Does every tool in here still build? Type-checks each Swift tool, `py_compile`s each Python one and `bash -n`s each shell one — including itself, which is how its own first version's bash-3.2 crash would have been caught. The gate C25 and T16 needed and did not have. |
 | `vm-gui-check.sh` | The interface checks that need a running app — U13, U15, U17 — in a headless VM. Exit 0 pass / 1 fail / 3 could-not-run. |
 | `probe-window-reopen.swift` | Can the window be got back after it is closed mid-run? Exit 0 = yes. The one thing in this project that could not be settled by reading. **Does not compile against `Sources/`** — it is a standalone app, and its restore body is a copy of `AppDelegate.showMainWindow` that has to be kept in step. |
 

@@ -39,6 +39,28 @@ if ! command -v swiftc >/dev/null 2>&1; then
   exit 1
 fi
 
+# A staged tool gets type-checked, because until C25 nothing checked that a tool
+# compiled at all: score-text-route had never built in any commit, and the
+# annotation commit silently broke score-skew and score-reading-order eleven days
+# later by adding a field to a struct they transcribed by hand. Only the staged
+# ones, which is seconds rather than the two minutes the whole of Tools/ costs.
+# Existing files only: a staged *deletion* is still a staged path, and passing one
+# would make the checker refuse a commit whose whole content is removing a tool.
+staged_tools=""
+while IFS= read -r f; do
+  [ -n "$f" ] && [ -f "$f" ] && staged_tools="$staged_tools $f"
+done <<EOF
+$(echo "$staged" | grep -E '^Tools/.*\.(swift|py)$' || true)
+EOF
+if [ -n "${staged_tools// /}" ]; then
+  echo "pre-commit: type-checking the staged tools…"
+  # shellcheck disable=SC2086
+  if ! ./Tools/check-tools-compile.sh $staged_tools; then
+    echo "pre-commit: a staged tool does not build — commit refused." >&2
+    exit 1
+  fi
+fi
+
 echo "pre-commit: running ./run_tests.sh (2-4 minutes; it runs real OCR)…"
 log=$(mktemp -t vrg-precommit)
 if ! ./run_tests.sh >"$log" 2>&1; then

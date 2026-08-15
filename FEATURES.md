@@ -600,10 +600,27 @@ replacement for the 1-bit route and not a size win over it — on a 600-page tex
 book, MRC costs 55 KB/page against 1-bit's 48. It is a replacement for the single
 large JPEG that *mixed* pages currently get, and there the measurement is strong:
 
-**48 real picture pages from the corpus: 40,010 KB today, 8,069 KB as MRC —
-4.96x.** Text in the reconstruction is visually indistinguishable from the
-source at 1:1, and arguably crisper than today's JPEG, because the edges come
-from a full-resolution stencil rather than a DCT quantiser.
+**74 sampled picture pages from the 233-document corpus: 88,972 KB today,
+20,364 KB as three layers — 4.37x**, and the app publishes the smaller of the two
+per page, which on this sample is MRC on all 74. Measured 2026-08-15 with
+`score-mrc` calling `Flattener.mrcLayers` rather than a copy of it. Text in the
+reconstruction is visually indistinguishable from the source at 1:1, and arguably
+crisper than today's JPEG, because the edges come from a full-resolution stencil
+rather than a DCT quantiser.
+
+*(**The figure this replaces should not be requoted: "48 real picture pages from the
+corpus: 40,010 KB today, 8,069 KB as MRC — 4.96x."** Two things are wrong with it,
+and the second is the instructive one. It is not reproducible — the corpus has grown
+from that sample to 74 sampled picture pages. And **its ratio is the blind row of the
+table below**: 40,010 / 8,069 = 4.958, and the table's own "Sauvola everywhere" row
+is 4.96x. The sentence quoted the segmenter this entry rejects as visibly smeared as
+the measurement of the segmenter it ships. It also came from the instrument
+`BUGS.md` T15 was about, which overstated the layered total by **43%** on the pages
+that reach R50's shrink. Same 72 pages, that instrument against this one: today
+61,181 → 62,306 KB, layered 18,759 → 13,115 KB, 3.26x → 4.75x — and it had dropped
+two further pages entirely, including the corpus's largest at 64.84 MP, on a 60 MP
+gate belonging to neither of the app's two bounds. Those two pages are 26.0 MiB, 30%
+of the 74 sampled pages' present-day total.)*
 
 **Segmentation was the blocker and it is solved.** Sauvola alone (k=0.34, window
 dpi/4, following `internetarchive/archive-pdf-tools`) marks halftone dots as
@@ -614,10 +631,29 @@ MRC exists for.
 
 Confining the stencil to Vision's word boxes fixes it, and costs nothing:
 
-| stencil | ratio | the photograph |
-|---|---|---|
-| Sauvola everywhere | 4.96x | smeared, streaked |
-| **inside Vision's word boxes** | **5.15x** | intact |
+| stencil | stencil bytes, all 74 pages | page total, 26 comparable pages | the photograph |
+|---|---|---|---|
+| Sauvola everywhere | 4,930.8 KB | 3.25x vs today | smeared, streaked |
+| **inside Vision's word boxes** | **3,699.2 KB** (1.33x smaller) | **3.48x vs today** | intact |
+
+*(Re-measured 2026-08-15. **Two columns rather than one, and that is the point of the
+correction.** `MRC_BLIND=1` differs from the shipped route in three ways, not one:
+no confinement, no R50 shrink — the signal needs the text region blind mode discards
+— and grey layers on every page, because the colour interleave lives inside
+`mrcLayers`. So a whole-sample page total compares three changes at once. The
+stencil column is the one that compares everywhere, since the stencil is what
+confinement acts on; the page-total column is restricted to the 26 grey pages where
+R50 does not fire, which is the only subset where the two runs differ in exactly one
+way.)*
+
+*(**A number this file carried for an afternoon was wrong and it is worth saying how.**
+The first version of this correction read "confinement is 1.35x better, not 1.04x" and
+called the old pair an order-of-magnitude understatement. 1.35x was the whole-sample
+page total — 84% of which is R50's shrink, not confinement. On the comparable subset
+it is **1.07x**, so the retired 4.96x/5.15x pair was right in magnitude all along and
+only the headline sentence quoting the blind row was wrong. Caught by an adversarial
+review of the diff that introduced it, which is the third time in three days that a
+correction to this project's own measurements has needed correcting.)*
 
 Better on *both* axes, which is worth understanding rather than just banking: a
 mask restricted to text has far fewer connected components, so it costs less as
@@ -631,8 +667,38 @@ publishing a plate at a third of its resolution.
 
 **The background downsample is the real quality knob**, and it is steep. On the
 photograph page: 1x gives 1.15x compression, 2x gives 3.05x, 3x gives 4.72x.
-Across 40 documents: 2x gives 3.28x, 3x gives 5.15x. At 3x the photograph is
-intact but soft; at 2x it is close to today's.
+Re-measured 2026-08-15 over the same 74 corpus picture pages with the repaired
+instrument, which is the first time the three settings have been swept with R50's
+all-text shrink in place:
+
+| Photo detail | factor | as published | vs today | pages where one JPEG wins |
+|---|---|---|---|---|
+| Maximum | 1x | 83,435 KB | 1.07x | **31 of 74** |
+| **Balanced** (default) | 2x | 20,364 KB | **4.37x** | 0 |
+| Smallest files | 3x | 13,363 KB | 6.66x | 0 |
+
+*(Supersedes "across 40 documents: 2x gives 3.28x, 3x gives 5.15x", which came from
+the mirrored instrument. At 3x the photograph is intact but soft; at 2x it is close
+to today's.)*
+
+**Two things in that table are worth more than the ratios.** `PhotoDetail.maximum`
+is a factor of 1, which sets `keepEveryPixel` and so suppresses R50's shrink
+everywhere — deliberately, because R52 was a page stored at an eighth of the
+resolution its user had explicitly asked to keep. The consequence, unmeasured until
+now, is that **at Maximum three layers cost more than one image on 42% of the
+picture route**, and the app keeps the JPEG on each of those pages. That
+`after < before` rule was written as a precaution; this is the measurement that
+shows it doing real work.
+
+And **Balanced and Smallest files are byte-identical on any all-text page**: the
+shrink is a floor, `max(2, 8)` and `max(3, 8)` are both 8, so the setting can only
+move the 36 of 74 sampled pages that carry a genuine picture. Measured directly on the
+self-test fixture — `MRC_BG=2` and `MRC_BG=3` both give 15.4 KB.
+
+*(This sweep is over **picture pages only**, so it is not the denominator the Settings
+blurbs use — those speak about whole files, most of whose pages are text going to
+1-bit. Neither number contradicts the other; they are answers to different
+questions.)*
 
 Shipped as a setting rather than a decision made for the user — **Searchable PDF
 ▸ Photo detail**, defaulting to Balanced (2x). The pages this applies to are the

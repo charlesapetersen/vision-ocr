@@ -276,7 +276,7 @@ let label = CommandLine.arguments[2]
 let work = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("ln-\(UUID().uuidString)")
 try? FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
 defer { try? FileManager.default.removeItem(at: work) }
-Prefs.register(); UserDefaults.standard.set(false, forKey: Prefs.openWhenDone)
+Prefs.register(migrate: false); UserDefaults.standard.set(false, forKey: Prefs.openWhenDone)
 if CommandLine.arguments.count > 3,
    let f = Double(CommandLine.arguments[3]) { SearchableWriter.headroomFactor = CGFloat(f) }
 if CommandLine.arguments.count > 4,

@@ -492,11 +492,10 @@ func renderRotated(_ page: PDFPage, degrees: Double) -> (grey: [UInt8], width: I
 }
 
 if recoverRender {
-    let settings = Prefs.Snapshot(
-        mode: .searchablePDF, textFormat: .text, besideOriginal: false, useJBIG2: false,
-        photoDetail: .balanced, joinHyphenated: false, fast: false, languages: "",
-        languageCorrection: true, confidence: 0.0, pdfDPIAuto: true, pdfDPI: 0,
-        password: "", customWords: "", minTextHeightOn: false, minTextHeight: 0.0)
+    // Asked for, not transcribed — see the note at the second of these two, which
+    // is why this tool had stopped compiling altogether.
+    Prefs.register(migrate: false)
+    let settings = Prefs.Snapshot.current()
     func characters(_ grey: [UInt8], _ w: Int, _ h: Int) -> Int? {
         guard let image = greyImage(grey, width: w, height: h),
               let observations = try? Recogniser.recognise(image, settings: settings)
@@ -553,11 +552,14 @@ if recover {
     // killed deskew last time was damage to pages that were already fine, so a
     // run that only looked at crooked pages would be measuring the half that
     // cannot lose.
-    let settings = Prefs.Snapshot(
-        mode: .searchablePDF, textFormat: .text, besideOriginal: false, useJBIG2: false,
-        photoDetail: .balanced, joinHyphenated: false, fast: false, languages: "",
-        languageCorrection: true, confidence: 0.0, pdfDPIAuto: true, pdfDPI: 0,
-        password: "", customWords: "", minTextHeightOn: false, minTextHeight: 0.0)
+    // The shipped defaults, asked for rather than transcribed. Both of this file's
+    // `Prefs.Snapshot(...)` literals stopped compiling the moment the struct grew
+    // `preserveAnnotations` in `9684c3f`, so **this tool has not built since
+    // 2026-08-14** — verified by type-checking it at `9684c3f~1`, where it does.
+    // C25's shape, found by `Tools/check-tools-compile.sh`, which exists because of
+    // C25. Every field `Recogniser.recognise` reads is identical either way.
+    Prefs.register(migrate: false)
+    let settings = Prefs.Snapshot.current()
 
     func characters(_ image: CGImage) -> Int? {
         guard let observations = try? Recogniser.recognise(image, settings: settings)

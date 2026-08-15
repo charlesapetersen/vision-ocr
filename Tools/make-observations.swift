@@ -40,7 +40,7 @@ let source = URL(fileURLWithPath: arguments[1])
 let target = URL(fileURLWithPath: arguments[2])
 let password = arguments.count > 3 && !arguments[3].isEmpty ? arguments[3] : nil
 
-Prefs.register()
+Prefs.register(migrate: false)
 UserDefaults.standard.set(false, forKey: Prefs.openWhenDone)
 var settings = Prefs.Snapshot.current()
 settings.textFormat = .json

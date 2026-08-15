@@ -480,8 +480,22 @@ enum Prefs {
 
     /// Defaults chosen to match mac-ocr's own defaults, so an untouched
     /// settings panel behaves exactly like running the CLI bare.
-    static func register() {
-        migrateFromPreviousName()
+    ///
+    /// **`migrate: false` is for the tools, and it is not a nicety.** A tool in
+    /// `Tools/` has no bundle identifier, so `UserDefaults.standard` lands in a
+    /// domain keyed by its *process name* — and `migrateFromPreviousName` then
+    /// copies every setting out of `com.cp1.VisionReaderGUI` **and removes it from
+    /// there**, into a plist called `score-mrc.plist`. A measurement run would
+    /// consume the user's pre-rename migration and drop it somewhere the app will
+    /// never look, so the next real launch would find nothing to migrate: A4.3's
+    /// harm through a door A4.3 did not consider. It also means two runs of one
+    /// tool race on one file, which is the `tests.plist` hazard in CLAUDE.md.
+    ///
+    /// The registration itself is in-memory, so a tool calling
+    /// `register(migrate: false)` gets exactly the shipped defaults and writes
+    /// nothing at all. Every tool passes false; only the app migrates.
+    static func register(migrate: Bool = true) {
+        if migrate { migrateFromPreviousName() }
         UserDefaults.standard.register(defaults: [
             mode: Mode.searchablePDF.rawValue,
             besideOriginal: false,

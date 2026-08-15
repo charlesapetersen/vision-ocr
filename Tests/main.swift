@@ -9312,6 +9312,32 @@ do {
           d.string(forKey: Prefs.outputFolder) == nil,
           d.string(forKey: Prefs.outputFolder) ?? "nil")
 
+    // `register(migrate: false)` must not touch either domain. Every tool in
+    // `Tools/` passes it, because a tool has no bundle identifier: its
+    // `UserDefaults.standard` is a plist named after the *process*, so a migration
+    // there consumes the user's pre-rename settings, removes them from the old
+    // domain, and files them somewhere the app will never look. Found by reviewing
+    // the diff that put `Prefs.register()` into three more tools, and confirmed by
+    // the plists it had already created — `bin-score-skew.plist` and friends, each
+    // carrying `migratedFromVisionReaderGUI = 1`.
+    old.set("/Users/someone/Scans", forKey: Prefs.outputFolder)
+    for k in Prefs.allKeys { d.removeObject(forKey: k) }
+    d.removeObject(forKey: Prefs.migratedFromOldName)
+    Prefs.register(migrate: false)
+    check("register(migrate: false) imports nothing",
+          d.object(forKey: Prefs.outputFolder) == nil,
+          d.string(forKey: Prefs.outputFolder) ?? "nil")
+    check("…leaves the old domain intact",
+          old.string(forKey: Prefs.outputFolder) == "/Users/someone/Scans",
+          old.string(forKey: Prefs.outputFolder) ?? "nil")
+    check("…and does not claim to have migrated",
+          d.object(forKey: Prefs.migratedFromOldName) == nil)
+    // The registration still happened, or the tools would read an empty domain —
+    // which is divergence 5 of BUGS.md T15, where `languageCorrection` came back
+    // false against the app's true.
+    check("…while still registering the shipped defaults",
+          Prefs.Snapshot.current().languageCorrection)
+
     for k in Prefs.allKeys { old.removeObject(forKey: k) }
     d.removeObject(forKey: Prefs.migratedFromOldName)
     resetPrefs()
