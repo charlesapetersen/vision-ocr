@@ -239,7 +239,35 @@ struct SettingsView: View {
                 .accessibilityValue("\(pdfDPI)")
                 Spacer()
             }
-            .help("Higher DPI can rescue small print, at the cost of speed.")
+            // A10.2. Qualified, because on the shipped default route this setting
+            // cannot affect anything. Its only reader is `Recogniser.render`, which
+            // runs when `bitmaps` is empty — and with the rebuild on, every page
+            // arrives as a bitmap from `flatten`, which takes no DPI at all.
+            // Measured on one fixture: 1431 characters at Auto, 72 and 600 alike
+            // with the rebuild on; 1407 at 72 with it off. So the control is live in
+            // Extract Text, and in Searchable PDF with the rebuild off, and inert
+            // otherwise.
+            //
+            // A caption rather than a code change on purpose. H1 deleted
+            // `ocrAllPages` and `strategy` for being settings that did nothing, and
+            // this is not that: it does something in two of the four states. What
+            // was wrong was the panel asserting it unconditionally while
+            // `pageTooLarge`'s own error text already said "does not affect this
+            // step" — the app holding two opinions about one control.
+            .help("Higher DPI can rescue small print, at the cost of speed.\n\n"
+                  + "Only applies when Vision reads the pages as they are: in Extract "
+                  + "Text, and in Searchable PDF with “Rebuild page images first” "
+                  + "turned off. With the rebuild on, the pages are re-rendered at a "
+                  + "resolution taken from the file itself and this has no effect.")
+            if mode == .searchablePDF, rebuildImages {
+                Row("", labelWidth) {
+                    Text("Not in use: the rebuild renders the pages, so this DPI is "
+                         + "ignored for this run.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                }
+            }
 
             Row("Ignore small text", labelWidth) {
                 Toggle("", isOn: $minTextHeightOn).labelsHidden().toggleStyle(.checkbox)
@@ -336,19 +364,6 @@ struct SettingsView: View {
                           + "chosen below. It runs on files that already contain text, and "
                           + "on all of them when JBIG2 is on below, since JBIG2 needs the "
                           + "pages as bitmaps.")
-
-                if rebuildImages {
-                    Toggle("Ask first if a PDF already has selectable text",
-                           isOn: $warnDigitalText)
-                        .help("The rebuild discards any existing text layer. For a scan "
-                              + "that layer is a previous OCR pass and losing it is the "
-                              + "point. For a born-digital PDF it is the real text, and "
-                              + "OCR of a picture of it is worse — measured on one such "
-                              + "book, 9% of the words were lost. This asks before "
-                              + "replacing text that was not produced by OCR; turn it off "
-                              + "if you are deliberately re-OCRing files whose embedded "
-                              + "text is broken.")
-                }
 
                 Toggle("Keep highlights and notes", isOn: $preserveAnnotations)
                     .help("Rebuilding a page turns it into an image, and a highlight or a "
@@ -448,6 +463,32 @@ struct SettingsView: View {
                         .foregroundStyle(.orange)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+            }
+
+            // Outside the switch, and guarded by the *same* predicate `start()`
+            // uses (A10.1). It used to be drawn inside `case .searchablePDF` and
+            // under `if rebuildImages`, so in Extract Text — where the setting is
+            // just as live — there was no control for it anywhere: tick "Don't ask
+            // again" once and Extract Text silently OCRs a picture of good text,
+            // with nothing in the panel able to turn the question back on.
+            if OCRModel.warnsAboutDigitalText(mode: mode, rebuildImages: rebuildImages) {
+                Toggle("Ask first if a PDF already has selectable text",
+                       isOn: $warnDigitalText)
+                    .help(mode == .text
+                          ? "A born-digital PDF already holds its real text. OCR reads a "
+                            + "picture of that text instead, and comes out worse — measured "
+                            + "on one such book, 9% of the words were lost. Nothing is "
+                            + "overwritten in this mode; the question is which text ends up "
+                            + "in the output file. Turn it off if you are deliberately "
+                            + "OCRing files whose embedded text is broken."
+                          : "The rebuild discards any existing text layer. For a scan "
+                            + "that layer is a previous OCR pass and losing it is the "
+                            + "point. For a born-digital PDF it is the real text, and "
+                            + "OCR of a picture of it is worse — measured on one such "
+                            + "book, 9% of the words were lost. This asks before "
+                            + "replacing text that was not produced by OCR; turn it off "
+                            + "if you are deliberately re-OCRing files whose embedded "
+                            + "text is broken.")
             }
         }
     }

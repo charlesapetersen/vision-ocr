@@ -111,17 +111,29 @@ enum Prefs {
         }
 
         /// What the preset is for, in the user's terms.
+        ///
+        /// **A10.3: these have to describe what the preset writes, not what its
+        /// name suggests.** Newspaper's used to promise that it "keeps every
+        /// uncertain word, because a rough guess at a smudged word is still
+        /// findable" — which is true of the app, and true of every other preset,
+        /// and true of the defaults. `confidence = 0.0` is what `register()`
+        /// already sets. Newspaper and Book scan write byte-identical values, so
+        /// two of the four buttons are "restore the defaults" under names that say
+        /// what material those defaults suit. That is a reasonable thing for them
+        /// to be; claiming a distinguishing behaviour they do not have is not, and
+        /// the suite now requires any preset equal to the defaults to say so.
         var blurb: String {
             switch self {
             case .newspaper:
-                return "Dense columns on poor paper. Keeps every uncertain word, "
-                     + "because a rough guess at a smudged word is still findable."
+                return "Dense columns on poor paper — the settings this app already "
+                     + "defaults to, which suit newsprint as they come."
             case .typescript:
-                return "Carbon copies and mimeographs. Aged paper reads as tinted, "
-                     + "so this leans on the layout signals rather than colour."
+                return "Carbon copies and mimeographs. The defaults with language "
+                     + "correction off, because it is tuned for prose and a typescript "
+                     + "is full of names, abbreviations and struck-through text."
             case .photographs:
-                return "Plates and illustrated pages. Keeps picture detail at the "
-                     + "cost of size."
+                return "Plates and illustrated pages. The defaults with picture detail "
+                     + "at maximum, which costs size."
             case .bookScan:
                 return "Printed books. The settings this app already defaults to."
             }

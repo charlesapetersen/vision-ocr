@@ -3786,6 +3786,116 @@ Four checks, including the inverse row (a count cannot resurrect a setting that 
 the existing 4d enumeration that every `Snapshot` field maps to a row. Mutant:
 `A9.2-jbig2-row-is-the-route`.
 
+### R69 · Extract Text could be made to silently OCR a picture of good text — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A10.1.)*
+
+The born-digital pre-flight applies in **Extract Text** as well — `couldReadInstead = mode ==
+.text` — but the only control bound to `warnDigitalText` was drawn inside
+`case .searchablePDF:` **and** `if rebuildImages`. Measured against the real `start()`:
+
+```
+TEXT mode, warn=on,  rebuild=on   -> alert fires
+TEXT mode, warn=on,  rebuild=OFF  -> alert fires
+TEXT mode, warn=off, ...          -> no
+```
+
+**The trigger.** Work in Extract Text. Drop a born-digital PDF, get the alert, tick **Don't
+ask again**. From then on Extract Text silently OCRs a picture of text the file was carrying
+perfectly well — the loss the alert's own wording puts at **9% of the words** — and **no
+control in the panel can turn the question back on**, because the only one lives in the other
+mode, under a toggle that mode does not have. The routes back were Reset to Defaults, or
+switching mode, opening Settings, and switching back.
+
+U19 and U23 are entries about a property enforced only in the view. **This is the inverse: a
+live setting *hidden* by the view in a state where it still applies.** Both are fixed the same
+way — `OCRModel.warnsAboutDigitalText(mode:rebuildImages:)`, one function, read by `start()`
+and by the panel, so neither can hold a second opinion. The toggle moved out of the `switch`
+and is guarded by that predicate.
+
+**And the alert named a harm that cannot happen there.** "Rebuilding the pages as images
+discards that text" is false for Extract Text, which rebuilds nothing and discards nothing —
+`start()`'s own comment says so. A message describing destruction that is not on offer pushes
+the user toward Cancel for a reason that does not exist, which is A3.3's shape in an alert
+instead of an error. The wording is now mode-aware and keeps the 9% figure, which is the real
+cost in both modes. *(A5.4 recorded this as a `json`/`jsonl` problem; it was wrong for every
+Extract Text format, because `digitalTextWarning` took no mode at all.)*
+
+Checks: the four-state table through the predicate, the panel-source check that the toggle is
+inside that guard, the real `start()` driven in Extract Text with the rebuild **off** — the
+state the review measured — and six on the two wordings. Mutants:
+`A10.1-warn-applies-in-text`, `A10.1-alert-wording-by-mode`.
+
+### R70 · "PDF render DPI" is inert on the default route and said otherwise — FIXED *(the panel)*
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A10.2.)*
+
+Its only reader is `Recogniser.render`, reached only when `bitmaps` is empty — and with the
+rebuild on, every page arrives as a bitmap from `flatten`, which takes no DPI at all:
+
+| | Auto | 72 | 600 |
+|---|---|---|---|
+| chars, rebuild **on** | 1431 | **1431** | **1431** |
+| chars, rebuild **off** | 1431 | 1407 | 1431 |
+
+**Fixed as a caption, not a code change**, and the distinction matters: H1 deleted
+`ocrAllPages` and `strategy` for being settings that did nothing, and this is not that — it is
+live in Extract Text and in Searchable PDF with the rebuild off, i.e. in two of four states.
+What was wrong was the panel asserting it unconditionally while `pageTooLarge`'s own error
+text already said the setting "does not affect this step": the app holding two opinions about
+one control. The help text now names the states it applies in, and a caption appears under the
+stepper when the current state is not one of them.
+
+### R71 · Two presets are byte-identical and one of them claimed otherwise — FIXED *(the prose)*
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A10.3.)*
+
+Fingerprinted over every key a preset may write: **Newspaper and Book scan write exactly the
+same eight values, and both equal `register()`'s own.** Typescript differs in one bit
+(`languageCorrection`), Photographs in one (`photoDetail`). So of four buttons, two are
+"restore the defaults" under names that say which material those defaults suit.
+
+**The code is honest about this and the blurbs were not.** Newspaper promised it "keeps every
+uncertain word, because a rough guess at a smudged word is still findable" — which is
+`confidence = 0.0`, the registered default, and true of every other preset too. The class doc
+already states the rule the code follows ("where nothing has been measured the preset leaves
+the setting alone"), so the fix is the prose.
+
+**Not fixed by inventing differences.** Giving Newspaper a distinct value to justify its blurb
+would be calibrating a constant to make a sentence true, which is this register's own worst
+recurring mistake.
+
+**The check maintains itself.** The old guard compared **one key**, only Photographs against
+Newspaper, so it said nothing about the other five pairs. The new property is: *a preset that
+writes exactly the defaults has to say so in its blurb*, the way Book scan already did. Give
+Newspaper a real distinct value later and the fingerprint stops matching, so the requirement
+lifts on its own. Plus a check naming which pairs are identical, and an inverse row so it
+cannot be satisfied by an `apply` that writes nothing. Mutant: `A10.3-newspaper-blurb`.
+
+### R72 · The updater opened whatever URL the response body named — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A4.2.)*
+
+`Updater.parse` accepted any `URL(string:)` for `html_url` and `ContentView` handed it straight
+to `NSWorkspace.shared.open`. Verified against the real parser:
+`file:///Applications/Calculator.app` accepted, `x-fake-handler://run?cmd=…` accepted,
+`https://not-github.example/evil` accepted. So whoever controls the response body could make
+the Download button open an arbitrary local file or any registered scheme handler.
+
+**Fixed** by `isOfferableURL`: `https` only. Refused as `.unreadable` rather than
+`.notAnOffer`, because a response this app cannot trust is a *failed* check — `notAnOffer`
+would mean the endpoint answered and had nothing, which stops the retry (U25's
+ninety-six-requests-a-day case).
+
+**The host is deliberately not pinned, and that is a decision rather than an omission.** `https`
+alone closes the two cases where opening the URL does something other than show a web page. A
+host pin would additionally refuse `https://not-github.example/evil`, whose marginal harm over
+publishing a malicious GitHub release page is nothing — an attacker who can rewrite this
+response can rewrite the page it points at. Against that, a pin is a second place to edit if
+the release page ever moves, and its failure mode is that updates stop being offered with no
+error anywhere, which is the shape most of this register already is. Six checks, including the
+inverse row that an ordinary `https` page is still offered and that the predicate is
+scheme-based rather than host-based. Mutant: `A4.2-update-url-scheme`.
+
+*(A4.2 also records that `release.notes` is parsed, unbounded at 200,000 characters, and never
+displayed. Still true, still harmless, and still worth deleting when the notes get a surface.)*
+
 ---
 ## The interface
 

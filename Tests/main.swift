@@ -737,6 +737,52 @@ do {
           "photographs \(photoDetail ?? "nil") vs newspaper "
             + "\(d.string(forKey: Prefs.photoDetail) ?? "nil")")
 
+    // A10.3. The check above compares **one key**, and only Photographs against
+    // Newspaper, so it says nothing about the other five pairs. Fingerprinted over
+    // every key a preset may write: Newspaper and Book scan are byte-identical,
+    // and both equal `register()`'s own values, so of four buttons two are
+    // "restore defaults" under other names. The code is honest about that; the
+    // blurbs were not — Newspaper's "keeps every uncertain word" **is** the
+    // registered default.
+    //
+    // So the property is not "all four differ" (they do not, and forcing them to
+    // would be inventing settings nothing measured). It is: **a preset that writes
+    // exactly the defaults has to say so**, the way Book scan already does. That
+    // check maintains itself — give Newspaper a real distinct value later and the
+    // fingerprint stops matching, so the requirement lifts on its own.
+    func fingerprint(_ preset: Prefs.Preset?) -> [String: String] {
+        resetPrefs(); Prefs.register()
+        preset?.apply()
+        return Prefs.Preset.keysWritten.reduce(into: [String: String]()) {
+            $0[$1] = String(describing: d.object(forKey: $1))
+        }
+    }
+    let defaults = fingerprint(nil)
+    var prints: [Prefs.Preset: [String: String]] = [:]
+    for preset in Prefs.Preset.allCases { prints[preset] = fingerprint(preset) }
+
+    for preset in Prefs.Preset.allCases where prints[preset] == defaults {
+        check("\(preset.label) writes the registered defaults, so its blurb says so",
+              preset.blurb.lowercased().contains("default"),
+              "\(preset.label): \(preset.blurb)")
+    }
+    // And the pairs that *are* identical are named, so nobody has to re-derive
+    // which buttons are the same button. Reported rather than refused: this is a
+    // fact about a deliberate design, not a defect.
+    let identical = Prefs.Preset.allCases.flatMap { a in
+        Prefs.Preset.allCases.filter { b in
+            a.rawValue < b.rawValue && prints[a] == prints[b]
+        }.map { "\(a.label)=\($0.label)" }
+    }
+    check("the identical presets are the two this register records",
+          identical == ["Book scan=Newspaper"] || identical == ["Newspaper=Book scan"],
+          identical.isEmpty ? "none identical — the blurbs need revisiting"
+                            : identical.joined(separator: ", "))
+    // Not vacuous: at least one preset must be genuinely distinct, or "identical"
+    // above could be satisfied by an `apply` that writes nothing at all.
+    check("…and at least one preset really is different from the defaults",
+          Prefs.Preset.allCases.contains { prints[$0] != defaults })
+
     // Photographs is the one preset that spends bytes on pictures.
     resetPrefs(); Prefs.register()
     Prefs.Preset.photographs.apply()
@@ -4068,6 +4114,36 @@ do {
     check("junk is refused rather than guessed at",
           Updater.release(from: Data("not json".utf8)) == nil
           && Updater.release(from: Data()) == nil)
+
+    // A4.2. The URL out of the response went straight to NSWorkspace.open, so
+    // whoever controls the response body chose what the Download button opened.
+    // All three of these were accepted by the real parser before the guard.
+    for hostile in ["file:///Applications/Calculator.app",
+                    "x-fake-handler://run?cmd=rm",
+                    "ftp://example.com/payload",
+                    "javascript:alert(1)"] {
+        check("an update URL with scheme \(hostile.prefix(12))… is refused",
+              Updater.release(from: Data("""
+              {"tag_name":"v9.9.9","html_url":"\(hostile)"}
+              """.utf8)) == nil,
+              hostile)
+    }
+    // Refused as *unreadable*, not as "no update": a response this app cannot
+    // trust is a failed check, and `notAnOffer` would mean the endpoint answered
+    // and had nothing — which stops the retry (U25's ninety-six-requests case).
+    check("…and refused as unreadable rather than as a successful non-offer",
+          Updater.parse(Data("""
+          {"tag_name":"v9.9.9","html_url":"file:///tmp/x"}
+          """.utf8)) == .unreadable)
+    // The inverse row: https still works, or the guard would be satisfied by an
+    // updater that refuses everything.
+    check("…while an ordinary https release page is still offered",
+          Updater.release(from: Data("""
+          {"tag_name":"v9.9.9","html_url":"https://github.com/x/y/releases/tag/v9.9.9"}
+          """.utf8))?.version == "9.9.9")
+    check("…and the predicate itself is scheme-based, not host-based",
+          Updater.isOfferableURL(URL(string: "https://not-github.example/evil")!)
+            && !Updater.isOfferableURL(URL(string: "http://github.com/x")!))
     // A prerelease is a *successful* check with nothing to offer, and a
     // truncated response is a failure. `release(from:)` returns nil for both,
     // and `check` treats nil as failure — which spends fifteen minutes and
@@ -7001,11 +7077,105 @@ do {
           flagged.map(\.lastPathComponent).joined(separator: ","))
 
     // 5. The wording names the files and is honest about the cost.
-    let warning = OCRModel.digitalTextWarning(for: [digital], of: 3)
+    let warning = OCRModel.digitalTextWarning(for: [digital], of: 3, mode: .searchablePDF)
     check("the warning names the file", warning.contains("born-digital.pdf"), warning)
     check("…says how much of the batch it is", warning.contains("1 of 3"), warning)
     check("…and says re-OCRing is legitimate when the text is broken",
           warning.lowercased().contains("broken"), warning)
+    // A5.4, as corrected by A10.1: the un-qualified wording named a harm that
+    // cannot happen in Extract Text. Nothing is rebuilt and nothing is discarded
+    // in that mode — `start()`'s own comment says so — and a message describing
+    // destruction that is not on offer pushes the user toward Cancel for a reason
+    // that does not exist. It was wrong for *every* text format, not only json.
+    let textWarning = OCRModel.digitalTextWarning(for: [digital], of: 3, mode: .text)
+    check("the Extract Text wording does not claim the pages are rebuilt",
+          !textWarning.contains("Rebuilding the pages"), textWarning)
+    check("…and does not claim anything is discarded or replaced",
+          !textWarning.contains("discards") && !textWarning.contains("replaces"),
+          textWarning)
+    check("…but still names the 9% loss, which is the real cost",
+          textWarning.contains("9% of the words"), textWarning)
+    check("…and still names the file and the scope",
+          textWarning.contains("born-digital.pdf") && textWarning.contains("1 of 3"))
+    check("…while the Searchable PDF wording keeps the harm that is real there",
+          warning.contains("Rebuilding the pages"), warning)
+
+    // 5b. A10.1. The setting is live in four states and its control was drawn in
+    // one of them. Enumerated as a table rather than reasoned about in pairs
+    // (CONTRIBUTING 4d), and driven through the **real** `start()`, because the
+    // defect was precisely that the panel's condition and `start()`'s condition
+    // were two different expressions of one rule.
+    //
+    // The harm: work in Extract Text, get the alert, tick "Don't ask again". From
+    // then on Extract Text silently OCRs a picture of good text — 9% of the words
+    // — and no control in the panel can turn it back on, because the only one
+    // lived in the other mode under a toggle that mode does not have.
+    do {
+        let table: [(Prefs.Mode, Bool, Bool)] = [
+            (.searchablePDF, true,  true),    // rebuild destroys the real text (C17)
+            (.searchablePDF, false, false),   // nothing is discarded, nothing to ask
+            (.text,          true,  true),    // OCR of a picture of good text
+            (.text,          false, true),    // …and the rebuild flag is irrelevant here
+        ]
+        for (mode, rebuild, expected) in table {
+            check("the warning applies in \(mode.rawValue), rebuild "
+                    + "\(rebuild ? "on" : "off"): \(expected)",
+                  OCRModel.warnsAboutDigitalText(mode: mode, rebuildImages: rebuild)
+                    == expected)
+        }
+
+        // And the panel draws the toggle under that predicate rather than under a
+        // second opinion. A source check, because the alternative is instantiating
+        // a SwiftUI view: what it holds is that the control is inside the guard,
+        // which is the whole of the defect.
+        let panel = (try? String(contentsOfFile: "Sources/SettingsView.swift",
+                                 encoding: .utf8)) ?? ""
+        check("the panel draws the toggle under the model's own predicate",
+              panel.contains("OCRModel.warnsAboutDigitalText(mode: mode, "
+                             + "rebuildImages: rebuildImages)"),
+              panel.isEmpty ? "could not read SettingsView.swift" : "predicate not used")
+        // The toggle must not be back inside the rebuild-only branch. `range(of:)`
+        // on the two positions: the guard has to come *before* the toggle.
+        if let guardAt = panel.range(of: "warnsAboutDigitalText"),
+           let toggleAt = panel.range(of: "Ask first if a PDF already has selectable text") {
+            check("…and the toggle is the thing that guard governs",
+                  guardAt.lowerBound < toggleAt.lowerBound)
+        } else {
+            check("the panel still has the toggle and the guard", false)
+        }
+
+        // The real `start()`, for the one state the review measured as broken:
+        // Extract Text with the rebuild off. If the pre-flight does not fire here
+        // the whole predicate is decoration.
+        resetPrefs()
+        let d2 = UserDefaults.standard
+        d2.set(true, forKey: Prefs.warnDigitalText)
+        d2.set(false, forKey: Prefs.rebuildImages)
+        d2.set(Prefs.Mode.text.rawValue, forKey: Prefs.mode)
+        d2.set(Prefs.TextFormat.text.rawValue, forKey: Prefs.textFormat)
+        var askedInTextMode = false
+        let asked2 = DispatchSemaphore(value: 0)
+        let m2 = MainActor.assumeIsolated { OCRModel() }
+        OCRModel.digitalTextDecisionForTesting = { _, _ in
+            askedInTextMode = true
+            asked2.signal()
+            return .cancel
+        }
+        MainActor.assumeIsolated {
+            m2.besideOriginal = true
+            _ = m2.add([digital])
+            m2.start()
+        }
+        let began = Date()
+        while asked2.wait(timeout: .now()) == .timedOut,
+              Date().timeIntervalSince(began) < 30 {
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+        }
+        check("Extract Text with the rebuild off still asks about born-digital text",
+              askedInTextMode, "the pre-flight never fired")
+        OCRModel.digitalTextDecisionForTesting = nil
+        resetPrefs()
+    }
 
     // 6. Extract Text has a strictly better answer than OCR for these files:
     //    read the text out. Verify it round-trips and beats what OCR would give.

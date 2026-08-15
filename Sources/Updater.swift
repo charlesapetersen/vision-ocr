@@ -84,7 +84,8 @@ enum Updater {
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let tag = root["tag_name"] as? String,
               let page = root["html_url"] as? String,
-              let url = URL(string: page) else { return .unreadable }
+              let url = URL(string: page),
+              isOfferableURL(url) else { return .unreadable }
         // Drafts and prereleases are not offers — but they are answers.
         if root["draft"] as? Bool == true || root["prerelease"] as? Bool == true {
             return .notAnOffer
@@ -93,6 +94,38 @@ enum Updater {
         guard !version.isEmpty, version.first?.isNumber == true else { return .unreadable }
         return .offer(Release(version: version, url: url,
                               notes: root["body"] as? String ?? ""))
+    }
+
+    /// Whether a URL out of the response is one we will hand to
+    /// `NSWorkspace.open`.
+    ///
+    /// A4.2. `parse` accepted any `URL(string:)` and `ContentView` handed it
+    /// straight to `NSWorkspace.shared.open`, so whoever controls the response body
+    /// controls what the Download button opens. Verified against the real parser
+    /// before this guard: `file:///Applications/Calculator.app` accepted,
+    /// `x-fake-handler://run?cmd=…` accepted, `https://not-github.example/evil`
+    /// accepted.
+    ///
+    /// It needs control of the HTTPS response to matter — ATS is in force with no
+    /// exceptions, so there is no plain MITM — and the marginal gain over simply
+    /// publishing a malicious release page is the `file://` and custom-scheme
+    /// cases. Which is exactly why the guard is cheap and worth having.
+    ///
+    /// **Scheme only, and the host deliberately not pinned.** `https` alone closes
+    /// both cases that are actually worth closing — a local file and a registered
+    /// custom scheme — because those are the two where opening the URL does
+    /// something other than show a web page. What a host pin would add is refusing
+    /// `https://not-github.example/evil`, whose marginal harm over simply
+    /// publishing a malicious GitHub release page is nothing, since an attacker who
+    /// can rewrite this response can equally rewrite the page it points at.
+    ///
+    /// Against that, a host pin has a real cost in the other direction: it is a
+    /// second place that has to be edited if the release page ever moves, and the
+    /// failure mode is that updates stop being offered with no error anywhere. This
+    /// project's own register is mostly entries where the app quietly stopped doing
+    /// something. So: `https`, and a comment rather than a constant.
+    static func isOfferableURL(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "https"
     }
 
     /// The offer alone, for callers that do not care why there is not one.

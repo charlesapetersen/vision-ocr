@@ -911,19 +911,62 @@ final class OCRModel: ObservableObject {
                                        mode: mode, available: jbig2Available)
     }
 
-    nonisolated static func digitalTextWarning(for digital: [URL], of total: Int) -> String {
+    /// Whether the born-digital pre-flight applies in this state — **and
+    /// therefore whether the settings panel has to show its toggle** (A10.1).
+    ///
+    /// One predicate with two readers, on purpose. `start()` decided this inline
+    /// and `SettingsView` drew the control under a *different* condition
+    /// (`case .searchablePDF` **and** `if rebuildImages`), so in Extract Text the
+    /// setting was live and its only control was in the other mode, under a toggle
+    /// that mode does not have. Tick "Don't ask again" once there and Extract Text
+    /// silently OCRs a picture of good text — the loss the alert itself puts at 9%
+    /// of the words — with **no control in the panel able to turn it back on**.
+    /// The routes back were Reset to Defaults, or switching mode, opening
+    /// Settings, and switching back.
+    ///
+    /// U19 and U23 are about a property enforced only in the view. This is the
+    /// inverse: a live setting *hidden* by the view in a state where it still
+    /// applies. Both are fixed the same way — one function, and nobody gets to
+    /// hold a second opinion.
+    nonisolated static func warnsAboutDigitalText(mode: Prefs.Mode,
+                                                  rebuildImages: Bool) -> Bool {
+        switch mode {
+        // Searchable PDF + rebuild *destroys* the existing text (C17).
+        case .searchablePDF: return rebuildImages
+        // Extract Text destroys nothing — but it still hands back OCR of a picture
+        // of text the file was carrying perfectly well, which for plain text this
+        // app can simply read out instead.
+        case .text: return true
+        }
+    }
+
+    nonisolated static func digitalTextWarning(for digital: [URL], of total: Int,
+                                              mode: Prefs.Mode) -> String {
         let names = digital.prefix(5).map(\.lastPathComponent).joined(separator: "\n• ")
         let more = digital.count > 5 ? "\n• …and \(digital.count - 5) more" : ""
         let subject = digital.count == 1 ? "This file already contains" : "These files already contain"
         let scope = digital.count == total
             ? ""
             : " (\(digital.count) of \(total) in the batch)"
+        // Mode-aware, because the un-qualified wording named a harm that cannot
+        // happen in Extract Text — nothing is rebuilt and nothing is discarded,
+        // and `start()`'s own comment says so. A message describing destruction
+        // that is not on offer pushes the user toward Cancel for the wrong reason,
+        // which is A3.3's shape in an alert instead of an error (A5.4, corrected by
+        // A10.1: it is wrong for *every* Extract Text format, not only json).
+        let harm = mode == .text
+            ? "\n\nOCR would read a picture of that text instead of the text itself, and "
+                + "come out worse — measured on one such book, 9% of the words were lost and "
+                + "about one word in seven of the rest was an OCR error. Nothing is "
+                + "overwritten either way; this is about which text ends up in the output.\n\n"
+                + "If the existing text is broken, OCR is the right thing to use."
+            : "\n\nRebuilding the pages as images discards that text and replaces it with "
+                + "Vision's, which is usually worse — measured on one such book, 9% of the "
+                + "words were lost and about one word in seven of the rest was an OCR "
+                + "error.\n\nIf the existing text is broken, re-OCRing is the right thing "
+                + "to do."
         return "\(subject) selectable text that was not produced by OCR\(scope):\n\n• "
-            + names + more
-            + "\n\nRebuilding the pages as images discards that text and replaces it with "
-            + "Vision's, which is usually worse — measured on one such book, 9% of the words "
-            + "were lost and about one word in seven of the rest was an OCR error.\n\n"
-            + "If the existing text is broken, re-OCRing is the right thing to do."
+            + names + more + harm
     }
 
     /// `note`, when there is one, is the first line of the run log: why this
@@ -938,17 +981,15 @@ final class OCRModel: ObservableObject {
         // is still expanding is U1's "8,001 rows over Done — 1 of 1 succeeded".
         guard !files.isEmpty, !isRunning, !isPreflighting, !isImporting else { return }
 
-        // Two different wrongs, both worth stopping for.
-        //
-        // Searchable PDF + rebuild *destroys* the existing text (C17). Extract
-        // Text destroys nothing — but it still hands back OCR of a picture of
-        // text the file was carrying perfectly well, which for the plain-text
-        // format this app can simply read out instead.
+        // Two different wrongs, both worth stopping for — and the condition lives
+        // in `warnsAboutDigitalText` rather than here, because the settings panel
+        // has to draw the toggle under exactly this condition and used not to
+        // (A10.1).
         let d = UserDefaults.standard
         let mode = Prefs.Mode(rawValue: d.string(forKey: Prefs.mode) ?? "") ?? .searchablePDF
-        let willDiscardText = mode == .searchablePDF && d.bool(forKey: Prefs.rebuildImages)
-        let couldReadInstead = mode == .text
-        guard willDiscardText || couldReadInstead, d.bool(forKey: Prefs.warnDigitalText) else {
+        guard Self.warnsAboutDigitalText(
+                  mode: mode, rebuildImages: d.bool(forKey: Prefs.rebuildImages)),
+              d.bool(forKey: Prefs.warnDigitalText) else {
             run(files, note: note)
             return
         }
@@ -1033,7 +1074,7 @@ final class OCRModel: ObservableObject {
         alert.messageText = digital.count == 1
             ? "This PDF already has selectable text."
             : "\(digital.count) of these PDFs already have selectable text."
-        alert.informativeText = Self.digitalTextWarning(for: digital, of: total)
+        alert.informativeText = Self.digitalTextWarning(for: digital, of: total, mode: mode)
         alert.alertStyle = .warning
 
         var actions: [DigitalTextChoice] = []

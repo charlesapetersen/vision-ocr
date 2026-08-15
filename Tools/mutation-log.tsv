@@ -37,3 +37,7 @@ logic/R39-auto-vs-engine	killed	123	2 check(s): on Automatic, a ceiling below th
 logic/detects-language-when-none-named	killed	118	1 check(s): no language named means Vision is asked to detect one
 logic/A9.1-loginshell-last-line	killed	272	2 check(s): a startup file's chatter does not hide an installed tool; …nor does a multi-line one
 logic/A9.2-jbig2-row-is-the-route	killed	273	3 check(s): the JBIG2 row does not claim a route no file took; …and says so in words rather than by omission; …and counts the files that really took it
+logic/A10.1-warn-applies-in-text	killed	302	2 check(s): the warning applies in text, rebuild off: true; Extract Text with the rebuild off still asks about born-digital text
+logic/A10.1-alert-wording-by-mode	killed	272	2 check(s): the Extract Text wording does not claim the pages are rebuilt; …and does not claim anything is discarded or replaced
+logic/A10.3-newspaper-blurb	killed	273	1 check(s): Newspaper writes the registered defaults, so its blurb says so
+logic/A4.2-update-url-scheme	killed	274	5 check(s): an update URL with scheme file:///Appl… is refused; an update URL with scheme x-fake-handl… is refused; an update URL with scheme ftp://exampl… is refused

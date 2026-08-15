@@ -195,6 +195,27 @@ OPERATORS = [
      "alsoClaimed: [], releasing: [])", "R60-retry-reservations"),
     ("Model.swift", "defer { self.isPreflighting = false }",
      "self.isPreflighting = false", "U21-committed-across-alert"),
+    # A10.1. The predicate back to the panel's old opinion of it: in Extract Text
+    # the question then depends on a toggle that mode does not have, which is how a
+    # dismissed alert became unreachable and Extract Text silently OCR'd a picture
+    # of good text.
+    ("Model.swift", "        case .text: return true",
+     "        case .text: return rebuildImages", "A10.1-warn-applies-in-text"),
+    # A10.1's other half: the alert naming a harm that cannot happen in that mode.
+    ("Model.swift", "        let harm = mode == .text",
+     "        let harm = false && mode == .text", "A10.1-alert-wording-by-mode"),
+    # A4.2. The update URL unvalidated again, so the response body chooses what the
+    # Download button opens - file:// and any registered scheme handler included.
+    ("Updater.swift", "              isOfferableURL(url) else { return .unreadable }",
+     "              true else { return .unreadable }", "A4.2-update-url-scheme"),
+    # A10.3. Newspaper's blurb claiming a behaviour that is the registered default,
+    # over values byte-identical to Book scan's.
+    ("Prefs.swift",
+     "                return \"Dense columns on poor paper — the settings this app already \"\n"
+     "                     + \"defaults to, which suit newsprint as they come.\"",
+     "                return \"Dense columns on poor paper. Keeps every uncertain word, \"\n"
+     "                     + \"because a rough guess at a smudged word is still findable.\"",
+     "A10.3-newspaper-blurb"),
     # R64 / A4.1. Puts the document's own text back into the message that goes into
     # a file the user is invited to mail to someone. Run by hand before the
     # catalogue got it: 2 checks red, and the failure detail printed the excerpt.
