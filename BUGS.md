@@ -5157,13 +5157,25 @@ field-count defects below, by looking for the same shape)*
 `[1, n/3, n/2, n*3/4]` is `[1, 1, 2, 3]`.
 
 **And the same expression is `[]` for n ≤ 3, which is worse and is not in A12.8.** Counted
-from `CORPUS-2026-08-15.tsv`: **47 of 233 corpus documents have 1–3 pages**, and on every
-one of them the tool printed its header, printed its summary, and measured **nothing** —
-`no picture-route pages measured`, exit 0, indistinguishable from a document with no
-picture pages in it. 9 more have exactly 4 pages and got a single page. So the sample was
-27 documents over-weighted, 47 empty, 9 thin. The `filter { $0 > 0 }` that produced the
-empty sample was there to drop index 0, which is the one page the replacement deliberately
-skips anyway.
+from `CORPUS-2026-08-15.tsv`: **47 of 233 corpus documents have 1–3 pages**. 9 more have
+exactly 4 pages and got a single page. So the sample was 27 documents over-weighted, 47
+empty, 9 thin. The `filter { $0 > 0 }` that produced the empty sample was there to drop
+index 0, which is the one page the replacement deliberately skips anyway.
+
+**Verified by running the pre-commit tool, not by reading it.** Built at `6fdd000` and
+pointed at a real 2-page corpus document:
+
+```
+$ score-text-route@6fdd000 "testdocs/newspaperArticle/Zipkin_2000_Management.pdf"
+page  route  sat  tone  inkOut  layered  1bit  delta  verdict
+
+no picture-route pages measured                                       exit=0
+```
+
+A bare header, the "nothing here" summary, and **exit 0** — indistinguishable from a
+document with no picture pages in it. The same document through the fixed tool measures
+both pages and finds one picture page worth **238,176 bytes** of difference between the two
+routes. A silent zero from an instrument whose output three documents cite.
 
 Both tools *average over the sample they draw*,
 so a repeated page is a page weighted twice in the answer, and `score-routing` reports a

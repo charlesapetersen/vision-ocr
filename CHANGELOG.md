@@ -733,7 +733,16 @@ were holding every percentile up.
 `Tools/sample-zotero.py` now classifies every candidate and keeps only scans,
 using the same `Flattener.pageIsAnImage` the app uses to decide whether it is
 about to discard someone's text — one rule, not two that drift. `manuscript` and
-`letter` are excluded outright as Archive Processor's material. New flags:
+`letter` are excluded outright as Archive Processor's material.
+
+*(**That last clause was false and stayed false for a week.** The gate compiled against
+`Flattener` and then computed its own page-image test from a max over five pages combined
+with a median over those pages — two rules, drifting, in the sentence claiming one. Fixed
+2026-08-15, `BUGS.md` T17; the corpus it drew is 230 scans, not 233. The counts in this
+entry are the old predicate's.)*
+
+New flags:
+
 `--added-since`, `--exclude-manifest`, `--types`, and `--allow-any-kind` for
 reproducing an old corpus, which says in its help what that costs.
 

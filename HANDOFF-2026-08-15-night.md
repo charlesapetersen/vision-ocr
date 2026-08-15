@@ -94,6 +94,43 @@ All fixed in the same commit. Eleven were in prose. The ones worth carrying forw
 
 One review agent over a finished diff, after the work was done. It keeps paying.
 
+## The hand-off audit, and what it found
+
+Every figure in this file and in the commit before it was recomputed from
+`CORPUS-2026-08-15.tsv` and from `git`, because the last three sessions each put a wrong
+number into a commit and nothing in this repository checks one. All of them reproduce:
+233 documents / 16,987 pages, 230/2/1 at 98.7/0.9/0.4%, `digitalText=yes` on exactly 2,
+minimum `imagePages` 1, majority rule 7, all-pages rule 21, 9 pages of 16,987 (0.053%),
+47 documents of 1–3 pages and 27 of 5–11, five `OPEN` entries, one commit of 23 files
++1760/−166, corpus 1.2 GB with 233 manifest rows against 233 PDFs on disk. Every markdown
+link in the files this session touched resolves, and every register ID they cite has a
+heading.
+
+**Then the audit found two more claims this commit had falsified elsewhere**, which is the
+part worth reading:
+
+- **`HANDOFF.md` still said "233 documents, every one of them a scan."** Corrected in place
+  to 230, with the wrong sentence named rather than quietly replaced.
+- **`CHANGELOG.md`'s 1.10.0 entry claimed the gate used "the same `Flattener.pageIsAnImage`
+  the app uses — one rule, not two that drift."** That is the exact sentence T17 falsifies,
+  in a released changelog, and it had been true-sounding for a week. Bracketed correction
+  added; the entry's counts are left as the dated figures they are.
+
+**What is deliberately left stale, labelled rather than rewritten:** `CORPUS-2026-08-08.md`,
+`CORPUS-2026-08-09.md`, `CHANGELOG.md`'s corpus counts and `TODO.md` §2's survey table all
+carry old-predicate verdicts and now carry a dated note saying so. They are records of runs,
+not claims about the present, and re-cutting their numbers would mean re-running the library
+sweep (~50 minutes) and re-drawing a corpus.
+
+**No tool wrote a preferences plist.** Checked by name for every binary this session built
+and ran — `score-text-route.plist` exists and is dated **2026-08-13**, part of the
+long-standing debris the evening hand-off documents, not new. `Prefs.register(migrate: false)`
+is holding.
+
+**Nothing stranded.** One worktree, one branch, nothing staged, no suite running, and the
+2.3 GB `zotero.sqlite` copy this session made for R54's measurement has been deleted along
+with every scratch binary.
+
 ## What is left
 
 **Group 3 — the text layer and the crop box.** Not started. `A1.2`, then `A1.1`, then
@@ -136,10 +173,13 @@ to 100. About 50 minutes. `TODO.md` §2 carries the superseded-figures note.
   The `score-reading-order`/`score-skew` twins are byte-identical and are the one pair worth
   converting when either tool is next opened.
 - **`score-text-route` measured *nothing* on 47 of 233 documents** before this commit —
-  `filter { $0 > 0 }` empties the sample for n ≤ 3 — and printed `no picture-route pages
-  measured`, exit 0, indistinguishable from a document with no picture pages. The 8.2 KB/page
-  figure it is cited for is still unverified (C25); `Blacks in the City` is not in the
-  current corpus, so re-deriving it needs that file back.
+  `filter { $0 > 0 }` empties the sample for n ≤ 3. Verified by building the tool at
+  `6fdd000` and running it on a real 2-page corpus document: a bare header, `no
+  picture-route pages measured`, **exit 0**, indistinguishable from a document with no
+  picture pages. The same document through the fixed tool finds one picture page worth
+  238,176 bytes between the two routes. The 8.2 KB/page figure the tool is cited for is
+  still unverified (C25); `Blacks in the City` is not in the current corpus, so re-deriving
+  it needs that file back.
 - **`Flattener` reads no preferences at all**, and eleven tools that never call
   `Prefs.register` read none either — checked, so T15's fifth divergence has no other
   instance.

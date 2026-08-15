@@ -581,7 +581,11 @@ order, how the announcements sound, and the Settings sheet on a short display.
 
 ## Corpus
 
-`testdocs/` holds **233 documents, every one of them a scan** — 232 from the
+`testdocs/` holds **233 documents, 230 of them scans** — the gate that drew it was asking
+its own question rather than the app's, and `BUGS.md` T17 is that; two of the 233 are
+documents `Flattener.hasDigitalText` calls born-digital, 9 pages of 16,987, named in
+[CORPUS-2026-08-15.md](CORPUS-2026-08-15.md). This sentence said "every one of them a
+scan" for a week. 232 come from the
 stratified draw (8 item types x 4 eras; widened from 84 in 2026-08 by dropping an
 arbitrary five-year recency bound — 79% of the new material is older and none of the
 figures moved) **plus one added by hand on 2026-08-13** at the owner's request: a
