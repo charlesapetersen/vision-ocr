@@ -28,10 +28,12 @@ Read its header before planning anything. Update it in the same commit as any fi
 with their costs and the reasons some are parked, and
 [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a
 whole-codebase review sweep, including findings not yet fixed and areas not yet
-covered. **[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md) is where to start**, and then
-[HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md) — it
-has the fix order, what is deliberately withheld from release, and which
-instruments not to trust.
+covered. **[HANDOFF-2026-08-15-day.md](HANDOFF-2026-08-15-day.md) is where to start** — it has the
+live status, the corrections this project's own review document got wrong, and the
+owner's instruction to work serially. Then
+[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md) for the twenty-three fixes that landed
+overnight, and [HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md) for the original fix order
+and what is deliberately withheld from release.
 
 *(This paragraph read "nothing open" for a day after four entries were opened, which
 is exactly the sentence a new reader trusts most. If you close or open an entry,
@@ -48,7 +50,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1037 checks, 2-4 min; runs real OCR, needs nothing installed
+./run_tests.sh        # 1042 checks, 2-4 min; runs real OCR, needs nothing installed
 ```
 
 Never report a change as working without `./run_tests.sh` passing. Add a test that

@@ -32,32 +32,41 @@ below.
 
 ### Where the fix order got to
 
-**Twenty-three of the sweep's findings are fixed and merged, and the suite is at 1037 checks.**
-The list is in **[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md)** — read that rather than a
-summary here, because a summary in this file is what went stale twice in two days.
+**Twenty-five of the sweep's findings are fixed and merged, and the suite is at 1042
+checks.** The list of the first twenty-three is in
+**[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md)**; the two since are `BUGS.md` T14 and C25,
+in **[HANDOFF-2026-08-15-day.md](HANDOFF-2026-08-15-day.md)**, which is the live status.
+Read those rather than a summary here, because a summary in this file is what went stale
+three times in three days.
 
-*(It said "Five of its top items are done… 916 checks" for most of 2026-08-15, written when that
-was true and left behind by the fifteen commits after it. Before that, an earlier draft said R60
-was merged when it was committed on an unmerged branch, and that R61/R62 were committed when they
-were staged in a worktree under `/private/tmp`. **Ask git, not this file.** Both corrections are
-in the hand-off, which is also where the list of things this project's own controls caught lives.)*
+*(It said "Five of its top items are done… 916 checks" for most of 2026-08-15, written when
+that was true and left behind by the fifteen commits after it. Before that, an earlier draft
+said R60 was merged when it was committed on an unmerged branch, and that R61/R62 were
+committed when they were staged in a worktree under `/private/tmp`. **Ask git, not this
+file.**)*
 
-**What is left is three groups, and the first gates the third:**
+**Group 1 is done — the invariant-3 instruments are repaired (T14), and the gate on the
+whole text-layer group is lifted.** All four were compromised and two of the commands would
+not run at all; `CLAUDE.md` now carries the procedure as five commands that work.
 
-1. **`A6.1` — the invariant-3 instruments.** Three of the four are compromised and the
-   re-measurement procedure is **not executable as written**: two probes want a JSON shape
-   nothing in `Tools/` produces any more, and `score-corpus` prints `OK` for a document it
-   measured nothing on. Nothing in the text layer can be trusted until this is repaired.
-2. **The rest of `Tools/`** — `A12.2` (four `manifest.tsv` rows describe a pipeline nothing
-   runs), `A12.3` (`score-mrc`'s tone layers are 14–17x, which affects `FEATURES.md`'s 4.96x),
-   `A12.4` (the corpus gate re-implements `pageIsAnImage`), and the rest of `A12.8`.
-3. **`A1.2`, then `A1.1`, then `C23`** — that order, because A1.1's only viable fix triples the
-   sliver population A1.2 is about. Plus `A1.3`, `A1.4`, `A2.4`, `A3.1` in its narrower form.
+**What is left:**
 
-**`C23` is the release blocker**, and the only open finding with harm a user sees today: every
-rebuild route publishes with no `/CropBox`, so the copy displays what the original hid — 14 of
-233 documents, 577 of 16,987 pages, worst case a third of the sheet. Whether to ship the
-twenty-three fixes without it is the owner's decision; the hand-off sets out both paths.
+1. **The rest of `Tools/`** — `A12.3` (`score-mrc`'s tone layers are 14–17x, which affects
+   `FEATURES.md`'s 4.96x), `A12.4` (the corpus gate re-implements `pageIsAnImage` and
+   admitted the two documents the app calls born-digital), `R54`, and the remainder of
+   `A12.8`. `R55` needs its own measurement campaign first.
+2. **`A1.2`, then `A1.1`, then `C23`** — that order, because A1.1's only viable fix triples
+   the sliver population A1.2 is about. Plus `A1.3`, `A1.4`, `A2.4`, `A3.1` in its narrower
+   form, `A13.4`, the residue of `A10.6`, and `A11.8`.
+3. **`C24`**, opened 2026-08-15 and not fixed: `largestImage` answers a document-wide
+   question, so a page that draws no image is rebuilt at another page's plate resolution.
+   Three repairs were attempted; two were worse and the third needs a threshold the corpus
+   has no gap for. Its entry says what closing it needs.
+
+**`C23` is the release blocker**, and the only open finding with harm a user sees today:
+every rebuild route publishes with no `/CropBox`, so the copy displays what the original hid
+— 14 of 233 documents, 577 of 16,987 pages, worst case a third of the sheet. Whether to ship
+without it is the owner's decision; the hand-offs set out both paths.
 
 ## What is actually left
 
