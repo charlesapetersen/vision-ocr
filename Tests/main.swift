@@ -7304,6 +7304,9 @@ do {
         settings: snapshot,
         rebuildImages: true, rebuildMode: .auto, concurrency: 6,
         recognitionInHelpers: true, recognitionFallbacks: 0,
+        // The default for this block: the setting is on and every file took the
+        // route. The A9.2 checks below vary it.
+        jbig2Files: 4,
         destination: URL(fileURLWithPath: "/tmp/out"),
         inputs: [a, b, c, e],
         outcomes: [a: .succeeded, b: .failed, c: .cancelled],
@@ -7364,6 +7367,35 @@ do {
     check("…and a run that never used a helper still says the app itself",
           RunReport.text(neither).contains("the app itself")
             && !RunReport.text(neither).contains("fell back"))
+
+    // A9.2. The same defect R41 fixed for the recognition row, one row below it:
+    // "JBIG2 compression" read the *checkbox*. Three of the four states that reach
+    // this row report "on" about a step that did not run — rebuild off, greyscale
+    // mode, or the tools not found — and A9.1 reaches the same place invisibly.
+    // The size difference is ~3x, so the report was denying the one thing a user
+    // would go looking for. `usedJBIG2` existed and never left the function.
+    // Read the row rather than matching column padding, so the checks are about
+    // what the row says and not about how wide the label column happens to be.
+    func jbig2Row(_ c: RunReport.Context) -> String {
+        RunReport.text(c).split(separator: "\n")
+            .first { $0.contains("JBIG2") }.map(String.init) ?? "absent"
+    }
+    var noJBIG2 = context
+    noJBIG2.jbig2Files = 0
+    check("the JBIG2 row does not claim a route no file took",
+          !jbig2Row(noJBIG2).hasSuffix("on"), jbig2Row(noJBIG2))
+    check("…and says so in words rather than by omission",
+          jbig2Row(noJBIG2).contains("no page took that route"), jbig2Row(noJBIG2))
+    var someJBIG2 = context
+    someJBIG2.jbig2Files = 2
+    check("…and counts the files that really took it",
+          jbig2Row(someJBIG2).contains("2 of 4 file(s)"), jbig2Row(someJBIG2))
+    // The inverse row: a count cannot resurrect a setting that was off.
+    var offButCounted = context
+    offButCounted.settings.useJBIG2 = false
+    offButCounted.jbig2Files = 2
+    check("…and a run with the setting off still says off",
+          jbig2Row(offButCounted).hasSuffix("off"), jbig2Row(offButCounted))
 
     // CONTRIBUTING 4d — enumerate, do not reason about pairs. A setting added
     // to `Snapshot` and forgotten here makes every later report quietly wrong
@@ -9205,12 +9237,52 @@ do {
     check("…and a path arriving in chunks is reassembled, not truncated",
           assembled == "/bin/ls", String(describing: assembled))
 
-    // A shell that answers with something unusable must still be refused.
+    // A9.1. `zsh -lc` sources .zshenv/.zprofile/.zlogin onto the *same* stdout
+    // before it runs the command, so one `echo` in a login startup file makes an
+    // installed tool invisible — and the nil is memoised for the session, so
+    // JBIG2 stays off for every file in every batch until the app is relaunched.
+    // ~3x the output size, and Settings shows "Not installed" over a tool that is
+    // installed. `command -v` prints its answer last; the chatter comes first.
+    let chatty = shell("chatty", "echo 'Last login: Fri Aug 15 09:02:11 on ttys002'\necho /bin/ls")
+    setenv("SHELL", chatty, 1)
+    Runner.forgetToolPaths()
+    check("a startup file's chatter does not hide an installed tool",
+          Runner.locateTool("definitely-not-a-real-tool-a91-chatty") == "/bin/ls",
+          String(describing: Runner.locateTool("definitely-not-a-real-tool-a91-chatty")))
+
+    // The version-manager notice, which is several lines and the common case.
+    let nvmish = shell("nvmish", "echo 'Now using node v20.11.0 (npm v10.2.4)'\n"
+                       + "echo 'nvm is not compatible with the npm config prefix'\n"
+                       + "echo /bin/ls")
+    setenv("SHELL", nvmish, 1)
+    Runner.forgetToolPaths()
+    check("…nor does a multi-line one",
+          Runner.locateTool("definitely-not-a-real-tool-a91-nvm") == "/bin/ls",
+          String(describing: Runner.locateTool("definitely-not-a-real-tool-a91-nvm")))
+
+    // A shell that answers with something unusable must still be refused — and
+    // the chatty version of it too, or "take the last line" would have replaced
+    // one way of believing the wrong thing with another.
     let nonsense = shell("nonsense", "echo /no/such/binary/at/all")
     setenv("SHELL", nonsense, 1)
     Runner.forgetToolPaths()
     check("a path that is not runnable is not believed",
           Runner.locateTool("definitely-not-a-real-tool-u18-bogus") == nil)
+
+    let chattyNonsense = shell("chatty-nonsense",
+                               "echo 'Last login: whenever'\necho /no/such/binary/at/all")
+    setenv("SHELL", chattyNonsense, 1)
+    Runner.forgetToolPaths()
+    check("…and neither is the last line of chatter when it is not a tool",
+          Runner.locateTool("definitely-not-a-real-tool-a91-bogus") == nil)
+
+    // `command -v` finding nothing prints nothing, so the whole output is
+    // chatter. Taking the last line must not turn that into a believed path.
+    let chatterOnly = shell("chatter-only", "echo 'Last login: whenever'")
+    setenv("SHELL", chatterOnly, 1)
+    Runner.forgetToolPaths()
+    check("…and a shell that only chatters finds nothing",
+          Runner.locateTool("definitely-not-a-real-tool-a91-silent") == nil)
 
     // And the prefix scan itself stays fast. Renamed: it measures the three
     // stat calls, which is worth holding, but it is not a test of the shell.

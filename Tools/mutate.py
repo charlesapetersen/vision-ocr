@@ -203,6 +203,22 @@ OPERATORS = [
      "A4.1-unplaced-carries-text"),
     ("Runner.swift", "guard deadline > now else { return 0 }",
      "guard true else { return 0 }", "R30-monotonic-underflow"),
+    # A9.1. Trim the whole output again, so one line from a login startup file
+    # hides an installed jbig2/qpdf for the rest of the session - and the nil is
+    # memoised, so it is every batch until the app is relaunched.
+    ("Runner.swift",
+     "        let path = out.split(whereSeparator: \\.isNewline).last\n"
+     "            .map(String.init)?.trimmingCharacters(in: .whitespaces) ?? \"\"",
+     "        let path = out.trimmingCharacters(in: .whitespacesAndNewlines)",
+     "A9.1-loginshell-last-line"),
+    # A9.2. The report's JBIG2 row back to the checkbox. Three of the four states
+    # that reach it then say "on" about a step that did not run.
+    ("RunReport.swift",
+     "            rows.append((\"JBIG2 compression\", {\n"
+     "                guard c.settings.useJBIG2 else { return \"off\" }",
+     "            rows.append((\"JBIG2 compression\", {\n"
+     "                guard false else { return c.settings.useJBIG2 ? \"on\" : \"off\" }",
+     "A9.2-jbig2-row-is-the-route"),
     # The bundled compression tools are single-architecture, so this check is
     # what keeps an arm64-only jbig2 from being handed to an Intel Mac.
     ("Runner.swift", "return isRunnable(path) && containsNativeSlice(path) ? path : nil",

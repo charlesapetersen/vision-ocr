@@ -35,3 +35,5 @@ const/continuationCandidates	killed	123	1 check(s): compose looks past the folio
 logic/R38-ink-needs-tone	killed	126	3 check(s): heavy ink with no tone is text, not a picture; …and tone below the minimum does not rescue it; flatten sends dense type to the 1-bit route
 logic/R39-auto-vs-engine	killed	123	2 check(s): on Automatic, a ceiling below the engine's own choice is sent; a lowered DPI still outside the recogniser's range is clamped into it
 logic/detects-language-when-none-named	killed	118	1 check(s): no language named means Vision is asked to detect one
+logic/A9.1-loginshell-last-line	killed	272	2 check(s): a startup file's chatter does not hide an installed tool; …nor does a multi-line one
+logic/A9.2-jbig2-row-is-the-route	killed	273	3 check(s): the JBIG2 row does not claim a route no file took; …and says so in words rather than by omission; …and counts the files that really took it

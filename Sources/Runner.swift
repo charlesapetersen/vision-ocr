@@ -148,10 +148,33 @@ enum Runner {
     private static let cacheLock = NSLock()
     private static var discovered: [String: String?] = [:]
 
+    /// The **last** line of output, not all of it.
+    ///
+    /// A9.1. `zsh -lc` sources `.zshenv`, `.zprofile` and `.zlogin` onto the same
+    /// stdout before it runs the command, so a single `echo` in a login startup
+    /// file — a "Last login" line, a version manager's notice — used to make an
+    /// installed tool invisible: the whole output was trimmed and handed to
+    /// `isRunnable`, which correctly refused `"Now using node v20…\n/opt/homebrew/bin/jbig2"`.
+    ///
+    /// The nil is then memoised for the session (`discovered`), so `JBIG2.isAvailable`
+    /// goes false, `wantsJBIG2` goes false, and **every page in every batch takes
+    /// the Flate route at roughly 3x the size** until the app is relaunched — while
+    /// Settings shows its "Not installed" hint, naming a remedy the user has
+    /// already applied.
+    ///
+    /// `command -v` prints its answer after the startup files have had their say,
+    /// so the answer is the last line. Still validated by `isRunnable`, so the last
+    /// line of pure chatter is refused exactly as the whole blob was.
+    ///
+    /// Not fixed, and worth knowing: `tcsh` and `csh` have no `-lc` at all, so this
+    /// route finds nothing for anyone whose `SHELL` is one of those. They fall back
+    /// to the bundled tool and the three standard prefixes, which is every
+    /// supported install.
     private static func askLoginShell(for name: String) -> String? {
         let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
         guard let out = captureBounded(shell, ["-lc", "command -v \(name)"]) else { return nil }
-        let path = out.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path = out.split(whereSeparator: \.isNewline).last
+            .map(String.init)?.trimmingCharacters(in: .whitespaces) ?? ""
         guard !path.isEmpty, isRunnable(path) else { return nil }
         return path
     }

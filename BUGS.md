@@ -3713,6 +3713,79 @@ then refused on the `isCommitted` guard it already had. A green check over an un
 decided by the defect in the check above it. Mutants: `A5.3-import-count`,
 `A5.3-start-checks-importing`, `A5.3-clearFiles-importing`.
 
+### R67 · One line in a login startup file cost JBIG2 for the whole session — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A9.1.)*
+
+`askLoginShell` ran `$SHELL -lc "command -v jbig2"` and trimmed **all** of stdout — but
+`zsh -lc` sources `.zshenv`, `.zprofile` and `.zlogin` onto that same stdout *first*:
+
+| startup file | `locateTool` |
+|---|---|
+| quiet | the path |
+| `echo "Last login: …"` | **nil** |
+| an nvm version notice | **nil** |
+| backgrounds a daemon | **nil** (no EOF, 3.00 s) |
+
+The nil is then **memoised for the session** in `discovered`, so `JBIG2.isAvailable` goes
+false, `wantsJBIG2` goes false, and **every page in every batch takes the Flate route at
+roughly 3x the size** until the app is relaunched — while Settings shows its "Not installed"
+hint, naming a remedy the user has already applied. The user's own dotfile, one `echo`, no
+error anywhere.
+
+**Fixed**: take the **last** line. `command -v` prints its answer after the startup files have
+had their say. `isRunnable` still validates it, so the last line of pure chatter is refused
+exactly as the whole blob was — which is the half worth checking, because "take the last line"
+could otherwise replace one way of believing the wrong thing with another. Five checks: chatter
+before a real path, a multi-line version-manager notice, chatter whose last line is not a tool,
+chatter with no path at all, and the pre-existing unrunnable-path refusal.
+
+**Not fixed, and now written down in the code**: `tcsh` and `csh` have no `-lc`, so this route
+finds nothing for anyone whose `SHELL` is one of those. They fall back to the bundled tool and
+the three standard prefixes, which covers every supported install. The daemon-backgrounding row
+above is not a line-selection problem and is still handled by `captureBounded`'s bound.
+
+Mutant: `A9.1-loginshell-last-line`.
+
+### R68 · The report's JBIG2 row was the checkbox, not the route — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A9.2.)*
+
+```
+defaults, tools installed    report: on    wantsJBIG2() = true
+Rebuild page images OFF      report: on    wantsJBIG2() = false
+mode grayscale               report: on    wantsJBIG2() = false
+tools not installed          report: on    wantsJBIG2() = false
+```
+
+**Three of four states reported "on" about a step that did not run**, and R67 reaches the
+fourth invisibly. The difference is about 3x in file size, so the report was denying the one
+thing a user would open it to check. `usedJBIG2` already existed as a local in
+`makeSearchablePDF` and never left the function.
+
+**This is R41's defect, one row below R41's fix.** R41 corrected the *recognition* row from the
+configuration to the outcome, and added `recognitionFallbacks` to make it true rather than
+intended. The row underneath kept the old shape. So the repo held an outcome-shaped and a
+setting-shaped answer to the same question — `Runner.previewLines`, in the other file of this
+same review area, gets it right — and the report took the setting.
+
+**Fixed** the same way R41 was: `tookJBIG2Route`, a callback shaped exactly like `fellBack`,
+counted into `Context.jbig2Files`, and the row reads
+
+```
+JBIG2 compression         on — 12 of 12 file(s)
+JBIG2 compression         on, but no page took that route — the pages are Flate compressed, which is larger
+JBIG2 compression         off
+```
+
+Counted **on the success path only**: a file that entered the route and then failed published
+nothing, so counting it would make the report claim a compression no file on disk has.
+`Context.jbig2Files` deliberately has **no default value**, so every construction site has to
+supply it — R41 is what happens when one can be forgotten, and the compile error that came out
+of adding it is the mechanism working.
+
+Four checks, including the inverse row (a count cannot resurrect a setting that was off) and
+the existing 4d enumeration that every `Snapshot` field maps to a row. Mutant:
+`A9.2-jbig2-row-is-the-route`.
+
 ---
 ## The interface
 

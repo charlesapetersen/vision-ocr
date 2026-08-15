@@ -1254,6 +1254,7 @@ final class OCRModel: ObservableObject {
         // Per batch, like `tally`: a count left over from the last run would
         // describe the wrong batch in this run's report (R41).
         recognitionFallbacks = 0
+        jbig2Files = 0
         finishUp = { [weak self] in
             guard let self else { return }
             self.isRunning = false
@@ -1284,6 +1285,7 @@ final class OCRModel: ObservableObject {
                              recognitionInHelpers: useHelper
                                  && Recogniser.helperPath() != nil,
                              recognitionFallbacks: self.recognitionFallbacks,
+                             jbig2Files: self.jbig2Files,
                              destination: destination)
 
             if ok > 0,
@@ -1327,6 +1329,11 @@ final class OCRModel: ObservableObject {
                             text: "\(file.lastPathComponent): \(text)", kind: .info))
                     }
                 }
+                // Counted, not logged: the route is not news to the user, but the
+                // report has to be able to say what actually happened (A9.2).
+                let tookJBIG2Route: () -> Void = {
+                    DispatchQueue.main.async { self?.jbig2Files += 1 }
+                }
 
                 if isSearchable {
                     Self.makeSearchablePDF(
@@ -1337,7 +1344,8 @@ final class OCRModel: ObservableObject {
                         rebuild: needsRebuild, rebuildMode: rebuildMode,
                         password: password, settings: settings,
                         control: control, useHelper: useHelper,
-                        progress: note, fellBack: fellBack, report: report)
+                        progress: note, fellBack: fellBack,
+                        tookJBIG2Route: tookJBIG2Route, report: report)
                     return
                 }
 
@@ -1585,6 +1593,11 @@ final class OCRModel: ObservableObject {
         /// these — and a second, unrelated use of a general channel would
         /// silently inflate that count (R41).
         fellBack: @escaping (String) -> Void = { _ in },
+        /// Called once, on the files whose pages really came out through
+        /// `JBIG2.assemble` (A9.2). Same shape and same reason as `fellBack`: the
+        /// run report has to describe the route taken rather than the box ticked,
+        /// and `usedJBIG2` used to be a local that never left this function.
+        tookJBIG2Route: @escaping () -> Void = { },
         report: @escaping (Runner.Result.Outcome, String) -> Void
     ) {
         // Shares of the wall clock, measured on a 22-page run: rebuilding and
@@ -1772,6 +1785,11 @@ final class OCRModel: ObservableObject {
             return
         }
 
+        // Declared out here so the *success* exit can see it: the report counts
+        // files whose published copy carries JBIG2 streams, and a file that took
+        // the route and then failed did not publish anything (A9.2).
+        var tookJBIG2 = false
+
         do {
             // A page the recogniser never reported would compose as a page with
             // no text, pass the page-count check, and publish as a success.
@@ -1808,6 +1826,7 @@ final class OCRModel: ObservableObject {
             if wantJBIG2, encoded.count == expected,
                encoded.count == bitmaps.count, let qpdf = JBIG2.merger {
                 usedJBIG2 = true
+                tookJBIG2 = true
 
                 // Re-layer the picture pages now that the recogniser has said
                 // where the words are.
@@ -2083,6 +2102,10 @@ final class OCRModel: ObservableObject {
             report(.failed, error.localizedDescription)
             return
         }
+        // Counted on the success path only: a file that entered the JBIG2 route and
+        // then failed published nothing, so counting it would make the report claim
+        // a compression no file on disk has (A9.2).
+        if tookJBIG2 { tookJBIG2Route() }
         // `filter { !$0.isEmpty }`, not `compactMap`: `sizeNote` returns an empty string
         // rather than nil unless the copy grew, so joining on it put a leading " — " in
         // front of the message every ordinary run showed the user.
@@ -2170,6 +2193,8 @@ final class OCRModel: ObservableObject {
     /// can say what *happened* rather than what was configured — a helper that is
     /// present and broken used to be reported as though it had been used (R41).
     private var recognitionFallbacks = 0
+    /// Files whose published copy really carries JBIG2 streams (A9.2).
+    private var jbig2Files = 0
 
     /// When the batch in flight began, on both clocks. See `run(_:binary:)`.
     private var runStarted: Date?
@@ -2189,7 +2214,8 @@ final class OCRModel: ObservableObject {
     private func writeReport(batch: [URL], leftOut: [URL], settings: Prefs.Snapshot,
                              rebuildImages: Bool, rebuildMode: Flattener.Mode,
                              concurrency: Int, recognitionInHelpers: Bool,
-                             recognitionFallbacks: Int, destination: URL?) {
+                             recognitionFallbacks: Int, jbig2Files: Int,
+                             destination: URL?) {
         lastReport = nil
         guard UserDefaults.standard.bool(forKey: Prefs.writeRunReport) else { return }
         let finished = Date()
@@ -2207,6 +2233,7 @@ final class OCRModel: ObservableObject {
             concurrency: concurrency,
             recognitionInHelpers: recognitionInHelpers,
             recognitionFallbacks: recognitionFallbacks,
+            jbig2Files: jbig2Files,
             destination: destination,
             // `batch` is what ran; "Skip Those" hands `run` the remainder and
             // keeps the skipped ones out of it. Counting only `batch` would let

@@ -113,6 +113,17 @@ enum RunReport {
         /// used to be reported as "helper processes" over a batch that ran
         /// entirely in-process.
         var recognitionFallbacks: Int
+        /// How many files actually came out through `JBIG2.assemble`.
+        ///
+        /// **The route, not the checkbox** (A9.2). `useJBIG2` being on is one of
+        /// four conditions; rebuild has to be on, the mode has to be one that
+        /// produces bilevel pages, and `jbig2` and `qpdf` both have to be found —
+        /// which A9.1 could silently prevent. Three of the four states that reach
+        /// this row reported "on" over a step that did not run, and the
+        /// difference is about 3x in file size, so it was denying the one thing a
+        /// user would come to the report to check. Deliberately has no default:
+        /// R41 is what happens when a construction site can forget one of these.
+        var jbig2Files: Int
         var destination: URL?
         /// Input order, as dropped.
         var inputs: [URL]
@@ -192,7 +203,16 @@ enum RunReport {
         if c.settings.mode == .searchablePDF {
             rows.append(("Rebuild page images", c.rebuildImages
                             ? c.rebuildMode.label : "off"))
-            rows.append(("JBIG2 compression", c.settings.useJBIG2 ? "on" : "off"))
+            // The route, not the setting (A9.2) — the same correction R41 made to
+            // the recognition row three rows above, for the same reason.
+            rows.append(("JBIG2 compression", {
+                guard c.settings.useJBIG2 else { return "off" }
+                guard c.jbig2Files > 0 else {
+                    return "on, but no page took that route — the pages are Flate "
+                        + "compressed, which is larger"
+                }
+                return "on — \(c.jbig2Files) of \(c.inputs.count) file(s)"
+            }()))
             rows.append(("Photo detail", c.settings.photoDetail.label))
             rows.append(("Join broken words", c.settings.joinHyphenated ? "on" : "off"))
             rows.append(("Keep highlights and notes",
