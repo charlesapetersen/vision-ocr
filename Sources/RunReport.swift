@@ -82,7 +82,12 @@ enum RunReport {
     /// `1h 04m 12s`, `4m 12s`, `12s`. Seconds are kept at every scale: a batch
     /// that took 61 seconds and one that took 119 both read as "1m" otherwise.
     static func duration(_ seconds: Double) -> String {
-        let total = Int(max(seconds, 0).rounded())
+        // A9.7: the sixth bare `Int(Double)` in this codebase, in the one file
+        // A7.3's grep did not cover — that sweep was scoped to `Flattener`. `1e19`
+        // and `.nan` both trapped here. Unreachable today, because `elapsed` is a
+        // monotonic difference, but the elapsed time of a batch left running across
+        // a sleep is not a number this function should be trusting.
+        let total = Flattener.safeInt(max(seconds, 0).rounded())
         let h = total / 3600, m = (total % 3600) / 60, s = total % 60
         if h > 0 { return String(format: "%dh %02dm %02ds", h, m, s) }
         if m > 0 { return String(format: "%dm %02ds", m, s) }
@@ -163,6 +168,18 @@ enum RunReport {
             out += "\n"
         }
 
+        // A9.7. Cancelled files were named **nowhere but the log** while failures
+        // got a by-name block, so after an overnight batch that was stopped part
+        // way the report counted the cancellations in its summary line and left the
+        // reader to reconstruct which documents they were from the log's arrival
+        // order. They are the files to re-run, so they are the ones worth naming.
+        let stopped = c.inputs.filter { c.outcomes[$0] == .cancelled }
+        if !stopped.isEmpty {
+            out += "Cancelled\n"
+            for url in stopped { out += "  \(url.path)\n" }
+            out += "\n"
+        }
+
         out += "Settings\n"
         for (label, value) in settingsRows(c) {
             // `+ 2`, not `max(22, count)`: a label longer than the column would
@@ -194,6 +211,18 @@ enum RunReport {
                         : (c.destination?.path ?? "(none)")))
         rows.append(("Files at once", "\(c.concurrency)"))
         rows.append(("Recognition runs in", {
+            // A9.4. Extract Text calls `Recogniser.extract`, which has no helper
+            // parameter at all, so in that mode recognition runs in the app by
+            // construction — and `recognitionInHelpers` was computed with no
+            // reference to the mode, so a text batch reported "helper processes"
+            // over a run that never launched one. `recognitionFallbacks` stays 0
+            // too, because nothing fell back when nothing was tried, so the
+            // qualifier that would have made the row honest never appeared either.
+            //
+            // The mode is checked here as well as at the call site because this row
+            // is a property of the route, and R41 is the entry about a row that
+            // reported the configuration instead.
+            guard c.settings.mode == .searchablePDF else { return "the app itself" }
             guard c.recognitionInHelpers else { return "the app itself" }
             guard c.recognitionFallbacks > 0 else { return "helper processes" }
             return "helper processes — \(c.recognitionFallbacks) file(s) fell back "
@@ -303,9 +332,52 @@ enum RunReport {
         let dir = directory ?? self.directory
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            let url = unusedPath(in: dir, for: c.finished)
-            try Data(text(c).utf8).write(to: url, options: .atomic)
-            return .success(url)
+            let body = Data(text(c).utf8)
+            // A9.7. `unusedPath` then `write` is **time-of-check to time-of-use**:
+            // it asks whether a name is free and then writes to it, and an atomic
+            // write to a name taken in between *replaces* what is there. Two batches
+            // finishing in the same second is the exact loss `unusedPath`'s own
+            // docstring exists to prevent, and this app runs concurrent workers.
+            //
+            // `O_CREAT | O_EXCL` asks the kernel to create-or-fail instead, so the
+            // check and the use are one operation. The loop then means what it says.
+            let name = fileName(for: c.finished)
+            let base = (name as NSString).deletingPathExtension
+            var attempt = 1
+            while attempt <= 1000 {
+                let url = attempt == 1
+                    ? dir.appendingPathComponent(name)
+                    : dir.appendingPathComponent("\(base) \(attempt).txt")
+                let fd = open(url.path, O_WRONLY | O_CREAT | O_EXCL, 0o644)
+                if fd >= 0 {
+                    defer { close(fd) }
+                    // `Darwin.write`, qualified: unqualified `write` resolves to
+                    // this very function, `RunReport.write(_:to:)`, and the compiler
+                    // says so rather than recursing.
+                    let written = body.withUnsafeBytes {
+                        Darwin.write(fd, $0.baseAddress, $0.count)
+                    }
+                    guard written == body.count else {
+                        return .failure(CocoaError(.fileWriteUnknown))
+                    }
+                    return .success(url)
+                }
+                guard errno == EEXIST else {
+                    return .failure(NSError(domain: NSPOSIXErrorDomain,
+                                            code: Int(errno), userInfo: nil))
+                }
+                attempt += 1
+            }
+            // A9.7's other half: the thousandth collision used to fall out of the
+            // loop and overwrite `… 999.txt` **silently**. A refusal the caller has
+            // to report is the only honest end to this — the report exists so that
+            // an overnight batch leaves a record, and quietly destroying the
+            // previous one is the failure it was built to prevent.
+            return .failure(NSError(
+                domain: "VisionOCR", code: 1,
+                userInfo: [NSLocalizedDescriptionKey:
+                    "Could not find an unused name for the run report in "
+                    + "\(dir.path) — 1,000 reports already carry this timestamp."]))
         } catch {
             return .failure(error)
         }

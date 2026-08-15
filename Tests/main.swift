@@ -7692,12 +7692,57 @@ do {
     // U18. The bound has to cover the read, not just the wait: a child that
     // exits while a grandchild holds stdout open must not hang the caller.
     let began = DispatchTime.now()
+    // A9.3. This fixture *creates* the leak — the child exits and a backgrounded
+    // grandchild keeps stdout open — and the check asserted only `took < 5`, so the
+    // stranded process it produced went unnoticed. The grandchild writes its own
+    // pid where this can read it, so "was it collected?" is a question about that
+    // process and not a pattern match against every process on the machine.
+    let pidFile = tmp.appendingPathComponent("a93-\(UUID().uuidString).pid")
+    defer { try? FileManager.default.removeItem(at: pidFile) }
     let held = Runner.captureBounded(
-        "/bin/sh", ["-c", "(sleep 30 &) ; echo partial"], seconds: 1)
+        "/bin/sh", ["-c", "(sleep 30 & echo $! > '\(pidFile.path)') ; echo partial"],
+        seconds: 1)
     let took = Double(DispatchTime.now().uptimeNanoseconds &- began.uptimeNanoseconds) / 1e9
     check("a background job holding stdout cannot hang the capture",
           took < 5, String(format: "%.1fs, returned %@", took,
                            held == nil ? "nil" : "a value"))
+
+    let grandchild = Int32((try? String(contentsOf: pidFile, encoding: .utf8))?
+        .trimmingCharacters(in: .whitespacesAndNewlines) ?? "") ?? 0
+    check("the grandchild's pid was recorded, so this is testing something",
+          grandchild > 0, "\(grandchild)")
+    if grandchild > 0 {
+        // `kill(pid, 0)` asks whether the process exists without signalling it.
+        // A moment's grace: `stop` signals the group and the kernel reaps
+        // asynchronously.
+        var alive = true
+        for _ in 0..<40 {
+            if kill(grandchild, 0) != 0 { alive = false; break }
+            usleep(50_000)
+        }
+        check("…and the grandchild holding the pipe was collected, not stranded",
+              !alive,
+              "pid \(grandchild) is still running — stop() returned early because "
+                + "the child had already exited, so the group was never signalled")
+    }
+
+    // A9.6. No byte cap: `drain`'s other caller caps its accumulator explicitly and
+    // says why, and this one did not, so a child that writes without ever closing
+    // the pipe was bounded in time and unbounded in memory — measured with
+    // `cat /dev/zero`, peak RSS 9 MB -> 1,985 MB.
+    //
+    // Asserted through *time*, not memory: the cap makes `drain` stop as soon as it
+    // trips, so a five-second bound ends in well under five seconds. `ru_maxrss` is
+    // the instrument this project has already been burned by (A3.1), and it would
+    // read a multi-phase suite as a sum of peaks here.
+    let floodBegan = DispatchTime.now()
+    let flooded = Runner.captureBounded("/bin/sh", ["-c", "cat /dev/zero"], seconds: 5)
+    let floodTook = Double(DispatchTime.now().uptimeNanoseconds
+                            &- floodBegan.uptimeNanoseconds) / 1e9
+    check("a child that floods stdout is refused", flooded == nil)
+    check("…and is stopped by the byte cap, not by the five-second deadline",
+          floodTook < 3, String(format: "%.2fs — it ran to the deadline instead",
+                                floodTook))
     resetPrefs()
 }
 
@@ -7819,6 +7864,39 @@ do {
     check("…and a run with the setting off still says off",
           jbig2Row(offButCounted).hasSuffix("off"), jbig2Row(offButCounted))
 
+    // A9.4. Extract Text calls a function with no helper parameter, so the row is
+    // "the app itself" by construction — and it used to say "helper processes" over
+    // a batch that never launched one, with recognitionFallbacks at 0 so the
+    // qualifier that would have made it honest never appeared either.
+    var textHelpers = context
+    textHelpers.settings.mode = .text
+    textHelpers.recognitionInHelpers = true
+    check("a text run never claims helper processes",
+          RunReport.text(textHelpers).contains("the app itself"),
+          RunReport.text(textHelpers).split(separator: "\n")
+            .first { $0.contains("Recognition runs in") }.map(String.init) ?? "absent")
+    check("…and a searchable run still can", RunReport.text(context).contains("helper processes"))
+
+    // A9.7. Cancelled files were named nowhere but the log, while failures got a
+    // by-name block — so after a batch stopped part way, the report counted the
+    // cancellations and left the reader to work out which documents they were.
+    check("the report names the cancelled files, not just the failed ones",
+          RunReport.text(context).contains("Cancelled\n  /tmp/c.pdf"),
+          RunReport.text(context).split(separator: "\n")
+            .first { $0.hasPrefix("Cancelled") }.map(String.init) ?? "no Cancelled block")
+    var noneStopped = context
+    noneStopped.outcomes = [a: .succeeded, b: .failed]
+    check("…and omits the block when nothing was cancelled",
+          !RunReport.text(noneStopped).contains("Cancelled\n"))
+
+    // A9.7. The sixth bare Int(Double) in the codebase, in the one file A7.3's
+    // grep did not cover — that sweep was scoped to Flattener.
+    check("a nonsense elapsed time does not trap the report",
+          RunReport.duration(.nan) == "0s" && RunReport.duration(1e19).hasSuffix("s"),
+          "\(RunReport.duration(.nan)) / \(RunReport.duration(1e19))")
+    check("…and an ordinary one is unchanged", RunReport.duration(3671) == "1h 01m 11s",
+          RunReport.duration(3671))
+
     // CONTRIBUTING 4d — enumerate, do not reason about pairs. A setting added
     // to `Snapshot` and forgotten here makes every later report quietly wrong
     // about how its documents were produced, and nothing afterwards can tell.
@@ -7885,6 +7963,36 @@ do {
           Set(written.map(\.lastPathComponent)).count == 3
             && (try? FileManager.default.contentsOfDirectory(atPath: clash.path))?.count == 3,
           written.map(\.lastPathComponent).joined(separator: " | "))
+
+    // A9.7. The check above is satisfied by ask-then-write, which is
+    // time-of-check-to-time-of-use: two writers can both be told a name is free.
+    // This app runs concurrent workers and finishes batches in the same second, so
+    // the window is real. Driven concurrently — the property is that N writers
+    // produce N files, whatever order the kernel serialises them in.
+    let race = tmp.appendingPathComponent("race-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: race, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: race) }
+    let group = DispatchGroup()
+    let raceLock = NSLock()
+    var racedPaths: Set<String> = []
+    var raceFailures = 0
+    for _ in 0..<12 {
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = RunReport.write(context, to: race)
+            raceLock.lock()
+            if case .success(let u) = result { racedPaths.insert(u.lastPathComponent) }
+            else { raceFailures += 1 }
+            raceLock.unlock()
+            group.leave()
+        }
+    }
+    group.wait()
+    let onDisk = (try? FileManager.default.contentsOfDirectory(atPath: race.path))?.count ?? -1
+    check("twelve reports written at once are twelve distinct files",
+          racedPaths.count == 12 && onDisk == 12,
+          "\(racedPaths.count) names, \(onDisk) files, \(raceFailures) refused")
+    check("…and none of them was refused", raceFailures == 0, "\(raceFailures)")
 
     // CONTRIBUTING 4c — make the failure path actually fail. A report that
     // could not be written must say so, not return quietly.

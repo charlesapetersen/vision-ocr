@@ -253,9 +253,25 @@ enum Runner {
         p.standardOutput = pipe
         p.standardError = FileHandle.nullDevice
         do { try p.run() } catch { return nil }
+        // Read while the child is certainly alive: `stop` cannot recover it once
+        // Foundation has reaped the child, and the whole point of calling `stop`
+        // here is the case where the child has exited and a grandchild is still
+        // holding the pipe (A9.3).
+        let group = processGroup(of: p)
 
         let fd = pipe.fileHandleForReading.fileDescriptor
         var data = Data()
+        // A9.6. `drain`'s other caller caps its accumulator explicitly and says
+        // why; this one did not, so a child that writes without ever closing the
+        // pipe was bounded in *time* and unbounded in *memory*. Measured with
+        // `cat /dev/zero` for the window: peak RSS 9 MB -> **1,985 MB**.
+        //
+        // 1 MB is four orders of magnitude more than any real answer here — the
+        // longest legitimate output is one absolute path — and the cap is a stop,
+        // not a truncation: whatever is on the other end is not answering the
+        // question that was asked, so the answer is discarded either way.
+        let byteCap = 1 << 20
+        var overflowed = false
         // Monotonic, for the reason `wait(for:upTo:)` gives below its own
         // deadline: a wall clock steps in both directions and both are wrong
         // here. Forward — an NTP correction, or waking from sleep, which moves
@@ -266,18 +282,27 @@ enum Runner {
         // responsive. This function reached for `Date()` while the file it lives
         // in already documented why not (R30).
         let deadline = DispatchTime.now() + seconds
-        let outcome = drain(fd, deadline: { deadline }) { chunk in
+        let outcome = drain(fd, deadline: { deadline },
+                            shouldStop: { overflowed }) { chunk in
+            if data.count >= byteCap { overflowed = true; return }
             data.append(contentsOf: chunk)
         }
         // No EOF inside the bound means something is still holding the pipe. The
         // answer is not worth waiting for, and `stop` takes the whole group so a
         // backgrounded grandchild goes with it.
-        guard outcome == .eof else {
-            stop(p)
+        //
+        // A9.6: `graceSeconds: 0.5` rather than the default 2. The bound was being
+        // applied twice in series plus `stop`'s grace, so the worst case was
+        // `2 × seconds + 2` — measured **7.98 s** held on the main thread, and with
+        // `forgetToolPaths()` per Settings appear and two tool names, about 16 s of
+        // frozen UI. Half a second is ample for a child that has already had SIGTERM
+        // and whose answer is being thrown away regardless.
+        guard outcome == .eof, !overflowed else {
+            stop(p, knownGroup: group, graceSeconds: 0.5)
             return nil
         }
         if !wait(for: p, upTo: seconds) {
-            stop(p)
+            stop(p, knownGroup: group, graceSeconds: 0.5)
             return nil
         }
         guard p.terminationStatus == 0 else { return nil }
@@ -331,9 +356,35 @@ enum Runner {
     ///
     /// The group is read before the first signal, because `getpgid` needs the
     /// child to still exist.
-    static func stop(_ process: Process, graceSeconds: Double = 2) {
-        guard process.isRunning else { return }
-        let group = processGroup(of: process)
+    /// `knownGroup` is the process group read **at launch**, for the case the
+    /// child has already exited (A9.3).
+    ///
+    /// `guard process.isRunning else { return }` used to be the whole of this
+    /// function's behaviour in that case — and an exited child is exactly the case
+    /// `captureBounded`'s own comment describes: "no EOF inside the bound means
+    /// something is still holding the pipe", and if it is not the child then the
+    /// child has finished and something it started has not. Once Foundation reaps
+    /// the child, `getpgid` fails and the group is unrecoverable, so the
+    /// grandchild survives with nothing left referring to it. Verified: a
+    /// `sleep 40` outlived `stop` entirely, and a manual `kill(-pgid)` would have
+    /// collected it. `SettingsView` calls `forgetToolPaths()` on every appear, so
+    /// that was **one stranded process per tool name per Settings open**.
+    ///
+    /// The group therefore has to be captured while the child is alive and handed
+    /// back in. PID reuse is the risk that argues against signalling a group we no
+    /// longer see: it is bounded here because the only caller passing `knownGroup`
+    /// does so within one `captureBounded` window — a few seconds — and because
+    /// `processGroup(of:)` only ever returns a group the child was the leader of.
+    static func stop(_ process: Process, knownGroup: pid_t? = nil,
+                     graceSeconds: Double = 2) {
+        guard process.isRunning else {
+            // The child is gone; anything it started and left holding the pipe is
+            // not. Killing an empty group is a no-op, so this costs nothing when
+            // the child really did clean up after itself.
+            if let knownGroup { kill(-knownGroup, SIGKILL) }
+            return
+        }
+        let group = knownGroup ?? processGroup(of: process)
 
         // Reaches the group as well as the child.
         process.terminate()

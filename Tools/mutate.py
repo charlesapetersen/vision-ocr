@@ -263,6 +263,26 @@ OPERATORS = [
      "A4.1-unplaced-carries-text"),
     ("Runner.swift", "guard deadline > now else { return 0 }",
      "guard true else { return 0 }", "R30-monotonic-underflow"),
+    # A9.3. stop() giving up on an exited child again, so the grandchild holding the
+    # pipe is stranded - one per tool name per Settings open, since SettingsView
+    # calls forgetToolPaths() on every appear.
+    ("Runner.swift",
+     "        guard process.isRunning else {\n"
+     "            // The child is gone; anything it started and left holding the pipe is\n"
+     "            // not. Killing an empty group is a no-op, so this costs nothing when\n"
+     "            // the child really did clean up after itself.\n"
+     "            if let knownGroup { kill(-knownGroup, SIGKILL) }\n"
+     "            return\n        }",
+     "        guard process.isRunning else { return }", "A9.3-stop-collects-the-group"),
+    # A9.6. The accumulator unbounded again: bounded in time, unbounded in memory.
+    ("Runner.swift", "            if data.count >= byteCap { overflowed = true; return }",
+     "            if false { overflowed = true; return }", "A9.6-capture-byte-cap"),
+    # A9.7. Ask-then-write, so two concurrent writers are both told the name is free
+    # and one atomic write replaces the other's report.
+    ("RunReport.swift", "                let fd = open(url.path, O_WRONLY | O_CREAT | O_EXCL, 0o644)",
+     "                let fd = FileManager.default.fileExists(atPath: url.path)\n"
+     "                    ? -1 : open(url.path, O_WRONLY | O_CREAT, 0o644)",
+     "A9.7-report-name-is-exclusive"),
     # A9.1. Trim the whole output again, so one line from a login startup file
     # hides an installed jbig2/qpdf for the rest of the session - and the nil is
     # memoised, so it is every batch until the app is relaunched.

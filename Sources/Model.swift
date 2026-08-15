@@ -181,18 +181,31 @@ final class RunControl: @unchecked Sendable {
         return _cancelled
     }
 
+    /// The process group each adopted child leads, read **at adoption** while the
+    /// child is certainly alive.
+    ///
+    /// A9.3's other half. `Runner.stop` cannot recover a group once Foundation has
+    /// reaped the child, so by the time `cancel()` runs it may be too late to ask.
+    /// Captured here, where the child has just been launched.
+    private var _groups: [ObjectIdentifier: pid_t] = [:]
+
     func adopt(_ process: Process) {
+        let group = Runner.processGroup(of: process)
         lock.lock()
         let alreadyCancelled = _cancelled
-        if !alreadyCancelled { _processes[ObjectIdentifier(process)] = process }
+        if !alreadyCancelled {
+            _processes[ObjectIdentifier(process)] = process
+            if let group { _groups[ObjectIdentifier(process)] = group }
+        }
         lock.unlock()
         // Cancel may have landed between launch and adoption; don't strand it.
-        if alreadyCancelled { process.terminate() }
+        if alreadyCancelled { Runner.stop(process, knownGroup: group, graceSeconds: 0.5) }
     }
 
     func release(_ process: Process) {
         lock.lock()
         _processes[ObjectIdentifier(process)] = nil
+        _groups[ObjectIdentifier(process)] = nil
         lock.unlock()
     }
 
@@ -222,10 +235,32 @@ final class RunControl: @unchecked Sendable {
     func cancel() {
         lock.lock()
         _cancelled = true
-        let running = Array(_processes.values)
+        let running = _processes.map { ($0.value, _groups[$0.key]) }
         _processes.removeAll()
+        _groups.removeAll()
         lock.unlock()
-        for process in running { process.terminate() }
+
+        // SIGTERM to everything first, synchronously: it is immediate, it reaches
+        // the whole group, and it is what makes Cancel feel like Cancel.
+        for (process, _) in running { process.terminate() }
+
+        // **Then escalate, off this thread** (A9.5). `cancel` and `cancelAll` used
+        // to send a bare `terminate()` and stop there — no wait, no SIGKILL — so a
+        // child ignoring SIGTERM survived both Cancel and quit, and `adopting`'s
+        // `defer` then unregistered it: alive and unreferenced. R21 built the
+        // escalation and `ARCHITECTURE` claims this path uses it; it never called it.
+        //
+        // Off the main thread because `Runner.stop` waits up to `graceSeconds` per
+        // child, and `cancel()` is called from the UI and from the quit gate. Doing
+        // it inline would trade an orphaned child for a frozen window, which is
+        // A9.6's defect in a new place. `terminate()` has already gone out, so this
+        // usually finds an exited child and just collects its group.
+        guard !running.isEmpty else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            for (process, group) in running {
+                Runner.stop(process, knownGroup: group, graceSeconds: 2)
+            }
+        }
     }
 }
 
@@ -1343,7 +1378,18 @@ final class OCRModel: ObservableObject {
             self.writeReport(batch: batch, leftOut: leftOut, settings: settings,
                              rebuildImages: needsRebuild, rebuildMode: rebuildMode,
                              concurrency: limit,
-                             recognitionInHelpers: useHelper
+                             // `isSearchable` too (A9.4). `recognitionInHelpers`
+                             // was computed with no reference to the mode, so an
+                             // Extract Text batch — which calls
+                             // `Recogniser.extract`, a function with no helper
+                             // parameter at all — reported "Recognition runs in:
+                             // helper processes" over a run that never launched
+                             // one. And `recognitionFallbacks` stays 0, because
+                             // nothing fell back when nothing was tried, so the
+                             // qualifier that would have made the row honest never
+                             // appeared either. R41's own defect, restored inside
+                             // R41's own row for a different reason.
+                             recognitionInHelpers: isSearchable && useHelper
                                  && Recogniser.helperPath() != nil,
                              recognitionFallbacks: self.recognitionFallbacks,
                              jbig2Files: self.jbig2Files,

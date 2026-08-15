@@ -4073,6 +4073,96 @@ without which the guard would be satisfied by a route that never produces anythi
 *(A2.2's searchable half — the 0.38 s–7 s window between the last cancellation check and
 `publish` — was closed by R59's `publishVerified` guard, and the review's own text says so.)*
 
+### R77 · `stop` gave up on an exited child, stranding the grandchild — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A9.3, A9.5, A9.6.)*
+
+**A9.3.** `Runner.stop` opened with `guard process.isRunning else { return }` — and an exited
+child is *exactly* the case `captureBounded`'s own comment describes: "no EOF inside the bound
+means something is still holding the pipe", which if it is not the child means the child has
+finished and something it started has not. Once Foundation reaps the child, `getpgid` fails and
+the group is unrecoverable, so the grandchild lives on with nothing referring to it. Verified: a
+`sleep 30` outlived `stop` entirely, and a manual `kill(-pgid)` would have collected it.
+`SettingsView` calls `forgetToolPaths()` on every appear, so this was **one stranded process per
+tool name per Settings open**.
+
+**Fixed** by reading the group while the child is certainly alive — at launch in
+`captureBounded`, at adoption in `RunControl` — and passing it in, so `stop` can signal a group
+it can no longer look up. PID reuse is the argument against signalling a group you cannot see;
+it is bounded here because `knownGroup` is only ever passed within one capture window, and
+`processGroup(of:)` only returns a group the child led.
+
+**The check for this existed and asserted only `took < 5`.** The fixture *creates* the leak —
+`(sleep 30 &) ; echo partial` — so the suite has been manufacturing a stranded process on every
+run and calling it a pass. It now records the grandchild's own pid and asks `kill(pid, 0)`
+whether it is still there, which is a question about that process rather than a pattern match
+against the machine. Mutant: `A9.3-stop-collects-the-group`.
+
+**A9.5.** `cancel`, `adopt` and `cancelAll` all sent a bare `terminate()` — no wait, no
+escalation — so a child ignoring SIGTERM survived Cancel *and* quit, and `adopting`'s `defer`
+then unregistered it: alive and unreferenced. R21 built the escalation and `ARCHITECTURE` claims
+this path uses it; nothing called it. **Fixed**: SIGTERM to everything synchronously (immediate,
+reaches the group, and it is what makes Cancel feel like Cancel), then `Runner.stop` **off the
+main thread**, because `stop` waits per child and `cancel()` is called from the UI and from the
+quit gate — doing it inline would trade an orphaned child for a frozen window, which is A9.6's
+defect in a new place. On quit the escalation is best-effort by the same decision `cancelAll`
+already records; the synchronous `terminate()` is what does the work there.
+
+**A9.6.** `captureBounded` had **no byte cap**: bounded in time, unbounded in memory. Measured
+with `cat /dev/zero` for the window, peak RSS went from 9 MB to **1,985 MB**. `drain`'s other
+caller caps its accumulator explicitly and says why. **Fixed** with a 1 MB cap — four orders of
+magnitude more than the longest legitimate answer, which is one absolute path — and the cap
+*stops* the drain rather than truncating, because whatever is on the other end is not answering
+the question asked.
+
+Its bound was also applied twice in series plus `stop`'s grace, worst case `2 × seconds + 2`:
+**7.98 s measured on the main thread**, and about 16 s of frozen UI with two tool names and
+`forgetToolPaths()` per Settings appear. `stop` now gets `graceSeconds: 0.5` from here, since the
+child has already had SIGTERM and its answer is being discarded anyway.
+
+**Asserted through time, not memory.** The cap makes the drain stop when it trips, so a
+five-second bound ends in well under five seconds. `ru_maxrss` is the instrument this project has
+already been burned by (A3.1) and it would read a multi-phase suite as a sum of peaks. Mutant:
+`A9.6-capture-byte-cap`.
+
+### R78 · Four smaller reporting defects, one of which could destroy a report — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A9.4 and A9.7.)*
+
+**A9.4 · the report claimed helper processes over a run that launched none.**
+`recognitionInHelpers` was computed with no reference to `isSearchable`, and the text route calls
+`Recogniser.extract`, a function with no helper parameter at all. `recognitionFallbacks` stays 0
+because nothing fell back when nothing was tried, so the qualifier that would have made the row
+honest never appeared either. **R41's own defect, restored inside R41's own row**, for a
+different reason. Fixed at the call site *and* in `settingsRows`, which now treats Extract Text
+as "the app itself" by construction — the row is a property of the route, and R41 is the entry
+about a row that reported the configuration instead.
+
+**A9.7 · `unusedPath` → `write` was time-of-check-to-time-of-use.** It asked whether a name was
+free and then wrote to it, and an atomic write to a name taken in between *replaces* what is
+there — which is the exact loss `unusedPath`'s own docstring exists to prevent, in an app that
+runs concurrent workers and finishes batches in the same second. **Fixed** with
+`O_CREAT | O_EXCL`, so the check and the use are one operation. The check that existed was
+satisfied by ask-then-write; the new one drives **twelve concurrent writers** and requires twelve
+distinct files. Mutant: `A9.7-report-name-is-exclusive`.
+
+**A9.7 · the thousandth collision overwrote a report silently.** The bounded loop fell out and
+wrote over `… 999.txt`. Now a refusal the caller has to report, because the report exists so an
+overnight batch leaves a record and quietly destroying the previous one is the failure it was
+built to prevent.
+
+**A9.7 · `RunReport.duration` trapped on `1e19` and `.nan`** — the sixth bare `Int(Double)` in
+the codebase, in the one file A7.3's grep did not cover, because that sweep was scoped to
+`Flattener`. Now `safeInt`. Unreachable today; `elapsed` is a monotonic difference.
+
+**A9.7 · cancelled files were named nowhere but the log**, while failures got a by-name block. So
+after an overnight batch stopped part way, the report counted the cancellations in its summary
+and left the reader to reconstruct which documents they were from the log's arrival order. They
+are the files worth re-running, so they now get their own block — with the inverse check that it
+is absent when nothing was cancelled.
+
+*(A9.7's last item, "a positive memo survives deletion of the tool", is `locateTool`'s
+memoisation being deliberate and documented; `forgetToolPaths` is the answer and Settings calls
+it on every appear. Left alone.)*
+
 ---
 ## The interface
 
