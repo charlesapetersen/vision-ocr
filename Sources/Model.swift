@@ -396,6 +396,25 @@ final class OCRModel: ObservableObject {
     /// is pushed to a third name and renamed again on every retry.
     private var previousOutputs: [URL: URL] = [:]
 
+    /// Everything `retryFailures` cleared, held until the run it asked for either
+    /// starts or is declined.
+    ///
+    /// A5.2. `retryFailures` narrows `files` to the failures and erases every
+    /// verdict, and put them back with `guard isCommitted else { … }` — which
+    /// **never runs**, because under the shipped defaults `start()` returns with
+    /// `isPreflighting` already true, so `isCommitted` is true and the guard
+    /// passes. Every refusal arriving after the pre-flight left the user holding a
+    /// list narrowed to the failures, no verdicts, and `canRetryFailures` false so
+    /// the record of what failed was unrecoverable — under a log line reading
+    /// "Start cancelled — nothing was changed."
+    ///
+    /// Restored on exactly the paths that clear `continuesRetryChain`, because the
+    /// two have the same lifetime: a retry chain continues iff a run began.
+    private var retryPutBack: (files: [URL],
+                               outcomes: [URL: Runner.Result.Outcome],
+                               stages: [URL: (label: String, fraction: Double)],
+                               skipped: Set<URL>)?
+
     /// True from `retryFailures` until the run it asks for reaches `run()`.
     ///
     /// A property rather than a parameter threaded through `start`: `start`
@@ -519,6 +538,15 @@ final class OCRModel: ObservableObject {
         // list narrowed to the failures, with every verdict erased and only a
         // line in the log. Restoring is three lines; reasoning about which
         // refusals are possible is how U21 happened.
+        //
+        // A5.2: it has to survive `start()` *returning*, because the refusal that
+        // matters arrives later, from the async pre-flight. Held in
+        // `retryPutBack` and released by `abandonRetry()` on every path that
+        // declines, or dropped by `run()` when a batch really begins. Everything
+        // this function clears is captured, so "nothing was changed" is true of
+        // the rows and the progress labels too, not only of the list.
+        retryPutBack = (files: files, outcomes: outcomes,
+                        stages: stages, skipped: skipped)
         let previousFiles = files
         let previousOutcomes = outcomes
         // The note goes through `start`, because `run` clears the log as its
@@ -539,12 +567,33 @@ final class OCRModel: ObservableObject {
         start(note: "Retrying \(retry.count) file\(retry.count == 1 ? "" : "s") "
                   + "that failed in the previous run.")
         guard isCommitted else {
+            // The synchronous refusals — `start` returning at its own first guard.
+            // `previousFiles`/`previousOutcomes` are kept as the local, obvious
+            // path for this case; `abandonRetry` covers the asynchronous ones.
             files = previousFiles
             outcomes = previousOutcomes
-            continuesRetryChain = false
+            abandonRetry()
             return false
         }
         return true
+    }
+
+    /// Undo a `retryFailures` whose run never began.
+    ///
+    /// Called from every path that declines after the list has been narrowed:
+    /// `start`'s own first guard, the pre-flight's Cancel, and the Skip Those
+    /// branch that leaves nothing to run. Those are exactly the paths that clear
+    /// `continuesRetryChain`, which is not a coincidence — a chain continues if
+    /// and only if a run began, so the two are cleared together and neither can
+    /// be added to without the other being considered.
+    private func abandonRetry() {
+        continuesRetryChain = false
+        guard let put = retryPutBack else { return }
+        retryPutBack = nil
+        files = put.files
+        outcomes = put.outcomes
+        stages = put.stages
+        skipped = put.skipped
     }
 
     // MARK: - The drop box
@@ -581,8 +630,15 @@ final class OCRModel: ObservableObject {
         return .added(ignored: result.ignored)
     }
 
-    /// True while a drop or an Add… is being expanded off the main actor.
-    @Published var isImporting = false
+    /// How many drops or Add…s are being expanded off the main actor right now.
+    ///
+    /// A **count**, not a flag: `isImporting` was a boolean set true by every
+    /// `add` and cleared by every completion, so the first walk to land lowered
+    /// the interlock while the others were still going (A5.3).
+    @Published var importsInFlight = 0
+
+    /// True while any drop or Add… is being expanded off the main actor.
+    var isImporting: Bool { importsInFlight > 0 }
 
     /// The same as `add`, with the directory walk moved off the main actor.
     ///
@@ -603,13 +659,16 @@ final class OCRModel: ObservableObject {
     /// main thread for exactly this reason. The import path never got it.
     func add(_ urls: [URL], then completion: @escaping (AddResult) -> Void) {
         guard !isCommitted else { completion(.refusedRunInProgress); return }
-        isImporting = true
+        importsInFlight += 1
         DispatchQueue.global(qos: .userInitiated).async {
             // No `existing:` here — this pass is only the expensive expansion.
             let expanded = collectInputFiles(from: urls)
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    self.isImporting = false
+                    // `max(0,)` so a stray extra completion cannot drive the count
+                    // negative and leave the interlock permanently down — the
+                    // failure this whole change is about, one layer along.
+                    self.importsInFlight = max(0, self.importsInFlight - 1)
                     // Re-checked: Start can have been pressed while we walked.
                     guard !self.isCommitted else {
                         completion(.refusedRunInProgress)
@@ -688,7 +747,10 @@ final class OCRModel: ObservableObject {
     /// the next batch is a normal thing to do straight after reading it.
     @discardableResult
     func clearFiles() -> Bool {
-        guard !isCommitted else { return false }
+        // `!isImporting` for the same reason as `start`: measured 0 → 8,000 files
+        // after a Clear the user explicitly asked for, because the walk that was
+        // still running appended into the list Clear had just emptied.
+        guard !isCommitted, !isImporting else { return false }
         files.removeAll()
         // The log is deliberately kept — it is the record of the last batch —
         // but the per-row state is about *these* rows, and there are none.
@@ -870,7 +932,11 @@ final class OCRModel: ObservableObject {
     /// path that declines to run (no binary, the pre-flight cancelled) and
     /// reappears as the header of an unrelated batch later.
     func start(note: String? = nil) {
-        guard !files.isEmpty, !isRunning, !isPreflighting else { return }
+        // `!isImporting` is here and not only in `canStart`: a guard that lives in
+        // the view is a guard for the button, and U19 and U23 are both entries
+        // about a door someone else can walk through. A batch frozen while a walk
+        // is still expanding is U1's "8,001 rows over Done — 1 of 1 succeeded".
+        guard !files.isEmpty, !isRunning, !isPreflighting, !isImporting else { return }
 
         // Two different wrongs, both worth stopping for.
         //
@@ -929,8 +995,9 @@ final class OCRModel: ObservableObject {
                     guard !rest.isEmpty else {
                         self.log.append(LogLine(text: skipped + " Nothing left to run.",
                                                 kind: .info))
-                        // No run, so no chain continues from here (R60).
-                        self.continuesRetryChain = false
+                        // No run, so no chain continues from here (R60) and a
+                        // retry that got this far is put back (A5.2).
+                        self.abandonRetry()
                         return
                     }
                     self.run(rest, note: note, leftOut: digital)
@@ -938,7 +1005,10 @@ final class OCRModel: ObservableObject {
                 case .cancel:
                     self.log.append(LogLine(text: "Start cancelled — nothing was changed.",
                                             kind: .info))
-                    self.continuesRetryChain = false
+                    // The sentence above is the reason this call is here: it was
+                    // false for a retry, which had had its list narrowed and every
+                    // verdict erased by the time the alert went up (A5.2).
+                    self.abandonRetry()
                 }
             }
         }
@@ -1148,6 +1218,11 @@ final class OCRModel: ObservableObject {
             claimedByEarlierAttempts = []
             previousOutputs = [:]
         }
+        // A run is really beginning, so there is nothing to put back: dropped, not
+        // restored (A5.2). This is the one exit from `retryPutBack` that is not
+        // `abandonRetry`, and it is the definition of the two states — a retry
+        // either ran or it did not.
+        retryPutBack = nil
         // Each retried input's own slot from the previous attempt, given back so
         // it is reused rather than renamed again.
         let releasing = Set(batch.compactMap { previousOutputs[$0] })

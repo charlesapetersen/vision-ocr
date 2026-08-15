@@ -3635,6 +3635,84 @@ so it is documented in `RunReport`'s own docstring instead of being trimmed. The
 excluded and a check asserts it never appears. **Not fixed here, and still true: there is no
 rotation and no cap — one report per batch, forever.**
 
+### R65 · A retry declined at the alert left the batch gutted — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A5.2.)*
+
+`retryFailures` narrows `files` to the failures and erases every verdict, and it has always
+carried a put-back for the case where `start` then declines — with a comment saying why:
+"reasoning about which refusals are possible is how U21 happened". **The put-back never ran.**
+It was gated on `guard isCommitted`, and under the shipped defaults `start()` returns with
+`isPreflighting` already true, so `isCommitted` is true, the guard passes, and
+`retryFailures` reports success. Every refusal arriving *after* the pre-flight left:
+
+```
+Retry Failed -> pre-flight finds born-digital -> alert -> Cancel
+log:      "Start cancelled — nothing was changed."     <- false
+files:    [failed.pdf]      the sibling that succeeded is gone from the list
+outcomes: 0                 every verdict erased
+canRetryFailures: false     the record of what failed is unrecoverable
+```
+
+**Fixed** by holding the cleared state in `retryPutBack` and releasing it from
+`abandonRetry()`, which is called from every path that declines after the narrowing: `start`'s
+own first guard, the pre-flight's Cancel, and the Skip Those branch that leaves nothing to
+run. `run()` drops it instead of restoring it, because a run really beginning is the one exit
+that is not a decline.
+
+**Those are exactly the paths that clear R60's `continuesRetryChain`, and that is the load
+bearing part of this fix rather than a coincidence.** A retry chain continues if and only if a
+run began, which is the same condition as "there is nothing to put back", so the two are
+cleared together in one function and neither can acquire a new path without the other being
+considered. R60's own entry had already had to enumerate those paths; this reuses that
+enumeration instead of re-deriving it.
+
+Everything the function clears is captured — `files`, `outcomes`, `stages` and `skipped` — so
+the log's "nothing was changed" is true of the rows and the progress labels as well as of the
+list.
+
+**The check that existed for this could not fail.** `"…and puts the whole batch back"` drove
+the *first* guard: with no destination `canRetryFailures` is false, so `retryFailures` returns
+before it has narrowed anything, and the assertion compared a list nothing had taken away.
+That is the eleventh un-failable check found in this project, and it was guarding the one
+thing A5.2 is about. The new block drives the real path — a born-digital fixture, the
+pre-flight, `digitalTextDecisionForTesting` returning `.cancel` — and **asserts the premise
+first**: that the list really was narrowed to `[failed.pdf]` at the moment the alert went up,
+so the restore below has something to restore. Mutant: `A5.2-cancel-puts-back`.
+
+### R66 · The import interlock was a flag, so the first drop to land lowered it — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A5.3.)*
+
+`isImporting` was a boolean set true by every `add` and false by every completion, so with two
+drops in flight the **first** completion cleared it while the other walk was still going:
+
+```
+at the moment the small import lands: isImporting = false, canStart = true
+Start -> batch total = 1
+the large walk completes -> REFUSED, "a run is in progress"
+```
+
+and with a fast batch the walk instead lands *after* `finishUp`: **8,001 rows over "Done — 1 of
+1 succeeded"**, which is U1 verbatim for the fourth time. **Fixed**: `importsInFlight` is a
+count, incremented by `add` and decremented by each completion, and `isImporting` derives from
+it. The decrement is `max(0,)` so a stray extra completion cannot drive it negative and leave
+the interlock permanently *down* — the same failure one layer along.
+
+**And the interlock was enforced only where the button is drawn.** `start()` never checked
+`isImporting` at all, so it existed for `canStart` and for nothing else, and `clearFiles()` was
+not interlocked either — measured 0 → 8,000 files after a Clear the user explicitly asked for.
+Both now check it. U19 and U23 are the two entries about precisely this shape, and this is the
+third.
+
+**The test needed no race.** The review's scenario used an 8,000-file walk to make the window
+observable by hand, but both `add` calls dispatch before either completion can run, so two
+walks are in flight by construction; four small fixtures prove it. The assertion is
+order-independent — *whichever* import lands first, one is still outstanding — so it cannot be
+a flaky timing check. The three door checks each get their own model, because sharing one made
+two of them pass for the wrong reason: `start()` got through, set `isRunning`, and `clearFiles`
+then refused on the `isCommitted` guard it already had. A green check over an unguarded door,
+decided by the defect in the check above it. Mutants: `A5.3-import-count`,
+`A5.3-start-checks-importing`, `A5.3-clearFiles-importing`.
+
 ---
 ## The interface
 

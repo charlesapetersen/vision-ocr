@@ -161,6 +161,23 @@ OPERATORS = [
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",
      "guard !isRunning else { return .refusedRunInProgress }", "U19-add-guard"),
+    # A5.3. The interlock as a flag again: the first walk to land lowers it while
+    # the others are still going. Run by hand before the catalogue got it: the
+    # two-import check goes red, and it is order-independent, so it is not a race.
+    ("Model.swift", "self.importsInFlight = max(0, self.importsInFlight - 1)",
+     "self.importsInFlight = 0", "A5.3-import-count"),
+    # A5.3's other half: the interlock enforced only where the button is drawn.
+    ("Model.swift",
+     "guard !files.isEmpty, !isRunning, !isPreflighting, !isImporting else { return }",
+     "guard !files.isEmpty, !isRunning, !isPreflighting else { return }",
+     "A5.3-start-checks-importing"),
+    ("Model.swift", "guard !isCommitted, !isImporting else { return false }",
+     "guard !isCommitted else { return false }", "A5.3-clearFiles-importing"),
+    # A5.2. The put-back that never ran. Removing the restore leaves the model
+    # gutted after a pre-flight Cancel, under a log line saying nothing changed.
+    ("Model.swift", "                    self.abandonRetry()\n                }",
+     "                    self.continuesRetryChain = false\n                }",
+     "A5.2-cancel-puts-back"),
     # T10 / A11.1. The tenth un-failable check guarded exactly this, and deleting
     # the gate it named left the suite 862/862 green. Run by hand before the
     # catalogue got it: 3 checks red, and the good file at the destination went

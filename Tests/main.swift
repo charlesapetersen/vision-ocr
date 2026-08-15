@@ -2914,9 +2914,9 @@ do {
         m.isPreflighting = false
         m.besideOriginal = true
         check("Start is available with a settled list", m.canStart)
-        m.isImporting = true
+        m.importsInFlight = 1
         check("…and unavailable while an import is in flight", !m.canStart)
-        m.isImporting = false
+        m.importsInFlight = 0
         check("…and available again once it lands", m.canStart)
     }
     resetPrefs()
@@ -4335,6 +4335,121 @@ do {
     resetPrefs()
 }
 
+// MARK: - The import interlock counts, and every door respects it (A5.3)
+
+// `isImporting` was a boolean set true by every `add` and false by every
+// completion, so the **first** completion cleared it while other walks were still
+// in flight. Two drops, one large: at the moment the small one lands the interlock
+// is down, Start is available, and the batch total is 1 — then the 8,000-file walk
+// completes into a batch that has already been frozen, or lands *after* `finishUp`
+// as 8,001 rows over "Done — 1 of 1 succeeded". U1 verbatim, for the fourth time.
+//
+// And the interlock lived only in `canStart`, so it was a property enforced in the
+// view: `start()` never checked it at all, and `clearFiles()` was not interlocked
+// either. U19 and U23 are the two entries about exactly that shape.
+
+print("\nthe import interlock counts imports, not drops")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("a53-\(UUID().uuidString)")
+    let bigDir = dir.appendingPathComponent("many")
+    let smallDir = dir.appendingPathComponent("few")
+    for d in [bigDir, smallDir] {
+        try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
+    }
+    defer { try? FileManager.default.removeItem(at: dir) }
+    // Deliberately tiny. The review's scenario used an 8,000-file walk to make the
+    // race observable by hand, but nothing here depends on a race: both `add`
+    // calls dispatch before either completion can run, because this block holds
+    // the main actor until it returns to the run loop. So both walks are in flight
+    // by construction, and the suite does not pay for 8,000 files to prove it.
+    for i in 1...3 {
+        makeScannedPDF(at: bigDir.appendingPathComponent("scan \(i).pdf"),
+                       lines: ["Page one of scan \(i)."])
+    }
+    makeScannedPDF(at: smallDir.appendingPathComponent("only.pdf"), lines: ["Only."])
+
+    var importingAtEachCompletion: [Bool] = []
+    let m = MainActor.assumeIsolated { OCRModel() }
+    MainActor.assumeIsolated {
+        m.besideOriginal = true
+        // Both in flight before either completion can run: `add` returns
+        // immediately and does the walk on a background queue.
+        m.add([bigDir]) { _ in
+            MainActor.assumeIsolated { importingAtEachCompletion.append(m.isImporting) }
+        }
+        m.add([smallDir]) { _ in
+            MainActor.assumeIsolated { importingAtEachCompletion.append(m.isImporting) }
+        }
+    }
+    let started = Date()
+    while importingAtEachCompletion.count < 2, Date().timeIntervalSince(started) < 60 {
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+    }
+
+    check("both imports completed", importingAtEachCompletion.count == 2,
+          "\(importingAtEachCompletion.count)")
+    // Order-independent on purpose: whichever walk finishes first, one import is
+    // still outstanding when it does. With a boolean this is false.
+    check("the interlock is still up when the first of two imports completes",
+          importingAtEachCompletion.first == true,
+          "isImporting was already false with a walk still in flight")
+    check("…and down once the second completes",
+          importingAtEachCompletion.last == false)
+    MainActor.assumeIsolated {
+        check("…and both drops' files arrived", m.files.count == 4, "\(m.files.count)")
+    }
+    resetPrefs()
+}
+
+do {
+    // The other half of A5.3: the interlock has to be enforced where the mutation
+    // happens, not only where the button is drawn. Driven through the state
+    // directly, the way the doors table drives `isRunning` — a real race would be
+    // a timing test, and this is a property.
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("a53b-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let one = dir.appendingPathComponent("one.pdf")
+    makeScannedPDF(at: one, lines: ["One."])
+
+    // A fresh model per door. Sharing one made two of these pass for the wrong
+    // reason: `start()` got through, which set `isRunning`, and `clearFiles` then
+    // refused on the *isCommitted* guard it already had — a green check over an
+    // unguarded door, decided by the defect in the check above it.
+    @MainActor func importing() -> OCRModel {
+        let m = OCRModel()
+        m.besideOriginal = true
+        _ = m.add([one])
+        m.importsInFlight = 1                      // a walk is outstanding
+        return m
+    }
+
+    MainActor.assumeIsolated {
+        check("Start is not offered while an import is in flight", !importing().canStart)
+
+        let s = importing()
+        s.start()
+        check("…and start() refuses even when called directly",
+              !s.isRunning && !s.isPreflighting,
+              "a batch began with an import still walking")
+
+        let c = importing()
+        check("…and clearFiles refuses too", !c.clearFiles())
+        check("…so the files are still there", c.files == [one], "\(c.files.count)")
+
+        // The inverse row, or the three above are satisfied by an app that does
+        // nothing at all (CONTRIBUTING 4d).
+        let done = importing()
+        done.importsInFlight = 0
+        check("…and Start is offered again once the walk lands", done.canStart)
+        check("…and clearFiles works again", done.clearFiles())
+    }
+    resetPrefs()
+}
+
 print("\nretrying the failures from a finished batch")
 
 do {
@@ -4467,6 +4582,101 @@ do {
                 && m.outcomes[b] == .failed && m.outcomes[c] == .failed,
               "\(m.outcomes.count) outcomes")
     }
+    resetPrefs()
+}
+
+// MARK: - A declined retry puts the batch back, on the path that actually declines (A5.2)
+
+// The block above drives the **first** guard: with no destination
+// `canRetryFailures` is false, so `retryFailures` returns before it has narrowed
+// anything, and "puts the whole batch back" is a check that cannot fail — it
+// asserts a list nothing took away. The eleventh of those in this project, and it
+// is guarding the very thing A5.2 is about.
+//
+// The decline that matters arrives *after* the narrowing, out of the async
+// pre-flight. Under the shipped defaults `start()` returns with `isPreflighting`
+// already true, so `guard isCommitted` passes, `retryFailures` reports success,
+// and the restore it exists for never runs. What the user is left holding: a list
+// narrowed to the failures, every verdict erased, `canRetryFailures` false so the
+// record is unrecoverable — under a log line reading "Start cancelled — nothing
+// was changed."
+
+print("\na retry declined at the alert puts the batch back")
+
+do {
+    resetPrefs()
+    let d = UserDefaults.standard
+    let dir = tmp.appendingPathComponent("a52-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer {
+        try? FileManager.default.removeItem(at: dir)
+        OCRModel.digitalTextDecisionForTesting = nil
+    }
+    // Both born-digital, so the pre-flight fires on the retried one.
+    var made: [URL] = []
+    for name in ["kept.pdf", "failed.pdf"] {
+        let u = dir.appendingPathComponent(name)
+        makeDigitalPDF(at: u, lines: (1...26).map {
+            "Line \($0) of ordinary running prose, long enough to be a real paragraph."
+        })
+        made.append(u)
+    }
+    let kept = made[0], failed = made[1]
+
+    d.set(true, forKey: Prefs.warnDigitalText)
+    d.set(true, forKey: Prefs.rebuildImages)
+    d.set(Prefs.Mode.searchablePDF.rawValue, forKey: Prefs.mode)
+
+    let asked = DispatchSemaphore(value: 0)
+    var narrowedAtDecision: [URL] = []
+    let m = MainActor.assumeIsolated { OCRModel() }
+    OCRModel.digitalTextDecisionForTesting = { _, _ in
+        MainActor.assumeIsolated { narrowedAtDecision = m.files }
+        asked.signal()
+        return .cancel
+    }
+
+    let claimed: Bool = MainActor.assumeIsolated {
+        m.besideOriginal = true
+        _ = m.add([kept, failed])
+        m.outcomes = [kept: .succeeded, failed: .failed]
+        check("the retry is offered", m.canRetryFailures)
+        return m.retryFailures()
+    }
+    let started = Date()
+    while asked.wait(timeout: .now()) == .timedOut,
+          Date().timeIntervalSince(started) < 30 {
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+    }
+    // Let the cancel branch run after the decision returns.
+    let settled = Date()
+    while MainActor.assumeIsolated({ m.isPreflighting }),
+          Date().timeIntervalSince(settled) < 30 {
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+    }
+
+    check("the pre-flight reached the decision", !narrowedAtDecision.isEmpty,
+          "never asked")
+    // The premise, asserted rather than assumed: the list really was narrowed, so
+    // the restore below has something to restore. Without this the whole block
+    // could pass against a `retryFailures` that never got started.
+    check("…and the list really was narrowed to the failure first",
+          narrowedAtDecision == [failed],
+          narrowedAtDecision.map(\.lastPathComponent).joined(separator: ","))
+    check("…and retryFailures reported that it started", claimed)
+
+    MainActor.assumeIsolated {
+        check("the whole batch is back after the decline", m.files == [kept, failed],
+              m.files.map(\.lastPathComponent).joined(separator: ","))
+        check("…with every verdict intact",
+              m.outcomes[kept] == .succeeded && m.outcomes[failed] == .failed,
+              "\(m.outcomes.count) outcomes")
+        check("…so the record of what failed is still recoverable", m.canRetryFailures)
+        check("…and the log's claim that nothing changed is now true",
+              m.log.map(\.text).joined().contains("nothing was changed"),
+              m.log.map(\.text).joined(separator: " | "))
+    }
+    OCRModel.digitalTextDecisionForTesting = nil
     resetPrefs()
 }
 
