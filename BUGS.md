@@ -4010,6 +4010,69 @@ the cost of over-refusing a path this app generates itself is nothing and the co
 under-refusing one is a silently short list. Four checks, one per newline form. Mutant:
 `A13.3-newline-guard-is-every-newline`.
 
+### R63 · Cancelling a Plain Text run reported every in-flight file as failed — FIXED
+*(found 2026-08-14, late, and **recorded nowhere until now** — see the note at the end of this
+entry, which is the more useful half of it.)*
+
+The Extract Text route caught everything and reported `.failed` with the error's description.
+`Recogniser.extract` throws `Failure.cancelled` when the user cancels, and that error's
+description is **"Cancelled."** So pressing Cancel put a red ✗ against every in-flight file,
+with "Cancelled." given as the reason it *failed*:
+
+```
+outcome: failed    message: "Cancelled."
+```
+
+It is not only cosmetic. Those files are counted as failures in the run report, and they stay
+in `failedFiles` — which is exactly what **Retry Failed** offers to re-run, so a cancel left the
+user holding a batch that claims it broke.
+
+**The searchable route already gets this right in seven separate places**, each with its own
+comment saying why — R14: "a cancelled jbig2 child surfaces here as a throw, and is a
+cancellation, not a broken file." The eighth site, on the other route, had none. **Fixed** by
+making that rule a function, `OCRModel.outcome(for:cancelled:)`, so a ninth site cannot hold a
+different opinion. Four checks, including the inverse row that a genuine failure during a
+cancelled batch is still a failure — otherwise cancelling would paper over every broken file in
+the run. Mutant: `R63-cancel-is-not-a-failure`.
+
+**Where this entry came from, because it is a process finding as much as a defect.** R63 existed
+as **one sentence of prose in an uncommitted `TODO.md`** and nothing else: no register entry, no
+`REVIEW` entry, no evidence, no reproduction, nowhere in the repo or in any worktree. The
+session that found it was cut off before writing it down. Everything else that session left
+behind was recoverable from git in minutes; this was not recoverable at all, and had to be
+reproduced from scratch to be fixed. **A defect that exists only as a sentence is a defect
+nobody can act on** — the register entry is the artefact, not the observation.
+
+### R76 · A cancelled text extraction still replaced the user's previous output — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A2.2, text half. The
+searchable half is R59.)*
+
+`Recogniser.extract` checks `isCancelled` only at the top of each **page**, so a cancel arriving
+during the last page finished it and fell straight through to
+`Data(body).write(to: target, options: .atomic)` — **the user's destination, with no staging and
+no publish.** Verified end to end: a previous run's `.txt` replaced by the text of a run the user
+had stopped.
+
+```
+cancel fires after the last page
+before: "PRECIOUS OUTPUT from the previous run"
+after:  "First page of the extraction test."      <- the cancelled run's output
+```
+
+**Invariant 2 says never write directly to the user's destination**, and this is the route that
+does it. `.atomic` makes the replacement indivisible; it does not make it wanted. For the
+single-page inputs this mode usually gets, the cancel window is the whole run.
+
+**Fixed** by asking again immediately before the write, in `extract` rather than only in
+`Model`: `extract` is what touches the file, and a caller that forgot to re-check would be back
+to publishing a cancelled run. That is the same placement the searchable route uses for its own
+publish. Three checks, including the inverse row that an uncancelled extraction still writes —
+without which the guard would be satisfied by a route that never produces anything. Mutant:
+`A2.2-text-cancel-before-write`.
+
+*(A2.2's searchable half — the 0.38 s–7 s window between the last cancellation check and
+`publish` — was closed by R59's `publishVerified` guard, and the review's own text says so.)*
+
 ---
 ## The interface
 

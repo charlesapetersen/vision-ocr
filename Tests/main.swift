@@ -351,6 +351,97 @@ do {
           !message.contains("no text was found"), message)
 }
 
+// MARK: - The text route's cancel handling (A2.2's text half, and R63)
+
+// Two defects in eight lines, both about a cancel on the Extract Text route.
+//
+// A2.2: `Recogniser.extract` checks `isCancelled` only at the top of each page, so
+// a cancel during the last page finishes it and then writes **straight to the
+// user's destination** — `Data(body).write(to: target)`, no staging, no publish.
+// The previous run's .txt is replaced by a run the user stopped. Invariant 2 says
+// "never write directly to the user's destination" and this is the route that does.
+//
+// R63: the route caught everything and reported `.failed` with the error's
+// description — and the error thrown by a cancel is `Failure.cancelled`, whose
+// description is "Cancelled." So a cancelled Plain Text run put a red ✗ against
+// every in-flight file, reason "Cancelled.", counted them as failures in the run
+// report, and left them in `failedFiles` for Retry Failed to offer.
+
+print("\ncancelling a text extraction neither publishes nor lies about it")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("a22-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    let source = dir.appendingPathComponent("scan.pdf")
+    makeScannedPDF(at: source, lines: ["First page of the extraction test."])
+    let target = dir.appendingPathComponent("scan.txt")
+    let precious = "PRECIOUS OUTPUT from the previous run\n"
+    try? Data(precious.utf8).write(to: target)
+
+    // False while the pages are read, true afterwards — so the cancel lands in
+    // exactly the window A2.2 measured: after the last page, before the write.
+    var pagesSeen = 0
+    let cancelAfterTheLastPage = {
+        defer { pagesSeen += 1 }
+        return pagesSeen >= 1
+    }
+    var thrown: Error?
+    do {
+        try Recogniser.extract(from: source, to: target,
+                               settings: Prefs.Snapshot.current(), password: nil,
+                               isCancelled: cancelAfterTheLastPage)
+    } catch { thrown = error }
+
+    check("a cancel after the last page is thrown, not swallowed",
+          (thrown as? Recogniser.Failure) == .cancelled,
+          thrown.map { "\($0)" } ?? "nothing was thrown — it wrote the file")
+    let after = (try? String(contentsOf: target, encoding: .utf8)) ?? ""
+    check("…and the previous output is still there, byte for byte",
+          after == precious,
+          after.isEmpty ? "<the file is gone>" : String(after.prefix(50)))
+
+    // The inverse row: an uncancelled extraction must still write, or the guard
+    // above is satisfied by a route that never produces anything.
+    let fresh = dir.appendingPathComponent("fresh.txt")
+    do {
+        try Recogniser.extract(from: source, to: fresh,
+                               settings: Prefs.Snapshot.current(), password: nil,
+                               isCancelled: { false })
+        let got = (try? String(contentsOf: fresh, encoding: .utf8)) ?? ""
+        check("…while an uncancelled extraction does write its text", !got.isEmpty,
+              "the file is empty")
+    } catch {
+        check("an uncancelled extraction does not throw", false, "\(error)")
+    }
+
+    // R63. The mapping, which the searchable route spells out in seven places and
+    // the text route did not spell out at all.
+    let cancelled = OCRModel.outcome(for: Recogniser.Failure.cancelled, cancelled: true)
+    check("a cancelled file is reported as cancelled, not failed",
+          cancelled.0 == .cancelled,
+          "reported \(cancelled.0) with “\(cancelled.1)”")
+    check("…with the message the rest of the app uses", cancelled.1 == "Cancelled.")
+    // And the inverse: a real failure during a cancelled batch is still a failure —
+    // otherwise cancelling would paper over every broken file in the run.
+    let broken = OCRModel.outcome(for: SearchableWriter.Failure.unreadableSource,
+                                  cancelled: false)
+    check("…while a genuine failure is still a failure", broken.0 == .failed,
+          "reported \(broken.0)")
+    check("…and keeps its own description", !broken.1.isEmpty && broken.1 != "Cancelled.",
+          broken.1)
+
+    // The text route has to *use* it. A bare `report(.failed, error…)` in that
+    // branch is the defect, and it is one line, so nothing else would notice.
+    let modelSource = (try? String(contentsOfFile: "Sources/Model.swift",
+                                   encoding: .utf8)) ?? ""
+    check("the text route maps its error through outcome(for:cancelled:)",
+          modelSource.contains("Self.outcome(for: error,"),
+          modelSource.isEmpty ? "could not read Model.swift" : "it does not")
+}
+
 // MARK: - A document Vision reads nothing from says so (A13.2)
 
 // `recogniseDocument` records `[]` for a blank page so `missingPages` can tell a

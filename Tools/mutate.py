@@ -196,6 +196,20 @@ OPERATORS = [
      "alsoClaimed: [], releasing: [])", "R60-retry-reservations"),
     ("Model.swift", "defer { self.isPreflighting = false }",
      "self.isPreflighting = false", "U21-committed-across-alert"),
+    # R63. A cancelled file reported as a failure again: red rows, "Cancelled." as
+    # the reason it failed, counted as failures in the report, and left in
+    # failedFiles for Retry Failed to offer.
+    ("Model.swift",
+     "        cancelled ? (.cancelled, \"Cancelled.\") : (.failed, error.localizedDescription)",
+     "        (.failed, error.localizedDescription)", "R63-cancel-is-not-a-failure"),
+    # A2.2's text half. Without this the cancelled run's text replaces the previous
+    # run's output at the user's own destination - invariant 2, on the one route
+    # that writes there directly.
+    ("Recogniser.swift",
+     "        if isCancelled() { throw Failure.cancelled }\n"
+     "        try Data(body.utf8).write(to: target, options: .atomic)",
+     "        try Data(body.utf8).write(to: target, options: .atomic)",
+     "A2.2-text-cancel-before-write"),
     # A13.3. The newline guard back to "\n" only, so a path ending in CR passes it
     # and merges with the manifest separator into one Character.
     ("Recogniser.swift",

@@ -281,6 +281,21 @@ enum Recogniser {
                 return String(decoding: data, as: UTF8.self)
             }.joined(separator: "\n") + "\n"
         }
+        // A2.2. The loop above checks `isCancelled` at the top of each *page*, so a
+        // cancel arriving during the last page finished it and fell straight through
+        // to this write — which goes to the **user's destination**, replacing the
+        // previous run's output with the output of a run they stopped. Measured: a
+        // 13,006-byte previous .txt overwritten by a cancelled run's text.
+        //
+        // Invariant 2 says never write directly to the user's destination, and this
+        // is the route that does. `.atomic` makes the replacement indivisible; it
+        // does not make it wanted. So the last thing before writing is to ask again.
+        //
+        // Deliberately here and not only in `Model`: `extract` is what touches the
+        // file, and a caller that forgot to re-check would be back to publishing a
+        // cancelled run. The searchable route has this same guard immediately before
+        // its own publish, seven sites' worth (R14, A2.2's other half).
+        if isCancelled() { throw Failure.cancelled }
         try Data(body.utf8).write(to: target, options: .atomic)
     }
 

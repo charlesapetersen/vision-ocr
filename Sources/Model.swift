@@ -911,6 +911,26 @@ final class OCRModel: ObservableObject {
                                        mode: mode, available: jbig2Available)
     }
 
+    /// What to report for a thrown error, **asking the control before calling a
+    /// cancellation a failure**.
+    ///
+    /// R63. The Extract Text route caught everything and reported `.failed` with
+    /// the error's description — and `Recogniser.extract` throws
+    /// `Failure.cancelled` when the user cancels, whose description is
+    /// "Cancelled." So cancelling a Plain Text run put a red ✗ against every
+    /// in-flight file, with "Cancelled." as the reason it *failed*, and counted
+    /// them as failures in the run report and in `failedFiles` — which is what
+    /// Retry Failed then offers to re-run.
+    ///
+    /// The searchable route already gets this right, in **seven** separate places,
+    /// each with a comment saying why (R14: "a cancelled jbig2 child surfaces here
+    /// as a throw, and is a cancellation, not a broken file"). This is that rule
+    /// as a function, so the eighth site cannot hold a different opinion.
+    nonisolated static func outcome(for error: Error,
+                                    cancelled: Bool) -> (Runner.Result.Outcome, String) {
+        cancelled ? (.cancelled, "Cancelled.") : (.failed, error.localizedDescription)
+    }
+
     /// Whether the born-digital pre-flight applies in this state — **and
     /// therefore whether the settings panel has to show its toggle** (A10.1).
     ///
@@ -1437,10 +1457,11 @@ final class OCRModel: ObservableObject {
                     try Recogniser.extract(from: file, to: target, settings: settings,
                                            password: password,
                                            isCancelled: { control.isCancelled })
-                    if control.isCancelled { report(.cancelled, "Cancelled.") }
-                    else { report(.succeeded, "") }
+                    report(.succeeded, "")
                 } catch {
-                    report(.failed, error.localizedDescription)
+                    let (outcome, message) = Self.outcome(for: error,
+                                                          cancelled: control.isCancelled)
+                    report(outcome, message)
                 }
             }
         }
