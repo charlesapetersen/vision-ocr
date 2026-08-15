@@ -21,9 +21,42 @@ promoted, or it does not and should be deleted.
 ## Start here
 
 **[HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md)** — the 2026-08-14 review sweep's fix order,
-the release decision waiting on the owner, and the three invariant-3 instruments that cannot
-currently be trusted. `REVIEW-2026-08-14.md` is the evidence behind it. Neither is superseded
-by anything below.
+what has been fixed against it, the environment traps, and the three invariant-3 instruments
+that cannot currently be trusted. `REVIEW-2026-08-14.md` is the evidence behind it. Neither is
+superseded by anything below.
+
+### Where the fix order got to
+
+**Five of its top items are done and merged**, and the suite is at **916 checks**: **T9**
+(the release gate could not see a destroyed page image — four wrong instruments were built
+before one bit, and the record of them is worth reading before building any measurement
+here), **T10** (invariant 2 had no working test; the mutant that used to leave the suite
+green now turns 107,847 bytes into 809), **R60** (Retry Failed published over a file the same
+batch protected — content destruction, verified end to end), and **R61/R62** (two
+declared-geometry conversions that trapped uncatchably on the default route, plus the one
+fraction whose numerator and denominator came from different populations).
+
+*(An earlier draft of this section said R60 was merged when it was committed on an unmerged
+branch, and that R61/R62 were committed when they were staged in a worktree under
+`/private/tmp` — written in the past tense about the last two steps of a close-out sequence
+that then never ran. Both are now genuinely on `main`. **Ask git, not this file**, which is
+the same lesson as "ask the forge, not the prose" one paragraph up.)*
+
+**Reviewing those two diffs before merging them found two more defects in them**, which is
+this project's tenth-odd consecutive round of that. R61's fix had been written with
+`safeInt((dpi / 4).rounded())` where the expression it replaced truncated: a silent
+one-pixel move of the Sauvola window on about half of all pages — a threshold change on the
+default route, inside a fix for a trap. R60's `previousOutputs` map is the one place in that
+fix that does not normalise its path keys; it is recorded in R60's entry as bounded and in
+the safe direction rather than changed.
+
+**Two defects are open and both are in this session's queue:** **C23**, every rebuild route
+publishes with no `/CropBox` so the copy displays what the original hid (14 of 233
+documents), and **R63**, cancelling a Plain Text run reports every in-flight file as failed.
+**R63 has no register entry and no evidence anywhere** — it exists as this sentence and
+nothing else, so it has to be reproduced from scratch before it can be fixed.
+
+Everything else in the review's order is being worked now, in the order the hand-off gives.
 
 ## What is actually left
 

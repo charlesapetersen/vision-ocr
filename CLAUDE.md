@@ -18,8 +18,9 @@ boxes, and what the tests don't cover.
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **five
 entries are open and three of them change content on the default route**: R56 (a pale
 drawing is erased, not softened), R57 (a tonal plate can come out a black blob) and
-C23 (the rebuilt copy displays what the original's crop box hid — C13 recurring
-through `JBIG2.assemble`, which writes no `/CropBox`; 14 of 233 corpus documents).
+C23 (the rebuilt copy displays what the original's crop box hid — C13 recurring on
+**every** rebuild route, because `Flattener.flatten` drops the crop box before
+`compose` can copy it; 14 of 233 corpus documents).
 Read its header before planning anything. Update it in the same commit as any fix.
 [TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas
 with their costs and the reasons some are parked, and
@@ -44,7 +45,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 880 checks, 2-4 min; runs real OCR, needs nothing installed
+./run_tests.sh        # 916 checks, 2-4 min; runs real OCR, needs nothing installed
 ```
 
 Never report a change as working without `./run_tests.sh` passing. Add a test that
@@ -96,8 +97,27 @@ fails without the fix.
 
 ## Environment traps
 
+- **Never run two suites at once, in any two worktrees.** `build/tests` has no
+  bundle identifier, so `UserDefaults.standard` lands in a domain keyed by the
+  process *name* — `~/Library/Preferences/tests.plist` — and **every worktree
+  shares that one file**. A second suite's `resetPrefs()` removes every key and
+  wipes the first one's settings mid-run. Measured: 882/883 → 877/879, two
+  failures in the run-report block, because the other run cleared
+  `writeRunReport` between this one setting it and the batch finishing.
+  `Tools/mutate.py` says to stay sequential and blames *timing*; the real hazard
+  is shared preferences, and it fails checks for reasons unrelated to load. This
+  includes suites started by review agents you launched.
 - **Backgrounded shell commands have essentially no `PATH`** — `basename`, `cut`,
   `timeout` fail silently and loops report bogus results. Use absolute paths.
+- **A suite's log lags by up to 4 KB when redirected to a file** — `print` is
+  fully buffered there, so `tail -f` looks stalled on a healthy run. Watch the
+  process, not the log.
+- **Watch for the suite with `pgrep -x tests`, not `pgrep -f build/tests`.** The
+  `-f` form matches every *waiter* whose own command line contains the string,
+  including itself, so a "is a suite running?" guard reports yes on a machine
+  with no suite on it. Four such loops once sat waiting on each other while
+  nothing ran, and the guard they fed refused to start the real run. The
+  instrument was measuring itself — §3, in the shell rather than the code.
 - **`nohup … &` reports success immediately** while the real work runs orphaned.
   Wait on the process; don't trust the exit code.
 - Zotero locks `zotero.sqlite`; copy it before querying.
