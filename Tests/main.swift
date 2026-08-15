@@ -652,6 +652,51 @@ do {
           OCRModel.sizeNote(from: small, to: big))
 }
 
+// MARK: - The unplaced-lines message carries no document text (A4.1)
+
+// This string goes report(.failed:) -> log -> RunReport.text, which copies the log
+// **verbatim** into ~/Library/Logs/VisionOCR — a file whose own docstring calls it
+// one "that gets mailed to whoever is helping you", written by default. It used to
+// carry text.prefix(24) for up to three lines: 72 characters of the user's own
+// document, with the page numbers to locate them by. It is also spoken aloud.
+
+print("\nthe unplaced-lines message names pages, not text")
+
+do {
+    // Text a reader would recognise instantly if it turned up in a shared file.
+    let secret = "Kaczynski to Ellsberg, 14 March: the diagnosis is"
+    let lost = [
+        SearchableWriter.Unplaced(page: 3, text: secret, reason: "no room"),
+        SearchableWriter.Unplaced(page: 7, text: "PATIENT NAME: Iris Chang", reason: "off page"),
+    ]
+    let summary = OCRModel.unplacedSummary(lost)
+
+    check("the summary counts the lines", summary.contains("2 line(s)"), summary)
+    check("…and names the page", summary.contains("p3") && summary.contains("p7"), summary)
+    check("…and gives the reason", summary.contains("no room"), summary)
+    // The property, stated as the negative it is. Substring of the whole message,
+    // not of the prefix the old code took, so a shorter excerpt does not pass it.
+    check("…and carries no word of the document",
+          !summary.contains("Kaczynski") && !summary.contains("Ellsberg")
+            && !summary.contains("PATIENT") && !summary.contains("Iris"),
+          summary)
+    // The excerpt was 24 characters, so a check that only looked for the whole
+    // string would pass against the defect. This looks for the prefix that shipped.
+    check("…not even the first 24 characters of it",
+          !summary.contains(String(secret.prefix(24))), summary)
+
+    // Invariant 1 still has to hold: the loss is reported, loudly, with enough to
+    // find it. A message that dropped the text *and* the pages would satisfy the
+    // privacy property by breaking the one this code exists for.
+    let many = (1...5).map {
+        SearchableWriter.Unplaced(page: $0, text: "line \($0)", reason: "no room")
+    }
+    check("more than three lines are elided, not silently dropped",
+          OCRModel.unplacedSummary(many).contains("5 line(s)")
+            && OCRModel.unplacedSummary(many).hasSuffix("…"),
+          OCRModel.unplacedSummary(many))
+}
+
 // MARK: - Batch presets
 
 print("\npresets")

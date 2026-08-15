@@ -3591,6 +3591,50 @@ one this whole entry exists to stay on. **If a future door ever puts a re-spelle
 `files` — a bookmark restore, a resumed batch read back from disk — key this map through `key()`
 first.**
 
+### R64 · The run report carried the document's own text — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A4.1. Highest
+severity per line changed in the sweep.)*
+
+The unplaced-lines failure message was built out of the recognised text itself —
+`p\(page) "\(text.prefix(24))"`, up to three lines — and that message goes `report(.failed:)`
+→ `log` → `RunReport.text`, which copies the log **verbatim** into
+`~/Library/Logs/VisionOCR/Run <ts>.txt`. So up to **72 characters of the user's document,
+with the page numbers to locate them by**, landed in a file whose own docstring calls it one
+"that gets mailed to whoever is helping you". The report is written **by default**, and the
+same string is spoken aloud.
+
+**Fixed** by `OCRModel.unplacedSummary`, which reports the count, the pages and the reasons
+and nothing else. Extracted into a function precisely so it can be asserted: the message used
+to be built inline in the middle of `makeSearchablePDF`, where nothing could see it.
+
+**Invariant 1 is untouched, and that is the part worth checking rather than asserting.** A
+privacy fix that quietly stopped naming the loss would trade a leak for a silence, which is
+the worse defect in this project's own ordering. The checks hold both halves: the count, both
+page numbers, the reason and the `…` elision above three are each asserted present, and two
+further checks assert the text is absent — one for whole words, one for the exact 24-character
+prefix that shipped, because a check looking only for the full string would pass against the
+defect.
+
+**Verified by running.** With the shipped body restored the two absence checks go red and the
+four presence checks stay green, and the failure detail prints the leak verbatim:
+`p3 "Kaczynski to Ellsberg, 1" (no room)`. Mutant: `A4.1-unplaced-carries-text`.
+
+**Sibling sweep (CONTRIBUTING 4b).** Every other interpolation into a `LogLine` was checked:
+they carry file names, page numbers and byte counts, never recognised text.
+`SearchableWriter.joiningHyphenatedWords` does print document text —
+`reject: tail not lower-case (\(tail.prefix(14)))` — but only to **stderr** and only when
+`JOIN_DEBUG` is set in the environment, so it reaches no file and no report. That is the shape
+any future text logging should take, and `RunReport`'s docstring now says so.
+
+**What stays in the report, now written down** rather than left to be rediscovered: absolute
+paths of every input and output, every file name in the batch, the destination folder, the
+custom-words list verbatim, and qpdf's stderr with its file-name prefixes. A user pasting a
+report into a bug report leaks their short name, directory layout and every document name.
+All of it earns its place — it is what makes the file worth having after an overnight batch —
+so it is documented in `RunReport`'s own docstring instead of being trimmed. The password is
+excluded and a check asserts it never appears. **Not fixed here, and still true: there is no
+rotation and no cap — one report per batch, forever.**
+
 ---
 ## The interface
 

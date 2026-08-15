@@ -178,6 +178,12 @@ OPERATORS = [
      "alsoClaimed: [], releasing: [])", "R60-retry-reservations"),
     ("Model.swift", "defer { self.isPreflighting = false }",
      "self.isPreflighting = false", "U21-committed-across-alert"),
+    # R64 / A4.1. Puts the document's own text back into the message that goes into
+    # a file the user is invited to mail to someone. Run by hand before the
+    # catalogue got it: 2 checks red, and the failure detail printed the excerpt.
+    ("Model.swift", '.map { "p\\($0.page) (\\($0.reason))" }',
+     '.map { "p\\($0.page) \\"\\($0.text.prefix(24))\\" (\\($0.reason))" }',
+     "A4.1-unplaced-carries-text"),
     ("Runner.swift", "guard deadline > now else { return 0 }",
      "guard true else { return 0 }", "R30-monotonic-underflow"),
     # The bundled compression tools are single-architecture, so this check is

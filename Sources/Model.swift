@@ -1917,12 +1917,7 @@ final class OCRModel: ObservableObject {
 
             // A line the writer could not place is reported, not swallowed.
             if !unplaced.isEmpty {
-                let lost = unplaced
-                let detail = lost.prefix(3)
-                    .map { "p\($0.page) \"\($0.text.prefix(24))\" (\($0.reason))" }
-                    .joined(separator: "; ")
-                report(.failed, "\(lost.count) line(s) could not be placed: \(detail)"
-                    + (lost.count > 3 ? " …" : ""))
+                report(.failed, Self.unplacedSummary(unplaced))
                 return
             }
             // Carry the source's outline across, if it has one. CoreGraphics
@@ -2040,6 +2035,29 @@ final class OCRModel: ObservableObject {
     /// So this is not a defect to fix by compressing harder; the alternative is
     /// a compression that can alter digits in an archival document. It is a
     /// result to state plainly, so nobody has to wonder.
+    /// The failure message for lines `compose` could not place.
+    ///
+    /// **Counts, pages and reasons — never the text itself.** This string reaches
+    /// `report(.failed:)` → `log` → `RunReport.text`, and the report copies the
+    /// log *verbatim* into `~/Library/Logs/VisionOCR`, a file whose own docstring
+    /// calls it one "that gets mailed to whoever is helping you". It is written by
+    /// default and it is also spoken aloud.
+    ///
+    /// It carried `text.prefix(24)` for up to three lines until A4.1 — 72
+    /// characters of the user's document, with the page numbers to find them by.
+    /// The page and the reason are what diagnosing an unplaced line actually
+    /// needs, and neither identifies content. **Invariant 1 is unaffected**: the
+    /// count, the pages and the elision are all still here, so the loss is as
+    /// loud as it was. The text was the one part that only the user's own file
+    /// could supply.
+    nonisolated static func unplacedSummary(_ lost: [SearchableWriter.Unplaced]) -> String {
+        let detail = lost.prefix(3)
+            .map { "p\($0.page) (\($0.reason))" }
+            .joined(separator: "; ")
+        return "\(lost.count) line(s) could not be placed: \(detail)"
+            + (lost.count > 3 ? " …" : "")
+    }
+
     nonisolated static func sizeNote(from input: URL, to output: URL) -> String {
         // PDF in, PDF out, or the comparison is meaningless. The drop box also
         // takes jpg, png, heic and tiff, and a photograph wrapped into a

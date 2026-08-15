@@ -19,6 +19,32 @@ import Foundation
 /// Split into `text(…)` and `write(…)` so the whole document can be asserted
 /// without touching a filesystem, and so a failure to write is a value the
 /// caller has to handle rather than a silent nothing.
+///
+/// ## What is in it, written down because it is meant to be shared
+///
+/// The log is copied **verbatim**, so anything any code puts in a `LogLine` is in
+/// a file the user is invited to send to someone. As of A4.1 that is:
+///
+/// - every input file's **absolute path**, and every output's, so the user's
+///   short name and directory layout;
+/// - **every file name in the batch**, which for archival material is often the
+///   author, title and date of the document;
+/// - the destination folder, the settings, and the **custom-words list
+///   verbatim** — typically proper nouns lifted from the document being scanned;
+/// - `qpdf`'s stderr, which prefixes its diagnostics with the input file name.
+///
+/// All of that is defensible: it is what makes the report worth having when a
+/// batch fails overnight, and none of it can be dropped without making the file
+/// useless. **The password is deliberately excluded** and there is a check
+/// asserting it never appears.
+///
+/// What is *not* in it, and must not come back, is the content of the documents
+/// themselves. `OCRModel.unplacedSummary` is the one place that had it — up to 72
+/// characters of recognised text with page numbers (A4.1) — and its own
+/// docstring says why it now reports pages and reasons only. Anything new that
+/// wants to log recognised text belongs behind a debug environment variable, the
+/// way `joiningHyphenatedWords`' `JOIN_DEBUG` notes are: stderr, off by default,
+/// and nowhere near this file.
 enum RunReport {
 
     /// Where reports go. `~/Library/Logs/VisionOCR`, which is where macOS
