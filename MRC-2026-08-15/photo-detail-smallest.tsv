@@ -1,0 +1,80 @@
+# background /3 (MRC_BG), foreground /4 (shipped default) — before R50's all-text shrink, which is a floor and can only raise them
+file	page	px	dpi	route	boxes	inkOut	nowKB	maskKB	bgKB	fgKB	mrcKB	bgF	fgF	ratio	kept	mrcPSNR	nowPSNR	note
+1954 - Why.pdf	4	1224x946	111.3	grey	63	0.0540	269.7	19.2	1.8	1.2	22.2	8.0	16.1	12.13x	mrc	24.05	41.69	-
+1954 - Why.pdf	6	1224x946	111.3	grey	57	0.0493	237.6	17.1	1.9	1.2	20.2	8.0	16.1	11.75x	mrc	24.99	42.37	-
+Guilford_Psychometric Methods.pdf	5	928x1424	144.0	grey	54	0.0000	395.9	24.6	2.2	1.7	28.6	8.0	16.0	13.84x	mrc	21.31	37.93	-
+Ibson_2006_Picturing men.pdf	88	1008x1440	144.0	grey	37	0.8310	235.6	9.4	16.5	8.9	34.8	3.0	4.0	6.77x	mrc	27.52	44.76	-
+Ibson_2006_Picturing men.pdf	132	1008x1440	144.0	grey	45	0.8265	260.8	11.9	19.3	11.0	42.2	3.0	4.0	6.18x	mrc	26.56	40.28	-
+Ibson_2006_Picturing men.pdf	198	1008x1440	144.0	grey	39	0.8668	248.8	9.8	19.3	10.0	39.2	3.0	4.0	6.35x	mrc	26.90	40.78	-
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	9	2076x2650	390.0	colour	47	0.0282	769.0	46.2	15.5	4.3	65.9	8.0	16.1	11.66x	mrc	25.62	42.57	-
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	13	1950x2592	400.0	colour	37	0.0000	679.8	37.9	10.7	3.7	52.4	8.0	16.1	12.98x	mrc	26.69	42.38	-
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	19	1949x2592	390.0	colour	36	0.0000	723.9	35.8	10.1	3.7	49.5	8.0	16.1	14.62x	mrc	26.12	41.93	-
+UN-OCred.pdf	21	1340x1106	150.0	grey	64	0.6929	293.2	16.2	28.2	13.9	58.3	3.0	4.0	5.03x	mrc	25.92	40.04	-
+UN-OCred.pdf	31	1351x1109	150.1	grey	91	0.3484	306.3	16.9	25.9	15.6	58.4	3.0	4.0	5.24x	mrc	26.99	39.49	-
+Broadhead - 1994 - Regionalism and the Upper Class.pdf	5	2278x1834	200.0	grey	78	0.0405	737.9	45.2	10.6	2.1	57.9	8.0	16.0	12.75x	mrc	25.71	40.41	-
+Broadhead - 1994 - Regionalism and the Upper Class.pdf	7	2278x1834	200.0	grey	79	0.0370	731.4	44.6	10.5	2.0	57.1	8.0	16.0	12.81x	mrc	25.75	40.46	-
+Broadhead - 1994 - Regionalism and the Upper Class.pdf	10	2278x1834	200.0	grey	78	0.0441	732.2	45.1	10.6	2.0	57.7	8.0	16.0	12.70x	mrc	25.71	40.46	-
+Findlay_1992_Stanford Industrial Park_University of California Press.pdf	21	984x1335	150.0	grey	24	0.8271	188.9	9.2	19.0	7.0	35.2	3.0	4.0	5.36x	mrc	28.35	41.50	-
+Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	14	1014x1614	200.0	grey	40	0.0000	201.5	26.5	4.2	1.9	32.7	8.0	16.1	6.17x	mrc	22.17	47.45	-
+Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	21	1014x1614	200.0	grey	43	0.0000	217.4	27.8	4.2	1.9	34.0	8.0	16.1	6.40x	mrc	22.05	46.01	-
+Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	31	1014x1614	200.0	grey	42	0.0000	230.3	29.0	4.1	1.9	35.1	8.0	16.1	6.56x	mrc	21.47	45.62	-
+1881 - Harry Wilcox.pdf	4	4000x2626	317.5	colour	60	0.5207	1221.1	38.4	175.7	51.7	265.8	3.0	4.0	4.59x	mrc	30.77	55.89	-
+1881 - Harry Wilcox.pdf	5	3897x2521	304.8	colour	29	0.4250	1384.0	41.0	181.5	65.5	287.9	3.0	4.0	4.81x	mrc	28.76	53.99	-
+1881 - Harry Wilcox.pdf	7	3737x2482	300.1	colour	26	0.5232	1103.4	27.4	140.4	47.6	215.5	3.0	4.0	5.12x	mrc	30.06	52.10	-
+1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	4	3024x3441	72.0	colour	40	0.0287	1543.8	26.9	18.2	4.7	49.7	8.0	16.0	31.05x	mrc	28.37	38.12	-
+1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	7	3010x3397	72.0	colour	87	0.2574	1294.3	27.7	118.4	30.6	176.7	3.0	4.0	7.32x	mrc	31.27	39.45	-
+Atkinson_1939_Atkinson on firings_.pdf	1	1935x2592	72.0	colour	41	0.0000	724.5	35.4	10.8	3.5	49.7	8.0	16.1	14.58x	mrc	27.68	41.29	-
+Atkinson_1939_Atkinson on firings_.pdf	2	1935x2592	72.0	colour	44	0.0580	807.3	42.9	13.2	4.3	60.4	8.0	16.1	13.37x	mrc	25.21	40.65	-
+Atkinson_1939_Atkinson on firings_.pdf	3	1935x2592	72.0	grey	45	0.0388	770.9	47.2	11.3	3.8	62.3	8.0	16.1	12.37x	mrc	25.20	41.06	-
+Ford_1941_Speech_.pdf	3	1935x2592	72.0	grey	34	0.0107	731.2	28.5	9.8	3.6	41.9	8.0	16.1	17.43x	mrc	28.19	41.80	-
+Ford_1941_Speech_.pdf	4	1935x2592	72.0	grey	33	0.0007	728.0	28.2	9.6	3.5	41.3	8.0	16.1	17.61x	mrc	28.05	41.83	-
+Ford_1941_Speech_.pdf	5	1935x2592	72.0	grey	32	0.0022	747.9	30.0	9.9	3.5	43.4	8.0	16.1	17.24x	mrc	27.67	41.73	-
+Herbert Marks papers.pdf	12	1700x2200	200.0	grey	38	0.0041	225.0	17.2	4.0	1.7	22.9	8.0	16.0	9.82x	mrc	31.05	46.60	-
+October_2,_1960_(Page_24_of_25.pdf	1	2287x4007	152.0	grey	226	0.6541	1229.7	78.2	263.4	63.7	405.3	3.0	4.0	3.03x	mrc	22.94	47.96	-
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	1	1192x1746	150.1	grey	33	0.0035	303.2	18.0	4.8	2.2	25.0	8.0	16.1	12.13x	mrc	29.41	41.25	-
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	2	969x1419	150.0	grey	31	0.0006	208.3	13.8	3.4	1.6	18.8	8.0	16.1	11.08x	mrc	29.03	40.74	-
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	3	992x1441	150.1	grey	35	0.0123	231.9	15.8	3.8	1.8	21.5	8.0	16.0	10.80x	mrc	28.63	40.48	-
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	4	993x1438	149.9	grey	31	0.0578	227.3	14.0	3.9	1.8	19.6	8.0	16.0	11.59x	mrc	27.02	40.45	-
+_1939_Former students to Board re Merriam_.pdf	7	1935x2592	72.0	colour	33	0.0001	800.2	32.1	13.4	3.3	48.7	8.0	16.1	16.42x	mrc	27.65	40.38	-
+_1939_Former students to Board re Merriam_.pdf	10	1935x2592	72.0	colour	21	0.7874	676.9	18.5	78.5	17.0	113.9	3.0	4.0	5.94x	mrc	33.54	41.59	-
+_1939_Former students to Board re Merriam_.pdf	14	1935x2592	72.0	grey	46	0.0000	755.9	37.3	9.9	3.4	50.7	8.0	16.1	14.91x	mrc	26.82	41.27	-
+_1973_Committee Against Racism_.pdf	2	1276x1651	150.1	grey	80	0.0000	775.5	43.8	4.8	2.5	51.1	8.0	16.2	15.16x	mrc	19.83	37.71	-
+_1973_Committee Against Racism_.pdf	3	1275x1650	150.0	grey	80	0.0000	802.2	46.7	3.8	2.4	53.0	8.0	16.1	15.14x	mrc	19.38	37.59	-
+1944_Options picking up.pdf	1	1208x1656	150.0	grey	188	0.0714	553.1	37.7	5.3	1.9	44.9	8.0	16.1	12.32x	mrc	22.27	37.61	-
+1944_Options picking up.pdf	2	1203x1652	150.0	grey	128	0.6793	469.0	24.3	42.1	16.4	82.9	3.0	4.0	5.66x	mrc	24.49	38.67	-
+Albanese_1997_Senate Will Examine Stock Option Bill.pdf	1	1696x2200	300.0	colour	129	0.5322	703.6	38.2	49.8	45.5	133.4	3.0	4.0	5.27x	mrc	24.27	41.64	-
+Albanese_1997_Senate Will Examine Stock Option Bill.pdf	2	1696x2200	300.0	colour	175	0.3011	838.1	46.2	60.0	53.1	159.3	3.0	4.0	5.26x	mrc	23.31	40.76	-
+Har - THE NECKLACE OF KALI..pdf	1	4813x7223	400.0	grey	873	0.6420	6131.6	194.6	568.4	321.3	1084.4	3.0	4.0	5.65x	mrc	27.48	41.16	-
+Merriam_1920_Daughter of Pan_The Montanan (The Frontier).pdf	1	1935x2592	72.0	colour	90	0.1797	904.6	38.6	84.5	29.1	152.2	3.0	4.0	5.94x	mrc	28.34	38.86	-
+oster - Engagement of Anne Foster To Tucson Man Announced.pdf	1	6535x9249	400.0	grey	656	0.5813	12589.8	314.5	1226.7	568.9	2110.1	3.0	4.0	5.97x	mrc	26.16	39.99	-
+1947_Corporation Tax Study Due By House Body.pdf	2	1244x1758	150.1	grey	316	0.6021	636.7	26.4	61.3	18.0	105.6	3.0	4.0	6.03x	mrc	19.79	37.56	-
+Black_0000_The Scandal of Educational Testing.pdf	1	1932x2636	284.1	grey	100	0.8235	814.0	27.0	93.0	39.7	159.7	3.0	4.0	5.10x	mrc	26.09	42.24	-
+Black_0000_The Scandal of Educational Testing.pdf	2	1020x1391	150.0	grey	237	0.4642	486.2	32.0	31.8	20.2	83.9	3.0	4.0	5.79x	mrc	20.89	37.72	-
+Black_0000_The Scandal of Educational Testing.pdf	3	1020x1388	150.0	grey	284	0.2251	520.0	34.4	32.5	22.5	89.4	3.0	4.0	5.82x	mrc	19.70	37.29	-
+Davis_2005_Optimism of the Will_Nation.pdf	3	717x960	88.2	colour	106	0.5948	221.6	13.4	17.6	10.0	41.0	3.0	4.0	5.40x	mrc	20.36	33.03	-
+Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	5	1600x2201	200.3	grey	66	0.6425	597.5	32.1	43.2	28.7	104.1	3.0	4.0	5.74x	mrc	26.47	39.74	-
+Glazer_2002_Higher Ed_New Republic.pdf	1	1590x2177	200.1	grey	190	0.0648	849.6	62.2	9.7	3.8	75.7	8.0	16.1	11.22x	mrc	19.99	39.70	-
+Kelly_2014_Orders of Magnitude_TLS.pdf	3	2092x2664	186.8	colour	191	0.5557	1402.6	47.2	90.0	59.9	197.1	3.0	4.0	7.12x	mrc	23.50	38.59	-
+Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	1	1016x1502	156.5	grey	160	0.6980	463.7	26.1	34.6	20.9	81.5	3.0	4.0	5.69x	mrc	20.06	38.55	-
+Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	1177x1538	197.3	grey	158	0.2413	588.3	37.3	37.5	33.3	108.1	3.0	4.0	5.44x	mrc	19.70	38.46	-
+Merriam_1913_Clutter of Things_The Independent.pdf	2	1808x2807	300.0	grey	156	0.0063	1340.6	70.7	7.4	5.8	84.0	8.0	16.0	15.97x	mrc	20.80	40.05	-
+_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	3	919x1357	150.1	grey	183	0.0087	469.0	33.1	3.4	1.9	38.4	8.1	16.1	12.20x	mrc	19.09	37.57	-
+_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	4	971x1387	150.0	grey	144	0.4134	458.9	27.8	24.4	23.0	75.2	3.0	4.0	6.10x	mrc	19.73	38.01	-
+_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	5	915x1369	150.0	grey	190	0.0081	504.7	34.9	2.9	1.9	39.6	8.0	16.1	12.74x	mrc	18.94	37.40	-
+_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	1	1159x1573	140.0	colour	224	0.0257	528.4	36.6	4.8	2.4	43.9	8.0	16.1	12.04x	mrc	22.45	35.68	-
+Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	1246x2011	150.0	grey	190	0.4708	752.8	47.2	48.0	34.4	129.7	3.0	4.0	5.80x	mrc	20.76	38.60	-
+Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	1	959x1281	149.9	grey	204	0.0210	480.0	38.7	2.7	1.7	43.1	8.1	16.3	11.14x	mrc	18.79	37.23	-
+Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	1	1997x3219	330.0	grey	315	0.0023	1627.8	108.7	16.4	8.9	134.0	8.0	16.1	12.15x	mrc	18.27	40.16	-
+Zipkin_2000_Management.pdf	2	1908x2383	300.0	grey	271	0.2025	1609.7	80.5	71.3	74.2	226.0	3.0	4.0	7.12x	mrc	20.30	38.47	-
+_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	2	1296x1086	171.5	grey	197	0.5163	356.0	25.7	23.5	19.8	69.0	3.0	4.0	5.16x	mrc	19.94	39.25	-
+_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	3	1328x1134	176.7	grey	200	0.3659	408.6	27.3	27.8	21.1	76.2	3.0	4.0	5.36x	mrc	19.33	38.93	-
+___ 3.pdf	1	6215x9217	400.0	grey	752	0.7289	8781.0	380.6	1087.6	294.1	1762.3	3.0	4.0	4.98x	mrc	28.87	42.42	-
+___ 4.pdf	1	2383x4281	310.0	grey	458	0.1180	1547.7	96.2	133.1	126.7	355.9	3.0	4.0	4.35x	mrc	22.32	42.14	-
+___.pdf	1	6533x9925	400.0	grey	727	0.4680	14076.5	341.8	1286.5	735.0	2363.3	3.0	4.0	5.96x	mrc	23.67	36.05	-
+Doermann_1967_The market for college education in the United States.pdf	10	2652x3202	300.2	grey	100	0.0056	1084.3	48.0	21.0	5.8	74.9	8.0	16.1	14.48x	mrc	27.06	42.12	-
+Doermann_1967_The market for college education in the United States.pdf	21	2658x3200	300.4	grey	50	0.0165	1312.0	80.8	21.6	5.3	107.7	8.0	16.0	12.19x	mrc	25.11	40.39	-
+Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	151	736x952	86.6	grey	26	0.7086	111.9	7.0	7.7	6.1	20.8	3.0	4.0	5.39x	mrc	25.05	41.00	-
+
+=== 74 picture pages: 74 layered, 0 declined ===
+today  88972 KB   layered 13363 KB   6.66x smaller over the pages that layered
+as published 13363 KB   6.66x smaller than today   (0 pages where three layers cost more than one image)

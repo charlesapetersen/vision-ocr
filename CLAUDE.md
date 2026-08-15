@@ -24,6 +24,8 @@ C23 (the rebuilt copy displays what the original's crop box hid — C13 recurrin
 shared `/Resources`, so a page that draws no image is rebuilt at another page's plate
 resolution; 4 documents, and two attempted fixes were each worse).
 Read its header before planning anything. Update it in the same commit as any fix.
+Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2026-08-09.md`
+and `MRC-2026-08-15/` — and are evidence for one run, not claims about the present.
 [TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas
 with their costs and the reasons some are parked, and
 [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a

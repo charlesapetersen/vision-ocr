@@ -174,7 +174,7 @@ apply, or an app that does nothing satisfies the table.
 | any fix | the sibling sweep in 4b, with the answer in the commit |
 | a property spanning a lifecycle | the states-by-doors table in 4d |
 | any UI change | `./build.sh` (the suite compiles the views but does not run them) |
-| a change to a tool, **or to a struct a tool constructs** | `Tools/check-tools-compile.sh` — enforced by the hook for staged tools. Three tools have shipped unable to compile: C25's had never built, and T16's two were broken by a field added to `Prefs.Snapshot` eleven days before anyone noticed |
+| a change to a tool, **or to a struct a tool constructs** | `Tools/check-tools-compile.sh` — enforced by the hook for staged tools. Three tools have shipped unable to compile: C25's had never built, and T16's two were broken by a field added to `Prefs.Snapshot` 40 commits before anyone noticed |
 | `SearchableWriter` / `Flattener` / `JBIG2` | the invariant-3 procedure, before and after — CLAUDE.md has the commands. **Three instruments, not four**: this row said "all four probes" while CLAUDE.md named four *properties* and no fourth probe existed (T14) |
 | anything geometry- or routing-related | `Tools/score-corpus.swift` over `testdocs/` |
 

@@ -60,6 +60,19 @@ retired 4.96x/5.15x pair was right in magnitude all along, and only the sentence
 blind row was wrong. Caught by the adversarial review of my own diff, which is the third time
 in three days that a correction to this project's measurements has itself needed correcting.
 
+## Where the evidence is
+
+**`MRC-2026-08-15/`** — the five corpus runs behind every figure above, committed because
+`testdocs/` is not. Its README says which run establishes what, and has the four commands
+to regenerate them (about 7 minutes each). The review of this commit recomputed all twenty
+or so published figures from those files and found two arithmetic errors in the prose; the
+next reader should be able to do the same without rebuilding 1.2 GB of PDFs first.
+
+The same directory records the one trap in reading them: `mirrored-instrument.tsv` carries
+the **old** header, prints integer KB, and has a twelfth unnamed field — so its totals run
+up to 1 KB per page low, which slightly *understates* the very overstatement it is evidence
+for.
+
 ## What is left, unchanged from the daytime hand-off except item 1
 
 **Group 2 — the rest of `Tools/`.** `A12.4` (the corpus gate re-implements `pageIsAnImage`
@@ -92,9 +105,9 @@ It exists because C25 closed a symptom. `score-text-route` had never compiled in
 while three documents cited its output, and C25 removed the bad line — but nothing anywhere
 compiled a tool, so the door stayed open. **The first run found two more:** `score-skew` and
 `score-reading-order` have not built since `9684c3f`, the annotation transplant, which added
-`preserveAnnotations` to `Prefs.Snapshot` — a struct both tools transcribed by hand. Twenty-two
-commits and eleven days. Confirmed by type-checking at `9684c3f~1` in a worktree, where they
-build. Fixed the way T15 was: ask for `Prefs.Snapshot.current()` instead of transcribing it.
+`preserveAnnotations` to `Prefs.Snapshot` — a struct both tools transcribed by hand. **40 commits
+and 36 hours** (`9684c3f` at 2026-08-14 00:17, found 2026-08-15 around noon). Confirmed by
+type-checking at `9684c3f~1` in a worktree, where they build. Fixed the way T15 was: ask for `Prefs.Snapshot.current()` instead of transcribing it.
 
 **If you add a field to a struct a tool constructs, that is now a gated change** —
 CONTRIBUTING §5 has the row.
@@ -120,22 +133,39 @@ CONTRIBUTING §5 has the row.
   gates of 0.15 and 0.12. That is not a new finding — it is **R57**, open, and the fixture is
   the evidence for it. Do not re-file it.
 - **`Runner.locateTool` reads absolute paths**, so `PATH=` cannot hide `jbig2` or `qpdf` from a
-  tool. The two "refusing to run without it" branches are therefore *unexercised* — to watch one
-  fail you have to `chmod -x /opt/homebrew/bin/jbig2` and put it back. `Tools/fault-inject.sh`
-  has a case for it now; it is the only way to reach that branch.
+  tool. `chmod -x` on the binary is the only way in, which is what `Tools/fault-inject.sh
+  mrc_refuses` does — it restores on every exit path including failure, because leaving a user's
+  `jbig2` non-executable would silently take the app's JBIG2 route away. **The jbig2 branch is
+  exercised and passes; the qpdf twin is not.**
 - **A tool calling `Prefs.register()` was eating the user's settings.** A tool has no bundle
   identifier, so its `UserDefaults.standard` is a plist named after the *process* — and
   `migrateFromPreviousName` copies everything out of `com.cp1.VisionReaderGUI`, **deletes it
-  from there**, and files it in `score-mrc.plist`, where the app will never look. Nothing was
-  lost here (that domain holds only window frames on this machine), and the plists it made are
-  real: `bin-score-skew.plist`, `bin-score-corpus.plist` and four others each carry
-  `migratedFromVisionReaderGUI = 1`. `Prefs.register(migrate: false)` is the fix, every tool
-  passes it, and the suite now checks that it imports nothing and still registers the defaults.
-  **This predates today** — `score-corpus` and `score-line-separation` have been doing it since
-  2026-08-14.
-- **Two of the five things reviewed as defects in my own diff were arithmetic**: a median quoted
-  from the row above it, and "three were the script's fault and two were real" summing to six.
-  Numbers in prose do not get checked by anything. Recompute them from the TSVs before quoting.
+  from there**, and files it in `score-mrc.plist`, where the app will never look.
+
+  **Why nothing was lost, checked rather than assumed:** `com.cp1.VisionOCR.plist` already carries
+  `migratedFromVisionReaderGUI = True` and 13 settings, so the *app* migrated long ago and the old
+  domain was already empty of settings — it holds four AppKit window-frame keys and nothing else.
+  The race was real and had been defused before any tool ran.
+
+  **The debris is real and long-standing**: about thirty `~/Library/Preferences/*.plist` files
+  named after tool and test binaries, the oldest from 2026-08-05, most holding nothing but that
+  one marker. Harmless. `defaults read <name>` before deleting any of them, since a few also hold
+  `openWhenDone` and `warnDigitalText` that a tool set on purpose.
+
+  `Prefs.register(migrate: false)` is the fix, every tool passes it, and four suite checks cover
+  it. **Verified empirically, not just by the checks:** the post-fix binaries wrote no plist at
+  all — `score-mrc-v5.plist` and `score-mrc-final.plist` do not exist, where every pre-fix build
+  created one. **This predates today** — `score-corpus` and `score-line-separation` have been
+  doing it since 2026-08-14.
+- **Four of the review's findings against my own diff were arithmetic or citation errors, and one
+  was analytical.** The arithmetic: a median quoted from the row above it (182.5 for 179.4), "three
+  plus two" summing to six, 26,666 KB called 26.7 MB, and "34 of 72" inside a paragraph about 74.
+  A fifth — "twenty-two commits, eleven days" — survived that review and was caught during
+  handoff prep; it is 40 commits and 36 hours. **Nothing in this repository checks a number in
+  prose.** Recompute from `MRC-2026-08-15/` before quoting, and `git log | wc -l` before counting
+  commits.
+  The analytical one is the 1.35x confinement claim above, and it is the more instructive: three
+  variables moving at once, reported as one.
 
 ## Environment, unchanged and still true
 

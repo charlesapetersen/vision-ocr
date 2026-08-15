@@ -4757,7 +4757,9 @@ UN-OCred        p21         91        91.5         same       3.20x      3.20x
 UN-OCred        p31         89        89.7         same       3.42x      3.42x
 ```
 
-**Then over the whole corpus, 233 documents and the same 72 pages both versions measured.**
+**Then over the whole corpus, 233 documents and the same 72 pages both versions measured** — the
+five runs are committed in `MRC-2026-08-15/`, because `testdocs/` is not and every figure below
+should be recomputable without rebuilding it.
 R50's shrink fires on **38 of the 72** — just over half the picture route:
 
 ```
@@ -4963,10 +4965,16 @@ score-reading-order.swift:120: error: missing argument for parameter 'preserveAn
 ```
 
 Confirmed by bisection rather than inferred: type-checked at `9684c3f~1` in a worktree, where it
-builds clean. Twenty-two commits, eleven days, two instruments — one of which is the evidence
-behind `FEATURES.md`'s refusal of deskew and the other behind its reading-order item — and the
-symptom would have been C25's exact one, a compile error in a file the next maintainer had not
-touched.
+builds clean. **40 commits and 36 hours** — `9684c3f` landed 2026-08-14 00:17 and this was found
+2026-08-15 around noon — and two instruments, one of which is the evidence behind `FEATURES.md`'s
+refusal of deskew and the other behind its reading-order item. The symptom would have been C25's
+exact one, a compile error in a file the next maintainer had not touched.
+
+*(An earlier draft of this entry said "twenty-two commits, eleven days". Both numbers were
+invented, and `git log --oneline 9684c3f..HEAD | wc -l` with the two commit dates settles it in one
+line. Recorded rather than quietly fixed because it is the third arithmetic error in this
+commit's own prose, after a median quoted from the row above it and "three plus two" summing to
+six — none of which any check in this repository looks at.)*
 
 **Fixed the way T15 was**: `Prefs.register()` then `Prefs.Snapshot.current()`, so the tool asks
 for the shipped defaults instead of transcribing them and cannot break again on a new field. Every
