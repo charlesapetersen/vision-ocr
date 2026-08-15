@@ -41,3 +41,6 @@ logic/A10.1-warn-applies-in-text	killed	302	2 check(s): the warning applies in t
 logic/A10.1-alert-wording-by-mode	killed	272	2 check(s): the Extract Text wording does not claim the pages are rebuilt; …and does not claim anything is discarded or replaced
 logic/A10.3-newspaper-blurb	killed	273	1 check(s): Newspaper writes the registered defaults, so its blurb says so
 logic/A4.2-update-url-scheme	killed	274	5 check(s): an update URL with scheme file:///Appl… is refused; an update URL with scheme x-fake-handl… is refused; an update URL with scheme ftp://exampl… is refused
+logic/A13.3-newline-guard-is-every-newline	killed	277	3 check(s): a page path containing a carriage return is refused; a page path containing a CRLF is refused; a page path containing U+2028 is refused
+logic/A13.2-empty-document-says-so	killed	280	3 check(s): …but the message says no text was found; …and says how many pages that was; …and points at the two open routing defects rather than just shrugging
+logic/A13.1-nul-in-settings	killed	205	1 check(s): a NUL in languages is refused before the process is launched

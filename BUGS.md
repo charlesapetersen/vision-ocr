@@ -3896,6 +3896,120 @@ scheme-based rather than host-based. Mutant: `A4.2-update-url-scheme`.
 *(A4.2 also records that `release.notes` is parsed, unbounded at 200,000 characters, and never
 displayed. Still true, still harmless, and still worth deleting when the notes get a surface.)*
 
+### R73 · A NUL in *Languages* or *Custom words* aborted the whole app — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A13.1. The one real
+defect in the area that came out **sound** on the strongest evidence in the sweep.)*
+
+`Process.arguments` goes through `fileSystemRepresentation`, which raises
+**`NSInvalidArgumentException`** for a string containing U+0000. An Objective-C exception is
+not a Swift error, so the `do/catch` around `process.run()` does not catch it: SIGABRT, exit
+134.
+
+```
+customWords has a NUL: false -> succeeded, published
+customWords has a NUL: true  -> NSInvalidArgumentException, libc++abi: terminating (134)
+```
+
+`report` is never called and `fellBack` is never called, so `makeSearchablePDF`'s "the report
+callback is called exactly once per file" is broken as well.
+
+**The asymmetry is exact, and it is why this is worth a guard rather than a note.** The same
+snapshot recognises perfectly *in-process*, and `useHelper` is `helperIsWorthIt` — so **a
+one-file batch works and a two-file batch kills the app**. It also persists: `UserDefaults`
+round-trips the NUL, so every multi-file batch aborts until the user finds and clears an
+invisible character in a text field. Reachability is low and unproven at the UI — typing a NUL
+is impossible, pasting is the route — but this is the one thing the file promises cannot
+happen: `HelperFailure`'s docstring says "every case falls back", `helperName` says "the worst
+a broken helper can cost is time", and `ARCHITECTURE` says "the helper is never authoritative
+about failure". All three were false for the *launch*.
+
+**Fixed** by refusing before the launch and falling back, which is what every other
+`HelperFailure` does. Not sanitised: a NUL in a languages list is not a recognition setting the
+user meant, and in-process recognition honours the same snapshot without launching anything.
+
+**§4b made it a single-site fix.** Of five `Process.arguments` in `Sources/`, the other four
+carry only paths and constants — and A4.3's password fix had already removed the second
+free-text exposure.
+
+**Fuzzing decided the scope.** 16 candidates in child processes: **only NUL does this.**
+U+0085, U+2028, U+FFFF, a bare CR, ZWJ emoji, an RTL override and 256 KB arguments all launch;
+a ≥1 MB list gives a *catchable* Swift error that already falls back correctly. So the guard is
+two characters wide on purpose, and five inverse checks assert the others still reach the
+helper — a guard that refused them would turn a crash into a permanent fallback to the slow
+path, which is R40's 2.5x.
+
+**Where the NUL sits decides which of two defects you get, and the review recorded only the
+first.** Measured with a four-case probe against the real `Process.arguments`:
+
+```
+"en-US\0"        ran, exit 0     silently truncated to "en-US"
+"\0"             ran, exit 0     silently became an empty argument
+"Bolt\0Latour"   exit 134        uncaught NSException, SIGABRT
+"\0en-US"        exit 134        likewise
+```
+
+So it raises **iff something follows the NUL**, and a NUL in the final position instead changes
+the value the user asked for without saying so — a languages list quietly not being the one in
+the text field. A13.1 said "a string containing U+0000" and that is true of the abort for most
+placements but not all. Both are refused, because both are wrong: one kills the batch and the
+other silently recognises with settings nobody chose. Five checks, one per placement.
+
+**The mutant shows both halves at once, and finding that out corrected this entry.** The first
+draft asserted that removing the guard makes the suite abort *instead of* failing a check. The
+mutation log says otherwise:
+
+```
+FAIL a NUL at the end of languages is refused… — it succeeded, so the NUL reached Process.arguments
+…
+libc++abi: terminating due to uncaught exception of type NSException
+exit=134
+```
+
+One red line from a truncating case, then the abort from an embedded one. Written down because
+the wrong version of this sentence was already in the file, and reading the mutant's own saved
+output is what replaced it. Mutant: `A13.1-nul-in-settings`.
+
+### R74 · A document Vision read nothing from published as a silent success — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A13.2.)*
+
+`recogniseDocument` records `[]` for a blank page so `missingPages` can tell a skip from a blank
+(C12) — and nothing checked the *other* side: a document whose every page came back empty.
+
+```
+observations [1: 0, 2: 0]   missingPages []   -> succeeded, published, message=""   0 chars
+```
+
+Right for a genuinely blank scan. **Wrong for R56 and R57, both open and both on the default
+route** — a pale drawing erased, or a page blobbed to solid black, produces exactly this
+signature, and on a one-page document the user was told it succeeded and told nothing else.
+
+**The sibling already answered this question.** `writeEmbeddedText` reports "N page(s) carry an
+image with no text and were not read", with the comment "Invariant 1: this path can drop a
+page, so it says which." Same question, answered in one route and not the other, which is C20's
+shape.
+
+**Fixed** as a note on success, not a failure: a blank page is a legitimate thing to find, and
+refusing to publish would make an empty scan unprocessable. The note names the page count and
+points at the two open routing defects, so a user seeing it has somewhere to go. Four checks,
+including the inverse row that an ordinary document does **not** carry the note — without which
+this would be noise on every run. Mutant: `A13.2-empty-document-says-so`.
+
+### R75 · The manifest's newline guard missed every newline but one — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A13.3.)*
+
+`unusablePaths` checked `contains("\n")`. A path *ending* in CR passed it, and in the joined
+manifest that CR merges with the separator into a single Swift `Character` (`"\r\n"`), so the
+helper's `split(separator: "\n")` does not split there — **3 paths sent, 2 lines parsed**.
+
+**No content is lost**: the merged line names no file, the helper exits 4, and the app falls
+back. But it is the *count* check that saves it, not the guard, and the guard's own comment says
+it exists for the future in which "something hands the pipeline a page image named by the user"
+— exactly the future in which it is insufficient. **Fixed**: `rangeOfCharacter(from: .newlines)`,
+which is deliberately broader than the parser needs (it also refuses U+2028 and U+2029), because
+the cost of over-refusing a path this app generates itself is nothing and the cost of
+under-refusing one is a silently short list. Four checks, one per newline form. Mutant:
+`A13.3-newline-guard-is-every-newline`.
+
 ---
 ## The interface
 

@@ -102,6 +102,7 @@ CONSTANTS = [
     ("Recogniser.swift", "helperStallSeconds", "900.0", "0.001"),
 ]
 
+
 # Single-token logic edits in code written to close a defect. Each one undoes a
 # specific decision the register records, so each SHOULD be caught.
 OPERATORS = [
@@ -195,6 +196,30 @@ OPERATORS = [
      "alsoClaimed: [], releasing: [])", "R60-retry-reservations"),
     ("Model.swift", "defer { self.isPreflighting = false }",
      "self.isPreflighting = false", "U21-committed-across-alert"),
+    # A13.3. The newline guard back to "\n" only, so a path ending in CR passes it
+    # and merges with the manifest separator into one Character.
+    ("Recogniser.swift",
+     "        guard !images.contains(where: {\n"
+     "            $0.path.rangeOfCharacter(from: .newlines) != nil\n        }) else {",
+     "        guard !images.contains(where: { $0.path.contains(\"\\n\") }) else {",
+     "A13.3-newline-guard-is-every-newline"),
+    # A13.2. A document Vision read nothing from publishing silently again.
+    ("Model.swift", "            if byPage.values.allSatisfy(\\.isEmpty) {",
+     "            if false, byPage.values.allSatisfy(\\.isEmpty) {",
+     "A13.2-empty-document-says-so"),
+    # A13.1, and this one's verdict needs reading rather than trusting. Without the
+    # guard, a NUL with anything after it makes `Process.arguments` raise
+    # NSInvalidArgumentException - not a Swift error, so the do/catch around
+    # process.run() cannot catch it: SIGABRT, exit 134, and in the app the whole
+    # batch with every concurrent file in it. A NUL in the *final* position does not
+    # raise; it silently truncates the value instead. So the run produces one FAIL
+    # line (from a truncating case) and then dies (on an embedded one), and
+    # `killed` here means both things. mutation-out/ has the output.
+    ("Recogniser.swift",
+     "        guard !settings.languages.utf8.contains(0),\n"
+     "              !settings.customWords.utf8.contains(0) else {\n"
+     "            throw HelperFailure.unusableSettings\n        }",
+     "        // guard removed by mutation", "A13.1-nul-in-settings"),
     # A10.1. The predicate back to the panel's old opinion of it: in Extract Text
     # the question then depends on a toggle that mode does not have, which is how a
     # dismissed alert became unreachable and Extract Text silently OCR'd a picture

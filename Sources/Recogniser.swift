@@ -629,6 +629,7 @@ enum Recogniser {
     /// user has to act on.
     enum HelperFailure: LocalizedError {
         case unusablePaths
+        case unusableSettings
         case couldNotStart(String)
         case stalled
         case exited(Int32, String)
@@ -639,6 +640,9 @@ enum Recogniser {
             switch self {
             case .unusablePaths:
                 return "a page image's path contains a newline"
+            case .unusableSettings:
+                return "Languages or Custom words contains a NUL character, which "
+                    + "cannot be passed to another process"
             case .couldNotStart(let why): return "it would not start: \(why)"
             case .stalled: return "it stopped responding"
             case .exited(let code, let detail):
@@ -678,8 +682,50 @@ enum Recogniser {
         // fire today — it is here so that if something ever hands the pipeline
         // a page image named by the user, the handover refuses rather than
         // silently recognising the wrong list of files.
-        guard !images.contains(where: { $0.path.contains("\n") }) else {
+        //
+        // A13.3: `.newlines`, not `"\n"`. A path *ending* in CR passed the old
+        // check, and in the joined manifest that CR merges with the separator into
+        // one Swift `Character` (`"\r\n"`), so the helper's `split(separator: "\n")`
+        // does not split there — 3 paths sent, 2 lines parsed. No content was lost,
+        // because the merged line names no file, the helper exits 4 and the app
+        // falls back — but it was the *count* check that saved it and not this
+        // guard, and this guard's own comment says it exists for the future in
+        // which something hands the pipeline a page image named by the user.
+        guard !images.contains(where: {
+            $0.path.rangeOfCharacter(from: .newlines) != nil
+        }) else {
             throw HelperFailure.unusablePaths
+        }
+
+        // A13.1. `Process.arguments` goes through `fileSystemRepresentation`, which
+        // raises **`NSInvalidArgumentException`** for a string containing U+0000.
+        // An Objective-C exception is not a Swift error, so the `do/catch` around
+        // `process.run()` below does not catch it: SIGABRT, exit 134, the whole app
+        // gone — and `report` is never called, so `makeSearchablePDF`'s "the report
+        // callback is called exactly once per file" is broken too.
+        //
+        // **The asymmetry is exact and it is why this is worth a guard rather than a
+        // note**: the same snapshot recognises perfectly *in-process*, and
+        // `useHelper` is `helperIsWorthIt`, so a one-file batch works and a two-file
+        // batch kills the app. It also persists — `UserDefaults` round-trips the
+        // NUL — so every multi-file batch aborts until the user finds and clears an
+        // invisible character in a text field.
+        //
+        // Fuzzed 16 candidates in child processes: **only NUL does this.** U+0085,
+        // U+2028, U+FFFF, a bare CR, ZWJ emoji, an RTL override and 256 KB
+        // arguments all launch; a ≥1 MB list gives a *catchable* Swift error that
+        // correctly falls back.
+        //
+        // §4b makes it a single-site fix: of five `Process.arguments` in `Sources/`,
+        // the other four carry only paths and constants — and A4.3's password fix
+        // incidentally removed the second free-text exposure. Falling back is the
+        // right answer rather than sanitising the value, because a NUL in a
+        // languages list is not a recognition setting the user meant, and
+        // in-process recognition honours the same snapshot without launching
+        // anything.
+        guard !settings.languages.utf8.contains(0),
+              !settings.customWords.utf8.contains(0) else {
+            throw HelperFailure.unusableSettings
         }
 
         let fm = FileManager.default

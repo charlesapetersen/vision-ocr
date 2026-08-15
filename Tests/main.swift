@@ -345,6 +345,66 @@ do {
     check("searchable PDF gains a selectable text layer",
           text.contains("Hello OCR World"),
           text.isEmpty ? "<none>" : text.replacingOccurrences(of: "\n", with: " / "))
+    // The inverse of A13.2 below: an ordinary document that *did* yield text must
+    // not carry the empty-document note, or that note is noise on every run.
+    check("…and a document with text says nothing about being empty",
+          !message.contains("no text was found"), message)
+}
+
+// MARK: - A document Vision reads nothing from says so (A13.2)
+
+// `recogniseDocument` records `[]` for a blank page so `missingPages` can tell a
+// skip from a blank (C12), and nothing checked the other side: a document where
+// **every** page came back empty published as a success with `message=""`, zero
+// characters, and no note anywhere.
+//
+// Right for a genuinely blank scan. Wrong for R56 and R57 — both open, both on the
+// default route — where a pale drawing is erased or a page is blobbed to solid
+// black, which produces exactly this signature. On a one-page document the user was
+// told it succeeded and told nothing else at all.
+
+print("\na document with no text on any page says so")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("a132-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    // Genuinely blank pages, two of them, so the plural wording is exercised too.
+    let empty = dir.appendingPathComponent("empty.pdf")
+    var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    if let ctx = CGContext(empty as CFURL, mediaBox: &box, nil) {
+        for _ in 0..<2 {
+            ctx.beginPDFPage(nil)
+            ctx.setFillColor(NSColor.white.cgColor)
+            ctx.fill(box)
+            ctx.endPDFPage()
+        }
+        ctx.closePDF()
+    }
+    check("the blank fixture is a two-page PDF",
+          PDFDocument(url: empty)?.pageCount == 2,
+          "\(PDFDocument(url: empty)?.pageCount ?? -1)")
+
+    var outcome: Runner.Result.Outcome?
+    var message = ""
+    OCRModel.makeSearchablePDF(
+        file: empty, output: dir.appendingPathComponent("empty.ocr.pdf"),
+        rebuild: true, rebuildMode: .auto, password: nil,
+        control: RunControl(), progress: { _, _ in },
+        report: { o, m in outcome = o; message = m })
+
+    // Still a success: a blank page is a legitimate thing to find, and refusing to
+    // publish would make an empty scan unprocessable.
+    check("a document with no text anywhere still succeeds", outcome == .succeeded, message)
+    check("…but the message says no text was found",
+          message.contains("no text was found"),
+          message.isEmpty ? "<empty message — the A13.2 defect>" : message)
+    check("…and says how many pages that was",
+          message.contains("2 pages"), message)
+    check("…and points at the two open routing defects rather than just shrugging",
+          message.contains("reduced to nothing"), message)
 }
 
 do {
@@ -3622,6 +3682,107 @@ do {
           Recogniser.helperPath() == nil)
     if let saved { setenv("VISIONOCR_HELPER", saved, 1) } else { unsetenv("VISIONOCR_HELPER") }
     check("the suite's own helper is back", Recogniser.helperPath() != nil)
+
+    // MARK: A13.1 — a NUL in a settings field must not abort the app
+
+    // `Process.arguments` goes through `fileSystemRepresentation`, which raises
+    // NSInvalidArgumentException for a string containing U+0000. An Objective-C
+    // exception is not a Swift error, so the do/catch around `process.run()` does
+    // not catch it: SIGABRT, exit 134, the whole app gone — and `report` is never
+    // called, so "the report callback is called exactly once per file" breaks too.
+    //
+    // The asymmetry is what makes it worth a guard: the same snapshot recognises
+    // perfectly in-process, and `useHelper` is `helperIsWorthIt`, so a one-file
+    // batch works and a two-file batch kills the app. It persists, because
+    // UserDefaults round-trips the NUL.
+    //
+    // **Where the NUL sits decides which of two defects you get**, measured with a
+    // four-case probe against the real `Process.arguments` rather than reasoned
+    // about (the review recorded only the first):
+    //
+    //     "en-US\0"        ran, exit 0     <- silently truncated to "en-US"
+    //     "\0"             ran, exit 0     <- silently became an empty argument
+    //     "Bolt\0Latour"   exit 134        <- uncaught NSException, SIGABRT
+    //     "\0en-US"        exit 134        <- likewise
+    //
+    // So a NUL raises iff something follows it, and a NUL in the final position
+    // instead changes the value the user asked for without saying so. Both are
+    // refused here: one aborts the app, and the other is a languages list quietly
+    // not being the one in the text field.
+    //
+    // Two of these cases run in-process against the real API, so with the guard
+    // removed this block does not merely go red — the embedded cases take the suite
+    // down with SIGABRT, which is what the missing guard actually costs. The
+    // mutation log for `A13.1-nul-in-settings` shows both halves: one FAIL line for
+    // a truncating case, then `exit=134`.
+    for (field, hostile) in [("languages", "en-US\u{0}"),
+                             ("languages", "\u{0}en-US"),
+                             ("languages", "en\u{0}US"),
+                             ("customWords", "Boltanski\u{0}Latour"),
+                             ("customWords", "Latour\u{0}")] {
+        var poisoned = settings
+        if field == "languages" { poisoned.languages = hostile }
+        else { poisoned.customWords = hostile }
+        let where_ = hostile.hasSuffix("\u{0}") ? "at the end"
+            : hostile.hasPrefix("\u{0}") ? "at the start" : "in the middle"
+        let result = Result {
+            try Recogniser.recogniseViaHelper(
+                images: two, settings: poisoned,
+                helper: fakeHelper("nul-\(field)-\(hostile.utf8.count)-\(where_.count)", """
+                    printf '{"observations":[]}' > "$out/0.json"
+                    printf '{"observations":[]}' > "$out/1.json"
+                    """))
+        }
+        check("a NUL \(where_) of \(field) is refused before the process is launched",
+              failed(result)?.contains("NUL") == true,
+              failed(result) ?? "it succeeded, so the NUL reached Process.arguments")
+    }
+    // The inverse row: every other awkward character still goes through, because a
+    // guard that refused them would turn a crash into a permanent fallback to the
+    // slow path. Fuzzing found only NUL aborts; these all launch.
+    for (name, value) in [("a bare CR", "en-US\r"), ("U+0085", "en-US\u{85}"),
+                          ("U+2028", "en-US\u{2028}"), ("an RTL override", "en-US\u{202E}"),
+                          ("ZWJ emoji", "en-US\u{1F469}\u{200D}\u{1F4BB}")] {
+        var odd = settings
+        odd.languages = value
+        let result = Result {
+            try Recogniser.recogniseViaHelper(
+                images: two, settings: odd,
+                helper: fakeHelper("odd-\(value.hashValue.magnitude)", """
+                    printf '{"observations":[]}' > "$out/0.json"
+                    printf '{"observations":[]}' > "$out/1.json"
+                    """))
+        }
+        check("…while \(name) in a languages list still reaches the helper",
+              failed(result) == nil, failed(result) ?? "")
+    }
+
+    // MARK: A13.3 — the newline guard has to mean every newline
+
+    // A path *ending* in CR passed the old `contains("\n")` check, and in the joined
+    // manifest that CR merges with the separator into one Swift Character ("\r\n"),
+    // so the helper's `split(separator: "\n")` does not split there: 3 paths sent,
+    // 2 lines parsed. No content was lost — the merged line names no file, the
+    // helper exits 4, the app falls back — but the *count* check saved it, not this
+    // guard, and the guard exists for the future in which a page image is named by
+    // the user.
+    if let first = two.first {
+        for (name, suffix) in [("a newline", "\n"), ("a carriage return", "\r"),
+                               ("a CRLF", "\r\n"), ("U+2028", "\u{2028}")] {
+            let hostilePath = URL(fileURLWithPath: first.path + suffix)
+            let result = Result {
+                try Recogniser.recogniseViaHelper(
+                    images: [first, hostilePath], settings: settings,
+                    helper: fakeHelper("crlf-\(suffix.hashValue.magnitude)", """
+                        printf '{"observations":[]}' > "$out/0.json"
+                        printf '{"observations":[]}' > "$out/1.json"
+                        """))
+            }
+            check("a page path containing \(name) is refused",
+                  failed(result)?.contains("newline") == true,
+                  failed(result) ?? "it succeeded")
+        }
+    }
 }
 
 print("\nthe engine assumptions two declined features rest on")

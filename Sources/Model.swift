@@ -1816,6 +1816,8 @@ final class OCRModel: ObservableObject {
         // Carried out of the annotation step and onto the success line, because that is
         // what the run report keeps. See the transplant call below.
         var marksNote: String?
+        // A13.2. Set when every page came back with no observations at all.
+        var emptyDocumentNote: String?
 
         // Read the expected page count now, while everything still exists. The
         // scratch intermediates get deleted as they're spent, so asking later
@@ -1845,6 +1847,34 @@ final class OCRModel: ObservableObject {
                     + shown + (missing.count > 5 ? " …" : "")
                     + " of \(pageTotal); nothing was written.")
                 return
+            }
+
+            // A13.2. `recogniseDocument` records `[]` for a blank page so
+            // `missingPages` can tell a skip from a blank (C12) — and nothing
+            // checked the *other* side: a document where **every** page came back
+            // empty published as a success with `message=""`, 0 characters, no note
+            // anywhere.
+            //
+            // Right for a genuinely blank scan. **Wrong for R56 and R57, both open
+            // and both on the default route**: a pale drawing erased, or a page
+            // blobbed to solid black, produces exactly this signature, and on a
+            // one-page document the user is told it succeeded and told nothing else.
+            //
+            // The sibling already answers this question — `writeEmbeddedText`
+            // reports "N page(s) carry an image with no text and were not read",
+            // with the comment "Invariant 1: this path can drop a page, so it says
+            // which." Same question, answered in one route and not the other, which
+            // is C20's shape. A note on success rather than a failure, because a
+            // blank page is a legitimate thing to find and refusing to publish would
+            // make an empty scan unprocessable.
+            if byPage.values.allSatisfy(\.isEmpty) {
+                emptyDocumentNote = pageTotal == 1
+                    ? "no text was found on the page — if it is not blank, the page "
+                        + "image may have been reduced to nothing (see the release notes "
+                        + "on pale drawings and tonal plates)"
+                    : "no text was found on any of its \(pageTotal) pages — if they are "
+                        + "not blank, the page images may have been reduced to nothing "
+                        + "(see the release notes on pale drawings and tonal plates)"
             }
 
             // Held locally, not read back off a static: files run concurrently,
@@ -2150,7 +2180,8 @@ final class OCRModel: ObservableObject {
         // `filter { !$0.isEmpty }`, not `compactMap`: `sizeNote` returns an empty string
         // rather than nil unless the copy grew, so joining on it put a leading " — " in
         // front of the message every ordinary run showed the user.
-        report(.succeeded, [sizeNote(from: inputFile, to: output), marksNote ?? ""]
+        report(.succeeded, [sizeNote(from: inputFile, to: output),
+                            emptyDocumentNote ?? "", marksNote ?? ""]
                              .filter { !$0.isEmpty }.joined(separator: " — "))
     }
 
