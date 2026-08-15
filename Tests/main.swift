@@ -10037,6 +10037,82 @@ do {
 // somebody's marginalia. `Annotations.transplant` copies the marks onto the finished
 // file and then *verifies* its own work, which is the part these checks are about: the
 // interesting failure is not "no marks" but "marks that moved".
+// MARK: - The setting actually gates the feature (A8.1)
+
+// **Every other check in this file calls `Annotations.transplant` directly**, and
+// `Model.swift` reads `preserveAnnotations` in exactly one place. So if that guard
+// were inverted, deleted, or pointed at the wrong key, all of them would still pass
+// and the panel would be offering a switch that does nothing — H1's shape, which is
+// why `ocrAllPages` and `strategy` were deleted, and U26's.
+//
+// This is the owner's stated precondition for advertising the feature, alongside a
+// third adversarial review round. It drives the **real** `makeSearchablePDF` twice
+// over one marked-up document and asks the published files what happened.
+
+print("\nthe Keep highlights and notes setting gates the transplant")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("a81-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    // A real scan with a real highlight over it: the transplant needs a page it will
+    // rebuild, and the check needs a mark whose survival is visible.
+    let marked = dir.appendingPathComponent("marked.pdf")
+    makeScannedPDF(at: marked, lines: ["A MARKED PARAGRAPH OF TEXT",
+                                       "second line of the page"])
+    guard let doc = PDFDocument(url: marked), let page = doc.page(at: 0) else {
+        check("the A8.1 fixture opens", false); exit(1)
+    }
+    let mark = PDFAnnotation(bounds: CGRect(x: 60, y: 690, width: 300, height: 34),
+                             forType: .highlight, withProperties: nil)
+    mark.color = .yellow
+    mark.contents = "A8.1"
+    page.addAnnotation(mark)
+    check("the fixture carries one mark", doc.write(to: marked)
+            && PDFDocument(url: marked)?.page(at: 0)?.annotations.count == 1,
+          "\(PDFDocument(url: marked)?.page(at: 0)?.annotations.count ?? -1)")
+
+    /// Runs the shipped pipeline with the setting at `keep`, and returns how many
+    /// marks the published file carries.
+    func marksAfterRun(keep: Bool, tag: String) -> (outcome: Runner.Result.Outcome?, marks: Int) {
+        UserDefaults.standard.set(keep, forKey: Prefs.preserveAnnotations)
+        let out = dir.appendingPathComponent("out-\(tag).pdf")
+        var outcome: Runner.Result.Outcome?
+        OCRModel.makeSearchablePDF(
+            file: marked, output: out,
+            rebuild: true, rebuildMode: .auto, password: nil,
+            settings: Prefs.Snapshot.current(),
+            control: RunControl(), progress: { _, _ in },
+            report: { o, _ in outcome = o })
+        let published = PDFDocument(url: out)
+        let count = (0..<(published?.pageCount ?? 0))
+            .compactMap { published?.page(at: $0)?.annotations.count }
+            .reduce(0, +)
+        return (outcome, count)
+    }
+
+    let off = marksAfterRun(keep: false, tag: "off")
+    check("with the setting off the run still succeeds", off.outcome == .succeeded)
+    check("…and no mark arrives in the output", off.marks == 0, "\(off.marks) marks")
+
+    let on = marksAfterRun(keep: true, tag: "on")
+    check("with the setting on the run succeeds too", on.outcome == .succeeded)
+    // The whole point: the two runs differ, and they differ *because of the setting*.
+    // Without qpdf the transplant cannot run at all, so this is the one assertion
+    // here that has to be gated — and it says so rather than skipping silently.
+    if JBIG2.merger != nil {
+        check("…and the mark arrives", on.marks >= 1, "\(on.marks) marks")
+        check("…so the setting is what decides, not the code path",
+              on.marks > off.marks, "off \(off.marks), on \(on.marks)")
+    } else {
+        skipBlock("the transplant half of the preserveAnnotations gate", checks: 2,
+                  because: "qpdf not installed, so the transplant cannot run")
+    }
+    resetPrefs()
+}
+
 do {
     let dir = tmp.appendingPathComponent("annots-\(UUID().uuidString)")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

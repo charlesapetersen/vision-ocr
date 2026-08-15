@@ -199,6 +199,12 @@ OPERATORS = [
     # why the end-to-end check exists — it is what goes red, on the user's file.
     ("Model.swift", "alsoClaimed: claimedByEarlierAttempts, releasing: releasing)",
      "alsoClaimed: [], releasing: [])", "R60-retry-reservations"),
+    # A8.1. The setting unwired: the transplant runs whatever the user chose. Every
+    # other annotation check calls transplant directly, so before A8.1's checks this
+    # mutant would have survived a full suite - which is exactly H1's shape, a switch
+    # in the panel that does nothing.
+    ("Model.swift", "            if settings.preserveAnnotations {",
+     "            if true {", "A8.1-preserveAnnotations-gates"),
     ("Model.swift", "defer { self.isPreflighting = false }",
      "self.isPreflighting = false", "U21-committed-across-alert"),
     # R63. A cancelled file reported as a failure again: red rows, "Cancelled." as

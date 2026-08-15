@@ -47,3 +47,4 @@ logic/A13.1-nul-in-settings	killed	205	1 check(s): a NUL in languages is refused
 logic/A9.3-stop-collects-the-group	killed	281	1 check(s): …and the grandchild holding the pipe was collected, not stranded
 logic/A9.6-capture-byte-cap	killed	283	1 check(s): …and is stopped by the byte cap, not by the five-second deadline
 logic/A9.7-report-name-is-exclusive	killed	277	3 check(s): three reports finishing in the same second are three files; twelve reports written at once are twelve distinct files; …and none of them was refused
+logic/A8.1-preserveAnnotations-gates	killed	282	2 check(s): …and no mark arrives in the output; …so the setting is what decides, not the code path

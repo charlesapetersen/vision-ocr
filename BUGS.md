@@ -4388,6 +4388,40 @@ that went looking for it. Reported rather than deleted: removing somebody's evid
 tool's decision. **`BUGS.md` T5's "27 mutants, 25 killed, two survivors" is a figure from a
 smaller catalogue and should be read as such** — the current coverage line is the live number.
 
+### T13 · Nothing proved the annotation setting was wired to anything — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A8.1. One of the owner's
+two stated preconditions for advertising the feature.)*
+
+`preserveAnnotations` appeared **exactly once** in `Tests/main.swift` — in the `notRecognition`
+list — and `Model.swift` reads it in exactly one place. **Every** annotation check called
+`Annotations.transplant` directly. So if that guard had been inverted, deleted, or pointed at the
+wrong key, all fifteen of them would still have passed and the panel would have been offering a
+switch that does nothing: H1's shape, which is why `ocrAllPages` and `strategy` were deleted, and
+U26's.
+
+**Fixed** with two runs of the real `makeSearchablePDF` over one marked-up scan, asking the
+published files what happened rather than asking the transplant:
+
+```
+setting off -> succeeded, 0 marks in the output
+setting on  -> succeeded, mark present
+```
+
+and a third check that the two runs **differ**, which is the one that makes this about the
+setting rather than about the code path. The transplant half is gated on qpdf — it cannot run
+without it — and that gate reports through `skipBlock`, so it cannot skip silently (T11).
+
+**Proved by mutation, and this is the part worth keeping.** `A8.1-preserveAnnotations-gates`
+replaces the guard with `if true {`, and it is **killed by exactly the two new checks**: "…and no
+mark arrives in the output" and "…so the setting is what decides, not the code path". Before
+these checks that mutant would have survived a full green suite of 1,031 — an unwired switch,
+with fifteen passing annotation checks over it.
+
+*(The feature stays off by default and unadvertised. Its other precondition — a third
+adversarial review round, after two that each found marks landing in the wrong coordinate space
+— is still outstanding, and `score-annotations` only became trustworthy on rotated pages in T12,
+which is the instrument that round would use.)*
+
 ---
 ## The interface
 
