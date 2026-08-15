@@ -216,7 +216,7 @@ If something ever does drive it directly, these are the things that would bite:
 
 ## What the tests don't cover
 
-916 checks, 2–4 minutes, real OCR. The gaps listed here through 1.0 — the failure
+1031 checks, 2–4 minutes, real OCR. The gaps listed here through 1.0 — the failure
 and cancel branches, `publish`, encrypted PDFs, `rebuild: false`, `previewLines`,
 concurrent *searchable* runs, and colour pages — are all covered now (BUGS.md
 T3). What remains:

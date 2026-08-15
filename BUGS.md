@@ -6,7 +6,11 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Five open, and three of them change content on the default route. R58 is `FIXED` but its
+**Four open. C23 is the one that changes content on a route the user is on today**, and it is
+the reason 1.13.0 was not cut on 2026-08-15: it alters what a published page *displays* on 14 of
+233 corpus documents, and the instruments that would say whether the alteration is right are
+themselves under repair (`REVIEW-2026-08-14.md` A6.1, A12.2). R56 and R57 remain open and both
+wait on the one unbuilt *shape* signal. **R58 is `FIXED` but its
 feature is deliberately unreleased** — the annotation transplant, after two adversarial rounds
 that each found marks landing in the wrong place. The third round is unrun.
 
