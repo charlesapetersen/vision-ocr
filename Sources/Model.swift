@@ -148,6 +148,33 @@ final class RunControl: @unchecked Sendable {
     /// True while any batch is running. Drives the "really quit?" prompt.
     static var isAnyRunning: Bool { liveControls().contains { !$0.isFinished } }
 
+    /// Pre-flights that have started and not yet reached `run()`.
+    ///
+    /// A5.4. A `RunControl` does not exist until `run()`, so for the whole
+    /// committed-but-not-running window — `start()` has been pressed, the
+    /// born-digital scan is going, the alert may be up — `isAnyRunning` is
+    /// **false**. The quit gate reads `isAnyRunning` and the model reads
+    /// `isCommitted`, so closing the window during "Checking…" quit the app with a
+    /// batch the user had pressed Start on. Lost work rather than lost content, and
+    /// C20's two-definitions shape: one question, two answers.
+    private static var preflights = 0
+
+    static func beginPreflight() {
+        registryLock.lock(); preflights += 1; registryLock.unlock()
+    }
+    static func endPreflight() {
+        registryLock.lock(); preflights = max(0, preflights - 1); registryLock.unlock()
+    }
+
+    /// True while any batch is *committed*, which is what both the quit gate and
+    /// the model mean by "there is a batch". The one definition.
+    static var isAnyCommitted: Bool {
+        registryLock.lock()
+        let waiting = preflights
+        registryLock.unlock()
+        return waiting > 0 || isAnyRunning
+    }
+
     /// Cancels every live batch. Best effort by design: the app is quitting, and
     /// a child that ignores SIGTERM is not worth blocking the quit for.
     static func cancelAll() {
@@ -1059,6 +1086,8 @@ final class OCRModel: ObservableObject {
         let saved = d.string(forKey: Prefs.password) ?? ""
         let password = saved.isEmpty ? nil : saved
         isPreflighting = true
+        // Paired with the `defer` below, so the quit gate can see this window too.
+        RunControl.beginPreflight()
         DispatchQueue.global(qos: .userInitiated).async {
             let digital = Self.filesWithDigitalText(in: candidates, password: password)
             DispatchQueue.main.async { [weak self] in
@@ -1077,7 +1106,7 @@ final class OCRModel: ObservableObject {
                 // `run()`, which sets isRunning synchronously — so isCommitted
                 // never goes false between the two — and the fifth has to clear
                 // it on the way out.
-                defer { self.isPreflighting = false }
+                defer { self.isPreflighting = false; RunControl.endPreflight() }
                 guard !digital.isEmpty else {
                     self.run(candidates, note: note); return
                 }
@@ -1091,7 +1120,12 @@ final class OCRModel: ObservableObject {
                     self.run(candidates, readingTextFrom: Set(digital), note: note)
                 case .skipThem:
                     let rest = candidates.filter { !digital.contains($0) }
-                    self.skipped = Set(digital)
+                    // `formUnion`, not assignment (A5.4). `run` is careful to
+                    // `subtract` from this set; assigning here discarded every
+                    // mark an earlier decision had left, so a second Skip Those
+                    // in one session forgot what the first one skipped and the
+                    // rows lost their ⊘.
+                    self.skipped.formUnion(digital)
                     let skipped = "Skipped \(digital.count) file(s) that already had "
                         + "selectable text; their own text is kept."
                     guard !rest.isEmpty else {
@@ -1170,6 +1204,18 @@ final class OCRModel: ObservableObject {
     private func run(_ batch: [URL], readingTextFrom extract: Set<URL> = [],
                      note: String? = nil, leftOut: [URL] = []) {
         guard !batch.isEmpty, !isRunning else { return }
+
+        // A5.4. Cancel pressed during the pre-flight, when there was no
+        // `RunControl` yet to record it. Honoured here rather than dropped, and
+        // *before* `log = []` below, which is what used to erase the "Cancelling…"
+        // line and leave the user watching the batch start anyway.
+        if cancelledDuringPreflight {
+            cancelledDuringPreflight = false
+            log.append(LogLine(text: "Start cancelled — nothing was changed.",
+                               kind: .info))
+            abandonRetry()
+            return
+        }
 
         // Re-checked here, not only at the click. The file list is frozen when
         // Start is pressed but the destination is read at this point, so the two
@@ -2503,7 +2549,30 @@ final class OCRModel: ObservableObject {
         // Not opQueue.cancelAllOperations(): a cancelled Operation never runs,
         // so it would never report back and the batch would never finish.
         // control.isCancelled makes each queued file return immediately instead.
-        control?.cancel()
+        //
+        // A5.4: unguarded, this was a **silent no-op** in the committed-but-not-
+        // running states. `control` does not exist until `run()`, so during the
+        // pre-flight it cancelled nothing — and the "Cancelling…" line it appended
+        // was then erased by `run()`'s `log = []`, so the user pressed Cancel, saw
+        // a line appear, and watched the batch start anyway. Not reachable from
+        // today's UI, because the button is rendered only `if model.isRunning` —
+        // one `if` in a view standing between this and a lie, which is the U19/U23
+        // shape this codebase keeps paying for.
+        guard let control else {
+            // Committed but not running: the pre-flight is the thing to stop, and
+            // the honest way to stop it is to refuse the run it is about to ask
+            // for. `abandonRetry` also puts back a retry that got this far (A5.2).
+            if isPreflighting {
+                cancelledDuringPreflight = true
+                log.append(LogLine(text: "Cancelling…", kind: .info))
+            }
+            return
+        }
+        control.cancel()
         log.append(LogLine(text: "Cancelling…", kind: .info))
     }
+
+    /// Set by `cancel()` during the pre-flight, when there is no `RunControl` yet
+    /// to carry the fact (A5.4). Read and cleared by `run()`.
+    private var cancelledDuringPreflight = false
 }

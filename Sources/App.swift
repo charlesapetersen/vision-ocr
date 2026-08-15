@@ -10,7 +10,7 @@ import SwiftUI
 /// `NSTemporaryDirectory()`.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard RunControl.isAnyRunning else { return .terminateNow }
+        guard RunControl.isAnyCommitted else { return .terminateNow }
 
         // Ask, rather than silently discarding work. A batch over a few hundred
         // archival pages is long enough that quitting is usually a mistake.
@@ -31,7 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // because a quit that hangs is worse than a stray temporary file — and
         // `NSTemporaryDirectory()` is swept by the OS regardless.
         let deadline = Date().addingTimeInterval(2)
-        while RunControl.isAnyRunning, Date() < deadline {
+        while RunControl.isAnyCommitted, Date() < deadline {
             RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05))
         }
         return .terminateNow
@@ -46,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// `applicationShouldHandleReopen` brings the window back so it remains
     /// reachable.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        !RunControl.isAnyRunning
+        !RunControl.isAnyCommitted
     }
 
     /// Clicking the Dock icon with no window open restores one, which is how the

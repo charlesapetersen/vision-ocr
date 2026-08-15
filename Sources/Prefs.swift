@@ -468,6 +468,16 @@ enum Prefs {
         d.set(true, forKey: migratedFromOldName)
     }
 
+    /// Keys in `allKeys` that are **records, not settings** (A10.6).
+    ///
+    /// They have to be in `allKeys` — the migration and the enumeration checks walk
+    /// it — but "Reset to Defaults" must not touch them. `skippedVersion` is the
+    /// user having already said "don't offer me 1.9.0 again", so resetting it
+    /// re-offered a version they had dismissed; `lastUpdateCheck` is bookkeeping
+    /// that decides when the next request is due, and clearing it makes the app ask
+    /// again immediately.
+    static let notASetting: Set<String> = [skippedVersion, lastUpdateCheck]
+
     /// Defaults chosen to match mac-ocr's own defaults, so an untouched
     /// settings panel behaves exactly like running the CLI bare.
     static func register() {

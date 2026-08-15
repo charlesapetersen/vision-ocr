@@ -4280,6 +4280,49 @@ would sync to Dropbox or iCloud unnoticed. Now a `Failure.cannotPublish` naming 
 and the file to delete. A rollback that fails silently is the shape this function exists to
 avoid.
 
+### R80 · The updater could offer a downgrade, and Check Now gave no way to take it — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A10.4, A10.5, A10.6,
+A5.4.)*
+
+**A10.5 · a prerelease published without GitHub's flag was offered over the release it
+precedes.** `isNewer` filters non-digits per component, so `v99.0.0-rc.1` parses as
+`[99, 0, 0, 1]` and beats 99.0.0 — **a downgrade presented as an update**. `1.-1.0` parses as
+`[1, 1, 0]` and beats `1.0.0` the same way. Now a tag must be purely dotted digits, and a tag
+that is not is `.notAnOffer` rather than `.unreadable`: the endpoint answered and this app
+understood it, and calling that a failed check would retry every fifteen minutes (U25).
+
+**A10.4 · "Check Now" reported an update and then suppressed the only way to get it.** The panel
+kept `r.version` and threw away `r.url`, and the banner — the sole surface with *What's New* and
+*Download* — is set only from the non-forced `.task`, which returns immediately when `isDue()` is
+false. A successful forced check then stamps the full 24-hour interval. So after any failed
+automatic check (offline, 5xx, rate limit), Check Now read "99.0.0 is available" and gave no
+link, no button and no banner — that session or for the next day. The panel keeps the URL now
+and offers a Download link beside the status.
+
+**A10.6 · Reset to Defaults un-skipped a version.** `skippedVersion` is in `allKeys`, and has to
+be — the migration and the enumeration checks walk it — but it is a *record*, not a setting: the
+user has already said "don't offer me 1.9.0 again". `Prefs.notASetting` names it and
+`lastUpdateCheck` alongside, and the reset skips both. Made a constant rather than a literal in
+the view precisely so it can be asserted, with an inverse check that it has not grown to swallow
+real settings.
+
+**A5.4 · the quit gate and the model disagreed about when a batch exists.** `App.swift` gated on
+`RunControl.isAnyRunning`, and a `RunControl` does not exist until `run()` — so for the whole
+committed-but-not-running window (Start pressed, born-digital scan going, alert possibly up) it
+was **false**, and closing the window during "Checking…" quit the app with a batch the user had
+started. Lost work rather than lost content, and C20's two-definitions shape. `isAnyCommitted`
+counts pre-flights as well, and it is the one definition both sides read.
+
+**A5.4 · `cancel()` was a silent no-op in those same states.** `control` does not exist yet, so
+Cancel cancelled nothing — and the "Cancelling…" line it appended was then erased by `run()`'s
+`log = []`, so the user pressed Cancel, saw a line appear, and watched the batch start anyway.
+Not reachable from today's UI because the button is rendered only `if model.isRunning` — one
+`if` in a view standing between this and a lie, which is exactly the shape U19 and U23 record.
+`cancel()` now records the intent and `run()` honours it *before* it clears the log.
+
+**A5.4 · `skipThem` assigned where `run` subtracts**, discarding every mark an earlier decision
+had left, so a second Skip Those in one session forgot what the first had skipped. `formUnion`.
+
 ---
 ## The interface
 

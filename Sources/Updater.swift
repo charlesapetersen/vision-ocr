@@ -92,6 +92,19 @@ enum Updater {
         }
         let version = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
         guard !version.isEmpty, version.first?.isNumber == true else { return .unreadable }
+        // **Purely dotted digits, nothing else** (A10.5). `isNewer` strips non-digits
+        // per component, so `1.7.0rc2` parsed as `[1, 7, 0]`… and then compared
+        // *equal* to 1.7.0 at every position, which is not the harm — the harm is
+        // `v99.0.0-rc.1`, which parses as `[99, 0, 0, 1]` and is therefore "newer"
+        // than the 99.0.0 it precedes: **a downgrade offered as an update**.
+        // `1.-1.0` parses as `[1, 1, 0]` and beats `1.0.0` the same way.
+        //
+        // A prerelease published *with* GitHub's flag is already handled above.
+        // This is for one published without it, which is a mistake nobody notices
+        // until it ships, and the failure mode is users downgrading.
+        guard version.split(separator: ".", omittingEmptySubsequences: false)
+                .allSatisfy({ !$0.isEmpty && $0.allSatisfy(\.isNumber) })
+        else { return .notAnOffer }
         return .offer(Release(version: version, url: url,
                               notes: root["body"] as? String ?? ""))
     }

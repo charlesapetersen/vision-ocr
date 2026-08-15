@@ -53,6 +53,10 @@ struct SettingsView: View {
 
     @AppStorage(Prefs.checkForUpdates) private var checkForUpdates = true
     @State private var updateStatus = ""
+    /// The release page for an update this panel has found (A10.4). The
+    /// banner is the app's usual surface for this, and it is unreachable
+    /// after a failed automatic check — so the panel keeps its own.
+    @State private var updateURL: URL?
     /// What the last "Start from" button did. View state, not a setting: it
     /// describes an action that happened, and must not become a "currently using
     /// preset X" flag — see `Prefs.Preset.apply`.
@@ -562,9 +566,25 @@ struct SettingsView: View {
                     Updater.check(force: true) { result in
                         DispatchQueue.main.async {
                             switch result {
-                            case .available(let r): updateStatus = "\(r.version) is available"
-                            case .upToDate: updateStatus = "Up to date (\(Updater.currentVersion))"
-                            case .failed(let why): updateStatus = "Could not check — \(why)"
+                            case .available(let r):
+                                updateStatus = "\(r.version) is available"
+                                // A10.4. The panel kept `r.version` and threw away
+                                // `r.url`, and the banner — the only surface with
+                                // *What's New* and *Download* — is set from the
+                                // non-forced `.task`, which returns immediately when
+                                // `isDue()` is false. A successful forced check then
+                                // stamps the full 24-hour interval. So after any
+                                // failed automatic check (offline, 5xx, rate limit),
+                                // Check Now read "99.0.0 is available" and gave no
+                                // link, no button and no banner — this session or
+                                // for the next day. Keeping the URL costs one line.
+                                updateURL = r.url
+                            case .upToDate:
+                                updateStatus = "Up to date (\(Updater.currentVersion))"
+                                updateURL = nil
+                            case .failed(let why):
+                                updateStatus = "Could not check — \(why)"
+                                updateURL = nil
                             }
                         }
                     }
@@ -574,6 +594,11 @@ struct SettingsView: View {
             if !updateStatus.isEmpty {
                 Row("", labelWidth) {
                     Text(updateStatus).font(.caption).foregroundStyle(.secondary)
+                    if let updateURL {
+                        Link("Download", destination: updateURL)
+                            .font(.caption)
+                            .accessibilityLabel("Download the available update")
+                    }
                     Spacer()
                 }
             }
@@ -651,7 +676,13 @@ struct SettingsView: View {
 
     private func resetAll() {
         let d = UserDefaults.standard
-        for key in Prefs.allKeys {
+        // A10.6. `skippedVersion` is in `allKeys` — it has to be, or `resetAll`'s
+        // own enumeration check would flag it — but it is not a *setting*. It is a
+        // record of something the user already told the app once ("don't offer me
+        // 1.9.0 again"), and Reset to Defaults un-skipped it, so the next check
+        // re-offered a version they had dismissed. Same shape as `lastUpdateCheck`,
+        // which is bookkeeping rather than preference for the same reason.
+        for key in Prefs.allKeys where !Prefs.notASetting.contains(key) {
             d.removeObject(forKey: key)
         }
         // The registered defaults survive removal, so the UI snaps back to

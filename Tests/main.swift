@@ -4452,6 +4452,56 @@ do {
     check("…and the predicate itself is scheme-based, not host-based",
           Updater.isOfferableURL(URL(string: "https://not-github.example/evil")!)
             && !Updater.isOfferableURL(URL(string: "http://github.com/x")!))
+
+    // A10.5. `isNewer` filters non-digits per component, so a prerelease tag
+    // published *without* GitHub's prerelease flag parses as a version and can beat
+    // the release it precedes: `v99.0.0-rc.1` becomes [99,0,0,1] and is offered
+    // over 99.0.0 — a **downgrade presented as an update**. `1.-1.0` becomes
+    // [1,1,0] and beats 1.0.0 the same way.
+    for tag in ["v99.0.0-rc.1", "v1.7.0rc2", "v1.-1.0", "v2.0.0-beta", "v1.0.0+build3"] {
+        check("a tag that is not purely dotted digits is not an offer (\(tag))",
+              Updater.parse(Data("""
+              {"tag_name":"\(tag)","html_url":"https://github.com/x/y"}
+              """.utf8)) == .notAnOffer, tag)
+    }
+    // The inverse row, or the guard is satisfied by an updater that offers nothing.
+    check("…while an ordinary dotted version still is",
+          Updater.release(from: Data("""
+          {"tag_name":"v1.13.0","html_url":"https://github.com/x/y"}
+          """.utf8))?.version == "1.13.0")
+    // `.notAnOffer`, not `.unreadable`: the endpoint answered and this app
+    // understood it. Calling it unreadable would keep retrying every 15 minutes.
+    check("…and a malformed tag is an answer, not a failed check",
+          Updater.parse(Data("""
+          {"tag_name":"v99.0.0-rc.1","html_url":"https://github.com/x/y"}
+          """.utf8)) != .unreadable)
+
+    // A10.6. `skippedVersion` is in `allKeys`, so Reset to Defaults un-skipped a
+    // version the user had already dismissed and the next check re-offered it.
+    check("the reset leaves the records that are not settings alone",
+          Prefs.notASetting.contains(Prefs.skippedVersion)
+            && Prefs.notASetting.contains(Prefs.lastUpdateCheck),
+          Prefs.notASetting.sorted().joined(separator: ", "))
+    check("…and every one of them is a real key, not a typo",
+          Prefs.notASetting.isSubset(of: Set(Prefs.allKeys)),
+          Prefs.notASetting.subtracting(Set(Prefs.allKeys)).joined(separator: ", "))
+    // The inverse row: the exclusion list must not swallow actual settings.
+    check("…while the settings themselves are still reset",
+          !Prefs.notASetting.contains(Prefs.useJBIG2)
+            && !Prefs.notASetting.contains(Prefs.mode)
+            && Prefs.notASetting.count == 2)
+
+    // A5.4. A `RunControl` does not exist until `run()`, so the quit gate read
+    // false for the whole committed-but-not-running window and the app could quit
+    // with a batch the user had pressed Start on. One definition now.
+    check("no batch is committed to begin with", !RunControl.isAnyCommitted)
+    RunControl.beginPreflight()
+    check("…a pre-flight counts as a committed batch", RunControl.isAnyCommitted)
+    RunControl.endPreflight()
+    check("…and stops counting once it is over", !RunControl.isAnyCommitted)
+    RunControl.endPreflight()
+    check("…and an unpaired end cannot drive the count negative",
+          !RunControl.isAnyCommitted)
     // A prerelease is a *successful* check with nothing to offer, and a
     // truncated response is a failure. `release(from:)` returns nil for both,
     // and `check` treats nil as failure — which spends fifteen minutes and
