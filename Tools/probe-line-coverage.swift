@@ -1,7 +1,23 @@
 import PDFKit
 import Foundation
-// Precise coverage: for every recognised line, probe the right-hand 15% of that
-// line's own bounding box. A short line is no longer counted as a failure.
+// Precise coverage: for every recognised line on EVERY page, probe the right-hand
+// 15% of that line's own bounding box. A short line is no longer counted as a
+// failure.
+//
+//     probe-line-coverage <pdf> <observations.json>
+//
+// Build the JSON with Tools/make-observations.swift.
+//
+// Sibling note (T14, CONTRIBUTING 4b). This rect — `w * 0.15` at the line's right
+// edge — exists in three places: here, in `probe-line-edges`, and in
+// `score-corpus`'s own `end=` column. They are one idea in three shells, not three
+// instruments, and quoting two of them as corroboration of each other is what
+// "four invariant-3 instruments" invited. `score-corpus` is the one to quote.
+//
+// This file did NOT have the defect its two siblings had: it iterates `pages`
+// and takes each page's own observations, where they both read
+// `pages[0].observations` whatever page they were asked for. Recorded rather than
+// changed.
 struct Box: Decodable { let x, y, width, height: Double }
 struct Obs: Decodable { let boundingBox: Box; let text: String }
 struct Pg: Decodable { let page: Int; let observations: [Obs] }

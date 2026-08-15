@@ -4391,6 +4391,154 @@ that went looking for it. Reported rather than deleted: removing somebody's evid
 tool's decision. **`BUGS.md` T5's "27 mutants, 25 killed, two survivors" is a figure from a
 smaller catalogue and should be read as such** — the current coverage line is the live number.
 
+### T14 · All four invariant-3 instruments were compromised, and the procedure would not run — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A6.1, with the
+`pages[0]` half from A12.8. This was the gate on every text-layer change, which is why
+nothing in group 3 could be started before it.)*
+
+Invariant 3 tells a maintainer to re-measure four properties with four instruments after
+any change to `SearchableWriter`. **Every one of the four was wrong, and two of the
+commands could not be run at all.** Each defect below was reproduced by compiling the
+tool at `9dc1156` and running it; each fix was verified the same way.
+
+**1 · `score-line-separation` divided PDFKit *lines* by Vision *fragments*.** Different
+populations, so the ratio is not a percentage of anything — Vision emits 1.0–8.5
+fragments per visual line, and the tool read 35%–2533% across the corpus. Worse, it
+could not move:
+
+```
+HarpersMagazine-1938, headroomFactor 0.95   161/308  52%
+HarpersMagazine-1938, headroomFactor 1.5    161/308  52%     <- identical
+HarpersMagazine-1938, headroomFactor 3.0    161/308  52%     <- identical again
+```
+
+A tool taking `headroomFactor` as an argument and printing the same three characters at
+0.95, 1.5 and 3.0. A6.1 already recorded it reading 87% → 87% across a change from no
+runaway line to a 2,139-character one.
+
+**Replaced with two numbers that are made of the property.** Fragments are grouped back
+into visual lines — with `SearchableWriter.isSameVisualLine`, the app's own predicate,
+not a copy of it, because a copy is C20's shape with the writer and its own measuring
+stick as the two halves — and then: `merged=M/N`, the adjacent visual-line pairs sharing
+a column that PDFKit put into **one** extracted line; and `runaway=`, the share of
+extracted characters in lines longer than the longest visual line the reference found on
+that page. Neither needs a calibrated constant. The runaway threshold is *derived* from
+the page's own typography rather than chosen, deliberately: shipping a fresh magic number
+inside the fix for an unvalidated instrument would be the same defect again. The same
+document, same three constants:
+
+```
+headroomFactor 0.95   merged 0/154 (0.0%)   runaway 3.9%   longest 102   ratio 1.1x
+headroomFactor 1.5    merged 0/154 (0.0%)   runaway 3.9%   longest 102   ratio 1.1x
+headroomFactor 3.0    merged 35/154 (22.7%) runaway 44.2%  longest 774   ratio 8.7x
+```
+
+0.95 and 1.5 agreeing is real and not the old blindness: at both values `headroom`'s
+ceiling does not bind on these pages, so the output is byte-identical. At 3.0 the ceiling
+bites, runs widen, and 35 pairs weld — which the retired ratio could not see.
+
+**It carries a self-test that runs on every invocation and exits 4**, the pattern
+`score-threshold-loss` established. Five cases, including the retired defect pinned as a
+case of its own: three side-by-side fragments per visual line with all five lines
+extracted correctly, where the old ratio read 5/15 = 33% and called it a failure.
+**Made to fail first, twice** (CONTRIBUTING §4a): mutating the grouping so fragments
+never fold gives `15 fragments became 15 lines, wanted 5`; mutating the merge test to
+`if false` gives `merged 0/4 vs healthy 0`. Both exit 4.
+
+**2 · `probe-line-edges` and `probe-text-offset` read `pages[0].observations` whatever
+page they were asked for.** A12.8 recorded this as a small thing. It is not — it is a
+false *failure* as well as a false pass. On a real two-page searchable output:
+
+```
+                       page 1                        page 2
+probe-line-edges  before   starts 32/32 ends 32/32   starts  0/32 ends  1/32
+                  after    starts 32/32 ends 32/32   starts   5/5 ends   5/5
+probe-text-offset before   9 lines located           "no lines matched", exit 0
+                  after    6 of 25 located           1 of 3 located
+```
+
+Page 2 holds five measurable lines and every one of them is fine. The tool reported
+`0/32` — page 1's observations probed against page 2's geometry. Both now match `argv[2]`
+against the observations' own `page` field and refuse a page that is not in the JSON.
+
+**3 · `probe-text-offset`'s median was not sound, and A6.1 says it was.** The review
+records the printed *range* as ~1.7% artifact from locking onto a common word on the row
+below, and calls the median sound. Measured, changing the scan order and nothing else:
+
+```
+dense newsprint, 124 candidate lines
+  upward scan from -1.2, first hit    median -0.10   range -0.20...0.20
+  outward from zero                   median  0.00   range  0.00...0.20
+```
+
+The mechanism is broader than the one A6.1 names and needs no neighbouring line: scanning
+upward accepts the *lowest* step whose 0.5h window still clips this line's own glyphs.
+**So every `off=` figure recorded before this commit belongs to the old instrument** —
+`CLAUDE.md`, `HANDOFF.md`, and A6.2's "median 0.10 offset, max 0.10 → median holds; max
+0.20" row. Re-measured on a real document after the fix: `off=+0.00`.
+
+**And the fix A6.1 actually proposes was tested and dropped.** It blames the anchor —
+a first word that repeats on the page cannot say which line was found, `the` alone
+accounting for 33 of 87 outliers — so the obvious fix is to refuse those lines. Measured
+over four pages and 161 candidate lines, gate on versus gate off:
+
+| page | located, gate on | gate off | median | p5..p95 |
+|---|---|---|---|---|
+| dense newsprint p1 | 27/124 | 83/124 | 0.00 both | 0.00..0.10 both |
+| magazine p1 | 6/25 | 9/25 | 0.00 both | 0.00..0.00 both |
+| magazine p2 | 1/3 | 2/3 | 0.00 both | — |
+| journal title p1 | 4/9 | 6/9 | 0.00 both | 0.00..0.00 both |
+
+Identical medians and identical spreads, at the cost of a third to two thirds of the
+sample. **Scanning outward is the whole fix**, because a line's own glyphs are found at
+|step| ≈ 0 long before any neighbour a full line-height away, so the anchor never gets
+the chance to be ambiguous. The count is still printed as exposure; it does not gate the
+measurement. A rule that only shrinks the sample is not a fix.
+
+**4 · `score-corpus` printed `OK` for a document it measured nothing on.** Reproduced
+byte-for-byte on a blank two-page PDF: `BLANK OK 2p start=-% end=-% off=nan
+overlap=0/0 words=-%`. That is T12's false green, in the instrument that grades the
+pipeline. It now separates the two ways of measuring nothing — no reference line over 12
+characters, and no reference words at all — names which one fired, prints the reference
+observation count and the output's character count beside it, and **exits 1**, because a
+skip that exits 0 is a pass wearing a different word (T12's own rule):
+
+```
+BLANK  SKIP  2p  measured nothing: no reference line over 12 characters; the reference
+                 read no words at all   reference observations=0  output characters=0
+```
+
+`score-line-separation` had the same defect inverted — `0/0 lines kept separate 0%`,
+total failure reported over nothing — and refuses now too.
+
+**5 · The procedure was not executable.** Both probes take a JSON of observations as
+`argv[3]` and nothing in `Tools/` had produced that shape since recognition moved into
+the helper: the helper writes one file *per page*, a top-level object, not the array of
+pages the probes decode. **`Tools/make-observations.swift`** is the missing step, and it
+is a wrapper rather than a new measurement — `Recogniser.extract` at `textFormat = .json`
+already emits exactly the array the probes decode, so the instrument's input is the same
+bytes a user gets from Extract Text ▸ JSON and the two cannot drift. It refuses, at exit
+3, rather than hand a probe an empty file to report a clean run over.
+
+**6 · There are three instruments, not four**, and the documents said four in three
+places. `probe-line-edges` builds `score-corpus`'s `start=`/`end=` rect character for
+character and agrees with it on 48 of 48 documents; `probe-line-coverage` is a third
+shell on the same rect. Kept, both of them — `probe-line-edges` is the only thing that
+**names** a failing line, and deleting `probe-line-coverage` would delete the evidence
+behind an entry that cites it. But `CLAUDE.md` now prints the procedure as commands, and
+`CONTRIBUTING.md` §5 no longer says "all four probes". *(Sibling sweep, CONTRIBUTING §4b:
+`rg -n 'w \* 0\.85|width: w \* 0\.15' Tools/` gives three files. `probe-line-coverage` does
+**not** have the `pages[0]` defect — it iterates `pages` correctly — so it is recorded
+here rather than changed.)*
+
+**Two `private` keywords came off `Sources/SearchableWriter.swift`** so the instrument can
+group with the writer's own predicate. That makes it a contract with a second consumer, so
+it has suite checks now — five, in a block of their own — where before it was exercised
+only through `compose`, in which a change to the predicate and a compensating change to
+`draw` would cancel out and stay green. One of them pins C20's `min(height)` choice with
+a fixture whose baselines sit *between* the two rules' tolerances, so `min` refuses and
+`max` would accept.
+
 ### T13 · Nothing proved the annotation setting was wired to anything — FIXED
 *(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A8.1. One of the owner's
 two stated preconditions for advertising the feature.)*

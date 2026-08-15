@@ -71,10 +71,42 @@ let pages = byPage.sorted { $0.key < $1.key }
 var startOK = 0, startTotal = 0, endOK = 0, endTotal = 0
 var offsets: [Double] = [], overlaps = 0, overlapPairs = 0
 var refWords = 0, gotWords = 0
+var offsetAmbiguous = 0, offsetUnplaced = 0
+
+/// How many times `needle` occurs in `haystack`, stopping at two.
+///
+/// Reported, not enforced. A6.1 blames the offset artifact on a non-unique anchor
+/// (`the` alone accounted for 33 of 87 outliers); measured over four pages and 161
+/// lines, refusing every line whose first word repeats changes the median, the
+/// p5..p95 and the range by nothing at all while discarding a third to two thirds
+/// of the sample. The scan order is the whole fix. This count is kept because it
+/// is the exposure a reader would want if the number ever moves.
+func occurrences(of needle: String, in haystack: String) -> Int {
+    guard !needle.isEmpty else { return 0 }
+    var count = 0
+    var from = haystack.startIndex
+    while let r = haystack.range(of: needle, range: from..<haystack.endIndex) {
+        count += 1
+        from = r.upperBound
+        if count > 1 { break }
+    }
+    return count
+}
+
+// Nearest first, then outward. The old scan started at −1.2 and took the first
+// hit, so it accepted the *lowest* step whose window still clipped this line's
+// own glyphs — a systematic downward bias with no neighbouring line needed to
+// explain it. Measured, changing nothing else: median −0.10 → 0.00 on two real
+// pages. On a tie the upward step wins, because the glyphs sit above the box
+// bottom by `baselineFraction`.
+let offsetSteps = stride(from: -1.2, through: 1.2, by: 0.1)
+    .map { ($0 * 10).rounded() / 10 }
+    .sorted { (abs($0), -$0) < (abs($1), -$1) }
 
 for pg in pages {
     guard let page = result.page(at: pg.page - 1) else { continue }
     let b = page.bounds(for: .mediaBox)
+    let whole = page.string ?? ""
     let lines = pg.observations.filter { $0.text.count > 12 }
     for o in lines {
         let w = o.boundingBox.width * b.width, h = o.boundingBox.height * b.height
@@ -90,12 +122,15 @@ for pg in pages {
         // Where does this line's own text actually sit?
         let first = String(o.text.split(separator: " ").first ?? "").prefix(6)
         if first.count >= 3 {
-            for step in stride(from: -1.2, through: 1.2, by: 0.1) {
+            if occurrences(of: String(first), in: whole) != 1 { offsetAmbiguous += 1 }
+            var found = false
+            for step in offsetSteps {
                 if probe(CGRect(x: x, y: bottom + h * step,
                                 width: w * 0.2, height: h * 0.5)).contains(first) {
-                    offsets.append(step); break
+                    offsets.append(step); found = true; break
                 }
             }
+            if !found { offsetUnplaced += 1 }
         }
     }
     // Vertical overlap between horizontally-overlapping lines.
@@ -125,9 +160,41 @@ for pg in pages {
 offsets.sort()
 let median = offsets.isEmpty ? Double.nan : offsets[offsets.count/2]
 func pct(_ a: Int, _ b: Int) -> String { b == 0 ? "-" : String(Int(100.0*Double(a)/Double(b))) }
+
+// A6.1 (d): this printed the literal `OK` on any run that reached the end, so a
+// document whose reference read nothing came out as
+// `OK 2p start=-% end=-% off=nan words=-%` — a pass, in dashes, over no
+// measurement at all. That is the false-green shape T12 fixed twice elsewhere
+// (`score-annotations` skipping every mark and exiting 0; `mutate.py` reporting a
+// clean bill for four mutants it never applied), and it is the one this file
+// itself is meant to catch in the pipeline.
+//
+// Two populations, deliberately named apart, because they are different faults
+// and only one of them is the instrument's:
+//
+//  - no reference LINES over 12 characters → nothing to probe. Either the page
+//    genuinely holds no running text, or the reference OCR has collapsed. A6.2
+//    found three corpus documents whose reference read has collapsed outright.
+//  - no reference WORDS at all → the reference read nothing, full stop, and the
+//    `words=` column — the one column A6.1 says still holds — has no denominator.
+//
+// A SKIP does not exit 0. T12's rule: a skip that exits 0 is a pass wearing a
+// different word.
+var missing: [String] = []
+if startTotal == 0 { missing.append("no reference line over 12 characters") }
+if refWords == 0 { missing.append("the reference read no words at all") }
+guard missing.isEmpty else {
+    print([label, "SKIP", "\(sample.pageCount)p",
+           "measured nothing: \(missing.joined(separator: "; "))",
+           "reference observations=\(pages.reduce(0) { $0 + $1.observations.count })",
+           "output characters=\(result.string?.count ?? 0)",
+           String(format: "%.0fs", seconds)].joined(separator: "\t"))
+    exit(1)
+}
 print([label, "OK", "\(sample.pageCount)p",
        "start=\(pct(startOK, startTotal))%", "end=\(pct(endOK, endTotal))%",
-       String(format: "off=%+.2f", median),
+       offsets.isEmpty ? "off=-" : String(format: "off=%+.2f", median),
+       "offn=\(offsets.count)/\(offsets.count + offsetAmbiguous + offsetUnplaced)",
        "overlap=\(overlaps)/\(overlapPairs)",
        "words=\(pct(gotWords, refWords))%",
        String(format: "%.0fs", seconds)].joined(separator: "\t"))

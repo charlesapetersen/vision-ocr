@@ -914,7 +914,12 @@ enum SearchableWriter {
     /// height difference, which let a short superscript overlap a taller line —
     /// and, in `rightLimit`, let a display numeral count a body line two rows
     /// away as its own line's neighbour.
-    private static func drawnBaseline(_ o: Observation, in box: CGRect) -> CGFloat {
+    ///
+    /// Not `private`, and not for the app's benefit: `Tools/score-line-separation`
+    /// has to group fragments into visual lines the way this file does, and a
+    /// second definition of "one visual line" living in an instrument is C20's
+    /// shape with the writer and its own measuring stick as the two halves.
+    static func drawnBaseline(_ o: Observation, in box: CGRect) -> CGFloat {
         let h = o.boundingBox.height * box.height
         let bottom = box.height - (o.boundingBox.y * box.height) - h
         return bottom + h * baselineFraction
@@ -944,8 +949,12 @@ enum SearchableWriter {
     /// C18's overlap tolerance is what opened the door: it established that
     /// Vision's fragment boxes routinely overlap by a point or two, and an
     /// overlap in (1, 2] pt clears `headroom`'s `> 1` test.
-    private static func isSameVisualLine(_ a: Observation, _ b: Observation,
-                                         in box: CGRect) -> Bool {
+    ///
+    /// Not `private`, for the reason `drawnBaseline` gives: the instrument that
+    /// measures line separation groups fragments with *this* predicate rather
+    /// than a copy of it.
+    static func isSameVisualLine(_ a: Observation, _ b: Observation,
+                                 in box: CGRect) -> Bool {
         let tolerance = min(a.boundingBox.height * box.height,
                             b.boundingBox.height * box.height) * sameLineBaselineFraction
         return abs(drawnBaseline(a, in: box) - drawnBaseline(b, in: box)) < tolerance

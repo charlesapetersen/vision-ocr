@@ -65,23 +65,48 @@ fails without the fix.
 3. **The text layer must satisfy four properties at once**: word spacing survives
    extraction, runs don't overlap vertically, runs span the ink, and **runs keep
    a gap from the next fragment on their own line**. Each has been broken by a
-   fix to another. Re-measure all of them after any change to `SearchableWriter` —
-   **but fix an instrument first, because three of the four named here cannot
-   currently be trusted** (`REVIEW-2026-08-14.md` A6.1, measured over 233 documents):
+   fix to another. Re-measure all of them after any change to `SearchableWriter`.
+   The instruments were repaired in `BUGS.md` T14 — before that, **all four were
+   compromised and the procedure would not run**. The procedure:
 
-   - `Tools/score-line-separation.swift` divides PDFKit *lines* by Vision
-     *fragments* and **can move opposite to the property it names** — 87% to 87%
-     across a change from no runaway line to a 2,139-character one.
-   - `Tools/probe-line-edges.swift` is behaviourally identical to `score-corpus`'s
-     own `start=`/`end=` columns on 48 of 48 documents, so the four instruments are
-     really three.
-   - `Tools/probe-text-offset.swift`'s printed *range* is ~1.7% artifact (it locks
-     onto a common word on the line below); its median is sound.
-   - the `words=` column of `Tools/score-corpus.swift` is the one that holds — but
-     `score-corpus` prints `OK` for a document it measured nothing on.
+   ```sh
+   Tools/make-observations <finished.pdf> obs.json   # produce the reference
+   Tools/probe-line-edges  <finished.pdf> <page> obs.json
+   Tools/probe-text-offset <finished.pdf> <page> obs.json
+   Tools/score-corpus      <source.pdf> <label> [headroomFactor] [minimumVertical] [reserveEms]
+   Tools/score-line-separation <source.pdf> <label> [same three]
+   ```
 
-   And **the procedure is not executable as written**: two of those probes take a
-   JSON of observations that nothing in `Tools/` produces any more.
+   **There are three instruments, not four.** `probe-line-edges` builds the same
+   rect as `score-corpus`'s `start=`/`end=` columns, character for character, and
+   agrees with them on 48 of 48 documents; it is kept because it *names* the lines
+   that fail, and `score-corpus` only counts them. `probe-line-coverage` is a
+   third shell on that same rect. Counting them as independent is how "four
+   instruments" became a sentence nobody could act on.
+
+   What each one is for, and what it used to get wrong:
+
+   - `score-line-separation` — properties (a) and (b). Reports `merged=M/N`
+     over adjacent visual-line pairs and a `runaway=` character share. It used to
+     divide PDFKit *lines* by Vision *fragments*, which is not a percentage of
+     anything: it read 35%–2533%, read **87% → 87%** across a change from no
+     runaway line to a 2,139-character one, and read an identical 52% at two
+     different `headroomFactor`s. Every figure it produced before T14 is void,
+     including `HANDOFF.md`'s "modern print keeps 100%, 1920s-50s 87-93%".
+   - `score-corpus` — properties (c) and (d) plus word retention. Its `words=`
+     column always held. Its `off=` column did not: see the next bullet, and note
+     that it now prints `SKIP` at exit 1 rather than `OK` over a document it
+     measured nothing on.
+   - `probe-text-offset` — where the runs sit relative to their boxes. It scanned
+     upward from −1.2 and took the first hit, so it accepted the *lowest* step
+     whose window still clipped the line's own glyphs. **This moved the median,
+     not only the range as A6.1 recorded** — −0.10 → 0.00 on dense newsprint once
+     the scan runs outward from zero. Every `off=` figure recorded before T14
+     belongs to the old instrument.
+   - `probe-line-edges` — the per-page drill-down that names failing lines. It
+     read `pages[0].observations` whatever page it was given, so on page 2 of a
+     real document it printed `line starts: 0/32` — a false *failure* — over a
+     page holding five perfectly good lines.
 
    The fourth was found late and had been holding **by accident**. Vision splits
    one visual line into fragments side by side; nothing writes a space character

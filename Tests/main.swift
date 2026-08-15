@@ -8688,6 +8688,84 @@ do {
     resetPrefs()
 }
 
+print("\n\"one visual line\" means the same thing to the writer and to its instrument")
+
+do {
+    // `isSameVisualLine` and `drawnBaseline` stopped being `private` so that
+    // Tools/score-line-separation can group Vision's fragments back into visual
+    // lines with the app's own predicate rather than a copy — the copy is C20's
+    // shape, and C20 is in this register because two functions held two
+    // definitions of exactly this idea.
+    //
+    // That makes the predicate a contract with a second consumer, so it gets
+    // checks of its own. Until now nothing asserted its behaviour directly: the
+    // block above exercises it only through `compose`, where a change to it and a
+    // compensating change to `draw` would cancel out and stay green.
+    let box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    func obs(_ text: String, x: Double, y: Double, width w: Double = 0.20,
+             height h: Double = 0.016) -> SearchableWriter.Observation {
+        SearchableWriter.Observation(
+            boundingBox: SearchableWriter.BoundingBox(x: x, y: y, width: w, height: h),
+            text: text, confidence: 1.0)
+    }
+
+    // The case the instrument depends on: Vision splits one newspaper line into
+    // fragments sitting side by side. If these are not one visual line, the
+    // instrument counts 3 lines where the page has 1 and its merge rate is
+    // nonsense — which is the retired ratio's defect, arriving by a new door.
+    let a = obs("that", x: 0.10, y: 0.300)
+    let b = obs("measurable", x: 0.32, y: 0.300)
+    let c = obs("by standardised", x: 0.54, y: 0.300)
+    check("fragments side by side on one baseline are one visual line",
+          SearchableWriter.isSameVisualLine(a, b, in: box)
+          && SearchableWriter.isSameVisualLine(b, c, in: box))
+
+    // …and the next row down is not, or every page collapses to one line and
+    // the merge count is structurally zero — a metric that cannot report the
+    // defect it exists for.
+    let below = obs("the next line down the column", x: 0.10, y: 0.316)
+    check("…and the row beneath is not",
+          !SearchableWriter.isSameVisualLine(a, below, in: box),
+          String(format: "baselines %.2f vs %.2f pt",
+                 SearchableWriter.drawnBaseline(a, in: box),
+                 SearchableWriter.drawnBaseline(below, in: box)))
+
+    // C20 chose `min(height)` deliberately: a tall display numeral must not be
+    // able to claim a body line two rows away. Pinned behaviourally, because
+    // `sameLineBaselineFraction` is otherwise guarded only by a drift check that
+    // asserts the literal 0.4.
+    //
+    // The geometry is chosen so the two rules disagree, which is what makes the
+    // check bite: drawn baselines 12.0 pt apart, against 0.4 x the shorter height
+    // = 5.1 pt and 0.4 x the taller = 19.0 pt. `min` refuses, `max` accepts. A
+    // pair inside both tolerances, or outside both, would pass either way.
+    let display = obs("7", x: 0.10, y: 0.2000, width: 0.05, height: 0.060)
+    let bodyTwoRowsOff = obs("a body line well below it", x: 0.20, y: 0.2495)
+    let apart = abs(SearchableWriter.drawnBaseline(display, in: box)
+                    - SearchableWriter.drawnBaseline(bodyTwoRowsOff, in: box))
+    let shorterTolerance = 0.016 * 792 * SearchableWriter.sameLineBaselineFraction
+    let tallerTolerance = 0.060 * 792 * SearchableWriter.sameLineBaselineFraction
+    check("the fixture really does separate the two rules",
+          apart > shorterTolerance && apart < tallerTolerance,
+          String(format: "%.2f pt apart, shorter tolerance %.2f, taller %.2f",
+                 apart, shorterTolerance, tallerTolerance))
+    check("a tall display numeral cannot claim a body line two rows away",
+          !SearchableWriter.isSameVisualLine(display, bodyTwoRowsOff, in: box),
+          "tolerance is 0.4 x the SHORTER height, not the taller")
+
+    // The baseline is where the text is *drawn*, not where the box bottom sits —
+    // comparing box bottoms over-estimates the gap by 0.22 x the height
+    // difference, which is what let a short superscript overlap a taller line.
+    let tall = obs("Wg", x: 0.10, y: 0.300, height: 0.030)
+    let short = obs("x", x: 0.40, y: 0.300, height: 0.010)
+    let boxBottomGap = abs((0.030 - 0.010) * 792)
+    let drawnGap = abs(SearchableWriter.drawnBaseline(tall, in: box)
+                       - SearchableWriter.drawnBaseline(short, in: box))
+    check("drawnBaseline is the drawn baseline, not the box bottom",
+          drawnGap < boxBottomGap,
+          String(format: "drawn gap %.2f pt, box-bottom gap %.2f pt", drawnGap, boxBottomGap))
+}
+
 // MARK: - The rename must not cost anyone their settings
 
 // A bundle identifier IS the preferences domain, so renaming the app to Vision

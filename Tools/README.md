@@ -41,13 +41,21 @@ the ones that call `Flattener` need `Sources/SearchableWriter.swift` with it.
 | tool | question it answers |
 |---|---|
 | `score-corpus.swift` | Per document: line-start/line-end selectability, text-layer offset, source line tightness, word retention. One TSV row per document. |
-| `score-line-separation.swift` | Do recognised lines survive as *separate* lines in the output? The metric that matches "selecting a paragraph skips a line". Takes an optional `headroomFactor` as argv[3]. |
+| `score-line-separation.swift` | Do recognised lines survive as *separate* lines in the output? The metric that matches "selecting a paragraph skips a line": `merged=M/N` over adjacent visual-line pairs, plus a `runaway=` character share. Optional `headroomFactor`, `minimumVertical`, `reserveEms` as argv[3-5]. **Carries a self-test that runs on every invocation** (exit 4). Figures from before T14 are not comparable — it used to divide PDFKit lines by Vision fragments. |
+| `make-observations.swift` | `<pdf> <out.json> [password]` — the reference JSON the three probes below read. Invariant 3's procedure was not executable without it. A wrapper over `Recogniser.extract` at `textFormat = .json`, so the probes read the same bytes Extract Text ▸ JSON gives a user. |
 | `score-gate.swift` | **The release gate.** Every document in a corpus through `OCRModel.start()` end to end, at the app's own concurrency — the check the unit suite cannot do. Run before any release touching `Flattener`, `SearchableWriter` or `JBIG2`; baseline in HANDOFF.md. |
 | `score-routing.swift` | Per page: bilevel or greyscale, and KB/page. Catches both a picture routed to 1-bit (content destroyed) and text routed to greyscale (file balloons). |
 | `picture-signals.swift` | The three routing signals — ink coverage, continuous tone, colour saturation — plus the Otsu threshold, per page. Use when routing looks wrong. |
-| `probe-line-coverage.swift` | Is the right-hand end of each line selectable? Catches a text layer narrower than the ink. |
-| `probe-line-edges.swift` | Both ends, and names the lines that fail. |
-| `probe-text-offset.swift` | Slides a probe vertically to find where each line's text actually sits. 0.00 = on the ink. Catches the drift class of bug. |
+| `probe-line-coverage.swift` | Is the right-hand end of each line selectable, over the whole document? Catches a text layer narrower than the ink. **Third shell on one rect** — see the note below. Not affected by the page bug the other two had: it iterates `pages` correctly. |
+| `probe-line-edges.swift` | `<pdf> <page> <obs.json>` — both ends of every line on one page, and **names** the ones that fail. That naming is the only reason to keep it. |
+| `probe-text-offset.swift` | `<pdf> <page> <obs.json>` — slides a probe out from zero to find where each line's text actually sits. 0.00 = on the ink. Catches the drift class of bug. |
+
+**`score-corpus`, `probe-line-edges` and `probe-line-coverage` build the same
+probe rect** — `w * 0.15` at the line's own left and right edges — in three
+places, and it is one idea, not three instruments. `score-corpus` is the one to
+quote; the other two exist to say *which* lines failed and to sweep a whole
+document. Do not report them as independent corroboration of each other, which is
+what "four invariant-3 instruments" invited.
 | `pdf-extract-pages.swift` | `<src> <dest> <page…>` — pull pages into a small fixture. |
 | `pdf-page-text.swift` | `<pdf> <page>` — that page's embedded text, no OCR. |
 | `pdf-info.swift` | Pages, how many carry text, total characters, page box, encryption. |
