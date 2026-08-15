@@ -4964,6 +4964,123 @@ coverage maps.
   finishes, `done > 0` resets the counter, so a batch that stalls mid-run prints its progress
   line for ever — A12.6's hang in the one form still reachable. A stall bound over a corpus has
   to survive a single 64.84 MP page, and guessing one is how R44 happened.
+### T10 · The tenth check that cannot fail — and it was invariant 2's only guardian — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A11.1–A11.4. The
+highest-value area of that sweep, established by four full suite runs against mutated
+product code.)*
+
+**CLAUDE.md invariant 2 had no working test at all.** In the block headed *"partial results
+are never published"*, which exists for that invariant:
+
+```swift
+let published = outDir.appendingPathComponent("published.pdf")
+check("the truncated file is not at the destination",
+      !FileManager.default.fileExists(atPath: published.path))
+```
+
+`published.pdf` occurred **exactly twice in the 8,600-line file: that declaration and that
+use.** Nothing ever wrote it. The block never called `makeSearchablePDF` and never called
+`publish` — it called `compose` directly into `staged.pdf`. So it asserted that a path no code
+in the test had ever named did not exist, under a label claiming to cover the page-count gate.
+
+**Proved by mutation.** Deleting the gate the check claims to cover —
+
+```swift
+guard produced == expected else { report(.failed, "The result had \(produced) pages …"); return }
+```
+
+— left the suite at **862/862, exit 0**. The mechanism CLAUDE.md names *verbatim* ("stages
+output and moves it into place **after verifying the page count**") could be deleted with a
+green suite. Two more of that block's five checks carried no information either: one restated
+a value asserted on the line above, and its comment said "a previous good output must survive
+a later **failed run**" when no run happened between writing the file and checking it. **3 of
+5.**
+
+**Fixed, and the fix is a place rather than a check.** The verify-then-move pair is now one
+named function, `OCRModel.publishVerified(_:expecting:to:)`, and the refusal's wording is one
+function, `incompleteRefusal`, because there are two call sites — an early one that fails a
+short result before the outline rewrite and the annotation transplant are paid for, and
+`publishVerified` immediately before the user's disk is touched.
+
+**And it is defence in depth, not the closing of a hole.** A first version of this entry said
+"the file that actually lands was never the file that was checked". That is **false**, and an
+adversarial review of this diff caught it: the outline branch only adopts `outlined` when
+`PDFPageCount(outlined) == expected`, and the annotation branch re-reads `finished` and refuses
+on `after != expected`. Every path to `publish` already verified what it was about to publish.
+What the named function adds is a **single place the invariant lives**, which is what lets one
+check drive it with a deliberately short file — and the register carrying an overstated claim
+about its own fix is the shape four false entries here already have.
+
+What the block now does, with the real functions:
+
+- `incompleteRefusal` over a genuinely truncated compose, asserting the refusal exists, that
+  it says "nothing was written", and that it names both counts. A11.8 recorded that **neither**
+  of `makeSearchablePDF`'s refusal messages was asserted anywhere, so the wiring from
+  predicate to reported sentence was untested in both directions.
+- **The check A11.1 is about**: a good three-page output at the destination, a one-page
+  staged file offered for publication, refusal, and the good file **byte-for-byte** intact
+  afterwards. Byte comparison deliberately — the truncated file also opens and also has
+  "some pages", so `fileExists` and a page count are both satisfied by the destroyed state
+  the invariant exists to prevent.
+- The inverse row, per CONTRIBUTING 4d: a complete result **does** publish, and is *moved*
+  rather than copied. Without it an app that never writes anything satisfies the three checks
+  above.
+- **End to end through the real pipeline**: a run whose destination is a **folder** holding
+  someone's file. It composes, reaches the new call site, throws at `publish`, reports
+  `.failed` in the words the user sees, and the file inside is byte-for-byte intact. A
+  directory is the one *reachable* way to fail at the publish step: nothing in the pipeline can
+  produce a short staged file, which was established by trying — a cancel is caught before the
+  gate, and PDFKit repairs a page tree that over-declares its `/Count` rather than handing back
+  a nil page. So the page-count half is defence in depth, tested at its seam.
+- **A pre-cancelled run reports `.cancelled`**, which makes T3's closing list true. It bites on
+  the outcome and *only* on the outcome — and the first version of this block claimed otherwise.
+  It asserted that a good file at the destination survived a pre-cancelled run, which holds for
+  every possible implementation of `publishVerified`, because a pre-cancelled control makes
+  recognition throw and the run returns before it composes anything. **An un-failable check,
+  inside the fix for un-failable checks**, found by the adversarial pass over this diff and not
+  by the author. It is the tenth entry in this register's own lesson: the instrument is wrong
+  more often than the code, and most convincing when it agrees with you.
+
+**T3's closing list is wrong in two places, and both are corrected by that last check.** It
+records "**a pre-cancelled control that must report `.cancelled` and publish nothing**" as
+closed. What is actually there is `check("a cancelled control refuses the work before it
+starts", control.isCancelled)` — a property of `RunControl`, asserted without calling
+`makeSearchablePDF` at all. And it records "**`rebuild: false`** … Two pages of differing
+size, per invariant 5", which is A11.4:
+
+- **the `rebuild: false` fixture never satisfied invariant 5.** Both pages came from
+  `makeScannedPDF`, which hard-codes 612×792, so they were **the same size** — "a different
+  size" was the *text drawn on the sheet*, mistaken for the sheet. The block had **no geometry
+  assertion at all**, on the one route where C7 *and* C10 both bit. **Fixed**: three pages of
+  three sizes with the last quarter-turned, built by the same `mixedPage` helper the
+  invariant-5 block uses so the two fixtures cannot drift apart in what they mean by "a
+  different size", plus a per-page display-box assertion and text checks on the narrow and the
+  rotated page.
+
+**Two more inert checks, from the same area:**
+
+- **A11.2 · three doors-table rows could not fail, and U19's own recorded defect survived
+  them.** `retryFailures cannot change a committed batch` used a one-file fixture and marked
+  *that same file* failed, so the narrowing was the **identity map** and `files != before` was
+  false whether the gate held or not. Mutating `canRetryFailures`' `!isCommitted` to
+  `!isRunning` — U19's defect verbatim, and `mutate.py`'s own mutation applied to the seventh
+  door — left the suite **862/862, exit 0**, while under it a retry in the pre-flighting and
+  deciding states erased every verdict and silently narrowed a committed two-file batch to
+  one. **Fixed**: the batch is two files, one failed and one not, so the narrowing is
+  observable; `add` opens a *third* file, because adding a file the batch already holds would
+  dedupe and go inert the same way. A quarter of CONTRIBUTING 4d's flagship control was
+  decorative.
+- **A11.3 · two checks whose condition was the literal `true`.**
+  `check("nothing external has to resolve for start() to reach the pre-flight", true)`, twice.
+  `git log -S` shows the mac-ocr removal replaced a real assertion — `Runner.resolveBinary()
+  != nil` — with the literal, leaving a falsifiable label over nothing. **Deleted**, because
+  the property is now true by construction: the pre-flight's only work is
+  `Flattener.hasDigitalText`, which runs no program. This file handles this correctly
+  elsewhere and says so — "Deleted rather than weakened into something that passes without
+  testing anything."
+
+**Suite count: 862 → 880.** Two deletions, twenty additions — four of them the
+folder-destination end-to-end check that replaced the un-failable one.
 
 ---
 

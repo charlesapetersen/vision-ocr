@@ -161,6 +161,15 @@ OPERATORS = [
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",
      "guard !isRunning else { return .refusedRunInProgress }", "U19-add-guard"),
+    # T10 / A11.1. The tenth un-failable check guarded exactly this, and deleting
+    # the gate it named left the suite 862/862 green. Run by hand before the
+    # catalogue got it: 3 checks red, and the good file at the destination went
+    # from 107,847 bytes to 809.
+    ("Model.swift",
+     "        if let refusal = incompleteRefusal(staged, expecting: expected) {\n"
+     "            throw Failure.incompleteResult(refusal)\n        }\n"
+     "        try publish(staged, to: output)",
+     "        try publish(staged, to: output)", "A11.1-publishVerified-gate"),
     ("Model.swift", "defer { self.isPreflighting = false }",
      "self.isPreflighting = false", "U21-committed-across-alert"),
     ("Runner.swift", "guard deadline > now else { return 0 }",

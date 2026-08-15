@@ -4183,8 +4183,10 @@ do {
     defer { try? FileManager.default.removeItem(at: dir) }
     let one = dir.appendingPathComponent("one.pdf")
     let two = dir.appendingPathComponent("two.pdf")
+    let three = dir.appendingPathComponent("three.pdf")
     makeScannedPDF(at: one, lines: ["ONE"])
     makeScannedPDF(at: two, lines: ["TWO"])
+    makeScannedPDF(at: three, lines: ["THREE"])
 
     // Every state in which the batch is committed and therefore frozen.
     let committedStates: [(String, @MainActor (OCRModel) -> Void)] = [
@@ -4196,8 +4198,21 @@ do {
     ]
 
     // Every door. `mutate` returns true if the batch actually changed.
+    //
+    // **The batch is two files, and it has to be** (`REVIEW-2026-08-14.md`
+    // A11.2). With one file that was also the failed one, `retryFailures`'
+    // narrowing was the *identity map*: `files != before` was false whether the
+    // gate held or not, in all three states. Mutating `canRetryFailures`'
+    // `!isCommitted` to `!isRunning` — U19's recorded defect verbatim — left the
+    // suite **862/862, exit 0**, while under it a retry in the pre-flighting and
+    // deciding states erased every verdict and silently narrowed a committed
+    // two-file batch to one. Three of this table's cells were decorative, in
+    // CONTRIBUTING 4d's flagship control.
+    //
+    // So `add` opens a *third* file: adding `two` to a batch that already holds
+    // it would dedupe, and the add row would go inert in the same way.
     let doors: [(String, @MainActor (OCRModel) -> Bool)] = [
-        ("add", { m in let before = m.files; _ = m.add([two]); return m.files != before }),
+        ("add", { m in let before = m.files; _ = m.add([three]); return m.files != before }),
         ("remove", { m in let before = m.files; m.remove(one); return m.files != before }),
         ("clearFiles", { m in let before = m.files; m.clearFiles(); return m.files != before }),
         // The seventh door. `retryFailures` replaces `files` wholesale, which is
@@ -4205,7 +4220,10 @@ do {
         // from a button that is visible whenever the last run left a failure —
         // including while the next run is in flight.
         ("retryFailures", { m in
+            // One of the two failed and one did not, so a retry that ran would
+            // narrow [one, two] to [one] and be visible in `files`.
             m.outcomes[one] = .failed
+            m.outcomes[two] = .succeeded
             let before = m.files
             _ = m.retryFailures()
             return m.files != before
@@ -4217,7 +4235,7 @@ do {
             MainActor.assumeIsolated {
                 let m = OCRModel()
                 m.besideOriginal = true
-                _ = m.add([one])
+                _ = m.add([one, two])
                 enter(m)
                 check("\(doorName) cannot change a committed batch (\(stateName))",
                       !mutate(m), "the batch changed while \(stateName)")
@@ -4230,11 +4248,18 @@ do {
     MainActor.assumeIsolated {
         let m = OCRModel()
         m.besideOriginal = true
-        _ = m.add([one])
-        check("…and add still works when idle", { _ = m.add([two]); return m.files.count == 2 }())
-        check("…and remove still works when idle", { m.remove(one); return m.files.count == 1 }())
+        _ = m.add([one, two])
+        check("…and add still works when idle",
+              { _ = m.add([three]); return m.files.count == 3 }(), "\(m.files.count)")
+        check("…and remove still works when idle",
+              { m.remove(one); return m.files.count == 2 }(), "\(m.files.count)")
         check("…and clearFiles still works when idle", { m.clearFiles(); return m.files.isEmpty }())
     }
+    // The seventh door's inverse row is not repeated here: "retrying the
+    // failures from a finished batch" above drives `retryFailures` from an idle
+    // model and asserts both that it starts a run and that `files` narrows to
+    // `[broken]`. Repeating it here would mean a second real batch — the
+    // narrowing is inseparable from `start()` — for coverage that already exists.
     resetPrefs()
 }
 
@@ -4405,8 +4430,15 @@ do {
           Flattener.hasDigitalText(digital))
     check("warnDigitalText is on for this block",
           d.bool(forKey: Prefs.warnDigitalText))
-    check("nothing external has to resolve for start() to reach the pre-flight",
-          true)
+    // A `check("nothing external has to resolve for start() to reach the
+    // pre-flight", true)` stood here, and its twin below. `git log -S` shows the
+    // mac-ocr removal replaced a real assertion — `Runner.resolveBinary() != nil`
+    // — with the literal, leaving a falsifiable label over nothing
+    // (`REVIEW-2026-08-14.md` A11.3). Deleted rather than weakened further: the
+    // property is now true by construction, because the pre-flight's only work is
+    // `Flattener.hasDigitalText`, which runs no program at all. This file already
+    // handles this correctly elsewhere and says so — "Deleted rather than
+    // weakened into something that passes without testing anything."
 
     var committedAtDecision: Bool?
     var preflightingAtDecision: Bool?
@@ -4473,8 +4505,7 @@ do {
 
     check("the skip-status fixture is born-digital, or the alert never comes",
           Flattener.hasDigitalText(born))
-    check("nothing external has to resolve for start() to reach the pre-flight",
-          true)
+    // The twin of the literal-`true` check deleted above — A11.3.
 
     // On for this block only: the report is where a skipped file could go
     // missing without anyone noticing, so it has to be written to be checked.
@@ -5474,35 +5505,41 @@ do {
 // Flattener.flatten nor JBIG2.assemble had ever seen a document with both
 // properties. This runs one through the real makeSearchablePDF.
 
+/// An image-only page of a given size carrying one legible line.
+///
+/// File scope rather than block scope because two fixtures need it: this block's
+/// and the non-rebuild block's. The non-rebuild fixture used `makeScannedPDF`,
+/// which hard-codes 612×792, and so claimed "two pages of differing size" while
+/// building two identical ones (A11.4). One helper means the two fixtures cannot
+/// drift apart in what they mean by a different size.
+func mixedPage(_ url: URL, w: CGFloat, h: CGFloat, text: String) {
+    let px = 2.0
+    guard let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil, pixelsWide: Int(w * px), pixelsHigh: Int(h * px),
+        bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { return }
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    NSColor.white.setFill()
+    NSRect(x: 0, y: 0, width: w * px, height: h * px).fill()
+    (text as NSString).draw(at: NSPoint(x: 40 * px, y: h * px / 2), withAttributes: [
+        .font: NSFont(name: "Helvetica-Bold", size: 36 * px)
+            ?? NSFont.systemFont(ofSize: 72),
+        .foregroundColor: NSColor.black])
+    NSGraphicsContext.current?.flushGraphics()
+    NSGraphicsContext.restoreGraphicsState()
+    var box = CGRect(x: 0, y: 0, width: w, height: h)
+    guard let cg = rep.cgImage, let ctx = CGContext(url as CFURL, mediaBox: &box, nil)
+    else { return }
+    ctx.beginPDFPage(nil); ctx.draw(cg, in: box); ctx.endPDFPage(); ctx.closePDF()
+}
+
 print("\nmixed page sizes and rotation through the whole pipeline")
 
 do {
     resetPrefs()
     let dir = tmp.appendingPathComponent("mixed")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-
-    /// An image-only page of a given size carrying one legible line.
-    func page(_ url: URL, w: CGFloat, h: CGFloat, text: String) {
-        let px = 2.0
-        guard let rep = NSBitmapImageRep(
-            bitmapDataPlanes: nil, pixelsWide: Int(w * px), pixelsHigh: Int(h * px),
-            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { return }
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-        NSColor.white.setFill()
-        NSRect(x: 0, y: 0, width: w * px, height: h * px).fill()
-        (text as NSString).draw(at: NSPoint(x: 40 * px, y: h * px / 2), withAttributes: [
-            .font: NSFont(name: "Helvetica-Bold", size: 36 * px)
-                ?? NSFont.systemFont(ofSize: 72),
-            .foregroundColor: NSColor.black])
-        NSGraphicsContext.current?.flushGraphics()
-        NSGraphicsContext.restoreGraphicsState()
-        var box = CGRect(x: 0, y: 0, width: w, height: h)
-        guard let cg = rep.cgImage, let ctx = CGContext(url as CFURL, mediaBox: &box, nil)
-        else { return }
-        ctx.beginPDFPage(nil); ctx.draw(cg, in: box); ctx.endPDFPage(); ctx.closePDF()
-    }
 
     // Three pages, three different boxes, the last one quarter-turned.
     //
@@ -5518,7 +5555,7 @@ do {
     let mixed = PDFDocument()
     for (i, s) in sizes.enumerated() {
         let one = dir.appendingPathComponent("p\(i).pdf")
-        page(one, w: s.0, h: s.1, text: s.2)
+        mixedPage(one, w: s.0, h: s.1, text: s.2)
         if let d = PDFDocument(url: one), let p = d.page(at: 0) {
             if i == 2 { p.rotation = 270 }         // and one rotated page
             mixed.insert(p, at: mixed.pageCount)
@@ -5621,19 +5658,39 @@ do {
 // Cancelling used to leave a PDF that opened perfectly but was missing its later
 // pages, written straight over any previous good output. The result is now built
 // in a scratch directory and only moved into place once its page count matches.
+//
+// This block had three checks that carried no information, and CLAUDE.md
+// invariant 2 therefore had no working test at all — `REVIEW-2026-08-14.md`
+// A11.1, the tenth un-failable check in `BUGS.md`:
+//
+//   * `"the truncated file is not at the destination"` asserted that
+//     `published.pdf` did not exist. **`published.pdf` occurred exactly twice in
+//     the 8,600-line file: its declaration and that check.** Nothing ever wrote
+//     it, and the block never called `makeSearchablePDF` or `publish` at all.
+//     Deleting the page-count gate the check claimed to cover left the suite
+//     **862/862, exit 0** — so the mechanism CLAUDE.md names verbatim could be
+//     removed with a green suite.
+//   * `"and it stays intact on disk"` restated `goodPages == 3` from the line
+//     above, and its comment said "a previous good output must survive a later
+//     failed run" when **no run happened between writing the file and checking
+//     it**.
+//
+// What replaces them drives the real functions, with a real good file at the
+// destination, and goes red when either gate is removed.
 
 print("\npartial results are never published")
 
 do {
     resetPrefs()
-    let outDir = tmp.appendingPathComponent("publish")
+    let outDir = tmp.appendingPathComponent("publish-\(UUID().uuidString)")
     try? FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: outDir) }
 
     // A truncated build is detectable purely from the page count.
-    let src = tmp.appendingPathComponent("pub-src.pdf")
+    let src = outDir.appendingPathComponent("pub-src.pdf")
     let three = PDFDocument()
     for i in 1...3 {
-        let one = tmp.appendingPathComponent("pub-\(i).pdf")
+        let one = outDir.appendingPathComponent("pub-\(i).pdf")
         makeScannedPDF(at: one, lines: ["page \(i) of the source"])
         if let d = PDFDocument(url: one), let p = d.page(at: 0) {
             three.insert(p, at: three.pageCount)
@@ -5644,25 +5701,144 @@ do {
 
     // Compose with cancellation already set: the writer stops early.
     let staged = outDir.appendingPathComponent("staged.pdf")
-    let json = outDir.appendingPathComponent("obs.json")
     let byPage = observations(of: src)
     try? SearchableWriter.compose(visible: src, observations: byPage, to: staged,
                                   isCancelled: { true })
     let truncated = PDFDocument(url: staged)?.pageCount ?? -1
     check("a cancelled compose really does truncate", truncated < 3, "\(truncated) pages")
 
-    // Which is exactly what the page-count guard catches before publishing.
-    let published = outDir.appendingPathComponent("published.pdf")
-    check("the truncated file is not at the destination",
-          !FileManager.default.fileExists(atPath: published.path))
+    // The refusal itself, and its wording. A11.8: neither of
+    // `makeSearchablePDF`'s refusal messages was asserted anywhere, so the
+    // wiring from predicate to reported text was untested in both directions.
+    let refusal = OCRModel.incompleteRefusal(staged, expecting: 3)
+    check("a short staged file is refused", refusal != nil, "got nil")
+    check("…and the refusal says nothing was written",
+          refusal?.contains("nothing was written") == true, refusal ?? "nil")
+    check("…and names both counts",
+          refusal?.contains("\(truncated) pages") == true
+            && refusal?.contains("source has 3") == true, refusal ?? "nil")
+    check("a complete staged file is not refused",
+          OCRModel.incompleteRefusal(src, expecting: 3) == nil,
+          OCRModel.incompleteRefusal(src, expecting: 3) ?? "")
 
-    // A previous good output must survive a later failed run.
-    let good = outDir.appendingPathComponent("keeper.pdf")
-    try? SearchableWriter.compose(visible: src, observations: byPage, to: good)
-    let goodPages = PDFDocument(url: good)?.pageCount ?? -1
-    check("a complete run writes every page", goodPages == 3, "\(goodPages)")
-    check("and it stays intact on disk",
-          FileManager.default.fileExists(atPath: good.path) && goodPages == 3)
+    // THE CHECK A11.1 IS ABOUT. A good previous output at the destination, a
+    // short file offered for publication, and the good file must still be there
+    // afterwards — byte for byte, not merely present with the right page count.
+    //
+    // Byte comparison on purpose: the truncated file also opens, and it also has
+    // "some pages". `fileExists` and a page count are both satisfied by the
+    // destroyed state this invariant exists to prevent.
+    let keeper = outDir.appendingPathComponent("keeper.pdf")
+    try? SearchableWriter.compose(visible: src, observations: byPage, to: keeper)
+    let keeperBefore = try? Data(contentsOf: keeper)
+    check("the previous good output has every page",
+          PDFDocument(url: keeper)?.pageCount == 3,
+          "\(PDFDocument(url: keeper)?.pageCount ?? -1)")
+
+    var refused = false
+    do {
+        try OCRModel.publishVerified(staged, expecting: 3, to: keeper)
+    } catch {
+        refused = true
+        check("…and the refusal reaches the caller as the same sentence",
+              error.localizedDescription.contains("nothing was written"),
+              error.localizedDescription)
+    }
+    check("publishing a short result over a good one is refused", refused,
+          "publishVerified returned without throwing")
+    let keeperAfter = try? Data(contentsOf: keeper)
+    check("…and the previous good output is byte-for-byte intact",
+          keeperBefore != nil && keeperBefore == keeperAfter,
+          "\(keeperBefore?.count ?? -1) bytes before, \(keeperAfter?.count ?? -1) after")
+    check("…and the truncated file never moved to the destination",
+          FileManager.default.fileExists(atPath: staged.path))
+
+    // The inverse row, per CONTRIBUTING 4d: the gate must still *publish* when
+    // the result is complete, or an app that never writes anything satisfies the
+    // three checks above.
+    let complete = outDir.appendingPathComponent("complete.pdf")
+    try? SearchableWriter.compose(visible: src, observations: byPage, to: complete)
+    var published = false
+    do {
+        try OCRModel.publishVerified(complete, expecting: 3, to: keeper)
+        published = true
+    } catch {
+        check("a complete result publishes", false, error.localizedDescription)
+    }
+    check("a complete result does publish", published)
+    // Moved, not copied: the staged file is gone from where it was and the
+    // destination has every page. Comparing the destination's bytes against
+    // `keeperBefore` would prove nothing here — `complete` was composed from the
+    // same source with the same observations, so it can legitimately be
+    // byte-identical to what it replaced.
+    check("…and the staged file was moved into place, not left behind",
+          !FileManager.default.fileExists(atPath: complete.path))
+    check("…and the destination has every page",
+          PDFDocument(url: keeper)?.pageCount == 3,
+          "\(PDFDocument(url: keeper)?.pageCount ?? -1)")
+
+    // A pre-cancelled run reports `.cancelled`, which is T3's closing list made
+    // true: what it recorded as covered is `check("a cancelled control refuses the
+    // work before it starts", control.isCancelled)` — a property of `RunControl`,
+    // asserted without calling `makeSearchablePDF` at all.
+    //
+    // **And it proves nothing about publishing, which is worth saying plainly
+    // because the first version of this block claimed it did.** A pre-cancelled
+    // control makes recognition throw, the catch at `Model.swift`'s "A cancellation
+    // surfaces here as a throw" reports `.cancelled` and returns, and the run never
+    // composes and never reaches `publish`. So "the good file at the destination is
+    // untouched" would have held for every possible implementation of
+    // `publishVerified` — an un-failable check, inside the fix for un-failable
+    // checks. It bites on the outcome and only on the outcome: delete that
+    // `if control.isCancelled` and this goes red with `.failed`.
+    let good2 = outDir.appendingPathComponent("survivor.pdf")
+    try? SearchableWriter.compose(visible: src, observations: byPage, to: good2)
+    let cancelled = RunControl()
+    cancelled.cancel()
+    var outcome: Runner.Result.Outcome?
+    var detail = ""
+    OCRModel.makeSearchablePDF(
+        file: src, output: good2,
+        rebuild: false, rebuildMode: .auto, password: nil,
+        control: cancelled, progress: { _, _ in },
+        report: { o, m in outcome = o; detail = m })
+    check("a cancelled run reports cancelled, not failed",
+          outcome == .cancelled, "\(String(describing: outcome)) \(detail)")
+
+    // The end-to-end check that *can* fail: a run that composes successfully and
+    // then fails at the publish step, with the user's content at the destination.
+    //
+    // A directory is the one reachable way to get there. Nothing in the pipeline
+    // can produce a short staged file — established by trying: a cancel is caught
+    // before the gate, and PDFKit repairs a page tree that over-declares its
+    // `/Count` rather than handing back a nil page — so the page-count half of
+    // `publishVerified` has no end-to-end trigger and is defence in depth, tested
+    // at its seam above. The folder half has one, and this drives the whole
+    // pipeline through the new call site: compose, the gate, `publish`, the throw,
+    // and the outcome the user is shown.
+    let folder = outDir.appendingPathComponent("aimed-at-a-folder.pdf", isDirectory: true)
+    try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    let inside = folder.appendingPathComponent("someone's work.pdf")
+    try? SearchableWriter.compose(visible: src, observations: byPage, to: inside)
+    let insideBefore = try? Data(contentsOf: inside)
+    check("the folder fixture holds a real file", (insideBefore?.count ?? 0) > 0)
+    var folderOutcome: Runner.Result.Outcome?
+    var folderDetail = ""
+    OCRModel.makeSearchablePDF(
+        file: src, output: folder,
+        rebuild: false, rebuildMode: .auto, password: nil,
+        control: RunControl(), progress: { _, _ in },
+        report: { o, m in folderOutcome = o; folderDetail = m })
+    check("a run whose destination is a folder fails rather than publishing",
+          folderOutcome == .failed, "\(String(describing: folderOutcome)) \(folderDetail)")
+    check("…and says so, in the words the user sees",
+          folderDetail.contains("is a folder"), folderDetail)
+    check("…and the folder is still there",
+          FileManager.default.fileExists(atPath: folder.path))
+    check("…with the file inside it byte-for-byte intact",
+          insideBefore != nil && insideBefore == (try? Data(contentsOf: inside)),
+          "\(insideBefore?.count ?? -1) bytes before, "
+            + "\((try? Data(contentsOf: inside))?.count ?? -1) after")
     resetPrefs()
 }
 
@@ -5862,20 +6038,55 @@ do {
     let dir = tmp.appendingPathComponent("norebuild")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
-    // Two pages of differing size, per invariant 5 — the non-rebuild path takes
-    // its geometry from the source rather than from anything it drew, which is
-    // precisely where the crop-box bugs lived.
+    // Pages of differing size with one rotated, per invariant 5 — the non-rebuild
+    // path takes its geometry from the source rather than from anything it drew,
+    // which is precisely where the crop-box bugs lived.
+    //
+    // **This fixture did not satisfy the invariant its comment claimed**
+    // (`REVIEW-2026-08-14.md` A11.4). It built both pages with `makeScannedPDF`,
+    // which hard-codes 612×792, so both pages were *the same size* — "a different
+    // size" was the text drawn on the sheet, mistaken for the sheet. There was no
+    // geometry assertion at all, on the one route where C7 *and* C10 both bit,
+    // and `BUGS.md` T1's closing list recorded this as done. T1 recurring inside
+    // T1's own closing list.
+    //
+    // `mixedPage` is the same helper the invariant-5 block uses, so the two
+    // fixtures cannot drift apart in what they mean by "a different size".
     let src = dir.appendingPathComponent("plain.pdf")
+    // Short lines on purpose. The first version drew "SECOND PAGE NARROW" on the
+    // 456 pt page, which runs close enough to the right edge that Vision read
+    // **"SECOND PAGE NARRO"** — so a check asserting the whole word failed over a
+    // fixture, not over the code. A fixture whose text does not comfortably fit
+    // its own page tests the margin, and the assertion must not hang on the last
+    // glyph.
+    let sizes: [(CGFloat, CGFloat, String)] = [
+        (612, 792, "ONE LETTER"),
+        (456, 710, "TWO NARROW"),
+        (700, 540, "THREE WIDE"),
+    ]
     let merged = PDFDocument()
-    for (i, lines) in [["first page of the untouched source"],
-                       ["second page, a different size"]].enumerated() {
+    for (i, s) in sizes.enumerated() {
         let one = dir.appendingPathComponent("p\(i).pdf")
-        makeScannedPDF(at: one, lines: lines)
+        mixedPage(one, w: s.0, h: s.1, text: s.2)
         if let doc = PDFDocument(url: one), let page = doc.page(at: 0) {
+            // 700×540 turned a quarter displays as 540×700, which is neither of
+            // the other two — an obvious 792×612 would display as page 1's box
+            // and a page that wrongly inherited it would look correct.
+            if i == 2 { page.rotation = 270 }
             merged.insert(page, at: merged.pageCount)
         }
     }
     merged.write(to: src)
+
+    guard let sd = PDFDocument(url: src), sd.pageCount == 3 else {
+        check("built the non-rebuild fixture", false); exit(1)
+    }
+    let srcBoxes = (0..<3).compactMap { sd.page(at: $0).map { Flattener.displayBox(of: $0) } }
+    check("the non-rebuild fixture has three different display boxes",
+          Set(srcBoxes.map { "\(Int($0.width))x\(Int($0.height))" }).count == 3,
+          "\(srcBoxes.map { "\(Int($0.width))x\(Int($0.height))" })")
+    check("…and one of them is rotated",
+          (0..<3).contains { sd.page(at: $0)?.rotation == 270 })
 
     let output = dir.appendingPathComponent("plain.ocr.pdf")
     var outcome: Runner.Result.Outcome?
@@ -5890,8 +6101,33 @@ do {
     check("…keeps every page",
           PDFDocument(url: output)?.pageCount == merged.pageCount,
           "\(PDFDocument(url: output)?.pageCount ?? -1) of \(merged.pageCount)")
-    let text = embeddedText(of: output)
-    check("…and writes a text layer", text.contains("first page"), text.prefix(80).description)
+    // The assertion the block never had: each page keeps its own box rather than
+    // inheriting page 1's. On this route the geometry comes straight from the
+    // source, so a wrong box here is invariant 4's failure with nothing between
+    // it and the user.
+    var boxesMatch = true
+    var boxReport: [String] = []
+    if let od = PDFDocument(url: output) {
+        for i in 0..<min(od.pageCount, 3) {
+            let want = srcBoxes[i]
+            let got = od.page(at: i).map { Flattener.displayBox(of: $0) } ?? .zero
+            boxReport.append("p\(i + 1) want \(Int(want.width))x\(Int(want.height))"
+                             + " got \(Int(got.width))x\(Int(got.height))")
+            if abs(got.width - want.width) > 2 || abs(got.height - want.height) > 2 {
+                boxesMatch = false
+            }
+        }
+    } else {
+        boxesMatch = false
+        boxReport.append("the output does not open")
+    }
+    check("…and each page keeps its own size, not page 1's", boxesMatch,
+          boxReport.joined(separator: "; "))
+    let text = embeddedText(of: output).uppercased()
+    check("…and writes a text layer", text.contains("ONE LETTER"), text.prefix(120).description)
+    check("…on the differently-sized page too", text.contains("NARROW"),
+          text.prefix(120).description)
+    check("…and on the rotated one", text.contains("WIDE"), text.prefix(120).description)
     resetPrefs()
 }
 

@@ -762,6 +762,10 @@ final class OCRModel: ObservableObject {
         /// The destination path is a folder. `replaceItemAt` would delete it and
         /// everything in it, and report success.
         case destinationIsFolder(String)
+        /// The file about to be published is not the full length. Carries the
+        /// message rather than the counts so there is one copy of the wording —
+        /// see `incompleteRefusal`.
+        case incompleteResult(String)
         var errorDescription: String? {
             switch self {
             case .unreadable: return "Could not open that PDF to read its text."
@@ -769,6 +773,7 @@ final class OCRModel: ObservableObject {
             case .destinationIsFolder(let name):
                 return "\u{201C}\(name)\u{201D} is a folder, so nothing was written "
                      + "\u{2014} publishing over it would have deleted it."
+            case .incompleteResult(let message): return message
             }
         }
     }
@@ -1355,6 +1360,49 @@ final class OCRModel: ObservableObject {
         }
     }
 
+    /// Invariant 2's refusal, as one function: the message when `staged` is not
+    /// the full length, and nil when it is.
+    ///
+    /// One copy, because there are two call sites — an early one that fails the
+    /// document before spending seconds on the outline rewrite and the annotation
+    /// transplant, and `publishVerified` immediately before the user's disk is
+    /// touched. Two copies of a refusal is how C20 happened.
+    nonisolated static func incompleteRefusal(_ staged: URL, expecting expected: Int) -> String? {
+        let produced = PDFPageCount(staged)
+        guard produced != expected else { return nil }
+        return "The result had \(produced) pages but the source has \(expected); "
+             + "nothing was written."
+    }
+
+    /// **CLAUDE.md invariant 2, in one place.** Verifies, and only then publishes.
+    ///
+    /// It exists because the invariant had no working test. Its sole guardian was
+    /// a check asserting that a path *nothing in the test had ever written* did
+    /// not exist, so deleting the page-count gate left the suite 862/862 green
+    /// (`REVIEW-2026-08-14.md` A11.1). Splitting the verify-then-move pair into a
+    /// named function is what lets a check drive it with a deliberately short
+    /// file and a good file already at the destination — which is the exact
+    /// situation the invariant exists for, and which no check could reach while
+    /// the gate was one `guard` in the middle of a 500-line function.
+    ///
+    /// **It is defence in depth, not the closing of a hole, and saying otherwise
+    /// would be this register's own recurring mistake.** A first version of this
+    /// comment claimed the landing file "was never the file that was checked".
+    /// That is false: the outline branch only adopts `outlined` when
+    /// `PDFPageCount(outlined) == expected`, and the annotation branch re-reads
+    /// `finished` and refuses on `after != expected`. Every path to `publish`
+    /// already verified what it was about to publish. What this adds is a single
+    /// named place where the invariant lives — which is what lets one check drive
+    /// it with a deliberately short file, and what the mutant
+    /// `A11.1-publishVerified-gate` perturbs.
+    nonisolated static func publishVerified(_ staged: URL, expecting expected: Int,
+                                            to output: URL) throws {
+        if let refusal = incompleteRefusal(staged, expecting: expected) {
+            throw Failure.incompleteResult(refusal)
+        }
+        try publish(staged, to: output)
+    }
+
     /// The whole searchable-PDF pipeline for one file, on a worker thread:
     /// strip any old text layer, recognise, then write the text layer ourselves.
     ///
@@ -1778,12 +1826,14 @@ final class OCRModel: ObservableObject {
                                                  layerShare(d, t)) })
             }
 
-            // Never publish a partial result.
+            // Never publish a partial result. Early, so a short result fails
+            // before the outline rewrite and the annotation transplant are paid
+            // for; the copy that *enforces* the invariant is `publishVerified`,
+            // immediately before the move, and reads the file that actually
+            // lands rather than this one.
             if control.isCancelled { report(.cancelled, "Cancelled."); return }
-            let produced = PDFPageCount(staged)
-            guard produced == expected else {
-                report(.failed, "The result had \(produced) pages but the source has "
-                    + "\(expected); nothing was written.")
+            if let refusal = Self.incompleteRefusal(staged, expecting: expected) {
+                report(.failed, refusal)
                 return
             }
 
@@ -1874,7 +1924,7 @@ final class OCRModel: ObservableObject {
             // never published" and "three gates, then publish" were both false. This does
             // not shorten the window, it stops it from ending in a publish.
             if control.isCancelled { report(.cancelled, "Cancelled."); return }
-            try publish(finished, to: output)
+            try publishVerified(finished, expecting: expected, to: output)
         } catch {
             // Cancelling reaches the jbig2 and qpdf children as SIGTERM, so they
             // exit 15 and JBIG2.encode/overlay throw — arriving here, where the
