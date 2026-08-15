@@ -1,5 +1,5 @@
 #!/bin/bash
-# Does every tool in Tools/ still build?
+# Does every tool in Tools/ still build — and does `.githooks/pre-commit` still parse?
 #
 # Nothing asked that until BUGS.md C25, which found that
 # `Tools/score-text-route.swift` had **never compiled in any commit** — it called
@@ -81,6 +81,27 @@ trap 'rm -rf "$WORK"' EXIT
 SWIFT_TOOLS=()
 PY_TOOLS=()
 SH_TOOLS=()
+
+# A file with no recognised extension, classified by its shebang. `bash -n` only,
+# deliberately: it is the wrong parser for a zsh script, so a zsh shebang is
+# skipped rather than checked by something that would fail on correct code.
+#
+# $2 = "quiet" suppresses the "skipping" note, for directories that legitimately
+# hold non-scripts. `.githooks/` is one — `*.sample`, a README — and the first
+# version of this glob added *every* file there to the `bash -n` set, which made a
+# `.githooks/README.md` refuse every commit while reporting every tool green.
+# That is T16's own failure mode, reintroduced by the fix for T16's own gap.
+classify_by_shebang() {
+  case "$(head -1 "$1" 2>/dev/null)" in
+    '#!'*bash*|'#!'*/sh|'#!'*' sh')  SH_TOOLS+=("$1") ;;
+    '#!'*python*)                    PY_TOOLS+=("$1") ;;
+    *)
+      [ "${2:-}" = "quiet" ] && return 0
+      echo "check-tools-compile: '$1' is not .swift, .py or .sh and has no" \
+           "bash, sh or python shebang, skipping." >&2
+      ;;
+  esac
+}
 if [ "$#" -gt 0 ]; then
   for want in "$@"; do
     hit=""
@@ -96,13 +117,38 @@ if [ "$#" -gt 0 ]; then
       *.swift) SWIFT_TOOLS+=("$hit") ;;
       *.py)    PY_TOOLS+=("$hit") ;;
       *.sh)    SH_TOOLS+=("$hit") ;;
-      *) echo "check-tools-compile: '$hit' is not .swift, .py or .sh, skipping." >&2 ;;
+      *)
+        # No extension: read the shebang rather than skipping. `.githooks/pre-commit`
+        # is the file this branch exists for, and "skipping" over the one script that
+        # can refuse every commit is the wrong default — a silent skip in a gate reads
+        # as a pass. Named explicitly, so it says when it skips.
+        classify_by_shebang "$hit"
+        ;;
     esac
   done
 else
   for f in Tools/*.swift; do [ -f "$f" ] && SWIFT_TOOLS+=("$f"); done
   for f in Tools/*.py;    do [ -f "$f" ] && PY_TOOLS+=("$f"); done
   for f in Tools/*.sh;    do [ -f "$f" ] && SH_TOOLS+=("$f"); done
+  # And the hook, which is not in Tools/ and was the one shell script nothing
+  # checked — while being the only one whose failure refuses *every* commit. The
+  # bash-3.2 defect described above shipped in this file and would have refused
+  # the commit that added it; the same class of defect in the hook cannot even be
+  # worked around by staging different files. `git config core.hooksPath` may
+  # point elsewhere, but the committed copy is what a new clone installs.
+  #
+  # Through the shebang sniff, and `quiet`: a hooks directory holds `*.sample`
+  # files and READMEs, and a gate that refuses a commit over a Markdown file is
+  # worse than the gap it closes.
+  for f in .githooks/*; do
+    [ -f "$f" ] || continue
+    case "$f" in
+      *.swift) SWIFT_TOOLS+=("$f") ;;
+      *.py)    PY_TOOLS+=("$f") ;;
+      *.sh)    SH_TOOLS+=("$f") ;;
+      *)       classify_by_shebang "$f" quiet ;;
+    esac
+  done
 fi
 
 # One job per two cores, capped: this is pure compilation with no shared state, so

@@ -56,6 +56,13 @@ def build_classifier():
     it is about to discard someone's digital text (C17). A second copy of that
     rule would drift from the first, which is exactly how `picture-signals`
     ended up measuring a page production never renders (T2).
+
+    **That sentence was false for a week, in this file, about this tool.**
+    Compiling against `Sources/` is necessary and was not sufficient: the
+    classifier linked `Flattener` and then computed its own page-image test from
+    two different cross-page aggregates, which is A12.4. It calls
+    `Flattener.pageIsAnImage` per page and `Flattener.hasDigitalText` per
+    document now. Linking a function is not calling it.
     """
     out = os.path.join(tempfile.gettempdir(), "vrg-classify")
     work = tempfile.mkdtemp()
@@ -80,25 +87,228 @@ def build_classifier():
     return out
 
 
-def classify(tool, paths, workers=8):
-    """{path: verdict} for a list of PDFs. Runs the tool in parallel batches."""
-    verdicts = {}
+# The classifier's output contract, in one place. `sweep-zotero.py` imports this
+# module for the parser as well as the build, because two copies of a column
+# layout are the same defect as two copies of a rule — and this layout has
+# already grown two columns once (A12.4 added `imagePages` and `digitalText`),
+# which silently shifted `path` from field 8 to field 10 for anyone indexing from
+# the front.
+FIELDS = ["verdict", "pages", "sampled", "imagePages", "digitalText",
+          "charsPerPage", "maxImagePx", "medianDPI", "saturation",
+          "illumination", "path"]
+
+
+def parse_rows(text):
+    """([row-dict], [unparsed line]) for the classifier's stdout.
+
+    Exact field count, not `>= 9`. A row with the wrong number of fields is
+    reported, never quietly dropped: this project has shipped a row printing 10
+    fields under a 9-column header (T14) and one printing 12 under 11 (A12.3),
+    and on both occasions the consumer's `>=` accepted it. A path containing a
+    literal tab lands here too, as an unparsed line rather than as a mis-split
+    one.
+    """
+    rows, bad = [], []
+    for line in text.splitlines():
+        f = line.split("\t")
+        if len(f) != len(FIELDS):
+            bad.append(line)
+            continue
+        rows.append(dict(zip(FIELDS, f)))
+    return rows, bad
+
+
+def classify_rows(tool, paths, workers=8, progress=0):
+    """{path: row-dict} for a list of PDFs, run in parallel batches.
+
+    A batch, because one process launch per document is most of the cost at this
+    scale. But a batch is also a blast radius: the classifier traps on a
+    malformed PDF now and then, and when it does, every path *after* the
+    offending one in its chunk goes unmeasured too — 11 documents rejected for
+    one document's defect, invisibly, since an unseen path and a rejected one
+    look identical downstream. So a chunk that comes back short is retried one
+    path at a time, and only the paths that fail alone are left unmeasured.
+
+    `progress` prints a line every N paths when non-zero.
+    """
     batch = 12
     chunks = [paths[i:i + batch] for i in range(0, len(paths), batch)]
+    unparsed, late = [], []
+
+    def once(chunk, timeout):
+        """({path: row}, [unparsed line], [path that ran out of time])."""
+        try:
+            # A timeout, because its absence is unbounded: one document that
+            # renders forever otherwise stalls the whole sweep with no output.
+            # 600 s for a chunk of 12 is what `sweep-zotero.py` has always used.
+            r = subprocess.run([tool] + chunk, capture_output=True, text=True,
+                               timeout=timeout)
+        except subprocess.TimeoutExpired:
+            return {}, [], list(chunk)
+        rows, bad = parse_rows(r.stdout)
+        return {row["path"]: row for row in rows}, bad, []
 
     def run(chunk):
-        r = subprocess.run([tool] + chunk, capture_output=True, text=True)
-        out = {}
-        for line in r.stdout.splitlines():
-            f = line.split("\t")
-            if len(f) >= 9:
-                out[f[8]] = f[0]
-        return out
+        found, bad, timed = once(chunk, 600)
+        missing = [p for p in chunk if p not in found]
+        if missing and len(chunk) > 1:
+            # 120 s a document, not 600: retrying a *timed-out* chunk at the
+            # chunk's own bound would let one pathological file cost 12 x 600 s.
+            # The corpus averages 0.85 s a document, so 120 s is 140x the mean.
+            #
+            # The chunk attempt's diagnostics are *discarded*, not added to: every
+            # malformed row belongs to a path that produced no usable row, so that
+            # path is in `missing` and its row comes back from the retry. Keeping
+            # both counted one malformed row twice — "2 unparsable rows" over one
+            # bad document, in a change whose whole value is honest reporting.
+            bad, timed = [], []
+            for p in missing:
+                got, more, slow = once([p], 120)
+                found.update(got)
+                bad += more
+                timed += slow
+        return found, bad, timed
 
+    out, done = {}, 0
     with cf.ThreadPoolExecutor(max_workers=workers) as pool:
-        for got in pool.map(run, chunks):
-            verdicts.update(got)
-    return verdicts
+        for found, bad, timed in pool.map(run, chunks):
+            out.update(found)
+            unparsed += bad
+            late += timed
+            done += batch
+            if progress and done % progress < batch:
+                print(f"  {min(done, len(paths))}/{len(paths)}", flush=True)
+    # Both of these are silence otherwise, and silence here reads downstream as
+    # "not a scan" — a rejection nobody chose.
+    if unparsed:
+        print(f"  {len(unparsed)} unparsable classifier row(s); first: "
+              f"{unparsed[0][:120]}", flush=True)
+    if late:
+        print(f"  {len(late)} document(s) the classifier could not finish; "
+              f"first: {late[0]}", flush=True)
+    missed = [p for p in paths if p not in out]
+    if missed:
+        print(f"  {len(missed)} document(s) unmeasured (the classifier gave no "
+              f"row); first: {missed[0]}", flush=True)
+    return out
+
+
+def classify(tool, paths, workers=8):
+    """{path: verdict} for a list of PDFs."""
+    return {p: r["verdict"]
+            for p, r in classify_rows(tool, paths, workers).items()}
+
+
+def self_test():
+    """Check the classifier-output parser and the batch runner. `--self-test`.
+
+    Against a *fake* classifier — a shell script — because the real one needs a
+    PDF and 0.85 s a document, and neither is what is under test here. Nothing in
+    this repository ran a Python tool's own checks before this one: the whole
+    gate for `Tools/*.py` was `py_compile`, which is why the pre-commit hook now
+    runs `--self-test` on any staged Python tool that advertises one.
+
+    Three properties, each watched failing first by breaking the code back:
+
+      1. a row with the wrong field count is *reported*, not accepted. The `>= 9`
+         it replaced accepted a 10-field row under a 9-column header (T14) and a
+         12-field one under 11 (A12.3).
+      2. a chunk whose classifier dies part-way still yields every other path in
+         it. Before the retry, paths *after* the trap were lost — and an unseen
+         path is indistinguishable downstream from a rejected one, so twelve
+         documents left a library sweep for one document's defect, silently.
+      3. `path` is read as the last field. A12.4 added two columns to this TSV,
+         which moved `path` from field 8 to field 10 under every consumer that
+         indexed from the front.
+    """
+    failures = []
+
+    def check(name, ok, detail=""):
+        # The detail goes out only on a failure, and only then: the Swift suite's
+        # habit, and the reason a red line here is diagnosable without a rerun.
+        print(f"  {'ok  ' if ok else 'FAIL'} {name}"
+              + ("" if ok or not detail else f" — {detail}"))
+        if not ok:
+            failures.append(name)
+
+    def row_text(path, verdict="scanned"):
+        return "\t".join([verdict, "10", "5", "5", "no", "1200", "1600", "300",
+                          "0.000", "0.050", path])
+
+    # 1 — the field count is exact, and a short row is reported.
+    rows, bad = parse_rows(row_text("/a.pdf") + "\n"
+                           + "\t".join(["scanned"] * 9) + "\n"
+                           + "\t".join(["scanned"] * 12))
+    check("an 11-field row parses", len(rows) == 1)
+    check("a 9-field and a 12-field row are both reported, not accepted",
+          len(bad) == 2)
+
+    # 3 — path is the last field, spaces and all. `testdocs/` filenames have them.
+    rows, _ = parse_rows(row_text("/x/A Book, 1954 - Why.pdf"))
+    check("path is the last field, spaces intact",
+          rows and rows[0]["path"] == "/x/A Book, 1954 - Why.pdf")
+    check("the fields either side of the new columns still line up",
+          rows and rows[0]["imagePages"] == "5" and rows[0]["digitalText"] == "no"
+          and rows[0]["medianDPI"] == "300")
+
+    # 2 — a trap part-way through a chunk costs only its own document.
+    work = tempfile.mkdtemp()
+    fake = os.path.join(work, "fake-classify")
+    with open(fake, "w") as fh:
+        fh.write("#!/bin/bash\n"
+                 "for p in \"$@\"; do\n"
+                 "  case \"$p\" in\n"
+                 # Faithful to the real failure: a Swift trap is SIGILL/SIGABRT
+                 # part-way through the arguments, with the rows before it
+                 # already on stdout.
+                 "    *TRAP*) kill -ABRT $$ ;;\n"
+                 "    *) printf '%s\\t10\\t5\\t5\\tno\\t1200\\t1600\\t300\\t0.000\\t0.050\\t%s\\n' scanned \"$p\" ;;\n"
+                 "  esac\n"
+                 "done\n")
+    os.chmod(fake, 0o755)
+
+    # One chunk of 12 — the batch size — with the trap third. Paths 4 through 12
+    # are reachable only through the retry.
+    paths = [f"/tmp/doc{i}.pdf" for i in range(1, 13)]
+    paths[2] = "/tmp/doc3-TRAP.pdf"
+    got = classify_rows(fake, paths, workers=2)
+    check("the trapping document is the only one missing",
+          sorted(got) == sorted(p for p in paths if "TRAP" not in p))
+    check("a path after the trap in the same chunk is measured",
+          "/tmp/doc12.pdf" in got)
+
+    # A malformed row is reported once, not once per attempt. The retry re-runs the
+    # offending path, so counting the chunk's diagnostics as well as the retry's
+    # reported "2 unparsable rows" over a single bad document.
+    short = os.path.join(work, "short-classify")
+    with open(short, "w") as fh:
+        fh.write("#!/bin/bash\n"
+                 "for p in \"$@\"; do\n"
+                 "  case \"$p\" in\n"
+                 # Ten fields where eleven are promised — T14's shape, on purpose.
+                 "    *BAD*) printf 'scanned\\t10\\t5\\t5\\tno\\t1200\\t1600\\t300\\t0.000\\t%s\\n' \"$p\" ;;\n"
+                 "    *) printf '%s\\t10\\t5\\t5\\tno\\t1200\\t1600\\t300\\t0.000\\t0.050\\t%s\\n' scanned \"$p\" ;;\n"
+                 "  esac\n"
+                 "done\n")
+    os.chmod(short, 0o755)
+    bad_paths = [f"/tmp/s{i}.pdf" for i in range(1, 13)]
+    bad_paths[4] = "/tmp/s5-BAD.pdf"
+    import io as _io
+    import contextlib
+    buf = _io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        got_short = classify_rows(short, bad_paths, workers=2)
+    noise = buf.getvalue()
+    check("a malformed row is counted once, not once per attempt",
+          "1 unparsable classifier row(s)" in noise, noise.strip().replace("\n", " | "))
+    check("…and the eleven good documents in its chunk are still measured",
+          len(got_short) == 11 and "/tmp/s5-BAD.pdf" not in got_short)
+    check("classify() reduces the same run to verdicts",
+          classify(fake, paths[:2]) == {p: "scanned" for p in paths[:2]})
+    shutil.rmtree(work, ignore_errors=True)
+
+    print(f"self-test: {len(failures)} failure(s)")
+    return 1 if failures else 0
 
 
 def era(year):
@@ -109,6 +319,9 @@ def era(year):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--self-test", action="store_true",
+                    help="check the classifier-output parser and the batch "
+                         "runner against a fake classifier, and exit")
     ap.add_argument("--zotero", default=os.path.expanduser("~/Zotero"))
     ap.add_argument("--dest", default="testdocs")
     ap.add_argument("--per-bucket", type=int, default=2)
@@ -125,6 +338,9 @@ def main():
                     help="skip the scanned-only gate. Only for reproducing an old "
                          "corpus; see BUGS.md D1 for what it costs.")
     args = ap.parse_args()
+
+    if args.self_test:
+        sys.exit(self_test())
 
     types = set(t.strip() for t in args.types.split(",") if t.strip()) or TYPES
 

@@ -63,8 +63,14 @@ guard let doc = PDFDocument(url: src), doc.pageCount > 0 else {
     exit(1)
 }
 let requested = args.dropFirst(2).compactMap { Int($0) }
+// One-based, because `isolate` takes a page *number*. `sampleIndices` is the
+// app's own stride and does not repeat; the expression here used to be
+// `(1...min(12, n)).map { $0 * n / 13 }.filter { $0 > 0 }`, which at n=5 is
+// [1, 1, 1] — **page 1 measured three times and pages 2 to 5 not at all**, in a
+// tool whose whole output is per-page byte counts and their averages. 27 of 233
+// corpus documents are short enough to land in that (A12.8).
 let pages: [Int] = requested.isEmpty
-    ? (1...min(12, doc.pageCount)).map { $0 * doc.pageCount / 13 }.filter { $0 > 0 }
+    ? Flattener.sampleIndices(count: doc.pageCount, wanted: 12).map { $0 + 1 }
     : requested
 
 func bytes(_ url: URL) -> Int { (try? Data(contentsOf: url).count) ?? 0 }
@@ -78,7 +84,27 @@ func isolate(_ index: Int) -> URL? {
     return one.write(to: url) ? url : nil
 }
 
-print("page\troute\tsat\ttone\tinkOut\tlayered\t1bit\tdelta\tverdict")
+/// The one printer, and the nine columns in one place.
+///
+/// Every row came out of its own `print` before, and two of the four were the wrong
+/// width: the `already 1-bit` row printed **10** fields under this 9-column header
+/// and the `encode failed` row printed **3**, so `verdict` landed under `drift` on
+/// one and under `sat` on the other. A comment beside the third row reasoned the
+/// dash count out ("eight dashes, not nine" — there are seven) and got the row
+/// right, which is the argument for not counting dashes at all. Third instance of
+/// this shape in the register: T14's SKIP row, A12.3's `score-mrc`, this.
+let columns = ["page", "route", "sat", "tone", "inkOut", "layered", "1bit",
+               "delta", "verdict"]
+func row(_ page: Int, _ route: String = "-", sat: String = "-", tone: String = "-",
+         inkOut: String = "-", layered: String = "-", bilevel: String = "-",
+         delta: String = "-", verdict: String) {
+    let fields = ["p\(page)", route, sat, tone, inkOut, layered, bilevel, delta,
+                  verdict.replacingOccurrences(of: "\t", with: " ")]
+    precondition(fields.count == columns.count)
+    print(fields.joined(separator: "\t"))
+}
+
+print(columns.joined(separator: "\t"))
 var totalLayered = 0, totalBilevel = 0, counted = 0
 var allTextLayered = 0, allTextBilevel = 0, allTextPages = 0
 
@@ -98,13 +124,9 @@ for index in pages {
         let before = Flattener.rebuildDPI(of: page)
         let after = Flattener.rebuildDPI(of: isolated)
         if abs(before - after) > 0.5 {
-            // Eight dashes, not nine: the header lost its `toneOut` column in
-            // this same commit. A SKIP row wider than its header shifts every
-            // column from `layered` rightward, which is a reporting defect
-            // arriving inside a fix for a reporting defect.
-            print(String(format: "p%d\t-\t-\t-\t-\t-\t-\t-\t"
-                         + "SKIP isolation moved the rebuild DPI %.0f->%.0f (A12.2)",
-                         index, before, after))
+            row(index, verdict: String(format:
+                "SKIP isolation moved the rebuild DPI %.0f->%.0f (A12.2)",
+                before, after))
             continue
         }
     }
@@ -123,7 +145,7 @@ for index in pages {
     }
     // A page already on the 1-bit route is not what this is about.
     guard case .jpeg(let jpegURL) = first.content else {
-        print("p\(index)\t\(route)\t-\t-\t-\t-\t-\t-\t-\talready 1-bit")
+        row(index, route, verdict: "already 1-bit")
         continue
     }
 
@@ -190,15 +212,21 @@ for index in pages {
         }
     }
     guard layered > 0, bilevel > 0 else {
-        print("p\(index)\t\(route)\tencode failed")
+        row(index, route, sat: String(format: "%.3f", sat),
+            tone: String(format: "%.3f", tone),
+            inkOut: String(format: "%.4f", inkOut),
+            verdict: "FAIL encode failed")
         continue
     }
 
     totalLayered += layered; totalBilevel += bilevel; counted += 1
     if allText { allTextLayered += layered; allTextBilevel += bilevel; allTextPages += 1 }
-    print(String(format: "p%d\t%@\t%.3f\t%.3f\t%.4f\t%d\t%d\t%+d\t%@",
-                 index, route, sat, tone, inkOut, layered, bilevel,
-                 bilevel - layered, allText ? "all-text" : "picture"))
+    row(index, route, sat: String(format: "%.3f", sat),
+        tone: String(format: "%.3f", tone),
+        inkOut: String(format: "%.4f", inkOut),
+        layered: "\(layered)", bilevel: "\(bilevel)",
+        delta: String(format: "%+d", bilevel - layered),
+        verdict: allText ? "all-text" : "picture")
 }
 
 print("")

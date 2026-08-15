@@ -207,6 +207,13 @@ if let i = argv.firstIndex(of: "--pages"), i + 1 < argv.count {
     argv.removeSubrange(i...(i + 1))
 }
 let perDoc = Int(ProcessInfo.processInfo.environment["PAGES"] ?? "") ?? 2
+// `PAGES=0` used to reach `(1...0)`, which traps: "Range requires lowerBound <=
+// upperBound", from an environment variable. Refuse it by name instead of dying
+// with a message about ranges.
+if perDoc < 1 {
+    FileHandle.standardError.write(Data("PAGES must be at least 1 (got \(perDoc))\n".utf8))
+    exit(2)
+}
 
 print("document\tpage\totsu\tink\ttone\tsat\tlost\troute")
 for path in argv {
@@ -215,8 +222,7 @@ for path in argv {
     let label = url.deletingPathExtension().lastPathComponent
     let total = doc.pageCount
     let indices: [Int] = explicitPages.isEmpty
-        ? (total <= perDoc ? Array(0..<total)
-                           : (1...perDoc).map { $0 * total / (perDoc + 1) })
+        ? Flattener.sampleIndices(count: total, wanted: perDoc)
         : explicitPages.map { $0 - 1 }
     for i in indices {
         guard let page = doc.page(at: i) else { continue }

@@ -6,19 +6,22 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Six open. C23 is the one that changes content on a route the user is on today**, and it is
+**Five open. C23 is the one that changes content on a route the user is on today**, and it is
 the reason 1.13.0 was not cut on 2026-08-15: it alters what a published page *displays* on 14 of
 233 corpus documents, and the instruments that would say whether the alteration is right are
 themselves under repair (`REVIEW-2026-08-14.md` A6.1, A12.2). R56 and R57 remain open and both
-wait on the one unbuilt *shape* signal. **R54 and R55 are the other two, and neither is in the
-app** — both are in `Tools/`, and R55 needs its own measurement campaign before
-`classify-source` changes. **C24 is the sixth**, opened 2026-08-15: `largestImage` answers
+wait on the one unbuilt *shape* signal. **R55 is the fourth and it is not in the app** — it is
+in `Tools/`, and it needs its own measurement campaign before `classify-source` changes.
+**C24 is the fifth**, opened 2026-08-15: `largestImage` answers
 "the largest image in this document" to a question about *this page*, so on the 4 corpus
 documents whose pages share one `/Resources` a page that draws nothing at all is rebuilt at
 another page's plate resolution. Two repairs were built and both were wrong, and the third
 would need a threshold the corpus has no gap for — it is open with the measurements rather
 than tuned. So: one release blocker, two waiting on an instrument that does not exist yet,
-two in the tooling, and one rebuild-resolution defect refused with its numbers. **R58 is `FIXED` but its
+one in the tooling, and one rebuild-resolution defect refused with its numbers. **R54 was the
+sixth and is `FIXED`** as of 2026-08-15 — with a correction to its own two numbers, and a fix
+aimed at the eight *real* item types that had the same defect rather than only the pseudo-type
+it named. **R58 is `FIXED` but its
 feature is deliberately unreleased** — the annotation transplant, after two adversarial rounds
 that each found marks landing in the wrong place. The third round is unrun.
 
@@ -39,11 +42,12 @@ luminance signal was built for R56 and refused over four measured rounds. Neithe
 fixed, and `TODO.md` item 1's size optimisation is refused until R56 closes, because it
 would make R56 more common for a measured 8.2 KB a page.
 
-**R54 and R55 are not in the app.** R54, a pooling bug in `Tools/sweep-zotero.py` that
-makes its per-type medians and its "GB reclaimable" figure untrustworthy for 181
-parentless attachments; it matters only when the library sweep runs, which is scheduled
-last. And R55, `classify-source` calling an upright-scanner capture `photographed`,
-which is the gate deciding what the corpus and the sweep are allowed to contain.
+**R55 is not in the app**: `classify-source` calling an upright-scanner capture
+`photographed`, which is the gate deciding what the corpus and the sweep are allowed to
+contain. **R54 was its neighbour and is now `FIXED`** — a pooling bug in
+`Tools/sweep-zotero.py` that made its per-type medians and its "GB reclaimable" figure
+untrustworthy. It mattered only when the library sweep runs, which is scheduled last, and
+the measurement behind the fix found the same defect in eight real item types.
 
 **R51–R53 came out of a review of R49 and R50's own diff and are all `FIXED`** — the
 tenth round running in which reviewing the previous round's code found real defects in
@@ -3073,9 +3077,10 @@ before touching the gate that decides what everything else is allowed to measure
 *Why?* is in the corpus regardless, by the owner's ruling, with the anomaly recorded
 in `testdocs/README.md` beside it.
 
-### R54 · `sweep-zotero.py` pools 181 parentless attachments into one pseudo-type — OPEN
+### R54 · `sweep-zotero.py` pools 181 parentless attachments into one pseudo-type — FIXED
 *(found 2026-08-13 reviewing the commit it arrived in; not in the app, and not urgent
-— the library sweep it serves is scheduled last)*
+— the library sweep it serves is scheduled last. Fixed 2026-08-15, and the fix is not
+about the type this entry names.)*
 
 The survey's `LEFT JOIN` onto the parent item leaves attachments with no parent
 carrying a null item type, and they are then grouped together. **181 files** land in
@@ -3087,6 +3092,60 @@ cannot survive.
 It does not corrupt anything and it does not touch a document. It makes two numbers in
 the survey wrong by an unknown amount for 181 of 15,901 attachments. Fix it before
 step 2 of the sweep reads those numbers, not before the release.
+
+**Re-measured 2026-08-15, and two of the numbers above want correcting.** The library
+holds 181 parentless PDF attachments on disk — the `LEFT JOIN` finds exactly 181 more
+rows than the `INNER` one, so that count reproduces — but out of **15,367**, not 15,901.
+15,901 was the population of the run *before* the LEFT JOIN landed, which excluded them,
+so the entry divided by the denominator that did not contain its numerator. And of the
+181, the repaired classifier (T17) calls **160 born-digital, 16 scanned, 3 photographed,
+1 no-page-image, 1 unreadable** — so the pooled median the entry objects to stood on
+**16** files, not 181.
+
+**It is still the right objection, and it is not about parentless attachments.** Their
+per-page spread is IQR/median **7.92**, against 1.21 for the median real item type and
+3.17 for the widest (`magazineArticle`). But the code required only **5 scans** to treat a
+type's median as that type's characteristic cost, and on the 2026-08-13 run **eight real
+item types** had fewer than 20 — including `blogPost`, 5 scans, holding the **highest**
+median in the table at 430 KB/page and therefore the divisor for those same five files.
+The pseudo-type was one instance of a general defect.
+
+**How many files a median needs, measured.** Bootstrap over the 2026-08-13 whole-library
+run, 2,000 draws a cell, p90 of |median over n files / median over all of that type's
+scans − 1|:
+
+| type | scans | n=5 | n=10 | n=20 | n=50 | n=100 |
+|---|---:|---:|---:|---:|---:|---:|
+| journalArticle | 5026 | 72% | 47% | 35% | 22% | 15% |
+| book | 1414 | 102% | 72% | 52% | 28% | 20% |
+| newspaperArticle | 852 | 94% | 64% | 50% | 34% | 22% |
+| thesis | 562 | 20% | 13% | 10% | 7% | 5% |
+| document | 349 | 135% | 75% | 55% | 37% | 28% |
+| magazineArticle | 323 | 275% | 167% | 100% | 59% | 34% |
+| bookSection | 287 | 183% | 111% | 57% | 32% | 22% |
+
+`OUTLIER_RATIO` is 3.0, so a denominator 50% too small turns a file at 2.0x its type's
+real cost into a candidate: an error of that size is not a rounding matter, it is the
+whole test. **n=5 admits errors up to 275%.** 100 is where the worst-behaved type first
+comes under ~35%, and the types clearing it hold **98% of the library's scans**.
+
+**Fixed** with `MINIMUM_SCANS_FOR_MEDIAN = 100` and no special case for the pseudo-type,
+which is now simply an under-populated type like the other eight. Everything below the
+line is compared to the **library-wide scan median** with `basis=library` printed on the
+row, and its outliers are marked **`review`** rather than `candidate`: visible to a person,
+never acted on unread, because step 2 of the sweep moves originals to `~/Downloads` and a
+ratio against a pooled median is not a comparison to a file's own kind. Every run now says
+out loud which types borrowed the library's median and how many files that was — the
+silence was half the defect. Dropping them instead was refused: 181 files and 0.50 GB, and
+dropping them is what the import bug this entry came from already did once.
+
+Verified on a 1,200-file slice of the real library end to end (query → classify → judge →
+table): 74 candidates on the type basis, 55 `review` on the library basis, 15 types under
+the line — and the table now sorts candidates first, then type-basis rows, then
+library-basis ones, whose ratios are inflated for any type dearer per page than the
+library average and used to sit at the top looking like the worst offenders in it.
+`judge()` was split out of `main` so `--self-test` can drive it, six of its properties are
+checked, and each was watched failing with its defect put back (T18).
 
 ### R53 · R50's own doc comment recorded one miss where there are two — FIXED
 *(found 2026-08-13 reviewing R50's diff)*
@@ -5015,6 +5074,181 @@ it, and the first would have refused this very commit.**
    `bash -n` on `Tools/*.sh` is now part of the run, and it is the check that would have caught
    defect 1 before it reached the hook. `py_compile` and `bash -n` are both syntax-only and the
    header says so: a Python body of `return no_such_function(1)` compiles clean.
+### T17 · The corpus gate linked the app's page test and then computed its own — FIXED
+*(found by `REVIEW-2026-08-14.md` A12.4; fixed 2026-08-15, and the entry's stated
+mechanism turned out to be wrong)*
+
+`Tools/sample-zotero.py` says the classifier's page-image test is
+`Flattener.pageIsAnImage`, "the same function the app uses… A second copy of that rule
+would drift from the first." **It was a second copy**, three bare literals in
+`classify-source.swift`, and it drifted in the way that mattered most: the gate whose
+entire purpose is D1 admitted the two corpus documents `Flattener.hasDigitalText` calls
+born-digital.
+
+**Compiling against `Sources/` was necessary and was not sufficient.** The tool linked
+`Flattener` — `sample-zotero.py` even explains why it must — and then answered the
+question itself. Linking a function is not calling it, and that sentence is now in
+`build_classifier`'s docstring where the false claim was.
+
+**Fixed** by asking the app's own two questions: `Flattener.pageIsAnImage` per sampled
+page, and a new `Flattener.hasDigitalText(in:)` overload per document, which exists so a
+tool holding an open `PDFDocument` has no excuse to re-implement the rule. The URL form is
+now a two-line wrapper over it, and the suite checks the two agree on all three C17
+fixtures — "it just opens the file and calls the other one" being exactly the claim that
+goes stale.
+
+**Measured over the whole corpus, before and after** — `CORPUS-2026-08-15.md`, with the
+233-row run committed beside it as `CORPUS-2026-08-15.tsv`:
+
+| | old cross-page test | repaired gate |
+|---|---:|---:|
+| scanned | 233 | **230** |
+| born-digital | 0 | **2** |
+| photographed | 0 (verdict reached, R55) | 1 |
+
+The old predicate admitted **all 233**, so the corpus's stated property "every one of them
+a scan" was never 233 of 233 by any question the app asks. The two born-digital documents
+are `Canby_1929` (4 pages) and `Davis_2005` (5 pages) — **9 pages of 16,987**, so no
+average moves, and D1 is about composition rather than averages.
+
+**A12.4's mechanism claim is wrong, and this is the fourth of its findings to need
+correcting.** It says the two aggregates "pass a test no single page passes" — `maxImage` a
+max over five pages, `medianDPI` a median over those pages. Structurally true; it did not
+happen. **The minimum `imagePages` over all 233 documents is 1**: every document the old
+test admitted had at least one page that passes `pageIsAnImage` alone. The real mechanism is
+duller — a `max` over five pages is an *any-page* rule wearing an aggregate's clothes, and
+it was being read as a statement about the document. A12.4's *count* of 7 disagreements
+reproduces exactly.
+
+**The document-level rule was measured, not chosen.** There is no shipped answer to copy:
+the app asks `pageIsAnImage` of a page and `hasDigitalText` of a document, and neither is
+"is this document a scan". A majority rule — mirroring `hasDigitalText`'s own
+`digital * 2 > sampled` — was built first and rejects 7 documents. Two are the ones
+`hasDigitalText` names, so it removes **no** non-scan that question misses; of the other
+five, four are scans and one is genuinely mixed. `bookSection/full chapter.pdf` is the
+instructive one: a ~100 DPI scan whose rasters run 810–987 px across the 900 px bar, where
+this tool's five indices landed on four pages *under* it and `hasDigitalText`'s four
+indices, a different stride through the same book, landed on four *over* it. **Same
+document, opposite verdicts, by sample luck at a threshold.** So the gate is
+`hasDigitalText` first and then *any* sampled page being a page-sized raster, and
+`imagePages`/`sampled` are printed so a stricter rule can be recomputed from a saved run —
+an all-pages rule would reject 21.
+
+**One new verdict, `textual`**, for a document with no page raster in the sample, real
+text, and an app that would nonetheless not warn — kept apart from the pre-existing
+`no-page-image` rather than both being called `born-digital`, because merging them is what
+hides a disagreement with the shipped rule. *(An earlier draft of this entry called both
+verdicts new. `no-page-image` has existed since the tool was written and D1 and
+`CORPUS-2026-08-09.md` both already cite counts of it.)* **Neither occurs in the corpus**
+and both occur in a library, which is what the gate is for.
+
+**Siblings swept.** `rg 'pageIsAnImage|hasDigitalText'` finds one other copy of the 900/72/1400
+literals and it was this tool's; `Model.swift`'s two call sites use the real functions. Eleven
+tools that never call `Prefs.register` were checked for pref reads at the same time — all
+eleven read none, so T15's fifth divergence has no other instance.
+
+### T18 · Five copies of "sample pages through a document", two of which measured one page twice — FIXED
+*(found by `REVIEW-2026-08-14.md` A12.8 for two of them; the other three, and both
+field-count defects below, by looking for the same shape)*
+
+`Tools/score-text-route.swift` measured **page 1 three times** on a five-page document —
+`(1...min(12, n)).map { $0 * n / 13 }.filter { $0 > 0 }` is `[1, 1, 1]` at n=5, and 27 of
+233 corpus documents are short enough to land in it — while `score-routing`'s
+`[1, n/3, n/2, n*3/4]` is `[1, 1, 2, 3]`.
+
+**And the same expression is `[]` for n ≤ 3, which is worse and is not in A12.8.** Counted
+from `CORPUS-2026-08-15.tsv`: **47 of 233 corpus documents have 1–3 pages**, and on every
+one of them the tool printed its header, printed its summary, and measured **nothing** —
+`no picture-route pages measured`, exit 0, indistinguishable from a document with no
+picture pages in it. 9 more have exactly 4 pages and got a single page. So the sample was
+27 documents over-weighted, 47 empty, 9 thin. The `filter { $0 > 0 }` that produced the
+empty sample was there to drop index 0, which is the one page the replacement deliberately
+skips anyway.
+
+Both tools *average over the sample they draw*,
+so a repeated page is a page weighted twice in the answer, and `score-routing` reports a
+four-page census over three distinct pages. Its own header note said the repeat was
+harmless because "PDFKit duplicates the page rather than dropping it, so position and index
+still line up" — true, and the wrong conclusion.
+
+**Fixed** with `Flattener.sampleIndices(count:wanted:)`, used by `hasDigitalText`,
+`classify-source`, `score-text-route`, `score-routing` and `score-threshold-loss` — the
+five that were copies of *the shipped stride*. Distinct
+by construction rather than by a `Set`: with `wanted < count` the step is at least 1 and a
+half-open interval of length ≥ 1 always contains an integer, so the floors strictly
+increase. The suite checks distinctness, order, range and count over `count` 1…40 ×
+`wanted` 1…13, names both defects as cases, and — because "pure refactor" is a claim —
+checks index-for-index that `hasDigitalText`'s four indices are unchanged for every
+document length.
+
+`score-threshold-loss` also reached `(1...perDoc)` with `PAGES=0`, which **traps**: "Range
+requires lowerBound <= upperBound", from an environment variable. It refuses the value by
+name now.
+
+**Siblings swept, and there are more of them than this entry first said.** An earlier draft
+of it claimed `sampleIndices` was now the only page sampler in the tree. It is not: **seven
+others survive**, none of them the shipped stride, and they were left alone deliberately.
+
+| tool | expression | repeats? |
+|---|---|---|
+| `score-mrc` | `n<=4 ? all : [n/3, n/2, n*3/4]` | no |
+| `score-picture-codec` | `n<=6 ? all : [1, n/3, n/2, n*3/4]` | no |
+| `score-line-separation` | `n<=3 ? all : [1, n/2, n*3/4]` | no |
+| `picture-signals` | `n<=3 ? all : [1, n/2]` | no |
+| `score-corpus` | `n<=3 ? all : [min(1,n-1), n/2, min(n-1,n*3/4)]` | no |
+| `score-reading-order` | `samplePages(_:)` | no |
+| `score-skew` | `samplePages(_:)` — byte-identical to the above | no |
+
+Checked by brute force over `n` 1…3000, and for the two `samplePages` twins over
+`pages` ∈ {1,2,3,4,6,12} as well: **no repeats and no out-of-range indices anywhere.** So
+there is no defect to fix, and converting them would be worse than leaving them: each
+tool's sample *defines* the figures recorded against it, and `score-corpus`'s in particular
+is the sample behind every text-layer figure in this register. Changing five samplers would
+retire those numbers to buy uniformity. CONTRIBUTING §4b asks for the answer in the commit,
+and this is the answer. The two `samplePages` twins are a genuine C20/R23/R29 shape —
+byte-identical code in two files — and are the one candidate worth converting the next time
+either tool is opened for another reason.
+
+**Two rows printed the wrong number of fields, and this is the third instance of that
+shape** after T14's SKIP row and A12.3's `score-mrc`. Found by counting `\t` in every
+`print` in every Swift tool rather than by reading them:
+
+```
+score-text-route   already 1-bit   10 fields under a 9-column header   (verdict under drift)
+score-text-route   encode failed    3 fields under a 9-column header
+score-annotations  could not render 6 fields under a 7-column header   (verdict under drift)
+```
+
+The `already 1-bit` row was measured in a real run, not deduced. Beside the third row of
+that tool sits a comment reasoning the dash count out — "eight dashes, not nine", where
+there are seven — which got *that* row right and is the argument for not counting dashes:
+all three tools have one `row(...)` printer over a `columns` array now, with a
+`precondition` on the width. The same audit cleared `score-picture-codec`,
+`score-reading-order`, `score-corpus` and `score-line-separation`: the first builds its
+header and rows from one candidate list, the second prints two different tables and each is
+internally consistent, and the last two print self-labelling `key=value` fields rather than
+positional ones.
+
+**And nothing in this repository ran a Python tool's own checks.** The whole gate for
+`Tools/*.py` was `py_compile`, which cannot see a parser that accepts a malformed row —
+which is precisely how both consumers' `len(f) >= 9` survived two field-count defects. So
+`sample-zotero.py` and `sweep-zotero.py` both carry `--self-test` now, run by the
+pre-commit hook for any staged Python tool that advertises one, and each was watched
+failing with its defect put back:
+
+```
+mutant: >= 9 parse      2 failures   an 11-field row parses; a 9- and a 12-field row are reported
+mutant: no retry        2 failures   the trapping document is the only one missing
+mutant: path from front 4 failures   path is the last field
+mutant: MINIMUM = 5     3 failures   R54's own defect
+mutant: no size floor   1 failure    over the ratio, under the floor
+mutant: medians over all files
+                        1 failure    a born-digital file must not enter its type's median
+```
+
+`.githooks/pre-commit` is in `check-tools-compile.sh`'s `bash -n` set now too — it was the
+one shell script nothing checked, while being the only one whose failure refuses *every*
+commit, and T16's own bash-3.2 defect is what that costs.
 
 ---
 ## The interface
@@ -5985,8 +6219,20 @@ rule that would drift from the first the way `picture-signals` did (T2). New
 flags: `--added-since`, `--exclude-manifest`, `--types`, and `--allow-any-kind`
 for reproducing an old corpus, which says in its own help what it costs.
 
+**That last claim was false for a week and it is the sentence to distrust.** The gate
+*linked* `Flattener.pageIsAnImage` and then computed its own answer from a max over five
+pages combined with a median over those pages — **T17** — so this entry's own remedy carried
+the defect it was written against, one level down. The consequence is small and exact: the
+233-document corpus that replaced the 84 contains **two documents `Flattener.hasDigitalText`
+calls born-digital**, 9 pages of 16,987, named in `CORPUS-2026-08-15.md`. It is 230 scans,
+not 233. The gate asks both of the app's questions now, and the corpus's composition is a
+committed 233-row measurement rather than a sentence.
+
 The rebuilt corpus is **84 documents, all 84 verified scans** (the gate rejected
-275 born-digital, 23 photographed, 2 with no page image). Measured through the
+275 born-digital, 23 photographed, 2 with no page image). *(**"Verified" by the same
+defective gate**, so that count carries T17's caveat too — it was never re-checked,
+because the 84-document corpus was superseded by the 233 on 2026-08-09 and the files
+of the ones dropped are gone. The 233 were re-checked: 230.)* Measured through the
 shipped pipeline:
 
 | | |

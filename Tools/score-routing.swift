@@ -6,7 +6,7 @@ let tmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("r
 try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
 defer { try? FileManager.default.removeItem(at: tmp) }
 guard let doc = PDFDocument(url: src), doc.pageCount > 0 else { print("\(label)\tFAIL"); exit(0) }
-let idx = doc.pageCount <= 4 ? Array(0..<doc.pageCount) : [1, doc.pageCount/3, doc.pageCount/2, doc.pageCount*3/4]
+let idx = Flattener.sampleIndices(count: doc.pageCount, wanted: 4)
 let s = PDFDocument()
 for i in idx { if let p = doc.page(at: i) { s.insert(p, at: s.pageCount) } }
 let input = tmp.appendingPathComponent("in.pdf"); _ = s.write(to: input)
@@ -17,10 +17,15 @@ let input = tmp.appendingPathComponent("in.pdf"); _ = s.write(to: input)
 // the DPI *value* on those documents. Say so rather than print a KB/page figure
 // measured at a resolution production would not have used. qpdf --pages gives the
 // same wrong answer; this is not fixable in the tool.
-// A page it cannot compare is a refusal, not a pass. Note `idx` CAN repeat an
-// index — at pageCount 5 it is [1, 1, 2, 3], which is 5 corpus documents — and
-// PDFKit duplicates the page rather than dropping it, so position and index still
-// line up. Verified on two of those five.
+// A page it cannot compare is a refusal, not a pass. This note used to say that
+// `idx` CAN repeat an index — at pageCount 5 it was `[1, 1, 2, 3]`, on 5 corpus
+// documents — and that PDFKit duplicates the page so position and index still line
+// up. Both true, and it was the wrong conclusion: the counts below are a *census*
+// of how the sample routes, so a page counted twice is one document reported as
+// four pages when three were looked at. `Flattener.sampleIndices` does not repeat
+// (A12.8). Both expressions skip page 1 on a document over four pages — an earlier
+// version of this note claimed otherwise, and it was written the wrong way round:
+// the old `[1, n/3, n/2, n*3/4]` is 0-based, so its lowest index is page *two*.
 var drift: [String] = []
 guard let extracted = PDFDocument(url: input), extracted.pageCount == idx.count else {
     print("\(label)\tFAIL\tthe sample did not survive the write"); exit(1)

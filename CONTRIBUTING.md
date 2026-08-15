@@ -174,7 +174,9 @@ apply, or an app that does nothing satisfies the table.
 | any fix | the sibling sweep in 4b, with the answer in the commit |
 | a property spanning a lifecycle | the states-by-doors table in 4d |
 | any UI change | `./build.sh` (the suite compiles the views but does not run them) |
-| a change to a tool, **or to a struct a tool constructs** | `Tools/check-tools-compile.sh` — enforced by the hook for staged tools. Three tools have shipped unable to compile: C25's had never built, and T16's two were broken by a field added to `Prefs.Snapshot` 40 commits before anyone noticed |
+| a change to a tool, **or to a struct a tool constructs** | `Tools/check-tools-compile.sh` — enforced by the hook for staged tools. Three tools have shipped unable to compile: C25's had never built, and T16's two were broken by a field added to `Prefs.Snapshot` 40 commits before anyone noticed. It covers `.githooks/pre-commit` too, which nothing checked while being the only script whose failure refuses every commit |
+| a change to a Python tool | `python3 Tools/<tool>.py --self-test` — enforced by the hook for any staged `Tools/*.py` carrying `add_argument("--self-test"`. Add one when you add a tool. `py_compile` was the entire gate for Python here, and it cannot see a parser that accepts a malformed row: that is how `len(f) >= 9` in two consumers survived two separate field-count defects (T14, A12.3, then T18) |
+| a tool that prints a TSV | one `row(...)` printer over one `columns` array, with the width asserted. Counting tab escapes by eye has now put the wrong number of fields under a header **three times** — T14's SKIP row, A12.3's `score-mrc`, T18's two — and one of them sat beside a comment reasoning the dash count out and getting it wrong |
 | `SearchableWriter` / `Flattener` / `JBIG2` | the invariant-3 procedure, before and after — CLAUDE.md has the commands. **Three instruments, not four**: this row said "all four probes" while CLAUDE.md named four *properties* and no fourth probe existed (T14) |
 | anything geometry- or routing-related | `Tools/score-corpus.swift` over `testdocs/` |
 

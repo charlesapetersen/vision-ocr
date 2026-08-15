@@ -55,9 +55,14 @@ not run at all; `CLAUDE.md` now carries the procedure as five commands that work
    `Flattener.mrcLayers` now instead of mirroring it, and `FEATURES.md`'s 4.96x was not just
    stale, it was the *blind* segmenter's figure). So is the tools-compile gate that came out
    of it (`T16`), which found two more tools that had not built since 2026-08-14. Remaining:
-   `A12.4` (the corpus gate re-implements `pageIsAnImage` and admitted the two documents the
-   app calls born-digital), `R54`, and the remainder of `A12.8`. `R55` needs its own
-   measurement campaign first.
+   **`A12.4`, `R54` and the remainder of `A12.8` are all done** as of 2026-08-15
+   (`BUGS.md` T17, R54 `FIXED`, T18): the gate asks the app's own two questions and the
+   corpus turns out to be **230 scans, not 233** (`CORPUS-2026-08-15.md`); a type's median
+   in the survey now needs enough files behind it to be one, which was never only about
+   R54's pseudo-type; and `Flattener.sampleIndices` replaced five copies of "sample pages
+   through a document", two of which measured one page twice. **Group 1 of the three-group
+   statement is therefore closed** — nothing in `Tools/` is outstanding except `R55`, which
+   needs its own measurement campaign first.
 2. **`A1.2`, then `A1.1`, then `C23`** — that order, because A1.1's only viable fix triples
    the sliver population A1.2 is about. Plus `A1.3`, `A1.4`, `A2.4`, `A3.1` in its narrower
    form, `A13.4`, the residue of `A10.6`, and `A11.8`.
@@ -154,8 +159,9 @@ helper under `env -i`, `visionocr-recognise --version` included.
    object-graph plumbing, and doing it first means writing that twice.
 
 4. **The Zotero library sweep.** Explicitly the *last* thing, after all feature work,
-   and probably its own session. Specified below. Fix `BUGS.md` R54 before step 2
-   reads the survey's per-type numbers.
+   and probably its own session. Specified below. `BUGS.md` R54 is `FIXED`, so step 2 may
+   read the survey's per-type numbers — but **step 1 has to be re-run first**: the verdicts
+   below came from the old classifier and the candidate list from a 5-file median floor.
 
 **A watched folder or command line is dropped** — 2026-08-13, at the owner's
 direction. It was `FEATURES.md` item 7 and nobody had asked for it.
@@ -446,6 +452,15 @@ Worth doing only if someone is waiting on single big books.
 
 ### What the survey found
 
+> **Superseded 2026-08-15, and step 1 wants re-running before step 2 acts on any of it.**
+> Two changes since: the classifier asks the app's own questions (`BUGS.md` T17), so these
+> verdicts are the old predicate's; and a type's median now needs
+> `MINIMUM_SCANS_FOR_MEDIAN` scans behind it, because at 5 files a median is off by up to
+> **275%** while the outlier test is 3.0x (R54). The candidate count and the "GB
+> reclaimable" figure below are both computed from those medians. The library has also
+> changed — 15,367 PDF attachments on disk on 2026-08-15 against 15,901 here, the
+> Robinson–Montana archive being most of the difference. A re-run is about 50 minutes.
+
 `Tools/sweep-zotero.py` over the whole library, read-only. **15,901 attachments**:
 
 | verdict | files |
@@ -463,8 +478,11 @@ extraordinary: five sit above 1.4 MB/page, the worst a 3-page document at
 2,960 KB/page. Those are image-heavy exports, not scans, and want a different
 tool.
 
-Per-page median by item type, over scans only, is in the log; it ranges from
-newspaperArticle at 286 KB/page down to thesis at 40.
+Per-page median by item type, over scans only, is in the log. Among the types with
+enough scans to have a trustworthy median it ranges from **newspaperArticle at 286
+KB/page down to thesis at 40**; the log's actual maximum is **blogPost at 430**, over
+**5** scans, which is exactly the untrustworthy kind R54 is now about. This sentence
+originally gave 286 as the top of the range with no qualification.
 
 **1,164 re-OCR candidates** — scanned, ≥3x their own item type's median, and
 ≥150 KB/page. They hold **11.6 GB** and would give back roughly **10.0 GB**. The

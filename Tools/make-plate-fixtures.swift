@@ -27,6 +27,15 @@
 //                    pamphlet's shape, and the case where colour is *inside* the
 //                    words rather than beside them.
 //
+// **What these fixtures are blind to, by construction: geometry.** All six are one
+// page, 8.5x11, `/Rotate 0`. CLAUDE.md invariant 5 says a fixture needs two pages
+// of differing size and one rotated page, because a single-page upright fixture
+// cannot see a geometry bug at all — and R56 and R57 rest on these six. So their
+// evidence is about *routing*, and says nothing about whether a pale drawing or a
+// tonal plate survives on a rotated or oddly-sized page. A11.8 tracks the coverage
+// gap; A12.8 is where this was written down. If a fix for either entry is measured
+// only here, it has been measured on the easy geometry.
+//
 //   mkdir -p /tmp/h && cp Tools/make-plate-fixtures.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/plates -target "$(uname -m)-apple-macos13.0" /tmp/h/main.swift
 //   /tmp/plates <output-directory>

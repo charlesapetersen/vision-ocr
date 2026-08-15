@@ -61,6 +61,28 @@ if [ -n "${staged_tools// /}" ]; then
   fi
 fi
 
+# A staged Python tool that can test itself, does. `py_compile` was the entire
+# gate for Tools/*.py, and a parser that accepts a malformed row compiles
+# perfectly — which is how a consumer's `len(f) >= 9` survived two separate
+# field-count defects (T14, A12.3). Advertise one the way sample-zotero.py does,
+# with an argparse flag; these run against fakes rather than the corpus, so the
+# cost is a second or two. The Swift tools' --self-test stays out of the hook on
+# purpose: each one needs a 25-second build first.
+while IFS= read -r f; do
+  { [ -n "$f" ] && [ -f "$f" ]; } || continue
+  # Quote-agnostic: `add_argument('--self-test'` is the same capability, and the
+  # first version's double-quoted literal skipped it *silently* — which is the
+  # default check-tools-compile.sh argues against three files away.
+  grep -qE "add_argument\(.--self-test." "$f" || continue
+  echo "pre-commit: $f --self-test…"
+  if ! python3 "$f" --self-test; then
+    echo "pre-commit: $f --self-test FAILED — commit refused." >&2
+    exit 1
+  fi
+done <<EOF
+$(echo "$staged" | grep -E '^Tools/.*\.py$' || true)
+EOF
+
 echo "pre-commit: running ./run_tests.sh (2-4 minutes; it runs real OCR)…"
 log=$(mktemp -t vrg-precommit)
 if ! ./run_tests.sh >"$log" 2>&1; then

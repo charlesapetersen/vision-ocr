@@ -15,17 +15,21 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **six
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **five
 entries are open and four of them change what the default route produces**: R56 (a pale
 drawing is erased, not softened), R57 (a tonal plate can come out a black blob),
 C23 (the rebuilt copy displays what the original's crop box hid — C13 recurring on
 **every** rebuild route, because `Flattener.flatten` drops the crop box before
 `compose` can copy it; 14 of 233 corpus documents), and C24 (`largestImage` reads a
 shared `/Resources`, so a page that draws no image is rebuilt at another page's plate
-resolution; 4 documents, and two attempted fixes were each worse).
+resolution; 4 documents, and two attempted fixes were each worse). The fifth is R55,
+in `Tools/`.
 Read its header before planning anything. Update it in the same commit as any fix.
-Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2026-08-09.md`
-and `MRC-2026-08-15/` — and are evidence for one run, not claims about the present.
+Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2026-08-09.md`,
+`CORPUS-2026-08-15.md` + `.tsv` and `MRC-2026-08-15/` — and are evidence for one run, not
+claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
+the gate re-run after T17, and it names the two documents the app itself calls
+born-digital.
 [TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas
 with their costs and the reasons some are parked, and
 [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a

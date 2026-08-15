@@ -306,6 +306,36 @@ enum Flattener {
         return largest.pixelWidth >= 900 && largest.dpi >= 72 && largest.dpi <= 1400
     }
 
+    /// `wanted` page indices spread through a document of `count` pages, in
+    /// ascending order and **never repeating**.
+    ///
+    /// One definition because there were five, four of them different, and two of
+    /// those repeated a page: `score-text-route` measured page 1 **three times**
+    /// on a five-page document (27 of 233 corpus documents are short enough to
+    /// hit it), and `score-routing`'s `[1, n/3, n/2, n*3/4]` is `[1, 1, 2, 3]` at
+    /// n=5. A sample that repeats a page weights it twice in every average taken
+    /// over the sample, and both tools average (`REVIEW-2026-08-14.md` A12.8).
+    ///
+    /// Page 1 is deliberately never chosen when the whole document does not fit:
+    /// a born-digital book often has a raster cover and a scan often has a clean
+    /// title page, so it is the least informative page in either.
+    ///
+    /// Distinct by construction rather than by a `Set`: with `n < count` the step
+    /// `count / (n + 1)` is at least 1, and a half-open interval of length ≥ 1
+    /// always contains an integer, so the floors strictly increase.
+    ///
+    /// The `n == count` line is a statement, not a shortcut: the general formula
+    /// gives `[0 ..< count]` there anyway, since `floor(k·c / (c+1)) = k − 1` for
+    /// every `k ≤ c`. It is kept because "the whole document" should not depend on
+    /// the reader noticing that identity, and the suite's distinctness, order,
+    /// range and count checks pin the two to the same answer.
+    static func sampleIndices(count: Int, wanted: Int) -> [Int] {
+        guard count > 0, wanted > 0 else { return [] }
+        let n = min(wanted, count)
+        if n == count { return Array(0..<count) }
+        return (0..<n).map { ($0 + 1) * count / (n + 1) }
+    }
+
     /// Does this file already carry **real digital text**, as opposed to an OCR
     /// layer over a scan?
     ///
@@ -330,10 +360,21 @@ enum Flattener {
     /// false negative costs the user nothing but the warning; a false positive
     /// puts a question in front of someone who did not need one.
     static func hasDigitalText(_ url: URL, password: String? = nil) -> Bool {
-        guard let doc = open(url, password: password), doc.pageCount > 0 else { return false }
-        let total = doc.pageCount
-        let wanted = min(4, total)
-        let indices = (0..<wanted).map { total <= 4 ? $0 : ($0 + 1) * total / (wanted + 1) }
+        guard let doc = open(url, password: password) else { return false }
+        return hasDigitalText(in: doc)
+    }
+
+    /// The same question against a document that is already open.
+    ///
+    /// Exists so a *tool* can ask it without re-opening the file it is already
+    /// holding — and, more to the point, so that no tool has an excuse to
+    /// re-implement the rule. `Tools/classify-source.swift` had its own copy of
+    /// `pageIsAnImage` for a week, with a different predicate, and the corpus
+    /// gate whose only job is D1 consequently admitted the two documents this
+    /// function calls born-digital (`REVIEW-2026-08-14.md` A12.4).
+    static func hasDigitalText(in doc: PDFDocument) -> Bool {
+        guard doc.pageCount > 0 else { return false }
+        let indices = sampleIndices(count: doc.pageCount, wanted: 4)
 
         var digital = 0, sampled = 0
         for i in indices {

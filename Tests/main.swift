@@ -7427,6 +7427,78 @@ do {
         check("a born-digital page does not", !Flattener.pageIsAnImage(p))
     }
 
+    // A12.4. The document overload exists so a tool can ask this question about a
+    // document it is already holding, instead of doing what
+    // `Tools/classify-source.swift` did for a week: link `Flattener` and then
+    // compute its own answer from two cross-page aggregates. Both forms are
+    // checked against each other on all three fixtures, because "it just opens the
+    // file and calls the other one" is exactly the claim that goes stale.
+    for (name, url) in [("born-digital", digital), ("scan", scan), ("already-OCR'd", ocrd)] {
+        guard let doc = PDFDocument(url: url) else { continue }
+        check("hasDigitalText(in:) agrees with hasDigitalText(_:) on the \(name) fixture",
+              Flattener.hasDigitalText(in: doc) == Flattener.hasDigitalText(url))
+    }
+
+    // A12.8. `sampleIndices` replaced five copies of "pages spread through a
+    // document", two of which repeated a page — and both of those two average over
+    // the sample they draw, so a repeat is a page counted twice in the answer.
+    do {
+        var repeats: [String] = [], outOfOrder: [String] = [], outOfRange: [String] = []
+        var wrongCount: [String] = [], tookPageOne: [String] = []
+        var driftedFromHasDigitalText: [String] = []
+        for count in 1...40 {
+            for wanted in 1...13 {
+                let got = Flattener.sampleIndices(count: count, wanted: wanted)
+                let where_ = "count=\(count) wanted=\(wanted)"
+                if Set(got).count != got.count { repeats.append("\(where_) -> \(got)") }
+                if got != got.sorted() { outOfOrder.append("\(where_) -> \(got)") }
+                if got.contains(where: { $0 < 0 || $0 >= count }) {
+                    outOfRange.append("\(where_) -> \(got)")
+                }
+                if got.count != min(wanted, count) { wrongCount.append("\(where_) -> \(got)") }
+                if wanted < count, got.contains(0) { tookPageOne.append("\(where_) -> \(got)") }
+                // The refactor claim: `hasDigitalText` used to compute its four
+                // indices inline. Same numbers, or its behaviour moved silently.
+                if wanted == 4 {
+                    let old = (0..<min(4, count)).map {
+                        count <= 4 ? $0 : ($0 + 1) * count / (min(4, count) + 1)
+                    }
+                    if got != old {
+                        driftedFromHasDigitalText.append("\(where_) -> \(got) was \(old)")
+                    }
+                }
+            }
+        }
+        check("a page sample never repeats an index", repeats.isEmpty,
+              repeats.prefix(3).joined(separator: "; "))
+        check("…is in ascending order", outOfOrder.isEmpty,
+              outOfOrder.prefix(3).joined(separator: "; "))
+        check("…is inside the document", outOfRange.isEmpty,
+              outOfRange.prefix(3).joined(separator: "; "))
+        check("…and has as many indices as were asked for", wrongCount.isEmpty,
+              wrongCount.prefix(3).joined(separator: "; "))
+        check("a partial sample skips page 1, which is the least informative page",
+              tookPageOne.isEmpty, tookPageOne.prefix(3).joined(separator: "; "))
+        check("hasDigitalText's own four indices are unchanged by the extraction",
+              driftedFromHasDigitalText.isEmpty,
+              driftedFromHasDigitalText.prefix(3).joined(separator: "; "))
+
+        // The two defects by name, so a future reader sees what was wrong rather
+        // than only that something is asserted. `score-text-route` asked for 12
+        // pages of a 5-page document and measured page 1 three times;
+        // `score-routing` asked for 4 of 5 and measured index 1 twice.
+        check("the five-page document score-text-route mis-sampled now gives five "
+              + "distinct pages",
+              Flattener.sampleIndices(count: 5, wanted: 12) == [0, 1, 2, 3, 4])
+        check("…and the one score-routing double-counted gives four",
+              Flattener.sampleIndices(count: 5, wanted: 4) == [1, 2, 3, 4])
+        check("no pages wanted, or no pages to sample, is an empty sample rather "
+              + "than a trap",
+              Flattener.sampleIndices(count: 0, wanted: 4).isEmpty
+              && Flattener.sampleIndices(count: 10, wanted: 0).isEmpty
+              && Flattener.sampleIndices(count: 10, wanted: -1).isEmpty)
+    }
+
     // 4. The batch-level pre-flight picks out exactly the digital ones.
     let mixed = [scan, digital, ocrd]
     let flagged = OCRModel.filesWithDigitalText(in: mixed, password: nil)

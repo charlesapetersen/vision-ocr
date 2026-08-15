@@ -1,5 +1,17 @@
 # Test corpus
 
+> **Corrected 2026-08-15: it is 230 scans, not 233.** The gate that drew this corpus was
+> asking its own question rather than the app's — `BUGS.md` T17 — and it admitted the two
+> documents `Flattener.hasDigitalText` calls born-digital:
+> `bookSection/Canby_1929_Comment on Several Subjects.pdf` and
+> `magazineArticle/Davis_2005_Optimism of the Will_Nation.pdf`, **9 pages of 16,987**. Plus
+> the one hand-added document the gate calls `photographed` and the owner ruled a scan (R55).
+> The repaired gate's whole-corpus run is [../CORPUS-2026-08-15.md](../CORPUS-2026-08-15.md)
+> with its 233 rows committed beside it. Nothing has been removed from `testdocs/` — re-cutting
+> the corpus moves every published figure at once, and that is a decision to take with the
+> numbers rather than instead of them. **The sentence below is the claim that was wrong; it is
+> left standing because a corrected figure with no trace of the error teaches nobody.**
+
 **233 documents, every one of them a scan**: 232 sampled from the Zotero library
 and stratified into 32 buckets — 8 item types x 4 eras (pre-1960, 1960-1999,
 2000+, undated), up to 6 per bucket where the library has them — **plus one added

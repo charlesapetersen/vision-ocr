@@ -168,7 +168,23 @@ let centroidTolerance = 0.10
 let coverageFloor = 0.4
 
 var failures = 0, checked = 0, skipped = 0
-print("page\tsubtype\trect\tsrcCover\toutCover\tdrift\tverdict")
+
+/// The one printer, and the seven columns in one place. The `could not render`
+/// row printed **six** fields under this header, so its verdict landed in the
+/// `drift` column and every reader's eye — and every `cut -f7` — found an empty
+/// one. Same shape as T14's SKIP row and A12.3's `score-mrc`; found by counting
+/// tabs in every tool's `print` rather than by reading them.
+let columns = ["page", "subtype", "rect", "srcCover", "outCover", "drift", "verdict"]
+func row(_ page: Int, subtype: String = "-", rect: String = "-",
+         srcCover: String = "-", outCover: String = "-", drift: String = "-",
+         verdict: String) {
+    let fields = ["p\(page)", subtype, rect, srcCover, outCover, drift,
+                  verdict.replacingOccurrences(of: "\t", with: " ")]
+    precondition(fields.count == columns.count)
+    print(fields.joined(separator: "\t"))
+}
+
+print(columns.joined(separator: "\t"))
 for index in 0..<source.pageCount {
     guard let sourcePage = source.page(at: index), let outputPage = output.page(at: index)
     else { continue }
@@ -179,7 +195,7 @@ for index in 0..<source.pageCount {
           let sWithout = render(sourcePage, scale: scale, withAnnotations: false),
           let oWith = render(outputPage, scale: scale, withAnnotations: true),
           let oWithout = render(outputPage, scale: scale, withAnnotations: false) else {
-        print("p\(index + 1)\t-\t-\t-\t-\tFAIL could not render")
+        row(index + 1, verdict: "FAIL could not render")
         failures += 1
         continue
     }
@@ -270,9 +286,12 @@ for index in 0..<source.pageCount {
         } else {
             verdict = "ok"
         }
-        print(String(format: "p%d\t%@\t%.0f,%.0f\t%.3f\t%.3f\t%.3f\t%@", index + 1,
-                     mark.type ?? "?", rect.minX, rect.minY,
-                     inSource?.coverage ?? -1, inOutput?.coverage ?? -1, drift, verdict))
+        row(index + 1, subtype: mark.type ?? "?",
+            rect: String(format: "%.0f,%.0f", rect.minX, rect.minY),
+            srcCover: String(format: "%.3f", inSource?.coverage ?? -1),
+            outCover: String(format: "%.3f", inOutput?.coverage ?? -1),
+            drift: String(format: "%.3f", drift),
+            verdict: verdict)
     }
 }
 print("")

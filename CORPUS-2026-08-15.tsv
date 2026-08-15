@@ -1,0 +1,234 @@
+verdict	pages	sampled	imagePages	digitalText	charsPerPage	maxImagePx	medianDPI	saturation	illumination	path
+photographed	10	5	5	no	115	1224	111	0.041	0.169	testdocs/book/1954 - Why.pdf
+scanned	31	5	5	no	2237	1582	300	0.000	0.048	testdocs/book/Berle_1940_New directions in the new world,_Harper.pdf
+scanned	203	5	5	no	5268	8352	515	0.000	0.053	testdocs/book/Boltanski_2006_On justification_Princeton University Press.pdf
+scanned	10	5	5	no	2846	1020	150	0.000	0.036	testdocs/book/Casey_1954_1954 pay almanac,.pdf
+scanned	8	5	5	no	3122	3400	600	0.001	0.047	testdocs/book/Cohen_1990_Making a New Deal_Cambridge University Press.pdf
+scanned	436	5	5	no	3058	1944	360	0.009	0.048	testdocs/book/Countryman - 2006 - Up south  civil rights and Black power in Philadelphia.pdf
+scanned	30	5	5	no	2293	1856	300	0.000	0.073	testdocs/book/Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press.pdf
+scanned	226	5	5	no	2317	1050	200	0.000	0.042	testdocs/book/Friedman_1962_Capitalism and freedom_University of Chicago Press.pdf
+scanned	6	5	5	no	0	1020	123	0.000	0.035	testdocs/book/Gowan and Demos - 1964 - The education and guidance of the ablest.pdf
+scanned	6	5	5	no	3338	954	144	0.000	0.040	testdocs/book/Guilford_Psychometric Methods.pdf
+scanned	574	5	5	no	2772	3165	446	0.000	0.036	testdocs/book/Hayek_1978_The constitution of liberty_University of Chicago Press.pdf
+scanned	255	5	5	no	1640	1494	144	0.000	0.036	testdocs/book/Himanen_2001_The hacker ethic and the spirit of the information age_Random House.pdf
+scanned	263	5	5	no	2493	2100	144	0.000	0.072	testdocs/book/Ibson_2006_Picturing men.pdf
+scanned	3	3	2	no	2280	3400	600	0.001	0.048	testdocs/book/JAH Review.pdf
+scanned	3	3	2	no	4475	4200	600	0.001	0.059	testdocs/book/Keyssar_2000_The Right to Vote_Basic Books.pdf
+scanned	81	5	5	no	4758	3600	300	0.000	0.057	testdocs/book/LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press.pdf
+scanned	119	5	5	no	4365	3541	300	0.000	0.037	testdocs/book/Mintzberg - 1973 - The nature of managerial work.pdf
+scanned	12	5	5	no	4168	4248	300	0.000	0.027	testdocs/book/Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press.pdf
+scanned	3	3	2	no	3891	3950	600	0.001	0.037	testdocs/book/Morgan_1975_American Slavery, American Freedom_Norton.pdf
+scanned	372	5	5	no	2391	2143	300	0.000	0.065	testdocs/book/Mudge_2018_Leftism Reinvented_Harvard University Press.pdf
+scanned	7	5	5	no	5060	2200	200	0.000	0.032	testdocs/book/Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press.pdf
+scanned	146	5	5	no	2688	1023	105	0.000	0.016	testdocs/book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf
+scanned	414	5	5	no	2536	2763	450	0.000	0.033	testdocs/book/Noble_1977_America by design.pdf
+scanned	25	5	5	no	2355	2076	400	0.080	0.073	testdocs/book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf
+scanned	191	5	5	no	2163	2507	500	0.000	0.047	testdocs/book/Schumpeter_1955_Imperialism ; Social classes_World.pdf
+scanned	18	5	5	no	2795	2098	300	0.000	0.062	testdocs/book/Shows and Burton - 1972 - Microeconomics.pdf
+scanned	40	5	5	no	4502	1361	150	0.000	0.068	testdocs/book/UN-OCred.pdf
+scanned	3	3	2	no	3357	3900	600	0.001	0.046	testdocs/book/Westad_2005_The Global Cold War_Cambridge University Press.pdf
+scanned	22	5	5	no	5272	3257	298	0.000	0.045	testdocs/book/_2010_New Materialisms_Duke University Press.pdf
+scanned	29	5	5	no	3184	1773	300	0.000	0.039	testdocs/bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf
+scanned	24	5	5	no	2782	2175	300	0.000	0.065	testdocs/bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf
+scanned	13	5	5	no	5418	2278	200	0.000	0.067	testdocs/bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf
+scanned	25	5	5	no	1249	1459	300	0.000	0.053	testdocs/bookSection/Canby_1915_Current Literature and the Colleges_Harper & Brothers.pdf
+born-digital	4	4	1	yes	1952	1181	78	0.000	0.040	testdocs/bookSection/Canby_1929_Comment on Several Subjects.pdf
+scanned	29	5	4	no	2931	1854	150	0.000	0.072	testdocs/bookSection/Falasca-Zamponi_2004_The »Culture« of Personality.pdf
+scanned	62	5	5	no	2547	984	150	0.000	0.090	testdocs/bookSection/Findlay_1992_Stanford Industrial Park_University of California Press.pdf
+scanned	26	5	5	no	0	2228	400	0.000	0.077	testdocs/bookSection/Geiger et al_2018_American higher education in the postwar era, 1945-1970.pdf
+scanned	22	5	5	no	1909	1708	300	0.000	0.040	testdocs/bookSection/Gilroy - 2000 - Getting In.pdf
+scanned	6	5	5	no	4629	3266	374	0.000	0.080	testdocs/bookSection/Gregory-Huddleston_1994_Culture conflict with growth_University Press of America.pdf
+scanned	324	5	5	no	2727	1460	300	0.000	0.052	testdocs/bookSection/Hobsbawm and Ranger - 1992 - The Invention of tradition.pdf
+scanned	15	5	5	no	4158	3585	300	0.000	0.017	testdocs/bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf
+scanned	16	5	4	no	1789	1250	144	0.000	0.020	testdocs/bookSection/Kazin_1955_The Writer and the .pdf
+scanned	40	5	5	no	2498	1014	200	0.000	0.056	testdocs/bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf
+scanned	29	5	5	no	4952	3431	300	0.000	0.040	testdocs/bookSection/Kristol_1962_SOCIAL SCIENCES AND LAW_.pdf
+scanned	23	5	5	no	1734	1890	300	0.000	0.047	testdocs/bookSection/Lloyd-Jones_Smith_1938_Selection and Admissions.pdf
+scanned	10	5	5	no	4923	3300	300	0.000	0.022	testdocs/bookSection/Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press.pdf
+scanned	23	5	5	no	1874	1396	164	0.000	0.040	testdocs/bookSection/Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co.pdf
+scanned	31	5	5	no	1917	1966	400	0.000	0.043	testdocs/bookSection/Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press.pdf
+scanned	25	5	5	no	2836	1467	300	0.000	0.034	testdocs/bookSection/Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49).pdf
+scanned	65	5	5	no	2385	2531	300	0.000	0.043	testdocs/bookSection/National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1.pdf
+scanned	37	5	5	no	2154	1646	300	0.000	0.059	testdocs/bookSection/O'Brien_1955_The Area of Admissions in Higher Education_.pdf
+scanned	15	5	5	no	4836	3534	403	0.000	0.069	testdocs/bookSection/Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press.pdf
+scanned	40	5	4	no	3013	1830	300	0.000	0.068	testdocs/bookSection/Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_.pdf
+scanned	11	5	5	no	4900	1936	150	0.000	0.053	testdocs/bookSection/Schaar, handwritten notes.pdf
+scanned	56	5	5	no	3014	1750	300	0.000	0.052	testdocs/bookSection/Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds.pdf
+scanned	150	5	5	no	3417	2656	302	0.000	0.034	testdocs/bookSection/_1945_Postwar Economic Policy and Planning_.pdf
+scanned	32	5	1	no	1734	918	98	0.000	0.053	testdocs/bookSection/full chapter.pdf
+scanned	8	5	5	no	0	1700	200	0.000	0.044	testdocs/document/(F) Dickens.pdf
+scanned	9	5	5	no	0	4000	305	0.068	0.094	testdocs/document/1881 - Harry Wilcox.pdf
+scanned	9	5	5	no	0	3024	72	0.063	0.088	testdocs/document/1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf
+scanned	15	5	5	no	3065	1700	200	0.000	0.028	testdocs/document/2008_Hoagland oral history.pdf
+scanned	18	5	5	no	3118	1700	200	0.000	0.041	testdocs/document/2008_McIntyre oral history.pdf
+scanned	38	5	5	no	1832	1812	213	0.050	0.037	testdocs/document/2013 - Silicon Valley Program Transcript.pdf
+scanned	71	5	5	no	1563	1700	200	0.000	0.024	testdocs/document/2015_Gibbs oral history.pdf
+scanned	69	5	5	no	1532	1700	200	0.000	0.025	testdocs/document/2017_Bunnell oral history, athletics.pdf
+scanned	75	5	5	no	2145	1275	150	0.003	0.025	testdocs/document/2024 - Class Action lawsuit re need blind admissions.pdf
+scanned	3	3	3	no	0	1935	72	0.061	0.154	testdocs/document/Atkinson_1939_Atkinson on firings_.pdf
+scanned	6	5	5	no	0	1935	72	0.054	0.123	testdocs/document/Ford_1941_Speech_.pdf
+scanned	7	5	5	no	3314	2007	200	0.000	0.046	testdocs/document/Freud_Fetishism.pdf
+scanned	14	5	5	no	7896	4334	300	0.000	0.044	testdocs/document/Galison_1998_Trading Zone_.pdf
+scanned	99	5	5	no	1989	1700	200	0.000	0.028	testdocs/document/Geiger oral history.pdf
+scanned	201	5	5	no	978	1700	200	0.000	0.011	testdocs/document/Henry Morgenthau papers.pdf
+scanned	15	5	5	no	0	1700	200	0.000	0.036	testdocs/document/Herbert Marks papers.pdf
+scanned	45	5	5	no	3384	1107	150	0.000	0.029	testdocs/document/Intellectual History Newsletter -- Forum on Menand.pdf
+scanned	114	5	5	no	1684	3400	400	0.000	0.029	testdocs/document/Lyons oral history.pdf
+scanned	46	5	5	no	1611	3400	400	0.000	0.026	testdocs/document/Nogales oral history.pdf
+scanned	1	1	1	no	25382	2287	152	0.000	0.064	testdocs/document/October_2,_1960_(Page_24_of_25.pdf
+scanned	10	5	5	no	1887	5256	600	0.000	0.047	testdocs/document/RIESMAN_1942_American Law Institute Proceedings_.pdf
+scanned	18	5	5	no	2198	1490	300	0.000	0.033	testdocs/document/Riesman_1964_From inner-directed to other- directed_.pdf
+scanned	12	5	5	no	2263	1470	300	0.000	0.059	testdocs/document/Riesman_1964_The New Education_.pdf
+scanned	30	5	5	no	2850	3264	300	0.000	0.035	testdocs/document/Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_.pdf
+scanned	27	5	5	no	1766	1468	173	0.002	0.008	testdocs/document/Senate, Democratic Leadership.pdf
+scanned	4	4	4	no	1757	1192	150	0.045	0.025	testdocs/document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf
+scanned	3	3	2	no	4654	4300	600	0.000	0.030	testdocs/document/Stiglitz1975(onPasinetti1974).pdf
+scanned	18	5	5	no	0	1935	72	0.062	0.151	testdocs/document/_1939_Former students to Board re Merriam_.pdf
+scanned	31	5	5	no	9840	3751	400	0.000	0.108	testdocs/document/_1953_99 Cong_ 2.pdf
+scanned	32	5	5	no	8979	3850	400	0.000	0.081	testdocs/document/_1953_99 Cong_.pdf
+scanned	3	3	3	no	5985	3045	337	0.000	0.049	testdocs/document/_1953_Conspicuous Production_.pdf
+scanned	73	5	5	no	2834	2600	400	0.000	0.039	testdocs/document/_1960_Organization and operation of the Small Business Administration_.pdf
+scanned	4	4	4	no	9094	1276	150	0.003	0.055	testdocs/document/_1973_Committee Against Racism_.pdf
+scanned	16	5	5	no	0	3018	452	0.000	0.029	testdocs/document/_1979_Ideology of American Neo-Conservatism_.pdf
+scanned	5	5	5	no	1864	1773	200	0.000	0.041	testdocs/document/ppf_description.pdf
+scanned	64	5	5	no	999	2600	300	0.000	0.024	testdocs/document/w5093.pdf
+scanned	3	3	2	no	282	2560	301	0.000	0.006	testdocs/journalArticle/1935_Title Page.pdf
+scanned	3	3	3	no	3391	2550	150	0.005	0.120	testdocs/journalArticle/1944_Options picking up.pdf
+scanned	3	3	2	no	3105	1696	300	0.066	0.062	testdocs/journalArticle/Albanese_1997_Senate Will Examine Stock Option Bill.pdf
+scanned	12	5	5	no	2200	4200	600	0.000	0.052	testdocs/journalArticle/Baker_2000_The Supply-Side Effect of a Stock Market Crash.pdf
+scanned	54	5	5	no	2759	3142	370	0.000	0.017	testdocs/journalArticle/Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California.pdf
+scanned	5	5	5	no	2863	2479	300	0.000	0.026	testdocs/journalArticle/Borges_The Lottery in Babylon.pdf
+scanned	24	5	5	no	1448	3224	600	0.000	0.051	testdocs/journalArticle/Burke - The Expansion of American Higher Education.pdf
+scanned	19	5	5	no	4620	3900	600	0.000	0.040	testdocs/journalArticle/Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review.pdf
+scanned	1	1	1	no	0	3450	300	0.000	0.021	testdocs/journalArticle/Crystal_2000_Option grants leave CEOs with sinking feeling.pdf
+scanned	3	3	2	no	3582	2328	300	0.000	0.042	testdocs/journalArticle/Donahue - 2001 - Time to Get Serious About Talent Management.pdf
+scanned	59	5	5	no	3185	2112	301	0.000	0.069	testdocs/journalArticle/Eyal-Cohen - Why Is Small Business the Chief Business of Congress.pdf
+scanned	57	5	5	no	3475	3900	600	0.000	0.055	testdocs/journalArticle/Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors.pdf
+scanned	1	1	1	no	10381	4813	400	0.000	0.074	testdocs/journalArticle/Har - THE NECKLACE OF KALI..pdf
+scanned	15	5	5	no	4294	1240	150	0.000	0.041	testdocs/journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf
+scanned	13	5	5	no	2778	1680	300	0.000	0.043	testdocs/journalArticle/Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_.pdf
+scanned	50	5	5	no	2681	3900	600	0.000	0.067	testdocs/journalArticle/Lemieux et al. - Performance Pay and Wage Inequality.pdf
+scanned	24	5	5	no	102	1171	301	0.000	0.038	testdocs/journalArticle/Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks.pdf
+scanned	11	5	5	no	102	2544	300	0.000	0.048	testdocs/journalArticle/Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State.pdf
+scanned	14	5	5	no	2409	1488	300	0.000	0.063	testdocs/journalArticle/Lowell - The Government of Dependencies.pdf
+scanned	15	5	5	no	3084	1762	207	0.000	0.037	testdocs/journalArticle/McWilliams_1933_Provincialism_The Frontier and Midland.pdf
+scanned	1	1	1	no	0	1935	72	0.086	0.157	testdocs/journalArticle/Merriam_1920_Daughter of Pan_The Montanan (The Frontier).pdf
+scanned	37	5	5	no	2902	1824	305	0.000	0.058	testdocs/journalArticle/Price_1958_The Small Business Tax Revision of 1958.pdf
+scanned	55	5	5	no	3241	3519	600	0.000	0.065	testdocs/journalArticle/Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43).pdf
+scanned	3	3	3	no	4567	2585	300	0.000	0.019	testdocs/journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf
+scanned	15	5	5	no	2463	3614	600	0.000	0.051	testdocs/journalArticle/Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review.pdf
+scanned	7	5	5	no	6348	5123	600	0.000	0.051	testdocs/journalArticle/Riesman_1976_Thoughts on the Graduate Experience_Change.pdf
+scanned	16	5	5	no	2678	1579	300	0.000	0.034	testdocs/journalArticle/Ripley_1889_The Teaching of the English Language and Literature_Education.pdf
+scanned	32	5	5	no	3109	4300	600	0.001	0.050	testdocs/journalArticle/Robin_Stephens_1996_Against the Grain_Social Text.pdf
+scanned	17	5	5	no	4800	2413	300	0.000	0.030	testdocs/journalArticle/Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY.pdf
+scanned	13	5	5	no	7191	1026	150	0.000	0.054	testdocs/journalArticle/Scott_TK_The Scientific Selection of Salesmen.pdf
+scanned	37	5	3	no	3739	2048	114	0.002	0.048	testdocs/journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf
+scanned	67	5	5	no	3228	1961	300	0.000	0.065	testdocs/journalArticle/Wells_2015_A Long View of Shareholder Power.pdf
+scanned	4	4	3	no	2683	4300	600	0.000	0.055	testdocs/journalArticle/Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature.pdf
+scanned	32	5	5	no	2876	1382	150	0.001	0.039	testdocs/journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf
+scanned	29	5	5	no	2701	2112	301	0.000	0.068	testdocs/journalArticle/_1985_Issue 2_New Perspectives.pdf
+scanned	1	1	1	no	16860	6535	400	0.000	0.077	testdocs/journalArticle/oster - Engagement of Anne Foster To Tucson Man Announced.pdf
+scanned	4	4	4	no	5734	1244	150	0.002	0.032	testdocs/magazineArticle/1947_Corporation Tax Study Due By House Body.pdf
+scanned	3	3	3	no	6066	2572	303	0.001	0.071	testdocs/magazineArticle/Astin__The Challenge of Open Admissions by Alexander W_UNZ.org.pdf
+scanned	3	3	3	no	7779	1932	150	0.000	0.111	testdocs/magazineArticle/Black_0000_The Scandal of Educational Testing.pdf
+scanned	8	5	5	no	4185	1190	150	0.000	0.040	testdocs/magazineArticle/Bullitt_1959_The Future American Class System_Horizon.pdf
+born-digital	5	5	1	yes	3615	1166	88	0.004	0.030	testdocs/magazineArticle/Davis_2005_Optimism of the Will_Nation.pdf
+scanned	13	5	5	no	4285	1613	200	0.000	0.034	testdocs/magazineArticle/Ehrenreich_2000_Maid to order_Harper's Magazine.pdf
+scanned	2	2	1	no	3608	1590	200	0.012	0.033	testdocs/magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf
+scanned	3	3	3	no	4802	2381	300	0.000	0.032	testdocs/magazineArticle/Glazer_2003_Kith and Kin_Commentary; New York.pdf
+scanned	10	5	5	no	4062	1214	200	0.025	0.031	testdocs/magazineArticle/HarpersMagazine-1938-05-0019577.pdf
+scanned	3	3	3	no	10129	2092	187	0.001	0.044	testdocs/magazineArticle/Kelly_2014_Orders of Magnitude_TLS.pdf
+scanned	10	5	5	no	4128	2001	300	0.003	0.042	testdocs/magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf
+scanned	3	3	3	no	4989	1755	300	0.000	0.026	testdocs/magazineArticle/Lasky et al. - 1949 - Letters from readers.pdf
+scanned	5	5	5	no	2515	1866	300	0.000	0.074	testdocs/magazineArticle/Lemann, Nicholas_1977_Success In America_Washington Monthly.pdf
+scanned	5	5	5	no	132	1656	301	0.000	0.055	testdocs/magazineArticle/Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York.pdf
+scanned	4	4	4	no	134	1640	300	0.000	0.064	testdocs/magazineArticle/Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York.pdf
+scanned	2	2	2	no	4210	1177	197	0.000	0.087	testdocs/magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf
+scanned	2	2	2	no	5341	1808	300	0.000	0.052	testdocs/magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf
+scanned	35	5	5	no	2341	1529	180	0.000	0.046	testdocs/magazineArticle/Part Two.pdf
+scanned	4	4	4	no	3845	2021	300	0.000	0.048	testdocs/magazineArticle/Peters_1989_Tilting at Windmilss_Washington Monthly.pdf
+scanned	6	5	5	no	0	3464	419	0.000	0.065	testdocs/magazineArticle/Sherman_1986_elite institutions_The Public Interest; New York.pdf
+scanned	4	4	4	no	4977	2551	300	0.000	0.056	testdocs/magazineArticle/Stone_1965_England’s Revolution_The New York Review of Books.pdf
+scanned	6	5	4	no	5124	971	150	0.000	0.050	testdocs/magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf
+scanned	1	1	1	no	7765	1159	140	0.064	0.073	testdocs/magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf
+scanned	3	3	3	no	2479	1835	300	0.000	0.051	testdocs/magazineArticle/_1977_What We're About_Washington Monthly.pdf
+scanned	1	1	1	no	268	2036	292	0.000	0.028	testdocs/newspaperArticle/1976_Results of Trading in Stock Options.pdf
+scanned	1	1	1	no	8451	1246	150	0.000	0.087	testdocs/newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf
+scanned	1	1	1	no	10006	959	150	0.000	0.100	testdocs/newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf
+scanned	1	1	1	no	1407	1064	300	0.000	0.093	testdocs/newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf
+scanned	1	1	1	no	8783	1216	140	0.000	0.080	testdocs/newspaperArticle/JOURNAL_1969_Giving the Boss a Raise_Wall Street Journal (1923 - Current file); New York, N.Y..pdf
+scanned	1	1	1	no	7653	1997	330	0.000	0.082	testdocs/newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf
+scanned	2	2	1	no	188	1633	298	0.000	0.053	testdocs/newspaperArticle/Zipkin_2000_Management.pdf
+scanned	1	1	1	no	27697	3459	200	0.000	0.040	testdocs/newspaperArticle/_1926_Clapp defends Cox_Billings Gazette.pdf
+scanned	1	1	1	no	27906	2675	200	0.000	0.045	testdocs/newspaperArticle/_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard.pdf
+scanned	1	1	1	no	14621	3364	200	0.000	0.057	testdocs/newspaperArticle/_1926_English dept summer school_Havre Daily News Promoter.pdf
+scanned	1	1	1	no	27617	3031	200	0.000	0.039	testdocs/newspaperArticle/_1928_Creative writing a featured course at Summer School_Helena Daily Independent.pdf
+scanned	1	1	1	no	31972	3039	200	0.000	0.051	testdocs/newspaperArticle/_1931_Again, press most excited about Frontier's history section_Helena Daily Independent.pdf
+scanned	1	1	1	no	17854	3220	200	0.000	0.047	testdocs/newspaperArticle/_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake.pdf
+scanned	1	1	1	no	19897	2889	200	0.000	0.059	testdocs/newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf
+scanned	1	1	1	no	11466	3453	200	0.000	0.042	testdocs/newspaperArticle/_1950_Comic_Independent Record.pdf
+scanned	4	4	2	no	128	1328	172	0.000	0.075	testdocs/newspaperArticle/_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf
+scanned	1	1	1	no	18460	2131	200	0.000	0.050	testdocs/newspaperArticle/___ 2.pdf
+scanned	1	1	1	no	27499	6215	400	0.000	0.024	testdocs/newspaperArticle/___ 3.pdf
+scanned	1	1	1	no	9535	2383	310	0.000	0.102	testdocs/newspaperArticle/___ 4.pdf
+scanned	1	1	1	no	11847	2381	200	0.000	0.051	testdocs/newspaperArticle/___ 5.pdf
+scanned	1	1	1	no	23405	6533	400	0.000	0.026	testdocs/newspaperArticle/___.pdf
+scanned	35	5	5	no	1438	2432	300	0.000	0.059	testdocs/report/1957_Allied Chemical & Dye Corporation Annual Report -- 1957.pdf
+scanned	41	5	5	no	2686	2249	300	0.000	0.049	testdocs/report/1958_CiT Financial Corporation Annual Report -- 1958.pdf
+scanned	50	5	5	no	1704	1405	300	0.000	0.035	testdocs/report/1958_E.pdf
+scanned	28	5	5	no	2740	1985	300	0.000	0.047	testdocs/report/1958_General Foods Corporation Annual Report -- 1958.pdf
+scanned	34	5	5	no	2705	2320	300	0.000	0.053	testdocs/report/1958_The Anaconda Company Annual Report -- 1958.pdf
+scanned	43	5	5	no	2628	2248	300	0.000	0.062	testdocs/report/1958_The Goodyear Tire & Rubber Company Annual Report -- 1958.pdf
+scanned	71	5	5	no	3423	2929	354	0.001	0.024	testdocs/report/AI 2027.pdf
+scanned	20	5	5	no	1656	3676	300	0.000	0.027	testdocs/report/Autor et al_2020_Extending the Race between Education and Technology.pdf
+scanned	80	5	5	no	1626	2614	300	0.000	0.023	testdocs/report/Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research.pdf
+scanned	63	5	5	no	1518	2624	300	0.000	0.024	testdocs/report/Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research.pdf
+scanned	66	5	5	no	2182	2362	300	0.016	0.020	testdocs/report/Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ.pdf
+scanned	49	5	5	no	1563	1311	150	0.000	0.024	testdocs/report/Temin_1997_The American Business Elite in Historical Perspective.pdf
+scanned	24	5	5	no	102	2384	300	0.000	0.024	testdocs/report/_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports.pdf
+scanned	25	5	5	no	102	1576	301	0.000	0.038	testdocs/report/_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports.pdf
+scanned	28	5	5	no	2533	2336	400	0.000	0.047	testdocs/report/_1958_Small Business Investment Act_.pdf
+scanned	38	5	5	no	1932	2488	260	0.000	0.037	testdocs/report/_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports.pdf
+scanned	34	5	5	no	2528	2320	300	0.000	0.062	testdocs/report/_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports.pdf
+scanned	30	5	5	no	2167	2566	300	0.000	0.074	testdocs/report/_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports.pdf
+scanned	22	5	5	no	1654	2432	300	0.000	0.028	testdocs/report/_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports.pdf
+scanned	19	5	5	no	102	2352	301	0.000	0.064	testdocs/report/_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports.pdf
+scanned	39	5	5	no	102	2224	301	0.000	0.046	testdocs/report/_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports.pdf
+scanned	30	5	5	no	1875	1704	200	0.000	0.037	testdocs/report/w7787 2.pdf
+scanned	30	5	5	no	1875	1704	200	0.000	0.037	testdocs/report/w7787.pdf
+scanned	160	5	5	no	1407	2622	301	0.000	0.030	testdocs/thesis/Anderson_1997_Legacy of the American Frontier_California State University, Fresno.pdf
+scanned	132	5	5	no	1695	3307	300	0.000	0.023	testdocs/thesis/BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning.pdf
+scanned	403	5	5	no	2005	2566	300	0.000	0.028	testdocs/thesis/Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm.pdf
+scanned	334	5	5	no	102	2368	301	0.000	0.020	testdocs/thesis/CAMFIELD_Psychologists at War.pdf
+scanned	398	5	5	no	1315	2620	300	0.000	0.024	testdocs/thesis/CARTWRIGHT_Legislation Against Discrimination in Employment in New York State.pdf
+scanned	110	5	5	no	1303	3406	400	0.000	0.015	testdocs/thesis/Clark_The graphic rating scale at Northwestern University.pdf
+scanned	375	5	5	no	2239	2563	300	0.000	0.028	testdocs/thesis/Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972.pdf
+scanned	234	5	5	no	1990	3400	400	0.000	0.015	testdocs/thesis/Corson_Current practices in student guidance and personnel administration in liberal.pdf
+scanned	316	5	5	no	954	2571	300	0.000	0.021	testdocs/thesis/DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa.pdf
+scanned	280	5	5	no	1108	2610	301	0.000	0.021	testdocs/thesis/DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas.pdf
+scanned	27	5	5	no	1440	2664	300	0.000	0.050	testdocs/thesis/Doermann_1967_The market for college education in the United States.pdf
+scanned	240	5	5	no	2200	2550	300	0.000	0.029	testdocs/thesis/Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II.pdf
+scanned	679	5	5	no	1373	2598	300	0.000	0.025	testdocs/thesis/ERICKSON - 1952 - The Taxation of Investment Companies in the United States.pdf
+scanned	484	5	5	no	2285	3433	300	0.000	0.032	testdocs/thesis/Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po.pdf
+scanned	212	5	5	no	1317	2582	300	0.000	0.023	testdocs/thesis/GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University.pdf
+scanned	221	5	5	no	2168	2499	301	0.000	0.028	testdocs/thesis/GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities.pdf
+scanned	328	5	5	no	1763	2584	300	0.000	0.034	testdocs/thesis/GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling.pdf
+scanned	319	5	5	no	1788	2563	300	0.000	0.036	testdocs/thesis/Ho_Useful fiction.pdf
+scanned	571	5	5	no	1829	2711	301	0.000	0.025	testdocs/thesis/Jensen_The rise of an African-American Left.pdf
+scanned	188	5	5	no	1614	2550	300	0.000	0.017	testdocs/thesis/Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California.pdf
+scanned	189	5	5	no	1879	3304	300	0.000	0.028	testdocs/thesis/Koh - 2008 - Essays on stock options expensing and stock option.pdf
+scanned	171	5	5	no	2112	2585	300	0.000	0.031	testdocs/thesis/MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University.pdf
+scanned	266	5	5	no	1616	2593	300	0.000	0.026	testdocs/thesis/NAYLOR_Arthur E.pdf
+scanned	200	5	5	no	830	3322	300	0.000	0.019	testdocs/thesis/PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign.pdf
+scanned	172	5	5	no	1425	2607	300	0.000	0.022	testdocs/thesis/PRICE_A History of the American College Personnel Association.pdf
+scanned	261	5	5	no	1936	2551	300	0.000	0.025	testdocs/thesis/Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967.pdf
+scanned	107	5	5	no	1576	1206	150	0.000	0.019	testdocs/thesis/Ries_Marshall_1955_web.pdf
+scanned	200	5	5	no	1557	1198	150	0.000	0.027	testdocs/thesis/Robertson_1990_Organizational adaptation to environmental change_Stanford University copy.pdf
+scanned	300	5	2	no	2359	2641	87	0.027	0.130	testdocs/thesis/Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf
+scanned	165	5	5	no	1167	2556	300	0.000	0.013	testdocs/thesis/Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California.pdf
+scanned	237	5	5	no	1591	2565	300	0.000	0.025	testdocs/thesis/TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign.pdf
+scanned	119	5	5	no	1624	2496	602	0.000	0.043	testdocs/thesis/TROTMAN - 1976 - Race, Iq, and the Middle-Class..pdf
+scanned	413	5	5	no	1705	2358	301	0.000	0.025	testdocs/thesis/WITTE_1978_Democracy, Authority and Alienation in Work_Yale University.pdf
+scanned	110	5	5	no	1850	2565	300	0.000	0.048	testdocs/thesis/Wu - 2003 - Employee stock option design and valuation.pdf
+scanned	258	5	5	no	1402	3163	300	0.000	0.024	testdocs/thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf
+scanned	76	5	5	no	2002	2571	300	0.000	0.030	testdocs/thesis/Zheng - 2003 - Six -month -one -day employee stock option reprici.pdf
