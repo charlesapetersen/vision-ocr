@@ -16,47 +16,48 @@ promoted, or it does not and should be deleted.
 - **No release until more of the recorded bugs are fixed.** 1.13.0 is deferred by the owner;
   R59's `publish` fixes ride along with whatever ships next rather than going out alone.
 - **The annotation feature is held for more work** — see item 2 below. Off by default on `main`,
-  unadvertised, needing a third review round and the A8.1 test.
+  unadvertised. **The A8.1 test is now done** (`BUGS.md` T13, and its mutant would have survived
+  a green suite of 1,031 before it). The third adversarial review round is still outstanding, and
+  `score-annotations` only became trustworthy on quarter-turned pages in T12 — which is the
+  instrument that round needs.
 
 ## Start here
 
-**[HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md)** — the 2026-08-14 review sweep's fix order,
-what has been fixed against it, the environment traps, and the three invariant-3 instruments
-that cannot currently be trusted. `REVIEW-2026-08-14.md` is the evidence behind it. Neither is
-superseded by anything below.
+**[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md)** first — what the overnight run fixed, what is
+left in dependency order, and why the release was not cut. Then
+**[HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md)** for the sweep's original fix order, the
+environment traps, and the three invariant-3 instruments that cannot be trusted.
+`REVIEW-2026-08-14.md` is the evidence behind both. None of the three is superseded by anything
+below.
 
 ### Where the fix order got to
 
-**Five of its top items are done and merged**, and the suite is at **916 checks**: **T9**
-(the release gate could not see a destroyed page image — four wrong instruments were built
-before one bit, and the record of them is worth reading before building any measurement
-here), **T10** (invariant 2 had no working test; the mutant that used to leave the suite
-green now turns 107,847 bytes into 809), **R60** (Retry Failed published over a file the same
-batch protected — content destruction, verified end to end), and **R61/R62** (two
-declared-geometry conversions that trapped uncatchably on the default route, plus the one
-fraction whose numerator and denominator came from different populations).
+**Twenty-three of the sweep's findings are fixed and merged, and the suite is at 1037 checks.**
+The list is in **[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md)** — read that rather than a
+summary here, because a summary in this file is what went stale twice in two days.
 
-*(An earlier draft of this section said R60 was merged when it was committed on an unmerged
-branch, and that R61/R62 were committed when they were staged in a worktree under
-`/private/tmp` — written in the past tense about the last two steps of a close-out sequence
-that then never ran. Both are now genuinely on `main`. **Ask git, not this file**, which is
-the same lesson as "ask the forge, not the prose" one paragraph up.)*
+*(It said "Five of its top items are done… 916 checks" for most of 2026-08-15, written when that
+was true and left behind by the fifteen commits after it. Before that, an earlier draft said R60
+was merged when it was committed on an unmerged branch, and that R61/R62 were committed when they
+were staged in a worktree under `/private/tmp`. **Ask git, not this file.** Both corrections are
+in the hand-off, which is also where the list of things this project's own controls caught lives.)*
 
-**Reviewing those two diffs before merging them found two more defects in them**, which is
-this project's tenth-odd consecutive round of that. R61's fix had been written with
-`safeInt((dpi / 4).rounded())` where the expression it replaced truncated: a silent
-one-pixel move of the Sauvola window on about half of all pages — a threshold change on the
-default route, inside a fix for a trap. R60's `previousOutputs` map is the one place in that
-fix that does not normalise its path keys; it is recorded in R60's entry as bounded and in
-the safe direction rather than changed.
+**What is left is three groups, and the first gates the third:**
 
-**Two defects are open and both are in this session's queue:** **C23**, every rebuild route
-publishes with no `/CropBox` so the copy displays what the original hid (14 of 233
-documents), and **R63**, cancelling a Plain Text run reports every in-flight file as failed.
-**R63 has no register entry and no evidence anywhere** — it exists as this sentence and
-nothing else, so it has to be reproduced from scratch before it can be fixed.
+1. **`A6.1` — the invariant-3 instruments.** Three of the four are compromised and the
+   re-measurement procedure is **not executable as written**: two probes want a JSON shape
+   nothing in `Tools/` produces any more, and `score-corpus` prints `OK` for a document it
+   measured nothing on. Nothing in the text layer can be trusted until this is repaired.
+2. **The rest of `Tools/`** — `A12.2` (four `manifest.tsv` rows describe a pipeline nothing
+   runs), `A12.3` (`score-mrc`'s tone layers are 14–17x, which affects `FEATURES.md`'s 4.96x),
+   `A12.4` (the corpus gate re-implements `pageIsAnImage`), and the rest of `A12.8`.
+3. **`A1.2`, then `A1.1`, then `C23`** — that order, because A1.1's only viable fix triples the
+   sliver population A1.2 is about. Plus `A1.3`, `A1.4`, `A2.4`, `A3.1` in its narrower form.
 
-Everything else in the review's order is being worked now, in the order the hand-off gives.
+**`C23` is the release blocker**, and the only open finding with harm a user sees today: every
+rebuild route publishes with no `/CropBox`, so the copy displays what the original hid — 14 of
+233 documents, 577 of 16,987 pages, worst case a third of the sheet. Whether to ship the
+twenty-three fixes without it is the owner's decision; the hand-off sets out both paths.
 
 ## What is actually left
 
@@ -125,8 +126,9 @@ helper under `env -i`, `visionocr-recognise --version` included.
 2. **Preserve annotations through re-OCR — BUILT, VERIFIED, AND HELD FOR MORE WORK
    (owner decision, 2026-08-14).** It stays on `main`, off by default, and is **not** advertised
    in a release until it has had a **third adversarial review round** — rounds one and two each
-   found marks landing in the wrong coordinate space — and the **A8.1 test**, because nothing
-   currently proves the setting gates the feature. Do not treat it as done.
+   found marks landing in the wrong coordinate space. **The A8.1 test is done** (T13): two runs of
+   the real `makeSearchablePDF` over one marked-up scan, and a mutant that unwires the guard is
+   killed by them. The review round is the one precondition left. Do not treat it as done.
    `Sources/Annotations.swift`, behind *Keep highlights and notes* (off by default),
    between the outline step and `publish`. The full verification bar was met on
    `Hyman_2012_Rethinking the Postwar Corporation`, which is the document the

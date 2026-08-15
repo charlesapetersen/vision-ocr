@@ -6,11 +6,14 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Four open. C23 is the one that changes content on a route the user is on today**, and it is
+**Five open. C23 is the one that changes content on a route the user is on today**, and it is
 the reason 1.13.0 was not cut on 2026-08-15: it alters what a published page *displays* on 14 of
 233 corpus documents, and the instruments that would say whether the alteration is right are
 themselves under repair (`REVIEW-2026-08-14.md` A6.1, A12.2). R56 and R57 remain open and both
-wait on the one unbuilt *shape* signal. **R58 is `FIXED` but its
+wait on the one unbuilt *shape* signal. **R54 and R55 are the other two, and neither is in the
+app** — both are in `Tools/`, and R55 needs its own measurement campaign before
+`classify-source` changes. So: one release blocker, two waiting on an instrument that does not
+exist yet, two in the tooling. **R58 is `FIXED` but its
 feature is deliberately unreleased** — the annotation transplant, after two adversarial rounds
 that each found marks landing in the wrong place. The third round is unrun.
 
@@ -3541,7 +3544,7 @@ today — `retryFailures` is the only narrowing door, and the other three (`add`
 that runs part of a list the app has already resolved outputs for; `alsoClaimed`/`releasing` is the
 mechanism it should use.
 
-### R63 · Cancelling a Plain Text run reports every in-flight file as **failed** — OPEN
+### R63 · Cancelling a Plain Text run reported every in-flight file as **failed** — FIXED
 *(found 2026-08-14 by the adversarial pass over R60's own diff — the eleventh round running in
 which reviewing a round's code found a real defect near it. Verified by reading both sides.)*
 
