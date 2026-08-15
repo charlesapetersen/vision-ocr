@@ -6,9 +6,14 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Four open, and two of them destroy content. R58 is `FIXED` but its feature is
-deliberately unreleased** — the annotation transplant, after two adversarial rounds that
-each found marks landing in the wrong place. The third round is unrun.
+**Five open, and three of them change content on the default route. R58 is `FIXED` but its
+feature is deliberately unreleased** — the annotation transplant, after two adversarial rounds
+that each found marks landing in the wrong place. The third round is unrun.
+
+**C23 is the newest, and it was found by the release gate an hour after T9 taught the gate to
+read pixels.** `JBIG2.assemble` writes no `/CropBox`, so on the default route the rebuilt copy
+displays what the original's crop box hid — C13's own harm, at the one site C13's fix never
+reached. 14 of 233 corpus documents, 577 of 16,987 pages, worst case a third of the sheet.
 
 **R56 and R57 are in the app, on the default route.** R56: a pale line drawing is
 **erased** by the 1-bit route, because it scores the same ink, tone and saturation as a
@@ -946,6 +951,73 @@ measure.** The corpus is weak evidence *for* this fix rather than against it: it
 samples three pages a document, so an aligned column of repeated figures is
 rarely in the sample. The unit checks are the evidence that the defect is gone;
 the corpus is the evidence that closing it broke nothing.
+
+### C23 · C13 recurs on the default route: the rebuilt copy displays what the original hid — OPEN
+*(found 2026-08-14 by the repaired release gate, minutes after T9 made it able to see pixels)*
+
+**C13 is fixed in `compose`, and `compose` cannot fix it on any rebuild route.** C13's harm
+was a published page carrying **no crop box at all**, so margin notes and running heads the
+viewer had been hiding became visible — and because the recogniser only ever sees the crop
+(C7), that revealed ink carries no text layer. Its fix made `compose` write both boxes:
+"media box for what is *kept*, crop box for what is *shown*."
+
+**But `compose` reads its boxes from `visible`, and on any rebuild route `visible` is the
+rebuilt file, which has already lost the crop box.** `Flattener.flatten` writes
+`kCGPDFContextMediaBox` and nothing else (`Flattener.swift:617`), so the crop box is gone
+before `compose` is reached and its "write both" is writing the media box twice. The JBIG2
+route then takes its geometry from `JBIG2.assemble` instead, whose page dictionary is one
+hand-written line with no `/CropBox` at all:
+
+```
+<< /Type /Page /Parent 2 0 R /MediaBox [ 0 0 \(w) \(h) ] … >>      JBIG2.swift:284
+```
+
+**So every rebuild route reproduces C13, not only the JBIG2 one** — a first version of this
+entry scoped it to `JBIG2.assemble`, which would have sent a maintainer past the Flate rebuild
+where the same thing happens for a different reason. (`Flattener.swift:412` is the other
+`beginPDFPage`, in `wrapImage`, and it is *not* affected: its input is a bare raster image,
+which has no crop box to carry.) The non-rebuild route is the only one that keeps the crop box,
+and it is the one C13's test covers.
+
+C10's own entry records the property as harmless — "every rebuilt file carries only a media
+box" — on the evidence that the boxes usually coincide. They do usually; the entry never asked
+how often they do not.
+
+**Rendered, not argued.** `Boltanski_2006_On justification`, page 23, through the shipped
+pipeline at defaults:
+
+```
+             crop box            media box       darkness of what a reader sees
+source       779x628 at (45,81)  1031x727 at 0   0.12349
+output       1031x727 at (0,0)   1031x727 at 0   0.31320
+```
+
+The output's extra ink is the scanner's black gutter down the right and bottom edges of the
+sheet, which the original's crop box hides. It is not lost content — it is *gained*
+content, unsearchable, and 2.5x the page's ink. This is why the repaired gate reported 177
+false blocking findings before it was told to read the media box on both sides: a third of
+this document's sheet is a region the two files disagree about showing.
+
+**How much of the corpus.** Measured over all 233 documents and 16,987 pages, counting a
+page whose crop box hides more than 0.5% of its media box:
+
+```
+documents  14 of 233
+pages     577 of 16,987
+worst      34.7% of the sheet hidden   Boltanski   crop 779x628 of media 1031x727
+then        8.8%  Canby_1929 · 7.4%  Zarifa_2008 · 6.6%  ppf_description
+```
+
+**Not fixed here.** The fix is a `/CropBox` carried through `Flattener.flatten`'s
+`beginPDFPage` (so the Flate rebuild keeps it and `compose` has something real to copy) and
+written into `JBIG2.assemble`'s page dictionary, in the rebuilt page's own coordinate space —
+which means putting the source crop rect through the same transform
+`SearchableWriter.cropRegion` uses, since the rebuild bakes `/Rotate` in and swaps the box.
+That is a geometry change on the default route, it needs the invariant-3 probes and a corpus
+run behind it, and C13's own entry records that the obvious check for it does not work:
+re-OCRing the published copy cannot prove the hidden ink survived, because the recogniser
+renders the crop and would only ever report what is displayed. The test has to lift the trim
+off a throwaway duplicate first.
 
 ## Robustness and correctness of reporting
 
@@ -4684,6 +4756,214 @@ shipped in 1.5.0 — `leptonica is bundled with no licence notice`.
 - **`Flattener.jpegQuality`** was a defaulted parameter no caller ever overrode —
   a constant with extra steps, and one that had to be threaded through every call
   site to stay consistent. Now `Flattener.pictureJPEGQuality`.
+
+### T9 · The release gate read the text layer, so a destroyed page image passed it — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A12.1, A12.6 and
+A12.8. Every release figure in `HANDOFF.md` rested on this tool.)*
+
+`Tools/score-gate.swift`'s own header names the requirement: *"Read the output PDFs at the
+end, not just the outcome enum. Page count is not sufficient verification (invariant 1) and
+neither is a success value; **a stream a reader cannot decode still opens as a page**."* What
+it read was `PDFDocument(url:)?.string?.count` — **the text layer**, which `SearchableWriter`
+draws itself and which is independent of the image underneath it. A requirement stated
+correctly and then not implemented.
+
+**Reproduced on this project's own outputs.** 400 bytes of `0x41` into the middle of each
+image stream of a real gate output — `/Subtype /Image` only, so the embedded font and
+therefore the text layer are untouched:
+
+```
+              pages   characters      qpdf --check
+original        3       1862          clean
+corrupted       3       1862          "No syntax or stream encoding errors found"
+              2         1241
+              2         1241
+```
+
+`pages`, `characters`, `outputs` and `colour` do not move. On the review's five-page sample,
+48.3% / 48.8% / 52.7% / 50.8% / 84.3% of each page's rendered pixels had changed.
+
+**Fixed: every page of every output is rendered and compared against the page it came from.**
+Each output is paired with its input through `OCRModel.uniqueOutputs` — the run's own
+function, not a guess from the names on disk, and cross-checked against the directory so a
+drift between the two is a loud failure rather than an unverified corpus. Page counts are
+compared with the input's. Then each page pair is reduced to a 28×28 ink grid and correlated.
+
+**Three wrong instruments were built before one bit, which is the part worth keeping.**
+
+1. **"A destroyed page renders as paper" is false.** The first version tested each output
+   page for renders-as-paper, on the assumption that a stream a decoder chokes on draws
+   nothing. Measured against the corruption above: mean ink **0.05973 → 0.37470**, no page
+   blank, nothing reported, **exit 0**. A JBIG2 arithmetic decoder fed rubbish emits rubbish.
+   A decode-error check fails for the same reason — no error is raised. So there is no
+   instrument that can see this without the input.
+2. **A darkness ratio would need a threshold nothing calibrates.** The rebuild legitimately
+   changes every pixel — 1-bit binarisation, MRC layering, a different resolution. Grid
+   *correlation* is used instead: it asks whether the ink is still in the same places, is
+   scale- and offset-invariant, and so does not care that a 1-bit page is uniformly darker
+   than its greyscale original. On the fixtures: **0.94338** clean against **−0.19759 …
+   0.15363** corrupted, all five pages named, exit 1.
+3. **The crop box was the wrong box, and calibrating on real documents is what found it.**
+   A 36-document stratified run produced **177 release-blocking findings, every one false**,
+   because the output's crop box was compared against the input's. That is CLAUDE.md's own
+   sentence — media box for what is kept, crop box for what is shown — so a rebuilt page's
+   crop box is its whole sheet while the source's is a window on it:
+   `Boltanski p23  source crop 779x628 at (45,81) · output crop 1031x727 at (0,0)`. A
+   correlation between two different regions is noise with a sign. Both sides now take the
+   **media box**. Two synthetic fixtures had agreed to 0.94 and would have shipped it.
+4. **The grid read paper tone, not ink, and the 1-bit route is *meant* to throw paper away.**
+   With the boxes fixed, one blocking finding survived on 1,701 real pages, and it was
+   wrong: `1954 - Why.pdf` p3 keeps every word legible and drops the grey of aged paper, and
+   the raw grids correlate at **0.435**. Rendered and looked at, not argued about. Fixed by
+   correlating **high-passed** grids as well — each cell minus its 5×5 local mean, which
+   discards anything smoother than the window — and taking the larger of the two: the same
+   pair reads 0.655 high-passed while the corrupted fixtures stay at 0.17–0.26.
+5. **And that rescue then let a genuinely destroyed page through.** `doc-b p2`, image stream
+   overwritten, scored raw −0.198 and high-passed **+0.510** — above the floor, reported
+   instead of blocked. The high pass exists to forgive *paper removal*, which makes a page
+   **lighter**; that page was **9.2x darker** than its input, against a measured legitimate
+   maximum of 1.13x. So above 2x darker the raw correlation stands alone, and it fails on
+   −0.198 as it should. Five of five corrupted pages block again.
+
+**Calibration, stated as the numbers rather than as a claim.** Every legitimate page measured
+sits at or above 0.655; every destroyed page at or below 0.261, with the darker-than-2x rule
+in force:
+
+```
+                                       raw     high-passed  resemblance
+  corrupted doc-b p2                  -0.198      0.510       -0.198   (9.2x darker)
+  corrupted doc-a p1                  -0.189      0.196       -0.189
+  corrupted doc-a p2                  +0.107      0.173       +0.107
+  corrupted doc-a p3                  +0.154      0.261       +0.154
+  corrupted doc-b p1                  +0.106      0.095       +0.106
+  ------------------------------- the 0.45 floor ------------------------
+  1954 - Why p3  grey paper whitened  +0.435      0.655       +0.655
+  1947 magazine p3                    +0.764      0.738       +0.764
+  AI 2027 p51                         +0.700      0.794       +0.794
+  tonal-plate fixture (R57's page)    +0.924      0.811       +0.924
+  Boltanski p23 (203-page book)       +0.995      0.980       +0.995
+  clean fixture doc-a p1              +1.000      0.999       +1.000
+```
+
+A per-cell standard-deviation grid was measured too and is **worse**: it scores the corrupted
+pages 0.387–0.599, because noise has texture.
+
+**Final state on real material: 36 documents, 1,701 pages, 0 release-blocking, 3 reported,
+exit 0** — and the corrupted pair still exits 1 on all five pages.
+
+**A fade signal was added as an R56 detector, measured useless by the review of this diff, and
+removed.** The idea was that a pale drawing erased by the 1-bit route is invisible to the
+correlation — true, the text on the same page holds it at 0.993 — and would show up as ink
+falling away with the layout unchanged. Measured through the shipped pipeline:
+
+```
+  pale-drawing fixture   the drawing IS erased    src 0.07178  out 0.02513  ratio 0.35009
+  text-only fixture      nothing is damaged       src 0.07000  out 0.02515  ratio 0.35934
+```
+
+**0.9% apart.** What the ratio measures on the 1-bit route is the *paper tone the rebuild is
+meant to discard* — 0.070 to 0.025 in both cases — not the drawing. No threshold between
+0.35009 and 0.35934 means anything, which is the same confound `highPassed` exists for on the
+correlation side.
+
+**And the threshold as written could not have fired on the case it was for.** It was 0.35 with
+a strict `<`, derived by hand-dividing the *rounded printout* — 0.0251 / 0.0718 = 0.34958 —
+instead of the numbers the code computes. The fixture lands at 0.35009. So "the only signal in
+the tool that can see R56" described a check sitting on the wrong side of its own measurement,
+in an entry about checks that cannot fail. The darkness columns stay as a run-to-run drift
+measure; nothing is named on them and no release is blocked by them. **`FEATURES.md`'s shape
+signal remains the only thing that would see R56**, and `Tools/score-threshold-loss.swift`
+remains the estimator built for it — so the priority claim was false as well.
+
+**And the repaired gate immediately found a real defect on the default route: C23.**
+
+**Also fixed in the same tool, from A12.6 and A12.8:**
+
+- **It hung for ever on an empty run.** `if !isRunning && done > 0` was the only path to
+  completion, so a mistyped corpus path waited indefinitely — indistinguishable from the
+  hang requirement 1 exists to prevent, arriving through a door the header does not cover.
+  Now: an empty corpus is refused with exit 2, and a batch that is neither committed nor
+  progressing for two consecutive ticks reports the last six log lines and exits 3.
+  `isCommitted` rather than `isRunning`, because the pre-flight opens every document and is
+  minutes of legitimately not-running time.
+- **The tallies never had to add up.** `succeeded + failed == documents` and
+  `outputs == successes` are asserted now, and the enumerator no longer counts whatever was
+  already in the directory: `documents 1 … outputs 2 characters 15187` was a previous run's
+  leftovers reported as this run's products. A non-empty output directory is refused up
+  front, because `uniqueOutputs` seeds its claimed set with the batch's *inputs* and not
+  with the destination, so a second run into a used directory republishes over the first
+  run's outputs and every byte comparison against "the previous run" becomes meaningless.
+- **The colour count read only the first 4 MB** of each file, biasing it against exactly the
+  picture-heavy documents most likely to carry colour. Whole file now. Still a syntax test:
+  a `/DeviceRGB` inside a compressed object stream is invisible to it, so it stays a lower
+  bound — just not one that shrinks with file size.
+
+**A `--verify <corpus> <outputs>` mode was added, and it is the reason any of the above
+could be tested.** The whole cause of A12.1 standing was that nothing had ever made this
+tool's verification fail; a 78-minute run per attempt guarantees it stays that way.
+Corrupting a real output and re-verifying takes seconds, and it is what caught instruments
+1 and 3.
+
+**What it does not catch, stated so nobody over-trusts it.** A partial *blob* — R57's shape —
+is still indistinguishable from a legitimate rebuild here: the tonal-plate fixture scores
+0.924 and 0.92x the ink, which is what a correct rebuild of that page also looks like. What
+catches that is the per-page ink, resemblance and fade columns now written to
+`per-document.tsv`, diffed against the previous run: the same mechanism, and the same reason,
+as the per-document character column that localised a 23-character drift out of 34.2 million.
+
+**Cost, and the first version of this paragraph flattered it.** The verification is serial and
+renders two pages per output page. Measured on the 36-document calibration set: 1,701 output
+pages verified in about 7 minutes against about 7 for the batch itself — so verification is
+roughly **1:1 with the run**, not "half as much again". At 16,987 corpus pages, 9.99x the
+calibration set, that is **over an hour** on top of the existing 78 minutes.
+
+**Three more defects in this diff, found by the adversarial pass over it and fixed here:**
+
+- **A run in which a document failed outright exited 0.** `failed` never produced a
+  release-blocking entry, so only a tally *inconsistency* blocked — and successes plus failures
+  equalling documents is perfectly consistent with a document the app could not convert.
+  Measured: three documents, one unreadable, printed "failed 1" and exited **0**, so
+  `gate testdocs /tmp/out && ship` shipped. Worse in the general case: if *every* document
+  fails, the result block prints `worst page 1.00000` over a run that converted nothing. And it
+  contradicted the tool's own exit 3, which blocks when the batch never *started*.
+- **`per-document.tsv` was rewritten in place**, destroying the baseline this entry names as
+  the only thing that localises a partial loss — **by the act of re-measuring**, including
+  under `--verify`, which is nothing but a re-measurement. The empty-directory refusal did not
+  protect it either: it counts PDFs, and keeping the tsv while deleting multi-gigabyte outputs
+  is the plausible thing to do. Never overwritten now.
+- **`--verify` with one path silently became a run**, with `"--verify"` as the corpus root, and
+  a bare `gate` indexed out of range. Both print usage and exit 64.
+
+**Two more from the same pass, both fixed here.** The blank test was
+`spread == 0 || darkness < 0.004`, and the darkness half was wrong in both
+directions: a sparse page of real text can sit under 0.004, and calling it blank
+meant **its pixels were never compared at all** — destroyed to near-white over a
+near-white source, the comparison was skipped rather than made. A page is flat when
+it has no variation; whether that flat page is paper or a solid black sheet is what
+`darkness` then says, and a flat *dark* page is now a failure rather than a silent
+"blank". And grid cells that received no pixels were filled with a literal `0.0` in
+**both** grids, putting perfectly-correlated points into every comparison — on a page
+whose aspect ratio leaves rows of cells empty that inflates the correlation towards 1,
+the one direction a gate must never drift. The comparison now intersects the two
+coverage maps.
+
+**Two things left open, stated rather than claimed closed.**
+
+- **The resemblance figure is whole-page, and it dilutes.** A reviewer measured **0.52** on a
+  page whose lower 55% was overwritten — above the floor, REPORTED rather than blocked. Four
+  attempts to reproduce that number here failed (400 bytes mid-stream and a corrupted tail, on
+  both a third-page-text and a full-sheet-text fixture; all four blocked), but the gap is real.
+  **The obvious repair was built and reverted**: scoring a page as the worst of itself and its
+  sixteen 7×7 regions gave **11 release-blocking findings on 36 real, undamaged documents**,
+  against 0 for the whole-page figure on the same 1,701 pages — four of them regions too flat
+  to correlate at all, where the high-passed residual of two nearly-blank quarter-pages was
+  compared instead. A gate with eleven false blockers is worse than one with a known dilution.
+  A real fix needs a region rule requiring raw structure on both sides, a floor calibrated on
+  regions rather than inherited from the page, and a corpus run behind it.
+- **The watchdog covers a run that never starts, and nothing else.** Once any document
+  finishes, `done > 0` resets the counter, so a batch that stalls mid-run prints its progress
+  line for ever — A12.6's hang in the one form still reachable. A stall bound over a corpus has
+  to survive a single 64.84 MP page, and guessing one is how R44 happened.
 
 ---
 

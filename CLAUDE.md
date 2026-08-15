@@ -15,9 +15,11 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **four
-entries are open and two of them destroy content on the default route**: R56 (a pale
-drawing is erased, not softened) and R57 (a tonal plate can come out a black blob).
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **five
+entries are open and three of them change content on the default route**: R56 (a pale
+drawing is erased, not softened), R57 (a tonal plate can come out a black blob) and
+C23 (the rebuilt copy displays what the original's crop box hid — C13 recurring
+through `JBIG2.assemble`, which writes no `/CropBox`; 14 of 233 corpus documents).
 Read its header before planning anything. Update it in the same commit as any fix.
 [TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas
 with their costs and the reasons some are parked, and
