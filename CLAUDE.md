@@ -46,7 +46,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1031 checks, 2-4 min; runs real OCR, needs nothing installed
+./run_tests.sh        # 1037 checks, 2-4 min; runs real OCR, needs nothing installed
 ```
 
 Never report a change as working without `./run_tests.sh` passing. Add a test that
