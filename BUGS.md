@@ -3347,6 +3347,119 @@ assume the bins were page-relative, which is the opposite of the property that
 makes the score comparable across angles. Threaded through `estimate` and
 `selfTest` as well. **Fixed**: removed from all three.
 
+### R61 · Two declared-geometry conversions still trapped, on the default route — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A7.1 and A3.2. A7.1 is
+the sibling A3.2's own §4b sweep missed — same function, four lines from the same guard.)*
+
+`safeInt` exists in `Flattener` because **`Int(_:)` traps for a Double that is not finite or is
+outside `Int`'s range**, and R24 is the entry that put it there. Two conversions 1,300 lines
+below it were still bare, both on numbers descending entirely from what the file declares.
+
+**A7.1 · `sauvolaMask(…, window: max(Int(dpi / 4), 3))`.** Verified end to end on shipped
+defaults — rebuild on, jbig2 and qpdf present, Automatic, one recognised word, a tone wedge to
+route the page to the picture path:
+
+```
+MediaBox [0 0 1e-14 1.3e-14], image declaring 8000x10400
+dpi = 5.76e+19    wide = 8000  high = 10400   product 83.2 MP
+flatten gate (<=400MP): true    mrc gate (<=100MP): true
+flatten OK -> published 68,950 bytes;  mrcLayers -> EXIT 133 (SIGTRAP)
+```
+
+`Int(1.44e19)` against `Int.max` 9.22e18. **Both gates pass because `wide` reduces
+algebraically to the declared `/Width`**, so any raster size is reachable at any box scale, and
+the page renders as an ordinary sheet with visible ink that `qpdf --check` calls clean. R24's
+recorded harm verbatim: uncatchable, and it takes every concurrent file in the batch with it.
+
+**Fixed** by `sauvolaWindow(dpi:width:height:)`, which uses `safeInt` and clamps at **both**
+ends. The upper clamp is the second half of the defect and is not cosmetic: at a merely large
+DPI the window computed to 3.6e12, so Sauvola's radius covered the whole image and it silently
+**degenerated into the single global threshold its own doc comment exists to avoid** — a page
+thresholded as though `sauvolaMask` were `otsuThreshold`, with no error anywhere. The ceiling is
+half the shorter side.
+
+**And `sauvolaMask` now bounds its own radius**, because `let y1 = min(y + r + 1, h)` computes
+`y + r + 1` *first*: an `r` that is merely large overflows there even when the conversion
+succeeded. A caller reaching the function without going through the helper would trap inside it.
+Its own invariant, enforced by itself.
+
+**A3.2 · `textRegionMask` on a non-finite word box.** `Int((b.x - padX) * Double(w))` over
+boxes that come from Vision. **Fixed**: each box's four fields are checked for finiteness and
+the box is *skipped* — not clamped, because a box this arithmetic cannot describe is not a
+region to include, and including the whole page would put a picture into the stencil, which is
+the harm `textRegionMask` exists to prevent. The remaining conversions use `safeInt` and `&+`.
+
+**Sibling sweep (CONTRIBUTING 4b), and it is the whole point of this entry.** The family is one
+grep — five `Int(Double)` sites in `Flattener`:
+
+| site | verdict |
+|---|---|
+| `flatten`'s `max(Int(wide), 1)` | **safe**: guarded by the megapixel check above it, in Double |
+| `mrcLayers`' `max(Int(wide), 1)` | **safe**: same shape, `maximumMRCPageMegapixels` |
+| `mrcLayers`' `Int(dpi / 4)` | **A7.1, fixed** |
+| `textRegionMask`'s four | **A3.2, fixed** |
+| `largestImage`'s `Int(w) * Int(h)` | **safe**: `maximumDeclaredImageSide` refuses first |
+
+Two more from the same sweep, both closed here rather than argued about:
+
+- **`textRegionMask` allocated before it checked.** `[Bool](repeating: false, count: w * h)` sat
+  on the line *above* `guard w > 0, h > 0`. The guard is first now.
+- **`bilevelImage` lacked the `grey.count` guard `greyPNG` and `jpegRGB` both have.**
+  `grey[src + x]` indexes to `width * height - 1`, so a buffer shorter than its stated size read
+  out of bounds instead of returning nil. No shipped caller mismatches; a missing guard in a
+  family of three is R23's and R29's shape exactly.
+
+**How it is tested, which is the part that took the thought.** A trap is uncatchable, so a check
+that calls the hostile code cannot be in-process — it would take the suite down instead of
+failing. The suite already has that mechanism for R24 (`--probe-hostile-page` re-runs the same
+binary on one hostile file and the parent inspects how the child exited), and A7.1 needed a
+second mode: `--probe-hostile-numbers` calls the two conversions directly with values a file can
+produce and **prints markers**, because exit 0 alone would only prove nothing crashed while the
+*behaviour* — an absurd box contributing nothing rather than the whole page — matters as much.
+Driving it through `mrcLayers` on the real 8000x10400 fixture was tried and rejected: its
+integral images are two `[Double]` of 83.2M entries, **1.3 GB**, and a child killed for memory
+is indistinguishable from a child killed by the trap. Reachability is asserted separately and
+in-process, because *reading* the DPI is safe and only converting it was not: the fixture's
+`rebuildDPI` is checked to exceed 3.7e19, which is what puts `dpi / 4` past `Int.max`.
+
+**Three corrections from the review of this diff, and the first one is the reason the review
+happened.** The fix was written, staged and left uncommitted; reviewing it before committing
+found that it **also changed the shipped Sauvola window**:
+
+```
+sauvolaWindow used  safeInt((dpi / 4).rounded())      <- as first written
+the expression it replaced was  max(Int(dpi / 4), 3)  <- truncating
+```
+
+`safeInt` truncates, so `safeInt(dpi / 4)` is `Int(dpi / 4)` exactly for every in-range value
+and the window is untouched. **`.rounded()` moves it by one pixel wherever `dpi / 4` lands on a
+half** — about half of all pages — which is a silent edit to the 1-bit stencil on the default
+route, bought for nothing, inside a fix for a trap. That is this project's own recurring shape:
+a regression *inside* a fix for something else, which is what CONTRIBUTING's preamble is about.
+It is now truncating, a check compares the window against the replaced expression over every
+DPI from 72.0 to 600.0 in tenths, and `A7.1-sauvola-window-truncates` plants the rounding back.
+
+The other two were cosmetic and are recorded because both are shapes this register already
+carries: the new function was inserted *under* `sauvolaMask`'s doc comment, leaving the
+integral-image note describing the wrong function (`sauvolaWindow` now has its own and
+`sauvolaMask` has its back); and the new fixture's first check reused the label of R24's
+existing `"the hostile fixture is a PDF the app will actually open"`, so two of 880 checks
+printed the same line — U29's two-controls-one-name property, in the suite instead of the panel.
+
+### R62 · `inkCoverage` divided one population by another — FIXED
+*(found 2026-08-14; `REVIEW-2026-08-14.md` A7.2. Latent, and recorded anyway.)*
+
+It walked all of `grey` and divided by `width * height`. Every sibling fraction in the file takes
+numerator and denominator from one population. Told a 4,000-pixel buffer was 20x20 it returned
+**10.0** — a coverage above 1 — and told a 100-pixel buffer was 20x20 it under-reported **4x**.
+
+No shipped caller mismatches, so nothing is wrong in the app today. It is recorded and fixed
+because of *which* constants a rescaled value would miscalibrate: `pictureInkThreshold` and
+`pictureInkMinimumTone` are the two whose miscalibration destroyed content twice, and the next
+caller to hand this a downsampled buffer — a tool, a future MRC path — would get a silently
+rescaled fraction with no error. **Fixed**: it measures `min(grey.count, width * height)` pixels
+and divides by that.
+
 ---
 ## The interface
 

@@ -180,6 +180,31 @@ OPERATORS = [
      "return isRunnable(path) ? path : nil", "bundle-arch-check"),
     ("Runner.swift", "case 0xcffa_edfe, 0xcefa_edfe:                     // little-endian file\n            return word(4, bigEndian: false) == native",
      "case 0xcffa_edfe, 0xcefa_edfe:\n            return word(4, bigEndian: true) == native", "bundle-arch-endianness"),
+    # R61. The two conversions safeInt did not cover, and the two clamps around
+    # them. Each of these four plants a *trap*, so the check that dies is the
+    # `--probe-hostile-numbers` child — which is the point of running the hostile
+    # calls out of process: a mutant that takes the suite down instead of failing
+    # a check is a mutant whose verdict nobody can read.
+    ("Flattener.swift", "let quarterInch = safeInt(dpi / 4)",
+     "let quarterInch = Int(dpi / 4)", "A7.1-sauvola-window-safeint"),
+    # The fix must not also be a threshold change. This mutant is the first version
+    # of the fix as written, caught in review: rounding moves the shipped window by a
+    # pixel on about half of all pages, which no trap test would ever notice.
+    ("Flattener.swift", "let quarterInch = safeInt(dpi / 4)",
+     "let quarterInch = safeInt((dpi / 4).rounded())", "A7.1-sauvola-window-truncates"),
+    ("Flattener.swift", "return min(max(quarterInch, 3), ceiling)",
+     "return max(quarterInch, 3)", "A7.1-sauvola-window-ceiling"),
+    ("Flattener.swift", "let r = min(max(window / 2, 1), max(w, h))",
+     "let r = max(window / 2, 1)", "A7.1-sauvola-radius-bound"),
+    ("Flattener.swift",
+     "guard b.x.isFinite, b.y.isFinite, b.width.isFinite, b.height.isFinite\n            else { continue }",
+     "if false { continue }", "A3.2-textregion-finite"),
+    # R62. Numerator and denominator from one population. The mutant restores the
+    # 10.0-coverage version, which no page count and no routing decision on today's
+    # callers would notice — which is why it is here rather than trusted to a
+    # caller that happens to protect it.
+    ("Flattener.swift", "let pixels = min(grey.count, width * height)",
+     "let pixels = grey.count", "A7.2-inkcoverage-population"),
 ]
 
 

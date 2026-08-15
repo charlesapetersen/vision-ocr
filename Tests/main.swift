@@ -36,6 +36,33 @@ if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--probe-hostil
     exit(0)
 }
 
+// A7.1 and A3.2. Two `Int(Double)` conversions on numbers descending entirely from
+// what a file declares, 1,300 lines below the `safeInt` that exists for exactly
+// this. Both trap, so both are exercised here and the parent reads the markers:
+// exit 0 alone would only prove nothing crashed, and the *behaviour* — an absurd
+// box contributing nothing rather than the whole page — matters as much.
+if CommandLine.arguments.count == 2, CommandLine.arguments[1] == "--probe-hostile-numbers" {
+    // A7.1: `MediaBox [0 0 1e-14 1.3e-14]` with an image declaring 8000x10400
+    // gives dpi 5.76e+19. `Int(1.44e19)` against `Int.max` 9.22e18 trapped, and
+    // both routing gates pass first because `wide` reduces algebraically to the
+    // declared `/Width`.
+    print("window=\(Flattener.sauvolaWindow(dpi: 5.76e19, width: 8000, height: 10400))")
+    print("windowNaN=\(Flattener.sauvolaWindow(dpi: .nan, width: 40, height: 40))")
+    print("windowTiny=\(Flattener.sauvolaWindow(dpi: 300, width: 2, height: 2))")
+    // sauvolaMask's own arithmetic: `y + r + 1` overflows for a merely large `r`,
+    // so the bound has to be inside the function and not only at its caller.
+    let flat = [UInt8](repeating: 200, count: 64)
+    print("maskHuge=\(Flattener.sauvolaMask(flat, width: 8, height: 8, window: Int.max).count)")
+    // A3.2: one non-finite word box among good ones.
+    let bad = SearchableWriter.BoundingBox(x: .nan, y: 0.1, width: 0.2, height: 0.05)
+    let good = SearchableWriter.BoundingBox(x: 0.1, y: 0.1, width: 0.2, height: 0.05)
+    print("mixed=\(Flattener.textRegionMask([bad, good], width: 100, height: 100).filter { $0 }.count)")
+    print("goodOnly=\(Flattener.textRegionMask([good], width: 100, height: 100).filter { $0 }.count)")
+    let absurd = SearchableWriter.BoundingBox(x: 1e300, y: 1e300, width: 1e300, height: 1e300)
+    print("absurd=\(Flattener.textRegionMask([absurd], width: 100, height: 100).filter { $0 }.count)")
+    exit(0)
+}
+
 // R23. copyOutline recurses once per outline level, and the stack that matters
 // is the 512 KB of an OperationQueue worker — which is where the pipeline calls
 // it from. Overflowing it is a SIGBUS, so this runs in a child too.
@@ -7065,6 +7092,157 @@ do {
     check("a value past Int's range saturates", Flattener.safeInt(1e30) == Int(9.0e18)
               && Flattener.safeInt(-1e30) == Int(-9.0e18))
     check("an ordinary value is unchanged", Flattener.safeInt(1234.7) == 1234)
+}
+
+// MARK: - The two conversions safeInt did not cover (A7.1, A3.2)
+
+// `safeInt` exists because `Int(_:)` traps, and two conversions 1,300 lines below
+// it were still bare — both on numbers descending entirely from what a file
+// declares, and both on the **default** route. A trap is uncatchable and takes
+// every concurrent file with it, so the hostile calls run in a child and this
+// reads the markers it prints: exit 0 alone would only say nothing crashed, and
+// the behaviour matters as much as the survival.
+
+print("\nthe declared-geometry conversions cannot trap")
+
+do {
+    // Reachability first, because a bound on an unreachable value is not a fix.
+    // `wide` reduces algebraically to the declared `/Width`, so any raster size
+    // is reachable at any box scale and *both* routing gates pass: the page
+    // renders as an ordinary 8000x10400 sheet that `qpdf --check` calls clean.
+    let dir = tmp.appendingPathComponent("hostile-dpi-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let tiny = dir.appendingPathComponent("tinybox.pdf")
+    let bodies = [
+        "<</Type/Catalog/Pages 2 0 R>>",
+        "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+        "<</Type/Page/Parent 2 0 R/MediaBox[0 0 0.00000000000001 0.000000000000013]"
+            + "/Resources<</XObject<</Im0 4 0 R>>>>/Contents 5 0 R>>",
+        "<</Type/XObject/Subtype/Image/Width 8000/Height 10400"
+            + "/ColorSpace/DeviceGray/BitsPerComponent 8/Length 3>>\nstream\nabc\nendstream",
+        "<</Length 1>>\nstream\n \nendstream",
+    ]
+    var raw = "%PDF-1.4\n"
+    var offsets: [Int] = []
+    for (i, body) in bodies.enumerated() {
+        offsets.append(raw.utf8.count)
+        raw += "\(i + 1) 0 obj\n\(body)\nendobj\n"
+    }
+    let startxref = raw.utf8.count
+    raw += "xref\n0 \(bodies.count + 1)\n0000000000 65535 f \n"
+    for off in offsets { raw += String(format: "%010d 00000 n \n", off) }
+    raw += "trailer\n<</Size \(bodies.count + 1)/Root 1 0 R>>\nstartxref\n\(startxref)\n%%EOF\n"
+    try? raw.write(to: tiny, atomically: true, encoding: .ascii)
+
+    // Labelled for the tiny box specifically: R24's own probe block already has a
+    // check called "the hostile fixture is a PDF the app will actually open", and
+    // triage here is grepping 880 lines of log for the one that failed.
+    check("the tiny-media-box fixture is a PDF the app will actually open",
+          PDFDocument(url: tiny)?.pageCount == 1)
+    if let page = PDFDocument(url: tiny)?.page(at: 0) {
+        let dpi = Flattener.rebuildDPI(of: page)
+        // Reading it is safe; converting it was not. Over 3.7e19 is what puts
+        // `dpi / 4` past `Int.max`.
+        check("a declared geometry really does produce a DPI past Int's range",
+              dpi > 3.7e19, String(format: "%.3g", dpi))
+    } else {
+        check("the tiny-media-box page opens", false)
+    }
+
+    /// Runs the trapping calls in a child and hands back its markers.
+    func hostileNumbers() -> (survived: Bool, markers: [String: String]) {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
+        p.arguments = ["--probe-hostile-numbers"]
+        let pipe = Pipe()
+        p.standardOutput = pipe
+        p.standardError = FileHandle.nullDevice
+        do { try p.run() } catch { return (false, [:]) }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        p.waitUntilExit()
+        var markers: [String: String] = [:]
+        for line in String(decoding: data, as: UTF8.self).split(separator: "\n") {
+            let parts = line.split(separator: "=", maxSplits: 1)
+            if parts.count == 2 { markers[String(parts[0])] = String(parts[1]) }
+        }
+        return (p.terminationReason == .exit && p.terminationStatus == 0, markers)
+    }
+
+    let probe = hostileNumbers()
+    check("the hostile conversions do not take the process down", probe.survived,
+          "the child died on a signal — Int(dpi / 4) or Int(NaN * width) trapped")
+    // A7.1's upper half: the window is clamped to half the shorter side, because a
+    // radius covering the whole image is the single global threshold Sauvola's own
+    // doc comment exists to avoid. 8000x10400 -> 4000.
+    check("…and the window is clamped to a local one", probe.markers["window"] == "4000",
+          probe.markers["window"] ?? "missing")
+    check("…with the floor still 3 for a nonsense DPI", probe.markers["windowNaN"] == "3",
+          probe.markers["windowNaN"] ?? "missing")
+    check("…and a tiny page cannot get a window of 1",
+          probe.markers["windowTiny"] == "3", probe.markers["windowTiny"] ?? "missing")
+    // sauvolaMask's own bound: `y + r + 1` overflows for an `r` that is merely
+    // large, so a caller who did not go through the helper would still trap.
+    check("sauvolaMask bounds its own radius", probe.markers["maskHuge"] == "64",
+          probe.markers["maskHuge"] ?? "missing")
+    // A3.2: skipped, not clamped. Including an absurd box would put the whole page
+    // into the stencil, which is the harm `textRegionMask` exists to prevent.
+    check("a non-finite word box is skipped and the good one is kept",
+          probe.markers["mixed"] == probe.markers["goodOnly"]
+            && (Int(probe.markers["goodOnly"] ?? "0") ?? 0) > 0,
+          "mixed \(probe.markers["mixed"] ?? "?") vs good-only "
+            + "\(probe.markers["goodOnly"] ?? "?")")
+    check("…and an absurd one contributes nothing rather than the whole page",
+          probe.markers["absurd"] == "0", probe.markers["absurd"] ?? "missing")
+
+    // The other half of a trap fix: it must not *also* be a threshold change. The
+    // window is compared against the expression it replaced, over every DPI the app
+    // can render, on a page large enough that the new ceiling is not the binding
+    // term. `safeInt` truncates, so these agree exactly; a `.rounded()` — which the
+    // first version of this fix had — moves the window by a pixel wherever `dpi / 4`
+    // lands on a half, which is about half of all pages, silently editing the 1-bit
+    // stencil on the default route. Mutant: A7.1-sauvola-window-truncates.
+    var windowDrift: [String] = []
+    for tenths in 720...6_000 {
+        let dpi = Double(tenths) / 10
+        let now = Flattener.sauvolaWindow(dpi: dpi, width: 2550, height: 3300)
+        let before = max(Int(dpi / 4), 3)
+        if now != before { windowDrift.append("\(dpi): \(before) -> \(now)") }
+    }
+    check("the shipped window is unchanged for every DPI the app can render",
+          windowDrift.isEmpty,
+          "\(windowDrift.count) drifted, e.g. \(windowDrift.prefix(3).joined(separator: ", "))")
+}
+
+// MARK: - inkCoverage's two halves come from one population (A7.2)
+
+print("\nink coverage cannot exceed one")
+
+do {
+    // The one fraction in Flattener whose numerator and denominator were
+    // different populations: it walked all of `grey` and divided by
+    // `width * height`. No shipped caller mismatches, so this was latent — but the
+    // two constants a rescaled value would miscalibrate, `pictureInkThreshold` and
+    // `pictureInkMinimumTone`, are the two whose miscalibration destroyed content
+    // twice, and the next caller to hand it a downsampled buffer would not know.
+    let allDark = [UInt8](repeating: 0, count: 4_000)
+    check("a buffer larger than its stated size cannot exceed 1",
+          Flattener.inkCoverage(of: allDark, width: 20, height: 20, threshold: 128) <= 1,
+          String(Flattener.inkCoverage(of: allDark, width: 20, height: 20, threshold: 128)))
+    check("…and reports the coverage of what it was actually given",
+          Flattener.inkCoverage(of: allDark, width: 20, height: 20, threshold: 128) == 1)
+    let short = [UInt8](repeating: 0, count: 100)
+    check("a buffer smaller than its stated size is not under-reported 4x",
+          Flattener.inkCoverage(of: short, width: 20, height: 20, threshold: 128) == 1,
+          String(Flattener.inkCoverage(of: short, width: 20, height: 20, threshold: 128)))
+    var half = [UInt8](repeating: 0, count: 200)
+    for i in 100..<200 { half[i] = 255 }
+    check("an ordinary buffer is unchanged",
+          abs(Flattener.inkCoverage(of: half, width: 20, height: 10,
+                                    threshold: 128) - 0.5) < 1e-9,
+          String(Flattener.inkCoverage(of: half, width: 20, height: 10, threshold: 128)))
+    check("an empty buffer is zero, not a division by zero",
+          Flattener.inkCoverage(of: [], width: 20, height: 20, threshold: 128) == 0)
 }
 
 print("\nrepeated text in a column is not a duplicate")

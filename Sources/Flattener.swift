@@ -873,6 +873,12 @@ enum Flattener {
     private static func bilevelImage(
         from grey: [UInt8], width: Int, height: Int, threshold: UInt8
     ) -> CGImage? {
+        // The guard `greyPNG` and `jpegRGB` both have and this one did not
+        // (A7.3): `grey[src + x]` below indexes to `width * height - 1`, so a
+        // buffer shorter than its stated size reads out of bounds rather than
+        // returning nil. No shipped caller mismatches; the sibling sweep's rule is
+        // that a missing guard is recorded and closed, not argued about.
+        guard width > 0, height > 0, grey.count >= width * height else { return nil }
         let rowBytes = (width + 7) / 8
         var bits = [UInt8](repeating: 0, count: rowBytes * height)
         for y in 0..<height {
@@ -1072,13 +1078,23 @@ enum Flattener {
 
     /// Fraction of the page that would be ink once thresholded. Text sits at
     /// 6–8%; halftones and dark scans run far higher.
+    /// **Both halves come from one population, and that is the whole of A7.2.**
+    /// It used to walk all of `grey` and divide by `width * height`. Told a
+    /// 4,000-pixel buffer was 20x20 it returned **10.0** — a coverage above 1 —
+    /// and told a 100-pixel buffer was 20x20 it under-reported 4x. Every sibling
+    /// fraction in this file takes numerator and denominator from the same place.
+    /// No shipped caller mismatches today; the two constants a rescaled value
+    /// would miscalibrate, `pictureInkThreshold` and `pictureInkMinimumTone`, are
+    /// the two whose miscalibration destroyed content twice.
     static func inkCoverage(
         of grey: [UInt8], width: Int, height: Int, threshold: UInt8
     ) -> Double {
         guard width > 0, height > 0 else { return 0 }
+        let pixels = min(grey.count, width * height)
+        guard pixels > 0 else { return 0 }
         var dark = 0
-        for value in grey where value < threshold { dark += 1 }
-        return Double(dark) / Double(width * height)
+        for i in 0..<pixels where grey[i] < threshold { dark += 1 }
+        return Double(dark) / Double(pixels)
     }
 
     /// The encoded JPEG bytes, so the same data can go into a hand-built PDF.
@@ -1336,6 +1352,26 @@ enum Flattener {
             <= Double(maximumPageMegapixels) * measuredGreyBytesPerPixel
     }
 
+    /// The local window for a page rendered at `dpi`, bounded at both ends.
+    ///
+    /// A quarter of an inch is the measured choice and stays the choice; this only
+    /// stops a declared-geometry absurdity from reaching the arithmetic. The upper
+    /// bound is half the shorter side, because a window wider than the image is a
+    /// *global* threshold wearing a local threshold's name.
+    ///
+    /// **Truncating, not rounding.** `safeInt(dpi / 4)` is `Int(dpi / 4)` for every
+    /// value in range, so the window this returns for a page the app can actually
+    /// render is the byte-identical one it returned before. A `.rounded()` here
+    /// would move the window by one pixel on about half of all pages — a silent
+    /// change to the 1-bit stencil on the default route, bought for nothing, in a
+    /// fix for a trap. That is this project's own recurring defect shape
+    /// (CONTRIBUTING preamble), so the conversion stays truncating.
+    static func sauvolaWindow(dpi: Double, width w: Int, height h: Int) -> Int {
+        let quarterInch = safeInt(dpi / 4)
+        let ceiling = max(3, min(w, h) / 2)
+        return min(max(quarterInch, 3), ceiling)
+    }
+
     /// Sauvola's local threshold: `t(x) = m(x) * (1 + k * (s(x)/128 - 1))`.
     ///
     /// Local, not global. Otsu picks one threshold for the whole sheet, which is
@@ -1358,7 +1394,11 @@ enum Flattener {
                 sq[(y + 1) * stride1 + x + 1] = sq[y * stride1 + x + 1] + rq
             }
         }
-        let r = max(window / 2, 1)
+        // Clamped here as well as by `sauvolaWindow`, because `y + r + 1` below
+        // overflows for an `r` that is merely large — a window a caller obtained
+        // without going through the helper would trap inside this function rather
+        // than at the conversion. Its own invariant, enforced by itself.
+        let r = min(max(window / 2, 1), max(w, h))
         var mask = [Bool](repeating: false, count: w * h)
         for y in 0..<h {
             let y0 = max(y - r, 0), y1 = min(y + r + 1, h)
@@ -1393,17 +1433,28 @@ enum Flattener {
     /// 5.15x against 4.96x, better on both axes.
     static func textRegionMask(_ boxes: [SearchableWriter.BoundingBox],
                                width w: Int, height h: Int) -> [Bool] {
+        // The guard first. `[Bool](repeating:count:)` was being asked for `w * h`
+        // on the line *above* the check that either is positive — A7.3's list, and
+        // the shape R24 and R29 are both made of.
+        guard w > 0, h > 0 else { return [] }
         var region = [Bool](repeating: false, count: w * h)
-        guard w > 0, h > 0 else { return region }
         for b in boxes {
+            // A non-finite or absurd word box traps the conversion, uncatchably,
+            // 1,300 lines below the `safeInt` that exists for exactly this (A3.2).
+            // Skipped rather than clamped: a box this arithmetic cannot describe is
+            // not a region to include, and including the whole page would put a
+            // picture into the stencil — which is what `textRegionMask` exists to
+            // prevent.
+            guard b.x.isFinite, b.y.isFinite, b.width.isFinite, b.height.isFinite
+            else { continue }
             // The pad is a fraction of the box's *height* in both directions, so
             // it is converted through the aspect ratio for the horizontal one.
             let padY = b.height * mrcBoxPadding
             let padX = padY * Double(h) / Double(w)
-            let x0 = max(Int((b.x - padX) * Double(w)), 0)
-            let x1 = min(Int((b.x + b.width + padX) * Double(w)) + 1, w)
-            let y0 = max(Int((b.y - padY) * Double(h)), 0)
-            let y1 = min(Int((b.y + b.height + padY) * Double(h)) + 1, h)
+            let x0 = max(safeInt((b.x - padX) * Double(w)), 0)
+            let x1 = min(safeInt((b.x + b.width + padX) * Double(w)) &+ 1, w)
+            let y0 = max(safeInt((b.y - padY) * Double(h)), 0)
+            let y1 = min(safeInt((b.y + b.height + padY) * Double(h)) &+ 1, h)
             guard x0 < x1, y0 < y1 else { continue }
             for y in y0..<y1 { for x in x0..<x1 { region[y * w + x] = true } }
         }
@@ -1538,7 +1589,18 @@ enum Flattener {
         guard let grey = renderGrey(page, box: box, scale: scale,
                                     width: w, height: h, from: .mediaBox) else { return nil }
 
-        var mask = sauvolaMask(grey, width: w, height: h, window: max(Int(dpi / 4), 3))
+        // `safeInt`, not `Int`, and clamped at both ends. `dpi` descends entirely
+        // from what the file declares and is *not* covered by the megapixel guard
+        // above, because `wide` reduces algebraically to the declared `/Width`:
+        // `MediaBox [0 0 1e-14 1.3e-14]` with an image declaring 8000x10400 gives
+        // dpi 5.76e+19, both gates pass, and `Int(1.44e19)` against `Int.max`
+        // 9.22e18 **trapped uncatchably**, taking every concurrent file with it
+        // (A7.1, verified end to end on shipped defaults). The upper clamp is the
+        // second half: at a merely large DPI the window computed to 3.6e12, so
+        // Sauvola's radius covered the whole image and it silently degenerated
+        // into the single global threshold its own doc comment exists to avoid.
+        var mask = sauvolaMask(grey, width: w, height: h,
+                               window: sauvolaWindow(dpi: dpi, width: w, height: h))
         guard mask.count == w * h else { return nil }
         let region = textRegionMask(boxes, width: w, height: h)
         for i in 0..<(w * h) where !region[i] { mask[i] = false }
