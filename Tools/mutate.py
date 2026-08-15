@@ -515,6 +515,32 @@ def run(argv=None):
         print(f"\n{len(unevaluated)} mutant(s) NOT EVALUATED — no verdict, not a clean result:")
         for k in unevaluated:
             print(f"   {k}: {final[k]}")
+
+    # A12.7. **The summary read only the log**, so a catalogue entry that had never
+    # been applied was invisible: a `--only` campaign printed a clean bill over four
+    # mutants nobody had ever run. `const/maximumMRCPageMegapixels` was one of them,
+    # which is why A3.1's "killed by a check whose input is wrong" was a prediction
+    # rather than an observation. A tool whose job is finding false negatives cannot
+    # have one of its own.
+    knownIDs = {m["id"] for m in catalogue()}
+    never = sorted(knownIDs - set(final))
+    if never:
+        print(f"\n{len(never)} mutant(s) in the catalogue with NO ROW AT ALL — "
+              "never applied, so nothing is known about them:")
+        for k in never:
+            print(f"   {k}")
+    # And the other direction: a row for a mutant the catalogue no longer has is a
+    # verdict about code that may not exist. Reported rather than deleted, because
+    # deleting somebody's evidence is not this tool's decision.
+    stale = sorted(set(final) - knownIDs)
+    if stale:
+        print(f"\n{len(stale)} logged mutant(s) NOT IN THE CATALOGUE — the entry was "
+              "renamed or removed, so the verdict describes code that may be gone:")
+        for k in stale:
+            print(f"   {k}: {final[k]}")
+
+    print(f"\ncoverage: {len(knownIDs & set(final))} of {len(knownIDs)} "
+          "catalogue entries have a verdict.")
     return 0
 
 

@@ -4327,6 +4327,67 @@ Not reachable from today's UI because the button is rendered only `if model.isRu
 **A5.4 · `skipThem` assigned where `run` subtracts**, discarding every mark an earlier decision
 had left, so a second Skip Those in one session forgot what the first had skipped. `formUnion`.
 
+### T12 · Two instruments that reported clean over things they had not measured — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A12.5 and A12.7.)*
+
+**A12.5 · `score-annotations` skipped every mark on a quarter-turned page and exited 0.** It
+sized its buffer from PDFKit's **unrotated** box and then drew *with* rotation applied, so the
+page was landscape and the buffer portrait and every mark landed outside. On a two-page fixture
+with identical highlights, page 2 at `/Rotate 90`:
+
+```
+before:  p2  Highlight  srcCover 0.000  outCover 0.000  SKIP draws nothing in the source
+         2 marks checked, 0 failed   exit=0
+after:   p2  Highlight  srcCover 0.778  outCover 0.778  ok
+         2 marks checked, 0 failed, 0 skipped
+```
+
+**This is the tool's own recorded failure re-entering by another door.** Its header says the
+off-page case was promoted from SKIP to FAIL because "counting that as skipped is how a fixture
+with three provably lost highlights reported 0 failures". A skip that fires for a reason *the
+tool itself caused* is the same lie with a different cause.
+
+Two halves, and the first alone was not enough. Sizing the buffer through `Flattener.fullBox`
+fixed page 1's measurement and left page 2 skipped for a *different* reason — a `/Rect` is in
+unrotated page space, so at y = 690…720 it sat outside a buffer 612 tall and became "off its own
+page". The rectangles go through `CGPDFPage.getDrawingTransform` now, which is what
+`PDFPage.draw` uses and what `SearchableWriter.cropRegion` already uses for the crop box: the
+app's own answer rather than a rotation matrix written out a second time.
+
+**And a skip no longer exits 0.** `exit(failures == 0 ? 0 : 1)` let a run that measured nothing
+report success, which is how this stayed invisible across 57 highlights. Skips are counted,
+named in the summary, and make the run non-zero — while staying distinct from a FAIL, because a
+skip does not say the mark was lost, it says nobody knows.
+
+**Verified in both directions.** The rotated fixture now measures 0.778 and reports `ok`; a copy
+with page 2's mark deleted reports `FAIL no mark of that type in the output` and exits 1. An
+instrument that says "ok" for everything is worse than one that skips.
+
+**This is R58's rotated-page half**, since this is the instrument that would verify any future
+implementation of it — and A12.5's own by-product confirms R58's claim stands: of 475 non-zero
+`/Rotate` corpus pages, 447 are 180° and only 28 are quarter-turns, with 0 of those carrying a
+mark.
+
+**A12.7 · `mutate.py` could print a clean bill over mutants it had never run.** `already_done()`
+reads only the log, so a catalogue entry with **no row at all** was invisible — four of them,
+including `const/maximumMRCPageMegapixels`, which is why A3.1's "killed by a check whose input is
+wrong" was a *prediction* rather than an observation. A tool whose whole job is finding false
+negatives cannot be allowed one of its own.
+
+The summary now compares the catalogue against the log in both directions and prints a coverage
+line. Run immediately after the change, on this repo:
+
+```
+20 mutant(s) in the catalogue with NO ROW AT ALL — never applied
+ 1 logged mutant(s) NOT IN THE CATALOGUE — logic/R39-auto-vs-engine: killed
+coverage: 48 of 68 catalogue entries have a verdict.
+```
+
+The stale row is A12.7's "one row is for a mutant that no longer exists", confirmed by the fix
+that went looking for it. Reported rather than deleted: removing somebody's evidence is not this
+tool's decision. **`BUGS.md` T5's "27 mutants, 25 killed, two survivors" is a figure from a
+smaller catalogue and should be read as such** — the current coverage line is the live number.
+
 ---
 ## The interface
 

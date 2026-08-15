@@ -62,7 +62,23 @@ let copied = Annotations.copiedSubtypes.map { String($0.dropFirst()) }
 /// to be wrong in the direction of agreeing with a hypothesis. Luminance is taken from
 /// the RGB afterwards.
 func render(_ page: PDFPage, scale: CGFloat, withAnnotations: Bool) -> (data: [UInt8], w: Int, h: Int)? {
-    let box = page.bounds(for: .mediaBox)
+    // **`Flattener.fullBox`, not `page.bounds(for: .mediaBox)`** (A12.5). PDFKit
+    // reports the *unrotated* box, and `PDFPage.draw(with:to:)` applies the rotation
+    // — so on a quarter-turned page this sized a portrait buffer and then drew a
+    // landscape page into it, and every mark landed outside. The tool reported
+    // `srcCover 0.000` and `SKIP draws nothing in the source`, twice, and **exited
+    // 0**.
+    //
+    // That is this tool's own recorded failure coming back through another door: its
+    // header says the off-page case was promoted from SKIP to FAIL because "counting
+    // that as skipped is how a fixture with three provably lost highlights reported
+    // 0 failures". A skip that fires for a *reason the tool caused* is the same lie
+    // with a different cause.
+    //
+    // `Flattener.boxSize` sits in the same compiled sources with a comment saying
+    // exactly this, which is the reason the fix is to call it rather than to repeat
+    // the swap here.
+    let box = Flattener.fullBox(of: page)
     let w = max(Int(box.width * scale), 1), h = max(Int(box.height * scale), 1)
     var rgba = [UInt8](repeating: 255, count: w * h * 4)
     var buffer = [UInt8](repeating: 255, count: w * h)
@@ -151,7 +167,7 @@ let centroidTolerance = 0.10
 /// a mark that drew *nothing much*, not to compare areas.
 let coverageFloor = 0.4
 
-var failures = 0, checked = 0
+var failures = 0, checked = 0, skipped = 0
 print("page\tsubtype\trect\tsrcCover\toutCover\tdrift\tverdict")
 for index in 0..<source.pageCount {
     guard let sourcePage = source.page(at: index), let outputPage = output.page(at: index)
@@ -167,8 +183,23 @@ for index in 0..<source.pageCount {
         failures += 1
         continue
     }
-    let sourceBox = sourcePage.bounds(for: .mediaBox)
-    let outputBox = outputPage.bounds(for: .mediaBox)
+    // The **rotated** boxes, matching the buffers `render` now sizes (A12.5), and a
+    // transform that puts an annotation's rectangle into the same space.
+    //
+    // Sizing the buffer correctly was only half of it: a mark's `/Rect` is in
+    // unrotated page space, so on a quarter-turned page a rect at y = 690..720 sat
+    // outside a buffer only 612 tall and the tool skipped it as "off its own page" —
+    // a different skip, same silence. `getDrawingTransform` is what
+    // `PDFPage.draw(with:to:)` uses and what `SearchableWriter.cropRegion` already
+    // uses for the crop box, so this is the app's own answer rather than a rotation
+    // matrix written out a second time here.
+    let sourceBox = Flattener.fullBox(of: sourcePage)
+    let outputBox = Flattener.fullBox(of: outputPage)
+    func intoDrawnSpace(_ rect: CGRect, of page: PDFPage, box: CGRect) -> CGRect {
+        guard let cgPage = page.pageRef else { return rect }
+        return rect.applying(cgPage.getDrawingTransform(
+            .mediaBox, rect: box, rotate: 0, preserveAspectRatio: true))
+    }
 
     // Pair each source mark with the output mark that claims to be it, by subtype and
     // order. **The output must be measured with the output's OWN rectangle**, not the
@@ -186,9 +217,13 @@ for index in 0..<source.pageCount {
         let paired = outputMarks.firstIndex { $0.type == mark.type }
         let outputRect = paired.map { outputMarks[$0].bounds }
         if let paired { outputMarks.remove(at: paired) }
-        let inSource = footprint(sWith, sWithout, in: rect, pageBox: sourceBox, scale: scale)
+        let inSource = footprint(sWith, sWithout,
+                                 in: intoDrawnSpace(rect, of: sourcePage, box: sourceBox),
+                                 pageBox: sourceBox, scale: scale)
         let inOutput = outputRect.flatMap {
-            footprint(oWith, oWithout, in: $0, pageBox: outputBox, scale: scale)
+            footprint(oWith, oWithout,
+                      in: intoDrawnSpace($0, of: outputPage, box: outputBox),
+                      pageBox: outputBox, scale: scale)
         }
         let verdict: String
         var drift = 0.0
@@ -202,6 +237,7 @@ for index in 0..<source.pageCount {
             // The source's own rectangle falls outside its own page: nothing to compare
             // against, and not the output's fault.
             verdict = "SKIP the source rectangle is off its own page"
+            skipped += 1
         } else if inOutput == nil {
             // **A failure, not a skip.** This is what a rotated page produced before the
             // transplant learned to refuse one: the carried rectangle lands outside the
@@ -212,7 +248,16 @@ for index in 0..<source.pageCount {
         } else if inSource!.coverage < 0.01 {
             // Nothing to compare against. A zero-area annotation, or one whose
             // appearance draws nothing in the original either.
+            //
+            // **Counted, and it makes the run non-zero** (A12.5). A skip here means
+            // this tool measured nothing about a mark that exists, and until the
+            // rotation bug above was fixed that was every mark on every
+            // quarter-turned page — reported as a clean `0 failed, exit 0`. A skip is
+            // a hole in the evidence, and the exit code is how a release script finds
+            // out. The distinction from a FAIL is kept: a skip does not say the mark
+            // was lost, it says nobody knows.
             verdict = "SKIP draws nothing in the source"
+            skipped += 1
         } else if inOutput!.coverage < 0.01 {
             verdict = "FAIL absent from the output"
             failures += 1
@@ -231,5 +276,11 @@ for index in 0..<source.pageCount {
     }
 }
 print("")
-print("\(checked) marks checked, \(failures) failed")
-exit(failures == 0 ? 0 : 1)
+print("\(checked) marks checked, \(failures) failed, \(skipped) skipped")
+if skipped > 0 {
+    print("SKIPPED marks are unmeasured, not verified — this run does not clear them.")
+}
+// A12.5: a skip is not a pass. `exit(failures == 0 ? 0 : 1)` let a run that
+// measured nothing at all report success, which is how the rotation bug above
+// stayed invisible through 57 highlights.
+exit(failures == 0 && skipped == 0 ? 0 : 1)
