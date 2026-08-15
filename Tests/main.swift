@@ -9410,13 +9410,43 @@ do {
     check("the refusal still names the page, its size and its DPI",
           message.contains("Page 1") && message.contains("443")
               && message.contains("800") && message.contains("400"))
-    check("the refusal does not point at the render-DPI setting",
-          !message.lowercased().contains("render dpi")
-              || message.contains("does not"),
-          message)
-    check("the refusal names the control that does let the file through",
-          message.contains("Rebuild page images first"),
-          message)
+    // A3.3, and this check is the interesting part: **it used to assert the
+    // opposite, and it was R26's own belief written down.** R26 removed "Set an
+    // explicit PDF render DPI" because that control had no effect on `flatten`,
+    // which is true — `Flattener` reads nothing from `Prefs`. What R26 then
+    // concluded, and what this check enforced, is that the setting is irrelevant to
+    // the refusal. It is not: the remedy R26 put in its place, turning the rebuild
+    // off, sends the page to `Recogniser.render`, which applies **the same
+    // `rebuildDPI` and the same megapixel guard** — and `pdfDPIAuto` defaults to
+    // true. Measured on a page declaring 2,100 DPI:
+    //
+    //     rebuild off, Page DPI = Automatic (the default) : still fails
+    //     rebuild off, Page DPI = 144                     : 1224x1584, works
+    //
+    // So the advertised remedy changed the message and not the outcome, while the
+    // setting the message explicitly disclaimed is the only one that helps. Both
+    // halves are needed, and the old check would have kept the second one out.
+    check("the refusal names the rebuild toggle",
+          message.contains("Rebuild page images first"), message)
+    check("…and the DPI setting, which is the half that actually works",
+          message.contains("PDF render DPI"), message)
+    check("…and says Automatic is not good enough, since that is the default",
+          message.contains("Automatic"), message)
+    // The property under both messages: a remedy named must be one that works.
+    // Asserted against the real render, so this cannot drift into prose again.
+    var fixed = Prefs.Snapshot.current()
+    fixed.pdfDPIAuto = false
+    fixed.pdfDPI = 144
+    var auto = fixed
+    auto.pdfDPIAuto = true
+    if let huge = PDFDocument(url: big)?.page(at: 0) {
+        check("Automatic really does still fail on the oversized page",
+              Recogniser.render(huge, settings: auto) == nil)
+        check("…and a fixed 144 DPI really does render it",
+              Recogniser.render(huge, settings: fixed) != nil)
+    } else {
+        check("the oversized fixture opens", false)
+    }
 
     try? FileManager.default.removeItem(at: dir)
 }

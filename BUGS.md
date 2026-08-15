@@ -4212,6 +4212,74 @@ a skip. Nothing in that block runs jbig2 — it composes a text layer and reads 
 reader counting gated blocks counted one that was not gated, and a reader wondering why a
 hyphenation check needed a compression tool had no answer. Now a plain `do`.
 
+### R79 · Five smaller defects, and a refusal that named the wrong remedy twice — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A3.3, A3.4, A4.3,
+A4.5, A4.6.)*
+
+**A3.3 · `pageTooLarge` named a remedy that does not work, and this is R26 recurring.** R26
+rewrote this message because it named "PDF render DPI", a control with no effect on `flatten` —
+`Flattener` reads nothing from `Prefs`. True, and the conclusion drawn from it was wrong: the
+replacement remedy, turning the rebuild off, sends the page to `Recogniser.render`, which
+applies **the same `rebuildDPI` and the same megapixel guard**, and `pdfDPIAuto` defaults to
+true. Measured on a page declaring 2,100 DPI:
+
+```
+rebuild off, Page DPI = Automatic (the default) : still fails
+rebuild off, Page DPI = 144                     : 1224x1584, works
+```
+
+So the advertised remedy changed the message and not the outcome, while the setting the message
+explicitly disclaimed is the only one that helps. Both halves are named now, in the order they
+have to be done.
+
+**The check for this asserted the opposite, because it was R26's belief written down.** It
+required that the message *not* point at the render-DPI setting. Replaced with checks that
+require both halves — and, so it cannot drift back into prose, two that drive the real
+`Recogniser.render`: Automatic returns nil on the oversized page, a fixed 144 DPI renders it.
+
+**A3.4 · `jpegData` read past the end of its buffer.** `greyPNG` and `jpegRGB` both guard
+`count >= w*h`; this did not, and a 16-byte buffer at 100×100 produced a valid 2,055-byte JPEG
+from **9,984 bytes past the end of the array**. The framing that matters is A4.4's: not "it
+traps" but **adjacent heap bytes get JPEG-encoded into the published page image** — memory
+disclosure into the output document. Unreachable from today's three callers, all traced; the
+function is `static` and already called from `Tools/`.
+
+**A3.4 · `wrapImage` bounded a declared resolution only from below.** At 1.0001 DPI a 200×100 px
+image became a 200×100 **inch** page and died at the megapixel gate quoting A3.3's ineffective
+remedy; at 1e6 DPI it *succeeded* and published a 1/5000-inch page. Now clamped at both ends at
+4,800 DPI — twice any flatbed's optical maximum, so past it is a declaration to disbelieve.
+
+**A3.4 · two dead `if true {` conditionals** in `flatten`, and a comment saying "page 1's
+*display* box" over code that uses `fullBox`. Given how much of `ARCHITECTURE.md` is about
+keeping those two apart, one word worth fixing.
+
+**A3.4 · `downsample` never samples the last `w mod f` columns**, and `JBIG2.assemble` stretches
+the layer over the whole page box: 1,899 px at f=16 drops 11 columns, a **0.58% horizontal
+stretch**. Only the tone layers, only where they are flat, so invisible — **documented rather
+than fixed**, because sampling the ragged edge needs a partial-window mean and the layer it
+affects is a blur by construction.
+
+**A4.3 · a plaintext password "Reset to Defaults" could not reach.** `migrateFromPreviousName`
+copied every key including `password` out of `com.cp1.VisionReaderGUI` and **never removed the
+source**, while `resetAll` clears only the current domain. Anyone who set a password before the
+rename kept a stale plaintext copy, readable with `defaults read`, and present in Time Machine
+backups and APFS local snapshots. The migration now empties the old domain — every key, not just
+the password, because a half-emptied domain is a second source of truth.
+
+**A4.5 · a scratch directory leaked on one error path.** `recogniseViaHelper` put its
+`defer { removeItem }` *below* the `createDirectory` that can throw, so a failure there left the
+directory behind — and what survives in one, for an encrypted source, is qpdf's stream dump: the
+document's content **decrypted**, in a file named after the document. The other two scratch roots
+already order these correctly.
+
+**A4.6 · `publish`'s rollback was `try?` — and this is my own code, from R59.** If the
+same-volume `replaceItemAt` fails and the rollback fails too, a complete copy of the finished
+document is left as an invisible, extension-less `.visionocr-publish-<UUID>` file beside the
+user's output: same directory, same 0644, so no new audience, but invisible in Finder and it
+would sync to Dropbox or iCloud unnoticed. Now a `Failure.cannotPublish` naming both problems
+and the file to delete. A rollback that fails silently is the shape this function exists to
+avoid.
+
 ---
 ## The interface
 

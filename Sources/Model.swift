@@ -892,10 +892,16 @@ final class OCRModel: ObservableObject {
         /// message rather than the counts so there is one copy of the wording —
         /// see `incompleteRefusal`.
         case incompleteResult(String)
+        /// The move into place failed **and** the rollback failed, so a complete
+        /// copy of the document is sitting beside the user's output under a hidden
+        /// name (A4.6). Carries the whole sentence for the same reason
+        /// `incompleteResult` does.
+        case cannotPublish(String)
         var errorDescription: String? {
             switch self {
             case .unreadable: return "Could not open that PDF to read its text."
             case .noTextFound: return "That PDF turned out to have no extractable text after all."
+            case .cannotPublish(let message): return message
             case .destinationIsFolder(let name):
                 return "\u{201C}\(name)\u{201D} is a folder, so nothing was written "
                      + "\u{2014} publishing over it would have deleted it."
@@ -1624,7 +1630,25 @@ final class OCRModel: ObservableObject {
         } catch {
             // Put the staged file back where the caller left it, so a retry has
             // something to publish and no scratch is orphaned beside the user's file.
-            try? fm.moveItem(at: sibling, to: staged)
+            //
+            // **And say so if that fails** (A4.6 — my own code, from R59). `try?`
+            // here could leave a complete copy of the finished document as an
+            // invisible, extension-less `.visionocr-publish-<UUID>` file beside the
+            // user's output: same directory, same 0644, so no new audience, but
+            // invisible in Finder and it would sync to Dropbox or iCloud unnoticed.
+            // A rollback that fails silently is the shape of defect this whole
+            // function exists to avoid, so the error names both problems.
+            do {
+                try fm.moveItem(at: sibling, to: staged)
+            } catch let rollback {
+                throw Failure.cannotPublish(
+                    "could not replace \(output.lastPathComponent) "
+                    + "(\(error.localizedDescription)), and the finished copy could "
+                    + "not be moved back out of the way either "
+                    + "(\(rollback.localizedDescription)). A hidden file named "
+                    + "\(sibling.lastPathComponent) is beside it and holds the "
+                    + "finished document; delete it or rename it.")
+            }
             throw error
         }
     }

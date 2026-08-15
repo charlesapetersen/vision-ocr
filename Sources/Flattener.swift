@@ -261,11 +261,25 @@ enum Flattener {
                 // rebuild resolution is always the page's own. The only setting
                 // that lets the file through is the one that stops the rebuild
                 // happening at all (R26).
+                //
+                // **And the replacement was wrong too, which is R26 recurring**
+                // (A3.3). Turning the rebuild off is *not sufficient*:
+                // `Recogniser.render` applies the same `rebuildDPI` and the same
+                // megapixel guard on the non-rebuild path, and `pdfDPIAuto`
+                // defaults to true — so on a page declaring 2,100 DPI, rebuild off
+                // with Page DPI on Automatic **still fails**, while rebuild off
+                // with Page DPI set to 144 renders 1224×1584 and works. So the
+                // advertised remedy changed the message and not the outcome, while
+                // the setting the message explicitly disclaimed is the only one
+                // that helps. Both halves have to be named, in the order they have
+                // to be done.
                 return "Page \(page) would rebuild to \(megapixels) megapixels at "
                     + "its own \(dpi) DPI, past the \(maximumPageMegapixels) MP limit. "
                     + "Nothing was written. To process this file, turn off "
-                    + "\"Rebuild page images first\" in Settings. The PDF render "
-                    + "DPI setting does not affect this step."
+                    + "\"Rebuild page images first\" in Settings **and** set "
+                    + "\"PDF render DPI\" to a fixed value such as 144 — leaving it "
+                    + "on Automatic takes the page's own DPI again and fails the "
+                    + "same way."
             }
         }
     }
@@ -378,8 +392,17 @@ enum Flattener {
             // mode — and using the horizontal figure for both squashed the page
             // by the ratio between them. 72 dpi unless the file says otherwise,
             // so an image with no resolution recorded still gets a sensible size.
+            // Bounded at **both** ends (A3.4). It only guarded from below, so at
+            // 1.0001 DPI a 200×100 px image became a 200×100 **inch** page and died
+            // at the megapixel gate quoting A3.3's remedy, and at 1e6 DPI it
+            // *succeeded* and published a 1/5000-inch page. Neither is a resolution
+            // any scanner or camera records; both come from a malformed or hostile
+            // file. 4,800 DPI is drum-scanner territory and twice any flatbed's
+            // optical maximum, so anything past it is a declaration to disbelieve
+            // rather than a page to render.
             func resolution(_ key: CFString) -> Double {
-                (props?[key] as? Double).flatMap { $0 > 1 ? $0 : nil } ?? 72
+                (props?[key] as? Double)
+                    .flatMap { $0 > 1 && $0 <= 4800 ? $0 : nil } ?? 72
             }
             var dpiX = resolution(kCGImagePropertyDPIWidth)
             var dpiY = resolution(kCGImagePropertyDPIHeight)
@@ -477,7 +500,7 @@ enum Flattener {
             throw Failure.unreadable
         }
 
-        // Seed the context with page 1's *display* box. The per-page override
+        // Seed the context with page 1's *media* box. The per-page override
         // below should govern, but CoreGraphics falls back to this one, so a
         // rotated first page would otherwise stretch into the wrong shape.
         var mediaBox = fullBox(of: first)
@@ -628,12 +651,12 @@ enum Flattener {
                         // a disk-full or permissions fault.
                         throw Failure.pageFailed(page: index + 1, of: count)
                     }
-                    if true {
-                        let entry = RebuiltPage(content: .bilevel(png), pixelWidth: width,
-                                                pixelHeight: height, boxSize: box.size)
-                        rebuilt.append(entry)
-                        try onPage?(entry)
-                    }
+                    // `if true {` stood here and around the JPEG branch below
+                    // (A3.4) — two conditionals that read as gates and were not.
+                    let entry = RebuiltPage(content: .bilevel(png), pixelWidth: width,
+                                            pixelHeight: height, boxSize: box.size)
+                    rebuilt.append(entry)
+                    try onPage?(entry)
                 } else {
                     // Literally the bytes embedded in the PDF above, not a second
                     // encode of the same buffer, so the compressed build and the
@@ -643,13 +666,11 @@ enum Flattener {
                           (try? data.write(to: jpeg)) != nil else {
                         throw Failure.pageFailed(page: index + 1, of: count)
                     }
-                    if true {
-                        let entry = RebuiltPage(content: .jpeg(jpeg), pixelWidth: width,
-                                                pixelHeight: height, boxSize: box.size,
-                                                isColour: isColour)
-                        rebuilt.append(entry)
-                        try onPage?(entry)
-                    }
+                    let entry = RebuiltPage(content: .jpeg(jpeg), pixelWidth: width,
+                                            pixelHeight: height, boxSize: box.size,
+                                            isColour: isColour)
+                    rebuilt.append(entry)
+                    try onPage?(entry)
                 }
             }
 
@@ -1098,9 +1119,20 @@ enum Flattener {
     }
 
     /// The encoded JPEG bytes, so the same data can go into a hand-built PDF.
+    ///
+    /// A3.4 / A4.4. The `grey.count` precondition `greyPNG` and `jpegRGB` both have
+    /// and this one did not. A 16-byte buffer at 100×100 produced a **valid
+    /// 2,055-byte JPEG from 9,984 bytes past the end of the array** — so the
+    /// framing is not "it traps" but **adjacent heap bytes get JPEG-encoded into
+    /// the published page image**, which is memory disclosure into the output
+    /// document. Not reachable from today's three callers (all traced, all pass
+    /// exactly-sized buffers), and `jpegData` is `static` and already called from
+    /// `Tools/`. The unguarded sibling in a family of three is R23's and R29's
+    /// shape, and this is the one where the shape is a memory-safety bug.
     static func jpegData(
         from grey: [UInt8], width: Int, height: Int, quality: Double
     ) -> Data? {
+        guard width > 0, height > 0, grey.count >= width * height else { return nil }
         guard let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
             bitsPerSample: 8, samplesPerPixel: 1, hasAlpha: false, isPlanar: false,
@@ -1517,6 +1549,14 @@ enum Flattener {
     }
 
     /// Box-average shrink by an integer factor.
+    /// **The last `w mod f` columns and `h mod f` rows are not sampled** (A3.4),
+    /// and `JBIG2.assemble` then stretches the layer over the whole page box: at
+    /// 1,899 px and f=16 that drops 11 columns, a **0.58% horizontal stretch**. Only
+    /// ever the tone layers, and only where they are flat enough to have been
+    /// downsampled by 16 in the first place, so it is invisible in practice — but it
+    /// was undocumented, which is how a 0.58% geometric error becomes somebody's
+    /// afternoon. Not fixed: sampling the ragged edge would need a partial-window
+    /// mean, and the layer it affects is a blur by construction.
     static func downsample(_ src: [UInt8], width w: Int, height h: Int, by f: Int)
         -> (pixels: [UInt8], width: Int, height: Int) {
         guard f > 1, w > 0, h > 0 else { return (src, w, h) }

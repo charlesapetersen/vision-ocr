@@ -453,6 +453,17 @@ enum Prefs {
             for key in allKeys {
                 if let value = old.object(forKey: key) { d.set(value, forKey: key) }
             }
+            // **And remove the source** (A4.3). This copied every key including
+            // `password` and left the old domain intact, while `resetAll` clears
+            // only the current one — so anyone who set a PDF password before the
+            // rename had a **stale plaintext copy that "Reset to Defaults" could not
+            // reach**, readable with `defaults read com.cp1.VisionReaderGUI` and
+            // present in Time Machine backups and APFS local snapshots.
+            //
+            // Every key, not just the password: the migration's whole point is that
+            // the old domain is finished with, and a half-emptied one is a second
+            // source of truth for settings this app no longer reads from there.
+            for key in allKeys { old.removeObject(forKey: key) }
         }
         d.set(true, forKey: migratedFromOldName)
     }

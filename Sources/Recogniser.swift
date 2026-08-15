@@ -747,12 +747,18 @@ enum Recogniser {
         let dir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("visionocr-recognise-\(UUID().uuidString)")
         let results = dir.appendingPathComponent("out")
+        // **Above** the `createDirectory`, not below it (A4.5). As written, a throw
+        // from `createDirectory` left `dir` behind — it can fail after creating the
+        // parent and before creating `out` — and what survives in there for an
+        // encrypted source is qpdf's stream dump, i.e. the document's content
+        // *decrypted*, in a file named after the document. The other two scratch
+        // roots in this codebase already order these correctly.
+        defer { try? fm.removeItem(at: dir) }
         do {
             try fm.createDirectory(at: results, withIntermediateDirectories: true)
         } catch {
             throw HelperFailure.couldNotStart(error.localizedDescription)
         }
-        defer { try? fm.removeItem(at: dir) }
 
         let manifest = dir.appendingPathComponent("pages.txt")
         do {
