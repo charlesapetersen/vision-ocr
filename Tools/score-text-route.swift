@@ -78,12 +78,36 @@ func isolate(_ index: Int) -> URL? {
     return one.write(to: url) ? url : nil
 }
 
-print("page\troute\tsat\ttone\tinkOut\ttoneOut\tlayered\t1bit\tdelta\tverdict")
+print("page\troute\tsat\ttone\tinkOut\tlayered\t1bit\tdelta\tverdict")
 var totalLayered = 0, totalBilevel = 0, counted = 0
 var allTextLayered = 0, allTextBilevel = 0, allTextPages = 0
 
 for index in pages {
     guard let single = isolate(index), let page = doc.page(at: index - 1) else { continue }
+
+    // A12.2. Isolating the page can change the resolution the rebuild renders it
+    // at — `largestImage` walks a `/Resources` that 4 of 208 multi-page corpus
+    // documents share across every page, so the whole file and the extract answer
+    // differently. This tool is *cited* as pricing TODO item 1 at 8.2 KB a page —
+    // cited rather than responsible, because C25 records that no committed version of
+    // this file has ever compiled — and a row measured at the wrong resolution would
+    // not be that page's price either. qpdf --pages does
+    // not help; `BUGS.md` C24 records why the app-side repair has no threshold to
+    // stand on.
+    if let isolated = PDFDocument(url: single)?.page(at: 0) {
+        let before = Flattener.rebuildDPI(of: page)
+        let after = Flattener.rebuildDPI(of: isolated)
+        if abs(before - after) > 0.5 {
+            // Eight dashes, not nine: the header lost its `toneOut` column in
+            // this same commit. A SKIP row wider than its header shifts every
+            // column from `layered` rightward, which is a reporting defect
+            // arriving inside a fix for a reporting defect.
+            print(String(format: "p%d\t-\t-\t-\t-\t-\t-\t-\t"
+                         + "SKIP isolation moved the rebuild DPI %.0f->%.0f (A12.2)",
+                         index, before, after))
+            continue
+        }
+    }
 
     // --- what the app does today, at this page's own routing decision ---
     let autoDir = work.appendingPathComponent("auto\(index)")
@@ -126,8 +150,18 @@ for index in pages {
     let region = Flattener.textRegionMask(boxes, width: w, height: h)
     let inkOut = Flattener.inkOutsideText(grey, region: region, width: w, height: h,
                                           threshold: threshold)
-    let toneOut = Flattener.toneOutsideText(grey, region: region, width: w, height: h,
-                                            threshold: threshold)
+    // `Flattener.toneOutsideText` was printed in a `toneOut` column here and
+    // **has never existed in any commit of this repository** — `git log -S` over
+    // all history finds it in this file and nowhere else. So this tool has not
+    // compiled since the line was added, in the R56/R57 commit, while its own
+    // header carries the build command that fails and three documents cite it as
+    // the way to re-measure. See `BUGS.md` C25.
+    //
+    // Removed rather than implemented: the tool's stated principle is that it
+    // drives shipped code so it cannot drift, and there is no shipped signal for
+    // continuous tone outside the recognised words. Adding one to `Flattener` for
+    // a tool's benefit would put dead code on the app's side, which is the call
+    // `score-skew` and `score-threshold-loss` both already record.
     let allText = inkOut < Flattener.textPageInkOutsideThreshold
 
     // --- layered, exactly as it ships ---
@@ -162,8 +196,8 @@ for index in pages {
 
     totalLayered += layered; totalBilevel += bilevel; counted += 1
     if allText { allTextLayered += layered; allTextBilevel += bilevel; allTextPages += 1 }
-    print(String(format: "p%d\t%@\t%.3f\t%.3f\t%.4f\t%.4f\t%d\t%d\t%+d\t%@",
-                 index, route, sat, tone, inkOut, toneOut, layered, bilevel,
+    print(String(format: "p%d\t%@\t%.3f\t%.3f\t%.4f\t%d\t%d\t%+d\t%@",
+                 index, route, sat, tone, inkOut, layered, bilevel,
                  bilevel - layered, allText ? "all-text" : "picture"))
 }
 

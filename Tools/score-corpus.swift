@@ -40,6 +40,56 @@ for i in wanted { if let p = doc.page(at: i) { sample.insert(p, at: sample.pageC
 let input = work.appendingPathComponent("in.pdf")
 guard sample.write(to: input) else { fail("cannot write sample") }
 
+// A12.2. Pulling pages into a fresh `PDFDocument` can change the resolution the
+// rebuild renders them at, because `Flattener.largestImage` walks the page's
+// `/Resources` — and 4 of 208 multi-page corpus documents give **every page one
+// shared dictionary**, so in the whole file it answers "the largest image
+// anywhere" and in the extract it answers "the largest image this page kept".
+// Measured, production against this tool's own sample:
+//
+//     Batzell - Free Labor   p2   3142x4066 -> 2550x3300   1.52x in pixel area
+//     AI 2027                p2   2929x4142 -> 1290x1824   5.16x
+//     Kelly_2014             p1   2092x2664 -> 3359x4277   0.39x
+//
+// `qpdf --pages` does **not** avoid it — measured, it produces the identical
+// wrong answer, so the usual "use qpdf when geometry is the question" does not
+// apply here. And the divergence is not the tool's fault to fix: `BUGS.md` C24
+// records that the app is answering a per-page question with a document-wide
+// number, and why the obvious repair has no threshold to stand on.
+//
+// So the row says so. A measurement taken at a resolution production would not
+// use is not this document's row, and printing it as one is how four
+// `manifest.tsv` rows came to describe a pipeline nothing runs.
+// Checked here, before the pipeline runs, and enforced immediately below: there is
+// no point spending a full OCR pass on a row that is going to be refused.
+//
+// A page it cannot compare is a refusal, not a pass. The guard cannot reach that
+// today — `wanted` holds no duplicates and no out-of-range index, for either arm
+// of its expression — but "the check quietly did nothing" is the shape this
+// project keeps paying for, and a `continue` here would be it.
+var resolutionDrift: [String] = []
+guard let extracted = PDFDocument(url: input) else { fail("cannot re-open the sample") }
+guard extracted.pageCount == sample.pageCount else {
+    fail("the sample lost pages on write: \(extracted.pageCount) of \(sample.pageCount)")
+}
+for (position, index) in wanted.enumerated() {
+    guard let original = doc.page(at: index), let copy = extracted.page(at: position) else {
+        fail("cannot compare page \(index + 1) against extracted position \(position + 1)")
+    }
+    let before = Flattener.rebuildDPI(of: original)
+    let after = Flattener.rebuildDPI(of: copy)
+    if abs(before - after) > 0.5 {
+        resolutionDrift.append(String(format: "p%d %.0f->%.0f", index + 1, before, after))
+    }
+}
+guard resolutionDrift.isEmpty else {
+    print([label, "SKIP", "\(sample.pageCount)p",
+           "extraction changed the rebuild resolution, so this row would not describe "
+           + "the shipped pipeline (A12.2, BUGS.md C24): "
+           + resolutionDrift.joined(separator: " ")].joined(separator: "\t"))
+    exit(1)
+}
+
 let out = work.appendingPathComponent("out.pdf")
 var outcome = "?"
 var message = ""

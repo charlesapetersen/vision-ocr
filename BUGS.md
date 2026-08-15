@@ -6,14 +6,19 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Five open. C23 is the one that changes content on a route the user is on today**, and it is
+**Six open. C23 is the one that changes content on a route the user is on today**, and it is
 the reason 1.13.0 was not cut on 2026-08-15: it alters what a published page *displays* on 14 of
 233 corpus documents, and the instruments that would say whether the alteration is right are
 themselves under repair (`REVIEW-2026-08-14.md` A6.1, A12.2). R56 and R57 remain open and both
 wait on the one unbuilt *shape* signal. **R54 and R55 are the other two, and neither is in the
 app** — both are in `Tools/`, and R55 needs its own measurement campaign before
-`classify-source` changes. So: one release blocker, two waiting on an instrument that does not
-exist yet, two in the tooling. **R58 is `FIXED` but its
+`classify-source` changes. **C24 is the sixth**, opened 2026-08-15: `largestImage` answers
+"the largest image in this document" to a question about *this page*, so on the 4 corpus
+documents whose pages share one `/Resources` a page that draws nothing at all is rebuilt at
+another page's plate resolution. Two repairs were built and both were wrong, and the third
+would need a threshold the corpus has no gap for — it is open with the measurements rather
+than tuned. So: one release blocker, two waiting on an instrument that does not exist yet,
+two in the tooling, and one rebuild-resolution defect refused with its numbers. **R58 is `FIXED` but its
 feature is deliberately unreleased** — the annotation transplant, after two adversarial rounds
 that each found marks landing in the wrong place. The third round is unrun.
 
@@ -1025,6 +1030,154 @@ run behind it, and C13's own entry records that the obvious check for it does no
 re-OCRing the published copy cannot prove the hidden ink survived, because the recogniser
 renders the crop and would only ever report what is displayed. The test has to lift the trim
 off a throwaway duplicate first.
+
+### C24 · `largestImage` answers a document-wide question, so one page's plate sets another page's rebuild resolution — OPEN
+*(found 2026-08-15 fixing `REVIEW-2026-08-14.md` A12.2, which files it as a defect in
+`Tools/`. It is not. The tools are right that they disagree with production; production
+is the one that is wrong.)*
+
+A12.2 says three tools extract their sample into a fresh `PDFDocument`, that extraction
+"destroys the sharing" of a `/Resources` dictionary, and that `largestImage` therefore
+answers differently than in production. The three measured rows reproduce exactly:
+
+```
+Batzell - Free Labor   p2   production 3142x4066   tool 2550x3300   1.52x
+AI 2027                p2   production 2929x4142   tool 1290x1824   5.16x
+Kelly_2014             p1   production 2092x2664   tool 3359x4277   0.39x
+```
+
+**But the tool is nearer right than production is.** Every page of `Batzell` points at
+`/Resources 438 0 R` — one dictionary, listing four images including a 3142x1408 plate —
+and pages 1 and 2 **draw no images at all** (`Do` count 0 in both content streams). They
+were still rebuilt at 369.6 DPI rather than the 300 fallback, because `largestImage` walks
+`/Resources` and takes the largest thing in it. `Kelly_2014` p1 is the same shape: no `Do`
+in any of its eight content streams, and a 2092 px image in a dictionary its three pages
+share. This is **C9's harm from the other side** — C9 was a logo *on the page* setting the
+page's resolution, and the floor it added cannot see this one because the number comes out
+too high rather than too low.
+
+**`qpdf --pages` does not avoid it.** The hand-off's standing advice is to use qpdf when
+geometry is the question, because PDFKit normalises the media box. Measured here, qpdf
+gives the **identical** wrong answer on all three documents — it is not a PDFKit artefact,
+so that remedy does not apply.
+
+**Two repairs were built and both were wrong.** Kept because the second one is the
+argument for leaving this open.
+
+1. *Count only XObjects the page draws*, found by scanning the content stream for `Do`.
+   130 pages over 4 documents move, which is the right population — and `Batzell` p22 goes
+   from 369.6 DPI to **70.6**, because that page's own figure is 600 px wide and
+   `minimumScanPixelWidth` reads 600 px as "this image *is* the page, and it is a coarse
+   scan — trust it". That constant separates 47 logos of 16–96 px from 37 page-sized scans
+   of 1936–2592 px and records that "nothing lands in between"; it was calibrated against
+   the document-wide maximum, so a mid-sized figure on a page of type was never in its
+   population. Rendering a text page at 70 DPI is C9 again.
+2. *Also require the image to be drawn across the sheet.* This needs the CTM, which needs
+   `q`/`Q`/`cm` tracked through the content stream — and then it rejected **113 of 114
+   pages of `Lyons oral history`**, a real scan, because the unit-square rule is an
+   **image** rule. `Lyons` draws `q/Fg Do Q`: a Form XObject with `/BBox [0 0 612 792]` at
+   the identity CTM, whose scale is 1.0 and which covers the whole sheet. Gating forms on
+   that number rejects every page whose scan sits one level down inside a form, which is
+   what scanner drivers routinely produce. Fixed by gating images on coverage and merely
+   following forms, after which 246 pages over 16 documents move.
+
+**And then the threshold has nowhere to stand.** Coverage measured over all 16,987 corpus
+pages, as the fraction of the media box each drawn image spans:
+
+| coverage | pages |
+|---|---|
+| draws no XObject at all | 284 |
+| 0.00–0.20 | 43 |
+| 0.20–0.40 | 53 |
+| 0.40–0.50 | 55 |
+| 0.50–0.60 | 71 |
+| 0.60–0.80 | 153 |
+| 0.80–0.95 | 179 |
+| **0.95–1.05 — the sheet** | **16,148** |
+| >1.05 | 1 |
+
+16,148 pages — 95.1% of all of them, 96.7% of the 16,703 that draw anything — sit at "the
+image is the sheet", and the 554 below are spread evenly with **no gap anywhere in
+[0, 0.95]**. So any coverage threshold is chosen, not measured, and `FEATURES.md` and R49
+both record what that costs: "a plausible-looking gap on the corpus and an overlap the
+corpus did not contain", twice. Refused on that basis rather than tuned.
+
+*(The first version of this table said "draws nothing | 3" and summed to 16,706 against a
+corpus of 16,987, because the sweep that produced it dropped every page with no drawn
+XObject instead of counting it — and this entry's own prose says Batzell has 51 such pages.
+Caught by the review of this diff. The "no gap" conclusion is unaffected: the missing
+bucket sits outside [0, 0.95] entirely.)*
+
+**One thing this entry claimed and should not have.** An earlier draft said a *second*
+defect had been surfaced — that `walkedAt`, the shallowest-depth memo inside
+`largestImage`, makes the walk miss images depending on traversal order, because the
+filtered prototype reported a **larger** image than the shipped walk on six pages of
+`AI 2027` and single pages of `Kazin_1955`, `Intellectual History Newsletter`,
+`Zipkin_2000` and `UN-OCred`. **That cause was tested and is wrong.** The review of this
+diff reimplemented `largestImage` with no memo at all, same depth cap and recursion,
+validated against the nested form in `Lyons`, and diffed it against the shipped walk over
+all 16,987 pages: **0 differences, in either direction.** The memo removes no candidate
+anywhere in the corpus. The larger answers were the prototype's, not the shipped walk's,
+and the observation is recorded here without a cause rather than with a wrong one — which
+is the mistake this register has made four times.
+
+**What the tools do instead, and it is the honest half of A12.2.** `score-corpus`,
+`score-routing` and `score-text-route` now compare `rebuildDPI` on the original page
+against the extracted one and **refuse the row** when they differ, naming the pages and
+the numbers:
+
+```
+Batzell  SKIP  3p  extraction changed the rebuild resolution, so this row would not
+                   describe the shipped pipeline (A12.2, BUGS.md C24):
+                   p2 370->300  p28 370->300  p41 370->300
+```
+
+That is the T14 pattern: an instrument that knows when it is not measuring what it claims.
+It does not make the four `manifest.tsv` rows right — it stops them being produced. **The
+rows for the four affected documents should be regenerated once C24 closes**, and until
+then they are the old, wrong numbers.
+
+**`BUGS.md` T2's closing line is wrong as written** and A12.2 is right about that:
+"`score-routing` was never affected — it calls the real `flatten`" is true of the DPI
+*policy* and false of the DPI *value* on these four documents. Corrected in T2.
+
+**What closing this needs**, in order: a discriminator for "this image is the page" that is
+not a coverage threshold — the drawn rectangle against the *crop* box rather than the media
+box is the obvious next thing to measure, since a scan bled to the trim would read below 1.0
+against the sheet; then `minimumScanPixelWidth` recalibrated against the per-page population
+rather than the document-wide one; then the `walkedAt` defect above; then a corpus gate run,
+because this changes what the default route renders.
+
+### C25 · `score-text-route` has never compiled, and three documents cite it as the evidence — FIXED
+*(found 2026-08-15 while fixing A12.2, by trying to build it)*
+
+The tool calls `Flattener.toneOutsideText` at line 129 and prints it in a `toneOut` column.
+**That function has never existed in any commit of this repository** — `git log -S'func
+toneOutsideText' --all` returns nothing, and the only occurrences of the name anywhere in
+the tree are this call and its column header. So the tool has not built since the line was
+added, in `43b62c2` (the R56/R57 commit), and its own header carries the build command that
+fails:
+
+```
+Tools/score-text-route.swift:129:29: error: type 'Flattener' has no member 'toneOutsideText'
+```
+
+**What rests on it.** `TODO.md` item 1's refusal is priced at **8.2 KB a page** by this tool
+and prints a two-row table summarising seven of its pages; `FEATURES.md` names it as the way to re-measure;
+`Tools/README.md` calls it "the measurement that priced TODO item 1". Whatever produced that
+table, it was not this file as committed — so the figure is not reproducible from the
+repository, and the first person to try would have hit a compile error in code they had not
+touched, which `Tools/README.md` warns is the signature of a *missing source*, sending them
+looking in the wrong place entirely.
+
+**Fixed** by removing the column rather than adding the function. The tool's stated principle
+is that it drives shipped code so it cannot drift, and there is no shipped signal for
+continuous tone outside the recognised words; adding one to `Flattener` for a tool's benefit
+would put dead code on the app's side, which is the call `score-skew` and
+`score-threshold-loss` both already record for their own estimators. The tool builds and runs
+now. **The 8.2 KB figure is left standing but unverified** — re-deriving it needs a run over
+`Blacks in the City`, which is a separate job; TODO item 1 is refused on R56's grounds
+regardless, so nothing waits on it.
 
 ## Robustness and correctness of reporting
 
@@ -5722,6 +5875,13 @@ this project has been burnt by bad instruments before.
 
 **Fix:** the tool calls `Flattener.rebuildDPI`. `Tools/score-routing.swift` was
 never affected — it calls the real `flatten`.
+
+*(Corrected 2026-08-15, C24. That last sentence is true of the DPI **policy** and
+false of the DPI **value**. `score-routing` extracts its sample into a fresh
+`PDFDocument` first, and on the four corpus documents whose pages share one
+`/Resources` dictionary the extract's `rebuildDPI` differs from production's — by up
+to 5.16x in pixel area. It calls the real `flatten`, and hands it a page the real
+`flatten` would have rendered at a different size. It refuses those rows now.)*
 
 ### T3 · Six paths had no coverage at all — FIXED
 Every gap TODO.md listed under "Correctness and coverage", closed. None of them
