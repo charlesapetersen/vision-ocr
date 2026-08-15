@@ -4163,6 +4163,55 @@ is absent when nothing was cancelled.
 memoisation being deliberate and documented; `forgetToolPaths` is the answer and Settings calls
 it on every appear. Left alone.)*
 
+### T11 · The skip census was a documented number, and three checks were gated behind a tool they do not use — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A11.5, A11.6, A11.7.
+A11.2, A11.3 and A11.4 were fixed alongside A11.1 and are recorded in T10.)*
+
+**A11.7 · the census.** `ARCHITECTURE.md` said the suite silently skipped "roughly **76**"
+checks without jbig2/qpdf; before that it said "~18"; the true count at the time was **75 in
+eight blocks**. A number in a document that was wrong by 57 and would go stale again with the
+next gated check.
+
+**Fixed by measuring instead of documenting.** `skipBlock(label:checks:because:)` records every
+gated block that does not run, and the suite prints the census at the end of every run. Five of
+the eight blocks previously skipped with **no `else` at all**, so they left no trace in the log
+— a silent skip is now a contradiction in terms.
+
+**And each block's figure is asserted on machines where the block does run**, so the number a
+*toolless* run reports is one this suite has verified rather than one somebody counted by hand.
+That mechanism paid for itself immediately: the figures written into this fix were counted by
+hand as 16 and 13, the assertions came back **14 and 12**, and the register would otherwise have
+carried two more wrong numbers. Static counting of `check(` lines over-counts, because some sit
+in branches that do not all execute.
+
+One skip message named the wrong dependency: "mac-ocr not resolvable
+(`brew install jbig2enc qpdf`)" — a program removed in 1.11.0, with a remedy for a different
+one, hiding twelve checks. Recognition is in-process now (R40), so an empty language list is a
+property of the OS.
+
+**A11.6 · the toolless run does not exit 0.** Measured **784/788, exit 1** — two ungated
+preview checks, one deliberate, one hard-coded `false`. So on a fresh clone, before
+`brew install jbig2enc qpdf`, **the pre-commit hook refuses every commit.** `ARCHITECTURE.md`
+now says so. **Not re-measured in this session**, because both tools are installed on this
+machine and removing them to check was not worth the risk to the user's system; the figure and
+the exit code are the review's, and the way to confirm is a clone on a machine without them.
+
+**A11.5 · three bound checks gated behind a tool they never call.** Four
+arithmetic-over-constants checks sat inside `if JBIG2.isAvailable` while comparing two
+constants and touching no external tool, so on a machine without the tools `mutate.py`'s
+`const/maximumMRCPageMegapixels` mutant **had nothing that could kill it** and the log would
+have recorded a survivor for the wrong reason. Moved out of the gate. A gated check is a check
+that does not exist on somebody's machine.
+
+`const/maximumColourPageMegapixels` was **not in the catalogue at all** — A11.5's third pair.
+Its check already existed, ungated, so the mutant is what was missing; added rather than
+duplicating the check.
+
+And `if JBIG2.encoder != nil || true {` was a condition that is always true wearing the shape of
+a skip. Nothing in that block runs jbig2 — it composes a text layer and reads it back — so a
+reader counting gated blocks counted one that was not gated, and a reader wondering why a
+hyphenation check needed a compression tool had no answer. Now a plain `do`.
+
 ---
 ## The interface
 

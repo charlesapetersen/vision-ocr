@@ -236,9 +236,20 @@ T3). What remains:
 - Deleting `deduplicated` breaks nothing, because the recognition path doesn't
   emit the duplicates it exists to remove.
 
-The suite exits 0 without jbig2/qpdf installed, silently skipping roughly **76**
-checks — so "all green" on a machine without them means considerably less than it
-looks. (This said ~18, which is the number the sentence exists to convey.)
+**Without jbig2/qpdf installed the suite does not exit 0** — measured **784/788,
+exit 1**, four failures: two ungated preview checks, one deliberate, one hard-coded
+`false`. So on a fresh clone, before `brew install jbig2enc qpdf`, the pre-commit
+hook refuses every commit. R43's shape: a refusal that is right with a diagnosis
+that is not (`REVIEW-2026-08-14.md` A11.6).
+
+**The skip census is no longer a number in this file.** It was "~18" here, then
+"~76" from the audit that corrected it, and the true count at the time was **75 in
+eight blocks** — a documented figure that was wrong by 57 and would have gone stale
+again with the next gated check. The suite now counts its own skips and prints the
+census at the end of every run, with each block's figure asserted on machines where
+that block *does* run, so the number the toolless run reports is one the suite has
+verified rather than one somebody counted by hand (A11.7). Read the tail of
+`./run_tests.sh` output; do not read a number here.
 
 It does now compile `ContentView.swift` and `SettingsView.swift`, even though
 nothing instantiates a view, so a change that breaks only the UI fails the test

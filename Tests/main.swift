@@ -82,6 +82,24 @@ if CommandLine.arguments.count == 5, CommandLine.arguments[1] == "--probe-deep-o
 var failures = 0
 var checks = 0
 
+/// Blocks that did not run, and why.
+///
+/// A11.7. The skip census was **75 checks in eight blocks**, and getting that
+/// number took an audit: five blocks skipped with no `else` at all, so they left
+/// no trace in the log, and the two that did print said "jbig2enc/qpdf not
+/// installed" without saying how much had gone. `ARCHITECTURE.md` claimed ~18 and
+/// the audit that corrected it guessed ~76 before the count came out at 75.
+///
+/// A documented number goes stale the first time someone adds a gated check. So
+/// the suite counts its own skips and prints the census at the end: the number is
+/// **measured on every run** rather than asserted in a document, and a silent skip
+/// is now a contradiction in terms.
+var skippedBlocks: [(label: String, checks: Int, reason: String)] = []
+func skipBlock(_ label: String, checks n: Int, because reason: String) {
+    skippedBlocks.append((label, n, reason))
+    print("  SKIP \(label) — \(n) check(s) not run: \(reason)")
+}
+
 func check(_ label: String, _ condition: Bool, _ detail: String = "") {
     checks += 1
     if condition {
@@ -732,7 +750,13 @@ do {
             == "meritocracy")
 
     // And the whole point: it has to be findable in a real PDF.
-    if JBIG2.encoder != nil || true {
+    //
+    // Not gated. `if JBIG2.encoder != nil || true {` stood here — a condition
+    // that is always true, wearing the shape of a skip (A11.5). Nothing in this
+    // block runs jbig2: it composes a text layer and reads it back. A reader
+    // counting gated blocks counted this one, and a reader wondering why a
+    // hyphenation check needed a compression tool had no answer.
+    do {
         let dir = tmp.appendingPathComponent("hyphen")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let src = dir.appendingPathComponent("src.pdf")
@@ -1237,6 +1261,46 @@ do {
     check("forcing greyscale overrides the text check",
           kinds(textPage, mode: .grayscale, into: "t3") == ["jpeg"])
 
+    // MARK: The allocation bounds, which are arithmetic over constants (A11.5)
+    //
+    // **Deliberately outside the `if JBIG2.isAvailable` below.** These four ran
+    // inside it and touch no external tool at all — they compare two constants —
+    // so on a machine without jbig2/qpdf `mutate.py`'s `const/maximumMRCPageMegapixels`
+    // and `const/maximumColourPageMegapixels` mutants had nothing that could kill
+    // them, and the mutation log would have recorded a survivor for the wrong
+    // reason. A gated check is a check that does not exist on somebody's machine.
+    //
+    // Checked as a decision rather than by allocating the page each describes. R24
+    // bounded one allocation and left its sibling unbounded (R29); layering is that
+    // sibling for `flatten`'s render, holding about 8 bytes a pixel against 5.5.
+    check("layering's worst case stays inside the render's",
+          Flattener.mrcBoundIsWithinTheRenderOne,
+          String(format: "MRC %.2f GB vs render %.2f GB",
+                 Double(Flattener.maximumMRCPageMegapixels)
+                    * Flattener.measuredMRCBytesPerPixel / 1000,
+                 Double(Flattener.maximumPageMegapixels)
+                    * Flattener.measuredGreyBytesPerPixel / 1000))
+    check("…and layering is recorded as the more expensive per pixel",
+          Flattener.measuredMRCBytesPerPixel > Flattener.measuredGreyBytesPerPixel)
+    // R49 · the same property for colour layering, which holds three planes where
+    // the grey route holds one. R24/R29's shape again: a bound asserted in one place
+    // and left to be inferred in its sibling.
+    check("colour layering's worst case stays inside the render's too",
+          Flattener.colourMRCBoundIsWithinTheRenderOne,
+          String(format: "colour MRC %.2f GB vs render %.2f GB",
+                 Double(Flattener.maximumMRCPageMegapixels)
+                    * Flattener.statedColourMRCBytesPerPixel / 1000,
+                 Double(Flattener.maximumPageMegapixels)
+                    * Flattener.measuredGreyBytesPerPixel / 1000))
+    check("…and colour layering is recorded as the more expensive of the two",
+          Flattener.statedColourMRCBytesPerPixel > Flattener.measuredMRCBytesPerPixel)
+    // A11.5's third pair — `colourBoundIsWithinTheGreyOne` over
+    // `maximumColourPageMegapixels` — is already asserted ungated further down,
+    // with better commentary than a copy here would have. What that pair was
+    // missing is a *mutant*: it was not in `mutate.py`'s catalogue at all, so
+    // nothing had ever perturbed the constant to see whether the check bites.
+    // Added there instead of duplicated here.
+
     // A mixed book must assemble into one valid PDF carrying both filters.
     if JBIG2.isAvailable {
         let mixedSrc = tmp.appendingPathComponent("auto-mixed.pdf")
@@ -1459,31 +1523,6 @@ do {
                 check("the MRC fixture produces layers", false, "mrcLayers returned nil")
             }
         }
-        // The allocation bound, checked as a decision rather than by allocating
-        // the page it describes. R24 bounded one allocation and left its sibling
-        // unbounded (R29); layering is that sibling for `flatten`'s render,
-        // holding about 8 bytes a pixel against the render's 5.5.
-        check("layering's worst case stays inside the render's",
-              Flattener.mrcBoundIsWithinTheRenderOne,
-              String(format: "MRC %.2f GB vs render %.2f GB",
-                     Double(Flattener.maximumMRCPageMegapixels)
-                        * Flattener.measuredMRCBytesPerPixel / 1000,
-                     Double(Flattener.maximumPageMegapixels)
-                        * Flattener.measuredGreyBytesPerPixel / 1000))
-        check("…and layering is recorded as the more expensive per pixel",
-              Flattener.measuredMRCBytesPerPixel > Flattener.measuredGreyBytesPerPixel)
-        // R49 · and the same property for colour layering, which holds three
-        // planes where the grey route holds one. R24/R29's shape again: a bound
-        // asserted in one place and left to be inferred in its sibling.
-        check("colour layering's worst case stays inside the render's too",
-              Flattener.colourMRCBoundIsWithinTheRenderOne,
-              String(format: "colour MRC %.2f GB vs render %.2f GB",
-                     Double(Flattener.maximumMRCPageMegapixels)
-                        * Flattener.statedColourMRCBytesPerPixel / 1000,
-                     Double(Flattener.maximumPageMegapixels)
-                        * Flattener.measuredGreyBytesPerPixel / 1000))
-        check("…and colour layering is recorded as the more expensive of the two",
-              Flattener.statedColourMRCBytesPerPixel > Flattener.measuredMRCBytesPerPixel)
 
         // MARK: R50 — a page whose ink is all text shrinks its tone layers
         //
@@ -1792,8 +1831,14 @@ do {
     check("JBIG2 is on by default", UserDefaults.standard.bool(forKey: Prefs.useJBIG2))
 
     if !JBIG2.isAvailable {
-        print("  skipped — jbig2enc/qpdf not installed (\(JBIG2.installHint))")
+        skipBlock("JBIG2 compression of the page images", checks: 14,
+                  because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
     } else {
+        // The census figure above is asserted at the end of this block, so it
+        // cannot go stale: on any machine with the tools it is measured, and the
+        // number the *toolless* run reports is therefore one this suite has
+        // verified rather than one somebody counted by hand once (A11.7).
+        let checksBeforeJBIG2Block = checks
         let page = tmp.appendingPathComponent("jb-src.pdf")
         makeScannedPDF(at: page, lines: ["JBIG2 compression test page",
                                         "second line of the page",
@@ -1897,6 +1942,11 @@ do {
         check("JBIG2 output is smaller than the Flate route",
               size(final) < size(flate),
               "\(size(final)/1024)K vs \(size(flate)/1024)K")
+        // A11.7. The number the toolless run will report for this block, verified
+        // here rather than counted by hand. `+ 1` counts this check itself.
+        check("the skip census figure for this block is still right",
+              checks - checksBeforeJBIG2Block + 1 == 14,
+              "\(checks - checksBeforeJBIG2Block + 1) checks, census says 14")
     }
     resetPrefs()
 }
@@ -2986,6 +3036,8 @@ do {
     // (measured: 374 KB with /JBIG2Decode becoming 467 KB without), so this
     // asserts both halves — the outline arrives AND the compression survives.
     if JBIG2.isAvailable {
+        // Self-verifying census figure, as above (A11.7).
+        let checksBeforeOutlineBlock = checks
         let jb = dir.appendingPathComponent("book-jbig2.ocr.pdf")
         var jbOutcome: Runner.Result.Outcome?
         OCRModel.makeSearchablePDF(
@@ -3018,8 +3070,12 @@ do {
         check("…and the text layer is unharmed",
               embeddedText(of: jb).contains("CHAPTER ONE OPENING"),
               String(embeddedText(of: jb).prefix(100)))
+        check("the skip census figure for the outline block is still right",
+              checks - checksBeforeOutlineBlock + 1 == 7,
+              "\(checks - checksBeforeOutlineBlock + 1) checks, census says 7")
     } else {
-        print("  skipped — jbig2enc/qpdf not installed (\(JBIG2.installHint))")
+        skipBlock("the outline across the JBIG2 route", checks: 7,
+                  because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
     }
 
     // A source with no outline must publish exactly as before.
@@ -7625,8 +7681,17 @@ do {
     let accurate = Recogniser.supportedLanguages(fast: false)
     let quick = Recogniser.supportedLanguages(fast: true)
     if accurate.isEmpty {
-        print("  skipped — mac-ocr not resolvable (\(JBIG2.installHint))")
+        // A11.7. This said "mac-ocr not resolvable" and offered
+        // `brew install jbig2enc qpdf` as the remedy — naming a dependency removed
+        // in 1.11.0 and a fix for a different one. Twelve checks hid behind it.
+        // Recognition is in-process now (R40), so an empty list means Vision
+        // reported no languages, which is a property of the OS and not something a
+        // user can install.
+        skipBlock("recognition languages this Mac actually has", checks: 12,
+                  because: "Vision reported no recognition languages on this system")
     } else {
+        // Self-verifying census figure (A11.7).
+        let checksBeforeLanguageBlock = checks
         check("the accurate recognizer reports a plausible list",
               accurate.count >= 5 && accurate.contains("en-US"),
               "\(accurate.count): \(accurate.prefix(6).joined(separator: ","))")
@@ -7677,6 +7742,10 @@ do {
               SettingsView.languageLabel("zz") == "zz"
                 || SettingsView.languageLabel("zz").contains("zz"),
               SettingsView.languageLabel("zz"))
+        // A11.7, as above: the figure the skipping branch reports, verified here.
+        check("the skip census figure for the language block is still right",
+              checks - checksBeforeLanguageBlock + 1 == 12,
+              "\(checks - checksBeforeLanguageBlock + 1) checks, census says 12")
     }
 
     // The bounded capture the language list rides on is the same one tool
@@ -10148,5 +10217,17 @@ do {
 }
 
 resetPrefs()
+
+// A11.7. Measured, not documented. The census used to live in `ARCHITECTURE.md` as
+// a number that was wrong by 57, and five of the eight blocks left no trace at all
+// when they skipped.
+if skippedBlocks.isEmpty {
+    print("\nno checks were skipped — every gated block ran")
+} else {
+    let total = skippedBlocks.reduce(0) { $0 + $1.checks }
+    print("\n\(total) check(s) skipped, in \(skippedBlocks.count) block(s):")
+    for b in skippedBlocks { print("  \(b.label) — \(b.checks): \(b.reason)") }
+    print("so this run exercised \(checks) of a possible \(checks + total).")
+}
 print("\n\(checks - failures)/\(checks) passed")
 exit(failures == 0 ? 0 : 1)

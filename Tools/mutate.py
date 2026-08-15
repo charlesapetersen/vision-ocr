@@ -88,6 +88,11 @@ CONSTANTS = [
     # Layering holds ~8 bytes a pixel against the render's 5.5, so it needs its
     # own bound. R29 is what happens when a sibling allocation does not get one.
     ("Flattener.swift", "maximumMRCPageMegapixels", "100", "40000"),
+    # A11.5. The third arithmetic-over-constants pair, which was not in this
+    # catalogue at all: `colourBoundIsWithinTheGreyOne` over the colour render
+    # bound. Colour holds three planes where grey holds one, and the property is
+    # that colour cannot reach a high-water mark grey could not already.
+    ("Flattener.swift", "maximumColourPageMegapixels", "100", "40000"),
     ("Flattener.swift", "minimumPlausibleScanDPI", "150", "10"),
     ("Flattener.swift", "fallbackRebuildDPI", "300", "72"),
     ("Flattener.swift", "minimumScanPixelWidth", "600", "10"),
