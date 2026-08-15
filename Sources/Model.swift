@@ -379,6 +379,31 @@ final class OCRModel: ObservableObject {
     /// with "beside each original" or a partly-failed batch.
     private var resolvedOutputs: [URL: URL] = [:]
 
+    /// Every path an earlier attempt in this retry chain was reading from or
+    /// writing to — its inputs *and* its outputs, accumulated across however many
+    /// retries there have been.
+    ///
+    /// R60 is what this is for. A retry runs a *subset* of a previous batch, and
+    /// `uniqueOutputs`' protection is only as wide as the list it is handed, so
+    /// the sibling that was keeping a name reserved is gone and the retry takes
+    /// it. A set of paths rather than a map keyed by input, because a third
+    /// attempt has to remember what the first one reserved.
+    private var claimedByEarlierAttempts: Set<URL> = []
+
+    /// Each input's output on the previous attempt, so a retry can *reuse* its own
+    /// slot. Without it, carrying the earlier attempt's outputs forward
+    /// over-reserves: the retried file's own previous name is in that set, so it
+    /// is pushed to a third name and renamed again on every retry.
+    private var previousOutputs: [URL: URL] = [:]
+
+    /// True from `retryFailures` until the run it asks for reaches `run()`.
+    ///
+    /// A property rather than a parameter threaded through `start`: `start`
+    /// reaches `run` through five branches and an async pre-flight, and a sixth
+    /// branch added later would default to "a new chain" — which is the safe
+    /// direction for over-reserving and the *unsafe* direction for R60.
+    private var continuesRetryChain = false
+
     struct LogLine: Identifiable {
         let id = UUID()
         let text: String
@@ -508,11 +533,15 @@ final class OCRModel: ObservableObject {
         outcomes.removeAll()
         stages.removeAll()
         skipped.subtract(retry)
+        // Set before `start`, because `run` reads it. R60: this run must not be
+        // allowed to claim a path the batch it descends from had reserved.
+        continuesRetryChain = true
         start(note: "Retrying \(retry.count) file\(retry.count == 1 ? "" : "s") "
                   + "that failed in the previous run.")
         guard isCommitted else {
             files = previousFiles
             outcomes = previousOutcomes
+            continuesRetryChain = false
             return false
         }
         return true
@@ -900,6 +929,8 @@ final class OCRModel: ObservableObject {
                     guard !rest.isEmpty else {
                         self.log.append(LogLine(text: skipped + " Nothing left to run.",
                                                 kind: .info))
+                        // No run, so no chain continues from here (R60).
+                        self.continuesRetryChain = false
                         return
                     }
                     self.run(rest, note: note, leftOut: digital)
@@ -907,6 +938,7 @@ final class OCRModel: ObservableObject {
                 case .cancel:
                     self.log.append(LogLine(text: "Start cancelled — nothing was changed.",
                                             kind: .info))
+                    self.continuesRetryChain = false
                 }
             }
         }
@@ -1100,9 +1132,38 @@ final class OCRModel: ObservableObject {
         let textExt = settings.textFormat.fileExtension
         let outputSuffix = isSearchable ? ".ocr" : ""
         let outputExt = isSearchable ? "pdf" : textExt
+
+        // A fresh Start begins a new chain of reservations; a retry continues the
+        // previous one's. **Not cleared from `add`, `remove` or `clearFiles`**,
+        // and that is a correction to R60's own recorded fix direction: clearing
+        // at a door reopens the defect whenever a retry follows the door. Drop a
+        // folder holding a previous run's results, have one file fail, add an
+        // unrelated file, then press Retry Failed — the list changed, so the
+        // reservations would be gone, and the retry takes the protected name
+        // again. The chain ends where a chain can actually end: at a Start that
+        // is not a retry.
+        if continuesRetryChain {
+            continuesRetryChain = false
+        } else {
+            claimedByEarlierAttempts = []
+            previousOutputs = [:]
+        }
+        // Each retried input's own slot from the previous attempt, given back so
+        // it is reused rather than renamed again.
+        let releasing = Set(batch.compactMap { previousOutputs[$0] })
         let outputs = Self.uniqueOutputs(
             for: batch, besideOriginal: besideOriginal, folder: destination,
-            suffix: outputSuffix, extension: outputExt)
+            suffix: outputSuffix, extension: outputExt,
+            alsoClaimed: claimedByEarlierAttempts, releasing: releasing)
+
+        // Recorded *after* resolving, so the next attempt in this chain knows
+        // both what this one read and what it wrote. `files`, not `batch`: a file
+        // the user chose to skip is still a file on disk that this batch had in
+        // hand, and over-reserving only ever renames an output — visibly, through
+        // `renamedOutputs` — where under-reserving destroys one.
+        claimedByEarlierAttempts.formUnion(files)
+        claimedByEarlierAttempts.formUnion(outputs.values)
+        for (input, output) in outputs { previousOutputs[input] = output }
 
         // uniqueOutputs appends " 2" when two inputs would claim one path. That
         // rename was invisible: a user with two files called scan.pdf saw two
@@ -1277,14 +1338,31 @@ final class OCRModel: ObservableObject {
     /// worker is concurrently reading. `publish` would then replace a file
     /// mid-read. Seeding `claimed` with the inputs pushes the collision to
     /// `scan 2.ocr.pdf` instead.
+    ///
+    /// **And that protection is only as wide as the list it is given, which is
+    /// how R60 destroyed a file.** `retryFailures` narrows `files` to the
+    /// failures, so the sibling that was doing the protecting is no longer in the
+    /// batch and the retry claims the name that had been reserved away from it.
+    /// `alsoClaimed` carries the earlier attempt's inputs *and* its outputs
+    /// forward; `releasing` gives each retried input its own previous slot back,
+    /// so a retry reuses `scan 2.ocr.pdf` rather than being pushed to a third
+    /// name on every attempt. Both are needed and neither is sufficient — R60
+    /// records the two ways a one-sided version of this fails its own test.
     nonisolated static func uniqueOutputs(
         for files: [URL],
         besideOriginal: Bool,
         folder: URL?,
         suffix: String,
-        extension ext: String
+        extension ext: String,
+        alsoClaimed: Set<URL> = [],
+        releasing: Set<URL> = []
     ) -> [URL: URL] {
-        var claimed = Set(files.map { $0.standardizedFileURL.path.lowercased() })
+        func key(_ url: URL) -> String { url.standardizedFileURL.path.lowercased() }
+        // Union in this order deliberately: an input of *this* batch is claimed
+        // even if `releasing` names it, because a path being read right now is
+        // the case the whole function exists for.
+        var claimed = Set(alsoClaimed.map(key)).subtracting(releasing.map(key))
+        claimed.formUnion(files.map(key))
         var result: [URL: URL] = [:]
         for file in files {
             let dir = besideOriginal ? file.deletingLastPathComponent()

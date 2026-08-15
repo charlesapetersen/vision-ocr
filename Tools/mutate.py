@@ -170,6 +170,12 @@ OPERATORS = [
      "            throw Failure.incompleteResult(refusal)\n        }\n"
      "        try publish(staged, to: output)",
      "        try publish(staged, to: output)", "A11.1-publishVerified-gate"),
+    # R60. Content destruction: without the carried-forward reservations a retry
+    # claims the path the batch it came from reserved away from it. The unit checks
+    # pass `alsoClaimed`/`releasing` explicitly and would survive this, which is
+    # why the end-to-end check exists — it is what goes red, on the user's file.
+    ("Model.swift", "alsoClaimed: claimedByEarlierAttempts, releasing: releasing)",
+     "alsoClaimed: [], releasing: [])", "R60-retry-reservations"),
     ("Model.swift", "defer { self.isPreflighting = false }",
      "self.isPreflighting = false", "U21-committed-across-alert"),
     ("Runner.swift", "guard deadline > now else { return 0 }",

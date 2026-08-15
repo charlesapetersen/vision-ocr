@@ -4425,6 +4425,246 @@ do {
     resetPrefs()
 }
 
+// MARK: - A retry cannot publish over a file the batch protected (R60)
+
+// `uniqueOutputs` keeps every output off **every input in the batch**, so
+// re-running a folder that already holds a previous run's results cannot claim a
+// name another worker is reading. `retryFailures` narrows `files` to the
+// failures — so the sibling that was doing the protecting leaves the batch, and
+// the retry claims the name that had been reserved away from it. Verified end to
+// end: 13,006 bytes of somebody's previous output replaced by 7,268 bytes of a
+// re-scan, with nothing in the log about it.
+//
+// The unit checks come first because they are exhaustive and instant, and because
+// **both halves of the fix are needed and neither is sufficient** — the first
+// attempt at this carried only the earlier attempt's *outputs* forward and failed
+// its own test twice over.
+
+print("\na retry cannot claim a path the batch it came from protected")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("retry-claim-\(UUID().uuidString)")
+    let sub = dir.appendingPathComponent("b")
+    let outDir = dir.appendingPathComponent("out")
+    for u in [dir, sub, outDir] {
+        try? FileManager.default.createDirectory(at: u, withIntermediateDirectories: true)
+    }
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    // Sequence A's shape: a folder holding a previous run's output beside the
+    // original it came from. Both are inputs, because the user dropped the folder.
+    let precious = dir.appendingPathComponent("scan.ocr.pdf")
+    let original = dir.appendingPathComponent("scan.pdf")
+
+    // What run 1 resolved, computed by the real function.
+    let first = OCRModel.uniqueOutputs(for: [precious, original], besideOriginal: true,
+                                       folder: nil, suffix: ".ocr", extension: "pdf")
+    check("run 1 keeps the second input off the first input's own path",
+          first[original]?.lastPathComponent == "scan 2.ocr.pdf",
+          first[original]?.lastPathComponent ?? "nil")
+    check("…and the first input's output is a third name",
+          first[precious]?.lastPathComponent == "scan.ocr.ocr.pdf",
+          first[precious]?.lastPathComponent ?? "nil")
+
+    // The defect, stated as a check: with only the retried file in the list and
+    // nothing carried forward, the protected path is exactly what it claims.
+    let naive = OCRModel.uniqueOutputs(for: [original], besideOriginal: true,
+                                       folder: nil, suffix: ".ocr", extension: "pdf")
+    check("a narrowed batch on its own claims the protected path — the defect",
+          naive[original]?.lastPathComponent == "scan.ocr.pdf",
+          naive[original]?.lastPathComponent ?? "nil")
+
+    // The fix: the earlier attempt's inputs *and* outputs carried forward, with
+    // the retried file's own previous slot released back to it.
+    let carried = Set<URL>([precious, original]).union(first.values)
+    let retried = OCRModel.uniqueOutputs(
+        for: [original], besideOriginal: true, folder: nil, suffix: ".ocr",
+        extension: "pdf", alsoClaimed: carried, releasing: [first[original]!])
+    check("carrying the earlier attempt forward protects the path",
+          retried[original]?.lastPathComponent == "scan 2.ocr.pdf",
+          retried[original]?.lastPathComponent ?? "nil")
+
+    // And **outputs alone are not enough**, which is the half that was tried
+    // first: the protected path was an *input* of the earlier attempt, never one
+    // of its outputs, so carrying outputs forward does not re-reserve it.
+    let outputsOnly = OCRModel.uniqueOutputs(
+        for: [original], besideOriginal: true, folder: nil, suffix: ".ocr",
+        extension: "pdf", alsoClaimed: Set(first.values),
+        releasing: [first[original]!])
+    check("…and carrying only the outputs forward does not — the fix that failed",
+          outputsOnly[original]?.lastPathComponent == "scan.ocr.pdf",
+          outputsOnly[original]?.lastPathComponent ?? "nil")
+
+    // Nor is releasing optional. Without it the retried file is pushed past its
+    // own previous slot to a *third* name, and would be renamed again on every
+    // retry — the quieter second bug in the same place.
+    let noRelease = OCRModel.uniqueOutputs(
+        for: [original], besideOriginal: true, folder: nil, suffix: ".ocr",
+        extension: "pdf", alsoClaimed: carried)
+    check("…and without releasing its own slot the retry is renamed again",
+          noRelease[original]?.lastPathComponent == "scan 3.ocr.pdf",
+          noRelease[original]?.lastPathComponent ?? "nil")
+
+    // Sequence B: two inputs sharing a base name in different folders, one output
+    // folder, the second one failing. The retry must reuse its own slot and leave
+    // the first input's finished output alone.
+    let aScan = dir.appendingPathComponent("scan.pdf")
+    let bScan = sub.appendingPathComponent("scan.pdf")
+    let firstB = OCRModel.uniqueOutputs(for: [aScan, bScan], besideOriginal: false,
+                                        folder: outDir, suffix: ".ocr", extension: "pdf")
+    check("two inputs sharing a base name get distinct outputs",
+          firstB[aScan]?.lastPathComponent == "scan.ocr.pdf"
+            && firstB[bScan]?.lastPathComponent == "scan 2.ocr.pdf",
+          "\(firstB[aScan]?.lastPathComponent ?? "nil") / "
+            + "\(firstB[bScan]?.lastPathComponent ?? "nil")")
+    let retriedB = OCRModel.uniqueOutputs(
+        for: [bScan], besideOriginal: false, folder: outDir, suffix: ".ocr",
+        extension: "pdf", alsoClaimed: Set([aScan, bScan]).union(firstB.values),
+        releasing: [firstB[bScan]!])
+    check("a retry keeps off the other input's finished output",
+          retriedB[bScan]?.lastPathComponent == "scan 2.ocr.pdf",
+          retriedB[bScan]?.lastPathComponent ?? "nil")
+
+    // An input of *this* batch outranks a release. A path being read right now is
+    // the case `uniqueOutputs` exists for, so `releasing` must not be able to
+    // hand it out — otherwise a retry that still holds the previous output as an
+    // input would publish over the file it is reading.
+    let clash = OCRModel.uniqueOutputs(
+        for: [precious, original], besideOriginal: true, folder: nil, suffix: ".ocr",
+        extension: "pdf", alsoClaimed: [precious], releasing: [precious])
+    check("releasing cannot hand out a path this batch is reading",
+          clash[original]?.lastPathComponent == "scan 2.ocr.pdf",
+          clash[original]?.lastPathComponent ?? "nil")
+
+    // Three attempts, so the accumulation is exercised rather than assumed: the
+    // third must still remember what the first reserved.
+    let cScan = dir.appendingPathComponent("third.pdf")
+    var chain: Set<URL> = [precious, original, cScan]
+    let a1 = OCRModel.uniqueOutputs(for: [precious, original, cScan], besideOriginal: true,
+                                    folder: nil, suffix: ".ocr", extension: "pdf")
+    chain.formUnion(a1.values)
+    let a2 = OCRModel.uniqueOutputs(
+        for: [original, cScan], besideOriginal: true, folder: nil, suffix: ".ocr",
+        extension: "pdf", alsoClaimed: chain,
+        releasing: [a1[original]!, a1[cScan]!])
+    chain.formUnion(a2.values)
+    let a3 = OCRModel.uniqueOutputs(
+        for: [original], besideOriginal: true, folder: nil, suffix: ".ocr",
+        extension: "pdf", alsoClaimed: chain, releasing: [a2[original]!])
+    check("a third attempt still keeps off what the first reserved",
+          a3[original]?.lastPathComponent == "scan 2.ocr.pdf",
+          a3[original]?.lastPathComponent ?? "nil")
+    check("…and does not rename its own output again",
+          a3[original] == a1[original] && a2[original] == a1[original],
+          "\(a1[original]?.lastPathComponent ?? "nil") → "
+            + "\(a2[original]?.lastPathComponent ?? "nil") → "
+            + "\(a3[original]?.lastPathComponent ?? "nil")")
+    resetPrefs()
+}
+
+// And the same sequence through the real model, because the unit checks above
+// prove the *rule* and this proves the model applies it. The recorded harm is a
+// user's file replaced, so the assertion is on the user's file, byte for byte.
+
+print("\nthe retried batch really does protect the earlier one's files")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("retry-e2e-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    // No modal in a headless run: the digital-text prompt would sit there for
+    // ever, and this block drives a real batch.
+    d.set(false, forKey: Prefs.warnDigitalText)
+
+    // A previous run's output — named exactly as `uniqueOutputs` would have named
+    // it — carrying text nothing else in the suite writes.
+    let precious = dir.appendingPathComponent("scan.ocr.pdf")
+    makeScannedPDF(at: precious, lines: ["PRECIOUS ORIGINAL from the previous run"])
+    // …and its original, which arrives unreadable so the first attempt fails it.
+    let original = dir.appendingPathComponent("scan.pdf")
+    try? Data("not a pdf at all".utf8).write(to: original)
+    let preciousBefore = try? Data(contentsOf: precious)
+
+    final class Box: @unchecked Sendable { var model: OCRModel? }
+    let box = Box()
+    var started = false
+    Task { @MainActor in
+        let m = OCRModel()
+        m.besideOriginal = true
+        _ = m.add([precious, original])
+        box.model = m
+        m.start()
+        started = true
+    }
+    _ = pump(until: { started }, seconds: 5)
+    _ = pump(until: { MainActor.assumeIsolated { box.model?.isRunning == true } }, seconds: 30)
+    _ = pump(until: { MainActor.assumeIsolated { box.model?.isRunning == false } }, seconds: 240)
+
+    var retried = false
+    MainActor.assumeIsolated {
+        guard let m = box.model else { check("the model exists", false); return }
+        check("the unreadable original failed, or there is nothing to retry",
+              m.failedFiles == [original],
+              m.failedFiles.map(\.lastPathComponent).joined(separator: ","))
+        check("…and the previous output was itself processed",
+              m.outcomes[precious] == .succeeded, String(describing: m.outcomes[precious]))
+        check("the first run left the previous output alone",
+              preciousBefore == (try? Data(contentsOf: precious)))
+        // The original is readable now — a truncated download that completed, an
+        // encrypted file whose password was entered, a destination that came back.
+        makeScannedPDF(at: original, lines: ["REPLACEMENT SCAN, freshly readable"])
+        retried = m.retryFailures()
+        check("the retry starts", retried)
+    }
+    if retried {
+        _ = pump(until: { MainActor.assumeIsolated { box.model?.isRunning == false } },
+                 seconds: 240)
+        MainActor.assumeIsolated {
+            guard let m = box.model else { return }
+            check("the retry succeeded", m.outcomes[original] == .succeeded,
+                  m.log.map(\.text).joined(separator: " | ").prefix(200).description)
+            // THE CHECK THIS BLOCK EXISTS FOR.
+            check("the file the first batch protected is byte-for-byte intact",
+                  preciousBefore != nil && preciousBefore == (try? Data(contentsOf: precious)),
+                  "\(preciousBefore?.count ?? -1) bytes before, "
+                    + "\((try? Data(contentsOf: precious))?.count ?? -1) after")
+            // Byte identity is the assertion, and it is the strongest one
+            // available. A first version added "…and it still says what it said"
+            // over `embeddedText(of: precious)` — which is empty for every
+            // fixture `makeScannedPDF` builds, because a scan has pixels and no
+            // text layer. It failed against a file that was provably unchanged:
+            // a check that cannot pass, next to a check that cannot fail, in a
+            // block about checks that cannot fail. What corroborates that the
+            // protected file held real content is run 1's own output from it.
+            let derived = dir.appendingPathComponent("scan.ocr.ocr.pdf")
+            check("…and run 1's output from it carries its text, so it was not empty",
+                  embeddedText(of: derived).uppercased().contains("PRECIOUS"),
+                  embeddedText(of: derived).prefix(80).description)
+            // The retry's own output went somewhere, and the log says where.
+            let renamed = dir.appendingPathComponent("scan 2.ocr.pdf")
+            check("the retry published to its own slot instead",
+                  FileManager.default.fileExists(atPath: renamed.path),
+                  ((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? [])
+                      .sorted().joined(separator: ", "))
+            check("…carrying the replacement's text",
+                  embeddedText(of: renamed).uppercased().contains("REPLACEMENT"),
+                  embeddedText(of: renamed).prefix(80).description)
+            // R60 also noted the silence: `renamedOutputs` was empty on a retry,
+            // so even the "(renamed; another input claimed that name)" note was
+            // absent. Reusing its own slot makes the name differ from the default
+            // again, so the note is back.
+            let text = m.log.map(\.text).joined(separator: "\n")
+            check("…and the log says the name was not the default",
+                  text.contains("renamed") || text.contains("scan 2.ocr.pdf"),
+                  text.prefix(300).description)
+        }
+    }
+    resetPrefs()
+}
+
 print("\nthe batch stays frozen while the alert is up")
 
 do {

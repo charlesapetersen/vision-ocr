@@ -3460,6 +3460,137 @@ caller to hand this a downsampled buffer — a tool, a future MRC path — would
 rescaled fraction with no error. **Fixed**: it measures `min(grey.count, width * height)` pixels
 and divides by that.
 
+### R60 · Retry Failed publishes over a file the same batch deliberately kept off — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A5.1. **The most severe
+finding in that sweep: content destruction, verified end to end, and shipped.**)*
+
+`uniqueOutputs` keeps every output off **every input in the batch**, not merely off the other
+outputs, precisely so that re-running a folder which already holds a previous run's results cannot
+claim a name another worker is reading. `retryFailures` narrows `files` to the failures and `run`
+re-resolves outputs from that narrowed list — **so the sibling that was doing the protecting is gone,
+and the retry claims the name that was reserved away from it.** `publish` is atomic; it was atomic
+onto the wrong file.
+
+Sequence A, run end to end:
+
+```
+dir/scan.ocr.pdf   13,006 bytes, text "PRECIOUS ORIGINAL from the previous run"
+dir/scan.pdf       arrives truncated
+drop dir, save beside each original, Start
+  scan.ocr.pdf -> dir/scan.ocr.ocr.pdf      OK
+  scan.pdf                                  FAILS, unreadable
+dir/scan.ocr.pdf still says PRECIOUS        <- uniqueOutputs did its job
+replace dir/scan.pdf with a readable scan, press Retry Failed
+  scan.pdf -> dir/scan.ocr.pdf              OK
+dir/scan.ocr.pdf   7,268 bytes, "REPLACEMENT SCAN"   <- the user's file is gone
+```
+
+Any per-file failure that does not recur triggers it: a truncated download that completed, an
+encrypted PDF once the password is entered, a full or unmounted destination — **or R59's `EXDEV`**,
+which means the defect fixed that morning was a trigger for this one. The retry's log says nothing,
+and `renamedOutputs` was empty on a retry, so even the "(renamed; another input claimed that name)"
+note was absent. Invariant 1 and the spirit of invariant 2 both fail.
+
+**The obvious fix does not work, and that was established by trying it.** Seeding the retry's
+`claimed` set with the earlier attempt's `resolvedOutputs` failed its own test twice:
+
+```
+FAIL  a retry that carries the first attempt's outputs keeps its own path — scan.ocr.pdf
+FAIL  a retry cannot publish over another input's finished output — scan 3.ocr.pdf vs a=scan.ocr.pdf
+```
+
+The first failure *is* the defect restating itself: in sequence A the protected path
+(`dir/scan.ocr.pdf`) was an **input** of the earlier attempt, never one of its outputs, so carrying
+outputs forward does not re-reserve it. The second is over-reservation: the retried file's *own*
+previous slot is in that set, so it is pushed to a **third** name — and would be renamed again on
+every retry.
+
+**Fixed** by carrying both halves and giving one back. `uniqueOutputs` takes `alsoClaimed` (the
+earlier attempts' inputs *and* outputs, accumulated as a set of paths so a third attempt still
+remembers what the first reserved) and `releasing` (each retried input's own slot from the previous
+attempt, so it is reused rather than renamed). An input of the *current* batch outranks a release,
+because a path being read right now is the case the function exists for. The state lives in
+`claimedByEarlierAttempts` and `previousOutputs`, and `continuesRetryChain` is what tells `run`
+whether this batch continues the previous one's chain or begins a new one.
+
+**A correction to the fix direction A5.1 recorded.** It says the state must be "cleared whenever the
+user changes the file list — through both `add` overloads, `remove` and `clearFiles`". It must not
+be: **clearing at a door reopens the defect whenever a retry follows the door.** Drop the folder,
+have one file fail, add an unrelated file, press Retry Failed — the list changed, so the reservations
+would be gone and the retry takes the protected name again. `remove` has the same hole with any third
+file. The chain instead ends where a chain can actually end: at a **Start that is not a retry**,
+which is also where `run` already clears `outcomes`, `stages` and the log. A `continuesRetryChain`
+property rather than a parameter threaded through `start`, because `start` reaches `run` through five
+branches and an async pre-flight, and a sixth branch added later would default to "a new chain" —
+the safe direction for over-reserving and the *unsafe* direction for this defect. The three branches
+that decline to run clear it.
+
+**Not a defect, and worth writing down because it looks like one.** After a run, removing the
+previous output from the list and pressing **Start** does replace it. That is the ordinary re-run:
+`publish` has always replaced a previous run's output, and the file is that input's own output. What
+made the retry case destruction is that the batch had just reserved the path *away* from the very
+file that then took it.
+
+**Sibling sweep (CONTRIBUTING 4b): who else runs a subset of a previous batch?** Nothing else does
+today — `retryFailures` is the only narrowing door, and the other three (`add`, `remove`,
+`clearFiles`) only ever change the list before a run. The shape to watch for is any future feature
+that runs part of a list the app has already resolved outputs for; `alsoClaimed`/`releasing` is the
+mechanism it should use.
+
+### R63 · Cancelling a Plain Text run reports every in-flight file as **failed** — OPEN
+*(found 2026-08-14 by the adversarial pass over R60's own diff — the eleventh round running in
+which reviewing a round's code found a real defect near it. Verified by reading both sides.)*
+
+The text route's `do`/`catch` in `run`:
+
+```swift
+try Recogniser.extract(from: file, to: target, …, isCancelled: { control.isCancelled })
+if control.isCancelled { report(.cancelled, "Cancelled.") }
+else { report(.succeeded, "") }
+} catch {
+    report(.failed, error.localizedDescription)      // <- no cancellation check
+}
+```
+
+`Recogniser.extract` raises a cancel as `throw Failure.cancelled` — five sites do — so a user
+Cancel lands in that `catch` and is recorded as a **failure**. The *success* path checks
+cancellation two lines above; the failure path does not. The searchable route gets this right in
+both of its catches, and its comment says why: "A cancellation surfaces here as a throw … and is
+a cancellation rather than a broken file."
+
+**The report contradicts itself**, which is what makes it worse than a wrong enum:
+`Failure.cancelled.localizedDescription` is "Cancelled.", so the row shows a red ✗ and the tally
+counts a failure while the message beside it says the run was cancelled. `problemCount` then
+reports it, the results pane sorts it to the top as a problem, and **`canRetryFailures` offers to
+retry work the user asked to stop** — a cancelled file is deliberately *not* a failed one
+elsewhere in this model, which is asserted by "a cancelled file is not retried".
+
+This is **R14's recorded shape** at the one site R14's sweep did not reach, and it sits with the
+other text-route cancellation gap already open from A2.2: `extract` writes straight to the user's
+destination with no staging, so a cancel during the last page finishes it, replaces the previous
+output, and *then* reports. Both belong in one fix of the text route's cancel handling. Not fixed
+here: R60's diff is about output-path reservation, and folding an unrelated route's cancel
+semantics into it is how C13 and C14 were shipped inside other fixes.
+
+**One asymmetry found reviewing this diff before merging it, recorded rather than changed.**
+`uniqueOutputs` compares paths through `key()` — `standardizedFileURL.path.lowercased()` —
+because area 5's own sound-list notes that `standardizedFileURL` is load-bearing here: a folder
+walk yields `/private/var/…` where a drop of the same file yields `/var/…`. The new
+`previousOutputs` map is the one place in the fix that does **not** normalise: it is
+`[URL: URL]`, so `releasing = Set(batch.compactMap { previousOutputs[$0] })` is a lookup by
+`URL`'s own `Hashable`, and two spellings of one path miss each other.
+
+The consequence is bounded and is in the safe direction. A missed lookup means the retried file
+does not get its own previous slot back, so it is pushed to `scan 2.ocr.pdf` and the rename is
+announced through `renamedOutputs` — **over-reserving, which renames visibly; never
+under-reserving, which is what destroys a file.** It is also not reachable today: `retryFailures`
+builds its list from `outcomes`, whose keys are the same `URL` values `files` holds, so both
+spellings cannot arise within one chain. Left alone because a check that bit it would have to
+manufacture two spellings of one path through a real retry, and the direction it fails in is the
+one this whole entry exists to stay on. **If a future door ever puts a re-spelled path into
+`files` — a bookmark restore, a resumed batch read back from disk — key this map through `key()`
+first.**
+
 ---
 ## The interface
 
