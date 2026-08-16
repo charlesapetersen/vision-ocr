@@ -60,3 +60,6 @@ const/maximumMRCPageMegapixels	killed	283	1 check(s): layering's worst case stay
 const/minimumColumnOverlap	killed	283	2 check(s): a continuation in a barely-overlapping neighbouring column is refused; a continuation in the next column is not joined
 logic/R23-copyOutline-bound	killed	214	4 check(s): ContentView.swift has controls of this shape to check; SettingsView.swift has controls of this shape to check; ContentView.swift has named controls to check
 logic/R23-copyOutline-bound	killed	283	3 check(s): copying a 4,000-level outline does not kill the worker; …and the outline still lands in the output, truncated; both outline walks truncate at the same depth
+const/paleDrawingThreshold	killed	478	3 check(s): pale-drawing routes to the picture path; pale-chart routes to the picture path; …and a page carrying a pale drawing does not
+const/maximumInkUnderADrawing	killed	469	3 check(s): pale-drawing routes to the picture path; pale-chart routes to the picture path; …and a page carrying a pale drawing does not
+const/minimumMarkContrast	killed	475	1 check(s): faint-marks routes to 1-bit

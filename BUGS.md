@@ -6,20 +6,22 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Four open, and none of them is a release blocker any more.** **C23 is `FIXED`** as of
-2026-08-15 — the crop box the rebuilt copy never carried — and the fix is not the one its entry
-proposed: putting it where the entry said would have shifted every run on the page on one route
-and clipped the retained ink away for good on the other. It cost the JBIG2 route on trimmed
-documents, 16 of 233, which is written up with the numbers. R56 and R57 remain open and both
-wait on the one unbuilt *shape* signal. **R55 is the third and it is not in the app** — it is
-in `Tools/`, and it needs its own measurement campaign before `classify-source` changes.
-**C24 is the fourth**, opened 2026-08-15: `largestImage` answers
-"the largest image in this document" to a question about *this page*, so on the 4 corpus
-documents whose pages share one `/Resources` a page that draws nothing at all is rebuilt at
-another page's plate resolution. Two repairs were built and both were wrong, and the third
-would need a threshold the corpus has no gap for — it is open with the measurements rather
-than tuned. So: two waiting on an instrument that does not exist yet, one in the tooling, and
-one rebuild-resolution defect refused with its numbers — **and no release blocker.** **R81, R82 and
+**Two open, neither in the app's content path, and no release blocker.** **R56 and R57
+are `FIXED`** as of 2026-08-16 — the pale drawing erased and the tonal plate blobbed, the
+two entries that had been waiting on a shape signal since 2026-08-13. It exists now:
+`Flattener.pageMarks`, `largeMarkTone` and `paleDrawing`, on the sixth attempt and the
+second signal class, and the term that closed R56 is not a threshold on how pale a mark
+is but on **where it is**. Read both entries before touching the routing — four
+luminance rounds and two shape rounds were refused first, and the corpus section in R57
+states plainly the acceptance bar this did *not* meet. **R55 is the first of the two
+still open and it is not in the app** — it is in `Tools/`, and it needs its own
+measurement campaign before `classify-source` changes. **C24 is the second**, opened
+2026-08-15: `largestImage` answers "the largest image in this document" to a question
+about *this page*, so on the 3 corpus documents whose pages share one `/Resources` a page
+that draws nothing at all is rebuilt at another page's plate resolution — **85 pages,
+measured 2026-08-16 by scanning content streams for `Do`**. Two repairs were built and
+both were wrong, and the third would need a threshold the corpus has no gap for; it is
+open with the measurements rather than tuned. **R81, R82 and
 R83 are the text layer's three, all `FIXED` on 2026-08-15**: a line drawn at 5% of its width
 because a second reading of its own ink counted as the next fragment; words welding when one
 fragment of a line is much shorter than the next; and the small ones from areas 2, 3 and 13,
@@ -36,17 +38,18 @@ site C13's fix never reached; 16 of 233 corpus documents, 627 of 16,987 pages, w
 of the sheet. Read its entry before touching the crop box anywhere: the obvious fix is wrong in
 two different ways, both measured.
 
-**R56 and R57 are in the app, on the default route.** R56: a pale line drawing is
-**erased** by the 1-bit route, because it scores the same ink, tone and saturation as a
-page with nothing on it but text — no routing signal has a term for the zone it sits in.
-R57: a continuous-tone plate over a fifth of a page misses *both* routing gates at once
-(ink 0.147 against 0.15, tone 0.102 against 0.12) and comes out a solid black blob that
-swallows a line of text. Both were found by the adversarial fixtures in
-`Tools/make-plate-fixtures.swift`, both are **rendered rather than argued**, and both
-converge on the one unbuilt instrument `FEATURES.md` specifies: shape, not luminance. A
-luminance signal was built for R56 and refused over four measured rounds. Neither is
-fixed, and `TODO.md` item 1's size optimisation is refused until R56 closes, because it
-would make R56 more common for a measured 8.2 KB a page.
+**R56 and R57 were in the app, on the default route, and are `FIXED`.** R56: a pale
+line drawing was **erased** by the 1-bit route, because it scored the same ink, tone and
+saturation as a page with nothing on it but text. R57: a continuous-tone plate over a
+fifth of a page missed *both* routing gates at once (ink 0.147 against 0.15, tone 0.102
+against 0.12) and came out a solid black blob. Both were found by the adversarial
+fixtures in `Tools/make-plate-fixtures.swift` and both were **rendered rather than
+argued** — and R57's "realism not established" caveat turned out to be hiding a credited
+art photograph and 87 more pages in one thesis. Both are closed by the shape signal
+`FEATURES.md` specified three days earlier, and the two entries carry what that
+specification got wrong as well as what it got right. `TODO.md` item 1's size
+optimisation was refused until R56 closed; it is now unblocked in principle and has not
+been re-measured.
 
 **R55 is not in the app**: `classify-source` calling an upright-scanner capture
 `photographed`, which is the gate deciding what the corpus and the sweep are allowed to
@@ -2969,10 +2972,117 @@ content-integrity defects, and the base rate says a third would too. It also nee
 if `if settings.preserveAnnotations` were inverted or deleted, all 23 checks here would still
 pass. It is on `main`, off by default, and unadvertised.
 
-### R56 · `isPicture` is blind to pale marks, and the 1-bit route erases them — OPEN
+### R56 · `isPicture` is blind to pale marks, and the 1-bit route erases them — FIXED
 *(found 2026-08-13 building the adversarial fixtures TODO item 1's measurement asked
 for. **In the app, on the default route, and it destroys content** — the only entry in
-this register found by a fixture rather than by a document.)*
+this register found by a fixture rather than by a document. Fixed 2026-08-16, on the
+sixth attempt and the second signal class.)*
+
+**What closed it was not a better threshold on how pale a mark is. It was asking where
+the mark is.**
+
+This entry's refusal is the specification for its own fix, and it holds up: the blind
+zone contains three kinds of thing — a pale drawing (keep it), decorative table shading
+(harmless to lose) and show-through from the reverse of the sheet (losing it is
+*desirable*) — and no luminance statistic separates them, because the two commonest are
+the two you want deleted. Every one of those three descriptions is about shape or
+place, and none is about how dark the mark is. `Flattener.paleDrawing` asks
+three structural questions of each connected pale mark, at 150 cells to the inch:
+
+| question | a drawing | shading | show-through |
+|---|---|---|---|
+| taller than a quarter inch? (`typeCeilingInches`) | yes | yes | **no** — it is type-sized |
+| does it fill its own box? (`solidMarkFill`) | **no**, it is strokes | yes | — |
+| is this page's own type inside its box? (`maximumInkUnderADrawing`) | **no** — a figure sits where the type is not | — | **yes** — it *is* the type, reversed |
+
+The third question is the one that matters and it is the one nothing before had asked.
+Both of the first two are defeated by real show-through, because at any reduction it
+merges into components taller than a line and emptier than a block — measured, on
+`Ibson_2006` p29 and on `Doermann_1967`. Show-through is the reverse page's type, and
+the two pages are set to the same measure, so it lands **in** the type. A figure does
+not: it occupies a part of the sheet the type gave up.
+
+**And the verdict is about one mark, not about the page.** The first version summed the
+*ink* of every drawing-shaped mark, which is wrong twice: it makes a page of scattered
+specks look like a page with a figure on it, and it under-counts the thing it protects,
+because a drawing is thin. The `pale-chart` fixture — added by the review of this fix,
+and the ordinary layout of a figure in a book: hairline plot lines with the page's own
+axis numerals inside the frame — scored **0.0115** of the sheet in ink against a 0.012
+bar and was erased, while its mark *spans* 0.2221 of the sheet. R49 had said it in one
+sentence three days earlier: text is thousands of small components and a subject is one
+large one.
+
+**What the third question is worth, over the whole corpus.** Pages carrying a
+drawing-shaped mark over `paleDrawingThreshold`, with everything else held fixed and
+only `maximumInkUnderADrawing` moved:
+
+| | pages | term off | 0.10 | **0.05** | 0.02 |
+|---|---|---|---|---|---|
+| `Doermann_1967` — show-through | 27 | 7 | 0 | **0** | 0 |
+| `Ibson_2006` — show-through | 263 | 53 | 0 | **0** | 0 |
+| `Boltanski_2006` — dense type, R38's document | 203 | 0 | 0 | **0** | 0 |
+| `Himanen_2001` — faded type | 255 | 0 | 0 | **0** | 0 |
+| the whole corpus | 16,987 | 175 | 34 | **25** | 14 |
+| the two positive fixtures | 2 | 2 | 2 | **2** | 2 |
+
+Sixty pages of show-through go to nothing, the corpus goes from 175 to 25, and the
+fixtures do not move at any value — theirs is the one case with no type under the mark.
+*(An earlier draft of this table was measured with the coverage statistic this fix
+replaced, and with the wrong threshold beside it. The review of the diff recomputed it
+and neither row reproduced. This one is from `census-v3` and the numbers above are the
+shipped configuration.)*
+
+**Two things had to be fixed before the shape question could even be asked, and both
+were found by reading the pages the signal fired on rather than the aggregate.**
+
+- **`minimumMarkContrast`.** Round 3's rule for "too dark to be paper" is the paper's
+  mode less three times the spread of its peak's clean upper side. On a scan whose
+  white is **clipped**, the mode is 255, there is no upper side, the spread is 0.0 and
+  the rule degenerates to `paper − 4`. That read **228 of `Himanen_2001`'s 255 pages**
+  as carrying pale content — a book of type whose 1-bit rendering is perfect. A floor
+  of 24 levels removes it; the fixture's strokes sit 47 below their paper, so the case
+  the constant protects has a factor of two of headroom.
+- **The reduction was too coarse.** The first draft ran at 75 cells to the inch on the
+  strength of Leptonica's 37.5 ppi halftone seed. That is a *seed* for a reconstruction
+  into a higher-resolution mask, not a surface anything decides on; Leptonica's own
+  decision surfaces are 150–300 ppi and `pixGenerateHalftoneMask` says in as many words
+  that it "is not intended to work on small thumbnails". At 75 the interline gap of a
+  300 DPI page is one or two cells and a rank-1 reduction bridges it. See
+  `RESEARCH-shape-signals.md` §7.
+
+**The sibling, which is the half a fix like this usually leaves behind.**
+`mrcLayers`'s all-text rule shrinks a page's tone layers 8x and 16x when
+`inkOutsideText` says the page is all text — and R50 recorded that a pale drawing reads
+**0.0000** there, judging the miss harmless *"because this only ever changes
+resolution"*. True at 2x. Closing R56 in `isPicture` alone would have sent that page to
+the picture path and then stored its drawing at an eighth of its resolution, which is
+the same miss in front of a second decision. The all-text rule now asks
+`paleDrawing` as well (CONTRIBUTING 4b).
+
+**What this does not do, stated because it will come back.**
+
+- **A figure smaller than about 2.2 inches on a side is still erased.** That is
+  `paleDrawingThreshold` — 0.05 of the sheet — and it is set where it is because below
+  0.02 the confusers begin. The alternative is a threshold inside the confuser cluster,
+  which is the fifth refusal this fix exists to avoid.
+- **It does not separate a pale drawing from show-through that lies where the type is
+  not.** A survey of the field found no published method that does either —
+  `RESEARCH-shape-signals.md` §6.1, which also records the one mechanism that would in
+  principle work (DjVu's per-blob coding-cost comparison) and that no constants for it
+  are published. What holds this line is the asymmetry rather than the discrimination:
+  a page wrongly routed to pictures costs bytes and keeps an artefact nobody wanted,
+  and a page wrongly thresholded loses its figure. That is R50's shipping argument, and
+  it is the honest one here.
+- **It is blind to geometry.** All seven fixtures are one upright Letter page, which
+  CLAUDE.md invariant 5 calls structurally blind. Nothing here says a pale drawing
+  survives on a rotated or oddly-sized page; it says the page changes lane.
+
+**On the corpus this branch fires 11 times**, out of the 125 pages the two signals move
+between them — see R57's corpus section, which covers both. `Doermann_1967` and
+`Ibson_2006`, the two show-through documents that defeated every earlier attempt, move
+**0 pages on this branch**.
+
+The original entry, including the four refused luminance rounds, follows.
 
 A page of type with a **pale line drawing** on it — luminance 200 on cream stock —
 comes out of `Flattener.flatten` in Automatic mode with **the drawing gone**. Not
@@ -3068,9 +3178,189 @@ do not work. It is still the remaining prize, and it still wants its own cycle.
 latent defect into a common one for a measured 8.2 KB a page. Refused until R56 closes;
 `TODO.md` has the arithmetic.
 
-### R57 · a continuous-tone plate can miss both routing thresholds at once — OPEN
-*(found 2026-08-13 alongside R56, from the same fixtures. **Realism not established** —
-read the caveat.)*
+### R57 · a continuous-tone plate can miss both routing thresholds at once — FIXED
+*(found 2026-08-13 alongside R56, from the same fixtures, and filed with the caveat
+"realism not established". **The caveat is now settled, the wrong way**: the three
+corpus pages the entry named were rendered on 2026-08-16 and one of them is a
+photograph coming out as a black blob. Fixed the same day.)*
+
+**The fix is one sentence: ask the page's own tone constant about the region the tone
+is in.** `pictureToneThreshold` is not miscalibrated — the fixture reads 0.102 against
+its 0.12 — it is being asked about the wrong area. A plate over a fifth of a sheet
+dilutes its own tone by five, and the constant was measured on pages a picture
+*dominates*. `Flattener.largeMarkTone` takes connected components of the page's ink at
+150 cells to the inch, keeps those that span at least `largeMarkShare` (2%) of the sheet
+**and fill at least `minimumPlateFill` (0.25) of what they span**, and measures
+`toneFraction` **inside** each one, at full resolution. No new tone threshold: the
+existing constant, asked the question it was calibrated for.
+
+*(Two terms on the component, and each was arrived at by getting the other wrong. Size
+alone admits a page **frame** — a 3 px rule round the edge spans the whole sheet — and
+the tone of everything it encloses is then measured, 1.54x the whole-sheet figure on a
+synthetic framed text page, in a branch with no `pictureInkMinimumTone`-style
+corroborating gate to catch it. Replacing size with the component's own **ink** refuses
+the frame and also refuses `Scott_TK` p13, a real reversed-out advertisement that 1-bit
+destroys. Fill is what separates them: 0.02 for a frame, 0.5–0.9 for a plate. Both
+versions were found by the review of this diff and by rendering the pages they moved.)*
+
+It cuts the way `pictureInkMinimumTone` already does and for the same reason. A
+halftone is bimodal, so a coarse screen's own component reads low and stays at 1-bit
+where R38 measured it belongs; a solid rule, a rubber stamp or a title bar reads near
+zero. What reads high is an unresolved halftone or a photograph — which is what 1-bit
+destroys.
+
+| fixture | tone over the sheet | tone in the biggest mark | route |
+|---|---|---|---|
+| text only | 0.0044 | 0.0000 | 1-bit |
+| coarse halftone (R38 — must stay) | 0.0114 | **0.0000** | 1-bit |
+| **tonal plate** | 0.1023 | **0.3798** | **picture** |
+
+**Three pages were rendered before anything was written, and that is what turned the
+caveat over.** The entry said of its three band-dwelling corpus pages: *"Those three
+have not been rendered and compared; that is the next step, and until it happens the
+honest statement is that real pages occupy the band, not that they are being damaged."*
+
+- `Ehrenreich_2000` p9 — a Laurie Simmons photograph, credited on the page, over about
+  a quarter of the sheet. At 1-bit it is **a black blob with a few white shapes in
+  it**. Damaged, exactly as `pictureInkThreshold`'s own comment predicts.
+- `HarpersMagazine-1938` p4 and p7 — dense two-column type, and **1-bit renders both
+  perfectly**. They are in the band for R38's reason, not for this one.
+
+So the band holds two populations and the entry was right to be unsure which it had.
+It had one of each.
+
+**And the corpus holds a far larger instance than the three the entry named.**
+`Schwaller`, a 2026 thesis whose photographs are the substance of it, has **87 pages**
+that route to 1-bit; `Flattener.hasDigitalText` calls the file a scan, so the app
+rebuilds it. p57's photograph of an office interior comes out a solid black rectangle.
+Rendered and read, not inferred.
+
+### What the corpus did, and the bar this did not meet
+
+`FEATURES.md` step 1 set the bar in two halves: every fixture routes correctly, **and no
+corpus page changes route**. The first half is met. The second is not, and restating it
+after the fact would be the worse of the two available dishonesties, so here it is
+plainly. `Tools/score-routing-census.swift` over all 16,987 pages, before against after:
+
+```
+                                    pages
+1-bit  -> 1-bit                    16,408
+1-bit  -> picture                     125     0.74%
+picture-> picture                     454
+picture-> 1-bit                         0
+```
+
+**125 pages over 21 documents move, every one of them in the direction that keeps
+content, and none in the direction that destroys it.** 114 are R57's tone-in-region and
+11 are R56's pale drawing; none is unexplained by one of the two, which is the check
+that the diff did what it says and nothing else.
+
+The bar was written for a signal that moves pages *wrongly*, and the way to tell the
+difference is to look at them rather than to count them:
+
+- **87 of the 125 are `Schwaller`** — the photographs above.
+- `Ehrenreich_2000` p9 is the entry's own named page, and it was destroyed.
+- `Scott_TK` p13's reversed-out advertisement is destroyed at 1-bit; rendered.
+- `Boltanski_2006` moves **0 of 203** and `Himanen_2001` **0 of 255**, which is the
+  result that matters most: R38's document is untouched, and R38 is what a routing
+  change breaks when it goes wrong.
+- **Three pages of `Doermann_1967` are false positives** and are named rather than
+  swept up: their large tonal mark is a scanner-edge blob just inside the inset, and
+  p22 was rendered — a clean typescript that 1-bit prints perfectly. They cost bytes.
+  `largeMarkShare` records why the constant is not moved one step up to remove them.
+
+### What it costs, end to end
+
+`Tools/score-gate.swift` through `OCRModel.start()` over the **21 documents that changed
+plus 4 controls** — a subset chosen to contain the change, so these are worst-case
+proportions and not corpus ones:
+
+```
+                        before        after
+documents               25/25 ok      25/25 ok
+pages                   1,927         1,927
+characters              4,639,609     4,641,234     +1,625  (+0.035%)
+output bytes            113,572,233   134,372,882   1.183x
+byte-identical            —           4 of 25       every control
+minutes                 8             11
+```
+
+**All four controls are byte-identical** — `Boltanski_2006`, `Himanen_2001`,
+`HarpersMagazine-1938` and `Findlay_1992`, which between them are R38's document, the
+faded-type one, the dense-newsprint one and a photograph-heavy one. Nothing moves on a
+document with no changed page, which is the property that matters most here.
+
+**The 125 changed pages cost 20.8 MB between them, 166 KB a page.** Against the
+232-document gate's 721 MB that is **+2.9%** — arithmetic from this subset rather than a
+corpus run, and labelled as such. The worst single document is `Riesman_1976` at 2.09x
+for one page, because a real photograph's three MRC layers can exceed its single JPEG
+and `Model` then keeps the JPEG. That is the price of not destroying the picture.
+
+**Characters move by +0.035%, in both directions per document** — `Scott_TK` +600,
+`Doermann_1967` −91. A page that moves from a 1-bit rendering to a grey one is
+recognised from a different image, and R38 recorded the same behaviour. The gate's
+`REPORTED` list is identical before and after, all six entries, so no page resembles its
+input less than it did.
+
+**The text layer moves on the documents whose pages moved, and only there.**
+`Tools/score-corpus.swift` over the same 25, before against after — 2 refuse the row on
+C24's grounds, and of the remaining 23:
+
+```
+identical on every column      15
+changed                         8
+worst:  Scott_TK   start 100% -> 95%   end 99% -> 95%   words 99% -> 107%
+next:   Davis_2005 start 100% -> 99%   end 100% -> 99%  words unchanged
+the other six move by one or two observations and no percentage at all
+```
+
+`off=+0.00` on every document both ways, so nothing drifted. The `Scott_TK` row is the
+mechanism R38 already recorded: three of its pages are now recognised from a grey
+rendering instead of a 1-bit one, so Vision returns different fragments — it recovers
+**more** words (99% → 107%) and a slightly smaller share of line ends is selectable.
+95% is inside the corpus's existing range, whose worst document is 91%, and the pages
+that bought it are the ones whose reversed-out advertisement is no longer a black
+rectangle.
+
+**Three of the ten new mutants have been run, and one of them SURVIVED a green suite
+before a fixture was written for it.** `Tools/mutate.py`:
+
+| mutant | verdict |
+|---|---|
+| `const/paleDrawingThreshold 0.05 → 0.9` | killed, by 3 checks |
+| `const/maximumInkUnderADrawing 0.05 → 0.0` | killed, by 3 checks — **all three are the `pale-chart` fixture's**, and before that fixture existed nothing could see this constant at all |
+| `const/minimumMarkContrast 24.0 → 4.0` | **SURVIVED** 1118/1118, then killed by 1 check once `faint-marks` was added |
+
+The survivor is the interesting one and the review of this diff predicted it exactly:
+the constant's whole justification is a corpus measurement — 228 of `Himanen_2001`'s 255
+pages — and every fixture's marks were either 47 levels below the paper or not there at
+all, so no fixture could tell whether the constant did anything. `faint-marks` is the
+same drawing at **eleven** levels, and it must stay at 1-bit. **The remaining seven
+mutants are not yet run** and are named here rather than left to be assumed.
+
+**And what the detector itself costs**, measured on two real corpus pages, best of 25:
+
+| | `Himanen_2001` p10, 3.4 MP | `Boltanski_2006` p50, 9.8 MP |
+|---|---|---|
+| tone + ink + saturation (the old three) | 4.8 ms | 9.3 ms |
+| `pageMarks` | 14.0 | 27.6 |
+| `largeMarkTone` | 7.3 | 10.1 |
+| `paleDrawing` | 4.5 | 2.6 |
+| **`isPicture` end to end** | **29.5** | **44.1** |
+
+*(The old three are timed with saturation precomputed, as `flatten` passes it. Measured
+on its own, `saturation` renders a thumbnail and costs 85 ms on the 9.8 MP page — more
+than everything here put together, which is worth knowing before anyone optimises the
+wrong thing.)*
+
+So the new signals add about **26 ms to a 3.4 MP page and 40 ms to a 9.8 MP one**, and
+they are paid on every *text* page — the majority — because those are the pages the
+three older signals do not stop. Ordering them last buys the picture pages, not the text
+ones, and `isPicture`'s comment says so rather than implying otherwise. End to end the
+gate above went from 8 minutes to 11 over 1,927 pages, which includes the extra JPEG
+encoding and layering on the 125 pages that moved.
+
+The original entry follows.
 
 The `tonal-plate` fixture — a smooth gradient with a dark subject on it, over the lower
 third of a text page — routes to **1-bit**, and comes out a **solid black blob that

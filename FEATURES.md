@@ -293,10 +293,51 @@ something else rather than sold a setting.
 
 ## Likely worth doing
 
-### A spatial signal for the picture detector — PARTLY ANSWERED, and now the only route left
-*(specified 2026-08-13 out of R49; **R50 answered the easier half the same day**;
-**promoted 2026-08-13 from "likely worth doing" to the thing two open defects both
-depend on** — see the block immediately below.)*
+### A spatial signal for the picture detector — SHIPPED 2026-08-16
+*(specified 2026-08-13 out of R49; R50 answered the easier half the same day; the
+**harder half — `isPicture` itself — landed 2026-08-16** and closed `BUGS.md` R56 and
+R57. Everything below is kept because the entry predicted the answer three days before
+it was built, and because two of the things it predicted turned out to be wrong.)*
+
+**What shipped, in three lines.** `Flattener.pageMarks` reduces the render to two
+binary masks at 150 cells to the inch — ink, and the pale marks the threshold will
+erase. `Flattener.largeMarkTone` measures the *existing* `pictureToneThreshold` inside
+each large ink component instead of over the sheet, which is R57.
+`Flattener.paleDrawing` finds pale marks that are taller than type, not solid,
+**and have none of this page's own type inside them**, which is R56.
+
+**Where this entry was right.** Shape is the answer and the histogram is not; the
+adversarial fixtures were essential and the corpus alone would never have produced
+them; and it wanted its own cycle rather than being bolted onto a size fix.
+
+**Where it was wrong, and both matter for the next thing like it.**
+
+1. **"A connected-component pass over the routing thumbnail … cheap, since the
+   thumbnail is about 210x350."** The 40 DPI thumbnail is far below the floor. Every
+   implementation surveyed normalises to a fixed reference resolution before applying
+   any constant — Leptonica to 300 then 150, ScanTailor to 300, Haneda & Bouman to 300
+   — and Leptonica's own halftone mask documents "assumed to be 150 to 200 ppi" and
+   "this is not intended to work on small thumbnails". At 40 DPI a 10 pt glyph is
+   5.5 px, below the minimum component size the MRC literature will look at. The
+   shipped signal runs at 150 cells to the inch off the full render, and a first draft
+   at 75 was already measurably worse. `RESEARCH-shape-signals.md` §7.
+2. **"Shape does [separate them]: strokes are long and curved, show-through is
+   text-shaped blobs in rows."** Half true, and the wrong half was load-bearing. Real
+   show-through does *not* stay text-shaped at any usable reduction — it merges into
+   components taller than a line and emptier than a block, measured on `Ibson_2006` and
+   `Doermann_1967`. Size and fill could not separate it from a drawing. What separated
+   them was not shape at all but **place**: show-through lies *in* the page's own type,
+   because it is the reverse page's type set to the same measure, and a figure sits
+   where the type is not.
+
+**And a third thing the survey found which this entry could not have.** No published
+method separates a pale drawing from show-through. Leptonica names bleed-through as a
+*failure mode* of its own threshold selector rather than a case it handles, and puts
+line art on the text side of its photo detector. The one mechanism that would in
+principle do it is DjVu's per-blob coding-cost comparison, and no constants for it are
+published. So the term that closed this is not something the field already had, and it
+should be held to that standard: its recorded miss is in `BUGS.md` R56, with the page
+that produces it named.
 
 **It is no longer an optimisation. R56 and R57 are content-destruction defects in the
 shipped routing, and this is what closes both.** R56: a pale line drawing scores the
@@ -381,7 +422,20 @@ Synthesise the adversarial cases; the corpus alone will not produce them.
 
 ---
 
-## The order of work for this, decided 2026-08-16
+## The order of work for this, decided 2026-08-16 — and what it actually produced
+
+**All four steps were carried out on 2026-08-16 and the signal shipped.** The order was
+right and it is worth keeping as a pattern, but the *content* of two steps was wrong,
+so read the outcome beside each one:
+
+| step | what it said | what happened |
+|---|---|---|
+| 0 | re-read the four refused rounds sceptically | **Paid for itself, but not the way it expected.** R56's luminance refusal is sound — `Doermann_1967` p19 was rendered and its pale content really is show-through. What the re-read found instead was that **R57's caveat was wrong**: its three named corpus pages had never been looked at, and one of them is a photograph coming out as a black blob. |
+| 1 | write the acceptance test first | **Did what it was for.** Six fixture checks in the suite plus `Tools/score-routing-census.swift`, which names every corpus page that moves. Both halves bit: the first draft of the pale signal passed the fixtures and moved 228 pages of `Himanen_2001`, and only the census could see that. |
+| 2 | check `Flattener.inkOutsideText` against the two fixtures — "if it holds the build mostly disappears" | **Refuted, and it was already known to be.** `inkOutsideText`'s signal is *ink*, and R50's own doc comment records that a pale drawing reads 0.0000 there. The hypothesis could not have held. It cost ten minutes to confirm rather than the hour budgeted. |
+| 3 | one scoped read of DjVu's separator, then connected components | **The read was worth far more than the build.** DjVuLibre turns out to contain no separator at all, and the useful sources were Leptonica and ScanTailor. It corrected the resolution by 4x and supplied the negative result — *nobody separates a pale drawing from show-through* — that stopped a fifth round being spent looking for a published answer. `RESEARCH-shape-signals.md`. |
+
+The original text of the four steps follows.
 
 Four rounds have been refused here, and the owner's constraint is explicit: no more
 fixes that do not work. So the next attempt is bounded in advance, and the first two

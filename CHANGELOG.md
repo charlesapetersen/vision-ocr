@@ -14,6 +14,31 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+**Photographs no longer come out as black blobs, and a pale drawing is no longer
+erased.** Two content-destruction defects on Automatic's default route, both open since
+2026-08-13, both closed by asking the routing question about *things on the page*
+instead of about the page's histogram — `BUGS.md` R56 and R57.
+
+**A photograph over a fifth of a sheet was thresholded to 1-bit** and came out a solid
+black shape. It missed both gates at once — ink 0.147 against 0.15, tone 0.102 against
+0.12 — because a plate that size dilutes its own tone by five, and both constants were
+calibrated on pages a picture *dominates*. The page's own tone constant is now measured
+**inside** each large mark rather than over the sheet: the same number, asked about the
+right region. Verified on real pages before anything was written — `Ehrenreich_2000` p9
+is a credited art photograph rendering as a blob, and one thesis in the corpus has 87
+more. **R57.**
+
+**A pale line drawing was erased rather than softened** — not blurred, gone, with the
+text beside it intact — because every routing signal is blind to a mark paler than the
+ink and darker than the paper. Four rounds of luminance signal had been refused here:
+that blind zone holds pale drawings, decorative shading and show-through from the
+reverse of the sheet, and the two you want deleted are the commonest. What separates
+them is **where they are** — show-through lies in the page's own type because it *is*
+type, and a figure sits where the type is not. **R56.**
+
+Both are held by seven synthetic fixtures the corpus cannot produce, and by a
+page-by-page census of all 16,987 corpus pages that names every page whose route moved.
+
 **A line you could not highlight, words that welded together, and a copy that showed
 what the original hid.** Three text-layer and geometry defects, all on the default
 route, all found by the 2026-08-14 whole-codebase review and all measured before and

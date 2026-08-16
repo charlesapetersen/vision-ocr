@@ -78,17 +78,24 @@ without it is the owner's decision; the hand-offs set out both paths.
 
 ## What is actually left
 
-**One thing, and it is not an optimisation: a shape signal for the picture detector.**
-`FEATURES.md` has it. Everything else in the feature backlog is either shipped or
-refused with its numbers, and **two open defects now depend on that one signal** — R56
-(a pale drawing erased by the 1-bit route) and R57 (a tonal plate blobbed by it). It also
-unblocks three things already refused for want of it: R35's per-page background factor,
-R49's paper detector, and item 1 below.
+**The shape signal is SHIPPED, 2026-08-16, and R56 and R57 are closed with it** —
+`Flattener.pageMarks` / `largeMarkTone` / `paleDrawing`, held by seven fixtures and by a
+page-by-page census of all 16,987 corpus pages. `FEATURES.md` carries what the
+specification got right and the two things it got wrong; `RESEARCH-shape-signals.md` is
+the survey that corrected its analysis resolution by 4x.
 
-**The order of work for it was decided on 2026-08-16 and is written out in
-`FEATURES.md`** — read that before starting, because the first two steps are cheap
-enough to settle the question without a build, and the fifth attempt is meant to be a
-bounded experiment rather than a fifth refusal:
+**Three things it was said to unblock, and none of them is unblocked yet.** R35's
+per-page background factor, R49's paper detector and item 1 below were each refused for
+want of a shape signal. There is one now — but none of the three has been re-measured
+against it, and it answers a *narrower* question than any of them asks: it finds a pale
+mark bigger than about 2.2 inches on a side, and a large mark with continuous tone in
+it. It says nothing about a photomicrograph that reads as paper (R35) or about whether a
+page's bright class is paper or a plate (R49). Re-open those on measurement, not on the
+assumption that the blocker has gone.
+
+The order of work below was decided on 2026-08-16 and was followed. What each step
+actually produced is in `FEATURES.md` — the order was right and two of the four steps
+were wrong in their content. Kept as written:
 
 | step | what | cost |
 |---|---|---|

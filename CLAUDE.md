@@ -15,12 +15,15 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **four
-entries are open and three of them change what the default route produces**: R56 (a pale
-drawing is erased, not softened), R57 (a tonal plate can come out a black blob), and C24
-(`largestImage` reads a shared `/Resources`, so a page that draws no image is rebuilt at
-another page's plate resolution; 4 documents, and two attempted fixes were each worse). The
-fourth is R55, in `Tools/`. **C23 — the rebuilt copy displaying what the original's crop box
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries
+are open and neither destroys content**: C24 (`largestImage` reads a shared `/Resources`,
+so a page that draws no image is rebuilt at another page's plate resolution; 3 documents,
+85 pages, and two attempted fixes were each worse) and R55, in `Tools/`. **R56 and R57 —
+the pale drawing erased and the tonal plate blobbed — are `FIXED` as of 2026-08-16** by a
+shape signal in `Flattener`, on the sixth attempt and the second signal class; read both
+entries before touching the routing, because four luminance rounds and two shape rounds
+were refused before the one that worked, and the term that closed R56 is not a threshold
+on how pale a mark is but on **where it is**. **C23 — the rebuilt copy displaying what the original's crop box
 hid — is `FIXED`, and there is no release blocker.** Read its entry before touching the crop
 box anywhere: the fix the entry itself proposed is wrong in two measured ways, the first fix
 this project shipped for it gave up JBIG2 compression it did not have to, and the crop box now
@@ -38,11 +41,16 @@ with their costs and the reasons some are parked,
 [RESEARCH-2026-08-16.md](RESEARCH-2026-08-16.md) is what other tools do about the
 problems this register keeps re-deriving — the extractor thresholds that bound
 `reserveEms`, Tesseract's two-knob text layer, and the qpdf option C23 was refused
-without reading — and
+without reading —
+[RESEARCH-shape-signals.md](RESEARCH-shape-signals.md) is the same question asked of
+MRC segmentation, and it is the file that corrected the picture detector's analysis
+resolution by 4x and established that **nobody separates a pale drawing from
+show-through**, and
 [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a
 whole-codebase review sweep, including findings not yet fixed and areas not yet
-covered. **[HANDOFF-2026-08-16.md](HANDOFF-2026-08-16.md) is where to start** — group 3 is
-closed, so what is left is `R55`, `R56`/`R57` and `C24` — then
+covered. **[HANDOFF-2026-08-17.md](HANDOFF-2026-08-17.md) is where to start** — R56 and
+R57 are closed, so what is left is `R55` and `C24` — then
+[HANDOFF-2026-08-16.md](HANDOFF-2026-08-16.md), then
 [HANDOFF-2026-08-15-night.md](HANDOFF-2026-08-15-night.md), then
 [HANDOFF-2026-08-15-evening.md](HANDOFF-2026-08-15-evening.md), then
 [HANDOFF-2026-08-15-day.md](HANDOFF-2026-08-15-day.md), which has the corrections this
@@ -66,7 +74,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1046 checks, 2-4 min; runs real OCR, needs nothing installed
+./run_tests.sh        # 1119 checks, 3-6 min; runs real OCR, needs nothing installed
 ```
 
 Never report a change as working without `./run_tests.sh` passing. Add a test that

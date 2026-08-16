@@ -1011,7 +1011,45 @@ enum Flattener {
         if tone > pictureInkMinimumTone,
            inkCoverage(of: grey, width: width, height: height,
                        threshold: threshold) > pictureInkThreshold { return true }
-        return (precomputed ?? saturation(of: page)) > pictureSaturationThreshold
+        if (precomputed ?? saturation(of: page)) > pictureSaturationThreshold { return true }
+
+        // The three signals above are all statistics of the whole sheet, and R56 and
+        // R57 are both pages where that is the defect rather than the threshold: a
+        // plate over a fifth of a page dilutes its own tone by five, and a pale
+        // drawing is not counted by any of them at all. The two below ask about
+        // *things on the page* instead.
+        //
+        // **They are last, and that saves less than it looks.** The pages that reach
+        // here are the ones the three above called text, which is the great majority,
+        // so the cost is paid on nearly every page rather than on a few. Measured, best
+        // of 25 over two real corpus pages: the three above cost 4.8 ms on a 3.4 MP
+        // page and these two add 25.8 ms; at 9.8 MP it is 9.3 ms against 40.3.
+        // Ordering them last buys the picture pages, not the text ones. Worth paying
+        // against a per-page recognition cost two orders of magnitude larger — and
+        // worth knowing that `saturation` measured *without* the caller's precomputed
+        // value costs 85 ms on that 9.8 MP page, more than all of this together, which
+        // is where an optimisation should start.
+        let dpi = renderDPI(of: page, pixelWidth: width)
+        let marks = pageMarks(grey, width: width, height: height,
+                              threshold: threshold, dpi: dpi)
+        // R57. The page's own tone constant, asked about the region the tone is in.
+        if largeMarkTone(marks, grey: grey, width: width, height: height,
+                         threshold: threshold) > pictureToneThreshold { return true }
+        // R56. A pale mark too big to be type and too empty to be a shaded block.
+        return paleDrawing(marks, dpi: dpi).extent > paleDrawingThreshold
+    }
+
+    /// The resolution a render of `page` was taken at, from the render itself.
+    ///
+    /// Derived from the buffer in hand rather than by calling `rebuildDPI` a second
+    /// time, for two reasons: `rebuildDPI` walks the page's resources and is not free,
+    /// and a caller that rendered at some other scale — every tool in `Tools/` at
+    /// some point, and `score-threshold-loss`'s header records what that mistake
+    /// looks like — would otherwise be told about a page nothing produced.
+    static func renderDPI(of page: PDFPage, pixelWidth: Int) -> Double {
+        let box = fullBox(of: page)
+        guard box.width > 0, pixelWidth > 0 else { return 72 }
+        return Double(pixelWidth) * 72.0 / Double(box.width)
     }
 
     /// Fraction of pixels that are neither near-white nor near-black. Text is
@@ -1364,6 +1402,599 @@ enum Flattener {
         }
         // No ink at all is a blank page, and a blank page has no picture on it.
         return total > 0 ? Double(outside) / Double(total) : 0
+    }
+
+    // MARK: - Shape: what is on the page, rather than how dark it is
+
+    /// The resolution the mark analysis runs at, in cells to the inch.
+    ///
+    /// A **physical** cell rather than a fixed reduction factor, because the corpus
+    /// renders between 72 and 600 DPI and every statistic below is a size in inches.
+    /// A fixed factor would make a quarter inch mean 19 cells on one document and 3
+    /// on another, and the constants would then be describing the scanner.
+    ///
+    /// **150, and 75 was tried first and is measurably worse.** 150 ppi is where
+    /// Leptonica's own page segmentation operates: `pixGetRegionsBinary` documents its
+    /// input as 300–400 ppi and reduces 2x, and `pixGenerateHalftoneMask` documents
+    /// *"assumed to be 150 to 200 ppi"* and adds *"this is not intended to work on
+    /// small thumbnails"*. Its 37.5 ppi levels are **seeds** for a morphological
+    /// reconstruction back into a higher-resolution mask, never a surface a decision
+    /// is taken on, and reading them as one is what put the first draft of this at 75.
+    /// `RESEARCH-shape-signals.md` §7 is the survey that settles it.
+    ///
+    /// The cost of the coarser choice was concrete rather than theoretical: at 75 the
+    /// interline gap of a 300 DPI page is one or two cells, a rank-1 reduction bridges
+    /// it, and the show-through on `Ibson_2006` p29 merges into components four inches
+    /// tall — which is exactly what the type ceiling below exists to rule out.
+    ///
+    /// **It is a ceiling on the analysis resolution rather than the resolution.** The
+    /// reduction never *up*samples, so a page rendered below about 225 DPI is analysed
+    /// at its own resolution — 72 to 200 cells an inch, and `rebuildDPI`'s own note
+    /// records 37 real 72 DPI scans in the corpus. Those pages sit in the coarse
+    /// regime the paragraph above rejects, and the honest statement is that they are
+    /// covered by the corpus census rather than by this argument: not one of them
+    /// changes route, and `Himanen_2001` at 144 DPI is one of the two documents that
+    /// measured `minimumMarkContrast`. Upsampling to reach 150 would invent detail,
+    /// which C14 and `rebuildDPI` refuse everywhere else in this file.
+    static let markCellsPerInch = 150.0
+
+    /// The most cells the mark analysis will ever hold, whatever the page is.
+    ///
+    /// **R24 and R29's shape, caught before it shipped rather than after.** The
+    /// reduction factor is derived from the render's DPI, so on a *low*-resolution
+    /// page it is 1 and the analysis runs at full size — and the labelling holds an
+    /// `Int32` a cell. `maximumPageMegapixels` allows 400 MP, which a 200-inch page
+    /// (PDF ≤1.5's own ceiling on a page box) reaches at 100 DPI, and at factor 1
+    /// that is **1.6 GB of labels** on top of a render this file bounds at 5.5 bytes
+    /// a pixel. Both R24 and R29 were an allocation bounded in one place and left
+    /// unbounded in its sibling; this is that sibling, and it is bounded here.
+    ///
+    /// **What 4 million cells actually costs, counted rather than estimated** — the
+    /// first version of this comment said "16 MB of labels and 8 MB of masks" and
+    /// omitted the largest term:
+    ///
+    /// | buffer | at the ceiling |
+    /// |---|---|
+    /// | `labels` `[Int32]` | 16 MB |
+    /// | `ink`, `pale`, and `pale`'s copy in the suppression pass | 12 MB |
+    /// | `area`, `x0`, `x1`, `y0`, `y1` `[Int]`, one entry a *label* | up to 160 MB |
+    ///
+    /// The last row is the one that was missed, and it is worst on the page kind this
+    /// is least interested in: a mask of scanner speckle can produce a label per
+    /// second cell. Measured by the review of this diff on a 2000x2000 speckle mask —
+    /// 1,000,000 labels, 44 MB — and the ceiling is four times that page.
+    ///
+    /// A 300 DPI Letter page uses **1.61 M** of the ceiling: 1,116 x 1,444 after
+    /// **both** insets and the 2x reduction. (The first version said 1,195 x 1,547,
+    /// which is the sixteenth taken off once instead of once at each end — the
+    /// arithmetic contradicted `pageMarks`' own doc comment two screens below it.)
+    /// Real text pages produce a few thousand labels, not a million, so the honest
+    /// figure for the common case is about 1.3 bytes a pixel of render against the
+    /// 5.5 the render itself is budgeted at, and the table above is the worst case.
+    static let markCellCeiling = 4_000_000
+
+    /// A mark taller than this is not a letter, and so is not show-through either.
+    ///
+    /// **Physical, and the page-relative version was tried first and is wrong.** The
+    /// obvious scale is the median height of the page's own ink components — and on
+    /// the halftone fixture that reads 2 cells, because ten thousand halftone dots
+    /// outvote three hundred glyphs. A scale taken from the page's own components is
+    /// corrupted by exactly the pages this exists to judge. Type on a page is under a
+    /// quarter inch: 24 pt has a cap height near 0.24 in, and the corpus holds no body
+    /// face remotely that large. Show-through is the *reverse* page's type, so the
+    /// same bound holds it.
+    ///
+    /// Height only, deliberately. Show-through blurs adjacent glyphs into one
+    /// component the width of a whole line — four or five inches — so any width term
+    /// would put show-through in the same class as a drawing. Its *height* is still a
+    /// line's height.
+    static let typeCeilingInches = 0.25
+
+    /// How far below its paper a mark has to sit before it is a mark at all.
+    ///
+    /// **This constant is two measured corpus failures, and without it the pale layer
+    /// is mostly paper.** The level below which a pixel is not paper was, in
+    /// `score-threshold-loss`'s round 3, the paper's mode less three times the spread
+    /// of the peak's clean upper side. On a scan whose white is *clipped* the mode is
+    /// 255, there is no upper side, the spread is 0.0, and the rule degenerates to
+    /// `paper - 4`. Measured on the corpus that reads a **quarter of the pages of
+    /// `Himanen_2001`** — 228 of 255 — as carrying pale content, when what they carry
+    /// is a page of type whose 1-bit rendering is perfect and whose "pale marks" are
+    /// paper four levels off white.
+    ///
+    /// The second is faint show-through, 8–15 levels below the paper on the corpus
+    /// pages that carry it. That case is *also* held by `maximumInkUnderADrawing`
+    /// below, and deliberately by both: this constant keeps it out of the mask at all,
+    /// and that one keeps what does get in from being called a drawing. Neither is
+    /// sufficient alone — measured, `Ibson_2006` needs the second and `Himanen_2001`
+    /// needs the first.
+    ///
+    /// 24 levels is 9% of the range. The pale-drawing fixture's strokes sit **47**
+    /// below their paper, so the constant has a factor of two of headroom against the
+    /// case it exists to protect, and the corpus population it excludes is 8–15.
+    static let minimumMarkContrast = 24.0
+
+    /// A mark that fills this much of its own bounding box is a filled shape rather
+    /// than a stroke: a shaded table cell, not a drawing.
+    ///
+    /// The two populations are far apart rather than adjacent — a solid rectangle is
+    /// 1.0 and the pale-drawing fixture's strokes are 0.11 — so this is a divider
+    /// between two clusters, not a tuned threshold.
+    static let solidMarkFill = 0.6
+
+    /// A component has to span this much of the sheet before its own tone is asked
+    /// about. Below it, a mark is too small for a misjudgement to cost anything.
+    ///
+    /// **A genuine continuum, and the pages on both sides of it were rendered and
+    /// looked at** — which is the only reason a number here is defensible at all. Of
+    /// the 114 corpus pages this branch moves, **16 have their qualifying mark between
+    /// 0.02 and 0.05 of the sheet**, so that band is what the choice is about:
+    ///
+    /// - it holds **two `Schwaller` photograph pages** (p173 and p191, small figures on
+    ///   a page of type) which 1-bit turns into black shapes;
+    /// - and **three `Doermann_1967` pages** whose mark is a scanner-edge blob just
+    ///   inside the inset. p22 was rendered: a clean typescript that 1-bit prints
+    ///   perfectly, so those three cost bytes and nothing else.
+    ///
+    /// 0.02, because a page wrongly held in greyscale costs bytes and a page wrongly
+    /// thresholded loses its picture. That asymmetry is the register's standing answer
+    /// (R50), and it is the whole of why this sits one step low rather than one high.
+    ///
+    /// *(An earlier draft of this comment justified 0.02 by claiming 0.05 would lose
+    /// `Scott_TK` p13's reversed-out advertisement. It would not: p13 stays at 1-bit at
+    /// **both** values, because its largest mark does not clear `minimumPlateFill`. The
+    /// number was checked against the corpus rather than assumed, and it was wrong —
+    /// the same failure the review of this diff had already caught twice.)*
+    static let largeMarkShare = 0.02
+
+    /// …and it has to *fill* this much of what it spans, or it is a frame rather than
+    /// a plate.
+    ///
+    /// **Both terms, and each was reached by getting the other one wrong.** The first
+    /// version gated on bounding-box area alone: a 3 px rule round the edge of a sheet
+    /// spans the whole page, qualified, and the tone of everything the frame *encloses*
+    /// was then measured — 1.54x the whole-sheet figure on a synthetic framed text
+    /// page, in a branch with no `pictureInkMinimumTone`-style gate to catch it. The
+    /// second version gated on the component's own **ink** instead, which is 0.4% for a
+    /// frame and correctly refused it — and also refused `Scott_TK` p13, a 1915 trade
+    /// magazine page whose reversed-out advertisement really is destroyed at 1-bit.
+    ///
+    /// Fill is what actually separates the two: a frame is 0.02 of its box, a plate is
+    /// 0.5 to 0.9. 0.25 sits in the middle of that gap and is a divider between two
+    /// clusters rather than a tuned value.
+    ///
+    /// **What it gives up, named because it was measured.** `Scott_TK` p13's
+    /// reversed-out advertisement — a 1915 trade-magazine page that 1-bit turns into a
+    /// black rectangle with illegible white text — has a largest mark spanning 0.16 of
+    /// the sheet and does *not* clear this, so the page stays at 1-bit. The
+    /// advertisement is white type on black, so the component that survives the
+    /// reduction is the type rather than the ground. Recorded rather than fixed: the
+    /// term is what keeps a page *frame* from being read as a plate, and no value of it
+    /// separates those two cases.
+    static let minimumPlateFill = 0.25
+
+    /// How much ink may sit inside a pale mark's own rectangle before the mark is
+    /// judged to be lying *in* the type rather than in a space of its own.
+    ///
+    /// **This is the term that separates a drawing from show-through, and it is the
+    /// only one tried that does.** R56's refusal turns on those two being
+    /// indistinguishable, and four rounds of luminance and two of shape agree with it:
+    /// a contrast floor cannot separate them (`Doermann_1967`'s show-through is as far
+    /// below its paper as the fixture's strokes are below theirs), and neither can
+    /// size or fill (at any reduction, show-through merges into components taller than
+    /// a line and emptier than a block).
+    ///
+    /// What does separate them is **where they are**. A figure occupies a part of the
+    /// sheet the type does not; show-through lies *in* the type, because it is the
+    /// reverse page's type and the two pages are set to the same measure. So the
+    /// question is asked of the mark's own rectangle: how much of it is this page's
+    /// ink?
+    ///
+    /// Measured, holding everything else fixed, counting pages over the threshold:
+    ///
+    /// | | term off | at 0.10 | at 0.05 | at 0.02 |
+    /// |---|---|---|---|---|
+    /// | `Doermann_1967`, show-through, 27 pp | 24 | 2 | **1** | 1 |
+    /// | `Ibson_2006`, show-through, 263 pp | 93 | 0 | **0** | 0 |
+    /// | `Boltanski_2006`, dense type, 203 pp | 0 | 0 | **0** | 0 |
+    /// | the pale-drawing fixture | fires | fires | **fires** | fires |
+    ///
+    /// The fixture does not move by a thousandth across the whole range, because its
+    /// plate has no type under it at all. 0.05 is the middle of a range where the
+    /// answer does not change, which is the most a constant can be asked to be.
+    static let maximumInkUnderADrawing = 0.05
+
+    /// How much of the sheet **one** drawing-shaped pale mark has to span before the
+    /// page is kept off the 1-bit route.
+    ///
+    /// **One mark, not the sum of them, and the first version summed.** It summed the
+    /// *ink* of every drawing-shaped mark, which is the wrong statistic twice over: it
+    /// makes a page of scattered specks look like a page with a figure on it, and it
+    /// under-counts the very thing it exists to protect, because a drawing is thin.
+    /// The `pale-chart` fixture — a chart drawn the way charts are drawn, hairline
+    /// plot lines with its own axis numerals inside the frame — scored **0.0115** of
+    /// the sheet in ink against a 0.012 bar and was erased, while the same page's mark
+    /// *spans* 0.2221 of the sheet. R49 said this three days earlier in one sentence:
+    /// text is thousands of small components and a subject is one large one. The
+    /// question is about the mark, not about the page.
+    ///
+    /// 0.05 of a Letter sheet is 4.7 square inches — a mark about 2.2 inches on a
+    /// side. Measured over ten documents chosen for being awkward: the two
+    /// show-through ones, R38's dense-type one, the faded-type one, and four that
+    /// carry real pale marks.
+    ///
+    /// | | pages | over 0.02 | over 0.05 | over 0.10 |
+    /// |---|---|---|---|---|
+    /// | `Doermann_1967` + `Ibson_2006` — show-through | 290 | 1 | **0** | 0 |
+    /// | `Boltanski_2006` — dense type, R38's document | 203 | 2 | **0** | 0 |
+    /// | `Himanen_2001` — faded type | 255 | 0 | **0** | 0 |
+    /// | `Broadhead_1994` | 13 | 13 | **0** | 0 |
+    /// | four documents carrying real pale marks | 61 | 26 | **17** | 11 |
+    /// | the two positive fixtures | 2 | 2 | **2** | 2 |
+    ///
+    /// The confusers cluster under 0.02 and the fixtures sit at 0.2221 and 0.2556, so
+    /// 0.05 is 2.5x above one population and 4.4x below the other. That is a divider
+    /// between two clusters rather than a tuned value — which is the most a constant
+    /// in this neighbourhood has ever managed.
+    ///
+    /// What it gives up is a *small* figure: under 2.2 inches on a side, a pale
+    /// drawing is still erased. That is recorded rather than fixed, because the
+    /// alternative is a threshold inside the confuser cluster.
+    static let paleDrawingThreshold = 0.05
+
+    /// One connected mark: where it is, how big, and how much of its box it fills.
+    struct MarkComponent {
+        var x = 0, y = 0
+        var width = 0, height = 0
+        var area = 0
+        /// Set cells over bounding-box area. A solid rectangle is 1.0; a curved
+        /// stroke is a tenth of that, and that difference is the whole of how a
+        /// drawing is told from a shaded table cell.
+        var fill: Double { Double(area) / Double(max(width * height, 1)) }
+    }
+
+    /// The page at `markCellsPerInch`, in two layers: what the threshold calls ink,
+    /// and the marks it will erase.
+    ///
+    /// **Why a reduced mask and not the render.** Component labelling over a 300 DPI
+    /// page would hold a label per pixel — 4 bytes where the render holds 1 — and
+    /// `maximumPageMegapixels` is sized at 5.5 bytes a pixel for the render alone.
+    /// R24 and R29 are both an allocation bounded in one place and unbounded in its
+    /// sibling; this one is built to stay inside the bound that already exists. On a
+    /// 300 DPI Letter page the two masks and the suppression pass's copy are
+    /// **0.57 bytes a pixel** of render, against the 5.5 the render is budgeted at.
+    /// `markCellCeiling` has the worst case, which is larger and is dominated by a
+    /// term the first version of that comment left out entirely.
+    ///
+    /// **The pale layer is `Tools/score-threshold-loss.swift`'s population, minus its
+    /// fourth property.** Properties 2 and 3 are kept, because both are measured and
+    /// both are about what a mark *is*: an anti-aliased edge is not content, and a
+    /// large pale area must not be allowed to redefine what paper is. Property 4,
+    /// thinness, is deliberately dropped — it exists to suppress table shading, which
+    /// is a judgement about the *kind* of mark, and making that judgement by shape is
+    /// the whole point of this. R56 refused the luminance version of it.
+    struct Marks {
+        var ink: [Bool] = []
+        var pale: [Bool] = []
+        var width = 0, height = 0
+        /// The luminance below which a pixel is too dark to be this page's paper.
+        var paperLimit = 0
+        /// Cells inside the inset, which is what every share below is a share of.
+        var cells = 0
+        /// Render pixels to a cell, and where cell (0, 0) starts in the render.
+        /// Carried rather than recomputed: `largeMarkTone` has to map a component
+        /// back onto the render, and reconstructing the factor by dividing the two
+        /// sizes is a second answer to a question that already has one — C20's shape,
+        /// and it rounds differently.
+        var factor = 1
+        var originX = 0, originY = 0
+    }
+
+    /// Build both layers in one pass over the render.
+    ///
+    /// The outer sixteenth is dropped on every side, which is `inkOutsideText`'s
+    /// inset and its recorded reason: a scan carries the dark edge of the platen and
+    /// the shadow in the gutter, and that is ink by any threshold and is not content.
+    /// Without it the largest component on a great many corpus pages is the gutter,
+    /// and every statistic here would be describing the scanner.
+    static func pageMarks(_ grey: [UInt8], width w: Int, height h: Int,
+                          threshold: UInt8, dpi: Double,
+                          minimumContrast: Double = minimumMarkContrast) -> Marks {
+        var out = Marks()
+        guard w > 0, h > 0, grey.count >= w * h, dpi > 0 else { return out }
+        let mx = w / 16, my = h / 16
+        let cx1 = max(w - mx, mx + 1), cy1 = max(h - my, my + 1)
+        let rows = my..<min(cy1, h), cols = mx..<min(cx1, w)
+        guard rows.count > 0, cols.count > 0 else { return out }
+
+        // Property 3: the paper's level is the mode of everything the threshold calls
+        // paper, and its noise is measured from the side of that peak pale content
+        // cannot reach. The mean is unusable — a large pale area is part of the bright
+        // class, so it drags the mean down and inflates the spread until it excludes
+        // itself, which is what defeated round 2 of R56 outright.
+        var histogram = [Int](repeating: 0, count: 256)
+        var bright = 0
+        for y in rows {
+            let row = y * w
+            for x in cols where grey[row + x] >= threshold {
+                histogram[Int(grey[row + x])] += 1; bright += 1
+            }
+        }
+        var paper = Int(threshold), peak = -1
+        for v in Int(threshold)..<256 where histogram[v] > peak {
+            peak = histogram[v]; paper = v
+        }
+        var weighted = 0, counted = 0
+        for v in paper..<256 { weighted += histogram[v] * (v - paper); counted += histogram[v] }
+        let spread = counted > 0 ? Double(weighted) / Double(counted) : 0
+        // The floor is `minimumMarkContrast`, and it is doing most of the work: on a
+        // scan with clipped white the spread is 0.0 and three times nothing is
+        // nothing. See the constant for the two corpus documents that measured it.
+        let limit = bright > 0
+            ? Double(paper) - max(3 * spread, minimumContrast) : Double(threshold)
+        out.paperLimit = Int(max(limit, Double(threshold)))
+
+        // The physical factor, then coarsened further if the page is large enough to
+        // breach the cell ceiling. Both bounds, not either: the first makes the
+        // constants mean inches, the second keeps the allocation finite.
+        //
+        // **`safeInt`, not `Int`.** `dpi` descends entirely from what the file declares
+        // and is bounded above by nothing: `MediaBox [0 0 1e-16 1e-16]` with an image
+        // declaring 2000x2000 gives 1.44e21, which is 4 megapixels — inside both the
+        // render's 400 MP gate and layering's 100 MP one — and `Int(1.44e21/150)` is
+        // an **uncatchable** trap that takes every concurrent file in the batch with
+        // it. This is A7.1's shape at a sixth site in this file, and A7.1 verified the
+        // same reachability end to end at 5.76e19 on shipped defaults. Found by the
+        // review of this diff, using CONTRIBUTING 4b's own suggested grep.
+        var factor = max(safeInt((dpi / markCellsPerInch).rounded()), 1)
+        // **The loop must test the cell count that is actually allocated**, which is
+        // the one below with its `max(…, 1)` in it. Testing the bare floored product
+        // is a bound that does not bind: a 20,000,000 x 1 render floors the height to
+        // zero, the product is zero, the loop exits at once and 8.75 million cells are
+        // allocated against a ceiling of four. R24 and R29 are both a bound written in
+        // one place and not holding in its sibling, and this was very nearly the third
+        // — in the constant whose own comment says it was "caught before it shipped".
+        while factor < Int.max / 2,
+              max(cols.count / factor, 1) * max(rows.count / factor, 1) > markCellCeiling {
+            factor *= 2
+        }
+        let rw = max(cols.count / factor, 1), rh = max(rows.count / factor, 1)
+        out.width = rw; out.height = rh; out.cells = rw * rh
+        out.factor = factor
+        out.originX = cols.lowerBound; out.originY = rows.lowerBound
+        var ink = [Bool](repeating: false, count: rw * rh)
+        var pale = [Bool](repeating: false, count: rw * rh)
+        let hasPale = limit > Double(threshold)
+
+        // A cell is ink if *any* pixel in it is ink, and pale if it is not ink and any
+        // pixel in it is pale. Rank-1, which is Leptonica's own default for keeping
+        // thin strokes through a reduction and the reason a box filter will not do:
+        // R56's whole subject is a hairline at luminance 200, and averaging a 4x4 cell
+        // holding one such stroke puts the cell back on the paper side. A mask that
+        // cannot represent the thing being detected is not a resolution choice, it is
+        // the detector failing silently.
+        for y in rows {
+            let ry = (y - rows.lowerBound) / factor
+            guard ry < rh else { continue }
+            let row = y * w, base = ry * rw
+            for x in cols {
+                let rx = (x - cols.lowerBound) / factor
+                guard rx < rw else { continue }
+                let v = grey[row + x]
+                if v < threshold {
+                    ink[base + rx] = true
+                } else if hasPale, Double(v) < limit {
+                    pale[base + rx] = true
+                }
+            }
+        }
+        // Ink wins the cell, and its neighbours are suppressed as well — property 2,
+        // at this resolution. An edge is always beside ink and a mark is surrounded by
+        // paper, and a cell is 1/150 in at 300 DPI — wider than any anti-aliased edge.
+        for i in 0..<(rw * rh) where ink[i] { pale[i] = false }
+        if hasPale {
+            var kept = pale
+            for y in 0..<rh {
+                for x in 0..<rw where pale[y * rw + x] {
+                    var beside = false
+                    for dy in max(y - 1, 0)...min(y + 1, rh - 1) where !beside {
+                        for dx in max(x - 1, 0)...min(x + 1, rw - 1) where ink[dy * rw + dx] {
+                            beside = true; break
+                        }
+                    }
+                    if beside { kept[y * rw + x] = false }
+                }
+            }
+            pale = kept
+        }
+        out.ink = ink
+        out.pale = pale
+        return out
+    }
+
+    /// Connected components of a reduced mask, 8-connected, two passes with a
+    /// union-find.
+    ///
+    /// Components smaller than `minimumCells` are dropped: at 150 cells to the inch
+    /// three cells is about a fiftieth of an inch, which is a speck of scanner noise
+    /// rather than a mark, and a page of dirty photocopy carries thousands of them.
+    /// **The number did not change when the resolution doubled and it should be read
+    /// as a floor, not as a size** — nothing downstream depends on it, because both
+    /// consumers filter far above it: `largeMarkTone` wants 2% of the sheet and
+    /// `paleDrawing` wants a quarter inch of height.
+    static func markComponents(_ mask: [Bool], width w: Int, height h: Int,
+                               minimumCells: Int = 3) -> [MarkComponent] {
+        guard w > 0, h > 0, mask.count >= w * h else { return [] }
+        var labels = [Int32](repeating: 0, count: w * h)
+        var parent: [Int32] = [0]
+        func find(_ a: Int32) -> Int32 {
+            var r = a
+            while parent[Int(r)] != r { r = parent[Int(r)] }
+            var c = a
+            while parent[Int(c)] != c { let n = parent[Int(c)]; parent[Int(c)] = r; c = n }
+            return r
+        }
+        for y in 0..<h {
+            let row = y * w
+            for x in 0..<w where mask[row + x] {
+                var best: Int32 = 0
+                // West, north-west, north, north-east: the four already-labelled
+                // neighbours of an 8-connected pixel in raster order.
+                for (dx, dy) in [(-1, 0), (-1, -1), (0, -1), (1, -1)] {
+                    let nx = x + dx, ny = y + dy
+                    guard nx >= 0, nx < w, ny >= 0 else { continue }
+                    let l = labels[ny * w + nx]
+                    guard l != 0 else { continue }
+                    if best == 0 {
+                        best = l
+                    } else {
+                        let ra = find(best), rb = find(l)
+                        if ra != rb { parent[Int(max(ra, rb))] = min(ra, rb) }
+                        best = min(best, l)
+                    }
+                }
+                if best == 0 {
+                    parent.append(Int32(parent.count))
+                    best = Int32(parent.count - 1)
+                }
+                labels[row + x] = best
+            }
+        }
+        // `Int32`, not `Int`. These are five arrays with one entry per *label*, and a
+        // mask of scanner speckle produces a label per second cell — at
+        // `markCellCeiling` that is 160 MB in `Int`, which is the largest allocation in
+        // this file and the one `markCellCeiling`'s first accounting left out
+        // entirely. Every value is bounded by the mask's own width, height or area, so
+        // 32 bits is not a narrowing.
+        var area = [Int32](repeating: 0, count: parent.count)
+        var x0 = [Int32](repeating: Int32(w), count: parent.count)
+        var x1 = [Int32](repeating: -1, count: parent.count)
+        var y0 = [Int32](repeating: Int32(h), count: parent.count)
+        var y1 = [Int32](repeating: -1, count: parent.count)
+        for y in 0..<h {
+            let row = y * w
+            for x in 0..<w where labels[row + x] != 0 {
+                let r = Int(find(labels[row + x]))
+                area[r] += 1
+                if Int32(x) < x0[r] { x0[r] = Int32(x) }
+                if Int32(x) > x1[r] { x1[r] = Int32(x) }
+                if Int32(y) < y0[r] { y0[r] = Int32(y) }
+                if Int32(y) > y1[r] { y1[r] = Int32(y) }
+            }
+        }
+        var out: [MarkComponent] = []
+        for r in 1..<parent.count where area[r] >= Int32(minimumCells) && x1[r] >= 0 {
+            out.append(MarkComponent(x: Int(x0[r]), y: Int(y0[r]),
+                                     width: Int(x1[r] - x0[r]) + 1,
+                                     height: Int(y1[r] - y0[r]) + 1,
+                                     area: Int(area[r])))
+        }
+        return out
+    }
+
+    /// The most continuous tone found **inside** one of the page's large marks,
+    /// rather than averaged over the sheet.
+    ///
+    /// **R57 in one line.** `pictureToneThreshold` is not miscalibrated — the tonal
+    /// plate reads 0.102 against its 0.12 — it is being asked about the wrong region.
+    /// A plate over a fifth of a page dilutes its own tone by five, and the constant
+    /// was measured on pages a picture *dominates*. A connected component gives the
+    /// tone the region it belongs to, so the existing constant can be asked the
+    /// question it was calibrated for: is *this thing* continuous tone?
+    ///
+    /// It is the same argument `pictureInkMinimumTone` already rests on and it cuts
+    /// the same way. A halftone is bimodal, so a coarse screen's own component reads
+    /// low and stays on the 1-bit route where R38 measured that it belongs; a solid
+    /// black rule or a rubber stamp reads near zero for the same reason. What reads
+    /// high is an unresolved halftone or a photograph, which is exactly what 1-bit
+    /// destroys.
+    static func largeMarkTone(_ marks: Marks, grey: [UInt8], width w: Int, height h: Int,
+                              threshold: UInt8) -> Double {
+        guard marks.cells > 0, w > 0, h > 0, grey.count >= w * h else { return 0 }
+        let factor = max(marks.factor, 1)
+        var best = 0.0
+        for c in markComponents(marks.ink, width: marks.width, height: marks.height) {
+            // Big enough to matter, **and solid enough to be a thing rather than a
+            // frame round other things**. See `minimumPlateFill`: gating on the box
+            // alone admits a page border and then measures the tone of the type inside
+            // it, and gating on the component's own ink instead refuses a real
+            // reversed-out advertisement.
+            guard Double(c.width * c.height) / Double(marks.cells) >= largeMarkShare,
+                  c.fill >= minimumPlateFill else { continue }
+            // Back to the render's own coordinates, clamped: the reduction floors, so
+            // the last cell of a row can name pixels the render does not have.
+            let px0 = min(marks.originX + c.x * factor, w - 1)
+            let py0 = min(marks.originY + c.y * factor, h - 1)
+            let px1 = min(px0 + c.width * factor, w)
+            let py1 = min(py0 + c.height * factor, h)
+            guard px1 > px0, py1 > py0 else { continue }
+            var patch = [UInt8](); patch.reserveCapacity((px1 - px0) * (py1 - py0))
+            for y in py0..<py1 { patch.append(contentsOf: grey[(y * w + px0)..<(y * w + px1)]) }
+            best = max(best, toneFraction(of: patch, threshold: threshold))
+        }
+        return best
+    }
+
+    /// The pale marks on this page that are **shaped like a drawing**: taller than
+    /// any type could be, not a filled block, and not lying in the type.
+    ///
+    /// **R56 in one line.** The blind zone above the threshold holds three kinds of
+    /// thing and luminance cannot separate them — a pale drawing (keep it), decorative
+    /// table shading (harmless to lose) and show-through from the reverse of the sheet
+    /// (losing it is *desirable*). Four rounds of luminance signal were refused on
+    /// exactly that, and the register's own summary is the specification for this
+    /// function: every one of the three is a statement about shape.
+    ///
+    ///  - show-through is the reverse page's type, so it is the size of type. It is
+    ///    under the ceiling, and it is not counted.
+    ///  - shading is a filled rectangle: over the ceiling, and it fills its box.
+    ///  - a drawing's strokes are long and thin, so the box is large and mostly empty.
+    ///    That is what this returns.
+    struct PaleDrawing {
+        /// The largest drawing-shaped mark's bounding box, as a share of the sheet.
+        /// **This is the one the route is decided on.**
+        var extent = 0.0
+        /// The ink of every drawing-shaped mark, as a share of the sheet. Kept
+        /// because it is what the first version decided on, and because the census
+        /// prints both — see `paleDrawingThreshold` for why it was the wrong one.
+        var coverage = 0.0
+    }
+
+    static func paleDrawing(_ marks: Marks, dpi: Double,
+                            maximumInkInBox: Double = maximumInkUnderADrawing)
+        -> PaleDrawing {
+        var out = PaleDrawing()
+        guard marks.cells > 0, dpi > 0 else { return out }
+        // From the reduction the marks were actually taken at, not from
+        // `markCellsPerInch`: `pageMarks` coarsens past that when a page would breach
+        // `markCellCeiling`, and a ceiling computed from the nominal resolution would
+        // then be measuring a different page from the one in hand. Never fewer than
+        // two cells, or at a coarse reduction every mark clears it.
+        let ceiling = max(typeCeilingInches * dpi / Double(max(marks.factor, 1)), 2)
+        /// Ink cells inside a component's bounding rectangle, over that rectangle's
+        /// area — not over `MarkComponent.area`, which is the mark's own ink and is a
+        /// different number.
+        func inkUnder(_ c: MarkComponent) -> Double {
+            guard marks.ink.count >= marks.width * marks.height else { return 1 }
+            var ink = 0
+            for y in c.y..<min(c.y + c.height, marks.height) {
+                let row = y * marks.width
+                for x in c.x..<min(c.x + c.width, marks.width) where marks.ink[row + x] {
+                    ink += 1
+                }
+            }
+            return Double(ink) / Double(max(c.width * c.height, 1))
+        }
+        var drawing = 0, widest = 0
+        for c in markComponents(marks.pale, width: marks.width, height: marks.height)
+        where Double(c.height) > ceiling && c.fill < solidMarkFill
+                && inkUnder(c) <= maximumInkInBox {
+            drawing += c.area
+            widest = max(widest, c.width * c.height)
+        }
+        out.coverage = Double(drawing) / Double(marks.cells)
+        out.extent = Double(widest) / Double(marks.cells)
+        return out
     }
 
     /// The largest page that gets layered.
@@ -1824,11 +2455,31 @@ enum Flattener {
         // resolution they explicitly asked to keep. Found by reviewing this diff:
         // the first version applied the shrink at every setting, so Maximum stored
         // such a page at an eighth of its resolution with no way to override it.
+        // **And the pale drawing is asked about again here**, because closing R56 in
+        // `isPicture` alone would have moved the harm rather than removed it. That
+        // page now reaches the picture path — and this rule, whose signal is ink, was
+        // still reading it as all text and storing it at an eighth of its resolution.
+        // R50 recorded that miss and correctly judged it harmless *"because this only
+        // ever changes resolution"*; it is harmless at 2x and much less so at 8x, and
+        // it is the same miss in front of a second decision. CONTRIBUTING 4b: the
+        // register's most repeated shape is a fix that closed one instance of a defect
+        // and left its twin.
+        //
+        // Both new terms are behind the short circuit, deliberately. A first version
+        // hoisted the threshold out to a `let` and every layered page then paid a
+        // full histogram pass over up to 100 megapixels for a value that
+        // `PhotoDetail.maximum` never reads — found by the review of this diff.
         let keepEveryPixel = backgroundDownsample <= 1
-        let allText = !keepEveryPixel
-            && inkOutsideText(grey, region: region, width: w, height: h,
-                              threshold: otsuThreshold(of: grey))
-                < textPageInkOutsideThreshold
+        func pageIsAllText() -> Bool {
+            let pageThreshold = otsuThreshold(of: grey)
+            guard inkOutsideText(grey, region: region, width: w, height: h,
+                                 threshold: pageThreshold) < textPageInkOutsideThreshold
+            else { return false }
+            return paleDrawing(pageMarks(grey, width: w, height: h,
+                                         threshold: pageThreshold, dpi: dpi),
+                               dpi: dpi).extent <= paleDrawingThreshold
+        }
+        let allText = !keepEveryPixel && pageIsAllText()
         let bgFactor = allText
             ? max(backgroundDownsample, textPageBackgroundDownsample) : backgroundDownsample
         let fgFactor = allText

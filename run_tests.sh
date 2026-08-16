@@ -50,4 +50,25 @@ if ! swiftc -o "$HELPER" \
   exit 1
 fi
 
-VISIONOCR_HELPER="$PWD/$HELPER" "./$BIN"
+# The six routing fixtures (R56, R57), built from the tool rather than copied into
+# the suite. `Tools/make-plate-fixtures.swift` is where the pale drawing and the tonal
+# plate are *defined* — luminance 200 on cream stock, a gradient with a dark subject —
+# and a second copy of those numbers inside `Tests/main.swift` is a copy that goes
+# stale silently, which is the shape of BUGS.md T15. The suite runs this binary and
+# reads what it wrote, so the fixtures the acceptance checks route are the fixtures
+# the register's measurements describe.
+#
+# Standalone: it imports AppKit and nothing from `Sources/`. About two seconds.
+PLATES="build/make-plate-fixtures"
+cp Tools/make-plate-fixtures.swift build/make-plate-fixtures-main.swift
+if ! swiftc -o "$PLATES" \
+  -target "$(uname -m)-apple-macos13.0" \
+  build/make-plate-fixtures-main.swift; then
+  echo >&2
+  echo "run_tests: Tools/make-plate-fixtures.swift did not compile." >&2
+  echo "           The suite did NOT run — the R56/R57 routing checks would" >&2
+  echo "           otherwise pass by having no fixtures to route." >&2
+  exit 1
+fi
+
+VISIONOCR_HELPER="$PWD/$HELPER" VISIONOCR_PLATE_FIXTURES="$PWD/$PLATES" "./$BIN"

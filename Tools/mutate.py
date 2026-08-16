@@ -83,6 +83,39 @@ CONSTANTS = [
     # catalogue wants the one the register records.
     ("Flattener.swift", "pictureInkMinimumTone", "0.03", "0.0"),
     ("Flattener.swift", "pictureSaturationThreshold", "0.06", "0.9"),
+    # R56 / R57, the shape signals. Each mutant is the *defect*, not an arbitrary
+    # perturbation, which is the rule R38's entry above sets out.
+    #
+    # `minimumMarkContrast` at 4.0 is the degenerate floor put back: on a scan whose
+    # white is clipped the spread of the paper peak is 0.0, so `paper - 4` is what
+    # the rule reduced to before this constant existed — and it read 228 of
+    # `Himanen_2001`'s 255 pages as carrying pale content.
+    ("Flattener.swift", "minimumMarkContrast", "24.0", "4.0"),
+    # 0.9 makes both pale fixtures text again, which is R56 itself. The catalogue
+    # said 0.006 against a source declaring 0.012, so it was NOT-APPLIED and the one
+    # constant that decides R56's verdict had no live mutant — caught by the review of
+    # the diff that added it, and the reason `mutate.py` prints NOT-APPLIED at all.
+    ("Flattener.swift", "paleDrawingThreshold", "0.05", "0.9"),
+    # R56's discriminator, and the fixtures **cannot** kill it: `pale-drawing` sits on
+    # bare paper and reads the same at every value including zero. `pale-chart` is the
+    # fixture that can — its axis numerals are inside the plot frame — and it is here
+    # for that reason. 0.0 refuses every mark with any of the page's ink under it.
+    ("Flattener.swift", "maximumInkUnderADrawing", "0.05", "0.0"),
+    # The analysis resolution. 20 cells an inch is below the floor the whole signal
+    # rests on, and the constant's own comment is three paragraphs about why.
+    ("Flattener.swift", "markCellsPerInch", "150.0", "20.0"),
+    # The quarter inch that separates a drawing from show-through. Large, so every
+    # pale mark is type-sized and the drawing is never found.
+    ("Flattener.swift", "typeCeilingInches", "0.25", "99.0"),
+    # A drawing is a stroke; shading is a filled block. At 0.0 nothing is a drawing.
+    ("Flattener.swift", "solidMarkFill", "0.6", "0.0"),
+    # 0.9 means no component is ever big enough to have its own tone asked about,
+    # which is R57 restored.
+    ("Flattener.swift", "largeMarkShare", "0.02", "0.9"),
+    # …and its partner. 0.0 admits a page *frame* as a plate and then measures the tone
+    # of the type it encloses — the defect the review of R57's diff measured at 1.54x
+    # the whole-sheet figure, not an arbitrary perturbation.
+    ("Flattener.swift", "minimumPlateFill", "0.25", "0.0"),
     # The paper-colour estimate. Drop the floor and every dark pixel counts as
     # paper, so the "paper" is the page mean and the correction removes whatever
     # cast the *content* had; raise the fraction and the correction never runs at
@@ -182,6 +215,23 @@ OPERATORS = [
      "if true,\n           inkCoverage(", "R38-ink-needs-tone"),
     ("Flattener.swift", "if let seen = walkedAt[identity], seen <= depth { return }",
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
+    # R56's second half, and the one a constant mutant cannot reach. Closing R56 in
+    # `isPicture` alone would have moved the harm rather than removed it: the page
+    # reaches the picture path and `mrcLayers` then stores it at an eighth of its
+    # resolution, because the all-text rule's signal is ink and the drawing is not
+    # ink. This plants that back — the sibling defect, not the reported one
+    # (CONTRIBUTING 4b).
+    ("Flattener.swift",
+     "dpi: dpi).extent <= paleDrawingThreshold",
+     "dpi: dpi).extent <= 99.0", "R56-alltext-sees-drawings"),
+    # R57's mechanism rather than its constant: tone asked about the whole sheet
+    # again instead of the region the tone is in. This is the entry's own diagnosis —
+    # "a plate over a fifth of a page dilutes its own tone by five" — planted.
+    ("Flattener.swift",
+     "        if largeMarkTone(marks, grey: grey, width: width, height: height,\n"
+     "                         threshold: threshold) > pictureToneThreshold",
+     "        if toneFraction(of: grey, threshold: threshold) > pictureToneThreshold",
+     "R57-tone-of-the-region"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",
      "guard !isRunning else { return .refusedRunInProgress }", "U19-add-guard"),
     # A5.3. The interlock as a flag again: the first walk to land lowers it while

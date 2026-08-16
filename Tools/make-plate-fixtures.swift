@@ -26,11 +26,26 @@
 //   text-red-ink     text whose headings are red, no picture at all. The `Why?`
 //                    pamphlet's shape, and the case where colour is *inside* the
 //                    words rather than beside them.
+//   faint-marks      the same curves as pale-drawing, at luminance 232 against paper at
+//                    about 243 — eleven levels, where the drawing is forty-seven. A
+//                    mark you can barely see is not content, and this is the fixture
+//                    that says so: it must route to 1-bit. Added 2026-08-16 because
+//                    `minimumMarkContrast`'s mutant SURVIVED a green 1,118-check suite:
+//                    the constant is justified by 228 pages of `Himanen_2001` and
+//                    nothing in the suite could see it.
+//   pale-chart       a pale line chart with its axis labels and caption INSIDE its
+//                    own bounding box. Added 2026-08-16 by the review of R56's fix,
+//                    which observed that `maximumInkUnderADrawing` refuses a pale mark
+//                    with this page's own type inside it — and that a chart, a
+//                    captioned plate and an inset figure all have exactly that.
+//                    `pale-drawing` sits on bare paper and therefore cannot see that
+//                    constant at all: it reads 0.0197 at every value of it, including
+//                    zero. This one can, and it is the hardest of the eight.
 //
-// **What these fixtures are blind to, by construction: geometry.** All six are one
+// **What these fixtures are blind to, by construction: geometry.** All eight are one
 // page, 8.5x11, `/Rotate 0`. CLAUDE.md invariant 5 says a fixture needs two pages
 // of differing size and one rotated page, because a single-page upright fixture
-// cannot see a geometry bug at all — and R56 and R57 rest on these six. So their
+// cannot see a geometry bug at all — and R56 and R57 rest on these eight. So their
 // evidence is about *routing*, and says nothing about whether a pale drawing or a
 // tonal plate survives on a rotated or oddly-sized page. A11.8 tracks the coverage
 // gap; A12.8 is where this was written down. If a fix for either entry is measured
@@ -155,6 +170,26 @@ page("pale-drawing") { ctx in
     ctx.strokeEllipse(in: plate.insetBy(dx: plate.width * 0.3, dy: plate.height * 0.2))
 }
 
+// Faint. The same subject as `pale-drawing` and the same size, eleven luminance levels
+// below the paper instead of forty-seven — the depth of a photocopy's background mottle
+// and of the show-through on a real typescript. It must stay at 1-bit: losing it is
+// exactly what `minimumMarkContrast` is for, and this is the only fixture that can tell
+// whether that constant is doing anything.
+page("faint-marks") { ctx in
+    ctx.setStrokeColor(gray: 232.0 / 255.0, alpha: 1)
+    ctx.setLineWidth(3)
+    for i in 0..<14 {
+        let t = Double(i) / 13.0
+        ctx.move(to: CGPoint(x: plate.minX, y: plate.minY + t * plate.height))
+        ctx.addCurve(to: CGPoint(x: plate.maxX, y: plate.minY + (1 - t) * plate.height),
+                     control1: CGPoint(x: plate.midX - 200, y: plate.maxY),
+                     control2: CGPoint(x: plate.midX + 200, y: plate.minY))
+    }
+    ctx.strokePath()
+    ctx.setLineWidth(5)
+    ctx.strokeEllipse(in: plate.insetBy(dx: plate.width * 0.3, dy: plate.height * 0.2))
+}
+
 // R50 measured this at inkOutsideText 0.0365: a flat field whose luminance
 // straddles the page's own threshold, so half of it counts as ink and half does not.
 page("flat-colour") { ctx in
@@ -176,6 +211,62 @@ page("tonal-plate") { ctx in
     ctx.setFillColor(gray: 0.08, alpha: 1)
     ctx.fillEllipse(in: plate.insetBy(dx: plate.width * 0.34, dy: plate.height * 0.22))
     ctx.restoreGState()
+}
+
+// A pale chart, drawn like a real one: pale plot lines and a pale frame, with **black
+// axis numerals, a legend and a caption inside the plot's own rectangle**. That is the
+// ordinary layout of a figure in a book, and it is the case `maximumInkUnderADrawing`
+// is most likely to refuse — which would erase the chart. Must read as a picture.
+page("pale-chart") { ctx in
+    let dark = NSColor.black
+    ctx.setStrokeColor(gray: 200.0 / 255.0, alpha: 1)
+    ctx.setLineWidth(2)
+    // The frame, and gridlines across it.
+    ctx.stroke(plate.insetBy(dx: 40, dy: 40))
+    for i in 1..<6 {
+        let y = plate.minY + 40 + (plate.height - 80) * Double(i) / 6
+        ctx.move(to: CGPoint(x: plate.minX + 40, y: y))
+        ctx.addLine(to: CGPoint(x: plate.maxX - 40, y: y))
+    }
+    ctx.strokePath()
+    // Three plotted series: long thin curves, which is the drawing profile.
+    ctx.setLineWidth(3)
+    for series in 0..<3 {
+        var x = plate.minX + 40
+        ctx.move(to: CGPoint(x: x, y: plate.minY + 60 + Double(series) * 30))
+        var step = 0
+        while x < plate.maxX - 40 {
+            x += 24
+            let wobble = sin(Double(step) * 0.7 + Double(series)) * 60
+            ctx.addLine(to: CGPoint(x: x,
+                                    y: plate.minY + 90 + Double(series) * 55
+                                        + wobble + Double(step) * 4))
+            step += 1
+        }
+        ctx.strokePath()
+        ctx.move(to: CGPoint(x: plate.minX + 40, y: plate.minY + 60 + Double(series) * 30))
+    }
+    // …and this page's own type, inside the plot rectangle: axis numerals down the
+    // left, a legend in the corner, a caption along the bottom.
+    let attrs: [NSAttributedString.Key: Any] = [
+        .font: NSFont(name: "Times-Roman", size: 26) ?? NSFont.systemFont(ofSize: 26),
+        .foregroundColor: dark]
+    func label(_ s: String, at p: CGPoint) {
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: ctx, flipped: false)
+        NSAttributedString(string: s, attributes: attrs)
+            .draw(at: NSPoint(x: p.x, y: p.y))
+        NSGraphicsContext.restoreGraphicsState()
+    }
+    for i in 0..<6 {
+        label("\(i * 20)", at: CGPoint(x: plate.minX + 6,
+                                       y: plate.minY + 40 + (plate.height - 80)
+                                           * Double(i) / 6 - 12))
+    }
+    label("Series A", at: CGPoint(x: plate.maxX - 260, y: plate.maxY - 90))
+    label("Series B", at: CGPoint(x: plate.maxX - 260, y: plate.maxY - 130))
+    label("Figure 4. Enrolment by decade", at: CGPoint(x: plate.minX + 60,
+                                                       y: plate.minY + 4))
 }
 
 // Bimodal by construction: dots of solid ink on bare paper. R38's finding is that

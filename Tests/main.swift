@@ -1718,6 +1718,266 @@ do {
     resetPrefs()
 }
 
+// MARK: - R56 / R57: the eight routing fixtures, routed
+
+// **The acceptance test for the picture detector, written before the signal that
+// passes it.** `FEATURES.md`'s order of work makes this step 1 and says why: four
+// rounds of detector work have been refused, and the way a fifth becomes a bounded
+// experiment rather than a fifth refusal is to fix the bar in advance. The bar has
+// two halves and this is the first:
+//
+//   1. every one of `Tools/make-plate-fixtures.swift`'s seven pages routes correctly —
+//      here;
+//   2. **and no corpus page changes route** — `Tools/score-routing-census.swift`,
+//      which cannot live in a unit suite because it is 17,000 renders.
+//
+// Half 2 is not optional. A signal that fixes the fixtures and moves corpus pages is
+// not a fix, it is a different set of defects, and the register has that mistake
+// twice already (R49 twice, R35 twice).
+//
+// The fixtures are built by running the tool, not by a copy of it in this file. The
+// pale drawing's luminance 200 and the tonal plate's gradient are the numbers R56 and
+// R57 were measured with; a second copy here would drift silently, which is BUGS.md
+// T15's shape.
+//
+// **What these fixtures cannot see: geometry.** All eight are one upright Letter page,
+// which CLAUDE.md invariant 5 calls structurally blind. Their evidence is about
+// *routing* and says nothing about a pale drawing on a rotated or oddly-sized page.
+// The tool's own header carries this; it is repeated here because a check is read far
+// more often than the fixture behind it.
+
+print("\nthe eight routing fixtures route the way R56 and R57 say they must")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("plates-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+
+    // Fail rather than skip when the binary is missing. A skipped acceptance check
+    // reads as a pass in a green run, and the reason `run_tests.sh` builds the helper
+    // and hands it over by path is that the alternative passed over a helper which
+    // did not compile (R43).
+    let builder = ProcessInfo.processInfo.environment["VISIONOCR_PLATE_FIXTURES"] ?? ""
+    check("the suite was given the fixture builder to run",
+          !builder.isEmpty && FileManager.default.isExecutableFile(atPath: builder),
+          "VISIONOCR_PLATE_FIXTURES is unset or does not point at a runnable file")
+
+    var built = false
+    if !builder.isEmpty, FileManager.default.isExecutableFile(atPath: builder) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: builder)
+        task.arguments = [dir.path]
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+        // `try`, not `try?`. A `Process` that failed to launch raises
+        // `NSInvalidArgumentException` from `waitUntilExit`, which takes the suite down
+        // with a cause that names neither this block nor the missing binary — R43's
+        // shape, in the code whose comment above claims to have avoided it. Caught by
+        // the review of this diff.
+        do {
+            try task.run()
+            task.waitUntilExit()
+            built = task.terminationStatus == 0
+            check("the fixture builder ran", built, "exit \(task.terminationStatus)")
+        } catch {
+            check("the fixture builder ran", false, "\(error)")
+        }
+    }
+    if !built {
+        // A silent skip reads as a pass in a green run, and this block holds the whole
+        // acceptance test for two content-destruction defects. The census of skipped
+        // blocks (A11.7) is what makes "no checks were skipped" mean anything.
+        skipBlock("the R56/R57 routing fixtures", checks: 18,
+                  because: "VISIONOCR_PLATE_FIXTURES did not produce the eight fixtures")
+    }
+    if built {
+
+        /// The shipped verdict, through the shipped call, at the resolution `flatten`
+        /// would render this page at. `picture-signals.swift` records what taking the
+        /// native DPI instead looks like: tone 0.940 against production's 0.013 on
+        /// the same page, and the verdict inverted.
+        func route(_ name: String) -> (picture: Bool, detail: String)? {
+            let url = dir.appendingPathComponent(name + ".pdf")
+            guard let page = PDFDocument(url: url)?.page(at: 0) else { return nil }
+            let box = Flattener.fullBox(of: page)
+            let scale = Flattener.rebuildDPI(of: page) / 72.0
+            let w = max(Int((box.width * scale).rounded()), 1)
+            let h = max(Int((box.height * scale).rounded()), 1)
+            guard let grey = Flattener.renderGrey(page, box: box, scale: scale,
+                                                  width: w, height: h, from: .mediaBox)
+            else { return nil }
+            let t = Flattener.otsuThreshold(of: grey)
+            let s = Flattener.pictureSignals(page, grey: grey, width: w, height: h)
+            let picture = Flattener.isPicture(page, grey: grey, width: w, height: h,
+                                              threshold: t, saturation: s.sat)
+            return (picture, String(format: "ink %.3f tone %.3f sat %.3f otsu %d",
+                                    s.ink, s.tone, s.sat, s.threshold))
+        }
+
+        // Each row names the defect it holds, so a failure says which one came back.
+        // The three that must stay on the 1-bit route are as load-bearing as the two
+        // that must leave it: R38 measured `Boltanski_2006` at 16 MB → 156 MB when
+        // dense bilevel type went to the picture path, and the halftone row is that
+        // page kind. A detector that passes only the first two has re-opened R38.
+        let expected: [(name: String, picture: Bool, why: String)] = [
+            ("text-only",     false, "the control — a page of type is not a picture"),
+            ("text-red-ink",  false, "colour inside the words is not a plate"),
+            ("halftone",      false, "R38 — a bimodal halftone belongs at 1-bit"),
+            ("flat-colour",   true,  "a flat colour plate is a picture"),
+            ("pale-drawing",  true,  "R56 — 1-bit erases it, it is not softened"),
+            ("faint-marks",   false, "R56's floor — eleven levels below the paper is"
+                                     + " not content, and losing it is right"),
+            ("pale-chart",    true,  "R56's hard case — a chart with its own axis"
+                                     + " numerals inside the plot frame"),
+            ("tonal-plate",   true,  "R57 — 1-bit makes it a solid black blob"),
+        ]
+        for row in expected {
+            guard let r = route(row.name) else {
+                check("the \(row.name) fixture builds and renders", false)
+                continue
+            }
+            check("\(row.name) routes to \(row.picture ? "the picture path" : "1-bit")"
+                  + " — \(row.why)",
+                  r.picture == row.picture, r.detail)
+        }
+
+        // **And the positive fixtures must still be negatives for the three older
+        // signals**, or the checks above can go green without the new ones ever being
+        // consulted. `tonal-plate` is the live case: ink 0.147 against a 0.15 gate, so
+        // a CoreGraphics or CoreText revision that nudges its rendered coverage by 2%
+        // makes R38's ink branch fire and R57's check passes for the wrong reason. That
+        // is CONTRIBUTING §2's crop-box failure — a test that passed against a
+        // reintroduced bug because it asserted something the bug does not touch.
+        // Found by the review of this diff.
+        for name in ["pale-drawing", "pale-chart", "tonal-plate"] {
+            guard let page = PDFDocument(url: dir.appendingPathComponent(name + ".pdf"))?
+                .page(at: 0) else { continue }
+            let box = Flattener.fullBox(of: page)
+            let scale = Flattener.rebuildDPI(of: page) / 72.0
+            let w = max(Int((box.width * scale).rounded()), 1)
+            let h = max(Int((box.height * scale).rounded()), 1)
+            guard let grey = Flattener.renderGrey(page, box: box, scale: scale,
+                                                  width: w, height: h, from: .mediaBox)
+            else { continue }
+            let s = Flattener.pictureSignals(page, grey: grey, width: w, height: h)
+            let older = s.tone > Flattener.pictureToneThreshold
+                || (s.tone > Flattener.pictureInkMinimumTone
+                    && s.ink > Flattener.pictureInkThreshold)
+                || s.sat > Flattener.pictureSaturationThreshold
+            check("\(name) is still a negative for the three older signals,"
+                  + " so its route is the new ones' answer",
+                  !older, String(format: "ink %.3f tone %.3f sat %.3f", s.ink, s.tone, s.sat))
+        }
+
+        // MARK: The two component gates, on buffers where the answer is known
+        //
+        // The fixtures can only show that a *page* changed lane. These assert the two
+        // terms of `largeMarkTone`'s gate directly, on pages built so the right answer
+        // is arithmetic — which is how the R50 block further down asserts
+        // `inkOutsideText`, and for the same reason.
+        //
+        // Both are defects the review of this diff measured rather than hypotheticals:
+        // a page *frame* spans the whole sheet, so a size-only gate admits it and then
+        // measures the tone of the type inside it (1.54x the whole-sheet figure), while
+        // gating on the component's own ink instead refuses a real reversed-out
+        // advertisement. It takes both terms.
+        do {
+            let W = 1200, H = 1500, dpi = 300.0
+            var typePage = [UInt8](repeating: 250, count: W * H)
+            for band in stride(from: 100, to: 1400, by: 36) {
+                for y in band..<min(band + 18, H) {
+                    for x in 100..<1100 where (x / 21) % 2 == 0 { typePage[y * W + x] = 20 }
+                    // Grain, so the sheet itself has tone for a frame to pick up.
+                    for x in 100..<1100 where (x / 7) % 3 == 0 {
+                        typePage[y * W + x] = UInt8(120 + (x % 40))
+                    }
+                }
+            }
+            var framed = typePage
+            for t in 0..<4 {                                   // a 4 px rule round it
+                for x in 40..<(W - 40) {
+                    framed[(40 + t) * W + x] = 0; framed[(H - 41 - t) * W + x] = 0
+                }
+                for y in 40..<(H - 40) {
+                    framed[y * W + 40 + t] = 0; framed[y * W + W - 41 - t] = 0
+                }
+            }
+            func markTone(_ page: [UInt8]) -> Double {
+                let t = Flattener.otsuThreshold(of: page)
+                return Flattener.largeMarkTone(
+                    Flattener.pageMarks(page, width: W, height: H, threshold: t, dpi: dpi),
+                    grey: page, width: W, height: H, threshold: t)
+            }
+            let sheetTone = Flattener.toneFraction(
+                of: framed, threshold: Flattener.otsuThreshold(of: framed))
+            check("a page frame is not a plate, so its tone is never asked about",
+                  markTone(framed) == 0,
+                  String(format: "%.4f from the frame against %.4f over the sheet",
+                         markTone(framed), sheetTone))
+            check("…and that page carries enough tone for the mistake to have shown",
+                  sheetTone > 0.02,
+                  String(format: "sheet tone %.4f — too low for the check above to bite",
+                         sheetTone))
+
+            var plated = typePage
+            for y in 600..<1300 {
+                for x in 150..<1050 { plated[y * W + x] = UInt8(30 + (x - 150) * 200 / 900) }
+            }
+            check("…while a filled tonal plate of the same span is asked, and answers",
+                  markTone(plated) > Flattener.pictureToneThreshold,
+                  String(format: "%.4f", markTone(plated)))
+        }
+
+        // MARK: …and the sibling, which is the half a fix like this usually leaves
+        //
+        // Routing the pale drawing to the picture path is only half of R56. The page
+        // then reaches `mrcLayers`, whose all-text rule shrinks the tone layers 8x and
+        // 16x when `inkOutsideText` says the page is all text — and R50 recorded that
+        // a pale drawing reads **0.0000** there, judging the miss harmless "because
+        // this only ever changes resolution". True at 2x. At 8x the drawing this fix
+        // exists to keep is stored at an eighth of its resolution, which is the same
+        // miss in front of a second decision. CONTRIBUTING 4b.
+        //
+        // Ungated, deliberately: `mrcLayers` writes PNG and JPEG itself and needs
+        // neither jbig2 nor qpdf, and a check that only runs on some machines is a
+        // check that does not exist.
+        let layerDir = dir.appendingPathComponent("layers")
+        try? FileManager.default.createDirectory(at: layerDir, withIntermediateDirectories: true)
+        // Boxes over the type, which on these fixtures runs from about 0.08 to 0.91 of
+        // the sheet — `make-plate-fixtures` sets two blocks from the top margin down.
+        // A first version covered only the upper two thirds and **the control failed**:
+        // the type below the boxes is ink outside the words, so `inkOutsideText` read
+        // high and a page of type alone did not take the all-text shrink. The check was
+        // wrong and the code was right, which is CONTRIBUTING §3's whole subject.
+        let boxes = (0..<14).map { i in
+            SearchableWriter.BoundingBox(x: 0.10, y: 0.08 + Double(i) * 0.06,
+                                         width: 0.80, height: 0.05)
+        }
+        func backgroundShrink(_ name: String) -> (shrunk: Bool, detail: String)? {
+            let url = dir.appendingPathComponent(name + ".pdf")
+            guard let page = PDFDocument(url: url)?.page(at: 0) else { return nil }
+            let scale = Flattener.rebuildDPI(of: page) / 72.0
+            let fullW = Int((Flattener.fullBox(of: page).width * scale).rounded())
+            guard let l = Flattener.mrcLayers(
+                for: page, boxes: boxes, into: layerDir, stem: "r56-" + name,
+                backgroundDownsample: Prefs.PhotoDetail.balanced.downsample)
+            else { return nil }
+            let limit = fullW / Flattener.textPageBackgroundDownsample + 1
+            return (l.backgroundWidth <= limit,
+                    "\(l.backgroundWidth) wide of \(fullW), text-page limit \(limit)")
+        }
+        if let plain = backgroundShrink("text-only") {
+            check("a page of type alone still takes the all-text shrink",
+                  plain.shrunk, plain.detail)
+        } else { check("the text-only fixture layers", false) }
+        if let drawn = backgroundShrink("pale-drawing") {
+            check("…and a page carrying a pale drawing does not — R56's other half",
+                  !drawn.shrunk, drawn.detail)
+        } else { check("the pale-drawing fixture layers", false) }
+    }
+}
+
 // MARK: - R38: heavy ink is not on its own a picture
 
 print("\ndense bilevel type is routed to 1-bit, not to the picture path")
