@@ -85,6 +85,24 @@ refused with its numbers, and **two open defects now depend on that one signal**
 unblocks three things already refused for want of it: R35's per-page background factor,
 R49's paper detector, and item 1 below.
 
+**The order of work for it was decided on 2026-08-16 and is written out in
+`FEATURES.md`** — read that before starting, because the first two steps are cheap
+enough to settle the question without a build, and the fifth attempt is meant to be a
+bounded experiment rather than a fifth refusal:
+
+| step | what | cost |
+|---|---|---|
+| **0** | re-read the four refused rounds **sceptically** — C23's refusal was wrong and was corrected the same day it shipped | an hour |
+| **1** | write the acceptance test **first**: both `make-plate-fixtures` cases route correctly *and* `score-routing` changes no corpus page | an hour |
+| **2** | check `Flattener.inkOutsideText` against the two fixtures before building anything — it is already a structural signal and is currently asked only about background resolution. **Unverified hypothesis**, and if it holds the build mostly disappears | an hour |
+| **3** | only then: one scoped read of DjVu's separator, then a connected-component pass over the routing thumbnail | half a session, then a build |
+
+`RESEARCH-2026-08-16.md` is why the order is this way: this is **not an open problem** —
+it is MRC segmentation, ITU-T T.44, open in DjVu since 1996 — and the field's answer is
+connected components and stroke geometry. All four refused rounds measured luminance
+aggregates over a whole page, which is the wrong signal class rather than a wrong
+threshold.
+
 **1.12.0 IS released** — tag `v1.12.0` at `0dcca38`, a universal `Vision OCR.dmg`, and a
 GitHub release published 2026-08-14T01:56Z. This paragraph said the opposite for most of
 a day, and the claim was repeated without being checked; `git tag | tail` reads

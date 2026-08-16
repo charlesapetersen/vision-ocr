@@ -68,12 +68,33 @@ enum SearchableWriter {
     /// boundaries lost, 5-18 welded pairs per newspaper page.
     ///
     /// So reserve it deliberately: a quarter of the run's own size. Measured in
-    /// ems rather than points on purpose — the threshold PDFKit applies is
-    /// itself proportional (~0.15 em), so 0.25 em clears it at *every* font
-    /// size, and no absolute floor is needed. One was tried, at 0.5, 2 and 4 pt:
-    /// all three scored identically to no floor at all across 25 newspaper
+    /// ems rather than points on purpose — the thresholds extractors apply are
+    /// themselves proportional to the font size, so 0.25 em clears them at
+    /// *every* size and no absolute floor is needed. One was tried, at 0.5, 2 and
+    /// 4 pt: all three scored identically to no floor at all across 25 newspaper
     /// scans, so it is not here. A line with no right-hand neighbour on it is
     /// untouched.
+    ///
+    /// **0.25 was calibrated, and it is now bounded** (`RESEARCH-2026-08-16.md`).
+    /// Three of the four extractors that matter are readable, and every one of
+    /// them re-derives word breaks from the drawn gap:
+    ///
+    /// | extractor | needs at least | complains above |
+    /// |---|---|---|
+    /// | poppler `minWordBreakSpace` | 0.10 em | ~1.0 em, read as a column gap |
+    /// | pdf.js `TRACKING_SPACE_FACTOR` | 0.102 em | 0.6 em, which breaks the span |
+    /// | mupdf `SPACE_DIST` | 0.15 em | **0.30 em, where it emits _two_ spaces** |
+    /// | PDFKit | unknown, and closed | unknown |
+    ///
+    /// So the window is **(0.15, 0.30) em** and this sits in the middle of it.
+    /// Below 0.15 poppler and mupdf stop seeing a word break at all; above 0.30
+    /// mupdf doubles the space. That is the derivation this constant never had.
+    ///
+    /// **A real space character does not remove the need for the gap**, which is
+    /// the counter-intuitive part and the reason this constant cannot be retired
+    /// by writing spaces: poppler consumes a `U+0020` as a word *terminator* and
+    /// then discards it, re-deciding from geometry; pdf.js drops whitespace
+    /// before its heuristic runs. Only mupdf honours it outright.
     static var reserveEms: CGFloat = 0.25
 
     /// Floor on the vertical squash in the text matrix.

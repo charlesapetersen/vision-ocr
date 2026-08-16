@@ -41,10 +41,10 @@ fraction of the *shorter* box — about a point, on a pair whose boxes differ by
 black gutter down the edge of the sheet, unsearchable and 2.5x the page's ink. **627
 pages of the 233-document test corpus, in 16 documents.** The copy now shows exactly
 what the original showed: checked on three trimmed pages from each of the 16, 42
-pages in all, none differing. **C23.** One cost, and it is visible:
-a document that hides part of its sheet can no longer use JBIG2 compression, because
-the merge step clips the page to the crop and throws the rest away. Measured at 2.26x
-the bytes on one such document; 16 of the 233-document test corpus are affected.
+pages in all, none differing. **C23**, and it keeps its compression: the crop box is
+applied after the compressed pages are merged, because the merge step would otherwise
+clip the page to the crop and throw the rest away. Measured on one such document, the
+crop box costs 477 bytes; doing it the other way would have cost 114,884.
 
 Also: two memory bounds that described the wrong phase of the work they bound, colour
 page layering given a limit of its own, and a handful of smaller repairs — `BUGS.md`

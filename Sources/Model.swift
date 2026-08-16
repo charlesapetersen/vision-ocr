@@ -959,13 +959,18 @@ final class OCRModel: ObservableObject {
     nonisolated static func wantsJBIG2(rebuild: Bool, settings: Prefs.Snapshot,
                                        mode: Flattener.Mode,
                                        available: Bool = JBIG2.isAvailable,
-                                       trimmed: @autoclosure () -> Bool = false) -> Bool {
-        // `trimmed` last and behind an autoclosure: answering it means opening
-        // the document and reading every page's two boxes, and `&&` short-circuits
-        // before it whenever the route was never on offer. A plain `Bool` here
-        // made every file in every batch pay for a question only some of them
-        // ask — including the ones that are not being rebuilt at all.
-        rebuild && settings.useJBIG2 && mode.canUseJBIG2 && available && !trimmed()
+                                       cropWouldBeLost: @autoclosure () -> Bool = false) -> Bool {
+        // `cropWouldBeLost` last and behind an autoclosure: answering it means
+        // opening the document and reading every page's two boxes, and `&&`
+        // short-circuits before it whenever the route was never on offer. A plain
+        // `Bool` here made every file in every batch pay for a question only some
+        // of them ask — including the ones that are not being rebuilt at all.
+        //
+        // It is *would be lost*, not *is trimmed*: a trimmed document can take
+        // this route whenever the crop box can be put back after the merge, which
+        // qpdf 11 and later allow (C23, `JBIG2.setCropBoxes`). Only an older qpdf
+        // sends it down the Flate route now.
+        rebuild && settings.useJBIG2 && mode.canUseJBIG2 && available && !cropWouldBeLost()
     }
 
     /// Does this file hide part of any sheet behind a crop box?
@@ -1853,25 +1858,25 @@ final class OCRModel: ObservableObject {
         //    `rebuild` gates JBIG2 as well: wanting bitmaps is not permission to
         //    re-render pages the user asked us to leave alone.
         //
-        //    C23: and a document that hides part of its sheet behind a crop box
-        //    does not take this route at all. `qpdf --overlay` wraps BOTH the
-        //    destination's content and the stamped layer in form XObjects whose
-        //    `/BBox` is the destination page's **crop** box, then centres that
-        //    box on the media box. Measured on a 612x792 page cropped to
-        //    312x400 at (100,100): the page image came out translated by
-        //    (50, 96) — exactly the centring — and everything outside the crop
-        //    was clipped away by the form, so lifting the trim off the published
-        //    copy revealed nothing. That is invariant 1's harm arriving through
-        //    the fix for C23, so the crop box cannot be present when qpdf runs,
-        //    and there is nowhere else to put it: CGPDFContext and PDFKit both
-        //    drop the /JBIG2Decode streams when copying the pages afterwards
-        //    (measured, 7,391 -> 13,401 bytes with the compression gone).
-        //    So those documents take the Flate route, which carries the crop
-        //    correctly, and pay in size. 16 of 233 corpus documents, 627 of
-        //    16,987 pages, 6.8% of the corpus by bytes.
-        let wantJBIG2 = Self.wantsJBIG2(rebuild: rebuild, settings: settings,
-                                        mode: rebuildMode,
-                                        trimmed: Self.hasTrimmedPages(file, password: password))
+        //    C23: a document that hides part of its sheet behind a crop box can
+        //    take this route, but **the crop box must not exist while
+        //    `qpdf --overlay` runs**. That wraps BOTH the destination's content
+        //    and the stamped layer in form XObjects whose `/BBox` is the
+        //    destination page's crop box, then centres that box on the media box:
+        //    measured on a 612x792 page cropped to 312x400 at (100,100), the page
+        //    image came out translated by (50, 96) — exactly the centring — and
+        //    everything outside the crop was clipped away for good, so lifting the
+        //    trim off the published copy revealed nothing.
+        //
+        //    So the crop goes on **after** the merge, through
+        //    `JBIG2.setCropBoxes`, which is qpdf's own JSON and leaves the
+        //    /JBIG2Decode streams alone. An older qpdf has no such option, and
+        //    that is now the only case that takes the Flate route for its
+        //    geometry — at 2.26x the bytes, measured.
+        let canCarryCrop = JBIG2.merger.map { JBIG2.canSetCropBoxes(using: $0) } ?? false
+        let wantJBIG2 = Self.wantsJBIG2(
+            rebuild: rebuild, settings: settings, mode: rebuildMode,
+            cropWouldBeLost: !canCarryCrop && Self.hasTrimmedPages(file, password: password))
         var visible = file
         var bitmaps: [Flattener.RebuiltPage] = []
         var encoded: [JBIG2.Page] = []
@@ -2255,6 +2260,13 @@ final class OCRModel: ObservableObject {
                 try control.adopting { register in
                     try JBIG2.overlay(text: textLayer, onto: imagesOnly,
                                       to: staged, using: qpdf, register: register)
+                }
+                // C23. Last, and it has to be last — see `setCropBoxes`. Empty
+                // for the overwhelming majority of documents, which is a `return`
+                // on the first line rather than three more processes.
+                try control.adopting { register in
+                    try JBIG2.setCropBoxes(sourceCropBoxes, in: staged, using: qpdf,
+                                           register: register)
                 }
                 try? FileManager.default.removeItem(at: imagesOnly)
                 try? FileManager.default.removeItem(at: textLayer)

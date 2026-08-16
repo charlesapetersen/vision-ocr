@@ -21,10 +21,12 @@ drawing is erased, not softened), R57 (a tonal plate can come out a black blob),
 (`largestImage` reads a shared `/Resources`, so a page that draws no image is rebuilt at
 another page's plate resolution; 4 documents, and two attempted fixes were each worse). The
 fourth is R55, in `Tools/`. **C23 — the rebuilt copy displaying what the original's crop box
-hid — is `FIXED` as of 2026-08-15, and there is no release blocker.** Read its entry before
-touching the crop box anywhere: the fix the entry itself proposed is wrong in two measured
-ways, and the price of the right one is that a document hiding part of its sheet no longer
-takes the JBIG2 route.
+hid — is `FIXED`, and there is no release blocker.** Read its entry before touching the crop
+box anywhere: the fix the entry itself proposed is wrong in two measured ways, the first fix
+this project shipped for it gave up JBIG2 compression it did not have to, and the crop box now
+goes on **after** the qpdf merge — where `--update-from-json` replaces a page object rather than
+merging into one, which turned a 7,391-byte page into 391 bytes with `qpdf --check` calling it
+healthy.
 Read its header before planning anything. Update it in the same commit as any fix.
 Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2026-08-09.md`,
 `CORPUS-2026-08-15.md` + `.tsv` and `MRC-2026-08-15/` — and are evidence for one run, not
@@ -32,7 +34,11 @@ claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-
 the gate re-run after T17, and it names the two documents the app itself calls
 born-digital.
 [TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas
-with their costs and the reasons some are parked, and
+with their costs and the reasons some are parked,
+[RESEARCH-2026-08-16.md](RESEARCH-2026-08-16.md) is what other tools do about the
+problems this register keeps re-deriving — the extractor thresholds that bound
+`reserveEms`, Tesseract's two-knob text layer, and the qpdf option C23 was refused
+without reading — and
 [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a
 whole-codebase review sweep, including findings not yet fixed and areas not yet
 covered. **[HANDOFF-2026-08-16.md](HANDOFF-2026-08-16.md) is where to start** — group 3 is

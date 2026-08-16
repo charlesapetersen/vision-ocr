@@ -86,6 +86,7 @@ enum JBIG2 {
         case cannotWrite
         case noPages
         case badPageBox(page: Int, size: CGSize)
+        case cropBoxFailed(String)
 
         var errorDescription: String? {
             switch self {
@@ -93,6 +94,9 @@ enum JBIG2 {
             case .overlayFailed(let m): return "Merging the text layer failed: \(m)"
             case .cannotWrite: return "Could not write the compressed PDF."
             case .noPages: return "There were no page images to assemble."
+            case .cropBoxFailed(let why):
+                return "Could not carry the original's displayed area onto the "
+                    + "compressed copy: \(why)"
             case .badPageBox(let page, let size):
                 return "Page \(page) reports an unusable size "
                     + "(\(size.width) x \(size.height)), so the compressed pages "
@@ -597,5 +601,197 @@ enum JBIG2 {
             throw Failure.overlayFailed(message.isEmpty
                 ? "qpdf exited with code \(process.terminationStatus)" : message)
         }
+    }
+
+    // MARK: - The crop box, after the merge
+
+    /// Whether this qpdf can be asked to change a page dictionary without
+    /// touching the streams beside it.
+    ///
+    /// `--update-from-json` arrived with qpdf JSON v2 (qpdf 11). An older qpdf
+    /// on the user's machine is a real possibility, and the answer decides the
+    /// **route**, so it is asked before a route is chosen rather than discovered
+    /// after the pages are compressed.
+    static func canSetCropBoxes(using qpdf: String) -> Bool {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: qpdf)
+        process.arguments = ["--help=--update-from-json"]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        do { try process.run() } catch { return false }
+        process.waitUntilExit()
+        return process.terminationStatus == 0
+    }
+
+    /// Adds `/CropBox` to the published pages of a finished file, in place.
+    ///
+    /// **This is the last step, and it has to be**: `qpdf --overlay` wraps both
+    /// the destination's content and the stamped text layer in form XObjects
+    /// whose `/BBox` is the destination page's crop box, then centres that box on
+    /// the media box. A crop box present during the merge therefore clips away
+    /// everything outside it — permanently, not just from view — and translates
+    /// the page image. `BUGS.md` C23 has the measurement: (50, 96) of shift on a
+    /// 612x792 page cropped to 312x400.
+    ///
+    /// So the crop arrives afterwards, through qpdf's own JSON, which leaves the
+    /// `/JBIG2Decode` streams alone. Measured on a one-page fixture: 7,391 bytes
+    /// in, 7,414 out, compression intact, and the ink outside the crop still
+    /// there when the trim is lifted.
+    ///
+    /// ## The trap this function is built around
+    ///
+    /// **`--update-from-json` replaces an object; it does not merge into one.**
+    /// A patch carrying only `/CropBox` for a page produces a page with *only* a
+    /// crop box: measured, 7,391 bytes became **391**, with `/Contents` and the
+    /// image gone — and `qpdf --check` called the result healthy. That is a
+    /// content-destroying edit with a clean bill of health, which is invariant 1's
+    /// nightmare.
+    ///
+    /// Two things keep it safe, and neither is optional:
+    ///
+    ///  1. **The page dictionary is never authored here.** It is read back from
+    ///     qpdf's own serialisation of the file and handed straight back with one
+    ///     key added. This function does not know what a page dictionary contains
+    ///     and must not learn.
+    ///  2. **The result is verified before it replaces anything** — every page's
+    ///     content and image object lists must be unchanged, and the crop boxes
+    ///     must be what was asked for. `qpdf --check` does not answer either
+    ///     question, as the 391-byte file demonstrates.
+    static func setCropBoxes(_ boxes: [Int: CGRect], in file: URL, using qpdf: String,
+                             register: (Process) -> Void = { _ in }) throws {
+        guard !boxes.isEmpty else { return }
+
+        /// `qpdf --json`, as data. `stream-data=none` keeps image bytes out of it:
+        /// the JSON is proportional to the file's *structure*, not its pages.
+        func json(_ keys: [String]) throws -> [String: Any] {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: qpdf)
+            process.arguments = [file.path, "--json=2", "--json-stream-data=none"]
+                + keys.map { "--json-key=\($0)" }
+            let out = Pipe(), err = Pipe()
+            process.standardOutput = out
+            process.standardError = err
+            try process.run()
+            register(process)
+            // Read before waiting: a large structure fills the pipe buffer and
+            // the child blocks writing while we block waiting (C6's shape).
+            let data = out.fileHandleForReading.readDataToEndOfFile()
+            _ = err.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 || process.terminationStatus == 3,
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else { throw Failure.cropBoxFailed("qpdf could not describe the merged file") }
+            return parsed
+        }
+
+        /// page number (from 1) -> the object it lives in, e.g. `3 0 R`.
+        func pageObjects(_ described: [String: Any]) throws -> [Int: String] {
+            guard let pages = described["pages"] as? [[String: Any]] else {
+                throw Failure.cropBoxFailed("qpdf listed no pages")
+            }
+            var byNumber: [Int: String] = [:]
+            for page in pages {
+                guard let number = page["pageposfrom1"] as? Int,
+                      let object = page["object"] as? String else {
+                    throw Failure.cropBoxFailed("a page in qpdf's listing has no object")
+                }
+                byNumber[number] = object
+            }
+            return byNumber
+        }
+
+        /// What must not change: which objects hold each page's content and
+        /// images. The verification after the patch compares these.
+        func fingerprint(_ described: [String: Any]) -> [String] {
+            ((described["pages"] as? [[String: Any]]) ?? []).map { page in
+                let contents = (page["contents"] as? [String] ?? []).joined(separator: ",")
+                let images = (page["images"] as? [Any] ?? []).count
+                return "\(page["pageposfrom1"] as? Int ?? -1):\(contents):\(images)"
+            }
+        }
+
+        let before = try json(["pages"])
+        let objects = try pageObjects(before)
+        let described = try json(["qpdf"])
+        guard let qpdfKey = described["qpdf"] as? [Any], qpdfKey.count == 2,
+              let header = qpdfKey[0] as? [String: Any],
+              let all = qpdfKey[1] as? [String: Any] else {
+            throw Failure.cropBoxFailed("qpdf's JSON is not the shape this expects")
+        }
+
+        var patch: [String: Any] = [:]
+        for (number, box) in boxes.sorted(by: { $0.key < $1.key }) {
+            guard let object = objects[number] else {
+                throw Failure.cropBoxFailed("page \(number) is not in the merged file")
+            }
+            let key = "obj:\(object)"
+            // Read back, not authored. See the note above: a patch that does not
+            // carry the whole dictionary deletes the rest of it.
+            guard let entry = all[key] as? [String: Any],
+                  var value = entry["value"] as? [String: Any] else {
+                throw Failure.cropBoxFailed("qpdf did not describe page \(number)")
+            }
+            guard box.width > 0, box.height > 0,
+                  box.minX.isFinite, box.minY.isFinite,
+                  box.maxX.isFinite, box.maxY.isFinite else {
+                throw Failure.cropBoxFailed("page \(number) has an unusable displayed area")
+            }
+            value["/CropBox"] = [box.minX, box.minY, box.maxX, box.maxY]
+            patch[key] = ["value": value]
+        }
+
+        let work = file.deletingLastPathComponent()
+        let patchURL = work.appendingPathComponent("cropbox-\(UUID().uuidString).json")
+        let patched = work.appendingPathComponent("cropped-\(UUID().uuidString).pdf")
+        defer {
+            try? FileManager.default.removeItem(at: patchURL)
+            try? FileManager.default.removeItem(at: patched)
+        }
+        let document: [String: Any] = ["qpdf": [
+            ["jsonversion": 2, "pdfversion": header["pdfversion"] ?? "1.4"], patch]]
+        guard let body = try? JSONSerialization.data(withJSONObject: document),
+              (try? body.write(to: patchURL)) != nil else {
+            throw Failure.cropBoxFailed("could not write the page update")
+        }
+
+        let apply = Process()
+        apply.executableURL = URL(fileURLWithPath: qpdf)
+        apply.arguments = [file.path, "--update-from-json=\(patchURL.path)", patched.path]
+        let err = Pipe()
+        apply.standardError = err
+        apply.standardOutput = FileHandle.nullDevice
+        try apply.run()
+        register(apply)
+        let errorText = err.fileHandleForReading.readDataToEndOfFile()
+        apply.waitUntilExit()
+        guard apply.terminationStatus == 0 || apply.terminationStatus == 3,
+              FileManager.default.fileExists(atPath: patched.path) else {
+            let message = String(decoding: errorText, as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            throw Failure.cropBoxFailed(message.isEmpty
+                ? "qpdf exited with code \(apply.terminationStatus)" : message)
+        }
+
+        // Verify against the file that is about to be replaced, not against a
+        // description of what should have happened.
+        let check = Process()
+        check.executableURL = URL(fileURLWithPath: qpdf)
+        check.arguments = [patched.path, "--json=2", "--json-stream-data=none", "--json-key=pages"]
+        let checkOut = Pipe()
+        check.standardOutput = checkOut
+        check.standardError = FileHandle.nullDevice
+        try check.run()
+        register(check)
+        let checkData = checkOut.fileHandleForReading.readDataToEndOfFile()
+        check.waitUntilExit()
+        guard check.terminationStatus == 0 || check.terminationStatus == 3,
+              let after = try? JSONSerialization.jsonObject(with: checkData) as? [String: Any],
+              fingerprint(after) == fingerprint(before) else {
+            throw Failure.cropBoxFailed(
+                "the page contents changed while the displayed area was being set")
+        }
+
+        try FileManager.default.removeItem(at: file)
+        try FileManager.default.moveItem(at: patched, to: file)
     }
 }

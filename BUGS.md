@@ -1060,9 +1060,13 @@ fix for C23.** There is nowhere else to put it either: copying the merged pages 
 set the box drops the compression, measured, 7,391 → 13,401 bytes with `/JBIG2Decode` gone
 (CGPDFContext; PDFKit was already known to do the same, 374 KB → 467 KB).
 
-So **a document that hides part of any sheet does not take the JBIG2 route**
-(`Model.wantsJBIG2`'s new `trimmed:` term, from `Model.hasTrimmedPages`). It takes the Flate
-rebuild, which carries the crop correctly, and pays in size.
+So the crop box goes on **after** the merge, through `JBIG2.setCropBoxes` — qpdf's own
+`--update-from-json`, which patches a page dictionary and leaves every stream alone. Only a qpdf
+too old to have it (pre-11) sends the document down the Flate route now, through
+`Model.wantsJBIG2`'s `cropWouldBeLost:` term.
+
+**That is the second version of this fix, and the first one was refused for a bad reason** —
+see the correction at the end of this entry.
 
 **Measured, `testdocs/bookSection/Canby_1929`, four sampled pages through the shipped
 pipeline at defaults:**
@@ -1071,11 +1075,14 @@ pipeline at defaults:**
                     published copy shows            bytes      route
 before   p1 624x802 of 624x802   (0.0% hidden)      91,118     JBIG2
          p2 647x821 of 647x821   (0.0% hidden)
-after    p1 612x792 of 624x802   (3.2% hidden)     206,002     Flate
+after    p1 612x792 of 624x802   (3.2% hidden)      91,595     JBIG2
          p2 612x792 of 647x821   (8.8% hidden)
+                                        (the route fallback would have cost 206,002)
 ```
 
-Every page of the copy now hides exactly what the source hid, to the point.
+Every page of the copy now hides exactly what the source hid, to the point, **and keeps its
+compression**: the crop box costs 477 bytes on this document, against the 114,884 that leaving
+the JBIG2 route cost.
 
 **And over every trimmed document in the corpus**, three trimmed pages from each through the
 shipped pipeline at defaults: **16 documents, 42 pages, 0 differing** — `Boltanski_2006`, whose
@@ -1085,13 +1092,31 @@ whole sheet.
 **The cost is 2.26x the bytes on this document** — 0.55x its input before, 1.25x after. Over the corpus that
 is 16 documents of 233, 627 pages of 16,987, 6.8% of it by bytes.
 
-**The alternative was considered and refused, and is written down so it is not rediscovered.**
-qpdf ships `fix-qdf` precisely so a `--qdf` file can be edited by hand and repaired, which would
-allow the crop to be inserted into the merged file's page dictionaries after the overlay and keep
-the compression. It costs two more qpdf invocations, a dependency on a second binary from the
-same package, and hand-editing page dictionaries in a project whose own contributing guide names
-hand-written PDF as the risky kind. Refused for 6.8% of the corpus by bytes; revisit it if that
-share ever moves.
+**CORRECTION, same day: the first version of this fix gave up the JBIG2 route, and it did not
+have to.** That decision was recorded here as a refusal — "qpdf ships `fix-qdf` precisely so a
+`--qdf` file can be edited by hand and repaired… two more qpdf invocations, a dependency on a
+second binary from the same package, and hand-editing page dictionaries… refused for 6.8% of the
+corpus by bytes". Every clause of that is true of the `fix-qdf` route and **none of it is true of
+the route that exists**: `qpdf --update-from-json` is one more invocation, no second binary, and
+no hand-authored PDF syntax. The refusal was written without reading qpdf's option list to the
+end. `RESEARCH-2026-08-16.md` §3 has the fuller account; the lesson is the cheap one, which is
+that "there is nowhere else to put it" is a claim about the tool's documentation and should be
+checked against the tool's documentation.
+
+**And the route that exists has a trap in it, which is why `setCropBoxes` is shaped the way it
+is.** `--update-from-json` **replaces** an object rather than merging into it. A patch carrying
+only `/CropBox` for a page produces a page with *only* a crop box: measured, **7,391 bytes became
+391**, with `/Contents` and the image gone — and `qpdf --check` called the result healthy. Page
+count cannot see it either, so neither can `publishVerified`. Two things hold it:
+
+1. the page dictionary is **read back from qpdf's own serialisation and handed straight back with
+   one key added** — the function never authors one, and must not learn how;
+2. the patched file is **verified before it replaces anything**, by comparing every page's
+   content and image object lists against the file going in.
+
+The suite drives the whole path end to end and checks the *ink*, not the page count: a trimmed
+document through Automatic must come out compressed, displaying the crop, and still holding the
+words outside it when the trim is lifted.
 
 **The test had to lift the trim off a throwaway duplicate**, as this entry predicted: re-OCRing
 the published copy proves nothing, because the recogniser renders the crop (C7) and would only

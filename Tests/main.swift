@@ -6565,32 +6565,33 @@ do {
         check("the rebuilt copy keeps the whole sheet", false, "no output")
     }
 
-    // And the route. A trimmed document does NOT take the JBIG2 route, because
-    // `qpdf --overlay` wraps both layers in form XObjects whose `/BBox` is the
-    // destination's crop box and centres that box on the media box: measured on
-    // this very fixture, the page image came out translated by (50, 96) with
-    // everything outside the crop clipped away for good. The crop cannot be
-    // present when qpdf runs and cannot be added afterwards without dropping the
-    // /JBIG2Decode streams, so those documents pay in size instead.
+    // And the route. The crop box must not be present while `qpdf --overlay`
+    // runs — it wraps both layers in form XObjects whose `/BBox` is the
+    // destination's crop box and centres that box on the media box, which on this
+    // very fixture translated the page image by (50, 96) and clipped everything
+    // outside the crop away for good. So it is put back **after** the merge, and
+    // only a qpdf too old to do that sends the document down the Flate route.
     check("a trimmed document is recognised as trimmed",
           OCRModel.hasTrimmedPages(cropped, password: nil),
           "the crop box hides part of the sheet")
     check("…and an untrimmed one is not",
           !OCRModel.hasTrimmedPages(full, password: nil),
           "the fixture without a crop box must not be swept up by the fallback")
-    check("a trimmed document does not take the JBIG2 route",
+    check("a document whose crop could not be carried leaves the JBIG2 route",
           !OCRModel.wantsJBIG2(rebuild: true, settings: .current(), mode: .auto,
-                               available: true, trimmed: true),
-          "qpdf --overlay would clip the sheet away behind the crop")
-    check("…and an untrimmed one still does",
+                               available: true, cropWouldBeLost: true),
+          "publishing it compressed would show what the original hid")
+    check("…and one whose crop can be carried stays on it",
           OCRModel.wantsJBIG2(rebuild: true, settings: .current(), mode: .auto,
-                              available: true, trimmed: false),
+                              available: true, cropWouldBeLost: false),
           "the fallback must not cost every document its compression")
 
-    if JBIG2.isAvailable {
+    if JBIG2.isAvailable, let qpdf = JBIG2.merger {
         let checksBeforeJBIG2Crop = checks
-        // End to end, at the app's own defaults: the route decision has to be
-        // wired to the pipeline, not merely available to it.
+        let carries = JBIG2.canSetCropBoxes(using: qpdf)
+        // End to end, at the app's own defaults: the route decision and the
+        // crop-box pass both have to be wired to the pipeline, not merely
+        // available to it.
         var autoOutcome: Runner.Result.Outcome?
         let autoOut = dir.appendingPathComponent("auto-out.pdf")
         OCRModel.makeSearchablePDF(
@@ -6598,24 +6599,48 @@ do {
             password: nil, control: RunControl(), progress: { _, _ in },
             report: { o, _ in autoOutcome = o })
         let bytes = (try? Data(contentsOf: autoOut)) ?? Data()
+        let compressed = bytes.firstRange(of: Array("/JBIG2Decode".utf8)) != nil
         check("Automatic on a trimmed document still succeeds",
               autoOutcome == .succeeded)
-        check("…and takes the Flate route, not JBIG2",
-              bytes.firstRange(of: Array("/JBIG2Decode".utf8)) == nil,
-              "a JBIG2 stream here means the crop went through qpdf --overlay")
+        check("…and keeps its compression when qpdf can carry the crop",
+              compressed == carries,
+              carries ? "this qpdf can set a crop box after the merge, so the "
+                        + "document should have stayed on the JBIG2 route"
+                      : "this qpdf cannot, so the Flate route is correct")
         if let doc = PDFDocument(url: autoOut), let page = doc.page(at: 0) {
             let shown = page.bounds(for: .cropBox)
+            let media = page.bounds(for: .mediaBox)
             check("…so the published copy still displays the original's area",
                   abs(shown.width - crop.width) < 2 && abs(shown.height - crop.height) < 2,
                   "displays \(shown), the original showed \(crop)")
+            check("…while keeping the whole sheet",
+                  abs(media.width - mediaW) < 2 && abs(media.height - mediaH) < 2,
+                  "\(media)")
+            // The trap `setCropBoxes` is built around: `--update-from-json`
+            // REPLACES an object. A patch that does not carry the whole page
+            // dictionary produced a 391-byte file with no `/Contents` and no
+            // image, and `qpdf --check` called it healthy. Page count cannot see
+            // that either — so the ink is what gets checked.
+            let bare = dir.appendingPathComponent("bare-auto.pdf")
+            if let dup = PDFDocument(url: autoOut), let dp = dup.page(at: 0) {
+                dp.setBounds(dp.bounds(for: .mediaBox), for: .cropBox)
+                dup.write(to: bare)
+            }
+            let ink = observations(of: bare).values.flatMap { $0 }
+                .map(\.text).joined(separator: " ")
+            check("…and the page still has its ink, all of it",
+                  ink.contains("BRAVO") && ink.contains("ALPHA") && ink.contains("CHARLIE"),
+                  "setting the crop box must not replace the page: '\(ink.prefix(40))'")
         } else {
             check("…so the published copy still displays the original's area", false, "no output")
+            check("…while keeping the whole sheet", false, "no output")
+            check("…and the page still has its ink, all of it", false, "no output")
         }
         check("the skip census figure for the JBIG2 crop block is still right",
-              checks - checksBeforeJBIG2Crop + 1 == 4,
-              "\(checks - checksBeforeJBIG2Crop + 1) checks, census says 4")
+              checks - checksBeforeJBIG2Crop + 1 == 6,
+              "\(checks - checksBeforeJBIG2Crop + 1) checks, census says 6")
     } else {
-        skipBlock("the crop box on the JBIG2 route", checks: 4,
+        skipBlock("the crop box on the JBIG2 route", checks: 6,
                   because: "jbig2enc/qpdf not installed")
     }
 

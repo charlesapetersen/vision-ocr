@@ -379,6 +379,108 @@ than assumed — the two histogram discriminators tried in R49 both had a
 plausible-looking gap on the corpus and an overlap the corpus did not contain.
 Synthesise the adversarial cases; the corpus alone will not produce them.
 
+---
+
+## The order of work for this, decided 2026-08-16
+
+Four rounds have been refused here, and the owner's constraint is explicit: no more
+fixes that do not work. So the next attempt is bounded in advance, and the first two
+steps are both cheap enough to produce a verdict rather than a session.
+
+`RESEARCH-2026-08-16.md` establishes that this is **not an open problem** — it is MRC
+segmentation, standardised as ITU-T T.44 and implemented openly in DjVu since 1996 —
+and that the field's answer is connected components and stroke geometry, which is the
+signal class this entry has been specifying and the one none of the four refused rounds
+measured. All four measured luminance aggregates over a whole page.
+
+**1 · Write the acceptance test first, before any signal exists.** The fixtures are
+already built and already rendered rather than argued: `Tools/make-plate-fixtures.swift`
+produces the pale drawing and the tonal plate that are R56 and R57. The bar:
+
+  - both fixtures route correctly, and
+  - **no routing decision changes on the corpus** — `Tools/score-routing` over
+    `testdocs/`, compared page by page against a run from the commit before.
+
+A signal that fixes the fixtures and moves corpus pages is not a fix, it is a
+different set of defects. This step costs an hour and it is what turns the fifth
+attempt into a bounded experiment instead of a fifth refusal.
+
+**2 · Then check what is already in the tree, before building anything.**
+`Flattener.inkOutsideText` computes *ink that falls outside every recognised word box*,
+using Vision's own boxes as the text mask. That is a structural signal, it is already
+measured (text pages 0.0000 against 0.971–0.993 for plates, per R50), and it is
+currently asked only about background resolution. **R56's pale drawing and R57's tonal
+plate are both ink outside every text box.** Whether it separates the two fixtures is
+**unverified** — it is a hypothesis, stated here so the next person tests it rather
+than believing it — but it is an hour's work and if it holds, most of this entry
+becomes unnecessary.
+
+The catch to check while doing it: `isPicture` runs *before* recognition and
+`inkOutsideText` needs the word boxes, so using it here means moving the routing
+decision after recognition, which the section above already names as the remaining
+prize. That is a real restructuring, not a free win.
+
+**3 · Only if step 2 fails: one scoped read, then build.** DjVu's separator is the
+canonical open implementation; the standard features are component count, the median
+and spread of component bounding boxes, fill ratio, and a stroke-width estimate. Half
+a session with a specific question, not a survey. Then the build — a two-pass
+connected-component labelling over the routing thumbnail is ~200 lines and the
+thumbnail is already about 210x350.
+
+**0 · And before any of it, re-read the four refused rounds sceptically.** C23's
+refusal was written on 2026-08-15 and corrected the same day: it claimed there was
+nowhere to put a crop box, which was a statement about qpdf's documentation made
+without reading qpdf's documentation to the end. This register has a long history of
+"confirmed" findings that were measurement artefacts (CONTRIBUTING §3), and four
+refusals in a row is exactly the pattern that deserves one sceptical pass before a
+fifth attempt is designed around them.
+
+### A glyphless font and a second knob for the text layer — NOT STARTED, costed 2026-08-16
+
+**The idea.** Stop fitting the run's width with its font size. Set the font size from the ink
+height, fit the width with a horizontal scale, and delete the vertical squash. Two independent
+knobs instead of one doing both jobs.
+
+**Why it is here.** `RESEARCH-2026-08-16.md` §2: this is what Tesseract's PDF renderer does, and
+the font size cancels out of its width arithmetic entirely. Our design couples the two — the font
+size fits the width, which forces the glyphs to the wrong height, and **the vertical squash
+exists only to undo that**. Invariant 3's "four properties that fight each other" is largely a
+description of that coupling. Properties (b) and (c) are not naturally in tension; they are in
+tension because one constant is being asked to satisfy both. C18, C20, R81 and R82 are all in the
+neighbourhood of it.
+
+**Why it is not a small change, and why the obvious version of it fails.** Our own `draw` comment
+already records the attempt: *"Fitting width by stretching x instead exaggerates the gaps."* That
+is not a superstition — §1 of the research file explains it. Stretching a **real** font
+horizontally scales its side bearings too, so a natural 0.1 em inter-glyph gap becomes 0.15 em at
+150% and crosses poppler's `minWordBreakSpace`, splitting words: `accom plished`.
+
+Tesseract escapes it because its font is **glyphless and fixed-pitch** — every character exactly
+half the font size wide, no side bearings, so a uniform stretch creates no gap an extractor can
+find. **The glyphless font is not a detail of the design; it is what makes the two knobs safe.**
+
+So the change is a package:
+
+1. embed a glyphless fixed-pitch CID font (Tesseract's `pdf.ttf` is Apache-2.0; or generate one)
+2. width fit by horizontal scale rather than font size
+3. delete the vertical squash and `minimumVertical` with it
+4. re-run the whole invariant-3 procedure, because every recorded figure in the register belongs
+   to the current geometry
+
+**Cost.** Item 1 is the risky one — a hand-built CID font with `/Identity-H`, a `ToUnicode` CMap
+and a `CIDToGIDMap`, in a project whose contributing guide names hand-written PDF as the risky
+kind. Tesseract's own notes record that Acrobat rejects `CIDToGIDMap` entries of 0 and Ghostscript
+considers the font invalid for its purposes. Items 2 and 3 are small. Item 4 is a corpus campaign.
+
+**What would have to be true first.** A measurement nobody upstream has: whether a glyphless
+fixed-pitch layer actually extracts *better than ours* **in PDFKit**, which is Preview, Quick
+Look and Spotlight and is the only extractor our users have. Every PDFKit datapoint in six years
+of Tesseract and OCRmyPDF discussion is a screenshot. We have `score-run-width` and `welded=` and
+could answer it properly on a fixture built both ways, before touching `SearchableWriter`.
+
+**Not recommended yet, and not refused.** The prerequisite measurement is cheap; the package is
+not. Do the measurement first.
+
 ### A per-page background factor — DECLINED after a second attempt
 *(first attempt built and reverted 2026-08-11; second attempt measured and
 refused 2026-08-12. BUGS.md R35 has both. Kept because the reason it failed the
