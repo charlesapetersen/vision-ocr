@@ -1089,8 +1089,10 @@ shipped pipeline at defaults: **16 documents, 42 pages, 0 differing** — `Bolta
 34.7% is the worst case this entry opened with, among them. Before the fix all 42 displayed the
 whole sheet.
 
-**The cost is 2.26x the bytes on this document** — 0.55x its input before, 1.25x after. Over the corpus that
-is 16 documents of 233, 627 pages of 16,987, 6.8% of it by bytes.
+**What it would have cost to do it by leaving the route** — the first version of this fix, below
+— was 2.26x the bytes on this document: 91,118 to 206,002, or 0.55x its input before and 1.25x
+after. The population that would have paid it is 16 documents of 233, 627 pages of 16,987, 6.8%
+of the corpus by bytes. Nobody pays it now unless their qpdf predates 11.
 
 **CORRECTION, same day: the first version of this fix gave up the JBIG2 route, and it did not
 have to.** That decision was recorded here as a refusal — "qpdf ships `fix-qdf` precisely so a
