@@ -78,7 +78,7 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 836 checks, ~2-4 minutes (it runs real OCR)
+./run_tests.sh        # 1,127 checks, 3-6 minutes (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -224,13 +224,20 @@ warns about in as many words.
 the consequence, and whether it was verified by running code or only reasoned
 about.
 
-**Four entries are open, and two of them destroy content on the default route** —
-R56 (a pale drawing erased, not softened) and R57 (a tonal plate as a black blob), plus
-R54 and R55, which are in the tooling rather than the app. Everything else is `FIXED` or
-`WONTFIX` with its reasoning recorded, including three decisions that went against the
-obvious fix: C5, R9 and R13. `TODO.md` holds an ordered four-item queue, and
-`REVIEW-2026-08-14.md` holds a whole-codebase review sweep with findings not yet fixed
-and areas not yet covered.
+**One entry is open, and it does not destroy content** — `C24`, half fixed: a page that
+draws no XObject at all no longer takes another page's plate resolution, while the 45 pages
+that draw a *smaller* image than the shared dictionary holds are still open, with their
+measurements and two refused repairs in the entry. Everything else is `FIXED` or `WONTFIX`
+with its reasoning recorded, including three decisions that went against the obvious fix:
+C5, R9 and R13. `TODO.md` holds the decided-but-undone work, and `REVIEW-2026-08-14.md`
+holds a whole-codebase review sweep with findings not yet fixed and areas not yet covered.
+
+*(This paragraph said "Four entries are open, and two of them destroy content on the default
+route", naming R56, R57, R54 and R55, for a day after all four closed — R54/R56/R57 `FIXED`,
+R55 `WONTFIX` on the owner's arithmetic 2026-08-17. It is the same failure `CLAUDE.md`
+confesses to about its own status line, and for the same reason: a sentence a new reader
+trusts most, in a file nothing checked. `ops/autonomous/check-staleness.sh` now checks it —
+it is what caught this — so correct it here in the same commit as any status change.)*
 
 For each: reproduce it with a harness from `Tools/` first, fix, re-measure, then
 update the entry in `BUGS.md` with the fix and its evidence. Run `./run_tests.sh`

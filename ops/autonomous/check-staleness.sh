@@ -62,6 +62,17 @@
 #     inside a before/after table is TRUE about that session — and CLAUDE.md's own doctrine is that dated
 #     records "are evidence for one run, not claims about the present". Flagging them would demand edits to
 #     honest history.
+#   * NOR IS ONE UNDER A HEADING THE DOCUMENT MARKS HISTORICAL — "## The old specification, kept for the
+#     commands", "— done <date>", "closed", "superseded", "archived". The heading is the date stamp, and the
+#     prose beneath it is a record. Same first-fix-run lesson as the rule below: excluding one historical
+#     claim just promotes the next-highest one into the report unless the whole retained section is exempt.
+#   * A CHECK-COUNT CLAIM THE PROSE ITSELF DATES OR PUTS IN THE PAST IS NEVER REPORTED — "as of
+#     2026-08-15 … the suite stood at 1,046 checks", or any claim on a line carrying an ISO date. It is the
+#     same doctrine as the dated-handoff rule above, applied to a sentence instead of a file: such a claim is
+#     TRUE, and demanding an edit to it would be demanding an edit to honest history. This was added after the
+#     first real fix run, where reconciling TODO.md by DATING its stale figure — the right repair, because a
+#     dated figure cannot go stale again — left this check flagging the correct version. A guard that fires on
+#     the fix it just asked for is a guard that gets switched off.
 #   * ONLY EACH FILE'S HIGHEST CHECK-COUNT CLAIM IS REPORTED, one finding per file. Lower figures in the
 #     same file are historical sections kept on purpose: `TODO.md` carries "The suite is at **790 checks**"
 #     under §"The old specification, kept for the commands", and quotes its own superseded "916 checks" in a
@@ -259,15 +270,36 @@ cc_scan() {  # $1 = path, $2 = label, $3 = live|dated
     # "the suite is at 1046" and begins the next with "checks." A line-at-a-time matcher reads that file as
     # claiming 916 (a figure it quotes only to correct) and misses the live claim entirely — measured.
     {
+      # Keep the ORIGINAL text as well as the mangled one. The mangling below turns 2026-08-15 into
+      # "2026 08 15", so a date test has to run on the original or it can never match.
+      orig = tolower($0)
+      # Track the enclosing section heading. A claim sitting under a heading the document itself marks as
+      # historical is retained-on-purpose writing, not drift. TODO.md keeps "The suite is at 790 checks"
+      # under "## The old specification, kept for the commands" — the heading IS the date stamp, and the
+      # sentence under it needs no edit. Without this, excluding the newer dated claim above merely promotes
+      # the next-highest historical figure into the report, which is what happened on the first fix run.
+      if ($0 ~ /^#+ /) {
+        head = tolower($0)
+        hist_head = (head ~ /old specification|old spec|kept for the command|superseded|archived|closed|done [0-9]|fixed earlier|no longer/) ? 1 : 0
+      }
       raw = $0
       gsub(/,/, "", raw)                       # 1,127 -> 1127, and "1,101   1,127 checks" stays two numbers
       gsub(/[^A-Za-z0-9]+/, " ", raw)
       n = split(raw, w, " ")
       for (i = 1; i <= n; i++) {
-        if (tolower(w[i]) == "checks" && prev ~ /^[0-9]+$/ && prev + 0 >= floor)
-          print label "\t" pline "\t" prev + 0 "\t" kind
+        if (tolower(w[i]) == "checks" && prev ~ /^[0-9]+$/ && prev + 0 >= floor) {
+          # A claim the prose itself DATES or puts in the PAST is correct writing, not drift — the same
+          # doctrine this file already applies to the dated HANDOFF-<date>.md files. Test its own
+          # line AND the one before it, because the claim wraps (that is why `prev`/`pline` exist at all).
+          k = kind
+          both = prevorig " " orig
+          if (both ~ /as of|stood at|was at|were at|had been|used to|superseded|20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) k = "dated"
+          if (hist_head) k = "dated"
+          print label "\t" pline "\t" prev + 0 "\t" k
+        }
         prev = w[i]; pline = FNR
       }
+      prevorig = orig
     }
   ' "$1" >> "$CC"
 }

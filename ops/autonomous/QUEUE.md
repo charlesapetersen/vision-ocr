@@ -67,7 +67,11 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       `/Resources` dictionary holds still take the shared plate's resolution. The measurements and the two
       already-refused repairs are in the entry; read both refusals before proposing a third.
       (origin: BUGS.md C24, HALF FIXED)
-- [ ] **stale-docs** — reconcile the status claims that have gone stale behind the work. At seeding:
+- [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
+      HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite
+      figure was corrected to a MEASURED 1,127 in HANDOFF.md, TECHNICAL.md and ARCHITECTURE.md; TODO.md's
+      was dated rather than updated, so it cannot go stale again. check-staleness.sh gained two exclusions
+      so it stops flagging correct historical writing. At seeding:
       `HANDOFF.md` said "Four entries are open" against an actual one and still described R56/R57 as open;
       the suite's check count was asserted as 836 (`HANDOFF.md`), 880 (`TECHNICAL.md`) and 1,046
       (`TODO.md`) against an actual 1,127. Run `ops/autonomous/check-staleness.sh` for the current list,

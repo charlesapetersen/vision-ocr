@@ -32,12 +32,14 @@ below.
 
 ### Where the fix order got to
 
-**Twenty-five of the sweep's findings are fixed and merged, and the suite is at 1046
-checks.** The list of the first twenty-three is in
-**[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md)**; the two since are `BUGS.md` T14 and C25,
-in **[HANDOFF-2026-08-15-day.md](HANDOFF-2026-08-15-day.md)**, which is the live status.
+**As of 2026-08-15, twenty-five of the sweep's findings had been fixed and merged and the
+suite stood at 1,046 checks** — both figures are dated on purpose, because the present tense
+is what made this sentence wrong twice. The list of the first twenty-three is in
+**[HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md)**; the two after it are `BUGS.md` T14 and C25,
+in **[HANDOFF-2026-08-15-day.md](HANDOFF-2026-08-15-day.md)**.
 Read those rather than a summary here, because a summary in this file is what went stale
-three times in three days.
+three times in three days. For where things stand *now*: `git log`, and
+`ops/autonomous/bugs-entry.sh --list-open` for the register.
 
 *(It said "Five of its top items are done… 916 checks" for most of 2026-08-15, written when
 that was true and left behind by the fifteen commits after it. Before that, an earlier draft
