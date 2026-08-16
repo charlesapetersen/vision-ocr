@@ -65,3 +65,10 @@ const/maximumInkUnderADrawing	killed	469	3 check(s): pale-drawing routes to the 
 const/minimumMarkContrast	killed	475	1 check(s): faint-marks routes to 1-bit
 logic/C24-page-draws-nothing	killed	474	2 check(s): C24; …and it rebuilds at the fallback, not its neighbour's plate
 logic/C24-unknown-is-not-no	killed	471	6 check(s): a declared geometry really does produce a DPI past Int's range; a merely enormous page is still refused, not rendered; Automatic really does still fail on the oversized page
+const/markCellsPerInch	killed	416	1 check(s): a page frame is not a plate, so its tone is never asked about
+const/typeCeilingInches	killed	473	3 check(s): pale-drawing routes to the picture path; pale-chart routes to the picture path; …and a page carrying a pale drawing does not
+const/solidMarkFill	killed	471	3 check(s): pale-drawing routes to the picture path; pale-chart routes to the picture path; …and a page carrying a pale drawing does not
+const/largeMarkShare	killed	475	2 check(s): tonal-plate routes to the picture path; …while a filled tonal plate of the same span is asked, and answers
+logic/R56-alltext-sees-drawings	killed	631	1 check(s): …and a page carrying a pale drawing does not
+logic/R57-tone-of-the-region	killed	623	1 check(s): tonal-plate routes to the picture path
+const/minimumPlateFill	killed	632	1 check(s): a page frame is not a plate, so its tone is never asked about

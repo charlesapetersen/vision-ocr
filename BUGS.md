@@ -6,17 +6,19 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Two open, neither in the app's content path, and no release blocker.** **R56 and R57
+**One open, half fixed, not in the app's content path, and no release blocker.** **R56 and R57
 are `FIXED`** as of 2026-08-16 — the pale drawing erased and the tonal plate blobbed, the
 two entries that had been waiting on a shape signal since 2026-08-13. It exists now:
 `Flattener.pageMarks`, `largeMarkTone` and `paleDrawing`, on the sixth attempt and the
 second signal class, and the term that closed R56 is not a threshold on how pale a mark
 is but on **where it is**. Read both entries before touching the routing — four
 luminance rounds and two shape rounds were refused first, and the corpus section in R57
-states plainly the acceptance bar this did *not* meet. **R55 is the first of the two
-still open and it is not in the app** — it is in `Tools/`, and it needs its own
-measurement campaign before `classify-source` changes. **C24 is the second**, opened
-2026-08-15: `largestImage` answers "the largest image in this document" to a question
+states plainly the acceptance bar this did *not* meet. **R55 is `WONTFIX`** as of 2026-08-17 — it was in `Tools/` rather than the app, the
+measurement campaign it wanted was run, and the owner closed it on the arithmetic: the
+gate's over-exclusion costs the sweep roughly 80 candidates and 0.7 GB against 1,164 and
+~10 GB, the corpus half is solved by adding upright-scanner documents by hand, and
+loosening the gate would admit the hand-held photographs D1 exists to keep out. **C24 is
+the one still open**, opened 2026-08-15 and **half fixed 2026-08-16**: `largestImage` answers "the largest image in this document" to a question
 about *this page*, so on the 3 corpus documents whose pages share one `/Resources` a page
 that draws nothing at all is rebuilt at another page's plate resolution — **85 pages,
 measured 2026-08-16 by scanning content streams for `Do`**. Two repairs were built and
@@ -3342,6 +3344,25 @@ difference is to look at them rather than to count them:
   p22 was rendered — a clean typescript that 1-bit prints perfectly. They cost bytes.
   `largeMarkShare` records why the constant is not moved one step up to remove them.
 
+**Seven of the 125 were rendered and read**, which is R35's rule — judge an attempt by
+the pages it fires on, not by the aggregate. Two classes of correct fire and two of
+false one, and the false ones are named so the next person does not rediscover them:
+
+| page | what it is | verdict |
+|---|---|---|
+| `Schwaller` p57 | a photograph of an office interior | **destroyed at 1-bit** — correct |
+| `Ehrenreich_2000` p9 | a credited Laurie Simmons photograph | **destroyed at 1-bit** — correct |
+| `Mudge_2018` p94 | a bar chart with **three** fills — black, white and mid-grey, named in its own legend | **correct**, and it is the case nobody had thought of: 1-bit has two levels and the chart needs three |
+| `Morgan_1975` p1 | a JSTOR cover page's engraved seal | correct, mild — the seal blobs at 1-bit |
+| `Doermann_1967` p2, p5, p27 | a scanner-edge blob just inside the inset | **false**, costs bytes |
+| `UN-OCred` p6 | a two-page spread whose **central gutter shadow** is a solid black bar at 1-bit | **false**, costs bytes — and the inset cannot help, because it trims the *edges* and this is down the middle |
+
+The gutter one is worth stating as a class rather than a page: any spread scanned
+two-up has a dark band down its centre, that band is a large mark with tone in it, and
+`inkOutsideText`'s outer-sixteenth inset was designed for the platen edge and does not
+reach it. Three of `UN-OCred`'s pages are this. Nothing is lost on them; they cost
+bytes.
+
 ### What it costs, end to end
 
 `Tools/score-gate.swift` through `OCRModel.start()` over the **21 documents that changed
@@ -3395,21 +3416,31 @@ rendering instead of a 1-bit one, so Vision returns different fragments — it r
 that bought it are the ones whose reversed-out advertisement is no longer a black
 rectangle.
 
-**Three of the ten new mutants have been run, and one of them SURVIVED a green suite
-before a fixture was written for it.** `Tools/mutate.py`:
+**All ten new mutants have been run, and two SURVIVED a green suite before a check was
+written that could see them.** `Tools/mutate.py`:
 
 | mutant | verdict |
 |---|---|
-| `const/paleDrawingThreshold 0.05 → 0.9` | killed, by 3 checks |
-| `const/maximumInkUnderADrawing 0.05 → 0.0` | killed, by 3 checks — **all three are the `pale-chart` fixture's**, and before that fixture existed nothing could see this constant at all |
-| `const/minimumMarkContrast 24.0 → 4.0` | **SURVIVED** 1118/1118, then killed by 1 check once `faint-marks` was added |
+| `const/paleDrawingThreshold 0.05 → 0.9` | killed, 3 checks |
+| `const/maximumInkUnderADrawing 0.05 → 0.0` | killed, 3 checks — **all three are the `pale-chart` fixture's**, and before that fixture existed nothing could see this constant |
+| `const/typeCeilingInches 0.25 → 99.0` | killed, 3 checks |
+| `const/solidMarkFill 0.6 → 0.0` | killed, 3 checks |
+| `const/largeMarkShare 0.02 → 0.9` | killed, 2 checks |
+| `const/markCellsPerInch 150.0 → 20.0` | killed, 1 check |
+| `logic/R56-alltext-sees-drawings` | killed, 1 check — the sibling in `mrcLayers` |
+| `logic/R57-tone-of-the-region` | killed, 1 check |
+| `const/minimumMarkContrast 24.0 → 4.0` | **SURVIVED**, then killed once `faint-marks` was added |
+| `const/minimumPlateFill 0.25 → 0.0` | **SURVIVED**, then killed once the frame check was repaired |
 
-The survivor is the interesting one and the review of this diff predicted it exactly:
-the constant's whole justification is a corpus measurement — 228 of `Himanen_2001`'s 255
-pages — and every fixture's marks were either 47 levels below the paper or not there at
-all, so no fixture could tell whether the constant did anything. `faint-marks` is the
-same drawing at **eleven** levels, and it must stay at 1-bit. **The remaining seven
-mutants are not yet run** and are named here rather than left to be assumed.
+**Both survivors are the same shape and both were predicted, one by the review and one
+by the machine.** `minimumMarkContrast`'s justification is a corpus measurement — 228 of
+`Himanen_2001`'s 255 pages — and every fixture's marks were either 47 levels below the
+paper or absent, so nothing could tell whether the constant did anything; `faint-marks`
+is the same drawing at **eleven** levels and must stay at 1-bit. `minimumPlateFill` was
+worse: a check existed for it, and it **could not fail**, because it drew its page frame
+40 px from the edge while the analysis crops the outer sixteenth — 75 px on that page.
+Moved to 150 px, the frame's own tone reads 0.1668 against the sheet's 0.1223 and the
+mutant dies. CONTRIBUTING 4a's whole point, twice in one diff.
 
 **And what the detector itself costs**, measured on two real corpus pages, best of 25:
 
@@ -3472,7 +3503,7 @@ R56's refused luminance signal is no help here either: requiring a mark to be *t
 drops this fixture from 0.0931 to **0.0024**, because a tonal plate is precisely not
 thin. Two defects, one instrument, and it is shape.
 
-### R55 · `classify-source` calls an upright-scanner capture `photographed` — OPEN, and the campaign it asked for has now been run
+### R55 · `classify-source` calls an upright-scanner capture `photographed` — WONTFIX *(decided by the owner 2026-08-17, on the measurement below)*
 *(found 2026-08-13 running the gate over the one document the owner asked to add to
 the corpus; not in the app — it is the gate that decides what the corpus and the
 sweep may contain. **Measured 2026-08-16**: the discriminator this entry proposed works
@@ -3515,13 +3546,44 @@ so the measure is content-dependent exactly where the pages are darkest.
 gradient **and** lighting that varies between pages — would reclassify **48 of the 75**
 survey files currently over the gradient line, and rescue `Why?`. That is a large change
 to the gate that decides what the sweep may touch, made on a population that has been
-shown not to be what it was labelled. So it is **not made here.** What is needed first,
-now specified rather than guessed:
+shown not to be what it was labelled.
 
-1. a lighting measure that is not content-dependent — block means taken from each page's
-   own paper *mode* rather than from "brighter than 140";
-2. a hand-held set that somebody has *looked at*. "Random Photograph" is not one, and
-   this entry now has two rendered counter-examples out of two sampled.
+### Why this is `WONTFIX` rather than open — the owner's call, 2026-08-17, and the arithmetic behind it
+
+The entry has two consumers and **neither is worth a classifier campaign**.
+
+**The corpus gate is solved by hand and already was.** `sample-zotero.py` keeps only
+`scanned`, so upright-scanner material is never drawn — and the cheap answer is to add
+such documents by hand, which is exactly how `Why?` entered the corpus in the first
+place. One request, no classifier.
+
+**The sweep's exposure is about 7%.** The candidate test is applied only to `scanned`
+files, so the 1,001 `photographed` ones are excluded by verdict before their size is
+ever looked at:
+
+| | files | re-OCR candidates |
+|---|---|---|
+| `scanned` | 9,106 | 1,164 — 12.8% |
+| `photographed` | 1,001 | **0**, and not because they are small |
+
+At the measured misclassification rate (48 of 75 over the gradient line, ~64%), roughly
+640 of them are really scans; at the scanned population's own 12.8% candidate rate that
+is **on the order of 80 extra candidates and perhaps 0.7 GB**, against 1,164 candidates
+and ~10 GB. Estimated from two rates rather than measured directly, and labelled as
+such.
+
+**And the risk sits on the wrong side.** Loosening the gate to admit those 640 also
+admits genuine hand-held photographs, which is precisely the material D1 records the
+corpus being 65% polluted with before this gate existed, and which this app is not for.
+A one-sided discriminator that cannot tell hand-held from mechanical is not a safe way
+to loosen it.
+
+**What would re-open it**, so this is a decision rather than an omission: evidence that
+the sweep's remaining prize actually matters at the margin, *and* the two things the
+measurement showed are missing — a lighting measure that is not content-dependent
+(block means from each page's own paper *mode* rather than "brighter than 140"), and a
+hand-held set somebody has looked at. `Tools/score-illumination.swift` is committed so
+that starts from data rather than from scratch.
 
 The original entry follows, and its diagnosis is unchanged.
 

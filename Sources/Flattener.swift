@@ -1561,7 +1561,11 @@ enum Flattener {
     ///
     /// Fill is what actually separates the two: a frame is 0.02 of its box, a plate is
     /// 0.5 to 0.9. 0.25 sits in the middle of that gap and is a divider between two
-    /// clusters rather than a tuned value.
+    /// clusters rather than a tuned value. Held by a check on a synthetic framed page,
+    /// where setting this to 0.0 makes the frame's own tone read **0.1668 against the
+    /// sheet's 0.1223** — and the first version of that check drew its frame inside the
+    /// margin the analysis crops away, so it could not fail. `mutate.py` found that,
+    /// not a person.
     ///
     /// **What it gives up, named because it was measured.** `Scott_TK` p13's
     /// reversed-out advertisement — a 1915 trade-magazine page that 1-bit turns into a

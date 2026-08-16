@@ -15,14 +15,15 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries
-are open and neither destroys content**: **C24, now half fixed** — a page that draws no
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **one entry
+is open and it does not destroy content**: **C24, half fixed** — a page that draws no
 XObject at all no longer takes another page's plate resolution (85 pages over 3 documents,
 structural, no threshold, 0 route changes), while the 45 pages that draw a *smaller* image
-than the shared dictionary holds are still open with their measurements — and **R55, whose
-measurement campaign has now been run**: the discriminator it proposed rules a flatbed out
-and does not rule hand-held in, and the population it was to be tested against turns out to
-be mostly scans. **R56 and R57 —
+than the shared dictionary holds are still open with their measurements and two refused
+repairs. **R55 is `WONTFIX`** as of 2026-08-17: the measurement campaign was run and the
+owner closed it on the arithmetic — the gate's over-exclusion costs the sweep about 80
+candidates and 0.7 GB against 1,164 and ~10 GB, and loosening it would admit the hand-held
+photographs D1 exists to keep out. **R56 and R57 —
 the pale drawing erased and the tonal plate blobbed — are `FIXED` as of 2026-08-16** by a
 shape signal in `Flattener`, on the sixth attempt and the second signal class; read both
 entries before touching the routing, because four luminance rounds and two shape rounds

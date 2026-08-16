@@ -1894,13 +1894,23 @@ do {
                     }
                 }
             }
+            // **The rule sits at 150 px, not at 40, and that is the whole check.** The
+            // analysis drops the outer sixteenth on every side — 75 px across and 93 px
+            // down on this page — so a frame drawn at 40 px is cropped away before any
+            // of this runs, and the check then passes whatever `minimumPlateFill` is.
+            // It did: `const/minimumPlateFill 0.25 -> 0.0` SURVIVED a green 1,127-check
+            // suite, and this is why. CONTRIBUTING 4a — the machine put the defect back
+            // and found a check that could not fail.
             var framed = typePage
+            let inset = 150
             for t in 0..<4 {                                   // a 4 px rule round it
-                for x in 40..<(W - 40) {
-                    framed[(40 + t) * W + x] = 0; framed[(H - 41 - t) * W + x] = 0
+                for x in inset..<(W - inset) {
+                    framed[(inset + t) * W + x] = 0
+                    framed[(H - inset - 1 - t) * W + x] = 0
                 }
-                for y in 40..<(H - 40) {
-                    framed[y * W + 40 + t] = 0; framed[y * W + W - 41 - t] = 0
+                for y in inset..<(H - inset) {
+                    framed[y * W + inset + t] = 0
+                    framed[y * W + W - inset - 1 - t] = 0
                 }
             }
             func markTone(_ page: [UInt8]) -> Double {
