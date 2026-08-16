@@ -121,11 +121,6 @@ enum SearchableWriter {
 
     // MARK: - Vision's output, as mac-ocr reports it
 
-    struct Page: Decodable {
-        let page: Int
-        let observations: [Observation]
-    }
-
     /// **`Encodable` as well, because the recognition helper writes these.**
     /// R40's helper process recognises a page and hands the observations back as
     /// JSON, and the app decodes them into this same type — so the two halves of
@@ -157,38 +152,14 @@ enum SearchableWriter {
         }
     }
 
-    /// Parses JSON Lines: one page object per line, as mac-ocr streams them.
-    static func observations(fromJSONLines lines: [String]) throws -> [Int: [Observation]] {
-        let decoder = JSONDecoder()
-        var byPage: [Int: [Observation]] = [:]
-        var undecodable = 0
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else { continue }
-            guard let page = try? decoder.decode(Page.self, from: data) else {
-                undecodable += 1
-                continue
-            }
-            byPage[page.page, default: []] += page.observations
-        }
-        // Skipping these quietly published the affected pages with no text at all
-        // and still reported success — the page-count check cannot see it.
-        guard undecodable == 0 else { throw Failure.unreadableObservations }
-        guard !byPage.isEmpty else { throw Failure.unreadableObservations }
-        return byPage
-    }
-
-    static func observations(fromJSONAt url: URL) throws -> [Int: [Observation]] {
-        guard let data = try? Data(contentsOf: url) else { throw Failure.unreadableObservations }
-        let pages: [Page]
-        do { pages = try JSONDecoder().decode([Page].self, from: data) }
-        catch { throw Failure.unreadableObservations }
-        // mac-ocr numbers pages from 1. Merge rather than overwrite, so a
-        // duplicated page entry can't silently drop text.
-        var byPage: [Int: [Observation]] = [:]
-        for page in pages { byPage[page.page, default: []] += page.observations }
-        return byPage
-    }
+    // `observations(fromJSONLines:)` and `observations(fromJSONAt:)` used to sit
+    // here, and A1.3 records them as dead since recognition came in-process:
+    // nothing had called either since R40, and they were divergent siblings —
+    // one refused an undecodable line and an empty result, the other refused
+    // neither. `Recogniser.HelperPage` is the live decoder of this shape, and
+    // one decoder is the point (C20). Removed with R81; `Failure` keeps
+    // `unreadableObservations`, which is part of the type's public surface and
+    // reads correctly for a caller that adds a parser back.
 
     // MARK: - Composing
 
@@ -206,8 +177,8 @@ enum SearchableWriter {
         to destination: URL,
         drawImages: Bool = true,
         password: String? = nil,
-        minimumConfidence: Double = 0,
         joinHyphenated: Bool = true,
+        cropBoxes: [Int: CGRect] = [:],
         isCancelled: () -> Bool = { false },
         progress: (Int, Int) -> Void = { _, _ in }
     ) throws -> [Unplaced] {
@@ -274,8 +245,20 @@ enum SearchableWriter {
             // document that had suddenly grown unsearchable furniture.
             //
             // Media box for what is kept, crop box for what is shown.
-            if region != pageBox {
-                var cropRect = region
+            //
+            // C23: `region` is derived from `visible`, and on **every rebuild
+            // route** `visible` is the rebuilt copy, which carries only a media
+            // box — so this wrote the media box twice and the published page
+            // displayed the black scanner gutter the original hid. The caller
+            // knows the source's crop and passes it in this page's own space;
+            // `region` remains what the observations are normalised to, which on
+            // that route is the whole sheet and must stay that way.
+            //
+            // Deliberately two different rectangles, because they answer two
+            // questions: where the text goes, and what the reader is shown.
+            let displayed = cropBoxes[index + 1] ?? region
+            if displayed != pageBox {
+                var cropRect = displayed
                 let cropData = withUnsafeBytes(of: &cropRect) { Data($0) } as CFData
                 pageInfo[kCGPDFContextCropBox as String] = cropData
             }
@@ -296,24 +279,8 @@ enum SearchableWriter {
             // The text, invisible, over the top.
             pdf.saveGState()
             pdf.setTextDrawingMode(.invisible)
-            var lines = (byPage[index + 1] ?? [])
-                .filter { $0.confidence >= minimumConfidence
-                    && !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            lines = deduplicated(lines, in: region)
-            // After dedup, so a line reported twice cannot be joined to its own
-            // twin, and before the geometry helpers below, which read the text
-            // only through its box.
-            if joinHyphenated {
-                // The next page's topmost line, so a word carried over a page
-                // break can be joined. From `byPage`, which this loop already
-                // holds for every page — no extra render, no extra recognition.
-                let next = (byPage[index + 2] ?? [])
-                    .filter { $0.confidence >= minimumConfidence
-                        && !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                    .sorted { $0.boundingBox.y < $1.boundingBox.y }
-                    .prefix(SearchableWriter.continuationCandidates)
-                lines = joiningHyphenatedWords(lines, in: region, continuation: Array(next))
-            }
+            let lines = prepared(byPage[index + 1] ?? [], nextPage: byPage[index + 2] ?? [],
+                                 in: region, joinHyphenated: joinHyphenated)
             for (position, observation) in lines.enumerated() {
                 if let reason = draw(observation, in: region,
                                      ceiling: headroom(for: position, among: lines, in: region),
@@ -331,6 +298,41 @@ enum SearchableWriter {
         }
         pdf.closePDF()
         return skipped
+    }
+
+    /// The observations a page's text layer is actually built from: everything
+    /// `compose` does to a page's raw recognition before any geometry is
+    /// computed from it.
+    ///
+    /// Split out of `compose` for the same reason `placement` was: an instrument
+    /// that measures the text layer has to start from the list the writer draws,
+    /// and the alternative is a second copy of this sequence drifting out of step
+    /// with it (C20). The order matters and is asserted by the suite — dedup
+    /// before joining, so a line reported twice cannot be joined to its own twin.
+    static func prepared(
+        _ raw: [Observation],
+        nextPage: [Observation] = [],
+        in region: CGRect,
+        joinHyphenated: Bool = true
+    ) -> [Observation] {
+        // A13.4: there was a `minimumConfidence` here and on `compose`, filtering
+        // by a threshold `Recogniser.recognise` has already applied — a second
+        // live definition of one rule, with **no shipped caller setting it**. The
+        // confidence filter belongs where the confidences are produced, and now
+        // it is only there. `ocrAllPages` is the same shape and is in the
+        // register for it.
+        func usable(_ lines: [Observation]) -> [Observation] {
+            lines.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        }
+        let lines = deduplicated(usable(raw), in: region)
+        guard joinHyphenated else { return lines }
+        // The next page's topmost lines, so a word carried over a page break can
+        // be joined. The caller already holds them — no extra render, no extra
+        // recognition.
+        let next = usable(nextPage)
+            .sorted { $0.boundingBox.y < $1.boundingBox.y }
+            .prefix(SearchableWriter.continuationCandidates)
+        return joiningHyphenatedWords(lines, in: region, continuation: Array(next))
     }
 
     /// One entry of a document outline, detached from PDFKit.
@@ -399,7 +401,12 @@ enum SearchableWriter {
             var left: CGFloat?
             var top: CGFloat?
             if let destination = node.destination, let page = destination.page {
-                index = doc.index(for: page)
+                // Bounded, like `copyOutline`'s mirror of this line: `index(for:)`
+                // answers `NSNotFound` for a page this document does not hold, and
+                // an entry pointing at page 9,223,372,036,854,775,807 is worse
+                // than one pointing nowhere — nowhere is a state the type has.
+                let found = doc.index(for: page)
+                index = (found >= 0 && found < doc.pageCount) ? found : nil
                 let p = destination.point
                 // kPDFDestinationUnspecifiedValue is how PDFKit reports "the
                 // source did not say" — for /Fit, /FitH and /XYZ null alike.
@@ -596,8 +603,21 @@ enum SearchableWriter {
                 ? copy : nil
         }
 
-        guard let newRoot = rebuild(root, depth: 0),
-              newRoot.numberOfChildren > 0 else { return false }
+        // The root is not an entry, and `readOutline` has always known that:
+        // it walks `root`'s children at depth 0. This called `rebuild(root, 0)`,
+        // so the root itself spent a level and real entries started at 1 —
+        // **31 levels here against 32 there** (A1.3). Mirrors that disagree
+        // about their own bound is R23 exactly, and the disagreement is invisible
+        // until a document is deep enough to be truncated by one of them.
+        let newRoot = PDFOutline()
+        var kept = 0
+        for i in 0..<root.numberOfChildren {
+            guard let child = root.child(at: i),
+                  let built = rebuild(child, depth: 0) else { continue }
+            newRoot.insertChild(built, at: kept)
+            kept += 1
+        }
+        guard kept > 0 else { return false }
         dst.outlineRoot = newRoot
         return dst.write(to: out)
     }
@@ -824,15 +844,10 @@ enum SearchableWriter {
                 // replaced. Columns do not overlap horizontally, so requiring the
                 // two spans to share most of their width rules the whole class out.
                 if !acrossPage {
-                    let headLeft = out[i].boundingBox.x
-                    let headRight = headLeft + out[i].boundingBox.width
-                    let tailLeft = tailLine.boundingBox.x
-                    let tailRight = tailLeft + tailLine.boundingBox.width
-                    let shared = min(headRight, tailRight) - max(headLeft, tailLeft)
-                    let narrower = min(out[i].boundingBox.width, tailLine.boundingBox.width)
-                    guard narrower > 0, shared / narrower >= minimumColumnOverlap else {
+                    let overlap = sharedWidthFraction(out[i].boundingBox, tailLine.boundingBox)
+                    guard overlap >= minimumColumnOverlap else {
                         note(String(format: "    reject: different column (%.2f overlap)",
-                                    narrower > 0 ? shared / narrower : -1)); continue
+                                    overlap)); continue
                     }
                 }
 
@@ -865,6 +880,27 @@ enum SearchableWriter {
     /// top of the next column, which on any real page is a whole column height
     /// away and usually *above* rather than below.
     static var maximumJoinPitch: CGFloat = 2.5
+
+    /// How much of the **narrower** box two horizontal spans have in common, as a
+    /// fraction of it. Negative when they do not overlap at all, and 0 for a box
+    /// with no width — which no caller may treat as an overlap.
+    ///
+    /// One definition, two questions. `joiningHyphenatedWords` asks whether two
+    /// lines are in the same column (`minimumColumnOverlap`); `rightLimit` asks
+    /// whether two same-line boxes are describing the same ink
+    /// (`sharedInkFraction`). The measure is identical and the thresholds are
+    /// deliberately not — a constant serving two questions is what C20 was, and
+    /// A1.1 is `sameLineBaselineFraction` still being shared by two.
+    ///
+    /// The narrower box is the denominator on purpose: a short last line of a
+    /// paragraph still sits inside the column above it, and a small fragment
+    /// swallowed whole by a mis-grouped observation is entirely inside it.
+    static func sharedWidthFraction(_ a: BoundingBox, _ b: BoundingBox) -> Double {
+        let shared = min(a.x + a.width, b.x + b.width) - max(a.x, b.x)
+        let narrower = min(a.width, b.width)
+        guard narrower > 0 else { return 0 }
+        return shared / narrower
+    }
 
     /// How much of their width two lines must share before they count as being
     /// in the same column.
@@ -933,6 +969,47 @@ enum SearchableWriter {
     /// why `rightLimit` uses `min`.
     static var sameLineBaselineFraction: CGFloat = 0.4
 
+    /// How much of the smaller of two same-line boxes the other may cover before
+    /// they stop being two fragments and start being two readings of one piece
+    /// of ink.
+    ///
+    /// Sequential fragments of a line do not overlap: their boxes meet, or miss
+    /// by a point or two of Vision's own jitter. A box covering *half* of its
+    /// neighbour is not the next thing along the line — it is the same words
+    /// recognised twice, or a mis-grouped observation swallowing a real one, and
+    /// `rightLimit` must not shrink a run to make room for it. That is A1.2:
+    /// `('their', 19.4 pt)` against `('their eder but', 63.3 pt)` starting 1.0 pt
+    /// later, and the first drawn at 5.0% of its box.
+    ///
+    /// **This constant sits in a continuum, not a gap, and the honest defence is
+    /// that it barely matters where in the continuum it sits.** Measured over 852
+    /// limited runs on 24 real newspaper pages (`Tools/score-run-width`), with
+    /// "harmed" meaning drawn under half its box:
+    ///
+    /// | shared ink | pairs | of those, drawn under half their box |
+    /// |---|---|---|
+    /// | ≤ 0.47 | 779 | 1 |
+    /// | 0.47–0.53 | 3 | 1 |
+    /// | ≥ 0.53 | 70 | 60 |
+    ///
+    /// Three pairs of 852 lie in the band this constant could move through, and
+    /// moving it from 0.5 to 0.4 or 0.6 changes the verdict on **six** — 75
+    /// neighbours refused instead of 71, or 69. Nothing here is calibrated on a
+    /// knife edge, which is the property to check, since the corpus has no gap
+    /// to put a threshold in and a constant chosen inside a continuum is how
+    /// `BUGS.md` C24's repairs went wrong.
+    ///
+    /// Both directions of error were priced before choosing. Refusing a genuine
+    /// neighbour risks a weld; but two boxes overlapping by half the smaller are
+    /// drawn over each other whatever this says, so the gap PDFKit would read
+    /// between them is not a gap in the first place. Keeping a false neighbour
+    /// costs a line nobody can highlight, which is the defect being fixed.
+    ///
+    /// `Double`, like `minimumColumnOverlap` and unlike the geometry constants
+    /// around it, because `sharedWidthFraction` works in the observations' own
+    /// normalised coordinates and that is the type they arrive in.
+    static var sharedInkFraction: Double = 0.5
+
     /// Whether two observations are fragments of **one visual line**.
     ///
     /// One definition, because there were two and they disagreed (C20).
@@ -953,15 +1030,42 @@ enum SearchableWriter {
     /// Not `private`, for the reason `drawnBaseline` gives: the instrument that
     /// measures line separation groups fragments with *this* predicate rather
     /// than a copy of it.
+    ///
+    /// **Which height the tolerance scales with is the caller's question, not a
+    /// second predicate.** C20 unified two functions that disagreed about "one
+    /// visual line"; A1.1 is the discovery that the two callers really do want
+    /// different tolerances, and the way to have that without re-creating C20 is
+    /// one function, one constant and an explicit argument at each call site.
+    /// `.shorter` is what C20 chose and what `headroom` still asks for; `.taller`
+    /// is what the horizontal reserve asks for and why is in `Scale`.
+    enum Scale {
+        /// 0.4 × the shorter box. A tall display numeral cannot claim a body line
+        /// two rows away — measured, and the reason `min` was chosen.
+        case shorter
+        /// 0.4 × the taller box. Two fragments of one line whose heights differ —
+        /// a headline word beside a body word, a figure beside its caption — get
+        /// a tolerance of 1.4–2.1 pt under `.shorter`, and in the band above it
+        /// no reserve is opened, the run is drawn to its full box width and the
+        /// words weld (`REVIEW-2026-08-14.md` A1.1, `BUGS.md` R82).
+        case taller
+    }
+
     static func isSameVisualLine(_ a: Observation, _ b: Observation,
-                                 in box: CGRect) -> Bool {
-        let tolerance = min(a.boundingBox.height * box.height,
-                            b.boundingBox.height * box.height) * sameLineBaselineFraction
+                                 in box: CGRect, _ scale: Scale = .shorter) -> Bool {
+        let heights = (a.boundingBox.height * box.height, b.boundingBox.height * box.height)
+        let reference = scale == .shorter ? min(heights.0, heights.1)
+                                          : max(heights.0, heights.1)
+        let tolerance = reference * sameLineBaselineFraction
         return abs(drawnBaseline(a, in: box) - drawnBaseline(b, in: box)) < tolerance
     }
 
-    private static func headroom(for position: Int, among lines: [Observation],
-                                 in box: CGRect) -> CGFloat {
+    /// Not `private`, for the reason `rightLimit` is not: `Tools/score-run-width`
+    /// measures both halves of the fight — how wide a run is drawn and how far
+    /// the ceiling squashed it — and C20 is the entry about a pair getting both
+    /// treatments at once, so an instrument that can see only one of them cannot
+    /// see C20 at all.
+    static func headroom(for position: Int, among lines: [Observation],
+                         in box: CGRect) -> CGFloat {
         func baseline(_ o: Observation) -> CGFloat { drawnBaseline(o, in: box) }
         func span(_ o: Observation) -> (CGFloat, CGFloat) {
             let x = o.boundingBox.x * box.width
@@ -1000,46 +1104,113 @@ enum SearchableWriter {
     /// *horizontally*. Same-baseline neighbours only — a line on the row below
     /// is `headroom`'s business, and treating it as a horizontal obstacle would
     /// crush every run on a tightly-set page.
-    private static func rightLimit(for position: Int, among lines: [Observation],
-                                   in box: CGRect) -> CGFloat {
+    ///
+    /// Not `private`, for the reason `isSameVisualLine` and `drawnBaseline` are
+    /// not: `Tools/score-run-width` has to ask which neighbour limited a run, and
+    /// a second implementation of that question in an instrument is C20's shape.
+    static func rightLimit(for position: Int, among lines: [Observation],
+                           in box: CGRect) -> CGFloat {
         let me = lines[position]
-        let myHeight = me.boundingBox.height * box.height
-        let myBaseline = drawnBaseline(me, in: box)
         let myLeft = me.boundingBox.x * box.width
 
         var nearest = CGFloat.greatestFiniteMagnitude
         for (i, other) in lines.enumerated() where i != position {
-            // Baselines, and the SHORTER of the two heights — see
-            // `sameLineBaselineFraction`. The same predicate `headroom` uses, so
-            // the two cannot drift apart again (C20).
-            guard isSameVisualLine(me, other, in: box) else { continue }
+            // Baselines, and the TALLER of the two heights. The same predicate
+            // `headroom` uses — one function, one constant — asked at the scale
+            // this direction needs: a short fragment beside a tall one is one
+            // line, and under `.shorter` its tolerance is 1.4–2.1 pt, so the
+            // reserve never opened and the words welded (A1.1).
+            guard isSameVisualLine(me, other, in: box, .taller) else { continue }
 
             // Anything starting to the right of MY LEFT edge is after me on this
             // line. The test used to be `>= myRight - 0.5`, which is a cliff:
             // Vision's fragment boxes routinely overlap by a point or two — 0.5 pt
             // is two pixels at 300 DPI — and past it the neighbour was dropped
             // entirely and the words silently welded again. Measured: welds
-            // returned for overlaps of 0.51-2.0 pt. How far to shrink is decided
-            // by `allowed > 0` below, which already refuses a heavy overlap.
+            // returned for overlaps of 0.51-2.0 pt.
             let otherLeft = other.boundingBox.x * box.width
             guard otherLeft > myLeft else { continue }
+
+            // …but "to the right of my left edge" also accepts a box sitting on
+            // top of mine, and that is A1.2: the run is then shrunk to the couple
+            // of points before the intruder starts and a whole line is drawn at
+            // 5% of its width, silently. This is the test the comment above used
+            // to claim `allowed > 0` was making, which it never was — `allowed`
+            // is positive for *any* neighbour right of my left edge, measured
+            // 4,338 times out of 4,338, the smallest at 1.97e-07 pt.
+            // The same measure `joiningHyphenatedWords` uses for "same column",
+            // against a threshold of its own: see `sharedWidthFraction`.
+            guard sharedWidthFraction(me.boundingBox, other.boundingBox)
+                    <= sharedInkFraction else { continue }
+
             nearest = min(nearest, box.minX + otherLeft)
         }
         return nearest
     }
 
-    /// Returns nil when the line was placed, or a reason when it could not be.
-    @discardableResult
-    private static func draw(
-        _ observation: Observation,
+    /// Where one run lands, and how big it is: everything `draw` decides before
+    /// it draws anything.
+    ///
+    /// Split out of `draw` so an instrument can ask the writer what it *will*
+    /// draw instead of re-deriving it. `Tools/score-run-width` measures property
+    /// (c) — does the run span its ink — over thousands of fragments, and the
+    /// only honest way to do that is with this arithmetic rather than a second
+    /// copy of it: C20 is in the register because two functions held two
+    /// definitions of one idea, and `score-line-separation` already had to stop
+    /// keeping its own "one visual line".
+    struct Run {
+        /// The font size the glyphs are drawn at, after both the width fit and
+        /// the vertical cap.
+        let size: CGFloat
+        /// The y scale in the text matrix — how far the glyphs are squashed.
+        let vertical: CGFloat
+        /// Origin of the run in PDF user space.
+        let left, bottom: CGFloat
+        /// The observation's own box, in points.
+        let boxWidth, boxHeight: CGFloat
+        /// The advance this text has at `reference`, from which the drawn
+        /// advance scales linearly.
+        let naturalAdvance, reference: CGFloat
+        /// How tall the glyphs would stand if no neighbouring line were in the
+        /// way: the ink's own height, less the `0.86` the writer never exceeds.
+        let idealHeight: CGFloat
+        /// True when a same-visual-line neighbour to the right shortened it.
+        let limitedByNeighbour: Bool
+
+        /// How wide the run is actually drawn, in points.
+        var advance: CGFloat { naturalAdvance * size / reference }
+        /// The share of its own box the run covers. Property (c) lives here: at
+        /// 5% of the box, a click past the first tenth of the line selects some
+        /// other line (`REVIEW-2026-08-14.md` A1.2).
+        var widthShare: CGFloat { boxWidth > 0 ? advance / boxWidth : 0 }
+        /// How tall the glyphs are actually drawn, in points.
+        var drawnHeight: CGFloat { size * vertical }
+        /// The share of the height it wanted that the ceiling left it. C20 is
+        /// what happens when this and `widthShare` are both small on one run —
+        /// measured there at a quarter of its box width and 0.71 pt against a
+        /// natural 9.04 pt.
+        var heightShare: CGFloat { idealHeight > 0 ? drawnHeight / idealHeight : 0 }
+    }
+
+    /// The placement of one observation, or the reason it cannot be placed.
+    enum Placement {
+        case placed(Run)
+        case refused(String)
+    }
+
+    /// What `draw` will do with this observation, without a context to draw into.
+    ///
+    /// `draw` is this function plus four lines of CoreText, so the two cannot
+    /// disagree about what gets drawn.
+    static func placement(
+        of observation: Observation,
         in box: CGRect,
         ceiling: CGFloat,
         rightLimit: CGFloat,
-        font: CTFont,
-        into pdf: CGContext
-    ) -> String? {
+        font: CTFont
+    ) -> Placement {
         let text = observation.text
-        guard !text.isEmpty else { return "empty text" }
+        guard !text.isEmpty else { return .refused("empty text") }
 
         // Vision's boxes are normalised with a top-left origin; PDF user space
         // has its origin at the bottom left.
@@ -1052,7 +1223,7 @@ enum SearchableWriter {
         let left = box.minX + observation.boundingBox.x * box.width
         let bottom = box.minY + box.height - (observation.boundingBox.y * box.height) - height
         guard width > 0.5, height > 0.5 else {
-            return String(format: "box too small (%.2f x %.2f pt)", width, height)
+            return .refused(String(format: "box too small (%.2f x %.2f pt)", width, height))
         }
 
         // Width and height are set independently, which is the only way to get
@@ -1075,7 +1246,7 @@ enum SearchableWriter {
         let probe = CTLineCreateWithAttributedString(
             NSAttributedString(string: text, attributes: [.font: probeFont]))
         let probeWidth = CTLineGetTypographicBounds(probe, nil, nil, nil)
-        guard probeWidth > 0 else { return "text has no typographic width" }
+        guard probeWidth > 0 else { return .refused("text has no typographic width") }
 
         // Clamped, not abandoned. This band used to drop real content — a "I 3"
         // table row (420.9), an em-rule over a wide box (428), a lone page number
@@ -1087,6 +1258,7 @@ enum SearchableWriter {
         // runs to their true box width — which is what makes line ends
         // selectable — closes the geometric gap PDFKit reads as a space, and
         // two words weld into one. See `reserveEms`.
+        var limited = false
         if rightLimit < .greatestFiniteMagnitude {
             // Solve for the size, don't budget against the pre-shrink one.
             //
@@ -1110,14 +1282,13 @@ enum SearchableWriter {
             let allowed = room / (1 + ems * reference / probeWidth)
             if allowed > 0, allowed < width {
                 widthSize = min(max(reference * (allowed / probeWidth), 0.5), 400)
+                limited = true
             }
         }
-        let sizedFont = CTFontCreateCopyWithAttributes(font, widthSize, nil, nil)
-        var line = CTLineCreateWithAttributedString(
-            NSAttributedString(string: text, attributes: [.font: sizedFont]))
 
         // How much to squash so the glyphs stand no taller than the ink.
-        let wanted = min(height * 0.86, ceiling)
+        let idealHeight = height * 0.86
+        let wanted = min(idealHeight, ceiling)
 
         // A sparse row — "1 24" in a table of contents, a lone page number in a
         // wide column — needs a huge size to span its box, and squashing that back
@@ -1132,17 +1303,37 @@ enum SearchableWriter {
         var size = widthSize
         if wanted / size < minimumVertical { size = wanted / minimumVertical }
         let vertical = min(max(wanted / size, minimumVertical), 3.0)
-        if size != widthSize {
-            let refit = CTFontCreateCopyWithAttributes(font, size, nil, nil)
-            line = CTLineCreateWithAttributedString(
-                NSAttributedString(string: text, attributes: [.font: refit]))
-        }
 
-        var matrix = CGAffineTransform(a: 1, b: 0, c: 0, d: vertical, tx: 0, ty: 0)
-        matrix.tx = left
-        matrix.ty = bottom + height * baselineFraction
-        pdf.textMatrix = matrix
-        CTLineDraw(line, pdf)
-        return nil
+        return .placed(Run(size: size, vertical: vertical, left: left, bottom: bottom,
+                           boxWidth: width, boxHeight: height,
+                           naturalAdvance: probeWidth, reference: reference,
+                           idealHeight: idealHeight, limitedByNeighbour: limited))
+    }
+
+    /// Returns nil when the line was placed, or a reason when it could not be.
+    @discardableResult
+    private static func draw(
+        _ observation: Observation,
+        in box: CGRect,
+        ceiling: CGFloat,
+        rightLimit: CGFloat,
+        font: CTFont,
+        into pdf: CGContext
+    ) -> String? {
+        switch placement(of: observation, in: box, ceiling: ceiling,
+                         rightLimit: rightLimit, font: font) {
+        case .refused(let why):
+            return why
+        case .placed(let run):
+            let sized = CTFontCreateCopyWithAttributes(font, run.size, nil, nil)
+            let line = CTLineCreateWithAttributedString(
+                NSAttributedString(string: observation.text, attributes: [.font: sized]))
+            var matrix = CGAffineTransform(a: 1, b: 0, c: 0, d: run.vertical, tx: 0, ty: 0)
+            matrix.tx = run.left
+            matrix.ty = run.bottom + run.boxHeight * baselineFraction
+            pdf.textMatrix = matrix
+            CTLineDraw(line, pdf)
+            return nil
+        }
     }
 }

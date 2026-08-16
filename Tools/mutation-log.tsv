@@ -48,3 +48,15 @@ logic/A9.3-stop-collects-the-group	killed	281	1 check(s): …and the grandchild 
 logic/A9.6-capture-byte-cap	killed	283	1 check(s): …and is stopped by the byte cap, not by the five-second deadline
 logic/A9.7-report-name-is-exclusive	killed	277	3 check(s): three reports finishing in the same second are three files; twelve reports written at once are twelve distinct files; …and none of them was refused
 logic/A8.1-preserveAnnotations-gates	killed	282	2 check(s): …and no mark arrives in the output; …so the setting is what decides, not the code path
+const/sharedInkFraction	SURVIVED	283	1069/1069 passed
+const/sharedInkFraction	killed	280	3 check(s): sharedInkFraction is the calibrated 0.5; a box overlapping half of it is not treated as the next fragment; …and `rightLimit` says so rather than `draw` compensating
+logic/C20-rightlimit-sameline	SURVIVED	283	1077/1077 passed
+logic/R82-reserve-taller-scale	killed	216	5 check(s): the suite was given a helper to test; ContentView.swift has controls of this shape to check; SettingsView.swift has controls of this shape to check
+const/sharedInkFraction	killed	283	3 check(s): sharedInkFraction is the calibrated 0.5; a box overlapping half of it is not treated as the next fragment; …and `rightLimit` says so rather than `draw` compensating
+logic/R82-reserve-taller-scale	killed	283	3 check(s): the reserve acts on a pair of unequal heights; …and the run is drawn clear of it; …which is a change, not the shape it already had
+logic/C20-rightlimit-sameline	killed	284	1 check(s): a fragment on the row below is not a horizontal obstacle
+const/maximumColourMRCPageMegapixels	killed	281	3 check(s): colour layering's worst case stays inside the render's too; the colour layering bound is the derivation, not a choice; …and it is below the grey one, which is the whole point
+const/maximumMRCPageMegapixels	killed	283	1 check(s): layering's worst case stays inside the render's
+const/minimumColumnOverlap	killed	283	2 check(s): a continuation in a barely-overlapping neighbouring column is refused; a continuation in the next column is not joined
+logic/R23-copyOutline-bound	killed	214	4 check(s): ContentView.swift has controls of this shape to check; SettingsView.swift has controls of this shape to check; ContentView.swift has named controls to check
+logic/R23-copyOutline-bound	killed	283	3 check(s): copying a 4,000-level outline does not kill the worker; …and the outline still lands in the output, truncated; both outline walks truncate at the same depth

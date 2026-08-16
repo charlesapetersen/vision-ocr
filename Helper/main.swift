@@ -39,13 +39,12 @@ import CoreGraphics
 /// mac-ocr's shape.
 
 /// Exit codes, so a failed run in a log says what went wrong.
-enum Exit: Int32 {
-    case badArguments = 2
-    case unreadableManifest = 3
-    case unreadablePage = 4
-    case recognitionFailed = 5
-    case cannotWrite = 6
-}
+///
+/// **Declared in `Recogniser.swift`**, which this binary compiles alongside the
+/// app (R40), so the app can tell one of these from a signal number when it
+/// reports why the helper died — A13.4 records it calling signal 11 "code 11"
+/// and sending the reader to a list that ends at 6.
+typealias Exit = Recogniser.HelperExit
 
 func die(_ code: Exit, _ message: String) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8))

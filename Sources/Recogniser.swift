@@ -179,7 +179,15 @@ enum Recogniser {
         for index in 0..<total {
             if isCancelled() { throw Failure.cancelled }
             onPage(index, total)
-            guard let page = doc.page(at: index) else { continue }
+            // A13.4. This was `else { continue }`, alone among the three places
+            // that ask a document for a page — the two below throw. `missingPages`
+            // catches the gap downstream, so nothing was published untexted, but
+            // the refusal it raises says "the recogniser returned nothing for
+            // page N", which names the recogniser for a page PDFKit would not
+            // hand over. Same refusal, at the point that knows the cause.
+            guard let page = doc.page(at: index) else {
+                throw Failure.unreadablePage(index + 1)
+            }
             guard let image = render(page, settings: settings) else {
                 throw Failure.unreadablePage(index + 1)
             }
@@ -642,12 +650,28 @@ enum Recogniser {
     /// Why a helper run was abandoned. Every case falls back to in-process
     /// recognition, so these are diagnoses for the log rather than failures the
     /// user has to act on.
+    /// The helper's exit codes, in the file the helper and the app **both**
+    /// compile — which is R40's whole design, and the reason this is here rather
+    /// than in `Helper/main.swift` where it used to live alone.
+    ///
+    /// A13.4: the app reported a signal death as "it exited with code 11", and 11
+    /// is not one of these, so the single number in the message pointed the
+    /// reader at a list that could not contain it. Knowing the list is what lets
+    /// the message tell the two apart.
+    enum HelperExit: Int32 {
+        case badArguments = 2
+        case unreadableManifest = 3
+        case unreadablePage = 4
+        case recognitionFailed = 5
+        case cannotWrite = 6
+    }
+
     enum HelperFailure: LocalizedError {
         case unusablePaths
         case unusableSettings
         case couldNotStart(String)
         case stalled
-        case exited(Int32, String)
+        case exited(Int32, String, bySignal: Bool = false)
         case incomplete(page: Int, of: Int)
         case unreadableResult(Int)
 
@@ -660,8 +684,21 @@ enum Recogniser {
                     + "cannot be passed to another process"
             case .couldNotStart(let why): return "it would not start: \(why)"
             case .stalled: return "it stopped responding"
-            case .exited(let code, let detail):
-                return "it exited with code \(code)"
+            case .exited(let code, let detail, let bySignal):
+                // A13.4. A child killed by a signal reports `terminationStatus`
+                // as the **signal number**, and "it exited with code 11" sends
+                // the reader to the helper's `HelperExit` list, which stops at 6
+                // and cannot contain an 11 — the one number in the message is a
+                // lie about where to look.
+                //
+                // From `Process.terminationReason`, not from the number: an
+                // earlier version of this guessed, on the grounds that a small
+                // code not in `HelperExit` must be a signal. The suite has a
+                // fixture whose helper genuinely exits 7, and the guess called it
+                // a signal. Two different facts, and only one of them is knowable
+                // by arithmetic.
+                return (bySignal ? "it was killed by signal \(code)"
+                                 : "it exited with code \(code)")
                     + (detail.isEmpty ? "" : ": \(detail)")
             case .incomplete(let page, let total):
                 return "it returned nothing for page \(page) of \(total)"
@@ -846,7 +883,8 @@ enum Recogniser {
         if isCancelled() { throw Failure.cancelled }
         guard process.terminationStatus == 0 else {
             throw HelperFailure.exited(process.terminationStatus,
-                                       lastLine(of: diagnostics))
+                                       lastLine(of: diagnostics),
+                                       bySignal: process.terminationReason == .uncaughtSignal)
         }
 
         // Invariant 1. A short dictionary here would compose as a document with

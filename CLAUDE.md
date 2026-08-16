@@ -15,15 +15,16 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **five
-entries are open and four of them change what the default route produces**: R56 (a pale
-drawing is erased, not softened), R57 (a tonal plate can come out a black blob),
-C23 (the rebuilt copy displays what the original's crop box hid — C13 recurring on
-**every** rebuild route, because `Flattener.flatten` drops the crop box before
-`compose` can copy it; 14 of 233 corpus documents), and C24 (`largestImage` reads a
-shared `/Resources`, so a page that draws no image is rebuilt at another page's plate
-resolution; 4 documents, and two attempted fixes were each worse). The fifth is R55,
-in `Tools/`.
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **four
+entries are open and three of them change what the default route produces**: R56 (a pale
+drawing is erased, not softened), R57 (a tonal plate can come out a black blob), and C24
+(`largestImage` reads a shared `/Resources`, so a page that draws no image is rebuilt at
+another page's plate resolution; 4 documents, and two attempted fixes were each worse). The
+fourth is R55, in `Tools/`. **C23 — the rebuilt copy displaying what the original's crop box
+hid — is `FIXED` as of 2026-08-15, and there is no release blocker.** Read its entry before
+touching the crop box anywhere: the fix the entry itself proposed is wrong in two measured
+ways, and the price of the right one is that a document hiding part of its sheet no longer
+takes the JBIG2 route.
 Read its header before planning anything. Update it in the same commit as any fix.
 Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2026-08-09.md`,
 `CORPUS-2026-08-15.md` + `.tsv` and `MRC-2026-08-15/` — and are evidence for one run, not
@@ -34,8 +35,9 @@ born-digital.
 with their costs and the reasons some are parked, and
 [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a
 whole-codebase review sweep, including findings not yet fixed and areas not yet
-covered. **[HANDOFF-2026-08-15-night.md](HANDOFF-2026-08-15-night.md) is where to start** —
-group 2 is closed, so what is left is group 3 plus `R55` — then
+covered. **[HANDOFF-2026-08-16.md](HANDOFF-2026-08-16.md) is where to start** — group 3 is
+closed, so what is left is `R55`, `R56`/`R57` and `C24` — then
+[HANDOFF-2026-08-15-night.md](HANDOFF-2026-08-15-night.md), then
 [HANDOFF-2026-08-15-evening.md](HANDOFF-2026-08-15-evening.md), then
 [HANDOFF-2026-08-15-day.md](HANDOFF-2026-08-15-day.md), which has the corrections this
 project's own review document got wrong and the owner's instruction to work serially. Then
@@ -45,7 +47,7 @@ and what is deliberately withheld from release.
 
 *(This paragraph read "nothing open" for a day after four entries were opened, which
 is exactly the sentence a new reader trusts most. If you close or open an entry,
-correct it here in the same commit.)*
+correct it here in the same commit — it is the only way this line has ever stayed true.)*
 
 Install the hook once per clone:
 
@@ -87,14 +89,23 @@ fails without the fix.
    Tools/probe-text-offset <finished.pdf> <page> obs.json
    Tools/score-corpus      <source.pdf> <label> [headroomFactor] [minimumVertical] [reserveEms]
    Tools/score-line-separation <source.pdf> <label> [same three]
+   Tools/score-run-width   <source.pdf> <label> [--worst N] [--pages N]
    ```
 
-   **There are three instruments, not four.** `probe-line-edges` builds the same
-   rect as `score-corpus`'s `start=`/`end=` columns, character for character, and
-   agrees with them on 48 of 48 documents; it is kept because it *names* the lines
-   that fail, and `score-corpus` only counts them. `probe-line-coverage` is a
-   third shell on that same rect. Counting them as independent is how "four
-   instruments" became a sentence nobody could act on.
+   **There are three shells on one rect, and two instruments beside them.**
+   `probe-line-edges` builds the same rect as `score-corpus`'s `start=`/`end=`
+   columns, character for character, and agrees with them on 48 of 48 documents;
+   it is kept because it *names* the lines that fail, and `score-corpus` only
+   counts them. `probe-line-coverage` is a third shell on that same rect.
+   Counting them as independent is how "four instruments" became a sentence
+   nobody could act on.
+
+   `score-line-separation` and `score-run-width` are the two that ask different
+   questions. **`score-run-width` was added for R81** and is the only one that can
+   see it: the rect asks whether *anything* is selectable at a line's right-hand
+   end, and over a run drawn at 5% of its box the answer comes from the line
+   above. It asks the writer instead — how wide it drew this run, and how much of
+   the height it wanted the ceiling left it — over every fragment on the page.
 
    What each one is for, and what it used to get wrong:
 

@@ -69,6 +69,11 @@ struct VisualLine {
     let text: String
     let baseline: CGFloat      // in the page box's own space, y up
     let left, right: Double    // normalised, for the same-column test
+    /// The fragments this line was folded from, left to right. Kept because
+    /// property (d) — a run keeping a gap from the next fragment ON ITS OWN LINE
+    /// — is a question about adjacent fragments, and the joined `text` has
+    /// already answered it by putting a space there.
+    var fragments: [String] = []
 }
 
 struct Separation {
@@ -137,7 +142,37 @@ func score(visual: [VisualLine], extracted: [String]) -> Separation {
         s.judgedPairs += 1
         if hi == hj { s.mergedPairs += 1 }
     }
+
     return s
+}
+
+/// Property (d): adjacent fragments of ONE visual line that arrive with no
+/// separator between them — `femalemember`.
+///
+/// Its own grouping, at its own scale, and that is the whole point. `score`
+/// groups at `.shorter` because `merged` asks which *rows* ran together, and
+/// every figure this file has published uses that grouping. A weld is a
+/// question about two fragments of one row, and `SearchableWriter.rightLimit`
+/// — the only thing that can open a gap between them — asks at `.taller`
+/// (`BUGS.md` R82). Counting welds over the `.shorter` grouping makes this blind
+/// to exactly the pairs R82 is about: measured, `___ 3.pdf` reported 0 welds
+/// from that grouping while the extracted text of the same run held four.
+func welds(in lines: [VisualLine], extracted: [String]) -> (welded: Int, pairs: Int) {
+    let page = extracted.joined(separator: "\n")
+    var welded = 0, pairs = 0
+    for line in lines where line.fragments.count > 1 {
+        for k in 0..<(line.fragments.count - 1) {
+            let left = line.fragments[k].trimmingCharacters(in: .whitespacesAndNewlines)
+            let right = line.fragments[k + 1].trimmingCharacters(in: .whitespacesAndNewlines)
+            guard left.count >= 3, right.count >= 3 else { continue }
+            pairs += 1
+            // The tail of one and the head of the other, searched in the whole
+            // page rather than in the line the reference expected: a weld is
+            // exactly the case where the pair did not land where it was put.
+            if page.contains(String(left.suffix(6)) + String(right.prefix(6))) { welded += 1 }
+        }
+    }
+    return (welded, pairs)
 }
 
 // MARK: - Self-test, on every invocation
@@ -213,6 +248,49 @@ func selfTest() {
              "merged \(fromFragments.mergedPairs)/\(fromFragments.judgedPairs)")
     }
 
+    // 4b. PROPERTY (d), the one this file could not see until R82. Two fragments
+    //     of one visual line, and the question is whether the extracted text put
+    //     anything at all between them. Both directions, because a counter that
+    //     only ever reports zero is the shape T12 fixed twice.
+    let pair = VisualLine(text: "valuable study of it", baseline: 700,
+                          left: 0.1, right: 0.9,
+                          fragments: ["valuable", "study of it"])
+    let spaced = welds(in: [pair], extracted: ["valuable study of it"])
+    guard spaced.pairs == 1, spaced.welded == 0 else {
+        fail("a spaced pair of fragments is not a weld",
+             "welded \(spaced.welded)/\(spaced.pairs)")
+    }
+    let stuck = welds(in: [pair], extracted: ["valuablestudy of it"])
+    guard stuck.welded == 1, stuck.pairs == 1 else {
+        fail("`valuablestudy` is counted as a weld",
+             "welded \(stuck.welded)/\(stuck.pairs)")
+    }
+    // A one-fragment line has no pair to weld, and must not invent one.
+    let single = welds(in: [line("a whole line in one fragment", at: 700)],
+                       extracted: ["a whole line in one fragment"])
+    guard single.pairs == 0, single.welded == 0 else {
+        fail("a line of one fragment offers no pair",
+             "welded \(single.welded)/\(single.pairs)")
+    }
+    // The two scales really do group differently, or the weld count is being
+    // taken over the same rows as `merged` and this file is blind again.
+    let sheet = CGRect(x: 0, y: 0, width: 612, height: 792)
+    func frag(_ t: String, x: Double, w: Double, y: Double, h: Double)
+        -> SearchableWriter.Observation {
+        SearchableWriter.Observation(
+            boundingBox: SearchableWriter.BoundingBox(x: x, y: y, width: w, height: h),
+            text: t, confidence: 1.0)
+    }
+    // R82's own fixture: `the female` / `member or ine known criminals`.
+    let unequal = [frag("the female", x: 0.038793, w: 0.047414, y: 0.347384, h: 0.007279),
+                   frag("member or ine", x: 0.086207, w: 0.181034, y: 0.348837, h: 0.002907)]
+    guard visualLines(from: unequal, in: sheet, scale: .shorter).count == 2,
+          visualLines(from: unequal, in: sheet, scale: .taller).count == 1 else {
+        fail("the two scales group a real unequal-height pair differently",
+             "shorter \(visualLines(from: unequal, in: sheet, scale: .shorter).count), "
+             + "taller \(visualLines(from: unequal, in: sheet, scale: .taller).count)")
+    }
+
     // 5. Degenerate: nothing to judge is nothing to judge, and the caller refuses.
     let empty = score(visual: [], extracted: [])
     guard empty.judgedPairs == 0, empty.visualLines == 0 else {
@@ -226,7 +304,8 @@ func selfTest() {
 /// writer and the instrument must not be able to disagree about what a visual
 /// line is, or they are measuring different things and only one of them knows.
 func visualLines(from observations: [SearchableWriter.Observation],
-                 in box: CGRect) -> [VisualLine] {
+                 in box: CGRect,
+                 scale: SearchableWriter.Scale = .shorter) -> [VisualLine] {
     let sorted = observations.sorted {
         SearchableWriter.drawnBaseline($0, in: box) > SearchableWriter.drawnBaseline($1, in: box)
     }
@@ -242,7 +321,7 @@ func visualLines(from observations: [SearchableWriter.Observation],
         var best: (index: Int, distance: CGFloat)?
         for (i, line) in lines.enumerated() {
             guard let rep = line.first,
-                  SearchableWriter.isSameVisualLine(rep, o, in: box) else { continue }
+                  SearchableWriter.isSameVisualLine(rep, o, in: box, scale) else { continue }
             let d = abs(SearchableWriter.drawnBaseline(rep, in: box) - here)
             if best == nil || d < best!.distance { best = (i, d) }
         }
@@ -254,7 +333,8 @@ func visualLines(from observations: [SearchableWriter.Observation],
             text: ordered.map(\.text).joined(separator: " "),
             baseline: SearchableWriter.drawnBaseline(ordered[0], in: box),
             left: ordered.map(\.boundingBox.x).min() ?? 0,
-            right: ordered.map { $0.boundingBox.x + $0.boundingBox.width }.max() ?? 0)
+            right: ordered.map { $0.boundingBox.x + $0.boundingBox.width }.max() ?? 0,
+            fragments: ordered.map(\.text))
     }
 }
 
@@ -311,6 +391,11 @@ guard let byPage = try? Recogniser.recogniseDocument(visible: out, bitmaps: [],
 else { refuse("reference recognition failed") }
 
 var total = Separation()
+// Property (d), counted for the first time by a committed instrument, and kept
+// beside `total` rather than inside it: `score` does not compute these — `welds`
+// does, over its own grouping — and a field on `Separation` that one of its two
+// producers never sets is a confident zero waiting for the next reader.
+var weldedTotal = 0, fragmentPairTotal = 0
 for (number, observations) in byPage.sorted(by: { $0.key < $1.key }) {
     guard let page = res.page(at: number - 1) else { continue }
     let box = page.bounds(for: .mediaBox)
@@ -318,16 +403,21 @@ for (number, observations) in byPage.sorted(by: { $0.key < $1.key }) {
         !$0.text.trimmingCharacters(in: .whitespaces).isEmpty
     }
     let visual = visualLines(from: usable, in: box)
+    // The reserve's own scale, for the weld count only — see `welds`.
+    let rows = visualLines(from: usable, in: box, scale: .taller)
     let extracted = (page.string ?? "").components(separatedBy: "\n")
         .map { $0.trimmingCharacters(in: .whitespaces) }
         .filter { !$0.isEmpty }
     let one = score(visual: visual, extracted: extracted)
+    let (welded, fragmentPairs) = welds(in: rows, extracted: extracted)
     total.visualLines += one.visualLines
     total.mergedPairs += one.mergedPairs
     total.judgedPairs += one.judgedPairs
     total.skippedPairs += one.skippedPairs
     total.runawayChars += one.runawayChars
     total.totalChars += one.totalChars
+    weldedTotal += welded
+    fragmentPairTotal += fragmentPairs
     total.longestExtracted = max(total.longestExtracted, one.longestExtracted)
     total.longestVisual = max(total.longestVisual, one.longestVisual)
 }
@@ -339,10 +429,11 @@ guard total.judgedPairs > 0 else {
     refuse("nothing judged: \(total.visualLines) visual line(s), "
            + "\(total.skippedPairs) pair(s) with no unique anchor")
 }
-print(String(format: "%@\tOK\tvisual=%d\tmerged=%d/%d (%.1f%%)\tskipped=%d\t"
+print(String(format: "%@\tOK\tvisual=%d\tmerged=%d/%d (%.1f%%)\twelded=%d/%d\tskipped=%d\t"
                    + "runaway=%.1f%%\tlongest=%d\tlongestVisual=%d\tratio=%.1fx",
              label, total.visualLines, total.mergedPairs, total.judgedPairs,
              100 * Double(total.mergedPairs) / Double(total.judgedPairs),
+             weldedTotal, fragmentPairTotal,
              total.skippedPairs,
              100 * Double(total.runawayChars) / Double(max(total.totalChars, 1)),
              total.longestExtracted, total.longestVisual,

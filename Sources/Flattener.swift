@@ -509,6 +509,19 @@ enum Flattener {
         let boxSize: CGSize
         /// True when `content` is a three-channel JPEG.
         var isColour = false
+        /// Where the **source** page's crop box lands on this rebuilt sheet, or
+        /// nil when the source trimmed nothing.
+        ///
+        /// **The rebuilt file deliberately does not declare it**, and that is not
+        /// an oversight — it is what makes recognition work. On the JBIG2 route
+        /// Vision reads the per-page bitmaps, which are whole sheets, so the
+        /// observations come back normalised to the media box; a crop box on this
+        /// intermediate would make `compose` map them into the trimmed
+        /// rectangle and shift every run on the page. On the Flate route it
+        /// would instead stop the hidden margin being read at all. Either way the
+        /// crop belongs on the **published** page and nowhere else, which is
+        /// where `compose` and `JBIG2.assemble` put it. See `BUGS.md` C23.
+        var sourceCropBox: CGRect?
     }
 
     /// Rebuilds `source` into `destination` as image-only pages.
@@ -682,6 +695,15 @@ enum Flattener {
             pdf.draw(image, in: pageBox)
             pdf.endPDFPage()
 
+            // C23. Carried, not declared — `RebuiltPage.sourceCropBox` says why
+            // this page dictionary must keep only a media box while the
+            // published one gets both. Through `SearchableWriter.cropRegion`,
+            // the app's own mapping, because the rebuild bakes `/Rotate` in and
+            // a crop rect written out by hand here would be a second answer to
+            // a question that already has one.
+            let region = SearchableWriter.cropRegion(of: page, on: pageBox)
+            let sourceCrop = region == pageBox ? nil : region
+
             if let pngDirectory {
                 let stem = String(format: "p%05d", index + 1)
                 if useBilevel {
@@ -695,7 +717,8 @@ enum Flattener {
                     // `if true {` stood here and around the JPEG branch below
                     // (A3.4) — two conditionals that read as gates and were not.
                     let entry = RebuiltPage(content: .bilevel(png), pixelWidth: width,
-                                            pixelHeight: height, boxSize: box.size)
+                                            pixelHeight: height, boxSize: box.size,
+                                            sourceCropBox: sourceCrop)
                     rebuilt.append(entry)
                     try onPage?(entry)
                 } else {
@@ -709,7 +732,7 @@ enum Flattener {
                     }
                     let entry = RebuiltPage(content: .jpeg(jpeg), pixelWidth: width,
                                             pixelHeight: height, boxSize: box.size,
-                                            isColour: isColour)
+                                            isColour: isColour, sourceCropBox: sourceCrop)
                     rebuilt.append(entry)
                     try onPage?(entry)
                 }
@@ -1346,12 +1369,18 @@ enum Flattener {
     /// The largest page that gets layered.
     ///
     /// Not `maximumPageMegapixels`, which is the bound on *rendering* a page and
-    /// is sized for the grey buffer at a measured 5.5 bytes a pixel. Layering
-    /// the same page holds a good deal more at once: the grey buffer, the
-    /// stencil, the text-region map, the filled background, and inside
-    /// `fillHoles` a second copy of the buffer plus two more flag arrays — about
-    /// 8 bytes a pixel at peak against the render's 5.5. At 400 MP that is over
-    /// 3 GB for a saving, on a page nobody asked to be made smaller.
+    /// is sized for the grey buffer at 5.5 bytes a pixel. Layering the same page
+    /// holds a good deal more at once. At 400 MP that would be over 3 GB for a
+    /// saving, on a page nobody asked to be made smaller.
+    ///
+    /// **This paragraph used to enumerate the wrong phase** (A3.1): "the grey
+    /// buffer, the stencil, the text-region map, the filled background, and
+    /// inside `fillHoles` a second copy of the buffer plus two more flag arrays —
+    /// about 8 bytes a pixel". Every item is real and the peak is not among them.
+    /// `sauvolaMask` runs first and holds two `(w+1)(h+1)` `[Double]` integral
+    /// images — **16 bytes a pixel on their own** — and it is not in the list.
+    /// The peak of a function is the maximum over its phases, not the phase
+    /// somebody enumerated.
     ///
     /// 100 MP matches `maximumColourPageMegapixels`, which was measured for the
     /// same reason. Above it the page keeps the single JPEG it already has,
@@ -1362,12 +1391,45 @@ enum Flattener {
     /// `mrcBoundIsWithinTheRenderOne` rather than left to be inferred.
     static let maximumMRCPageMegapixels = 100
 
-    /// Peak bytes per pixel while layering, measured against the render's 5.5.
-    static let measuredMRCBytesPerPixel = 8.0
+    /// Peak bytes per pixel while layering, against the render's 5.5.
+    ///
+    /// **Analytic, and named for it** (A3.1). The 8.0 that stood here was an
+    /// RSS measurement of the wrong phase, and RSS is the wrong instrument for
+    /// this question: `ru_maxrss` is a high-water mark and libmalloc keeps freed
+    /// large blocks mapped and dirty, so over a multi-phase function it reads as
+    /// a sum of distinct-size peaks rather than a maximum. The review's control
+    /// settles it — two 8 B/px phases with a `free` between them read 16.38 by
+    /// `ru_maxrss` and 8.00 by live bytes.
+    ///
+    /// So this is counted from the code instead, at the peak phase
+    /// (`sauvolaMask`), which is the one the enumeration above missed:
+    ///
+    /// | buffer | bytes a pixel |
+    /// |---|---|
+    /// | `grey` `[UInt8]` w·h | 1 |
+    /// | `sum` `[Double]` (w+1)(h+1) | 8 |
+    /// | `sq` `[Double]` (w+1)(h+1) | 8 |
+    /// | `mask` `[Bool]` w·h | 1 |
+    /// | | **18** |
+    ///
+    /// Corroborated independently: the review measured **19.11 B/px live** on a
+    /// real page against this 18.005 analytic, and the phases provably do not
+    /// overlap — `renderGrey + sauvolaMask` and the whole grey `mrcLayers` read
+    /// the same 1,181.8 MB live peak, to the byte.
+    ///
+    /// **What this number does not include**, on either side of the comparison:
+    /// CoreGraphics' own buffers for the render and the JPEG encode. The bound
+    /// below is therefore a statement about *this file's* allocations, which is
+    /// what it can honestly be.
+    static let analyticMRCBytesPerPixel = 18.0
 
     /// Whether layering's worst case stays inside the render's.
+    ///
+    /// 100 × 18.0 = 1.8 GB against 400 × 5.5 = 2.2 GB. It held at the old 8.0 and
+    /// it still holds at the real number, which is the useful thing to be able to
+    /// say after correcting a constant by 2.25x.
     static var mrcBoundIsWithinTheRenderOne: Bool {
-        Double(maximumMRCPageMegapixels) * measuredMRCBytesPerPixel
+        Double(maximumMRCPageMegapixels) * analyticMRCBytesPerPixel
             <= Double(maximumPageMegapixels) * measuredGreyBytesPerPixel
     }
 
@@ -1412,23 +1474,53 @@ enum Flattener {
     /// That is 21, not 14. Found by reviewing this code rather than by running out
     /// of memory, which is the good way to find it.
     ///
-    /// **22.0 is that sum rounded up, not a measured peak RSS** — unlike
-    /// `measuredGreyBytesPerPixel` and `measuredColourBytesPerPixel`, which were
-    /// measured. It is deliberately above the arithmetic so the bound it feeds is
-    /// conservative, and it is named for what it is. The bound still holds, and the
-    /// page is separately capped at `maximumColourPageMegapixels` before it can ever
-    /// be a colour page at all.
-    static let statedColourMRCBytesPerPixel = 22.0
+    /// **22.0 was that sum rounded up, and it was short by three** (A3.1). Counted
+    /// buffer by buffer at the peak — channel 0 of the interleave, at
+    /// `PhotoDetail.maximum` where every downsample factor is 1:
+    ///
+    /// | buffer | bytes a pixel |
+    /// |---|---|
+    /// | `grey`, `mask`, `region`, `inverse`, `maskPixels` | 5 |
+    /// | `rgba` from `renderRGB`, w·h·4 | 4 |
+    /// | `plane`, `filledBG`, `bgPlane`, `filledFG`, `fgPlane` | 5 |
+    /// | `background` w·h·4, `foreground` w·h·4 | 8 |
+    /// | `fillHoles`' own copy and two flag arrays, during the second call | 3 |
+    /// | | **25** |
+    ///
+    /// The old sum reasoned about the interleaved *background* and forgot that the
+    /// **foreground** is a second full-resolution RGBA buffer at that setting, and
+    /// that both `fillHoles` results are alive at once. The review's independent
+    /// measurement reads 42.4 B/px by peak footprint, which is this plus
+    /// CoreGraphics' render and encode buffers — outside what this file allocates
+    /// and outside both sides of the bound below.
+    static let analyticColourMRCBytesPerPixel = 25.0
+
+    /// The largest page that gets layered **in colour**.
+    ///
+    /// A3.1: at the corrected 25 B/px, 100 MP is 2.5 GB against the render's
+    /// 2.2 GB, so the property below was false at the shipped bound while both
+    /// assertions passed — the colour one by sitting exactly on the boundary,
+    /// which the review rightly calls the signature of a constant tuned to pass.
+    ///
+    /// **Derived, not chosen**: 400 × 5.5 / 25 = 88. A colour page larger than
+    /// this is layered in **grey** rather than not at all — the same fallback
+    /// `mrcLayers` already takes when the colour render fails, and for the same
+    /// reason: layering in grey is an improvement on the single JPEG, and nothing
+    /// about the colour route is a requirement.
+    ///
+    /// Corpus impact **none**: the largest page in the 233-document corpus is
+    /// 64.84 MP, and there are no pages over 72 MP.
+    static let maximumColourMRCPageMegapixels = 88
 
     /// Whether colour layering's worst case stays inside the render's, the same
     /// property `mrcBoundIsWithinTheRenderOne` asserts for the grey route.
     ///
-    /// It is bounded twice over, which is why the constant did not have to move:
-    /// a page only reaches colour layering by having been kept in colour, and
-    /// `shouldKeepColour` already refuses anything over
-    /// `maximumColourPageMegapixels` — the same 100.
+    /// Against `maximumColourMRCPageMegapixels`, not the grey bound: that is the
+    /// correction. Reading the grey bound here was what made a false statement
+    /// pass — the two routes hold different amounts and were compared as if they
+    /// held the same.
     static var colourMRCBoundIsWithinTheRenderOne: Bool {
-        Double(maximumMRCPageMegapixels) * statedColourMRCBytesPerPixel
+        Double(maximumColourMRCPageMegapixels) * analyticColourMRCBytesPerPixel
             <= Double(maximumPageMegapixels) * measuredGreyBytesPerPixel
     }
 
@@ -1680,6 +1772,13 @@ enum Flattener {
         let wide = (box.width * scale).rounded(), high = (box.height * scale).rounded()
         guard wide.isFinite, high.isFinite, wide >= 1, high >= 1,
               wide * high <= Double(maximumMRCPageMegapixels) * 1_000_000 else { return nil }
+        // A3.1. Colour layering holds 25 bytes a pixel against grey's 18, so it
+        // stops sooner — and stopping means *grey* layering, not none.
+        if inColour, wide * high > Double(maximumColourMRCPageMegapixels) * 1_000_000 {
+            return mrcLayers(for: page, boxes: boxes, into: directory, stem: stem,
+                             backgroundDownsample: backgroundDownsample,
+                             foregroundDownsample: foregroundDownsample, inColour: false)
+        }
         let w = max(Int(wide), 1), h = max(Int(high), 1)
         guard let grey = renderGrey(page, box: box, scale: scale,
                                     width: w, height: h, from: .mediaBox) else { return nil }

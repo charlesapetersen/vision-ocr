@@ -12,6 +12,45 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## Unreleased
+
+**A line you could not highlight, words that welded together, and a copy that showed
+what the original hid.** Three text-layer and geometry defects, all on the default
+route, all found by the 2026-08-14 whole-codebase review and all measured before and
+after — `BUGS.md` R81, R82 and C23.
+
+```
+                                             before   after
+lines drawn under half their own box            76      15    (7,617 fragments,
+  …of those, with a neighbour to blame          62       2     24 newspaper pages)
+welds fixed / welds created                     17       0    (21 documents, 31,526 tokens)
+```
+
+**A whole line could be drawn at 5% of its width** and nothing said so — the characters
+were all there, so search worked, while clicking anywhere past the first tenth of the
+line highlighted a different line. A second reading of the same ink, which Vision emits
+constantly on noisy scans, was being treated as the next fragment of the line. **R81.**
+
+**Words welded** when one fragment of a line was much shorter than the next: `female`
+and `member` arriving as `femalemember`. The gap that keeps them apart could only be
+opened for pairs the writer already believed were one line, and its tolerance was a
+fraction of the *shorter* box — about a point, on a pair whose boxes differ by 2.5x.
+**R82.**
+
+**A rebuilt copy displayed what the original's crop box hid** — on a 1930s scan, the
+black gutter down the edge of the sheet, unsearchable and 2.5x the page's ink. **627
+pages of the 233-document test corpus, in 16 documents.** The copy now shows exactly
+what the original showed: checked on three trimmed pages from each of the 16, 42
+pages in all, none differing. **C23.** One cost, and it is visible:
+a document that hides part of its sheet can no longer use JBIG2 compression, because
+the merge step clips the page to the crop and throws the rest away. Measured at 2.26x
+the bytes on one such document; 16 of the 233-document test corpus are affected.
+
+Also: two memory bounds that described the wrong phase of the work they bound, colour
+page layering given a limit of its own, and a handful of smaller repairs — `BUGS.md`
+R83. A helper killed by a signal now says so instead of reporting the signal number as
+an exit code.
+
 ## 1.12.0 — 2026-08-13
 
 **A 568-page scan went in at 31 MB and came out at 437 MB. It now comes out at

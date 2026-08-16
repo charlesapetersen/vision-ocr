@@ -57,6 +57,10 @@ CONSTANTS = [
     ("SearchableWriter.swift", "reserveEms", "0.25", "0.0"),
     ("SearchableWriter.swift", "minimumVertical", "0.25", "0.5"),
     ("SearchableWriter.swift", "sameLineBaselineFraction", "0.4", "0.05"),
+    # 1.0, not 0.9: `shared` can never exceed the narrower box, so 1.0 is not a
+    # loose threshold — it is the code before R81, admitting every box that
+    # starts right of my left edge. The mutant puts A1.2 back exactly.
+    ("SearchableWriter.swift", "sharedInkFraction", "0.5", "1.0"),
     ("SearchableWriter.swift", "duplicateBaselineFraction", "0.3", "1.0"),
     ("SearchableWriter.swift", "maximumOutlineDepth", "32", "4000"),
     # Rejoining words broken across a line. edgeOfPage was guessed at 0.18 and
@@ -88,6 +92,10 @@ CONSTANTS = [
     # Layering holds ~8 bytes a pixel against the render's 5.5, so it needs its
     # own bound. R29 is what happens when a sibling allocation does not get one.
     ("Flattener.swift", "maximumMRCPageMegapixels", "100", "40000"),
+    # A3.1's colour bound. Derived from the other three constants, so the check
+    # that guards it asserts the derivation rather than the literal — and a
+    # mutant is the only thing that says the derivation is load-bearing.
+    ("Flattener.swift", "maximumColourMRCPageMegapixels", "88", "40000"),
     # A11.5. The third arithmetic-over-constants pair, which was not in this
     # catalogue at all: `colourBoundIsWithinTheGreyOne` over the colour render
     # bound. Colour holds three planes where grey holds one, and the property is
@@ -125,8 +133,17 @@ OPERATORS = [
      "R23-copyOutline-bound"),
     ("SearchableWriter.swift", "guard !isSameVisualLine(me, other, in: box) else { continue }",
      "if false { continue }", "C20-headroom-sameline"),
-    ("SearchableWriter.swift", "guard isSameVisualLine(me, other, in: box) else { continue }",
+    ("SearchableWriter.swift",
+     "guard isSameVisualLine(me, other, in: box, .taller) else { continue }",
      "if false { continue }", "C20-rightlimit-sameline"),
+    # R82. The scale the reserve asks for, put back to the one that welded. Not a
+    # constant, so it cannot live in CONSTANTS — and the entry above had to be
+    # re-anchored when the argument appeared, or it would have gone on reporting
+    # NOT APPLIED over a line it no longer matched.
+    ("SearchableWriter.swift",
+     "guard isSameVisualLine(me, other, in: box, .taller) else { continue }",
+     "guard isSameVisualLine(me, other, in: box, .shorter) else { continue }",
+     "R82-reserve-taller-scale"),
     # `guard true else` is a compile error in Swift, so the removal has to be
     # spelled as a no-op branch. The first attempt was recorded INVALID, which is
     # the harness reporting honestly rather than scoring an untested mutant.

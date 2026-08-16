@@ -1272,28 +1272,43 @@ do {
     //
     // Checked as a decision rather than by allocating the page each describes. R24
     // bounded one allocation and left its sibling unbounded (R29); layering is that
-    // sibling for `flatten`'s render, holding about 8 bytes a pixel against 5.5.
+    // sibling for `flatten`'s render, holding 18 bytes a pixel against 5.5 — and
+    // 25 in colour, which is why the colour route has a bound of its own (A3.1).
     check("layering's worst case stays inside the render's",
           Flattener.mrcBoundIsWithinTheRenderOne,
           String(format: "MRC %.2f GB vs render %.2f GB",
                  Double(Flattener.maximumMRCPageMegapixels)
-                    * Flattener.measuredMRCBytesPerPixel / 1000,
+                    * Flattener.analyticMRCBytesPerPixel / 1000,
                  Double(Flattener.maximumPageMegapixels)
                     * Flattener.measuredGreyBytesPerPixel / 1000))
     check("…and layering is recorded as the more expensive per pixel",
-          Flattener.measuredMRCBytesPerPixel > Flattener.measuredGreyBytesPerPixel)
+          Flattener.analyticMRCBytesPerPixel > Flattener.measuredGreyBytesPerPixel)
     // R49 · the same property for colour layering, which holds three planes where
     // the grey route holds one. R24/R29's shape again: a bound asserted in one place
     // and left to be inferred in its sibling.
     check("colour layering's worst case stays inside the render's too",
           Flattener.colourMRCBoundIsWithinTheRenderOne,
           String(format: "colour MRC %.2f GB vs render %.2f GB",
-                 Double(Flattener.maximumMRCPageMegapixels)
-                    * Flattener.statedColourMRCBytesPerPixel / 1000,
+                 Double(Flattener.maximumColourMRCPageMegapixels)
+                    * Flattener.analyticColourMRCBytesPerPixel / 1000,
                  Double(Flattener.maximumPageMegapixels)
                     * Flattener.measuredGreyBytesPerPixel / 1000))
     check("…and colour layering is recorded as the more expensive of the two",
-          Flattener.statedColourMRCBytesPerPixel > Flattener.measuredMRCBytesPerPixel)
+          Flattener.analyticColourMRCBytesPerPixel > Flattener.analyticMRCBytesPerPixel)
+    // A3.1. The colour bound is derived from the other three numbers, not chosen,
+    // so it is asserted as a derivation: the largest whole megapixel count that
+    // keeps colour layering inside the render's budget. Pinning the literal 88
+    // instead would go stale the moment any of the three moved, which is how the
+    // old constant came to sit exactly on a boundary it no longer described.
+    let colourBudget = Double(Flattener.maximumPageMegapixels)
+        * Flattener.measuredGreyBytesPerPixel / Flattener.analyticColourMRCBytesPerPixel
+    check("the colour layering bound is the derivation, not a choice",
+          Double(Flattener.maximumColourMRCPageMegapixels) == colourBudget.rounded(.down),
+          String(format: "%d against a derived %.1f MP",
+                 Flattener.maximumColourMRCPageMegapixels, colourBudget))
+    check("…and it is below the grey one, which is the whole point",
+          Flattener.maximumColourMRCPageMegapixels < Flattener.maximumMRCPageMegapixels,
+          "colour holds more per pixel, so it must stop sooner")
     // A11.5's third pair — `colourBoundIsWithinTheGreyOne` over
     // `maximumColourPageMegapixels` — is already asserted ungated further down,
     // with better commentary than a copy here would have. What that pair was
@@ -3738,6 +3753,19 @@ do {
     check("a helper that exits non-zero is refused",
           failed(exited)?.contains("code 7") == true, failed(exited) ?? "it succeeded")
 
+    // A13.4. A child killed by a signal reports the signal number as its
+    // `terminationStatus`, and this said "it exited with code 11" — pointing the
+    // reader at `HelperExit`, which stops at 6. The two cases are told apart by
+    // `terminationReason`, not by the size of the number: the fixture above
+    // genuinely exits 7, and an earlier version of the fix called that a signal.
+    let signalled = run(fakeHelper("signalled", "kill -SEGV $$"))
+    check("a helper killed by a signal says so, and names the signal",
+          failed(signalled)?.contains("killed by signal 11") == true,
+          failed(signalled) ?? "it succeeded")
+    check("…and an ordinary exit is still reported as an exit",
+          failed(exited)?.contains("killed by signal") == false,
+          failed(exited) ?? "it succeeded")
+
     // Invariant 1, at the point the gap is visible. A short dictionary here
     // would compose as a document with untexted pages and publish.
     let short = run(fakeHelper("short", """
@@ -5877,6 +5905,30 @@ do {
     check("…and the outline still lands in the output, truncated",
           PDFDocument(url: outlined)?.outlineRoot?.numberOfChildren ?? 0 > 0,
           "no outline written")
+
+    // A1.3. The two walks are mirrors and they truncated at different depths:
+    // 32 real levels through `readOutline`, 31 through `copyOutline`, because
+    // one started counting at the root's children and the other at the root.
+    // Both were bounded, which is why nothing noticed — the property that was
+    // missing is that they **agree**, and that is what R23 was about.
+    //
+    // Held document, not a chained optional: a `PDFOutline` does not own its
+    // document, and reading a tree off a temporary reads back as an empty root.
+    let copiedDoc = PDFDocument(url: outlined)
+    func levels(_ node: PDFOutline?) -> Int {
+        guard let node else { return 0 }
+        var deepest = 0
+        for i in 0..<node.numberOfChildren { deepest = max(deepest, levels(node.child(at: i))) }
+        return 1 + deepest
+    }
+    // Minus the root, which is not an entry in either representation.
+    let copiedDepth = max(levels(copiedDoc?.outlineRoot) - 1, 0)
+    check("both outline walks truncate at the same depth",
+          copiedDepth == depth(items),
+          "readOutline kept \(depth(items)) levels, copyOutline kept \(copiedDepth)")
+    check("…which is the documented bound, not some other number",
+          depth(items) == SearchableWriter.maximumOutlineDepth,
+          "\(depth(items)) against \(SearchableWriter.maximumOutlineDepth)")
 }
 
 // MARK: - Every destination form, not just the convenient one
@@ -6446,6 +6498,127 @@ do {
               "page \(Int(page.width))x\(Int(page.height)), region \(r), "
               + "wanted \(Int(wantW))x\(Int(wantH)), inside=\(inside)")
     }
+
+    // ---- BUGS.md C23: the same document through the routes the user is on ----
+    //
+    // Everything above this line is the NON-rebuild path, and C13's fix lives
+    // there. `compose` reads its boxes from the file it is handed, and on every
+    // rebuild route that file is the rebuilt copy, which carries only a media
+    // box — so "media box for what is kept, crop box for what is shown" was
+    // writing the same rectangle twice and the published page displayed what the
+    // original hid. Measured on the corpus before the fix: 16 of 233 documents,
+    // 627 of 16,987 pages, worst case 34.7% of the sheet.
+    //
+    // The fixture needs a text layer or nothing rebuilds: `willRebuild` is
+    // `(rebuild && hasEmbeddedText) || wantsJBIG2`, and an image-only page with
+    // JBIG2 off satisfies neither. The first version of this block asked for a
+    // Flate rebuild, got the non-rebuild path, and checked C13 twice.
+    let withText = dir.appendingPathComponent("cropped-with-text.pdf")
+    if case let obs = observations(of: cropped), !obs.isEmpty {
+        try? SearchableWriter.compose(visible: cropped, observations: obs, to: withText)
+    }
+    check("the rebuild fixture really has a text layer to strip",
+          Flattener.hasEmbeddedText(withText, password: nil),
+          "without one, `rebuild: true` does not rebuild and this block tests C13 again")
+
+    var rebuiltOutcome: Runner.Result.Outcome?
+    var rebuiltMessage = ""
+    let rebuiltOut = dir.appendingPathComponent("rebuilt-out.pdf")
+    OCRModel.makeSearchablePDF(
+        file: withText, output: rebuiltOut, rebuild: true, rebuildMode: .grayscale,
+        password: nil, control: RunControl(), progress: { _, _ in },
+        report: { o, m in rebuiltOutcome = o; rebuiltMessage = m })
+    check("the rebuild route succeeds", rebuiltOutcome == .succeeded, rebuiltMessage)
+    if let doc = PDFDocument(url: rebuiltOut), let page = doc.page(at: 0) {
+        let media = page.bounds(for: .mediaBox), shown = page.bounds(for: .cropBox)
+        check("the rebuilt copy keeps the whole sheet",
+              abs(media.width - mediaW) < 2 && abs(media.height - mediaH) < 2, "\(media)")
+        check("…and displays what the original displayed",
+              abs(shown.width - crop.width) < 2 && abs(shown.height - crop.height) < 2
+              && abs(shown.minX - crop.minX) < 2 && abs(shown.minY - crop.minY) < 2,
+              "displays \(shown), the original showed \(crop)")
+
+        // The ink, not the boxes. Re-OCRing the copy proves nothing (C7: the
+        // recogniser renders the crop), so lift the trim off a duplicate first —
+        // if the rebuild dropped the hidden margin, it is not there to find.
+        let bare = dir.appendingPathComponent("bare-rebuilt.pdf")
+        if let dup = PDFDocument(url: rebuiltOut), let dp = dup.page(at: 0) {
+            dp.setBounds(dp.bounds(for: .mediaBox), for: .cropBox)
+            dup.write(to: bare)
+        }
+        let hidden = observations(of: bare).values.flatMap { $0 }
+            .map(\.text).joined(separator: " ")
+        check("…and the hidden ink is still in the file, merely not displayed",
+              hidden.contains("ALPHA") && hidden.contains("CHARLIE"),
+              "ALPHA \(hidden.contains("ALPHA")), CHARLIE \(hidden.contains("CHARLIE"))")
+
+        // The failure this fix had to avoid. Recognition on a rebuild route reads
+        // whole-sheet bitmaps, so declaring the crop as the region the
+        // observations are normalised to — rather than only as the box the reader
+        // is shown — would shift every run on the page.
+        let found = doc.findString("BRAVO", withOptions: [.caseInsensitive]).first
+        let at = found?.bounds(for: page) ?? .zero
+        check("…and the text layer still lands on the ink",
+              at.width > 0 && abs(at.minX - inkX) < 14 && abs(at.minY - inkY) < 24,
+              "run at \(at), ink at x=\(inkX) y=\(inkY)")
+    } else {
+        check("the rebuilt copy keeps the whole sheet", false, "no output")
+    }
+
+    // And the route. A trimmed document does NOT take the JBIG2 route, because
+    // `qpdf --overlay` wraps both layers in form XObjects whose `/BBox` is the
+    // destination's crop box and centres that box on the media box: measured on
+    // this very fixture, the page image came out translated by (50, 96) with
+    // everything outside the crop clipped away for good. The crop cannot be
+    // present when qpdf runs and cannot be added afterwards without dropping the
+    // /JBIG2Decode streams, so those documents pay in size instead.
+    check("a trimmed document is recognised as trimmed",
+          OCRModel.hasTrimmedPages(cropped, password: nil),
+          "the crop box hides part of the sheet")
+    check("…and an untrimmed one is not",
+          !OCRModel.hasTrimmedPages(full, password: nil),
+          "the fixture without a crop box must not be swept up by the fallback")
+    check("a trimmed document does not take the JBIG2 route",
+          !OCRModel.wantsJBIG2(rebuild: true, settings: .current(), mode: .auto,
+                               available: true, trimmed: true),
+          "qpdf --overlay would clip the sheet away behind the crop")
+    check("…and an untrimmed one still does",
+          OCRModel.wantsJBIG2(rebuild: true, settings: .current(), mode: .auto,
+                              available: true, trimmed: false),
+          "the fallback must not cost every document its compression")
+
+    if JBIG2.isAvailable {
+        let checksBeforeJBIG2Crop = checks
+        // End to end, at the app's own defaults: the route decision has to be
+        // wired to the pipeline, not merely available to it.
+        var autoOutcome: Runner.Result.Outcome?
+        let autoOut = dir.appendingPathComponent("auto-out.pdf")
+        OCRModel.makeSearchablePDF(
+            file: withText, output: autoOut, rebuild: true, rebuildMode: .auto,
+            password: nil, control: RunControl(), progress: { _, _ in },
+            report: { o, _ in autoOutcome = o })
+        let bytes = (try? Data(contentsOf: autoOut)) ?? Data()
+        check("Automatic on a trimmed document still succeeds",
+              autoOutcome == .succeeded)
+        check("…and takes the Flate route, not JBIG2",
+              bytes.firstRange(of: Array("/JBIG2Decode".utf8)) == nil,
+              "a JBIG2 stream here means the crop went through qpdf --overlay")
+        if let doc = PDFDocument(url: autoOut), let page = doc.page(at: 0) {
+            let shown = page.bounds(for: .cropBox)
+            check("…so the published copy still displays the original's area",
+                  abs(shown.width - crop.width) < 2 && abs(shown.height - crop.height) < 2,
+                  "displays \(shown), the original showed \(crop)")
+        } else {
+            check("…so the published copy still displays the original's area", false, "no output")
+        }
+        check("the skip census figure for the JBIG2 crop block is still right",
+              checks - checksBeforeJBIG2Crop + 1 == 4,
+              "\(checks - checksBeforeJBIG2Crop + 1) checks, census says 4")
+    } else {
+        skipBlock("the crop box on the JBIG2 route", checks: 4,
+                  because: "jbig2enc/qpdf not installed")
+    }
+
     resetPrefs()
 }
 
@@ -8758,6 +8931,281 @@ do {
     check("a line with no right-hand neighbour still gets its full width",
           aloneText.contains("no neighbour"), aloneText.prefix(60).description)
     resetPrefs()
+}
+
+print("\na box sitting on top of a run is not the next fragment of its line")
+
+do {
+    // BUGS.md R81 / REVIEW-2026-08-14.md A1.2. `rightLimit` accepted any
+    // same-visual-line box starting right of MY LEFT EDGE, so a second reading of
+    // my own ink — Vision emits them constantly on noisy scans — shrank the run
+    // to the couple of points before it started. A whole line drawn at 5% of its
+    // width, with nothing reported: the characters are all in the content stream,
+    // so search still works and `Unplaced` stays empty, while a click past the
+    // first tenth of the line highlights a different line.
+    //
+    // The geometry is a real pair, measured by `Tools/score-run-width` on
+    // `testdocs/newspaperArticle/_1928_Creative writing…`: 'their' in a 19.4 pt
+    // box against 'their eder but' in a 63.3 pt box starting 1.0 pt later,
+    // drawn at 5.02% of its box. Points converted to fractions of a 612 pt page.
+    let box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    let font = CTFontCreateWithName("Helvetica" as CFString, 12, nil)
+    func obs(_ text: String, xPoints: Double, widthPoints: Double,
+             y: Double = 0.30, height h: Double = 0.016) -> SearchableWriter.Observation {
+        SearchableWriter.Observation(
+            boundingBox: SearchableWriter.BoundingBox(
+                x: xPoints / 612, y: y, width: widthPoints / 612, height: h),
+            text: text, confidence: 1.0)
+    }
+    let mine = obs("their", xPoints: 153.1, widthPoints: 19.4)
+    let onTop = obs("their eder but", xPoints: 154.1, widthPoints: 63.3)
+    let pair = [mine, onTop]
+
+    /// What share of its own box the first fragment is drawn at.
+    func share(_ lines: [SearchableWriter.Observation]) -> Double {
+        let limit = SearchableWriter.rightLimit(for: 0, among: lines, in: box)
+        guard case .placed(let run) = SearchableWriter.placement(
+            of: lines[0], in: box, ceiling: .greatestFiniteMagnitude,
+            rightLimit: limit, font: font) else { return -1 }
+        return Double(run.widthShare)
+    }
+
+    // 1. THE SHIPPED VALUE FIRST, and nothing may have assigned it before this
+    //    line. The first version of this block set the constant, measured, set it
+    //    back and *then* pinned it — so `mutate.py`'s `const/sharedInkFraction`
+    //    mutant SURVIVED: the suite overwrote the mutated default before reading
+    //    it, and eleven green checks said nothing about the shipped code. That is
+    //    the ninth "check that cannot fail" in this register and the first to be
+    //    caught by the machine rather than by hand (CONTRIBUTING 4a).
+    let shipped = SearchableWriter.sharedInkFraction
+    check("sharedInkFraction is the calibrated 0.5",
+          shipped == 0.5,
+          "\(shipped); of 852 limited runs on 24 newspaper pages, 779 share at "
+          + "most 0.47 of the narrower box and 70 share at least 0.53")
+
+    // 2. At the shipped value the run spans its own ink. Read, not written: a
+    //    mutated default has to reach this check.
+    let after = share(pair)
+    check("a box overlapping half of it is not treated as the next fragment",
+          after > 0.9, String(format: "drawn at %.2f%% of its box", after * 100))
+    check("…and `rightLimit` says so rather than `draw` compensating",
+          SearchableWriter.rightLimit(for: 0, among: pair, in: box)
+            == .greatestFiniteMagnitude,
+          "the neighbour must be refused where the question is asked")
+
+    // 3. THE DEFECT, put back by hand and watched failing. At 1.0 the guard
+    //    admits every box `otherLeft > myLeft` admits, which is exactly what
+    //    shipped: `shared` can never exceed the narrower box, so 1.0 is not "a
+    //    loose threshold", it is the old code. This is the direction proof — if
+    //    the pair stopped being crushed for some *other* reason, check 2 would
+    //    pass over a fixture proving nothing.
+    SearchableWriter.sharedInkFraction = 1.0
+    let before = share(pair)
+    // Back to what was shipped, not to the literal 0.5 — restoring the literal
+    // would quietly *un-mutate* the constant for every block after this one.
+    SearchableWriter.sharedInkFraction = shipped
+    check("with the guard off, the same pair is crushed to a sliver",
+          before > 0 && before < 0.15,
+          String(format: "drawn at %.2f%% of its box, against %.2f%% with the guard on",
+                 before * 100, after * 100))
+
+    // 3. And the guard is not a licence to ignore real neighbours: two fragments
+    //    whose boxes MEET are still one line, still limited, still spaced. This
+    //    is the direction the fix could have broken — the welds C18 is about.
+    let first = obs("that", xPoints: 61.2, widthPoints: 33.7)
+    let next = obs("measurable by standardised", xPoints: 94.9, widthPoints: 183.6)
+    check("a fragment whose box begins where mine ends still limits me",
+          SearchableWriter.rightLimit(for: 0, among: [first, next], in: box)
+            < .greatestFiniteMagnitude,
+          "the reserve has to keep acting on genuine neighbours or words weld")
+
+    let dir = tmp.appendingPathComponent("sharedink")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let page = dir.appendingPathComponent("page.pdf")
+    makeScannedPDF(at: page, lines: ["ignored — the layer is built from the boxes below"])
+    let sequential = dir.appendingPathComponent("sequential.pdf")
+    try? SearchableWriter.compose(visible: page, observations: [1: [first, next]],
+                                  to: sequential, drawImages: false)
+    let sequentialText = (PDFDocument(url: sequential)?.string ?? "")
+        .replacingOccurrences(of: "\n", with: " ")
+    check("…so the space between them survives end to end",
+          sequentialText.contains("that measurable")
+            && !sequentialText.contains("thatmeasurable"),
+          sequentialText.prefix(60).description)
+
+    // 4. Nothing is dropped by refusing a neighbour: both readings are still
+    //    drawn and both are still extractable. Invariant 1 — this path must not
+    //    lose text to fix a width.
+    let stacked = dir.appendingPathComponent("stacked.pdf")
+    let unplaced = try? SearchableWriter.compose(visible: page, observations: [1: pair],
+                                                 to: stacked, drawImages: false)
+    let stackedText = (PDFDocument(url: stacked)?.string ?? "")
+    check("both overlapping readings are still placed",
+          (unplaced?.isEmpty ?? false) && stackedText.contains("eder but"),
+          "unplaced \(unplaced?.count ?? -1): '\(stackedText.prefix(40))'")
+
+    // 5. The measure itself, which `joiningHyphenatedWords` shares. Boxes that
+    //    only touch share nothing; a box swallowed whole shares all of itself.
+    let touching = SearchableWriter.sharedWidthFraction(first.boundingBox, next.boundingBox)
+    let swallowed = SearchableWriter.sharedWidthFraction(mine.boundingBox, onTop.boundingBox)
+    check("two boxes that merely meet share none of the narrower one",
+          touching <= 0.001, String(format: "%.4f", touching))
+    check("a box inside another shares nearly all of itself",
+          swallowed > 0.9, String(format: "%.4f", swallowed))
+    // The denominator is the NARROWER box, or a small fragment swallowed by a
+    // mis-grouped observation reads as a small overlap and the guard sits out.
+    // Here the same 18.4 pt of shared ink is 94.8% of the 19.4 pt box and only
+    // 29.1% of the 63.3 pt one — the wider denominator would leave this pair
+    // under the threshold and the defect in place.
+    let againstTheWider = 18.4 / 63.3
+    check("…measured against the narrower box, not the wider",
+          swallowed > againstTheWider && againstTheWider < SearchableWriter.sharedInkFraction,
+          String(format: "%.4f against the narrower box, %.4f against the wider",
+                 swallowed, againstTheWider))
+    resetPrefs()
+}
+
+print("\na short fragment beside a tall one is one line, and keeps its space")
+
+do {
+    // BUGS.md R82 / REVIEW-2026-08-14.md A1.1. `rightLimit` asked
+    // `isSameVisualLine` at 0.4 × the SHORTER box, so a pair of very unequal
+    // heights — Vision gives `the female` a 5.8 pt box and `member or ine known
+    // criminals…` a 2.3 pt one on the same line — got a tolerance of about a
+    // point, fell outside it, opened no reserve, and welded: `femalemember`.
+    //
+    // The geometry below is that pair, from
+    // `testdocs/newspaperArticle/___ 3.pdf`, to six decimal places.
+    let box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    let font = CTFontCreateWithName("Helvetica" as CFString, 12, nil)
+    func obs(_ text: String, x: Double, y: Double, width w: Double, height h: Double)
+        -> SearchableWriter.Observation {
+        SearchableWriter.Observation(
+            boundingBox: SearchableWriter.BoundingBox(x: x, y: y, width: w, height: h),
+            text: text, confidence: 1.0)
+    }
+    let tall = obs("the female", x: 0.038793, y: 0.347384,
+                   width: 0.047414, height: 0.007279)
+    let short = obs("member or ine known criminals", x: 0.086207, y: 0.348837,
+                    width: 0.181034, height: 0.002907)
+
+    // The fixture has to separate the two scales or it proves nothing — the
+    // shape of check the C20 block below already uses.
+    let apart = abs(SearchableWriter.drawnBaseline(tall, in: box)
+                    - SearchableWriter.drawnBaseline(short, in: box))
+    let shorterTolerance = 0.002907 * 792 * SearchableWriter.sameLineBaselineFraction
+    let tallerTolerance = 0.007279 * 792 * SearchableWriter.sameLineBaselineFraction
+    check("the fixture sits between the two scales",
+          apart > shorterTolerance && apart < tallerTolerance,
+          String(format: "%.2f pt apart; shorter tolerance %.2f, taller %.2f",
+                 apart, shorterTolerance, tallerTolerance))
+    check("…so the shorter scale calls a real pair of fragments two lines",
+          !SearchableWriter.isSameVisualLine(tall, short, in: box, .shorter),
+          "that is the defect: no reserve is opened and the words weld")
+    check("…and the taller scale calls them one",
+          SearchableWriter.isSameVisualLine(tall, short, in: box, .taller))
+
+    // Which is what the reserve now asks, so the pair is limited.
+    let limit = SearchableWriter.rightLimit(for: 0, among: [tall, short], in: box)
+    check("the reserve acts on a pair of unequal heights",
+          limit < .greatestFiniteMagnitude,
+          "`rightLimit` must see the neighbour before `reserveEms` can do anything")
+
+    /// The gap the writer leaves between this run's last glyph and the next
+    /// fragment's box, in points. This is the thing the writer controls;
+    /// whether PDFKit then synthesises a space from it is PDFKit's business,
+    /// and A1.4 records that its answer depends on the whole page — a
+    /// two-observation fixture is not the place to assert it.
+    /// Measured against the NEIGHBOUR'S box edge, not against `limit` — with no
+    /// limit at all, `limit` is `.greatestFiniteMagnitude` and the subtraction
+    /// answers 1.8e308 pt of clearance, which the first version of this check
+    /// duly reported.
+    let neighbourLeft = 0.086207 * 612.0
+    func gap(_ lines: [SearchableWriter.Observation], _ limit: CGFloat) -> CGFloat {
+        guard case .placed(let run) = SearchableWriter.placement(
+            of: lines[0], in: box, ceiling: .greatestFiniteMagnitude,
+            rightLimit: limit, font: font) else { return -1 }
+        return neighbourLeft - (run.left + run.advance)
+    }
+    let opened = gap([tall, short], limit)
+    let closed = gap([tall, short], .greatestFiniteMagnitude)
+    check("…and the run is drawn clear of it",
+          opened > 1.0,
+          String(format: "%.2f pt of clearance, against %.2f pt with no limit at all "
+                 + "— the run ran into its neighbour's box edge", opened, closed))
+    check("…which is a change, not the shape it already had",
+          closed < 0.01 && opened > closed,
+          String(format: "unlimited leaves %.4f pt; if that were already open, "
+                 + "the check above would pass against the defect", closed))
+
+    // The ceiling still asks for the shorter scale, and must: a tall display
+    // element with a body line a row below is a VERTICAL neighbour, and if the
+    // reserve's looser scale reached `headroom` too, the display element would
+    // be drawn over the line beneath it. This is the direction the fix could
+    // have re-opened C20 from, so it is asserted rather than assumed.
+    //
+    // The body line sits UNDER the numeral rather than beside it: `headroom`
+    // only looks at pairs sharing more than a point of horizontal space, so a
+    // fixture placed side by side would pass this check without the ceiling
+    // ever being asked. (It did, on the first attempt.)
+    let display = obs("7", x: 0.10, y: 0.2000, width: 0.05, height: 0.060)
+    let bodyBelow = obs("a body line well below it", x: 0.10, y: 0.2495,
+                        width: 0.20, height: 0.016)
+    check("the ceiling still sees a body line under a display numeral",
+          SearchableWriter.headroom(for: 0, among: [display, bodyBelow], in: box)
+            < .greatestFiniteMagnitude,
+          "`headroom` must keep the shorter scale or C20 comes back the other way")
+    check("…even though the reserve's scale would call them one line",
+          SearchableWriter.isSameVisualLine(display, bodyBelow, in: box, .taller),
+          "if this is false the check above passes for the wrong reason")
+
+    // A line on the ROW BELOW is `headroom`'s business, not the reserve's, and
+    // treating one as a horizontal obstacle shortens every run on a tightly-set
+    // page (C20). That filter had exactly one thing holding it — an incidental
+    // geometry check inside the outline test — and **R81's guard took it over**:
+    // with the shared-ink test in place, `mutate.py`'s
+    // `logic/C20-rightlimit-sameline` went from killed to SURVIVED, because a
+    // neighbour that would crush a run badly necessarily overlaps it heavily and
+    // the new guard refuses it first. Two guards covering one case is not the
+    // same as one of them being unnecessary, so the property gets its own check
+    // over a fixture the other guard deliberately lets through.
+    let wideRow = obs("a wide line of body text across the column", x: 0.10, y: 0.300,
+                      width: 0.60, height: 0.016)
+    let rowBelow = obs("the next row down the page", x: 0.60, y: 0.360,
+                       width: 0.30, height: 0.016)
+    let sharedWithRowBelow = SearchableWriter.sharedWidthFraction(wideRow.boundingBox,
+                                                                  rowBelow.boundingBox)
+    check("the fixture is one R81's guard lets through",
+          sharedWithRowBelow < SearchableWriter.sharedInkFraction
+            && !SearchableWriter.isSameVisualLine(wideRow, rowBelow, in: box, .taller),
+          String(format: "shares %.3f of the narrower box, against a limit of %.2f",
+                 sharedWithRowBelow, SearchableWriter.sharedInkFraction))
+    check("a fragment on the row below is not a horizontal obstacle",
+          SearchableWriter.rightLimit(for: 0, among: [wideRow, rowBelow], in: box)
+            == .greatestFiniteMagnitude,
+          "the reserve must only see fragments of my own line")
+
+    // End to end, for what a two-observation page can honestly settle: nothing
+    // is lost by widening the reserve's reach. **Whether the pair welds is NOT
+    // asserted here.** Composed alone the two still weld, at 1.58 pt of
+    // clearance, while on their own page they do not — A1.4 is the entry for
+    // that: PDFKit's line grouping is a function of the whole sheet, and a
+    // fixture that cannot reproduce it would be a check on PDFKit rather than on
+    // this writer. The weld count that moved is
+    // `score-line-separation welded=`, 7 -> 2 over six real documents (R82).
+    let dir = tmp.appendingPathComponent("unequalheights")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let page = dir.appendingPathComponent("page.pdf")
+    makeScannedPDF(at: page, lines: ["ignored — the layer is built from the boxes below"])
+    let out = dir.appendingPathComponent("pair.pdf")
+    let unplaced = try? SearchableWriter.compose(visible: page, observations: [1: [tall, short]],
+                                                 to: out, drawImages: false)
+    let text = (PDFDocument(url: out)?.string ?? "")
+        .replacingOccurrences(of: "\n", with: " ")
+    check("both fragments are still placed",
+          (unplaced?.isEmpty ?? false)
+            && text.contains("female") && text.contains("criminals"),
+          "unplaced \(unplaced?.count ?? -1): '\(text.prefix(60))'")
 }
 
 print("\n\"one visual line\" means the same thing to the writer and to its instrument")

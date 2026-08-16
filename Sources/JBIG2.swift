@@ -212,7 +212,20 @@ enum JBIG2 {
             written += bytes.count
         }
         func write(_ string: String) throws {
-            try emit(string.data(using: .isoLatin1) ?? Data())
+            // A2.4. `?? Data()` stood here, and it emits **nothing** for a string
+            // Latin-1 cannot hold — while `written` does not advance either, so
+            // the xref stays perfectly self-consistent over a file with an
+            // object body missing. A structurally broken PDF with a
+            // valid-looking cross-reference table, produced by the one file
+            // whose whole job is not producing that.
+            //
+            // Unreachable today: every caller-controlled string goes through
+            // `pdfString`, `trim` or `coordinate`. A throw costs nothing, and
+            // "unreachable" is what R31, R32 and H2 were each called.
+            guard let data = string.data(using: .isoLatin1) else {
+                throw Failure.cannotWrite
+            }
+            try emit(data)
         }
         func beginObject(_ number: Int) throws {
             precondition(offsets.count == number - 1, "objects must be written in order")
@@ -278,6 +291,24 @@ enum JBIG2 {
             let names = objects.indices.map { "/Im\($0)" }
             let resources = zip(names, objects)
                 .map { "\($0) \($1) 0 R" }.joined(separator: " ")
+
+            // **No `/CropBox` here, and that is deliberate — C23.**
+            //
+            // A page whose crop box hides part of the sheet is the defect C23
+            // records, and the obvious fix is a `/CropBox` on this line. It was
+            // written, measured and removed: `qpdf --overlay` wraps both this
+            // page's content and the text layer in form XObjects whose `/BBox`
+            // is the destination page's crop box, and then centres that box on
+            // the media box. On a 612x792 page cropped to 312x400 at (100,100)
+            // the image came out translated by (50, 96) and everything outside
+            // the crop was clipped away for good. So the crop must not exist
+            // when qpdf runs, and `Model.wantsJBIG2` keeps trimmed documents off
+            // this route entirely rather than publishing a page that is wrong in
+            // both geometry and content.
+            //
+            // If you are here to add one: the merged file is the thing that
+            // needs it, and neither CGPDFContext nor PDFKit can rewrite these
+            // pages without dropping /JBIG2Decode (measured).
 
             try beginObject(pageObject(i))
             try write("""
@@ -400,6 +431,16 @@ enum JBIG2 {
         for offset in offsets {
             // %010ld, not %010d: past 2 GiB a 32-bit conversion wraps negative
             // and every later offset is garbage.
+            //
+            // A2.4, the same trap's next boundary: an xref entry must be exactly
+            // 20 bytes, and `%010ld` only keeps it there below 10 GB — past
+            // 9,999,999,999 the field widens to 11 digits and every entry becomes
+            // 21. Reachable only by something like 1,300 pages of 100-megapixel
+            // colour plates, which `maximumPageMegapixels` does not forbid.
+            // Refuse rather than write a file whose xref no reader can index.
+            guard offset < 9_999_999_999 else {
+                throw Failure.cannotWrite
+            }
             try write(String(format: "%010ld 00000 n \n", offset))
         }
         try write("trailer\n<< /Size \(objectCount + 1) /Root 1 0 R >>\n")

@@ -6,29 +6,35 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Five open. C23 is the one that changes content on a route the user is on today**, and it is
-the reason 1.13.0 was not cut on 2026-08-15: it alters what a published page *displays* on 14 of
-233 corpus documents, and the instruments that would say whether the alteration is right are
-themselves under repair (`REVIEW-2026-08-14.md` A6.1, A12.2). R56 and R57 remain open and both
-wait on the one unbuilt *shape* signal. **R55 is the fourth and it is not in the app** — it is
+**Four open, and none of them is a release blocker any more.** **C23 is `FIXED`** as of
+2026-08-15 — the crop box the rebuilt copy never carried — and the fix is not the one its entry
+proposed: putting it where the entry said would have shifted every run on the page on one route
+and clipped the retained ink away for good on the other. It cost the JBIG2 route on trimmed
+documents, 16 of 233, which is written up with the numbers. R56 and R57 remain open and both
+wait on the one unbuilt *shape* signal. **R55 is the third and it is not in the app** — it is
 in `Tools/`, and it needs its own measurement campaign before `classify-source` changes.
-**C24 is the fifth**, opened 2026-08-15: `largestImage` answers
+**C24 is the fourth**, opened 2026-08-15: `largestImage` answers
 "the largest image in this document" to a question about *this page*, so on the 4 corpus
 documents whose pages share one `/Resources` a page that draws nothing at all is rebuilt at
 another page's plate resolution. Two repairs were built and both were wrong, and the third
 would need a threshold the corpus has no gap for — it is open with the measurements rather
-than tuned. So: one release blocker, two waiting on an instrument that does not exist yet,
-one in the tooling, and one rebuild-resolution defect refused with its numbers. **R54 was the
-sixth and is `FIXED`** as of 2026-08-15 — with a correction to its own two numbers, and a fix
+than tuned. So: two waiting on an instrument that does not exist yet, one in the tooling, and
+one rebuild-resolution defect refused with its numbers — **and no release blocker.** **R81, R82 and
+R83 are the text layer's three, all `FIXED` on 2026-08-15**: a line drawn at 5% of its width
+because a second reading of its own ink counted as the next fragment; words welding when one
+fragment of a line is much shorter than the next; and the small ones from areas 2, 3 and 13,
+including two memory constants that described a phase that was not the peak. **R54 was `FIXED`
+before them** as of 2026-08-15 — with a correction to its own two numbers, and a fix
 aimed at the eight *real* item types that had the same defect rather than only the pseudo-type
 it named. **R58 is `FIXED` but its
 feature is deliberately unreleased** — the annotation transplant, after two adversarial rounds
 that each found marks landing in the wrong place. The third round is unrun.
 
-**C23 is the newest, and it was found by the release gate an hour after T9 taught the gate to
-read pixels.** `JBIG2.assemble` writes no `/CropBox`, so on the default route the rebuilt copy
-displays what the original's crop box hid — C13's own harm, at the one site C13's fix never
-reached. 14 of 233 corpus documents, 577 of 16,987 pages, worst case a third of the sheet.
+**C23 was found by the release gate an hour after T9 taught the gate to read pixels**, and is
+`FIXED`. The rebuilt copy displayed what the original's crop box hid — C13's own harm, at the one
+site C13's fix never reached; 16 of 233 corpus documents, 627 of 16,987 pages, worst case a third
+of the sheet. Read its entry before touching the crop box anywhere: the obvious fix is wrong in
+two different ways, both measured.
 
 **R56 and R57 are in the app, on the default route.** R56: a pale line drawing is
 **erased** by the 1-bit route, because it scores the same ink, tone and saturation as a
@@ -968,7 +974,7 @@ samples three pages a document, so an aligned column of repeated figures is
 rarely in the sample. The unit checks are the evidence that the defect is gone;
 the corpus is the evidence that closing it broke nothing.
 
-### C23 · C13 recurs on the default route: the rebuilt copy displays what the original hid — OPEN
+### C23 · C13 recurs on the default route: the rebuilt copy displays what the original hid — FIXED
 *(found 2026-08-14 by the repaired release gate, minutes after T9 made it able to see pixels)*
 
 **C13 is fixed in `compose`, and `compose` cannot fix it on any rebuild route.** C13's harm
@@ -1024,16 +1030,75 @@ worst      34.7% of the sheet hidden   Boltanski   crop 779x628 of media 1031x72
 then        8.8%  Canby_1929 · 7.4%  Zarifa_2008 · 6.6%  ppf_description
 ```
 
-**Not fixed here.** The fix is a `/CropBox` carried through `Flattener.flatten`'s
-`beginPDFPage` (so the Flate rebuild keeps it and `compose` has something real to copy) and
-written into `JBIG2.assemble`'s page dictionary, in the rebuilt page's own coordinate space —
-which means putting the source crop rect through the same transform
-`SearchableWriter.cropRegion` uses, since the rebuild bakes `/Rotate` in and swaps the box.
-That is a geometry change on the default route, it needs the invariant-3 probes and a corpus
-run behind it, and C13's own entry records that the obvious check for it does not work:
-re-OCRing the published copy cannot prove the hidden ink survived, because the recogniser
-renders the crop and would only ever report what is displayed. The test has to lift the trim
-off a throwaway duplicate first.
+**FIXED 2026-08-15, and not the way this entry proposed.** The proposal was a `/CropBox`
+carried through `Flattener.flatten`'s `beginPDFPage` and written into `JBIG2.assemble`'s page
+dictionary. **Both halves of that are wrong**, and the second is wrong in a way that would have
+shipped a worse defect than the one it fixed.
+
+**Not on the rebuilt intermediate.** Recognition reads the per-page bitmaps `flatten` writes,
+which are whole sheets, so the observations come back normalised to the media box. A crop box on
+the intermediate makes `compose` map them into the trimmed rectangle and shifts every run on the
+page. The crop belongs on the **published** page and nowhere else: `RebuiltPage.sourceCropBox`
+carries it, `compose` takes it as `cropBoxes:` and declares it, and the region the observations
+are normalised to stays the whole sheet. Two rectangles, two questions.
+
+**And not in `JBIG2.assemble` at all.** `qpdf --overlay` wraps *both* the destination's content
+and the stamped text layer in form XObjects whose `/BBox` is the destination page's **crop** box,
+then centres that box on the media box. Built and measured on a 612x792 page cropped to 312x400
+at (100,100):
+
+```
+merged page content:   1 0 0 1 50 96 cm  /Fx0 Do        <- the page image, translated
+                       1 0 0 1 0 0 cm    /Fx1 Do        <- the text layer, not
+form /BBox:            [ 100 100 412 500 ]              <- both clipped to the crop
+```
+
+(50, 96) is exactly the centring: (612−312)/2 − 100 and (792−400)/2 − 100. So the page image
+came out displaced *and* everything outside the crop was clipped away for good — lifting the
+trim off the published copy revealed nothing. **That is invariant 1's harm arriving through the
+fix for C23.** There is nowhere else to put it either: copying the merged pages afterwards to
+set the box drops the compression, measured, 7,391 → 13,401 bytes with `/JBIG2Decode` gone
+(CGPDFContext; PDFKit was already known to do the same, 374 KB → 467 KB).
+
+So **a document that hides part of any sheet does not take the JBIG2 route**
+(`Model.wantsJBIG2`'s new `trimmed:` term, from `Model.hasTrimmedPages`). It takes the Flate
+rebuild, which carries the crop correctly, and pays in size.
+
+**Measured, `testdocs/bookSection/Canby_1929`, four sampled pages through the shipped
+pipeline at defaults:**
+
+```
+                    published copy shows            bytes      route
+before   p1 624x802 of 624x802   (0.0% hidden)      91,118     JBIG2
+         p2 647x821 of 647x821   (0.0% hidden)
+after    p1 612x792 of 624x802   (3.2% hidden)     206,002     Flate
+         p2 612x792 of 647x821   (8.8% hidden)
+```
+
+Every page of the copy now hides exactly what the source hid, to the point.
+
+**And over every trimmed document in the corpus**, three trimmed pages from each through the
+shipped pipeline at defaults: **16 documents, 42 pages, 0 differing** — `Boltanski_2006`, whose
+34.7% is the worst case this entry opened with, among them. Before the fix all 42 displayed the
+whole sheet.
+
+**The cost is 2.26x the bytes on this document** — 0.55x its input before, 1.25x after. Over the corpus that
+is 16 documents of 233, 627 pages of 16,987, 6.8% of it by bytes.
+
+**The alternative was considered and refused, and is written down so it is not rediscovered.**
+qpdf ships `fix-qdf` precisely so a `--qdf` file can be edited by hand and repaired, which would
+allow the crop to be inserted into the merged file's page dictionaries after the overlay and keep
+the compression. It costs two more qpdf invocations, a dependency on a second binary from the
+same package, and hand-editing page dictionaries in a project whose own contributing guide names
+hand-written PDF as the risky kind. Refused for 6.8% of the corpus by bytes; revisit it if that
+share ever moves.
+
+**The test had to lift the trim off a throwaway duplicate**, as this entry predicted: re-OCRing
+the published copy proves nothing, because the recogniser renders the crop (C7) and would only
+ever report what is displayed. And the fixture needs a **text layer**, or nothing rebuilds at
+all — `willRebuild` is `(rebuild && hasEmbeddedText) || wantsJBIG2`, so an image-only page with
+JBIG2 off takes the non-rebuild path and the block tests C13 twice. The first version of the
+test did exactly that and passed.
 
 ### C24 · `largestImage` answers a document-wide question, so one page's plate sets another page's rebuild resolution — OPEN
 *(found 2026-08-15 fixing `REVIEW-2026-08-14.md` A12.2, which files it as a defect in
@@ -4541,6 +4606,314 @@ Not reachable from today's UI because the button is rendered only `if model.isRu
 
 **A5.4 · `skipThem` assigned where `run` subtracts**, discarding every mark an earlier decision
 had left, so a second Skip Those in one session forgot what the first had skipped. `formUnion`.
+
+### R81 · A whole line drawn at 5% of its width, because a second reading of its own ink counted as the next fragment — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A1.2, verified there by
+a second agent against the content stream. Fixed 2026-08-15.)*
+
+`rightLimit` accepted any same-visual-line box starting **right of my left edge** as the next
+fragment of my line, and `draw` then shrank the run to the couple of points before it started.
+Vision emits overlapping readings of one piece of ink constantly on noisy scans — `their` in a
+19.4 pt box against `their eder but` in a 63.3 pt box starting **1.0 pt later** — so the first
+was drawn at **5.02% of its box**: a line nobody can highlight, whose characters are all still
+in the content stream, so search works, `Unplaced` is empty and nothing anywhere says so.
+
+The comment at the guard claimed `allowed > 0` "already refuses a heavy overlap". It cannot:
+`allowed` is positive for *any* neighbour right of my left edge. A1.2's verifier measured it
+true 4,338 times out of 4,338, smallest 1.97e-07 pt.
+
+**Nothing could see it, which is why it survived.** `score-corpus`'s `end=` column,
+`probe-line-edges` and `probe-line-coverage` are one probe rect in three shells (T14): they ask
+whether *anything* is selectable in the right-hand 15% of a line's box. Over a sliver that
+rectangle sits on the line **above**, whose run does reach it, so the page scores clean.
+`Tools/score-run-width` is the instrument that was missing — it asks the writer itself, through
+`SearchableWriter.prepared`, `rightLimit` and the new `placement`, so there is no second copy of
+the arithmetic to drift (C20). It carries a self-test that runs on every invocation.
+
+**The fix.** Two boxes on one line that overlap by more than half of the *narrower* one are not
+two fragments of that line; they are two readings of the same ink, and one must not shrink for
+the other. The measure — shared width over the narrower box — already existed in this file, in
+`joiningHyphenatedWords`'s same-column test, and is now one function, `sharedWidthFraction`,
+with two thresholds for its two questions.
+
+**The constant sits in a continuum, not a gap, and the defence is that it barely matters where
+in the continuum it sits.** Over 852 limited runs on 24 newspaper pages, with "harmed" meaning
+drawn under half its box:
+
+| shared ink | pairs | drawn under half their box before the fix |
+|---|---|---|
+| ≤ 0.47 | 779 | 1 |
+| 0.47–0.53 | 3 | 1 |
+| ≥ 0.53 | 70 | 60 |
+
+Three pairs of 852 lie in the band the constant could move through, and moving it from 0.5 to
+0.4 or to 0.6 changes the verdict on **six** — 75 neighbours refused instead of 71, or 69. That
+is the property to check, because this corpus has **no gap** to put a threshold in and a
+constant chosen inside a continuum is how C24's two repairs went wrong.
+
+**Measured, `Tools/score-run-width` over 21 newspaper documents, 24 pages, 7,617 fragments.**
+Both columns come from **one binary of the instrument**, with "before" produced by putting the
+two constants back rather than by an older build — `sharedInkFraction = 1.0` admits every
+neighbour the old code admitted, because `shared` can never exceed the narrower box, and
+`.shorter` is R82's scale before R82:
+
+| | before | after |
+|---|---|---|
+| runs a neighbour shortened | 852 | 899 |
+| drawn under 15% of their box | **30** | 2 |
+| drawn under 50% | **76** | 15 |
+| both narrowed *and* squashed to under half — C20's symptom | **48** | 3 |
+| narrowest run with a neighbour | **2.84%** | **25.21%** |
+
+The last row is the defect, closed. **Every run still under half its box after the fix is one
+whose neighbour left it a full box width or more** — the two limited ones measure `room` 1.106
+and 1.000, so the neighbour costs them nothing; the other thirteen have no neighbour at all. A
+lone `(` in a 108 pt box, `• ^` in a 156 pt one: that is the documented sparse-row trade, where
+the vertical cap wins over spanning the box (`draw`, "When the two demands conflict, height
+wins"). Different mechanism, deliberate, left alone — recorded so the next reader does not chase
+it as a residue of this.
+
+**The rise from 852 to 899 is R82, not this**, and it costs nothing: R81 alone reads 787 limited
+runs with the same 2 slivers, the same 15 under half and the same 3 crushed. R82's entry has
+that comparison.
+
+*(An earlier draft of this table read 787 / 30→2 / 73→12 / 51.43%, measured with the instrument
+passing an **unbounded** ceiling — its first version argued that could only understate the width,
+which is true, and made it blind to the runs the ceiling squashes. The numbers above are what
+the app draws. A table whose two columns come from two instruments is the shape T14 spent a day
+on.)*
+
+**The other three properties, re-measured before and after over 8 documents spanning newspaper,
+book section, journal, magazine and book** (`score-corpus` and `score-line-separation`, one
+binary compiled per revision — CLAUDE.md invariant 3). Everything not listed is unchanged:
+
+```
+                        start=       end=      words=    merged=          runaway=
+___ 3                   84 -> 84   83 -> 84   111%     8/129 ->  8/129   1.3% -> 1.3%
+_1928_Creative writing  89 -> 89   86 -> 87    96%    21/156 -> 21/156   0.0% -> 0.0%
+Williams_1958           98 -> 98   97 -> 98   105%     3/73  ->  3/73    4.0% -> 4.0%
+JOURNAL_1969           100 ->100  100 ->100    99%     3/85  ->  3/85    4.2% -> 4.2%
+Broadhead 1994         100 ->100  100 ->100    99%     0/115 ->  0/115   0.0% -> 0.0%
+Baker_2000             100 ->100  100 ->100   100%     0/97  ->  0/97    2.3% -> 2.3%
+1947_Corporation Tax    92 -> 92   92 -> 92   112->113% 1/31  ->  0/31   0.0% -> 4.4%
+1954 - Why              99 -> 99   99 -> 99   100%     0/58  ->  0/58    0.5% -> 0.5%
+```
+
+`end=` — line-end selectability, property (c) — rises on the three worst documents and never
+falls. `off=` is `+0.00` on all sixteen runs. **The fix widens runs, and widening runs is what
+welds words** (C18), so "no new welds" was the thing to prove rather than assume: `merged=` is
+identical on seven documents and one better on the eighth.
+
+**And `runaway=` 0.0% → 4.4% on that eighth document is a fixed weld, not a regression.** Chased
+rather than waved at, by diffing the extracted text of both builds over the same pages:
+
+```
+- p1  85  Point Out Opportunities to 113Big Packers Hold off MeNair Report H. Copter Is Favored
++ p1  86  Point Out Opportunities to 113 Big Packers Hold off MeNair Report H. Copter Is Favored
+```
+
+`113Big` → `113 Big`. The run was widened until PDFKit read a gap and put the space back — the
+`valuablestudy` symptom, one instance of it repaired — and the line went from 85 characters to
+86. `runaway` counts characters in extracted lines longer than **that page's own** longest
+reference visual line, which on page 1 is 85, so a one-character improvement tips the whole line
+into the runaway population: 86 of the document's 1,955 extracted characters, which is the 4.4%
+to the digit. The only other change on the document is three headline fragments regrouped
+between extracted lines with no character gained or lost. Recorded because the number reads as
+a regression and is the opposite, and because it is a real limit of the metric: **derived from
+the page's own typography, it has a one-character cliff.**
+
+**Sibling sweep** (CONTRIBUTING 4b). Who else asks "is this box after mine on this line?" —
+`headroom` asks the vertical version and already refuses same-line boxes through the shared
+predicate; `joiningHyphenatedWords` asks about the *next line*, and its same-column test is the
+measure this fix reuses; `deduplicated` asks about *identical text* and so can never see these
+pairs, which is why A1.2's population survived it. `Tools/score-line-separation` groups
+fragments with the app's own predicate and is unaffected. No other site compares two boxes'
+left edges.
+
+**Two more things landed with it, both in the lines the fix touched:**
+
+- **A1.3's dead locals.** `myHeight` and `myBaseline` in `rightLimit`, computed and never used
+  since C20 extracted `isSameVisualLine`, warned about on every build. A1.3 deliberately left
+  them for "the next real change to that file"; this is it.
+- **`draw` split into `placement` + four lines of CoreText.** Not a behaviour change and proved
+  so rather than asserted: the composed glyph geometry — every character's
+  `PDFPage.characterBounds`, to five decimal places — is **byte-identical across 4 documents,
+  69 pages and 238,902 characters** between the refactor and the commit before it.
+
+### R82 · Words weld when one fragment of a line is much shorter than the next — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A1.1, whose count and
+cited pairs a second agent reproduced against the content stream while correcting its severity
+and its mechanism. Fixed 2026-08-15, after R81, which it depended on.)*
+
+`reserveEms` — the constant holding property (d) open — can only act through `rightLimit`, and
+`rightLimit` asked `isSameVisualLine` at **0.4 × the shorter box**. Vision gives `the female` a
+5.8 pt box and `member or ine known criminals…` a 2.3 pt one *on the same line of the same
+column*, so the tolerance was 0.9 pt against a 1.6 pt baseline difference: not one line, no
+reserve, the run drawn to its full box width, and `femalemember` in the extracted text.
+
+**The fix is one predicate with an argument, not two predicates.** C20 is in this register
+because two functions held two definitions of "one visual line"; the honest reading of A1.1 is
+that the two callers really do want different tolerances, so `isSameVisualLine` now takes a
+`Scale` — `.shorter` for the ceiling, `.taller` for the reserve — over one constant, and each
+call site says which question it is asking. The alternative on offer, raising
+`sameLineBaselineFraction` for both, is what the review measured as making `headroom` skip real
+vertical neighbours.
+
+**Nothing in `Tools/` could count a weld, which is most of why this sat open.** `merged=` counts
+whole rows running together; a weld happens *inside* a row. Every column of `score-corpus` and
+`score-line-separation` reads **identical** across this change on all eight invariant-3
+documents — `start=`, `end=`, `off=`, `words=`, `overlap=`, `merged=`, `runaway=`, to the digit —
+while the extracted text gains seventeen spaces. An instrument that cannot move is the defect
+`score-line-separation` was rewritten for in T14, arriving by a new door.
+
+So `score-line-separation` counts them now, as `welded=W/N` over adjacent fragments of one row.
+**Its grouping for that column is `.taller`, and the first version got this wrong**: grouped at
+`.shorter`, the instrument is blind to exactly the pairs R82 is about, because "these two are one
+row" is the very judgement at issue. Measured on `___ 3.pdf`: 0 welds reported from the
+`.shorter` grouping over a run whose extracted text held four. Both scales are now used in one
+file, each for the question that needs it.
+
+**Two measurements, two routes, both stated because they are not the same experiment:**
+
+| | route | population | before | after |
+|---|---|---|---|---|
+| `score-line-separation welded=` | rebuild (the default) | 6 documents, 1,684 fragment pairs | **7** | **2** |
+| token diff of the extracted text | direct, observations cached so `compose` is the only variable | 21 documents, 31,526 tokens | — | **17 fixed, 0 created** |
+
+No document gets worse on either. Three of the seventeen are the pairs A1.1 named by hand:
+`itycompanies` → `ity companies`, `femalemember` → `female member`, `Greece(AP)_The` →
+`Greece (AP)_The`. The others include `NEWYORK-High-ranking`, `Butalternative`,
+`stroke.completely` and `pileof`. The two routes disagree about *which* welds exist — the
+rebuild re-renders the page at `rebuildDPI` and Vision reads a different raster, so `___ 3.pdf`
+has four welds on one route and none on the other. Neither number is the other's check.
+
+**The review's reason for ordering this after R81 was right, and is now measured from both
+sides.** It predicted the viable variant would still take fragments drawn under 15% of their box
+from 30 to **113**, and refused to ship it before A1.2 was fixed. Built three ways over the same
+24 pages and 7,617 fragments:
+
+| build | runs limited | under 15% of box | under 50% | crushed both ways |
+|---|---|---|---|---|
+| `.shorter` + R81's guard | 787 | 2 | 15 | 3 |
+| **`.taller` + R81's guard (shipped)** | **899** | **2** | **15** | **3** |
+| `.taller`, R81's guard removed | 1,087 | **114** | 204 | 155 |
+| neither (the code before both) | 852 | 30 | 76 | 48 |
+
+**113 predicted, 114 measured** — on a different page sample, by a different instrument, which
+is about as close as this kind of agreement gets. And the third row is the whole reason for the
+ordering: the slivers the review feared are not a property of the looser scale at all, they are
+R81's population being reached by more neighbours. With R81 in, the looser scale costs **nothing
+measurable** — the same 2 slivers, the same 3 crushed runs, 112 more runs merely shortened.
+
+`crushed` — a run drawn under half its box width *and* under half the height it wanted — is
+C20's own symptom, and it is in `Tools/score-run-width` because of this change: the looser scale
+re-opens a band where the reserve calls a pair one line and the ceiling calls it two. **9,196
+such pairs exist on those 24 pages; 37 have the same partner doing both; none of the 37 produces
+the symptom.** Measured rather than argued, because "the band is narrow" is what one would have
+said about C20 as well.
+
+**Not fixed, and not this defect:** the seven of A1.1's thirty-one welds that are *cross-column*
+pairs, where a line break is the correct output and the predicate is right to refuse; and A1.4,
+the seven where the reserve did apply and the drawn gap was 2.6–7.3 pt, which is PDFKit's
+whole-page line grouping and is still unpinned.
+
+### R83 · The small ones from areas 2, 3 and 13, and two constants that described the wrong phase — FIXED
+*(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A2.4, A3.1, A13.4.
+Fixed 2026-08-15 alongside R81 and R82, which is what put a maintainer in these files.)*
+
+**A2.4 · `JBIG2.write` emitted nothing for a string Latin-1 cannot hold.** `?? Data()`, and
+`written` did not advance either — so the xref stayed perfectly self-consistent over a file with
+an object body missing. A structurally broken PDF with a valid-looking cross-reference table,
+from the one file whose whole job is not producing that. Unreachable today (every
+caller-controlled string goes through `pdfString`, `trim` or `coordinate`) and now a throw,
+because "unreachable" is what R31, R32 and H2 were each called.
+
+**A2.4 · an xref entry stops being 20 bytes at 10 GB.** `%010ld` widens to eleven digits past
+9,999,999,999 and every entry becomes 21, which no reader can index. The `%010d` trap's next
+boundary, reachable by roughly 1,300 pages of 100-megapixel plates. Refused rather than written.
+
+**A2.4 · the MRC loop read whole files to learn their sizes.** `Data(contentsOf:).count`, twice,
+on the per-page path, while `sizeNote` answered the same question from the file's attributes two
+hundred lines away — C20's shape with the expensive copy on the hot side. One `fileSize`.
+
+**A3.1 · both MRC memory constants described a phase that is not the peak, and the colour bound
+was false.** The doc enumerated "the grey buffer, the stencil, the text-region map, the filled
+background, and inside `fillHoles` a second copy plus two flag arrays — about 8 bytes a pixel".
+Every item real; the peak is not among them. `sauvolaMask` runs first and holds two
+`(w+1)(h+1)` `[Double]` integral images, **16 bytes a pixel on their own**.
+
+The review's verifier had already shown why the old figures could not be trusted: `ru_maxrss` is
+a high-water mark and libmalloc keeps freed large blocks mapped and dirty, so over a multi-phase
+function it reads as a sum of distinct-size peaks rather than a maximum — two 8 B/px phases with
+a `free` between them read **16.38** by `ru_maxrss` and **8.00** by live bytes. So these are
+counted from the code instead, buffer by buffer, and named `analytic*` for it:
+
+| route | was | is | how |
+|---|---|---|---|
+| grey layering | 8.0 | **18.0** | 1 grey + 8 sum + 8 sq + 1 mask |
+| colour layering | 22.0 | **25.0** | 5 masks + 4 rgba + 5 planes + 8 interleaved + 3 in `fillHoles` |
+
+The grey number is corroborated independently: the review measured **19.11 B/px live** against
+this 18.005 analytic, on a real page.
+
+**The colour bound was the finding, and it was false while its assertion passed.** At 25 B/px,
+100 MP is 2.5 GB against the render's 2.2 GB — and `colourMRCBoundIsWithinTheRenderOne` compared
+the colour cost against the *grey* page bound, so it passed by sitting exactly on a boundary that
+no longer described it. Colour layering now stops at its own
+`maximumColourMRCPageMegapixels = 88`, **derived** as 400 × 5.5 / 25 and asserted as that
+derivation rather than as the literal, so it cannot go stale the way the last one did. A colour
+page above it is layered in **grey**, not left unlayered — the same fallback the colour *render*
+failure already takes. Corpus impact **none**: the largest page in 233 documents is 64.84 MP and
+none exceeds 72.
+
+**A13.4 · one of three page lookups did not throw.** `recogniseDocument`'s
+`guard let page = doc.page(at:) else { continue }`, where both siblings throw. `missingPages`
+caught the gap downstream, so nothing published untexted — and the refusal it raises says "the
+recogniser returned nothing for page N" over a page PDFKit would not hand over, naming the wrong
+cause. §4b's shape.
+
+**A13.4 · `compose`'s `minimumConfidence` was a second live definition of a filter
+`Recogniser.recognise` already applies**, with no shipped caller setting it. Removed; the
+confidence filter lives where the confidences are made. `ocrAllPages` is the same shape and is
+already in this register for it.
+
+**A13.4 · a signal death was reported as "it exited with code 11".** The helper's exit codes stop
+at 6, so the one number in the message pointed the reader at a list that could not contain it.
+The codes now live in `Recogniser.swift` — which the helper compiles too, R40's design, so there
+is one list rather than two — and the message asks `Process.terminationReason` which kind of
+death it was. **Not** arithmetic on the number: the first version of the fix guessed that a small
+code absent from the list must be a signal, and the suite has a fixture whose helper genuinely
+exits 7. Two different facts, and only one of them is knowable by counting.
+
+**A1.3 · the two outline walks disagreed about their own bound.** `readOutline` walks the root's
+*children* at depth 0 and allows 32 levels of real entries; `copyOutline` walked the *root* at
+depth 0, so the root spent a level and it allowed 31. Both were bounded, which is why nothing
+noticed — R23 is in this register because two mirrors disagreed, and "each is bounded" is not the
+property. Watched failing before the fix: `readOutline kept 32 levels, copyOutline kept 31`, on
+the 4,000-level fixture. And `readOutline` took `doc.index(for: page)` unbounded where its mirror
+already checked `index < dst.pageCount` — `index(for:)` answers `NSNotFound` for a page the
+document does not hold, and that went into `pageIndex` as a real number.
+
+**Left open deliberately, with what is now known:**
+
+- **A1.4** — the seven welds where the reserve *did* apply and the drawn gap was 2.6–7.3 pt.
+  R82 does not touch them and was not expected to. What changed is that they are now countable:
+  `score-line-separation welded=` reads **2 of 1,684** adjacent fragment pairs on the six
+  documents measured, which is the residue A1.4 describes. The mechanism is PDFKit's line
+  grouping over the whole sheet — a two-fragment page with the same geometry produces a correct
+  space — and nothing in this codebase can pin it from outside.
+- **A13.4's remaining three**: `recognitionInHelpers` is a fresh probe at `finishUp` rather than
+  a record of what happened; progress means different things on the two routes, so the bar goes
+  backwards after a fallback; and `helperStallSeconds = 900` is fifteen minutes per file before a
+  wedged helper is given up on. All three are real, all three are behaviour changes to the run
+  report or the progress model, and none of them is a text-layer or geometry defect. They belong
+  with the next piece of work in `Runner`/`RunReport`, not bolted onto a `SearchableWriter`
+  session.
+- **A3.5** — a document whose pages are half born-digital gets no warning, because
+  `hasDigitalText`'s majority rule reads a tie as "no". Untouched, and deliberately: it wants the
+  same treatment as R56 and R57, which is a signal measured over known material rather than a
+  threshold tuned on the two documents that exposed it. Adding one here would be the fifth tuned
+  constant this register has refused.
 
 ### T12 · Two instruments that reported clean over things they had not measured — FIXED
 *(found 2026-08-14 by the whole-codebase review; `REVIEW-2026-08-14.md` A12.5 and A12.7.)*

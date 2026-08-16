@@ -68,7 +68,8 @@ refused the commit that introduced it.
 | tool | question it answers |
 |---|---|
 | `score-corpus.swift` | Per document: line-start/line-end selectability, text-layer offset, source line tightness, word retention. One TSV row per document. |
-| `score-line-separation.swift` | Do recognised lines survive as *separate* lines in the output? The metric that matches "selecting a paragraph skips a line": `merged=M/N` over adjacent visual-line pairs, plus a `runaway=` character share. Optional `headroomFactor`, `minimumVertical`, `reserveEms` as argv[3-5]. **Carries a self-test that runs on every invocation** (exit 4). Figures from before T14 are not comparable — it used to divide PDFKit lines by Vision fragments. |
+| `score-line-separation.swift` | Do recognised lines survive as *separate* lines in the output? The metric that matches "selecting a paragraph skips a line": `merged=M/N` over adjacent visual-line pairs, plus a `runaway=` character share. **`welded=W/N` is property (d)** — adjacent fragments of ONE row arriving with nothing between them, `femalemember` — added for R82, because nothing here could count a weld and so every column read identical across a change that fixed seventeen of them. It groups rows at `.taller` for that column and `.shorter` for the others, deliberately: see the header. Optional `headroomFactor`, `minimumVertical`, `reserveEms` as argv[3-5]. **Carries a self-test that runs on every invocation** (exit 4). Figures from before T14 are not comparable — it used to divide PDFKit lines by Vision fragments. |
+| `score-run-width.swift` | How much of its own box does each run actually cover, and how much of the height it wanted did the ceiling leave it? The two halves of the fight invariant 3 is about, counted over every fragment on the sampled pages. Built for `BUGS.md` R81, which the three probes below are **structurally unable to see**: over a run drawn at 5% of its box, their right-hand-15% rectangle sits on the line above, which does reach it, so the page scores clean. Asks the writer directly — `SearchableWriter.prepared`, `rightLimit`, `headroom`, `placement` — rather than re-deriving any of it. `crushed` is C20's symptom, both directions lost at once. **Carries a self-test that runs on every invocation** (exit 4), including a direction proof that does not go through `rightLimit`, so it keeps its ability to see a sliver on the day one is fixed. Measures the **direct** route and the header says so. |
 | `make-observations.swift` | `<pdf> <out.json> [password]` — the reference JSON the three probes below read. Invariant 3's procedure was not executable without it. A wrapper over `Recogniser.extract` at `textFormat = .json`, so the probes read the same bytes Extract Text ▸ JSON gives a user. |
 | `score-gate.swift` | **The release gate.** Every document in a corpus through `OCRModel.start()` end to end, at the app's own concurrency — the check the unit suite cannot do. Run before any release touching `Flattener`, `SearchableWriter` or `JBIG2`; baseline in HANDOFF.md. |
 | `score-routing.swift` | Per page: bilevel or greyscale, and KB/page. Catches both a picture routed to 1-bit (content destroyed) and text routed to greyscale (file balloons). |
@@ -83,6 +84,16 @@ places, and it is one idea, not three instruments. `score-corpus` is the one to
 quote; the other two exist to say *which* lines failed and to sweep a whole
 document. Do not report them as independent corroboration of each other, which is
 what "four invariant-3 instruments" invited.
+
+**`score-run-width` is not a fourth shell on that rect, and the difference is the
+point.** The rect asks "is *anything* selectable at the end of this line", which a
+neighbouring line's run can answer for it; `score-run-width` asks the writer how
+wide it drew *this* run and how far the ceiling squashed it. That is why R81 —
+62 of 852 shortened runs drawn under half their box on 24 newspaper pages, the
+worst at 2.84% — sat under a clean score for as long as it did. Quote it for
+property (c) alongside `score-corpus`, not
+instead of it: one measures what the writer intends, the other what a reader can
+select, and R81 is exactly a case where those two disagreed.
 | `pdf-extract-pages.swift` | `<src> <dest> <page…>` — pull pages into a small fixture. |
 | `pdf-page-text.swift` | `<pdf> <page>` — that page's embedded text, no OCR. |
 | `pdf-info.swift` | Pages, how many carry text, total characters, page box, encryption. |

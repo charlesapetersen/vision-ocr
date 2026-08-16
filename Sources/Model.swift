@@ -958,8 +958,36 @@ final class OCRModel: ObservableObject {
     /// pages get re-rendered even when there is no text layer to strip.
     nonisolated static func wantsJBIG2(rebuild: Bool, settings: Prefs.Snapshot,
                                        mode: Flattener.Mode,
-                                       available: Bool = JBIG2.isAvailable) -> Bool {
-        rebuild && settings.useJBIG2 && mode.canUseJBIG2 && available
+                                       available: Bool = JBIG2.isAvailable,
+                                       trimmed: @autoclosure () -> Bool = false) -> Bool {
+        // `trimmed` last and behind an autoclosure: answering it means opening
+        // the document and reading every page's two boxes, and `&&` short-circuits
+        // before it whenever the route was never on offer. A plain `Bool` here
+        // made every file in every batch pay for a question only some of them
+        // ask — including the ones that are not being rebuilt at all.
+        rebuild && settings.useJBIG2 && mode.canUseJBIG2 && available && !trimmed()
+    }
+
+    /// Does this file hide part of any sheet behind a crop box?
+    ///
+    /// C23. It decides the route, so it is a function rather than a line inside
+    /// `makeSearchablePDF`: the same question is asked by the suite, and by
+    /// anyone checking why a document came out larger than its neighbour.
+    ///
+    /// A crop box equal to the media box — 26 of 78 corpus documents write one —
+    /// is not a trim and does not count. The comparison is exact rather than
+    /// tolerant: `Flattener.cropRegion` already normalises a null, empty or
+    /// out-of-page crop to the whole page, so the only thing an epsilon would
+    /// buy is a page trimmed by a millionth of a point, which no route
+    /// difference can matter to.
+    nonisolated static func hasTrimmedPages(_ file: URL, password: String?) -> Bool {
+        guard let doc = Flattener.open(file, password: password) else { return false }
+        for index in 0..<doc.pageCount {
+            guard let page = doc.page(at: index) else { continue }
+            let sheet = CGRect(origin: .zero, size: Flattener.fullBox(of: page).size)
+            if SearchableWriter.cropRegion(of: page, on: sheet) != sheet { return true }
+        }
+        return false
     }
 
     /// Whether this file's pages will be re-rendered — the question the Settings
@@ -1824,8 +1852,26 @@ final class OCRModel: ObservableObject {
         //
         //    `rebuild` gates JBIG2 as well: wanting bitmaps is not permission to
         //    re-render pages the user asked us to leave alone.
+        //
+        //    C23: and a document that hides part of its sheet behind a crop box
+        //    does not take this route at all. `qpdf --overlay` wraps BOTH the
+        //    destination's content and the stamped layer in form XObjects whose
+        //    `/BBox` is the destination page's **crop** box, then centres that
+        //    box on the media box. Measured on a 612x792 page cropped to
+        //    312x400 at (100,100): the page image came out translated by
+        //    (50, 96) — exactly the centring — and everything outside the crop
+        //    was clipped away by the form, so lifting the trim off the published
+        //    copy revealed nothing. That is invariant 1's harm arriving through
+        //    the fix for C23, so the crop box cannot be present when qpdf runs,
+        //    and there is nowhere else to put it: CGPDFContext and PDFKit both
+        //    drop the /JBIG2Decode streams when copying the pages afterwards
+        //    (measured, 7,391 -> 13,401 bytes with the compression gone).
+        //    So those documents take the Flate route, which carries the crop
+        //    correctly, and pay in size. 16 of 233 corpus documents, 627 of
+        //    16,987 pages, 6.8% of the corpus by bytes.
         let wantJBIG2 = Self.wantsJBIG2(rebuild: rebuild, settings: settings,
-                                        mode: rebuildMode)
+                                        mode: rebuildMode,
+                                        trimmed: Self.hasTrimmedPages(file, password: password))
         var visible = file
         var bitmaps: [Flattener.RebuiltPage] = []
         var encoded: [JBIG2.Page] = []
@@ -1834,6 +1880,10 @@ final class OCRModel: ObservableObject {
         // still to read. Only these: the JPEGs in the same directory are the
         // picture pages' actual streams and the assembly reads them later.
         var spentBitmaps: [URL] = []
+        /// C23. Where each page's crop box lands on the published sheet, for the
+        /// pages whose source hid part of it. Empty on the non-rebuild route,
+        /// where `compose` reads the real thing off the user's own file.
+        var sourceCropBoxes: [Int: CGRect] = [:]
 
         // Rebuild when there's an old text layer to strip, and also whenever
         // JBIG2 is wanted — it needs the per-page bitmaps.
@@ -1896,6 +1946,14 @@ final class OCRModel: ObservableObject {
                         }
                     } : nil)
                 visible = rebuilt
+                // C23. `compose` reads its boxes from `visible`, which is now the
+                // rebuilt copy and carries only a media box — so its "media box
+                // for what is kept, crop box for what is shown" was writing the
+                // same rectangle twice. These are the source's, in the rebuilt
+                // page's own space, keyed the way `compose` numbers pages.
+                for (index, page) in bitmaps.enumerated() {
+                    if let crop = page.sourceCropBox { sourceCropBoxes[index + 1] = crop }
+                }
             } catch {
                 // Same as below: a cancelled jbig2 child surfaces here as a
                 // throw, and is a cancellation, not a broken file.
@@ -2080,7 +2138,13 @@ final class OCRModel: ObservableObject {
                               let page = source.page(at: index),
                               let boxes = byPage[index + 1]?.map({ $0.boundingBox }),
                               !boxes.isEmpty else { continue }
-                        let before = (try? Data(contentsOf: existing).count) ?? 0
+                        // A2.4. `Data(contentsOf:).count` read the whole file
+                        // into memory to learn its size, on the per-page path,
+                        // while `sizeNote` two hundred lines away answers the
+                        // same question from the file's attributes — C20's shape,
+                        // with the expensive copy on the hot side. `fileSize`
+                        // is the one definition now.
+                        let before = fileSize(existing)
                         guard let layers = Flattener.mrcLayers(
                             for: page, boxes: boxes, into: pngDir,
                             stem: String(format: "m%05d", index + 1),
@@ -2103,7 +2167,7 @@ final class OCRModel: ObservableObject {
                         }
                         try? FileManager.default.removeItem(at: layers.mask)
                         let after = [stencil, layers.background, layers.foreground]
-                            .reduce(0) { $0 + ((try? Data(contentsOf: $1).count) ?? 0) }
+                            .reduce(0) { $0 + fileSize($1) }
                         // Three layers are not always cheaper than one image —
                         // a page of dense halftone with a caption under it can
                         // come out larger. Keep whichever is smaller rather than
@@ -2145,6 +2209,7 @@ final class OCRModel: ObservableObject {
                     visible: visible, observations: byPage, to: textLayer,
                     drawImages: false, password: password,
                     joinHyphenated: settings.joinHyphenated,
+                    cropBoxes: sourceCropBoxes,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Writing text layer \(d) of \(t)",
                                                  layerShare(d, t)) })
@@ -2201,6 +2266,7 @@ final class OCRModel: ObservableObject {
                     visible: visible, observations: byPage, to: staged,
                     password: password,
                     joinHyphenated: settings.joinHyphenated,
+                    cropBoxes: sourceCropBoxes,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Writing pages \(d) of \(t)",
                                                  layerShare(d, t)) })
@@ -2365,6 +2431,15 @@ final class OCRModel: ObservableObject {
             + (lost.count > 3 ? " …" : "")
     }
 
+    /// How many bytes a file holds, without reading it.
+    ///
+    /// A2.4: the MRC loop asked with `Data(contentsOf:).count` — the whole file
+    /// into memory, per page, to compare two sizes — while `sizeNote` asked the
+    /// file system. One definition, and the cheap one.
+    nonisolated static func fileSize(_ url: URL) -> Int {
+        ((try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? Int) ?? 0
+    }
+
     nonisolated static func sizeNote(from input: URL, to output: URL) -> String {
         // PDF in, PDF out, or the comparison is meaningless. The drop box also
         // takes jpg, png, heic and tiff, and a photograph wrapped into a
@@ -2372,11 +2447,8 @@ final class OCRModel: ObservableObject {
         // original "used a stronger compression" would be both wrong and
         // baffling, since the user never chose a compression at all.
         guard input.pathExtension.lowercased() == "pdf" else { return "" }
-        func bytes(_ url: URL) -> Int? {
-            (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? Int
-        }
-        guard let before = bytes(input), let after = bytes(output),
-              before > 0, after > before else { return "" }
+        let before = fileSize(input), after = fileSize(output)
+        guard before > 0, after > before else { return "" }
         // A hair over is not worth a sentence; the searchable copy carries a
         // text layer the original did not have, and that is the product.
         guard Double(after) / Double(before) >= sizeNoteRatio else { return "" }
