@@ -1,0 +1,56 @@
+RUN STATUS: IN_PROGRESS — first unattended run
+
+<!-- Copy this to ~/.local/state/visionocr-autonomous/RUN.md before the first start:
+       mkdir -p ~/.local/state/visionocr-autonomous
+       cp ops/autonomous/RUN.md.template ~/.local/state/visionocr-autonomous/RUN.md
+     It lives OUTSIDE the repo on purpose. It changes every session, so keeping it in the tree would
+     churn commits for state that is not part of the project's history — and the things that ARE part of
+     that history (the register, the queue, the changelog) are committed and pushed, so a fresh session
+     still recovers everything that matters from git.
+
+     ⚠️ The "RUN STATUS:" line above must stay a PLAIN greppable line. The daemon stops on
+     `grep '^RUN STATUS: COMPLETE'`, so decorating it (`**RUN STATUS:**`) means COMPLETE can never be
+     detected and the daemon never unloads. -->
+
+## FOCUS
+
+Nothing in particular — work the queue in order.
+
+<!-- This is your steering wheel, and the cheapest one you have. Free prose; the session reads it before
+     it reads the queue and treats it as overriding queue order. Use it to say things like:
+
+       Work only on C24b this week. Leave the review-area items alone.
+       Do not touch the routing at all — I am measuring it by hand.
+       Prefer small documentation reconciliations; I want the trees quiet before a release.
+
+     Editing this file also WAKES the daemon: the work fingerprint covers the RUN STATUS line, and a
+     queue edit or a commit cuts the current backoff short, so you are never waiting out a 30-minute
+     nap after unblocking it. -->
+
+## HOLD (owner-only)
+
+Nothing beyond the standing list in `ops/autonomous/QUEUE.md` §HOLD — a release, anything that writes
+`testdocs/` or the Zotero library, and the by-hand tab-order walk.
+
+<!-- Add anything here you want the run to leave alone. The resume prompt reads this section as off
+     limits, and `next-item.sh` independently refuses any queue item tagged `[hold]` / `needs: owner`,
+     so the two layers agree without either trusting the other. -->
+
+## NEEDS OWNER
+
+<!-- The daemon's outbox. A session that hits something needing a human APPENDS here and moves on — it
+     never waits, because nobody is awake to answer. `daemon.sh status` surfaces this under "Needs you".
+
+     This is the half of the arrangement that makes unattended work safe: the run does not have to
+     choose between guessing and stopping. Drain it when you check in. -->
+
+## SESSION LOG
+
+<!-- Newest first — sessions PREPEND. `compact-runlog.sh` trims this to the newest 8 entries between
+     cycles and archives the tail to RUN-SESSION-ARCHIVE.md beside this file, so the file a fresh
+     session reads to orient cannot grow without bound. Everything above this heading is structurally
+     untouchable by that compactor.
+
+     One entry per session: the date, the item tag, the sha, one line of result — and, if the item was
+     left unfinished, EXACTLY which sub-steps remain and the last checkpoint sha, so the next session
+     continues instead of restarting. -->

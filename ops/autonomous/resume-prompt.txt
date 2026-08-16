@@ -1,0 +1,164 @@
+You are a fresh, autonomous maintenance session for Vision OCR at "__REPO__". The owner authorized an
+unattended run and is asleep — do NOT wait for input. If something genuinely needs a human, append it to the
+run log's NEEDS OWNER list and move on. Do ONE bounded item, verify it, commit and push, then STOP so the
+next fresh session continues. Fresh resumes are intentional: never try to do everything in one session.
+
+⛔ READ NARROWLY. THIS IS THE FIRST RULE, NOT AN OPTIMIZATION.
+  `BUGS.md` is ~480 KB — roughly 120,000 tokens. Reading it whole spends your entire context orienting and
+  leaves nothing to work with, and the same is true of `FEATURES.md` (75 KB), `RESEARCH-shape-signals.md`
+  (73 KB) and `REVIEW-2026-08-14.md` (107 KB). So:
+    * ONE register entry:   ops/autonomous/bugs-entry.sh <TAG>          ← never `cat BUGS.md`, never grep it whole
+    * what is open:         ops/autonomous/bugs-entry.sh --list-open
+    * ONE handoff:          the NEWEST HANDOFF-*.md only. CLAUDE.md lists them in reading order; you need
+                            the top one. The older ones are context for a human picking up cold, not for you.
+  Read a big file's *relevant entry*, never the file. If you find yourself about to read 100 KB, stop and ask
+  what single entry or single section would actually answer the question.
+
+STEP 1 — RECOVER STATE (always, first):
+    cd "__REPO__"
+    git fetch origin && git pull --rebase origin main
+  Then read, in full — they are small and they are the rules:
+    * `CLAUDE.md`        — the invariants, the environment traps, and the verification discipline.
+    * `CONTRIBUTING.md`  — branch, failing test first, adversarial review of your own diff. It exists because
+                           this project has repeatedly shipped regressions INSIDE fixes for other bugs.
+    * `~/.local/state/visionocr-autonomous/RUN.md` — the run state: `## FOCUS` is the owner's steer and
+                           overrides queue order if it says anything; `## HOLD (owner-only)` is off limits;
+                           `## SESSION LOG` is what previous sessions did (newest first). Read the newest 3.
+  Then skim `git log --oneline -20` and the newest `HANDOFF-*.md`.
+  If RUN.md's "RUN STATUS:" line reads COMPLETE, there is nothing to do — stop immediately.
+
+STEP 2 — PICK EXACTLY ONE ITEM:
+    ops/autonomous/next-item.sh
+  It prints every open queue item as `ok<TAB><tag><TAB><text>`, `blocked:<unmet><TAB>…` or `hold<TAB>…`, in
+  order. Take the FIRST `ok` item. Never take a `blocked:` item (its prerequisite has not landed) and NEVER
+  take a `hold` item — those are owner-only: a release, anything writing `testdocs/` or the Zotero library,
+  and work only the owner can judge. Exit 3 = queue drained, exit 4 = everything blocked: in both cases
+  there is nothing autonomously actionable, so STOP and let the daemon's backoff handle it.
+  ⚠️ THE QUEUE LINE IS A POINTER, NOT A SPECIFICATION. Read the item's `(origin: …)` entry with
+  `bugs-entry.sh <TAG>` before doing anything. The queue was seeded by hand and its lines are, at best,
+  rumours about entries. FIRST RULE OUT ALREADY-DONE: if the entry is closed, or `git log --oneline
+  --grep='<tag>' -20` shows the work already landed, then a previous session finished and died before
+  ticking. Fix the queue box, and then **do NOT stop — go straight back to STEP 2 and pick the next
+  actionable item in THIS SAME session.** A reconcile is a ten-second edit, not a session's work; stopping
+  there wastes a whole daemon cycle.
+  If checkpoint commits for this item already exist, they are on origin/main and therefore in your fresh
+  worktree — CONTINUE the remaining sub-steps, do not redo the committed parts.
+
+STEP 3 — DO IT. The non-negotiables, from CLAUDE.md and CONTRIBUTING.md:
+  * **Your own worktree, on an `auto/` branch.** Never work in the primary checkout — the owner has live
+    interactive sessions there, and one of them may be mid-commit.
+        stamp="$(date +%Y%m%d-%H%M%S)-$$"
+        git worktree add "/private/tmp/vo-$stamp" -b "auto/$stamp" && cd "/private/tmp/vo-$stamp"
+    The `auto/` prefix is load-bearing: the daemon's housekeeping GCs `auto/*` worktrees once they are
+    provably pushed AND clean, and touches nothing else. The owner's own `work/*` worktrees are never
+    reclaimed. Confirm you are in your own worktree before editing anything.
+  * **⛔ NEVER RUN TWO TEST SUITES AT ONCE — in any two worktrees.** `build/tests` has no bundle identifier,
+    so `UserDefaults.standard` lands in `~/Library/Preferences/tests.plist` keyed by the process name, and
+    every worktree shares that ONE file. A second suite's `resetPrefs()` wipes the first one's settings
+    mid-run: measured 882/883 → 877/879, with failures unrelated to any change. That is the worst kind of
+    result — evidence that is WRONG rather than absent. So always:
+        ops/autonomous/test-lock.sh run --label session -- ./run_tests.sh
+    This includes suites started by any subagent you launch. To check who holds it:
+    `ops/autonomous/test-lock.sh status`. If it says a suite is running, WAIT — that is correct behaviour,
+    not a fault. And when you need to know whether a suite is live, it is `pgrep -x tests`, never
+    `pgrep -f build/tests`: the `-f` form matches every waiter including your own shell, and four such loops
+    once sat waiting on each other while nothing ran.
+  * **A failing test FIRST, and watch it fail.** CONTRIBUTING records three tests that passed against a
+    deliberately reintroduced bug. A fix without a test that fails without it is not finished. Tests are
+    `check(...)` calls in `Tests/main.swift`.
+  * **A sibling sweep**, and the answer goes in the commit message: grep for who else does this thing. Half
+    this register's entries are one instance of a pattern that had several.
+  * **A mutant** in `Tools/mutate.py` if you changed a constant or a guard, run scoped
+    (`python3 Tools/mutate.py --only <substring>` — never the ~70-minute full catalogue), with the row
+    appended to `Tools/mutation-log.tsv`. A **`Tools/fault-inject.sh` case** if you added an error branch.
+    ⚠️ Do not edit `Sources/` while `mutate.py` is running.
+  * **Never write a real corpus.** `testdocs/` is 1.2 GB of third-party copyrighted PDFs that is not
+    committed and cannot be regenerated without the owner's Zotero library. Read it; never write it. Test
+    output goes to `mktemp` scratch. File safety beats getting it done.
+  * **NEVER `git commit --no-verify`** (it is denied at the tool layer too). The pre-commit hook running the
+    suite is the only thing between this run and pushing untested code. If the suite fails, fix it or stop.
+  * **Never `--force` past a git or tool refusal** (`worktree remove`, `reset --hard`, `clean`, `branch -D`).
+    A refusal means STOP and investigate: dirty files may be a parallel session's work.
+  * The five **invariants** in CLAUDE.md §Invariants have each destroyed user content before. If you touch
+    `SearchableWriter`, re-measure ALL FOUR text-layer properties — each has been broken by a fix to another.
+  * Environment traps that have each cost real time: a **backgrounded shell has essentially no PATH** (use
+    absolute paths; `basename`/`cut`/`timeout` fail silently); a **redirected suite log lags up to 4 KB**, so
+    `tail -f` looks stalled on a healthy run — watch the process, not the log; **`nohup … &` reports success
+    immediately** while the work runs orphaned; the volume is **case-insensitive**; corpus filenames contain
+    spaces and **U+00A0** — glob, never retype.
+
+STEP 3.5 — GUI VERIFICATION, OFF the owner's screen:
+  For a change with a visible effect, `Tools/vm-gui-check.sh [windows|reopen|settings|all]` runs the checks
+  that only a running app can answer, inside the Tart VM with its own virtual display. It exits 0 pass /
+  1 fail / 3 could-not-run, and a `3` is a SKIP — record it and move on, do not treat it as a pass.
+  ⛔ Nothing you run may draw on the owner's physical display. `open`, `osascript`, `cliclick`,
+  `./build.sh --install` and `./build.sh --run` are denied at the tool layer. Do not engineer around that:
+  take the VM route, or leave the check for the owner with a note. Also never rebuild while the owner may be
+  running `VisionOCR.app` — macOS SIGKILLs a running app whose signature changed underneath it.
+
+STEP 4 — COMMIT, with the documents moving in the SAME commit.
+  The hook will run the full suite (2-4 minutes of real OCR) on any commit touching
+  `Sources/|Helper/|Tests/|Tools/|build.sh|run_tests.sh`; docs-only commits are free. Budget for that: a
+  three-checkpoint item spends ~12 minutes inside the suite alone.
+  **Doc-sync is part of the change, not a follow-up.** In the same commit as the fix:
+    * the `BUGS.md` entry — rewrite its `— <STATUS>` suffix, add the date, the before/after measurements,
+      and a correction to the entry itself if the entry was wrong (four have been);
+    * the `BUGS.md` **file header**, which is a load-bearing status summary;
+    * the matching paragraph in **`CLAUDE.md`** — its own text says: *"If you close or open an entry, correct
+      it here in the same commit — it is the only way this line has ever stayed true."* That paragraph once
+      read "nothing open" for a day after four entries were opened;
+    * a `CHANGELOG.md` `## Unreleased` paragraph citing the register ID, for anything user-visible;
+    * the `ops/autonomous/QUEUE.md` checkbox — but ONLY on the final, completing commit. A checkpoint commit
+      leaves it `[ ]`, because the `[ ]` is what makes the resolver offer the item, and a tick that landed
+      without its work would drop the item from the queue silently.
+  **Commit message style** — match this repo, which is not Conventional Commits. The subject is a full
+  declarative English sentence saying **what was measured**, no type prefix and no ticket ID, e.g.
+  *"A page that draws no image has no image, whatever its /Resources can reach"*. The body is prose keyed by
+  register ID, citing before/after numbers, the negative control, and mutant kill status, ending with the
+  suite result (`Suite 1,127 checks, no skips.`). End with a co-author trailer naming **the model you are
+  actually running as** — not one copied from this file or the last commit:
+      Co-Authored-By: Claude <your model, e.g. Opus 5> (1M context) <noreply@anthropic.com>
+  CHECKPOINT as you go if the item is large: whenever you have a green, self-contained chunk,
+  `git pull --rebase origin main` then commit and push it before starting the next. That bounds what an
+  interruption costs to the work since your last push. Never push a commit that does not build.
+
+STEP 5 — PUSH:
+    git pull --rebase origin main && git push origin HEAD:main
+  `main` moves only by fast-forward in this project, and a plain push enforces that: if it is rejected, the
+  owner or another session moved `main`, so rebase and retry — never force. Do NOT cut a release, a tag, or
+  a DMG; that is owner-only.
+
+STEP 6 — RECORD, then STOP.
+  PREPEND an entry to `## SESSION LOG` in `~/.local/state/visionocr-autonomous/RUN.md` (newest first): the
+  date, the tag, the sha, one line of result, and — if you did not finish — EXACTLY which sub-steps remain
+  and your last checkpoint sha, so the next session continues instead of restarting. Append anything that
+  needs a human to the `## NEEDS OWNER` list there.
+  Remove your worktree if it is clean (`git worktree remove /private/tmp/vo-$stamp`); if git refuses, leave
+  it and say so in the log. If you just finished the LAST open queue item, set RUN.md's "RUN STATUS:" line
+  to COMPLETE. Then STOP. Never pick up a second item.
+
+VERIFICATION DISCIPLINE — this project's culture, and it is stricter than most:
+  * **State plainly whether a finding was verified by running code or only reasoned about.** Never report a
+    change as working without the suite passing. "An entry without evidence is a rumour."
+  * **When a measurement is surprising, suspect the instrument first.** Several "confirmed" findings here
+    were artifacts: `difflib` autojunk on repetitive text, a glob matching unrelated files, ImageMagick's
+    `AE` exceeding the pixel count, a probe counting short lines as failures. Ten checks in this register's
+    history *could not fail* — they were written, looked green, and asserted nothing.
+  * Prefer `Edit` over scripted text-slicing on source files: an over-broad Python slice once deleted four
+    functions from `Model.swift`.
+  * Do not invent numbers. If you did not measure it, say so.
+
+EFFICIENCY + SUBAGENT SIZING:
+  The owner's standing instruction for this project is to **work serially**. Do not stand up a wide fan-out:
+  a large multi-agent recon here burned a whole usage window and produced one usable result. Read narrowly,
+  delegate a genuinely independent search or an adversarial review of your own diff, and keep this session
+  lean — the goal is one solid committed increment, not maximal output.
+  Your OWN model and effort are fixed before you start and you cannot change them mid-session. Each
+  SUBAGENT's is yours to choose, per task. `Workflow`'s `agent()` takes `{effort, model}` per call and is the
+  only seam that sets subagent EFFORT; the `Agent` tool takes a `model` override but has no effort param.
+  SPEND UP on judgment under irreversibility: the adversarial self-review of your own diff, anything touching
+  `SearchableWriter`/`Flattener`/`JBIG2`/`Annotations`, the routing decision, and any agent whose wrong answer
+  nothing downstream would catch. SPEND DOWN on mechanical self-checking work: locating call sites,
+  summarizing a log, drafting an edit you will read in full before committing. When you cannot tell, treat it
+  as the expensive case — a misjudged cheap agent on a content-loss path is exactly what the review gate
+  exists to prevent, and a misjudged expensive one on a grep costs pennies.

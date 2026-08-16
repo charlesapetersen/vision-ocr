@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Must match the daemon's own $JOB (`com.${VISIONOCR_LABEL:-visionocr}.autonomous`) CHARACTER FOR
+       CHARACTER: `park_run`, the RUN-STATUS-COMPLETE exit and `daemon.sh stop` all `launchctl bootout`
+       this label. A label that does not match the one launchd registered means every intentional stop
+       silently fails and KeepAlive relaunches the daemon it just tried to retire. -->
+  <key>Label</key>
+  <string>com.visionocr.autonomous</string>
+
+  <!-- Runs the INSTALLED copy of the same long-lived loop (one argument, no wrapper). The script lives
+       under ~/.local/bin, i.e. OUTSIDE ~/Desktop, and that placement is load-bearing rather than tidy: a
+       launchd-context bash cannot exec anything under Desktop (TCC) — it dies with "Operation not
+       permitted" and the job then silently no-ops on every relaunch. -->
+  <!-- __HOME__ / __REPO__ are rendered by `daemon.sh` at install time. launchd expands NEITHER `~` NOR
+       `$HOME` in a path, and the committed template has to stay user-agnostic, so the placeholders are the
+       only way to have both. daemon.sh lints the RENDERED file, since that is what launchd actually loads. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>__HOME__/.local/bin/vision-ocr-autonomous.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- The installed daemon sits outside any checkout, so it cannot derive the repo from its own location,
+         and it REFUSES to start without this (there is deliberately no hardcoded fallback — guessing wrong
+         means working in a directory that does not exist and failing obscurely every cycle). -->
+    <key>VISIONOCR_REPO</key>
+    <string>__REPO__</string>
+    <!-- ⚠️ NOT boilerplate, and not something the daemon can recover from on its own. vision-ocr's CLAUDE.md
+         lists it as an environment trap: "Backgrounded shell commands have essentially no PATH — basename,
+         cut, timeout fail silently and loops report bogus results." A launchd job is the extreme case. The
+         build needs /opt/homebrew/bin for `jbig2` and `qpdf`, and `build.sh` treats "not installed" as
+         BENIGN — so a PATH-less launch would not fail, it would ship a bundle missing its own tools and
+         report success. The daemon exports the same list itself; this is the belt to that braces, because
+         launchd's environment is what everything before that line inherits. -->
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- KeepAlive=true: the only thing that STOPS this daemon is a `launchctl bootout`, which every
+       INTENTIONAL stop performs (park_run, RUN STATUS: COMPLETE, `daemon.sh stop`). Any OTHER death — a
+       crash, an OOM kill, a stray SIGTERM — leaves the job registered, so launchd relaunches it.
+       ⚠️ DELIBERATELY NOT {SuccessfulExit: false}: the daemon traps SIGTERM/INT/HUP and exits 0, so a
+       stray TERM would look "successful" and would NOT be restarted. That is exactly how a real daemon
+       death went unnoticed in the sibling project (2026-07-17: TERMed mid-session, nothing restarted it,
+       and the only evidence was a "daemon up" line with no matching "daemon down"). KeepAlive=true makes
+       any bootout-less death restart, closing that gap. -->
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- Don't hammer on a startup crash-loop: 60s minimum between (re)launches. Also the reason
+       `daemon.sh`'s post-launch poll can legitimately come up empty — see step 7 there. -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+  <!-- launchd's own view of the job, separate from the daemon's $STATE/daemon.log: these two files are
+       where a failure BEFORE the daemon's first log line lands (a bad interpreter, a TCC refusal, an
+       unset VISIONOCR_REPO). Read them first when `daemon up` never appears. -->
+  <key>StandardOutPath</key>
+  <string>__HOME__/.local/state/visionocr-autonomous/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/.local/state/visionocr-autonomous/launchd.err.log</string>
+
+  <!-- A LaunchAgent loads in the GUI login session. So this survives a daemon CRASH but NOT a logout or a
+       reboot, and reboot-survival is deliberately out of scope: bringing the run back after a reboot means
+       a LaunchDaemon in a root domain with no logged-in user's keychain, TCC grants or `caffeinate`
+       assertion — none of which this daemon can work without. Background is the right ProcessType for a
+       long loop that must not be treated as interactive by the scheduler. -->
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

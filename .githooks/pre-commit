@@ -85,6 +85,44 @@ EOF
 
 echo "pre-commit: running ./run_tests.sh (2-4 minutes; it runs real OCR)…"
 log=$(mktemp -t vrg-precommit)
+# ONE SUITE AT A TIME, machine-wide. `build/tests` has no bundle identifier, so
+# UserDefaults.standard lands in ~/Library/Preferences/tests.plist keyed by the
+# process *name* — and every worktree shares that one file. A second suite's
+# resetPrefs() wipes this one's settings mid-run: measured 882/883 -> 877/879,
+# with two failures in the run-report block that had nothing to do with the
+# change under test. CLAUDE.md lists it first among the environment traps.
+#
+# Until the autonomous daemon existed this was a discipline — one human, one
+# suite at a time, and remembering. A daemon that commits on its own cadence
+# turns it into a race: its health gate runs the suite, and every session's
+# commit lands here. So the hook takes the lock rather than trusting whoever is
+# at the keyboard. That protects interactive commits too, which is the point:
+# the collision needs only ONE careless party, and now neither party can be one.
+#
+# ⚠️ DEGRADES EXACTLY TO THE OLD BEHAVIOUR when the helper is absent (an older
+# checkout, a clone that has not merged ops/autonomous yet). This guard must
+# never be the reason a commit cannot happen — it is here to make evidence
+# trustworthy, not to add a way to fail.
+#
+# The lock is acquired here and released by an EXIT trap rather than wrapping
+# the suite in `test-lock.sh run`, so its "waiting for the suite" notice reaches
+# your terminal instead of being swallowed into $log — a hook that appears to
+# hang for ten minutes with no explanation is worse than one that says why.
+LOCK_SH="ops/autonomous/test-lock.sh"
+if [ -x "$LOCK_SH" ]; then
+  # VISIONOCR_TEST_LOCK_PID makes THIS hook the holder of record, so if the
+  # commit is interrupted the lock is reclaimable the moment this pid is gone.
+  if ! VISIONOCR_TEST_LOCK_PID=$$ "$LOCK_SH" acquire --label "pre-commit $$" --wait 1800; then
+    echo >&2
+    echo "pre-commit: another test suite has been running for 30 minutes and the" >&2
+    echo "            suite lock never freed. Refusing rather than running a second" >&2
+    echo "            suite, which would corrupt BOTH runs' results." >&2
+    echo "            Check who holds it:  $LOCK_SH status" >&2
+    exit 1
+  fi
+  trap 'VISIONOCR_TEST_LOCK_PID=$$ "$LOCK_SH" release >/dev/null 2>&1' EXIT
+fi
+
 if ! ./run_tests.sh >"$log" 2>&1; then
   echo >&2
   echo "pre-commit: TESTS FAILED — commit refused." >&2
