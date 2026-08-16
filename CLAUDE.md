@@ -16,9 +16,13 @@ paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries
-are open and neither destroys content**: C24 (`largestImage` reads a shared `/Resources`,
-so a page that draws no image is rebuilt at another page's plate resolution; 3 documents,
-85 pages, and two attempted fixes were each worse) and R55, in `Tools/`. **R56 and R57 —
+are open and neither destroys content**: **C24, now half fixed** — a page that draws no
+XObject at all no longer takes another page's plate resolution (85 pages over 3 documents,
+structural, no threshold, 0 route changes), while the 45 pages that draw a *smaller* image
+than the shared dictionary holds are still open with their measurements — and **R55, whose
+measurement campaign has now been run**: the discriminator it proposed rules a flatbed out
+and does not rule hand-held in, and the population it was to be tested against turns out to
+be mostly scans. **R56 and R57 —
 the pale drawing erased and the tonal plate blobbed — are `FIXED` as of 2026-08-16** by a
 shape signal in `Flattener`, on the sixth attempt and the second signal class; read both
 entries before touching the routing, because four luminance rounds and two shape rounds
@@ -74,7 +78,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1119 checks, 3-6 min; runs real OCR, needs nothing installed
+./run_tests.sh        # 1127 checks, 3-6 min; runs real OCR, needs nothing installed
 ```
 
 Never report a change as working without `./run_tests.sh` passing. Add a test that

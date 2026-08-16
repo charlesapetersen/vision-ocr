@@ -36,8 +36,18 @@ reverse of the sheet, and the two you want deleted are the commonest. What separ
 them is **where they are** — show-through lies in the page's own type because it *is*
 type, and a figure sits where the type is not. **R56.**
 
-Both are held by seven synthetic fixtures the corpus cannot produce, and by a
+Both are held by eight synthetic fixtures the corpus cannot produce, and by a
 page-by-page census of all 16,987 corpus pages that names every page whose route moved.
+
+**A page that draws no image no longer borrows another page's resolution.** On documents
+whose pages share one `/Resources` dictionary — 3 of the corpus's 233 — a page that draws
+nothing at all was rebuilt at whatever the largest image in that shared dictionary
+implied, which on one journal article meant every page of type rendered at 370 DPI
+because page 41 has a plate on it. It now asks whether the page's content stream invokes
+any XObject, which needs no threshold, and takes the documented fallback when it does
+not. 85 pages across 3 documents; those documents come out 7.4% smaller and recover
+0.63% fewer characters, both measured end to end. `BUGS.md` C24 — half of it; the pages
+that draw a *smaller* image than the dictionary holds are still open.
 
 **A line you could not highlight, words that welded together, and a copy that showed
 what the original hid.** Three text-layer and geometry defects, all on the default

@@ -3226,6 +3226,92 @@ do {
     check("the page's text survives the rebuild",
           read.contains("BORN") && read.contains("DIGITAL"),
           String(read.prefix(200)))
+
+    // MARK: C24 — a page that draws no image has no image resolution
+    //
+    // `largestImage` walks the page's `/Resources`, and **4 of the corpus's 208
+    // multi-page documents share one `/Resources` across every page** — so a page that
+    // draws nothing at all was told its resolution by another page's plate. Measured:
+    // 85 pages over 3 documents, `Batzell` rebuilding at 369.6 DPI and `AI 2027` at
+    // 354.3 on pages whose content streams contain no `Do` at all.
+    //
+    // **The fixture has to be hand-written**, and that is worth a sentence because this
+    // project's guide names hand-written PDF as the risky kind. Nothing in CoreGraphics
+    // or PDFKit can produce the shape: `CGPDFContext` gives every page its own
+    // `/Resources`, and pulling pages out through `PDFDocument` destroys the sharing —
+    // which is the whole of A12.2 and the reason the tools disagreed with production in
+    // the first place. The two pages below share object 4 by construction, and the
+    // check is untestable otherwise.
+    //
+    // The image stream is a stub: `largestImage` reads `/Width` and `/Height` off the
+    // stream dictionary and never decodes it, so three bytes of body is enough for the
+    // page to claim a 3000 px plate.
+    do {
+        var objects: [String] = []
+        objects.append("<< /Type /Catalog /Pages 2 0 R >>")
+        objects.append("<< /Type /Pages /Kids [3 0 R 6 0 R] /Count 2 >>")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 7 0 R >>")          // draws nothing
+        objects.append("<< /XObject << /Im0 5 0 R >> >>")                // the shared one
+        objects.append("<< /Type /XObject /Subtype /Image /Width 3000 /Height 4000 "
+                       + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
+                       + ">>\nstream\nabc\nendstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 8 0 R >>")          // draws it
+        let quietStream = "BT /F1 12 Tf 72 700 Td (no image here) Tj ET\n"
+        let drawStream = "q 612 0 0 792 0 0 cm /Im0 Do Q\n"
+        objects.append("<< /Length \(quietStream.utf8.count) >>\nstream\n"
+                       + quietStream + "endstream")
+        objects.append("<< /Length \(drawStream.utf8.count) >>\nstream\n"
+                       + drawStream + "endstream")
+
+        var pdf = "%PDF-1.4\n"
+        var offsets: [Int] = []
+        for (i, body) in objects.enumerated() {
+            offsets.append(pdf.utf8.count)
+            pdf += "\(i + 1) 0 obj\n\(body)\nendobj\n"
+        }
+        let xref = pdf.utf8.count
+        pdf += "xref\n0 \(objects.count + 1)\n0000000000 65535 f \n"
+        for o in offsets { pdf += String(format: "%010d 00000 n \n", o) }
+        pdf += "trailer\n<< /Size \(objects.count + 1) /Root 1 0 R >>\n"
+        pdf += "startxref\n\(xref)\n%%EOF\n"
+
+        let shared = dir.appendingPathComponent("shared-resources.pdf")
+        try? pdf.write(to: shared, atomically: true, encoding: .isoLatin1)
+        let sd = PDFDocument(url: shared)
+        check("the shared-/Resources fixture is a readable two-page PDF",
+              sd?.pageCount == 2, "\(sd?.pageCount ?? -1) pages")
+        if let sd, let quiet = sd.page(at: 0), let drawing = sd.page(at: 1) {
+            // The premise first. Without these two the checks below would pass over a
+            // fixture that simply has no image in it, which is a different page and
+            // proves nothing — CONTRIBUTING §2's shape.
+            check("…and its second page really does draw a 3000 px plate",
+                  Flattener.largestImage(of: drawing)?.pixelWidth == 3000,
+                  "\(Flattener.largestImage(of: drawing)?.pixelWidth ?? -1)")
+            check("…which implies a resolution well above the fallback",
+                  (Flattener.nativeDPI(of: drawing) ?? 0) > Flattener.fallbackRebuildDPI,
+                  String(format: "%.1f", Flattener.nativeDPI(of: drawing) ?? -1))
+
+            check("a page whose content stream draws nothing draws no XObject",
+                  Flattener.drawsAnyXObject(quiet) == false,
+                  "\(String(describing: Flattener.drawsAnyXObject(quiet)))")
+            check("…and the page that invokes one does",
+                  Flattener.drawsAnyXObject(drawing) == true,
+                  "\(String(describing: Flattener.drawsAnyXObject(drawing)))")
+            check("C24 — so the quiet page has no image, though it can reach one",
+                  Flattener.largestImage(of: quiet) == nil,
+                  "\(String(describing: Flattener.largestImage(of: quiet)))")
+            check("…and it rebuilds at the fallback, not its neighbour's plate",
+                  Flattener.rebuildDPI(of: quiet) == Flattener.fallbackRebuildDPI,
+                  String(format: "%.1f", Flattener.rebuildDPI(of: quiet)))
+            check("…while the page that does draw the plate is untouched",
+                  Flattener.rebuildDPI(of: drawing) == Flattener.nativeDPI(of: drawing),
+                  String(format: "%.1f", Flattener.rebuildDPI(of: drawing)))
+        } else {
+            check("the shared-/Resources fixture has two readable pages", false)
+        }
+    }
     resetPrefs()
 }
 

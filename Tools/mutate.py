@@ -232,6 +232,18 @@ OPERATORS = [
      "                         threshold: threshold) > pictureToneThreshold",
      "        if toneFraction(of: grey, threshold: threshold) > pictureToneThreshold",
      "R57-tone-of-the-region"),
+    # C24's structural half. The mutant is the defect: a page that draws nothing is
+    # told its resolution by whatever the shared /Resources can reach. Not a constant —
+    # the whole point of this repair is that it needs none, which is why the entry's
+    # first two attempts died.
+    ("Flattener.swift", "guard drawsAnyXObject(page) != false else { return nil }",
+     "guard true else { return nil }", "C24-page-draws-nothing"),
+    # …and the half of it that is about the *instrument*: `nil` means "could not tell"
+    # and must behave as before. Reading it as "draws nothing" would refuse the image
+    # on any page whose content stream the scanner could not read — losing detail on a
+    # real scan to fix a byte problem, which is the wrong direction (T14).
+    ("Flattener.swift", "return seen.operators > 0 ? false : nil",
+     "return false", "C24-unknown-is-not-no"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",
      "guard !isRunning else { return .refusedRunInProgress }", "U19-add-guard"),
     # A5.3. The interlock as a flag again: the first walk to land lowers it while

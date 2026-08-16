@@ -1130,10 +1130,83 @@ all — `willRebuild` is `(rebuild && hasEmbeddedText) || wantsJBIG2`, so an ima
 JBIG2 off takes the non-rebuild path and the block tests C13 twice. The first version of the
 test did exactly that and passed.
 
-### C24 · `largestImage` answers a document-wide question, so one page's plate sets another page's rebuild resolution — OPEN
+### C24 · `largestImage` answers a document-wide question, so one page's plate sets another page's rebuild resolution — HALF FIXED
 *(found 2026-08-15 fixing `REVIEW-2026-08-14.md` A12.2, which files it as a defect in
 `Tools/`. It is not. The tools are right that they disagree with production; production
-is the one that is wrong.)*
+is the one that is wrong. **The half that needs no threshold closed 2026-08-16**; the
+half that needs one is still open, with the measurements below.)*
+
+**What closed: a page that draws no XObject at all has no image, whatever its
+`/Resources` can reach.** That needs no coverage rule, no CTM tracking and no constant —
+it is a fact about the content stream, and reaching for a constant is what killed the
+first two repairs. `Flattener.drawsAnyXObject` scans the page for a `Do` operator (any
+`Do`, including a form's, so a scan nested inside a Form XObject still counts — which is
+what broke repair 2), and `largestImage` returns nil when the answer is a definite no.
+
+**It answers `nil` when it could not tell**, and the caller then behaves exactly as
+before. A content stream yielding no operators at all is not evidence that the page
+draws nothing; it is evidence that the instrument read nothing. This is the one place
+here where believing it would cost detail rather than bytes, so it is T14's rule: an
+instrument that knows when it is not measuring.
+
+**Measured over all 16,987 corpus pages, twice** — once by an independent probe that
+walks the streams itself, once through `rebuildDPI` before and after:
+
+| | pages |
+|---|---|
+| the drawn-only walk agrees with the shipped one | 16,661 |
+| draws nothing, and the shipped walk also found nothing | 196 |
+| **draws nothing, and the shipped walk found another page's plate** | **85** |
+| draws a *smaller* image than the shared dictionary holds — still open | 45 |
+
+The 85 are `Batzell` (51 pages at 369.6 DPI), `AI 2027` (32 at 354.3) and `Kelly_2014`
+(2 at 186.8), and all three now take `fallbackRebuildDPI`. **Exactly 85 pages change
+resolution and not one other** — the probe named the same 85 before the fix existed.
+
+**What it costs, which is not nothing.** The three documents through `OCRModel.start()`
+end to end, both ways. The gate is exactly reproducible here: a repeat of the "before"
+run matched to the character and to the byte, so these differences are the change.
+
+```
+                    bytes                       characters
+AI 2027       4,132,163 -> 3,857,518  0.934      -1,889   -0.79%
+Batzell       3,132,316 -> 2,734,587  0.873        -404   -0.27%
+Kelly_2014      505,356 ->   600,970  1.189        -342   -1.15%
+TOTAL         7,769,835 -> 7,193,075  0.926      -2,635   -0.63%
+```
+
+**Bytes fall 7.4% and recognised characters fall 0.63%**, because 300 DPI rasterises
+vector text slightly less well than the 370 those pages were accidentally getting.
+`Kelly_2014` moves the other way on both counts — its two pages *gain* resolution
+(186.8 → 300) and its bytes rise 19% — because changing the resolution also changes what
+`isPicture` sees, so those pages take a different route as well.
+
+**The character cost is an argument about `fallbackRebuildDPI`, not about this fix**, and
+it is named here so nobody rediscovers it as a surprise. The resolution those 85 pages
+had was arbitrary — another page's plate — and taking the documented fallback instead is
+correct. If 300 is too low for a born-digital page with no image on it, that is a
+constant to re-measure on its own evidence, not a reason to keep reading a neighbour's
+resources.
+
+**What the tools do, and it is less than hoped.** `score-routing` still refuses the rows
+for `Batzell` and `AI 2027`: its four-page sample lands on p22, p15 and p43, which are in
+the 45 still open rather than the 85 fixed. A12.2's SKIP rows stay until the other half
+closes.
+
+**Both mutants are killed**, which matters here because the repair is a guard rather
+than a constant and `mutate.py` is the only thing that puts a guard back:
+`logic/C24-page-draws-nothing` (the guard removed) by 2 checks, and
+`logic/C24-unknown-is-not-no` — reading "could not tell" as "draws nothing" — by 6,
+among them the hostile-geometry checks A7.1 left behind. That second one is the reason
+the function returns `Bool?` rather than `Bool`.
+
+**And what it does not change: the route.** `score-routing-census` over all 128 pages of
+the three documents, before against after — **85 pages change resolution and 0 change
+route**. That was not obvious: the routing signals are computed on the render, so a
+resolution change can flip `isPicture`, and on `Kelly_2014` it does change what the
+layering sees. It changes no page's lane.
+
+The original entry, which is about that other half, follows unchanged.
 
 A12.2 says three tools extract their sample into a fresh `PDFDocument`, that extraction
 "destroys the sharing" of a `/Resources` dictionary, and that `largestImage` therefore
@@ -3399,10 +3472,58 @@ R56's refused luminance signal is no help here either: requiring a mark to be *t
 drops this fixture from 0.0931 to **0.0024**, because a tonal plate is precisely not
 thin. Two defects, one instrument, and it is shape.
 
-### R55 · `classify-source` calls an upright-scanner capture `photographed` — OPEN
+### R55 · `classify-source` calls an upright-scanner capture `photographed` — OPEN, and the campaign it asked for has now been run
 *(found 2026-08-13 running the gate over the one document the owner asked to add to
 the corpus; not in the app — it is the gate that decides what the corpus and the
-sweep may contain)*
+sweep may contain. **Measured 2026-08-16**: the discriminator this entry proposed works
+in one direction only, and the population it was to be tested against turns out not to
+be what it was thought to be.)*
+
+**The entry said: do not touch the threshold on one document; measure the *consistency*
+of the gradient over known hand-held material against known mechanical material, because
+a rig repeats and hands do not.** `Tools/score-illumination.swift` does that. Per
+document it takes `classify-source`'s own five-page sample, divides each page's nine
+block means by that page's own brightest block so overall exposure drops out, and
+reports the spread of that *shape* across pages — `repeatability`.
+
+| | documents | repeatability p50 | p90 | max | gradient p50 |
+|---|---|---|---|---|---|
+| the corpus, all mechanical | 204 | 0.0044 | 0.0134 | **0.0373** | 0.0267 |
+| the survey's "Random Photograph" set | 123 | 0.0299 | 0.0563 | 0.0781 | 0.1693 |
+
+**No mechanical scan in 204 exceeds 0.0373.** So repeatability above about 0.04 rules a
+flatbed out, and `Why?` — the document that opened this entry, gradient 0.1754, over the
+0.16 line — reads **0.0196** and is comfortably inside the scanner population. The
+discriminator does what the entry hoped in that direction.
+
+**It does not work in the other direction, and the reason is the useful part.** Two
+documents from the extremes were rendered rather than counted:
+
+- `Shub_1956`, the *lowest* repeatability in the survey set at 0.0040 with a gradient of
+  0.170, is **a flat ProQuest page scan with a copyright footer on it**. It is not a
+  photograph and never was. This is the entry's own suspicion — *"the survey's 1,001
+  `photographed` files are not all photographs"* — confirmed on a second document.
+- `Kichen_1985`, the *highest* at 0.0781, is **a full-bleed magazine advertisement**:
+  a scan of a dark page. Its repeatability is high because its *content* varies from
+  page to page, not its lighting.
+
+That second one names the confound. `illuminationGradient` averages only pixels above
+140, which on a nearly black page is a handful of bright *content* rather than paper —
+so the measure is content-dependent exactly where the pages are darkest.
+
+**What that leaves.** The rule the entry wanted — `photographed` requires a high
+gradient **and** lighting that varies between pages — would reclassify **48 of the 75**
+survey files currently over the gradient line, and rescue `Why?`. That is a large change
+to the gate that decides what the sweep may touch, made on a population that has been
+shown not to be what it was labelled. So it is **not made here.** What is needed first,
+now specified rather than guessed:
+
+1. a lighting measure that is not content-dependent — block means taken from each page's
+   own paper *mode* rather than from "brighter than 140";
+2. a hand-held set that somebody has *looked at*. "Random Photograph" is not one, and
+   this entry now has two rendered counter-examples out of two sampled.
+
+The original entry follows, and its diagnosis is unchanged.
 
 `classify-source` verdicts `photographed` when the median illumination gradient
 exceeds 0.16. *Why?* (1954, National Foremen's Institute) comes back **0.169** and is

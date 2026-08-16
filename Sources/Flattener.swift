@@ -2613,9 +2613,65 @@ enum Flattener {
     /// whose only image is a logo. Use `rebuildDPI` to render with.
     static func nativeDPI(of page: PDFPage) -> Double? { largestImage(of: page)?.dpi }
 
+    /// Does this page's content stream invoke **any** XObject?
+    ///
+    /// `nil` means the question could not be answered — an unreadable page, or a
+    /// content stream the scanner returned no operators at all for. A caller must treat
+    /// that as "assume it does", because the alternative is deciding a page draws
+    /// nothing on the strength of an instrument that measured nothing. T14's rule, in
+    /// the one place here where getting it wrong loses detail rather than bytes.
+    ///
+    /// **This is C24's structural half.** `largestImage` walks the page's `/Resources`,
+    /// and 4 of the corpus's 208 multi-page documents share one `/Resources` across
+    /// every page — so a page that draws nothing at all is told its resolution by
+    /// another page's plate. Asking whether the page draws anything needs no threshold
+    /// and no coverage rule, which is what killed the entry's first two repairs: it is
+    /// a fact about the content stream.
+    ///
+    /// Any `Do` counts, including a form's. A scan nested one level down inside a Form
+    /// XObject — which scanner drivers routinely produce, and which broke the entry's
+    /// second repair — still reaches this as the `Do` that invokes the form.
+    static func drawsAnyXObject(_ page: PDFPage) -> Bool? {
+        guard let cgPage = page.pageRef else { return nil }
+        final class Count { var draws = 0; var operators = 0 }
+        let seen = Count()
+        guard let table = CGPDFOperatorTableCreate() else { return nil }
+        // Two callbacks: `Do` counts what we are after, and `q` counts *anything at
+        // all*, so a stream the scanner could not read is distinguishable from a page
+        // that genuinely draws nothing. Every real content stream has a `q` in it; a
+        // page with neither is one this cannot speak for.
+        CGPDFOperatorTableSetCallback(table, "Do") { _, info in
+            guard let info else { return }
+            Unmanaged<Count>.fromOpaque(info).takeUnretainedValue().draws += 1
+        }
+        for op in ["q", "Q", "cm", "BT", "re", "gs"] {
+            CGPDFOperatorTableSetCallback(table, op) { _, info in
+                guard let info else { return }
+                Unmanaged<Count>.fromOpaque(info).takeUnretainedValue().operators += 1
+            }
+        }
+        let stream = CGPDFContentStreamCreateWithPage(cgPage)
+        let scanner = CGPDFScannerCreate(stream, table, Unmanaged.passUnretained(seen).toOpaque())
+        CGPDFScannerScan(scanner)
+        CGPDFScannerRelease(scanner)
+        CGPDFContentStreamRelease(stream)
+        CGPDFOperatorTableRelease(table)
+        if seen.draws > 0 { return true }
+        return seen.operators > 0 ? false : nil
+    }
+
     /// The largest embedded image's implied resolution *and* its pixel width.
     /// `rebuildDPI` needs both to tell a coarse scan from a logo.
+    ///
+    /// **A page that draws no XObject has no image on it, whatever its `/Resources`
+    /// says it may reach** — C24. Refused here rather than in `rebuildDPI` because it
+    /// is a correction to the *measurement*: this function's own doc calls itself "the
+    /// largest embedded image's implied resolution", and on those pages there is no
+    /// embedded image. `nativeDPI` reads better for it too, and the three tools that
+    /// refuse a row when production and an extracted copy disagree stop refusing on
+    /// the pages where the disagreement was production's fault.
     static func largestImage(of page: PDFPage) -> (dpi: Double, pixelWidth: Int)? {
+        guard drawsAnyXObject(page) != false else { return nil }
         guard let cgPage = page.pageRef, let dict = cgPage.dictionary else { return nil }
 
         final class Largest { var width = 0; var height = 0 }
