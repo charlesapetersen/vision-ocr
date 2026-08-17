@@ -108,10 +108,16 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       (`TODO.md`) against an actual 1,127. Run `ops/autonomous/check-staleness.sh` for the current list,
       and fix the documents rather than the check. (origin: TODO.md, and CLAUDE.md's own confession that
       its status paragraph "read 'nothing open' for a day after four entries were opened")
-- [ ] **tools-compile** — run `Tools/check-tools-compile.sh` over *every* tool, not just the staged ones
-      (~26 s), and fix or delete what does not build. It is a standing gate that today only runs on the
+- [ ] **tools-compile** — run `Tools/check-tools-compile.sh` over *every* tool, not just the staged ones,
+      and fix or delete what does not build. It is a standing gate that today only runs on the
       files a commit happens to touch: `score-text-route` had never compiled in any commit, and an
       annotation change silently broke `score-skew` and `score-reading-order` eleven days later.
+      ⚠️ **RUN IT DETACHED AND POLL — this line said "~26 s" and that is a quiet-machine figure.** Measured
+      2026-08-17 ~05:00: killed at the **120 s** foreground tool ceiling with no output at all, which a
+      session cannot tell apart from a hang. It is one of the five gates in this repo that now need the
+      detached-plus-poll shape; `ops/autonomous/resume-prompt.txt` §STEP 3 lists all five with their costs.
+      Quoting a duration here again would just re-create the trap: every duration in this repo has turned
+      out to be a reading of the machine's load.
       (context: BUGS.md C25 and T16 — both CLOSED; they are why this gate matters, not the work itself)
 - [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
