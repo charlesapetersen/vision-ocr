@@ -2594,8 +2594,36 @@ enum Flattener {
     /// 37 real 72 DPI scans, 1936–2592 px wide. Nothing lands in between, so the
     /// threshold is not finely balanced.
     static func rebuildDPI(of page: PDFPage) -> Double {
-        rebuildDPI(from: largestImage(of: page))
+        if let override = rebuildDPIOverride, let answer = override(page) { return answer }
+        return rebuildDPI(from: largestImage(of: page))
     }
+
+    /// A substitute resolution, for a tool asking what a page **would** rebuild at.
+    ///
+    /// `nil` in the app, always — nothing in `Sources/` sets it, and the settings panel
+    /// has no control that reaches it. It exists because C24's open half is a question
+    /// the shipped code cannot be asked: `Flattener` reads nothing from `Prefs`, so the
+    /// rebuild resolution is always the page's own, and `Recogniser.render`'s manual
+    /// "PDF render DPI" governs the *non*-rebuild route only. Measuring what a page
+    /// recognises at some other resolution therefore meant either a tool reproducing
+    /// `flatten`'s render — the divergence T15 charges for — or this.
+    ///
+    /// **One hook rather than a parameter, because there are three consumers.**
+    /// `flatten`, `mrcLayers` and `Recogniser.render` each call `rebuildDPI(of:)`
+    /// independently, and a page measured at one resolution and layered at another is a
+    /// worse instrument than no instrument. Overriding the one function they share is the
+    /// only way all three move together; see "a measurement override reaches every page
+    /// the rebuild renders" in the suite, which asserts exactly that rather than trusting
+    /// it.
+    ///
+    /// **It cannot cross a process boundary.** Recognition may run in
+    /// `visionocr-recognise`, which has its own address space and its own `nil` here, so a
+    /// tool that sets this must keep `useHelper` false. `Tools/score-rebuild-dpi.swift`
+    /// does, and says so.
+    ///
+    /// Returning `nil` from the closure means "no opinion about this page", so a sweep can
+    /// move one page and leave the rest of the document on the shipped policy.
+    nonisolated(unsafe) static var rebuildDPIOverride: ((PDFPage) -> Double?)?
 
     /// The policy alone, over a measurement someone else took.
     ///
@@ -2801,16 +2829,21 @@ enum Flattener {
     /// image by *area* and then report its *width*, so a subset's winner can be the wider
     /// of two.
     ///
-    /// **Deliberately wired into nothing.** Restricting the walk to the invoked names is
-    /// structural: it needs no coverage rule and no threshold, which is what killed the
-    /// entry's second repair. What it does need is a constant it would move into a
-    /// population that constant was not calibrated for. `minimumScanPixelWidth` separated
-    /// 47 logos of 16–96 px from 37 page-sized scans of 1936–2592 px, measured against
-    /// each document's *maximum*; the entry's first repair sent `Batzell` p22 from 369.6
-    /// DPI to **70.6** because that page's own figure is 600 px wide and 600 reads as
-    /// "this image is the page, and it is coarse". Rendering a page of type at 70 DPI is
-    /// C9 again. So the recalibration comes first, on the per-page population this
-    /// function exists to produce — `Tools/score-drawn-images.swift`.
+    /// **Deliberately wired into nothing, and the reason has changed.** Restricting the walk
+    /// to the invoked names is structural: it needs no coverage rule and no threshold, which
+    /// is what killed the entry's second repair. What this comment then said it needed was a
+    /// constant recalibrated — `minimumScanPixelWidth` separated 47 logos of 16–96 px from 37
+    /// page-sized scans of 1936–2592 px measured against each document's *maximum*, and the
+    /// entry's first repair sent `Batzell` p22 from 369.6 DPI to **70.6** because that page's
+    /// own figure is 600 px wide. This comment called that "C9 again", **which was reasoned
+    /// and is measured false** (C24, 2026-08-17): p22 at 70.6 DPI retains 92.8% of its own
+    /// 291 words against 94.2% at 369.6 and 93.8% at the 300 fallback, for 87% fewer
+    /// published bytes, and the other two pages the constant faces are right as well. C9 was
+    /// a page rebuilt as 16 x 23 px; this is 600 x 776.
+    ///
+    /// So no recalibration is wanted. What is left before wiring this in is a corpus gate
+    /// run, because it moves 45 pages. `Tools/score-rebuild-dpi.swift` is what measured it
+    /// and `Tools/score-drawn-images.swift` is the per-page population.
     ///
     /// Forms are followed by scanning their own content streams, which is the only way to
     /// learn what a form draws. C24's second repair died on that shape: `Lyons oral

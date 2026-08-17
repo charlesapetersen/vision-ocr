@@ -24,12 +24,16 @@ half is measured as of 2026-08-16** — read the entry's `C24b` section before p
 anything there: `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swift` report
 what a page actually draws, the 45 are **39 smaller and 6 wider** (which retires the
 observation the entry carried without a cause — both walks pick by *area* and report
-*width*), and the constant the entry wanted recalibrated faces **three** pages, getting two
-right and one wrong on its own boundary value of 600. It is wired into nothing; **two
-sub-steps** close it — decide what `Batzell` p22 should render at, then *wire the drawn walk
-into `rebuildDPI`* behind a corpus gate run, because it moves 45 pages. (This sentence named
-only "a corpus gate run" and dropped the wiring, which is the sub-step the gate run is *for*.)
-Read that
+*width*), and the constant the entry wanted recalibrated faces **three** pages. **It gets all
+three right, measured 2026-08-17, so the blocker is retired**: `Tools/score-rebuild-dpi.swift`
+rendered `Batzell` p22 both ways and it retains **92.8%** of its own 291 words at 70.6 DPI
+against **94.2%** at the 369.6 it accidentally gets today, for **87% fewer bytes** — so
+"rendering a page of type at 70 DPI is C9 again" was reasoned and is **false**, corrected in
+the four places it was published. Note too that *counting characters*, which the entry asked
+for, reads 1,961 at every resolution from 70.6 to 369.6 and would have said "no difference"
+while being right by accident; word retention against the page's own embedded text is what
+moves. It is wired into nothing, so **one sub-step** closes it — *wire the drawn walk into
+`rebuildDPI`* behind a corpus gate run, because it moves 45 pages. Read that
 section's review subsection too — it found **a
 tenth check that could not fail** and a bare form resolving its resource names in the page's
 scope rather than its invoker's, and it is where to look before believing that

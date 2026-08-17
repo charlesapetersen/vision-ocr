@@ -3430,10 +3430,12 @@ do {
 
             // MARK: C24b — what the page draws, not what its /Resources can reach
             //
-            // The measurement only. `rebuildDPI` still reads `largestImage`, deliberately:
-            // moving it would put `minimumScanPixelWidth` in front of a population it was
-            // not calibrated for, and the entry's first repair sent a page of type to 70.6
-            // DPI that way. These assert the number, not the policy.
+            // The measurement only. `rebuildDPI` still reads `largestImage`, deliberately —
+            // moving it moves 45 corpus pages and wants a gate run first. This comment used
+            // to give a second reason, that the constant was not calibrated for the
+            // population and had sent a page of type to 70.6 DPI; that page was rendered both
+            // ways on 2026-08-17 and the constant is right about it (C24). These assert the
+            // number, not the policy.
             guard let small = sd.page(at: 2), let viaForm = sd.page(at: 3),
                   let viaBareForm = sd.page(at: 4), let unresolved = sd.page(at: 5) else {
                 check("the shared-/Resources fixture's pages 3-6 are readable", false)
@@ -3526,6 +3528,118 @@ do {
                   Flattener.drawnLargestImage(of: scoped)
                       == .largest(dpi: 1500 / (612.0 / 72.0), pixelWidth: 1500),
                   "\(Flattener.drawnLargestImage(of: scoped))")
+
+            // MARK: C24 — a measurement override reaches every page the rebuild renders
+            //
+            // `Flattener.rebuildDPIOverride` is the seam C24b's blocker needed:
+            // `Flattener` reads nothing from `Prefs`, so the rebuild resolution is always
+            // the page's own, and the "PDF render DPI" setting governs the *non*-rebuild
+            // route only — there was no way to ask what a page would recognise at some
+            // other resolution without a tool reproducing `flatten`'s render, which is the
+            // divergence T15 charges for. `Tools/score-rebuild-dpi.swift` is the caller.
+            //
+            // **Three functions read `rebuildDPI(of:)` independently** — `flatten`,
+            // `mrcLayers` and `Recogniser.render` — and a hook only one of them honours is
+            // worse than no hook: a page rendered at 70 DPI and layered at 370 is a
+            // measurement of neither. So the doors are enumerated rather than reasoned
+            // about (CONTRIBUTING §4d), and the inverse row is here too — a page the
+            // closure has no opinion about must still take the shipped policy's answer, or
+            // an override that pinned every page unconditionally would satisfy the table.
+            let sheet = Flattener.fullBox(of: quiet).width
+            func overrideWidth(atDPI dpi: Double) -> Int { Int((sheet * dpi / 72.0).rounded()) }
+            let probeDPI = 90.0
+
+            check("C24 — the rebuild-DPI override is nil until something sets it",
+                  Flattener.rebuildDPIOverride == nil)
+            // The premise for the rows below: neither page left to the shipped policy may
+            // already answer the probe resolution, or every assertion here passes over a
+            // fixture that cannot tell the two apart.
+            check("…and the shipped policy does not already answer the probe resolution",
+                  Flattener.rebuildDPI(of: quiet) != probeDPI
+                      && Flattener.rebuildDPI(of: drawing) != probeDPI,
+                  "\(Flattener.rebuildDPI(of: quiet)) / \(Flattener.rebuildDPI(of: drawing))")
+
+            Flattener.rebuildDPIOverride = { page in
+                // No opinion about the page that draws nothing; the probe resolution for
+                // every other page. Deliberately not "every page": the untouched one is
+                // what makes the `nil` arm visible inside the same render.
+                Flattener.drawsAnyXObject(page) == false ? nil : probeDPI
+            }
+            check("…and setting it changes what rebuildDPI answers",
+                  Flattener.rebuildDPI(of: drawing) == probeDPI,
+                  "\(Flattener.rebuildDPI(of: drawing))")
+            check("…while a page the closure declines still takes the shipped policy",
+                  Flattener.rebuildDPI(of: quiet) == Flattener.fallbackRebuildDPI,
+                  "\(Flattener.rebuildDPI(of: quiet))")
+
+            // Door 1: `flatten`, the one that matters most — the bitmaps it writes are
+            // exactly what recognition reads, so this is the resolution a character count
+            // from the finished file is a count at.
+            let overrideDir = dir.appendingPathComponent("override")
+            try? FileManager.default.createDirectory(at: overrideDir,
+                                                     withIntermediateDirectories: true)
+            let flattened = (try? Flattener.flatten(
+                shared, to: overrideDir.appendingPathComponent("out.pdf"),
+                mode: .auto, pngDirectory: overrideDir)) ?? []
+            check("…and `flatten` renders every overridden page at that resolution",
+                  flattened.count == 9 && flattened.dropFirst()
+                      .allSatisfy { $0.pixelWidth == overrideWidth(atDPI: probeDPI) },
+                  "\(flattened.map(\.pixelWidth))")
+            check("…and leaves the declined page on the shipped fallback in the same run",
+                  flattened.first?.pixelWidth
+                      == overrideWidth(atDPI: Flattener.fallbackRebuildDPI),
+                  "\(flattened.first?.pixelWidth ?? -1) of "
+                  + "\(overrideWidth(atDPI: Flattener.fallbackRebuildDPI))")
+
+            // Door 2: `Recogniser.render`, the non-rebuild route's raster.
+            var probeSettings = Prefs.Snapshot.current()
+            probeSettings.pdfDPIAuto = true
+            check("…and `Recogniser.render` renders at it too",
+                  Recogniser.render(drawing, settings: probeSettings)?.width
+                      == overrideWidth(atDPI: probeDPI),
+                  "\(Recogniser.render(drawing, settings: probeSettings)?.width ?? -1)")
+
+            // Door 3: `mrcLayers`. A ratio between two overrides rather than an absolute
+            // width, because the tone layers are downsampled by a constant this check has
+            // no business restating — T15 again. Doubling the resolution doubles the layer.
+            //
+            // On `born.pdf`, not on this fixture, and over the whole sheet — both because
+            // `mrcLayers` guards `mask.contains(true)` and returns nil for a page with no
+            // ink on it. **Every page of `shared-resources.pdf` renders white**: its images
+            // are stubs whose streams are three bytes of nonsense, and its `Tj` has no
+            // `/Font` in the shared dictionary to draw with. Two versions of this check read
+            // `no layers: low=nil high=nil` before that was chased down, which is the same
+            // "the check quietly did nothing" shape the block above exists to prevent.
+            // `born.pdf` carries real 24 pt glyphs. The box spans the sheet because the
+            // stencil is confined to the boxes it is handed, so a box in the wrong corner
+            // is the empty mask again.
+            let probeBoxes = [SearchableWriter.BoundingBox(x: 0, y: 0, width: 1, height: 1)]
+            let inked = PDFDocument(url: born)?.page(at: 0)
+            Flattener.rebuildDPIOverride = { _ in probeDPI }
+            let lowLayers = inked.flatMap {
+                Flattener.mrcLayers(for: $0, boxes: probeBoxes, into: overrideDir, stem: "low")
+            }
+            Flattener.rebuildDPIOverride = { _ in probeDPI * 2 }
+            let highLayers = inked.flatMap {
+                Flattener.mrcLayers(for: $0, boxes: probeBoxes, into: overrideDir, stem: "high")
+            }
+            if let lowLayers, let highLayers {
+                check("…and `mrcLayers` layers at it, so the two cannot disagree",
+                      abs(highLayers.backgroundWidth - lowLayers.backgroundWidth * 2) <= 2,
+                      "\(lowLayers.backgroundWidth) -> \(highLayers.backgroundWidth)")
+            } else {
+                check("…and `mrcLayers` layers at it, so the two cannot disagree", false,
+                      "no layers: low=\(lowLayers == nil ? "nil" : "ok") "
+                      + "high=\(highLayers == nil ? "nil" : "ok")")
+            }
+
+            // Cleared, and asserted cleared. A hook left set here would silently re-render
+            // every later section of this suite at the probe resolution.
+            Flattener.rebuildDPIOverride = nil
+            check("…and clearing it restores the shipped policy exactly",
+                  Flattener.rebuildDPIOverride == nil
+                      && Flattener.rebuildDPI(of: drawing) == Flattener.nativeDPI(of: drawing),
+                  "\(Flattener.rebuildDPI(of: drawing))")
         } else {
             check("the shared-/Resources fixture's first two pages are readable", false)
         }

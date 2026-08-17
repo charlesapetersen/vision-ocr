@@ -27,11 +27,14 @@ open with the measurements rather than tuned. **The open half was measured 2026-
 is narrower than the entry assumed**: `Flattener.drawnLargestImage` reports what a page
 actually draws, the 45 pages are 39 smaller plus **6 wider** — which retires the
 observation the entry carried without a cause, since both walks pick by *area* and report
-*width* — and the constant the entry wanted recalibrated faces **three** pages, judging two
-right and one wrong on its own boundary value of 600. Wired into nothing yet; what remains is
-deciding what `Batzell` p22 renders at, then **wiring the drawn walk into `rebuildDPI`**
-behind a corpus gate run — the wiring is the sub-step the gate run is *for*, and this
-sentence dropped it. The review of that measurement
+*width* — and the constant the entry wanted recalibrated faces **three** pages. **It judges all
+three of them right, measured 2026-08-17**, which retires the blocker: `Batzell` p22 at its own
+70.6 DPI retains **92.8%** of its 291 words against **94.2%** at the 369.6 it accidentally gets
+today, for **87% fewer published bytes** — so "rendering a page of type at 70 DPI is C9 again"
+was reasoned, is **false**, and has been corrected in the four places it was published.
+`minimumScanPixelWidth` needs no recalibration. Wired into nothing yet, so what remains for
+this half is the wiring alone: **`drawnLargestImage` into `rebuildDPI`, behind a corpus gate
+run**, moving 45 pages. The review of that measurement
 found **a check that could not
 fail** — the fixture had no page that reached the guard one of its own mutants edits — and a
 bare form resolving its names against the page rather than its invoker; both fixed, with
@@ -1286,16 +1289,128 @@ above it:
 
 ```
 Batzell  p9   1254 px   147.5 DPI   width >= 600 -> trusted at 147.5   plausible for a scan
-Batzell  p22   600 px    70.6 DPI   width >= 600 -> trusted at  70.6   THE DEFECT (C9 again)
+Batzell  p22   600 px    70.6 DPI   width >= 600 -> trusted at  70.6   suspected THE DEFECT
 AI 2027  p1    245 px    29.6 DPI   width <  600 -> fallback 300       correct
 ```
 
-So the constant judges two of the three correctly, and the one it gets wrong sits
+So the constant faces three pages, and the one it was *suspected* of getting wrong sits
 **exactly on its own boundary value of 600**. That is a much narrower question than
 recalibration: what should a page whose only drawn image is 600 px wide be rebuilt at?
 Answering it wants `Batzell` p22 rendered both ways and its characters counted — not a
 new threshold, and **not a guess**. The two refused repairs are still refused for their
 own reasons; nothing here rehabilitates them.
+
+## C24b's blocker, measured — 2026-08-17: the constant is right about all three
+
+**It was rendered both ways, and the row above marked `THE DEFECT` is not one.** The claim
+being tested — this entry's, `Sources/Flattener.swift`'s and
+`Tools/score-drawn-images.swift`'s, in the same words in all three — was *"Rendering a page
+of type at 70 DPI is C9 again."* **It is false, and the sentence has been corrected in every
+place it appeared.** C9 was a 595x841 pt page whose largest image implied 1.9 DPI, rebuilt
+as a **16 x 23 pixel** image: the page was gone. `Batzell` p22 at its own 70.6 DPI is
+600 x 776 px, and it recognises.
+
+`Tools/score-rebuild-dpi.swift` is the instrument. It drives the shipped pipeline —
+`Flattener.rebuildDPIOverride` substitutes the resolution and `flatten`, `mrcLayers` and
+`Recogniser.render` all read the one function it hooks — then counts what comes back out of
+the **published** file, not off Vision's observations, so the figures compare with this
+entry's own before/after table. Every candidate resolution is computed by shipped code:
+`rebuildDPI(of:)` for `shipped`, `rebuildDPI(from:)` over `drawnLargestImage`'s answer for
+`drawn`, `fallbackRebuildDPI` for `fallback`. `REBUILD-DPI-2026-08-17.tsv` beside this file
+is the run.
+
+**And the measure the entry asked for was not evidence.** "Count the characters"
+reads **1,961 at 70.6 DPI, 1,961 at 300 and 1,961 at 369.6** — three *different* strings of
+identical length, which the tool prints a hash per row to make visible — and 1,960 / 1,962 /
+1,962 at 96 / 150 / 200. The character count on this page is flat across a 5x resolution
+change and moves only once recognition collapses outright. What moves is **word retention
+against the page's own embedded text**: p22 is born-digital, so the layer the rebuild
+rasterises away *is* the ground truth, and the multiset intersection of it with the
+published text is a real accuracy figure rather than a volume figure.
+
+```
+Batzell p22   truth 291 words                          route  bytes    chars  retained
+  drawn      70.6 DPI    600 x 776 px   0.5 MP         grey    51,302   1961   92.8%  (270/291)
+  fallback  300.0 DPI   2550 x 3300 px  8.4 MP         grey   308,760   1961   93.8%  (273/291)
+  shipped   369.6 DPI   3142 x 4066 px 12.8 MP         grey   407,556   1961   94.2%  (274/291)
+  ---- three more points on the same axis ----
+            200.0 DPI   1700 x 2200 px  3.7 MP         grey   175,696   1962   93.8%  (273/291)
+            150.0 DPI   1275 x 1650 px  2.1 MP         grey   117,661   1962   93.1%  (271/291)
+             96.0 DPI    816 x 1056 px  0.9 MP         grey    68,374   1960   94.2%  (274/291)
+  ---- negative controls, both below the constant's reach ----
+             50.0 DPI    425 x 550 px   0.2 MP         grey    40,230   1415   60.5%  (176/291)
+             30.0 DPI    255 x 330 px   0.1 MP         grey    21,370    215    3.4%   (10/291)
+```
+
+**Trusting the page's own 70.6 DPI costs no difference this instrument can resolve, and
+saves 87% of the published bytes** — 51 KB against 408 KB, which is 12.6% of them. Read the
+whole axis and not the first three rows: retention over 70.6–369.6 DPI is a **non-monotone
+92.8%–94.2%**, and **96 DPI ties the 369.6 maximum** at the same 274 of 291 words while
+beating 150, 200 and 300. So 1.4 points is inside this instrument's spread and "70.6 costs
+four words" would be reading noise as a cost. What the axis *does* say is where the floor
+is: two steps further down, retention goes to 60.5% and then 3.4%. The negative controls are
+also what say the instrument can fail at all.
+
+**The other two pages are right too, and one of them is right in the direction nobody
+checked.**
+
+```
+Batzell p9    truth 382 words                          route  bytes    chars  retained
+  drawn     147.5 DPI   1254 x 1623 px  2.0 MP      bilevel    41,026   2615   93.5%  (357/382)
+  fallback  300.0 DPI   2550 x 3300 px  8.4 MP      bilevel    63,727   2665   93.2%  (356/382)
+  shipped   369.6 DPI   3142 x 4066 px 12.8 MP      bilevel    72,161   2641   94.5%  (361/382)
+
+AI 2027 p1    truth 27 words                           route  bytes    chars  retained
+  drawn =
+  fallback  300.0 DPI   2480 x 3508 px  8.7 MP      bilevel    19,652    174   85.2%   (23/27)
+  shipped   354.3 DPI   2929 x 4142 px 12.1 MP      bilevel    20,956    186   85.2%   (23/27)
+  ---- negative control: what the constant refuses ----
+            29.6 DPI     245 x 346 px   0.1 MP      bilevel    12,102    100   33.3%    (9/27)
+```
+
+`Batzell` p9 at its own 147.5 DPI **beats the 300 fallback** — 357 words against 356 — so
+upsampling a coarse page buys nothing here, which is the asymmetry `minimumPlausibleScanDPI`
+was argued from, holding in the one place it had never been measured. And `AI 2027` p1 is
+where the constant earns its keep: refusing that page's 29.6 DPI is worth **14 of its 27
+words**.
+
+**So `minimumScanPixelWidth` needs no recalibration, and the answer to "what should
+`Batzell` p22 render at" is its own 70.6 DPI — which is what the shipped policy already
+says.** The next step for this half is the wiring alone: `drawnLargestImage` into
+`rebuildDPI`, behind a corpus gate run, moving 45 pages. Nothing here changes a route, a
+resolution or a published byte — `rebuildDPIOverride` is `nil` in the app and no setting
+reaches it, which the suite asserts before it sets it and again after it clears it.
+
+**And "right about all three" is right on a criterion, which is worth naming.** On p9 and on
+`AI 2027` p1 the constant's decision wins on retention alone. On p22 it does not: 92.8%
+against the declined fallback's 93.8% is a point *down*, inside the spread but not above it,
+and what makes it the right call is 87% fewer bytes for it. Whether that trade is acceptable
+is a judgement about `fallbackRebuildDPI` and **not** a measurement; the figures are here so
+it can be made on them rather than asserted. What *is* measured is that no threshold change
+is required — the review of this diff is what insisted on the distinction.
+
+**Verified by running code, not reasoned about**: 14 pipeline runs over 3 pages of 2
+documents — 15 candidate labels, two of which are one resolution on `AI 2027` p1 and are run
+once — each a full `OCRModel.makeSearchablePDF` on the page plus a `flatten` for the route
+and the raster; the whole TSV reproduced from a second independent invocation with every
+figure identical; the two-arm override asserted at all three doors — **the positive arm only**,
+34 of 34 green in an extracted single-section probe; and both negative controls. **Not run: the
+negative arm, and the mutant.** Neutering the hook to watch the nine new checks go red was
+attempted twice and both attempts died in the rebuild at the 10-minute tool ceiling, so those
+checks are *believed* able to fail and not *known* to be — the reasoning is that door 1's two
+rows kill each other's failure modes, but this register's rule is that only `mutate.py` settles
+it. `logic/C24-override-ignored` is in the catalogue for exactly that — the pattern matches
+`Flattener.swift` exactly once and it is a behaviour change rather than a compile error — but a
+scoped campaign is ~45 minutes and it has not been spent. **That is the first thing to do
+here.**
+`logic/C24-override-ignored` is in the catalogue — the pattern matches `Flattener.swift`
+exactly once and it is a behaviour change rather than a compile error — but a scoped campaign
+is ~45 minutes per verdict and it has not been spent. Until it is, "these checks can fail" is
+this section's word rather than `mutate.py`'s. **Also not asserted structurally**: the suite
+clears the override on the straight-line path only, and `mrcLayers`' door reads
+`backgroundWidth`, whose downsample factor is chosen by an R56/R57 shape signal that is
+itself DPI-dependent — so if that signal ever answers differently at 90 and 180 DPI, the row
+fails naming the override instead of the signal.
 
 **What is still true and unchanged.** `score-routing` still refuses the rows for
 `Batzell` and `AI 2027`; the four `manifest.tsv` rows are still the old wrong numbers;
@@ -1631,7 +1746,10 @@ argument for leaving this open.
    scan — trust it". That constant separates 47 logos of 16–96 px from 37 page-sized scans
    of 1936–2592 px and records that "nothing lands in between"; it was calibrated against
    the document-wide maximum, so a mid-sized figure on a page of type was never in its
-   population. Rendering a text page at 70 DPI is C9 again.
+   population. **This paragraph then said "rendering a text page at 70 DPI is C9 again",
+   and that was reasoned rather than measured. It is false** — see the 2026-08-17 section:
+   p22 at 70.6 DPI retains 92.8% of its own words against 94.2% at 369.6. The repair is
+   still refused, on the coverage-threshold argument below and not on this page.
 2. *Also require the image to be drawn across the sheet.* This needs the CTM, which needs
    `q`/`Q`/`cm` tracked through the content stream — and then it rejected **113 of 114
    pages of `Lyons oral history`**, a real scan, because the unit-square rule is an

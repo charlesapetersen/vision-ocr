@@ -83,9 +83,17 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       than run (21 of 26 killed, not 12 of 14), `estimate_window`'s check could not fail, the free
       `--only nothing-matches-this` command ran a full baseline suite, and five files still published the
       suite's floor as an `exit 133` crash.
-      **What is left is two things**: decide what `Batzell` p22 should render at (render it both ways and
-      count characters — do not pick a number); then wire the drawn walk into `rebuildDPI` behind a corpus
-      gate run, because it moves 45 pages. The first of those is what actually closes the half.
+      **The blocker is retired, 2026-08-17.** `Batzell` p22 was rendered both ways by
+      `Tools/score-rebuild-dpi.swift` (new; drives the shipped pipeline through
+      `Flattener.rebuildDPIOverride`): 92.8% word retention against the page's own embedded text at its
+      own 70.6 DPI, 93.8% at the 300 fallback, 94.2% at the 369.6 it accidentally gets today — for 87%
+      fewer published bytes. So `minimumScanPixelWidth` is right about all three pages it faces, needs no
+      recalibration, and "rendering a page of type at 70 DPI is C9 again" was reasoned and is false.
+      Note the trap: **counting characters, which this line asked for, reads 1,961 at every resolution
+      from 70.6 to 369.6** and would have said "no difference" while being right by accident.
+      **What is left is ONE thing**: wire the drawn walk into `rebuildDPI` behind a corpus gate run,
+      because it moves 45 pages. Expect `score-drawn-images`'s sweep unchanged and `score-routing`'s two
+      refused rows to come back.
       Read the entry's `C24b` section first, not this line. (origin: BUGS.md C24, HALF FIXED)
 - [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
       HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite

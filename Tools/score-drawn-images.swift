@@ -8,11 +8,15 @@
 // wider**, and the entry's word for all 45 was "smaller". See the `wider` note below.
 //
 // Restricting the walk to the invoked names is structural and needs no threshold, which is
-// why `Flattener.drawnLargestImage` exists. What it needs first is a constant recalibrated:
-// `minimumScanPixelWidth = 600` separated 47 logos of 16–96 px from 37 page-sized scans of
-// 1936–2592 px, measured against each document's **maximum**, and C24's first repair sent
-// `Batzell` p22 from 369.6 DPI to **70.6** because that page's own figure is 600 px wide.
-// Rendering a page of type at 70 DPI is C9 again.
+// why `Flattener.drawnLargestImage` exists. This header said it needed a constant
+// recalibrated first: `minimumScanPixelWidth = 600` separated 47 logos of 16–96 px from 37
+// page-sized scans of 1936–2592 px, measured against each document's **maximum**, and C24's
+// first repair sent `Batzell` p22 from 369.6 DPI to **70.6** because that page's own figure
+// is 600 px wide. It then said "rendering a page of type at 70 DPI is C9 again", **which was
+// reasoned and is measured false** — `Tools/score-rebuild-dpi.swift`, C24 2026-08-17: p22 at
+// 70.6 DPI retains 92.8% of its own words against 94.2% at 369.6, and the constant judges
+// all three of the pages it faces correctly. No recalibration is wanted; the population
+// below is still what a corpus gate run needs to read.
 //
 // **This produces the population that constant would actually face.** One row per page, no
 // rendering and no OCR, so it is metadata-speed. The policy applied to the drawn
