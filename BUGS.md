@@ -1401,13 +1401,18 @@ checks are *believed* able to fail and not *known* to be — the reasoning is th
 rows kill each other's failure modes, but this register's rule is that only `mutate.py` settles
 it. `logic/C24-override-ignored` is in the catalogue for exactly that — the pattern matches
 `Flattener.swift` exactly once and it is a behaviour change rather than a compile error — but a
-scoped campaign is ~45 minutes and it has not been spent. **That is the first thing to do
-here.**
-`logic/C24-override-ignored` is in the catalogue — the pattern matches `Flattener.swift`
-exactly once and it is a behaviour change rather than a compile error — but a scoped campaign
-is ~45 minutes per verdict and it has not been spent. Until it is, "these checks can fail" is
-this section's word rather than `mutate.py`'s. **Also not asserted structurally**: the suite
-clears the override on the straight-line path only, and `mrcLayers`' door reads
+scoped campaign is a full suite per verdict and it had not been spent. **That was the first
+thing to do here, and `### The override seam, mutated` below is what happened when it was.**
+*(This paragraph was two near-identical copies of itself until 2026-08-17, disagreeing on
+whether the cost was "~45 minutes" or "~45 minutes per verdict" while a paragraph six below
+gave a measured 37 — an unfinished edit, left immediately after the sentence naming the next
+step. It now states no duration at all: every duration in this thread has been a reading of
+the machine's load, and the campaign section carries the measured ones.)*
+**The straight-line clear now has a `defer` behind it**, added 2026-08-17: `check()` does not
+exit on failure, so nothing leaked, but a hook left set would have re-rendered every later
+section of the suite at the probe resolution — a whole-suite failure whose cause sits 200 lines
+above the first red row. The explicit clear and its assertion stay; the `defer` removes the
+class rather than the instance. **Still not asserted structurally**: `mrcLayers`' door reads
 `backgroundWidth`, whose downsample factor is chosen by an R56/R57 shape signal that is
 itself DPI-dependent — so if that signal ever answers differently at 90 and 180 DPI, the row
 fails naming the override instead of the signal.
@@ -1443,6 +1448,53 @@ Three pages of `Astin__The Challenge of Open Admissions` are the "could not tell
 the wild — a `Do` naming something the page's resource chain does not hold. The walk
 reports `.unreadable` there and a caller keeps the `/Resources` answer, which is the
 direction that costs bytes rather than detail.
+
+### The override seam, mutated — 2026-08-17, both killed, and the second one settles the review's finding
+
+Run scoped as `python3 Tools/mutate.py --only C24-override`, against a **green baseline of 1,152
+checks**. Two mutants, two verdicts, and the second is the point of the exercise:
+
+| mutant | verdict | cost | killing checks |
+|---|---|---|---|
+| `logic/C24-override-ignored` | **killed** | 3,453 s | **5** |
+| `logic/C24-override-nil-means-fallback` | **killed** | 3,014 s | **1** |
+
+**Read the last column, not the verdict column.** The first mutant neuters the hook entirely and
+five separate rows object, which only says the seam is read at all. The second is the *nearer*
+wrong implementation — `override(page) ?? fallbackRebuildDPI`, i.e. `nil` from the closure taken
+as "use the fallback" rather than "no opinion about this page" — and **exactly one** check kills
+it: *"…and a declined page keeps its OWN answer, not the fallback"*.
+
+That check does not exist in `c8855f6`. So against the nine checks this block shipped with, the
+count would have been **zero**: the mutant would have SURVIVED, and the register would have gone
+on recording those nine as pinning a seam that one of the two obvious wrong readings walked
+straight through. The review called that *the eleventh check in this register that could not
+fail*, and it reasoned its way there from the fixture — `quiet`'s own shipped answer already IS
+`fallbackRebuildDPI`, so it is the one page the closure declines and every row agreed with the
+wrong reading by accident. **`mutate.py` has now settled it, which is this register's rule.** The
+finding was right, and it was right for the stated reason.
+
+⚠️ **What this does NOT say.** The campaign was run in the worktree that already carried the new
+check, so "would have survived against c8855f6" is an inference from the killing-check count
+plus that check's absence there — a *measured* count and a *checked* absence, but not a run of
+the mutant against `c8855f6`'s own `Tests/main.swift`. That run would cost another full suite and
+was not spent. It is the honest reading, recorded rather than rounded up.
+
+**On the cost — and this is the first estimate in this thread that nearly held.** `test-lock.sh`
+recorded the whole campaign as one row: **8,882 s** (2 h 28 m), completing 10:01:10 at loadavg
+**5.92**, the highest in the ledger. That decomposes as a baseline of **2,415 s** plus the 3,453 s
+and 3,014 s above. The tool announced *"roughly 131-136 minutes … Budget the 136"*, i.e. 8,160 s,
+so it came in **1.09x low — about 9% under the figure it told the reader to budget.**
+
+⚠️ **That deserves stating plainly, because this thread has trained the opposite expectation.**
+The same estimator is recorded above as **4.85x** low and, out of sample, **4.22x** low. It is
+now the version that *reads `mutation-log.tsv`* rather than reasoning from a remembered suite
+duration, and on this campaign it was nearly right. One good sample does not retire the warning —
+the 4.22x row was itself out-of-sample and the estimate still carries no term for contention —
+but "budget its high end and then some" was, this once, exactly enough. Note also that the
+highest loadavg in the ledger produced neither the fastest nor the slowest per-suite cost, which
+is the ledger's standing point: **the loadavg column does not order the durations.**
+`Tools/mutation-log.tsv` has both mutant rows; `$STATE/suite-timings.tsv` has the campaign row.
 
 ### What the review of this diff found, and one of them was a check that could not fail
 

@@ -321,8 +321,9 @@ OPERATORS = [
     # real scan to fix a byte problem, which is the wrong direction (T14).
     ("Flattener.swift", "return seen.operators > 0 ? false : nil",
      "return false", "C24-unknown-is-not-no"),
-    # C24's open half, as a measurement: `drawnLargestImage`. Five mutants — the sixth tuple
-    # below, `C24-override-ignored`, is a later addition and not one of these five. Five because the
+    # C24's open half, as a measurement: `drawnLargestImage`. Five mutants — the sixth and
+    # seventh tuples below, `C24-override-ignored` and `C24-override-nil-means-fallback`, are
+    # later additions about the measurement *seam* and are not among these five. Five because the
     # entry's two refused repairs each died on a *different* one of these branches, and a
     # constant mutant can reach none of them — the whole claim of this walk is that it
     # needs no constant.
@@ -375,6 +376,18 @@ OPERATORS = [
      "        if let override = rebuildDPIOverride, let answer = override(page) { return answer }\n",
      "        _ = rebuildDPIOverride\n",
      "C24-override-ignored"),
+    # The *nearer* wrong implementation, and the one nine checks could not see: `nil` from the
+    # closure read as "use the fallback" rather than "no opinion about this page". It survived
+    # every row written on 2026-08-17 because the only declined page in that fixture is the one
+    # whose shipped answer already IS the fallback, so all nine agreed with it — found by an
+    # adversarial review, not by this tool, because nothing had encoded it. Killed now by the
+    # inverted-closure rows and, as far as the checks go, by nothing else. Both tuples are worth
+    # keeping: `C24-override-ignored` says the hook is read at all, this one says its `nil`
+    # means what its doc comment at `Flattener.swift` says it means.
+    ("Flattener.swift",
+     "        if let override = rebuildDPIOverride, let answer = override(page) { return answer }\n",
+     "        if let override = rebuildDPIOverride { return override(page) ?? fallbackRebuildDPI }\n",
+     "C24-override-nil-means-fallback"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",
      "guard !isRunning else { return .refusedRunInProgress }", "U19-add-guard"),
     # A5.3. The interlock as a flag again: the first walk to land lowers it while

@@ -61,7 +61,17 @@ guard args.count >= 2, let pageNumber = Int(args[1]), pageNumber >= 1 else {
     exit(2)
 }
 let source = URL(fileURLWithPath: args[0])
-let extra = args.dropFirst(2).compactMap(Double.init)
+// Refused, not dropped. `compactMap(Double.init)` over argv reads `96 1o0` as "measure 96",
+// silently, and the row that never appears is indistinguishable from a resolution that was
+// never asked for — invariant 1's shape in an instrument.
+let extra: [Double] = args.dropFirst(2).map {
+    guard let dpi = Double($0), dpi > 0, dpi.isFinite else {
+        FileHandle.standardError.write(Data(
+            "REFUSED: '\($0)' is not a positive DPI. Extra arguments are resolutions.\n".utf8))
+        exit(2)
+    }
+    return dpi
+}
 
 // One printer over one array. Counting tab escapes by eye has put the wrong number of
 // fields under a header three times here — T14's SKIP row, A12.3's `score-mrc`, T18's two.
@@ -212,6 +222,12 @@ guard abs(boxesBefore.0.width - boxesAfter.0.width) < 0.01,
 
 print(columns.joined(separator: "\t"))
 
+// A row of dashes is not a measurement. `score-corpus` printed `OK` at exit 1 over a document
+// it measured nothing on (T14) and that is the bug being avoided here, so the count is kept
+// rather than inferred from the output: a wrapper doing `tool … >> corpus.tsv && echo OK`
+// must not record a header and four failures as evidence.
+var measured = 0
+
 for (label, dpi) in queued {
     Flattener.rebuildDPIOverride = { _ in dpi }
     defer { Flattener.rebuildDPIOverride = nil }
@@ -279,4 +295,16 @@ for (label, dpi) in queued {
          total == 0 ? "-" : String(total),
          total == 0 ? "-" : String(matched),
          total == 0 ? "-" : String(format: "%.1f%%", 100.0 * Double(matched) / Double(total))])
+    measured += 1
+}
+
+if measured == 0 {
+    refuse("no candidate produced a measurement: \(queued.count) attempted and every one "
+           + "failed, so every row above is dashes. Exit 0 here would let a caller record a "
+           + "header as evidence.")
+}
+if measured < queued.count {
+    FileHandle.standardError.write(Data(
+        ("NOTE: \(queued.count - measured) of \(queued.count) candidates failed and carry "
+         + "dashes rather than numbers.\n").utf8))
 }

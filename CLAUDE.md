@@ -20,7 +20,7 @@ is open and it does not destroy content**: **C24, half fixed** — a page that d
 XObject at all no longer takes another page's plate resolution (85 pages over 3 documents,
 structural, no threshold, 0 route changes), while the 45 pages that draw a *different*
 image than the shared dictionary holds are still open with two refused repairs. **That open
-half is measured as of 2026-08-16** — read the entry's `C24b` section before planning
+half is measured as of 2026-08-17** — read the entry's `C24b` section before planning
 anything there: `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swift` report
 what a page actually draws, the 45 are **39 smaller and 6 wider** (which retires the
 observation the entry carried without a cause — both walks pick by *area* and report
@@ -30,9 +30,21 @@ rendered `Batzell` p22 both ways and it retains **92.8%** of its own 291 words a
 against **94.2%** at the 369.6 it accidentally gets today, for **87% fewer bytes** — so
 "rendering a page of type at 70 DPI is C9 again" was reasoned and is **false**, corrected in
 the four places it was published. Note too that *counting characters*, which the entry asked
-for, reads 1,961 at every resolution from 70.6 to 369.6 and would have said "no difference"
-while being right by accident; word retention against the page's own embedded text is what
-moves. It is wired into nothing, so **one sub-step** closes it — *wire the drawn walk into
+for, reads **1,960–1,962 across every resolution from 70.6 to 369.6** — a 0.1% spread against
+word retention's 1.4 points — so it would have said "no difference" while being right by
+accident; word retention against the page's own embedded text is what moves. (This sentence
+said a flat "1,961 at every resolution" until 2026-08-17; three of those six rows are 1,960 or
+1,962, and `BUGS.md` had it right while the two summaries flattened it.)
+**The override seam is mutation-tested as of 2026-08-17, and it found an ELEVENTH check that could
+not fail** — read `BUGS.md`'s `### The override seam, mutated` before trusting that block. Both
+mutants are killed, but the column that matters is *how many checks object*:
+`logic/C24-override-nil-means-fallback` — `nil` from the closure read as "use the fallback"
+rather than "no opinion about this page" — is killed by **exactly one** check, and that check did
+not exist in `c8855f6`. Against the nine checks that commit shipped the count was **zero**, so the
+nearer wrong reading would have survived while the register recorded the seam as pinned. The
+fixture is why: the only page it declines is the one whose shipped answer already *is* the
+fallback, so every row agreed with the wrong implementation by accident.
+It is wired into nothing, so **one sub-step** closes it — *wire the drawn walk into
 `rebuildDPI`* behind a corpus gate run, because it moves 45 pages. Read that
 section's review subsection too — it found **a
 tenth check that could not fail** and a bare form resolving its resource names in the page's

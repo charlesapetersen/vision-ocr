@@ -77,3 +77,5 @@ logic/C24b-bare-form-resources	killed	2693	2 check(s): …and inside a form carr
 logic/C24b-scope-does-not-descend	killed	2661	1 check(s): …yet a bare form resolves /Ix in its invoker's scope, not the page's
 logic/C24b-no-image-is-not-unknown	killed	2719	1 check(s): …and when that form draws no image, the answer is no image, not unknown
 logic/C24b-unresolved-name-is-not-nothing	killed	2621	1 check(s): …while a `Do` naming nothing the dictionary holds is unreadable
+logic/C24-override-ignored	killed	3453	5 check(s): …and setting it changes what rebuildDPI answers; …and the inverted closure still moves the page it does claim; …and `flatten` renders every overridden page at that resolution
+logic/C24-override-nil-means-fallback	killed	3014	1 check(s): …and a declined page keeps its OWN answer, not the fallback

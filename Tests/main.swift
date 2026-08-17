@@ -3559,18 +3559,53 @@ do {
                       && Flattener.rebuildDPI(of: drawing) != probeDPI,
                   "\(Flattener.rebuildDPI(of: quiet)) / \(Flattener.rebuildDPI(of: drawing))")
 
-            Flattener.rebuildDPIOverride = { page in
-                // No opinion about the page that draws nothing; the probe resolution for
-                // every other page. Deliberately not "every page": the untouched one is
-                // what makes the `nil` arm visible inside the same render.
+            // No opinion about the page that draws nothing; the probe resolution for
+            // every other page. Deliberately not "every page": the untouched one is
+            // what makes the `nil` arm visible inside the same render.
+            let declineQuiet: (PDFPage) -> Double? = { page in
                 Flattener.drawsAnyXObject(page) == false ? nil : probeDPI
             }
+            Flattener.rebuildDPIOverride = declineQuiet
+            // Belt to the explicit clear at the end of the block. `check()` does not exit on
+            // failure, so nothing leaks today, but a hook left set here would silently
+            // re-render every later section of this suite at the probe resolution — a
+            // whole-suite failure whose cause is 200 lines above the first red row.
+            defer { Flattener.rebuildDPIOverride = nil }
             check("…and setting it changes what rebuildDPI answers",
                   Flattener.rebuildDPI(of: drawing) == probeDPI,
                   "\(Flattener.rebuildDPI(of: drawing))")
             check("…while a page the closure declines still takes the shipped policy",
                   Flattener.rebuildDPI(of: quiet) == Flattener.fallbackRebuildDPI,
                   "\(Flattener.rebuildDPI(of: quiet))")
+
+            // **That row alone could not fail**, and for the nine checks this block shipped
+            // with in `c8855f6` none of the others could see it either. `quiet`'s own shipped
+            // answer *is* `fallbackRebuildDPI` — asserted 150 lines above — and `quiet` is the
+            // only page `declineQuiet` declines. So `override(page) ?? fallbackRebuildDPI`,
+            // the nearest wrong reading of "no opinion about this page", satisfies every row
+            // in this block: the eleventh check in this register that could not fail, found by
+            // an adversarial review of the commit that added it.
+            //
+            // What separates the two readings is a declined page whose shipped answer is *not*
+            // the fallback, and the fixture already pins one: `drawing`'s native resolution is
+            // asserted above to be strictly greater than the fallback, so the two values cannot
+            // coincide however the fixture's plate is resized. Inverting the closure is enough
+            // — all three doors read `rebuildDPI(of:)`, so a wrong reading pinned there is
+            // pinned everywhere, without a second nine-check render.
+            Flattener.rebuildDPIOverride = { page in
+                Flattener.drawsAnyXObject(page) == false ? probeDPI : nil
+            }
+            check("…and a declined page keeps its OWN answer, not the fallback",
+                  Flattener.rebuildDPI(of: drawing) == Flattener.nativeDPI(of: drawing)
+                      && Flattener.rebuildDPI(of: drawing) != Flattener.fallbackRebuildDPI,
+                  String(format: "%.1f, fallback %.1f", Flattener.rebuildDPI(of: drawing),
+                         Flattener.fallbackRebuildDPI))
+            check("…and the inverted closure still moves the page it does claim",
+                  Flattener.rebuildDPI(of: quiet) == probeDPI,
+                  String(format: "%.1f", Flattener.rebuildDPI(of: quiet)))
+
+            // Back to the closure the three doors below measure.
+            Flattener.rebuildDPIOverride = declineQuiet
 
             // Door 1: `flatten`, the one that matters most — the bitmaps it writes are
             // exactly what recognition reads, so this is the resolution a character count

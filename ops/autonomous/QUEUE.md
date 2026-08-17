@@ -85,12 +85,15 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       suite's floor as an `exit 133` crash.
       **The blocker is retired, 2026-08-17.** `Batzell` p22 was rendered both ways by
       `Tools/score-rebuild-dpi.swift` (new; drives the shipped pipeline through
-      `Flattener.rebuildDPIOverride`): 92.8% word retention against the page's own embedded text at its
-      own 70.6 DPI, 93.8% at the 300 fallback, 94.2% at the 369.6 it accidentally gets today — for 87%
+      `Flattener.rebuildDPIOverride`): **270 of its own 291 embedded words (92.8%)** at its own 70.6 DPI,
+      **273 (93.8%)** at the 300 fallback, **274 (94.2%)** at the 369.6 it accidentally gets today — for 87%
       fewer published bytes. So `minimumScanPixelWidth` is right about all three pages it faces, needs no
       recalibration, and "rendering a page of type at 70 DPI is C9 again" was reasoned and is false.
-      Note the trap: **counting characters, which this line asked for, reads 1,961 at every resolution
-      from 70.6 to 369.6** and would have said "no difference" while being right by accident.
+      Note the trap: **counting characters, which this line asked for, reads 1,960–1,962 across every
+      resolution from 70.6 to 369.6** — a 0.1% spread against retention's 1.4 points — and would have said
+      "no difference" while being right by accident. (This line said a flat "1,961 at every resolution"
+      until a 2026-08-17 review checked it against `REBUILD-DPI-2026-08-17.tsv`: three of those six rows
+      are 1,960 or 1,962. Percentages here now carry their absolute counts, per CONTRIBUTING §3.)
       **What is left is ONE thing**: wire the drawn walk into `rebuildDPI` behind a corpus gate run,
       because it moves 45 pages. Expect `score-drawn-images`'s sweep unchanged and `score-routing`'s two
       refused rows to come back.
