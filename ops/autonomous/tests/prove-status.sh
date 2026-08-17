@@ -1,0 +1,316 @@
+#!/usr/bin/env bash
+# prove-status.sh — prove-the-mechanism harness for ops/autonomous/status-digest.sh's STATE 1 block.
+#
+# WHY IT IS COMMITTED. run-state-lib.sh decides WHY a live daemon is not advancing and can answer five
+# different things; status-digest.sh renders that answer, and the answers call for OPPOSITE owner actions
+# ("go add work" / "wait, it is capped" / "wait, a suite has the lock" / "rescue the work a dead commit left
+# behind" / "nothing, it is working"). The lib is careful; the RENDERER is where an answer can still be
+# thrown away, and on 2026-08-16 that happened TWICE IN ONE EVENING, both times printing the same sentence:
+#
+#   20:33 — `daemon.sh status` printed
+#       ◐  Running, but not finding anything it can do (16 minutes)
+#   while its own Suite section printed "a suite is RUNNING", `pgrep -x tests` returned pid 3574 and
+#   $STATE/test.lock/label held `c24b-session`. The case statement had a branch for *THROTTLED* and a
+#   residual `*)`, and NONE for the WAITING FOR THE SUITE answer the lib had returned.
+#
+#   21:19 — with that fixed, the SAME sentence appeared over a session 59 minutes in and actively editing
+#   `Tests/main.swift`. No branch was missing this time; the PREMISE was wrong. $STATE/idle.since advances
+#   only when the git tip or the queue moves — it is a stopwatch on COMMITS, not on work — so every branch
+#   downstream of it inherited "has not committed for an hour" and rendered it as "has done nothing".
+#
+# So this harness asserts BRANCH COVERAGE OF THE ANSWER SET plus the PRECEDENCE between answers, not the
+# detectors themselves. Section [5] fails if the lib grows a reason the renderer has no branch for.
+#
+# FULLY SANDBOXED — it cannot touch the owner's machine, and cannot be perturbed by it:
+#   * its own $HOME, $VISIONOCR_STATE, $VISIONOCR_TEST_LOCK and a throwaway $VISIONOCR_REPO git repo;
+#   * `pgrep` and `launchctl` are interposed, so the verdict does not depend on what is running here;
+#   * the digest is READ-ONLY by construction (its own header), so nothing is written outside $T;
+#   * NO suite, build, swiftc or real `tests` process — deliberately, unlike prove-test-lock.sh [10]. That
+#     harness already proves the real `pgrep -x tests` detector against a genuine process it names `tests`;
+#     duplicating it here would spawn a process every other test-lock caller on this machine must yield to,
+#     to re-prove a detector this file is not testing.
+#
+# ⚠️ Interposition is by BASH_ENV shell function, not by $PATH: status-digest.sh re-prepends /usr/bin:/bin to
+# PATH itself, so a $T/bin/pgrep stub would be shadowed by the real one. preflight PROVES the interposition
+# works and aborts if it does not — the one check that must never be taken on trust.
+#
+# USAGE:  ops/autonomous/tests/prove-status.sh [path/to/status-digest.sh]
+# EXPECTED RESULT: 33 passed, 0 failed. Three independent falsifications, all actually run:
+#   * against the renderer as it stood before this commit — 11 passed / 23 failed, with sections [1], [6]
+#     and [7] printing the measured sentences back verbatim;
+#   * against a lib given a new `DISK FULL` reason and a renderer given only a `# TODO` comment for it —
+#     26 / 7, section [5]. Before [5] was rewritten to read case PATTERNS instead of grepping the whole
+#     file, that same plant scored a clean pass, i.e. the section could not fail;
+#   * against a renderer that is nothing but `exit 1` — 9 / 24, caught in preflight. Before the exit-code
+#     and output assertions existed it scored 8 PASS in silence, because every negative assertion
+#     ("does NOT say …") is satisfied by no output at all.
+set -uo pipefail
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+DIGEST="${1:-$HERE/../status-digest.sh}"
+LIB="$(dirname "$DIGEST")/run-state-lib.sh"
+[ -f "$DIGEST" ] || { echo "no status-digest.sh at $DIGEST"; exit 2; }
+[ -f "$LIB" ]    || { echo "no run-state-lib.sh beside $DIGEST"; exit 2; }
+T="$(mktemp -d)"
+_cleanup() { rm -rf "$T"; }
+trap _cleanup EXIT
+# bash does NOT run an EXIT trap when it dies of an UNTRAPPED signal, so these are what actually stop the
+# sandbox leaking when the harness is pkill'd or Ctrl-C'd. Same lesson as prove-test-lock.sh, same fix.
+trap '_cleanup; exit 130' INT
+trap '_cleanup; exit 143' TERM
+trap '_cleanup; exit 129' HUP
+PASS=0; FAIL=0
+ok()  { printf '  \033[32mPASS\033[0m %s\n' "$1"; PASS=$((PASS+1)); }
+bad() { printf '  \033[31mFAIL\033[0m %s\n' "$1"; FAIL=$((FAIL+1)); }
+
+# ---- sandbox --------------------------------------------------------------------------------------------
+export HOME="$T/home"; mkdir -p "$HOME/Desktop"
+export VISIONOCR_STATE="$T/state"; mkdir -p "$VISIONOCR_STATE"
+export VISIONOCR_TEST_LOCK="$VISIONOCR_STATE/test.lock"
+export VISIONOCR_REPO="$T/repo"
+
+# A throwaway repo with a REAL `auto/*` worktree, so orphaned_work is exercised against actual git rather
+# than a mock of it — reading `git worktree list` correctly is the detector's whole job.
+git init -q "$VISIONOCR_REPO" 2>/dev/null
+git -C "$VISIONOCR_REPO" config user.email t@t; git -C "$VISIONOCR_REPO" config user.name t
+echo one > "$VISIONOCR_REPO/f.txt"; git -C "$VISIONOCR_REPO" add f.txt
+git -C "$VISIONOCR_REPO" commit -qm first
+git -C "$VISIONOCR_REPO" worktree add -q "$T/auto-wt" -b auto/testwt 2>/dev/null
+
+# Stubs, as shell functions so they beat PATH lookups (see the header).
+#   pgrep: `-f vision-ocr-autonomous.sh` always matches — every case here is a LIVE daemon, which is the
+#          only branch of STATE 1 this harness is about. `-x tests` consults $SUITECTL.
+#   launchctl: always fails ("no job loaded"). Unreached while running=1, stubbed anyway so the harness can
+#          never read — or bootout — the owner's real com.visionocr.autonomous.
+cat > "$T/stubs.sh" <<'STUBS'
+pgrep() {
+  case "$*" in
+    *vision-ocr-autonomous.sh*) return 0 ;;
+    *-x*tests*) [ "$(cat "$SUITECTL" 2>/dev/null)" = live ] && { echo 4242; return 0; }; return 1 ;;
+  esac
+  return 1
+}
+launchctl() { return 1; }
+export -f pgrep launchctl
+STUBS
+export SUITECTL="$T/suitectl"; echo none > "$SUITECTL"
+export BASH_ENV="$T/stubs.sh"
+
+# idle.since: a fixed 16 minutes ago, the interval the first measured misreport was printed at.
+echo $(( $(date +%s) - 960 )) > "$VISIONOCR_STATE/idle.since"
+
+ENGINE="$VISIONOCR_STATE/engine.lock"
+session_on()  { : > "$ENGINE"; }                  # fresh mtime = heartbeat alive
+session_off() { rm -f "$ENGINE"; }
+dirty_on()    { echo changed > "$T/auto-wt/f.txt"; }
+dirty_off()   { git -C "$T/auto-wt" checkout -q -- f.txt 2>/dev/null; }
+
+# ⚠️ CAPTURE STDERR AND THE EXIT CODE, do not discard them. The first version did `2>/dev/null` and asserted
+# only on substrings, so 8 of these checks were the NEGATIVE form ("does NOT say 'not finding anything'")
+# and passed happily against a digest that printed nothing at all — a syntax error, a missing helper, an
+# `exit 1` all scored 8 PASS. The digest's own header promises it "ALWAYS exits 0" and prints a useful
+# report with no repo and no state dir, so both of those are assertable facts, not incidental.
+# ⚠️ THE STATUS AND STDERR GO THROUGH FILES, NOT VARIABLES. Every caller here is `x="$(state_block)"`, a
+# COMMAND SUBSTITUTION — a subshell — so a `DIGEST_RC=$?` assigned inside is discarded the moment it
+# returns, and the assertion reading it tests a stale value from the previous call. The first version of
+# this block did exactly that: against a renderer that was nothing but `exit 1` it still reported the
+# digest had exited 0. A harness that cannot see the failure it is testing for is the whole subject of this
+# file, so it is written the one way that survives a subshell.
+run_digest() { bash "$DIGEST" 2>"$T/digest.err"; printf '%s' "$?" > "$T/digest.rc"; }
+digest_rc()  { cat "$T/digest.rc" 2>/dev/null || printf 0; }
+digest_err() { cat "$T/digest.err" 2>/dev/null; }
+# STATE 1 is the icon line and the hint under it: everything after the title, up to the `Done` row.
+# ⚠️ NOT a fixed `sed -n '2,5p'`. The hint is variable-length — the orphaned-work branch prints one line per
+# worktree — so a fixed window silently truncates it and an assertion looking for the SECOND worktree fails
+# while the renderer is perfectly correct. That produced exactly one wrong diagnosis while this file was
+# being written. Delimit on the next section instead of counting lines.
+state_block() {
+  local o; o="$(run_digest)"
+  # Fail LOUDLY rather than returning empty: an empty block silently satisfies every negative assertion.
+  [ "$(digest_rc)" = 0 ] || { printf 'DIGEST-EXITED-%s\n' "$(digest_rc)"; return; }
+  [ -z "$(digest_err)" ] || { printf 'DIGEST-STDERR: %s\n' "$(digest_err)"; return; }
+  case "$o" in '') printf 'DIGEST-EMPTY\n'; return ;; esac
+  printf '%s\n' "$o" | awk 'NR==1{next} /^  Done/{exit} {print}'
+}
+
+# preflight — PROVE the interposition before asserting anything through it. A harness whose stubs are
+# shadowed still prints PASS lines; it is just measuring the wrong machine.
+echo "[0] preflight — stubs really interposed"
+echo live > "$SUITECTL"
+if bash -c 'pgrep -x tests' >/dev/null 2>&1; then ok "pgrep stub reachable through BASH_ENV"
+else bad "pgrep stub NOT interposed — every assertion below would measure the real machine"; exit 2; fi
+if ! bash -c 'launchctl print gui/0/nope' >/dev/null 2>&1; then ok "launchctl stub reachable"
+else bad "launchctl stub NOT interposed"; exit 2; fi
+if [ -d "$T/auto-wt" ]; then ok "sandbox repo has a real auto/* worktree"
+else bad "could not create the sandbox worktree — [7] would assert nothing"; exit 2; fi
+echo none > "$SUITECTL"; session_off; dirty_off
+# The digest must actually RUN before any negative assertion below means anything.
+_pre="$(run_digest)"
+[ "$(digest_rc)" = 0 ] && ok "the digest exits 0 (its header promises it always does)" \
+                       || bad "the digest exited $(digest_rc) — every negative assertion below would pass vacuously"
+[ -z "$(digest_err)" ] && ok "the digest writes nothing to stderr" \
+                       || bad "the digest wrote to stderr: $(digest_err)"
+[ "$(printf '%s\n' "$_pre" | wc -l)" -ge 6 ] && ok "the digest produces a report, not silence" \
+                     || bad "the digest printed fewer than 6 lines — negative assertions would be vacuous"
+
+# ---- [1] a suite holds the lock -------------------------------------------------------------------------
+echo "[1] a suite is running under the lock"
+mkdir -p "$VISIONOCR_TEST_LOCK"; echo 4242 > "$VISIONOCR_TEST_LOCK/pid"; echo c24b-session > "$VISIONOCR_TEST_LOCK/label"
+echo live > "$SUITECTL"
+b="$(state_block)"
+case "$b" in *"Waiting for a test suite to finish"*) ok "names the suite wait" ;;
+  *) bad "does not name the suite wait — got: $(printf '%s' "$b" | tr '\n' ' ')" ;; esac
+case "$b" in *"not finding anything it can do"*) bad "STILL reports an empty queue over a running suite" ;;
+  *) ok "does NOT report it as an empty queue" ;; esac
+case "$b" in *c24b-session*) ok "names WHO holds the suite lock" ;;
+  *) bad "does not name the lock holder" ;; esac
+
+# ---- [2] a suite started outside the lock ---------------------------------------------------------------
+echo "[2] a suite is running, started outside the lock"
+rm -rf "$VISIONOCR_TEST_LOCK"
+b="$(state_block)"
+case "$b" in *"Waiting for a test suite to finish"*) ok "still names the suite wait with no lock label" ;;
+  *) bad "an unlabelled suite falls through to the residual" ;; esac
+case "$b" in *"outside the suite lock"*) ok "says it was started outside the lock — a different owner action" ;;
+  *) bad "does not distinguish an out-of-band suite from the daemon's own" ;; esac
+
+# ---- [3] throttled, and the reset time survives the render ----------------------------------------------
+# ratelimit_phrase was called with NO argument here, which degrades to a bare "usage cap" and drops the reset
+# time the lib had just computed — the half of the sentence that says whether to wait or to look.
+echo "[3] the last session was refused by the usage cap"
+echo none > "$SUITECTL"
+reset=$(( $(date +%s) + 3600 ))
+printf '{"type":"result","api_error_status":429,"resetsAt":%s}\n' "$reset" > "$VISIONOCR_STATE/last-session.log"
+b="$(state_block)"
+case "$b" in *"usage cap"*) ok "names the usage cap" ;;
+  *) bad "does not name the cap — got: $(printf '%s' "$b" | tr '\n' ' ')" ;; esac
+case "$b" in *"resets $(date -r "$reset" '+%H:%M')"*) ok "carries the reset time through to the owner" ;;
+  *) bad "reset time dropped — ratelimit_phrase called without its epoch" ;; esac
+case "$b" in *"not finding anything it can do"*) bad "a cap reported as an empty queue" ;;
+  *) ok "does NOT report the cap as an empty queue" ;; esac
+rm -f "$VISIONOCR_STATE/last-session.log"
+
+# ---- [4] the residual really is still reachable ---------------------------------------------------------
+# A fix that makes every case match something is not a fix; the empty-queue sentence must still be printed
+# when the queue is in fact the reason.
+echo "[4] no cap, no suite, no session, nothing orphaned — the residual"
+b="$(state_block)"
+case "$b" in *"not finding anything it can do"*) ok "the residual branch is still reachable" ;;
+  *) bad "the empty-queue sentence can no longer be printed at all" ;; esac
+
+# ---- [5] structural: one branch per answer the lib can give ---------------------------------------------
+# The first defect was not a wrong branch, it was a MISSING one, and a new reason added to the lib would be
+# swallowed by the residual exactly the same way.
+echo "[5] every answer run-state-lib.sh can give has a branch in the renderer"
+# ⚠️ THIS CHECK WAS ITSELF A CHECK THAT COULD NOT FAIL, for its first hours of life. It asked
+# `grep -qF "$p" "$DIGEST"` — a substring search over the WHOLE FILE, comments included. Since the renderer's
+# own comments narrate the history ("Hence WORKING, checked first", "…had no case here"), every reason
+# matched whether or not a branch existed. Demonstrated: adding a `running, DISK FULL (…)` reason to the lib
+# and giving the renderer nothing but a `# TODO` comment still scored 26/0. That is the exact scenario this
+# section exists to catch, and the project's register records ten prior checks with the same defect.
+#
+# Now it extracts the case PATTERNS — the `*…)` labels between `case "$(idle_explanation …)"` and its `esac`
+# — and matches against those alone. A comment cannot satisfy it, because a comment line does not begin
+# with `*` and end with `)`.
+cand="$T/reasons"; pats="$T/patterns"
+awk '/case "\$\(idle_explanation/{f=1; next} f && /^[[:space:]]*esac/{f=0} f' "$DIGEST" \
+  | grep -oE '^[[:space:]]*\*[^)]*\)' > "$pats"
+if [ ! -s "$pats" ]; then
+  bad "could not find the idle_explanation case statement in the renderer — this check is asserting nothing"
+else
+  # ⚠️ ONE PHRASE PER LINE throughout. The phrases contain spaces, so a space-separated accumulator splits
+  # 'WAITING FOR THE SUITE' into four words and the failure message reads as gibberish.
+  # BACKING OFF is the lib's own residual, deliberately matched by the renderer's `*)`, so it is excluded.
+  # Two sources on purpose: a literal list saying what is known today, and a scan of the lib that catches a
+  # reason nobody remembered to add to the list.
+  { printf 'THROTTLED\nWAITING FOR THE SUITE\nWORKING\nORPHANED WORK\n'
+    grep -o "running, [A-Z][A-Z ]*[A-Z]" "$LIB" | sed 's/^running, //'
+  } | grep -v '^BACKING OFF$' | sort -u > "$cand"
+  missing=""
+  while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    grep -qF "$p" "$pats" || missing="$missing '$p'"
+  done < "$cand"
+  if [ -z "$missing" ]; then ok "every lib answer has a case PATTERN, not merely a mention in a comment"
+  else bad "the renderer has no branch for:$missing — it will be reported as an empty queue"; fi
+  # And the residual must still be there, or a future reason falls off the end of the case entirely.
+  grep -qE '^[[:space:]]*\*\)' "$pats" \
+    && ok "the residual \`*)\` is still present as the last resort" \
+    || bad "no residual \`*)\` — an unmatched reason would render as an empty STATE_LINE"
+fi
+
+# ---- [6] a session is in flight — the 21:19 defect -------------------------------------------------------
+echo "[6] a session is working right now"
+session_on
+b="$(state_block)"
+case "$b" in *"Working now"*) ok "reports that it is working" ;;
+  *) bad "a live session is not reported as working — got: $(printf '%s' "$b" | tr '\n' ' ')" ;; esac
+# THE regression assertion. This exact sentence was printed over a session 59 minutes into real edits.
+case "$b" in *"not finding anything it can do"*) bad "STILL reports a working session as an empty queue" ;;
+  *) ok "does NOT report a working session as an empty queue" ;; esac
+# The idle figure must not be the headline: "(62 minutes)" beside "Working now" is what made a healthy
+# daemon look stuck, and it measures time since the last COMMIT, not time doing nothing.
+case "$b" in *"into this session"*) ok "the headline counts session runtime, not time since the last commit" ;;
+  *) bad "headline still leads with the commit stopwatch" ;; esac
+case "$b" in *"time since the last COMMIT"*) ok "says explicitly what the other number measures" ;;
+  *) bad "does not explain the idle figure, which is what misled the reader" ;; esac
+
+# ---- [7] a session's commit died, leaving work behind ----------------------------------------------------
+echo "[7] uncommitted work orphaned in an auto/* worktree"
+session_off; dirty_on
+b="$(state_block)"
+case "$b" in *"never committed"*) ok "names the lost commit" ;;
+  *) bad "orphaned work is not reported — got: $(printf '%s' "$b" | tr '\n' ' ')" ;; esac
+case "$b" in *"not finding anything it can do"*) bad "orphaned work reported as an empty queue" ;;
+  *) ok "does NOT report orphaned work as an empty queue" ;; esac
+case "$b" in *auto-wt*) ok "names the worktree the work is sitting in" ;;
+  *) bad "does not say WHERE the work is, so it cannot be rescued" ;; esac
+case "$b" in *"file changed"*|*insertion*|*deletion*) ok "says how much work is at stake" ;;
+  *) bad "no diffstat — the owner cannot judge whether to rescue it" ;; esac
+# ⚠️ EVERY orphan, not just the first. The renderer originally used `${_orph%% *}`, which on the machine
+# this was written on named 660 insertions in one worktree and silently omitted 887 in another.
+git -C "$VISIONOCR_REPO" worktree add -q "$T/auto-wt2" -b auto/testwt2 2>/dev/null
+echo changed2 > "$T/auto-wt2/f.txt"
+b="$(state_block)"
+case "$b" in *auto-wt*) : ;; *) bad "lost the first worktree once a second appeared" ;; esac
+case "$b" in *auto-wt2*) ok "names BOTH worktrees, not just the head of the list" ;;
+  *) bad "reports only the first orphan — understates the loss while looking specific" ;; esac
+case "$b" in *"2 worktrees"*) ok "counts them" ;; *) bad "does not say how many" ;; esac
+
+# ---- [8] precedence — a working session outranks everything ---------------------------------------------
+# A live session's worktree is SUPPOSED to be dirty, so orphaned_work fires during every healthy session. If
+# ORPHANED outranked WORKING the digest would cry wolf once per session, which is worse than silence.
+echo "[8] precedence"
+session_on   # dirty worktree AND a live session
+b="$(state_block)"
+case "$b" in *"Working now"*) ok "a live session outranks its own dirty worktree" ;;
+  *) bad "reports a healthy in-flight session as orphaned work — cries wolf every session" ;; esac
+echo live > "$SUITECTL"   # …and outranks a running suite, which is just what it is doing
+b="$(state_block)"
+case "$b" in *"Working now"*) ok "a live session outranks the suite wait" ;;
+  *) bad "a session running its own suite is reported as waiting for someone else's" ;; esac
+case "$b" in *"Running a test suite"*) ok "…and still says the suite is what it is doing" ;;
+  *) bad "loses the fact that the session is in its suite" ;; esac
+# ⚠️ …and WORKING must still SURFACE the orphan it outranks. Sessions run ~95 min back to back, so a state
+# ranked below WORKING is visible a few percent of the time — and ORPHANED WORK is the only one that never
+# clears by itself. Outranking it must not mean hiding it.
+case "$b" in *"holding uncommitted work"*) ok "the WORKING hint still surfaces the orphaned work beneath it" ;;
+  *) bad "WORKING hides orphaned work — the one state that needs a human is invisible 97% of the time" ;; esac
+echo none > "$SUITECTL"
+
+# ---- [9] a stale engine.lock must not read as working ----------------------------------------------------
+# If the daemon is hard-killed the lock survives with nothing behind it. Reporting that as "Working now" is
+# the same lie pointing the other way, and it would hide a dead run indefinitely.
+echo "[9] a stale engine.lock is not a working session"
+session_on
+# 20 minutes of missed heartbeats; the lib's threshold is 300s.
+touch -t "$(date -v-20M '+%Y%m%d%H%M.%S' 2>/dev/null || date '+%Y%m%d%H%M.%S')" "$ENGINE"
+b="$(state_block)"
+case "$b" in *"Working now"*) bad "a lock with a 20-minute-dead heartbeat still reads as working" ;;
+  *) ok "a stale lock does NOT read as a working session" ;; esac
+case "$b" in *"never committed"*) ok "falls through to the orphaned-work truth beneath it" ;;
+  *) bad "fell past orphaned work too — got: $(printf '%s' "$b" | tr '\n' ' ')" ;; esac
+
+session_off; dirty_off
+printf '\n  %s passed, %s failed\n' "$PASS" "$FAIL"
+[ "$FAIL" = 0 ]

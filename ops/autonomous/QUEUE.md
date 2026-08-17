@@ -97,8 +97,9 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       (context: BUGS.md C25 and T16 — both CLOSED; they are why this gate matters, not the work itself)
 - [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
-      scoped (`python3 Tools/mutate.py --only <substring>`), never the ~70-minute full catalogue in one
-      session, and never while `Sources/` is being edited. The work item is the live survivor list in
+      scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~55 hours
+      at the suite's measured 39m30s per mutant, not the ~70 minutes this line used to claim — and never
+      while `Sources/` is being edited. The work item is the live survivor list in
       `Tools/mutation-log.tsv`. (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a
       value nothing depends on)
 - [ ] **fault-inject** — run `Tools/fault-inject.sh` over all its cases and confirm each sabotage is still

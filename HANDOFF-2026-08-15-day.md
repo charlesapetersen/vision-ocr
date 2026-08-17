@@ -118,6 +118,13 @@ writing it. CONTRIBUTING §4 is not ceremony.
 
 ## A process note, from the owner
 
+> ⛔ **WITHDRAWN 2026-08-16.** The owner has reversed this: subagents are wanted, and an adversarial
+> review agent over a finished diff before committing is expected rather than optional. The paragraph
+> below is kept because the *incident* is real and still worth knowing — a barrier makes a part-way
+> fan-out unsalvageable, and ten agents each re-reading `BUGS.md` is waste — but its **instruction no
+> longer applies**. What is wanted now is in `ops/autonomous/resume-prompt.txt`, §EFFICIENCY + SUBAGENT
+> SIZING. This is the only edit to this dated hand-off; the record below is unchanged.
+
 **Work serially. Do not fan out to subagents.** This session opened with a ten-agent recon
 workflow over the open findings plus a ten-agent challenge phase behind a barrier. The owner
 stopped it: it consumed most of a usage window and one of the ten designs had landed when it

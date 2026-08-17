@@ -201,7 +201,10 @@ finished.
 ./run_tests.sh
 ```
 
-1,141 checks, about 37 minutes, because it runs real OCR rather than mocking it.
+1,141 checks, and anywhere from about a minute and a half to about forty depending on what else the
+machine is doing, because it runs real OCR rather than mocking it. Every run through
+`ops/autonomous/test-lock.sh` records its own duration and the load average beside it, so the
+spread is a fact you can look up rather than one you have to rediscover.
 It builds image-only PDFs and puts them through the actual pipeline — including
 `OCRModel.makeSearchablePDF`, which is deliberately internal so the tests exercise
 the real function rather than a replica of it.

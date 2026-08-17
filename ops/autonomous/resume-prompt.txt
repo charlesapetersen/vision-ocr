@@ -69,9 +69,15 @@ STEP 3 — DO IT. The non-negotiables, from CLAUDE.md and CONTRIBUTING.md:
   * **A sibling sweep**, and the answer goes in the commit message: grep for who else does this thing. Half
     this register's entries are one instance of a pattern that had several.
   * **A mutant** in `Tools/mutate.py` if you changed a constant or a guard, run scoped
-    (`python3 Tools/mutate.py --only <substring>` — never the ~70-minute full catalogue), with the row
-    appended to `Tools/mutation-log.tsv`. A **`Tools/fault-inject.sh` case** if you added an error branch.
-    ⚠️ Do not edit `Sources/` while `mutate.py` is running.
+    (`python3 Tools/mutate.py --only <substring>`), with the row appended to `Tools/mutation-log.tsv`.
+    ⛔ **NEVER the full catalogue.** This line said "~70 minutes", which was arithmetic on a 2-4 minute
+    suite; the suite is **39m30s measured 2026-08-16** and the tool runs the whole of it per mutant over
+    **84 mutants**, so the real figure is on the order of **55 HOURS**. Not a thing to start in a session.
+    Even a SCOPED run costs ~40 min per mutant — budget it like a commit, not like a check.
+    A **`Tools/fault-inject.sh` case** if you added an error branch.
+    ⚠️ Do not edit `Sources/` while `mutate.py` is running. ⚠️ And `mutate.py` does NOT take the suite
+    lock: check `ops/autonomous/test-lock.sh status` first. It will not yield to a health gate or a hook
+    already mid-suite, and two suites at once corrupt both.
   * **Never write a real corpus.** `testdocs/` is 1.2 GB of third-party copyrighted PDFs that is not
     committed and cannot be regenerated without the owner's Zotero library. Read it; never write it. Test
     output goes to `mktemp` scratch. File safety beats getting it done.
@@ -97,9 +103,57 @@ STEP 3.5 — GUI VERIFICATION, OFF the owner's screen:
   running `VisionOCR.app` — macOS SIGKILLs a running app whose signature changed underneath it.
 
 STEP 4 — COMMIT, with the documents moving in the SAME commit.
-  The hook will run the full suite (2-4 minutes of real OCR) on any commit touching
-  `Sources/|Helper/|Tests/|Tools/|build.sh|run_tests.sh`; docs-only commits are free. Budget for that: a
-  three-checkpoint item spends ~12 minutes inside the suite alone.
+  The hook will run the full suite on any commit touching
+  `Sources/|Helper/|Tests/|Tools/|build.sh|run_tests.sh`; docs-only commits are free.
+  ⚠️ **A COMMIT COSTS ABOUT FORTY MINUTES, NOT FOUR.** This line said "2-4 minutes" until 2026-08-16 and was
+  wrong by an order of magnitude. The suite was then timed end to end: **39m30s** — lock acquired 20:29:23,
+  released 21:08:53, 1137/1137 with no skips; swiftc 1m47s of it, the `tests` binary the other 37m43s, at
+  ~96% of one core throughout. The health gate that wraps it measured 44m53s. Plan the whole item around
+  that, and note that you pay it TWICE if you run the suite yourself before committing — the hook does not
+  know you just ran it. If you have already run a green suite and changed nothing since, going straight to
+  the commit and letting the HOOK be your suite run is the cheaper order.
+  ⛔ **NEVER END YOUR TURN WITH A COMMIT STILL IN FLIGHT.** This is how the run stalled on 2026-08-16: a
+  95-minute session did the whole of C24b, went green 1137/1137, backgrounded `git commit`, wrote itself a
+  hand-off saying the work was done — and ended its turn (`stop_reason: end_turn`, rc=0, $15.10 of $20, no
+  watchdog and no cap involved). Ending the turn KILLS every background task, so the hook died at
+  `Terminated: 15` partway through its suite, nothing landed, and the daemon correctly logged "advanced
+  nothing". Two sessions and about three hours bought one commit's worth of nothing.
+
+  ⛔ **AND YOU CANNOT JUST RUN IT IN THE FOREGROUND — THE BASH TOOL CAPS AT 10 MINUTES.** `timeout` maxes
+  out at 600000 ms, so a foreground `git commit` on a ~40 minute hook is killed at 10 minutes, every time,
+  with `Exit code 143 Command timed out after 10m 0s`. Measured 2026-08-16 21:31→21:41: a session tried
+  exactly that, lost ten minutes of suite, and had to start the whole hook again. So the ONLY working
+  shape is detached-plus-poll:
+
+      cd <your worktree> && export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+      git commit -F /tmp/<your-msg>.txt > /tmp/<your>-commit.log 2>&1 &
+
+  Write the message to a FILE first — a heredoc into a backgrounded command is a good way to lose it — and
+  set PATH explicitly, because a backgrounded shell here has essentially none.
+
+  ⚠️ **THEN POLL ON `HEAD`, NOT ON `pgrep -x tests`.** The hook type-checks the staged tools and compiles
+  for about two minutes BEFORE the `tests` binary exists, so `pgrep -x tests` is false at the start of a
+  perfectly healthy hook and a poll keyed on it reports "hook finished" almost immediately. The same
+  session made that mistake in the same hour and had to catch itself. The condition that means what you
+  want is the sha moving:
+
+      before=$(git log -1 --format=%h)
+      for i in $(seq 1 300); do
+        now=$(git log -1 --format=%h)
+        [ "$now" != "$before" ] && { echo "landed: $now"; break; }
+        /usr/bin/grep -qE 'TESTS FAILED|commit refused' /tmp/<your>-commit.log && { echo "REFUSED"; break; }
+        /bin/sleep 10
+      done
+
+  Each `seq`/`sleep 10` batch is well under the 10-minute cap, so run several back to back until one of the
+  two conditions fires. Poll to completion before you stop — "I asked for it" is not "it landed".
+
+  ⛔ **NEVER END YOUR TURN WITH A COMMIT STILL IN FLIGHT.** Ending a turn KILLS every background task, which
+  is how the 95-minute session above lost everything. Before STEP 6, PROVE the commit exists:
+  `git log -1 --format=%H` must differ from the sha you started from, and `git status --porcelain` must be
+  clean. If it does not, say so in RUN.md's SESSION LOG in those words — your staged work survives in the
+  worktree and the next session can finish it, but only if your log says the commit never landed instead of
+  implying it did.
   **Doc-sync is part of the change, not a follow-up.** In the same commit as the fix:
     * the `BUGS.md` entry — rewrite its `— <STATUS>` suffix, add the date, the before/after measurements,
       and a correction to the entry itself if the entry was wrong (four have been);
@@ -115,7 +169,8 @@ STEP 4 — COMMIT, with the documents moving in the SAME commit.
   declarative English sentence saying **what was measured**, no type prefix and no ticket ID, e.g.
   *"A page that draws no image has no image, whatever its /Resources can reach"*. The body is prose keyed by
   register ID, citing before/after numbers, the negative control, and mutant kill status, ending with the
-  suite result (`Suite 1,127 checks, no skips.`). End with a co-author trailer naming **the model you are
+  suite result, with the count YOU saw rather than one copied from here (`Suite 1,137 checks, no skips.`
+  was true on 2026-08-16; it goes up as checks are added, which is the point of quoting your own run). End with a co-author trailer naming **the model you are
   actually running as** — not one copied from this file or the last commit:
       Co-Authored-By: Claude <your model, e.g. Opus 5> (1M context) <noreply@anthropic.com>
   CHECKPOINT as you go if the item is large: whenever you have a green, self-contained chunk,
@@ -149,10 +204,24 @@ VERIFICATION DISCIPLINE — this project's culture, and it is stricter than most
   * Do not invent numbers. If you did not measure it, say so.
 
 EFFICIENCY + SUBAGENT SIZING:
-  The owner's standing instruction for this project is to **work serially**. Do not stand up a wide fan-out:
-  a large multi-agent recon here burned a whole usage window and produced one usable result. Read narrowly,
-  delegate a genuinely independent search or an adversarial review of your own diff, and keep this session
-  lean — the goal is one solid committed increment, not maximal output.
+  **USE SUBAGENTS.** `Task`, `Agent` and `Workflow` are all allowed and none is denied at the tool layer —
+  delegating is wanted, not merely tolerated.
+  ⛔ **THE OLD "WORK SERIALLY / DO NOT FAN OUT TO SUBAGENTS" RULE IS WITHDRAWN** (owner, 2026-08-16). It
+  came from `HANDOFF-2026-08-15-day.md` and was still quoted in `CLAUDE.md`; if you meet it in either place,
+  or in any older hand-off, **ignore it** — it no longer describes what the owner wants. Nothing below
+  reinstates it. The things worth handing off:
+    * **an adversarial review of your own finished diff, before you commit.** This is the highest-value one
+      and it keeps paying: on 2026-08-15 it found 15 defects in a commit that was already "done", including
+      a new pre-commit gate that would have refused a commit over a README. Do this every time.
+    * a genuinely independent search — locating call sites, a sibling sweep, reading a large document for
+      one answer — where the subagent's context does the reading instead of yours.
+    * an independent second opinion on a judgement call you cannot check cheaply.
+  ⚠️ **Tell every subagent NOT to run the suite** (`./run_tests.sh`, `./build.sh`, `Tools/mutate.py`). Two
+  suites at once corrupt both, and a subagent is the easiest way to start a second one by accident.
+  The one real limit is arithmetic, not policy: you have **one $20 session budget and your subagents spend
+  out of it**, so aim them at work that actually needs doing rather than at speculative breadth. That is a
+  budget fact to plan around, NOT a reason to do it all yourself — an agent that saves you 30k of context
+  or catches one defect has already paid for itself.
   Your OWN model and effort are fixed before you start and you cannot change them mid-session. Each
   SUBAGENT's is yours to choose, per task. `Workflow`'s `agent()` takes `{effort, model}` per call and is the
   only seam that sets subagent EFFORT; the `Agent` tool takes a `model` override but has no effort param.

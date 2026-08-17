@@ -94,6 +94,64 @@ consults `pgrep -x tests`, which catches a suite started by something that never
 is `-x`, never `-f build/tests`, because the `-f` form matches every waiter including its own shell, which is
 how four loops once sat waiting on each other while nothing ran.
 
+## How long things actually take — and why one number was never going to do
+
+Every timing constant in this daemon was originally derived from a suite believed to take **3-6 minutes**.
+That figure was never measured by anyone: the commit that last touched it says so in its own message —
+*"DURATIONS ARE NOT MEASURED … I did not time the run, so that figure is inherited, not established."*
+
+It was timed on 2026-08-16, and the answer is that **the suite has no single duration on this machine**:
+
+| when | duration | what else was running |
+|---|---|---|
+| 09:47, via `Tools/mutate.py` | **80–632 s** per run | quiet machine |
+| 17:54, health gate (tools-compile + suite + `build.sh` + doc checks) | **44m 53s** | daemon loop only |
+| 20:29, timed directly under the lock | **39m 30s** | a daemon session + an interactive session |
+| 21:42, a real `pre-commit` run | **~37 min** | same |
+
+Between 09:59 and 21:42 no commit added a test — the suite did not get four times slower, **the laptop got
+four times busier** (load average ~5 by the evening). This is a personal machine that runs other work and
+thermally throttles, and the daemon is itself designed to keep it loaded. So a constant derived from any one
+of those rows is a reading of the load, not a property of the suite.
+
+⚠️ **The suite is corpus-free**, which is worth knowing before reasoning about its cost: `testdocs/` appears
+in `Tests/main.swift` only in three comments, and nowhere in `Sources/`, `Helper/` or `run_tests.sh`. It
+synthesises its own PDFs and OCRs those. Corpus work is done by `Tools/score-*` on purpose, by a session
+that decided to; writing the corpus is an owner-only `[hold]`. Nothing runs the corpus on a commit.
+
+### The ledger, and how to re-derive a timeout
+
+Rather than pick a number, `test-lock.sh run` now records **every** suite that passes through it — the gate,
+`.githooks/pre-commit`, and every session — to `$STATE/suite-timings.tsv`:
+
+```
+when                 label            seconds  rc  loadavg1
+2026-08-16 22:19:31  pre-commit 34226 2201     0   4.42
+```
+
+The load average is there because without it two rows are not comparable. To size a timeout, take the
+**worst** row you are willing to survive and add headroom; do not take the mean, and do not take one run.
+That is the whole method — the file is the authority, and this README is not.
+
+Two constants were wrong by enough to cause real failures:
+
+- **`GATE_MAXRUN` was 2700** and the gate measured **2693**. Seven seconds of margin, on a cap whose
+  overrun counts as a TIMEOUT, two of which **park the run**. Now 9000.
+- **`test-lock.sh`'s wait was 1800** — shorter than a single loaded-machine suite. Anything queued behind a
+  healthy run gave up early, and `pre-commit` then announced the lock "never freed". Now 3600.
+
+And one that was proposed, checked, and **left alone**:
+
+- **`STALE` stays at 1800.** The tempting argument is that a 95-minute session's engine lock looks stale
+  after 30 minutes — but the lock is HEARTBEATED (`touch "$LOCK"` every 60 s while the daemon lives), so its
+  age measures how long the heartbeat has been dead, never how long the session has run. Raising it would
+  only have made crash recovery take 2 h 40 m instead of 30 minutes. The real improvement is recording the
+  session pid in the lock and testing `kill -0`; it is a 0-byte file today. Left as a follow-up.
+
+`VISIONOCR_PRECOMMIT_LOCK_WAIT` (default 3600) overrides how long `.githooks/pre-commit` waits for the
+lock, independently of `VISIONOCR_TEST_LOCK_WAIT`; it is spelled out in the hook so the number sits beside
+the refusal message that quotes it. `VISIONOCR_SUITE_TIMINGS` overrides where the ledger is written.
+
 ## The queue, and why there is a second list at all
 
 `ops/autonomous/QUEUE.md` is committed and holds only the **order**, one line per item, each citing the
@@ -265,9 +323,15 @@ is why a long high-effort generation is not mistaken for a hang.
   idle tree with no subagent for three polls is wedged; a CPU-busy tree with no subagent and no events for
   `HB_HARD` is a runaway.
 
-`HB_HARD` is **50 min** here, well above the sibling's 40, because a legitimate `Tools/mutate.py --only …`
-run is CPU-busy and silent by design and the full catalogue is ~70 minutes. Killing a healthy mutation run
-would look exactly like a wedge.
+`HB_HARD` is **60 min** here (raised from 50 on 2026-08-16), and no longer for the reason it used to give.
+The old text justified it by "the full mutation catalogue is ~70 minutes", which was arithmetic on a
+2-4 minute suite; the real figure is hours (see the timings table), and no watchdog value makes that
+survivable — the resume prompt forbids the full catalogue outright instead. What this must not kill is the
+ORDINARY case: a session sitting inside its own `git commit`, CPU-busy and silent for the hook's ~40
+minutes. 50 min left ten minutes of headroom over that.
+
+The **idle** branch of the same watchdog needed the companion fix — see the timings section above. It killed
+a session merely waiting on the suite lock after 660 s, because waiting is silent and uses no CPU.
 
 Every kill routes through `_terminate_tree`, which snapshots the descendant set up front, TERMs the whole
 tree, and schedules a detached KILL backstop — so a runaway build child is never orphaned when the session
@@ -308,12 +372,20 @@ rather than assuming it:
 
 ```bash
 ops/autonomous/tests/prove-daemon.sh      # the real daemon loop against a stub `claude`, fully sandboxed
-ops/autonomous/tests/prove-test-lock.sh   # mutual exclusion, reentrancy, stale reclaim, release-on-kill
+ops/autonomous/tests/prove-test-lock.sh   # mutual exclusion, reentrancy, stale reclaim, release-on-kill,
+                                          #   and that both caller shapes write the same ledger row
+ops/autonomous/tests/prove-status.sh      # STATE 1: one branch per answer the run-state lib can give
 ```
 
 `prove-daemon.sh` runs the **real** daemon in a temp `HOME`/`STATE`/repo with every host-touching command
 (`osascript`, `launchctl`, `caffeinate`, `curl`, `df`) stubbed, so it cannot reach the Desktop, the real repo,
-launchd or the network. Neither harness ever runs the real suite or build.
+launchd or the network. No harness ever runs the real suite or build.
+
+`prove-status.sh` exists because the status **renderer** is where a correct answer still gets thrown away,
+and that happened twice on 2026-08-16 — both times printing *"Running, but not finding anything it can
+do"*, once over a suite that was three minutes into a forty-minute run, and once over a session 59 minutes
+into real edits. Its section [5] is structural: it fails if `run-state-lib.sh` grows a reason
+`status-digest.sh` has no branch for, so the residual can never silently swallow a new answer again.
 
 ## What this deliberately does not have
 

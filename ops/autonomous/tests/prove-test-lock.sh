@@ -31,6 +31,9 @@
 # the interposition works and aborts if it does not.
 #
 # USAGE:  ops/autonomous/tests/prove-test-lock.sh [path/to/test-lock.sh]
+# EXPECTED RESULT: 43 passed, 0 failed, 0 skipped — on an IDLE machine. Section [10]'s last assertion
+# ("with no suite on the machine, the real detector reports free") is the one that cannot be made
+# deterministic, so it SKIPs loudly when a real suite happens to be running rather than going red.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -258,6 +261,45 @@ else
   [ "$RC" = 0 ] && printf '%s' "$OUT" | grep -q 'no `tests` process running' \
     && ok "with no suite on the machine, the real detector reports free (rc 0)" || bad "rc=$RC ('$OUT')"
 fi
+
+
+# ---- [11] THE TIMING LEDGER — every caller shape must write the SAME row -----------------------------------
+# The suite has no single duration on this machine (80-632 s on a quiet one, ~37-40 min loaded), so the
+# constants in this file are meant to be re-derived from a ledger rather than from prose. That only works if
+# the ledger sees every run, and there are TWO caller shapes: the health gate and every session use `run`,
+# while .githooks/pre-commit holds the lock with acquire/trap-release — so its notice reaches the terminal
+# rather than a log file — and hands its timing in with `record`. The hook is the most frequent suite runner
+# of the three, so a ledger that quietly skipped it would under-report the common case.
+echo "[11] the suite-timing ledger"
+LED="$T/timings.tsv"; rm -f "$LED"
+pgset none; clear_lock
+VISIONOCR_SUITE_TIMINGS="$LED" tl run --label gate-shape --wait 0 -- /bin/sleep 1 >/dev/null 2>&1
+rc_run=$?
+VISIONOCR_SUITE_TIMINGS="$LED" tl record --label "pre-commit 999" --seconds 2201 --rc 0 >/dev/null 2>&1
+[ "$rc_run" = 0 ] && ok "run still propagates its command status with timing on" \
+                  || bad "run returned $rc_run with timing on"
+[ "$(wc -l < "$LED" | tr -d " ")" = 3 ] && ok "one header plus one row per caller shape" \
+                  || bad "expected 3 lines, got $(wc -l < "$LED" | tr -d " ")"
+head -1 "$LED" | grep -q "^when.label.seconds.rc.loadavg1$" \
+  && ok "header written once, in the documented order" || bad "header wrong: $(head -1 "$LED")"
+grep -q "	gate-shape	" "$LED" && ok "the run shape (gate, sessions) is recorded" || bad "run wrote no row"
+# THE regression this section exists for: --label is consumed by the GLOBAL option parser before any
+# subcommand sees it, so a naive `record` defaulting its own label to "" wrote every hook row as `?`.
+grep -q "	pre-commit 999	2201	0	" "$LED" \
+  && ok "the record shape (pre-commit) keeps its label and handed-in duration" \
+  || bad "record row wrong: $(grep -v "^when" "$LED" | tail -1)"
+# A non-numeric duration must be DROPPED, not written as garbage that a later reader averages in.
+VISIONOCR_SUITE_TIMINGS="$LED" tl record --label junk --seconds "abc" >/dev/null 2>&1
+grep -q "	junk	" "$LED" && bad "a non-numeric duration reached the ledger" \
+                          || ok "a non-numeric duration is refused, not recorded"
+# ⚠️ Instrumentation must NEVER be able to fail a suite or a commit. /usr/bin/true, not /bin/true — the
+# latter does not exist on macOS, and using it made this assertion fail for a reason that had nothing to do
+# with the ledger. That mistake is exactly why the harness runs rather than reasons.
+VISIONOCR_SUITE_TIMINGS="/nonexistent-dir-$$/x.tsv" tl run --label unwritable --wait 0 -- /usr/bin/true \
+  >/dev/null 2>&1 \
+  && ok "an unwritable ledger does not fail the command it is timing" \
+  || bad "an unwritable ledger broke the run — instrumentation must never be a gate"
+clear_lock
 
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="

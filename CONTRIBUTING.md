@@ -103,7 +103,7 @@ is the part a person forgets. So:
 
 ```sh
 python3 Tools/mutate.py --only <substring>   # after changing a constant or a guard
-python3 Tools/mutate.py                      # the whole catalogue, ~70 min
+python3 Tools/mutate.py                      # the whole catalogue — ~55 HOURS, see the tool's header
 ```
 
 Add a mutant when you add a constant or a guard worth protecting. A survivor is

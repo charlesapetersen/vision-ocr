@@ -18,7 +18,8 @@
 # the claim, and once when the owner has to work out why it did.
 #
 # ⚠️ WHAT THIS SCRIPT DELIBERATELY DOES NOT DO: MEASURE THE SUITE. Only `./run_tests.sh` can say how many
-# checks the suite has, it takes 3-6 minutes, it runs real OCR, and TWO SUITES AT ONCE CORRUPT EACH OTHER
+# checks the suite has, it takes ~40 minutes (39m30s measured 2026-08-16), it runs real OCR, and TWO
+# SUITES AT ONCE CORRUPT EACH OTHER
 # (`~/Library/Preferences/tests.plist` is shared by every worktree — CLAUDE.md's first environment trap, and
 # the whole reason `test-lock.sh` exists). This check has to be free enough to run on every gate and inside a
 # git hook, so it must never start one. There is also nothing to read instead: `Tests/main.swift` holds no

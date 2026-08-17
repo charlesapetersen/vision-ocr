@@ -86,16 +86,112 @@ suite_blocking() {
   return 1
 }
 
+# orphaned_work — echo the `auto/*` worktrees holding UNCOMMITTED work and return 0; return 1 (echoing
+# nothing) when there are none. This is a fourth thing "the daemon advanced nothing" can mean, and it is the
+# opposite of the other three: not "there is nothing to do" but "a session DID the work and the commit did
+# not land".
+#
+# WHY IT EXISTS — measured 2026-08-16. A session worked 95 minutes, went green 1137/1137, backgrounded its
+# `git commit`, and ended its turn; ending a turn kills background tasks, so the pre-commit hook died partway
+# through its suite (`Terminated: 15`) and the tip never moved. The daemon's verdict is DERIVED from the tip
+# and the queue — both correct, both unchanged — so it logged "advanced nothing (queue + tip unchanged)" and
+# backed off. Every word true, the whole misleading: 660 insertions across 8 files were sitting staged in
+# the session's own worktree /private/tmp/vo-20260816-184311-95643, and the NEXT session (…-202151-2803)
+# redid them from scratch. Getting those two paths the right way round matters — the first draft of this
+# comment named the successor as the victim, which would have sent a reader to the wrong tree.
+#
+# ⚠️ NO "IS A SESSION LIVE" GUARD IN HERE, ON PURPOSE — `idle_explanation` checks session_in_flight FIRST and
+# returns before reaching this, and the daemon calls this only after `wait`ing on its session. A running
+# session's worktree is SUPPOSED to be dirty; putting the guard in the ordering rather than in the detector
+# keeps this function answering exactly one question.
+#
+# ⚠️ `--untracked-files=no` is deliberate: every worktree carries an untracked `build/` full of compiler
+# output, and counting that as lost work would report EVERY worktree, always. A detector that fires
+# constantly is one nobody reads. Tracked, modified-or-staged files only.
+orphaned_work() {
+  local repo="${REPO:-$HOME/Claude/vision-ocr}" dir ref found=""
+  git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || return 1
+  while IFS="$(printf '\t')" read -r dir ref; do
+    [ -n "$dir" ] || continue
+    [ "$dir" = "$repo" ] && continue
+    case "$ref" in refs/heads/auto/*) ;; *) continue ;; esac
+    [ -d "$dir" ] || continue
+    [ -n "$(git -C "$dir" status --porcelain --untracked-files=no 2>/dev/null)" ] || continue
+    found="$found $dir"
+  done <<EOF
+$(git -C "$repo" worktree list --porcelain 2>/dev/null \
+    | awk '/^worktree /{w=substr($0,10)} /^branch /{print w"\t"substr($0,8)}')
+EOF
+  [ -n "$found" ] || return 1
+  printf '%s' "${found# }"
+  return 0
+}
+
+# orphaned_work_summary DIR — "what is actually in there", so the owner can judge whether it is worth
+# rescuing without going to look. Staged first, since a died-in-the-hook commit leaves its work staged.
+orphaned_work_summary() {
+  local d="${1:-}" n
+  { [ -n "$d" ] && [ -d "$d" ]; } || return 1
+  n="$(git -C "$d" diff --cached --shortstat 2>/dev/null)"
+  [ -n "$n" ] || n="$(git -C "$d" diff --shortstat 2>/dev/null)"
+  printf '%s' "${n:- uncommitted changes}"
+  return 0
+}
+
+# session_in_flight — echo how many seconds the CURRENT resume session has been running and return 0; return
+# 1 when no session is live. $STATE/engine.lock is the daemon's OWN answer to this question (`tick` skips a
+# cycle when it finds one fresh), which is why this reads that rather than pgrep — CLAUDE.md's `pgrep -f`
+# trap is that the pattern matches every process whose command line CONTAINS it, and the session's command
+# line is the entire resume prompt, so half the greps one would reach for here match themselves.
+#
+# ⚠️ A STALE LOCK MUST NOT READ AS "WORKING". If the daemon is hard-killed (lid, SIGKILL) the lock survives
+# with nothing behind it. The daemon heartbeats the file every **60 s** (the `touch "$LOCK"` subshell in the
+# session launcher — NOT $HB_POLL, which is the health watchdog's 20 s and a different clock entirely), so
+# an mtime older than a few minutes means the heartbeat stopped: lock present, session gone.
+#
+# ⚠️ THE ELAPSED FIGURE IS BEST-EFFORT AND CAN OVERSTATE, in exactly one case. Birth time (%B) is the
+# session's start on the normal path — verified against daemon.log's launch line — but the daemon's
+# stale-lock TAKEOVER path `touch`es the EXISTING file rather than recreating it, and `touch` preserves
+# birthtime on APFS (measured). So after a hard kill plus a takeover, this reports the age of the DEAD
+# session's lock, not the live one's. It is a display figure, never a control input, and the liveness half
+# (%m) stays correct either way — but do not build anything on the elapsed number without fixing the
+# takeover to `rm -f` the lock first.
+session_in_flight() {
+  local lock="${STATE:-$HOME/.local/state/visionocr-autonomous}/engine.lock" beat born now
+  [ -f "$lock" ] || return 1
+  beat="$(stat -f %m "$lock" 2>/dev/null)"; born="$(stat -f %B "$lock" 2>/dev/null)"
+  case "$beat" in ''|*[!0-9]*) return 1 ;; esac
+  now="$(date +%s)"
+  # 300 s = five missed 60-second heartbeats. Generous on purpose: a false "it is dead" here would report a
+  # working session as an idle queue, which is the whole failure this file exists to prevent.
+  [ "$(( now - beat ))" -lt 300 ] || return 1
+  case "$born" in ''|*[!0-9]*) born="$beat" ;; esac
+  printf '%s' "$(( now - born ))"
+  return 0
+}
+
 # idle_explanation IDLE_SECONDS — the full one-line reason a live daemon is not advancing. This is the
 # function the status renderers call, and it is what keeps the wording identical across both of them.
 #
-# ORDER MATTERS, and it is not arbitrary: throttling is checked first because a capped session cannot have
-# reached the suite at all, so a 429 is the more upstream explanation. The suite check is second because it
-# is a real, self-clearing wait. "No actionable work" is LAST — it is the residual, and making it the
-# fallback is precisely the bug this file exists to fix, so it must never be reachable while a more
-# specific explanation holds.
+# ORDER MATTERS, and it is not arbitrary. WORKING is first because it is not a reason to be idle at all —
+# it is the answer that the premise is wrong, and it outranks every explanation below it. Throttling is next
+# because a capped session cannot have reached the suite. The suite wait is a real, self-clearing wait.
+# ORPHANED WORK is fourth: a session ran and produced something, so it is emphatically not an empty queue.
+# "No actionable work" is LAST — it is the residual, and making it the fallback is precisely the bug this
+# file exists to fix, so it must never be reachable while a more specific explanation holds.
+#
+# ⚠️ THE CALLER'S IDLE CLOCK IS NOT A WORK CLOCK. $STATE/idle.since advances only when the git tip or the
+# queue moves, i.e. on a COMMIT — so a session that has been writing code for an hour without committing
+# shows an hour of "idle", and every renderer that read that number alone has reported a working daemon as a
+# drained one. Measured 2026-08-16 21:19: a session 59 minutes in, actively editing `Tests/main.swift`, was
+# rendered as "Running, but not finding anything it can do (62 minutes)". Hence the WORKING branch.
 idle_explanation() {
-  local idle="${1:-?}" reset suite
+  local idle="${1:-?}" reset suite ran orph
+  if ran="$(session_in_flight)"; then
+    printf 'running, WORKING (a session has been in flight %ss; idle %ss only measures time since the last COMMIT, and a session that has not committed yet has not been idle)' \
+      "$ran" "$idle"
+    return 0
+  fi
   if reset="$(ratelimit_reset_epoch)"; then
     printf 'running, THROTTLED (idle %ss — last session was REFUSED by the %s; this is NOT an empty queue)' \
       "$idle" "$(ratelimit_phrase "$reset")"
@@ -104,6 +200,11 @@ idle_explanation() {
   if suite="$(suite_blocking)"; then
     printf 'running, WAITING FOR THE SUITE (idle %ss — %s, and two suites at once corrupt both; it goes by itself when that finishes)' \
       "$idle" "$suite"
+    return 0
+  fi
+  if orph="$(orphaned_work)"; then
+    printf 'running, ORPHANED WORK (idle %ss — a session did the work but its commit never landed; uncommitted changes are sitting in %s. This is NOT an empty queue)' \
+      "$idle" "$orph"
     return 0
   fi
   printf 'running, BACKING OFF (idle %ss — sessions finding no actionable work; retrying, widening the gap)' \

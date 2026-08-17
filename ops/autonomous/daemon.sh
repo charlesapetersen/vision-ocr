@@ -174,8 +174,8 @@ case "$VERB" in
     #       in ops/autonomous/resume-prompt.txt. If that prompt is reworded, this pattern must move with it,
     #       or `stop` starts silently leaving a live budget-spending session behind.
     #   (c) an in-flight health gate — `bash health-gate.sh` -> build + suite, matched by NEITHER of the
-    #       above (same bare-child class as (b)), so without it `stop` leaves a full build and a 3-6 min
-    #       suite running, holding the suite lock;
+    #       above (same bare-child class as (b)), so without it `stop` leaves a full build and a ~40 min
+    #       suite running, holding the suite lock for the best part of an hour;
     #   (d) the run-log compactor, which the daemon runs BETWEEN cycles, i.e. exactly when the loop is not
     #       inside a session and a `stop` is most likely to land.
     # None of these patterns can match daemon.sh itself, nor an interactive Claude session.
@@ -344,7 +344,7 @@ if [ -x "$TESTLOCK" ]; then
   printf '%s\n' "$tl_out" | sed 's/^/  /'
   if [ "$tl_rc" != 0 ]; then
     echo "  ^ BUSY. This is NOT a fault and NOT a reason to wait before starting: the first health gate will"
-    echo "    QUEUE behind it (up to VISIONOCR_TEST_LOCK_WAIT, 1800s) rather than run a second suite."
+    echo "    QUEUE behind it (up to VISIONOCR_TEST_LOCK_WAIT, 3600s) rather than run a second suite."
     echo "    Expect a quiet daemon log until that finishes. Nothing is stuck."
   fi
 else

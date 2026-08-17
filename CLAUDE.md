@@ -69,7 +69,12 @@ R57 are closed, so what is left is `R55` and `C24` — then
 [HANDOFF-2026-08-15-night.md](HANDOFF-2026-08-15-night.md), then
 [HANDOFF-2026-08-15-evening.md](HANDOFF-2026-08-15-evening.md), then
 [HANDOFF-2026-08-15-day.md](HANDOFF-2026-08-15-day.md), which has the corrections this
-project's own review document got wrong and the owner's instruction to work serially. Then
+project's own review document got wrong. ⛔ Its process note *"Work serially. Do not fan out
+to subagents"* is **WITHDRAWN as of 2026-08-16.** Subagents are wanted: `Task`, `Agent` and
+`Workflow` are all permitted, and an adversarial review agent over a finished diff before
+committing is expected rather than optional. Ignore that paragraph wherever you meet it — in
+that hand-off or any older one. The only remaining limit is the session's own budget, and
+that every subagent must be told **not to run the suite**. Then
 [HANDOFF-2026-08-15.md](HANDOFF-2026-08-15.md) for the twenty-three fixes that landed
 overnight, and [HANDOFF-2026-08-14.md](HANDOFF-2026-08-14.md) for the original fix order
 and what is deliberately withheld from release.
@@ -89,7 +94,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1141 checks, ~37 min; runs real OCR, needs nothing installed
+./run_tests.sh        # 1141 checks; ~2-40 min depending on machine load, real OCR
 ```
 
 Never report a change as working without `./run_tests.sh` passing. Add a test that

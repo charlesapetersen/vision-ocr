@@ -15,14 +15,36 @@ should notice. A mutant the suite still passes is either a gap in the checks or 
 constant nothing depends on — and knowing which is which is the point.
 
     python3 Tools/mutate.py --list
-    python3 Tools/mutate.py                  # the whole catalogue, sequentially
+    python3 Tools/mutate.py                  # the whole catalogue — SEE THE COST BELOW
     python3 Tools/mutate.py --only headroom  # one substring of the mutant id
 
-**Sequential on purpose.** Each run is two to four minutes of real OCR, and the
+**⚠️ THE WHOLE CATALOGUE IS HOURS, NOT THE "~70 MINUTES" IT USED TO CLAIM.** Read the
+figure off this tool's own log rather than deriving it: `Tools/mutation-log.tsv` holds
+73 recorded runs at **80-632 s, mean 237 s**, and the newest rows — the R56/R57/C24
+mutants added 2026-08-16 — sit at ~630 s. Over **84 mutants** that is roughly **5.5
+hours at the historical mean, ~15 at the current one**, and it grows every time the
+suite does. Scope it with `--only`, always.
+
+⚠️ And note WHY a mutation run is not simply "one suite": the rsync below excludes
+`testdocs`, so every corpus-dependent check is skipped. A full `./run_tests.sh` in a
+tree that HAS the corpus is far slower — the health gate at HEAD measured 44m53s for
+tools-compile + suite + build.sh. Do not reason from either figure to the other; they
+are different suites. An earlier draft of this very paragraph multiplied 84 mutants by
+the full-suite time and announced "~55 hours", which is wrong for exactly that reason.
+
+**Sequential on purpose**, and for a second reason besides the arithmetic: the
 suite contains real timing assertions (the login-shell bounds, "came back
 promptly"). Several suites at once make those flaky, and a flaky check reports a
 mutant as KILLED when the suite merely tripped over the load — a false negative
 in the one tool whose job is finding false negatives.
+
+**⚠️ It does NOT take `ops/autonomous/test-lock.sh`.** It runs `./run_tests.sh`
+directly in its copied tree, and a copy still shares
+`~/Library/Preferences/tests.plist` with every other worktree — CLAUDE.md's first
+environment trap. The lock's `pgrep -x tests` belt means other callers will yield
+to a mutation run, but this tool will not yield to THEM: starting it while the
+daemon's hook or health gate is mid-suite corrupts both. Check first
+(`ops/autonomous/test-lock.sh status`) until this goes through the lock properly.
 
 Runs against a **copy of the working tree**, so the tree itself is never touched
 and an interrupted run leaves nothing behind. It copies what is on disk, not
@@ -530,8 +552,13 @@ def run(argv=None):
     VERDICTS = ("SURVIVED", "killed")
     done = {} if args.rerun else already_done()
     todo = [m for m in mutants if done.get(m["id"]) not in VERDICTS]
+    # The estimate is a RANGE read off this tool's own log, not a constant. It was a flat `* 3`, which
+    # matched the historical mean (mutation-log.tsv: 73 rows, 80-632 s, mean 237 s) but not the present —
+    # the newest rows, the R56/R57/C24 mutants added 2026-08-16, are ~630 s each. Understating this is how
+    # "the ~70-minute full catalogue" got into the daemon's resume prompt as something a session might start.
     print(f"{len(mutants)} mutants, {len(mutants) - len(todo)} already recorded, "
-          f"{len(todo)} to run — about {len(todo) * 3} minutes")
+          f"{len(todo)} to run — roughly {len(todo) * 4}-{len(todo) * 11} minutes "
+          f"(mutation-log.tsv records 80-632 s per run, and it grows with the suite)")
 
     # A copy of what is on disk right now. Not `git worktree add HEAD`: that
     # tests the last commit, which is not what anyone means by "does my suite

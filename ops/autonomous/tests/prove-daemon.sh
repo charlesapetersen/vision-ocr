@@ -24,7 +24,7 @@
 # as a second layer. preflight() PROVES the interposition works before any daemon is launched, and aborts
 # if it does not — the one check that must never be taken on trust.
 #
-# EXPECTED RESULT: 74 passed, 0 failed. Section [7b] was the one failure when this harness was written; it
+# EXPECTED RESULT: 75 passed, 0 failed. Section [7b] was the one failure when this harness was written; it
 # found a CONFIRMED DEFECT in vision-ocr-autonomous.sh (a stale $STATE/gate-timeouts is not cleared at
 # startup) which was FIXED the same day by adding the file to the startup clear at line ~294. Kept as the
 # regression test for that fix. The original note read:
@@ -484,6 +484,33 @@ printf '%s\n' "$SRC" | grep -q 'DENY0=Bash(sudo:\*)' && ok "config loaded (DENY/
 printf '%s\n' "$SRC" | grep -q 'TRAPS=\[\]' && ok "installed no traps in the caller's shell" || bad "installed traps: $SRC"
 [ -s "$T/caffeinate.log" ] && bad "sourcing spawned caffeinate" || ok "spawned no caffeinate"
 grep -q 'daemon up' "$STATE/daemon.log" && bad "sourcing started the loop" || ok "started no loop (no 'daemon up')"
+
+# ⚠️ AND IT MUST NOT TOUCH STATE — the half of "starts NOTHING" this section used to miss entirely.
+# The assertions above check traps, caffeinate and the loop, all of which were already correct. The startup
+# counter-clear was NOT checked, and it sat at module scope ABOVE the source guard, so a source ran it.
+#
+# Measured 2026-08-16 21:2x, by hitting it: sourcing the daemon to verify this very section's behaviour —
+# with $VISIONOCR_STATE unset, so $STATE fell back to the REAL ~/.local/state/visionocr-autonomous — deleted
+# the live run's `idle.since` while a session was 70 minutes into its work. `nocomplete.count` (the attempt
+# cap) and `gate-timeouts` (a park trigger) go with it, so one keystroke silently resets two counters whose
+# entire purpose is stopping a runaway. A section that reported "starts NOTHING" in green over a file that
+# deleted three state files is precisely what this project means by a check that could not fail.
+#
+# Planted VALUES, not just presence: a clear that ran and then recreated the files would pass an existence
+# check. The converse — that a REAL start still wipes them — is already asserted by §[7], which is why it is
+# not repeated here; between them, moving the clear below the guard cannot go too far in either direction.
+: > "$STATE/daemon.log"
+echo 4242 > "$STATE/idle.since"; echo 3 > "$STATE/nocomplete.count"; echo 1 > "$STATE/gate-timeouts"
+VISIONOCR_REPO="$REPO" VISIONOCR_STATE="$STATE" VISIONOCR_RUN="$RUN" VISIONOCR_QUEUE="$QUEUE" \
+  BASH_ENV="$T/preload.sh" bash -c '. "$1"' _ "$DAEMON" >/dev/null 2>&1
+survived=0
+[ "$(cat "$STATE/idle.since" 2>/dev/null)"       = 4242 ] && survived=$((survived+1))
+[ "$(cat "$STATE/nocomplete.count" 2>/dev/null)" = 3    ] && survived=$((survived+1))
+[ "$(cat "$STATE/gate-timeouts" 2>/dev/null)"    = 1    ] && survived=$((survived+1))
+[ "$survived" = 3 ] \
+  && ok "sourcing left idle.since / nocomplete.count / gate-timeouts untouched" \
+  || bad "sourcing destroyed run state — $((3 - survived)) of 3 counters cleared (the clear must live BELOW the source guard)"
+rm -f "$STATE/idle.since" "$STATE/nocomplete.count" "$STATE/gate-timeouts"
 
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="

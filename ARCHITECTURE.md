@@ -216,7 +216,9 @@ If something ever does drive it directly, these are the things that would bite:
 
 ## What the tests don't cover
 
-1,141 checks, about 37 minutes, real OCR. The gaps listed here through 1.0 — the failure
+1,141 checks, real OCR, and no single duration — the same suite has been timed at 80-632 s on a
+quiet machine and ~37-40 minutes with other work alongside, so plan against the load, not a number
+(`ops/autonomous/README.md`, and the per-run ledger in `$STATE/suite-timings.tsv`). The gaps listed here through 1.0 — the failure
 and cancel branches, `publish`, encrypted PDFs, `rebuild: false`, `previewLines`,
 concurrent *searchable* runs, and colour pages — are all covered now (BUGS.md
 T3). What remains:

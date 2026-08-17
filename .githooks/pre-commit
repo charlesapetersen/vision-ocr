@@ -23,7 +23,7 @@ if [ "$touches_sources" -gt 0 ] && [ "$touches_tests" -eq 0 ] && [ "$touches_bug
   echo "      Continuing; this is a warning, not a refusal."
 fi
 
-# Docs-only commits do not need four minutes of real OCR. Anything that can
+# Docs-only commits do not need forty minutes of real OCR. Anything that can
 # change behaviour does: sources, tests, the build or test scripts, the tools.
 # Helper/ is in the list because R40 put shipped code there: it builds
 # visionocr-recognise, which does the recognition for every batch. A change to
@@ -83,7 +83,13 @@ done <<EOF
 $(echo "$staged" | grep -E '^Tools/.*\.py$' || true)
 EOF
 
-echo "pre-commit: running ./run_tests.sh (2-4 minutes; it runs real OCR)…"
+# ⚠️ SAY THE REAL NUMBER. This read "2-4 minutes" until 2026-08-16, when the suite was timed end to end:
+# **39m30s** (lock acquired 20:29:23, released 21:08:53, 1137/1137 with no skips) — swiftc 1m47s of it, the
+# `tests` binary the other 37m43s, single-core bound at ~96% CPU throughout. The health gate that wraps it
+# measured 44m53s the same evening. Understating it is not a cosmetic slip: an unattended session budgeted
+# four minutes for its commit, backgrounded it, ended its turn while this hook was still running, and killed
+# the commit — 95 minutes of finished, green work never landed. A caller who knows it is forty minutes waits.
+echo "pre-commit: running ./run_tests.sh (~40 minutes on this machine; it runs real OCR)…"
 log=$(mktemp -t vrg-precommit)
 # ONE SUITE AT A TIME, machine-wide. `build/tests` has no bundle identifier, so
 # UserDefaults.standard lands in ~/Library/Preferences/tests.plist keyed by the
@@ -112,18 +118,35 @@ LOCK_SH="ops/autonomous/test-lock.sh"
 if [ -x "$LOCK_SH" ]; then
   # VISIONOCR_TEST_LOCK_PID makes THIS hook the holder of record, so if the
   # commit is interrupted the lock is reclaimable the moment this pid is gone.
-  if ! VISIONOCR_TEST_LOCK_PID=$$ "$LOCK_SH" acquire --label "pre-commit $$" --wait 1800; then
+  # ⚠️ THE WAIT MUST EXCEED ONE SUITE. This was `--wait 1800` against a suite measured at 39m30s, so the
+  # hook gave up NINE MINUTES BEFORE a healthy run could possibly have finished — and then blamed the run
+  # it was queued behind, in a message asserting the lock "never freed". Written out here rather than left
+  # to test-lock.sh's default so the number sits next to the sentence that quotes it.
+  hook_wait="${VISIONOCR_PRECOMMIT_LOCK_WAIT:-3600}"
+  # Coerce a junk override rather than letting `$((hook_wait / 60))` fault inside the error path — the one
+  # place that must still be able to print why it refused.
+  case "$hook_wait" in ''|*[!0-9]*) hook_wait=3600 ;; esac
+  if ! VISIONOCR_TEST_LOCK_PID=$$ "$LOCK_SH" acquire --label "pre-commit $$" --wait "$hook_wait"; then
     echo >&2
-    echo "pre-commit: another test suite has been running for 30 minutes and the" >&2
-    echo "            suite lock never freed. Refusing rather than running a second" >&2
-    echo "            suite, which would corrupt BOTH runs' results." >&2
+    echo "pre-commit: another test suite has held the lock for $((hook_wait / 60)) minutes — longer than the" >&2
+    echo "            ~40 min a healthy suite takes, so it is stuck rather than merely slow. Refusing" >&2
+    echo "            rather than running a second suite, which would corrupt BOTH runs' results." >&2
     echo "            Check who holds it:  $LOCK_SH status" >&2
     exit 1
   fi
   trap 'VISIONOCR_TEST_LOCK_PID=$$ "$LOCK_SH" release >/dev/null 2>&1' EXIT
 fi
 
-if ! ./run_tests.sh >"$log" 2>&1; then
+# Timed so this run reaches $STATE/suite-timings.tsv like every other. The hook holds the lock with
+# acquire/trap-release rather than `test-lock.sh run` (so the "waiting for the suite" notice reaches your
+# terminal instead of $log), which means it does NOT get `run`'s automatic timing — and the hook is the most
+# frequent suite runner there is, so a ledger without it would under-report the common case. `record` keeps
+# the row format in test-lock.sh, the one place that owns it.
+suite_t0=$(date +%s)
+./run_tests.sh >"$log" 2>&1; suite_rc=$?
+[ -x "$LOCK_SH" ] && "$LOCK_SH" record --label "pre-commit $$" \
+  --seconds "$(( $(date +%s) - suite_t0 ))" --rc "$suite_rc" 2>/dev/null || true
+if [ "$suite_rc" -ne 0 ]; then
   echo >&2
   echo "pre-commit: TESTS FAILED — commit refused." >&2
   echo >&2

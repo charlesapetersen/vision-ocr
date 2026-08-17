@@ -80,6 +80,13 @@ if [ -r "$HERE/run-state-lib.sh" ]; then
 else
   idle_explanation() { printf 'running, BACKING OFF (idle %ss — reason undetermined)' "${1:-?}"; }
   ratelimit_phrase() { printf 'usage cap'; }
+  # Stubs for everything else the lib exports, so the branches below can call them unconditionally. A missing
+  # function here would print `command not found` INTO the digest — the one thing this file must never do.
+  ratelimit_reset_epoch() { return 1; }
+  suite_blocking() { return 1; }
+  session_in_flight() { return 1; }
+  orphaned_work() { return 1; }
+  orphaned_work_summary() { return 1; }
 fi
 
 # ---------------------------------------------------------------------------------------------------
@@ -102,13 +109,68 @@ elif [ "$running" = 1 ]; then
     *)
       idle=$(( $(date +%s) - since ))
       STATE_ICON="${AMB}◐${OFF}"
-      # THROTTLED vs BACKING OFF is the whole reason run-state-lib.sh exists: "the queue is drained, go add
-      # work" and "it is capped, it resumes by itself" call for OPPOSITE responses, and the second used to be
-      # reported as the first for an hour at a time. A cap must NEVER be printed as an empty queue.
+      # Each answer run-state-lib.sh can give is a DIFFERENT owner action — "go add work", "it is capped, it
+      # resumes by itself", "it is behind a suite, it resumes by itself", "a commit died, its work is sitting
+      # in a worktree" and "it is working right now, leave it alone". The residual used to be printed over
+      # all of them.
+      #
+      # ⚠️ THERE MUST BE ONE BRANCH HERE PER ANSWER `idle_explanation` CAN GIVE, and section [5] of
+      # tests/prove-status.sh fails the build if there is not. Consuming only some of them silently
+      # re-creates the exact lie the lib was written to end. It has now happened twice in one day:
+      #   * 20:33 — the suite branch, the one added FOR this project, had no case here, so the line read
+      #     "Running, but not finding anything it can do (16 minutes)" while the digest's OWN 'Suite' line
+      #     said RUNNING and a suite was three minutes into a forty-minute run.
+      #   * 21:19 — with that fixed, the SAME sentence appeared again, this time over a session 59 minutes
+      #     in and actively editing `Tests/main.swift`. Nothing was wrong with the branches; the premise was.
+      #     $STATE/idle.since advances on a COMMIT, so it is a stopwatch on landings, NOT on work, and every
+      #     branch below inherits that. Hence WORKING, checked first: "it has not committed for an hour" and
+      #     "it has done nothing for an hour" are different sentences and only one of them was ever true.
+      # The residual `*)` must stay LAST and stay the only unnamed case.
       case "$(idle_explanation "$idle")" in
+        *WORKING*)
+          # NOT amber, and no idle figure in the headline: this is the healthy state, and printing "(62
+          # minutes)" beside it is what made a working daemon look stuck in the first place.
+          STATE_ICON="${GRN}●${OFF}"
+          _forsec="$(session_in_flight)"
+          STATE_LINE="Working now — $(human_secs "${_forsec:-0}") into this session"
+          if suite_blocking >/dev/null; then
+            STATE_HINT="Running a test suite. Last commit was $(human_secs "$idle") ago."
+          else
+            STATE_HINT="Nothing needed. The $(human_secs "$idle") below is time since the last COMMIT, not idle time."
+          fi
+          # ⚠️ ORPHANED WORK HAS TO SURFACE HERE TOO, even though WORKING outranks it. Sessions run ~95 min
+          # back to back with a ~3 min gap, so the states below are visible a few percent of the time — and
+          # ORPHANED WORK is the ONLY one that does not clear by itself. Ranking it under a state that holds
+          # 97% of the time would hide the single thing that actually needs a human until someone happened
+          # to look in a gap. It cannot be promoted above WORKING (a live session's own worktree is supposed
+          # to be dirty, so it would cry wolf every session — tests/prove-status.sh [8] pins that), so it
+          # rides along in the hint instead.
+          if _owk="$(orphaned_work)"; then
+            _n=0; for _d in $_owk; do _n=$((_n+1)); done
+            STATE_HINT="$STATE_HINT  ⚠ also: $(plural "$_n" 'worktree') holding uncommitted work — see 'Needs you'."
+          fi ;;
         *THROTTLED*)
-          STATE_LINE="Paused — it hit the $(ratelimit_phrase)"
+          # Pass the epoch through: ratelimit_phrase with no argument degrades to a bare "usage cap" and throws
+          # away the reset time the lib just computed, which is the half of the sentence the owner acts on.
+          STATE_LINE="Paused — it hit the $(ratelimit_phrase "$(ratelimit_reset_epoch)")"
           STATE_HINT="This is NOT out of work; it retries by itself. Idle $(human_secs "$idle")." ;;
+        *'WAITING FOR THE SUITE'*)
+          STATE_LINE="Waiting for a test suite to finish ($(human_secs "$idle"))"
+          STATE_HINT="This is NOT out of work — $(suite_blocking), and two at once corrupt both. It goes by itself." ;;
+        *'ORPHANED WORK'*)
+          # RED, not amber: unlike the two above this does NOT clear by itself, and what is at risk is
+          # finished work rather than a few minutes of waiting.
+          STATE_ICON="${RED}✕${OFF}"
+          # ⚠️ EVERY worktree, not `${_orph%% *}`. The first cut named only the head of the list, which on
+          # the machine this was written on meant reporting 660 insertions in one worktree and silently
+          # omitting 887 in another — understating the loss by more than half while looking specific.
+          _orph="$(orphaned_work)"; _osum=""; _on=0
+          for _d in $_orph; do
+            _on=$((_on + 1))
+            _osum="$_osum   ${_d/#$HOME/~} —$(orphaned_work_summary "$_d")"$'\n'
+          done
+          STATE_LINE="Work was never committed — $(plural "$_on" 'worktree') holding it ($(human_secs "$idle") since the last commit)"
+          STATE_HINT="NOT an empty queue. Nothing is lost until these are removed:"$'\n'"${_osum%$'\n'}" ;;
         *)
           STATE_LINE="Running, but not finding anything it can do ($(human_secs "$idle"))"
           STATE_HINT="Usually means what is left is waiting on you — see 'Needs you' below." ;;

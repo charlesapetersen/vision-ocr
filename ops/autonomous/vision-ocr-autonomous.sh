@@ -68,12 +68,32 @@ LOCK="$STATE/engine.lock"; LOG="$STATE/daemon.log"; PROMPT="$STATE/resume-prompt
 COMPACTOR="${VISIONOCR_COMPACTOR:-$HOME/.local/bin/compact-runlog.sh}"
 JOB="com.${LABEL}.autonomous"
 
+# ⚠️ EVERY TIMING CONSTANT IN THIS BLOCK WAS SIZED AGAINST A "3-6 MIN" SUITE THAT NOBODY HAD TIMED. Timed on
+# 2026-08-16, the same suite ran 80-632 s on a quiet machine and ~37-40 min with other work alongside, and
+# the health gate that wraps it measured 44m53s. There is no single correct number here: this is a personal
+# laptop that throttles, and the daemon exists to keep it busy. So the constants below are sized off the
+# WORST observed run plus headroom, not off a mean or a single sample, and `test-lock.sh` now records every
+# run to $STATE/suite-timings.tsv with its load average so the next person re-derives from data. Two of
+# them were wrong by enough to cause real failures — see each one.
 INTERVAL="${VISIONOCR_INTERVAL:-90}"      # gap between cycles while the run is PRODUCTIVE. Sessions here run
-                                          # long (every code commit triggers a 3-6 min suite via the
+                                          # long (every code commit triggers a ~40 min suite via the
                                           # pre-commit hook), so this is near-back-to-back in practice.
-STALE="${VISIONOCR_STALE:-1800}"          # a lock older than this (30 min) is stale -> take over. Larger than
-                                          # the sibling's 25 min because a session that commits three times
-                                          # legitimately spends ~12 min of that inside the suite alone.
+# ⚠️ LEFT AT 1800 DELIBERATELY, after a change to 9600 was proposed and REFUTED. The tempting argument is
+# "a session now runs 95 minutes, so a 30-minute staleness window condemns a healthy session's lock" — and
+# it is WRONG, because this lock is HEARTBEATED. See the `touch "$LOCK"` loop in the session launcher: a
+# background subshell re-touches it every 60 s for as long as the daemon lives. Verified on the live run —
+# engine.lock's mtime tracked wall-clock the whole way through a 95-minute session. So the age of this lock
+# never measures how long the session has run; it measures HOW LONG THE HEARTBEAT HAS BEEN DEAD, and the
+# heartbeat only dies with the daemon. 1800 s is therefore already "30 missed beats", which is generous.
+#
+# What raising it to MAXRUN + slack would actually have bought: after a hard kill (lid, SIGKILL) plus a
+# launchd restart, the new daemon would sit doing NOTHING for 2 h 40 m before taking over, instead of 30
+# minutes. That is a pure regression, and the comment justifying it had the failure mode backwards.
+# The real improvement here is not a bigger number: it is recording the session pid IN the lock (it is a
+# 0-byte file today) and testing `kill -0`, the way test-lock.sh already does. Left as a follow-up rather
+# than done blind.
+STALE="${VISIONOCR_STALE:-1800}"          # 30 missed 60-second heartbeats. NOT a session-length budget —
+                                          # re-read the note above before touching it.
 MAXRUN="${VISIONOCR_MAXRUN:-9000}"        # OUTER wall-clock backstop (2.5 h). The health watchdog below is
                                           # the PRIMARY killer; this only fires if that fails or a session is
                                           # productive-but-endless.
@@ -114,12 +134,25 @@ MAX_NOCOMPLETE="${VISIONOCR_MAX_NOCOMPLETE:-5}"
 # so per-commit regression cover is not this gate's job. Its job is the three things the hook does NOT do:
 # `./build.sh` (the hook builds only when a view file is staged, yet the suite excludes App.swift entirely),
 # `check-tools-compile.sh` over EVERY tool rather than the staged ones, and the document-coherence checks.
-# Those are cheap (~10 min all in), so a tighter cadence costs little and catches the drift sooner.
+# Those are NOT cheap: the gate runs the suite too, and on 2026-08-16 it measured 44m53s all in. The owner's
+# standing decision (2026-08-16) is to KEEP the suite in the gate — it is the one check that does not trust
+# the hook, and it is not the throughput bottleneck, since any code commit already pays ~40 min in the hook.
+# `VISIONOCR_GATE_QUICK=1` drops the suite AND ./build.sh if that is ever wanted; what remains is
+# tools-compile plus the document checks. Deliberately NOT given a duration here — nobody has timed the
+# quick gate, and the only bound available (44m53s minus the suite) still includes the build that QUICK
+# also drops. Measure it before quoting it.
 GATE_EVERY="${VISIONOCR_GATE_EVERY:-10}"
 GATE_CMD="${VISIONOCR_GATE_CMD:-$REPO/ops/autonomous/health-gate.sh}"
-GATE_MAXRUN="${VISIONOCR_GATE_MAXRUN:-2700}"   # 45 min. The gate itself is ~10 min, but it may WAIT on the
-                                               # suite lock behind an interactive run (up to 30 min), and a
-                                               # cap below true runtime is what false-parks a healthy run.
+# ⚠️ WAS 2700, AND THE LAST GATE FINISHED IN 2693 — SEVEN SECONDS UNDER THE CAP. The old comment read "the
+# gate itself is ~10 min"; the measured run on 2026-08-16 was 17:54:30 → 18:39:23 GREEN, i.e. 44m53s against
+# a 45-minute kill. A gate one percent slower is killed, that counts as a TIMEOUT, and $GATE_MAX_TIMEOUTS of
+# them PARKS THE RUN — so the run was one slow gate away from parking itself over nothing. DERIVED: the gate
+# is tools-compile (~2 min) + suite (39m30s) + ./build.sh + doc checks ≈ 45 min, and it may additionally WAIT
+# up to $VISIONOCR_TEST_LOCK_WAIT (3600) on the lock behind another run. 9000 covers both without ever
+# false-parking; the health watchdog, not this cap, is the real defence against a wedged gate.
+GATE_MAXRUN="${VISIONOCR_GATE_MAXRUN:-9000}"   # 2.5 h = one full gate (~45 min) + a full lock wait (60 min)
+                                               # + margin. A cap below true runtime is what false-parks a
+                                               # healthy run, and that had become one bad minute away.
 GATE_MAX_TIMEOUTS="${VISIONOCR_GATE_MAX_TIMEOUTS:-2}"
 
 STATUS_CMD="${VISIONOCR_STATUS_CMD:-$REPO/ops/autonomous/status-digest.sh}"
@@ -133,12 +166,17 @@ STATUS_CMD="${VISIONOCR_STATUS_CMD:-$REPO/ops/autonomous/status-digest.sh}"
 #                  not stream into the parent log and may sit at ~0% CPU blocked on the API) OR the tree is
 #                  CPU-busy (a real build/suite). Idle tree + no subagent for HB_IDLE_N polls -> wedged.
 #                  CPU-busy + no subagent + no events for HB_HARD -> runaway.
-# ⚠️ HB_HARD is 3000 s here (50 min), well above the sibling's 40: a legitimate `Tools/mutate.py --only …`
-# run is CPU-busy and silent for a long time by design, and the full catalogue is ~70 min. Killing a healthy
-# mutation run would look exactly like a wedge.
+# ⚠️ HB_HARD is 3600 s here (60 min), raised from 3000 on 2026-08-16 and NO LONGER for the reason the old
+# comment gave. It said "the full catalogue is ~70 min", which was arithmetic on a 2-4 min suite; the suite
+# is 39m30s and `Tools/mutate.py` runs the WHOLE of it per mutant over 84 mutants, so the full catalogue is
+# on the order of 55 HOURS and no watchdog setting makes it survivable — the resume prompt forbids it
+# outright instead. The real case this must not kill is the ordinary one: a session sitting inside its own
+# `git commit`, which is CPU-busy and silent for the hook's ~40 min. 3000 left only ten minutes of headroom
+# over that, and a commit that also waited on the suite lock would have been killed as a runaway while doing
+# exactly what it was told to. 60 min is one suite plus half again.
 HB_POLL="${VISIONOCR_HB_POLL:-20}"
 HB_STALL="${VISIONOCR_HB_STALL:-600}"
-HB_HARD="${VISIONOCR_HB_HARD:-3000}"
+HB_HARD="${VISIONOCR_HB_HARD:-3600}"
 HB_CPU="${VISIONOCR_HB_CPU:-3}"
 HB_IDLE_N="${VISIONOCR_HB_IDLE_N:-3}"
 
@@ -169,7 +207,29 @@ DENY=(
 # what makes every code commit test-gated, and it is the ONLY thing standing between an unattended session
 # and pushing untested code. A session that hits a failing suite must fix it or stop — never bypass it.
 
-mkdir -p "$STATE"
+# ⚠️ NO SIDE EFFECTS BELOW THIS POINT UNTIL THE SOURCE GUARD. `mkdir -p "$STATE"` and the startup
+# counter-clear both used to live up here and both ran on a mere `source`; see the guard's own comment for
+# what that cost. Config, function definitions and `source` of a functions-only library are all that belong
+# in this region.
+
+# run-state-lib.sh — the ONE place that decides what "the daemon is not advancing" MEANS. Sourced here, and
+# not reimplemented, because its own header is right that a detector written twice is a detector that gets
+# fixed once: the daemon's progress verdict and the status digest have to agree about "a session left work
+# uncommitted", or the log and the status line contradict each other over the same worktree.
+# Guarded and stubbed in the same SHAPE as status-digest.sh, but resolved differently and on purpose:
+# the digest uses $HERE so a worktree's digest consults that worktree's lib, whereas this file is
+# INSTALLED to ~/.local/bin, outside any checkout, so $HERE would point at the install dir and find
+# nothing. $REPO is the only thing that resolves for both the launchd copy and a direct run.
+# The guard itself is not optional: this is what launchd relaunches, and it must degrade rather than die
+# at line one on a checkout that predates the lib.
+if [ -r "$REPO/ops/autonomous/run-state-lib.sh" ]; then
+  # shellcheck source=/dev/null
+  . "$REPO/ops/autonomous/run-state-lib.sh"
+else
+  orphaned_work() { return 1; }
+  orphaned_work_summary() { return 1; }
+fi
+
 log() { printf '%s  %s\n' "$(date '+%F %T')" "$*" >> "$LOG"; }
 
 # Regenerate the one-screen $STATE/STATUS.md digest. Cheap, read-only, never fatal. Written to a temp then
@@ -270,28 +330,12 @@ work_fingerprint() {
 BACKOFF="$INTERVAL"
 IDLE_SINCE="$STATE/idle.since"
 NOCOMPLETE="$STATE/nocomplete.count"
-# Clear ALL THREE counters at every startup so on-disk state shares the daemon's lifetime (BACKOFF is
-# in-memory and resets on start; these must too). Otherwise a stale stamp from a PRIOR run makes the FIRST
-# cycle park immediately — turning the owner's restart, which is an explicit "try again" signal, into a
-# single retry. Starting a run always buys a full window.
-#
-# ⚠️ `gate-timeouts` WAS MISSING FROM THIS LINE and that was a real bug, caught by
-# tests/prove-daemon.sh §[7b]. The gate-timeout streak is exactly the same kind of counter as the other two,
-# but it was declared further down with the rest of the gate state (as $GATE_TO) and so was overlooked here.
-# The consequence: a run whose gate hangs once and is then stopped — a lid close, `daemon.sh stop`, a bootout
-# — came back with the streak at 1, so the FIRST hang of the fresh run parked it while reporting "the health
-# gate TIMED OUT 2 cycle(s) in a row". That sentence was false, and a gate timeout is the daemon's own
-# INCONCLUSIVE case, so it parked a healthy run on non-evidence. Measured: planted a `1`, and the daemon
-# parked 3 s after startup on its first hang.
-#
-# Spelled as a literal path rather than "$GATE_TO" because that variable is defined further down, next to the
-# gate functions that use it; referencing it here would silently expand to "/gate-timeouts" under `set -u`'s
-# blind spot for a not-yet-assigned name. Keep the two spellings in step if either ever moves.
-#
-# ⛔ Do NOT add "$GATE_STATE" ($STATE/last-gate) to this line. That one holds the last GREEN gate's sha and is
-# MEANT to outlive the daemon: the gate cadence tracks code churn, not daemon lifetime, so clearing it would
-# make every restart re-run a full gate it had already passed.
-rm -f "$IDLE_SINCE" "$NOCOMPLETE" "$STATE/gate-timeouts" 2>/dev/null || true
+# Worktrees already reported as holding orphaned work, so each is named once per daemon lifetime rather
+# than once per cycle. Cleared at startup with the other counters — a restart is the owner saying "tell me
+# again", exactly as it is for the idle stamp.
+ORPHSEEN="$STATE/orphans.seen"
+# (The startup clear of these counters lives BELOW the source guard — see the note there. It used to be
+# here, where a `source` of this file ran it against whatever $STATE resolved to.)
 
 note_progress() {
   [ "$BACKOFF" != "$INTERVAL" ] && log "progress — backoff reset to ${INTERVAL}s."
@@ -594,10 +638,46 @@ housekeeping() {
 # caffeinate, and runs the loop that launches `claude -p`. If a maintainer sources this file to inspect
 # $DENY/$ALLOW, stop here: do NOT install a `trap 'exit 0'` in their interactive shell or fork a
 # budget-spending run. (In the sibling project, sourcing-to-inspect actually spent budget once.)
+#
+# ⚠️ THAT CLAIM USED TO BE FALSE, AND IT DESTROYED LIVE RUN STATE. The startup counter-clear
+# (`rm -f $IDLE_SINCE $NOCOMPLETE gate-timeouts`) and `mkdir -p "$STATE"` both sat ABOVE this guard at module
+# scope, so they ran on a SOURCE as well as on a start. Measured 2026-08-16 21:2x: sourcing this file to
+# check that the guard worked — with $VISIONOCR_STATE unset, so $STATE defaulted to the REAL
+# ~/.local/state/visionocr-autonomous — deleted the live daemon's `idle.since` out from under a session that
+# was 70 minutes into its work. The status digest then rendered a bare "Working now" with no elapsed time,
+# because the stamp it reads was gone. Nothing else broke, and it could have: $NOCOMPLETE is an attempt cap
+# and `gate-timeouts` a park trigger, so the same keystroke silently resets two counters whose whole purpose
+# is to stop a runaway. Both are now BELOW the guard. Keep every side effect below this line — the comment
+# above is a promise this file has already broken once.
 if [ "$_SOURCED" = 1 ]; then
   echo "vision-ocr-autonomous.sh sourced, not executed — config + functions loaded; daemon NOT started." >&2
   return 0 2>/dev/null || exit 0
 fi
+
+# ---- STARTUP SIDE EFFECTS — everything from here down runs ONLY on a real start ------------------------
+mkdir -p "$STATE"
+# Clear ALL THREE counters at every startup so on-disk state shares the daemon's lifetime (BACKOFF is
+# in-memory and resets on start; these must too). Otherwise a stale stamp from a PRIOR run makes the FIRST
+# cycle park immediately — turning the owner's restart, which is an explicit "try again" signal, into a
+# single retry. Starting a run always buys a full window.
+#
+# ⚠️ `gate-timeouts` WAS MISSING FROM THIS LINE and that was a real bug, caught by tests/prove-daemon.sh
+# §[7b]. The gate-timeout streak is exactly the same kind of counter as the other two, but it was declared
+# further down with the rest of the gate state (as $GATE_TO) and so was overlooked here. The consequence: a
+# run whose gate hangs once and is then stopped — a lid close, `daemon.sh stop`, a bootout — came back with
+# the streak at 1, so the FIRST hang of the fresh run parked it while reporting "the health gate TIMED OUT
+# 2 cycle(s) in a row". That sentence was false, and a gate timeout is the daemon's own INCONCLUSIVE case,
+# so it parked a healthy run on non-evidence. Measured: planted a `1`, and the daemon parked 3 s after
+# startup on its first hang.
+#
+# Spelled as a literal path rather than "$GATE_TO" because that variable is defined further down, next to
+# the gate functions that use it; referencing it here would silently expand to "/gate-timeouts" under
+# `set -u`'s blind spot for a not-yet-assigned name. Keep the two spellings in step if either ever moves.
+#
+# ⛔ Do NOT add "$GATE_STATE" ($STATE/last-gate) to this line. That one holds the last GREEN gate's sha and
+# is MEANT to outlive the daemon: the gate cadence tracks code churn, not daemon lifetime, so clearing it
+# would make every restart re-run a full gate it had already passed.
+rm -f "$IDLE_SINCE" "$NOCOMPLETE" "$STATE/gate-timeouts" "$ORPHSEEN" 2>/dev/null || true
 
 # ---- WHY a daemon used to vanish without a trace -----------------------------------------------------
 # Only the NORMAL loop exit logged a "daemon down" line. `trap 'exit 0' TERM INT` exited immediately, so a
@@ -730,8 +810,26 @@ health_watchdog() {
         "watchdog: CPU-busy but no events ${quiet}s (>= HB_HARD ${HB_HARD}s), no subagent — runaway, killing tree of pid $cpid" >> "$LOG"
       _terminate_tree "$cpid"; return 0
     fi
-    # Idle tree, no subagent. Require HB_IDLE_N consecutive idle polls so a brief low-CPU dip (linking, I/O
-    # wait, or waiting on the suite lock) inside a real tool does not false-kill.
+    # ⚠️ QUEUED BEHIND SOMEONE ELSE'S SUITE IS NOT A WEDGE — SPARE IT. This branch used to claim it covered
+    # "waiting on the suite lock" with HB_IDLE_N polls, i.e. 60 seconds of tolerance, and that was never
+    # true: `test-lock.sh acquire` polls in `sleep 5`, so the tree sits at ~0% CPU with no subagent and no
+    # stream events for as long as the wait lasts, and this killed it at HB_STALL + HB_IDLE_N×HB_POLL =
+    # 660 s. A single suite is ~40 minutes, so ANY session that queued behind the health gate was killed as
+    # wedged while doing exactly what the lock told it to do — and raising the lock wait to 3600 s without
+    # this would have made that the normal outcome rather than a rare one.
+    #
+    # `pgrep -x tests` (never `-f build/tests` — CLAUDE.md's trap) is the right question here because both
+    # answers are safe: if the running suite is OUR OWN, the tree is CPU-busy and we never reach this
+    # branch at all; if it is someone else's, we are legitimately waiting. So a live suite means "not
+    # wedged" either way. This cannot mask a real hang indefinitely — a suite cannot outlive
+    # $VISIONOCR_TEST_LOCK_MAXAGE (5400 s), after which the lock breaks and the wait ends, and $MAXRUN
+    # remains the outer backstop regardless.
+    if pgrep -x tests >/dev/null 2>&1; then
+      idle_streak=0
+      continue
+    fi
+    # Idle tree, no subagent, no suite anywhere. Require HB_IDLE_N consecutive idle polls so a brief
+    # low-CPU dip (linking, I/O wait) inside a real tool does not false-kill.
     idle_streak=$(( idle_streak + 1 ))
     [ "$idle_streak" -lt "$HB_IDLE_N" ] && continue
     printf '%s  %s\n' "$(date '+%F %T')" \
@@ -755,6 +853,12 @@ tick() {
     local age; age=$(( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) ))
     if [ "$age" -lt "$STALE" ]; then log "engine busy (lock ${age}s old) — skip."; return 0; fi
     log "stale lock (${age}s) — taking over."
+    # ⚠️ REMOVE it rather than letting the launcher `touch` it back to life. `touch` on an existing file
+    # PRESERVES birthtime on APFS (measured), and status-digest.sh reads that birthtime to say how long the
+    # current session has been running. Without this the digest inherits the DEAD session's start time and
+    # reports "Working now — 3 hours into this session" about a session one minute old — misreporting a
+    # fresh run as a stuck one, in the takeover path, which is precisely when the owner is reading it.
+    rm -f "$LOCK" 2>/dev/null || true
   fi
 
   # 3b. Disk guard. AFTER the engine-busy check ON PURPOSE, not for tidiness: disk_ok() calls housekeeping()
@@ -870,9 +974,33 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     # the window is exhausted and cannot move the fingerprint, so it lands here looking identical to "there
     # was nothing to do". Reading that as an idle queue is the misreport run-state-lib.sh exists to undo one
     # level up; this is the log line it leaves behind.
-    local _elapsed=$(( SECONDS - _t0 ))
+    local _elapsed=$(( SECONDS - _t0 )) _orph _d
     if [ "$rc" -ne 0 ] && [ "$_elapsed" -lt 10 ]; then
       log "session (rc=$rc) exited after ${_elapsed}s — likely USAGE-LIMIT fast-fail, not an empty queue; backing off."
+    # ⚠️ "ADVANCED NOTHING" AND "LOST ITS COMMIT" ARE NOT THE SAME EVENT, and the fingerprint cannot tell
+    # them apart — it is derived from the tip and the queue, and neither moves in either case. Measured
+    # 2026-08-16: a 95-minute session went green 1137/1137, backgrounded `git commit`, ended its turn, and
+    # the hook died mid-suite at `Terminated: 15`. This logged "advanced nothing (queue + tip unchanged) —
+    # no progress", which was true and read as "the queue is drained" — while 660 insertions across 8 files
+    # sat staged in that session's worktree (/private/tmp/vo-20260816-184311-95643), and the NEXT session
+    # redid all of it from scratch. Naming it
+    # costs one `git status` per worktree and is the difference between the owner rescuing the work and
+    # never learning it existed. Checked BEFORE housekeeping, which is what would otherwise GC the evidence.
+    elif _orph="$(orphaned_work)"; then
+      # ⚠️ DO NOT BLAME THIS SESSION, AND DO NOT REPEAT IT EVERY CYCLE. A dirty `auto/*` worktree is
+      # PERMANENT until a human clears it: housekeeping only removes worktrees whose branch is an ancestor
+      # of origin/main, and `git worktree remove` refuses a dirty one regardless. So the obvious phrasing —
+      # "session (rc=…) left UNCOMMITTED WORK" every no-progress cycle — would pin a week-old orphan on a
+      # session that never created a worktree, and would repeat it until the log held nothing else. Both are
+      # the failure this whole change is about: a true sentence that reads as something it is not. So name
+      # the WORKTREE, not the session, and say each one once per daemon lifetime.
+      log "no progress, and a worktree is holding UNCOMMITTED WORK — this is NOT an empty queue."
+      for _d in $_orph; do
+        grep -qxF "$_d" "$ORPHSEEN" 2>/dev/null && continue
+        printf '%s\n' "$_d" >> "$ORPHSEEN" 2>/dev/null || true
+        log "  orphaned: $_d —$(orphaned_work_summary "$_d")"
+      done
+      log "  a later session can finish it, or rescue it by hand; nothing is lost until that worktree is removed."
     else
       log "session (rc=$rc) advanced nothing (queue + tip unchanged) — no progress."
     fi

@@ -35,6 +35,7 @@
 #   test-lock.sh acquire [--label L] [--wait S]                 acquire and return (caller must release)
 #   test-lock.sh release                                        release a lock this pid tree holds
 #   test-lock.sh status                                         who holds it + whether a suite is live (read-only)
+#   test-lock.sh record --label L --seconds N [--rc R]          append one row to the suite-timing ledger
 #
 # EXIT: 0 ok (for `run`, the command's own status is propagated) · 4 could not acquire within --wait
 #       · 2 usage error.  `status` is 0 when free, 1 when busy.
@@ -53,12 +54,20 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PA
 # the double-suite this file exists to prevent. Fixed here, in the one place, rather than by having every
 # caller remember to pass VISIONOCR_TEST_LOCK.
 LOCKDIR="${VISIONOCR_TEST_LOCK:-${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}/test.lock}"
-# A suite is 3-6 min and a gate can legitimately queue behind one, so the default wait is generous.
-# 0 means "fail immediately if busy".
-WAIT_DEFAULT="${VISIONOCR_TEST_LOCK_WAIT:-1800}"
-# A holder whose pid is gone is stale immediately (see _holder_alive). This is the backstop for the
-# other case: a live pid that has wandered off (a wedged suite). 90 min is well past the 3-6 min suite
-# and the ~10 min gate, so it can only fire on something genuinely stuck.
+# ⚠️ THE WAIT MUST EXCEED ONE SUITE ON A BUSY MACHINE, OR IT REFUSES HEALTHY WORK. This was 1800 (30 min)
+# and read "a suite is 3-6 min", a figure nobody had ever timed. Timed on 2026-08-16 the same suite took
+# 80-632 s on a quiet machine and ~37-40 min with a daemon session and an interactive session alongside it —
+# so 1800 was comfortably shorter than a loaded run, and anything queued behind a healthy suite gave up.
+# `.githooks/pre-commit` then reported that the lock "never freed", naming a wedge over a suite that still
+# had minutes to go. 3600 covers the worst run observed so far with headroom. Re-derive it from
+# $STATE/suite-timings.tsv (worst row you are willing to survive, plus headroom) rather than from this
+# comment — the ledger is the authority. 0 means "fail immediately if busy".
+WAIT_DEFAULT="${VISIONOCR_TEST_LOCK_WAIT:-3600}"
+# A holder whose pid is gone is stale immediately (see _holder_alive). This is the backstop for the other
+# case: a live pid that has wandered off (a wedged suite). 90 min was chosen as "well past the 3-6 min
+# suite"; against a 39m30s suite it is only 2.3x, and the gate that wraps one measured 44m53s — so this is
+# now the tightest of the three margins, not the loosest. Kept at 5400 because breaking a lock is worse
+# than waiting for one, but it must be re-derived, not inherited, if the suite grows again.
 MAXAGE="${VISIONOCR_TEST_LOCK_MAXAGE:-5400}"
 
 # WHOSE pid owns the lock. For `run` this script stays alive as the command's parent, so its own `$$` is the
@@ -128,7 +137,7 @@ _try_acquire() {
 }
 
 acquire() {
-  local label="$1" wait_s="$2" waited=0
+  local label="$1" wait_s="$2" waited=0 _lbl="" _hpid=""
   mkdir -p "$(dirname "$LOCKDIR")" 2>/dev/null || true
   while :; do
     _try_acquire "$label" && return 0
@@ -136,11 +145,20 @@ acquire() {
     [ "$waited" -ge "$wait_s" ] && return 4
     # 5s granularity: a suite runs for minutes, so polling faster buys nothing and a launchd daemon
     # should not spin. Announce once, not every poll, or the daemon log fills with waiting notices.
+    # ⚠️ THE HOLDER MAY BE GONE BY THE TIME WE ANNOUNCE. _try_acquire RECLAIMS a dead holder's lock and
+    # returns 1 on purpose (so the next pass races for it fairly), which means the lock dir it describes has
+    # just been deleted — `_holder_label`/`_holder_pid` then read empty and this printed the nonsense
+    # `test-lock: '' holds the suite lock (pid )` straight into the daemon log, immediately under the
+    # "reclaiming" line that explains it. Observed 2026-08-16 in /tmp/vo-commit.log while diagnosing a lost
+    # commit; it cost real time reading it as a second, unknown holder. Say what is actually true instead.
     [ "$waited" = 0 ] && {
+      _lbl="$(_holder_label)"; _hpid="$(_holder_pid)"
       if _suite_live; then
         echo "test-lock: a suite is already running (pgrep -x tests) — waiting up to ${wait_s}s…" >&2
+      elif [ -n "$_hpid" ] || [ -n "$_lbl" ]; then
+        echo "test-lock: '${_lbl:-?}' holds the suite lock (pid ${_hpid:-?}) — waiting up to ${wait_s}s…" >&2
       else
-        echo "test-lock: '$(_holder_label)' holds the suite lock (pid $(_holder_pid)) — waiting up to ${wait_s}s…" >&2
+        echo "test-lock: the lock was just reclaimed from a dead holder — racing for it, up to ${wait_s}s…" >&2
       fi
     }
     sleep 5; waited=$(( waited + 5 ))
@@ -179,6 +197,29 @@ status() {
   return "$rc"
 }
 
+# note_timing LABEL SECONDS [RC] — append one row to the suite-timing ledger. THE ONLY place that knows the
+# format, because there are two kinds of caller and they must produce the same rows: `run` (the health gate
+# and every session) times the command itself, while `.githooks/pre-commit` holds the lock with
+# acquire/trap-release so its "waiting for the suite" notice reaches the terminal instead of a log file —
+# and so has to hand its own timing in. The hook is the MOST FREQUENT suite runner of the three, so a ledger
+# that silently skipped it would under-report exactly the runs the owner most wants to see.
+#
+# A failure to write must NEVER fail a suite or a commit: this is instrumentation, not a gate.
+note_timing() {
+  local lbl="${1:-?}" secs="${2:-}" rc="${3:-0}" led load
+  case "$secs" in ''|*[!0-9]*) return 0 ;; esac
+  led="${VISIONOCR_SUITE_TIMINGS:-${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}/suite-timings.tsv}"
+  {
+    mkdir -p "$(dirname "$led")" 2>/dev/null || true
+    [ -s "$led" ] || printf 'when\tlabel\tseconds\trc\tloadavg1\n' >> "$led"
+    # The 1-minute load average AT THE END of the run. Without it two rows are not comparable — the same
+    # suite has been timed at 80 s and at 2370 s on this machine, and load is most of the difference.
+    load="$(uptime 2>/dev/null | sed -n 's/.*load averages*: *\([0-9.]*\).*/\1/p')"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$(date '+%F %T')" "$lbl" "$secs" "$rc" "${load:-?}" >> "$led"
+  } 2>/dev/null || true
+  return 0
+}
+
 # ---- dispatch ----
 LABEL="${VISIONOCR_TEST_LOCK_LABEL:-$(basename "${0##*/}")-$$}"
 WAIT="$WAIT_DEFAULT"
@@ -195,6 +236,21 @@ case "$WAIT" in ''|*[!0-9]*) echo "test-lock: --wait must be a whole number of s
 
 case "$CMD" in
   status)  status; exit $? ;;
+  record)
+    # Positional-free on purpose: the caller is a hook writing a machine-read row, and a transposed
+    # seconds/rc pair would corrupt the ledger silently.
+    # ⚠️ $LABEL is ALREADY SET by the global option parser above, which consumes `--label` before any
+    # subcommand sees it. Defaulting to "" here instead wrote every hook row as `?` — caught by running it.
+    _rl="$LABEL"; _rs=""; _rr=0
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --label)   _rl="${2:-}"; shift 2 ;;
+        --seconds) _rs="${2:-}"; shift 2 ;;
+        --rc)      _rr="${2:-0}"; shift 2 ;;
+        *) shift ;;
+      esac
+    done
+    note_timing "${_rl:-?}" "$_rs" "$_rr"; exit 0 ;;
   release) release; exit $? ;;
   acquire) acquire "$LABEL" "$WAIT"; exit $? ;;
   run)
@@ -216,8 +272,23 @@ case "$CMD" in
     trap 'release >/dev/null 2>&1' EXIT
     trap 'exit 143' TERM
     trap 'exit 130' INT
+    # ⚠️ TIME EVERY RUN, because a single wall-clock sample of this suite is not a fact about the suite.
+    # Measured on one laptop on 2026-08-16: the same suite took 80-632 s in the morning's mutation runs and
+    # 37m43s at 20:31 with a daemon session and an interactive session both live. This is a personal machine
+    # under wildly varying load, and it thermally throttles — so any constant derived from one timing is a
+    # guess wearing a number's clothes. The project has been doing exactly that: "3-6 min" was never
+    # measured at all (939680e says so in its own message: "DURATIONS ARE NOT MEASURED … inherited, not
+    # established"), and replacing it with one measurement of mine would only move the guess.
+    #
+    # So: every suite that goes through this lock records what it actually cost, and the timeouts get
+    # re-derived from the DISTRIBUTION rather than from prose. This is the one place that sees them all —
+    # the health gate, `.githooks/pre-commit`, and every session — which is why it lives here and not in
+    # any one caller. Append-only, one line per run, and a failure to write it must never fail the suite.
+    _tl_t0="$(date +%s)"
     VISIONOCR_TEST_LOCK_HELD=1 "$@"
-    exit $?
+    _tl_rc=$?
+    note_timing "$LABEL" "$(( $(date +%s) - _tl_t0 ))" "$_tl_rc"
+    exit "$_tl_rc"
     ;;
   ''|-h|--help|help) usage; exit 0 ;;
   *) echo "test-lock: unknown command '$CMD'" >&2; usage >&2; exit 2 ;;
