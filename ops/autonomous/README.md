@@ -108,9 +108,11 @@ It was timed on 2026-08-16, and the answer is that **the suite has no single dur
 | 17:54, health gate (tools-compile + suite + `build.sh` + doc checks) | **44m 53s** | daemon loop only |
 | 20:29, timed directly under the lock | **39m 30s** | a daemon session + an interactive session |
 | 21:42, a real `pre-commit` run | **~37 min** | same |
+| 22:34, this work's own `pre-commit` run | **474 s (7m 54s)** | daemon STOPPED, load 3.47 — the ledger's first row |
 
 Between 09:59 and 21:42 no commit added a test — the suite did not get four times slower, **the laptop got
-four times busier** (load average ~5 by the evening). This is a personal machine that runs other work and
+four times busier** (load average ~5 by the evening). The last row settles it: with the daemon stopped, the
+same suite on the same tree took **474 s against 2370 s**, a 5x swing from load alone. This is a personal machine that runs other work and
 thermally throttles, and the daemon is itself designed to keep it loaded. So a constant derived from any one
 of those rows is a reading of the load, not a property of the suite.
 
