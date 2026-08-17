@@ -42,6 +42,38 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PA
 # -lint` cannot see that at all because the result is still well-formed XML.
 sed_repl() { printf '%s' "$1" | sed -e 's/[\\&]/\\&/g'; }
 
+# ---- process-tree helpers, for `stop` -------------------------------------------------------------------
+# ⚠️ A DELIBERATE SECOND COPY of vision-ocr-autonomous.sh's `_descendants`. Not laziness, and not something to
+# de-duplicate by sourcing: `stop` runs ABOVE this script's prerequisite checks and must work when the daemon
+# script is missing, half-installed, or from a different checkout than the process it is stopping — which is
+# exactly the situation an owner is in when they reach for `stop`. Sourcing the canonical copy would make the
+# one verb that has to work unconditionally depend on the file most likely to be broken.
+# Keep the two in step if either changes; they are the same BFS for the same reason (macOS `ps` has no
+# recursive ppid filter, so snapshot the pid/ppid table once and walk it).
+#
+# ⚠️ CALL IT BEFORE KILLING ANYTHING. Once a parent dies its children reparent to init and no longer appear
+# beneath it, so a tree collected AFTER the kill is empty — which is exactly how the old `stop` looked correct
+# while leaving a suite running. Measured 2026-08-17: `stop` TERMed `claude` and forty minutes later its
+# `test-lock.sh -> mutate.py -> run_tests.sh -> build/tests` subtree was alive at ppid 1, holding the suite
+# lock at 98% of a core.
+_desc() {
+  local root="$1" map frontier all next p k kids
+  case "$root" in ''|*[!0-9]*) return 0 ;; esac
+  map="$(ps -axo pid=,ppid= 2>/dev/null)"
+  frontier="$root"; all="$root"
+  while [ -n "$frontier" ]; do
+    next=""
+    for p in $frontier; do
+      kids="$(printf '%s\n' "$map" | awk -v pp="$p" '$2==pp{print $1}')"
+      for k in $kids; do
+        case " $all " in *" $k "*) ;; *) all="$all $k"; next="$next $k" ;; esac
+      done
+    done
+    frontier="$next"
+  done
+  printf '%s\n' $all
+}
+
 # ===== CONFIG — every value here is the daemon's, not this script's ======================================
 # vision-ocr-autonomous.sh is the CONTRACT: it decides where state lives, what the job is called and which
 # env var it needs. Everything below is read off that file, so a change there must be mirrored here.
@@ -64,6 +96,7 @@ LOG="$STATE/daemon.log"
 # OWN default is the hardcoded ~/.local/state/visionocr-autonomous/test.lock — it does not derive from $STATE —
 # so this must be passed in explicitly on every call, or an overridden $STATE silently consults a different lock.
 LOCKDIR="${VISIONOCR_TEST_LOCK:-$STATE/test.lock}"
+SESSPID="$STATE/session.pid"                      # the daemon's $SESSPID — the live session's `claude` pid
 NEXT="$REPO/ops/autonomous/next-item.sh"
 DIGEST="$REPO/ops/autonomous/status-digest.sh"
 TESTLOCK="$REPO/ops/autonomous/test-lock.sh"
@@ -179,17 +212,117 @@ case "$VERB" in
     #   (d) the run-log compactor, which the daemon runs BETWEEN cycles, i.e. exactly when the loop is not
     #       inside a session and a `stop` is most likely to land.
     # None of these patterns can match daemon.sh itself, nor an interactive Claude session.
-    k=0
-    pkill -f 'vision-ocr-autonomous\.sh'                        >/dev/null 2>&1 && { k=1; echo "daemon loop stopped."; }
-    pkill -f 'autonomous maintenance session for Vision OCR'    >/dev/null 2>&1 && { k=1; echo "in-flight resume session stopped."; }
-    pkill -f 'ops/autonomous/health-gate\.sh'                   >/dev/null 2>&1 && { k=1; echo "in-flight health gate stopped (its build + suite go with it)."; }
-    pkill -f 'compact-runlog\.sh'                               >/dev/null 2>&1 && { k=1; echo "in-flight run-log compactor stopped."; }
+    #
+    # ⚠️ AND EACH PATTERN IS KILLED AS A TREE, NOT AS A PROCESS. Measured 2026-08-17 07:55, and it is the
+    # defect this block was rewritten for: `pkill -f` TERMs only the process whose argv matched. Every child
+    # reparents to init and runs on. Three consequences, all observed or mechanical:
+    #   * (b) left `test-lock.sh run --label mutants-C24-override -- python3 Tools/mutate.py` ->
+    #     `./run_tests.sh` -> `./build/tests` alive for 40+ minutes at 98% of a core, holding the SUITE LOCK,
+    #     with no `git` and no session left to read its result. That is the fifth orphan class, and the four
+    #     patterns above cannot name it: it is a plain `bash`/`python3`/`tests` argv belonging to whatever the
+    #     session decided to run. It is unreachable by pattern and reachable by ANCESTRY, which is why the
+    #     snapshot below is keyed on the session pid rather than on a fifth `pgrep`.
+    #   * (c)'s note used to end "(its build + suite go with it)". It did not: the gate runs
+    #     `test-lock.sh run --label health-gate -- ./run_tests.sh` as a direct child, so a TERM to the parent
+    #     alone leaves the ~43-minute suite running and the lock held.
+    #   * ⛔ The obvious repair is WRONG and must not be reintroduced: a `pkill -f run_tests.sh` (or
+    #     `pgrep -x tests`) sweep would kill THE OWNER'S OWN interactive suite, which is the one thing the
+    #     lock logic bends over backwards to protect. Ancestry is what tells the two apart. Nothing here may
+    #     ever kill a process it cannot trace back to the daemon.
+    #
+    # ⚠️ ORDER: snapshot FIRST, kill SECOND. A tree collected after the kill is empty, which is precisely how
+    # the old code looked correct.
+    #
+    # $SESSPID is consulted too, but be clear about what it can and cannot do here, because the first draft of
+    # this comment overstated it. It is NOT an independent handle on a session `pgrep` failed to match: the
+    # code below only takes its tree when the pgrep set ALREADY contains it, so in that case it adds nothing.
+    # It cannot safely do more — this script is not the session's parent, so it has no way to verify a bare pid
+    # is ours, and a file that survives a SIGKILL can name anything by the time it is read. What it genuinely
+    # buys is a DIAGNOSTIC: a live pid in that file that belongs to no tree found here is reported to the
+    # owner rather than silently killed or silently ignored.
+    # ⚠️ THE LOOP'S TREE COMES FIRST, AND IT IS NOT JUST ONE OF THE FOUR. While the daemon loop is alive,
+    # (b), (c), (d) and the fifth class are all DESCENDANTS of it, so one snapshot of pattern (a)'s tree
+    # already contains every one of them — session, gate, compactor, suite, build, mutate. The other three
+    # patterns are the FALLBACK for the case ancestry cannot answer: a loop that was SIGKILLed or OOM-killed
+    # left its children reparented to init, and then a pattern is the only handle left on them.
+    #
+    # ⚠️ RESIDUAL EXPOSURE, stated rather than papered over: `pgrep -f` matches any process whose ARGV
+    # CONTAINS the pattern, including a `grep`, `tail` or editor someone has open on health-gate.sh — CLAUDE.md
+    # names this trap ("the instrument was measuring itself") and the four `pkill -f` lines this replaced had
+    # the same exposure. Tree-killing makes a false match WORSE, not better, because it would take that
+    # process's children too. Two cheap guards, in order: the loop tree is preferred so the fallback rarely
+    # runs at all, and any candidate whose executable is a known FILE-READER rather than an executor is
+    # dropped. Neither is a proof; both remove the cases that actually happen.
+    _is_reader() {
+      case "$(basename "$(ps -o comm= -p "$1" 2>/dev/null)" 2>/dev/null)" in
+        grep|egrep|fgrep|rg|ag|tail|head|less|more|cat|awk|sed|vim|vi|nvim|nano|emacs|bat|pgrep|ps|open) return 0 ;;
+        *) return 1 ;;
+      esac
+    }
+    victims=""
+    for _p in $(pgrep -f 'vision-ocr-autonomous\.sh' 2>/dev/null); do
+      _is_reader "$_p" || victims="$victims $(_desc "$_p")"
+    done
+    for _pat in 'autonomous maintenance session for Vision OCR' \
+                'ops/autonomous/health-gate\.sh' \
+                'compact-runlog\.sh'; do
+      for _p in $(pgrep -f "$_pat" 2>/dev/null); do
+        _is_reader "$_p" && continue
+        victims="$victims $(_desc "$_p")"
+      done
+    done
+    # The recorded session pid, but ONLY if something already in the victim set is its ancestor-or-self —
+    # i.e. only if this stop has independent evidence that pid belongs to the run it is stopping.
+    sp="$(cat "$SESSPID" 2>/dev/null)"
+    case "$sp" in ''|*[!0-9]*) sp="" ;; esac
+    if [ -n "$sp" ] && kill -0 "$sp" 2>/dev/null; then
+      case " $victims " in
+        *" $sp "*) victims="$victims $(_desc "$sp")" ;;   # already implied; take its tree too
+        *) echo "note: $SESSPID names pid $sp, which is alive but is NOT part of any daemon process tree" >&2
+           echo "      found here — so it is left alone. Check it by hand: ps -p $sp -o command=" >&2 ;;
+      esac
+    fi
+    # De-duplicate, and drop this script and its own ancestors so a `stop` can never TERM itself. `pgrep -f`
+    # on a pattern this file CONTAINS would otherwise match daemon.sh, and the tree walk would then sweep up
+    # the owner's shell — the self-matching trap CLAUDE.md records in the shell rather than in the code.
+    self_line=" $$ $PPID $(_desc "$$" | tr '\n' ' ') "
+    uniq_victims=""
+    for p in $victims; do
+      case " $uniq_victims " in *" $p "*) continue ;; esac
+      case "$self_line" in *" $p "*) continue ;; esac
+      uniq_victims="$uniq_victims $p"
+    done
+    k=0; n=0
+    if [ -n "${uniq_victims// /}" ]; then
+      k=1
+      for p in $uniq_victims; do n=$(( n + 1 )); done
+      # TERM the whole set, then a DETACHED KILL backstop 8s later for anything that ignored it. Detached so
+      # it outlives this script — a `stop` that returns before the backstop lands is the normal case.
+      for p in $uniq_victims; do kill -TERM "$p" 2>/dev/null; done
+      ( sleep 8; for p in $uniq_victims; do kill -KILL "$p" 2>/dev/null; done ) >/dev/null 2>&1 &
+    fi
     # Three outcomes, and two of them used to read alike. "Booted out but nothing to kill" is a NORMAL
     # state (a crashed daemon inside ThrottleInterval, or one that parked itself), and it is not the same
     # answer as "there was nothing here at all".
-    if   [ "$k" = 1 ];      then echo "daemon stopped."
+    # The COUNT is printed because it is the only thing that distinguishes "stopped the loop" from "stopped
+    # the loop, a session, a suite and a build" — and after the 2026-08-17 orphan the difference between
+    # those two is the whole point of this verb.
+    if   [ "$k" = 1 ];      then echo "daemon stopped — TERMed $n process(es): the loop, any in-flight session, gate or compactor, plus every descendant of each (suite, build, mutate). KILL backstop in 8s."
     elif [ "$booted" = 1 ]; then echo "launchd job stopped — its process was already down (crash window, or it had parked itself)."
     else                         echo "daemon was not running."; fi
+
+    # ⚠️ CLEAR THE ENGINE LOCK. $STATE/engine.lock is the daemon's "a session is in flight" flag, heartbeated
+    # every 60s by a subshell that dies with the daemon. Nothing then refreshes it and nothing removed it, so
+    # it survived every stop — and `tick`'s guard is `age < $STALE` (1800s), which means a RESTART inside the
+    # next 30 minutes logs `engine busy (lock Ns old) — skip` and does nothing, over a session that is already
+    # dead. Measured after the 07:55:53 stop on 2026-08-17: a restart before 08:25:53 would have idled ~20
+    # minutes for no reason. This is safe here for the reason the rest of this branch is safe: we have just
+    # TERMed the only process that could legitimately be holding it.
+    if [ -f "$STATE/engine.lock" ]; then
+      rm -f "$STATE/engine.lock" 2>/dev/null \
+        && echo "engine.lock cleared — a restart starts working on its first cycle instead of waiting out \$STALE."
+    fi
+    rm -f "$SESSPID" 2>/dev/null || true
 
     # ⚠️ RELEASE THE SUITE LOCK, but only if it is ours to release. A health gate we just killed cannot run
     # its own EXIT trap, so it can leave the lock dir behind — and a lock nobody owns is invisible: it does
@@ -199,13 +332,31 @@ case "$VERB" in
     # the refusal is not an error to work around — it is the answer, and the useful thing this branch adds
     # is telling the owner WHICH refusal they got. (Read test-lock.sh: a holder pid that no longer exists is
     # reclaimed on the very next `acquire`, without waiting out MAXAGE, so a dead holder needs no action.)
+    #
+    # ⚠️ AND "STILL ALIVE" IS NOT THE SAME QUESTION AS "NOT OURS". Measured 2026-08-17 07:55, this branch
+    # printed, about a process it had orphaned four lines earlier:
+    #     suite lock LEFT ALONE — pid 26389 holds it and is still ALIVE, so it is not ours to break.
+    #       If that is your own `./run_tests.sh`, nothing to do.
+    # pid 26389 was the resume session's own `test-lock.sh run --label mutants-C24-override` child. The advice
+    # was therefore exactly inverted: it told the owner to ignore a runaway this script had just created. The
+    # caution itself is right and stays — it must never break the lock out from under the owner's interactive
+    # suite — but the test has to be ANCESTRY, not liveness, so the two cases can be told apart at all.
     if [ -d "$LOCKDIR" ]; then
       hp="$(cat "$LOCKDIR/pid" 2>/dev/null)"
+      hl="$(cat "$LOCKDIR/label" 2>/dev/null)"
+      was_ours=0
+      case "$hp" in ''|*[!0-9]*) ;; *) case " $uniq_victims " in *" $hp "*) was_ours=1 ;; esac ;; esac
       if [ -x "$TESTLOCK" ] && VISIONOCR_TEST_LOCK="$LOCKDIR" "$TESTLOCK" release 2>/dev/null; then
         echo "suite lock released."
+      elif [ "$was_ours" = 1 ]; then
+        echo "suite lock was held by ${hl:-?} (pid $hp) — one of the processes this stop just TERMed, so it IS"
+        echo "  ours. \`test-lock.sh run\` releases on its own TERM trap, and a dead holder is reclaimed by the"
+        echo "  next acquire without waiting out MAXAGE — so this needs nothing from you. Confirm if you like:"
+        echo "  $TESTLOCK status"
       elif [ -n "$hp" ] && kill -0 "$hp" 2>/dev/null; then
-        echo "suite lock LEFT ALONE — pid $hp holds it and is still ALIVE, so it is not ours to break."
-        echo "  If that is your own \`./run_tests.sh\`, nothing to do. Otherwise: $TESTLOCK status"
+        echo "suite lock LEFT ALONE — pid $hp (${hl:-no label}) holds it, is still ALIVE, and is NOT part of any"
+        echo "  process tree this stop touched — so it is not ours to break. That is what your own interactive"
+        echo "  \`./run_tests.sh\` looks like from here, and nothing needs doing. Otherwise: $TESTLOCK status"
       else
         echo "suite lock: holder pid ${hp:-?} is gone, so the lock is STALE — no action needed."
         echo "  test-lock.sh reclaims a dead holder on the next acquire, without waiting out its MAXAGE."

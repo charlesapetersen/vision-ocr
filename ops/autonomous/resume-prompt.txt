@@ -63,6 +63,21 @@ STEP 3 — DO IT. The non-negotiables, from CLAUDE.md and CONTRIBUTING.md:
     not a fault. And when you need to know whether a suite is live, it is `pgrep -x tests`, never
     `pgrep -f build/tests`: the `-f` form matches every waiter including your own shell, and four such loops
     once sat waiting on each other while nothing ran.
+  * ⛔ **EVERY EXPENSIVE GATE IN THIS REPO NEEDS THE DETACHED-PLUS-POLL SHAPE — not just the commit.** The
+    Bash tool caps at 10 minutes (`timeout` maxes out at 600000 ms) and a foreground tool call is killed at
+    2-4 minutes under load, so on this machine there are exactly TWO shapes that work: "free and instant", or
+    "detached, then polled". STEP 4 spells the shape out for `git commit`; it applies verbatim to all of
+    these, and **three separate sessions each lost time rediscovering that one gate at a time**:
+        ./run_tests.sh                     ~43 min   (2,552 / 2,575 / 2,615 s measured 2026-08-17)
+        Tools/check-tools-compile.sh       >120 s    (killed at the ceiling with NO output; QUEUE.md's ~26s
+                                                     is a quiet-machine figure)
+        python3 Tools/mutate.py --only …   ~45 min per mutant, plus a full baseline suite
+        Tools/fault-inject.sh              treat as expensive
+        swiftc / a Sources rebuild + probe ~80 s cold, but **>8 min under contention** — measured, after it
+                                                     killed two runs of the same measurement arm mid-`swiftc`
+    So even "watch the check fail" is a detached job here. Do not discover this a fourth time: write the
+    output to a file, background it, and poll on the CONDITION (a sha moving, a file appearing) — never on
+    `pgrep -x tests`, which is false for the first ~2 minutes of a perfectly healthy hook.
   * **A failing test FIRST, and watch it fail.** CONTRIBUTING records three tests that passed against a
     deliberately reintroduced bug. A fix without a test that fails without it is not finished. Tests are
     `check(...)` calls in `Tests/main.swift`.

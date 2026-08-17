@@ -216,7 +216,7 @@ chmod +x "$T/gate-green.sh" "$T/gate-red.sh" "$T/gate-hang.sh" "$T/gate-flaky.sh
 # ---- drive the daemon -----------------------------------------------------------------------------------
 launch() {   # $1 = VISIONOCR_IDLE_STOP ; backgrounds the daemon, echoes its pid
   VISIONOCR_LABEL=provetest VISIONOCR_REPO="$REPO" VISIONOCR_STATE="$STATE" \
-  VISIONOCR_RUN="$RUN" VISIONOCR_QUEUE="$QUEUE" VISIONOCR_CLAUDE="$T/claude" \
+  VISIONOCR_RUN="$RUN" VISIONOCR_QUEUE="$QUEUE" VISIONOCR_CLAUDE="${CLAUDE_STUB:-$T/claude}" \
   VISIONOCR_INTERVAL=1 VISIONOCR_MAXBACKOFF=8 VISIONOCR_IDLE_STOP="$1" VISIONOCR_HB_POLL=1 \
   VISIONOCR_MAXRUN="${DMAXRUN:-300}" VISIONOCR_STALE="${STALE:-1800}" VISIONOCR_BUDGET=1 \
   VISIONOCR_MINFREE_MB="${MINFREE:-10240}" VISIONOCR_MAX_NOCOMPLETE="${MAXNC:-0}" \
@@ -429,7 +429,15 @@ echo "1:no" > "$CTRL"; reset_repo; dfset 999999; reset_state
 touch "$STATE/engine.lock"
 P=$(launch 0); sleep 5; stop "$P"; L="$STATE/daemon.log"
 grep -q 'engine busy' "$L" && ok "fresh lock -> cycle skipped" || bad "did not detect the busy engine"
-[ "$(nsessions "$L")" = 0 ] && ok "…and no session was launched behind it" || bad "launched a session anyway"
+# DIAGNOSTIC ON FAILURE, added 2026-08-17: "launched a session anyway" is a bare count and says nothing about
+# WHY the lock stopped being respected — whether it was removed, aged out, or never seen. Printing the log and
+# the lock's fate turns a rerun-and-squint into one reading.
+if [ "$(nsessions "$L")" = 0 ]; then
+  ok "…and no session was launched behind it"
+else
+  bad "launched a session anyway ($(nsessions "$L")) — lock $([ -f "$STATE/engine.lock" ] && echo STILL PRESENT || echo GONE) at assert time"
+  sed 's/^/        /' "$L"
+fi
 reset_state; touch "$STATE/engine.lock"; touch -t 202601010000 "$STATE/engine.lock"
 P=$(launch 0); sleep 5; stop "$P"; L="$STATE/daemon.log"
 grep -q "stale lock" "$L" && ok "stale lock -> taken over" || bad "did not take over a stale lock"
@@ -511,6 +519,104 @@ survived=0
   && ok "sourcing left idle.since / nocomplete.count / gate-timeouts untouched" \
   || bad "sourcing destroyed run state — $((3 - survived)) of 3 counters cleared (the clear must live BELOW the source guard)"
 rm -f "$STATE/idle.since" "$STATE/nocomplete.count" "$STATE/gate-timeouts"
+
+# ================= a stop must not orphan the session's tree ============================================
+# REGRESSION TEST FOR THE 2026-08-17 07:55 ORPHAN (README §Defects D1/D4). The daemon's TERM/INT/HUP traps
+# were `exit 0`: they LOGGED "session-in-flight=YES … may leave it stale" and did nothing, so a bootout,
+# logout or lid close killed `claude` and left its whole subtree running at ppid 1. Measured: a
+# `test-lock.sh -> mutate.py -> run_tests.sh -> build/tests` chain alive 40+ minutes later at 98% of a core,
+# still holding the suite lock, with nothing left to read its result.
+#
+# ⚠️ THE GRANDCHILD IS THE WHOLE POINT. Killing `claude` was never the broken part — every earlier version of
+# this harness would have passed a test that only checked the session pid. What was broken is the process
+# TWO levels down, which is where every expensive thing in this repo actually runs (the suite, the build,
+# swiftc, mutate.py). So the stub spawns a grandchild with a unique argv and the assertion is about THAT.
+echo "[16] A TRAPPED STOP TEARS DOWN THE WHOLE SESSION TREE (not just \`claude\`)"
+cat > "$T/claude-spawner" <<'SPAWN'
+#!/usr/bin/env bash
+# Stand-in for a session that has started a suite: a grandchild the daemon must reach, then a long wait.
+sleep 987321 &
+sleep 987322
+SPAWN
+chmod +x "$T/claude-spawner"
+echo "0:no:no" > "$CTRL"; reset_repo; dfset 999999; reset_state
+pkill -f 'sleep 98732' >/dev/null 2>&1; sleep 0.3
+CLAUDE_STUB="$T/claude-spawner"; P=$(launch 0)
+# Wait for the grandchild to exist, so a pass cannot come from it never having started (a vacuous green).
+gc=""; for _i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+  gc="$(pgrep -f 'sleep 987321' 2>/dev/null | head -1)"; [ -n "$gc" ] && break; sleep 1
+done
+if [ -z "$gc" ]; then
+  bad "the stub's grandchild never started — section [16] would have been vacuous"
+else
+  ok "the session's grandchild is running (pid $gc), so the assertions below are not vacuous"
+  [ -f "$STATE/engine.lock" ] && ok "engine.lock present while the session is in flight" \
+                              || bad "no engine.lock during a live session (premise broken)"
+  kill -TERM "$P" 2>/dev/null; wait "$P" 2>/dev/null
+  # The trap TERMs the tree and schedules a detached KILL 8s later; allow for both.
+  gone=0; for _i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
+    kill -0 "$gc" 2>/dev/null || { gone=1; break; }; sleep 1
+  done
+  [ "$gone" = 1 ] && ok "the grandchild died with the daemon — the tree was torn down, not orphaned" \
+                  || bad "GRANDCHILD $gc SURVIVED THE STOP — this is the 2026-08-17 orphan (D1)"
+  [ -f "$STATE/engine.lock" ] && bad "engine.lock left behind — a restart idles until it goes stale (D4)" \
+                              || ok "engine.lock cleared by the stop (no \$STALE wait on restart)"
+  grep -q 'session-in-flight=YES — TERMed' "$STATE/daemon.log" \
+    && ok "the down line reports what it actually did, not just that a session existed" \
+    || bad "the down line still only NAMES the hazard: $(grep -o 'session-in-flight=.*' "$STATE/daemon.log" | tail -1)"
+fi
+pkill -f 'sleep 98732' >/dev/null 2>&1
+unset CLAUDE_STUB          # every later section must go back to the normal stub
+
+# ================= orphaned work is SAVED, not just reported ============================================
+# REGRESSION TEST FOR README §Defects D8. The orphan detector's closing line read "nothing is lost until that
+# worktree is removed" — true of `git worktree remove`, false of the directory those worktrees live in. Every
+# session works in /private/tmp/vo-<stamp>, which macOS clears on reboot, so the daemon's own answer to "is
+# this work safe?" rested on a volatile filesystem holding the ONLY copy.
+echo "[17] AN ORPHANED WORKTREE'S WORK IS SNAPSHOTTED TO \$STATE/rescue"
+echo "0:no:no" > "$CTRL"; reset_repo; dfset 999999; reset_state
+rm -rf "$STATE/rescue"
+# ⚠️ THE SANDBOX REPO NEEDS run-state-lib.sh, and without it this section is not merely weak but INVERTED.
+# The daemon sources the lib from "$REPO/ops/autonomous/run-state-lib.sh" and falls back to
+# `orphaned_work() { return 1; }` when it is absent — a deliberate degrade-don't-die guard for an old
+# checkout. $REPO here is the throwaway repo, which has no ops/ tree, so the detector was hard-wired off and
+# the section reported "NO PATCH SAVED" as a daemon defect when the daemon had never been asked. Measured:
+# it failed identically against the FIXED daemon. Copy the real lib in, and SKIP loudly if it cannot be
+# found rather than emitting a red that means nothing.
+mkdir -p "$REPO/ops/autonomous"
+if cp "$(cd "$(dirname "$DAEMON")" && pwd)/run-state-lib.sh" "$REPO/ops/autonomous/run-state-lib.sh" 2>/dev/null; then
+  ok "run-state-lib.sh is present in the sandbox repo, so the real orphan detector is live"
+else
+  skip "run-state-lib.sh not found beside $DAEMON — the orphan detector cannot be exercised here"
+fi
+OW="$T/orphan-wt"; rm -rf "$OW"
+git -C "$REPO" worktree add -q -b auto/orphan-test "$OW" >/dev/null 2>&1
+printf 'unique-rescue-payload-%s\n' "$$" > "$OW/rescued.txt"
+git -C "$OW" add rescued.txt >/dev/null 2>&1          # tracked+staged, so --untracked-files=no can see it
+# Prove the PREMISE before asserting on the response: if the detector does not see this worktree, a missing
+# patch says nothing about the rescue code.
+seen_orph="$(VISIONOCR_REPO="$REPO" bash -c '. "$1"; REPO="$2" orphaned_work' _ \
+             "$REPO/ops/autonomous/run-state-lib.sh" "$REPO" 2>/dev/null)"
+case "$seen_orph" in
+  *"$OW"*) ok "orphaned_work sees the dirty worktree (the premise holds)" ;;
+  *) bad "orphaned_work does not see $OW — fix the fixture, not the daemon (got: '$seen_orph')" ;;
+esac
+L=$(run_daemon 0 6)
+if [ -f "$STATE/rescue/orphan-wt.patch" ]; then
+  ok "a patch was written for the dirty auto/* worktree"
+  grep -q "unique-rescue-payload-$$" "$STATE/rescue/orphan-wt.patch" \
+    && ok "…and it actually contains the stranded content (not an empty diff)" \
+    || bad "the patch exists but does not hold the work — a backup that restores nothing"
+  [ -s "$STATE/rescue/orphan-wt.base" ] \
+    && ok "…and records the base sha it applies to" \
+    || bad "no base sha recorded — a patch with no base is guesswork to restore"
+  grep -q 'rescued:' "$L" && ok "the log tells the owner where the durable copy is" \
+                          || bad "the rescue is silent, so nobody knows it happened"
+else
+  bad "NO PATCH SAVED for a worktree holding uncommitted work — /private/tmp is the only copy (D8)"
+fi
+git -C "$REPO" worktree remove --force "$OW" >/dev/null 2>&1
+git -C "$REPO" branch -D auto/orphan-test >/dev/null 2>&1
 
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="

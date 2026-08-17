@@ -65,6 +65,16 @@ CLAUDE="${VISIONOCR_CLAUDE:-$HOME/.local/bin/claude}"
 RUN="${VISIONOCR_RUN:-$STATE/RUN.md}"          # run state: RUN STATUS + FOCUS + HOLD + SESSION LOG
 QUEUE="${VISIONOCR_QUEUE:-$REPO/ops/autonomous/QUEUE.md}"
 LOCK="$STATE/engine.lock"; LOG="$STATE/daemon.log"; PROMPT="$STATE/resume-prompt.txt"
+# The live session's `claude` pid, on disk rather than in a variable, for two readers that cannot see a shell
+# local: this daemon's OWN signal traps (a TERM can land while the loop is anywhere, and $cpid is `local` to
+# the launcher, so under `set -u` a trap that referenced it would abort instead of cleaning up), and
+# `daemon.sh stop`, which is a SEPARATE PROCESS and otherwise has nothing but `pgrep -f` patterns to aim at.
+# Written after launch, removed after `wait`. Treat its content as a HINT, never as proof of liveness: it
+# survives a SIGKILL, so every reader must re-verify that the pid is still the session before signalling it.
+# The two readers verify DIFFERENTLY, and each uses the strongest test available to it: the trap in this file
+# checks `ppid == $$` (exact — it is the parent); `daemon.sh stop` cannot, so it cross-checks the pid against
+# its own `pgrep` for the resume-prompt phrase.
+SESSPID="$STATE/session.pid"
 COMPACTOR="${VISIONOCR_COMPACTOR:-$HOME/.local/bin/compact-runlog.sh}"
 JOB="com.${LABEL}.autonomous"
 
@@ -100,7 +110,19 @@ STALE="${VISIONOCR_STALE:-1800}"          # 30 missed 60-second heartbeats. NOT 
 MAXRUN="${VISIONOCR_MAXRUN:-9000}"        # OUTER wall-clock backstop (2.5 h). The health watchdog below is
                                           # the PRIMARY killer; this only fires if that fails or a session is
                                           # productive-but-endless.
-BUDGET="${VISIONOCR_BUDGET:-20}"          # --max-budget-usd per resume session
+# --max-budget-usd per resume session. RAISED 20 -> 35 on the owner's decision, 2026-08-17, and the reason is
+# a measurement rather than a preference (README §Defects D6): a session must survive its own commit, and a
+# commit here costs a ~43-minute hook (2,552 / 2,575 / 2,615 s, three consecutive rows in
+# $STATE/suite-timings.tsv). The 05:19 session died `budget_exhausted` at **$20.14 of $20** with its hook
+# still in the suite; the commit landed anyway and the NEXT session had to discover and push it, and the log
+# it left behind says "THE COMMIT HAD NOT LANDED" about a commit that had. Three sessions in a row ended that
+# way, which is what drives `nocomplete.count` toward the auto-park.
+# ⚠️ THE HEADROOM IS FOR POLLING, NOT FOR MORE WORK. Waiting on a detached commit is cheap per wall-clock
+# minute but not free: each poll turn re-reads a large context, ~$0.35-0.40 at the sizes these sessions reach
+# (the 05:19 session read 23.3M cached tokens over 151 turns). ~43 minutes of polling is therefore ~$4, and
+# $15 of headroom is deliberately more than that — a session that has done its work must never be unable to
+# AFFORD to land it. If this stops helping, the next lever is item size, not another raise.
+BUDGET="${VISIONOCR_BUDGET:-35}"
 EFFORT="${VISIONOCR_EFFORT:-xhigh}"       # low|medium|high|xhigh|max. xhigh, not max: it is the documented
                                           # sweet spot for agentic coding work, while max overthinks for
                                           # diminishing returns AND reaches the usage cap sooner — which on
@@ -685,7 +707,14 @@ mkdir -p "$STATE"
 # ⛔ Do NOT add "$GATE_STATE" ($STATE/last-gate) to this line. That one holds the last GREEN gate's sha and
 # is MEANT to outlive the daemon: the gate cadence tracks code churn, not daemon lifetime, so clearing it
 # would make every restart re-run a full gate it had already passed.
-rm -f "$IDLE_SINCE" "$NOCOMPLETE" "$STATE/gate-timeouts" "$ORPHSEEN" 2>/dev/null || true
+#
+# `$SESSPID` belongs here for a DIFFERENT reason from the counters, and it is worth stating: it is not a
+# streak to be forgiven but a stale POINTER. It is removed after every `wait` and by the signal traps, so a
+# file surviving into startup means the last daemon was SIGKILLed or OOM-killed — and by now that pid may
+# belong to anything. Its readers re-verify before signalling, but a fresh run should not start out holding a
+# pid it can no longer vouch for: this daemon's `ppid == $$` test would reject it anyway, and a pointer that
+# is guaranteed to fail its own guard is just a thing to misread in `ls $STATE`.
+rm -f "$IDLE_SINCE" "$NOCOMPLETE" "$STATE/gate-timeouts" "$ORPHSEEN" "$SESSPID" 2>/dev/null || true
 
 # ---- WHY a daemon used to vanish without a trace -----------------------------------------------------
 # Only the NORMAL loop exit logged a "daemon down" line. `trap 'exit 0' TERM INT` exited immediately, so a
@@ -698,17 +727,97 @@ rm -f "$IDLE_SINCE" "$NOCOMPLETE" "$STATE/gate-timeouts" "$ORPHSEEN" 2>/dev/null
 # personal laptop almost always the lid closing or the battery dying, not a defect.
 _DAEMON_STARTED=$SECONDS
 _EXIT_REASON="fell out of the main loop (rc 9 — RUN STATUS: COMPLETE, or parked)"
+_KILLED_INFLIGHT=""                # set by _terminate_inflight_session so _log_exit can say what it did
 _log_exit() {
   local st=$?                      # MUST be the first statement — any command clobbers $?
   local up=$(( SECONDS - _DAEMON_STARTED ))
   local sess="no"
-  [ -f "$LOCK" ] && sess="YES (engine.lock present — a resume session was in flight and may leave it stale)"
+  # ORDER MATTERS: the killed case is checked FIRST, because _terminate_inflight_session REMOVES $LOCK and
+  # the `-f` test below would then report "no" over a session this daemon had just torn down — hiding the
+  # single most useful fact in the line.
+  if [ -n "$_KILLED_INFLIGHT" ]; then sess="$_KILLED_INFLIGHT"
+  elif [ -f "$LOCK" ]; then sess="YES (engine.lock present — a resume session was in flight and may leave it stale)"
+  fi
   log "=== daemon down (pid $$) — reason: ${_EXIT_REASON} | status=${st} | uptime=${up}s | session-in-flight=${sess} ==="
 }
+
+# ⚠️ TEAR THE IN-FLIGHT SESSION DOWN ON A TRAPPABLE EXIT — the whole TREE, not just `claude`.
+#
+# WHY THIS EXISTS (measured 2026-08-17 07:55): the owner ran `daemon.sh stop` while a session was 22 minutes
+# into a scoped mutant campaign. The daemon logged its "daemon down … session-in-flight=YES" line and exited,
+# and `claude` died — but the session's own subtree did NOT. Forty minutes later
+#   bash ops/autonomous/test-lock.sh run --label mutants-C24-override -- python3 Tools/mutate.py …
+#     -> ./run_tests.sh -> ./build/tests
+# was still alive at ppid 1, pinning 98% of a core and HOLDING THE SUITE LOCK, with no `git` and no session
+# left to read its result. `daemon.sh stop` then reported the lock as "not ours to break".
+#
+# The old trap body was `exit 0`. It REPORTED the hazard in the down line and did nothing about it, which is
+# the shape this project keeps paying for: an instrument that names a problem is not a fix for it.
+#
+# This is deliberately the DAEMON's trap and not only `daemon.sh stop`'s business, because three of the four
+# ways this run ends never go through that script at all — logout, shutdown, and this laptop's lid closing all
+# arrive here as a bare SIGTERM from launchd.
+#
+# HARD LIMIT, unchanged: SIGKILL and an OOM kill cannot be trapped, so they still orphan the tree. That is
+# what `daemon.sh stop`'s own sweep is for, and why it does not simply trust this.
+_terminate_inflight_session() {
+  local cp="" pp="" n=0
+  cp="$(cat "$SESSPID" 2>/dev/null)"
+  case "$cp" in ''|*[!0-9]*) cp="" ;; esac
+  pp="$(ps -o ppid= -p "${cp:-0}" 2>/dev/null | tr -d ' ')"
+  # ⚠️ PID-REUSE GUARD: the pid must still be OUR OWN CHILD. The first version of this checked
+  # `ps -o comm= -p $cp | grep -q claude` and that was wrong in a way worth recording, because it fails
+  # SILENTLY — the worst shape for a guard on a cleanup path. `comm` reports the RESOLVED executable, and
+  # $CLAUDE is a symlink to a versioned file whose own name carries no "claude" at all
+  # (~/.local/bin/claude -> ~/.local/share/claude/versions/2.1.222). It matches here only because an ancestor
+  # DIRECTORY happens to be called `claude`; installed anywhere else, the grep misses, the branch is skipped,
+  # and the tree is orphaned exactly as before while the log claims a clean stop.
+  # `ppid == $$` needs no such luck: this daemon launched the session as a direct background child, so the
+  # test is exact, costs one `ps`, and cannot be fooled by a recycled pid belonging to anything else.
+  if [ -n "$cp" ] && [ "$pp" = "$$" ] && kill -0 "$cp" 2>/dev/null \
+     && declare -F _terminate_tree >/dev/null 2>&1; then
+    n="$(_descendants "$cp" 2>/dev/null | wc -w | tr -d ' ')"
+    _terminate_tree "$cp"
+    # Clear the engine lock ONLY HERE — inside the branch that proved the dying session was OURS. It is
+    # heartbeated by a subshell that dies with this daemon, so leaving it costs the NEXT run up to $STALE
+    # (1800s) of "engine busy — skip" cycles: measured after the 07:55 stop, a restart would have idled ~20
+    # minutes over a session already dead.
+    rm -f "$LOCK" 2>/dev/null || true
+    _KILLED_INFLIGHT="YES — TERMed pid $cp and its ${n}-process tree (suite/build/mutate children included), \
+engine.lock cleared; a detached KILL backstop follows in 8s"
+  else
+    # ⛔ AND IT MUST *NOT* BE CLEARED HERE. The first version of this function removed $LOCK unconditionally,
+    # "either way", and that was a genuine defect — caught by tests/prove-daemon.sh §[12] rather than by
+    # reading, which is the whole argument for the harness. What the log showed:
+    #
+    #   09:26:48  === daemon up (pid 83707 …) ===          <- a second daemon starts
+    #   09:26:48  engine busy (lock 0s old) — skip.        <- correctly defers to the live lock
+    #   09:26:49  === daemon down (pid 83428) … SIGTERM …  <- the FIRST daemon's trap finally runs
+    #   09:26:49  launching fresh resume session …         <- 83707 now sees NO lock, and launches
+    #
+    # A dying daemon deleted a LIVE daemon's lock, one second after that daemon had correctly stood down. And
+    # engine.lock is not bookkeeping: it is the mutual exclusion BETWEEN daemon instances. Removing another
+    # instance's lock permits two concurrent sessions, therefore two concurrent suites — `~/Library/Preferences/
+    # tests.plist` is shared, so that is CLAUDE.md's first environment trap and it corrupts BOTH runs into a
+    # nearly-green result with unrelated failures. Trading D1's orphan for that would have been a bad trade:
+    # an orphan wastes a core and is visible, this manufactures wrong evidence and is not.
+    #
+    # The ownership test is simply the branch above: this daemon `touch`es $LOCK at launch and removes it after
+    # `wait`, so a lock present with no session of OURS behind it belongs to somebody else — or is genuinely
+    # stale, in which case `tick`'s existing stale-lock takeover reclaims it after $STALE and no daemon has to
+    # guess. Leaving it is the conservative half of both cases.
+    if [ -f "$LOCK" ]; then
+      _KILLED_INFLIGHT="none of this daemon's (engine.lock present but no session of OURS behind it — LEFT \
+ALONE, since it may belong to another live daemon; tick's stale takeover reclaims it if it is truly dead)"
+    fi
+  fi
+  rm -f "$SESSPID" 2>/dev/null || true
+  return 0
+}
 trap _log_exit EXIT
-trap '_EXIT_REASON="SIGTERM — launchd bootout/stop, logout, shutdown, or the laptop lid closing"; exit 0' TERM
-trap '_EXIT_REASON="SIGINT — Ctrl-C / interactive interrupt"; exit 0' INT
-trap '_EXIT_REASON="SIGHUP — controlling terminal closed / login session ended"; exit 0' HUP
+trap '_EXIT_REASON="SIGTERM — launchd bootout/stop, logout, shutdown, or the laptop lid closing"; _terminate_inflight_session; exit 0' TERM
+trap '_EXIT_REASON="SIGINT — Ctrl-C / interactive interrupt"; _terminate_inflight_session; exit 0' INT
+trap '_EXIT_REASON="SIGHUP — controlling terminal closed / login session ended"; _terminate_inflight_session; exit 0' HUP
 
 # Children must be INDEPENDENT claude sessions, not NESTED. When this daemon is started from an interactive
 # Claude session it inherits CLAUDECODE / CLAUDE_CODE_* / CLAUDE_EFFORT etc., and a child `claude -p` would
@@ -752,12 +861,38 @@ _descendants() {
 # dies. Snapshots the tree UP FRONT (once claude dies its children reparent to init and drop off
 # _descendants), TERMs all now, and schedules a DETACHED KILL backstop that survives this daemon's own
 # cleanup of the watchdog — so there is no race between reaping the watchdog and the KILL landing.
+#
+# ⚠️ THE DELAYED KILL RE-CHECKS IDENTITY, and it did not used to. The old backstop was
+#     ( sleep 8; for p in $victims; do kill -KILL "$p" 2>/dev/null; done ) &
+# which signals a snapshot taken BEFORE the TERM, eight seconds earlier, with no check that each pid is still
+# the process it was. The TERM itself frees those pids; a machine forking as hard as this one (a suite, a
+# build, a harness) can reissue one inside that window, and the victim then takes an uninterruptible SIGKILL
+# it has nothing to do with.
+# The reason this counts as a defect rather than a worry is that the rest of this file already treats pid
+# reuse as real: the `kill -0 "$root"` line below says "never fire on a stale/reused pid" in those words, the
+# outer backstop watchdog polls liveness for the same stated reason, and the test harness reaps only pids
+# whose command name still matches. One loop was left outside a rule everything else follows.
+# It also became far more likely the moment the signal traps started calling this on EVERY stop rather than
+# only on a watchdog kill — so it is fixed in the same change (README §Defects D9).
+# `ps -o lstart=` is the identity: a pid plus its start time is unique in practice, and a recycled pid gets a
+# different one. Cost is one `ps` per victim, paid once.
 _terminate_tree() {
-  local root="$1" victims p
+  local root="$1" victims p snap=""
   kill -0 "$root" 2>/dev/null || return 0        # never fire on a stale/reused pid
   victims="$(_descendants "$root")"
+  for p in $victims; do
+    snap="$snap$p $(ps -o lstart= -p "$p" 2>/dev/null | tr -s ' ' | sed 's/^ *//; s/ *$//')
+"
+  done
   for p in $victims; do kill -TERM "$p" 2>/dev/null; done
-  ( sleep 8; for p in $victims; do kill -KILL "$p" 2>/dev/null; done ) &
+  ( sleep 8
+    printf '%s' "$snap" | while read -r _vp _vstart; do
+      [ -n "$_vp" ] || continue
+      _now="$(ps -o lstart= -p "$_vp" 2>/dev/null | tr -s ' ' | sed 's/^ *//; s/ *$//')"
+      [ -n "$_now" ] || continue                 # already gone: nothing to kill
+      [ "$_now" = "$_vstart" ] || continue       # pid REISSUED since the snapshot — not ours, leave it
+      kill -KILL "$_vp" 2>/dev/null
+    done ) &
   return 0
 }
 
@@ -937,6 +1072,10 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
       --disallowedTools "${DENY[@]}" \
       >> "$SLOG" 2>&1 &
   local cpid=$!
+  # Publish the session pid for the two readers that cannot see this local: this daemon's signal traps, and
+  # `daemon.sh stop` in another process. Written BEFORE the watchdogs so a TERM arriving in the next
+  # microsecond still finds it. Removed after `wait` below, and by the traps themselves.
+  printf '%s' "$cpid" > "$SESSPID" 2>/dev/null || true
   # Start stamp, used ONLY to tell a usage-limit fast-fail apart from a genuine no-op in the verdict below.
   # Bash's SECONDS builtin, NOT $(date +%s): a fork+exec here lands in the window a TERM-right-after-launch
   # test races, and a builtin costs nothing and cannot perturb timing.
@@ -959,6 +1098,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   health_watchdog "$cpid" "$SLOG" 0 &
   local cwpid=$!
   wait "$cpid"; local rc=$?
+  rm -f "$SESSPID" 2>/dev/null || true   # the session is reaped; the pointer must not outlive it (pid reuse)
   kill "$wpid" "$cwpid" 2>/dev/null; wait "$wpid" "$cwpid" 2>/dev/null
   log "resume session exited rc=$rc"
   # Best-effort readable mirror of the final result (jq present -> extract; else skip).
@@ -1008,7 +1148,41 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
         printf '%s\n' "$_d" >> "$ORPHSEEN" 2>/dev/null || true
         log "  orphaned: $_d —$(orphaned_work_summary "$_d")"
       done
-      log "  a later session can finish it, or rescue it by hand; nothing is lost until that worktree is removed."
+      # ⚠️ AND THE PATCH IS SAVED, because the sentence this used to end on was optimistic. It read
+      # "nothing is lost until that worktree is removed" — true of `git worktree remove`, and NOT true of the
+      # directory those worktrees live in. Every session works in `/private/tmp/vo-<stamp>`, and /private/tmp
+      # is cleared by macOS on reboot and swept for age while running. So the daemon's own answer to "is this
+      # work safe?" rested on a volatile filesystem, and the ONLY copy of a killed session's work sat there.
+      #
+      # Measured 2026-08-17: `/private/tmp/vo-20260817-072554-25857` held 114 uncommitted insertions across 7
+      # files — a session's discovery of an ELEVENTH check that could not fail in the commit that had landed
+      # 45 minutes earlier, plus the new mutant that catches it and a published figure corrected from a flat
+      # "1,961 at every resolution" to 1,960-1,962. A reboot would have taken all of it, and the register
+      # would have kept the check that cannot fail.
+      #
+      # A patch, not a copy: it is a few KB against a worktree's hundreds of MB (each carries its own build/),
+      # it diffs against a sha that IS pushed, and `git apply` restores it anywhere. Cheap enough to do on
+      # every newly-seen orphan without a size guard, and $ORPHSEEN already makes that once per worktree per
+      # daemon lifetime. Best-effort throughout: a failure here must never affect the run's verdict.
+      _rescue="$STATE/rescue"
+      mkdir -p "$_rescue" 2>/dev/null || true
+      for _d in $_orph; do
+        _rb="$(basename "$_d")"
+        [ -f "$_rescue/$_rb.patch" ] && continue      # first snapshot wins; never overwrite a saved rescue
+        if git -C "$_d" diff HEAD > "$_rescue/$_rb.patch" 2>/dev/null && [ -s "$_rescue/$_rb.patch" ]; then
+          git -C "$_d" log -1 --format='%H %s'  > "$_rescue/$_rb.base"   2>/dev/null || true
+          git -C "$_d" status --porcelain       > "$_rescue/$_rb.status" 2>/dev/null || true
+          log "  rescued: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes) — /private/tmp does not survive a reboot; this does."
+        else
+          # An EMPTY patch over a worktree `orphaned_work` called dirty means the two disagree, and that is
+          # worth a line rather than silence: the likely cause is untracked-only content, which `git diff`
+          # cannot see and which therefore has NO backup here.
+          rm -f "$_rescue/$_rb.patch" 2>/dev/null || true
+          log "  ⚠️ could not snapshot $_d — 'git diff HEAD' produced nothing. If its content is UNTRACKED, a patch cannot hold it: copy it by hand."
+        fi
+      done
+      log "  a later session can finish it, or rescue it by hand. The committed base plus \$STATE/rescue/*.patch"
+      log "  is the durable copy; the worktree itself is in /private/tmp and is NOT."
     else
       log "session (rc=$rc) advanced nothing (queue + tip unchanged) — no progress."
     fi

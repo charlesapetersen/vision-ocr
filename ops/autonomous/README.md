@@ -12,9 +12,17 @@ deliberately does not have* records what was cut and why, because the reasons ar
 | | Archive Suite | this | |
 |---|---|---|---|
 | helper + daemon scripts | 16 | **11** | fewer moving parts |
-| proof harnesses | 15 | **2** | it guards far less machinery |
-| core shell lines | 4,295 | **3,668** | only ~15% fewer |
-| harness lines | 2,866 | 688 | |
+| proof harnesses | 15 | **4** | it guards far less machinery |
+| core shell lines | 4,295 | **4,381** | *no longer fewer at all* |
+| harness lines | 2,866 | 1,515 | |
+
+⚠️ **Two of those numbers were wrong and are corrected here, re-counted 2026-08-17 with `wc -l`.** The
+harness row read **2** while three harnesses were committed — it was written when two existed and was never
+re-counted as `prove-status.sh` landed, which is the ordinary way a measured figure rots into an asserted one.
+It is **4** now that `prove-stop.sh` exists (README §Defects D5: `daemon.sh` had no coverage, and it was the
+file that failed). The core-shell row read **3,668**; the real count is **4,381**, so the "only ~15% fewer"
+claim below has become "slightly more" — the honest reading of the paragraph that follows is now stronger, not
+weaker, and the row is left in place rather than quietly dropped.
 
 ⚠️ Note the third row, because the honest reading is not the flattering one: **the line count is barely
 down.** This repo's house style is heavy "why this exists" commenting that records the incident behind each
@@ -397,7 +405,16 @@ ops/autonomous/tests/prove-daemon.sh      # the real daemon loop against a stub 
 ops/autonomous/tests/prove-test-lock.sh   # mutual exclusion, reentrancy, stale reclaim, release-on-kill,
                                           #   and that both caller shapes write the same ledger row
 ops/autonomous/tests/prove-status.sh      # STATE 1: one branch per answer the run-state lib can give
+ops/autonomous/tests/prove-stop.sh        # `daemon.sh stop`: tree teardown, the lock verdicts, engine.lock
 ```
+
+`prove-stop.sh` is the newest and the reason it exists is worth keeping: `daemon.sh` had **no** harness, and
+`stop` is the verb an owner reaches for when something has already gone wrong — so it was the one path
+guaranteed to run on a bad day and the only one never driven except by a real incident. Its `pgrep` **and**
+`pkill` stubs are safety measures rather than conveniences: `stop` resolves its victims across the whole
+machine, so an un-stubbed harness would TERM the owner's live daemon and live session — it would *be* the
+incident it exists to detect. Both stubs run the real pattern match and then keep only processes the harness
+itself created, and §[0] refuses to continue unless it has proved that filter works.
 
 `prove-daemon.sh` runs the **real** daemon in a temp `HOME`/`STATE`/repo with every host-touching command
 (`osascript`, `launchctl`, `caffeinate`, `curl`, `df`) stubbed, so it cannot reach the Desktop, the real repo,
@@ -408,6 +425,201 @@ and that happened twice on 2026-08-16 — both times printing *"Running, but not
 do"*, once over a suite that was three minutes into a forty-minute run, and once over a session 59 minutes
 into real edits. Its section [5] is structural: it fails if `run-state-lib.sh` grows a reason
 `status-digest.sh` has no branch for, so the residual can never silently swallow a new answer again.
+
+## Defects found 2026-08-17, in one evaluation of a live run
+
+The owner stopped the daemon at **07:55:53** on 2026-08-17 and asked for it to be evaluated and fixed. Seven
+defects came out of that one stop. They are recorded here rather than in `BUGS.md` because that register is
+the **app's** — this file is where this system's incidents live, and the reasons are the useful part.
+
+Every claim below is tagged **[M]** measured on this machine, or **[I]** inferred from a mechanism that was
+measured elsewhere in the same incident. Nothing here is tagged from reasoning alone.
+
+`D1`–`D5` are one incident seen from five angles: **a stop is not a stop.** `D6`–`D8` are the other half of
+the same evaluation: **a session's work is not safe until it is pushed**, and this run had three ways of
+losing it. `D9` is the one the *fixes* turned up — a latent hazard that only mattered once `D1` started
+exercising it, which is the ordinary shape of a fix in this repo and the reason the review step is not
+optional.
+
+### D1 · A trappable exit orphaned the session's whole subtree — FIXED
+
+**[M]** The daemon's `TERM`/`INT`/`HUP` traps were `exit 0`. The EXIT trap then logged
+`session-in-flight=YES (engine.lock present — a resume session was in flight and may leave it stale)` — and
+nothing acted on it. Forty minutes after the 07:55:53 stop, this was still alive at **ppid 1**:
+
+```
+bash ops/autonomous/test-lock.sh run --label mutants-C24-override -- python3 Tools/mutate.py --only C24-override
+  └─ python3 Tools/mutate.py --only C24-override
+       └─ /bin/bash ./run_tests.sh
+            └─ ./build/tests          ← 97.9% of one core
+```
+
+It held the **suite lock**, pinned a core, and no `git` and no session were left to read its result. The
+daemon already had `_terminate_tree` — snapshot the descendants, TERM them all, detached KILL backstop — and
+already used it for the wall-clock backstop, the gate watchdog and the health watchdog. **The signal trap was
+the one killer that did not.** An instrument that names a hazard in its own log line is not a fix for it,
+which is the shape this project keeps paying for.
+
+Fixed in the daemon's trap rather than only in `daemon.sh stop`, because **three of the four ways this run
+ends never go through that script**: logout, shutdown and this laptop's lid closing all arrive here as a bare
+SIGTERM from launchd. Unchanged hard limit: SIGKILL and an OOM kill cannot be trapped and still orphan the
+tree — which is why `stop` also sweeps, and does not simply trust this.
+
+### D2 · `stop`'s four `pkill -f` patterns killed parents, not trees — and a fifth orphan class had no pattern at all — FIXED
+
+**[M]** Pattern (b) matched `claude -p` and killed it; every descendant reparented to init and ran on. That is
+the tree above. **[I]** Pattern (c)'s own comment claimed that killing `health-gate.sh` meant *"its build +
+suite go with it"* — false by the identical mechanism: the gate runs `test-lock.sh run --label health-gate --
+./run_tests.sh` as a direct child, which a TERM to the parent alone does not touch.
+
+And **no pattern matched a suite or campaign the *session* launched** — `test-lock.sh run …`, a bare
+`./run_tests.sh`. That is the class that actually survived.
+
+⚠️ The obvious repair is wrong: `pkill -f run_tests.sh` would kill **the owner's own interactive suite**, which
+is the one thing the lock logic bends over backwards to protect. The tree has to be **snapshotted from the
+session pid while the session is still alive**, because once it dies the ancestry link is gone — the same
+lesson `_terminate_tree`'s comment already records, applied one process further out.
+
+### D3 · `stop` reported a lock it had just orphaned as "not ours to break" — FIXED
+
+**[M]** After the stop, its lock branch printed:
+
+```
+suite lock LEFT ALONE — pid 26389 holds it and is still ALIVE, so it is not ours to break.
+  If that is your own `./run_tests.sh`, nothing to do.
+```
+
+The holder was the session's own child, orphaned four lines earlier by this same script. The branch is right
+to refuse the *owner's* suite and its caution is not the defect — reporting somebody else's lock over one it
+had just created is.
+
+### D4 · Both paths left `engine.lock` behind, costing the next run up to 30 minutes — FIXED
+
+**[M]** `engine.lock` survived the stop with mtime 07:55:53. `tick`'s guard is `age < $STALE` (1800 s), so a
+restart at any point before **08:25:53** logs `engine busy (lock Ns old) — skip` and idles — over a session
+that is already dead. The heartbeat subshell dies with the daemon, so nothing refreshes the file and nothing
+clears it either. A stop *knows* it killed the session; it can say so.
+
+### D5 · `daemon.sh` had no proof harness at all — FIXED
+
+**[M]** The three harnesses cover `vision-ocr-autonomous.sh`, `status-digest.sh` and `test-lock.sh`.
+`daemon.sh` — `start`, `stop`, the prerequisite checks — had none. **The one file in this system with no
+coverage is the file that just failed**, and that is not a coincidence to shrug at: `stop` is the verb the
+owner reaches for when something is already wrong, so it is the worst possible place for an untested path.
+See `prove-stop.sh`.
+
+### D6 · Three sessions in a row ended with a commit inside its ~43-minute hook — MITIGATED (budget raised)
+
+**[M]** From `$STATE/suite-timings.tsv`, three consecutive `pre-commit` rows: **2,552 s · 2,575 s · 2,615 s**.
+A commit is a ~43-minute fixed cost, and the session has to still be alive at the end of it.
+
+| session | ended | how | what happened to its commit |
+|---|---|---|---|
+| 22:44→01:15 | rc=143 | watchdog | hook orphaned, landed **04:04** as `1935d05` — the next session found it 30 min into its suite and let it finish |
+| 05:19→07:10 | rc=1 | `budget_exhausted`, $20.14 of $20 | landed **06:40** as `c8855f6`; the session's own log says *"THE COMMIT HAD NOT LANDED"* — it had. A second hook it started ~06:41 ran to **07:24:34 rc=0** with no `git` left to record it |
+| 07:12→07:55 | SIGTERM | owner's stop | the D1 tree |
+
+The rescuing session's verdict is the honest one: *"It survived by luck, not by design."* `nocomplete.count`
+stands at **2**, and `MAX_NOCOMPLETE` is 5 — three more and the run parks itself for a reason that is not
+really about the item.
+
+**The owner's decision, 2026-08-17: raise `VISIONOCR_BUDGET` from $20 to $35.** The reasoning is in the
+constant's own comment, and the one sentence worth repeating here is that the headroom is for **polling, not
+for more work** — a session that has done its work must never be unable to *afford to land it*. Each poll turn
+costs ~$0.35–0.40 at the context sizes these sessions reach, so ~43 minutes of polling is ~$4; $15 of headroom
+is deliberately generous against that.
+
+⚠️ **This is a mitigation, not a fix, and the distinction matters for what to try next.** It buys a session the
+means to survive its own commit; it does not make a commit cheaper. If sessions still fail to complete items,
+the next lever is **item size** — not another raise — and `GATE_EVERY` after that. The other half of the same
+problem is what the sessions themselves asked for, and that *was* fixed: see D7.
+
+### D7 · The detached-plus-poll rule was written for the commit alone — FIXED
+
+**[M]** `resume-prompt.txt` §STEP 4 is emphatic and correct about the commit: the Bash tool caps at 10
+minutes, so a ~43-minute hook has exactly one working shape, detached-plus-poll. But **every other expensive
+gate in this repo has since crossed the same ceiling**, and the prompt said nothing about any of them, so
+three separate sessions each lost time rediscovering it one gate at a time and wrote it into `NEEDS OWNER`
+three separate times:
+
+- `Tools/check-tools-compile.sh` over every tool — killed at 120 s with no output (~05:00), against a QUEUE
+  estimate of ~26 s that was a quiet-machine figure;
+- `python3 Tools/mutate.py --only …` — ~45 min per mutant, and it does not take the suite lock itself;
+- a plain `Sources/` + probe rebuild — ~80 s cold, **>8 min under contention**, which killed two runs of the
+  same measurement arm mid-`swiftc` at the 10-minute ceiling.
+
+### D8 · The only copy of a killed session's work lived in `/private/tmp` — FIXED
+
+**[M]** The orphan detector was right to exist and its closing line was optimistic:
+
+> `a later session can finish it, or rescue it by hand; nothing is lost until that worktree is removed.`
+
+True of `git worktree remove`. **Not true of the directory those worktrees live in.** §STEP 3 sends every
+session to `/private/tmp/vo-<stamp>`, and macOS clears `/private/tmp` on reboot and sweeps it for age while
+running — so the daemon's own answer to *"is this work safe?"* rested on a volatile filesystem holding the
+only copy, and the detector reported the risk without reducing it. Same shape as D1.
+
+What was actually at stake when this was found, and it is not a hypothetical: `/private/tmp/vo-20260817-072554-25857`
+held **114 uncommitted insertions across 7 files** — the session's discovery of an **eleventh check that could
+not fail**, in the commit that had landed 45 minutes earlier (`c8855f6`), plus the new mutant
+`logic/C24-override-nil-means-fallback` that catches it, plus a published figure corrected from a flat
+*"1,961 characters at every resolution"* to 1,960–1,962. A reboot would have taken all of it, and the register
+would have kept a check that cannot fail while believing it was pinned.
+
+Now every newly-seen orphan gets `git diff HEAD` written to `$STATE/rescue/<worktree>.patch`, with the base
+sha beside it. A patch rather than a copy: a few KB against a worktree's hundreds of MB (each carries its own
+`build/`), diffed against a sha that is already pushed, restorable anywhere with `git apply`. `$ORPHSEEN`
+already bounds it to once per worktree per daemon lifetime, and the first snapshot is never overwritten.
+
+⚠️ **What a patch cannot hold: untracked files.** `orphaned_work` uses `--untracked-files=no` on purpose
+(every worktree has an untracked `build/`, so counting it would report every worktree always), and `git diff`
+cannot see untracked content either. So a session whose only output is a *new, unstaged* file is still not
+backed up — the rescue logs a loud warning naming that case rather than reporting a green snapshot.
+
+The three worktrees live on this machine were rescued by hand during the evaluation and the important one was
+verified recoverable (`git apply --check` forward onto a clean `c8855f6`). The other two were verified
+**redundant** rather than assumed to be: `vo-20260816-224600-82042`'s five `mutation-log.tsv` rows — 2,621–2,719 s
+each, about 3.7 hours of measurement — are all present on `main`, and `vo-20260816-184311-95643`'s 660
+insertions are superseded by `db9481f`, whose `Tools/score-drawn-images.swift` and `DRAWN-2026-08-16.tsv` are
+both on `main`.
+
+### D9 · The delayed SIGKILL signals a stale pid snapshot — FIXED
+
+**[I]** — inferred from the code, not reproduced, and labelled that way deliberately because forcing a pid to
+recycle on demand is not something this evaluation could stage. `_terminate_tree` ends:
+
+```sh
+kill -0 "$root" 2>/dev/null || return 0        # never fire on a stale/reused pid
+victims="$(_descendants "$root")"
+for p in $victims; do kill -TERM "$p" 2>/dev/null; done
+( sleep 8; for p in $victims; do kill -KILL "$p" 2>/dev/null; done ) &
+```
+
+The **root** is guarded against pid reuse, in those words. The **victims are not**: eight seconds later the
+detached subshell sends `SIGKILL` to a snapshot taken before the TERM, with no check that each pid is still
+the process it was. A pid freed by the TERM and reissued inside that window is then killed — uninterruptibly,
+and quite possibly the owner's.
+
+What makes this a defect rather than a theoretical worry is that **this file already treats pid reuse as a
+real hazard in the two analogous places** — the root check above, and the outer backstop watchdog, whose
+comment says it polls liveness so it "never fires `_terminate_tree` against a stale/reused pid". The harness
+does the same, reaping only pids whose command name still matches. One delayed loop was left out of a rule
+the rest of the system follows.
+
+**It is listed here because D1 is what makes it matter.** Before that fix `_terminate_tree` ran only on a
+watchdog kill or a gate timeout — rare. D1 puts it on the path of *every* trappable stop, so a latent 8-second
+window became one that opens on every bootout, logout and lid close. Fixing the first without the second would
+have traded an orphan for a rarer but worse failure.
+
+Now each victim's pid is snapshotted **with its start time** (`ps -o lstart=`), and the delayed loop kills only
+pids whose start time still matches — gone-already and recycled are both skipped. Cost: one `ps` per victim.
+
+Also still open, already in `NEEDS OWNER` and **deliberately not touched here** — `test-lock.sh status`
+reports the suite's own `--probe-hostile-page` child as a second suite, which is the exact reading CLAUDE.md
+tells a session to treat as corruption. It costs a session the time to rule that out *every time*. It is a
+reporting defect, not a safety one (the belt still answers correctly), and it wants its own commit: that file
+is the only thing standing between this run and two concurrent suites, and "a regression inside a fix for
+another bug" is this project's most repeated shape.
 
 ## What this deliberately does not have
 

@@ -136,6 +136,29 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
 - [ ] **zotero-2** — the Zotero library sweep, steps 2-4. ⚠️ Step 1 wants re-running first; the survey it
       produced is dated. Reads a Zotero library, so copy `zotero.sqlite` before querying it — Zotero holds
       a lock on it. (origin: TODO.md §"2. The Zotero library sweep")
+- [ ] **lock-report** — the two REPORTING defects in `ops/autonomous/test-lock.sh`. Both were measured
+      2026-08-17 and neither is a safety defect: the mutual-exclusion belt answers correctly in both cases,
+      so what is wrong is only what the owner and the next session are *told*. Queued rather than fixed on
+      the day, on the owner's decision, because that file is the only thing standing between this run and two
+      concurrent suites and a campaign was mid-flight on it.
+      1. **`status` counts the suite's own child as a second suite.** `test-lock.sh status` printed
+         `suite RUNNING — pid(s) 1536 98565`; the second pid is `build/tests --probe-hostile-page …`, which
+         the suite forks *of itself* and whose process name is also `tests`, so `pgrep -x tests` matches it.
+         It changes every few seconds as probes come and go, which makes it look like something respawning.
+         Two pids is the one reading CLAUDE.md tells a session to treat as corruption, so it costs a session
+         the time to rule that out **every time** — and it teaches the reader to discount a two-pid reading,
+         which is the reading that would matter if two suites ever really did run.
+         Fix: report only pids whose parent is not itself a `tests` process (or match the full command line
+         and exclude `--probe-`), and have `status` say "1 suite (+1 probe child)" rather than listing raw
+         pids. ⛔ Keep `pgrep -x`, never `-f` — CLAUDE.md's trap, and four loops once waited on each other.
+      2. **The stale-lock reclaim prints a phantom holder.** After a commit attempt was killed mid-hook the
+         next acquire logged `test-lock: '' holds the suite lock (pid ) — waiting up to 1800s…` — empty
+         label, empty pid — then acquired immediately and ran fine. The behaviour is right and only the
+         message is wrong, but that message is what a session reads when deciding whether to wait, and
+         "waiting up to 1800s" on a lock nobody holds is the exact shape of the four loops above.
+      ⚠️ Run `ops/autonomous/tests/prove-test-lock.sh` green BEFORE and AFTER — it was 42/0/1 on 2026-08-17,
+      the skip being its real-detector arm, which correctly skips while any suite is running.
+      (origin: README.md §Defects D7's closing note; both entries began in RUN.md's NEEDS OWNER)
 
 ## HOLD — owner-only, never auto-executed
 
