@@ -300,6 +300,37 @@ case "$disk_gb" in ''|*[!0-9]*) disk_gb="" ;; esac    # unknown is not the same 
 gate_to="$(num "$(cat "$STATE/gate-timeouts" 2>/dev/null | tr -dc '0-9')")"
 needs=""
 add_need() { needs="$needs"$'\n'"    • $1"; }
+
+# ⚠️ RUN.md's `## NEEDS OWNER` LIST — THE DAEMON'S OUTBOX, AND IT WAS NEVER READ HERE. This is the mechanism
+# the resume prompt gives every session for anything that needs a human ("append here and move on — it never
+# waits, because nobody is awake to answer"), and RUN.md's own comment beside the heading states that
+# "`daemon.sh status` surfaces this under 'Needs you'". It did not. Six conditions below could raise a need —
+# a park note, a docfix, a red gate, gate timeouts, COMPLETE-with-open-items, low disk — and not one of them
+# was this list.
+#
+# Measured 2026-08-16 22:51: two real entries sat in NEEDS OWNER, including a dead session's worktree holding
+# 660 uncommitted lines with removal instructions, while this digest printed "Needs you  Nothing right now."
+# That is the same lie as the state line above, in the one section whose entire job is answering "does it
+# need me?", and it silently breaks the half of the arrangement that makes unattended work safe: a session
+# writes the note, moves on, and the note is never delivered.
+#
+# Parsed rather than dumped: only top-level `- ` bullets between the heading and the next `## `, with the
+# explanatory HTML comment skipped, so the section's own prose cannot masquerade as an item.
+if [ -f "$RUNMD" ]; then
+  while IFS= read -r _n; do
+    [ -n "$_n" ] || continue
+    add_need "$(clip "$_n" 88)"
+  done <<EOF
+$(awk '
+    /^## NEEDS OWNER/ { inb = 1; next }
+    inb && /^## /     { exit }
+    inb && /<!--/     { inc = 1 }
+    inb && inc        { if (/-->/) inc = 0; next }
+    inb && /^- /      { sub(/^- /, ""); gsub(/\*\*/, ""); print }
+  ' "$RUNMD" 2>/dev/null)
+EOF
+fi
+
 [ -f "$PARKNOTE" ] && \
   add_need "It parked and left you a note: $(clip "$(head -n 1 "$PARKNOTE" 2>/dev/null)" 62) (${PARKNOTE/#$HOME/~})"
 [ -f "$STATE/docfix" ] && \

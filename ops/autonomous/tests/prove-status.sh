@@ -35,8 +35,8 @@
 # works and aborts if it does not — the one check that must never be taken on trust.
 #
 # USAGE:  ops/autonomous/tests/prove-status.sh [path/to/status-digest.sh]
-# EXPECTED RESULT: 33 passed, 0 failed. Three independent falsifications, all actually run:
-#   * against the renderer as it stood before this commit — 11 passed / 23 failed, with sections [1], [6]
+# EXPECTED RESULT: 39 passed, 0 failed. Three independent falsifications, all actually run:
+#   * against the renderer as it stood before this work — 14 passed / 26 failed, with sections [1], [6]
 #     and [7] printing the measured sentences back verbatim;
 #   * against a lib given a new `DISK FULL` reason and a renderer given only a `# TODO` comment for it —
 #     26 / 7, section [5]. Before [5] was rewritten to read case PATTERNS instead of grepping the whole
@@ -310,6 +310,58 @@ case "$b" in *"Working now"*) bad "a lock with a 20-minute-dead heartbeat still 
   *) ok "a stale lock does NOT read as a working session" ;; esac
 case "$b" in *"never committed"*) ok "falls through to the orphaned-work truth beneath it" ;;
   *) bad "fell past orphaned work too — got: $(printf '%s' "$b" | tr '\n' ' ')" ;; esac
+
+
+# ---- [10] RUN.md's NEEDS OWNER list must reach the owner ---------------------------------------------------
+# The daemon's outbox. The resume prompt tells every session to append anything needing a human here and move
+# on, and RUN.md's own comment says `daemon.sh status` surfaces it under "Needs you". It did not: the digest
+# raised needs from six conditions (park note, docfix, red gate, gate timeouts, COMPLETE-with-open-items, low
+# disk) and never read this list at all. Measured 2026-08-16 22:51 — two real entries present, including a
+# dead session's worktree holding 660 uncommitted lines, while the digest printed "Nothing right now."
+echo "[10] the NEEDS OWNER outbox"
+session_off; dirty_off
+cat > "$VISIONOCR_STATE/RUN.md" <<'RUNMD'
+RUN STATUS: IN_PROGRESS — harness
+
+## NEEDS OWNER
+
+<!-- This explanatory comment must NOT be mistaken for an item. -->
+
+- **A dead session's worktree is dirty** and the daemon will never reclaim it.
+- Second thing that needs a human.
+
+## SESSION LOG
+
+- not an item; this heading ends the section.
+RUNMD
+out="$(run_digest)"
+printf '%s' "$out" | grep -q "Nothing right now" \
+  && bad "two entries in NEEDS OWNER and the digest still says 'Nothing right now'" \
+  || ok "a non-empty outbox is not reported as 'Nothing right now'"
+printf '%s' "$out" | grep -q "dead session's worktree" \
+  && ok "the first entry reaches the owner" || bad "first NEEDS OWNER entry not surfaced"
+printf '%s' "$out" | grep -q "Second thing that needs a human" \
+  && ok "so does the second — not just the head of the list" || bad "only the first entry surfaced"
+printf '%s' "$out" | grep -q "must NOT be mistaken" \
+  && bad "the section's HTML comment was rendered as an item" \
+  || ok "the explanatory comment is not mistaken for an item"
+printf '%s' "$out" | grep -q "this heading ends the section" \
+  && bad "parsing ran past the next '## ' heading into SESSION LOG" \
+  || ok "parsing stops at the next heading"
+# And the converse, so this cannot be satisfied by always printing something.
+cat > "$VISIONOCR_STATE/RUN.md" <<'RUNMD'
+RUN STATUS: IN_PROGRESS — harness
+
+## NEEDS OWNER
+
+<!-- nothing outstanding -->
+
+## SESSION LOG
+RUNMD
+run_digest | grep -q "Nothing right now" \
+  && ok "an empty outbox still reports 'Nothing right now'" \
+  || bad "an empty outbox no longer reports nothing — the check would pass on anything"
+rm -f "$VISIONOCR_STATE/RUN.md"
 
 session_off; dirty_off
 printf '\n  %s passed, %s failed\n' "$PASS" "$FAIL"
