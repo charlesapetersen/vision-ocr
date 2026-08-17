@@ -1299,8 +1299,17 @@ followed only when they carry `/Resources`), `logic/C24b-scope-does-not-descend`
 scoping defect below), `logic/C24b-no-image-is-not-unknown` and
 `logic/C24b-unresolved-name-is-not-nothing` (T14's rule, once in each direction).
 `python3 Tools/mutate.py --only C24b` is what says whether these checks can fail; each
-verdict costs a full suite, which is **~40 minutes measured** on this machine rather than
-the 2–4 minutes `mutate.py`'s own header claims.
+verdict costs a full suite, and that is **about 37 minutes measured** on this machine —
+timed twice, 20:31→21:08 standing alone and 21:42→22:19 inside the pre-commit hook — rather
+than the "2 to 4 minutes" `mutate.py`'s own header claims and the "3-6 min" four of this
+project's documents claimed until 2026-08-16. A five-mutant campaign is therefore about
+four hours, which is why it is a separate piece of work and not a step in the commit that
+added the mutants. `mutate.py`'s header and `.githooks/pre-commit`'s progress line both
+still say 2-4 minutes; whoever runs the campaign is touching `Tools/` anyway and should fix
+them in that commit.
+
+**The suite is 1,141 checks with no skips**, measured by this work's own pre-commit run —
+1,137 before the four checks page 8 and page 9 brought.
 
 Three pages of `Astin__The Challenge of Open Admissions` are the "could not tell" case in
 the wild — a `Do` naming something the page's resource chain does not hold. The walk
