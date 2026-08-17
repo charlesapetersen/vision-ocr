@@ -104,17 +104,37 @@ It was timed on 2026-08-16, and the answer is that **the suite has no single dur
 
 | when | duration | what else was running |
 |---|---|---|
-| 09:47, via `Tools/mutate.py` | **80–632 s** per run | quiet machine |
+| 09:47, via `Tools/mutate.py` | **416–632 s** per run | quiet machine |
 | 17:54, health gate (tools-compile + suite + `build.sh` + doc checks) | **44m 53s** | daemon loop only |
 | 20:29, timed directly under the lock | **39m 30s** | a daemon session + an interactive session |
 | 21:42, a real `pre-commit` run | **~37 min** | same |
-| 22:34, this work's own `pre-commit` run | **474 s (7m 54s)** | daemon STOPPED, load 3.47 — the ledger's first row |
+| 22:34, a `pre-commit` run | **474 s (7m 54s)** | daemon STOPPED, load 3.47 — the ledger's first row |
+| 22:47–03:14 (2026-08-17), the C24b mutant campaign, 6 runs | **2621–2719 s** per run | daemon + an interactive session; ledger row records loadavg **2.39** at completion |
+| 03:22–04:04 (2026-08-17), a real `pre-commit` run | **2,552 s (42m 32s)** | daemon + this session, loadavg **4.20** |
+
+The first row read **80–632 s** until 2026-08-17. Its floor was not a fast suite: `logic/R24-safeInt-finite`
+at 80 s and `logic/R30-monotonic-underflow` at 89 s are `exit 133` — crashes 80 and 89 seconds in, correctly
+scored as kills and not durations at all (BUGS.md C24b). `Tools/mutate.py` now excludes them from its own
+estimate; every doc that quoted 80 s as this suite's floor was quoting a suite that died.
 
 Between 09:59 and 21:42 no commit added a test — the suite did not get four times slower, **the laptop got
-four times busier** (load average ~5 by the evening). The last row settles it: with the daemon stopped, the
-same suite on the same tree took **474 s against 2370 s**, a 5x swing from load alone. This is a personal machine that runs other work and
-thermally throttles, and the daemon is itself designed to keep it loaded. So a constant derived from any one
-of those rows is a reading of the load, not a property of the suite.
+four times busier** (load average ~5 by the evening). That much still holds.
+
+⚠️ **What does NOT hold is the sentence this paragraph used to end with**, and the retraction is the point of
+the ledger existing: it read *"with the daemon stopped, the same suite on the same tree took 474 s against
+2370 s, a 5x swing from load alone."* The swing is real — 474 s against ~2,669 s per campaign run is
+**5.6x** — but "from load alone" does not survive the ledger's own three rows. Sorted by duration they are
+474 s, 2,552 s, ~2,669 s; sorted by the loadavg column, 2.39, 3.47, 4.20. **The column does not order the
+durations**: the fastest run happened at the middle load average and the slowest at the lowest. One pair
+points the way load would predict and the other points the opposite way, over the same suite on the same
+laptop within thirty hours.
+
+What might explain it, filed as an inference and not a finding: the campaign's session saw OneDrive at ~50%
+of a core and CrashPlanService at ~24% while the suite sat single-core bound at ~96%, so contention for that
+one core is the plausible term, and neither of those processes moves a 1-minute load average much. Nobody
+has run the controlled experiment. So a constant derived from any one of these rows is a reading of the load,
+**and a covariate derived from the loadavg column is not enough to correct for it** — which is a stronger
+reason to keep the ledger than the one this section was written with.
 
 ⚠️ **The suite is corpus-free**, which is worth knowing before reasoning about its cost: `testdocs/` appears
 in `Tests/main.swift` only in three comments, and nowhere in `Sources/`, `Helper/` or `run_tests.sh`. It

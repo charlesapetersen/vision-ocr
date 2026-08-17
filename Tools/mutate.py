@@ -24,13 +24,25 @@ version of this paragraph that quoted a number went stale, twice within one day.
 startup line reads the range off `Tools/mutation-log.tsv`'s newest rows and prints it
 before doing any work; that is the only figure here that tracks the machine. Want it
 without starting a campaign: `python3 Tools/mutate.py --only nothing-matches-this`.
+That prints the range and **stops**. It did neither until 2026-08-17: it printed no
+numbers at all and then fell through to the rsync and a full baseline suite, so the
+one command this header advertised as free cost ~45 minutes in a tool that does not
+take `test-lock.sh`. `startup_line` is what stops it now. The self-test pins both halves — what
+`startup_line` returns, and that `run` acts on it: a review mutated `if not proceed:` to
+`if False:` and the harness stayed green, so the check that drives `run` with tripwires
+over `subprocess.run`, `shutil.rmtree` and `os.makedirs` was added for exactly that.
 
 **What the log established on 2026-08-17, and it is a fact about the machine rather
 than the suite.** The C24b campaign's per-mutant rows came in at ~2700 s against
-~630 s for the R56/R57 mutants recorded the evening before — a 4.3x jump across the
-five-row window the estimate spans, on a catalogue that grew by four checks (1,137 to
-1,141) in between. Four checks do not do that. So the sentence this paragraph carried
-until then — "it grows every time the suite does" — was keyed on the wrong variable.
+~630 s for the R56/R57 mutants recorded **that same morning** — 09:47, committed
+09:59 in `41815b9`, about thirteen hours before the campaign started at 22:46, not
+"the evening before" as three of this project's documents said — a 4.3x jump across
+the five-row window the estimate spans, on a catalogue that grew by four checks
+(1,137 to 1,141) in between. Four checks do not do that. So the sentence this
+paragraph carried until then — "it grows every time the suite does" — was keyed on
+the wrong variable. The clock matters to the argument and not only to the record:
+quiet-morning against loaded-overnight is the comparison being drawn, and dating
+the cheap rows to the evening puts both readings in the same half of the day.
 
 **What is measured and what is inferred, kept apart.** Measured: the same five-mutant
 catalogue recorded ~630 s and ~2700 s per run on the same machine hours apart, across
@@ -44,22 +56,34 @@ Nobody has yet run the controlled experiment that would settle it.
 
 Two consequences, both load-bearing:
 
-  * **The printed estimate is a floor, not a forecast.** Budget its high end. The C24b
-    campaign was announced as "20-55 minutes" by the hardcoded arithmetic this replaced
-    and ran for hours.
-  * **A duration measured here does not transfer to `./run_tests.sh` in a tree that has
-    the corpus, in either direction.** The rsync below excludes `testdocs`, so every
-    corpus-dependent check is skipped. One draft of this paragraph multiplied the
-    catalogue by the full-suite time and announced "~55 hours"; a later one argued from
-    the same exclusion that a mutation run must therefore be much *faster* than a full
-    suite. The C24b rows falsify the second as well — 2700 s here against 2370 s for
-    the full corpus suite the evening before. Neither figure predicts the other.
+  * **The printed estimate is a floor, not a forecast, and reading the log does not
+    make it a forecast.** Budget its high end. The C24b campaign was announced as
+    "20-55 minutes" by the hardcoded arithmetic this replaced and ran 267 minutes —
+    4.85x the high end. But run against the log **as it stood when that campaign
+    started** (74 rows, newest five 471-632 s) the fixed arithmetic here says
+    **47-63 minutes, which is 4.22x low against the same 267**. Measured 2026-08-17,
+    by driving these functions over `git show`'s copy of the pre-campaign log. So the
+    fix removed a stale *constant*; it did not make the estimate survive a change in
+    load, and nothing in this file can, because the term that moved is not in the log.
+  * **A duration measured here is not a reading of the suite's size.** The rsync below
+    excludes `testdocs`, and one draft of this paragraph argued from that exclusion
+    that a mutation run must therefore be much *faster* than a full `./run_tests.sh`.
+    It cannot be, and the exclusion is not why: **the suite is corpus-free.**
+    `testdocs/` appears in `Tests/main.swift` in three comments and nowhere in
+    `Sources/`, `Helper/` or `run_tests.sh` — the suite synthesises its own PDFs and
+    OCRs those, and nothing runs the corpus on a commit (`ops/autonomous/README.md`
+    says so under its ledger). So the rsync skips no check at all, and 2700 s here
+    against 2370 s for a `pre-commit` suite the evening before is **one suite at two
+    loads** — which is this paragraph's own argument, and stronger stated that way
+    than as two different suites. An earlier draft went the other direction and
+    multiplied the catalogue by the full-suite time to announce "~55 hours". Neither
+    figure predicts the other, because neither was reading the variable that moves.
 
 And two rows in the log are **not durations at all**, which is worth knowing before
 reading it by hand: `logic/R24-safeInt-finite` at 80 s and `logic/R30-monotonic-
-underflow` at 89 s are `exit 133` — SIGTRAP, a crash 80 seconds in. They are correctly
-scored as kills. `logged_seconds` excludes them, and they are why it does not simply
-trust the seconds column.
+underflow` at 89 s are `exit 133` — SIGTRAP, a crash 80 and 89 seconds in
+respectively. They are correctly scored as kills. `logged_seconds` excludes them, and
+they are why it does not simply trust the seconds column.
 
 Scope it with `--only`, always.
 
@@ -538,14 +562,35 @@ def catalogue():
 
 # ------------------------------------------------------------------- the runner
 
-def already_done():
-    if not os.path.exists(LOG):
+def already_done(path=None):
+    """`{mutant id: verdict}` for rows this tool wrote. Exact field count, like
+    `logged_seconds` — and for the same reason, found by asking who else parses this
+    log with a lower bound.
+
+    This read `len(parts) >= 2` while the docstring below called that pattern a defect
+    three times over (T14, A12.3, T18). It is the more expensive one of the two, not
+    the cheaper: a malformed row accepted here means a mutant **treated as already
+    recorded and never run**, which is a silent gap in the gate. Refusing it costs one
+    re-run of a mutant, ~45 minutes — and one thing it DOES report falsely, which is
+    worth knowing before widening the guard again: `run`'s closing "never applied, so
+    nothing is known about them" line is computed from this dict, so a refused row makes
+    a mutant that *has* a verdict on disk read as one that has none. The trade is
+    deliberate (a duplicate row and a wrong "never applied" beat a mutant silently
+    counted as gated), and `record` writes four fields, so no row on disk hits it today. `record` writes exactly
+    four fields, so four is the count; all 79 rows of the log on disk have four, so this
+    changed no verdict when it landed.
+
+    Takes `path` so the self-test can drive it. It did not, which is why nothing checked
+    it — the whole reason `logged_seconds` grew the same parameter.
+    """
+    p = path or LOG
+    if not os.path.exists(p):
         return {}
     done = {}
-    with open(LOG) as fh:
+    with open(p) as fh:
         for line in fh:
             parts = line.rstrip("\n").split("\t")
-            if len(parts) >= 2 and parts[0] != "mutant":
+            if len(parts) == 4 and parts[0] != "mutant":
                 done[parts[0]] = parts[1]
     return done
 
@@ -604,21 +649,46 @@ def logged_seconds(path=None):
     seconds=0), an aborted run (see `ABORTED_DETAIL`), and a zero-second row from any
     source.
 
-    **Four of the five terms below are load-bearing and one is redundant, measured
-    rather than assumed.** Deleting the exact field count, the verdict filter, the
-    abort filter or the `secs > 0` guard each makes a `--self-test` check fail. Two
-    mutations survive, and they are named here so nobody reads this as full coverage:
+    **The coverage figure for `--self-test` is 21 of 26 mutations killed**, measured
+    2026-08-17 by applying each one to a copy of this file and running the flag. Every
+    mutation, its verdict and its killing checks are in
+    `SELFTEST-MUTANTS-2026-08-17.tsv`, so the count is auditable and re-derivable
+    rather than a sentence. It read "12 of 14" for a few hours on 2026-08-17, written from
+    reasoning and not from a run, and it was wrong in both the numerator and the denominator;
+    it then read "16 of 20" and "18 of 22" as review rounds enumerated mutations nobody had
+    thought of. Do not update it by argument, and expect the denominator to keep growing —
+    that is what an honest one does.
+
+    Note the asymmetry with `already_done`, which parses the same rows: its header term
+    IS load-bearing, because it has no verdict filter standing behind it. The same
+    guard is redundant in one function and the only thing in the other.
+
+    **Five mutations survive. Four are provably no-ops** — a different claim from "not
+    covered", and the reason the figure is worth having — **and one is a real gap, named
+    rather than hidden**: dropping `run`'s `print(text)` entirely survives, because the check
+    that drives `run` asserts its return value and its tripwires and not its stdout. That
+    loses a message and starts nothing, which is why it is recorded and not fixed. The four
+    no-ops:
 
       * dropping the `f[0] == "mutant"` header term changes nothing, because a header
         row's second field is the literal "verdict", which no verdict tuple holds;
       * admitting "NOT-APPLIED" to `TIMED_VERDICTS` changes nothing — not a term, a
         value inside one — because those rows carry seconds=0 and `secs > 0` catches
         them anyway. The INVALID row is what pins the verdict term instead: a non-run
-        with a *nonzero* duration.
+        with a *nonzero* duration;
+      * `ABORTED_DETAIL.match` -> `.search`, and dropping the `^` from the pattern,
+        each survive because **each alone is behaviourally identical**: `.search` on a
+        `^`-anchored pattern can only match at position 0, and `.match` anchors there
+        whatever the pattern says. Measured, not argued — all three of anchored-match,
+        anchored-search and bare-match answer the same on both a mid-string and a
+        leading detail. Only *both at once* reads a detail that merely mentions the
+        abort shape as an abort, and the "mentions the abort shape" check below kills
+        that pair. A 2026-08-17 review reported these two as uncovered survivors; they
+        are survivors, and the reason is redundancy rather than blindness.
 
     The header term is kept as belt to the verdict brace, because a future hand
-    broadening `TIMED_VERDICTS` should not silently start reading headers. Neither
-    survivor is a check that cannot fail; each is a guard whose neighbour covers it.
+    broadening `TIMED_VERDICTS` should not silently start reading headers. No survivor
+    here is a check that cannot fail; each is a guard whose neighbour covers it.
     """
     p = path or LOG
     if not os.path.exists(p):
@@ -649,8 +719,9 @@ def estimate_minutes(n_todo, seconds, baseline=True):
 
     Returns None for two distinguishable reasons and the caller must tell them
     apart — "the log records no run" and "there is nothing to run" are different
-    sentences, and printing the first over a log holding 74 runs is a false claim
-    about this tool's own data.
+    sentences, and printing the first over a log holding 77 completed runs is a false
+    claim about this tool's own data. (79 rows, less the two crashes below: any figure
+    in this file that says "74" predates the C24b campaign's own five.)
 
     Reads the newest recorded runs. This was two constants — `len(todo) * 4` to
     `len(todo) * 11` — under a comment calling itself "a RANGE read off this tool's
@@ -670,6 +741,55 @@ def estimate_minutes(n_todo, seconds, baseline=True):
 def estimate_window(seconds):
     """The rows the estimate actually spanned, for a caller that wants to quote them."""
     return seconds[-ESTIMATE_SAMPLE:] if seconds else []
+
+
+def startup_line(n_mutants, n_todo, seconds):
+    """`(text, proceed)` — the line printed before any work, and whether there is any.
+
+    `proceed is False` means **stop**, and that is the whole reason this is a function.
+    The branch it replaces printed "nothing to do" and then fell straight through to
+    the rsync and a full baseline suite, while this file's header advertised
+    `--only nothing-matches-this` as the free way to read the estimate. It was neither
+    free nor informative: no numbers, ~45 minutes, and `mutate.py` does not take
+    `ops/autonomous/test-lock.sh`, so the advertised no-op could corrupt a hook's suite.
+
+    Pulled out of `run` because `run` cannot be driven from a self-test — it parses
+    argv, copies the tree and starts suites. This takes its three inputs as arguments
+    and returns a string, so the branches are checkable for free, including their
+    ORDER: `estimate_minutes` returns None both when the log is empty and when there
+    is nothing to run, and those are different sentences. Deciding the estimate first
+    makes the nothing-to-run case report "records no run that went the distance" over
+    a log holding 77 of them.
+    """
+    window = estimate_window(seconds)
+    span = f"{min(window)}-{max(window)} s each" if window else ""
+    head = (f"{n_mutants} mutants, {n_mutants - n_todo} already recorded, "
+            f"{n_todo} to run")
+    nolog = (f"{os.path.basename(LOG)} records no run that went the distance")
+    if n_todo <= 0:
+        # Minutes as well as seconds: the header calls this the free way to read "the
+        # estimate", and a caller deciding whether to wait thinks in minutes. There is no
+        # campaign total to print here, because there is no campaign.
+        tail = (f"The {len(window)} newest recorded runs: {span} "
+                f"({min(window) / 60.0:.0f}-{max(window) / 60.0:.0f} min each)." if window
+                else f"And {nolog}.")
+        return (f"{head} — nothing to do, so nothing runs, not even the baseline. "
+                f"{tail}", False)
+    est = estimate_minutes(n_todo, seconds)
+    if est is None:
+        return (f"{head} — no estimate: {nolog}", True)
+    lo, hi, n = est
+    # The WINDOW's span, not the whole log's. Quoting min/max over all 79 rows put the
+    # 80 s floor next to a claim about contention, when the 80 s row is a crashed run
+    # from a smaller suite — two different causes on one line.
+    return (f"{head} + 1 baseline = {n_todo + 1} suite runs — roughly "
+            f"{lo:.0f}-{hi:.0f} minutes off the {n} newest rows of "
+            f"{os.path.basename(LOG)} ({span}). "
+            f"**Budget the {hi:.0f}.** Even that is a floor and not a forecast: "
+            f"contention moves the per-run cost more than the suite's size does, and "
+            f"this same arithmetic run against the log as it stood before the C24b "
+            f"campaign was 4.2x low against what that campaign took. Read it again "
+            f"after every campaign.", True)
 
 
 def self_test():
@@ -750,6 +870,21 @@ def self_test():
     # rule wearing a disguise.
     check("a killed row that did print FAILs IS a duration",
           logged_seconds(log_of(("l", "killed", 777, "2 check(s): a; b"))) == secs + [777])
+    # `.match` and the `^`, not `.search`. A detail that MENTIONS the abort shape
+    # partway through belongs to a run that went the distance, and this row is the
+    # only thing in this file that says so: `ABORTED_DETAIL.search(f[3])` and dropping
+    # the `^` from the pattern both survived every other check here, measured by
+    # applying them one at a time and watching the self-test stay green.
+    check("a detail that mentions the abort shape without starting with it IS a duration",
+          logged_seconds(log_of(
+              ("o", "killed", 700,
+               "1 check(s): exit 133, no FAIL line is what this reports"))) == secs + [700])
+    # `int`, not `float`. `record` writes the seconds column with `int`, so a
+    # fractional value in it means something other than this tool wrote the row —
+    # refuse it rather than round it. The "n/a" row above does not pin this: "n/a" is
+    # not a float either, so `float(f[2])` survived it.
+    check("a fractional seconds field is refused, not rounded into a duration",
+          logged_seconds(log_of(("q", "killed", "45.5", "1 check(s): x"))) == secs)
     # MISMATCH ran a whole suite; only its check count differed. Its duration is
     # as good as any row's, and it is the row class that appears exactly when the
     # window must not reach back into a cheaper era.
@@ -772,6 +907,19 @@ def self_test():
     check("an absent log yields no durations and no estimate",
           logged_seconds(p + ".nope") == []
           and estimate_minutes(5, logged_seconds(p + ".nope")) is None)
+
+    # `already_done` is the OTHER consumer of this log, and it read `len(parts) >= 2`
+    # while the docstring above called that a defect three times. It is the expensive
+    # side of the two: a malformed row accepted here is a mutant marked recorded and
+    # never run — a silent hole in the gate rather than a wrong number.
+    check("a well-formed row marks its mutant recorded",
+          already_done(log_of()).get("d") == "killed")
+    check("a row with a stray tab does not mark its mutant recorded",
+          "g" not in already_done(log_of(("g", "killed", 999, "detail\twith a tab"))))
+    check("a short row does not mark its mutant recorded",
+          "h" not in already_done(log_of(("h", "killed", 998))))
+    check("the header is not a mutant id, and an absent log records nothing",
+          "mutant" not in already_done(log_of()) and already_done(p + ".nope") == {})
 
     # THE DEFECT, pinned as one exact tuple rather than a handful of thresholds.
     # 6 runs (5 mutants + baseline) over the five newest rows, min 80 s and max
@@ -810,9 +958,81 @@ def self_test():
 
     check("nothing to run gets no estimate",
           estimate_minutes(0, secs) is None)
+
+    # SIX rows in, not five. `secs` is exactly ESTIMATE_SAMPLE long, and over an input
+    # that length `seconds[-5:]`, `list(seconds)`, `seconds[:5]` and `seconds[-6:]` are
+    # all the same list — so the version of this check that fed `secs` passed against
+    # every wrong `estimate_window` there is. That is the eleventh check in this
+    # register unable to fail, and it was found by mutating the function it guards
+    # rather than by reading it: a fixture whose length equals the constant under test
+    # cannot see a window at all. The second clause pins the claim the name makes —
+    # that the quotable window and the sampled window are the same rows — by asserting
+    # the estimate over the same six-row input: 2 runs x 283 s low, x 2700 s high.
+    six = secs + [777]
     check("the window a caller can quote is the window the estimate used",
-          estimate_window(secs) == [80, 632, 283, 2700, 2693]
+          estimate_window(six) == [632, 283, 2700, 2693, 777]
+          and estimate_minutes(1, six) == (2 * 283 / 60.0, 2 * 2700 / 60.0, 5)
           and estimate_window([]) == [])
+
+    # `startup_line` — the branches `run` cannot be driven through. The one that
+    # matters is `proceed`: this branch used to print "nothing to do" and then rsync
+    # the tree and run a full baseline suite, in a tool that does not take the suite
+    # lock, while the header called it the free way to read the estimate.
+    # `six`, not `secs`, for the same reason the check above uses it: over a five-row
+    # input the window IS the whole log, so `min(seconds)` in place of `min(window)`
+    # here reads identically and survives. The first version of these two checks fed
+    # `secs` and did exactly that — written minutes after the comment above explaining
+    # why not to, and caught by the same harness. The window of `six` starts at 283 s;
+    # the whole log starts at 80 s, which is a crashed run from a smaller suite.
+    t, proceed = startup_line(89, 0, six)
+    check("nothing to run stops before the baseline, and still quotes the window",
+          proceed is False and "283-2700 s each" in t and "(5-45 min each)" in t
+          and "roughly" not in t)
+    t, proceed = startup_line(89, 5, six)
+    check("something to run proceeds, and budgets the high end",
+          proceed is True and "28-270 minutes" in t and "Budget the 270" in t
+          and "283-2700 s each" in t)
+    # Branch ORDER, which is a contract and not a style: `estimate_minutes` returns
+    # None both for "no log" and for "nothing to run". Deciding the estimate before
+    # the nothing-to-run case makes the check above report "records no run that went
+    # the distance" over a log holding five of them.
+    t, proceed = startup_line(89, 5, [])
+    check("an empty log with work to do says so, and still proceeds",
+          proceed is True and "records no run that went the distance" in t)
+    t, proceed = startup_line(89, 0, [])
+    check("an empty log with nothing to do stops without claiming an estimate",
+          proceed is False and "roughly" not in t and "nothing runs" in t)
+
+    # ...and `run` must ACT on `proceed`. The four checks above pin only what
+    # `startup_line` RETURNS: a review mutated `if not proceed:` to `if False:`, and to
+    # `print(text)` alone, and this harness stayed green both times — restoring the exact
+    # defect it was written for, an advertised free command that rsyncs the tree and
+    # starts an unlocked ~45-minute suite. So drive the real `run` over an `--only` that
+    # matches nothing, with every call that could copy a tree or start a process replaced
+    # by a tripwire. This is the only check here that touches `run`, and the tripwires are
+    # what make it safe to: if the guard ever regresses, this raises instead of running a
+    # suite inside the pre-commit hook.
+    tripped = []
+    saved = (subprocess.run, shutil.rmtree, os.makedirs)
+
+    def tripwire(name):
+        def fired(*a, **k):
+            tripped.append(name)
+            raise AssertionError(f"run() reached {name} with nothing to run")
+        return fired
+
+    try:
+        subprocess.run = tripwire("subprocess.run")
+        shutil.rmtree = tripwire("shutil.rmtree")
+        os.makedirs = tripwire("os.makedirs")
+        try:
+            rc = run(["--only", "no-mutant-id-contains-this-substring"])
+        except AssertionError:
+            rc = "tripped"
+    finally:
+        subprocess.run, shutil.rmtree, os.makedirs = saved
+    check("run() returns before anything that copies a tree or starts a suite",
+          rc == 0 and tripped == [])
 
     print(f"self-test: {len(failures)} failure(s)")
     return 1 if failures else 0
@@ -847,32 +1067,12 @@ def run(argv=None):
     # was not. Understating it is not cosmetic: "the ~70-minute full catalogue" reached
     # the daemon's resume prompt as something a session might start, and the C24b
     # campaign was announced as "20-55 minutes" and ran about four and a half hours.
-    every = logged_seconds()
-    window = estimate_window(every)
-    est = estimate_minutes(len(todo), every)
-    head = (f"{len(mutants)} mutants, {len(mutants) - len(todo)} already recorded, "
-            f"{len(todo)} to run")
-    # `estimate_minutes` returns None for two reasons and they are different
-    # sentences. Reporting "records no completed run" over a log holding 74 of them
-    # — which is what `--only <something-already-done>` produces — would be this
-    # tool making a false claim about its own data, in the one line a caller reads
-    # before deciding how long to wait.
-    if not todo:
-        print(f"{head} — nothing to do")
-    elif est is None:
-        print(f"{head} — no estimate: {os.path.basename(LOG)} records no run that "
-              f"went the distance")
-    else:
-        lo, hi, n = est
-        # The WINDOW's span, not the whole log's. Quoting min/max over all 74 rows
-        # put the 80 s floor next to a claim about contention, when the 80 s row is
-        # a crashed run from a smaller suite — two different causes on one line.
-        print(f"{head} + 1 baseline = {len(todo) + 1} suite runs — roughly "
-              f"{lo:.0f}-{hi:.0f} minutes off the {n} newest rows of "
-              f"{os.path.basename(LOG)} ({min(window)}-{max(window)} s each). "
-              f"**Budget the {hi:.0f}.** Even that is a floor and not a forecast: "
-              f"contention moves the per-run cost more than the suite's size does, "
-              f"so read it again after every campaign.")
+    text, proceed = startup_line(len(mutants), len(todo), logged_seconds())
+    print(text)
+    # Nothing to mutate means nothing to run, INCLUDING the baseline. This used to fall
+    # through to the rsync and a full suite — see `startup_line`.
+    if not proceed:
+        return 0
 
     # A copy of what is on disk right now. Not `git worktree add HEAD`: that
     # tests the last commit, which is not what anyone means by "does my suite

@@ -69,8 +69,11 @@ COMPACTOR="${VISIONOCR_COMPACTOR:-$HOME/.local/bin/compact-runlog.sh}"
 JOB="com.${LABEL}.autonomous"
 
 # ⚠️ EVERY TIMING CONSTANT IN THIS BLOCK WAS SIZED AGAINST A "3-6 MIN" SUITE THAT NOBODY HAD TIMED. Timed on
-# 2026-08-16, the same suite ran 80-632 s on a quiet machine and ~37-40 min with other work alongside, and
-# the health gate that wraps it measured 44m53s. There is no single correct number here: this is a personal
+# 2026-08-16, the same suite ran 416-632 s on a quiet machine and ~37-40 min with other work alongside, and
+# ~45 min per run under the C24b campaign's overnight load. (This said 80-632 s: the 80 s and 89 s rows it
+# read as a floor are `exit 133` crashes, not fast suites — BUGS.md C24b. A constant sized off 80 s is
+# sized off a suite that died.) The health gate that wraps it measured 44m53s.
+# There is no single correct number here: this is a personal
 # laptop that throttles, and the daemon exists to keep it busy. So the constants below are sized off the
 # WORST observed run plus headroom, not off a mean or a single sample, and `test-lock.sh` now records every
 # run to $STATE/suite-timings.tsv with its load average so the next person re-derives from data. Two of
@@ -168,11 +171,14 @@ STATUS_CMD="${VISIONOCR_STATUS_CMD:-$REPO/ops/autonomous/status-digest.sh}"
 #                  CPU-busy + no subagent + no events for HB_HARD -> runaway.
 # ⚠️ HB_HARD is 3600 s here (60 min), raised from 3000 on 2026-08-16 and NO LONGER for the reason the old
 # comment gave. It said "the full catalogue is ~70 min", which was arithmetic on a 2-4 min suite. Measured
-# 2026-08-17 by the C24b campaign: ~45 min per mutant (2661-2719 s) over 89 mutants — not 84, which every
+# 2026-08-17 by the C24b campaign: ~45 min per mutant (2621-2719 s) over 89 mutants — not 84, which every
 # doc said until the C24b five landed — so the full catalogue is on the order of 65 HOURS and no watchdog
 # setting makes it survivable; the resume prompt forbids it outright instead. Note the per-mutant figure is
-# a reading of the machine and not of the suite: the same catalogue recorded ~630 s per mutant the evening
-# before, across four checks of growth, so contention moves it more than size does (BUGS.md C24b). The real case this must not kill is the ordinary one: a session sitting inside its own
+# a reading of the machine and not of the suite: the same catalogue recorded ~630 s per mutant THAT MORNING
+# (09:47, committed 09:59 in 41815b9 — this comment said "the evening before", which put both readings in
+# the same half of the day and garbled the only argument it was making), across four checks of growth, so
+# contention moves it more than size does (BUGS.md C24b).
+# The real case this must not kill is the ordinary one: a session sitting inside its own
 # `git commit`, which is CPU-busy and silent for the hook's ~40 min. 3000 left only ten minutes of headroom
 # over that, and a commit that also waited on the suite lock would have been killed as a runaway while doing
 # exactly what it was told to. 60 min is one suite plus half again.

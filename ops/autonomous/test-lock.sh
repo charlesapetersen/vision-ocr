@@ -56,8 +56,11 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PA
 LOCKDIR="${VISIONOCR_TEST_LOCK:-${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}/test.lock}"
 # ⚠️ THE WAIT MUST EXCEED ONE SUITE ON A BUSY MACHINE, OR IT REFUSES HEALTHY WORK. This was 1800 (30 min)
 # and read "a suite is 3-6 min", a figure nobody had ever timed. Timed on 2026-08-16 the same suite took
-# 80-632 s on a quiet machine and ~37-40 min with a daemon session and an interactive session alongside it —
-# so 1800 was comfortably shorter than a loaded run, and anything queued behind a healthy suite gave up.
+# 416-632 s on a quiet machine and ~37-40 min with a daemon session and an interactive session alongside it,
+# and ~45 min per run overnight on 2026-08-17 — so 1800 was comfortably shorter than a loaded run, and
+# anything queued behind a healthy suite gave up. (That range read 80-632 s until 2026-08-17: its floor was
+# an `exit 133` crash rather than a fast suite, so the wait budget here was partly sized off a suite that
+# died. BUGS.md C24b.)
 # `.githooks/pre-commit` then reported that the lock "never freed", naming a wedge over a suite that still
 # had minutes to go. 3600 covers the worst run observed so far with headroom. Re-derive it from
 # $STATE/suite-timings.tsv (worst row you are willing to survive, plus headroom) rather than from this
@@ -273,7 +276,7 @@ case "$CMD" in
     trap 'exit 143' TERM
     trap 'exit 130' INT
     # ⚠️ TIME EVERY RUN, because a single wall-clock sample of this suite is not a fact about the suite.
-    # Measured on one laptop on 2026-08-16: the same suite took 80-632 s in the morning's mutation runs and
+    # Measured on one laptop on 2026-08-16: the same suite took 416-632 s in the morning's mutation runs and
     # 37m43s at 20:31 with a daemon session and an interactive session both live. This is a personal machine
     # under wildly varying load, and it thermally throttles — so any constant derived from one timing is a
     # guess wearing a number's clothes. The project has been doing exactly that: "3-6 min" was never

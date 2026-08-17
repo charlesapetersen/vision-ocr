@@ -75,9 +75,14 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       names in the page's scope instead of its invoker's, a verdict column that shadowed `unreadable`, and
       the two walks disagreeing about depth — all fixed, sweep byte-identical, suite green.
       **The mutant campaign is DONE, 2026-08-17** — all five killed, recorded in
-      `Tools/mutation-log.tsv`, and it cost ~45 min per verdict rather than the ~40 estimated here. It also
-      falsified `mutate.py`'s own startup estimate by a factor of four, which is fixed and now self-tested
-      in the same commit; see the entry's `### The campaign` subsection.
+      `Tools/mutation-log.tsv`, and it cost ~45 min per verdict (2621-2719 s) rather than the ~40 estimated
+      here. It also falsified `mutate.py`'s own startup estimate by **4.85x**, which is fixed and now
+      self-tested; see the entry's `### The campaign` subsection. **A 2026-08-17 review of that commit found
+      nine defects in it and they are fixed** in the follow-up: its "negative control" on the estimate was
+      in-sample (out of sample the fix is still 4.22x low), its self-test coverage figure was reasoned rather
+      than run (21 of 26 killed, not 12 of 14), `estimate_window`'s check could not fail, the free
+      `--only nothing-matches-this` command ran a full baseline suite, and five files still published the
+      suite's floor as an `exit 133` crash.
       **What is left is two things**: decide what `Batzell` p22 should render at (render it both ways and
       count characters — do not pick a number); then wire the drawn walk into `rebuildDPI` behind a corpus
       gate run, because it moves 45 pages. The first of those is what actually closes the half.
@@ -99,8 +104,11 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       (context: BUGS.md C25 and T16 — both CLOSED; they are why this gate matters, not the work itself)
 - [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
-      scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~55 hours
-      at the suite's measured 39m30s per mutant, not the ~70 minutes this line used to claim — and never
+      scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~65 hours
+      at the C24b campaign's measured ~45 min per mutant over 89 mutants, not the ~55 hours this line
+      claimed off a 39m30s sample nor the ~70 minutes it claimed before that; read the estimate the tool
+      prints at startup instead, and note it was 4.22x low the one time anyone checked it out of sample —
+      and never
       while `Sources/` is being edited. The work item is the live survivor list in
       `Tools/mutation-log.tsv`. (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a
       value nothing depends on)

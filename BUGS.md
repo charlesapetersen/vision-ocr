@@ -29,14 +29,20 @@ actually draws, the 45 pages are 39 smaller plus **6 wider** — which retires t
 observation the entry carried without a cause, since both walks pick by *area* and report
 *width* — and the constant the entry wanted recalibrated faces **three** pages, judging two
 right and one wrong on its own boundary value of 600. Wired into nothing yet; what remains is
-deciding what `Batzell` p22 renders at, then a corpus gate run. The review of that measurement
+deciding what `Batzell` p22 renders at, then **wiring the drawn walk into `rebuildDPI`**
+behind a corpus gate run — the wiring is the sub-step the gate run is *for*, and this
+sentence dropped it. The review of that measurement
 found **a check that could not
 fail** — the fixture had no page that reached the guard one of its own mutants edits — and a
 bare form resolving its names against the page rather than its invoker; both fixed, with
 the 16,987-row sweep byte-identical before and after. **Its mutant campaign was run
 2026-08-17 and killed all five**, which is what says those five checks can fail; it also cost
-4x the estimate `mutate.py` printed, so that estimate now reads the tool's own log instead of
-two hardcoded constants and `mutate.py` has a `--self-test` for the first time. **R81, R82 and
+**4.85x** the estimate `mutate.py` printed, so that estimate now reads the tool's own log
+instead of two hardcoded constants and `mutate.py` has a `--self-test` for the first time —
+though a follow-up the same day found that fix is still **4.22x low out of sample**, that the
+section's own "negative control" on it was in-sample, and that its self-test coverage figure
+(21 of 26 mutations killed, not the 12 of 14 first written) had been reasoned rather than run.
+`SELFTEST-MUTANTS-2026-08-17.tsv` is the audit. **R81, R82 and
 R83 are the text layer's three, all `FIXED` on 2026-08-15**: a line drawn at 5% of its width
 because a second reading of its own ink counted as the next fragment; words welding when one
 fragment of a line is much shorter than the next; and the small ones from areas 2, 3 and 13,
@@ -1309,8 +1315,11 @@ than the "2 to 4 minutes" `mutate.py`'s own header claimed and the "3-6 min" fou
 project's documents claimed until 2026-08-16. A five-mutant campaign is therefore about
 four hours, which is why it is a separate piece of work and not a step in the commit that
 added the mutants. **That campaign was run on 2026-08-17; `### The campaign` below is its
-result**, and the four hours predicted here turned out to be the first estimate in this
-thread that erred in the safe direction.
+result**, and the "about four hours" predicted here came in at 4h27m — an **under**-estimate
+by 27 minutes, which is the same direction every other figure in this thread got wrong and
+the direction that section itself calls the one that gets an unattended session killed
+mid-campaign. This sentence read "the first estimate in this thread that erred in the safe
+direction" until 2026-08-17, with the sign backwards.
 
 **The suite is 1,141 checks with no skips**, measured by this work's own pre-commit run —
 1,137 before the four checks page 8 and page 9 brought.
@@ -1412,9 +1421,10 @@ one check** — the one the review's bare-form finding added — so that finding
 load-bearing by machine rather than by argument.
 
 **And the campaign falsified the estimate the tool printed before starting it.** `mutate.py`
-announced *"5 mutants … roughly 20-55 minutes"* and then ran for 4h27m — **out by a factor of
-five on the high end**, in the direction that gets an unattended session killed mid-campaign.
-The startup line
+announced *"5 mutants … roughly 20-55 minutes"* and then ran for 4h27m — **out by 4.85x on
+the high end** (267 min against 55) and 13.4x on the low, in the direction that gets an
+unattended session killed mid-campaign. Four documents rounded that to "4x", "five", "four"
+and "a factor of four" before anyone divided it; 4.85x is the measured figure. The startup line
 was two hardcoded constants, `len(todo) * 4` to `len(todo) * 11` minutes, sitting under a
 comment that described itself as *"a RANGE read off this tool's own log, not a constant"* —
 so the comment was true of the intent and false of the code, and nothing could tell the
@@ -1430,29 +1440,96 @@ fix has three parts, none of which is a new constant:
 - **It says which number to budget**, because the range is wide and the high end is the
   useful one.
 
-**The negative control on the fix itself: run against the completed log, it predicts
-262-272 minutes for a five-mutant campaign, and this one took 267.** That is the same
-arithmetic the old line got wrong by 5x, checked against the run that exposed it. Over the
-whole catalogue of 89 it now says 66-68 hours. The 77 durations it reads out of 79 rows are
-79 minus the two `exit 133` crashes described below.
+**The check on the fix is a consistency check, not a negative control — this section
+called it one and that was wrong.** Run against the completed log the fixed arithmetic
+predicts 262-272 minutes for a five-mutant campaign against the 267 this one took, and it
+could not have come out otherwise: the window it samples **is** this campaign's own five
+rows, so it is min/max over the very numbers being predicted. An in-sample fit is a sanity
+check on the plumbing and no evidence at all that the estimate works.
+
+**The out-of-sample number is the one that matters, and it is not good.** Driven over the
+log as it stood when the campaign started — `git show 1935d05~1:Tools/mutation-log.tsv`, 74
+rows, newest five 471-632 s (this said `HEAD:`, which is the *post*-campaign log and
+reproduces the in-sample 262-272 instead — a recipe that did not reproduce, in the paragraph
+arguing for re-derivable over quotable) — the fixed estimator says **47-63 minutes against the 267 that
+followed: 4.22x low.** The hardcoded line it replaced said 20-55, which is **4.85x low** on
+the same run. So the fix removes a stale *constant* and makes the tool read its own data;
+it does **not** make the estimate survive a change in load, and the two errors are within
+15% of each other. Measured 2026-08-17 by importing `logged_seconds` and
+`estimate_minutes` and feeding them the pre-campaign log — run, not reasoned about. Two
+consequences worth carrying:
+
+- `ops/autonomous/resume-prompt.txt` tells a session to *"read the estimate the tool prints
+  at startup, not any number written here"*. Still better than a stale constant, but it is
+  advice to read a number that was 4.22x low the one time it has been checked out of
+  sample. The startup line now says that about itself, in the line a caller actually reads.
+- Nothing in the log can fix it, because the term that moved is not in the log. The
+  contention paragraph below is the same finding from the other end.
+
+Over the whole catalogue of 89 the estimator now says **65.5-68 hours** (3,931-4,078
+minutes); this section said "66-68" off the same run, rounding the low end up. The 77
+durations it reads out of 79 rows are 79 minus the two `exit 133` crashes described below.
 
 **`mutate.py` now has a `--self-test`, which it did not before** — the tool the entire
 mutation gate runs through had none, while `.githooks/pre-commit` has run one for any staged
-`Tools/*.py` that carries the flag since T18. 19 checks, and **two of them were watched
+`Tools/*.py` that carries the flag since T18. **29 checks** — 19 in `1935d05`, ten more in the
+follow-up below; this said 25, which was neither figure. And **two of them were watched
 failing against the old arithmetic before the fix went in** ("got 20-55 min" is the
-self-test reproducing the real campaign's own wrong sentence). Then every guard was mutated
-one at a time: **12 of 14 mutations killed**, and the two survivors are named in
-`logged_seconds`'s docstring rather than left to look like coverage — admitting
-`"NOT-APPLIED"` to the timed verdicts changes nothing because those rows carry seconds=0,
-and dropping the header-row guard changes nothing because a header's verdict field is the
-literal `"verdict"`. Both are kept as belt to the other's brace.
+self-test reproducing the real campaign's own wrong sentence).
+
+**Then every guard was mutated one at a time, and this section's first answer — "12 of 14
+mutations killed, two survivors" — was written from reasoning rather than from a run. The
+run says 21 of 26** — and it took three passes to get there, because each round of review
+enumerated mutations the previous round had not thought of (12 of 14, then 16 of 20, then 18
+of 22, then this). The denominator growing is what an honest one does; the first figure was
+wrong in both halves. Every mutation, its verdict and the checks that killed it are in
+`SELFTEST-MUTANTS-2026-08-17.tsv` (26 rows, 7 columns), so the count is re-derivable instead
+of quotable — including the two mutations that are only a defect **as a pair**, which the
+first version of that file omitted and so made a real check look like a check that kills
+nothing. What the run found, in order
+of how much it mattered:
+
+- **`estimate_window`'s check could not fail.** This register's running count of these is
+  itself inconsistent — a 2026-08-14 entry calls one "the eleventh", `CLAUDE.md` calls a
+  2026-08-16 one "a tenth" — so this adds one rather than claiming an ordinal. It asserted
+  `estimate_window(secs) == [80, 632, 283, 2700, 2693]` over a `secs` exactly
+  `ESTIMATE_SAMPLE` long, and at that length `seconds[-5:]`, `list(seconds)`, `seconds[:5]`
+  and `seconds[-6:]` are the *same list*. All three wrong windows survived. **A fixture whose
+  length equals the constant under test cannot see a window at all**, which is the general
+  shape and worth more than the instance: the check now feeds six rows.
+- **The same defect was then reproduced, in this commit, minutes later.** The two new
+  `startup_line` checks were first written against the same five-row `secs`, so
+  `min(window)` → `min(seconds)` survived them for exactly the reason above. Caught by
+  re-running the harness rather than by reading the diff. Both now feed six rows.
+- **`int(f[2])` → `float(f[2])` survived.** The existing "non-integer seconds field" check
+  feeds `"n/a"`, which is not a float either. A `"45.5"` row is what separates them.
+- **Two survivors are survivors for a better reason than the review that found them
+  supposed.** A 2026-08-17 review reported `ABORTED_DETAIL.match` → `.search` and dropping
+  the pattern's `^` as uncovered. Measured, **each alone is a behavioural no-op**: `.search`
+  on a `^`-anchored pattern can only match at position 0, and `.match` anchors there
+  whatever the pattern says — anchored-match, anchored-search and bare-match all answer
+  identically on both a mid-string and a leading detail. Only *both at once* reads a detail
+  that merely mentions the abort shape as an abort, and the new "mentions the abort shape"
+  check kills that pair. Redundancy, not blindness.
+
+The four remaining survivors are all no-ops of that kind and are named in `logged_seconds`'s
+docstring rather than left to look like coverage: admitting `"NOT-APPLIED"` to the timed
+verdicts changes nothing because those rows carry seconds=0, dropping the header-row guard
+changes nothing because a header's verdict field is the literal `"verdict"`, and the abort
+pair above. Each is kept as belt to another's brace.
 
 **Two things the campaign settled that were not about C24 at all**, and both were found by
 suspecting the instrument:
 
 - **The per-run cost is not a function of the suite's size.** These five runs came in at
-  ~2700 s against ~630 s for the R56/R57 mutants recorded the evening before, on a catalogue
-  that grew by four checks (1,137 → 1,141) in between. Four checks do not do that, so the
+  ~2700 s against ~630 s for the R56/R57 mutants recorded **that same morning** — 09:47,
+  committed 09:59 in `41815b9`, about thirteen hours before this campaign started at 22:46,
+  and *not* "the evening before" as this entry, `mutate.py`'s header and
+  `ops/autonomous/vision-ocr-autonomous.sh` all said until 2026-08-17. The clock is not
+  bookkeeping here: quiet-morning against loaded-overnight is the entire argument, and
+  dating the cheap rows to the evening puts both readings in the same half of the day and
+  garbles it. That jump sits on top of a catalogue that grew by four checks (1,137 → 1,141)
+  in between, and four checks do not do that, so the
   header's old sentence — "it grows every time the suite does" — was keyed on the wrong
   variable. **That much is measured; the cause is not.** The session that ran the campaign
   reported `ps -r` showing OneDrive at ~50% of a core and CrashPlanService at ~24% — *its*
@@ -1460,11 +1537,19 @@ suspecting the instrument:
   for that core is the plausible term and a 1-minute load average an insufficient covariate
   for it, since neither process moves loadavg much. Filed as an inference with its evidence,
   not as a finding: the controlled experiment has not been run. It bears on any timeout sized
-  off `$STATE/suite-timings.tsv`, whose one row (474 s) is 5.8x from these at a comparable
-  load average.
+  off `$STATE/suite-timings.tsv`, which has **three rows**, not the one this entry first said
+  and not the two its first correction said: `474 s @ loadavg 3.47`, this campaign's
+  `16,012 s @ 2.39` — which is **six suite runs, ~2,669 s each**, not one run, and quoting the
+  campaign total as a duration is the same instrument error twice — and `2,552 s @ 4.20` from
+  the follow-up commit's own hook. Ordered by duration those load averages read 3.47, 2.39,
+  4.20: **the column does not order the durations.** One pair points the way load would
+  predict and one points the other way, which is why `ops/autonomous/README.md`'s "a 5x swing
+  from load alone" is retracted there. The swing is real (474 s against ~2,669 s is 5.6x);
+  the 1-minute load average is not a sufficient covariate for it.
 - **Two rows in `mutation-log.tsv` are not durations.** `logic/R24-safeInt-finite` at 80 s
-  and `logic/R30-monotonic-underflow` at 89 s are `exit 133` — SIGTRAP, a crash 80 seconds
-  in, correctly scored as kills. They were the log's two cheapest rows, so they had become
+  and `logic/R30-monotonic-underflow` at 89 s are `exit 133` — SIGTRAP, crashes 80 and 89
+  seconds in respectively (this entry said "80 seconds in" of both),
+  correctly scored as kills. They were the log's two cheapest rows, so they had become
   the published floor of its per-run range, including in `mutate.py`'s own header. A crash is
   not a fast suite. `logged_seconds` excludes them by their detail column, and that exclusion
   is one of the twelve killed mutations.
@@ -1482,6 +1567,24 @@ and `vision-ocr-autonomous.sh` both asserted in the present tense — the C24b f
 added without either being updated. Both corrected here, along with the "~55 HOURS" figure
 they carried: at the measured ~45 min per mutant the full catalogue is nearer **65 hours**,
 so that number was about right by luck and wrong in its reasoning.
+
+**And the sweep for the crash-as-duration finding was not finished when it was written.**
+`80-632 s` was still published as this suite's duration range in five files after the entry
+above established that its floor is an `exit 133` crash: `ops/autonomous/vision-ocr-autonomous.sh`,
+`ops/autonomous/test-lock.sh` (twice), `ops/autonomous/tests/prove-test-lock.sh`,
+`ARCHITECTURE.md`, and `ops/autonomous/README.md`'s ledger. All six sites corrected on
+2026-08-17 to **416-632 s**, which is what 2026-08-16's morning mutation runs recorded (the
+seven rows `41815b9` added are 416/473/471/475/631/623/632, and the earlier morning commits
+`2cf2370` and `12acd38` add nothing below 469) — the 80 s and 89 s rows are the two crashes
+and belong to an older, smaller suite besides. **The first attempt at this correction wrote
+471-632 and was wrong in the same way as the thing it corrected**: 471 is `min()` of the
+*estimator's newest-five window*, a window boundary relabelled as a measurement. Caught by
+review, from the log; the review is why six files do not now publish a second invented floor.
+`test-lock.sh`'s second site had the *clock* right where three other documents had it wrong
+("the morning's mutation runs"), which is how the right date was recoverable at all.
+Two of those files are sized off that range — `test-lock.sh`'s wait budget and
+`prove-test-lock.sh`'s expectation — so the floor being a crash is not a cosmetic matter
+there: a timeout derived from 80 s is derived from a suite that died.
 
 **What this does not do: it does not touch `Sources/`.** No route changes, no resolution
 changes, no sweep to re-run — the negative control above still stands unmodified, and C24
