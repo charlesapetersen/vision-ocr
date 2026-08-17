@@ -72,3 +72,8 @@ const/largeMarkShare	killed	475	2 check(s): tonal-plate routes to the picture pa
 logic/R56-alltext-sees-drawings	killed	631	1 check(s): …and a page carrying a pale drawing does not
 logic/R57-tone-of-the-region	killed	623	1 check(s): tonal-plate routes to the picture path
 const/minimumPlateFill	killed	632	1 check(s): a page frame is not a plate, so its tone is never asked about
+logic/C24b-form-not-followed	killed	2700	3 check(s): …an image drawn inside a Form XObject is found; …and inside a form carrying no /Resources of its own; …yet a bare form resolves /Ix in its invoker's scope, not the page's
+logic/C24b-bare-form-resources	killed	2693	2 check(s): …and inside a form carrying no /Resources of its own; …yet a bare form resolves /Ix in its invoker's scope, not the page's
+logic/C24b-scope-does-not-descend	killed	2661	1 check(s): …yet a bare form resolves /Ix in its invoker's scope, not the page's
+logic/C24b-no-image-is-not-unknown	killed	2719	1 check(s): …and when that form draws no image, the answer is no image, not unknown
+logic/C24b-unresolved-name-is-not-nothing	killed	2621	1 check(s): …while a `Do` naming nothing the dictionary holds is unreadable

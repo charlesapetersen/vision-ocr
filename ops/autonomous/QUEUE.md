@@ -74,11 +74,13 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       that could not fail (no fixture page reached the guard its own mutant edits), a bare form resolving
       names in the page's scope instead of its invoker's, a verdict column that shadowed `unreadable`, and
       the two walks disagreeing about depth — all fixed, sweep byte-identical, suite green.
-      **What is left is three things**: run `python3 Tools/mutate.py --only C24b` and record the five
-      verdicts in `Tools/mutation-log.tsv` (~40 min per verdict on this machine, so the campaign is hours —
-      it is the one gate this work has not been through); decide what `Batzell` p22 should render at
-      (render it both ways and count characters — do not pick a number); then wire the drawn walk into
-      `rebuildDPI` behind a corpus gate run, because it moves 45 pages.
+      **The mutant campaign is DONE, 2026-08-17** — all five killed, recorded in
+      `Tools/mutation-log.tsv`, and it cost ~45 min per verdict rather than the ~40 estimated here. It also
+      falsified `mutate.py`'s own startup estimate by a factor of four, which is fixed and now self-tested
+      in the same commit; see the entry's `### The campaign` subsection.
+      **What is left is two things**: decide what `Batzell` p22 should render at (render it both ways and
+      count characters — do not pick a number); then wire the drawn walk into `rebuildDPI` behind a corpus
+      gate run, because it moves 45 pages. The first of those is what actually closes the half.
       Read the entry's `C24b` section first, not this line. (origin: BUGS.md C24, HALF FIXED)
 - [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
       HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite

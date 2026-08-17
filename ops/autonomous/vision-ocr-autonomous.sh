@@ -167,10 +167,12 @@ STATUS_CMD="${VISIONOCR_STATUS_CMD:-$REPO/ops/autonomous/status-digest.sh}"
 #                  CPU-busy (a real build/suite). Idle tree + no subagent for HB_IDLE_N polls -> wedged.
 #                  CPU-busy + no subagent + no events for HB_HARD -> runaway.
 # ⚠️ HB_HARD is 3600 s here (60 min), raised from 3000 on 2026-08-16 and NO LONGER for the reason the old
-# comment gave. It said "the full catalogue is ~70 min", which was arithmetic on a 2-4 min suite; the suite
-# is 39m30s and `Tools/mutate.py` runs the WHOLE of it per mutant over 84 mutants, so the full catalogue is
-# on the order of 55 HOURS and no watchdog setting makes it survivable — the resume prompt forbids it
-# outright instead. The real case this must not kill is the ordinary one: a session sitting inside its own
+# comment gave. It said "the full catalogue is ~70 min", which was arithmetic on a 2-4 min suite. Measured
+# 2026-08-17 by the C24b campaign: ~45 min per mutant (2661-2719 s) over 89 mutants — not 84, which every
+# doc said until the C24b five landed — so the full catalogue is on the order of 65 HOURS and no watchdog
+# setting makes it survivable; the resume prompt forbids it outright instead. Note the per-mutant figure is
+# a reading of the machine and not of the suite: the same catalogue recorded ~630 s per mutant the evening
+# before, across four checks of growth, so contention moves it more than size does (BUGS.md C24b). The real case this must not kill is the ordinary one: a session sitting inside its own
 # `git commit`, which is CPU-busy and silent for the hook's ~40 min. 3000 left only ten minutes of headroom
 # over that, and a commit that also waited on the suite lock would have been killed as a runaway while doing
 # exactly what it was told to. 60 min is one suite plus half again.

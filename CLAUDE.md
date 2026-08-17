@@ -25,12 +25,18 @@ anything there: `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swif
 what a page actually draws, the 45 are **39 smaller and 6 wider** (which retires the
 observation the entry carried without a cause — both walks pick by *area* and report
 *width*), and the constant the entry wanted recalibrated faces **three** pages, getting two
-right and one wrong on its own boundary value of 600. It is wired into nothing; a corpus
-gate run is what closing it needs. Read that section's review subsection too — it found **a
+right and one wrong on its own boundary value of 600. It is wired into nothing; deciding what
+`Batzell` p22 should render at, then a corpus gate run, is what closing it needs. Read that
+section's review subsection too — it found **a
 tenth check that could not fail** and a bare form resolving its resource names in the page's
 scope rather than its invoker's, and it is where to look before believing that
 `CGPDFContentStreamGetResource` searches the parent chain: measured, it does not, after a
-comment in this repo said it did. **R55 is `WONTFIX`** as of 2026-08-17: the measurement campaign was run and the
+comment in this repo said it did. **The mutant campaign is done as of 2026-08-17 — all five
+killed**, so none of those five checks is one that cannot fail; its `### The campaign`
+subsection also records that `mutate.py`'s startup estimate was wrong by 4x (fixed, and the
+tool has a `--self-test` now), that a mutation run's cost tracks **machine contention rather
+than the suite's size**, and that two of `mutation-log.tsv`'s cheapest rows are `exit 133`
+crashes rather than fast suites. **R55 is `WONTFIX`** as of 2026-08-17: the measurement campaign was run and the
 owner closed it on the arithmetic — the gate's over-exclusion costs the sweep about 80
 candidates and 0.7 GB against 1,164 and ~10 GB, and loosening it would admit the hand-held
 photographs D1 exists to keep out. **R56 and R57 —

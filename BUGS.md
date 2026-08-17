@@ -28,11 +28,15 @@ is narrower than the entry assumed**: `Flattener.drawnLargestImage` reports what
 actually draws, the 45 pages are 39 smaller plus **6 wider** — which retires the
 observation the entry carried without a cause, since both walks pick by *area* and report
 *width* — and the constant the entry wanted recalibrated faces **three** pages, judging two
-right and one wrong on its own boundary value of 600. Wired into nothing yet; the corpus
-gate run is what remains. The review of that measurement found **a check that could not
+right and one wrong on its own boundary value of 600. Wired into nothing yet; what remains is
+deciding what `Batzell` p22 renders at, then a corpus gate run. The review of that measurement
+found **a check that could not
 fail** — the fixture had no page that reached the guard one of its own mutants edits — and a
 bare form resolving its names against the page rather than its invoker; both fixed, with
-the 16,987-row sweep byte-identical before and after. **R81, R82 and
+the 16,987-row sweep byte-identical before and after. **Its mutant campaign was run
+2026-08-17 and killed all five**, which is what says those five checks can fail; it also cost
+4x the estimate `mutate.py` printed, so that estimate now reads the tool's own log instead of
+two hardcoded constants and `mutate.py` has a `--self-test` for the first time. **R81, R82 and
 R83 are the text layer's three, all `FIXED` on 2026-08-15**: a line drawn at 5% of its width
 because a second reading of its own ink counted as the next fragment; words welding when one
 fragment of a line is much shorter than the next; and the small ones from areas 2, 3 and 13,
@@ -1301,12 +1305,12 @@ scoping defect below), `logic/C24b-no-image-is-not-unknown` and
 `python3 Tools/mutate.py --only C24b` is what says whether these checks can fail; each
 verdict costs a full suite, and that is **about 37 minutes measured** on this machine —
 timed twice, 20:31→21:08 standing alone and 21:42→22:19 inside the pre-commit hook — rather
-than the "2 to 4 minutes" `mutate.py`'s own header claims and the "3-6 min" four of this
+than the "2 to 4 minutes" `mutate.py`'s own header claimed and the "3-6 min" four of this
 project's documents claimed until 2026-08-16. A five-mutant campaign is therefore about
 four hours, which is why it is a separate piece of work and not a step in the commit that
-added the mutants. `mutate.py`'s header and `.githooks/pre-commit`'s progress line both
-still say 2-4 minutes; whoever runs the campaign is touching `Tools/` anyway and should fix
-them in that commit.
+added the mutants. **That campaign was run on 2026-08-17; `### The campaign` below is its
+result**, and the four hours predicted here turned out to be the first estimate in this
+thread that erred in the safe direction.
 
 **The suite is 1,141 checks with no skips**, measured by this work's own pre-commit run —
 1,137 before the four checks page 8 and page 9 brought.
@@ -1378,6 +1382,112 @@ after**, so every number above this section stands as measured, and the corpus c
 page that any of these three code fixes moves. Two of them were found by reasoning about
 shapes the corpus does not have — which is the argument for the hand-written fixture, since
 nothing in `testdocs/` would ever have failed.
+
+### The campaign, run 2026-08-17 — all five killed, and the tool's own estimate was wrong by 4x
+
+`ops/autonomous/test-lock.sh run --label mutants-C24b -- python3 Tools/mutate.py --only C24b`,
+started 22:46:47 on 2026-08-16 and finished 03:13:46 on 2026-08-17 — **4h27m end to end**.
+**Baseline 1,141 checks, green**, which is the number the section above predicted. Verdicts as
+`mutation-log.tsv` records them, with the killing check counts:
+
+```
+logic/C24b-form-not-followed                killed  2700 s  3 checks
+logic/C24b-bare-form-resources              killed  2693 s  2 checks
+logic/C24b-scope-does-not-descend           killed  2661 s  1 check   <- the review's bare-form fix
+logic/C24b-no-image-is-not-unknown          killed  2719 s  1 check   <- needs page 8 to be reachable
+logic/C24b-unresolved-name-is-not-nothing   killed  2621 s  1 check
+```
+
+The five mutant runs are 13,394 s of that; the baseline is not timed into the log, so by
+subtraction it was about 2,600 s including the rsync — consistent with the others, as it
+should be, since it is the same suite.
+
+**All five killed, so none of the five checks is a check that cannot fail.** That is the
+gate this half of C24 had not been through, and the one that mattered most is
+`logic/C24b-no-image-is-not-unknown`: the review above found it **unreachable by any page
+of the fixture**, added page 8 of `shared-resources.pdf` to reach it, and predicted that
+without page 8 the mutant would have SURVIVED a green suite. It is killed, so page 8 does
+reach the guard. Note also that `logic/C24b-scope-does-not-descend` was killed by **exactly
+one check** — the one the review's bare-form finding added — so that finding's fix is now
+load-bearing by machine rather than by argument.
+
+**And the campaign falsified the estimate the tool printed before starting it.** `mutate.py`
+announced *"5 mutants … roughly 20-55 minutes"* and then ran for 4h27m — **out by a factor of
+five on the high end**, in the direction that gets an unattended session killed mid-campaign.
+The startup line
+was two hardcoded constants, `len(todo) * 4` to `len(todo) * 11` minutes, sitting under a
+comment that described itself as *"a RANGE read off this tool's own log, not a constant"* —
+so the comment was true of the intent and false of the code, and nothing could tell the
+difference because nothing outside `run()` could call it. Fixed in this commit, and the
+fix has three parts, none of which is a new constant:
+
+- **It reads the log.** `logged_seconds()` parses the per-run durations; `estimate_minutes()`
+  takes min and max over the newest `ESTIMATE_SAMPLE` (5) rows. The whole log is the wrong
+  window — it reaches back to a smaller suite on a quieter machine.
+- **It counts the baseline.** The baseline is a full suite run, it happens on every campaign,
+  and the old arithmetic omitted it, so even a correct per-run figure understated every
+  campaign by one whole suite.
+- **It says which number to budget**, because the range is wide and the high end is the
+  useful one.
+
+**The negative control on the fix itself: run against the completed log, it predicts
+262-272 minutes for a five-mutant campaign, and this one took 267.** That is the same
+arithmetic the old line got wrong by 5x, checked against the run that exposed it. Over the
+whole catalogue of 89 it now says 66-68 hours. The 77 durations it reads out of 79 rows are
+79 minus the two `exit 133` crashes described below.
+
+**`mutate.py` now has a `--self-test`, which it did not before** — the tool the entire
+mutation gate runs through had none, while `.githooks/pre-commit` has run one for any staged
+`Tools/*.py` that carries the flag since T18. 19 checks, and **two of them were watched
+failing against the old arithmetic before the fix went in** ("got 20-55 min" is the
+self-test reproducing the real campaign's own wrong sentence). Then every guard was mutated
+one at a time: **12 of 14 mutations killed**, and the two survivors are named in
+`logged_seconds`'s docstring rather than left to look like coverage — admitting
+`"NOT-APPLIED"` to the timed verdicts changes nothing because those rows carry seconds=0,
+and dropping the header-row guard changes nothing because a header's verdict field is the
+literal `"verdict"`. Both are kept as belt to the other's brace.
+
+**Two things the campaign settled that were not about C24 at all**, and both were found by
+suspecting the instrument:
+
+- **The per-run cost is not a function of the suite's size.** These five runs came in at
+  ~2700 s against ~630 s for the R56/R57 mutants recorded the evening before, on a catalogue
+  that grew by four checks (1,137 → 1,141) in between. Four checks do not do that, so the
+  header's old sentence — "it grows every time the suite does" — was keyed on the wrong
+  variable. **That much is measured; the cause is not.** The session that ran the campaign
+  reported `ps -r` showing OneDrive at ~50% of a core and CrashPlanService at ~24% — *its*
+  observation, not re-made here — and the suite is single-core bound at ~96%, so contention
+  for that core is the plausible term and a 1-minute load average an insufficient covariate
+  for it, since neither process moves loadavg much. Filed as an inference with its evidence,
+  not as a finding: the controlled experiment has not been run. It bears on any timeout sized
+  off `$STATE/suite-timings.tsv`, whose one row (474 s) is 5.8x from these at a comparable
+  load average.
+- **Two rows in `mutation-log.tsv` are not durations.** `logic/R24-safeInt-finite` at 80 s
+  and `logic/R30-monotonic-underflow` at 89 s are `exit 133` — SIGTRAP, a crash 80 seconds
+  in, correctly scored as kills. They were the log's two cheapest rows, so they had become
+  the published floor of its per-run range, including in `mutate.py`'s own header. A crash is
+  not a fast suite. `logged_seconds` excludes them by their detail column, and that exclusion
+  is one of the twelve killed mutations.
+
+**The sibling sweep, since a stale duration claim is a pattern and not an instance.**
+`Tools/` holds four Python tools. `sample-zotero.py` and `sweep-zotero.py` already carry
+`--self-test`; `mutate.py` does now; **`bundle-libs.py` still does not**, and it is the one
+place left where the T18 gate would bite — it parses `otool -L` output in `dependencies()`,
+which is exactly the "a parser that accepts a malformed row" shape `py_compile` cannot see.
+Not fixed here: it is a build-time tool on a different path, nothing in this campaign
+touched it, and bundling an unrelated tool's first self-test into a mutation-campaign commit
+is how this register got C13. It is named so the next sweep does not have to rediscover it.
+Separately, `--list` reports **89 mutants**, not the 84 that `ops/autonomous/resume-prompt.txt`
+and `vision-ocr-autonomous.sh` both asserted in the present tense — the C24b five had been
+added without either being updated. Both corrected here, along with the "~55 HOURS" figure
+they carried: at the measured ~45 min per mutant the full catalogue is nearer **65 hours**,
+so that number was about right by luck and wrong in its reasoning.
+
+**What this does not do: it does not touch `Sources/`.** No route changes, no resolution
+changes, no sweep to re-run — the negative control above still stands unmodified, and C24
+stays HALF FIXED for the reason it already was. Both remaining sub-steps are unchanged:
+decide what `Batzell` p22 should render at, then wire the drawn walk into `rebuildDPI`
+behind a corpus gate run.
 
 ---
 
