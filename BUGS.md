@@ -23,7 +23,16 @@ about *this page*, so on the 3 corpus documents whose pages share one `/Resource
 that draws nothing at all is rebuilt at another page's plate resolution — **85 pages,
 measured 2026-08-16 by scanning content streams for `Do`**. Two repairs were built and
 both were wrong, and the third would need a threshold the corpus has no gap for; it is
-open with the measurements rather than tuned. **R81, R82 and
+open with the measurements rather than tuned. **The open half was measured 2026-08-16 and
+is narrower than the entry assumed**: `Flattener.drawnLargestImage` reports what a page
+actually draws, the 45 pages are 39 smaller plus **6 wider** — which retires the
+observation the entry carried without a cause, since both walks pick by *area* and report
+*width* — and the constant the entry wanted recalibrated faces **three** pages, judging two
+right and one wrong on its own boundary value of 600. Wired into nothing yet; the corpus
+gate run is what remains. The review of that measurement found **a check that could not
+fail** — the fixture had no page that reached the guard one of its own mutants edits — and a
+bare form resolving its names against the page rather than its invoker; both fixed, with
+the 16,987-row sweep byte-identical before and after. **R81, R82 and
 R83 are the text layer's three, all `FIXED` on 2026-08-15**: a line drawn at 5% of its width
 because a second reading of its own ink counted as the next fragment; words welding when one
 fragment of a line is much shorter than the next; and the small ones from areas 2, 3 and 13,
@@ -1208,6 +1217,161 @@ route**. That was not obvious: the routing signals are computed on the render, s
 resolution change can flip `isPicture`, and on `Kelly_2014` it does change what the
 layering sees. It changes no page's lane.
 
+---
+
+## C24b, the open half, measured — 2026-08-16
+
+**The measurement now exists and it is smaller than the entry assumed.**
+`Flattener.drawnLargestImage` resolves every `Do` the content stream issues, following
+forms by scanning their own content streams, and reports the largest image the page
+**actually draws**. It is wired into nothing — `rebuildDPI` still reads `largestImage` —
+because what closes this half is a decision about one page, and that page is named below.
+`Tools/score-drawn-images.swift` is the instrument: one row per page, no rendering, all
+16,987 pages in **74 to 93 seconds** over three timed runs — the first draft of this
+paragraph said "under a minute", which no run here has managed.
+`DRAWN-2026-08-16.tsv` beside this file is the evidence — the 45 rows that move plus the 3
+unreadable ones, cut from a 16,987-row sweep, and **reproduced byte-identically from an
+independent second run** before anything below was believed. Like every dated record here
+it is one run, not a claim about the present.
+
+Over all 233 documents and 16,987 pages:
+
+| the drawn walk against the `/Resources` walk | pages |
+|---|---|
+| agree | 16,654 |
+| the dictionary walk found no image at all | 285 |
+| **the page draws a *smaller* image than the dictionary holds** | **39** |
+| **the page draws a *wider* one** — see below, this is not a defect | **6** |
+| a `Do` this could not resolve, so "could not tell" | 3 |
+
+**The entry's 45 is right as a total and wrong as a description.** 39 + 6 = 45, and the
+six are not "smaller". They are `AI 2027` pages 4, 8, 10, 11, 15 and 54.
+
+**Which retires the observation this entry recorded without a cause.** The entry says a
+filtered prototype reported a *larger* image than the shipped walk on six pages of
+`AI 2027`, that the proposed cause was the `walkedAt` memo, and that the cause was tested
+and refuted — leaving the observation standing with no explanation. The cause is that
+**both walks pick the largest image by *area* and then report its *width***. A subset's
+largest-by-area can be the wider of two. Verified by listing every image in the page's
+`/Resources`: `AI 2027` p4 draws only `/Im5`, **3000x1011** (area 3.03 M), while the
+dictionary's largest by area is `/Im52`, **2929x2370** (area 6.94 M). Neither walk misses
+a candidate. The entry's single pages of `Kazin_1955`, `Intellectual History Newsletter`,
+`Zipkin_2000` and `UN-OCred` do **not** reproduce and were the prototype's own.
+
+A check asserting the obvious invariant — a subset cannot answer larger — would have
+passed on every page of the suite's fixture and been wrong about the corpus. The seventh
+page of `shared-resources.pdf` is a 4000x100 strip in a dictionary whose largest by area
+is the 3000x4000 plate, so the fixture now carries the shape rather than the assumption.
+
+**The 45 pages are three documents, and `Sherman_1986` is a third nobody had named**:
+`AI 2027` 38, `Sherman_1986` 5, `Batzell` 2. `Sherman_1986`'s five move by a hair —
+419.0 DPI to 417.4, 416.8, 411.2, 418.1, 413.1 — because each page draws a plate a few
+pixels narrower than the document's widest.
+
+**And the blocker is one page, not a population.** The entry says the next step is
+`minimumScanPixelWidth` "recalibrated against the per-page population rather than the
+document-wide one". Measured, that population is **three pages**, because the constant is
+only consulted when the DPI falls below `minimumPlausibleScanDPI` and 42 of the 45 land
+above it:
+
+```
+Batzell  p9   1254 px   147.5 DPI   width >= 600 -> trusted at 147.5   plausible for a scan
+Batzell  p22   600 px    70.6 DPI   width >= 600 -> trusted at  70.6   THE DEFECT (C9 again)
+AI 2027  p1    245 px    29.6 DPI   width <  600 -> fallback 300       correct
+```
+
+So the constant judges two of the three correctly, and the one it gets wrong sits
+**exactly on its own boundary value of 600**. That is a much narrower question than
+recalibration: what should a page whose only drawn image is 600 px wide be rebuilt at?
+Answering it wants `Batzell` p22 rendered both ways and its characters counted — not a
+new threshold, and **not a guess**. The two refused repairs are still refused for their
+own reasons; nothing here rehabilitates them.
+
+**What is still true and unchanged.** `score-routing` still refuses the rows for
+`Batzell` and `AI 2027`; the four `manifest.tsv` rows are still the old wrong numbers;
+and wiring the drawn walk into `rebuildDPI` still needs a corpus gate run, because it
+changes what the default route renders on 45 pages.
+
+**Five mutants**, because this walk's whole claim is that it needs no constant and a
+constant mutant can reach none of it: `logic/C24b-form-not-followed` (repair 2's blind
+spot: a form's own content stream never scanned), `logic/C24b-bare-form-resources` (forms
+followed only when they carry `/Resources`), `logic/C24b-scope-does-not-descend` (the
+scoping defect below), `logic/C24b-no-image-is-not-unknown` and
+`logic/C24b-unresolved-name-is-not-nothing` (T14's rule, once in each direction).
+`python3 Tools/mutate.py --only C24b` is what says whether these checks can fail; each
+verdict costs a full suite, which is **~40 minutes measured** on this machine rather than
+the 2–4 minutes `mutate.py`'s own header claims.
+
+Three pages of `Astin__The Challenge of Open Admissions` are the "could not tell" case in
+the wild — a `Do` naming something the page's resource chain does not hold. The walk
+reports `.unreadable` there and a caller keeps the `/Resources` answer, which is the
+direction that costs bytes rather than detail.
+
+### What the review of this diff found, and one of them was a check that could not fail
+
+Two rounds: an agent with an adversarial brief, then the findings tested by running code
+rather than argued about. **Every one of the four below was in code written the same day**,
+and the register's own habit is what caught them — recompute the arithmetic, and reach the
+guard before believing the check on it.
+
+- **`logic/C24b-no-image-is-not-unknown` could not have been killed.** Reaching
+  `guard state.width > 0 else { return .noImage }` needs a page that invokes an XObject
+  (so the early `drawsAnyXObject == false` return does not fire), resolves every name it
+  invokes, and still ends with no image — a page whose only `Do` is a *form that draws no
+  image*. The fixture had no such page: all seven either returned early or ended with a
+  width, so the mutant would have SURVIVED against a green suite. **Verified by building
+  the walk and running it over the missing page before writing the check** —
+  `drawsAnyXObject=true`, `drawn=noImage`, which is the line the mutant edits. Page 8 of
+  `shared-resources.pdf` is that page. Nine checks in this register could not fail; this
+  would have been the tenth, and it was written by the same session that added the mutant
+  meant to catch exactly this.
+- **A bare form resolved its names against the page instead of its invoker.** PDF gives a
+  form with no `/Resources` of its own the scope of the stream that *invoked* it. The walk
+  fell back to the page's dictionary, which is the same thing only when the page is the
+  invoker — true of every bare form in the fixture and, as it turns out, of every one in
+  the corpus. Page 9 tells them apart: a bare form nested inside a form that carries its
+  own `/Resources`, both scopes defining `/Ix`, where the invoker's is 1500 px and the
+  page's is the 3000 px plate. **Measured 3000 before the fix and 1500 after.** The scope
+  now descends and is restored on the way out, and `logic/C24b-scope-does-not-descend`
+  removes that descent.
+- **And the obvious repair for it was wrong, which is why it was run rather than reasoned
+  about.** The comment being fixed asserted that `CGPDFContentStream` "searches its
+  parent", so passing the form's own stream dictionary would let the chain inherit. It does
+  not: `CGPDFContentStreamGetResource` does not search the parent for a name absent from
+  the dictionary it was handed, and that version measured **`.unreadable` on both page 5
+  and page 9** — it would have blinded the walk on precisely the nested scans repair 2 died
+  on. A review finding's first fix is not automatically right; this register has now said
+  that three times (C23, R57's ink gate, here).
+- **The instrument's verdict column was ordered wrong.** `case (nil, _)` came first, so any
+  page whose dictionary walk found nothing was filed `noDictImage` *whatever the drawn walk
+  answered* — and an unresolvable name is likeliest on exactly such a page, so the
+  published "3 unreadable" was really "unreadable pages that also had a dictionary image"
+  while this entry quoted it as the number of pages the walk could not read. **On this
+  corpus it changed no row** — all 285 `noDictImage` pages report `drawnKind=none`, checked
+  by cross-tabulating the two columns — so the number was right by luck. Fixed by asking
+  the drawn answer first, and `drawnOnly` now names the case the old order hid: the drawn
+  walk finding an image the dictionary walk did not, **0 pages of 16,987**.
+- **The two walks disagreed about how deep to look**, which is a confound in the one
+  instrument built to isolate a single variable. `largestImage` refuses depth 4 and so sees
+  images listed three form-levels down; the drawn walk entered a form whenever
+  `s.depth < 4`, which is a fourth level. An image drawn there would have read as a
+  drawn-versus-dictionary difference caused by the caps rather than by the page. Now `< 3`.
+  Nothing in the corpus nests that deep: **`< 4` and `< 3` produce byte-identical sweeps.**
+- **The memo could not stay keyed on the form stream alone** once the scope descends,
+  because the same bare form reached from two scopes is two different measurements and the
+  second was being skipped. Keyed on the (stream, scope) pair, and taken *after* the scope
+  is resolved rather than before, so what may be skipped is exactly what was already
+  answered. Its comment also imported R25's 5.09 s figure, which belongs to `largestImage`
+  and its dictionary-keyed memo; corrected to claim the shape and not the measurement.
+
+**The negative control for all of it: the 16,987-row sweep is byte-identical before and
+after**, so every number above this section stands as measured, and the corpus contains no
+page that any of these three code fixes moves. Two of them were found by reasoning about
+shapes the corpus does not have — which is the argument for the hand-written fixture, since
+nothing in `testdocs/` would ever have failed.
+
+---
+
 The original entry, which is about that other half, follows unchanged.
 
 A12.2 says three tools extract their sample into a fresh `PDFDocument`, that extraction
@@ -1321,6 +1485,13 @@ box is the obvious next thing to measure, since a scan bled to the trim would re
 against the sheet; then `minimumScanPixelWidth` recalibrated against the per-page population
 rather than the document-wide one; then the `walkedAt` defect above; then a corpus gate run,
 because this changes what the default route renders.
+
+*(**Three of those four are now answered or void, 2026-08-16** — see the C24b section
+above, and prefer it to this paragraph. The drawn walk needs no discriminator at all,
+because restricting to the names the page invokes is a fact about the content stream; the
+"recalibration" is one page at the constant's own boundary rather than a population; and
+the `walkedAt` defect does not exist — its symptom was area-versus-width, verified on the
+document it was observed in. The corpus gate run is the one item that stands.)*
 
 ### C25 · `score-text-route` has never compiled, and three documents cite it as the evidence — FIXED
 *(found 2026-08-15 while fixing A12.2, by trying to build it)*

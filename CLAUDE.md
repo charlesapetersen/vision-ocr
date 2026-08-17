@@ -18,9 +18,19 @@ boxes, and what the tests don't cover.
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **one entry
 is open and it does not destroy content**: **C24, half fixed** — a page that draws no
 XObject at all no longer takes another page's plate resolution (85 pages over 3 documents,
-structural, no threshold, 0 route changes), while the 45 pages that draw a *smaller* image
-than the shared dictionary holds are still open with their measurements and two refused
-repairs. **R55 is `WONTFIX`** as of 2026-08-17: the measurement campaign was run and the
+structural, no threshold, 0 route changes), while the 45 pages that draw a *different*
+image than the shared dictionary holds are still open with two refused repairs. **That open
+half is measured as of 2026-08-16** — read the entry's `C24b` section before planning
+anything there: `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swift` report
+what a page actually draws, the 45 are **39 smaller and 6 wider** (which retires the
+observation the entry carried without a cause — both walks pick by *area* and report
+*width*), and the constant the entry wanted recalibrated faces **three** pages, getting two
+right and one wrong on its own boundary value of 600. It is wired into nothing; a corpus
+gate run is what closing it needs. Read that section's review subsection too — it found **a
+tenth check that could not fail** and a bare form resolving its resource names in the page's
+scope rather than its invoker's, and it is where to look before believing that
+`CGPDFContentStreamGetResource` searches the parent chain: measured, it does not, after a
+comment in this repo said it did. **R55 is `WONTFIX`** as of 2026-08-17: the measurement campaign was run and the
 owner closed it on the arithmetic — the gate's over-exclusion costs the sweep about 80
 candidates and 0.7 GB against 1,164 and ~10 GB, and loosening it would admit the hand-held
 photographs D1 exists to keep out. **R56 and R57 —

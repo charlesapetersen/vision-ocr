@@ -63,10 +63,23 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
      rule is that an entry without evidence is a rumour, and a queue line is at best a rumour about an
      entry. Delete an item that turns out to be already done, and say so in the commit. -->
 
-- [ ] **C24b** — the remaining half of C24: the 45 pages that draw a *smaller* image than the shared
+- [ ] **C24b** — the remaining half of C24: the 45 pages that draw a *different* image than the shared
       `/Resources` dictionary holds still take the shared plate's resolution. The measurements and the two
       already-refused repairs are in the entry; read both refusals before proposing a third.
-      (origin: BUGS.md C24, HALF FIXED)
+      MEASURED 2026-08-16 (still open): `Flattener.drawnLargestImage` + `Tools/score-drawn-images.swift`
+      report what a page draws; the 45 are **39 smaller and 6 wider**, and the "wider" six retire the
+      observation the entry carried without a cause. The constant the entry wanted recalibrated faces
+      **three** pages and gets two right — the one it gets wrong is `Batzell` p22, a 600 px figure sitting
+      exactly on `minimumScanPixelWidth`'s own boundary value. Reviewed and corrected 2026-08-16: a check
+      that could not fail (no fixture page reached the guard its own mutant edits), a bare form resolving
+      names in the page's scope instead of its invoker's, a verdict column that shadowed `unreadable`, and
+      the two walks disagreeing about depth — all fixed, sweep byte-identical, suite green.
+      **What is left is three things**: run `python3 Tools/mutate.py --only C24b` and record the five
+      verdicts in `Tools/mutation-log.tsv` (~40 min per verdict on this machine, so the campaign is hours —
+      it is the one gate this work has not been through); decide what `Batzell` p22 should render at
+      (render it both ways and count characters — do not pick a number); then wire the drawn walk into
+      `rebuildDPI` behind a corpus gate run, because it moves 45 pages.
+      Read the entry's `C24b` section first, not this line. (origin: BUGS.md C24, HALF FIXED)
 - [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
       HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite
       figure was corrected to a MEASURED 1,127 in HANDOFF.md, TECHNICAL.md and ARCHITECTURE.md; TODO.md's

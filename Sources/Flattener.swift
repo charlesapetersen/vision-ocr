@@ -2594,7 +2594,17 @@ enum Flattener {
     /// 37 real 72 DPI scans, 1936–2592 px wide. Nothing lands in between, so the
     /// threshold is not finely balanced.
     static func rebuildDPI(of page: PDFPage) -> Double {
-        guard let found = largestImage(of: page) else { return fallbackRebuildDPI }
+        rebuildDPI(from: largestImage(of: page))
+    }
+
+    /// The policy alone, over a measurement someone else took.
+    ///
+    /// Split out so `Tools/score-drawn-images.swift` can apply the *shipped* policy to
+    /// `drawnLargestImage`'s answer instead of carrying a second copy of these three
+    /// branches — T15 is what a drifting copy costs, and the whole question C24's open
+    /// half asks is what this policy does to a different measurement.
+    static func rebuildDPI(from found: (dpi: Double, pixelWidth: Int)?) -> Double {
+        guard let found else { return fallbackRebuildDPI }
         // Comfortably a scan.
         if found.dpi >= minimumPlausibleScanDPI { return found.dpi }
         // Below the floor, but page-sized: a real scan that happens to be coarse.
@@ -2761,5 +2771,205 @@ enum Flattener {
         guard widthPt > 0 else { return nil }
         return (dpi: Double(largest.width) / (Double(widthPt) / 72.0),
                 pixelWidth: largest.width)
+    }
+
+    /// What `drawnLargestImage` found, with "could not tell" kept apart from "nothing".
+    enum DrawnImage: Equatable {
+        /// The question could not be answered — an unreadable page, a content stream that
+        /// yielded no operators, a `Do` whose operand name would not pop, or a name that
+        /// resolves to nothing. A caller must fall back to the `/Resources` answer rather
+        /// than conclude the page draws nothing: `drawsAnyXObject`'s rule and T14's, in
+        /// the one place here where believing an instrument that measured nothing costs
+        /// detail rather than bytes.
+        case unreadable
+        /// The page draws no image. It may still draw forms, rules and text.
+        case noImage
+        case largest(dpi: Double, pixelWidth: Int)
+    }
+
+    /// The largest image the page actually **draws**, found by resolving every `Do` the
+    /// content stream issues rather than by walking `/Resources`.
+    ///
+    /// **This is C24's open half, as a measurement.** `largestImage` answers a question
+    /// about the resource dictionary, and 4 of the corpus's 208 multi-page documents share
+    /// one dictionary across every page. `drawsAnyXObject` closed the degenerate case — a
+    /// page that invokes nothing at all — and **45 corpus pages remain that invoke a
+    /// *different* image than the shared dictionary holds**, so they still take a
+    /// neighbour's plate resolution. Measured with this function: **39 draw a smaller image
+    /// and 6 draw a wider one**, the six being pages of `AI 2027`. "Smaller" was the
+    /// entry's word for all 45 and is wrong for those six — both walks pick the largest
+    /// image by *area* and then report its *width*, so a subset's winner can be the wider
+    /// of two.
+    ///
+    /// **Deliberately wired into nothing.** Restricting the walk to the invoked names is
+    /// structural: it needs no coverage rule and no threshold, which is what killed the
+    /// entry's second repair. What it does need is a constant it would move into a
+    /// population that constant was not calibrated for. `minimumScanPixelWidth` separated
+    /// 47 logos of 16–96 px from 37 page-sized scans of 1936–2592 px, measured against
+    /// each document's *maximum*; the entry's first repair sent `Batzell` p22 from 369.6
+    /// DPI to **70.6** because that page's own figure is 600 px wide and 600 reads as
+    /// "this image is the page, and it is coarse". Rendering a page of type at 70 DPI is
+    /// C9 again. So the recalibration comes first, on the per-page population this
+    /// function exists to produce — `Tools/score-drawn-images.swift`.
+    ///
+    /// Forms are followed by scanning their own content streams, which is the only way to
+    /// learn what a form draws. C24's second repair died on that shape: `Lyons oral
+    /// history` puts its scan one level down inside a form on 114 of 114 pages, and
+    /// scanner drivers routinely produce it.
+    static func drawnLargestImage(of page: PDFPage) -> DrawnImage {
+        // The shipped guard first, unchanged, so this cannot disagree with it about
+        // whether the page draws anything — and so the two mutants protecting it still
+        // protect this.
+        switch drawsAnyXObject(page) {
+        case nil: return .unreadable
+        case false: return .noImage
+        default: break
+        }
+        guard let cgPage = page.pageRef else { return .unreadable }
+
+        /// One form stream scanned in one resource scope. **Both halves are load-bearing**,
+        /// and the stream alone is not enough: a form with no `/Resources` of its own
+        /// resolves its names against whatever invoked it, so the same stream reached from
+        /// two scopes is two different measurements and must be scanned twice. Keying on
+        /// the stream alone silently kept the first answer for both.
+        struct Visit: Hashable {
+            let stream: UnsafeRawPointer
+            let scope: UnsafeRawPointer
+        }
+        final class State {
+            var width = 0, height = 0
+            var unreadable = false
+            var depth = 0
+            /// The shallowest depth each (form stream, scope) pair has been entered at.
+            /// R25's memo for R25's *shape* — the depth cap bounds recursion and not
+            /// breadth, so one stream reachable by many paths is otherwise re-scanned once
+            /// per path at every level, N + N² + N³ + N⁴ where N is 1 walk. R25's own 5.09 s
+            /// figure belongs to `largestImage` and its dictionary-keyed memo; this is the
+            /// same blow-up over streams, not that measurement.
+            var enteredAt: [Visit: Int] = [:]
+            var table: CGPDFOperatorTableRef?
+            /// The resource scope in effect: the page's to begin with, then each form's as
+            /// it is entered, restored on the way out.
+            var resources: CGPDFDictionaryRef?
+        }
+        let state = State()
+        if let dict = cgPage.dictionary {
+            var resources: CGPDFDictionaryRef?
+            if CGPDFDictionaryGetDictionary(dict, "Resources", &resources) {
+                state.resources = resources
+            }
+        }
+        guard let table = CGPDFOperatorTableCreate() else { return .unreadable }
+        state.table = table
+
+        CGPDFOperatorTableSetCallback(table, "Do") { scanner, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            var name: UnsafePointer<Int8>?
+            let cs = CGPDFScannerGetContentStream(scanner)
+            guard CGPDFScannerPopName(scanner, &name), let name,
+                  let object = CGPDFContentStreamGetResource(cs, "XObject", name) else {
+                s.unreadable = true
+                return
+            }
+            var stream: CGPDFStreamRef?
+            guard CGPDFObjectGetValue(object, .stream, &stream), let stream,
+                  let streamDict = CGPDFStreamGetDictionary(stream) else {
+                s.unreadable = true
+                return
+            }
+            var subtype: UnsafePointer<Int8>?
+            guard CGPDFDictionaryGetName(streamDict, "Subtype", &subtype), let subtype else {
+                s.unreadable = true
+                return
+            }
+            switch String(cString: subtype) {
+            case "Image":
+                var w: CGPDFInteger = 0, h: CGPDFInteger = 0
+                // The same guards `largestImage` applies, for the same reason: /Width and
+                // /Height are whatever the file declares and nothing cross-checks them
+                // against a stream that can be three bytes long (R24, A7.1).
+                guard CGPDFDictionaryGetInteger(streamDict, "Width", &w),
+                      CGPDFDictionaryGetInteger(streamDict, "Height", &h),
+                      w > 0, h > 0,
+                      w <= CGPDFInteger(Flattener.maximumDeclaredImageSide),
+                      h <= CGPDFInteger(Flattener.maximumDeclaredImageSide)
+                else { return }
+                if Int(w) * Int(h) > s.width * s.height {
+                    s.width = Int(w)
+                    s.height = Int(h)
+                }
+            case "Form":
+                // **`< 3`, not `< 4`, so this reaches exactly as far as `largestImage`.**
+                // That walk starts at the page's dictionary at depth 0 and refuses depth 4,
+                // so it sees images listed in a form three levels down and no further. A
+                // form entered here at `s.depth == 3` would be a fourth level, and an image
+                // it draws would show up as a drawn-versus-dictionary difference caused by
+                // the two caps disagreeing rather than by what the page draws — a confound
+                // in the one instrument built to isolate that variable. Measured over the
+                // corpus: `< 4` and `< 3` produce byte-identical sweeps, so nothing here
+                // nests that deep and the symmetry costs nothing. If this is ever wired
+                // into `rebuildDPI`, the cap becomes a question about pages rather than
+                // about agreement, and wants re-measuring then.
+                guard s.depth < 3, let table = s.table else { return }
+                // A form need not carry `/Resources`; PDF then resolves its names against
+                // the scope that **invoked** it, which is not the same thing as the page.
+                // Skipping resource-less forms would go blind on exactly the nesting that
+                // scanner drivers produce, and that is how the entry's second repair died.
+                //
+                // **The invoker's scope, not the page's**, and the review of this diff
+                // caught the page's being used. On the ninth page of `shared-resources.pdf`
+                // — a bare form nested inside a form that carries its own `/Resources`,
+                // where the form and the page each define `/Ix` — resolving against the page
+                // answered its 3000 px plate instead of the 1500 px image the form draws.
+                //
+                // *And the obvious way to get this right does not work.* Passing the form's
+                // own stream dictionary and letting `CGPDFContentStreamCreateWithStream`'s
+                // `parent` argument inherit — which an earlier comment here asserted it
+                // would — measured `.unreadable` on **both** that page and the fifth,
+                // because `CGPDFContentStreamGetResource` does not search the parent chain
+                // for a name absent from the dictionary it was handed. Verified by running
+                // it, which is the only reason this reads the way it does.
+                var formResources: CGPDFDictionaryRef?
+                _ = CGPDFDictionaryGetDictionary(streamDict, "Resources", &formResources)
+                let inherited = s.resources
+                let resources = formResources ?? inherited ?? streamDict
+                // The memo, after the scope is known rather than before: what this scan will
+                // answer is a function of the pair, so the pair is what may be skipped.
+                let visit = Visit(stream: unsafeBitCast(stream, to: UnsafeRawPointer.self),
+                                  scope: unsafeBitCast(resources, to: UnsafeRawPointer.self))
+                if let seen = s.enteredAt[visit], seen <= s.depth { return }
+                s.enteredAt[visit] = s.depth
+                let nested = CGPDFContentStreamCreateWithStream(stream, resources, cs)
+                let nestedScanner = CGPDFScannerCreate(nested, table, info)
+                s.depth += 1
+                s.resources = resources
+                CGPDFScannerScan(nestedScanner)
+                s.resources = inherited
+                s.depth -= 1
+                CGPDFScannerRelease(nestedScanner)
+                CGPDFContentStreamRelease(nested)
+            default:
+                // A `/PS` XObject, or a subtype this does not know. Resolvable, and not an
+                // image: it contributes nothing and hides nothing.
+                break
+            }
+        }
+
+        let stream = CGPDFContentStreamCreateWithPage(cgPage)
+        let scanner = CGPDFScannerCreate(stream, table,
+                                        Unmanaged.passUnretained(state).toOpaque())
+        CGPDFScannerScan(scanner)
+        CGPDFScannerRelease(scanner)
+        CGPDFContentStreamRelease(stream)
+        CGPDFOperatorTableRelease(table)
+
+        if state.unreadable { return .unreadable }
+        guard state.width > 0 else { return .noImage }
+        // Media box, to match `largestImage` and the area flatten renders — see fullBox.
+        let widthPt = page.bounds(for: .mediaBox).width
+        guard widthPt > 0 else { return .unreadable }
+        return .largest(dpi: Double(state.width) / (Double(widthPt) / 72.0),
+                        pixelWidth: state.width)
     }
 }

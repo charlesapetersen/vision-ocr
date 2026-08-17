@@ -244,6 +244,47 @@ OPERATORS = [
     # real scan to fix a byte problem, which is the wrong direction (T14).
     ("Flattener.swift", "return seen.operators > 0 ? false : nil",
      "return false", "C24-unknown-is-not-no"),
+    # C24's open half, as a measurement: `drawnLargestImage`. Five mutants because the
+    # entry's two refused repairs each died on a *different* one of these branches, and a
+    # constant mutant can reach none of them — the whole claim of this walk is that it
+    # needs no constant.
+    #
+    # Repair 2 died here. A walk that does not scan a form's own content stream reports
+    # "draws no image" on the 114 of 114 pages of `Lyons oral history` whose scan sits one
+    # level down inside a form, which is what scanner drivers routinely produce.
+    ("Flattener.swift", "guard s.depth < 3, let table = s.table else { return }",
+     "guard s.depth < 0, let table = s.table else { return }",
+     "C24b-form-not-followed"),
+    # …and the narrower version of the same blindness: a form is followed, but only when it
+    # carries `/Resources` of its own. PDF resolves a bare form's names in the scope that
+    # invoked it, and dropping that fallback loses the image again.
+    ("Flattener.swift",
+     "let resources = formResources ?? inherited ?? streamDict",
+     "guard let resources = formResources else { return }",
+     "C24b-bare-form-resources"),
+    # The scope must *descend*. Without this assignment a bare form nested inside a form
+    # that carries its own `/Resources` resolves against the page rather than its invoker,
+    # which is what the first version of this walk did and what the ninth page of
+    # `shared-resources.pdf` exists to see. `_ = resources` rather than a deletion, so the
+    # mutant is a behaviour change and not a compile error — mutate.py scores those
+    # differently and a NOT-APPLIED verdict would tell us nothing about the checks.
+    ("Flattener.swift", "                s.resources = resources\n",
+     "                _ = resources\n", "C24b-scope-does-not-descend"),
+    # T14's rule at a new site, in the direction that costs detail: reading "draws no
+    # image" as "could not tell" makes the measurement useless — every page would fall back
+    # to the `/Resources` answer, which is the defect this function exists to measure.
+    ("Flattener.swift", "guard state.width > 0 else { return .noImage }",
+     "guard state.width > 0 else { return .unreadable }",
+     "C24b-no-image-is-not-unknown"),
+    # …and the same rule in the direction that costs bytes and content: a `Do` whose name
+    # will not resolve reported as "draws nothing". Anchored on the line above because the
+    # same assignment guards three branches, and T7 is what an ambiguous pattern costs.
+    ("Flattener.swift",
+     "                  let object = CGPDFContentStreamGetResource(cs, \"XObject\", name) else {\n"
+     "                s.unreadable = true",
+     "                  let object = CGPDFContentStreamGetResource(cs, \"XObject\", name) else {\n"
+     "                s.unreadable = false",
+     "C24b-unresolved-name-is-not-nothing"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",
      "guard !isRunning else { return .refusedRunInProgress }", "U19-add-guard"),
     # A5.3. The interlock as a flag again: the first walk to land lowers it while

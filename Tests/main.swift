@@ -3256,24 +3256,133 @@ do {
     // The image stream is a stub: `largestImage` reads `/Width` and `/Height` off the
     // stream dictionary and never decodes it, so three bytes of body is enough for the
     // page to claim a 3000 px plate.
+    //
+    // **C24b — the open half — is on the same fixture**, because it is the same sharing
+    // seen one page further on: page 3 below draws a *600 px* figure while the shared
+    // dictionary also holds the 3000 px plate, which is the shape of the 45 pages still
+    // open. `largestImage` answers 3000 there and is *right* about `/Resources`; only a
+    // walk of the content stream can say what the page draws. Pages 4 and 5 carry the
+    // shape that killed the entry's second repair — the image one level down inside a Form
+    // XObject, once with the form holding its own `/Resources` and once without. Pages 8
+    // and 9 were added by the review of that work, and each exists because no other page
+    // could see the thing it tests: page 8 is the only shape that reaches the "draws an
+    // XObject but no image" guard, and page 9 the only one where a bare form's invoker is
+    // not the page, which is what tells resource *scope* apart from the page's dictionary.
     do {
+        let quietStream = "BT /F1 12 Tf 72 700 Td (no image here) Tj ET\n"
+        let drawStream = "q 612 0 0 792 0 0 cm /Im0 Do Q\n"
+        let smallStream = "q 60 0 0 80 0 0 cm /Im1 Do Q\n"
+        let formCall = "q /Fg Do Q\n"
+        let bareFormCall = "q /Fg2 Do Q\n"
+        let missingCall = "q /Nope Do Q\n"
+        let stripCall = "q 612 0 0 15 0 0 cm /Im2 Do Q\n"
+        let emptyFormCall = "q /Fg3 Do Q\n"
+        let noImageInForm = "q 0 0 100 100 re f Q\n"
+        let outerFormCall = "q /Fout Do Q\n"
+        let outerBody = "q /Fin Do Q\n"
+        let innerBareCall = "q /Ix Do Q\n"
+
         var objects: [String] = []
         objects.append("<< /Type /Catalog /Pages 2 0 R >>")
-        objects.append("<< /Type /Pages /Kids [3 0 R 6 0 R] /Count 2 >>")
+        objects.append("<< /Type /Pages /Kids "
+                       + "[3 0 R 6 0 R 9 0 R 12 0 R 16 0 R 18 0 R 21 0 R 24 0 R 29 0 R] "
+                       + "/Count 9 >>")
         objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
                        + "/Resources 4 0 R /Contents 7 0 R >>")          // draws nothing
-        objects.append("<< /XObject << /Im0 5 0 R >> >>")                // the shared one
+        // `/Ix` is the 3000 px plate *here*, and object 28's form defines the same name as a
+        // 1500 px image. Page 9 is what tells those two scopes apart.
+        objects.append("<< /XObject << /Im0 5 0 R /Im1 10 0 R "          // the shared one
+                       + "/Im2 20 0 R /Fg 14 0 R /Fg2 15 0 R "
+                       + "/Fg3 23 0 R /Fout 28 0 R /Ix 5 0 R >> >>")
         objects.append("<< /Type /XObject /Subtype /Image /Width 3000 /Height 4000 "
                        + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
                        + ">>\nstream\nabc\nendstream")
         objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
                        + "/Resources 4 0 R /Contents 8 0 R >>")          // draws it
-        let quietStream = "BT /F1 12 Tf 72 700 Td (no image here) Tj ET\n"
-        let drawStream = "q 612 0 0 792 0 0 cm /Im0 Do Q\n"
         objects.append("<< /Length \(quietStream.utf8.count) >>\nstream\n"
                        + quietStream + "endstream")
         objects.append("<< /Length \(drawStream.utf8.count) >>\nstream\n"
                        + drawStream + "endstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 11 0 R >>")         // draws only Im1
+        objects.append("<< /Type /XObject /Subtype /Image /Width 600 /Height 800 "
+                       + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
+                       + ">>\nstream\nabc\nendstream")
+        objects.append("<< /Length \(smallStream.utf8.count) >>\nstream\n"
+                       + smallStream + "endstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 13 0 R >>")         // Im0 inside a form
+        objects.append("<< /Length \(formCall.utf8.count) >>\nstream\n"
+                       + formCall + "endstream")
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Length \(drawStream.utf8.count) "
+                       + ">>\nstream\n" + drawStream + "endstream")
+        // The same form with **no `/Resources` of its own**, so `/Im0` is reachable only
+        // by resolving the name further up the chain. A form shaped like this is one line
+        // of a scanner driver away from `Lyons oral history`, and a walk that skipped it
+        // would go blind on 114 of 114 real pages.
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Length \(drawStream.utf8.count) "
+                       + ">>\nstream\n" + drawStream + "endstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 17 0 R >>")         // via a bare form
+        objects.append("<< /Length \(bareFormCall.utf8.count) >>\nstream\n"
+                       + bareFormCall + "endstream")
+        // A `Do` naming something the dictionary does not hold. The measurement must say
+        // "could not tell" here, not "draws nothing": the second would refuse a real
+        // scan's resolution on the strength of a name this could not follow.
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 19 0 R >>")         // names /Nope
+        objects.append("<< /Length \(missingCall.utf8.count) >>\nstream\n"
+                       + missingCall + "endstream")
+        // A 4000 px strip: **wider** than the 3000 px plate and a fraction of its area.
+        // The page below draws only this, so the drawn walk answers wider than the
+        // dictionary walk — `AI 2027` p4's shape, and the cause C24 was missing.
+        objects.append("<< /Type /XObject /Subtype /Image /Width 4000 /Height 100 "
+                       + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
+                       + ">>\nstream\nabc\nendstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 22 0 R >>")         // draws the strip
+        objects.append("<< /Length \(stripCall.utf8.count) >>\nstream\n"
+                       + stripCall + "endstream")
+        // **A form that draws no image at all** (object 23), and the page that invokes it.
+        // This is the only shape in this fixture that reaches `drawnLargestImage`'s
+        // `guard state.width > 0 else { return .noImage }` — the page draws an XObject, so
+        // the early `drawsAnyXObject == false` return does not fire, and nothing sets the
+        // unreadable flag. Added because the review of this diff traced all seven earlier
+        // pages and found that none of them reach that line, so the mutant protecting it
+        // (`logic/C24b-no-image-is-not-unknown`) would have SURVIVED and the check written
+        // for it could not fail. Confirmed by running the walk over this page before the
+        // check existed: `drawsAnyXObject=true`, `drawn=noImage`.
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Length \(noImageInForm.utf8.count) "
+                       + ">>\nstream\n" + noImageInForm + "endstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 25 0 R >>")         // a form, no image
+        objects.append("<< /Length \(emptyFormCall.utf8.count) >>\nstream\n"
+                       + emptyFormCall + "endstream")
+        // **Resource scoping.** Object 26 is a 1500 px image; object 27 is a form with **no
+        // `/Resources` of its own** that draws `/Ix`; object 28 is a form that carries its
+        // own `/Resources`, defining `/Ix` as the 1500 px image and `/Fin` as that bare form.
+        // The page's own dictionary defines `/Ix` as the 3000 px plate. PDF resolves a bare
+        // form's names against the stream that **invoked** it, so the right answer is 1500.
+        // The first version of this walk fell back to the *page's* dictionary and answered
+        // 3000; no earlier page could tell, because every bare form in the fixture was
+        // invoked by the page itself, where the two scopes coincide.
+        objects.append("<< /Type /XObject /Subtype /Image /Width 1500 /Height 2000 "
+                       + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
+                       + ">>\nstream\nabc\nendstream")
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Length \(innerBareCall.utf8.count) "
+                       + ">>\nstream\n" + innerBareCall + "endstream")
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Resources << /XObject << /Fin 27 0 R /Ix 26 0 R >> >> "
+                       + "/Length \(outerBody.utf8.count) "
+                       + ">>\nstream\n" + outerBody + "endstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 30 0 R >>")         // bare form in form
+        objects.append("<< /Length \(outerFormCall.utf8.count) >>\nstream\n"
+                       + outerFormCall + "endstream")
 
         var pdf = "%PDF-1.4\n"
         var offsets: [Int] = []
@@ -3290,8 +3399,8 @@ do {
         let shared = dir.appendingPathComponent("shared-resources.pdf")
         try? pdf.write(to: shared, atomically: true, encoding: .isoLatin1)
         let sd = PDFDocument(url: shared)
-        check("the shared-/Resources fixture is a readable two-page PDF",
-              sd?.pageCount == 2, "\(sd?.pageCount ?? -1) pages")
+        check("the shared-/Resources fixture is a readable nine-page PDF",
+              sd?.pageCount == 9, "\(sd?.pageCount ?? -1) pages")
         if let sd, let quiet = sd.page(at: 0), let drawing = sd.page(at: 1) {
             // The premise first. Without these two the checks below would pass over a
             // fixture that simply has no image in it, which is a different page and
@@ -3318,8 +3427,107 @@ do {
             check("…while the page that does draw the plate is untouched",
                   Flattener.rebuildDPI(of: drawing) == Flattener.nativeDPI(of: drawing),
                   String(format: "%.1f", Flattener.rebuildDPI(of: drawing)))
+
+            // MARK: C24b — what the page draws, not what its /Resources can reach
+            //
+            // The measurement only. `rebuildDPI` still reads `largestImage`, deliberately:
+            // moving it would put `minimumScanPixelWidth` in front of a population it was
+            // not calibrated for, and the entry's first repair sent a page of type to 70.6
+            // DPI that way. These assert the number, not the policy.
+            guard let small = sd.page(at: 2), let viaForm = sd.page(at: 3),
+                  let viaBareForm = sd.page(at: 4), let unresolved = sd.page(at: 5) else {
+                check("the shared-/Resources fixture's pages 3-6 are readable", false)
+                resetPrefs()
+                exit(1)
+            }
+            // The premise, again: `largestImage` is *right* about the dictionary, and that
+            // wrong-for-the-page answer is the whole of C24's open half. Without this the
+            // check below could pass over a page whose dictionary held nothing bigger.
+            check("C24b — the small page's /Resources still reaches the 3000 px plate",
+                  Flattener.largestImage(of: small)?.pixelWidth == 3000,
+                  "\(Flattener.largestImage(of: small)?.pixelWidth ?? -1)")
+            check("…and the drawn walk answers 600, the figure the page actually draws",
+                  Flattener.drawnLargestImage(of: small)
+                      == .largest(dpi: 600 / (612.0 / 72.0), pixelWidth: 600),
+                  "\(Flattener.drawnLargestImage(of: small))")
+            check("…the page that draws the plate still reads 3000 either way",
+                  Flattener.drawnLargestImage(of: drawing)
+                      == .largest(dpi: 3000 / (612.0 / 72.0), pixelWidth: 3000),
+                  "\(Flattener.drawnLargestImage(of: drawing))")
+            check("…a page that draws nothing draws no image",
+                  Flattener.drawnLargestImage(of: quiet) == .noImage,
+                  "\(Flattener.drawnLargestImage(of: quiet))")
+            // The two that killed repair 2. A walk that does not scan a form's own content
+            // stream reports `.noImage` here, and one that skips resource-less forms
+            // reports it on the second.
+            check("…an image drawn inside a Form XObject is found",
+                  Flattener.drawnLargestImage(of: viaForm)
+                      == .largest(dpi: 3000 / (612.0 / 72.0), pixelWidth: 3000),
+                  "\(Flattener.drawnLargestImage(of: viaForm))")
+            check("…and inside a form carrying no /Resources of its own",
+                  Flattener.drawnLargestImage(of: viaBareForm)
+                      == .largest(dpi: 3000 / (612.0 / 72.0), pixelWidth: 3000),
+                  "\(Flattener.drawnLargestImage(of: viaBareForm))")
+            // T14's rule, and `drawsAnyXObject`'s: a name this cannot follow is "could not
+            // tell", never "draws nothing". The difference is whether a caller keeps a real
+            // scan's resolution or drops it to the fallback on the strength of an
+            // instrument that measured nothing.
+            check("…while a `Do` naming nothing the dictionary holds is unreadable",
+                  Flattener.drawnLargestImage(of: unresolved) == .unreadable,
+                  "\(Flattener.drawnLargestImage(of: unresolved))")
+            check("…and that page still draws an XObject as far as the shipped guard sees",
+                  Flattener.drawsAnyXObject(unresolved) == true,
+                  "\(String(describing: Flattener.drawsAnyXObject(unresolved)))")
+            // **The drawn walk can report a WIDER image than the dictionary walk**, and it
+            // is not a defect in either. Both pick the largest by *area* and then report
+            // its *width*, so the drawn subset's winner can be the wider of two. This is
+            // the cause of the observation C24 records without one: `AI 2027` p4 draws only
+            // `/Im5`, 3000x1011, while the dictionary's largest by area is `/Im52`,
+            // 2929x2370. The entry blamed the `walkedAt` memo, tested that, and refuted it.
+            // Six corpus pages behave this way, all of them in `AI 2027`.
+            //
+            // Asserted rather than assumed away, because the obvious invariant — "a subset
+            // cannot answer larger" — is false, and a check asserting it would have passed
+            // on every other page of this fixture while being wrong about the corpus.
+            guard let widerDrawn = sd.page(at: 6), let emptyForm = sd.page(at: 7),
+                  let scoped = sd.page(at: 8) else {
+                check("the shared-/Resources fixture has nine readable pages", false)
+                resetPrefs()
+                exit(1)
+            }
+            check("…the dictionary's largest by area is the 3000 px plate",
+                  Flattener.largestImage(of: widerDrawn)?.pixelWidth == 3000,
+                  "\(Flattener.largestImage(of: widerDrawn)?.pixelWidth ?? -1)")
+            check("…yet the page draws a 4000 px strip, so the drawn walk answers wider",
+                  Flattener.drawnLargestImage(of: widerDrawn)
+                      == .largest(dpi: 4000 / (612.0 / 72.0), pixelWidth: 4000),
+                  "\(Flattener.drawnLargestImage(of: widerDrawn))")
+
+            // A form that draws no image. **The premise is the whole check**: this page must
+            // reach the width guard, which means the shipped `drawsAnyXObject` has to say
+            // `true` here — otherwise `.noImage` comes from the early return one page 1
+            // already covers, and the mutant on the guard survives. Every other page of this
+            // fixture either returns early or ends with a width.
+            check("C24b — a page whose only XObject is a form does draw an XObject",
+                  Flattener.drawsAnyXObject(emptyForm) == true,
+                  "\(String(describing: Flattener.drawsAnyXObject(emptyForm)))")
+            check("…and when that form draws no image, the answer is no image, not unknown",
+                  Flattener.drawnLargestImage(of: emptyForm) == .noImage,
+                  "\(Flattener.drawnLargestImage(of: emptyForm))")
+
+            // Resource scoping: a bare form nested inside a form that carries its own
+            // `/Resources`, both scopes defining `/Ix`. The premise again — the page's
+            // dictionary really does hold the bigger one, so answering 1500 cannot be an
+            // accident of the fixture holding nothing else.
+            check("…the scoping page's own dictionary reaches the 3000 px plate",
+                  Flattener.largestImage(of: scoped)?.pixelWidth == 3000,
+                  "\(Flattener.largestImage(of: scoped)?.pixelWidth ?? -1)")
+            check("…yet a bare form resolves /Ix in its invoker's scope, not the page's",
+                  Flattener.drawnLargestImage(of: scoped)
+                      == .largest(dpi: 1500 / (612.0 / 72.0), pixelWidth: 1500),
+                  "\(Flattener.drawnLargestImage(of: scoped))")
         } else {
-            check("the shared-/Resources fixture has two readable pages", false)
+            check("the shared-/Resources fixture's first two pages are readable", false)
         }
     }
     resetPrefs()
