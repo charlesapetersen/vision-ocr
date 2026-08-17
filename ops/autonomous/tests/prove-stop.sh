@@ -61,7 +61,7 @@ GRN=$'\033[32m'; RED=$'\033[31m'; OFF=$'\033[0m'
 ok()  { PASS=$((PASS+1)); echo "  ${GRN}PASS${OFF} $1"; }
 bad() { FAIL=$((FAIL+1)); echo "  ${RED}FAIL${OFF} $1"; }
 
-# Every stand-in process this harness starts, so cleanup is total even on a Ctrl-C. `sleep 9873xx` argvs are
+# Every stand-in process this harness starts, so cleanup is total even on a Ctrl-C. `sleep 9763xx` argvs are
 # unique to this file so a stray one is identifiable, and the reap is guarded on the sleep name so a RECYCLED
 # pid is never killed.
 PIDS=""
@@ -71,11 +71,22 @@ cleanup() {
   for p in $PIDS; do
     case "$(ps -o command= -p "$p" 2>/dev/null)" in *sleep\ 9873*) kill -KILL "$p" 2>/dev/null ;; esac
   done
-  # …and anything whose argv names THIS sandbox. The $PIDS loop above only catches processes that are
-  # themselves `sleep 9873xx`; it misses the wrappers (`bash $T/inside-probe.sh`, the fake loop, the
-  # stand-in suite) whose own children would otherwise be left running with the temp dir deleted under them.
+  # …and anything whose argv names THIS sandbox: the wrappers (`bash $T/inside-probe.sh`, the fake loop, the
+  # stand-in suite), which the $PIDS loop cannot match because their argv is a path, not a sleep.
   # Keyed on $T, so it can only ever match processes this run created.
   pkill -f "$T" >/dev/null 2>&1
+  # ⚠️ AND THE WRAPPERS' OWN `sleep` CHILDREN, which is the leak this line exists for. Measured after this
+  # harness's first six runs: THIRTY orphaned `sleep` processes, up to 1h54m old. The two sweeps above are
+  # both blind to them — a child's argv is bare ("sleep 976398"), so it carries no $T, and only the wrapper
+  # pid was ever tracked. Killing a wrapper does not take its children: that is D2's lesson, and this file
+  # reproduced it two hours after documenting it, which is exactly why prove-daemon.sh's header records the
+  # same class ("four orphaned sandboxes after four pkill'd runs").
+  # A tree walk cannot fix it here — by cleanup time the wrappers may already be dead and their children
+  # reparented to init, so ancestry is gone. The number range IS the identity instead: 9763xx is unique to
+  # this file, deliberately disjoint from prove-daemon.sh's 98732x/987654, so this cannot reach across to a
+  # sibling harness even if one were running (they must not run concurrently for other reasons — see the
+  # header).
+  pkill -f 'sleep 9763' >/dev/null 2>&1
   rm -rf "$T"
 }
 trap cleanup EXIT INT TERM
@@ -132,9 +143,9 @@ run_stop() {
 mk_fake_loop() {   # echoes "parentpid grandchildpid"
   cat > "$T/vision-ocr-autonomous.sh" <<'LOOP'
 #!/usr/bin/env bash
-sleep 987301 &          # stands in for test-lock.sh -> run_tests.sh -> build/tests
+sleep 976301 &          # stands in for test-lock.sh -> run_tests.sh -> build/tests
 echo "$!" > "$1"
-sleep 987302
+sleep 976302
 LOOP
   chmod +x "$T/vision-ocr-autonomous.sh"
   bash "$T/vision-ocr-autonomous.sh" "$T/gc.pid" >/dev/null 2>&1 &
@@ -151,7 +162,7 @@ echo
 # ---- preflight: the interposition must actually intercept -----------------------------------------------
 echo "[0] SANDBOX INTEGRITY — the stubs must intercept under daemon.sh's own PATH"
 : > "$T/launchctl.log"
-outside=$( { sleep 987399 >/dev/null 2>&1 & } ; echo $! ); track "$outside"
+outside=$( { sleep 976399 >/dev/null 2>&1 & } ; echo $! ); track "$outside"
 # ⚠️ TWO CONTROLS, NOT ONE, and the positive one is the reason this block was rewritten. The first version
 # asserted only that the OUTSIDE pid was absent from the probe — which an EMPTY probe satisfies, for any
 # reason at all: a stub that failed to load, a usage error, a typo in the pattern. It was a check that could
@@ -159,14 +170,14 @@ outside=$( { sleep 987399 >/dev/null 2>&1 & } ; echo $! ); track "$outside"
 # So: a NEGATIVE control (the outside process must be invisible) AND a POSITIVE one (a process inside $T must
 # be visible). Only both together distinguish "correctly filtered" from "returned nothing".
 # ⚠️ THE TWO CONTROLS NEED TWO PATTERNS, and the first attempt got this wrong in a way worth recording. It
-# used one pattern (`sleep 98739`) for both, expecting it to match the inside process and not the outside one.
+# used one pattern (`sleep 97639`) for both, expecting it to match the inside process and not the outside one.
 # It matched NEITHER, and the positive control caught that and aborted: the filter keys on whether a
-# process's ARGV contains $T, and a `sleep 987398` process's argv is just "sleep 987398" — the sandbox path is
+# process's ARGV contains $T, and a `sleep 976398` process's argv is just "sleep 976398" — the sandbox path is
 # in its PARENT's argv, not its own. So the inside marker has to be matched by the pattern that names the
 # SCRIPT (`inside-probe.sh`, whose argv is "bash $T/inside-probe.sh" and therefore carries both), while the
 # outside control stays a bare `sleep` that legitimately carries no $T at all.
 inside_marker="$T/inside-probe.sh"
-printf '#!/usr/bin/env bash\nsleep 987398\n' > "$inside_marker"; chmod +x "$inside_marker"
+printf '#!/usr/bin/env bash\nsleep 976398\n' > "$inside_marker"; chmod +x "$inside_marker"
 bash "$inside_marker" >/dev/null 2>&1 &
 inside=$!; track "$inside"
 sleep 0.5
@@ -174,7 +185,7 @@ probe="$(VISIONOCR_STATE="$STATE" BASH_ENV="$T/preload.sh" bash -c '
   export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
   launchctl bootout gui/0/probe >/dev/null 2>&1
   echo "POS:$(pgrep -f "inside-probe.sh" | tr "\n" " ")"
-  echo "NEG:$(pgrep -f "sleep 987399" | tr "\n" " ")"
+  echo "NEG:$(pgrep -f "sleep 976399" | tr "\n" " ")"
 ' 2>"$T/probe.stderr")"
 [ -s "$T/launchctl.log" ] \
   && ok "launchctl is the stub, even after daemon.sh's PATH export (no real bootout)" \
@@ -202,7 +213,7 @@ kill -KILL "$inside" 2>/dev/null
 # pkill aimed squarely at its argv.
 VISIONOCR_STATE="$STATE" BASH_ENV="$T/preload.sh" bash -c '
   export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin:${PATH:-}"
-  pkill -f "sleep 987399" >/dev/null 2>&1' || true
+  pkill -f "sleep 976399" >/dev/null 2>&1' || true
 sleep 0.5
 kill -0 "$outside" 2>/dev/null \
   && ok "pkill is filtered too — the pre-fix code cannot reach outside this sandbox" \
@@ -237,14 +248,14 @@ fi
 
 # ---- [2]+[4] the owner's own suite is untouchable -------------------------------------------------------
 echo "[2] THE OWNER'S OWN SUITE IS NEVER KILLED, AND ITS LOCK IS NEVER BROKEN (D2 ⛔ / D3 converse)"
-# ⚠️ THE STAND-IN HAS TO LOOK LIKE A SUITE, or this section cannot fail. A bare `sleep 987310` has no $T in
+# ⚠️ THE STAND-IN HAS TO LOOK LIKE A SUITE, or this section cannot fail. A bare `sleep 976310` has no $T in
 # its argv, so the pgrep stub would filter it out and it would survive no matter what `stop` did — a check
 # that passes because of the sandbox rather than because of the code, which is the exact shape this project
 # calls a check that cannot fail. So the stand-in is `bash $T/owner-suite/run_tests.sh`: its argv carries $T,
 # the stub therefore CAN return it, and the only thing keeping it alive is that `stop` refuses to kill what it
 # cannot trace to the daemon. Reintroduce a `pkill -f run_tests.sh` sweep and this goes red immediately.
 mkdir -p "$T/owner-suite"
-printf '#!/usr/bin/env bash\nsleep 987310\n' > "$T/owner-suite/run_tests.sh"
+printf '#!/usr/bin/env bash\nsleep 976310\n' > "$T/owner-suite/run_tests.sh"
 chmod +x "$T/owner-suite/run_tests.sh"
 bash "$T/owner-suite/run_tests.sh" >/dev/null 2>&1 &
 mine=$!; track "$mine"
@@ -313,7 +324,7 @@ kill -KILL "$reader" 2>/dev/null
 echo "[7] A STOP NEVER KILLS ITSELF OR THE SHELL THAT INVOKED IT"
 # The strongest available evidence: this harness is still executing, and a marker child of THIS shell — which
 # `stop` walked past while collecting trees — is still alive after two stops.
-marker=$( { sleep 987320 >/dev/null 2>&1 & } ; echo $! ); track "$marker"
+marker=$( { sleep 976320 >/dev/null 2>&1 & } ; echo $! ); track "$marker"
 out="$(run_stop)"; sleep 1
 kill -0 "$marker" 2>/dev/null && ok "this harness's own child survived (stop excluded itself and its ancestors)" \
                               || bad "stop killed a child of the invoking shell — it swept up its own caller"
