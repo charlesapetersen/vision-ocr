@@ -201,7 +201,7 @@ finished.
 ./run_tests.sh
 ```
 
-1,159 checks at `c17b3f3`, and anywhere from about a minute and a half to about forty depending on what else the
+1,163 checks at `b11c236`, and anywhere from about a minute and a half to about forty depending on what else the
 machine is doing, because it runs real OCR rather than mocking it. Every run through
 `ops/autonomous/test-lock.sh` records its own duration and the load average beside it, so the
 spread is a fact you can look up rather than one you have to rediscover.
