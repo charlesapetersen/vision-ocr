@@ -216,7 +216,7 @@ If something ever does drive it directly, these are the things that would bite:
 
 ## What the tests don't cover
 
-1,163 checks at `b11c236`, real OCR, and no single duration — the same suite has been timed at 416-632 s on a
+1,175 checks at `d56fd0e`, real OCR, and no single duration — the same suite has been timed at 416-632 s on a
 quiet machine, ~37-40 minutes with other work alongside, and ~45 min per run overnight during the
 C24b mutant campaign, so plan against the load, not a number
 (`ops/autonomous/README.md`, and the per-run ledger in `$STATE/suite-timings.tsv`). The gaps listed here through 1.0 — the failure

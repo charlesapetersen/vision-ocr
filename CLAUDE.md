@@ -184,7 +184,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,163 checks at b11c236; 8-45 min depending on machine load, real OCR
+./run_tests.sh        # 1,175 checks at d56fd0e; 8-45 min depending on machine load, real OCR
                       # measured 474 s quiet -> 2,719 s under the C24b campaign. Never size a
                       # timeout off one sample: ops/autonomous/README.md keeps the ledger.
 ```
