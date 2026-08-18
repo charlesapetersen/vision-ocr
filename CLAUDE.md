@@ -15,8 +15,14 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **nothing is open
-as of 2026-08-17**: **C24 is `FIXED`**, both halves. A page that draws no
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **one entry is open as
+of 2026-08-17: `C26`, and it loses content at the DEFAULT Photo detail setting.** A small line
+drawing is erased on the picture path because `pageIsAllText()` shrinks the tone layers 8x and 16x
+and the pale-drawing guard in front of that needs 5% of the page to fire; three of four drawings
+in a 10-page booklet went, every word survived, and `1.13.0` shipped it hours earlier having been
+cut against an empty register. It is **not** R56 — that fix is intact and works on the other
+route. **`Tools/score-gate.swift` cannot see this class**, by its own source, so do not read a
+green gate as covering it. **C24 is `FIXED`**, both halves. A page that draws no
 XObject at all no longer takes another page's plate resolution (85 pages over 3 documents,
 structural, no threshold, 0 route changes), and **the 45 pages that draw a *different*
 image than the shared dictionary holds were closed the same day** — `rebuildDPI(of:)` applies

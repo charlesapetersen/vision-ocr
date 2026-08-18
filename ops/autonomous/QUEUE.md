@@ -114,6 +114,26 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       the tool needed repairing before it could be the gate. The `score-routing` half is right.
       Read the entry's `C24b` and `C24's wiring` sections first, not this line.
       (origin: BUGS.md C24, FIXED)
+- [ ] **C26** — a small line drawing is erased on the picture path, at the SHIPPED DEFAULT Photo
+      detail setting. Content loss, found by the owner on `1954 - Why.pdf` hours after `1.13.0`
+      shipped. **Read the entry before anything else** — it carries the four-page rendering, the
+      `score-threshold-loss` table, the mechanism and three named unmeasured questions.
+      **Sub-step 1, and it is cheap: TEST THE PREDICTION.** The entry predicts that Photo detail
+      **Maximum** preserves all four drawings, because `keepEveryPixel = backgroundDownsample <= 1`
+      skips the shrink. Measure it. If it holds, that is the user workaround and the diagnosis is
+      confirmed; if it fails, the entry is wrong about the mechanism and the routing is where to
+      look. Do this before designing any fix.
+      **Sub-step 2: sweep before tuning.** `Tools/score-threshold-loss.swift` prints `lost` per
+      page, so one corpus sweep says how many pages carry a sub-5% mark on a picture-path page.
+      ⛔ **Do NOT tune `paleDrawingThreshold` on this one document** — that is the failure R55 and
+      R56 both record, and R56's signal was refused four times for admitting show-through and
+      decorative shading. The entry argues the real shape is that one constant is answering two
+      questions at different costs (a ROUTE in `isPicture`, a RESOLUTION in `mrcLayers`), which
+      needs no new signal because `pageMarks` already finds these marks.
+      ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
+      so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
+      the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.
+      (origin: BUGS.md C26)
 - [ ] **depth-cap** — `Flattener.drawnLargestImage`'s `case "Form"` branch caps recursion at `depth < 3`
       while `largestImage` caps at `< 4`, and **the stated reason for the mismatch expired when `c17b3f3`
       made the drawn walk production**. That comment says so itself: the symmetry existed so the

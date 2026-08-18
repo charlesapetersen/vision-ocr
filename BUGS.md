@@ -6,7 +6,13 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Nothing open, and no release blocker.** **C24 closed 2026-08-17** — read the paragraph
+**One open: `C26`, and it destroys content on the shipped default setting.** Opened 2026-08-17,
+hours after `1.13.0` was cut against an empty register — a small line drawing on a page the code
+correctly reads as all text is erased on the picture path, because the guard that would protect it
+needs the mark to cover 5% of the page and these cover 0.2%. It is **not** R56, whose fix is
+intact and whose mechanism is the other route; read C26 before touching either. **The release gate
+cannot see this class and says so in its own source**, so a green gate is not evidence about it.
+**C24 closed 2026-08-17** — read the paragraph
 beginning "**C24 is now `FIXED`**" below before trusting that sentence, and correct this line
 in the same commit as any entry you open. This file has published "nothing open" while four
 entries were open, and it has published "one open" while that one was closed. **R56 and R57
@@ -2101,6 +2107,94 @@ would put dead code on the app's side, which is the call `score-skew` and
 now. **The 8.2 KB figure is left standing but unverified** — re-deriving it needs a run over
 `Blacks in the City`, which is a separate job; TODO item 1 is refused on R56's grounds
 regardless, so nothing waits on it.
+
+### C26 · A small line drawing is erased on the PICTURE path, because the page it sits on is correctly read as all text — OPEN
+*(found 2026-08-17 by the owner, on `1954 - Why.pdf` processed by 1.13.0 at Photo detail
+**Balanced**, Rebuild **Automatic** — the release cut the same day)*
+
+**Three of the four red line drawings in a 10-page booklet are erased or all but erased, and
+every word on every page survives**, which is what makes it invisible in use. Rendered at
+55 DPI from the shipped output, against the same page of the input:
+
+```
+page  drawing              outcome
+p4    bottom right         erased — a faint vertical ghost is all that is left
+p6    top left             ERASED COMPLETELY — blank white where a cartoon figure was
+p7    bottom right         mostly destroyed — one dark fragment survives
+p9    bottom left          SURVIVES, rendered black rather than red
+```
+
+**This is NOT R56, and R56's fix is intact.** `Tools/score-threshold-loss.swift` over the four
+pages says the drawings that die are on the **picture** path and the one that lives is on the
+**1-bit** one — the opposite way round from R56, whose harm is 1-bit thresholding erasing a
+pale mark:
+
+```
+document      page  otsu  ink    tone   sat    lost    route
+1954 - Why    p4    139   0.102  0.144  0.039  0.0017  picture
+1954 - Why    p6    140   0.094  0.164  0.043  0.0016  picture
+1954 - Why    p7    139   0.104  0.148  0.041  0.0032  picture
+1954 - Why    p9    130   0.106  0.071  0.041  0.0160  1-bit
+```
+
+p9 survives *because* it reaches the 1-bit route, where its drawing is dark enough against that
+page's lower Otsu (130 against 139/140) to be cut into the stencil and published as ink.
+
+**The mechanism, and `Flattener.mrcLayers` already names it.** On the picture path
+`pageIsAllText()` decides whether to shrink the tone layers by `textPageBackgroundDownsample`
+(**8**) and `textPageForegroundDownsample` (**16**) instead of the caller's factor. The comment
+above it says, in terms:
+
+> **And the pale drawing is asked about again here**, because closing R56 in `isPicture` alone
+> would have moved the harm rather than removed it. … it is harmless at 2x and much less so at
+> 8x, and it is the same miss in front of a second decision. CONTRIBUTING 4b: the register's
+> most repeated shape is a fix that closed one instance of a defect and left its twin.
+
+So the guard was **deliberately placed at this second decision** and it cannot fire on these
+pages. `pageIsAllText()` returns false — protecting the page — only when
+`paleDrawing(pageMarks(…)).extent > paleDrawingThreshold`, and that threshold is **0.05**: a pale
+mark must cover **5% of the page**. These are corner vignettes covering **0.17%–0.32%** of it
+(the `lost` column above). The page then is read as all text, which it truthfully is, and a fine
+line stored at 1/16 resolution is gone.
+
+**`paleDrawingThreshold` is doing two different jobs at two different costs.** In `isPicture` it
+decides a ROUTE, where a false positive sends a text page down the picture path and costs bytes.
+Here it decides a RESOLUTION, where a false negative costs the drawing outright. 5% is a
+defensible bar for the first question and is the wrong order of magnitude for the second. That is
+the shape to fix, and it needs no new signal: `pageMarks` already found these marks.
+
+**PREDICTED, NOT MEASURED — do this first.** `keepEveryPixel = backgroundDownsample <= 1`, so at
+Photo detail **Maximum** the shrink is skipped entirely and all four drawings should survive
+untouched. If they do, that is both the user workaround and proof the diagnosis is right; if they
+do not, this entry is wrong about the mechanism and the routing is where to look next. Balanced
+is 2 and Smallest is 3, so **both are exposed** — and Balanced is the shipped default
+(`Prefs.swift`).
+
+**⚠️ THE RELEASE GATE CANNOT SEE THIS, AND SAYS SO IN ITS OWN SOURCE.** `Tools/score-gate.swift`
+ran this exact document during 1.13.0's release gate and passed it: page 6 rendered from the
+gate's output and from the owner's output are **pixel-identical** (`f4d852ba…`), and the only
+page the gate named was p3, a benign background clean. Its one detector for this class is the
+fade ratio at `:688`, whose comment reads "**R56 is only visible to this one** … Counted and
+recorded, **never reported as a finding**" with `fadeCount = 0.5`. Worse, the four pages it
+counted as faded on this document are **3, 5, 8 and 9** — the pages whose grey background was
+legitimately cleaned, where mean darkness halves — and **not** 4, 6 or 7, because losing a 0.2%
+vignette barely moves a page's mean darkness while its text stays put. So no signal in the gate
+fired on this at all. `score-gate.swift:619` states the limit plainly: `pages`, `ink` and `blank`
+"are the only thing that localises a *partial* pixel loss, which the absolute check below cannot
+see." A whole-corpus gate that is green is therefore not evidence about this defect class.
+
+**Consequence for 1.13.0, stated rather than buried.** Its release notes assert that a pale
+drawing being erased is fixed, and for R56's mechanism that is true. This is a second mechanism
+with the same user-visible harm, it is in the shipped default setting, and the notes do not
+mention it. Whether to amend them is the owner's call and is not part of this entry.
+
+**Not yet measured, and each is a real question:** how many corpus pages carry a mark under the
+5% bar on a picture-path page (`score-threshold-loss` prints `lost` for every page, so this is
+one sweep); whether a bar set by mark *size* rather than page *fraction* separates these
+vignettes from the decorative shading and show-through R56 was refused four times for admitting;
+and whether the fix belongs in `paleDrawingThreshold`, in a second constant for this decision, or
+in `pageMarks`' own output. **Do not tune a constant on this one document** — that is the failure
+R55 and R56 both record.
 
 ## Robustness and correctness of reporting
 

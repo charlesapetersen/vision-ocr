@@ -78,7 +78,7 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 1,141 checks; 8-45 minutes depending on load (it runs real OCR)
+./run_tests.sh        # 1,159 checks at c17b3f3; 8-45 min depending on load (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -224,7 +224,7 @@ warns about in as many words.
 the consequence, and whether it was verified by running code or only reasoned
 about.
 
-**Nothing is open as of 2026-08-17** — `C24` was the last one and it is `FIXED`, both halves:
+**One entry is open as of 2026-08-17: `C26`** — a small line drawing erased on the picture path at the default Photo detail setting, opened hours after `1.13.0` shipped and on a document the release gate had already passed. It is not R56. Read C26, and read the note below about what this gate can and cannot see. **`C24` was open before it and is `FIXED`**, both halves:
 a page that draws no XObject at all no longer takes another page's plate resolution, and the 45
 pages that draw a *different* image than the shared dictionary holds now take their own, after a
 corpus gate that moved exactly those 45 of 16,987 for **+8 matched words of 3,025** and 25-81%
