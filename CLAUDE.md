@@ -16,13 +16,26 @@ paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries are open as
-of 2026-08-17, `C26` and `C27`, both found on one document after `1.13.0` shipped. `C26` loses
+of 2026-08-18, `C26` and `C27`, both found on one document after `1.13.0` shipped. `C26` loses
 content at the DEFAULT Photo detail setting; `C27` discards spot colour and is fidelity rather
 than loss.** A small line
 drawing is erased on the picture path because `pageIsAllText()` shrinks the tone layers 8x and 16x
-and the pale-drawing guard in front of that needs 5% of the page to fire; three of four drawings
+and the pale-drawing guard in front of that does not fire;
+three of four drawings
 in a 10-page booklet went, every word survived, and `1.13.0` shipped it hours earlier having been
-cut against an empty register. It is **not** R56 — that fix is intact and works on the other
+cut against an empty register. **This sentence said the guard "needs 5% of the page to fire" and
+C26 said those marks cover 0.2% — measured 2026-08-18, that 0.2% was a different function's
+column, and the quantity the 5% bar actually reads is `0.00000` on the two pages that lose the
+most.** So the guard finds no drawing-shaped mark at all there, and lowering `paleDrawingThreshold`
+to any value protects neither page; the fix has to be in what `pageMarks`/`paleDrawing` *find*,
+and which of their four filters rejects a red line is the next single measurement. **The corpus
+sweep both entries were blocked on ran the same day** — 441 pages, 233 documents,
+`THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes C26 (61 picture-route pages: 2 protected, 22 under
+the bar, 37 at zero, and the cluster under the bar is led by the show-through document R56 was
+refused four times for) while **not** sizing C27, because a mean saturation cannot see concentrated
+colour and C27's own measurement was a saturated-pixel fraction no tool here prints. Both entries
+carry the numbers, the retractions and what is left. It is **not** R56 — that fix is intact and
+works on the other
 route. **`Tools/score-gate.swift` cannot see this class**, by its own source, so do not read a
 green gate as covering it. **C24 is `FIXED`**, both halves. A page that draws no
 XObject at all no longer takes another page's plate resolution (85 pages over 3 documents,

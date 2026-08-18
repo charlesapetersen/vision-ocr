@@ -1,0 +1,442 @@
+document	page	otsu	ink	tone	sat	lost	extent	cover	cells	factor	route
+(F) Dickens	p3	90	0.091	0.000	0.000	0.0000	0.00000	0.00000	2849520	1	1-bit
+(F) Dickens	p6	90	0.100	0.000	0.000	0.0000	0.00000	0.00000	2849092	1	1-bit
+1881 - Harry Wilcox	p4	125	0.145	0.140	0.062	0.1982	0.00796	0.00915	2010750	2	picture
+1881 - Harry Wilcox	p7	126	0.133	0.103	0.068	0.0841	0.48119	0.03969	1775610	2	picture
+1935_Title Page	p2	128	0.006	0.000	0.000	0.0000	0.00000	0.00000	1622880	2	1-bit
+1935_Title Page	p3	186	0.000	0.000	0.000	0.0000	0.00000	0.00000	1622880	2	1-bit
+1944_Options picking up	p2	151	0.254	0.307	0.007	0.0415	0.00156	0.00043	1522638	1	picture
+1944_Options picking up	p3	90	0.006	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+1947_Corporation Tax Study Due By House Body	p2	187	0.148	0.144	0.006	0.0242	0.00000	0.00000	1678600	1	picture
+1947_Corporation Tax Study Due By House Body	p3	144	0.025	0.010	0.000	0.0596	0.00000	0.00000	1668096	1	1-bit
+1954 - Why	p4	139	0.102	0.144	0.039	0.0017	0.00000	0.00000	887616	1	picture
+1954 - Why	p7	139	0.104	0.148	0.041	0.0032	0.00029	0.00021	887616	1	picture
+1957_Allied Chemical & Dye Corporation Annual Report -- 1957	p12	90	0.233	0.000	0.000	0.0000	0.00000	0.00000	1504496	2	1-bit
+1957_Allied Chemical & Dye Corporation Annual Report -- 1957	p24	128	0.035	0.003	0.000	0.0001	0.00000	0.00000	1165100	2	1-bit
+1958_CiT Financial Corporation Annual Report -- 1958	p14	128	0.086	0.009	0.000	0.0000	0.00000	0.00000	1274280	2	picture
+1958_CiT Financial Corporation Annual Report -- 1958	p28	90	0.070	0.000	0.000	0.0000	0.00000	0.00000	692831	2	1-bit
+1958_E	p17	128	0.120	0.005	0.000	0.0000	0.00000	0.00000	482202	2	1-bit
+1958_E	p34	90	0.075	0.000	0.000	0.0000	0.00000	0.00000	615244	2	1-bit
+1958_General Foods Corporation Annual Report -- 1958	p10	90	0.106	0.001	0.000	0.0000	0.00000	0.00000	995596	2	1-bit
+1958_General Foods Corporation Annual Report -- 1958	p19	128	0.063	0.000	0.000	0.0000	0.00000	0.00000	948934	2	1-bit
+1958_The Anaconda Company Annual Report -- 1958	p12	90	0.057	0.000	0.000	0.0000	0.00000	0.00000	943460	2	1-bit
+1958_The Anaconda Company Annual Report -- 1958	p23	128	0.071	0.005	0.000	0.0000	0.00000	0.00000	955840	2	1-bit
+1958_The Goodyear Tire & Rubber Company Annual Report -- 1958	p15	90	0.099	0.000	0.000	0.0000	0.00000	0.00000	1293980	2	1-bit
+1958_The Goodyear Tire & Rubber Company Annual Report -- 1958	p29	90	0.269	0.000	0.000	0.0000	0.00000	0.00000	1350048	2	1-bit
+1976 - Regis McKenna Papers - Early Career, 1965-1981	p4	129	0.144	0.063	0.063	0.1958	0.04492	0.02053	1991115	2	picture
+1976 - Regis McKenna Papers - Early Career, 1965-1981	p7	131	0.181	0.234	0.105	0.1488	0.02922	0.01401	1957062	2	picture
+1976_Results of Trading in Stock Options	p1	131	0.140	0.006	0.000	0.0000	0.00000	0.00000	1584198	2	1-bit
+2008_Hoagland oral history	p11	90	0.067	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+2008_Hoagland oral history	p6	90	0.053	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+2008_McIntyre oral history	p13	90	0.063	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+2008_McIntyre oral history	p7	90	0.050	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+2013 - Silicon Valley Program Transcript	p13	166	0.090	0.018	0.050	0.0033	0.00000	0.00000	3256058	1	1-bit
+2013 - Silicon Valley Program Transcript	p26	166	0.097	0.020	0.050	0.0033	0.00000	0.00000	3256058	1	1-bit
+2015_Gibbs oral history	p24	90	0.022	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+2015_Gibbs oral history	p48	90	0.022	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+2017_Bunnell oral history, athletics	p24	90	0.020	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+2017_Bunnell oral history, athletics	p47	90	0.019	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+2024 - Class Action lawsuit re need blind admissions	p26	156	0.042	0.017	0.003	0.0001	0.00000	0.00000	1612948	1	1-bit
+2024 - Class Action lawsuit re need blind admissions	p51	155	0.048	0.019	0.003	0.0000	0.00000	0.00000	1612948	1	1-bit
+AI 2027	p24	149	0.079	0.021	0.013	0.0000	0.00000	0.00000	1803480	1	1-bit
+AI 2027	p48	137	0.047	0.008	0.001	0.0000	0.00000	0.00000	1665475	2	1-bit
+Albanese_1997_Senate Will Examine Stock Option Bill	p2	162	0.128	0.077	0.063	0.0800	0.00046	0.00025	714546	2	picture
+Albanese_1997_Senate Will Examine Stock Option Bill	p3	149	0.013	0.005	0.000	0.0009	0.00000	0.00000	659736	1	1-bit
+Allen_2011_The Origins of Political Philosophy_Oxford University Press	p10	135	0.121	0.012	0.000	0.0002	0.00000	0.00000	949048	2	1-bit
+Allen_2011_The Origins of Political Philosophy_Oxford University Press	p20	135	0.114	0.011	0.000	0.0000	0.00000	0.00000	949048	2	1-bit
+Anderson_1997_Legacy of the American Frontier_California State University, Fresno	p107	90	0.178	0.000	0.000	0.0000	0.00000	0.00000	1702134	2	1-bit
+Anderson_1997_Legacy of the American Frontier_California State University, Fresno	p54	90	0.007	0.000	0.000	0.0000	0.00000	0.00000	1680380	2	1-bit
+Astin__The Challenge of Open Admissions by Alexander W_UNZ.org	p2	135	0.094	0.010	0.001	0.0000	0.00000	0.00000	1639456	2	1-bit
+Astin__The Challenge of Open Admissions by Alexander W_UNZ.org	p3	128	0.188	0.017	0.001	0.0001	0.00000	0.00000	1639456	2	1-bit
+Atkinson_1939_Atkinson on firings_	p2	118	0.096	0.160	0.061	0.1098	0.00944	0.00776	3844260	1	picture
+Atkinson_1939_Atkinson on firings_	p3	130	0.102	0.157	0.045	0.0808	0.00053	0.00218	3844260	1	picture
+Autor et al_2020_Extending the Race between Education and Technology	p14	90	0.006	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Autor et al_2020_Extending the Race between Education and Technology	p7	90	0.065	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning	p45	90	0.079	0.000	0.000	0.0000	0.00000	0.00000	1620640	2	1-bit
+BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning	p89	90	0.067	0.000	0.000	0.0000	0.00000	0.00000	1644150	2	1-bit
+Baker_2000_The Supply-Side Effect of a Stock Market Crash	p5	129	0.089	0.000	0.000	0.0000	0.00000	0.00000	1333469	4	1-bit
+Baker_2000_The Supply-Side Effect of a Stock Market Crash	p9	129	0.083	0.000	0.000	0.0000	0.00000	0.00000	1333469	4	1-bit
+Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm	p135	90	0.054	0.000	0.000	0.0000	0.00000	0.00000	1691238	2	1-bit
+Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm	p269	90	0.044	0.000	0.000	0.0000	0.00000	0.00000	1685600	2	1-bit
+Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California	p19	136	0.064	0.012	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California	p37	136	0.056	0.010	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y.	p1	136	0.244	0.044	0.000	0.0113	0.00000	0.00000	1923012	1	picture
+Berger_2013_Toward a Third Industrial Divide_	p17	128	0.055	0.004	0.000	0.0000	0.00000	0.00000	1121456	2	1-bit
+Berger_2013_Toward a Third Industrial Divide_	p9	128	0.084	0.004	0.000	0.0000	0.00000	0.00000	1103792	2	1-bit
+Berle_1940_New directions in the new world,_Harper	p11	90	0.090	0.000	0.000	0.0000	0.00000	0.00000	702464	2	1-bit
+Berle_1940_New directions in the new world,_Harper	p21	90	0.089	0.000	0.000	0.0000	0.00000	0.00000	709632	2	1-bit
+Black_0000_The Scandal of Educational Testing	p2	156	0.231	0.113	0.000	0.0076	0.00000	0.00000	1089786	1	picture
+Black_0000_The Scandal of Educational Testing	p3	159	0.174	0.105	0.039	0.0073	0.00000	0.00000	1087104	1	picture
+Boltanski_2006_On justification_Princeton University Press	p136	141	0.256	0.013	0.000	0.0072	0.00017	0.00022	3263067	3	1-bit
+Boltanski_2006_On justification_Princeton University Press	p68	143	0.279	0.022	0.000	0.0078	0.00000	0.00000	1832844	2	1-bit
+Borges_The Lottery in Babylon	p2	90	0.075	0.002	0.000	0.0000	0.00000	0.00000	1665475	2	1-bit
+Borges_The Lottery in Babylon	p4	90	0.073	0.003	0.000	0.0000	0.00000	0.00000	1665475	2	1-bit
+Broadhead - 1994 - Regionalism and the Upper Class	p5	165	0.159	0.156	0.000	0.1884	0.02959	0.01089	3202364	1	picture
+Broadhead - 1994 - Regionalism and the Upper Class	p9	163	0.147	0.148	0.000	0.2081	0.03360	0.01081	3202364	1	picture
+Bullitt_1959_The Future American Class System_Horizon	p3	161	0.065	0.033	0.000	0.0033	0.00000	0.00000	1459842	1	1-bit
+Bullitt_1959_The Future American Class System_Horizon	p6	163	0.108	0.061	0.000	0.0020	0.00000	0.00000	1427926	1	1-bit
+Burke - The Expansion of American Higher Education	p17	128	0.057	0.001	0.000	0.0000	0.00000	0.00000	723144	4	1-bit
+Burke - The Expansion of American Higher Education	p9	128	0.068	0.001	0.000	0.0000	0.00000	0.00000	738135	4	1-bit
+CAMFIELD_Psychologists at War	p112	131	0.064	0.003	0.000	0.0000	0.00000	0.00000	1473192	2	1-bit
+CAMFIELD_Psychologists at War	p223	131	0.099	0.004	0.000	0.0000	0.00000	0.00000	1473192	2	1-bit
+CARTWRIGHT_Legislation Against Discrimination in Employment in New York State	p133	90	0.066	0.000	0.000	0.0000	0.00000	0.00000	1640112	2	1-bit
+CARTWRIGHT_Legislation Against Discrimination in Employment in New York State	p266	90	0.052	0.000	0.000	0.0000	0.00000	0.00000	1640112	2	1-bit
+Canby_1915_Current Literature and the Colleges_Harper & Brothers	p17	155	0.094	0.018	0.000	0.0202	0.00000	0.00000	627154	2	1-bit
+Canby_1915_Current Literature and the Colleges_Harper & Brothers	p9	155	0.094	0.016	0.000	0.0196	0.00000	0.00000	625534	2	1-bit
+Canby_1929_Comment on Several Subjects	p2	139	0.008	0.002	0.000	0.0000	0.00000	0.00000	1767957	2	1-bit
+Canby_1929_Comment on Several Subjects	p3	137	0.053	0.010	0.000	0.0000	0.00000	0.00000	1618074	2	1-bit
+Casey_1954_1954 pay almanac,	p4	154	0.092	0.037	0.000	0.0166	0.00000	0.00000	1126440	1	1-bit
+Casey_1954_1954 pay almanac,	p7	156	0.080	0.035	0.000	0.0219	0.00000	0.00000	1207794	1	1-bit
+Clark_The graphic rating scale at Northwestern University	p37	90	0.028	0.000	0.000	0.0000	0.00000	0.00000	1272736	3	1-bit
+Clark_The graphic rating scale at Northwestern University	p74	90	0.050	0.000	0.000	0.0000	0.00000	0.00000	1277290	3	1-bit
+Cohen_1990_Making a New Deal_Cambridge University Press	p3	129	0.088	0.000	0.001	0.0000	0.00000	0.00000	831048	4	1-bit
+Cohen_1990_Making a New Deal_Cambridge University Press	p6	129	0.087	0.000	0.001	0.0000	0.00000	0.00000	831048	4	1-bit
+Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review	p13	129	0.123	0.000	0.000	0.0000	0.00000	0.00000	1113165	4	1-bit
+Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review	p7	129	0.119	0.000	0.000	0.0000	0.00000	0.00000	1113165	4	1-bit
+Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972	p126	90	0.050	0.000	0.000	0.0000	0.00000	0.00000	1618724	2	1-bit
+Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972	p251	90	0.044	0.000	0.000	0.0000	0.00000	0.00000	1619845	2	1-bit
+Corson_Current practices in student guidance and personnel administration in liberal	p157	90	0.019	0.000	0.000	0.0000	0.00000	0.00000	1272736	3	1-bit
+Corson_Current practices in student guidance and personnel administration in liberal	p79	90	0.056	0.000	0.000	0.0000	0.00000	0.00000	1272736	3	1-bit
+Countryman - 2006 - Up south  civil rights and Black power in Philadelphia	p146	136	0.086	0.042	0.009	0.0045	0.00000	0.00000	1148022	2	1-bit
+Countryman - 2006 - Up south  civil rights and Black power in Philadelphia	p291	127	0.092	0.012	0.013	0.0057	0.00000	0.00000	1168452	2	1-bit
+Crystal_2000_Option grants leave CEOs with sinking feeling	p1	90	0.122	0.000	0.000	0.0000	0.00000	0.00000	2775380	2	1-bit
+DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa	p106	90	0.038	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa	p211	90	0.033	0.000	0.000	0.0000	0.00000	0.00000	1629800	2	1-bit
+DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas	p187	90	0.044	0.000	0.000	0.0000	0.00000	0.00000	1695375	2	1-bit
+DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas	p94	90	0.020	0.000	0.000	0.0000	0.00000	0.00000	1734698	2	1-bit
+Davis_2005_Optimism of the Will_Nation	p2	138	0.135	0.034	0.001	0.0034	0.00000	0.00000	1523676	2	picture
+Davis_2005_Optimism of the Will_Nation	p4	138	0.115	0.030	0.004	0.0000	0.00000	0.00000	1523676	2	1-bit
+Doermann_1967_The market for college education in the United States	p10	177	0.079	0.121	0.000	0.2846	0.03897	0.01758	1626561	2	picture
+Doermann_1967_The market for college education in the United States	p19	171	0.121	0.100	0.000	0.2577	0.00097	0.00055	1626077	2	1-bit
+Donahue - 2001 - Time to Get Serious About Talent Management	p2	135	0.112	0.011	0.000	0.0000	0.00000	0.00000	1439847	2	1-bit
+Donahue - 2001 - Time to Get Serious About Talent Management	p3	136	0.011	0.002	0.000	0.0000	0.00000	0.00000	1665475	2	1-bit
+Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II	p161	90	0.038	0.000	0.000	0.0000	0.00000	0.00000	1670652	2	1-bit
+Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II	p81	90	0.039	0.000	0.000	0.0000	0.00000	0.00000	1670652	2	1-bit
+ERICKSON - 1952 - The Taxation of Investment Companies in the United States	p227	90	0.045	0.000	0.000	0.0000	0.00000	0.00000	1660020	2	1-bit
+ERICKSON - 1952 - The Taxation of Investment Companies in the United States	p453	90	0.066	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Ehrenreich_2000_Maid to order_Harper's Magazine	p5	189	0.151	0.097	0.037	0.0331	0.00000	0.00000	2697800	1	picture
+Ehrenreich_2000_Maid to order_Harper's Magazine	p9	192	0.145	0.106	0.023	0.0221	0.00000	0.00000	2722188	1	picture
+Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po	p162	90	0.034	0.000	0.000	0.0000	0.00000	0.00000	1675116	2	1-bit
+Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po	p323	90	0.036	0.000	0.000	0.0000	0.00000	0.00000	1677734	2	1-bit
+Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press	p11	90	0.112	0.000	0.000	0.0000	0.00000	0.00000	863156	2	1-bit
+Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press	p21	128	0.113	0.002	0.000	0.0000	0.00000	0.00000	859712	2	1-bit
+Eyal-Cohen - Why Is Small Business the Chief Business of Congress	p20	135	0.076	0.007	0.000	0.0000	0.00000	0.00000	1216908	2	1-bit
+Eyal-Cohen - Why Is Small Business the Chief Business of Congress	p40	135	0.050	0.005	0.000	0.0000	0.00000	0.00000	1216908	2	1-bit
+Falasca-Zamponi_2004_The »Culture« of Personality	p10	161	0.087	0.042	0.000	0.0019	0.00000	0.00000	943272	1	1-bit
+Falasca-Zamponi_2004_The »Culture« of Personality	p20	90	0.070	0.000	0.000	0.0000	0.00000	0.00000	959784	2	1-bit
+Findlay_1992_Stanford Industrial Park_University of California Press	p21	166	0.259	0.080	0.000	0.0517	0.00000	0.00000	1007678	1	picture
+Findlay_1992_Stanford Industrial Park_University of California Press	p42	178	0.099	0.052	0.000	0.1284	0.00000	0.00000	936298	1	1-bit
+Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors	p20	129	0.072	0.000	0.000	0.0000	0.00000	0.00000	1131931	4	1-bit
+Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors	p39	129	0.075	0.000	0.000	0.0000	0.00000	0.00000	1131931	4	1-bit
+Ford_1941_Speech_	p3	116	0.053	0.149	0.045	0.0074	0.00036	0.00074	3844260	1	picture
+Ford_1941_Speech_	p5	126	0.092	0.336	0.057	0.0788	0.00069	0.00361	3844260	1	picture
+Freud_Fetishism	p3	90	0.035	0.000	0.000	0.0000	0.00000	0.00000	2440542	1	1-bit
+Freud_Fetishism	p5	90	0.103	0.000	0.000	0.0000	0.00000	0.00000	2440542	1	1-bit
+Friedman_1962_Capitalism and freedom_University of Chicago Press	p151	90	0.103	0.001	0.000	0.0000	0.00000	0.00000	1288000	1	1-bit
+Friedman_1962_Capitalism and freedom_University of Chicago Press	p76	90	0.096	0.001	0.000	0.0000	0.00000	0.00000	1288000	1	1-bit
+GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University	p142	90	0.045	0.000	0.000	0.0000	0.00000	0.00000	1644150	2	1-bit
+GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University	p71	90	0.142	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities	p148	90	0.042	0.000	0.000	0.0000	0.00000	0.00000	1599059	2	1-bit
+GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities	p74	90	0.029	0.000	0.000	0.0000	0.00000	0.00000	1584495	2	1-bit
+GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling	p110	90	0.051	0.000	0.000	0.0000	0.00000	0.00000	1646736	2	1-bit
+GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling	p219	90	0.047	0.000	0.000	0.0000	0.00000	0.00000	1641566	2	1-bit
+Galison_1998_Trading Zone_	p10	90	0.135	0.000	0.000	0.0000	0.00000	0.00000	2497968	2	1-bit
+Galison_1998_Trading Zone_	p5	90	0.127	0.000	0.000	0.0000	0.00000	0.00000	2517810	2	1-bit
+Geiger et al_2018_American higher education in the postwar era, 1945-1970	p18	154	0.095	0.057	0.000	0.0150	0.00000	0.00000	633249	3	1-bit
+Geiger et al_2018_American higher education in the postwar era, 1945-1970	p9	164	0.090	0.054	0.000	0.0577	0.00000	0.00000	613056	3	1-bit
+Geiger oral history	p34	90	0.021	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+Geiger oral history	p67	90	0.021	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+Gilroy - 2000 - Getting In	p15	90	0.103	0.000	0.000	0.0000	0.00000	0.00000	812058	2	1-bit
+Gilroy - 2000 - Getting In	p8	90	0.085	0.000	0.000	0.0000	0.00000	0.00000	879648	2	1-bit
+Gitlin_2000_How Our Crowd Got Lonely_New York Times	p1	150	0.189	0.072	0.000	0.0012	0.00000	0.00000	942761	1	picture
+Glazer_2002_Higher Ed_New Republic	p1	160	0.165	0.095	0.012	0.0708	0.00000	0.00000	2651760	1	picture
+Glazer_2002_Higher Ed_New Republic	p2	150	0.009	0.003	0.000	0.0003	0.00000	0.00000	659736	1	1-bit
+Glazer_2003_Kith and Kin_Commentary; New York	p2	130	0.067	0.001	0.000	0.0324	0.00000	0.00000	1512040	2	1-bit
+Glazer_2003_Kith and Kin_Commentary; New York	p3	130	0.062	0.001	0.001	0.0316	0.00000	0.00000	1527572	2	1-bit
+Glazer_2003_Neoconservatives, Then and Now_New York Times	p1	146	0.094	0.031	0.000	0.0334	0.00000	0.00000	291250	2	1-bit
+Gowan and Demos - 1964 - The education and guidance of the ablest	p3	145	0.063	0.019	0.000	0.0285	0.00000	0.00000	1129122	1	1-bit
+Gowan and Demos - 1964 - The education and guidance of the ablest	p5	144	0.025	0.007	0.000	0.0075	0.00000	0.00000	1129122	1	1-bit
+Gregory-Huddleston_1994_Culture conflict with growth_University Press of America	p3	90	0.069	0.000	0.000	0.0000	0.00000	0.00000	2386006	2	1-bit
+Gregory-Huddleston_1994_Culture conflict with growth_University Press of America	p5	90	0.068	0.000	0.000	0.0000	0.00000	0.00000	2260620	2	1-bit
+Guilford_Psychometric Methods	p3	157	0.114	0.039	0.000	0.0230	0.00000	0.00000	1007776	1	1-bit
+Guilford_Psychometric Methods	p5	151	0.151	0.046	0.000	0.0293	0.00000	0.00000	1011752	1	picture
+Har - THE NECKLACE OF KALI.	p1	130	0.184	0.101	0.000	0.1691	0.00110	0.00117	2958228	3	picture
+HarpersMagazine-1938-05-0019577	p4	172	0.139	0.094	0.036	0.1355	0.00265	0.00134	1683248	1	1-bit
+HarpersMagazine-1938-05-0019577	p7	174	0.143	0.096	0.017	0.0870	0.00000	0.00000	1661108	1	1-bit
+Hayek_1978_The constitution of liberty_University of Chicago Press	p192	90	0.140	0.000	0.000	0.0000	0.00000	0.00000	1323582	3	1-bit
+Hayek_1978_The constitution of liberty_University of Chicago Press	p383	90	0.130	0.000	0.000	0.0000	0.00000	0.00000	1302045	3	1-bit
+Henry Morgenthau papers	p135	90	0.013	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+Henry Morgenthau papers	p68	90	0.019	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+Herbert Marks papers	p11	213	0.024	0.990	0.000	0.0062	0.00000	0.00000	2865888	1	picture
+Herbert Marks papers	p6	207	0.044	0.074	0.000	0.0130	0.00000	0.00000	2865888	1	1-bit
+Himanen_2001_The hacker ethic and the spirit of the information age_Random House	p171	166	0.066	0.048	0.000	0.1032	0.00000	0.00000	2636928	1	1-bit
+Himanen_2001_The hacker ethic and the spirit of the information age_Random House	p86	169	0.065	0.051	0.000	0.1030	0.00000	0.00000	2636928	1	1-bit
+Ho_Useful fiction	p107	90	0.039	0.000	0.000	0.0000	0.00000	0.00000	1618724	2	1-bit
+Ho_Useful fiction	p213	90	0.040	0.000	0.000	0.0000	0.00000	0.00000	1618724	2	1-bit
+Hobsbawm and Ranger - 1992 - The Invention of tradition	p109	128	0.129	0.007	0.000	0.0000	0.00000	0.00000	634172	2	1-bit
+Hobsbawm and Ranger - 1992 - The Invention of tradition	p217	90	0.117	0.000	0.000	0.0000	0.00000	0.00000	634172	2	1-bit
+Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research	p27	143	0.054	0.015	0.000	0.0013	0.00000	0.00000	1657656	2	1-bit
+Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research	p54	139	0.052	0.011	0.000	0.0021	0.00000	0.00000	1638112	2	1-bit
+Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press	p11	90	0.104	0.000	0.000	0.0000	0.00000	0.00000	1843968	2	1-bit
+Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press	p6	128	0.073	0.004	0.000	0.0000	0.00000	0.00000	905113	2	1-bit
+Ibson_2006_Picturing men	p176	165	0.339	0.136	0.000	0.0144	0.00015	0.00009	1111320	1	picture
+Ibson_2006_Picturing men	p88	172	0.201	0.101	0.000	0.0330	0.00000	0.00000	1111320	1	picture
+Intellectual History Newsletter -- Forum on Menand	p16	144	0.107	0.035	0.000	0.0000	0.00000	0.00000	1088061	1	1-bit
+Intellectual History Newsletter -- Forum on Menand	p31	142	0.113	0.029	0.000	0.0000	0.00000	0.00000	1253200	1	1-bit
+JAH Review	p2	128	0.098	0.000	0.001	0.0000	0.00000	0.00000	863784	4	1-bit
+JAH Review	p3	128	0.089	0.000	0.001	0.0000	0.00000	0.00000	863784	4	1-bit
+JOURNAL_1969_Giving the Boss a Raise_Wall Street Journal (1923 - Current file); New York, N.Y.	p1	142	0.148	0.034	0.000	0.0000	0.00000	0.00000	2001384	1	1-bit
+Jensen_The rise of an African-American Left	p191	90	0.087	0.000	0.000	0.0000	0.00000	0.00000	1867957	2	1-bit
+Jensen_The rise of an African-American Left	p381	90	0.053	0.000	0.000	0.0000	0.00000	0.00000	1862820	2	1-bit
+Jones et al_2010_The Productivity Effects of Stock Option Schemes	p11	170	0.033	0.021	0.000	0.0001	0.00000	0.00000	1567098	1	1-bit
+Jones et al_2010_The Productivity Effects of Stock Option Schemes	p6	165	0.051	0.027	0.000	0.0001	0.00000	0.00000	1567098	1	1-bit
+Kazin_1955_The Writer and the 	p11	136	0.121	0.022	0.000	0.0002	0.00000	0.00000	1518684	1	1-bit
+Kazin_1955_The Writer and the 	p6	145	0.090	0.031	0.000	0.0006	0.00000	0.00000	405440	1	1-bit
+Kelly_2014_Orders of Magnitude_TLS	p2	148	0.133	0.032	0.001	0.0000	0.00000	0.00000	2750370	2	1-bit
+Kelly_2014_Orders of Magnitude_TLS	p3	164	0.191	0.150	0.101	0.0156	0.00000	0.00000	1068056	2	picture
+Keyssar_2000_The Right to Vote_Basic Books	p2	127	0.090	0.000	0.001	0.0000	0.00000	0.00000	1297628	4	1-bit
+Keyssar_2000_The Right to Vote_Basic Books	p3	127	0.092	0.000	0.001	0.0000	0.00000	0.00000	1297628	4	1-bit
+Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California	p126	90	0.054	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California	p63	90	0.057	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Koh - 2008 - Essays on stock options expensing and stock option	p127	90	0.030	0.000	0.000	0.0000	0.00000	0.00000	1623858	2	1-bit
+Koh - 2008 - Essays on stock options expensing and stock option	p64	90	0.041	0.000	0.000	0.0000	0.00000	0.00000	1618724	2	1-bit
+Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research	p22	135	0.055	0.007	0.000	0.0000	0.00000	0.00000	1636362	2	1-bit
+Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research	p43	128	0.052	0.004	0.000	0.0000	0.00000	0.00000	1635228	2	1-bit
+Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited	p14	176	0.147	0.162	0.000	0.1480	0.00000	0.00000	1255632	1	picture
+Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited	p27	176	0.147	0.131	0.000	0.1735	0.00000	0.00000	1255632	1	picture
+Kristol_1960_High, Low, and Modern_Encounter	p4	139	0.113	0.024	0.003	0.0007	0.00000	0.00000	1152375	2	1-bit
+Kristol_1960_High, Low, and Modern_Encounter	p7	145	0.113	0.033	0.003	0.0003	0.00000	0.00000	1140935	2	1-bit
+Kristol_1962_SOCIAL SCIENCES AND LAW_	p10	90	0.207	0.000	0.000	0.0000	0.00000	0.00000	1700996	2	1-bit
+Kristol_1962_SOCIAL SCIENCES AND LAW_	p20	90	0.128	0.000	0.000	0.0000	0.00000	0.00000	1613736	2	1-bit
+Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_	p5	128	0.084	0.003	0.000	0.0000	0.00000	0.00000	868770	2	1-bit
+Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_	p9	128	0.085	0.003	0.000	0.0000	0.00000	0.00000	868770	2	1-bit
+LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press	p28	90	0.105	0.000	0.000	0.0000	0.00000	0.00000	1861650	2	1-bit
+LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press	p55	90	0.099	0.000	0.000	0.0000	0.00000	0.00000	1861650	2	1-bit
+Lasky et al. - 1949 - Letters from readers	p2	139	0.148	0.033	0.000	0.0350	0.00000	0.00000	935424	2	1-bit
+Lasky et al. - 1949 - Letters from readers	p3	144	0.147	0.044	0.002	0.0615	0.00000	0.00000	939744	2	1-bit
+Lemann, Nicholas_1977_Success In America_Washington Monthly	p2	90	0.120	0.020	0.000	0.0000	0.00000	0.00000	1004910	2	1-bit
+Lemann, Nicholas_1977_Success In America_Washington Monthly	p4	90	0.190	0.000	0.000	0.0000	0.00000	0.00000	1004910	2	1-bit
+Lemieux et al. - Performance Pay and Wage Inequality	p17	129	0.085	0.000	0.000	0.0000	0.00000	0.00000	1131931	4	1-bit
+Lemieux et al. - Performance Pay and Wage Inequality	p34	130	0.058	0.000	0.000	0.0000	0.00000	0.00000	1131931	4	1-bit
+Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ	p23	131	0.041	0.002	0.015	0.0119	0.00000	0.00000	1412444	2	1-bit
+Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ	p45	133	0.040	0.003	0.015	0.0096	0.00000	0.00000	1412444	2	1-bit
+Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York	p2	132	0.153	0.008	0.000	0.0000	0.00000	0.00000	699072	2	1-bit
+Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York	p4	132	0.145	0.007	0.000	0.0000	0.00000	0.00000	703290	2	1-bit
+Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks	p17	131	0.185	0.008	0.000	0.0000	0.00000	0.00000	406359	2	1-bit
+Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks	p9	131	0.165	0.007	0.000	0.0000	0.00000	0.00000	431123	2	1-bit
+Lloyd-Jones_Smith_1938_Selection and Admissions	p16	90	0.085	0.002	0.000	0.0000	0.00000	0.00000	467088	2	1-bit
+Lloyd-Jones_Smith_1938_Selection and Admissions	p8	90	0.086	0.002	0.000	0.0000	0.00000	0.00000	784300	2	1-bit
+Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State	p4	128	0.077	0.000	0.000	0.0000	0.00000	0.00000	1714020	2	1-bit
+Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State	p8	128	0.100	0.000	0.000	0.0000	0.00000	0.00000	1714020	2	1-bit
+Lowell - The Government of Dependencies	p10	135	0.113	0.010	0.000	0.0000	0.00000	0.00000	649698	2	1-bit
+Lowell - The Government of Dependencies	p5	135	0.106	0.010	0.000	0.0000	0.00000	0.00000	649698	2	1-bit
+Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York	p2	135	0.157	0.013	0.000	0.0000	0.00000	0.00000	667291	2	1-bit
+Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York	p3	132	0.144	0.008	0.000	0.0000	0.00000	0.00000	717282	2	1-bit
+Lyons oral history	p39	90	0.021	0.000	0.000	0.0000	0.00000	0.00000	1272736	3	1-bit
+Lyons oral history	p77	90	0.022	0.000	0.000	0.0000	0.00000	0.00000	1272736	3	1-bit
+MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University	p115	90	0.046	0.000	0.000	0.0000	0.00000	0.00000	1633826	2	1-bit
+MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University	p58	90	0.046	0.000	0.000	0.0000	0.00000	0.00000	1646736	2	1-bit
+Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press	p4	90	0.093	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press	p7	90	0.092	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington	p1	138	0.321	0.071	0.000	0.0206	0.00000	0.00000	1171240	1	picture
+Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington	p2	151	0.181	0.076	0.000	0.0506	0.00000	0.00000	1387726	1	picture
+McWilliams_1933_Provincialism_The Frontier and Midland	p11	142	0.096	0.025	0.000	0.0000	0.00000	0.00000	3077832	1	1-bit
+McWilliams_1933_Provincialism_The Frontier and Midland	p6	144	0.077	0.022	0.000	0.0000	0.00000	0.00000	3077832	1	1-bit
+Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co	p16	147	0.077	0.025	0.000	0.0000	0.00000	0.00000	1934426	1	1-bit
+Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co	p8	147	0.082	0.027	0.000	0.0000	0.00000	0.00000	1934426	1	1-bit
+Merriam_1913_Clutter of Things_The Independent	p1	137	0.152	0.027	0.000	0.0238	0.00000	0.00000	971348	2	1-bit
+Merriam_1913_Clutter of Things_The Independent	p2	136	0.173	0.030	0.000	0.0249	0.00000	0.00000	971348	2	picture
+Merriam_1920_Daughter of Pan_The Montanan (The Frontier)	p1	137	0.166	0.226	0.086	0.0001	0.00000	0.00000	3844260	1	picture
+Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press	p11	90	0.105	0.000	0.000	0.0000	0.00000	0.00000	550620	3	1-bit
+Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press	p21	90	0.125	0.000	0.000	0.0000	0.00000	0.00000	542568	3	1-bit
+Mintzberg - 1973 - The nature of managerial work	p40	90	0.067	0.000	0.000	0.0000	0.00000	0.00000	1826271	2	1-bit
+Mintzberg - 1973 - The nature of managerial work	p80	90	0.045	0.000	0.000	0.0000	0.00000	0.00000	1791396	2	1-bit
+Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press	p5	90	0.255	0.000	0.000	0.0000	0.00000	0.00000	2245672	2	1-bit
+Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press	p9	90	0.225	0.000	0.000	0.0000	0.00000	0.00000	2238236	2	1-bit
+Morgan_1975_American Slavery, American Freedom_Norton	p2	127	0.086	0.000	0.001	0.0000	0.00000	0.00000	1141344	4	1-bit
+Morgan_1975_American Slavery, American Freedom_Norton	p3	127	0.086	0.000	0.001	0.0000	0.00000	0.00000	1141344	4	1-bit
+Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49)	p17	90	0.090	0.000	0.000	0.0000	0.00000	0.00000	719514	2	1-bit
+Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49)	p9	90	0.089	0.000	0.000	0.0000	0.00000	0.00000	720792	2	1-bit
+Mudge_2018_Leftism Reinvented_Harvard University Press	p125	90	0.095	0.000	0.000	0.0000	0.00000	0.00000	1070400	2	1-bit
+Mudge_2018_Leftism Reinvented_Harvard University Press	p249	128	0.097	0.003	0.000	0.0000	0.00000	0.00000	1085950	2	1-bit
+NAYLOR_Arthur E	p178	90	0.059	0.000	0.000	0.0000	0.00000	0.00000	1632375	2	1-bit
+NAYLOR_Arthur E	p89	90	0.050	0.000	0.000	0.0000	0.00000	0.00000	1653372	2	1-bit
+National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1	p22	128	0.092	0.005	0.000	0.0000	0.00000	0.00000	1591352	2	1-bit
+National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1	p44	128	0.060	0.004	0.000	0.0000	0.00000	0.00000	1597551	2	1-bit
+Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press	p3	90	0.103	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press	p5	90	0.105	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+New York Stock Exchange_1956_Stock ownership plans for employees	p49	148	0.049	0.017	0.000	0.0000	0.00000	0.00000	1056708	1	1-bit
+New York Stock Exchange_1956_Stock ownership plans for employees	p98	150	0.057	0.022	0.000	0.0011	0.00000	0.00000	1055814	1	1-bit
+Noble_1977_America by design	p139	128	0.205	0.002	0.000	0.0000	0.00000	0.00000	1026844	3	1-bit
+Noble_1977_America by design	p277	128	0.200	0.002	0.000	0.0000	0.00000	0.00000	1026844	3	1-bit
+Nogales oral history	p16	90	0.023	0.000	0.000	0.0000	0.00000	0.00000	1272736	3	1-bit
+Nogales oral history	p31	90	0.022	0.000	0.000	0.0000	0.00000	0.00000	1272736	3	1-bit
+O'Brien_1955_The Area of Admissions in Higher Education_	p13	145	0.142	0.045	0.000	0.0414	0.00000	0.00000	725351	2	1-bit
+O'Brien_1955_The Area of Admissions in Higher Education_	p25	144	0.140	0.043	0.000	0.0382	0.00000	0.00000	752376	2	1-bit
+October_2,_1960_(Page_24_of_25	p1	141	0.197	0.262	0.000	0.0119	0.00015	0.00007	1754753	2	picture
+PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign	p134	90	0.040	0.000	0.000	0.0000	0.00000	0.00000	1621760	2	1-bit
+PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign	p67	90	0.063	0.000	0.000	0.0000	0.00000	0.00000	1612948	2	1-bit
+PRICE_A History of the American College Personnel Association	p115	90	0.062	0.000	0.000	0.0000	0.00000	0.00000	1655965	2	1-bit
+PRICE_A History of the American College Personnel Association	p58	90	0.060	0.000	0.000	0.0000	0.00000	0.00000	1657424	2	1-bit
+Part Two	p12	141	0.087	0.020	0.000	0.0000	0.00000	0.00000	2320487	1	1-bit
+Part Two	p24	143	0.068	0.017	0.000	0.0000	0.00000	0.00000	2320487	1	1-bit
+Peters_1989_Tilting at Windmilss_Washington Monthly	p2	90	0.124	0.000	0.000	0.0000	0.00000	0.00000	1141244	2	1-bit
+Peters_1989_Tilting at Windmilss_Washington Monthly	p3	90	0.099	0.000	0.000	0.0000	0.00000	0.00000	1141244	2	1-bit
+Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press	p11	128	0.058	0.022	0.000	0.0000	0.00000	0.00000	1290414	3	1-bit
+Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press	p6	128	0.037	0.013	0.000	0.0000	0.00000	0.00000	1290414	3	1-bit
+Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967	p175	90	0.049	0.000	0.000	0.0000	0.00000	0.00000	1667274	2	1-bit
+Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967	p88	90	0.044	0.000	0.000	0.0000	0.00000	0.00000	1675116	2	1-bit
+Price_1958_The Small Business Tax Revision of 1958	p13	135	0.093	0.008	0.000	0.0000	0.00000	0.00000	959196	2	1-bit
+Price_1958_The Small Business Tax Revision of 1958	p25	135	0.078	0.008	0.000	0.0000	0.00000	0.00000	959196	2	1-bit
+RIESMAN_1942_American Law Institute Proceedings_	p4	156	0.079	0.025	0.000	0.0001	0.00000	0.00000	1654830	4	1-bit
+RIESMAN_1942_American Law Institute Proceedings_	p7	159	0.071	0.024	0.000	0.0081	0.02939	0.00662	1627227	4	1-bit
+Ries_Marshall_1955_web	p36	153	0.060	0.023	0.000	0.0238	0.00000	0.00000	1494207	1	1-bit
+Ries_Marshall_1955_web	p72	153	0.064	0.024	0.000	0.0271	0.00000	0.00000	1495200	1	1-bit
+Riesman - 1954 - Individualism reconsidered, and other essays	p17	103	0.108	0.277	0.091	0.0750	0.00000	0.00000	967302	2	picture
+Riesman - 1954 - Individualism reconsidered, and other essays	p9	135	0.142	0.488	0.080	0.0974	0.00000	0.00000	468438	3	picture
+Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43)	p19	90	0.082	0.000	0.000	0.0000	0.00000	0.00000	936192	4	1-bit
+Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43)	p37	90	0.074	0.000	0.000	0.0000	0.00000	0.00000	936192	4	1-bit
+Riesman_1949_Men, Women, and Marriage_Nation	p2	148	0.147	0.054	0.000	0.0237	0.00000	0.00000	1637531	2	1-bit
+Riesman_1949_Men, Women, and Marriage_Nation	p3	151	0.009	0.004	0.000	0.0002	0.00000	0.00000	2869740	1	1-bit
+Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review	p11	90	0.086	0.000	0.000	0.0000	0.00000	0.00000	959784	4	1-bit
+Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review	p6	90	0.078	0.000	0.000	0.0000	0.00000	0.00000	959784	4	1-bit
+Riesman_1964_From inner-directed to other- directed_	p13	90	0.135	0.000	0.000	0.0000	0.00000	0.00000	739700	2	1-bit
+Riesman_1964_From inner-directed to other- directed_	p7	90	0.056	0.000	0.000	0.0000	0.00000	0.00000	743280	2	1-bit
+Riesman_1964_The New Education_	p5	148	0.140	0.051	0.000	0.0689	0.00000	0.00000	676200	2	1-bit
+Riesman_1964_The New Education_	p9	90	0.109	0.000	0.000	0.0000	0.00000	0.00000	605430	2	1-bit
+Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_	p11	90	0.151	0.000	0.000	0.0000	0.00000	0.00000	584361	2	1-bit
+Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_	p21	146	0.132	0.044	0.000	0.0745	0.00000	0.00000	589680	2	1-bit
+Riesman_1976_Thoughts on the Graduate Experience_Change	p3	143	0.151	0.028	0.000	0.0165	0.00241	0.00056	1629703	4	picture
+Riesman_1976_Thoughts on the Graduate Experience_Change	p5	90	0.141	0.000	0.000	0.0000	0.00000	0.00000	1627128	4	1-bit
+Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_	p14	90	0.117	0.000	0.000	0.0000	0.00000	0.00000	912989	2	1-bit
+Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_	p27	145	0.132	0.032	0.000	0.0019	0.00000	0.00000	910644	1	1-bit
+Ripley_1889_The Teaching of the English Language and Literature_Education	p11	138	0.107	0.021	0.000	0.0354	0.00000	0.00000	778757	2	1-bit
+Ripley_1889_The Teaching of the English Language and Literature_Education	p6	138	0.099	0.019	0.000	0.0313	0.00000	0.00000	778757	2	1-bit
+Robertson_1990_Organizational adaptation to environmental change_Stanford University copy	p134	143	0.060	0.016	0.000	0.0000	0.00000	0.00000	1455300	1	1-bit
+Robertson_1990_Organizational adaptation to environmental change_Stanford University copy	p67	146	0.066	0.020	0.000	0.0000	0.00000	0.00000	1440383	1	1-bit
+Robin_Stephens_1996_Against the Grain_Social Text	p11	127	0.054	0.000	0.001	0.0000	0.00000	0.00000	1247766	4	1-bit
+Robin_Stephens_1996_Against the Grain_Social Text	p22	127	0.053	0.000	0.001	0.0000	0.00000	0.00000	1247766	4	1-bit
+Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY	p12	90	0.116	0.000	0.000	0.0000	0.00000	0.00000	1495944	2	1-bit
+Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY	p6	90	0.117	0.000	0.000	0.0000	0.00000	0.00000	1504430	2	1-bit
+Schaar, handwritten notes	p4	154	0.124	0.060	0.000	0.0467	0.00875	0.00579	1623208	1	1-bit
+Schaar, handwritten notes	p8	154	0.119	0.043	0.000	0.0219	0.00109	0.00111	1628022	1	1-bit
+Schumpeter_1955_Imperialism ; Social classes_World	p128	128	0.099	0.008	0.000	0.0000	0.00000	0.00000	817503	3	1-bit
+Schumpeter_1955_Imperialism ; Social classes_World	p64	128	0.088	0.007	0.000	0.0000	0.00000	0.00000	832104	3	1-bit
+Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech	p101	157	0.133	0.064	0.037	0.0007	0.00000	0.00000	1727880	2	picture
+Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech	p201	138	0.057	0.011	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Scott_TK_The Scientific Selection of Salesmen	p5	156	0.131	0.060	0.000	0.0073	0.00000	0.00000	984294	1	1-bit
+Scott_TK_The Scientific Selection of Salesmen	p9	158	0.170	0.079	0.000	0.0074	0.00000	0.00000	994086	1	picture
+Senate, Democratic Leadership	p10	142	0.053	0.012	0.002	0.0002	0.00000	0.00000	2139904	1	1-bit
+Senate, Democratic Leadership	p19	142	0.043	0.010	0.002	0.0002	0.00000	0.00000	2139904	1	1-bit
+Sherman_1986_elite institutions_The Public Interest; New York	p3	136	0.071	0.011	0.000	0.0000	0.00000	0.00000	1311424	3	1-bit
+Sherman_1986_elite institutions_The Public Interest; New York	p5	135	0.074	0.010	0.000	0.0000	0.00000	0.00000	1322688	3	1-bit
+Shows and Burton - 1972 - Microeconomics	p13	128	0.177	0.006	0.000	0.0000	0.00000	0.00000	1058496	2	1-bit
+Shows and Burton - 1972 - Microeconomics	p7	90	0.182	0.000	0.000	0.0000	0.00000	0.00000	1107108	2	1-bit
+Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California	p111	90	0.052	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California	p56	90	0.052	0.000	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Stanford_1891_Jane Stanford opening day speech (undelivered)	p2	182	0.049	0.152	0.041	0.0246	0.00000	0.00000	1055307	1	picture
+Stanford_1891_Jane Stanford opening day speech (undelivered)	p3	179	0.056	0.146	0.042	0.0320	0.00000	0.00000	1094548	1	picture
+Stiglitz1975(onPasinetti1974)	p2	90	0.097	0.000	0.000	0.0000	0.00000	0.00000	1234592	4	1-bit
+Stiglitz1975(onPasinetti1974)	p3	90	0.100	0.000	0.000	0.0000	0.00000	0.00000	1234592	4	1-bit
+Stone_1965_England’s Revolution_The New York Review of Books	p2	128	0.111	0.007	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Stone_1965_England’s Revolution_The New York Review of Books	p3	128	0.107	0.007	0.000	0.0000	0.00000	0.00000	1611504	2	1-bit
+Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds	p19	90	0.092	0.000	0.000	0.0000	0.00000	0.00000	821730	2	1-bit
+Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds	p38	128	0.097	0.003	0.000	0.0000	0.00000	0.00000	844740	2	1-bit
+Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County	p13	141	0.063	0.018	0.014	0.0056	0.00000	0.00000	1039360	2	1-bit
+Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County	p25	138	0.079	0.017	0.002	0.0000	0.00000	0.00000	1611504	2	1-bit
+TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign	p159	90	0.049	0.000	0.000	0.0000	0.00000	0.00000	1612948	2	1-bit
+TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign	p80	90	0.044	0.000	0.000	0.0000	0.00000	0.00000	1612948	2	1-bit
+TROTMAN - 1976 - Race, Iq, and the Middle-Class.	p40	90	0.026	0.000	0.000	0.0000	0.00000	0.00000	406080	4	1-bit
+TROTMAN - 1976 - Race, Iq, and the Middle-Class.	p80	90	0.019	0.000	0.000	0.0000	0.00000	0.00000	408880	4	1-bit
+Temin_1997_The American Business Elite in Historical Perspective	p17	153	0.044	0.016	0.000	0.0000	0.00000	0.00000	1647604	1	1-bit
+Temin_1997_The American Business Elite in Historical Perspective	p33	155	0.041	0.016	0.000	0.0000	0.00000	0.00000	1649886	1	1-bit
+UN-OCred	p14	168	0.128	0.085	0.000	0.1385	0.00057	0.00046	1149540	1	1-bit
+UN-OCred	p27	176	0.128	0.078	0.000	0.0966	0.00039	0.00104	1138914	1	1-bit
+WITTE_1978_Democracy, Authority and Alienation in Work_Yale University	p138	90	0.066	0.000	0.000	0.0000	0.00000	0.00000	1453094	2	1-bit
+WITTE_1978_Democracy, Authority and Alienation in Work_Yale University	p276	90	0.053	0.000	0.000	0.0000	0.00000	0.00000	1467583	2	1-bit
+Wells_2015_A Long View of Shareholder Power	p23	90	0.090	0.000	0.000	0.0000	0.00000	0.00000	1124640	2	1-bit
+Wells_2015_A Long View of Shareholder Power	p45	90	0.098	0.000	0.000	0.0000	0.00000	0.00000	1135134	2	1-bit
+Westad_2005_The Global Cold War_Cambridge University Press	p2	127	0.080	0.000	0.001	0.0000	0.00000	0.00000	1163492	4	1-bit
+Westad_2005_The Global Cold War_Cambridge University Press	p3	127	0.084	0.000	0.001	0.0000	0.00000	0.00000	1163492	4	1-bit
+Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK)	p1	150	0.219	0.093	0.000	0.0375	0.00000	0.00000	1230592	2	picture
+Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature	p2	129	0.104	0.000	0.000	0.0000	0.00000	0.00000	1248707	4	1-bit
+Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature	p3	129	0.105	0.000	0.000	0.0000	0.00000	0.00000	1248707	4	1-bit
+Wu - 2003 - Employee stock option design and valuation	p37	90	0.034	0.000	0.000	0.0000	0.00000	0.00000	1684122	2	1-bit
+Wu - 2003 - Employee stock option design and valuation	p74	90	0.049	0.000	0.000	0.0000	0.00000	0.00000	1685244	2	1-bit
+Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO	p11	169	0.056	0.032	0.001	0.0017	0.00000	0.00000	976470	1	1-bit
+Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO	p22	181	0.036	0.031	0.000	0.0037	0.00000	0.00000	976470	1	1-bit
+Zarifa_2008_Emerging Forms of Stratification in Higher Education_	p173	90	0.033	0.000	0.000	0.0000	0.00000	0.00000	1422096	2	1-bit
+Zarifa_2008_Emerging Forms of Stratification in Higher Education_	p87	90	0.017	0.000	0.000	0.0000	0.00000	0.00000	1385384	2	1-bit
+Zheng - 2003 - Six -month -one -day employee stock option reprici	p26	90	0.041	0.000	0.000	0.0000	0.00000	0.00000	1696500	2	1-bit
+Zheng - 2003 - Six -month -one -day employee stock option reprici	p51	90	0.041	0.000	0.000	0.0000	0.00000	0.00000	1667274	2	1-bit
+Zipkin_2000_Management	p1	139	0.133	0.028	0.000	0.0000	0.00000	0.00000	813246	2	1-bit
+Zipkin_2000_Management	p2	137	0.212	0.035	0.000	0.0000	0.00000	0.00000	870905	2	picture
+_1926_Clapp defends Cox_Billings Gazette	p1	135	0.172	0.018	0.000	0.0001	0.00000	0.00000	3398198	2	1-bit
+_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard	p1	135	0.168	0.022	0.000	0.0000	0.00000	0.00000	1818180	2	1-bit
+_1926_English dept summer school_Havre Daily News Promoter	p1	128	0.164	0.008	0.000	0.0000	0.00000	0.00000	2808576	2	1-bit
+_1928_Creative writing a featured course at Summer School_Helena Daily Independent	p1	128	0.281	0.010	0.000	0.0000	0.00000	0.00000	2225028	2	1-bit
+_1931_Again, press most excited about Frontier's history section_Helena Daily Independent	p1	128	0.214	0.021	0.000	0.0000	0.00000	0.00000	2225090	2	1-bit
+_1939_Former students to Board re Merriam_	p13	114	0.057	0.122	0.062	0.1705	0.21864	0.12637	3844260	1	picture
+_1939_Former students to Board re Merriam_	p7	137	0.079	0.353	0.073	0.1771	0.00201	0.00833	3844260	1	picture
+_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake	p1	128	0.285	0.021	0.000	0.0003	0.00000	0.00000	2616513	2	1-bit
+_1941_Fiedler's hiring at UM announced_Helena Independent	p1	128	0.261	0.019	0.000	0.0001	0.00000	0.00000	2454688	2	1-bit
+_1945_Postwar Economic Policy and Planning_	p101	128	0.141	0.008	0.000	0.0000	0.00000	0.00000	2066400	2	1-bit
+_1945_Postwar Economic Policy and Planning_	p51	128	0.125	0.007	0.000	0.0000	0.00000	0.00000	2144464	2	1-bit
+_1950_Comic_Independent Record	p1	128	0.222	0.012	0.000	0.0000	0.00000	0.00000	3173100	2	1-bit
+_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports	p17	129	0.125	0.003	0.000	0.0000	0.00000	0.00000	1312192	2	1-bit
+_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports	p9	131	0.054	0.002	0.000	0.0000	0.00000	0.00000	1405964	2	1-bit
+_1953_99 Cong_	p11	90	0.117	0.000	0.000	0.0000	0.00000	0.00000	1443055	3	1-bit
+_1953_99 Cong_	p22	90	0.139	0.000	0.000	0.0000	0.00000	0.00000	1443055	3	1-bit
+_1953_99 Cong_ 2	p11	90	0.125	0.000	0.000	0.0000	0.00000	0.00000	1411260	3	1-bit
+_1953_99 Cong_ 2	p21	90	0.122	0.000	0.000	0.0000	0.00000	0.00000	1411260	3	1-bit
+_1953_Conspicuous Production_	p2	148	0.113	0.040	0.000	0.0274	0.00000	0.00000	2237760	2	1-bit
+_1953_Conspicuous Production_	p3	151	0.122	0.048	0.000	0.0255	0.00000	0.00000	2066477	2	1-bit
+_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports	p17	132	0.080	0.004	0.000	0.0000	0.00000	0.00000	701190	2	1-bit
+_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports	p9	133	0.031	0.002	0.000	0.0000	0.00000	0.00000	566412	2	1-bit
+_1958_Executive Pay_Nation's Business (pre-1986); Washington	p3	147	0.186	0.062	0.000	0.0004	0.00000	0.00000	957145	1	picture
+_1958_Executive Pay_Nation's Business (pre-1986); Washington	p5	145	0.185	0.062	0.000	0.0000	0.00000	0.00000	960399	1	picture
+_1958_Small Business Investment Act_	p10	90	0.175	0.000	0.000	0.0000	0.00000	0.00000	819924	3	1-bit
+_1958_Small Business Investment Act_	p19	90	0.196	0.000	0.000	0.0000	0.00000	0.00000	763336	3	1-bit
+_1960_Organization and operation of the Small Business Administration_	p25	90	0.108	0.000	0.000	0.0000	0.00000	0.00000	906568	3	1-bit
+_1960_Organization and operation of the Small Business Administration_	p49	90	0.096	0.000	0.000	0.0000	0.00000	0.00000	906568	3	1-bit
+_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports	p13	90	0.225	0.000	0.000	0.0000	0.00000	0.00000	1480960	2	1-bit
+_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports	p26	90	0.185	0.000	0.000	0.0000	0.00000	0.00000	1359450	2	1-bit
+_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports	p12	90	0.332	0.000	0.000	0.0000	0.00000	0.00000	1153248	2	1-bit
+_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports	p23	128	0.319	0.009	0.000	0.0000	0.00000	0.00000	987660	2	1-bit
+_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports	p11	128	0.218	0.013	0.000	0.0001	0.00000	0.00000	1021075	2	1-bit
+_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports	p21	90	0.083	0.000	0.000	0.0000	0.00000	0.00000	1620489	2	1-bit
+_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports	p15	90	0.026	0.000	0.000	0.0000	0.00000	0.00000	1533224	2	1-bit
+_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports	p8	128	0.166	0.002	0.000	0.0000	0.00000	0.00000	1371178	2	1-bit
+_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York	p1	163	0.116	0.085	0.064	0.0384	0.00112	0.00050	1397655	1	picture
+_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports	p13	128	0.031	0.001	0.000	0.0000	0.00000	0.00000	1511601	2	1-bit
+_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports	p7	127	0.332	0.002	0.000	0.0000	0.00000	0.00000	1453232	2	1-bit
+_1973_Committee Against Racism_	p2	149	0.167	0.066	0.001	0.0000	0.00000	0.00000	1615510	1	picture
+_1973_Committee Against Racism_	p3	151	0.158	0.064	0.002	0.0000	0.00000	0.00000	1612948	1	picture
+_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y.	p2	139	0.213	0.055	0.000	0.0002	0.00000	0.00000	1079568	1	picture
+_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y.	p3	147	0.168	0.060	0.000	0.0004	0.00000	0.00000	1155028	1	picture
+_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports	p14	134	0.051	0.003	0.000	0.0000	0.00000	0.00000	1311632	2	1-bit
+_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports	p27	134	0.030	0.002	0.000	0.0000	0.00000	0.00000	1310470	2	1-bit
+_1977_What We're About_Washington Monthly	p2	128	0.090	0.002	0.000	0.0000	0.00000	0.00000	1028643	2	1-bit
+_1977_What We're About_Washington Monthly	p3	128	0.175	0.007	0.000	0.0000	0.00000	0.00000	1028643	2	1-bit
+_1979_Ideology of American Neo-Conservatism_	p11	128	0.134	0.006	0.000	0.0000	0.00000	0.00000	989120	3	1-bit
+_1979_Ideology of American Neo-Conservatism_	p6	128	0.134	0.003	0.000	0.0000	0.00000	0.00000	921360	3	1-bit
+_1985_Issue 2_New Perspectives	p10	128	0.097	0.007	0.000	0.0000	0.00000	0.00000	1216908	2	1-bit
+_1985_Issue 2_New Perspectives	p20	128	0.093	0.007	0.000	0.0000	0.00000	0.00000	1216908	2	1-bit
+_2010_New Materialisms_Duke University Press	p15	139	0.085	0.012	0.000	0.0000	0.00000	0.00000	763364	2	1-bit
+_2010_New Materialisms_Duke University Press	p8	141	0.093	0.023	0.000	0.0000	0.00000	0.00000	1564650	2	1-bit
+___	p1	126	0.180	0.068	0.000	0.1106	0.00049	0.00022	1377544	6	picture
+___ 2	p1	135	0.187	0.018	0.000	0.0000	0.00000	0.00000	1417572	2	1-bit
+___ 3	p1	100	0.076	0.167	0.000	0.1045	0.00254	0.00386	1217664	6	picture
+___ 4	p1	144	0.152	0.046	0.000	0.0183	0.00000	0.00000	1953539	2	picture
+___ 5	p1	128	0.173	0.007	0.000	0.0000	0.00000	0.00000	1729720	2	1-bit
+full chapter	p11	153	0.051	0.019	0.000	0.0007	0.00000	0.00000	647520	1	1-bit
+full chapter	p22	152	0.047	0.019	0.000	0.0022	0.00000	0.00000	836160	1	1-bit
+oster - Engagement of Anne Foster To Tucson Man Announced	p1	113	0.195	0.110	0.000	0.1037	0.00239	0.00302	1284644	6	picture
+ppf_description	p2	90	0.054	0.000	0.000	0.0000	0.00000	0.00000	3070281	1	1-bit
+ppf_description	p4	90	0.034	0.000	0.000	0.0000	0.00000	0.00000	2865888	1	1-bit
+w5093	p22	135	0.026	0.003	0.000	0.0000	0.00000	0.00000	1606080	2	1-bit
+w5093	p43	128	0.006	0.000	0.000	0.0000	0.00000	0.00000	1606080	2	1-bit
+w7787	p11	90	0.045	0.000	0.000	0.0000	0.00000	0.00000	2879560	1	1-bit
+w7787	p21	90	0.046	0.000	0.000	0.0000	0.00000	0.00000	2879560	1	1-bit
+w7787 2	p11	90	0.045	0.000	0.000	0.0000	0.00000	0.00000	2879560	1	1-bit
+w7787 2	p21	90	0.046	0.000	0.000	0.0000	0.00000	0.00000	2879560	1	1-bit

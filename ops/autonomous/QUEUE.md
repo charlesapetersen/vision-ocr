@@ -122,13 +122,25 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       `score-mrc` at `MRC_BG=2` against `MRC_BG=1` shows `bgF` 8.0 and `fgF` 16.1 on the affected
       pages, a background layer that is 190 KB at Maximum stored as **1.8 KB** at Balanced, and
       PSNR 24.05 → 27.45. Photo detail = Maximum is a real workaround. Do not re-run that.
-      **Sub-step 1: sweep before tuning.** `Tools/score-threshold-loss.swift` prints `lost` per
-      page, so one corpus sweep says how many pages carry a sub-5% mark on a picture-path page.
-      ⛔ **Do NOT tune `paleDrawingThreshold` on this one document** — that is the failure R55 and
-      R56 both record, and R56's signal was refused four times for admitting show-through and
-      decorative shading. The entry argues the real shape is that one constant is answering two
-      questions at different costs (a ROUTE in `isPicture`, a RESOLUTION in `mrcLayers`), which
-      needs no new signal because `pageMarks` already finds these marks.
+      ✅ **Sub-step 1 is DONE, 2026-08-18, and it changed the diagnosis.** `lost` — the column this
+      line used to tell you to sweep — is `score-threshold-loss`'s *refused* luminance candidate,
+      not the `paleDrawing(…).extent` the 5% bar reads. The tool now prints `extent`, `cover`,
+      `cells` and `factor`, and on the two worst pages `extent` is **0.00000**: the guard's search
+      finds nothing, so no value of the constant protects them. Sweep run and committed as
+      `THRESHOLD-LOSS-2026-08-18.tsv` — 441 pages, 233 documents, 61 picture-route (2 protected,
+      22 under the bar, 37 at zero), and the sub-bar cluster is led by `Doermann_1967` p10 at
+      0.039, the show-through page R56 was refused for. **Do not re-run that sweep.**
+      ⛔ **Do NOT tune `paleDrawingThreshold`** — not on this one document (the failure R55 and R56
+      both record), and now also not on the sweep: 0.05 sits in a 4.9x gap above the next page down,
+      the useful range below it is **one page wide** (0.045 protects `1976 - Regis McKenna Papers`
+      p4 and nothing else new; below 0.039 admits `Doermann_1967` p10's show-through), and none of
+      it reaches C26's own pages at 0.00000. **Retracted from this line**: "needs no new signal because `pageMarks`
+      already finds these marks" — measured, `pageMarks`/`paleDrawing` do not find them.
+      **Sub-step 2, and it is one instrumented run rather than a sweep:** name which filter drops
+      these strokes — `minimumMarkContrast` in `pageMarks`, or `typeCeilingInches`, `solidMarkFill`
+      or `maximumInkUnderADrawing` in `paleDrawing` — because a red line renders to a *mid* grey
+      and may be landing in `ink` rather than `pale`, in which case this is not a pale-mark miss at
+      all. The entry's `extent MEASURED 2026-08-18` section has the four candidates.
       ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
       the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.
@@ -138,9 +150,20 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the
       document was printed, and inconsistently within itself. Read the entry; it has the per-page
       red-pixel measurements and the reason the mean cannot answer this question.
-      **Share C26's sweep — do not run a second one.** `score-threshold-loss` prints both `lost` and
-      `sat` per page, so one corpus pass sizes both populations. Until that number exists this is one
-      document, and one document is not a campaign (R55).
+      ⚠️ **C26's sweep RAN on 2026-08-18 and it does NOT size this population** — the shared-sweep
+      plan on this line was wrong, for the reason the entry itself gives: `sat` is a mean, so a page
+      at 0.045 may be two-ink or uniformly tinted and no bar on a mean separates them. What the
+      sweep gives is a bound and a candidate list: **13 pages of 441 sit in 0.03–0.06**, against 13
+      that clear 0.06. `1954 - Why` p4 and p7 are two of the 13 in the band; the
+      other eleven have never been looked at and are listed in the entry. **Do not re-run the
+      sweep.** Sizing this population needs a per-page **saturated-pixel fraction** — what the
+      owner's own C27 measurement used (`in red%`) — and no tool in this repo prints it over the
+      corpus. That column, added to `score-threshold-loss` or beside it, is sub-step 1 now.
+      ✅ One thing the sweep did settle, in this entry's favour: across the 0.06 bar the distribution
+      is a **continuum**, 0.057 then 0.061, a gap of 0.004 — so no value of the constant separates
+      the populations, which is the "statistic not number" claim with a number behind it for the
+      first time. C26's 0.05, by contrast, sits in a 4.9x gap, so the two entries are no longer the
+      same case and the "two constants, same shape" line is retracted in both.
       ⛔ **Do not raise `pictureSaturationThreshold`.** It gates the ROUTE, so a lower bar sends more
       text pages down the picture path and costs bytes on every one — the trade R49 and R50 were
       about. The entry argues the statistic is wrong rather than the number: a page with 3% of its
@@ -257,6 +280,30 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       ⚠️ Run `ops/autonomous/tests/prove-test-lock.sh` green BEFORE and AFTER — it was 42/0/1 on 2026-08-17,
       the skip being its real-detector arm, which correctly skips while any suite is running.
       (origin: README.md §Defects D7's closing note; both entries began in RUN.md's NEEDS OWNER)
+- [ ] **tsv-header-drift** — the sibling sweep from C26's 2026-08-18 instrument commit, both halves
+      measured by grep on that day and neither empty. CONTRIBUTING §5 asks a tool that prints a TSV
+      for "one `row(...)` printer over one `columns` array, with the width asserted", because
+      counting tab escapes by eye has put the wrong field count under a header **three times** —
+      T14's SKIP row, T15's `score-mrc` and T18's two — all three FIXED, cited as precedent rather
+      than as work to redo. CONTRIBUTING §5 names the middle one by its review tag, which resolves in
+      `REVIEW-2026-08-14.md` and not in the register; T15 is the register's name for it.
+      1. **Three tools still build the header separately from the rows:**
+         `Tools/score-picture-codec.swift`, `Tools/score-reading-order.swift` (**two** headers, lines
+         145 and 238 — and its `let columns` at 258 is a local about text bands, not a TSV array, so
+         a reader grepping for the good pattern gets a false positive) and `Tools/score-skew.swift`.
+         `score-threshold-loss.swift` is the worked example: one `columns` array, one `row(…)` that
+         returns nil on a width mismatch, and three self-test checks — two of which were watched
+         failing against a copy with the width test removed.
+      2. **Four tools exit 0 having measured nothing:** `Tools/pdf-embedded-text.swift`,
+         `Tools/pdf-extract-pages.swift`, `Tools/pdf-info.swift` and `Tools/picture-signals.swift`
+         skip an unopenable document with `continue` and count neither what they opened nor what they
+         rendered. This is how C26's own corpus sweep silently measured zero pages from an `auto/`
+         worktree (`testdocs/` is not committed) and reported success; `score-corpus` and now
+         `score-threshold-loss` both refuse instead. Judge each one first — a single-document
+         utility may be right to say nothing — but say so per tool rather than skipping the class.
+      ⚠️ Any tool you touch is staged, so the pre-commit hook runs `check-tools-compile.sh` on it and
+      the full suite. Budget a commit, not a check. (origin: the sibling sweep in C26's instrument
+      commit, 2026-08-18; the rule is CONTRIBUTING §5)
 
 ## HOLD — owner-only, never auto-executed
 

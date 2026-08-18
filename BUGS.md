@@ -12,7 +12,14 @@ saturation — and it is a separate mechanism from C26 with a separate constant;
 addresses the other. `C26` destroys content on the shipped default setting. Opened 2026-08-17,
 hours after `1.13.0` was cut against an empty register — a small line drawing on a page the code
 correctly reads as all text is erased on the picture path, because the guard that would protect it
-needs the mark to cover 5% of the page and these cover 0.2%. It is **not** R56, whose fix is
+does not fire. **This line said "the guard needs the mark to cover 5% of the page and these cover
+0.2%" until 2026-08-18, and the 0.2% was the wrong column** — measured, the quantity the 5% bar
+reads (`paleDrawing(…).extent`) is **0.00000** on the two worst pages, so the guard's search finds
+nothing rather than finding something too small, and no value of the constant would protect them.
+The corpus sweep both entries were waiting on ran the same day: **441 pages, 233 documents**, and
+it sizes C26's population (61 picture-route pages: 2 protected, 22 under the bar, 37 at zero)
+while **not** sizing C27's, because a mean cannot see concentrated colour. Both entries carry the
+numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
 **C24 closed 2026-08-17** — read the paragraph
@@ -2155,16 +2162,31 @@ above it says, in terms:
 
 So the guard was **deliberately placed at this second decision** and it cannot fire on these
 pages. `pageIsAllText()` returns false — protecting the page — only when
-`paleDrawing(pageMarks(…)).extent > paleDrawingThreshold`, and that threshold is **0.05**: a pale
-mark must cover **5% of the page**. These are corner vignettes covering **0.17%–0.32%** of it
-(the `lost` column above). The page then is read as all text, which it truthfully is, and a fine
-line stored at 1/16 resolution is gone.
+`paleDrawing(pageMarks(…)).extent > paleDrawingThreshold`, and that threshold is **0.05**: the
+largest drawing-shaped pale mark's bounding box must cover 5% of the marks grid. The page then is
+read as all text, which it truthfully is, and a fine line stored at 1/16 resolution is gone.
 
-**`paleDrawingThreshold` is doing two different jobs at two different costs.** In `isPicture` it
-decides a ROUTE, where a false positive sends a text page down the picture path and costs bytes.
-Here it decides a RESOLUTION, where a false negative costs the drawing outright. 5% is a
-defensible bar for the first question and is the wrong order of magnitude for the second. That is
-the shape to fix, and it needs no new signal: `pageMarks` already found these marks.
+⚠️ **"of the sheet" is this register's and `Flattener`'s own shorthand and it is off by a quarter.**
+`extent`'s denominator is `marks.cells`, which counts the *inset* — `pageMarks` drops the outer
+sixteenth on all four sides, so the grid is 0.875 × 0.875 = **76.6%** of the page (887,616 cells of
+1,158,970 render pixels on the pages below). So `extent` 0.05 is 3.8% of the actual sheet. Every
+"share of the sheet" in this entry, in C27's comparison and in `paleDrawing`'s doc comment means
+share of the inset. It changes no conclusion here, and it would change an arithmetic one.
+
+⚠️ **THE TWO SENTENCES THAT STOOD HERE PUT THE WRONG NUMBER UNDER THAT BAR, AND THE SWEEP
+SECTION BELOW IS WHY.** They read *"These are corner vignettes covering **0.17%–0.32%** of it
+(the `lost` column above)"* and *"5% is … the wrong order of magnitude for the second [decision].
+That is the shape to fix, and it needs no new signal: `pageMarks` already found these marks."*
+Both are struck. `lost` is `Tools/score-threshold-loss.swift`'s own **refused luminance
+candidate**, not `paleDrawing(…).extent` — two different functions either side of one comparison
+— and measured 2026-08-18 the real `extent` on p4 and p6 is **0.00000**, not 0.0017 and 0.0016.
+`paleDrawing` found **no drawing-shaped component at all** on either page. (`pageMarks` does find
+pale cells there — 1,475 and 1,486 of them; it is the next filter that drops them, and the section
+below names it. An earlier draft of this retraction said "`pageMarks` and `paleDrawing` did not
+find these marks", which is wrong about the first of the two.) Read
+"**`extent` MEASURED 2026-08-18**" below before planning any fix here: the constant is not the
+term that decides these pages, and a session acting on the struck sentences would tune a bar that
+cannot reach them.
 
 **MEASURED 2026-08-17, and the mechanism is confirmed in one number.** `Tools/score-mrc.swift`
 against the current tree, same document, `MRC_BG=2` (Balanced, the shipped default) against
@@ -2203,7 +2225,9 @@ fade ratio at `:688`, whose comment reads "**R56 is only visible to this one** �
 recorded, **never reported as a finding**" with `fadeCount = 0.5`. Worse, the four pages it
 counted as faded on this document are **3, 5, 8 and 9** — the pages whose grey background was
 legitimately cleaned, where mean darkness halves — and **not** 4, 6 or 7, because losing a 0.2%
-vignette barely moves a page's mean darkness while its text stays put. So no signal in the gate
+vignette (0.2% of the page's pixels, by the `lost` column, *not* the bar's `extent` — the two are
+distinguished below and this is the one site where `lost` is the right quantity) barely moves a
+page's mean darkness while its text stays put. So no signal in the gate
 fired on this at all. `score-gate.swift:619` states the limit plainly: `pages`, `ink` and `blank`
 "are the only thing that localises a *partial* pixel loss, which the absolute check below cannot
 see." A whole-corpus gate that is green is therefore not evidence about this defect class.
@@ -2213,13 +2237,176 @@ drawing being erased is fixed, and for R56's mechanism that is true. This is a s
 with the same user-visible harm, it is in the shipped default setting, and the notes do not
 mention it. Whether to amend them is the owner's call and is not part of this entry.
 
-**Not yet measured, and each is a real question:** how many corpus pages carry a mark under the
+**Not yet measured, and each is a real question:** ~~how many corpus pages carry a mark under the
 5% bar on a picture-path page (`score-threshold-loss` prints `lost` for every page, so this is
-one sweep); whether a bar set by mark *size* rather than page *fraction* separates these
-vignettes from the decorative shading and show-through R56 was refused four times for admitting;
-and whether the fix belongs in `paleDrawingThreshold`, in a second constant for this decision, or
-in `pageMarks`' own output. **Do not tune a constant on this one document** — that is the failure
-R55 and R56 both record.
+one sweep)~~ — **measured 2026-08-18, and the instrument that sentence names was measuring the
+wrong quantity; see the next two sections**; ~~whether a bar set by mark *size* rather than page
+*fraction* separates these vignettes from the decorative shading and show-through R56 was refused
+four times for admitting; and whether the fix belongs in `paleDrawingThreshold`, in a second
+constant for this decision, or in `pageMarks`' own output.~~ **Both of those are answered below and
+this whole list is now history** — a bar on size and a second constant are both bars on `extent`,
+and `extent` is 0.00000 on the pages this entry exists for, so neither can reach them; what is left
+is the third option, `pageMarks`/`paleDrawing`'s own output, and the section after next names which
+filter drops these marks. **Do not tune a constant on this one
+document** — that is the failure R55 and R56 both record. (This list was left live above a section
+that rules two of its three items out, until the review of this diff caught it: a reader who starts
+at the list takes the path the measurement forbids.)
+
+#### `extent` MEASURED 2026-08-18, and it is **zero** on the two pages that lose the most
+
+The sweep this entry asked for could not be run as written, because the column it named is not
+the quantity the decision reads. `paleDrawingThreshold` is compared against
+`Flattener.paleDrawing(pageMarks(…)).extent` — the largest *drawing-shaped* mark's bounding box
+over the sheet, the shape signal R56 shipped. `score-threshold-loss`'s `lost` column is the
+**luminance candidate R56 refused in four rounds**, and the tool's own header says the app does
+not use it. So `Tools/score-threshold-loss.swift` now prints `extent` and `cover` beside `lost`,
+from the same grey buffer at the same Otsu threshold and the same `rebuildDPI` that `mrcLayers`
+renders at, plus `cells` and `factor` so the numerator is recoverable. The four pages, re-measured
+against the same tree:
+
+```
+document      page  otsu  ink    tone   sat    lost    extent   cover    cells   factor  route
+1954 - Why    p4    139   0.102  0.144  0.039  0.0017  0.00000  0.00000  887616  1       picture
+1954 - Why    p6    140   0.094  0.164  0.043  0.0016  0.00000  0.00000  887616  1       picture
+1954 - Why    p7    139   0.104  0.148  0.041  0.0032  0.00029  0.00021  887616  1       picture
+1954 - Why    p9    130   0.106  0.071  0.041  0.0160  0.00128  0.00110  887616  1       1-bit
+```
+
+**On p4 and p6 — the completely-erased cartoon and the ghost — `extent` is 0.00000 and `cover` is
+0.00000, and that is a zero rather than a rounded-down small number.** `extent` is
+`widest / cells`, where `widest` is an integer count of cells and `cells` is 887,616 here, so five
+decimals resolve to 4.4 cells. So a printed 0.00000 needs `widest ≤ 4` — a bounding box of at most
+4 cells, hence at most 4 cells tall. `paleDrawing` counts a component only where its height exceeds
+`max(typeCeilingInches × dpi / factor, 2)` = `max(0.25 × dpi, 2)` at the measured `factor` of 1, so
+a 4-cell-tall qualifying component needs `dpi` below about **16** — and `factor` 1 means the marks
+grid *is* the render, so an 887,616-pixel inset at 16 dpi would be a sheet of some 4,500 square
+inches. That page does not exist, so `widest` is 0. So
+**no drawing-shaped component was found on those pages at all**: the bar is not what fails, the
+search is. p7, the one whose drawing partly survives, does report a mark, at 1/172 of the bar.
+
+Consequences, and they change what a fix can be:
+
+* **Lowering `paleDrawingThreshold` — to anything, including zero — would not protect p4 or p6.**
+  A bar cannot be cleared by a value that does not exist. The struck sentence above said the fix
+  "needs no new signal"; measured, it needs the signal to *find the mark first*.
+* The two candidate fixes this entry listed — a second constant for the resolution decision, or a
+  bar on mark size rather than page fraction — are both bars on `extent`, so both inherit the same
+  emptiness on the worst two pages. What is left is `pageMarks`/`paleDrawing`'s own filters.
+* **The filter is `typeCeilingInches`, measured 2026-08-18** — see the next section. It is not
+  `paleDrawingThreshold`, and it is not a bar on the page at all.
+
+#### The filter that drops them is the height ceiling, and `pageMarks` is not the problem — 2026-08-18
+
+One instrumented run over the same four pages, driving `Flattener`'s own functions (built from
+`Sources/*.swift`, so this is production's code and not a replica). Found by the adversarial review
+of this commit's diff, which contradicted the draft's claim that `pageMarks` found nothing, and
+**re-measured independently afterwards — both runs agree digit for digit**:
+
+```
+page  dpi       cells   factor  paperLimit  paleCells  comps  tallest  ceiling  clearHeight  +fill  extent
+p4    111.2727  887616  1       172              1475     35        8    27.82            0      0  0.00000
+p6    111.2727  887616  1       172              1486     55       11    27.82            0      0  0.00000
+p7    111.2727  887616  1       172              2855     78      257    27.82            6      2  0.00029
+p9    111.2727  887616  1       178              7145    356      284    27.82            8      3  0.00128
+```
+
+`pageMarks` marks **1,475 and 1,486 pale cells** on p4 and p6 and finds 35 and 55 connected
+components in them, so `minimumMarkContrast` is not what fails and the pale layer is not empty.
+What fails is the first of `paleDrawing`'s three tests: it keeps only components **taller than**
+`max(typeCeilingInches × dpi / factor, 2)` = 0.25 in × 111.27 dpi = **27.82 cells**, and the tallest
+pale component on either page is **8 and 11 cells** — 0.07 and 0.10 inch. **Zero components clear
+it**, so `solidMarkFill` and `maximumInkUnderADrawing` are never consulted at all. On p7 and p9,
+where marks do survive, 6 and 8 components clear the height test and 2 and 3 also clear `fill`.
+
+So C26's fix is not a threshold on a page fraction; it is that a fine line drawing's *pale* trace
+arrives as short fragments, and a rule written to say "taller than a line of type" reads those
+fragments as type. `typeCeilingInches` is doing exactly what R56 designed it to do — it is what
+kept dense type and show-through out — and this is the class of mark it cannot see.
+`paleDrawingThreshold`'s own doc comment already concedes the shape of this: *"What it gives up is
+a small figure: under 2.2 inches on a side, a pale drawing is still erased."* Measured, the give-up
+is smaller and earlier than that: under **0.25 inch of connected pale stroke**, nothing is reported
+at any bar.
+
+⚠️ **Still not measured, and it decides what the fix is.** Why the strokes fragment. A red line at
+~0.04 page saturation renders to a *mid* grey, so some of each stroke may be crossing the Otsu
+threshold into `marks.ink` and leaving only disconnected pale fringes in `marks.pale` — `paperLimit`
+is 172 against an Otsu of 139/140, a 32-level pale band, which is narrow. If that is what is
+happening then the drawing is partly *ink* on this page and the erasure is not a pale-mark miss at
+all, which is a different fix from widening a ceiling. p9 is the corroborating hint rather than the
+answer: its drawing survives precisely by being cut into the 1-bit stencil **as ink**. Two ways to
+settle it, both one run: render `marks.ink` and `marks.pale` as images for p4 and see where the
+cartoon's strokes went; or count cells by luminance band across the drawing's bounding box.
+
+#### The corpus sweep, 2026-08-18: `THRESHOLD-LOSS-2026-08-18.tsv`
+
+`PAGES=2` over `testdocs/*/*.pdf`, 8 minutes, **441 pages from 233 documents**, and the count
+reconciles exactly: 208 documents gave 2 rows and **25 gave 1**, and all 25 are single-page
+documents (checked with `qpdf --show-npages`, 25 of 25). So no page was dropped by the megapixel
+guard or a failed render — worth stating, because a sweep that quietly renders fewer pages than it
+was asked for is this register's recurring instrument defect. Routes: **61 picture, 380 1-bit.** The
+whole file is committed beside this register. `stderr` carried CoreGraphics' usual
+`Unexpected EOF in JBIG2 stream` noise from the corpus's own damaged streams; no row is missing
+because of it.
+
+`extent` on the 61 picture-route pages — the pages where this decision is actually taken:
+
+```
+extent                pages   what happens to them
+> 0.05                    2   protected: pageIsAllText() returns false, no 8x/16x shrink
+0 < extent ≤ 0.05        22   a drawing-shaped mark IS found, and the page is shrunk anyway
+= 0.00000                37   nothing drawing-shaped found — p4/p6's class
+```
+
+and picture-route pages above each candidate bar, cumulatively — **including the 2 already above
+0.05**, so the pages a lower bar would *newly* protect is each figure minus 2:
+
+```
+> 0.04  3 pages     > 0.02  7 pages     > 0.005  9 pages     > 0.001  16 pages
+```
+
+So dropping the bar to 0.04 newly protects **one** page of 441, to 0.02 five, to 0.001 fourteen —
+and none of them is a page this entry was opened for. 17 of the 22 sub-bar pages are below 0.01.
+
+**The bar sits between two clusters here as well, and the cluster immediately under it is led by
+the document R56 was refused for.** The two protected pages are at **0.48119** (`1881 - Harry
+Wilcox` p7) and **0.21864** (`_1939_Former students to Board re Merriam_` p13); the highest
+unprotected page is **0.04492** (`1976 - Regis McKenna Papers` p4) and the second is **0.03897** —
+`Doermann_1967` **p10**, the 1967 typescript whose pale content is *show-through from the reverse
+of the sheet*, which is the exact confuser `paleDrawingThreshold`'s own doc comment tabulates at
+"1 over 0.02, **0** over 0.05" and which killed four rounds of the luminance signal. **So the
+constant has exactly one page of headroom.** A bar at 0.045 protects `1976 - Regis McKenna Papers`
+p4 and nothing else new; anything **below 0.039** admits the show-through page R56 was refused four
+times for. And neither reaches a single page this entry was opened for, which are at 0.00000. That
+is a measured argument against tuning this constant down and it is stronger than the one the entry
+had — but note what it is *not*: it does not say a lower bar admits show-through immediately. It
+says the useful range is one page wide. (This paragraph said "a bar low enough to protect anything
+in that cluster starts protecting show-through, at 0.039", which its own neighbouring sentence —
+"dropping the bar to 0.04 newly protects one page" — refutes. Corrected by the review of this
+diff.)
+
+⚠️ **`extent == 0` is not one mechanism, and the 37 should not be read as 37 of p4's case.** It is
+also what comes back when `marks.cells == 0`, when `dpi <= 0`, and when `pageMarks` finds **no pale
+cells at all** — the pale band collapses when the paper's level sits close to the Otsu threshold.
+On p4 and p6 the band is real (`paperLimit` 172 against Otsu 139/140, 1,475 and 1,486 pale cells),
+so those two are specifically "pale cells found, no component tall enough". How the other 35 split
+between that and an empty pale layer is **not measured**, and it is one column away — a `paleCells`
+count beside `extent` would separate them.
+
+`lost` and `extent` disagree so widely that the two cannot stand in for each other: the 37
+extent-zero picture pages include `lost` values up to **0.1735** (`Krippner` p27), and over the 22
+sub-bar pages `lost / extent` runs from **4.36x to 225.71x**, 6 of the 22 under 10x. (This
+sentence read "an order of magnitude or two above its `extent`" until the review of this diff
+re-derived it from the committed TSV: the *direction* holds on all 22, the quantifier did not.
+Same shape as the figure it was correcting.) The entry's original 0.17%–0.32% came from `lost`.
+
+⚠️ **What this sweep does NOT establish.** It samples 2 pages a document, so 441 pages of the
+corpus's ~16,987 — it sizes the *rate* of each class, not a census, and a document's other pages
+may differ. It does not say whether any of the 22 sub-bar pages carries a drawing a user would
+miss; `extent` is a shape statistic, not a judgement, and reading them needs rendered pages. And
+it cannot see `pageIsAllText()`'s first term (`inkOutsideText` needs Vision's text boxes, which
+this tool does not compute), so a picture-route page with `extent` under the bar is a page that
+reaches the guard's second term, not one proven to be shrunk. `Tools/score-mrc.swift`'s `bgF`/`fgF`
+columns are what confirm the shrink, as they did for p4 and p6 above.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct
@@ -2267,17 +2454,64 @@ because "the corpus had no document of that kind that anyone picked deliberately
 that exists to test spot colour loses its spot colour on every page but one.
 
 **Not measured, and it is the whole question:** how many corpus documents carry spot colour under
-the 0.06 bar. `Tools/score-threshold-loss.swift` already prints `sat` per page, so the population
-is one sweep — the same sweep C26 needs, and they should share it. Until that number exists this
-is one document, and **one document is not a campaign (R55's lesson)**.
+the 0.06 bar. ~~`Tools/score-threshold-loss.swift` already prints `sat` per page, so the population
+is one sweep — the same sweep C26 needs, and they should share it.~~ **The shared sweep was run on
+2026-08-18 and it does NOT answer this — see below.** Until that number exists this is one
+document, and **one document is not a campaign (R55's lesson)**.
+
+#### The shared sweep ran, and it cannot size this population — 2026-08-18
+
+C26's sweep (441 pages, 233 documents, `THRESHOLD-LOSS-2026-08-18.tsv`) does print `sat` per page,
+and this entry's plan was that one pass would size both populations. It does not, **for the reason
+this entry itself gives**: `sat` is the mean, so a page at 0.045 may be a two-ink sheet with 4% of
+its area in saturated ink or a grey scan with a uniform cast, and no threshold on a mean separates
+them. The measurement that found C27 was a *saturated-pixel fraction* (`in red%` in the table
+above), and no tool in this repo prints that per page over the corpus. Sizing this population needs
+that column added — to `score-threshold-loss` or beside it — not this sweep re-read.
+
+What the sweep does give is a **bound and a candidate list**, which is worth having:
+
+```
+sat band          pages of 441   route
+> 0.06                      13   all 13 picture — they clear this bar (see the caveat below)
+0.03 … 0.06                 13   10 picture, 3 1-bit — the band C27's own pages sit in
+0.01 … 0.03                  8
+< 0.01                     407
+```
+
+⚠️ Clearing the bar is not the whole of `shouldKeepColour`: it also requires `mode == .auto` and
+the page to be under `maximumColourPageMegapixels`, and the sweep checks neither. So "13 clear
+0.06" is not "13 published in colour".
+
+So **at most 13 pages of 441 (3.0%) are near enough to the bar to be candidates**, and `1954 - Why`
+p4 (0.039) and p7 (0.041) are two of them — the sample drew p4 and p7 rather than the p2 that
+keeps its red, which is itself the entry's point about within-document inconsistency. The rest of
+the band: `Ford_1941_Speech_` p5 (0.057) and p3 (0.045), `2013 - Silicon Valley Program Transcript`
+p26 and p13 (0.050, both 1-bit), `Atkinson_1939` p3 (0.045), `Stanford_1891` p3 and p2 (0.042,
+0.041), `Black_0000` p3 (0.039), `Schwaller - 2026` p101 (0.037), `Ehrenreich_2000` p5 (0.037),
+`HarpersMagazine-1938-05` p4 (0.036, 1-bit). None has been looked at; they are where to point a
+saturated-pixel measurement first.
+
+**And one measured fact does support this entry's central claim.** Across the bar the distribution
+is a *continuum*, not two clusters: …0.045, 0.050, 0.050, **0.057 | 0.061**, 0.062, 0.062, 0.063,
+0.063, 0.064, 0.068, 0.073, 0.080, 0.086, 0.091, 0.101, 0.105. The gap either side of 0.06 is
+**0.004** — so no value of `pictureSaturationThreshold` separates two-ink pages from tinted grey
+ones, because on this statistic they are not separated. Compare `paleDrawingThreshold` in C26,
+whose own doc comment claims a divider between clusters and whose sweep on 2026-08-18 shows one
+(0.045 against 0.219, a 4.9x gap). Same shape of complaint, opposite verdict about the number:
+C26's constant sits in a gap, C27's does not.
 
 ⛔ **Do not raise `pictureSaturationThreshold` on this evidence.** It gates the *route*, so
 lowering the bar sends more text pages down the picture path and costs bytes on every one — the
 trade R49 and R50 were about. The shape worth considering, and it needs no new signal, is that
 "mean saturation over the page" is the wrong *statistic* for the question rather than 0.06 being
 the wrong *number*: a page with 3% of its area at 0.8 saturation is not the same page as one with
-uniform 0.03 cast, and the mean cannot tell them apart. Note the symmetry with C26, where a
-page-fraction threshold could not see a 0.2% vignette. Two constants, same shape.
+uniform 0.03 cast, and the mean cannot tell them apart. ~~Note the symmetry with C26, where a
+page-fraction threshold could not see a 0.2% vignette. Two constants, same shape.~~ **That
+symmetry was retracted 2026-08-18**: C26's bar is not looking at a 0.2% mark, it is looking at
+nothing — its statistic reports 0.00000 on the pages that lose their drawing — and its 0.05 does
+sit in a 4.9x gap between clusters where this entry's 0.06 sits in a 0.004-wide continuum. The two
+entries are still both "the statistic, not the number", and they are no longer the same case.
 
 ⚠️ **The release gate is silent on this too.** It counts `colour` documents (24 of 233 on
 2026-08-17) and reports no per-page colour decision, so a page that quietly drops its ink moves

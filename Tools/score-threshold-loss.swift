@@ -19,6 +19,40 @@
 // caught a sign error, and two of the four properties here were added *because* a
 // version without them produced a plausible corpus distribution and a wrong answer.
 //
+// ⚠️ **`lost` IS NOT THE QUANTITY ANY SHIPPED DECISION READS, AND C26 MISREAD IT AS
+// ONE.** `lost` is the refused luminance candidate above. What R56 actually shipped is
+// a *shape* signal — `Flattener.paleDrawing(pageMarks(…)).extent`, the largest
+// drawing-shaped mark's bounding box as a share of the sheet — and that is the number
+// `paleDrawingThreshold` (0.05) is compared against, in `isPicture` for a ROUTE and
+// again in `mrcLayers`' `pageIsAllText()` for a RESOLUTION. C26 quoted this tool's
+// `lost` column as "the 5% bar sees 0.17%–0.32%", which is two different functions
+// either side of one comparison. So `extent` and `cover` are printed here beside
+// `lost`: the shipped signal, at the resolution and threshold production uses, so the
+// bar and the number under it are the same kind of thing.
+//
+// What this tool still **cannot** print is `pageIsAllText()`'s verdict. That guard has
+// a first term, `inkOutsideText(…) < textPageInkOutsideThreshold`, which needs the
+// page's Vision text boxes, and nothing here runs OCR. `extent` is the second term and
+// the one C26 is about; use `Tools/score-mrc.swift`'s `bgF`/`fgF` columns to see
+// whether the whole guard fired.
+//
+// Two ways the printed `extent` is the RESOLUTION decision's number exactly and the
+// ROUTE decision's only nearly, both found by the review of the commit that added it and
+// both bounded rather than fixed:
+//
+//   * The loop below mirrors `mrcLayers` — `fullBox`, `rebuildDPI`, `.mediaBox`, the same
+//     rounding, `otsuThreshold` of that render — so at `pageIsAllText()` it is character
+//     for character right. `isPicture`'s call reaches `paleDrawing` through
+//     `renderDPI(of:pixelWidth:)` = `w · 72 / box.width` instead, which differs from
+//     `rebuildDPI` by under 0.05 DPI at these sizes and can only change an answer where
+//     `dpi / markCellsPerInch` lands on a rounding boundary or a component's height sits
+//     exactly on `typeCeilingInches × dpi`. Measured on `1954 - Why.pdf` the two are both
+//     111.2727 and `extent` is identical.
+//   * The megapixel guard below is `maximumPageMegapixels` (400), the bound on rendering.
+//     `mrcLayers` refuses to layer above `maximumMRCPageMegapixels` (100). So a page
+//     between the two gets a row here for a decision production never takes. No corpus
+//     page is affected — the widest `cells` in `THRESHOLD-LOSS-2026-08-18.tsv` is 2.85 M.
+//
 //   mkdir -p /tmp/h && cp Tools/score-threshold-loss.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-threshold-loss -target "$(uname -m)-apple-macos13.0" \
 //     $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
@@ -129,6 +163,33 @@ func contentLostToThreshold(_ grey: [UInt8], width w: Int, height h: Int,
     return total > 0 ? Double(lost) / Double(total) : 0
 }
 
+// MARK: - One columns array, one row printer
+
+/// CONTRIBUTING §5: a tool that prints a TSV gets one `columns` array and one `row(…)`
+/// printer with the width asserted. Counting tab escapes by eye has put the wrong
+/// number of fields under a header in this repo three times — T14's SKIP row, T15's
+/// `score-mrc` (which `REVIEW-2026-08-14.md` calls A12.3) and T18's two — and one of
+/// those sat beside a comment that reasoned the count out and got it wrong. This file
+/// used to print a hand-written header string and a hand-written `String(format:)`
+/// carrying seven tab escapes under an eight-name header, so adding a column meant
+/// editing both and agreeing with yourself.
+///
+/// `cells` and `factor` are printed because `extent` cannot be read on its own. It is
+/// `widest / marks.cells` with `widest` an integer count of cells, so on the page C26
+/// turns on — 887,616 cells — five decimals resolve no finer than 4.4 of them, and the
+/// question there is whether `extent` is *small* or *exactly zero*, which are two
+/// different defects with two different fixes. With `cells` beside it the numerator is
+/// recoverable; `factor` says what reduction `pageMarks` actually took the marks at,
+/// which is the divisor in `paleDrawing`'s own size ceiling.
+let columns = ["document", "page", "otsu", "ink", "tone", "sat", "lost",
+               "extent", "cover", "cells", "factor", "route"]
+
+/// Returns `nil` rather than trapping, so the self-test can prove it still refuses a bad
+/// width. A printer that accepts any width is the defect above wearing a helper's name.
+func row(_ fields: [String]) -> String? {
+    fields.count == columns.count ? fields.joined(separator: "\t") : nil
+}
+
 // MARK: - Self-test, on every run
 
 func selfTest() -> [String] {
@@ -181,6 +242,16 @@ func selfTest() -> [String] {
     expect("a large pale area does not excuse itself", panelLoss > 0,
            String(format: "%.4f", panelLoss))
 
+    // The TSV's shape, pinned. The header and every row come from one `columns` array
+    // through one printer; what has to hold is that the printer still *refuses* a width
+    // that does not match, because that is the check a helper silently loses.
+    expect("a row of the header's width prints", row(columns) != nil,
+           "\(columns.count) fields refused")
+    expect("a short row is refused", row(Array(columns.dropLast())) == nil,
+           "\(columns.count - 1) fields accepted")
+    expect("a long row is refused", row(columns + ["extra"]) == nil,
+           "\(columns.count + 1) fields accepted")
+
     // Degenerate pages: no divide by zero, no answer out of range.
     for (name, buffer) in [("blank", [UInt8](repeating: 255, count: W * H)),
                            ("all ink", [UInt8](repeating: 10, count: W * H))] {
@@ -215,10 +286,20 @@ if perDoc < 1 {
     exit(2)
 }
 
-print("document\tpage\totsu\tink\ttone\tsat\tlost\troute")
+print(columns.joined(separator: "\t"))
+// A corpus sweep that measured nothing must not exit 0. `testdocs/` is not committed, so
+// from an `auto/` worktree `testdocs/*/*.pdf` matches no PDF at all — measured
+// 2026-08-18, bash left the pattern unexpanded and this tool took it as one path, opened
+// nothing, printed its header and **exited 0**, which reads exactly like a clean run in a
+// log. CLAUDE.md records the
+// same fix on `score-corpus`, which "now prints SKIP at exit 1 rather than OK over a
+// document it measured nothing on"; CONTRIBUTING 4b's sibling sweep is why it is here
+// too. Counted rather than inferred from the row count, because a caller may be piping.
+var opened = 0, measured = 0
 for path in argv {
     let url = URL(fileURLWithPath: path)
     guard let doc = PDFDocument(url: url), doc.pageCount > 0 else { continue }
+    opened += 1
     let label = url.deletingPathExtension().lastPathComponent
     let total = doc.pageCount
     let indices: [Int] = explicitPages.isEmpty
@@ -243,11 +324,40 @@ for path in argv {
         let tone = Flattener.toneFraction(of: grey, threshold: t)
         let sat = Flattener.saturation(of: page)
         let lost = contentLostToThreshold(grey, width: w, height: h, threshold: t)
+        // The shipped shape signal, from the same grey buffer at the same threshold and
+        // the same dpi `mrcLayers` computes — it renders `fullBox` at `rebuildDPI` from
+        // the media box exactly as the loop above does, so `extent` here is the number
+        // `pageIsAllText()` compares against `paleDrawingThreshold`. `cover` is the ink
+        // of every drawing-shaped mark; the route reads `extent`, and R56 records why
+        // deciding on `cover` was wrong.
+        let marks = Flattener.pageMarks(grey, width: w, height: h, threshold: t, dpi: dpi)
+        let pale = Flattener.paleDrawing(marks, dpi: dpi)
         let picture = Flattener.isPicture(page, grey: grey, width: w, height: h,
                                           threshold: t, saturation: sat)
-        print(String(format: "%@\tp%d\t%d\t%.3f\t%.3f\t%.3f\t%.4f\t%@",
-                     label, i + 1, Int(t), ink, tone, sat, lost,
-                     picture ? "picture" : "1-bit"))
+        guard let line = row([label, "p\(i + 1)", String(Int(t)),
+                              String(format: "%.3f", ink),
+                              String(format: "%.3f", tone),
+                              String(format: "%.3f", sat),
+                              String(format: "%.4f", lost),
+                              String(format: "%.5f", pale.extent),
+                              String(format: "%.5f", pale.coverage),
+                              String(marks.cells), String(marks.factor),
+                              picture ? "picture" : "1-bit"])
+        else {
+            FileHandle.standardError.write(Data(
+                "row width does not match the \(columns.count) columns\n".utf8))
+            exit(5)
+        }
+        print(line)
+        measured += 1
         fflush(stdout)
     }
+}
+
+if measured == 0 {
+    FileHandle.standardError.write(Data(
+        ("measured nothing: \(argv.count) argument(s), \(opened) opened as a PDF, "
+         + "0 pages rendered — check the paths, and that `testdocs/` is where you think "
+         + "it is (it is not committed, so a worktree does not have it)\n").utf8))
+    exit(3)
 }
