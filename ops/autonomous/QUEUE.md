@@ -53,6 +53,13 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
 - **`C5`** (right-to-left text stored in visual order) and **`R9`** (picture-page JPEGs held in scratch)
   are `WONTFIX` with reasons in their entries. `R9`'s entry additionally *misdescribes the code* —
   following it literally would corrupt output.
+- **`drawnLargestImage`'s `depth < 3` STAYS, and "make it `< 4` to match `largestImage`" is refused**
+  (owner, 2026-08-18 — it was *decided* the other way on 2026-08-17 and retracted the next day on the
+  code). The two numbers are the same reach in different frames: `largestImage` counts resource-dictionary
+  levels from the page (`depth: 0` is the page, `< 4` refused), the drawn walk counts forms entered
+  (`< 3` refuses a fourth). Both reach three nested forms; at four both are blind and both fall back.
+  Raising it would CREATE a divergence, not close one. Do not re-derive this from the number mismatch —
+  the `depth-cap` item carries the full reasoning and the check that pins it.
 
 ## The queue
 
@@ -166,9 +173,28 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       numbers**, so a glob silently measures document 1 and prints a summary that reads like a corpus
       run — it needs a driver loop; and **it samples up to 12 pages a document, not 2**, so 233
       documents is ~2,500 pages, not 441. At the measured 3.8 s/page that is **3-4 hours**, and
-      `1954 - Why` is 111 DPI so read it as a floor. Detached and polled, in a session that budgets
-      for it. ⛔ Do NOT move the constant without it: this is R50's trade, and R49/R50 are the
-      entries about paying bytes on every text page.
+      `1954 - Why` is 111 DPI so read it as a floor. ⛔ Do NOT move the constant without it: this is
+      R50's trade, and R49/R50 are the entries about paying bytes on every text page.
+      ✅ **SIZED, owner 2026-08-18: run it DETACHED ACROSS SESSIONS, the `C24b` mutant-campaign
+      pattern.** It does not fit one session and that is arithmetic, not caution: 3-4 hours is a
+      floor against a `VISIONOCR_MAXRUN` backstop of 9000 s (2.5 h), so a session that tries to see
+      it through is killed mid-sweep. The shape that works, and the one `mutate.py`'s campaign
+      already proved on 2026-08-17:
+      **(1)** write the driver loop over documents first, and commit it — the tool's one-pdf trap
+      above means a glob reports success having measured document 1, so the driver is the deliverable
+      that makes the rest safe. Give it a resumable output: append per-document rows to the TSV as
+      each finishes, and skip documents already carrying a row, so any later session continues
+      instead of restarting.
+      **(2)** start it detached with `nohup`/`setsid` so it OUTLIVES the session, under
+      `test-lock.sh run --label inkbar-sweep` if it can collide with a suite, and write a
+      **resume note into `RUN.md`'s SESSION LOG naming the worktree, the log path and the exact
+      resume command** — that note is what makes the work survivable, and CLAUDE.md's rule applies:
+      `nohup … &` reports success immediately, so poll the artefact and never the exit code.
+      **(3)** later sessions poll, and the one that finds the TSV complete commits it and does the
+      analysis. Cycles that only poll will score as no-progress and back off — correct, not a fault.
+      ⚠️ Expect the run to span a stop: the daemon is not started, so nothing is polling until the
+      owner starts it. The TSV and the resume note are the whole state; `/private/tmp` does not
+      survive a reboot, so keep both under the repo or `$STATE`, never only in the worktree.
       ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
       the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.
@@ -204,16 +230,36 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       the cap becomes a question about pages rather than about agreement, and wants re-measuring then"*.
       The wiring landed and revisited neither the cap nor the comment.
       **Not a wrong answer on anything measured**: that same comment records `< 4` and `< 3` producing
-      byte-identical sweeps over all 16,987 corpus pages, so nothing here nests that deep. The reason to
-      do it anyway is the *latent* one — `.unreadable` falls back to `largestImage`, so a page nesting
-      images four levels deep would get a different answer depending on which path it took, and the two
-      walks are production's two walks now rather than an instrument and its subject.
-      **The decided fix, owner 2026-08-17: set the cap to `< 4`**, re-run `Tools/score-drawn-images.swift`
-      over the corpus expecting a byte-identical sweep, and let the pre-commit suite gate it. If the sweep
-      is NOT byte-identical, that is the interesting outcome and wants writing up rather than tuning away.
-      Found by reviewing `c17b3f3`'s diff while its suite was already running, so it was filed rather than
-      folded in. (context: BUGS.md C24 — CLOSED, and `c17b3f3` is the wiring; the entry is why this
-      matters, not the work itself)
+      byte-identical sweeps over all 16,987 corpus pages, so nothing here nests that deep.
+      ⛔ **THE 2026-08-17 DECISION — "set the cap to `< 4`" — IS RETRACTED, owner 2026-08-18, because its
+      premise is wrong.** It rested on a latent divergence: *"`.unreadable` falls back to `largestImage`, so
+      a page nesting images four levels deep would get a different answer depending on which path it
+      took."* Read against the code, **there is no such divergence — the two caps are different NUMBERS
+      for the SAME REACH**, because they count in different frames:
+      `largestImage` walks resource *dictionaries* and starts at the PAGE's own at `walk(resources, depth: 0)`,
+      refusing `depth 4` — so it reaches images inside **3 nested forms**. `drawnLargestImage` counts *forms
+      entered*: at `s.depth 0` (page content) it may enter, `s.depth += 1` before scanning, and
+      `guard s.depth < 3` blocks entering a fourth — so it also reaches **3 nested forms**. At four levels
+      BOTH are blind and both degrade to the fallback, which is the same answer, not a different one.
+      So `< 4` here would let the drawn walk enter a fourth form and see images `largestImage` cannot —
+      **creating** the divergence the change was meant to remove. And the verification that decision
+      prescribed cannot detect either outcome: `< 4` vs `< 3` was already measured byte-identical, so the
+      corpus sweep is guaranteed to pass while proving nothing about the only case at issue.
+      ⚠️ Confidence, stated plainly: verified by READING the control flow, not by executing it. The check
+      below is what turns it into a measured claim, which is the point of adding it.
+      ✅ **The decided fix, owner 2026-08-18: KEEP `< 3`, rewrite the comment, and add a check that PINS
+      THE TWO WALKS TO THE SAME REACH.** The comment must state the frame-of-reference difference — that is
+      what makes the two numbers legible and stops a third reader "noticing" the mismatch — and drop the
+      instrument-symmetry justification that expired when `c17b3f3` made the walk production; the honest
+      production reason is that three levels is what shipped, and a scan nested deeper returns nil and takes
+      `fallbackRebuildDPI` exactly as the dictionary walk did. The check needs a fixture nesting forms
+      **three and four** deep and asserts both walks agree at both depths: found at three, neither at four.
+      **`A1.3` is the precedent and the reason this is a check rather than a comment** — `Tests/main.swift`
+      already carries *"both outline walks truncate at the same depth"* because that mirror-walk pair
+      truncated at different depths for real. Equal reach recorded only in prose is what let this be
+      re-litigated into a wrong decision once already. One commit, one suite run, and the item retires
+      instead of riding along. (context: BUGS.md C24 — CLOSED, and `c17b3f3` is the wiring; the entry is why
+      this matters, not the work itself)
 - [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
       HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite
       figure was corrected to a MEASURED 1,127 in HANDOFF.md, TECHNICAL.md and ARCHITECTURE.md; TODO.md's
