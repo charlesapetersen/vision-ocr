@@ -1692,6 +1692,18 @@ enum Flattener {
         /// and it rounds differently.
         var factor = 1
         var originX = 0, originY = 0
+        /// Pale cells property 2 threw away: pale, not ink, and 8-adjacent to ink.
+        ///
+        /// Carried for the same reason `factor` is — it cannot be recovered from
+        /// outside without becoming a second answer to a question that already has
+        /// one. Recomputing the pale band needs `limit`, and `paperLimit` is that
+        /// number **floored**, so a replica's `v < paperLimit` and `v <= paperLimit`
+        /// straddle production's own `Double(v) < limit` and each is right on some
+        /// pages and wrong on others. C26's instrument needs the count and nothing
+        /// else does; it is written here rather than guessed there.
+        ///
+        /// Diagnostic only. Nothing in the app reads it and no decision turns on it.
+        var paleBesideInk = 0
     }
 
     /// Build both layers in one pass over the render.
@@ -1806,7 +1818,7 @@ enum Flattener {
                             beside = true; break
                         }
                     }
-                    if beside { kept[y * rw + x] = false }
+                    if beside { kept[y * rw + x] = false; out.paleBesideInk += 1 }
                 }
             }
             pale = kept

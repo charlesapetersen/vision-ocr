@@ -27,12 +27,20 @@ cut against an empty register. **This sentence said the guard "needs 5% of the p
 C26 said those marks cover 0.2% — measured 2026-08-18, that 0.2% was a different function's
 column, and the quantity the 5% bar actually reads is `0.00000` on the two pages that lose the
 most.** So the guard finds no drawing-shaped mark at all there, and lowering `paleDrawingThreshold`
-to any value protects neither page; the fix has to be in what `pageMarks`/`paleDrawing` *find*,
-and which of their four filters rejects a red line is the next single measurement. **The corpus
+to any value protects neither page. **And measured 2026-08-18, `paleDrawing` was never the term to
+look at: the drawings are INK** — 5,495 / 4,188 / 3,379 cells below their page's own Otsu, against
+8 / 350 / 0 pale cells the guard is offered — so they are cut out of the stencil by
+`textRegionMask` (correctly; they are not text), left in the background, and the background is
+what gets stored at 1/8. The term that decides those pages is `pageIsAllText()`'s **first** one:
+`inkOutsideText` reads **0.0493–0.0660 against a bar of 0.08**, so it sees them and lets them
+through, and unlike the pale term it *can* reach them. Whether to move that bar is unmeasured and
+is a corpus question — read the entry's last section before touching it. **The corpus
 sweep both entries were blocked on ran the same day** — 441 pages, 233 documents,
-`THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes C26 (61 picture-route pages: 2 protected, 22 under
-the bar, 37 at zero, and the cluster under the bar is led by the show-through document R56 was
-refused four times for) while **not** sizing C27, because a mean saturation cannot see concentrated
+`THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes the `extent` bar's population (61 picture-route
+pages: 2 protected, 22 under the bar, 37 at zero, and the cluster under the bar is led by the
+show-through document R56 was refused four times for), **which the next day's measurement showed
+is not C26's population** — C26 turns on `inkOutsideText`, and no sweep of that has run — while
+**not** sizing C27, because a mean saturation cannot see concentrated
 colour and C27's own measurement was a saturated-pixel fraction no tool here prints. Both entries
 carry the numbers, the retractions and what is left. It is **not** R56 — that fix is intact and
 works on the other

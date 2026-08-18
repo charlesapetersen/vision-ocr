@@ -184,7 +184,29 @@ for index in pages {
     // continuous tone outside the recognised words. Adding one to `Flattener` for
     // a tool's benefit would put dead code on the app's side, which is the call
     // `score-skew` and `score-threshold-loss` both already record.
+    // **Both** of `pageIsAllText()`'s terms, not just the first. This read
+    // `inkOut < textPageInkOutsideThreshold` alone until 2026-08-18, which is a
+    // replica of a shipped guard missing a clause — CONTRIBUTING 4b's shape, found
+    // by C26's sibling sweep. R56 added the second term precisely so a page carrying
+    // a pale drawing is *not* shrunk, so a tool that omits it prints `all-text` over
+    // exactly the pages R56 exists to protect. Measured on `1954 - Why.pdf` p4/p6/p7
+    // the verdict does not move — `extent` is 0.00000 there, which is C26.
+    //
+    // ⚠️ **That is one document, and `allText` is not only the `verdict` column** — it
+    // also gates the `allTextLayered`/`allTextBilevel`/`allTextPages` aggregate and the
+    // summary line, which `Tools/README.md` records as the source of the figure that
+    // prices TODO item 1. Any page with `inkOut` under the bar *and* `extent` over
+    // `paleDrawingThreshold` now leaves that aggregate;
+    // `THRESHOLD-LOSS-2026-08-18.tsv` has 2 such pages in 61 picture-route rows, and
+    // what that does to the corpus figure is not measured. Found by the review of this
+    // diff, which was right that "no number moves" was a claim about one document.
+    //
+    // The third condition, `keepEveryPixel`, is deliberately not mirrored: it belongs
+    // to the caller's Photo detail, and this tool measures the default.
     let allText = inkOut < Flattener.textPageInkOutsideThreshold
+        && Flattener.paleDrawing(Flattener.pageMarks(grey, width: w, height: h,
+                                                     threshold: threshold, dpi: dpi),
+                                 dpi: dpi).extent <= Flattener.paleDrawingThreshold
 
     // --- layered, exactly as it ships ---
     var layered = 0

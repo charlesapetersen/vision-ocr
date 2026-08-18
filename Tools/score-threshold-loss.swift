@@ -36,6 +36,13 @@
 // the one C26 is about; use `Tools/score-mrc.swift`'s `bgF`/`fgF` columns to see
 // whether the whole guard fired.
 //
+// ⚠️ **And on C26's own pages the first term is the one that decides** — measured
+// 2026-08-18, `inkOutsideText` reads 0.0493–0.0660 against a bar of 0.08 while `extent`
+// is 0.00000, so a reader who has only this tool's output is looking at the term that
+// passes vacuously. `Tools/score-text-route.swift` and `Tools/score-mrc.swift` both
+// print the first term, because both run Vision; this tool and one of those together
+// are what settled C26 sub-step 2, and this one could not have done it alone.
+//
 // Two ways the printed `extent` is the RESOLUTION decision's number exactly and the
 // ROUTE decision's only nearly, both found by the review of the commit that added it and
 // both bounded rather than fixed:
@@ -181,8 +188,149 @@ func contentLostToThreshold(_ grey: [UInt8], width w: Int, height h: Int,
 /// different defects with two different fixes. With `cells` beside it the numerator is
 /// recoverable; `factor` says what reduction `pageMarks` actually took the marks at,
 /// which is the divisor in `paleDrawing`'s own size ceiling.
+///
+/// The last seven are C26 sub-step 2's columns, and they exist because `extent` being
+/// zero says the guard found nothing without saying *why*. `paleDrawing` keeps
+/// components **taller than** a quarter inch, so what decides that page is the height
+/// of the tallest thing in each mask:
+///
+///   * `paleC` / `paleTall` — the layer `paleDrawing` actually reads, and its ceiling.
+///   * `besideInk` — pale cells property 2 threw away for touching ink. A crossing into
+///     ink breaks the stroke's pale trace by itself, because an ink cell is not a pale
+///     one; property 2 then widens each break by a cell on either side. The column
+///     says how much of the pale layer that rule is removing, which on a scan of type
+///     is most of it.
+///   * `inkTall` / `unionTall` — the tallest component of `ink`, and of `ink ∪ pale`.
+///   * `bandOnly` / `bandTall` — the tallest component of the pale **band**, and of
+///     `ink ∪` that band. The band is the pale layer before property 2 removed the
+///     cells beside ink.
+///
+/// **Read `bandOnly` for the band and `bandTall` only as a pair with `inkTall`.**
+/// `bandTall` is `tallestComponent(ink ∪ band)`, so it is bounded below by `inkTall`
+/// and a large value can be nothing but a tall ink component somewhere else on the
+/// page — measured on `1954 - Why.pdf` p4 it reads 189 where `inkTall` is 187 and
+/// `bandOnly` is 14, so the band's own contribution to that 189 is two cells of height
+/// on somebody else's component. The first version of this doc claimed the column
+/// separated "the band bridges the pale fragments" from "the stroke is genuinely
+/// broken in the render", and it cannot; `bandOnly` was added by the review of that
+/// commit's diff because that is the column that can. `unionTall` is the same shape
+/// over production's own two masks and nothing reconstructed — and note it can be cut
+/// by property 2 too, since a suppressed cell is removed from `pale` and is not `ink`,
+/// so it is a hole in the union.
 let columns = ["document", "page", "otsu", "ink", "tone", "sat", "lost",
-               "extent", "cover", "cells", "factor", "route"]
+               "extent", "cover", "cells", "factor", "route",
+               "paleC", "besideInk", "paleTall", "inkTall", "unionTall",
+               "bandOnly", "bandTall"]
+
+// MARK: - Where the pale layer's cells went (C26 sub-step 2)
+
+/// The tallest connected component of a cell mask, in cells, at `paleDrawing`'s own
+/// component floor — production's `markComponents`, not a second implementation of it.
+/// Zero when nothing clears the floor.
+func tallestComponent(_ mask: [Bool], width w: Int, height h: Int) -> Int {
+    guard w > 0, h > 0, mask.count >= w * h else { return 0 }
+    return Flattener.markComponents(mask, width: w, height: h)
+        .reduce(0) { max($0, $1.height) }
+}
+
+/// Both layers as one mask. Used only to ask whether a mark that is fragmented in
+/// `pale` is continuous once the cells `ink` took are put back.
+func unionMask(_ a: [Bool], _ b: [Bool]) -> [Bool] {
+    guard a.count == b.count else { return a }
+    var out = a
+    for i in 0..<b.count where b[i] { out[i] = true }
+    return out
+}
+
+/// The pale **band** as cells: in `[threshold, paperLimit]`, reduced exactly as
+/// `pageMarks` reduces — a cell is in the band if any pixel in it is. This is the pale
+/// layer *before* property 2 takes the cells beside ink, and `bandTall` is the column
+/// that decides C26 sub-step 2: whether a stroke that arrives in `pale` as fragments
+/// was continuous in the render.
+///
+/// ⚠️ **Replica, and one grey level wide.** Production tests `Double(v) < limit`;
+/// only `Int(limit)` survives on `Marks`, so this uses `v <= paperLimit`, which is the
+/// same set except for cells whose only band pixels sit on exactly that level. It is
+/// therefore a superset of production's band by at most one level — never a subset,
+/// which is what a height question needs. The exact count of what property 2 removed
+/// is `Marks.paleBesideInk`, measured inside `pageMarks`; the two are printed side by
+/// side by `--dump` so the gap is visible rather than assumed.
+func bandMask(_ grey: [UInt8], width w: Int, height h: Int, threshold: UInt8,
+              marks: Flattener.Marks) -> [Bool] {
+    let rw = marks.width, rh = marks.height, f = max(marks.factor, 1)
+    guard rw > 0, rh > 0, grey.count >= w * h, w > 0, h > 0 else { return [] }
+    // `pageMarks`'s own inset and its own `guard r? < r?` skip, rather than
+    // `origin + cells * factor`. Two reasons, both from the review of this diff: that
+    // product overflows for a `factor` near `Int.max`, which `pageMarks` uses `safeInt`
+    // to survive (A7.1); and where `cells` was floored to 1 on a page narrower than one
+    // cell it reaches `factor` pixels past the inset production stops at.
+    let mx = w / 16, my = h / 16
+    let cx1 = max(w - mx, mx + 1), cy1 = max(h - my, my + 1)
+    var band = [Bool](repeating: false, count: rw * rh)
+    for y in marks.originY..<min(cy1, h) {
+        let ry = (y - marks.originY) / f
+        guard ry < rh else { continue }
+        let row = y * w, base = ry * rw
+        for x in marks.originX..<min(cx1, w) {
+            let rx = (x - marks.originX) / f
+            guard rx < rw else { continue }
+            let v = grey[row + x]
+            if v >= threshold, Int(v) <= marks.paperLimit { band[base + rx] = true }
+        }
+    }
+    return band
+}
+
+/// `--dump <dir>`: one composite image per measured page, at the cell resolution the
+/// decision is actually taken at.
+///
+///   black  ink            — below Otsu
+///   red    pale, kept     — what `paleDrawing` gets to look at
+///   blue   pale, dropped  — in the pale band, not ink, and touching ink (property 2)
+///   white  paper
+///
+/// ⚠️ **The blue class is the tool's arithmetic, not production's mask.** Production
+/// tests `Double(v) < limit` and only the floored `limit` survives on `Marks`, so this
+/// uses `v <= paperLimit` and can differ by the cells sitting on exactly that level.
+/// It is a picture, and the number beside it — `besideInk`, counted inside `pageMarks`
+/// — is the measurement. `--dump` prints both counts to stderr so a reader can see how
+/// far apart they are before trusting the blue.
+func dumpMarks(_ band: [Bool], marks: Flattener.Marks, to url: URL) -> String {
+    let rw = marks.width, rh = marks.height
+    guard rw > 0, rh > 0, marks.ink.count >= rw * rh, marks.pale.count >= rw * rh,
+          band.count >= rw * rh
+    else { return "no cells" }
+    var dropped = 0
+    var rgb = [UInt8](repeating: 255, count: rw * rh * 3)
+    for i in 0..<(rw * rh) {
+        let p = i * 3
+        if marks.ink[i] { rgb[p] = 0; rgb[p + 1] = 0; rgb[p + 2] = 0 }
+        else if marks.pale[i] { rgb[p] = 220; rgb[p + 1] = 30; rgb[p + 2] = 30 }
+        else if band[i] { rgb[p] = 40; rgb[p + 1] = 90; rgb[p + 2] = 230; dropped += 1 }
+    }
+    guard let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: rw, pixelsHigh: rh, bitsPerSample: 8,
+            samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: rw * 3, bitsPerPixel: 24),
+          let plane = rep.bitmapData
+    else { return "no bitmap" }
+    // A padded row stride would shear the image rather than overflow the buffer, which
+    // is the kind of wrong picture a reader believes. Asked rather than assumed.
+    guard rep.bytesPerRow == rw * 3 else {
+        return "row stride \(rep.bytesPerRow), not \(rw * 3)"
+    }
+    rgb.withUnsafeBufferPointer { plane.update(from: $0.baseAddress!, count: rgb.count) }
+    guard let png = rep.representation(using: .png, properties: [:]),
+          (try? png.write(to: url)) != nil
+    else { return "not written" }
+    return "\(url.lastPathComponent): blue \(dropped) cells (tool, v <= paperLimit) "
+         + "against besideInk \(marks.paleBesideInk) (pageMarks)"
+}
+
+/// Every string `dumpMarks` returns that is not a written file. Kept as one list so a
+/// caller cannot decide a failure was fine: `--dump` that quietly writes nothing and
+/// exits 0 is this tool's own silent-success defect wearing a second hat.
+let dumpFailures = ["no cells", "no bitmap", "not written"]
 
 /// Returns `nil` rather than trapping, so the self-test can prove it still refuses a bad
 /// width. A printer that accepts any width is the defect above wearing a helper's name.
@@ -252,6 +400,57 @@ func selfTest() -> [String] {
     expect("a long row is refused", row(columns + ["extra"]) == nil,
            "\(columns.count + 1) fields accepted")
 
+    // C26 sub-step 2's columns, on a page built to be the thing they have to tell
+    // apart: one continuous pale stroke, 60 cells tall, with two ink cells sitting on
+    // it where the line happens to darken past Otsu.
+    //
+    // **The crossing is what fragments the stroke, not property 2** — an ink cell is
+    // not a pale one, so the break exists before the suppression runs; property 2 then
+    // widens it by a cell on each side, 20 + 38 becoming 19 + 37. The first version of
+    // this comment credited property 2 with the fragmentation, and the review of the
+    // diff that added it worked the fixture through by hand and found otherwise. The
+    // `paleBesideInk` check below is therefore the only one of these that tests
+    // property 2 at all; the height checks test the crossing.
+    var stroke = [UInt8](repeating: 250, count: W * H)
+    for y in 10..<70 { stroke[y * W + 40] = 200 }
+    for y in 30..<32 { stroke[y * W + 40] = 20 }
+    let sm = Flattener.pageMarks(stroke, width: W, height: H, threshold: 128, dpi: 150)
+    let sBand = bandMask(stroke, width: W, height: H, threshold: 128, marks: sm)
+    let sPaleTall = tallestComponent(sm.pale, width: sm.width, height: sm.height)
+    let sBandTall = tallestComponent(unionMask(sm.ink, sBand),
+                                     width: sm.width, height: sm.height)
+    expect("factor 1, so a cell is a pixel and the heights are readable",
+           sm.factor == 1, "factor \(sm.factor)")
+    // Exactly two: the stroke is one cell wide, so the only pale cells 8-adjacent to
+    // the two ink cells are the ones directly above and below them.
+    expect("property 2 took cells, and says how many", sm.paleBesideInk == 2,
+           "\(sm.paleBesideInk), expected 2")
+    expect("the stroke reaches `pale` in fragments", sPaleTall == 37,
+           "tallest pale component \(sPaleTall) of a 60-cell stroke, expected 37")
+    expect("…and the band it came from is continuous once the ink is put back",
+           sBandTall == 60, "tallest ink ∪ band component \(sBandTall), expected 60")
+    // `bandOnly` is the column that can attribute height to the band rather than to
+    // some ink component elsewhere: here the band alone is still two fragments, and
+    // 38 rather than 37 is exactly property 2's cell on each side.
+    expect("…while the band alone is still cut where the stroke crossed into ink",
+           tallestComponent(sBand, width: sm.width, height: sm.height) == 38,
+           "\(tallestComponent(sBand, width: sm.width, height: sm.height)), expected 38")
+    expect("the band is never smaller than the layer it is the before-picture of",
+           sBand.count == sm.pale.count
+               && sBand.indices.allSatisfy { !sm.pale[$0] || sBand[$0] },
+           "\(sBand.count) band cells against \(sm.pale.count) pale, "
+               + "or a kept pale cell is outside the band")
+    // …and the height helper is not simply agreeing with everything: a mask with
+    // nothing in it has no tallest component, and one solid block is its own height.
+    expect("an empty mask has no component",
+           tallestComponent([Bool](repeating: false, count: W * H),
+                            width: W, height: H) == 0, "non-zero")
+    var block = [Bool](repeating: false, count: W * H)
+    for y in 10..<25 { for x in 10..<14 { block[y * W + x] = true } }
+    expect("a 15-cell block measures 15",
+           tallestComponent(block, width: W, height: H) == 15,
+           "\(tallestComponent(block, width: W, height: H))")
+
     // Degenerate pages: no divide by zero, no answer out of range.
     for (name, buffer) in [("blank", [UInt8](repeating: 255, count: W * H)),
                            ("all ink", [UInt8](repeating: 10, count: W * H))] {
@@ -275,6 +474,11 @@ var argv = Array(CommandLine.arguments.dropFirst())
 var explicitPages: [Int] = []
 if let i = argv.firstIndex(of: "--pages"), i + 1 < argv.count {
     explicitPages = argv[i + 1].split(separator: ",").compactMap { Int($0) }
+    argv.removeSubrange(i...(i + 1))
+}
+var dumpDir: URL?
+if let i = argv.firstIndex(of: "--dump"), i + 1 < argv.count {
+    dumpDir = URL(fileURLWithPath: argv[i + 1], isDirectory: true)
     argv.removeSubrange(i...(i + 1))
 }
 let perDoc = Int(ProcessInfo.processInfo.environment["PAGES"] ?? "") ?? 2
@@ -334,6 +538,42 @@ for path in argv {
         let pale = Flattener.paleDrawing(marks, dpi: dpi)
         let picture = Flattener.isPicture(page, grey: grey, width: w, height: h,
                                           threshold: t, saturation: sat)
+        // C26 sub-step 2: what the pale layer looked like before `paleDrawing`'s
+        // height ceiling refused all of it.
+        let paleC = marks.pale.reduce(0) { $0 + ($1 ? 1 : 0) }
+        let paleTall = tallestComponent(marks.pale, width: marks.width,
+                                        height: marks.height)
+        let inkTall = tallestComponent(marks.ink, width: marks.width,
+                                       height: marks.height)
+        let unionTall = tallestComponent(unionMask(marks.ink, marks.pale),
+                                         width: marks.width, height: marks.height)
+        let band = bandMask(grey, width: w, height: h, threshold: t, marks: marks)
+        // A band that came back the wrong size would make `bandOnly` read 0 and
+        // `bandTall` fall back to `inkTall` through `unionMask`'s guard — two plausible
+        // numbers from a failure. Refuse instead.
+        guard band.count == marks.pale.count else {
+            FileHandle.standardError.write(Data(
+                ("band mask is \(band.count) cells against \(marks.pale.count) pale on "
+                 + "\(label) p\(i + 1); measuring nothing rather than guessing\n").utf8))
+            exit(6)
+        }
+        let bandOnly = tallestComponent(band, width: marks.width, height: marks.height)
+        let bandTall = tallestComponent(unionMask(marks.ink, band),
+                                        width: marks.width, height: marks.height)
+        if let dir = dumpDir {
+            try? FileManager.default.createDirectory(at: dir,
+                                                     withIntermediateDirectories: true)
+            let name = "\(label)-p\(i + 1)-marks.png"
+                .replacingOccurrences(of: "/", with: "_")
+            let note = dumpMarks(band, marks: marks,
+                                 to: dir.appendingPathComponent(name))
+            FileHandle.standardError.write(Data(("  " + note + "\n").utf8))
+            if dumpFailures.contains(note) || note.hasPrefix("row stride") {
+                FileHandle.standardError.write(Data(
+                    "--dump wrote no image; exiting rather than reporting a clean run\n".utf8))
+                exit(6)
+            }
+        }
         guard let line = row([label, "p\(i + 1)", String(Int(t)),
                               String(format: "%.3f", ink),
                               String(format: "%.3f", tone),
@@ -342,7 +582,10 @@ for path in argv {
                               String(format: "%.5f", pale.extent),
                               String(format: "%.5f", pale.coverage),
                               String(marks.cells), String(marks.factor),
-                              picture ? "picture" : "1-bit"])
+                              picture ? "picture" : "1-bit",
+                              String(paleC), String(marks.paleBesideInk),
+                              String(paleTall), String(inkTall), String(unionTall),
+                              String(bandOnly), String(bandTall)])
         else {
             FileHandle.standardError.write(Data(
                 "row width does not match the \(columns.count) columns\n".utf8))

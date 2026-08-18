@@ -1582,6 +1582,57 @@ do {
         check("…and a dark scan edge is not a picture either",
               Flattener.inkOutsideText(borderOnly, region: wordRegion,
                                        width: inkW, height: inkH, threshold: 128) == 0)
+        // C26, and this check records the defect rather than the behaviour: a small
+        // ink drawing outside the words is *seen* by this signal and still passes the
+        // bar. `textPageInkOutsideThreshold`'s own doc comment says its recorded miss
+        // is a **pale** drawing reading 0.0000 — measured 2026-08-18 on
+        // `1954 - Why.pdf`, the three erased drawings are not that case: they are ink,
+        // and they read 0.0540, 0.0493 and 0.0660 against the bar of 0.08. That is
+        // the term that lets those pages be stored at an eighth of their resolution,
+        // and it is a term that can reach them. The figure here is sized to land in
+        // that measured band rather than merely under the bar: 15 ink pixels outside
+        // the words against 256 inside is **0.0554**, between p6's 0.0493 and p7's
+        // 0.0660. **When C26 is fixed this check must flip** — it is the register's
+        // measurement in the suite, not a property anyone wants to keep — and sizing
+        // it this way is what makes the flip mean something: a bar dropped to 0.045,
+        // the value the entry names as protecting all three pages, fails this check
+        // rather than squeaking past it.
+        var smallFigure = allPaper
+        for y in 20..<23 { for x in 8..<13 { smallFigure[y * inkW + x] = 30 } }
+        let smallScore = Flattener.inkOutsideText(smallFigure, region: wordRegion,
+                                                  width: inkW, height: inkH,
+                                                  threshold: 128)
+        check("C26 — a small ink drawing outside the words is seen by R50's signal",
+              smallScore > 0,
+              String(format: "%.4f, so the signal is blind to it", smallScore))
+        check("C26 — …and passes the bar anyway, which is why the page is shrunk",
+              smallScore < Flattener.textPageInkOutsideThreshold,
+              String(format: "%.4f vs threshold %.2f", smallScore,
+                     Flattener.textPageInkOutsideThreshold))
+
+        // Property 2 of `pageMarks` says how much it took. C26's instrument needs the
+        // count and cannot recompute it — `Marks.paperLimit` is the floored `limit`,
+        // so a replica's band lands one grey level either side of production's own
+        // test. Pinned here because a counter nothing asserts is a counter that can
+        // quietly stop counting: on `1954 - Why.pdf` p4 it reads 30,591 against 1,475
+        // pale cells kept, which is the number that says the pale layer on those pages
+        // is edge rather than content.
+        let strokeW = 80, strokeH = 80
+        var strokePage = [UInt8](repeating: 250, count: strokeW * strokeH)
+        for y in 10..<70 { strokePage[y * strokeW + 40] = 200 }
+        for y in 30..<32 { strokePage[y * strokeW + 40] = 20 }
+        let strokeMarks = Flattener.pageMarks(strokePage, width: strokeW, height: strokeH,
+                                              threshold: 128, dpi: 150)
+        check("property 2 counts the pale cells it drops for touching ink",
+              strokeMarks.paleBesideInk == 2,
+              "\(strokeMarks.paleBesideInk) cells, from a stroke crossed by 2 ink cells")
+        var strokeNoInk = [UInt8](repeating: 250, count: strokeW * strokeH)
+        for y in 10..<70 { strokeNoInk[y * strokeW + 40] = 200 }
+        let noInkMarks = Flattener.pageMarks(strokeNoInk, width: strokeW, height: strokeH,
+                                             threshold: 128, dpi: 150)
+        check("…and the same stroke with no ink on it loses none of them",
+              noInkMarks.paleBesideInk == 0 && noInkMarks.pale.contains(true),
+              "\(noInkMarks.paleBesideInk) dropped from a page with no ink")
 
         // And the layers it produces. A text page's tone layers must come out at
         // the shrunk size; a page with a picture must not.

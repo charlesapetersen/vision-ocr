@@ -136,11 +136,22 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       p4 and nothing else new; below 0.039 admits `Doermann_1967` p10's show-through), and none of
       it reaches C26's own pages at 0.00000. **Retracted from this line**: "needs no new signal because `pageMarks`
       already finds these marks" — measured, `pageMarks`/`paleDrawing` do not find them.
-      **Sub-step 2, and it is one instrumented run rather than a sweep:** name which filter drops
-      these strokes — `minimumMarkContrast` in `pageMarks`, or `typeCeilingInches`, `solidMarkFill`
-      or `maximumInkUnderADrawing` in `paleDrawing` — because a red line renders to a *mid* grey
-      and may be landing in `ink` rather than `pale`, in which case this is not a pale-mark miss at
-      all. The entry's `extent MEASURED 2026-08-18` section has the four candidates.
+      ✅ **Sub-step 2 is DONE, 2026-08-18, and it moved the defect to a different term.** The red
+      line does land in `ink` rather than `pale` — that was the standing hypothesis and it is now
+      measured. The drawings are **5,495 / 4,188 / 3,379 cells below their page's own Otsu** and
+      `paleDrawing` is offered **8 / 350 / 0**, so no filter inside it is the answer. Being ink and
+      outside the recognised words, they are cut out of the stencil by `textRegionMask` and left in
+      the background — and `pageIsAllText()`'s **first** term, `inkOutsideText`, reads
+      **0.0493 / 0.0540 / 0.0660 against a bar of 0.08**: it sees them and passes them.
+      **Do not re-run this** — `score-threshold-loss --dump` and `score-text-route` both carry it,
+      and the entry's "The drawings are INK" section has the tables.
+      **Sub-step 3, and it is a sweep this time:** price a lower `textPageInkOutsideThreshold`.
+      0.045 refuses all three pages and keeps a factor of 3.4 under the 0.153 hazards that
+      constant's own doc comment tabulates — but every page newly held at full resolution pays
+      bytes, the distribution "runs smoothly from 0 to 0.97" with no gap to hide in, and none of
+      that is measured. `Tools/score-text-route.swift` prints `inkOut` per page and runs Vision on
+      each, so budget it as a real sweep. ⛔ Do NOT move the constant without it: this is R50's
+      trade, and R49/R50 are the entries about paying bytes on every text page.
       ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
       the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.

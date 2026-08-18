@@ -12,13 +12,20 @@ saturation — and it is a separate mechanism from C26 with a separate constant;
 addresses the other. `C26` destroys content on the shipped default setting. Opened 2026-08-17,
 hours after `1.13.0` was cut against an empty register — a small line drawing on a page the code
 correctly reads as all text is erased on the picture path, because the guard that would protect it
-does not fire. **This line said "the guard needs the mark to cover 5% of the page and these cover
-0.2%" until 2026-08-18, and the 0.2% was the wrong column** — measured, the quantity the 5% bar
-reads (`paleDrawing(…).extent`) is **0.00000** on the two worst pages, so the guard's search finds
-nothing rather than finding something too small, and no value of the constant would protect them.
+does not fire. **Measured 2026-08-18, the guard's second term was never the one to look at: the
+drawings are INK, not pale marks** (5,495 / 4,188 / 3,379 cells below the page's own Otsu, against
+8 / 350 / 0 pale cells `paleDrawing` gets to see), and the term that decides these pages is
+`pageIsAllText()`'s **first** one — `inkOutsideText` reads **0.0493–0.0660 against a bar of
+0.08**. That term *can* reach them, which the pale one cannot. **This line said "the guard needs
+the mark to cover 5% of the page and these cover 0.2%" until 2026-08-18, and the 0.2% was the
+wrong column** — measured, the quantity the 5% bar reads (`paleDrawing(…).extent`) is **0.00000**
+on the two worst pages, so the guard's search finds nothing rather than finding something too
+small, and no value of that constant would protect them.
 The corpus sweep both entries were waiting on ran the same day: **441 pages, 233 documents**, and
-it sizes C26's population (61 picture-route pages: 2 protected, 22 under the bar, 37 at zero)
-while **not** sizing C27's, because a mean cannot see concentrated colour. Both entries carry the
+it sizes the population of the `extent` bar (61 picture-route pages: 2 protected, 22 under the
+bar, 37 at zero) while **not** sizing C27's, because a mean cannot see concentrated colour.
+**⚠️ That is no longer C26's population**: the term C26 turns on is `inkOutsideText`, and a sweep
+of *that* has not been run — see the entry's last section. Both entries carry the
 numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
@@ -2122,6 +2129,14 @@ regardless, so nothing waits on it.
 *(found 2026-08-17 by the owner, on `1954 - Why.pdf` processed by 1.13.0 at Photo detail
 **Balanced**, Rebuild **Automatic** — the release cut the same day)*
 
+⚠️ **READ "The drawings are INK" (2026-08-18, last section) FIRST.** This entry spent two sessions
+inside `paleDrawing` — the bar, then the height ceiling — and measured, **the drawings are not
+pale marks at all**: 5,495 / 4,188 / 3,379 cells of them are below the page's own Otsu, and
+`paleDrawing` is offered 8 / 350 / 0. The term that decides these pages is `pageIsAllText()`'s
+**first** one, `inkOutsideText`, which reads **0.0493–0.0660 against a bar of 0.08** — it sees
+them and lets them through. Everything above that section about the pale layer is arithmetically
+right and about the wrong layer.
+
 **Three of the four red line drawings in a 10-page booklet are erased or all but erased, and
 every word on every page survives**, which is what makes it invisible in use. Rendered at
 55 DPI from the shipped output, against the same page of the input:
@@ -2149,6 +2164,11 @@ document      page  otsu  ink    tone   sat    lost    route
 
 p9 survives *because* it reaches the 1-bit route, where its drawing is dark enough against that
 page's lower Otsu (130 against 139/140) to be cut into the stencil and published as ink.
+⚠️ **The parenthetical implies the other three drawings were not dark enough for their own pages,
+and measured 2026-08-18 they were** — all three are ink below their page's own Otsu. The
+differentiator is the *route*, and on the picture route being ink is not enough: the stencil there
+is intersected with `textRegionMask`, and a drawing is not text. Corrected by the review of the
+diff that measured it.
 
 **The mechanism, and `Flattener.mrcLayers` already names it.** On the picture path
 `pageIsAllText()` decides whether to shrink the tone layers by `textPageBackgroundDownsample`
@@ -2247,7 +2267,9 @@ constant for this decision, or in `pageMarks`' own output.~~ **Both of those are
 this whole list is now history** — a bar on size and a second constant are both bars on `extent`,
 and `extent` is 0.00000 on the pages this entry exists for, so neither can reach them; what is left
 is the third option, `pageMarks`/`paleDrawing`'s own output, and the section after next names which
-filter drops these marks. **Do not tune a constant on this one
+filter drops these marks. **⚠️ That third option is struck too, 2026-08-18** — the drawings are ink,
+so nothing `pageMarks`/`paleDrawing` outputs decides them; the fourth option, which this list did
+not contain, is `pageIsAllText()`'s *other* term. **Do not tune a constant on this one
 document** — that is the failure R55 and R56 both record. (This list was left live above a section
 that rules two of its three items out, until the review of this diff caught it: a reader who starts
 at the list takes the path the measurement forbids.)
@@ -2292,10 +2314,27 @@ Consequences, and they change what a fix can be:
 * The two candidate fixes this entry listed — a second constant for the resolution decision, or a
   bar on mark size rather than page fraction — are both bars on `extent`, so both inherit the same
   emptiness on the worst two pages. What is left is `pageMarks`/`paleDrawing`'s own filters.
-* **The filter is `typeCeilingInches`, measured 2026-08-18** — see the next section. It is not
-  `paleDrawingThreshold`, and it is not a bar on the page at all.
+* ~~**The filter is `typeCeilingInches`, measured 2026-08-18** — see the next section. It is not
+  `paleDrawingThreshold`, and it is not a bar on the page at all.~~ **STRUCK 2026-08-18 the same
+  day**: `typeCeilingInches` is what refuses the pale layer on these pages, and the pale layer is
+  not the drawing. No filter inside `paleDrawing` decides them, because the drawings are **ink** —
+  see "The drawings are INK", the last section of this entry. This bullet stood in bold above two
+  sections that rule it out, which is the same shape as the note three bullets up.
 
 #### The filter that drops them is the height ceiling, and `pageMarks` is not the problem — 2026-08-18
+
+⚠️ **THIS SECTION'S ARITHMETIC HOLDS AND ITS INFERENCE DOES NOT — read the section after next
+before acting on it.** Every number below re-measures; what is wrong is the word *them*. Measured
+2026-08-18 with the drawings' own bounding boxes, the pale cells this section counts are mostly
+**not the drawings**: of p4's 1,475 the cartoon's box holds **8**, of p6's 1,486 it holds **350**,
+and of p7's 2,855 it holds **0**. p6 is the weakest of the three and is stated rather than left
+out — 350 is 23.6% of that page's pale layer inside a box that is 1.7% of the grid, so the drawing
+does put pale cells there. What it does not do is put a *tall* one there: p6's tallest pale
+component anywhere on the page is 11 cells against a ceiling of 27.82, and the drawing's own ink
+count in that box is 4,188. The drawings are on the **ink** side of Otsu. So the height ceiling is
+refusing the residue of a pale layer that is mostly type edge, and the sentence below — "a fine line drawing's *pale* trace arrives as short fragments, and
+a rule written to say 'taller than a line of type' reads those fragments as type" — is a true
+statement about the pale layer and says nothing about C26's drawings.
 
 One instrumented run over the same four pages, driving `Flattener`'s own functions (built from
 `Sources/*.swift`, so this is production's code and not a replica). Found by the adversarial review
@@ -2336,6 +2375,11 @@ all, which is a different fix from widening a ceiling. p9 is the corroborating h
 answer: its drawing survives precisely by being cut into the 1-bit stencil **as ink**. Two ways to
 settle it, both one run: render `marks.ink` and `marks.pale` as images for p4 and see where the
 cartoon's strokes went; or count cells by luminance band across the drawing's bounding box.
+
+✅ **SETTLED 2026-08-18, the first way, and the hypothesis in this paragraph was right.** The
+drawing is partly — mostly — ink on this page, so it is not a pale-mark miss at all. Do not run
+either of the two runs above again; `score-threshold-loss --dump` is the first of them and its
+output is in "The drawings are INK" below.
 
 #### The corpus sweep, 2026-08-18: `THRESHOLD-LOSS-2026-08-18.tsv`
 
@@ -2407,6 +2451,133 @@ it cannot see `pageIsAllText()`'s first term (`inkOutsideText` needs Vision's te
 this tool does not compute), so a picture-route page with `extent` under the bar is a page that
 reaches the guard's second term, not one proven to be shrunk. `Tools/score-mrc.swift`'s `bgF`/`fgF`
 columns are what confirm the shrink, as they did for p4 and p6 above.
+
+#### The drawings are INK, and the term that decides these pages is `pageIsAllText()`'s FIRST one — MEASURED 2026-08-18
+
+Sub-step 2 asked why the strokes fragment in the pale layer. They do not: **the drawings are not
+in the pale layer.** Two instruments, both driving shipped code.
+
+**(a) The marks grid, rendered.** `Tools/score-threshold-loss.swift --dump <dir>` writes one
+composite per page at the cell resolution the decision is taken at — black `marks.ink`, red
+`marks.pale` as kept, blue the pale band property 2 threw away for touching ink, white paper.
+Classifying by colour inside each drawing's own bounding box:
+
+```
+page  box (cells, x0,y0–x1,y1)   ink   paleKept  bandEdge   paper
+p4     925,565 – 1072,800       5495         8      1553   27489
+p6       0,  0 –  150,105       4188       350      1029   10183
+p7     900,600 – 1072,828       3379         0       563   35274
+```
+
+**5,495, 4,188 and 3,379 cells of the drawing are below the page's own Otsu threshold**, and
+`paleDrawing` is offered 8, 350 and 0 cells of it. A red line at ~0.04 page saturation does not
+render to a pale grey on this scan; it renders to a *dark* one. The boxes were read off the
+composite by eye and are approximate — they include a little of the neighbouring text column on
+p4 and none on p7 — but the classification inside them is exact, and no reading of the boxes
+turns 5,495 ink cells into a pale mark. **Sensitivity, since the boxes were picked by eye**:
+walking p4's left edge in from 925 to 940, 950 and 960 gives ink 5,495 → 4,522 → 3,854 → 2,748
+and paleKept 8 → 3 → 3 → 3. Every edge that keeps any of the drawing reports thousands of ink
+cells against single-figure pale ones, so the conclusion does not live in the choice of box.
+
+The composites are **deliberately not committed**: they are renderings of a third-party 1954
+booklet, and that is the same reason `testdocs/` is not in this repository. Re-derive them with
+`/tmp/score-threshold-loss --pages 4,6,7,9 --dump <dir> "testdocs/book/1954 - Why.pdf"` and count
+the four colours in a box. Four pages, so it is a run of seconds rather than the sweep's minutes.
+
+**(b) The first term, with real Vision boxes.** `Tools/score-text-route.swift` recognises the page
+and so can compute what `score-threshold-loss` says in its own header it cannot. ⚠️ **And so can
+`Tools/score-mrc.swift`, which has an `inkOut` column and which this entry already ran on p4 and
+p6 on 2026-08-17** — the `bgF`/`fgF` table above is that run, with the column that answers this
+question dropped from the quotation. The number was in hand a day before it was looked at; found
+by the review of this diff. Two sessions of pale-layer analysis stand between the two.
+
+```
+page  inkOut  bar   verdict
+p4    0.0540  0.08  all-text
+p6    0.0493  0.08  all-text
+p7    0.0660  0.08  all-text
+p9    —       —     already 1-bit, so the guard is never reached
+```
+
+`inkOutsideText` reads **0.0493–0.0660 against a bar of 0.08**. Both of `pageIsAllText()`'s terms
+pass; the second passes vacuously at `extent` 0.00000, and **the term that could have refused is
+the first, by a factor of 1.2 to 1.6.**
+
+**So the mechanism, end to end** — with the one link that is inferred rather than measured named
+as such immediately after:
+
+1. the drawing is ink, so the pale-drawing signal was never going to see it — that signal exists
+   for marks Otsu puts on the *paper* side, which is R56's case and not this one;
+2. `mrcLayers` intersects the Sauvola stencil with `textRegionMask` — `for i in 0..<(w * h) where
+   !region[i] { mask[i] = false }` — and the drawing's ink is *outside* the recognised words,
+   which is the same region mask `inkOut` counts against. So the drawing is cut out of the
+   stencil, correctly: it is not text. **This is the inferred link**;
+3. what is not in the stencil is in the background layer — `fillHoles(grey, holes: mask, …)` and
+   the downsample below it, not the line quoted in 2, which only clears the stencil;
+4. `pageIsAllText()` is true, so that background is stored at **1/8** and the foreground at 1/16;
+5. a fine line at 1/8 is gone — which is the 190 KB → 1.8 KB already measured above.
+
+**Which of those five links are measured, and which are inferred.** 1 is measured (the colour census).
+3 is structural. 4 is measured twice over: `inkOut` and
+`extent` are both printed above, and `score-mrc`'s `bgF` 8.0 / `fgF` 16.1 confirmed the shrink
+actually happened. 5 is measured (the rendered pages and the layer sizes). **2 is the inferred
+link**: what is measured is that ink equal to 5.0% / 4.3% / 3.1% of each page's total (5,495 of
+110,844; 4,188 of 98,348; 3,379 of 107,273 — and these two counts are directly comparable only
+because `factor` is **1** on these pages, so a cell is a pixel, and `pageMarks` and
+`inkOutsideText` share the same 1/16 inset and the same Otsu) against an `inkOut` of
+5.4% / 4.9% / 6.6% *outside the recognised words* — so on p4 and p6 the drawing is the same size
+as the whole of what that term counts and on p7 about half of it. The box's own slack cuts both
+ways (p4's 5.0% falls to 2.5% if its left edge is walked in to 960), so read this as an
+order-of-magnitude agreement rather than an identity. That is strong and it is not the same as rendering the region mask
+and seeing the drawing fall outside it. **One run would settle it**: `score-text-route` already
+builds `region`, so dumping it as a third layer beside `ink` and `pale` would show the drawing's
+box empty. Left undone deliberately — it would not change the term this section names, because
+`inkOut` cannot read 0.054 unless something outside the words is ink.
+
+**`textPageInkOutsideThreshold`'s doc comment tabulates its own misses and this is not one of
+them.** It says *"a pale line drawing reads **0.0000**, because Otsu puts light grey on the paper
+side and it is therefore not ink at all"*. Measured, C26's drawings read 0.049–0.066: the signal
+sees them and the bar lets them through. That is a different defect from the one the constant
+records, and it is the one that costs content.
+
+⚠️ **What this does NOT establish, stated because the obvious next move is a constant.** It does
+not say lowering the bar is the fix — only that this is the term that can reach these pages. The
+three sit between 0.0493 and 0.0660, so a bar at 0.045 refuses all three, and the hazards that
+constant's own doc comment tabulates land at **0.153 and above**, so 0.045 would keep a factor of
+3.4 rather than the factor of 2 that 0.08 was chosen for. What is unmeasured is the cost: every
+page newly held at full resolution pays bytes, on a signal whose doc comment says the distribution
+"runs smoothly from 0 to 0.97" with no gap to hide in. That is a corpus sweep — 441 pages of
+`inkOut` would say how many pages a 0.045 bar moves — and `Tools/score-text-route.swift` already
+prints the per-page number, at the cost of running Vision on every page.
+
+Two smaller things this run settled:
+
+* **Property 2 is most of the pale layer on these pages.** `Marks.paleBesideInk` (new, diagnostic,
+  read by nothing in the app) counts what the "pale beside ink is edge" rule removes: **30,591
+  cells against 1,475 kept on p4** — 95.4% — 25,461 on p6 and 28,324 on p7. On a 111 DPI scan of
+  type, nearly the whole pale band is glyph edge, which is the rule working. It also means the
+  pale-layer statistics in the section above are statistics about type edges.
+* **The tallest thing on these pages is ink, not pale — and property 2 is not what makes that
+  true.** New columns on `score-threshold-loss`: p4 `paleTall` 8, `inkTall` 187, `unionTall` 187,
+  `bandOnly` **14**, `bandTall` 189; p6 11 / 111 / 111 / **15** / 112. `bandOnly` is the tallest
+  component of the pale band *before* property 2 removes anything, so it answers the obvious
+  follow-up: **turning the suppression off would not save these pages either.** 14 and 15 cells are
+  still under the 27.82-cell ceiling, and a long way under it. (p7 and p9, where drawings partly
+  survive, read `bandOnly` 392 and 823 — so the column does move when there is a tall pale thing to
+  find, which is the negative control for it.) The pale layer has nothing in it a quarter of an
+  inch tall on p4 and p6 because the marks a quarter of an inch tall are in the other layer.
+
+**Sibling sweep (CONTRIBUTING 4b).** Two tools read `textPageInkOutsideThreshold`.
+`score-mrc.swift` asserts it of its own fixtures, which is not a replica. **`score-text-route.swift`
+was a replica of the whole guard missing a clause** — `let allText = inkOut <
+textPageInkOutsideThreshold`, with no `paleDrawing` term — so it would have printed `all-text` over
+exactly the pages R56 added that term to protect. Fixed in the same commit; measured, the verdicts
+on p4/p6/p7 do not move, because `extent` is 0.00000 there, which is C26. ⚠️ **That is one
+document.** `allText` also gates that tool's aggregate and its summary line — the figure
+`Tools/README.md` records as pricing TODO item 1 — and the sweep above holds 2 pages over
+`paleDrawingThreshold` in 61 picture-route rows, which will now leave it. Unmeasured, and said so
+in the tool. `score-mrc.swift` needs no equivalent fix: its verdicts come from calling `mrcLayers`
+and reading the `bgF`/`fgF` it returns, not from a replica of the guard.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct
