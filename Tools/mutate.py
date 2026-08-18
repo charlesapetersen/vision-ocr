@@ -388,6 +388,41 @@ OPERATORS = [
      "        if let override = rebuildDPIOverride, let answer = override(page) { return answer }\n",
      "        if let override = rebuildDPIOverride { return override(page) ?? fallbackRebuildDPI }\n",
      "C24-override-nil-means-fallback"),
+    # C24's wiring, closed 2026-08-17: the whole defect put back. `rebuildDPI` applying the
+    # shipped policy to the `/Resources` walk instead of the drawn one is what sent 45 corpus
+    # pages to a *neighbour's* plate resolution. Run by hand before it was catalogued — a
+    # scratch copy of `Sources/` plus an extracted single-section probe — and the three rows
+    # it kills are the 600 px page, the logo page and the empty-form page.
+    ("Flattener.swift",
+     "        case .unreadable: return rebuildDPI(from: largestImage(of: page))\n"
+     "        case .noImage: return rebuildDPI(from: nil)\n"
+     "        case let .largest(dpi, pixelWidth):\n"
+     "            return rebuildDPI(from: (dpi: dpi, pixelWidth: pixelWidth))\n",
+     "        case .unreadable, .noImage, .largest:\n"
+     "            return rebuildDPI(from: largestImage(of: page))\n",
+     "C24-rebuild-reads-dictionary"),
+    # T14's rule at the *caller*, in the direction that costs content: a `Do` this could not
+    # resolve read as "there is no image", which refuses a real scan's resolution on the
+    # strength of a failed read. 3 corpus pages, all of `Astin__The Challenge of Open
+    # Admissions`. Anchored on the one arm so the mutant is a behaviour change.
+    ("Flattener.swift",
+     "        case .unreadable: return rebuildDPI(from: largestImage(of: page))\n",
+     "        case .unreadable: return rebuildDPI(from: nil)\n",
+     "C24-rebuild-unreadable-is-nothing"),
+    # The policy handed the drawn DPI but not the drawn *width*, so `minimumScanPixelWidth`
+    # judges a number no page measured. Every page of `shared-resources.pdf` but the tenth
+    # ends in a resolution the policy already trusts, which is why that page was added with
+    # this wiring: on the other nine this mutant answers identically. Run by hand before it
+    # was catalogued and it takes **three** rows red — the tenth page's, plus two C9 rows on
+    # `born.pdf`, whose 16 px logo reaches the same branch. So this one was already reachable;
+    # what the tenth page adds is a page where the two walks *disagree* and the answer turns
+    # on the width, which is `AI 2027` p1's shape and 1 of the 45 the wiring moves.
+    ("Flattener.swift",
+     "        case let .largest(dpi, pixelWidth):\n"
+     "            return rebuildDPI(from: (dpi: dpi, pixelWidth: pixelWidth))\n",
+     "        case let .largest(dpi, _):\n"
+     "            return rebuildDPI(from: (dpi: dpi, pixelWidth: Int.max))\n",
+     "C24-rebuild-width-invented"),
     ("Model.swift", "guard !isCommitted else { return .refusedRunInProgress }",
      "guard !isRunning else { return .refusedRunInProgress }", "U19-add-guard"),
     # A5.3. The interlock as a flag again: the first walk to land lowers it while

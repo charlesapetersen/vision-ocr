@@ -63,10 +63,22 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
      rule is that an entry without evidence is a rumour, and a queue line is at best a rumour about an
      entry. Delete an item that turns out to be already done, and say so in the commit. -->
 
-- [ ] **C24b** — the remaining half of C24: the 45 pages that draw a *different* image than the shared
-      `/Resources` dictionary holds still take the shared plate's resolution. The measurements and the two
-      already-refused repairs are in the entry; read both refusals before proposing a third.
-      MEASURED 2026-08-16 (still open): `Flattener.drawnLargestImage` + `Tools/score-drawn-images.swift`
+- [x] **C24b** — the remaining half of C24: the 45 pages that draw a *different* image than the shared
+      `/Resources` dictionary holds took the shared plate's resolution. **DONE 2026-08-17** — the wiring
+      landed and the gate ran. `rebuildDPI(of:)` applies the shipped policy to `drawnLargestImage`;
+      **exactly 45 pages of 16,987 change resolution**, page-for-page the 45 the 2026-08-16 sweep named,
+      sweep reproduced byte-identically twice, `dictRebuildDPI` equal to the pre-change record's
+      `shippedRebuildDPI` on 48 of 48 rows. Retention against those pages' own embedded text is **+8 words
+      of 3,025** over the 7 that have one (`AI 2027` p16 +11, p47 +13, `Batzell`'s two −4 each); bytes fall
+      **25% / 81% / 3%** by document. `score-drawn-images` had to be repaired first — its
+      `shippedRebuildDPI` column would have collapsed into a copy of the column it was compared against,
+      a tool measuring itself. `score-routing`'s refused rows for `Batzell` and `AI 2027` came back, as
+      predicted here, and the prediction was checked both ways rather than assumed. **`pageIsAnImage` was
+      deliberately NOT wired** (2 pages would flip; it feeds D1's corpus gate — R55's territory), stated in
+      the entry per CONTRIBUTING §4b. Not spent: a scoped `--only C24-rebuild` campaign — the three new
+      mutants were put back by hand and watched red first. C24 is `FIXED`. At seeding, and still worth
+      reading for the two refused repairs:
+      MEASURED 2026-08-16 (then still open): `Flattener.drawnLargestImage` + `Tools/score-drawn-images.swift`
       report what a page draws; the 45 are **39 smaller and 6 wider**, and the "wider" six retire the
       observation the entry carried without a cause. The constant the entry wanted recalibrated faces
       **three** pages and gets two right — the one it gets wrong is `Batzell` p22, a 600 px figure sitting
@@ -94,10 +106,14 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       "no difference" while being right by accident. (This line said a flat "1,961 at every resolution"
       until a 2026-08-17 review checked it against `REBUILD-DPI-2026-08-17.tsv`: three of those six rows
       are 1,960 or 1,962. Percentages here now carry their absolute counts, per CONTRIBUTING §3.)
-      **What is left is ONE thing**: wire the drawn walk into `rebuildDPI` behind a corpus gate run,
-      because it moves 45 pages. Expect `score-drawn-images`'s sweep unchanged and `score-routing`'s two
-      refused rows to come back.
-      Read the entry's `C24b` section first, not this line. (origin: BUGS.md C24, HALF FIXED)
+      **What was left was ONE thing**: wire the drawn walk into `rebuildDPI` behind a corpus gate run,
+      because it moves 45 pages. This line then said "expect `score-drawn-images`'s sweep unchanged and
+      `score-routing`'s two refused rows to come back". **Half right, measured.** The verdict columns are
+      unchanged to the row, but `policyMoves` is not and could not be: it compared production against the
+      drawn walk, and once production *is* the drawn walk that column reads `same` on all 16,987 rows —
+      the tool needed repairing before it could be the gate. The `score-routing` half is right.
+      Read the entry's `C24b` and `C24's wiring` sections first, not this line.
+      (origin: BUGS.md C24, FIXED)
 - [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
       HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite
       figure was corrected to a MEASURED 1,127 in HANDOFF.md, TECHNICAL.md and ARCHITECTURE.md; TODO.md's
@@ -122,9 +138,11 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
 - [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
       scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~65 hours
-      at the C24b campaign's measured ~45 min per mutant over 89 mutants, not the ~55 hours this line
-      claimed off a 39m30s sample nor the ~70 minutes it claimed before that; read the estimate the tool
-      prints at startup instead, and note it was 4.22x low the one time anyone checked it out of sample —
+      at the C24b campaign's measured ~45 min per mutant over the whole catalogue, whose size is
+      `python3 Tools/mutate.py --list | tail -1` and not a number written here — this line said 89 while
+      the tool printed 91, and C24's wiring made it 94. Not the ~55 hours it claimed off a 39m30s sample
+      nor the ~70 minutes before that; read the estimate the tool prints at startup instead, and note it
+      was 4.22x low the one time anyone checked it out of sample —
       and never
       while `Sources/` is being edited. The work item is the live survivor list in
       `Tools/mutation-log.tsv`. (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a

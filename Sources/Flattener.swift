@@ -2593,20 +2593,53 @@ enum Flattener {
     /// sampled pages below the DPI floor split into 47 logos, 16–96 px wide, and
     /// 37 real 72 DPI scans, 1936–2592 px wide. Nothing lands in between, so the
     /// threshold is not finely balanced.
+    ///
+    /// **The measurement is `drawnLargestImage`, not `largestImage` — C24, closed
+    /// 2026-08-17.** The policy above is unchanged; what changed is which number it is
+    /// applied to. `largestImage` walks the page's `/Resources`, and 4 of the corpus's
+    /// 208 multi-page documents share one dictionary across every page, so a page was
+    /// told its resolution by a *neighbour's* plate. C24's structural half fixed the 85
+    /// pages that draw nothing at all; this fixes the **45 that draw a different image
+    /// than the dictionary holds** — `AI 2027` 38, `Sherman_1986` 5, `Batzell` 2.
+    /// Measured over all 16,987 corpus pages, before against after: exactly those 45
+    /// change resolution and not one other.
+    ///
+    /// **`.unreadable` keeps the `/Resources` answer**, which is T14's rule one level up
+    /// from the walk that already obeys it: a `Do` whose name would not resolve is
+    /// evidence the instrument read nothing, never evidence the page draws nothing.
+    /// Dropping such a page to the fallback would refuse a real scan's resolution on the
+    /// strength of a failed read. 3 corpus pages, all of `Astin__The Challenge of Open
+    /// Admissions`, and all three keep the 302.6 DPI they have today.
+    ///
+    /// **Not wired here: `pageIsAnImage`**, which asks a different question — is the page
+    /// a raster rather than what should it be rebuilt at — and feeds `Model`'s
+    /// text-extraction skip marker, `hasDigitalText` and `Tools/classify-source.swift`,
+    /// which is D1's corpus gate (R55). Applying its predicate to both columns of the
+    /// 16,987-page sweep in `DRAWN-2026-08-17.tsv`, wiring the drawn walk there would flip
+    /// exactly **2** pages: `Batzell` p22 (600 px, under the 900 floor) and `AI 2027` p1
+    /// (245 px). Both have embedded text, so neither reaches `Model`'s marker branch; the
+    /// reason to leave it is that it moves a corpus gate the owner closed on its own
+    /// arithmetic, not that it is unaffected.
     static func rebuildDPI(of page: PDFPage) -> Double {
         if let override = rebuildDPIOverride, let answer = override(page) { return answer }
-        return rebuildDPI(from: largestImage(of: page))
+        switch drawnLargestImage(of: page) {
+        case .unreadable: return rebuildDPI(from: largestImage(of: page))
+        case .noImage: return rebuildDPI(from: nil)
+        case let .largest(dpi, pixelWidth):
+            return rebuildDPI(from: (dpi: dpi, pixelWidth: pixelWidth))
+        }
     }
 
     /// A substitute resolution, for a tool asking what a page **would** rebuild at.
     ///
     /// `nil` in the app, always — nothing in `Sources/` sets it, and the settings panel
-    /// has no control that reaches it. It exists because C24's open half is a question
-    /// the shipped code cannot be asked: `Flattener` reads nothing from `Prefs`, so the
-    /// rebuild resolution is always the page's own, and `Recogniser.render`'s manual
-    /// "PDF render DPI" governs the *non*-rebuild route only. Measuring what a page
-    /// recognises at some other resolution therefore meant either a tool reproducing
-    /// `flatten`'s render — the divergence T15 charges for — or this.
+    /// has no control that reaches it. It exists because "what would this page recognise at
+    /// some other resolution" is a question the shipped code cannot be asked: `Flattener`
+    /// reads nothing from `Prefs`, so the rebuild resolution is always the page's own, and
+    /// `Recogniser.render`'s manual "PDF render DPI" governs the *non*-rebuild route only.
+    /// Measuring it therefore meant either a tool reproducing `flatten`'s render — the
+    /// divergence T15 charges for — or this. C24's second half is what wanted it first, and
+    /// the same seam then ran that half's corpus gate; it is not specific to either.
     ///
     /// **One hook rather than a parameter, because there are three consumers.**
     /// `flatten`, `mrcLayers` and `Recogniser.render` each call `rebuildDPI(of:)`
@@ -2818,32 +2851,36 @@ enum Flattener {
     /// The largest image the page actually **draws**, found by resolving every `Do` the
     /// content stream issues rather than by walking `/Resources`.
     ///
-    /// **This is C24's open half, as a measurement.** `largestImage` answers a question
-    /// about the resource dictionary, and 4 of the corpus's 208 multi-page documents share
-    /// one dictionary across every page. `drawsAnyXObject` closed the degenerate case — a
-    /// page that invokes nothing at all — and **45 corpus pages remain that invoke a
-    /// *different* image than the shared dictionary holds**, so they still take a
-    /// neighbour's plate resolution. Measured with this function: **39 draw a smaller image
-    /// and 6 draw a wider one**, the six being pages of `AI 2027`. "Smaller" was the
-    /// entry's word for all 45 and is wrong for those six — both walks pick the largest
-    /// image by *area* and then report its *width*, so a subset's winner can be the wider
-    /// of two.
+    /// **This was C24's open half; it is what `rebuildDPI` reads.** `largestImage` answers a
+    /// question about the resource dictionary, and 4 of the corpus's 208 multi-page documents
+    /// share one dictionary across every page. `drawsAnyXObject` closed the degenerate case —
+    /// a page that invokes nothing at all — and **45 corpus pages invoked a *different* image
+    /// than the shared dictionary holds**, so they took a neighbour's plate resolution.
+    /// Measured with this function: **39 draw a smaller image and 6 draw a wider one**, the
+    /// six being pages of `AI 2027`. "Smaller" was the entry's word for all 45 and is wrong
+    /// for those six — both walks pick the largest image by *area* and then report its
+    /// *width*, so a subset's winner can be the wider of two.
     ///
-    /// **Deliberately wired into nothing, and the reason has changed.** Restricting the walk
-    /// to the invoked names is structural: it needs no coverage rule and no threshold, which
-    /// is what killed the entry's second repair. What this comment then said it needed was a
-    /// constant recalibrated — `minimumScanPixelWidth` separated 47 logos of 16–96 px from 37
-    /// page-sized scans of 1936–2592 px measured against each document's *maximum*, and the
-    /// entry's first repair sent `Batzell` p22 from 369.6 DPI to **70.6** because that page's
-    /// own figure is 600 px wide. This comment called that "C9 again", **which was reasoned
-    /// and is measured false** (C24, 2026-08-17): p22 at 70.6 DPI retains 92.8% of its own
-    /// 291 words against 94.2% at 369.6 and 93.8% at the 300 fallback, for 87% fewer
-    /// published bytes, and the other two pages the constant faces are right as well. C9 was
-    /// a page rebuilt as 16 x 23 px; this is 600 x 776.
+    /// **Wired into `rebuildDPI(of:)` on 2026-08-17, and the reason it was not has been
+    /// answered twice.** Restricting the walk to the invoked names is structural: it needs no
+    /// coverage rule and no threshold, which is what killed the entry's second repair. What
+    /// this comment then said it needed was a constant recalibrated —
+    /// `minimumScanPixelWidth` separated 47 logos of 16–96 px from 37 page-sized scans of
+    /// 1936–2592 px measured against each document's *maximum*, and the entry's first repair
+    /// sent `Batzell` p22 from 369.6 DPI to **70.6** because that page's own figure is 600 px
+    /// wide. This comment called that "C9 again", **which was reasoned and is measured
+    /// false** (C24, 2026-08-17): p22 at 70.6 DPI retains 92.8% of its own 291 words against
+    /// 94.2% at 369.6 and 93.8% at the 300 fallback, for 87% fewer published bytes, and the
+    /// other two pages the constant faces are right as well. C9 was a page rebuilt as
+    /// 16 x 23 px; this is 600 x 776.
     ///
-    /// So no recalibration is wanted. What is left before wiring this in is a corpus gate
-    /// run, because it moves 45 pages. `Tools/score-rebuild-dpi.swift` is what measured it
-    /// and `Tools/score-drawn-images.swift` is the per-page population.
+    /// **Then the corpus gate ran, over 12 of the 45 pages the wiring moves.** Retention
+    /// against each page's own embedded text is flat to slightly up — `AI 2027` p16 gains 11
+    /// words of 386 and p47 gains 13 of 446, `Batzell`'s two lose 4 each — while published
+    /// bytes fall 25% on `AI 2027`'s five, 81% on `Batzell`'s two and 3% on `Sherman_1986`'s
+    /// five. `Tools/score-rebuild-dpi.swift` took those figures and
+    /// `REBUILD-DPI-WIRING-2026-08-17.tsv` is the run; `Tools/score-drawn-images.swift` is
+    /// the per-page population and the before/after over all 16,987.
     ///
     /// Forms are followed by scanning their own content streams, which is the only way to
     /// learn what a form draws. C24's second repair died on that shape: `Lyons oral

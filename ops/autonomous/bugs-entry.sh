@@ -27,7 +27,8 @@
 # OPEN IS DEFINED BY EXCLUSION, and this is the load-bearing decision in the file. An entry is CLOSED iff
 # its status begins `FIXED`, `WONTFIX` or `NO DEFECT`; ANYTHING ELSE IS OPEN — notably `HALF FIXED`.
 # Why not a whitelist of "open" spellings: the register's own header declares the vocabulary
-# `OPEN · FIXED · WONTFIX`, but `HALF FIXED` is what the one genuinely open entry actually carries. A
+# `OPEN · FIXED · WONTFIX`, but `HALF FIXED` is what C24 carried for the two days it was half done, and
+# the register has nothing open as of 2026-08-17. The exclusion rule stays because the vocabulary drifts. A
 # whitelist would have to be taught every new coinage, and the day someone invents the next one it reports
 # ZERO OPEN ENTRIES — the most confidently wrong sentence this project can print about itself. Erring toward
 # OPEN costs a look at an entry; erring toward CLOSED hides work. So: exclusion, and the list of closed

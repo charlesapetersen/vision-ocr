@@ -3257,10 +3257,11 @@ do {
     // stream dictionary and never decodes it, so three bytes of body is enough for the
     // page to claim a 3000 px plate.
     //
-    // **C24b — the open half — is on the same fixture**, because it is the same sharing
-    // seen one page further on: page 3 below draws a *600 px* figure while the shared
-    // dictionary also holds the 3000 px plate, which is the shape of the 45 pages still
-    // open. `largestImage` answers 3000 there and is *right* about `/Resources`; only a
+    // **C24b — the other half, closed 2026-08-17 — is on the same fixture**, because it is
+    // the same sharing seen one page further on: page 3 below draws a *600 px* figure while
+    // the shared dictionary also holds the 3000 px plate, which is the shape of the 45 pages
+    // that took a neighbour's plate resolution until `rebuildDPI` was wired to the drawn
+    // walk. `largestImage` answers 3000 there and is *right* about `/Resources`; only a
     // walk of the content stream can say what the page draws. Pages 4 and 5 carry the
     // shape that killed the entry's second repair — the image one level down inside a Form
     // XObject, once with the form holding its own `/Resources` and once without. Pages 8
@@ -3268,6 +3269,8 @@ do {
     // could see the thing it tests: page 8 is the only shape that reaches the "draws an
     // XObject but no image" guard, and page 9 the only one where a bare form's invoker is
     // not the page, which is what tells resource *scope* apart from the page's dictionary.
+    // **Page 10 came with the wiring** — a logo, so the drawn answer is one the policy
+    // *refuses*, which is the only way a check can see that the drawn *width* reaches it.
     do {
         let quietStream = "BT /F1 12 Tf 72 700 Td (no image here) Tj ET\n"
         let drawStream = "q 612 0 0 792 0 0 cm /Im0 Do Q\n"
@@ -3279,20 +3282,22 @@ do {
         let emptyFormCall = "q /Fg3 Do Q\n"
         let noImageInForm = "q 0 0 100 100 re f Q\n"
         let outerFormCall = "q /Fout Do Q\n"
+        let logoCall = "q 40 0 0 30 0 0 cm /Im4 Do Q\n"
         let outerBody = "q /Fin Do Q\n"
         let innerBareCall = "q /Ix Do Q\n"
 
         var objects: [String] = []
         objects.append("<< /Type /Catalog /Pages 2 0 R >>")
         objects.append("<< /Type /Pages /Kids "
-                       + "[3 0 R 6 0 R 9 0 R 12 0 R 16 0 R 18 0 R 21 0 R 24 0 R 29 0 R] "
-                       + "/Count 9 >>")
+                       + "[3 0 R 6 0 R 9 0 R 12 0 R 16 0 R 18 0 R 21 0 R 24 0 R 29 0 R "
+                       + "32 0 R] "
+                       + "/Count 10 >>")
         objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
                        + "/Resources 4 0 R /Contents 7 0 R >>")          // draws nothing
         // `/Ix` is the 3000 px plate *here*, and object 28's form defines the same name as a
         // 1500 px image. Page 9 is what tells those two scopes apart.
         objects.append("<< /XObject << /Im0 5 0 R /Im1 10 0 R "          // the shared one
-                       + "/Im2 20 0 R /Fg 14 0 R /Fg2 15 0 R "
+                       + "/Im2 20 0 R /Im4 31 0 R /Fg 14 0 R /Fg2 15 0 R "
                        + "/Fg3 23 0 R /Fout 28 0 R /Ix 5 0 R >> >>")
         objects.append("<< /Type /XObject /Subtype /Image /Width 3000 /Height 4000 "
                        + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
@@ -3383,6 +3388,30 @@ do {
                        + "/Resources 4 0 R /Contents 30 0 R >>")         // bare form in form
         objects.append("<< /Length \(outerFormCall.utf8.count) >>\nstream\n"
                        + outerFormCall + "endstream")
+        // **A logo on a page whose dictionary reaches the plate** — the shape where the
+        // wiring and `minimumScanPixelWidth` interact. 400 px on a 612 pt sheet is 47 DPI,
+        // under `minimumPlausibleScanDPI` *and* under the 600 px floor, so the policy must
+        // answer the fallback while the dictionary would have it trusted at 352.9. Added
+        // with the wiring (C24, 2026-08-17): every one of the nine pages above ends in a
+        // resolution the policy *trusts*, so on all nine a wiring that handed the policy the
+        // drawn DPI with an invented width would answer identically.
+        //
+        // **It is not the only page that reaches the width branch, and the first version of
+        // this comment said it was.** `born.pdf`'s 16 px logo, 150 lines above, reaches it
+        // too and is what the C9 rows read — measured, by building the invented-width
+        // mutant and running it: three rows go red and two of them are those. What `born.pdf`
+        // cannot see is the *wiring*, because its dictionary holds only that one logo, so
+        // both walks agree on it and either dispatch answers 1.9 DPI. This page is where the
+        // two walks disagree *and* the answer turns on the width. `AI 2027` p1 is it in the
+        // corpus — a 245 px figure whose refusal is worth 14 of that page's 27 words — and
+        // it is 1 of the 45 this fix moves.
+        objects.append("<< /Type /XObject /Subtype /Image /Width 400 /Height 300 "
+                       + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
+                       + ">>\nstream\nabc\nendstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 4 0 R /Contents 33 0 R >>")         // draws a logo
+        objects.append("<< /Length \(logoCall.utf8.count) >>\nstream\n"
+                       + logoCall + "endstream")
 
         var pdf = "%PDF-1.4\n"
         var offsets: [Int] = []
@@ -3399,8 +3428,8 @@ do {
         let shared = dir.appendingPathComponent("shared-resources.pdf")
         try? pdf.write(to: shared, atomically: true, encoding: .isoLatin1)
         let sd = PDFDocument(url: shared)
-        check("the shared-/Resources fixture is a readable nine-page PDF",
-              sd?.pageCount == 9, "\(sd?.pageCount ?? -1) pages")
+        check("the shared-/Resources fixture is a readable ten-page PDF",
+              sd?.pageCount == 10, "\(sd?.pageCount ?? -1) pages")
         if let sd, let quiet = sd.page(at: 0), let drawing = sd.page(at: 1) {
             // The premise first. Without these two the checks below would pass over a
             // fixture that simply has no image in it, which is a different page and
@@ -3430,12 +3459,13 @@ do {
 
             // MARK: C24b — what the page draws, not what its /Resources can reach
             //
-            // The measurement only. `rebuildDPI` still reads `largestImage`, deliberately —
-            // moving it moves 45 corpus pages and wants a gate run first. This comment used
-            // to give a second reason, that the constant was not calibrated for the
-            // population and had sent a page of type to 70.6 DPI; that page was rendered both
-            // ways on 2026-08-17 and the constant is right about it (C24). These assert the
-            // number, not the policy.
+            // The measurement only — the rows that say what the walk *answers*. The block
+            // after them is the wiring, which `rebuildDPI` took on 2026-08-17 after the
+            // corpus gate ran. This comment used to say the wiring was held back for two
+            // reasons: the gate, and a constant it thought uncalibrated for the population.
+            // The second was reasoned and is false — the page it worried about, `Batzell`
+            // p22, was rendered both ways and the constant is right about it (C24) — and the
+            // first has been run. These still assert the number, not the policy.
             guard let small = sd.page(at: 2), let viaForm = sd.page(at: 3),
                   let viaBareForm = sd.page(at: 4), let unresolved = sd.page(at: 5) else {
                 check("the shared-/Resources fixture's pages 3-6 are readable", false)
@@ -3443,7 +3473,7 @@ do {
                 exit(1)
             }
             // The premise, again: `largestImage` is *right* about the dictionary, and that
-            // wrong-for-the-page answer is the whole of C24's open half. Without this the
+            // wrong-for-the-page answer was the whole of C24's second half. Without this the
             // check below could pass over a page whose dictionary held nothing bigger.
             check("C24b — the small page's /Resources still reaches the 3000 px plate",
                   Flattener.largestImage(of: small)?.pixelWidth == 3000,
@@ -3493,7 +3523,7 @@ do {
             // on every other page of this fixture while being wrong about the corpus.
             guard let widerDrawn = sd.page(at: 6), let emptyForm = sd.page(at: 7),
                   let scoped = sd.page(at: 8) else {
-                check("the shared-/Resources fixture has nine readable pages", false)
+                check("the shared-/Resources fixture's pages 7-9 are readable", false)
                 resetPrefs()
                 exit(1)
             }
@@ -3528,6 +3558,83 @@ do {
                   Flattener.drawnLargestImage(of: scoped)
                       == .largest(dpi: 1500 / (612.0 / 72.0), pixelWidth: 1500),
                   "\(Flattener.drawnLargestImage(of: scoped))")
+
+            // MARK: C24 — and `rebuildDPI` now applies the policy to the drawn walk
+            //
+            // The wiring, closed 2026-08-17. Everything above asserts the *measurement*;
+            // these assert that production uses it. `rebuildDPI(of:)` read `largestImage`
+            // until this commit, so a page in a shared-`/Resources` document was rebuilt at
+            // a **neighbour's** plate resolution: 45 corpus pages over `AI 2027` (38),
+            // `Sherman_1986` (5) and `Batzell` (2), measured before and after over all
+            // 16,987 pages with exactly those 45 moving.
+            //
+            // Five rows, and each one kills a different wrong reading of the same three-case
+            // switch — because the policy function `rebuildDPI(from:)` is already pinned by
+            // `const/minimumScanPixelWidth` and what is new here is only *which number is
+            // handed to it*:
+            //
+            //   the old dispatch          `from: largestImage(…)`   — dies on the 600 px page
+            //   "could not tell" as none  `.unreadable -> from: nil` — dies on the /Nope page
+            //   "no image" as the dict's  `.noImage -> from: dict`   — dies on the empty form
+            //   the DPI without its width `pixelWidth` invented      — dies on the logo page
+            //   moving a page it must not the walks agree            — dies on page 2
+            //
+            // **All four were run, not reasoned about**: each replacement was written into a
+            // scratch copy of `Sources/` and put through an extracted single-section probe.
+            // The old dispatch takes three rows red; the other three take exactly the one row
+            // named. The catalogue carries them as `logic/C24-rebuild-reads-dictionary`,
+            // `-unreadable-is-nothing` and `-width-invented` so `mutate.py` keeps saying so.
+            //
+            // The tenth page is new with this wiring, for the fourth line: all nine before it
+            // end in a resolution the policy *trusts*, so on every one of them a wiring that
+            // handed the policy the drawn DPI with an invented width answers identically. (It
+            // is not the only page in the *suite* that reaches that branch — `born.pdf`'s 16 px
+            // logo does, and the invented-width mutant takes its C9 rows red too. What
+            // `born.pdf` cannot see is which walk `rebuildDPI` reads, because its dictionary
+            // holds only that logo and the two walks agree on it.)
+            let sheetPt = 612.0 / 72.0
+            guard let logo = sd.page(at: 9) else {
+                check("the shared-/Resources fixture has a tenth page", false)
+                resetPrefs()
+                exit(1)
+            }
+            check("C24 — the logo page's /Resources still reaches the 3000 px plate",
+                  Flattener.largestImage(of: logo)?.pixelWidth == 3000,
+                  "\(Flattener.largestImage(of: logo)?.pixelWidth ?? -1)")
+            check("…while what it draws is 400 px, under both of the policy's floors",
+                  Flattener.drawnLargestImage(of: logo)
+                      == .largest(dpi: 400 / sheetPt, pixelWidth: 400)
+                      && 400 / sheetPt < Flattener.minimumPlausibleScanDPI
+                      && 400 < Flattener.minimumScanPixelWidth,
+                  "\(Flattener.drawnLargestImage(of: logo))")
+
+            check("C24 — rebuildDPI answers the figure the page draws, not the shared plate",
+                  Flattener.rebuildDPI(of: small) == 600 / sheetPt,
+                  String(format: "%.1f, dictionary would say %.1f",
+                         Flattener.rebuildDPI(of: small), 3000 / sheetPt))
+            check("…and a page drawing a logo takes the fallback, not the logo's 47 DPI",
+                  Flattener.rebuildDPI(of: logo) == Flattener.fallbackRebuildDPI,
+                  String(format: "%.1f", Flattener.rebuildDPI(of: logo)))
+            check("…and a form that draws no image rebuilds at the fallback too",
+                  Flattener.rebuildDPI(of: emptyForm) == Flattener.fallbackRebuildDPI,
+                  String(format: "%.1f", Flattener.rebuildDPI(of: emptyForm)))
+            // T14's rule, one level up from the walk that already obeys it. A `Do` naming
+            // nothing the dictionary holds is a failed *read*, so the caller must keep the
+            // `/Resources` answer rather than refuse a resolution on the strength of it.
+            // 3 corpus pages, all of `Astin__The Challenge of Open Admissions`, and this is
+            // what keeps all three on the 302.6 DPI they have today.
+            check("…while an unreadable page keeps the /Resources answer, not the fallback",
+                  Flattener.rebuildDPI(of: unresolved) == 3000 / sheetPt
+                      && Flattener.rebuildDPI(of: unresolved) != Flattener.fallbackRebuildDPI,
+                  String(format: "%.1f, fallback %.1f", Flattener.rebuildDPI(of: unresolved),
+                         Flattener.fallbackRebuildDPI))
+            // The inverse row (CONTRIBUTING §4d): the wiring must leave alone every page
+            // the two walks agree about, which is 16,942 of the corpus's 16,987. Without it
+            // a switch that answered the fallback in all three arms would pass four of the
+            // five rows above.
+            check("…and a page whose drawn image *is* its dictionary's is unmoved",
+                  Flattener.rebuildDPI(of: drawing) == 3000 / sheetPt,
+                  String(format: "%.1f", Flattener.rebuildDPI(of: drawing)))
 
             // MARK: C24 — a measurement override reaches every page the rebuild renders
             //
@@ -3617,7 +3724,7 @@ do {
                 shared, to: overrideDir.appendingPathComponent("out.pdf"),
                 mode: .auto, pngDirectory: overrideDir)) ?? []
             check("…and `flatten` renders every overridden page at that resolution",
-                  flattened.count == 9 && flattened.dropFirst()
+                  flattened.count == 10 && flattened.dropFirst()
                       .allSatisfy { $0.pixelWidth == overrideWidth(atDPI: probeDPI) },
                   "\(flattened.map(\.pixelWidth))")
             check("…and leaves the declined page on the shipped fallback in the same run",

@@ -193,8 +193,9 @@ STATUS_CMD="${VISIONOCR_STATUS_CMD:-$REPO/ops/autonomous/status-digest.sh}"
 #                  CPU-busy + no subagent + no events for HB_HARD -> runaway.
 # ⚠️ HB_HARD is 3600 s here (60 min), raised from 3000 on 2026-08-16 and NO LONGER for the reason the old
 # comment gave. It said "the full catalogue is ~70 min", which was arithmetic on a 2-4 min suite. Measured
-# 2026-08-17 by the C24b campaign: ~45 min per mutant (2621-2719 s) over 89 mutants — not 84, which every
-# doc said until the C24b five landed — so the full catalogue is on the order of 65 HOURS and no watchdog
+# 2026-08-17 by the C24b campaign: ~45 min per mutant (2621-2719 s) over the whole catalogue — whose size
+# is `python3 Tools/mutate.py --list | tail -1` and NOT a number written here, this comment having said 84
+# and then 89 while the tool printed 91 — so the full catalogue is on the order of 65 HOURS and no watchdog
 # setting makes it survivable; the resume prompt forbids it outright instead. Note the per-mutant figure is
 # a reading of the machine and not of the suite: the same catalogue recorded ~630 s per mutant THAT MORNING
 # (09:47, committed 09:59 in 41815b9 — this comment said "the evening before", which put both readings in

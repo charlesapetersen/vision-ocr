@@ -19,7 +19,8 @@
 #     register says it shipped. The daemon would REDO SHIPPED WORK, which is a whole wasted cycle and a
 #     commit that undoes a fix. Reported only when EVERY cited tag is closed, never when one of several is
 #     still open: a part-closed cite still carries live justification, and flagging it would be crying wolf
-#     about legitimate bookkeeping. (`C24b` cites the HALF FIXED C24 — one open cite, correctly silent.)
+#     about legitimate bookkeeping. (`C24b` cited the HALF FIXED C24 while it was open — correctly silent;
+#     both are closed as of 2026-08-17, so there is no open cite to be silent about at the moment.)
 #     Two consequences, not one, and both are live: a session may redo the finished work, OR — following the
 #     resume prompt's STEP 2 rule to "FIRST RULE OUT ALREADY-DONE: if the entry is closed … a previous
 #     session finished and died before ticking" — tick a still-live item off UNREAD. The second is the worse

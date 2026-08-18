@@ -65,8 +65,8 @@ TAB="$(printf '\t')"
 # ---- pass 1: which register tags are CLOSED --------------------------------------------------------
 # BUGS.md entries are `### <TAG> · <title> — <STATUS>`. CLOSED iff the status begins FIXED / WONTFIX /
 # NO DEFECT; anything else (notably `HALF FIXED`) is OPEN. Defined by exclusion on purpose: the register's
-# header declares the vocabulary `OPEN · FIXED · WONTFIX`, but `HALF FIXED` is what the one genuinely open
-# entry actually carries, so a whitelist of "open" spellings would report zero open entries the day someone
+# header declares the vocabulary `OPEN · FIXED · WONTFIX`, but `HALF FIXED` is what C24 carried for the two
+# days it was half done, so a whitelist of "open" spellings would report zero open entries the day someone
 # coins a new one. Erring toward OPEN only ever costs a look; erring toward CLOSED unblocks work early.
 BUGSTATE="$(mktemp -t vo-next-bugs)"
 trap 'rm -f "$BUGSTATE"' EXIT

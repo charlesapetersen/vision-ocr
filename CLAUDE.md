@@ -15,13 +15,28 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **one entry
-is open and it does not destroy content**: **C24, half fixed** — a page that draws no
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **nothing is open
+as of 2026-08-17**: **C24 is `FIXED`**, both halves. A page that draws no
 XObject at all no longer takes another page's plate resolution (85 pages over 3 documents,
-structural, no threshold, 0 route changes), while the 45 pages that draw a *different*
-image than the shared dictionary holds are still open with two refused repairs. **That open
-half is measured as of 2026-08-17** — read the entry's `C24b` section before planning
-anything there: `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swift` report
+structural, no threshold, 0 route changes), and **the 45 pages that draw a *different*
+image than the shared dictionary holds were closed the same day** — `rebuildDPI(of:)` applies
+the shipped policy to `drawnLargestImage`, the corpus gate ran, and **exactly 45 pages of
+16,987 change resolution**, page-for-page the 45 the earlier sweep named. Retention against
+those pages' own embedded text is **+8 words of 3,025** over the 7 that have one; bytes fall
+**25% / 81% / 3%** by document. Three things in that commit are worth knowing before you
+touch this area. (a) **The gate's own instrument had to be repaired first**:
+`score-drawn-images`'s `shippedRebuildDPI` column compared production against the drawn walk,
+so once production *became* the drawn walk it would have read `same` on all 16,987 rows — a
+tool measuring itself, §3 in a tool rather than in the shell. (b) **`score-routing` was
+refusing rows for three documents, not the two this register kept saying**, and its "drift"
+diagnostics were the *correct* per-page resolutions all along — it was refusing its own right
+answers because production held a wrong one. (c) **One row is named as an unsettled
+surprise**: `Sherman_1986` p1 moves 219 → 182 recognised words on a **0.38%** resolution
+change, non-monotone (the 300 fallback reads 224, above both), with only 14 words of embedded
+text so nothing can grade it. **`pageIsAnImage` was deliberately not wired** — 2 pages would
+flip, and it feeds D1's corpus gate, which is R55's territory. **What led up to that close
+is measured as of 2026-08-17** — read the entry's `C24b` and `C24's wiring` sections before
+planning anything there: `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swift` report
 what a page actually draws, the 45 are **39 smaller and 6 wider** (which retires the
 observation the entry carried without a cause — both walks pick by *area* and report
 *width*), and the constant the entry wanted recalibrated faces **three** pages. **It gets all
@@ -44,8 +59,8 @@ not exist in `c8855f6`. Against the nine checks that commit shipped the count wa
 nearer wrong reading would have survived while the register recorded the seam as pinned. The
 fixture is why: the only page it declines is the one whose shipped answer already *is* the
 fallback, so every row agreed with the wrong implementation by accident.
-It is wired into nothing, so **one sub-step** closes it — *wire the drawn walk into
-`rebuildDPI`* behind a corpus gate run, because it moves 45 pages. Read that
+That was the last thing standing before the wiring, and the wiring closed the entry the same
+day; its `C24's wiring` section is the gate run and the close. Read that
 section's review subsection too — it found **a
 tenth check that could not fail** and a bare form resolving its resource names in the page's
 scope rather than its invoker's, and it is where to look before believing that
@@ -95,8 +110,9 @@ resolution by 4x and established that **nobody separates a pale drawing from
 show-through**, and
 [REVIEW-2026-08-14.md](REVIEW-2026-08-14.md) is the standing record of a
 whole-codebase review sweep, including findings not yet fixed and areas not yet
-covered. **[HANDOFF-2026-08-17.md](HANDOFF-2026-08-17.md) is where to start** — R56 and
-R57 are closed, so what is left is `R55` and `C24` — then
+covered. **[HANDOFF-2026-08-17.md](HANDOFF-2026-08-17.md) is where to start** — it was written
+when R56 and R57 had just closed and named `R55` and `C24` as what was left; `R55` is
+`WONTFIX` and `C24` is `FIXED`, both on 2026-08-17, so the register is empty — then
 [HANDOFF-2026-08-16.md](HANDOFF-2026-08-16.md), then
 [HANDOFF-2026-08-15-night.md](HANDOFF-2026-08-15-night.md), then
 [HANDOFF-2026-08-15-evening.md](HANDOFF-2026-08-15-evening.md), then

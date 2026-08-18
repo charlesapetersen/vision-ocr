@@ -216,7 +216,7 @@ of order. `[hold]` / `needs: owner` items are printed but never offered.
 
 An entry is **OPEN by exclusion**: closed iff its status suffix begins `FIXED`, `WONTFIX` or `NO DEFECT`.
 That is deliberately not a whitelist of "open" spellings — the register's header declares the vocabulary
-`OPEN · FIXED · WONTFIX`, but the one genuinely open entry carries `HALF FIXED`, so a whitelist would report
+`OPEN · FIXED · WONTFIX`, but C24 carried `HALF FIXED` for the two days it was half done, so a whitelist would report
 zero open entries the day someone coins a new marker. Erring toward OPEN costs a look; erring toward CLOSED
 hides work. `next-item.sh` and `bugs-entry.sh` share this rule and must stay consistent — if the resolver and
 the extractor disagreed about a status, the queue would offer work whose entry cannot be found.

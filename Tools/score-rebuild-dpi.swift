@@ -1,6 +1,6 @@
 // What does one page actually recognise at, if it were rebuilt at some other resolution?
 //
-// Built for BUGS.md C24's open half, whose blocker is **one page and not a population**.
+// Built for BUGS.md C24's second half, whose blocker was **one page and not a population**.
 // 45 corpus pages draw a different image than their shared `/Resources` dictionary holds,
 // and `Tools/score-drawn-images.swift` measured what the shipped policy would do with each:
 // 42 of the 45 land above `minimumPlausibleScanDPI` and are unaffected, and the three that
@@ -9,14 +9,20 @@
 // entry, `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swift` all called that
 // "C9 again", in the same words, none of them from a measurement. This tool is the
 // measurement, and it says **the constant is right**: 92.8% of the page's own 291 words at
-// 70.6 DPI against 94.2% at 369.6, for 87% fewer published bytes.
+// 70.6 DPI against 94.2% at 369.6, for 87% fewer published bytes. It then ran the wiring's
+// own corpus gate over 10 more pages — `REBUILD-DPI-WIRING-2026-08-17.tsv`.
 //
 // This is that instrument, and it is general: `<pdf> <page>` prints one row per candidate
 // resolution, every candidate derived from shipped code rather than typed in.
 //
-//   shipped   `Flattener.rebuildDPI(of:)` — what production does today.
-//   drawn     `Flattener.rebuildDPI(from:)` over `drawnLargestImage`'s answer — what
-//             production would do with the drawn walk wired in and the constant unchanged.
+//   shipped   `Flattener.rebuildDPI(of:)` — what production does today. **Since C24's wiring
+//             landed on 2026-08-17 this equals `drawn` on every page**: production now *is* the
+//             drawn walk. The labels are kept apart rather than collapsed, because a candidate
+//             that stopped being printed is indistinguishable from one nobody asked about, and
+//             because the tool computes each from the function that owns it. When they agree
+//             the row is printed once, as `AI 2027` p1's already was.
+//   drawn     `Flattener.rebuildDPI(from:)` over `drawnLargestImage`'s answer — what production
+//             would have done with the drawn walk before it was wired in, and does now.
 //   fallback  `Flattener.fallbackRebuildDPI` — what the drawn walk plus a constant raised
 //             above this page's width would do.
 //
@@ -167,10 +173,19 @@ if truth.isEmpty {
     ).utf8))
 }
 
-// The three candidates, each from the shipped code that would produce it.
+// The candidates, each from the shipped code that would produce it.
+//
+// **`dict` is here because C24's wiring made `shipped` and `drawn` the same number.** Before
+// 2026-08-17 the interesting comparison was those two; after it, production *is* the drawn
+// walk, the dedup below folds them into one row, and the resolution production used to give
+// this page would have become unaskable — the same collapse `score-drawn-images`'s column 6
+// had, one tool over. `dict` is `rebuildDPI(from: largestImage(of:))`, the old body verbatim,
+// so a page can still be rendered at what production answered before the wiring. On the
+// 16,942 pages the two walks agree about it dedups away, as it should.
 let shipped = Flattener.rebuildDPI(of: page)
 let drawn = Flattener.drawnLargestImage(of: page)
 var candidates: [(String, Double)] = [("shipped", shipped)]
+candidates.append(("dict", Flattener.rebuildDPI(from: Flattener.largestImage(of: page))))
 switch drawn {
 case .unreadable:
     FileHandle.standardError.write(Data(

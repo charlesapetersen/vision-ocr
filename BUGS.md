@@ -6,7 +6,10 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**One open, half fixed, not in the app's content path, and no release blocker.** **R56 and R57
+**Nothing open, and no release blocker.** **C24 closed 2026-08-17** — read the paragraph
+beginning "**C24 is now `FIXED`**" below before trusting that sentence, and correct this line
+in the same commit as any entry you open. This file has published "nothing open" while four
+entries were open, and it has published "one open" while that one was closed. **R56 and R57
 are `FIXED`** as of 2026-08-16 — the pale drawing erased and the tonal plate blobbed, the
 two entries that had been waiting on a shape signal since 2026-08-13. It exists now:
 `Flattener.pageMarks`, `largeMarkTone` and `paleDrawing`, on the sixth attempt and the
@@ -17,24 +20,31 @@ states plainly the acceptance bar this did *not* meet. **R55 is `WONTFIX`** as o
 measurement campaign it wanted was run, and the owner closed it on the arithmetic: the
 gate's over-exclusion costs the sweep roughly 80 candidates and 0.7 GB against 1,164 and
 ~10 GB, the corpus half is solved by adding upright-scanner documents by hand, and
-loosening the gate would admit the hand-held photographs D1 exists to keep out. **C24 is
-the one still open**, opened 2026-08-15 and **half fixed 2026-08-16**: `largestImage` answers "the largest image in this document" to a question
+loosening the gate would admit the hand-held photographs D1 exists to keep out. **C24 is now
+`FIXED`**, opened 2026-08-15, half fixed 2026-08-16 and **closed 2026-08-17**: `largestImage`
+answered "the largest image in this document" to a question
 about *this page*, so on the 3 corpus documents whose pages share one `/Resources` a page
-that draws nothing at all is rebuilt at another page's plate resolution — **85 pages,
+that draws nothing at all was rebuilt at another page's plate resolution — **85 pages,
 measured 2026-08-16 by scanning content streams for `Do`**. Two repairs were built and
-both were wrong, and the third would need a threshold the corpus has no gap for; it is
-open with the measurements rather than tuned. **The open half was measured 2026-08-16 and
+both were wrong, and neither the structural half nor the close needed the threshold the third
+would have wanted. **The second half was measured 2026-08-16 and
 is narrower than the entry assumed**: `Flattener.drawnLargestImage` reports what a page
 actually draws, the 45 pages are 39 smaller plus **6 wider** — which retires the
 observation the entry carried without a cause, since both walks pick by *area* and report
 *width* — and the constant the entry wanted recalibrated faces **three** pages. **It judges all
-three of them right, measured 2026-08-17**, which retires the blocker: `Batzell` p22 at its own
-70.6 DPI retains **92.8%** of its 291 words against **94.2%** at the 369.6 it accidentally gets
-today, for **87% fewer published bytes** — so "rendering a page of type at 70 DPI is C9 again"
+three of them right, measured 2026-08-17**, which retired the blocker: `Batzell` p22 at its own
+70.6 DPI retains **92.8%** of its 291 words against **94.2%** at the 369.6 it was accidentally
+getting, for **87% fewer published bytes** — so "rendering a page of type at 70 DPI is C9 again"
 was reasoned, is **false**, and has been corrected in the four places it was published.
-`minimumScanPixelWidth` needs no recalibration. Wired into nothing yet, so what remains for
-this half is the wiring alone: **`drawnLargestImage` into `rebuildDPI`, behind a corpus gate
-run**, moving 45 pages. The review of that measurement
+`minimumScanPixelWidth` needed no recalibration. **Then the wiring landed the same day and
+the gate ran**: `rebuildDPI(of:)` reads the drawn walk, **exactly 45 pages of 16,987 change
+resolution** and they are page-for-page the 45 the earlier sweep named, retention against
+those pages' own embedded text is **+8 words of 3,025** over the 7 that have one, and bytes
+fall 25% / 81% / 3% by document. The instrument had to be repaired first — its
+`shippedRebuildDPI` column would have become a copy of the column it was compared against,
+a tool measuring itself — and one row is named as a surprise nothing settles: `Sherman_1986`
+p1 moves 219 → 182 recognised words on a **0.38%** resolution change, non-monotone, with no
+ground truth to grade it. The review of that measurement
 found **a check that could not
 fail** — the fixture had no page that reached the guard one of its own mutants edits — and a
 bare form resolving its names against the page rather than its invoker; both fixed, with
@@ -1154,11 +1164,15 @@ all — `willRebuild` is `(rebuild && hasEmbeddedText) || wantsJBIG2`, so an ima
 JBIG2 off takes the non-rebuild path and the block tests C13 twice. The first version of the
 test did exactly that and passed.
 
-### C24 · `largestImage` answers a document-wide question, so one page's plate sets another page's rebuild resolution — HALF FIXED
+### C24 · `largestImage` answers a document-wide question, so one page's plate sets another page's rebuild resolution — FIXED
 *(found 2026-08-15 fixing `REVIEW-2026-08-14.md` A12.2, which files it as a defect in
 `Tools/`. It is not. The tools are right that they disagree with production; production
-is the one that is wrong. **The half that needs no threshold closed 2026-08-16**; the
-half that needs one is still open, with the measurements below.)*
+is the one that is wrong. **The half that needs no threshold closed 2026-08-16**, and the
+other half **closed 2026-08-17** — needing no threshold either, which is the sentence the
+three days between them went on establishing: the constant the entry assumed wanted
+recalibrating judges all three pages it faces correctly. `## C24's wiring, measured —
+2026-08-17` at the end of this entry is the gate run and the close; the sections before it
+are the measurement campaigns it rests on, in date order.)*
 
 **What closed: a page that draws no XObject at all has no image, whatever its
 `/Resources` can reach.** That needs no coverage rule, no CTM tracking and no constant —
@@ -1181,7 +1195,7 @@ walks the streams itself, once through `rebuildDPI` before and after:
 | the drawn-only walk agrees with the shipped one | 16,661 |
 | draws nothing, and the shipped walk also found nothing | 196 |
 | **draws nothing, and the shipped walk found another page's plate** | **85** |
-| draws a *smaller* image than the shared dictionary holds — still open | 45 |
+| draws a *different* image than the shared dictionary holds — closed 2026-08-17 | 45 |
 
 The 85 are `Batzell` (51 pages at 369.6 DPI), `AI 2027` (32 at 354.3) and `Kelly_2014`
 (2 at 186.8), and all three now take `fallbackRebuildDPI`. **Exactly 85 pages change
@@ -1212,10 +1226,12 @@ correct. If 300 is too low for a born-digital page with no image on it, that is 
 constant to re-measure on its own evidence, not a reason to keep reading a neighbour's
 resources.
 
-**What the tools do, and it is less than hoped.** `score-routing` still refuses the rows
-for `Batzell` and `AI 2027`: its four-page sample lands on p22, p15 and p43, which are in
-the 45 still open rather than the 85 fixed. A12.2's SKIP rows stay until the other half
-closes.
+**What the tools do, and at the time it was less than hoped.** `score-routing` refused the
+rows for `Batzell` and `AI 2027`: its four-page sample lands on p22, p15 and p43, which
+were in the 45 still open rather than the 85 fixed. A12.2's SKIP rows stayed until the
+other half closed. *(What happened to them when it did is in `## C24's wiring` below,
+measured rather than predicted — the prediction written into the queue was that they would
+come back.)*
 
 **Both mutants are killed**, which matters here because the repair is a guard rather
 than a constant and `mutate.py` is the only thing that puts a guard back:
@@ -1232,13 +1248,14 @@ layering sees. It changes no page's lane.
 
 ---
 
-## C24b, the open half, measured — 2026-08-16
+## C24b, the second half, measured — 2026-08-16 (it was open when this was written)
 
 **The measurement now exists and it is smaller than the entry assumed.**
 `Flattener.drawnLargestImage` resolves every `Do` the content stream issues, following
 forms by scanning their own content streams, and reports the largest image the page
-**actually draws**. It is wired into nothing — `rebuildDPI` still reads `largestImage` —
-because what closes this half is a decision about one page, and that page is named below.
+**actually draws**. It was wired into nothing on this date — `rebuildDPI` still read
+`largestImage` — because what closed this half was a decision about one page, and that page
+is named below. `rebuildDPI` reads this walk as of 2026-08-17.
 `Tools/score-drawn-images.swift` is the instrument: one row per page, no rendering, all
 16,987 pages in **74 to 93 seconds** over three timed runs — the first draft of this
 paragraph said "under a minute", which no run here has managed.
@@ -1376,10 +1393,11 @@ words**.
 
 **So `minimumScanPixelWidth` needs no recalibration, and the answer to "what should
 `Batzell` p22 render at" is its own 70.6 DPI — which is what the shipped policy already
-says.** The next step for this half is the wiring alone: `drawnLargestImage` into
-`rebuildDPI`, behind a corpus gate run, moving 45 pages. Nothing here changes a route, a
-resolution or a published byte — `rebuildDPIOverride` is `nil` in the app and no setting
-reaches it, which the suite asserts before it sets it and again after it clears it.
+says.** The next step for this half was the wiring alone: `drawnLargestImage` into
+`rebuildDPI`, behind a corpus gate run, moving 45 pages — and it landed the same day, in
+`## C24's wiring` below. Nothing in *this* section changed a route, a resolution or a
+published byte — `rebuildDPIOverride` is `nil` in the app and no setting reaches it, which
+the suite asserts before it sets it and again after it clears it.
 
 **And "right about all three" is right on a criterion, which is worth naming.** On p9 and on
 `AI 2027` p1 the constant's decision wins on retention alone. On p22 it does not: 92.8%
@@ -1417,10 +1435,10 @@ class rather than the instance. **Still not asserted structurally**: `mrcLayers`
 itself DPI-dependent — so if that signal ever answers differently at 90 and 180 DPI, the row
 fails naming the override instead of the signal.
 
-**What is still true and unchanged.** `score-routing` still refuses the rows for
-`Batzell` and `AI 2027`; the four `manifest.tsv` rows are still the old wrong numbers;
-and wiring the drawn walk into `rebuildDPI` still needs a corpus gate run, because it
-changes what the default route renders on 45 pages.
+**What was still true when this section was written.** `score-routing` refused the rows for
+`Batzell` and `AI 2027`; the four `manifest.tsv` rows were still the old wrong numbers; and
+wiring the drawn walk into `rebuildDPI` still needed a corpus gate run, because it changes
+what the default route renders on 45 pages. That run is the next section.
 
 **Five mutants**, because this walk's whole claim is that it needs no constant and a
 constant mutant can reach none of it: `logic/C24b-form-not-followed` (repair 2's blind
@@ -1729,11 +1747,17 @@ which is exactly the "a parser that accepts a malformed row" shape `py_compile` 
 Not fixed here: it is a build-time tool on a different path, nothing in this campaign
 touched it, and bundling an unrelated tool's first self-test into a mutation-campaign commit
 is how this register got C13. It is named so the next sweep does not have to rediscover it.
-Separately, `--list` reports **89 mutants**, not the 84 that `ops/autonomous/resume-prompt.txt`
-and `vision-ocr-autonomous.sh` both asserted in the present tense — the C24b five had been
-added without either being updated. Both corrected here, along with the "~55 HOURS" figure
-they carried: at the measured ~45 min per mutant the full catalogue is nearer **65 hours**,
-so that number was about right by luck and wrong in its reasoning.
+Separately, `--list` reported **89 mutants** when this was written, not the 84 that
+`ops/autonomous/resume-prompt.txt` and `vision-ocr-autonomous.sh` both asserted in the present
+tense — the C24b five had been added without either being updated. Both corrected here, along
+with the "~55 HOURS" figure they carried: at the measured ~45 min per mutant the full
+catalogue is nearer **65 hours**, so that number was about right by luck and wrong in its
+reasoning. **And the same defect immediately recurred**: by `d83ddc5`, hours later, `--list`
+printed **91** while six files still said 89 — measured 2026-08-17 by running it on that
+commit. C24's wiring takes it to **94**. A count asserted in prose goes stale the next time
+anyone adds a tuple, which has now happened three times (84 → 89 → 91 → 94); the durable
+form is `python3 Tools/mutate.py --list | tail -1`, and every one of those six sites now says
+so instead of carrying a number.
 
 **And the sweep for the crash-as-duration finding was not finished when it was written.**
 `80-632 s` was still published as this suite's duration range in five files after the entry
@@ -1755,13 +1779,175 @@ there: a timeout derived from 80 s is derived from a suite that died.
 
 **What this does not do: it does not touch `Sources/`.** No route changes, no resolution
 changes, no sweep to re-run — the negative control above still stands unmodified, and C24
-stays HALF FIXED for the reason it already was. Both remaining sub-steps are unchanged:
-decide what `Batzell` p22 should render at, then wire the drawn walk into `rebuildDPI`
-behind a corpus gate run.
+was HALF FIXED for the reason it already was when this section was written. Both remaining
+sub-steps were unchanged: decide what `Batzell` p22 should render at, then wire the drawn
+walk into `rebuildDPI` behind a corpus gate run. **The first was done in `c8855f6`; the
+second is the next section, and it closes the entry.**
+
+## C24's wiring, measured — 2026-08-17: the gate ran, and the entry is closed
+
+**`rebuildDPI(of:)` applies the shipped policy to `drawnLargestImage`.** The policy is
+untouched — the same three branches, the same two constants — and what changed is which
+measurement it judges. `.unreadable` keeps the `/Resources` answer, which is T14's rule one
+level up from the walk that already obeys it; `.noImage` takes the fallback; `.largest` takes
+the drawn DPI and the drawn pixel width. Six lines.
+
+**Exactly 45 pages change resolution and 16,942 do not**, measured over all 16,987 corpus
+pages, and they are the *same* 45 the 2026-08-16 sweep named — `diff` of the two page lists
+is empty. `AI 2027` 38, `Sherman_1986` 5, `Batzell` 2. `DRAWN-2026-08-17.tsv` beside this
+file is the cut, and the sweep was reproduced **byte-identically from a second independent
+invocation** before any of it was believed.
+
+**The instrument had to be repaired before it could be the gate, and the repair is the
+interesting part.** `Tools/score-drawn-images.swift` printed `rebuildDPI(of:)` in a column
+called `shippedRebuildDPI` and compared it against its own reading of the drawn walk. That
+was a real comparison until the wiring landed and would have become a **tautology** after
+it: production *is* the drawn walk now, so the column would have equalled `drawnRebuildDPI`
+on all 16,987 rows and `policyMoves` would have read `same` everywhere — a tool reporting
+"the wiring changed nothing" while measuring itself. §3 in a tool rather than in the shell.
+So column 6 is now `dictRebuildDPI`, holding `rebuildDPI(from: largestImage(of:))` — the old
+body verbatim — and `rebuildDPI(of:)` moved to a new last column with an assertion beside
+it: **production matched the drawn arm on all 16,987 pages**, printed every run whichever way
+it goes, and a mismatch exits 1.
+
+**And the anchor is a record that predates the change.** `DRAWN-2026-08-16.tsv` was produced
+by the *old* production path, before this dispatch existed. Its `shippedRebuildDPI` column
+equals the new sweep's `dictRebuildDPI` on **48 of 48** rows it holds, and its verdict
+totals are identical (agree 16,654 · noDictImage 285 · smaller 39 · wider 6 · unreadable 3).
+So "45 move" is a diff against a measurement, not this tool agreeing with itself.
+
+**What the 45 pages cost, over 12 of them driven through the shipped pipeline.**
+`Tools/score-rebuild-dpi.swift` renders one page at each candidate resolution and counts
+what comes out of the **published** file; where the page is born-digital its own embedded
+text is the ground truth, so `retained` is an accuracy figure and not a volume figure.
+`REBUILD-DPI-WIRING-2026-08-17.tsv` is this run and `REBUILD-DPI-2026-08-17.tsv` is
+`Batzell`'s two from the blocker campaign.
+
+```
+                      before -> after       retained (of the page's own words)   bytes
+AI 2027  p2     354.3 -> 156.0 DPI    95.2% (414/435) -> 93.8% (408/435)   72,359 ->  45,144
+AI 2027  p16    354.3 -> 219.8        89.6% (346/386) -> 92.5% (357/386)   68,795 ->  45,786
+AI 2027  p47    354.3 -> 299.5        94.8% (423/446) -> 97.8% (436/446)   69,998 ->  61,948
+AI 2027  p66    354.3 -> 266.1        96.4% (406/421) -> 96.9% (408/421)  298,908 -> 205,236
+AI 2027  p4     354.3 -> 362.9        91.3% (606/664) -> 90.7% (602/664)   88,032 ->  91,770
+   five pages                         +16 matched words of 2,352            598,092 -> 449,884  (-24.8%)
+
+Batzell  p9     369.6 -> 147.5        94.5% (361/382) -> 93.5% (357/382)   72,161 ->  41,026
+Batzell  p22    369.6 ->  70.6        94.2% (274/291) -> 92.8% (270/291)  407,556 ->  51,302
+   two pages                          -8 matched words of 673              479,717 ->  92,328  (-80.8%)
+
+Sherman  p1     419.0 -> 417.4        no truth: 219 -> 182 recognised words  85,328 ->  78,142
+Sherman  p2     419.0 -> 416.8        no truth: 414 -> 455                  102,254 ->  99,187
+Sherman  p3     419.0 -> 411.2        no truth: 535 -> 537                  101,917 ->  98,078
+Sherman  p4     419.0 -> 418.1        no truth: 514 -> 517                   98,025 ->  95,122
+Sherman  p5     419.0 -> 413.1        no truth: 523 -> 523                   96,981 ->  99,259
+   five pages                          +9 recognised words                  484,505 -> 469,788  (-3.0%)
+```
+
+**Read the graded rows and the ungraded ones differently, because they are different
+claims.** On the seven pages with an embedded text layer, retention against it is
+**+16 words on `AI 2027`'s five and −8 on `Batzell`'s two**, net +8 of 3,025 — flat, with
+p16's +11 and p47's +13 the largest single moves and both *upward*. That is the accuracy
+figure. `Sherman_1986` is a scan whose text layer is 14 words on a title page, so there is
+no truth to grade and the numbers are **volume**: more recognised words may be more type or
+more mush, and this instrument cannot tell.
+
+**`Sherman_1986` p1 is where it is worth being careful, and it is the surprise this gate
+turned up.** A **0.38%** resolution change — 419.0 to 417.4 DPI, 13 pixels of 3,464 — moves
+its recognised word count by **−17%**, 219 to 182. Suspecting the instrument first: the runs
+are deterministic (same page, same resolution, same raster) and the whole TSV reproduced, so
+this is a real difference between two rasters and not measurement noise. What it is *not* is
+evidence of loss: the page's 14-word embedded layer is retained in full at every resolution
+tried, and at the **300** fallback it reads **224 words — above both** — so word count is
+non-monotone in resolution on that page and 419.0 was not a maximum it fell off. The four
+other `Sherman` pages move +41, +2, +3 and 0. **Named rather than smoothed over**: it is the
+one row in this gate that a different instrument could reasonably call a regression, and
+nothing here settles it.
+
+**The trade, stated as a criterion and not as a win.** Bytes fall on 13 of the 12 pages'
+14 measured arms and rise on two (`AI 2027` p4, `Sherman` p5), for **−25%, −81% and −3%** by
+document. Accuracy is flat. What makes the change right is not the bytes: it is that the
+resolution those 45 pages had was **another page's plate**, and reading the page's own drawn
+image is correct whatever the byte count does. The bytes are why nobody has to weigh it.
+
+**Not wired: `pageIsAnImage`.** It asks a different question — is this page a raster — and
+feeds `Model`'s text-extraction skip marker, `Flattener.hasDigitalText` and
+`Tools/classify-source.swift`, which is D1's corpus gate and therefore R55's territory.
+Applying its predicate to both columns of the 16,987-row sweep, wiring the drawn walk there
+would flip **exactly 2 pages**: `Batzell` p22 (600 px, under its 900 floor) and `AI 2027` p1
+(245 px). Both carry embedded text, so neither reaches `Model`'s marker branch. It is left
+because it moves a gate the owner closed on its own arithmetic, **not** because it is
+unaffected — CONTRIBUTING §4b's second option, taken deliberately.
+
+**Nine checks, and all four wrong readings of the six lines were put back by hand and
+watched.** Each replacement went into a scratch copy of `Sources/` and through an extracted
+single-section probe (43 checks, 85 s, its own `UserDefaults` domain — the technique
+`c8855f6` left behind):
+
+```
+the old dispatch, `from: largestImage(…)`        3 rows red   the 600 px, logo and empty-form pages
+`.unreadable` -> `from: nil`                     1 row red    the /Nope page
+`.noImage`    -> `from: largestImage(…)`         1 row red    the empty-form page
+`.largest`'s width invented (`Int.max`)          3 rows red   the logo page + two C9 rows on born.pdf
+the fix as written                               0 rows red   43/43
+```
+
+All three are in the catalogue as `logic/C24-rebuild-reads-dictionary`,
+`-unreadable-is-nothing` and `-width-invented`, so `mutate.py` keeps saying it. **A scoped
+`--only C24-rebuild` run has NOT been spent** — that is a baseline suite plus ~45 min per
+verdict — so these are *known* able to fail by the probe and *not yet* confirmed by the
+tool; the probe mutates the same file with the same replacement text and runs the same
+checks, so the gap is coverage of the rest of the suite, not of these rows.
+
+**A tenth fixture page came with the wiring, and the reason is the trap this register keeps
+paying for.** `shared-resources.pdf` page 10 draws a 400 px logo while the shared dictionary
+reaches the 3000 px plate: 47 DPI, under `minimumPlausibleScanDPI` *and* under
+`minimumScanPixelWidth`, so the policy must **refuse** it. Every one of the nine pages before
+it ends in a resolution the policy *trusts*, so on all nine a wiring that handed the policy
+the drawn DPI with an invented width answers identically — the row asserting that the drawn
+*width* reaches the policy would have been green while asserting nothing. *The first version
+of this paragraph went further and said page 10 was the only thing in the suite reaching that
+branch; the invented-width mutant then took three rows red, two of them C9 rows on
+`born.pdf`, whose 16 px logo reaches it too. What `born.pdf` cannot see is the wiring — its
+dictionary holds only that logo, so both walks agree and either dispatch answers 1.9 DPI.*
+Corrected from the mutant's own output.
+
+**`score-routing`'s refused rows came back — and there were three documents, not the two
+this entry has been saying.** Run both ways, against the reverted `Sources/` and against the
+fix:
+
+```
+before   AI-2027       SKIP  extraction changed the rebuild resolution: p15 354->363  p43 354->156
+         Batzell       SKIP                                            p22 370->71
+         Sherman_1986  SKIP    p2 419->417  p3 419->411  p4 419->418  p5 419->413
+after    AI-2027       bilevel=3 greyscale=1 colour=0   306 KB/page   bytes=1,255,305  pages=4
+         Batzell       bilevel=3 greyscale=1 colour=0   118 KB/page   bytes=  485,618  pages=4
+         Sherman_1986  bilevel=4 greyscale=0 colour=0   231 KB/page   bytes=  949,360  pages=4
+```
+
+**And read the `before` diagnostics, because they are the entry's own thesis in one line.**
+The resolution extraction "drifted" to is *exactly* the drawn answer every time — p43 to
+156.0, p22 to 70.6, `Sherman`'s four to 417/411/418/413. Extraction rewrites a page's
+`/Resources` to hold what the page references, so an extracted page has always been measured
+the way this fix now measures an unextracted one. `score-routing` was not drifting; it was
+right, and it was refusing its own correct rows because production disagreed. That is what
+A12.2 filed as a tool defect and what the head of this entry says it is not.
+*(A12.2's SKIP rows and this entry both name "`Batzell` and `AI 2027`". `Sherman_1986` was a
+third and nobody had run it — the sentence was written from the 45-page population, where its
+five pages move by ≤1.6 DPI, and `score-routing`'s threshold is 0.5.)*
+
+**Verified by running code**: two independent 16,987-page sweeps, byte-identical, 45 moves
+and 0 divergences between production and the drawn arm; the 45 page-for-page equal to
+2026-08-16's; column 6 equal to the pre-change record on 48 of 48 rows; 30 pipeline runs
+over 10 pages plus the blocker campaign's 3; four hand-built mutants each watched red on
+exactly the rows written for them and the fix watched green at 43/43; the
+`pageIsAnImage` flip count computed over the sweep rather than eyeballed. **Reasoned, not
+run**: nothing in this section — and where a number could not be graded (`Sherman_1986`'s
+five) it is labelled `no truth` rather than presented as accuracy.
 
 ---
 
-The original entry, which is about that other half, follows unchanged.
+The original entry, which is about the other half, follows unchanged.
 
 A12.2 says three tools extract their sample into a fresh `PDFDocument`, that extraction
 "destroys the sharing" of a `/Resources` dictionary, and that `largestImage` therefore

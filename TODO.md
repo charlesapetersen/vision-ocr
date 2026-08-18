@@ -68,10 +68,12 @@ not run at all; `CLAUDE.md` now carries the procedure as five commands that work
 2. **`A1.2`, then `A1.1`, then `C23`** — that order, because A1.1's only viable fix triples
    the sliver population A1.2 is about. Plus `A1.3`, `A1.4`, `A2.4`, `A3.1` in its narrower
    form, `A13.4`, the residue of `A10.6`, and `A11.8`.
-3. **`C24`**, opened 2026-08-15 and not fixed: `largestImage` answers a document-wide
-   question, so a page that draws no image is rebuilt at another page's plate resolution.
-   Three repairs were attempted; two were worse and the third needs a threshold the corpus
-   has no gap for. Its entry says what closing it needs.
+3. ~~**`C24`**~~ — **`FIXED` 2026-08-17**, both halves, and it needed no threshold in the
+   end: `rebuildDPI` applies the shipped policy to what the page *draws*. 85 pages closed on
+   2026-08-16 and 45 on 2026-08-17, measured over all 16,987. Nothing left here. *(This item
+   said "three repairs were attempted; two were worse and the third needs a threshold the
+   corpus has no gap for". The first clause was right and the second was the assumption the
+   whole thread went on to falsify.)*
 
 **`C23` is the release blocker**, and the only open finding with harm a user sees today:
 every rebuild route publishes with no `/CropBox`, so the copy displays what the original hid

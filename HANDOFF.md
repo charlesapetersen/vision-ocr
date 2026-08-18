@@ -224,10 +224,13 @@ warns about in as many words.
 the consequence, and whether it was verified by running code or only reasoned
 about.
 
-**One entry is open, and it does not destroy content** — `C24`, half fixed: a page that
-draws no XObject at all no longer takes another page's plate resolution, while the 45 pages
-that draw a *smaller* image than the shared dictionary holds are still open, with their
-measurements and two refused repairs in the entry. Everything else is `FIXED` or `WONTFIX`
+**Nothing is open as of 2026-08-17** — `C24` was the last one and it is `FIXED`, both halves:
+a page that draws no XObject at all no longer takes another page's plate resolution, and the 45
+pages that draw a *different* image than the shared dictionary holds now take their own, after a
+corpus gate that moved exactly those 45 of 16,987 for **+8 matched words of 3,025** and 25-81%
+fewer bytes on the three documents. Read the entry's `C24's wiring` section — the gate's own
+instrument had to be repaired first, and one row (`Sherman_1986` p1) is named as an unsettled
+surprise. Everything else is `FIXED` or `WONTFIX`
 with its reasoning recorded, including three decisions that went against the obvious fix:
 C5, R9 and R13. `TODO.md` holds the decided-but-undone work, and `REVIEW-2026-08-14.md`
 holds a whole-codebase review sweep with findings not yet fixed and areas not yet covered.

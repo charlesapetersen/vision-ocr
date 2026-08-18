@@ -17,6 +17,15 @@ let input = tmp.appendingPathComponent("in.pdf"); _ = s.write(to: input)
 // the DPI *value* on those documents. Say so rather than print a KB/page figure
 // measured at a resolution production would not have used. qpdf --pages gives the
 // same wrong answer; this is not fixable in the tool.
+//
+// **C24 closed on 2026-08-17 and this guard stopped firing on the corpus.** `rebuildDPI`
+// applies the policy to what the page *draws*, and extraction rewrites a page's
+// `/Resources` to hold what it references — so an extracted page and its original measure
+// the same now, and the three documents this refused (`AI 2027`, `Batzell`, `Sherman_1986`)
+// all print rows. Measured both ways in that commit. **The guard stays**: it was never
+// specific to C24's cause, it is cheap, and its `before` diagnostics are what showed the
+// resolutions it called "drift" were the *correct* per-page ones all along — this tool was
+// refusing its own right answers because production held a wrong one.
 // A page it cannot compare is a refusal, not a pass. This note used to say that
 // `idx` CAN repeat an index — at pageCount 5 it was `[1, 1, 2, 3]`, on 5 corpus
 // documents — and that PDFKit duplicates the page so position and index still line

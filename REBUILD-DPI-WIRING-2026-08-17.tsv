@@ -1,0 +1,31 @@
+document	page	candidate	dpi	pixelWidth	pixelHeight	megapixels	route	bytes	characters	words	textSHA	vsSource	truthWords	matched	retained
+AI 2027	2	shipped	354.3	2929	4142	12.1	bilevel	72359	2809	475	af0bcb870748	differs	435	414	95.2%
+AI 2027	2	drawn	156.0	1290	1824	2.4	bilevel	45144	2776	470	b44ed4863c94	differs	435	408	93.8%
+AI 2027	2	fallback	300.0	2480	3508	8.7	bilevel	57978	2757	466	b0733d802c57	differs	435	410	94.3%
+AI 2027	16	shipped	354.3	2929	4142	12.1	bilevel	68795	2765	453	98fd64481dc1	differs	386	346	89.6%
+AI 2027	16	drawn	219.8	1817	2570	4.7	bilevel	45786	2841	467	0dc42e21c6c6	differs	386	357	92.5%
+AI 2027	16	fallback	300.0	2480	3508	8.7	bilevel	57338	2838	461	6b2edd3fb3b7	differs	386	357	92.5%
+AI 2027	47	shipped	354.3	2929	4142	12.1	bilevel	69998	3413	534	7873c1a712a4	differs	446	423	94.8%
+AI 2027	47	drawn	299.5	2476	3502	8.7	bilevel	61948	3481	547	8599acc593d4	differs	446	436	97.8%
+AI 2027	47	fallback	300.0	2480	3508	8.7	bilevel	62469	3500	548	3a829bfd7a78	differs	446	435	97.5%
+AI 2027	66	shipped	354.3	2929	4142	12.1	grey	298908	2837	459	281678c456e1	differs	421	406	96.4%
+AI 2027	66	drawn	266.1	2200	3111	6.8	grey	205236	2834	458	aac31e0944bf	differs	421	408	96.9%
+AI 2027	66	fallback	300.0	2480	3508	8.7	grey	238291	2851	462	17332597efc4	differs	421	405	96.2%
+AI 2027	4	shipped	354.3	2929	4142	12.1	bilevel	88032	4105	677	07a91e8deaed	differs	664	606	91.3%
+AI 2027	4	drawn	362.9	3000	4243	12.7	bilevel	91770	4102	677	8028b2a66529	differs	664	602	90.7%
+AI 2027	4	fallback	300.0	2480	3508	8.7	bilevel	79803	4091	677	4fa8ae6e58fd	differs	664	593	89.3%
+Sherman_1986_elite institutions_The Public Interest; New York	1	shipped	419.0	3464	4701	16.3	bilevel	85328	1316	219	6336764daf84	differs	14	14	100.0%
+Sherman_1986_elite institutions_The Public Interest; New York	1	drawn	417.4	3451	4684	16.2	bilevel	78142	1106	182	f45673f8bf54	differs	14	14	100.0%
+Sherman_1986_elite institutions_The Public Interest; New York	1	fallback	300.0	2480	3366	8.3	bilevel	61641	1396	224	ca71fa9d169d	differs	14	14	100.0%
+Sherman_1986_elite institutions_The Public Interest; New York	2	shipped	419.0	3464	4619	16.0	bilevel	102254	2680	414	94a9983e4110	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	2	drawn	416.8	3446	4595	15.8	bilevel	99187	2962	455	927514f861e6	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	2	fallback	300.0	2480	3307	8.2	bilevel	72344	2462	384	a881f6fd1416	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	3	shipped	419.0	3464	4619	16.0	bilevel	101917	3246	535	0321957e0a0f	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	3	drawn	411.2	3400	4533	15.4	bilevel	98078	3244	537	80b8dfa3558a	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	3	fallback	300.0	2480	3307	8.2	bilevel	72194	2974	487	7be558c93623	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	4	shipped	419.0	3464	4619	16.0	bilevel	98025	3145	514	afb474ee2ea8	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	4	drawn	418.1	3457	4609	15.9	bilevel	95122	3175	517	2688ce65e527	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	4	fallback	300.0	2480	3307	8.2	bilevel	68141	2460	403	9d0ba092685c	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	5	shipped	419.0	3464	4619	16.0	bilevel	96981	3256	523	5abddb1fc852	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	5	drawn	413.1	3415	4553	15.5	bilevel	99259	3257	523	a9057abda957	differs	-	-	-
+Sherman_1986_elite institutions_The Public Interest; New York	5	fallback	300.0	2480	3307	8.2	bilevel	72534	3256	523	8436fc8c42d3	differs	-	-	-

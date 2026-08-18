@@ -46,8 +46,16 @@ implied, which on one journal article meant every page of type rendered at 370 D
 because page 41 has a plate on it. It now asks whether the page's content stream invokes
 any XObject, which needs no threshold, and takes the documented fallback when it does
 not. 85 pages across 3 documents; those documents come out 7.4% smaller and recover
-0.63% fewer characters, both measured end to end. `BUGS.md` C24 — half of it; the pages
-that draw a *smaller* image than the dictionary holds are still open.
+0.63% fewer characters, both measured end to end.
+
+**And the other half of the same defect: a page that draws a *different* image than its
+dictionary holds.** `Flattener.rebuildDPI` now applies the same unchanged policy to what the
+page's content stream actually draws rather than to whatever its `/Resources` can reach, so
+45 more pages across 3 documents stop taking a neighbour's plate resolution — `AI 2027` 38,
+`Sherman_1986` 5, `Batzell` 2. Measured over all 16,987 corpus pages: exactly those 45 change
+resolution and not one other. On the 7 that carry their own text layer to grade against,
+recognition retains **+8 words of 3,025** — `AI 2027` p16 gains 11 of 386 and p47 gains 13 of
+446 — while published bytes fall 25%, 81% and 3% by document. `BUGS.md` C24, now closed.
 
 **A line you could not highlight, words that welded together, and a copy that showed
 what the original hid.** Three text-layer and geometry defects, all on the default

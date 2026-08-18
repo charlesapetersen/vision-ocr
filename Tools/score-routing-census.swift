@@ -9,10 +9,15 @@
 // this as step 1 and says why: *a signal that fixes the fixtures and moves corpus
 // pages is not a fix, it is a different set of defects.*
 //
-// It reads each page **from the document it is in**, never from an extracted copy, so
-// it is not exposed to C24 — `rebuildDPI` reads the shared `/Resources` in production
-// too, and a census that extracted its pages would report a resolution production does
-// not use (A12.2, and `score-routing` refuses the row for exactly this reason).
+// It reads each page **from the document it is in**, never from an extracted copy, which is
+// what made it comparable with production while C24 was open: `rebuildDPI` read the shared
+// `/Resources` then, so a census that extracted its pages would have reported a resolution
+// production did not use (A12.2, and `score-routing` refused rows for exactly this reason).
+// **C24 closed 2026-08-17** — `rebuildDPI` applies the policy to what the page draws, and
+// extraction rewrites a page's `/Resources` to hold what it references, so the two now agree
+// and `score-routing`'s three refused documents print rows. Reading in place stays right for
+// its own reasons: it is what the census's before/after diffs were taken with, and nothing
+// here should depend on PDFKit's rewriting being faithful.
 //
 // **Every number below comes from `Flattener`'s own functions.** This file computes
 // nothing the app does not compute; it only arranges the answers in columns. An

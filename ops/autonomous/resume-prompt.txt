@@ -87,8 +87,11 @@ STEP 3 — DO IT. The non-negotiables, from CLAUDE.md and CONTRIBUTING.md:
     (`python3 Tools/mutate.py --only <substring>`), with the row appended to `Tools/mutation-log.tsv`.
     ⛔ **NEVER the full catalogue.** This line said "~70 minutes", which was arithmetic on a 2-4 minute
     suite. **Measured 2026-08-17 by the C24b campaign**: 2621-2719 s per mutant, so ~45 min each, over
-    **89 mutants** (`--list` says 89 — every doc that said 84 predated the C24b five). The full
-    catalogue is on the order of **65 HOURS**. Not a thing to start in a session.
+    the whole catalogue — **run `python3 Tools/mutate.py --list | tail -1` for the count instead of
+    trusting a number written here.** This line has said 84, then 89, and was stale each time: it
+    printed **91** on `d83ddc5` while six files still said 89, and C24's wiring takes it to 94 (both
+    measured, by running it). At ~45 min each the full catalogue is on the order of **65 HOURS**.
+    Not a thing to start in a session.
     A SCOPED run costs a **baseline suite plus ~45 min per mutant**, and the baseline is a full run that
     is easy to forget: five mutants took **4h27m end to end**, against the "20-55 minutes" the tool
     printed before starting. Budget it like several commits, not like a check — and read the estimate the
