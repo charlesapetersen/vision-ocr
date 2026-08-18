@@ -24,7 +24,16 @@
 # as a second layer. preflight() PROVES the interposition works before any daemon is launched, and aborts
 # if it does not — the one check that must never be taken on trust.
 #
-# EXPECTED RESULT: 75 passed, 0 failed. Section [7b] was the one failure when this harness was written; it
+# EXPECTED RESULT: 92 passed, 0 failed — RUN 2026-08-18, not inherited. This line read "75 passed" while the
+# harness was actually running 86 assertions, which is the same way a measured number rots into an asserted one
+# that ops/autonomous/README.md's own table records two rows of. Re-measure it when you add a section.
+#
+# Section [4b] is the second CONFIRMED DEFECT this harness has found, and it was found by the daemon in
+# production first: `work_fingerprint` read only the primary checkout's HEAD, so a session that pushed from its
+# worktree without fast-forwarding scored as "advanced nothing". Written as a failing test against the unfixed
+# daemon (88 passed / 3 failed), then fixed. See that section for the reflog timings that date it.
+#
+# Section [7b] was the one failure when this harness was written; it
 # found a CONFIRMED DEFECT in vision-ocr-autonomous.sh (a stale $STATE/gate-timeouts is not cleared at
 # startup) which was FIXED the same day by adding the file to the startup clear at line ~294. Kept as the
 # regression test for that fix. The original note read:
@@ -180,6 +189,10 @@ reset_repo
 # Behaviour is scripted by $CTRL: "<rc>:<commit?>[:queue|bugs]". EVERY invocation appends to $RUN's
 # SESSION LOG — that is the churn a real session produces even when it achieves nothing, and proving it does
 # NOT read as progress is the assertion the whole backoff mechanism rests on.
+#
+# <commit?> is `no`, `yes` (commit on the primary checkout's HEAD) or `pushed` (land the work the way a real
+# session actually does — in its own worktree, pushed, with the primary checkout left behind). Those two are
+# NOT the same event to the fingerprint, which is what section [4b] exists to prove.
 cat > "$T/claude" <<STUB
 #!/usr/bin/env bash
 env > "$CHILDENV"                       # prove exactly what a session inherits
@@ -192,6 +205,15 @@ esac
 if [ "\$docommit" = yes ]; then
   echo "work \$\$ \$RANDOM \$(date +%s)" > "$REPO/f"
   git -C "$REPO" add -A >/dev/null 2>&1; git -C "$REPO" commit -qm "work \$\$" >/dev/null 2>&1
+elif [ "\$docommit" = pushed ]; then
+  # A SESSION THAT WORKED IN ITS OWN WORKTREE AND PUSHED — origin/main moves, the primary checkout's HEAD
+  # does not. Built with git plumbing rather than a second checkout on purpose: the mechanism under test
+  # reads REFS, so the commit deliberately carries HEAD's own tree. This fixture is about which ref moved
+  # and nothing else, and \$RANDOM keeps successive cycles from colliding on an identical sha.
+  _t=\$(git -C "$REPO" rev-parse "HEAD^{tree}")
+  _c=\$(git -C "$REPO" commit-tree "\$_t" -p "\$(git -C "$REPO" rev-parse HEAD)" \\
+          -m "pushed from a worktree \$\$.\$RANDOM" 2>/dev/null)
+  [ -n "\$_c" ] && git -C "$REPO" update-ref refs/remotes/origin/main "\$_c"
 fi
 exit "\$rc"
 STUB
@@ -273,6 +295,44 @@ echo "1:no" > "$CTRL"; reset_repo; dfset 999999; reset_state
 P=$(launch 0); sleep 12; echo "1:yes" > "$CTRL"; sleep 8; stop "$P"; L="$STATE/daemon.log"
 grep -q 'resume session exited rc=1' "$L" && ok "the committing session did exit nonzero" || bad "stub never exited nonzero"
 grep -q "backoff reset to 1s" "$L" && ok "rc=1-with-commit counts as progress (rc does not gate)" || bad "commit+rc=1 missed — a commit-then-die run would march to a false park"
+
+echo "[4b] A COMMIT PUSHED FROM A WORKTREE is progress (origin/main is a tip too)"
+# THE 2026-08-18 04:14 FALSE BACKOFF, as a regression test. The 02:41 session committed `bd574ac`, pushed it
+# and removed its worktree; the daemon logged "advanced nothing (queue + tip unchanged)", slept 1800s instead
+# of 90s, and left the idle stopwatch reading 21142s. Nothing was wrong with the session — it never
+# fast-forwarded the PRIMARY checkout, and work_fingerprint read only that checkout's HEAD. `git reflog` is
+# what settles it: refs/remotes/origin/main reached bd574ac at 04:13:07, SEVENTY-FOUR SECONDS before the
+# verdict, and main itself did not get there until 04:44:51 — by the NEXT session's `pull --rebase`.
+#
+# The two halves of the daemon disagreed about where "landed" is recorded, which is why this is a defect and
+# not a preference: housekeeping() already deletes branches on the strength of this very ref, and says so —
+# "PURELY LOCAL: no `git fetch` — the session's push already advanced the origin/main ref this checkout".
+echo "0:no" > "$CTRL"; reset_repo; dfset 999999; reset_state
+P=$(launch 0); sleep 12; H0=$(git -C "$REPO" rev-parse HEAD)
+# Count the TRUE "advanced nothing" lines the idle phase has already earned. The assertion below has to be
+# about lines added AFTER the push, not about the string's presence: those first cycles really did advance
+# nothing, and reporting them is the mechanism working. A whole-log grep here failed for exactly that
+# reason on its first run, which is this harness's own recurring lesson about over-broad assertions.
+N0=$(grep -c "advanced nothing (queue + tip unchanged)" "$STATE/daemon.log" 2>/dev/null || true)
+echo "0:pushed" > "$CTRL"; sleep 8; stop "$P"; L="$STATE/daemon.log"
+[ "$(git -C "$REPO" rev-parse HEAD)" = "$H0" ] \
+  && ok "the primary checkout's HEAD did NOT move (the incident is reproduced, not approximated)" \
+  || bad "HEAD moved — this is testing an ordinary commit, not a worktree push"
+[ "$(git -C "$REPO" rev-parse refs/remotes/origin/main)" != "$H0" ] \
+  && ok "…and origin/main DID move, so the work really landed" \
+  || bad "origin/main unchanged — the stub is broken and every assertion below is vacuous"
+grep -q "progress $EM backoff reset to 1s" "$L" \
+  && ok "a pushed-from-worktree commit reads as progress -> reset to 1s" \
+  || bad "scored as no-progress — the 04:14 false backoff (1800s for 90s) is live"
+[ "${N0:-0}" -ge 1 ] \
+  && ok "the idle phase did log 'advanced nothing' (${N0}x), so the next assertion is not vacuous" \
+  || bad "no 'advanced nothing' before the push — the idle phase never ran"
+[ "$(grep -c "advanced nothing (queue + tip unchanged)" "$L" 2>/dev/null || true)" = "${N0:-0}" ] \
+  && ok "…and NOT ONE MORE after it: no false line over work that is pushed and public" \
+  || bad "still logs 'advanced nothing' over work that is committed, pushed and public"
+[ -f "$STATE/idle.since" ] \
+  && bad "idle stopwatch still running after real progress (it read 21142s at 04:14)" \
+  || ok "idle.since cleared — the stopwatch reset that 04:14 did not get"
 
 echo "[5] A QUEUE EDIT wakes it early from backoff_sleep (the owner arming an item)"
 echo "1:no" > "$CTRL"; reset_repo; dfset 999999; reset_state

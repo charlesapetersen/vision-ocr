@@ -13,8 +13,8 @@ deliberately does not have* records what was cut and why, because the reasons ar
 |---|---|---|---|
 | helper + daemon scripts | 16 | **11** | fewer moving parts |
 | proof harnesses | 15 | **4** | it guards far less machinery |
-| core shell lines | 4,295 | **4,381** | *no longer fewer at all* |
-| harness lines | 2,866 | 1,515 | |
+| core shell lines | 4,295 | **4,479** | *no longer fewer at all* |
+| harness lines | 2,866 | 1,702 | |
 
 ⚠️ **Two of those numbers were wrong and are corrected here, re-counted 2026-08-17 with `wc -l`.** The
 harness row read **2** while three harnesses were committed — it was written when two existed and was never
@@ -23,6 +23,14 @@ It is **4** now that `prove-stop.sh` exists (README §Defects D5: `daemon.sh` ha
 file that failed). The core-shell row read **3,668**; the real count is **4,381**, so the "only ~15% fewer"
 claim below has become "slightly more" — the honest reading of the paragraph that follows is now stronger, not
 weaker, and the row is left in place rather than quietly dropped.
+
+⚠️ **And they rotted again inside a day — re-counted 2026-08-18 with `wc -l`: 4,479 and 1,702.** The
+**4,381 / 1,515** pair above was already wrong before this commit touched anything: at `dddcbf6` the true
+counts were **4,451 / 1,642**, so `prove-stop.sh`'s own repair and the four commits after it moved both rows
+within twenty-five minutes of the recount that was supposed to fix them. That is the third time these two
+numbers have gone stale, which is the argument for the row's `wc -l` recipe being written down here rather
+than for anyone's diligence: `wc -l ops/autonomous/*.sh` and `wc -l ops/autonomous/tests/*.sh`, whose totals
+are the two figures. Re-run those two commands when you add a section; do not carry the number forward.
 
 ⚠️ Note the third row, because the honest reading is not the flattering one: **the line count is barely
 down.** This repo's house style is heavy "why this exists" commenting that records the incident behind each
@@ -620,6 +628,93 @@ tells a session to treat as corruption. It costs a session the time to rule that
 reporting defect, not a safety one (the belt still answers correctly), and it wants its own commit: that file
 is the only thing standing between this run and two concurrent suites, and "a regression inside a fix for
 another bug" is this project's most repeated shape.
+
+## Defects found 2026-08-18, from one overnight check-in
+
+Found by reading the log of an unattended night, not by stopping the run — which is the cheaper way to find
+this class and the reason the log lines are written to be read. Same tagging as the section above: **[M]**
+measured on this machine, **[I]** inferred from a mechanism measured in the same incident.
+
+### D10 · A session that pushed from its worktree was scored as having advanced nothing — FIXED
+
+**[M]** — dated to the second from `git reflog`, and reproduced as a failing test before being fixed.
+
+The 02:41 session committed `bd574ac`, pushed it, removed its worktree and stopped. At **04:14:21** the daemon
+logged `session (rc=0) advanced nothing (queue + tip unchanged) — no progress`, slept **1800 s instead of
+90 s**, and left the idle stopwatch reading **21142 s** — over a run that had just shipped a commit and a
+441-page corpus sweep.
+
+`work_fingerprint()` hashed `git rev-parse HEAD`: the **primary checkout's** HEAD. Sessions work in
+`/private/tmp/vo-<stamp>` worktrees and push from there, and fast-forwarding the primary checkout afterwards is
+something they do only sometimes. The two reflogs date both halves:
+
+```
+refs/remotes/origin/main@{04:13:07}   bd574ac   update by push     <- 74 s BEFORE the verdict
+main@{04:44:51}                       bd574ac   pull --rebase      <- where the NEXT session dragged it
+```
+
+The fingerprint therefore could not have moved, and the run's own record of what it had accomplished lagged a
+full cycle behind reality — once per session that landed work this way.
+
+**[M] It does not only DELAY that signal, it MISATTRIBUTES it — measured live at 08:41:51 the same morning**,
+while the daemon was still running its pre-fix installed copy. That session pushed `d56fd0e` and `36fe77a` and
+left the primary checkout two commits behind, exactly as the 02:41 one had; the daemon logged progress anyway.
+Not for those two commits. `fp_before` is captured when the cycle launches at 06:15:50, and the session's own
+first act — `git pull --rebase origin main`, at **06:16:00** by the reflog — fast-forwarded main to the
+PREVIOUS cycle's `dddcbf6` ten seconds later. So the fingerprint moved on work that had landed two hours
+earlier, and every cycle was being credited with its predecessor's commits while its own stayed invisible.
+A progress signal shifted one cycle to the left reads as healthy for exactly as long as the run keeps
+producing, and starts lying at the moment a session produces nothing — which is the case the whole backoff
+mechanism exists to detect.
+
+**What makes it a defect rather than a preference is that the daemon already knew.** `housekeeping()` deletes
+merged `auto/*` branches on the strength of this very ref, and says so: *"PURELY LOCAL: no `git fetch` — the
+session's push already advanced the origin/main ref this checkout"*. Two halves of one script disagreed about
+where "landed" is recorded, and the half that scored the run was the one that had it wrong.
+
+Fixed by hashing `refs/remotes/origin/main` beside `HEAD`. No network and no fetch: `refs/remotes` is shared
+with every linked worktree, and the push is what updates it. Covered by `tests/prove-daemon.sh` §[4b], written
+against the unfixed daemon first — **88 passed / 3 failed**, the three being the false backoff, the false log
+line and the un-reset stopwatch — and green at **92 / 0** after.
+
+A push by someone else — the owner from another machine, an interactive session — now reads as progress too.
+That is correct rather than tolerated: per the fingerprint's own accelerator note, a changed fingerprint means
+only *"the decision surface moved, retry NOW"*, which a fresh push from any source warrants.
+
+**[M]** One thing the fix caught in itself, worth knowing before copying the idiom: a bare
+`git rev-parse <missing-ref>` **echoes the ref name back on stdout and also exits nonzero**, so a
+`|| echo <fallback>` appends to that output instead of replacing it. Both lines are deterministic, so the
+fingerprint stays stable either way — but a fallback string that can never appear on its own is one nobody can
+reason about. The new line therefore uses `--verify --quiet`, which is the form `housekeeping()` already uses on
+this same ref. **The `HEAD` line beside it has the identical latent shape** in a repo with no commits, and is
+deliberately left: the daemon refuses to start without a repo, so nothing can reach it, and changing it is a
+different change from this one.
+
+### D11 · A completed item is credited one cycle late, from the same root cause — LEFT, with the reason
+
+**[M]** on the mechanism, **[I]** on the consequence — and the consequence is bounded by a measured fact rather
+than an assumed one.
+
+`completed_items()` counts ticked `QUEUE.md` boxes and closed `BUGS.md` entries by reading **the primary
+checkout's working tree** — the same tree `D10` found lagging. A session that ticks a box in its worktree and
+pushes without fast-forwarding therefore has its completion counted as zero, and `note_committed` increments the
+no-completion streak that parks the run at five.
+
+**It cannot accumulate to a false park, which is why it is recorded rather than fixed.** The resume prompt's
+step 1 is `git fetch origin && git pull --rebase origin main`, so the next cycle's session brings the primary
+checkout current *before* that cycle's verdict is computed; the tick becomes visible and resets the streak. The
+real effect is a one-cycle lag in crediting a completion, and a streak that can read one higher than the truth
+in between.
+
+Left deliberately: fixing it means `completed_items()` reading the queue and the register out of `origin/main`
+instead of the working tree, which changes what two further mechanisms count and wants its own harness section.
+`D10`'s fix is one line and one ref; this is a different change and belongs in its own commit — this repo's most
+repeated lesson being regressions shipped inside fixes for other bugs.
+
+⚠️ **`D10`'s fix is what exposes this**, and the trade is deliberate. Before it, a push-without-fast-forward
+session took the no-progress branch and never reached `note_committed` at all. The exchange is a false
+30-minute backoff on every such session, for a transient off-by-one in a counter that self-corrects on the next
+cycle.
 
 ## What this deliberately does not have
 

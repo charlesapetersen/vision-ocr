@@ -344,9 +344,37 @@ disk_ok() {
 # QUEUE.md is committed, so it already rides in `rev-parse HEAD`; it is hashed DIRECTLY as well so that the
 # owner editing the queue in the working tree — arming an item without committing — wakes the daemon
 # immediately via backoff_sleep. That is the single most common way a human unblocks this run.
+#
+# ⚠️ AND origin/main, BECAUSE "THE TIP" IS NOT ONE REF. A session works in its own worktree and pushes from
+# there; fast-forwarding the PRIMARY checkout afterwards is something sessions do only sometimes. Measured
+# 2026-08-18: the 02:41 session committed `bd574ac`, pushed it, removed its worktree and stopped — and this
+# function, reading only the primary checkout's HEAD, returned an unchanged fingerprint. The daemon logged
+# "advanced nothing (queue + tip unchanged)" at 04:14:21 over work that was already public, slept 1800s
+# instead of 90s, and left the idle stopwatch reading 21142s. `git reflog` dates it exactly:
+# refs/remotes/origin/main reached bd574ac at 04:13:07 — 74 s before that verdict — while main itself did not
+# arrive until 04:44:51, dragged there by the NEXT session's `pull --rebase`. So the run's own record of what
+# it had accomplished lagged a full cycle behind reality, once per session that pushed this way.
+#
+# It costs nothing and needs no network: a push updates this checkout's remote-tracking ref, and refs/remotes
+# is SHARED with every linked worktree. housekeeping() already relies on precisely that — it deletes branches
+# on the strength of this ref and says so ("PURELY LOCAL: no `git fetch` — the session's push already advanced
+# the origin/main ref this checkout"). Before this line the daemon's two halves disagreed about where
+# "landed" is written down, and the half that scored the run was the one that had it wrong.
+#
+# A move made by someone ELSE — the owner pushing from another machine, an interactive session landing a
+# commit — reads as progress here, and that is correct rather than tolerated: per the accelerator note below,
+# a changed fingerprint means only "the decision surface moved, retry NOW", which is exactly what a fresh
+# push from any source warrants.
 work_fingerprint() {
   {
     git -C "$REPO" rev-parse HEAD 2>/dev/null || echo no-head
+    # --verify --quiet, the same form housekeeping() uses on this ref: a BARE `rev-parse <missing-ref>` echoes
+    # the ref name back on STDOUT and *also* exits nonzero, so the `|| echo` fallback would append to it rather
+    # than replace it. Deterministic either way, so the fingerprint would still be stable — but a fallback
+    # string that never appears alone is a fallback nobody can reason about. (The `HEAD` line above has the
+    # same latent shape in a repo with no commits; left alone, and recorded in README §D10, because the daemon
+    # refuses to start without a repo and that is a different change.)
+    git -C "$REPO" rev-parse --verify --quiet refs/remotes/origin/main 2>/dev/null || echo no-remote-tip
     grep -m1 '^RUN STATUS:' "$RUN" 2>/dev/null || echo no-status
     grep -E '^[[:space:]]*[-*][[:space:]]+\[[ xX]\]' "$QUEUE" 2>/dev/null || echo no-queue
   } | shasum -a 256 2>/dev/null | cut -d' ' -f1
