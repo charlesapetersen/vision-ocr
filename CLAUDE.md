@@ -15,8 +15,10 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **one entry is open as
-of 2026-08-17: `C26`, and it loses content at the DEFAULT Photo detail setting.** A small line
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries are open as
+of 2026-08-17, `C26` and `C27`, both found on one document after `1.13.0` shipped. `C26` loses
+content at the DEFAULT Photo detail setting; `C27` discards spot colour and is fidelity rather
+than loss.** A small line
 drawing is erased on the picture path because `pageIsAllText()` shrinks the tone layers 8x and 16x
 and the pale-drawing guard in front of that needs 5% of the page to fire; three of four drawings
 in a 10-page booklet went, every word survived, and `1.13.0` shipped it hours earlier having been

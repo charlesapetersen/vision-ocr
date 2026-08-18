@@ -224,7 +224,7 @@ warns about in as many words.
 the consequence, and whether it was verified by running code or only reasoned
 about.
 
-**One entry is open as of 2026-08-17: `C26`** — a small line drawing erased on the picture path at the default Photo detail setting, opened hours after `1.13.0` shipped and on a document the release gate had already passed. It is not R56. Read C26, and read the note below about what this gate can and cannot see. **`C24` was open before it and is `FIXED`**, both halves:
+**Two entries are open as of 2026-08-17: `C26` and `C27`** — a small line drawing erased on the picture path at the default Photo detail setting, opened hours after `1.13.0` shipped and on a document the release gate had already passed. It is not R56. Read C26, and read the note below about what this gate can and cannot see. **`C24` was open before it and is `FIXED`**, both halves:
 a page that draws no XObject at all no longer takes another page's plate resolution, and the 45
 pages that draw a *different* image than the shared dictionary holds now take their own, after a
 corpus gate that moved exactly those 45 of 16,987 for **+8 matched words of 3,025** and 25-81%

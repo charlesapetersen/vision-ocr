@@ -6,7 +6,10 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**One open: `C26`, and it destroys content on the shipped default setting.** Opened 2026-08-17,
+**Two open: `C26` and `C27`, both found on one document hours after `1.13.0` shipped.** `C27` is
+fidelity rather than content loss — spot colour discarded because the bar is on the page's mean
+saturation — and it is a separate mechanism from C26 with a separate constant; neither fix
+addresses the other. `C26` destroys content on the shipped default setting. Opened 2026-08-17,
 hours after `1.13.0` was cut against an empty register — a small line drawing on a page the code
 correctly reads as all text is erased on the picture path, because the guard that would protect it
 needs the mark to cover 5% of the page and these cover 0.2%. It is **not** R56, whose fix is
@@ -2217,6 +2220,69 @@ vignettes from the decorative shading and show-through R56 was refused four time
 and whether the fix belongs in `paleDrawingThreshold`, in a second constant for this decision, or
 in `pageMarks`' own output. **Do not tune a constant on this one document** — that is the failure
 R55 and R56 both record.
+
+### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
+*(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct
+mechanism, distinct constant, distinct harm — fixing either one does not address the other.)*
+
+**Measured, input against shipped output, saturated-red pixels per page at 50 DPI:**
+
+```
+page  sat     in red%   out red%   outcome
+p1    -         0.106      0.000   nothing to lose
+p2    0.178    24.400     24.604   colour KEPT
+p4    0.039     3.231      0.000   colour DISCARDED
+p6    0.043     4.212      0.000   colour DISCARDED
+p7    0.041     3.959      0.000   colour DISCARDED
+p9    0.041     3.075      0.000   colour DISCARDED
+p10   -         0.520      0.000   colour DISCARDED
+```
+
+`p3` carries no red (the owner confirms every other page does). **`p5` and `p8` were not
+measured** — 7 of 10 pages were, and the entry does not extrapolate over the other two.
+
+**This is documented, deliberate behaviour, and the numbers were already in the tree.**
+`shouldKeepColour` requires `saturation > pictureSaturationThreshold` (**0.06**), and
+`testdocs/README.md` already tabulates p2 at `sat 0.178` as "picture, **kept in colour**" and p6
+at `sat 0.043` as "picture, **greyscale**". Nothing here contradicts the design. What is filed is
+the *consequence*, which nobody had stated.
+
+**Why spot colour can never qualify.** `Flattener.saturation(ofRGBA:)` returns the **mean
+per-pixel saturation over the whole page**, paper cast removed — `total / pixels`. Reaching 0.06
+therefore needs roughly 8% of the page in saturated colour. Red subheads, rules and a corner
+cartoon come to 3-4%. So the constant answers "is this a colour photograph page" — which it does
+well, and which is what R49 and R50 needed — and makes "this document is printed in two inks"
+**structurally invisible**, whatever the page's design intent.
+
+**The harm, stated as fidelity and not as content loss.** No word is lost and no mark is erased;
+this is not C26. What is lost is that the copy **misrepresents how the pamphlet was printed**, and
+inconsistently: p2's red survives at 24.6% while p4, p6, p7, p9 and p10 come out with none. A
+reader of the copy sees a two-ink document on its title spread and a one-ink document thereafter.
+Uniform loss would be a lesser defect than this.
+
+**And this document is the corpus's deliberately chosen fixture for exactly this decision.**
+`TODO.md` records it as "requested by the owner as a test case for the decision R49 and R50 both
+turned on: colour on paper that is not a photograph", added by hand outside the stratified draw
+because "the corpus had no document of that kind that anyone picked deliberately". The fixture
+that exists to test spot colour loses its spot colour on every page but one.
+
+**Not measured, and it is the whole question:** how many corpus documents carry spot colour under
+the 0.06 bar. `Tools/score-threshold-loss.swift` already prints `sat` per page, so the population
+is one sweep — the same sweep C26 needs, and they should share it. Until that number exists this
+is one document, and **one document is not a campaign (R55's lesson)**.
+
+⛔ **Do not raise `pictureSaturationThreshold` on this evidence.** It gates the *route*, so
+lowering the bar sends more text pages down the picture path and costs bytes on every one — the
+trade R49 and R50 were about. The shape worth considering, and it needs no new signal, is that
+"mean saturation over the page" is the wrong *statistic* for the question rather than 0.06 being
+the wrong *number*: a page with 3% of its area at 0.8 saturation is not the same page as one with
+uniform 0.03 cast, and the mean cannot tell them apart. Note the symmetry with C26, where a
+page-fraction threshold could not see a 0.2% vignette. Two constants, same shape.
+
+⚠️ **The release gate is silent on this too.** It counts `colour` documents (24 of 233 on
+2026-08-17) and reports no per-page colour decision, so a page that quietly drops its ink moves
+nothing it prints. Pixel resemblance does not see it either: the greyscale copy correlates almost
+perfectly with the colour original.
 
 ## Robustness and correctness of reporting
 

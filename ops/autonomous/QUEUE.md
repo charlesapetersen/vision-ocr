@@ -133,6 +133,19 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
       the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.
       (origin: BUGS.md C26)
+- [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
+      MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
+      Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the
+      document was printed, and inconsistently within itself. Read the entry; it has the per-page
+      red-pixel measurements and the reason the mean cannot answer this question.
+      **Share C26's sweep — do not run a second one.** `score-threshold-loss` prints both `lost` and
+      `sat` per page, so one corpus pass sizes both populations. Until that number exists this is one
+      document, and one document is not a campaign (R55).
+      ⛔ **Do not raise `pictureSaturationThreshold`.** It gates the ROUTE, so a lower bar sends more
+      text pages down the picture path and costs bytes on every one — the trade R49 and R50 were
+      about. The entry argues the statistic is wrong rather than the number: a page with 3% of its
+      area at 0.8 saturation is not a page with a uniform 0.03 cast, and a mean cannot separate them.
+      (origin: BUGS.md C27)
 - [ ] **depth-cap** — `Flattener.drawnLargestImage`'s `case "Form"` branch caps recursion at `depth < 3`
       while `largestImage` caps at `< 4`, and **the stated reason for the mismatch expired when `c17b3f3`
       made the drawn walk production**. That comment says so itself: the symmetry existed so the

@@ -85,7 +85,7 @@ the merge after all". Every rebuild route had published with no `/CropBox`, so t
 what the original hid: 14 of 233 documents, 577 of 16,987 pages, worst case a third of the sheet.
 **The register was empty when `1.13.0` was cut on 2026-08-17** — 0 open of 163 entries, `R55`
 `WONTFIX` and `C24` `FIXED` that day — which is what made the release answerable on defect
-grounds. **It did not stay empty: `C26` was opened hours later, the same day**, on a document the
+grounds. **It did not stay empty: `C26` and `C27` were opened hours later, the same day**, on a document the
 release gate had already passed, and it loses content at the default Photo detail setting. Both
 sentences are dated on purpose and neither supersedes the other.
 *(This paragraph read "`C23` is the release blocker, and the only open finding with harm a user
@@ -233,7 +233,8 @@ It earns its place. Measured on its sampled pages, a text pamphlet routes to the
 | 2 | 0.276 | 0.192 | **0.178** | picture, kept in **colour** |
 | 6 | 0.094 | **0.164** | 0.043 | picture, greyscale |
 
-The red ink alone clears `pictureSaturationThreshold`; the scan's 111 DPI, where
+The red ink clears `pictureSaturationThreshold` **on p2 only** — the table's own second row is
+0.043, below the 0.06 bar, and `BUGS.md` C27 is what that costs. The scan's 111 DPI, where
 type is mostly anti-aliased edge, clears `pictureToneThreshold`. `score-corpus`:
 `OK 3p start=99% end=99% off=-0.10 overlap=0/21 words=100%`, which moves no median
 and no worst case. **The corpus is 233 documents; every byte and character total
