@@ -65,9 +65,14 @@ not run at all; `CLAUDE.md` now carries the procedure as five commands that work
    through a document", two of which measured one page twice. **Group 1 of the three-group
    statement is therefore closed** — nothing in `Tools/` is outstanding except `R55`, which
    needs its own measurement campaign first.
-2. **`A1.2`, then `A1.1`, then `C23`** — that order, because A1.1's only viable fix triples
-   the sliver population A1.2 is about. Plus `A1.3`, `A1.4`, `A2.4`, `A3.1` in its narrower
-   form, `A13.4`, the residue of `A10.6`, and `A11.8`.
+2. ~~**`A1.2`, then `A1.1`, then `C23`**~~ — **all three `FIXED`**, 2026-08-15 and 2026-08-16
+   (`R81`, `R82`, `4a27bd8`); `A2.4` and `A3.1` closed with them, in `R83`. **What is actually left
+   of the review sweep, each verified unstruck in `REVIEW-2026-08-14.md` on 2026-08-17 rather than
+   inherited from this list: `A1.3`, `A1.4`, `A3.5`, `A10.6`'s residue, `A11.8` and `A13.4`'s
+   remainder.** All six are now queue items in `ops/autonomous/QUEUE.md`, which is the sequence of
+   record; this line is the standing count and stays dated so it cannot go stale in the present
+   tense again. Three of them — `A1.3`, `A10.6`, `A11.8` — were open and *unqueued* until
+   2026-08-17, because the queue was seeded from this list while this list was already wrong.
 3. ~~**`C24`**~~ — **`FIXED` 2026-08-17**, both halves, and it needed no threshold in the
    end: `rebuildDPI` applies the shipped policy to what the page *draws*. 85 pages closed on
    2026-08-16 and 45 on 2026-08-17, measured over all 16,987. Nothing left here. *(This item
@@ -75,10 +80,17 @@ not run at all; `CLAUDE.md` now carries the procedure as five commands that work
    corpus has no gap for". The first clause was right and the second was the assumption the
    whole thread went on to falsify.)*
 
-**`C23` is the release blocker**, and the only open finding with harm a user sees today:
-every rebuild route publishes with no `/CropBox`, so the copy displays what the original hid
-— 14 of 233 documents, 577 of 16,987 pages, worst case a third of the sheet. Whether to ship
-without it is the owner's decision; the hand-offs set out both paths.
+**`C23` was the release blocker and is `FIXED`** — 2026-08-16, `4a27bd8`, "the crop box survives
+the merge after all". Every rebuild route had published with no `/CropBox`, so the copy displayed
+what the original hid: 14 of 233 documents, 577 of 16,987 pages, worst case a third of the sheet.
+**As of 2026-08-17 the register is empty** — 0 open of 163 entries, `R55` `WONTFIX` and `C24`
+`FIXED` the same day — so nothing gates a release on defect grounds. The owner's decision on
+2026-08-17 was to cut `1.13.0`, and this commit is its version bump. Dated on purpose.
+*(This paragraph read "`C23` is the release blocker, and the only open finding with harm a user
+sees today … whether to ship without it is the owner's decision" for a day after C23 was fixed,
+in the section a reader starts from and reaches for when making exactly that decision.
+`check-staleness.sh` was green throughout: it counts open register entries and does not read
+this sentence. Nothing in this repo checks a number or a status written in prose.)*
 
 ## What is actually left
 

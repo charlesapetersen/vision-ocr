@@ -114,6 +114,23 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       the tool needed repairing before it could be the gate. The `score-routing` half is right.
       Read the entry's `C24b` and `C24's wiring` sections first, not this line.
       (origin: BUGS.md C24, FIXED)
+- [ ] **depth-cap** — `Flattener.drawnLargestImage`'s `case "Form"` branch caps recursion at `depth < 3`
+      while `largestImage` caps at `< 4`, and **the stated reason for the mismatch expired when `c17b3f3`
+      made the drawn walk production**. That comment says so itself: the symmetry existed so the
+      drawn-versus-dictionary sweep isolated one variable, and *"if this is ever wired into `rebuildDPI`,
+      the cap becomes a question about pages rather than about agreement, and wants re-measuring then"*.
+      The wiring landed and revisited neither the cap nor the comment.
+      **Not a wrong answer on anything measured**: that same comment records `< 4` and `< 3` producing
+      byte-identical sweeps over all 16,987 corpus pages, so nothing here nests that deep. The reason to
+      do it anyway is the *latent* one — `.unreadable` falls back to `largestImage`, so a page nesting
+      images four levels deep would get a different answer depending on which path it took, and the two
+      walks are production's two walks now rather than an instrument and its subject.
+      **The decided fix, owner 2026-08-17: set the cap to `< 4`**, re-run `Tools/score-drawn-images.swift`
+      over the corpus expecting a byte-identical sweep, and let the pre-commit suite gate it. If the sweep
+      is NOT byte-identical, that is the interesting outcome and wants writing up rather than tuning away.
+      Found by reviewing `c17b3f3`'s diff while its suite was already running, so it was filed rather than
+      folded in. (context: BUGS.md C24 — CLOSED, and `c17b3f3` is the wiring; the entry is why this
+      matters, not the work itself)
 - [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
       HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite
       figure was corrected to a MEASURED 1,127 in HANDOFF.md, TECHNICAL.md and ARCHITECTURE.md; TODO.md's
@@ -150,6 +167,13 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
 - [ ] **fault-inject** — run `Tools/fault-inject.sh` over all its cases and confirm each sabotage is still
       refused by the real build step. It builds into a scratch copy of the tree, so it is safe unattended.
       (origin: Tools/fault-inject.sh)
+- [ ] **A1.3** — one live bullet of that finding's four; the other three are struck through in place
+      (`R81`, `R83`). What is left: `observations(fromJSONLines:)` (`:161`) and `observations(fromJSONAt:)`
+      (`:181`) have **no callers** since recognition came in-process, and they are divergent siblings —
+      one refuses an undecodable line and an empty result, the other refuses neither. Dead code that
+      would mislead the next reuse, which is the harm the entry names. Verified still unstruck
+      2026-08-17. The entry's own title calls it "smaller, real, low value", so it is a delete-or-reconcile
+      decision and not a campaign. (origin: REVIEW-2026-08-14.md A1.3)
 - [ ] **A1.4** — the outstanding finding in review area 1. Read the entry before assuming it is still
       live: findings that graduated into `BUGS.md` are struck through in place there.
       (origin: REVIEW-2026-08-14.md A1.4)
@@ -157,6 +181,21 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       (origin: REVIEW-2026-08-14.md A13.4)
 - [ ] **A3.5** — observed but never triaged. Triage it: either it becomes a `BUGS.md` entry with
       measurements, or it is closed in place with the reason. (origin: REVIEW-2026-08-14.md A3.5)
+- [ ] **A10.6** — the residue after its two real defects were fixed in `BUGS.md` R80: the
+      **2/27-effective preset check** and the inert-control notes still stand. Read the entry before
+      planning anything — the fixed half is struck through in place and the standing half is not.
+      Verified still unstruck 2026-08-17. (origin: REVIEW-2026-08-14.md A10.6)
+- [ ] **A11.8** — the invariant coverage table, and what its 2026-08-15 re-read left open. **Invariant 2's
+      gap is CLOSED** (`BUGS.md` T10 made A11.1's check bite; `publishVerified` is driven by two checks and
+      a mutant), and invariant 3's (c) and (d) gained real instruments (`score-run-width` in R81,
+      `score-line-separation` in R82). What is still open is **invariant 1 — "never lose content silently"
+      — at unit level only**, and the re-read makes it *harder*, not merely uncovered: both of
+      `makeSearchablePDF`'s refusal messages sit downstream of guards that fire first, so a helper
+      returning a short dictionary is refused by `HelperFailure.incomplete` and then falls back in-process,
+      and `missingPages`' report may not be reachable at all.
+      ⚠️ **The entry says explicitly that "add a test" is the WRONG next step until reachability is
+      answered.** Answer that first. Invariant 5 also stays unenforced outside where it is asserted (A11.4).
+      Verified still unstruck 2026-08-17. (origin: REVIEW-2026-08-14.md A11.8)
 - [ ] **annot-r3** — the third adversarial review round on the annotation-preservation feature. Rounds one
       and two are recorded; this is the round that has not been run.
       (origin: TODO.md §"Preserving annotations through re-OCR")

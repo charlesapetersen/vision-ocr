@@ -12,7 +12,7 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
-## Unreleased
+## 1.13.0 — 2026-08-17
 
 **Photographs no longer come out as black blobs, and a pale drawing is no longer
 erased.** Two content-destruction defects on Automatic's default route, both open since
