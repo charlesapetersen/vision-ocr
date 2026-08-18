@@ -145,13 +145,30 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       **0.0493 / 0.0540 / 0.0660 against a bar of 0.08**: it sees them and passes them.
       **Do not re-run this** — `score-threshold-loss --dump` and `score-text-route` both carry it,
       and the entry's "The drawings are INK" section has the tables.
-      **Sub-step 3, and it is a sweep this time:** price a lower `textPageInkOutsideThreshold`.
-      0.045 refuses all three pages and keeps a factor of 3.4 under the 0.153 hazards that
-      constant's own doc comment tabulates — but every page newly held at full resolution pays
-      bytes, the distribution "runs smoothly from 0 to 0.97" with no gap to hide in, and none of
-      that is measured. `Tools/score-text-route.swift` prints `inkOut` per page and runs Vision on
-      each, so budget it as a real sweep. ⛔ Do NOT move the constant without it: this is R50's
-      trade, and R49/R50 are the entries about paying bytes on every text page.
+      ✅ **Sub-step 3's per-page price is DONE, 2026-08-18, and 0.045 is affordable on these three
+      pages.** `Flattener.textPageInkOutsideThresholdOverride` (nil in the app; substitutes the
+      guard's *comparand*, not its verdict, so R56's pale term keeps participating) plus `INKBAR` on
+      `Tools/score-text-route.swift`: over all ten pages, the three are refused the shrink,
+      `65,477 B -> 195,785 B`, **+130,308 B, 43,436 B/page, 2.99x on those three and 1.76x across
+      the document's five picture-route pages** — the other five are already 1-bit and pay nothing.
+      The stencil is byte-identical at both bars so all of it is tone layers, and **two picture-route
+      pages read `same` with real bytes** (p2 at `inkOut` 0.1072, p10 at 0.9735), which is the seam's
+      negative control. `inkOut` reproduced digit for digit through a second code path. Two mutants
+      added (**96** in the catalogue) and both **watched failing** against mutated copies of
+      `Sources/` — 12 checks, pristine 12/12, fails 3 and 2; `override-ignored` is killed by the new
+      checks **and by nothing else in the suite**, and neither mutant has a `mutation-log.tsv` row.
+      The term that fires is also on a fixture now — `makeScannedPDF(figure:)`, `inkOut` 0.0551 —
+      though **not** the erasure itself. **Do not re-run any of that.**
+      ⛔ **Sub-step 3b is what remains, and it is the half that decides the fix: the corpus
+      population.** How many pages sit in `[0.045, 0.08)` — held at 1/8 today, newly paying ~3x?
+      The distribution "runs smoothly from 0 to 0.97" with no gap, so it cannot be reasoned out.
+      Two traps, both measured: **the tool takes ONE pdf and treats later arguments as page
+      numbers**, so a glob silently measures document 1 and prints a summary that reads like a corpus
+      run — it needs a driver loop; and **it samples up to 12 pages a document, not 2**, so 233
+      documents is ~2,500 pages, not 441. At the measured 3.8 s/page that is **3-4 hours**, and
+      `1954 - Why` is 111 DPI so read it as a floor. Detached and polled, in a session that budgets
+      for it. ⛔ Do NOT move the constant without it: this is R50's trade, and R49/R50 are the
+      entries about paying bytes on every text page.
       ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
       the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.

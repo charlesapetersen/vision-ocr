@@ -28,10 +28,33 @@
 // decision after recognition would have to use, so the pages where the two routes
 // are close can be read against how confidently the page is text at all.
 //
+// **And it prices a different bar on that signal, which is C26's sub-step 3.**
+// `INKBAR=0.045` publishes every page twice — once at the shipped
+// `textPageInkOutsideThreshold` and once at the bar given — and prints what the
+// difference costs in bytes. That is the measurement C26 is blocked on: three
+// drawings are erased because `inkOut` reads 0.049–0.066 against a bar of 0.08, a
+// bar at 0.045 refuses all three, and R49/R50 are the entries about what refusing a
+// page costs. `Flattener.textPageInkOutsideThresholdOverride` is the seam, and it
+// substitutes the *comparand* rather than the verdict, so R56's `paleDrawing` term
+// keeps participating — see that property's doc comment, including why
+// `keepEveryPixel` is NOT part of that argument.
+//
+// ⚠️ **One PDF per invocation.** Every argument after the path is a page number, so a
+// glob of the corpus silently measures document 1 and prints a summary that reads like
+// a corpus run. A sweep needs a driver loop; `score-threshold-loss` is the tool that
+// takes a path list. And the default sample is up to **12** pages a document, not 2.
+//
+// The stencil is **not** re-encoded for the second measurement: it comes from the
+// Sauvola mask intersected with the region, neither of which reads a downsample
+// factor, so the two runs' stencils are the same bytes. That is checked per page
+// rather than assumed — a row whose stencil moves says `STENCIL-MOVED` and
+// re-encodes.
+//
 //   mkdir -p /tmp/h && cp Tools/score-text-route.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-text-route -target "$(uname -m)-apple-macos13.0" \
 //     $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
 //   /tmp/score-text-route "<pdf>" [page…]        # 1-indexed; default: a spread
+//   INKBAR=0.045 /tmp/score-text-route "<pdf>"   # + the priced columns
 //
 // Needs jbig2 on PATH — without it there is no size question to answer, and it
 // says so rather than reporting halves.
@@ -84,7 +107,30 @@ func isolate(_ index: Int) -> URL? {
     return one.write(to: url) ? url : nil
 }
 
-/// The one printer, and the nine columns in one place.
+/// C26 sub-step 3. A second bar on `inkOutsideText` to price, or `nil` for none.
+///
+/// An environment variable rather than an argument, because the trailing arguments
+/// are already page numbers and a sweep driver sets it once for a whole corpus.
+/// Refused loudly outside `(0, 1)`: that range is what a *fraction of the page's
+/// ink* can be, and a typo like `INKBAR=45` would otherwise price a bar no page can
+/// fail, print `same` on every row, and read as "the change costs nothing".
+let priceBar: Double? = {
+    guard let raw = ProcessInfo.processInfo.environment["INKBAR"], !raw.isEmpty
+    else { return nil }
+    guard let bar = Double(raw), bar > 0, bar < 1 else {
+        FileHandle.standardError.write(Data(
+            "INKBAR=\(raw) is not a fraction in (0,1); nothing to price\n".utf8))
+        exit(2)
+    }
+    if bar == Flattener.textPageInkOutsideThreshold {
+        FileHandle.standardError.write(Data(
+            "INKBAR equals the shipped bar, so there is nothing to compare\n".utf8))
+        exit(2)
+    }
+    return bar
+}()
+
+/// The one printer, and the thirteen columns in one place.
 ///
 /// Every row came out of its own `print` before, and two of the four were the wrong
 /// width: the `already 1-bit` row printed **10** fields under this 9-column header
@@ -93,13 +139,19 @@ func isolate(_ index: Int) -> URL? {
 /// dash count out ("eight dashes, not nine" — there are seven) and got the row
 /// right, which is the argument for not counting dashes at all. Third instance of
 /// this shape in the register: T14's SKIP row, A12.3's `score-mrc`, this.
+///
+/// The last four are C26's. `extent` is `paleDrawing(…).extent`, the guard's *second*
+/// term, printed so a row that does not move can be read for which term held it;
+/// `barVerdict`, `layeredAtBar` and `barDelta` are `-` unless `INKBAR` is set.
 let columns = ["page", "route", "sat", "tone", "inkOut", "layered", "1bit",
-               "delta", "verdict"]
+               "delta", "verdict", "extent", "barVerdict", "layeredAtBar", "barDelta"]
 func row(_ page: Int, _ route: String = "-", sat: String = "-", tone: String = "-",
          inkOut: String = "-", layered: String = "-", bilevel: String = "-",
-         delta: String = "-", verdict: String) {
+         delta: String = "-", verdict: String, extent: String = "-",
+         barVerdict: String = "-", layeredAtBar: String = "-", barDelta: String = "-") {
     let fields = ["p\(page)", route, sat, tone, inkOut, layered, bilevel, delta,
-                  verdict.replacingOccurrences(of: "\t", with: " ")]
+                  verdict.replacingOccurrences(of: "\t", with: " "),
+                  extent, barVerdict, layeredAtBar, barDelta]
     precondition(fields.count == columns.count)
     print(fields.joined(separator: "\t"))
 }
@@ -107,6 +159,12 @@ func row(_ page: Int, _ route: String = "-", sat: String = "-", tone: String = "
 print(columns.joined(separator: "\t"))
 var totalLayered = 0, totalBilevel = 0, counted = 0
 var allTextLayered = 0, allTextBilevel = 0, allTextPages = 0
+// C26. Pages the priced bar moves off the shrink, and what it costs to move them.
+// `comparedPages` is counted so the summary cannot report a property of a comparison
+// that never ran — `score-corpus`'s `SKIP` row and `score-threshold-loss`'s exit 3 are
+// both this lesson.
+var movedPages = 0, movedShipped = 0, movedAtBar = 0
+var stencilMoved = 0, comparedPages = 0, replicaDisagreed = 0
 
 for index in pages {
     guard let single = isolate(index), let page = doc.page(at: index - 1) else { continue }
@@ -203,23 +261,75 @@ for index in pages {
     //
     // The third condition, `keepEveryPixel`, is deliberately not mirrored: it belongs
     // to the caller's Photo detail, and this tool measures the default.
-    let allText = inkOut < Flattener.textPageInkOutsideThreshold
-        && Flattener.paleDrawing(Flattener.pageMarks(grey, width: w, height: h,
-                                                     threshold: threshold, dpi: dpi),
-                                 dpi: dpi).extent <= Flattener.paleDrawingThreshold
+    //
+    // `extent` is hoisted to a `let` because C26's priced bar needs the same value
+    // for both verdicts. Only the first term moves with `INKBAR`, so computing the
+    // second twice would be two chances to disagree about one page.
+    let extent = Flattener.paleDrawing(Flattener.pageMarks(grey, width: w, height: h,
+                                                           threshold: threshold, dpi: dpi),
+                                       dpi: dpi).extent
+    let noPaleDrawing = extent <= Flattener.paleDrawingThreshold
+    let allText = inkOut < Flattener.textPageInkOutsideThreshold && noPaleDrawing
+    // C26. The same page against the bar being priced. A *lower* bar can only take
+    // pages off the shrink, but the sign is not assumed: `INKBAR` above the shipped
+    // value is legal and prices the other direction.
+    let allTextAtBar = priceBar.map { inkOut < $0 && noPaleDrawing }
 
     // --- layered, exactly as it ships ---
-    var layered = 0
+    var layered = 0, stencilBytes = 0, shippedBackgroundWidth = 0
+    var shippedMask: Data?
     if !boxes.isEmpty,
        let layers = Flattener.mrcLayers(for: page, boxes: boxes, into: work,
                                        stem: "m\(index)", inColour: isColour) {
         let stencil = work.appendingPathComponent("m\(index).jbig2")
         if (try? JBIG2.encode(png: layers.mask, to: stencil, using: jbig2)) != nil {
-            layered = bytes(stencil) + bytes(layers.background) + bytes(layers.foreground)
+            stencilBytes = bytes(stencil)
+            layered = stencilBytes + bytes(layers.background) + bytes(layers.foreground)
+            shippedMask = try? Data(contentsOf: layers.mask)
+            shippedBackgroundWidth = layers.backgroundWidth
         }
     }
     // Layering declining is a real answer: the page keeps its single JPEG.
     if layered == 0 { layered = bytes(jpegURL) }
+
+    // --- C26: layered again, with the priced bar substituted for the shipped one ---
+    //
+    // Same call, same page, one property different, so the two numbers cannot come
+    // from two pieces of code that drifted — T15 is what a second copy of shipped
+    // arithmetic costs. The override is cleared immediately after, not at the end of
+    // the loop: a `continue` further down would otherwise leak it into the next page.
+    //
+    // `barBackgroundWidth` is **production's** verdict rather than this file's replica
+    // of the guard, and the two are cross-checked below. The replica is still needed
+    // for the `barVerdict` column on a page that never layered, but a tool deciding a
+    // routing question by a second copy of a shipped guard is what this same commit
+    // repaired in `allText` — see `BUGS.md` C26's sibling sweep. It is also the
+    // tripwire for a *dead* seam: if the replica says three pages should move and
+    // production's widths never budge, the override is not being read and every
+    // `barDelta` would otherwise print `same`, which reads as "the change is free".
+    var layeredAtBar = 0, movedStencil = false
+    var barBackgroundWidth = 0
+    if let bar = priceBar, stencilBytes > 0 {
+        Flattener.textPageInkOutsideThresholdOverride = bar
+        if let layers = Flattener.mrcLayers(for: page, boxes: boxes, into: work,
+                                           stem: "mb\(index)", inColour: isColour) {
+            barBackgroundWidth = layers.backgroundWidth
+            var barStencil = stencilBytes
+            // The stencil reads no downsample factor, so it should be the same bytes.
+            // Checked rather than assumed, and if it ever moves the row says so and
+            // pays for a real encode instead of quietly reusing the wrong number.
+            if (try? Data(contentsOf: layers.mask)) != shippedMask {
+                movedStencil = true
+                let s = work.appendingPathComponent("mb\(index).jbig2")
+                barStencil = (try? JBIG2.encode(png: layers.mask, to: s, using: jbig2)) != nil
+                    ? bytes(s) : 0
+            }
+            if barStencil > 0 {
+                layeredAtBar = barStencil + bytes(layers.background) + bytes(layers.foreground)
+            }
+        }
+        Flattener.textPageInkOutsideThresholdOverride = nil
+    }
 
     // --- 1-bit, via the shipped Black & white route ---
     let bwDir = work.appendingPathComponent("bw\(index)")
@@ -243,12 +353,49 @@ for index in pages {
 
     totalLayered += layered; totalBilevel += bilevel; counted += 1
     if allText { allTextLayered += layered; allTextBilevel += bilevel; allTextPages += 1 }
+    // C26. A page whose verdict does not move is a measured `same`, not an assumed
+    // one: `layeredAtBar` is a second run of `mrcLayers` either way, so an equal pair
+    // of byte counts is this row's own negative control on the seam.
+    var barVerdict = "-", barBytes = "-", barDelta = "-"
+    if let moved = allTextAtBar {
+        barVerdict = moved ? "all-text" : "picture"
+        if movedStencil { stencilMoved += 1; barVerdict += " STENCIL-MOVED" }
+        if layeredAtBar > 0 {
+            comparedPages += 1
+            // Production's own answer, not the replica's: the two factors differ, so a
+            // page whose verdict moved must come back a different width. A row where
+            // the replica and the layers disagree is either a dead seam or a term this
+            // file does not mirror (`keepEveryPixel`, the megapixel caps), and it is
+            // named rather than averaged into the total.
+            let widthMoved = barBackgroundWidth != shippedBackgroundWidth
+            if widthMoved != (moved != allText) {
+                barVerdict += " REPLICA-DISAGREES"
+                replicaDisagreed += 1
+            }
+            barBytes = "\(layeredAtBar)"
+            barDelta = layeredAtBar == layered ? "same"
+                : String(format: "%+d", layeredAtBar - layered)
+            if moved != allText {
+                movedPages += 1; movedShipped += layered; movedAtBar += layeredAtBar
+            }
+        } else if stencilBytes == 0 {
+            // The page was never layered at all — no words, or the shipped stencil
+            // failed to encode — so there is no priced counterfactual to have. A real
+            // answer, and deliberately NOT the same token as an instrument failure: a
+            // `grep FAIL` over a corpus log must not conflate the two.
+            barBytes = "n/a"; barDelta = "n/a"
+        } else {
+            barBytes = "FAIL"
+        }
+    }
     row(index, route, sat: String(format: "%.3f", sat),
         tone: String(format: "%.3f", tone),
         inkOut: String(format: "%.4f", inkOut),
         layered: "\(layered)", bilevel: "\(bilevel)",
         delta: String(format: "%+d", bilevel - layered),
-        verdict: allText ? "all-text" : "picture")
+        verdict: allText ? "all-text" : "picture",
+        extent: String(format: "%.5f", extent),
+        barVerdict: barVerdict, layeredAtBar: barBytes, barDelta: barDelta)
 }
 
 print("")
@@ -265,4 +412,41 @@ if allTextPages > 0 {
                    Double(allTextBilevel - allTextLayered) / Double(allTextPages)))
     print("negative delta = 1-bit is smaller = the prize; positive = the route it "
           + "already takes is cheaper")
+}
+// C26 sub-step 3's answer, in the two numbers the entry is blocked on: how many
+// pages a bar moves, and what moving them costs.
+if let bar = priceBar {
+    print(String(format: "INKBAR %.4f against the shipped %.4f: %d of %d picture-route "
+                 + "pages change verdict", bar, Flattener.textPageInkOutsideThreshold,
+                 movedPages, counted))
+    if movedPages > 0 {
+        print("  those pages: \(movedShipped) B shipped, \(movedAtBar) B at the bar, "
+              + String(format: "%+d B (%.0f B/page, %.2fx)", movedAtBar - movedShipped,
+                       Double(movedAtBar - movedShipped) / Double(movedPages),
+                       Double(movedAtBar) / Double(max(movedShipped, 1))))
+    }
+    // ⚠️ Both of the next two lines are about a comparison that may not have happened,
+    // so `comparedPages` gates them. "The stencil was byte-identical on every page"
+    // over zero pages is a success report on a measurement never made, which is the
+    // shape `score-corpus`'s `SKIP` row and `score-threshold-loss`'s exit 3 exist for.
+    if comparedPages == 0 {
+        print("  ⚠️ NO page was priced: nothing was layered twice, so this run says "
+              + "nothing about the bar")
+    } else {
+        print(stencilMoved == 0
+              ? "  the stencil was byte-identical on all \(comparedPages) priced page(s), "
+                + "as it must be"
+              : "  ⚠️ the stencil moved with the bar on \(stencilMoved) of \(comparedPages) "
+                + "priced page(s) and was re-encoded")
+        // The seam's own tripwire. A dead override prints `same` on every row and "0
+        // pages change verdict", which reads as "the change is free" rather than as a
+        // broken instrument — the exact misreading the `INKBAR` range guard above
+        // exists to prevent, arriving by a different door.
+        if replicaDisagreed > 0 {
+            print("  ⚠️ this file's replica of the guard and the widths `mrcLayers` "
+                  + "returned disagree on \(replicaDisagreed) of \(comparedPages) priced "
+                  + "page(s) — suspect a dead override or an unmirrored term before "
+                  + "reading any total above")
+        }
+    }
 }

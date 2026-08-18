@@ -301,6 +301,19 @@ OPERATORS = [
     ("Flattener.swift",
      "dpi: dpi).extent <= paleDrawingThreshold",
      "dpi: dpi).extent <= 99.0", "R56-alltext-sees-drawings"),
+    # C26's measurement seam, in the pair C24's seam taught this register to write. The
+    # first says the override is read at all; the second says its `nil` means what its
+    # doc comment says — "the shipped bar", not "refuse the page". C24 shipped with only
+    # the first reading pinned and the *nearer* wrong one then survived nine checks, so
+    # both go in together this time rather than one of them after a review.
+    ("Flattener.swift",
+     "            let bar = textPageInkOutsideThresholdOverride ?? textPageInkOutsideThreshold\n",
+     "            let bar = textPageInkOutsideThreshold\n",
+     "C26-inkbar-override-ignored"),
+    ("Flattener.swift",
+     "            let bar = textPageInkOutsideThresholdOverride ?? textPageInkOutsideThreshold\n",
+     "            let bar = textPageInkOutsideThresholdOverride ?? 0\n",
+     "C26-inkbar-nil-refuses-the-page"),
     # R57's mechanism rather than its constant: tone asked about the whole sheet
     # again instead of the region the tone is in. This is the entry's own diagnosis —
     # "a plate over a fifth of a page dilutes its own tone by five" — planted.

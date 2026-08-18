@@ -33,8 +33,21 @@ look at: the drawings are INK** — 5,495 / 4,188 / 3,379 cells below their page
 `textRegionMask` (correctly; they are not text), left in the background, and the background is
 what gets stored at 1/8. The term that decides those pages is `pageIsAllText()`'s **first** one:
 `inkOutsideText` reads **0.0493–0.0660 against a bar of 0.08**, so it sees them and lets them
-through, and unlike the pale term it *can* reach them. Whether to move that bar is unmeasured and
-is a corpus question — read the entry's last section before touching it. **The corpus
+through, and unlike the pale term it *can* reach them. **What moving that bar costs is measured as of
+2026-08-18: at 0.045 all three pages are refused the shrink and go 65,477 -> 195,785 bytes, `2.99x`
+on those three pages, `1.76x` across the document's five picture-route pages, all of it tone
+layers.** (That second figure is there because the first was published as a *document* total and is
+not one — five of the ten pages are already 1-bit and pay nothing. Corrected the same day by the
+review of the diff that measured it.) The seam is
+`Flattener.textPageInkOutsideThresholdOverride` — `nil` in the app, substituting the guard's
+comparand rather than its verdict — and `INKBAR=0.045 Tools/score-text-route.swift` prices any
+document with it. What is still missing is the **corpus population**: how many pages sit in
+[0.045, 0.08) and would newly pay that 3x. ⛔ The constant must not move without it (R49/R50's
+trade), and that sweep is **3-4 hours, not the 37 minutes this line first claimed** — the tool takes
+one PDF per invocation and samples up to 12 pages a document, so it needs a driver loop over ~2,500
+pages rather than the 441 of a different tool's sweep. Read the entry's last section before touching
+it.
+**The corpus
 sweep both entries were blocked on ran the same day** — 441 pages, 233 documents,
 `THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes the `extent` bar's population (61 picture-route
 pages: 2 protected, 22 under the bar, 37 at zero, and the cluster under the bar is led by the

@@ -169,7 +169,12 @@ func inkFractionMRC(of url: URL, page index: Int) -> Double {
 /// book stock is cream, and measured on a 1964 monograph it carries a mean
 /// saturation of 0.08 — above `pictureSaturationThreshold`, while its ink
 /// coverage and tone fraction both say plainly that it is text.
-func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white) {
+///
+/// `figure` puts a block of solid ink on the sheet at the given raster rect, which is
+/// C26's case in miniature — a mark that is ink, is outside every recognised word, and
+/// is small. Defaulted to `nil`, so the twenty-odd existing callers are unchanged.
+func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white,
+                    figure: NSRect? = nil) {
     let w = 1224, h = 1584
     guard let rep = NSBitmapImageRep(
         bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
@@ -189,6 +194,10 @@ func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white) {
     for line in lines {
         (line as NSString).draw(at: NSPoint(x: 130, y: y), withAttributes: attrs)
         y -= 78
+    }
+    if let figure {
+        NSColor.black.setFill()
+        figure.fill()
     }
     NSGraphicsContext.current?.flushGraphics()
     NSGraphicsContext.restoreGraphicsState()
@@ -1766,6 +1775,185 @@ do {
         check("bit depths match their filters",
               raw.contains("/BitsPerComponent 1") && raw.contains("/BitsPerComponent 8"))
     }
+
+    // MARK: C26 — the priced-bar seam, and C26's own case at the door
+    //
+    // **Deliberately outside the `if JBIG2.isAvailable` block above.** `mrcLayers`
+    // runs no external tool, so gating these would make them checks that do not
+    // exist on a machine without jbig2 — and then `mutate.py`'s mutant for the seam
+    // would have nothing to kill it with and the log would record a survivor for the
+    // wrong reason. A11.5 is that lesson, paid for by four checks that compare two
+    // constants and were gated for years.
+    //
+    // What this section is for. C26's three erased drawings are ink outside the
+    // recognised words reading `inkOutsideText` 0.0493–0.0660 against a bar of 0.08,
+    // so the guard passes them and their page's tone layers are stored at 1/8 and
+    // 1/16. Sub-step 3 is to *price* a lower bar over the corpus, which needs the bar
+    // to be substitutable —`Flattener.textPageInkOutsideThresholdOverride`. These
+    // checks are what says that seam works, in both directions, and they are also the
+    // first place in this repository where C26's mechanism is reproduced end to end on
+    // a fixture rather than measured on a copyrighted scan.
+    //
+    // The figure is sized by measurement, not by taste: at 30x30 raster pixels it
+    // reads **0.0551**, between p6's 0.0493 and p7's 0.0660. 40x40 reads 0.0940 —
+    // above the shipped bar — and is the fixture for the other direction. Both
+    // measured 2026-08-18 by a probe driving this same code.
+    let c26Dir = dir.appendingPathComponent("c26")
+    try? FileManager.default.createDirectory(at: c26Dir, withIntermediateDirectories: true)
+    let c26Lines = ["an ordinary page of text", "with a second line of it",
+                    "and a third for good measure"]
+    let c26Boxes = (0..<10).map { i in
+        SearchableWriter.BoundingBox(x: 0.10, y: 0.06 + Double(i) * 0.07,
+                                     width: 0.80, height: 0.05)
+    }
+    /// `inkOutsideText` over one of these fixtures, through the shipped render.
+    func c26InkOut(_ url: URL) -> Double? {
+        guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return nil }
+        let box = Flattener.fullBox(of: page)
+        let scale = Flattener.rebuildDPI(of: page) / 72.0
+        let w = max(Int((box.width * scale).rounded()), 1)
+        let h = max(Int((box.height * scale).rounded()), 1)
+        guard let grey = Flattener.renderGrey(page, box: box, scale: scale,
+                                              width: w, height: h, from: .mediaBox)
+        else { return nil }
+        return Flattener.inkOutsideText(grey,
+                                        region: Flattener.textRegionMask(c26Boxes,
+                                                                         width: w, height: h),
+                                        width: w, height: h,
+                                        threshold: Flattener.otsuThreshold(of: grey))
+    }
+    /// The layers this fixture publishes at Balanced, with `bar` substituted.
+    ///
+    /// Balanced explicitly rather than the parameter default, because the whole
+    /// question is what the *shipped default* does — `keepEveryPixel` is a third term
+    /// of the guard and a factor of 1 would switch the rule off entirely.
+    func c26Layers(_ url: URL, bar: Double?, stem: String) -> Flattener.MRCLayers? {
+        guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return nil }
+        Flattener.textPageInkOutsideThresholdOverride = bar
+        defer { Flattener.textPageInkOutsideThresholdOverride = nil }
+        return Flattener.mrcLayers(for: page, boxes: c26Boxes, into: c26Dir, stem: stem,
+                                   backgroundDownsample: Prefs.PhotoDetail.balanced.downsample,
+                                   inColour: true)
+    }
+    func c26FullWidth(_ url: URL) -> Int {
+        guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return 0 }
+        let scale = Flattener.rebuildDPI(of: page) / 72.0
+        return Int((Flattener.fullBox(of: page).size.width * scale).rounded())
+    }
+
+    // The app never sets it. Asserted rather than assumed, because a seam left set by
+    // a tool or a test is a seam that changes what the app publishes.
+    check("the ink-bar override is nil unless something sets it",
+          Flattener.textPageInkOutsideThresholdOverride == nil)
+
+    let c26Small = tmp.appendingPathComponent("c26-small-figure.pdf")
+    makeScannedPDF(at: c26Small, lines: c26Lines,
+                   figure: NSRect(x: 850, y: 200, width: 30, height: 30))
+    let c26Big = tmp.appendingPathComponent("c26-big-figure.pdf")
+    makeScannedPDF(at: c26Big, lines: c26Lines,
+                   figure: NSRect(x: 850, y: 200, width: 40, height: 40))
+
+    // The fixture has to *stay* in the band, or the checks below stop testing C26 and
+    // say nothing about it. A font substitution or a render change would move it
+    // silently otherwise — which is how a fixture comes to agree with a wrong
+    // implementation by accident (C24's eleventh check).
+    //
+    // The band is `[0.0493, 0.0660]` — the three drawings' own measured values, p6's to
+    // p7's — and is written as literals **on purpose**. Expressing the lower edge as
+    // `0.045`, the value C26's fix proposes, would make the band `[0.045, 0.045)` the
+    // moment the constant moved there: empty for every possible reading, so a check
+    // that cannot pass rather than one that flips. That was the first version of this
+    // line, caught by the adversarial review of this diff.
+    let smallInk = c26InkOut(c26Small) ?? -1
+    check("C26's fixture figure lands in the measured band the drawings sit in",
+          smallInk >= 0.0493 && smallInk <= 0.0660,
+          String(format: "%.4f, wanted [0.0493, 0.0660]", smallInk))
+    // …and separately, that the SHIPPED bar lets it through. This is the one that must
+    // flip when C26 is fixed, and it says so.
+    check("C26 — …and the shipped bar lets it through, which is the defect",
+          smallInk < Flattener.textPageInkOutsideThreshold,
+          String(format: "%.4f vs %.2f", smallInk, Flattener.textPageInkOutsideThreshold))
+    let bigInk = c26InkOut(c26Big) ?? -1
+    check("…and the larger figure is above the bar, which is the other direction",
+          bigInk > Flattener.textPageInkOutsideThreshold,
+          String(format: "%.4f vs %.2f", bigInk, Flattener.textPageInkOutsideThreshold))
+
+    let smallFull = c26FullWidth(c26Small)
+    let shrunkCeiling = smallFull / Flattener.textPageBackgroundDownsample + 1
+    if let shipped = c26Layers(c26Small, bar: nil, stem: "c26ship") {
+        // C26 itself: the page carrying an erased-drawing-shaped mark is shrunk.
+        // This check records the DEFECT, not a property to keep — when the constant
+        // moves it must flip, exactly like the two buffer-level C26 checks above.
+        check("C26 — a page with a small ink figure outside the words is still shrunk",
+              shipped.backgroundWidth <= shrunkCeiling,
+              "\(shipped.backgroundWidth) wide of \(smallFull), ceiling \(shrunkCeiling)")
+    } else {
+        check("C26's fixture layers", false, "mrcLayers returned nil")
+    }
+    if let priced = c26Layers(c26Small, bar: 0.045, stem: "c26bar") {
+        // The seam, doing the one thing it exists for. Measured: 153 -> 612 wide, and
+        // the tone layers go 2,643 B -> 16,071 B, which is the price sub-step 3 is
+        // sweeping for.
+        check("C26 — …and a bar at 0.045 holds that page at the caller's factor",
+              priced.backgroundWidth > shrunkCeiling,
+              "\(priced.backgroundWidth) wide of \(smallFull), ceiling \(shrunkCeiling)")
+        check("…its foreground too, so both layers move together",
+              priced.foregroundWidth > smallFull / Flattener.textPageForegroundDownsample + 1,
+              "\(priced.foregroundWidth) wide of \(smallFull)")
+    } else {
+        check("the priced-bar layering", false, "mrcLayers returned nil")
+    }
+    // …and the same page comes back shrunk once the override is out of the way.
+    if let again = c26Layers(c26Small, bar: nil, stem: "c26after") {
+        check("…and asking again with no override puts the page back on the shrink",
+              again.backgroundWidth <= shrunkCeiling,
+              "\(again.backgroundWidth) wide of \(smallFull)")
+    } else {
+        check("the re-asked layering", false, "mrcLayers returned nil")
+    }
+    // The override substitutes the *comparand*, not the verdict. If it short-circuited
+    // to "not all text" this check would fail while all three above still passed —
+    // which is the reading `nil`-means-fallback got wrong in C24's seam, killed there
+    // by exactly one check.
+    let bigFull = c26FullWidth(c26Big)
+    if let plain = c26Layers(c26Big, bar: nil, stem: "c26bigship"),
+       let raised = c26Layers(c26Big, bar: 0.15, stem: "c26bigbar") {
+        check("C26 — a figure page above the bar is not shrunk",
+              plain.backgroundWidth > bigFull / Flattener.textPageBackgroundDownsample + 1,
+              "\(plain.backgroundWidth) wide of \(bigFull)")
+        check("…and raising the bar past it shrinks it, so the seam is the comparand",
+              raised.backgroundWidth <= bigFull / Flattener.textPageBackgroundDownsample + 1,
+              "\(raised.backgroundWidth) wide of \(bigFull)")
+    } else {
+        check("the raised-bar layering", false, "mrcLayers returned nil")
+    }
+    // `Tools/score-text-route.swift` reuses the shipped run's JBIG2 stencil for its
+    // priced run instead of encoding it twice, on the grounds that the stencil reads
+    // no downsample factor. That is the tool's arithmetic resting on a property of
+    // this function, so the property is pinned here rather than in the tool's own
+    // per-page warning alone.
+    if let a = c26Layers(c26Small, bar: nil, stem: "c26maskA"),
+       let b = c26Layers(c26Small, bar: 0.045, stem: "c26maskB") {
+        let da = try? Data(contentsOf: a.mask), db = try? Data(contentsOf: b.mask)
+        check("the stencil is the same bytes whatever the tone layers are shrunk by",
+              da != nil && da == db,
+              "\(da?.count ?? -1) B vs \(db?.count ?? -1) B")
+    } else {
+        check("the two-bar mask comparison", false, "mrcLayers returned nil")
+    }
+    // ⛔ LAST, and it is the only check here that can see a seam left set.
+    //
+    // `c26Layers` assigns the override unconditionally — including `nil` — so every
+    // "…and clearing it puts the page back" style check above re-clears the seam
+    // itself and would stay green with the `defer` deleted. The last call in this block
+    // asks for 0.045, so a broken `defer` would latch that value into every later
+    // `mrcLayers` in this suite and surface as a *red R56 check naming the wrong
+    // cause*. This is the check that fails instead. Found by the adversarial review of
+    // this diff, which is also where "the not-latched check cannot detect a latch"
+    // came from — the comment on that check claimed exactly what it could not do.
+    let leftSet = Flattener.textPageInkOutsideThresholdOverride
+    check("no test left the ink-bar override set", leftSet == nil,
+          leftSet == nil ? "nil" : String(format: "%.4f", leftSet!))
     resetPrefs()
 }
 

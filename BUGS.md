@@ -25,7 +25,15 @@ The corpus sweep both entries were waiting on ran the same day: **441 pages, 233
 it sizes the population of the `extent` bar (61 picture-route pages: 2 protected, 22 under the
 bar, 37 at zero) while **not** sizing C27's, because a mean cannot see concentrated colour.
 **⚠️ That is no longer C26's population**: the term C26 turns on is `inkOutsideText`, and a sweep
-of *that* has not been run — see the entry's last section. Both entries carry the
+of *that* has not been run — see the entry's last section. **What HAS been measured, 2026-08-18, is
+what C26's proposed fix costs: at a bar of 0.045 all three erased-drawing pages are refused the
+shrink and go 65,477 -> 195,785 bytes, `2.99x` on those three, `1.76x` across the document's five
+picture-route pages** (the other five are already 1-bit and pay nothing — the first version of this
+line called the three-page sum a document total, which it is not). So the fix is affordable on three
+pages and its corpus-wide population is the number still missing;
+`Flattener.textPageInkOutsideThresholdOverride` plus `INKBAR=0.045 score-text-route` is the
+instrument, and that sweep is **3-4 hours** over ~2,500 pages, needing a driver loop because the tool
+takes one PDF per invocation. Both entries carry the
 numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
@@ -2578,6 +2586,165 @@ document.** `allText` also gates that tool's aggregate and its summary line — 
 `paleDrawingThreshold` in 61 picture-route rows, which will now leave it. Unmeasured, and said so
 in the tool. `score-mrc.swift` needs no equivalent fix: its verdicts come from calling `mrcLayers`
 and reading the `bgF`/`fgF` it returns, not from a replica of the guard.
+
+#### Sub-step 3, half of it: what refusing a page costs — MEASURED 2026-08-18 on this document's own pages
+
+Sub-step 3 is "price a lower `textPageInkOutsideThreshold`", and it has two halves that are not the
+same size. **The per-page price is now measured. The corpus population is not**, and that is the
+expensive half — it needs Vision on every page.
+
+`Flattener.textPageInkOutsideThresholdOverride` is the seam: `nil` in the app, nothing sets it, and
+it substitutes the guard's **comparand** rather than its verdict, so `keepEveryPixel` and R56's
+`paleDrawing` term keep participating. Forcing `pageIsAllText()` to return false would have priced
+a page refused by the *second* term as though the first had moved it.
+`Tools/score-text-route.swift` reads `INKBAR` and publishes every page twice — `extent`,
+`barVerdict`, `layeredAtBar` and `barDelta` are the new columns.
+
+`INKBAR=0.045` over **all ten pages** of `testdocs/book/1954 - Why.pdf`, 38 s. Six of the
+thirteen columns, in the tool's own order; the seven omitted are `route`, `sat`, `tone`, `1bit`,
+`delta` and the two the header line carries:
+
+```
+page  inkOut  layered   verdict         extent   barVerdict  layeredAtBar  barDelta
+p1    -       -         already 1-bit   -        -           -             -
+p2    0.1072    74081   picture         0.00000  picture            74081  same
+p3    -       -         already 1-bit   -        -           -             -
+p4    0.0540    22762   all-text        0.00000  picture            67976  +45214
+p5    -       -         already 1-bit   -        -           -             -
+p6    0.0493    20708   all-text        0.00000  picture            62397  +41689
+p7    0.0660    22007   all-text        0.00029  picture            65412  +43405
+p8    -       -         already 1-bit   -        -           -             -
+p9    -       -         already 1-bit   -        -           -             -
+p10   0.9735    31577   picture         0.00000  picture            31577  same
+
+3 of 5 picture-route pages change verdict: 65,477 B -> 195,785 B, +130,308 B,
+43,436 B/page, 2.99x on those three pages
+```
+
+**So the fix C26 points at costs about three times the page it moves — and 1.76x across this
+document's picture-route pages.** 171,135 B over the five becomes 301,443 B. The other five pages
+are already 1-bit, so the guard never reaches them and they pay nothing; **the document's own total
+published size is not measured here** and neither multiplier is it. That is R49/R50's trade in a
+number on the pages this entry was opened for, and it is why the constant must not move on one
+document: three pages at 43 KB is nothing, and the same multiplier over an unknown corpus-wide
+population is not.
+
+⚠️ **This section first published "the document's published bytes go 65,477 -> 195,785, 2.99x"** —
+a three-page sum labelled as a document, and the pages had been named explicitly (`4 6 7 9`) when
+running with no page arguments would have measured all ten for the same 38 seconds. Caught by the
+adversarial review of this diff, which also named it as this register's own recorded shape: the
+summaries flatten what the entry gets right. Corrected in all four places it was published.
+
+**Two picture-route pages read `same`, and they are the seam's negative control with real bytes.**
+p2 at `inkOut` 0.1072 and p10 at 0.9735 are both above the shipped bar already, so a lower bar
+cannot move them, and their `layeredAtBar` is byte-identical to their `layered` — 74,081 and 31,577
+— across a second full `mrcLayers` call with the override set. An override that leaked, latched or
+was read as "refuse the page" would have moved these two.
+
+Three things this run also settled, none of them asked for:
+
+* **`inkOut` reproduces digit for digit** — 0.0540 / 0.0493 / 0.0660, the figures the earlier
+  2026-08-18 run printed, now arrived at through a path that publishes the layers as well as scoring
+  them. Two agreeing measurements of the term that decides these pages. (Note the order: those are
+  **p4 / p6 / p7**. Elsewhere this entry and the queue have listed them ascending as 0.0493 /
+  0.0540 / 0.0660, which pairs p4 with p6's figure for a reader matching by position.)
+* **The stencil is byte-identical at both bars, on every page.** The tool reuses the shipped run's
+  JBIG2 stream rather than encoding twice, on the grounds that the stencil reads no downsample
+  factor; that is checked per page and reported rather than assumed, and the suite pins the property
+  it rests on. It also means the entire +130 KB is tone layers.
+* **p7's `extent` is 0.00029, not 0.00000.** The sections above say "0.00000 on the two worst pages"
+  and name p4 and p6, which is right; p7 was never quoted and is not zero. It changes nothing —
+  0.00029 is well under the 0.05 bar — but a reader scanning for "extent is zero on C26's pages"
+  would be generalising from two pages to three.
+
+**The seam is mutation-tested, and the count of objecting checks is the column that matters.** Two
+mutants, `logic/C26-inkbar-override-ignored` and `logic/C26-inkbar-nil-refuses-the-page`, both
+written before the checks were trusted and both **watched failing**: over the block's **12** checks,
+pristine passes 12 of 12, `override-ignored` fails **3** (the 0.045 bar, its foreground, and the
+raised bar) and `nil-refuses-the-page` fails **2** (the shipped shrink, and the page coming back
+shrunk with no override). Recorded rather than smoothed:
+**`override-ignored` is killed by the new checks and by nothing else in the suite**, because nothing
+else reads the override — which is the position C24's seam was in when its nearer wrong reading
+survived nine checks. `nil-refuses-the-page` additionally contradicts R50's own "a text page's
+background is shrunk by the text-page factor", so the real suite objects to it more loudly than the
+harness below does. The catalogue is **96** mutants.
+
+⚠️ **Neither has been through `mutate.py`, so `Tools/mutation-log.tsv` has no row for either** and
+the next run of that tool will correctly report two catalogue entries with no row at all. A scoped
+run is a baseline suite plus ~45 min per mutant and was not spent. What was done instead is
+reproducible in about six minutes, and the recipe is here because a count nobody can re-derive is
+the same rumour a count nobody measured is: extract the `MARK: C26 — the priced-bar seam` block from
+`Tests/main.swift` into a `main.swift` carrying its own `check`/`tmp`/`makeScannedPDF` preamble,
+compile it against three copies of `Sources/` — pristine, and once per mutation applied by hand from
+the catalogue tuples — and run all three. **The binary must not be called `tests`**: the environment
+trap in `CLAUDE.md` is that `build/tests` has no bundle identifier, so it lands in a `UserDefaults`
+domain keyed by the process name and a second one wipes the suite's settings mid-run. A differently
+named binary gets its own domain and cannot.
+
+**And that harness paid for itself twice, both times as instrument failures rather than findings.**
+(a) Its first run of the corrected block **failed to compile all three trees** —
+`override.map(String.init)` in the new "no test left the override set" check is ambiguous — and that
+error would otherwise have reached the pre-commit hook as a 2-minute build failure with no suite
+behind it. (b) The same run then **executed the previous round's binaries**, because it did not
+remove them before rebuilding and did not stop on a non-zero build: three lines of `build rc=1`
+followed by three passing runs, over source the tree no longer held. It was visible only because a
+check name in the output had already been renamed. `CONTRIBUTING` §3 is the standing instruction and
+this is its cheapest possible instance — suspect the instrument, and the instrument here was a
+fifteen-line shell function written the same hour.
+
+**Sibling sweep for the seam itself (CONTRIBUTING 4b), which is a different question from the one
+above.** `Flattener` now holds **two** measurement seams — `rebuildDPIOverride` and this one — and
+`Model.digitalTextDecisionForTesting` is a third of the same shape elsewhere; all three are
+`nonisolated(unsafe) static var`, `nil` in the app, and CONTRIBUTING §4 names `static var` as one of
+the three kinds of code that has produced defects here. Two things came out of asking who else is
+affected. (a) **`score-mrc.swift` would follow the override without being told**, because its
+verdicts come from the `bgF`/`fgF` `mrcLayers` returns rather than a replica — but its self-test
+*asserts* `text.inkOutsideText < Flattener.textPageInkOutsideThreshold` against the shipped constant,
+so a future tool that sets the override and then runs that self-test would have it contradict the
+layers it is checking. Not a defect today: nothing sets the override but `score-text-route`, which
+has no such assertion. Recorded because it is a trap with no compiler in front of it.
+(b) `score-threshold-loss.swift` reads the constant only in a comment and computes no verdict from
+it, so it is unaffected.
+
+**And the term that fires is now reproduced on a fixture rather than only on a copyrighted scan.**
+`makeScannedPDF` takes a `figure:` rect; a 30x30 raster block of ink outside every word box reads
+`inkOutsideText` **0.0551** — between p6's 0.0493 and p7's 0.0660 — is shrunk to 1/8 at the shipped
+bar and held at 1/2 at 0.045, its tone layers going 2,643 B -> 16,071 B. The band is asserted against
+literals, not against the constant: `[0.0493, 0.0660]`, so that a fix moving the bar to 0.045 makes
+the *shipped-bar* check flip rather than making the band check unsatisfiable.
+⚠️ **What the fixture does NOT reproduce is the erasure.** It pins which term fires and what
+resolution follows; it asserts widths, not content. A 30x30 solid block at 1/8 survives as a small
+blob, where C26's harm is a *fine line* disappearing — which is exactly the distinction R50 got wrong
+in judging this miss harmless "because this only ever changes resolution". This section first called
+it "C26's mechanism reproduced end to end", which overclaims; corrected by the review of this diff.
+A fixture that could see the erasure would need a hairline drawing and a rendered comparison, and is
+not what these checks are.
+
+⛔ **REMAINING, and it is the half that decides the fix: the corpus population.** How many pages of
+the corpus sit in [0.045, 0.08) — held at 1/8 today, and newly paying ~3x? The distribution
+`textPageInkOutsideThreshold`'s doc comment describes "runs smoothly from 0 to 0.97" with no gap, so
+this cannot be reasoned from the constant.
+
+**Two things about running it, both of which a session would otherwise discover the hard way.**
+
+1. **`score-text-route` takes ONE pdf, and everything after it is a page number.** `INKBAR=0.045
+   score-text-route testdocs/*/*.pdf` drops paths 2..N with no message and prints a summary that
+   reads exactly like a corpus run — the silent-success shape `score-threshold-loss` was given a
+   path list and an `exit 3` for on this same day. So this needs a **driver loop** over documents
+   with the per-document summaries collected, or that path list handled in the tool first. There is
+   also no cross-document aggregation in it, so "prints the total delta" is true per document only.
+2. **It samples up to 12 pages a document, not 2.** `Flattener.sampleIndices(count:, wanted: 12)`,
+   with no `PAGES` knob — so 233 documents is at most 233 x 12 = **2,796** pages and on the order of
+   2,500, *not* the 441 of `THRESHOLD-LOSS-2026-08-18.tsv` (which is a different tool with a `PAGES`
+   default of 2). Measured cost here: **38 s for this document's 10 pages** (3.8 s/page, and 5 of
+   the 10 are cheap already-1-bit rows), and 10 s against 8 s for two priced pages against two
+   unpriced, so the second `mrcLayers` is about a quarter of the cost. That puts the sweep at **3-4
+   hours**, on a 111 DPI pamphlet, so read it as a floor and expect a 300 DPI book to cost more per
+   page. ⚠️ **This paragraph first said "~37 minutes"**, from multiplying the wrong tool's page
+   count; caught by the review of this diff. Detached and polled, in a session that budgets for it.
+
+The instrument is reproducible: the two-page and ten-page runs are byte-identical on the pages they
+share (p4 and p6: 43,470 B -> 130,373 B in both). Do NOT move the constant without that number.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct

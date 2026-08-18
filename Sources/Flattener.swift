@@ -1363,6 +1363,33 @@ enum Flattener {
     /// see the `keepEveryPixel` guard in `mrcLayers`.
     static let textPageInkOutsideThreshold = 0.08
 
+    /// A substitute bar, for a tool asking what a **different** threshold would publish.
+    ///
+    /// `nil` in the app, always — nothing in `Sources/` sets it and no setting reaches it.
+    /// It exists for C26's sub-step 3, which is a pricing question the shipped code cannot
+    /// otherwise be asked: three drawings are erased because `inkOutsideText` reads
+    /// 0.0493–0.0660 against this bar of 0.08, a bar at 0.045 would refuse all three, and
+    /// the cost of refusing a page is bytes on every page that newly stays at the caller's
+    /// factor. R49/R50 are the entries about paying those bytes, so the number has to be
+    /// measured before the constant moves.
+    ///
+    /// **It substitutes the bar, not the verdict, and that is the point.** Forcing
+    /// `pageIsAllText()` to return false would measure a proxy: **R56's `paleDrawing` term
+    /// would stop participating**, so a page refused today by that second term would be priced
+    /// as though this first one had moved it. Substituting the comparand leaves the guard in
+    /// place, so what a sweep measures is the proposed change and not a hand-forced outcome.
+    /// (An earlier version of this comment claimed `keepEveryPixel` for the same argument. It
+    /// does not belong there: it is applied *outside* this function — `!keepEveryPixel &&
+    /// pageIsAllText()` — so a forced-false verdict and a `keepEveryPixel` page give the same
+    /// answer, and the only term the choice actually protects is `paleDrawing`. Caught by the
+    /// adversarial review of the diff that added this property.)
+    ///
+    /// Unlike `rebuildDPIOverride` this one needs no `useHelper` caveat: it is read in
+    /// `mrcLayers`, which runs in the app's own process. `visionocr-recognise` compiles this
+    /// file — see `build.sh`'s `HELPER_SOURCES` — but never layers a page, so there is no
+    /// second address space for the value to be `nil` in.
+    nonisolated(unsafe) static var textPageInkOutsideThresholdOverride: Double?
+
     /// What a page of nothing but text shrinks its tone layers to.
     ///
     /// 8 and 16, measured on `Blacks in the City` page 41 (1899x3138 at 360 DPI),
@@ -2488,8 +2515,12 @@ enum Flattener {
         let keepEveryPixel = backgroundDownsample <= 1
         func pageIsAllText() -> Bool {
             let pageThreshold = otsuThreshold(of: grey)
+            // C26. The bar is substitutable so a tool can price a different one; `nil`
+            // means "the shipped bar", not "refuse the page", and every other term of
+            // this guard is untouched. See `textPageInkOutsideThresholdOverride`.
+            let bar = textPageInkOutsideThresholdOverride ?? textPageInkOutsideThreshold
             guard inkOutsideText(grey, region: region, width: w, height: h,
-                                 threshold: pageThreshold) < textPageInkOutsideThreshold
+                                 threshold: pageThreshold) < bar
             else { return false }
             return paleDrawing(pageMarks(grey, width: w, height: h,
                                          threshold: pageThreshold, dpi: dpi),
