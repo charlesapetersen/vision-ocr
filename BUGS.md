@@ -2163,12 +2163,34 @@ Here it decides a RESOLUTION, where a false negative costs the drawing outright.
 defensible bar for the first question and is the wrong order of magnitude for the second. That is
 the shape to fix, and it needs no new signal: `pageMarks` already found these marks.
 
-**PREDICTED, NOT MEASURED — do this first.** `keepEveryPixel = backgroundDownsample <= 1`, so at
-Photo detail **Maximum** the shrink is skipped entirely and all four drawings should survive
-untouched. If they do, that is both the user workaround and proof the diagnosis is right; if they
-do not, this entry is wrong about the mechanism and the routing is where to look next. Balanced
-is 2 and Smallest is 3, so **both are exposed** — and Balanced is the shipped default
-(`Prefs.swift`).
+**MEASURED 2026-08-17, and the mechanism is confirmed in one number.** `Tools/score-mrc.swift`
+against the current tree, same document, `MRC_BG=2` (Balanced, the shipped default) against
+`MRC_BG=1` (Maximum):
+
+```
+page  setting   route  bgF   fgF    bgKB    fgKB   mrcPSNR
+p4    Balanced  grey    8.0  16.1     1.8     1.2    24.05
+p4    Maximum   grey    1.0   4.0   190.4    11.8    27.45
+p6    Balanced  grey    8.0  16.1     1.9     1.2    24.99
+p6    Maximum   grey    1.0   4.0   173.0    10.9    28.48
+```
+
+`bgF` reads **8.0** and `fgF` **16.1** at Balanced — `textPageBackgroundDownsample` and
+`textPageForegroundDownsample` exactly — so `pageIsAllText()` is firing on these pages. **A
+background layer that is 190 KB at Maximum is stored as 1.8 KB at Balanced.** That is the
+erasure, quantified, and PSNR against the source moves 24.05 → 27.45 and 24.99 → 28.48 with it.
+At Maximum `keepEveryPixel` skips the shrink and the layer survives.
+
+**So the workaround is real and specific: Photo detail = Maximum.** Balanced is 2 and Smallest is
+3, so **both other settings are exposed**, and Balanced is the shipped default (`Prefs.swift`).
+`MRC-2026-08-15/README.md` corroborates the floor independently from an unrelated campaign:
+`photo-detail-smallest.tsv` is "identical to Balanced on every all-text page, because the shrink
+is a floor".
+
+⚠️ **Measured on 2 pages, not 4.** `score-mrc` listed only p4 and p6 for this document and it was
+not established whether that is its sampling rule or its route filter — it does not read a `PAGES`
+variable. p9 takes the 1-bit route and would not appear in a layering report at all. Both pages it
+did measure are erased-drawing pages, which is what the mechanism needed.
 
 **⚠️ THE RELEASE GATE CANNOT SEE THIS, AND SAYS SO IN ITS OWN SOURCE.** `Tools/score-gate.swift`
 ran this exact document during 1.13.0's release gate and passed it: page 6 rendered from the

@@ -118,12 +118,11 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       detail setting. Content loss, found by the owner on `1954 - Why.pdf` hours after `1.13.0`
       shipped. **Read the entry before anything else** — it carries the four-page rendering, the
       `score-threshold-loss` table, the mechanism and three named unmeasured questions.
-      **Sub-step 1, and it is cheap: TEST THE PREDICTION.** The entry predicts that Photo detail
-      **Maximum** preserves all four drawings, because `keepEveryPixel = backgroundDownsample <= 1`
-      skips the shrink. Measure it. If it holds, that is the user workaround and the diagnosis is
-      confirmed; if it fails, the entry is wrong about the mechanism and the routing is where to
-      look. Do this before designing any fix.
-      **Sub-step 2: sweep before tuning.** `Tools/score-threshold-loss.swift` prints `lost` per
+      ✅ **The prediction is MEASURED and the mechanism is confirmed** (2026-08-17, in the entry):
+      `score-mrc` at `MRC_BG=2` against `MRC_BG=1` shows `bgF` 8.0 and `fgF` 16.1 on the affected
+      pages, a background layer that is 190 KB at Maximum stored as **1.8 KB** at Balanced, and
+      PSNR 24.05 → 27.45. Photo detail = Maximum is a real workaround. Do not re-run that.
+      **Sub-step 1: sweep before tuning.** `Tools/score-threshold-loss.swift` prints `lost` per
       page, so one corpus sweep says how many pages carry a sub-5% mark on a picture-path page.
       ⛔ **Do NOT tune `paleDrawingThreshold` on this one document** — that is the failure R55 and
       R56 both record, and R56's signal was refused four times for admitting show-through and
