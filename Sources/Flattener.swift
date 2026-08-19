@@ -1111,6 +1111,18 @@ enum Flattener {
     /// moved: the body is `saturation(of:)`'s, and the two ways that function used
     /// to answer 0 — no thumbnail size, and a context or page ref it could not get
     /// — are the two ways this one answers nil.
+    ///
+    /// ⚠️ **Not a pure function of the page, measured 2026-08-19.** On pages whose
+    /// images CoreGraphics caches, what this draws depends on whether the page was
+    /// already rendered at a higher resolution in the same process: `1954 - Why` p7
+    /// gives `saturation(ofRGBA:)` **0.041 after `flatten`'s grey render and 0.044
+    /// taken cold**, and `saturatedFraction(above: 0.25)` **0.02831 against 0.03033**
+    /// (+7.1%); `Schwaller - 2026` p101 moves 0.06367 -> 0.06514; five of seven pages
+    /// tried are identical either way. `flatten` renders grey first, so **production's
+    /// number is the warm one** and so is every committed tool's (they all render the
+    /// page before asking) — but a check or tool that calls this first will not
+    /// reproduce production, and that is a wrong-instrument session waiting to happen.
+    /// C27's `#### The population, swept` has the measurement.
     static func saturationThumbnail(of page: PDFPage)
         -> (buffer: [UInt8], width: Int, height: Int)? {
         // The same area flatten rebuilds, so the routing signal describes the
@@ -1259,9 +1271,15 @@ enum Flattener {
     /// cast — which is why C27 says the statistic is wrong rather than the number.
     ///
     /// `floor` is the caller's and there is deliberately no constant for it here.
-    /// Sizing C27's population is what settles a floor, that sweep has not been run
-    /// (`Tools/score-threshold-loss.swift`'s `satFrac`/`satFloor` columns are the
-    /// instrument for it), and a constant in this file would read as a shipped
+    /// Sizing C27's population was supposed to settle a floor. **That sweep ran on
+    /// 2026-08-19 (`SATFRAC-2026-08-19.tsv`, 233 documents, 441 pages) and settled
+    /// no floor, because measured over the corpus there is not one to settle**: the
+    /// noise is a per-page property, and one page of a 1938 magazine scan reads
+    /// **2.0% of its sheet above a 0.25 floor with no ink of its own on it** — above
+    /// the 1.36% of a page that loses real red ink — while another page of that same
+    /// scan reads 0.04%. So no single value clears the noise everywhere, the answer
+    /// wants a term about *where* the colour is rather than how much (R56's shape),
+    /// and a constant in this file would read as a shipped
     /// calibration to every later reader — which is what `Tools/score-skew.swift`
     /// and R56's own refused candidate signal both record as the reason for keeping
     /// an unshipped measurement out of `Flattener`. This one is here only because it

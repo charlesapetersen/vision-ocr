@@ -58,7 +58,12 @@
 //   * The megapixel guard below is `maximumPageMegapixels` (400), the bound on rendering.
 //     `mrcLayers` refuses to layer above `maximumMRCPageMegapixels` (100). So a page
 //     between the two gets a row here for a decision production never takes. No corpus
-//     page is affected — the widest `cells` in `THRESHOLD-LOSS-2026-08-18.tsv` is 2.85 M.
+//     page is affected — the widest `cells` in `THRESHOLD-LOSS-2026-08-18.tsv` is
+//     **3.84 M** (3,844,260), i.e. 3.8 megapixels, far under either bound, so the
+//     conclusion holds with room to spare. This line said 2.85 M until 2026-08-19: that
+//     was the file's FIRST DATA ROW and not its largest, and 40 of its 441 rows exceed it.
+//     C27's register entry and the autonomous queue carried the same wrong figure and are
+//     corrected in the same commit.
 //
 //   mkdir -p /tmp/h && cp Tools/score-threshold-loss.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-threshold-loss -target "$(uname -m)-apple-macos13.0" \

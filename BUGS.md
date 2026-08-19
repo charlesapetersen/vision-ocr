@@ -3954,7 +3954,14 @@ pages tried are identical either way. **Production renders the page grey first**
 `renderGrey`, then `let sat = mode == .auto ? saturation(of: page) : 0` — and so does
 `score-threshold-loss`, so this sweep's numbers are production's. But a tool or check that reads
 `saturation(of:)` cold will not reproduce them, and that is one wrong-instrument session waiting to
-happen.
+happen. **The sibling sweep for it**: `pictureSignals` and `isPicture`'s
+`precomputed ?? saturation(of: page)` both take a `grey` buffer the caller has already rendered,
+`Tools/score-text-route.swift:354` renders grey at `rebuildDPI` first exactly as this tool does, and
+`Tools/classify-source.swift:129` renders at **60 DPI** first — warm, but warmed at a different
+resolution, which is unmeasured. So nothing committed reads it cold today. It is written into
+`saturationThumbnail`'s own doc comment, together with the correction of its neighbour
+`saturatedFraction`, whose comment said this sweep "has not been run" and that sizing the population
+would settle a floor — measured, it settled that there is no floor to settle.
 
 **What remains, and none of it is the constant.** The population is sized and the harm is
 characterised for the ten pages looked at; what is *not* measured is (a) the **two** terms the masks
