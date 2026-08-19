@@ -3015,9 +3015,15 @@ run that**, and this is a latent hazard in an instrument rather than an observed
 mechanism and deciding what those eight should do is its own decision. Only `score-text-route`
 documents the trap in its own header today.
 
-⛔ **What remains is the sweep itself and its analysis.** A later session polls, and the one that
-finds the TSV complete commits it and answers the population question. Cycles that only poll score as
-no-progress, which is correct rather than a fault.
+⛔ **The sweep is RUNNING as of 2026-08-19 04:26** — 233 documents at bar 0.045, in a session of its
+own (`start_new_session=True`, since macOS ships no `setsid`) and reparented to launchd, so it outlives
+the session that started it. It writes `$STATE/INKBAR-2026-08-19.tsv` with `$STATE/inkbar-sweep.log`
+beside it, where `$STATE` is `~/.local/state/visionocr-autonomous`; `$STATE/inkbar/launch.sh` is both
+the launch and the resume and refuses while one is live. First document 10 rows in 38.2 s — the slowest
+of the three timed, so the run's own ETA is a ceiling that falls. **What remains is the analysis**:
+`--report` first, then the `[0.045, 0.08)` population into this entry, and only then is R50's trade
+decidable. Poll with `--report` or `wc -l`, never with a second `sweep` invocation. Cycles that only
+poll score as no-progress, which is correct rather than a fault.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct

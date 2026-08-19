@@ -53,8 +53,10 @@ argument survives it: 2.5 h at the worst measured rate still reaches the session
 `Tools/sweep-ink-bar.py`** — resumable per document, aborting on the environment rather than
 recording 233 identical failures, 71 `--self-test` checks with 42 mutants watched failing, and it
 reproduces the entry's 65,477 -> 195,785 bytes digit for digit through a second process; `--report`
-prints the band population. **The sweep itself is what is outstanding**, and a session that only polls
-it has done the right thing. Read the entry's last two sections before touching it.
+prints the band population. **That sweep is RUNNING since 2026-08-19 04:26** — 233 documents, detached in a session of its own, writing `INKBAR-2026-08-19.tsv` under
+`~/.local/state/visionocr-autonomous`; poll it with `--report` or `wc -l` and NEVER with a second
+`sweep` invocation, which is refused while the lock is held. **Its analysis is what is
+outstanding**, and a session that only polls it has done the right thing. Read the entry's last two sections before touching it.
 **The corpus
 sweep both entries were blocked on ran the same day** — 441 pages, 233 documents,
 `THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes the `extent` bar's population (61 picture-route

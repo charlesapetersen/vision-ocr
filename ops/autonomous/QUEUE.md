@@ -195,11 +195,23 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       constant was emptied instead of failing. It deliberately does NOT take `test-lock.sh`: the lock
       is about two `tests` binaries sharing one plist keyed by process name, and a 3-4 hour hold would
       block every commit hook in the window.
-      **(2)** start it detached with `nohup`/`setsid` so it OUTLIVES the session, and write a
-      **resume note into `RUN.md`'s SESSION LOG naming the log path and the exact resume command** —
-      that note is what makes the work survivable, and CLAUDE.md's rule applies: `nohup … &` reports
-      success immediately, so poll the artefact and never the exit code. Run the script and the built
-      `score-text-route` from `$STATE`, not from the worktree, which is GC'd once pushed and clean.
+      ✅ **(2) IS DONE, 2026-08-19 04:26: THE SWEEP IS RUNNING. Do not start another — poll it.**
+      233 documents, bar 0.045, launched in a session of its own (`start_new_session=True`; macOS
+      ships no `setsid`) and reparented to launchd, so it outlives every session. First document
+      `1954 - Why.pdf` 10 rows in 38.2 s — the slowest one measured, so read its own ETA as a
+      ceiling that falls. Everything lives under `$STATE`, never the worktree:
+      ```sh
+      STATE=~/.local/state/visionocr-autonomous
+      wc -l "$STATE/INKBAR-2026-08-19.tsv"                       # rows, growing
+      tail -3 "$STATE/inkbar-sweep.log"                          # [n/233] … eta
+      python3 "$STATE/inkbar/sweep-ink-bar.py" --report "$STATE/INKBAR-2026-08-19.tsv"
+      $STATE/inkbar/launch.sh                                    # RESUME if it died; refuses if live
+      ```
+      ⚠️ **`--report` takes no lock and only reads, so it is safe against a live sweep. A second
+      `sweep` invocation is NOT** — including `--dry-run` — and is refused while `<out>.lock` is
+      held. That refusal is the protection; do not route around it. `launch.sh` is also the resume
+      command: a sweep killed mid-document leaves that document unrecorded and the next launch
+      continues from exactly there.
       **(3)** later sessions poll, and the one that finds the TSV complete commits it and does the
       analysis — `--report` first, then the band population into `BUGS.md` C26. Cycles that only poll
       will score as no-progress and back off — correct, not a fault. ⚠️ Read `--report`'s output as
