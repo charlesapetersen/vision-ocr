@@ -122,7 +122,15 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       Read the entry's `C24b` and `C24's wiring` sections first, not this line.
       (origin: BUGS.md C24, FIXED)
 - [ ] **C26** — a small line drawing is erased on the picture path, at the SHIPPED DEFAULT Photo
-      detail setting. Content loss, found by the owner on `1954 - Why.pdf` hours after `1.13.0`
+      detail setting. **[hold] needs: owner** — ⛔ **the measurement campaign is COMPLETE as of
+      2026-08-19 (sub-steps 1, 2, 3, 3b and 4 all ✅ below) and what is left is the constant, which is
+      not a session's to move.** R49/R50 state no growth-tolerance bar, so there is no standard a
+      session could apply; the arithmetic, both signs of it, is in `NEEDS OWNER` in the run state and
+      in the entry. The box stays `[ ]` because the register entry is still OPEN — the coherence check
+      wants that — and `[hold]` because an unattended session offering itself this item would either
+      re-derive a finished campaign or decide a threshold the owner has reserved. **Held 2026-08-19,
+      after the sub-step (4) session; unhold it by deciding the bar.**
+      Content loss, found by the owner on `1954 - Why.pdf` hours after `1.13.0`
       shipped. **Read the entry before anything else** — it carries the four-page rendering, the
       `score-threshold-loss` table, the mechanism and three named unmeasured questions.
       ✅ **The prediction is MEASURED and the mechanism is confirmed** (2026-08-17, in the entry):
@@ -487,6 +495,41 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       ⚠️ Triage before coding: some of these are single-document utilities that are right as they are,
       and the answer per tool belongs in the commit. Any tool you touch is staged, so budget a commit
       (a full suite) rather than a check. (origin: the sibling sweep in `BUGS.md` C26, 2026-08-19)
+- [ ] **silent-image-writes** — **two of the five image writers in `Tools/` still swallow a failed
+      write, and one of them can make the suite pass by writing nothing.** Found 2026-08-19 by the
+      adversarial review of C26's sub-step (4) diff, which is also what corrected "three writers" to
+      **five**; recorded in `BUGS.md` C26's sibling-sweep paragraph, and queued here because that
+      paragraph says "both are queued rather than left in prose" and until this line existed it was not
+      true. `score-threshold-loss` (`dumpFailures`), `score-mrc` (`MRC_DUMP`, fixed 2026-08-19, exit 6
+      through `stop`) and `score-text-route` (`INKDUMP`, exit 4 counting promised against written) are
+      the three that now account for what reached disk. The two left:
+      1. ⛔ **`Tools/make-plate-fixtures.swift` — the worst of the five.** It writes eight 300-DPI
+         fixture pages through `CGDataConsumer(url:)` and every failure is a bare `return`;
+         `run_tests.sh` builds it and the suite reads what it wrote, and `run_tests.sh`'s own comment
+         says the R56/R57 checks "would otherwise pass by having no fixtures to route". **So a partial
+         write is a silent PASS in the suite** — evidence that is wrong rather than absent, which is the
+         shape CLAUDE.md's environment-traps section exists for. It touches the suite's own scaffolding,
+         so read what reads those fixtures before changing what it writes.
+      2. `Tools/make_icon.swift:65` swallows its write, and the first draft of C26's paragraph defended
+         it with "`iconutil -c icns` catches that". ⛔ **Measured, and FALSE**: an iconset holding **3 of
+         the 10** files `make_icon` promises, correctly named and sized, makes `iconutil` exit **0** and
+         produce a valid 7,241-byte `.icns`. So a partial icon set ships a degraded icon with a clean
+         build — and `build.sh:113` discards make_icon's only diagnostic with `2>/dev/null`, which is
+         the second half of the same defect and is in `build.sh` rather than in `Tools/`.
+      ⚠️ `build.sh` and any tool you touch are both in the hook's code set, so budget a commit (a full
+      suite) rather than a check. The counting shape to copy is `score-text-route`'s `INKDUMP`: count
+      what was promised against what reached disk, name the missing files, and exit non-zero — an empty
+      output directory reads as "there was nothing to write", which is how a dump settles a question the
+      wrong way round. (origin: the sibling sweep in `BUGS.md` C26, 2026-08-19)
+- [ ] **sweep-exit5** — `Tools/sweep-ink-bar.py`'s `CONFIG_EXITS` does not include
+      `score-text-route`'s exit **5** (self-test failed, nothing measured), added 2026-08-19 by C26's
+      sub-step (4). A systematic self-test failure would therefore be **recorded as 233 failed
+      documents** instead of aborting the sweep on the first one — the same class of silent-garbage run
+      the constant exists to prevent. Named rather than fixed by the session that added the exit.
+      ⚠️ **Three edits, not one**, and the tool's header says one: the constant, its `--self-test`
+      assertion, and `EXPECTED_CHECKS`. A staged `Tools/*.py` carrying `--self-test` is hook-enforced,
+      so the self-test runs; the suite runs too because the file is under `Tools/`.
+      (origin: the sibling sweep in `BUGS.md` C26, 2026-08-19)
 
 ## HOLD — owner-only, never auto-executed
 
