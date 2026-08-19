@@ -24,23 +24,32 @@ small, and no value of that constant would protect them.
 The corpus sweep both entries were waiting on ran the same day: **441 pages, 233 documents**, and
 it sizes the population of the `extent` bar (61 picture-route pages: 2 protected, 22 under the
 bar, 37 at zero) while **not** sizing C27's, because a mean cannot see concentrated colour.
-**⚠️ That is no longer C26's population**: the term C26 turns on is `inkOutsideText`, and a sweep
-of *that* has not been run — see the entry's last section. **What HAS been measured, 2026-08-18, is
-what C26's proposed fix costs: at a bar of 0.045 all three erased-drawing pages are refused the
-shrink and go 65,477 -> 195,785 bytes, `2.99x` on those three, `1.76x` across the document's five
-picture-route pages** (the other five are already 1-bit and pay nothing — the first version of this
-line called the three-page sum a document total, which it is not). So the fix is affordable on three
-pages and its corpus-wide population is the number still missing;
-`Flattener.textPageInkOutsideThresholdOverride` plus `INKBAR=0.045 score-text-route` is the
-instrument, and that sweep is **tens of minutes to about three hours** over ~2,500 pages (the "3-4
-hours" this header carried is RETRACTED — measured per-document rates put every projection *below* it;
-see the driver's section), needing a driver loop because the tool
-takes one PDF per invocation. **That driver exists as of 2026-08-19** —
-`Tools/sweep-ink-bar.py`, resumable per document, 71 self-test checks and 42 mutants watched failing,
-and it reproduces this entry's 65,477 -> 195,785 digit for digit through a second process; the sweep
-it drives is what is still outstanding, and `--report` prints the band population once it lands.
-Both entries carry the
-numbers and the retractions. It is **not** R56, whose fix is
+**⚠️ That is no longer C26's population**: the term C26 turns on is `inkOutsideText`, and the sweep
+of *that* is a separate run — it is `INKBAR-2026-08-19.tsv`, below. **What was measured 2026-08-18 is
+what C26's proposed fix costs on the document it was found on: at a bar of 0.045 all three
+erased-drawing pages are refused the shrink and go 65,477 -> 195,785 bytes, `2.99x` on those three,
+`1.76x` across the document's five picture-route pages** (the other five are already 1-bit and pay
+nothing — the first version of this line called the three-page sum a document total, which it is not).
+**⛔ And measured 2026-08-19 over the corpus, that 2.99x is the BEST case and is retracted as a corpus
+figure**: `Tools/sweep-ink-bar.py` swept 233 documents in 105.6 min (`ok=233`, committed as
+`INKBAR-2026-08-19.tsv`, 2,129 measured page rows) and the band `[0.045, 0.08)` holds **17 pages, 16
+of which flip** — 0.75% of sampled pages, 18.0% of the 89 that are shrunk today, over 10 documents of
+233. Those 16 cost **838,569 -> 3,804,222 B, +2,965,653 B, 4.54x, 185,353 B/page** — 4.3x worse per
+page than this document's three, which are ranks 1, 3 and 4 of the 16 sorted by cost. That is
+**+8.19%** of the layered bytes on the 181 pages that reach layering and **1.21x to 3.60x** per
+document, but only **~+0.55%** of corpus output — **~21 pages of 16,987 and ~4.0 MB**, 8 pages of it
+exact. ⚠️ **The obvious extrapolation says ~130 pages and ~+24 MB and is 6x high, retracted the same
+day**: the sweep takes 12 pages a document whatever its length, so pooling its per-page rate applies
+short documents' rate (4.8x higher) to the long documents holding 98% of the corpus. R49/R50 state
+**no** growth-tolerance bar (read 2026-08-19), so there is nothing to test that against; what R50 was
+accepted on was "not one grew", and this grows ten documents while barely moving the corpus.
+**⛔ So the population is known and what is still unmeasured is the SIZE OF THE BENEFIT**: only 3 of the
+16 moved pages are known to lose content, and whether the other 13 carry an erased mark or are plain
+type paying 4.54x for nothing is sub-step (4). The evidence leans toward them being real — the 16 were
+selected by the mechanism that erases, the three known losses sit at `inkOut` ranks 4, 6 and 13 of 17
+rather than at an extreme, and 4 of the 16 are colour-route pages at 5-7% non-text ink — but none of
+that is a rendered page. The decision is the owner's, R55's precedent, and it is in the run's
+`NEEDS OWNER`. Both entries carry the numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
 **C24 closed 2026-08-17** — read the paragraph
@@ -2151,6 +2160,13 @@ pale marks at all**: 5,495 / 4,188 / 3,379 cells of them are below the page's ow
 them and lets them through. Everything above that section about the pale layer is arithmetically
 right and about the wrong layer.
 
+⚠️ **AND READ THE LAST SECTION SECOND, because it retracts a number this entry publishes twice.**
+The corpus sweep landed 2026-08-19 (`INKBAR-2026-08-19.tsv`): the band `[0.045, 0.08)` holds **17
+pages, 16 of which move**, and they cost **4.54x / 185,353 B per page** — not the **2.99x /
+43,436 B** "Sub-step 3, half of it" measured on this document, whose three pages turn out to be the
+cheapest end of the band. The population is now known; the constant is **still not decidable**,
+because only 3 of the 16 are known to be losing content.
+
 **Three of the four red line drawings in a 10-page booklet are erased or all but erased, and
 every word on every page survives**, which is what makes it invisible in use. Rendered at
 55 DPI from the shipped output, against the same page of the input:
@@ -2635,6 +2651,15 @@ number on the pages this entry was opened for, and it is why the constant must n
 document: three pages at 43 KB is nothing, and the same multiplier over an unknown corpus-wide
 population is not.
 
+⛔ **AND THAT LAST SENTENCE WAS RIGHT FOR A REASON IT DID NOT EXPECT — 2026-08-19, from the corpus
+sweep.** It is not the *same* multiplier: over the 16 pages the corpus actually moves, the price is
+**4.54x and 185,353 B/page**, against these three at 2.99x and 43,436 B. **These three pages are the
+cheapest end of the band** — ranks 1, 3 and 4 of 16 sorted by `barDelta` — so every figure in this
+section is right about the pages it names and **none of it is a corpus price**. The section that
+supersedes it for the corpus question is "Sub-step 3b, the population", last in this entry. Keep this
+one: it is the per-page mechanism and the seam's negative control, and its `layered` /`layeredAtBar`
+values are what the corpus sweep was validated against.
+
 ⚠️ **This section first published "the document's published bytes go 65,477 -> 195,785, 2.99x"** —
 a three-page sum labelled as a document, and the pages had been named explicitly (`4 6 7 9`) when
 running with no page arguments would have measured all ten for the same 38 seconds. Caught by the
@@ -3015,15 +3040,200 @@ run that**, and this is a latent hazard in an instrument rather than an observed
 mechanism and deciding what those eight should do is its own decision. Only `score-text-route`
 documents the trap in its own header today.
 
-⛔ **The sweep is RUNNING as of 2026-08-19 04:26** — 233 documents at bar 0.045, in a session of its
-own (`start_new_session=True`, since macOS ships no `setsid`) and reparented to launchd, so it outlives
-the session that started it. It writes `$STATE/INKBAR-2026-08-19.tsv` with `$STATE/inkbar-sweep.log`
-beside it, where `$STATE` is `~/.local/state/visionocr-autonomous`; `$STATE/inkbar/launch.sh` is both
-the launch and the resume and refuses while one is live. First document 10 rows in 38.2 s — the slowest
-of the three timed, so the run's own ETA is a ceiling that falls. **What remains is the analysis**:
-`--report` first, then the `[0.045, 0.08)` population into this entry, and only then is R50's trade
-decidable. Poll with `--report` or `wc -l`, never with a second `sweep` invocation. Cycles that only
-poll score as no-progress, which is correct rather than a fault.
+✅ **The sweep RAN: 2026-08-19 04:26 → 06:12, 105.6 min, `ok=233`, no failures, no resume needed.**
+233 documents at bar 0.045, in a session of its own (`start_new_session=True`, since macOS ships no
+`setsid`) and reparented to launchd, so it outlived the session that started it — that is what the
+detached shape bought, and the sweep ran undisturbed through two later sessions' work. Committed here
+as **`INKBAR-2026-08-19.tsv`**, beside `THRESHOLD-LOSS-2026-08-18.tsv`, byte-identical to the copy
+still under `$STATE` (`md5` checked, not assumed). 2,131 lines = a **15-column** header, the
+`# bar=0.045 corpus=… binary=…` provenance line, and **2,129 measured page rows** — every row exactly
+15 fields, no torn final row, and **no duplicate `document`+`page` key**, so nothing in the counts
+below is double-counted. ⚠️ **15, not 13**: the sweep's own `document` and `status` columns sit in
+front of `score-text-route`'s 13, and this line said 13 until the review of this diff caught it
+(`QUEUE.md` carried the same conflation). The population question this entry has carried since
+2026-08-18 is answered below.
+
+#### Sub-step 3b, the population: 17 pages in the band, 16 of them move — MEASURED 2026-08-19
+
+**The band, and it is the whole answer to "how many".** `--report` over the committed TSV, and every
+figure below re-derived by hand with `awk` over the same file rather than taken from the tool:
+
+```
+2,129 measured page rows over 233 documents
+  1,947  already 1-bit   (91.5% — never reach the layering decision, pay nothing)
+     89  all-text        (shrunk 8x/16x today: the population at risk)
+     93  picture         (already refused the shrink: pay nothing more)
+
+inkOutsideText over the 182 rows that carry one:
+     78  in [0, 0.045)       below the priced bar — unaffected
+     17  in [0.045, 0.08)    THE BAND: held at 1/8 today, refused at 0.045
+     87  in [0.08, 1.01)     already above the shipped bar — unaffected
+```
+
+**17 in the band, 16 of which flip `all-text` → `picture`.** The seventeenth is the boundary and not
+an anomaly: `bookSection/Broadhead - 1994` p3 prints `inkOut` **0.0450** at the column's four decimals
+and reads `all-text` at the bar too, so its true value is just under 0.045 and it is `same` with real
+bytes. A reader who subtracts 16 from 17 and looks for a missing page will find rounding.
+**16 of 2,129 sampled pages is 0.75%; 16 of the 89 pages actually at risk is 18.0%**, and the moved
+pages come from **10 documents of 233 (4.3%)**.
+
+**What those 16 pages cost, at three scopes, because the entry has already published one figure at
+the wrong scope once.** Over the 16 moved pages: **838,569 B → 3,804,222 B, +2,965,653 B, 4.54x**,
+mean **+185,353 B/page**. Over all 181 rows carrying both byte columns — every page in the corpus
+sample that reaches the layering decision — **36,201,928 B → 39,167,581 B, +8.19%**. And per
+document, over that document's own **priced** pages — read the warning under the table before quoting
+any of these:
+
+| document | pages | sampled | priced | moved | shipped → at bar | factor |
+|---|---|---|---|---|---|---|
+| `magazineArticle/Glazer_2002_Higher Ed_New Republic` | 2 | 2 | 1 | 1 | 77,506 → 278,692 | **3.60x** |
+| `document/Atkinson_1939_Atkinson on firings_` | 3 | 3 | 3 | 1 | 176,537 → 408,817 | 2.32x |
+| `document/RIESMAN_1942_American Law Institute Proceedings_` | 10 | 10 | 2 | 1 | 688,912 → 1,391,192 | 2.02x |
+| `book/1954 - Why` | 10 | 10 | 5 | 3 | 171,135 → 301,443 | 1.76x |
+| `document/_1973_Committee Against Racism_` | 4 | 4 | 4 | 1 | 196,711 → 313,173 | 1.59x |
+| `journalArticle/1944_Options picking up` | 3 | 3 | 2 | 1 | 183,307 → 290,461 | 1.58x |
+| `bookSection/Broadhead - 1994 - Regionalism and the Upper Class` | 13 | 12 | 12 | 3 | 1,037,549 → 1,610,507 | 1.55x |
+| `book/Riesman - 1954 - Individualism reconsidered` | 25 | 12 | 12 | 3 | 1,565,492 → 2,353,178 | 1.50x |
+| `journalArticle/Jones et al_2010 - Productivity Effects of Stock Option Schemes` | 15 | 12 | 6 | 1 | 218,127 → 291,102 | 1.33x |
+| `journalArticle/Xin Qu et al_2018 - Executive stock option vesting` | 32 | 12 | 9 | 1 | 203,927 → 246,291 | 1.21x |
+
+⚠️ **Those four counts are four different things, and the first draft of this table collapsed two of
+them into a wrong column heading.** `pages` is the document's real length
+(`mdls -name kMDItemNumberOfPages`, each of the ten verified by hand); `sampled` is rows the sweep
+wrote for it; `priced` is how many of those reach the layering decision and therefore carry bytes (the
+rest are `already 1-bit` and pay nothing); `moved` is how many flip. **The factor divides by `priced`**
+— `1954 - Why`'s 1.76x is over its five picture-route pages, exactly as "Sub-step 3, half of it" states
+it — **and it is not a whole-document factor for the four documents whose `sampled` is below `pages`.**
+The first version printed `priced` under a heading reading `sampled`, which would have said
+`RIESMAN_1942` was a 2-page document when it is 10; caught by the adversarial review of this diff,
+which re-derived the column instead of reading it, and independently by re-deriving it here. **Six of
+the ten are complete** (`sampled == pages`); Broadhead, Riesman, Jones and Xin Qu are not.
+⚠️ **`Flattener.sampleIndices` takes up to 12 pages a document however long it is, and 150 of the 233
+hit that cap** — which is not just a caveat on this table. It is what makes the obvious corpus
+extrapolation wrong by 6x; see the next section.
+
+**⛔ THE ENTRY'S OWN 2.99x WAS THE BEST CASE, AND THIS RETRACTS IT AS A CORPUS FIGURE.** Sub-step 3
+priced the refusal at **2.99x on three pages and 43,436 B/page**, measured on `1954 - Why` — the only
+document then available. Over the corpus's 16 the price is **4.54x and 185,353 B/page, 4.3x worse per
+page**. The reason is that this document's three pages are the *cheapest end* of the band: sorted by
+`barDelta` they are ranks **1, 3 and 4 of 16** (+41,689 / +43,405 / +45,214 B), against a worst of
+**+702,280 B** on `RIESMAN_1942` p10 and three pages of `Riesman - 1954` between +249,437 and
++280,066 B on the *colour* route. Nothing was wrong with the 2.99x — it is right about the three pages
+it names, and the entry said so — but it is the document C26 was *found* on, and a found document is a
+sample of one. That makes **three published numbers this entry has now had to correct**: the "these
+marks cover 0.2% of the page" that was read from a different function's column, the three-page byte sum
+labelled a document total, and this. ⚠️ The three are not the same failure, and lumping them would be
+its own error — the first was the wrong quantity and the second the wrong scope, both catchable at the
+desk. **This one was neither wrong nor mis-scoped; it was true of its one document, and only a corpus
+run could tell.** That is the argument for the sweep, stated after the fact rather than before it.
+
+**The instrument, checked against this entry's own committed numbers before any of the above was
+believed.** `THRESHOLD-LOSS`'s lesson was that a sweep can be arithmetically perfect about the wrong
+column, so the TSV was made to reproduce what sub-step 3 published, from the corpus run rather than
+from a targeted one: `1954 - Why` p4/p6/p7 read `layered` **22,762 / 20,708 / 22,007 = 65,477 B** and
+`layeredAtBar` **67,976 / 62,397 / 65,412 = 195,785 B**, and the document's five priced pages read
+**1.76x**. Both are digit-for-digit the numbers in "Sub-step 3, half of it" above — the fourth
+independent reproduction of that pair, and the first from a corpus sweep. `--report`'s band counts and
+byte sums were then re-derived with `awk` and agree exactly (78 / 17 / 87; 838,569 and 3,804,222).
+One row carries an `inkOut` and only **half** a byte pair — `report/Levy and Temin - 2007` p6,
+`inkOut` **1.0000**, already `picture` both ways, `layered` **103,764** and `layeredAtBar` the sentinel
+**`n/a`** — which is why the byte aggregate runs over **181** rows and the band histogram over **182**.
+Named rather than quietly dropped. (This sentence said "no byte pair" and the sentinel was given as
+`-`; both corrected by the review of this diff. The 181/182 split was right either way.)
+
+#### Extrapolating to the corpus: the obvious arithmetic is 6x too high, and the sweep's own sampling is why
+
+⛔ **THE FIRST VERSION OF THIS SECTION SAID "on the order of 130 pages and roughly +24 MB, about +3%",
+AND IT IS RETRACTED THE SAME DAY — it is 6x high.** It came from the one multiplication that looks
+right and is not: 0.75% of sampled pages × 16,987 corpus pages. That treats the 2,129 sampled pages as
+a uniform sample of the corpus, and `Flattener.sampleIndices` does not give one. It samples **up to
+12 pages per document however long the document is**, so a 3-page pamphlet contributes all 3 while a
+32-page article contributes 12 — and the moved pages turn out to be concentrated in exactly the short
+documents that are over-weighted per page. Measured, splitting the corpus at "was this document
+sampled completely":
+
+| stratum | documents | corpus pages | sampled | moved | move rate/page |
+|---|---|---|---|---|---|
+| sampled **completely** (`sampled == pageCount`) | 86 | 365 | 365 | **8** | **2.19%** |
+| sampled **partly** | 147 | 16,622 | 1,764 | **8** | **0.45%** |
+
+**A page in a fully-sampled document is 4.8x more likely to move than a page in a long one**, and the
+long ones are **98%** of the corpus. The pooled figure inherits the small documents' rate and applies
+it to the large documents' page count, which is how 21 became 128.
+
+**The defensible estimate is stratified — each document's own rate against its own page count — and it
+is ~21 pages and ~4.0 MB.** Better than that, **8 of the 16 moved pages need no estimate at all**: they
+are in the 86 documents the sweep measured *completely*, so over those 365 pages **8 moved and
++1,489,670 B** is an exact count. The other 8 are in the 147 partly-sampled documents and scale to
+**~13 more pages and ~+2.5 MB**. Total: **~21 pages of 16,987 (0.13%)**, **~4.0 MB**, which against the
+**721 MB** R50's own 232-document gate measured is **+0.55%**.
+
+⚠️ **Treat even the stratified figure as an order of magnitude.** It rests on 8 moved pages spread over
+4 long documents, so its variance is large; and it is arithmetic over a 12.5% sample compared against a
+total from a *different* gate run. What it is good enough for is the decision's sign: the cost is
+**~0.5% of corpus output, not ~3%**, and the count is **tens of pages, not hundreds**. ⚠️ **And note
+which way the retraction cuts** — the correction makes the change *cheaper*, not dearer. Publishing the
+6x-high figure would have argued against a fix on numbers that were wrong in the direction of caution,
+which is the failure mode this register is least likely to catch.
+
+**How this sits against R50's precedent, which is the trade and is not a bar.** R49 and R50 state **no
+growth-tolerance standard** — no percentage, no per-page ceiling, no allowance for how many pages may
+regress (read 2026-08-19; neither entry contains one). What R50 offers instead is corroboration:
+its corpus gate came in at **721 MB against R49's 739**, **209 of 232 documents unchanged**, and
+**"not one grew"**, with every photograph-heavy document byte for byte identical. That is the shape
+the 0.08 bar was accepted on, and **moving it to 0.045 does not have that shape**: 10 documents grow,
+one of them **3.60x**. So the two are not comparable on aggregate size — this is **+8.2% of layered
+bytes on the pages that layer** but only **~+0.55% of corpus output** — and the difference that matters
+is that R50's growth was *nil and diffuse* while this is *small and concentrated*. A handful of
+documents get visibly bigger; the corpus barely moves.
+
+**For scale, the nearest arithmetic this register has already weighed.** R55's — the one the owner did
+close on — reads *"The 125 changed pages cost 20.8 MB between them, 166 KB a page. Against the
+232-document gate's 721 MB that is +2.9% — arithmetic from this subset rather than a corpus run, and
+labelled as such."* This proposition is **~4.0 MB and +0.55%**, so it is **about five times smaller
+than a cost the owner has already reasoned about at length**. ⚠️ That comparison is only about size, and
+R55 was not decided on size: it was closed on what the looser bar would *admit*. Which is exactly the
+question still open here, and it is sub-step (4).
+
+**And `0.55% of the corpus` is a number this register has already put a value on — R35's, from the
+other direction.** R35 measured *"every MRC background in the corpus together is 39.4 MB of a 792 MB
+output, 5.0%. A threshold at 0.10 saves 4.35 MB — 0.55% of the corpus"* — and refused it, because
+0.55% was *"not worth a rule that can misrepresent an archival document"*. C26's arithmetic is the same
+0.55% with the sign flipped: it is what would be **paid**, and what it buys is archival documents not
+being misrepresented. So the two entries agree on the yardstick and land on opposite sides of it, which
+is the cleanest statement of this trade available. ⚠️ Coincidence of magnitude, not a shared
+measurement — R35's is a whole-corpus gate figure and this is a stratified estimate from a 12.5%
+sample.
+
+⛔ **WHAT IS STILL NOT MEASURED, AND IT IS THE OTHER HALF OF THE TRADE: does the cost buy anything on
+the other 13?** Three of the 16 moved pages are `1954 - Why` p4/p6/p7, where content loss is
+*rendered and known*. For the other 13 the sweep measured **bytes only** — it does not say whether
+those pages carry a mark that is being erased today, or are pages of plain type that would pay 4.54x
+for nothing. **⚠️ This paragraph first said "both readings fit every number above", and that is FALSE
+— corrected by the adversarial review of this diff.** The numbers lean toward the 13 being real, and
+the entry should say so rather than hide behind a symmetry it does not have:
+
+- the 16 were **selected by the mechanism that causes the loss**, not by anything incidental;
+- sorted by `inkOut`, the three known losses are ranks **4, 6 and 13 of the 17** banded pages
+  (0.0493 / 0.0540 / 0.0660) — **interspersed, not extremal**, so on the one term that decides these
+  pages the 13 are indistinguishable from the three that are known to lose content;
+- **4 of the 16 are on the `colour` route** at 5-7% non-text ink, with 5-6x the greys' `barDelta`.
+  A page of plain type does not usually look like that.
+
+So the honest statement is **not** "the constant is undecidable" but "**the magnitude of the benefit is
+unmeasured**". It is still the right call not to move a shipped constant on that — the evidence above
+is suggestive and none of it is a rendered page — but the reason is the cost of being wrong, not a
+genuine balance of readings. The instrument for settling it already
+exists and is this entry's own — `score-threshold-loss --dump <dir>` writes the marks grid, and
+rendering each of the 13 pages before and after at both bars is what "The drawings are INK" did for
+three pages. That is sub-step **(4)**, and it is a measurement rather than a judgement.
+
+**The decision itself is the owner's, and is in `NEEDS OWNER`.** R55 is the precedent: a measurement
+campaign was run, and the owner closed it on the arithmetic. ⛔ Do not move
+`textPageInkOutsideThreshold` — or `paleDrawingThreshold`, which measured cannot reach these pages at
+all — without that call. `Flattener.textPageInkOutsideThresholdOverride` remains `nil` in the app, so
+nothing about the shipped behaviour changed with this sweep; what changed is that the price is now
+known at corpus scale instead of on one document.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct

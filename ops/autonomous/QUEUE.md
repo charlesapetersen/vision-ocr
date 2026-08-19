@@ -153,7 +153,9 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       **Do not re-run this** — `score-threshold-loss --dump` and `score-text-route` both carry it,
       and the entry's "The drawings are INK" section has the tables.
       ✅ **Sub-step 3's per-page price is DONE, 2026-08-18, and 0.045 is affordable on these three
-      pages.** `Flattener.textPageInkOutsideThresholdOverride` (nil in the app; substitutes the
+      pages** — ⛔ **but read `2.99x` here as THIS DOCUMENT ONLY: over the corpus's 16 moved pages it
+      is `4.54x` and 185,353 B/page, measured 2026-08-19, and these three are ranks 1, 3 and 4 of 16
+      by cost. See the (2)/(3) block below.** `Flattener.textPageInkOutsideThresholdOverride` (nil in the app; substitutes the
       guard's *comparand*, not its verdict, so R56's pale term keeps participating) plus `INKBAR` on
       `Tools/score-text-route.swift`: over all ten pages, the three are refused the shrink,
       `65,477 B -> 195,785 B`, **+130,308 B, 43,436 B/page, 2.99x on those three and 1.76x across
@@ -166,18 +168,18 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       checks **and by nothing else in the suite**, and neither mutant has a `mutation-log.tsv` row.
       The term that fires is also on a fixture now — `makeScannedPDF(figure:)`, `inkOut` 0.0551 —
       though **not** the erasure itself. **Do not re-run any of that.**
-      ⛔ **Sub-step 3b is what remains, and it is the half that decides the fix: the corpus
-      population.** How many pages sit in `[0.045, 0.08)` — held at 1/8 today, newly paying ~3x?
-      The distribution "runs smoothly from 0 to 0.97" with no gap, so it cannot be reasoned out.
-      Two traps, both measured: **the tool takes ONE pdf and treats later arguments as page
-      numbers**, so a glob silently measures document 1 and prints a summary that reads like a corpus
-      run — it needs a driver loop; and **it samples up to 12 pages a document, not 2**, so 233
-      documents is ~2,500 pages, not 441. ⚠️ **"3-4 hours, and read it as a FLOOR" is RETRACTED,
-      2026-08-19**: three documents timed through the driver read 3.83 / 0.54 / 0.66 s a page, so the
-      *worst* of them puts 2,500 pages at 2.7 h and the cheap ones at ~25 min. The honest figure is
-      **tens of minutes to about three hours**, and which end depends on the corpus's picture-route
-      share — part of what the sweep measures. ⛔ Do NOT move the constant without it: this is
-      R50's trade, and R49/R50 are the entries about paying bytes on every text page.
+      ✅ **Sub-step 3b — the corpus population — IS DONE, 2026-08-19. Do not re-derive it; the
+      answer and the retraction it forced are in the (2)/(3) block below.** For the record of what it
+      cost: the sweep took **105.6 min** for 233 documents / 2,129 sampled pages, so the estimate that
+      mattered was the low end. ⚠️ **"3-4 hours, and read it as a FLOOR" was RETRACTED on
+      2026-08-19 before the run, and the run confirmed the retraction** — three documents timed
+      through the driver read 3.83 / 0.54 / 0.66 s a page and the honest range was called "tens of
+      minutes to about three hours"; 105.6 min landed inside it. The two traps that shaped the driver
+      are still true of the tool and still worth knowing: **`score-text-route` takes ONE pdf and
+      treats later arguments as page numbers**, so a glob silently measures document 1 and prints a
+      summary that reads like a corpus run; and **it samples up to 12 pages a document, not 2** —
+      measured, 150 of the 233 hit that cap, so the sweep covered 2,129 of the corpus's 16,987 pages
+      (12.5%), which is why *rates* from it extrapolate and *counts* do not.
       ✅ **SIZED, owner 2026-08-18: run it DETACHED ACROSS SESSIONS, the `C24b` mutant-campaign
       pattern.** It may not fit one session, and that is arithmetic rather than caution: 2.7 h at the
       worst measured rate against a `VISIONOCR_MAXRUN` backstop of 9000 s (2.5 h), so a session that
@@ -195,35 +197,46 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       constant was emptied instead of failing. It deliberately does NOT take `test-lock.sh`: the lock
       is about two `tests` binaries sharing one plist keyed by process name, and a 3-4 hour hold would
       block every commit hook in the window.
-      ✅ **(2) IS DONE, 2026-08-19 04:26: THE SWEEP IS RUNNING. Do not start another — poll it.**
-      233 documents, bar 0.045, launched in a session of its own (`start_new_session=True`; macOS
-      ships no `setsid`) and reparented to launchd, so it outlives every session. First document
-      `1954 - Why.pdf` 10 rows in 38.2 s — the slowest one measured, so read its own ETA as a
-      ceiling that falls. Everything lives under `$STATE`, never the worktree:
-      ```sh
-      STATE=~/.local/state/visionocr-autonomous
-      wc -l "$STATE/INKBAR-2026-08-19.tsv"                       # rows, growing
-      tail -3 "$STATE/inkbar-sweep.log"                          # [n/233] … eta
-      python3 "$STATE/inkbar/sweep-ink-bar.py" --report "$STATE/INKBAR-2026-08-19.tsv"
-      $STATE/inkbar/launch.sh                                    # RESUME if it died; refuses if live
-      ```
-      ⚠️ **`--report` takes no lock and only reads, so it is safe against a live sweep. A second
-      `sweep` invocation is NOT** — including `--dry-run` — and is refused while `<out>.lock` is
-      held. That refusal is the protection; do not route around it. `launch.sh` is also the resume
-      command: a sweep killed mid-document leaves that document unrecorded and the next launch
-      continues from exactly there.
-      **(3)** later sessions poll, and the one that finds the TSV complete commits it and does the
-      analysis — `--report` first, then the band population into `BUGS.md` C26. Cycles that only poll
-      will score as no-progress and back off — correct, not a fault. ⚠️ Read `--report`'s output as
-      counts, not as a decision: the population is the *input* to R50's trade.
-      ⚠️ The daemon WAS started (owner, 2026-08-19 00:40), so sessions are cycling and polling is
-      live; this line used to say it was not. Still expect the run to span a stop. The TSV and the
-      resume note are the whole state; `/private/tmp` does not
-      survive a reboot, so keep both under the repo or `$STATE`, never only in the worktree.
-      ⚠️ **Poll with `--report` or `wc -l`, not with a second `sweep` invocation.** `--report` takes no
-      lock and only reads. Any invocation that would write — including `--dry-run`, which used to trim
-      the file before previewing it — is now REFUSED while a sweep holds `<out>.lock`, which is the
-      protection and not a fault to route around.
+      ✅ **(2) AND (3) ARE DONE, 2026-08-19. THE SWEEP RAN AND ITS ANALYSIS IS IN THE ENTRY.** It ran
+      04:26 → 06:12, **105.6 min, `ok=233`, no failures and no resume needed**, and its result is
+      committed as **`INKBAR-2026-08-19.tsv`** at the repo root beside `THRESHOLD-LOSS-2026-08-18.tsv`
+      — 2,129 measured page rows. ⛔ **Do NOT re-run it, and do not re-derive the population.** The
+      answer, with the arithmetic in `BUGS.md` C26 §"Sub-step 3b, the population":
+      **17 pages in `[0.045, 0.08)`, 16 of which flip** `all-text` → `picture` (the seventeenth is a
+      rounding boundary at 0.0450 and is `same`); **0.75%** of sampled pages, **18.0%** of the 89
+      shrunk today, **10 documents of 233**; **838,569 → 3,804,222 B, +2,965,653 B, `4.54x`,
+      185,353 B/page**; **+8.19%** of layered bytes over the 181 pages that reach layering; per
+      document, over that document's own *priced* pages rather than its page count, **1.21x–3.60x**;
+      and at corpus scale **~21 pages of 16,987 and ~4.0 MB, `+0.55%`** of R50's 721 MB gate.
+      ⛔ **That last figure needs the STRATIFIED estimate and the obvious one is 6x high** — the sweep
+      samples up to 12 pages a document whatever its length, and a page in a fully-sampled short
+      document is **4.8x** likelier to move than one in a long document, which hold 98% of the corpus.
+      "~130 pages, ~+24 MB, ~+3%" is **RETRACTED** in the entry. 8 of the 16 moved pages need no
+      estimate at all: 86 documents were sampled completely.
+      ⚠️ Read the entry's table's three counts as three things — `sampled` rows, `priced` rows (the
+      ones carrying bytes), `moved` rows — and the factor divides by `priced`. The first draft printed
+      `priced` under a `sampled` heading; the entry says so.
+      ⛔ **AND IT RETRACTED THE ENTRY'S OWN `2.99x` AS A CORPUS FIGURE** — `1954 - Why`'s three pages
+      are ranks 1, 3 and 4 of the 16 by cost, so the found document was the cheapest end of the band.
+      Corrected in `BUGS.md` (three places), the file header and `CLAUDE.md`.
+      ⛔ **(4) IS WHAT REMAINS, AND IT IS THE OTHER HALF OF R50's TRADE: does the cost buy anything on
+      the other 13?** The sweep measured **bytes only**. Three of the 16 moved pages are
+      `1954 - Why` p4/p6/p7, where the loss is rendered and known; for the other 13 nobody has looked
+      at whether they carry a mark being erased today or are plain type that would pay 4.54x for
+      nothing. ⚠️ **This said "both readings fit every number" and that was FALSE** — the `inkOut`
+      column discriminates, and the three known losses sit at ranks 4, 6 and 13 of the 17 banded pages
+      rather than at an extreme, so the 13 look like the knowns on the term that decides. The honest
+      gap is **the size of the benefit**, not undecidability.
+      The instrument exists and is this entry's own: `score-threshold-loss --dump <dir>`
+      writes the marks grid, and rendering each of the 13 before and after at both bars is exactly
+      what "The drawings are INK" did for three pages. The 13 are named in the entry's per-page table.
+      This is a measurement, not a judgement, so it is autonomously actionable — but it is 13 pages of
+      rendering across 10 documents, so budget it as its own item and checkpoint per document.
+      ⛔ **THE CONSTANT ITSELF IS THE OWNER'S CALL, and it is in `NEEDS OWNER` as of 2026-08-19.**
+      R55 is the precedent: the campaign runs, the owner closes it on the arithmetic. R49/R50 state
+      **no** growth-tolerance bar (read 2026-08-19), so there is no standard a session could apply;
+      what R50 was accepted on was "not one grew", and 0.045 grows ten documents.
+      `Flattener.textPageInkOutsideThresholdOverride` stays `nil` in the app.
       ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
       the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.

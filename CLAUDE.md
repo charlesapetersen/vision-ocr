@@ -41,28 +41,39 @@ not one — five of the ten pages are already 1-bit and pay nothing. Corrected t
 review of the diff that measured it.) The seam is
 `Flattener.textPageInkOutsideThresholdOverride` — `nil` in the app, substituting the guard's
 comparand rather than its verdict — and `INKBAR=0.045 Tools/score-text-route.swift` prices any
-document with it. What is still missing is the **corpus population**: how many pages sit in
-[0.045, 0.08) and would newly pay that 3x. ⛔ The constant must not move without it (R49/R50's
-trade), and that sweep is **tens of minutes to about three hours** — the tool takes
-one PDF per invocation and samples up to 12 pages a document, so it needs a driver loop over ~2,500
-pages rather than the 441 of a different tool's sweep. (This line said **3-4 hours**, itself a
-correction of "37 minutes"; measured per-document rates on 2026-08-19 put every projection *below*
-3 h, so that figure was a ceiling guess and is retracted in the entry and here. The resumability
-argument survives it: 2.5 h at the worst measured rate still reaches the session backstop.)
-**That driver landed 2026-08-19 as
-`Tools/sweep-ink-bar.py`** — resumable per document, aborting on the environment rather than
-recording 233 identical failures, 71 `--self-test` checks with 42 mutants watched failing, and it
-reproduces the entry's 65,477 -> 195,785 bytes digit for digit through a second process; `--report`
-prints the band population. **That sweep is RUNNING since 2026-08-19 04:26** — 233 documents, detached in a session of its own, writing `INKBAR-2026-08-19.tsv` under
-`~/.local/state/visionocr-autonomous`; poll it with `--report` or `wc -l` and NEVER with a second
-`sweep` invocation, which is refused while the lock is held. **Its analysis is what is
-outstanding**, and a session that only polls it has done the right thing. Read the entry's last two sections before touching it.
+document with it. **⛔ But measured over the corpus 2026-08-19, that `2.99x` is the BEST case and is
+retracted as a corpus figure.** `Tools/sweep-ink-bar.py` (which landed the same day — resumable per
+document, 71 `--self-test` checks, 42 mutants watched failing) swept 233 documents in **105.6 min,
+`ok=233`**, and the result is committed as **`INKBAR-2026-08-19.tsv`**, 2,129 measured page rows. The
+population question is answered: the band `[0.045, 0.08)` holds **17 pages and 16 of them flip** —
+**0.75%** of sampled pages, **18.0%** of the 89 that are shrunk today, spread over **10 documents of
+233**. Those 16 cost **838,569 -> 3,804,222 B, +2,965,653 B, `4.54x`, 185,353 B/page** — **4.3x worse
+per page** than the three pages the entry priced, which turn out to be ranks 1, 3 and 4 of the 16 when
+sorted by cost. Corpus-wide that is **+8.19%** of the layered bytes on the 181 pages reaching the
+layering decision, and per document — over that document's own *priced* pages, not its whole page
+count — **1.21x to 3.60x**. ⚠️ **The corpus-scale figure is `+0.55%`, and getting there needs the
+STRATIFIED estimate, not the obvious one**: `sampleIndices` takes up to 12 pages a document whatever
+its length, and a page in a fully-sampled (short) document is **4.8x** likelier to move than a page in
+a long one, which hold 98% of the corpus. Pooling the rate says ~130 pages and ~+24 MB and is **6x
+high, retracted**; per-document it is **~21 pages of 16,987 and ~4.0 MB**, of which **8 pages and
+1,489,670 B are exact** because 86 documents were sampled completely. R49 and R50 state **no**
+growth-tolerance bar
+(read 2026-08-19), so there is nothing to test it against; R50 was accepted on "not one grew", and
+this grows ten documents while barely moving the corpus. ⛔ **So the population is known and what is
+still unmeasured is the SIZE OF THE BENEFIT**: only 3 of the 16 moved pages are *known* to lose
+content, and whether the other 13 carry an erased mark or are plain type paying 4.54x for nothing is
+sub-step **(4)**, whose instrument is the entry's own `score-threshold-loss --dump`. The evidence
+leans toward the 13 being real — the 16 are selected by the mechanism that erases, and the three known
+losses sit at `inkOut` ranks 4, 6 and 13 of 17 rather than at an extreme — but no page has been
+rendered. The decision itself is the owner's (R55's precedent) and sits in the run's `NEEDS OWNER`.
+Read the entry's last section before touching any of it.
 **The corpus
 sweep both entries were blocked on ran the same day** — 441 pages, 233 documents,
 `THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes the `extent` bar's population (61 picture-route
 pages: 2 protected, 22 under the bar, 37 at zero, and the cluster under the bar is led by the
 show-through document R56 was refused four times for), **which the next day's measurement showed
-is not C26's population** — C26 turns on `inkOutsideText`, and no sweep of that has run — while
+is not C26's population** — C26 turns on `inkOutsideText`, and the sweep of *that* is the separate
+`INKBAR-2026-08-19.tsv` run described above — while
 **not** sizing C27, because a mean saturation cannot see concentrated
 colour and C27's own measurement was a saturated-pixel fraction no tool here prints. Both entries
 carry the numbers, the retractions and what is left. It is **not** R56 — that fix is intact and
