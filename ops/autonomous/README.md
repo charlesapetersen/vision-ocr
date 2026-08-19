@@ -12,9 +12,9 @@ deliberately does not have* records what was cut and why, because the reasons ar
 | | Archive Suite | this | |
 |---|---|---|---|
 | helper + daemon scripts | 16 | **11** | fewer moving parts |
-| proof harnesses | 15 | **4** | it guards far less machinery |
-| core shell lines | 4,295 | **4,479** | *no longer fewer at all* |
-| harness lines | 2,866 | 1,702 | |
+| proof harnesses | 15 | **5** | it guards far less machinery |
+| core shell lines | 4,295 | **4,614** | *no longer fewer at all* |
+| harness lines | 2,866 | 2,179 | |
 
 ⚠️ **Two of those numbers were wrong and are corrected here, re-counted 2026-08-17 with `wc -l`.** The
 harness row read **2** while three harnesses were committed — it was written when two existed and was never
@@ -31,6 +31,11 @@ within twenty-five minutes of the recount that was supposed to fix them. That is
 numbers have gone stale, which is the argument for the row's `wc -l` recipe being written down here rather
 than for anyone's diligence: `wc -l ops/autonomous/*.sh` and `wc -l ops/autonomous/tests/*.sh`, whose totals
 are the two figures. Re-run those two commands when you add a section; do not carry the number forward.
+
+⚠️ **And again on 2026-08-19 — 4,614 and 2,179, re-counted with the recipe above rather than adjusted.** The
+harness row also goes **4 → 5**: `tests/mutate-test-lock.sh` is the new one, a shell mutant catalogue for
+`test-lock.sh` (there was none — `Tools/mutate.py` covers `Sources/` only). That is the fourth time these two
+numbers have moved, which is why the recipe is here and the numbers are not to be trusted between commits.
 
 ⚠️ Note the third row, because the honest reading is not the flattering one: **the line count is barely
 down.** This repo's house style is heavy "why this exists" commenting that records the incident behind each
@@ -414,9 +419,23 @@ ops/autonomous/tests/prove-test-lock.sh   # mutual exclusion, reentrancy, stale 
                                           #   and that both caller shapes write the same ledger row
 ops/autonomous/tests/prove-status.sh      # STATE 1: one branch per answer the run-state lib can give
 ops/autonomous/tests/prove-stop.sh        # `daemon.sh stop`: tree teardown, the lock verdicts, engine.lock
+ops/autonomous/tests/mutate-test-lock.sh  # puts each of test-lock.sh's guards back as a defect, on a copy,
+                                          #   and proves prove-test-lock.sh objects. --only, --out TSV.
 ```
 
-`prove-stop.sh` is the newest and the reason it exists is worth keeping: `daemon.sh` had **no** harness, and
+`mutate-test-lock.sh` is the newest, and it exists because **a green harness is not evidence that its checks
+can fail.** `Tools/mutate.py` covers `Sources/` and nothing covered the shell. On 2026-08-19 an adversarial
+review of the `lock-report` commit mutated `test-lock.sh` twelve ways and **seven survived** a harness whose
+author had already run nine mutants of his own — one of the survivors turned `⚠️ 2 SUITES AT ONCE` into
+`1 suite plus a probe child`, i.e. it silenced the alarm that the whole file exists to raise. Run it after any
+change to `test-lock.sh`; it starts with a pristine control, because a campaign whose control is red is
+measuring the harness rather than the mutants, and every run is `prove-test-lock.sh` against a copy — no suite,
+no build, minutes rather than the ~45 min *per mutant* `Tools/mutate.py` costs. A `SURVIVED` row is either a
+check that cannot fail or a value nothing depends on (`BUGS.md` T5); a `NOT-APPLIED` row means the edit did not
+match, so it tested nothing and must be re-expressed rather than counted — two entries needed that, and one of
+the two then exposed a check that asserted nothing.
+
+`prove-stop.sh` came before it and the reason it exists is worth keeping: `daemon.sh` had **no** harness, and
 `stop` is the verb an owner reaches for when something has already gone wrong — so it was the one path
 guaranteed to run on a bad day and the only one never driven except by a real incident. Its `pgrep` **and**
 `pkill` stubs are safety measures rather than conveniences: `stop` resolves its victims across the whole
@@ -628,6 +647,65 @@ tells a session to treat as corruption. It costs a session the time to rule that
 reporting defect, not a safety one (the belt still answers correctly), and it wants its own commit: that file
 is the only thing standing between this run and two concurrent suites, and "a regression inside a fix for
 another bug" is this project's most repeated shape.
+
+> **FIXED 2026-08-19, in the separate commit that paragraph asked for — and the fix found a third defect of
+> the same shape.** `status` now classifies the `pgrep -x tests` set by ancestry *within that set*: a pid with
+> an ancestor in the set is one of the suite's own probes, anything else is a suite. Before:
+> `suite RUNNING — pid(s) 90955 90956  (pgrep -x tests)`. After:
+> `suite RUNNING — 1 suite (pid 90955), plus 1 probe child of it (pid 90956) (pgrep -x tests)`. Two
+> *unrelated* `tests` processes now read `⚠️ 2 SUITES AT ONCE (pids …) — two suites corrupt BOTH runs`, which
+> is the point: suppressing the probe children is only safe if the reading that matters gets LOUDER, and
+> `prove-test-lock.sh` [12] asserts that as hard as it asserts the one-suite case. Every pid `pgrep` returned
+> still appears in the line — relabelled, never dropped (invariant 1, inside an instrument), which is its own
+> check and dies to a mutant that prints only the roots.
+>
+> Classification is by **ancestry, not `ps -o comm=`**: comm and `pgrep -x` disagree about a process renamed
+> with `exec -a`, which is exactly how the harness makes a process genuinely named `tests`, and the answer has
+> to be about the same set `pgrep` produced. A pid whose ancestry cannot be read — it exited between the
+> `pgrep` and the `ps` — counts as a **suite**, because over-reporting one makes a caller wait while
+> under-reporting one runs two. That is a check, not a comment.
+>
+> **The third defect, found by pinning the second one.** `NEEDS OWNER` item 2 (the reclaim notice naming an
+> empty phantom holder, `'' holds the suite lock (pid )`) turned out to have been fixed already, in `df3ab6a`
+> — and pinned by **nothing**. Writing the missing check exposed that the replacement message was itself
+> wrong one branch further along: it said *"reclaimed from a dead holder"* after **either** reclaim, and the
+> other one is a live holder broken past `MAXAGE`. Measured 2026-08-19 over a genuinely live helper:
+> `holder 'wedged' (pid 91138) has held the lock 19885779s (>= 60s) — breaking it.` followed by
+> `the lock was just reclaimed from a dead holder`. The notice now says only what is true of both reclaims and
+> points at the line above, which is the one that knows which happened. Same phantom shape, introduced by its
+> own fix, and it survived because the fix landed with no check.
+>
+> Gate: `ops/autonomous/tests/prove-test-lock.sh` **43 → 71 checks, 0 failed, 0 skipped**, ~35 s, no suite and
+> no build; `prove-status.sh` 39/0 as the consumer regression check. **Nine mutant patterns watched failing
+> against copies of `test-lock.sh`** — killed by 1, 1, 6, 2, 9, 2, 7, 1 and 3 checks — and **two of the nine
+> exposed checks that could not fail**: a walk capped at one hop passed all 57 because the grandchild fixture's
+> chain was contiguous, and the assertion written for the phantom holder grepped for the *empty* form while the
+> branch now defaults to `${_lbl:-?}`, so restoring the defect printed `'?' holds the suite lock (pid ?)` and
+> sailed past it. The recipe is repeatable: copy the script, apply one edit, and run
+> `bash ops/autonomous/tests/prove-test-lock.sh /path/to/copy` — the harness takes the script under test as `$1`.
+>
+> `_suite_live()` is deliberately **unchanged**: as a boolean it was always right, because a probe child only
+> ever exists under a suite. Sibling sweep, by grep — **three** other places call `pgrep -x tests`
+> (`vision-ocr-autonomous.sh:999`, `status-digest.sh:289`, `run-state-lib.sh:75`'s `suite_blocking`), and every
+> one uses it as a boolean, so the pid-reporting defect had exactly one site. ⚠️ **This paragraph said "five
+> other places" and named `daemon.sh` first; `daemon.sh` contains no `pgrep -x tests` call at all** — its two
+> mentions are prose, and every executable `pgrep` in it is `-f vision-ocr-autonomous.sh`. Corrected the same
+> day by the adversarial review of this diff, which ran the grep the sentence was asserting. The two consumers
+> of `status`'s *text* — `daemon.sh:494`, which prints it verbatim and branches on the exit code, and
+> `status-digest.sh:284`, which matches `^lock` and `^suite  *RUNNING` — both survive the new format, and
+> `prove-status.sh` was run (39/0) rather than reasoned about.
+>
+> One other place prints a raw `pgrep -x tests` pid list: `prove-test-lock.sh`'s own skip message when a real
+> suite makes section [10]'s converse undecidable. Left as it is deliberately — it is naming what is on the
+> machine, not counting suites, and the pids are the useful part of that sentence.
+>
+> **Residuals, named rather than fixed.** (a) Ancestry can only say *"forked by something in the set"*, so a
+> genuine suite launched BY a suite would be silenced as a probe child. No such topology exists here —
+> `mutate.py`, `.githooks/pre-commit` and the health gate all launch the suite from a non-`tests` parent — and
+> `ps -o command=` (the ARGV, which would show `--probe-hostile-page` positively) is the stronger signal if one
+> ever does. Reasoned, not measured. (b) A probe child orphaned by a killed suite reparents to launchd, so its
+> ancestry leaves the set and it reads as a suite; that is the safe direction and consistent with the
+> unresolvable-pid rule, but it means the two-pid false alarm is reduced rather than eliminated.
 
 ## Defects found 2026-08-18, from one overnight check-in
 

@@ -360,7 +360,37 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
 - [ ] **zotero-2** — the Zotero library sweep, steps 2-4. ⚠️ Step 1 wants re-running first; the survey it
       produced is dated. Reads a Zotero library, so copy `zotero.sqlite` before querying it — Zotero holds
       a lock on it. (origin: TODO.md §"2. The Zotero library sweep")
-- [ ] **lock-report** — the two REPORTING defects in `ops/autonomous/test-lock.sh`. Both were measured
+- [x] **lock-report** — DONE 2026-08-19. `status` classifies the `pgrep -x tests` set by ancestry within that
+      set, so the suite's own probe children stop reading as extra suites:
+      `suite RUNNING — pid(s) 90955 90956` becomes
+      `suite RUNNING — 1 suite (pid 90955), plus 1 probe child (pid 90956)`, while two UNRELATED
+      `tests` processes now read `⚠️ 2 SUITES AT ONCE (pids …) — concurrent suites corrupt ALL of them`.
+      Suppressing the children is only safe if that reading gets louder, so it is asserted as hard as the
+      quiet one.
+      **Point 2 below was already fixed** — in `df3ab6a`, and pinned by NOTHING; writing the missing check
+      found a THIRD defect of the same shape, which the fix for point 2 had introduced: the replacement
+      notice said *"reclaimed from a dead holder"* after an aged-out reclaim of a **live** holder too
+      (measured over a real helper: `has held the lock 19885779s (>= 60s) — breaking it.` then
+      `reclaimed from a dead holder`). ⚠️ And the adversarial review of THAT fix found a FOURTH: its
+      replacement, *"just reclaimed (see the line above)"*, fired on the yield-to-an-out-of-band-suite path,
+      where nothing was reclaimed and there is no line above. All four were one defect — `acquire` re-derived
+      the reason from a lock directory `_try_acquire` had already deleted — so the reason is recorded by the
+      branch that knows it now, and [13] is one assertion per reason plus the inverse row (CONTRIBUTING 4d)
+      rather than a fifth patch.
+      Gate: `prove-test-lock.sh` **43 → 71 checks, 0 failed, 0 skipped**, ~45 s, plus `prove-status.sh` 39/0.
+      The review found **seven more surviving mutants** on top of the author's nine — including one that turned
+      the two-suite alarm back into `1 suite plus a probe child` — because [12] stubs `pgrep` but uses the real
+      `ps`, and the harness cannot CHOOSE pids: exact-vs-substring set membership, an ancestry cycle and a set
+      with no parentless member are all invisible to it. `ps` is interposed on the same BASH_ENV seam now
+      ([12b]), the one-pgrep decision is pinned ([12c]), and **the campaign is committed rather than described**
+      — `ops/autonomous/tests/mutate-test-lock.sh` + `MUTANTS-test-lock-2026-08-19.tsv`, the precedent being
+      `Tools/mutation-log.tsv`. It runs no suite and no build, so the whole catalogue is minutes.
+      Sibling sweep, by grep: **three** other `pgrep -x tests` sites (`vision-ocr-autonomous.sh:999`,
+      `status-digest.sh:289`, `run-state-lib.sh:75`) all use it as a boolean, which is correct — a probe child
+      only exists under a suite — so this had exactly one site. ⚠️ That sentence said "five, starting with
+      `daemon.sh`"; `daemon.sh` has no such call at all. The two consumers of `status`'s text match only
+      `^lock` / `^suite  *RUNNING`. Written up in `README.md` under D7's closing note. Original text follows.
+      — the two REPORTING defects in `ops/autonomous/test-lock.sh`. Both were measured
       2026-08-17 and neither is a safety defect: the mutual-exclusion belt answers correctly in both cases,
       so what is wrong is only what the owner and the next session are *told*. Queued rather than fixed on
       the day, on the owner's decision, because that file is the only thing standing between this run and two
@@ -382,6 +412,9 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
          "waiting up to 1800s" on a lock nobody holds is the exact shape of the four loops above.
       ⚠️ Run `ops/autonomous/tests/prove-test-lock.sh` green BEFORE and AFTER — it was 42/0/1 on 2026-08-17,
       the skip being its real-detector arm, which correctly skips while any suite is running.
+      (⚠️ It read **43/0/0** before this work on 2026-08-19, not 42/0/1: nothing named `tests` was running,
+      so the arm that skips on a busy machine ran and passed. Both figures are the same harness on two
+      machine states, which is what that arm is for. It is **58/0/0** now.)
       (origin: README.md §Defects D7's closing note; both entries began in RUN.md's NEEDS OWNER)
 - [ ] **tsv-header-drift** — the sibling sweep from C26's 2026-08-18 instrument commit, both halves
       measured by grep on that day and neither empty. CONTRIBUTING §5 asks a tool that prints a TSV

@@ -31,9 +31,13 @@
 # the interposition works and aborts if it does not.
 #
 # USAGE:  ops/autonomous/tests/prove-test-lock.sh [path/to/test-lock.sh]
-# EXPECTED RESULT: 43 passed, 0 failed, 0 skipped — on an IDLE machine. Section [10]'s last assertion
-# ("with no suite on the machine, the real detector reports free") is the one that cannot be made
-# deterministic, so it SKIPs loudly when a real suite happens to be running rather than going red.
+# EXPECTED RESULT: 71 passed, 0 failed, 0 skipped — on an IDLE machine with a working process tree.
+# ⚠️ THERE ARE THREE SKIP ARMS, not one, and this line used to name only the first while the count beside it
+# had been updated twice. They are: [10]'s converse ("with no suite on the machine, the real detector reports
+# free"), which is undecidable while a real suite runs; [12]'s pid-chain arm, if the three-deep helper chain
+# cannot be built; and [12]'s real end-to-end arm, if the real `pgrep` cannot see both `exec -a tests`
+# processes. Each emits ONE skip per assertion it stands in for, named the same, so the total is 71 either way
+# — see the note on [12]'s `else`. A skip is a loud SKIP, never a quiet pass.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -75,20 +79,75 @@ export PATH="$BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export VISIONOCR_TEST_LOCK="$T/test.lock"
 LOCKDIR="$T/test.lock"
 
-# Scriptable `pgrep` stub: $T/pgrepctl holds `none` or `live`.
+# Scriptable `pgrep` stub: $T/pgrepctl holds `none`, `live`, `pids N N N…`, or `flip` (a suite on the first
+# call and none afterwards — a suite that exits inside the acquire window).
+# The `pids` form is what section [12] needs: `status` classifies the `tests` set by ANCESTRY within that set,
+# so the assertions need a set whose parentage they control. `live` keeps its old meaning (one pid, 424242,
+# that does not exist) because sections [0] and [9] assert against it.
+# ⚠️ AN UNRECOGNISED CONTROL VALUE IS AN ERROR, NOT "no suite". The first version of this stub treated
+# anything that was not `none`/`live` as a pid list, so a `pgset non` typo would have produced
+# `1 suite (pid non)`; the version before that treated anything not `live` as "no suite", which is worse — a
+# typo would have silently turned an assertion about a live suite into one about an idle machine, and passed.
 echo none > "$T/pgrepctl"
 cat > "$BIN/pgrep" <<STUB
 #!/bin/sh
 echo "pgrep \$*" >> "$T/pgrep.log"
-if [ "\$(cat "$T/pgrepctl" 2>/dev/null)" = live ]; then echo 424242; exit 0; fi
-exit 1
+_c="\$(cat "$T/pgrepctl" 2>/dev/null)"
+case "\$_c" in
+  none|'')  exit 1 ;;
+  live)     echo 424242; exit 0 ;;
+  flip)     echo none > "$T/pgrepctl"; echo 424242; exit 0 ;;
+  pids\ *)  for _p in \${_c#pids }; do echo "\$_p"; done; exit 0 ;;
+  *)        echo "pgrep stub: unrecognised control value '\$_c'" >&2; exit 3 ;;
+esac
 STUB
 chmod +x "$BIN/pgrep"
 printf 'pgrep() { "%s/pgrep" "$@"; }\n' "$BIN" > "$T/preload.sh"
 pgset() { echo "$1" > "$T/pgrepctl"; }
 
-tl()     { BASH_ENV="$T/preload.sh" bash "$LOCKSH" "$@"; }   # stubbed detector -> deterministic
-tlreal() { bash "$LOCKSH" "$@"; }                            # the REAL `pgrep -x tests`
+# Scriptable `ps` stub, for the assertions the real `ps` cannot reach: this harness cannot CHOOSE pids, so
+# exact-vs-substring set membership, an ancestry cycle, and a set with no parentless member are all
+# untestable against the machine's own process tree. $T/psctl holds `pid ppid` lines; anything not listed
+# answers as the real `ps` does for a process that has exited — nothing, exit 1.
+# ⚠️ Only `-p N -o ppid=` is emulated. test-lock.sh's only other `ps` use is none; the harness's own `ps`
+# calls run in the harness shell and are NOT interposed (BASH_ENV reaches the child).
+: > "$T/psctl"
+cat > "$BIN/psstub" <<STUB
+#!/bin/sh
+_want=""; _next=""
+for _a in "\$@"; do
+  case "\$_next" in p) _want="\$_a"; _next="" ;; *) : ;; esac
+  case "\$_a" in -p) _next=p ;; esac
+done
+[ -n "\$_want" ] || exit 1
+while read -r _p _pp; do [ "\$_p" = "\$_want" ] && { echo " \$_pp"; exit 0; }; done < "$T/psctl"
+exit 1
+STUB
+chmod +x "$BIN/psstub"
+{ printf 'pgrep() { "%s/pgrep" "$@"; }\n' "$BIN"; printf 'ps() { "%s/psstub" "$@"; }\n' "$BIN"; } > "$T/preload-ps.sh"
+psset() { printf '%s\n' "$@" > "$T/psctl"; }
+
+tl()     { BASH_ENV="$T/preload.sh" bash "$LOCKSH" "$@"; }     # stubbed detector -> deterministic
+tlreal() { bash "$LOCKSH" "$@"; }                              # the REAL `pgrep -x tests`
+# ⚠️ EVERY `ps`-STUBBED CALL IS BOUNDED, and that is not caution — it is required for the harness to be able to
+# REPORT its own findings. Two of `mutate-test-lock.sh`'s mutants (`walk-unbounded`, `nroots-zero-unhandled`)
+# make `status` loop for ever over a cyclic ancestry, so an unbounded call there does not fail the check, it
+# HANGS THE WHOLE CAMPAIGN: measured 2026-08-19, four mutants ran past 560 s and had to be killed by hand, with
+# no verdict for any of them. A hanging implementation must arrive as a failed assertion, so the timeout is
+# inside the runner rather than around the campaign. Echoes the output and the seconds it took.
+tlps() {   # $1 = ceiling in seconds; rest = test-lock.sh arguments
+  local ceil="$1"; shift
+  local t0 t1 p
+  t0=$(date +%s)
+  ( BASH_ENV="$T/preload-ps.sh" bash "$LOCKSH" "$@" ) > "$T/tlps.out" 2>&1 &
+  p=$!
+  local w=0; while kill -0 "$p" 2>/dev/null && [ "$w" -lt "$ceil" ]; do sleep 1; w=$(( w + 1 )); done
+  if kill -0 "$p" 2>/dev/null; then kill -9 "$p" 2>/dev/null; printf 'TLPS-TIMEOUT after %ss\n' "$ceil" >> "$T/tlps.out"; fi
+  wait "$p" 2>/dev/null
+  t1=$(date +%s); TLPS_SECS=$(( t1 - t0 ))
+  cat "$T/tlps.out"
+}
+TLPS_SECS=0
 held()   { [ -d "$LOCKDIR" ]; }
 holder() { cat "$LOCKDIR/pid" 2>/dev/null; }
 clear_lock() { rm -rf "$LOCKDIR"; }
@@ -301,6 +360,286 @@ VISIONOCR_SUITE_TIMINGS="/nonexistent-dir-$$/x.tsv" tl run --label unwritable --
   && ok "an unwritable ledger does not fail the command it is timing" \
   || bad "an unwritable ledger broke the run — instrumentation must never be a gate"
 clear_lock
+
+# ---- [12] STATUS must not read the suite's OWN probe children as extra suites -------------------------------
+# `Tests/main.swift` re-executes `build/tests` with --probe-hostile-page / --probe-hostile-numbers /
+# --probe-deep-outline, so a healthy suite has one or more CHILDREN also named `tests`, and `pgrep -x tests`
+# matches every one. `status` used to print the raw list — `suite RUNNING — pid(s) 1536 98565` — and two pids
+# is the reading CLAUDE.md tells a session to treat as corruption. It cost a session the time to rule that
+# out every time, and (worse) it teaches the reader to DISCOUNT a two-pid reading, which is the one reading
+# that would matter if two suites ever really did run. So the two-suite case is asserted here as loudly as
+# the one-suite case.
+#
+# The classification is by ancestry WITHIN the set pgrep returned, not by `ps -o comm=`: comm and `pgrep -x`
+# do not agree about a process renamed with `exec -a`, and the answer has to be about the same set pgrep
+# produced. So these pids need a real parent/child relationship but NOT the name `tests` — the stub supplies
+# the set, `ps` supplies the truth. The real `pgrep -x tests` detector is proven in [10]; the real end-to-end
+# composition of the two is the last assertion of this section.
+echo "[12] STATUS separates the suite from the probe children it forks of ITSELF"
+pgset none; clear_lock
+rm -f "$T/probe.pid" "$T/mid.pid"
+# SROOT -> SPROBE -> SGRAND, a genuine three-deep chain. `exec` preserves the pid, so backgrounding a child
+# and then exec-ing the parent into a long sleep keeps the parentage while giving the parent a stable pid.
+( ( /bin/sleep 765431 >/dev/null 2>&1 & printf '%s' "$!" > "$T/probe.pid"
+    exec /bin/sleep 765432 ) >/dev/null 2>&1 & printf '%s' "$!" > "$T/mid.pid"
+  exec /bin/sleep 765430 ) >/dev/null 2>&1 &
+SROOT=$!; note_pid "$SROOT" "765430"
+# `disown`, as in [8]: bash announces a killed background job ("Killed: 9") on its own stderr, and in this
+# harness's output that notice reads exactly like a failure. Same reason, same fix.
+disown "$SROOT" 2>/dev/null || true
+W=0; while { [ ! -s "$T/mid.pid" ] || [ ! -s "$T/probe.pid" ]; } && [ "$W" -lt 8 ]; do sleep 1; W=$(( W + 1 )); done
+SPROBE="$(cat "$T/mid.pid" 2>/dev/null)"; SGRAND="$(cat "$T/probe.pid" 2>/dev/null)"
+[ -n "$SPROBE" ] && note_pid "$SPROBE" "765432"
+[ -n "$SGRAND" ] && note_pid "$SGRAND" "765431"
+SOTHER=$(live_helper)          # an unrelated live process: a genuine SECOND suite
+if [ -z "$SPROBE" ] || [ -z "$SGRAND" ]; then
+  # ⚠️ ONE SKIP PER ASSERTION, NAMED THE SAME. The first version of this arm emitted seven skips — one of them
+  # a section header — against NINE assertions in the `else`, so the totals read 56 instead of 58 and a reader
+  # could not tell which three had gone. That matters because one of the nine (`the walk reaches past one hop`)
+  # is the SOLE killer of a mutant that had already survived once; losing it into an unlabelled skip is the
+  # instrument mislaying its own coverage — invariant 1, inside the harness, and the same shape as the defect
+  # the section is about.
+  echo "    could not build the pid chain (root=$SROOT probe='$SPROBE' grand='$SGRAND')"
+  skip "one suite plus its probe child reads as 1 suite, naming the parent (no pid chain)"
+  skip "…and names the child AS a probe child (no pid chain)"
+  skip "the probe child appears nowhere in the SUITE half of the line (no pid chain)"
+  skip "a live suite still exits 1 (no pid chain)"
+  skip "a whole chain under one suite is all probe children (no pid chain)"
+  skip "a descendant whose own parent is NOT in the set is still a probe child (no pid chain)"
+  skip "two UNRELATED tests processes are still reported as two suites, loudly (no pid chain)"
+  skip "two suites AND a probe child: both counts right (no pid chain)"
+  skip "every pid pgrep returned appears in the line (no pid chain)"
+else
+  pgset "pids $SROOT $SPROBE"
+  OUT=$(tl status 2>&1); RC=$?
+  printf '%s' "$OUT" | grep -q "1 suite (pid $SROOT)" \
+    && ok "one suite plus its probe child reads as 1 suite, naming the parent" \
+    || bad "did not name the single suite: '$(printf '%s' "$OUT" | grep '^suite')'"
+  printf '%s' "$OUT" | grep -q "1 probe child (pid $SPROBE)" \
+    && ok "…and names the child AS a probe child" \
+    || bad "the probe child is not reported as one: '$(printf '%s' "$OUT" | grep '^suite')'"
+  # ⚠️ This assertion has to bite against the OLD line as well, or it is one more check that cannot fail:
+  # `grep -qi 'SUITES AT ONCE'` alone was green over `pid(s) 90955 90956`, which is the very defect. So strip
+  # the probe-child clause and assert the probe pid is not in what remains — the SUITE half of the line.
+  SUITEHALF="$(printf '%s' "$OUT" | grep '^suite' | sed 's/, plus .*//')"
+  case "$SUITEHALF" in
+    *"$SPROBE"*) bad "the probe child is still listed as a suite: '$SUITEHALF'" ;;
+    *)           ok "the probe child appears nowhere in the SUITE half of the line" ;;
+  esac
+  [ "$RC" = 1 ] && ok "a live suite still exits 1" || bad "expected rc 1, got $RC"
+
+  # A probe that forks its own helper: the whole contiguous chain is probe children.
+  pgset "pids $SROOT $SPROBE $SGRAND"
+  OUT=$(tl status 2>&1)
+  printf '%s' "$OUT" | grep -q "1 suite (pid $SROOT)" \
+    && printf '%s' "$OUT" | grep -q "2 probe children" \
+    && ok "a whole chain under one suite is all probe children" \
+    || bad "the chain was misclassified: '$(printf '%s' "$OUT" | grep '^suite')'"
+
+  # ⚠️ THE REACH OF THE WALK, pinned. The set above is CONTIGUOUS — SGRAND's own parent SPROBE is in it — so
+  # a one-ppid-deep implementation classifies it correctly by accident and the check above cannot see the
+  # difference. Measured: a mutant capping the walk at one hop passed all 57 checks. So this set omits the
+  # INTERMEDIATE: SGRAND's parent is not a member, its grandparent is. A1.3's precedent — equal reach belongs
+  # in a check, not in a comment.
+  pgset "pids $SROOT $SGRAND"
+  OUT=$(tl status 2>&1)
+  printf '%s' "$OUT" | grep -q "1 suite (pid $SROOT), plus 1 probe child (pid $SGRAND)" \
+    && ok "a descendant whose own parent is NOT in the set is still a probe child (the walk reaches past one hop)" \
+    || bad "the walk stops too early: '$(printf '%s' "$OUT" | grep '^suite')'"
+
+  # ⛔ THE READING THAT MUST SURVIVE. Suppressing probe children is only safe if two real suites still shout.
+  pgset "pids $SROOT $SOTHER"
+  OUT=$(tl status 2>&1)
+  printf '%s' "$OUT" | grep -q '2 SUITES AT ONCE' \
+    && ok "two UNRELATED tests processes are still reported as two suites, loudly" \
+    || bad "two genuine suites were not flagged: '$(printf '%s' "$OUT" | grep '^suite')'"
+
+  pgset "pids $SROOT $SPROBE $SOTHER"
+  OUT=$(tl status 2>&1)
+  if printf '%s' "$OUT" | grep -q "2 SUITES AT ONCE (pids $SROOT $SOTHER)" \
+     && printf '%s' "$OUT" | grep -q "1 probe child (pid $SPROBE)"; then
+    ok "two suites AND a probe child: both counts right, and the child is not one of the two"
+  else
+    bad "mixed case wrong: '$(printf '%s' "$OUT" | grep '^suite')'"
+  fi
+  # Invariant 1 in an instrument: a classifier may relabel a pid, never drop it.
+  # ⚠️ The SUITE line only. Grepping all of $OUT also searches `lock   free (/var/folders/…)`, whose temp-dir
+  # path contains digits — so a pid could "appear" in a line that is not about suites at all.
+  MISSING=""; SUITELINE="$(printf '%s' "$OUT" | grep '^suite')"
+  for p in $SROOT $SPROBE $SOTHER; do
+    case "$SUITELINE" in *"$p"*) ;; *) MISSING="$MISSING $p" ;; esac
+  done
+  [ -z "$MISSING" ] && ok "every pid pgrep returned appears in the line — relabelled, never dropped" \
+                    || bad "pid(s)$MISSING vanished from the report: '$SUITELINE'"
+fi
+
+# A pid whose ancestry cannot be read (it exited between the pgrep and the ps) must count as a SUITE.
+# Over-reporting a suite makes a caller wait; under-reporting one runs two. 424242 does not exist.
+pgset live; clear_lock
+OUT=$(tl status 2>&1); RC=$?
+printf '%s' "$OUT" | grep -q '1 suite (pid 424242)' \
+  && ok "a pid whose parent cannot be read counts as a suite, not as a child" \
+  || bad "an unresolvable pid was not reported as a suite: '$(printf '%s' "$OUT" | grep '^suite')'"
+
+# END TO END: the REAL `pgrep -x tests` over two processes this harness genuinely names `tests`, one the
+# parent of the other. Robust to machine state — a real suite elsewhere only adds its own root and children,
+# and cannot change how THIS child is classified.
+pgset none
+rm -f "$T/rprobe.pid"
+( exec -a tests /bin/bash -c "exec -a tests /bin/sleep 765433 >/dev/null 2>&1 & printf '%s' \$! > '$T/rprobe.pid'
+                              exec -a tests /bin/sleep 765434" ) >/dev/null 2>&1 &
+RROOT=$!; note_pid "$RROOT" "765434"
+disown "$RROOT" 2>/dev/null || true
+W=0; while [ ! -s "$T/rprobe.pid" ] && [ "$W" -lt 8 ]; do sleep 1; W=$(( W + 1 )); done
+RPROBE="$(cat "$T/rprobe.pid" 2>/dev/null)"; [ -n "$RPROBE" ] && note_pid "$RPROBE" "765433"
+if [ -n "$RPROBE" ] && /usr/bin/pgrep -x tests 2>/dev/null | grep -qx "$RROOT" \
+   && /usr/bin/pgrep -x tests 2>/dev/null | grep -qx "$RPROBE"; then
+  OUT=$(tlreal status 2>&1)
+  printf '%s' "$OUT" | grep -qE "probe child(ren)? \(pids? [0-9 ]*$RPROBE" \
+    && ok "the REAL detector's own child is classified as a probe child" \
+    || bad "real end-to-end: child $RPROBE not reported as a probe child ('$(printf '%s' "$OUT" | grep '^suite')')"
+else
+  skip "could not observe both \`tests\` processes via the real pgrep (root=$RROOT probe='$RPROBE') — the end-to-end assertion is not decidable here"
+fi
+kill -9 "$RPROBE" "$RROOT" 2>/dev/null
+kill -9 "$SGRAND" "$SPROBE" "$SROOT" "$SOTHER" 2>/dev/null
+pgset none; clear_lock
+
+# ---- [12b] THE THREE THINGS THE REAL `ps` CANNOT BE ASKED ----------------------------------------------------
+# [12] stubs `pgrep` but uses the machine's REAL `ps`, so it can only test the ancestry relations the machine
+# happens to hand it — and it cannot CHOOSE pids. Three properties of the classifier are therefore invisible to
+# it, and an adversarial review found all three unpinned on 2026-08-19 by mutating a copy: two of the mutants
+# scored a full 58/0/0. So `ps` is interposed here too, on the same BASH_ENV seam as `pgrep`.
+echo "[12b] the classifier against an interposed \`ps\`: exact membership, a cycle, and no parentless member"
+clear_lock
+# (i) EXACT membership. 456 is a decimal SUBSTRING of 45678, and 45678 is a genuine second suite whose real
+# ancestor 456 is not in the set. `*"$up"*` without the anchoring spaces calls it a probe child of 999 — the
+# alarm this whole change exists to make louder, switched off.
+psset "45678 456" "456 1" "999 1"
+pgset "pids 45678 999"
+OUT=$(tlps 20 status)
+printf '%s' "$OUT" | grep -q '2 SUITES AT ONCE' \
+  && ok "set membership is EXACT: an ancestor that is a substring of a member is not a match" \
+  || bad "substring false positive silenced a second suite: '$(printf '%s' "$OUT" | grep '^suite\|TLPS-TIMEOUT')'"
+# (ii) THE HOP BOUND. The walk samples one `ps` per hop, so a pid recycled between hops can close a loop; the
+# bound is what stops `status` spinning, and `status` is what daemon.sh prints before the daemon starts.
+psset "500 600" "600 700" "700 600"
+pgset "pids 500"
+OUT=$(tlps 15 status)
+{ [ "$TLPS_SECS" -le 12 ] && ! printf '%s' "$OUT" | grep -q 'TLPS-TIMEOUT'; } \
+  && ok "an ancestry CYCLE terminates the walk (${TLPS_SECS}s) instead of hanging status" \
+  || bad "status did not return over a cyclic ps (${TLPS_SECS}s) — the hop bound is gone"
+# (iii) NO PARENTLESS MEMBER. Same cause, different symptom: every member looks like somebody's descendant, so
+# the root count is 0. The old code printed `0 suite (pids )` with NO alarm over two live `tests` processes.
+psset "100 200" "200 100"
+pgset "pids 100 200"
+OUT=$(tlps 15 status)
+if printf '%s' "$OUT" | grep -q 'inconsistent ps reading' \
+   && printf '%s' "$OUT" | grep -q '100' && printf '%s' "$OUT" | grep -q '200'; then
+  ok "a set with no parentless member is reported as an inconsistent reading, busy, naming every pid"
+else
+  bad "nroots=0 was not reported honestly: '$(printf '%s' "$OUT" | grep '^suite\|TLPS-TIMEOUT')'"
+fi
+printf '%s' "$OUT" | grep -q '0 suite' \
+  && bad "printed '0 suite' while two tests processes were live" \
+  || ok "…and never prints '0 suite' over a non-empty set"
+: > "$T/psctl"; pgset none; clear_lock
+
+# ---- [12c] ONE `pgrep`, so the report cannot disagree with the verdict ---------------------------------------
+# `status` used to ask `_suite_live` and then `pgrep` again. Two calls can give two answers about the same
+# machine: a suite exiting in between leaves the first saying RUNNING and the second returning nothing, and the
+# report is then built from an empty set. Unpinned until an adversarial review reverted it and scored 58/0/0.
+echo "[12c] the suite report comes from ONE pgrep call"
+clear_lock; pgset flip           # a suite on the first call, none afterwards
+OUT=$(tl status 2>&1); RC=$?
+case "$(printf '%s' "$OUT" | grep '^suite')" in
+  *"1 suite (pid 424242)"*) ok "a suite that exits mid-status is reported from the set that was actually read" ;;
+  *"no \`tests\` process"*) ok "…or not at all — either is consistent; what must not happen is the third case" ;;
+  *) bad "two pgrep calls disagreed and the report is built from neither: '$(printf '%s' "$OUT" | grep '^suite')'" ;;
+esac
+printf '%s' "$OUT" | grep -qE 'RUNNING.*(0 suite|\(pids? \))' \
+  && bad "reported RUNNING over an empty pid set" || ok "never reports RUNNING over an empty pid set"
+pgset none; clear_lock
+
+# ---- [13] THE WAITING NOTICE — one assertion per REASON _try_acquire can be busy for -------------------------
+# `_try_acquire` returns 1 for four different reasons and `acquire` announces once. It used to RE-DERIVE the
+# reason by re-reading the lock directory — after `_try_acquire` had already deleted or broken it — and that was
+# wrong three times running, each fix leaving one case:
+#   * `test-lock: '' holds the suite lock (pid )` after any reclaim (observed 2026-08-16 in /tmp/vo-commit.log
+#     while diagnosing a lost commit; it cost real time, read as a second unknown holder), fixed in df3ab6a and
+#     pinned by NOTHING;
+#   * "reclaimed from a dead holder" after an AGED-OUT break-in of a genuinely LIVE holder (found here, by
+#     writing the check df3ab6a never got);
+#   * "just reclaimed (see the line above)" on the yield-to-an-out-of-band-suite path, where nothing was
+#     reclaimed and there IS no line above (found by an adversarial review of that fix, with a `pgrep` that
+#     reports a suite once and then none).
+# The reason is recorded by the branch that knows it now, so the section is one assertion per reason plus the
+# "no reason was recorded" case — a states-by-doors table, CONTRIBUTING 4d, rather than three patches.
+# ⚠️ --wait must be > 0 or acquire returns 4 before it ever reaches the notice.
+echo "[13] the waiting notice says which of the four busy reasons it is, and invents nothing"
+pgset none; clear_lock; DP=$(dead_pid); plant_lock "$DP" ghost
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label taker --wait 6 2>&1); RC=$?
+# ⚠️ NOT `grep "(pid )"`. The original defect printed empties, but the branch that produced it defaults to
+# `${_lbl:-?}` / `${_hpid:-?}`, so restoring it prints `'?' holds the suite lock (pid ?)` — and a check written
+# against the empty form passed the mutant. Measured 2026-08-19: `elif true; then` was killed by the NEXT
+# assertion only. After a reclaim there is no holder at all, so the phrase must not appear in any form.
+printf '%s' "$OUT" | grep -q 'holds the suite lock' \
+  && bad "named a holder after reclaiming a dead one: '$(printf '%s' "$OUT" | tr '\n' '|')'" \
+  || ok "REASON dead holder: no phantom holder in any form"
+printf '%s' "$OUT" | grep -q 'reclaimed from a holder whose pid is gone' \
+  && ok "…and it says the holder's pid was gone, which is what happened" \
+  || bad "the notice does not name the dead-holder reclaim: '$(printf '%s' "$OUT" | tr '\n' '|')'"
+VISIONOCR_TEST_LOCK_PID=$$ tl release >/dev/null 2>&1; clear_lock
+# REASON aged out, holder ALIVE. Must not be called dead.
+LH=$(live_helper); plant_lock "$LH" wedged 202601010000
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ VISIONOCR_TEST_LOCK_MAXAGE=60 tl acquire --label taker --wait 6 2>&1); RC=$?
+if printf '%s' "$OUT" | grep -q 'breaking it' \
+   && printf '%s' "$OUT" | grep -q 'broken after ageing out' \
+   && ! printf '%s' "$OUT" | grep -qi 'dead\|pid is gone'; then
+  ok "REASON aged out: a LIVE holder is broken without being called dead"
+else
+  bad "the aged-out notice misreports the holder: '$(printf '%s' "$OUT" | tr '\n' '|')'"
+fi
+[ "$RC" = 0 ] && ok "…and the acquire still succeeds on the next pass (rc 0)" || bad "acquire rc=$RC after the break-in"
+kill -9 "$LH" 2>/dev/null; clear_lock
+# REASON a live holder INSIDE MaxAge — the ordinary busy case. The label and pid must be the real ones, and a
+# MULTI-WORD label must survive: this repo writes `pre-commit 999`, and any packed-string-plus-`cut` form of the
+# recorded reason would print only `pre-commit`.
+LH=$(live_helper); plant_lock "$LH" "pre-commit 999"
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label taker --wait 6 2>&1); RC=$?
+printf '%s' "$OUT" | grep -q "'pre-commit 999' holds the suite lock (pid $LH)" \
+  && ok "REASON held: names the live holder's WHOLE label and its pid" \
+  || bad "the ordinary busy notice is wrong: '$(printf '%s' "$OUT" | tr '\n' '|')'"
+[ "$RC" = 4 ] && ok "…and gives up with exit 4 rather than stealing it" || bad "expected rc 4, got $RC"
+kill -9 "$LH" 2>/dev/null; clear_lock
+# REASON an out-of-band suite. Nothing was reclaimed and no holder exists, so it must say neither.
+pgset live
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label taker --wait 6 2>&1); RC=$?
+if printf '%s' "$OUT" | grep -q 'a suite is already running' \
+   && ! printf '%s' "$OUT" | grep -q 'reclaim\|broken after\|holds the suite lock'; then
+  ok "REASON out-of-band suite: says so, and claims no reclaim and no holder"
+else
+  bad "the yield notice invents a reclaim or a holder: '$(printf '%s' "$OUT" | tr '\n' '|')'"
+fi
+held && bad "left a lock behind while yielding to an out-of-band suite" || ok "…and left no lock behind"
+# The SAME path with the suite exiting inside the window — the case that produced "just reclaimed" over nothing.
+pgset flip; clear_lock
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label taker --wait 6 2>&1); RC=$?
+printf '%s' "$OUT" | grep -q 'reclaim\|broken after' \
+  && bad "claimed a reclaim on the yield path, where nothing was reclaimed: '$(printf '%s' "$OUT" | tr '\n' '|')'" \
+  || ok "a suite that exits inside the acquire window still produces no phantom reclaim"
+pgset none; clear_lock
+# THE INVERSE ROW (CONTRIBUTING 4d): the notice must NOT appear when nobody is going to wait. `--wait 0`
+# short-circuits before the announce, so a caller that asked not to queue gets no "waiting up to 0s…" line.
+# (The first version of this assertion planted no holder, so `--wait 0` simply ACQUIRED and it failed on rc 0 —
+# a check about the notice that was really about an empty lock. Caught by running it.)
+LH=$(live_helper); plant_lock "$LH" incumbent
+OUT=$(VISIONOCR_TEST_LOCK_PID=$$ tl acquire --label taker --wait 0 2>&1); RC=$?
+[ "$RC" = 4 ] && ok "--wait 0 refuses (rc 4) without reaching the notice at all" || bad "wait 0 rc=$RC ('$OUT')"
+[ -z "$(printf '%s' "$OUT" | grep 'waiting up to')" ] \
+  && ok "…and prints no waiting notice, because nobody is waiting" \
+  || bad "printed a waiting notice for a caller that asked not to wait: '$(printf '%s' "$OUT" | tr '\n' '|')'"
+kill -9 "$LH" 2>/dev/null; clear_lock
 
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="

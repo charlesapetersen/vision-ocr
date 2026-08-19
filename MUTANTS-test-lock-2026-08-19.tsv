@@ -1,0 +1,19 @@
+mutant	verdict	failing_checks	summary
+pristine	control-ok	0	71 passed, 0 failed, 0 skipped
+membership-unanchored	killed	9	FAIL did not name the single suite: 'suite  RUNNING — ⚠️ 2 tests process(es), NONE of them parentless — inconsistent ps reading, treat as BUSY (pids 39070 39072) (pgrep -x tests)'
+membership-half-anchored	killed	8	FAIL did not name the single suite: 'suite  RUNNING — ⚠️ 2 SUITES AT ONCE (pids 72410 72412) — concurrent suites corrupt ALL of them (pgrep -x tests)'
+walk-one-hop-only	killed	8	FAIL did not name the single suite: 'suite  RUNNING — ⚠️ 2 SUITES AT ONCE (pids 25915 25918) — concurrent suites corrupt ALL of them (pgrep -x tests)'
+walk-unbounded	killed	1	FAIL status did not return over a cyclic ps (0s) — the hop bound is gone
+unresolvable-is-a-child	killed	2	FAIL an unresolvable pid was not reported as a suite: 'suite  RUNNING — ⚠️ 1 tests process(es), NONE of them parentless — inconsistent ps reading, treat as BUSY (pid 424242) (pgrep -x tests)'
+roots-and-kids-swapped	killed	12	FAIL did not name the single suite: 'suite  RUNNING — 1 suite (pid 9600), plus 1 probe child (pid 9595) (pgrep -x tests)'
+no-two-suite-alarm	killed	3	FAIL two genuine suites were not flagged: 'suite  RUNNING — 2 suite (pids 71355 71989) (pgrep -x tests)'
+nroots-counted-as-one-word	killed	4	FAIL two genuine suites were not flagged: 'suite  RUNNING — 1 suite (pids 45506 46231) (pgrep -x tests)'
+nroots-zero-unhandled	killed	2	FAIL nroots=0 was not reported honestly: 'suite  RUNNING — 0 suite (pids ), plus 2 probe children (pids 100 200) (pgrep -x tests)'
+probe-children-not-printed	killed	6	FAIL the probe child is not reported as one: 'suite  RUNNING — 1 suite (pid 63019) (pgrep -x tests)'
+pidlist-always-plural	killed	7	FAIL did not name the single suite: 'suite  RUNNING — 1 suite (pids 6744), plus 1 probe child (pids 6748) (pgrep -x tests)'
+status-asks-pgrep-twice	killed	2	FAIL two pgrep calls disagreed and the report is built from neither: 'suite  RUNNING — ⚠️ 0 tests process(es), NONE of them parentless — inconsistent ps reading, treat as BUSY (pids ) (pgrep -x tests)'
+notice-rederives-the-holder	killed	4	FAIL named a holder after reclaiming a dead one: 'test-lock: holder pid 48132 is gone (lock 0s old) — reclaiming.|test-lock: '?' holds the suite lock (pid ?) — waiting up to 6s…'
+notice-calls-aged-out-dead	killed	1	FAIL the aged-out notice misreports the holder: 'test-lock: holder 'wedged' (pid 86004) has held the lock 19892694s (>= 60s) — breaking it.|test-lock: the lock was just reclaimed from a dead holder — racing for it, up to 6s…'
+notice-claims-reclaim-on-yield	killed	2	FAIL the yield notice invents a reclaim or a holder: 'test-lock: the lock was just reclaimed (see the line above) — racing for it, up to 6s…'
+busy-reason-not-recorded	killed	1	FAIL the aged-out notice misreports the holder: 'test-lock: holder 'wedged' (pid 56813) has held the lock 19892812s (>= 60s) — breaking it.|test-lock: the suite lock is busy for an unrecorded reason — waiting up to 6s…'
+multiword-label-truncated	killed	1	FAIL the ordinary busy notice is wrong: 'test-lock: 'pre-commit' holds the suite lock (pid 94401) — waiting up to 6s…'

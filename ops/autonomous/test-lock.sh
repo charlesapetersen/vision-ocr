@@ -104,11 +104,118 @@ _holder_alive() {
 }
 
 # Is a suite running that did NOT come through this lock? See the -x note in the header.
+# A probe child (below) is only ever forked BY a suite, so as a boolean this stays exactly right and is
+# deliberately left as the cheap one-process question. Only the REPORT needs to tell the two apart.
 _suite_live() { pgrep -x tests >/dev/null 2>&1; }
 
+# ---- reporting the `tests` set: one suite, or two, or one and its own probe children ----------------------
+# `pgrep -x tests` matches the suite's OWN CHILDREN. Tests/main.swift re-executes build/tests with
+# --probe-hostile-page, --probe-hostile-numbers and --probe-deep-outline, and a child of `tests` is also
+# named `tests`, so a healthy single suite shows up as two or three pids. `status` printed that list raw
+# (`suite RUNNING — pid(s) 1536 98565`), and TWO PIDS IS THE READING CLAUDE.md TELLS A SESSION TO TREAT AS
+# CORRUPTION. It cost a session the time to rule that out every time the probes happened to be up — and the
+# worse half is that it teaches the reader to discount a two-pid reading, which is the one reading that would
+# matter if two suites ever really did run. So the fix must make the genuine two-suite case LOUDER, not
+# quieter; `status`'s two-suite line says so in capitals and prove-test-lock.sh [12] asserts it.
+_ppid_of() { ps -p "$1" -o ppid= 2>/dev/null | tr -d ' '; }
+
+# _is_probe_child PID SET — 0 if some ANCESTOR of PID is itself in SET.
+#
+# Ancestry within the set, NOT `ps -o comm=`: comm and `pgrep -x` do not agree about a process renamed with
+# `exec -a` (which is how the harness makes a process genuinely named `tests` — a *copy* of an Apple platform
+# binary is SIGKILLed at exec on Apple Silicon), and the question has to be answered about the same set pgrep
+# produced. Walking to the grandparent and beyond matters too: a probe that forks its own helper is still not
+# a suite.
+#
+# ⚠️ A pid whose ancestry cannot be READ counts as a SUITE, not as a child — `ps` returns nothing for a
+# process that exited between the pgrep and the ps. Over-reporting a suite makes a caller wait; under-
+# reporting one runs two suites at once, which is the thing this whole file exists to prevent. So the
+# unresolvable case falls on the safe side, and that is check, not comment (prove-test-lock.sh [12]).
+#
+# ⚠️ THE ANCHORING SPACES IN THE MEMBERSHIP TEST ARE THE WHOLE OF THE EXACT-MATCH. Without both of them
+# `*"$up"*` is a SUBSTRING test, and a low-pid ancestor that happens to be a decimal substring of a set
+# member turns a genuine second suite into a probe child of the first — the exact reading this code exists to
+# make louder, switched off. Measured 2026-08-19 with an interposed `ps`: set {45678, 999}, 45678's ancestor
+# 456, unanchored -> `1 suite (pid 999), plus 1 probe child of it (pid 45678)`. Found by an adversarial review
+# because the anchoring was pinned by NOTHING; it is [12b] now.
+#
+# ⚠️ THE HOP BOUND IS LOAD-BEARING, and this comment said the opposite. It read "a process tree cannot
+# contain a cycle, so 24 is unreachable rather than tuned" — true of one instant, FALSE of this walk, which
+# samples one `ps` per hop. A pid recycled between two hops can close a loop: measured 2026-08-19 with an
+# interposed `ps` reporting 500->600->700->600, the bound-less copy of this file was still spinning after 6 s
+# and had to be killed, and `status` is what `daemon.sh` prints before the daemon starts. A1.3's idiom for a
+# bounded walk over data you do not own, and it is a check now rather than an assurance.
+#
+# Stopping at ppid 0 and 1 is an EARLY EXIT, not a guard: neither is ever a `tests` pid, so the membership
+# test cannot match them and the walk would terminate one hop later anyway (`ps -p 0` prints nothing here).
+# It saves one `ps` per pid. Said plainly because a mutant dropping either conjunct is behaviour-identical and
+# correctly survives — calling them guards would make that survivor look like a gap in the checks.
+_is_probe_child() {
+  local set=" $2 " up hops=0
+  up="$(_ppid_of "$1")"
+  while [ -n "$up" ] && [ "$up" != 0 ] && [ "$up" != 1 ] && [ "$hops" -lt 24 ]; do
+    case "$set" in *" $up "*) return 0 ;; esac
+    up="$(_ppid_of "$up")"
+    hops=$(( hops + 1 ))
+  done
+  return 1
+}
+
+_count()   { echo $#; }
+_pidlist() { case $# in 1) printf 'pid %s' "$1" ;; *) printf 'pids %s' "$*" ;; esac; }
+
+# _suite_report — echo the human sentence for a NON-EMPTY `tests` set. Every pid pgrep returned appears in
+# it: a classifier may relabel a pid, it may never drop one (invariant 1, in an instrument).
+_suite_report() {
+  local pids="$1" p roots="" kids="" nroots nkids msg
+  for p in $pids; do
+    if _is_probe_child "$p" "$pids"; then kids="${kids:+$kids }$p"; else roots="${roots:+$roots }$p"; fi
+  done
+  nroots="$(_count $roots)"; nkids="$(_count $kids)"
+  # ⚠️ nroots CAN be 0, and this said it could not. The proof it carried — a finite acyclic ancestry has a
+  # member with no ancestor inside it — is true of one instant and false of a walk that samples one `ps` per
+  # hop: a pid recycled between hops can make every member look like somebody's descendant. Verified reachable
+  # 2026-08-19 with an interposed `ps` reporting 100<->200, where the previous code printed
+  # `0 suite (pids ), plus 2 probe children of it (pids 100 200)` — no alarm, over two live `tests` processes.
+  # So it is a branch with a check on it rather than a proof in a comment (CONTRIBUTING 4c cuts both ways:
+  # an unreachable else is worse than none, and a REACHABLE one written off as unreachable is worse still).
+  if [ "$nroots" = 0 ]; then
+    printf '⚠️ %s tests process(es), NONE of them parentless — inconsistent ps reading, treat as BUSY (%s)' \
+      "$(_count $pids)" "$(_pidlist $pids)"
+    return 0
+  fi
+  if [ "$nroots" -gt 1 ]; then
+    # No "two" and no "BOTH": with three roots this line used to read "3 SUITES AT ONCE — two suites corrupt
+    # BOTH runs", and "of it" below had no antecedent once there was more than one suite.
+    msg="⚠️ $nroots SUITES AT ONCE ($(_pidlist $roots)) — concurrent suites corrupt ALL of them"
+  else
+    msg="$nroots suite ($(_pidlist $roots))"
+  fi
+  if [ "$nkids" = 1 ]; then
+    msg="$msg, plus 1 probe child ($(_pidlist $kids))"
+  elif [ "$nkids" -gt 1 ]; then
+    msg="$msg, plus $nkids probe children ($(_pidlist $kids))"
+  fi
+  printf '%s' "$msg"
+}
+
+# WHY the last _try_acquire said busy. THE PHANTOM HOLDER, THE DEAD-HOLDER MISLABEL AND THE RECLAIM THAT
+# NEVER HAPPENED WERE ALL ONE DEFECT: `acquire` re-DERIVED the reason from the lock directory *after*
+# `_try_acquire` had already changed or deleted it. Three fixes in a row patched the derivation and each left
+# a case (`'' holds the suite lock (pid )` -> "from a dead holder" over a live holder -> "just reclaimed (see
+# the line above)" with nothing above it and nothing reclaimed, found 2026-08-19 by an adversarial review with
+# an interposed `pgrep` that flips). So the reason is now RECORDED BY THE FUNCTION THAT KNOWS IT and read, not
+# reconstructed. It carries no behaviour: _try_acquire's return values are unchanged and nothing branches on
+# this except the message.
+#
+# THREE variables, not one packed string: labels legitimately contain spaces (`pre-commit 999` is one this
+# repo writes), so any `cut -d' '` on a packed form is a field-splitting defect waiting for the first
+# multi-word label.
+_TL_BUSY=""; _TL_BUSY_LABEL=""; _TL_BUSY_PID=""
 # Try once. 0 = acquired. 1 = busy.
 _try_acquire() {
   local label="$1"
+  _TL_BUSY=""; _TL_BUSY_LABEL=""; _TL_BUSY_PID=""
   # mkdir is atomic on every filesystem this repo runs on, which is why the lock is a DIRECTORY and not
   # a file written with `>`. Two racing `[ -f ] && touch` callers both win; two racing mkdirs cannot.
   if mkdir "$LOCKDIR" 2>/dev/null; then
@@ -119,6 +226,7 @@ _try_acquire() {
     # alongside ours, which is the exact collision this file exists to prevent.
     if _suite_live; then
       rm -rf "$LOCKDIR" 2>/dev/null || true
+      _TL_BUSY="out-of-band-suite"
       return 1
     fi
     return 0
@@ -128,19 +236,24 @@ _try_acquire() {
   if ! _holder_alive; then
     echo "test-lock: holder pid $(_holder_pid) is gone (lock ${age}s old) — reclaiming." >&2
     rm -rf "$LOCKDIR" 2>/dev/null || true
+    _TL_BUSY="reclaimed-dead"
     return 1     # deliberately do NOT acquire on this pass: let the next loop iteration race for it
                  # fairly, so two reclaimers cannot both conclude they own it.
   fi
   if [ "$MAXAGE" -gt 0 ] && [ "$age" -ge "$MAXAGE" ]; then
     echo "test-lock: holder '$(_holder_label)' (pid $(_holder_pid)) has held the lock ${age}s (>= ${MAXAGE}s) — breaking it." >&2
     rm -rf "$LOCKDIR" 2>/dev/null || true
+    _TL_BUSY="reclaimed-aged"
     return 1
   fi
+  # A live holder inside MAXAGE: the ordinary busy case. Capture its label and pid HERE, while the lock still
+  # exists — reading them later is what invented a phantom three times.
+  _TL_BUSY="held"; _TL_BUSY_LABEL="$(_holder_label)"; _TL_BUSY_PID="$(_holder_pid)"
   return 1
 }
 
 acquire() {
-  local label="$1" wait_s="$2" waited=0 _lbl="" _hpid=""
+  local label="$1" wait_s="$2" waited=0 _why="" _lbl="" _hpid=""
   mkdir -p "$(dirname "$LOCKDIR")" 2>/dev/null || true
   while :; do
     _try_acquire "$label" && return 0
@@ -148,21 +261,35 @@ acquire() {
     [ "$waited" -ge "$wait_s" ] && return 4
     # 5s granularity: a suite runs for minutes, so polling faster buys nothing and a launchd daemon
     # should not spin. Announce once, not every poll, or the daemon log fills with waiting notices.
-    # ⚠️ THE HOLDER MAY BE GONE BY THE TIME WE ANNOUNCE. _try_acquire RECLAIMS a dead holder's lock and
-    # returns 1 on purpose (so the next pass races for it fairly), which means the lock dir it describes has
-    # just been deleted — `_holder_label`/`_holder_pid` then read empty and this printed the nonsense
-    # `test-lock: '' holds the suite lock (pid )` straight into the daemon log, immediately under the
-    # "reclaiming" line that explains it. Observed 2026-08-16 in /tmp/vo-commit.log while diagnosing a lost
-    # commit; it cost real time reading it as a second, unknown holder. Say what is actually true instead.
+    #
+    # ⚠️ READ THE REASON, DO NOT RE-DERIVE IT. This block used to re-read the lock directory here, after
+    # `_try_acquire` had already deleted or broken it, and it was wrong three times running: `_holder_label` /
+    # `_holder_pid` read empty after a reclaim and it printed `test-lock: '' holds the suite lock (pid )` into
+    # the daemon log immediately under the line explaining the reclaim (observed 2026-08-16 in
+    # /tmp/vo-commit.log; it cost real time, read as a second unknown holder). The fix for that said "from a
+    # dead holder" after an aged-out break-in of a LIVE holder. The fix for THAT said "just reclaimed (see the
+    # line above)" on the yield-to-an-out-of-band-suite path, where nothing was reclaimed and there is no line
+    # above — verified 2026-08-19 with an interposed `pgrep` that reports a suite once and then none. Every one
+    # of the three was the same mistake: reconstructing a fact from state that had moved. `$_TL_BUSY` is set by
+    # the branch that knows, so there is nothing left to reconstruct.
     [ "$waited" = 0 ] && {
-      _lbl="$(_holder_label)"; _hpid="$(_holder_pid)"
-      if _suite_live; then
-        echo "test-lock: a suite is already running (pgrep -x tests) — waiting up to ${wait_s}s…" >&2
-      elif [ -n "$_hpid" ] || [ -n "$_lbl" ]; then
-        echo "test-lock: '${_lbl:-?}' holds the suite lock (pid ${_hpid:-?}) — waiting up to ${wait_s}s…" >&2
-      else
-        echo "test-lock: the lock was just reclaimed from a dead holder — racing for it, up to ${wait_s}s…" >&2
-      fi
+      _why="$_TL_BUSY"
+      case "$_why" in
+        out-of-band-suite)
+          echo "test-lock: a suite is already running (pgrep -x tests) — waiting up to ${wait_s}s…" >&2 ;;
+        held)
+          _lbl="$_TL_BUSY_LABEL"; _hpid="$_TL_BUSY_PID"
+          echo "test-lock: '${_lbl:-?}' holds the suite lock (pid ${_hpid:-?}) — waiting up to ${wait_s}s…" >&2 ;;
+        reclaimed-dead)
+          echo "test-lock: the lock was just reclaimed from a holder whose pid is gone — racing for it, up to ${wait_s}s…" >&2 ;;
+        reclaimed-aged)
+          echo "test-lock: the lock was just broken after ageing out (see the line above) — racing for it, up to ${wait_s}s…" >&2 ;;
+        *)
+          # Not a fallback for a case above — it is the honest answer when `_try_acquire` returned busy without
+          # recording why, which would mean a path was added and this case was not. Says so rather than
+          # guessing, and it is a check.
+          echo "test-lock: the suite lock is busy for an unrecorded reason — waiting up to ${wait_s}s…" >&2 ;;
+      esac
     }
     sleep 5; waited=$(( waited + 5 ))
   done
@@ -191,8 +318,16 @@ status() {
   else
     printf 'lock   free (%s)\n' "$LOCKDIR"
   fi
-  if _suite_live; then
-    printf 'suite  RUNNING — pid(s) %s (pgrep -x tests)\n' "$(pgrep -x tests | tr '\n' ' ')"
+  # ONE pgrep, and the report is derived from its output rather than from a second call: asking twice can
+  # give two different answers about the same machine, and for a mutex a report that disagrees with itself is
+  # exactly how two callers each conclude the suite is free.
+  # (No trailing-space trim: `_pidlist` joins with `"$*"`, and the membership test needs a space on BOTH sides
+  # of a candidate, so a trailing one changes nothing. It was defensive code that asserted nothing — a mutant
+  # deleting it was correctly indistinguishable from a pass — so it is gone rather than commented.)
+  local pids
+  pids="$(pgrep -x tests 2>/dev/null | tr '\n' ' ')"
+  if [ -n "$pids" ]; then
+    printf 'suite  RUNNING — %s (pgrep -x tests)\n' "$(_suite_report "$pids")"
     rc=1
   else
     printf 'suite  no `tests` process running\n'
