@@ -122,14 +122,22 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       Read the entry's `C24b` and `C24's wiring` sections first, not this line.
       (origin: BUGS.md C24, FIXED)
 - [ ] **C26** — a small line drawing is erased on the picture path, at the SHIPPED DEFAULT Photo
-      detail setting. **[hold] needs: owner** — ⛔ **the measurement campaign is COMPLETE as of
-      2026-08-19 (sub-steps 1, 2, 3, 3b and 4 all ✅ below) and what is left is the constant, which is
-      not a session's to move.** R49/R50 state no growth-tolerance bar, so there is no standard a
-      session could apply; the arithmetic, both signs of it, is in `NEEDS OWNER` in the run state and
-      in the entry. The box stays `[ ]` because the register entry is still OPEN — the coherence check
-      wants that — and `[hold]` because an unattended session offering itself this item would either
-      re-derive a finished campaign or decide a threshold the owner has reserved. **Held 2026-08-19,
-      after the sub-step (4) session; unhold it by deciding the bar.**
+      detail setting. ✅ **UNHELD 2026-08-19: the owner decided the bar at a check-in — move
+      `Flattener.textPageInkOutsideThreshold` from 0.08 to 0.045, behind a corpus gate.** The
+      measurement campaign is COMPLETE (sub-steps 1, 2, 3, 3b and 4 all ✅ below) and ⛔ **must not be
+      re-derived**: expect the **16 pages** named in `INKBAR-2026-08-19.tsv` to move and nothing else.
+      The owner's reasoning, recorded because it is what makes this a session's work rather than his:
+      the loss is **content, not fidelity** — 8 of the 13 measured pages lose whole lines of prose or
+      table data — so invariant 1 governs, and ~4.0 MB / **+0.55%** of corpus output is a cheap price
+      for not destroying words. R35's refusal of a change worth the same 0.55% does not transfer: R35
+      weighed 0.55% as a *prize* and this is 0.55% as a *price*. ⚠️ **But the bar move does NOT close
+      the entry**, and the counter-finding is accepted rather than waved away: **32.4% of the band's
+      byte cost lands on two pages a reader cannot tell apart** (`RIESMAN_1942` p10, `Riesman - 1954`
+      p18), which says a threshold is a blunt instrument and not the right final answer. So the
+      stencil question this campaign surfaced — *why is recognised-page prose dropped from the stencil
+      at all* — is to be OPENED as its own register entry and its own item, in its own commit, and not
+      worked; it is why the entry stays OPEN and this box stays `[ ]` after the constant lands.
+      **Held 2026-08-19 after the sub-step (4) session, unheld the same day by the decision above.**
       Content loss, found by the owner on `1954 - Why.pdf` hours after `1.13.0`
       shipped. **Read the entry before anything else** — it carries the four-page rendering, the
       `score-threshold-loss` table, the mechanism and three named unmeasured questions.
@@ -249,13 +257,16 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       The 13 in aggregate are **773,092 -> 3,608,437 B, +2,835,345, 4.67x, 218,103 B/page**, and all
       13 rows reproduced the sweep's `inkOut`/`layered`/`layeredAtBar` **identically**, compared
       programmatically rather than by eye.
-      ⛔ **WHAT REMAINS ON C26 IS THE CONSTANT, AND IT IS NOT A SESSION'S TO MOVE** — see the block
-      below. The measurement campaign is complete: population, price and benefit are all in the entry.
-      ⛔ **THE CONSTANT ITSELF IS THE OWNER'S CALL, and it is in `NEEDS OWNER` as of 2026-08-19.**
-      R55 is the precedent: the campaign runs, the owner closes it on the arithmetic. R49/R50 state
-      **no** growth-tolerance bar (read 2026-08-19), so there is no standard a session could apply;
-      what R50 was accepted on was "not one grew", and 0.045 grows ten documents.
-      `Flattener.textPageInkOutsideThresholdOverride` stays `nil` in the app.
+      ⛔ **WHAT REMAINS ON C26 IS THE CONSTANT — DECIDED 2026-08-19, so it IS a session's to move
+      now.** The measurement campaign is complete: population, price and benefit are all in the entry.
+      ✅ **THE CONSTANT WAS THE OWNER'S CALL AND HE MADE IT: 0.08 -> 0.045**, at a 2026-08-19 check-in,
+      on R55's precedent — the campaign runs, the owner closes it on the arithmetic. R49/R50 state
+      **no** growth-tolerance bar (read 2026-08-19), so no session could have applied a standard; what
+      R50 was accepted on was "not one grew", and 0.045 grows ten documents, which is the trade the
+      owner took. This line said "not a session's to move" until the decision; it is kept, corrected in
+      place, because the reason it said so is still the reason a session must not move the *next* one.
+      `Flattener.textPageInkOutsideThresholdOverride` stays `nil` in the app — the constant moves, the
+      seam does not.
       ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
       the instruments for this are `score-threshold-loss.swift` and `score-text-route.swift`'s
@@ -608,7 +619,12 @@ picked, and the resume prompt surfaces them to the run log instead of acting on 
       and the owner accepted it as a known gap on 2026-08-13 rather than queueing it.
       (origin: TODO.md, the one open checkbox there)
 - [ ] **release** — cutting a release: a version bump, `./build.sh --dmg`, `hdiutil`, a tag, a GitHub
-      release. [hold] needs: owner — judgement about what is fit to ship. Last released: 1.12.0.
+      release. [hold] needs: owner — judgement about what is fit to ship. Last released: **1.13.0**,
+      tagged `v1.13.0` and in `Info.plist` (this line said 1.12.0 until 2026-08-19 and was stale by one
+      release). The owner decided at the 2026-08-19 check-in that **`1.13.1` is cut by hand once C26's
+      bar move has landed and he has read its gate** — C26 is invariant-1 content destruction on the
+      shipped default and `v1.13.0` is the build carrying it; C27 is fidelity and rides in 1.14.0. That
+      decision does NOT unhold this item: no session prepares, bumps, tags or builds a DMG.
       (origin: CHANGELOG.md, TECHNICAL.md)
 - [ ] **corpus-write** — anything that writes `testdocs/` or the Zotero library itself. [hold] needs:
       owner — 1.2 GB of third-party copyrighted PDFs, not committed, and not regenerable without the
