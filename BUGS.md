@@ -24,6 +24,17 @@ small, and no value of that constant would protect them.
 The corpus sweep both entries were waiting on ran the same day: **441 pages, 233 documents**, and
 it sizes the population of the `extent` bar (61 picture-route pages: 2 protected, 22 under the
 bar, 37 at zero) while **not** sizing C27's, because a mean cannot see concentrated colour.
+**⛔ C27's own instrument exists as of 2026-08-19 and its sweep has NOT been run** — the column that
+can see concentrated colour is `satFrac` on `Tools/score-threshold-loss.swift` (`Flattener`'s
+`saturatedFraction`: the share of the page above `satFloor`, out of the same thumbnail `sat` itself
+comes from). It reproduces the entry's independent 50-DPI red-pixel count on all 7 pages of
+`1954 - Why` that count covers — **0.93x to 1.49x, median 1.12x, across a range from 0.1% to 24%**,
+at `SATFLOOR=0.15` — and the two pages that count never measured are now measured. It also **found a
+cost the entry does not carry**: the mean gates the ROUTE as well as the colour, one number charged
+twice as in C9, so **3 pages of this document that are 1-bit today (p5, p8, p9) hold as much
+saturated ink as the picture-route pages** and a fraction-based signal inside `isPicture` moves their
+route and their bytes, not just their colour. Read C27's `#### The population instrument` before
+planning that sweep.
 **⚠️ That is no longer C26's population**: the term C26 turns on is `inkOutsideText`, and the sweep
 of *that* is a separate run — it is `INKBAR-2026-08-19.tsv`, below. **What was measured 2026-08-18 is
 what C26's proposed fix costs on the document it was found on: at a bar of 0.045 all three
@@ -3510,6 +3521,192 @@ entries are still both "the statistic, not the number", and they are no longer t
 2026-08-17) and reports no per-page colour decision, so a page that quietly drops its ink moves
 nothing it prints. Pixel resemblance does not see it either: the greyscale copy correlates almost
 perfectly with the colour original.
+
+#### The population instrument — 2026-08-19
+
+**The column this entry said was missing exists now, and the sweep it is for has NOT been run.**
+`Flattener.saturatedFraction(ofRGBA:width:height:above:)` is the share of a page whose
+paper-corrected per-pixel saturation is above a floor, and `Tools/score-threshold-loss.swift` prints
+it as `satFrac` with the floor beside it as `satFloor` (`SATFLOOR=n`, default 0.25). Nothing shipped
+reads it: `pictureSaturationThreshold` still gates on the mean and the app is byte-for-byte the same
+program. What this commit bought is the ability to ask the entry's own unanswered question — *how
+many corpus documents carry spot colour under the 0.06 bar* — over 233 documents instead of one.
+
+**Measured on `1954 - Why.pdf`, all ten pages, three floors** (`sat` and `route` are the shipped
+signals; `in red%` is this entry's own 50-DPI saturated-red count from 2026-08-17, taken by another
+method entirely and reproduced here from the table at the top of the entry):
+
+```
+page  route    sat    satFrac  satFrac  satFrac   in red%   ratio    this entry's
+                      @0.15    @0.25    @0.40    (50 DPI)  @0.15    outcome
+p1    1-bit   0.001   0.00119  0.00114  0.00112     0.106   1.12   nothing to lose
+p2    picture 0.178   0.25921  0.25088  0.24138    24.400   1.06   colour KEPT
+p3    1-bit   0.023   0.00469  0.00124  0.00064   no red      —    (owner: no red)
+p4    picture 0.039   0.02991  0.01360  0.00435     3.231   0.93   DISCARDED
+p5    1-bit   0.037   0.03428  0.01913  0.00603   not measured —   —
+p6    picture 0.043   0.04266  0.02282  0.00612     4.212   1.01   DISCARDED
+p7    picture 0.041   0.04840  0.02831  0.00934     3.959   1.22   DISCARDED
+p8    1-bit   0.042   0.04761  0.02722  0.00737   not measured —   —
+p9    1-bit   0.041   0.04578  0.02632  0.00948     3.075   1.49   DISCARDED
+p10   picture 0.041   0.00635  0.00338  0.00223     0.520   1.22   DISCARDED
+```
+
+**1. The instrument agrees with a measurement taken by a different method, which is the only reason
+to believe it.** At `SATFLOOR=0.15` the seven pages this entry counted by hand reproduce at **0.93x
+to 1.49x, median 1.12x**, over a range from 0.1% to 24% — two different renders (a 40 DPI
+paper-corrected RGBA thumbnail against a 50 DPI red-pixel count), two different definitions of
+"saturated", one answer. `p9` at 1.49x is the loosest and is not explained. **The 12 columns that
+existed before reproduce `THRESHOLD-LOSS-2026-08-18.tsv` digit for digit** on the two rows that
+sweep sampled (`p4` and `p7`: `otsu` 139, `ink` 0.102/0.104, `tone` 0.144/0.148, **`sat`
+0.039/0.041**, `lost`, `extent`, `cover`, `cells`, `factor`, `route`), which is what says the
+refactor under this — one `forEachSaturation` walk under both statistics, and
+`saturationThumbnail` split out of `saturation(of:)` — did not move production's own number.
+
+**2. The two pages this entry never measured are in the same population, and one of them is third
+highest on the sheet.** `p5` reads 0.03428 and `p8` 0.04761 at 0.15, against `p6`'s 0.04266 and
+`p7`'s 0.04840 — so `p8` is third of the ten behind `p2` and `p7`. That discharges the entry's "does
+not extrapolate over the other two". **Nine of the ten pages carry spot colour and one keeps it** —
+but read that as the hand count plus the owner's testimony about `p3`, *not* as something this sheet
+shows: see (3), which is the reason it cannot show it.
+
+**3. ⚠️ `satFrac` has a noise floor, and it is ABOVE the smallest real marks — so the instrument
+cannot rank the bottom of the sheet.** `p3` carries no red and still reads **0.00469** at 0.15,
+**four times `p1`**, which does carry a little red (0.106% by hand). Scanner chroma noise and colour
+fringing are what fill that band, so a page with no spot colour on it scores roughly **0.5% at a
+0.15 floor and 0.12% at 0.25**, and any bar a sweep sets on `satFrac` has to sit above that.
+
+⚠️ **Three floors, and no single one of them wins — which is the argument for printing the floor
+rather than choosing it once.** Ranked by what each is *for*:
+
+* **Reproducing the hand count**: 0.15 (0.93x–1.49x). At the default 0.25 the same seven pages read
+  **0.42x–1.08x**, which is a different claim and is why every quotation of the 1.12x median names
+  its floor.
+* **Separating the pages that carry spot colour from the page that carries none** — the population
+  question. Against `p3`: at 0.25 `p4`/`p6`/`p7` are **11.0x / 18.4x / 22.8x** its reading; at 0.15
+  they are 6.4x / 9.1x / 10.3x and at 0.40 6.8x / 9.6x / 14.6x. **0.25 is the default on this
+  criterion**, and it is the criterion a sweep uses.
+* **Ranking the smallest real mark**: **0.40 wins and 0.25 loses.** `p3` (none) against `p10`
+  (0.520% by hand) separates 3.5x at 0.40 and 2.7x at 0.25, and at 0.15 it *inverts* (1.35x the
+  wrong way). More bluntly, `p1` reads **below** `p3` at 0.15 and 0.25 and only comes out right at
+  0.40 — where `p3` is the lowest of the ten and `p1` second. So marks at or under half a percent of
+  a sheet are outside what this column can rank at the default, and `p1` and `p10` are both in that
+  class.
+
+That is the whole reason the floor is a printed parameter and not a constant in `Flattener`: the
+sweep should be read at 0.25, a page under half a percent should be looked at by eye at 0.40 or not
+at all, and a file that did not record which floor produced it could not tell you which of those it
+was.
+
+⚠️ **And it lets one of this entry's own reasoned numbers be checked for the first time.** The entry
+says reaching a mean of 0.06 "needs roughly 8% of the page in saturated colour". On these ten pages
+`sat` and `satFrac@0.15` are close to equal — the ratio runs **0.69 to 1.30** — so a mean of 0.06
+corresponds to roughly **6%** above a 0.15 floor rather than 8%. Same order, and the entry's
+conclusion (3-4% cannot reach it) is unaffected; the 8% was reasoned and is a little high.
+
+**4. ⛔ And the instrument found a cost this entry does not carry: the mean gates the ROUTE as well
+as the colour.** `p5`, `p8` and `p9` are on the **1-bit** route today while holding 1.9%–2.7% of
+their sheet in saturated ink. **`p8` (0.02722) and `p9` (0.02632) sit between the two picture pages
+`p6` (0.02282) and `p7` (0.02831); `p5` at 0.01913 is a little under both.** They are 1-bit
+because `sat` 0.037–0.042 failed the same 0.06 bar that `isPicture` reads, and no other picture
+signal fired. So a fraction-based signal put *inside `isPicture`* moves those three pages onto the
+picture path and pays for it in bytes on every one, which is exactly the trade R49 and R50 refused
+— and it is C9's shape verbatim, named in `saturation(ofRGBA:)`'s own doc comment: *"the same number
+was then charged twice, because one constant gates both `isPicture` and `shouldKeepColour`"*. A fix
+that only wants the colour back has to separate the two decisions first. **This entry's "it gates
+the route, so lowering the bar costs bytes on every page" was reasoned; the three pages are
+measured, and they are 30% of this document.**
+
+**What remains, and it is one bounded item.** Sweep the corpus with the new column
+(`PAGES=2 SATFLOOR=0.25 score-threshold-loss testdocs/*/*.pdf`, 441 pages, the same shape as
+`THRESHOLD-LOSS-2026-08-18.tsv`) and count pages with `sat` under 0.06 and `satFrac` above the noise
+floor. ⚠️ **It is probably NOT the cross-session job C26's sweeps were, and the rate is measured
+rather than reasoned**: ten page-measurements of this document, `-O` build, took **4 s** — 0.4 s a
+page, and `satFrac` itself costs nothing because the thumbnail was already being rendered for `sat`.
+⛔ **Do not turn 0.4 s a page into a corpus forecast**, which is the mistake C26's own sizing made
+twice: page area dominates, this pamphlet is 887,616 cells against the widest 2.85 M in
+`THRESHOLD-LOSS-2026-08-18.tsv`, that run's duration was never recorded, and the tool that *does* run
+Vision measured 0.54–3.83 s a page over three documents. So time three documents through whatever
+drives it, then size it — but nothing here suggests hours, and the resumable-driver machinery C26
+needed is likely unnecessary. The tool has no resume of its own; `Tools/sweep-ink-bar.py` is the shape
+if one is wanted. Until that count exists
+this is still one document, and **one document is not a campaign (R55's lesson)** — nothing here
+decides the constant, and nothing here should.
+
+⚠️ **And if you do reach for `sweep-ink-bar.py` as that driver, its `CONFIG_EXITS = {2, 3}` does not
+transfer.** For its own target 3 means "no `jbig2` on this machine" — an environment fault worth
+aborting 233 documents over. For *this* tool 3 means "this invocation measured no pages", which is a
+recordable per-document outcome and exactly what that driver's `no-pages` status is for; treated as a
+config exit it would abort the sweep on the first unmeasurable document. The set that means here what
+{2, 3} means there is **{2, 4}**: a refused `SATFLOOR` or `PAGES`, and a failed self-test.
+
+**The seams, and how each new check was made to fail.** `forEachSaturation` is one walk under both
+statistics, so the von Kries correction cannot be corrected in one place and left stale in the other
+(R23's and R29's shape, and the reason this measurement is in `Flattener` at all rather than in the
+tool where `score-skew`'s estimator and R56's refused candidate signal both correctly live). Five
+mutants were hand-built against copies of `Sources/` and run through the tool's own self-test, which
+refuses to measure anything if they fire:
+
+| mutant | what it does | verdict |
+|---|---|---|
+| `skip-zeros` | the walk skips `hi == 0` instead of yielding 0 | **SURVIVED**, then killed after the fixture was fixed — see below |
+| `ge-floor` | `>= floor` instead of `> floor` | killed, by the floor-of-1 check **only** |
+| `lt-floor` | counts the pixels *below* the floor | killed, by the separation check and the fraction check |
+| `frac-over-coloured` | divides by the coloured pixels, not by the sheet | killed, by the separation check (`spot 1.00000`) |
+| `no-paper-correction` | drops the von Kries correction | killed, by the cream-stock check (`0.106122`) |
+| `thumbnail-nil` | `saturationThumbnail` cannot render | **exit 6**, the new refusal, watched failing |
+
+⛔ **`skip-zeros` SURVIVED the first check set, and that is the most useful thing in this diff.** The
+walk-count check was written to catch exactly it and could not: the skip is `if hi > 0`, where `hi` is
+the **brightest channel** and not the saturation, so pure red (`255, 0, 0`) has `hi = 255` and is
+yielded either way. A fixture of red ink on white paper contains no pixel the mutant skips. It is
+killed only once the fixture holds **pure black** pixels — which is also the case that matters, since
+black type is what a scanned page is made of — and with those 32 black pixels added the same mutant
+exits 4 on `the walk yields every pixel, black type included — 992 pixels, 0.031250 vs 0.031250`.
+Read that message: **the mean it reports is exactly right and the count is 32 short**, which is the
+whole reason a check on the mean cannot stand in for a check on the walk. (The fixture fix moved no
+measurement: all 21 columns of the ten-page run are identical before and after it, compared with
+`diff`.) That is **another check in this register's
+history that could not fail** — deliberately not given an ordinal, because this file already carries
+two different "eleventh"s and a note at T5 that the counter is unreliable. It was written by the
+session that then found it, and it was found by *asking which check kills which mutant* rather than
+by counting green ticks. Note also what
+it is worth: `skip-zeros` moves **neither published statistic** (the mean adds a zero either way, the
+fraction divides by the pixel count), so it is T5's "a value nothing depends on" today, and the
+walk-count check is there for the caller that takes a median or a histogram tomorrow.
+
+**`ge-floor` is worth noticing for the same reason.** Neither obvious fixture can see it, because
+nothing in them sits exactly on the floor; only the degenerate "no pixel is above a floor of 1" case
+kills it, and that case was written before the mutants were run rather than after.
+
+⚠️ **What was verified against which source, stated exactly.** The four killed mutants were built
+against the check set as it stood before the fixture fix; `diff` shows the fix changes only the
+walk-check block, and the three checks that killed them (floor-of-1, separation, cream) are
+byte-identical in the committed file. `skip-zeros`, `thumbnail-nil` and a pristine control were built
+and run against the committed source. `Tools/mutate.py` was not used and has no row for any of these:
+its catalogue mutates `Sources/` and is scored by the full suite at ~45 min a mutant, and these six
+are scored by a tool self-test that runs in a second — the same trade C26 sub-step 3 records for its
+two.
+
+**The adversarial review of this diff (CONTRIBUTING §4) found eleven things; the four that were
+defects are fixed here and are worth knowing.** (1) `satFloor` was printed at `%.2f`, which renders
+`SATFLOOR=0.001` as `0.00` and `0.999` as `1.00` — **both values the tool refuses by name** — so the
+column that exists to say which floor produced a file could round two accepted floors onto a refused
+one. `%.5f` now, and measured: `SATFLOOR=0.001` prints `0.00100`. (2) A page whose colour thumbnail
+failed to render printed `sat 0.000  satFrac 0.00000`, which in a sweep about colour is the most
+plausible-looking wrong answer available; it now **exits 6** with the page named, and the branch was
+watched firing through the `thumbnail-nil` mutant above. (3) `saturatedFraction`'s
+`buffer.count >= pixels * 4` clause is **dead** — `forEachSaturation` guards it identically — so the
+short-buffer check would stay green with it deleted; the load-bearing clause is `pixels > 0`, without
+which the division is `0.0 / 0.0`, and there is a check for that now. (4) The walk check compared one
+fixture's walk against **another fixture's** mean, which agreed only because both hold 32 saturated
+pixels in 1,024; it compares `withBlack` against its own mean now. Also corrected: the ratio was
+quoted in three places without the floor it was taken at (at the default 0.25 the same seven pages
+read **0.42x–1.08x**, a different claim), a comment justified 0.25 against a *page mean* labelled as
+a per-pixel residue (0.000–0.008 is the mean; the per-pixel figure in that comment is 0.118), and a
+check's label claimed "buffer and render alike" while asserting only the buffer. The review also
+found that `Sources/Flattener.swift` is in `build.sh`'s `HELPER_SOURCES` — so this touches the helper
+binary too, and `CLAUDE.md`'s description of what the helper compiles was understating it; corrected
+there.
 
 ## Robustness and correctness of reporting
 

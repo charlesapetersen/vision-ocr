@@ -3,7 +3,8 @@
 Vision OCR — macOS SwiftUI app that OCRs scanned PDFs through Apple's Vision
 framework and writes its own searchable-PDF text layer. Recognition runs in a
 helper process this repo builds (`Helper/main.swift` → `visionocr-recognise`),
-compiling `Sources/Recogniser.swift` so the app and the helper cannot diverge —
+compiling `Sources/Recogniser.swift` (and, as `build.sh`'s `HELPER_SOURCES` shows,
+`Flattener.swift` and the rest of its closure with it) so the app and the helper cannot diverge —
 BUGS.md R40 is why. `jbig2` and `qpdf` are the only other programs it runs.
 
 **Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything** — branch,
@@ -16,9 +17,10 @@ paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries are open as
-of 2026-08-18, `C26` and `C27`, both found on one document after `1.13.0` shipped. `C26` loses
+of 2026-08-19, `C26` and `C27`, both found on one document after `1.13.0` shipped. `C26` loses
 content at the DEFAULT Photo detail setting; `C27` discards spot colour and is fidelity rather
-than loss.** A small line
+than loss. Neither is decided: C26's campaign is COMPLETE and its constant is the owner's call
+(`ops/autonomous/QUEUE.md` holds that item), and C27 now has its instrument but not its sweep.** A small line
 drawing is erased on the picture path because `pageIsAllText()` shrinks the tone layers 8x and 16x
 and the pale-drawing guard in front of that does not fire;
 three of four drawings
@@ -85,7 +87,26 @@ show-through document R56 was refused four times for), **which the next day's me
 is not C26's population** — C26 turns on `inkOutsideText`, and the sweep of *that* is the separate
 `INKBAR-2026-08-19.tsv` run described above — while
 **not** sizing C27, because a mean saturation cannot see concentrated
-colour and C27's own measurement was a saturated-pixel fraction no tool here prints. Both entries
+colour and C27's own measurement was a saturated-pixel fraction no tool here printed. **⛔ One prints
+it as of 2026-08-19 and C27's sweep has still NOT been run** — `Flattener.saturatedFraction` behind
+`Tools/score-threshold-loss.swift`'s `satFrac`/`satFloor` columns (`SATFLOOR=n`, default 0.25), out of
+the same thumbnail `sat` comes from, with nothing shipped reading it. It reproduces the entry's own
+50-DPI red-pixel count on all seven pages that count covers — **0.93x to 1.49x, median 1.12x, over a
+range from 0.1% to 24%, at `SATFLOOR=0.15`** (at the default 0.25 the same seven read 0.42x–1.08x, so
+the floor always travels with the ratio) — and the twelve pre-existing columns reproduce `THRESHOLD-LOSS-2026-08-18.tsv`
+digit for digit, `sat` included, which is what says the walk it was refactored onto did not move
+production's number. Three things came out of it that the entry did not have: the two pages it never
+measured are in the same population (`p8` is third of the ten); **it has a noise floor ABOVE the
+smallest real marks** — a page with no spot colour on it reads ~0.5% at a 0.15 floor and ~0.12% at
+0.25, which is why `p1` (0.1% red by hand) ranks *below* `p3` (none), so marks at half a percent of a
+sheet are outside what the column can see and the floor is a printed parameter rather than a constant;
+and ⛔ **the mean gates the ROUTE as well as the colour, so two of this document's 1-bit pages hold as
+much saturated ink as its picture pages and a third nearly does** — C9's "the same number charged twice", which
+makes "a fraction instead of a mean" cost bytes on pages nobody was complaining about. What remains is
+one bounded item: the 441-page corpus sweep, which measured 0.4 s a page on this document (ten pages in
+4 s) and so is probably a single session rather than C26's detached-across-sessions pattern — page area
+dominates, so time three documents before believing that.
+Both entries
 carry the numbers, the retractions and what is left. It is **not** R56 — that fix is intact and
 works on the other
 route. **`Tools/score-gate.swift` cannot see this class**, by its own source, so do not read a

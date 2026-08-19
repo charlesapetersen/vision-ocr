@@ -1097,10 +1097,26 @@ enum Flattener {
     /// Mean saturation from a small RGB thumbnail. Cheap: the page is redrawn at
     /// about 40 DPI purely to ask whether there is colour on it.
     static func saturation(of page: PDFPage) -> Double {
+        guard let t = saturationThumbnail(of: page) else { return 0 }
+        return saturation(ofRGBA: t.buffer, width: t.width, height: t.height)
+    }
+
+    /// The ~40 DPI RGBA thumbnail every colour signal is measured on — the page
+    /// the routing decision actually describes.
+    ///
+    /// Split out of `saturation(of:)` for C27, which needs a **different statistic
+    /// of the same pixels**. A tool that rendered its own page at its own
+    /// resolution would be comparing two calibrations, and the number
+    /// `shouldKeepColour` reads is the one taken here. Nothing about the render
+    /// moved: the body is `saturation(of:)`'s, and the two ways that function used
+    /// to answer 0 — no thumbnail size, and a context or page ref it could not get
+    /// — are the two ways this one answers nil.
+    static func saturationThumbnail(of page: PDFPage)
+        -> (buffer: [UInt8], width: Int, height: Int)? {
         // The same area flatten rebuilds, so the routing signal describes the
         // page that actually gets written.
         let box = fullBox(of: page)
-        guard let (w, h, scale) = thumbnailSize(for: box) else { return 0 }
+        guard let (w, h, scale) = thumbnailSize(for: box) else { return nil }
         var buffer = [UInt8](repeating: 255, count: w * h * 4)
         let ok = buffer.withUnsafeMutableBytes { raw -> Bool in
             guard let ctx = CGContext(
@@ -1117,8 +1133,8 @@ enum Flattener {
             ctx.drawPDFPage(cgPage)
             return true
         }
-        guard ok else { return 0 }
-        return saturation(ofRGBA: buffer, width: w, height: h)
+        guard ok else { return nil }
+        return (buffer, w, h)
     }
 
     /// The colour of the page's own paper, or nil when the page has no credible
@@ -1178,6 +1194,32 @@ enum Flattener {
     static func saturation(ofRGBA buffer: [UInt8], width: Int, height: Int) -> Double {
         let pixels = width * height
         guard pixels > 0, buffer.count >= pixels * 4 else { return 0 }
+        var total = 0.0
+        forEachSaturation(ofRGBA: buffer, width: width, height: height) { total += $0 }
+        return total / Double(pixels)
+    }
+
+    /// Every pixel's saturation, corrected for the page's own paper, handed to
+    /// `body` one at a time — **including the zeros**, so a caller can divide by
+    /// the pixel count it passed in and get a mean over the sheet rather than over
+    /// the coloured part of it.
+    ///
+    /// One walk and not two because C27 asks for a *different statistic of the same
+    /// population*: `saturation(ofRGBA:)` above is the mean of exactly these
+    /// values, `saturatedFraction` below counts how many clear a floor. The von
+    /// Kries correction is what a user's 600-page monograph paid for at 709 MB, and
+    /// a second copy of it — in a tool, or in a later fix for C27 — is R23's and
+    /// R29's shape exactly: one instance corrected, its twin left behind holding
+    /// the older definition. So the correction and `(hi - lo) / hi` exist once.
+    ///
+    /// A pure black pixel yields 0 rather than being skipped. That is what the
+    /// version of this loop inside `saturation` did (`if hi > 0 { total += … }`
+    /// over a denominator of every pixel), and adding a literal zero to a running
+    /// `Double` is exact, so the mean is unchanged bit for bit.
+    static func forEachSaturation(ofRGBA buffer: [UInt8], width: Int, height: Int,
+                                  _ body: (Double) -> Void) {
+        let pixels = width * height
+        guard pixels > 0, buffer.count >= pixels * 4 else { return }
         var kr = 1.0, kg = 1.0, kb = 1.0
         if let paper = paperColour(ofRGBA: buffer, width: width, height: height) {
             let peak = max(paper.r, max(paper.g, paper.b))
@@ -1188,15 +1230,51 @@ enum Flattener {
                 kr = peak / paper.r; kg = peak / paper.g; kb = peak / paper.b
             }
         }
-        var total = 0.0
         for i in stride(from: 0, to: pixels * 4, by: 4) {
             let r = Double(buffer[i]) * kr
             let g = Double(buffer[i + 1]) * kg
             let b = Double(buffer[i + 2]) * kb
             let hi = max(r, max(g, b)), lo = min(r, min(g, b))
-            if hi > 0 { total += (hi - lo) / hi }
+            body(hi > 0 ? (hi - lo) / hi : 0)
         }
-        return total / Double(pixels)
+    }
+
+    /// How much of the page carries ink of its own colour, rather than how much
+    /// colour the page carries on average: the fraction of pixels whose
+    /// paper-corrected saturation is **strictly above** `floor`, matching
+    /// `shouldKeepColour`'s own strict comparison against the mean.
+    ///
+    /// **C27 is the whole reason this exists, and no shipped decision reads it.**
+    /// The route and the colour decision both read the mean, and reaching 0.06
+    /// there takes something like 6% of the sheet in saturated ink (C27 reasoned
+    /// "roughly 8%" before this column existed; measured on ten real pages, `sat`
+    /// and this fraction at a 0.15 floor differ by 0.69x-1.30x, which puts it
+    /// nearer 6%). Red subheads, rules and a corner cartoon come to 3-4%, so
+    /// either way "this document is printed in two inks"
+    /// is *structurally* invisible to that statistic whatever the constant is set
+    /// to. Measured over the corpus, mean saturation either side of 0.06 is one
+    /// continuum with a 0.004-wide gap, so tinted grey scans and two-ink sheets are
+    /// not separated populations on it. A fraction can hold them apart — a page
+    /// with 3% of its area at saturation 0.8 is not the page with a uniform 0.03
+    /// cast — which is why C27 says the statistic is wrong rather than the number.
+    ///
+    /// `floor` is the caller's and there is deliberately no constant for it here.
+    /// Sizing C27's population is what settles a floor, that sweep has not been run
+    /// (`Tools/score-threshold-loss.swift`'s `satFrac`/`satFloor` columns are the
+    /// instrument for it), and a constant in this file would read as a shipped
+    /// calibration to every later reader — which is what `Tools/score-skew.swift`
+    /// and R56's own refused candidate signal both record as the reason for keeping
+    /// an unshipped measurement out of `Flattener`. This one is here only because it
+    /// cannot be written outside it without a second copy of the correction above.
+    static func saturatedFraction(ofRGBA buffer: [UInt8], width: Int, height: Int,
+                                  above floor: Double) -> Double {
+        let pixels = width * height
+        guard pixels > 0, buffer.count >= pixels * 4 else { return 0 }
+        var saturated = 0
+        forEachSaturation(ofRGBA: buffer, width: width, height: height) {
+            if $0 > floor { saturated += 1 }
+        }
+        return Double(saturated) / Double(pixels)
     }
 
     /// Fraction of the page that would be ink once thresholded. Text sits at

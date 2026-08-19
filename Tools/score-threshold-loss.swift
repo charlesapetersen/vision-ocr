@@ -67,6 +67,22 @@
 //   /tmp/score-threshold-loss --pages 41,78 "book.pdf"
 //
 // PAGES=n samples n pages per document (default 2, spread through it).
+// SATFLOOR=n is C27's, and it is the only knob here about colour: what counts as a
+// saturated pixel when asking how much of a page carries ink of its own colour
+// (default 0.25, refused outside 0…1). It sets the `satFrac` column and is printed
+// beside it on every row.
+//
+// ⚠️ **This tool is C27's population instrument as well as C26's**, and the two
+// questions read different columns. C26 is about the 1-bit route erasing a mark;
+// C27 is about `pictureSaturationThreshold` being a bar on the page's MEAN
+// saturation, which spot colour cannot reach — measured, `1954 - Why.pdf` keeps its
+// red on 1 page of 10, and its discarded pages score `sat` 0.039-0.043 against 0.06
+// while 3-4% of each sheet is saturated red ink. `sat` is that mean; `satFrac` is the
+// share of the page above `satFloor`. The entry's own point is that no value of the
+// constant separates two-ink sheets from tinted grey scans **on the mean**, because
+// over the corpus that statistic is one continuum with a 0.004-wide gap either side
+// of 0.06 — so the column to sweep for C27 is `satFrac`, and `sat` is only there to
+// say which side of the shipped bar the page fell.
 import AppKit
 import Foundation
 import PDFKit
@@ -217,10 +233,28 @@ func contentLostToThreshold(_ grey: [UInt8], width w: Int, height h: Int,
 /// over production's own two masks and nothing reconstructed — and note it can be cut
 /// by property 2 too, since a suppressed cell is removed from `pale` and is not `ink`,
 /// so it is a hole in the union.
+///
+/// **`satFrac` and `satFloor` are C27's**, and they are the only columns here that say
+/// anything about *colour* rather than about the 1-bit route. `sat` is
+/// `Flattener.saturation`'s mean over the page, the number `pictureSaturationThreshold`
+/// (0.06) is compared against; reaching it takes something like 6% of the sheet in
+/// saturated ink (C27 reasoned "roughly 8%" before this column existed; measured on ten
+/// real pages it is nearer 6% — `Flattener.saturatedFraction`'s doc comment has the
+/// arithmetic), so a two-ink pamphlet whose red subheads and rules come to 3-4% scores
+/// 0.039-0.043 and is published in grey. `satFrac` is the fraction of the same
+/// thumbnail's pixels whose paper-corrected saturation is above `satFloor` — the
+/// statistic C27 says the decision should be taken on — and both come from **one**
+/// `Flattener.saturationThumbnail` render, so `sat` here is production's own number
+/// rather than a second calibration of it.
+///
+/// `satFloor` is on every row because it is a parameter of the measurement and not of
+/// the page. `sweep-ink-bar.py` records a resume at a different `INKBAR` mixing two
+/// measurements into one file; a floor that exists only in the invoking shell is that
+/// defect waiting for its second run. `SATFLOOR=n` sets it, default 0.25.
 let columns = ["document", "page", "otsu", "ink", "tone", "sat", "lost",
                "extent", "cover", "cells", "factor", "route",
                "paleC", "besideInk", "paleTall", "inkTall", "unionTall",
-               "bandOnly", "bandTall"]
+               "bandOnly", "bandTall", "satFrac", "satFloor"]
 
 // MARK: - Where the pale layer's cells went (C26 sub-step 2)
 
@@ -457,6 +491,88 @@ func selfTest() -> [String] {
         let v = contentLostToThreshold(buffer, width: W, height: H, threshold: 128)
         expect("a \(name) page is 0", v == 0, String(format: "%.4f", v))
     }
+
+    // C27's two columns, on the pair of sheets `sat` cannot tell apart. One pixel in
+    // 32 at full saturation (a red subhead on white paper) against a uniform mid-tone
+    // cast: the same mean, exactly, and both below `pictureSaturationThreshold`, so
+    // the two-ink sheet is published in grey along with the cast one. If `satFrac`
+    // ever stops separating them the column is measuring nothing, and a sweep of 233
+    // documents taken with it would be 233 plausible rows — so this refuses to
+    // measure rather than print them. Every number is exact in binary
+    // (1/32 = 0.03125, (128 - 124) / 128 = 0.03125), so these are `==` and not `abs`.
+    func rgba(_ r: UInt8, _ g: UInt8, _ b: UInt8, count: Int) -> [UInt8] {
+        var out: [UInt8] = []
+        out.reserveCapacity(count * 4)
+        for _ in 0..<count { out.append(contentsOf: [r, g, b, 255]) }
+        return out
+    }
+    var spot = rgba(255, 0, 0, count: 32)
+    spot.append(contentsOf: rgba(255, 255, 255, count: 992))
+    let cast = rgba(128, 124, 124, count: 1024)
+    let spotMean = Flattener.saturation(ofRGBA: spot, width: 32, height: 32)
+    let castMean = Flattener.saturation(ofRGBA: cast, width: 32, height: 32)
+    expect("the mean cannot tell two ink from a cast", spotMean == castMean,
+           String(format: "spot %.6f, cast %.6f", spotMean, castMean))
+    expect("…and refuses the colour on both", spotMean <= Flattener.pictureSaturationThreshold,
+           String(format: "%.5f vs %.2f", spotMean, Flattener.pictureSaturationThreshold))
+    let spotFrac = Flattener.saturatedFraction(ofRGBA: spot, width: 32, height: 32,
+                                               above: 0.25)
+    let castFrac = Flattener.saturatedFraction(ofRGBA: cast, width: 32, height: 32,
+                                               above: 0.25)
+    expect("satFrac separates them", spotFrac == 0.03125 && castFrac == 0,
+           String(format: "spot %.5f, cast %.5f", spotFrac, castFrac))
+    // …and it is a share of the sheet, so a page of nothing but ink is 1 and not more.
+    let inkOnly = rgba(255, 0, 0, count: 1024)
+    let allInk = Flattener.saturatedFraction(ofRGBA: inkOnly, width: 32, height: 32,
+                                             above: 0.25)
+    expect("satFrac is a fraction of the page", allInk == 1.0,
+           String(format: "%.5f", allInk))
+    // Saturation is (hi - lo) / hi and cannot exceed 1, so nothing is above a floor of
+    // 1. This is the case that separates `> floor` from `>= floor`, and the tool refuses
+    // such a floor by name rather than printing the empty column it would produce.
+    expect("no pixel is above a floor of 1",
+           Flattener.saturatedFraction(ofRGBA: inkOnly, width: 32, height: 32,
+                                       above: 1.0) == 0, "something was")
+    // The walk both statistics come from yields EVERY pixel, zeros included. Neither
+    // published number would move if it skipped them — the mean adds a zero and the
+    // fraction divides by the pixel count either way — so this is the only check that
+    // can see it, and a statistic that is not a mean (a median, a histogram) would be
+    // wrong without it.
+    //
+    // ⚠️ **The fixture needs PURE BLACK pixels in it and the first version had none.**
+    // The skip is `if hi > 0`, where `hi` is the brightest channel and not the
+    // saturation: pure red is `hi = 255` and is yielded either way, so a sheet of red
+    // ink on white paper cannot see the difference. Measured — a hand-built
+    // `skip-zeros` mutant of `forEachSaturation` **survived this check** until the 32
+    // black pixels below were added — another of this repo's checks that could not fail,
+    // caught the same way as the rest of them (BUGS.md C27 has the mutant table).
+    var withBlack = rgba(255, 0, 0, count: 32)
+    withBlack.append(contentsOf: rgba(0, 0, 0, count: 32))          // black type
+    withBlack.append(contentsOf: rgba(255, 255, 255, count: 960))   // paper
+    var walked = 0.0, walkedCount = 0
+    Flattener.forEachSaturation(ofRGBA: withBlack, width: 32, height: 32) {
+        walked += $0; walkedCount += 1
+    }
+    // Against `withBlack`'s OWN mean: the two fixtures happen to share a mean, and a
+    // check that leans on that coincidence asserts less than its label says.
+    let blackMean = Flattener.saturation(ofRGBA: withBlack, width: 32, height: 32)
+    expect("the walk yields every pixel, black type included",
+           walkedCount == 1024 && walked / 1024 == blackMean && blackMean == 0.03125,
+           "\(walkedCount) pixels, " + String(format: "%.6f vs %.6f", walked / 1024,
+                                              blackMean))
+    // `pixels > 0` and not the length check is the load-bearing guard: the length is
+    // guarded identically inside the walk, so only this can see 0.0 / 0.0 = NaN.
+    expect("a zero-size buffer is 0 rather than NaN",
+           Flattener.saturatedFraction(ofRGBA: [], width: 0, height: 0, above: 0.25) == 0,
+           "not 0")
+    // And the paper correction is still in the walk: cream stock is a real 0.106 per
+    // pixel uncorrected, and the whole point of `saturation` is that it reads 0 here.
+    // Without this a sweep would report every cream-paper scan in the corpus as coloured
+    // — the 709 MB monograph, again, and from the tool this time.
+    let cream = Flattener.saturation(ofRGBA: rgba(245, 237, 219, count: 1024),
+                                     width: 32, height: 32)
+    expect("cream stock corrects to no colour at all", cream < 0.0001,
+           String(format: "%.6f", cream))
     return failures
 }
 
@@ -487,6 +603,18 @@ let perDoc = Int(ProcessInfo.processInfo.environment["PAGES"] ?? "") ?? 2
 // with a message about ranges.
 if perDoc < 1 {
     FileHandle.standardError.write(Data("PAGES must be at least 1 (got \(perDoc))\n".utf8))
+    exit(2)
+}
+// C27's floor. Saturation is `(hi - lo) / hi`, so it lives in 0…1: a floor of 0 counts
+// every pixel that is not perfectly neutral — on an anti-aliased scan that is most of
+// them — and a floor of 1 or more counts none, whatever is on the page. Either produces
+// a column of plausible numbers that answers a different question than the one asked,
+// which is the failure `PAGES=0` above is refused for. Refuse by name instead.
+let satFloor = Double(ProcessInfo.processInfo.environment["SATFLOOR"] ?? "") ?? 0.25
+if !(satFloor > 0 && satFloor < 1) {
+    FileHandle.standardError.write(Data(
+        ("SATFLOOR must be above 0 and below 1 (got \(satFloor)); saturation is "
+         + "(hi - lo) / hi, so 0 counts every anti-aliased pixel and 1 counts none\n").utf8))
     exit(2)
 }
 
@@ -526,7 +654,31 @@ for path in argv {
         let t = Flattener.otsuThreshold(of: grey)
         let ink = Flattener.inkCoverage(of: grey, width: w, height: h, threshold: t)
         let tone = Flattener.toneFraction(of: grey, threshold: t)
-        let sat = Flattener.saturation(of: page)
+        // One thumbnail, two statistics of the same pixels (C27). `sat` is what
+        // `isPicture` and `shouldKeepColour` read — the same render `saturation(of:)`
+        // would have taken, through the same function — and `satFrac` is the fraction
+        // of those pixels that carry real colour. Measuring the fraction on a second
+        // render at another resolution would compare two calibrations, and the mean is
+        // the one the constant was set against.
+        //
+        // A thumbnail that could not be rendered is REFUSED rather than defaulted. `sat`
+        // has always answered 0 on that path through `saturation(of:)`, and 0 is the most
+        // plausible-looking wrong answer available to a sweep whose whole question is
+        // which pages carry colour: `sat 0.000  satFrac 0.00000` reads as a page with no
+        // ink of its own on it. This tool already exits 6 rather than print a row it
+        // cannot stand behind (the band-mask guard below), and `renderGrey` has already
+        // succeeded on this page above, so a failure here is an anomaly and not a
+        // property of the document.
+        guard let thumb = Flattener.saturationThumbnail(of: page) else {
+            FileHandle.standardError.write(Data(
+                ("no colour thumbnail for \(label) p\(i + 1) though the page rendered; "
+                 + "measuring nothing rather than calling it colourless\n").utf8))
+            exit(6)
+        }
+        let sat = Flattener.saturation(ofRGBA: thumb.buffer, width: thumb.width,
+                                      height: thumb.height)
+        let satFrac = Flattener.saturatedFraction(ofRGBA: thumb.buffer, width: thumb.width,
+                                                 height: thumb.height, above: satFloor)
         let lost = contentLostToThreshold(grey, width: w, height: h, threshold: t)
         // The shipped shape signal, from the same grey buffer at the same threshold and
         // the same dpi `mrcLayers` computes — it renders `fullBox` at `rebuildDPI` from
@@ -585,7 +737,14 @@ for path in argv {
                               picture ? "picture" : "1-bit",
                               String(paleC), String(marks.paleBesideInk),
                               String(paleTall), String(inkTall), String(unionTall),
-                              String(bandOnly), String(bandTall)])
+                              String(bandOnly), String(bandTall),
+                              String(format: "%.5f", satFrac),
+                              // %.5f and not %.2f: `SATFLOOR=0.001` is accepted and would
+                              // print as `0.00`, and 0.999 as `1.00` — both of them values
+                              // this tool refuses by name. A column that exists to say
+                              // which floor produced the file must not round two accepted
+                              // floors onto a refused one.
+                              String(format: "%.5f", satFloor)])
         else {
             FileHandle.standardError.write(Data(
                 "row width does not match the \(columns.count) columns\n".utf8))

@@ -10631,6 +10631,108 @@ do {
     check("…and not believed from a 5% margin",
           Flattener.paperColour(ofRGBA: mostlyPlate, width: 20, height: 20) == nil)
 
+    // C27, as arithmetic rather than as prose: the two sheets a MEAN cannot tell
+    // apart. One in every 32 pixels at full saturation — a red subhead and a rule on
+    // otherwise white paper — against a uniform mid-tone cast over the whole sheet.
+    // `saturation` returns the same number for both, *exactly* and not nearly, and it
+    // is below `pictureSaturationThreshold` for both, so the two-ink sheet is
+    // published in grey alongside the cast one. `saturatedFraction` separates them.
+    // Both buffers are built so every quantity is exact in binary: 1/32 = 0.03125 and
+    // (128 - 124) / 128 = 0.03125, so these are `==` checks and there is no tolerance
+    // for a wrong implementation to pass through. (CONTRIBUTING §2: the same properties
+    // are asserted in `Tools/score-threshold-loss.swift`'s `selfTest()`, and it is those
+    // copies that were watched failing — five hand-built mutants of `Sources/`, scored by
+    // a self-test that runs in a second rather than by this suite at ~45 minutes a
+    // verdict. `BUGS.md` C27's instrument section says which check kills which mutant,
+    // and one of them survived until a fixture was fixed.)
+    var spotInk = rgba(255, 0, 0, count: 32)                        // saturation 1.0
+    spotInk.append(contentsOf: rgba(255, 255, 255, count: 992))     // paper, 0.0
+    let uniformCast = rgba(128, 124, 124, count: 1024)              // 0.03125 each
+    let spotMean = Flattener.saturation(ofRGBA: spotInk, width: 32, height: 32)
+    let castMean = Flattener.saturation(ofRGBA: uniformCast, width: 32, height: 32)
+    check("a two-ink sheet and a uniform cast can hold the same mean saturation",
+          spotMean == castMean && spotMean == 0.03125,
+          String(format: "spot %.6f, cast %.6f", spotMean, castMean))
+    check("…and the threshold refuses the colour on both of them",
+          spotMean <= Flattener.pictureSaturationThreshold
+            && castMean <= Flattener.pictureSaturationThreshold,
+          String(format: "%.5f vs %.2f", spotMean, Flattener.pictureSaturationThreshold))
+    // The floor is the caller's; 0.25 is what `score-threshold-loss` defaults to. It is
+    // NOT chosen against the 0.000-0.008 figure in `saturation(ofRGBA:)`'s doc comment —
+    // that is a mean over a page, not a per-pixel residue, and the per-pixel number in
+    // that same comment is 0.118 for black on cream. What 0.25 is chosen against is
+    // measured on real pages: a scan carrying no spot colour puts ~0.12% of itself above
+    // 0.25 (~0.5% above 0.15), and the two-ink pages of `1954 - Why.pdf` put 1.4%-2.8%,
+    // an 11x-23x separation. BUGS.md C27's instrument section ranks all three floors.
+    let spotFrac = Flattener.saturatedFraction(ofRGBA: spotInk, width: 32, height: 32,
+                                               above: 0.25)
+    let castFrac = Flattener.saturatedFraction(ofRGBA: uniformCast, width: 32, height: 32,
+                                               above: 0.25)
+    check("…while the saturated-pixel fraction tells them apart",
+          spotFrac == 0.03125 && castFrac == 0,
+          String(format: "spot %.5f, cast %.5f", spotFrac, castFrac))
+    // The fraction is over the whole sheet, not over the coloured part of it: one
+    // population for numerator and denominator, which is A7.2's rule and the defect
+    // `inkCoverage` carried — a 4,000-pixel buffer called 20x20 returned 10.0, a
+    // coverage above 1. Every pixel saturated is exactly 1.0 and nothing above it.
+    let allInk = rgba(255, 0, 0, count: 1024)
+    check("…and it is a fraction of the sheet, so it cannot exceed 1",
+          Flattener.saturatedFraction(ofRGBA: allInk, width: 32, height: 32,
+                                      above: 0.25) == 1.0)
+    // A floor at 1 counts nothing, because saturation is (hi - lo) / hi and cannot
+    // exceed 1. Pinned because it is the shape of a silently empty column, and it is
+    // why the tool refuses such a floor by name instead of measuring with it.
+    check("…and no pixel is above a floor of 1",
+          Flattener.saturatedFraction(ofRGBA: allInk, width: 32, height: 32,
+                                      above: 1.0) == 0)
+    // ONE walk under both statistics, so a later fix for C27 cannot correct the paper
+    // cast in one place and leave the other holding the older definition — R23's and
+    // R29's shape. Asserted by summing the walk and comparing against the mean, and by
+    // counting what it yields.
+    //
+    // ⚠️ **The fixture needs PURE BLACK pixels and the first version of this check had
+    // none, so it could not fail.** The skip inside the walk is `if hi > 0`, where `hi`
+    // is the brightest channel and not the saturation — pure red is `hi = 255` and is
+    // yielded either way. Measured: a hand-built `skip-zeros` mutant of
+    // `forEachSaturation` SURVIVED this check until the 32 black pixels below were
+    // added. Black type is also the case that matters, since it is what a page of
+    // ordinary type is made of.
+    var withBlack = rgba(255, 0, 0, count: 32)
+    withBlack.append(contentsOf: rgba(0, 0, 0, count: 32))          // black type
+    withBlack.append(contentsOf: rgba(255, 255, 255, count: 960))   // paper
+    var walked = 0.0, walkedCount = 0
+    Flattener.forEachSaturation(ofRGBA: withBlack, width: 32, height: 32) {
+        walked += $0; walkedCount += 1
+    }
+    // Against `withBlack`'s OWN mean, not `spotMean`: the two fixtures happen to share a
+    // mean (32 saturated pixels in 1,024 either way), and a check that leans on that
+    // coincidence is asserting less than its label claims.
+    let blackMean = Flattener.saturation(ofRGBA: withBlack, width: 32, height: 32)
+    check("the walk yields every pixel, black type included, and sums to the mean",
+          walked / 1024 == blackMean && blackMean == 0.03125 && walkedCount == 1024,
+          String(format: "%.6f over %d pixels vs %.6f", walked / 1024, walkedCount,
+                 blackMean))
+    // The guards, which are what a caller gets instead of reading past the buffer — and
+    // the one that matters is `pixels > 0`, not the length check. `forEachSaturation`
+    // guards the length identically, so deleting that clause from `saturatedFraction`
+    // leaves the short-buffer check below green; without `pixels > 0` the division is
+    // 0.0 / 0.0 and the column fills with NaN.
+    check("a short buffer measures nothing rather than guessing",
+          Flattener.saturatedFraction(ofRGBA: rgba(255, 0, 0, count: 4), width: 32,
+                                      height: 32, above: 0.25) == 0)
+    check("…and a zero-size buffer is 0 rather than NaN",
+          Flattener.saturatedFraction(ofRGBA: [], width: 0, height: 0, above: 0.25) == 0
+            && Flattener.saturation(ofRGBA: [], width: 0, height: 0) == 0)
+    // The paper correction is inside that one walk, so it applies to both statistics.
+    // Cream stock is a real 0.106 per pixel uncorrected; `saturation` reading 0 here is
+    // what stops a corpus sweep reporting every cream-paper scan as coloured, which is
+    // the 709 MB monograph the correction was written for. On the buffer, which is what a
+    // tool passes; the rendered-page form of this is above, at a much weaker bar (a real
+    // page has black text on it and cannot hold < 0.0001).
+    let creamMean = Flattener.saturation(ofRGBA: creamBuf, width: 20, height: 20)
+    check("cream stock corrects to no colour at all, on the buffer",
+          creamMean < 0.0001, String(format: "%.6f", creamMean))
+
     // A plain white scan must not move: it had no tint to correct for.
     let plainWhite = dir.appendingPathComponent("plain-white.pdf")
     makeScannedPDF(at: plainWhite, lines: (1...22).map {
