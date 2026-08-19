@@ -32,8 +32,14 @@ picture-route pages** (the other five are already 1-bit and pay nothing — the 
 line called the three-page sum a document total, which it is not). So the fix is affordable on three
 pages and its corpus-wide population is the number still missing;
 `Flattener.textPageInkOutsideThresholdOverride` plus `INKBAR=0.045 score-text-route` is the
-instrument, and that sweep is **3-4 hours** over ~2,500 pages, needing a driver loop because the tool
-takes one PDF per invocation. Both entries carry the
+instrument, and that sweep is **tens of minutes to about three hours** over ~2,500 pages (the "3-4
+hours" this header carried is RETRACTED — measured per-document rates put every projection *below* it;
+see the driver's section), needing a driver loop because the tool
+takes one PDF per invocation. **That driver exists as of 2026-08-19** —
+`Tools/sweep-ink-bar.py`, resumable per document, 71 self-test checks and 42 mutants watched failing,
+and it reproduces this entry's 65,477 -> 195,785 digit for digit through a second process; the sweep
+it drives is what is still outstanding, and `--report` prints the band population once it lands.
+Both entries carry the
 numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
@@ -2745,6 +2751,273 @@ this cannot be reasoned from the constant.
 
 The instrument is reproducible: the two-page and ten-page runs are byte-identical on the pages they
 share (p4 and p6: 43,470 B -> 130,373 B in both). Do NOT move the constant without that number.
+
+#### Sub-step 3b, the driver: `Tools/sweep-ink-bar.py` — 2026-08-19
+
+The population sweep above needs a loop, for the reason in point 1: the tool takes one pdf. That
+loop is now a committed tool with its own gate, and it is the deliverable that makes the rest safe
+rather than a shell one-liner, because the failure mode being avoided is a run that *looks* like a
+corpus run.
+
+```sh
+python3 Tools/sweep-ink-bar.py --out INKBAR-<date>.tsv --bar 0.045 \
+    --corpus /Users/cp1/Claude/vision-ocr/testdocs --binary <built score-text-route>
+python3 Tools/sweep-ink-bar.py --report INKBAR-<date>.tsv     # counts, no verdict
+```
+
+**It transports the measurement without changing it, and that is checked against this entry's own
+numbers rather than asserted.** Run over `1954 - Why.pdf` on 2026-08-19 through the driver, the
+three pages read `inkOut` **0.0540 / 0.0493 / 0.0660**, `layered` **22,762 / 20,708 / 22,007** =
+**65,477 B**, `layeredAtBar` **67,976 / 62,397 / 65,412** = **195,785 B**, `barDelta`
+**+45,214 / +41,689 / +43,405** = **+130,308 B**, in **38.3 s** for ten pages. Every one of those
+figures is the section above's, digit for digit, through a different process. p2 (0.1072) and p10
+(0.9735) read `same`, so the negative control arrives intact as well.
+
+**Four properties it has, each because of a shape this register already paid for.**
+
+1. **Resumable by construction, not by a checkpoint file.** A document's rows are buffered and
+   appended only when its whole run finishes, so "the document has a row" *is* "the document is
+   done"; there is no half-written document to detect. 3-4 hours is a floor against a 2.5 h session
+   backstop, so a sweep that could not be resumed could not be run at all.
+2. **Every document gets a row, including the ones that measure nothing.** A document with no
+   picture-route page produces no data rows, and a document recorded by nothing at all is retried on
+   every resume for ever. `status` carries `ok` / `no-pages` / `error:<rc>` / `timeout:<n>s`.
+3. **A configuration failure aborts; a document failure is recorded.** The tool exits 2 on a bad
+   `INKBAR` and 3 with no `jbig2` on `PATH` — conditions that hold for all 233 documents, so
+   recording them would build a **complete-looking TSV of 233 identical failures**, which is the
+   silent-success shape in a new costume. Those abort with the document unwritten, so a later run
+   retries it. Exit 1 ("this file will not open") is the one document's own problem and is recorded.
+4. **The tool's header is compared, not assumed.** `score-text-route` prints 13 columns from one
+   `columns` array; if that array gains or renames a column, every field in the sweep's output would
+   sit one place from its name. T14, A12.3 and T18 are three field-count defects in this register,
+   and a *renamed* column is refused as well as an extra one.
+
+**`--report` reads `verdict` against `barVerdict`, and reading `barVerdict` alone would have been
+wrong by 5:3 on the one document in hand.** `barVerdict` is the verdict *at* the bar, not a diff: it
+says `picture` on all five priced pages of `1954 - Why.pdf`, including p2 and p10 which the bar does
+not move. A page is newly refused only when it reads `all-text` today and `picture` at the bar. The
+report prints counts, a `[0, 0.045) / [0.045, 0.08) / [0.08, 1.01)` histogram and the byte totals —
+and deliberately no verdict about the constant, because the population is the *input* to R50's trade
+and this register has enough figures published one step past what was measured.
+
+**The gate: 71 checks in `--self-test`, run by the pre-commit hook, and 42 mutants watched failing.**
+The self-test drives the parser, the printer, the resume set, the lock, the provenance stamp and the
+abort rule against stub binaries, so it renders no page and costs about eleven seconds; the `--report`
+cases are driven over the control run's own ten rows plus a three-row fixture of shapes that document
+does not have. Each guard then had the defect put back on a copy of the file and the self-test re-run.
+**All 42 are killed, none by zero checks** — three of them by an uncaught exception rather than by a
+`FAIL` line, which is a kill and is worth saying precisely. The check count is itself asserted
+(`EXPECTED_CHECKS`), because nothing enforced it and a mutant that made 19 cases *vanish* was
+otherwise indistinguishable from a pass.
+
+⚠️ **The adversarial review of this diff found fifteen things and the material ones are fixed in the
+commit. Six of them were behaviours no check objected to, and two would have corrupted the number the
+sweep exists to produce.**
+
+1. **`--report` compared `barVerdict` exactly, and `score-text-route` appends to that column.** Lines
+   362 and 372 of it add `" STENCIL-MOVED"` and `" REPLICA-DISAGREES"`, so an `== "picture"` drops
+   exactly the anomalous pages — and their bytes. Measured on a crafted TSV: **three newly-refused
+   pages reported as one.** Compared on the first word now, with a suffixed row in the fixture.
+2. **`--retry-errors` doubled the answer.** It filtered the resume *set* and nothing removed the old
+   rows, so the retry appended beside them: the document then held both `error:1` and `ok`,
+   `completed()`'s `setdefault` kept the stale error (so it was retried for ever) and `--report`
+   counted its pages twice — measured at **exactly double** on a one-page document. It rewrites the
+   file now, through a temp file and `os.replace`.
+3. **A row of the wrong width UNDER a correct header was recorded per document.** That is T18's own
+   defect and it recurs on every document, so it produced a 233-row TSV of `error:parse` with
+   `sweep()` still returning 0 — the complete-looking-TSV-of-nothing this design claims to prevent,
+   through the one door left open for it. It aborts like header drift now, the closing line carries a
+   status tally (the documented polling recipe is `tail -3`, which would otherwise show 233 failures
+   as a finished sweep), and `--report` **exits 3** over a file that measured nothing, as
+   `score-threshold-loss` does.
+4. **The resume invariant was not absolute.** A torn final row — `ENOSPC` or a crash between the
+   write and the newline, over an unattended multi-hour run — read as a completed document. It is
+   trimmed on resume, **and so is every other row of that document**: the first version of this fix
+   trimmed only the last line, and the check for it caught that the document still read as done on
+   half its pages. A second gap in the same place: driving `trim_partial_row` directly left "`sweep`
+   calls it" unpinned, and a mutant removing the call survived until a sweep-level case was added.
+5. **Nothing serialised two sweeps onto one `--out`.** Duplicate rows inflate the pages, the bands and
+   the bytes while the document count still looks right — measured. `--out` is `flock`ed, `--report`
+   names duplicates rather than summing them, and the lock had no check at all until a mutant removing
+   it survived.
+6. **The artefact recorded neither its bar nor its corpus root.** It is meant to be committed as
+   evidence, and a resume at another bar mixed two measurements silently; a different `--corpus` root
+   re-keys every document through `relpath` and re-runs the whole corpus into one file. A
+   `# bar=… corpus=… binary=…` stamp goes under the header, and bar and corpus are enforced on resume.
+   The *binary* is recorded and reported but **not** enforced — that would refuse the first honest
+   resume after a rebuild, and the inverse case is in the checks so the rule cannot become
+   refuse-everything.
+7. Smaller, all fixed: the printer's two guards were `assert`, which `python3 -O` strips — so they
+   were checked in the hook and absent in the sweep; `completed()`'s `if first and first != COLUMNS`
+   could never take its left branch (`"".split("\t") == [""]` is truthy), so a zero-byte `--out` was
+   unresumable while the docstring promised to tolerate one; `--report` on a missing path raised a
+   traceback; a band histogram with no denominator dropped an out-of-range or `nan` `inkOut` in
+   silence; `low <= ink < high` was killed by nothing because no fixture row sat **on** 0.045; the
+   band's `0.045` edge and the modal all-text-at-both-bars page were both absent from the fixture, so
+   dropping `report()`'s `barVerdict` term survived — over the corpus that mutant reports every text
+   page as newly refused; the empty-corpus guard (an `auto/` worktree has no `testdocs/`, which is
+   this tool's default) was killed by zero checks; `--dry-run` was exercised by none; and
+   `EXPECTED_CHECKS` was off by one as first written, which is the same off-by-one that put "34" in
+   five documents.
+
+⚠️ **Two of the review's findings were about numbers published here, and both are corrected above and
+below.** The "~25x" in `DEFAULT_TIMEOUT`'s comment is **39x** at the rate it cites. And "read the
+3-4 hours as a FLOOR" is contradicted by this diff's own three measurements — see the cost paragraph.
+
+⚠️ **One mutant of mine SURVIVED and was right to.** Splitting a tuple assignment into two statements
+inside the same `try` is the same program, so it tested nothing; the defect only reappears by
+restoring `+=` into the `try`. A mutant that changes no behaviour reports a gap in the checks that is
+not there — §3, in the mutation harness. Five other patterns went `NOT-APPLIED` because the fixes
+changed the form of the guard they edited, and they are dropped rather than counted as kills.
+
+⚠️ **A SECOND and THIRD review round, by the session that landed this file on 2026-08-19, found
+TWELVE more — and the second round's own new checks contained one that could not fail.** The gate is
+**71 checks** rather than 57 and the campaign **42 mutants** rather than 29; all twelve are fixed in
+this commit and every guard has a mutant watched failing. Round two was a reading of the diff, round
+three an adversarial agent that ran 14 mutants and 5 probes of its own against a copy. Numbered on
+from the fifteen above, because they are the same file's diff:
+
+16. **The refusal arrived after the mutation, so its position was the defect rather than its
+    existence.** `sweep()` trimmed a torn row and, under `--retry-errors`, rewrote the whole file
+    through `os.replace` **before** taking the `flock` — so a second launch onto a LIVE sweep's
+    `--out` mutated it and refused afterwards. `os.replace` is the destructive half: it swaps the
+    inode, so the running sweep's append fd goes on writing to a file that is no longer named. Its
+    remaining hours of rendering land nowhere, and the TSV a later session polls simply stops
+    growing with nothing saying so — invariant 1 inside an instrument, over exactly the multi-hour
+    unattended run this design is for. The lock is a **sidecar** (`<out>.lock`) taken before
+    anything reads or writes the artefact, because a lock on the artefact does not survive its own
+    rewrite: that is its own check, and `lock_path` returning `out` unchanged is a mutant it kills.
+17. **`--dry-run` was not read-only.** It reached its early return *after* the trim and the rewrite,
+    so `--dry-run --retry-errors` deleted the error statuses of the documents it then did not
+    re-run — the preview costing the thing being previewed, and the natural command for a polling
+    session to reach for. Detection is split out into a read-only `torn_document()`, so the preview
+    and the repair cannot come to hold two definitions of "torn" (C20 was one idea in two
+    functions), and the preview subtracts the same three sets the run does.
+
+**Round three, an adversarial agent over that delta, found ten more — all ten VERIFIED by running
+code, and all ten fixed here.** It is the highest-yield gate this project has: the delta it read was
+about seventy lines old.
+
+18. **A tear INSIDE the document key left that document "done" on a partial page set.** A document's
+    rows go out in ONE `out.write`, so the tear can land anywhere in ~1 KB — and when it lands before
+    the row's first tab, the fragment's key is a *prefix* (`book/1954 - W`) that matches no row while
+    that document's landed rows survive. Measured: a 3-page document read done on **2 of 3**, with
+    `--dry-run` agreeing. `torn_document` now owes the last COMPLETE row's key as well; when the tear
+    was at the start of the write that key names the previous document and costs one redundant re-run,
+    which is the cheap direction. The existing check cut at `whole[:-12]`, always past the key, so it
+    could not see this.
+19. **`--dry-run`'s to-do set was pinned by a COUNT, and three wrong implementations matched it.**
+    `listed.count("would run ") == 2` was green for `todo = docs` (ignore the resume set entirely),
+    for a `todo` that never lists a never-run document, and for an `owed` that forgets the torn one —
+    because both fixture documents were owed, so 2 was also every wrong answer. It is asserted BY NAME
+    now, with a partially-recorded case (one listed, one not) and a torn-without-`--retry-errors`
+    case. The second implementation would have printed "2 to do" over a file with 200 left.
+20. **`--report` and `--dry-run` died with an uncaught `UnicodeDecodeError` on a torn row.** The
+    corpus's filenames carry U+00A0, so a tear can halve a UTF-8 sequence — and those two commands are
+    exactly what a polling session runs against a live sweep. `completed()` and `report()` decode with
+    `errors="replace"`; `drop_documents` deliberately does NOT, because it writes back what it reads
+    and would put U+FFFD inside a filename.
+21. **`acquire_lock` reported every `flock` failure as a rival sweep.** `ENOLCK` and `EOPNOTSUPP` — a
+    volume whose locks do not work — came out as "another sweep already holds", so the documented
+    3-hour launch would refuse to start while blaming a run that does not exist. Only `EAGAIN` /
+    `EWOULDBLOCK` says that now; anything else is re-raised. And a missing or read-only output
+    directory arrived as a bare traceback naming a `.lock` the operator never asked for.
+22. **The lock was taken for `--dry-run` too**, so the one read-only command a poller has refused
+    against the live sweep it was asking about. Dispatched before the lock now — which also makes the
+    existing check "`--dry-run` writes no file" literally true again, `.lock` included.
+23. **`finally: lock.close()` was pinned by nothing**: refcounting closes the handle when the frame
+    dies, so deleting the `try/finally` left the suite green. The one place the two differ is inside an
+    `except` block, where the traceback still holds the frame — and this file's own resume path raises
+    `SystemExit` from inside the lock. That is the check now.
+24. **The truncate was one no-op away from green**, because `drop_documents` removes the fragment's
+    line too whenever the fragment carries a key. The case where it cannot — a fragment whose first
+    field is empty — is the branch that makes the truncate load-bearing, and it is a check now
+    (CONTRIBUTING 4c).
+25. **`trim_partial_row` returned a byte count with a ROW COUNT added to it**, and the resume prints
+    it as `N B`: 18 B reported for a file that had shrunk 218. It is the measured size delta now.
+26. **`--dry-run` did not enforce the provenance the run refuses on**: `--dry-run --bar 0.070` over a
+    file stamped `bar=0.045` printed a to-do list and exited 0 — a preview of work that would never
+    run. One `refuse_mixed_provenance`, called by both.
+
+**The campaign: 13 mutant patterns, all 13 killed, watched against copies of the file** (2026-08-19,
+`/tmp/vo-inkbar-mutants.py`). Eleven fell on the first pass. The two survivors are worth more than the
+eleven:
+
+* `trimmed-counts-rows-not-bytes` as first written mutated `fragment` *after its last use* — the same
+  program, so it tested nothing and survived correctly. §3 in the mutation harness, and the second
+  time this file has produced that exact shape. Re-expressed as what the function RETURNS, it is
+  killed.
+* `completed-decodes-strictly` survived because **the check written for it could not fail**: the
+  fixture appended `"book/1954 - Wh".encode()[:-1]`, which drops the trailing `h` and leaves
+  perfectly valid UTF-8. The fixture now halves the U+00A0 itself (`[:-3]`), the mutant dies, and this
+  is the register's tenth-plus check that asserted nothing — found, as ever, by putting the defect
+  back rather than by reading the check.
+
+**End to end over real documents, twice.** The tool had only ever been driven against stub binaries
+and one document, so it was run over two corpus PDFs through a symlinked read-only corpus directory:
+`(F) Dickens.pdf` 8 rows in 3.6-4.2 s, `Stiglitz1975(onPasinetti1974).pdf` 3 rows in 5.3-6.3 s, then a
+resume (0 to do), a `--dry-run`, a `--report`, and finally 14 bytes chopped off the end — which
+trimmed **259 B**, named the one affected document, and re-ran exactly it.
+
+⚠️ **Two residuals, named rather than fixed.** (a) There is no global wall-clock budget: 233 documents
+at the 1800 s per-document ceiling is 116 h, so a *class* of hanging documents would outrun the window
+instead of ending it. Measured rates are 0.5-4 s a page against that ceiling, so it is a bound with
+three orders of magnitude of headroom, and a `--max-hours` flag is not worth the code today. (b)
+`subprocess.run`'s timeout kills `score-text-route` but not its `jbig2`/`qpdf` grandchildren, which
+would leak on a timeout; no document has ever timed out. Both are in the register rather than in the
+tool deliberately.
+
+**It does not take `test-lock.sh`, and that is a decision rather than an omission.** The suite lock
+exists because two `tests` binaries share `~/Library/Preferences/tests.plist`, keyed by process
+*name*; this runs `score-text-route`, whose defaults land in a different domain, and which calls
+`Prefs.register(migrate: false)`. **Read in `Sources/Prefs.swift` rather than assumed**: `register`
+only calls `UserDefaults.standard.register(defaults:)` when `migrate` is false, and its own doc
+comment at line 494 says so — *"The registration itself is in-memory, so a tool calling
+`register(migrate: false)` gets exactly the shipped defaults and writes nothing at all"* — and it
+names the `tests.plist` hazard two lines above. `Prefs.Snapshot.current()` is reads only. Holding the
+lock for 3-4 hours would instead block every commit hook in that window. ⚠️ Verified by reading the
+two functions, **not** by running a suite alongside the sweep. The CPU contention is real and a
+concurrent suite will be slower for it.
+
+⚠️ **"Read the 3-4 hours as a FLOOR" is RETRACTED — this section's own measurements contradict it, and
+in the opposite direction.** Measured 2026-08-19: `1954 - Why.pdf` 38.3 s / 10 pages = **3.83 s/page**;
+`(F) Dickens.pdf` 4.3 s / 8 = **0.54**; `Freud_Fetishism.pdf` 4.6 s / 7 = **0.66**. At the *worst* of
+those, 2,500 pages is **2.7 h**; 233 documents at the measured 38.3 s each is **2.5 h**; at the cheap
+rates it is **22-27 minutes**. Every figure lands *below* the 3-4 hours, so that number is a ceiling
+guess and the honest statement is **tens of minutes to about three hours**, with which end depending on
+the corpus's picture-route share — part of what the sweep is measuring. The resumability argument
+survives it (2.5 h at the worst rate still reaches the 2.5 h backstop), but it was resting on a figure
+stated as measured that was not, and this correction is the review of the driver's diff, the day after
+the sentence was written. Read any projection here as a range: `mutate.py`'s startup estimate was 4.22x
+low out of sample for the same reason.
+
+**Sibling sweep (CONTRIBUTING 4b): who else takes one pdf and reads argv[2] as something else?**
+Every `.swift` in `Tools/` was classified by its argument parse, 2026-08-19. **Ten** take a path list,
+so a glob works. **Eight have `score-text-route`'s shape** — `score-text-route` (argv[2..] are page
+numbers, `compactMap { Int($0) }` at line 88, so paths vanish), `score-corpus` and
+`score-line-separation` (argv[2] a label, argv[3..5] three `SearchableWriter` factors through
+`if let Double`), `score-routing` and `picture-signals` (argv[2] a label, the rest never read),
+`score-annotations` (argv[2] a second pdf), `pdf-extract-pages` and `make-observations`. Of the
+remaining eleven, nine refuse or trap loudly — `score-rebuild-dpi` lines 70-72 is the counter-pattern
+this register already argued for: *"Refused, not dropped. `compactMap(Double.init)` over argv reads `96 1o0` as 'measure
+96', silently"* — and **two ignore argv[2..] in silence while writing with `try?`**
+(`make-plate-fixtures` lines 61-62, `make_icon` line 10), so "ten refuse or trap loudly" as first
+written was wrong by two; corrected by the review of this diff. `score-illumination` is the half-trap:
+it does take a path list, but argv[1] is the population *label*, so a glob measures 232 of 233 and
+names the population after document 1.
+
+⚠️ **Two of the eight would WRITE, not mis-measure.** `pdf-extract-pages` (line 5) and
+`make-observations` (line 40) take argv[2] as an output path, so a corpus glob would overwrite the
+second file in the glob — against the 1.2 GB of uncommitted third-party PDFs CLAUDE.md says to read
+and never write, and `pdf-extract-pages` would then print `extracted 0 pages` over it. **Nobody has
+run that**, and this is a latent hazard in an instrument rather than an observed defect; it is
+**untriaged**, and queued as `argv-shape` rather than folded into this entry, because it is not C26's
+mechanism and deciding what those eight should do is its own decision. Only `score-text-route`
+documents the trap in its own header today.
+
+⛔ **What remains is the sweep itself and its analysis.** A later session polls, and the one that
+finds the TSV complete commits it and answers the population question. Cycles that only poll score as
+no-progress, which is correct rather than a fault.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct

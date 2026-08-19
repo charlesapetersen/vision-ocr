@@ -43,10 +43,18 @@ review of the diff that measured it.) The seam is
 comparand rather than its verdict — and `INKBAR=0.045 Tools/score-text-route.swift` prices any
 document with it. What is still missing is the **corpus population**: how many pages sit in
 [0.045, 0.08) and would newly pay that 3x. ⛔ The constant must not move without it (R49/R50's
-trade), and that sweep is **3-4 hours, not the 37 minutes this line first claimed** — the tool takes
+trade), and that sweep is **tens of minutes to about three hours** — the tool takes
 one PDF per invocation and samples up to 12 pages a document, so it needs a driver loop over ~2,500
-pages rather than the 441 of a different tool's sweep. Read the entry's last section before touching
-it.
+pages rather than the 441 of a different tool's sweep. (This line said **3-4 hours**, itself a
+correction of "37 minutes"; measured per-document rates on 2026-08-19 put every projection *below*
+3 h, so that figure was a ceiling guess and is retracted in the entry and here. The resumability
+argument survives it: 2.5 h at the worst measured rate still reaches the session backstop.)
+**That driver landed 2026-08-19 as
+`Tools/sweep-ink-bar.py`** — resumable per document, aborting on the environment rather than
+recording 233 identical failures, 71 `--self-test` checks with 42 mutants watched failing, and it
+reproduces the entry's 65,477 -> 195,785 bytes digit for digit through a second process; `--report`
+prints the band population. **The sweep itself is what is outstanding**, and a session that only polls
+it has done the right thing. Read the entry's last two sections before touching it.
 **The corpus
 sweep both entries were blocked on ran the same day** — 441 pages, 233 documents,
 `THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes the `extent` bar's population (61 picture-route

@@ -172,29 +172,46 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       Two traps, both measured: **the tool takes ONE pdf and treats later arguments as page
       numbers**, so a glob silently measures document 1 and prints a summary that reads like a corpus
       run — it needs a driver loop; and **it samples up to 12 pages a document, not 2**, so 233
-      documents is ~2,500 pages, not 441. At the measured 3.8 s/page that is **3-4 hours**, and
-      `1954 - Why` is 111 DPI so read it as a floor. ⛔ Do NOT move the constant without it: this is
+      documents is ~2,500 pages, not 441. ⚠️ **"3-4 hours, and read it as a FLOOR" is RETRACTED,
+      2026-08-19**: three documents timed through the driver read 3.83 / 0.54 / 0.66 s a page, so the
+      *worst* of them puts 2,500 pages at 2.7 h and the cheap ones at ~25 min. The honest figure is
+      **tens of minutes to about three hours**, and which end depends on the corpus's picture-route
+      share — part of what the sweep measures. ⛔ Do NOT move the constant without it: this is
       R50's trade, and R49/R50 are the entries about paying bytes on every text page.
       ✅ **SIZED, owner 2026-08-18: run it DETACHED ACROSS SESSIONS, the `C24b` mutant-campaign
-      pattern.** It does not fit one session and that is arithmetic, not caution: 3-4 hours is a
-      floor against a `VISIONOCR_MAXRUN` backstop of 9000 s (2.5 h), so a session that tries to see
-      it through is killed mid-sweep. The shape that works, and the one `mutate.py`'s campaign
+      pattern.** It may not fit one session, and that is arithmetic rather than caution: 2.7 h at the
+      worst measured rate against a `VISIONOCR_MAXRUN` backstop of 9000 s (2.5 h), so a session that
+      tries to see it through can be killed mid-sweep. The resumability is what makes that safe. The shape that works, and the one `mutate.py`'s campaign
       already proved on 2026-08-17:
-      **(1)** write the driver loop over documents first, and commit it — the tool's one-pdf trap
-      above means a glob reports success having measured document 1, so the driver is the deliverable
-      that makes the rest safe. Give it a resumable output: append per-document rows to the TSV as
-      each finishes, and skip documents already carrying a row, so any later session continues
-      instead of restarting.
-      **(2)** start it detached with `nohup`/`setsid` so it OUTLIVES the session, under
-      `test-lock.sh run --label inkbar-sweep` if it can collide with a suite, and write a
-      **resume note into `RUN.md`'s SESSION LOG naming the worktree, the log path and the exact
-      resume command** — that note is what makes the work survivable, and CLAUDE.md's rule applies:
-      `nohup … &` reports success immediately, so poll the artefact and never the exit code.
+      ✅ **(1) IS DONE, 2026-08-19: `Tools/sweep-ink-bar.py`.** Resumable per document (rows are
+      buffered and appended only when a document finishes, so "has a row" means "is done"); every
+      document gets a row including the ones that measure nothing, or a resume retries them for ever;
+      the tool's exits 2 and 3 and a drifted 13-column header ABORT rather than being recorded as 233
+      identical failures; `--report` reads `verdict` against `barVerdict`, because `barVerdict` alone
+      says `picture` on all five priced pages of `1954 - Why` including the two the bar does not move.
+      71 `--self-test` checks (hook-enforced), 42 mutants watched failing, and it reproduces the
+      entry's 65,477 -> 195,785 B digit for digit through a second process. One of the mutants found a
+      case that could not fail — two cases generated from `sorted(CONFIG_EXITS)` *vanished* when that
+      constant was emptied instead of failing. It deliberately does NOT take `test-lock.sh`: the lock
+      is about two `tests` binaries sharing one plist keyed by process name, and a 3-4 hour hold would
+      block every commit hook in the window.
+      **(2)** start it detached with `nohup`/`setsid` so it OUTLIVES the session, and write a
+      **resume note into `RUN.md`'s SESSION LOG naming the log path and the exact resume command** —
+      that note is what makes the work survivable, and CLAUDE.md's rule applies: `nohup … &` reports
+      success immediately, so poll the artefact and never the exit code. Run the script and the built
+      `score-text-route` from `$STATE`, not from the worktree, which is GC'd once pushed and clean.
       **(3)** later sessions poll, and the one that finds the TSV complete commits it and does the
-      analysis. Cycles that only poll will score as no-progress and back off — correct, not a fault.
-      ⚠️ Expect the run to span a stop: the daemon is not started, so nothing is polling until the
-      owner starts it. The TSV and the resume note are the whole state; `/private/tmp` does not
+      analysis — `--report` first, then the band population into `BUGS.md` C26. Cycles that only poll
+      will score as no-progress and back off — correct, not a fault. ⚠️ Read `--report`'s output as
+      counts, not as a decision: the population is the *input* to R50's trade.
+      ⚠️ The daemon WAS started (owner, 2026-08-19 00:40), so sessions are cycling and polling is
+      live; this line used to say it was not. Still expect the run to span a stop. The TSV and the
+      resume note are the whole state; `/private/tmp` does not
       survive a reboot, so keep both under the repo or `$STATE`, never only in the worktree.
+      ⚠️ **Poll with `--report` or `wc -l`, not with a second `sweep` invocation.** `--report` takes no
+      lock and only reads. Any invocation that would write — including `--dry-run`, which used to trim
+      the file before previewing it — is now REFUSED while a sweep holds `<out>.lock`, which is the
+      protection and not a fault to route around.
       ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
       the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.
@@ -378,6 +395,28 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       ⚠️ Any tool you touch is staged, so the pre-commit hook runs `check-tools-compile.sh` on it and
       the full suite. Budget a commit, not a check. (origin: the sibling sweep in C26's instrument
       commit, 2026-08-18; the rule is CONTRIBUTING §5)
+- [ ] **argv-shape** — **UNTRIAGED, and one half of it can destroy corpus files.** The sibling sweep
+      of C26's driver commit classified the argument parse of all 29 `.swift` tools (2026-08-19, in
+      `BUGS.md` C26's `Sub-step 3b, the driver` section). Eleven take a path list; **eight take one pdf
+      and read argv[2..] as something else**, so a corpus glob is silently mis-measured:
+      `score-text-route` (page numbers via `compactMap { Int($0) }`, line 88), `score-corpus` and
+      `score-line-separation` (a label then three `SearchableWriter` factors via `if let Double`),
+      `score-routing` and `picture-signals` (a label, rest unread), `score-annotations` (a second pdf),
+      `pdf-extract-pages`, `make-observations`.
+      ⛔ **Decide the last two first.** `pdf-extract-pages` line 5 and `make-observations` line 40 take
+      argv[2] as a path they **WRITE** — so `pdf-extract-pages testdocs/*/*.pdf` overwrites the second
+      corpus file and prints `extracted 0 pages`. `testdocs/` is 1.2 GB of third-party PDFs that is not
+      committed and cannot be rebuilt without the owner's Zotero library. Nobody has run it; this is
+      latent, not observed. A refusal ("argv[2] exists and is a PDF — refusing to overwrite it") is
+      cheap and is the invariant-1 shape.
+      `score-rebuild-dpi` lines 70-72 is the counter-pattern to copy, and its comment already argues
+      the case: *"Refused, not dropped… the row that never appears is indistinguishable from a
+      resolution that was never asked for"*. `score-illumination` is a half-trap worth a line too — it
+      DOES take a path list, but argv[1] is the population label, so a glob measures 232 of 233 and
+      names the population after document 1. Only `score-text-route` documents its trap in its header.
+      ⚠️ Triage before coding: some of these are single-document utilities that are right as they are,
+      and the answer per tool belongs in the commit. Any tool you touch is staged, so budget a commit
+      (a full suite) rather than a check. (origin: the sibling sweep in `BUGS.md` C26, 2026-08-19)
 
 ## HOLD — owner-only, never auto-executed
 
