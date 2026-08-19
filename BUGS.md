@@ -24,7 +24,7 @@ small, and no value of that constant would protect them.
 The corpus sweep both entries were waiting on ran the same day: **441 pages, 233 documents**, and
 it sizes the population of the `extent` bar (61 picture-route pages: 2 protected, 22 under the
 bar, 37 at zero) while **not** sizing C27's, because a mean cannot see concentrated colour.
-**⛔ C27's own instrument exists as of 2026-08-19 and its sweep has NOT been run** — the column that
+**⛔ C27's own instrument exists as of 2026-08-19 and its sweep RAN the same day** — the column that
 can see concentrated colour is `satFrac` on `Tools/score-threshold-loss.swift` (`Flattener`'s
 `saturatedFraction`: the share of the page above `satFloor`, out of the same thumbnail `sat` itself
 comes from). It reproduces the entry's independent 50-DPI red-pixel count on all 7 pages of
@@ -33,8 +33,28 @@ at `SATFLOOR=0.15` — and the two pages that count never measured are now measu
 cost the entry does not carry**: the mean gates the ROUTE as well as the colour, one number charged
 twice as in C9, so **3 pages of this document that are 1-bit today (p5, p8, p9) hold as much
 saturated ink as the picture-route pages** and a fraction-based signal inside `isPicture` moves their
-route and their bytes, not just their colour. Read C27's `#### The population instrument` before
-planning that sweep.
+route and their bytes, not just their colour.
+**The corpus sweep is `SATFRAC-2026-08-19.tsv`** — 233 documents, 441 pages, 12.2 min, every
+document `rc=0`, with the 12 columns of `THRESHOLD-LOSS-2026-08-18.tsv` reproducing digit for digit
+over all 441 rows. **428 of 441 pages are published in grey because they fail the 0.06 mean bar —
+though 401 of those have nothing measurable to lose — and 10 pages in 7 documents of 233 carry as
+much saturated ink as the page the owner watched lose real red ink**, ~220 pages of 16,987
+stratified. That 10 is bounded **both** ways (two of the ten carry no ink of their own; the bar sits
+above the smallest real marks), and the sweep's three real results are not the count. (1) **The mean
+MIS-ORDERS colour rather than merely under-counting it**: 24 discarded pages hold more saturated ink
+than the least-coloured page that keeps its colour, 6 of the 13 kept pages hold less than the
+most-coloured page that loses it (1.6x–27x), 58 of 5,564 pairs inverted. (2) ⛔ **Eight of the ten
+were dumped and read by eye** (the other two are the owner's own verdicts), and **three of the eight
+real ones are colour photographs or illustrations on pages of type rather than spot colour** — so
+the harm is wider than the entry's framing while staying fidelity *on the pages looked at*.
+(3) ⛔ **Two of the ten carry no ink of their own**: a 1938 magazine scan reads 2.0% from a page-wide
+cast the paper correction left standing — 48x what another page of the same scan reads — and a 1941
+typescript's 4.08% is 88% photographed surround from outside the sheet. **So no bar on `satFrac`
+separates the populations, and neither does the single locality test first proposed here: measured,
+that would rank the scan-border page top of the corpus.** Two terms, not one — R56's lesson in a
+second place.
+Read C27's `#### The population, swept` and `#### ⛔ And the ten pages were LOOKED AT` before
+planning anything here; the constant is untouched and nothing shipped reads the fraction.
 **⚠️ That is no longer C26's population**: the term C26 turns on is `inkOutsideText`, and the sweep
 of *that* is a separate run — it is `INKBAR-2026-08-19.tsv`, below. **What was measured 2026-08-18 is
 what C26's proposed fix costs on the document it was found on: at a bar of 0.045 all three
@@ -3445,7 +3465,12 @@ cartoon come to 3-4%. So the constant answers "is this a colour photograph page"
 well, and which is what R49 and R50 needed — and makes "this document is printed in two inks"
 **structurally invisible**, whatever the page's design intent.
 
-**The harm, stated as fidelity and not as content loss.** No word is lost and no mark is erased;
+**The harm, stated as fidelity and not as content loss.** ⚠️ **Still fidelity as of 2026-08-19, and
+WIDER than this paragraph says**: the corpus sweep's ten pages were looked at, and half of the ones
+carrying real colour are **colour photographs and illustrations on pages of type**, not two-ink
+printing — so the harm is not only "a pamphlet's red" but "a colour photograph published in grey",
+which is the case `pictureSaturationThreshold` exists to catch. See
+`#### ⛔ And the ten pages were LOOKED AT`. No word is lost and no mark is erased;
 this is not C26. What is lost is that the copy **misrepresents how the pamphlet was printed**, and
 inconsistently: p2's red survives at 24.6% while p4, p6, p7, p9 and p10 come out with none. A
 reader of the copy sees a two-ink document on its title spread and a one-ink document thereafter.
@@ -3487,7 +3512,14 @@ sat band          pages of 441   route
 the page to be under `maximumColourPageMegapixels`, and the sweep checks neither. So "13 clear
 0.06" is not "13 published in colour".
 
-So **at most 13 pages of 441 (3.0%) are near enough to the bar to be candidates**, and `1954 - Why`
+~~So **at most 13 pages of 441 (3.0%) are near enough to the bar to be candidates**~~ — **measured
+2026-08-19, that band is the WRONG candidate list in both directions**: one of its 13 pages carries
+below what this column can see (`Stanford_1891` p2, `satFrac` 0.00052 — which is not the same as
+carrying no colour: `1954 - Why` p10 has 0.520% red by hand and reads 0.00338) and 8 pages read
+above 0.003 outside it, one of them — `Ehrenreich_2000` p9, looked at, a colour illustration —
+holding more saturated ink than the page the owner watched lose its red. The other 7 are readings
+and have not been looked at.
+See `#### The population, swept`. The band as it stood: `1954 - Why`
 p4 (0.039) and p7 (0.041) are two of them — the sample drew p4 and p7 rather than the p2 that
 keeps its red, which is itself the entry's point about within-document inconsistency. The rest of
 the band: `Ford_1941_Speech_` p5 (0.057) and p3 (0.045), `2013 - Silicon Valley Program Transcript`
@@ -3524,7 +3556,9 @@ perfectly with the colour original.
 
 #### The population instrument — 2026-08-19
 
-**The column this entry said was missing exists now, and the sweep it is for has NOT been run.**
+**The column this entry said was missing exists now.** ~~and the sweep it is for has NOT been
+run.~~ **It ran the next day** — `SATFRAC-2026-08-19.tsv`, and the section after this one is what it
+found.
 `Flattener.saturatedFraction(ofRGBA:width:height:above:)` is the share of a page whose
 paper-corrected per-pixel saturation is above a floor, and `Tools/score-threshold-loss.swift` prints
 it as `satFrac` with the floor beside it as `satFloor` (`SATFLOOR=n`, default 0.25). Nothing shipped
@@ -3574,6 +3608,10 @@ cannot rank the bottom of the sheet.** `p3` carries no red and still reads **0.0
 **four times `p1`**, which does carry a little red (0.106% by hand). Scanner chroma noise and colour
 fringing are what fill that band, so a page with no spot colour on it scores roughly **0.5% at a
 0.15 floor and 0.12% at 0.25**, and any bar a sweep sets on `satFrac` has to sit above that.
+⚠️ **Corrected 2026-08-19 by the corpus sweep: that ~0.5% / ~0.12% is `1954 - Why` p3's floor and
+not a corpus constant** — `HarpersMagazine-1938-05` p4 carries no ink of its own and reads **2.0%**
+at 0.25, above a page that loses real red, while another page of that same scan reads 0.04%. So
+there is **no** single value a bar can sit above; see `#### ⛔ And the ten pages were LOOKED AT`.
 
 ⚠️ **Three floors, and no single one of them wins — which is the argument for printing the floor
 rather than choosing it once.** Ranked by what each is *for*:
@@ -3616,14 +3654,18 @@ that only wants the colour back has to separate the two decisions first. **This 
 the route, so lowering the bar costs bytes on every page" was reasoned; the three pages are
 measured, and they are 30% of this document.**
 
-**What remains, and it is one bounded item.** Sweep the corpus with the new column
+**What remains, and it is one bounded item.** ✅ **DONE 2026-08-19 — the section below is the
+answer, and the sizing guess in this paragraph is graded there: 12.2 min of measured time, one
+session, no resumable driver needed.** Sweep the corpus with the new column
 (`PAGES=2 SATFLOOR=0.25 score-threshold-loss testdocs/*/*.pdf`, 441 pages, the same shape as
 `THRESHOLD-LOSS-2026-08-18.tsv`) and count pages with `sat` under 0.06 and `satFrac` above the noise
 floor. ⚠️ **It is probably NOT the cross-session job C26's sweeps were, and the rate is measured
 rather than reasoned**: ten page-measurements of this document, `-O` build, took **4 s** — 0.4 s a
 page, and `satFrac` itself costs nothing because the thumbnail was already being rendered for `sat`.
 ⛔ **Do not turn 0.4 s a page into a corpus forecast**, which is the mistake C26's own sizing made
-twice: page area dominates, this pamphlet is 887,616 cells against the widest 2.85 M in
+twice: page area dominates, this pamphlet is 887,616 cells against the widest ~~2.85 M~~ **3.84 M
+(`3,844,260`, measured 2026-08-19 over both files; 40 of the 441 rows exceed 2.85 M, which was that
+file's FIRST data row and not its largest)** in
 `THRESHOLD-LOSS-2026-08-18.tsv`, that run's duration was never recorded, and the tool that *does* run
 Vision measured 0.54–3.83 s a page over three documents. So time three documents through whatever
 drives it, then size it — but nothing here suggests hours, and the resumable-driver machinery C26
@@ -3707,6 +3749,231 @@ check's label claimed "buffer and render alike" while asserting only the buffer.
 found that `Sources/Flattener.swift` is in `build.sh`'s `HELPER_SOURCES` — so this touches the helper
 binary too, and `CLAUDE.md`'s description of what the helper compiles was understating it; corrected
 there.
+
+#### The population, swept — 2026-08-19
+
+**The sweep this entry has been asking for since it was opened has run. The population is 10 pages
+of 441 in 7 documents of 233 at the bar that matters — and that 10 is bounded on BOTH sides.** It is
+an upper bound on what clears the bar, because two of the ten were looked at and carry no ink of
+their own; and it is a **lower** bound on pages losing real colour, because the bar sits above the
+smallest real marks — this entry's own `1954 - Why` p10 (0.520% red counted by hand) reads `satFrac`
+0.00338 and p1 (0.106%) reads 0.00114, both under every bar in the table below except the noise
+row. `SATFRAC-2026-08-19.tsv` is the
+record: 233 documents, 441 pages, `PAGES=2 SATFLOOR=0.25`, `Tools/score-threshold-loss.swift`
+built `-O` at `a728a07`, **729 s of measured time (12.2 min; slowest document 14 s)**, every
+document `rc=0`. It was not the cross-session job C26's sweeps were and C26's resumable-driver
+machinery was not needed: a throwaway per-document loop was enough, and it was used only so that a
+mid-corpus refusal could not cost the whole run.
+
+**Three controls first, because this file's entire value is that its columns are production's.**
+
+* **The 12 columns `THRESHOLD-LOSS-2026-08-18.tsv` already held reproduce digit for digit over all
+  441 rows**, and the two runs sampled the *same* 441 (document, page) pairs — 0 rows in one and
+  not the other. `sat` is one of the 12, and it is the column the shipped decision reads.
+* **The two `satFrac` values this entry published on 2026-08-19 reproduce exactly**: `1954 - Why`
+  p4 `0.01360`, p7 `0.02831`.
+* **Driving it per document moves nothing.** The first three documents' 6 rows, taken instead by
+  one three-document invocation, agree with the sweep's on all 21 columns. `sampleIndices` is
+  computed per document so the sample cannot move — measured rather than assumed.
+
+**The count, at five bars.** 428 of the 441 pages fail the 0.06 mean bar and lose their colour; 13
+clear it. How many of the 428 carry colour depends on where a bar on `satFrac` goes, and this
+entry's own noise-floor warning is why there is more than one row here:
+
+```
+satFrac bar   pages OF THE 428   % of 441   documents   what the bar is
+> 0.00124              27           6.1%       18       `1954 - Why` p3's reading at this floor — a
+                                                        page the owner confirms has NO red
+> 0.003                20           4.5%       14       2.4x that noise reading
+> 0.01                 15           3.4%       10
+>= 0.0136              10           2.3%        7       `1954 - Why` p4's own reading — the
+                                                        least-coloured page this entry watched lose
+                                                        real red ink. THE HEADLINE BAR.
+> 0.03                  7           1.6%        5
+```
+
+Every numerator is a page that **fails** the mean bar, so the percentage is of all 441 while the
+count is out of the 428 — the audit of this diff caught the first version's header calling them
+"pages of 441". The `>=` at 0.0136 is load-bearing: `1954 - Why` p4 reads exactly 0.01360 and a
+strict `>` gives 9.
+
+⛔ **And the headline bar is BELOW a measured noise reading.** `HarpersMagazine-1938-05` p4 carries no
+ink of its own and reads 0.02017, above the 0.0136 that a page losing real red reads. So none of
+these rows is proposed as a signal — this section's last part is why — and this entry's earlier
+sentence *"any bar a sweep sets on `satFrac` has to sit above that"* is corrected there: there is no
+single value that clears the noise on every page.
+
+**401 of the 441 pages read below 0.00124**, so 91% of the corpus sample is inside the noise band
+and the question can only be asked of the 40 pages above it.
+
+**Corpus scale, and this entry does not lean on it.** Per document rather than pooled — C26's
+lesson, because `sampleIndices` takes up to `PAGES` pages whatever the document's length — the
+estimate is **~220 pages of 16,987 (1.30%)** at the headline bar and **~406 (2.39%)** at
+`> 0.003`. Pooling the sampled rate says 385 and 770, **1.75x–1.90x high**, the same direction of
+error C26 retracted. Two things make even the stratified figure weak, and both are worth more than
+the figure: **none of the 220 is exact** (no document affected at the headline bar was sampled
+completely, where C26 had 8 exact pages — at `> 0.003` exactly **1.0 page** is exact, `Glazer_2002`
+being 2 pages with both sampled), and **68% of the 220 is one document** — `Schwaller - 2026`, 300
+pages, 1 of 2 sampled pages hit, contributing 150 pages on the strength of a single page's reading.
+**The sampled count is the measurement; 220 is arithmetic on top of it.**
+
+**⛔ The strongest result is not the count. The mean does not merely under-count colour — it
+MIS-ORDERS it.** Measured against the 13 pages that clear 0.06:
+
+* **24 pages that lose their colour carry more saturated ink than the least-coloured page that
+  keeps it** — `_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice` p1, `satFrac` 0.00236,
+  which is only **1.9x** the 0.00124 a page with no red on it reads at this same 0.25 floor. (This
+  bullet said 0.00236 was *below* that reading until the numbers audit of this diff: 0.00469 is
+  `1954 - Why` p3 at a **0.15** floor, and this entry's own rule is that no `satFrac` figure may be
+  quoted without the floor it was taken at.)
+* **6 of the 13 kept pages carry less than the most-coloured page that loses it** — `Schwaller`
+  p101 at 0.06367, **27.0x** the Ampex page.
+* **58 of the 5,564 (kept, discarded) pairs are ordered the wrong way round by the mean.**
+
+⚠️ Clearing 0.06 is not the whole of `shouldKeepColour` — `mode == .auto` and
+`maximumColourPageMegapixels` also apply and the sweep checks neither — so "13 kept" is a ceiling
+on what is published in colour, exactly as the 2026-08-18 note said.
+
+**The 2026-08-18 candidate list was both incomplete and held a false candidate**, which is this
+entry's claim about the mean arriving from the other direction. Of the 13 pages in the 0.03–0.06
+`sat` band it named: **`Stanford_1891` p2 reads 0.00052** — below the noise floor, a band page with
+a reading below what this column can resolve — which is not the same as no colour, since
+`1954 - Why` p10 carries 0.520% red by hand and reads 0.00338. And **8 of the 20 pages above 0.003
+sit OUTSIDE that band**, led
+by **`Ehrenreich_2000` p9 at `satFrac` 0.03063 with `sat` 0.023** — more saturated ink than
+`1954 - Why` p7 (0.02831), the page the owner watched lose its red, while sitting a whole band
+lower on the mean. ⚠️ Only that one of the 8 has been looked at; the other 7 are `satFrac` readings
+and this section's own last part is why that is not the same as colour.
+
+**`satFrac` is a continuum too, so a bar on it is a choice and not a discovered divide.** Among the
+428 the largest gap in the top 25 is **1.48x** and the top two are **1.03x** apart. Same caution
+this entry established for `sat` (0.057 to 0.061 — a gap **0.004 wide across** 0.06, not 0.004 on
+each side of it), and the opposite of C26's
+`paleDrawingThreshold` (0.045 against 0.219, a 4.9x gap).
+
+#### ⛔ And the ten pages were LOOKED AT, which changes what this entry is about — 2026-08-19
+
+Each page's production saturation thumbnail was written out beside the mask of the pixels
+`satFrac` counted, through `Flattener.saturationThumbnail` and `forEachSaturation` — the same walk
+and the same buffer the number comes from, in a separate invocation. **Eight of the ten were dumped
+and read; the other two are the owner's own 2026-08-17 verdicts**, not this session's:
+
+```
+satFrac  sat    route    page                                    what is actually on it
+0.06367  0.037  picture  Schwaller - 2026 p101                   COLOUR PHOTOGRAPH + blue caption
+0.06198  0.037  picture  Ehrenreich_2000 p5                      colour illustration
+0.04517  0.050  1-bit    2013 - Silicon Valley Transcript p13    red brand banner, knockout type
+0.04512  0.050  1-bit    2013 - Silicon Valley Transcript p26    same red banner; the whole count is
+                                                                 the banner, as on p13
+0.04082  0.057  picture  Ford_1941_Speech_ p5                    MISATTRIBUTED — see below
+0.03727  0.039  picture  Black_0000 p3                           black line art + ONE gold ink (Hazel)
+0.03063  0.023  picture  Ehrenreich_2000 p9                      colour illustration
+0.02831  0.041  picture  1954 - Why p7                           red (owner, 2026-08-17)
+0.02017  0.036  1-bit    HarpersMagazine-1938-05 p4              NO INK OF ITS OWN — see below
+0.01360  0.039  picture  1954 - Why p4                           red (owner, 2026-08-17)
+```
+
+⚠️ **The dumps are the COLD renders, on the two pages where cold and warm differ** — see the
+instrument note below. `1954 - Why` p7's mask counts 3.005% against the sweep's 2.831% and
+`Schwaller` p101's 6.438% against 6.367%; `Ehrenreich_2000` p5's is byte-identical either way. No
+verdict in the table depends on it, and the first version of this paragraph claimed the pictures
+*were* the sweep's rows, which on those two pages they are not.
+
+**⛔ Three of the eight real pages are not spot colour, and that is a bigger harm than the one this
+entry was opened for.** `Schwaller` p101 is a **colour photograph** on a page of type with a blue
+figure caption; `Ehrenreich_2000` p5 and p9 are colour illustrations. The other five are one extra
+ink: `2013 - Silicon Valley Program Transcript` p13/p26's red banner, `1954 - Why` p4/p7's red, and
+`Black_0000` p3, which the first version of this section called "a colour cartoon strip" and the
+review of this diff corrected — it is **black line art plus a single gold ink**, 75% of its counted
+pixels in one hue and confined to the cartoon panel, which is the entry's founding case and not a
+new one. So the harm is **wider than two-ink printing without being mostly wider**: a colour
+photograph on a text page is published in grey, which is precisely the case
+`pictureSaturationThreshold` exists to catch and the case R49 and R50 were about. The mean is
+diluted by the surrounding type — a photograph whose saturated pixels cover 6.4% of the sheet reads
+`sat` 0.037. (6.4% is `satFrac`, a lower bound on the photograph's footprint and not its area.)
+
+⚠️ **And the classification is settled for these ten pages, NOT for the corpus.** This ranking is by
+*quantity* of colour, which is biased away from the pages where colour carries meaning — a chart's
+coloured series is a little colour and all of the information. The unexamined pages above the noise
+band include `AI 2027` p24 and `Levy and Temin - 2007` p23/p45, modern reports of exactly that kind.
+**C26 was reclassified from fidelity to an invariant-1 defect by this same "look at the pages" step**
+days earlier, so "fidelity" here means *on the ten looked at*.
+
+**⛔ Two of the ten carry no ink of their own, and they are why the count is an upper bound.**
+
+* **`HarpersMagazine-1938-05` p4 has no ink of its own in the count, and the mechanism is not the
+  obvious one.** The first version of this bullet said "chroma fringing on black letters"; the
+  review of this diff measured the dumped mask and refuted it — **97% of the counted pixels share
+  one hue, their median luminance is paper-bright rather than letter-dark, and they are ~1,290
+  components whose largest is 6 px**. It is a page-wide cast that the von Kries correction did not
+  remove. **The decisive evidence is in the sweep's own file and needs no image**: the *same
+  document's* p7, at the same ink density and threshold (`ink` 0.143 vs 0.139, `otsu` 174 vs 172),
+  reads `satFrac` **0.00042 — 48x lower**, and `sat` 0.017 against 0.036. Fringing on letterforms
+  cannot differ 48x between two pages of the same type at the same ink density; a per-sheet cast
+  can. So **the noise floor is a per-page property and not the corpus constant this entry took from
+  `1954 - Why` p3 (~0.12% at 0.25)** — on *one page* of this 1938 scan it is 2.0% while another
+  page of the same scan reads 0.04%. ⚠️ That also makes it an instrument finding:
+  `saturatedFraction`'s paper correction leaves a whole-sheet cast standing on this page, and
+  nobody has chased why.
+* **`Ford_1941_Speech_` p5's colour is a small red library stamp, but that is not what was
+  counted.** Measured by the review of this diff over the dumped mask: **88% of the counted pixels
+  lie in the photographed border-connected surround *outside* the sheet**, and excluding them
+  leaves the page at **0.49%** — below `1954 - Why` p4's 1.36%. This page is the closest to the bar
+  in the whole corpus (`sat` 0.057 against 0.060), and what nearly promotes it is the scan's
+  background. Compare C26's `RIESMAN_1942` p10, whose only non-stencil ink is a pale scanner-edge
+  strip: the same artefact, charged against a different decision.
+
+**So no single bar on `satFrac` separates these populations either** — and ⛔ **neither does the
+single test the first version of this section proposed.** It said the answer "looks like a locality
+or largest-connected-region test", and the review of this diff refuted that from the dumped masks:
+**`Ford_1941` p5's largest connected component holds 88.2% of its counted pixels in one border
+ring, against 44.7% for `Schwaller` p101 and 7.6% for `1954 - Why` p7** — so a largest-region test
+*alone* ranks the page it was meant to reject top of the corpus, and ranks the weakest real page
+nearly last. What the pictures actually say is that there are **two** problems and they need two
+terms: saturation **outside the sheet** has to be discarded (`Ford_1941` p5, and C26's
+`RIESMAN_1942` p10 for the other decision), and a **locality** term is what separates a page-wide
+cast from a mark (`HarpersMagazine` p4's ~1,290 components with a 6 px largest, against 44.7% in one
+region). ⚠️ Both are untested on `1954 - Why` p4, the page that *defines* the headline bar and the
+one page of the ten that was never dumped. That is R56's lesson arriving in a second place — *the
+term that closed R56 is not a threshold on how pale a mark is but on where it is* — with R56's other
+lesson attached: four candidate signals were refused there before one worked.
+
+**And the route is in it for 3 of the 10** — `2013 - Silicon Valley Program Transcript` p13/p26 and
+`HarpersMagazine-1938-05` p4 are on the **1-bit** route today, so they are not merely losing
+colour, they are being thresholded. So "the same number charged twice" (C9) is found on 3 more
+pages in 2 documents besides the pamphlet, rather than only inside it. (The first version of this
+sentence called that "the 3-of-10 shape reproduced"; 3 of a corpus top-ten and 3 of a ten-page
+pamphlet are not the same statistic, and the coincidence is numerology.)
+
+⚠️ **One instrument fact to know before re-measuring any single page: `saturation(of:)` is not a
+pure function of the page.** Taking the thumbnail cold gives a different answer than taking it
+after the page has been rendered at full resolution, on pages whose images CoreGraphics caches.
+Measured: `1954 - Why` p7 reads `sat 0.041 / satFrac 0.02831` warm and **`0.044 / 0.03033` cold
+(+7.1% on the fraction)**; `Schwaller` p101 `0.06367` warm and `0.06514` cold; five of the seven
+pages tried are identical either way. **Production renders the page grey first** — `flatten` calls
+`renderGrey`, then `let sat = mode == .auto ? saturation(of: page) : 0` — and so does
+`score-threshold-loss`, so this sweep's numbers are production's. But a tool or check that reads
+`saturation(of:)` cold will not reproduce them, and that is one wrong-instrument session waiting to
+happen.
+
+**What remains, and none of it is the constant.** The population is sized and the harm is
+characterised for the ten pages looked at; what is *not* measured is (a) the **two** terms the masks
+ask for — discarding saturation outside the sheet, and a locality term — separately rather than as
+the one signal this section first proposed and the review refuted, measured over the 40 pages above
+the noise band and including `1954 - Why` p4, which defines the bar and was never dumped,
+(b) **what keeping the colour costs in bytes** on those pages —
+the R49/R50 trade, unpriced here, and the reason this cannot be closed on the harm alone, and (c)
+that one number still gates both `isPicture` and `shouldKeepColour`, so nothing can be given back
+to the colour decision without separating them first. The constant stays where it is: **this sweep
+is an argument about the statistic, not a licence to move 0.06.** ⚠️ **And the reason is not the one
+the first draft of this section gave.** It said lowering the bar would "send 428 pages' worth of
+tinted grey scans down the picture path"; measured, a bar low enough to reach the lowest of the ten
+(`Ehrenreich_2000` p9 at `sat` 0.023) admits **14 of the 428, and only 3 of those are 1-bit today**,
+so the route cost of moving the number is small and the argument against moving it has to be its
+*accuracy*, not its blast radius. Of the 428, 380 are 1-bit and 48 already take the picture route.
+The case against the number stands on the ordering: no value of it puts the ten above the pages that
+already clear it, because two of the ten carry no colour and one page that keeps its colour reads
+0.00236.
 
 ## Robustness and correctness of reporting
 

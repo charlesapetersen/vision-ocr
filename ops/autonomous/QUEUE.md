@@ -269,9 +269,12 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       ⚠️ **C26's sweep RAN on 2026-08-18 and it does NOT size this population** — the shared-sweep
       plan on this line was wrong, for the reason the entry itself gives: `sat` is a mean, so a page
       at 0.045 may be two-ink or uniformly tinted and no bar on a mean separates them. What the
-      sweep gives is a bound and a candidate list: **13 pages of 441 sit in 0.03–0.06**, against 13
-      that clear 0.06. `1954 - Why` p4 and p7 are two of the 13 in the band; the
-      other eleven have never been looked at and are listed in the entry. **Do not re-run the
+      sweep gives is a bound and ~~a candidate list~~: **13 pages of 441 sit in 0.03–0.06**, against 13
+      that clear 0.06. ⛔ **RETRACTED 2026-08-19 as a candidate list — the band is wrong in both
+      directions** (`BUGS.md` C27 `#### The population, swept`): one of its 13 reads below what the
+      column can resolve and 8 pages above 0.003 sit outside it. 9 of its 13 have now been looked at
+      or measured; the four left are `Ford_1941` p3, `Atkinson_1939` p3 and `Stanford_1891` p2/p3.
+      **Do not re-run the
       sweep.** Sizing this population needs a per-page **saturated-pixel fraction** — what the
       owner's own C27 measurement used (`in red%`) — and no tool in this repo prints it over the
       corpus. That column, added to `score-threshold-loss` or beside it, is sub-step 1 now.
@@ -285,27 +288,59 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       `THRESHOLD-LOSS-2026-08-18.tsv`'s 12 pre-existing columns digit for digit including `sat`. Three
       results are in the entry's `#### The population instrument` section: `p5`/`p8`, which the entry
       never measured, are in the same population (`p8` third of the ten); ⛔ **the column has a noise
-      floor ABOVE the smallest real marks** — a page with no spot colour reads ~0.5% at a 0.15 floor
-      and ~0.12% at 0.25, so `p1` (0.1% red by hand) ranks *below* `p3` (none) and a bar on `satFrac`
-      has to sit above that, which is also why the floor that reproduces the hand count is not the one
+      floor ABOVE the smallest real marks** — ⚠️ **superseded 2026-08-19: that floor is one page's and
+      not a constant, so "a bar has to sit above it" has no value to name; a 1938 magazine scan reads
+      2.0% with no ink of its own** — a page with no spot colour reads ~0.5% at a 0.15 floor
+      and ~0.12% at 0.25, so `p1` (0.1% red by hand) ranks *below* `p3` (none), which is also why the floor that reproduces the hand count is not the one
       that separates best; and ⛔ **the mean gates the ROUTE as well as the colour** (C9's "same number
       charged twice"), so `p8` and `p9` are 1-bit today while holding as much saturated ink as the
       picture pages `p6`/`p7` (`p5` a little less), and a fraction inside `isPicture` moves their bytes
       too.
-      ⛔ **NEXT IS THE SWEEP, AND IT IS ONE BOUNDED ITEM.**
-      `PAGES=2 SATFLOOR=0.25 score-threshold-loss testdocs/*/*.pdf` — 441 pages, the same shape as
-      `THRESHOLD-LOSS-2026-08-18.tsv` — then count pages with `sat` under 0.06 and `satFrac` above the
-      noise floor. ⚠️ **It is probably a ONE-SESSION job, unlike C26's sweeps**: measured, ten
+      ✅ **THE SWEEP RAN 2026-08-19 AND IS `SATFRAC-2026-08-19.tsv`. DO NOT RE-RUN IT.** 233
+      documents, 441 pages, 12.2 min, every document `rc=0`; the 12 columns of the previous day's file
+      reproduce digit for digit over all 441 rows. **428 of 441 pages are published in grey (they
+      fail the 0.06 mean bar; 401 of them have nothing measurable to lose), and 10 pages in 7
+      documents of 233 carry as much saturated ink as the page the owner watched lose real red ink**,
+      ~220 pages of 16,987 stratified — bounded **both** ways, and not the result. The results are:
+      the mean **mis-orders** colour (24 discarded pages hold more than the least-coloured page that
+      keeps its colour; 58 of 5,564 pairs inverted); **eight of the ten were dumped and read by eye**
+      (the other two are the owner's own verdicts) and **three of the eight real ones are colour
+      PHOTOGRAPHS or illustrations on pages of type**, not spot colour; and **two carry no ink of
+      their own** (a 1938 scan reads 2.0% from a page-wide cast the paper correction left standing,
+      48x what another page of that scan reads; a 1941 typescript's 4.08% is 88% photographed surround
+      from outside the sheet). ⛔ **So the noise floor is per-page, no bar on the fraction separates
+      the populations, and the single locality test first proposed for it would rank that scan-border
+      page top of the corpus — TWO terms, not one.** R56's lesson in a second place.
+      Read `#### The population, swept` and `#### ⛔ And the ten pages were LOOKED AT`.
+      ⛔ **NEXT, and each is one bounded item:** (a) the **two mask terms measured separately** —
+      discarding saturation outside the sheet, and a locality term (`Flattener.pageMarks` has an
+      8-connected component routine already) — over the 40 pages above the noise band, and including
+      `1954 - Why` p4, which defines the headline bar and is the one page of the ten never dumped;
+      (b) **the byte price** of keeping colour on those pages, unpriced and the reason this cannot
+      close on the harm alone (R49/R50's trade); (c) **split the one number** that gates both
+      `isPicture` and `shouldKeepColour`, because nothing can be given back to the colour decision
+      while a change to it also moves the route (C9). The constant is still not a
+      session's to move.
+      ⚠️ **Instrument fact from the sweep, before re-measuring any single page:** `saturation(of:)`
+      is **not** a pure function of the page — read cold it differs from read after a full-resolution
+      render of the same page (`1954 - Why` p7: satFrac 0.02831 warm, 0.03033 cold, +7.1%; five of
+      seven pages identical). Production renders grey first and so does the tool.
+      ~~It is probably a ONE-SESSION job, unlike C26's sweeps~~ — it was, and the estimate below held:
+      measured, ten
       page-measurements of `1954 - Why` took **4 s** with an `-O` build (0.4 s a page; this path runs
       no OCR). ⛔ **Do not extrapolate that to the corpus** — page area dominates, this pamphlet is
-      887,616 cells against the widest 2.85 M in `THRESHOLD-LOSS-2026-08-18.tsv`, that run's own
+      887,616 cells against the widest **3.84 M** (not the 2.85 M this line said until 2026-08-19 —
+      that was the file's first data row; 40 of its 441 rows are bigger) in
+      `THRESHOLD-LOSS-2026-08-18.tsv`, that run's own
       duration was never recorded, and the Vision-running tool measured 0.54–3.83 s a page. Time three
       documents first, then size it. The tool has no resume; `sweep-ink-bar.py` is the shape if one is
       wanted, but ⚠️ **its `CONFIG_EXITS = {2, 3}` does not transfer** — for its own target 3 is "no
       `jbig2`", and for this tool 3 is "measured no pages", a recordable per-document outcome that as a
       config exit would abort the sweep on the first unmeasurable document. Here the set is **{2, 4}**.
-      Until the count exists this is
-      still one document, and one document is not a campaign (R55's lesson) — the constant is not a
+      ~~Until the count exists this is still one document~~ — **the count exists as of 2026-08-19 (10
+      pages, 7 documents), so this is no longer one document.** What is still missing before anything
+      could close is the **byte price**, so it is not yet a campaign that can be closed on
+      arithmetic (R55's shape) — and the constant is not a
       session's to move either way.
       ✅ One thing the sweep did settle, in this entry's favour: across the 0.06 bar the distribution
       is a **continuum**, 0.057 then 0.061, a gap of 0.004 — so no value of the constant separates
