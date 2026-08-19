@@ -50,11 +50,34 @@
 // rather than assumed — a row whose stencil moves says `STENCIL-MOVED` and
 // re-encodes.
 //
+// **`INKDUMP=<dir>` writes the layers out, which is C26 sub-step 4.** Sub-step 3
+// priced the bar in bytes; sub-step 4 asks whether those bytes buy anything, and no
+// column here can answer that — a page paying 4.54x to keep a drawing and a page of
+// plain type paying it for nothing print the same `barDelta`. What separates them is
+// the tone layers themselves. Because the stencil is byte-identical at both bars, the
+// *whole* difference between what ships and what the bar would ship is in the files
+// this writes, so comparing `bg-shipped` against `bg-bar` is comparing exactly what
+// the constant changes and nothing else.
+//
 //   mkdir -p /tmp/h && cp Tools/score-text-route.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-text-route -target "$(uname -m)-apple-macos13.0" \
 //     $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
 //   /tmp/score-text-route "<pdf>" [page…]        # 1-indexed; default: a spread
 //   INKBAR=0.045 /tmp/score-text-route "<pdf>"   # + the priced columns
+//   INKBAR=0.045 INKDUMP=/tmp/look /tmp/score-text-route "<pdf>" 4
+//
+// Exit codes: 1 unreadable PDF, 2 a refused `INKBAR`/`INKDUMP`, 3 no jbig2,
+// **4 an INKDUMP that did not write everything it promised** — the totals are still
+// printed and still valid on a 4, because only the dump failed — and 5 a failed
+// self-test, which measures nothing. `Tools/sweep-ink-bar.py` treats 2 and 3 as
+// configuration aborts and never sets `INKDUMP`, so it cannot see 4.
+//
+// ⚠️ **5 is NOT in that driver's `CONFIG_EXITS`, and it is systematic, so the driver would
+// record 233 identical failure rows rather than aborting** — the exact shape its abort
+// exists to prevent. Left as it is deliberately: adding 5 there means moving a constant
+// its own `--self-test` asserts (`CONFIG_EXITS == {2, 3}`) plus a mutant, and a 5 can only
+// happen if someone breaks the self-test above in the same commit they run a corpus sweep.
+// Named rather than fixed, and the remedy is one line if that ever stops being true.
 //
 // Needs jbig2 on PATH — without it there is no size question to answer, and it
 // says so rather than reporting halves.
@@ -129,6 +152,117 @@ let priceBar: Double? = {
     }
     return bar
 }()
+
+/// C26 sub-step 4. Where to write the layers this run publishes, or `nil` for none.
+///
+/// An environment variable for the same reason `INKBAR` is one, and here the reason is
+/// sharper than convention: every trailing argument is a page number and `requested` is
+/// `compactMap { Int($0) }`, so a `--dump` flag would be **silently swallowed** by the
+/// page parser. The tool would accept it, write nothing, and print a clean run — which
+/// is precisely the failure `score-threshold-loss`'s `dumpFailures` list exists for,
+/// arriving through the argument parser instead of through the writer.
+///
+/// Refused loudly rather than created quietly on a bad path: a dump is evidence, and an
+/// empty directory reads as "there was nothing on those pages", which would settle
+/// C26's remaining question the wrong way round.
+let dumpDirectory: URL? = {
+    guard let raw = ProcessInfo.processInfo.environment["INKDUMP"], !raw.isEmpty
+    else { return nil }
+    let url = URL(fileURLWithPath: raw, isDirectory: true)
+    do {
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    } catch {
+        FileHandle.standardError.write(Data(
+            "INKDUMP=\(raw) cannot be created: \(error.localizedDescription)\n".utf8))
+        exit(2)
+    }
+    var isDirectory: ObjCBool = false
+    guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+          isDirectory.boolValue else {
+        FileHandle.standardError.write(Data("INKDUMP=\(raw) is not a directory\n".utf8))
+        exit(2)
+    }
+    return url
+}()
+
+/// How many pages `INKDUMP` wrote in full, and how many promised files never reached
+/// disk. Both are needed: `dumpMissing == 0` over `dumpedPages == 0` is the silent
+/// failure, and it looks identical to success from inside the loop.
+/// …and how many pages ever REACHED the dump, which is the third thing and the one the
+/// first version of this block left out. Five `continue`s sit above the dump — already
+/// 1-bit, an A12.2 DPI drift, a failed render, a failed isolation — so
+/// `INKDUMP … doc.pdf 3` over a 1-bit page 3 is a run with **nothing to dump**, and
+/// without this counter it was indistinguishable from a broken writer: it printed a
+/// correct row and then "INKDUMP wrote NOTHING, read that as an instrument failure",
+/// which is the exact inversion of the distinction this accounting exists for. Caught by
+/// the adversarial review of this diff, which also noted that `score-mrc`'s sibling fix in
+/// the same commit had the qualifier (`dumped == 0 && layered > 0`) and this did not.
+var dumpedPages = 0, dumpMissing = 0, dumpablePages = 0
+
+/// The exit status a finished run deserves, as a function of its four inputs and
+/// nothing else.
+///
+/// Pulled out of `finish()` so it can be asserted rather than reasoned about. Ten checks
+/// in this register could not fail, and the shape they share is a verdict computed inline
+/// where nothing can call it — so the enumeration below is CONTRIBUTING 4d's
+/// states-by-doors table at its smallest: every combination of "was a dump asked for",
+/// "did any page write in full" and "did any promised file go missing", including the
+/// inverse rows where no dump was asked for and the answer must be 0 whatever the
+/// counters say.
+func dumpExitCode(asked: Bool, dumpable: Int, wrote: Int, missing: Int) -> Int32 {
+    guard asked else { return 0 }
+    return (missing > 0 || (dumpable > 0 && wrote == 0)) ? 4 : 0
+}
+
+// Runs on every invocation, `score-mrc` and `score-threshold-loss`'s pattern. Cheap
+// enough to be unconditional, and the point of it is the FOURTH row: a run that wrote
+// nothing and lost nothing is the silent failure, and it is the one a reader would
+// mistake for "there was nothing on those pages".
+for (asked, dumpable, wrote, missing, want) in [
+    (false, 0, 0, 0, Int32(0)),   // no dump asked for: 0
+    (false, 3, 0, 9, Int32(0)),   // …even if the counters are somehow non-zero
+    (false, 3, 3, 0, Int32(0)),   // …and with a full dump's counters, still 0
+    (true, 3, 3, 0, Int32(0)),    // three dumpable, three written, nothing lost: 0
+    (true, 3, 0, 0, Int32(4)),    // ⚠️ THE SILENT ONE: pages to dump, none written
+    (true, 0, 0, 0, Int32(0)),    // ⚠️ AND ITS TWIN: nothing to dump, so 0 is the answer
+    (true, 0, 0, 6, Int32(4)),    // files went missing even with no dumpable page: 4
+    (true, 3, 2, 1, Int32(4)),    // partial across pages: still 4
+] where dumpExitCode(asked: asked, dumpable: dumpable, wrote: wrote, missing: missing) != want {
+    FileHandle.standardError.write(Data(
+        ("score-text-route: self-test failed on (asked: \(asked), dumpable: \(dumpable), "
+         + "wrote: \(wrote), missing: \(missing)) — wanted \(want), got "
+         + "\(dumpExitCode(asked: asked, dumpable: dumpable, wrote: wrote, missing: missing)); "
+         + "measuring nothing\n").utf8))
+    exit(5)
+}
+
+/// Exit, carrying an incomplete dump in the status. Two `exit`s below reach the end of
+/// the run — the "no picture-route pages measured" guard and the normal fall-through —
+/// and a dump failure has to survive both. The totals are printed either way, because
+/// they are unaffected by whether the images were written.
+/// ⚠️ It also removes `work`, and that is not housekeeping. The top-level `defer` below
+/// only runs when this file falls off its own end; before this function existed, the
+/// normal path *did* fall off the end, so routing it through `exit` would silently start
+/// leaking a scratch directory holding up to twelve pages of renders and layers on every
+/// run. `score-mrc.swift`'s `stop` carries the same note and the same reason.
+func finish() -> Never {
+    let silent = dumpDirectory != nil && dumpablePages > 0 && dumpedPages == 0
+    if dumpDirectory != nil {
+        print("INKDUMP: \(dumpedPages) page(s) written in full of \(dumpablePages) that "
+              + "reached the dump, \(dumpMissing) promised file(s) missing")
+        if dumpablePages == 0 {
+            print("  no page reached the layering decision, so there was nothing to dump — "
+                  + "an empty answer, not an instrument failure")
+        }
+        if silent {
+            print("  ⚠️ INKDUMP wrote NOTHING. Read that as an instrument failure, not "
+                  + "as an empty answer about these pages.")
+        }
+    }
+    try? FileManager.default.removeItem(at: work)
+    exit(dumpExitCode(asked: dumpDirectory != nil, dumpable: dumpablePages,
+                      wrote: dumpedPages, missing: dumpMissing))
+}
 
 /// The one printer, and the thirteen columns in one place.
 ///
@@ -278,9 +412,19 @@ for index in pages {
     // --- layered, exactly as it ships ---
     var layered = 0, stencilBytes = 0, shippedBackgroundWidth = 0
     var shippedMask: Data?
+    // Held for `INKDUMP` below. The struct is three URLs and four dimensions, so
+    // keeping it costs nothing and reading the files back out of `work` after the loop
+    // body would be reading paths this tool composed by hand rather than the ones
+    // `mrcLayers` returned.
+    var shippedLayers: Flattener.MRCLayers?
     if !boxes.isEmpty,
        let layers = Flattener.mrcLayers(for: page, boxes: boxes, into: work,
                                        stem: "m\(index)", inColour: isColour) {
+        // Assigned OUTSIDE the encode guard, deliberately: an external `jbig2` failing has
+        // nothing to do with whether `mrcLayers` wrote its three files, and inside the guard
+        // a failed encode collapsed the dump to one grey PNG while still reporting "written
+        // in full". Found by the adversarial review of this diff.
+        shippedLayers = layers
         let stencil = work.appendingPathComponent("m\(index).jbig2")
         if (try? JBIG2.encode(png: layers.mask, to: stencil, using: jbig2)) != nil {
             stencilBytes = bytes(stencil)
@@ -309,11 +453,13 @@ for index in pages {
     // `barDelta` would otherwise print `same`, which reads as "the change is free".
     var layeredAtBar = 0, movedStencil = false
     var barBackgroundWidth = 0
+    var barLayers: Flattener.MRCLayers?
     if let bar = priceBar, stencilBytes > 0 {
         Flattener.textPageInkOutsideThresholdOverride = bar
         if let layers = Flattener.mrcLayers(for: page, boxes: boxes, into: work,
                                            stem: "mb\(index)", inColour: isColour) {
             barBackgroundWidth = layers.backgroundWidth
+            barLayers = layers
             var barStencil = stencilBytes
             // The stencil reads no downsample factor, so it should be the same bytes.
             // Checked rather than assumed, and if it ever moves the row says so and
@@ -329,6 +475,69 @@ for index in pages {
             }
         }
         Flattener.textPageInkOutsideThresholdOverride = nil
+    }
+
+    // --- C26 sub-step 4: the layers themselves, for a reader rather than a total ---
+    //
+    // Placed here, immediately after the override is cleared and before the 1-bit
+    // route's own `continue`, for the same reason the clear is: a page that fails to
+    // encode further down must still have written its evidence, because the bytes are
+    // not what this mode is for.
+    //
+    // The promise is built from what actually got built, not from a fixed list of six
+    // names. A page the tool declined to layer has no tone layers to write, and
+    // promising them would make that page indistinguishable from a dump that silently
+    // failed — which is the one distinction this accounting exists to keep.
+    if let dump = dumpDirectory {
+        dumpablePages += 1
+        // ⚠️ The document's own name is in every filename, and it was NOT in the first
+        // version. Among C26's 13 pages `p1` occurs twice and `p8` occurs twice, so nine
+        // invocations sharing one `<dir>` — which is what this entry's own re-derivation
+        // recipe says to do — silently overwrote two pairs while counting both and exiting
+        // 0. Evidence lost while reporting success, in the mode added to stop exactly that.
+        // `score-mrc`'s `MRC_DUMP` already prefixed its label; caught by the adversarial
+        // review of this diff.
+        let stem = "\(src.deletingPathExtension().lastPathComponent.prefix(40))-p\(index)"
+        var promised: [(String, () -> Data?)] = [
+            ("\(stem)-source.png", { Flattener.greyPNG(grey, width: w, height: h) })
+        ]
+        if let s = shippedLayers {
+            promised += [
+                ("\(stem)-bg-shipped.jpg", { try? Data(contentsOf: s.background) }),
+                ("\(stem)-fg-shipped.jpg", { try? Data(contentsOf: s.foreground) }),
+                ("\(stem)-stencil.png", { try? Data(contentsOf: s.mask) }),
+            ]
+        }
+        if let b = barLayers {
+            promised += [
+                ("\(stem)-bg-bar.jpg", { try? Data(contentsOf: b.background) }),
+                ("\(stem)-fg-bar.jpg", { try? Data(contentsOf: b.foreground) }),
+                // The bar's stencil too, so a reader can check this entry's central premise
+                // — that the stencil is byte-identical at both bars — from the dump instead
+                // of taking the tool's word for it. The first version dumped only the
+                // shipped one, which asks to be believed.
+                ("\(stem)-stencil-bar.png", { try? Data(contentsOf: b.mask) }),
+            ]
+        }
+        var missing: [String] = []
+        for (name, produce) in promised {
+            guard let data = produce(), !data.isEmpty,
+                  (try? data.write(to: dump.appendingPathComponent(name))) != nil
+            else { missing.append(name); continue }
+        }
+        // Per page on stderr rather than in a column: the row is a TSV a driver parses,
+        // and the dump is a thing a person is about to look at. The two background
+        // widths go with it because they are what makes the pair worth comparing — equal
+        // widths mean the bar did not move this page and the two images are the same
+        // picture.
+        let note = missing.isEmpty
+            ? "wrote \(promised.count) file(s)"
+            : "wrote \(promised.count - missing.count) of \(promised.count) file(s), "
+              + "MISSING \(missing.joined(separator: " "))"
+        FileHandle.standardError.write(Data(
+            ("INKDUMP p\(index): \(note); background \(shippedBackgroundWidth)px shipped"
+             + " vs \(barBackgroundWidth)px at the bar\n").utf8))
+        if missing.isEmpty { dumpedPages += 1 } else { dumpMissing += missing.count }
     }
 
     // --- 1-bit, via the shipped Black & white route ---
@@ -399,7 +608,7 @@ for index in pages {
 }
 
 print("")
-guard counted > 0 else { print("no picture-route pages measured"); exit(0) }
+guard counted > 0 else { print("no picture-route pages measured"); finish() }
 print("\(counted) picture-route pages: layered \(totalLayered) B, 1-bit \(totalBilevel) B, "
       + String(format: "delta %+d B (%.0f B/page)",
                totalBilevel - totalLayered,
@@ -450,3 +659,4 @@ if let bar = priceBar {
         }
     }
 }
+finish()

@@ -43,13 +43,19 @@ day**: the sweep takes 12 pages a document whatever its length, so pooling its p
 short documents' rate (4.8x higher) to the long documents holding 98% of the corpus. R49/R50 state
 **no** growth-tolerance bar (read 2026-08-19), so there is nothing to test that against; what R50 was
 accepted on was "not one grew", and this grows ten documents while barely moving the corpus.
-**⛔ So the population is known and what is still unmeasured is the SIZE OF THE BENEFIT**: only 3 of the
-16 moved pages are known to lose content, and whether the other 13 carry an erased mark or are plain
-type paying 4.54x for nothing is sub-step (4). The evidence leans toward them being real — the 16 were
-selected by the mechanism that erases, the three known losses sit at `inkOut` ranks 4, 6 and 13 of 17
-rather than at an extreme, and 4 of the 16 are colour-route pages at 5-7% non-text ink — but none of
-that is a rendered page. The decision is the owner's, R55's precedent, and it is in the run's
-`NEEDS OWNER`. Both entries carry the numbers and the retractions. It is **not** R56, whose fix is
+**⛔ The population is known AND so is the benefit, measured 2026-08-19: the other 13 pages were
+rendered at both bars and 11 of them lose something.** `INKDUMP` on `Tools/score-text-route.swift`
+writes both tone-layer pairs from the same call the byte columns come from, and the stencil being
+byte-identical at both bars makes the two backgrounds the whole difference. **7 of the 13 lose whole
+lines of prose or table data, and an 8th a hand-drawn mark** — `Xin Qu` p20 loses thirteen values out of a Pearson correlation
+matrix, `_1973_Committee Against Racism_` p4 loses seven lines — 2 more lose graphic rules and word
+fragments, 1 blurs a pencil mark, and **2 lose nothing a reader would see**. ⛔ **So C26 is an
+invariant-1 defect, not the fidelity complaint the entry was opened as**: the dominant case is not a
+drawing but prose Vision failed to box, cut from the stencil and then destroyed in the background.
+⛔ **And the dearest page of the 16 is one of the two that buy nothing** — `RIESMAN_1942` p10 at
++702,280 B and 6.47x, whose only non-stencil ink is a pale scanner-edge strip; with `Riesman - 1954`
+p18 that is **32.4% of the band's byte cost on pages a reader cannot tell apart.** The decision is
+still the owner's, R55's precedent, and it is in the run's `NEEDS OWNER`. Both entries carry the numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
 **C24 closed 2026-08-17** — read the paragraph
@@ -2164,8 +2170,11 @@ right and about the wrong layer.
 The corpus sweep landed 2026-08-19 (`INKBAR-2026-08-19.tsv`): the band `[0.045, 0.08)` holds **17
 pages, 16 of which move**, and they cost **4.54x / 185,353 B per page** — not the **2.99x /
 43,436 B** "Sub-step 3, half of it" measured on this document, whose three pages turn out to be the
-cheapest end of the band. The population is now known; the constant is **still not decidable**,
-because only 3 of the 16 are known to be losing content.
+cheapest end of the band. The population is known AND so is the benefit (sub-step 4, 2026-08-19):
+**11 of the 13 unmeasured pages lose something and 8 lose content outright — 7 whole lines of prose or table data, 1 a hand-drawn mark**, which
+makes C26 an invariant-1 defect — but the dearest page of the 16 loses nothing, so the constant is
+still the owner's call. This sentence read "still not decidable, because only 3 of the 16 are known to
+be losing content" until that ran.
 
 **Three of the four red line drawings in a 10-page booklet are erased or all but erased, and
 every word on every page survives**, which is what makes it invisible in use. Rendered at
@@ -3192,8 +3201,9 @@ close on — reads *"The 125 changed pages cost 20.8 MB between them, 166 KB a p
 232-document gate's 721 MB that is +2.9% — arithmetic from this subset rather than a corpus run, and
 labelled as such."* This proposition is **~4.0 MB and +0.55%**, so it is **about five times smaller
 than a cost the owner has already reasoned about at length**. ⚠️ That comparison is only about size, and
-R55 was not decided on size: it was closed on what the looser bar would *admit*. Which is exactly the
-question still open here, and it is sub-step (4).
+R55 was not decided on size: it was closed on what the looser bar would *admit*. That was sub-step (4),
+and it has since run — see the section below. What a 0.045 bar admits here is 11 pages of recovered
+content out of 13 and two pages of paid-for scanner artefact.
 
 **And `0.55% of the corpus` is a number this register has already put a value on — R35's, from the
 other direction.** R35 measured *"every MRC background in the corpus together is 39.4 MB of a 792 MB
@@ -3205,8 +3215,16 @@ is the cleanest statement of this trade available. ⚠️ Coincidence of magnitu
 measurement — R35's is a whole-corpus gate figure and this is a stratified estimate from a 12.5%
 sample.
 
-⛔ **WHAT IS STILL NOT MEASURED, AND IT IS THE OTHER HALF OF THE TRADE: does the cost buy anything on
-the other 13?** Three of the 16 moved pages are `1954 - Why` p4/p6/p7, where content loss is
+⛔ **THIS SECTION'S QUESTION IS ANSWERED — see "Sub-step 4, the benefit" below, MEASURED 2026-08-19.**
+**11 of the 13 lose something and 8 of them lose whole lines of body text or table data**, so the
+lean recorded here was right; but the *kind* of content is not what this section guessed, and one of
+the two pages that lose nothing is the dearest page of the 16. Kept as written because it is the
+record of what the evidence looked like before the pages were rendered, and because its last
+paragraph is the one the answer came from.
+
+⛔ **WHAT WAS STILL NOT MEASURED WHEN THIS SECTION WAS WRITTEN, AND IT WAS THE OTHER HALF OF THE
+TRADE: does the cost buy anything on the other 13?** Three of the 16 moved pages are
+`1954 - Why` p4/p6/p7, where content loss is
 *rendered and known*. For the other 13 the sweep measured **bytes only** — it does not say whether
 those pages carry a mark that is being erased today, or are pages of plain type that would pay 4.54x
 for nothing. **⚠️ This paragraph first said "both readings fit every number above", and that is FALSE
@@ -3220,13 +3238,13 @@ the entry should say so rather than hide behind a symmetry it does not have:
 - **4 of the 16 are on the `colour` route** at 5-7% non-text ink, with 5-6x the greys' `barDelta`.
   A page of plain type does not usually look like that.
 
-So the honest statement is **not** "the constant is undecidable" but "**the magnitude of the benefit is
-unmeasured**". It is still the right call not to move a shipped constant on that — the evidence above
+So the honest statement was **not** "the constant is undecidable" but "**the magnitude of the benefit is
+unmeasured**" — and it has since been measured, below. It is still the right call not to move a shipped constant on that — the evidence above
 is suggestive and none of it is a rendered page — but the reason is the cost of being wrong, not a
-genuine balance of readings. The instrument for settling it already
-exists and is this entry's own — `score-threshold-loss --dump <dir>` writes the marks grid, and
-rendering each of the 13 pages before and after at both bars is what "The drawings are INK" did for
-three pages. That is sub-step **(4)**, and it is a measurement rather than a judgement.
+genuine balance of readings. ⚠️ **The instrument that settled it is `score-text-route`'s `INKDUMP`, NOT
+`score-threshold-loss --dump`, which this sentence named and which is the wrong tool** — the marks
+grid has no tone layers in it, so it cannot show what the shrink destroys. Corrected 2026-08-19 by the
+run that did the work; see "Sub-step 4, the benefit" below.
 
 **The decision itself is the owner's, and is in `NEEDS OWNER`.** R55 is the precedent: a measurement
 campaign was run, and the owner closed it on the arithmetic. ⛔ Do not move
@@ -3234,6 +3252,154 @@ campaign was run, and the owner closed it on the arithmetic. ⛔ Do not move
 all — without that call. `Flattener.textPageInkOutsideThresholdOverride` remains `nil` in the app, so
 nothing about the shipped behaviour changed with this sweep; what changed is that the price is now
 known at corpus scale instead of on one document.
+
+#### Sub-step 4, the benefit: 11 of the 13 lose something, and the dearest page of the 16 is one of the two that do not — MEASURED 2026-08-19
+
+**The question, restated so the answer can be checked against it.** The sweep priced the bar in
+bytes. It could not say what those bytes buy, because a page paying 4.54x to keep a drawing and a
+page of plain type paying it for nothing print the same `barDelta`. Three of the 16 moved pages are
+`1954 - Why` p4/p6/p7, where the loss is rendered and known. **These are the other 13, rendered.**
+
+**The instrument, and it is this entry's own seam rather than a new one.** `INKDUMP=<dir>` on
+`Tools/score-text-route.swift` writes, per measured page, the grey render the decision was taken on,
+the stencil, and **both** tone-layer pairs — the ones that ship and the ones the 0.045 bar would
+publish. It is the same `mrcLayers` call the byte columns come from, with the same
+`textPageInkOutsideThresholdOverride`, so the images and the numbers are one run. Two facts make the
+comparison exact rather than suggestive: the stencil is **byte-identical at both bars** (checked per
+page, as ever), so the *whole* difference between what ships and what the bar would ship is in these
+files; and the background at the bar carries the true glyphs of anything outside the stencil while
+carrying only a pale `fillHoles` residue of anything inside it, so **the background itself
+distinguishes "in the stencil" from "outside it" without anyone having to guess.**
+
+⚠️ **Everything below was read off pages at native resolution, and two of the readings that looked
+obvious at page scale were WRONG.** Method, in the order it earned: (a) a whole-page difference of
+the two backgrounds, auto-levelled — useful for finding where to look, **and it misled twice**,
+because `-auto-level` normalises each page on its own and amplifies the harmless `fillHoles` residue
+into what reads as legible text; (b) three-row crops at 1:1 — source, background at the bar,
+background as it ships — which is what settles legibility; (c) an **ink-outside-the-stencil map**
+(source thresholded, minus the stencil), which is what settles *what* the marks are and where they
+all are. (c) overturned (a) on `Broadhead` p9 and `_1973_Committee Against Racism_` p4, both of
+which had been written down as "loses nothing" off a crop that happened to land on lines the stencil
+did hold. ⚠️ The map is composed here out of ImageMagick's Otsu, **not** `Flattener.otsuThreshold`,
+so it is a locator and not a shipped signal; every verdict below rests on a 1:1 crop.
+
+**The answer, per page. `RIESMAN_1942` p10 is the row to read first.**
+
+| page | route | shipped → at bar | what is outside the stencil | as shipped |
+|---|---|---|---|---|
+| `Xin Qu et al_2018` p20 | grey | 20,295 → 62,659 | the correlation matrix's **last numeric column — 13 values** — plus `−0.096`, the 5–9 column heads, 7 row numbers, 2 row labels, 3 rules | **illegible smear** |
+| `_1973_Committee Against Racism_` p4 | grey | 48,689 → 165,151 | **7 lines of body text** in three bands | **illegible** |
+| `Broadhead - 1994` p6 | grey | 57,475 → 249,633 | **3 lines of body text**; thumbs, gutter, page edges | **illegible** |
+| `Broadhead - 1994` p9 | grey | 57,003 → 247,259 | **3 lines of body text**; thumbs, gutter, page edges | **illegible** |
+| `Atkinson_1939` p2 | colour | 61,842 → 294,122 | **2 lines of 1939 typescript**; whole-page show-through | **illegible** |
+| `Glazer_2002` p1 | grey | 77,506 → 278,692 | **2 lines of body text**, the masthead outline, **both column rules** | text illegible; rules → 8px grey bands |
+| `Riesman - 1954` p16 | colour | 70,276 → 350,342 | a **hand-drawn margin bracket**, the trailing text lines, the gutter | bracket **broken into disconnected blobs** |
+| `Broadhead - 1994` p8 | grey | 56,576 → 247,120 | **1 line of body text**; thumbs, gutter | **illegible** |
+| `Jones et al_2010` p12 | grey | 31,670 → 104,645 | **4 table rules**, the `(1)` column head, **4 en-dash cells** | rules → grey bands; dashes → smudges |
+| `1944_Options picking up` p1 | grey | 46,172 → 153,326 | the sidebar's **box frame**, the FINANCE rule, 3 word fragments | frame → soft grey band |
+| `Riesman - 1954` p8 | colour | 65,039 → 314,476 | a **pencil slash**, the gutter, show-through | slash blurred but still a slash |
+| `Riesman - 1954` p18 | colour | 52,255 → 310,438 | **show-through only**, plus fingers and the page edge | nothing of the page |
+| `RIESMAN_1942` p10 | grey | 128,294 → 830,574 | **a pale scanner-edge strip. Nothing else.** | nothing of the page |
+
+**Read as counts, and the buckets are five rather than four because C26's own founding case needs one:
+7 pages lose whole lines of prose or table data; 1 loses a hand-drawn mark outright (`Riesman - 1954`
+p16's bracket, plus that page's trailing lines); 2 lose graphic rules and word fragments only; 1
+degrades a pencil mark without destroying it; 2 lose nothing a reader would see. 7+1+2+1+2 = 13, and
+**8 lose content outright**.** ⚠️ The first version of this paragraph had four buckets and no slot for a
+destroyed drawing, so `Riesman - 1954` p16 could not be placed without contradicting either its own
+table row or the sentence below calling it the only page reproducing the founding failure mode. Caught
+by the adversarial review of this diff. So the answer to "does the cost buy anything" is **yes on 11 of 13**, and the entry's
+lean was right — but not for the reason it gave.
+
+**⛔ THE DOMINANT CASE IS NOT A DRAWING. IT IS BODY TEXT, AND THAT MAKES C26 AN INVARIANT-1
+DEFECT RATHER THAN A FIDELITY ONE.** C26 was opened on erased line drawings and every section above
+reasons about marks that are *not text*. Measured, **7 of these 13 pages lose lines of running prose
+or table data, and an 8th loses a hand-drawn mark outright** — words Vision did not box, therefore cut out of the stencil by `textRegionMask`
+(correctly, by its own lights: it only keeps what was recognised), therefore left in the background,
+therefore stored at 1/8 and destroyed. `Xin Qu` p20 loses thirteen values out of a Pearson
+correlation matrix; `_1973_Committee Against Racism_` p4 loses seven lines. A drawing being erased is
+a fidelity complaint a user might live with. **Text that is present in the source, absent from the
+text layer *and* illegible in the image is content lost silently**, which is invariant 1. Only
+`Riesman - 1954` p16 reproduces C26's own founding failure mode — a fine hand-drawn stroke that
+survives at the bar and breaks into disconnected blobs as shipped.
+
+**⛔ AND THE SINGLE MOST EXPENSIVE PAGE IN THE BAND BUYS NOTHING.** `RIESMAN_1942` p10 is rank 1 of
+16 by cost (+702,280 B, **6.47x** on that page). Its entire body text is in the stencil — at 1:1 the
+background holds only the pale `fillHoles` ghost at both bars, and the published glyphs come from a
+stencil that does not move. The one thing outside the stencil is the pale vertical strip the scanner
+caught at the right edge, carrying show-through from the facing leaf; it is barely legible in the
+*source*. So **32.4% of the band's total byte cost is concentrated on two pages where a reader would
+see no difference at all** (p10's +702,280 and `Riesman - 1954` p18's +258,183 of the 16 pages'
++2,965,653). That is the sharpest thing this sub-step found and it cuts *against* a blanket bar:
+the same threshold that rescues thirteen correlation coefficients also pays 6.47x for a scanner
+artefact.
+
+**The 13 in aggregate, and it is a fifth reproduction of the sweep.** 773,092 → 3,608,437 B,
+**+2,835,345 B, 4.67x, 218,103 B/page** — arithmetic over the committed TSV, and every one of the 13
+rows was re-measured here through nine fresh `score-text-route` invocations: `page`, `inkOut`,
+`layered` and `layeredAtBar` are **identical on all 13**, compared programmatically rather than by
+eye. `1954 - Why` p4 was re-run too and prints 22,762 → 67,976, +45,214, 2.99x, as it has four times
+before.
+
+**What this does NOT establish.** It does not price the fix — the bytes were already known — and it
+does not say the bar should move. It says the trade is **not** "4.54x for decoration": on 8 of 13
+pages it is 4.67x — the 13's own ratio, not the band's 4.54x — for words that are currently unreadable. It also does not say the *stencil* is
+right; **four** of these documents lose whole lines of prose because Vision's boxes missed them
+(Broadhead, `_1973_Committee Against Racism_`, `Atkinson_1939`, `Glazer_2002`) and a fifth loses table
+cells the same way, and a bar on
+`inkOutsideText` is a way of paying to photograph the miss rather than a way of fixing it. ⚠️ Nothing
+here was rendered through `makeSearchablePDF`, so these are the layers the app would publish rather
+than a published PDF; the stencil-is-identical property is what makes that a fair substitution, and
+it is checked per page rather than assumed.
+
+**The images are deliberately not committed**, the same call the marks-grid composites got and for
+the same reason: they are renderings of ten third-party documents. Re-derive with
+`INKBAR=0.045 INKDUMP=<dir> /tmp/score-text-route "<pdf>" <page…>` — nine invocations, the whole set
+inside six minutes by file timestamps (07:36 to 07:41:50), and the pages are named in the table
+above. It is a run of minutes rather than the sweep's hours because it measures 13 named pages
+instead of 2,129.
+
+**The dump's own failure mode, watched failing before anything was believed.** `score-threshold-loss`
+records that a `--dump` which quietly writes nothing and reports a clean run is worse than no dump;
+here it would have been worse still, because an empty directory reads as *"there was nothing on those
+pages"* and would have settled this sub-step the wrong way round. So `INKDUMP` counts what it promised
+against what reached disk and **exits 4**, and both arms were executed: a path that cannot be created
+exits **2** with the reason, and an existing directory with mode 500 gives
+`INKDUMP p4: wrote 0 of 6 file(s), MISSING p4-source.png …` and exit **4**, with the byte totals still
+printed and still correct. ⚠️ Note what the second run proves: without the accounting that same
+invocation prints the right numbers, leaves an empty directory and exits 0.
+
+**Sibling sweep (CONTRIBUTING 4b): three tools in `Tools/` write images for a reader, and the second
+one had the same hole.** `score-threshold-loss` already guards it (`dumpFailures`, and it checks the
+*write*, not just the encode). **`score-mrc`'s `MRC_DUMP` did not**: `pngData` returning nil, an empty
+plane set and `try? data.write` were all silent, and `dumped += 1` ran regardless — so an unwritable
+directory produced an empty directory and a clean exit over the one mode whose entire output is
+images. Fixed in the same commit: it names the missing planes on stderr and stops with **6** through
+`stop`, which is what removes its scratch directory (a bare `exit` there would have leaked a page's
+worth of layers, the reason `stop` exists). ⚠️ **6 and not 4, and the first version of this diff got
+that wrong** — `score-mrc` already spends **4** on "the self-test failed, so nothing was measured" and
+**5** on a drifted row width, so a dump that loses one plane out of a run whose every measurement is
+sound would have been indistinguishable from a run that measured nothing. Caught by reading
+`Tools/README.md`'s own row for the tool, which names exit 4; the same conflation
+`score-text-route`'s `n/a`-versus-`FAIL` distinction exists to prevent. ⛔ **There are FIVE such writers, not three, and the defence this paragraph first
+offered for one of them is FALSE — both found by the adversarial review of this diff, the second by
+running `iconutil`.** (4) `make_icon.swift:65` swallows its write, and this paragraph claimed
+`build.sh`'s `iconutil -c icns` catches that. Measured: an iconset holding **3 of the 10** files
+`make_icon` promises, correctly named and sized, makes `iconutil` exit **0** and produce a valid
+7,241-byte `.icns`. So a partial icon set ships a degraded icon with a clean build, and `build.sh:113`
+discards make_icon's only diagnostic with `2>/dev/null`. (5) `make-plate-fixtures.swift` writes eight
+300-DPI fixture pages through `CGDataConsumer(url:)` — invisible to a grep for `pngData`/`data.write`,
+which is why the first sweep missed it — and every failure is a bare `return`. That one is the worst of
+the five: `run_tests.sh` builds it and the suite reads what it wrote, and `run_tests.sh`'s own comment
+says the R56/R57 checks "would otherwise pass by having no fixtures to route", so a partial write is a
+**silent pass in the suite**. Neither is fixed here — both are outside this item and the fixture one
+touches the suite's own scaffolding — and both are queued rather than left in prose.
+
+⚠️ **One regression this diff nearly shipped, caught reviewing it.** Routing
+`score-text-route`'s normal exit through a `finish()` that calls `exit` would have stopped the
+top-level `defer` from running, silently leaking a scratch directory holding up to twelve pages of
+renders and layers on **every** run — the tool fell off its own end before. `finish()` removes `work`
+itself, and the comment says why.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct

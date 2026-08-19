@@ -110,6 +110,17 @@
 //                     is blind to text edges being exact, which is precisely the
 //                     trade MRC makes. Look at the pages.
 //
+//                     **Exits 6 if it did not write what it promised**, including
+//                     the case where it wrote nothing at all over a run that did
+//                     layer pages. Every failure in the writer used to be a `try?`
+//                     or a `continue` and the page was counted as dumped anyway, so
+//                     an unwritable directory produced an empty directory and a
+//                     clean exit — over the one mode whose entire output is images.
+//                     Found by C26 sub-step 4's sibling sweep. 6 rather than 4
+//                     because 4 already means "the self-test failed and nothing was
+//                     measured" and 5 a drifted row width; a lost dump plane must
+//                     not read as either.
+//
 // A self-test runs on every invocation and refuses to measure anything if it
 // fails, which is `score-threshold-loss`'s pattern and earns its keep the same
 // way: its central assertion — that an all-text picture page reports the 8x/16x
@@ -407,6 +418,12 @@ func decibels(_ value: Double) -> String {
 /// the time of the call.
 var dumped = 0
 
+/// Planes MRC_DUMP promised and did not write. Separate from `dumped` because
+/// `dumped == 0` with `dumpMissing == 0` is a run that never reached a dumpable page,
+/// while `dumped == 0` with `dumpMissing > 0` is a broken dump — and the two used to be
+/// the same observable state, namely an empty directory and a clean exit.
+var dumpMissing = 0
+
 // MARK: - One page
 
 /// What the app would do with one page, and what it would cost either way.
@@ -645,16 +662,42 @@ func measure(_ page: PDFPage, label: String, index: Int,
 
     guard printing else { return outcome }
 
+    // ⚠️ **Every failure in here used to be silent, and `dumped += 1` counted the page
+    // either way.** `pngData` returning nil, an empty plane set, a `try?` write onto a
+    // full or unwritable directory: all three left the run reporting cleanly with an
+    // empty directory, over a mode whose whole output is "look at the pages". That is
+    // the failure `score-threshold-loss`'s `dumpFailures` list exists for, and this file
+    // had the same hole in a different shape — found by C26 sub-step 4's sibling sweep
+    // (CONTRIBUTING 4b) while adding `INKDUMP` to `score-text-route`, which is the
+    // second tool here that writes images for a reader rather than a number.
     if let dump = dumpDirectory, dumped < 3 {
         let name = "\(label.prefix(24))-p\(index + 1)"
         let nowPlanes = planes(ofData: now.data, width: w, height: h, colour: inColour) ?? []
+        var missing: [String] = []
+        var offered = 0
+        // ⚠️ `where !pixels.isEmpty` was load-bearing and the first version of this fix
+        // dropped it. `reconstruction` is legitimately `[]` whenever the guard above fails —
+        // a state this file already reports as `-1.00 dB` rather than as an error — and
+        // `nowPlanes` is `?? []`. Counting those as MISSING would have exited 6 over a run
+        // whose every measurement is sound, which is the mirror image of the defect being
+        // fixed. A plane that exists and cannot be written is the failure; a plane that does
+        // not exist is an answer. Caught by the adversarial review of this diff.
         for (suffix, pixels) in [("mrc", reconstruction), ("now", nowPlanes),
                                  ("src", source)] where !pixels.isEmpty {
-            guard let data = pngData(planes: pixels, width: w, height: h) else { continue }
-            try? data.write(to: URL(fileURLWithPath: dump)
-                .appendingPathComponent("\(name)-\(suffix).png"))
+            offered += 1
+            guard let data = pngData(planes: pixels, width: w, height: h),
+                  (try? data.write(to: URL(fileURLWithPath: dump)
+                      .appendingPathComponent("\(name)-\(suffix).png"))) != nil
+            else { missing.append(suffix); continue }
         }
-        dumped += 1
+        if missing.isEmpty, offered > 0 {
+            dumped += 1
+        } else {
+            dumpMissing += missing.count
+            FileHandle.standardError.write(Data(
+                ("score-mrc: MRC_DUMP wrote \(offered - missing.count) of \(offered) plane "
+                 + "set(s) for \(name); missing \(missing.joined(separator: " "))\n").utf8))
+        }
     }
 
     emit([label, "\(index + 1)", "\(w)x\(h)", String(format: "%.1f", dpi), route,
@@ -1008,4 +1051,26 @@ if pages > 0 {
                    / Double(max(publishedTotal, 1)))
           + "   (\(mrcLostTo) page\(mrcLostTo == 1 ? "" : "s") where three layers "
           + "cost more than one image)")
+}
+// MRC_DUMP's own verdict, and it is an exit code rather than a line, because the mode
+// exists to be looked at and a caller that greps the totals would never see a warning.
+// A run that asked for a dump and reached a dumpable page must have written one.
+if dumpDirectory != nil {
+    let silent = dumped == 0 && layered > 0
+    print("MRC_DUMP: \(dumped) page(s) written in full, \(dumpMissing) plane(s) missing"
+          + (silent ? "  ⚠️ NOTHING was written over \(layered) layered page(s) — an "
+                      + "instrument failure, not an empty answer" : ""))
+    // `stop` rather than `exit`, because the top-level `defer` that removes `scratch`
+    // does not run through `exit` — the reason `stop` exists at all, and this is the
+    // fifth caller.
+    //
+    // ⚠️ **6, not 4.** This file already spends 4 on "the self-test failed, so nothing was
+    // measured" and 5 on a drifted row width. Reusing 4 would make a run whose every
+    // measurement is sound but whose dump lost a plane indistinguishable from a run that
+    // measured nothing at all — the same conflation `score-text-route`'s `n/a`-versus-`FAIL`
+    // distinction exists to prevent, and a `sweep`-style driver keying on the code would
+    // discard a good corpus row for a cosmetic failure.
+    if dumpMissing > 0 || silent {
+        stop("score-mrc: MRC_DUMP did not write what it promised\n", code: 6)
+    }
 }

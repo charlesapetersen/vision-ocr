@@ -59,14 +59,24 @@ high, retracted**; per-document it is **~21 pages of 16,987 and ~4.0 MB**, of wh
 1,489,670 B are exact** because 86 documents were sampled completely. R49 and R50 state **no**
 growth-tolerance bar
 (read 2026-08-19), so there is nothing to test it against; R50 was accepted on "not one grew", and
-this grows ten documents while barely moving the corpus. ⛔ **So the population is known and what is
-still unmeasured is the SIZE OF THE BENEFIT**: only 3 of the 16 moved pages are *known* to lose
-content, and whether the other 13 carry an erased mark or are plain type paying 4.54x for nothing is
-sub-step **(4)**, whose instrument is the entry's own `score-threshold-loss --dump`. The evidence
-leans toward the 13 being real — the 16 are selected by the mechanism that erases, and the three known
-losses sit at `inkOut` ranks 4, 6 and 13 of 17 rather than at an extreme — but no page has been
-rendered. The decision itself is the owner's (R55's precedent) and sits in the run's `NEEDS OWNER`.
-Read the entry's last section before touching any of it.
+this grows ten documents while barely moving the corpus. ⛔ **The population is known AND so is the
+benefit, measured 2026-08-19 — sub-step (4) ran and the other 13 pages were rendered at both bars.**
+`INKDUMP=<dir>` on `Tools/score-text-route.swift` writes both tone-layer pairs from the same
+`mrcLayers` call the byte columns come from, and the stencil being byte-identical at both bars makes
+the two backgrounds the entire difference. **11 of the 13 lose something**, and ⛔ **the dominant case
+is NOT a drawing**: **7 of the 13 lose whole lines of prose or table data and an 8th loses a hand-drawn mark outright — 8 losing content outright** — `Xin Qu et al_2018`
+p20 loses thirteen values out of a Pearson correlation matrix, `_1973_Committee Against Racism_` p4
+loses seven lines of prose — words Vision did not box, cut from the stencil by `textRegionMask` and
+then destroyed at 1/8. **That makes C26 an invariant-1 defect rather than the fidelity complaint it
+was opened as**, and only `Riesman - 1954` p16 (a hand-drawn margin bracket broken into blobs)
+reproduces its founding failure mode. ⛔ **And the dearest page of the 16 buys nothing** —
+`RIESMAN_1942` p10, +702,280 B and **6.47x**, whose only non-stencil ink is a pale scanner-edge
+strip; with `Riesman - 1954` p18 that is **32.4% of the band's byte cost on pages a reader cannot
+tell apart.** ⚠️ Two verdicts read off whole-page difference maps were WRONG and were overturned by
+1:1 crops plus an ink-outside-the-stencil map — `-auto-level` amplifies the harmless `fillHoles`
+residue into what looks like legible text. The decision itself is still the owner's (R55's
+precedent) and sits in the run's `NEEDS OWNER`. Read the entry's last section before touching any of
+it.
 **The corpus
 sweep both entries were blocked on ran the same day** — 441 pages, 233 documents,
 `THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes the `extent` bar's population (61 picture-route

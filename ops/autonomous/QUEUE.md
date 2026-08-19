@@ -219,19 +219,30 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       ⛔ **AND IT RETRACTED THE ENTRY'S OWN `2.99x` AS A CORPUS FIGURE** — `1954 - Why`'s three pages
       are ranks 1, 3 and 4 of the 16 by cost, so the found document was the cheapest end of the band.
       Corrected in `BUGS.md` (three places), the file header and `CLAUDE.md`.
-      ⛔ **(4) IS WHAT REMAINS, AND IT IS THE OTHER HALF OF R50's TRADE: does the cost buy anything on
-      the other 13?** The sweep measured **bytes only**. Three of the 16 moved pages are
-      `1954 - Why` p4/p6/p7, where the loss is rendered and known; for the other 13 nobody has looked
-      at whether they carry a mark being erased today or are plain type that would pay 4.54x for
-      nothing. ⚠️ **This said "both readings fit every number" and that was FALSE** — the `inkOut`
-      column discriminates, and the three known losses sit at ranks 4, 6 and 13 of the 17 banded pages
-      rather than at an extreme, so the 13 look like the knowns on the term that decides. The honest
-      gap is **the size of the benefit**, not undecidability.
-      The instrument exists and is this entry's own: `score-threshold-loss --dump <dir>`
-      writes the marks grid, and rendering each of the 13 before and after at both bars is exactly
-      what "The drawings are INK" did for three pages. The 13 are named in the entry's per-page table.
-      This is a measurement, not a judgement, so it is autonomously actionable — but it is 13 pages of
-      rendering across 10 documents, so budget it as its own item and checkpoint per document.
+      ✅ **(4) IS DONE, 2026-08-19, AND IT CHANGED WHAT C26 IS.** The other 13 moved pages were
+      rendered at both bars — `INKDUMP=<dir>` on `Tools/score-text-route.swift`, which writes both
+      tone-layer pairs out of the same `mrcLayers` call the byte columns come from; the stencil is
+      byte-identical at both bars, so the two backgrounds are the entire difference. ⛔ **Do not
+      re-run it**; the per-page table is in `BUGS.md` C26 §"Sub-step 4, the benefit".
+      **11 of the 13 lose something; 8 lose content outright — 7 whole lines of prose or table data, 1 a hand-drawn mark** —
+      `Xin Qu et al_2018` p20 loses thirteen values out of a Pearson correlation matrix,
+      `_1973_Committee Against Racism_` p4 seven lines of prose, `Broadhead - 1994` p6/p8/p9 three,
+      one and three. Those are words Vision did not box, cut from the stencil by `textRegionMask` and
+      destroyed at 1/8. ⛔ **So C26 is an invariant-1 defect, not the fidelity complaint it was opened
+      as** — only `Riesman - 1954` p16 (a hand-drawn bracket broken into blobs) reproduces the
+      founding failure mode. ⛔ **And the dearest page of the 16 buys NOTHING**: `RIESMAN_1942` p10,
+      +702,280 B and 6.47x, whose only non-stencil ink is a pale scanner-edge strip; with
+      `Riesman - 1954` p18 that is **32.4% of the band's byte cost on pages a reader cannot tell
+      apart**, which cuts against a blanket bar.
+      ⚠️ **Two verdicts read off whole-page difference maps were WRONG** and were overturned by 1:1
+      crops plus an ink-outside-the-stencil map: `-auto-level` normalises each page on its own and
+      amplifies the harmless `fillHoles` residue into what reads as legible text. If you render any of
+      these pages again, settle legibility on a 1:1 crop and nothing else.
+      The 13 in aggregate are **773,092 -> 3,608,437 B, +2,835,345, 4.67x, 218,103 B/page**, and all
+      13 rows reproduced the sweep's `inkOut`/`layered`/`layeredAtBar` **identically**, compared
+      programmatically rather than by eye.
+      ⛔ **WHAT REMAINS ON C26 IS THE CONSTANT, AND IT IS NOT A SESSION'S TO MOVE** — see the block
+      below. The measurement campaign is complete: population, price and benefit are all in the entry.
       ⛔ **THE CONSTANT ITSELF IS THE OWNER'S CALL, and it is in `NEEDS OWNER` as of 2026-08-19.**
       R55 is the precedent: the campaign runs, the owner closes it on the arithmetic. R49/R50 state
       **no** growth-tolerance bar (read 2026-08-19), so there is no standard a session could apply;
@@ -239,7 +250,8 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       `Flattener.textPageInkOutsideThresholdOverride` stays `nil` in the app.
       ⚠️ **The release gate cannot see this defect class** — `score-gate.swift`'s own source says
       so, and it passed this exact document. Do not accept a green gate as evidence of a fix here;
-      the instrument for this is `score-threshold-loss.swift` plus rendered before-and-after pages.
+      the instruments for this are `score-threshold-loss.swift` and `score-text-route.swift`'s
+      `INKDUMP`, plus rendered before-and-after pages.
       (origin: BUGS.md C26)
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
