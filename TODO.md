@@ -13,8 +13,12 @@ promoted, or it does not and should be deleted.
 
 ## Two standing decisions, 2026-08-14
 
-- **No release until more of the recorded bugs are fixed.** 1.13.0 is deferred by the owner;
-  R59's `publish` fixes ride along with whatever ships next rather than going out alone.
+- ~~**No release until more of the recorded bugs are fixed.**~~ **SUPERSEDED by the owner 2026-08-19,
+  and acted on 2026-08-20.** It was set when the register held five entries. `1.13.0` shipped
+  2026-08-17 with the register empty, and **`1.13.1` was cut by hand on 2026-08-20 with two open** —
+  `C27` and `C28`, both sequenced by the owner into 1.14.0 — because `C26` was invariant-1 content
+  destruction on the shipped default and `v1.13.0` was the build carrying it. R59's `publish` fixes
+  still ride along with whatever ships next rather than going out alone.
 - **The annotation feature is held for more work** — see item 2 below. Off by default on `main`,
   unadvertised. **The A8.1 test is now done** (`BUGS.md` T13, and its mutant would have survived
   a green suite of 1,031 before it). The third adversarial review round is still outstanding, and

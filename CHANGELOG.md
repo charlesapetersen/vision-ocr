@@ -12,7 +12,7 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
-## Unreleased
+## 1.13.1 — 2026-08-20
 
 **Lines of prose and hand-drawn marks are no longer destroyed on sixteen measured pages
 the code was reading as nothing but type.** On a page whose ink is all text, both tone

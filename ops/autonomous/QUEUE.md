@@ -768,9 +768,12 @@ picked, and the resume prompt surfaces them to the run log instead of acting on 
       and the owner accepted it as a known gap on 2026-08-13 rather than queueing it.
       (origin: TODO.md, the one open checkbox there)
 - [ ] **release** — cutting a release: a version bump, `./build.sh --dmg`, `hdiutil`, a tag, a GitHub
-      release. [hold] needs: owner — judgement about what is fit to ship. Last released: **1.13.0**,
-      tagged `v1.13.0` and in `Info.plist` (this line said 1.12.0 until 2026-08-19 and was stale by one
-      release). The owner decided at the 2026-08-19 check-in that **`1.13.1` is cut by hand once C26's
+      release. [hold] needs: owner — judgement about what is fit to ship. Last released: **1.13.1**,
+      tagged `v1.13.1` and in `Info.plist` (this line said 1.12.0 until 2026-08-19 and was stale by one
+      release, so it is now moved by the release itself rather than after it). **`1.13.1` was cut by
+      the owner on 2026-08-20** — bumped, tagged, DMG built and verified, GitHub release published —
+      with `C27` and `C28` open and sequenced into 1.14.0. This item stays `[hold]`: it is the standing
+      release item, not a one-off, and nothing about cutting 1.13.1 makes a session fit to cut 1.14.0. The owner decided at the 2026-08-19 check-in that **`1.13.1` is cut by hand once C26's
       bar move has landed and he has read its gate** — ⚠️ **the bar move LANDED 2026-08-19 and no fresh
       corpus gate was run with it.** What is offered in its place is `INKBAR-2026-08-19.tsv`, which
       already holds the page-by-page comparison of exactly these two states over 233 documents, plus a
