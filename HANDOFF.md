@@ -304,9 +304,14 @@ pipeline where Vision's word boxes exist: ink that is not inside any recognised 
 is not text. That signal is 0.0000 on text pages and 0.971–0.993 on plates, and it
 cost nothing to compute. ⛔ **That premise is FALSE as stated and `C28` was opened on it
 (2026-08-19): measured over 13 corpus pages, the ink outside the recognised words was
-running prose or table data on 7 of them.** **Re-measured 2026-08-20 over eight further pages: 3 of
-the 8 lose prose or table data and a 4th a handwritten signature, so 21 pages are now rendered and
-10 of them lose prose or table data.** The signal is still the best one available
+running prose or table data on 7 of them.** **`C28` sub-step 1, 2026-08-20: eight further pages
+were rendered and 3 of the 8 lost prose or table data, a 4th a handwritten signature.**
+⚠️ **No running total is kept here, deliberately.** The first version of this sentence carried one
+("21 pages rendered, 10 losing prose or table data") and it was stale within two hours, because C28
+kept adding sub-steps underneath it — `CLAUDE.md` records the same failure on its own copy of that
+figure. The current total lives in `CLAUDE.md`'s C28 paragraph and in `BUGS.md` C28, which move in
+the same commit as the work; a design-rationale file is the wrong place for a number that is still
+moving, and dated sub-step findings are what belongs here. The signal is still the best one available
 there and R50 is still `FIXED` — what is wrong is the justification, and the consequence
 is that marks the recogniser missed are stored at 1/8 on a page this signal calls all
 text. **The remaining prize is moving `isPicture` itself after
