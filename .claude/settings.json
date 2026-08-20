@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git status *)",
+      "Bash(git diff:*)",
+      "Bash(git diff *)",
+      "Bash(git log:*)",
+      "Bash(git log *)",
+      "Bash(git show:*)",
+      "Bash(git show *)",
+      "Bash(git worktree list)",
+      "Bash(./ops/autonomous/check-queue-coherence.sh)",
+      "Bash(./ops/autonomous/check-queue-coherence.sh:*)",
+      "Bash(./ops/autonomous/check-queue-coherence.sh *)",
+      "Bash(./ops/autonomous/check-staleness.sh)",
+      "Bash(./ops/autonomous/check-staleness.sh:*)",
+      "Bash(./ops/autonomous/check-staleness.sh *)",
+      "Bash(./ops/autonomous/next-item.sh)",
+      "Bash(./ops/autonomous/next-item.sh:*)",
+      "Bash(./ops/autonomous/next-item.sh *)",
+      "Bash(./ops/autonomous/daemon.sh status)",
+      "Bash(./ops/autonomous/daemon.sh status:*)",
+      "Bash(./ops/autonomous/daemon.sh status *)"
+    ],
+    "deny": [
+      "Bash(./ops/autonomous/daemon.sh start)",
+      "Bash(./ops/autonomous/daemon.sh start:*)",
+      "Bash(./ops/autonomous/daemon.sh start *)"
+    ]
+  }
+}
