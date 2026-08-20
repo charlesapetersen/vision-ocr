@@ -44,6 +44,12 @@ resolution — that is **`BUGS.md` C28**, and it is what a real fix here would b
 heading above said the loss was fixed outright until this was measured; it says "sixteen
 measured pages" now because sixteen is what was measured.
 
+**The three pages this was reported on were re-rendered and looked at** (2026-08-20): the
+line drawings that were erased, or left as a ghost, are whole and legible again, where
+before they were smudges. Detail measurements over each drawing's own patch of page agree —
+under the old setting that patch held no more fine structure than a blank patch of the same
+paper does now. That closes **`BUGS.md` C26**.
+
 Photo detail = **Maximum** was exempt from the shrink before this change and still is.
 
 ## 1.13.0 — 2026-08-17

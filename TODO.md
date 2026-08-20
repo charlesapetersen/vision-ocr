@@ -86,8 +86,12 @@ what the original hid: 14 of 233 documents, 577 of 16,987 pages, worst case a th
 **The register was empty when `1.13.0` was cut on 2026-08-17** — 0 open of 163 entries, `R55`
 `WONTFIX` and `C24` `FIXED` that day — which is what made the release answerable on defect
 grounds. **It did not stay empty: `C26` and `C27` were opened hours later, the same day**, on a document the
-release gate had already passed, and it loses content at the default Photo detail setting. Both
-sentences are dated on purpose and neither supersedes the other.
+release gate had already passed, and C26 lost content at the default Photo detail setting. Both
+sentences are dated on purpose and neither supersedes the other. ⚠️ **A third date, 2026-08-20:
+`C26` is `FIXED`** — its bar moved 2026-08-19 and its founding pages were rendered the next day —
+and `C28` was opened out of its campaign, so the register holds two, `C27` and `C28`. This
+paragraph said C26 "loses content at the default Photo detail setting" in the present tense for a
+day after it stopped, which is the failure its own parenthetical below is about.
 *(This paragraph read "`C23` is the release blocker, and the only open finding with harm a user
 sees today … whether to ship without it is the owner's decision" for a day after C23 was fixed,
 in the section a reader starts from and reaches for when making exactly that decision.

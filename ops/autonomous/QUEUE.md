@@ -138,8 +138,9 @@ than reasoned — the first attempt broke the coherence check twice:
       the tool needed repairing before it could be the gate. The `score-routing` half is right.
       Read the entry's `C24b` and `C24's wiring` sections first, not this line.
       (origin: BUGS.md C24, FIXED)
-- [ ] **C26** — a small line drawing is erased on the picture path, at the SHIPPED DEFAULT Photo
-      detail setting. ✅ **UNHELD 2026-08-19: the owner decided the bar at a check-in — move
+- [x] **C26** — a small line drawing is erased on the picture path, at the SHIPPED DEFAULT Photo
+      detail setting. ✅ **CLOSED 2026-08-20 on the rendered proof; the entry is `FIXED`.**
+      ✅ **UNHELD 2026-08-19: the owner decided the bar at a check-in — move
       `Flattener.textPageInkOutsideThreshold` from 0.08 to 0.045, behind a corpus gate.** ⚠️ **The
       move landed the same day WITHOUT a fresh corpus gate, deliberately**, and the substitution — the
       already-committed `INKBAR-2026-08-19.tsv`, which compares exactly these two states page by page
@@ -158,8 +159,9 @@ than reasoned — the first attempt broke the coherence check twice:
       p18), which says a threshold is a blunt instrument and not the right final answer. So the
       stencil question this campaign surfaced — *why is recognised-page prose dropped from the stencil
       at all* — **WAS opened as its own register entry, `C28`, on 2026-08-19** (it is an item of its own
-      below); this line read "is to be OPENED" until then, and C26 no longer stays open for it. Not
-      worked; it is why the entry stays OPEN and this box stays `[ ]` after the constant lands.
+      below); this line read "is to be OPENED" until then, and C26 no longer stays open for it. It is
+      not worked here. ⚠️ This line then said the entry stays OPEN and this box stays `[ ]` *for the
+      founding-page render*, which ran on 2026-08-20 — see the ✅ block below.
       **Held 2026-08-19 after the sub-step (4) session, unheld the same day by the decision above.**
       Content loss, found by the owner on `1954 - Why.pdf` hours after `1.13.0`
       shipped. **Read the entry before anything else** — it carries the four-page rendering, the
@@ -289,17 +291,18 @@ than reasoned — the first attempt broke the coherence check twice:
       document 1 — the tool headers say so now.
       ✅ **THE STENCIL QUESTION IS NOW ITS OWN ENTRY, `C28`, opened 2026-08-19** (FOCUS item 3, done).
       Do not work it from here and do not fold it back in — it is its own item below.
-      ⛔ **WHAT REMAINS ON THIS BOX IS ONE BOUNDED THING: the rendered proof on the founding pages.**
-      `1954 - Why` p4/p6/p7 are refused the shrink at 0.045 **by measurement** (`inkOut` 0.0540 /
-      0.0493 / 0.0660, `verdict` now `picture`, 65,477 -> 195,785 B, stencil byte-identical) and
-      **nobody has rendered them to watch the drawings come back.** One invocation of an
-      already-built `score-text-route` does it — `INKBAR=0.08 INKDUMP=<dir> /tmp/score-text-route
-      "…/1954 - Why.pdf" 4 6 7`, where `layered` is now what ships and `layeredAtBar` the old state —
-      then read the two backgrounds at **1:1**, not as an auto-levelled whole-page difference, which
-      misled twice in sub-step 4. When those three pages read as drawings again, close C26 and tick
-      this box. Read `BUGS.md` C26 §"What is left on C26 itself" for the whole of it. The measurement
-      campaign is complete: population, price and benefit are all in the entry, and ⛔ none of it is
-      to be re-derived.
+      ✅ **THE RENDERED PROOF RAN 2026-08-20 AND THE ENTRY IS CLOSED.** `INKBAR=0.08
+      INKDUMP=<dir> score-text-route "…/1954 - Why.pdf" 4 6 7`, exit 0: `verdict` reads `picture` on
+      all three (`inkOut` 0.0540 / 0.0493 / 0.0660), 195,785 B against 65,477 B at the old bar,
+      stencil byte-identical, backgrounds **612 px against 153 px**. Read at 1:1 over each drawing's
+      own rect the cartoons are whole and legible as shipped and illegible at 0.08. ⛔ **The verdict is
+      those crops.** The section's first draft led with a ratio — "5.7x / 6.3x / 5.7x the fine detail" —
+      and blank rects on the same page measure 3.6x–14.2x, so the ratio tracks the downsample factor and
+      is retracted in place; what holds is absolute, 11.99–12.35 over the drawings against a
+      blank-paper floor of 2.10–2.51 as shipped, and 1.87–2.16 at the old bar, which is that floor.
+      `BUGS.md` C26 §"The rendered proof on the founding pages" is the whole of it. The
+      measurement campaign is complete: population, price and benefit are all in the entry, and ⛔ none
+      of it is to be re-derived.
       ✅ **THE CONSTANT WAS THE OWNER'S CALL AND HE MADE IT: 0.08 -> 0.045**, at a 2026-08-19 check-in,
       on R55's precedent — the campaign runs, the owner closes it on the arithmetic. R49/R50 state
       **no** growth-tolerance bar (read 2026-08-19), so no session could have applied a standard; what
@@ -317,9 +320,10 @@ than reasoned — the first attempt broke the coherence check twice:
         2026-08-19 decision, landed with the suite's checks and a mutant. Ticked because the sub-step
         finished, NOT because the item above did: that one stays open for the stencil question, which
         is also why this box carries no register cite — a `[x]` citing an open entry is TICKED-OPEN
-        drift, and this box's span must stay clear of the cite line above it. ⚠️ **That reason has
-        since moved out**: the stencil question is `C28` as of 2026-08-19, and what keeps the item
-        above open now is the founding-page render.
+        drift, and this box's span must stay clear of the cite line above it. ⚠️ **Both reasons have
+        since gone**: the stencil question became `C28` on 2026-08-19, the founding-page render that
+        replaced it ran on 2026-08-20, and the item above is now `[x]` with C26 `FIXED`. The no-cite
+        rule still holds for these two sub-boxes — it is about the *shape*, not about C26's status.
       - [x] **C26-stencil-open** — the stencil question opened as its own register entry (`C28`) on
         2026-08-19, the third of the owner's three commits and the last thing FOCUS item 3 asked for.
         Docs plus two corrected doc comments; no constant moved. Same no-cite rule as the box above.
@@ -625,8 +629,9 @@ than reasoned — the first attempt broke the coherence check twice:
          `score-threshold-loss` both refuse instead. Judge each one first — a single-document
          utility may be right to say nothing — but say so per tool rather than skipping the class.
       ⚠️ Any tool you touch is staged, so the pre-commit hook runs `check-tools-compile.sh` on it and
-      the full suite. Budget a commit, not a check. (origin: the sibling sweep in C26's instrument
-      commit, 2026-08-18; the rule is CONTRIBUTING §5)
+      the full suite. Budget a commit, not a check. (context: the sibling sweep in `BUGS.md` C26's
+      instrument commit, 2026-08-18 — C26 is CLOSED and this is provenance, not a status claim; the
+      rule is CONTRIBUTING §5)
 - [ ] **argv-shape** — **UNTRIAGED, and one half of it can destroy corpus files.** The sibling sweep
       of C26's driver commit classified the argument parse of all 29 `.swift` tools (2026-08-19, in
       `BUGS.md` C26's `Sub-step 3b, the driver` section). Eleven take a path list; **eight take one pdf
@@ -648,7 +653,10 @@ than reasoned — the first attempt broke the coherence check twice:
       names the population after document 1. Only `score-text-route` documents its trap in its header.
       ⚠️ Triage before coding: some of these are single-document utilities that are right as they are,
       and the answer per tool belongs in the commit. Any tool you touch is staged, so budget a commit
-      (a full suite) rather than a check. (origin: the sibling sweep in `BUGS.md` C26, 2026-08-19)
+      (a full suite) rather than a check. (context: the sibling sweep in `BUGS.md` C26 — CLOSED
+      2026-08-20; it is where this was found, not the work. Was `origin:` until C26 closed and the
+      coherence check read it as a status claim, which is the mistake §"How to write an item" records
+      `tools-compile` and `mutants` making)
 - [ ] **silent-image-writes** — **two of the five image writers in `Tools/` still swallow a failed
       write, and one of them can make the suite pass by writing nothing.** Found 2026-08-19 by the
       adversarial review of C26's sub-step (4) diff, which is also what corrected "three writers" to
@@ -674,7 +682,10 @@ than reasoned — the first attempt broke the coherence check twice:
       suite) rather than a check. The counting shape to copy is `score-text-route`'s `INKDUMP`: count
       what was promised against what reached disk, name the missing files, and exit non-zero — an empty
       output directory reads as "there was nothing to write", which is how a dump settles a question the
-      wrong way round. (origin: the sibling sweep in `BUGS.md` C26, 2026-08-19)
+      wrong way round. (context: the sibling sweep in `BUGS.md` C26 — CLOSED
+      2026-08-20; it is where this was found, not the work. Was `origin:` until C26 closed and the
+      coherence check read it as a status claim, which is the mistake §"How to write an item" records
+      `tools-compile` and `mutants` making)
 - [ ] **sweep-exit5** — `Tools/sweep-ink-bar.py`'s `CONFIG_EXITS` does not include
       `score-text-route`'s exit **5** (self-test failed, nothing measured), added 2026-08-19 by C26's
       sub-step (4). A systematic self-test failure would therefore be **recorded as 233 failed
@@ -683,7 +694,23 @@ than reasoned — the first attempt broke the coherence check twice:
       ⚠️ **Three edits, not one**, and the tool's header says one: the constant, its `--self-test`
       assertion, and `EXPECTED_CHECKS`. A staged `Tools/*.py` carrying `--self-test` is hook-enforced,
       so the self-test runs; the suite runs too because the file is under `Tools/`.
-      (origin: the sibling sweep in `BUGS.md` C26, 2026-08-19)
+      (context: the sibling sweep in `BUGS.md` C26 — CLOSED
+      2026-08-20; it is where this was found, not the work. Was `origin:` until C26 closed and the
+      coherence check read it as a status claim, which is the mistake §"How to write an item" records
+      `tools-compile` and `mutants` making)
+- [ ] **paledraw-term** — **UNTRIAGED, and carried out of C26 so it is not closed by silence.**
+      `pageIsAllText()`'s SECOND term still ships blind: `paleDrawing(pageMarks(…)).extent` reads
+      **0.00000** on p4 and p6 and 0.00029 on p7, so the guard's search finds *nothing* rather than
+      finding something too small, and **no value of `paleDrawingThreshold` protects them**. C26 closed
+      because its FIRST term (`inkOutsideText`, bar 0.045 since 2026-08-19) now refuses those three
+      pages; the second term was never repaired and what it costs elsewhere is **unmeasured** — that is
+      the whole of the claim here, and nothing is asserted beyond it. ⛔ **Do NOT tune
+      `paleDrawingThreshold`** — refused on this document (R55, R56) and again on the 2026-08-18 corpus
+      sweep, where 0.05 sits in a 4.9x gap, the useful range below it is one page wide, and none of it
+      reaches 0.00000. So a fix, if there is one, is in what `pageMarks`/`paleDrawing` *find*, and the
+      first honest step is triage rather than code: does the blind term lose anything the first term
+      does not already refuse? Read C26 §"The drawings are INK" and §"What C26's close does NOT cover"
+      before starting. (context: `BUGS.md` C26 — FIXED 2026-08-20; it is the evidence, not the work)
 
 ## HOLD — owner-only, never auto-executed
 

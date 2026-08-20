@@ -174,7 +174,9 @@ let priceBar: Double? = {
 ///
 /// Refused loudly rather than created quietly on a bad path: a dump is evidence, and an
 /// empty directory reads as "there was nothing on those pages", which would settle
-/// C26's remaining question the wrong way round.
+/// C26's remaining question the wrong way round. (That question was answered on
+/// 2026-08-20 by this very mode and C26 is `FIXED`. The refusal stays: the same trap
+/// applies to every dump `C28` will want.)
 let dumpDirectory: URL? = {
     guard let raw = ProcessInfo.processInfo.environment["INKDUMP"], !raw.isEmpty
     else { return nil }
@@ -632,8 +634,10 @@ if allTextPages > 0 {
     print("negative delta = 1-bit is smaller = the prize; positive = the route it "
           + "already takes is cheaper")
 }
-// C26 sub-step 3's answer, in the two numbers the entry is blocked on: how many
-// pages a bar moves, and what moving them costs.
+// C26 sub-step 3's answer, in the two numbers that entry was blocked on: how many
+// pages a bar moves, and what moving them costs. (Both were measured 2026-08-19 and
+// C26 is `FIXED` 2026-08-20; the columns stay — `C28` asks the same two questions of
+// a different mechanism.)
 if let bar = priceBar {
     print(String(format: "INKBAR %.4f against the shipped %.4f: %d of %d picture-route "
                  + "pages change verdict", bar, Flattener.textPageInkOutsideThreshold,

@@ -18,8 +18,10 @@ re-measurement needs a new `--out`.
 takes ONE pdf and treats every later argument as a page number, so
 `score-text-route testdocs/**/*.pdf` measures document 1, silently ignores the
 other 232 as unparseable page numbers, and prints a summary that reads exactly
-like a corpus run. `BUGS.md` C26 sub-step 3b is blocked on a corpus number, and a
-glob would have answered it with one document's.
+like a corpus run. `BUGS.md` C26 sub-step 3b was blocked on a corpus number, and a
+glob would have answered it with one document's. (That sweep ran 2026-08-19 —
+`INKBAR-2026-08-19.tsv` — and C26 is `FIXED` as of 2026-08-20. This driver is kept
+for `C28`, which needs the same walk over a different bar.)
 
 **What the number was for, and it did its job.** C26 lost three line drawings
 because `pageIsAllText()`'s first term, `inkOutsideText`, reads 0.0493-0.0660

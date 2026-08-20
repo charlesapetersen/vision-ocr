@@ -16,14 +16,26 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **three entries are open as
-of 2026-08-19: `C26`, `C27` and `C28`. The first two were found on one document after `1.13.0`
-shipped; `C28` was opened out of C26's own campaign. `C26` loses
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries are open as
+of 2026-08-20: `C27` and `C28`. `C26` is `FIXED`.** `C26` and `C27` were found on one document after
+`1.13.0` shipped; `C28` was opened out of C26's own campaign. `C26` lost
 content at the DEFAULT Photo detail setting; `C27` discards spot colour and is fidelity rather
 than loss. ⛔ **C26's CONSTANT HAS MOVED — `Flattener.textPageInkOutsideThreshold` is `0.045`, not
 the `0.08` most of the register is written against, the owner's decision on a complete campaign,
 shipped 2026-08-19.** The 16 corpus pages the sweep named keep their tone layers at the caller's
-factor; nothing else moves, measured. ⛔ **`C28` IS WHAT THAT FIX LEFT, and it is the invariant-1 half:
+factor; nothing else moves, measured. ✅ **And the three pages C26 was opened on were RENDERED on
+2026-08-20 and the drawings are back** — `verdict` reads `picture` where it read `all-text` and the
+backgrounds are 612 px rather than 153 px, and at 1:1 the cartoons are whole and legible where they
+were smudges. ⛔ **The verdict is the crops. Do not quote a ratio off that section**: its first draft
+led with "5.7x / 6.3x / 5.7x the fine detail", and five blank rects of the same page measure 3.6x–14.2x
+— the ratio tracks the downsample factor, not returned content, and the *control* was the worst
+offender. What survives is absolute: the drawings read 11.99–12.35 against a blank-paper floor of
+2.10–2.51 as shipped, and 1.87–2.16 at the old bar, which is that floor. The ink-fraction column is
+worse still — it understates p6, the page the founding table called completely erased, because an 8x
+blur keeps solid black while destroying every line. **What C26's close does NOT cover** is
+`pageIsAllText()`'s second term, which still ships blind (`paleDrawing(pageMarks(…)).extent` = 0.00000
+on p4 and p6, 0.00029 on p7, so no value of `paleDrawingThreshold` reaches them) — carried out as the
+queue's `paledraw-term` triage item, and unmeasured. ⛔ **`C28` IS WHAT THAT FIX LEFT, and it is the invariant-1 half:
 the 1-bit stencil is the *intersection* of the page's ink with Vision's word boxes
 (`textRegionMask`, one production call site), so prose the recogniser missed is in neither the stencil
 nor the text layer and survives only in a background stored at 1/8 on a page read as all text —
@@ -35,10 +47,8 @@ and 31 of the 73 are in six of the nine documents sub-step 4 rendered**. In `Bro
 whose twelve sampled pages are all layered, p8 loses a line of body text at `inkOut` 0.0465 and is
 rescued while its p10 sits 0.0024 lower and is not. And the premise the code states as fact — *"ink that is not inside any
 recognised word is, by construction, not text"* — is measured false; both that comment and
-`textRegionMask`'s now say so. **What is left on `C26` itself is one bounded thing**: nobody has
-rendered `1954 - Why` p4/p6/p7 from the shipped build to watch the drawings come back, and the
-arithmetic saying they must is not the same as looking. Read `BUGS.md` C28, and C26's
-`#### The constant moved` and `#### What is left on C26 itself`, before touching any
+`textRegionMask`'s now say so. Read `BUGS.md` C28, and C26's
+`#### The constant moved` and `#### The rendered proof on the founding pages`, before touching any
 of this; every "would" in its pricing sections is now a "does", and ⚠️ **`INKBAR=0.045` now exits 2
 by design** ("equals the shipped bar, nothing to compare") — it is `INKBAR=0.08` that prices the old
 behaviour, which also stops `Tools/sweep-ink-bar.py --bar 0.045` dead on document 1.
@@ -156,7 +166,7 @@ separating the one number that gates both `isPicture` and `shouldKeepColour`. �
 `saturation(of:)` is **not a pure function of the page** — read cold it differs from read after a
 full-resolution render of the same page (`1954 - Why` p7: 0.02831 vs 0.03033), production renders grey
 first, and so must anything that wants to reproduce these numbers.
-Both entries
+`C26`, `C27` and `C28` each
 carry the numbers, the retractions and what is left. It is **not** R56 — that fix is intact and
 works on the other
 route. **`Tools/score-gate.swift` cannot see this class**, by its own source, so do not read a

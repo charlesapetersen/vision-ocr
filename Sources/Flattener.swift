@@ -1482,9 +1482,14 @@ enum Flattener {
     /// threshold is a blunt instrument here.** 32.4% of the band's byte cost
     /// lands on two pages a reader cannot tell apart (`RIESMAN_1942` p10, the
     /// dearest of the 16 at +702,280 B and 6.47x, whose only non-stencil ink is
-    /// a pale scanner-edge strip; and `Riesman - 1954` p18). C26 stays OPEN on
-    /// the question this campaign surfaced and this constant cannot answer — why
-    /// recognised-page prose is dropped from the stencil at all.
+    /// a pale scanner-edge strip; and `Riesman - 1954` p18). The question this
+    /// campaign surfaced and this constant cannot answer — why recognised-page
+    /// prose is dropped from the stencil at all — is **`C28`**, opened
+    /// 2026-08-19. C26 itself is `FIXED` as of 2026-08-20, on the render of its
+    /// own founding pages. ⚠️ This comment read "C26 stays OPEN on the question"
+    /// for a day after that question became its own entry, and would have read
+    /// it for longer: nothing in this repo checks a status written in prose, and
+    /// both `check-staleness.sh` and `check-queue-coherence.sh` passed over it.
     ///
     /// **What it misses — two cases, both recorded because they will come up.** The
     /// signal is ink, so anything whose luminance sits near the paper/ink boundary

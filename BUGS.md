@@ -6,14 +6,25 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Three open: `C26`, `C27` and `C28`. The first two were found on one document hours after `1.13.0`
-shipped; `C28` was opened out of C26's own campaign on 2026-08-19.** `C27` is
+**Two open: `C27` and `C28`. `C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
+(`textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's decision on a complete campaign, so the 16
+corpus pages the sweep named keep their tone layers at the caller's factor) and the next day the
+three pages it was opened on were **rendered and the drawings are back**:
+`verdict` reads `picture` where it read `all-text`, the backgrounds are 612 px rather than 153 px,
+and at 1:1 the cartoons are whole and legible where they were smudges. ⛔ **The verdict is those
+crops, not a ratio.** This paragraph led with "fine-detail energy is 5.7x / 6.3x / 5.7x what the old
+bar published, against a body-text control where both backgrounds are identically blank" until
+2026-08-20, and it is retracted: blank rects on the same page measure **3.6x–14.2x**, that control
+being the worst of them, so the ratio tracks the downsample factor rather than returned content.
+What holds is absolute — the drawings read **11.99–12.35** against a measured blank-paper floor of
+**2.10–2.51** as shipped, and **1.87–2.16** at the old bar, which is that floor. See C26's
+`#### The rendered proof on the founding pages` — and note that the ink-fraction column *understates*
+p6 badly (32% of its ink lost against 84% on p4 and p7), because an 8x
+blur keeps solid black while destroying every line. `C27` was found on the same document as C26,
+hours after `1.13.0` shipped; `C28` was opened out of C26's own campaign on 2026-08-19. `C27` is
 fidelity rather than content loss — spot colour discarded because the bar is on the page's mean
 saturation — and it is a separate mechanism from C26 with a separate constant; neither fix
-addresses the other. `C26` destroys content on the shipped default setting — **⛔ or did until
-2026-08-19, when its constant MOVED: `textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's
-decision on a complete campaign, so the 16 corpus pages the sweep named keep their tone layers at
-the caller's factor.** ⚠️ **What that fix left, and what `C28` is:** 32.4% of its byte
+addresses the other. ⚠️ **What C26's fix left, and what `C28` is:** 32.4% of its byte
 cost lands on two pages a reader cannot tell apart — so a page-wide threshold is a blunt instrument
 rather than the answer — and, measured 2026-08-19 over the committed sweep, **73 sampled pages in 22
 documents are still shrunk 8x/16x at the new bar**, seven of the eight nearest of them in the three
@@ -23,9 +34,7 @@ campaign surfaced (*why is recognised-page prose dropped from the stencil at all
 entry, **`C28`** — the stencil is the intersection of the page's ink with Vision's word boxes, and
 that premise is written in `inkOutsideText`'s doc comment as a fact ("ink that is not inside any
 recognised word is, by construction, not text") which sub-step 4 measured false on 7 of 13 pages.
-**What keeps `C26` itself open is now only the rendered proof on its own founding pages** — p4/p6/p7
-of `1954 - Why` are refused the shrink at 0.045 by measurement, and no one has yet rendered them to
-watch the drawings come back. Read `#### The constant moved` at the
+Read `#### The constant moved` and the section after it at the
 foot of C26 before touching any of it. Opened 2026-08-17,
 hours after `1.13.0` was cut against an empty register — a small line drawing on a page the code
 correctly reads as all text is erased on the picture path, because the guard that would protect it
@@ -107,7 +116,8 @@ p18 that is **32.4% of the band's byte cost on pages a reader cannot tell apart.
 was the owner's, R55's precedent, and he took it at a 2026-08-19 check-in: the bar is 0.045, on the
 arithmetic that ~4.0 MB of corpus output is a cheap price for not destroying words.** It shipped the
 same day; the entry's `#### The constant moved` section is the diff, the suite's flipped checks and
-what was watched failing. This line said the decision was outstanding until then. All three entries carry
+what was watched failing, and the section after it is the render that closed the entry on 2026-08-20.
+This line said the decision was outstanding until then. `C26`, `C27` and `C28` each carry
 the numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
@@ -2207,19 +2217,22 @@ now. **The 8.2 KB figure is left standing but unverified** — re-deriving it ne
 `Blacks in the City`, which is a separate job; TODO item 1 is refused on R56's grounds
 regardless, so nothing waits on it.
 
-### C26 · A small line drawing is erased on the PICTURE path, because the page it sits on is correctly read as all text — OPEN (the bar MOVED 2026-08-19, the stencil question is now `C28`, and what is left here is the rendered proof on the founding pages)
+### C26 · A small line drawing is erased on the PICTURE path, because the page it sits on is correctly read as all text — FIXED (the bar moved 2026-08-19; the founding pages were RENDERED 2026-08-20 and the drawings are back. The wider stencil question is `C28`)
 *(found 2026-08-17 by the owner, on `1954 - Why.pdf` processed by 1.13.0 at Photo detail
 **Balanced**, Rebuild **Automatic** — the release cut the same day)*
 
-⛔ **READ `#### The constant moved` (the last section) FIRST if you are here to change code.**
+⛔ **READ `#### The constant moved`, then `#### The rendered proof on the founding pages`, FIRST if
+you are here to change code** (they are the last two sections; this line named them by *position*
+until 2026-08-20, which is a pointer that rots on every append, and it did).
 `textPageInkOutsideThreshold` is **0.045** as of 2026-08-19, not the 0.08 most of this entry is
-written against, and every "would" in the pricing sections is now a "does". What is still open is
-not the bar: it is that 8 of the 13 pages the bar rescues were losing **prose Vision failed to
-box**, cut from the stencil by `textRegionMask` and then destroyed at 1/8 — and that the dearest
+written against, and every "would" in the pricing sections is now a "does". What is open is not this
+entry at all — it is **`C28`**: 8 of the 13 pages the bar rescues were losing **prose Vision failed to
+box**, cut from the stencil by `textRegionMask` and then destroyed at 1/8 — and the dearest
 page of the 16 the bar move costs bytes for is losing nothing at all. That question belongs to the
 stencil, not to this constant.
 
-⚠️ **READ "The drawings are INK" (2026-08-18, last section) FIRST.** This entry spent two sessions
+⚠️ **READ `#### The drawings are INK…` (2026-08-18) FIRST.** (It said "last section" until 2026-08-20
+and had been two sections out of date.) This entry spent two sessions
 inside `paleDrawing` — the bar, then the height ceiling — and measured, **the drawings are not
 pale marks at all**: 5,495 / 4,188 / 3,379 cells of them are below the page's own Otsu, and
 `paleDrawing` is offered 8 / 350 / 0. The term that decides these pages is `pageIsAllText()`'s
@@ -2227,7 +2240,8 @@ pale marks at all**: 5,495 / 4,188 / 3,379 cells of them are below the page's ow
 them and lets them through. Everything above that section about the pale layer is arithmetically
 right and about the wrong layer.
 
-⚠️ **AND READ THE LAST SECTION SECOND, because it retracts a number this entry publishes twice.**
+⚠️ **AND READ `#### Sub-step 3b, the population…` SECOND, because it retracts a number this entry
+publishes twice.** (This too said "the last section", and by 2026-08-20 it pointed at the render.)
 The corpus sweep landed 2026-08-19 (`INKBAR-2026-08-19.tsv`): the band `[0.045, 0.08)` holds **17
 pages, 16 of which move**, and they cost **4.54x / 185,353 B per page** — not the **2.99x /
 43,436 B** "Sub-step 3, half of it" measured on this document, whose three pages turn out to be the
@@ -2419,7 +2433,8 @@ Consequences, and they change what a fix can be:
   `paleDrawingThreshold`, and it is not a bar on the page at all.~~ **STRUCK 2026-08-18 the same
   day**: `typeCeilingInches` is what refuses the pale layer on these pages, and the pale layer is
   not the drawing. No filter inside `paleDrawing` decides them, because the drawings are **ink** —
-  see "The drawings are INK", the last section of this entry. This bullet stood in bold above two
+  see `#### The drawings are INK…` (it said "the last section of this entry", and eight sections have
+  been appended since — counted). This bullet stood in bold above two
   sections that rule it out, which is the same shape as the note three bullets up.
 
 #### The filter that drops them is the height ceiling, and `pageMarks` is not the problem — 2026-08-18
@@ -3589,37 +3604,134 @@ check-in. C28 also carries what this section could not have known: measured over
 which sub-step 4 read losing a line of body text — is rescued at `inkOut` 0.0465 while its own p10
 sits 0.0024 lower and is not.
 
-#### What is left on C26 itself: the rendered proof on the founding pages
+#### The rendered proof on the founding pages: the drawings are back — MEASURED 2026-08-20, and C26 CLOSES
 
-⛔ **This is the whole of it, and it is a bounded item.** The three pages C26 was opened on —
-`1954 - Why` p4/p6/p7 — are refused the shrink at 0.045 **by measurement**: `inkOut` 0.0540 / 0.0493 /
-0.0660, `verdict` now `picture` where it read `all-text`, and the three go 65,477 -> 195,785 B, all of
-it tone layers, with the stencil byte-identical. What has **not** happened is anyone rendering those
-three pages from the shipped build and watching the drawings come back. Every number above says they
-must; the register's own rule is that a founding failure mode is closed by looking at it, and this
-entry's history is four rounds of arithmetic about the wrong layer.
-
-One invocation does it, and it needs no new code — the constant now being 0.045 means `INKBAR=0.08`
-is the *old* state, so a single run writes both:
+**This entry's history is four rounds of arithmetic about the wrong layer, so it does not close on a
+byte column.** It closes on the three pages it was opened on, looked at. One invocation, no new code —
+the constant being 0.045 means `INKBAR=0.08` is now the *old* state, so a single run writes both:
 
 ```sh
-# built first, as every Swift tool here is — sub-step 4's own command, with the bar swapped
+# the tool is built first, as every Swift tool here is
 INKBAR=0.08 INKDUMP=/tmp/c26-founding /tmp/score-text-route "testdocs/book/1954 - Why.pdf" 4 6 7
 ```
 
-`layered` is then what ships and `layeredAtBar` what shipped before, and `INKDUMP` writes both
-tone-layer pairs from the same `mrcLayers` call. ⚠️ Read sub-step 4's method paragraph first: an
-auto-levelled whole-page difference **misled twice** there, and only 1:1 crops settled it. When those
-three pages read as drawings again, C26 closes.
+**Exit 0, and the columns reproduce this entry digit for digit.** `layered` is what ships,
+`layeredAtBar` what shipped before 2026-08-19:
 
-⚠️ **One thread this narrowing does NOT close, recorded here so it has a home.** The *second* term of
-`pageIsAllText()` is still measured blind: `paleDrawing(pageMarks(…)).extent` reads **0.00000** on the
-two pages that lose the most, so no value of `paleDrawingThreshold` protects them and — as this entry
-established on 2026-08-18 — a fix there would have to be in what `pageMarks`/`paleDrawing` *find*. The
-bar move makes that moot **for these three pages**, because the *first* term now refuses them; it does
-not repair the second term, which still ships. Nothing is claimed about what that costs — it is
-unmeasured — but it must not be closed by silence when C26 closes on the render. Found by the
-adversarial review of the diff that opened `C28`.
+| page | `inkOut` | `verdict` (ships) | `layered` | `barVerdict` (0.08) | `layeredAtBar` | `extent` |
+|---|---|---|---|---|---|---|
+| p4 | 0.0540 | **picture** | 67,976 B | all-text | 22,762 B | 0.00000 |
+| p6 | 0.0493 | **picture** | 62,397 B | all-text | 20,708 B | 0.00000 |
+| p7 | 0.0660 | **picture** | 65,412 B | all-text | 22,007 B | 0.00029 |
+
+195,785 B against 65,477 B, `0.33x` (= 1/2.99, the ratio sub-step 3 measured with the columns the
+other way round), and the tool's own per-page check says the **stencil is byte-identical on all 3**,
+so the whole difference is in the tone layers. The backgrounds it dumped say the same thing in pixels:
+**612 px wide as shipped against 153 px at the bar**, out of a 1,224 px page render — the caller's 2x
+against the all-text 8x.
+
+**What the pixels show, read at 1:1 the way sub-step 4's method (b) requires.** Each drawing's own
+rect, three panels side by side — source, background as it ships, background at 0.08:
+
+| page | drawing (rect in the 1224x946 render) | shipped (0.045) | at the old bar (0.08) |
+|---|---|---|---|
+| p4 | bottom right, `254x240+970+595` | whole and legible — shelf, figure, the flying books, the floor line | a grey smudge; the posture is guessable, no stroke is followable |
+| p6 | top left, `240x185+0+0` | whole and legible | an amorphous blur |
+| p7 | bottom right, `260x250+925+540` | whole and legible | the solid masses survive as blobs, every stroke is gone |
+
+⚠️ **A correction of degree to this entry's founding table, not of kind.** It recorded p6 as "ERASED
+COMPLETELY — blank white where a cartoon figure was", read at 55 DPI off the *composited* output. On
+the background layer at 0.08 there is a smudge: it is **illegible, not absent**. What reached the
+reader as white is that smudge plus a stencil holding none of it.
+
+**Two numbers beside the eye — and the first thing to say is that the obvious one is refuted by its own
+control.** Both are taken over the rects above, on the backgrounds upscaled to the render's geometry
+(`magick <bg> -resize 1224x946! <out>`, which resolves to Mitchell here; `-filter point` more than halves
+the last column, so the filter is part of the recipe rather than a detail).
+
+- (a) **ink fraction** — `magick <img> -crop <RECT> +repage -colorspace Gray -threshold 54.51% -format
+  '%[fx:1-mean]' info:`, one cut at grey **≤139**, the Otsu of p4 and p7. source / shipped / at 0.08:
+  p4 **0.1276 / 0.0771 / 0.0204**, p6 **0.1870 / 0.1927 / 0.1269**, p7 **0.1287 / 0.0842 / 0.0206**.
+  (p6's own Otsu is 140; cutting there instead, `-threshold 54.92%`, reads **0.1884 / 0.1958 / 0.1345**
+  and moves nothing below. Both spellings are given because the audit of this diff recomputed the row at
+  the other one and got a third answer.)
+  ⚠️ p6's row is why this measure **cannot carry the verdict**: an 8x blur preserves the solid black of
+  the bookshelf, so p6 gives up **32%** of its ink where p4 and p7 give up **84%**. Area is not
+  legibility, and this column badly understates the page the founding table called completely erased.
+- (b) **fine-detail energy** — `magick <img> -crop <RECT> +repage -colorspace Gray \( +clone -blur 0x3 \)
+  -compose difference -composite -format '%[fx:standard_deviation*255]' info:`. source / shipped / at
+  0.08: p4 **23.06 / 11.99 / 2.10**, p6 **21.24 / 11.75 / 1.87**, p7 **24.19 / 12.35 / 2.16**.
+
+⛔ **RETRACTED BEFORE IT SHIPPED, and it was this section's headline: "the shipped background carries
+5.7x / 6.3x / 5.7x the detail the old one does" is not evidence.** Five rects on p4 holding no
+out-of-stencil marks at all read, shipped / at 0.08: **2.41/0.17, 2.22/0.22, 2.25/0.62, 2.10/0.19,
+2.51/0.18** — ratios of **3.6x to 14.2x**. Blank paper beats the drawings' 5.7x. The ratio measures the
+downsample factor, not returned content, and the rect this section had offered as its *control* is the
+worst offender at 14.2x. Found by the adversarial review of this diff and confirmed by re-running it;
+it is the fourth time this entry has published arithmetic about the wrong quantity.
+
+**What (b) does say, in absolute terms against that measured floor.** Over the three drawings the
+shipped background reads **11.99 / 11.75 / 12.35** against a shipped blank-paper floor of **2.10–2.51**
+— about **5x above floor**. At 0.08 the same three rects read **2.10 / 1.87 / 2.16**, which is the level
+blank paper reaches in the layer that ships *today*: after the old bar the drawing's own patch of page
+carries no more fine structure than an empty patch does at the resolution now published. ⚠️ And what it
+does not say: inside the 0.08 state its own blank floor is 0.17–0.62, so the drawing rect is still above
+*that*. **The verdict rests on the 1:1 crops.** (b) corroborates them against a floor; (a) does not.
+
+**What the control is good for, which is (a) and not (b).** The same rects on p4's body text
+(`254x240+60+300`, no out-of-stencil marks): ink fraction **0.1790 in the source, 0.00000 in BOTH
+backgrounds**. That is the clean half — type is in the stencil, `fillHoles` inpaints it out of both
+backgrounds, and by (a) the bar changes **nothing** there, so the whole of what this constant moves is
+on marks the stencil does not hold. By (b) the same rect reads 32.59 → 2.41 → 0.17, the 14.2x above. One
+control, one verdict each way.
+
+**And the stencil is the third piece — measured on all three pages, not on one.** Ink share over each
+drawing's own rect: p4 **1.43%**, p6 **0.68%**, p7 **1.87%**, against **16.95%** over p4's body-text
+rect. Read at 1:1, p4's and p6's are body-text words clipped at the rect's top and left edges and hold
+**nothing of the cartoon**. ⚠️ **p7's is not**: beside the clipped text it holds two small fragments of
+the drawing that Vision boxed as words, and they publish crisply at both bars. That is the founding
+table's *"mostly destroyed — one dark fragment survives"* arriving from the other side, and it means
+that on p7 the background carries the **rest** of the drawing rather than all of it. `cmp` says all
+three stencil pairs are byte-identical between the two bars, so nothing the stencil holds moves either
+way. Everything else on all three pages is the background's alone — `C28`'s premise from the other
+direction.
+
+**Why the background and not the foreground, since both were dumped.** `mrcLayers` builds the foreground
+by `fillHoles` over everything *outside* the stencil, and the writer paints it with the stencil as its
+`/SMask`, so it is transparent wherever the stencil is off and can carry nothing the stencil does not
+hold. Verified by reading `Sources/Flattener.swift` and `Sources/JBIG2.swift` in the adversarial review
+of this diff, and by looking: the upscaled `-fg-shipped.jpg` over p4's drawing rect is grey mush with no
+drawing in it.
+
+⚠️ **The images are deliberately NOT committed: they are crops of a copyrighted 1954 booklet out of the
+uncommitted `testdocs/`**, which cannot be redistributed and cannot be rebuilt without the owner's
+Zotero library. (An earlier draft gave the reason as "every dated record beside this one is a TSV",
+which is false — `CORPUS-2026-08-08/09/15.md` are markdown and `MRC-2026-08-15/` carries a README.
+Caught by the numbers audit of this diff.) What rebuilds them is all here: the invocation above, the
+four rects, the resize line, and the two `magick` recipes.
+
+**So the three drawings that founded C26 are legible again in the layers the app publishes, and the
+fourth (p9) never moved — it is on the 1-bit route and always survived.** ⚠️ Stated exactly: nothing
+here went through `makeSearchablePDF`, so these are the layers the app *would* publish rather than a
+published PDF — sub-step 4's own caveat, which carries because the stencil is byte-identical at both
+bars. Word retention was **not** re-measured in this run and nothing here claims it; the founding
+observation that every word on every page survived stands untouched and untested by this. C26 is
+`FIXED`.
+
+#### What C26's close does NOT cover, and where each part went
+
+1. **`pageIsAllText()`'s second term still ships blind, and this fix did not repair it.**
+   `paleDrawing(pageMarks(…)).extent` reads **0.00000** on p4 and p6 and **0.00029** on p7 — named
+   rather than ranked, because this section's own crops overturn the severity order those pages were
+   put in on 2026-08-18. No
+   value of `paleDrawingThreshold` protects any of the three; a fix there would have to be in what
+   `pageMarks`/`paleDrawing` *find*, not in the constant. The bar move makes that moot **for these
+   three pages** because the *first* term now refuses them. Nothing is claimed about what the second
+   term costs elsewhere — it is unmeasured. Carried out of this entry as the queue's `paledraw-term`
+   triage item so it is not closed by silence. Found by the adversarial review of the diff that
+   opened `C28`.
+2. **The 73 sampled pages in 22 documents still shrunk at 0.045**, and the 32.4% of the band's byte
+   cost spent on two pages a reader cannot tell apart: both are `C28`, which is OPEN.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct
