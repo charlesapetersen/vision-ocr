@@ -334,6 +334,14 @@ than reasoned — the first attempt broke the coherence check twice:
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
+      ⚠️ **TWO CODE COMMENTS STILL SAY "7 of them" AND ARE YOURS TO CORRECT, IN YOUR OWN COMMIT.**
+      `Sources/Flattener.swift:1421-1423` and `Tests/main.swift:1557-1559` both cite C26 sub-step 4's 13
+      pages and its 7 prose losses. Both are TRUE as dated claims, so this is an omission and not an
+      error — but both stage a code path, so a docs-only commit cannot carry them and a commit made only
+      for them would buy a 45-90 minute suite for a comment. `HANDOFF.md` and `CLAUDE.md` were corrected
+      on 2026-08-20 (docs-only, free); these two were deliberately left for the next C28 commit, which
+      pays for the suite anyway. The campaign total to quote is **21 pages rendered, 12 losing content,
+      10 of those prose or table data**. (owner's call, 2026-08-20)
       ✅ **The first sub-step is DONE 2026-08-20 — the 8 near-misses are rendered and 4 of the 8 lose
       content.** Do not re-run it; the sub-box below and the entry's
       `#### The eight near-misses, RENDERED` carry the table, the byte price and the method.

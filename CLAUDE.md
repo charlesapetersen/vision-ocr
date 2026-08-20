@@ -40,7 +40,8 @@ the 1-bit stencil is the *intersection* of the page's ink with Vision's word box
 (`textRegionMask`, one production call site), so prose the recogniser missed is in neither the stencil
 nor the text layer and survives only in a background stored at 1/8 on a page read as all text —
 7 of the 13 pages C26 rendered lose whole lines of running prose or table data that way, and nothing
-reports it.** Two measurements say the page-wide bar cannot be the answer: 32.4% of its byte cost
+reports it. Eight more of the 73 were rendered 2026-08-20 (`78de7a2`) and 4 of the 8 lose content, so
+the campaign stands at 21 pages rendered, 12 losing content and 10 of those prose or table data.** Two measurements say the page-wide bar cannot be the answer: 32.4% of its byte cost
 lands on two pages a reader cannot tell apart, and — measured 2026-08-19 over the committed
 `INKBAR-2026-08-19.tsv` — **73 sampled pages in 22 documents are still shrunk 8x/16x at the new bar,
 and 31 of the 73 are in six of the nine documents sub-step 4 rendered**. In `Broadhead - 1994`,
@@ -132,7 +133,7 @@ benefit, measured 2026-08-19 — sub-step (4) ran and the other 13 pages were re
 `INKDUMP=<dir>` on `Tools/score-text-route.swift` writes both tone-layer pairs from the same
 `mrcLayers` call the byte columns come from, and the stencil being byte-identical at both bars makes
 the two backgrounds the entire difference. **11 of the 13 lose something**, and ⛔ **the dominant case
-is NOT a drawing**: **7 of the 13 lose whole lines of prose or table data and an 8th loses a hand-drawn mark outright — 8 losing content outright** — `Xin Qu et al_2018`
+is NOT a drawing**: **7 of the 13 lose whole lines of prose or table data and an 8th loses a hand-drawn mark outright — 8 losing content outright** (and the eight near-misses rendered 2026-08-20 hold the same shape: 3 lose prose or table data, a 4th a handwritten signature — **21 pages rendered across the campaign, 12 losing content**) — `Xin Qu et al_2018`
 p20 loses thirteen values out of a Pearson correlation matrix, `_1973_Committee Against Racism_` p4
 loses seven lines of prose — words Vision did not box, cut from the stencil by `textRegionMask` and
 then destroyed at 1/8. **That makes C26 an invariant-1 defect rather than the fidelity complaint it
