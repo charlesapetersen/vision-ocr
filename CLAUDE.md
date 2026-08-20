@@ -16,8 +16,10 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **three entries are open as
-of 2026-08-20: `C27`, `C28` and `C29`. `C26` is `FIXED`.** `C29` is the owner's JSTOR finding — a
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **four entries are open as
+of 2026-08-20: `C27`, `C28`, `C29` and `C30`. `C26` is `FIXED`.** `C30` is the owner's second JSTOR
+finding and the widest of them: whole blocks of clean body text get no text layer, and all four of this
+project's text-layer instruments count only the words Vision returned, so `words=100%` is silent about it. `C29` is the owner's JSTOR finding — a
 born-digital cover page rasterised and re-OCR'd because `hasDigitalText` votes per DOCUMENT and never
 samples page 1 at all on a document of 5+ pages. `C26` and `C27` were found on one document after
 `1.13.0` shipped; `C28` was opened out of C26's own campaign. `C26` lost

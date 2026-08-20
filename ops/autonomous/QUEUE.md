@@ -522,6 +522,22 @@ than reasoned — the first attempt broke the coherence check twice:
       out-of-stencil mark is the curled sheet's own edge shadow, typescript crisply in the stencil.
       Corpus read-only; all 140 dumps, maps and crops written under `/tmp`.
       (context: BUGS.md C28)
+- [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
+      the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
+      43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,
+      AND IT IS ONE RUN**: dump what the recogniser returned with `Tools/make-observations.swift` and see
+      whether its observations cover the voids. If they do, the loss is in `SearchableWriter`/`compose`; if
+      they do not, it is recogniser recall and a different fix. **Settle that before proposing anything** —
+      the entry says in terms that the mechanism is not diagnosed. ⛔ **AND DO NOT TRUST `words=`, `start=`,
+      `end=`, `probe-line-coverage` OR `probe-line-edges` HERE**: all four count only the words Vision
+      returned, so they read 100% on a page that lost a third of its text. Any new instrument must be able
+      to fail a page while `words=` passes it, or it has inherited the same blind spot. A generated fixture
+      is the standing preference; `testdocs/` holds nothing of this shape and the document itself is not in
+      it. (origin: BUGS.md C30)
+      ⚠️ Placed straight after `C28` because it is the same root cause seen from the other side — C28 is the
+      subset where the missed ink is also DESTROYED at 1/8, this is the general case where it is merely
+      unsearchable. C28 is mid-campaign so it keeps its place, but this may deserve to jump it: it is the
+      app's central promise and the owner reports seeing it on other documents too. Owner's call.
 - [ ] **born-digital-page** — a born-digital cover page is rasterised to 1-bit and re-OCR'd because the
       digital-text test votes per DOCUMENT. On the JSTOR download this was found on, page 1's vector text,
       its embedded fonts and a 197x267 colour JPEG became one 1-bit raster, and the text layer went from

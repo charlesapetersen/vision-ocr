@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Three open: `C27`, `C28` and `C29`. `C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
+**Four open: `C27`, `C28`, `C29` and `C30`. `C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
 (`textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's decision on a complete campaign, so the 16
 corpus pages the sweep named keep their tone layers at the caller's factor) and the next day the
 three pages it was opened on were **rendered and the drawings are back**:
@@ -5331,6 +5331,98 @@ substitution risk. Written down here so nobody re-derives "3x too big" from the 
   this file", and it has NOT been run here** — the mechanism above is read from the source with the
   arithmetic enumerated, and the *consequence* is what was measured in the output. Run it first; this
   project's rule is that the instrument is wrong before the code.
+
+### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
+
+*(found 2026-08-20 by the owner, on a second JSTOR/ProQuest download and reported as "only about half
+of the first page is actually selectable, and significant non-selectable text on all the other pages".
+He adds that he has seen the same on other PDFs. Measured below and CONFIRMED. Mechanism NOT
+diagnosed — see `#### The fork that has to be settled first`.)*
+
+**The document.** `1951 - Briefer Book Notes.pdf` (*Management Review* 40:3, March 1951; producer
+`Apache FOP 1.0`; 6 pages, 595x808 pt; in `~/Downloads`, **not** in `testdocs/`). The input is a raw
+scan with **no usable text layer** — 78 characters on page 1, the ProQuest citation header, and 0 on
+pages 2-6 — so there is no reference read to compare against and nothing was stripped. The app added
+2,101 words. The complaint is what it did **not** add.
+
+**What was measured, and the one number that survives.** Three proxies were tried and only the third
+is free of an artifact, which is why it is the one quoted:
+
+| measure | result | why it is not the answer |
+|---|---|---|
+| inked ROWS with no word box | 54% bare | a word box covers the x-height while an inked row spans ascenders and descenders, so this over-reports by a near-constant fraction per line |
+| ink LINES with no word box | 20% bare | at this leading the row profile never returns to background between lines, so "lines" are merged blocks and a block counts as covered if ANY word in it is |
+| **inked rows inside runs of 20+ consecutive rows holding NO word box within 2px** | **30%** | **neither artifact can manufacture a 20-row void; this is a floor, not an estimate** |
+
+Per page, that floor is **43% / 17% / 33% / 32% / 40% / 15%**, and the largest single void is **171
+rows at 100 dpi — about 1.7 inches** of page 1.
+
+⛔ **AND IT IS NOT FAINT OR DEGRADED TYPE.** That 171-row void was cropped and read: it is
+`General` followed by two complete paragraphs of clean, crisp, well-inked 1951 body type —
+*"PUBLIC OPINION—1935-1946. Under the editorial direction of Hadley Cantril…"* and *"ECONOMICS OF
+NATIONAL SECURITY. Edited by G. A. Lincoln…"* — roughly 200 words, the easiest material on the page,
+with nothing selectable over any of it. **So this is not `C28`'s premise.** C28 is about ink the
+recogniser misses on faint, skewed and tightly-set scans; this is clean type skipped in contiguous
+blocks, which is a different signature and probably a different cause.
+
+#### Why no existing measurement can see this
+
+**`C28` names it and does not measure it.** Its one-sentence statement says the missed ink is "in
+neither the stencil nor the text layer" — the text-layer half is named there. But C28's whole measured
+campaign (65 pages at 1:1, 22 losing content) is about the **background being stored at 1/8**, i.e. the
+visual consequence. Nothing in it counts selectability. On this document the voids are *legible*, so
+C28's destruction is not what happened here: same family, different consequence.
+
+⛔ **EVERY TEXT-LAYER INSTRUMENT IN THIS REPOSITORY IS KEYED TO THE WORDS VISION RETURNED, so all of
+them are blind to a word it never returned.** Read from the source:
+
+- `Tools/score-corpus.swift:206-207` — `refWords += pg.observations.flatMap { $0.text.split(...) }` and
+  `gotWords += (page.string ?? "").split(...)`, so **`words=` is `gotWords / refWords`**. If the
+  recogniser returns half a page, both sides halve and the column reads **100%**.
+- the same file's `start=` / `end=` increment `startTotal` / `endTotal` once per **reference line**.
+- `Tools/probe-line-coverage.swift` — *"for every recognised line on EVERY page, probe the right-hand
+  15%"*.
+- `Tools/probe-line-edges.swift` — *"for each recognised line on ONE page: is its first word
+  selectable"*.
+
+That is four instruments measuring **the writer against the recogniser**, and none measuring **the
+recogniser against the page**. `probe-line-coverage`'s own header already says the 15% rect "exists in
+three places… one idea in three shells, not three instruments"; this entry is the next level of that
+observation — the shells differ and the blind spot is common to all of them. It is why
+`testdocs/manifest.tsv` reads **`words=100%` on 181 of 233 documents, 99% on 50, 98% on one and 97% on
+one** while a document can lose a third of its text layer. **That record is not evidence against this
+entry; it is silent about it.**
+
+#### The fork that has to be settled first
+
+**Did Vision not return those words, or did the writer drop them?** The two have different fixes and
+nothing measured here distinguishes them. `Tools/make-observations.swift` dumps what the recogniser
+returned for a PDF; comparing its observation geometry against the voids answers it in one run:
+
+- **if the observations cover the voids**, the loss is in `SearchableWriter`/`compose` and this is a
+  writer defect with the four existing instruments pointed the wrong way;
+- **if they do not**, it is recogniser recall, the app's options are what to do about it (re-recognise
+  the region, tile the page, vary the render), and the four instruments are measuring the wrong thing
+  by construction rather than by accident.
+
+⚠️ **Ruled out already: a text-height threshold.** `Prefs.swift:522-523` defaults `minTextHeightOn` to
+`false` with `minTextHeight` `0.0`, and `Recogniser.swift:412-413` only sets
+`request.minimumTextHeight` when that is on — so the app imposes none. An attempt to test the sibling
+idea (that the skipped type is simply smaller) was **inconclusive and is not evidence**: bare blocks
+measured *taller* than covered ones, but the segmentation that produced both merges lines into blocks
+up to 423 px, so it compared block sizes rather than type sizes. Recorded so nobody quotes it.
+
+#### What a fix has to satisfy
+
+- **An instrument that starts from the PAGE, not from the observations.** Whatever it is, it must be
+  able to report a page as bad while `words=` reads 100%, or it has inherited the blind spot. The
+  ink-void measure above is a starting shape and is deliberately crude; the tool version belongs in
+  `Tools/` with a `--self-test`.
+- **A fixture, and this document is not one** — it is in `~/Downloads` and `testdocs/` holds nothing of
+  this shape. Generated fixtures are the standing preference (owner, 2026-08-20).
+- **The corpus figure has to be re-established afterwards**, because `words=` on 233 documents is
+  currently the project's headline claim about its own text layer and it does not mean what it appears
+  to mean.
 
 ## Robustness and correctness of reporting
 
