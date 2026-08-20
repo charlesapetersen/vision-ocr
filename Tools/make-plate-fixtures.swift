@@ -17,7 +17,8 @@
 //                    Otsu calls it paper, so `inkOutsideText` reads 0.0000 and
 //                    1-bit renders it as blank white. Total content loss.
 //   flat-colour      text + a flat red field at luminance ~103. R50 measured this
-//                    at inkOutsideText 0.0365 — under the 0.08 threshold — because
+//                    at inkOutsideText 0.0365 — under the threshold at 0.08 and still
+//                    under it at the 0.045 C26 moved it to on 2026-08-19 — because
 //                    Otsu lands mid-field and splits it in half.
 //   tonal-plate      text + a continuous-tone photograph. Must read as a picture.
 //   halftone         text + a coarse halftone. Bimodal, so 1-bit is *correct* here

@@ -181,6 +181,17 @@ CONSTANTS = [
     # The analysis resolution. 20 cells an inch is below the floor the whole signal
     # rests on, and the constant's own comment is three paragraphs about why.
     ("Flattener.swift", "markCellsPerInch", "150.0", "20.0"),
+    # C26's bar, put back where it stood before 2026-08-19 — 0.08 is not a
+    # perturbation, it is the shipped value that erased three drawings on
+    # `1954 - Why.pdf` and lines of prose on 7 other corpus pages. The suite has three
+    # checks sized against it: two on `inkOutsideText` directly (0.0554 and 0.0551,
+    # both inside the band the lost drawings measured) and one that layers the fixture
+    # and reads the background width back. This state was run by hand on the way in —
+    # the flipped checks were watched failing against 0.08 before the constant moved —
+    # so what this entry buys is that the same experiment stays runnable. ⚠️ `--only C26`
+    # does NOT select it: `--only` is a substring of the id, and the id is built from the
+    # constant's own name. Use `--only textPageInk`.
+    ("Flattener.swift", "textPageInkOutsideThreshold", "0.045", "0.08"),
     # The quarter inch that separates a drawing from show-through. Large, so every
     # pale mark is type-sized and the drawing is never found.
     ("Flattener.swift", "typeCeilingInches", "0.25", "99.0"),

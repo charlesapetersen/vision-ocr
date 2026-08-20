@@ -19,8 +19,17 @@ boxes, and what the tests don't cover.
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries are open as
 of 2026-08-19, `C26` and `C27`, both found on one document after `1.13.0` shipped. `C26` loses
 content at the DEFAULT Photo detail setting; `C27` discards spot colour and is fidelity rather
-than loss. Neither is decided: C26's campaign is COMPLETE and its constant is the owner's call
-(`ops/autonomous/QUEUE.md` holds that item), and C27's population sweep has now RUN — 10 pages of 441
+than loss. ⛔ **C26's CONSTANT HAS MOVED — `Flattener.textPageInkOutsideThreshold` is `0.045`, not
+the `0.08` most of the register is written against, the owner's decision on a complete campaign,
+shipped 2026-08-19.** The 16 corpus pages the sweep named keep their tone layers at the caller's
+factor; nothing else moves, measured. **The entry stays OPEN for a different question**: 32.4% of
+that fix's byte cost lands on two pages a reader cannot tell apart, so the threshold is a blunt
+instrument, and what is left is *why recognised-page prose is dropped from the stencil at all* —
+to be opened as its own entry. Read `BUGS.md` C26's `#### The constant moved` before touching any
+of this; every "would" in its pricing sections is now a "does", and ⚠️ **`INKBAR=0.045` now exits 2
+by design** ("equals the shipped bar, nothing to compare") — it is `INKBAR=0.08` that prices the old
+behaviour, which also stops `Tools/sweep-ink-bar.py --bar 0.045` dead on document 1.
+C27 is undecided: its population sweep has RUN — 10 pages of 441
 in 7 documents, three of the eight real ones are colour PICTURES rather than spot colour, and two
 carry no ink of their own.** A small line
 drawing is erased on the picture path because `pageIsAllText()` shrinks the tone layers 8x and 16x
@@ -36,16 +45,18 @@ look at: the drawings are INK** — 5,495 / 4,188 / 3,379 cells below their page
 8 / 350 / 0 pale cells the guard is offered — so they are cut out of the stencil by
 `textRegionMask` (correctly; they are not text), left in the background, and the background is
 what gets stored at 1/8. The term that decides those pages is `pageIsAllText()`'s **first** one:
-`inkOutsideText` reads **0.0493–0.0660 against a bar of 0.08**, so it sees them and lets them
-through, and unlike the pale term it *can* reach them. **What moving that bar costs is measured as of
+`inkOutsideText` reads **0.0493–0.0660 against what was then a bar of 0.08**, so it saw them and let
+them through, and unlike the pale term it *can* reach them — which is why 0.045 refuses all three.
+**What moving that bar costs is measured as of
 2026-08-18: at 0.045 all three pages are refused the shrink and go 65,477 -> 195,785 bytes, `2.99x`
 on those three pages, `1.76x` across the document's five picture-route pages, all of it tone
 layers.** (That second figure is there because the first was published as a *document* total and is
 not one — five of the ten pages are already 1-bit and pay nothing. Corrected the same day by the
 review of the diff that measured it.) The seam is
 `Flattener.textPageInkOutsideThresholdOverride` — `nil` in the app, substituting the guard's
-comparand rather than its verdict — and `INKBAR=0.045 Tools/score-text-route.swift` prices any
-document with it. **⛔ But measured over the corpus 2026-08-19, that `2.99x` is the BEST case and is
+comparand rather than its verdict — and `INKBAR=0.08 Tools/score-text-route.swift` prices any
+document with it (**`INKBAR=0.045` was the command until the constant moved there; it now exits 2**,
+because a bar equal to the shipped one has nothing to compare). **⛔ But measured over the corpus 2026-08-19, that `2.99x` is the BEST case and is
 retracted as a corpus figure.** `Tools/sweep-ink-bar.py` (which landed the same day — resumable per
 document, 71 `--self-test` checks, 42 mutants watched failing) swept 233 documents in **105.6 min,
 `ok=233`**, and the result is committed as **`INKBAR-2026-08-19.tsv`**, 2,129 measured page rows. The
@@ -78,9 +89,10 @@ reproduces its founding failure mode. ⛔ **And the dearest page of the 16 buys 
 strip; with `Riesman - 1954` p18 that is **32.4% of the band's byte cost on pages a reader cannot
 tell apart.** ⚠️ Two verdicts read off whole-page difference maps were WRONG and were overturned by
 1:1 crops plus an ink-outside-the-stencil map — `-auto-level` amplifies the harmless `fillHoles`
-residue into what looks like legible text. The decision itself is still the owner's (R55's
-precedent) and sits in the run's `NEEDS OWNER`. Read the entry's last section before touching any of
-it.
+residue into what looks like legible text. ✅ **The decision was the owner's (R55's precedent) and he
+took it at a 2026-08-19 check-in: 0.045, on the arithmetic that ~4.0 MB of corpus output is a cheap
+price for not destroying words. It shipped the same day.** This sentence said the decision was
+outstanding until then. Read the entry's last section before touching any of it.
 **The corpus
 sweep both entries were blocked on ran the same day** — 441 pages, 233 documents,
 `THRESHOLD-LOSS-2026-08-18.tsv` — and it sizes the `extent` bar's population (61 picture-route
@@ -263,7 +275,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,175 checks at d56fd0e; 8-45 min depending on machine load, real OCR
+./run_tests.sh        # 1,185 checks at C26's bar move; 8-45 min depending on machine load, real OCR
                       # measured 474 s quiet -> 2,719 s under the C24b campaign. Never size a
                       # timeout off one sample: ops/autonomous/README.md keeps the ledger.
 ```

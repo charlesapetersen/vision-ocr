@@ -794,8 +794,16 @@ func writeSelfTestPage(_ kind: SelfTestPage, to url: URL) -> Bool {
     if kind == .colourPlate {
         // A saturated block in the lower third, the way `make-plate-fixtures` puts
         // a plate on a page. Luminance ~103 so it is ink by any threshold this page
-        // produces, which is what puts `inkOutsideText` well above 0.08 and keeps
-        // R50 from firing — the assertion the all-text fixture cannot make.
+        // produces, which is what puts `inkOutsideText` well above the bar — 0.08 when
+        // this was written, 0.045 since 2026-08-19 (C26), above both — and keeps R50
+        // from firing: the assertion the all-text fixture cannot make. **And the
+        // all-text fixture was re-measured against the moved bar rather than assumed.**
+        // This self-test exits 4 if that fixture's `inkOut` has drifted up into
+        // `[0.045, 0.08)`; it was run and exited 0 on 2026-08-19. `selftest-alltext` is
+        // the only fixture in the repository layered with a shrink assertion outside
+        // `Tests/main.swift`, so it is the one C26's negative control nearly missed —
+        // and nothing would have said so, because the hook does not run a Swift tool's
+        // self-test and this file was not staged in that commit until it was.
         canvas.setFillColor(red: 0.62, green: 0.14, blue: 0.16, alpha: 1)
         canvas.fill(CGRect(x: margin, y: 40, width: column, height: 130))
     }
@@ -902,7 +910,7 @@ func selfTest() -> [String] {
         expect("the all-text fixture's ink is all text",
                text.inkOutsideText >= 0
                    && text.inkOutsideText < Flattener.textPageInkOutsideThreshold,
-               String(format: "inkOutsideText %.4f, threshold %.2f", text.inkOutsideText,
+               String(format: "inkOutsideText %.4f, threshold %.3f", text.inkOutsideText,
                       Flattener.textPageInkOutsideThreshold))
         expect("an all-text page takes R50's background shrink",
                Int(text.backgroundFactor.rounded()) == Flattener.textPageBackgroundDownsample,
@@ -924,7 +932,7 @@ func selfTest() -> [String] {
                "it was layered and compared in grey — " + signals(.colourPlate))
         expect("a page with a plate on it has ink outside the words",
                plate.inkOutsideText >= Flattener.textPageInkOutsideThreshold,
-               String(format: "inkOutsideText %.4f, threshold %.2f", plate.inkOutsideText,
+               String(format: "inkOutsideText %.4f, threshold %.3f", plate.inkOutsideText,
                       Flattener.textPageInkOutsideThreshold))
         expect("a picture page keeps the caller's background factor",
                Int(plate.backgroundFactor.rounded()) == Flattener.mrcBackgroundDownsample,

@@ -12,6 +12,28 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## Unreleased
+
+**Lines of prose and hand-drawn marks are no longer destroyed on pages the code reads as
+nothing but type.** On a page whose ink is all text, both tone layers are stored at an
+eighth and a sixteenth of their resolution — a large saving, and safe as long as "all
+text" is true. What decides it is how much of the page's ink Vision found no words for,
+and the bar was **0.08**; it is now **0.045**. In between sits a page carrying marks the
+recogniser never boxed — a figure, a table's rules, and as it turns out mostly **words** —
+which are cut out of the 1-bit stencil because they are not text and then destroyed in the
+background because the page is called text. **`BUGS.md` C26.**
+
+Measured over the whole corpus before the number moved, because refusing the shrink costs
+bytes on every page it refuses: **16 pages of 2,129 sampled sit in that band and all of
+them stop being shrunk**, over 10 documents of 233 — 4.54x on those pages, about
+**+0.55% of total output**. Thirteen of the sixteen were rendered at both bars and read by
+eye: eleven lose something, **eight lose content outright**, one page losing thirteen
+values out of a correlation matrix and another seven lines of prose. Two of the sixteen
+lose nothing a reader could see and still cost the bytes, which is why C26 stays open —
+what is left is a question about the stencil, not about this constant.
+
+Photo detail = **Maximum** was exempt from the shrink before this change and still is.
+
 ## 1.13.0 — 2026-08-17
 
 **Photographs no longer come out as black blobs, and a pale drawing is no longer

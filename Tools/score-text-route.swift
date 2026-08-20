@@ -29,12 +29,20 @@
 // are close can be read against how confidently the page is text at all.
 //
 // **And it prices a different bar on that signal, which is C26's sub-step 3.**
-// `INKBAR=0.045` publishes every page twice — once at the shipped
+// `INKBAR=<bar>` publishes every page twice — once at the shipped
 // `textPageInkOutsideThreshold` and once at the bar given — and prints what the
-// difference costs in bytes. That is the measurement C26 is blocked on: three
-// drawings are erased because `inkOut` reads 0.049–0.066 against a bar of 0.08, a
-// bar at 0.045 refuses all three, and R49/R50 are the entries about what refusing a
-// page costs. `Flattener.textPageInkOutsideThresholdOverride` is the seam, and it
+// difference costs in bytes. That was the measurement C26 was blocked on: three
+// drawings were erased because `inkOut` reads 0.049–0.066 against what was then a bar
+// of 0.08, a bar at 0.045 refuses all three, and R49/R50 are the entries about what
+// refusing a page costs.
+//
+// ⛔ **The shipped bar became 0.045 on 2026-08-19, so `INKBAR=0.045` — the command this
+// header used to give, and the one every record of that campaign quotes — now exits 2**
+// on the guard below: a bar equal to the shipped one has nothing to compare. **Drive it
+// with `INKBAR=0.08` to reproduce those measurements.** It is the same comparison with
+// the columns swapped — `layered` is now the new behaviour and `layeredAtBar` the old
+// one — so a page reported as costing 4.54x reads as the same ratio the other way
+// round. The arithmetic did not move; which side is called "shipped" did. `Flattener.textPageInkOutsideThresholdOverride` is the seam, and it
 // substitutes the *comparand* rather than the verdict, so R56's `paleDrawing` term
 // keeps participating — see that property's doc comment, including why
 // `keepEveryPixel` is NOT part of that argument.
@@ -63,8 +71,10 @@
 //   swiftc -O -o /tmp/score-text-route -target "$(uname -m)-apple-macos13.0" \
 //     $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
 //   /tmp/score-text-route "<pdf>" [page…]        # 1-indexed; default: a spread
-//   INKBAR=0.045 /tmp/score-text-route "<pdf>"   # + the priced columns
-//   INKBAR=0.045 INKDUMP=/tmp/look /tmp/score-text-route "<pdf>" 4
+//   INKBAR=0.08 /tmp/score-text-route "<pdf>"    # + the priced columns
+//   INKBAR=0.08 INKDUMP=/tmp/look /tmp/score-text-route "<pdf>" 4
+//   (0.045 in both until 2026-08-19, when it became the shipped bar and started
+//    exiting 2 — see the ⛔ paragraph above)
 //
 // Exit codes: 1 unreadable PDF, 2 a refused `INKBAR`/`INKDUMP`, 3 no jbig2,
 // **4 an INKDUMP that did not write everything it promised** — the totals are still

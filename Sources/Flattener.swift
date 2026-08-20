@@ -1431,12 +1431,45 @@ enum Flattener {
     ///
     /// **It is a threshold on a continuum, not a gap, and that is stated rather
     /// than dressed up.** Across the 91 corpus pages the values run smoothly from
-    /// 0 to 0.97. What makes 0.08 defensible is not a hole in the distribution but
-    /// that *both* ways of being wrong are mild — a page wrongly held at fine
-    /// resolution costs bytes and nothing else, and a page wrongly shrunk has its
-    /// figure softened, never removed. Every hazard that could be constructed for
-    /// it lands at 0.153 or above, and 0.08 leaves a factor of two below the
-    /// nearest one.
+    /// 0 to 0.97. What makes a bar here defensible is not a hole in the
+    /// distribution but where the two ways of being wrong land: a page wrongly
+    /// held at fine resolution costs bytes and nothing else. Every hazard that
+    /// could be constructed for it lands at 0.153 or above, and 0.045 leaves a
+    /// factor of 3.4 below the nearest one.
+    ///
+    /// ⛔ **This paragraph read "0.08 … *both* ways of being wrong are mild — …a
+    /// page wrongly shrunk has its figure softened, never removed" until
+    /// 2026-08-19, and the second half of that is FALSE.** It is what C26 was
+    /// decided against. Measured over 13 of the 16 corpus pages the bar move
+    /// rescues (`INKDUMP` on `Tools/score-text-route.swift`, in the entry's
+    /// "Sub-step 4, the benefit"), 11 lose something and **8 lose content
+    /// outright** — `Xin Qu et al_2018` p20 loses thirteen values out of a
+    /// Pearson correlation matrix, `_1973_Committee Against Racism_` p4 seven
+    /// lines of prose. Words Vision did not box are cut from the stencil by
+    /// `textRegionMask`, left in the background, and destroyed at 1/8. So one
+    /// way of being wrong here is invariant-1 content loss, not softening, and
+    /// the reasoning that sized this constant had it the other way round.
+    ///
+    /// **Why 0.045, measured 2026-08-19 and decided by the owner.** A
+    /// 233-document corpus sweep (`Tools/sweep-ink-bar.py`, committed as
+    /// `INKBAR-2026-08-19.tsv`, 2,129 measured page rows) sized the band
+    /// `[0.045, 0.08)`: **16 pages, all of which stop being shrunk** — 0.75% of
+    /// sampled pages, 18.0% of the 89 shrunk today, over 10 documents of 233. (A
+    /// seventeenth row prints `0.0450`; its true value is under the bar, so it
+    /// does not move and is not in the band.)
+    /// They cost **838,569 -> 3,804,222 B, 4.54x, 185,353 B a page**, which is
+    /// **~21 pages of 16,987 and ~4.0 MB at corpus scale, +0.55%** of R50's
+    /// 721 MB gate (the stratified estimate; pooling the rate is 6x high, and the
+    /// entry says why). R49/R50 set no growth-tolerance bar, so this was the R55
+    /// shape — the campaign measures, the owner closes it on the arithmetic.
+    ///
+    /// ⚠️ **And the counter-finding is recorded rather than waved away: a
+    /// threshold is a blunt instrument here.** 32.4% of the band's byte cost
+    /// lands on two pages a reader cannot tell apart (`RIESMAN_1942` p10, the
+    /// dearest of the 16 at +702,280 B and 6.47x, whose only non-stencil ink is
+    /// a pale scanner-edge strip; and `Riesman - 1954` p18). C26 stays OPEN on
+    /// the question this campaign surfaced and this constant cannot answer — why
+    /// recognised-page prose is dropped from the stencil at all.
     ///
     /// **What it misses — two cases, both recorded because they will come up.** The
     /// signal is ink, so anything whose luminance sits near the paper/ink boundary
@@ -1451,23 +1484,33 @@ enum Flattener {
     ///   not be "simplified" back to a flat one — it would assert the limitation
     ///   instead of the behaviour.
     ///
-    /// Neither is alarming, because this only ever changes *resolution*: the worst
-    /// it can do is soften something, never remove it. A flat field also loses
-    /// nothing to a downsample, so the second miss is self-cancelling in the common
-    /// case; what would actually suffer is a detailed colour image with no dark
-    /// tones. `PhotoDetail.maximum` is honoured in full for exactly this reason —
-    /// see the `keepEveryPixel` guard in `mrcLayers`.
-    static let textPageInkOutsideThreshold = 0.08
+    /// Both survive the move to 0.045: a pale drawing still reads 0.0000 (R56's
+    /// shape signal is the term that reaches it, and it is the second half of
+    /// `pageIsAllText()` for that reason), and 0.0365 is still under the bar. ⛔ The
+    /// sentence that stood here — *"Neither is alarming, because this only ever
+    /// changes resolution: the worst it can do is soften something, never remove
+    /// it"* — is **retracted, 2026-08-19**, for the reason given above the table:
+    /// at 8x it removes lines of prose. What is still true is that a flat field
+    /// loses nothing to a downsample, so the second miss is self-cancelling in the
+    /// common case; what suffers is a detailed colour image with no dark tones.
+    /// `PhotoDetail.maximum` is honoured in full for exactly this reason — see the
+    /// `keepEveryPixel` guard in `mrcLayers`.
+    static let textPageInkOutsideThreshold = 0.045
 
     /// A substitute bar, for a tool asking what a **different** threshold would publish.
     ///
     /// `nil` in the app, always — nothing in `Sources/` sets it and no setting reaches it.
     /// It exists for C26's sub-step 3, which is a pricing question the shipped code cannot
-    /// otherwise be asked: three drawings are erased because `inkOutsideText` reads
-    /// 0.0493–0.0660 against this bar of 0.08, a bar at 0.045 would refuse all three, and
-    /// the cost of refusing a page is bytes on every page that newly stays at the caller's
-    /// factor. R49/R50 are the entries about paying those bytes, so the number has to be
-    /// measured before the constant moves.
+    /// otherwise be asked: three drawings were erased because `inkOutsideText` reads
+    /// 0.0493–0.0660 against what was then a bar of 0.08, a bar at 0.045 refuses all three,
+    /// and the cost of refusing a page is bytes on every page that newly stays at the
+    /// caller's factor. R49/R50 are the entries about paying those bytes, so the number had
+    /// to be measured before the constant moved. **It was, and the constant moved on
+    /// 2026-08-19 — `textPageInkOutsideThreshold` is 0.045.** So the direction this seam is
+    /// driven in has reversed: substituting 0.045 now asks the shipped question, and it is
+    /// **0.08** that prices the old behaviour. The suite's C26 block was re-paired for
+    /// exactly that reason — a check comparing `nil` against 0.045 is a run compared with
+    /// itself, which is a check that cannot fail.
     ///
     /// **It substitutes the bar, not the verdict, and that is the point.** Forcing
     /// `pageIsAllText()` to return false would measure a proxy: **R56's `paleDrawing` term

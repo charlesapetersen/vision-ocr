@@ -37,7 +37,8 @@
 // whether the whole guard fired.
 //
 // ⚠️ **And on C26's own pages the first term is the one that decides** — measured
-// 2026-08-18, `inkOutsideText` reads 0.0493–0.0660 against a bar of 0.08 while `extent`
+// 2026-08-18, `inkOutsideText` reads 0.0493–0.0660 against what was then a bar of 0.08
+// (0.045 since 2026-08-19, which refuses all three) while `extent`
 // is 0.00000, so a reader who has only this tool's output is looking at the term that
 // passes vacuously. `Tools/score-text-route.swift` and `Tools/score-mrc.swift` both
 // print the first term, because both run Vision; this tool and one of those together

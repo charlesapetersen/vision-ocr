@@ -9,14 +9,22 @@ Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 **Two open: `C26` and `C27`, both found on one document hours after `1.13.0` shipped.** `C27` is
 fidelity rather than content loss — spot colour discarded because the bar is on the page's mean
 saturation — and it is a separate mechanism from C26 with a separate constant; neither fix
-addresses the other. `C26` destroys content on the shipped default setting. Opened 2026-08-17,
+addresses the other. `C26` destroys content on the shipped default setting — **⛔ or did until
+2026-08-19, when its constant MOVED: `textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's
+decision on a complete campaign, so the 16 corpus pages the sweep named keep their tone layers at
+the caller's factor. The entry stays `OPEN` anyway, and deliberately** — 32.4% of that fix's byte
+cost lands on two pages a reader cannot tell apart, which says a threshold is a blunt instrument
+rather than the answer, so the question the campaign surfaced (*why is recognised-page prose dropped
+from the stencil at all*) is to be opened as its own entry. Read `#### The constant moved` at the
+foot of C26 before touching any of it. Opened 2026-08-17,
 hours after `1.13.0` was cut against an empty register — a small line drawing on a page the code
 correctly reads as all text is erased on the picture path, because the guard that would protect it
 does not fire. **Measured 2026-08-18, the guard's second term was never the one to look at: the
 drawings are INK, not pale marks** (5,495 / 4,188 / 3,379 cells below the page's own Otsu, against
 8 / 350 / 0 pale cells `paleDrawing` gets to see), and the term that decides these pages is
-`pageIsAllText()`'s **first** one — `inkOutsideText` reads **0.0493–0.0660 against a bar of
-0.08**. That term *can* reach them, which the pale one cannot. **This line said "the guard needs
+`pageIsAllText()`'s **first** one — `inkOutsideText` reads **0.0493–0.0660 against what was then a
+bar of 0.08** (0.045 since 2026-08-19, which is what refuses all three). That term *can* reach them,
+which the pale one cannot. **This line said "the guard needs
 the mark to cover 5% of the page and these cover 0.2%" until 2026-08-18, and the 0.2% was the
 wrong column** — measured, the quantity the 5% bar reads (`paleDrawing(…).extent`) is **0.00000**
 on the two worst pages, so the guard's search finds nothing rather than finding something too
@@ -85,8 +93,12 @@ invariant-1 defect, not the fidelity complaint the entry was opened as**: the do
 drawing but prose Vision failed to box, cut from the stencil and then destroyed in the background.
 ⛔ **And the dearest page of the 16 is one of the two that buy nothing** — `RIESMAN_1942` p10 at
 +702,280 B and 6.47x, whose only non-stencil ink is a pale scanner-edge strip; with `Riesman - 1954`
-p18 that is **32.4% of the band's byte cost on pages a reader cannot tell apart.** The decision is
-still the owner's, R55's precedent, and it is in the run's `NEEDS OWNER`. Both entries carry the numbers and the retractions. It is **not** R56, whose fix is
+p18 that is **32.4% of the band's byte cost on pages a reader cannot tell apart.** ✅ **The decision
+was the owner's, R55's precedent, and he took it at a 2026-08-19 check-in: the bar is 0.045, on the
+arithmetic that ~4.0 MB of corpus output is a cheap price for not destroying words.** It shipped the
+same day; the entry's `#### The constant moved` section is the diff, the suite's flipped checks and
+what was watched failing. This line said the decision was outstanding until then. Both entries carry
+the numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
 **C24 closed 2026-08-17** — read the paragraph
@@ -2185,9 +2197,17 @@ now. **The 8.2 KB figure is left standing but unverified** — re-deriving it ne
 `Blacks in the City`, which is a separate job; TODO item 1 is refused on R56's grounds
 regardless, so nothing waits on it.
 
-### C26 · A small line drawing is erased on the PICTURE path, because the page it sits on is correctly read as all text — OPEN
+### C26 · A small line drawing is erased on the PICTURE path, because the page it sits on is correctly read as all text — OPEN (the bar MOVED 2026-08-19; the stencil question is what keeps it open)
 *(found 2026-08-17 by the owner, on `1954 - Why.pdf` processed by 1.13.0 at Photo detail
 **Balanced**, Rebuild **Automatic** — the release cut the same day)*
+
+⛔ **READ `#### The constant moved` (the last section) FIRST if you are here to change code.**
+`textPageInkOutsideThreshold` is **0.045** as of 2026-08-19, not the 0.08 most of this entry is
+written against, and every "would" in the pricing sections is now a "does". What is still open is
+not the bar: it is that 8 of the 13 pages the bar rescues were losing **prose Vision failed to
+box**, cut from the stencil by `textRegionMask` and then destroyed at 1/8 — and that the dearest
+page of the 16 the bar move costs bytes for is losing nothing at all. That question belongs to the
+stencil, not to this constant.
 
 ⚠️ **READ "The drawings are INK" (2026-08-18, last section) FIRST.** This entry spent two sessions
 inside `paleDrawing` — the bar, then the height ceiling — and measured, **the drawings are not
@@ -2203,9 +2223,10 @@ pages, 16 of which move**, and they cost **4.54x / 185,353 B per page** — not 
 43,436 B** "Sub-step 3, half of it" measured on this document, whose three pages turn out to be the
 cheapest end of the band. The population is known AND so is the benefit (sub-step 4, 2026-08-19):
 **11 of the 13 unmeasured pages lose something and 8 lose content outright — 7 whole lines of prose or table data, 1 a hand-drawn mark**, which
-makes C26 an invariant-1 defect — but the dearest page of the 16 loses nothing, so the constant is
-still the owner's call. This sentence read "still not decidable, because only 3 of the 16 are known to
-be losing content" until that ran.
+makes C26 an invariant-1 defect — but the dearest page of the 16 loses nothing, so the constant was
+the owner's call. **He made it the same day and it is shipped: 0.045.** This sentence read "still not
+decidable, because only 3 of the 16 are known to be losing content" until the benefit half ran, and
+"still the owner's call" until he took it.
 
 **Three of the four red line drawings in a 10-page booklet are erased or all but erased, and
 every word on every page survives**, which is what makes it invisible in use. Rendered at
@@ -3277,12 +3298,16 @@ genuine balance of readings. ⚠️ **The instrument that settled it is `score-t
 grid has no tone layers in it, so it cannot show what the shrink destroys. Corrected 2026-08-19 by the
 run that did the work; see "Sub-step 4, the benefit" below.
 
-**The decision itself is the owner's, and is in `NEEDS OWNER`.** R55 is the precedent: a measurement
-campaign was run, and the owner closed it on the arithmetic. ⛔ Do not move
-`textPageInkOutsideThreshold` — or `paleDrawingThreshold`, which measured cannot reach these pages at
-all — without that call. `Flattener.textPageInkOutsideThresholdOverride` remains `nil` in the app, so
-nothing about the shipped behaviour changed with this sweep; what changed is that the price is now
-known at corpus scale instead of on one document.
+**The decision itself was the owner's, and it was in `NEEDS OWNER`.** R55 is the precedent: a
+measurement campaign was run, and the owner closed it on the arithmetic. ✅ **He closed this one on
+2026-08-19 — 0.08 -> 0.045 — and it shipped the same day** (`#### The constant moved`, below). ⛔ The
+refusal this paragraph carried still stands for the *next* one: do not move
+`textPageInkOutsideThreshold` again, and do not move `paleDrawingThreshold` — which measured cannot
+reach these pages at all — without another such call.
+`Flattener.textPageInkOutsideThresholdOverride` remains `nil` in the app: the constant moved, the
+seam did not. **What this paragraph said until the decision** — *"nothing about the shipped behaviour
+changed with this sweep; what changed is that the price is now known"* — was true of the sweep and is
+no longer true of the entry.
 
 #### Sub-step 4, the benefit: 11 of the 13 lose something, and the dearest page of the 16 is one of the two that do not — MEASURED 2026-08-19
 
@@ -3431,6 +3456,124 @@ touches the suite's own scaffolding — and both are queued rather than left in 
 top-level `defer` from running, silently leaking a scratch directory holding up to twelve pages of
 renders and layers on **every** run — the tool fell off its own end before. `finish()` removes `work`
 itself, and the comment says why.
+
+#### The constant moved: `textPageInkOutsideThreshold` 0.08 -> 0.045 — SHIPPED 2026-08-19
+
+**One line of `Sources/Flattener.swift`, decided by the owner at a check-in on the arithmetic this
+campaign produced, on R55's precedent.** His reasoning, recorded because it is what made this a
+session's work rather than his: the loss is **content, not fidelity** — 8 of the 13 pages read by
+eye lose whole lines of prose or table data — so invariant 1 governs, and ~4.0 MB / **+0.55%** of
+corpus output is a cheap price for not destroying words. R35's refusal of a change worth the same
+0.55% does not transfer: R35 weighed 0.55% as a *prize*, this is 0.55% as a *price*.
+`Flattener.textPageInkOutsideThresholdOverride` is still `nil` in the app — the constant moved, the
+seam did not.
+
+**What was watched failing, before the constant moved.** The suite was run with the flipped checks
+against the old 0.08 — the same source state as the new mutant — and it read **1180/1185, with
+exactly five failures, all five in the C26 block**:
+
+```
+FAIL C26 — …and the bar now refuses it, which is the fix — 0.0554 vs threshold 0.080, wanted (bar, 0.0660]
+FAIL C26 — …and the shipped bar now refuses it, which is the fix — 0.0551 vs 0.080
+FAIL C26 — a page with a small ink figure outside the words is not shrunk — 153 wide of 1224, ceiling 154
+FAIL …its foreground too, so both layers move together — 76 wide of 1224
+FAIL …and asking again with no override leaves the page at the caller's factor — 153 wide of 1224
+```
+
+That is the mutant's answer without `mutate.py`: **five checks object**, which is the column that
+matters (C24's seam was killed by exactly one, and that one did not exist a commit earlier). It is
+also a second negative control, and a wider one than the probe below: **the other 1,180 checks
+passed at both bars**, so nothing else in the suite depends on this constant's value. 153 = 1224/8
+and 76 = 1224/16 — the two shrink factors, printed by the failures themselves.
+
+**Three checks recorded the defect and now record the fix**, each written for this moment by the
+sessions that measured the mechanism:
+
+| check | before | after |
+|---|---|---|
+| `C26 — …and the bar now refuses it` (buffer level, 0.0554) | `< bar` | `> bar` **and** `<= 0.0660` |
+| `C26 — …and the shipped bar now refuses it` (fixture, 0.0551) | `< bar` | `> bar` |
+| `C26 — a page with a small ink figure … is not shrunk` (layered) | `<= ceiling` | `> ceiling` |
+
+The upper edge on the first is new and deliberate: "above 0.045" alone stays green over a fixture
+that has drifted up into being a photograph, at which point the check is no longer about C26. The
+band `[0.0493, 0.0660]` stays written as literals for the reason the section's own comment gives.
+
+⛔ **And a check that could no longer fail, found by re-reading the block rather than by a failure.**
+Three of the C26 checks substituted **0.045** through the seam to show what the proposed bar would
+do. The moment 0.045 became the shipped bar, `c26Layers(page, bar: 0.045)` is byte-for-byte
+`c26Layers(page, bar: nil)` — so "a bar at 0.045 holds that page at the caller's factor" compared a
+run with itself, and the stencil-identity check compared a file with itself, both green for ever
+and asserting nothing. A11.5 and C24's eleventh check are the two precedents. They are re-paired on
+**0.08**, which is now the bar that reproduces the defect, so each pair is again shrunk against
+unshrunk. The latch check's comment is corrected with them: the last override in the block is 0.08
+now, so a broken `defer` latches the *old* bar into the rest of the suite.
+
+**The negative control, measured 2026-08-19 by a probe over the shipped code** (not reasoned):
+`inkOutsideText` on every fixture the suite layers with a shrink assertion, using the same synthetic
+boxes those checks use.
+
+| fixture | `inkOut` |
+|---|---|
+| `auto-text.pdf` (R50's text page, 10 boxes) | **0.00000** |
+| all eight `make-plate-fixtures` pages, incl. `text-only` (14 boxes) | **0.00000** |
+| C26's own small figure / big figure | 0.05514 / 0.09400 |
+
+So nothing else in the suite is anywhere near the band, and the two C26 fixtures reproduce the
+0.0551 / 0.0940 the entry published on 2026-08-18 — a second process agreeing with the first.
+⚠️ **That table's first draft said "every fixture the suite layers", and the scope of that sentence
+is what nearly hid the one that matters** — found by the adversarial review of this diff.
+`Tools/score-mrc.swift` carries a self-test that runs on **every invocation** and exits 4 if
+`selftest-alltext` does not take the all-text shrink; that fixture is a CoreText page boxed by real
+Vision output, it is not one of the eight, and it is the only fixture in the repository layered with
+a shrink assertion outside `Tests/main.swift`. Nothing would have reported it — the hook does not
+run a Swift tool's self-test. Measured rather than argued: **built against the moved constant and
+run, `score-mrc` exits 0**, so that fixture is below 0.045 too. It is staged in this commit and its
+comment now says so.
+
+**And on the founding document, end to end at both bars.** `score-text-route` over
+`1954 - Why.pdf`, built from this tree twice:
+
+| build | `INKBAR` | the 3 all-text pages, shipped | at the bar |
+|---|---|---|---|
+| constant 0.08 (the old state) | 0.045 | 65,477 B | 195,785 B |
+| constant 0.045 (this fix) | 0.08 | **195,785 B** | **65,477 B** |
+
+`p4`/`p6`/`p7` read `inkOut` 0.0540 / 0.0493 / 0.0660 in both, digit for digit with what this entry
+published in sub-step 2, and the stencil is byte-identical across the pair in both directions. The
+first row reproduces the entry's own 2.99x; the second is the same comparison with the columns
+swapped (`0.33x`, and 1/2.99 = 0.334), which is what says the shipped build now publishes the layers
+the sweep priced. The per-page half of it is the sharper reading: those three pages' `verdict` column
+now says **`picture`** where it said `all-text`, and the summary line *"3 of them read all-text"* is
+gone from the shipped run because none of them does.
+
+⚠️ **Two instruments changed meaning with the constant, and one of them fails loudly.**
+`score-text-route` exits 2 when `INKBAR` equals the shipped bar — nothing to compare — so
+`INKBAR=0.045`, the command this entry, `CLAUDE.md` and both tool headers used to give, now refuses.
+`Tools/sweep-ink-bar.py --bar 0.045` inherits it through `CONFIG_EXITS = {2, 3}` and **aborts on
+document 1** rather than sweeping 233 documents to no purpose. Both headers now say to drive them
+with **0.08**, and that the two runs are one comparison with the byte columns swapped. Nothing was
+re-run over the corpus for this commit, and that is deliberate: `INKBAR-2026-08-19.tsv` already
+holds the page-by-page comparison of exactly these two states over 233 documents, and the constant
+has **one** read site (`pageIsAllText()` in `mrcLayers`, by grep), so it cannot move a route — a
+route is decided by `isPicture`, before recognition, which never reads it.
+
+**The mutant.** `const/textPageInkOutsideThreshold` (`0.045 -> 0.08`) is in `Tools/mutate.py`'s
+`CONSTANTS`, and its generated pattern was verified to match **exactly once** against the moved
+source — the `hits != 1` guard is what turns a rotted entry into `NOT-APPLIED`, and
+`paleDrawingThreshold` sat un-runnable behind that for a while. It is **not** run through
+`mutate.py` here: a scoped run is a baseline suite plus ~45 minutes, and the state it would build is
+the state that was already run by hand above, with the objecting checks named. The catalogue entry
+is what keeps that experiment repeatable.
+
+⛔ **What this does NOT fix, and why the entry stays `OPEN`.** Two of the sixteen pages the bar move
+costs bytes for lose nothing a reader can see — `RIESMAN_1942` p10 at +702,280 B and 6.47x is the
+dearest of all sixteen — which is **32.4% of the band's byte cost spent on pages nobody could tell
+apart**. A threshold cannot separate those from `Xin Qu et al_2018` p20, and the reason it cannot is
+the thing sub-step 4 actually found: the marks being destroyed are mostly **prose Vision failed to
+box**, cut out of the stencil by `textRegionMask` because they are not text, and then destroyed at
+1/8 in the background. That is a stencil question, it is where the remaining 32.4% goes, and it is
+to be opened as its own entry rather than folded in here.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct

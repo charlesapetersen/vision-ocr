@@ -1575,7 +1575,7 @@ do {
                                                    width: inkW, height: inkH, threshold: 128)
         check("…while ink outside them does not",
               figureScore > Flattener.textPageInkOutsideThreshold,
-              String(format: "%.4f vs threshold %.2f", figureScore,
+              String(format: "%.4f vs threshold %.3f", figureScore,
                      Flattener.textPageInkOutsideThreshold))
         // A blank page has no picture on it, and must not divide by zero deciding so.
         check("…and a page with no ink at all is not a picture",
@@ -1591,21 +1591,24 @@ do {
         check("…and a dark scan edge is not a picture either",
               Flattener.inkOutsideText(borderOnly, region: wordRegion,
                                        width: inkW, height: inkH, threshold: 128) == 0)
-        // C26, and this check records the defect rather than the behaviour: a small
-        // ink drawing outside the words is *seen* by this signal and still passes the
-        // bar. `textPageInkOutsideThreshold`'s own doc comment says its recorded miss
-        // is a **pale** drawing reading 0.0000 — measured 2026-08-18 on
-        // `1954 - Why.pdf`, the three erased drawings are not that case: they are ink,
-        // and they read 0.0540, 0.0493 and 0.0660 against the bar of 0.08. That is
-        // the term that lets those pages be stored at an eighth of their resolution,
-        // and it is a term that can reach them. The figure here is sized to land in
-        // that measured band rather than merely under the bar: 15 ink pixels outside
-        // the words against 256 inside is **0.0554**, between p6's 0.0493 and p7's
-        // 0.0660. **When C26 is fixed this check must flip** — it is the register's
-        // measurement in the suite, not a property anyone wants to keep — and sizing
-        // it this way is what makes the flip mean something: a bar dropped to 0.045,
-        // the value the entry names as protecting all three pages, fails this check
-        // rather than squeaking past it.
+        // C26, **and this check has FLIPPED — 2026-08-19, when the bar moved from
+        // 0.08 to 0.045.** It used to record the defect: a small ink drawing outside
+        // the words is *seen* by this signal and passes the bar anyway, so its page is
+        // stored at an eighth of its resolution. `textPageInkOutsideThreshold`'s own
+        // doc comment said its recorded miss was a **pale** drawing reading 0.0000 —
+        // measured 2026-08-18 on `1954 - Why.pdf`, the three erased drawings are not
+        // that case: they are ink, and they read 0.0540, 0.0493 and 0.0660.
+        //
+        // The figure here is sized by measurement rather than taste, and that sizing is
+        // what makes the flip mean something: 15 ink pixels outside the words against
+        // 256 inside is **0.0554**, between p6's 0.0493 and p7's 0.0660, so it is above
+        // the new bar *and still inside the band the lost drawings sit in* — both halves
+        // asserted below, because "above 0.045" alone would stay green over a fixture
+        // that had drifted up to a photograph and stopped being C26's case at all.
+        // Watched failing at 0.08 before the constant moved (the old form read
+        // `smallScore < bar`); the upper edge is a literal for the reason the fixture
+        // band at C26's own section is: writing it as the constant would make the test
+        // agree with any future value of the constant.
         var smallFigure = allPaper
         for y in 20..<23 { for x in 8..<13 { smallFigure[y * inkW + x] = 30 } }
         let smallScore = Flattener.inkOutsideText(smallFigure, region: wordRegion,
@@ -1614,9 +1617,9 @@ do {
         check("C26 — a small ink drawing outside the words is seen by R50's signal",
               smallScore > 0,
               String(format: "%.4f, so the signal is blind to it", smallScore))
-        check("C26 — …and passes the bar anyway, which is why the page is shrunk",
-              smallScore < Flattener.textPageInkOutsideThreshold,
-              String(format: "%.4f vs threshold %.2f", smallScore,
+        check("C26 — …and the bar now refuses it, which is the fix",
+              smallScore > Flattener.textPageInkOutsideThreshold && smallScore <= 0.0660,
+              String(format: "%.4f vs threshold %.3f, wanted (bar, 0.0660]", smallScore,
                      Flattener.textPageInkOutsideThreshold))
 
         // Property 2 of `pageMarks` says how much it took. C26's instrument needs the
@@ -1786,18 +1789,27 @@ do {
     // constants and were gated for years.
     //
     // What this section is for. C26's three erased drawings are ink outside the
-    // recognised words reading `inkOutsideText` 0.0493–0.0660 against a bar of 0.08,
-    // so the guard passes them and their page's tone layers are stored at 1/8 and
-    // 1/16. Sub-step 3 is to *price* a lower bar over the corpus, which needs the bar
-    // to be substitutable —`Flattener.textPageInkOutsideThresholdOverride`. These
-    // checks are what says that seam works, in both directions, and they are also the
-    // first place in this repository where C26's mechanism is reproduced end to end on
-    // a fixture rather than measured on a copyrighted scan.
+    // recognised words reading `inkOutsideText` 0.0493–0.0660 against what was then a
+    // bar of 0.08, so the guard passed them and their page's tone layers were stored at
+    // 1/8 and 1/16. Sub-step 3 *priced* a lower bar over the corpus, which needed the
+    // bar to be substitutable — `Flattener.textPageInkOutsideThresholdOverride` — and
+    // **the constant moved to 0.045 on 2026-08-19**. These checks are what says the
+    // seam works, in both directions, and they are also the only place in this
+    // repository where C26's mechanism is reproduced end to end on a fixture rather
+    // than measured on a copyrighted scan.
+    //
+    // ⚠️ **Which way round the seam is driven changed with the constant.** Every
+    // "substitute 0.045" check below became a comparison of the shipped run with
+    // itself the moment 0.045 shipped — green for ever, asserting nothing. They are
+    // now driven with **0.08**, the bar that reproduces the defect. A11.5 and C24's
+    // eleventh check are the two precedents for a check that cannot fail.
     //
     // The figure is sized by measurement, not by taste: at 30x30 raster pixels it
-    // reads **0.0551**, between p6's 0.0493 and p7's 0.0660. 40x40 reads 0.0940 —
-    // above the shipped bar — and is the fixture for the other direction. Both
-    // measured 2026-08-18 by a probe driving this same code.
+    // reads **0.0551**, between p6's 0.0493 and p7's 0.0660, so it is above the new
+    // bar and inside the band the lost drawings sit in. 40x40 reads 0.0940 and is the
+    // fixture for the other direction — above both bars, so it is unaffected by the
+    // move, which is what makes it a negative control. Both measured 2026-08-18 by a
+    // probe driving this same code.
     let c26Dir = dir.appendingPathComponent("c26")
     try? FileManager.default.createDirectory(at: c26Dir, withIntermediateDirectories: true)
     let c26Lines = ["an ordinary page of text", "with a second line of it",
@@ -1863,50 +1875,68 @@ do {
     // `0.045`, the value C26's fix proposes, would make the band `[0.045, 0.045)` the
     // moment the constant moved there: empty for every possible reading, so a check
     // that cannot pass rather than one that flips. That was the first version of this
-    // line, caught by the adversarial review of this diff.
+    // line, caught by the adversarial review of this diff — and the constant *did* move
+    // there, 2026-08-19, so the warning was not hypothetical.
     let smallInk = c26InkOut(c26Small) ?? -1
     check("C26's fixture figure lands in the measured band the drawings sit in",
           smallInk >= 0.0493 && smallInk <= 0.0660,
           String(format: "%.4f, wanted [0.0493, 0.0660]", smallInk))
-    // …and separately, that the SHIPPED bar lets it through. This is the one that must
-    // flip when C26 is fixed, and it says so.
-    check("C26 — …and the shipped bar lets it through, which is the defect",
-          smallInk < Flattener.textPageInkOutsideThreshold,
-          String(format: "%.4f vs %.2f", smallInk, Flattener.textPageInkOutsideThreshold))
+    // …and separately, what the SHIPPED bar does with it. **FLIPPED 2026-08-19**: this
+    // read `smallInk < bar` and recorded the defect, the bar moved 0.08 -> 0.045, and it
+    // was watched failing in that form on the way. The band check above is what keeps
+    // this one honest: 0.0551 is above 0.045 by a factor of 1.2, so a fixture that had
+    // drifted would fail there rather than pass here for the wrong reason.
+    check("C26 — …and the shipped bar now refuses it, which is the fix",
+          smallInk > Flattener.textPageInkOutsideThreshold,
+          String(format: "%.4f vs %.3f", smallInk, Flattener.textPageInkOutsideThreshold))
     let bigInk = c26InkOut(c26Big) ?? -1
     check("…and the larger figure is above the bar, which is the other direction",
           bigInk > Flattener.textPageInkOutsideThreshold,
-          String(format: "%.4f vs %.2f", bigInk, Flattener.textPageInkOutsideThreshold))
+          String(format: "%.4f vs %.3f", bigInk, Flattener.textPageInkOutsideThreshold))
 
     let smallFull = c26FullWidth(c26Small)
     let shrunkCeiling = smallFull / Flattener.textPageBackgroundDownsample + 1
     if let shipped = c26Layers(c26Small, bar: nil, stem: "c26ship") {
-        // C26 itself: the page carrying an erased-drawing-shaped mark is shrunk.
-        // This check records the DEFECT, not a property to keep — when the constant
-        // moves it must flip, exactly like the two buffer-level C26 checks above.
-        check("C26 — a page with a small ink figure outside the words is still shrunk",
-              shipped.backgroundWidth <= shrunkCeiling,
+        // C26's fix, end to end on a fixture: the page carrying an erased-drawing-shaped
+        // mark keeps the resolution the caller asked for. **FLIPPED 2026-08-19** — this
+        // read `<= shrunkCeiling` and recorded the DEFECT, and it was watched failing in
+        // that form against the bar at 0.045. Measured on this fixture: 153 wide of 1224
+        // before, 612 after, and the tone layers 2,643 B -> 16,071 B, which is what the
+        // corpus sweep priced 16 pages of.
+        check("C26 — a page with a small ink figure outside the words is not shrunk",
+              shipped.backgroundWidth > shrunkCeiling,
               "\(shipped.backgroundWidth) wide of \(smallFull), ceiling \(shrunkCeiling)")
+        check("…its foreground too, so both layers move together",
+              shipped.foregroundWidth > smallFull / Flattener.textPageForegroundDownsample + 1,
+              "\(shipped.foregroundWidth) wide of \(smallFull)")
     } else {
         check("C26's fixture layers", false, "mrcLayers returned nil")
     }
-    if let priced = c26Layers(c26Small, bar: 0.045, stem: "c26bar") {
-        // The seam, doing the one thing it exists for. Measured: 153 -> 612 wide, and
-        // the tone layers go 2,643 B -> 16,071 B, which is the price sub-step 3 is
-        // sweeping for.
-        check("C26 — …and a bar at 0.045 holds that page at the caller's factor",
-              priced.backgroundWidth > shrunkCeiling,
-              "\(priced.backgroundWidth) wide of \(smallFull), ceiling \(shrunkCeiling)")
-        check("…its foreground too, so both layers move together",
-              priced.foregroundWidth > smallFull / Flattener.textPageForegroundDownsample + 1,
-              "\(priced.foregroundWidth) wide of \(smallFull)")
+    // The seam, doing the one thing it exists for — and note which way round it now has
+    // to be driven. Substituting 0.045 was the pricing question while 0.08 shipped; with
+    // 0.045 shipped that call is byte-for-byte the shipped one, so a check written that
+    // way would compare a run against itself and could not fail (A11.5's shape, and
+    // C24's eleventh check). The *old* bar is the one that has to be substituted now, and
+    // it reproduces the defect the constant move removed.
+    if let old = c26Layers(c26Small, bar: 0.08, stem: "c26oldbar") {
+        check("C26 — …and substituting the old 0.08 bar shrinks it again",
+              old.backgroundWidth <= shrunkCeiling,
+              "\(old.backgroundWidth) wide of \(smallFull), ceiling \(shrunkCeiling)")
+        check("…its foreground with it, which is the eighth and the sixteenth together",
+              old.foregroundWidth <= smallFull / Flattener.textPageForegroundDownsample + 1,
+              "\(old.foregroundWidth) wide of \(smallFull)")
     } else {
-        check("the priced-bar layering", false, "mrcLayers returned nil")
+        check("the old-bar layering", false, "mrcLayers returned nil")
     }
-    // …and the same page comes back shrunk once the override is out of the way.
+    // …and the same page comes back unshrunk once the override is out of the way. ⚠️ This
+    // is NOT a latch detector and the first version of this comment claimed it was —
+    // `c26Layers` assigns the override unconditionally, including `nil`, so this call
+    // re-clears the seam before it measures. The block's closing comment says so, and the
+    // previous review of this section caught the identical claim on the identical check.
+    // What it does say is that the substitution is not sticky *within* `mrcLayers`.
     if let again = c26Layers(c26Small, bar: nil, stem: "c26after") {
-        check("…and asking again with no override puts the page back on the shrink",
-              again.backgroundWidth <= shrunkCeiling,
+        check("…and asking again with no override leaves the page at the caller's factor",
+              again.backgroundWidth > shrunkCeiling,
               "\(again.backgroundWidth) wide of \(smallFull)")
     } else {
         check("the re-asked layering", false, "mrcLayers returned nil")
@@ -1932,8 +1962,13 @@ do {
     // no downsample factor. That is the tool's arithmetic resting on a property of
     // this function, so the property is pinned here rather than in the tool's own
     // per-page warning alone.
+    // ⚠️ The two bars have to produce two *different* tone-layer factors, or this
+    // compares a run against itself. `nil` was paired with 0.045 until 2026-08-19, when
+    // 0.045 became the shipped bar and the pair became the same configuration twice —
+    // a check that cannot fail, over a property the tool's arithmetic rests on. 0.08 is
+    // the bar that shrinks this page now, so the pair is unshrunk-vs-shrunk again.
     if let a = c26Layers(c26Small, bar: nil, stem: "c26maskA"),
-       let b = c26Layers(c26Small, bar: 0.045, stem: "c26maskB") {
+       let b = c26Layers(c26Small, bar: 0.08, stem: "c26maskB") {
         let da = try? Data(contentsOf: a.mask), db = try? Data(contentsOf: b.mask)
         check("the stencil is the same bytes whatever the tone layers are shrunk by",
               da != nil && da == db,
@@ -1946,7 +1981,8 @@ do {
     // `c26Layers` assigns the override unconditionally — including `nil` — so every
     // "…and clearing it puts the page back" style check above re-clears the seam
     // itself and would stay green with the `defer` deleted. The last call in this block
-    // asks for 0.045, so a broken `defer` would latch that value into every later
+    // asks for **0.08** — 0.045 until the constant moved there and the mask pair had to be
+    // re-paired — so a broken `defer` would latch the *old* bar into every later
     // `mrcLayers` in this suite and surface as a *red R56 check naming the wrong
     // cause*. This is the check that fails instead. Found by the adversarial review of
     // this diff, which is also where "the not-latched check cannot detect a latch"

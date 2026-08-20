@@ -123,7 +123,11 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       (origin: BUGS.md C24, FIXED)
 - [ ] **C26** — a small line drawing is erased on the picture path, at the SHIPPED DEFAULT Photo
       detail setting. ✅ **UNHELD 2026-08-19: the owner decided the bar at a check-in — move
-      `Flattener.textPageInkOutsideThreshold` from 0.08 to 0.045, behind a corpus gate.** The
+      `Flattener.textPageInkOutsideThreshold` from 0.08 to 0.045, behind a corpus gate.** ⚠️ **The
+      move landed the same day WITHOUT a fresh corpus gate, deliberately**, and the substitution — the
+      already-committed `INKBAR-2026-08-19.tsv`, which compares exactly these two states page by page
+      over 233 documents — is flagged in `NEEDS OWNER` and on the `release` item rather than assumed.
+      The
       measurement campaign is COMPLETE (sub-steps 1, 2, 3, 3b and 4 all ✅ below) and ⛔ **must not be
       re-derived**: expect the **16 pages** named in `INKBAR-2026-08-19.tsv` to move and nothing else.
       The owner's reasoning, recorded because it is what makes this a session's work rather than his:
@@ -257,8 +261,17 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       The 13 in aggregate are **773,092 -> 3,608,437 B, +2,835,345, 4.67x, 218,103 B/page**, and all
       13 rows reproduced the sweep's `inkOut`/`layered`/`layeredAtBar` **identically**, compared
       programmatically rather than by eye.
-      ⛔ **WHAT REMAINS ON C26 IS THE CONSTANT — DECIDED 2026-08-19, so it IS a session's to move
-      now.** The measurement campaign is complete: population, price and benefit are all in the entry.
+      ✅ **THE CONSTANT HAS MOVED — 0.08 -> 0.045, landed 2026-08-19.** Do not do it again. The suite
+      carries the flip (three checks that recorded the defect now record the fix, watched failing
+      against 0.08 on the way in, plus a new mutant `const/textPageInkOutsideThreshold`), and the
+      entry's `#### The constant moved` section is the diff and the numbers. ⚠️ **Two instruments
+      changed meaning with it**: `INKBAR=0.045` now exits 2 ("equals the shipped bar"), so it is
+      `INKBAR=0.08` that prices the old behaviour, and `sweep-ink-bar.py --bar 0.045` would abort on
+      document 1 — the tool headers say so now.
+      ⛔ **WHAT REMAINS ON C26 IS NOT THE CONSTANT: it is the STENCIL**, which is FOCUS item 3 and
+      belongs in its own entry and its own commit. This box stays `[ ]` for that reason — the bar
+      move was never going to close the entry. The measurement campaign is complete: population,
+      price and benefit are all in the entry.
       ✅ **THE CONSTANT WAS THE OWNER'S CALL AND HE MADE IT: 0.08 -> 0.045**, at a 2026-08-19 check-in,
       on R55's precedent — the campaign runs, the owner closes it on the arithmetic. R49/R50 state
       **no** growth-tolerance bar (read 2026-08-19), so no session could have applied a standard; what
@@ -622,7 +635,13 @@ picked, and the resume prompt surfaces them to the run log instead of acting on 
       release. [hold] needs: owner — judgement about what is fit to ship. Last released: **1.13.0**,
       tagged `v1.13.0` and in `Info.plist` (this line said 1.12.0 until 2026-08-19 and was stale by one
       release). The owner decided at the 2026-08-19 check-in that **`1.13.1` is cut by hand once C26's
-      bar move has landed and he has read its gate** — C26 is invariant-1 content destruction on the
+      bar move has landed and he has read its gate** — ⚠️ **the bar move LANDED 2026-08-19 and no fresh
+      corpus gate was run with it.** What is offered in its place is `INKBAR-2026-08-19.tsv`, which
+      already holds the page-by-page comparison of exactly these two states over 233 documents, plus a
+      grep establishing the constant has one read site and therefore cannot move a route. Whether that
+      substitution counts as "its gate" is the owner's call and is in `NEEDS OWNER`; a fresh
+      `score-gate` run is ~10 GB and hours, and R50 — the entry that introduced this constant — was
+      accepted on one — C26 is invariant-1 content destruction on the
       shipped default and `v1.13.0` is the build carrying it; C27 is fidelity and rides in 1.14.0. That
       decision does NOT unhold this item: no session prepares, bumps, tags or builds a DMG.
       (origin: CHANGELOG.md, TECHNICAL.md)

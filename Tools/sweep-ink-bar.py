@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 """Drive `score-text-route` over the whole corpus, one document per invocation.
 
-    python3 Tools/sweep-ink-bar.py --out INKBAR-2026-08-19.tsv --bar 0.045 \
+    python3 Tools/sweep-ink-bar.py --out INKBAR-<today>.tsv --bar 0.08 \
         --corpus /Users/cp1/Claude/vision-ocr/testdocs
+
+⛔ **That `--bar` was `0.045` when this sweep ran, and 0.045 is now the SHIPPED bar
+(2026-08-19, C26's fix).** `score-text-route` exits 2 on `INKBAR` equal to the shipped
+constant — "nothing to compare" — and 2 is in `CONFIG_EXITS`, so `--bar 0.045` does not
+mis-measure: it aborts the sweep on document 1, by design. The comparison the committed
+`INKBAR-2026-08-19.tsv` holds is now reached from the other side, with `--bar 0.08` — the
+same two states with the byte columns swapped, `layered` the new behaviour and
+`layeredAtBar` the old. ⚠️ **It does not reproduce that file and must not be pointed at
+it**: `refuse_mixed_provenance` reads its `# bar=0.045` stamp and refuses, correctly, so a
+re-measurement needs a new `--out`.
 
 **This exists because of a measured trap, not for tidiness.** `score-text-route`
 takes ONE pdf and treats every later argument as a page number, so
@@ -11,14 +21,16 @@ other 232 as unparseable page numbers, and prints a summary that reads exactly
 like a corpus run. `BUGS.md` C26 sub-step 3b is blocked on a corpus number, and a
 glob would have answered it with one document's.
 
-**What the number is for.** C26 loses three line drawings because
-`pageIsAllText()`'s first term, `inkOutsideText`, reads 0.0493-0.0660 against a
-bar of 0.08, so the page is called all-text and its background is stored at 1/8.
-A bar at 0.045 refuses all three, and the per-page price of refusing them is
-measured: 2.99x on those pages. What is NOT measured, and what this sweep is for,
-is how many OTHER corpus pages sit in `[0.045, 0.08)` and would newly pay it.
-R49/R50 are the entries about paying bytes on every text page; that trade is why
-the constant must not move without this.
+**What the number was for, and it did its job.** C26 lost three line drawings
+because `pageIsAllText()`'s first term, `inkOutsideText`, reads 0.0493-0.0660
+against what was then a bar of 0.08, so the page was called all-text and its
+background stored at 1/8. A bar at 0.045 refuses all three, and the per-page price
+of refusing them was measured at 2.99x on those pages. What was NOT measured, and
+what this sweep answered, is how many OTHER corpus pages sit in `[0.045, 0.08)` and
+would newly pay it: **17, of which 16 move, over 10 documents of 233 — 4.54x and
+185,353 B a page, ~+0.55% of corpus output.** R49/R50 are the entries about paying
+bytes on every text page; that trade is why the constant did not move without this,
+and on 2026-08-19 the owner read the arithmetic and moved it to 0.045.
 
 **Cost, and the arithmetic rather than the slogan.** 233 documents, up to 12
 sampled pages each (`Flattener.sampleIndices`, not 2), so roughly 2,500 pages.
@@ -89,8 +101,8 @@ contention is real and will make a concurrent suite slower.
 immediately while the work runs orphaned, so poll the artefact:
 
     cd <worktree> && export PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
-    setsid nohup python3 Tools/sweep-ink-bar.py --out "$STATE/INKBAR-2026-08-19.tsv" \
-        --bar 0.045 --corpus /Users/cp1/Claude/vision-ocr/testdocs \
+    setsid nohup python3 Tools/sweep-ink-bar.py --out "$STATE/INKBAR-<today>.tsv" \
+        --bar 0.08 --corpus /Users/cp1/Claude/vision-ocr/testdocs \
         > "$STATE/inkbar-sweep.log" 2>&1 &
     # then, from any later session:
     wc -l "$STATE/INKBAR-2026-08-19.tsv"; tail -3 "$STATE/inkbar-sweep.log"
@@ -1488,8 +1500,13 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", help="TSV to append to; resumed if it exists")
-    ap.add_argument("--bar", type=float, default=0.045,
-                    help="the INKBAR to price against the shipped bar (default 0.045)")
+    # 0.045 until 2026-08-19, when 0.045 BECAME the shipped bar: `score-text-route`
+    # exits 2 on an `INKBAR` equal to it and 2 is in `CONFIG_EXITS`, so the default
+    # invocation aborted on document 1. A default that cannot measure anything is
+    # worse than no default, and `--help` was advertising it.
+    ap.add_argument("--bar", type=float, default=0.08,
+                    help="the INKBAR to price against the shipped bar (default 0.08; "
+                         "0.045 IS the shipped bar and is refused)")
     ap.add_argument("--corpus", default=os.path.join(REPO, "testdocs"),
                     help="directory of pdfs, walked recursively (read-only)")
     ap.add_argument("--binary", default="/tmp/score-text-route",
