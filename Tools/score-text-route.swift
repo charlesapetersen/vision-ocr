@@ -83,9 +83,39 @@
 // pages are at or above it and 86 already print `barDelta same`. ⚠️ This paragraph said
 // "at or above 0.045" in its first version, which is wrong on 87 pages against 17 right —
 // the adversarial review of that diff sized it. For a page *below* the shipped bar (C28's
-// 73) the bar must be **below that page's own `inkOut`**; `INKBAR=0.02` covers C28's eight
+// 73) the bar must be **at or below that page's own `inkOut`** — and since this column PRINTS four
+// places, use a bar strictly below the printed value: a page whose true `inkOut` is 0.01365 prints
+// `0.0137`, and `INKBAR=0.0137` would leave it shrunk, which is this warning's own failure mode
+// arriving through the rounding. `INKBAR=0.02` covers C28's eight
 // near-misses. `BUGS.md` C28 `#### The eight near-misses, RENDERED` is the measurement, and
 // this warning is here because the entry's own instrument line said 0.08.
+//
+// ⛔ **AND THERE IS A FLOOR: A PAGE WHOSE `inkOut` IS 0 CANNOT BE PRICED THROUGH THIS SEAM AT
+// ALL.** `pageIsAllText()` compares `inkOutsideText(…) < bar` with a strict `<`, and the guard
+// below refuses an `INKBAR` outside `(0, 1)` — correctly, for the reason it gives — so there is
+// no legal bar at or below zero. Measured 2026-08-20 over C28's 24-page sub-step: **11 of 24
+// pages print `barDelta same` at `INKBAR=0.00001`**, and **27 of the 73** rows this population
+// comes from print `inkOut` `0.0000`. ⚠️ The printed value is NOT the test, `barDelta` is:
+// `Riesman - 1954` p12 prints `0.0000` and *did* flip, so its true value is in
+// [0.00001, 0.00005). ⚠️ Nor can the summary line tell you which tiny bar ran — it formats the
+// bar with `%.4f`, so `INKBAR=0.00001` prints as `INKBAR 0.0000 against the shipped 0.0450`.
+//
+// What reads those pages instead needs no override and no second `mrcLayers` run — just the two
+// files this tool already dumps, `-source.png` and `-stencil.png`:
+//
+//   magick "$s-source.png"  -auto-threshold OTSU -negate ink.png
+//   magick "$s-stencil.png" -morphology Erode Disk:3 notsten.png   # dilates the stencil's INK
+//   magick ink.png notsten.png -compose Multiply -composite out.png # 0/255 AND, commutative
+//
+// i.e. ink with no stencil within 3 px, which is the set stored only in the background. The
+// dilation is load-bearing: `inkOutsideText` thresholds with a page-wide Otsu while the stencil
+// is an adaptive Sauvola mask, so every stencilled glyph leaves a rim. Measured over C28's twelve
+// positive-`inkOut` pages the rim is worth **0.97x to 19.4x** the whole of `inkOut` — negligible on
+// eight of them, and worst on `Atkinson_1939` p1 (34,158 px at r=0, 15 px at r=3, on a page whose
+// `inkOut` is 0.0000), so it is a per-page hazard rather than a constant. Use `Multiply` and not
+// `Minus`: `-compose Minus` computes `dst - src` and measures the stencil minus the ink. Both
+// mistakes were made and caught here; `BUGS.md` C28's 24-page section has the validation against
+// a page with a known loss and a page with none, where the map names the lost words.
 //
 //   mkdir -p /tmp/h && cp Tools/score-text-route.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-text-route -target "$(uname -m)-apple-macos13.0" \

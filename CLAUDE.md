@@ -66,7 +66,29 @@ pages lose something, so they say only that 0.045 sits too high in those scans; 
 among the eight is cross-document. ⚠️ A first draft concluded
 "the useful bar is **per scan**"; the audit of that diff refuted it from the committed sweep — the
 other three documents contributed **one rendered page each**, so no per-document window is computable
-for them. 65 of the 73 remain unrendered, 24 of them in the six documents already read.
+for them. ✅ **C28's SECOND sub-step ran the same day — the other 24 pages of the six read documents —
+and the headline is that the loss reaches a THIRD of the way to zero**: `Jones et al_2010` p7 loses the
+paper's **estimating equation** at `inkOut` **0.0137** (stencil ink **0.00%** in the rect against
+15.59% on the prose line above) and its p2 loses the word "value." at **0.0008**, against a previous
+lowest measured loser of 0.0353 — so "the pages near the bar" was never the population, and displayed
+mathematics is a failure class the campaign had not seen. `Riesman - 1954` p20 loses a hand-drawn pen
+line to a smear; five `Xin Qu` pages lose a footnote rule; the other 16 of the 24 lose nothing a reader
+sees, `Broadhead - 1994`'s two lowest pages among them — so that document's window HOLDS at
+[0.04415, 0.04495] while `Jones`'s is at most 0.0137, and protecting `Jones` p7 therefore protects
+`Broadhead` p2/p4 as well at +379,584 B on two pages of thumbs. ⛔ **But the sharp result is
+`Riesman - 1954`, which has NO window: its p18 at 0.0676 loses nothing while its p16 at 0.0565 loses a
+hand-drawn bracket, so no bar orders that scan's own pages.** That within-document inversion is what
+kills "the useful bar is per scan" outright, and it is the review of this diff's finding — the first
+draft claimed "two documents with disjoint windows", which is true only of `Broadhead` against the
+other four (`Jones` ∩ `Atkinson_1939` ∩ `CAR` ∩ `Xin Qu` is a non-empty (0.0016, 0.0137]). ⛔ **Two instrument facts from it.** (1) **11 of those
+24 — and 27 of the 73 — cannot be priced through the override seam at all**: `pageIsAllText` is a strict
+`<` and `INKBAR` is refused outside (0,1), so a page whose `inkOut` is 0 has no legal bar below it, and
+`barDelta` `same` is the test rather than the printed `0.0000` (`Riesman - 1954` p12 prints 0.0000 and
+flipped). (2) The instrument that works on all of them is a **`ink AND NOT dilate(stencil)` map** off
+the dump's own `-source.png` and `-stencil.png`, validated against `Broadhead - 1994` p3/p10 where it
+NAMES the two lines sub-step 1 read by eye — and ⛔ its pixel COUNT discriminates nothing (the loser
+15,431 px, the non-loser 15,727 px, flat across dilation radii), which is a scalar term refused for the
+second time. 41 of the 73 remain unrendered, in 15 documents none of which has been looked at.
 ⛔ **AND C28'S OWN RECIPE FOR THAT RENDER WAS A FALSE NEGATIVE, measured**: `INKBAR=0.08` on a page
 *below* the shipped bar reads `all-text` on both sides and dumps two **byte-identical** backgrounds,
 so the comparison the entry told a reader to make is a page against itself. The bar must be BELOW the

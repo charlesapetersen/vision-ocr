@@ -352,9 +352,21 @@ than reasoned — the first attempt broke the coherence check twice:
       `inkOut`**; `INKBAR=0.02` covers that population. (2) An un-normalised at-bar background is a
       good locator (out-of-stencil ink is solid there, in-stencil ink only a pale `fillHoles` ghost);
       a `-normalize`d one misled twice more, on top of the two the entry already records.
-      **What is left of sub-step 1: 65 of the 73 pages, 24 of them in the six documents
-      sub-step 4 already read** — that is where the next session continues, same instrument, no new
-      code. After that, the entry's questions 2-5, in its order.
+      ✅ **The second sub-step is DONE 2026-08-20 too — the other 24 pages of the six read documents,
+      and the loss reaches `inkOut` 0.0137 (an estimating equation) and 0.0008 (a word).** Do not re-run
+      it; the `c28-sixdocs` sub-box below and the entry's
+      `#### The other 24 in the six read documents, RENDERED` carry the table, the two instrument facts
+      and the byte price.
+      **What is left of sub-step 1: 41 of the 73 pages, in 15 documents none of which has been looked
+      at** — `Krippner__…financial exuberance` 10, `_1939_Former students to Board re Merriam_` 7,
+      `Ford_1941_Speech_` 6, `Stanford_1891_…opening day speech` 4, then 14 pages in 11 documents at 1-2
+      each. The "same scan, same recogniser" argument is spent, so pick by `inkOut` descending: both
+      substantial losses so far have been in the top half of their document's sub-bar pages by `inkOut`
+      (`Jones` p7 is 3rd of its five, p2 4th — a first draft of this line said "the highest", which is
+      wrong). ⛔ **And use the map
+      rather than the render pair on any page whose `inkOut` prints `0.0000` — 15 of the 41 — because
+      the override seam cannot reach it at all** (strict `<`, and `INKBAR` is refused at 0). After that,
+      the entry's questions 2-5, in its order.
       ⚠️ **Do not widen `textRegionMask` without pricing it — and do not quote the wrong price.** T15's
       1.33x over 74 corpus *picture* pages is the STENCIL-bytes total; the page total on the 26 cleanly-comparable
       pages is **1.07x**, which is what a widening is judged on, and T15 records the whole-sample gap
@@ -394,6 +406,53 @@ than reasoned — the first attempt broke the coherence check twice:
       Price of un-shrinking the eight: 430,679 -> 1,754,076 B, **+1,323,397 B, 4.07x, 165,425 B/page**,
       of which **57.4% lands on the four that lose nothing**.
       Corpus read-only throughout; every image written to `mktemp`-style scratch under `/tmp`.
+- [x] **c28-sixdocs** — **DONE 2026-08-20.** C28's second sub-step: the other **24** still-shrunk pages
+      in the six documents C26 sub-step 4 had already read. Six invocations, `rc=0` on all, `INKDUMP`
+      7 files per page with none missing, and `inkOut` / `layered` / `extent` reproduce
+      `INKBAR-2026-08-19.tsv` digit for digit on all 24 rows.
+      ⛔ **The loss reaches a THIRD of the way to zero, which is the result.** `Jones et al_2010` **p7**
+      loses the **two displayed lines of the paper's estimating equation (2)** and the
+      `(p-value 0.12).` after its Hansen J statistic — at `inkOut` **0.0137** — while the
+      `ε_it ~ iid(0,σ²)` line under the equation SURVIVES (2.87% stencil ink; a first draft of this box
+      listed it as lost and the published-page composite refuted that). Its **p2** loses
+      the word "value." at **0.0008**, against a previous lowest measured loser of 0.0353. Displayed
+      mathematics is a failure class this campaign had not seen: Vision boxes prose and misses set
+      equations. `Riesman - 1954` p20 loses a **hand-drawn pen line** to a smear (stroke still
+      followable, so degraded rather than lost); five `Xin Qu` pages lose the **footnote separator
+      rule**; the other 16 lose page edges, gutter, the scanner's thumbs, two specks or nothing at all.
+      Stencil-ink cross-check on the three that matter: **0.00% / 0.00% / 0.06%** in the rect against
+      **15.59% / 11.94% / 17.69%** on the adjacent line or type.
+      ⛔ **TWO INSTRUMENT FACTS, both of which the next batch needs.** (1) **11 of the 24, and 27 of the
+      73, cannot be priced through the override seam at all**: `pageIsAllText` is a strict `<` and
+      `INKBAR` is refused outside (0,1), so a page whose `inkOut` is 0 has no legal bar below it. The
+      test is `barDelta`, NOT the printed value — `Riesman - 1954` p12 prints `0.0000` and did flip. The
+      tool's summary line also formats the bar `%.4f`, so `INKBAR=0.00001` prints as `0.0000`. (2) The
+      instrument that works on every page is `ink AND NOT dilate(stencil)` off the dump's own
+      `-source.png` and `-stencil.png` — three `magick` calls, no override, no second `mrcLayers` run —
+      **validated against `Broadhead - 1994` p3/p10**, where it NAMES the two lines sub-step 1 read by
+      eye and shows p10 holding no type at all. ⚠️ Its first two versions were both wrong and measured
+      so: `-compose Minus` computes `dst - src` (caught by counts RISING with the dilation radius), and
+      without the dilation the map carries a glyph-edge rim from the Otsu-vs-Sauvola mismatch worth
+      **0.97x to 19.4x** `inkOut` depending on the page — negligible on the eight `Jones`/`Xin Qu`
+      pages, 3.3x/3.6x on `Broadhead`, 8.0x/19.4x on `Riesman` p20/p24, and worst on `Atkinson_1939`
+      p1 (34,158 px at r=0 against 15 px at r=3, on a page whose `inkOut` is 0.0000).
+      ⛔ **And its pixel COUNT discriminates nothing** — the losing control 15,431 px, the non-losing one
+      15,727 px, flat across r = 2/3/4 — so a scalar "how much ink is outside" fails exactly as the
+      page-wide fraction did. Second measured refusal of a scalar; question 3's term must be shape.
+      **Per-document windows: measurable for two documents now, and disjoint.** `Broadhead - 1994`'s
+      two lowest pages (0.0193, 0.0140) lose nothing, so all ten of its sampled pages the first term can
+      move are read and still order perfectly — window unchanged at **[0.04415, 0.04495]** — while
+      `Jones et al_2010` also orders all **six** of its layered pages perfectly, with a window of at
+      most **0.0137** (**0.0008** if its single lost word counts). ⛔ **But the sharp result is that
+      `Riesman - 1954` has NO window: its p18 at 0.0676 loses nothing while its p16 at 0.0565 loses a
+      hand-drawn bracket, so no bar orders that scan's own pages — a within-document inversion, which
+      is what actually kills "the useful bar is per scan".** ⚠️ And "disjoint" holds only of
+      `Broadhead` against the rest: `Jones` ∩ `Atkinson_1939` ∩ `CAR` ∩ `Xin Qu` is (0.0016, 0.0137].
+      No single bar satisfies `Broadhead` and `Jones`:
+      at 0.0137 or below, `Broadhead` p2/p4 are protected too, which is **+379,584 B** on two pages of
+      thumbs. Byte price of the 13 the seam reaches: 499,203 → 2,065,879 B, **+1,566,676 B, 4.14x,
+      120,514 B/page**, of which **94.7% buys nothing a reader would miss** (71.4% counting the word and
+      the pen line). Corpus read-only; every image written to scratch under `/tmp`.
 - [ ] **born-digital-page** — a born-digital cover page is rasterised to 1-bit and re-OCR'd because the
       digital-text test votes per DOCUMENT. On the JSTOR download this was found on, page 1's vector text,
       its embedded fonts and a 197x267 colour JPEG became one 1-bit raster, and the text layer went from
