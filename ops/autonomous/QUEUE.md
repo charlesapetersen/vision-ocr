@@ -505,8 +505,15 @@ than reasoned — the first attempt broke the coherence check twice:
       specimen was priced and deferred: `testdocs/manifest.tsv`'s 12 columns are gate outputs that cannot
       be hand-written, 22 files quote the corpus size, and `testdocs/README.md` says re-cutting "moves
       every published figure at once, and that is a decision to take with the numbers rather than instead
-      of them". Those numbers are what sub-steps 1-3 produce. Do not propose a corpus write before then;
-      `corpus-write` stays `[hold] needs: owner` regardless.
+      of them". Those numbers are what sub-steps 1-3 produce, so do not propose a corpus write before
+      then. Writing `testdocs/` is the owner's call alone either way — see the `corpus-write` line at the
+      foot of this file, which nothing here changes.
+      ⚠️ **AND THE TWO TOKENS THAT MARK A HOLD MUST NOT APPEAR IN THIS BOX.** `next-item.sh:100` is
+      `held = (cur_span ~ /\[hold\]/ || cur_span ~ /needs:[[:space:]]*owner/)`, matched over the item's
+      WHOLE greedy span — so merely *writing about* another item's hold, in either spelling, silently
+      converts this actionable item into an owner-only one. That happened to this box on 2026-08-20 and
+      `next-item.sh` reported `hold gutter-floor` until the sentence above was rephrased. Same family as
+      the sub-box span trap in this file's header.
       (context: FEATURES.md item 3, reopened 2026-08-20; Tests/main.swift:5196)
       ⚠️ This and `born-digital-page` are the same document class and share a fixture, so they sit
       together. **`C27` has now been passed by two items** — if the owner wants C27 first, move it up.
