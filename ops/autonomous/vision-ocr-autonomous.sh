@@ -107,9 +107,24 @@ INTERVAL="${VISIONOCR_INTERVAL:-90}"      # gap between cycles while the run is 
 # than done blind.
 STALE="${VISIONOCR_STALE:-1800}"          # 30 missed 60-second heartbeats. NOT a session-length budget —
                                           # re-read the note above before touching it.
-MAXRUN="${VISIONOCR_MAXRUN:-9000}"        # OUTER wall-clock backstop (2.5 h). The health watchdog below is
+MAXRUN="${VISIONOCR_MAXRUN:-14400}"       # OUTER wall-clock backstop (4 h). The health watchdog below is
                                           # the PRIMARY killer; this only fires if that fails or a session is
                                           # productive-but-endless.
+# ⚠️ RAISED 9000 -> 14400 on 2026-08-19, for the same reason the budget went 20 -> 35 above: A SESSION MUST
+# SURVIVE ITS OWN COMMIT. Sized the way the README says to size these -- the WORST row in
+# $STATE/suite-timings.tsv you are willing to survive, plus headroom; never the mean, never one run. That
+# worst pre-commit row is 5554 s (92.6 min).
+# ⛔ AND LOADAVG DOES NOT PREDICT WHERE A RUN LANDS, so there is no quiet-machine discount to bank on: the
+# 14 pre-commit rows span 474-5554 s, with 864 s measured at loadavg 12.64 and 3569 s at 3.59.
+# A CODE commit under this repo's own discipline needs TWO of those runs -- the watch-the-new-check-fail
+# control, then the hook's green run -- so 2 x 5554 s plus the session's own work is ~12300 s, and 9000 s
+# cannot fit it.
+# WHAT 9000 COST ON 2026-08-19: four consecutive sessions committed work but completed NO item. The fifth ran
+# its control at 19:10 (4252 s, rc=1, label `c26-watch-fail`) and was 27 min into its real hook against a
+# 20:13 backstop when the owner stopped the daemon -- on course to miss it, though stopped rather than timed
+# out, so that last step is inference. The owner landed C26 by hand; that hook took 864 s with the daemon off.
+# ⚠️ Read ONCE at module scope, so a change here needs a `daemon.sh start` to take effect -- and the repo is
+# the source of truth: `start` re-runs `install -m 755` over ~/.local/bin, so do NOT edit that copy.
 # --max-budget-usd per resume session. RAISED 20 -> 35 on the owner's decision, 2026-08-17, and the reason is
 # a measurement rather than a preference (README §Defects D6): a session must survive its own commit, and a
 # commit here costs a ~43-minute hook (2,552 / 2,575 / 2,615 s, three consecutive rows in
@@ -175,7 +190,14 @@ GATE_CMD="${VISIONOCR_GATE_CMD:-$REPO/ops/autonomous/health-gate.sh}"
 # is tools-compile (~2 min) + suite (39m30s) + ./build.sh + doc checks ≈ 45 min, and it may additionally WAIT
 # up to $VISIONOCR_TEST_LOCK_WAIT (3600) on the lock behind another run. 9000 covers both without ever
 # false-parking; the health watchdog, not this cap, is the real defence against a wedged gate.
-GATE_MAXRUN="${VISIONOCR_GATE_MAXRUN:-9000}"   # 2.5 h = one full gate (~45 min) + a full lock wait (60 min)
+# ⚠️ RAISED 9000 -> 14400 on 2026-08-19, the same defect as $MAXRUN above and by the README's own stated
+# method (take the WORST row you will survive, add headroom, never the mean). The derivation above assumed a
+# 39m30s suite. It is not one any more: suite-timings.tsv's worst row is 5554 s (92.6 min), so a gate is
+# ~2 min tools-compile + ~93 min suite + ./build.sh + doc checks = ~100 min, and it may STILL wait a full
+# $VISIONOCR_TEST_LOCK_WAIT (3600 s) behind another run -- about 9600 s, already OVER the 9000 s cap it was
+# being measured against. An overrun counts as a TIMEOUT and $GATE_MAX_TIMEOUTS of them PARKS THE RUN, so
+# this was the 2700-vs-2693 mistake a second time, in the same constant, from the suite growing underneath it.
+GATE_MAXRUN="${VISIONOCR_GATE_MAXRUN:-14400}"  # 4 h = one full gate (~100 min) + a full lock wait (60 min)
                                                # + margin. A cap below true runtime is what false-parks a
                                                # healthy run, and that had become one bad minute away.
 GATE_MAX_TIMEOUTS="${VISIONOCR_GATE_MAX_TIMEOUTS:-2}"

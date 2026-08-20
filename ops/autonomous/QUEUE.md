@@ -43,6 +43,23 @@ would have been silent: the resume prompt tells a session to **rule out already-
 have opened those `FIXED` entries, concluded the work had shipped, and ticked live standing work off
 unread. A cite that reads as a status claim when it is only a footnote is exactly how that happens.
 
+⚠️ **RECORDING A FINISHED SUB-STEP: A SUB-BOX IS PARSED AS A TOP-LEVEL ITEM, AND ITS SPAN IS GREEDY.**
+A long campaign whose box stays `[ ]` by design reports NO progress to the daemon: `completed_items()` counts
+ticked boxes here and closed register entries there, so a session that finishes a sub-step advances neither,
+and `nocomplete.count` walks to the auto-park. On 2026-08-19 that took four consecutive sessions. Recording
+the finished sub-step as its own ticked box is the fix, under three constraints, all MEASURED that day rather
+than reasoned — the first attempt broke the coherence check twice:
+
+- It must sit **AFTER its parent's cite line**, not inside the parent's block. Both `next-item.sh` and
+  `check-queue-coherence.sh` give every box a GREEDY SPAN — each following line up to the next box — so a
+  sub-box in the middle of a block STEALS the remainder of it, the parent's `(origin: …)` line included.
+  Measured: that produced `DUPLICATE-TAG` *and* `TICKED-OPEN`, and left the parent citing nothing at all.
+- It needs **its own tag**. Reusing the parent's is a duplicate, and `(blocked-on: …)` then resolves to
+  whichever came first.
+- It must cite **no register entry**. ⛔ `(context: …)` does NOT exempt it — the check is
+  `[ "$st" = "x" ] && [ "$n_open" -gt 0 ]`, which never looks at *which* cite word was used, so any `[x]`
+  citing a still-OPEN entry is drift. The parent keeps the cite; the sub-box carries none.
+
 ## ⛔ Settled — do not re-open, do not "notice" these again
 
 - **`R55` is `WONTFIX`** (owner, 2026-08-17). The measurement campaign was run and the owner closed it on
@@ -285,6 +302,11 @@ unread. A cite that reads as a status claim when it is only a footnote is exactl
       the instruments for this are `score-threshold-loss.swift` and `score-text-route.swift`'s
       `INKDUMP`, plus rendered before-and-after pages.
       (origin: BUGS.md C26)
+      - [x] **C26-constant** — `Flattener.textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's
+        2026-08-19 decision, landed with the suite's checks and a mutant. Ticked because the sub-step
+        finished, NOT because the item above did: that one stays open for the stencil question, which
+        is also why this box carries no register cite — a `[x]` citing an open entry is TICKED-OPEN
+        drift, and this box's span must stay clear of the cite line above it.
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the

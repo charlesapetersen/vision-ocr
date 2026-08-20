@@ -179,9 +179,18 @@ That is the whole method — the file is the authority, and this README is not.
 Two constants were wrong by enough to cause real failures:
 
 - **`GATE_MAXRUN` was 2700** and the gate measured **2693**. Seven seconds of margin, on a cap whose
-  overrun counts as a TIMEOUT, two of which **park the run**. Now 9000.
+  overrun counts as a TIMEOUT, two of which **park the run**. Raised to 9000, and to 14400 on
+  2026-08-19 — see the third bullet.
 - **`test-lock.sh`'s wait was 1800** — shorter than a single loaded-machine suite. Anything queued behind a
   healthy run gave up early, and `pre-commit` then announced the lock "never freed". Now 3600.
+- **Both wall-clock caps were 9000, and neither was sized against the ledger's worst row.** `MAXRUN` and
+  `GATE_MAXRUN` were derived against a 39m30s suite. `suite-timings.tsv`'s 14 pre-commit rows span
+  **474-5554 s** (8-93 min), and loadavg does not predict where a run lands — 864 s was measured at 12.64,
+  3569 s at 3.59 — so there is no quiet-machine discount to size against. A CODE commit needs TWO of those
+  runs (the watch-the-new-check-fail control, then the hook's green run), and a gate is one plus up to a
+  3600 s lock wait, so both caps sat under worst-case runtime. Now 14400. What 9000 cost on 2026-08-19: four
+  consecutive sessions committed work but completed no item, and the fifth was 27 min into its own hook, on
+  course to miss a 20:13 backstop, when the owner stopped the daemon and landed C26 by hand.
 
 And one that was proposed, checked, and **left alone**:
 
@@ -357,7 +366,7 @@ Each session runs with `--output-format stream-json --include-partial-messages`,
 in real time with an event per message, per tool call, and per token-delta during generation. That last part
 is why a long high-effort generation is not mistaken for a hang.
 
-- **Wall-clock backstop** (`MAXRUN`, 2.5 h) — polls the child's liveness rather than sleeping blindly, so it
+- **Wall-clock backstop** (`MAXRUN`, 4 h) — polls the child's liveness rather than sleeping blindly, so it
   self-exits when the session ends and never fires against a stale or reused pid.
 - **Health watchdog** (the primary killer) — two combined signals so no single false positive kills a healthy
   session. When the log's non-`rate_limit_event` bytes stop growing for `HB_STALL` (10 min) the session is
