@@ -47,8 +47,15 @@ measured loser of 0.0353 — so "the pages near the bar" was never the populatio
 at exactly 0.0000** where the override seam cannot price them at all (no legal `INKBAR` is below 0).
 `Broadhead - 1994`'s two lowest pages lose nothing, so its window holds at [0.04415, 0.04495] while
 `Jones`'s is at most 0.0137 — **two documents that each order their own pages, with disjoint windows**,
-and 94.7% of the 13 priced pages' +1,566,676 B buys nothing a reader would miss. **32 of the 73 read,
-41 left, in 15 documents none of which has been looked at.**
+and 94.7% of the 13 priced pages' +1,566,676 B buys nothing a reader would miss. ⛔ **20 more were
+rendered the same day — the twenty highest-`inkOut` of what was left — and 8 of those 20 lose
+content**: three lines of 1958 magazine prose over two pages, a line and a word of 1930s
+typescript, a word of 1913 body text, a page folio, a signature, a pencilled annotation and a
+hand-inked margin number. The headline there is that **the four pages of the 41 with the most ink
+outside the recognised words lose nothing at all**, while six pages between `inkOut` 0.0051 and 0.0165
+lose content — so a bar protects the wrong end of its own range first. **52 of
+the 73 read, 21 left, in 6 documents — but 7 of those 21 are in two documents now known to lose
+content.**
 ⚠️ **And the recipe C28 gave for this render was a false negative** — `INKBAR=0.08` compares a
 sub-bar page with itself (byte-identical backgrounds, measured); the bar must be *at or below* the
 page's own `inkOut`, and where that is 0 the instrument is instead an `ink AND NOT dilate(stencil)` map
@@ -4314,11 +4321,13 @@ already clear it, because two of the ten carry no colour and one page that keeps
 
 ### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — OPEN
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move
-the bar **and** open this as its own entry rather than fold it into C26. Two sub-steps worked
+the bar **and** open this as its own entry rather than fold it into C26. Three sub-steps worked
 2026-08-20 — the eight near-misses in `#### The eight near-misses, RENDERED`, then the other 24 pages
-of the six documents sub-step 4 had read, in `#### The other 24 in the six read documents, RENDERED`;
-everything before those two sections is the mechanism, the evidence C26 already paid for, and the first
-measurement. ⛔ Both sections correct this entry's own instrument line — the one in question 1 of
+of the six documents sub-step 4 had read, in `#### The other 24 in the six read documents, RENDERED`,
+then the twenty highest-`inkOut` of what was left, in
+`#### The twenty highest-inkOut of the remaining 41, RENDERED`;
+everything before those three sections is the mechanism, the evidence C26 already paid for, and the
+first measurement. ⛔ Both sections correct this entry's own instrument line — the one in question 1 of
 `#### What is not known`, below. `INKBAR=0.08` compares these pages **with themselves** and reads as
 "loses nothing"; and for the 27 of the 73 whose `inkOut` is `0.0000` there is **no legal `INKBAR` at
 all**, so the override seam cannot price them and the measurement is a stencil-versus-ink map
@@ -4346,7 +4355,12 @@ p3 — and sorted by `inkOutsideText` those four are the 1st, 3rd, 6th and 8th, 
 reads does not order the loss**. ⛔ **And measured the same day over 24 more pages, it happens a third
 of the way to zero**: `Jones et al_2010` p7 loses the paper's **estimating equation** at `inkOut`
 **0.0137** and its p2 loses a word at **0.0008**, so the population at risk is not "the pages near the
-bar" — 27 of the 73 sit at exactly 0.0000 and one page at 0.0008 is already losing type.
+bar" — 27 of the 73 sit at exactly 0.0000 and one page at 0.0008 is already losing type. ⛔ **And
+measured the same day over the twenty highest-`inkOut` pages left, the loss is a MIDDLE band**: 8 of
+20 lose content, their `inkOut` runs [0.0051, 0.0165], and of the twelve that lose nothing **four sit
+above that band and six below it** — so the signal does not merely fail to separate the two sets, it
+is not monotone in the direction `pageIsAllText()` assumes, and the four pages with the most ink
+outside the recognised words are the first four any bar protects and lose nothing at all.
 
 #### The mechanism, read off the shipped code (read, not executed) — 2026-08-19
 
@@ -4445,8 +4459,13 @@ running prose each, one losing figures out of a statistical table, one losing a 
 See `#### The eight near-misses, RENDERED` below; and **24 more were rendered the same day** —
 `#### The other 24 in the six read documents, RENDERED` — of which **2 lose content** (an estimating
 equation, a word), **6 more lose something** (a hand-drawn pen line and five footnote rules) and 16
-lose nothing a reader sees, so **32 of the 73 are read and 41 remain unrendered.** (This sentence read "whether any of the 73 is
-losing content is **not known** — none has been rendered", then "65 remain unrendered", until then.)
+lose nothing a reader sees; and **20 more the same day** —
+`#### The twenty highest-inkOut of the remaining 41, RENDERED` — of which **8 lose content** (a line
+and a word of typescript, three lines of magazine prose over two pages, a word of body text, a page
+folio, a signature, a pencilled annotation and a hand-inked margin number) — so **52 of the 73 are
+read and 21 remain unrendered.** (This sentence read "whether any of the 73 is
+losing content is **not known** — none has been rendered", then "65 remain unrendered", then "41",
+until then.)
 
 ⛔ **And 31 of the 73 are in documents sub-step 4 already rendered.** The 13 rendered pages came from
 9 documents; 6 of those 9 have *other* pages still shrunk at the new bar, and they
@@ -4539,6 +4558,12 @@ strip carrying show-through, barely legible in the source. With `Riesman - 1954`
 show-through only) that is **32.4% of the band's +2,965,653 B spent on two pages a reader cannot tell
 apart.** A page-wide ink fraction cannot separate those from `Xin Qu` p20 because both are "ink
 outside the words"; the difference is *what the marks are*, which is the question this entry is about.
+⛔ **A third such page was measured 2026-08-20**: `1976 - Regis McKenna Papers` p4, **+350,632 B at
+7.89x** — the steepest ratio in this campaign — whose out-of-stencil ink is platen strips and a staple
+shadow and nothing else. ⚠️ **But the sub-step that found it also weakened this section's general
+claim, and that is recorded there rather than here**: over its twenty pages a bar set to protect every
+loser puts only **37.6%** of its cost on pages that lose nothing, against 57.4% (sub-step 1) and 56.6%
+(sub-step 2). How much a bar overpays is a property of the pages sampled, not a constant.
 
 #### The eight near-misses, RENDERED — 4 of 8 lose content, and `inkOutsideText` does not order them — MEASURED 2026-08-20
 
@@ -4711,8 +4736,8 @@ entry's thesis restated in the residue: a page-wide bar cannot spend that money 
 **What remains of question 1: 65 of the 73.** Eight rendered, four losing. Seven of the eight came out
 of the 31 in the six documents sub-step 4 already read (`Scott_TK` p3 is in none of them), so **24 of
 that 31 remain** and are still the cheapest place to continue. ⛔ **Those 24 were rendered on
-2026-08-20 — the next section — so this paragraph is superseded: 32 of the 73 are read and 41 remain,
-and the six documents are exhausted.**
+2026-08-20 — the next section — and then 20 more, so this paragraph is superseded twice over: 52 of
+the 73 are read and 21 remain, and the six documents are exhausted.**
 
 #### The other 24 in the six read documents, RENDERED — the loss reaches a THIRD of the bar, and quantity does not order it either — MEASURED 2026-08-20
 
@@ -4912,21 +4937,248 @@ founding-mode loss (`Riesman - 1954` p16's hand-drawn bracket) lived in an outer
 `Stanford_1891_Jane Stanford opening day speech` **4**, then 14 pages in 11 documents at 1-2 each.
 **15 of the 41 print `0.0000`**, which is a print and not a verdict — the seam is refused only where
 `inkOut` is *exactly* 0, and `barDelta` at a bar below 1e-5 is the test. The map above reads them
-either way, and is cheaper than a render pair.
+either way, and is cheaper than a render pair. ⛔ **20 of those 41 were RENDERED on 2026-08-20 — the
+section below — and 8 of the 20 lose content, so 52 of the 73 are read and 21 remain.**
+
+#### The twenty highest-`inkOut` of the remaining 41, RENDERED — 8 of 20 lose content, and the losers are a MIDDLE band with non-losers on both sides — MEASURED 2026-08-20
+
+**The population, and why these twenty.** The section above says to pick by `inkOut` descending, so:
+the **twelve** highest-`inkOut` pages of the 41 (`1976 - Regis McKenna Papers` p4 down to
+`Merriam_1913` p2, 0.0287 to 0.0063), **plus the completion of the two documents where completing
+them was nearly free** — `Ford_1941_Speech_` (all 6 of its sub-bar pages, 5 of them extra) and
+`Stanford_1891_Jane Stanford opening day speech` (all 4, 3 extra) — because a whole document is the
+only way to ask whether a bar orders that document's own pages, which is where sub-steps 1 and 2 got
+their sharpest results. Twenty pages, **eleven documents, none of which had been looked at** (the
+twelve highest span eleven too — `_1958_Executive Pay` contributes two; a first draft of this
+sentence said ten and was contradicted by the word "eleven" three words later). Eleven
+invocations, `rc=0` on every one, `INKDUMP` **7 files per page with none missing on all 20** (140
+files), and `inkOut`, `layered` and `extent` reproduce `INKBAR-2026-08-19.tsv` **digit for digit on
+all 20 rows** — checked by a script over the committed file, not by eye.
+
+✅ **And all twenty are reachable through the override seam**, unlike sub-step 2's 11-of-24 floor:
+every one printed a changed `barVerdict` at its document's bar, so every row below has both a byte
+price and a render pair. The bars used were strictly below the lowest printed `inkOut` in each
+invocation — 0.02 / 0.01 / 0.005 / 0.0005 / 0.00004 — which is the rule the tool's header states.
+
+⛔ **THE HEADLINE IS THAT THE BAR'S ORDERING IS WRONG AT THE TOP OF THE RANGE: THE FOUR PAGES WITH
+THE MOST INK OUTSIDE THE RECOGNISED WORDS LOSE NOTHING.** Sorted by `inkOut` descending, the twenty
+read
+
+```
+n n n n L L n n L L L L L L n n n n n n
+```
+
+The eight losers span `inkOut` **[0.0051, 0.0165]**. Of the twelve non-losers, **four sit above that
+whole span**, **six below it**, and **two inside**. `pageIsAllText()` is one-sided — a page is
+protected exactly when its `inkOut` is *at or above* the bar — so those four are the first four any
+bar protects as it comes down, and each of them loses only a staple-and-debris shadow, magazine column
+rules, a book's gutter shadow, or a photograph's frame.
+
+⚠️ **Two things this paragraph must NOT be read as saying, both caught by the adversarial review of
+this diff.** (a) The loser set is **not contiguous**: `Ford_1941` p3 (0.0107) and `Stanford_1891` p3
+(0.0104) sit inside the span and lose nothing. The *interval* is contiguous, the set is not, and a
+first draft wrote "contiguous middle band" while listing the two exceptions in the same sentence.
+(b) ⛔ **The "non-losers on both sides" shape is partly a SELECTION EFFECT and the first draft called
+it "a stronger refusal of the bar than the interleaving was", which it is not.** All six non-losers
+*below* the span are among the eight pages added by completing `Ford_1941` and `Stanford_1891` for
+convenience rather than by the stated rule. The twelve pages the rule actually chose read
+`n n n n L L n n L L L L` — four non-losers above every loser and **none** below — which is
+sub-step 1's finding reproduced in a fresh population, not a new one. What survives as new is the
+top of that string: in sub-step 1 the highest-`inkOut` page of the eight was a loser, and here the
+four highest of the 41 are not.
+
+⚠️ **AND THE COMPARISON WITH SUB-STEPS 1 AND 2 ON "THE BAR OVERPAYS" IS FLAT, NOT A WEAKENING —
+a first draft of this section claimed a weakening off MISMATCHED BASES.** Over all twenty pages the
+price is **861,180 -> 3,892,140 B, +3,030,960 B, 4.52x, 151,548 B/page**, split **45.8% on the eight
+losers / 54.2% on the twelve that lose nothing** — and 54.2% is the figure comparable with sub-step 1's
+57.4% and sub-step 2's 56.6%, both of which are over *all* their priced pages. Flat. The narrower
+question — what a bar chosen to protect every loser costs — is **+2,225,619 B over the 14 pages at or
+above 0.0051**, of which **62.4%** lands on losers and **37.6%** on six that lose nothing; that 37.6%
+is over 14 pages, not 20, and comparing it against the two whole-sample figures is what produced the
+false claim. On this narrower basis sub-step 2 reads **50.7%** (a bar at 0.0008 does not reach
+`Riesman - 1954` p12's +187,582 B), so it is flat there too. Sub-step 2's own text already warns that
+these two definitions are not comparable, and this diff made the mistake anyway.
+
+⛔ **THE STEEPEST-RATIO PAGE BUYS NOTHING, FOR THE THIRD TIME IN THIS CAMPAIGN.**
+`1976 - Regis McKenna Papers - Early Career, 1965-1981` p4 is **+350,632 B at 7.89x**, the steepest
+ratio measured anywhere in it, and its out-of-stencil ink is **13 components over 400 px** (8 over
+800): the largest are four tall thin strips of platen/binding shadow spanning x 43-137, a
+page-corner fragment, and a staple-and-debris shadow at `115x36+420+118` whose rect holds **0.0000**
+stencil ink and whose shipped background still shows the same shape. No type-shaped component at
+either threshold — the five that only a 400 threshold sees were crop-checked at 1:1 by the review of
+this diff and are strokes and specks. ⚠️ **It is NOT the dearest page of the twenty and a first draft
+said it was**: `Doermann_1967` p21 costs **+361,465 B**, 10,833 B more, and *does* lose content, so
+the parallel with `RIESMAN_1942` p10 — which was dearest in absolute bytes — holds only on the ratio.
+On ratio it joins `RIESMAN_1942` p10 (+702,280 B, 6.47x, a scanner-edge strip) and
+`Riesman - 1954` p18.
+
+**The verdicts.** Every mark located by connected components of the `ink AND NOT dilate(stencil)` map
+— so the counts are measured, not impressions — and every verdict on a *loss* settled by a **four-row
+1:1 crop: source / stencil / background at the bar / background as shipped.** The stencil row is the
+decisive one: where it is blank, the background is the only carrier, and the fourth row is what a
+reader gets. ⚠️ **Three of the twenty carry no 1:1 crop and rest on the map alone** —
+`_1967_Ampex` p1 (column rules), `UN-OCred` p7 (a gutter/spine shadow) and `Stanford_1891` p3
+(specks and one edge blob), none of which holds a type-shaped component. `Ford_1941` p3 was in that
+list until the review of this diff pointed out that its "loses nothing" is load-bearing for the
+within-document argument below; it was then cropped at 1:1, and its largest out-of-stencil component
+(`134x303+1508+183`, and a `129x183` twin) is the **curled sheet's own edge shadow** crossing the
+page, with its typescript sitting crisply *in* the stencil. Verdict unchanged, now evidenced.
+
+| `inkOut` | document | page | `layered` -> at bar | | what the shipped background destroys |
+|---|---|---|---|---|---|
+| 0.0287 | `1976 - Regis McKenna Papers` | p4 | 50,919 -> 401,551 | 7.89x | platen strips + a staple shadow — **nothing** |
+| 0.0286 | `_1967_Yearly Increase … Ampex` | p1 | 44,991 -> 139,007 | 3.09x | column rules, right edge — **nothing** |
+| 0.0231 | `UN-OCred` | p7 | 29,238 -> 93,056 | 3.18x | gutter/spine shadow — **nothing** |
+| 0.0210 | `Gitlin_2000 … New York Times` | p1 | 44,133 -> 114,803 | 2.60x | a photograph's frame + a rule, softened — **nothing** |
+| 0.0165 | `Doermann_1967` | p21 | 110,245 -> 471,710 | 4.28x | **a hand-inked margin number, illegible**; footnote rule softened |
+| 0.0148 | `Herbert Marks papers` | p11 | 19,439 -> 77,005 | 3.96x | **TYPE: the line `City of Seattle`, the word `etc.`, 59 marks in all** |
+| 0.0107 | `Ford_1941_Speech_` | p3 | 42,948 -> 243,509 | 5.67x | the photographed sheet's curved edges — **nothing** |
+| 0.0104 | `Stanford_1891 … opening day speech` | p3 | 22,030 -> 79,773 | 3.62x | specks, one edge blob — **nothing** |
+| 0.0087 | `_1958_Executive Pay` | p3 | 39,354 -> 120,957 | 3.07x | **TWO LINES of running prose** |
+| 0.0081 | `_1958_Executive Pay` | p5 | 40,549 -> 112,148 | 2.77x | **ONE LINE of running prose** |
+| 0.0069 | `_1939_Former students to Board re Merriam_` | p6 | 52,626 -> 280,384 | 5.33x | **a handwritten signature** |
+| 0.0063 | `Merriam_1913_Clutter of Things` | p2 | 85,981 -> 280,049 | 3.26x | **words of body text (`husband` and 8 more marks)** |
+| 0.0056 | `Ford_1941_Speech_` | p6 | 31,137 -> 211,656 | 6.80x | **the page folio `-6-`**, and part of an ink stamp |
+| 0.0051 | `Ford_1941_Speech_` | p1 | 47,782 -> 261,383 | 5.47x | **a pencilled marginal annotation**, and part of an ink stamp |
+| 0.0023 | `Ford_1941_Speech_` | p2 | 47,489 -> 259,478 | 5.46x | stamp arc, specks — **nothing** |
+| 0.0022 | `Ford_1941_Speech_` | p5 | 44,435 -> 249,553 | 5.62x | stamp arc, specks — **nothing** |
+| 0.0012 | `Stanford_1891 …` | p1 | 25,636 -> 103,993 | 4.06x | specks — **nothing** |
+| 0.0007 | `Ford_1941_Speech_` | p4 | 42,323 -> 243,575 | 5.75x | stamp arc, specks — **nothing** |
+| 0.0005 | `Stanford_1891 …` | p2 | 19,257 -> 70,962 | 3.68x | specks — **nothing** |
+| 0.0001 | `Stanford_1891 …` | p4 | 20,668 -> 77,588 | 3.75x | specks, one edge bar — **nothing** |
+
+**Three of the eight are failure classes this campaign had not seen.** `Ford_1941` p6's **page folio**
+— the characters `-6-`, in a rect holding **0.0000** stencil ink, legible at the bar and an unreadable
+blur as shipped — and a folio is what a citation refers to. (⚠️ A first draft called it "the first
+typeset mark lost that is not part of a sentence or a table"; sub-step 1's `Scott_TK` p3 lost the
+*"Digitized by Google / Original from UNIVERSITY OF MICHIGAN"* footer, which is also neither.)
+`Ford_1941` p1's **pencilled annotation** and `Doermann_1967` p21's **hand-inked margin number** are
+archival marks a reader of a 1941 speech transcript or a 1967 thesis would want, and both rects also
+hold **0.0000** stencil ink. And **magazine body text** is new: on `_1958_Executive Pay` p3 and p5
+Vision boxes the lines above and below and misses one or two in the middle of a justified column.
+(⚠️ Also drafted as a "first" — `Merriam_1913` is a `magazineArticle` too and loses a word of body
+text in this same batch, so the two Executive Pay pages are only the first *found*.)
+
+**The stencil cross-check, on tight rects.** The rect drawn around the lost mark alone, against the
+adjacent line that survives:
+
+| page | mark | stencil ink in the lost rect | adjacent survivor |
+|---|---|---|---|
+| `Herbert Marks` p11 | `City of Seattle` | **2.97%** | 7.80% |
+| `Herbert Marks` p11 | `etc.` | **0.00%** | — |
+| `_1958_Executive Pay` p3 | two prose lines | **2.56%** | 32.9% |
+| `_1958_Executive Pay` p5 | one prose line | **6.42%** | 23.9% |
+| `_1939_Former students` p6 | the signature | **0.43%** | 20.7% |
+| `Merriam_1913` p2 | `husband` | **15.7%** | 33.8% |
+| `Ford_1941` p1 | the annotation | **0.00%** | — |
+| `Ford_1941` p6 | the folio | **0.00%** | — |
+| `Doermann_1967` p21 | the margin number | **0.00%** | — |
+
+⚠️ **`Merriam_1913` p2 is the weak row and it is labelled as such**: 15.7% against 33.8% is a ratio of
+0.47, against **0.00-0.38** for the others — `Herbert Marks` p11's `City of Seattle` is 0.029728 /
+0.0780097 = **0.38**, so Merriam is a far less clear outlier than a first draft's "0.00-0.27" made it
+look. The cause is that a 23 px band on a 2807 px page catches the neighbouring lines' ascenders. Its
+verdict rests on the crop, where the stencil holds broken dashes where the word
+is and the shipped background holds an unreadable smear — not on this row. ⚠️ And the first version of
+this table was worse: it measured the *display* rects, which deliberately include the surviving lines
+above and below so a reader can see the contrast in one image, and those read 6.1% to 13.0% — not
+loss-only figures at all. They were replaced with tight rects before publication.
+
+**Within a document, the bar still cannot avoid a false positive.** `Ford_1941_Speech_`'s six pages
+read `n L L n n n` by `inkOut` — its p3 at 0.0107 loses nothing while its p6 and p1 at 0.0056 and
+0.0051 lose a folio and an annotation — so any bar protecting either loser also protects p3, at
++200,561 B. That is the same shape as sub-step 2's `Riesman - 1954`: in both, a non-loser sits at
+strictly higher `inkOut` than a loser inside one scan, so no bar orders that document's own pages
+without waste. It is now **two of the nine documents that have two or more still-shrunk pages, all
+nine of which have now been read in full** (⚠️ a first draft said "two of the eight"; the six
+sub-step 2 named plus `Ford_1941`, `Stanford_1891` and `_1958_Executive Pay` is nine).
+`Stanford_1891`'s four all lose nothing and `_1958_Executive Pay`'s two both lose, so
+both order trivially and neither is evidence either way.
+
+⚠️ **TWO INSTRUMENT CORRECTIONS, AND THE FIRST ONE INVALIDATED THE LOCATOR'S FIRST RUN.**
+
+1. **The map's published RECIPE has to crop to the interior — both images — because `inkOutsideText`
+   does.** The guard walks x ∈ [w/16, w−w/16) and y ∈ [h/16, h−h/16) and divides outside-ink by
+   *interior* ink, so it never sees a photographed surround or a platen edge. Counted over the whole
+   page the locator's fraction reads **0.4479** on `Ford_1941` p1 against an `inkOut` of 0.0051 and
+   **0.8199** on `Regis McKenna` p4 against 0.0287 — and the largest *ratio* is neither of those but
+   **256x**, `Stanford_1891` p4's 0.0256 against 0.0001, with `Ford_1941` p4 at 143x (⚠️ a first
+   draft led with "88x", which is Ford p1's ratio and only the largest absolute *fraction*). Cropped,
+   the twenty read **0.56x to 16.0x**. ⚠️ **Two corrections to how this is stated.** (a) The crop must
+   be applied to the ink image as well as the map — the fraction is outside/ink, and cropping only the
+   numerator gives 0.0048 rather than 0.0087 on `Ford_1941` p1, an error of 1.8x in the direction that
+   hides the problem; the first version of the recipe added to `score-text-route`'s header cropped
+   only the map. (b) **Sub-step 2's own numbers were ALREADY interior** ("9.1% of its interior ink",
+   "4.48% of its interior ink"), so its 0.97x-19.4x band is *not* void and is still the reference used
+   above — it was only the shell recipe it published that omitted the crop, and that is what this
+   sub-step followed. ⚠️ And what the outer band holds is **not established here**: `Ford_1941` p1's
+   band carries 224,288 px of out-of-stencil ink and none of the twenty outer bands was inspected mark
+   by mark, while sub-step 2 explicitly *withdrew* the claim that such a band holds nothing belonging
+   to the page (`Riesman - 1954` p6's held a typographic mark). "Photographed surround and platen
+   edge" is what these pages look like, not a measurement.
+   ⚠️ **Six of the twenty read BELOW 1.0** — `_1967_Ampex` p1 0.56x, `Merriam_1913` p2 0.57x,
+   `_1958_Executive Pay` p5 0.72x and p3 0.77x, `UN-OCred` p7 0.90x, `Gitlin_2000` p1 0.98x — and
+   **the cause is not established.** A first draft attributed it to the `Disk:3` erosion eating marks
+   within 3 px of stencilled ink; that is reasoned, and sub-step 2's own r=0-to-r=3 numbers move about
+   2% on such pages, which cannot produce 0.56x. Two other differences are candidates and neither was
+   isolated: ImageMagick's whole-page OTSU against `otsuThreshold(of:)`, and the fact that the dumped
+   stencil is the Sauvola mask **∧ `region`** while the guard tests `region` alone — which should push
+   the map *higher*, not lower. An r=0 interior run over these twenty would settle it and was not done.
+   Either way the map is a locator and not a measure.
+2. **The fraction interleaves as badly as the count did — the third measured refusal of a scalar, and
+   the first on the fraction form.** Sorted by the locator's interior fraction the twenty read
+   `L n n n L n n n L L L L L n n L n n n n`: `Merriam_1913` p2 loses words at 0.0036 while
+   `Stanford_1891` p1 and p2 lose nothing at 0.0050 and 0.0041, and `Regis McKenna` p4 is second of
+   twenty at 0.0339 and loses nothing. Sub-step 2 killed the pixel *count*; this kills its
+   normalised form on the same page set that killed the bar.
+
+⚠️ One sensitivity note, drafted as a cost note and upgraded by the review of this diff: on
+`Regis McKenna` p4 (3024x3441) the connected-component call at `area-threshold=400` exceeded a
+two-minute foreground ceiling and was re-run at 800 — **so the one page carrying both the steepest
+ratio and the "no type on the map" headline was measured at half the sensitivity of the other
+nineteen.** Re-run at 400 it has **13** components, not 8; the five that 800 hid were crop-checked at
+1:1 (stencil ink 0.0000) and are a thin stroke and specks, so the verdict stands, but the count to
+quote is 13 at 400. Corpus read-only throughout; all 140 dumped files, every map and every crop
+written under `/tmp`.
+
+**What remains of question 1: 21 of the 73, in 6 documents.**
+`Krippner__The political economy of financial exuberance` **10** (p10/13/16/19/22/25/28/31/34/37, all
+at `inkOut` 0.0001 or 0.0000), `_1939_Former students to Board re Merriam_` **6** (p2/3/7/9/14/16),
+`Guilford_Psychometric Methods` **2** (p1/p5), and one page each in
+`Williams_1958_DEMOCRACY OR MERITOCRACY`, `Riesman_1973_THEMES OF WORK AND PLAY` and
+`Herbert Marks papers` (p12). ✅ **And the "same scan, same recogniser" argument is back for 7 of the
+21**: `Herbert Marks papers` p11 loses type and `_1939_Former students` p6 loses a signature, so their
+seven remaining pages are in documents now *known* to lose content — take those first. The other 14
+are in four documents that have never been read, ten of them one `bookSection` whose sampled pages all
+print `inkOut` 0.0001 or 0.0000. **15 of the 21 print `0.0000`** — `Krippner` 9 of its 10 (p10 prints
+0.0001), `_1939_Former students` 4, `Guilford` p5 and `Riesman_1973` p5 — so for most of what is left
+the override seam may be refused outright and the map is the instrument.
 
 #### What is not known, in the order worth measuring
 
-1. **Do the 73 still-shrunk pages lose content? — 32 rendered 2026-08-20 in two sub-steps, 6 of the 32
-   lose content and 6 more lose something; 41 to go.** The 32 bucket as: **5 lose type** —
-   `Broadhead - 1994` p3 and `Jones et al_2010` p5 two lines each, `Scott_TK` p3 a table,
-   `Jones` p7 an estimating equation, `Jones` p2 one word — **1 loses a handwritten signature**
-   (`Atkinson_1939` p3), **1 degrades a hand-drawn pen line** (`Riesman - 1954` p20), **5 blur a
-   footnote rule** (`Xin Qu et al_2018`), and **20 lose nothing a reader would see**. The two sections
-   above are the measurement: the eight nearest the bar (4 of 8 losing) and the other 24 in the six
-   documents sub-step 4 read (2 of 24 losing). The 41 that remain are
-   in 15 documents none of which has been looked at, so the next batch has no "same scan, same
-   recogniser" argument behind it — pick by `inkOut` descending instead, which is where the two
-   substantial losses have been. Two instruments, and prefer the second:
+1. **Do the 73 still-shrunk pages lose content? — 52 rendered 2026-08-20 in three sub-steps, 14 of the
+   52 lose content and 6 more lose something; 21 to go.** The 52 bucket as: **10 lose type** —
+   `Broadhead - 1994` p3 and `Jones et al_2010` p5 two lines each, `Scott_TK` p3 a table and a footer,
+   `Jones` p7 an estimating equation, `Jones` p2 one word, `Herbert Marks` p11 a line **and** a word,
+   `_1958_Executive Pay` p3 two prose lines and p5 one, `Merriam_1913` p2 a word of body text, and
+   `Ford_1941` p6 a page folio (eleven items over ten pages) — **4 lose a hand-made mark**
+   (`Atkinson_1939` p3's signature, `_1939_Former students` p6's signature, `Ford_1941` p1's pencilled
+   annotation and `Doermann_1967` p21's hand-inked margin number), **6 more lose something** without
+   losing content (`Riesman - 1954` p20's pen line degraded to a followable smear and five
+   `Xin Qu et al_2018` footnote rules blurred), and **32 lose nothing a reader would see**.
+   ⚠️ **This bucket was wrong in four ways in its first draft and the review of the diff caught all
+   four**: it said 9 type while listing ten, "ten items over nine pages", counted `Riesman - 1954`
+   p20's pen line as a content loss when sub-step 2 had classed it as degradation (which made the
+   enumeration 15 against a stated 14), and put `Gitlin_2000` p1's photograph frame in the rule bucket
+   while its own verdict table has it losing nothing — double-counting it against the 32. 10 + 4 = 14,
+   + 6 + 32 = 52, and with C26 sub-step 4's 7 type + 1 hand-made that is the published campaign total
+   of 17 type and 5 hand-made over 22 content losses. The three
+   sections above are the measurement: the eight nearest the bar (4 of 8 losing), the other 24 in the
+   six documents sub-step 4 read (2 of 24), and the twenty highest-`inkOut` of what was left (8 of 20).
+   ⛔ **Of the 21 that remain, 7 are in two documents now KNOWN to lose content** —
+   `_1939_Former students to Board re Merriam_` (6 pages) and `Herbert Marks papers` p12 — so the
+   "same scan, same recogniser" argument, spent after sub-step 2, is back for a third of them; take
+   those first, then the four unread documents. Two instruments, and prefer the second:
    `INKBAR=<a bar at or below the page's own inkOut> INKDUMP=<dir> /tmp/score-text-route "<pdf>"
    <page…>` writes the grey render, the stencil and **both** tone-layer pairs from the same `mrcLayers`
    call the byte columns come from — but it **cannot reach a page whose `inkOut` is 0**, which is 27 of

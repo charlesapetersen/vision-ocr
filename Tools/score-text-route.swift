@@ -117,6 +117,29 @@
 // mistakes were made and caught here; `BUGS.md` C28's 24-page section has the validation against
 // a page with a known loss and a page with none, where the map names the lost words.
 //
+// ⛔ **AND CROP TO THE INTERIOR BEFORE COUNTING ANYTHING — BOTH IMAGES, WHICH THE RECIPE ABOVE DID
+// NOT SAY.** `Flattener.inkOutsideText` walks only x ∈ [w/16, w−w/16) and y ∈ [h/16, h−h/16) and
+// divides by *interior* ink, so it never sees a photographed surround, a platen edge or a scanner
+// border. The fraction is outside/ink, so cropping only the map understates it — measured, 0.0048
+// instead of 0.0087 on `Ford_1941_Speech_` p1, 1.8x in the direction that hides the problem, and the
+// first version of this paragraph made exactly that mistake:
+//
+//   mx=$((w/16)); my=$((h/16)); c="$((w-2*mx))x$((h-2*my))+$mx+$my"
+//   magick ink.png -crop "$c" +repage ink-int.png
+//   magick out.png -crop "$c" +repage out-int.png
+//
+// Measured 2026-08-20 over C28's 20-page sub-step 3: uncropped, this map's fraction reads **0.4479**
+// on `Ford_1941_Speech_` p1 against an `inkOut` of 0.0051 and **0.8199** on
+// `1976 - Regis McKenna Papers` p4 against 0.0287 — and the worst *ratio* is neither, but **256x** on
+// `Stanford_1891` p4 (0.0256 against 0.0001). Cropped, the twenty read **0.56x to 16.0x**. Note the
+// 0.97x-19.4x band above is NOT void: sub-step 2's figures were already interior, it was only its
+// published shell recipe that omitted the crop. Six of the twenty read below 1.0 and the cause is
+// **not established** — the erosion, ImageMagick's OTSU against `otsuThreshold(of:)`, and the dumped
+// stencil being the Sauvola mask ∧ `region` while the guard tests `region` alone are three candidates
+// and none was isolated. ⛔ Either way the number is a locator and not a measure: sorted by the
+// cropped fraction those twenty pages' losing and non-losing verdicts interleave, which is the third
+// scalar C28 has measured and refused.
+//
 //   mkdir -p /tmp/h && cp Tools/score-text-route.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-text-route -target "$(uname -m)-apple-macos13.0" \
 //     $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift

@@ -42,8 +42,12 @@ the 1-bit stencil is the *intersection* of the page's ink with Vision's word box
 (`textRegionMask`, one production call site), so prose the recogniser missed is in neither the stencil
 nor the text layer and survives only in a background stored at 1/8 on a page read as all text —
 7 of the 13 pages C26 rendered lose whole lines of running prose or table data that way, and nothing
-reports it. Eight more of the 73 were rendered 2026-08-20 (`78de7a2`) and 4 of the 8 lose content, so
-the campaign stands at 21 pages rendered, 12 losing content and 10 of those prose or table data.** Two measurements say the page-wide bar cannot be the answer: 32.4% of its byte cost
+reports it. Eight more of the 73 were rendered 2026-08-20 (`78de7a2`) and 4 of the 8 lose content;
+24 more the same day (`6818a0e`) and 2 of those; and 20 more the same day and **8 of those 20** — so
+the campaign stands at **65 pages rendered, 22 losing content, 17 of them type and 5 a hand-made
+mark**, and **52 of the 73 are read with 21 left in 6 documents**. ⚠️ This line read "21 pages
+rendered, 12 losing content" while 45 had been read, because `6818a0e` did not update it; the total is
+arrived at by addition over the sub-steps, not by re-measuring.** Two measurements say the page-wide bar cannot be the answer: 32.4% of its byte cost
 lands on two pages a reader cannot tell apart, and — measured 2026-08-19 over the committed
 `INKBAR-2026-08-19.tsv` — **73 sampled pages in 22 documents are still shrunk 8x/16x at the new bar,
 and 31 of the 73 are in six of the nine documents sub-step 4 rendered**. In `Broadhead - 1994`,
@@ -88,7 +92,13 @@ flipped). (2) The instrument that works on all of them is a **`ink AND NOT dilat
 the dump's own `-source.png` and `-stencil.png`, validated against `Broadhead - 1994` p3/p10 where it
 NAMES the two lines sub-step 1 read by eye — and ⛔ its pixel COUNT discriminates nothing (the loser
 15,431 px, the non-loser 15,727 px, flat across dilation radii), which is a scalar term refused for the
-second time. 41 of the 73 remain unrendered, in 15 documents none of which has been looked at.
+second time. ⛔ **Sub-step 3 then rendered the 20 highest-`inkOut` of those 41 and 8 of the 20 lose
+content** — the sharp result being that the four pages of the 41 with the MOST ink outside the
+recognised words lose nothing, while six between `inkOut` 0.0051 and 0.0165 lose content, so a
+one-sided bar protects the wrong end of its own range first; ⚠️ and it *retracted* its own first
+claim that the bar "overpays less" here, which compared 37.6% over 14 pages against two whole-sample
+figures — like for like it is 54.2% against 57.4% and 56.6%, i.e. flat. **21 of the 73 remain
+unrendered, in 6 documents, 7 of those pages in two documents now known to lose content.**
 ⛔ **AND C28'S OWN RECIPE FOR THAT RENDER WAS A FALSE NEGATIVE, measured**: `INKBAR=0.08` on a page
 *below* the shipped bar reads `all-text` on both sides and dumps two **byte-identical** backgrounds,
 so the comparison the entry told a reader to make is a page against itself. The bar must be BELOW the
@@ -157,7 +167,7 @@ benefit, measured 2026-08-19 — sub-step (4) ran and the other 13 pages were re
 `INKDUMP=<dir>` on `Tools/score-text-route.swift` writes both tone-layer pairs from the same
 `mrcLayers` call the byte columns come from, and the stencil being byte-identical at both bars makes
 the two backgrounds the entire difference. **11 of the 13 lose something**, and ⛔ **the dominant case
-is NOT a drawing**: **7 of the 13 lose whole lines of prose or table data and an 8th loses a hand-drawn mark outright — 8 losing content outright** (and the eight near-misses rendered 2026-08-20 hold the same shape: 3 lose prose or table data, a 4th a handwritten signature — **21 pages rendered across the campaign, 12 losing content**) — `Xin Qu et al_2018`
+is NOT a drawing**: **7 of the 13 lose whole lines of prose or table data and an 8th loses a hand-drawn mark outright — 8 losing content outright** (and the three C28 sub-steps rendered 2026-08-20 hold the same shape — 8 + 24 + 20 pages, 4 + 2 + 8 losing content — so **65 pages rendered across the campaign, 22 losing content, 17 of them type**) — `Xin Qu et al_2018`
 p20 loses thirteen values out of a Pearson correlation matrix, `_1973_Committee Against Racism_` p4
 loses seven lines of prose — words Vision did not box, cut from the stencil by `textRegionMask` and
 then destroyed at 1/8. **That makes C26 an invariant-1 defect rather than the fidelity complaint it

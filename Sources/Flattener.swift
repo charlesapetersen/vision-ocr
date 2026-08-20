@@ -1418,9 +1418,14 @@ enum Flattener {
     /// inside any recognised word is not *recognised* text.
     ///
     /// ⛔ **That sentence read "is, by construction, not text" until 2026-08-19,
-    /// and it is FALSE — see `C28`, which was opened on it.** Measured over 13
-    /// corpus pages (C26 sub-step 4), the ink outside the recognised words was
-    /// running prose or table data on **7 of them**: Vision misses lines on faint,
+    /// and it is FALSE — see `C28`, which was opened on it.** Measured over **65
+    /// corpus pages** read at 1:1 (C26 sub-step 4, then C28's three sub-steps of
+    /// 8 + 24 + 20, all 2026-08-20), the ink outside the recognised words was
+    /// content on **22 of them** — **17 of those typeset**: whole lines of running
+    /// prose, values out of a correlation matrix, a paper's displayed estimating
+    /// equation, a page folio; the other 5 hand-made — two signatures, a pencilled
+    /// annotation, a hand-inked margin number and a drawn margin bracket. Vision
+    /// misses lines on faint,
     /// skewed and tightly-set scans, and nothing in this file can tell "the
     /// recogniser missed this" from "this is not text". A later paragraph in this
     /// same comment already said words Vision did not box are destroyed at 1/8, so
@@ -2448,8 +2453,10 @@ enum Flattener {
     /// pictures: `C28`, opened 2026-08-19.** Words Vision *failed* to box are
     /// outside `region` exactly as a photograph is, so they stay wholly in the
     /// background too — and the background is downsampled, by 8x on a page
-    /// `pageIsAllText()` accepts. Measured over 13 corpus pages (C26 sub-step 4),
-    /// **7 were losing whole lines of prose or table data that way**, and those
+    /// `pageIsAllText()` accepts. Measured over **65 corpus pages** read at 1:1
+    /// (C26 sub-step 4, then C28's three sub-steps of 8 + 24 + 20, all
+    /// 2026-08-20), **22 were losing content that way and 17 of those typeset** —
+    /// running prose, table values, a displayed equation, a page folio — and those
     /// marks are in no text layer either because these same boxes are what
     /// `SearchableWriter` draws from. The confinement is still right for the reason
     /// the first paragraph gives; what is missing is any term that distinguishes

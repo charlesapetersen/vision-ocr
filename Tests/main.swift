@@ -1555,9 +1555,10 @@ do {
         // because it runs before recognition; layering can, because it runs after.
         //
         // ⛔ This read "is not text" until 2026-08-19 and that is FALSE — `C28`.
-        // Measured over 13 corpus pages, the ink outside the recognised words was
-        // running prose or table data on 7 of them. These checks and R50's signal
-        // are unaffected; the stated REASON was wider than the truth.
+        // Measured over 65 corpus pages read at 1:1 (C26 sub-step 4 plus C28's
+        // three sub-steps of 8 + 24 + 20), the ink outside the recognised words
+        // was content on 22 of them, 17 of those typeset. These checks and R50's
+        // signal are unaffected; the stated REASON was wider than the truth.
         //
         // Asserted on buffers first, where the answer is known by construction,
         // because the page-level checks below can only show that *something*
