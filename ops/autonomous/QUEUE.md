@@ -143,7 +143,8 @@ than reasoned — the first attempt broke the coherence check twice:
       `Flattener.textPageInkOutsideThreshold` from 0.08 to 0.045, behind a corpus gate.** ⚠️ **The
       move landed the same day WITHOUT a fresh corpus gate, deliberately**, and the substitution — the
       already-committed `INKBAR-2026-08-19.tsv`, which compares exactly these two states page by page
-      over 233 documents — is flagged in `NEEDS OWNER` and on the `release` item rather than assumed.
+      over 233 documents — ✅ **was ACCEPTED BY THE OWNER as C26's gate at a 2026-08-19 check-in**, so no
+      fresh `score-gate` run is owed and this is no longer an open question. Do not re-raise it.
       The
       measurement campaign is COMPLETE (sub-steps 1, 2, 3, 3b and 4 all ✅ below) and ⛔ **must not be
       re-derived**: expect the **16 pages** named in `INKBAR-2026-08-19.tsv` to move and nothing else.
@@ -660,8 +661,9 @@ picked, and the resume prompt surfaces them to the run log instead of acting on 
       bar move has landed and he has read its gate** — ⚠️ **the bar move LANDED 2026-08-19 and no fresh
       corpus gate was run with it.** What is offered in its place is `INKBAR-2026-08-19.tsv`, which
       already holds the page-by-page comparison of exactly these two states over 233 documents, plus a
-      grep establishing the constant has one read site and therefore cannot move a route. Whether that
-      substitution counts as "its gate" is the owner's call and is in `NEEDS OWNER`; a fresh
+      grep establishing the constant has one read site and therefore cannot move a route. ✅ **The owner
+      ACCEPTED that substitution as "its gate" at the 2026-08-19 check-in, so this precondition is now
+      MET** and the item waits only on the release work itself, which stays owner-only; a fresh
       `score-gate` run is ~10 GB and hours, and R50 — the entry that introduced this constant — was
       accepted on one — C26 is invariant-1 content destruction on the
       shipped default and `v1.13.0` is the build carrying it; C27 is fidelity and rides in 1.14.0. That
