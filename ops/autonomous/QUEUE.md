@@ -157,7 +157,8 @@ than reasoned — the first attempt broke the coherence check twice:
       byte cost lands on two pages a reader cannot tell apart** (`RIESMAN_1942` p10, `Riesman - 1954`
       p18), which says a threshold is a blunt instrument and not the right final answer. So the
       stencil question this campaign surfaced — *why is recognised-page prose dropped from the stencil
-      at all* — is to be OPENED as its own register entry and its own item, in its own commit, and not
+      at all* — **WAS opened as its own register entry, `C28`, on 2026-08-19** (it is an item of its own
+      below); this line read "is to be OPENED" until then, and C26 no longer stays open for it. Not
       worked; it is why the entry stays OPEN and this box stays `[ ]` after the constant lands.
       **Held 2026-08-19 after the sub-step (4) session, unheld the same day by the decision above.**
       Content loss, found by the owner on `1954 - Why.pdf` hours after `1.13.0`
@@ -286,10 +287,19 @@ than reasoned — the first attempt broke the coherence check twice:
       changed meaning with it**: `INKBAR=0.045` now exits 2 ("equals the shipped bar"), so it is
       `INKBAR=0.08` that prices the old behaviour, and `sweep-ink-bar.py --bar 0.045` would abort on
       document 1 — the tool headers say so now.
-      ⛔ **WHAT REMAINS ON C26 IS NOT THE CONSTANT: it is the STENCIL**, which is FOCUS item 3 and
-      belongs in its own entry and its own commit. This box stays `[ ]` for that reason — the bar
-      move was never going to close the entry. The measurement campaign is complete: population,
-      price and benefit are all in the entry.
+      ✅ **THE STENCIL QUESTION IS NOW ITS OWN ENTRY, `C28`, opened 2026-08-19** (FOCUS item 3, done).
+      Do not work it from here and do not fold it back in — it is its own item below.
+      ⛔ **WHAT REMAINS ON THIS BOX IS ONE BOUNDED THING: the rendered proof on the founding pages.**
+      `1954 - Why` p4/p6/p7 are refused the shrink at 0.045 **by measurement** (`inkOut` 0.0540 /
+      0.0493 / 0.0660, `verdict` now `picture`, 65,477 -> 195,785 B, stencil byte-identical) and
+      **nobody has rendered them to watch the drawings come back.** One invocation of an
+      already-built `score-text-route` does it — `INKBAR=0.08 INKDUMP=<dir> /tmp/score-text-route
+      "…/1954 - Why.pdf" 4 6 7`, where `layered` is now what ships and `layeredAtBar` the old state —
+      then read the two backgrounds at **1:1**, not as an auto-levelled whole-page difference, which
+      misled twice in sub-step 4. When those three pages read as drawings again, close C26 and tick
+      this box. Read `BUGS.md` C26 §"What is left on C26 itself" for the whole of it. The measurement
+      campaign is complete: population, price and benefit are all in the entry, and ⛔ none of it is
+      to be re-derived.
       ✅ **THE CONSTANT WAS THE OWNER'S CALL AND HE MADE IT: 0.08 -> 0.045**, at a 2026-08-19 check-in,
       on R55's precedent — the campaign runs, the owner closes it on the arithmetic. R49/R50 state
       **no** growth-tolerance bar (read 2026-08-19), so no session could have applied a standard; what
@@ -307,7 +317,37 @@ than reasoned — the first attempt broke the coherence check twice:
         2026-08-19 decision, landed with the suite's checks and a mutant. Ticked because the sub-step
         finished, NOT because the item above did: that one stays open for the stencil question, which
         is also why this box carries no register cite — a `[x]` citing an open entry is TICKED-OPEN
-        drift, and this box's span must stay clear of the cite line above it.
+        drift, and this box's span must stay clear of the cite line above it. ⚠️ **That reason has
+        since moved out**: the stencil question is `C28` as of 2026-08-19, and what keeps the item
+        above open now is the founding-page render.
+      - [x] **C26-stencil-open** — the stencil question opened as its own register entry (`C28`) on
+        2026-08-19, the third of the owner's three commits and the last thing FOCUS item 3 asked for.
+        Docs plus two corrected doc comments; no constant moved. Same no-cite rule as the box above.
+- [ ] **C28** — the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+      prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
+      background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
+      pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
+      reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
+      move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
+      sub-step 4 section ("the benefit"), and do NOT re-derive either.
+      **The first sub-step is named in the entry and needs no new code**: 73 sampled pages in 22
+      documents are still shrunk at the new bar and **31 of them are in six of the nine documents
+      sub-step 4 rendered**. Render the 8 near-miss pages first (printed `inkOut` 0.0353 to 0.0450),
+      starting with `Broadhead - 1994` p3 — the same scan whose p8
+      loses a line at 0.0465 and IS rescued while its p10 sits 0.0024 lower and is not. Instrument:
+      `INKBAR=0.08 INKDUMP=<dir> /tmp/score-text-route`, then 1:1 crops — **not** an auto-levelled
+      whole-page difference, which misled twice.
+      ⚠️ **Do not widen `textRegionMask` without pricing it — and do not quote the wrong price.** T15's
+      1.33x over 74 corpus *picture* pages is the STENCIL-bytes total; the page total on the 26 cleanly-comparable
+      pages is **1.07x**, which is what a widening is judged on, and T15 records the whole-sample gap
+      as 84% R50's shrink. Widening still owes an R49/R50 byte
+      measurement; the entry lists a cheaper variant (exempt text-shaped regions from the background
+      shrink rather than admitting them to the stencil). And this is the third place R56's lesson
+      applies — the term that works is likely to be about *where and what shape* a mark is, not how
+      dark it is.
+      ⚠️ **The release gate cannot see this class either** — same `score-gate.swift` limitation C26
+      records. Do not accept a green gate as evidence.
+      (origin: BUGS.md C28)
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the

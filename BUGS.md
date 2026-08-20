@@ -6,16 +6,26 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Two open: `C26` and `C27`, both found on one document hours after `1.13.0` shipped.** `C27` is
+**Three open: `C26`, `C27` and `C28`. The first two were found on one document hours after `1.13.0`
+shipped; `C28` was opened out of C26's own campaign on 2026-08-19.** `C27` is
 fidelity rather than content loss — spot colour discarded because the bar is on the page's mean
 saturation — and it is a separate mechanism from C26 with a separate constant; neither fix
 addresses the other. `C26` destroys content on the shipped default setting — **⛔ or did until
 2026-08-19, when its constant MOVED: `textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's
 decision on a complete campaign, so the 16 corpus pages the sweep named keep their tone layers at
-the caller's factor. The entry stays `OPEN` anyway, and deliberately** — 32.4% of that fix's byte
-cost lands on two pages a reader cannot tell apart, which says a threshold is a blunt instrument
-rather than the answer, so the question the campaign surfaced (*why is recognised-page prose dropped
-from the stencil at all*) is to be opened as its own entry. Read `#### The constant moved` at the
+the caller's factor.** ⚠️ **What that fix left, and what `C28` is:** 32.4% of its byte
+cost lands on two pages a reader cannot tell apart — so a page-wide threshold is a blunt instrument
+rather than the answer — and, measured 2026-08-19 over the committed sweep, **73 sampled pages in 22
+documents are still shrunk 8x/16x at the new bar**, seven of the eight nearest of them in the three
+documents already proven to be losing lines of prose on other pages. `Broadhead - 1994` p8 loses a
+line at `inkOut` 0.0465 and is rescued; its p10 sits 0.0024 lower and is not. So the question C26's
+campaign surfaced (*why is recognised-page prose dropped from the stencil at all*) is now its own
+entry, **`C28`** — the stencil is the intersection of the page's ink with Vision's word boxes, and
+that premise is written in `inkOutsideText`'s doc comment as a fact ("ink that is not inside any
+recognised word is, by construction, not text") which sub-step 4 measured false on 7 of 13 pages.
+**What keeps `C26` itself open is now only the rendered proof on its own founding pages** — p4/p6/p7
+of `1954 - Why` are refused the shrink at 0.045 by measurement, and no one has yet rendered them to
+watch the drawings come back. Read `#### The constant moved` at the
 foot of C26 before touching any of it. Opened 2026-08-17,
 hours after `1.13.0` was cut against an empty register — a small line drawing on a page the code
 correctly reads as all text is erased on the picture path, because the guard that would protect it
@@ -97,7 +107,7 @@ p18 that is **32.4% of the band's byte cost on pages a reader cannot tell apart.
 was the owner's, R55's precedent, and he took it at a 2026-08-19 check-in: the bar is 0.045, on the
 arithmetic that ~4.0 MB of corpus output is a cheap price for not destroying words.** It shipped the
 same day; the entry's `#### The constant moved` section is the diff, the suite's flipped checks and
-what was watched failing. This line said the decision was outstanding until then. Both entries carry
+what was watched failing. This line said the decision was outstanding until then. All three entries carry
 the numbers and the retractions. It is **not** R56, whose fix is
 intact and whose mechanism is the other route; read C26 before touching either. **The release gate
 cannot see this class and says so in its own source**, so a green gate is not evidence about it.
@@ -2197,7 +2207,7 @@ now. **The 8.2 KB figure is left standing but unverified** — re-deriving it ne
 `Blacks in the City`, which is a separate job; TODO item 1 is refused on R56's grounds
 regardless, so nothing waits on it.
 
-### C26 · A small line drawing is erased on the PICTURE path, because the page it sits on is correctly read as all text — OPEN (the bar MOVED 2026-08-19; the stencil question is what keeps it open)
+### C26 · A small line drawing is erased on the PICTURE path, because the page it sits on is correctly read as all text — OPEN (the bar MOVED 2026-08-19, the stencil question is now `C28`, and what is left here is the rendered proof on the founding pages)
 *(found 2026-08-17 by the owner, on `1954 - Why.pdf` processed by 1.13.0 at Photo detail
 **Balanced**, Rebuild **Automatic** — the release cut the same day)*
 
@@ -3566,14 +3576,50 @@ source — the `hits != 1` guard is what turns a rotted entry into `NOT-APPLIED`
 the state that was already run by hand above, with the objecting checks named. The catalogue entry
 is what keeps that experiment repeatable.
 
-⛔ **What this does NOT fix, and why the entry stays `OPEN`.** Two of the sixteen pages the bar move
+⛔ **What this does NOT fix, and where it went.** Two of the sixteen pages the bar move
 costs bytes for lose nothing a reader can see — `RIESMAN_1942` p10 at +702,280 B and 6.47x is the
 dearest of all sixteen — which is **32.4% of the band's byte cost spent on pages nobody could tell
 apart**. A threshold cannot separate those from `Xin Qu et al_2018` p20, and the reason it cannot is
 the thing sub-step 4 actually found: the marks being destroyed are mostly **prose Vision failed to
-box**, cut out of the stencil by `textRegionMask` because they are not text, and then destroyed at
+box**, cut out of the stencil by `textRegionMask` because it keeps only what was *recognised* (`C28`), and then destroyed at
 1/8 in the background. That is a stencil question, it is where the remaining 32.4% goes, and it is
-to be opened as its own entry rather than folded in here.
+**`C28` as of 2026-08-19** — opened rather than folded in here, on the owner's decision at that day's
+check-in. C28 also carries what this section could not have known: measured over the committed sweep,
+**73 sampled pages in 22 documents are still shrunk at the new bar**, and `Broadhead - 1994` p8 —
+which sub-step 4 read losing a line of body text — is rescued at `inkOut` 0.0465 while its own p10
+sits 0.0024 lower and is not.
+
+#### What is left on C26 itself: the rendered proof on the founding pages
+
+⛔ **This is the whole of it, and it is a bounded item.** The three pages C26 was opened on —
+`1954 - Why` p4/p6/p7 — are refused the shrink at 0.045 **by measurement**: `inkOut` 0.0540 / 0.0493 /
+0.0660, `verdict` now `picture` where it read `all-text`, and the three go 65,477 -> 195,785 B, all of
+it tone layers, with the stencil byte-identical. What has **not** happened is anyone rendering those
+three pages from the shipped build and watching the drawings come back. Every number above says they
+must; the register's own rule is that a founding failure mode is closed by looking at it, and this
+entry's history is four rounds of arithmetic about the wrong layer.
+
+One invocation does it, and it needs no new code — the constant now being 0.045 means `INKBAR=0.08`
+is the *old* state, so a single run writes both:
+
+```sh
+# built first, as every Swift tool here is — sub-step 4's own command, with the bar swapped
+INKBAR=0.08 INKDUMP=/tmp/c26-founding /tmp/score-text-route "testdocs/book/1954 - Why.pdf" 4 6 7
+```
+
+`layered` is then what ships and `layeredAtBar` what shipped before, and `INKDUMP` writes both
+tone-layer pairs from the same `mrcLayers` call. ⚠️ Read sub-step 4's method paragraph first: an
+auto-levelled whole-page difference **misled twice** there, and only 1:1 crops settled it. When those
+three pages read as drawings again, C26 closes.
+
+⚠️ **One thread this narrowing does NOT close, recorded here so it has a home.** The *second* term of
+`pageIsAllText()` is still measured blind: `paleDrawing(pageMarks(…)).extent` reads **0.00000** on the
+two pages that lose the most, so no value of `paleDrawingThreshold` protects them and — as this entry
+established on 2026-08-18 — a fix there would have to be in what `pageMarks`/`paleDrawing` *find*. The
+bar move makes that moot **for these three pages**, because the *first* term now refuses them; it does
+not repair the second term, which still ships. Nothing is claimed about what that costs — it is
+unmeasured — but it must not be closed by silence when C26 closes on the render. Found by the
+adversarial review of the diff that opened `C28`.
 
 ### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct
@@ -4124,6 +4170,248 @@ so the route cost of moving the number is small and the argument against moving 
 The case against the number stands on the ordering: no value of it puts the ten above the pages that
 already clear it, because two of the ten carry no colour and one page that keeps its colour reads
 0.00236.
+
+### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — OPEN
+*(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move
+the bar **and** open this as its own entry rather than fold it into C26. Nothing here is worked yet —
+this is the mechanism, the evidence C26 already paid for, and the first measurement.)*
+
+**⛔ READ `C26` FIRST**, two sections of it in particular: `#### Sub-step 4, the benefit` is the
+evidence for everything below, and `#### The constant moved` is what shipped on 2026-08-19. **This is
+not a duplicate of C26.** C26 is a page-wide **threshold** on this mechanism
+(`textPageInkOutsideThreshold`, 0.08 -> 0.045) and it was the right call on the arithmetic it had.
+This entry is the mechanism the threshold stands in for, and the reason a threshold cannot be the
+final answer: measured, it **overpays on pages that lose nothing and still leaves pages that do**.
+
+**The one-sentence statement.** On the layered (MRC) route the 1-bit stencil is the *intersection* of
+an adaptive binarisation of the whole page with the geometry of the words Vision recognised — so ink
+the recogniser missed is in neither the stencil nor the text layer, and survives only in the
+background, which on a page read as all text is stored at **1/8** of the page's resolution. C26's
+sub-step 4 read thirteen such pages at 1:1 and **8 were losing content outright**: thirteen values out
+of a Pearson correlation matrix on `Xin Qu et al_2018` p20, seven lines of prose on
+`_1973_Committee Against Racism_` p4, three lines on `Broadhead - 1994` p6. Content present in the
+source, absent from the text layer, illegible in the image, and **nothing reports it** — invariant 1.
+
+#### The mechanism, read off the shipped code (read, not executed) — 2026-08-19
+
+`Flattener.mrcLayers` builds the stencil in three lines, `Sources/Flattener.swift:2634-2638`:
+
+```swift
+var mask = sauvolaMask(grey, width: w, height: h, window: …)  // every ink pixel on the page
+…
+let region = textRegionMask(boxes, width: w, height: h)       // the recognised word boxes, padded
+for i in 0..<(w * h) where !region[i] { mask[i] = false }     // the stencil is the INTERSECTION
+```
+
+Four facts about that, each checked in the source rather than assumed:
+
+1. **`sauvolaMask` sees everything and `region` throws most of it away.** The binarisation is adaptive
+   and page-wide; the confinement is `textRegionMask`, which fills only the recognised boxes plus a pad
+   of `mrcBoxPadding` = **0.25** of each box's *height* — `padX = padY * h / w` in normalised
+   coordinates, which is the same pad in **pixels** on both axes rather than a wider one horizontally.
+   Nothing else contributes to the stencil.
+2. **`boxes` is exactly the text layer's geometry.** `Sources/Model.swift:2144` passes
+   `byPage[index + 1]?.map({ $0.boundingBox })` — the same recognition observations
+   `SearchableWriter` draws its runs from. So "outside the stencil" and "not searchable" are the same
+   set by construction, which is what makes the image the *only* remaining copy of those marks.
+3. **What is left outside is stored at the background factor.** `mrcLayers` takes
+   `backgroundDownsample` from `settings.photoDetail.downsample` — **1 / 2 / 3** for Maximum /
+   Balanced / Smallest — and then, on a page `pageIsAllText()` accepts, raises it to
+   `max(caller, textPageBackgroundDownsample = 8)` with the foreground at `max(caller, 16)`. Maximum
+   short-circuits the whole rule (`keepEveryPixel`), so the 8x case is Balanced and Smallest, i.e. the
+   shipped default and below.
+4. **The 1-bit route does not have this defect.** `bilevelImage` thresholds the whole page with no box
+   confinement, and `Model.swift`'s re-layering loop skips bilevel pages outright ("A bilevel page is
+   already cheaper than MRC could be"). Unrecognised ink survives there at 1-bit fidelity — subject to
+   R56's own thresholding harm, which is a different entry. **This is a layered-route defect only.**
+
+`textRegionMask` has exactly **one** production call site and `inkOutsideText` exactly one (by grep
+over `Sources/`), so the whole of this behaviour is those two functions and the three lines above.
+
+**The sibling sweep (CONTRIBUTING 4b) found no second site making the same inference.** Grepped over
+`Sources/`: nothing else reasons from "not inside a word box" to "not text". `Flattener.swift:52` is
+ink *coverage*, a different signal, and `Model.swift:2145`'s `!boxes.isEmpty` guard is the one place
+the shape is benign — a page where Vision recognised **nothing** is skipped by the re-layering loop
+entirely and keeps its full-resolution JPEG. ⚠️ Note what that implies about severity: the defect is
+worst where recognition mostly *works*, because a handful of missed lines on an otherwise clean page
+is exactly what produces a low `inkOutsideText` and therefore the 8x shrink. Total failure is safe;
+near-success is not.
+
+**The same sweep over the documents found the premise stated in three more places, two corrected here
+and one deliberately left.** Corrected in this commit: `R50`'s entry ("ink that is not inside any
+recognised word is not text") and the matching sentence in `HANDOFF.md` §R50, both of which now carry
+a ⛔ pointer here — R50 stays `FIXED`, because what is wrong is its justification and not its fix.
+**Left alone: `CHANGELOG.md`'s `1.12.0` note**, which says the app "can now tell, because layering
+happens *after* recognition and ink that falls outside every recognised word is not text". That is a
+released note and a record of what was claimed at the time; the `## Unreleased` section carries the
+correction instead, where a reader looking at the current state will find it. Stated rather than
+silently skipped, per CONTRIBUTING 4b.
+
+#### The premise this entry refutes WAS written in the code, as a fact
+
+`inkOutsideText`'s own doc comment (`Sources/Flattener.swift:1411`), as it read up to and including
+`783b1a5` — the commit that moved the constant:
+
+> This runs *after* recognition, where the word boxes exist, so it can ask a structural question
+> instead of a statistical one: **ink that is not inside any recognised word is, by construction, not
+> text.**
+
+That sentence is the justification for both the signal and the confinement, and C26's sub-step 4
+measured it false on **7 of 13 pages**: the ink outside the recognised words was running prose or
+table data on `Xin Qu et al_2018`, `_1973_Committee Against Racism_`, `Broadhead - 1994` (three
+pages), `Atkinson_1939` and `Glazer_2002`. It is false for an ordinary reason — Vision misses lines on
+faint, skewed and tightly-set scans — and the code has no term that can tell "the recogniser missed
+this" from "this is not text". The comment already carried a ⛔ correction later in the same block
+saying words Vision did not box are destroyed at 1/8; the two paragraphs contradicted each other, and
+the premise is corrected in the same commit that opens this entry. **No behaviour changed with it** —
+the comment is the only thing that moved.
+
+#### What C26's fix left behind — MEASURED 2026-08-19 over `INKBAR-2026-08-19.tsv`
+
+The committed sweep holds both verdicts per page, so the residue is arithmetic over a file rather than
+a new run. 2,129 sampled page rows, all `status=ok`; **182 reach the layering decision**, 181 of them
+with a comparable at-bar pair. ⚠️ The odd one is `Levy and Temin - 2007` p6, and **not for the reason
+first written here** — 92 other pages are picture at both bars and still print byte counts. It prints
+`n/a` because it was never layered *at all*: `score-text-route` prints `n/a` when `layeredAtBar <= 0`
+and the stencil encoded to nothing, its `inkOut` reads `1.0000`, and its `layered` 103,764 is the
+fallback JPEG rather than a layer pair. That is why the entry's cousin figures use 181, and
+2,965,653 / 36,201,928 = **8.192%** reproduces C26's published +8.19% over exactly those 181:
+
+| | pages read `all-text` (so shrunk 8x/16x) |
+|---|---|
+| at the old bar, 0.08 | **89** |
+| at the shipped bar, 0.045 | **73** |
+
+So C26's fix moved 16 pages and **73 sampled pages in 22 documents are still shrunk**, carrying
+3,201,507 layered bytes. Every one of them still stores every unrecognised mark on it at 1/8. Whether
+any of the 73 is losing content is **not known** — none has been rendered.
+
+⛔ **And 31 of the 73 are in documents sub-step 4 already rendered.** The 13 rendered pages came from
+9 documents; 6 of those 9 have *other* pages still shrunk at the new bar, and they
+hold 31 of the 73 between them — five of the six lose content outright somewhere (`Jones et al_2010`
+is the exception; its rendered page loses graphic rules and table cells) — `Xin Qu et al_2018` **8**, `Broadhead - 1994` **7**,
+`Riesman - 1954` **6**, `Jones et al_2010` **5**, `_1973_Committee Against Racism_` **3**,
+`Atkinson_1939` **2**. The remaining 42 are spread over 16 other documents, the largest single share
+being 10 pages of `Krippner__The political economy of financial exuberance`. So the population most
+likely to be losing content is not a guess: it is the same scans, same recogniser, and 31 pages of it,
+none of them looked at.
+
+**And the eight nearest are not a random eight.** The 73, banded by the `inkOut` the sweep *prints*:
+**7 in [0.030, 0.045), 1 printing exactly 0.0450**, 4 in [0.020, 0.030), 7 in [0.010, 0.020), 54 below
+0.010 — 73. ⚠️ **The endpoint is stated that way on purpose.** `pageIsAllText()` compares strict `<`
+against 0.045, so that row's *true* value is in [0.04495, 0.045) and it belongs in the first band; the
+column prints four places. Written as "8 in [0.030, 0.045)" the band contradicts a number printed
+fifteen lines below it, which is how a reader loses trust in the whole table. The eight, printed
+values:
+
+| `inkOut` | page | layered B | document |
+|---|---|---|---|
+| 0.0450 | p3 | 56,226 | `Broadhead - 1994` |
+| 0.0441 | p10 | 59,041 | `Broadhead - 1994` |
+| 0.0412 | p3 | 33,911 | `Scott_TK_The Scientific Selection of Salesmen` |
+| 0.0410 | p12 | 63,955 | `Broadhead - 1994` |
+| 0.0405 | p5 | 59,251 | `Broadhead - 1994` |
+| 0.0388 | p3 | 63,806 | `Atkinson_1939` |
+| 0.0370 | p7 | 58,442 | `Broadhead - 1994` |
+| 0.0353 | p5 | 36,047 | `Jones et al_2010` |
+
+**Seven of the eight are in three documents sub-step 4 already rendered** — `Broadhead - 1994` (5 of
+the 8; its p6/p8/p9 lose 3/1/3 lines of body text), `Atkinson_1939` (1; its p2 loses two lines of 1939
+typescript) and `Jones et al_2010` (1; its p12 loses four table rules, the `(1)` column head and four
+en-dash cells). ⚠️ **Two of those three, not all three, are "losing content outright"** — sub-step 4
+bucketed `Jones` p12 under "graphic rules and word fragments only", and saying otherwise overstates the
+case; the numbers audit of this diff caught it. Same scan, same recogniser, same miss rate, on the
+other side of a bar.
+
+⛔ **And the adjacency is tighter than "same document" — it is 0.0024 wide.** All twelve *sampled*
+pages of `Broadhead - 1994`, every one of them layered. ⚠️ It is a **13-page** file and `p1` was never
+sampled (`Flattener.sampleIndices(count: 13, wanted: 12)` gives p2…p13), so its route is unknown; the
+first draft called this a 12-page scan and the numbers audit caught it:
+
+| `inkOut` | page | at 0.045 | what sub-step 4 read on it |
+|---|---|---|---|
+| 0.0767 | p6 | rescued | 3 lines of body text, illegible as shipped |
+| 0.0590 | p9 | rescued | 3 lines of body text, illegible as shipped |
+| **0.0465** | **p8** | **rescued** | **1 line of body text, illegible as shipped** |
+| **0.0450** | **p3** | **still shrunk** | not rendered |
+| **0.0441** | **p10** | **still shrunk** | not rendered |
+| 0.0410 | p12 | still shrunk | not rendered |
+| 0.0405 | p5 | still shrunk | not rendered |
+| 0.0370 | p7 | still shrunk | not rendered |
+| 0.0193 / 0.0140 | p4 / p2 | still shrunk | not rendered |
+| 0.1210 / 0.1034 | p13 / p11 | picture at both bars | not at risk |
+
+`p8` loses a line of body text at 0.0465 and is rescued. `p10` sits **0.0024 lower — 5% relative** —
+and is not. Nothing in the *decision* separates them but which side of 0.045 a page-area fraction
+landed on, and that fraction has no relationship to whether a line of type went missing: it measures
+how much of the sheet the unrecognised ink covers, not whether any of it is words. (What is on the two
+pages of course differs — that is the point. The decision cannot see it.) The same pattern holds in the other two documents: `Atkinson_1939` p2 (0.0580, two lines
+lost) is rescued and its p3 (0.0388) is not; `Jones et al_2010` p12 (0.0461, table cells lost) is
+rescued and its p5 (0.0353) is not.
+⚠️ The `p3` row is the seventeenth row C26 names: it *prints* `0.0450` and its true value is under the
+bar, so it does not move — the instrument agreeing with the entry, not a new page.
+
+#### And the same bar overpays, which is the other half
+
+From C26 sub-step 4, unchanged here and cited rather than re-derived: `RIESMAN_1942` p10 is rank 1 of
+the 16 by cost (**+702,280 B, 6.47x**) and the only ink outside its stencil is a pale scanner-edge
+strip carrying show-through, barely legible in the source. With `Riesman - 1954` p18 (+258,183 B,
+show-through only) that is **32.4% of the band's +2,965,653 B spent on two pages a reader cannot tell
+apart.** A page-wide ink fraction cannot separate those from `Xin Qu` p20 because both are "ink
+outside the words"; the difference is *what the marks are*, which is the question this entry is about.
+
+#### What is not known, in the order worth measuring
+
+1. **Do the 73 still-shrunk pages lose content?** The 31 in the six documents sub-step 4 already read
+   are where to start, and inside those, the eight near-misses above — `Broadhead - 1994` p3 first,
+   same document as a page already proven to lose lines. The instrument exists and needs no
+   new code — `INKBAR=0.08 INKDUMP=<dir> /tmp/score-text-route "<pdf>" <page…>` (built first, as every
+   Swift tool here is) writes the grey render, the stencil and **both** tone-layer pairs from the same
+   `mrcLayers` call the byte columns come from. ⚠️ Read C26 sub-step 4's method paragraph before believing any of it: an auto-levelled
+   whole-page difference **misled twice**, and the readings that stood were 1:1 crops plus an
+   ink-outside-the-stencil map.
+2. **What the same loss looks like at 1/2 and 1/3**, i.e. on every layered page that is *not* read as
+   all text — **109 of the 182 sampled** at the shipped bar, up from 93 before it. The confinement is identical there;
+   only the factor differs. Unmeasured, and the likely finding is "degraded but legible", which would
+   bound this entry to the 8x case — worth establishing rather than assuming, because it is the
+   difference between a defect on 73 pages and one on 182.
+3. **Can a shape term admit missed text into the stencil without admitting pictures?** This is R56's
+   lesson in a third place — the term that closed R56 was not "how pale is this mark" but "where is
+   it". Candidates, none measured: stroke width and component size against the *recognised* text's own
+   (a page's own type is the calibration, so nothing needs a constant chosen in advance); connected
+   components whose bounding boxes tile a baseline. What must not happen is the whole page entering the
+   stencil, which is what `textRegionMask` exists to prevent.
+4. **The price of widening, which is already partly known — and it is smaller than the headline
+   figure.** T15 measured the confined **stencil** at 1.33x smaller in total over 74 corpus picture
+   pages and never larger on a single page. But the *page* total is the number a fix would be judged
+   on, and there it is **1.07x**, over the 26 pages where blind and shipped layering differ in exactly
+   one way; T15 records that the bigger whole-sample gap is **84% R50's shrink** rather than
+   confinement (`FEATURES.md` has both columns). ⚠️ So "widening is expensive" is a weaker claim than
+   the 1.33x makes it sound, and it must not be quoted as the page-level price. Any widening still owes
+   a byte measurement against R49/R50's gate. A cheaper
+   variant that keeps the stencil alone: leave the stencil confined and exempt *regions* of
+   text-shaped ink from the background shrink, which is C26's bar made local instead of page-wide.
+5. **Nothing reports the loss, and that is its own half of invariant 1.** `inkOutsideText` is read
+   exactly once, in the **layering** decision inside `mrcLayers` — not the route, which `isPicture`
+   settles before recognition and which never reads it — and never in reporting, so a page can lose
+   seven lines of prose and the run report says nothing. Whether the answer is a warning or a fix is a design question, but the
+   invariant's words are "must report it".
+
+#### What this entry is NOT
+
+- **Not C26.** C26 is the page-wide bar and it is shipped. This is the mechanism, and the two named
+  failures of the bar (73 pages still shrunk, 32.4% of the cost on two pages that lose nothing) are
+  what a fix here would retire. If this is fixed, `textPageInkOutsideThreshold` may well be able to go
+  *back up*, which is the outcome worth aiming at.
+- **Not R56 or R57.** Those are the 1-bit route — a pale mark thresholded away — and both are `FIXED`.
+  The route here is the opposite one, and per fact 4 above the 1-bit route does not carry this defect.
+- **Not visible to the release gate.** `Tools/score-gate.swift` cannot see this class by its own
+  source, and it passed the founding document. The instruments are `score-text-route`'s `INKDUMP`,
+  `score-threshold-loss`, and rendered before-and-after pages.
+- **Not a fidelity complaint.** It was opened as one inside C26 and sub-step 4 reclassified it: **8 of
+  13 measured pages lose content outright, 7 of those 8 losing words or table data** and the eighth a
+  hand-drawn mark. ⚠️ Those are two different counts and this bullet conflated them in its first
+  draft — caught by the numbers audit of this diff.
 
 ## Robustness and correctness of reporting
 
@@ -6589,6 +6877,16 @@ measurement that a histogram cannot separate text from a tinted plate. Layering 
 *after* recognition, where Vision's word boxes exist, so it can ask a structural
 question instead of a statistical one: **ink that is not inside any recognised word
 is not text.** It costs nothing; the boxes and the render are already in hand.
+
+⛔ **That last sentence is FALSE as stated, and `C28` was opened on it (2026-08-19).**
+Measured over 13 corpus pages in C26's sub-step 4, the ink outside the recognised words
+was running prose or table data on **7 of them** — Vision misses lines on faint, skewed
+and tightly-set scans. The signal R50 built on this premise is still the best one
+available at that point in the pipeline and R50 is still `FIXED`; what is wrong is the
+justification, and the consequence is C28's: marks the recogniser missed are cut from the
+stencil, left in the background, and stored at 1/8 on a page this signal calls all text.
+The same sentence in `Sources/Flattener.swift` and in `HANDOFF.md` is corrected in the
+same commit.
 
 | | ink outside the words |
 |---|---|

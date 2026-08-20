@@ -2136,9 +2136,18 @@ final class OCRModel: ObservableObject {
                         // a flat-tinted plate with a dark subject on it is
                         // indistinguishable from it on every tonal signal — so a
                         // detector change would have to guess. This does not
-                        // guess. It keeps the page's colour, keeps its text at
-                        // full resolution in the stencil, and is taken only when
-                        // it is measurably smaller.
+                        // guess. It keeps the page's colour, keeps its
+                        // RECOGNISED text at full resolution in the stencil, and is
+                        // taken only when it is measurably smaller.
+                        //
+                        // ⛔ That said "keeps its text at full resolution" until
+                        // 2026-08-19, and the qualifier is C28: the stencil holds
+                        // only what Vision boxed, so a line the recogniser missed
+                        // is stored at the background factor instead — 1/8 on a
+                        // page `pageIsAllText()` accepts. Measured over 13 corpus
+                        // pages, 7 were losing whole lines that way. Nothing about
+                        // this R49 decision changes; the sentence was just wider
+                        // than the truth.
                         guard case .jpeg(let existing) = encoded[index].stream,
                               let page = source.page(at: index),
                               let boxes = byPage[index + 1]?.map({ $0.boundingBox }),

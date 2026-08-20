@@ -1551,8 +1551,13 @@ do {
         // MARK: R50 — a page whose ink is all text shrinks its tone layers
         //
         // The signal is structural, not statistical: ink that is not inside any
-        // recognised word is not text. `isPicture` cannot ask this because it runs
-        // before recognition; layering can, because it runs after.
+        // recognised word is not RECOGNISED text. `isPicture` cannot ask this
+        // because it runs before recognition; layering can, because it runs after.
+        //
+        // ⛔ This read "is not text" until 2026-08-19 and that is FALSE — `C28`.
+        // Measured over 13 corpus pages, the ink outside the recognised words was
+        // running prose or table data on 7 of them. These checks and R50's signal
+        // are unaffected; the stated REASON was wider than the truth.
         //
         // Asserted on buffers first, where the answer is known by construction,
         // because the page-level checks below can only show that *something*

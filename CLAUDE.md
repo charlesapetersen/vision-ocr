@@ -16,16 +16,29 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries are open as
-of 2026-08-19, `C26` and `C27`, both found on one document after `1.13.0` shipped. `C26` loses
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **three entries are open as
+of 2026-08-19: `C26`, `C27` and `C28`. The first two were found on one document after `1.13.0`
+shipped; `C28` was opened out of C26's own campaign. `C26` loses
 content at the DEFAULT Photo detail setting; `C27` discards spot colour and is fidelity rather
 than loss. ⛔ **C26's CONSTANT HAS MOVED — `Flattener.textPageInkOutsideThreshold` is `0.045`, not
 the `0.08` most of the register is written against, the owner's decision on a complete campaign,
 shipped 2026-08-19.** The 16 corpus pages the sweep named keep their tone layers at the caller's
-factor; nothing else moves, measured. **The entry stays OPEN for a different question**: 32.4% of
-that fix's byte cost lands on two pages a reader cannot tell apart, so the threshold is a blunt
-instrument, and what is left is *why recognised-page prose is dropped from the stencil at all* —
-to be opened as its own entry. Read `BUGS.md` C26's `#### The constant moved` before touching any
+factor; nothing else moves, measured. ⛔ **`C28` IS WHAT THAT FIX LEFT, and it is the invariant-1 half:
+the 1-bit stencil is the *intersection* of the page's ink with Vision's word boxes
+(`textRegionMask`, one production call site), so prose the recogniser missed is in neither the stencil
+nor the text layer and survives only in a background stored at 1/8 on a page read as all text —
+7 of the 13 pages C26 rendered lose whole lines of running prose or table data that way, and nothing
+reports it.** Two measurements say the page-wide bar cannot be the answer: 32.4% of its byte cost
+lands on two pages a reader cannot tell apart, and — measured 2026-08-19 over the committed
+`INKBAR-2026-08-19.tsv` — **73 sampled pages in 22 documents are still shrunk 8x/16x at the new bar,
+and 31 of the 73 are in six of the nine documents sub-step 4 rendered**. In `Broadhead - 1994`,
+whose twelve sampled pages are all layered, p8 loses a line of body text at `inkOut` 0.0465 and is
+rescued while its p10 sits 0.0024 lower and is not. And the premise the code states as fact — *"ink that is not inside any
+recognised word is, by construction, not text"* — is measured false; both that comment and
+`textRegionMask`'s now say so. **What is left on `C26` itself is one bounded thing**: nobody has
+rendered `1954 - Why` p4/p6/p7 from the shipped build to watch the drawings come back, and the
+arithmetic saying they must is not the same as looking. Read `BUGS.md` C28, and C26's
+`#### The constant moved` and `#### What is left on C26 itself`, before touching any
 of this; every "would" in its pricing sections is now a "does", and ⚠️ **`INKBAR=0.045` now exits 2
 by design** ("equals the shipped bar, nothing to compare") — it is `INKBAR=0.08` that prices the old
 behaviour, which also stops `Tools/sweep-ink-bar.py --bar 0.045` dead on document 1.
@@ -43,7 +56,8 @@ most.** So the guard finds no drawing-shaped mark at all there, and lowering `pa
 to any value protects neither page. **And measured 2026-08-18, `paleDrawing` was never the term to
 look at: the drawings are INK** — 5,495 / 4,188 / 3,379 cells below their page's own Otsu, against
 8 / 350 / 0 pale cells the guard is offered — so they are cut out of the stencil by
-`textRegionMask` (correctly; they are not text), left in the background, and the background is
+`textRegionMask` (correctly by its own lights, which is `C28`: it keeps only what was *recognised*),
+left in the background, and the background is
 what gets stored at 1/8. The term that decides those pages is `pageIsAllText()`'s **first** one:
 `inkOutsideText` reads **0.0493–0.0660 against what was then a bar of 0.08**, so it saw them and let
 them through, and unlike the pale term it *can* reach them — which is why 0.045 refuses all three.

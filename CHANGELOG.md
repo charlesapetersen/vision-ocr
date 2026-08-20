@@ -14,13 +14,15 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
-**Lines of prose and hand-drawn marks are no longer destroyed on pages the code reads as
-nothing but type.** On a page whose ink is all text, both tone layers are stored at an
+**Lines of prose and hand-drawn marks are no longer destroyed on sixteen measured pages
+the code was reading as nothing but type.** On a page whose ink is all text, both tone
+layers are stored at an
 eighth and a sixteenth of their resolution — a large saving, and safe as long as "all
 text" is true. What decides it is how much of the page's ink Vision found no words for,
 and the bar was **0.08**; it is now **0.045**. In between sits a page carrying marks the
 recogniser never boxed — a figure, a table's rules, and as it turns out mostly **words** —
-which are cut out of the 1-bit stencil because they are not text and then destroyed in the
+which are cut out of the 1-bit stencil because the stencil keeps only what was recognised, and
+then destroyed in the
 background because the page is called text. **`BUGS.md` C26.**
 
 Measured over the whole corpus before the number moved, because refusing the shrink costs
@@ -29,8 +31,18 @@ them stop being shrunk**, over 10 documents of 233 — 4.54x on those pages, abo
 **+0.55% of total output**. Thirteen of the sixteen were rendered at both bars and read by
 eye: eleven lose something, **eight lose content outright**, one page losing thirteen
 values out of a correlation matrix and another seven lines of prose. Two of the sixteen
-lose nothing a reader could see and still cost the bytes, which is why C26 stays open —
-what is left is a question about the stencil, not about this constant.
+lose nothing a reader could see and still cost the bytes.
+
+**What this does not do.** Moving one number rescues the sixteen pages that sit above it.
+Measured over the same corpus sweep, **73 of the sampled pages are still stored this way**
+at the new bar, in 22 documents — and **31 of those 73 are in documents already known to
+be losing marks on other pages**. In one scan a page is rescued at 0.0465 and another,
+0.0024 lower, is not. Whether those 73 lose anything has not been looked
+at yet. The mechanism underneath is that the 1-bit stencil is built only where
+the recogniser found words, so anything it missed is neither searchable nor kept at full
+resolution — that is **`BUGS.md` C28**, and it is what a real fix here would be. The
+heading above said the loss was fixed outright until this was measured; it says "sixteen
+measured pages" now because sixteen is what was measured.
 
 Photo detail = **Maximum** was exempt from the shrink before this change and still is.
 

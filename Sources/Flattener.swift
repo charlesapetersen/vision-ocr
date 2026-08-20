@@ -1415,7 +1415,22 @@ enum Flattener {
     /// histogram cannot tell text from a tinted plate — R49 measured that, twice
     /// over. This runs *after* recognition, where the word boxes exist, so it can
     /// ask a structural question instead of a statistical one: ink that is not
-    /// inside any recognised word is, by construction, not text.
+    /// inside any recognised word is not *recognised* text.
+    ///
+    /// ⛔ **That sentence read "is, by construction, not text" until 2026-08-19,
+    /// and it is FALSE — see `C28`, which was opened on it.** Measured over 13
+    /// corpus pages (C26 sub-step 4), the ink outside the recognised words was
+    /// running prose or table data on **7 of them**: Vision misses lines on faint,
+    /// skewed and tightly-set scans, and nothing in this file can tell "the
+    /// recogniser missed this" from "this is not text". A later paragraph in this
+    /// same comment already said words Vision did not box are destroyed at 1/8, so
+    /// the comment contradicted itself; this is the half that was wrong. The signal is
+    /// still the best one available at this point in the pipeline — it is a proxy
+    /// for "is this page a picture" — but it is a proxy, and nothing here measures
+    /// how good a picture detector it is. And it is
+    /// the premise that licensed the "both ways of being wrong are mild" reasoning
+    /// the ⛔ paragraph below retracts: if unboxed ink cannot be text, then a page
+    /// wrongly shrunk can only lose decoration.
     ///
     /// Measured. Text pages sit at zero and pictures sit two orders of magnitude
     /// above them:
@@ -2423,6 +2438,20 @@ enum Flattener {
     /// run also skips R50's shrink and layers colour pages in grey, so most of any
     /// whole-sample gap is not confinement at all. On the 26 pages where the two
     /// differ in exactly one way it is 1.07x. `FEATURES.md` has both columns.
+    ///
+    /// ⛔ **What confinement also leaves in the background, and it is not only
+    /// pictures: `C28`, opened 2026-08-19.** Words Vision *failed* to box are
+    /// outside `region` exactly as a photograph is, so they stay wholly in the
+    /// background too — and the background is downsampled, by 8x on a page
+    /// `pageIsAllText()` accepts. Measured over 13 corpus pages (C26 sub-step 4),
+    /// **7 were losing whole lines of prose or table data that way**, and those
+    /// marks are in no text layer either because these same boxes are what
+    /// `SearchableWriter` draws from. The confinement is still right for the reason
+    /// the first paragraph gives; what is missing is any term that distinguishes
+    /// missed text from a picture. Do not widen this without reading C28 — and note
+    /// which figure above prices it: the 1.33x is the STENCIL total, while the page
+    /// total on the 26 cleanly-comparable pages is **1.07x**, which is the number a
+    /// widening would actually be judged on.
     static func textRegionMask(_ boxes: [SearchableWriter.BoundingBox],
                                width w: Int, height h: Int) -> [Bool] {
         // The guard first. `[Bool](repeating:count:)` was being asked for `w * h`

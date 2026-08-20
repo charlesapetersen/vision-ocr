@@ -224,7 +224,7 @@ warns about in as many words.
 the consequence, and whether it was verified by running code or only reasoned
 about.
 
-**Two entries are open as of 2026-08-17: `C26` and `C27`** — a small line drawing erased on the picture path at the default Photo detail setting, opened hours after `1.13.0` shipped and on a document the release gate had already passed. It is not R56. Read C26, and read the note below about what this gate can and cannot see. **Both were re-measured on 2026-08-18 and C26's diagnosis changed**: the entry had quoted `score-threshold-loss`'s `lost` column as the number under `paleDrawingThreshold`'s 5% bar, and those are two different functions — the quantity the bar reads is `paleDrawing(pageMarks(…)).extent`, which is **0.00000** on the two pages that lose their drawing, so no value of the constant protects them and the fix has to be in what `pageMarks`/`paleDrawing` *find*. The corpus sweep both entries were blocked on ran the same day (`THRESHOLD-LOSS-2026-08-18.tsv`, 441 pages, 233 documents): it sizes C26 — 61 picture-route pages, 2 protected, 22 under the bar, 37 at zero — and, measured, does **not** size C27, because a mean saturation cannot see concentrated colour. **`C24` was open before it and is `FIXED`**, both halves:
+**Three entries are open as of 2026-08-19: `C26`, `C27` and `C28`** — a small line drawing erased on the picture path at the default Photo detail setting, opened hours after `1.13.0` shipped and on a document the release gate had already passed. It is not R56. Read C26, and read the note below about what this gate can and cannot see. **`C28` was opened 2026-08-19 out of C26's own campaign** and is the invariant-1 half of it: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so prose the recogniser missed is in neither the stencil nor the text layer and is stored at 1/8 on a page read as all text — 7 of the 13 pages C26 rendered lose whole lines of prose or table data that way. C26's own constant moved (0.08 -> 0.045, shipped 2026-08-19) and still leaves 73 sampled pages shrunk, which is why the stencil is its own entry rather than a footnote to the bar. **Both C26 and C27 were re-measured on 2026-08-18 and C26's diagnosis changed**: the entry had quoted `score-threshold-loss`'s `lost` column as the number under `paleDrawingThreshold`'s 5% bar, and those are two different functions — the quantity the bar reads is `paleDrawing(pageMarks(…)).extent`, which is **0.00000** on the two pages that lose their drawing, so no value of the constant protects them and the fix has to be in what `pageMarks`/`paleDrawing` *find*. The corpus sweep both entries were blocked on ran the same day (`THRESHOLD-LOSS-2026-08-18.tsv`, 441 pages, 233 documents): it sizes C26 — 61 picture-route pages, 2 protected, 22 under the bar, 37 at zero — and, measured, does **not** size C27, because a mean saturation cannot see concentrated colour. **`C24` was open before it and is `FIXED`**, both halves:
 a page that draws no XObject at all no longer takes another page's plate resolution, and the 45
 pages that draw a *different* image than the shared dictionary holds now take their own, after a
 corpus gate that moved exactly those 45 of 16,987 for **+8 matched words of 3,025** and 25-81%
@@ -302,7 +302,12 @@ scores identically to a page of type on every tonal signal tried. R50 sidesteppe
 rather than solving it, by asking a *structural* question at a later point in the
 pipeline where Vision's word boxes exist: ink that is not inside any recognised word
 is not text. That signal is 0.0000 on text pages and 0.971–0.993 on plates, and it
-cost nothing to compute. **The remaining prize is moving `isPicture` itself after
+cost nothing to compute. ⛔ **That premise is FALSE as stated and `C28` was opened on it
+(2026-08-19): measured over 13 corpus pages, the ink outside the recognised words was
+running prose or table data on 7 of them.** The signal is still the best one available
+there and R50 is still `FIXED` — what is wrong is the justification, and the consequence
+is that marks the recogniser missed are stored at 1/8 on a page this signal calls all
+text. **The remaining prize is moving `isPicture` itself after
 recognition**, which is why it is now first in `TODO.md`.
 
 **The order of work, agreed with the owner 2026-08-13:**
