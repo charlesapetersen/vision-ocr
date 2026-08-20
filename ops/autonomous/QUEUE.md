@@ -60,6 +60,54 @@ than reasoned — the first attempt broke the coherence check twice:
   `[ "$st" = "x" ] && [ "$n_open" -gt 0 ]`, which never looks at *which* cite word was used, so any `[x]`
   citing a still-OPEN entry is drift. The parent keeps the cite; the sub-box carries none.
 
+## How to SIZE an item — and why an unbounded verb strands a worktree
+
+**The failure this prevents.** A session that is interrupted mid-item leaves its worktree dirty. The work
+is not lost — the daemon writes `$STATE/rescue/<stamp>.patch` and says so in `daemon.log` — but it costs a
+hand review to decide whether the patch is redundant, and until someone does that, **every following cycle
+logs "a worktree is holding UNCOMMITTED WORK — this is NOT an empty queue"**, which is the daemon telling
+the truth in a way that reads like a fault. Seven such rescues accumulated in the four days to 2026-08-20.
+The lever is item size, and D6 said so when the budget was raised: *"If this stops helping, the next lever
+is item size, not another raise."*
+
+**The envelope a box has to fit.** `MAXRUN` is **14400 s (4 h)** and the budget is **$35** a session — but
+neither is the binding constraint, because **a usage limit ends a session at any moment regardless of
+size** (measured 2026-08-20: four consecutive sessions fast-failed in 8-9 s). So sizing cannot make
+interruption impossible. What it controls is **how many minutes of uncommitted work are exposed when one
+happens.**
+
+**The cost model, measured rather than assumed.**
+
+| what a commit touches | what it costs |
+|---|---|
+| docs, the register, this file, a `.tsv` | **free** — the hook prints "no code staged, skipping the suite" and it lands in seconds |
+| `Sources/` `Helper/` `Tests/` `Tools/` `build.sh` `run_tests.sh` | **one full suite**, measured 474-5554 s — read `$STATE/suite-timings.tsv` and never quote one figure |
+| a NEW check | **two** suite runs — the watch-it-fail control, then the hook's green run |
+| a scoped `mutate.py` run | **a baseline suite plus ~45 min per mutant** (five took 4h27m end to end) |
+
+**The rules that follow from it.**
+
+1. **One code commit per box.** If the work needs two, it needs two boxes, or one box with tickable
+   sub-boxes. A box that implies three code commits implies three suite runs — 1.5 to 4.5 hours of
+   machine time before the last of them lands, and everything before the first commit is exposed.
+2. **Split the free work out.** Measurement, triage, a register entry, a doc correction and this file's own
+   checkboxes are all free commits. Landing them first turns one long exposure into several short ones, and
+   it is why `C28`'s campaign has never stranded anything: each sub-step committed on its own.
+3. **Anything over about an hour of compute is a detached driver, not a session.** Write the driver, commit
+   it first, start it with `nohup`/`setsid` so it outlives the session, make its output resumable, and leave
+   a resume note in the SESSION LOG naming the worktree, the log and the exact resume command. That is
+   `C26` sub-step 3b's pattern and it is the only shape that has worked here. Later sessions poll; a
+   polling cycle scoring as no-progress is correct, not a fault.
+4. ⛔ **WRITE THE BOUND INTO THE BOX, AS A NUMBER.** *"work the survivors"*, *"run over all its cases"*,
+   *"steps 2-4"* and *"the SIX that mis-measure"* are all licence to start something a session cannot
+   finish, and a session reading its first `ok` has no other source for how much is enough. **One mutant.
+   One tool. Three pages.** If the bound is genuinely "all of them", say how many that is and how long it
+   took last time.
+5. **Never size against a quiet machine.** Every duration this project has written down turned out to be a
+   reading of the machine's load: the suite has run 474 s and 5554 s on the same corpus-free tree, and
+   loadavg does not predict it. Size against the WORST row in the ledger plus headroom.
+
+
 ## ⛔ Settled — do not re-open, do not "notice" these again
 
 - **`R55` is `WONTFIX`** (owner, 2026-08-17). The measurement campaign was run and the owner closed it on
@@ -548,6 +596,14 @@ than reasoned — the first attempt broke the coherence check twice:
       NOT this item** — that is the JBIG2 generic-vs-symbol encoder mode, it is measured in the entry, and
       the lossless remedy is refused by jbig2enc 0.32. Do not reach for `-s`. Needs a FIXTURE first:
       `testdocs/` has no born-digital-cover document. (origin: BUGS.md C29)
+      ⛔ **BOUND: decide FIRST whether this is one code commit or two, and write the answer here before
+      starting.** It looks like two — the fixture, then the per-page routing — and two code commits is two
+      suite runs, 1.5-3 h by the ledger, which does not fit one session safely. But they may not be
+      separable: a fixture committed alone must not leave a check RED, because a red suite refuses every
+      later commit through the hook (see `gutter-floor`'s sub-step 0 for the same trap and the way out —
+      pin current behaviour, flip it in the second commit). So either the fixture pins today's wrong
+      behaviour and the routing commit flips it, or both are one commit and the session must be told to
+      expect a single long one. Whichever it is, one session does ONE of them.
       ⚠️ Placed ahead of `C27` by the owner 2026-08-20 on this project's own precedence — content loss
       outranks fidelity, the same call that put C26 before C27 — and behind `C28`, which is mid-campaign.
 - [ ] **gutter-floor** — the reading-order DECLINE rests on "0.19% of observations cross a gutter", and
@@ -741,7 +797,11 @@ than reasoned — the first attempt broke the coherence check twice:
       and fix the documents rather than the check. (origin: TODO.md, and CLAUDE.md's own confession that
       its status paragraph "read 'nothing open' for a day after four entries were opened")
 - [ ] **tools-compile** — run `Tools/check-tools-compile.sh` over *every* tool, not just the staged ones,
-      and fix or delete what does not build. It is a standing gate that today only runs on the
+      and REPORT what does not build. ⛔ **BOUND: the sweep and its report are ONE free commit; each tool
+      you then fix is its own commit and its own suite run, so fix at most ONE per session and leave the
+      rest listed here.** *"Fix or delete what does not build"* was this line until 2026-08-20; if the
+      sweep finds four broken tools, that reading is four suite runs, which is a stranded worktree.
+      It is a standing gate that today only runs on the
       files a commit happens to touch: `score-text-route` had never compiled in any commit, and an
       annotation change silently broke `score-skew` and `score-reading-order` eleven days later.
       ⚠️ **RUN IT DETACHED AND POLL — this line said "~26 s" and that is a quiet-machine figure.** Measured
@@ -761,10 +821,23 @@ than reasoned — the first attempt broke the coherence check twice:
       was 4.22x low the one time anyone checked it out of sample —
       and never
       while `Sources/` is being edited. The work item is the live survivor list in
-      `Tools/mutation-log.tsv`. (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a
+      `Tools/mutation-log.tsv`.
+      ⛔ **BOUND: ONE mutant per session, and commit its row before starting another.** A baseline suite
+      plus ~45 min per mutant means two can exceed the 4 h `MAXRUN` on a busy machine, and a scoped run
+      that matches more mutants than you counted is the shape that strands a worktree — five took
+      **4h27m** end to end against the 20-55 minutes the tool predicted. Check the match count with
+      `--list` BEFORE running; if your substring matches more than one, narrow it or take the first.
+      (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a
       value nothing depends on)
-- [ ] **fault-inject** — run `Tools/fault-inject.sh` over all its cases and confirm each sabotage is still
-      refused by the real build step. It builds into a scratch copy of the tree, so it is safe unattended.
+- [ ] **fault-inject** — confirm each sabotage is still refused by the real build step. It builds into a
+      scratch copy of the tree, so it is safe unattended.
+      ⛔ **BOUND: the case list is `FAULTS` at the foot of the script — 7 as of 2026-08-20, read it rather
+      than trusting that number. Take ONE case per session** until a run proves they are cheap on this
+      machine, and record the per-case cost here the first time so the next session can size itself. Each
+      case builds the tree, and the resume prompt lists this among the five gates needing the
+      detached-plus-poll shape — a foreground run can be killed at the 120 s ceiling with no output, which
+      a session cannot tell from a hang. *"Over all its cases"* was the whole of this box until 2026-08-20
+      and it is exactly the unbounded verb §"How to size an item" rule 4 is about.
       (origin: Tools/fault-inject.sh)
 - [ ] **A1.3** — one live bullet of that finding's four; the other three are struck through in place
       (`R81`, `R83`). What is left: `observations(fromJSONLines:)` (`:161`) and `observations(fromJSONAt:)`
@@ -798,9 +871,14 @@ than reasoned — the first attempt broke the coherence check twice:
 - [ ] **annot-r3** — the third adversarial review round on the annotation-preservation feature. Rounds one
       and two are recorded; this is the round that has not been run.
       (origin: TODO.md §"Preserving annotations through re-OCR")
-- [ ] **zotero-2** — the Zotero library sweep, steps 2-4. ⚠️ Step 1 wants re-running first; the survey it
-      produced is dated. Reads a Zotero library, so copy `zotero.sqlite` before querying it — Zotero holds
-      a lock on it. (origin: TODO.md §"2. The Zotero library sweep")
+- [ ] **zotero-2** — the Zotero library sweep. ⚠️ Step 1 wants re-running first; the survey it produced is
+      dated. Reads a Zotero library, so copy `zotero.sqlite` before querying it — Zotero holds a lock on it.
+      ⛔ **BOUND: ONE step per session, starting with the re-run of step 1, and commit its output before
+      taking the next.** *"Steps 2-4"* was this box until 2026-08-20 — three steps over a whole library,
+      which is both a multi-hour job and an unbounded verb. Read the steps in `TODO.md` §"2. The Zotero
+      library sweep" and treat each as its own box; if one is over an hour of compute it is a detached
+      driver under §"How to size an item" rule 3, not a session.
+      (origin: TODO.md §"2. The Zotero library sweep")
 - [x] **lock-report** — DONE 2026-08-19. `status` classifies the `pgrep -x tests` set by ancestry within that
       set, so the suite's own probe children stop reading as extra suites:
       `suite RUNNING — pid(s) 90955 90956` becomes
@@ -879,7 +957,11 @@ than reasoned — the first attempt broke the coherence check twice:
          `score-threshold-loss` both refuse instead. Judge each one first — a single-document
          utility may be right to say nothing — but say so per tool rather than skipping the class.
       ⚠️ Any tool you touch is staged, so the pre-commit hook runs `check-tools-compile.sh` on it and
-      the full suite. Budget a commit, not a check. (context: the sibling sweep in `BUGS.md` C26's
+      the full suite. Budget a commit, not a check.
+      ⛔ **BOUND: the two halves are two sessions, and within each, ONE tool per commit.** *"Both halves"*
+      reads as one item and is not one — each tool touched is a suite run. Survey both halves first in a
+      free commit listing the tools and the verdict per tool, then fix them one at a time.
+      (context: the sibling sweep in `BUGS.md` C26's
       instrument commit, 2026-08-18 — C26 is CLOSED and this is provenance, not a status claim; the
       rule is CONTRIBUTING §5)
 - [ ] **argv-shape** — **the SIX that mis-measure, after the two that could destroy were fixed.** The
@@ -901,7 +983,13 @@ than reasoned — the first attempt broke the coherence check twice:
       known to be wrong from it yet.
       ⚠️ Triage before coding: some of these are single-document utilities that are right as they are,
       and the answer per tool belongs in the commit. Any tool you touch is staged, so budget a commit
-      (a full suite) rather than a check. (context: the sibling sweep in `BUGS.md` C26 — CLOSED
+      (a full suite) rather than a check.
+      ⛔ **BOUND: the triage of all six is ONE free commit — it is a judgement written down, no code —
+      and then ONE tool per session.** Six guarded tools is six suite runs, 1.5 to 9 hours by the ledger,
+      and reading *"the SIX that mis-measure"* as one session's work is the shape §"How to size an item"
+      rule 4 exists to stop. Tick nothing until the sixth lands; give each tool its own sub-box under this
+      one, following §"How to write an item"'s three constraints.
+      (context: the sibling sweep in `BUGS.md` C26 — CLOSED
       2026-08-20; it is where this was found, not the work. Was `origin:` until C26 closed and the
       coherence check read it as a status claim, which is the mistake §"How to write an item" records
       `tools-compile` and `mutants` making)
