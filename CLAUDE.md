@@ -16,8 +16,10 @@ Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
-Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **two entries are open as
-of 2026-08-20: `C27` and `C28`. `C26` is `FIXED`.** `C26` and `C27` were found on one document after
+Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **three entries are open as
+of 2026-08-20: `C27`, `C28` and `C29`. `C26` is `FIXED`.** `C29` is the owner's JSTOR finding — a
+born-digital cover page rasterised and re-OCR'd because `hasDigitalText` votes per DOCUMENT and never
+samples page 1 at all on a document of 5+ pages. `C26` and `C27` were found on one document after
 `1.13.0` shipped; `C28` was opened out of C26's own campaign. `C26` lost
 content at the DEFAULT Photo detail setting; `C27` discards spot colour and is fidelity rather
 than loss. ⛔ **C26's CONSTANT HAS MOVED — `Flattener.textPageInkOutsideThreshold` is `0.045`, not

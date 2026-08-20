@@ -394,6 +394,18 @@ than reasoned — the first attempt broke the coherence check twice:
       Price of un-shrinking the eight: 430,679 -> 1,754,076 B, **+1,323,397 B, 4.07x, 165,425 B/page**,
       of which **57.4% lands on the four that lose nothing**.
       Corpus read-only throughout; every image written to `mktemp`-style scratch under `/tmp`.
+- [ ] **born-digital-page** — a born-digital cover page is rasterised to 1-bit and re-OCR'd because the
+      digital-text test votes per DOCUMENT. On the JSTOR download this was found on, page 1's vector text,
+      its embedded fonts and a 197x267 colour JPEG became one 1-bit raster, and the text layer went from
+      exact to `AMFAKAN FOCAX ONCAL ASSOXUTION` — so a search that worked on the input fails on the output.
+      ⛔ **Read the entry before touching `sampleIndices`**: the sharp finding is that page 1 is NEVER
+      sampled on a document of 5+ pages, but the fix is a per-page decision, not a change to the sampling.
+      `pageIsAnImage` is already per-page, so the signal exists. ⛔ **And the file being 1.55x BIGGER is
+      NOT this item** — that is the JBIG2 generic-vs-symbol encoder mode, it is measured in the entry, and
+      the lossless remedy is refused by jbig2enc 0.32. Do not reach for `-s`. Needs a FIXTURE first:
+      `testdocs/` has no born-digital-cover document. (origin: BUGS.md C29)
+      ⚠️ Placed ahead of `C27` by the owner 2026-08-20 on this project's own precedence — content loss
+      outranks fidelity, the same call that put C26 before C27 — and behind `C28`, which is mid-campaign.
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the

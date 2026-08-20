@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Two open: `C27` and `C28`. `C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
+**Three open: `C27`, `C28` and `C29`. `C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
 (`textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's decision on a complete campaign, so the 16
 corpus pages the sweep named keep their tone layers at the caller's factor) and the next day the
 three pages it was opened on were **rendered and the drawings are back**:
@@ -4742,6 +4742,107 @@ that 31 remain** and are still the cheapest place to continue.
   13 measured pages lose content outright, 7 of those 8 losing words or table data** and the eighth a
   hand-drawn mark. ⚠️ Those are two different counts and this bullet conflated them in its first
   draft — caught by the numbers audit of this diff.
+
+### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — OPEN
+
+*(found 2026-08-20 by the owner on a JSTOR download, not by a sweep. The file is
+`~/Downloads/Hughes - The Knitting of Racial Groups in Industry.pdf` and is **not in `testdocs/`** —
+so nothing in the corpus gate covers this shape yet, and the first thing a fix needs is a fixture.)*
+
+**The document.** 9 pages, 542,468 B, producer `iText 5.5.13.4`, the standard JSTOR shape: **page 1 is
+born digital** — 1,022 characters of vector text, an embedded `Code2000` CID TrueType subset plus base-14
+Helvetica and Times-Roman, a 121x74 RGB indexed image (the ASA mark) and a **197x267 progressive RGB JPEG
+at 300 DPI, 61,368 B (the crimson JSTOR logo)** — while **pages 2-9 are 4000x5600 1-bit JBIG2 scans**
+carrying JSTOR's own OCR text layer.
+
+**What shipped.** Page 1 came out as a **single 2550x3333 1-bit JBIG2 image, 14,609 B**, with both of its
+images flattened into it. The output's only fonts are the OCR layer's own (`AAAAAB+Helvetica`,
+`AAAAAD+PingFangSC-Regular`); every original font is gone. Read by eye at 68 DPI against the source:
+the ASA logo's blue-green gradient is **1-bit blobs**, the crimson JSTOR mark is black line art, and the
+metadata block is legible but rasterised.
+
+⛔ **AND THE TEXT LAYER GOT WORSE, WHICH IS THE PART THAT IS NOT MERELY FIDELITY.** The original page 1's
+text is exact, because it *is* the text. The rebuilt page 1 is OCR of a 1-bit picture of that text, and it
+opens `AS / 1 / AMFAKAN FOCAX ONCAL ASSOXUTION` where the source reads *American Sociological
+Association*. So a reader searching the output for the publisher's name on page 1 now fails on a document
+where it previously succeeded — 1,071 OCR'd characters in place of 1,022 exact ones.
+
+#### Why it happens, and the sharp part
+
+`Flattener.hasDigitalText(in:)` (`Sources/Flattener.swift:375-390`) samples pages with
+`sampleIndices(count:, wanted: 4)`, counts a sampled page as digital when
+`text.count >= 120 && !pageIsAnImage(page)`, and returns `digital * 2 > sampled` — a strict majority of a
+four-page sample. **It fails on this document twice over, and the second reason is the interesting one.**
+
+1. **The character-count term is not the discriminator here, because JSTOR ships an OCR layer on the
+   scans.** Measured per page on the original: **881, 3212, 3671, 388, 2690, 1575, 3777, 3647, 3051**
+   non-space characters. **Every one of the nine clears 120.** So the whole decision rests on
+   `pageIsAnImage`, and the eight scans are full-page images, so `digital` is 0 of 4 sampled and
+   `0 * 2 > 4` is false.
+2. ⛔ **PAGE 1 IS NEVER SAMPLED AT ALL.** `sampleIndices` returns `(0..<n).map { ($0 + 1) * count / (n + 1) }`
+   whenever `n < count`, and at `$0 == 0` that is `count / (n + 1)`, which is **>= 1 for every document of
+   more than `wanted` pages**. Enumerated: 9 pages -> indices `[1, 3, 5, 7]`, i.e. 1-based pages
+   **2, 4, 6, 8**. Index 0 is sampled **only** when `pageCount <= 4`, via the `n == count` early return.
+   So for every document of **5 or more pages the first page cannot influence this decision**, and the
+   born-digital cover page is exactly the page the test cannot see. Verified by running the formula over
+   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 20, 50, 100, 300 and 16,987 pages.
+
+   *This is not obviously a bug in `sampleIndices`* — sampling interior pages is a reasonable way to ask
+   what a document is *mostly* made of, and front matter is unrepresentative by design. It is a bug in
+   using a **document-level majority** to decide a **per-page** question. Note `pageIsAnImage` is already
+   per-page, so the signal a fix needs exists and is already trusted; only the decision is document-wide.
+
+#### ⛔ THE FILE BEING BIGGER IS **NOT** THIS ENTRY, AND DO NOT "FIX" IT WITH `-s`
+
+The processed file is 839,937 B against 542,468 B (1.55x), which is what prompted the look — and the
+born-digital page is not the cause. **It makes the file smaller, by destroying content.** Stream
+accounting, both files, via `qpdf --json`:
+
+| | original | processed |
+|---|---|---|
+| pages 2-9, bilevel | 54,528 B streams + **193,267 B JBIG2 symbol dictionaries** = **247,795 B** | **746,137 B**, and **zero** `/JBIG2Globals` |
+| page 1 images | 63,536 B (JPEG 61,368 + indexed 2,168) | **14,609 B** |
+| fonts, text, structure | 140,398 B | 63,101 B |
+
+So pages 2-9 are **+498,342 B (3.01x)** and page 1 is **-48,927 B**. **Controlled to the encoder**: page 2's
+bitmap was extracted from the original with `pdfimages -png` and re-encoded with the app's own bundled
+`jbig2` 0.32 — **generic (`-p`, what `Sources/JBIG2.swift:150` runs): 96,349 B**; **symbol (`-s -p`):
+7,826 B + 16,772 B dictionary = 24,598 B**, within **0.4%** of the 24,504 B JSTOR's file holds for that
+page. The app's real page-2 output is 96,500 B, so re-encoding the *original's own bitmap* reproduces it to
+within **151 B**: the 3x is **entirely the encoder mode**, and resampling (4000x5600 -> 4000x5667)
+contributes nothing measurable.
+
+⛔ **The obvious remedy is refused by the encoder, and the comment at `JBIG2.swift:149` is right.**
+jbig2enc's symbol mode substitutes visually similar glyphs — the classic JBIG2 character-substitution
+failure — and its lossless variant does not work: `jbig2 -s -r -p` **exits 1** with *"Refinement broke in
+recent releases since it's rarely used. If you need it you should bug agl@imperialviolet.org to fix it"*
+(jbig2enc 0.32, leptonica 1.87.0). So **generic coding is the only lossless mode this encoder offers**, the
+3x is the price of losslessness rather than a defect, and JSTOR's file is smaller because JSTOR accepted
+substitution risk. Written down here so nobody re-derives "3x too big" from the file sizes and reaches for
+`-s`. If the size is ever worth revisiting it is an **owner decision about lossiness**, not a fix.
+
+#### What a fix has to satisfy
+
+- **A per-page decision, not a document-level one.** A page that already carries real text over no
+  page-sized raster is passed through; every other page is rebuilt as today.
+- **A passed-through page keeps its own content stream, fonts and images** — including colour ones — and
+  **must not receive a second text layer.** It already has one; adding Vision's would double it, which is
+  the very thing `rebuildImages` defaults on to prevent (see this function's own doc comment).
+- **The all-scan and all-digital cases must be byte-identical to today.** An all-digital document is
+  already skipped by `hasDigitalText`; an all-scan document must not change at all.
+- ⚠️ **Mixed output needs the page boxes checked, and PDFKit normalises the media box** — a trap this
+  register already records, so a passthrough page and a rebuilt page in one file is exactly where it would
+  bite.
+- ⚠️ **The `SearchableWriter` invariants are stated over rebuilt pages.** A passthrough page bypasses them,
+  so whatever asserts them has to know which pages were passed through rather than silently reporting a
+  page it never wrote.
+- **A failing test first, and a fixture**, per `CONTRIBUTING.md`. `testdocs/` holds no born-digital-cover
+  document, so the shape is currently untested and uncovered by the corpus gate. `Tools/make-plate-fixtures.swift`
+  is the precedent for building one rather than adding a third-party PDF.
+- ⚠️ **`Tools/classify-source.swift` is the instrument that answers "what would `hasDigitalText` say about
+  this file", and it has NOT been run here** — the mechanism above is read from the source with the
+  arithmetic enumerated, and the *consequence* is what was measured in the output. Run it first; this
+  project's rule is that the instrument is wrong before the code.
 
 ## Robustness and correctness of reporting
 
