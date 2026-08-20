@@ -36,9 +36,16 @@ lose nothing a reader could see and still cost the bytes.
 **What this does not do.** Moving one number rescues the sixteen pages that sit above it.
 Measured over the same corpus sweep, **73 of the sampled pages are still stored this way**
 at the new bar, in 22 documents — and **31 of those 73 are in documents already known to
-be losing marks on other pages**. In one scan a page is rescued at 0.0465 and another,
-0.0024 lower, is not. Whether those 73 lose anything has not been looked
-at yet. The mechanism underneath is that the 1-bit stencil is built only where
+be losing marks on other pages**. **Eight of the 73 were rendered and looked at (2026-08-20)
+and four of the eight lose content** — two of them two lines of running prose each, one
+figures out of a statistical table, one a handwritten signature on a 1939 letter. The other
+four lose nothing a reader would see and account for **57%** of what rescuing the eight
+would cost. (In one scan a page is rescued at 0.0465 and another 0.0024 lower is not —
+measured, that pair is the number getting it right. It is across scans that it fails: the
+pages that lose content and the pages that do not are interleaved, so no value of the number
+separates them.) Sixty-five of the 73 have still not been looked at; this paragraph read
+"whether those 73 lose anything has not been looked at yet" until the eight were rendered.
+The mechanism underneath is that the 1-bit stencil is built only where
 the recogniser found words, so anything it missed is neither searchable nor kept at full
 resolution — that is **`BUGS.md` C28**, and it is what a real fix here would be. The
 heading above said the loss was fixed outright until this was measured; it says "sixteen

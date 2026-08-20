@@ -45,7 +45,36 @@ lands on two pages a reader cannot tell apart, and — measured 2026-08-19 over 
 `INKBAR-2026-08-19.tsv` — **73 sampled pages in 22 documents are still shrunk 8x/16x at the new bar,
 and 31 of the 73 are in six of the nine documents sub-step 4 rendered**. In `Broadhead - 1994`,
 whose twelve sampled pages are all layered, p8 loses a line of body text at `inkOut` 0.0465 and is
-rescued while its p10 sits 0.0024 lower and is not. And the premise the code states as fact — *"ink that is not inside any
+rescued while its p10 sits 0.0024 lower and is not — ⛔ **and measured 2026-08-20 that pair is the bar
+getting it RIGHT: p10 loses nothing.** ✅ **C28's first sub-step RAN that day: the eight
+pages nearest the bar from below were rendered and 4 of the 8 LOSE CONTENT** — two lines of running
+prose each on `Broadhead - 1994` p3 and `Jones et al_2010` p5, table figures / column heads / Roman
+row labels on `Scott_TK` p3, and a handwritten signature on `Atkinson_1939` p3, all illegible as
+shipped, all read at 1:1 and three of the four also checked against the stencil holding **0.0%–3.6%**
+ink in those rects against 7.6%–15.4% on the adjacent lines that survive (`Scott_TK` is the one
+without that second check). ⛔ **The headline is that NO VALUE OF THE CONSTANT SEPARATES THE EIGHT:
+sorted by `inkOutsideText` they read lose / no / lose / no / no / lose / no / lose**, so the two sets
+interleave — a bar low enough to protect all four losers protects all four non-losers too, and the
+lowest of the eight loses two lines of prose while two of the four highest lose nothing. Within
+`Broadhead - 1994` alone the fraction *does* order its eight rendered pages perfectly (missing p3 by
+at most 0.00005), which is why the corpus-level argument rests on the interleaving rather than on
+p8-vs-p10 — and note that `Atkinson_1939` p2-vs-p3 and `Jones` p12-vs-p5 are pairs in which **both**
+pages lose something, so they say only that 0.045 sits too high in those scans; every actual inversion
+among the eight is cross-document. ⚠️ A first draft concluded
+"the useful bar is **per scan**"; the audit of that diff refuted it from the committed sweep — the
+other three documents contributed **one rendered page each**, so no per-document window is computable
+for them. 65 of the 73 remain unrendered, 24 of them in the six documents already read.
+⛔ **AND C28'S OWN RECIPE FOR THAT RENDER WAS A FALSE NEGATIVE, measured**: `INKBAR=0.08` on a page
+*below* the shipped bar reads `all-text` on both sides and dumps two **byte-identical** backgrounds,
+so the comparison the entry told a reader to make is a page against itself. The bar must be BELOW the
+page's own `inkOut` (`INKBAR=0.02` covers all eight); the entry, the queue box, the tool's own header
+and `Tools/README.md` all say so now. ⚠️ The corrected rule is that `INKBAR=0.08` reaches only
+`inkOut` in **[0.045, 0.08)** — 17 sampled rows — and then only where `extent <= 0.05` and Photo
+detail is not Maximum: the first fix said "at or above 0.045", which is wrong on the 87 pages at or
+above 0.08, and the review of that diff sized it.
+⚠️ A `-normalize`d whole-page view then misled **twice more** on that render — it called the whole of
+`Atkinson_1939` p3's typescript and the whole of `Jones` p5's Pattern column lost, and 1:1 plus the
+stencil's own ink fraction overturned both. And the premise the code states as fact — *"ink that is not inside any
 recognised word is, by construction, not text"* — is measured false; both that comment and
 `textRegionMask`'s now say so. Read `BUGS.md` C28, and C26's
 `#### The constant moved` and `#### The rendered proof on the founding pages`, before touching any

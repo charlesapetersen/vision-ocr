@@ -67,12 +67,33 @@
 // this writes, so comparing `bg-shipped` against `bg-bar` is comparing exactly what
 // the constant changes and nothing else.
 //
+// ⛔ **PICK THE BAR FROM THE PAGE, NOT FROM THIS HEADER — `INKBAR=0.08` CAN COMPARE A PAGE
+// WITH ITSELF.** The two verdicts are `inkOut < shipped && noPaleDrawing` and
+// `inkOut < INKBAR && noPaleDrawing`, so a page on the same side of both bars is published
+// identically twice: `barVerdict` matches `verdict`, `barDelta` prints `same`, and `INKDUMP`
+// writes **byte-identical** tone layers while still reporting "wrote 7 file(s)". Measured
+// 2026-08-20 on `Broadhead - 1994` p3 (`inkOut` 0.0450) at `INKBAR=0.08`: `all-text` both
+// sides, 284 px vs 284 px, one sha256 for both backgrounds. A reader diffing that pair
+// concludes the page loses nothing — on a page that loses two lines of prose.
+//
+// So `INKBAR=0.08` reaches only pages whose `inkOut` is in **[0.045, 0.08)** — **17 rows of
+// the 2,129** in `INKBAR-2026-08-19.tsv` — and then only where `extent <= 0.05` and the
+// caller is not at `PhotoDetail.maximum` (`keepEveryPixel` short-circuits the whole rule).
+// A page **at or above** 0.08 compares with itself just as one below 0.045 does: 87 sampled
+// pages are at or above it and 86 already print `barDelta same`. ⚠️ This paragraph said
+// "at or above 0.045" in its first version, which is wrong on 87 pages against 17 right —
+// the adversarial review of that diff sized it. For a page *below* the shipped bar (C28's
+// 73) the bar must be **below that page's own `inkOut`**; `INKBAR=0.02` covers C28's eight
+// near-misses. `BUGS.md` C28 `#### The eight near-misses, RENDERED` is the measurement, and
+// this warning is here because the entry's own instrument line said 0.08.
+//
 //   mkdir -p /tmp/h && cp Tools/score-text-route.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-text-route -target "$(uname -m)-apple-macos13.0" \
 //     $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
 //   /tmp/score-text-route "<pdf>" [page…]        # 1-indexed; default: a spread
-//   INKBAR=0.08 /tmp/score-text-route "<pdf>"    # + the priced columns
+//   INKBAR=0.08 /tmp/score-text-route "<pdf>"    # + the priced columns; inkOut in [0.045,0.08)
 //   INKBAR=0.08 INKDUMP=/tmp/look /tmp/score-text-route "<pdf>" 4
+//   INKBAR=0.02 INKDUMP=/tmp/look /tmp/score-text-route "<pdf>" 3   # a page BELOW the bar
 //   (0.045 in both until 2026-08-19, when it became the shipped bar and started
 //    exiting 2 — see the ⛔ paragraph above)
 //

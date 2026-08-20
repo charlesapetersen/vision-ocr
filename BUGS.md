@@ -28,8 +28,21 @@ addresses the other. ⚠️ **What C26's fix left, and what `C28` is:** 32.4% of
 cost lands on two pages a reader cannot tell apart — so a page-wide threshold is a blunt instrument
 rather than the answer — and, measured 2026-08-19 over the committed sweep, **73 sampled pages in 22
 documents are still shrunk 8x/16x at the new bar**, seven of the eight nearest of them in the three
-documents already proven to be losing lines of prose on other pages. `Broadhead - 1994` p8 loses a
-line at `inkOut` 0.0465 and is rescued; its p10 sits 0.0024 lower and is not. So the question C26's
+documents already proven to be losing lines of prose on other pages. ⛔ **Those eight were
+RENDERED 2026-08-20 and 4 of the 8 lose content** — two lines of prose each on `Broadhead - 1994` p3
+and `Jones et al_2010` p5, table figures and column heads on `Scott_TK` p3, a handwritten signature on
+`Atkinson_1939` p3 — and **no value of the constant separates them**: sorted by `inkOutsideText` the
+eight read lose / no / lose / no / no / lose / no / lose, so the two sets interleave and a bar low
+enough to protect all four losers protects all four non-losers too. The *lowest* of the eight loses
+two lines of prose and two of the four highest lose nothing. Within `Broadhead - 1994` alone the
+fraction does order its eight rendered pages perfectly, missing p3 by at most 0.00005 — so
+`p8`-against-`p10`, which this paragraph used to offer as the bar being arbitrary, is the bar getting
+that pair right; the argument now rests on the interleaving across documents instead, and on
+`Atkinson_1939` p2-vs-p3 and `Jones` p12-vs-p5, where the fraction is wrong.
+57.4% of what un-shrinking those eight would cost lands on the four that lose nothing.
+⚠️ **And the recipe C28 gave for this render was a false negative** — `INKBAR=0.08` compares a
+sub-bar page with itself (byte-identical backgrounds, measured); the bar must be *below* the page's own
+`inkOut`. So the question C26's
 campaign surfaced (*why is recognised-page prose dropped from the stencil at all*) is now its own
 entry, **`C28`** — the stencil is the intersection of the page's ink with Vision's word boxes, and
 that premise is written in `inkOutsideText`'s doc comment as a fact ("ink that is not inside any
@@ -3603,7 +3616,12 @@ box**, cut out of the stencil by `textRegionMask` because it keeps only what was
 check-in. C28 also carries what this section could not have known: measured over the committed sweep,
 **73 sampled pages in 22 documents are still shrunk at the new bar**, and `Broadhead - 1994` p8 —
 which sub-step 4 read losing a line of body text — is rescued at `inkOut` 0.0465 while its own p10
-sits 0.0024 lower and is not.
+sits 0.0024 lower and is not. ⛔ **That pair is the bar getting it RIGHT, measured 2026-08-20: p10
+loses nothing**, and within this document the fraction orders all eight rendered pages with no
+inversion. What C28 rests on instead is that the eight pages nearest the bar from below **interleave
+across documents** — 4 of 8 lose content and no value of the constant separates them. See C28's
+`#### The eight near-misses, RENDERED`; this sentence offered p8-vs-p10 as the arbitrary case until
+that render.
 
 #### The rendered proof on the founding pages: the drawings are back — MEASURED 2026-08-20, and C26 CLOSES
 
@@ -4286,8 +4304,12 @@ already clear it, because two of the ten carry no colour and one page that keeps
 
 ### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — OPEN
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move
-the bar **and** open this as its own entry rather than fold it into C26. Nothing here is worked yet —
-this is the mechanism, the evidence C26 already paid for, and the first measurement.)*
+the bar **and** open this as its own entry rather than fold it into C26. First sub-step worked
+2026-08-20 — the eight near-misses rendered, in `#### The eight near-misses, RENDERED`; everything
+before that section is the mechanism, the evidence C26 already paid for, and the first measurement.
+⛔ That section corrects this entry's own instrument line — the one in question 1 of
+`#### What is not known`, below: `INKBAR=0.08` compares these pages **with themselves** and reads as
+"loses nothing".)*
 
 **⛔ READ `C26` FIRST**, two sections of it in particular: `#### Sub-step 4, the benefit` is the
 evidence for everything below, and `#### The constant moved` is what shipped on 2026-08-19. **This is
@@ -4304,6 +4326,11 @@ sub-step 4 read thirteen such pages at 1:1 and **8 were losing content outright*
 of a Pearson correlation matrix on `Xin Qu et al_2018` p20, seven lines of prose on
 `_1973_Committee Against Racism_` p4, three lines on `Broadhead - 1994` p6. Content present in the
 source, absent from the text layer, illegible in the image, and **nothing reports it** — invariant 1.
+**Measured 2026-08-20, it happens on pages the shipped bar still shrinks too**: of the eight pages
+nearest the bar from below, **4 of 8 lose content** — two lines of prose on `Broadhead - 1994` p3, two
+on `Jones et al_2010` p5, table figures on `Scott_TK` p3, a handwritten signature on `Atkinson_1939`
+p3 — and sorted by `inkOutsideText` those four are the 1st, 3rd, 6th and 8th, so **the signal the bar
+reads does not order the loss**.
 
 #### The mechanism, read off the shipped code (read, not executed) — 2026-08-19
 
@@ -4396,8 +4423,11 @@ fallback JPEG rather than a layer pair. That is why the entry's cousin figures u
 | at the shipped bar, 0.045 | **73** |
 
 So C26's fix moved 16 pages and **73 sampled pages in 22 documents are still shrunk**, carrying
-3,201,507 layered bytes. Every one of them still stores every unrecognised mark on it at 1/8. Whether
-any of the 73 is losing content is **not known** — none has been rendered.
+3,201,507 layered bytes. Every one of them still stores every unrecognised mark on it at 1/8. ⛔ **8 of
+the 73 were RENDERED on 2026-08-20 and 4 of the 8 lose content** — two pages losing two lines of
+running prose each, one losing figures out of a statistical table, one losing a handwritten signature.
+See `#### The eight near-misses, RENDERED` below; **65 remain unrendered.** (This sentence read
+"whether any of the 73 is losing content is **not known** — none has been rendered" until then.)
 
 ⛔ **And 31 of the 73 are in documents sub-step 4 already rendered.** The 13 rendered pages came from
 9 documents; 6 of those 9 have *other* pages still shrunk at the new bar, and they
@@ -4407,7 +4437,9 @@ is the exception; its rendered page loses graphic rules and table cells) — `Xi
 `Atkinson_1939` **2**. The remaining 42 are spread over 16 other documents, the largest single share
 being 10 pages of `Krippner__The political economy of financial exuberance`. So the population most
 likely to be losing content is not a guess: it is the same scans, same recogniser, and 31 pages of it,
-none of them looked at.
+of which **7 have now been looked at and 24 have not** (2026-08-20 — this sentence ended "none of them
+looked at" until then; 7 rather than 8 because the eighth page rendered, `Scott_TK` p3, is in none of
+the six documents).
 
 **And the eight nearest are not a random eight.** The 73, banded by the `inkOut` the sweep *prints*:
 **7 in [0.030, 0.045), 1 printing exactly 0.0450**, 4 in [0.020, 0.030), 7 in [0.010, 0.020), 54 below
@@ -4441,26 +4473,37 @@ pages of `Broadhead - 1994`, every one of them layered. ⚠️ It is a **13-page
 sampled (`Flattener.sampleIndices(count: 13, wanted: 12)` gives p2…p13), so its route is unknown; the
 first draft called this a 12-page scan and the numbers audit caught it:
 
-| `inkOut` | page | at 0.045 | what sub-step 4 read on it |
+| `inkOut` | page | at 0.045 | what was read on it |
 |---|---|---|---|
-| 0.0767 | p6 | rescued | 3 lines of body text, illegible as shipped |
-| 0.0590 | p9 | rescued | 3 lines of body text, illegible as shipped |
-| **0.0465** | **p8** | **rescued** | **1 line of body text, illegible as shipped** |
-| **0.0450** | **p3** | **still shrunk** | not rendered |
-| **0.0441** | **p10** | **still shrunk** | not rendered |
-| 0.0410 | p12 | still shrunk | not rendered |
-| 0.0405 | p5 | still shrunk | not rendered |
-| 0.0370 | p7 | still shrunk | not rendered |
+| 0.0767 | p6 | rescued | 3 lines of body text, illegible as shipped (sub-step 4) |
+| 0.0590 | p9 | rescued | 3 lines of body text, illegible as shipped (sub-step 4) |
+| **0.0465** | **p8** | **rescued** | **1 line of body text, illegible as shipped (sub-step 4)** |
+| **0.0450** | **p3** | **still shrunk** | **2 lines of body text, illegible as shipped (2026-08-20)** |
+| **0.0441** | **p10** | **still shrunk** | **nothing a reader sees (2026-08-20)** |
+| 0.0410 | p12 | still shrunk | nothing a reader sees (2026-08-20) |
+| 0.0405 | p5 | still shrunk | nothing a reader sees (2026-08-20) |
+| 0.0370 | p7 | still shrunk | nothing a reader sees (2026-08-20) |
 | 0.0193 / 0.0140 | p4 / p2 | still shrunk | not rendered |
 | 0.1210 / 0.1034 | p13 / p11 | picture at both bars | not at risk |
 
-`p8` loses a line of body text at 0.0465 and is rescued. `p10` sits **0.0024 lower — 5% relative** —
-and is not. Nothing in the *decision* separates them but which side of 0.045 a page-area fraction
-landed on, and that fraction has no relationship to whether a line of type went missing: it measures
-how much of the sheet the unrecognised ink covers, not whether any of it is words. (What is on the two
-pages of course differs — that is the point. The decision cannot see it.) The same pattern holds in the other two documents: `Atkinson_1939` p2 (0.0580, two lines
-lost) is rescued and its p3 (0.0388) is not; `Jones et al_2010` p12 (0.0461, table cells lost) is
-rescued and its p5 (0.0353) is not.
+⛔ **THE ARGUMENT THIS SECTION MADE OFF `p8` AND `p10` IS OVERTURNED BY THE RENDER, on this document.**
+It read: *"`p8` loses a line of body text at 0.0465 and is rescued. `p10` sits 0.0024 lower — 5%
+relative — and is not. Nothing in the decision separates them but which side of 0.045 a page-area
+fraction landed on, and that fraction has no relationship to whether a line of type went missing."*
+Measured 2026-08-20, **`p10` loses nothing a reader sees**, so p8-against-p10 is the bar getting this
+pair *right* rather than arbitrarily, and on all eight rendered pages of this document the fraction
+orders the loss perfectly (see `#### The eight near-misses, RENDERED`). The claim survives — but as a
+claim about the **corpus**, not about this pair: across the eight near-miss pages in four documents
+the losing and non-losing sets **interleave**, so no value of the constant separates them. The other
+two documents' pairs are now measured on **both** sides and neither contains an inversion:
+`Atkinson_1939` p2 (0.0580, two lines lost, rescued) and p3 (0.0388, a **handwritten signature** lost,
+shrunk); `Jones et al_2010` p12 (0.0461, table cells lost, rescued) and p5 (0.0353, **two lines of
+prose** lost, shrunk). ⚠️ Both pages of each pair lose something, so those pairs say only that 0.045
+sits too high in those documents — they are **not** examples of the fraction mis-ordering, and this
+paragraph called them that until the audit of this diff counted them. Every actual inversion among
+the eight is **cross-document**: `Broadhead` p10 (0.0441, no) above `Scott_TK` p3 (0.0412, lose);
+p12/p5 (0.0410/0.0405, no) above `Atkinson_1939` p3 (0.0388, lose); p7 (0.0370, no) above `Jones` p5
+(0.0353, lose). That is what the corpus-level claim rests on.
 ⚠️ The `p3` row is the seventeenth row C26 names: it *prints* `0.0450` and its true value is under the
 bar, so it does not move — the instrument agreeing with the entry, not a new page.
 
@@ -4473,16 +4516,190 @@ show-through only) that is **32.4% of the band's +2,965,653 B spent on two pages
 apart.** A page-wide ink fraction cannot separate those from `Xin Qu` p20 because both are "ink
 outside the words"; the difference is *what the marks are*, which is the question this entry is about.
 
+#### The eight near-misses, RENDERED — 4 of 8 lose content, and `inkOutsideText` does not order them — MEASURED 2026-08-20
+
+**This is the first sub-step of this entry and it answers the first of the questions below on the
+eight pages that question named.** All eight rendered, all four documents, exit 0 on every
+invocation, `INKDUMP` reporting 7 files written in full per page with none missing, and the tool's
+own per-page check saying the **stencil is byte-identical at both bars on all 8** — so the whole
+difference between the two images compared below is the background factor and nothing else. `inkOut`
+and `layered` reproduce `INKBAR-2026-08-19.tsv` **digit for digit on all eight rows** — which pins
+determinism across invocations, not independence: the sweep drives this same binary, and those two
+columns do not depend on `INKBAR`. (The first draft called it "a second code path"; the audit of this
+diff was right that it is one code path run twice.)
+
+⛔ **FIRST, A CORRECTION TO THIS ENTRY'S OWN RECIPE, AND IT WOULD HAVE READ AS "LOSES NOTHING".**
+The instrument line below said `INKBAR=0.08 INKDUMP=<dir>`, copied from C26 sub-step 4 where the
+comparison was the old bar against the new one. **For this population that recipe compares a page
+with itself.** These eight sit *under* the shipped 0.045, so at 0.08 they are `all-text` on both
+sides. Measured on `Broadhead - 1994` p3: `barVerdict` **`all-text`**, `barDelta` **`same`**,
+background **284 px shipped vs 284 px at the bar**, and the two dumped JPEGs are **byte-identical**
+(sha256 `10abe386c157b468…` for both). A reader following the recipe would have diffed two copies of
+one file and concluded the page loses nothing — on the page that turns out to lose two lines of
+prose. **The bar must be BELOW the page's own `inkOut`**, which is what makes production's verdict
+the shrunk one and the override's the un-shrunk one; `INKBAR=0.02` covers all eight (the lowest
+`inkOut` here is 0.0353). Backgrounds then come out **1139 px against 284 px** (Broadhead, 2278 px
+render), 510/127 (Scott, 1020), 967/241 (Atkinson, 1935), 620/155 (Jones, 1240) — the caller's 2x
+against the all-text 8x, as fact 3 of the mechanism says.
+
+**The verdicts, each settled by a 1:1 crop and each cross-checked against the stencil's own ink in
+that rect.** Order is by `inkOut`, descending, i.e. the order the table above lists them in:
+
+| `inkOut` | page | what is outside the stencil | as shipped | verdict |
+|---|---|---|---|---|
+| 0.0450 | `Broadhead - 1994` p3 | **2 lines of body text** at the head of p155 — *"alizing a cultural order at that moment passing from life and of fab- / ricating, in the literary realm, a mentally possessible version of a"* | illegible blur | **LOSES WORDS** |
+| 0.0441 | `Broadhead - 1994` p10 | page edges, gutter, the scanner's thumbs | — | nothing a reader sees |
+| 0.0412 | `Scott_TK_The Scientific Selection of Salesmen` p3 | a scattered subset of the numerals in **four of the five columns** of the salesmen table (column C keeps only a sub-glyph fragment), the **column heads B / C / E**, the **Roman-numeral row labels** (IX., X., XI., XV.), the table rules, several **bold display lines** (*"by means of carefully classified data"*, *"tons during the last few years"*, *"roll of"*, *"Follow-"*, *"1918 Ap-"*, *"power sell."*) and the **"Digitized by Google / Original from UNIVERSITY OF MICHIGAN"** footer | blobs and smears; not one figure readable | **LOSES TABLE DATA** |
+| 0.0410 | `Broadhead - 1994` p12 | page edges, gutter, thumbs (an endnotes page) | — | nothing a reader sees |
+| 0.0405 | `Broadhead - 1994` p5 | page edges, gutter, thumbs | — | nothing a reader sees |
+| 0.0388 | `Atkinson_1939` p3 | the **handwritten signature** on a 1939 letter of resignation, and the typed dash rule under it | a smeared wavy band; no stroke followable | **LOSES A HAND-DRAWN MARK** |
+| 0.0370 | `Broadhead - 1994` p7 | page edges, gutter, thumbs | — | nothing a reader sees |
+| 0.0353 | `Jones et al_2010` p5 | **2 lines of body text** — *"whereas potential dilution is known ex-ante. Another rea- / son for using potential dilution is that other Finnish"* — plus Table 2's head rule, the `11111111111` **Pattern cell** (11 digits, one per year 1992-2002) and two bold Frequency values | lines illegible; rule → grey band; cell → smudge | **LOSES WORDS** |
+
+**Read as counts: 4 of 8 lose something, 3 of those 4 lose words or table data and the 4th a
+hand-drawn mark, 4 lose nothing a reader would see.** Sub-step 4's 13 pages on the other side of the
+bar split 7 words-or-table-data to 1 hand-drawn mark — the same two buckets in the same order, and
+**not** the same ratio (3:1 here against 7:1 there); the first draft of this line called it "the same
+3:1 shape", which is a reproduction claim that does not reproduce, and the numbers audit of this diff
+caught it.
+
+⛔ **AND THE SHARPEST RESULT IS THAT NO VALUE OF THE CONSTANT SEPARATES THESE EIGHT PAGES.** Sorted by
+`inkOut` the eight read **L, n, L, n, n, L, n, L** — losses at ranks 1, 3, 6 and 8, the *lowest* of the
+eight (`Jones` p5, 0.0353) losing two lines of prose and **two of the four highest** losing nothing.
+The two sets **interleave**: `pageIsAllText()` reads a page as all text when
+`inkOutsideText(…) < bar` (`Sources/Flattener.swift:2695-2697`, strict `<`; the shrink additionally
+needs `!keepEveryPixel`), so a page keeps its resolution when `inkOut` is at or above the bar, and
+protecting all four losers needs a bar at or below **0.03525** — the sweep prints four places, so
+`Jones` p5's true value is in [0.03525, 0.03535) — which protects all four non-losers too, since the
+lowest of them is at least 0.03695. There is no `textPageInkOutsideThreshold` that gets these eight
+pages right: not 0.045, not 0.035, not any value.
+
+⛔ **And the second term does not rescue the argument — it separates the eight PERFECTLY IN THE WRONG
+DIRECTION, which is sharper than a tie.** Sorted by `extent` the eight read **n, n, n, n, L, L, L, L**:
+the four highest (0.03460 / 0.03260 / 0.03159 / 0.02959) are exactly the four pages that lose nothing
+and the four lowest (0.02457 / 0.00053 / 0.00000 / 0.00000) exactly the four that lose content. So no
+*pair* of constants works either — any `paleDrawingThreshold` low enough to leave the non-losers shrunk
+is above `Jones` p5 and `Scott_TK` p3, which sit at 0.00000 and are unreachable by that term at any
+positive value. ⚠️ This paragraph first said `paleDrawing` "rescues none of them at any bar", which is
+false as stated: lowering the threshold below 0.02457 does rescue `Broadhead` p3 and below 0.00053
+`Atkinson_1939` p3. Corrected by the adversarial review of this diff, which also found the ordering. That is this entry's thesis measured rather than argued, and it is a stronger statement
+than the byte arithmetic ever made: the term has to be about *what the marks are*, which is question 3
+below. ⚠️ The first draft of this section concluded instead that "the useful bar is **per scan**" and
+that the other three documents "have no such window"; the numbers audit of this diff refuted it from
+the committed sweep — see the next paragraph. Interleaving is what the eight pages actually show.
+
+⚠️ **What the per-document reading does and does not support.** Within `Broadhead - 1994` the sets do
+*not* interleave: all eight of its rendered pages — these five plus sub-step 4's p6 / p8 / p9 —
+separate exactly, the four that lose lines reading 0.0767 / 0.0590 / 0.0465 / 0.0450 and the four that
+lose nothing reading 0.0441 / 0.0410 / 0.0405 / 0.0370, with **no inversion**. Because the sweep prints
+four places and the comparison is a strict `<`, p3's true value is in [0.04495, 0.045) and p10's in
+[0.04405, 0.04415), so any bar in **[0.04415, 0.04495]** sorts that document's **eight rendered** pages perfectly (its p4
+at 0.0193 and p2 at 0.0140 are sub-bar and still unrendered) and the shipped 0.045 sits above that window — missing p3 by **at most 0.00005**. ⛔ **But nothing of the kind is
+measurable for the other three documents, and the claim that they "have no such window" was wrong.**
+Read off `INKBAR-2026-08-19.tsv`, each contributed exactly **one** rendered page out of its sub-bar
+set: `Scott_TK` has only p3 below the bar at all (its p6/p9/p10/p12 read 0.1333-0.4795 and are
+`picture` at both bars), so *any* bar up to 0.0412 sorts it; `Atkinson_1939` has p1 (0.0000) and p3;
+`Jones et al_2010` has p2 (0.0008), p3 (0.0000), p5, p7 (0.0137) and p9 (0.0000). Five of those pages
+are unrendered and are part of the 65 still outstanding, so per-document windows for those three are
+open questions, not results. What *is* measured for them is only that 0.045 is too high for each.
+
+**What the four negatives are worth, stated as the bound it is — and ⛔ this paragraph's first two
+drafts both quoted a "floor" that was not one, which is C26's own retracted mistake for the third time
+in this campaign.** The bound: at 700 px the un-normalised at-bar background shows no solid mark
+anywhere on the sheet, and over **interior 900x240 windows at stride 60** (measured on all five
+Broadhead backgrounds through C26 method (b), one instrument at one window size) the numbers are
+
+| page | busiest interior window | flattest interior window |
+|---|---|---|
+| p3 (**loses 2 lines**) | **9.64** — and the window is `900x240+1149+152`, which *is* the two lost lines | 3.15 |
+| p10 | 4.50 | 3.30 |
+| p12 | 5.17 | 3.53 |
+| p5 | 4.42 | 3.11 |
+| p7 | 4.51 | 3.21 |
+
+so the four negatives' **busiest** window sits at 4.42-5.17 against a blank-paper level of 3.11-3.53
+on the same five images, while the one page that loses content peaks at **9.64 — about 2x the
+negatives and 3x the floor** — on exactly the rect the crop reads as two illegible lines. ⛔ Draft one
+quoted 5.78 (a **1010x170** measurement against 900x240 windows) and draft two 5.63, both of them p3's
+blankest rect *as found by a brightness-filtered scan at stride w/2* — which on this mottled spread
+lands on a **text** window, not on paper. Measured at stride 60 with no brightness filter, p3's
+flattest interior window is **3.15**, so the negatives were being compared against something *above*
+them and the bound as written was inverted. Found by the adversarial review of this diff, twice, and
+the corrected numbers are the table above.
+⚠️ Two limits that remain. (a) The window scan keeps a 1/12 margin **and** steps by w/2, h/2, so on a
+2278x1834 page the windows cover x ∈ [189, 1989] and y ∈ [152, 1592] — **62% of the sheet**, with
+unmeasured bands of 189 px left / 289 px right / 152 px top / 242 px bottom. Only the 700 px look
+covers the rest, and an outer margin is exactly where C26's one founding-mode loss lived
+(`Riesman - 1954` p16's hand-drawn bracket). ⚠️ The gutter is *not* in that unmeasured band — these
+pages are two-page spreads and it runs down the centre at x ≈ 1139, well inside the windows; the first
+draft of this caveat said otherwise. (b) None of this is a proof that no mark of any size sits outside
+the stencil on those four pages; it is that nothing on them approaches what p3 shows.
+
+**Method, and it is C26 sub-step 4's with one addition that made it cheap.** The addition: at the bar,
+ink outside the stencil appears as **true glyphs** while ink inside it appears only as a pale
+`fillHoles` residue, so the un-normalised at-bar background *is* the locator — one 700 px look per
+page says where to crop, and on four of the eight says there is nothing to crop. Every verdict then
+rests on a three-row 1:1 crop (source / at bar / as shipped), and **three of the four** losses are
+additionally cross-checked against the **stencil's own ink fraction** in that rect, which is the part
+that does not depend on anyone's eye:
+
+| rect | stencil ink | adjacent control, in the stencil |
+|---|---|---|
+| `Atkinson_1939` p3, the signature | **0.0%** | 7.6% (the typed line above) |
+| `Broadhead - 1994` p3, the two lost lines | **0.13%** | 11.4% (the next two lines) |
+| `Jones et al_2010` p5, the two lost lines | **3.6%** | 15.4% (the third line, which survives) |
+
+⚠️ **`Scott_TK` p3 — the largest of the four losses — has no such row, and this paragraph claimed
+"every verdict" was cross-checked until the audit of this diff counted the rows.** Its verdict rests
+on the 1:1 crop and on the un-normalised locator, which agree with each other; a stencil-ink figure
+for its table rect is owed and is cheap. So is one for each of the four negatives, where the check
+would be the other direction: high stencil ink everywhere there is ink.
+
+⚠️ **AND THE AUTO-LEVEL TRAP CAUGHT THIS SUB-STEP TWICE MORE — a third and fourth instance of the
+warning below.** A `-normalize`d whole-page view of the at-bar background said the **whole** of
+`Atkinson_1939` p3's typescript was outside the stencil (it is a two-page-worth loss if true) and
+that the **whole** Pattern column of `Jones` p5's Table 2 was. At 1:1 the typescript is residue —
+detail 3.97 over a 900x160 band at the bar against the signature's 12.66 over a 430x160 one, so those
+two are not the same-size comparison either — and only the top Pattern cell is solid. Both
+readings were overturned by the crops *and* independently by the stencil's ink fraction. Do not read
+a normalised whole-page image as evidence in this entry; it is a locator and a bad one.
+
+⚠️ **One test this sub-step did NOT run, and the audit of the diff both proposed it and had to run it
+twice**: the published page is the stencil composited over the background, not the background alone, so
+a loss read off the background could in principle be rescued by stencil ink sitting on top of it.
+Composited at 1:1 on the riskiest of the three (`Jones` p5, whose lost rect still holds 3.6% stencil
+ink), the two lost lines are **illegible** while the in-stencil lines above and below them are sharp in
+the same frame. The verdicts survive the composite. ⛔ **And the first attempt to reproduce that test
+here was itself the instrument failing**: the image it produced holds three grey levels and no JPEG at
+all — it was the stencil over a flat grey field, with the blurred background, the one thing that might
+have restored legibility, absent. It looked like a composite and was not one. §3 again, and the reason
+the claim above is the audit's measurement rather than this session's.
+
+**The byte price of the eight, which is the other half of any fix and is now measured on this
+population rather than the band.** 430,679 B shipped → 1,754,076 B un-shrunk: **+1,323,397 B,
+4.07x, 165,425 B/page**, all of it tone layers. Per page, `4.35x / 4.21x / 3.15x / 3.97x / 4.20x /
+4.44x / 4.25x / 3.30x` in the table's order. That is in line with the band's measured 4.54x and
+185,353 B/page (C26 sub-step 3b) rather than cheaper — and **more than half of it buys nothing**,
+since the four pages that lose nothing account for 759,536 B of the 1,323,397 (**57.4%**). Which is this
+entry's thesis restated in the residue: a page-wide bar cannot spend that money where the words are.
+
+**What remains of question 1: 65 of the 73.** Eight rendered, four losing. Seven of the eight came out
+of the 31 in the six documents sub-step 4 already read (`Scott_TK` p3 is in none of them), so **24 of
+that 31 remain** and are still the cheapest place to continue.
+
 #### What is not known, in the order worth measuring
 
-1. **Do the 73 still-shrunk pages lose content?** The 31 in the six documents sub-step 4 already read
-   are where to start, and inside those, the eight near-misses above — `Broadhead - 1994` p3 first,
-   same document as a page already proven to lose lines. The instrument exists and needs no
-   new code — `INKBAR=0.08 INKDUMP=<dir> /tmp/score-text-route "<pdf>" <page…>` (built first, as every
+1. **Do the 73 still-shrunk pages lose content? — 8 rendered 2026-08-20, 4 of them do; 65 to go.**
+   See the section immediately above for the eight and for the ⛔ correction to the recipe this item
+   used to give. The 31 in the six documents sub-step 4 already read are still where to continue, and
+   24 of those 31 remain. The instrument exists and needs no
+   new code — `INKBAR=<bar below the page's own inkOut> INKDUMP=<dir> /tmp/score-text-route "<pdf>"
+   <page…>` (built first, as every
    Swift tool here is) writes the grey render, the stencil and **both** tone-layer pairs from the same
    `mrcLayers` call the byte columns come from. ⚠️ Read C26 sub-step 4's method paragraph before believing any of it: an auto-levelled
-   whole-page difference **misled twice**, and the readings that stood were 1:1 crops plus an
-   ink-outside-the-stencil map.
+   whole-page difference **misled twice**, and then **twice more on 2026-08-20**; the readings that
+   stood were 1:1 crops, the stencil's own ink fraction in the rect, and the un-normalised at-bar
+   background as a locator.
 2. **What the same loss looks like at 1/2 and 1/3**, i.e. on every layered page that is *not* read as
    all text — **109 of the 182 sampled** at the shipped bar, up from 93 before it. The confinement is identical there;
    only the factor differs. Unmeasured, and the likely finding is "degraded but legible", which would

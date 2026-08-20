@@ -334,13 +334,19 @@ than reasoned — the first attempt broke the coherence check twice:
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      **The first sub-step is named in the entry and needs no new code**: 73 sampled pages in 22
-      documents are still shrunk at the new bar and **31 of them are in six of the nine documents
-      sub-step 4 rendered**. Render the 8 near-miss pages first (printed `inkOut` 0.0353 to 0.0450),
-      starting with `Broadhead - 1994` p3 — the same scan whose p8
-      loses a line at 0.0465 and IS rescued while its p10 sits 0.0024 lower and is not. Instrument:
-      `INKBAR=0.08 INKDUMP=<dir> /tmp/score-text-route`, then 1:1 crops — **not** an auto-levelled
-      whole-page difference, which misled twice.
+      ✅ **The first sub-step is DONE 2026-08-20 — the 8 near-misses are rendered and 4 of the 8 lose
+      content.** Do not re-run it; the sub-box below and the entry's
+      `#### The eight near-misses, RENDERED` carry the table, the byte price and the method.
+      ⛔ **Two corrections came out of it that this box was itself wrong about.** (1) The instrument
+      line here said `INKBAR=0.08 INKDUMP=<dir>`, and for pages BELOW the shipped bar that compares a
+      page **with itself** — measured, `barVerdict` `all-text`, `barDelta` `same`, two byte-identical
+      backgrounds — so it would have read as "loses nothing". Use a bar **below the page's own
+      `inkOut`**; `INKBAR=0.02` covers that population. (2) An un-normalised at-bar background is a
+      good locator (out-of-stencil ink is solid there, in-stencil ink only a pale `fillHoles` ghost);
+      a `-normalize`d one misled twice more, on top of the two the entry already records.
+      **What is left of sub-step 1: 65 of the 73 pages, 24 of them in the six documents
+      sub-step 4 already read** — that is where the next session continues, same instrument, no new
+      code. After that, the entry's questions 2-5, in its order.
       ⚠️ **Do not widen `textRegionMask` without pricing it — and do not quote the wrong price.** T15's
       1.33x over 74 corpus *picture* pages is the STENCIL-bytes total; the page total on the 26 cleanly-comparable
       pages is **1.07x**, which is what a widening is judged on, and T15 records the whole-sample gap
@@ -352,6 +358,34 @@ than reasoned — the first attempt broke the coherence check twice:
       ⚠️ **The release gate cannot see this class either** — same `score-gate.swift` limitation C26
       records. Do not accept a green gate as evidence.
       (origin: BUGS.md C28)
+- [x] **c28-nearmiss** — **DONE 2026-08-20.** C28's first sub-step: the eight pages nearest the shipped
+      bar from below (`inkOut` 0.0353-0.0450) rendered at both factors and read at 1:1. **4 of the 8
+      lose content** — two lines of running prose each on `Broadhead - 1994` p3 and `Jones et al_2010`
+      p5, table figures / column heads / Roman row labels / the Google-scan footer on `Scott_TK` p3,
+      and a **handwritten signature** on a 1939 letter on `Atkinson_1939` p3; the other four
+      (`Broadhead` p5 / p7 / p10 / p12) lose only page edges, gutter and the scanner's thumbs. Three
+      of the four losses are cross-checked against the stencil's own ink in the rect — **0.0% / 0.13%
+      / 3.6%** where the loss is, against 7.6% / 11.4% / 15.4% on the adjacent lines that survive;
+      `Scott_TK` p3 is the fourth and rests on the crop and the locator agreeing. `inkOut` and
+      `layered` reproduce `INKBAR-2026-08-19.tsv` digit for digit
+      on all eight rows, stencil byte-identical at both bars on all eight, `INKDUMP` 7 files per page
+      with none missing.
+      ⛔ **The result is the ORDERING, not the count, and it is that NO VALUE OF THE CONSTANT
+      SEPARATES THE EIGHT**: sorted by `inkOutsideText` they read
+      lose / no / lose / no / no / lose / no / lose, so the sets interleave — a bar low enough to
+      protect all four losers protects all four non-losers too. The lowest of the eight loses two
+      lines of prose and two of the four highest lose nothing. Within `Broadhead - 1994` the fraction
+      *does* sort its eight rendered pages perfectly (0.0767 / 0.0590 / 0.0465 / 0.0450 lose,
+      0.0441 / 0.0410 / 0.0405 / 0.0370 do not, no inversion) and the shipped bar misses p3 by at most
+      0.00005 — so `p8`-vs-`p10`, the pair C28 was opened citing, is the bar getting it right. Every
+      actual inversion among the eight is cross-document; `Atkinson_1939` p2-vs-p3 and `Jones`
+      p12-vs-p5 are pairs where BOTH pages lose, so they are not inversions.
+      **C28's case for a shape term, measured rather than argued.** ⚠️ A first draft of this box said
+      "the useful bar is per scan"; the audit of the diff refuted it — the other three documents
+      contributed one rendered page each, so no per-document window is computable for them.
+      Price of un-shrinking the eight: 430,679 -> 1,754,076 B, **+1,323,397 B, 4.07x, 165,425 B/page**,
+      of which **57.4% lands on the four that lose nothing**.
+      Corpus read-only throughout; every image written to `mktemp`-style scratch under `/tmp`.
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the
