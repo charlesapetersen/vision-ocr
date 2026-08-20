@@ -485,9 +485,28 @@ than reasoned — the first attempt broke the coherence check twice:
            **The class is already in the corpus and simply is not counted**, so this needs no new files.
         3. Report the two rates to the owner. The DECLINE stands or falls on that, and it is the owner's
            call, not a session's. If it falls, THEN a register entry gets opened.
-      ⚠️ Also add the narrow-gutter case to the `ENGINE ASSUMPTION` fixture — its gutter is 8.5% of the
-      page and its own comment calls that "far wider than any word space", which is exactly why it is
-      green while a real page welds. A second fixture at ~2.5% is the check that would have caught this.
+      ⛔ **SUB-STEP 0, AND THE OWNER PUT IT FIRST (2026-08-20): the narrow-gutter FIXTURE, before any
+      sweep.** The existing `ENGINE ASSUMPTION` fixture's gutter is 52 pt of 612 = 8.5%, and its own
+      comment calls that "far wider than any word space" — which is exactly why it is green while a real
+      page welds. A second fixture at ~2.5% is the check that would have caught this, and it is cheap,
+      committable and needs no corpus.
+      ⛔⛔ **BUT DO NOT WRITE IT AS AN ASSERTION THAT FAILS. A red suite refuses EVERY commit through
+      `.githooks/pre-commit`, including yours, and there is no fix to pair it with** — the remedy is
+      declined and, per this item, upstream rather than a sort. The project's own idiom is the way out:
+      these checks are named `ENGINE ASSUMPTION` and they PIN engine behaviour. So pin what is true —
+      *"ENGINE ASSUMPTION: at a ~2.5% gutter Vision welds across it"* — with the measured count in the
+      failure detail. That is green today, it records where the engine's competence ends, and it goes RED
+      if Vision ever improves, which is good news and is precisely when this feature should be reopened.
+      Watch it fail by planting a wide gutter, the same way the existing pair was watched.
+      ⚠️ This is a `Tests/main.swift` change, so it runs the full suite and is its own commit. Budget it
+      as one commit, not a free one.
+      ⛔ **NO CORPUS ADDITIONS — owner's decision 2026-08-20.** 18 corpus documents already carry this
+      shape and are simply not being counted, so the class needs no acquisition to be measured. Adding a
+      specimen was priced and deferred: `testdocs/manifest.tsv`'s 12 columns are gate outputs that cannot
+      be hand-written, 22 files quote the corpus size, and `testdocs/README.md` says re-cutting "moves
+      every published figure at once, and that is a decision to take with the numbers rather than instead
+      of them". Those numbers are what sub-steps 1-3 produce. Do not propose a corpus write before then;
+      `corpus-write` stays `[hold] needs: owner` regardless.
       (context: FEATURES.md item 3, reopened 2026-08-20; Tests/main.swift:5196)
       ⚠️ This and `born-digital-page` are the same document class and share a fixture, so they sit
       together. **`C27` has now been passed by two items** — if the owner wants C27 first, move it up.
