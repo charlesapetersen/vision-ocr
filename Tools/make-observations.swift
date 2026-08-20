@@ -33,8 +33,53 @@ guard arguments.count >= 3 else {
         Writes the observation JSON that probe-line-edges, probe-text-offset and
         probe-line-coverage read as their last argument. See CLAUDE.md invariant 3.
 
+        argv[2] is WRITTEN and must be named .json — a shell glob would otherwise
+        land a corpus PDF there. See BUGS.md T19.
+
         """.utf8))
     exit(2)
+}
+
+// ⛔ argv[2] IS WRITTEN, AND THE CORPUS IS NOT COMMITTED. `make-observations
+// testdocs/*/*.pdf` WOULD recognise corpus document 1 and write its JSON over corpus
+// document 2, with document 3 taken as the password and the rest unread; 1.2 GB of
+// third-party PDFs that cannot be rebuilt without the owner's Zotero library was one
+// glob away. Nobody ran it — latent, and measured on scratch fixtures (T19), where
+// the pre-fix tool did exactly that and reported `1 page(s), 14 observations` over
+// the PDF it had just destroyed. Of the eight tools here that read argv[2] as
+// something other than a path, this and `pdf-extract-pages` are the two that WRITE
+// it, which is why they were guarded first (BUGS.md T19; the owner's decision,
+// 2026-08-19).
+//
+// Two guards, and the discriminator is different from `pdf-extract-pages`'s on
+// purpose: that tool writes the same file type it reads, so existence is the only
+// signal it has and it needs an OVERWRITE escape. This one writes JSON, so the
+// destination's *extension* separates the corpus accident from the legitimate re-run
+// — and re-running the invariant-3 procedure onto its own obs.json, which is the
+// common case, stays free.
+//
+// What that does NOT do, written out because the first draft of this comment said
+// "perfectly": there is no existence guard here, so an unrelated `.json` named as
+// argv[2] is still overwritten with no override. The hazard being closed is the
+// unrebuildable corpus, and the corpus is `.pdf`; a hand-typed `.json` path is an
+// ordinary mistake with an ordinary cost. The two guards land in different places
+// and `fault-inject.sh argv_writers` has a row for each — the count guard needs
+// FOUR arguments to fire, which the first version of that case never gave it.
+func refuse(_ why: String) -> Never {
+    FileHandle.standardError.write(Data("REFUSED: \(why)\n".utf8))
+    exit(2)
+}
+guard arguments.count <= 4 else {
+    refuse("""
+        \(arguments.count - 1) arguments; this tool takes <pdf> <out.json> [password].
+                 Extra paths are a shell glob, and argv[2] is written, not read.
+        """)
+}
+guard arguments[2].lowercased().hasSuffix(".json") else {
+    refuse("""
+        the destination '\(arguments[2])' is not named .json, and argv[2] is written, not read.
+                 A shell glob puts a corpus document here.
+        """)
 }
 let source = URL(fileURLWithPath: arguments[1])
 let target = URL(fileURLWithPath: arguments[2])

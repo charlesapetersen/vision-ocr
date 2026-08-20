@@ -430,3 +430,12 @@ version control at the time they had to be reconstructed from memory.
 
 `testdocs/` — 1.2 GB of third-party copyrighted PDFs, 233 of them. `testdocs/manifest.tsv` and
 `Tools/sample-zotero.py` let it be rebuilt from a Zotero library.
+
+⚠️ **Two tools in `Tools/` WRITE `argv[2]`, so a glob could destroy a corpus document** —
+`pdf-extract-pages testdocs/*/*.pdf` *would have* opened document 1, overwritten document 2,
+dropped the other 231 paths silently and printed `extracted 0 pages` on exit 0. Nobody ran it:
+it was latent, and the destruction was measured on scratch fixtures (**710,796 B -> 809 B**,
+2026-08-20), never on the corpus. **`BUGS.md` T19 is `FIXED`**: both refuse now,
+`Tools/fault-inject.sh argv_writers` holds the refusals, and `OVERWRITE=1` is how to mean it on
+`pdf-extract-pages`. The **six** tools that read `argv[2..]` as a label or a page number
+mis-measure rather than destroy and are still open as the queue's `argv-shape`.

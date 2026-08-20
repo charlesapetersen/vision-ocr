@@ -255,7 +255,281 @@ fault_mrc_refuses() {
   fi
 }
 
-FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses"
+# T19. The two tools in `Tools/` that WRITE argv[2] — `pdf-extract-pages` and
+# `make-observations`. A shell glob lands a corpus document in that slot, so these
+# refusals are the only thing between `testdocs/*/*.pdf` and 1.2 GB of third-party
+# PDFs that is not committed and cannot be rebuilt without the owner's Zotero
+# library. Latent, not observed: nobody had run it, and until 2026-08-20 nothing
+# would have stopped them.
+#
+# ⚠️ THIS CASE MUST NEVER OPEN `testdocs/`. The victims are built here by the
+# suite's own fixture generator — a case that reached for the corpus to prove the
+# corpus is safe would be the defect it is testing for.
+#
+# Both halves, per CONTRIBUTING 4d's inverse row: the glob-shaped argv must be
+# refused with the destination BYTE IDENTICAL afterwards, and a legitimate
+# invocation must still produce its output. A tool that refused everything would
+# pass the first half on its own, which is how a guard becomes a silent outage.
+#
+# ⚠️ THIS CASE SABOTAGES NOTHING — it is the one here that feeds hostile argv to a
+# tool rather than breaking the tool's environment, so the file header's "sabotages
+# one thing, runs the real build step" describes the other six. It does compile:
+# `pdf-extract-pages` alone, `make-observations` against all of `Sources/`, and one
+# real Vision recognition for the inverse row.
+fault_argv_writers() {
+  local name target
+  target="$(uname -m)-apple-macos13.0"
+  sandbox
+
+  # Real PDFs to point them at. `make-plate-fixtures` is standalone (AppKit only)
+  # and is what run_tests.sh builds for the R56/R57 routing checks, so these are
+  # the same pages the register's own measurements describe.
+  if ! swiftc -o "$SB/plates" -target "$target" \
+       "$SB/Tools/make-plate-fixtures.swift" >"$SB/plates.log" 2>&1; then
+    bad "make-plate-fixtures builds" "$(grep -m1 'error:' "$SB/plates.log" || echo 'see plates.log')"
+    return
+  fi
+  mkdir -p "$SB/plates.d"
+  "$SB/plates" "$SB/plates.d" >/dev/null 2>&1
+  local master="$SB/plates.d/halftone.pdf" src="$SB/plates.d/text-only.pdf"
+  local third="$SB/plates.d/text-red-ink.pdf" victim="$SB/victim.pdf"
+  if [ ! -s "$master" ] || [ ! -s "$src" ] || [ ! -s "$third" ]; then
+    bad "the fixture pages exist" "make-plate-fixtures wrote no halftone/text-only/text-red-ink.pdf"
+    return
+  fi
+  local before after out rc
+
+  # A FRESH victim per check, not one `before` for all of them. Sharing it made the
+  # unguarded case cascade — the first check's write left every later digest
+  # comparison reporting the first check's damage.
+  # It sets `victim` as well as copying it, because later rows point `victim` at a
+  # different file under threat and this must not follow them there.
+  _t19_fresh() {
+    victim="$SB/victim.pdf"
+    cp "$master" "$victim"
+    before="$(shasum -a 256 "$victim" | cut -d' ' -f1)"
+  }
+
+  # What a refusal has to be, in one place: exit 2 (every guard in both tools uses
+  # it), a diagnostic that says so, and the destination BYTE IDENTICAL. `rc != 0`
+  # alone would read green on a refusal for an unrelated reason — the sibling
+  # `mrc_refuses` asserts an exact code and greps the message, and so does this.
+  _t19_refused() {   # name, rc, output
+    after="$(shasum -a 256 "$victim" | cut -d' ' -f1)"
+    if [ "$2" -eq 0 ]; then
+      bad "$1" "exit 0, said: $(head -1 <<<"$3")"
+    elif [ "$after" != "$before" ]; then
+      bad "$1" "refused with exit $2 AFTER writing the destination"
+    elif [ "$2" -ne 2 ]; then
+      bad "$1" "exit $2, wanted 2 (a refusal): $(head -1 <<<"$3")"
+    elif ! grep -qE 'REFUSED|usage:' <<<"$3"; then
+      bad "$1" "exit 2 with no refusal diagnostic: $(head -1 <<<"$3")"
+    else
+      ok "$1"
+    fi
+  }
+
+  # ---- pdf-extract-pages. Standalone: PDFKit and Foundation only.
+  if ! swiftc -o "$SB/extract" -target "$target" \
+       "$SB/Tools/pdf-extract-pages.swift" >"$SB/extract.log" 2>&1; then
+    bad "pdf-extract-pages builds" "$(grep -m1 'error:' "$SB/extract.log" || echo 'see extract.log')"
+    return
+  fi
+  # ⚠️ ONE ROW PER GUARD, and the count is the point. The first version of this case
+  # had four refusal rows reaching two guards of the seven `pdf-extract-pages` now
+  # has: deleting the overwrite guard — the one every document presents as the
+  # headline refusal — left all of them green, and the accident that is not a glob
+  # (two hand-typed corpus paths and a valid page) appeared nowhere. Two rounds of
+  # adversarial review on this diff found that and then found a guard with no row
+  # again. If you add a refusal to either tool, add its row here and watch the row
+  # fail without it.
+
+  # Guard 1, the page parse. Three or more paths: argv[3] is a path, and the old
+  # loop's `continue` dropped it and every path after it.
+  _t19_fresh
+  name="pdf-extract-pages refuses a glob rather than overwriting argv[2]"
+  out="$("$SB/extract" "$src" "$victim" "$third" 2>&1)"; rc=$?
+  _t19_refused "$name" "$rc" "$out"
+
+  # Guard 2, the usage guard. Exactly two paths — a two-document glob, where there is
+  # no page argument to refuse. This used to write an empty PDF and print
+  # `extracted 0 pages`.
+  _t19_fresh
+  name="…and refuses two paths with no page list, which used to write an empty PDF"
+  out="$("$SB/extract" "$src" "$victim" 2>&1)"; rc=$?
+  _t19_refused "$name" "$rc" "$out"
+
+  # Guard 3, the overwrite guard, and THE ACCIDENT THAT IS NOT A GLOB: two corpus
+  # paths typed by hand with a page number that parses. Nothing else in this case
+  # reaches this guard, and pre-fix this is a destroyed document with exit 0.
+  _t19_fresh
+  name="…and refuses an existing destination even with a valid page number"
+  out="$("$SB/extract" "$src" "$victim" 1 2>&1)"; rc=$?
+  _t19_refused "$name" "$rc" "$out"
+
+  # Guard 4, self-overwrite, and it must hold THROUGH the escape hatch: OVERWRITE=1
+  # means "replace my own fixture", never "write the file you are reading". Routed
+  # through the same assertion by pointing `victim` at the file under threat — the
+  # helper is the only place that knows what a refusal has to look like.
+  cp "$src" "$SB/self.pdf"
+  victim="$SB/self.pdf"; before="$(shasum -a 256 "$victim" | cut -d' ' -f1)"
+  name="…and OVERWRITE=1 still refuses to write the file it is reading"
+  out="$(OVERWRITE=1 "$SB/extract" "$victim" "$victim" 1 2>&1)"; rc=$?
+  _t19_refused "$name" "$rc" "$out"
+
+  # Guard 5, a DIRECTORY destination, and it must hold through the escape hatch too:
+  # `replaceItemAt` would swap a file in for the directory and take its contents. The
+  # round-two review of this diff called that a hazard the staged write had created,
+  # reasoning that the old `write(to: <directory>)` just failed. This row says
+  # otherwise, which is why it is a row and not a paragraph: against the PRE-FIX tool
+  # it fails with "the directory is gone" — PDFKit replaced the directory, and its
+  # `keepme.pdf` with it, on exit 0.
+  mkdir -p "$SB/adir" && cp "$src" "$SB/adir/keepme.pdf"
+  victim="$SB/adir/keepme.pdf"; before="$(shasum -a 256 "$victim" | cut -d' ' -f1)"
+  name="…and OVERWRITE=1 still refuses a directory as the destination"
+  out="$(OVERWRITE=1 "$SB/extract" "$src" "$SB/adir" 1 2>&1)"; rc=$?
+  if [ ! -d "$SB/adir" ]; then
+    bad "$name" "the directory is gone"
+  else
+    _t19_refused "$name" "$rc" "$out"
+  fi
+
+  # Guard 6, a page asked for twice. Nothing else passes this tool a repeated page,
+  # so without this row the refusal could be deleted with every check still green.
+  victim="$SB/twice.pdf"; before="absent"
+  name="…and refuses the same page twice rather than building a short document"
+  out="$("$SB/extract" "$src" "$victim" 1 1 2>&1)"; rc=$?
+  if [ "$rc" -eq 0 ]; then
+    bad "$name" "exit 0, said: $(head -1 <<<"$out")"
+  elif [ -e "$victim" ]; then
+    bad "$name" "refused with exit $rc and left a file at the destination"
+  elif [ "$rc" -ne 2 ]; then
+    bad "$name" "exit $rc, wanted 2 (a refusal): $(head -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # Guard 7, the page range. A page outside the source used to `continue`, so
+  # `… 4 6 7` over a five-page document wrote a short fixture and reported success.
+  # Nothing may be published at all — no destination and no staging debris, which is
+  # the only row that checks the staged write cleans up after itself. The staging name
+  # carries a pid, hence the glob.
+  name="…and refuses a page outside the source, publishing nothing"
+  out="$("$SB/extract" "$src" "$SB/oor.pdf" 999 2>&1)"; rc=$?
+  local debris; debris="$(ls "$SB"/oor.pdf.visionocr-staging-* 2>/dev/null | head -1)"
+  if [ "$rc" -eq 0 ]; then
+    bad "$name" "exit 0, said: $(head -1 <<<"$out")"
+  elif [ -e "$SB/oor.pdf" ] || [ -n "$debris" ]; then
+    bad "$name" "refused with exit $rc and left a file or staging debris behind"
+  elif [ "$rc" -ne 2 ]; then
+    bad "$name" "exit $rc, wanted 2 (a refusal): $(head -1 <<<"$out")"
+  elif ! grep -qE 'REFUSED|usage:' <<<"$out"; then
+    bad "$name" "exit 2 with no refusal diagnostic: $(head -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # The inverse rows. A tool that refused everything would pass all five above.
+  name="…and still extracts a page to a destination of its own"
+  out="$("$SB/extract" "$src" "$SB/fixture.pdf" 1 2>&1)"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bad "$name" "exit $rc: $(head -1 <<<"$out")"
+  elif [ ! -s "$SB/fixture.pdf" ]; then
+    bad "$name" "exit 0 and no fixture.pdf"
+  else
+    ok "$name"
+  fi
+
+  # Guarded on the precondition, or a broken row above turns this into "the tool
+  # exits 0 on a fresh destination" — which is the row above, tested twice.
+  name="…and OVERWRITE=1 is the way to mean it"
+  if [ ! -s "$SB/fixture.pdf" ]; then
+    bad "$name" "no fixture.pdf to overwrite — the previous row did not produce one"
+  else
+    out="$(OVERWRITE=1 "$SB/extract" "$src" "$SB/fixture.pdf" 1 2>&1)"; rc=$?
+    if [ "$rc" -eq 0 ] && [ -s "$SB/fixture.pdf" ]; then ok "$name"
+    else bad "$name" "exit $rc: $(head -1 <<<"$out")"; fi
+  fi
+
+  # ---- make-observations. Needs Sources/, like score-mrc above.
+  # Count-guarded expansion: an EMPTY array under `set -u` is a fatal "unbound
+  # variable" on macOS's bash 3.2, which is the defect check-tools-compile.sh's own
+  # header records shipping. A non-matching glob here yields a literal element rather
+  # than an empty array, so this is belt and braces — and that file says the guards
+  # are not decoration.
+  local sources=()
+  for f in "$SB"/Sources/*.swift; do
+    [ "$(basename "$f")" = "App.swift" ] && continue
+    sources+=("$f")
+  done
+  if [ "${#sources[@]}" -eq 0 ]; then
+    bad "make-observations builds" "no Sources/*.swift in the sandbox"
+    return
+  fi
+  mkdir -p "$SB/mo" && cp "$SB/Tools/make-observations.swift" "$SB/mo/main.swift"
+  if ! swiftc -o "$SB/make-observations" -target "$target" \
+       "${sources[@]}" "$SB/mo/main.swift" >"$SB/mo.log" 2>&1; then
+    bad "make-observations builds" "$(grep -m1 'error:' "$SB/mo.log" || echo 'see mo.log')"
+    return
+  fi
+
+  # Guard 1, the extension guard. Three paths — argv[3] becomes the "password".
+  _t19_fresh
+  name="make-observations refuses a glob rather than writing JSON over argv[2]"
+  out="$("$SB/make-observations" "$src" "$victim" "$third" 2>&1)"; rc=$?
+  _t19_refused "$name" "$rc" "$out"
+
+  # Still guard 1 — a different shape, the same guard, and saying so is the point of
+  # the comment above: two paths is `arguments.count == 3`, which the count guard
+  # permits.
+  _t19_fresh
+  name="…and refuses two paths, where the destination is a PDF and not a .json"
+  out="$("$SB/make-observations" "$src" "$victim" 2>&1)"; rc=$?
+  _t19_refused "$name" "$rc" "$out"
+
+  # Guard 2, the argument count, which needs FOUR arguments to fire and had no row
+  # until the review of this diff. The destination is a legal `.json` on purpose, so
+  # the extension guard cannot answer this one.
+  _t19_fresh
+  name="…and refuses a fourth argument, which the extension guard cannot see"
+  out="$("$SB/make-observations" "$src" "$SB/obs-extra.json" "$victim" "$third" 2>&1)"; rc=$?
+  if [ "$rc" -eq 0 ]; then
+    bad "$name" "exit 0, said: $(head -1 <<<"$out")"
+  elif [ -e "$SB/obs-extra.json" ]; then
+    bad "$name" "refused with exit $rc after writing the destination"
+  elif [ "$rc" -ne 2 ]; then
+    bad "$name" "exit $rc, wanted 2 (a refusal): $(head -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # The inverse row, and it is the expensive one: real recognition over a
+  # synthesised page of type. `make-observations` exits 3 on zero observations, so
+  # this asserts the guard let a legitimate run through AND that the run measured
+  # something — the two ways this instrument has been able to report nothing.
+  name="…and still writes the observation JSON the invariant-3 probes read"
+  out="$("$SB/make-observations" "$src" "$SB/obs.json" 2>&1)"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bad "$name" "exit $rc: $(head -1 <<<"$out")"
+  elif [ ! -s "$SB/obs.json" ]; then
+    bad "$name" "exit 0 and no obs.json"
+  elif ! grep -q "observations" <<<"$out"; then
+    bad "$name" "wrote a file but reported no observation count: $(head -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # Its own cleanup, because `fault_mrc_refuses` above does `trap - EXIT INT TERM`
+  # and takes the script's `cleanup` trap with it — so on a full run nothing would
+  # remove this sandbox, and it holds a whole-repo rsync plus a binary linked against
+  # all of `Sources/`. Named rather than fixed at the source: restoring that trap is
+  # a change to another case's error handling, and this case is not the place for it.
+  # Only on the paths that get this far — a build failure keeps the sandbox, because
+  # the log its `bad` message names lives inside it.
+  rm -rf "$SB"
+}
+
+FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers"
 
 if [ "${1:-}" = "--list" ]; then
   for f in $FAULTS; do echo "  $f"; done; exit 0

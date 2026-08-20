@@ -2784,7 +2784,8 @@ shrunk with no override). Recorded rather than smoothed:
 else reads the override — which is the position C24's seam was in when its nearer wrong reading
 survived nine checks. `nil-refuses-the-page` additionally contradicts R50's own "a text page's
 background is shrunk by the text-page factor", so the real suite objects to it more loudly than the
-harness below does. The catalogue is **96** mutants.
+harness below does. The catalogue is **97** mutants — this said 96, and `--list` printed 97 on
+2026-08-20 (T19's review, which was checking a *different* stale count in the same file).
 
 ⚠️ **Neither has been through `mutate.py`, so `Tools/mutation-log.tsv` has no row for either** and
 the next run of that tool will correctly report two catalogue entries with no row at all. A scoped
@@ -9316,6 +9317,190 @@ mutant: medians over all files
 `.githooks/pre-commit` is in `check-tools-compile.sh`'s `bash -n` set now too — it was the
 one shell script nothing checked, while being the only one whose failure refuses *every*
 commit, and T16's own bash-3.2 defect is what that costs.
+
+### T19 · The two tools that write argv[2], where a shell glob puts a corpus document — FIXED
+*(found 2026-08-19 by the sibling sweep of C26's driver commit, which classified the argument
+parse of all 29 `.swift` tools; the owner decided the scope the same day — guard the two
+WRITERS now, record the other six. Fixed 2026-08-20.)*
+
+Eleven tools here take a path list. **Eight take one pdf and read `argv[2…]` as something
+else** — page numbers, a label, `SearchableWriter` factors — so a corpus glob measures
+document 1 and prints a summary that reads exactly like a corpus run. That is C25's shape and
+it costs a measurement. **Two of the eight write `argv[2]`, and those cost the corpus:**
+
+```
+pdf-extract-pages <src> <dest> <page…>     dest was written unconditionally
+make-observations  <pdf> <out.json>        out.json is written by Recogniser.extract
+```
+
+`testdocs/` is 1.2 GB of third-party PDFs, is not committed, and cannot be rebuilt without
+the owner's Zotero library. **Latent, not observed** — nobody had run it. Nothing would have
+stopped them.
+
+**Measured 2026-08-20, on scratch fixtures rather than on the corpus** (`make-plate-fixtures`
+into a `mktemp` directory — a measurement that opened `testdocs/` to prove `testdocs/` is at
+risk would be the defect it was measuring). The pre-fix binary, built from `4bcfd3f` and given
+three paths, the shape a glob produces:
+
+```
+$ pdf-extract-pages text-only.pdf halftone.pdf text-red-ink.pdf
+extracted 0 pages                                                    exit=0
+halftone.pdf   before 710,796 B      after 809 B      sha256 a9ec00a1… -> 8bd12cf1…
+text-red-ink.pdf  309,622 B, untouched and unreported
+```
+
+(The byte counts reproduce; the digests are one run's. A fixture PDF carries its own creation
+date, so the generator's output is not byte-reproducible — three runs gave three digest pairs
+over identical sizes. What is stable is the size and the fact that the digest moved, which is
+what the fault-inject case asserts: `before != after`, never a literal.)
+
+**A 99.9% destruction of the second argument, on exit 0, with a success line on stdout** — and
+the third path, and every path after it, dropped by a loop whose only answer to an argument
+that is not an `Int` was `continue`. Both halves of invariant 1 at once: content lost without
+a word, and a report that reads like a clean run.
+
+**Fixed** by refusing, and the refusals are shaped by what each tool's destination *is*, which
+is the one judgement in this entry:
+
+* **`pdf-extract-pages` writes the same file type it reads**, so existence is the only signal
+  it has and there is no way to tell a re-run onto its own fixture from the accident. **Seven
+  refusals on argv**: an existing destination (with `OVERWRITE=1` named as the way to mean it);
+  the destination being the **source**; the destination being a **directory** — neither of those
+  two covered by `OVERWRITE=1`, because the override means "replace my own fixture", not
+  "replace my fixtures directory"; a non-`Int` page argument (`score-rebuild-dpi`'s "refused, not
+  dropped" — *"the row that never appears is indistinguishable from a resolution that was never
+  asked for"*); the same page **twice**, named rather than deduplicated; a page outside the
+  source, rather than writing a shorter fixture; and at least one page required, which is the
+  two-path glob. The write is then **staged and published only on success** — invariant 2 in an
+  instrument: `write(to:)` is discardable and was discarded, and verifying the read-back at the
+  destination would have left a bad file there for the overwrite guard to refuse the retry on.
+  The staging name carries the pid and an existing one is **refused, not removed**: the first
+  draft of that block silently `removeItem`-ed a fixed sibling path the user never typed, in the
+  tool that had just learned to refuse an existing destination. The published file is then
+  re-opened and counted, because `replaceItemAt` may hand back a different URL than it was
+  given, and the publish step was the one step that verified nothing.
+* **`make-observations` writes JSON**, so the destination's *extension* separates the corpus
+  accident from the legitimate re-run. **Two guards**: `argv[2]` must be named `.json`, and a
+  fourth argument is refused. No override, and re-running the invariant-3 procedure onto its own
+  `obs.json` — the common case — stays free. What it does not do: an unrelated `.json` is still
+  overwritten. The unrebuildable thing is `.pdf`.
+
+Every glob shape is refused by construction rather than by heuristic: two paths land in the
+usage guard or the extension guard, three or more land in the page parse or the argument count,
+and an existing destination lands in the overwrite guard before either.
+
+**The guards run mechanically, in `Tools/fault-inject.sh argv_writers`** (CONTRIBUTING §4c: an
+error branch nothing has executed is not a safeguard). **Thirteen checks — one per refusal, plus
+the inverse rows §4d asks for.** A refusal must exit 2, say so, and leave the destination **byte
+identical**; a legitimate invocation must still produce its output, because a tool that refused
+everything would pass every refusal row on its own. **Watched failing with the pre-fix files
+restored from `4bcfd3f`**, which is the only reason the case is known to bite:
+
+```
+                                                        pre-fix   fixed
+pdf-extract-pages refuses a glob (3 paths)               FAIL      ok    extracted 0 pages
+…two paths with no page list                             FAIL      ok    extracted 0 pages
+…an existing destination WITH a valid page number        FAIL      ok    extracted 1 pages
+…OVERWRITE=1 still refuses to write the file it reads    FAIL      ok    extracted 1 pages
+…OVERWRITE=1 still refuses a DIRECTORY                   FAIL      ok    the directory is gone
+…the same page twice                                     FAIL      ok    extracted 2 pages
+…a page outside the source, publishing nothing           FAIL      ok    extracted 0 pages
+…still extracts a page to a destination of its own       ok        ok
+…OVERWRITE=1 is the way to mean it                       ok        ok
+make-observations refuses a glob (3 paths)               FAIL      ok    "1 page(s), 14 obs"
+…a destination that is a PDF, not a .json                FAIL      ok    "1 page(s), 14 obs"
+…a fourth argument the extension guard cannot see        FAIL      ok    "1 page(s), 14 obs"
+…still writes the observation JSON                       ok        ok
+                                           3 passed, 10 failed   13 passed, 0 failed
+```
+
+⛔ **The DIRECTORY row is the one whose pre-fix result was a surprise, and it overturns a
+reasoned claim made in this campaign.** The round-two review found that the staged write below
+had created a new way to destroy a directory (`replaceItemAt` swaps a file in for it and takes
+its contents), and reasoned that the thirteen-line original was safe there because
+`write(to: <directory>)` would simply fail. **Measured: the original destroyed a directory
+holding a PDF and reported `extracted 1 pages` on exit 0** — the row's failure line reads
+`the directory is gone`. So the hazard is older than the fix, not created by it. The guard is
+right either way; what moved is which sentence is true, and this is the third reasoned claim in
+two days here that a measurement reversed.
+
+**The pre-fix `make-observations` rows are the second destruction, measured rather than
+reasoned.** All three failed with `exit 0` and this on stdout:
+
+```
+…/victim.pdf: 1 page(s), 14 observations (p1=14)
+```
+
+The path is the victim and the count is the *source's* — recognition output written over
+argv[2], reported as a success, and then read back and validated by the tool's own
+"did I measure anything" guard, which passed because the file it re-read was the JSON it had
+just written over the PDF. A6.1's shape with the file destroyed underneath it.
+
+⛔ **THE FIRST VERSION OF THIS CASE HAD FOUR REFUSAL ROWS REACHING TWO GUARDS, and two rounds of
+adversarial review on this diff are what found it — twice.** Deleting `pdf-extract-pages`'s
+overwrite guard left all seven of the original checks green, because rows 1 and 2 are answered by
+the page parse and the usage guard first, and that guard is the refusal every document here
+presents as the headline. **The accident that is not a glob had no row at all**:
+`pdf-extract-pages A.pdf B.pdf 3`, two corpus paths typed by hand with a page number that parses,
+which pre-fix reports as `extracted 1 pages` over a destroyed document. `make-observations` had
+the same shape — both its rows landed in the extension guard, while the argument-count guard needs
+FOUR arguments to fire. Round one added four rows (4 failing -> 8); **round two then found the
+same defect again** in what round one had written — the new duplicate-page refusal had no row
+either, and neither did the directory guard — and added two more (8 -> 10). A refusal with no row
+that can fail is the eleventh check that could not fail, arriving in the commit that cites the
+other ten, and it took two passes to stop writing it.
+
+⚠️ **Three of the thirteen cannot fail against the pre-fix tools, and they are not checks that
+cannot fail.** They are the inverse rows: a tool with no guard passes them trivially, and their
+job is to discriminate between a guard and an outage, not between the two commits. The
+`OVERWRITE=1` row is what would catch a guard with a misspelled escape hatch — a shape this
+register has shipped — and it is guarded on its own precondition, because a broken row above it
+would otherwise turn it into a second copy of that row.
+
+⚠️ **And this measurement had to be taken twice.** The first attempt backgrounded the driver
+with a `&` *inside* an already-backgrounded tool call, which orphaned it; a second launch then
+ran concurrently, and both copies swapped `Tools/*.swift` in the same worktree. Two
+`fault-inject` runs and one stray `swiftc` were live at once and the two logs disagreed. That is
+CLAUDE.md's first environment trap — evidence that is wrong rather than absent — one directory
+below the suite it was written for. The driver takes a `mkdir` lock now and refuses a second
+copy, and the numbers above are from a single clean run.
+
+**Siblings swept — who else writes a path that came from `argv`?** `grep` over `Tools/` and
+`Helper/` for `write(to:`, `CGDataConsumer(url:` and `createDirectory` finds **four** more, and
+all four are safe *by shape rather than by luck*: `make-plate-fixtures` (argv[1]), `make_icon`
+(argv[1]), `score-gate` (`args[verifyOnly ? 3 : 2]`) and `Helper/main.swift` (its output
+directory) each write a **generated name inside a directory they create** —
+`<argv>/pale-drawing.pdf`, `<argv>/icon_16x16.png`, `<argv>/breakdown.tsv`, `<output>/3.json` —
+so a corpus path lands as a *directory* that cannot be created and the write fails instead of
+overwriting. `score-gate` additionally refuses an output directory that already holds PDFs. The
+remaining writes in `Tools/` go to a `mktemp` work directory, to an env-var dump path (`INKDUMP`,
+`MRC_DUMP`) or to a named `--out` file (`sweep-ink-bar.py`), none of which a glob can reach.
+`argv[2]` taken *as the file to write* is these two tools and nothing else.
+(`make-plate-fixtures` and `make_icon` swallow the failed write silently, which is a different
+defect and is the queue's `silent-image-writes`.)
+
+⚠️ **That paragraph named three, not four, until the review of this diff.** `score-gate` matches
+all three grep patterns and was missed while the sentence claimed to be exhaustive — a sweep
+presented as complete is worse than one presented as partial, which is R23/R29/C20's lesson
+arriving in the sweep meant to honour it.
+
+**No mutant.** `Tools/mutate.py` mutates `Sources/` and grades by running the suite, so it cannot
+see a guard in `Tools/` — verified by reading (`mutate.py` joins `work/Sources/<file>`, and no
+catalogue row names a `Tools/` file). The catalogue is untouched; `--list` says **97 mutants**,
+measured 2026-08-20 by running it. ⚠️ Two prose counts were stale and this entry nearly added a
+third: C26's section said "96" and is corrected in this commit; the process documents said "94"
+and are corrected with it. `--list` is the durable answer, which §T18's own warning about counts
+asserted in prose already said. The fault-inject case above is what puts these defects back
+mechanically, and it was watched doing it.
+
+**The other six, recorded rather than swept**, per the owner's decision — they mis-measure and
+do not destroy, which is a different severity: `score-text-route` (page numbers, and the only
+one that documents its own trap), `score-corpus` and `score-line-separation` (a label then
+three factors), `score-routing` and `picture-signals` (a label, rest unread), `score-annotations`
+(a second pdf). `score-illumination` is the half-trap worth naming: it *does* take a path list,
+but `argv[1]` is the population label, so a glob measures 232 of 233 documents and names the
+population after document 1. It has published no committed TSV, so nothing on disk is known to
+be wrong from it. They stay the queue's `argv-shape` item.
 
 ---
 ## The interface

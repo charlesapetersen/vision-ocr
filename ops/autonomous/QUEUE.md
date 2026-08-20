@@ -632,31 +632,43 @@ than reasoned — the first attempt broke the coherence check twice:
       the full suite. Budget a commit, not a check. (context: the sibling sweep in `BUGS.md` C26's
       instrument commit, 2026-08-18 — C26 is CLOSED and this is provenance, not a status claim; the
       rule is CONTRIBUTING §5)
-- [ ] **argv-shape** — **UNTRIAGED, and one half of it can destroy corpus files.** The sibling sweep
-      of C26's driver commit classified the argument parse of all 29 `.swift` tools (2026-08-19, in
-      `BUGS.md` C26's `Sub-step 3b, the driver` section). Eleven take a path list; **eight take one pdf
-      and read argv[2..] as something else**, so a corpus glob is silently mis-measured:
-      `score-text-route` (page numbers via `compactMap { Int($0) }`, line 88), `score-corpus` and
-      `score-line-separation` (a label then three `SearchableWriter` factors via `if let Double`),
-      `score-routing` and `picture-signals` (a label, rest unread), `score-annotations` (a second pdf),
-      `pdf-extract-pages`, `make-observations`.
-      ⛔ **Decide the last two first.** `pdf-extract-pages` line 5 and `make-observations` line 40 take
-      argv[2] as a path they **WRITE** — so `pdf-extract-pages testdocs/*/*.pdf` overwrites the second
-      corpus file and prints `extracted 0 pages`. `testdocs/` is 1.2 GB of third-party PDFs that is not
-      committed and cannot be rebuilt without the owner's Zotero library. Nobody has run it; this is
-      latent, not observed. A refusal ("argv[2] exists and is a PDF — refusing to overwrite it") is
-      cheap and is the invariant-1 shape.
+- [ ] **argv-shape** — **the SIX that mis-measure, after the two that could destroy were fixed.** The
+      sibling sweep of C26's driver commit classified the argument parse of all 29 `.swift` tools
+      (2026-08-19, in `BUGS.md` C26's `Sub-step 3b, the driver` section). Eleven take a path list;
+      **eight take one pdf and read argv[2..] as something else**, so a corpus glob is silently
+      mis-measured. ⛔ **The two WRITERS are done — see the sub-box below and `BUGS.md` T19; do not
+      re-open them.** What is left is the six that mis-measure and do not destroy, which is a different
+      severity and was deliberately left by the owner (2026-08-19) to be *recorded* rather than swept:
+      `score-text-route` (page numbers via `compactMap { Int($0) }`, line 88, and the only one that
+      documents its own trap), `score-corpus` and `score-line-separation` (a label then three
+      `SearchableWriter` factors via `if let Double`), `score-routing` and `picture-signals` (a label,
+      rest unread), `score-annotations` (a second pdf).
       `score-rebuild-dpi` lines 70-72 is the counter-pattern to copy, and its comment already argues
       the case: *"Refused, not dropped… the row that never appears is indistinguishable from a
       resolution that was never asked for"*. `score-illumination` is a half-trap worth a line too — it
       DOES take a path list, but argv[1] is the population label, so a glob measures 232 of 233 and
-      names the population after document 1. Only `score-text-route` documents its trap in its header.
+      names the population after document 1. It has published no committed TSV, so nothing on disk is
+      known to be wrong from it yet.
       ⚠️ Triage before coding: some of these are single-document utilities that are right as they are,
       and the answer per tool belongs in the commit. Any tool you touch is staged, so budget a commit
       (a full suite) rather than a check. (context: the sibling sweep in `BUGS.md` C26 — CLOSED
       2026-08-20; it is where this was found, not the work. Was `origin:` until C26 closed and the
       coherence check read it as a status claim, which is the mistake §"How to write an item" records
       `tools-compile` and `mutants` making)
+- [x] **argv-writers** — **DONE 2026-08-20.** The two tools that WRITE argv[2], which is the half of
+      `argv-shape` that could destroy `testdocs/`: FOCUS item 4 and the owner's decision of 2026-08-19.
+      Measured on scratch fixtures, never on the corpus — the pre-fix `pdf-extract-pages` given three
+      paths took **710,796 B to 809 B** on argv[2], exit 0, `extracted 0 pages`, with the third path
+      dropped unreported. Both tools refuse now, by construction rather than by heuristic, and the
+      guards are exercised mechanically by `Tools/fault-inject.sh argv_writers` — **13 checks, one per
+      refusal, 3 passed / 10 failed against the pre-fix tools and 13 / 0 against the fix**. (Its first
+      version had 7, four of which reached two guards; two rounds of adversarial review on the diff
+      found the headline refusal could be deleted with every check still green — and then found the
+      same defect again in the rows round one had added.) The refusal differs per tool
+      on purpose:
+      `pdf-extract-pages` writes the file type it reads, so existence is its only signal and
+      `OVERWRITE=1` is the escape; `make-observations` writes JSON, so requiring `.json` separates the
+      accident from a re-run with no override needed.
 - [ ] **silent-image-writes** — **two of the five image writers in `Tools/` still swallow a failed
       write, and one of them can make the suite pass by writing nothing.** Found 2026-08-19 by the
       adversarial review of C26's sub-step (4) diff, which is also what corrected "three writers" to

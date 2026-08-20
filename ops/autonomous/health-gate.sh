@@ -308,10 +308,13 @@ fi
 #     VISIONOCR_GATE_FAULT=1 ops/autonomous/health-gate.sh
 #
 # SAFE — it rsyncs the tree to an mktemp sandbox (excluding .git, build, testdocs, mutation-out) and
-# sabotages THAT, so it cannot touch the working tree or the real build/ — but SLOW: six cases, each
-# running a real build step. It guards the code that only runs when something else fails (R31, R32, H2 —
-# a bundling audit, a detach-on-failure path, a licence count, each written carefully and never once
-# executed), which is exactly the kind of coverage worth having on a cadence rather than per commit.
+# sabotages THAT, so it cannot touch the working tree or the real build/ — but SLOW: seven cases, five of
+# them running a real build step. It guards the code that only runs when something else fails (R31, R32,
+# H2 — a bundling audit, a detach-on-failure path, a licence count, each written carefully and never once
+# executed), which is exactly the kind of coverage worth having on a cadence rather than per commit. The
+# seventh (`argv_writers`, T19) sabotages nothing: it feeds hostile argv to the two tools that WRITE
+# argv[2], and asserts the destination is byte-identical afterwards. Read `--list` rather than this
+# sentence — it said "six" for one case longer than it was true.
 # ⚠️ It is under step_skippable for the four-way mapping, but note it has NO exit-3 lane of its own: it
 # exits 0/1 only, so a missing rsync or swiftc REDs rather than skipping. That, as much as the runtime,
 # is why it stays off unless someone deliberately arms it.
