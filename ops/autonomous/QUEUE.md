@@ -465,6 +465,32 @@ than reasoned — the first attempt broke the coherence check twice:
       `testdocs/` has no born-digital-cover document. (origin: BUGS.md C29)
       ⚠️ Placed ahead of `C27` by the owner 2026-08-20 on this project's own precedence — content loss
       outranks fidelity, the same call that put C26 before C27 — and behind `C28`, which is mid-campaign.
+- [ ] **gutter-floor** — the reading-order DECLINE rests on "0.19% of observations cross a gutter", and
+      the population that produced it excludes the pages that fail. `score-reading-order.swift`'s ink test
+      needs a quiet run of `0.035 * width`; a page without one is counted `singleColumn` and `continue`d,
+      so it is dropped from both halves of the ratio before any observation is read. A JSTOR article whose
+      gutter is about one wide word space welds its columns into single strings — quoted from the content
+      stream in `FEATURES.md` item 3's reopen note. ⛔ **MEASUREMENT ONLY. Do NOT build a reorder**: the
+      decline's strongest finding is that a column-wise sort damages tables and contents pages, and a weld
+      cannot be repaired by sorting because the halves are already one string. Three bounded sub-steps, in
+      order, and STOP after each:
+        1. Reconcile the instrument. A poppler+python reimplementation of the ink test scored **43** pages
+           with a qualifying gutter where the recorded Swift run scored **59**, over comparable samples
+           (644 vs 638 pages). Find out why before trusting any number below it — `samplePages`,
+           `displayBox`/`cropBox` vs `pdftoppm`'s default box, and `renderGrey` are the candidates.
+        2. Run the real `score-reading-order --gutter` with the floor lowered (0.02) over the corpus, and
+           report crossing separately for the 3.5%+ band and the 2.0-3.5% band. The screen says ~27 pages
+           in 18 documents sit in that lower band — `Kristol_1962`, `Freud_Fetishism`, `WITTE_1978`,
+           `Berle_1940`, `Canby_1929`, `Kazin_1955`, `Hyman_2012`, `Maclean_2008`, `Jones et al_2010`.
+           **The class is already in the corpus and simply is not counted**, so this needs no new files.
+        3. Report the two rates to the owner. The DECLINE stands or falls on that, and it is the owner's
+           call, not a session's. If it falls, THEN a register entry gets opened.
+      ⚠️ Also add the narrow-gutter case to the `ENGINE ASSUMPTION` fixture — its gutter is 8.5% of the
+      page and its own comment calls that "far wider than any word space", which is exactly why it is
+      green while a real page welds. A second fixture at ~2.5% is the check that would have caught this.
+      (context: FEATURES.md item 3, reopened 2026-08-20; Tests/main.swift:5196)
+      ⚠️ This and `born-digital-page` are the same document class and share a fixture, so they sit
+      together. **`C27` has now been passed by two items** — if the owner wants C27 first, move it up.
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the

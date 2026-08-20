@@ -218,7 +218,8 @@ or a document that is visibly crooked and demonstrably reads badly — in which 
 measure that document, not the idea.
 Despeckle and border removal were not measured and are not claimed either way.
 
-**3. ~~Columns, reading order and tables~~ — DECLINED, measured 2026-08-13.**
+**3. ~~Columns, reading order and tables~~ — DECLINED 2026-08-13, and REOPENED FOR MEASUREMENT
+2026-08-20 on this entry's own stated trigger. Read the reopen note at the end before the body.**
 There is no column model, and that part is true: the nearest thing is
 `minimumColumnOverlap`, a *guard* that refuses a hyphen join when two lines do
 not share a column, and `SearchableWriter.compose` draws observations in the
@@ -266,6 +267,66 @@ metric distinguishes them.
 wrong — measure that document rather than the idea. Reading order coming out of a
 different recogniser would also change the answer, since all of the above is a
 property of Vision, not of this app.
+
+#### REOPENED 2026-08-20 — that trigger is met, and the 0.19% has a threshold hole
+
+**The document.** `Hughes - The Knitting of Racial Groups in Industry.pdf` (JSTOR, *American
+Sociological Review* 11:5, 1946; in `~/Downloads`, **not** in `testdocs/`). Its rebuilt text layer
+welds the columns, and this is quoted from the content stream rather than inferred — one `Tm`, one
+`TJ`:
+
+```
+BT 10.69533 0 0 7.795851  50.37037 606.0698 Tm
+[ (t)(i)(o)(n)… (w)(o)(rk )(w)(e)(l)(l)( )(t)(o)(- )(p)(l)(o)(ye)(s )(so)(rt)… ] TJ
+```
+
+`"…work well to-"` is the LEFT column's hyphenated line end; `"ployes sort themse…"` is the RIGHT
+column's line. One string, one position. The **input** reads `"work well together."` in the same
+place — JSTOR's own OCR columnises this page correctly — so the rebuild is a regression against the
+file it was given. `pdftotext` on the output interleaves the columns visibly; on the input it does
+not. ⚠️ The suite's `ENGINE ASSUMPTION: no line is welded across the gutter` is GREEN over its
+generated fixture, whose gutter is 52 pt of 612 = **8.5%** and is justified in its own comment as
+*"far wider than any word space"*. This article's gutter is roughly a wide word space.
+
+**Why the corpus number did not see it — and this is the actionable part.**
+`Tools/score-reading-order.swift`'s ink test requires a quiet run of `0.035 * width` (**3.5%**), and a
+page with no qualifying gutter is counted `singleColumn` and `continue`d — **dropped from both halves
+of the 0.19% before any observation is examined**. A census over the corpus, sampling 3 interior pages
+per document (644 pages of 233 documents, against the Swift run's 638), found:
+
+| widest interior quiet band | pages |
+|---|---|
+| ≥ 3.5% — counted | **43** |
+| 3.0–3.5% — dropped | 8 |
+| 2.5–3.0% — dropped | 9 |
+| 2.0–2.5% — dropped | 10 |
+
+So **27 pages across 18 corpus documents carry a real but sub-threshold gutter — a blind spot ~63% the
+size of the counted population.** They are the expected material: `Kristol_1962_SOCIAL SCIENCES AND
+LAW`, `Freud_Fetishism`, `WITTE_1978_Democracy, Authority and Alienation in Work`, `Berle_1940`,
+`Canby_1929`, `Kazin_1955`, `Hyman_2012`, `Maclean_2008`, `Jones et al_2010`. **The class is already
+in the corpus; it is not being counted.** `Jones et al_2010` is one of the documents C26's campaign
+rendered, so it has been read by eye for a different defect while being filed single-column here.
+
+⛔ **THE CENSUS ABOVE IS A REIMPLEMENTATION AND IS NOT AUTHORITATIVE.** It mirrors the ink test in
+poppler + Python (render grey at 150 DPI, Otsu, per-column ink, `quiet = peak/100`, `minimumRun`
+3.5%, 12% margins) so that it needed no `swiftc` build, and it disagrees with the Swift tool on the
+counted population — **43 against the recorded 59**. That gap is unexplained and is the first thing to
+reconcile; candidates are `samplePages` picking different pages, `Flattener.displayBox`/`.cropBox`
+versus `pdftoppm`'s default box, and `renderGrey`. Treat 27 as an order of magnitude, not a count.
+The authoritative instrument is the tool, and it has NOT been run — this is `gutter-floor` in the
+queue. The census itself is committed as `GUTTER-CENSUS-2026-08-20.tsv` (644 rows) so the 43-vs-59
+gap can be worked rather than re-derived. Its script is deliberately NOT committed: a file in
+`Tools/` owes a `--self-test` and staging one runs the full suite, which is 45-90 minutes bought for
+a screening script that the Swift tool is meant to replace. The method is stated in full above and
+is four lines of poppler; reproduce it or, better, run the tool.
+
+⛔ **AND THE DECLINE'S STRONGEST FINDING STILL STANDS: a column-wise sort is net negative.** The
+worst-scoring pages are a four-column table and a table of contents, where reading ACROSS is correct,
+and nothing in the metric distinguishes a table from prose. So what is reopened is the
+**measurement**, not the feature. A weld also cannot be repaired by reordering — the halves are
+already one string — so if a fix is ever warranted it is upstream, in how the page is handed to the
+recogniser, not a sort applied afterwards.
 
 **4, 5 and 6 — ARCHIVED 2026-08-13**, at the owner's decision, and recorded
 rather than deleted so nobody re-proposes them as new. They were: *show uncertain
