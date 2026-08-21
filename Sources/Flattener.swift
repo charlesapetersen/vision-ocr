@@ -1418,13 +1418,23 @@ enum Flattener {
     /// inside any recognised word is not *recognised* text.
     ///
     /// ⛔ **That sentence read "is, by construction, not text" until 2026-08-19,
-    /// and it is FALSE — see `C28`, which was opened on it.** Measured over **65
-    /// corpus pages** read at 1:1 (C26 sub-step 4, then C28's three sub-steps of
-    /// 8 + 24 + 20, all 2026-08-20), the ink outside the recognised words was
-    /// content on **22 of them** — **17 of those typeset**: whole lines of running
+    /// and it is FALSE — see `C28`, which was opened on it.** Measured over **86
+    /// corpus pages** read at 1:1 (C26 sub-step 4, then C28's four sub-steps of
+    /// 8 + 24 + 20 + 21 — every page this bar still shrinks — all 2026-08-20), the
+    /// ink outside the recognised words was
+    /// content on **24 of them** — **18 of those typeset**: whole lines of running
     /// prose, values out of a correlation matrix, a paper's displayed estimating
-    /// equation, a page folio; the other 5 hand-made — two signatures, a pencilled
-    /// annotation, a hand-inked margin number and a drawn margin bracket. Vision
+    /// equation, a page folio; the other 6 hand-made — two signatures, two pencilled
+    /// annotations, a hand-inked margin number and a drawn margin bracket.
+    /// ⛔ **And one of those 24 is a page this function prints as `0.0000`** —
+    /// `_1939_Former students to Board re Merriam_` p2, whose pencilled annotation
+    /// is paler than the page's own Otsu. ⚠️ Stated exactly, because the seam cannot
+    /// do better: it does not flip at an `INKBAR` of 1e-5, which bounds its
+    /// `inkOutsideText` to **[0, 1e-5)** rather than establishing zero. Either way
+    /// no *usable* bar protects it — the guard is a strict `<`, so at exactly 0 only
+    /// a `textPageInkOutsideThreshold` of 0 refuses the shrink, and that value
+    /// refuses it on every page in the corpus; and if the value is positive, the bar
+    /// that would reach it is below 1e-5, some 4,500x under the shipped 0.045. Vision
     /// misses lines on faint,
     /// skewed and tightly-set scans, and nothing in this file can tell "the
     /// recogniser missed this" from "this is not text". A later paragraph in this
@@ -2453,9 +2463,10 @@ enum Flattener {
     /// pictures: `C28`, opened 2026-08-19.** Words Vision *failed* to box are
     /// outside `region` exactly as a photograph is, so they stay wholly in the
     /// background too — and the background is downsampled, by 8x on a page
-    /// `pageIsAllText()` accepts. Measured over **65 corpus pages** read at 1:1
-    /// (C26 sub-step 4, then C28's three sub-steps of 8 + 24 + 20, all
-    /// 2026-08-20), **22 were losing content that way and 17 of those typeset** —
+    /// `pageIsAllText()` accepts. Measured over **86 corpus pages** read at 1:1
+    /// (C26 sub-step 4, then C28's four sub-steps of 8 + 24 + 20 + 21 — which is
+    /// every page still shrunk at the shipped bar — all
+    /// 2026-08-20), **24 were losing content that way and 18 of those typeset** —
     /// running prose, table values, a displayed equation, a page folio — and those
     /// marks are in no text layer either because these same boxes are what
     /// `SearchableWriter` draws from. The confinement is still right for the reason

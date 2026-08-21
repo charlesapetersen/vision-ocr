@@ -99,6 +99,11 @@
 // `Riesman - 1954` p12 prints `0.0000` and *did* flip, so its true value is in
 // [0.00001, 0.00005). ⚠️ Nor can the summary line tell you which tiny bar ran — it formats the
 // bar with `%.4f`, so `INKBAR=0.00001` prints as `INKBAR 0.0000 against the shipped 0.0450`.
+// ⚠️ **The count of the 73 this seam cannot reach is 25, measured over all four sub-steps, and it is
+// not the 27 that print `0.0000`** — `Riesman - 1954` p12 and `_1939_Former students` p14 both print
+// zero and flip. 11 of sub-step 2's 24 plus 14 of sub-step 4's 21. And prefer the **smallest legal
+// bar**: the verdict is `inkOut < bar`, so a page is un-shrunk exactly when its `inkOut` is at or
+// above the bar, which makes `INKBAR=0.00001` reach strictly more pages than any larger value.
 //
 // What reads those pages instead needs no override and no second `mrcLayers` run — just the two
 // files this tool already dumps, `-source.png` and `-stencil.png`:
@@ -139,6 +144,46 @@
 // and none was isolated. ⛔ Either way the number is a locator and not a measure: sorted by the
 // cropped fraction those twenty pages' losing and non-losing verdicts interleave, which is the third
 // scalar C28 has measured and refused.
+//
+// ⛔ **AND THIS MAP'S GLOBAL OTSU IS BLIND TO A PALE MARK ON A SHADOWED SHEET.** `inkOutsideText`
+// thresholds the whole page at one level and so does the recipe above, so pencil on a photographed
+// sheet whose margin runs 0.36-0.74 grey falls on the paper side of it. Measured 2026-08-20 on
+// `_1939_Former students to Board re Merriam_` p2: the map reads **44 px** and **1 px** in two rects
+// where `-lat 25x25-8%` (then `AND NOT dilate(stencil)`) reads **2,069** and **1,371**, and at 1:1 the
+// shipped composite renders that pencil as disconnected specks. That page's `inkOut` prints `0.0000`
+// and its `barDelta` is `same` at `INKBAR=1e-5`, so if any legal `INKBAR` reaches it, it is below
+// 1e-5 — the seam bounds that page to [0, 1e-5) rather than measuring it, and the map is the
+// instrument either way. Otsu's two failure modes are
+// opposite — a rim invented on a pale typescript (`Herbert Marks papers` p12, 11.65x its own `inkOut`,
+// losing nothing) and real pale ink missed here — so run both maps on any photographed sheet.
+//
+// ⛔ **AND `Disk:0` IS NOT THE IDENTITY, so an erosion sweep that starts at 0 reads backwards.**
+// Measured 2026-08-20 on `Guilford_Psychometric Methods` p1: **0 px at `Disk:0`, 133 at `Disk:1`, 15
+// at `Disk:2`, 0 at `Disk:3`**. A monotone erosion cannot rise and then fall, so `Disk:0` is behaving
+// as radius 4 rather than as "no dilation of the stencil" (`-define morphology:showKernel=1` prints
+// `Disk:0` as a 9x9+4+4 kernel, against 3x3 / 5x5 / 7x7 for `Disk:1/2/3`), and the r=0 row of such a sweep
+// is void. Start at r=1. Same shape as the `-compose Minus` error above: a sweep whose counts move the
+// wrong way is the instrument, not the page.
+//
+// ⚠️ **AND THE TWO MAPS ARE IN DIFFERENT COORDINATE FRAMES.** `magick … -connected-components` reports
+// rects in the frame of the image it is handed, so a run over `out-int.png` needs `+mx+my` added to
+// reach page coordinates and a run over `out.png` needs nothing. Measured 2026-08-20: adding the offset
+// to both produced a component rect 200 px away from any flagged ink, on a region that is genuinely
+// blank and genuinely loses nothing — a **false negative that reads like a careful negative**. Count
+// the white pixels inside a rect before believing it names anything:
+//
+//   magick out.png -crop 400x60+690+1478 +repage -format '%[fx:mean*w*h]' info:   # 1212
+//   magick out.png -crop  40x40+1050+1700 +repage -format '%[fx:mean*w*h]' info:  # 0
+//
+// ⚠️ **A cross-check on a located mark that needs no eye, and its limit.** Take the **stencil's ink
+// over the SOURCE's ink in the same tight rect** (`-auto-threshold OTSU -negate -format
+// '%[fx:mean]'` on each), which normalises for how much ink is in the rect at all. Measured on
+// `Williams_1958` p1: **0.21 and 0.17** on the two rects whose words are destroyed, against **1.09 and
+// 1.06** on the surviving stretches of those same two lines. ⛔ It is a WITHIN-PAGE contrast and not a
+// corpus number — `Herbert Marks papers` p12's six densest map bands read a uniform **0.40-0.47**
+// and it loses nothing — so compare a rect against its own line, never against a constant. (The
+// register said "seven densest" over six enumerated rects until the review of that diff counted
+// them; twelve rects in the whole sample, not thirteen.)
 //
 //   mkdir -p /tmp/h && cp Tools/score-text-route.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-text-route -target "$(uname -m)-apple-macos13.0" \

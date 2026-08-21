@@ -43,8 +43,12 @@ four lose nothing a reader would see and account for **57%** of what rescuing th
 would cost. (In one scan a page is rescued at 0.0465 and another 0.0024 lower is not —
 measured, that pair is the number getting it right. It is across scans that it fails: the
 pages that lose content and the pages that do not are interleaved, so no value of the number
-separates them.) Sixty-five of the 73 have still not been looked at; this paragraph read
-"whether those 73 lose anything has not been looked at yet" until the eight were rendered.
+separates them.) **All 73 have now been rendered and looked at (2026-08-20), and 16 of them
+lose content** — 11 lose type and 5 lose a hand-made mark; the lowest is a page with so
+little ink outside the recognised words that the number cannot usefully be set below it — at
+best the setting would have to go to zero, which turns the saving off on every page. This paragraph read
+"whether those 73 lose anything has not been looked at yet" until the eight were rendered,
+then "sixty-five of the 73 have still not been looked at" until the remaining 65 were.
 The mechanism underneath is that the 1-bit stencil is built only where
 the recogniser found words, so anything it missed is neither searchable nor kept at full
 resolution — that is **`BUGS.md` C28**, and it is what a real fix here would be. The
