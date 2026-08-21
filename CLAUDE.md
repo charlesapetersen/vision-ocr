@@ -50,6 +50,28 @@ an eighth, with that page's own fraction beside it, on the success path only and
 fraction** (the campaign proved the losers and non-losers interleave when sorted by it, and one
 measured loser prints `0.0000`, so any filter drops a known loser). ⛔ It is a report and not a fix —
 the pages are still degraded, and C28 stays OPEN on questions 3 and 4 (question 2 CLOSED 2026-08-21).
+✅ **QUESTION 3 HAS ITS FIRST MEASUREMENT, 2026-08-21, AND A SHAPE TERM SEPARATES WHERE FIVE SCALARS
+DID NOT** — `Tools/score-shape-term.swift` (new) counts **text lines** in the ink outside the
+recognised words at the page's own type scale, calibrating on the stencil's own components, and over 13
+labelled pages `lineN` is **≥ 1 on 6 of 6 pages that lose typeset content and 0 on 6 of 6 that lose
+nothing**. 12 of 13; the miss is the page whose loss is a hand-drawn bracket, which a rule calibrated
+on type is blind to by construction — so anything built on this protects prose and table data and
+leaves the campaign's 6 hand-made marks exactly where they are. Its five numbers are ratios rather
+than sizes, **written before any page was run and not adjusted after** (8 pages, then 5 held out).
+⛔ **Not validated: 8 of the 73 plus 5 of the 16 C26's bar move rescued (so 5 of them are not degraded in production today), a labelled convenience sample, 4 of the 6 non-losers from one scan,
+and no plate, halftone or line drawing in it at all** — which is exactly the class `textRegionMask`
+exists to keep out, so "reads 0 on scanner edges" is not yet "reads 0 on a picture". ⚠️ Read `lineN`
+and never the share: the drawn bracket's `txtShare` 0.0173 sits *below* a non-loser's 0.0500 on the
+same scan, which is the fifth scalar this entry has refused. ✅ It also settles
+`score-text-route`'s open instrument question, because it holds `region` itself so its map **is**
+`inkOutsideText`'s set (asserted every row, exit 6 otherwise; `inkOut` reproduced
+`INKBAR-2026-08-19.tsv` on all 13): the dumped stencil inflates the fraction **1.00x–3.17x**, the
+published `Disk:3` dilation lands **0.721x–1.007x**, and ImageMagick's OTSU equals
+`Flattener.otsuThreshold` on **13 of 13** pages over a 69-level range — so that recipe's published
+0.56x–16.0x spread is bounded on pages with ink to divide by, and its extremes all sit on `inkOut`
+0.0001–0.0051, a small-denominator candidate that is **not measured**. Nothing is wired: `Sources/` is
+untouched, and question 4's byte price is still owed (the *area* a local exemption would keep is
+0.12%–1.04% of the page on the six losers, which is not a byte figure and must not be quoted as one).
 ✅ **Question 2's 1/2 HALF IS MEASURED 2026-08-20 and it does NOT reproduce.** The 109 layered pages the
 bar does *not* read as all text keep the caller's factor, which on the default Photo detail is **2**;
 sixteen of them were rendered and read at 1:1, ten beside a 1/8 reference on the same rect, and **no
@@ -102,8 +124,12 @@ like safety.
 (`78de7a2`) and 4 of the 8 lose content;
 24 more the same day (`6818a0e`) and 2 of those; 20 more the same day (`72b866e`) and **8 of those
 20**; and ✅ **the last 21 the same day and 2 of those — so ALL 73 ARE READ and 16 of the 73 lose
-content**, 11 of them type and 5 a hand-made mark. The campaign stands at **86 pages rendered, 24
-losing content, 18 of them type and 6 a hand-made mark**. ⚠️ This line read "21 pages
+content**, 12 of them type and 5 a hand-made mark. The campaign stands at **86 pages rendered, 24
+losing content, 19 of them type and 6 a hand-made mark** — ⚠️ **and those two no longer sum to the 24,
+because `Atkinson_1939` p3 is in BOTH buckets as of 2026-08-21**: the shape term found two lines of
+typescript on it that sub-step 1's inventory (a signature and a typed dash rule) never listed, and its
+own two dumped backgrounds settle it — illegible at the shipped 8x, legible un-shrunk. The page counts,
+16 and 24, do not move. ⚠️ This line read "21 pages
 rendered, 12 losing content" while 45 had been read, because `6818a0e` did not update it; the total is
 arrived at by addition over the sub-steps, not by re-measuring.** ⛔ **The last 21 put a loss where the bar cannot reach
 it**: `Williams_1958_DEMOCRACY OR MERITOCRACY` p1 loses the words `their education,` and `but` at
@@ -249,7 +275,7 @@ benefit, measured 2026-08-19 — sub-step (4) ran and the other 13 pages were re
 `INKDUMP=<dir>` on `Tools/score-text-route.swift` writes both tone-layer pairs from the same
 `mrcLayers` call the byte columns come from, and the stencil being byte-identical at both bars makes
 the two backgrounds the entire difference. **11 of the 13 lose something**, and ⛔ **the dominant case
-is NOT a drawing**: **7 of the 13 lose whole lines of prose or table data and an 8th loses a hand-drawn mark outright — 8 losing content outright** (and the four C28 sub-steps rendered 2026-08-20 cover the whole population — 8 + 24 + 20 + 21 = 73 pages, 4 + 2 + 8 + 2 = 16 losing content — so **86 pages rendered across the campaign, 24 losing content, 18 of them type**) — `Xin Qu et al_2018`
+is NOT a drawing**: **7 of the 13 lose whole lines of prose or table data and an 8th (one of them also losing a signature, 2026-08-21) loses a hand-drawn mark outright — 8 losing content outright** (and the four C28 sub-steps rendered 2026-08-20 cover the whole population — 8 + 24 + 20 + 21 = 73 pages, 4 + 2 + 8 + 2 = 16 losing content — so **86 pages rendered across the campaign, 24 losing content, 18 of them type**) — `Xin Qu et al_2018`
 p20 loses thirteen values out of a Pearson correlation matrix, `_1973_Committee Against Racism_` p4
 loses seven lines of prose — ✅ **both re-measured independently 2026-08-20 by C28's 1/2 render and both
 hold** (p20's thirteen are the matrix's LAST column at stencil ink `0.0000`; three of p4's lines read

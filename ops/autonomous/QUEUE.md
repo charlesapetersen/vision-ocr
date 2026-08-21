@@ -396,7 +396,9 @@ happens.**
       `Sources/Flattener.swift` and `Tests/main.swift` no longer stop at C26 sub-step 4's 13 pages and
       7 prose losses; both now carry the campaign total. That was the last residue of the owner's
       2026-08-20 check-in note. The campaign total to quote is **86 pages rendered, 24 losing content,
-      18 of them type and 6 a hand-made mark** — and note it is arrived at by ADDITION over the five
+      19 of them type and 6 a hand-made mark, with one page in both buckets** (`Atkinson_1939` p3,
+      corrected 2026-08-21 by `c28-shapeterm` — so the two no longer sum to the 24; it read
+      "18 of them type and 6" before) — and note it is arrived at by ADDITION over the five
       renders (13 + 8 + 24 + 20 + 21), not by re-measuring. ⚠️ **This line said 21 / 12 / 10 while 45 pages
       had been read**, because sub-step 2's commit did not update it; if your sub-step renders pages,
       update this number in the same commit or the next reader inherits the same gap.
@@ -442,10 +444,17 @@ happens.**
       p20's correlation matrix, 460 px legible and 307 px not), 2 degrade and 5 read clean — and the
       term that orders them is the page's **own rebuild resolution**, not `inkOut`. `PHOTODETAIL=` on
       `Tools/score-text-route.swift` is the seam it needed.
-      **So questions 1, 2 and 5 are answered, and what is left is** —
-      **3** (a shape term
-      that admits missed text without admitting pictures — R56's lesson in a third place), **4** (the byte
-      price of widening, and do not quote T15's 1.33x as the page-level figure).
+      ✅ **QUESTION 3 HAS ITS FIRST MEASUREMENT, 2026-08-21, AND THE SHAPE TERM SEPARATES** — 12 of 13
+      labelled pages, `lineN` ≥ 1 on 6 of 6 type-losers and 0 on 6 of 6 non-losers, the miss being a
+      hand-drawn mark the rule is blind to by construction. Do not re-run it; the `c28-shapeterm`
+      sub-box below and the entry's `#### A shape term, MEASURED over 13 labelled pages` carry the
+      table, the crops, the three instrument answers and what is left. **What question 3 still needs is
+      the OTHER half of its own sentence** — "without admitting pictures" is unmeasured, because the
+      sample holds no plate, halftone or line drawing at all.
+      **So questions 1, 2 and 5 are answered, 3 is half answered, and what is left is** —
+      **3b** (run the shape term over picture-route pages and show it admits nothing there), **4** (the byte
+      price of widening, and do not quote T15's 1.33x as the page-level figure; `linePx` is an area and
+      not a byte count).
       ⛔ **AND ONE PROCESS WARNING WORTH MORE THAN THE MEASUREMENT: a draft of `c28-halfres` tried to
       RETRACT a correct claim of this campaign's, in six places, and the adversarial review of its diff
       refuted it from the same page.** The draft measured stencil ink over source ink in one rect of
@@ -623,7 +632,7 @@ happens.**
       the interior one 1,493, three populations the entry distinguishes); and a **pencilled annotation
       on `_1939_Former students` p2 at an `inkOut` that prints 0.0000**, which the Otsu map is blind to
       and the adversarial review of the diff found with an `-lat 25x25-8%` map. **Over the 73 that is
-      16 losing content, 11 type and 5 hand-made**, and a campaign total of **86 rendered, 24 losing
+      16 losing content, 11 type and 5 hand-made** ⚠️ (12 + 5 as of 2026-08-21, one page in both — `c28-shapeterm`), and a campaign total of **86 rendered, 24 losing
       content**.
       ⛔ **THE RESULT IS A LOSS ON A PAGE NO USABLE BAR CAN REACH**: p2's `inkOut` prints 0.0000 and its
       `barDelta` is `same`, so production's own first term is blind to exactly the ink that is lost.
@@ -813,6 +822,53 @@ happens.**
       false. The string is unchanged — a settings-UI wording call — and `Sources/Prefs.swift` carries a
       comment beside it.
       (context: BUGS.md C28 `#### The same loss at 1/3, RENDERED over 16 of the 109`)
+- [x] **c28-shapeterm** — **DONE 2026-08-21. C28's question 3 has its first measurement and a shape term
+      SEPARATES.** Do not re-run it. `Tools/score-shape-term.swift` is new: it drives production
+      (`renderGrey`, `otsuThreshold`, `sauvolaMask`, `textRegionMask`, `inkOutsideText`) and adds only a
+      run-based connected-component pass plus a shape rule whose five numbers are **ratios against the
+      page's own recognised text** — the stencil's own components are the calibration, so no constant is
+      chosen for a corpus. Over **13 labelled pages** the **count of accepted text lines** is `≥ 1` on
+      **6 of 6** pages measured to lose typeset content and `0` on **6 of 6** that lose nothing: the
+      first quantity in this entry that does not interleave, after `inkOutsideText`, `extent`, the
+      out-of-stencil pixel count, the source width and (now) `txtShare` were all refused.
+      ⚠️ **Read `lineN`, never the share** — `Riesman - 1954` p16's drawn bracket reads `txtShare`
+      **0.0173** against p18's **0.0500** on the same scan, so a bar on the share inverts that pair.
+      ⛔ **The one miss is the class, not a page**: a rule calibrated on type is blind to a hand-made
+      mark, measured 1 of 1, and the campaign has 6 such pages — so whatever ships on this protects
+      prose and table data and must SAY that it leaves the marks.
+      ⛔ **And it is not validated**: 8 of the 73 plus 5 of the 16 C26's bar move rescued (so 5 of them are not degraded in production today), a labelled convenience sample, 4 of its 6
+      non-losers pages of one scan, and **no plate, halftone or line drawing in the sample at all** —
+      the class `textRegionMask` exists to keep out. "Reads 0 on scanner edges" is not "reads 0 on a
+      picture", and that is the next measurement rather than a caveat to note.
+      ✅ **It also settles `score-text-route`'s open instrument question** (its header said the shell
+      map's 0.56x–16.0x spread against `inkOutsideText` was "not established", naming three
+      candidates). This tool holds `region` itself, so its map IS the guard's set — asserted on every
+      printed row, exit **6** otherwise, and `inkOut` reproduced `INKBAR-2026-08-19.tsv` on all 13
+      rows. Measured: the dumped stencil standing in for `region` inflates the fraction
+      **1.00x–3.17x** (5 of 13 read exactly 1.0000x, so the Sauvola rim is per-page), the published
+      `Disk:3` dilation lands **0.721x–1.007x** (worst on the page of small numerals), and
+      ImageMagick's `-auto-threshold OTSU` is **identical to `Flattener.otsuThreshold` on 13 of 13**
+      pages over a 69-grey-level range. So the recipe is bounded on pages with ink to divide by; its
+      extremes all sit on `inkOut` 0.0001–0.0051 and a small-denominator artefact is the obvious
+      unmeasured candidate. Do not read this as retracting sub-step 3's figures.
+      ⛔ **It corrected the register from the crops**: `Atkinson_1939` p3's largest accepted group is
+      not the signature but two lines of **typescript** sub-step 1's inventory never listed, illegible
+      in that page's shipped background and legible in its un-shrunk one — so the campaign's split is
+      **19 type and 6 hand-made over 24 pages with one page in both**, not the exclusive 18 + 6, and
+      the 73's is 12 + 5 over 16. Both page counts are unchanged. Corrected in nine places; the review of this diff found five more that still said 18, 11 or 10 and they are corrected too.
+      ⚠️ **Question 4 is still owed and this makes it cheap to ask, but the numbers here are AREAS and
+      not bytes**: `linePx` is 0.12%–1.04% of the page on the six losers (7,533 px of 4.18 Mpx on
+      `Broadhead - 1994` p3; 21,924 of 2.10 Mpx on `_1973_CAR` p4). Bounding boxes are bigger and JPEG
+      is not linear in area. T15's 1.33x is the stencil total and 1.07x the page total; neither is this.
+      Instrument notes: `--self-test` is 5 checks, **all watched failing at `-Onone`** with one
+      mutation each (4-connectivity for 8, the interior window removed, `lineMinimumMembers` 4→3), and
+      the map is built by **one function shared by `main` and the check** because the first draft built
+      it inline in both — a check that could not have failed if `main`'s copy drifted. `SHAPEDUMP=`
+      writes four PNGs a page, **all in the page's own frame and never interior-cropped**, which is
+      what makes the coordinate-frame trap sub-step 4 recorded unreachable. `lineMinimumMembers = 4`
+      costs content, measured: it drops `0.09` and `0.04` from `Xin Qu` p20's thirteen values (three
+      components each), so the term names 10 of the 13. And nothing is wired — `Sources/` is untouched.
+      (context: BUGS.md C28 `#### A shape term, MEASURED over 13 labelled pages`)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,

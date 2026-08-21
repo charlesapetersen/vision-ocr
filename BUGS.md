@@ -55,7 +55,7 @@ typescript, a word of 1913 body text, a page folio, a signature, a pencilled ann
 hand-inked margin number. The headline there is that **the four pages of the 41 with the most ink
 outside the recognised words lose nothing at all**, while six pages between `inkOut` 0.0051 and 0.0165
 lose content — so a bar protects the wrong end of its own range first. ✅ **The last 21 were rendered
-the same day, so the population is CLOSED: all 73 read, and 16 of the 73 lose content, 11 of them type
+the same day, so the population is CLOSED: all 73 read, and 16 of the 73 lose content, 12 of them type
 and 5 a hand-made mark.** 2 of the last 21 lose something a reader needs — the words
 `their education,` and `but` on `Williams_1958_DEMOCRACY OR MERITOCRACY` p1 at `inkOut` **0.0023**, and
 a pencilled annotation on `_1939_Former students` p2 at an `inkOut` that **prints `0.0000`**, a page no
@@ -67,7 +67,8 @@ anyway); the page with the **highest** out-of-stencil ink fraction of the 21 —
 `inkOut` — loses nothing, because on a pale typescript the map's page-wide Otsu catches a rim the
 stencil's Sauvola mask does not; and that same global Otsu **misses** pale pencil on a shadowed
 photographed sheet, which is how p2's loss was nearly filed as "nothing". **The campaign total is 86
-pages rendered, 24 losing content, 18 type and 6 hand-made.**
+pages rendered, 24 losing content, 19 type and 6 hand-made — with one page in both buckets, so those
+two no longer sum to the 24** (corrected 2026-08-21; see the question-3 paragraph below).
 ✅ **C28's question 5 is FIXED 2026-08-20 — the run report now names every page it published with the
 ink outside the recognised words stored at an eighth**, with that page's own fraction beside it, on
 the success path only and with **no bar on the fraction**: the four sub-steps proved the losers and
@@ -98,6 +99,29 @@ the sixteen and **the page that loses content saves the LEAST of them** (17,705 
 240,578 B on a page whose only out-of-stencil ink is a scanner edge). ✅ An all-text page is
 byte-identical at both settings, measured — `max(3,8)` is `max(2,8)` — which is what bounds this to the
 109 rather than the 182.
+✅ **QUESTION 3 HAS ITS FIRST MEASUREMENT, 2026-08-21, AND A SHAPE TERM SEPARATES WHERE FIVE SCALARS
+DID NOT.** `Tools/score-shape-term.swift` (new) counts the **text lines** in the ink outside the
+recognised words, at the page's own type scale — a component is type-shaped against the median height
+and stroke of *the stencil's own components*, and ≥ 4 of them tiling a baseline make a line. Over 13
+labelled pages the count is **≥ 1 on 6 of 6 pages measured to lose typeset content and 0 on 6 of 6
+that lose nothing** — 12 of 13, the odd one being the page whose loss is a hand-drawn bracket, which a
+rule calibrated on type is blind to by construction. Five numbers, all ratios rather than sizes,
+**written before any page was run and not adjusted after**: 8 pages first, then 5 held out. ⛔ **It is
+not validated** — 8 of the 73 plus 5 of the 16 C26's bar move rescued (so 5 of them are not degraded in production today), a labelled convenience sample, 4 of its 6 non-losers from one scan,
+and **no plate, halftone or line drawing in it at all**, which is exactly what `textRegionMask` exists
+to keep out. ⚠️ Read `lineN` and not the share: the drawn bracket's `txtShare` (0.0173) sits *below* a
+non-loser on the same scan (0.0500), so a bar on the share inverts that pair — a sixth refused scalar.
+✅ The same tool settles `score-text-route`'s open instrument question, because it holds `region`
+itself and its map therefore *is* `inkOutsideText`'s set (asserted on every row, exit 6 otherwise;
+`inkOut` reproduced the committed sweep on all 13): substituting the dumped stencil inflates the
+fraction **1.00x–3.17x**, a 7x7 SQUARE stand-in for the published `Disk:3` (which is 29 cells, not 49 — see the review note) lands **0.721x–1.007x**, and ImageMagick's
+OTSU is identical to `Flattener.otsuThreshold` on **13 of 13** pages, over a 69-level range — so that recipe's
+0.56x–16.0x spread is bounded on pages with ink to divide by, and the extremes all sit on `inkOut`
+0.0001–0.0051 (a small-denominator candidate, unmeasured). ⛔ **And it corrected this register from the
+crops: `Atkinson_1939` p3 loses two lines of TYPESCRIPT** the sub-step-1 inventory did not list
+(illegible at the shipped 8x, legible un-shrunk), so that page is in both buckets and the campaign's
+split is **19 type and 6 hand-made over 24 pages with one page in both**, not the exclusive 18 + 6
+that appears above and elsewhere. The page count, 24, does not move.
 ⛔ **And that sub-step's own draft tried to RETRACT a
 correct claim of this campaign's in six places — the adversarial review of its diff refuted it from the
 same page.** It read one rect of `Xin Qu et al_2018` p20's matrix (top-left values, stencil-over-source
@@ -4431,7 +4455,9 @@ outside the recognised words are the first four any bar protects and lose nothin
 bar cannot reach it**: 2 of the 21 lose content — the words `their education,` and `but` on
 `Williams_1958_DEMOCRACY OR MERITOCRACY` p1 at `inkOut` **0.0023**, and a pencilled annotation on
 `_1939_Former students` p2 at an `inkOut` that **prints `0.0000`**, where no usable bar exists. So the
-whole 73 is read: **16 lose content, 11 of them type and 5 a hand-made mark.**
+whole 73 is read: **16 lose content, 11 of them type and 5 a hand-made mark.** ⚠️ **Corrected
+2026-08-21 by `#### A shape term, MEASURED`: 12 type and 5 hand-made with `Atkinson_1939` p3 in both**,
+so the two buckets no longer partition the 16 (12 + 5 − 1 = 16); the 16 does not move.
 
 #### The mechanism, read off the shipped code (read, not executed) — 2026-08-19
 
@@ -5239,6 +5265,9 @@ every page still shrunk 8x/16x at the shipped bar has now been rendered at both 
 **Of the 73, 16 lose content** — 11 lose type and 5 lose a hand-made mark — by addition over the four
 sub-steps (4 + 2 + 8 + 2), not by re-measuring. With C26 sub-step 4's 13 pages that is a campaign
 total of **86 pages rendered, 24 losing content, 18 of them type and 6 a hand-made mark**.
+⚠️ **Both splits corrected 2026-08-21 to 12 + 5 of the 73 and 19 + 6 of the campaign, with
+`Atkinson_1939` p3 in both buckets** — its typescript loss was found by the shape term and read off
+that page's own two dumped backgrounds; see `#### A shape term, MEASURED`. Neither page count moves.
 ⚠️ **The second of this sub-step's two losses was found by the adversarial review of its diff, not by
 the render pass**: a pencilled annotation on `_1939_Former students` p2, invisible to the
 `ink AND NOT dilate(stencil)` map because that map thresholds with a **page-wide Otsu** and pale pencil
@@ -5461,7 +5490,10 @@ has nothing at all to say (this one).
 1. ✅ **ANSWERED, AND OVER THE WHOLE POPULATION: all 73 were rendered 2026-08-20 in four sub-steps and
    16 of the 73 lose content**, 11 of them type and 5 a hand-made mark, with 6 more losing something
    that is not content. 8 + 24 + 20 + 21 = 73; 4 + 2 + 8 + 2 = 16. With C26 sub-step 4's 13 pages the
-   campaign total is **86 rendered, 24 losing content, 18 type and 6 hand-made**. The four sections
+   campaign total is **86 rendered, 24 losing content, 18 type and 6 hand-made**. ⚠️ **Both splits are
+   corrected 2026-08-21 to 12 + 5 and 19 + 6, with `Atkinson_1939` p3 in both buckets** — see
+   `#### A shape term, MEASURED`, which also names the first-52 bucket below as 11 type + 4 hand-made
+   over the same 14 pages for the same reason. The page counts do not move. The four sections
    above are the measurement, the last of them (`#### The last 21 of the 73`) closing it. **What is
    still open under this heading is nothing about the 73 — it is items 2-4 below.** ⚠️ This sentence
    read "items 2-5 … and in particular item 5: a page can lose seven lines of prose and nothing
@@ -5484,7 +5516,7 @@ has nothing at all to say (this one).
    while its own verdict table has it losing nothing — double-counting it against the 32. 10 + 4 = 14,
    + 6 + 32 = 52, and with C26 sub-step 4's 7 type + 1 hand-made that is the published campaign total
    of 17 type and 5 hand-made over 22 content losses — which sub-step 4's two further losses take to
-   **18 type and 6 hand-made over 24**. The four
+   **18 type and 6 hand-made over 24** — ⚠️ **19 + 6 with one page in both as of 2026-08-21, and the 10 + 4 above is 11 + 4: see `#### A shape term, MEASURED`**. The four
    sections above are the measurement: the eight nearest the bar (4 of 8 losing), the other 24 in the
    six documents C26 sub-step 4 read (2 of 24), the twenty highest-`inkOut` of what was left (8 of 20),
    and the 21 sub-step 3 left (2 of 21). ⚠️ **The "same scan, same recogniser" heuristic — take the 7 pages in
@@ -6079,6 +6111,263 @@ mutants firing their intended check, the parser's immunity to the new summary li
 order making the `maximum`+`INKBAR` refusal reachable, the `keepEveryPixel` mirror matching
 `Flattener.swift:2738`/`2759` with no other replica in the file needing it, and that no test asserts on
 `PhotoDetail.blurb`.
+
+#### A shape term, MEASURED over 13 labelled pages — the first term of this entry that does NOT interleave, and it is blind to a hand-made mark — 2026-08-21
+
+**This is question 3's first measurement, and the headline is that it separates.** Four scalars have
+been tried on this population and all four were refused: `inkOutsideText` interleaves losers and
+non-losers, `paleDrawing(…).extent` separates them perfectly *backwards*, the out-of-stencil pixel
+count discriminates nothing (15,431 px against 15,727 px on a known pair), and the source render's own
+width interleaves them exactly as the fraction does. A fifth quantity does not:
+
+> **the number of accepted TEXT LINES in the ink outside the recognised words, at the page's own type
+> scale.** `lineN` ≥ 1 on **6 of 6** pages measured to lose typeset content, `lineN` = 0 on **6 of 6**
+> that lose nothing — and 0 on the one page that loses only a hand-made mark, which is the miss.
+> 12 of 13.
+
+The instrument is `Tools/score-shape-term.swift`, new in this commit. It drives production —
+`renderGrey`, `otsuThreshold`, `sauvolaMask`, `textRegionMask`, `inkOutsideText` — and adds only a
+run-based connected-component pass and the shape rule. Its rule has five numbers, all *ratios against
+the page's own recognised text* rather than absolute sizes: a component is `textish` when its height
+is within [0.5, 3.0]x the median height of the stencil's own components, its median horizontal run is
+at most 2.0x their median run, and it has ≥ 4 px; `textish` components make a line when ≥ 4 of them
+share a horizontal band with no adjacent gap wider than 3 glyph heights.
+
+⚠️ **Where those five numbers came from, because it decides what this is worth.** They were written
+from the shape of type before any page was run — a median glyph height sits between an `o` and an `H`,
+a stem is a few pixels wide, a line of prose is more than three marks — and **not one was adjusted
+afterwards**. The eight pages of `#### The eight near-misses` were measured once; the five held-out
+pages were then measured with the same binary and the same constants. So this is not a fitted rule
+reporting its own training error. ⛔ **What it is not is validated**: 8 pages of the 73 and 5 of the 16 C26's bar move rescued — NOT 13 of the 73 — chosen
+because earlier sub-steps had already published a verdict for them, is a labelled convenience sample,
+and **4 of its 6 non-losers are pages of one scan** (`Broadhead - 1994`).
+
+##### The table
+
+`inkOut` is the guard's own value and reproduces `INKBAR-2026-08-19.tsv` on **all 13 rows**;
+`mapFrac` is the map's own fraction and equals it on all 13 (the identity below). `txtShare` and
+`lineShare` are shares of that page's out-of-stencil ink. `topLine` is the largest accepted group, in
+the page's own frame.
+
+| page | published verdict | `inkOut` | `txtShare` | `lineN` | `lineShare` | `topLine` |
+|---|---|---|---|---|---|---|
+| `Broadhead - 1994` p3 | **2 prose lines** (sub-step 1) | 0.0450 | 0.5576 | **2** | 0.4924 | `779x50+1260+211` |
+| `Broadhead - 1994` p5 | nothing | 0.0405 | 0.0111 | **0** | 0.0000 | — |
+| `Broadhead - 1994` p7 | nothing | 0.0370 | 0.0230 | **0** | 0.0000 | — |
+| `Broadhead - 1994` p10 | nothing | 0.0441 | 0.0162 | **0** | 0.0000 | — |
+| `Broadhead - 1994` p12 | nothing | 0.0410 | 0.0245 | **0** | 0.0000 | — |
+| `Atkinson_1939` p3 | signature + dash rule (sub-step 1) | 0.0388 | 0.4439 | **3** | 0.4187 | `337x54+1136+2083` |
+| `Jones et al_2010` p5 | **2 prose lines** (sub-step 1) | 0.0353 | 0.6711 | **4** | 0.6616 | `488x18+107+1188` |
+| `Scott_TK` p3 | **table data** (sub-step 1) | 0.0412 | 0.7128 | **6** | 0.2407 | `241x5+364+150` |
+| `_1973_CAR` p4 † | **7 prose lines** (C26 sub-step 4) | 0.0779 | 0.9940 | **5** | 0.9937 | `1115x14+79+926` |
+| `Xin Qu et al_2018` p20 † | **13 matrix values** (C26 sub-step 4) | 0.0752 | 0.3066 | **13** | 0.2332 | `95x11+115+276` |
+| `RIESMAN_1942` p10 † | nothing (a scanner-edge strip) | 0.0614 | 0.0003 | **0** | 0.0000 | — |
+| `Riesman - 1954` p16 † | **a hand-drawn bracket** (sub-step 2) | 0.0565 | 0.0173 | **0** | 0.0000 | — |
+| `Riesman - 1954` p18 † | nothing | 0.0676 | 0.0500 | **0** | 0.0000 | — |
+
+† the five held out from choosing the constants.
+
+⛔ **`txtShare` alone is NOT the separator, and the difference matters.** Over the twelve pages whose
+loss is type or nothing it separates with a 6.1x gap (non-losers 0.0003–0.0500 against type-losers
+0.3066–0.9940) — but the hand-drawn bracket on `Riesman - 1954` p16 reads **0.0173**, which is *below*
+p18's 0.0500 on the same scan, so a bar on the share inverts that pair. It is the **line count** that
+holds, and the reason is structural rather than lucky: a share is a scalar and this entry has now
+refused five of them, while `lineN` asks whether the marks *tile a baseline*. R56's lesson in a third
+place, and the same answer — the term is about where and what shape a mark is.
+
+##### The positive control: the term names the words, read at 1:1 in the page's own frame
+
+Every rect below is a `magick -crop` off the run's own `-source.png` and `-lines.png` (the accepted
+groups' pixels), so there is no coordinate frame to convert and none of the four whole-page
+`-normalize` misreadings this entry already records can arise.
+
+- `Broadhead - 1994` p3's largest group holds **exactly** sub-step 1's two lines: *"alizing a cultural
+  order at that moment passing from life and of fab- / ricating, in the literary realm, a mentally
+  possessible version of a"*. The `-lines.png` mask carries the letterforms and drops the dots of the
+  `i`s and the hyphens — components under the height floor.
+- `Jones et al_2010` p5's holds sub-step 1's two lines: *"whereas potential dilution is known ex-ante.
+  Another rea- / son for using potential dilution is that other Finnish"*.
+- `Scott_TK` p3's rect holds *"by means of carefully classified data"*, one of the bold display lines
+  sub-step 1 named on that page.
+- `Xin Qu et al_2018` p20, in **the register's own rect** for the thirteen values
+  (`62x233+741+378`): the exact map holds **1,367 px** against the **1,375** the shell recipe
+  published for that rect — **0.994x**, two instruments agreeing to eight pixels — of which `textish`
+  accepts 1,256 and the accepted groups 1,062, reading **10 of the 13 values**. The two that drop out
+  are the shortest rows, `0.09` and `0.04`: three components each, under the four-member minimum. That
+  is `lineMinimumMembers` costing content, measured, and it is the constant to question first.
+
+##### ⛔ And a correction to sub-step 1's inventory, found by the term: `Atkinson_1939` p3 loses TYPE
+
+That page's largest accepted group is not the signature. It is two lines of **typescript** —
+*"accept my resignati… / …for my resignatio"* at `337x54+1136+2083` — and the page's two dumped
+backgrounds settle what happens to them: at the shipped 8x the crop is an illegible smear, at the
+un-shrunk factor it reads. Sub-step 1's row for that page lists *"the handwritten signature … and the
+typed dash rule under it"* and does not mention the words, so **the inventory for that page is
+incomplete and it belongs in both buckets**. The consequence for the campaign's published split: the
+24 content-losing pages are **19 losing type and 6 losing a hand-made mark with one page in both**,
+not the exclusive 18 + 6 that sums to 24. The page count, 24, does not move.
+
+##### The instrument questions this settles, and the one it does not
+
+`score-text-route.swift`'s header has carried an open question since sub-step 3: its shell map recipe
+reads **0.56x to 16.0x** the guard's own `inkOutsideText` and the cause was *"not established"*, with
+three named candidates. This tool holds `region` itself, so its map is `inkOutsideText`'s own set by
+construction, and the three can be priced against it.
+
+1. **Candidate 3 — the dumped stencil is `sauvolaMask ∧ region` while the guard tests `region` alone
+   — is the one that inflates it.** Substituting the stencil for `region` reads **1.000x to 3.174x**
+   of `inkOut` over the 13 (worst `Atkinson_1939` p3 at 3.17x; **5 of the 13 read exactly 1.0000x**, so
+   the rim is a per-page hazard and not a constant, exactly as that header says).
+2. **Candidate 1 — the erosion radius — is a good correction, not the culprit.** With the stencil
+   dilated by a 7x7 (the `Disk:3` the recipe publishes) the fraction lands **0.721x to 1.007x** of the
+   exact value, median 0.987x. It over-eats worst on `Scott_TK` p3 (0.721x), the page whose lost
+   content is a table of small numerals.
+3. **Candidate 2 — ImageMagick's `-auto-threshold OTSU` against `Flattener.otsuThreshold` — is
+   ruled out on this sample.** Measured on all 13 pages, by reading
+   `magick <source> -auto-threshold OTSU -verbose info:`'s percentage back to 8 bits against this
+   tool's `otsu` column: **165, 165, 165, 164, 165, 130, 162, 149, 149, 172, 156, 103, 129 —
+   identical on 13 of 13**, over a range of 69 grey levels.
+
+⚠️ **So the published 0.56x–16.0x spread is not reproduced here** — with the dilation these 13 pages
+sit inside [0.72, 1.01]. What that does *not* establish is where the 16x came from: every page here
+has `inkOut` ≥ 0.0353, while sub-step 3's extreme ratios sit on pages whose `inkOut` is 0.0001–0.0051,
+so a small-denominator artefact is the obvious candidate and it is **not measured**. Do not read this
+as retracting sub-step 3's figures; read it as bounding the recipe's error on pages with ink to divide
+by.
+
+##### What the tool asserts about itself, and the three mutants
+
+- **The identity**, on every printed row and not only in the self-test: the map's own fraction must
+  equal `Flattener.inkOutsideText` to full precision, or the row says so in `verdict` and the run
+  exits 6. It held on 13 of 13. The map is built by one function called by both `main` and the
+  self-test — the first draft built it inline in each, which is a check that could not fail if
+  `main`'s copy drifted, the shape this register has recorded ten times.
+- **`--self-test` is 5 checks and all 5 were watched failing**, one mutation each, built `-Onone`
+  (the checks are arithmetic; `-Onone` builds in a fraction of the `-O` time). Each exits 5:
+
+  | mutation | check that bit |
+  |---|---|
+  | 4-connectivity instead of 8 (`<=` → `<` on the run overlap) | `diagonal: 2 components not 1` |
+  | the interior window removed (`let mx = 0, my = 0`) | the identity (`0.8947… against inkOutsideText 0.3333…`) **plus three more**: interior ink 152 not 24, outside 136 not 8, 3 components not 1 |
+  | `lineMinimumMembers` 4 → 3 | `three glyphs made a line` **and** `a 365-px gap did not split the line` |
+  | `medianRun` returns the run *count* rather than the median | `stem medianRun 4 not 1`, `block medianRun 4 not 3` |
+  | `dilate` turns every radius below 4 into 4, ImageMagick s `Disk:0` being radius 4 | `dilate r=2: 81 px not 25`, `dilate r=0 is not the identity` |
+
+  ⚠️ The first three mutants reached only 3 of the 5 checks; the last two were written for the two
+  that had not been mutated, because "all watched failing" is a claim about checks and not about
+  mutants, and the first draft of this line made it off three.
+- **Determinism, and that the refactor moved nothing**: all 13 rows and the dumped PNGs are
+  byte-identical between the pre-refactor binary and the committed one.
+- `dilate(radius: 0)` is asserted to be the identity, because ImageMagick's `Disk:0` is radius 4 and
+  a sweep that started there once read backwards.
+
+##### What this leaves
+
+- **The byte price is still question 4's, and this makes it cheap to ask.** The area a *local*
+  exemption would have to keep out of the shrink is `linePx`: **7,533 px on a 4.18 Mpx page (0.18%)**
+  for `Broadhead - 1994` p3, 21,924 of 2.10 Mpx (1.04%) for `_1973_CAR` p4, 3,898 of 2.04 Mpx (0.19%)
+  for `Jones` p5, 8,201 of 5.02 Mpx (0.16%) for `Atkinson_1939` p3, 1,796 of 1.28 Mpx (0.14%) for
+  `Scott_TK` p3 and 1,467 of 1.27 Mpx (0.12%) for `Xin Qu` p20. Bounding boxes are larger than pixel
+  counts and JPEG is not linear in area, so **these are not byte figures and must not be quoted as
+  any** — they are the size of the thing to be paid for. T15's 1.33x is the stencil total and 1.07x
+  the page total; neither is this.
+- **The term is blind to a hand-made mark, measured 2 of 2** (p16 s bracket and `Atkinson_1939` p3 s signature — the review of this diff corrected the 1 of 1 this line first carried). A signature, a pencilled annotation, a
+  drawn bracket: the campaign has 6 such pages and this rule refuses them by construction, because it
+  calibrates on type. Any fix built on it protects prose and table data and leaves the hand-made
+  marks exactly where they are — which must be said out loud in whatever ships, because "protected"
+  would otherwise read as "all content".
+- **Nothing is wired.** `Sources/` is untouched by this sub-step; the seam a fix would use is either
+  `textRegionMask` (admit the pixels) or the `pageIsAllText()` consequence (exempt the regions from
+  the shrink), and the entry's own cheaper variant is the second.
+- **65 of the 73 pages are unmeasured by this term**, and so is every page outside the 73 — including
+  the pages that must *not* be admitted: this sample has no photograph, no halftone and no line
+  drawing on a picture-route page, which is precisely what `textRegionMask` exists to keep out. A rule
+  that reads 0 lines on six pages of scanner edges has not yet been shown to read 0 on a plate.
+
+##### ⛔ WHAT THE ADVERSARIAL REVIEW OF THIS DIFF FOUND — 2026-08-21, and it moved the sample's own definition
+
+Two agents, one auditing every number against the run logs and one attacking the tool. The audit
+confirmed the Otsu 13 of 13, the determinism, the `inkOut` reproduction, all six area percentages,
+the 6.1x share gap, the Disk-band min/max/median, the 1,367/1,375 rect and every positive-control
+crop — and refuted six claims. The code review found five real defects in the tool. Both are
+recorded, because the alternative is a reader trusting the paragraphs above.
+
+**Corrected in place, here and in the four summary files:**
+
+1. ⛔ **"13 of the 73" was FALSE, and the sample is weaker than it read.** Five of the thirteen —
+   `_1973_CAR` p4, `Xin Qu` p20, `RIESMAN_1942` p10, `Riesman - 1954` p16 and p18 — have
+   `barVerdict` **`picture`** in `INKBAR-2026-08-19.tsv`: they are C26's rescued `[0.045, 0.08)`
+   band and are **not degraded in production today**. It is **8 of the 73 plus 5 of C26's 16**, and
+   the remainder is **65 of the 73**, the number this entry already uses for it.
+2. ⛔ **`Xin Qu` p20 reads 10 of the 13 values, not 11.** A row profile of `-lines.png` over the
+   register's own rect gives exactly ten bands: the diagonal `1` at the head of the column drops out
+   as well as `0.09` and `0.04`, so `lineMinimumMembers = 4` costs **three** values.
+3. ⛔ **`stenD3` is a 7x7 SQUARE and `Disk:3` is 29 cells, not 49.** `magick -define
+   morphology:showKernel=1` prints `Disk:3` as `7x7+3+3 … Sum 29`; the two differ in 20 of 49 cells,
+   41% and not "only the corners" as the tool's header claimed. The square is the more generous
+   kernel, so `stenD3` is biased **low** and real `Disk:3` numbers sit *closer* to 1.0 than 0.721x.
+   The band remains a bound on the recipe's error; it is not the recipe's own kernel. The tool's
+   header is corrected — comment only, and no number here came from that text.
+4. ⛔ **`txtShare` is the FIFTH refused scalar, not the sixth** — this entry's own count makes the
+   source-render width the fourth. Two places said sixth.
+5. ⛔ **`Riesman - 1954` p16's verdict is C26 sub-step 4's, not sub-step 2's** (p16 and p18 are
+   `picture` rows and were never among sub-step 2's 24).
+6. ⚠️ **"6 of 6 type-losers" contains one label this tool itself created.** On the register's
+   *pre-existing* labels the sample holds **5**; the sixth is `Atkinson_1939` p3, whose type loss is
+   item 8. Read it as **5 of 5 pre-existing plus 1 new**. And because that page also loses a
+   signature the term does not name, the blindness figure is **2 of 2 hand-made marks missed**.
+7. ⛔ **Five tracked places still carried the old 18 + 6 / 11 + 5 / 10 + 4 split** — this entry's
+   first-52 bucket line, `CHANGELOG.md`, a second `CLAUDE.md` paragraph, `HANDOFF.md`'s open-entry
+   header and a second `QUEUE.md` box — while a queue line already claimed "corrected in five
+   places", and a forward reference promised a figure this section never gave.
+8. ⚠️ **The `Atkinson_1939` p3 relabelling reverses a reading this entry recorded as a refuted false
+   positive, and now says so.** Sub-step 2 records that a `-normalize`d whole-page view claimed *the
+   whole* of that page's typescript was outside the stencil, that 1:1 refuted it, and *"do not read a
+   normalised whole-page image as evidence in this entry"*. The new claim is narrower and arrives by
+   a different instrument — the exact map holds those two lines, and the reading is a 1:1 crop of
+   that page's own two dumped backgrounds rather than a normalised view — but it is a reversal on
+   that page and is marked as one.
+9. ⚠️ **"the extremes all sit on `inkOut` 0.0001–0.0051" is not in evidence** — one of the three
+   pages `score-text-route`'s header names sits at 0.0287, and which pages produce the *cropped*
+   0.56x and 16.0x is nowhere recorded. The small-denominator reading stays a hypothesis.
+10. ⚠️ Mutant 5's description contradicted its own printed output: `let r = max(r, 4)` turns **every**
+    radius below 4 into 4, which is why `r=2` printed 81 px rather than 25.
+
+**Defects in the tool, found and NOT fixed.** The numbers above stand — every one was produced by
+the committed source and cross-checked — but do not reach for this tool again without reading these:
+
+- **`SHAPEDUMP` is accounted for and then ignored.** `dumpMissing` is collected, printed, and never
+  reaches the exit code, and there is no `dumpablePages` equivalent: run over an already-1-bit page
+  the tool writes **no files, prints no dump line, and exits 0**. That is verbatim the state
+  `score-text-route`'s `dumpExitCode` was pulled out of — CONTRIBUTING §4b, in the commit that cites
+  that file.
+- **A requested page that does not exist is dropped with no row and exit 0**, the one `continue` that
+  prints nothing; and `measured == 0` also exits 0. Invariant 1, and the pattern `score-corpus` was
+  changed out of.
+- **`outsideFraction` is a second, unpinned copy of the interior-window ink walk** — in the file whose
+  refactor note explains why two copies of the map would be a check that cannot fail. Both candidate
+  columns rest on it, no check exercises it, and the free invariant `stenFrac >= mapFrac` (the
+  stencil is a subset of `region` by construction) is not asserted.
+- **Self-test check 3 pins only the *y* half of the interior window**: its fixture puts border ink in
+  row 0 and row h−1 only, so mutating `mx` leaves all four of its assertions passing. "The interior
+  window removed" is a half-kill.
+- **`textish` is never called by the self-test**, so four of the six constants have no coverage; and
+  `lines()` takes a band's extent from its *last* member, so components each overlapping the previous
+  by half can chain and drift. **So "blind to a hand-made mark by construction" is too strong** —
+  what is measured is that it read 0 on the two such pages here. Four blobs of a broken pen stroke on
+  a diagonal, ≤ 3 glyph-heights apart, is the case to try next.
+- Smaller: the dumped `-textish.png`/`-lines.png` paint each accepted component's bounding box
+  intersected with the map, so map ink from a *rejected* component inside that box is painted too —
+  the positive control is a slight superset, in the direction that flatters the term; the per-page
+  `SHAPEDUMP` note goes to stdout between TSV rows where the sibling puts it on stderr; the scratch
+  directory leaks on every non-zero exit; a non-numeric page argument is swallowed by
+  `compactMap { Int($0) }`, a seventh instance of the queue's own `argv-shape` class; and components
+  are truncated at the window edge, so a page whose type runs into the outer sixteenth has a clipped
+  `glyphH`.
+- **What survived the attack**: the connected-component pass is correct (the advance rule proved
+  sound in all three cases), `interiorWindow` is character-for-character `inkOutsideText`'s, the
+  `row()`/`columns` discipline holds at 22 fields, and every early `continue` but the one above
+  prints a full-width row.
 
 #### What this entry is NOT
 

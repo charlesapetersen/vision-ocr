@@ -61,7 +61,7 @@ would cost. (In one scan a page is rescued at 0.0465 and another 0.0024 lower is
 measured, that pair is the number getting it right. It is across scans that it fails: the
 pages that lose content and the pages that do not are interleaved, so no value of the number
 separates them.) **All 73 have now been rendered and looked at (2026-08-20), and 16 of them
-lose content** — 11 lose type and 5 lose a hand-made mark; the lowest is a page with so
+lose content** — 11 lose type and 5 lose a hand-made mark ⚠️ (12 + 5 and 19 + 6 as of 2026-08-21, `Atkinson_1939` p3 in both buckets — C28 `#### A shape term, MEASURED`); the lowest is a page with so
 little ink outside the recognised words that the number cannot usefully be set below it — at
 best the setting would have to go to zero, which turns the saving off on every page. This paragraph read
 "whether those 73 lose anything has not been looked at yet" until the eight were rendered,
