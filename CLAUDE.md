@@ -49,7 +49,25 @@ reports it as of 2026-08-20** — that was the entry's question 5, invariant 1's
 an eighth, with that page's own fraction beside it, on the success path only and with **no bar on the
 fraction** (the campaign proved the losers and non-losers interleave when sorted by it, and one
 measured loser prints `0.0000`, so any filter drops a known loser). ⛔ It is a report and not a fix —
-the pages are still degraded, and C28 stays OPEN on questions 2, 3 and 4.
+the pages are still degraded, and C28 stays OPEN on questions 3 and 4 plus half of 2.
+✅ **Question 2's 1/2 HALF IS MEASURED 2026-08-20 and it does NOT reproduce.** The 109 layered pages the
+bar does *not* read as all text keep the caller's factor, which on the default Photo detail is **2**;
+sixteen of them were rendered and read at 1:1, ten beside a 1/8 reference on the same rect, and **no
+content loss was found at 1/2 in any window read** — including on the two pages where the same ink WAS
+destroyed at 1/8 before the 2026-08-19 bar move. So this defect
+stays bounded to the 73 pages at 8x/16x instead of widening to 182, and the entry's guess ("degraded
+but legible") is now measured on the default rather than assumed. ⛔ **`PhotoDetail.smallest`'s factor
+of 3 is still unmeasured** — `score-text-route` measures the default — and 16 of 109 is a sample (all 6
+of the sub-bar pages, 2 of the 16 rescued, 8 of the other 87), read **one window a page**.
+⛔ **AND THAT SUB-STEP'S OWN DRAFT TRIED TO RETRACT A CORRECT CLAIM OF THIS CAMPAIGN'S IN SIX PLACES,
+and the adversarial review of its diff refuted it from the same page** — it measured stencil ink in one
+rect of `Xin Qu et al_2018` p20's matrix (top-left, 0.98x, stencilled), concluded "thirteen values" was
+misattributed, and would have had the next commit break a correct comment in `Flattener.swift`. The
+matrix's LAST column reads stencil ink **0.0000** and holds 1,375 of that page's 6,233 out-of-stencil
+map pixels: thirteen values, exactly as published. **A stencil-ink ratio is a claim about its rect, not
+about the page.** The related trap is real and stays recorded — `fillHoles` leaves stencilled ink in the
+background as a pale ghost, so a ghost's disappearance looks like a loss and a ghost-only rect looks
+like safety.
 **Back to the campaign:** eight more of the 73 beyond C26's thirteen were rendered 2026-08-20
 (`78de7a2`) and 4 of the 8 lose content;
 24 more the same day (`6818a0e`) and 2 of those; 20 more the same day (`72b866e`) and **8 of those
@@ -203,7 +221,9 @@ benefit, measured 2026-08-19 — sub-step (4) ran and the other 13 pages were re
 the two backgrounds the entire difference. **11 of the 13 lose something**, and ⛔ **the dominant case
 is NOT a drawing**: **7 of the 13 lose whole lines of prose or table data and an 8th loses a hand-drawn mark outright — 8 losing content outright** (and the four C28 sub-steps rendered 2026-08-20 cover the whole population — 8 + 24 + 20 + 21 = 73 pages, 4 + 2 + 8 + 2 = 16 losing content — so **86 pages rendered across the campaign, 24 losing content, 18 of them type**) — `Xin Qu et al_2018`
 p20 loses thirteen values out of a Pearson correlation matrix, `_1973_Committee Against Racism_` p4
-loses seven lines of prose — words Vision did not box, cut from the stencil by `textRegionMask` and
+loses seven lines of prose — ✅ **both re-measured independently 2026-08-20 by C28's 1/2 render and both
+hold** (p20's thirteen are the matrix's LAST column at stencil ink `0.0000`; three of p4's lines read
+`0.0000–0.0012` against 1.18x–1.19x on three lines below them) — words Vision did not box, cut from the stencil by `textRegionMask` and
 then destroyed at 1/8. **That makes C26 an invariant-1 defect rather than the fidelity complaint it
 was opened as**, and only `Riesman - 1954` p16 (a hand-drawn margin bracket broken into blobs)
 reproduces its founding failure mode. ⛔ **And the dearest page of the 16 buys nothing** —

@@ -72,9 +72,21 @@ pages rendered, 24 losing content, 18 type and 6 hand-made.**
 ink outside the recognised words stored at an eighth**, with that page's own fraction beside it, on
 the success path only and with **no bar on the fraction**: the four sub-steps proved the losers and
 the non-losers interleave when sorted by it, and one measured loser prints `0.0000`, so any filter
-would drop a page known to lose content. C28 stays OPEN on questions 2, 3 and 4 — the same loss at
-1/2 and 1/3, a shape term, and the price of widening. ⛔ The report is a report and not a fix: it says
+would drop a page known to lose content. C28 stays OPEN on questions 3 and 4 and half of 2 — a shape
+term, the price of widening, and the same loss at **1/3**. ⛔ The report is a report and not a fix: it says
 which pages were degraded, it does not stop them being degraded.
+✅ **Question 2's 1/2 half is MEASURED 2026-08-20 and the loss does NOT reproduce there** — 16 of the
+109 layered pages the bar does not read as all text were rendered and read at 1:1, ten of them beside a
+1/8 reference on the same rect, and **no content loss was found at 1/2 in any window read**, including
+on the two pages where the same ink WAS destroyed at 1/8 before the 2026-08-19 bar move. That bounds this entry to the 73 pages at
+8x/16x rather than 182. ⛔ **`PhotoDetail.smallest`'s factor of 3 is not measured**, 16 of 109 is a
+sample, and the base is **one window a page**. ⛔ **And that sub-step's own draft tried to RETRACT a
+correct claim of this campaign's in six places — the adversarial review of its diff refuted it from the
+same page.** It read one rect of `Xin Qu et al_2018` p20's matrix (top-left values, stencil-over-source
+ink 0.98x — stencilled) and concluded "thirteen values" was misattributed; the matrix's **last** column
+reads stencil ink **0.0000** and holds 1,375 of that page's 6,233 out-of-stencil map pixels. Thirteen
+values, exactly as published, all six edits reverted. **A stencil-ink ratio is a claim about its rect,
+not about the page.**
 ⚠️ **And the recipe C28 gave for the sub-step renders was a false negative** — `INKBAR=0.08` compares a
 sub-bar page with itself (byte-identical backgrounds, measured); the bar must be *at or below* the
 page's own `inkOut`, and where that is 0 the instrument is instead an `ink AND NOT dilate(stencil)` map
@@ -3448,7 +3460,16 @@ reasons about marks that are *not text*. Measured, **7 of these 13 pages lose li
 or table data, and an 8th loses a hand-drawn mark outright** — words Vision did not box, therefore cut out of the stencil by `textRegionMask`
 (correctly, by its own lights: it only keeps what was recognised), therefore left in the background,
 therefore stored at 1/8 and destroyed. `Xin Qu` p20 loses thirteen values out of a Pearson
-correlation matrix; `_1973_Committee Against Racism_` p4 loses seven lines. A drawing being erased is
+correlation matrix; `_1973_Committee Against Racism_` p4 loses seven lines. ✅ **Both were re-measured
+independently 2026-08-20 by C28's 1/2 render: p20's claim HOLDS in full and p4's is corroborated on
+three of its seven lines** — p20's thirteen values are the
+matrix's LAST column, at stencil ink **0.0000** against source ink 0.1004 over `62x233+741+378` and
+1,375 of that page's 6,233 out-of-stencil map pixels; three of p4's lines read stencil ink **0.0000**
+against source ink **0.0812–0.2464** (map 1,242–3,829 px) while the two lines below them read
+**1.15x and 1.16x** with map 0 px.
+⚠️ **A draft of that section nearly RETRACTED the p20 claim and was wrong** — see
+`#### The same loss at 1/2`; the top-left of the same table is stencilled at 0.98x–1.00x, so one rect's
+ratio is a claim about that rect. A drawing being erased is
 a fidelity complaint a user might live with. **Text that is present in the source, absent from the
 text layer *and* illegible in the image is content lost silently**, which is invariant 1. Only
 `Riesman - 1954` p16 reproduces C26's own founding failure mode — a fine hand-drawn stroke that
@@ -4366,7 +4387,8 @@ an adaptive binarisation of the whole page with the geometry of the words Vision
 the recogniser missed is in neither the stencil nor the text layer, and survives only in the
 background, which on a page read as all text is stored at **1/8** of the page's resolution. C26's
 sub-step 4 read thirteen such pages at 1:1 and **8 were losing content outright**: thirteen values out
-of a Pearson correlation matrix on `Xin Qu et al_2018` p20, seven lines of prose on
+of a Pearson correlation matrix on `Xin Qu et al_2018` p20 (✅ **re-measured independently 2026-08-20
+and it holds — they are the matrix's last column, stencil ink `0.0000`**), seven lines of prose on
 `_1973_Committee Against Racism_` p4, three lines on `Broadhead - 1994` p6. Content present in the
 source, absent from the text layer, illegible in the image, and **nothing reported it until
 2026-08-20** — invariant 1; the run report names those pages now, and `#### The report, SHIPPED` is
@@ -5463,11 +5485,20 @@ has nothing at all to say (this one).
    cannot see pale pencil on a shadowed sheet and missed a real loss an `-lat 25x25-8%` map finds**,
    `Disk:0` is radius 4 rather than the identity, and a connected-component rect off the
    interior-cropped map is in a different coordinate frame from one off the whole map.
-2. **What the same loss looks like at 1/2 and 1/3**, i.e. on every layered page that is *not* read as
-   all text — **109 of the 182 sampled** at the shipped bar, up from 93 before it. The confinement is identical there;
-   only the factor differs. Unmeasured, and the likely finding is "degraded but legible", which would
-   bound this entry to the 8x case — worth establishing rather than assuming, because it is the
-   difference between a defect on 73 pages and one on 182.
+2. ✅ **HALF ANSWERED 2026-08-20 — at 1/2 it does NOT reproduce, measured over 16 of the 109; 1/3 is
+   still unmeasured.** The population is **109 of the 182 sampled** layered pages at the shipped bar,
+   up from 93 before it — recomputed from the committed sweep, not quoted. The confinement is identical
+   there; only the factor differs, and on the DEFAULT Photo detail that factor is **2**. Sixteen were
+   rendered and read at 1:1, ten of them beside a 1/8 reference on the same rect, and **no content loss
+   was found at 1/2 in any window read** — including on the two pages where the same ink WAS destroyed
+   at 1/8 before the 2026-08-19 bar move. So the expected finding — "degraded but
+   legible" — holds at the default, and this entry stays bounded to the 8x case on 73 pages rather than
+   widening to 182. ⛔ **`PhotoDetail.smallest`'s factor of 3 is not measured**: `score-text-route`
+   measures the default, so that half is open; the base is **one window a page**; and 16 of 109 is a
+   sample. The section
+   `#### The same loss at 1/2, RENDERED over 16 of the 109` is the measurement — and it also
+   re-confirms the `Xin Qu et al_2018` p20 finding, whose thirteen values are the matrix's last column,
+   outside the stencil, and a smear at 1/8.
 3. **Can a shape term admit missed text into the stencil without admitting pictures?** This is R56's
    lesson in a third place — the term that closed R56 was not "how pale is this mark" but "where is
    it". Candidates, none measured: stroke width and component size against the *recognised* text's own
@@ -5603,6 +5634,176 @@ does not work, which is worth one sentence so the next reader does not spend an 
 the layering loop, but `Mode.canUseJBIG2` is `self != .grayscale` and `wantsJBIG2` ANDs it, so
 Grayscale takes the Flate route and never layers at all. Worth opening as its own item rather than
 leaving in a commit message.
+
+#### The same loss at 1/2, RENDERED over 16 of the 109 — it does not reproduce, and a draft of this section nearly retracted a correct claim of its own campaign — MEASURED 2026-08-20
+
+**This is question 2's first half.** The 109 layered pages the shipped bar does *not* read as all text
+keep the caller's factor, which on the DEFAULT Photo detail (Balanced) is **2**. Sixteen of them were
+rendered and read at 1:1, ten of them beside a 1/8 reference on the same rect from the same `mrcLayers`
+call (the other six cannot have one — see the negative controls below). **No content loss was found at
+1/2 in any window read on any of the sixteen** — including on two pages where the same ink *was*
+destroyed at 1/8 before the 2026-08-19 bar move. So the entry's expected
+finding ("degraded but legible") holds at the default, and this defect stays bounded to the 73 pages at
+8x/16x instead of widening to 182. ⚠️ **The evidential base is one window per page** (plus a second
+window on seven of them, and two more re-read by the adversarial review of this diff), not the whole
+page — stated as a limit at the end of this section, because a draft of it drew a false conclusion from
+exactly that.
+
+**The population, recomputed from `INKBAR-2026-08-19.tsv` rather than quoted.** `barVerdict` is
+`picture` on **109** rows and `all-text` on **73**, against `verdict` (the 0.08 bar) `picture` **93**
+and `all-text` **89** — which reproduces this entry's own "109, up from 93". The 109 split three ways
+and the sample covers each: **6 whose `inkOut` is BELOW the shipped bar** and which are `picture` only
+because `paleDrawing` refuses them (`extent` **0.055–0.361**, all six above the 0.05 bar) — **all 6
+read**; **16 in the band `[0.045, 0.08)`**, i.e. exactly the pages C26's bar move rescued — **2 read, as
+positive controls** (⚠️ the band holds **17** rows; `Broadhead - 1994` p3 prints in it at 0.0450 and
+does not flip, the caveat `Sources/Flattener.swift` and `CLAUDE.md` both already carry); and **87 at
+`inkOut` 0.0902 and above** — **8 read**, spanning 0.0902 to 0.9949.
+
+**Method, and its two negative controls.** `INKBAR=<bar> INKDUMP=<dir> /tmp/score-text-route <pdf>
+<page…>`, the tool built from `Sources/` at `55b650b`; 13 invocations, `rc=0` on every one, `INKDUMP`
+**7 files on all 16 pages** (112 files, none missing). `inkOut`, `extent` and `route` reproduce
+`INKBAR-2026-08-19.tsv` **digit for digit on all 16 rows**, by script over the committed file.
+⚠️ On the two control pages the *byte* columns reproduce **with the columns swapped** — this run's
+`layered` (165,151 B and 62,659 B) equals the committed file's `layeredAtBar` — which is the swap the
+tool's header documents after the 2026-08-19 bar move, and is the negative control on the seam. The
+bar was **0.08** on the two controls, whose `inkOut` is in `[0.045, 0.08)`, so it flips them and dumps
+the 1/8 background they had before the move; **0.99 / 0.999** on the rest, which flips any page whose
+`extent` is at or below `paleDrawingThreshold`. ⛔ **That 1/8 side is SYNTHETIC on those 8 pages** —
+production never stores them at an eighth, and the column is a contrast reference rather than a report
+of shipped behaviour. On the 6 pale-refused pages no bar can flip anything (`noPaleDrawing` is false),
+so their two backgrounds are **byte-identical**, which is the pipeline's own negative control and
+shows as two identical rows in every stack. Background widths confirm the factor on all 16
+(`_1973_Committee` p4: **637 px** shipped against **159 px** at the bar, 4x apart). Crops are the
+source at 1:1 against the background bilinearly upscaled to source size (`-filter Triangle`), which is
+the smoothing a viewer applies; **legibility is read at 1:1 and never off a normalised whole page**,
+for the reason C26 sub-step 4 records four times over.
+
+⛔ **THE POSITIVE CONTROL WORKS, AND ON THIS ENTRY'S OWN EXAMPLE.** `_1973_Committee Against Racism_`
+p4 is the page C26 sub-step 4 recorded as losing seven lines of prose. Three prose lines in one rect
+hold **stencil ink 0.0000** against source ink **0.0812–0.2464** (map 1,242–3,829 px), while the two
+lines below them read stencil-over-source **1.15x and 1.16x** with map **0 px** — so the instrument
+separates the two classes on one page. At 1/2 all three lines are fully legible; at 1/8 they are a
+smear. That page's verdict is corroborated by an independent instrument, and the loss is a property of
+the FACTOR and not of the confinement.
+
+⛔ **AND THE OTHER CONTROL IS WHERE THIS SUB-STEP NEARLY RETRACTED A CORRECT MEASUREMENT.** A draft of
+this section claimed that C26 sub-step 4's *"`Xin Qu et al_2018` p20 loses thirteen values out of a
+Pearson correlation matrix"* was misattributed, and it was going to correct that sentence in **six**
+places — `BUGS.md` ×4, `CLAUDE.md`, `ops/autonomous/QUEUE.md` — and instruct the next suite-paying
+commit to change a **correct** comment in `Sources/Flattener.swift:1476`. **The adversarial review of
+this diff refuted it from the same page**, and the refutation reproduces:
+
+| rect on `Xin Qu et al_2018` p20 (921x1382) | source ink | stencil ink | ratio | map px |
+|---|---|---|---|---|
+| `70x20+250+253` — the table's top-left values `0.767**` | 0.0943 | 0.0921 | **0.98x** | 0 |
+| `62x233+741+378` — the matrix's LAST column, thirteen values | 0.1004 | **0.0000** | **0.00x** | **1,375** |
+
+The last column holds exactly thirteen entries (`1`, `−0.130*`, `0.221**`, `−0.137*`, `0.045`, `0.024`,
+`−0.106`, `0.299**`, `−0.045`, `0.058`, `0.160**`, `0.09`, `0.04`), it carries **1,375 of that page's
+6,233 out-of-stencil map pixels** — and a 20-px-stride scan of every `62x233` window on that map peaks
+at **1,481 px at `+740+400`**, the same column, so this is the densest concentration on the page — and at 1:1 it is
+legible at 1/2 and an unreadable smear at 1/8. **So the campaign's wording was exactly right and every
+one of those six edits has been reverted.** The one-line lesson: **a stencil-ink ratio is a claim about
+its rect, not about the page.** The stencil's coverage of one table is not uniform — 0.98x in the
+top-left and 0.00x in the last column of the same matrix — and the draft's error was reading the
+a HAND-CHOSEN rect without first finding the map's own concentrations — that rect holds **0** map
+pixels, and a sliding `62x233` window over the whole map peaks at **1,481 px** on the last column, so the
+draft read the emptiest part of the table rather than the densest. Same shape as the false negative sub-step 4
+records from a component rect in the wrong coordinate frame.
+
+⚠️ **The trap that made the wrong reading plausible is real, and worth keeping.** `fillHoles` leaves
+stencilled ink in the background as a pale ghost, so **reading the two BACKGROUNDS against each other
+makes a ghost's disappearance at 1/8 indistinguishable from a content loss** — and the converse, which
+is what happened here: a rect whose ink is all ghost reads as "stencilled, therefore safe" while the
+page loses content over 400 px away (the two rects are 421 px apart horizontally). This entry already warns that `-auto-level` amplifies that residue into
+what looks like legible text; these are two more faces of it. **The discriminator is the stencil, over
+the WHOLE page**: `ink AND NOT dilate(stencil)`, interior-cropped, with the largest concentrations
+found before any rect is chosen — and then
+`-auto-threshold OTSU -negate -format '%[fx:mean]'` on stencil over source to settle each one. Three
+pages in this sample carry out-of-stencil ink that is not content and whose *content* is entirely
+stencilled (`Riesman - 1954` p4's gutter shadow, p22's one thin mark, `_1939_Former students` p5's
+whole handwritten note), so a background read without the stencil beside it would have had three more
+chances to invent a loss — ⚠️ that last clause is an inference, not a measurement.
+
+**The sixteen, read.** All at 1/2 unless said otherwise; "out of stencil" means dark in the
+background and confirmed by the map or by a stencil-ink rect.
+
+| page | `inkOut` | what is outside the stencil | at 1/2 | at 1/8 |
+|---|---|---|---|---|
+| `_1973_Committee Against Racism_` p4 | 0.0779 | three prose lines | **legible** | smear |
+| `Xin Qu et al_2018` p20 | 0.0752 | the matrix's last column (13 values), the column heads 5–9, eight row numbers, two labels, the rules | **legible** | gone |
+| `1881 - Harry Wilcox` p1 | 0.9154 | copperplate inscription, "versity of the Pacific" | **legible** | followable smear |
+| `Doermann_1967` p5 | 0.1924 | unrecognised typescript | **legible** | heavily degraded |
+| `Broadhead - 1994` p11 | 0.1034 | one footnote line (the map's own peak is the scanner operator's THUMBS) | **legible** | smear |
+| `___ 4` p1 | 0.1180 | the masthead's reversed-out display type | **legible** | marginal |
+| `Scott_TK` p9 | 0.1333 | a hatched arrow, two body lines | **legible** | gone |
+| `Keyssar_2000` p1 | 0.3303 | a cover engraving | faithful | mush |
+| `Ibson_2006` p122 | 0.9949 | a halftone photograph | faithful | mush |
+| `AI 2027` p66 | 0.0378 | diagram rules and labels | **legible** | *(identical — pale term)* |
+| `1976 - Regis McKenna` p2 | 0.0430 | blank paper and a platen edge | nothing | *(identical)* |
+| `Riesman - 1954` p4 | 0.0094 | a gutter shadow | nothing | *(identical)* |
+| `Riesman - 1954` p22 | 0.0013 | one thin vertical mark | nothing | *(identical)* |
+| `_1939_Former students` p13 | 0.0156 | one typescript line | **legible** | *(identical)* |
+| `_1939_Former students` p17 | 0.0135 | a signature's descender | **legible** | *(identical)* |
+| `_1939_Former students` p5 | 0.0902 | *nothing* — the whole note is in the stencil | n/a | n/a |
+
+⚠️ **`_1939_Former students` p5 is where the published map recipe INVERTS.** The note is a pale sheet
+photographed on a dark table, so the page-wide Otsu splits table-from-paper: the map flags the
+**surround** and none of the handwriting, reading **0.8234 against production's `inkOut` of 0.0902 —
+9.13x**, the only page of the 16 where the map and production disagree by more than 1.37x.
+`-lat 25x25-8%` reads **12,976** interior px instead. Same failure the entry records on p2 of that
+same scan, now with a ratio on it. The page loses nothing because its writing is stencilled — visible
+in the background only as a `fillHoles` ghost, which is the trap above met a second time in one
+sample.
+
+**The map recipe, validated on a sample where it works.** The interior-cropped
+`ink AND NOT dilate(stencil)` fraction against production's `inkOut` reads **0.70x to 1.37x on 15 of
+the 16** (`_1939` p5 the sixteenth, at 9.13x), against the **0.56x–16.0x** band sub-step 3 published.
+⚠️ That is not a correction of that band: this sample's `inkOut` values are mostly an order of
+magnitude larger, so a fixed per-glyph rim is a much smaller share of the numerator, and the cause was
+not isolated here any more than it was there.
+
+⛔ **TWO INSTRUMENT DEFECTS, BOTH IN THE SHELL — one silent, one wrong by a constant and visible in
+its own output.**
+1. **`%[fx:int(mean*w*h/255+0.5)]` is not a pixel count.** ImageMagick's fx `mean` is already
+   normalised to `[0,1]`, so the `/255` made every count **255x low** — a whole 3778x2252 page read
+   **3,975** ink pixels. Every RATIO was unaffected, which is exactly why it survived being read once;
+   what caught it was an absolute number being absurd, which is what §3 asks a reader to do.
+2. **`-connected-components:verbose` never prints the word `white`.** The mean-colour field is
+   `gray(255)` / `srgb(255,255,255)`, so `awk '$NF=="white"'` matched **nothing on every page** and
+   read as "no component above the area threshold" on all 16. A filter that cannot match is a check
+   that cannot fail — this register's eleventh, and in a shell rather than in the code.
+
+**What this bounds, and what it does not.** Four limits, and the third is the one a draft of this
+section got wrong.
+- ✅ **1/2 is measured** and it is not a content loss in any window read on any of the 16, including
+  the two pages where the same ink was destroyed at 1/8 before the bar move. The resolution extreme of the sample is
+  measured: the smallest background is **460x691 from a 921x1382 source** (`Xin Qu` p20), and its
+  out-of-stencil last column and column heads are both legible there. ⚠️ Background width is a
+  *resolution* proxy and not a type-size measurement; type size across the sample was not measured, so
+  "the worst case" is a claim about pixels per page and not about points per glyph.
+- ⛔ **1/3 is NOT measured.** `PhotoDetail.smallest` is the factor-3 case; `score-text-route` measures
+  the default and nothing here says what Smallest does. That half of question 2 stays open, and a
+  session taking it needs a way to set the tool's Photo detail.
+- ⛔ **ONE WINDOW PER PAGE, not the page.** The rect was chosen by the densest cell of a coarse grid
+  over the interior-cropped map; seven pages got a second, hand-chosen window, and the adversarial review
+  of this diff re-read two more (`Xin Qu` p20's last column and `Doermann_1967` p5's
+  bottom-of-page typescript, both legible at 1/2). ⛔ **On the one page where an independent window was
+  checked against a draft conclusion, the window had missed the content that mattered** — the
+  retraction above. So the verdict is "no content loss found at 1/2 in the windows read", and a reader
+  who wants it page-complete has to widen the windows, not the page count. ⚠️ And note the *argument*
+  that would make one window enough does not hold: `Flattener.downsample` is a box average anchored at
+  the origin, so it is uniform but **not shift-invariant** — it is invariant only under shifts that are
+  multiples of the factor.
+- ⛔ **16 of 109 is a sample**, not the population: all 6 of the sub-bar pages, 2 of the 16 rescued,
+  8 of the other 87. And the sample is not uniform in the failure mode under test: **about 9 of the 16
+  carry type or handwriting the recogniser missed**, 3 carry a picture or a diagram, and 4 carry
+  nothing outside the stencil at all. Spanning `inkOut` selects for pages whose out-of-stencil ink is a
+  *picture*, where "loses content" is a different question — so the verdict rests on those nine.
+- ⚠️ **Method limits worth stating.** The crops compare the source against the **background alone**,
+  upscaled with `-filter Triangle`, and not against the published composite; that is exactly the gap
+  the ghost trap lives in. `Triangle` is bilinear and approximates a viewer's smoothing — it was not
+  verified against any viewer.
 
 #### What this entry is NOT
 

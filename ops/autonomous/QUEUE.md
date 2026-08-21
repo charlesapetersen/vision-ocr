@@ -322,7 +322,9 @@ happens.**
       byte-identical at both bars, so the two backgrounds are the entire difference. ⛔ **Do not
       re-run it**; the per-page table is in `BUGS.md` C26 §"Sub-step 4, the benefit".
       **11 of the 13 lose something; 8 lose content outright — 7 whole lines of prose or table data, 1 a hand-drawn mark** —
-      `Xin Qu et al_2018` p20 loses thirteen values out of a Pearson correlation matrix,
+      `Xin Qu et al_2018` p20 loses thirteen values out of a Pearson correlation matrix — ✅ **and that
+      claim was re-measured independently by `c28-halfres` 2026-08-20 and HOLDS: they are the matrix's
+      LAST column, stencil ink `0.0000`, 1,375 of the page's 6,233 out-of-stencil map pixels** —
       `_1973_Committee Against Racism_` p4 seven lines of prose, `Broadhead - 1994` p6/p8/p9 three,
       one and three. Those are words Vision did not box, cut from the stencil by `textRegionMask` and
       destroyed at 1/8. ⛔ **So C26 is an invariant-1 defect, not the fidelity complaint it was opened
@@ -424,11 +426,31 @@ happens.**
       ✅ **Question 5 is DONE 2026-08-20 — the run report now names every page it stored at an
       eighth.** Do not re-do it; the `c28-report` sub-box below and the entry's
       `#### The report, SHIPPED` carry the four decisions in it and the one part no check reaches.
-      **So questions 1 and 5 are answered and what is left is the entry's questions 2-4, in its
-      order** —
-      2 (the same loss at 1/2 and 1/3, on the 109 layered pages not read as all text), 3 (a shape term
+      ✅ **Question 2's 1/2 HALF IS DONE 2026-08-20 and the loss does NOT reproduce there.** Do not
+      re-run it; the `c28-halfres` sub-box below and the entry's
+      `#### The same loss at 1/2, RENDERED over 16 of the 109` carry the table, the two negative
+      controls, the two instrument defects and a retraction of its own draft. **16 of the 109 rendered,
+      no content loss found at 1/2 in any window read**, including on the two pages where the same ink
+      WAS destroyed at 1/8 before the 2026-08-19 bar move — so this entry stays bounded to the 73 pages
+      at 8x/16x rather than 182.
+      ⚠️ **The base is one window a page** (six got a second, two more were re-read by the review), so
+      widening a window is what strengthens it, not adding pages.
+      **So questions 1 and 5 are answered, question 2 is half answered, and what is left is** —
+      **2b** (the same loss at **1/3**, i.e. `PhotoDetail.smallest`; `score-text-route` measures the
+      DEFAULT, so a session needs a way to set the tool's Photo detail before it can render this at
+      all — that is the first thing to work out, not the renders), 3 (a shape term
       that admits missed text without admitting pictures — R56's lesson in a third place), 4 (the byte
       price of widening, and do not quote T15's 1.33x as the page-level figure).
+      ⛔ **AND ONE PROCESS WARNING WORTH MORE THAN THE MEASUREMENT: a draft of `c28-halfres` tried to
+      RETRACT a correct claim of this campaign's, in six places, and the adversarial review of its diff
+      refuted it from the same page.** The draft measured stencil ink over source ink in one rect of
+      `Xin Qu et al_2018` p20's correlation matrix (top-left, **0.98x** — stencilled), concluded the
+      "thirteen values" claim was misattributed, and would also have told the next suite-paying commit
+      to change a **correct** comment in `Sources/Flattener.swift:1476`. The matrix's LAST column reads
+      stencil ink **0.0000** over `62x233+741+378` and holds **1,375 of the page's 6,233**
+      out-of-stencil map pixels: thirteen values, exactly as published. **A stencil-ink ratio is a claim
+      about its rect, not about the page** — find the whole page's out-of-stencil concentrations first,
+      then choose rects. No code comment is owed by that sub-step; `Flattener.swift:1476` is right.
       ⛔ **Before driving the map again, read sub-step 4's last three paragraphs.** The map must be
       INTERIOR-cropped on **both** images — `inkOutsideText` walks x ∈ [w/16, w−w/16),
       y ∈ [h/16, h−h/16) and divides by interior ink; uncropped it reads up to 256x the guard's own
@@ -681,6 +703,46 @@ happens.**
       picture route and then be read as all text — and `Mode.grayscale`, the obvious shortcut, is
       refused by `canUseJBIG2` and takes the Flate route.
       (context: BUGS.md C28)
+- [x] **c28-halfres** — **DONE 2026-08-20.** C28's question 2, first half: does the same loss reproduce
+      at **1/2**, the factor every layered page that is NOT read as all text keeps on the default Photo
+      detail? **No.** Sixteen of the 109 such pages were rendered and read at 1:1 against a 1/8
+      reference on the same rect from the same `mrcLayers` call (ten of the sixteen; the other six
+      cannot have one), and **no content loss was found at 1/2 in any window read** —
+      including the two on which the same ink WAS destroyed at 1/8 before the 2026-08-19 bar move. So
+      C28 stays bounded to the 73 pages
+      at 8x/16x rather than widening to 182. Population recomputed from `INKBAR-2026-08-19.tsv` rather
+      than quoted (`barVerdict` picture **109**, all-text **73**; at the old bar 93 / 89): all **6**
+      pages below the bar that are `picture` only because `paleDrawing` refuses them, **2** of the 16
+      the bar move rescued as positive controls, **8** of the other 87, spanning `inkOut` 0.0902–0.9949.
+      13 invocations, `rc=0` on every one, `INKDUMP` **7 files on all 16 pages**, and `inkOut`, `extent`
+      and `route` reproduce the committed sweep **digit for digit on all 16 rows**.
+      ⛔ **THE SHARP RESULT IS A PROCESS ONE: THIS SUB-STEP'S OWN DRAFT TRIED TO RETRACT A CORRECT
+      CLAIM AND ITS ADVERSARIAL REVIEW REFUTED IT.** The draft measured one rect of `Xin Qu et al_2018`
+      p20's matrix (top-left values, stencil-over-source ink **0.98x** — stencilled), concluded the
+      campaign's "thirteen values" wording was misattributed, and edited six places plus a queued
+      instruction to change a **correct** code comment. The matrix's LAST column reads **0.0000** over
+      `62x233+741+378` and holds **1,375 of the page's 6,233** out-of-stencil map pixels — thirteen
+      values, exactly as published, legible at 1/2 and a smear at 1/8. All six edits are reverted.
+      **A stencil-ink ratio is a claim about its rect, not about the page**, and the stencil's coverage
+      of one table is not uniform (0.98x top-left, 0.00x last column, same matrix). The related trap is
+      real and stays recorded: `fillHoles` leaves stencilled ink in the background as a pale ghost, so
+      comparing the two BACKGROUNDS makes a ghost's disappearance look like a loss — and a
+      ghost-only rect looks like safety while the page loses content 421 px away.
+      **Two negative controls, both fired.** The 6 pale-refused pages cannot be flipped by any bar
+      (`noPaleDrawing` is false), so their two backgrounds are byte-identical and their two rows are
+      visually identical — the pipeline checking itself. And on the two control pages the byte columns
+      reproduce the committed sweep **with the columns swapped** (this run's `layered` = the file's
+      `layeredAtBar`), which is the documented consequence of the 2026-08-19 bar move.
+      ⛔ **TWO SILENT INSTRUMENT DEFECTS, BOTH IN THE SHELL, both worth not repeating.** (1)
+      `%[fx:int(mean*w*h/255+0.5)]` is **not** a pixel count — fx `mean` is already normalised to
+      `[0,1]`, so every count read **255x low** (a 3778x2252 page reported 3,975 ink pixels) while every
+      RATIO stayed right, which is why one read did not catch it. (2) `-connected-components:verbose`
+      prints the mean colour as `gray(255)`, never the word `white`, so `awk '$NF=="white"'` matched
+      **nothing on all 16 pages** and read as "no component above the threshold" — a filter that cannot
+      match is a check that cannot fail.
+      ⛔ **What is NOT done: 1/3.** `PhotoDetail.smallest` is the factor-3 case and `score-text-route`
+      measures the default, so nothing here says what Smallest does; that is the parent box's **2b**.
+      And 16 of 109 is a sample, stated as one.
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,
