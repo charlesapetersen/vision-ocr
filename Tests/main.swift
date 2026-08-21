@@ -973,6 +973,31 @@ do {
     check("Photographs keeps picture detail at maximum",
           d.string(forKey: Prefs.photoDetail) == Prefs.PhotoDetail.maximum.rawValue)
 
+    // C28 question 2b · the blurb must not promise something the corpus refutes.
+    //
+    // `PhotoDetail.smallest`'s blurb read "…look noticeably soft up close, though
+    // nothing is lost from them" until 2026-08-21, when `Xin Qu et al_2018` p20 was
+    // rendered at that setting and lost the last column of a correlation matrix —
+    // thirteen values legible in Balanced's 460 px background and unreadable in
+    // Smallest's 307 px one. The clause is gone and nothing replaced it; this pins
+    // the absence so it is not restored as a kindness. It is a *reachability* check
+    // in the invariant-1 sense: the blurb is the only thing that tells a user this
+    // setting can cost them content, and a promise there is worse than silence.
+    for detail in Prefs.PhotoDetail.allCases {
+        let b = detail.blurb.lowercased()
+        check("\(detail.rawValue)'s blurb does not promise that nothing is lost",
+              !b.contains("nothing is lost") && !b.contains("lose nothing")
+                  && !b.contains("without losing"),
+              "\(detail.rawValue): \(detail.blurb)")
+    }
+    // Not vacuous: an empty blurb, or one that stopped describing the trade, would
+    // satisfy the check above while telling the user less than the old wrong one did.
+    check("…and Smallest still says the pictures get softer, so the check above is not "
+          + "satisfied by saying nothing",
+          Prefs.PhotoDetail.smallest.blurb.lowercased().contains("soft")
+              && Prefs.PhotoDetail.smallest.blurb.count > 40,
+          Prefs.PhotoDetail.smallest.blurb)
+
     // keysWritten is the list the first check above relies on; if a preset
     // writes a key that is not in it, that check silently stops covering it.
     resetPrefs()

@@ -74,7 +74,8 @@ ink outside the recognised words stored at an eighth**, with that page's own fra
 the success path only and with **no bar on the fraction**: the four sub-steps proved the losers and
 the non-losers interleave when sorted by it, and one measured loser prints `0.0000`, so any filter
 would drop a page known to lose content. C28 stays OPEN on questions 3 and 4 — a shape term and the
-price of widening. ⛔ The report is a report and not a fix: it says
+price of widening — **both of which now have measurements over the whole 73-page population
+(2026-08-21) and neither of which is wired**. ⛔ The report is a report and not a fix: it says
 which pages were degraded, it does not stop them being degraded.
 ✅ **Question 2's 1/2 half is MEASURED 2026-08-20 and the loss does NOT reproduce there** — 16 of the
 109 layered pages the bar does not read as all text were rendered and read at 1:1, ten of them beside a
@@ -107,10 +108,12 @@ labelled pages the count is **≥ 1 on 6 of 6 pages measured to lose typeset con
 that lose nothing** — 12 of 13, the odd one being the page whose loss is a hand-drawn bracket, which a
 rule calibrated on type reads 0 on. ⛔ That was published as blindness *by construction* and the picture
 run refuted it hours later: the term fires 17 and 11 groups on a pen ornament. Five numbers, all ratios rather than sizes,
-**written before any page was run and not adjusted after**: 8 pages first, then 5 held out. ⛔ **It is
-not validated** — 8 of the 73 plus 5 of the 16 C26's bar move rescued (so 5 of them are not degraded in production today), a labelled convenience sample, 4 of its 6 non-losers from one scan,
+**written before any page was run and not adjusted after**: 8 pages first, then 5 held out. ⛔ **It was
+not validated on that sample** — 8 of the 73 plus 5 of the 16 C26's bar move rescued (so 5 of them are not degraded in production today), a labelled convenience sample, 4 of its 6 non-losers from one scan,
 and **no plate, halftone or line drawing in it at all**, which is exactly what `textRegionMask` exists
-to keep out — **measured the same day, next sentence, and it does not read 0 there**. ⚠️ Read `lineN` and not the share: the drawn bracket's `txtShare` (0.0173) sits *below* a
+to keep out — **measured the same day, next sentence, and it does not read 0 there**. ✅ **The
+convenience sample was replaced by the whole 73-page population later the same day and the type half
+went 6 of 6 to 12 of 12; see two paragraphs down.** ⚠️ Read `lineN` and not the share: the drawn bracket's `txtShare` (0.0173) sits *below* a
 non-loser on the same scan (0.0500), so a bar on the share inverts that pair — a sixth refused scalar.
 ⛔ **QUESTION 3b IS MEASURED 2026-08-21 AND THE TERM ERRS IN BOTH DIRECTIONS** — ten picture pages,
 `SHAPETERM-PICTURES-2026-08-21.tsv`, `#### The same shape term on PICTURES`. `lineN` is **≥ 1 on 6 of
@@ -135,6 +138,23 @@ runs unconditionally on every layered page (`Flattener.swift:2696`), so those si
 halftone dots and pen strokes into the 1-bit stencil — R57's failure mode. ⚠️ `lineShare` separates 22
 of the **23** pages the term has been run on, and it is **the seventh share in a register that has
 refused six**: post-hoc, denominator-driven, and it leaves four known content-losers on the safe side.
+✅ **THE TERM IS NOW VALIDATED OVER ITS WHOLE POPULATION, 2026-08-21, AND QUESTION 4 HAS ITS FIRST
+PAGE-LEVEL BYTE PRICE** — `SHAPETERM-73-2026-08-21.tsv`, `#### The same shape term over ALL 73`. All
+**73** sub-bar pages, 22 documents, constants unchanged, **65 of them never measured before**:
+`lineN >= 1` on **12 of 12** pages that lose typeset content (8 of 8 out of sample), **1 of 4** that
+lose only a hand-made mark, **0 of 6** degraded-but-legible, and **3 of 51** that lose nothing. ⛔ **All
+three of those firings are the RIM of recognised type** — glyph tops outside Vision's word boxes on
+lines that are in the text layer, read at 1:1 — so the candidate fix is subtracting a *dilated*
+`region` before grouping, named and untried. ✅ **And a signature DOES fire**: `_1939_Former students`
+p6's only accepted group is the cursive signature itself, the third refutation of "blind by
+construction" and the first on a page of measured loss. ⛔ **One of the three misses is not the rule's**:
+`_1939_Former students` p2 has `outPx` **0**, so the map is empty and the shape rule is asked about no
+pixels. **The price**: the wiring refuses the shrink on **16 of 73** pages for **+2,362,625 B**
+(3.99x, 15.5% of it on pages that lose nothing) against the cheapest page-wide bar rescuing the same
+13, which refuses **41 of 73** for **+6,202,065 B** (4.24x, **58.5%** of it on pages that do not lose content) — **38.1% of the
+bytes** — ⛔ but that bar rescues **15 of 16** losers where the term rescues 13, the two extra being
+hand-made marks costing +575,066 B. ⚠️ Bytes are at the default Photo detail, page by page, and the
+`textRegionMask` seam is still unpriced. Nothing is wired.
 ✅ The same tool settles `score-text-route`'s open instrument question, because it holds `region`
 itself and its map therefore *is* `inkOutsideText`'s set (asserted on every row, exit 6 otherwise;
 `inkOut` reproduced the committed sweep on all 13): substituting the dumped stencil inflates the
@@ -4447,7 +4467,14 @@ reproduce the loss and **1/3 does**, on one page of sixteen —
 pages** (`#### The same shape term on PICTURES`) — firing on 6, and missing 2 whose loss C26 measured.
 So 3 is open on what to do about that rather than on whether a shape signal exists, and 3b opened two
 things of its own: the population of sub-bar pages carrying a picture, and the `textRegionMask` seam's
-price.)*
+price. ✅ **The term was then read over the WHOLE 73, 2026-08-21, constants unchanged** —
+`#### The same shape term over ALL 73`: `lineN >= 1` on **12 of 12** type-losers, **3 of 57**
+non-losers, and all three of those are the rim of recognised type. **That sub-step also gives question
+4 its first page-level byte price**: the wiring costs **+2,362,625 B over 16 of the 73 pages**, which
+is **38.1%** of what the cheapest page-wide bar rescuing the same pages costs, with **15.5%** of the
+spend on pages that do not lose content against that bar's **58.5%** — but the bar rescues **15 of 16** losers
+where the term rescues **13**. **So what is left of question 4 is the `textRegionMask` seam's price and
+a corpus figure; nothing is wired.**)*
 
 **⛔ READ `C26` FIRST**, two sections of it in particular: `#### Sub-step 4, the benefit` is the
 evidence for everything below, and `#### The constant moved` is what shipped on 2026-08-19. **This is
@@ -5602,8 +5629,23 @@ has nothing at all to say (this one).
    (a page's own type is the calibration, so nothing needs a constant chosen in advance); connected
    components whose bounding boxes tile a baseline. What must not happen is the whole page entering the
    stencil, which is what `textRegionMask` exists to prevent.
-4. **The price of widening, which is already partly known — and it is smaller than the headline
-   figure.** T15 measured the confined **stencil** at 1.33x smaller in total over 74 corpus picture
+   ✅ **The second candidate is built and has now been read over the WHOLE 73-page population,
+   2026-08-21** — `#### The same shape term over ALL 73`. Constants unchanged, 65 of the 73 never seen
+   before: `lineN >= 1` on **12 of 12** pages that lose typeset content, **3 of 57** that do not, and
+   all three of those are the **rim of recognised type** rather than noise. ⛔ The half of this question
+   that is still **no** is the parenthesis: 3b showed the term fires on 2 of 3 true halftone plates, so
+   "without admitting pictures" fails at the `textRegionMask` seam. It does **not** fail at the
+   *layering* seam, where the picture-route verdict keeps those pages out — which is why the wiring
+   priced under question 4 is the layering one.
+4. **The price of widening — ✅ the LAYERING seam now has a page-level measurement, 2026-08-21, and it
+   is a comparison rather than a number.** `#### The same shape term over ALL 73` prices
+   `inkOut < 0.045 AND lineN == 0` against the cheapest page-wide bar that rescues the same pages:
+   **16 of 73 pages and +2,362,625 B against 41 of 73 and +6,202,065 B — 38.1% of the bytes** — with
+   the share of the spend landing on pages that do not lose content falling from **58.5% to 15.5%**. ⛔ Not
+   equal protection: the bar also rescues `Ford_1941` p1 and `Doermann_1967` p21, two hand-made marks,
+   for +575,066 B of the +3,839,440 B difference. What is still owed is the **stencil** seam's price
+   (3b's finding) and a corpus figure; the 73 are sampled pages. What follows is the pre-existing
+   T15 arithmetic for the stencil seam, which stands: T15 measured the confined **stencil** at 1.33x smaller in total over 74 corpus picture
    pages and never larger on a single page. But the *page* total is the number a fix would be judged
    on, and there it is **1.07x**, over the 26 pages where blind and shipped layering differ in exactly
    one way; T15 records that the bigger whole-sample gap is **84% R50's shrink** rather than
@@ -6488,9 +6530,11 @@ run is that case and it confirms the prediction — **17 and 11 accepted groups 
 ornament**, and 1 inside a cartoon. What is measured is narrower than either claim: the term reads 0 on
 **four** hand-made marks (`Riesman - 1954` p16's bracket, `Atkinson_1939` p3's signature, and
 `1954 - Why` p6 and p7's cartoons) and fires on **three** (`Wilcox` p2, `Wilcox` p6, `1954 - Why` p4).
-⚠️ The phrase survives uncorrected in `Tools/score-shape-term.swift`'s header and `Tools/README.md`;
-both are in the pre-commit suite regex, so they are owed on the next suite-paying commit alongside the
-settings blurb, and the `C28` queue box says so.
+✅ **Both `Tools/` debts were discharged 2026-08-21**, on the suite-paying commit that measured the
+whole 73, alongside the settings blurb. ⚠️ One of them was misdescribed by this section: the phrase
+was in `Tools/README.md` only — `git show 5be15c3:Tools/score-shape-term.swift` never contained it,
+and what that header actually lacked was any mention of this sub-step at all. It now carries both
+this result and the 73-page one.
 
 ##### What the six accepted groups actually are, read at 1:1
 
@@ -6622,6 +6666,165 @@ a picture is unmeasured, not empty**, and that is what the 1.10x margin makes wo
 - No `Sources/` and no `Tools/` **code** change: nothing is wired, so no mutant and no
   `fault-inject.sh` case is owed. The two `Tools/` documentation debts are named above. `testdocs/` was
   read only; every artefact is under /tmp.
+
+#### The same shape term over ALL 73 — out of sample it holds on type (12 of 12), its only false positives are the RIM of recognised type, and question 4 has its first page-level byte price — MEASURED 2026-08-21
+
+Question 3's measurement was read over 13 labelled pages and its own tool header said what was wrong
+with that: *"13 pages … chosen because earlier sub-steps had already published a verdict for them, is
+a labelled convenience sample."* The population it is a sample **of** is machine-readable — the 73
+rows of `INKBAR-2026-08-19.tsv` with `verdict=all-text` **and** `barVerdict=all-text`, which is exactly
+the set C28's four sub-steps rendered and labelled — so the sample can simply be replaced by the
+population. It was, with the five constants unchanged and the same binary.
+**`SHAPETERM-73-2026-08-21.tsv`** is the result: 73 rows, 22 documents, 27 columns.
+
+⚠️ **The eight calibration pages are in it and are marked** (`sample=calibration`): `Broadhead - 1994`
+p3/p5/p7/p10/p12, `Atkinson_1939` p3, `Jones et al_2010` p5, `Scott_TK` p3. The other **65 had never
+been measured with this tool**, and every out-of-sample figure below is given separately for that
+reason.
+
+##### The cross-tab, over all 73 and over the 65 that are new
+
+`label` is the campaign's own published verdict for that page, taken from C28 sub-steps 1-4. Nothing
+was re-read to build it, except the four pages cropped below.
+
+| | fires (`lineN` >= 1) | quiet (`lineN` = 0) |
+|---|---|---|
+| loses **typeset** content | **12** | **0** |
+| loses only a **hand-made** mark | 1 | 3 |
+| degraded but legible | 0 | 6 |
+| loses nothing | 3 | 48 |
+
+Over the **65 out-of-sample pages alone**: type **8 of 8**, hand-made 1 of 4, degraded 0 of 6, nothing
+3 of 47. So the 13-page finding's type half is not an artefact of its sample — it goes from 6 of 6 to
+**12 of 12**, eight of them on pages the constants never saw. Whole-population rates: **13 of 16
+losers, 3 of 57 non-losers.**
+
+Controls, all on the same run: `inkOut` reproduces `INKBAR-2026-08-19.tsv` on **73 of 73** rows digit
+for digit; the tool's `mapFrac == inkOut` identity held on 73 of 73 (`verdict=ok` everywhere, exit 6
+never fired); `rc=0` on all 22 invocations; `--self-test` 5/5 on the exact binary.
+
+##### ⛔ All three false positives are the RIM of recognised type — read at 1:1
+
+`SHAPEDUMP` was run again on the three, and `-lines.png` cropped at each accepted group's own rect and
+read beside `-source.png`. ⚠️ **Two of the three pages have `lineN` 2, so there are five groups and not
+three**; the first draft of this section read the `topLine` of each page and the adversarial review of
+the diff called that out as resting the mechanism on 3 of 5. All five were then located by connected
+components on `-lines.png` itself and read: `Herbert Marks` p12's two groups share one band
+(`153x10+525+911` is the bbox of everything accepted on that page, inside the crop already read), and
+`_1967_Yearly Increase` p1's second group sits at y 1358-1368, above the first crop, on the words
+`Century-Fox.` — also glyph tops of recognised type. **5 of 5, not 3 of 5.**
+
+| page | `topLine` | what the accepted group is |
+|---|---|---|
+| `Herbert Marks papers` p12 | `72x10+606+911` | the tops of `AGE Corp. - Em…` on a typed ledger line **that is in the text layer** |
+| `_1939_Former students` p9 | `140x12+1456+1165` | the tops of `am not` in a line of typescript, likewise recognised |
+| `_1967_Yearly Increase` p1 | `113x5+459+1407` (+ a second group at `~66x7+458+1358`) | ascender fragments in a column of newsprint body type — `handle "Dolittle"` on the lower line, `Century-Fox.` on the upper |
+
+So the term is not firing on noise and it is not finding missed prose — it is finding **glyph tops
+that fall outside Vision's word boxes on words Vision boxed**. Two of the three pages carry almost no
+out-of-stencil ink at all (`outPx` **437** and **381** for the whole page), which is why their
+`lineShare` reads 0.8833 and 0.7953: a share of nearly nothing. The named candidate for removing them
+is the one `score-text-route`'s header already publishes for a different purpose — subtract a
+**dilated** `region` before grouping, so a rim is eaten and a missed line is not. ⚠️ **That is a
+candidate and not a measurement**: it must be tested against the 13 true positives before it is
+believed, because sub-step 1's own losers sit on lines directly adjacent to recognised ones.
+
+##### The three misses, and one of them is not the rule's
+
+- `_1939_Former students` p2 — `outPx` **0**. The map is **empty**, so the shape rule is being asked
+  about no pixels. This is the map's own measured false negative, already on record in sub-step 4: a
+  page-wide Otsu cannot see pale pencil on a shadowed sheet, and an `-lat 25x25-8%` map finds the
+  annotation. **The miss is upstream of the term** and no shape rule can fix it.
+- `Doermann_1967` p21 — `txtShare` **0.9946** with `txtN` 4: 99.46% of the page's out-of-stencil ink
+  is `textish` and it still forms **no** group. The blocking terms are `lineMinimumMembers` (4) and
+  `lineGapFactor`, not the glyph filter.
+- `Ford_1941` p1 — `txtN` 9 of `ccN` 80, no group.
+
+##### ✅ And a hand-made mark that DOES fire, on a page of measured loss
+
+`_1939_Former students` p6's only accepted group is `472x53+951+2216`, and cropped at 1:1 it **is the
+signature** — a cursive `Mrs H. R. Fl…` whose strokes are type-scaled and which tiles a baseline, so
+it groups. It is the **fourth** hand-made mark this term has been measured firing on, after the
+PICTURES run's `Wilcox` p2, `Wilcox` p6 and `1954 - Why` p4 — ⚠️ **not the third, and not the first on
+a page of measured loss either**: p4's group is a hit on its own lost cartoon, so this is the second of
+those. What is new is that it is the first on the *sub-bar* population, where the wiring would actually
+read it. The honest summary of the term's behaviour
+on hand-made marks is **1 of 4 on this population** — a coin toss, not a property.
+
+##### ⛔ `linePx` is refused AGAIN, and this time by a real loser sitting under the false positives
+
+The obvious way to remove three false positives is a floor on the accepted-line pixel count. 3b had
+already refused absolute `linePx` on picture pages; here it is refused on the population that would
+actually be gated, and more sharply. Sorted by `linePx` the sixteen firing pages read 8201, 7533,
+4256, 3898, 2259, 1897, 1796, 1780, 1574, 1491, 446, 423, **386**, **319**, **303**, 147 — the three
+bold ones are the false positives, and **`Jones et al_2010` p2 is a real loss at 147**, below all
+three. So no floor removes a rim without dropping a measured loss. **Read `lineN`**; it is still the
+only quantity this entry has not had to refuse.
+
+##### Question 4: the first page-level byte price, and it is a comparison rather than a number
+
+The wiring this prices is the cheap one — a second condition in `pageIsAllText()`'s true branch,
+`inkOut < 0.045 AND lineN == 0`, so a page that fires simply keeps the caller's factor. Every one of
+the sixteen firing pages has `inkOut` > 0, so all sixteen are reachable through the override seam
+(`INKBAR=0.00001`); `barVerdict=picture` on 16 of 16 and the stencil is byte-identical at both bars on
+every page, so the backgrounds are the whole difference.
+
+The counterfactual is the fairest one available: **the cheapest page-wide bar that protects the same
+13 losers**, which is `inkOut >= 0.0008` (`Jones et al_2010` p2 is the lowest of the 13). That is not
+a hypothetical — it is C26's own knob, turned down until it covers what the term covers. All 25 extra
+pages flip too (`barVerdict=picture` on 41 of 41), so the two rows are like for like. ⚠️ `0.0008` is
+a 4-decimal print, so p2's true fraction is somewhere in [0.00075, 0.00085) and a literal bar of
+0.0008 might sit just above it; the 41-page *set* is unaffected either way (the next value down in
+the population is 0.0007) and the error direction makes the bar dearer, so 38.1% is the conservative
+end.
+
+| | pages refused the shrink | shipped | at the bar | delta | | B/page | spend on pages that lose nothing |
+|---|---|---|---|---|---|---|---|
+| shape term, `lineN >= 1` | **16 of 73** | 789,825 B | 3,152,450 B | **+2,362,625 B** | 3.99x | 147,664 | **15.5%** |
+| page-wide bar at 0.0008 | **41 of 73** | 1,915,380 B | 8,117,445 B | **+6,202,065 B** | 4.24x | 151,269 | **58.5%** |
+
+**The term buys the same 13 rescues for 38.1% of the bytes, and the share of the spend that buys
+nothing falls from 58.5% to 15.5%** — against the 65.5% sub-step 4 measured for the bar on its own
+seven pages and the 32.4% the `[0.045, 0.08)` band spends on two pages a reader cannot tell apart.
+This is the first term in this campaign whose money mostly lands on pages that actually lose content.
+
+⛔ **But the two are not equal protection, and the difference is the whole argument.** The bar at
+0.0008 protects **15 of 16** losers; the term protects **13**. The two it catches that the term misses
+are `Ford_1941` p1 (a pencilled annotation) and `Doermann_1967` p21 (a hand-inked margin number) —
+both hand-made — and they cost **+575,066 B** of the +3,839,440 B the bar spends beyond the term. ⚠️
+Read that carefully: the two marks themselves cost 575,066 B, which is 0.24x the term's spend; what
+costs 2.6x is *the whole bar*, because reaching them page-wide drags 23 other pages along. **Neither
+approach reaches `_1939_Former students` p2**, whose map is empty.
+
+##### What this does not measure
+
+- **Bytes are at Photo detail Balanced** (the default), one page at a time through
+  `Tools/score-text-route.swift`, not a document rebuild. And the wiring priced is *page-wide* refusal
+  of the shrink; the **local** variant this entry prefers (exempt the text-shaped regions and shrink
+  the rest) can only be cheaper, so +2,362,625 B is an **upper** bound on it.
+- The 73 are `sampleIndices`' sampled pages, not all pages of those 22 documents. C26's stratified
+  lesson applies to any corpus extrapolation from them and none is attempted here.
+- The labels are the campaign's published eyeball verdicts, carried over rather than re-read — except
+  the four pages cropped above. A "loses nothing" that is really an unnoticed loss would move a false
+  positive into the true column, which is the direction `Atkinson_1939` p3 already moved once.
+- ⛔ **And that page is one of the 12, so one of the twelve type labels was supplied by the instrument
+  being graded.** `Atkinson_1939` p3 was inventoried by sub-step 1 as a signature and a typed dash
+  rule; its two lines of *typescript* were found on 2026-08-21 by this term's own crops and only then
+  entered the register. Without it the whole-population figure is **11 of 11**, which is the number to
+  quote if that circularity matters. It does not touch the out-of-sample 8 of 8: p3 is one of the eight
+  `sample=calibration` rows and is excluded from that subset already.
+- **Nothing is wired.** `Sources/Flattener.swift` is untouched, so no mutant and no `fault-inject.sh`
+  case is owed by this sub-step. The `textRegionMask` seam 3b named is still unpriced — this arm
+  prices the **layering** seam only.
+- The rim fix (subtract a dilated `region`) is named, not tried.
+- ⚠️ **One instrument note that cuts against this tool's own published bound.** Sub-step 4's shell map
+  (`ink AND NOT dilate(stencil)`) read **5,178** and **2,112** px on `Herbert Marks` p12 and
+  `_1939_Former students` p9; the exact map here reads **437** and **381** — **11.9x** and **5.5x**,
+  well outside the **1.00x-3.17x** stencil-inflation band `#### A shape term, MEASURED` published over
+  13 pages. Interior cropping can only remove pixels, so the whole gap is the stencil standing in for
+  `region`. The 437 and 381 above are the exact map's and are the right numbers for a `lineShare`
+  denominator, but **the 1.00x-3.17x band does not hold out of its own 13 pages** and should not be
+  quoted as if it did.
 
 #### What this entry is NOT
 

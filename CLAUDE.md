@@ -63,7 +63,8 @@ than sizes, **written before any page was run and not adjusted after** (8 pages,
 ⛔ **Not validated: 8 of the 73 plus 5 of the 16 C26's bar move rescued (so 5 of them are not degraded in production today), a labelled convenience sample, 4 of the 6 non-losers from one scan,
 and no plate, halftone or line drawing in it at all** — which is exactly the class `textRegionMask`
 exists to keep out, so "reads 0 on scanner edges" was not yet "reads 0 on a picture" — **measured the
-same day, next paragraph, and it is not**. ⚠️ Read `lineN`
+same day, next paragraph, and it is not** — ✅ **and the convenience sample was replaced by the whole
+73-page population later the same day; see the ✅ block below the 3b paragraph.** ⚠️ Read `lineN`
 and never the share: the drawn bracket's `txtShare` 0.0173 sits *below* a non-loser's 0.0500 on the
 same scan, which is the fifth scalar this entry has refused.
 ⛔ **QUESTION 3b IS MEASURED 2026-08-21 AND THE TERM ERRS IN BOTH DIRECTIONS** — ten picture pages,
@@ -78,9 +79,10 @@ page-wide-Otsu speckle in a grey endpaper reading mean 107.5 / sd 2.88 against a
 lost cartoon**, `27x17+1121+685` inside the published `254x240+970+595`, not a false positive.
 ⛔ **So "blind to a hand-made mark by construction" is REFUTED**: measured, 0 on four hand-made marks
 and firing on three, which is exactly the *"four blobs of a broken pen stroke"* case the last review
-predicted. ⚠️ That phrase survives in `Tools/score-shape-term.swift`'s header and `Tools/README.md` —
-both inside the pre-commit suite regex, so they are owed on the next suite-paying commit with the
-settings blurb. On `Wilcox` p2 the term is wrong both ways: 0 accepted pixels over the hand-lettered
+predicted. ✅ **`Tools/README.md` is corrected as of 2026-08-21**, riding along on the suite-paying
+commit that measured the whole 73, with the settings blurb — ⚠️ and the debt was one file, not two:
+`Tools/score-shape-term.swift`'s header never contained the phrase, so what it was actually owed was a
+mention of 3b at all, which it now has. On `Wilcox` p2 the term is wrong both ways: 0 accepted pixels over the hand-lettered
 "Harry W. Wilcox", 1,694 on the decoration. Four more scalars refused (`glyphN` interleaves 2,468-fires
 against 2,255-does-not, so "too little recognised type to calibrate on" is **not** the mechanism;
 `txtShare` again; absolute `linePx` 10,438 beats a real 7,533; `topLine` width 202 beats a real 95).
@@ -93,7 +95,33 @@ pages would admit halftone dots and pen strokes into the 1-bit stencil, which is
 ⚠️ `lineShare` separates 22 of the **23** pages run so far (0.0002–0.0099 firing, 0.2332–0.9937 on
 type-losers, 23.56x) and is **the seventh share in a register that has refused six** — `txtShare` with a
 narrower numerator, post-hoc, denominator-driven, and it leaves **four known content-losers on the safe
-side**. ✅ It also settles
+side**.
+✅ **THE CONVENIENCE SAMPLE IS GONE: the term was read over the WHOLE 73-page sub-bar population on
+2026-08-21, constants unchanged, and QUESTION 4 GOT ITS FIRST PAGE-LEVEL BYTE PRICE OUT OF THE SAME
+RUN** — `SHAPETERM-73-2026-08-21.tsv`, 73 rows in 22 documents, **65 of them never measured before**.
+`lineN` ≥ 1 on **12 of 12 pages that lose typeset content** (8 of 8 out of sample, so the 6-of-6 was
+not its sample), **1 of 4** losing only a hand-made mark, **0 of 6** degraded-but-legible and **3 of
+51** that lose nothing. ⛔ **All three of those firings are the RIM of recognised type**, read at 1:1 —
+glyph tops falling outside Vision's word boxes on lines that ARE in the text layer — so the candidate
+is subtracting a *dilated* `region` before grouping, named and untried. ✅ **A signature DOES fire**
+(`_1939_Former students` p6's only group is the cursive signature itself) — the **fourth** hand-made
+mark the term is measured firing on, after `Wilcox` p2, `Wilcox` p6 and `1954 - Why` p4, and the
+second on a page of measured loss (p4's group is a hit on its own lost cartoon). ⛔ **One of the three misses is not
+the rule's**: `_1939_Former students` p2 has `outPx` **0** — the map is empty, which is the page-wide
+Otsu's known blindness to pale pencil, upstream of any shape rule. ⛔ **And `linePx` is refused a second
+time, harder**: `Jones et al_2010` p2 is a real loss at **147 px**, below all three false positives, so
+no floor removes a rim without dropping a measured loss. **The price**: the wiring
+(`inkOut < 0.045 AND lineN == 0`) refuses the shrink on **16 of 73** pages, **789,825 → 3,152,450 B,
++2,362,625 B, 3.99x**, with **15.5%** of the spend on pages that lose nothing — against the cheapest
+page-wide bar rescuing the same 13 (`inkOut >= 0.0008`), which refuses **41 of 73**,
+**1,915,380 → 8,117,445 B, +6,202,065 B, 4.24x, 58.5% of it on pages that do not lose content**. **38.1% of the bytes**, and the
+first term in this campaign whose money mostly lands on pages that lose content. ⛔ **Not equal
+protection**: the bar rescues **15 of 16** losers and the term **13** — the two extra are hand-made
+marks costing +575,066 B — and **neither reaches `_1939_Former students` p2**. ⚠️ Bytes are at the
+default Photo detail, page by page through `score-text-route`, and the *local* variant would be
+cheaper, so +2,362,625 B is an upper bound. The `textRegionMask` seam is still unpriced and **nothing
+is wired**.
+✅ It also settles
 `score-text-route`'s open instrument question, because it holds `region` itself so its map **is**
 `inkOutsideText`'s set (asserted every row, exit 6 otherwise; `inkOut` reproduced
 `INKBAR-2026-08-19.tsv` on all 13): the dumped stencil inflates the fraction **1.00x–3.17x**, the
@@ -138,10 +166,12 @@ of which are clean; picking the sixth by narrowness rather than by `inkOut` over
 costs **0.6465x** the bytes of Balanced over the sixteen, and **the page that loses content saves the
 LEAST** (17,705 B against 240,578 B on a page whose only out-of-stencil ink is a scanner edge).
 ✅ An all-text page is **byte-identical** at both settings, measured — `max(3,8)` is `max(2,8)` — which
-is what bounds this to the 109 rather than the 182. ⚠️ And `PhotoDetail.smallest`'s user-facing blurb
-says photographs at a third resolution *"look noticeably soft up close, though nothing is lost from
-them"*, which that page makes false; the string is deliberately unchanged (owner's call) and
-`Sources/Prefs.swift` now carries a comment beside it.
+is what bounds this to the 109 rather than the 182. ✅ **`PhotoDetail.smallest`'s user-facing blurb
+promised that photographs at a third resolution *"look noticeably soft up close, though nothing is lost
+from them"*, which that page makes false — the clause was DELETED 2026-08-21 (owner's call) and nothing
+replaced it**, because a caveat about small print would itself need retracting if C28 is fixed.
+`Sources/Prefs.swift` carries the reason beside it and `Tests/main.swift` pins the absence over all
+three `PhotoDetail` cases, watched failing against the pre-fix string.
 ⛔ **AND THAT SUB-STEP'S OWN DRAFT TRIED TO RETRACT A CORRECT CLAIM OF THIS CAMPAIGN'S IN SIX PLACES,
 and the adversarial review of its diff refuted it from the same page** — it measured stencil ink in one
 rect of `Xin Qu et al_2018` p20's matrix (top-left, 0.98x, stencilled), concluded "thirteen values" was
@@ -456,7 +486,8 @@ Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2
 `CORPUS-2026-08-15.md` + `.tsv` and `MRC-2026-08-15/`, plus the dated corpus sweeps
 `THRESHOLD-LOSS-2026-08-18.tsv`, `INKBAR-2026-08-19.tsv` and `SATFRAC-2026-08-19.tsv` (this list had
 omitted all three; the review of C27's sweep counted that as the third such omission), plus the
-targeted `GUTTER-CENSUS-2026-08-20.tsv` and `SHAPETERM-PICTURES-2026-08-21.tsv` — and are
+targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv` and
+`SHAPETERM-73-2026-08-21.tsv` — and are
 evidence for one run, not
 claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls
@@ -505,7 +536,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,196 checks measured 2026-08-21; 8-45 min depending on machine load, real OCR
+./run_tests.sh        # 1,200 checks measured 2026-08-21; 8-45 min depending on machine load, real OCR
                       # measured 474 s quiet -> 2,719 s under the C24b campaign. Never size a
                       # timeout off one sample: ops/autonomous/README.md keeps the ledger.
 ```

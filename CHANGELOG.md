@@ -14,6 +14,14 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+**"Smallest files" no longer promises that nothing is lost from your photographs.** The setting's
+description used to end *"though nothing is lost from them"*, and that is measurably untrue: on a
+scanned page whose small print falls outside the words the recogniser boxed, a third of the
+resolution can be the difference between legible and not (BUGS.md C28 — a printed correlation matrix
+whose last column reads at half resolution and does not read at a third). The clause is gone and
+nothing replaced it; the rest of the description is unchanged, and nothing about what the setting
+*does* has changed.
+
 **The run report now names the pages whose non-text ink was stored at an eighth.** On a page whose
 ink is all recognised text, both tone layers are shrunk hard — and anything the recogniser *missed*
 on such a page lives only in that shrunk background. Measured over the whole population

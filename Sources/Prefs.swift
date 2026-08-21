@@ -74,19 +74,21 @@ enum Prefs {
                      + "halftone is hard to tell from the original. Files are about "
                      + "a third the size."
             case .smallest:
-                // ⚠️ C28 question 2b, measured 2026-08-21: *"nothing is lost from them"* is
-                // false on at least one corpus page. Not of a photograph — of the prose and
-                // figures that end up in the photo layer because the stencil is confined to
-                // Vision's word boxes. `Xin Qu et al_2018` p20's correlation matrix is
-                // legible in the 460 px background Balanced gives it and unreadable in this
-                // setting's 307 px one, and the page that loses those thirteen numbers saves
-                // the fewest bytes of the sixteen measured. The string is
-                // deliberately unchanged: rewording a settings blurb is the owner's call,
-                // and the honest wording depends on whether C28 is fixed or only recorded.
+                // ⚠️ This blurb used to end *"though nothing is lost from them"*, and C28
+                // question 2b measured that false on 2026-08-21. Not of a photograph — of the
+                // prose and figures that end up in the photo layer because the stencil is
+                // confined to Vision's word boxes. `Xin Qu et al_2018` p20's correlation
+                // matrix is legible in the 460 px background Balanced gives it and unreadable
+                // in this setting's 307 px one, and the page that loses those thirteen
+                // numbers saves the fewest bytes of the sixteen measured.
+                //
+                // The clause was DELETED on 2026-08-21, the owner's call, and nothing was put
+                // in its place: a caveat about small print would itself need retracting if
+                // C28 is fixed, whereas an absent promise stays true either way. Do not
+                // restore it as a "fix" — `Tests/main.swift` pins the absence.
                 // See `BUGS.md` C28 `#### The same loss at 1/3, RENDERED over 16 of the 109`.
                 return "Photographs keep a third of their resolution and look "
-                     + "noticeably soft up close, though nothing is lost from them. "
-                     + "Files are about a fifth the size."
+                     + "noticeably soft up close. Files are about a fifth the size."
             }
         }
     }

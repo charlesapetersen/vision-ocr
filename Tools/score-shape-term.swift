@@ -81,10 +81,30 @@
 // more than three marks — *before* any page was run, and **not one of them was adjusted
 // afterwards**: the eight pages of C28 sub-step 1 were measured once, then the five
 // held-out pages were measured with the same binary and the same constants. So this is
-// not a fitted rule reporting its own training error. What it also is not is validated:
-// 13 pages of the 73, chosen because earlier sub-steps had already published a verdict
-// for them, is a labelled convenience sample and four of its six non-losers are pages of
-// one scan. See `BUGS.md` C28 `#### A shape term, MEASURED`.
+// not a fitted rule reporting its own training error. The first sample it was read over
+// was 13 pages — **8 of the 73 and 5 of the 16 C26's bar move rescued**, not "13 of the
+// 73" as this comment said for a day — chosen because earlier sub-steps had already
+// published a verdict for them, which is a labelled convenience sample with four of its
+// six non-losers on one scan. See `BUGS.md` C28 `#### A shape term, MEASURED`.
+//
+// ✅ **It has since been read over the WHOLE 73-page sub-bar population, 2026-08-21**, with
+// the constants unchanged and every page's verdict already published: `lineN >= 1` on
+// **12 of 12 pages that lose typeset content, 1 of 4 that lose only a hand-made mark, and
+// 3 of 57 non-losers** (3 of the 51 that lose nothing; 0 of the 6 that only degrade). So
+// the type half is 12/12 rather than 6/6, and the three firings on non-losing pages are,
+// read at 1:1, the **rim of recognised type** — glyph tops outside Vision's word boxes on
+// lines that are in the text layer. See `SHAPETERM-73-2026-08-21.tsv` and `BUGS.md` C28
+// `#### The same shape term over ALL 73`.
+//
+// ⛔ **AND IT IS NOT SAFE ON PICTURES — read that before wiring it anywhere.** Over 10
+// picture pages it fires on **6**, two of the three true halftone plates among them, and it
+// reads **0** on two cartoons whose destruction C26 measured at 1:1. On hand-made marks it
+// is a coin toss rather than blind: 3b measured it reading 0 on four such marks and firing on
+// three, and the 73-page run below adds one more firing (a cursive signature) and three more
+// zeroes. `BUGS.md` C28
+// `#### The same shape term on PICTURES` and `SHAPETERM-PICTURES-2026-08-21.tsv`. The
+// layering seam keeps those pages out because they are already routed as pictures;
+// `textRegionMask`, which runs unconditionally on every layered page, does not.
 //
 // Usage:
 //

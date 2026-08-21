@@ -78,7 +78,7 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 1,196 checks measured 2026-08-21; 8-45 min depending on load (it runs real OCR)
+./run_tests.sh        # 1,200 checks measured 2026-08-21; 8-45 min depending on load (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -378,7 +378,31 @@ worth knowing (it is unmeasured, not empty: a plate can survive 8x, so it would 
 unconditionally on every layered page (`Flattener.swift:2696`), so under the seam question 3's own
 sentence describes those six pages would admit halftone dots into the 1-bit stencil — R57's failure
 mode, unpriced. `lineShare` separates 22 of the **23** pages run so far and is the **seventh share in a
-register that has refused six**; read the entry's section before building on it. The same run also settled
+register that has refused six**; read the entry's section before building on it.
+✅ **THE CONVENIENCE SAMPLE IS GONE AND QUESTION 4 HAS A PRICE, 2026-08-21** — `SHAPETERM-73-2026-08-21.tsv`
+and `BUGS.md` C28 `#### The same shape term over ALL 73`. The population the 13 were a sample of is
+machine-readable (the `verdict=all-text AND barVerdict=all-text` rows of `INKBAR-2026-08-19.tsv` are
+exactly the 73 the four sub-steps labelled), so the sample was replaced rather than extended:
+constants unchanged, 65 pages never measured before, and `lineN` ≥ 1 on **12 of 12** pages that lose
+typeset content (8 of 8 out of sample), 1 of 4 losing only a hand-made mark, 0 of 6
+degraded-but-legible and **3 of 51** that lose nothing. ⛔ **All three of those firings are the rim of
+recognised type** — glyph tops outside Vision's word boxes on lines that are in the text layer, read at
+1:1 — so the named candidate is subtracting a dilated `region` before grouping, untried. ✅ **And a
+signature DOES fire**: `_1939_Former students` p6's only group is the cursive signature itself — the
+**fourth** hand-made mark the term is measured firing on (after `Wilcox` p2, `Wilcox` p6 and
+`1954 - Why` p4) and the second on a page of measured loss. ⛔ One of the
+three misses is not the rule's at all: `_1939_Former students` p2 has `outPx` **0**, an empty map,
+which is the page-wide Otsu's known blindness to pale pencil. ⛔ `linePx` is refused a second time and
+harder — `Jones et al_2010` p2 is a real loss at 147 px, below all three false positives.
+**The price**: the wiring refuses the shrink on **16 of 73** pages for **+2,362,625 B** (3.99x, 15.5%
+of the spend on pages that lose nothing) against the cheapest page-wide bar rescuing the same 13, which
+refuses **41 of 73** for **+6,202,065 B** (4.24x, **58.5%** of it on pages that do not lose content) — **38.1% of the bytes**,
+and the first term in this campaign whose money mostly lands on pages that lose content. ⛔ Not equal
+protection: that bar rescues **15 of 16** losers where the term rescues 13, the two extra being
+hand-made marks at +575,066 B, and neither reaches `_1939_Former students` p2. ⚠️ Bytes are at the
+default Photo detail, page by page, an **upper** bound on the local variant; the `textRegionMask`
+seam's price and a corpus figure are still owed; nothing is wired.
+The same run also settled
 `score-text-route`'s open instrument question (the shell map's 0.56x–16.0x spread against
 `inkOutsideText`): with `region` in hand rather than a dilated stencil the map **is** the guard's set,
 the stencil substitution inflates it 1.00x–3.17x, a 7x7 square stand-in for `Disk:3` correction lands
@@ -434,7 +458,7 @@ usually running.
 links. Everything else is shipped, archived, or declined on measurement: deskew twice,
 columns once, per-page background factor twice, JPEG 2000 twice, and the refusals are
 *held* by checks rather than remembered (see "the engine's competence" below). The
-suite is at **1,196 checks** (measured 2026-08-21) and it **needs nothing installed
+suite is at **1,200 checks** (measured 2026-08-21) and it **needs nothing installed
 to run** — the mac-ocr dependency is gone.
 
 **Two of this app's qualities are Vision's, not this codebase's**, and that is

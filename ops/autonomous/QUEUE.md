@@ -402,7 +402,17 @@ happens.**
       renders (13 + 8 + 24 + 20 + 21), not by re-measuring. ⚠️ **This line said 21 / 12 / 10 while 45 pages
       had been read**, because sub-step 2's commit did not update it; if your sub-step renders pages,
       update this number in the same commit or the next reader inherits the same gap.
-      ⛔ **THE SETTINGS BLURB IS DECIDED, owner 2026-08-21, and it RIDES ALONG on your next commit that
+      ✅ **ALL THREE RIDE-ALONG DEBTS BELOW ARE DISCHARGED 2026-08-21 by the `c28-all73` sub-step's
+      commit** — the settings blurb, the tool header and the `Tools/README.md` row all landed on the
+      suite-paying commit that measured the whole 73. The three paragraphs are kept as the record of
+      what was decided and why. ⚠️ **One of them was wrong about its own target**: the "by construction"
+      phrase was in `Tools/README.md` only — `git show 5be15c3:Tools/score-shape-term.swift` never
+      contained it — so what that header was really owed was any mention of 3b, which it now carries
+      along with the 73-page result. ⚠️ The blurb also gained a check it did not
+      have: `Tests/main.swift` now asserts that **no** `PhotoDetail` blurb promises nothing is lost,
+      plus a non-vacuity row, watched failing (1 failure) against the pre-fix string in a standalone
+      harness built from `git show HEAD:Sources/Prefs.swift`.
+      ⛔ **THE SETTINGS BLURB WAS DECIDED, owner 2026-08-21, to RIDE ALONG on the next commit that
       runs the suite — do NOT make it a commit of its own.** `Sources/Prefs.swift`'s
       `PhotoDetail.smallest` blurb loses the clause *"though nothing is lost from them"* and gains
       NOTHING in its place, so the two lines become exactly:
@@ -481,11 +491,24 @@ happens.**
       **0 on two pages whose content loss is measured** (`1954 - Why` p6 and p7, C26's own founding
       cartoons). So question 3's "without admitting pictures" is answered **no**, and the same run
       refuted "blind to a hand-made mark by construction" — it fires 17 and 11 groups on a pen ornament.
-      **So questions 1, 2, 3 and 5 are measured, and what is left is** — **4** (the byte
-      price of widening, and do not quote T15's 1.33x as the page-level figure; `linePx` is an area and
-      not a byte count), plus the two things 3b opened: **the population of sub-bar pages carrying a
-      picture** (unmeasured, not empty — see the sub-box) and **the `textRegionMask` seam's price**,
-      which is the seam question 3's own sentence names and the one 3b's bound does NOT cover.
+      ✅ **THE TERM WAS THEN READ OVER THE WHOLE 73 ON 2026-08-21 AND QUESTION 4 GOT ITS FIRST
+      PAGE-LEVEL BYTE PRICE OUT OF THE SAME RUN — do NOT re-run either**; the `c28-all73` sub-box below
+      and `BUGS.md` C28 `#### The same shape term over ALL 73` carry both, with
+      `SHAPETERM-73-2026-08-21.tsv`. `lineN` ≥ 1 on **12 of 12** type-losers, **3 of 57** non-losers,
+      and all three of those are the rim of recognised type. The wiring costs **+2,362,625 B over 16 of
+      73 pages** against the cheapest page-wide bar rescuing the same 13 at **+6,202,065 B over 41** —
+      38.1% of the bytes, 15.5% of the spend on pages that do not lose content against 58.5% — but the bar rescues 15 of 16
+      losers and the term 13.
+      **So questions 1, 2, 3 and 5 are measured, question 4 is measured at the LAYERING seam, and what
+      is left is** — **question 4 at the `textRegionMask` seam** (which is the seam question 3's own
+      sentence names, the one 3b's bound does NOT cover, and now the more expensive of the two), plus
+      **the population of sub-bar pages carrying a picture** (unmeasured, not empty — see the
+      `c28-pictures` sub-box), plus **a corpus figure** (the 73 are sampled pages; C26's stratified
+      lesson applies). ⚠️ Do not quote T15's 1.33x as the page-level figure, and note `linePx` is an
+      area and not a byte count. ⚠️ **The one cheap thing worth trying first** is the rim fix the all-73
+      run named: subtract a *dilated* `region` before grouping, which is the candidate for removing all
+      three false positives — it must be tested against the 13 true positives, because sub-step 1's
+      losers sit on lines directly adjacent to recognised ones.
       ⛔ **AND ONE PROCESS WARNING WORTH MORE THAN THE MEASUREMENT: a draft of `c28-halfres` tried to
       RETRACT a correct claim of this campaign's, in six places, and the adversarial review of its diff
       refuted it from the same page.** The draft measured stencil ink over source ink in one rect of
@@ -990,6 +1013,47 @@ happens.**
       No `Sources/` and no `Tools/` **code** change, so no mutant and no `fault-inject.sh` case is owed;
       `testdocs/` read-only, artefacts under /tmp.
       (context: BUGS.md C28 `#### The same shape term on PICTURES`)
+- [x] **c28-all73** — **DONE 2026-08-21. The shape term over the WHOLE 73-page sub-bar population, and
+      question 4's first page-level byte price out of the same run.** Do not re-run either;
+      `SHAPETERM-73-2026-08-21.tsv` (73 rows, 27 columns) and `BUGS.md` C28
+      `#### The same shape term over ALL 73` carry both. **The population is machine-readable** — the
+      rows of `INKBAR-2026-08-19.tsv` with `verdict=all-text` AND `barVerdict=all-text` are exactly the
+      73 the four sub-steps rendered and labelled — so the convenience sample was replaced by the
+      population rather than extended. Constants unchanged, same binary, **65 of the 73 never measured
+      before**, and the eight calibration pages are marked `sample=calibration` in the TSV.
+      **Result**: `lineN` ≥ 1 on **12 of 12** pages that lose typeset content (8 of 8 out of sample),
+      **1 of 4** losing only a hand-made mark, **0 of 6** degraded-but-legible, **3 of 51** that lose
+      nothing. ⛔ **All three of those firings are the RIM of recognised type** — read at 1:1 from
+      `-lines.png` cropped at the group's own rect, they are glyph tops falling outside Vision's word
+      boxes on lines that ARE in the text layer (`Herbert Marks` p12 `AGE Corp. - Em…`,
+      `_1939_Former students` p9 `am not`, `_1967_Yearly Increase` p1 newsprint ascenders); two of the
+      three pages hold only **437** and **381** out-of-stencil pixels page-wide, which is why their
+      `lineShare` reads 0.88 and 0.80. ✅ **A signature DOES fire** — `_1939_Former students` p6's only
+      group is the cursive signature itself — the **fourth** hand-made mark the term is measured firing
+      on (after `Wilcox` p2, `Wilcox` p6 and `1954 - Why` p4) and the second on a page of measured loss. ⛔ **One of the three misses is not the rule's**:
+      `_1939_Former students` p2 has `outPx` **0**, an empty map, which is the page-wide Otsu's known
+      blindness to pale pencil. The other two are the grouping, not the glyph filter
+      (`Doermann_1967` p21 is `txtShare` 0.9946 with `txtN` 4 and no group).
+      ⛔ **`linePx` refused a second time and harder**: `Jones et al_2010` p2 is a real loss at 147 px,
+      below all three false positives, so no floor removes a rim without dropping a measured loss.
+      **Question 4**: the wiring (`inkOut < 0.045 AND lineN == 0`) refuses the shrink on **16 of 73**
+      pages — 789,825 → 3,152,450 B, **+2,362,625 B, 3.99x**, 15.5% of it on pages that lose nothing —
+      against the cheapest page-wide bar rescuing the same 13 (`inkOut >= 0.0008`), which refuses **41
+      of 73**: 1,915,380 → 8,117,445 B, **+6,202,065 B, 4.24x**, **58.5%** of it on pages that do not
+      lose content. **38.1% of
+      the bytes.** ⛔ Not equal protection — the bar rescues **15 of 16** losers and the term **13**, the
+      two extra being hand-made marks at +575,066 B, and neither reaches `_1939_Former students` p2.
+      Controls: `inkOut` reproduced `INKBAR-2026-08-19.tsv` on **73 of 73** rows; `mapFrac == inkOut` on
+      73 of 73 (exit 6 never fired); `rc=0` on all 22 tool invocations and all 21 byte invocations
+      (11 documents in the 16-page arm, 10 in the 25-page one, 19 distinct);
+      `barVerdict=picture` on **41 of 41** priced pages with a byte-identical stencil at both bars;
+      `--self-test` 5/5. ⚠️ Bytes are at the default Photo detail, page by page through
+      `score-text-route`; the *local* variant would be cheaper, so +2,362,625 B is an **upper** bound.
+      The three ride-along documentation debts (the settings blurb, the tool header, the
+      `Tools/README.md` row) landed on this commit, and the blurb gained a check watched failing.
+      ⚠️ Nothing is wired; no mutant is owed. **Next**: the rim fix (subtract a dilated `region` before
+      grouping), or the `textRegionMask` seam's price.
+      (context: BUGS.md C28 `#### The same shape term over ALL 73`)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,

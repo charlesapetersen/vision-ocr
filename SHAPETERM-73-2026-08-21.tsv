@@ -1,0 +1,79 @@
+document	page	w	h	otsu	inkPx	outPx	inkOut	mapFrac	stenFrac	stenD3	glyphN	glyphH	glyphRun	ccN	txtN	txtPx	txtShare	lineN	linePx	lineShare	topLine	verdict	sweepInkOut	label	kind	sample
+# C28 question 3, out of sample: the shape term over ALL 73 sub-bar pages, 2026-08-21.
+# population = INKBAR-2026-08-19.tsv rows with verdict=all-text AND barVerdict=all-text (73).
+# label/kind are the published verdicts of C26 sub-step 4 and C28 sub-steps 1-4; nothing here re-reads them.
+# sample: calibration = one of the 8 pages the five constants were written against; new = never measured before.
+# binary built from Tools/score-shape-term.swift at 5be15c3; --self-test 5/5; constants unchanged.
+book/Guilford_Psychometric Methods.pdf	p1	920	1428	150	193959	601	0.0031	0.0031	0.0031	0.0000	2732	12	4	59	0	0	0.0000	0	0	0.0000	-	ok	0.0031	nothing	-	new
+book/Guilford_Psychometric Methods.pdf	p5	928	1424	151	197517	0	0.0000	0.0000	0.0000	0.0000	2954	12	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p6	1955	2597	106	464636	0	0.0000	0.0000	0.0018	0.0000	2024	25	5	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p10	1953	2592	101	300190	2	0.0000	0.0000	0.0001	0.0000	1537	24	5	2	0	0	0.0000	0	0	0.0000	-	ok	0.0000	nothing	-	new
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p12	1980	2592	92	264446	9	0.0000	0.0000	0.0000	0.0000	908	29	6	5	0	0	0.0000	0	0	0.0000	-	ok	0.0000	nothing	-	new
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p14	2216	2749	102	638801	0	0.0000	0.0000	0.0026	0.0000	1926	29	7	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p20	2168	2716	105	598586	1294	0.0022	0.0022	0.0152	0.0021	2036	27	6	8	1	163	0.1260	0	0	0.0000	-	ok	0.0022	degraded	hand-mark-degraded	new
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p24	2100	2671	108	560837	824	0.0015	0.0015	0.0259	0.0014	2487	23	6	81	2	184	0.2233	0	0	0.0000	-	ok	0.0015	nothing	-	new
+book/UN-OCred.pdf	p7	1361	1109	186	181830	4205	0.0231	0.0231	0.0416	0.0196	3184	10	3	14	4	186	0.0442	0	0	0.0000	-	ok	0.0231	nothing	-	new
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p2	2278	1834	163	334692	4670	0.0140	0.0140	0.0410	0.0140	4447	13	3	125	5	1164	0.2493	0	0	0.0000	-	ok	0.0140	nothing	-	new
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p3	2278	1834	165	340166	15299	0.0450	0.0450	0.0809	0.0443	4261	13	3	230	119	8531	0.5576	2	7533	0.4924	779x50+1260+211	ok	0.0450	loses	type	calibration
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p4	2278	1834	165	345469	6683	0.0193	0.0193	0.0624	0.0193	4508	13	3	99	3	176	0.0263	0	0	0.0000	-	ok	0.0193	nothing	-	new
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p5	2278	1834	165	361787	14665	0.0405	0.0405	0.0790	0.0408	4420	13	3	91	2	163	0.0111	0	0	0.0000	-	ok	0.0405	nothing	-	calibration
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p7	2278	1834	165	351105	12974	0.0370	0.0370	0.0867	0.0370	4702	13	3	140	3	298	0.0230	0	0	0.0000	-	ok	0.0370	nothing	-	calibration
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p10	2278	1834	164	346041	15269	0.0441	0.0441	0.0771	0.0442	4501	13	3	157	6	248	0.0162	0	0	0.0000	-	ok	0.0441	nothing	-	calibration
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p12	2278	1834	165	292916	12008	0.0410	0.0410	0.1114	0.0409	6573	10	2	115	6	294	0.0245	0	0	0.0000	-	ok	0.0410	nothing	-	calibration
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p10	1014	1614	175	250475	23	0.0001	0.0001	0.0510	0.0001	2291	14	4	3	0	0	0.0000	0	0	0.0000	-	ok	0.0001	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p13	1014	1614	176	234488	0	0.0000	0.0000	0.0256	0.0000	2269	14	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p16	1014	1614	172	245782	0	0.0000	0.0000	0.0305	0.0000	2281	14	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p19	1014	1614	178	233661	0	0.0000	0.0000	0.0206	0.0000	2529	14	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p22	1014	1614	173	220957	0	0.0000	0.0000	0.0362	0.0000	1868	14	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p25	1014	1614	177	242600	0	0.0000	0.0000	0.0228	0.0000	2321	14	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p28	1014	1614	175	235201	0	0.0000	0.0000	0.0428	0.0000	2154	14	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p31	1014	1614	176	243027	0	0.0000	0.0000	0.0221	0.0000	2378	14	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p34	1014	1614	179	238939	0	0.0000	0.0000	0.1131	0.0000	2607	13	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+bookSection/Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited.pdf	p37	1014	1614	179	234306	0	0.0000	0.0000	0.0550	0.0000	2613	13	4	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+document/1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	p4	3024	3441	129	263421	7569	0.0287	0.0287	0.0535	0.0300	1444	19	4	532	45	1633	0.2157	0	0	0.0000	-	ok	0.0287	nothing	-	new
+document/Atkinson_1939_Atkinson on firings_.pdf	p1	1935	2592	108	373330	2	0.0000	0.0000	0.0845	0.0000	1917	19	4	1	0	0	0.0000	0	0	0.0000	-	ok	0.0000	nothing	-	new
+document/Atkinson_1939_Atkinson on firings_.pdf	p3	1935	2592	130	504651	19587	0.0388	0.0388	0.1231	0.0383	2582	20	4	50	27	8694	0.4439	3	8201	0.4187	337x54+1136+2083	ok	0.0388	loses	type+hand	calibration
+document/Ford_1941_Speech_.pdf	p1	1935	2592	133	278430	1422	0.0051	0.0051	0.1836	0.0068	1823	17	4	80	9	502	0.3530	0	0	0.0000	-	ok	0.0051	loses	hand	new
+document/Ford_1941_Speech_.pdf	p2	1935	2592	122	276946	629	0.0023	0.0023	0.1170	0.0022	1812	18	4	28	7	514	0.8172	0	0	0.0000	-	ok	0.0023	nothing	-	new
+document/Ford_1941_Speech_.pdf	p3	1935	2592	116	249860	2677	0.0107	0.0107	0.0749	0.0105	1650	18	4	48	8	561	0.2096	0	0	0.0000	-	ok	0.0107	nothing	-	new
+document/Ford_1941_Speech_.pdf	p4	1935	2592	116	253013	167	0.0007	0.0007	0.0623	0.0007	1642	18	4	13	0	0	0.0000	0	0	0.0000	-	ok	0.0007	nothing	-	new
+document/Ford_1941_Speech_.pdf	p5	1935	2592	126	276938	612	0.0022	0.0022	0.1154	0.0025	1788	18	4	12	2	232	0.3791	0	0	0.0000	-	ok	0.0022	nothing	-	new
+document/Ford_1941_Speech_.pdf	p6	1935	2592	122	168071	945	0.0056	0.0056	0.0844	0.0061	1079	18	4	15	7	836	0.8847	1	446	0.4720	134x43+1681+199	ok	0.0056	loses	type	new
+document/Herbert Marks papers.pdf	p11	1700	2200	213	88758	1314	0.0148	0.0148	0.4765	0.0393	2125	5	2	38	19	732	0.5571	1	423	0.3219	134x14+627+479	ok	0.0148	loses	type	new
+document/Herbert Marks papers.pdf	p12	1700	2200	213	106972	437	0.0041	0.0041	0.4701	0.0339	2752	5	2	21	13	422	0.9657	2	386	0.8833	72x10+606+911	ok	0.0041	nothing	-	new
+document/Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_.pdf	p5	1414	2163	147	423570	0	0.0000	0.0000	0.0000	0.0000	2142	21	6	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	p1	1192	1746	175	84258	97	0.0012	0.0012	0.1377	0.0034	2049	12	2	16	1	22	0.2268	0	0	0.0000	-	ok	0.0012	nothing	-	new
+document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	p2	969	1419	182	63630	30	0.0005	0.0005	0.1542	0.0035	1855	10	2	9	0	0	0.0000	0	0	0.0000	-	ok	0.0005	nothing	-	new
+document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	p3	992	1441	179	66227	687	0.0104	0.0104	0.1482	0.0120	1887	10	2	13	0	0	0.0000	0	0	0.0000	-	ok	0.0104	nothing	-	new
+document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	p4	993	1438	169	59272	5	0.0001	0.0001	0.1068	0.0009	1795	10	2	2	0	0	0.0000	0	0	0.0000	-	ok	0.0001	nothing	-	new
+document/_1939_Former students to Board re Merriam_.pdf	p2	1935	2592	111	365245	0	0.0000	0.0000	0.0592	0.0014	783	31	6	0	0	0	-	0	0	-	-	ok	0.0000	loses	hand	new
+document/_1939_Former students to Board re Merriam_.pdf	p3	1935	2592	126	350593	0	0.0000	0.0000	0.0873	0.0022	627	34	7	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+document/_1939_Former students to Board re Merriam_.pdf	p6	1935	2592	118	375072	2602	0.0069	0.0069	0.2266	0.0068	1578	21	4	32	8	2302	0.8847	1	2259	0.8682	472x53+951+2216	ok	0.0069	loses	hand	new
+document/_1939_Former students to Board re Merriam_.pdf	p7	1935	2592	137	357235	39	0.0001	0.0001	0.3603	0.0018	1845	17	4	23	0	0	0.0000	0	0	0.0000	-	ok	0.0001	nothing	-	new
+document/_1939_Former students to Board re Merriam_.pdf	p9	1935	2592	126	292516	381	0.0013	0.0013	0.4121	0.0037	3176	10	3	52	7	316	0.8294	1	303	0.7953	140x12+1456+1165	ok	0.0013	nothing	-	new
+document/_1939_Former students to Board re Merriam_.pdf	p14	1935	2592	128	411692	18	0.0000	0.0000	0.0997	0.0001	2078	18	5	5	0	0	0.0000	0	0	0.0000	-	ok	0.0000	nothing	-	new
+document/_1939_Former students to Board re Merriam_.pdf	p16	1935	2592	125	404834	3	0.0000	0.0000	0.0830	0.0000	2007	19	5	2	0	0	0.0000	0	0	0.0000	-	ok	0.0000	nothing	-	new
+document/_1973_Committee Against Racism_.pdf	p1	1276	1651	149	219435	0	0.0000	0.0000	0.0000	0.0000	5049	10	2	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+document/_1973_Committee Against Racism_.pdf	p2	1276	1651	149	313174	0	0.0000	0.0000	0.0000	0.0000	7067	10	2	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+document/_1973_Committee Against Racism_.pdf	p3	1275	1650	151	295324	0	0.0000	0.0000	0.0000	0.0000	7316	10	2	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p2	1240	1647	160	185073	155	0.0008	0.0008	0.0008	0.0006	5166	10	2	7	5	147	0.9484	1	147	0.9484	43x9+639+829	ok	0.0008	loses	type	new
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p3	1240	1647	161	179495	0	0.0000	0.0000	0.0000	0.0000	5028	10	2	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p5	1240	1647	162	166685	5892	0.0353	0.0353	0.0353	0.0321	4757	10	2	142	117	3954	0.6711	4	3898	0.6616	488x18+107+1188	ok	0.0353	loses	type	calibration
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p7	1240	1647	162	162460	2225	0.0137	0.0137	0.0137	0.0134	4919	10	2	135	91	1995	0.8966	3	1897	0.8526	401x20+155+759	ok	0.0137	loses	type	new
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p9	1240	1647	161	185502	0	0.0000	0.0000	0.0000	0.0000	5330	10	2	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+journalArticle/Scott_TK_The Scientific Selection of Salesmen.pdf	p3	1020	1257	149	180990	7462	0.0412	0.0412	0.0412	0.0297	3821	8	3	334	114	5319	0.7128	6	1796	0.2407	241x5+364+150	ok	0.0412	loses	type	calibration
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p3	921	1382	168	113600	0	0.0000	0.0000	0.0000	0.0000	2997	11	2	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p5	921	1382	167	103865	0	0.0000	0.0000	0.0000	0.0000	2760	11	2	0	0	0	-	0	0	-	-	ok	0.0000	nothing	-	new
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p8	921	1382	168	102197	150	0.0015	0.0015	0.0015	0.0015	2712	11	2	1	0	0	0.0000	0	0	0.0000	-	ok	0.0015	degraded	rule-blurred	new
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p10	921	1382	169	94353	151	0.0016	0.0016	0.0016	0.0016	2538	11	2	1	0	0	0.0000	0	0	0.0000	-	ok	0.0016	degraded	rule-blurred	new
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p13	921	1382	168	109426	150	0.0014	0.0014	0.0014	0.0014	2960	11	2	1	0	0	0.0000	0	0	0.0000	-	ok	0.0014	degraded	rule-blurred	new
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p23	921	1382	168	107517	149	0.0014	0.0014	0.0014	0.0014	2850	11	2	1	0	0	0.0000	0	0	0.0000	-	ok	0.0014	degraded	rule-blurred	new
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p25	921	1382	167	105513	150	0.0014	0.0014	0.0014	0.0014	2789	11	2	1	0	0	0.0000	0	0	0.0000	-	ok	0.0014	degraded	rule-blurred	new
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p28	921	1382	171	99065	163	0.0016	0.0016	0.0016	0.0007	3184	10	2	8	6	155	0.9509	0	0	0.0000	-	ok	0.0016	nothing	-	new
+magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	p2	1808	2807	136	846117	5336	0.0063	0.0063	0.0063	0.0034	4574	19	5	74	45	4649	0.8713	5	4256	0.7976	271x11+113+417	ok	0.0063	loses	type	new
+magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	p3	919	1357	147	186657	1624	0.0087	0.0087	0.0087	0.0064	3627	10	3	51	40	1586	0.9766	6	1574	0.9692	109x12+492+564	ok	0.0087	loses	type	new
+magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	p5	915	1369	145	189074	1540	0.0081	0.0081	0.0081	0.0054	3311	10	3	50	38	1491	0.9682	4	1491	0.9682	260x12+335+709	ok	0.0081	loses	type	new
+magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	p1	1159	1573	163	204713	5863	0.0286	0.0286	0.0399	0.0156	6472	8	2	63	36	1089	0.1857	2	319	0.0544	113x5+459+1407	ok	0.0286	nothing	-	new
+newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	p1	959	1281	150	195345	4094	0.0210	0.0210	0.0210	0.0207	2414	8	3	16	0	0	0.0000	0	0	0.0000	-	ok	0.0210	nothing	-	new
+newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	p1	1997	3219	150	1155973	2708	0.0023	0.0023	0.0024	0.0012	5007	21	6	38	18	2307	0.8519	1	1780	0.6573	250x19+710+1489	ok	0.0023	loses	type	new
+thesis/Doermann_1967_The market for college education in the United States.pdf	p21	2658	3200	176	1200389	19778	0.0165	0.0165	0.1342	0.0159	1291	33	8	42	4	19672	0.9946	0	0	0.0000	-	ok	0.0165	loses	hand	new
