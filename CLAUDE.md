@@ -49,7 +49,7 @@ reports it as of 2026-08-20** — that was the entry's question 5, invariant 1's
 an eighth, with that page's own fraction beside it, on the success path only and with **no bar on the
 fraction** (the campaign proved the losers and non-losers interleave when sorted by it, and one
 measured loser prints `0.0000`, so any filter drops a known loser). ⛔ It is a report and not a fix —
-the pages are still degraded, and C28 stays OPEN on questions 3 and 4 plus half of 2.
+the pages are still degraded, and C28 stays OPEN on questions 3 and 4 (question 2 CLOSED 2026-08-21).
 ✅ **Question 2's 1/2 HALF IS MEASURED 2026-08-20 and it does NOT reproduce.** The 109 layered pages the
 bar does *not* read as all text keep the caller's factor, which on the default Photo detail is **2**;
 sixteen of them were rendered and read at 1:1, ten beside a 1/8 reference on the same rect, and **no
@@ -62,15 +62,24 @@ page**.
 ⛔ **QUESTION 2'S 1/3 HALF IS MEASURED 2026-08-21 AND IT DOES REPRODUCE — so question 2 is CLOSED and
 what remains of C28 is questions 3 and 4.** `PHOTODETAIL=maximum|balanced|smallest` was added to
 `Tools/score-text-route.swift` (which had no way to vary the factor at all), the 16 pages C26's bar
-move *rescued* were rendered at `PhotoDetail.smallest` too, and **`Xin Qu et al_2018` p20 loses the
+move *rescued* — a different sixteen from the 1/2 sub-step's, overlap two — were rendered at
+`PhotoDetail.smallest` too, and **`Xin Qu et al_2018` p20 loses the
 correlation matrix's last column** — thirteen values legible in a 460 px background and unreadable in
 the 307 px one, at zoom 8 `−0.130*` reading `−#.1##*`. Two more are degraded and still legible
 (`_1973_CAR` p4's unrecognised prose lines; `Jones et al_2010` p12's table rule, darkest pixel 25 → 56
 → 136 against paper at ~250) and five read clean — all three `1954 - Why` cartoons, `Riesman - 1954`
 p16's pen bracket, and a whole line of unrecognised typescript on `Atkinson_1939` p2. ⛔ **The term that
 orders this population is the page's own rebuild resolution, not `inkOut` and not a difference map**:
-the loser has the smallest source render of the sixteen (921 px) and ranks *eighth of sixteen* on the
+the loser has the smallest source render of the sixteen (921 px) and ranks *sixth of sixteen* on the
 1/2-against-1/3 difference, so that scalar is refused the way the out-of-stencil pixel count was.
+⛔ **BUT THE RESOLUTION CLAIM ITSELF WAS RETRACTED BY THE REVIEW OF THAT DIFF, THE SAME DAY**: sorted
+by source width the three clean `1954 - Why` pages (1,224 px) sit BETWEEN the two degraded ones (1,208
+and 1,240), so width interleaves the verdicts exactly as `inkOut` does — a fourth refused scalar, not a
+new ordering. What survives is existence plus mechanism: the one page that loses is the narrowest, and
+307 px of background under 9-pt table type is why. And the quantity read was source pixel WIDTH, not
+`rebuildDPI`. ⚠️ Also retracted there: **8 of the 16 have a 1:1 reading, not 16** (all sixteen were
+rendered and are in the byte table; eight were looked at), and "the same 16 pages" as the 1/2 sub-step
+is wrong — those were 6 sub-bar + 2 rescued + 8 others, these are all 16 rescued, overlap two.
 ⚠️ **A draft of that sub-step was on course to conclude "no loss at 1/3" off its first five pages**, all
 of which are clean; picking the sixth by narrowness rather than by `inkOut` overturned it. Smallest
 costs **0.6465x** the bytes of Balanced over the sixteen, and **the page that loses content saves the
@@ -438,7 +447,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,185 checks at C26's bar move; 8-45 min depending on machine load, real OCR
+./run_tests.sh        # 1,196 checks measured 2026-08-21; 8-45 min depending on machine load, real OCR
                       # measured 474 s quiet -> 2,719 s under the C24b campaign. Never size a
                       # timeout off one sample: ops/autonomous/README.md keeps the ledger.
 ```

@@ -761,8 +761,14 @@ happens.**
       continuous throughout) and five read clean — the three `1954 - Why` cartoons whole, `Riesman - 1954`
       p16's pen bracket and both tick marks unbroken, and a **whole line of unrecognised typescript** on
       `Atkinson_1939` p2 fully readable.
-      ⛔ **THE HEADLINE IS THE ORDERING TERM: it is the page's own rebuild resolution, not `inkOut` and
-      not a difference scalar.** The sixteen span 921–5,129 px of source width; the loser is the
+      ⛔ **THE ORDERING CLAIM THIS BOX FIRST MADE WAS RETRACTED BY THE REVIEW OF ITS OWN DIFF, SAME DAY.**
+      Sorted by source width the three clean `1954 - Why` pages (1,224 px) sit BETWEEN the two degraded
+      ones (1,208 and 1,240), so width interleaves the verdicts exactly as `inkOut` does — a FOURTH
+      refused scalar, not a new ordering; and the quantity read was source pixel WIDTH, never
+      `rebuildDPI`. ⚠️ Also retracted: **8 of the 16 have a 1:1 reading, not 16**, and these sixteen are
+      not the 1/2 sub-step's sixteen (overlap two). Read the entry's
+      `##### ⛔ RETRACTED BY THE ADVERSARIAL REVIEW OF THIS DIFF` before quoting anything below.
+      The withdrawn claim, kept so it is not re-derived: The sixteen span 921–5,129 px of source width; the loser is the
       narrowest, and the next two narrowest (`1944_Options` p1 at 1,208, `Jones` p12 at 1,240) are the
       two that degrade. `Flattener.rebuildDPI(of:)` already computes it on every page. Untested as a bar
       — one page is not a calibration — and it would be this entry's fourth signal class.
@@ -797,7 +803,7 @@ happens.**
       `Close Octagon:3` + `Dilate Rectangle:9x1` joined letters into lines, because unrecognised prose
       is scattered letter-blobs. **Locate lines, not letters.** A 1/2-against-1/3 difference map is a
       usable **locator** and a refused **verdict**: it ranks `_1973_CAR` p4 top at 1.2527% (legible) and
-      the only real loser eighth of sixteen at 0.1825%. `magick montage` dies with
+      the only real loser SIXTH of sixteen at 0.1825%. `magick montage` dies with
       `unable to read font ''` here — use `+append`/`-append`. And ⛔ **swiftc rejects this tool unless
       the copied file is named `main.swift`**: 19 `statements are not allowed at the top level` errors
       that look like a build problem, which is how all three mutants failed on the first attempt and

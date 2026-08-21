@@ -78,7 +78,7 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 1,185 checks at C26's bar move; 8-45 min depending on load (it runs real OCR)
+./run_tests.sh        # 1,196 checks measured 2026-08-21; 8-45 min depending on load (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -324,8 +324,13 @@ same loss does not reproduce at 1/2 (16 pages, 2026-08-20) and **does at 1/3** (
 — `Xin Qu et al_2018` p20's correlation matrix is legible in the 460 px background Balanced gives it and
 unreadable in the 307 px one `PhotoDetail.smallest` gives it, two more pages degrade and five read
 clean. ⛔ **And the term that orders that population is the page's own rebuild resolution, not
-`inkOut`**: the loser has the smallest source render of the sixteen and ranks eighth of sixteen on a
-1/2-against-1/3 difference map, so that scalar is refused too — a fourth refused scalar in this area.
+`inkOut`**: the loser has the smallest source render of the sixteen and ranks SIXTH of sixteen on a
+1/2-against-1/3 difference map, so that scalar is refused too — ⛔ **and the review of that diff
+retracted the resolution framing as well, the same day**: sorted by source width the three clean pages
+sit BETWEEN the two degraded ones, so width interleaves the verdicts exactly as `inkOut` does. What
+survives is existence plus mechanism (the loser is the narrowest; 307 px of background under 9-pt table
+type), the quantity read was source pixel WIDTH and not `rebuildDPI`, and **8 of the 16 have a 1:1
+reading, not 16** — a fourth refused scalar in this area.
 Smallest costs 0.6465x the bytes of Balanced over the sixteen while **the page that loses content saves
 the LEAST of them**, which is C28's "the same bar overpays" in a second mechanism.
 `PHOTODETAIL=` on `Tools/score-text-route.swift` is the seam that made any of it measurable: before it

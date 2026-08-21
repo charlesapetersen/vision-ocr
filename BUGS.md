@@ -90,7 +90,7 @@ correlation matrix's last column** — thirteen values legible at a 460 px backg
 prose lines; `Jones et al_2010` p12's table rule, darkest pixel 25 → 56 → 136 against paper at ~250)
 and five read clean, including all three `1954 - Why` cartoons and `Riesman - 1954` p16's pen bracket.
 ⛔ **The term that orders it is the page's own rebuild resolution, not `inkOut` and not a difference
-map** — the loser has the smallest source render of the sixteen and ranks eighth of sixteen on the
+map** — the loser has the smallest source render of the sixteen and ranks SIXTH of sixteen on the
 1/2-against-1/3 difference, so that scalar is refused. ⚠️ **A draft of that sub-step was on course to
 conclude "no loss at 1/3" off its first five pages**, all of which are clean; choosing the sixth by
 narrowness rather than by `inkOut` overturned it. Smallest costs **0.6465x** the bytes of Balanced over
@@ -5513,7 +5513,7 @@ has nothing at all to say (this one).
    prose, `Jones et al_2010` p12's table rule at 56 → 136 darkest against paper at ~250) and five read
    clean, the three `1954 - Why` cartoons among them. ⛔ **So the term that orders this population is
    the page's own rebuild resolution, not `inkOut` and not a difference scalar** — `Xin Qu` p20 ranks
-   eighth of sixteen on the 1/2-against-1/3 difference and first on narrowness. Over the sixteen,
+   SIXTH of sixteen on the 1/2-against-1/3 difference, and narrowness does NOT order the verdicts either. Over the sixteen,
    Smallest costs **0.6465x** the bytes of Balanced, and **the one page that loses content saves the
    LEAST** (17,705 B against 240,578 B on a page whose only out-of-stencil ink is a scanner
    edge). ✅ And the reason this is 16 of the **109** and not of the 182: an all-text page is
@@ -5980,7 +5980,7 @@ also executed: `PHOTODETAIL=bogus` and `PHOTODETAIL=maximum INKBAR=0.02` each ex
   loser.** Differencing the two *backgrounds* (not a background against the source) does cancel most of
   the ghost, and it ranks: `_1973_CAR` p4 1.2527%, `1954 - Why` p7 0.7028%, `1944_Options` p1 0.6599%,
   down to `Riesman - 1954` p16 0.0088%. But the top of that ranking is the page that stays **legible**
-  and `Xin Qu` p20 — the only page that loses content — ranks **eighth of sixteen at 0.1825%**. So the
+  and `Xin Qu` p20 — the only page that loses content — ranks **SIXTH of sixteen at 0.1825%**. So the
   scalar is refused for the same reason the out-of-stencil pixel count was refused in sub-step 2: it
   does not order the verdicts. Kept as a locator only.
 - ⚠️ **The upscale filter here is ImageMagick's `-resize` default, not `-filter Triangle`** as
@@ -6013,6 +6013,72 @@ also executed: `PHOTODETAIL=bogus` and `PHOTODETAIL=maximum INKBAR=0.02` each ex
   is measured false — not of a photograph, but of the prose and figures this entry shows end up in the
   photo layer. The string is untouched: it is a settings-UI wording decision and it belongs to the
   owner. `Sources/Prefs.swift` now carries a comment beside it pointing here.
+
+##### ⛔ RETRACTED BY THE ADVERSARIAL REVIEW OF THIS DIFF — 2026-08-21, and it is the section's own headline that went
+
+The review of the commit above refuted **six** of its claims from the same files. The verdicts on the
+pages stand; three of the framings do not.
+
+1. ⛔ **"The term that orders this population is the page's own rebuild resolution" is FALSE.** Sorted by
+   source pixel width the sixteen read 921 (`Xin Qu` p20, **loses**), 1,208 (`1944_Options` p1), 1,224 /
+   1,224 / 1,224 (the three `1954 - Why` cartoons, all **clean**), 1,240 (`Jones` p12, degraded), 1,275
+   (`_1973_CAR` p4, degraded), 1,590 … — so the three clean pages sit **between** the two degraded ones
+   and width interleaves the verdicts exactly as `inkOut` does. The claim that it "ranks these sixteen
+   correctly" is withdrawn, and so is the sentence naming `1944_Options` p1 and `Jones` p12 as "the next
+   two narrowest … the two that degrade": the two degraded pages are `_1973_CAR` p4 and `Jones` p12, and
+   `1944_Options` p1 was given no verdict at all (its one window held no out-of-stencil ink). **What
+   survives is only the existence claim and the mechanism** — the one page that loses is the narrowest,
+   and 307 px of background under 9-pt table type is why. A fourth scalar, refused like the other three.
+2. ⛔ **And the quantity measured was source pixel WIDTH, not `rebuildDPI`.** No DPI was printed or
+   compared. The three `1954 - Why` pages render 1224x946 — landscape — while the rest are portrait, and
+   pixel width is DPI × page width in inches, so the two orderings differ exactly where page geometry
+   does. `Flattener.rebuildDPI(of:)` is a *candidate*, not the thing that was read.
+3. ⛔ **The difference scalar ranks `Xin Qu` p20 SIXTH of sixteen, not eighth** (0.1825%, with five pages
+   above it), and 12th by raw pixel count. Corrected in six places. The conclusion — the scalar is a
+   locator and not a verdict — is unaffected and is now stronger, see 4.
+4. ✅ **A positive control WAS run and its numbers were missing from this section.** `INKBAR=0.08` on
+   four of the sixteen gives their 1/8 backgrounds, and the same difference map over 1/2-against-1/8
+   reads `1954 - Why` p4 **0.5442%**, `Atkinson_1939` p2 **0.7406%**, `Xin Qu` p20 **0.7986%**,
+   `_1973_CAR` p4 **2.8175%** — four pages that all lose content at 1/8. So a page loses at 0.54% on
+   one comparison while `_1973_CAR` p4 *keeps* its content at 1.25% on the other. **That is the sharper
+   refutation of the scalar** and it belongs here rather than the "no calibrated loser" wording it
+   replaces.
+5. ⚠️ **Eight of the sixteen have a 1:1 reading, not sixteen.** 1 loss + 2 degraded + 5 clean = 8. No
+   crop was read for `Broadhead - 1994` p6 and p9, `Glazer_2002` p1, `RIESMAN_1942` p10,
+   `Riesman - 1954` p8 and p18. All sixteen were *rendered* at both settings and all sixteen are in the
+   byte table; only eight were *looked at*. The 1/2 sub-step was explicit that it read one window on all
+   sixteen and this one was not, which is the gap.
+6. ⚠️ **"The same 16 pages" is wrong as a cross-reference.** The 1/2 sub-step's sixteen were 6 sub-bar +
+   2 rescued + 8 of the other 87; this sub-step's are all 16 **rescued**. The overlap is two pages. The
+   1/2-against-1/3 pairing within this sub-step is sound — both settings were run on all sixteen of
+   *these* — but the two sixteens are different sets and the sections must not be read as one sample.
+7. ⚠️ **The seam ignores a Photo detail the tool already holds.** `score-text-route.swift` binds
+   `Prefs.Snapshot.current()`, and the sibling `score-mrc.swift` falls back to
+   `settings.photoDetail.downsample` when `MRC_BG` is unset; this falls back to
+   `Flattener.mrcBackgroundDownsample` instead. On a user set to Smallest the two tools then disagree
+   about what "the app does", and the new comment's *"the default is `balanced`, and that is not a
+   choice"* is false — `settings.photoDetail.downsample` was in scope. Left as it is deliberately (a
+   corpus-reproducible tool must not read the machine's preferences, which is what makes
+   `INKBAR-2026-08-19.tsv` re-derivable) but the *reason* is reproducibility, not absence of a choice.
+   Corollary: *"measurable at all only because `PHOTODETAIL=` exists"* is too strong —
+   `MRC_BG=3 MRC_DUMP=…` on `score-mrc` could already dump factor-3 layers.
+8. ⚠️ Minor, all confirmed: there are **six** instrument bullets and a queue box said five; `Jones` p12's
+   `56` is 56.9819 truncated (full readings 25 / 56.9819 / 136.45); and the `detailSuffix` self-test's
+   `(PhotoDetail.balanced.downsample, "")` row **cannot be the row that objects** once check (a) has
+   passed, because the two values are then equal — a row that cannot fail inside a check that can.
+9. ⚠️ One unexplained observation, not measured and not a claim: on `_1973_CAR` p4 the out-of-stencil
+   line immediately below a *stencilled* line is markedly paler in the 1/2 background than the one two
+   rows down, at near-identical source ink (0.373 vs 0.402). If that is `fillHoles`' radius-10 fill
+   bleeding across an 18 px line pitch, an out-of-stencil line's survival would depend on its
+   neighbour being recognised — a mechanism this entry does not have.
+
+**Could not refute**, checked independently by the review: the `Xin Qu` p20 verdict (rebuilt crop; the
+rect's stencil ink is 0.0000 against a whole-stencil mean of 0.9334), both degraded verdicts and their
+numbers, the all-text byte-identity control, the 3,804,222 B reproduction page for page, all three
+mutants firing their intended check, the parser's immunity to the new summary line, top-level init
+order making the `maximum`+`INKBAR` refusal reachable, the `keepEveryPixel` mirror matching
+`Flattener.swift:2738`/`2759` with no other replica in the file needing it, and that no test asserts on
+`PhotoDetail.blurb`.
 
 #### What this entry is NOT
 
