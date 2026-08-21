@@ -105,12 +105,36 @@ recognised words, at the page's own type scale — a component is type-shaped ag
 and stroke of *the stencil's own components*, and ≥ 4 of them tiling a baseline make a line. Over 13
 labelled pages the count is **≥ 1 on 6 of 6 pages measured to lose typeset content and 0 on 6 of 6
 that lose nothing** — 12 of 13, the odd one being the page whose loss is a hand-drawn bracket, which a
-rule calibrated on type is blind to by construction. Five numbers, all ratios rather than sizes,
+rule calibrated on type reads 0 on. ⛔ That was published as blindness *by construction* and the picture
+run refuted it hours later: the term fires 17 and 11 groups on a pen ornament. Five numbers, all ratios rather than sizes,
 **written before any page was run and not adjusted after**: 8 pages first, then 5 held out. ⛔ **It is
 not validated** — 8 of the 73 plus 5 of the 16 C26's bar move rescued (so 5 of them are not degraded in production today), a labelled convenience sample, 4 of its 6 non-losers from one scan,
 and **no plate, halftone or line drawing in it at all**, which is exactly what `textRegionMask` exists
-to keep out. ⚠️ Read `lineN` and not the share: the drawn bracket's `txtShare` (0.0173) sits *below* a
+to keep out — **measured the same day, next sentence, and it does not read 0 there**. ⚠️ Read `lineN` and not the share: the drawn bracket's `txtShare` (0.0173) sits *below* a
 non-loser on the same scan (0.0500), so a bar on the share inverts that pair — a sixth refused scalar.
+⛔ **QUESTION 3b IS MEASURED 2026-08-21 AND THE TERM ERRS IN BOTH DIRECTIONS** — ten picture pages,
+`SHAPETERM-PICTURES-2026-08-21.tsv`, `#### The same shape term on PICTURES`. `lineN` is **≥ 1 on 6 of
+10** and none of the six accepted groups is type: halftone dots, photograph grain inside a plate whose
+real caption Vision *did* recognise (12 groups, none on the caption), a pen ornament's feather strokes
+(17 and 11), and 10,438 px of page-wide-Otsu speckle in a featureless grey endpaper straddling the
+threshold by ±3 levels. ⛔ **But the sharper half is the other direction: it reads 0 on two pages whose
+loss C26 measured at 1:1** — `1954 - Why` p6 and p7, whose drawings are 92% and 100% of their pages'
+out-of-stencil ink and yield 372 and 785 `textish` px that never reach four members on a baseline. So
+the miss is `lineMinimumMembers`/`lineGapFactor`, not the component test, and **p4's single group is a
+hit on the lost cartoon** (`27x17+1121+685` lies inside the published `254x240+970+595`), not a false
+positive. ⛔ **"Blind to a hand-made mark by construction" is therefore REFUTED** — measured, it reads 0
+on four hand-made marks and fires on three — exactly the *"four blobs of a broken pen stroke"* case the
+previous section's own review named as the one to try. On `Wilcox` p2 it is wrong both ways: 0 accepted
+pixels over the hand-lettered *"Harry W. Wilcox"*, 1,694 on the decoration. Four more scalars refused
+(`glyphN` — so "too little type to calibrate on" is **not** the mechanism — plus `txtShare` again,
+absolute `linePx`, `topLine` width). ✅ **The bound holds for ONE of the two seams**: all ten are
+`barVerdict=picture`, so `inkOut < 0.045 AND lineN == 0` never consults the term on them and the byte
+cost is zero — derived from the sweep, not measured, and on a **1.10x** margin (0.0493 against 0.045).
+⛔ **Under `textRegionMask`, which is the seam question 3's own sentence names, there is no bound**: it
+runs unconditionally on every layered page (`Flattener.swift:2696`), so those six pages would put
+halftone dots and pen strokes into the 1-bit stencil — R57's failure mode. ⚠️ `lineShare` separates 22
+of the **23** pages the term has been run on, and it is **the seventh share in a register that has
+refused six**: post-hoc, denominator-driven, and it leaves four known content-losers on the safe side.
 ✅ The same tool settles `score-text-route`'s open instrument question, because it holds `region`
 itself and its map therefore *is* `inkOutsideText`'s set (asserted on every row, exit 6 otherwise;
 `inkOut` reproduced the committed sweep on all 13): substituting the dumped stencil inflates the
@@ -4417,7 +4441,13 @@ first measurement. ⛔ Those sections correct this entry's own instrument line �
 `0.0000` — there is **no legal `INKBAR` at all**, so the override seam cannot price them and the
 measurement is a stencil-versus-ink map instead. **Question 2 closed 2026-08-21**: 1/2 does not
 reproduce the loss and **1/3 does**, on one page of sixteen —
-`#### The same loss at 1/3, RENDERED over 16 of the 109`. Only questions 3 and 4 are open now.)*
+`#### The same loss at 1/3, RENDERED over 16 of the 109`. Only questions 3 and 4 are open now.
+**Question 3 has two halves and both are measured**: the shape term separates on 13 labelled pages
+(`#### A shape term, MEASURED over 13 labelled pages`) and then **errs in both directions on 10 picture
+pages** (`#### The same shape term on PICTURES`) — firing on 6, and missing 2 whose loss C26 measured.
+So 3 is open on what to do about that rather than on whether a shape signal exists, and 3b opened two
+things of its own: the population of sub-bar pages carrying a picture, and the `textRegionMask` seam's
+price.)*
 
 **⛔ READ `C26` FIRST**, two sections of it in particular: `#### Sub-step 4, the benefit` is the
 evidence for everything below, and `#### The constant moved` is what shipped on 2026-08-19. **This is
@@ -6112,7 +6142,7 @@ order making the `maximum`+`INKBAR` refusal reachable, the `keepEveryPixel` mirr
 `Flattener.swift:2738`/`2759` with no other replica in the file needing it, and that no test asserts on
 `PhotoDetail.blurb`.
 
-#### A shape term, MEASURED over 13 labelled pages — the first term of this entry that does NOT interleave, and it is blind to a hand-made mark — 2026-08-21
+#### A shape term, MEASURED over 13 labelled pages — the first term of this entry that does NOT interleave, and it reads 0 on this sample's hand-made mark — 2026-08-21 (⛔ "blind to a hand-made mark BY CONSTRUCTION" was refuted the same day: see `#### The same shape term on PICTURES`)
 
 **This is question 3's first measurement, and the headline is that it separates.** Four scalars have
 been tried on this population and all four were refused: `inkOutsideText` interleaves losers and
@@ -6192,8 +6222,12 @@ groups' pixels), so there is no coordinate frame to convert and none of the four
 - `Xin Qu et al_2018` p20, in **the register's own rect** for the thirteen values
   (`62x233+741+378`): the exact map holds **1,367 px** against the **1,375** the shell recipe
   published for that rect — **0.994x**, two instruments agreeing to eight pixels — of which `textish`
-  accepts 1,256 and the accepted groups 1,062, reading **10 of the 13 values**. The two that drop out
-  are the shortest rows, `0.09` and `0.04`: three components each, under the four-member minimum. That
+  accepts 1,256 and the accepted groups 1,062, reading **10 of the 13 values**. ⚠️ The **three** that
+  drop out are the shortest rows, `0.09` and `0.04`, and the diagonal `1` at the head of the column —
+  three components each, under the four-member minimum. (This sentence said "the two that drop out",
+  which contradicts its own "10 of the 13" by one; the row-profile count in this section's review
+  paragraph 2 is the authority, and this is the sibling it left uncorrected. **13 minus the number that
+  drop must equal the number named** — the arithmetic is the check.) That
   is `lineMinimumMembers` costing content, measured, and it is the constant to question first.
 
 ##### ⛔ And a correction to sub-step 1's inventory, found by the term: `Atkinson_1939` p3 loses TYPE
@@ -6276,6 +6310,13 @@ by.
   calibrates on type. Any fix built on it protects prose and table data and leaves the hand-made
   marks exactly where they are — which must be said out loud in whatever ships, because "protected"
   would otherwise read as "all content".
+  ⛔ **"BY CONSTRUCTION" IS REFUTED as of 2026-08-21 — see `#### The same shape term on PICTURES`.**
+  The next bullet already downgraded it to "too strong" and named the case to try; that case was run
+  and the term fires **17 and 11 groups on a pen-and-ink ornament** and 1 inside a cartoon. The
+  measured statement is now: **0 on four hand-made marks** (p16's bracket, `Atkinson_1939` p3's
+  signature, `1954 - Why` p6 and p7's cartoons) and **fires on three** (`1881 - Harry Wilcox` p2 and
+  p6, `1954 - Why` p4). The practical warning above still stands — it is unreliable on hand-made
+  marks in *both* directions, which is worse than blind.
 - **Nothing is wired.** `Sources/` is untouched by this sub-step; the seam a fix would use is either
   `textRegionMask` (admit the pixels) or the `pageIsAllText()` consequence (exempt the regions from
   the shrink), and the entry's own cheaper variant is the second.
@@ -6356,6 +6397,9 @@ the committed source and cross-checked — but do not reach for this tool again 
   by half can chain and drift. **So "blind to a hand-made mark by construction" is too strong** —
   what is measured is that it read 0 on the two such pages here. Four blobs of a broken pen stroke on
   a diagonal, ≤ 3 glyph-heights apart, is the case to try next.
+  ✅ **That case WAS tried, 2026-08-21, and it confirms this prediction** — a pen ornament fires 17 and
+  11 groups (`#### The same shape term on PICTURES`), so "too strong" becomes outright refuted. This
+  bullet is the reason to read a review's *predictions* and not only its corrections.
 - Smaller: the dumped `-textish.png`/`-lines.png` paint each accepted component's bounding box
   intersected with the map, so map ink from a *rejected* component inside that box is painted too —
   the positive control is a slight superset, in the direction that flatters the term; the per-page
@@ -6368,6 +6412,216 @@ the committed source and cross-checked — but do not reach for this tool again 
   sound in all three cases), `interiorWindow` is character-for-character `inkOutsideText`'s, the
   `row()`/`columns` discipline holds at 22 fields, and every early `continue` but the one above
   prints a full-width row.
+
+#### ⛔ The same shape term on PICTURES — it errs in BOTH directions over 10 pages, and two of its misses are pages whose content loss this register already measured — 2026-08-21
+
+**This is question 3b, the validation gap the previous section named rather than waved at.** The answer
+to "does it read 0 on a picture" is **no** — `lineN` is **≥ 1 on 6 of 10** picture pages, and not one of
+the six accepted groups is type. But the sharper result is the other direction: **it reads 0 on two
+pages whose loss C26 measured at 1:1**, which is the failure that costs content rather than bytes.
+Committed as **`SHAPETERM-PICTURES-2026-08-21.tsv`**, 10 measured rows plus one SKIP, the section
+above's 22 columns with `document` and `arm` prepended.
+
+##### How the ten pages were chosen, written down before the run
+
+Two arms, so that neither a sorted column nor this register's own labels chooses alone:
+
+- **Arm A — systematic.** The `verdict=picture` rows of `INKBAR-2026-08-19.tsv` sorted by `inkOut`
+  descending, top 8, capped at 3 pages per document. ⚠️ **The cap never bound** — the uncapped top 8 is
+  the identical list — so "one photo book cannot be the sample" describes a safeguard that did not
+  operate, and `Ibson_2006` still supplies 3 of the 10. Seven of the eight were measured; the first
+  **SKIPs** (see the instrument notes).
+- **Arm B — labelled by this project.** `1954 - Why` p4, p6 and p7, the three cartoons `C26` was opened
+  on and the only line drawings this campaign has read at 1:1. Their INKBAR `verdict` is `all-text`:
+  they were shrunk 8x until the 2026-08-19 bar move, and `#### The rendered proof on the founding pages`
+  measured all three losing their drawings at that shrink.
+
+⚠️ **Ten measured rows in FOUR documents** (`1954 - Why` 4, `Ibson_2006` 3, `Wilcox` 2, `Riesman - 1954`
+1); the fifth document contributed only the SKIP. ⛔ **And "10 picture pages" flatters the sample.** Of
+the ten: **3 are true photographic/halftone plates**, 2 are album openings carrying a pen ornament, 3
+are the arm-B cartoons (text pages with a drawing), and 2 are effectively blank sheets. On the class the
+previous section actually owed — a plate or halftone — the sample is **3 pages, of which 2 fire.**
+
+##### The table
+
+| page | what the out-of-stencil ink is | `inkOut` | `outPx` | `glyphN` | `txtShare` | `lineN` | `linePx` | `lineShare` | `topLine` |
+|---|---|---|---|---|---|---|---|---|---|
+| `1954 - Why` p4 † | cartoon — **loss measured** | 0.0540 | 5,983 | 2468 | 0.0742 | **1** | 59 | 0.0099 | `27x17+1121+685` |
+| `1954 - Why` p6 † | cartoon — **loss measured** | 0.0493 | 4,851 | 2013 | 0.0736 | **0** | 0 | 0.0000 | — |
+| `1954 - Why` p7 † | cartoon — **loss measured** | 0.0660 | 7,080 | 2255 | 0.1075 | **0** | 0 | 0.0000 | — |
+| `1954 - Why` p10 | near-blank back cover + show-through | 0.9735 | 1,353,270 | 7 | 0.0000 | **0** | 0 | 0.0000 | — |
+| `1881 - Harry Wilcox` p2 | pen-and-ink ornament | 0.9227 | 251,186 | 288 | 0.0401 | **17** | 1,694 | 0.0067 | `60x41+2771+1015` |
+| `1881 - Harry Wilcox` p6 | pen-and-ink ornament | 0.9773 | 364,895 | 70 | 0.0279 | **11** | 1,594 | 0.0044 | `78x33+1400+734` |
+| `Riesman - 1954` p2 | blank grey endpaper | 0.9446 | 2,389,079 | 85 | 0.0092 | **2** | 10,438 | 0.0044 | `444x154+366+3459` |
+| `Ibson_2006` p61 | halftone plate | 0.9515 | 2,254,516 | 393 | 0.0006 | **1** | 477 | 0.0002 | `74x29+1396+771` |
+| `Ibson_2006` p122 | photographic plate | 0.9949 | 359,906 | 68 | 0.0107 | **12** | 2,032 | 0.0056 | `202x48+84+873` |
+| `Ibson_2006` p162 | photographic plate | 0.9978 | 602,580 | 54 | 0.0005 | **0** | 0 | 0.0000 | — |
+
+† arm B. ⚠️ `linePx` is the total over *all* accepted groups on the page, not the `topLine` box: on
+`Riesman - 1954` p2 (`lineN` 2) a recount of the `444x154` rect holds 10,069 px of the 10,438.
+
+##### ⛔ The dangerous direction first: two false NEGATIVES on pages of measured loss
+
+`1954 - Why` p4, p6 and p7 all lose their drawings at 8x — measured at 1:1 on 2026-08-20, *"a grey
+smudge"*, *"an amorphous blur"*, *"every stroke is gone"* — and the term reads **1 / 0 / 0**. So on the
+three pages of this sample where content loss is a fact rather than a guess, it misses two. Counted in
+the map, over each page's own published drawing rect:
+
+| page | drawing rect | map px in it | of the page's `outPx` | `textish` px | accepted (`lines`) px |
+|---|---|---|---|---|---|
+| p4 | `254x240+970+595` | 5,757 | 96% of 5,983 | 477 | **59** |
+| p6 | `240x185+0+0` | 4,467 | 92% of 4,851 | 372 | **0** |
+| p7 | `260x250+925+540` | 7,057 | 100% of 7,080 | 785 | **0** |
+
+**So the drawing is essentially the whole out-of-stencil map on all three, `textish` accepts several
+hundred pixels of it on all three, and only p4 reaches four members on a shared baseline.** The
+mechanism is the *grouping* — `lineMinimumMembers = 4` and `lineGapFactor = 3.0` — not the
+component test. And p4's hit is **not a false positive**: `27x17+1121+685` lies inside
+`254x240+970+595`, so those 59 px are the cartoon. Under a wiring meant to protect content, firing
+there is the answer wanted.
+
+##### ⛔ And "blind to a hand-made mark by construction" is REFUTED, exactly where the last review predicted
+
+The previous section's own adversarial review already downgraded that claim to "too strong" and named
+the case to try next: *"four blobs of a broken pen stroke on a diagonal, ≤ 3 glyph-heights apart"*. This
+run is that case and it confirms the prediction — **17 and 11 accepted groups on a pen-and-ink
+ornament**, and 1 inside a cartoon. What is measured is narrower than either claim: the term reads 0 on
+**four** hand-made marks (`Riesman - 1954` p16's bracket, `Atkinson_1939` p3's signature, and
+`1954 - Why` p6 and p7's cartoons) and fires on **three** (`Wilcox` p2, `Wilcox` p6, `1954 - Why` p4).
+⚠️ The phrase survives uncorrected in `Tools/score-shape-term.swift`'s header and `Tools/README.md`;
+both are in the pre-commit suite regex, so they are owed on the next suite-paying commit alongside the
+settings blurb, and the `C28` queue box says so.
+
+##### What the six accepted groups actually are, read at 1:1
+
+⚠️ Every verdict here is a human reading a `magick -crop` of the run's own `-source.png` against its
+`-lines.png` at 1:1 in the same frame — no coordinate conversion and no `-normalize`, which is what
+makes it better than the four whole-page misreadings this entry already records, but it is an eye and
+not a number. **None is type.** Four are picture and two are threshold noise:
+
+- **Halftone screen.** `Ibson_2006` p61's single group is 477 px of the plate's own screen dots, in a
+  region whose grey render is flat tone with a visible dot grid and nothing else.
+- **Photograph grain.** `Ibson_2006` p122's twelve groups all sit *inside* the plate — a five-man track
+  team, printed inverted — and the thresholded grain of faces and collars is what the rule accepts.
+  ✅ **That page has a real caption line** (*"Figure 71. Studio portrait, 7½" × 9¼", five-man track team,
+  ca. 1890."*) which Vision recognised, so it is in the stencil: the caption's own rows hold **0** map
+  pixels and none of the twelve groups is on it. The whole-page `-lines.png` is the location control.
+- **Pen ornament.** `Wilcox` p2 (17 groups) and p6 (11) are a photographed album opening carrying a
+  calligraphic flourish; the accepted groups are the ornament's feather strokes. ⛔ **On p2 it is wrong
+  in both directions**: a `620x220+2180+540` crop of `-lines.png` over the ribbon's hand-lettered
+  copperplate *"Harry W. Wilcox"* holds **0** accepted pixels, while 1,694 land on the decoration
+  page-wide. ⚠️ That crop covers one of the page's **two** lettered ribbons and clips the tail of
+  "Wilcox"; the lower ribbon's window holds 305 px, which read against the source sit on its scalloped
+  border rather than on the word. So the direction is measured on one word, not on the page.
+- **Otsu speckle in a flat field.** `Riesman - 1954` p2's two groups total 10,438 px, the larger in a
+  `444x154` box whose `-source.png` is featureless grey — a photographed endpaper. That rect reads mean
+  **107.5**, standard deviation **2.88**, against a page Otsu of **107**: the field straddles the
+  threshold by ±3 grey levels, so the page-wide Otsu turns it into speckle and ≥ 4 specks tile a band.
+  This is the one firing page with nothing on it to lose.
+
+##### Four more scalars refused, two of them what an implementer would reach for first
+
+Sorted, over these ten pages:
+
+- **`glyphN`** interleaves: 2,468 fires and 2,255 does not; 68 fires and 54 does not. So **"the page has
+  too little recognised type to calibrate against" is NOT the mechanism**, however plausible it looks
+  beside `glyphH` reading 72 px on `1954 - Why` p10 and 5 px on `Wilcox` p2.
+- **`txtShare`** interleaves — the **highest** of the ten (`1954 - Why` p7, 0.1075) reads `lineN` 0,
+  and the firing pages occupy ranks 3, 4, 5, 6, 7 and 8 of 10. ⚠️ A draft of this bullet said it
+  "inverts at both ends"; it does not — the two **lowest** (`1954 - Why` p10 at 0.0000 and
+  `Ibson_2006` p162 at 0.0005) both read 0, and `Ibson_2006` p61 at 0.0006 is the third-lowest. The
+  refusal survives, the ordinal did not. Sixth refusal of a share.
+- **`linePx` in absolute pixels** interleaves against the previous section's labelled set: `Riesman -
+  1954` p2's 10,438 px of endpaper speckle exceeds the 7,533 px `Broadhead - 1994` p3's two genuinely
+  lost prose lines occupy (both are per-page `linePx` totals from the same tool).
+- **`topLine` width** interleaves too: 202 px here (`Ibson_2006` p122) against 95 px on
+  `Xin Qu et al_2018` p20. ⚠️ That 95-px group is **not** one of p20's thirteen matrix values — it sits
+  at x 115–210, y 276–287, disjoint from the register's own rect for them (`62x233+741+378`), and 95 px
+  cannot fit a 62-px column. What it is was not established; the run's dumps are gone.
+
+##### ⛔ The only column that separates is a SHARE — the family this entry has refused six times
+
+`lineShare` is the one column that does not interleave across both samples: **0.0002–0.0099** on the six
+firings here, **0.0000** on the six labelled non-losers, **0.2332–0.9937** on the six labelled
+type-losers, so a bar anywhere in (0.0099, 0.2332) — a **23.56x** gap — separates 22 of the 23 pages the
+term has now been run on. **It is recorded because it is what the columns do, NOT as a candidate**, and
+there are five reasons to leave it alone:
+
+1. **It is `txtShare` with a narrower numerator** — the identical denominator, the numerator narrowed
+   from `textish` pixels to line-accepted ones. `txtShare` is this entry's fifth refused scalar and is
+   refused again two subsections above. Anyone putting a bar on `lineShare` is implementing the seventh
+   share in a register that has refused six, and the 13-page section's own structural argument is
+   against the whole family: *"a share is a scalar … while `lineN` asks whether the marks tile a
+   baseline."*
+2. **It separates TYPE loss, not content loss.** The 23rd page is `Riesman - 1954` p16, a content-loser
+   reading `lineShare` **0.0000** — dropped out of the "22" above, which is why the denominator is
+   written as 23. Add `1954 - Why` p4/p6/p7 at 0.0099 / 0.0000 / 0.0000, all three measured losers, and
+   a bar in that window puts **four of the 23 known content-losers on the "nothing at risk" side**.
+3. **It was chosen after seeing the data**, unlike the five constants of the previous section — a fit,
+   not a rule.
+4. **The mechanism is the denominator.** Seven of the ten pages read `inkOut` > 0.9, so the map is
+   nearly the whole page and any numerator is a small share by construction. The page that sets the
+   0.0099 floor is `1954 - Why` p4, whose `outPx` is 5,983 — the smallest denominator among the pages
+   that *fire* (p6's 4,851 is smaller still and reads 0). The gap is held open by exactly the case that
+   stresses it.
+5. **The case a wiring would meet is not in the sample at all.** A plate or figure sitting in the map of
+   a page otherwise read as all text, *below* the bar, has zero pages here, and the corpus sweep offers
+   no other: every layered page of `Ibson_2006`, `Wilcox`, `Findlay_1992` and `Countryman - 2006` reads
+   `inkOut` > 0.4 (lowest `Wilcox` p5 at 0.4250, nine times the bar).
+
+##### What bounds the harm — under ONE of the two seams this entry names
+
+All ten pages are `barVerdict=picture` in `INKBAR-2026-08-19.tsv`, so **none is shrunk in production
+today**. A term wired as a second condition inside `pageIsAllText()`'s true branch
+(`inkOut < 0.045 AND lineN == 0`) is therefore never consulted on any of them, and the byte cost of
+these six firings is zero — ⚠️ **derived from the sweep's verdict column, not measured, because nothing
+is wired**, and on a margin of **1.10x**: the lowest `inkOut` of the ten is 0.0493 against the shipped
+0.045.
+
+⛔ **Under the OTHER seam the bound does not hold at all, and it is the seam question 3's own sentence
+names** — *"admit missed text into the stencil … what must not happen is the whole page entering the
+stencil, which is what `textRegionMask` exists to prevent"*. `textRegionMask` is called
+**unconditionally** on every layered page (`Sources/Flattener.swift:2696`, `let region =
+textRegionMask(...)` immediately after the Sauvola mask), picture-route pages included. So on these six
+pages a shape term feeding that function would admit halftone dots, photograph grain and pen strokes
+into the 1-bit JBIG2 stencil — R57's failure mode, and verbatim what that function's own comment exists
+to prevent. Nothing here prices it. **The stencil seam is now the more expensive of the two, and that is
+a result of this sub-step rather than a caveat on it.**
+
+⚠️ **And the absence argument that would bound the sub-bar population is over the wrong set.** "All 73
+sub-bar pages were rendered and no destroyed plate or halftone is among the 16 losers" does not say the
+73 carry no plates: **a plate can survive 8x** — this entry's own p6 finding is that an 8x blur keeps
+solid black while destroying every line — so a plate on a sub-bar page would never appear among the
+losers. The 57 non-losers were never inventoried for plates. **The population of sub-bar pages carrying
+a picture is unmeasured, not empty**, and that is what the 1.10x margin makes worth knowing.
+
+##### Instrument notes and controls
+
+- **`inkOut` reproduces `INKBAR-2026-08-19.tsv` on 10 of 10 rows**, digit for digit; the tool's own
+  `mapFrac == inkOut` identity held on all ten (exit 6 never fired, `rc=0` on all five invocations);
+  `stenFrac >= mapFrac` on all ten; `--self-test` passes its 5 checks on the exact binary that produced
+  the rows.
+- ⚠️ **The first cross-check of that reproduction read 0 of 10, and the instrument was wrong rather than
+  the tool**: the lookup keyed `"p" + page` against a column that already reads `p6`. §3, in a throwaway
+  script this time.
+- ⚠️ **The top row of `INKBAR` sorted by `inkOut` is a page with no recognised words at all.**
+  `Levy and Temin - 2007` p6 prints `inkOut` **1.0000** there, which is `inkOutsideText` being 1 by
+  degeneracy when `region` is empty; `score-shape-term` refuses it (`SKIP no words — mrcLayers refuses
+  this page too`). So a reader sorting that sweep by `inkOut` gets, at the top, a page the layering
+  decision never reaches, and arm A measured 7 pages rather than 8.
+- ⚠️ **A shell pixel count of `-lines.png` does not equal `linePx`, and the divergence is up to 1.32x**
+  — over the six firing pages `magick -threshold 50%` reads 1.000x (`Why` p4, 59/59), 1.05x (`Wilcox`
+  p2, 1784/1694), 1.11x, 1.13x, 1.14x and **1.32x** (`Riesman - 1954` p2, 13781/10438), worst on the
+  page the 10,438 figure comes from. Use the shell for "is anything accepted in this rect" — which is
+  how the 0-pixel lettering result above was obtained — never as a total.
+- ⚠️ **`1954 - Why` p10 was labelled "full-page photograph" in the first draft of this section and it is
+  not one**: `tone` 0.992 in the sweep invited the guess, and the render is a near-blank back cover
+  (mean 195.5, standard deviation 24.1) carrying a boxed "NFI" logo and heavy mirror-reversed
+  show-through — `glyphN` 7 at `glyphH` 72 is the logo. Caught by the adversarial review of this diff,
+  which read the crop. **A tone fraction is not a picture detector.**
+- No `Sources/` and no `Tools/` **code** change: nothing is wired, so no mutant and no
+  `fault-inject.sh` case is owed. The two `Tools/` documentation debts are named above. `testdocs/` was
+  read only; every artefact is under /tmp.
 
 #### What this entry is NOT
 

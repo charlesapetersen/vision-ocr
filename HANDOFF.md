@@ -341,14 +341,44 @@ the page's own type scale — component height and stroke width against the medi
 own* components, and four of them tiling a baseline make a line. Over 13 labelled pages the count is
 ≥ 1 on 6 of 6 pages that lose typeset content and 0 on 6 of 6 that lose nothing, and the crops say the
 largest group *is* the lost text: sub-step 1's two prose lines on `Broadhead - 1994` p3 and on
-`Jones et al_2010` p5, a named display line on `Scott_TK` p3, eleven of the thirteen matrix values on
-`Xin Qu` p20. So the answer to "is there a term at all" is yes, and it is the shape one R56's lesson
+`Jones et al_2010` p5, a named display line on `Scott_TK` p3, ten of the thirteen matrix values on
+`Xin Qu` p20 (this paragraph said *eleven*; the adversarial review of that same commit corrected the
+figure in `BUGS.md` and `CLAUDE.md` and this sentence was missed — three values fall under
+`lineMinimumMembers`: `0.09`, `0.04` and the diagonal `1`). So the answer to "is there a term at all" is yes, and it is the shape one R56's lesson
 predicted — the fifth scalar (`txtShare`) is refused in the same table, because a drawn bracket reads
-below a non-loser on its own scan. ⛔ **Two things that must travel with it.** The rule is **blind to a
-hand-made mark by construction** (measured 1 of 1; the campaign has 6), so anything built on it
-protects prose and table data and must say so rather than implying "content". And the sample contains
+below a non-loser on its own scan. ⛔ **Two things that must travel with it.** The rule reads **0 on
+this sample's hand-made mark** (2 of 2 after that commit's own review; the campaign has 6), so anything
+built on it protects prose and table data and must say so rather than implying "content" — ⛔ and it was
+published as blindness *by construction*, which the 3b run below **refutes**: 17 and 11 groups on a pen
+ornament, i.e. unreliable in both directions rather than blind. And the sample contains
 **no plate, halftone or line drawing at all**, so the second half of question 3's own sentence —
-*without admitting pictures* — is not measured; that is 3b. The same run also settled
+*without admitting pictures* — is not measured; that is 3b.
+⛔ **3b RAN 2026-08-21 AND THE TERM ERRS IN BOTH DIRECTIONS**
+(`SHAPETERM-PICTURES-2026-08-21.tsv`; two arms, the top of `INKBAR`'s `verdict=picture` rows by
+`inkOut` plus the three `1954 - Why` cartoons — ten measured rows in four documents). `lineN` ≥ 1 on
+**6 of 10** and none of the six accepted groups is type: halftone dots, photograph grain inside a plate
+whose caption Vision *did* recognise and which is therefore not among the twelve groups, a pen
+ornament's feather strokes, and 10,438 px of page-wide-Otsu speckle in a blank grey endpaper.
+⛔ **The half that matters more is that it reads 0 on TWO pages whose content loss is measured** —
+`1954 - Why` p6 and p7, C26's own founding cartoons, where the drawing is 92% and 100% of the page's
+out-of-stencil ink and `textish` accepts 372 and 785 px that never reach four members on a baseline. So
+the misses are the *grouping* constants, and p4's single group is a **hit** on its lost cartoon rather
+than a false positive. ⛔ **This also refutes "blind to a hand-made mark by construction"** — the term
+fires 17 and 11 groups on a pen ornament, which is precisely the case the previous review named as the
+one to try; measured, it reads 0 on four hand-made marks and fires on three. On `1881 - Harry Wilcox` p2
+it accepts **0** pixels of the hand-lettered "Harry W. Wilcox" while accepting 1,694 of the decoration
+beside it. Four further scalars interleave, `glyphN` among them, so "too little recognised type to
+calibrate on" is not the mechanism.
+✅ **What keeps this from sinking the idea** is that all ten pages are already `barVerdict=picture`, so
+a term wired as a second condition inside `pageIsAllText()`'s true branch is never consulted on them
+and costs zero bytes — derived from the sweep rather than measured, and on a **1.10x** margin (0.0493
+against 0.045), thin enough that the population of sub-bar pages carrying a picture is now the thing
+worth knowing (it is unmeasured, not empty: a plate can survive 8x, so it would never show up among the
+16 losers). ⛔ **And the bound covers only one of the two seams this entry names**: `textRegionMask` runs
+unconditionally on every layered page (`Flattener.swift:2696`), so under the seam question 3's own
+sentence describes those six pages would admit halftone dots into the 1-bit stencil — R57's failure
+mode, unpriced. `lineShare` separates 22 of the **23** pages run so far and is the **seventh share in a
+register that has refused six**; read the entry's section before building on it. The same run also settled
 `score-text-route`'s open instrument question (the shell map's 0.56x–16.0x spread against
 `inkOutsideText`): with `region` in hand rather than a dilated stencil the map **is** the guard's set,
 the stencil substitution inflates it 1.00x–3.17x, a 7x7 square stand-in for `Disk:3` correction lands

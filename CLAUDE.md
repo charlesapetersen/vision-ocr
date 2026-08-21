@@ -55,14 +55,45 @@ DID NOT** — `Tools/score-shape-term.swift` (new) counts **text lines** in the 
 recognised words at the page's own type scale, calibrating on the stencil's own components, and over 13
 labelled pages `lineN` is **≥ 1 on 6 of 6 pages that lose typeset content and 0 on 6 of 6 that lose
 nothing**. 12 of 13; the miss is the page whose loss is a hand-drawn bracket, which a rule calibrated
-on type is blind to by construction — so anything built on this protects prose and table data and
-leaves the campaign's 6 hand-made marks exactly where they are. Its five numbers are ratios rather
+on type reads 0 on — so anything built on this protects prose and table data and must say what it does
+about the campaign's 6 hand-made marks. ⛔ Published as blindness *by construction*, and refuted the
+same day by the picture run below: 17 and 11 groups on a pen ornament, so it is unreliable on hand-made
+marks in **both** directions rather than blind to them. Its five numbers are ratios rather
 than sizes, **written before any page was run and not adjusted after** (8 pages, then 5 held out).
 ⛔ **Not validated: 8 of the 73 plus 5 of the 16 C26's bar move rescued (so 5 of them are not degraded in production today), a labelled convenience sample, 4 of the 6 non-losers from one scan,
 and no plate, halftone or line drawing in it at all** — which is exactly the class `textRegionMask`
-exists to keep out, so "reads 0 on scanner edges" is not yet "reads 0 on a picture". ⚠️ Read `lineN`
+exists to keep out, so "reads 0 on scanner edges" was not yet "reads 0 on a picture" — **measured the
+same day, next paragraph, and it is not**. ⚠️ Read `lineN`
 and never the share: the drawn bracket's `txtShare` 0.0173 sits *below* a non-loser's 0.0500 on the
-same scan, which is the fifth scalar this entry has refused. ✅ It also settles
+same scan, which is the fifth scalar this entry has refused.
+⛔ **QUESTION 3b IS MEASURED 2026-08-21 AND THE TERM ERRS IN BOTH DIRECTIONS** — ten picture pages,
+`SHAPETERM-PICTURES-2026-08-21.tsv`. `lineN` is **≥ 1 on 6 of 10** and none of the six accepted groups
+is type: halftone dots, photograph grain inside a plate whose real caption Vision *did* recognise (12
+groups, none on the caption), a pen ornament's feather strokes (17 and 11), and 10,438 px of
+page-wide-Otsu speckle in a grey endpaper reading mean 107.5 / sd 2.88 against a page Otsu of 107.
+⛔ **The sharper half is the other direction — it reads 0 on TWO pages whose loss C26 measured at 1:1**:
+`1954 - Why` p6 and p7, whose cartoons are 92% and 100% of their out-of-stencil ink and give 372 and 785
+`textish` px that never reach four members on a baseline. The miss is the *grouping*
+(`lineMinimumMembers` / `lineGapFactor`), not the component test — and **p4's one group is a HIT on the
+lost cartoon**, `27x17+1121+685` inside the published `254x240+970+595`, not a false positive.
+⛔ **So "blind to a hand-made mark by construction" is REFUTED**: measured, 0 on four hand-made marks
+and firing on three, which is exactly the *"four blobs of a broken pen stroke"* case the last review
+predicted. ⚠️ That phrase survives in `Tools/score-shape-term.swift`'s header and `Tools/README.md` —
+both inside the pre-commit suite regex, so they are owed on the next suite-paying commit with the
+settings blurb. On `Wilcox` p2 the term is wrong both ways: 0 accepted pixels over the hand-lettered
+"Harry W. Wilcox", 1,694 on the decoration. Four more scalars refused (`glyphN` interleaves 2,468-fires
+against 2,255-does-not, so "too little recognised type to calibrate on" is **not** the mechanism;
+`txtShare` again; absolute `linePx` 10,438 beats a real 7,533; `topLine` width 202 beats a real 95).
+✅ **The bound holds for ONE of the two seams**: all ten are `barVerdict=picture`, so
+`inkOut < 0.045 AND lineN == 0` never consults the term on them and the byte cost is zero — *derived
+from the sweep's verdict column, not measured, because nothing is wired* — on a **1.10x** margin (0.0493
+against 0.045). ⛔ **Under `textRegionMask` there is no bound, and that is the seam question 3's own
+sentence names**: it runs unconditionally on every layered page (`Flattener.swift:2696`), so those six
+pages would admit halftone dots and pen strokes into the 1-bit stencil, which is R57's failure mode.
+⚠️ `lineShare` separates 22 of the **23** pages run so far (0.0002–0.0099 firing, 0.2332–0.9937 on
+type-losers, 23.56x) and is **the seventh share in a register that has refused six** — `txtShare` with a
+narrower numerator, post-hoc, denominator-driven, and it leaves **four known content-losers on the safe
+side**. ✅ It also settles
 `score-text-route`'s open instrument question, because it holds `region` itself so its map **is**
 `inkOutsideText`'s set (asserted every row, exit 6 otherwise; `inkOut` reproduced
 `INKBAR-2026-08-19.tsv` on all 13): the dumped stencil inflates the fraction **1.00x–3.17x**, the
@@ -424,7 +455,8 @@ Read its header before planning anything. Update it in the same commit as any fi
 Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2026-08-09.md`,
 `CORPUS-2026-08-15.md` + `.tsv` and `MRC-2026-08-15/`, plus the dated corpus sweeps
 `THRESHOLD-LOSS-2026-08-18.tsv`, `INKBAR-2026-08-19.tsv` and `SATFRAC-2026-08-19.tsv` (this list had
-omitted all three; the review of C27's sweep counted that as the third such omission) — and are
+omitted all three; the review of C27's sweep counted that as the third such omission), plus the
+targeted `GUTTER-CENSUS-2026-08-20.tsv` and `SHAPETERM-PICTURES-2026-08-21.tsv` — and are
 evidence for one run, not
 claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls
