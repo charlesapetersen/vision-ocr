@@ -314,7 +314,15 @@ the same commit as the work; a design-rationale file is the wrong place for a nu
 moving, and dated sub-step findings are what belongs here. The signal is still the best one available
 there and R50 is still `FIXED` — what is wrong is the justification, and the consequence
 is that marks the recogniser missed are stored at 1/8 on a page this signal calls all
-text. **The remaining prize is moving `isPicture` itself after
+text. ✅ **That consequence is REPORTED as of 2026-08-20 (`55b650b`)** — `MRCLayers.shrunkAsAllText`
+carries the decision and `OCRModel.shrunkTextPageSummary` names every page the shrink was applied to in
+the run log, which the run report copies. It reports what was DONE to the page rather than a verdict
+about its content, because of the 73 corpus pages that take the shrink 16 lose content and 57 do not,
+and no scalar term measured here separates them. The shrink itself is unchanged and `C28` stays open on
+its remaining questions. ⚠️ A first version of this paragraph — written in a session whose work was
+stranded and never landed — cited `OCRModel.textOnlyShrinkSummary`, which does not exist: that session
+and the one that finally landed the item implemented it under different names, so the paragraph was
+re-checked against the tree rather than copied. **The remaining prize is moving `isPicture` itself after
 recognition**, which is why it is now first in `TODO.md`.
 
 **The order of work, agreed with the owner 2026-08-13:**

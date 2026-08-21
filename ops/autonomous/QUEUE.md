@@ -907,6 +907,23 @@ happens.**
       (`TODO.md`) against an actual 1,127. Run `ops/autonomous/check-staleness.sh` for the current list,
       and fix the documents rather than the check. (origin: TODO.md, and CLAUDE.md's own confession that
       its status paragraph "read 'nothing open' for a day after four entries were opened")
+- [ ] **mrc-endtoend** — nothing in the suite runs a document end-to-end through `makeSearchablePDF` down
+      the MRC route. The three `.mrc` tests call `Flattener.mrcLayers` directly and assemble by hand, so
+      `Model.swift`'s whole adoption loop — the `after < before` guard, the JBIG2 encode-failure branch and
+      `shrunkTextPageSummary`'s wiring — has no end-to-end check. Pre-existing, and wider than the C28
+      report that surfaced it.
+      ⛔ **BOUND, and the owner's call 2026-08-20 was MEASURE FIRST rather than build-and-accept:**
+        1. Build the **smallest** page that `isPicture` routes to the picture path and `pageIsAllText()`
+           then accepts. The suite has the second half of that (`r50text`) and not the first, and
+           `Mode.grayscale` is refused by `canUseJBIG2` so it is not a shortcut.
+           `Tools/make-plate-fixtures.swift` is the precedent for generating one.
+        2. Record the suite duration from `$STATE/suite-timings.tsv` before and after, and report the delta.
+        3. Keep or revert on that number — that decision is the owner's, not a session's.
+      ⚠️ **Do NOT quote the outbox entry's "at least one more full layering plus a jbig2 and qpdf pass" as
+      the cost.** It is an estimate, and every duration estimate in this repo has turned out to be a
+      reading of the machine's load; a minimal fixture may cost seconds. Step 1 is one code commit and
+      therefore one suite run; steps 2-3 are free.
+      (context: BUGS.md C28 §"The report, SHIPPED", and the outbox entry drained 2026-08-20)
 - [ ] **tools-compile** — run `Tools/check-tools-compile.sh` over *every* tool, not just the staged ones,
       and REPORT what does not build. ⛔ **BOUND: the sweep and its report are ONE free commit; each tool
       you then fix is its own commit and its own suite run, so fix at most ONE per session and leave the
