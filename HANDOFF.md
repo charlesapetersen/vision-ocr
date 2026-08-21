@@ -404,8 +404,8 @@ usually running.
 links. Everything else is shipped, archived, or declined on measurement: deskew twice,
 columns once, per-page background factor twice, JPEG 2000 twice, and the refusals are
 *held* by checks rather than remembered (see "the engine's competence" below). The
-suite is at **836 checks** and it **needs nothing installed to run** — the mac-ocr
-dependency is gone.
+suite is at **1,196 checks** (measured 2026-08-21) and it **needs nothing installed
+to run** — the mac-ocr dependency is gone.
 
 **Two of this app's qualities are Vision's, not this codebase's**, and that is
 worth knowing before reading either refusal. `compose` never sorts, so reading

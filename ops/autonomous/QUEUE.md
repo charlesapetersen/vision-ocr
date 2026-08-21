@@ -402,6 +402,23 @@ happens.**
       renders (13 + 8 + 24 + 20 + 21), not by re-measuring. ⚠️ **This line said 21 / 12 / 10 while 45 pages
       had been read**, because sub-step 2's commit did not update it; if your sub-step renders pages,
       update this number in the same commit or the next reader inherits the same gap.
+      ⛔ **THE SETTINGS BLURB IS DECIDED, owner 2026-08-21, and it RIDES ALONG on your next commit that
+      runs the suite — do NOT make it a commit of its own.** `Sources/Prefs.swift`'s
+      `PhotoDetail.smallest` blurb loses the clause *"though nothing is lost from them"* and gains
+      NOTHING in its place, so the two lines become exactly:
+          return "Photographs keep a third of their resolution and look "
+               + "noticeably soft up close. Files are about a fifth the size."
+      The owner chose deletion over a caveat so the string cannot go stale again whichever way C28
+      lands — a warning about small print would itself need retracting if C28 is fixed. ⚠️ **Replace the
+      two-line "deliberately unchanged" comment beside it** rather than leaving it: it says the wording
+      is the owner's call and the honest wording depends on C28, and both halves of that are now spent.
+      Say instead that the clause was deleted on 2026-08-21 because p20 measured it false, and keep the
+      `BUGS.md` C28 pointer, so the next reader does not restore the promise as a "fix". ✅ **No check
+      asserts on it** — verified 2026-08-21 at the check-in, not inherited from the review: the suite
+      reads `Prefs.PhotoDetail` only through `rawValue` and `downsample`, and `Tests/main.swift`'s twelve
+      `blurb` references are all `Preset.blurb` and `Flattener.Mode.blurb`. ⚠️ `Sources/` is in the
+      pre-commit suite regex, so alone this one clause buys a 45-90 minute suite; this is the same call
+      the owner made on the two code comments above, and it discharges the last `## NEEDS OWNER` bullet.
       ✅ **The first sub-step is DONE 2026-08-20 — the 8 near-misses are rendered and 4 of the 8 lose
       content.** Do not re-run it; the sub-box below and the entry's
       `#### The eight near-misses, RENDERED` carry the table, the byte price and the method.
@@ -817,10 +834,11 @@ happens.**
       the copied file is named `main.swift`**: 19 `statements are not allowed at the top level` errors
       that look like a build problem, which is how all three mutants failed on the first attempt and
       would have counted as killed.
-      ⚠️ **Left for the owner**: `PhotoDetail.smallest`'s blurb promises photographs at a third
-      resolution *"look noticeably soft up close, though nothing is lost from them"*, which p20 makes
-      false. The string is unchanged — a settings-UI wording call — and `Sources/Prefs.swift` carries a
-      comment beside it.
+      ✅ **DECIDED by the owner 2026-08-21, so this is no longer left**: `PhotoDetail.smallest`'s blurb
+      promised photographs at a third resolution *"look noticeably soft up close, though nothing is lost
+      from them"*, which p20 makes false. The clause is DELETED and nothing replaces it; the exact
+      replacement text, the comment that goes with it and the reason it must ride a suite-paying commit
+      are in the `C28` box above, which is where the session doing it is already reading.
       (context: BUGS.md C28 `#### The same loss at 1/3, RENDERED over 16 of the 109`)
 - [x] **c28-shapeterm** — **DONE 2026-08-21. C28's question 3 has its first measurement and a shape term
       SEPARATES.** Do not re-run it. `Tools/score-shape-term.swift` is new: it drives production
@@ -1095,6 +1113,32 @@ happens.**
       (`TODO.md`) against an actual 1,127. Run `ops/autonomous/check-staleness.sh` for the current list,
       and fix the documents rather than the check. (origin: TODO.md, and CLAUDE.md's own confession that
       its status paragraph "read 'nothing open' for a day after four entries were opened")
+- [ ] **rescue-adopt** — a session that dies before it commits leaves its work in `$STATE/rescue/*.patch`,
+      and **nothing ever tells the next session to look**. `vision-ocr-autonomous.sh` writes the patch and
+      logs *"a later session can finish it, or rescue it by hand"*, but `resume-prompt.txt` contains no
+      occurrence of `rescue`, `stranded` or `orphan` — so the next session pulls `origin/main` into a fresh
+      `auto/<stamp>` worktree, reads a queue box the dead session never got to tick, and reimplements from
+      scratch. The log line is addressed to nobody.
+      ⚠️ **MEASURED 2026-08-21 at an owner check-in, not estimated**: `$STATE/rescue/` holds **four**
+      `SUPERSEDED-by-*` sets against five `LANDED-as-*`, and the fourth was filed that morning —
+      `vo-20260820-230443-5696`, 207 insertions adding an `MRC_BG=<factor>` knob to `score-text-route`,
+      superseded by `69ebf0e`'s `PHOTODETAIL=` two hours later. Its session died rc=1 at 23:35 with the
+      usage window, 26 minutes after its last file write. And the one orphan that WAS handled well,
+      `19f4131`, says in its own first line that it happened *"from an owner check-in"* — so the net only
+      discharges when the owner empties it, at roughly one duplicated session a night.
+      ⛔ **BOUND — write the paragraph, do not widen the daemon.** ONE paragraph in
+      `ops/autonomous/resume-prompt.txt`: before starting, check for a `$STATE/rescue/*.patch` not already
+      renamed `LANDED-as-*` / `SUPERSEDED-by-*`, and if there is one, do the **file-by-file supersession
+      check `19f4131` modelled** — that commit is the specification. ⛔ Adopt-or-delete on the strength of
+      "the item landed" is REFUSED: `55b650b` landed the same item by a different implementation and the
+      stranded copy still held a `HANDOFF.md` paragraph `main` genuinely lacked, whose cited symbol
+      (`OCRModel.textOnlyShrinkSummary`) does not exist on `main`. Copying is refused for the same reason.
+      ⚠️ **Both halves or neither**: `daemon.sh` renders the template into `$STATE/resume-prompt.txt` only
+      at `start`, so a repo-only edit does nothing to the running daemon — render it in and `mv` it
+      atomically, and keep the phrase *"autonomous maintenance session for Vision OCR"* verbatim, because
+      `daemon.sh stop`'s pkill matches on it.
+      ⚠️ Prompt-and-queue only, no `Sources/`, so **no suite** — one free commit.
+      (context: the rescue lines in `$STATE/daemon.log`, and `19f4131` as the worked example)
 - [ ] **mrc-endtoend** — nothing in the suite runs a document end-to-end through `makeSearchablePDF` down
       the MRC route. The three `.mrc` tests call `Flattener.mrcLayers` directly and assemble by hand, so
       `Model.swift`'s whole adoption loop — the `after < before` guard, the JBIG2 encode-failure branch and
