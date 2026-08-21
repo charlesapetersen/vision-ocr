@@ -319,7 +319,19 @@ carries the decision and `OCRModel.shrunkTextPageSummary` names every page the s
 the run log, which the run report copies. It reports what was DONE to the page rather than a verdict
 about its content, because of the 73 corpus pages that take the shrink 16 lose content and 57 do not,
 and no scalar term measured here separates them. The shrink itself is unchanged and `C28` stays open on
-its remaining questions. ⚠️ A first version of this paragraph — written in a session whose work was
+its remaining questions — **which as of 2026-08-21 are 3 and 4 only, because question 2 closed**: the
+same loss does not reproduce at 1/2 (16 pages, 2026-08-20) and **does at 1/3** (the same 16, 2026-08-21)
+— `Xin Qu et al_2018` p20's correlation matrix is legible in the 460 px background Balanced gives it and
+unreadable in the 307 px one `PhotoDetail.smallest` gives it, two more pages degrade and five read
+clean. ⛔ **And the term that orders that population is the page's own rebuild resolution, not
+`inkOut`**: the loser has the smallest source render of the sixteen and ranks eighth of sixteen on a
+1/2-against-1/3 difference map, so that scalar is refused too — a fourth refused scalar in this area.
+Smallest costs 0.6465x the bytes of Balanced over the sixteen while **the page that loses content saves
+the LEAST of them**, which is C28's "the same bar overpays" in a second mechanism.
+`PHOTODETAIL=` on `Tools/score-text-route.swift` is the seam that made any of it measurable: before it
+the tool could only measure the default, and its self-test now pins the fact that the default *is*
+Balanced — something every row of `INKBAR-2026-08-19.tsv` silently depends on and nothing in the tree
+stated. ⚠️ A first version of this paragraph — written in a session whose work was
 stranded and never landed — cited `OCRModel.textOnlyShrinkSummary`, which does not exist: that session
 and the one that finally landed the item implemented it under different names, so the paragraph was
 re-checked against the tree rather than copied. **The remaining prize is moving `isPicture` itself after

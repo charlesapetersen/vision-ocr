@@ -192,10 +192,38 @@
 //   INKBAR=0.08 /tmp/score-text-route "<pdf>"    # + the priced columns; inkOut in [0.045,0.08)
 //   INKBAR=0.08 INKDUMP=/tmp/look /tmp/score-text-route "<pdf>" 4
 //   INKBAR=0.02 INKDUMP=/tmp/look /tmp/score-text-route "<pdf>" 3   # a page BELOW the bar
+//   PHOTODETAIL=smallest INKDUMP=/tmp/look /tmp/score-text-route "<pdf>" 3   # C28 2b
 //   (0.045 in both until 2026-08-19, when it became the shipped bar and started
 //    exiting 2 — see the ⛔ paragraph above)
 //
-// Exit codes: 1 unreadable PDF, 2 a refused `INKBAR`/`INKDUMP`, 3 no jbig2,
+// **`PHOTODETAIL=maximum|balanced|smallest` is C28 question 2b**, added 2026-08-21. It
+// substitutes that setting's `downsample` for the `backgroundDownsample` argument, which is
+// the one argument `Model.swift`'s production call site varies — the foreground stays at
+// `mrcForegroundDownsample` (4) at *every* setting, so this does not touch it either. The
+// default is `balanced`, and that is not a choice: `PhotoDetail.balanced.downsample` and
+// `Flattener.mrcBackgroundDownsample` are both **2**, so every row this tool printed before
+// this variable existed — the whole of `INKBAR-2026-08-19.tsv` — is a Balanced row. The
+// self-test below goes red if those two constants ever stop agreeing, because otherwise
+// that stops being true silently.
+//
+// ⚠️ **`PHOTODETAIL` does NOT change what an all-text page is stored at.** `bgFactor` is
+// `max(caller, 8)` and `fgFactor` is `max(caller, 16)`, so Smallest's 3 and Balanced's 2
+// both lose to 8 — measured 2026-08-21, the two backgrounds of an all-text page are
+// **byte-identical** at the two settings. This variable reaches the pages the bar reads as
+// *pictures* and nothing else, which is what bounds question 2b to those.
+//
+// ⛔ **`PHOTODETAIL=maximum` with `INKBAR` set is REFUSED (exit 2).** At a factor of 1
+// `keepEveryPixel` short-circuits `pageIsAllText()` before any bar is read, so no bar can
+// move any page: every row would print `barDelta same` and every `INKDUMP` pair would be
+// byte-identical — the same false negative as `INKBAR=0.08` on a page below the shipped
+// bar, arriving through a different door.
+//
+// ⚠️ **Two settings dumped into one `INKDUMP` directory would overwrite each other**, and a
+// 1/2-against-1/3 comparison is exactly two runs over one page. Non-default settings add
+// `-d<factor>` to every dumped filename; Balanced adds nothing, because it is the same
+// measurement the tool has always made and a suffix would make one run look like two.
+//
+// Exit codes: 1 unreadable PDF, 2 a refused `INKBAR`/`INKDUMP`/`PHOTODETAIL`, 3 no jbig2,
 // **4 an INKDUMP that did not write everything it promised** — the totals are still
 // printed and still valid on a 4, because only the dump failed — and 5 a failed
 // self-test, which measures nothing. `Tools/sweep-ink-bar.py` treats 2 and 3 as
@@ -259,6 +287,41 @@ func isolate(_ index: Int) -> URL? {
     return one.write(to: url) ? url : nil
 }
 
+/// C28 question 2b. Which Photo detail setting to measure, as the background
+/// downsample factor it resolves to.
+///
+/// An environment variable for `INKBAR`'s reason — every trailing argument is a page
+/// number, so a `--detail` flag would be silently swallowed by `compactMap { Int($0) }`
+/// and the tool would measure the default while reporting a clean run.
+///
+/// ⛔ **The factor comes from `Prefs.PhotoDetail.downsample`, never from a literal
+/// here.** A tool that writes its own `3` is a second copy of shipped arithmetic — T15's
+/// shape — and this same file already had to repair one of those in `allText` (see the
+/// `keepEveryPixel` note beside it). The self-test below also pins the claim that makes
+/// every historical row of this tool comparable: the *default* argument
+/// `Flattener.mrcBackgroundDownsample` and `PhotoDetail.balanced.downsample` are the same
+/// number, so every measurement this tool has ever printed is a Balanced measurement. If
+/// either constant moves, that stops being true silently, and the check goes red instead.
+///
+/// ⛔ **Only `backgroundDownsample` is passed on, because only that is what the app
+/// passes.** `Model.swift`'s single production call site leaves `foregroundDownsample` at
+/// `Flattener.mrcForegroundDownsample` (4) at *every* setting, so a seam that scaled the
+/// foreground to match would measure a configuration no user can reach. The foreground
+/// still moves on an all-text page — `max(4, 16)` — and that is the shipped rule doing it,
+/// not this variable.
+let photoBackgroundDownsample: Int = {
+    guard let raw = ProcessInfo.processInfo.environment["PHOTODETAIL"], !raw.isEmpty
+    else { return Flattener.mrcBackgroundDownsample }
+    guard let detail = Prefs.PhotoDetail(rawValue: raw) else {
+        FileHandle.standardError.write(Data(
+            ("PHOTODETAIL=\(raw) is not a Photo detail setting; wanted one of "
+             + Prefs.PhotoDetail.allCases.map(\.rawValue).joined(separator: ", ")
+             + "\n").utf8))
+        exit(2)
+    }
+    return detail.downsample
+}()
+
 /// C26 sub-step 3. A second bar on `inkOutsideText` to price, or `nil` for none.
 ///
 /// An environment variable rather than an argument, because the trailing arguments
@@ -277,6 +340,19 @@ let priceBar: Double? = {
     if bar == Flattener.textPageInkOutsideThreshold {
         FileHandle.standardError.write(Data(
             "INKBAR equals the shipped bar, so there is nothing to compare\n".utf8))
+        exit(2)
+    }
+    // C28 question 2b. The same refusal one door along, and the same reason: at
+    // `PhotoDetail.maximum` the factor is 1, `keepEveryPixel` short-circuits
+    // `pageIsAllText()` before the bar is ever read, and *no* bar can move *any* page.
+    // Every row would print `barDelta same` and an `INKDUMP` pair would be byte-identical
+    // on every page — which reads as "the bar costs nothing / this page loses nothing",
+    // and that false negative is the one this file's header already records twice
+    // (`INKBAR=0.08` on a page below the shipped bar, compared against itself).
+    if photoBackgroundDownsample <= 1 {
+        FileHandle.standardError.write(Data(
+            ("PHOTODETAIL=maximum keeps every pixel, so no INKBAR can move any page — "
+             + "every row would print `same`; refusing rather than measuring nothing\n").utf8))
         exit(2)
     }
     return bar
@@ -345,6 +421,22 @@ func dumpExitCode(asked: Bool, dumpable: Int, wrote: Int, missing: Int) -> Int32
     return (missing > 0 || (dumpable > 0 && wrote == 0)) ? 4 : 0
 }
 
+/// C28 question 2b. What `PHOTODETAIL` adds to every dumped filename.
+///
+/// ⛔ **This exists because two Photo detail settings dumped into one directory would
+/// overwrite each other silently.** That is not hypothetical: the same failure already
+/// happened in this block once, when the stem carried no document name and nine
+/// invocations sharing one `<dir>` overwrote two pairs while counting both and exiting 0
+/// (see the note at the dump site). A comparison of 1/2 against 1/3 is *exactly* two runs
+/// over one page, so it is the first thing 2b would have hit.
+///
+/// Empty at the default, deliberately: `PHOTODETAIL=balanced` resolves to the same factor
+/// the tool has always used, so it is the same measurement and gets the same names. A
+/// suffix there would make one measurement look like two.
+func detailSuffix(factor: Int) -> String {
+    factor == Flattener.mrcBackgroundDownsample ? "" : "-d\(factor)"
+}
+
 // Runs on every invocation, `score-mrc` and `score-threshold-loss`'s pattern. Cheap
 // enough to be unconditional, and the point of it is the FOURTH row: a run that wrote
 // nothing and lost nothing is the silent failure, and it is the one a reader would
@@ -363,6 +455,47 @@ for (asked, dumpable, wrote, missing, want) in [
         ("score-text-route: self-test failed on (asked: \(asked), dumpable: \(dumpable), "
          + "wrote: \(wrote), missing: \(missing)) — wanted \(want), got "
          + "\(dumpExitCode(asked: asked, dumpable: dumpable, wrote: wrote, missing: missing)); "
+         + "measuring nothing\n").utf8))
+    exit(5)
+}
+
+// C28 question 2b, the same shape for the Photo detail seam. Three claims, none of which
+// a reader of a dumped directory can check by looking at it:
+//
+//  (a) **the tool's default IS Balanced.** Every row this tool has printed since it was
+//      written is a Balanced measurement, and the whole of `INKBAR-2026-08-19.tsv`
+//      depends on it. It holds only while two constants in two files agree, and nothing
+//      else in the tree says so.
+//  (b) Maximum is the factor that trips `keepEveryPixel`, which is what the `INKBAR`
+//      refusal above keys on. Written as `<= 1` there and pinned as `== 1` here.
+//  (c) the suffix is empty at the default and distinct otherwise — the overwrite guard.
+if Prefs.PhotoDetail.balanced.downsample != Flattener.mrcBackgroundDownsample {
+    FileHandle.standardError.write(Data(
+        ("score-text-route: self-test failed — PhotoDetail.balanced is "
+         + "\(Prefs.PhotoDetail.balanced.downsample) and mrcBackgroundDownsample is "
+         + "\(Flattener.mrcBackgroundDownsample), so this tool's default is no longer the "
+         + "Balanced setting and every row it has ever printed means something else; "
+         + "measuring nothing\n").utf8))
+    exit(5)
+}
+if Prefs.PhotoDetail.maximum.downsample != 1 {
+    FileHandle.standardError.write(Data(
+        ("score-text-route: self-test failed — PhotoDetail.maximum is "
+         + "\(Prefs.PhotoDetail.maximum.downsample), not 1, so it no longer trips "
+         + "`keepEveryPixel` and the INKBAR refusal above guards the wrong setting; "
+         + "measuring nothing\n").utf8))
+    exit(5)
+}
+for (factor, want) in [
+    (Flattener.mrcBackgroundDownsample, ""),        // the default: no suffix, same names
+    (Prefs.PhotoDetail.balanced.downsample, ""),    // …and Balanced is that same run
+    (Prefs.PhotoDetail.smallest.downsample, "-d3"), // 2b's own setting
+    (Prefs.PhotoDetail.maximum.downsample, "-d1"),
+] where detailSuffix(factor: factor) != want {
+    FileHandle.standardError.write(Data(
+        ("score-text-route: self-test failed — detailSuffix(factor: \(factor)) is "
+         + "\"\(detailSuffix(factor: factor))\", wanted \"\(want)\"; two Photo detail "
+         + "settings could overwrite each other in one INKDUMP directory; "
          + "measuring nothing\n").utf8))
     exit(5)
 }
@@ -524,8 +657,15 @@ for index in pages {
     // what that does to the corpus figure is not measured. Found by the review of this
     // diff, which was right that "no number moves" was a claim about one document.
     //
-    // The third condition, `keepEveryPixel`, is deliberately not mirrored: it belongs
-    // to the caller's Photo detail, and this tool measures the default.
+    // The third condition, `keepEveryPixel`, IS mirrored as of C28 question 2b, and it
+    // was not before. It did not have to be while this tool always measured the default
+    // factor of 2 — the guard is `backgroundDownsample <= 1`, which that can never be.
+    // `PHOTODETAIL=maximum` makes it 1, and an unmirrored replica would then print
+    // `all-text` in the `verdict` column, and count the page into the
+    // `allTextLayered`/`allTextBilevel` aggregate, over a page production keeps every
+    // pixel of. CONTRIBUTING 4b again, and in the same expression it was found in before:
+    // a replica of a shipped guard missing a clause, made reachable by a new seam rather
+    // than by an edit to the guard.
     //
     // `extent` is hoisted to a `let` because C26's priced bar needs the same value
     // for both verdicts. Only the first term moves with `INKBAR`, so computing the
@@ -534,11 +674,13 @@ for index in pages {
                                                            threshold: threshold, dpi: dpi),
                                        dpi: dpi).extent
     let noPaleDrawing = extent <= Flattener.paleDrawingThreshold
-    let allText = inkOut < Flattener.textPageInkOutsideThreshold && noPaleDrawing
+    let keepEveryPixel = photoBackgroundDownsample <= 1
+    let allText = !keepEveryPixel
+        && inkOut < Flattener.textPageInkOutsideThreshold && noPaleDrawing
     // C26. The same page against the bar being priced. A *lower* bar can only take
     // pages off the shrink, but the sign is not assumed: `INKBAR` above the shipped
     // value is legal and prices the other direction.
-    let allTextAtBar = priceBar.map { inkOut < $0 && noPaleDrawing }
+    let allTextAtBar = priceBar.map { !keepEveryPixel && inkOut < $0 && noPaleDrawing }
 
     // --- layered, exactly as it ships ---
     var layered = 0, stencilBytes = 0, shippedBackgroundWidth = 0
@@ -550,7 +692,9 @@ for index in pages {
     var shippedLayers: Flattener.MRCLayers?
     if !boxes.isEmpty,
        let layers = Flattener.mrcLayers(for: page, boxes: boxes, into: work,
-                                       stem: "m\(index)", inColour: isColour) {
+                                       stem: "m\(index)",
+                                       backgroundDownsample: photoBackgroundDownsample,
+                                       inColour: isColour) {
         // Assigned OUTSIDE the encode guard, deliberately: an external `jbig2` failing has
         // nothing to do with whether `mrcLayers` wrote its three files, and inside the guard
         // a failed encode collapsed the dump to one grey PNG while still reporting "written
@@ -588,7 +732,9 @@ for index in pages {
     if let bar = priceBar, stencilBytes > 0 {
         Flattener.textPageInkOutsideThresholdOverride = bar
         if let layers = Flattener.mrcLayers(for: page, boxes: boxes, into: work,
-                                           stem: "mb\(index)", inColour: isColour) {
+                                           stem: "mb\(index)",
+                                           backgroundDownsample: photoBackgroundDownsample,
+                                           inColour: isColour) {
             barBackgroundWidth = layers.backgroundWidth
             barLayers = layers
             var barStencil = stencilBytes
@@ -629,6 +775,7 @@ for index in pages {
         // `score-mrc`'s `MRC_DUMP` already prefixed its label; caught by the adversarial
         // review of this diff.
         let stem = "\(src.deletingPathExtension().lastPathComponent.prefix(40))-p\(index)"
+            + detailSuffix(factor: photoBackgroundDownsample)
         var promised: [(String, () -> Data?)] = [
             ("\(stem)-source.png", { Flattener.greyPNG(grey, width: w, height: h) })
         ]
@@ -667,7 +814,8 @@ for index in pages {
               + "MISSING \(missing.joined(separator: " "))"
         FileHandle.standardError.write(Data(
             ("INKDUMP p\(index): \(note); background \(shippedBackgroundWidth)px shipped"
-             + " vs \(barBackgroundWidth)px at the bar\n").utf8))
+             + " vs \(barBackgroundWidth)px at the bar, at background downsample "
+             + "\(photoBackgroundDownsample)x\n").utf8))
         if missing.isEmpty { dumpedPages += 1 } else { dumpMissing += missing.count }
     }
 
@@ -739,6 +887,15 @@ for index in pages {
 }
 
 print("")
+// C28 question 2b. In the prose block, not the header row: `sweep-ink-bar.py` stops
+// parsing at the blank line above, and a line added *before* the header is header drift
+// to it. Printed unconditionally, including at the default — an output that does not name
+// its own Photo detail is what made "this tool measures the default" a sentence in a
+// comment rather than a fact in the run, and every row of `INKBAR-2026-08-19.tsv` was
+// produced before there was any way to vary it.
+print("Photo detail: \(Prefs.PhotoDetail.allCases.first { $0.downsample == photoBackgroundDownsample }?.label ?? "?")"
+      + " — background downsample \(photoBackgroundDownsample)x, foreground "
+      + "\(Flattener.mrcForegroundDownsample)x (the app varies only the background)")
 guard counted > 0 else { print("no picture-route pages measured"); finish() }
 print("\(counted) picture-route pages: layered \(totalLayered) B, 1-bit \(totalBilevel) B, "
       + String(format: "delta %+d B (%.0f B/page)",

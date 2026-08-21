@@ -55,10 +55,31 @@ bar does *not* read as all text keep the caller's factor, which on the default P
 sixteen of them were rendered and read at 1:1, ten beside a 1/8 reference on the same rect, and **no
 content loss was found at 1/2 in any window read** — including on the two pages where the same ink WAS
 destroyed at 1/8 before the 2026-08-19 bar move. So this defect
-stays bounded to the 73 pages at 8x/16x instead of widening to 182, and the entry's guess ("degraded
-but legible") is now measured on the default rather than assumed. ⛔ **`PhotoDetail.smallest`'s factor
-of 3 is still unmeasured** — `score-text-route` measures the default — and 16 of 109 is a sample (all 6
-of the sub-bar pages, 2 of the 16 rescued, 8 of the other 87), read **one window a page**.
+stays bounded to the 73 pages at 8x/16x **on the default setting** instead of widening to 182, and the
+entry's guess ("degraded but legible") is now measured on the default rather than assumed. 16 of 109 is
+a sample (all 6 of the sub-bar pages, 2 of the 16 rescued, 8 of the other 87), read **one window a
+page**.
+⛔ **QUESTION 2'S 1/3 HALF IS MEASURED 2026-08-21 AND IT DOES REPRODUCE — so question 2 is CLOSED and
+what remains of C28 is questions 3 and 4.** `PHOTODETAIL=maximum|balanced|smallest` was added to
+`Tools/score-text-route.swift` (which had no way to vary the factor at all), the 16 pages C26's bar
+move *rescued* were rendered at `PhotoDetail.smallest` too, and **`Xin Qu et al_2018` p20 loses the
+correlation matrix's last column** — thirteen values legible in a 460 px background and unreadable in
+the 307 px one, at zoom 8 `−0.130*` reading `−#.1##*`. Two more are degraded and still legible
+(`_1973_CAR` p4's unrecognised prose lines; `Jones et al_2010` p12's table rule, darkest pixel 25 → 56
+→ 136 against paper at ~250) and five read clean — all three `1954 - Why` cartoons, `Riesman - 1954`
+p16's pen bracket, and a whole line of unrecognised typescript on `Atkinson_1939` p2. ⛔ **The term that
+orders this population is the page's own rebuild resolution, not `inkOut` and not a difference map**:
+the loser has the smallest source render of the sixteen (921 px) and ranks *eighth of sixteen* on the
+1/2-against-1/3 difference, so that scalar is refused the way the out-of-stencil pixel count was.
+⚠️ **A draft of that sub-step was on course to conclude "no loss at 1/3" off its first five pages**, all
+of which are clean; picking the sixth by narrowness rather than by `inkOut` overturned it. Smallest
+costs **0.6465x** the bytes of Balanced over the sixteen, and **the page that loses content saves the
+LEAST** (17,705 B against 240,578 B on a page whose only out-of-stencil ink is a scanner edge).
+✅ An all-text page is **byte-identical** at both settings, measured — `max(3,8)` is `max(2,8)` — which
+is what bounds this to the 109 rather than the 182. ⚠️ And `PhotoDetail.smallest`'s user-facing blurb
+says photographs at a third resolution *"look noticeably soft up close, though nothing is lost from
+them"*, which that page makes false; the string is deliberately unchanged (owner's call) and
+`Sources/Prefs.swift` now carries a comment beside it.
 ⛔ **AND THAT SUB-STEP'S OWN DRAFT TRIED TO RETRACT A CORRECT CLAIM OF THIS CAMPAIGN'S IN SIX PLACES,
 and the adversarial review of its diff refuted it from the same page** — it measured stencil ink in one
 rect of `Xin Qu et al_2018` p20's matrix (top-left, 0.98x, stencilled), concluded "thirteen values" was

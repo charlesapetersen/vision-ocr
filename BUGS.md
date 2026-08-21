@@ -72,15 +72,33 @@ pages rendered, 24 losing content, 18 type and 6 hand-made.**
 ink outside the recognised words stored at an eighth**, with that page's own fraction beside it, on
 the success path only and with **no bar on the fraction**: the four sub-steps proved the losers and
 the non-losers interleave when sorted by it, and one measured loser prints `0.0000`, so any filter
-would drop a page known to lose content. C28 stays OPEN on questions 3 and 4 and half of 2 — a shape
-term, the price of widening, and the same loss at **1/3**. ⛔ The report is a report and not a fix: it says
+would drop a page known to lose content. C28 stays OPEN on questions 3 and 4 — a shape term and the
+price of widening. ⛔ The report is a report and not a fix: it says
 which pages were degraded, it does not stop them being degraded.
 ✅ **Question 2's 1/2 half is MEASURED 2026-08-20 and the loss does NOT reproduce there** — 16 of the
 109 layered pages the bar does not read as all text were rendered and read at 1:1, ten of them beside a
 1/8 reference on the same rect, and **no content loss was found at 1/2 in any window read**, including
 on the two pages where the same ink WAS destroyed at 1/8 before the 2026-08-19 bar move. That bounds this entry to the 73 pages at
-8x/16x rather than 182. ⛔ **`PhotoDetail.smallest`'s factor of 3 is not measured**, 16 of 109 is a
-sample, and the base is **one window a page**. ⛔ **And that sub-step's own draft tried to RETRACT a
+8x/16x rather than 182 **on the default setting** — see the next paragraph, which is why that
+qualifier is now there. 16 of 109 is a
+sample, and the base is **one window a page**.
+⛔ **QUESTION 2'S 1/3 HALF IS MEASURED 2026-08-21 AND IT DOES REPRODUCE.** `PHOTODETAIL=` was added to
+`Tools/score-text-route.swift` (the tool measured the default and had no way to vary it), the same 16
+pages were rendered at `PhotoDetail.smallest` as well, and **`Xin Qu et al_2018` p20 loses the
+correlation matrix's last column** — thirteen values legible at a 460 px background and unreadable at
+307 px, at zoom 8 `−0.130*` reading `−#.1##*`. Two more are degraded and legible (`_1973_CAR` p4's
+prose lines; `Jones et al_2010` p12's table rule, darkest pixel 25 → 56 → 136 against paper at ~250)
+and five read clean, including all three `1954 - Why` cartoons and `Riesman - 1954` p16's pen bracket.
+⛔ **The term that orders it is the page's own rebuild resolution, not `inkOut` and not a difference
+map** — the loser has the smallest source render of the sixteen and ranks eighth of sixteen on the
+1/2-against-1/3 difference, so that scalar is refused. ⚠️ **A draft of that sub-step was on course to
+conclude "no loss at 1/3" off its first five pages**, all of which are clean; choosing the sixth by
+narrowness rather than by `inkOut` overturned it. Smallest costs **0.6465x** the bytes of Balanced over
+the sixteen and **the page that loses content saves the LEAST of them** (17,705 B, against
+240,578 B on a page whose only out-of-stencil ink is a scanner edge). ✅ An all-text page is
+byte-identical at both settings, measured — `max(3,8)` is `max(2,8)` — which is what bounds this to the
+109 rather than the 182.
+⛔ **And that sub-step's own draft tried to RETRACT a
 correct claim of this campaign's in six places — the adversarial review of its diff refuted it from the
 same page.** It read one rect of `Xin Qu et al_2018` p20's matrix (top-left values, stencil-over-source
 ink 0.98x — stencilled) and concluded "thirteen values" was misattributed; the matrix's **last** column
@@ -4373,7 +4391,9 @@ first measurement. ⛔ Those sections correct this entry's own instrument line �
 `#### What is not known`, below. `INKBAR=0.08` compares these pages **with themselves** and reads as
 "loses nothing"; and for **25 of the 73** — measured over all four sub-steps, not the 27 that print
 `0.0000` — there is **no legal `INKBAR` at all**, so the override seam cannot price them and the
-measurement is a stencil-versus-ink map instead.)*
+measurement is a stencil-versus-ink map instead. **Question 2 closed 2026-08-21**: 1/2 does not
+reproduce the loss and **1/3 does**, on one page of sixteen —
+`#### The same loss at 1/3, RENDERED over 16 of the 109`. Only questions 3 and 4 are open now.)*
 
 **⛔ READ `C26` FIRST**, two sections of it in particular: `#### Sub-step 4, the benefit` is the
 evidence for everything below, and `#### The constant moved` is what shipped on 2026-08-19. **This is
@@ -5485,17 +5505,32 @@ has nothing at all to say (this one).
    cannot see pale pencil on a shadowed sheet and missed a real loss an `-lat 25x25-8%` map finds**,
    `Disk:0` is radius 4 rather than the identity, and a connected-component rect off the
    interior-cropped map is in a different coordinate frame from one off the whole map.
-2. ✅ **HALF ANSWERED 2026-08-20 — at 1/2 it does NOT reproduce, measured over 16 of the 109; 1/3 is
-   still unmeasured.** The population is **109 of the 182 sampled** layered pages at the shipped bar,
+2. ✅ **ANSWERED IN BOTH HALVES. At 1/2 it does NOT reproduce (2026-08-20, 16 of the 109); at 1/3 it
+   DOES (2026-08-21, 16 of the 109) — one page loses thirteen numbers.** The 1/3 half is
+   `#### The same loss at 1/3, RENDERED over 16 of the 109`: `Xin Qu et al_2018` p20's correlation
+   matrix, legible at a 460 px background and unreadable at 307 px, and it is the page with the
+   **smallest source render** of the sixteen. Two more are degraded and legible (`_1973_CAR` p4's
+   prose, `Jones et al_2010` p12's table rule at 56 → 136 darkest against paper at ~250) and five read
+   clean, the three `1954 - Why` cartoons among them. ⛔ **So the term that orders this population is
+   the page's own rebuild resolution, not `inkOut` and not a difference scalar** — `Xin Qu` p20 ranks
+   eighth of sixteen on the 1/2-against-1/3 difference and first on narrowness. Over the sixteen,
+   Smallest costs **0.6465x** the bytes of Balanced, and **the one page that loses content saves the
+   LEAST** (17,705 B against 240,578 B on a page whose only out-of-stencil ink is a scanner
+   edge). ✅ And the reason this is 16 of the **109** and not of the 182: an all-text page is
+   byte-identical at the two settings, measured, because `max(3, 8)` is `max(2, 8)`. What is left under
+   this heading is a rate rather than an existence claim, and `PhotoDetail.smallest` is now measurable
+   at all only because `PHOTODETAIL=` exists — see that section's seam subsection.
+   The population is **109 of the 182 sampled** layered pages at the shipped bar,
    up from 93 before it — recomputed from the committed sweep, not quoted. The confinement is identical
    there; only the factor differs, and on the DEFAULT Photo detail that factor is **2**. Sixteen were
    rendered and read at 1:1, ten of them beside a 1/8 reference on the same rect, and **no content loss
    was found at 1/2 in any window read** — including on the two pages where the same ink WAS destroyed
    at 1/8 before the 2026-08-19 bar move. So the expected finding — "degraded but
    legible" — holds at the default, and this entry stays bounded to the 8x case on 73 pages rather than
-   widening to 182. ⛔ **`PhotoDetail.smallest`'s factor of 3 is not measured**: `score-text-route`
-   measures the default, so that half is open; the base is **one window a page**; and 16 of 109 is a
-   sample. The section
+   widening to 182. ⚠️ **That last clause is narrower than it sounds now that 1/3 is measured**: at
+   `PhotoDetail.smallest` one of those 109 pages loses content outright, so "bounded to the 73" is a
+   statement about the DEFAULT setting and not about the app. The base is **one window a page**; and 16
+   of 109 is a sample. The section
    `#### The same loss at 1/2, RENDERED over 16 of the 109` is the measurement — and it also
    re-confirms the `Xin Qu et al_2018` p20 finding, whose thirteen values are the matrix's last column,
    outside the stencil, and a smear at 1/8.
@@ -5804,6 +5839,180 @@ section got wrong.
   upscaled with `-filter Triangle`, and not against the published composite; that is exactly the gap
   the ghost trap lives in. `Triangle` is bilinear and approximates a viewer's smoothing — it was not
   verified against any viewer.
+
+#### The same loss at 1/3, RENDERED over 16 of the 109 — question 2b is ANSWERED and it DOES reproduce: one page loses thirteen numbers, and the term that predicts it is the page's own resolution — MEASURED 2026-08-21
+
+**Question 2's other half. At `PhotoDetail.smallest` the caller's factor is 3, and on one of the sixteen
+pages read the content that survives at 1/2 is destroyed at 1/3.** So 2b is not the 1/2 result again:
+`#### The same loss at 1/2` found nothing over sixteen pages and this finds one, on the same failure
+class (type the recogniser never boxed) and by eye at 1:1 on the same instrument.
+
+⛔ **`Xin Qu et al_2018` p20 loses the correlation matrix's last column at Smallest and keeps it at
+Balanced.** Source render 921x1382; background **460 px at 1/2** and **307 px at 1/3**. Over the rect
+`80x120+738+375`, seven of the thirteen values are in view — `1`, `−0.130*`, `0.221**`, `−0.137*`,
+`0.045`, `0.024`, `−0.106` — and every one of them is legible at 1/2 and unreadable at 1/3: at zoom 8
+`−0.130*` reads `−#.1##*`, the `0` after the minus sign is a solid blob and `30` does not resolve into
+two glyphs. A reader cannot recover the number. **This is the same thirteen values C26 sub-step 4 found
+destroyed at 1/8** — so on this page the shrink is destructive at 1/8 *and* at 1/3, and safe only at
+1/2, which is one step of the setting.
+
+⚠️ **AND THE FIRST FIVE PAGES READ SAID THE OPPOSITE.** The drawings on `1954 - Why` p4, p6 and p7 (the
+three pages C26 was opened on) are whole and legible at 1/3 — softer, with the bookshelf hatching
+muddier, no line lost; `Riesman - 1954` p16's hand-drawn pen bracket and its two tick marks are
+continuous and unbroken at 1/3, on the page whose same mark is *"broken into blobs"* at 1/8; and
+`Atkinson_1939` p2 keeps a **whole line of unrecognised typescript** — *"…ard meeting of September 11th
+Mr.Scheuch said to four people,who have af…"*, ink that exists only in the background — fully readable
+at 1/3. A draft of this section was on course to conclude "no loss at 1/3, only softening" off those
+five. What overturned it was choosing the next page by **source resolution** rather than by `inkOut`:
+`Xin Qu` p20 has the smallest source render of the sixteen and it is the one that loses.
+
+**The term that orders this population is the page's own rebuild resolution, not `inkOut`.** The sixteen
+span 921 px to 5,129 px of source width, and at 1/3 their backgrounds span 307 px to 1,709 px. The
+loser is the narrowest of the sixteen on both counts, and the two pages that come next — `1944_Options
+picking up` p1 (1,208 px) and `Jones et al_2010` p12 (1,240 px) — are the two that show degradation
+short of loss. That is a **third** signal class for this entry to weigh, and unlike `inkOut` it is
+already computed: `Flattener.rebuildDPI(of:)`. Untested as a bar; one page is not a calibration.
+
+**Two more of the sixteen are degraded and still legible, which is a different verdict and is kept
+separate.**
+
+- `_1973_Committee Against Racism_` p4 — the page that loses **seven lines of prose** at 1/8. At 1/3
+  those lines are readable: *"…f these studies have revealed that blacks achieve better in an integrated
+  environme…"* and *"…segregation by law, there is a burden on the PLAINTIFFS to show that racially
+  unba…"* survive as mushy but recoverable type, visibly worse than at 1/2. Read over two windows,
+  `620x48+180+268` and `620x40+180+912`. It is also the page with the **largest** 1/2-against-1/3
+  difference of the sixteen (1.25% of its pixels), which is a second reason a difference scalar cannot
+  be the verdict: the biggest difference is not the loss.
+- `Jones et al_2010` p12 — a table rule, continuous at both factors and **paler at 1/3**. Measured over
+  `1029x10+106+206` after upsampling both backgrounds to the source's pixel size: the darkest pixel of
+  the rule reads **25 in the source, 56 at 1/2 and 136 at 1/3** against paper at ~250, so it keeps
+  about 60% of the contrast 1/2 keeps. Nothing is broken; the line is thinner and greyer.
+
+**Five read clean, one is a scan artefact, and three windows said nothing.** The five clean are the
+three `1954 - Why` cartoons, `Riesman - 1954` p16's bracket and `Atkinson_1939` p2's typescript line.
+`1954 - Why` p7's full-width `1224x10` band at y=886 is the **sheet edge**, not a printed rule, and it
+fades at 1/3 — `RIESMAN_1942` p10's shape, and not content. Three windows chosen off the
+out-of-stencil map turned out to hold no out-of-stencil content at all and are recorded under the
+instrument facts below rather than as verdicts.
+
+##### What it costs, and the sharp part
+
+Over all sixteen, at the same `layered` column the byte questions in this entry use:
+
+| | 1/2 (Balanced) | 1/3 (Smallest) | delta | ratio |
+|---|---|---|---|---|
+| 16 rescued pages | 3,804,222 B | 2,459,319 B | −1,344,903 B | **0.6465x** |
+
+⛔ **The page that loses thirteen numbers saves 17,705 B — the smallest saving of the sixteen —
+while `RIESMAN_1942` p10, whose only out-of-stencil ink is a pale scanner-edge strip, saves 240,578 B.**
+That is `#### And the same bar overpays` in a second mechanism: the setting's cost and its harm are
+anti-correlated, because both track how much *tone* a page has rather than what is in it.
+⚠️ **This section's first draft said "second-smallest", in six places across five files.** Sorting the
+sixteen savings ascending gives 17,705 / 21,384 / 22,330 / 23,203 / 28,408 …, so it is the smallest: the
+rank was written before the column was sorted. Corrected in all six. An ordinal is a claim about a
+sorted list, and this one had not been sorted.
+
+✅ **Negative control on the population, and it is why this is 16 of the 109 rather than 16 of the 182.**
+`PHOTODETAIL` cannot reach an all-text page at all: `bgFactor` is `max(caller, 8)` and `fgFactor` is
+`max(caller, 16)`, so 3 loses to 8 exactly as 2 does. Measured on `Guilford_Psychometric Methods` p1
+(one of the 73): **all four dumped files byte-identical** at Balanced and Smallest — background 115 px
+both, of a 920 px source, which is 8x — and the `layered` column reads 29,174 B on both rows. So
+`PhotoDetail.smallest` changes nothing about the 73 pages this entry is otherwise about, and everything
+above is a statement about the 109 the bar reads as pictures.
+
+✅ **Negative control on the byte column.** The 1/2 total, 3,804,222 B, reproduces
+`INKBAR-2026-08-19.tsv`'s committed figure for these same sixteen pages *digit for digit* — the
+`838,569 -> 3,804,222 B` in `#### What C26's fix left behind`. That is what says these are the sixteen
+pages the sweep named and that the tool's byte column has not drifted.
+
+##### The seam this needed, and the three checks under it
+
+`Tools/score-text-route.swift` measured the **default** factor and had no way to vary it; the queue box
+said working that out was the first part of 2b, not the renders. `PHOTODETAIL=maximum|balanced|smallest`
+now substitutes that setting's `Prefs.PhotoDetail.downsample` for the `backgroundDownsample` argument.
+Four decisions in it, each for a reason already paid for somewhere in this register:
+
+1. **The factor comes from `Prefs.PhotoDetail.downsample`, never a literal** — T15 is what a second copy
+   of shipped arithmetic costs, and this same file had already had to repair one in `allText`.
+2. **Only the background is passed on.** `Model.swift`'s single production call site leaves
+   `foregroundDownsample` at `mrcForegroundDownsample` (4) at *every* setting, so a seam that scaled
+   both would measure a configuration no user can reach.
+3. **`PHOTODETAIL=maximum` with `INKBAR` set is refused, exit 2.** At a factor of 1 `keepEveryPixel`
+   short-circuits `pageIsAllText()` before any bar is read, so no bar moves any page: every row would
+   print `barDelta same` and every `INKDUMP` pair would be byte-identical. That is the same false
+   negative as `INKBAR=0.08` on a page below the shipped bar, through a different door.
+4. **Non-default settings suffix every dumped filename `-d<factor>`.** Two settings dumped into one
+   directory would overwrite each other, and a 1/2-against-1/3 comparison is *exactly* two runs over one
+   page — the failure this dump block already had once, when the stem carried no document name.
+
+And the replica of the shipped guard in that file now mirrors **`keepEveryPixel`** as well as both terms
+of `pageIsAllText()`. It did not have to before, because a factor of 2 can never make
+`backgroundDownsample <= 1` true; `PHOTODETAIL=maximum` makes it reachable, and without the mirror the
+`verdict` column would print `all-text` — and count the page into the `allTextLayered` aggregate — over
+a page production keeps every pixel of. CONTRIBUTING 4b in the same expression it was found in before.
+
+**Three self-test checks, and all three were watched failing** (`rc=5`, each naming its own check):
+
+| mutant | check that objected |
+|---|---|
+| `detailSuffix` always empty | `detailSuffix(factor: 3) is "", wanted "-d3"` |
+| `PhotoDetail.balanced` → 4 | `balanced is 4 and mrcBackgroundDownsample is 2, so this tool's default is no longer the Balanced setting` |
+| `PhotoDetail.maximum` → 2 | `maximum is 2, not 1, so it no longer trips keepEveryPixel` |
+
+The middle one is the load-bearing one: **every row this tool has ever printed, including all 2,129 of
+`INKBAR-2026-08-19.tsv`, is a Balanced row**, and that is true only while `PhotoDetail.balanced.downsample`
+and `Flattener.mrcBackgroundDownsample` are both 2. Nothing else in the tree said so. Both refusals were
+also executed: `PHOTODETAIL=bogus` and `PHOTODETAIL=maximum INKBAR=0.02` each exit 2 with their reason.
+
+##### Instrument facts, all measured 2026-08-21
+
+- ⛔ **The out-of-stencil map's largest component is a scan artefact more often than it is content.** Of
+  the pages driven through it here, it returned **fingertips** on `Broadhead - 1994` p8 (the operator's
+  thumbs holding the book, 12k of the interior map's 15,442 px), the **gutter shadow** on
+  `Riesman - 1954` p16 — which is how p16's actual pen bracket was nearly missed — page **edges** on
+  `Riesman - 1954` p8 and p18 (p8's whole-page Otsu saturates: one component covering 1952x2592), and
+  `fillHoles` **ghost residue** on `1944_Options picking up` p1, whose top component (8,271 px) is a
+  window holding no out-of-stencil ink at all. It found real content only on `Atkinson_1939` p2 and
+  `_1973_CAR` p4, and on p4 only after a `Close Octagon:3` + `Dilate Rectangle:9x1` to join letters into
+  lines — at `area-threshold=150` and no closing, that page's 21,655 white px produced **no component at
+  all**, because unrecognised prose is scattered letter-blobs. Locate lines, not letters.
+- ⚠️ **A 1/2-against-1/3 difference map is a pointer and not a verdict, and it has no calibrated
+  loser.** Differencing the two *backgrounds* (not a background against the source) does cancel most of
+  the ghost, and it ranks: `_1973_CAR` p4 1.2527%, `1954 - Why` p7 0.7028%, `1944_Options` p1 0.6599%,
+  down to `Riesman - 1954` p16 0.0088%. But the top of that ranking is the page that stays **legible**
+  and `Xin Qu` p20 — the only page that loses content — ranks **eighth of sixteen at 0.1825%**. So the
+  scalar is refused for the same reason the out-of-stencil pixel count was refused in sub-step 2: it
+  does not order the verdicts. Kept as a locator only.
+- ⚠️ **The upscale filter here is ImageMagick's `-resize` default, not `-filter Triangle`** as
+  `#### The same loss at 1/2` used. Lanczos preserves more apparent detail than bilinear, so it is the
+  *kinder* of the two to the downsampled image — which cuts in favour of the `Xin Qu` verdict and
+  against the five clean ones. Neither was checked against a real viewer.
+- ⚠️ `magick montage` dies with `unable to read font ''` on this machine, so the side-by-side and
+  stacked crops are `+append` / `-append` with a red separator bar instead of labelled tiles. A labelled
+  montage is not available here.
+- ⛔ **swiftc rejects this tool unless the copied file is named `main.swift`** — top-level statements are
+  a `main.swift` privilege, and under any other name it prints 19 `statements are not allowed at the top
+  level` errors that look like a build problem and nothing like a mutation. All three mutants failed
+  that way on the first attempt, which would have counted as three checks killed by a build failure
+  that has nothing to do with them.
+- ⚠️ **Two concurrent `swiftc` runs writing one output produce `input file … was modified during the
+  build`**, and a `&` inside a tool call is killed when the call returns while the harness's own
+  backgrounding is not. Build detached through the harness, once.
+
+##### What 2b leaves
+
+- **One page is not a calibration.** The claim proved is existence — the loss reproduces at 1/3 — not a
+  rate. 16 of 109, and the sixteen were chosen as C26's *rescued* set (all-text at 0.08, picture at
+  0.045), which selects for pages carrying unrecognised type. That is the right sample for the failure
+  class and the wrong one for a population estimate.
+- **`Flattener.rebuildDPI(of:)` as the ordering term is untested.** It ranks these sixteen correctly and
+  it is already computed on every page. A bar on it would be a fourth signal class in this entry, and
+  R56's lesson says a threshold on a scalar is where this entry has been refused twice already.
+- ⚠️ **`PhotoDetail.smallest`'s user-facing blurb says photographs at a third of their resolution
+  *"look noticeably soft up close, though nothing is lost from them"*.** On `Xin Qu et al_2018` p20 that
+  is measured false — not of a photograph, but of the prose and figures this entry shows end up in the
+  photo layer. The string is untouched: it is a settings-UI wording decision and it belongs to the
+  owner. `Sources/Prefs.swift` now carries a comment beside it pointing here.
 
 #### What this entry is NOT
 

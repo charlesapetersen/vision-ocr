@@ -435,11 +435,16 @@ happens.**
       at 8x/16x rather than 182.
       ⚠️ **The base is one window a page** (six got a second, two more were re-read by the review), so
       widening a window is what strengthens it, not adding pages.
-      **So questions 1 and 5 are answered, question 2 is half answered, and what is left is** —
-      **2b** (the same loss at **1/3**, i.e. `PhotoDetail.smallest`; `score-text-route` measures the
-      DEFAULT, so a session needs a way to set the tool's Photo detail before it can render this at
-      all — that is the first thing to work out, not the renders), 3 (a shape term
-      that admits missed text without admitting pictures — R56's lesson in a third place), 4 (the byte
+      ✅ **Question 2's 1/3 HALF IS DONE 2026-08-21 and it DOES reproduce**, which closes question 2. Do
+      not re-run it; the `c28-thirdres` sub-box below and the entry's
+      `#### The same loss at 1/3, RENDERED over 16 of the 109` carry the table, the two negative
+      controls, the byte price and five instrument facts. **1 of 16 loses content** (`Xin Qu et al_2018`
+      p20's correlation matrix, 460 px legible and 307 px not), 2 degrade and 5 read clean — and the
+      term that orders them is the page's **own rebuild resolution**, not `inkOut`. `PHOTODETAIL=` on
+      `Tools/score-text-route.swift` is the seam it needed.
+      **So questions 1, 2 and 5 are answered, and what is left is** —
+      **3** (a shape term
+      that admits missed text without admitting pictures — R56's lesson in a third place), **4** (the byte
       price of widening, and do not quote T15's 1.33x as the page-level figure).
       ⛔ **AND ONE PROCESS WARNING WORTH MORE THAN THE MEASUREMENT: a draft of `c28-halfres` tried to
       RETRACT a correct claim of this campaign's, in six places, and the adversarial review of its diff
@@ -742,7 +747,66 @@ happens.**
       match is a check that cannot fail.
       ⛔ **What is NOT done: 1/3.** `PhotoDetail.smallest` is the factor-3 case and `score-text-route`
       measures the default, so nothing here says what Smallest does; that is the parent box's **2b**.
-      And 16 of 109 is a sample, stated as one.
+      And 16 of 109 is a sample, stated as one. ✅ **1/3 IS DONE 2026-08-21 — see `c28-thirdres` below,
+      and it DOES reproduce**, which disturbs nothing measured here.
+- [x] **c28-thirdres** — **DONE 2026-08-21, and it CLOSES C28's question 2.** The second half of
+      question 2: does the loss reproduce at **1/3**, `PhotoDetail.smallest`? **Yes, on 1 of 16 pages.**
+      ⛔ **`Xin Qu et al_2018` p20 loses the correlation matrix's last column** — thirteen values legible
+      in the 460 px background Balanced gives it and unreadable in Smallest's 307 px one; at zoom 8
+      `−0.130*` reads `−#.1##*`, the `0` a solid blob and `30` not resolving into two glyphs. Same
+      thirteen values C26 sub-step 4 found destroyed at 1/8, so that page is destructive at 1/8 **and**
+      at 1/3 and safe only at 1/2 — one step of the setting. Two more of the sixteen are **degraded and
+      still legible** (`_1973_CAR` p4's unrecognised prose lines over two windows; `Jones et al_2010`
+      p12's table rule, darkest pixel 25 in the source → 56 at 1/2 → 136 at 1/3 against paper at ~250,
+      continuous throughout) and five read clean — the three `1954 - Why` cartoons whole, `Riesman - 1954`
+      p16's pen bracket and both tick marks unbroken, and a **whole line of unrecognised typescript** on
+      `Atkinson_1939` p2 fully readable.
+      ⛔ **THE HEADLINE IS THE ORDERING TERM: it is the page's own rebuild resolution, not `inkOut` and
+      not a difference scalar.** The sixteen span 921–5,129 px of source width; the loser is the
+      narrowest, and the next two narrowest (`1944_Options` p1 at 1,208, `Jones` p12 at 1,240) are the
+      two that degrade. `Flattener.rebuildDPI(of:)` already computes it on every page. Untested as a bar
+      — one page is not a calibration — and it would be this entry's fourth signal class.
+      ⚠️ **AND A DRAFT OF THIS SUB-STEP WAS ON COURSE TO CONCLUDE "NO LOSS AT 1/3" OFF ITS FIRST FIVE
+      PAGES**, every one of which is clean. What overturned it was choosing the sixth page by narrowness
+      instead of by `inkOut`. If you extend this, sort by source width.
+      **Byte price**: over the sixteen, 3,804,222 B at 1/2 → 2,459,319 B at 1/3, **−1,344,903 B,
+      0.6465x** — and ⛔ **the page that loses content saves 17,705 B, the LEAST of the sixteen**,
+      while `RIESMAN_1942` p10, whose only out-of-stencil ink is a pale scanner-edge strip, saves
+      240,578 B. Cost and harm are anti-correlated, which is `#### And the same bar overpays` again.
+      ✅ **Two negative controls.** (1) An all-text page is **byte-identical** at the two settings —
+      `Guilford_Psychometric Methods` p1, all four dumped files identical, background 115 px both of a
+      920 px source, `layered` 29,174 B on both rows — because `bgFactor` is `max(caller, 8)`. That is
+      what bounds this to the 109 rather than the 182. (2) The 1/2 total reproduces
+      `INKBAR-2026-08-19.tsv`'s committed `838,569 -> 3,804,222 B` for these same sixteen pages digit
+      for digit.
+      **The seam**: `PHOTODETAIL=maximum|balanced|smallest` on `Tools/score-text-route.swift`, from
+      `Prefs.PhotoDetail.downsample` and never a literal; **background only**, because `Model.swift`
+      leaves `foregroundDownsample` at 4 at every setting; `PHOTODETAIL=maximum` **with `INKBAR` exits
+      2** (`keepEveryPixel` makes every bar inert, so every row would print `same`); non-default
+      settings suffix dumped filenames `-d<factor>` so two settings in one directory cannot overwrite
+      each other; and the file's replica of the shipped guard now mirrors `keepEveryPixel` too, which it
+      did not need to while the factor was always 2. **Three self-test checks, all three watched
+      failing** — the load-bearing one pins `PhotoDetail.balanced.downsample == mrcBackgroundDownsample`,
+      i.e. that **every row this tool has ever printed, all 2,129 of `INKBAR-2026-08-19.tsv`, is a
+      Balanced row**. Nothing else in the tree said so.
+      ⚠️ **Instrument facts, and the out-of-stencil map is worse than the last sub-step recorded**: its
+      largest component was a **scan artefact on 5 of the pages tried** — fingertips holding the book
+      open (`Broadhead - 1994` p8), the gutter shadow (`Riesman - 1954` p16, which nearly cost that
+      page's verdict), page edges (p8, p18), `fillHoles` ghost residue (`1944_Options` p1) — and on
+      `_1973_CAR` p4 it found **no component at all** at `area-threshold=150` until a
+      `Close Octagon:3` + `Dilate Rectangle:9x1` joined letters into lines, because unrecognised prose
+      is scattered letter-blobs. **Locate lines, not letters.** A 1/2-against-1/3 difference map is a
+      usable **locator** and a refused **verdict**: it ranks `_1973_CAR` p4 top at 1.2527% (legible) and
+      the only real loser eighth of sixteen at 0.1825%. `magick montage` dies with
+      `unable to read font ''` here — use `+append`/`-append`. And ⛔ **swiftc rejects this tool unless
+      the copied file is named `main.swift`**: 19 `statements are not allowed at the top level` errors
+      that look like a build problem, which is how all three mutants failed on the first attempt and
+      would have counted as killed.
+      ⚠️ **Left for the owner**: `PhotoDetail.smallest`'s blurb promises photographs at a third
+      resolution *"look noticeably soft up close, though nothing is lost from them"*, which p20 makes
+      false. The string is unchanged — a settings-UI wording call — and `Sources/Prefs.swift` carries a
+      comment beside it.
+      (context: BUGS.md C28 `#### The same loss at 1/3, RENDERED over 16 of the 109`)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,
