@@ -2302,6 +2302,38 @@ enum Flattener {
         /// dictionary has to agree: a three-channel JPEG declared /DeviceGray
         /// draws as noise, and nothing reports it.
         var isColour = false
+        /// C28. True when `pageIsAllText()` accepted this page, so the all-text rule
+        /// raised both tone-layer factors to 8 and 16.
+        ///
+        /// **This is the lossy case, and it is carried out of here so that something
+        /// can say so.** The stencil holds only what Vision boxed (`textRegionMask`),
+        /// so ink the recogniser missed lives in the background alone — and on an
+        /// accepted page the background is stored at an eighth. Measured over the
+        /// whole population 2026-08-20: **16 of the 73 corpus pages the shipped bar
+        /// still accepts lose content**, 11 of them running prose or table data.
+        /// Invariant 1's second half is that a path which can drop a line must report
+        /// it, and until this field existed nothing downstream could.
+        ///
+        /// The caller's factor is a floor (`max`), so on every shipped Photo detail
+        /// this being true means the factors really rose — Balanced's 2 and Smallest's
+        /// 3 both become 8, and Maximum's 1 never reaches the rule at all.
+        var shrunkAsAllText = false
+        /// The `inkOutsideText` fraction that decision was taken on, or `nil` when it
+        /// was never asked.
+        ///
+        /// `nil` is `PhotoDetail.maximum`: `keepEveryPixel` short-circuits the whole
+        /// guard, deliberately, so that a page nobody is going to shrink does not pay
+        /// a histogram pass over up to 100 megapixels. Reporting the number must not
+        /// be the thing that reintroduces that cost, and a `nil` here is what says it
+        /// did not.
+        ///
+        /// ⛔ **Do not read this as "how much is at risk".** Sorted by it, the pages
+        /// that lose content and the pages that do not INTERLEAVE — measured over all
+        /// 73 — and one of the two losers in the last sub-step reads `0.0000`
+        /// (`_1939_Former students` p2, a pencilled annotation). It is worth printing
+        /// beside a page and worthless as a filter, which is why the caller names
+        /// every accepted page instead of thresholding on it.
+        var inkOutsideText: Double? = nil
     }
 
     /// Peak bytes per pixel while layering a *colour* page.
@@ -2704,15 +2736,22 @@ enum Flattener {
         // full histogram pass over up to 100 megapixels for a value that
         // `PhotoDetail.maximum` never reads — found by the review of this diff.
         let keepEveryPixel = backgroundDownsample <= 1
+        // C28. Kept so the layers can carry it out to a caller that reports the page.
+        // Assigned inside the closure rather than hoisted for the reason the paragraph
+        // above gives: at `PhotoDetail.maximum` the closure is never called, and this
+        // stays `nil` — which is the difference between reporting the decision and
+        // paying for a decision nobody takes.
+        var measuredInkOutside: Double?
         func pageIsAllText() -> Bool {
             let pageThreshold = otsuThreshold(of: grey)
             // C26. The bar is substitutable so a tool can price a different one; `nil`
             // means "the shipped bar", not "refuse the page", and every other term of
             // this guard is untouched. See `textPageInkOutsideThresholdOverride`.
             let bar = textPageInkOutsideThresholdOverride ?? textPageInkOutsideThreshold
-            guard inkOutsideText(grey, region: region, width: w, height: h,
-                                 threshold: pageThreshold) < bar
-            else { return false }
+            let outside = inkOutsideText(grey, region: region, width: w, height: h,
+                                         threshold: pageThreshold)
+            measuredInkOutside = outside
+            guard outside < bar else { return false }
             return paleDrawing(pageMarks(grey, width: w, height: h,
                                          threshold: pageThreshold, dpi: dpi),
                                dpi: dpi).extent <= paleDrawingThreshold
@@ -2801,7 +2840,9 @@ enum Flattener {
         return MRCLayers(mask: maskURL, background: bgURL, foreground: fgURL,
                          backgroundWidth: bw, backgroundHeight: bh,
                          foregroundWidth: fw, foregroundHeight: fh,
-                         isColour: inColour)
+                         isColour: inColour,
+                         shrunkAsAllText: allText,
+                         inkOutsideText: measuredInkOutside)
     }
 
     // MARK: - Resolution

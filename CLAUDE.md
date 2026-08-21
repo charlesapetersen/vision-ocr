@@ -43,8 +43,15 @@ queue's `paledraw-term` triage item, and unmeasured. ⛔ **`C28` IS WHAT THAT FI
 the 1-bit stencil is the *intersection* of the page's ink with Vision's word boxes
 (`textRegionMask`, one production call site), so prose the recogniser missed is in neither the stencil
 nor the text layer and survives only in a background stored at 1/8 on a page read as all text —
-7 of the 13 pages C26 rendered lose whole lines of running prose or table data that way, and nothing
-reports it. Eight more of the 73 were rendered 2026-08-20 (`78de7a2`) and 4 of the 8 lose content;
+7 of the 13 pages C26 rendered lose whole lines of running prose or table data that way. ✅ **Something
+reports it as of 2026-08-20** — that was the entry's question 5, invariant 1's other half, and it is
+`FIXED`: the run report names every page published with the ink outside the recognised words stored at
+an eighth, with that page's own fraction beside it, on the success path only and with **no bar on the
+fraction** (the campaign proved the losers and non-losers interleave when sorted by it, and one
+measured loser prints `0.0000`, so any filter drops a known loser). ⛔ It is a report and not a fix —
+the pages are still degraded, and C28 stays OPEN on questions 2, 3 and 4.
+**Back to the campaign:** eight more of the 73 beyond C26's thirteen were rendered 2026-08-20
+(`78de7a2`) and 4 of the 8 lose content;
 24 more the same day (`6818a0e`) and 2 of those; 20 more the same day (`72b866e`) and **8 of those
 20**; and ✅ **the last 21 the same day and 2 of those — so ALL 73 ARE READ and 16 of the 73 lose
 content**, 11 of them type and 5 a hand-made mark. The campaign stands at **86 pages rendered, 24

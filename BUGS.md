@@ -68,7 +68,14 @@ anyway); the page with the **highest** out-of-stencil ink fraction of the 21 —
 stencil's Sauvola mask does not; and that same global Otsu **misses** pale pencil on a shadowed
 photographed sheet, which is how p2's loss was nearly filed as "nothing". **The campaign total is 86
 pages rendered, 24 losing content, 18 type and 6 hand-made.**
-⚠️ **And the recipe C28 gave for this render was a false negative** — `INKBAR=0.08` compares a
+✅ **C28's question 5 is FIXED 2026-08-20 — the run report now names every page it published with the
+ink outside the recognised words stored at an eighth**, with that page's own fraction beside it, on
+the success path only and with **no bar on the fraction**: the four sub-steps proved the losers and
+the non-losers interleave when sorted by it, and one measured loser prints `0.0000`, so any filter
+would drop a page known to lose content. C28 stays OPEN on questions 2, 3 and 4 — the same loss at
+1/2 and 1/3, a shape term, and the price of widening. ⛔ The report is a report and not a fix: it says
+which pages were degraded, it does not stop them being degraded.
+⚠️ **And the recipe C28 gave for the sub-step renders was a false negative** — `INKBAR=0.08` compares a
 sub-bar page with itself (byte-identical backgrounds, measured); the bar must be *at or below* the
 page's own `inkOut`, and where that is 0 the instrument is instead an `ink AND NOT dilate(stencil)` map
 off the dump, validated against a known losing/non-losing pair. So the question C26's
@@ -4361,7 +4368,9 @@ background, which on a page read as all text is stored at **1/8** of the page's 
 sub-step 4 read thirteen such pages at 1:1 and **8 were losing content outright**: thirteen values out
 of a Pearson correlation matrix on `Xin Qu et al_2018` p20, seven lines of prose on
 `_1973_Committee Against Racism_` p4, three lines on `Broadhead - 1994` p6. Content present in the
-source, absent from the text layer, illegible in the image, and **nothing reports it** — invariant 1.
+source, absent from the text layer, illegible in the image, and **nothing reported it until
+2026-08-20** — invariant 1; the run report names those pages now, and `#### The report, SHIPPED` is
+what it says and what it deliberately does not do.
 **Measured 2026-08-20, it happens on pages the shipped bar still shrinks too**: of the eight pages
 nearest the bar from below, **4 of 8 lose content** — two lines of prose on `Broadhead - 1994` p3, two
 on `Jones et al_2010` p5, table figures on `Scott_TK` p3, a handwritten signature on `Atkinson_1939`
@@ -5397,7 +5406,7 @@ What caught it was a direct white-pixel count in the rect: `400x60+690+1478` hol
 pixels inside it — the arithmetic between two coordinate frames is exactly the kind of step that
 produces a plausible wrong answer.
 
-**What this sub-step does not change.** The mechanism, the premise, and questions 2-5 below are
+**What this sub-step does not change.** The mechanism, the premise, and questions 2-4 below are
 untouched: no production code moved, and `textRegionMask` still keeps only what was recognised. What
 it changes is that question 1 is answered over its whole population instead of a sample, and that the
 two remaining arguments for a page-wide bar are both now measured false — it protects the wrong end
@@ -5412,8 +5421,11 @@ has nothing at all to say (this one).
    that is not content. 8 + 24 + 20 + 21 = 73; 4 + 2 + 8 + 2 = 16. With C26 sub-step 4's 13 pages the
    campaign total is **86 rendered, 24 losing content, 18 type and 6 hand-made**. The four sections
    above are the measurement, the last of them (`#### The last 21 of the 73`) closing it. **What is
-   still open under this heading is nothing about the 73 — it is items 2-5 below**, and in particular
-   item 5: a page can lose seven lines of prose and nothing reports it. The bucket of the first 52,
+   still open under this heading is nothing about the 73 — it is items 2-4 below.** ⚠️ This sentence
+   read "items 2-5 … and in particular item 5: a page can lose seven lines of prose and nothing
+   reports it" until 2026-08-20, when item 5 below was fixed — a forward reference
+   telling the reader the opposite of what the entry now says, which is the same shape as the stale
+   running total `810199f` was the commit for. The report is `#### The report, SHIPPED`. The bucket of the first 52,
    kept because the later sub-steps are written against it: **10 lose type** —
    `Broadhead - 1994` p3 and `Jones et al_2010` p5 two lines each, `Scott_TK` p3 a table and a footer,
    `Jones` p7 an estimating equation, `Jones` p2 one word, `Herbert Marks` p11 a line **and** a word,
@@ -5472,11 +5484,125 @@ has nothing at all to say (this one).
    a byte measurement against R49/R50's gate. A cheaper
    variant that keeps the stencil alone: leave the stencil confined and exempt *regions* of
    text-shaped ink from the background shrink, which is C26's bar made local instead of page-wide.
-5. **Nothing reports the loss, and that is its own half of invariant 1.** `inkOutsideText` is read
-   exactly once, in the **layering** decision inside `mrcLayers` — not the route, which `isPicture`
-   settles before recognition and which never reads it — and never in reporting, so a page can lose
-   seven lines of prose and the run report says nothing. Whether the answer is a warning or a fix is a design question, but the
-   invariant's words are "must report it".
+5. ✅ **FIXED 2026-08-20 — the run report now names every page it stored at an eighth.** The finding
+   stands as written: `inkOutsideText` was read exactly once, in the **layering** decision inside
+   `mrcLayers` — not the route, which `isPicture` settles before recognition and which never reads it
+   — and never in reporting, so a page could lose seven lines of prose and the run report said
+   nothing. The section `#### The report, SHIPPED` below is the fix, what it deliberately does not do,
+   and the one part of it no check reaches.
+
+#### The report, SHIPPED — question 5 only, 2026-08-20
+
+**What changed.** `Flattener.MRCLayers` carries two new fields out of the layering decision —
+`shrunkAsAllText`, true when `pageIsAllText()` accepted the page so both tone factors rose to 8 and
+16, and `inkOutsideText`, the fraction that decision was taken on. `OCRModel.makeSearchablePDF`
+collects the accepted pages, `OCRModel.shrunkTextPageSummary` turns them into one sentence, and a new
+`shrunkTextPageNote` callback puts that sentence in the run log — which `RunReport` copies verbatim, so
+it survives the window closing. The line reads, with the file-name prefix the callback adds the way
+`fellBack`'s does:
+
+> `scan.pdf: 3 page(s) were read as holding nothing but recognised text, so the rest of the page was
+> stored at an eighth — anything the recogniser missed on them is degraded: p4 (2.1% of its ink);
+> p6 (0.0% of its ink); p7 (0.0% of its ink)`
+
+⚠️ **"were read as holding", not "held".** The first draft said "held nothing but recognised text",
+which states the guard's verdict as a fact and then contradicts itself in its own next clause — if the
+page held nothing but recognised text there was nothing to miss — and on 16 of the 73 measured pages
+that verdict is simply wrong, which is why the line exists at all. The review of this diff caught it.
+This block quote also showed the sentence without the file-name prefix while introducing it as "the
+line", which is not a line the log ever holds.
+
+**Four decisions in it, each with the campaign's own measurement behind it.**
+
+1. **Every accepted page is named; there is no bar on the fraction.** This is the one place the four
+   sub-steps above pay off directly. Sorted by `inkOutsideText` the losers and the non-losers
+   **interleave** over all 73, so no value of any bar separates them — and one of the two losers in
+   sub-step 4, `_1939_Former students` p2's pencilled annotation, sits at a fraction that prints
+   `0.0000`. A filter of any kind would have dropped precisely that page. The number is printed
+   because it is worth having beside a page number, and nothing branches on it.
+2. **Collected after the `after < before` guard, not inside `mrcLayers`.** A layering is a proposal
+   until that guard adopts it; a page whose three layers came out larger than its JPEG keeps the JPEG
+   and loses nothing, and reporting it would be a false alarm about a page that was never shrunk.
+3. **Emitted on the success path only, beside `tookJBIG2Route()`** and for A9.2's reason rather than a
+   new one: a document that reaches the layering loop and then fails its text-layer or page-count gate
+   publishes nothing, and a note about degraded pages in a file that does not exist is the same false
+   claim A9.2 removed from the JBIG2 count.
+4. **Not a failure.** 57 of the 73 measured pages do not lose content, so failing the conversion
+   would be wrong on most of them. Invariant 1's words are "must report it". ⚠️ 57 is 73 − 16 and is
+   **not** the number that lose nothing at all — at least six of the 57 lose something visible that
+   is not content (`Riesman - 1954` p20's pen line smeared, five `Xin Qu et al_2018` footnote rules
+   blurred), and the "6 more" bucket was counted over the first 52 pages only, so the true
+   lose-nothing count is at most 51 and is not established over all 73.
+
+**And the one thing the fix had to not do.** `pageIsAllText()` is called behind `!keepEveryPixel`
+deliberately — `mrcLayers`' own comment records a first version that hoisted the threshold out and
+made every layered page pay a full histogram pass over up to 100 megapixels for a value
+`PhotoDetail.maximum` never reads. Reporting the number must not be what buys that back, so the
+measurement is assigned *inside* the closure and `inkOutsideText` is `nil` at Maximum rather than
+measured. There is a check on exactly that, and it is the one that would catch the regression coming
+back.
+
+**Checks: eleven on the healthy path, in `Tests/main.swift`'s C26 block** (twelve `check(` calls; one
+is an `else` refusal that fires only if `mrcLayers` returns nil). **Two** check the flag in both
+directions — and only the positive one also *asserts* `backgroundWidth` against the 8x ceiling; the
+negative one carries the width in its failure message, which asserts nothing (the review of this diff
+caught the verb applying to both);
+**two** pin the fraction against an `inkOutsideText` computed independently by `c26InkOut` over its own
+render; one pins the `nil` at Maximum; six exercise `shrunkTextPageSummary`, including that a page
+whose fraction rounds to zero is still named (the `_1939` p2 case), that an unmeasured page prints no
+fraction rather than a fabricated `0.0%`, and that a long list truncates *from the front* with the
+count still complete.
+⚠️ **The width is NOT independent of the flag and this section said it was.** `shrunkAsAllText` and
+`bgFactor` are both functions of the one `allText` local, so the pairing catches a flag wired to a
+constant and not a wrong verdict — a mutation of `allText` itself moves both together and no check in
+the group objects. The word "independent" is true of the *fraction* checks and false of the width
+ones. Caught by the adversarial review of this diff, which noticed the prose contradicting the mutant
+table printed beside it.
+⚠️ The four flag and fraction checks are folded into the two `c26Layers` calls the block already
+makes. Their first draft opened two more with byte-for-byte the same configurations, which is two
+extra full layerings on a suite this register times at 8-45 minutes for no new coverage — same
+review.
+
+**Watched failing, and the numbers are a probe's rather than an argument's.** A probe compiled from
+the same `Sources` — `Prefs`, `Runner`, `Recogniser`, `SearchableWriter`, `Flattener`, `JBIG2` — drove
+the suite's own C26 fixture (`makeScannedPDF`, the 30x30 figure) three ways and printed the flag, the
+fraction and the width side by side. Shipped:
+
+| run | flag | fraction | `backgroundWidth` | width says shrunk |
+|---|---|---|---|---|
+| bar `nil`, Balanced | `false` | 0.055140 | 612 | no |
+| bar 0.08, Balanced | `true` | 0.055140 | 153 | yes (ceiling 154) |
+| bar 0.08, **Maximum** | `false` | **`nil`** | 1224 | no |
+
+The independent `inkOutsideText` over the same render reads **0.055140**, so the field carries the
+number the decision was taken on rather than a recomputation. Then a **two-part mutant** — the flag
+hard-wired to `false` and the measurement hoisted out of the closure — was built, the tree restored,
+and the mutant binary run: the middle row became `flag=false` against a width of 153 (**killed**, and
+it is the check that asserts the positive direction) and the Maximum row printed **0.055140 instead of
+`nil`** (**killed**, and that is the short-circuit check earning its place).
+⚠️ **One check in that group is NOT killed by that mutant and it would be dishonest to imply it is**:
+the first row still agrees, so "the page the shipped bar rescues does not report itself as shrunk"
+stays green against a flag hard-wired `false`. It is the negative direction, it is worth having
+against a flag hard-wired `true`, and the positive-direction check beside it is what does the killing.
+
+⛔ **What no check reaches, said plainly: the wiring from the layering loop to the log line.** The two
+lines in `Model.swift` that collect the pages and the one that sends the note are not covered, because
+**no test in this suite runs a document through `makeSearchablePDF` down the MRC route at all** — the
+three places that build `.mrc` pages call `mrcLayers` directly and assemble by hand (verified by
+reading them). That gap is pre-existing and wider than this fix: the whole MRC adoption loop,
+including the `after < before` guard, has no end-to-end check.
+
+**Which half is missing, precisely, because the two halves are not equally hard.** A fixture needs a
+page `isPicture` routes to the picture path *and* `pageIsAllText()` then accepts. The suite already
+has the second half — `r50text` is asserted taking the text-page shrink — and `c26Small` sits one
+constant away from being accepted at the shipped bar. It is the *routing* half that is unmeasured
+here: no fixture in this suite is known to reach the picture route and then be read as all text, and
+that is reasoning about `isPicture` rather than something anyone has run. ⛔ And the obvious shortcut
+does not work, which is worth one sentence so the next reader does not spend an hour on it:
+`Flattener.Mode.grayscale` looks like it would put every page on the `.jpeg` branch and straight into
+the layering loop, but `Mode.canUseJBIG2` is `self != .grayscale` and `wantsJBIG2` ANDs it, so
+Grayscale takes the Flate route and never layers at all. Worth opening as its own item rather than
+leaving in a commit message.
 
 #### What this entry is NOT
 

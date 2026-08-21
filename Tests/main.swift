@@ -1846,12 +1846,16 @@ do {
     /// Balanced explicitly rather than the parameter default, because the whole
     /// question is what the *shipped default* does — `keepEveryPixel` is a third term
     /// of the guard and a factor of 1 would switch the rule off entirely.
-    func c26Layers(_ url: URL, bar: Double?, stem: String) -> Flattener.MRCLayers? {
+    ///
+    /// `detail` is defaulted to Balanced for exactly that reason and is overridden in
+    /// one place only: C28's check that Maximum never asks the question at all.
+    func c26Layers(_ url: URL, bar: Double?, stem: String,
+                   detail: Prefs.PhotoDetail = .balanced) -> Flattener.MRCLayers? {
         guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return nil }
         Flattener.textPageInkOutsideThresholdOverride = bar
         defer { Flattener.textPageInkOutsideThresholdOverride = nil }
         return Flattener.mrcLayers(for: page, boxes: c26Boxes, into: c26Dir, stem: stem,
-                                   backgroundDownsample: Prefs.PhotoDetail.balanced.downsample,
+                                   backgroundDownsample: detail.downsample,
                                    inColour: true)
     }
     func c26FullWidth(_ url: URL) -> Int {
@@ -1916,6 +1920,33 @@ do {
         check("…its foreground too, so both layers move together",
               shipped.foregroundWidth > smallFull / Flattener.textPageForegroundDownsample + 1,
               "\(shipped.foregroundWidth) wide of \(smallFull)")
+        // C28's question 5, the negative direction. ⚠️ `backgroundWidth` is **not**
+        // independent of the flag — both descend from the one `allText` local — so this
+        // pairing catches a flag wired to a *constant*, not a wrong verdict. Measured:
+        // against a mutant hard-wiring the flag `false` this check stays green and its
+        // twin below is the one that goes red. Recorded rather than glossed, because
+        // "the flag agrees with the width" is the kind of sentence that sounds like
+        // corroboration and is not.
+        check("C28 — the page the shipped bar rescues does not report itself as shrunk",
+              shipped.shrunkAsAllText == false,
+              "flag \(shipped.shrunkAsAllText), \(shipped.backgroundWidth) wide, "
+                + "ceiling \(shrunkCeiling)")
+        // …and this one IS independent: `c26InkOut` re-derives `inkOutsideText` from its
+        // own render with the same boxes, so the field either carries the number the
+        // decision was taken on or it is measuring something else. Both bars measure it —
+        // a `nil` on the rescued page would mean the guard had been short-circuited
+        // somewhere it should not be.
+        //
+        // `1e-6` and not `1e-9`, deliberately. The probe that measured this printed
+        // 0.055140 both ways, which establishes agreement to six places and not nine —
+        // and `CLAUDE.md` records one case where a render was **not** a pure function of
+        // the page. 1e-6 is still four orders tighter than any wrong-value failure mode,
+        // so this asserts what was measured rather than what is hoped.
+        check("…and carries the fraction that refused it, not a recomputation",
+              shipped.inkOutsideText != nil
+                && abs(shipped.inkOutsideText! - smallInk) < 1e-6,
+              String(format: "%.6f vs c26InkOut's %.6f", shipped.inkOutsideText ?? -1,
+                     smallInk))
     } else {
         check("C26's fixture layers", false, "mrcLayers returned nil")
     }
@@ -1932,6 +1963,17 @@ do {
         check("…its foreground with it, which is the eighth and the sixteenth together",
               old.foregroundWidth <= smallFull / Flattener.textPageForegroundDownsample + 1,
               "\(old.foregroundWidth) wide of \(smallFull)")
+        // C28's question 5, the positive direction, and the one of the pair that a
+        // mutant actually kills: with `shrunkAsAllText` hard-wired to `false` this goes
+        // red against a page whose background really is 153 wide of 1224. Measured on a
+        // probe built from these same sources, 2026-08-20.
+        check("C28 — …and the same page under the old bar reports that it was shrunk",
+              old.shrunkAsAllText == true && old.backgroundWidth <= shrunkCeiling,
+              "flag \(old.shrunkAsAllText), \(old.backgroundWidth) wide, "
+                + "ceiling \(shrunkCeiling)")
+        check("…and it carries the fraction the decision was taken on",
+              old.inkOutsideText != nil && abs(old.inkOutsideText! - smallInk) < 1e-6,
+              String(format: "%.6f vs c26InkOut's %.6f", old.inkOutsideText ?? -1, smallInk))
     } else {
         check("the old-bar layering", false, "mrcLayers returned nil")
     }
@@ -1964,6 +2006,76 @@ do {
     } else {
         check("the raised-bar layering", false, "mrcLayers returned nil")
     }
+    // MARK: C28 — the page says out loud that it was shrunk, so something can report it
+    //
+    // C28's fifth open question, and invariant 1's second half: `mrcLayers` could shrink
+    // a page's tone layers 8x knowing perfectly well that the ink outside the recognised
+    // words was about to be stored at an eighth, and nothing downstream could find out.
+    // Measured over the whole population 2026-08-20 — all 73 corpus pages the shipped bar
+    // still accepts, rendered at both factors — **16 of them lose content**, 11 of those
+    // running prose or table data, and the run report said nothing on any of them.
+    //
+    // ⚠️ **The four flag and fraction checks are folded into the two `c26Layers` calls
+    // above rather than taking their own.** The first version of this section opened with
+    // `c28ship` and `c28oldbar`, which are byte-for-byte the same two configurations as
+    // `c26ship` and `c26oldbar` forty lines earlier — two extra full layerings (render,
+    // Sauvola, Otsu, `paleDrawing`, six `fillHoles`, six `downsample`, two JPEGs each) on
+    // a suite this register times at 8-45 minutes, for nothing. Caught by the adversarial
+    // review of this diff. Only the Maximum run below is a configuration this block did
+    // not already have, and it is the most expensive of them: a factor of 1 means a
+    // full-resolution three-channel background with no downsample at all.
+    //
+    // ⛔ The one check that says reporting did NOT buy back the cost the short circuit
+    // exists to avoid. `PhotoDetail.maximum` is a factor of 1, `keepEveryPixel` is true,
+    // and `pageIsAllText()` is never called — so the fraction must come back `nil`
+    // rather than measured. A version that hoisted the measurement out of the closure
+    // to report it would make every Maximum page pay a full histogram pass over up to
+    // 100 megapixels, which is a defect this function's own comment records being found
+    // and removed once already. This is the check that would catch it coming back.
+    if let untouched = c26Layers(c26Small, bar: 0.08, stem: "c28max", detail: .maximum) {
+        check("C28 — Maximum never asks the question, so it reports no fraction",
+              untouched.inkOutsideText == nil && untouched.shrunkAsAllText == false,
+              "fraction \(untouched.inkOutsideText.map { "\($0)" } ?? "nil"), "
+                + "flag \(untouched.shrunkAsAllText)")
+    } else {
+        check("the Maximum-detail layering for C28", false, "mrcLayers returned nil")
+    }
+    // The sentence the user actually reads. `unplacedSummary`'s shape — the complete
+    // count first, then at most three pages — because this goes into a run report a
+    // user is invited to send to someone and a 300-page typescript would otherwise put
+    // 300 page numbers in it.
+    let c28Note = OCRModel.shrunkTextPageSummary(
+        [(page: 4, inkOutside: 0.0212), (page: 6, inkOutside: 0.0004),
+         (page: 7, inkOutside: 0.0)])
+    check("C28 — the run-report line leads with the complete count",
+          c28Note.hasPrefix("3 page(s) "), c28Note)
+    check("…names the pages", c28Note.contains("p4 ") && c28Note.contains("p6 ")
+            && c28Note.contains("p7 "), c28Note)
+    // ⛔ The page that made this a "name every one of them" report rather than a
+    // thresholded one. `_1939_Former students` p2 lost a pencilled annotation at a
+    // fraction that prints 0.0000 — so a summary that dropped the zeros would drop a
+    // page measured losing content, and sorted by this fraction the losers and the
+    // non-losers interleave over all 73 anyway.
+    check("…and a page whose fraction rounds to zero is still named",
+          c28Note.contains("p7 (0.0% of its ink)"), c28Note)
+    check("…and says what happened to the page rather than only that something did",
+          c28Note.contains("eighth") && c28Note.contains("degraded"), c28Note)
+    let c28Long = OCRModel.shrunkTextPageSummary(
+        (1...9).map { i -> (page: Int, inkOutside: Double?) in (i, Double(i) / 1000) })
+    // `contains("p1 ")` as well as `!contains("p4")`, and the review of this diff is why:
+    // without it a `.suffix(3)` implementation prints p7/p8/p9 and satisfies all three
+    // of the other conjuncts. It is the direction of the truncation that is being pinned,
+    // not just its presence.
+    check("…and a long list is truncated from the front, with the count still complete",
+          c28Long.hasPrefix("9 page(s) ") && c28Long.contains(" …")
+            && c28Long.contains("p1 ") && !c28Long.contains("p4"), c28Long)
+    // A fraction the layering never measured prints as no fraction rather than as a
+    // fabricated 0.0% — the Maximum case above is where a `nil` comes from, and it must
+    // not read as "this page had no ink outside the words".
+    let c28Unmeasured = OCRModel.shrunkTextPageSummary([(page: 2, inkOutside: nil)])
+    check("…and an unmeasured page names itself without inventing a fraction",
+          c28Unmeasured.contains("p2") && !c28Unmeasured.contains("%"), c28Unmeasured)
+
     // `Tools/score-text-route.swift` reuses the shipped run's JBIG2 stencil for its
     // priced run instead of encoding it twice, on the grounds that the stencil reads
     // no downsample factor. That is the tool's arithmetic resting on a property of

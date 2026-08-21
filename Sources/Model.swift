@@ -1526,6 +1526,16 @@ final class OCRModel: ObservableObject {
                 let tookJBIG2Route: () -> Void = {
                     DispatchQueue.main.async { self?.jbig2Files += 1 }
                 }
+                // Logged, not counted, and that is the other way round from the two
+                // above. C28: this is the one path in the pipeline that can degrade
+                // ink the recogniser missed, and invariant 1 says a path that can drop
+                // a line has to say so. Said once per file at most.
+                let shrunkTextPageNote: (String) -> Void = { text in
+                    DispatchQueue.main.async {
+                        self?.log.append(LogLine(
+                            text: "\(file.lastPathComponent): \(text)", kind: .info))
+                    }
+                }
 
                 if isSearchable {
                     Self.makeSearchablePDF(
@@ -1537,7 +1547,8 @@ final class OCRModel: ObservableObject {
                         password: password, settings: settings,
                         control: control, useHelper: useHelper,
                         progress: note, fellBack: fellBack,
-                        tookJBIG2Route: tookJBIG2Route, report: report)
+                        tookJBIG2Route: tookJBIG2Route,
+                        shrunkTextPageNote: shrunkTextPageNote, report: report)
                     return
                 }
 
@@ -1809,6 +1820,12 @@ final class OCRModel: ObservableObject {
         /// run report has to describe the route taken rather than the box ticked,
         /// and `usedJBIG2` used to be a local that never left this function.
         tookJBIG2Route: @escaping () -> Void = { },
+        /// Called at most once per document, when pages were published with the ink
+        /// outside the recognised words stored at an eighth (C28). Its own channel for
+        /// the same reason `fellBack` is: this one is *logged* and that one is
+        /// *counted*, and sharing either would make the report describe something
+        /// other than what happened (R41).
+        shrunkTextPageNote: @escaping (String) -> Void = { _ in },
         report: @escaping (Runner.Result.Outcome, String) -> Void
     ) {
         // Shares of the wall clock, measured on a 22-page run: rebuilding and
@@ -2032,6 +2049,12 @@ final class OCRModel: ObservableObject {
         // files whose published copy carries JBIG2 streams, and a file that took
         // the route and then failed did not publish anything (A9.2).
         var tookJBIG2 = false
+        // C28, and out here for A9.2's reason rather than a new one. The layering
+        // loop below knows which pages were stored at an eighth, but a document that
+        // reaches that loop and then fails its text-layer or page-count gate publishes
+        // nothing — and a note about degraded pages in a file that does not exist is
+        // the same false claim A9.2 removed from the JBIG2 count.
+        var shrunkTextPageMessage: String?
 
         do {
             // A page the recogniser never reported would compose as a page with
@@ -2115,6 +2138,13 @@ final class OCRModel: ObservableObject {
                 if let jb = JBIG2.encoder,
                    let source = Flattener.open(inputFile, password: password) {
                     var relayered = 0, savedBytes = 0
+                    // C28. The pages this loop publishes with their tone layers at an
+                    // eighth because `pageIsAllText()` accepted them. Collected here
+                    // and not inside `mrcLayers`, because the layering is only a
+                    // proposal until the `after < before` guard below adopts it — a
+                    // page whose layers came out larger keeps its JPEG and loses
+                    // nothing, and reporting it would be a false alarm.
+                    var shrunkTextPages: [(page: Int, inkOutside: Double?)] = []
                     for index in encoded.indices {
                         if control.isCancelled { break }
                         // Any picture page, grey or colour. A bilevel page is
@@ -2211,11 +2241,21 @@ final class OCRModel: ObservableObject {
                         try? FileManager.default.removeItem(at: existing)
                         relayered += 1
                         savedBytes += before - after
+                        if layers.shrunkAsAllText {
+                            shrunkTextPages.append((index + 1, layers.inkOutsideText))
+                        }
                     }
                     if relayered > 0 {
                         progress("Layered \(relayered) picture page"
                                  + "\(relayered == 1 ? "" : "s"), saving \(savedBytes / 1024) KB",
                                  layerShare(0, 1))
+                    }
+                    // C28, and it is invariant 1 rather than a nicety. `progress` above
+                    // is a transient stage label that never reaches the log; the string
+                    // built here goes to the run report, which is the only record that
+                    // outlives the window. Held, not sent: the success exit sends it.
+                    if !shrunkTextPages.isEmpty {
+                        shrunkTextPageMessage = Self.shrunkTextPageSummary(shrunkTextPages)
                     }
                 }
                 let textLayer = work.appendingPathComponent("text.pdf")
@@ -2401,6 +2441,10 @@ final class OCRModel: ObservableObject {
         // then failed published nothing, so counting it would make the report claim
         // a compression no file on disk has (A9.2).
         if tookJBIG2 { tookJBIG2Route() }
+        // C28, on the success path for the same reason and immediately beside it, so
+        // the two cannot drift apart. This describes pages in the file that just
+        // landed.
+        if let message = shrunkTextPageMessage { shrunkTextPageNote(message) }
         // `filter { !$0.isEmpty }`, not `compactMap`: `sizeNote` returns an empty string
         // rather than nil unless the copy grew, so joining on it put a leading " — " in
         // front of the message every ordinary run showed the user.
@@ -2450,6 +2494,61 @@ final class OCRModel: ObservableObject {
             .joined(separator: "; ")
         return "\(lost.count) line(s) could not be placed: \(detail)"
             + (lost.count > 3 ? " …" : "")
+    }
+
+    /// C28. What the run report says about pages published with the ink outside the
+    /// recognised words stored at an eighth.
+    ///
+    /// **Every accepted page is named, with no threshold on the fraction**, and the
+    /// campaign is why. Sorted by `inkOutsideText` the corpus pages that lose content
+    /// and the ones that do not interleave — measured over all 73 that the shipped bar
+    /// still accepts, 16 of them losing content — so no value of any bar separates
+    /// them; and one of the losers, `_1939_Former students` p2's pencilled annotation,
+    /// sits at a fraction that prints `0.0000`. A filter here would drop exactly that
+    /// page. The number is printed because it is worth having beside a page, not
+    /// because anything downstream should branch on it.
+    ///
+    /// Three at most and then `…`, the shape `unplacedSummary` already uses: this line
+    /// goes into a file the user is invited to send to someone, and a 300-page
+    /// typescript would otherwise put 300 page numbers in it. The count is the part
+    /// that has to be complete, so it leads.
+    ///
+    /// ⛔ **A4.1 governs this string, and the obvious next enhancement walks into it.**
+    /// Everything here reaches `log` → `RunReport.text`, a file the user is invited to
+    /// mail to whoever is helping them — so page numbers and a ratio, never content.
+    /// "Say which words were lost" is the natural thing to add next and is exactly what
+    /// A4.1 took *out* of `unplacedSummary`, which carried 72 characters of the user's
+    /// own document. Anything wanting the words belongs behind a debug environment
+    /// variable, the way `JOIN_DEBUG` is.
+    ///
+    /// ⚠️ Deliberately not a failure. The file is whole, its text layer is whole, and
+    /// **57 of the 73 measured pages do not lose content** — reporting this as a failed
+    /// conversion would be false on most of them. Invariant 1's words are "must report
+    /// it", and this is the report. (57 is 73 − 16, not a count of pages that lose
+    /// nothing at all: at least six of those 57 lose something visible that is not
+    /// content, a pen line smeared and five footnote rules blurred.)
+    nonisolated static func shrunkTextPageSummary(_ pages: [(page: Int, inkOutside: Double?)])
+        -> String {
+        let detail = pages.prefix(3)
+            .map { entry -> String in
+                guard let fraction = entry.inkOutside else { return "p\(entry.page)" }
+                return String(format: "p%d (%.1f%% of its ink)", entry.page, fraction * 100)
+            }
+            .joined(separator: "; ")
+        // The page list LAST and the trailing `…` after it, which is `unplacedSummary`'s
+        // shape and is here for a duller reason than symmetry: with the sentence after
+        // the list, a truncated run ended " … ." — an ellipsis and a full stop with a
+        // space between them. Found by reading the two branches rather than by running
+        // one.
+        // "were read as holding", not "held". ⛔ The shorter sentence stated the guard's
+        // verdict as a fact and then contradicted itself in its own second clause: if
+        // the page held nothing but recognised text there was nothing to miss. On 16 of
+        // the 73 measured pages the verdict is simply wrong, which is the entire reason
+        // this line exists. Caught by the adversarial review of this diff.
+        return "\(pages.count) page(s) were read as holding nothing but recognised text, "
+            + "so the rest of the page was stored at an eighth — anything the recogniser "
+            + "missed on them is degraded: \(detail)"
+            + (pages.count > 3 ? " …" : "")
     }
 
     /// How many bytes a file holds, without reading it.

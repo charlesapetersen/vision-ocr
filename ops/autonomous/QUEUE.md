@@ -421,11 +421,14 @@ happens.**
       the 73, and 2 of the 21 lose content.** 8 + 24 + 20 + 21 = 73, all read. Do not re-run it; the
       `c28-last21` sub-box below and the entry's `#### The last 21 of the 73, RENDERED` carry the
       tables, the byte price and three instrument facts.
-      **So question 1 is answered and what is left is the entry's questions 2-5, in its order** —
+      ✅ **Question 5 is DONE 2026-08-20 — the run report now names every page it stored at an
+      eighth.** Do not re-do it; the `c28-report` sub-box below and the entry's
+      `#### The report, SHIPPED` carry the four decisions in it and the one part no check reaches.
+      **So questions 1 and 5 are answered and what is left is the entry's questions 2-4, in its
+      order** —
       2 (the same loss at 1/2 and 1/3, on the 109 layered pages not read as all text), 3 (a shape term
       that admits missed text without admitting pictures — R56's lesson in a third place), 4 (the byte
-      price of widening, and do not quote T15's 1.33x as the page-level figure), 5 (**nothing reports
-      the loss**, which is invariant 1's other half and probably the cheapest real fix here).
+      price of widening, and do not quote T15's 1.33x as the page-level figure).
       ⛔ **Before driving the map again, read sub-step 4's last three paragraphs.** The map must be
       INTERIOR-cropped on **both** images — `inkOutsideText` walks x ∈ [w/16, w−w/16),
       y ∈ [h/16, h−h/16) and divides by interior ink; uncropped it reads up to 256x the guard's own
@@ -642,6 +645,41 @@ happens.**
       Reproduction: 21/21 rows reproduce `INKBAR-2026-08-19.tsv` on `inkOut`, `layered` and `extent`,
       checked by script; six invocations, `rc=0` on each, 147 dump files with none missing; source and
       stencil sizes asserted equal per page. Corpus read-only; every dump, map and crop under `/tmp`.
+      (context: BUGS.md C28)
+- [x] **c28-report** — **DONE 2026-08-20.** C28's question 5, invariant 1's other half: a page could
+      lose seven lines of prose to the 8x shrink and the run report said nothing. `Flattener.MRCLayers`
+      now carries `shrunkAsAllText` and `inkOutsideText` out of the layering decision;
+      `OCRModel.shrunkTextPageSummary` turns the adopted pages into one sentence; a new
+      `shrunkTextPageNote` callback puts it in the log, which `RunReport` copies verbatim.
+      **Four decisions, each with the campaign behind it, and do not re-litigate them without reading
+      `#### The report, SHIPPED`:** (1) every accepted page is named, **no bar on the fraction** —
+      sorted by `inkOutsideText` the losers and the non-losers interleave over all 73, and
+      `_1939_Former students` p2 loses a pencilled annotation at a fraction printing `0.0000`, so any
+      filter drops a known loser; (2) collected **after** the `after < before` adoption guard, because
+      a layering larger than its JPEG is discarded and that page loses nothing; (3) emitted on the
+      **success path only**, beside `tookJBIG2Route()`, for A9.2's reason — a document that fails its
+      page-count gate publishes nothing to describe; (4) **not** a failure, because 57 of the 73 do
+      not lose content (73 − 16 — ⚠️ *not* the count that lose nothing at all, which is at most 51).
+      ⛔ **The short circuit is load-bearing and there is a check on it.** `pageIsAllText()` sits behind
+      `!keepEveryPixel` so `PhotoDetail.maximum` does not pay a histogram pass over up to 100
+      megapixels — a defect `mrcLayers`' own comment records being found and removed once. The
+      measurement is assigned *inside* the closure and `inkOutsideText` is `nil` at Maximum, measured.
+      **Eleven checks**, folded into the two `c26Layers` calls that block already makes rather than
+      taking their own — two check the flag in both directions (only the positive one also asserts
+      `backgroundWidth`; the negative one carries it in its message), two pin
+      the fraction against an independently computed `inkOutsideText`, one pins the Maximum `nil`, six
+      exercise the summary. ⚠️ The *width* is not independent of the flag (both descend from one
+      `allText` local), so that pair catches a flag wired to a constant, not a wrong verdict. Watched
+      failing against a two-part mutant (flag hard-wired `false`, the measurement hoisted out of the
+      closure) driven through a probe on the suite's own C26 fixture: the positive-direction flag
+      check and the Maximum-`nil` check both go red; the negative-direction one does **not**.
+      ⛔ **What no check reaches: the wiring itself**, because **no test runs a document through
+      `makeSearchablePDF` down the MRC route at all** — the three `.mrc` tests call `mrcLayers`
+      directly and assemble by hand, so the whole adoption loop including `after < before` is
+      uncovered. Pre-existing and wider than this fix. The missing half is the *routing* one: the
+      suite already has a fixture `pageIsAllText()` accepts (`r50text`), but none known to reach the
+      picture route and then be read as all text — and `Mode.grayscale`, the obvious shortcut, is
+      refused by `canUseJBIG2` and takes the Flate route.
       (context: BUGS.md C28)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,

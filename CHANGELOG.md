@@ -12,6 +12,23 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## Unreleased
+
+**The run report now names the pages whose non-text ink was stored at an eighth.** On a page whose
+ink is all recognised text, both tone layers are shrunk hard — and anything the recogniser *missed*
+on such a page lives only in that shrunk background. Measured over the whole population
+(BUGS.md C28): of the 73 corpus pages the shipped bar still treats this way, sixteen lose content.
+Until now nothing said which pages those were, on any run. A batch that publishes such a page now
+writes one line into its run report naming the pages and how much of each page's ink fell outside
+the recognised words — for example `scan.pdf: 3 page(s) were read as holding nothing but recognised
+text, so the rest of the page was stored at an eighth — anything the recogniser missed on them is
+degraded: p4 (2.1% of its ink); p6 (0.0% of its ink); p7 (0.0% of its ink)`
+
+Every such page is named, with no threshold on that fraction: the same campaign showed that the
+pages which lose content and the pages which do not cannot be told apart by it, and one page
+measured losing a pencilled annotation reads 0.0%. The conversion still succeeds and the file is
+still whole — this reports the degradation, it does not yet prevent it.
+
 ## 1.13.1 — 2026-08-20
 
 **Lines of prose and hand-drawn marks are no longer destroyed on sixteen measured pages
