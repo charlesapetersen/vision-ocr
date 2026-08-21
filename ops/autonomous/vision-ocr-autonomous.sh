@@ -1033,6 +1033,80 @@ health_watchdog() {
   return 0
 }
 
+# ⛔ NAMED AND RESCUED ON EVERY PATH, because "is a worktree holding uncommitted work" is a fact about the
+# tree and has NOTHING to do with whether the fingerprint moved. This block used to live inside the
+# no-progress branch, which made the rescue reachable only when nothing else had advanced.
+#
+# Measured 2026-08-20: the OWNER landed a docs commit at 14:40 while a session ran 14:29-16:36. The
+# fingerprint moved — correctly, per work_fingerprint()'s own note that an outside push means "the decision
+# surface moved, retry NOW" — so tick() took the progress branch, logged "committed but no item completed",
+# and skipped BOTH the orphan naming and the snapshot over 481 uncommitted insertions across 9 files,
+# including Sources/Flattener.swift and Tests/main.swift. $STATE/rescue held nothing for it and the only
+# copy was in /private/tmp; the owner wrote the patch by hand. The next session did recover the work, but
+# only because it read the SESSION LOG entry claiming "pushed" and checked it — which is luck, not a net.
+#
+# ⚠️ THE OLD REGRESSION TEST DID NOT CATCH THIS AND COULD NOT HAVE. prove-daemon.sh [17] drives the daemon
+# with "0:no" — a session that moves nothing — so it exercised the rescue from the only branch that could
+# reach it. It proved the rescue WORKS, never that it RUNS. [18] is the missing half: idle first so the
+# backoff rises, THEN create the orphan, THEN commit, so a patch can only have come from a progress cycle.
+#
+# One value was answering two questions. It still answers the retry one; this function answers the other.
+# $1 is the lead-in, so the log still reads as prose on both paths without the caller re-deriving anything.
+report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan was found and reported
+  local _orph _d _rescue _rb
+  _orph="$(orphaned_work)" || return 1
+
+  # ⚠️ DO NOT BLAME THIS SESSION, AND DO NOT REPEAT IT EVERY CYCLE. A dirty `auto/*` worktree is
+  # PERMANENT until a human clears it: housekeeping only removes worktrees whose branch is an ancestor
+  # of origin/main, and `git worktree remove` refuses a dirty one regardless. So the obvious phrasing —
+  # "session (rc=…) left UNCOMMITTED WORK" every no-progress cycle — would pin a week-old orphan on a
+  # session that never created a worktree, and would repeat it until the log held nothing else. Both are
+  # the failure this whole change is about: a true sentence that reads as something it is not. So name
+  # the WORKTREE, not the session, and say each one once per daemon lifetime.
+  log "$1 a worktree is holding UNCOMMITTED WORK — this is NOT an empty queue."
+  for _d in $_orph; do
+    grep -qxF "$_d" "$ORPHSEEN" 2>/dev/null && continue
+    printf '%s\n' "$_d" >> "$ORPHSEEN" 2>/dev/null || true
+    log "  orphaned: $_d —$(orphaned_work_summary "$_d")"
+  done
+  # ⚠️ AND THE PATCH IS SAVED, because the sentence this used to end on was optimistic. It read
+  # "nothing is lost until that worktree is removed" — true of `git worktree remove`, and NOT true of the
+  # directory those worktrees live in. Every session works in `/private/tmp/vo-<stamp>`, and /private/tmp
+  # is cleared by macOS on reboot and swept for age while running. So the daemon's own answer to "is this
+  # work safe?" rested on a volatile filesystem, and the ONLY copy of a killed session's work sat there.
+  #
+  # Measured 2026-08-17: `/private/tmp/vo-20260817-072554-25857` held 114 uncommitted insertions across 7
+  # files — a session's discovery of an ELEVENTH check that could not fail in the commit that had landed
+  # 45 minutes earlier, plus the new mutant that catches it and a published figure corrected from a flat
+  # "1,961 at every resolution" to 1,960-1,962. A reboot would have taken all of it, and the register
+  # would have kept the check that cannot fail.
+  #
+  # A patch, not a copy: it is a few KB against a worktree's hundreds of MB (each carries its own build/),
+  # it diffs against a sha that IS pushed, and `git apply` restores it anywhere. Cheap enough to do on
+  # every newly-seen orphan without a size guard, and $ORPHSEEN already makes that once per worktree per
+  # daemon lifetime. Best-effort throughout: a failure here must never affect the run's verdict.
+  _rescue="$STATE/rescue"
+  mkdir -p "$_rescue" 2>/dev/null || true
+  for _d in $_orph; do
+    _rb="$(basename "$_d")"
+    [ -f "$_rescue/$_rb.patch" ] && continue      # first snapshot wins; never overwrite a saved rescue
+    if git -C "$_d" diff HEAD > "$_rescue/$_rb.patch" 2>/dev/null && [ -s "$_rescue/$_rb.patch" ]; then
+      git -C "$_d" log -1 --format='%H %s'  > "$_rescue/$_rb.base"   2>/dev/null || true
+      git -C "$_d" status --porcelain       > "$_rescue/$_rb.status" 2>/dev/null || true
+      log "  rescued: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes) — /private/tmp does not survive a reboot; this does."
+    else
+      # An EMPTY patch over a worktree `orphaned_work` called dirty means the two disagree, and that is
+      # worth a line rather than silence: the likely cause is untracked-only content, which `git diff`
+      # cannot see and which therefore has NO backup here.
+      rm -f "$_rescue/$_rb.patch" 2>/dev/null || true
+      log "  ⚠️ could not snapshot $_d — 'git diff HEAD' produced nothing. If its content is UNTRACKED, a patch cannot hold it: copy it by hand."
+    fi
+  done
+  log "  a later session can finish it, or rescue it by hand. The committed base plus \$STATE/rescue/*.patch"
+  log "  is the durable copy; the worktree itself is in /private/tmp and is NOT."
+  return 0
+}
+
 tick() {
   # 1. Done? unload + stop.
   if grep -q '^RUN STATUS: COMPLETE' "$RUN" 2>/dev/null; then
@@ -1168,6 +1242,9 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   if [ -n "$fp_after" ] && [ "$fp_after" != "$fp_before" ]; then
     note_progress
     note_committed "$cc_before" "$cc_after" || verdict=9
+    # The verdict above is about the RUN advancing. This is about the TREE, and a moved tip does not mean
+    # nothing was stranded — an owner commit, or another session's push, moves the fingerprint too.
+    report_and_rescue_orphans "the tip moved, but" || true
   else
     # NAME THE CAUSE. A usage-limit fast-fail is NOT an empty queue: the CLI exits nonzero in ~2-3 s when
     # the window is exhausted and cannot move the fingerprint, so it lands here looking identical to "there
@@ -1185,55 +1262,8 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     # redid all of it from scratch. Naming it
     # costs one `git status` per worktree and is the difference between the owner rescuing the work and
     # never learning it existed. Checked BEFORE housekeeping, which is what would otherwise GC the evidence.
-    elif _orph="$(orphaned_work)"; then
-      # ⚠️ DO NOT BLAME THIS SESSION, AND DO NOT REPEAT IT EVERY CYCLE. A dirty `auto/*` worktree is
-      # PERMANENT until a human clears it: housekeeping only removes worktrees whose branch is an ancestor
-      # of origin/main, and `git worktree remove` refuses a dirty one regardless. So the obvious phrasing —
-      # "session (rc=…) left UNCOMMITTED WORK" every no-progress cycle — would pin a week-old orphan on a
-      # session that never created a worktree, and would repeat it until the log held nothing else. Both are
-      # the failure this whole change is about: a true sentence that reads as something it is not. So name
-      # the WORKTREE, not the session, and say each one once per daemon lifetime.
-      log "no progress, and a worktree is holding UNCOMMITTED WORK — this is NOT an empty queue."
-      for _d in $_orph; do
-        grep -qxF "$_d" "$ORPHSEEN" 2>/dev/null && continue
-        printf '%s\n' "$_d" >> "$ORPHSEEN" 2>/dev/null || true
-        log "  orphaned: $_d —$(orphaned_work_summary "$_d")"
-      done
-      # ⚠️ AND THE PATCH IS SAVED, because the sentence this used to end on was optimistic. It read
-      # "nothing is lost until that worktree is removed" — true of `git worktree remove`, and NOT true of the
-      # directory those worktrees live in. Every session works in `/private/tmp/vo-<stamp>`, and /private/tmp
-      # is cleared by macOS on reboot and swept for age while running. So the daemon's own answer to "is this
-      # work safe?" rested on a volatile filesystem, and the ONLY copy of a killed session's work sat there.
-      #
-      # Measured 2026-08-17: `/private/tmp/vo-20260817-072554-25857` held 114 uncommitted insertions across 7
-      # files — a session's discovery of an ELEVENTH check that could not fail in the commit that had landed
-      # 45 minutes earlier, plus the new mutant that catches it and a published figure corrected from a flat
-      # "1,961 at every resolution" to 1,960-1,962. A reboot would have taken all of it, and the register
-      # would have kept the check that cannot fail.
-      #
-      # A patch, not a copy: it is a few KB against a worktree's hundreds of MB (each carries its own build/),
-      # it diffs against a sha that IS pushed, and `git apply` restores it anywhere. Cheap enough to do on
-      # every newly-seen orphan without a size guard, and $ORPHSEEN already makes that once per worktree per
-      # daemon lifetime. Best-effort throughout: a failure here must never affect the run's verdict.
-      _rescue="$STATE/rescue"
-      mkdir -p "$_rescue" 2>/dev/null || true
-      for _d in $_orph; do
-        _rb="$(basename "$_d")"
-        [ -f "$_rescue/$_rb.patch" ] && continue      # first snapshot wins; never overwrite a saved rescue
-        if git -C "$_d" diff HEAD > "$_rescue/$_rb.patch" 2>/dev/null && [ -s "$_rescue/$_rb.patch" ]; then
-          git -C "$_d" log -1 --format='%H %s'  > "$_rescue/$_rb.base"   2>/dev/null || true
-          git -C "$_d" status --porcelain       > "$_rescue/$_rb.status" 2>/dev/null || true
-          log "  rescued: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes) — /private/tmp does not survive a reboot; this does."
-        else
-          # An EMPTY patch over a worktree `orphaned_work` called dirty means the two disagree, and that is
-          # worth a line rather than silence: the likely cause is untracked-only content, which `git diff`
-          # cannot see and which therefore has NO backup here.
-          rm -f "$_rescue/$_rb.patch" 2>/dev/null || true
-          log "  ⚠️ could not snapshot $_d — 'git diff HEAD' produced nothing. If its content is UNTRACKED, a patch cannot hold it: copy it by hand."
-        fi
-      done
-      log "  a later session can finish it, or rescue it by hand. The committed base plus \$STATE/rescue/*.patch"
-      log "  is the durable copy; the worktree itself is in /private/tmp and is NOT."
+    elif report_and_rescue_orphans "no progress, and"; then
+      :   # the function did the logging; this branch exists only to claim the verdict
     else
       log "session (rc=$rc) advanced nothing (queue + tip unchanged) — no progress."
     fi

@@ -678,6 +678,60 @@ fi
 git -C "$REPO" worktree remove --force "$OW" >/dev/null 2>&1
 git -C "$REPO" branch -D auto/orphan-test >/dev/null 2>&1
 
+# ================= the rescue must not depend on the PROGRESS VERDICT ===================================
+# REGRESSION TEST FOR README §Defects D12. [17] above proves the rescue WORKS; it does not prove it RUNS,
+# because it drives the daemon with "0:no" — a session that moves nothing — so the run takes the
+# no-progress branch, which is the only branch the orphan block was reachable from. The two questions
+# "did the fingerprint move" and "is a worktree holding uncommitted work" are independent, and one value
+# was answering both.
+#
+# Measured 2026-08-20: the OWNER landed a commit at 14:40 while a session ran 14:29-16:36. The fingerprint
+# moved — correctly, per work_fingerprint()'s own note that an outside push means "the decision surface
+# moved, retry now" — so tick() took the progress branch and logged "committed but no item completed".
+# That skipped the orphan naming AND the snapshot over 481 uncommitted insertions across 9 files,
+# including Sources/Flattener.swift and Tests/main.swift. $STATE/rescue held nothing for it; the only copy
+# was in /private/tmp, and the owner wrote the patch by hand.
+echo "[18] AN ORPHAN IS RESCUED EVEN WHEN THE FINGERPRINT MOVED (progress branch)"
+# ⚠️ THE SEQUENCE IS THE TEST. Two traps, both hit while writing this:
+#   (a) the progress line at daemon.sh:422 is guarded by `[ "$BACKOFF" != "$INTERVAL" ]`, so a run that
+#       commits on its FIRST cycle logs no "progress" line at all — hence the idle phase first, the same
+#       shape [3] uses.
+#   (b) if the orphan exists DURING that idle phase, the no-progress branch rescues it and the assertion
+#       below passes for the wrong reason — it would be measuring [17] again. So the worktree is created
+#       AFTER the idle phase and immediately before the switch to committing, which means any patch found
+#       can only have been written by a cycle that read as progress.
+echo "0:no" > "$CTRL"; reset_repo; dfset 999999; reset_state
+rm -rf "$STATE/rescue"
+mkdir -p "$REPO/ops/autonomous"
+cp "$(cd "$(dirname "$DAEMON")" && pwd)/run-state-lib.sh" "$REPO/ops/autonomous/run-state-lib.sh" 2>/dev/null \
+  || skip "run-state-lib.sh not found beside $DAEMON — the detector cannot be exercised"
+OW2="$T/orphan-wt-progress"; rm -rf "$OW2"
+P=$(launch 0); sleep 12                      # idle phase: backoff rises, and NO orphan exists yet
+git -C "$REPO" worktree add -q -b auto/orphan-progress "$OW2" >/dev/null 2>&1
+printf 'progress-branch-payload-%s\n' "$$" > "$OW2/stranded.txt"
+git -C "$OW2" add stranded.txt >/dev/null 2>&1
+echo "0:yes" > "$CTRL"; sleep 10; stop "$P"; L="$STATE/daemon.log"
+# THE PREMISE FIRST, or the assertion after it means nothing.
+if grep -q "progress $EM backoff reset" "$L"; then
+  ok "a cycle read as PROGRESS after the orphan appeared (the premise holds)"
+else
+  bad "no progress cycle in the log — fixture broken, so the assertion below is vacuous"
+  tail -6 "$L" | sed 's/^/      /'
+fi
+if [ -f "$STATE/rescue/orphan-wt-progress.patch" ]; then
+  ok "a patch was written even though the fingerprint moved"
+  grep -q "progress-branch-payload-$$" "$STATE/rescue/orphan-wt-progress.patch" \
+    && ok "…and it holds the stranded content" \
+    || bad "the patch exists but does not hold the work"
+  grep -q 'orphaned:' "$L" && ok "…and the orphan was NAMED, so the owner learns it exists" \
+                           || bad "rescued silently — the owner is never told which worktree"
+else
+  bad "NO PATCH SAVED because the fingerprint moved — an owner commit during a session disables the rescue (D12)"
+  tail -6 "$L" | sed 's/^/      /'
+fi
+git -C "$REPO" worktree remove --force "$OW2" >/dev/null 2>&1
+git -C "$REPO" branch -D auto/orphan-progress >/dev/null 2>&1
+
 echo
 echo "=================== $PASS passed, $FAIL failed, $SKIP skipped ==================="
 [ "$FAIL" = 0 ]

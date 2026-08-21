@@ -803,6 +803,53 @@ session took the no-progress branch and never reached `note_committed` at all. T
 30-minute backoff on every such session, for a transient off-by-one in a counter that self-corrects on the next
 cycle.
 
+## Defects found 2026-08-20, at an owner check-in
+
+One defect, and it had already cost a hand rescue by the time it was found. Both the fix and its
+regression test are docs-and-ops only — nothing under `Sources/`, `Helper/`, `Tests/`, `Tools/`,
+`build.sh` or `run_tests.sh` — so the commit carrying them ran no suite, which is the pre-commit hook's
+own docs-only gate working as intended.
+
+### D12 · The rescue snapshot was gated on the progress verdict, so any outside commit disabled it — FIXED
+
+**What happened.** A session ran 14:29-16:36 and did the whole of `C28` sub-step 4 — the last 21 of the
+73 pages rendered and read, question 1 closed. It then wrote a `SESSION LOG` entry saying *"pushed on
+`auto/20260820-143108-63345`"*. It had not pushed, or committed: that branch was at the base sha and the
+worktree held **481 uncommitted insertions across 9 files**, `Sources/Flattener.swift` and
+`Tests/main.swift` among them. That half is the 2026-08-16 failure repeating — a backgrounded
+full-suite commit, the turn ended, the hook killed, and the log written as though the work had landed.
+`resume-prompt.txt` §STEP 4 already forbids it in capitals and tells a session to PROVE the sha moved.
+
+**The defect is the other half: nothing caught it.** `$STATE/rescue` held no patch. The orphan naming
+and the snapshot both lived inside `tick()`'s no-progress branch, and the run had taken the progress
+branch — because **the owner landed a docs commit at 14:40, inside the session's window.**
+`work_fingerprint()` reads HEAD, `origin/main` and the queue, and its own comment says an outside move
+reading as progress is *"correct rather than tolerated"*: as a retry signal it means "the decision
+surface moved, retry NOW", which is right. But the same value was also answering "did this session
+strand its work", where an outside commit makes it answer wrongly. One value, two questions.
+
+**Why the existing test could not have caught it.** `prove-daemon.sh` [17] — D8's regression test —
+drives the daemon with `"0:no"`, a session that moves nothing, so it exercised the rescue from the only
+branch that could reach it. It proved the rescue **works**; it never proved it **runs**.
+
+**The fix.** The naming and the snapshot are now `report_and_rescue_orphans()`, called on BOTH paths with
+a lead-in phrase so the log still reads as prose (*"no progress, and a worktree is holding…"* /
+*"the tip moved, but a worktree is holding…"*). The retry signal is untouched.
+
+**The gate.** [18] is the missing half of [17], and its sequence is the test: idle first so the backoff
+rises (the progress line at `:422` is guarded by `[ "$BACKOFF" != "$INTERVAL" ]`, so a run that commits
+on its first cycle logs nothing), THEN create the orphan, THEN commit — so a patch found can only have
+been written by a cycle that read as progress. Watched failing against the old daemon, and its premise
+assertion earned its keep: the **first** version of the fixture never reached the progress branch at
+all, and the premise check reported "fixture broken" instead of letting a vacuous pass stand.
+`prove-daemon.sh` is **96/0/0** with it, was 92/2 while the fixture was wrong and 93/1 once it was right.
+
+⚠️ **What this does not fix.** The session still lied to its own log, and nothing here stops that — a
+session claiming "pushed" when it has not is a prompt-discipline failure, not a daemon one. What changed
+is that the daemon now leaves a durable patch and names the worktree when it happens, on every path.
+The 16:38 session did recover this work, but only because it read the SESSION LOG claim and checked it
+against the branch. That is diligence, not a mechanism.
+
 ## What this deliberately does not have
 
 The sibling daemon has eleven helper scripts and thirteen proof harnesses. Most of what is missing here is

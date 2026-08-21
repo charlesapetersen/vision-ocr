@@ -62,11 +62,19 @@ than reasoned — the first attempt broke the coherence check twice:
 
 ## How to SIZE an item — and why an unbounded verb strands a worktree
 
-**The failure this prevents.** A session that is interrupted mid-item leaves its worktree dirty. The work
-is not lost — the daemon writes `$STATE/rescue/<stamp>.patch` and says so in `daemon.log` — but it costs a
-hand review to decide whether the patch is redundant, and until someone does that, **every following cycle
-logs "a worktree is holding UNCOMMITTED WORK — this is NOT an empty queue"**, which is the daemon telling
+**The failure this prevents.** A session that is interrupted mid-item leaves its worktree dirty. The
+daemon's answer is to write `$STATE/rescue/<stamp>.patch` and name the worktree in `daemon.log`, which
+costs a hand review to decide whether the patch is redundant; until someone does that, **every following
+cycle logs "a worktree is holding UNCOMMITTED WORK — this is NOT an empty queue"** — the daemon telling
 the truth in a way that reads like a fault. Seven such rescues accumulated in the four days to 2026-08-20.
+
+⚠️ **THIS SECTION SAID "the work is not lost" AND THAT WAS TOO STRONG WHEN IT WAS WRITTEN.** Hours later
+a session stranded 481 insertions across 9 files and **no patch was written**, because the snapshot was
+gated on the progress verdict and an owner commit had moved the fingerprint — `README.md` §Defects **D12**,
+fixed the same day, with `prove-daemon.sh` [18] as its gate. So the net exists and is now reachable on
+every path, but treat it as insurance against a reboot rather than a reason to leave work uncommitted:
+the recovery still cost a hand-written patch, a re-run of a full suite, and a session spent re-verifying
+someone else's diff. **Sizing is the cheap lever; the rescue is the expensive one.**
 The lever is item size, and D6 said so when the budget was raised: *"If this stops helping, the next lever
 is item size, not another raise."*
 
