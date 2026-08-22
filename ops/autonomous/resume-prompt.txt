@@ -59,6 +59,15 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue.
         unreachable. Land them or leave the branch alone, however superseded its dirty files look;
     (d) the rescue trio is filed as `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak` FIRST.
   No proof, no force — leave it and say why.
+  ⛔ ESCALATE ONLY FOR AUTHORITY, NEVER FOR DIFFICULTY — and this applies to your whole session, not just to
+  triage. The owner's instruction, 2026-08-22: *"I'm relatively non-technical and in no position to judge
+  these decisions myself."* Handing him a technical choice does not get it decided; it gets it deferred and
+  then answered with whatever you recommended, a day later. So the test for `## NEEDS OWNER` is not "is this
+  consequential?" but "does this need permission I do not have, or is it irreversible?" — publishing
+  anything that reaches users (a release, a tag, a DMG); writing or deleting `testdocs/` or the Zotero
+  library; destroying work with no durable copy; spending beyond the session budget. **A hard call inside
+  `Sources/` is not on that list.** Decide it, record the reasoning and the option you rejected, and rely on
+  the gates: a failing test first, an adversarial review of your own diff, the suite, the pre-commit hook.
   ⚠️ FINISHING MEANS ONE OF TWO THINGS, and they are spelled differently. Resolved → delete the triage file.
   Escalated to the owner (the step-5 case in the file) → `mv` it to `<same-name>.escalated`. ⛔ Do not delete
   on the escalation path: deletion means resolved, the daemon re-assigns anything with neither name, and

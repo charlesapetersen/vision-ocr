@@ -1294,12 +1294,23 @@ YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
    item and may be the whole session.
 4. If it is TRIVIAL (docs already landed, an empty file, a stray build artefact): remove it as in 2 and
    log one line.
-5. If — and only if — deciding needs a judgement the owner has reserved (a new seam in `Sources/`,
-   a release, anything touching `testdocs/`), append ONE entry to `## NEEDS OWNER` naming the decision,
-   leave the worktree alone, and `mv` this file to `<same-name>.escalated`. ⛔ Do NOT delete it: deletion
-   means RESOLVED, and the daemon re-assigns anything with neither name — which would make every later
-   session spend its one item re-deciding this and append a duplicate outbox entry each time.
-   That branch is the escape hatch, not the default.
+5. ESCALATE ONLY FOR AUTHORITY, NEVER FOR DIFFICULTY. The test is not "is this consequential?" — it is
+   "does this need permission the daemon does not have, or is it irreversible?" That list is short:
+     * publishing anything that reaches users — a release, a tag, a DMG, a GitHub release;
+     * writing or deleting `testdocs/` or the Zotero library (1.2 GB of third-party copyrighted material
+       that cannot be regenerated);
+     * destroying work that has no durable copy;
+     * spending beyond the session budget.
+   ⛔ DO NOT escalate because a call is technically hard, or because it touches `Sources/`, or because it
+   feels weighty. The owner's own instruction, 2026-08-22: *"I'm relatively non-technical and in no
+   position to judge these decisions myself"* — so handing him a technical choice does not get it decided,
+   it gets it deferred and then answered with whatever you recommended anyway. Make the call, write down
+   the reasoning AND the option you rejected, and let the gates that exist catch you: a failing test
+   first, an adversarial review of your own diff, the suite, and the pre-commit hook.
+   If it does clear that bar: append ONE entry to `## NEEDS OWNER` naming the decision, leave the worktree
+   alone, and `mv` this file to `<same-name>.escalated`. ⛔ Do NOT delete it: deletion means RESOLVED, and
+   the daemon re-assigns anything with neither name — which would make every later session spend its one
+   item re-deciding this and append a duplicate outbox entry each time.
 
 Then delete this file (or rename it per step 5). An unresolved assignment is what keeps the strand visible.
 ⚠️ If the worktree named above no longer EXISTS, /private/tmp was swept. Say so in the SESSION LOG, note
