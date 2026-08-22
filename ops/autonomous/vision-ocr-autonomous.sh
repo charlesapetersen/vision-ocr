@@ -1320,7 +1320,13 @@ YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
    the reasoning AND the option you rejected, and let the gates that exist catch you: a failing test
    first, an adversarial review of your own diff, the suite, and the pre-commit hook.
    If it does clear that bar: append ONE entry to `## NEEDS OWNER` naming the decision, leave the worktree
-   alone, and `mv` this file to `<same-name>.escalated`. ⛔ Do NOT delete it: deletion means RESOLVED, and
+   alone, and rename this file so its `.md` becomes `.escalated` — for THIS strand, exactly
+   `mv $STATE/triage/<worktree>.md $STATE/triage/<worktree>.escalated`. ⛔ **REPLACE the `.md`, do not
+   append to it.** This said `<same-name>.escalated`, which reads as `<worktree>.md.escalated`, and that
+   is not the name anything tests: the daemon's guard and all three of `status-digest.sh`'s look for
+   `<worktree>.escalated`. Measured 2026-08-22 — a strand escalated at 09:19 as `.md.escalated` was
+   re-assigned at 11:51:40, the next session found a duplicate assignment beside the escalation, and the
+   digest reported it as merely "assigned". ⛔ Do NOT delete it either: deletion means RESOLVED, and
    the daemon re-assigns anything with neither name — which would make every later session spend its one
    item re-deciding this and append a duplicate outbox entry each time.
 
