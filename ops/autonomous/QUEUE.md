@@ -1478,8 +1478,12 @@ happens.**
       be hand-written, 22 files quote the corpus size, and `testdocs/README.md` says re-cutting "moves
       every published figure at once, and that is a decision to take with the numbers rather than instead
       of them". Those numbers are what sub-steps 1-3 produce, so do not propose a corpus write before
-      then. Writing `testdocs/` is the owner's call alone either way — see the `corpus-write` line at the
-      foot of this file, which nothing here changes.
+      then. ⛔ **Corrected 2026-08-22: writing `testdocs/` is NO LONGER the owner's call** — that hold now
+      covers his Zotero library only, because the corpus is a sample OF the library and the library is the
+      irreplaceable half. What still holds, and is the actual point of this paragraph, is that a re-cut
+      "moves every published figure at once": there is no replay-by-key mode, so a rebuild is a fresh
+      sample and the dated measurements stop being reproducible. Have the numbers first, then decide — see
+      the `corpus-write` line at the foot of this file for the full reasoning.
       ⚠️ **AND THE TWO TOKENS THAT MARK A HOLD MUST NOT APPEAR IN THIS BOX.** `next-item.sh:100` is
       `held = (cur_span ~ /\[hold\]/ || cur_span ~ /needs:[[:space:]]*owner/)`, matched over the item's
       WHOLE greedy span — so merely *writing about* another item's hold, in either spelling, silently
@@ -1963,6 +1967,20 @@ picked, and the resume prompt surfaces them to the run log instead of acting on 
       shipped default and `v1.13.0` is the build carrying it; C27 is fidelity and rides in 1.14.0. That
       decision does NOT unhold this item: no session prepares, bumps, tags or builds a DMG.
       (origin: CHANGELOG.md, TECHNICAL.md)
-- [ ] **corpus-write** — anything that writes `testdocs/` or the Zotero library itself. [hold] needs:
-      owner — 1.2 GB of third-party copyrighted PDFs, not committed, and not regenerable without the
-      source library. Reading it is fine; writing it is not. (origin: CLAUDE.md §"Not committed")
+- [ ] **corpus-write** — anything that WRITES the owner's **Zotero library**. [hold] needs: owner — it is
+      his data and the one irreplaceable thing in this project. Reading it is fine and is how the corpus is
+      built: `sample-zotero.py` copies `zotero.sqlite` because Zotero locks the original.
+      ⛔ **`testdocs/` CAME OFF THIS HOLD ON 2026-08-22, owner's correction.** This line read "1.2 GB of
+      third-party copyrighted PDFs … not regenerable without the source library", which is true and was
+      being read as if the library were unavailable. It is not: *"Isn't the corpus easily regenerated? It's
+      all just stuff from my zotero. As long as we're not touching my zotero library, we're fine, no?"* The
+      corpus is a SAMPLE of the library, so the library is what needs protecting and the sample does not.
+      ⚠️ **But `testdocs/` still is not something to rewrite casually, for a reason that is about EVIDENCE
+      rather than permission.** `sample-zotero.py` has **no replay-by-key mode** — `--exclude-manifest` does
+      the opposite, and there is no `--from-manifest` — so a rebuild is a fresh `random.seed(7)` stratified
+      sample, and the tool's own docstring promises only an *equivalent* corpus, not the same 233 documents.
+      A library that has grown since gives different picks, and every dated measurement keyed to specific
+      documents and pages then stops being reproducible: `INKBAR-2026-08-19.tsv`'s 2,129 page rows,
+      `SHAPETERM-*`, `CORPUS-2026-08-15.md`, the whole C26/C27/C28 campaign. So a session may write
+      `testdocs/` when it has a stated reason, must never re-sample as a side effect of something else, and
+      must say so loudly in the SESSION LOG when it does. (origin: CLAUDE.md §"Not committed")

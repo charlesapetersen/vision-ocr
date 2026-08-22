@@ -64,10 +64,17 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue.
   these decisions myself."* Handing him a technical choice does not get it decided; it gets it deferred and
   then answered with whatever you recommended, a day later. So the test for `## NEEDS OWNER` is not "is this
   consequential?" but "does this need permission I do not have, or is it irreversible?" — publishing
-  anything that reaches users (a release, a tag, a DMG); writing or deleting `testdocs/` or the Zotero
-  library; destroying work with no durable copy; spending beyond the session budget. **A hard call inside
-  `Sources/` is not on that list.** Decide it, record the reasoning and the option you rejected, and rely on
-  the gates: a failing test first, an adversarial review of your own diff, the suite, the pre-commit hook.
+  anything that reaches users (a release, a tag, a DMG); **writing** the owner's Zotero library; destroying
+  work with no durable copy; spending beyond the session budget. **A hard call inside `Sources/` is not on
+  that list.** Decide it, record the reasoning and the option you rejected, and rely on the gates: a failing
+  test first, an adversarial review of your own diff, the suite, the pre-commit hook.
+  ⚠️ `testdocs/` IS NOT ON THAT LIST EITHER — corrected by the owner 2026-08-22. It is a SAMPLE of his Zotero
+  library, so the library is the irreplaceable thing and the corpus is not; READING Zotero is fine and is how
+  the corpus gets built. What `testdocs/` deserves is care about EVIDENCE rather than permission:
+  `sample-zotero.py` has no replay-by-key mode, so a rebuild is a fresh `random.seed(7)` stratified sample
+  and its docstring promises only an *equivalent* corpus. A library that has grown gives different picks, and
+  every dated measurement keyed to specific documents and pages then stops being reproducible. Never
+  re-sample as a side effect; if you do it deliberately, say so loudly in the SESSION LOG.
   ⚠️ FINISHING MEANS ONE OF TWO THINGS, and they are spelled differently. Resolved → delete the triage file.
   Escalated to the owner (the step-5 case in the file) → `mv` it to `<same-name>.escalated`. ⛔ Do not delete
   on the escalation path: deletion means resolved, the daemon re-assigns anything with neither name, and

@@ -1297,10 +1297,22 @@ YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
 5. ESCALATE ONLY FOR AUTHORITY, NEVER FOR DIFFICULTY. The test is not "is this consequential?" — it is
    "does this need permission the daemon does not have, or is it irreversible?" That list is short:
      * publishing anything that reaches users — a release, a tag, a DMG, a GitHub release;
-     * writing or deleting `testdocs/` or the Zotero library (1.2 GB of third-party copyrighted material
-       that cannot be regenerated);
+     * WRITING the owner's Zotero library. That is his data and the one irreplaceable thing here.
+       READING it is fine and is how the corpus is built (`sample-zotero.py` copies `zotero.sqlite`
+       because Zotero locks the original).
      * destroying work that has no durable copy;
      * spending beyond the session budget.
+   ⚠️ `testdocs/` IS NOT ON THAT LIST, and an earlier version of this had it there on the grounds that it
+   "cannot be regenerated". That is wrong and the owner said so: it is a sample OF the Zotero library, so
+   the library is the irreplaceable thing and the corpus is not. What `testdocs/` actually deserves is
+   care for a different reason — EVIDENCE, not authority. `sample-zotero.py` has **no replay-by-key mode**
+   (`--exclude-manifest` does the opposite; there is no `--from-manifest`), so a rebuild is a fresh
+   `random.seed(7)` stratified sample and its own docstring promises only an *equivalent* corpus, not the
+   same 233 documents. A library that has grown since gives different picks — and every dated measurement
+   keyed to specific documents and pages (`INKBAR-2026-08-19.tsv`'s 2,129 page rows, `SHAPETERM-*`,
+   `CORPUS-2026-08-15.md`, the whole C26/C27/C28 campaign) silently stops being reproducible. So: never
+   re-sample as a side effect of something else, and if you deliberately do it, say so loudly in the
+   SESSION LOG. That is a "have a good reason" rule, not an "ask the owner" rule.
    ⛔ DO NOT escalate because a call is technically hard, or because it touches `Sources/`, or because it
    feels weighty. The owner's own instruction, 2026-08-22: *"I'm relatively non-technical and in no
    position to judge these decisions myself"* — so handing him a technical choice does not get it decided,
