@@ -500,11 +500,23 @@ happens.**
       38.1% of the bytes, 15.5% of the spend on pages that do not lose content against 58.5% — but the bar rescues 15 of 16
       losers and the term 13.
       **So questions 1, 2, 3 and 5 are measured, question 4 is measured at the LAYERING seam, and what
-      is left is** — **question 4 at the `textRegionMask` seam** (which is the seam question 3's own
-      sentence names, the one 3b's bound does NOT cover, and now the more expensive of the two), plus
-      **the population of sub-bar pages carrying a picture** (unmeasured, not empty — see the
-      `c28-pictures` sub-box). ⚠️ Do not quote T15's 1.33x as the page-level figure, and note `linePx`
-      is an area and not a byte count.
+      is left is question 4 at the `textRegionMask` seam** — the seam question 3's own sentence names,
+      the one 3b's bound does NOT cover, and now the only thing under this entry unpriced at any scale.
+      ⚠️ Do not quote T15's 1.33x as the page-level figure, and note `linePx` is an area and not a byte
+      count.
+      ✅ **THE OTHER THING THAT WAS LEFT — the population of sub-bar pages carrying a picture — IS
+      MEASURED 2026-08-22 AND IT HOLDS NO PRINTED PLATE. Do NOT re-run it**; the `c28-subbarpix` sub-box
+      below and `BUGS.md` C28 `#### Are there PICTURES in the sub-bar 73?` carry it, with
+      `SUBBARPIX-2026-08-22.tsv`. **0 printed plates and 0 printed figures over the 73, and the largest
+      non-text mark anywhere is ≤3% of a page** — that pair is what survives every boundary choice and is
+      the claim to quote; the device / camera / annotation counts are FLOORS, not a census.
+      ⛔ **Three of 3b's four substrates are absent and the fourth is NOT**: continuous tone occurs, as
+      camera photography — `1976 - Regis McKenna Papers` p4 is a colour photograph of a memo whose `txtN`
+      is **45** and `txtShare` **0.2157**, so the component test accepts a fifth of its out-of-stencil map
+      and only `lineN = 0` refuses it. ⛔ **So the bound is the GROUPING, not the component test**, and an
+      ornament rect on another page agrees: map 666 px, accepted components **664**, grouped **0**. Those
+      two constants are the same ones behind the term's false negatives on C26's cartoons, which makes
+      relaxing them a two-sided trade rather than a fix.
       ✅ **THE CORPUS FIGURE IS DONE 2026-08-21 — do NOT re-derive it**; the `c28-corpus` sub-box below
       and `BUGS.md` C28 `#### The corpus figure` carry it, with `Tools/stratify-corpus.py`. Per
       document, over the whole 16,987-page corpus: **~127 pages are still shrunk 8x/16x and ~19 of them
@@ -1017,7 +1029,11 @@ happens.**
       ⚠️ **The absence that would bound the sub-bar population is over the wrong set**: a plate can
       survive 8x (this entry's own p6: an 8x blur keeps solid black), so a plate on a sub-bar page would
       never appear among the 73's 16 losers, and the 57 non-losers were never inventoried for plates.
-      **Unmeasured, not empty.**
+      **Unmeasured, not empty.** ✅ **INVENTORIED 2026-08-22 and it holds no printed plate** — see the
+      `c28-subbarpix` sub-box: 0 printed plates, 0 printed figures, largest non-text mark ≤3% of a page.
+      ⛔ **But only THREE of this box's four substrates are absent** — halftone dots, pen-ornament strokes
+      and printed photograph grain occur nowhere in the 73, and **continuous tone does**, as camera
+      photography: `1976 - Regis McKenna Papers` p4's `txtShare` is 0.2157 with `lineN` 0.
       ⚠️ **`lineShare` is the only column that separates, and it is the SEVENTH SHARE in a register that
       has refused six** — 0.0002–0.0099 on the six firings, 0.0000 on the six labelled non-losers,
       0.2332–0.9937 on the six labelled type-losers, so a bar in (0.0099, 0.2332) separates 22 of the
@@ -1263,6 +1279,64 @@ happens.**
       the local variant. **Nothing is wired** — `Sources/` untouched, so no mutant and no
       `fault-inject.sh` case owed — and the `textRegionMask` seam is still unpriced at **any** scale.
       (context: BUGS.md C28 `#### The corpus figure`)
+- [x] **c28-subbarpix** — **DONE 2026-08-22. The sub-bar 73 are inventoried for pictures: the population
+      holds NO PRINTED PLATE, and the bound the shape term relies on turns out to be the GROUPING rather
+      than the component test.** Do not re-run it; `SUBBARPIX-2026-08-22.tsv` (80 rows, 16 columns) and
+      `BUGS.md` C28 `#### Are there PICTURES in the sub-bar 73?` carry it. This is the absence
+      `c28-pictures` said it could not supply.
+      **The population is the same 73, re-derived machine-readably** (`INKBAR-2026-08-19.tsv` rows with
+      `verdict=all-text AND barVerdict=all-text`) and asserted identical to
+      `SHAPETERM-73-2026-08-21.tsv`'s `(document, page)` pairs on **73 of 73**.
+      **The instrument**: one `pdftoppm -f N -l N -png -scale-to 1400` render of the SOURCE page each, the
+      73 plus **7 controls**, read by **two independent passes** of eight subagents — pass 1 under a class
+      rubric, pass 2 framed to **over-flag**. **6 of 6 positive controls found in both passes**, and both
+      called the hard negative `none`.
+      ✅ **THE CLAIM TO QUOTE, because it survives every boundary choice: 0 printed plates and 0 printed
+      figures over the 73, and the largest non-text mark anywhere in the population is ≤3% of a page.**
+      Beyond it the counts are **floors, not a census**: ≥3 printed devices (a script masthead with
+      stippled ornament bands, a `Digitized by Google` scan wordmark, a Great Northern Railway roundel),
+      ≥1 page that is itself a colour photograph, ≥7 with reader pen marks, ≤62 with nothing.
+      ⛔ **THE PART WORTH MORE THAN THE HEADLINE — three of 3b's four picture substrates are absent from
+      the 73 and the FOURTH IS NOT.** Halftone dots, pen-ornament strokes and printed photograph grain
+      occur nowhere, but **continuous tone does**, as camera photography: `1976 - Regis McKenna Papers` p4
+      is a colour photograph of a memo on a desk and from the committed sweep its `outPx` is **7,569**,
+      `txtN` **45**, `txtPx` **1,633**, `txtShare` **0.2157** — the component test accepts **21.6%** of
+      that page's out-of-stencil map — and only `lineN = 0` refuses it. A printer's-ornament rect on
+      `_1967_Yearly Increase … Boxoffice` p1 says the same: map **666** px, accepted components **664**,
+      grouped **0**. ⛔ **So `lineMinimumMembers` / `lineGapFactor` carry the whole bound, and they are the
+      same two constants behind the term's false negatives on C26's cartoons** (`textish` 372 and 785 px,
+      0 groups); `lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values, so
+      lowering it to 3 rescues three matrix values and admits 664 px of ornament. **First measurement that
+      prices both sides.**
+      ✅ **The register's "all three false positives are the RIM of recognised type" is confirmed
+      independently**: `_1967_Yearly Increase` p1's two accepted groups, read at 1:1 off a freshly built
+      binary, are the glyph tops of `Century-Fox.` and `handle "Dolittle"`.
+      ⛔ **It corrected a description of this campaign's**: `Gitlin_2000` p1's "photograph frame" is a
+      ProQuest *"Blocked due to copyright. See full page image or microfilm."* placeholder box — **there is
+      no photograph on that page** — fixed in `BUGS.md` in the **two** places it was published; the page's
+      verdict (loses nothing) does not move.
+      ⚠️ **What the adversarial review of this diff found, all corrected before commit**: `207/109` on the
+      Scott footer strip was truncation and is **208/110**; "all 666" was read off a mask that paints
+      `bbox ∩ map` and the accepted set is **664**; "the one device rect that reaches the map" was two of
+      three; `CLAUDE.md`'s enumeration summed to 72 of 73; "the floor is ~3%" is refuted by pass 2's own
+      1% findings; the hard negative is a photographed copyright page with a thumb in frame, not a
+      "featureless grey endpaper"; the Scott y-list named components where it meant line groups and said
+      "top half" of a band at 53.5% depth; ⛔ and **"none of 3b's four substrates occurs" was a claim that
+      could not fail**, protected by a `plate`-means-printed-on-the-sheet boundary drawn after the reads.
+      ⚠️ **Limits**: there is **no plate control below 40%** of a page, so "0 plates" is a claim about
+      plates the size of the three plate controls; the two passes disagree on **9 of 73**, every one pass 1
+      saying `none`, so read pass 2 and treat pass 1 as a second opinion; pass 1's prompt was **not
+      preserved on disk**; the file names carry the page number, so the three plate controls are
+      identifiable from the filename and the scatter blinds the order rather than the identity; and
+      `Riesman - 1954` p20, a register-known content loss, sits in the `none` bucket.
+      **No tool added and nothing wired** — `Sources/` and `Tools/` untouched, so no mutant and no
+      `fault-inject.sh` case owed, and no 45-90 minute suite bought for a one-shot driver. Reproducible
+      from the `awk` filter above, one `pdftoppm` per page, and `score-shape-term`'s `SHAPEDUMP`.
+      Determinism controls: `_1967_Yearly Increase` p1 and `Scott_TK` p3 reproduce
+      `SHAPETERM-73-2026-08-21.tsv` on `inkOut`/`lineN`/`linePx`/`topLine` to every digit, `--self-test`
+      6 of 6, and the review independently reproduced a third row (Regis p4). ⚠️ A re-run of unchanged
+      code, not a control across a change.
+      (context: BUGS.md C28 `#### Are there PICTURES in the sub-bar 73?`)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,

@@ -83,7 +83,16 @@ corpus**. The shape term's wiring refuses **~18 of the ~127** for +2,694,515 B a
 the ~19**; the cheapest page-wide bar refuses **~60** for +8,289,863 B and rescues **~17.9**. So the
 term is **30.9%** of the bar's pages and **32.5%** of its bytes, against the 39.0% and 38.1% these 41
 sampled rows read. `#### The corpus figure` is the measurement; the `textRegionMask` seam is still
-unpriced at any scale.
+unpriced at any scale, **and as of 2026-08-22 it is the only thing under this entry that is** — the
+other item that was left, the population of sub-bar pages carrying a picture, is measured: **0 printed
+plates and 0 printed figures over the 73**, the largest non-text mark ≤3% of a page, two independent reads
+each finding 6 of 6 positive controls (`SUBBARPIX-2026-08-22.tsv`, `#### Are there PICTURES in the sub-bar
+73?`). ⛔ **But the bound is the GROUPING, not the component test, and one page of continuous tone shows
+it plainly**: `1976 - Regis McKenna Papers` p4 is a colour photograph of a memo and the component test
+accepts `txtN` **45** components / **21.6%** of its out-of-stencil map, refused only by `lineN = 0`; in a
+printer's-ornament rect on another page the map holds 666 px and the accepted components **664** of them,
+grouped **0**. So `lineMinimumMembers` / `lineGapFactor` carry the whole of it — the same two constants
+behind the term's false negatives on C26's cartoons, which makes relaxing them a two-sided trade.
 ✅ **Question 2's 1/2 half is MEASURED 2026-08-20 and the loss does NOT reproduce there** — 16 of the
 109 layered pages the bar does not read as all text were rendered and read at 1:1, ten of them beside a
 1/8 reference on the same rect, and **no content loss was found at 1/2 in any window read**, including
@@ -120,7 +129,9 @@ not validated on that sample** — 8 of the 73 plus 5 of the 16 C26's bar move r
 and **no plate, halftone or line drawing in it at all**, which is exactly what `textRegionMask` exists
 to keep out — **measured the same day, next sentence, and it does not read 0 there**. ✅ **The
 convenience sample was replaced by the whole 73-page population later the same day and the type half
-went 6 of 6 to 12 of 12; see two paragraphs down.** ⚠️ Read `lineN` and not the share: the drawn bracket's `txtShare` (0.0173) sits *below* a
+went 6 of 6 to 12 of 12; see two paragraphs down.** ✅ **And the missing class turns out not to be a gap
+in the sample but a fact about the population: inventoried 2026-08-22, the 73 hold 0 plates and 0 drawn
+figures**, so no sample drawn from them could have contained one. ⚠️ Read `lineN` and not the share: the drawn bracket's `txtShare` (0.0173) sits *below* a
 non-loser on the same scan (0.0500), so a bar on the share inverts that pair — a sixth refused scalar.
 ⛔ **QUESTION 3b IS MEASURED 2026-08-21 AND THE TERM ERRS IN BOTH DIRECTIONS** — ten picture pages,
 `SHAPETERM-PICTURES-2026-08-21.tsv`, `#### The same shape term on PICTURES`. `lineN` is **≥ 1 on 6 of
@@ -4490,7 +4501,15 @@ reproduce the loss and **1/3 does**, on one page of sixteen —
 pages** (`#### The same shape term on PICTURES`) — firing on 6, and missing 2 whose loss C26 measured.
 So 3 is open on what to do about that rather than on whether a shape signal exists, and 3b opened two
 things of its own: the population of sub-bar pages carrying a picture, and the `textRegionMask` seam's
-price. ✅ **The term was then read over the WHOLE 73, 2026-08-21, constants unchanged** —
+price. ✅ **The first of those two is MEASURED 2026-08-22 and the population holds no printed plate** —
+`#### Are there PICTURES in the sub-bar 73?`, `SUBBARPIX-2026-08-22.tsv`: **0 printed plates and 0 printed
+figures over the 73**, the largest non-text mark ≤3% of a page, 6 of 6 positive controls found in each of
+two independent passes. ⛔ **But the same run found where the bound actually lives, and it is not the
+component test**: on `1976 - Regis McKenna Papers` p4 — a colour photograph of a memo on a desk — the
+component test accepts `txtN` **45** components, **21.6%** of that page's out-of-stencil map, and only
+`lineN = 0` refuses it; in a printer's-ornament rect on another page the map holds 666 px and the accepted
+components **664**, grouped **0**. So `lineMinimumMembers` / `lineGapFactor` carry all of it — the same two
+constants 3b named for the two false negatives on C26's cartoons. ✅ **The term was then read over the WHOLE 73, 2026-08-21, constants unchanged** —
 `#### The same shape term over ALL 73`: `lineN >= 1` on **12 of 12** type-losers, **3 of 57**
 non-losers, and all three of those are the rim of recognised type — ⛔ **and the collar that was supposed
 to remove them is measured the same day, `#### The rim fix, MEASURED`: as a REPLACEMENT it is refused
@@ -5215,7 +5234,7 @@ page, with its typescript sitting crisply *in* the stencil. Verdict unchanged, n
 | 0.0287 | `1976 - Regis McKenna Papers` | p4 | 50,919 -> 401,551 | 7.89x | platen strips + a staple shadow — **nothing** |
 | 0.0286 | `_1967_Yearly Increase … Ampex` | p1 | 44,991 -> 139,007 | 3.09x | column rules, right edge — **nothing** |
 | 0.0231 | `UN-OCred` | p7 | 29,238 -> 93,056 | 3.18x | gutter/spine shadow — **nothing** |
-| 0.0210 | `Gitlin_2000 … New York Times` | p1 | 44,133 -> 114,803 | 2.60x | a photograph's frame + a rule, softened — **nothing** |
+| 0.0210 | `Gitlin_2000 … New York Times` | p1 | 44,133 -> 114,803 | 2.60x | a ruled box + a rule, softened — **nothing** (⛔ read here as "a photograph's frame"; measured 2026-08-22, the box holds a *"Blocked due to copyright"* placeholder and the page has no photograph) |
 | 0.0165 | `Doermann_1967` | p21 | 110,245 -> 471,710 | 4.28x | **a hand-inked margin number, illegible**; footnote rule softened |
 | 0.0148 | `Herbert Marks papers` | p11 | 19,439 -> 77,005 | 3.96x | **TYPE: the line `City of Seattle`, the word `etc.`, 59 marks in all** |
 | 0.0107 | `Ford_1941_Speech_` | p3 | 42,948 -> 243,509 | 5.67x | the photographed sheet's curved edges — **nothing** |
@@ -5599,7 +5618,9 @@ has nothing at all to say (this one).
    ⚠️ **This bucket was wrong in four ways in its first draft and the review of the diff caught all
    four**: it said 9 type while listing ten, "ten items over nine pages", counted `Riesman - 1954`
    p20's pen line as a content loss when sub-step 2 had classed it as degradation (which made the
-   enumeration 15 against a stated 14), and put `Gitlin_2000` p1's photograph frame in the rule bucket
+   enumeration 15 against a stated 14), and put `Gitlin_2000` p1's photograph frame (⛔ **measured
+   2026-08-22: there is no photograph on that page** — the frame is a ProQuest *"Blocked due to
+   copyright"* placeholder box; see `#### Are there PICTURES in the sub-bar 73?`) in the rule bucket
    while its own verdict table has it losing nothing — double-counting it against the 32. 10 + 4 = 14,
    + 6 + 32 = 52, and with C26 sub-step 4's 7 type + 1 hand-made that is the published campaign total
    of 17 type and 5 hand-made over 22 content losses — which sub-step 4's two further losses take to
@@ -6673,6 +6694,13 @@ sub-bar pages were rendered and no destroyed plate or halftone is among the 16 l
 solid black while destroying every line — so a plate on a sub-bar page would never appear among the
 losers. The 57 non-losers were never inventoried for plates. **The population of sub-bar pages carrying
 a picture is unmeasured, not empty**, and that is what the 1.10x margin makes worth knowing.
+✅ **MEASURED 2026-08-22 and it holds no printed plate** — `#### Are there PICTURES in the sub-bar 73?`:
+**0 printed plates, 0 printed figures**, the largest non-text mark ≤3% of a page, over two independent
+reads that each found 6 of 6 positive controls. ⛔ **But three of this box's four substrates are absent and
+the fourth is NOT**: halftone dots, pen-ornament strokes and printed photograph grain occur nowhere in the
+73, and **continuous tone does** — `1976 - Regis McKenna Papers` p4 is a colour photograph of a memo whose
+`txtN` is **45** and `txtShare` **0.2157**, so the component test accepts a fifth of its map and only
+`lineN = 0` refuses it. **The bound is the grouping, not the component test.**
 
 ##### Instrument notes and controls
 
@@ -7423,6 +7451,216 @@ that the scaled one exists.
   `fault-inject.sh` case is owed; the only code added is a `Tools/` analysis script. The
   `textRegionMask` seam remains unpriced at any scale — this arm scales the **layering** seam's price
   and nothing else.
+
+#### Are there PICTURES in the sub-bar 73? — the population is EMPTY of plates and figures, the three printed devices in it are ≤3% of a page, and on the one that reaches the map the component test accepts the ornament WHOLESALE and only the grouping stops it — MEASURED 2026-08-22
+
+The `#### The same shape term on PICTURES` section closes with the one absence it could not supply:
+*"a plate can survive 8x (this entry's own p6: an 8x blur keeps solid black), so a plate on a sub-bar
+page would never appear among the 73's 16 losers, and the 57 non-losers were never inventoried for
+plates. **Unmeasured, not empty.**"* This is that inventory. It is committed as
+`SUBBARPIX-2026-08-22.tsv`, 80 rows and 16 columns — the 73 plus 7 scattered controls.
+
+**The population is the same 73, derived the same machine-readable way** and not re-listed by hand: the
+rows of `INKBAR-2026-08-19.tsv` with `verdict=all-text` AND `barVerdict=all-text`. Asserted 73, and
+asserted identical to `SHAPETERM-73-2026-08-21.tsv`'s `(document, page)` pairs on **73 of 73** — the
+same control that sub-step used, run again here because the whole point is that this file and that one
+describe the same pages.
+
+##### The instrument, and its floor is measured rather than asserted
+
+Each page is one `pdftoppm -f N -l N -png -scale-to 1400` render of the **source** PDF — not a
+`Flattener` render, because the question is what the sheet *carries*, not what the app does to it. The
+80 PNGs were named `page-NNN` in `md5("document|page")` order, so the controls are scattered and
+unlabelled, and read by **two independent passes** of eight subagents each:
+
+- **pass 1** classified into `plate` / `drawing` / `chart` / `none` under a rubric that excludes ruled
+  table lines, signatures, handwritten annotation, stamps of type, show-through and the photographed
+  surroundings of the sheet;
+- **pass 2** was framed the opposite way — *"be INCLUSIVE: it is better to flag a doubtful mark than to
+  miss one"*, with `crest, seal, emblem, roundel, mascot, logo, printer's ornament, decorative band,
+  fleuron, engraved initial` spelled out, and hand-drawn braces and arrows admitted.
+
+⛔ **The two passes are NOT two readings of comparable quality, and the review of this diff measured the
+gap.** Over the 73 they disagree on **9**, and every one is pass 1 saying `none`: pass 1 flagged **2**
+pages, pass 2 flagged **11**, so pass 1 caught 2 of the 11 marks pass 2 found — including calling
+`1976 - Regis McKenna Papers` p4, which is a colour photograph of a memo on a desk, `none`. **Read pass 2
+and treat pass 1 as a second opinion**, not the other way round. ⚠️ And pass 1's prompt was **not
+preserved on disk** (pass 2's is, at `/tmp/prompt2-*.txt`, and it is quoted above verbatim), so the
+rubric attributed to it here is a description rather than an artefact — which is the wrong half to have
+lost, given that pass 1's `none` calls are the ones under question.
+⛔ **The blinding is weaker than "scattered and unlabelled" sounds.** `pdftoppm` appends the page number,
+so the files are `page-NNN-<page>.png`, and the **three highest page-number suffixes in the whole set are
+the three plate controls** (`-162`, `-122`, `-061`) against a maximum of `-37` anywhere in the 73.
+All three plate positives are identifiable from the filename without opening the image. The readers'
+descriptions show they did look, so this probably did not change the outcome, but the scatter blinds the
+*order*, not the identity.
+
+**The seven controls are the floor, and both passes got 7 of 7.** Six are pages this register has
+already read at 1:1, all outside the 73 (every one `barVerdict=picture`): `Ibson_2006` p61 (the halftone
+plate 3b fired on), `Ibson_2006` p122 (photograph grain inside a plate), `Ibson_2006` p162,
+`1881 - Harry Wilcox` p2 (the pen ornament that gave 17 groups), and `1954 - Why` p4 and p6 (C26's
+founding cartoons, the second of which the shape term reads **0** on). Pass 1 found **6 of 6**, pass 2
+found **6 of 6**. The seventh is a hard negative — `Riesman - 1954` p2, the featureless grey endpaper
+whose page-wide-Otsu speckle 3b measured at **10,438 px**, more than `Broadhead - 1994` p3's two
+genuinely lost prose lines — and **both passes called it `none`**. ⛔ **But that control is weaker than
+the sentence above it**: the page is not a "featureless grey endpaper" — the committed TSV's own note
+reads *"Photographed copyright page; show-through and a thumb"*, and the render carries three lines of
+typeset copyright matter and a **photographed human thumb in colour** at bottom right. Under pass 2's own
+instruction (*"any pictorial or drawn mark — anywhere, at any size"*) a thumb in frame is arguably a
+**missed** mark rather than a held negative, so read this control as "neither reader called Otsu speckle a
+plate" and not as a clean negative. (The pre-existing "blank grey endpaper" description at 3b's own
+`##### What the six accepted groups actually are` is wrong the same way; 3b's `topLine` for it,
+`444x154+366+3459` on 3872x5184, is at 67% depth on the left and is **not** the thumb, so the speckle
+reading of the 10,438 px stands.)
+⚠️ **~3% is the smallest CONTROL, and it is not a floor** — pass 2 found marks it estimated at **1%** on
+five pages, so the instrument demonstrably sees 1% marks. And "3%" is the minimum of two disagreeing
+eyeball estimates of the same cartoon (pass 1 read `1954 - Why` p4 at 3%, pass 2 at 8%; p6 at 4% and 6%),
+so it is the most favourable available reading of a 2.7x disagreement. What is honest: **there is no plate
+control below 40%** of a page, so "0 plates" is a claim about plates the size of the three plate controls,
+and a postage-stamp halftone is untested either way.
+
+##### The result — and read the caveat under the table before quoting any row but the first two
+
+⚠️ **This is a census of the marks a reader FLAGGED, adjudicated by me after reading every flagged page.
+The 62 `none` rows rest on the two subagents; only the 17 flagged pages are author-verified.** The review
+of this diff found four undercounts by reading `none` rows itself, so **treat every row but `plate` and
+`drawing` as a FLOOR**.
+
+| adjudicated | pages | what it is |
+|---|---:|---|
+| `plate` | **0** | a photographic or halftone reproduction printed on the sheet |
+| `drawing` | **0** | a drawn line figure: cartoon, sketch, chart, technical figure |
+| `device` | ≥ **3** | a small printed pictorial or lettered device, each ≤3% of the page |
+| `camera` | ≥ **1** | the page image is itself a colour photograph of a document, not a scan |
+| `annot` | ≥ **7** | reader-added pen or pencil marks only — X's, ticks, braces |
+| `none` | ≤ **62** | letterforms, rules, furniture, show-through, stains |
+
+The named undercounts, all found by reading the renders: `device` is at least 4 — `Merriam_1913` p2
+carries the same `Digitized by Google` wordmark that made `Scott_TK` p3 a device, and two different
+readers handled the same mark two ways; `camera` is at least 4 (`Broadhead - 1994` p3 and p12,
+`Ford_1941` p6 are all photographed spreads, two with thumbs in frame); `annot` is at least 12 (signatures
+and pencil corrections on `Atkinson_1939` p3, `_1939_Former students` p6, `Ford_1941` p1,
+`Riesman - 1954` p10 among them). ⛔ **And one bucket boundary misleads and is called out rather than
+quietly fixed**: `Riesman - 1954` p20 is adjudicated `none`, and it is a **register-known content loss** —
+sub-step 2 measured it losing a hand-drawn pen line to a smear — while `Riesman - 1954` p24's much fainter
+pen caret is `annot`. Same document, same class, opposite buckets, and **pass 2 called p20 `none` too**,
+which refutes any reading of "the inclusive pass would have caught it".
+
+⛔ **What survives all of that, because it does not depend on where the boundaries fall: 0 plates and 0
+drawn figures over the 73, and the largest non-text mark anywhere in the population is ≤3% of a page.**
+⚠️ Note "0 drawn figures" is **my** adjudication overriding pass 1, which labelled `_1967_Yearly Increase`
+p1's masthead and `_1939_Former students` p2's roundel `drawing`; I read both and call the script masthead
+lettering and the roundel a device. Under pass 1's own labels the count is 2 drawings, both ≤3%.
+
+⛔ **So three of 3b's four picture substrates are absent, and the fourth is NOT.** Halftone dots,
+pen-ornament strokes and printed photograph grain occur nowhere in the 73 — but **continuous tone does**,
+as camera photography rather than as a printed plate, and on `1976 - Regis McKenna Papers` p4 it reaches
+the shape rule hard: from the committed sweep, `outPx` **7,569**, `txtN` **45** accepted components,
+`txtPx` **1,633**, `txtShare` **0.2157** — the component test accepts **21.6%** of that page's
+out-of-stencil map on a sheet that is continuous tone end to end — and only `lineN = 0` refuses it. ⚠️ **A
+first draft of this section wrote "none of those four things occurs on any of the 73" and was protected
+from being wrong by a category boundary drawn after the reads** (`plate` defined as printed *on the
+sheet*, so the one continuous-tone page in the population could not be one). That is a claim that cannot
+fail, it is the shape this register has caught nine times, and the review of this diff caught it here.
+"Unmeasured, not empty" resolves to **empty of printed plates and printed figures**, not to "empty of
+pictures" and not to "empty of continuous tone".
+
+The three devices, with the shape term's own columns beside them:
+
+| page | device | `outPx` | `lineN` | label |
+|---|---|---:|---:|---|
+| `_1967_Yearly Increase … Boxoffice` p1 | script masthead + stippled ornament bands | 5,863 | **2** | nothing |
+| `Scott_TK` p3 | the `Digitized by Google` wordmark in the scan footer | 7,462 | **6** | loses type |
+| `_1939_Former students` p2 | Great Northern Railway roundel, mountain-goat mascot | **0** | 0 | loses hand |
+
+⚠️ Pass 1 called the Google wordmark `none` and pass 2 called it a device: that is a rubric difference
+about whether a wordmark is lettering, not a disagreement about what is on the sheet. The count is 3
+under the inclusive rule and 2 under the strict one, and **0 plates either way**.
+
+##### ⛔ The sharp part: where a picture DOES reach the map, `textish` accepts nearly all of it and only the GROUPING refuses it
+
+`_1967_Yearly Increase … Boxoffice` p1 is one of the **three non-losers the term fires on**, and the
+register's account of those three — *"all three of those firings are the RIM of recognised type"* — is
+**confirmed here independently, read at 1:1 off a freshly built binary**: its two accepted groups are
+the glyph tops of `Century-Fox.` and `handle "Dolittle"`, on lines that are in the text layer. The
+masthead is not the cause.
+
+But in the masthead's own rect (`700x140+100+170` on a 1,159x1,573 page, crop-verified against
+`-source.png` before any pixel was counted, per this entry's own coordinate-frame warning):
+
+- the map holds **666 px**,
+- the accepted components hold **664** of them — three components of 488, 133 and 43 px, and every one is
+  the **stippled ornament band**; the script `Backstage` itself contributes nothing,
+- `-lines.png` holds **0**.
+
+⚠️ **`-textish.png` *paints* 666 there and the accepted set is 664**, and the difference is the dump's
+own construction, not a measurement: the tool paints each mask as `bbox ∩ map`, so 2 map px belonging to a
+component below `shapeMinimumArea = 4` get painted because they lie inside an accepted component's
+bounding box. Page-wide the same gap is 1,094 painted against `txtPx` **1,089**. A first draft of this
+section read "all 666" off the mask; the review of this diff caught it, and this register has corrected
+"1,961 at every resolution" to "1,960-1,962" for the same reason. **99.7%, not 100%.**
+
+⛔ **So the component test does not discriminate a printer's ornament from type at all. Only
+`lineMinimumMembers` / `lineGapFactor` does.** The wiring's zero picture false positives over these 73
+pages rests entirely on those two constants — and they are **the same two** 3b named as the cause of the
+term's two false negatives on `1954 - Why` p6 and p7, where `textish` accepts 372 and 785 px of cartoon
+and **0** reach a group. The tension is now measured on named pages in both directions:
+`lineMinimumMembers = 4` already **costs** content (it drops `0.09`, `0.04` and the diagonal `1` from
+`Xin Qu` p20's thirteen values, so the term names 10 of 13), and lowering it to 3 would admit 666 px of
+ornament on the Boxoffice page. There is no free move there, and this is the first measurement that
+prices both sides.
+
+`Scott_TK` p3 says the same thing more weakly: the footer strip holding the Google wordmark
+(`1020x150+0+1107` of a 1,020x1,257 page) has **208** map px of which **110** pass the component test and
+**0** group — so this is the **second** device rect that reaches the map, not the only one. ⚠️ **207/109
+in a first draft**, from `%[fx:int(w*h*(1-mean))]` truncating where it should round; the exact per-pixel
+count is 208/110 and it is stable across four neighbouring rect conventions. The page's six accepted
+**line groups** — not components, of which there are `txtN` **114** — occupy y bands (150,154) (288,292)
+(346,352) (378,382) (486,493) (672,675), so all six sit above y=676 and **431 px clear of the footer
+strip**; ⚠️ *not* "the top half", which is false for the last of them at 53.5% depth. ⚠️ Note this page's
+*losses*, as
+sub-step 1 inventoried them, include the Google-scan footer, so the term does not name everything that
+page loses; that is a pre-existing fact about the page, not a new one.
+
+`_1939_Former students` p2 is the third and needs no shape rule at all: `outPx` is **0**, so the map is
+empty and the roundel is invisible to every candidate term this entry has considered. It is the same
+page the entry already names as a measured content loss no legal bar reaches.
+
+##### ⛔ A correction to this entry: `Gitlin_2000` p1 has no photograph on it
+
+The bucket-of-52 paragraph and sub-step 3 both refer to *"`Gitlin_2000` p1's photograph frame"*.
+Measured: **there is no photograph.** The frame is a ProQuest placeholder — a ruled box holding the
+words *"Blocked due to copyright. See full page image or microfilm."* Both passes said so independently
+and it is legible in the 1400 px render. The page's verdict is unaffected (it loses nothing, and `lineN`
+is 0 there); the phrase is what was wrong, and it is one more thing this campaign has had to correct
+about its own descriptions rather than its numbers.
+
+##### What this does NOT settle
+
+- **It is a source-page inventory, not a route claim.** It says what the sheet carries. It does not say
+  what `isPicture` would do with a plate if one appeared on a sub-bar page — no such page exists here to
+  ask.
+- **There is no plate control below 40% of a page.** The claim is "no plate the size of the three plate
+  controls", not "no plate"; a postage-stamp halftone is untested. ⚠️ And "the floor is ~3%" was written
+  and then withdrawn in the same commit — pass 2 found marks at 1%, so 3% is the smallest *control*, not
+  a limit of the instrument.
+- **73 sampled pages, 22 documents.** Same sample as every other arm of this entry; the corpus figure
+  (`#### The corpus figure`) scales pages and bytes, not this inventory.
+- **`1976 - Regis McKenna Papers` p4 is the case the question was asking about, arriving by a different
+  route.** It is a colour photograph of a memo on a desk, read as all-text, published with its background
+  at an eighth, label `nothing` — and `txtN` **45** / `txtShare` **0.2157** say the component test accepts
+  a fifth of its out-of-stencil map. ⚠️ A first draft of this bullet said *"it is not that case"* with no
+  measurement, while those columns sat in the committed sweep. It is not a printed plate; it is
+  continuous tone reaching the shape rule, which is the same hazard by another name.
+- **No tool was added and nothing is wired.** `Sources/` and `Tools/` are untouched, so no mutant and no
+  `fault-inject.sh` case is owed. The measurement is reproducible from three things already in the tree
+  — the `awk` filter on `INKBAR-2026-08-19.tsv` above, one `pdftoppm` invocation per page, and
+  `score-shape-term`'s `SHAPEDUMP` — which is why it did not buy a 45-90 minute suite for a one-shot
+  driver.
+- **Two determinism controls on the shape term**, from a binary built fresh in this worktree:
+  `_1967_Yearly Increase` p1 and `Scott_TK` p3 reproduce `SHAPETERM-73-2026-08-21.tsv` on `inkOut`,
+  `lineN`, `linePx` and `topLine` to every digit, and `--self-test` is 6 of 6. ⚠️ That is a re-run of
+  unchanged code, not a control across a change.
 
 #### What this entry is NOT
 

@@ -154,6 +154,35 @@ still 3 true plates of 10 and the seam is ~181 layered pages of which the collar
 about 83; and the `textRegionMask` seam is **still unpriced** — this sub-step makes it no cheaper. ⚠️ The
 **local** variant is no way out either: a per-group exemption trusting the collar would still admit
 16,290 of 16,294 accepted-line pixels on these ten.
+✅ **THE SUB-BAR POPULATION IS INVENTORIED FOR PICTURES 2026-08-22 AND IT HOLDS NO PRINTED PLATE** —
+`SUBBARPIX-2026-08-22.tsv`, the same 73 pages plus 7 controls, rendered one page per PNG at
+`pdftoppm -scale-to 1400` and read by **two independent passes**, the second framed to over-flag. **0
+printed plates and 0 printed figures over the 73, and the largest non-text mark anywhere in the
+population is ≤3% of a page** — that pair is what survives every boundary choice, and is the claim to
+quote. Beyond it: ≥3 small printed devices (a script masthead with stippled ornament bands, a
+`Digitized by Google` scan wordmark, a Great Northern Railway roundel), ≥1 page that is itself a colour
+photograph, ≥7 with reader pen marks, ≤62 with nothing. ⚠️ **Those four are FLOORS, not a census**: only
+the 17 flagged pages are author-verified and the review of this diff found four undercounts by reading
+`none` rows; and `Riesman - 1954` p20, a register-known content loss, sits in the `none` bucket while a
+fainter caret on p24 sits in `annot`. ⚠️ **The two passes are not equals** — they disagree on 9 of 73,
+every one pass 1 saying `none`; pass 1 flagged 2 pages against pass 2's 11, so **read pass 2**. Both found
+**6 of 6** positive controls. ⛔ **Three of 3b's four false-positive substrates are absent from the 73 and
+THE FOURTH IS NOT**: halftone dots, pen-ornament strokes and printed photograph grain occur nowhere, but
+continuous tone does — `1976 - Regis McKenna Papers` p4 is a colour photograph of a memo on a desk whose
+`txtN` is **45** and `txtShare` **0.2157**, so the component test accepts a fifth of its out-of-stencil
+map and only `lineN = 0` refuses it. ⛔ **So the bound is the GROUPING, not the component test**, and a
+printer's-ornament rect says the same: map 666 px, accepted components **664**, grouped **0** (⚠️ the
+`-textish.png` mask *paints* 666 because it paints `bbox ∩ map`; 664 is the accepted set, and "all 666"
+was a first draft caught by the review). `lineMinimumMembers` / `lineGapFactor` are **the same two
+constants** 3b named for the term's false negatives on C26's cartoons (`textish` 372 and 785 px, 0
+groups), and `lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values — so relaxing
+it is a measured two-sided trade, not a fix. ⚠️ **There is no plate control below 40% of a page**, so "0
+plates" means "no plate the size of the three plate controls"; ~3% is the smallest control, **not** an
+instrument floor (pass 2 found marks at 1%). ⛔ **And it corrected a description of this campaign's**:
+`Gitlin_2000` p1's "photograph frame" is a ProQuest *"Blocked due to copyright"* placeholder box —
+**there is no photograph on that page** — corrected in the **two** places it was published; the page's
+verdict (loses nothing) does not move. Nothing wired, no tool added: reproducible from an `awk` filter on
+`INKBAR-2026-08-19.tsv`, one `pdftoppm` per page and `score-shape-term`'s `SHAPEDUMP`.
 ⚠️ A ratio-scaled collar does not rescue the replacement reading: `Scott_TK` p3 loses its last group at
 **0.375x** its own `glyphH` (8) while p12 still fires at **0.6x** its own (5) — ⚠️ derived from radii
 1-3; radii above 3 were not run. ⛔ **And the first draft of this got the mechanism wrong in five
@@ -581,7 +610,8 @@ Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2
 omitted all three; the review of C27's sweep counted that as the third such omission), plus the
 targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
-`SHAPETERM-PICTURES-RIM-2026-08-21.tsv` and `SHAPETERM-BYTES-2026-08-21.tsv` — and are
+`SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
+`SUBBARPIX-2026-08-22.tsv` — and are
 evidence for one run, not
 claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls

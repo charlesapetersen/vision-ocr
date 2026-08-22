@@ -372,9 +372,18 @@ calibrate on" is not the mechanism.
 ✅ **What keeps this from sinking the idea** is that all ten pages are already `barVerdict=picture`, so
 a term wired as a second condition inside `pageIsAllText()`'s true branch is never consulted on them
 and costs zero bytes — derived from the sweep rather than measured, and on a **1.10x** margin (0.0493
-against 0.045), thin enough that the population of sub-bar pages carrying a picture is now the thing
-worth knowing (it is unmeasured, not empty: a plate can survive 8x, so it would never show up among the
-16 losers). ⛔ **And the bound covers only one of the two seams this entry names**: `textRegionMask` runs
+against 0.045), thin enough that the population of sub-bar pages carrying a picture was the thing worth
+knowing. ✅ **That inventory RAN 2026-08-22 and the population holds NO PRINTED PLATE** — 0 printed plates
+and 0 printed figures over the 73, largest non-text mark ≤3% of a page, two independent reads each finding
+6 of 6 positive controls (`SUBBARPIX-2026-08-22.tsv`). ⛔ **But three of 3b's four substrates are absent
+and the fourth is not**: continuous tone occurs, as camera photography — `1976 - Regis McKenna Papers` p4
+is a colour photograph of a memo whose `txtN` is 45 and `txtShare` **0.2157**, so the component test
+accepts a fifth of its out-of-stencil map and only `lineN = 0` refuses it. ⛔ **So the bound is the
+GROUPING and not the component test**, and an ornament rect on another page agrees: map 666 px, accepted
+components **664**, grouped **0**. `lineMinimumMembers` / `lineGapFactor` carry all of it — the same two
+constants that cause the term's false negatives on C26's cartoons, which makes relaxing them a two-sided
+trade rather than a fix.
+⛔ **And the bound covers only one of the two seams this entry names**: `textRegionMask` runs
 unconditionally on every layered page (`Flattener.swift:2696`), so under the seam question 3's own
 sentence describes those six pages would admit halftone dots into the 1-bit stencil — R57's failure
 mode, unpriced. `lineShare` separates 22 of the **23** pages run so far and is the **seventh share in a
