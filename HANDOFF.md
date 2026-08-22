@@ -393,9 +393,16 @@ THE SAME DAY over the same 73 pages, `SHAPETERM-RIM-2026-08-21.tsv`, and it spli
 clears two rims of three while **adding one of its own** (a 1-px collar splits a three-component rim into
 four, reaching `lineMinimumMembers`); from r=2 it destroys real losses. ✅ As a **second condition**,
 `lineN >= 1 AND rim1N >= 1` reads **12 of 12 type-losers and 1 of 51 non-losers** on 14 pages rather than
-16 — the best rule this campaign has measured, ⚠️ but post-hoc, with the hand-made bucket unmoved (1 of
-4) and **never run on a picture page**, so 3b's `textRegionMask` finding is untouched. See `BUGS.md` C28
-`#### The rim fix, MEASURED`. ✅ **And a
+16 — the best rule this campaign has measured, ⚠️ but post-hoc and with the hand-made bucket unmoved (1
+of 4). ⛔ **AND IT BUYS NOTHING AT THE OTHER SEAM, measured 2026-08-21 over the same ten picture pages**
+(`SHAPETERM-PICTURES-RIM-2026-08-21.tsv`): `rim1N == rim2N == rim3N == lineN` on **10 of 10**, so the
+conjunction fires on the same **6 of 10** the r=0 rule does, and a 3-px collar removes **4
+accepted-line pixels of 16,294** page-wide. ⚠️ Four of the ten read `lineN` 0, so the *removal*
+question is asked on the six that fire and one of those six moves at all. The collar is `dilate(region, r) \ region`, so it can only
+reach a mark within `r` px of a recognised word box — which is what a rim is and what a halftone dot in
+the middle of a plate is not — so 3b's `textRegionMask` finding is untouched *as measured* rather than
+as assumed. See `BUGS.md` C28 `#### The rim fix, MEASURED` and
+`#### The conjunction on a PICTURE page`. ✅ **And a
 signature DOES fire**: `_1939_Former students` p6's only group is the cursive signature itself — the
 **fourth** hand-made mark the term is measured firing on (after `Wilcox` p2, `Wilcox` p6 and
 `1954 - Why` p4) and the second on a page of measured loss. ⛔ One of the

@@ -513,13 +513,18 @@ happens.**
       it is refused** — r=1 is the only radius that keeps every real loss, and it clears two rims of
       three while **adding one of its own** (a 1-px collar splits a three-component rim into four,
       reaching `lineMinimumMembers`); from r=2 it destroys real losses.
-      ✅ **BUT AS A SECOND CONDITION IT IS THE BEST RULE THIS CAMPAIGN HAS MEASURED, and that is the
-      live next step**: `lineN >= 1 AND rim1N >= 1` reads **12 of 12 type-losers and 1 of 51
+      ✅ **BUT AS A SECOND CONDITION IT IS THE BEST RULE THIS CAMPAIGN HAS MEASURED ON THE SUB-BAR
+      73**: `lineN >= 1 AND rim1N >= 1` reads **12 of 12 type-losers and 1 of 51
       non-losers**, on 14 pages rather than 16, and the manufactured firing cannot enter it. ⚠️ It is
-      **post-hoc** (chosen after seeing these 73), the hand-made bucket does not move (1 of 4), and
-      ⛔ **the rim columns have NEVER been run on a picture page** — so the next measurement is the
-      conjunction over the 10 pages of `SHAPETERM-PICTURES-2026-08-21.tsv`, which is one run of an
-      unchanged binary. ⚠️ A collar is worse for the **local** variant than any boolean shows: at r=1
+      **post-hoc** (chosen after seeing these 73) and the hand-made bucket does not move (1 of 4).
+      ⛔ **AND IT BUYS NOTHING ON A PICTURE PAGE — RUN 2026-08-21, do NOT re-run it**; the
+      `c28-rimpictures` sub-box below and `BUGS.md` C28 `#### The conjunction on a PICTURE page` carry
+      it, with `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`. `rim1N == rim2N == rim3N == lineN` on **10 of
+      10** pages, the **largest** accepted-line rect identical at every radius, and a 3-px collar removes
+      **4 accepted-line pixels of 16,294** page-wide — so the conjunction fires on the same **6 of 10**
+      the r=0 rule does and 3b's `textRegionMask` finding is untouched *as measured*. The collar is
+      `dilate(region, r) \ region`, so it reaches only a mark within `r` px of a padded word box.
+      ⚠️ A collar is worse for the **local** variant than any boolean shows: at r=1
       `Scott_TK` p3 keeps 278 of 1,796 accepted line pixels and its largest group MOVES. And note
       `outPx` interleaves too (`_1967_Yearly Increase` p1 reads 5,863, above eight of the twelve
       type-losers), so it is not the term either.
@@ -1088,8 +1093,8 @@ happens.**
       rim1N >= 1` reads **12 of 12 type-losers, 1 of 4 hand, 0 of 6 degraded, 1 of 51 non-losers**, on
       **14 of 73** pages rather than 16, and p28 cannot enter it (`lineN` 0 there). Both dropped pages
       are non-losers, so the wiring's price can only fall from +2,362,625 B — ⚠️ a direction, not a
-      number. ⚠️ **Post-hoc**, hand bucket unmoved, and ⛔ **never run on a picture page**: that is the
-      next measurement and it is one run over `SHAPETERM-PICTURES-2026-08-21.tsv`'s ten.
+      number. ⚠️ **Post-hoc** and hand bucket unmoved. ⛔ **And RUN on the ten picture pages 2026-08-21
+      — it buys nothing there**: see the `c28-rimpictures` sub-box below.
       ⚠️ A **ratio**-scaled collar does not rescue the replacement reading: `Scott_TK` p3 loses its last
       group at 0.375x its own `glyphH` (8) while p12 still fires at 0.6x its own (5) — derived from
       radii 1-3, radii above 3 not run. ⛔ **The first draft of this box said the mechanism was that the
@@ -1110,6 +1115,79 @@ happens.**
       ⚠️ The first stub did not compile, so it tested nothing and was rebuilt.
       ⚠️ Nothing is wired; `Sources/` untouched, no mutant and no `fault-inject.sh` case owed.
       (context: BUGS.md C28 `#### The rim fix, MEASURED`)
+- [x] **c28-rimpictures** — **DONE 2026-08-21, and the answer is that the collar does nothing at all on
+      a picture page.** The one run `c28-rimfix` left owed: the rim columns over the same ten pages as
+      `SHAPETERM-PICTURES-2026-08-21.tsv`, same five constants, same `rimRadii`, same five
+      invocations, from the same binary as the 73-page rim sweep (the tool as committed at `a98fdd0`)
+      — ⚠️ **not** the same binary as the pictures file, which had no rim sweep in it at all; that
+      difference is what makes the control below span a real code change, and calling it "the same
+      binary" was this box's own first-draft error. Do NOT re-run it;
+      `SHAPETERM-PICTURES-RIM-2026-08-21.tsv` (11 rows, 33 fields) and
+      `BUGS.md` C28 `#### The conjunction on a PICTURE page` carry it.
+      **`rim1N == rim2N == rim3N == lineN` on 10 of 10 pages**, and the **largest** accepted-line rect
+      (`topLine`, `rim1Top`, `rim2Top`, `rim3Top`) is identical at every radius on all six firing pages
+      — ⚠️ the largest and not every one: the tool prints one rect per page, and on `Wilcox` p2 a
+      *non-largest* group did change (the removed pixels at x 2596–2598 sit outside that page's printed
+      `60x41+2771+1015`). So
+      ⛔ **`lineN >= 1 AND rim1N >= 1` fires on the same 6 of 10 the shipped r=0 rule does — zero of the
+      five picture false positives removed — and the two false negatives on pages of measured cartoon
+      loss (`1954 - Why` p6, p7) are unchanged at 0.** A 3-px collar removes **4 accepted-line pixels of
+      16,294 page-wide, 0.02%, all four on `Wilcox` p2** (1,694 → 1,692 → 1,691 → 1,690); every other
+      page moves by 0. **So the sub-bar 3/51 → 1/51 improvement is specific to the rim failure mode and
+      does not generalise**: at the `textRegionMask` seam six of these ten pages would still admit
+      halftone dots, photograph grain, pen strokes and 10,438 px of page-wide-Otsu speckle into the
+      1-bit stencil, exactly as at r=0 — plus, on `1954 - Why` p4, the lost cartoon itself, which at
+      *that* seam is the admission wanted. ⚠️ **And "10 of 10" carries less than it sounds**: four of the
+      ten read `lineN` 0, where a collar can only be tested for *manufacture* (which the 73-page arm
+      proved it can do, and it did not here), so the removal question is asked on the **six** that fire
+      and exactly **one** of those six moves at all.
+      ⛔ **The mechanism is structural rather than a property of this sample**: the collar is
+      `dilate(region, r) \ region`, so it can only act on a map pixel within `r` px of a recognised word
+      box's boundary — which is what a *rim* is and what a halftone dot in the middle of a plate is not.
+      `dilate` is a `(2r+1)`-**square**, so that distance is Chebyshev.
+      Two internal controls, both measured: ✅ the collar is **live** in this run (on `Wilcox` p2 the
+      removed set reads `1x11+2596+1538`, `2x11+2596+1538`, `3x12+2596+1537` — **left edge pinned at
+      `x` 2596, widening by exactly one pixel per radius**, the signature of a `region` rectangle whose
+      last true column is 2595, and ⚠️ not the interior blanking, whose bounds on that 3,642-px-wide
+      page are x ∈ [227, 3415); the `-map.png` there is empty to the left of that edge, read at 1:1 and
+      at 6x, the removed pixels being the left end of a hatch stroke that starts where the box
+      ends); ✅ and it is **not idle for want of a `region` to dilate** (`1954 - Why` p4 has `glyphN`
+      2,468 and `inkOut` 0.0540, so `1 - inkOut` puts the padded region over 94.6% of its interior ink, and its accepted
+      group — 59 px at `27x17+1121+685`, inside the published cartoon rect `254x240+970+595` — is
+      unchanged in count, area *and* rect at r=1/2/3, because the group is in the middle of the drawing).
+      Controls: all **23** columns shared with `SHAPETERM-PICTURES-2026-08-21.tsv` plus `verdict` are
+      **byte-identical on 11 of 11 rows**, the SKIP row included — ✅ **and that is a stronger additivity
+      control than the 73-page arm's**, because that file was produced by a binary with no rim sweep in
+      it at all, so this says adding the sweep moved no printed column across a real code change.
+      `--self-test` **6/6** on the exact binary; `rc=0` on all five invocations; `verdict=ok` on 10 of 10
+      measured rows (identity held, exit 6 never fired); the same page SKIPs again with the same text.
+      ⚠️ **Instrument trap met again, same direction as 3b and WIDER in ratio**: `magick -threshold 0`
+      on the dumps counts **3 / 6 / 10** changed pixels at r=1/2/3 where the columns read cumulative
+      deltas of **2 / 3 / 4** — **1.5x/2.0x/2.5x** against 3b's 1.00x–1.32x over totals in the
+      thousands, which is what a small count does to a ratio. ✅ **And the cause 3b left "not
+      established" is in the tool's own code**: `paint` unions each accepted component's **bounding box
+      ∩ mask**, so a rejected neighbour's pixels inside an accepted bbox are painted — `-lines.png` is an
+      upper bound on `linePx` (1,784 against 1,694 on `Wilcox` p2) and its deltas noisier still. Both
+      come from the same `rimResult`, so it is not two computations disagreeing. Location from the shell,
+      totals from the columns. ⚠️ A draft of this box called it "the same 1.00x–1.32x divergence"; it is
+      not in that band.
+      ⚠️ Not settled: the tool prints the collar's effect on accepted LINES and never on the map, so
+      "0 accepted-line pixels removed" is not "0 map pixels removed" on the **nine** pages whose columns
+      did not move — `linePx == rim3Px` on 9 of 10, and 27 of the 30 `-rim<r>-lines.png` dumps are
+      byte-identical to their `-lines.png` (⚠️ a draft said "the four pages where nothing moved", which
+      is the count of pages accepting nothing); radii above 3 are still unrun; the sample is still
+      3 true plates in 10 pages across 4 documents, against a seam of ~181 layered pages of which the
+      collar has now been asked about **83**; and **no bytes** — all ten are `barVerdict=picture`, so the
+      layering seam still never consults the term on them, at a 1.0956x margin ⚠️ **derived from the
+      sweep's verdict column, not measured**, and the `textRegionMask` seam is **still unpriced**.
+      ⚠️ **The LOCAL variant is no way out either**: a per-group exemption trusting the collar would
+      still admit 16,290 of 16,294 accepted-line pixels — 99.98% — on these ten pages. ⚠️ Nothing is wired; `Sources/` untouched, so no mutant and no
+      `fault-inject.sh` case owed — `Tools/score-shape-term.swift` changed only in comments.
+      ✅ **One sibling find, in the same file**: `dilate`'s own doc comment still said a 7x7 square and
+      `Disk:3` "differ only at the corners", which that file's HEADER already records as refuted at
+      **20 of 49 cells (41%)**. Two comments in one file disagreeing, with the wrong one next to the
+      code; corrected here.
+      (context: BUGS.md C28 `#### The conjunction on a PICTURE page`)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,

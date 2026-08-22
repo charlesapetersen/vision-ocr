@@ -122,8 +122,38 @@ p28 cannot enter because `lineN` is 0 there. The two pages it drops are both non
 price can only fall from +2,362,625 B — a direction, not a number. ⚠️ **Three reasons it is a lead and
 not a result**: it is post-hoc (a conjunction chosen after seeing these 73 pages, which is the objection
 this entry raises against six shares); the hand-made bucket does not move (1 of 4 at every radius); and
-⛔ **the rim columns have never been run on a picture page**, so 3b's `textRegionMask` finding is
-untouched and that is the one run it needs next.
+⛔ **the rim columns had not been run on a picture page.**
+⛔ **THAT RUN HAPPENED 2026-08-21 AND THE COLLAR DOES NOT MOVE A SINGLE COUNT ON A PICTURE PAGE** —
+`SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, the same ten pages and constants, from the same binary as the
+73-page rim sweep, with all **23** shared columns plus `verdict` byte-identical to
+`SHAPETERM-PICTURES-2026-08-21.tsv` on **11 of 11** rows (⚠️ and that file came from a binary with **no
+rim sweep in it at all**, which is what makes this additivity control span a real code change — so
+"the same binary" is exactly what it is *not*). `rim1N == rim2N == rim3N == lineN` on **10 of 10** pages
+and the **largest** accepted-line rect is identical at every radius (⚠️ the tool prints one rect per
+page, the largest by area; on `Wilcox` p2 a non-largest group did change), so **`lineN >= 1 AND
+rim1N >= 1` fires on the same 6 of 10** the shipped r=0 rule does: **zero** of the five picture false
+positives removed, and the two false negatives on `1954 - Why` p6/p7 (cartoons whose destruction C26
+measured) unchanged at 0. A 3-px collar removes **4 accepted-line pixels of 16,294 — 0.02% — and all
+four are on one page** (`Wilcox` p2, 1,694 → 1,690). ⚠️ **What "10 of 10" carries**: four of the ten
+read `lineN` 0, where a collar can only be tested for *manufacture*, so the removal question is asked
+on the six that fire and exactly one of those six moves.
+⛔ **The mechanism is structural, not a property of this sample**: the collar is
+`dilate(region, r) \ region` with a `(2r+1)`-**square** kernel, so it can only reach a mark within `r`
+px (Chebyshev) of a padded word box's boundary — which is what a rim IS and what a halftone dot in the
+middle of a plate is not. Two internal controls: the collar is **live** in this run (on `Wilcox` p2 the
+removed set reads `1x11+2596+1538`, `2x11+2596+1538`, `3x12+2596+1537` — **left edge pinned at `x` 2596,
+widening by exactly one pixel per radius**, the signature of a `region` rectangle whose last true column
+is 2595, and ⚠️ *not* the interior blanking, whose bounds on that 3,642-px-wide page are x ∈ [227,
+3415)), and it is **not idle for want of a `region` to dilate** (`1954 - Why` p4 has `glyphN` 2,468 and
+`inkOut` 0.0540, so `1 - inkOut` puts the padded region over **94.6%** of its interior ink, and its
+accepted group is unchanged in count, area *and* rect at r=1/2/3, because the group is in the middle of
+the drawing). ⚠️ Not settled: the collar's effect on the **map**
+rather than on accepted lines is not printed, so "0 accepted-line pixels removed" is not "0 map pixels
+removed" on the **nine** pages whose columns did not move; radii above 3 are still unrun; the sample is
+still 3 true plates of 10 and the seam is ~181 layered pages of which the collar has now been asked
+about 83; and the `textRegionMask` seam is **still unpriced** — this sub-step makes it no cheaper. ⚠️ The
+**local** variant is no way out either: a per-group exemption trusting the collar would still admit
+16,290 of 16,294 accepted-line pixels on these ten.
 ⚠️ A ratio-scaled collar does not rescue the replacement reading: `Scott_TK` p3 loses its last group at
 **0.375x** its own `glyphH` (8) while p12 still fires at **0.6x** its own (5) — ⚠️ derived from radii
 1-3; radii above 3 were not run. ⛔ **And the first draft of this got the mechanism wrong in five
@@ -517,7 +547,8 @@ Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2
 `THRESHOLD-LOSS-2026-08-18.tsv`, `INKBAR-2026-08-19.tsv` and `SATFRAC-2026-08-19.tsv` (this list had
 omitted all three; the review of C27's sweep counted that as the third such omission), plus the
 targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
-`SHAPETERM-73-2026-08-21.tsv` and `SHAPETERM-RIM-2026-08-21.tsv` — and are
+`SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv` and
+`SHAPETERM-PICTURES-RIM-2026-08-21.tsv` — and are
 evidence for one run, not
 claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls

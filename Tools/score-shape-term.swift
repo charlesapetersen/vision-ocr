@@ -131,9 +131,29 @@
 //  * ✅ **as a SECOND CONDITION it is the best rule measured on this population**:
 //    `lineN >= 1 AND rim1N >= 1` reads **12/12 type-losers and 1 of 51 non-losers**, on 14
 //    pages rather than 16, and p28 cannot enter it because `lineN` is 0 there. ⚠️ It is
-//    post-hoc — a conjunction chosen after seeing these 73 pages — the hand-made bucket
-//    does not move (1 of 4 at every radius), and **the rim columns have never been run on
-//    a picture page**, so 3b's `textRegionMask` finding is untouched by it.
+//    post-hoc — a conjunction chosen after seeing these 73 pages — and the hand-made bucket
+//    does not move (1 of 4 at every radius).
+//  * ⛔ **and it buys NOTHING on a picture page, measured 2026-08-21 over the ten pages of
+//    `SHAPETERM-PICTURES-2026-08-21.tsv`** — `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, same
+//    constants and the same binary as the 73-page sweep, with all 23 shared columns plus
+//    `verdict` byte-identical on 11 of 11 rows. ⚠️ The pictures file came from a binary with
+//    **no** rim sweep in it, which is what makes that control span a real code change — so
+//    it is not "the same binary", and saying so was this comment's first-draft error.
+//    `rim1N == rim2N == rim3N == lineN` on **10 of 10**, the **largest** accepted-line rect
+//    identical at every radius (one rect is printed per page, and on `Wilcox` p2 a
+//    non-largest group did change), and a 3-px collar removes **4 accepted-line pixels of
+//    16,294** page-wide, all four on `Wilcox` p2. So the conjunction fires on the same **6 of
+//    10** the r=0 rule does and 3b's `textRegionMask` finding is untouched *as measured*.
+//    ⚠️ Four of the ten read `lineN` 0, where a collar can only be tested for manufacture, so
+//    the removal question is asked on the six that fire and one of those six moves.
+//    The reason is in the collar's definition: `dilate(region, r) \ region` can only reach a
+//    mark within `r` px of a word box's boundary, which is what a rim is and what a halftone
+//    dot in the middle of a plate is not. Two controls in that run: the collar is live (on
+//    `Wilcox` p2 it shaves a sliver at a `region` rectangle's own straight edge, read at 1:1)
+//    and it is not idle for want of a `region` (on `1954 - Why` p4 recognised type covers 95%
+//    of the interior ink and the group still does not move, because it is inside the drawing).
+//    ⚠️ The tool does not print the collar's effect on the MAP, only on accepted lines, so
+//    "0 accepted-line pixels removed" is not "0 map pixels removed".
 //  * the false positive that survives every radius is `Herbert Marks papers` p12, and at
 //    r=3 it is **still the rim** — 4-px flecks off the tops of `Corp.` on a recognised
 //    ledger line, read at 1:1 (64 px, exactly `rim3Px`).
@@ -333,8 +353,10 @@ func interiorWindow(width w: Int, height h: Int) -> (x0: Int, y0: Int, x1: Int, 
 
 /// Grow the set by `radius` in a (2r+1)-square, separably.
 ///
-/// A square and not a disk. `Disk:3` prints as a 7x7 kernel and the two differ only at
-/// the corners, so the square is the strictly more generous stand-in — which is the safe
+/// A square and not a disk. `Disk:3` prints as a 7x7 kernel with `Sum 29`, so a 7x7 square
+/// of 49 cells differs from it in **20 of 49** — 41%, not "only at the corners", which is
+/// what this comment said until 2026-08-21 and what the header above already records as
+/// refuted. The square is still the strictly more generous stand-in, which is the safe
 /// direction for a column whose job is to show how much the published recipe over-eats.
 func dilate(_ mask: [Bool], width w: Int, height h: Int, radius r: Int) -> [Bool] {
     guard r > 0, w > 0, h > 0, mask.count >= w * h else { return mask }
