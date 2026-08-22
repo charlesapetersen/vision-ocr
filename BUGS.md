@@ -144,8 +144,20 @@ PAGE-LEVEL BYTE PRICE** — `SHAPETERM-73-2026-08-21.tsv`, `#### The same shape 
 `lineN >= 1` on **12 of 12** pages that lose typeset content (8 of 8 out of sample), **1 of 4** that
 lose only a hand-made mark, **0 of 6** degraded-but-legible, and **3 of 51** that lose nothing. ⛔ **All
 three of those firings are the RIM of recognised type** — glyph tops outside Vision's word boxes on
-lines that are in the text layer, read at 1:1 — so the candidate fix is subtracting a *dilated*
-`region` before grouping, named and untried. ✅ **And a signature DOES fire**: `_1939_Former students`
+lines that are in the text layer, read at 1:1 — so the candidate fix was subtracting a *dilated*
+`region` before grouping. ⛔ **THAT FIX WAS TRIED THE SAME DAY OVER THE SAME 73 AND IT SPLITS IN TWO** —
+`SHAPETERM-RIM-2026-08-21.tsv`, `#### The rim fix, MEASURED`. Type-losers firing / non-losers firing:
+r=0 **12/12, 3/51**; r=1 **12/12, 2/51**; r=2 **11/12, 1/51**; r=3 **9/12, 1/51**. ⛔ **As a REPLACEMENT
+for the rule it is refused**: r=1 is the only radius that keeps every real loss, and it clears **two**
+rims of the three while **adding one of its own** — on `Xin Qu et al_2018` p28 the rim of a recognised
+`469.` is three accepted components at r=0, one short of `lineMinimumMembers`, and a 1-px collar splits
+the middle one (`8x8` -> `4x6` + `3x6`) into four. From r=2 it destroys real losses. The rim that
+survives every radius is `Herbert Marks papers` p12, still the rim at r=3. ✅ **But as a SECOND
+CONDITION it is the best rule this campaign has measured**: `lineN >= 1 AND rim1N >= 1` reads **12 of 12
+type-losers and 1 of 51 non-losers**, on 14 pages rather than 16 — ⚠️ post-hoc, hand-made bucket
+unmoved at 1 of 4, and **never run on a picture page**, which is the one run it needs next.
+⚠️ A ratio-scaled collar does not rescue the replacement reading either: `Scott_TK` p3 loses its last
+group at 0.375x its own `glyphH` while p12 still fires at 0.6x its own. ✅ **And a signature DOES fire**: `_1939_Former students`
 p6's only accepted group is the cursive signature itself, the third refutation of "blind by
 construction" and the first on a page of measured loss. ⛔ **One of the three misses is not the rule's**:
 `_1939_Former students` p2 has `outPx` **0**, so the map is empty and the shape rule is asked about no
@@ -4469,7 +4481,12 @@ So 3 is open on what to do about that rather than on whether a shape signal exis
 things of its own: the population of sub-bar pages carrying a picture, and the `textRegionMask` seam's
 price. ✅ **The term was then read over the WHOLE 73, 2026-08-21, constants unchanged** —
 `#### The same shape term over ALL 73`: `lineN >= 1` on **12 of 12** type-losers, **3 of 57**
-non-losers, and all three of those are the rim of recognised type. **That sub-step also gives question
+non-losers, and all three of those are the rim of recognised type — ⛔ **and the collar that was supposed
+to remove them is measured the same day, `#### The rim fix, MEASURED`: as a REPLACEMENT it is refused
+(at the only radius that keeps every real loss it clears two rims and adds one of its own, the fourth
+distinct non-loser to fire in that sweep), ✅ but as a SECOND CONDITION beside the r=0 rule it reads 12
+of 12 type-losers and 1 of 51 non-losers — post-hoc, and never run on a picture page.**
+**That sub-step also gives question
 4 its first page-level byte price**: the wiring costs **+2,362,625 B over 16 of the 73 pages**, which
 is **38.1%** of what the cheapest page-wide bar rescuing the same pages costs, with **15.5%** of the
 spend on pages that do not lose content against that bar's **58.5%** — but the bar rescues **15 of 16** losers
@@ -5632,7 +5649,12 @@ has nothing at all to say (this one).
    ✅ **The second candidate is built and has now been read over the WHOLE 73-page population,
    2026-08-21** — `#### The same shape term over ALL 73`. Constants unchanged, 65 of the 73 never seen
    before: `lineN >= 1` on **12 of 12** pages that lose typeset content, **3 of 57** that do not, and
-   all three of those are the **rim of recognised type** rather than noise. ⛔ The half of this question
+   all three of those are the **rim of recognised type** rather than noise. ⛔ **A dilated-`region`
+   collar does not remove them as a REPLACEMENT for the rule — measured 2026-08-21,
+   `#### The rim fix, MEASURED`** — ✅ **but as a second condition it takes the non-losers from 3 of 51
+   to 1 of 51 with all twelve type-losers intact** (`lineN >= 1 AND rim1N >= 1`). So the type half of
+   this question now has a candidate rule rather than a bare rim, and what it needs is the picture pages
+   and an out-of-sample population, because the conjunction is post-hoc. ⛔ The half of this question
    that is still **no** is the parenthesis: 3b showed the term fires on 2 of 3 true halftone plates, so
    "without admitting pictures" fails at the `textRegionMask` seam. It does **not** fail at the
    *layering* seam, where the picture-route verdict keeps those pages out — which is why the wiring
@@ -6728,6 +6750,11 @@ is the one `score-text-route`'s header already publishes for a different purpose
 **dilated** `region` before grouping, so a rim is eaten and a missed line is not. ⚠️ **That is a
 candidate and not a measurement**: it must be tested against the 13 true positives before it is
 believed, because sub-step 1's own losers sit on lines directly adjacent to recognised ones.
+⛔ **It was tested the same day over the same 73 pages and as a REPLACEMENT it is refused** — the collar
+removes two of these three, adds one of its own, and starts destroying real losses at r=2. ✅ **As a
+second condition beside this rule it removes two of the three at no cost to the twelve** (`lineN >= 1
+AND rim1N >= 1`: 12/12 type, 1 of 51 non-losers) — post-hoc, and never run on a picture page. See
+`#### The rim fix, MEASURED`.
 
 ##### The three misses, and one of them is not the rule's
 
@@ -6816,7 +6843,9 @@ approach reaches `_1939_Former students` p2**, whose map is empty.
 - **Nothing is wired.** `Sources/Flattener.swift` is untouched, so no mutant and no `fault-inject.sh`
   case is owed by this sub-step. The `textRegionMask` seam 3b named is still unpriced — this arm
   prices the **layering** seam only.
-- The rim fix (subtract a dilated `region`) is named, not tried.
+- ~~The rim fix (subtract a dilated `region`) is named, not tried.~~ ⛔ **TRIED 2026-08-21: refused as
+  a REPLACEMENT for the rule, ✅ open and best-measured as a SECOND CONDITION beside it** — see
+  `#### The rim fix, MEASURED` below.
 - ⚠️ **One instrument note that cuts against this tool's own published bound.** Sub-step 4's shell map
   (`ink AND NOT dilate(stencil)`) read **5,178** and **2,112** px on `Herbert Marks` p12 and
   `_1939_Former students` p9; the exact map here reads **437** and **381** — **11.9x** and **5.5x**,
@@ -6825,6 +6854,233 @@ approach reaches `_1939_Former students` p2**, whose map is empty.
   `region`. The 437 and 381 above are the exact map's and are the right numbers for a `lineShare`
   denominator, but **the 1.00x-3.17x band does not hold out of its own 13 pages** and should not be
   quoted as if it did.
+
+#### The rim fix, MEASURED over the same 73 — ⛔ as a REPLACEMENT for the rule it is refused, and at the one radius that keeps every real loss it MANUFACTURES a rim of its own; ✅ but as a SECOND CONDITION beside the r=0 rule it removes two of the three false positives at no cost to the twelve — 2026-08-21
+
+⛔ **READ THE TWO READINGS SEPARATELY. The first draft of this section published only the first, called
+the candidate "refused", and told the next session the cheap fix was spent** — the adversarial review of
+that diff computed the conjunction from this section's own committed file and refuted the headline. What
+is refused is *substituting* a collar radius for the shipped rule. Using it as a second condition is
+measured, better than the shipped rule on this population, and open.
+
+The section above named one candidate and called it the cheap thing to try first: *"subtract a
+**dilated** `region` before grouping, so a rim is eaten and a missed line is not."* It is now in
+`Tools/score-shape-term.swift` as a **sweep** rather than a knob — `rim1N`/`rim2N`/`rim3N`, the shape
+rule re-run over the map with an `r`-pixel collar around every recognised word box removed — and it
+was read over the same 73 pages, the same population, with the same five constants and one binary.
+**`SHAPETERM-RIM-2026-08-21.tsv`** is the result: 73 rows, 22 documents, **36 fields** — the tool's own
+31 columns (`page` through `verdict`), the driver's `document`, and the four labels carried from the
+previous file.
+
+⚠️ The collar is a *separate* mask and not a change to the map. `mapFrac`, `outPx` and every share
+column stay `inkOutsideText`'s own set, which is what keeps the identity guard meaningful — and which
+is why **every column the previous run printed reproduces it on 73 of 73 pages, digit for digit: all 27
+shared columns**, `w`, `h`, `otsu`, `txtShare` and `lineShare` included. The rim columns are strictly
+additive. ⚠️ A draft of this line said "the 16 columns the previous run printed" and enumerated them,
+which undercounts twice: that run printed 22 columns, 21 of them measurements, and the enumeration left
+out
+`lineShare` — the "seventh share", published the day before, so exactly the column a reader would want
+to know had not moved. The 27 were then checked one by one.
+
+##### The cross-tab, by radius
+
+| bucket | r=0 (shipped) | r=1 | r=2 | r=3 |
+|---|---|---|---|---|
+| loses **typeset** content | **12/12** | **12/12** | 11/12 | 9/12 |
+| loses only a **hand-made** mark | 1/4 | 1/4 | 1/4 | 1/4 |
+| degraded but legible | 0/6 | 0/6 | 0/6 | 0/6 |
+| loses nothing | **3/51** | **2/51** | 1/51 | 1/51 |
+
+**r=1 is the only radius that keeps every real typeset loss, and as a replacement it does not clear the
+rim.** It removes two of the three false positives — `_1939_Former students` p9 (303 accepted line px ->
+0) and `_1967_Yearly Increase` p1 (319 -> 0) — and **adds one of its own**, so 3 of 51 becomes 2 of 51.
+`Xin Qu et al_2018` p28 is the **fourth** distinct non-loser to fire anywhere in this sweep and the only
+one the collar itself produces.
+
+##### ✅ The reading the first draft missed: the collar as a SECOND CONDITION
+
+`lineN >= 1` **AND** `rim1N >= 1` reads **12/12** type-losers, 1/4 hand, 0/6 degraded and **1 of 51**
+that lose nothing. It is strictly better than the shipped rule on this population and it is structurally
+immune to the manufacturing above, because `Xin Qu` p28 has `lineN` **0** at r=0 and can never enter. The
+conjunction is not a new radius: it is `rim1N >= 1` restricted to the pages the shipped rule already
+fires on, and the two false positives it drops are exactly the two the collar clears.
+
+| rule | type | hand | degraded | nothing | pages firing |
+|---|---|---|---|---|---|
+| `lineN >= 1` (shipped, r=0) | 12/12 | 1/4 | 0/6 | **3/51** | 16 of 73 |
+| `rim1N >= 1` (replacement) | 12/12 | 1/4 | 0/6 | 2/51 | 15 of 73 |
+| **`lineN >= 1 AND rim1N >= 1`** | **12/12** | 1/4 | 0/6 | **1/51** | **14 of 73** |
+| `lineN >= 1 AND rim2N >= 1` | 11/12 | 1/4 | 0/6 | 1/51 | 13 of 73 |
+
+The two pages the conjunction drops from the firing set are **both non-losers**, so the wiring's price
+can only fall from the +2,362,625 B over 16 pages the section above measured and the 15.5% share landing
+on pages that lose nothing can only improve. ⚠️ **That is a direction and not a number** — no bytes were
+measured on this arm, and the two pages' own costs are not carried here.
+
+⚠️ **Three reasons this is a lead and not a result.** (1) It is **post-hoc**: a conjunction picked after
+looking at the same 73 pages it is scored on, which is the objection this entry has raised against six
+shares and now raises against itself. The radii were fixed before the run; the conjunction was not.
+(2) The hand-made bucket does not move — 1 of 4 at every radius and under every conjunction — so it buys
+nothing there. (3) ⛔ **The rim columns were never run on the 10 picture pages**, so 3b's finding stands
+untouched: at the `textRegionMask` seam the term still admits halftone dots and pen strokes, and the
+conjunction has not been asked about them. That is the measurement it needs next, and it is one run.
+
+##### ⛔ The collar manufactures a rim, and the mechanism is pixel-for-pixel
+
+`Xin Qu et al_2018` p28 reads `lineN` **0** at r=0, **2** at r=1, and **0** again at r=2 and r=3 — it
+fires at exactly one radius and at no other. Its **larger** accepted group at r=1 is `rim1Top`
+`26x6+132+835`, and cropped at 1:1 against `-source.png` it is the **top halves of `469.`**, a page
+number in a reference line that Vision recognised (the page's whole out-of-stencil ink is `outPx`
+**163**). ⚠️ There are **two** groups at r=1 and only this one was read. The second was located at
+`y` ~1022 on the same dump and **not** read, and the tool prints only the page total (`rim1Px` **117**
+across both), so no per-group area is on record for either. Connected components over the same rect on
+the r=0 dumps say why the read one formed:
+
+| | components in `x` 132-158, `y` 834-841 |
+|---|---|
+| r=0 `-map.png` | `8x8`, `8x8`, `7x8`, and a `2x3` speck |
+| r=0 `-textish.png` | `8x8`, `8x8`, `7x8` — **three** accepted; the speck has area 4, so the area guard passes it and the *height* floor refuses it, `0.5 x glyphH` = 5 px against its 3 |
+| r=1 accepted | `8x6`, **`4x6`, `3x6`**, `6x6` — **four** |
+
+Three accepted components is one short of `lineMinimumMembers`. The 1-pixel collar **split the middle
+one** (`8x8` -> `4x6` + `3x6`), took the count to four, and the group formed. ⚠️ Note the heights go
+8 -> 6 under a **one**-pixel collar, which means these stubs sit *between* two word boxes and lose a row
+to each — the line above's box and their own. ⚠️ And these bounding boxes are **not in any committed
+file**: the tool prints only `rim<r>N/Px/Top` per radius, so they were read by running ImageMagick
+connected components over the uncommitted `SHAPEDUMP` PNGs. `rim1N` = 2 and `rim1Px` = 117 are the
+committed numbers. This is the
+non-monotonicity the tool's comment predicted before the run, measured: **cutting the collar can turn
+a rim that was too sparse to group into one that groups.** The candidate does not merely fail to
+remove the artefact; on one page of 73 it is the artefact's cause.
+
+⚠️ It happens on a real loser too, in the harmless direction: `Herbert Marks papers` p11 reads `lineN`
+1 -> 1 -> **2** -> 1 while its `linePx` falls monotonically 423 -> 377 -> 311 -> 114. So a count that
+goes up while the pixels go down is the *normal* behaviour of a collar and not a fault of p28 — which
+is why each radius gets its own components pass in the tool rather than a filter over the r=0 ones.
+
+##### ⛔ The false positive that survives every radius is still the rim at r=3
+
+`Herbert Marks papers` p12 goes `lineN` 2 -> 1 -> 1 -> 1 and `linePx` 386 -> 145 -> 94 -> **64**. Its
+surviving group at r=3 is `65x4+606+914`, and read at 1:1 (`-crop 150x40+590+900`) it is **4-pixel
+flecks off the tops of `Corp.`** on a typed ledger line that is in the text layer. So the collar erodes
+this rim by 6x without clearing it.
+
+##### ⛔ And from r=2 it destroys real losses
+
+- `Williams_1958_DEMOCRACY OR MERITOCRACY` p1 — the words `their education,` and `but`, at `inkOut`
+  **0.0023**. `linePx` 1780 -> 1487 -> **0**. Gone at r=2. ⚠️ A draft of this line called it "the
+  lowest-`inkOut` typeset loss the campaign has", which is false and false from this section's own
+  file: `Jones et al_2010` p2 is a typeset loss at **0.0008**, 2.9x lower, and is one of the twelve
+  tabulated above. It survives every radius (147 -> 133 -> 119 -> 100).
+- `Scott_TK` p3 — table figures, column heads and Roman row labels. 6 groups -> 2 -> 1 -> **0**, and
+  `linePx` 1796 -> 278 -> 115 -> 0. Gone at r=3.
+- `Merriam_1913` p2 — 5 groups -> 4 -> 1 -> **0**, `linePx` 4256 -> 2414 -> 489 -> 0. Gone at r=3.
+
+##### The mechanism, and why a ratio-scaled collar is refused too
+
+**The collar is absolute pixels where every other number in this rule is a ratio against the page's own
+type. Scaling it to `glyphH` does not fix that, and the sharpest pair says so directly:** `Scott_TK` p3
+loses its last group at r=3, which is **0.375x its own `glyphH`** (8), while the surviving false positive
+`Herbert Marks` p12 still fires at r=3, **0.6x its own** (5). A ratio big enough to clear p12 has already
+destroyed a real loss elsewhere. ⚠️ Not "on a page of smaller type", which a draft of this line said and
+which is backwards: `Scott_TK` p3's `glyphH` is **8** against p12's **5**, and that is the point — at a
+fixed ratio the larger `glyphH` buys the larger absolute collar, so the page with *more* type scale is
+the one a ratio eats first. `Williams_1958` p1 is the same argument at the other
+end — gone at r=2, **0.095x** its `glyphH` of 21.
+
+⚠️ **A draft of this paragraph said the mechanism was that "the collar runs backwards" across the
+population — smallest type where the false positive is, largest where the true positives are — and the
+adversarial review refuted it from the same file.** Two facts kill that framing. **Three** type-losers
+are destroyed, not two, and the third is `Scott_TK` p3 at `glyphH` **8**, the second-smallest of the
+twelve — so the destroyed pages are not "the largest". And `Herbert Marks` **p11**, a real typeset loser
+in the same document at the same `glyphH` **5**, fires at *every* radius — so "the population's smallest
+type" is shared by a false positive and a true positive and separates nothing. The conclusion survives
+and is stronger without the framing; the framing was a mechanism story built on a chosen pair.
+
+⚠️ **All of it is derived from the measured radii 1-3, not run**: radii above 3 were not measured, and
+the derivation assumes p12 needs r >= 4 (measured: it fires at 3) and that a destroyed group does not
+come back at a larger radius (unmeasured, and the sweep's own non-monotonicity is a reason not to assume
+it — coming back would be stranger still, but "stranger" is not "measured").
+
+##### What this changes for the local variant, which is the one the entry prefers
+
+The wiring priced above is the boolean `lineN == 0`, and for that only firing matters. The variant this
+entry says it prefers — exempt the *text-shaped regions* from the background shrink rather than refuse
+the whole page — reads the **rects**, and a collar is much worse there than the boolean shows. At r=1
+`Scott_TK` p3 keeps **278 of 1,796** accepted line pixels (15.5%) and its largest group **moves** from
+`241x5+364+150` to `56x6+283+487` — a different part of the page. `Merriam_1913` p2 keeps 2,414 of
+4,256 and its largest group moves from `271x11+113+417` to `132x11+1482+1099`. So even at the one
+radius where every real loss still *fires*, the regions a local exemption would protect are a fraction
+of the ink that needs protecting, in a different place.
+
+##### Controls
+
+- `rc=0` on all **22** invocations; **73 of 73** rows measured; `verdict=ok` on every row, so the
+  `mapFrac == inkOut` identity held and exit 6 never fired.
+- All **27** shared columns are identical to `SHAPETERM-73-2026-08-21.tsv` on **73 of 73** pages, which
+  is what says the rim columns did not perturb the measurement they are read beside. `inkOut ==
+  sweepInkOut` on 73 of 73 as well, so `INKBAR-2026-08-19.tsv` is still reproduced through this file.
+- The whole sweep was **re-run after the review's two code fixes** and all 22 per-document outputs came
+  back byte-identical, so the committed file is the shipped binary's own output and neither the
+  collar-width assertions nor the `SHAPEDUMP` paint fix touches a printed column.
+- `--self-test` **6 of 6** on the exact binary. The new check is the rim rule on one synthetic scene and
+  it is **two-sided**: a word box with five glyph-top stubs above it and, twenty pixels clear, four full
+  stems standing for an unrecognised line. Untrimmed the rule must read **both** as lines; at r=3 it must
+  read exactly the real one, identified by its `minY`. **Watched failing on four mutants**, each a
+  one-line change to `rimSubtract`, each compiled and run. Two versions of the check exist and the table
+  says which each mutant was run against, because the second version was written *because* of the fourth
+  mutant:
+  | mutant | against the check as first written | against the shipped check |
+  |---|---|---|
+  | returns the map untouched | **1** failure: `rim: r=3 read 2 lines not 1 — the rim survived or the real line went with it` | **4** failures (that one plus the three pixel-count rows) |
+  | returns an empty mask | **3** failures (untrimmed read 0 lines, r=3 read 0, radius 0 changed the map) — which is what says the check is two-sided rather than a one-way "did anything go away" | not re-run |
+  | dilates the *map* instead of the region | caught (r=3 read 0) | not re-run |
+  | ⛔ `dilate(region, radius: r - 1)` — a collar one pixel too small | **passed 6 of 6** | **3** failures (`r=1 removed 0 px not 10`, and 10 and 20 where 20 and 30 are due) |
+  ⛔ **That last row is the finding.** A collar built one pixel small would have relabelled this whole
+  sweep by a column and made `rim1` a no-op, and the check as first written could not see it, because the
+  scene's stub heights survive a 1-px collar either way — a check that looked green while not asserting
+  the one number the sweep's columns are named after. The check now asserts the collar's *width*
+  directly: `rimSubtract` must remove exactly 10, 20 and 30 px at r=1, 2, 3 on that scene. Found by the
+  adversarial review of this diff, which built the mutant.
+  ⚠️ The first stub attempt did not compile (it left a reference to the variable it had replaced), so it
+  tested nothing and was rebuilt — a control that fails to build is not a control.
+- ⛔ **One real defect in this diff, found by the same review**: `SHAPEDUMP`'s new `-rim<r>-lines.png`
+  files were painted through the **untrimmed** map, so a surviving component's bounding box could show
+  ink the radius had removed. Fixed in the same commit (`paint` takes the mask it found the components
+  in), and the `Herbert Marks` p12 crop above was **re-read on the fixed build**: the r=3 file holds
+  seven components of 3-4 px totalling **64 px, exactly `rim3Px`**, so on that page nothing had been
+  over-painted and the reading is unchanged. The authoritative numbers were never affected either —
+  `rim<r>N` and `rim<r>Px` come from the trimmed components, not from the PNG.
+- The labels are unchanged: the campaign's published verdicts, carried from the previous run's file
+  rather than re-read. The two pages cropped at 1:1 here are `Xin Qu` p28 and `Herbert Marks` p12, and
+  neither reading changed a label — both are rim, which is what they were already recorded as (p28 was
+  `nothing` and quiet at r=0).
+
+##### What this does not measure
+
+- **Radii above 3.** The sweep is 1, 2, 3. The argument that a larger collar cannot work rests on
+  `Williams_1958` p1, `Scott_TK` p3 and `Merriam_1913` p2 already losing their groups at 2 and 3, which
+  is measured, plus the assumption that they do not come back, which is not.
+- ⛔ **The conjunction on a PICTURE page.** The rim columns have never been run on one. All ten pages of
+  `SHAPETERM-PICTURES-2026-08-21.tsv` fired `lineN >= 1` on 6 of 10 with none of the accepted groups
+  being type, and whether a 1-px collar changes that is unknown and is one run of an unchanged binary.
+  Until it is run, nothing here bears on the `textRegionMask` seam, which is the seam question 3's own
+  sentence names.
+- **The conjunction out of sample.** It was chosen after seeing these 73 pages. There is no held-out
+  population for it, and the 73 are themselves `sampleIndices`' sampled pages.
+- **The second group `Xin Qu` p28 manufactures at r=1.** Located at `y` ~1022, not read. Only the page
+  total `rim1Px` 117 is on record for the two together.
+- **Nothing is wired**, again: `Sources/` is untouched by this sub-step, so no mutant and no
+  `fault-inject.sh` case is owed. Only `Tools/score-shape-term.swift` and its documents moved.
+- **No bytes.** This arm is about which pages fire, not what a wiring costs; the byte price in the
+  section above is unchanged by it, because r=0 is what that price was measured at.
+- Whether the three false positives can be removed by something that is not a collar. Two facts bear
+  on it and the first is **weaker than it looks**: three of the four rim firings (the three at r=0,
+  plus the one r=1 manufactures) sit on pages whose whole out-of-stencil ink is tiny — `outPx`
+  **437**, **381** and **163** — but the fourth, `_1967_Yearly Increase` p1, reads **5,863**, above
+  **eight of the twelve** type-losers. So `outPx` interleaves too, and it would be the eighth scalar this
+  entry has looked at. The second is that `linePx` is already refused as a floor because a real loss
+  sits at 147.
 
 #### What this entry is NOT
 

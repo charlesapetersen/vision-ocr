@@ -106,6 +106,48 @@
 // layering seam keeps those pages out because they are already routed as pictures;
 // `textRegionMask`, which runs unconditionally on every layered page, does not.
 //
+// ## The rim sweep, added 2026-08-21 — ⛔ refused as a REPLACEMENT, ✅ open as a SECOND CONDITION
+//
+// The 73-page run's three firings on pages that lose nothing were all read at 1:1 and all
+// three are the **rim of recognised type**. So the candidate fix that run named is in here
+// as the `rim1N`/`rim2N`/`rim3N` columns: the shape rule re-run over the map with an
+// `r`-pixel collar around every word box removed. It is a sweep in one pass because a
+// radius is bounded from both sides — see `rimRadii` — and because the count is **not
+// monotone** in `r`: cutting the collar can split a component, and a piece of a rejected
+// component can pass a test its parent failed. Nothing here changes `mapFrac`, `outPx` or
+// any share column; the identity stays the guard's own set.
+//
+// It was then run over all 73 (`SHAPETERM-RIM-2026-08-21.tsv`). Type-losers firing /
+// non-losers firing, by radius: r=0 **12/12, 3/51**; r=1 **12/12, 2/51**;
+// r=2 **11/12, 1/51**; r=3 **9/12, 1/51**. Four findings:
+//
+//  * **as a replacement, no radius separates them.** r=1 is the only one that keeps every
+//    type-loser, and it does not clear the rim — it removes two false positives and adds
+//    one of its own. On `Xin Qu et al_2018` p28 the rim of a recognised `469.` is **three**
+//    accepted components at r=0, one short of `lineMinimumMembers`, and the 1-px collar
+//    SPLITS the middle one (8x8 -> 4x6 + 3x6), taking the count to four and manufacturing
+//    a line. So the collar can manufacture the artefact it was proposed to remove. (`rim1N`
+//    is 2 on that page: two groups are manufactured and one of them was read.)
+//  * ✅ **as a SECOND CONDITION it is the best rule measured on this population**:
+//    `lineN >= 1 AND rim1N >= 1` reads **12/12 type-losers and 1 of 51 non-losers**, on 14
+//    pages rather than 16, and p28 cannot enter it because `lineN` is 0 there. ⚠️ It is
+//    post-hoc — a conjunction chosen after seeing these 73 pages — the hand-made bucket
+//    does not move (1 of 4 at every radius), and **the rim columns have never been run on
+//    a picture page**, so 3b's `textRegionMask` finding is untouched by it.
+//  * the false positive that survives every radius is `Herbert Marks papers` p12, and at
+//    r=3 it is **still the rim** — 4-px flecks off the tops of `Corp.` on a recognised
+//    ledger line, read at 1:1 (64 px, exactly `rim3Px`).
+//  * ⛔ a **ratio**-scaled collar does not rescue the replacement reading: `Scott_TK` p3
+//    loses its last group at 0.375x its own `glyphH` (8) while p12 still fires at 0.6x its
+//    own (5), so a factor large enough to clear the rim has already destroyed a real loss
+//    elsewhere — and note the direction: at a fixed ratio the larger `glyphH` buys the
+//    larger absolute collar, so p3's 8 is eaten before p12's 5.
+//    ⚠️ Derived from radii 1-3; radii above 3 were not run.
+//    ⚠️ An earlier version of this comment said the collar "runs backwards" because the
+//    surviving false positive has the smallest type and the destroyed losses the largest —
+//    that is wrong on its own data (`Scott_TK` p3 is destroyed at `glyphH` 8, and
+//    `Herbert Marks` p11 is a real loser at `glyphH` 5 that fires at every radius).
+//
 // Usage:
 //
 //   mkdir -p /tmp/h && cp Tools/score-shape-term.swift /tmp/h/main.swift
@@ -125,10 +167,13 @@
 //   <stem>-map.png      the exact map: ink outside `region`, black on white
 //   <stem>-textish.png  only the components the shape rule accepts
 //   <stem>-lines.png    only the components in an accepted line group
+//   <stem>-rim<r>-lines.png   the same, per rim radius: one file for each of `rimRadii`
 //
 // Reading `-lines.png` beside `-source.png` at the same crop is the positive control the
 // share columns cannot be: it says whether the term named the words the register says
-// that page lost, or something else the same size.
+// that page lost, or something else the same size. `-rim<r>-lines.png` is that same
+// control at the radius under consideration, which is what says whether a surviving
+// group still names the lost words or only a fragment of them.
 //
 // Exit codes: 1 unreadable PDF, 2 a refused `SHAPEDUMP`, 5 a failed self-test,
 // **6 the identity above failed on some page** — the rows are still printed, because a
@@ -164,6 +209,24 @@ let lineMinimumMembers = 4
 /// …and no gap between adjacent members wider than this many glyph heights, which is
 /// what stops a mark at each margin from being read as one line spanning the page.
 let lineGapFactor = 3.0
+
+/// The rim candidate's radii, in map pixels, swept in one pass so that one run over a
+/// population answers the question at every radius rather than three runs at one each.
+///
+/// This is the fix the 73-page run named: all three of that run's firings on pages which
+/// lose nothing are the **rim of recognised type** — glyph tops and descenders poking a
+/// few pixels outside Vision's word box on a line that IS in the text layer, so the box's
+/// own collar is where they live. `region` is a union of rectangles, so growing it by `r`
+/// removes exactly that collar. A sweep and not a knob because the safe radius is bounded
+/// from both sides and neither bound was known in advance: too small leaves the rim, and
+/// too large eats an unrecognised line sitting beside a recognised one, which is what
+/// C28 sub-step 1's four losers are made of.
+///
+/// ⚠️ These are absolute pixels, not a ratio against the page's own type like the five
+/// numbers above — so unlike them this one does not travel across resolutions, and a page
+/// whose `glyphH` is 5 px is a different question from one whose `glyphH` is 50. The
+/// `rim*N` columns are read beside `glyphH` for that reason.
+let rimRadii = [1, 2, 3]
 
 // MARK: - Runs and components
 
@@ -291,6 +354,22 @@ func dilate(_ mask: [Bool], width w: Int, height h: Int, radius r: Int) -> [Bool
             for k in lo...hi { out[k * w + x] = true }
         }
     }
+    return out
+}
+
+/// The rim candidate: the exact map with an `r`-pixel collar around every recognised word
+/// box removed, so a glyph top that pokes out of its own box is no longer in the map.
+///
+/// Deliberately a *separate* mask rather than a change to `inkOutsideMap`: the identity
+/// this tool rests on is that the map is `inkOutsideText`'s own set, and a map with a
+/// collar cut out of it is not. So `mapFrac`, `outPx` and every share column stay the
+/// guard's, and only the shape rule reads this.
+func rimSubtract(_ map: [Bool], region: [Bool], width w: Int, height h: Int,
+                 radius r: Int) -> [Bool] {
+    guard r > 0, w > 0, h > 0, map.count >= w * h, region.count >= w * h else { return map }
+    let grown = dilate(region, width: w, height: h, radius: r)
+    var out = map
+    for i in 0..<(w * h) where grown[i] { out[i] = false }
     return out
 }
 
@@ -520,6 +599,67 @@ func selfTest() -> [String] {
         bad.append("lines: a 365-px gap did not split the line")
     }
 
+    // 6. The rim candidate, both directions on one scene. A recognised word box with five
+    //    glyph-top stubs sitting immediately above it — the shape the 73-page run's three
+    //    false positives are actually made of — and, twenty pixels below it, four full
+    //    stems standing for an unrecognised line of prose. Untrimmed the rule reads BOTH
+    //    as lines; trimmed by 3 px the rim stubs fall under the height floor and the
+    //    unrecognised line survives untouched.
+    //
+    //    The second half is the half that matters: a collar wide enough to remove the rim
+    //    must not remove a line of type that merely sits next to a recognised one, which
+    //    is what C28 sub-step 1's losers are. A one-sided check would pass on
+    //    `rimSubtract` returning an empty mask.
+    let rw = 128, rh = 128
+    var rimRegion = [Bool](repeating: false, count: rw * rh)
+    for y in 40..<60 { for x in 20..<100 { rimRegion[y * rw + x] = true } }
+    var rimMap = [Bool](repeating: false, count: rw * rh)
+    for k in 0..<5 {                                   // the rim: 2x6 stubs above the box
+        for y in 34..<40 { for x in (22 + k * 10)..<(24 + k * 10) { rimMap[y * rw + x] = true } }
+    }
+    for k in 0..<4 {                                   // an unrecognised line, 20 px clear
+        for y in 80..<90 { for x in (22 + k * 10)..<(24 + k * 10) { rimMap[y * rw + x] = true } }
+    }
+    func rimLines(_ radius: Int) -> [Line] {
+        let trimmed = rimSubtract(rimMap, region: rimRegion, width: rw, height: rh,
+                                  radius: radius)
+        let cs = components(trimmed, width: rw, height: rh, x0: 0, y0: 0, x1: rw, y1: rh)
+        return lines(cs, accepted: textish(cs, glyphHeight: 10, glyphRun: 2),
+                     glyphHeight: 10)
+    }
+    let untrimmed = rimLines(0)
+    if untrimmed.count != 2 {
+        bad.append("rim: untrimmed read \(untrimmed.count) lines not 2 (rim + real)")
+    }
+    let trimmed3 = rimLines(3)
+    if trimmed3.count != 1 {
+        bad.append("rim: r=3 read \(trimmed3.count) lines not 1 — the rim survived"
+                   + " or the real line went with it")
+    } else if trimmed3[0].minY < 80 {
+        bad.append("rim: r=3 kept the rim line at y=\(trimmed3[0].minY), not the real one")
+    }
+    // …and the collar is the whole mechanism, so radius 0 must leave the map alone.
+    if rimSubtract(rimMap, region: rimRegion, width: rw, height: rh, radius: 0)
+        != rimMap {
+        bad.append("rim: radius 0 changed the map")
+    }
+    // …and it must be exactly `r` wide, which is the one thing the assertions above
+    // cannot see. The stubs stop one row short of the box and are 2 px wide, five of
+    // them, so radius `r` eats exactly `r` rows of each: 10, 20, 30 px. Without this a
+    // collar built at `radius: r - 1` passes every other check — measured, and it would
+    // relabel a whole published sweep by one column while `rim1` did nothing at all.
+    func rimRemoved(_ radius: Int) -> Int {
+        let t = rimSubtract(rimMap, region: rimRegion, width: rw, height: rh,
+                            radius: radius)
+        return rimMap.filter { $0 }.count - t.filter { $0 }.count
+    }
+    for (radius, expected) in [(1, 10), (2, 20), (3, 30)] {
+        let got = rimRemoved(radius)
+        if got != expected {
+            bad.append("rim: r=\(radius) removed \(got) px not \(expected)")
+        }
+    }
+
     return bad
 }
 
@@ -529,7 +669,7 @@ let args = CommandLine.arguments
 if args.contains("--self-test") {
     let bad = selfTest()
     if bad.isEmpty {
-        print("score-shape-term: self-test ok (5 checks)")
+        print("score-shape-term: self-test ok (6 checks)")
         exit(0)
     }
     FileHandle.standardError.write(Data(
@@ -594,21 +734,27 @@ func isolate(_ index: Int) -> URL? {
 
 /// The one printer, and the columns in one place — T14, A12.3 and T18 are three
 /// separate defects from counting tab escapes by eye.
+/// The rim sweep's columns are generated from `rimRadii` rather than typed out, so the
+/// header and the row cannot disagree about how many there are — which is the defect T14,
+/// A12.3 and T18 each are, in a header written by hand beside a row written by hand.
 let columns = ["page", "w", "h", "otsu", "inkPx", "outPx", "inkOut", "mapFrac",
                "stenFrac", "stenD3", "glyphN", "glyphH", "glyphRun",
                "ccN", "txtN", "txtPx", "txtShare",
-               "lineN", "linePx", "lineShare", "topLine", "verdict"]
+               "lineN", "linePx", "lineShare", "topLine"]
+    + rimRadii.flatMap { ["rim\($0)N", "rim\($0)Px", "rim\($0)Top"] }
+    + ["verdict"]
 func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
          inkPx: String = "-", outPx: String = "-", inkOut: String = "-",
          mapFrac: String = "-", stenFrac: String = "-", stenD3: String = "-",
          glyphN: String = "-", glyphH: String = "-", glyphRun: String = "-",
          ccN: String = "-", txtN: String = "-", txtPx: String = "-", txtShare: String = "-",
          lineN: String = "-", linePx: String = "-", lineShare: String = "-",
-         topLine: String = "-", verdict: String) {
+         topLine: String = "-", rim: [String]? = nil, verdict: String) {
     let fields = ["p\(page)", w, h, otsu, inkPx, outPx, inkOut, mapFrac,
                   stenFrac, stenD3, glyphN, glyphH, glyphRun,
-                  ccN, txtN, txtPx, txtShare, lineN, linePx, lineShare, topLine,
-                  verdict.replacingOccurrences(of: "\t", with: " ")]
+                  ccN, txtN, txtPx, txtShare, lineN, linePx, lineShare, topLine]
+        + (rim ?? [String](repeating: "-", count: rimRadii.count * 3))
+        + [verdict.replacingOccurrences(of: "\t", with: " ")]
     precondition(fields.count == columns.count)
     print(fields.joined(separator: "\t"))
 }
@@ -713,9 +859,29 @@ for index in pages {
     let found = lines(comps, accepted: accepted, glyphHeight: glyphH)
     let linePx = found.reduce(0) { $0 + $1.area }
     let biggest = found.max { $0.area < $1.area }
-    let topLine = biggest.map {
-        "\($0.maxX - $0.minX + 1)x\($0.maxY - $0.minY + 1)+\($0.minX)+\($0.minY)"
-    } ?? "-"
+    func rect(_ l: Line) -> String {
+        "\(l.maxX - l.minX + 1)x\(l.maxY - l.minY + 1)+\(l.minX)+\(l.minY)"
+    }
+    let topLine = biggest.map(rect) ?? "-"
+
+    // The rim sweep. Each radius gets its own components pass over its own trimmed map,
+    // not a filter over `comps`: cutting a collar out of the map can SPLIT a component as
+    // well as shrink it, and a piece of a rejected component can be accepted where its
+    // parent was not — so the count is not monotone in the radius and it has to be
+    // re-derived rather than subtracted. The calibration stays the undilated stencil's:
+    // the page's type scale is not a function of the collar.
+    var rimFields: [String] = []
+    var rimResult: [(radius: Int, comps: [Comp], lines: [Line])] = []
+    for r in rimRadii {
+        let trimmed = rimSubtract(map, region: region, width: w, height: h, radius: r)
+        let rc = components(trimmed, width: w, height: h,
+                            x0: win.x0, y0: win.y0, x1: win.x1, y1: win.y1)
+        let racc = textish(rc, glyphHeight: glyphH, glyphRun: glyphRun)
+        let rlines = lines(rc, accepted: racc, glyphHeight: glyphH)
+        let top = rlines.max { $0.area < $1.area }.map(rect) ?? "-"
+        rimFields += ["\(rlines.count)", "\(rlines.reduce(0) { $0 + $1.area })", top]
+        rimResult.append((r, rc, rlines))
+    }
 
     measured += 1
     row(index, w: "\(w)", h: "\(h)", otsu: "\(otsu)",
@@ -731,7 +897,7 @@ for index in pages {
         txtShare: outPx > 0 ? String(format: "%.4f", Double(txtPx) / Double(outPx)) : "-",
         lineN: "\(found.count)", linePx: "\(linePx)",
         lineShare: outPx > 0 ? String(format: "%.4f", Double(linePx) / Double(outPx)) : "-",
-        topLine: topLine,
+        topLine: topLine, rim: rimFields,
         verdict: identity ? "ok"
             : String(format: "⛔ mapFrac %.6f != inkOut %.6f", mapFrac, inkOut))
 
@@ -747,23 +913,46 @@ for index in pages {
         // Components hold statistics rather than pixels, so the two derived masks are
         // painted from their bounding boxes intersected with the map — which is the map's
         // own ink inside those boxes and never a filled rectangle.
-        func paint(_ into: inout [Bool], _ indices: [Int]) {
+        //
+        // ⚠️ `through` is the mask the components were found in, and it is a parameter
+        // rather than `map` because the rim files below are components of a *trimmed*
+        // map: painting them through the untrimmed one would put collar pixels the radius
+        // removed back inside a surviving component's bounding box, so the picture would
+        // show more ink than the rule accepted. Found by the adversarial review of the
+        // commit that added the rim sweep, after a crop had already been read off the
+        // leaky version.
+        func paint(_ into: inout [Bool], _ from: [Comp], _ indices: [Int],
+                   through mask: [Bool]) {
             for i in indices {
-                let c = comps[i]
+                let c = from[i]
                 for y in c.minY...c.maxY {
                     let base = y * w
-                    for x in c.minX...c.maxX where map[base + x] { into[base + x] = true }
+                    for x in c.minX...c.maxX where mask[base + x] { into[base + x] = true }
                 }
             }
         }
-        paint(&textishOnly, accepted)
-        paint(&linesOnly, found.flatMap(\.members))
-        let promised: [(String, () -> Data?)] = [
+        paint(&textishOnly, comps, accepted, through: map)
+        paint(&linesOnly, comps, found.flatMap(\.members), through: map)
+        var promised: [(String, () -> Data?)] = [
             ("\(stem)-source.png", { Flattener.greyPNG(grey, width: w, height: h) }),
             ("\(stem)-map.png", { maskPNG(map) }),
             ("\(stem)-textish.png", { maskPNG(textishOnly) }),
             ("\(stem)-lines.png", { maskPNG(linesOnly) }),
         ]
+        // One `-lines` per rim radius, so the positive control can be read at the radius
+        // being considered rather than only at zero. Painted through that radius's OWN
+        // trimmed mask — never through `map`, which is the defect `paint`'s comment above
+        // records — so the pixels are the page's own ink, are only the ink the rule at this
+        // radius accepted, and are never a filled rectangle.
+        for entry in rimResult {
+            // Recomputed rather than carried on the common path: three full-page masks is
+            // several megabytes a page and only a dumping run ever needs them.
+            let trimmed = rimSubtract(map, region: region, width: w, height: h,
+                                      radius: entry.radius)
+            var rimOnly = [Bool](repeating: false, count: w * h)
+            paint(&rimOnly, entry.comps, entry.lines.flatMap(\.members), through: trimmed)
+            promised.append(("\(stem)-rim\(entry.radius)-lines.png", { maskPNG(rimOnly) }))
+        }
         var wrote = 0
         for (name, make) in promised {
             guard let data = make(),

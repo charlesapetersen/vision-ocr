@@ -103,7 +103,37 @@ RUN** — `SHAPETERM-73-2026-08-21.tsv`, 73 rows in 22 documents, **65 of them n
 not its sample), **1 of 4** losing only a hand-made mark, **0 of 6** degraded-but-legible and **3 of
 51** that lose nothing. ⛔ **All three of those firings are the RIM of recognised type**, read at 1:1 —
 glyph tops falling outside Vision's word boxes on lines that ARE in the text layer — so the candidate
-is subtracting a *dilated* `region` before grouping, named and untried. ✅ **A signature DOES fire**
+was subtracting a *dilated* `region` before grouping.
+⛔ **THAT CANDIDATE IS MEASURED 2026-08-21 — `SHAPETERM-RIM-2026-08-21.tsv`, the same 73 pages, one pass
+over radii 1/2/3, all 27 shared columns reproducing the previous file on 73 of 73 — AND IT SPLITS INTO
+TWO READINGS.** Type-losers firing / non-losers firing: r=0 **12/12, 3/51**; r=1 **12/12, 2/51**;
+r=2 **11/12, 1/51**; r=3 **9/12, 1/51**. ⛔ **As a REPLACEMENT for the rule it is refused**: r=1 is the
+only radius that keeps every real loss, and it clears two rims of the three while **adding one of its
+own** — on `Xin Qu et al_2018` p28 the rim of a recognised `469.` is three accepted components at r=0,
+one short of `lineMinimumMembers`, and a 1-px collar splits the middle one (`8x8` → `4x6` + `3x6`) into
+four, which is the non-monotonicity the tool's own comment predicted before the run — ⚠️ `rim1N` is 2
+there, so two groups are manufactured and only the larger was read. From r=2 it starts
+destroying real losses (`Williams_1958` p1, then `Scott_TK` p3 and `Merriam_1913` p2 at r=3). The rim
+that survives every radius is `Herbert Marks papers` p12, read at 1:1 at r=3 as 4-px flecks off the
+tops of `Corp.` on a recognised ledger line (64 px, exactly `rim3Px`).
+✅ **But as a SECOND CONDITION it is the best rule this campaign has measured**: `lineN >= 1 AND
+rim1N >= 1` reads **12 of 12 type-losers and 1 of 51 non-losers**, on **14** pages rather than 16, and
+p28 cannot enter because `lineN` is 0 there. The two pages it drops are both non-losers, so the wiring's
+price can only fall from +2,362,625 B — a direction, not a number. ⚠️ **Three reasons it is a lead and
+not a result**: it is post-hoc (a conjunction chosen after seeing these 73 pages, which is the objection
+this entry raises against six shares); the hand-made bucket does not move (1 of 4 at every radius); and
+⛔ **the rim columns have never been run on a picture page**, so 3b's `textRegionMask` finding is
+untouched and that is the one run it needs next.
+⚠️ A ratio-scaled collar does not rescue the replacement reading: `Scott_TK` p3 loses its last group at
+**0.375x** its own `glyphH` (8) while p12 still fires at **0.6x** its own (5) — ⚠️ derived from radii
+1-3; radii above 3 were not run. ⛔ **And the first draft of this got the mechanism wrong in five
+files**: it said the collar "runs backwards", smallest type where the false positive is and largest
+where the true positives are, which its own data refutes — `Scott_TK` p3 is destroyed at `glyphH` 8, the
+second-smallest of the twelve, and `Herbert Marks` p11 is a real typeset loser at `glyphH` **5** that
+fires at every radius, so "the smallest type" separates nothing. ⚠️ For the **local** variant this entry
+prefers (exempt the text-shaped regions rather than refuse the page) a collar is worse than any boolean
+shows: at r=1 `Scott_TK` p3 keeps 278 of 1,796 accepted line pixels and its largest group *moves* to a
+different part of the page. ✅ **A signature DOES fire**
 (`_1939_Former students` p6's only group is the cursive signature itself) — the **fourth** hand-made
 mark the term is measured firing on, after `Wilcox` p2, `Wilcox` p6 and `1954 - Why` p4, and the
 second on a page of measured loss (p4's group is a hit on its own lost cartoon). ⛔ **One of the three misses is not
@@ -486,8 +516,8 @@ Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2
 `CORPUS-2026-08-15.md` + `.tsv` and `MRC-2026-08-15/`, plus the dated corpus sweeps
 `THRESHOLD-LOSS-2026-08-18.tsv`, `INKBAR-2026-08-19.tsv` and `SATFRAC-2026-08-19.tsv` (this list had
 omitted all three; the review of C27's sweep counted that as the third such omission), plus the
-targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv` and
-`SHAPETERM-73-2026-08-21.tsv` — and are
+targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
+`SHAPETERM-73-2026-08-21.tsv` and `SHAPETERM-RIM-2026-08-21.tsv` — and are
 evidence for one run, not
 claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls

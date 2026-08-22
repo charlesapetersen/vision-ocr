@@ -387,7 +387,15 @@ constants unchanged, 65 pages never measured before, and `lineN` ≥ 1 on **12 o
 typeset content (8 of 8 out of sample), 1 of 4 losing only a hand-made mark, 0 of 6
 degraded-but-legible and **3 of 51** that lose nothing. ⛔ **All three of those firings are the rim of
 recognised type** — glyph tops outside Vision's word boxes on lines that are in the text layer, read at
-1:1 — so the named candidate is subtracting a dilated `region` before grouping, untried. ✅ **And a
+1:1 — so the named candidate was subtracting a dilated `region` before grouping. ⛔ **THAT WAS MEASURED
+THE SAME DAY over the same 73 pages, `SHAPETERM-RIM-2026-08-21.tsv`, and it splits in two.** As a
+**replacement** for the rule it is refused: r=1 is the only radius that keeps all 12 type-losers, and it
+clears two rims of three while **adding one of its own** (a 1-px collar splits a three-component rim into
+four, reaching `lineMinimumMembers`); from r=2 it destroys real losses. ✅ As a **second condition**,
+`lineN >= 1 AND rim1N >= 1` reads **12 of 12 type-losers and 1 of 51 non-losers** on 14 pages rather than
+16 — the best rule this campaign has measured, ⚠️ but post-hoc, with the hand-made bucket unmoved (1 of
+4) and **never run on a picture page**, so 3b's `textRegionMask` finding is untouched. See `BUGS.md` C28
+`#### The rim fix, MEASURED`. ✅ **And a
 signature DOES fire**: `_1939_Former students` p6's only group is the cursive signature itself — the
 **fourth** hand-made mark the term is measured firing on (after `Wilcox` p2, `Wilcox` p6 and
 `1954 - Why` p4) and the second on a page of measured loss. ⛔ One of the

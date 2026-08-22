@@ -505,10 +505,24 @@ happens.**
       **the population of sub-bar pages carrying a picture** (unmeasured, not empty — see the
       `c28-pictures` sub-box), plus **a corpus figure** (the 73 are sampled pages; C26's stratified
       lesson applies). ⚠️ Do not quote T15's 1.33x as the page-level figure, and note `linePx` is an
-      area and not a byte count. ⚠️ **The one cheap thing worth trying first** is the rim fix the all-73
-      run named: subtract a *dilated* `region` before grouping, which is the candidate for removing all
-      three false positives — it must be tested against the 13 true positives, because sub-step 1's
-      losers sit on lines directly adjacent to recognised ones.
+      area and not a byte count.
+      ⛔ **THE RIM FIX — "the one cheap thing worth trying first" — WAS TRIED 2026-08-21. Do NOT re-run
+      the sweep**; the `c28-rimfix` sub-box below and `BUGS.md` C28 `#### The rim fix, MEASURED` carry
+      it, with `SHAPETERM-RIM-2026-08-21.tsv`. A dilated-`region` collar over the same 73 pages reads
+      r=1 **12/12 type, 2/51 nothing**; r=2 **11/12, 1/51**; r=3 **9/12, 1/51**. ⛔ **As a REPLACEMENT
+      it is refused** — r=1 is the only radius that keeps every real loss, and it clears two rims of
+      three while **adding one of its own** (a 1-px collar splits a three-component rim into four,
+      reaching `lineMinimumMembers`); from r=2 it destroys real losses.
+      ✅ **BUT AS A SECOND CONDITION IT IS THE BEST RULE THIS CAMPAIGN HAS MEASURED, and that is the
+      live next step**: `lineN >= 1 AND rim1N >= 1` reads **12 of 12 type-losers and 1 of 51
+      non-losers**, on 14 pages rather than 16, and the manufactured firing cannot enter it. ⚠️ It is
+      **post-hoc** (chosen after seeing these 73), the hand-made bucket does not move (1 of 4), and
+      ⛔ **the rim columns have NEVER been run on a picture page** — so the next measurement is the
+      conjunction over the 10 pages of `SHAPETERM-PICTURES-2026-08-21.tsv`, which is one run of an
+      unchanged binary. ⚠️ A collar is worse for the **local** variant than any boolean shows: at r=1
+      `Scott_TK` p3 keeps 278 of 1,796 accepted line pixels and its largest group MOVES. And note
+      `outPx` interleaves too (`_1967_Yearly Increase` p1 reads 5,863, above eight of the twelve
+      type-losers), so it is not the term either.
       ⛔ **AND ONE PROCESS WARNING WORTH MORE THAN THE MEASUREMENT: a draft of `c28-halfres` tried to
       RETRACT a correct claim of this campaign's, in six places, and the adversarial review of its diff
       refuted it from the same page.** The draft measured stencil ink over source ink in one rect of
@@ -1051,9 +1065,51 @@ happens.**
       `score-text-route`; the *local* variant would be cheaper, so +2,362,625 B is an **upper** bound.
       The three ride-along documentation debts (the settings blurb, the tool header, the
       `Tools/README.md` row) landed on this commit, and the blurb gained a check watched failing.
-      ⚠️ Nothing is wired; no mutant is owed. **Next**: the rim fix (subtract a dilated `region` before
-      grouping), or the `textRegionMask` seam's price.
+      ⚠️ Nothing is wired; no mutant is owed. **Next**: ~~the rim fix (subtract a dilated `region`
+      before grouping)~~ — DONE: refused as a REPLACEMENT, best-measured as a SECOND CONDITION, see
+      `c28-rimfix` — or the `textRegionMask` seam's price.
       (context: BUGS.md C28 `#### The same shape term over ALL 73`)
+- [x] **c28-rimfix** — **DONE 2026-08-21, and the answer is TWO answers.** The rim fix the all-73 run
+      named — subtract a *dilated* `region` before grouping — is in `Tools/score-shape-term.swift` as a
+      **sweep** (`rim1N`/`rim2N`/`rim3N`, radii 1/2/3 in one pass) and was read over the same 73 pages,
+      same constants, one binary. `SHAPETERM-RIM-2026-08-21.tsv`, 73 rows, 22 documents, 36 fields.
+      **Type-losers firing / non-losers firing: r=0 12/12, 3/51; r=1 12/12, 2/51; r=2 11/12, 1/51;
+      r=3 9/12, 1/51.**
+      ⛔ **AS A REPLACEMENT IT IS REFUSED. r=1 is the only radius that keeps every real typeset loss, and
+      it clears TWO rims of the three while ADDING ONE OF ITS OWN**: on `Xin Qu et al_2018` p28 the rim
+      of a recognised `469.` is *three* accepted components at r=0, one short of `lineMinimumMembers`,
+      and a 1-px collar splits the middle one (`8x8` → `4x6` + `3x6`) into four — the non-monotonicity
+      the tool's comment predicted before the run. ⚠️ `rim1N` is **2** there: two groups are
+      manufactured, and only the larger was located and read at 1:1. **The rim that survives every radius
+      is `Herbert Marks papers` p12**, still the rim at r=3 (4-px flecks off the tops of `Corp.`, 64 px
+      = `rim3Px`, read at 1:1). **And from r=2 it destroys real losses**: `Williams_1958` p1
+      (`linePx` 1780 → 1487 → 0), then `Scott_TK` p3 and `Merriam_1913` p2 at r=3.
+      ✅ **AS A SECOND CONDITION IT IS THE BEST RULE THIS CAMPAIGN HAS MEASURED**: `lineN >= 1 AND
+      rim1N >= 1` reads **12 of 12 type-losers, 1 of 4 hand, 0 of 6 degraded, 1 of 51 non-losers**, on
+      **14 of 73** pages rather than 16, and p28 cannot enter it (`lineN` 0 there). Both dropped pages
+      are non-losers, so the wiring's price can only fall from +2,362,625 B — ⚠️ a direction, not a
+      number. ⚠️ **Post-hoc**, hand bucket unmoved, and ⛔ **never run on a picture page**: that is the
+      next measurement and it is one run over `SHAPETERM-PICTURES-2026-08-21.tsv`'s ten.
+      ⚠️ A **ratio**-scaled collar does not rescue the replacement reading: `Scott_TK` p3 loses its last
+      group at 0.375x its own `glyphH` (8) while p12 still fires at 0.6x its own (5) — derived from
+      radii 1-3, radii above 3 not run. ⛔ **The first draft of this box said the mechanism was that the
+      collar "runs backwards" (smallest type at the false positive, largest at the true positives) and
+      the adversarial review refuted it from the same file**: `Scott_TK` p3 is destroyed at `glyphH` 8,
+      and `Herbert Marks` p11 is a real typeset loser at `glyphH` 5 firing at every radius.
+      ⚠️ **Worse for the LOCAL variant than any boolean shows**: at r=1 `Scott_TK` p3 keeps 278 of 1,796
+      accepted line pixels and its largest group MOVES to a different part of the page.
+      Controls: all **27** shared columns reproduce `SHAPETERM-73-2026-08-21.tsv` on **73 of 73** pages
+      (`lineShare` included); `inkOut == sweepInkOut` on 73 of 73; `rc=0` on 22 invocations;
+      `verdict=ok` on every row (identity held, exit 6 never fired); `--self-test` **6/6**, the new
+      check two-sided on one synthetic scene and **watched failing on four mutants of `rimSubtract`**.
+      ⛔ **One of those four, `radius: r - 1`, passed 6 of 6 until the check gained a direct assertion on
+      the collar's WIDTH** (10/20/30 px removed at r=1/2/3) — a collar one pixel small would have
+      relabelled the whole sweep by a column. ⛔ **And the review found a real defect in the diff**:
+      `SHAPEDUMP`'s new `-rim<r>-lines.png` were painted through the untrimmed map; fixed in the same
+      commit and the p12 crop re-read on the fixed build (unchanged, 64 px).
+      ⚠️ The first stub did not compile, so it tested nothing and was rebuilt.
+      ⚠️ Nothing is wired; `Sources/` untouched, no mutant and no `fault-inject.sh` case owed.
+      (context: BUGS.md C28 `#### The rim fix, MEASURED`)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,
