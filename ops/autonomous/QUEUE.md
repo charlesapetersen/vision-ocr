@@ -503,9 +503,22 @@ happens.**
       is left is** — **question 4 at the `textRegionMask` seam** (which is the seam question 3's own
       sentence names, the one 3b's bound does NOT cover, and now the more expensive of the two), plus
       **the population of sub-bar pages carrying a picture** (unmeasured, not empty — see the
-      `c28-pictures` sub-box), plus **a corpus figure** (the 73 are sampled pages; C26's stratified
-      lesson applies). ⚠️ Do not quote T15's 1.33x as the page-level figure, and note `linePx` is an
-      area and not a byte count.
+      `c28-pictures` sub-box). ⚠️ Do not quote T15's 1.33x as the page-level figure, and note `linePx`
+      is an area and not a byte count.
+      ✅ **THE CORPUS FIGURE IS DONE 2026-08-21 — do NOT re-derive it**; the `c28-corpus` sub-box below
+      and `BUGS.md` C28 `#### The corpus figure` carry it, with `Tools/stratify-corpus.py`. Per
+      document, over the whole 16,987-page corpus: **~127 pages are still shrunk 8x/16x and ~19 of them
+      lose content (0.11% of the corpus). The shape term's wiring refuses ~18 of the ~127 for
+      +2,694,515 B and rescues ~14.7 of the ~19; the cheapest page-wide bar refuses ~60 for
+      +8,289,863 B and rescues ~17.9** — both incremental to C26's shipped
+      ~4.0 MB, so the term is two thirds of a fix already accepted and the bar 2.1x its whole bill.
+      ⛔ **Three pairs of ratios in this box move as a result.** Term against bar is **30.9%** of pages
+      and **32.5%** of bytes corpus-wide against the **39.0%** and **38.1%** these 41 sampled rows read,
+      so the term gets cheaper relative to the bar and not dearer; the share of the spend that buys
+      nothing goes the other way (**15.5% → 18.0%** and **58.5% → 61.0%**); and the
+      pooled-over-stratified factor is **not** a constant (4.58x / 5.48x / 6.57x / 6.93x over four arms
+      of one population), so C26's 5.96x is its band's number and must never be used to correct a
+      sampled count.
       ⛔ **THE RIM FIX — "the one cheap thing worth trying first" — WAS TRIED 2026-08-21. Do NOT re-run
       the sweep**; the `c28-rimfix` sub-box below and `BUGS.md` C28 `#### The rim fix, MEASURED` carry
       it, with `SHAPETERM-RIM-2026-08-21.tsv`. A dilated-`region` collar over the same 73 pages reads
@@ -1188,6 +1201,68 @@ happens.**
       **20 of 49 cells (41%)**. Two comments in one file disagreeing, with the wrong one next to the
       code; corrected here.
       (context: BUGS.md C28 `#### The conjunction on a PICTURE page`)
+- [x] **c28-corpus** — **DONE 2026-08-21. C28 question 4's CORPUS figure at the layering seam, which was
+      the last owed number there.** Do not re-derive it. New tool `Tools/stratify-corpus.py` plus a new
+      committed record `SHAPETERM-BYTES-2026-08-21.tsv` (41 rows, 11 columns); `BUGS.md` C28
+      `#### The corpus figure` is the section.
+      **Per document over all 16,987 corpus pages**: still shrunk 8x/16x **127.17** (24 exact),
+      **losing content 19.42 — 0.11% of the corpus** (7 exact), the shape term's wiring refusing
+      **18.42** for **+2,694,515 B** (7 pages and +1,291,409 B exact) and rescuing **14.67** of the
+      19.42, and the cheapest page-wide bar refusing **59.67** for **+8,289,863 B** (16 pages and
+      +2,736,780 B exact) and rescuing **17.92**. Both prices are
+      **incremental to C26's shipped ~4.0 MB**: the term is two thirds of a fix this project has already
+      decided it could afford, the page-wide alternative 2.1x its whole bill.
+      ✅ **The instrument asserts eleven of C26's published band figures before being asked anything
+      new** (`--control`, over the committed `INKBAR-2026-08-19.tsv`): 16 pages, 10 documents,
+      +2,965,653 B, 16,987 corpus pages, 2,129 sample rows, 86 documents sampled completely, ~21 pages,
+      ~4.0 MB, 8 pages and 1,489,670 B exact, and pooled at 5.96x. ⚠️ **Only five of the eleven are
+      estimator-sensitive** (measured: a pooled factor kills 3, an all-exact subtotal kills 2); the
+      other six are input-file facts. ⚠️ And **`5.96x` was never published** — the register says "6x" —
+      so it is a pinned regression value, not a reproduced figure.
+      `--self-test` is **54** checks and **seven mutants were watched failing**: a pooled factor in
+      place of the per-document one kills 9 (3 of them control checks), the mandatory rows-⊆-sample
+      identity check disabled kills 1, an exact subtotal counting every document kills 5 (2 control
+      checks), and the four below kill 2/1/1/1. ✅ **The pre-commit hook DOES run it** — it greps every
+      staged `Tools/*.py` for `add_argument('--self-test'` — which this box denied in draft, having
+      reasoned from `check-tools-compile.sh` (`py_compile` only) and stopped one file short.
+      ⛔ **THE REVIEW OF THIS DIFF FOUND FOUR CHECKS THAT COULD NOT FAIL, and one carried every pooled
+      figure above.** A mutant taking the pooled denominator from the **rows** file instead of the
+      **sample** passed 42 of 42 while turning 582.46 into 16987.00 and 4.58x into 133.58x, because
+      every fixture and the whole control block call `run(sample, sample, …)` where the two are equal by
+      construction. The other three were the output layer — `report()` and `--tsv` had no check at all,
+      and every number published here was read off `report()`. All four are pinned now and watched
+      failing. ⚠️ Six of the eight refusal guards are still one-check-each, the
+      `C24-override-nil-means-fallback` pattern.
+      ✅ **And the byte table it needed had never been committed.** It was re-measured from a binary
+      built at `ab55cd7`, one invocation per document, `INKBAR=0.00001`, Photo detail Balanced, and
+      **both previously published totals reproduce digit for digit** — `lineN >= 1` 789,825 →
+      3,152,450 B (+2,362,625, 3.99x, 15.5%) and all 41 1,915,380 → 8,117,445 B (+6,202,065, 4.24x,
+      58.5%) — with `barVerdict=picture` and a byte-identical stencil on 41 of 41 and every row's
+      `inkOut` asserted equal to its `SHAPETERM-73` value. ⚠️ **That is a determinism re-run, not a
+      control across a code change**: `git diff 5a929ec..ab55cd7 -- Sources/ Tools/score-text-route.swift`
+      is empty. The independent control is `layered` matching `INKBAR-2026-08-19.tsv` on 41 of 41 rows —
+      a different binary, a different bar, two days earlier.
+      ⛔ **Three pairs of ratios this queue and the register published are now superseded**, and the
+      reason is worth more than the numbers: **a ratio is a claim about its own set.** Term against bar
+      is 30.9% of pages and 32.5% of bytes corpus-wide against 39.0% and 38.1% sampled — the term gets
+      *cheaper*, and the mechanism is the mean scale factor (1.15 vs 1.46 by page, 1.14 vs 1.34 by
+      byte). ⛔ **Do not explain the byte ratio with `Xin Qu et al_2018`, which a draft of this box
+      did**: it is 26.8% of the bar's PAGE estimate and only 8.9% of its bytes, and the largest byte
+      contributor is `Broadhead - 1994` (+1,438,260 B, 17.3%), which the term *does* fire on. The
+      overpay share goes the other way, 15.5% → 18.0% and 58.5% → 61.0%. And the pooled-over-stratified
+      factor is **not** a corpus constant: 4.58x / 5.48x / 6.57x / 6.93x over four arms of one
+      population, so C26's 5.96x is its band's number and is not a correction factor.
+      ⚠️ **What it does not measure**: the estimator's one assumption — that a document's unsampled
+      pages behave like its sampled ones — is nowhere measured. All 41 pages were measured, so the
+      scaling adds 2.42 pages and 12.3% of the bytes to the term's arm; separately, 47.9% of that byte
+      estimate needs no assumption about an unsampled page at all (the fully-sampled documents).
+      ⛔ A draft said "7 measured, 11.42 extrapolated", which is wrong by ~5x — sixteen were measured.
+      The labels are still the campaign's eyeball verdicts with the `Atkinson_1939` p3
+      circularity the all-73 arm records; the census is `CORPUS-2026-08-15.tsv`'s; the bytes are 41
+      scaled pages rather than a corpus rebuild, at the default Photo detail, and an **upper** bound on
+      the local variant. **Nothing is wired** — `Sources/` untouched, so no mutant and no
+      `fault-inject.sh` case owed — and the `textRegionMask` seam is still unpriced at **any** scale.
+      (context: BUGS.md C28 `#### The corpus figure`)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,

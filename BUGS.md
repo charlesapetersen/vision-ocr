@@ -77,6 +77,13 @@ would drop a page known to lose content. C28 stays OPEN on questions 3 and 4 —
 price of widening — **both of which now have measurements over the whole 73-page population
 (2026-08-21) and neither of which is wired**. ⛔ The report is a report and not a fix: it says
 which pages were degraded, it does not stop them being degraded.
+✅ **And question 4 now has a CORPUS figure at the layering seam, 2026-08-21** — per document over all
+16,987 pages, **~127 pages are still shrunk 8x/16x and ~19 of them lose content, 0.11% of the
+corpus**. The shape term's wiring refuses **~18 of the ~127** for +2,694,515 B and rescues **~14.7 of
+the ~19**; the cheapest page-wide bar refuses **~60** for +8,289,863 B and rescues **~17.9**. So the
+term is **30.9%** of the bar's pages and **32.5%** of its bytes, against the 39.0% and 38.1% these 41
+sampled rows read. `#### The corpus figure` is the measurement; the `textRegionMask` seam is still
+unpriced at any scale.
 ✅ **Question 2's 1/2 half is MEASURED 2026-08-20 and the loss does NOT reproduce there** — 16 of the
 109 layered pages the bar does not read as all text were rendered and read at 1:1, ten of them beside a
 1/8 reference on the same rect, and **no content loss was found at 1/2 in any window read**, including
@@ -7241,6 +7248,181 @@ the mechanism rather than an idle instrument:**
   which still said a 7x7 square and `Disk:3` "differ only at the corners" while this file's own header
   already recorded that as refuted at **20 of 49 cells (41%)**. `testdocs/` was read only; every
   artefact is under /tmp.
+
+#### The corpus figure — question 4's last owed number at the LAYERING seam: this defect destroys content on ~19 pages of 16,987, and the sampled 39.0% page ratio between the two candidate fixes does NOT carry to the corpus — MEASURED 2026-08-21
+
+Every figure this entry has published about "the 73" is a **sample** statistic. `sampleIndices` takes
+up to 12 pages from a document whatever its length, so the 2,129 rows of `INKBAR-2026-08-19.tsv` are
+drawn from 16,987 pages at wildly different rates: a 1-page document is sampled with certainty, a
+40-page one at 12/40. C26's own decision was taken on a corpus figure (**~4.0 MB**, and the owner's
+arithmetic was that that is a cheap price for not destroying words), so this entry owes one in the same
+currency. This is it, for the layering seam.
+
+##### The instrument, and it agrees with C26's own arm before it is asked anything new
+
+`Tools/stratify-corpus.py` (new). It joins a per-page TSV to `CORPUS-2026-08-15.tsv`'s page census and
+computes, per document *d* with `pages_d` pages, `sampled_d` sample rows and `hit_d` selected rows,
+`Σ_d hit_d · pages_d / sampled_d` — plus the same expression over a byte-delta column, plus the
+**exact subtotal** contributed by documents where `sampled_d == pages_d`, which is the part of a
+corpus-level claim that needs no assumption about an unsampled page and is the honest number to fall
+back on. (It is a *no-scaling* subtotal, **not** "the part that was measured" — every selected row was
+measured; see the extrapolation paragraph below, which a draft of this section got wrong.) `--control` reads the committed sweep and
+asserts **eleven** of C26's published band figures, all of which pass: 16 sampled pages moving, over 10
+documents, **+2,965,653 B**, a corpus of **16,987** pages in 233 documents, a sample of **2,129** rows,
+**86** documents sampled completely, a stratified estimate rounding to **~21 pages** and **~4.0 MB**, an
+exact subtotal of **8 pages and 1,489,670 B**, and a pooled estimate **5.96x** the stratified one. So
+before it is pointed at anything new it agrees with the register digit for digit on the one arm the
+register already published.
+⚠️ **Read that "eleven" honestly, which the first draft of this section did not.** Only **five** of the
+eleven are sensitive to the estimator at all — measured by mutation, a pooled factor in place of the
+per-document one kills 3 (`~21 pages`, `~4.0 MB`, `5.96x`) and an exact subtotal counting every
+document kills 2 (`8 pages`, `1,489,670 B`); the other **six** are properties of the two input files
+and the predicate that any correct TSV reader reproduces. ⚠️ And **`5.96x` was never published** — the
+register says "**6x** high" — so that constant is this run's own two-decimal value pinned as a
+regression value, not a figure reproduced from the entry.
+✅ **`--self-test` is 54 checks over synthetic tables plus that control block, and seven mutants were
+watched failing**: a stratified factor replaced by the corpus-wide pooled one kills **9** checks
+including 3 of the 11 control checks; the mandatory rows-⊆-sample identity check disabled kills 1; an
+exact subtotal that counts every document rather than only fully-sampled ones kills **5**, 2 of them
+control checks; and the four the adversarial review of this diff found **surviving 42 of 42** now kill
+2, 1, 1 and 1 (see the next paragraph). ✅ The pre-commit hook **does** run it — `.githooks/pre-commit`
+greps every staged `Tools/*.py` for an `add_argument('--self-test'` and runs it — which the first draft
+of this section denied, having reasoned from `check-tools-compile.sh` (which really does only
+`py_compile`) and stopped one file short of the hook.
+⛔ **THE REVIEW OF THIS DIFF FOUND FOUR CHECKS THAT COULD NOT FAIL, AND ONE OF THEM CARRIED EVERY
+POOLED FIGURE IN THIS SECTION.** A mutant reading the pooled denominator off the **rows** file instead
+of the **sample** passed 42 of 42 while turning `582.46` into `16987.00` and `4.58x` into `133.58x`,
+because every fixture and the whole control block call `run(sample, sample, …)`, where the two are
+equal by construction, and the one genuine-subset call asserted only its stratified figure. The other
+three were the output layer: `report()` and `--tsv` had no check on them at all, so swapping which
+field prints in which slot was invisible — and **every number in this section was read off
+`report()`**. All four are pinned now, in the subset configuration and against captured output, and all
+four were watched failing. ⚠️ Six of the eight refusal guards are still killed by exactly **one** check
+each, which is the `C24-override-nil-means-fallback` pattern this register records.
+⚠️ **One instrument fact worth more than the checks**: `--sample` is a required argument and is
+deliberately not defaulted to `--rows`, because scaling a 73-row subset against **its own**
+per-document counts rather than the sample's reads `Jones et al_2010` as 3 of 5 instead of 3 of 12 and
+returns 9.00 pages where the answer is 3.75. The self-test pins both readings of the same fixture
+(8.00 against the sample, 40.00 against itself, **5.0x**), so the inflating mistake is a red check
+rather than a plausible number.
+
+##### The table — pages, over the four arms of the same 73
+
+| arm | selection | sampled | docs | **stratified** | of which exact | pooled | pooled ÷ strat |
+|---|---|---|---|---|---|---|---|
+| still shrunk 8x/16x today | all 73 | 73 | 22 | **127.17** | 24 in 11 docs | 582.46 | 4.58x |
+| **loses content today** | `label=loses` | 16 | 11 | **19.42** | 7 in 5 docs | 127.66 | 6.57x |
+| the shape term refuses | `lineN >= 1` | 16 | 11 | **18.42** | 7 in 6 docs | 127.66 | 6.93x |
+| the cheapest page-wide bar refuses | `inkOut >= 0.0008` | 41 | 19 | **59.67** | 16 in 10 docs | 327.13 | 5.48x |
+
+**So the defect's extent is ~19 pages of 16,987 — 0.11% of the corpus — and the population it lives in
+is ~127 pages, 0.75%.** Both readings of that are true and neither should be dropped: nineteen pages is
+a small share of a 16,987-page corpus, and each of those nineteen loses words, table figures or an
+estimating equation with nothing in the file to say so.
+
+##### The table — bytes, and a per-page price table that had never been committed
+
+The aggregate byte figures this entry published for question 4 were computed page by page in a session
+and only the totals were written down. They were re-measured here from a binary built at
+**`ab55cd7`**, one invocation per document, `INKBAR=0.00001` (below every selected page's own `inkOut`,
+so the shrink is really refused), Photo detail Balanced, and committed as
+**`SHAPETERM-BYTES-2026-08-21.tsv`** — 41 rows, 11 columns. ✅ **Both published totals reproduce digit
+for digit**, together with both ratios and both overpay shares: `lineN >= 1` reads **789,825 →
+3,152,450 B, +2,362,625 B, 3.99x, 15.5%** and all 41 read **1,915,380 → 8,117,445 B, +6,202,065 B,
+4.24x, 58.5%**. `barVerdict` is `picture` on 41 of 41 (so the shrink really was refused on every row)
+and the stencil is byte-identical at both bars on 41 of 41 (so the backgrounds are the whole
+difference), and every row's `inkOut` was asserted equal to its `SHAPETERM-73` value before being
+written.
+⚠️ **But "fresh binary" is not the control the first draft called it.** `git diff 5a929ec..ab55cd7 --
+Sources/ Tools/score-text-route.swift` is **empty**, so this binary is compiled from source
+byte-identical to the one that produced the original totals: it is a determinism re-run, not an
+additivity control across a code change — which is exactly the distinction two sections above prized in
+the pictures-rim run, and this one does not have it. ✅ **The independent control is a different column
+and it holds**: `layered` here equals `INKBAR-2026-08-19.tsv`'s `layered` on **41 of 41** rows — a
+two-day-old sweep, a different bar, a different binary. Quote that one.
+
+| arm | sampled | **stratified bytes** | of which exact | pooled | spend on pages that lose nothing |
+|---|---|---|---|---|---|
+| shape term, `lineN >= 1` | +2,362,625 B | **+2,694,515 B** | +1,291,409 B (7 pages) | +18,851,062 B | **18.0%** |
+| page-wide bar at 0.0008 | +6,202,065 B | **+8,289,863 B** | +2,736,780 B (16 pages) | +49,485,429 B | **61.0%** |
+
+**Both are incremental to what is shipped**, which is the thing to keep hold of: C26's bar move already
+costs the corpus **~4.0 MB** and the owner accepted that on the arithmetic that it is a cheap price for
+not destroying words. Against that yardstick the shape term's wiring is **+2.69 MB — two thirds of a
+fix this project has already decided it could afford** — and the page-wide alternative that rescues the
+same pages is **+8.29 MB, 2.1x C26's whole bill.** ⚠️ These are corpus **estimates** built on 41
+measured pages, not a corpus rebuild.
+
+⚠️ **How much of the estimate is extrapolation, stated properly.** All 41 pages were measured, so the
+scaling adds **+2.42 pages and +331,890 B — 12.3% — to the term's arm** and +18.67 pages and
++2,087,798 B (25.2%) to the bar's. The **exact** subtotal is a different and narrower thing: it is the
+part of the *corpus-level* claim that rests on no assumption about unsampled pages at all, because
+those documents were sampled completely — 47.9% of the term's byte estimate and 33.0% of the bar's.
+⛔ **A first draft of this section wrote "7 of the 18.42 pages are measured and 11.42 are extrapolated"
+and that is wrong by about 5x**: sixteen were measured, the nine in partially-sampled documents just
+as much as the seven in fully-sampled ones. The review of this diff caught it.
+
+**Corpus-wide the term's rescues cost +2,210,313 B over ~14.67 pages and the bar's +3,237,211 B over
+~17.92**, so the bar buys **3.25 more rescued pages for +1,026,897 B** and spends a further
+**+5,052,652 B** on ~41.75 pages that lose nothing. ⚠️ Neither reaches `_1939_Former students` p2,
+whose map is empty, and that page is the 1.50 corpus pages separating 19.42 from the bar's 17.92.
+⚠️ **And read the term's own coverage before quoting "~18"**: of the 18.42 pages it refuses, only
+**14.67** lose content — it misses ~4.75 corpus pages of loss, all of them hand-made marks — against
+the bar's 17.92 of 19.42.
+
+##### ⛔ Three things the sampled numbers got wrong, and all three are about ratios
+
+⛔ **The pooled-over-stratified ratio is not a corpus constant, so C26's 5.96x is not a correction
+factor.** Over four arms of one population it reads **4.58x, 5.48x, 6.57x and 6.93x**. It is a property
+of *which* pages a selection lands on — how long their documents are — and nothing else. This is the
+same lesson as the stencil-ink ratio two sub-steps ago and the `-normalize`d difference map before that:
+**a ratio is a claim about its own set.** Anyone tempted to divide a sampled count by six should read
+this row instead.
+
+⛔ **And the term-against-bar comparison this entry published moves.** At sampled scale the term refuses
+**16 of the bar's 41 pages, 39.0%**, for **38.1%** of its bytes; at corpus scale it refuses **18.42 of
+59.67, 30.9%**, for **32.5%** of the bytes — the term
+gets **cheaper** relative to the bar on both counts, not dearer, and the mechanism is a mean scale
+factor: **1.15** for the term's pages (18.42/16) against the bar's **1.46** (59.67/41), and
+byte-weighted **1.14** against **1.34**. The term's pages sit in shorter documents; the bar's reach into
+long ones. ⚠️ **On the page count the largest single contributor is `Xin Qu et al_2018`** — 6 sampled
+rows of 12 in a 32-page document, **16.00** estimated pages, **26.8%** of the bar's page estimate — and
+the term fires on **none** of its six rows. ⛔ **That page share does NOT explain the byte share, and a
+draft of this paragraph offered it for both**: `Xin Qu` is only **8.9%** of the bar's byte estimate, and
+the largest byte contributor is `Broadhead - 1994` at **+1,438,260 B, 17.3%** — a document the term
+*does* fire on. The byte direction holds by the byte-weighted factors above, not by that document.
+Caught by the review of this diff, and it is the same error as the ratios it is embedded in: **a share
+is a claim about the quantity it was computed over.**
+
+⚠️ **A third pair of figures moves, and this one moves against the fix**: the share of the spend that
+buys nothing rises at corpus scale for both arms, **15.5% → 18.0%** for the term and **58.5% → 61.0%**
+for the bar. The gap is unchanged in kind — the term still spends most of its money on pages that lose
+content and the bar still does not — but neither number should be quoted from the sampled table now
+that the scaled one exists.
+
+##### What this does not measure
+
+- **The estimator's one assumption**: that a document's unsampled pages behave like its sampled ones.
+  That is not measured anywhere and it is why the exact subtotal is printed beside the estimate — for
+  the term's arm the scaling adds **2.42 pages and 12.3% of the bytes** beyond the 16 measured, and
+  **47.9%** of the byte estimate needs no assumption about an unsampled page at all.
+- **The labels are still the campaign's eyeball verdicts**, carried over unchanged, with the
+  circularity `#### The same shape term over ALL 73` already records (`Atkinson_1939` p3's type label
+  came from the term's own crops; without it the type arm is 11 of 11).
+- **The census is 2026-08-15's.** `CORPUS-2026-08-15.tsv` is a dated record of one gate run, and its
+  page counts are what every figure here divides by; `testdocs/` is read-only in this project, so
+  nothing should have moved it, but that is an argument rather than a check.
+- **The corpus is the owner's 233-document Zotero sample**, not a claim about scanned PDFs in general.
+- **The bytes are 41 measured pages scaled, not a corpus rebuild**, at the default Photo detail and page
+  by page through `score-text-route` — the same qualification the sampled figures carry, and the
+  *local* variant this entry prefers can only be cheaper, so +2,694,515 B stays an **upper** bound.
+- **The `~4.0 MB` yardstick is C26's own estimate**, produced by the same estimator over a different
+  arm, so the comparison "two thirds of a fix already accepted" inherits every assumption above on both
+  sides of it. What it is not is a corpus rebuild of either.
+- **Nothing is wired**, still. `Sources/` is untouched by this sub-step, so no mutant and no
+  `fault-inject.sh` case is owed; the only code added is a `Tools/` analysis script. The
+  `textRegionMask` seam remains unpriced at any scale — this arm scales the **layering** seam's price
+  and nothing else.
 
 #### What this entry is NOT
 

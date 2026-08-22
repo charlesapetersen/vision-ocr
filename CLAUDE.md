@@ -181,6 +181,39 @@ marks costing +575,066 B — and **neither reaches `_1939_Former students` p2**.
 default Photo detail, page by page through `score-text-route`, and the *local* variant would be
 cheaper, so +2,362,625 B is an upper bound. The `textRegionMask` seam is still unpriced and **nothing
 is wired**.
+✅ **THE CORPUS FIGURE IS MEASURED 2026-08-21 and it is question 4's last owed number at the LAYERING
+seam** — `Tools/stratify-corpus.py` (new; `--control` asserts eleven of C26's published band figures
+off the committed sweep before it is asked anything new, of which **five are estimator-sensitive** and
+six are input-file facts, and ⚠️ its `5.96x` was never published — the register says "6x"; `--self-test`
+54 checks, seven mutants watched failing; **the pre-commit hook runs it** — it greps staged
+`Tools/*.py` for a `--self-test` flag, which `check-tools-compile.sh` alone does not).
+Per document over all **16,987** pages: **~127 are still shrunk 8x/16x and
+~19 of them lose content, 0.11% of the corpus.** The shape term's wiring refuses **~18 of the ~127**
+for **+2,694,515 B** and rescues **~14.7 of the ~19**; the cheapest page-wide bar refuses **~60** for
+**+8,289,863 B** and rescues **~17.9**. ✅ The per-page byte table behind that was
+never committed and now is — `SHAPETERM-BYTES-2026-08-21.tsv`, 41 rows — and **both published totals
+reproduce digit for digit** along with both ratios and both
+overpay shares, `barVerdict=picture` and a byte-identical stencil on 41 of 41. ⚠️ That binary is
+byte-identical in source to the one that produced the originals, so it is a determinism re-run rather
+than a control across a code change; the real independent control is that `layered` equals
+`INKBAR-2026-08-19.tsv`'s on 41 of 41 rows. **Both prices are
+incremental to C26's shipped ~4.0 MB**, so the term's wiring is **two thirds of a fix this project has
+already decided it could afford** and the page-wide alternative is **2.1x C26's whole bill**.
+⛔ **Three pairs of figures published above do not survive the scaling.** The term/bar ratio is
+**30.9%** of pages and **32.5%** of bytes corpus-wide against the sampled **39.0%** and **38.1%** — the
+term gets *cheaper* relative to the bar, because the bar's largest contributor (`Xin Qu et al_2018`, 6
+sampled rows of 12 in a 32-page document, 26.8% of its estimate) is a document the term never fires on.
+The share of the spend that buys nothing goes the other way, **15.5% → 18.0%** for the term and
+**58.5% → 61.0%** for the bar. And the
+pooled-over-stratified factor is **not a constant**: 4.58x / 5.48x / 6.57x / 6.93x over four arms of
+one population, so C26's 5.96x is its band's number and must never be used as a correction factor —
+**a ratio is a claim about its own set**, the same lesson as the stencil-ink ratio and the
+`-normalize`d difference map, and the same mistake this section's own draft made when it explained the
+byte ratio with `Xin Qu et al_2018`'s **page** share (26.8% of pages, 8.9% of bytes). ⚠️ The
+estimator's one assumption — that a document's unsampled pages behave like its sampled ones — is
+nowhere measured, which is why the **exact** subtotal is printed beside every estimate: all 41 pages
+were measured, the scaling adds **2.42 pages and 12.3% of the bytes** to the term's arm, and 47.9% of
+its byte estimate needs no assumption about an unsampled page at all.
 ✅ It also settles
 `score-text-route`'s open instrument question, because it holds `region` itself so its map **is**
 `inkOutsideText`'s set (asserted every row, exit 6 otherwise; `inkOut` reproduced
@@ -547,8 +580,8 @@ Dated measurement records live beside them — `CORPUS-2026-08-08.md`, `CORPUS-2
 `THRESHOLD-LOSS-2026-08-18.tsv`, `INKBAR-2026-08-19.tsv` and `SATFRAC-2026-08-19.tsv` (this list had
 omitted all three; the review of C27's sweep counted that as the third such omission), plus the
 targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
-`SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv` and
-`SHAPETERM-PICTURES-RIM-2026-08-21.tsv` — and are
+`SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
+`SHAPETERM-PICTURES-RIM-2026-08-21.tsv` and `SHAPETERM-BYTES-2026-08-21.tsv` — and are
 evidence for one run, not
 claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls

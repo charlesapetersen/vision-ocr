@@ -1,0 +1,59 @@
+# C28 question 4: the per-page byte price of refusing the 1/8 background shrink, over the 41 of the
+# 73 sub-bar pages whose inkOut is at or above 0.0008 — the cheapest page-wide bar that rescues the
+# same 13 losers the shape term does. 2026-08-21.
+# corpus=/Users/cp1/Claude/vision-ocr/testdocs; binary built from Tools/score-text-route.swift at
+# ab55cd7; INKBAR=0.00001 (below every selected page's own inkOut, so the shrink is really refused);
+# Photo detail Balanced (the default); one invocation per document, rc=0 on 19 of 19.
+# document/page/inkOut/lineN/label/kind are the SHAPETERM-73-2026-08-21.tsv row this came from, and
+# inkOut was asserted equal to that file's printed value on all 41 rows before writing.
+# barVerdict is picture on 41 of 41 (the shrink was refused) and stencilSame yes on 41 of 41 (the
+# stencil is byte-identical at both bars, so the backgrounds are the whole difference).
+# CONTROLS. The layered column equals INKBAR-2026-08-19.tsv's layered on 41 of 41 rows (a
+# different binary, a different bar, two days earlier) — that is the independent one. The two
+# totals below reproduce BUGS.md C28 #### The same shape term over ALL 73 digit for digit, but
+# from source byte-identical to that run's, so they are a determinism re-run and not a control
+# across a code change:
+#   lineN >= 1 (16 rows):  789,825 -> 3,152,450 B, +2,362,625 B, 3.99x, 15.5% of it on non-losers
+#   all 41 rows:         1,915,380 -> 8,117,445 B, +6,202,065 B, 4.24x, 58.5% of it on non-losers
+document	page	inkOut	lineN	label	kind	layered	layeredAtBar	delta	barVerdict	stencilSame
+book/Guilford_Psychometric Methods.pdf	p1	0.0031	0	nothing	-	29174	85874	56700	picture	yes
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p20	0.0022	0	degraded	hand-mark-degraded	66684	345617	278933	picture	yes
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p24	0.0015	0	nothing	-	70002	343987	273985	picture	yes
+book/UN-OCred.pdf	p7	0.0231	0	nothing	-	29238	93056	63818	picture	yes
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p2	0.0140	0	nothing	-	58099	248210	190111	picture	yes
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p3	0.0450	2	loses	type	56226	244731	188505	picture	yes
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p4	0.0193	0	nothing	-	58877	248350	189473	picture	yes
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p5	0.0405	0	nothing	-	59251	248756	189505	picture	yes
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p7	0.0370	0	nothing	-	58442	248574	190132	picture	yes
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p10	0.0441	0	nothing	-	59041	248701	189660	picture	yes
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p12	0.0410	0	nothing	-	63955	254194	190239	picture	yes
+document/1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	p4	0.0287	0	nothing	-	50919	401551	350632	picture	yes
+document/Atkinson_1939_Atkinson on firings_.pdf	p3	0.0388	3	loses	type+hand	63806	283176	219370	picture	yes
+document/Ford_1941_Speech_.pdf	p1	0.0051	0	loses	hand	47782	261383	213601	picture	yes
+document/Ford_1941_Speech_.pdf	p2	0.0023	0	nothing	-	47489	259478	211989	picture	yes
+document/Ford_1941_Speech_.pdf	p3	0.0107	0	nothing	-	42948	243509	200561	picture	yes
+document/Ford_1941_Speech_.pdf	p5	0.0022	0	nothing	-	44435	249553	205118	picture	yes
+document/Ford_1941_Speech_.pdf	p6	0.0056	1	loses	type	31137	211656	180519	picture	yes
+document/Herbert Marks papers.pdf	p11	0.0148	1	loses	type	19439	77005	57566	picture	yes
+document/Herbert Marks papers.pdf	p12	0.0041	2	nothing	-	23452	92052	68600	picture	yes
+document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	p1	0.0012	0	nothing	-	25636	103993	78357	picture	yes
+document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	p3	0.0104	0	nothing	-	22030	79773	57743	picture	yes
+document/_1939_Former students to Board re Merriam_.pdf	p6	0.0069	1	loses	hand	52626	280384	227758	picture	yes
+document/_1939_Former students to Board re Merriam_.pdf	p9	0.0013	1	nothing	-	50498	253455	202957	picture	yes
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p2	0.0008	1	loses	type	38067	125156	87089	picture	yes
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p5	0.0353	4	loses	type	36047	118981	82934	picture	yes
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p7	0.0137	3	loses	type	36556	119311	82755	picture	yes
+journalArticle/Scott_TK_The Scientific Selection of Salesmen.pdf	p3	0.0412	6	loses	type	33911	106963	73052	picture	yes
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p8	0.0015	0	degraded	rule-blurred	22084	67595	45511	picture	yes
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p10	0.0016	0	degraded	rule-blurred	21135	63974	42839	picture	yes
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p13	0.0014	0	degraded	rule-blurred	23605	72319	48714	picture	yes
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p23	0.0014	0	degraded	rule-blurred	22804	69471	46667	picture	yes
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p25	0.0014	0	degraded	rule-blurred	22854	69651	46797	picture	yes
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p28	0.0016	0	nothing	-	24693	70913	46220	picture	yes
+magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	p2	0.0063	5	loses	type	85981	280049	194068	picture	yes
+magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	p3	0.0087	6	loses	type	39354	120957	81603	picture	yes
+magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	p5	0.0081	4	loses	type	40549	112148	71599	picture	yes
+magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	p1	0.0286	2	nothing	-	44991	139007	94016	picture	yes
+newspaperArticle/Gitlin_2000_How Our Crowd Got Lonely_New York Times.pdf	p1	0.0210	0	nothing	-	44133	114803	70670	picture	yes
+newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	p1	0.0023	1	loses	type	137185	587419	450234	picture	yes
+thesis/Doermann_1967_The market for college education in the United States.pdf	p21	0.0165	0	loses	hand	110245	471710	361465	picture	yes

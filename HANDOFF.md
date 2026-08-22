@@ -416,7 +416,25 @@ and the first term in this campaign whose money mostly lands on pages that lose 
 protection: that bar rescues **15 of 16** losers where the term rescues 13, the two extra being
 hand-made marks at +575,066 B, and neither reaches `_1939_Former students` p2. ⚠️ Bytes are at the
 default Photo detail, page by page, an **upper** bound on the local variant; the `textRegionMask`
-seam's price and a corpus figure are still owed; nothing is wired.
+seam's price is still owed; nothing is wired.
+✅ **The corpus figure landed 2026-08-21** (`Tools/stratify-corpus.py`, which reproduces eleven of
+eleven of C26's published band figures before being asked anything new — of which five are
+estimator-sensitive and six are input-file facts). Per document over all 16,987 pages:
+**~127 still shrunk 8x/16x, ~19 losing content — 0.11% of the corpus.** The term's wiring refuses
+**~18 of the ~127** for +2,694,515 B and rescues **~14.7 of the ~19**; the cheapest page-wide bar
+refuses **~60** for +8,289,863 B and rescues **~17.9**. Both are incremental to
+C26's shipped ~4.0 MB, so the term is two thirds of a fix already accepted and the bar 2.1x its whole
+bill. ✅ The per-page byte table is committed for the first time as
+`SHAPETERM-BYTES-2026-08-21.tsv` (41 rows), and **both previously published
+totals reproduce digit for digit**, ratios and overpay shares included — ⚠️ from source
+byte-identical to the original run's, so a determinism re-run rather than a control across a code
+change; the independent control is `layered` matching `INKBAR-2026-08-19.tsv` on 41 of 41 rows.
+⛔ **And three pairs of ratios
+moved.** Term against bar is **30.9%** of pages and **32.5%** of bytes corpus-wide against **39.0%** and
+**38.1%** sampled, so the term gets *cheaper* relative to the bar; the spend that buys nothing goes the
+other way (15.5% → 18.0%, 58.5% → 61.0%); and the pooled-over-stratified factor is not a constant
+(4.58x–6.93x over four arms of one population), so C26's 5.96x is its band's number and is not a
+correction factor.
 The same run also settled
 `score-text-route`'s open instrument question (the shell map's 0.56x–16.0x spread against
 `inkOutsideText`): with `region` in hand rather than a dilated stencil the map **is** the guard's set,
