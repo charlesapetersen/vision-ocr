@@ -209,7 +209,17 @@ fi
 # are printed by `next-item.sh` but never OFFERED, so folding them into "N items queued" overstates what the
 # run can actually do — it reported "13 items queued" against 10 actionable ones on the first real render.
 # In a project whose stated rule is that an entry without evidence is a rumour, the check-in surface must not
-# round up its own backlog. Held items are still worth showing, as their own figure.
+# round up its own backlog.
+# ⛔ BUT THE HELD FIGURE IS NOT RENDERED AT ALL — owner, 2026-08-21. DO NOT PUT IT BACK; its absence is the
+# decision, not an oversight. It read `· 3 items waiting on you`, and every word of that was wrong except the
+# number: `## HOLD` is a PERMANENT exclusion class ("These are offered to nobody" — its own header), so
+# nothing in it is pending an owner action and the count cannot go down. `taborder` was accepted as a known
+# gap on 2026-08-13 rather than queued, `release` is the standing release item and explicitly "not a
+# one-off", and `corpus-write` is a policy guardrail on `testdocs/`. A constant that reads as an inbox is
+# the `check-staleness.sh` failure again — a line that cannot change gets read as noise until the one time
+# it matters. Owner-only work is visible where it is decided: `next-item.sh` still prints it as `hold`, and
+# `QUEUE.md`'s own section names all three. `hold_q` is still tallied below because the resolver's own
+# accounting is what keeps holds OUT of `open_q`; it just is not printed.
 # ⚠️ ASK THE RESOLVER, DO NOT RE-DERIVE. `next-item.sh` is the single authority on what an item is and
 # whether it is actionable, and it accumulates each item's FULL SPAN — so a `(blocked-on: …)` clause or a
 # `[hold]` marker that wrapped onto a continuation line is still seen. A second implementation here got
@@ -362,8 +372,7 @@ else
 fi
 [ -n "$lastsubj" ] && printf '  %-10s %s%s%s\n' "" "$DIM" "\"$lastsubj\"" "$OFF"
 if [ -f "$QUEUE" ]; then
-  printf '  %-10s %s queued · %s finished%s\n' "Left" "$(plural "$open_q" item)" "$done_q" \
-    "$([ "$hold_q" -gt 0 ] && printf ' · %s waiting on you' "$(plural "$hold_q" item)")"
+  printf '  %-10s %s queued · %s finished\n' "Left" "$(plural "$open_q" item)" "$done_q"
 else
   printf '  %-10s %s\n' "Left" "? — no queue file at $QUEUE"
 fi
