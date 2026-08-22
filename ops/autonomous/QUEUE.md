@@ -1656,6 +1656,16 @@ happens.**
       atomically, and keep the phrase *"autonomous maintenance session for Vision OCR"* verbatim, because
       `daemon.sh stop`'s pkill matches on it.
       ⚠️ Prompt-and-queue only, no `Sources/`, so **no suite** — one free commit.
+      ⛔ **PARTLY LANDED 2026-08-22 (`c25933f`), AND WHAT IS LEFT IS NARROWER AND SHARPER — do NOT tick this
+      box yet.** The daemon now snapshots each stranded worktree and writes `$STATE/triage/<wt>.md`, and
+      `resume-prompt.txt` STEP 1.5 drains that inbox ahead of the queue with the file-by-file supersession
+      procedure spelled out. So the LIVE-WORKTREE case is covered. **The residue is a rescue patch with no
+      worktree**, and this change made it more likely rather than less: `housekeeping()` GCs a triage
+      assignment once its worktree is gone from `/private/tmp` (macOS sweeps it) and deliberately KEEPS the
+      patch — so exactly then, a `$STATE/rescue/*.patch` exists that nothing points any session at, which is
+      this item's original complaint in the one case the new mechanism creates. STEP 1.5 keys on
+      `triage/*.md`, not on `rescue/*.patch`. What is left: have STEP 1.5 also notice a patch that is neither
+      `LANDED-as-*` nor `SUPERSEDED-by-*` nor matched by a live worktree. Still one free commit.
       (context: the rescue lines in `$STATE/daemon.log`, and `19f4131` as the worked example)
 - [ ] **mrc-endtoend** — nothing in the suite runs a document end-to-end through `makeSearchablePDF` down
       the MRC route. The three `.mrc` tests call `Flattener.mrcLayers` directly and assemble by hand, so
@@ -1757,6 +1767,31 @@ happens.**
       library sweep" and treat each as its own box; if one is over an hour of compute it is a detached
       driver under §"How to size an item" rule 3, not a session.
       (origin: TODO.md §"2. The Zotero library sweep")
+- [ ] **corpus-restore** — give `Tools/sample-zotero.py` a `--from-manifest` mode that rebuilds the EXACT
+      corpus from `testdocs/manifest.tsv` by `zotero_key`, instead of drawing a fresh sample. Today there is
+      no replay path at all: the flags are `--per-bucket`/`--seed`/`--added-since`/`--exclude-manifest`, and
+      `--exclude-manifest` does the OPPOSITE of replay (it excludes prior picks so you can sample new ones).
+      So a rebuild is `random.seed(7)` over the buckets as they stand, and the tool's own docstring promises
+      only an *"equivalent sample"* — same seed against an unchanged library reproduces the 233, a library
+      that has grown since does not.
+      ⛔ **WHY IT MATTERS, and it is the whole point: the corpus is the evidence base for every open entry.**
+      `INKBAR-2026-08-19.tsv` (2,129 page rows), `SHAPETERM-73`/`-RIM`/`-PICTURES-*`, `SATFRAC-2026-08-19`,
+      `THRESHOLD-LOSS-2026-08-18`, `CORPUS-2026-08-15.md` and the whole C26/C27/C28 campaign are keyed to
+      specific documents AND page numbers. If a rebuild returns different picks those rows stop being
+      reproducible, which `testdocs/README.md` already states as a re-cut "moves every published figure at
+      once". A replay mode converts that from a risk into a non-event, and it is why the owner's corpus is
+      recoverable in principle but not yet in practice.
+      ✅ The information needed is already committed: the manifest's 233 rows each carry a `zotero_key`, and
+      the sampler already resolves keys to attachment paths, so this is a second entry point over machinery
+      that exists — not new sampling logic.
+      ⚠️ **BOUND: the replay mode only.** Do NOT re-cut the corpus, do not change the sampling defaults, and
+      do not touch `--exclude-manifest`. Verify by restoring into a scratch `--dest` and diffing the file
+      list against `manifest.tsv`, not by overwriting `testdocs/`.
+      ⚠️ `Tools/` is inside the pre-commit suite regex, so this is a FULL-HOOK commit (~40 min), unlike the
+      ops-only work around it. It also needs the `--self-test` both Python tools here carry — `py_compile`
+      is the whole gate a Python tool used to get, and it cannot see a parser that accepts a malformed row.
+      Reading the Zotero library is fine; writing it is the `corpus-write` hold, which this does not touch.
+      (origin: CLAUDE.md §"Not committed"; `Tools/sample-zotero.py` docstring)
 - [x] **lock-report** — DONE 2026-08-19. `status` classifies the `pgrep -x tests` set by ancestry within that
       set, so the suite's own probe children stop reading as extra suites:
       `suite RUNNING — pid(s) 90955 90956` becomes
