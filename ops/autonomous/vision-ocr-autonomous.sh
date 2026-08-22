@@ -710,7 +710,30 @@ housekeeping() {
     git branch -D "$br" 2>/dev/null && delbr=$((delbr+1))
   done < <(git for-each-ref --format='%(refname:short)' refs/heads/auto/ 2>/dev/null)
   [ $((removed + delbr)) -gt 0 ] && log "housekeeping: GC'd $removed spent worktree(s), $delbr merged branch(es)"
-  [ "$skipped" -gt 0 ] && log "housekeeping: left $skipped merged-but-dirty/in-use worktree(s) for manual review"
+  # ⛔ "FOR MANUAL REVIEW" WAS A REQUEST NOBODY WAS GOING TO GRANT, AND IT MADE IT 57 TIMES in the log this
+  # line is being edited from — against zero parks, so it is by far the most repeated thing this daemon has
+  # ever asked a human for. The owner's answer, 2026-08-22: *"I don't really need to review stray worktrees
+  # and decide what to do with them."* Nothing about the GC changes — a dirty worktree still cannot be
+  # reaped here, and `git worktree remove` refusing it is correct — but the sentence now points at the
+  # mechanism that actually resolves it (`report_and_rescue_orphans` snapshots each one and writes a session
+  # a task), instead of at a reader who was never going to act. Still a count rather than names: the names
+  # are logged once per worktree by the orphan path, and repeating them every cycle is what buried them.
+  [ "$skipped" -gt 0 ] && log "housekeeping: left $skipped dirty/in-use worktree(s) in place — snapshotted and assigned to a session, not waiting on the owner"
+  # ⛔ AND GC THE ASSIGNMENTS, or the inbox outlives the work and starves the queue. A triage file points at
+  # a worktree in /private/tmp, which macOS sweeps for age and clears on reboot — so the directory can
+  # vanish under an assignment nobody has picked up yet. Left alone, STEP 1.5 outranks the queue, so every
+  # session would open a task naming a path that no longer exists and burn its one item deciding what to do
+  # about nothing. The rescue patch is deliberately NOT touched: it is the durable copy and it outliving the
+  # worktree is the whole point of writing it.
+  local _tf _tw _gcd=0
+  for _tf in "$STATE"/triage/*.md "$STATE"/triage/*.escalated; do
+    [ -f "$_tf" ] || continue
+    _tw="$(awk '/^worktree:/ {print $2; exit}' "$_tf" 2>/dev/null)"
+    [ -n "$_tw" ] || continue
+    [ -d "$_tw" ] && continue
+    rm -f "$_tf" 2>/dev/null && _gcd=$((_gcd + 1))
+  done
+  [ "$_gcd" -gt 0 ] && log "housekeeping: dropped $_gcd triage assignment(s) whose worktree is gone — /private/tmp was swept; the rescue patch is kept"
   return 0
 }
 
@@ -1053,7 +1076,7 @@ health_watchdog() {
 # One value was answering two questions. It still answers the retry one; this function answers the other.
 # $1 is the lead-in, so the log still reads as prose on both paths without the caller re-deriving anything.
 report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan was found and reported
-  local _orph _d _rescue _rb
+  local _orph _d _rescue _rb _ridx _tmp _complete _ahead _un _triage _assign
   _orph="$(orphaned_work)" || return 1
 
   # ⚠️ DO NOT BLAME THIS SESSION, AND DO NOT REPEAT IT EVERY CYCLE. A dirty `auto/*` worktree is
@@ -1085,22 +1108,205 @@ report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan w
   # it diffs against a sha that IS pushed, and `git apply` restores it anywhere. Cheap enough to do on
   # every newly-seen orphan without a size guard, and $ORPHSEEN already makes that once per worktree per
   # daemon lifetime. Best-effort throughout: a failure here must never affect the run's verdict.
+  # ⛔ THE SNAPSHOT HAS TO SEE UNTRACKED FILES, AND IT MUST NEVER SAVE LESS THAN THE OLD ONE DID. Those are
+  # two requirements and the first version of this fix met only the first, which is the more embarrassing
+  # half of the story.
+  #
+  # The bug it fixes: `git diff HEAD` cannot see an UNTRACKED file, so a worktree holding five modified files
+  # and one new one produced a patch with five in it, exit 0, and a cheerful "rescued: … bytes" line — while
+  # the guard that exists for this tests whether the patch is EMPTY, not whether it is COMPLETE, so it never
+  # ran. Measured 2026-08-22 on `vo-20260822-014509-85956`: the saved patch is **90,263 B holding 5 tracked
+  # files**, and `WIDEN-2026-08-22.tsv` — 10,465 B of measurement, the only copy in existence — was named in
+  # the `.status` written beside it and in no patch. The two files this loop writes disagreed and the log
+  # sided with the wrong one. (An earlier draft of this comment said "87,402 B"; that is a DIFFERENT
+  # worktree's patch, with 7 files in it. Pairing one strand's file count with another's byte count is
+  # exactly the kind of number this project keeps having to retract, and it was caught in review.)
+  #
+  # `GIT_INDEX_FILE=<throwaway> git add -A` then `diff --cached --binary HEAD` sees everything, in pure git:
+  # the worktree's REAL index is untouched (verified — a `??` entry is still `??` afterwards), `add -A`
+  # honours `.gitignore` so `build/` stays out and this stays a patch rather than a copy, and `--binary`
+  # means a dumped PNG survives the round trip. Measured on that worktree: 6 files, 100,934 B.
+  #
+  # ⛔ BUT `add -A` IS ALL-OR-NOTHING AND THE OLD COMMAND WAS NOT, so on its own it is a REGRESSION on the
+  # one function whose entire job is never to lose work. Measured: a worktree with real work in a modified
+  # tracked file plus ONE unreadable untracked file (`chmod 000`) gives `add -A` **rc=128** — "unable to
+  # index file" — the `&&` chain aborts, the else branch deletes the patch, and NOTHING is saved, where
+  # `git diff HEAD` still produced a 118-byte patch containing the work. An unreadable directory is only a
+  # warning; an unreadable file is fatal. So the complete form is TRIED FIRST and the old form is the
+  # FALLBACK, and a fallback snapshot says so and names what it could not hold. Strictly better than either.
   _rescue="$STATE/rescue"
   mkdir -p "$_rescue" 2>/dev/null || true
   for _d in $_orph; do
     _rb="$(basename "$_d")"
-    [ -f "$_rescue/$_rb.patch" ] && continue      # first snapshot wins; never overwrite a saved rescue
-    if git -C "$_d" diff HEAD > "$_rescue/$_rb.patch" 2>/dev/null && [ -s "$_rescue/$_rb.patch" ]; then
-      git -C "$_d" log -1 --format='%H %s'  > "$_rescue/$_rb.base"   2>/dev/null || true
-      git -C "$_d" status --porcelain       > "$_rescue/$_rb.status" 2>/dev/null || true
-      log "  rescued: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes) — /private/tmp does not survive a reboot; this does."
+    # ⛔ THE SKIP IS KEYED ON THE `.complete` MARKER, NOT ON THE PATCH EXISTING. "First snapshot wins; never
+    # overwrite a saved rescue" is right, and keying it on the patch meant every PARTIAL patch already on
+    # disk stayed partial forever — including the live one above, which this daemon would otherwise skip
+    # while writing a triage task pointing at it, so a session would be told a durable copy existed and
+    # granted `--force` against it. An old partial is preserved as `.patch.partial` rather than clobbered.
+    [ -f "$_rescue/$_rb.complete" ] && continue
+    _ridx="$STATE/.rescue-index.$$"
+    rm -f "$_ridx" "$_ridx.lock" 2>/dev/null || true
+    _tmp="$_rescue/.$_rb.new"
+    _complete=0
+    if GIT_INDEX_FILE="$_ridx" git -C "$_d" read-tree HEAD 2>/dev/null \
+       && GIT_INDEX_FILE="$_ridx" git -C "$_d" add -A 2>/dev/null \
+       && GIT_INDEX_FILE="$_ridx" git -C "$_d" diff --cached --binary HEAD > "$_tmp" 2>/dev/null \
+       && [ -s "$_tmp" ]; then
+      _complete=1
+    elif git -C "$_d" diff --binary HEAD > "$_tmp" 2>/dev/null && [ -s "$_tmp" ]; then
+      _complete=0
     else
-      # An EMPTY patch over a worktree `orphaned_work` called dirty means the two disagree, and that is
-      # worth a line rather than silence: the likely cause is untracked-only content, which `git diff`
-      # cannot see and which therefore has NO backup here.
-      rm -f "$_rescue/$_rb.patch" 2>/dev/null || true
-      log "  ⚠️ could not snapshot $_d — 'git diff HEAD' produced nothing. If its content is UNTRACKED, a patch cannot hold it: copy it by hand."
+      rm -f "$_tmp" "$_ridx" "$_ridx.lock" 2>/dev/null || true
+      log "  ⚠️ could NOT snapshot $_d at all — neither a scratch-index 'add -A' nor 'git diff HEAD' produced anything. Copy it by hand; this is the case where /private/tmp is the only copy."
+      continue
     fi
+    rm -f "$_ridx" "$_ridx.lock" 2>/dev/null || true
+    [ -f "$_rescue/$_rb.patch" ] && mv "$_rescue/$_rb.patch" "$_rescue/$_rb.patch.partial" 2>/dev/null
+    mv "$_tmp" "$_rescue/$_rb.patch" 2>/dev/null || true
+    git -C "$_d" log -1 --format='%H %s' > "$_rescue/$_rb.base"   2>/dev/null || true
+    git -C "$_d" status --porcelain      > "$_rescue/$_rb.status" 2>/dev/null || true
+    # ⛔ UNPUSHED COMMITS ARE NOT IN THAT PATCH AT ALL, and a session is about to be offered `--force`.
+    # `diff --cached HEAD` is relative to the branch TIP, so a strand with commits on it has those commits
+    # in neither the patch nor the base file — and `git branch -D` makes them unreachable. `housekeeping()`
+    # guards precisely this with an ancestor-of-origin/main test; the triage carve-out needs its own copy.
+    _ahead="$(git -C "$_d" rev-list --count origin/main..HEAD 2>/dev/null || echo 0)"
+    case "$_ahead" in ''|*[!0-9]*) _ahead=0 ;; esac
+    if [ "$_ahead" -gt 0 ]; then
+      git -C "$_d" format-patch --stdout origin/main..HEAD > "$_rescue/$_rb.commits.patch" 2>/dev/null || true
+      log "  rescued $_ahead unpushed commit(s) to $_rescue/$_rb.commits.patch — the working-tree patch does NOT contain them."
+    fi
+    if [ "$_complete" = 1 ]; then
+      : > "$_rescue/$_rb.complete"
+      log "  rescued: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes, COMPLETE — tracked and untracked) — /private/tmp does not survive a reboot; this does."
+    else
+      # The fallback's gap is exactly one thing and git will name it exactly, so do not re-derive it by
+      # parsing the patch. An earlier version compared `.status` against the patch's own diff headers with
+      # awk, and review measured FOUR false-positive classes it got wrong — a pure rename, a mode-only
+      # change, a path with a space (git appends a TAB to the `+++` line), and a UTF-8 path (git quotes the
+      # whole `"b/…"` operand). `ls-files --others --exclude-standard` is git answering the actual question.
+      _un="$(git -C "$_d" ls-files --others --exclude-standard 2>/dev/null | tr '\n' ' ')"
+      log "  ⚠️ PARTIAL rescue: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes) holds TRACKED changes only — 'add -A' failed, so UNTRACKED content is NOT in it: ${_un:-(none)} — copy that by hand NOW."
+    fi
+  done
+  # ---- ASSIGN IT, DO NOT ESCALATE IT ---------------------------------------------------------------
+  # ⛔ THIS IS THE POINT OF THE WHOLE FUNCTION AND IT USED TO BE MISSING. Everything above makes the work
+  # SAFE; none of it makes the work MOVE. A dirty `auto/*` worktree is permanent — `housekeeping()` only
+  # reaps a worktree whose branch is an ancestor of origin/main AND that `git worktree remove` accepts, so a
+  # dirty one is skipped forever and logged "left N … for manual review". The owner's verdict on that,
+  # 2026-08-22: *"I don't really need to review stray worktrees and decide what to do with them… I'd rather
+  # the daemon just decide and execute much of this work."*
+  #
+  # ⚠️ BUT THE DECISION ITSELF IS NOT MECHANISABLE IN SHELL, and pretending otherwise is how work gets
+  # destroyed. Twice now a strand was superseded by a later commit that redid it UNDER A DIFFERENT
+  # FILENAME — `MRC_BG=` → `PHOTODETAIL=` (69ebf0e), `estimate-corpus-rate.py` + `SHRINKCOST-*.tsv` →
+  # `stratify-corpus.py` + `SHAPETERM-BYTES-*.tsv` (ef9786c) — so no path or name comparison finds it; both
+  # were established by reading two tool headers for the same purpose and diffing TSV columns. And in the
+  # same sweep a third strand that LOOKED superseded by the same reasoning was not: it held
+  # `Flattener.textRegionWideningOverride` plus 112 lines of tests that `git grep` finds nowhere on
+  # origin/main, because the commit that appeared to replace it had landed only the tool half.
+  #
+  # So the daemon does not judge. It ASSIGNS — a session is an LLM and can do exactly that reading. This
+  # turns a thing waiting on a human into a thing waiting on the next session, which is the whole ask.
+  #
+  # ⚠️ AND THE INBOX IS OUTSIDE THE REPO, deliberately. The obvious channel is a `QUEUE.md` box, and it is
+  # wrong twice: the daemon would dirty the PRIMARY checkout, and with `rebase.autoStash` unset (verified
+  # 2026-08-22) the next session's STEP 1 `git pull --rebase origin main` then FAILS outright; and an
+  # appended box walks straight into the greedy-span trap QUEUE.md's own header documents. A file under
+  # $STATE touches no tracked path and cannot conflict with anything.
+  #
+  # Write-once, keyed on the file rather than on $ORPHSEEN: startup does `rm -f $ORPHSEEN`, so keying it
+  # there would re-write — and possibly clobber — an assignment a session is part-way through.
+  #
+  # ⚠️ NEVER ASSIGN A WORKTREE A LIVE SESSION IS USING. Both call sites (tick(), ~1351 and ~1369) run after
+  # `wait` returns, so today $SESSPID is already gone and this guard is a no-op — it is here because
+  # `orphaned_work` now counts UNTRACKED files, which makes a mid-run session's scratch `.tsv` enough to
+  # look like a strand, and a third call site added later would otherwise hand a session its own worktree
+  # to triage. Rescuing a live session's work is fine and stays ungated; ASSIGNING it is not.
+  _triage="$STATE/triage"
+  mkdir -p "$_triage" 2>/dev/null || true
+  _assign=1
+  if [ -f "$SESSPID" ] && kill -0 "$(cat "$SESSPID" 2>/dev/null || echo 0)" 2>/dev/null; then
+    _assign=0
+    log "  a session is live — snapshotted, but NOT assigning triage while it runs."
+  fi
+  for _d in $_orph; do
+    [ "$_assign" = 1 ] || break
+    _rb="$(basename "$_d")"
+    # ⛔ `.escalated` COUNTS AS ASSIGNED. Deleting the file has to mean "resolved", and step 5 of the
+    # template — escalate to ## NEEDS OWNER and leave the worktree alone — is also a way to be "done". If
+    # both used deletion, the daemon would re-assign next cycle, every following session would spend its one
+    # item on the same unresolvable strand, and each would append another duplicate outbox entry. So an
+    # escalation RENAMES rather than deletes, and this guard honours both names.
+    { [ -f "$_triage/$_rb.md" ] || [ -f "$_triage/$_rb.escalated" ]; } && continue
+    {
+      printf 'TRIAGE — stranded worktree %s\n' "$_rb"
+      printf 'assigned by the daemon at %s. Remove this file when the strand is resolved.\n\n' "$(date '+%F %T')"
+      printf 'worktree:  %s   (in /private/tmp — VOLATILE, swept by macOS)\n' "$_d"
+      printf 'branch:    %s\n' "$(git -C "$_d" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+      printf 'base:      %s\n' "$(cat "$_rescue/$_rb.base" 2>/dev/null || echo '?')"
+      # ⛔ THE ASSIGNMENT MUST STATE WHETHER THE BACKUP IS WHOLE, because the next thing it does is grant
+      # `--force`. Naming a path unconditionally — including for a strand whose snapshot just failed and
+      # whose patch was never written — tells a session a durable copy exists when it may not, and gives it
+      # no way to tell a COMPLETE patch from a TRACKED-ONLY one. Both facts are on disk; print them.
+      if [ -f "$_rescue/$_rb.complete" ]; then
+        printf 'rescue:    %s  (COMPLETE — tracked and untracked)\n' "$_rescue/$_rb.patch"
+      elif [ -f "$_rescue/$_rb.patch" ]; then
+        printf 'rescue:    %s\n' "$_rescue/$_rb.patch"
+        printf '  ⛔ PARTIAL — TRACKED CHANGES ONLY. Untracked content is NOT in it:\n'
+        printf '     %s\n' "$(git -C "$_d" ls-files --others --exclude-standard 2>/dev/null | tr '\n' ' ')"
+        printf '     Copy those out BEFORE you remove anything. Do NOT force-remove on this patch alone.\n'
+      else
+        printf '  ⛔ NO RESCUE PATCH EXISTS for this worktree — the snapshot failed. /private/tmp is the\n'
+        printf '     ONLY copy of this work. Do NOT remove the worktree under any circumstances; copy it out.\n'
+      fi
+      _ahead="$(git -C "$_d" rev-list --count origin/main..HEAD 2>/dev/null || echo '?')"
+      printf 'unpushed commits on its branch: %s\n' "$_ahead"
+      case "$_ahead" in
+        0|'') : ;;
+        *) printf '  ⛔ THOSE COMMITS ARE NOT IN THE WORKING-TREE PATCH (it is a diff against the branch TIP).\n'
+           printf '     %s holds them. `git branch -D` makes them unreachable — so a strand that is\n' "$_rescue/$_rb.commits.patch"
+           printf '     ahead of origin/main MAY NOT be force-removed on a files-only comparison, however\n'
+           printf '     superseded its dirty files look. Land them, or leave the branch alone.\n' ;;
+      esac
+      printf '\n'
+      printf 'dirty paths:\n'
+      sed 's/^/  /' "$_rescue/$_rb.status" 2>/dev/null || printf '  (none recorded)\n'
+      cat <<'EOP'
+
+YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
+
+1. Is it SUPERSEDED? Compare by CONTENT, never by filename — twice a strand was redone under a
+   different name. For each file: read the strand's version and ask what QUESTION it answers, then
+   `git grep` / `git log --oneline -20 --` on main for a file answering the SAME question. For a tool,
+   compare the two headers. For a TSV, compare the column list and `diff <(cut -f1-N …) <(cut -f1-N …)`
+   over the data rows. For code, `git grep` the new symbols on origin/main — if a symbol is absent, that
+   half did NOT land, whatever the commit subject suggests.
+2. If SUPERSEDED: say so in the SESSION LOG with the evidence (which commit, which columns matched),
+   `mv` the rescue trio to `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak`, then
+   `git worktree remove --force <worktree>` and `git branch -D <branch>`.
+   ⚠️ `--force` is normally forbidden here and this is the ONE case that earns it. THREE preconditions,
+   all of them, or do not force: (a) the content is provably already on main, by content and not by
+   filename; (b) the rescue patch says COMPLETE above — a PARTIAL one does not back what you are about to
+   delete; (c) `git rev-list --count origin/main..<branch>` is **0**. A branch that is ahead has commits
+   in NO patch this loop wrote, and `branch -D` makes them unreachable. Cite all three in the log.
+3. If it holds UNIQUE work: adopt it. Rebase onto main, resolve conflicts KEEPING BOTH SIDES where the
+   two are different measurements, run the suite through `test-lock.sh`, commit, push. That is a normal
+   item and may be the whole session.
+4. If it is TRIVIAL (docs already landed, an empty file, a stray build artefact): remove it as in 2 and
+   log one line.
+5. If — and only if — deciding needs a judgement the owner has reserved (a new seam in `Sources/`,
+   a release, anything touching `testdocs/`), append ONE entry to `## NEEDS OWNER` naming the decision,
+   leave the worktree alone, and `mv` this file to `<same-name>.escalated`. ⛔ Do NOT delete it: deletion
+   means RESOLVED, and the daemon re-assigns anything with neither name — which would make every later
+   session spend its one item re-deciding this and append a duplicate outbox entry each time.
+   That branch is the escape hatch, not the default.
+
+Then delete this file (or rename it per step 5). An unresolved assignment is what keeps the strand visible.
+⚠️ If the worktree named above no longer EXISTS, /private/tmp was swept. Say so in the SESSION LOG, note
+whether a rescue patch survives, and delete this file — there is nothing left to triage.
+EOP
+    } > "$_triage/$_rb.md" 2>/dev/null || true
+    log "  assigned: $_triage/$_rb.md — a session triages this; it is NOT waiting on the owner."
   done
   log "  a later session can finish it, or rescue it by hand. The committed base plus \$STATE/rescue/*.patch"
   log "  is the durable copy; the worktree itself is in /private/tmp and is NOT."

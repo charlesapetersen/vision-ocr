@@ -35,7 +35,9 @@
 # works and aborts if it does not — the one check that must never be taken on trust.
 #
 # USAGE:  ops/autonomous/tests/prove-status.sh [path/to/status-digest.sh]
-# EXPECTED RESULT: 39 passed, 0 failed. Three independent falsifications, all actually run:
+# EXPECTED RESULT: 48 passed, 0 failed — MEASURED 2026-08-22, not inherited (it read 39 before section [11]
+# and the assigned-vs-waiting change, then 44 before the icon and live-session assertions; this project's own
+# habit is to leave such a number stale, so run it rather than trusting this line). Three independent falsifications, all actually run:
 #   * against the renderer as it stood before this work — 14 passed / 26 failed, with sections [1], [6]
 #     and [7] printing the measured sentences back verbatim;
 #   * against a lib given a new `DISK FULL` reason and a renderer given only a `# TODO` comment for it —
@@ -103,7 +105,20 @@ ENGINE="$VISIONOCR_STATE/engine.lock"
 session_on()  { : > "$ENGINE"; }                  # fresh mtime = heartbeat alive
 session_off() { rm -f "$ENGINE"; }
 dirty_on()    { echo changed > "$T/auto-wt/f.txt"; }
-dirty_off()   { git -C "$T/auto-wt" checkout -q -- f.txt 2>/dev/null; }
+# ⚠️ BOTH worktrees, and untracked content too — this used to restore `auto-wt/f.txt` alone. Section [7]
+# creates a SECOND worktree (`auto-wt2`) to prove the renderer names every orphan and never cleans it up, so
+# from [7] onward the sandbox permanently held one dirty worktree that no `dirty_off` could clear. That was
+# invisible for as long as nothing put orphans into `needs`; the moment an unassigned strand started raising
+# one (2026-08-22), [10]'s closing "an empty outbox still reports 'Nothing right now'" went red — correctly,
+# because the sandbox did have unassigned orphaned work in it. A helper named `dirty_off` has to actually
+# leave the tree clean, or every later section inherits state it did not ask for.
+dirty_off()   {
+  git -C "$T/auto-wt"  checkout -q -- f.txt 2>/dev/null
+  git -C "$T/auto-wt2" checkout -q -- f.txt 2>/dev/null
+  git -C "$T/auto-wt"  clean -qfd 2>/dev/null
+  git -C "$T/auto-wt2" clean -qfd 2>/dev/null
+  rm -rf "$VISIONOCR_STATE/triage" 2>/dev/null
+}
 
 # ⚠️ CAPTURE STDERR AND THE EXIT CODE, do not discard them. The first version did `2>/dev/null` and asserted
 # only on substrings, so 8 of these checks were the NEGATIVE form ("does NOT say 'not finding anything'")
@@ -294,7 +309,11 @@ case "$b" in *"Running a test suite"*) ok "…and still says the suite is what i
 # ⚠️ …and WORKING must still SURFACE the orphan it outranks. Sessions run ~95 min back to back, so a state
 # ranked below WORKING is visible a few percent of the time — and ORPHANED WORK is the only one that never
 # clears by itself. Outranking it must not mean hiding it.
-case "$b" in *"holding uncommitted work"*) ok "the WORKING hint still surfaces the orphaned work beneath it" ;;
+# ⚠️ Matched on "stranded worktree", which is the 2026-08-22 wording. The hint used to end "— see 'Needs
+# you'." and no longer does, deliberately: during a live session the daemon does not assign, so the need is
+# suppressed and that pointer would dangle exactly the way D16's did. What must not change is that the
+# orphan is MENTIONED here at all, so that is what this asserts.
+case "$b" in *"stranded worktree"*) ok "the WORKING hint still surfaces the orphaned work beneath it" ;;
   *) bad "WORKING hides orphaned work — the one state that needs a human is invisible 97% of the time" ;; esac
 echo none > "$SUITECTL"
 
@@ -362,6 +381,68 @@ run_digest | grep -q "Nothing right now" \
   && ok "an empty outbox still reports 'Nothing right now'" \
   || bad "an empty outbox no longer reports nothing — the check would pass on anything"
 rm -f "$VISIONOCR_STATE/RUN.md"
+
+# ---- [11] AN ASSIGNED STRAND IS NOT AN OWNER NEED ---------------------------------------------------------
+# The 2026-08-22 change: the daemon snapshots each stranded worktree and writes a session a task for it at
+# $STATE/triage/<wt>.md, so the usual state of a strand is "handled, waiting its turn" rather than "waiting
+# on you". The owner asked for exactly this — *"I don't really need to review stray worktrees… I'd rather the
+# daemon just decide and execute much of this work"* — and the whole value of it is that a SHORT "Needs you"
+# list can be trusted. So the digest must distinguish the two, and this section pins BOTH directions, which
+# is what stops it becoming another check that cannot fail: the same fixture, one file created and removed.
+echo "[11] an assigned strand is queued work, not an owner need"
+session_off; dirty_off; dirty_on
+mkdir -p "$VISIONOCR_STATE/triage"
+u="$(run_digest)"
+printf '%s' "$u" | grep -q "Nothing right now" \
+  && bad "an UNASSIGNED dirty worktree raised no need — the strand is invisible, which is the old behaviour" \
+  || ok "an unassigned strand does raise a need"
+printf '%s' "$u" | grep -qi "NO triage assignment" \
+  && ok "…and the need says WHY it reached the owner (no assignment), not just that it exists" \
+  || bad "the need does not distinguish an unassigned strand from any other need"
+# Now assign it — the only change — and the need must disappear.
+: > "$VISIONOCR_STATE/triage/auto-wt.md"
+a="$(run_digest)"
+printf '%s' "$a" | grep -qi "NO triage assignment" \
+  && bad "the strand still reads as unassigned after a triage file was written for it" \
+  || ok "assigning it removes the need — the daemon handing work to a session ends the owner's involvement"
+printf '%s' "$a" | grep -qiE "queued for (a session|triage)" \
+  && ok "…and it is still VISIBLE as queued work rather than silently dropped" \
+  || bad "the assigned strand vanished from the digest entirely — that is silence, not delegation"
+rm -rf "$VISIONOCR_STATE/triage"
+r="$(run_digest)"
+printf '%s' "$r" | grep -qi "no triage assignment" \
+  && ok "removing the assignment brings the need back, so this section cannot pass on a constant" \
+  || bad "NEGATIVE CONTROL FAILED: the need did not return once the assignment was deleted"
+
+# ⛔ THE COLOUR IS PART OF THE CLAIM AND NOTHING PINNED IT. RED is now reserved for a strand nothing is
+# assigned to — the point being that painting the HANDLED case red is how a status surface trains its reader
+# to ignore red. Review measured that restoring the old unconditional `STATE_ICON="${RED}✕${OFF}"` left the
+# harness at 44/0, i.e. the whole colour change was untested. Asserted on the ICON LINE only, and in both
+# directions off the same fixture.
+b="$(state_block)"
+case "$b" in *✕*) ok "an UNASSIGNED strand is still RED — the case that does need a human" ;;
+  *) bad "an unassigned strand lost its ✕ — the one state that should alarm no longer does" ;; esac
+mkdir -p "$VISIONOCR_STATE/triage"; : > "$VISIONOCR_STATE/triage/auto-wt.md"
+b="$(state_block)"
+case "$b" in *✕*) bad "an ASSIGNED strand is still painted ✕ — the colour ignores the assignment" ;;
+  *) ok "…and assigning it drops the ✕, so red keeps meaning 'nobody is coming'" ;; esac
+rm -rf "$VISIONOCR_STATE/triage"
+
+# ⛔ AND NOT DURING A LIVE SESSION, which is the assertion whose ABSENCE let the first version of this ship a
+# permanent false entry in "Needs you". A running session's own worktree is supposed to be dirty and the
+# daemon deliberately does not assign while one is in flight, so every strand reads unassigned mid-session —
+# and the digest raised a need for it, printing "Nothing needed." three lines above "1 worktree … with NO
+# triage assignment — the daemon could not hand it to a session" while the session was running in that very
+# worktree. Section [8] pins the HINT during a live session and never looked at "Needs you", which is
+# precisely how 44/0 coexisted with the defect. This is the missing half.
+session_on                      # live session, worktree still dirty, still no triage file
+printf '%s' "$(run_digest)" | grep -qi "no triage assignment" \
+  && bad "a healthy live session raises a FALSE owner need for its own dirty worktree" \
+  || ok "a live session's own dirty worktree raises NO need — the daemon assigns between sessions"
+session_off
+printf '%s' "$(run_digest)" | grep -qi "no triage assignment" \
+  && ok "…and the need returns once the session ends, so the suppression is not a blanket mute" \
+  || bad "NEGATIVE CONTROL FAILED: suppressing during a session also suppressed it afterwards"
 
 session_off; dirty_off
 printf '\n  %s passed, %s failed\n' "$PASS" "$FAIL"

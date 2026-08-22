@@ -27,7 +27,46 @@ STEP 1 — RECOVER STATE (always, first):
   Then skim `git log --oneline -20` and the newest `HANDOFF-*.md`.
   If RUN.md's "RUN STATUS:" line reads COMPLETE, there is nothing to do — stop immediately.
 
-STEP 2 — PICK EXACTLY ONE ITEM:
+STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue.
+    ls ~/.local/state/visionocr-autonomous/triage/*.md 2>/dev/null
+  Each file is a STRANDED WORKTREE the daemon found, snapshotted and assigned to you. Read the oldest one
+  and do what it says — it carries the worktree path, its base sha, its rescue patch and the decision
+  procedure. **This is real work and it counts as your one item**, so if a triage file exists, that IS your
+  session; do not also take a queue item.
+  ⛔ WHY THIS STEP EXISTS, and it is the owner's own instruction (2026-08-22): *"I don't really need to
+  review stray worktrees and decide what to do with them… I'd rather the daemon just decide and execute
+  much of this work."* A dirty `auto/*` worktree is PERMANENT otherwise — `housekeeping()` only reaps a
+  worktree whose branch is an ancestor of origin/main AND that `git worktree remove` accepts, so a dirty
+  one is skipped every cycle forever and only ever appears as a count in a log line. Three had accumulated
+  by 2026-08-22, the oldest carrying work nobody had looked at for ten hours.
+  ⚠️ THE DECISION IS YOURS AND YOU ARE EXPECTED TO MAKE IT. You have the one capability the daemon does not:
+  you can read two files and tell whether they answer the same question. That is the whole job, because
+  supersession here is NEVER visible in a filename — twice a strand was redone under a different one
+  (`MRC_BG=` → `PHOTODETAIL=` in 69ebf0e; `estimate-corpus-rate.py` + `SHRINKCOST-*.tsv` →
+  `stratify-corpus.py` + `SHAPETERM-BYTES-*.tsv` in ef9786c). And do not assume: in that same sweep a third
+  strand looked superseded by the same reasoning and was not — it held `Flattener.textRegionWideningOverride`
+  plus 112 lines of tests that `git grep` finds NOWHERE on origin/main, because the commit that appeared to
+  replace it had landed only the tool half. **`git grep` the new symbols on origin/main before you conclude
+  anything.**
+  ⚠️ You may `git worktree remove --force` and `git branch -D` a strand you have PROVEN superseded, and only
+  then. That is the single exception to STEP 3's never-force rule, and it has FOUR preconditions — all of
+  them, cited in your SESSION LOG, or you do not force:
+    (a) the content is provably already on main, established by CONTENT and not by filename;
+    (b) the assignment file says the rescue is **COMPLETE**. A PARTIAL one holds tracked changes only, so it
+        does not back up what you are about to delete — copy the untracked files out first;
+    (c) `git rev-list --count origin/main..<branch>` is **0**. A branch that is AHEAD has commits that are in
+        no working-tree patch (that patch is a diff against the branch tip), and `git branch -D` makes them
+        unreachable. Land them or leave the branch alone, however superseded its dirty files look;
+    (d) the rescue trio is filed as `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak` FIRST.
+  No proof, no force — leave it and say why.
+  ⚠️ FINISHING MEANS ONE OF TWO THINGS, and they are spelled differently. Resolved → delete the triage file.
+  Escalated to the owner (the step-5 case in the file) → `mv` it to `<same-name>.escalated`. ⛔ Do not delete
+  on the escalation path: deletion means resolved, the daemon re-assigns anything with neither name, and
+  every later session would then spend its one item re-deciding the same strand and append another duplicate
+  `NEEDS OWNER` entry. A `.escalated` file is not offered to you — leave those alone.
+  If you finish triage with budget left, STOP anyway: one item.
+
+STEP 2 — PICK EXACTLY ONE ITEM (only if STEP 1.5 found nothing):
     ops/autonomous/next-item.sh
   It prints every open queue item as `ok<TAB><tag><TAB><text>`, `blocked:<unmet><TAB>…` or `hold<TAB>…`, in
   order. Take the FIRST `ok` item. Never take a `blocked:` item (its prerequisite has not landed) and NEVER

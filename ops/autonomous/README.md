@@ -394,7 +394,13 @@ dies.
 Each session mints an `auto/<stamp>` worktree and branch; `housekeeping()` GCs the spent ones between
 sessions. Safety is structural: **no `--force`, ever**, so git itself refuses any worktree with uncommitted or
 untracked content, which means housekeeping *cannot* destroy in-progress work; and **merged-only**, so a ref
-is touched only when it is an ancestor of `origin/main` and therefore provably pushed. It is purely local (no
+is touched only when it is an ancestor of `origin/main` and therefore provably pushed.
+
+⚠️ **That property still holds for `housekeeping()` and is no longer the whole story.** Since 2026-08-22 the
+worktrees it declines to touch are snapshotted and handed to a session, which **may** `--force` one it has
+proven superseded, under three preconditions (content already on main, the rescue marked COMPLETE, and the
+branch not ahead of `origin/main`). So "nothing can force-remove a dirty worktree" is false at the level of
+the *system* while remaining true of this function. D15 below is the mechanism and the reasoning. It is purely local (no
 `git fetch`), so it cannot hang the loop on a dead network.
 
 ⚠️ **Scope is deliberately narrow — `auto/*` only.** The owner works in `work/*` worktrees by hand. The
@@ -602,15 +608,18 @@ not fail**, in the commit that had landed 45 minutes earlier (`c8855f6`), plus t
 *"1,961 characters at every resolution"* to 1,960–1,962. A reboot would have taken all of it, and the register
 would have kept a check that cannot fail while believing it was pinned.
 
-Now every newly-seen orphan gets `git diff HEAD` written to `$STATE/rescue/<worktree>.patch`, with the base
-sha beside it. A patch rather than a copy: a few KB against a worktree's hundreds of MB (each carries its own
-`build/`), diffed against a sha that is already pushed, restorable anywhere with `git apply`. `$ORPHSEEN`
-already bounds it to once per worktree per daemon lifetime, and the first snapshot is never overwritten.
+Now every newly-seen orphan gets a patch written to `$STATE/rescue/<worktree>.patch`, with the base sha
+beside it. A patch rather than a copy: a few KB against a worktree's megabytes, diffed against a sha that is
+already pushed, restorable anywhere with `git apply`. `$ORPHSEEN` bounds the *logging* to once per worktree
+per daemon lifetime.
 
-⚠️ **What a patch cannot hold: untracked files.** `orphaned_work` uses `--untracked-files=no` on purpose
-(every worktree has an untracked `build/`, so counting it would report every worktree always), and `git diff`
-cannot see untracked content either. So a session whose only output is a *new, unstaged* file is still not
-backed up — the rescue logs a loud warning naming that case rather than reporting a green snapshot.
+⛔ **Both paragraphs of this section were superseded on 2026-08-22 — see D13 and D14 below.** As written here
+the snapshot was `git diff HEAD`, which **cannot see untracked files**, and this section went on to claim the
+gap was covered by "a loud warning naming that case" — it was not: the warning fires only when the patch is
+*entirely empty*, so a strand with five modified files and one new one was reported as a clean rescue. That
+paragraph also defended `orphaned_work`'s `--untracked-files=no` on the grounds that "every worktree has an
+untracked `build/`"; measured 2026-08-22, **none of the three live worktrees has a `build/` at all** and it
+is gitignored regardless. Read D13/D14 for what it does now, and do not trust the two sentences above.
 
 The three worktrees live on this machine were rescued by hand during the evaluation and the important one was
 verified recoverable (`git apply --check` forward onto a clean `c8855f6`). The other two were verified
@@ -849,6 +858,139 @@ session claiming "pushed" when it has not is a prompt-discipline failure, not a 
 is that the daemon now leaves a durable patch and names the worktree when it happens, on every path.
 The 16:38 session did recover this work, but only because it read the SESSION LOG claim and checked it
 against the branch. That is diligence, not a mechanism.
+
+## Defects found 2026-08-22, from the owner asking why so much needed him
+
+Four defects on one path, found by triaging three stranded worktrees by hand. They compound: the
+detector could not see one class of strand at all, the backup it took of the ones it *could* see was
+incomplete while reporting success, the thing it did about them was a request no one was ever going to
+grant, and the status surface pointed the reader at its own blank space. All four fixes are ops-only —
+nothing under `Sources/`, `Helper/`, `Tests/`, `Tools/`, `build.sh` or `run_tests.sh` — so the commit
+carrying them runs no suite.
+
+The owner's framing is the requirement, and it is quoted here because it is the standard the design is
+measured against: *"A lot of what ends up in 'needs me' seems like it could be resolved without me. I
+don't really need to review stray worktrees and decide what to do with them, for instance. Find a way to
+lower the threshold for 'needs me'. I'd rather the daemon just decide and execute much of this work."*
+
+### D13 · The rescue patch was PARTIAL and reported itself complete — FIXED
+
+**What happened.** `report_and_rescue_orphans` snapshotted a strand with `git diff HEAD`, which cannot
+see an untracked file. Measured on `vo-20260822-014509-85956`: the saved patch held **5 tracked files at
+90,263 B**, and `WIDEN-2026-08-22.tsv` — **10,465 B, the only copy of that measurement anywhere** — was
+named in the `.status` written beside it and in no patch at all. The `else` branch that exists for this
+tests whether the patch is **empty**, not whether it is **complete**, so it never ran and the log printed
+a cheerful `rescued: … bytes` line. The two files this loop writes disagreed, and nothing compared them.
+
+**The fix.** `GIT_INDEX_FILE=<scratch> git add -A` then `diff --cached --binary HEAD`. Pure git, and three
+properties matter: the worktree's real index is untouched (verified — a `??` entry is still `??`
+afterwards), `add -A` honours `.gitignore` so `build/` stays out and the patch stays a few KB, and
+`--binary` means a dumped PNG survives the round trip. Measured on the same worktree: **6 files, 100,934
+B**, against 5 files and 90,263. (This paragraph said **87,402 B** until review measured it: that is a
+DIFFERENT worktree's patch, holding **7** files — so the sentence paired one strand's file count with
+another's byte count. The arithmetic checks: the tsv's new-file hunk is 10,671 B, and 90,263 + 10,671 =
+100,934 exactly. Fourth number this campaign has had to retract, and the only reason it was caught is that
+somebody re-ran `wc -c`.) The loop also names what a FALLBACK patch could not hold, and
+names any gap, because a named gap can be copied by hand and a silent one cannot.
+
+⚠️ **Why the existing test could not catch it.** `prove-daemon.sh` §[17] had covered the rescue since
+D8 — and its fixture *staged* its payload, with the comment *"tracked+staged, so `--untracked-files=no`
+can see it"*. A fixture whose whole payload is tracked agrees with the broken implementation: the patch
+came out complete because everything in it was tracked. The section now carries an untracked payload, a
+gitignored one, and a **negative control** that runs the pre-fix `git diff HEAD` on the same worktree and
+fails if it *also* captures the untracked file. Another check in this project's history that could not
+fail, and the first one found in the harness rather than in the code.
+
+### D14 · A strand of only-new-files was invisible to the detector — FIXED
+
+**What happened.** `orphaned_work` tested `git status --porcelain --untracked-files=no`, so a worktree
+holding **only new files** was not an orphan. That is exactly the shape a measurement sweep produces: one
+fresh `.tsv` and nothing else. Such a strand got no rescue patch, no assignment and no mention beyond
+`housekeeping`'s count — while `git worktree remove` still refused it, because untracked files make a
+worktree dirty. So it sat in volatile `/private/tmp` with **no copy anywhere**, which is strictly worse
+than D13 sitting next to it.
+
+**The fix.** Count untracked content. Safe because every build product here is gitignored and plain
+`--porcelain` excludes ignored paths: `.gitignore` covers `build/`, `testdocs/*`, `Tools/mutation-out/`,
+`__pycache__/` and `output.[0-9]*`, and a real session worktree checked that day listed 5 modified files
+and exactly one untracked `.tsv` — no build noise. It cannot start crying wolf over compiler output.
+
+### D15 · "Left for manual review" was a request made 57 times and never granted — FIXED
+
+**What happened.** `housekeeping` reaps an `auto/*` worktree only if its branch is an ancestor of
+`origin/main` **and** `git worktree remove` accepts it, i.e. it is clean. A dirty one is therefore
+**permanent**, and every cycle logged `left N merged-but-dirty/in-use worktree(s) for manual review`.
+That line appears **57 times** in the log this was written from, against **zero** parks — by a wide
+margin the most repeated thing this daemon has ever asked a human for. Three strands had accumulated by
+2026-08-22; the oldest had been sitting unlooked-at for ten hours while three sessions ran past it.
+
+**The fix, and the shape of it.** The daemon **assigns** instead of asking: `$STATE/triage/<wt>.md`
+carrying the worktree path, base sha, rescue patch and a decision procedure, plus a new **STEP 1.5** in
+`resume-prompt.txt` that outranks the queue. A session drains the inbox as its one item.
+
+⛔ **The daemon deliberately does NOT judge, and that is the load-bearing decision.** Supersession here is
+never visible in a filename: twice a strand was redone under a different one — `MRC_BG=` → `PHOTODETAIL=`
+(`69ebf0e`), and `estimate-corpus-rate.py` + `SHRINKCOST-*.tsv` → `stratify-corpus.py` +
+`SHAPETERM-BYTES-*.tsv` (`ef9786c`, byte-identical on all 41 data rows across 9 shared columns). Both
+were established by reading two tool headers for the same purpose and diffing TSV columns, which is not a
+shell rule. And the inverse is just as real: in the same sweep a third strand looked superseded by that
+reasoning and was **not** — it held `Flattener.textRegionWideningOverride` plus 112 lines of tests that
+`git grep` finds nowhere on `origin/main`, because the commit that appeared to replace it had landed only
+the tool half. A session is an LLM and can do that reading; a bash rule would have deleted it.
+
+⚠️ **The inbox is outside the repo on purpose.** The obvious channel is a `QUEUE.md` box, and it is wrong
+twice: the daemon would dirty the **primary checkout**, and with `rebase.autoStash` unset (verified) the
+next session's STEP 1 `git pull --rebase origin main` then fails outright; and an appended box walks into
+the greedy-span trap `QUEUE.md`'s own header documents. A file under `$STATE` touches no tracked path.
+Assignment is also skipped while a session is live — both call sites run after `wait` returns so that is a
+no-op today, but D14 means a mid-run session's scratch `.tsv` now looks like a strand, and a third call
+site added later would otherwise hand a session its own worktree to triage.
+
+**`--force` earns its exception here.** A session may `git worktree remove --force` a strand it has
+**proven** superseded, and only after filing the rescue trio as `SUPERSEDED-by-<sha>-<name>.*.bak`, with
+the commit and the evidence cited in its SESSION LOG. That is the one carve-out from CLAUDE.md's
+never-force rule, and it is conditional on proof rather than on convenience.
+
+### D16 · The digest told the reader to look at its own blank space — FIXED
+
+**What happened.** The WORKING branch appended `⚠ also: N worktree holding uncommitted work — see 'Needs
+you'.` and **nothing ever put orphans into `needs`**. Measured 2026-08-22 with three dirty worktrees on
+disk: the hint said *see 'Needs you'* directly above `Needs you  Nothing right now.` Either half is
+defensible; together they are an instrument directing the reader to its own empty section. The same
+absence showed up in two other states — a strand was invisible entirely while THROTTLED on the usage cap,
+and while the daemon was stopped.
+
+**The fix.** An **assigned** strand is queued work and raises no need; an **unassigned** one does, and
+that is the only case the pointer now fires for. The `ORPHANED WORK` state is no longer unconditionally
+RED either: RED is reserved for a strand nothing is assigned to, because painting the handled case red is
+how a status surface trains its reader to ignore red. Precedence is unchanged — WORKING still outranks
+this, which `prove-status.sh` §[8] pins.
+
+### The harnesses, and what they caught
+
+`prove-daemon.sh` **110/0/0** and `prove-status.sh` **48/0**, both measured 2026-08-22 — against a stated 92
+(itself stale: D12's own section three screens up records 96) and 39. `prove-daemon.sh` §[17] gained
+assertions and a new §[17b]; `prove-status.sh` gained a new §[11] and two assertions in §[8]/§[11].
+⚠️ Totals only, deliberately: an earlier draft of this paragraph claimed a *delta* ("eight assertions", then
+"four") and got it wrong twice while the totals beside it were right. Run the harness; do not do arithmetic
+on this paragraph.
+
+⚠️ **The new checks scored 101/2 on their first run and both failures were real defects, one in the
+fixture and one in the code.** The fixture put its `.gitignore` in `$REPO` when the payload lived in a
+*linked worktree*, which has its own working tree and never saw it — so `add -A` correctly swallowed a
+build artefact nothing had told it to ignore. The code defect is the sharper one: `status --porcelain`
+collapses a wholly-untracked directory to `dir/` while the diff names every file inside it, so the new
+coverage check reported a complete rescue as incomplete. This project writes exactly those directories —
+`MRC-2026-08-15/` and its PNG dumps — so unfixed it would have warned on most real strands and taught the
+owner to skip the line. Two independent defects out of seven new assertions is the whole argument for
+writing them.
+
+`prove-status.sh` §[11] pins the mechanism in **both** directions off one fixture — create the triage file
+and the need disappears, delete it and the need returns — so it cannot pass on a constant. It also forced
+a fix to the `dirty_off` helper: §[7] creates a *second* worktree to prove the renderer names every orphan
+and never cleaned it up, so from §[7] onward the sandbox permanently held a dirty worktree no `dirty_off`
+could clear. Harmless for as long as nothing put orphans into `needs`; the moment an unassigned strand
+raised one, §[10]'s closing assertion went red — correctly.
 
 ## What this deliberately does not have
 

@@ -24,9 +24,18 @@
 # as a second layer. preflight() PROVES the interposition works before any daemon is launched, and aborts
 # if it does not — the one check that must never be taken on trust.
 #
-# EXPECTED RESULT: 92 passed, 0 failed — RUN 2026-08-18, not inherited. This line read "75 passed" while the
-# harness was actually running 86 assertions, which is the same way a measured number rots into an asserted one
-# that ops/autonomous/README.md's own table records two rows of. Re-measure it when you add a section.
+# EXPECTED RESULT: 110 passed, 0 failed, 0 skipped — RUN 2026-08-22, not inherited. This line read "75 passed" while the
+# harness was actually running 86 assertions, and then "92" while D12's own section three files away recorded
+# 96 — which is the same way a measured number rots into an asserted one that ops/autonomous/README.md's own
+# table records two rows of. Re-measure it when you add a section.
+# ⚠️ THE 2026-08-22 ADDITIONS FOUND THREE DEFECTS BEFORE THEY EVER RAN FOR REAL, which is the argument for
+# writing them. The first run of the [17] additions scored 101/2 and BOTH failures were genuine: `add -A`
+# swallowed a build artefact because the fixture's `.gitignore` sat in $REPO rather than in the linked
+# worktree (a linked worktree has its own working tree and never sees it), and a coverage check fired on a
+# complete rescue because `status --porcelain` collapses an untracked directory to `dir/` while the patch
+# names the files inside it. The third came out of the adversarial review of the same diff and is why [17b]
+# exists: the complete-snapshot path is all-or-nothing, so one unreadable file made it save NOTHING where
+# the command it replaced still saved the tracked work.
 #
 # Section [4b] is the second CONFIRMED DEFECT this harness has found, and it was found by the daemon in
 # production first: `work_fingerprint` read only the primary checkout's HEAD, so a session that pushed from its
@@ -652,7 +661,24 @@ fi
 OW="$T/orphan-wt"; rm -rf "$OW"
 git -C "$REPO" worktree add -q -b auto/orphan-test "$OW" >/dev/null 2>&1
 printf 'unique-rescue-payload-%s\n' "$$" > "$OW/rescued.txt"
-git -C "$OW" add rescued.txt >/dev/null 2>&1          # tracked+staged, so --untracked-files=no can see it
+git -C "$OW" add rescued.txt >/dev/null 2>&1          # tracked+staged: a died-in-the-hook commit looks like this
+# ⛔ AND AN UNTRACKED FILE BESIDE IT, because the staged one above is why this section could not catch the
+# 2026-08-22 defect. `git diff HEAD` — what the rescue used to run — cannot see an untracked path, so a
+# fixture whose whole payload is STAGED agrees with the broken implementation: the patch came out complete
+# because everything in it was tracked. Measured on the real machine that day: a strand's saved patch held
+# 5 tracked files at 90,263 B while a 10,465 B untracked `.tsv`, the only copy in existence, was named in
+# the `.status` beside it and in no patch at all. A measurement sweep is exactly this shape — one new file
+# and nothing else — and `orphaned_work` did not even count it until the same commit widened it.
+# The ignored file is the other half of the assertion: the rescue must stay a few-KB patch, not a copy of
+# a worktree's build output, so `add -A` honouring .gitignore is load-bearing and is pinned below.
+printf 'untracked-payload-%s\n' "$$" > "$OW/new-measurement.tsv"
+mkdir -p "$OW/build" && printf 'ignored-noise-%s\n' "$$" > "$OW/build/artifact.o"
+# ⚠️ THE .gitignore GOES IN THE ORPHAN WORKTREE, NOT IN $REPO. A linked worktree has its OWN working tree,
+# so an uncommitted `$REPO/.gitignore` is simply not present in `$OW` and ignores nothing there — the first
+# version of this fixture put it in $REPO and the assertion below went red because `add -A` correctly
+# swallowed a build artefact that nothing had told it to ignore. It does not need to be tracked: git reads
+# .gitignore out of the working tree whether or not it is in the index.
+printf 'build/\n' > "$OW/.gitignore"
 # Prove the PREMISE before asserting on the response: if the detector does not see this worktree, a missing
 # patch says nothing about the rescue code.
 seen_orph="$(VISIONOCR_REPO="$REPO" bash -c '. "$1"; REPO="$2" orphaned_work' _ \
@@ -672,10 +698,94 @@ if [ -f "$STATE/rescue/orphan-wt.patch" ]; then
     || bad "no base sha recorded — a patch with no base is guesswork to restore"
   grep -q 'rescued:' "$L" && ok "the log tells the owner where the durable copy is" \
                           || bad "the rescue is silent, so nobody knows it happened"
+  # The three assertions the staged-only fixture could never make.
+  grep -q "untracked-payload-$$" "$STATE/rescue/orphan-wt.patch" \
+    && ok "…and it holds the UNTRACKED file too (git diff HEAD cannot see one — add -A into a scratch index can)" \
+    || bad "the patch MISSES the untracked payload — a partial backup advertising itself as complete (2026-08-22)"
+  grep -q "ignored-noise-$$" "$STATE/rescue/orphan-wt.patch" \
+    && bad "the patch swallowed a GITIGNORED build artefact — add -A must honour .gitignore or this stops being a patch" \
+    || ok "…and it excludes gitignored build output, so it stays a patch rather than a copy"
+  [ -f "$STATE/rescue/orphan-wt.complete" ] \
+    && ok "…and it is marked COMPLETE, which is what stops a later run re-snapshotting it" \
+    || bad "no .complete marker — every future cycle will re-snapshot this worktree"
+  grep -q 'PARTIAL rescue' "$L" \
+    && bad "reported PARTIAL on a snapshot that captured everything — inverted, or add -A really failed" \
+    || ok "…and it does not cry PARTIAL over a complete snapshot"
+  # ⚠️ NEGATIVE CONTROL, mandatory here: every assertion above is satisfied by a patch that happens to be
+  # complete for the wrong reason, so prove the coverage check can FAIL. Run the PRE-FIX command on the same
+  # worktree and assert it comes out short — if this ever passes, the fixture stopped exercising the bug and
+  # the four checks above are decoration. This is the eleventh-check-that-could-not-fail discipline applied
+  # to the check being added, not to the code.
+  git -C "$OW" diff HEAD > "$T/prefix-rescue.patch" 2>/dev/null || true
+  if grep -q "untracked-payload-$$" "$T/prefix-rescue.patch" 2>/dev/null; then
+    bad "NEGATIVE CONTROL FAILED: 'git diff HEAD' also captured the untracked file, so this section cannot fail"
+  else
+    ok "negative control: the pre-fix 'git diff HEAD' misses that payload, so these checks can fail"
+  fi
 else
   bad "NO PATCH SAVED for a worktree holding uncommitted work — /private/tmp is the only copy (D8)"
 fi
+# The assignment is the point: a snapshot makes the work safe, an assignment makes it MOVE.
+if [ -f "$STATE/triage/orphan-wt.md" ]; then
+  ok "a triage assignment was written, so the strand is a session's job and not the owner's"
+  grep -q "$OW" "$STATE/triage/orphan-wt.md" \
+    && ok "…and it names the worktree the session has to go and look at" \
+    || bad "the assignment does not name the worktree — a task nobody can act on"
+  grep -q 'assigned:' "$L" && ok "…and the log says it was assigned rather than escalated" \
+                           || bad "the assignment is silent in the log"
+else
+  bad "NO TRIAGE ASSIGNMENT for a stranded worktree — it stays 'needs owner' forever, which is the 2026-08-22 complaint"
+fi
 git -C "$REPO" worktree remove --force "$OW" >/dev/null 2>&1
+
+# ---- [17b] THE FALLBACK: `add -A` FAILING MUST NOT LOSE WHAT THE OLD CODE SAVED --------------------------
+# ⛔ THE COMPLETE SNAPSHOT IS ALL-OR-NOTHING AND THE COMMAND IT REPLACED WAS NOT, which made the first
+# version of the 2026-08-22 fix a REGRESSION on the one function whose job is never to lose work. Measured:
+# a worktree holding real work in a modified tracked file plus ONE unreadable untracked file (`chmod 000`)
+# gives `git add -A` rc=128 — "unable to index file" — so the `&&` chain aborted, the else branch deleted the
+# patch, and NOTHING was saved, where the old `git diff HEAD` still produced a patch containing the work.
+# An unreadable DIRECTORY is only a warning; an unreadable FILE is fatal. So: try complete, fall back to
+# tracked-only, and SAY which one happened. This section is the only thing pinning that fallback.
+echo "[17b] a failed 'add -A' falls back to a tracked-only patch instead of saving nothing"
+echo "0:no:no" > "$CTRL"; reset_repo; dfset 999999; reset_state
+rm -rf "$STATE/rescue" "$STATE/triage"
+mkdir -p "$REPO/ops/autonomous"
+cp "$(cd "$(dirname "$DAEMON")" && pwd)/run-state-lib.sh" "$REPO/ops/autonomous/run-state-lib.sh" 2>/dev/null
+OW2="$T/orphan-wt2"; rm -rf "$OW2"
+git -C "$REPO" worktree add -q -b auto/orphan-fallback "$OW2" >/dev/null 2>&1
+printf 'fallback-tracked-payload-%s\n' "$$" > "$OW2/f.txt"      # real work, in a TRACKED file
+git -C "$OW2" add f.txt >/dev/null 2>&1
+printf 'unreadable-%s\n' "$$" > "$OW2/poison.bin"               # the thing that makes add -A rc=128
+chmod 000 "$OW2/poison.bin"
+# Prove the premise: add -A must actually fail here, or this section asserts nothing.
+rm -f "$T/probe.idx"
+GIT_INDEX_FILE="$T/probe.idx" git -C "$OW2" read-tree HEAD >/dev/null 2>&1
+if GIT_INDEX_FILE="$T/probe.idx" git -C "$OW2" add -A >/dev/null 2>&1; then
+  skip "add -A succeeded despite an unreadable file (running as root?) — the fallback cannot be exercised"
+else
+  ok "the premise holds: 'add -A' fails on an unreadable file, so the fallback is reachable"
+  L=$(run_daemon 0 6)
+  if [ -f "$STATE/rescue/orphan-wt2.patch" ]; then
+    ok "a patch was still written — the fallback saved something rather than nothing"
+    grep -q "fallback-tracked-payload-$$" "$STATE/rescue/orphan-wt2.patch" \
+      && ok "…and it holds the TRACKED work, which is exactly what the old command would have saved" \
+      || bad "the fallback patch does not contain the tracked work — strictly worse than the code it replaced"
+  else
+    bad "NO PATCH AT ALL because add -A failed — this is the regression: the old 'git diff HEAD' saved this work"
+  fi
+  [ -f "$STATE/rescue/orphan-wt2.complete" ] \
+    && bad "a tracked-only fallback was marked COMPLETE — a session may force-remove on it" \
+    || ok "…and it is NOT marked complete, so nothing treats it as a full backup"
+  grep -q 'PARTIAL rescue' "$L" \
+    && ok "…and the log says PARTIAL rather than reporting success" \
+    || bad "the fallback is silent about being partial — the 2026-08-22 defect in a new place"
+  grep -q 'poison.bin' "$L" \
+    && ok "…and it NAMES the untracked file it could not hold, so it can be copied by hand" \
+    || bad "the partial rescue does not say WHAT is missing"
+fi
+chmod 644 "$OW2/poison.bin" 2>/dev/null
+git -C "$REPO" worktree remove --force "$OW2" >/dev/null 2>&1
+git -C "$REPO" branch -D auto/orphan-fallback >/dev/null 2>&1
 git -C "$REPO" branch -D auto/orphan-test >/dev/null 2>&1
 
 # ================= the rescue must not depend on the PROGRESS VERDICT ===================================

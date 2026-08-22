@@ -90,6 +90,27 @@ else
 fi
 
 # ---------------------------------------------------------------------------------------------------
+# ASSIGNED vs WAITING — the distinction the owner asked for on 2026-08-22: *"A lot of what ends up in
+# 'needs me' seems like it could be resolved without me… I'd rather the daemon just decide and execute
+# much of this work."* A stranded worktree with a `$STATE/triage/<wt>.md` beside it is ASSIGNED: the daemon
+# has snapshotted it and written a session a task naming it, so the next session resolves it and nobody
+# needs to look. One WITHOUT that file is genuinely waiting — the assignment failed, or a session escalated
+# it deliberately — and only that case belongs under "Needs you".
+#
+# Counted HERE, above the state case, because both readers need it: the WORKING branch's hint at ~line 160
+# and add_need() at ~line 330. Getting that order wrong is how the pointer below came to point at nothing.
+orph_assigned=0; orph_waiting=0
+if _owk_all="$(orphaned_work 2>/dev/null)"; then
+  for _owd in $_owk_all; do
+    if [ -f "$STATE/triage/$(basename "$_owd").md" ]; then
+      orph_assigned=$((orph_assigned + 1))
+    else
+      orph_waiting=$((orph_waiting + 1))
+    fi
+  done
+fi
+
+# ---------------------------------------------------------------------------------------------------
 # STATE 1 — is it running, and if not, why? Sets STATE_ICON, STATE_LINE, STATE_HINT (may be empty).
 # Each branch is a DIFFERENT owner action, and two of them are historically reported as each other.
 # ---------------------------------------------------------------------------------------------------
@@ -145,9 +166,19 @@ elif [ "$running" = 1 ]; then
           # to look in a gap. It cannot be promoted above WORKING (a live session's own worktree is supposed
           # to be dirty, so it would cry wolf every session — tests/prove-status.sh [8] pins that), so it
           # rides along in the hint instead.
-          if _owk="$(orphaned_work)"; then
-            _n=0; for _d in $_owk; do _n=$((_n+1)); done
-            STATE_HINT="$STATE_HINT  ⚠ also: $(plural "$_n" 'worktree') holding uncommitted work — see 'Needs you'."
+          # ⚠️ AND IT SAYS WHICH KIND. An ASSIGNED strand is not an owner action — it is queued work with a
+          # task file naming it — so calling it out with "see 'Needs you'" was two errors at once: it sent
+          # the reader to a section that had nothing in it, and it dressed a handled thing as an unhandled
+          # one. Only the unassigned count points at 'Needs you', because only that count is ever there.
+          # ⚠️ AND IT DOES NOT SAY "see 'Needs you'" HERE. Assignment is skipped while a session is live, so
+          # an unassigned strand during a session is EXPECTED and transient — and the need is suppressed for
+          # the same reason, which would make that pointer dangle exactly the way D16's did.
+          if [ "$((orph_assigned + orph_waiting))" -gt 0 ]; then
+            if [ "$orph_waiting" -gt 0 ]; then
+              STATE_HINT="$STATE_HINT  ($(plural "$orph_waiting" 'stranded worktree') not assigned yet — the daemon assigns between sessions.)"
+            else
+              STATE_HINT="$STATE_HINT  ($(plural "$orph_assigned" 'stranded worktree') queued for a session to triage — nothing for you.)"
+            fi
           fi ;;
         *THROTTLED*)
           # Pass the epoch through: ratelimit_phrase with no argument degrades to a bare "usage cap" and throws
@@ -158,19 +189,40 @@ elif [ "$running" = 1 ]; then
           STATE_LINE="Waiting for a test suite to finish ($(human_secs "$idle"))"
           STATE_HINT="This is NOT out of work — $(suite_blocking), and two at once corrupt both. It goes by itself." ;;
         *'ORPHANED WORK'*)
-          # RED, not amber: unlike the two above this does NOT clear by itself, and what is at risk is
-          # finished work rather than a few minutes of waiting.
-          STATE_ICON="${RED}✕${OFF}"
           # ⚠️ EVERY worktree, not `${_orph%% *}`. The first cut named only the head of the list, which on
           # the machine this was written on meant reporting 660 insertions in one worktree and silently
           # omitting 887 in another — understating the loss by more than half while looking specific.
+          # ⚠️ AND EACH ROW SAYS WHICH KIND IT IS. The headline counts only the UNASSIGNED ones while this
+          # list prints every strand, so "1 worktree" over three rows is the same shape as the defect this
+          # branch already carries a warning about — "660 insertions in one worktree and silently omitting
+          # 887 in another — understating the loss while looking specific". A count that disagrees with the
+          # list beneath it is worse than either alone, so the rows are annotated rather than the count
+          # loosened: the owner needs to know which one nothing is coming for.
           _orph="$(orphaned_work)"; _osum=""; _on=0
           for _d in $_orph; do
             _on=$((_on + 1))
-            _osum="$_osum   ${_d/#$HOME/~} —$(orphaned_work_summary "$_d")"$'\n'
+            if [ -f "$STATE/triage/$(basename "$_d").md" ] || [ -f "$STATE/triage/$(basename "$_d").escalated" ]; then
+              _otag="[assigned]"
+            else
+              _otag="${RED}[NOT assigned]${OFF}"
+            fi
+            _osum="$_osum   $_otag ${_d/#$HOME/~} —$(orphaned_work_summary "$_d")"$'\n'
           done
-          STATE_LINE="Work was never committed — $(plural "$_on" 'worktree') holding it ($(human_secs "$idle") since the last commit)"
-          STATE_HINT="NOT an empty queue. Nothing is lost until these are removed:"$'\n'"${_osum%$'\n'}" ;;
+          # ⛔ THE COLOUR NOW TRACKS WHETHER ANYONE IS COMING. This branch was unconditionally RED with
+          # "Work was never committed", and after 2026-08-22 that is wrong for the common case: the daemon
+          # snapshots each strand and writes a session a triage task for it, so the usual state is "handled,
+          # waiting its turn" — and painting that RED is how a status surface trains its reader to ignore
+          # red. RED is reserved for a strand NOTHING has been assigned to, which is the only version of
+          # this that still needs a human. Precedence is unchanged: WORKING still outranks this
+          # (tests/prove-status.sh [8]).
+          if [ "$orph_waiting" -gt 0 ]; then
+            STATE_ICON="${RED}✕${OFF}"
+            STATE_LINE="Work was never committed and NOTHING is assigned to it — $(plural "$orph_waiting" 'worktree') ($(human_secs "$idle") since the last commit)"
+            STATE_HINT="NOT an empty queue, and NOT handled. Nothing is lost until these are removed:"$'\n'"${_osum%$'\n'}"
+          else
+            STATE_LINE="$(plural "$_on" 'stranded worktree') queued for triage — a session picks this up ($(human_secs "$idle") since the last commit)"
+            STATE_HINT="NOT an empty queue, and nothing for you: each one is snapshotted to \$STATE/rescue and has a task in \$STATE/triage."$'\n'"${_osum%$'\n'}"
+          fi ;;
         *)
           STATE_LINE="Running, but not finding anything it can do ($(human_secs "$idle"))"
           STATE_HINT="Usually means what is left is waiting on you — see 'Needs you' below." ;;
@@ -311,6 +363,24 @@ gate_to="$(num "$(cat "$STATE/gate-timeouts" 2>/dev/null | tr -dc '0-9')")"
 needs=""
 add_need() { needs="$needs"$'\n'"    • $1"; }
 
+# ⚠️ AND THIS REPAIRS A POINTER THAT POINTED NOWHERE. The WORKING branch appends "⚠ also: N worktree
+# holding uncommitted work — see 'Needs you'." and nothing ever put orphans INTO `needs`, so with three
+# dirty worktrees on disk the digest read "see 'Needs you'" directly above "Needs you  Nothing right now."
+# (measured 2026-08-22). Either half alone is defensible; together they are an instrument telling the reader
+# to go and look at its own blank space. Now only an UNASSIGNED strand raises a need, and the hint below
+# says which kind it is — so the pointer is either true or absent.
+# ⛔ NOT WHILE A SESSION IS LIVE, or this change manufactures the exact thing it was written to remove. A
+# running session's own worktree is SUPPOSED to be dirty, and the daemon deliberately does not assign triage
+# while one is in flight — so during a healthy session every strand reads as "unassigned", and the first
+# version of this raised a need for it. Rendered: "Nothing needed." on one line and "1 worktree … with NO
+# triage assignment — the daemon could not hand it to a session" three lines below, while the session was
+# running in that very worktree. Both halves false, in the state that holds ~97% of the time, and
+# `prove-status.sh` [8] did not catch it because it asserts on the HINT and never on "Needs you" being empty.
+# Same reasoning as that section's precedence rule: a live session outranks its own mess.
+if ! session_in_flight >/dev/null 2>&1; then
+  [ "$orph_waiting" -gt 0 ] && add_need "$(plural "$orph_waiting" worktree) holding uncommitted work with no triage assignment — snapshot or assignment failed, so no session will pick it up: $DAEMON_CMD status --details"
+fi
+
 # ⚠️ RUN.md's `## NEEDS OWNER` LIST — THE DAEMON'S OUTBOX, AND IT WAS NEVER READ HERE. This is the mechanism
 # the resume prompt gives every session for anything that needs a human ("append here and move on — it never
 # waits, because nobody is awake to answer"), and RUN.md's own comment beside the heading states that
@@ -398,6 +468,29 @@ if [ "$DETAILS" = 1 ]; then
   printf '  %-18s %s\n' "restart on crash" "$([ "$supervised" = 1 ] && echo 'yes (launchd keeps it alive)' || echo 'no (not loaded in launchd)')"
   printf '  %-18s %s\n' "disk free" "${disk_gb:-?} GB"
   printf '  %-18s %s\n' "suite lock" "${lock_line:-? (test-lock.sh missing)}"
+  # ⛔ THE STRANDS BELONG HERE, because "Needs you" now forwards the reader to this view for them and
+  # forwarding to a section that does not mention them is D16 again, reproduced inside D16's own fix. With
+  # the daemon stopped this was the only mention of three stranded worktrees anywhere in the digest, and it
+  # pointed at a screen listing code, branch, run state, steer, launchd, disk, suite lock and a log tail —
+  # nothing about worktrees. One line per strand, and the durable copy named, since the whole reason a
+  # reader comes here is to decide whether anything is at risk.
+  if [ "$((orph_assigned + orph_waiting))" -gt 0 ]; then
+    printf '\n  %s\n' "${B}Stranded worktrees${OFF}"
+    for _owd in $_owk_all; do
+      _obn="$(basename "$_owd")"
+      if [ -f "$STATE/triage/$_obn.escalated" ]; then _ost="escalated to you"
+      elif [ -f "$STATE/triage/$_obn.md" ];      then _ost="assigned — a session triages it"
+      else                                            _ost="${RED}NOT assigned${OFF}"
+      fi
+      if [ -f "$STATE/rescue/$_obn.complete" ];  then _orc="rescue COMPLETE"
+      elif [ -f "$STATE/rescue/$_obn.patch" ];   then _orc="${RED}rescue PARTIAL — tracked only${OFF}"
+      else                                            _orc="${RED}NO rescue patch${OFF}"
+      fi
+      printf '    %s\n' "${_owd/#$HOME/~}"
+      printf '      %s · %s%s\n' "$_ost" "$_orc" \
+        "$([ -f "$STATE/rescue/$_obn.commits.patch" ] && printf ' · has unpushed commits, saved separately')"
+    done
+  fi
   printf '\n  %s\n' "${B}Next up${OFF}"
   awk '
     /^[[:space:]]*(```|~~~)/ { fence = !fence; next }

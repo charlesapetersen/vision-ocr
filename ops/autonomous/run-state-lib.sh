@@ -105,9 +105,14 @@ suite_blocking() {
 # session's worktree is SUPPOSED to be dirty; putting the guard in the ordering rather than in the detector
 # keeps this function answering exactly one question.
 #
-# ⚠️ `--untracked-files=no` is deliberate: every worktree carries an untracked `build/` full of compiler
-# output, and counting that as lost work would report EVERY worktree, always. A detector that fires
-# constantly is one nobody reads. Tracked, modified-or-staged files only.
+# ⛔ THIS COMMENT USED TO DEFEND `--untracked-files=no` AND ITS PREMISE WAS FALSE. It read: "every worktree
+# carries an untracked `build/` full of compiler output, and counting that as lost work would report EVERY
+# worktree, always." Measured 2026-08-22 on all three live worktrees: **none of them has a `build/` directory
+# at all**, they are 5.4-5.5 MB each, and `build/` is gitignored anyway — so plain `--porcelain` never listed
+# it. The argument was for a cost that could not be incurred, and it bought a real blind spot: a strand whose
+# only output was a NEW file was not an orphan, so it got no rescue patch and no assignment while
+# `git worktree remove` still refused it, leaving it in volatile /private/tmp with no copy anywhere. Untracked
+# content is counted now; see the note at the test itself.
 orphaned_work() {
   local repo="${REPO:-$HOME/Claude/vision-ocr}" dir ref found=""
   git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || return 1
@@ -116,7 +121,17 @@ orphaned_work() {
     [ "$dir" = "$repo" ] && continue
     case "$ref" in refs/heads/auto/*) ;; *) continue ;; esac
     [ -d "$dir" ] || continue
-    [ -n "$(git -C "$dir" status --porcelain --untracked-files=no 2>/dev/null)" ] || continue
+    # ⛔ UNTRACKED CONTENT COUNTS. This read `--untracked-files=no`, and that made a whole class of strand
+    # INVISIBLE: a worktree holding only NEW files — which is what a measurement sweep produces, a fresh
+    # `.tsv` and nothing else — was not an orphan, so it got no rescue patch, no assignment and no mention
+    # beyond `housekeeping()`'s "left N … for manual review" count. `git worktree remove` still refuses it
+    # (untracked files make a worktree dirty), so it sat in volatile /private/tmp with NO copy anywhere,
+    # which is strictly worse than the partial-patch bug of 2026-08-22 that sat beside it.
+    # Safe to widen because every build product here is gitignored and plain `--porcelain` excludes ignored
+    # paths: `.gitignore` covers `build/`, `testdocs/*`, `Tools/mutation-out/`, `__pycache__/` and
+    # `output.[0-9]*`, and a real session worktree checked 2026-08-22 listed 5 modified files and exactly
+    # one untracked `.tsv` — no build noise. So this cannot start crying wolf over compiler output.
+    [ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ] || continue
     found="$found $dir"
   done <<EOF
 $(git -C "$repo" worktree list --porcelain 2>/dev/null \
