@@ -99,6 +99,23 @@ mode on a page that loses nothing — and because a widened region lowers `inkOu
 moves every page TOWARD the all-text verdict that shrinks backgrounds 8x (`1954 - Why` p4 goes
 0.0540 → 0.0524 against a bar of 0.045, so a more generous rule re-destroys the cartoon C26's bar move
 rescued). **Nothing is wired**; `Sources/` is untouched.
+✅ **AND `mrcBoxPadding`'s 25% COLLAR IS PRICED OUT OF THAT FIGURE AS OF 2026-08-22** — a stranded
+attempt from the same base commit unioned the same bounding rects into `region` **without** the collar,
+so the pair isolates it: over the same 16 sub-bar pages **+2,259 B against +2,315 B, so the collar is
+2.42%** of the price where the wiring would be judged, and **22.26%** over the 6 firing picture pages,
+where the harm is. ⚠️ Not an independent implementation — the same tool, one step different — and both
+ratios are claims about small sets (76.7% of that 22.26% is two pages of one document). ✅ **It splits
+the delta by LAYER, which isolates the `fillHoles` saving its own section's review refused as
+unisolated**: stencil +4,303 B **dearer on 16 of 16**, background −2,076 B **cheaper on 16 of 16**,
+foreground +32 B — and on the picture pages the largest term is the **foreground**, +3,071 B, 1.91x the
+stencil's. ⚠️ 4 of these 16 have a falling total, against the padded run's 6; the two counts belong to
+different widenings and must not be merged. ✅ It reads `shrunkAsAllText`, `backgroundWidth` and
+`inkOutsideText` back from production rather than inferring or recomputing them, so the all-text hazard
+is a measured 0 over 26 rows instead of a string proxy. ⛔ **The seam it used is REJECTED and `Sources/`
+still does not move** — `main` already documents the decision against a new override there, and with the
+tool half superseded it would have no caller. ⚠️ It also corrects the hazard arithmetic above:
+`0.0524 - 0.0450` is **0.0074**, not the 0.0079 first published.
+`WIDEN-LAYERS-2026-08-22.tsv`, `#### The same price without the collar`.
 The other item that was left, the population of sub-bar pages carrying a picture, is measured: **0 printed
 plates and 0 printed figures over the 73**, the largest non-text mark ≤3% of a page, two independent reads
 each finding 6 of 6 positive controls (`SUBBARPIX-2026-08-22.tsv`, `#### Are there PICTURES in the sub-bar
@@ -7783,8 +7800,11 @@ C26's founding cartoons and 3b's two false negatives are untouched.
 verdict — and the all-text verdict is what shrinks the background 8x.** On this sample no page crossed:
 `shipBg == wideBg` on **26 of 26**. But `1954 - Why` p4 — a picture page whose cartoon C26's bar move
 rescued at 0.0540 — reads **0.0524** widened, against a bar of **0.045**. ⚠️ **How far that is,
-quantified rather than asserted**: this widening bought **0.0016** and the bar is **0.0079** away, so
-flipping p4 needs about **5x** the effect measured here. The direction is structural — `textRegionMask`
+quantified rather than asserted**: this widening bought **0.0016** and the bar is **0.0074** away, so
+flipping p4 needs about **5x** the effect measured here. ⚠️ **That read 0.0079 until 2026-08-22** — a
+subtraction slip; `0.0524 - 0.0450` is 0.0074. Found by `#### The same price without the collar`, where
+the same page reads **0.0529** without `mrcBoxPadding`'s collar: 0.0079 is that variant's gap and this
+one's is 0.0074. The direction is structural — `textRegionMask`
 ORs boxes in, so the region is monotone in the box list and `wideInkOut <= inkOut` on **26 of 26** (22
 lower, 4 equal, the four `lineN == 0` rows) — the magnitude is not. And the picture page **nearest** the
 bar cannot be moved by this rule at all: `1954 - Why` p6 sits at **0.0493**, the 1.10x margin 3b already
@@ -7805,7 +7825,10 @@ hold `pageIsAllText`'s region at the *recognised* one or measure this. Unmeasure
   question 2b's one content loss lives there.
 - **The 57 non-firing sub-bar pages are not in it.** They cost exactly 0 by construction (`lineN` 0
   means no synthetic box, so the two calls are identical), which is asserted by the tool's own check 7
-  rather than measured on those pages.
+  rather than measured on those pages. ✅ **Two of the 57 are measured as of 2026-08-22** —
+  `Guilford_Psychometric Methods` p1 and `Ford_1941_Speech_` p3 are `ctl73` rows in
+  `WIDEN-LAYERS-2026-08-22.tsv`, both reading `wAdd` 0 and `dTot` exactly 0, so 2 of the 57 are no
+  longer by construction alone.
 - **Nothing is wired.** `Sources/` is untouched. The rule being priced is still post-hoc, still reads 0
   on four hand-made marks, still fires on 6 of 10 picture pages, and `_1939_Former students` p2's
   pencilled annotation is still out of reach of every term this campaign has (`outPx` 0).
@@ -7852,6 +7875,158 @@ hold `pageIsAllText`'s region at the *recognised* one or measure this. Unmeasure
 - ⚠️ **No `Tools/mutate.py` catalogue entry and no scoped run.** Nothing in `Sources/` changed, so
   there is no production constant or guard to mutate; the two mutations above are of the instrument and
   were run as standalone builds. A catalogue entry becomes owed the moment any of this is wired.
+
+#### The same price without the collar — a stranded attempt from the same base prices `mrcBoxPadding`'s 25% collar at **2.42% of the widening on text pages and 22.26% on pictures**, splits the delta by LAYER, and corrects one published number — 2026-08-22
+
+**A second attempt at the section above exists**, made from the same base commit (`6c154ca`) about two
+and a half hours earlier by a session whose work was stranded in `/private/tmp` and never landed. It is
+worth a section because of what it isolates, and it is worth being precise about what it is not.
+
+⚠️ **IT IS NOT AN INDEPENDENT IMPLEMENTATION, AND A FIRST DRAFT OF THIS SECTION CLAIMED IT WAS** —
+called it "the strongest control this sub-campaign has", which is the same superlative the review of the
+section above refused, for the same reason. It is the **same tool** with one step changed, over the same
+`mrcLayers`, `textRegionMask`, `fillHoles`, JBIG2 and JPEG, and the same shape term. Columns 3-32 being
+byte-identical on 24 of 24 shared rows is a determinism check on one code base, not a reproduction.
+
+⛔ **AND BOTH ROUTES UNION THE GROUPS' BOUNDING RECTS. The first draft of this section said the stranded
+one unioned the groups' own MASK, in five places, and its own artefact refutes that** — the stranded
+`wideningMask` fills each group's clamped bounding rect (its doc comment: *"the accepted line groups'
+bounding rects, clamped to the page… Rects rather than the accepted pixels"*), and `wAdd` equals the
+rect's area exactly on six of the eight single-group rows (`27x17` = 459, `74x29` = 2,146, `134x14` =
+1,876, `472x53` = 25,016, `140x12` = 1,680, `43x9` = 387; the other two are clamped or overlap the
+shipped region). **So the difference that matters between the two runs
+is `Flattener.mrcBoxPadding`'s 25% collar**, which the landed route pays because it goes through a
+`SearchableWriter.BoundingBox` and this one does not. That makes this file a price of the collar, and
+essentially nothing else — a smaller claim than the draft made and a cleaner one. ⚠️ **Not literally
+the only difference**: the round trip through a normalised box also adds the `&+ 1` on `x1`/`y1`
+(`Flattener.swift:2531`), the one-pixel term the section above records as swamped by a 25% collar. So
+the pair prices collar-plus-one-pixel, and the collar is the term that can be reasoned about.
+
+**The collar's price.** Over the **same 16 sub-bar pages** and the **same 6 firing picture pages**, with
+the shipped side byte-identical in both files (789,825 B and 1,522,050 B; `shipSten` and the totals
+identical row by row on all 24 shared rows, across two binaries — one with the seam compiled into
+`Flattener`, one without, which is what makes the seam measurably inert in published bytes):
+
+| | landed, padded | stranded, unpadded | the collar |
+|---|---|---|---|
+| 16 sub-bar pages | +2,315 B, 1.00293x | +2,259 B, 1.00286x | **+56 B — 2.42%** |
+| 6 firing picture pages | +4,694 B, 1.00308x | +3,649 B, 1.00240x | **+1,045 B — 22.26%** |
+
+⛔ **The asymmetry is the finding, and the mechanism is MEASURED rather than asserted.** The share of
+the admitted stencil ink that the collar alone contributes — `wideStenPx - stenPx` there minus
+`wStenAdd` here — is **40.7%, 43.5%, 46.4% and 85.4%** on the four picture pages that admit any, and
+**0.0% to 8.9%** (median **1.2%**, four of the sixteen at 0.0%) on the sixteen sub-bar pages. A 25%
+collar round a group on a plate
+lands on ink; round a group on a page of type it lands on paper. So the arm whose price depends on
+which wiring is chosen is the picture arm, which is also the arm where the harm is (R57's failure mode,
+`1881 - Harry Wilcox` p2).
+
+⚠️ **Both of those ratios are claims about small, lopsided sets, and the picture one especially.** Of
+the 6 firing picture pages, 2 contribute exactly 0 B to both routes, and **801 B of the 1,045 — 76.7% —
+is two pages of one document** (`Wilcox` p2 +423, p6 +378), with `Ibson` p122 +252 and `1954 - Why` p4
+at **−8**. Against `SUBBARPIX-2026-08-22.tsv` those 6 adjudicate as **2 plates** (`Ibson` p61 and p122),
+**2 drawings** (`Wilcox` p2, `1954 - Why` p4), **1 `none`** (`Riesman - 1954` p2, "photographed
+copyright page; show-through and a thumb") and **1 not adjudicated at all** (`Wilcox` p6 is absent from
+that file) — and the two plates are not the pages the money is on. Read 22.26% as "three pages in two
+documents", not as "picture pages".
+
+⛔ **AND "AN UPPER BOUND" HOLDS ON THE REGION BUT NOT ON THE BYTES.** `Tools/score-shape-term.swift`'s
+header says the synthetic box "makes every byte figure an upper bound on the widening rather than an
+estimate of it." The **region** is monotone and this file confirms it: the padded `wideInkOut` is lower
+on 11 of the 22 firing rows and equal on the other 11, never higher. The **bytes** are not: page by
+page the padded route is dearer on 9, **cheaper on 7** and equal on 6 (net +1,101 B over both arms), so
+`Merriam_1913` p2 saves 26 B by being padded and `1954 - Why` p4 saves 8. The bound holds per arm and
+fails per page, which is what a JPEG's response to a smoother mask looks like.
+
+✅ **THE DELTA SPLIT BY LAYER, WHICH CLOSES THE OBJECTION THE SECTION ABOVE'S OWN REVIEW RAISED.** That
+review refused the `fillHoles`-smooths-the-background story as "called measured and not isolated". It is
+isolated now — ⚠️ **for the unpadded widening, which is not the one the objected-to figure describes**:
+"recovering 47% of the stencil's growth" is the landed run's pooled 2,076/4,391, and that run's own
+background-versus-foreground split stays unmeasured. What follows is this file's, because it carries
+`shipBG`/`shipFG` and `wideBG`/`wideFG` separately where the
+landed one carries only stencil-versus-the-rest:
+
+* **16 sub-bar pages: stencil +4,303 B, background −2,076 B, foreground +32 B.** The stencil is dearer
+  on **16 of 16** and the background cheaper on **16 of 16** — universal, not an explanation of the
+  rows whose totals happen to fall. The foreground is the small, mixed term (dearer on 5, cheaper on 9,
+  unchanged on 2).
+* **6 firing picture pages: stencil +1,608 B, background −1,030 B, foreground +3,071 B.** ⛔ **The
+  largest single term on a picture page is the FOREGROUND tone layer, 1.91x the stencil** — dearer on 4
+  of the 6 and unchanged on the 2 that admit nothing, while the background is cheaper on 4 and
+  unchanged on 2. That is what "the picture arm's tone delta goes the other way on all four pages that
+  move" was; it is a foreground effect, and nothing above could see it.
+* ⚠️ **Do not merge the two files' "got cheaper" counts.** In THIS file 4 of the 16 have a falling
+  total; the section above says **6 of the 16**, and that is its own file's count for its own, padded
+  widening. Both are right about their own set. A draft of this section wrote "16 of 16 rather than the
+  6 whose totals fall" and put one file's numerator on the other's denominator.
+* ⚠️ **One coincidence to not read as a mechanism**: the landed run's combined tone delta over the same
+  16 is −2,076 B, numerically equal to this file's **background-only** delta, while this file's tone
+  total is −2,044 B. Nothing forces those equal — the ship-side tone sums do agree at 164,993 B, but
+  the widened sides differ by exactly this file's +32 B of foreground. The landed file cannot be
+  decomposed, so the two are **not** shown to agree layer by layer.
+
+✅ **Two free controls the landed run's own review said it left on the table are collected here.** That
+tool recomputes `inkOutsideText` and infers the all-text verdict from two strings; this one reads
+`MRCLayers.inkOutsideText`, `MRCLayers.shrunkAsAllText` and `MRCLayers.backgroundWidth` back from
+production.
+
+* **The hazard is a measured 0 on this population, from production rather than from a proxy**:
+  `shrunkAsAllText` flips nowhere and `backgroundWidth` changes nowhere over 26 rows, and the landed
+  run's inferred verdict agrees on all 24 rows the two files share.
+* **The recomputation checks out where it can be tested, on n = 2**: the only rows where both files
+  describe the same region are the 2 shared rows the term does not fire on, and there production's own
+  value and the recomputed one agree to 4 dp (`1954 - Why` p7 **0.0660**, `Ibson_2006` p162 **0.9978**).
+  ⚠️ Two rows of 26 is a check, not a validation.
+
+⛔ **AND IT CORRECTS A NUMBER THIS ENTRY PUBLISHED YESTERDAY.** The hazard paragraph above reads
+`1954 - Why` p4 as 0.0540 → 0.0524 against a bar of 0.045 and then says **"the bar is 0.0079 away"**. It
+is **0.0074** — `0.0524 - 0.0450` — corrected in the **three** places it was published: there,
+`CLAUDE.md`, and `ops/autonomous/QUEUE.md`'s `c28-stencilseam` box, which the review of this diff found
+after a first draft named only two. ⚠️ It is a subtraction slip and
+this section does not claim to know more than that: 0.0079 happens to be the distance from **0.0529**,
+which is what the page reads unpadded, but that number was in no committed file and nothing shows the
+landed session saw it. What the two runs do give is a bound rather than a point: on the register's own
+convention (the remaining gap over the effect bought) flipping p4 needs **~5x** the padded effect and
+**~7x** the unpadded one, so **the wiring without the collar is the further of the two from flipping the
+verdict**.
+
+⛔ **THE SEAM IS REJECTED AND `Sources/` DOES NOT MOVE.** Four reasons, in the order they decide it:
+
+1. **`main` already documents the decision against it.** `Tools/score-shape-term.swift`'s header:
+   *"Nothing in `Sources/` moves for this, which is what keeps it a measurement of production rather
+   than of a second copy of it, and it is why there is no new override seam beside
+   `textPageInkOutsideThresholdOverride`."* Landing the seam makes that sentence false and owes it a
+   retraction.
+2. **It would have no caller.** The stranded tool half is superseded by the landed `WIDENBYTES=1`
+   implementation, which is the better-tested of the two (9 self-test checks against this one's 7, two
+   watched mutations, and an adversarial pass whose findings all landed). Take the tool half away and
+   `textRegionWideningOverride` is an inert override inside `Flattener` on the content-loss path with
+   nothing reading it — permanent reader cost, zero measurement capability.
+3. **The measurement it existed to make is made**, and its own argument for the seam is now priced
+   rather than refuted. That argument was the collar: pushing the groups back through a
+   `BoundingBox` "would put them through `mrcBoxPadding`'s 25% collar and out again, so the region
+   measured would be 1.5x the height of the region proposed." True — and worth **2.42%** of the price
+   where the wiring would be judged, **22.26%** where it would do harm. An upper bound whose slack is
+   measured is not a defect.
+4. **The larger inflation is not the collar's and neither route escapes it.** `wAdd` — the rect's
+   contribution outside the shipped region — is **1.90x to 12.94x** `linePx` over the 22 firing rows
+   (11.1x on `_1939_Former students` p6, where a `472x53` rect carries 2,259 accepted pixels). Both
+   routes union rects; both pay that; neither prices it. A seam that changed only the collar was never
+   going to reach it.
+
+⚠️ **What this does NOT settle.** No new measurement was made here — this is a comparison of two
+artefacts, one committed and one rescued, and nothing was re-run. The two files price **24 shared pages
+of the 26 each carries**, so 2 pages of each are unpriced by the other route (`Guilford_Psychometric
+Methods` p1 and `Ford_1941_Speech_` p3 here; `1954 - Why` p6 and p10 there). The layer split is the
+unpadded route's, so a padded wiring's own split is unmeasured. And ⚠️ **one capability the rejection
+gives up, which should be said**: the seam came with **112 added lines** in `Tests/main.swift`, among
+them a fixture in which the widened region flips `pageIsAllText()`'s verdict — the second reader's
+effect, which **no page in either artefact exercises** (0 flips over 26 rows, both files). That fixture
+tested the override, not shipped behaviour, so nothing shipped loses coverage; but whatever wiring C28
+eventually takes owes that fixture again, because this corpus will not supply it. Artefact:
+`WIDEN-LAYERS-2026-08-22.tsv`, 26 rows, 52 columns, kept with a header saying plainly that its
+instrument is not in this repository; the seam's source is filed outside the tree as
+`$STATE/rescue/REJECTED-not-on-main-vo-20260822-014509-85956.patch.bak`.
 
 #### What this entry is NOT
 

@@ -1324,7 +1324,9 @@ happens.**
       ⛔ **The hazard, which is worth more than the price**: a widened region lowers `inkOutsideText`, so
       widening pushes every page **toward** the all-text verdict that shrinks backgrounds 8x.
       `shipBg == wideBg` on 26 of 26 here, but `1954 - Why` p4 moves 0.0540 → **0.0524** against a bar of
-      0.045 — ⚠️ 0.0016 bought against 0.0079 needed, so about 5x this effect, and p6 at 0.0493 has
+      0.045 — ⚠️ 0.0016 bought against 0.0074 needed (⚠️ **this read 0.0079 until 2026-08-22**; a
+      subtraction slip, and 0.0079 is the same page's gap *without* `mrcBoxPadding`'s collar, at 0.0529 —
+      see C28 `#### The same price without the collar`), so about 5x this effect, and p6 at 0.0493 has
       `lineN` 0 and cannot move at all — a more generous rule flips p4 and re-destroys the cartoon C26's
       bar move rescued. Wire `pageIsAllText`'s region at the **recognised** one, or measure it.
       **The cross-tool control**: `shipBytes` is byte-identical to

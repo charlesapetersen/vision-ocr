@@ -240,12 +240,45 @@ measured the other half: on `1881 - Harry Wilcox` p2 the widening turns a pen or
 admit ink at all, and — the hazard worth more than the price — **a widened region lowers
 `inkOutsideText`, so widening moves every page TOWARD the all-text verdict that shrinks backgrounds
 8x**: `1954 - Why` p4 reads 0.0540 → **0.0524** against a bar of 0.045 — ⚠️ this widening bought 0.0016 and
-the bar is 0.0079 away, so flipping it needs ~5x this effect, and the picture page nearest the bar
+the bar is 0.0074 away (⚠️ published as 0.0079 until 2026-08-22, a subtraction slip: `0.0524 - 0.0450` is
+0.0074, and 0.0079 is the gap of the same page **without** the collar, at 0.0529), so flipping it needs
+~5x this effect and ~7x without the collar, and the picture page nearest the bar
 (`1954 - Why` p6 at 0.0493) has `lineN` 0 and cannot move at all. A more generous rule
 re-destroys the cartoon C26's bar move rescued. ⚠️ It buys no searchability (a synthetic box carries no
 string; `SearchableWriter` still has nothing to draw), 26 pages at Balanced only, and the 57 non-firing
-sub-bar pages cost 0 **by construction** rather than by measurement. `WIDEN-STENCIL-2026-08-22.tsv`;
+sub-bar pages cost 0 **by construction** rather than by measurement (✅ 2 of the 57 measured 2026-08-22,
+`wAdd` 0 and `dTot` 0 — see `WIDEN-LAYERS-2026-08-22.tsv`). `WIDEN-STENCIL-2026-08-22.tsv`;
 **nothing is wired.**
+✅ **`mrcBoxPadding`'s 25% COLLAR IS PRICED OUT OF THAT FIGURE AS OF 2026-08-22** — a stranded attempt
+from the same base commit unioned the **same bounding rects** into `region` without going through a
+`BoundingBox`, so the collar is the only difference and the pair isolates it: **+2,259 B, 1.00286x** over
+the same 16 pages against +2,315 B, with the shipped side byte-identical row by row on all 24 shared
+rows across two binaries. **The collar is 2.42% of the price on text pages and 22.26% on the 6 firing
+picture pages**, and the mechanism is measured rather than asserted: the collar alone contributes
+**40.7%–85.4%** of the admitted stencil ink on the four picture pages that admit any, against
+**0.0%–8.9%** on the sixteen. ⛔ **Three things bound that: it is NOT an independent implementation**
+(same tool, same `mrcLayers`/`textRegionMask`/`fillHoles`/JBIG2, one step different — a first draft
+called it "the strongest control" and that superlative was refused here yesterday for this exact
+reason); **76.7% of the 22.26% is two pages of one document**, and of those 6 pages `SUBBARPIX` says 2
+are plates, 2 drawings, 1 `none` and 1 is absent from that file; and ⛔ **the LARGER inflation is not
+the collar's and neither route escapes it** — `wAdd`, the rect's contribution outside the shipped
+region, is **1.90x–12.94x** the accepted pixels. ✅ **It splits the delta by LAYER, which isolates the
+`fillHoles` saving the landed section's own review refused as unisolated** — ⚠️ for the UNPADDED
+widening; the objected-to "47% of the stencil's growth" is the landed run's pooled figure and that run's
+own split stays unmeasured — : stencil +4,303 B dearer on
+**16 of 16**, background −2,076 B cheaper on **16 of 16**, foreground +32 B — and on the picture pages
+the largest term is the **foreground**, +3,071 B, 1.91x the stencil's, which is what "the tone delta
+goes the other way" was. ⚠️ 4 of these 16 have a falling total against the padded run's 6: **different
+widenings, do not merge the counts.** ✅ It reads `shrunkAsAllText`, `backgroundWidth` and
+`inkOutsideText` back from production instead of inferring or recomputing them — the free controls that
+review said were left on the table — so the all-text hazard is a measured 0 over 26 rows rather than a
+string proxy, on n = 2 for the recomputation. ⛔ **And "an upper bound" holds on the REGION, not on the
+bytes**: the padded `wideInkOut` is lower on 11 of 22 firing rows and equal on 11, never higher, but page
+by page the padded route is **cheaper on 7 of 22**. ⛔ **The seam it used is REJECTED and `Sources/`
+still does not move**: `Tools/score-shape-term.swift`'s own header is the decision against a new
+override beside `textPageInkOutsideThresholdOverride`, and with the tool half superseded the seam would
+have had no caller. ⚠️ No new measurement was made — a comparison of two artefacts sharing **24 of the
+26 rows each carries**. `WIDEN-LAYERS-2026-08-22.tsv`.
 ✅ **THE CORPUS FIGURE IS MEASURED 2026-08-21 and it is question 4's last owed number at the LAYERING
 seam** — `Tools/stratify-corpus.py` (new; `--control` asserts eleven of C26's published band figures
 off the committed sweep before it is asked anything new, of which **five are estimator-sensitive** and
@@ -648,9 +681,16 @@ omitted all three; the review of C27's sweep counted that as the third such omis
 targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
-`SUBBARPIX-2026-08-22.tsv` and `WIDEN-STENCIL-2026-08-22.tsv` — and are
+`SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv` and `WIDEN-LAYERS-2026-08-22.tsv` — and are
 evidence for one run, not
-claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
+claims about the present. ⛔ **Two of these have no instrument in the tree at all, and both say so by
+decision rather than by neglect**: `GUTTER-CENSUS-2026-08-20.tsv`, whose poppler+python
+reimplementation was deliberately not committed (`18fae9e`), and `WIDEN-LAYERS-2026-08-22.tsv`, which
+came from a `Flattener` override seam C28 rejected — its own header says so, and the seam survives only
+outside the tree as
+`$STATE/rescue/REJECTED-not-on-main-vo-20260822-014509-85956.patch.bak`. ⚠️ A first draft called the
+second of those "the one file here whose instrument is not in this repository"; the review of that diff
+found the first two lines above it. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls
 born-digital.
 [TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas

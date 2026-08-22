@@ -398,6 +398,20 @@ price — **a widened region lowers `inkOutsideText`, so widening pushes every p
 verdict that shrinks backgrounds 8x** (`1954 - Why` p4, 0.0540 → 0.0524 against a bar of 0.045, so a
 more generous rule re-destroys the cartoon C26's bar move rescued). `WIDEN-STENCIL-2026-08-22.tsv` and
 `BUGS.md` C28 `#### The price at the textRegionMask seam`; nothing is wired.
+✅ **`mrcBoxPadding`'s 25% COLLAR IS PRICED OUT OF THAT FIGURE, 2026-08-22** — a stranded attempt from
+the same base commit unioned the **same bounding rects** into `region` without going through a
+`BoundingBox`, so the collar is the only difference: **+2,259 B against +2,315 B** over the same 16
+pages, i.e. the collar is **2.42%** of the price on text pages and **22.26%** on the 6 firing picture
+pages, with the collar alone contributing 40.7%–85.4% of the admitted stencil ink there against
+0.0%–8.9% on the sixteen. It splits the delta by layer (stencil +4,303 B, background **−2,076 B on 16 of
+16**, foreground +32 B; on the picture pages the foreground's +3,071 B is the largest term) and reads
+production's own `shrunkAsAllText` / `backgroundWidth` / `inkOutsideText` back rather than inferring
+them. ⚠️ It is **not** an independent implementation — same tool, one step different — and 76.7% of that
+22.26% is two pages of one document. ⛔ **And the collar is not the largest inflation**: `wAdd`, the
+rect's contribution outside the shipped region, is 1.90x–12.94x the accepted pixels, and BOTH routes pay
+that and neither prices it. ⛔ **The `Flattener` override seam it used was REJECTED and
+`Sources/` still does not move.** `WIDEN-LAYERS-2026-08-22.tsv` and C28
+`#### The same price without the collar`.
 `lineShare` separates 22 of the **23** pages run so far and is the **seventh share in a
 register that has refused six**; read the entry's section before building on it.
 ✅ **THE CONVENIENCE SAMPLE IS GONE AND QUESTION 4 HAS A PRICE, 2026-08-21** — `SHAPETERM-73-2026-08-21.tsv`

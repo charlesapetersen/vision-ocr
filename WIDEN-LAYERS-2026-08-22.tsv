@@ -1,0 +1,88 @@
+# C28 question 4 at the `textRegionMask` seam, DECOMPOSED BY LAYER — 2026-08-22.
+#
+# ⛔ **THE INSTRUMENT THAT PRODUCED THIS FILE IS NOT IN THIS REPOSITORY AND WILL NOT BE.** It is a
+# stranded attempt at the same measurement `WIDEN-STENCIL-2026-08-22.tsv` publishes, from the same base
+# commit (`6c154ca`) about two and a half hours earlier, and the seam it used was rejected on 2026-08-22
+# — see C28's `#### The same price without the collar`. Both runs union the accepted line groups'
+# **bounding rects** into `region`; the ONE difference is that the landed route hands `mrcLayers` a
+# `SearchableWriter.BoundingBox` per group and therefore pays `Flattener.mrcBoxPadding`'s 25% collar,
+# while this one wrote the same rects straight into the region through a
+# `Flattener.textRegionWideningOverride` closure that is not on `main`. So this file prices the collar
+# and nothing else. ⚠️ It is NOT an independent implementation: same tool, same `mrcLayers`,
+# `textRegionMask`, `fillHoles`, JBIG2 and JPEG, same shape term — one step different.
+# The seam's source survives outside the tree as
+# `$STATE/rescue/REJECTED-not-on-main-vo-20260822-014509-85956.patch.bak`.
+#
+# Kept for four things the landed instrument's columns cannot say, none of them re-derivable from
+# anything committed:
+#   * the byte delta split into STENCIL / BACKGROUND / FOREGROUND rather than stencil-versus-the-rest;
+#   * `MRCLayers.shrunkAsAllText` and `MRCLayers.backgroundWidth` read back from production, where the
+#     landed run infers the all-text verdict from two strings — the free control its own review said it
+#     left on the table;
+#   * `MRCLayers.inkOutsideText` read back from production, against the landed run's recomputation of it;
+#   * what the 25% collar costs, in published bytes and in admitted stencil ink.
+#
+# One row per page, 26 pages. `arm`: sub73 = one of the 16 sub-bar pages the shape term fires on
+# (`SHAPETERM-73-2026-08-21.tsv`, lineN >= 1); pic = one of the 6 picture pages it fires on
+# (`SHAPETERM-PICTURES-2026-08-21.tsv`); ctl73 / ctlpic = a page it does NOT fire on, where the widening
+# adds nothing and the two publications must therefore be byte-identical. `label`/`kind` are carried
+# from those two files. ⚠️ The arm names differ from `WIDEN-STENCIL`'s `subbar`/`picture`, which pool
+# the controls into the two arms — compare on `document` + `page`, never on `arm`.
+#
+# ⚠️ `wAdd` is the rect's contribution OUTSIDE the shipped region, so it is not the accepted pixels:
+# over the 22 firing rows it is **1.90x to 12.94x** `linePx`. That inflation is paid by BOTH routes and
+# priced by neither — the collar sits on top of it.
+#
+# CONTROLS, all re-run 2026-08-22 against the committed files rather than taken on trust:
+#   * `shipTot` equals `SHAPETERM-BYTES-2026-08-21.tsv`'s `layered` on **18 of the 18** shared rows,
+#     from a different tool and a different code path.
+#   * `shipSten` and `shipTot` are byte-identical to `WIDEN-STENCIL-2026-08-22.tsv`'s `shipSten` and
+#     `shipBytes` on **all 24 rows the two files share**, so the seam is measurably inert in published
+#     bytes on two binaries, one with it compiled into `Flattener` and one without.
+#   * columns 3-32 (the shape-term columns, which no widening touches) are byte-identical to
+#     `WIDEN-STENCIL-2026-08-22.tsv` on those same **24** rows. ⚠️ The two share 24, not the 26 each
+#     carries: this file has `Guilford_Psychometric Methods` p1 and `Ford_1941_Speech_` p3, the landed
+#     file has `1954 - Why` p6 and p10. An earlier note put the overlap at "the same 27 rows"; it is 26
+#     data rows each and 24 shared.
+#   * `shipSten + shipBG + shipFG == shipTot`, and the same widened, on 26 of 26 rows.
+#   * all 4 control pages read `wAdd` 0, `dTot` exactly 0 and `factor` 1.0000 — four determinism
+#     controls, free.
+#
+# ⚠️ NOT re-run, and carried over from the stranded header rather than checked: `wStenAdd` was
+# reproduced by ImageMagick on two pages (`Difference` of the two dumped stencils: 4,436 on Wilcox p2,
+# 2,365 on Jones p7). Those two numbers do match this file's `wStenAdd`, but the dumped PNGs are not
+# committed and the tool that wrote them is the rejected one, so this bullet is the one claim above that
+# cannot be re-derived. The review of the diff that committed this file found it inside the "all re-run"
+# list.
+#
+# ⚠️ `shrunkAsAllText` does not flip anywhere in this file, and neither does `backgroundWidth`, so
+# `region`'s SECOND reader (`pageIsAllText()`'s comparand) changes no verdict on this population.
+# ⚠️ Bytes are at the default Photo detail. ⚠️ These are sampled pages: scale with
+# `Tools/stratify-corpus.py`, never by multiplication.
+document	arm	page	w	h	otsu	inkPx	outPx	inkOut	mapFrac	stenFrac	stenD3	glyphN	glyphH	glyphRun	ccN	txtN	txtPx	txtShare	lineN	linePx	lineShare	topLine	rim1N	rim1Px	rim1Top	rim2N	rim2Px	rim2Top	rim3N	rim3Px	rim3Top	wAdd	wStenAdd	shipSten	shipBG	shipFG	shipTot	wideSten	wideBG	wideFG	wideTot	dTot	factor	shipShrunk	wideShrunk	shipBgW	wideBgW	wideInkOut	verdict	label	kind
+book/1954 - Why.pdf	pic	p4	1224	946	139	110844	5983	0.0540	0.0540	0.0757	0.0540	2468	9	2	42	12	444	0.0742	1	59	0.0099	27x17+1121+685	1	59	27x17+1121+685	1	59	27x17+1121+685	1	59	27x17+1121+685	459	128	19699	36220	12057	67976	19743	36199	12172	68114	138	1.0020	no	no	612	612	0.0529	ok	picture-arm-B	-
+book/1954 - Why.pdf	ctlpic	p7	1224	946	139	107273	7080	0.0660	0.0660	0.0908	0.0654	2255	9	2	40	12	761	0.1075	0	0	0.0000	-	0	0	-	0	0	-	0	0	-	0	0	18880	35313	11219	65412	18880	35313	11219	65412	0	1.0000	no	no	612	612	0.0660	ok	picture-arm-B	-
+book/Guilford_Psychometric Methods.pdf	ctl73	p1	920	1428	150	193959	601	0.0031	0.0031	0.0031	0.0000	2732	12	4	59	0	0	0.0000	0	0	0.0000	-	0	0	-	0	0	-	0	0	-	0	0	24873	2484	1817	29174	24873	2484	1817	29174	0	1.0000	yes	yes	115	115	0.0031	ok	nothing	-
+book/Ibson_2006_Picturing men.pdf	pic	p61	2100	3000	162	2369312	2254516	0.9515	0.9515	0.9686	0.9631	393	18	4	1521	22	1411	0.0006	1	477	0.0002	74x29+1396+771	1	477	74x29+1396+771	1	477	74x29+1396+771	1	477	74x29+1396+771	2146	0	7468	141543	12229	161240	7468	141543	12229	161240	0	1.0000	no	no	1050	1050	0.9513	ok	picture-arm-A	-
+book/Ibson_2006_Picturing men.pdf	pic	p122	1008	1440	172	361769	359906	0.9949	0.9949	0.9951	0.9947	68	9	2	4170	203	3836	0.0107	12	2032	0.0056	202x48+84+873	12	2032	202x48+84+873	12	2032	202x48+84+873	12	2032	202x48+84+873	26249	74	648	39437	2299	42384	710	39433	2725	42868	484	1.0114	no	no	504	504	0.9827	ok	picture-arm-A	-
+book/Ibson_2006_Picturing men.pdf	ctlpic	p162	1008	1440	160	603931	602580	0.9978	0.9978	0.9978	0.9978	54	9	2	707	17	321	0.0005	0	0	0.0000	-	0	0	-	0	0	-	0	0	-	0	0	558	40525	2164	43247	558	40525	2164	43247	0	1.0000	no	no	504	504	0.9978	ok	picture-arm-A	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	pic	p2	3872	5184	107	2529134	2389079	0.9446	0.9446	0.9562	0.9448	85	48	12	8789	59	21939	0.0092	2	10438	0.0044	444x154+366+3459	2	10438	444x154+366+3459	2	10438	444x154+366+3459	2	10438	444x154+366+3459	94818	0	4692	524751	30153	559596	4692	524751	30153	559596	0	1.0000	no	no	1936	1936	0.9313	ok	picture-arm-A	-
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	sub73	p3	2278	1834	165	340166	15299	0.0450	0.0450	0.0809	0.0443	4261	13	3	230	119	8531	0.5576	2	7533	0.4924	779x50+1260+211	2	7533	779x50+1260+211	2	7533	779x50+1260+211	2	7532	779x49+1260+212	67497	8674	43329	10821	2076	56226	44524	10585	2106	57215	989	1.0176	yes	yes	284	284	0.0215	ok	loses	type
+document/1881 - Harry Wilcox.pdf	pic	p2	3642	2449	121	272237	251186	0.9227	0.9227	0.9227	0.9203	288	5	3	1594	549	10078	0.0401	17	1694	0.0067	60x41+2771+1015	17	1692	60x41+2771+1015	17	1691	60x41+2771+1015	17	1690	60x41+2771+1015	21925	4436	4178	328399	14031	346608	5036	327824	15403	348263	1655	1.0048	no	no	1821	1821	0.9073	ok	picture-arm-A	-
+document/1881 - Harry Wilcox.pdf	pic	p6	3807	2441	127	373358	364895	0.9773	0.9773	0.9773	0.9765	70	7	3	2082	582	10181	0.0279	11	1594	0.0044	78x33+1400+734	11	1594	78x33+1400+734	11	1594	78x33+1400+734	11	1594	78x33+1400+734	12979	3701	1523	330864	11859	344246	2167	330434	13017	345618	1372	1.0040	no	no	1903	1903	0.9705	ok	picture-arm-A	-
+document/Atkinson_1939_Atkinson on firings_.pdf	sub73	p3	1935	2592	130	504651	19587	0.0388	0.0388	0.1231	0.0383	2582	20	4	50	27	8694	0.4439	3	8201	0.4187	337x54+1136+2083	3	8189	336x54+1137+2083	3	8175	336x54+1137+2083	3	8158	335x54+1138+2083	25137	6866	48362	11604	3840	63806	49030	11377	3873	64280	474	1.0074	yes	yes	241	241	0.0223	ok	loses	type+hand
+document/Ford_1941_Speech_.pdf	ctl73	p3	1935	2592	116	249860	2677	0.0107	0.0107	0.0749	0.0105	1650	18	4	48	8	561	0.2096	0	0	0.0000	-	0	0	-	0	0	-	0	0	-	0	0	29160	10062	3726	42948	29160	10062	3726	42948	0	1.0000	yes	yes	241	241	0.0107	ok	nothing	-
+document/Ford_1941_Speech_.pdf	sub73	p6	1935	2592	122	168071	945	0.0056	0.0056	0.0844	0.0061	1079	18	4	15	7	836	0.8847	1	446	0.4720	134x43+1681+199	1	446	134x43+1681+199	1	446	134x43+1681+199	1	446	134x43+1681+199	4370	247	19283	9152	2702	31137	19392	9141	2700	31233	96	1.0031	yes	yes	241	241	0.0030	ok	loses	type
+document/Herbert Marks papers.pdf	sub73	p11	1700	2200	213	88758	1314	0.0148	0.0148	0.4765	0.0393	2125	5	2	38	19	732	0.5571	1	423	0.3219	134x14+627+479	1	377	134x12+627+480	2	311	52x10+627+481	1	114	43x8+627+482	1876	218	14199	3693	1547	19439	14265	3680	1547	19492	53	1.0027	yes	yes	212	212	0.0096	ok	loses	type
+document/Herbert Marks papers.pdf	sub73	p12	1700	2200	213	106972	437	0.0041	0.0041	0.4701	0.0339	2752	5	2	21	13	422	0.9657	2	386	0.8833	72x10+606+911	1	145	72x8+606+912	1	94	65x6+606+913	1	64	65x4+606+914	1290	220	17634	4090	1728	23452	17676	4082	1726	23484	32	1.0014	yes	yes	212	212	0.0004	ok	nothing	-
+document/_1939_Former students to Board re Merriam_.pdf	sub73	p6	1935	2592	118	375072	2602	0.0069	0.0069	0.2266	0.0068	1578	21	4	32	8	2302	0.8847	1	2259	0.8682	472x53+951+2216	1	2216	472x52+951+2216	1	2174	472x51+951+2216	1	2121	472x50+951+2216	25016	2066	34175	14528	3923	52626	34593	14428	3932	52953	327	1.0062	yes	yes	241	241	0.0008	ok	loses	hand
+document/_1939_Former students to Board re Merriam_.pdf	sub73	p9	1935	2592	126	292516	381	0.0013	0.0013	0.4121	0.0037	3176	10	3	52	7	316	0.8294	1	303	0.7953	140x12+1456+1165	0	0	-	0	0	-	0	0	-	1680	193	35441	12173	2884	50498	35470	12163	2884	50517	19	1.0004	yes	yes	241	241	0.0003	ok	nothing	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	sub73	p2	1240	1647	160	185073	155	0.0008	0.0008	0.0008	0.0006	5166	10	2	7	5	147	0.9484	1	147	0.9484	43x9+639+829	1	133	42x8+640+830	1	119	42x7+640+831	1	100	42x6+640+832	387	178	32360	3246	2461	38067	32388	3228	2460	38076	9	1.0002	yes	yes	155	155	0.0000	ok	loses	type
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	sub73	p5	1240	1647	162	166685	5892	0.0353	0.0353	0.0353	0.0321	4757	10	2	142	117	3954	0.6711	4	3898	0.6616	488x18+107+1188	4	3695	488x17+107+1189	4	3508	488x16+107+1190	3	3274	488x15+107+1191	17506	4386	30091	3548	2408	36047	30630	3231	2392	36253	206	1.0057	yes	yes	155	155	0.0116	ok	loses	type
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	sub73	p7	1240	1647	162	162460	2225	0.0137	0.0137	0.0137	0.0134	4919	10	2	135	91	1995	0.8966	3	1897	0.8526	401x20+155+759	3	1852	401x20+155+759	3	1790	401x20+155+759	2	1669	401x20+155+759	15889	2365	30802	3383	2371	36556	31358	3196	2384	36938	382	1.0104	yes	yes	155	155	0.0013	ok	loses	type
+journalArticle/Scott_TK_The Scientific Selection of Salesmen.pdf	sub73	p3	1020	1257	149	180990	7462	0.0412	0.0412	0.0412	0.0297	3821	8	3	334	114	5319	0.7128	6	1796	0.2407	241x5+364+150	2	278	56x6+283+487	1	115	55x4+284+488	0	0	-	3404	1973	28305	3681	1925	33911	28397	3488	1917	33802	-109	0.9968	yes	yes	127	127	0.0311	ok	loses	type
+magazineArticle/Merriam_1913_Clutter of Things_The Independent.pdf	sub73	p2	1808	2807	136	846117	5336	0.0063	0.0063	0.0063	0.0034	4574	19	5	74	45	4649	0.8713	5	4256	0.7976	271x11+113+417	4	2414	132x11+1482+1099	1	489	85x11+874+1660	0	0	-	8452	4477	72396	7619	5966	85981	72558	7272	5959	85789	-192	0.9978	yes	yes	226	226	0.0012	ok	loses	type
+magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	sub73	p3	919	1357	147	186657	1624	0.0087	0.0087	0.0087	0.0064	3627	10	3	51	40	1586	0.9766	6	1574	0.9692	109x12+492+564	6	1399	108x11+493+565	3	912	101x10+500+566	3	858	101x9+500+567	4301	1895	33849	3525	1980	39354	33987	3348	1965	39300	-54	0.9986	yes	yes	114	114	0.0001	ok	loses	type
+magazineArticle/_1958_Executive Pay_Nation's Business (pre-1986); Washington.pdf	sub73	p5	915	1369	145	189074	1540	0.0081	0.0081	0.0081	0.0054	3311	10	3	50	38	1491	0.9682	4	1491	0.9682	260x12+335+709	3	1167	259x11+335+709	3	1005	259x10+335+709	2	478	126x9+468+709	3919	1694	35700	2923	1926	40549	35864	2764	1924	40552	3	1.0001	yes	yes	114	114	0.0001	ok	loses	type
+magazineArticle/_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	sub73	p1	1159	1573	163	204713	5863	0.0286	0.0286	0.0399	0.0156	6472	8	2	63	36	1089	0.1857	2	319	0.0544	113x5+459+1407	0	0	-	0	0	-	0	0	-	990	359	37552	4958	2481	44991	37575	4935	2479	44989	-2	1.0000	yes	yes	144	144	0.0270	ok	nothing	-
+newspaperArticle/Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK).pdf	sub73	p1	1997	3219	150	1155973	2708	0.0023	0.0023	0.0024	0.0012	5007	21	6	38	18	2307	0.8519	1	1780	0.6573	250x19+710+1489	1	1487	250x19+710+1489	0	0	-	0	0	-	3508	1942	111354	16748	9083	137185	111428	16698	9085	137211	26	1.0002	yes	yes	249	249	0.0008	ok	loses	type
