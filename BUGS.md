@@ -73,18 +73,33 @@ two no longer sum to the 24** (corrected 2026-08-21; see the question-3 paragrap
 ink outside the recognised words stored at an eighth**, with that page's own fraction beside it, on
 the success path only and with **no bar on the fraction**: the four sub-steps proved the losers and
 the non-losers interleave when sorted by it, and one measured loser prints `0.0000`, so any filter
-would drop a page known to lose content. C28 stays OPEN on questions 3 and 4 — a shape term and the
-price of widening — **both of which now have measurements over the whole 73-page population
-(2026-08-21) and neither of which is wired**. ⛔ The report is a report and not a fix: it says
+would drop a page known to lose content. C28 stays OPEN — ⚠️ but as of **2026-08-22 all five of its
+questions are MEASURED**, question 4 at both of its seams (layering 2026-08-21, `textRegionMask`
+2026-08-22), and **nothing is wired**, so what is left of the entry is the decision and the wiring. ⛔ The report is a report and not a fix: it says
 which pages were degraded, it does not stop them being degraded.
 ✅ **And question 4 now has a CORPUS figure at the layering seam, 2026-08-21** — per document over all
 16,987 pages, **~127 pages are still shrunk 8x/16x and ~19 of them lose content, 0.11% of the
 corpus**. The shape term's wiring refuses **~18 of the ~127** for +2,694,515 B and rescues **~14.7 of
 the ~19**; the cheapest page-wide bar refuses **~60** for +8,289,863 B and rescues **~17.9**. So the
 term is **30.9%** of the bar's pages and **32.5%** of its bytes, against the 39.0% and 38.1% these 41
-sampled rows read. `#### The corpus figure` is the measurement; the `textRegionMask` seam is still
-unpriced at any scale, **and as of 2026-08-22 it is the only thing under this entry that is** — the
-other item that was left, the population of sub-bar pages carrying a picture, is measured: **0 printed
+sampled rows read. `#### The corpus figure` is the measurement.
+✅ **AND THE `textRegionMask` SEAM IS PRICED 2026-08-22, which was the last thing under this entry
+unpriced at any scale — so question 4 is measured at BOTH seams and every one of this entry's five
+questions now has a measurement.** Letting the accepted line groups into the 1-bit stencil costs
+**789,825 → 792,140 B, +2,315 B, 1.0029x over the same 16 pages** the layering-seam wiring refuses for
++2,362,625 B — **0.098%**, 1,020x cheaper — with **6 of the 16 getting CHEAPER** (`fillHoles` hands the
+background a smoother image, recovering 47% of the stencil's growth) and **2.12%** of the spend on pages
+that lose nothing against 15.5%. Per document: **the same ~18.42 pages for +2,728 B** against
++2,694,515 B, **0.068% of C26's shipped ~4.0 MB**. The positive control is at 1:1 —
+`Jones et al_2010` p7's estimating equation is blank in the shipped stencil and fully legible in the
+widened one, for +369 B (`WIDEN-STENCIL-2026-08-22.tsv`, `#### The price at the textRegionMask seam`).
+⛔ **Cheap in bytes is not cheap in correctness, and the same run measured both halves**: on
+`1881 - Harry Wilcox` p2 the widening turns a pen ornament into a hard-edged 1-bit blob — R57's failure
+mode on a page that loses nothing — and because a widened region lowers `inkOutsideText`, the widening
+moves every page TOWARD the all-text verdict that shrinks backgrounds 8x (`1954 - Why` p4 goes
+0.0540 → 0.0524 against a bar of 0.045, so a more generous rule re-destroys the cartoon C26's bar move
+rescued). **Nothing is wired**; `Sources/` is untouched.
+The other item that was left, the population of sub-bar pages carrying a picture, is measured: **0 printed
 plates and 0 printed figures over the 73**, the largest non-text mark ≤3% of a page, two independent reads
 each finding 6 of 6 positive controls (`SUBBARPIX-2026-08-22.tsv`, `#### Are there PICTURES in the sub-bar
 73?`). ⛔ **But the bound is the GROUPING, not the component test, and one page of continuous tone shows
@@ -187,8 +202,10 @@ pixels. **The price**: the wiring refuses the shrink on **16 of 73** pages for *
 (3.99x, 15.5% of it on pages that lose nothing) against the cheapest page-wide bar rescuing the same
 13, which refuses **41 of 73** for **+6,202,065 B** (4.24x, **58.5%** of it on pages that do not lose content) — **38.1% of the
 bytes** — ⛔ but that bar rescues **15 of 16** losers where the term rescues 13, the two extra being
-hand-made marks costing +575,066 B. ⚠️ Bytes are at the default Photo detail, page by page, and the
-`textRegionMask` seam is still unpriced. Nothing is wired.
+hand-made marks costing +575,066 B. ⚠️ Bytes are at the default Photo detail, page by page. ✅ **The
+`textRegionMask` seam is priced 2026-08-22 at +2,315 B over the same 16 pages — 0.098% of this —
+but it admits only 50.03% of those pages' out-of-stencil ink, so it is not the same protection**; see
+`#### The price at the textRegionMask seam`. Nothing is wired.
 ✅ The same tool settles `score-text-route`'s open instrument question, because it holds `region`
 itself and its map therefore *is* `inkOutsideText`'s set (asserted on every row, exit 6 otherwise;
 `inkOut` reproduced the committed sweep on all 13): substituting the dumped stencil inflates the
@@ -4522,8 +4539,8 @@ the shipped rule does.**
 4 its first page-level byte price**: the wiring costs **+2,362,625 B over 16 of the 73 pages**, which
 is **38.1%** of what the cheapest page-wide bar rescuing the same pages costs, with **15.5%** of the
 spend on pages that do not lose content against that bar's **58.5%** — but the bar rescues **15 of 16** losers
-where the term rescues **13**. **So what is left of question 4 is the `textRegionMask` seam's price and
-a corpus figure; nothing is wired.**)*
+where the term rescues **13**. **So question 4 is now measured at BOTH seams — the corpus figure
+2026-08-21, the `textRegionMask` seam 2026-08-22 — and nothing is wired.**)*
 
 **⛔ READ `C26` FIRST**, two sections of it in particular: `#### Sub-step 4, the benefit` is the
 evidence for everything below, and `#### The constant moved` is what shipped on 2026-08-19. **This is
@@ -5699,9 +5716,18 @@ has nothing at all to say (this one).
    **16 of 73 pages and +2,362,625 B against 41 of 73 and +6,202,065 B — 38.1% of the bytes** — with
    the share of the spend landing on pages that do not lose content falling from **58.5% to 15.5%**. ⛔ Not
    equal protection: the bar also rescues `Ford_1941` p1 and `Doermann_1967` p21, two hand-made marks,
-   for +575,066 B of the +3,839,440 B difference. What is still owed is the **stencil** seam's price
-   (3b's finding) and a corpus figure; the 73 are sampled pages. What follows is the pre-existing
-   T15 arithmetic for the stencil seam, which stands: T15 measured the confined **stencil** at 1.33x smaller in total over 74 corpus picture
+   for +575,066 B of the +3,839,440 B difference. ✅ **The corpus figure landed 2026-08-21
+   (`#### The corpus figure`) and the STENCIL seam's price landed 2026-08-22
+   (`#### The price at the textRegionMask seam`) — so question 4 is measured at both seams and nothing
+   under this heading is unpriced.** The stencil seam is **+2,315 B over the same 16 pages** against the
+   layering seam's +2,362,625 B — **0.098%**, and ~18.42 corpus pages for **+2,728 B** against
+   +2,694,515 B — with the estimating equation legible in the widened stencil and blank in the shipped
+   one. ⛔ What is cheap in bytes is not cheap in correctness: the same widening turns `Wilcox` p2's pen
+   ornament into a 1-bit blob, and it moves every page toward the all-text verdict that shrinks
+   backgrounds 8x. Read that section's hazard subsection before wiring anything.
+   ⚠️ The T15 arithmetic below was this entry's only estimate for the stencil seam and it
+   is now superseded by a measurement — kept because it prices a DIFFERENT widening, the blind one:
+   T15 measured the confined **stencil** at 1.33x smaller in total over 74 corpus picture
    pages and never larger on a single page. But the *page* total is the number a fix would be judged
    on, and there it is **1.07x**, over the 26 pages where blind and shipped layering differ in exactly
    one way; T15 records that the bigger whole-sample gap is **84% R50's shrink** rather than
@@ -7661,6 +7687,171 @@ about its own descriptions rather than its numbers.
   `_1967_Yearly Increase` p1 and `Scott_TK` p3 reproduce `SHAPETERM-73-2026-08-21.tsv` on `inkOut`,
   `lineN`, `linePx` and `topLine` to every digit, and `--self-test` is 6 of 6. ⚠️ That is a re-run of
   unchanged code, not a control across a change.
+
+#### The price at the `textRegionMask` seam — question 4's last owed number, and it is **1,020x cheaper than the layering seam over the same 16 pages**: +2,315 B against +2,362,625 B, with the estimating equation legible in the widened stencil and blank in the shipped one — MEASURED 2026-08-22
+
+This is the seam question 3's own sentence names, the one 3b's bound does not cover, and the last thing
+under this entry that was unpriced at any scale. `WIDEN-STENCIL-2026-08-22.tsv`, 26 pages in two arms.
+
+**The instrument is production, unmodified.** `mrcLayers` does exactly two things with `boxes` — refuses
+an empty list (`Flattener.swift:2664`) and builds `textRegionMask` (`:2696`) — so handing it **one
+synthetic box per accepted line group** is exactly the word Vision would have returned had it recognised
+that line, and the widening needs no new override seam beside
+`textPageInkOutsideThresholdOverride`. Two `mrcLayers` calls a page differing in that one property,
+`WIDENBYTES=1` on `Tools/score-shape-term.swift`, one binary, bytes = jbig2 stencil + background +
+foreground at the default Photo detail.
+
+##### The number, over the same 16 pages the layering-seam wiring refuses
+
+| seam | pages | before | after | delta | ratio | spend on pages that lose nothing |
+|---|---|---|---|---|---|---|
+| layering (`inkOut < 0.045 AND lineN == 0`) | 16 of 73 | 789,825 | 3,152,450 | **+2,362,625** | 3.99x | 15.5% |
+| **`textRegionMask` (groups into the stencil)** | **16 of 73** | **789,825** | **792,140** | **+2,315** | **1.0029x** | **2.12%** |
+| cheapest page-wide bar | 41 of 73 | 1,915,380 | 8,117,445 | +6,202,065 | 4.24x | 58.5% |
+
+**+2,315 B is 0.098% of +2,362,625 B on the same population** — 1,020x — and per page it is **+145 B**
+against +147,664 B. Split by verdict: the **13 that lose content** cost **+2,266 B** (1.0034x) and the
+**3 rims that lose nothing** cost **+49 B** (1.0004x), so 2.12% of the spend buys nothing, against
+15.5% at the layering seam and 58.5% at the bar. Per page the whole range is **−218 B to +999 B**, and
+**6 of the 16 get CHEAPER**.
+
+⚠️ **Do not read "1,020x" as a corpus figure or as a claim about widening in general.** It is a ratio
+between two arms of one 16-page population, which is the mistake this entry has now recorded four times
+(the stencil-ink ratio, the `-normalize`d difference map, C26's 5.96x, and `Xin Qu`'s page share).
+Scaled per document by `Tools/stratify-corpus.py` over the same census it is **the same ~18.42 pages of
+16,987 for +2,728 B** (7 pages and +412 B exact, in 6 fully-sampled documents) against the layering
+seam's **+2,694,515 B** — **0.101%** — and against C26's shipped ~4.0 MB it is **0.068% of a fix this
+project has already decided it could afford**.
+
+⛔ **AND IT IS NOT THE SAME PROTECTION — which is the sharpest thing in this section, and the
+adversarial review of this diff found it.** Refusing the shrink keeps the *whole* background at full
+resolution, so +2,362,625 B protects all **73,370** out-of-stencil ink pixels on those 16 pages. The
+widening admits only what the term accepted: Σ `linePx` = **36,709 px, 50.03%** of Σ `outPx`, and per
+page anywhere from **5.4%** (`_1967_Yearly Increase` p1) to **96.9%** (`_1958_Executive Pay` p3) —
+**24.1%** on `Scott_TK` p3, a *measured content-loser*. The Sauvola ink actually admitted to the stencil
+agrees at **38,369 px, ~52%**. So the two rows of that table buy different amounts of ink, and **the
+ratio must never be quoted without the coverage beside it**: 1,020x cheaper, at half the coverage.
+
+##### Why six pages get cheaper: the aggregate is measured, the mechanism is reasoned
+
+Over the 16, stencil bytes go **624,832 → 629,223 (+4,391)** and the two tone layers go
+**164,993 → 162,917 (−2,076)**. `fillHoles` fills what the stencil covers, so a wider stencil hands the
+background a smoother image, and that recovers **47%** of the stencil's own growth. On `Merriam_1913`
+p2 it more than recovers it: **−218 B** while 4,510 stencil pixels were added.
+
+⚠️ **`fillHoles` is the reasoned half and is not isolated.** The tool prints one figure for background
+plus foreground, and a wider stencil also enlarges `inverse`, so the foreground can move the other way;
+nothing here separates them. On the **picture** arm the tone delta goes the other way on **all four**
+pages that move — `1954 - Why` p4 +52 B, `Wilcox` p2 +666 B, `Wilcox` p6 +803 B, `Ibson_2006` p122
++588 B — so the sign is not a property of widening. Separating them wants a `bg` and an `fg` byte
+column, which this run does not have.
+
+##### The positive control, read at 1:1 in the page's own frame
+
+`Jones et al_2010` p7's **estimating equation** — the loss C28 sub-step 2 found at `inkOut` 0.0137 — is
+**blank white in `-stencil-ship.png` and fully legible in `-stencil-wide.png`** over the same
+`440x60+140+740` crop: `= β_y_1 y_{i,t−1} + β_k k_it + β_k_1 k_{i,t−1} + β_l l_it + β_l_1 l_{i,t−1}`.
+The page's whole price is **+369 B**. Both PNGs are the ones `mrcLayers` handed to jbig2 and the byte
+columns counted, copied rather than rebuilt, under `SHAPEDUMP` + `WIDENBYTES=1`.
+
+⚠️ **The price is measured on 13 pages and the benefit on ONE.** All 13 content-losers grow the stencil
+(`wideStenPx − stenPx` from **+180** to **+8,945** px), which says ink entered the 1-bit layer; only
+`Jones et al_2010` p7 was read at 1:1, which is the only thing that says the *words* did. The tool's own
+comment beside those columns says exactly this, and it is the same distinction that made C26 sub-step
+4's whole-page difference maps wrong twice.
+
+⛔ **And the negative half of that control is on a picture page**: `1881 - Harry Wilcox` p2's pen
+ornament is blank in the shipped stencil and **hard-edged black in the widened one**, read at 1:1 over
+`360x220+2560+930`. That is R57's failure mode — a tonal mark rendered as a 1-bit blob — arriving on a
+page that loses nothing, for +2,078 B. **The byte price of this seam is cheap; its correctness price is
+not, and it is the same false positives 3b measured.**
+
+##### The picture arm: where the ink actually goes
+
+All ten of `SHAPETERM-PICTURES-2026-08-21.tsv`, same constants. The term fires on 6, and **4 of the 10
+admit ink to the stencil**: `Wilcox` p2 **+7,485 px**, `Wilcox` p6 **+6,548 px**, `Ibson_2006` p122
+**+506 px** (halftone) and `1954 - Why` p4 **+239 px** (a hit on its own lost cartoon). ✅ **Two pages
+fire and admit NOTHING** — `Riesman - 1954` p2 and `Ibson_2006` p61 read `lineN` 2 and 1 and
+`wideStenPx − stenPx` **0**, because the map's components come from page-wide Otsu and the stencil from
+Sauvola, and on those two the accepted ink is in the map but **not in the Sauvola stencil**. The whole picture arm costs **+4,694 B** over
+ten pages. `1954 - Why` p6 and p7 stay at **+0 B**: `lineN` is 0 there, so this seam does **not** rescue
+C26's founding cartoons and 3b's two false negatives are untouched.
+
+##### ⛔ The hazard this measurement found, and it is not a byte
+
+**A widened region lowers `inkOutsideText`, so the widening pushes every page TOWARD the all-text
+verdict — and the all-text verdict is what shrinks the background 8x.** On this sample no page crossed:
+`shipBg == wideBg` on **26 of 26**. But `1954 - Why` p4 — a picture page whose cartoon C26's bar move
+rescued at 0.0540 — reads **0.0524** widened, against a bar of **0.045**. ⚠️ **How far that is,
+quantified rather than asserted**: this widening bought **0.0016** and the bar is **0.0079** away, so
+flipping p4 needs about **5x** the effect measured here. The direction is structural — `textRegionMask`
+ORs boxes in, so the region is monotone in the box list and `wideInkOut <= inkOut` on **26 of 26** (22
+lower, 4 equal, the four `lineN == 0` rows) — the magnitude is not. And the picture page **nearest** the
+bar cannot be moved by this rule at all: `1954 - Why` p6 sits at **0.0493**, the 1.10x margin 3b already
+records, with `lineN` **0**. A more generous widening (a
+lower `lineMinimumMembers`, a dilated group rect, a second shape term) is what would flip p4 and
+shrink the cartoon 8x again, which is C26 reopened by C28's own fix. Anything wired here must either
+hold `pageIsAllText`'s region at the *recognised* one or measure this. Unmeasured: how close the other
+109 layered pages sit to the bar under a widening.
+
+##### What this does NOT settle
+
+- **It is not searchability.** The words enter the *image*; they are still in no text layer, because
+  `SearchableWriter` draws from the same boxes and a synthetic box carries no string. A fix must widen
+  the stencil **only** — feeding synthetic boxes to the recogniser's output would put empty invisible
+  text on the page.
+- **26 pages, one setting.** Balanced (`mrcBackgroundDownsample` 2, pinned by the tool's own check
+  against `PhotoDetail.balanced.downsample`). Nothing here says what the price is at `smallest`, and
+  question 2b's one content loss lives there.
+- **The 57 non-firing sub-bar pages are not in it.** They cost exactly 0 by construction (`lineN` 0
+  means no synthetic box, so the two calls are identical), which is asserted by the tool's own check 7
+  rather than measured on those pages.
+- **Nothing is wired.** `Sources/` is untouched. The rule being priced is still post-hoc, still reads 0
+  on four hand-made marks, still fires on 6 of 10 picture pages, and `_1939_Former students` p2's
+  pencilled annotation is still out of reach of every term this campaign has (`outPx` 0).
+
+##### Controls
+
+- **The cross-tool control**: `shipBytes` is **byte-identical to
+  `SHAPETERM-BYTES-2026-08-21.tsv`'s `layered` column on 16 of 16 rows**, and the published baseline
+  789,825 B reproduces as a sum and page for page. ⚠️ **What it spans, stated rather than ranked** — the
+  review of this diff refused a first draft calling it "the strongest control in this campaign": two
+  binaries, two processes, two days, the two tools' duplicated glue, and the determinism of the JPEG and
+  jbig2 encoders. What it does **not** span: `mrcLayers`, `textRegionMask`, `JBIG2`, the recogniser and
+  the renderer are the same shipped code in both, not two implementations. One behavioural difference it
+  hides: where layering declines `score-text-route` prints `bytes(jpegURL)` and this tool prints `-`, so
+  the two columns are not the same quantity in general — all 16 layered here, so it did not bite.
+- ✅ **Four measured determinism controls come free**: the four `lineN == 0` rows are the same
+  `mrcLayers` call twice on identical input and read **+0 B** with byte-identical `shipSten`/`wideSten`,
+  which rules out JPEG or jbig2 nondeterminism empirically rather than by assumption.
+- `wideN == lineN` on **26 of 26**: one synthetic box per accepted group, no group lost in conversion.
+  ⚠️ That is also the only thing testing `lineBoxes`' rejection guard — no check exercises it, so a
+  strict `<` there would silently drop single-row groups and only this column would notice.
+- The tool's own 31 columns are unchanged and the new ones are **appended after `verdict`**. ⚠️ A first
+  draft said "every committed `SHAPETERM-*.tsv` remains a byte-identical prefix", and the review refuted
+  it: only `SHAPETERM-PICTURES-RIM` is a prefix — the 73 and RIM files carry a different second column
+  and four trailing label columns, and `PICTURES` has no rim sweep. What reproduces is **806 cells over
+  26 of 26 rows** (22 shared columns against 73/PICTURES, 9 rim columns against RIM/PICTURES-RIM), **0
+  differences**.
+- `--self-test` is **9** checks, 6 → 9. The three new ones were watched failing under two mutations
+  built from this exact source: a **y-flip** in `lineBoxes` (`y: 1 - (maxY+1)/h`) kills 3, and
+  `lineBoxes` returning `[]` kills 3 including "the widened region is no larger than the shipped one",
+  which is the check that stops this whole column set reading "free" on every page. ⚠️ Two limits the
+  review found: **check 8 survives the y-flip** (on its 100-row scene the flipped rect still overlaps
+  the missed ink), so the frame rests on check 7 alone; and **dropping the `+ 1` from the box's width
+  and height passes all three**, because a 25% `mrcBoxPadding` swamps a one-pixel error.
+- ⚠️ **The artefact cannot prove `wideRefused` was 0**, because it was assembled one invocation per page
+  and no summary line is in it. What is checked instead: **0 dashes across columns 34-44 on all 26
+  rows**, so every published row is a real measurement — but an `awk` sum would read a `-` as 0, which is
+  the silent-zero class `stratify-corpus.py` exits 5 for.
+- ⚠️ **Two values production hands back are recomputed instead**: `MRCLayers` carries
+  `inkOutsideText` and `shrunkAsAllText`, and this run reads neither — `wideInkOut` is computed again
+  from the same grey and Otsu, and the all-text verdict is inferred from `shipBg`/`wideBg` string
+  equality (sound at Balanced, where the factor is 2 or 8 and the widths always differ). A free control
+  was left on the table, and a second copy of shipped arithmetic is T15's shape.
+- ⚠️ **No `Tools/mutate.py` catalogue entry and no scoped run.** Nothing in `Sources/` changed, so
+  there is no production constant or guard to mutate; the two mutations above are of the instrument and
+  were run as standalone builds. A catalogue entry becomes owed the moment any of this is wired.
 
 #### What this entry is NOT
 

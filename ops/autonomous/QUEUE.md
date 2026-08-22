@@ -502,6 +502,27 @@ happens.**
       **So questions 1, 2, 3 and 5 are measured, question 4 is measured at the LAYERING seam, and what
       is left is question 4 at the `textRegionMask` seam** — the seam question 3's own sentence names,
       the one 3b's bound does NOT cover, and now the only thing under this entry unpriced at any scale.
+      ✅ **PRICED 2026-08-22, so ALL FIVE QUESTIONS ARE MEASURED and what is left of this entry is the
+      DECISION AND THE WIRING, not another measurement. Do NOT re-run it**; the `c28-stencilseam`
+      sub-box below and `BUGS.md` C28 `#### The price at the textRegionMask seam` carry it, with
+      `WIDEN-STENCIL-2026-08-22.tsv`. Over the **same 16 pages** the layering wiring refuses:
+      **+2,315 B, 1.0029x** against **+2,362,625 B** — **0.098%**, 1,020x cheaper — **2.12%** of it on
+      pages that lose nothing, **6 of the 16 getting CHEAPER**, and per document **~18.42 pages for
+      +2,728 B**, which is **0.068% of C26's shipped ~4.0 MB**. ⛔ **NOT the same protection**: the shrink
+      refusal keeps all **73,370** out-of-stencil ink pixels on those 16 pages, the widening admits
+      **36,709 — 50.03%** (5.4% to 96.9% per page, **24.1%** on `Scott_TK` p3, a measured loser), so
+      **quote the coverage beside the ratio**. ✅ Positive control at 1:1:
+      `Jones et al_2010` p7's estimating equation is blank in the shipped stencil and legible in the
+      widened one for +369 B — ⚠️ read at 1:1 on **1 of the 13** losers; the other twelve have only a
+      stencil that grew.
+      ⛔ **Do not read that as "the fix is nearly free".** The same run measured the correctness price:
+      `Wilcox` p2's pen ornament becomes a hard-edged 1-bit blob (R57's failure mode, on a page that
+      loses nothing), 4 of the 10 picture pages admit ink at all, and **a widened region lowers
+      `inkOutsideText`, so widening pushes every page toward the all-text verdict that shrinks
+      backgrounds 8x** — `1954 - Why` p4 goes 0.0540 → **0.0524** against a bar of 0.045, i.e. a more
+      generous rule re-destroys the cartoon C26's bar move rescued. Anything wired must hold
+      `pageIsAllText`'s region at the **recognised** one, or measure that. It also buys **no
+      searchability**: a synthetic box carries no string, so `SearchableWriter` still has nothing to draw.
       ⚠️ Do not quote T15's 1.33x as the page-level figure, and note `linePx` is an area and not a byte
       count.
       ✅ **THE OTHER THING THAT WAS LEFT — the population of sub-bar pages carrying a picture — IS
@@ -1279,6 +1300,49 @@ happens.**
       the local variant. **Nothing is wired** — `Sources/` untouched, so no mutant and no
       `fault-inject.sh` case owed — and the `textRegionMask` seam is still unpriced at **any** scale.
       (context: BUGS.md C28 `#### The corpus figure`)
+- [x] **c28-stencilseam** — **DONE 2026-08-22. Question 4's last owed number: what it costs to let the
+      accepted line groups into the 1-bit stencil, and it is 1,020x cheaper than the layering seam over
+      the same 16 pages.** Do not re-run it; `WIDEN-STENCIL-2026-08-22.tsv` (26 rows, 44 columns) and
+      `BUGS.md` C28 `#### The price at the textRegionMask seam` carry it. **This closes the last thing
+      under C28 that was unpriced at any scale, so all five of its questions are measured and what
+      remains is the decision and the wiring.**
+      **The instrument is production, unmodified**: `mrcLayers` reads `boxes` only to refuse an empty
+      list (`Flattener.swift:2664`) and to build `textRegionMask` (`:2696`), so `WIDENBYTES=1` on
+      `Tools/score-shape-term.swift` hands it **one synthetic box per accepted line group** and calls it
+      twice a page, differing in that one property. **No new override seam, nothing in `Sources/`.**
+      **The numbers**: 16 sub-bar pages (`lineN >= 1`, exactly the population the layering wiring
+      refuses) **789,825 → 792,140 B, +2,315 B, 1.0029x, +145 B/page**, against the layering seam's
+      +2,362,625 B / 3.99x / +147,664 B per page — **0.098%**. 13 content-losers +2,266 B, 3 rims
+      +49 B, so **2.12%** of the spend buys nothing against 15.5% and the bar's 58.5%. Range **−218 to
+      +999 B**, and **6 of 16 get cheaper** — measured mechanism: stencil **+4,391 B**, tone layers
+      **−2,076 B**, because `fillHoles` fills what the stencil covers. Per document (`stratify-corpus.py`,
+      same census) **18.42 pages for +2,728 B**, 7 pages / +412 B exact.
+      ✅ **Positive control at 1:1, two-sided**: `Jones et al_2010` p7's estimating equation is blank
+      white in `-stencil-ship.png` and fully legible in `-stencil-wide.png` over one crop, for +369 B —
+      and `Wilcox` p2's pen ornament is blank shipped and **hard-edged black** widened, which is R57's
+      failure mode on a page that loses nothing.
+      ⛔ **The hazard, which is worth more than the price**: a widened region lowers `inkOutsideText`, so
+      widening pushes every page **toward** the all-text verdict that shrinks backgrounds 8x.
+      `shipBg == wideBg` on 26 of 26 here, but `1954 - Why` p4 moves 0.0540 → **0.0524** against a bar of
+      0.045 — ⚠️ 0.0016 bought against 0.0079 needed, so about 5x this effect, and p6 at 0.0493 has
+      `lineN` 0 and cannot move at all — a more generous rule flips p4 and re-destroys the cartoon C26's
+      bar move rescued. Wire `pageIsAllText`'s region at the **recognised** one, or measure it.
+      **The cross-tool control**: `shipBytes` is byte-identical to
+      `SHAPETERM-BYTES-2026-08-21.tsv`'s `layered` on **16 of 16** rows — a *different tool*
+      (`score-text-route`) with its own `mrcLayers` call site and its own jbig2 handling, reproducing the
+      published 789,825 B as a sum and page for page. ⚠️ It spans two binaries, two processes and the
+      encoders' determinism — **not** `mrcLayers`, `textRegionMask` or `JBIG2`, which are the same
+      shipped code in both; a first draft over-ranked it as "the strongest control this campaign has"
+      and the review refused that. 806 shared cells over 26 of 26 rows reproduce the four
+      `SHAPETERM-*` files, 0 differences — ⚠️ but only `SHAPETERM-PICTURES-RIM` is a column *prefix* of
+      this file, which a first draft claimed of all four.
+      ⚠️ **What it does not settle**: no searchability (a synthetic box carries no string); Balanced only;
+      the 57 non-firing sub-bar pages cost 0 **by construction**, asserted by the tool's check 7 rather
+      than measured; picture arm +4,694 B over ten pages with 2 of the 6 firings admitting **zero**
+      pixels (Otsu found the ink, Sauvola did not). The tool is **9** self-test checks (6 → 9), the three
+      new ones watched failing under a `lineBoxes` y-flip (kills 3, including the mirrored-rows half) and
+      `lineBoxes` returning `[]` (kills 3, including "the widened region is no larger"). No `mutate.py`
+      entry is owed: nothing in `Sources/` changed.
 - [x] **c28-subbarpix** — **DONE 2026-08-22. The sub-bar 73 are inventoried for pictures: the population
       holds NO PRINTED PLATE, and the bound the shape term relies on turns out to be the GROUPING rather
       than the component test.** Do not re-run it; `SUBBARPIX-2026-08-22.tsv` (80 rows, 16 columns) and

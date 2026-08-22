@@ -386,7 +386,19 @@ trade rather than a fix.
 ⛔ **And the bound covers only one of the two seams this entry names**: `textRegionMask` runs
 unconditionally on every layered page (`Flattener.swift:2696`), so under the seam question 3's own
 sentence describes those six pages would admit halftone dots into the 1-bit stencil — R57's failure
-mode, unpriced. `lineShare` separates 22 of the **23** pages run so far and is the **seventh share in a
+mode, unpriced when this was written. ✅ **PRICED 2026-08-22, and it is 1,020x cheaper than the layering
+seam over the same 16 pages** — +2,315 B / 1.0029x against +2,362,625 B / 3.99x, 2.12% of the spend on
+pages that lose nothing against 15.5%, 6 of the 16 getting CHEAPER, ~18.42 corpus pages for +2,728 B
+(0.068% of C26's shipped ~4.0 MB), with `Jones et al_2010` p7's estimating equation blank in the shipped
+stencil and fully legible in the widened one for +369 B. **So all five of C28's questions are measured
+and what is left of the entry is the decision and the wiring.** ⛔ **But the R57 failure mode is real and
+the same run measured it**: `1881 - Harry Wilcox` p2's pen ornament becomes a hard-edged 1-bit blob on a
+page that loses nothing, 4 of the 10 picture pages admit ink at all, and — the part worth more than the
+price — **a widened region lowers `inkOutsideText`, so widening pushes every page TOWARD the all-text
+verdict that shrinks backgrounds 8x** (`1954 - Why` p4, 0.0540 → 0.0524 against a bar of 0.045, so a
+more generous rule re-destroys the cartoon C26's bar move rescued). `WIDEN-STENCIL-2026-08-22.tsv` and
+`BUGS.md` C28 `#### The price at the textRegionMask seam`; nothing is wired.
+`lineShare` separates 22 of the **23** pages run so far and is the **seventh share in a
 register that has refused six**; read the entry's section before building on it.
 ✅ **THE CONVENIENCE SAMPLE IS GONE AND QUESTION 4 HAS A PRICE, 2026-08-21** — `SHAPETERM-73-2026-08-21.tsv`
 and `BUGS.md` C28 `#### The same shape term over ALL 73`. The population the 13 were a sample of is

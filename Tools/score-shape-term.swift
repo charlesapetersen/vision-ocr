@@ -176,6 +176,7 @@
 //   /tmp/score-shape-term --self-test
 //   /tmp/score-shape-term "<pdf>" [page…]              # 1-indexed; default: a spread
 //   SHAPEDUMP=/tmp/look /tmp/score-shape-term "<pdf>" 3
+//   WIDENBYTES=1 /tmp/score-shape-term "<pdf>" 3       # + the eleven byte columns
 //
 // ⚠️ The copied file must be named `main.swift` or swiftc rejects top-level code with a
 // pile of misleading errors about the expressions themselves — recorded in C28's 2b
@@ -188,6 +189,9 @@
 //   <stem>-textish.png  only the components the shape rule accepts
 //   <stem>-lines.png    only the components in an accepted line group
 //   <stem>-rim<r>-lines.png   the same, per rim radius: one file for each of `rimRadii`
+//   <stem>-stencil-ship.png   under `WIDENBYTES=1` only: the 1-bit stencil `mrcLayers`
+//   <stem>-stencil-wide.png   built each way, copied rather than rebuilt, so the byte
+//                             columns and the picture are the same two files
 //
 // Reading `-lines.png` beside `-source.png` at the same crop is the positive control the
 // share columns cannot be: it says whether the term named the words the register says
@@ -195,12 +199,47 @@
 // control at the radius under consideration, which is what says whether a surviving
 // group still names the lost words or only a fragment of them.
 //
-// Exit codes: 1 unreadable PDF, 2 a refused `SHAPEDUMP`, 5 a failed self-test,
+// `WIDENBYTES=1` prices C28's question 4 at the `textRegionMask` seam: what it costs, in
+// published bytes, to let the accepted line groups into the 1-bit stencil.
+//
+// The instrument is production's own `mrcLayers`, called twice on the same page with ONE
+// property different — the box list. `mrcLayers` does exactly two things with `boxes`
+// (refuses an empty list, `Flattener.swift:2664`, and builds `textRegionMask`, `:2696`),
+// so a synthetic box over a line group's rect is exactly the word Vision would have
+// returned had it recognised that line. **Nothing in `Sources/` moves for this**, which is
+// what keeps it a measurement of production rather than of a second copy of it, and it is
+// why there is no new override seam beside `textPageInkOutsideThresholdOverride`.
+//
+//   wideN       synthetic boxes added — 0 wherever `lineN` is 0, and those rows are the
+//               negative control: the same call twice, so the two totals must agree
+//   wideInkOut  `inkOutsideText` with the widened region, beside the shipped `inkOut`
+//   stenPx / wideStenPx   Sauvola ink inside each region — whether the missed ink actually
+//               ENTERED the stencil, which the map's Otsu components cannot say
+//   shipSten / wideSten   the jbig2 stencil alone, each way
+//   shipBytes / wideBytes / byteDelta   stencil + background + foreground, and the signed
+//               difference: the number a widening is judged on
+//   shipBg / wideBg   the background's stored dimensions each way
+//
+// ⚠️ **Read the two `Bg` columns before `byteDelta`.** The widening moves two things at
+// once: the ink enters the stencil, AND `pageIsAllText` reads the widened region, so
+// `inkOut` falls and a page that was refused the 8x shrink can be granted it. That is not
+// a confound to remove — it is the candidate fix's own arithmetic, because the ink the
+// shrink would have destroyed is in the 1-bit layer by then — but it means `byteDelta` can
+// be NEGATIVE, and a negative delta is a page that got cheaper *and* kept its content.
+//
+// ⚠️ The synthetic box is the group's bounding RECT, so it admits whatever else shares
+// that rect. A recognised word box already does that; it makes every byte figure an upper
+// bound on the widening rather than an estimate of it.
+//
+// Exit codes: 1 unreadable PDF, 2 a refused `SHAPEDUMP` or `WIDENBYTES`, **3 `WIDENBYTES`
+// was asked for and no jbig2 was found**, 5 a failed self-test,
 // **6 the identity above failed on some page** — the rows are still printed, because a
 // broken map is worth seeing, but no share column on that page means anything.
 //
-// It needs no jbig2 and never layers a page: there are no byte columns here, which is
-// what makes it cheaper than `score-text-route` on the same pages.
+// Without `WIDENBYTES` it needs no jbig2 and never layers a page, which is what makes it
+// cheaper than `score-text-route` on the same pages. With it, it costs two full layerings
+// and two jbig2 encodes per page on top of everything above, so it is a knob and not the
+// default.
 import AppKit
 import CoreGraphics
 import Foundation
@@ -512,6 +551,32 @@ func lines(_ comps: [Comp], accepted: [Int], glyphHeight: Double) -> [Line] {
     return out
 }
 
+/// The accepted line groups as word boxes, in `textRegionMask`'s own frame.
+///
+/// C28 question 4 at the `textRegionMask` seam. This is the whole of the widening: hand
+/// `mrcLayers` more boxes and it builds a wider region, admits more of the page's ink to
+/// the 1-bit stencil, and reads a smaller `inkOutsideText` — all through shipped code.
+///
+/// **The frame is the thing to get right.** `textRegionMask` reads `b.y` as a fraction of
+/// the render's height counted from the TOP: `Recogniser.swift:465` flips Vision's
+/// bottom-up origin (`y: 1 - origin.y - height`) before a box ever reaches it. A `Line`'s
+/// `minY` is a row index in that same render, so the conversion is a plain divide — and a
+/// flip here would price a rectangle on the *other half of the page* while every column
+/// still printed a reasonable-looking number. The self-test pins both halves.
+///
+/// One function, called by `main` and by the check, for the reason `inkOutsideMap`'s
+/// comment gives: two copies of this arithmetic is a check that cannot fail.
+func lineBoxes(_ found: [Line], width w: Int, height h: Int) -> [SearchableWriter.BoundingBox] {
+    guard w > 0, h > 0 else { return [] }
+    return found.compactMap { l in
+        guard l.minX <= l.maxX, l.minY <= l.maxY, l.minX >= 0, l.minY >= 0 else { return nil }
+        return SearchableWriter.BoundingBox(x: Double(l.minX) / Double(w),
+                                           y: Double(l.minY) / Double(h),
+                                           width: Double(l.maxX - l.minX + 1) / Double(w),
+                                           height: Double(l.maxY - l.minY + 1) / Double(h))
+    }
+}
+
 func median(_ xs: [Int]) -> Double {
     guard !xs.isEmpty else { return 0 }
     let s = xs.sorted()
@@ -682,6 +747,85 @@ func selfTest() -> [String] {
         }
     }
 
+    // 7. `lineBoxes` puts the group where the group is — the frame, both halves.
+    //
+    //    Deliberately on a NON-square page and off-centre vertically, because those are
+    //    the two ways a wrong frame hides: on a square page a transposed box lands
+    //    plausibly, and a group straddling the middle survives a y-flip. Rows 10-19 of a
+    //    200-row page mirror to rows 180-189, so the negative half is the flip's own
+    //    answer and not merely "somewhere else".
+    let bw = 100, bh = 200
+    var probe = Line()
+    probe.minX = 30; probe.maxX = 49; probe.minY = 10; probe.maxY = 19
+    let boxed = lineBoxes([probe], width: bw, height: bh)
+    if boxed.count != 1 {
+        bad.append("lineBoxes: made \(boxed.count) boxes from one group, not 1")
+    } else {
+        let r = Flattener.textRegionMask(boxed, width: bw, height: bh)
+        func covered(_ x: Int, _ y: Int) -> Bool { r.count == bw * bh && r[y * bw + x] }
+        if !covered(35, 15) { bad.append("lineBoxes: the group's own middle is not covered") }
+        if !covered(30, 10) || !covered(49, 19) {
+            bad.append("lineBoxes: a corner of the group is not covered")
+        }
+        if covered(35, 185) {
+            bad.append("lineBoxes: the vertically MIRRORED rows are covered — y is flipped")
+        }
+        if covered(15, 15) {
+            bad.append("lineBoxes: a column well left of the group is covered — x is wrong")
+        }
+        // `mrcBoxPadding` is a quarter of the box's height and is production's, so the
+        // pad is real and must not be mistaken for the box: 10 rows tall pads 2.5 rows,
+        // so row 5 is outside it and row 185 is nowhere near.
+        if covered(35, 5) {
+            bad.append("lineBoxes: row 5 is covered — the box is taller than its own group")
+        }
+    }
+    // …and an empty group list widens nothing, which is what makes a `lineN == 0` row a
+    // negative control rather than an untested path.
+    if !lineBoxes([], width: bw, height: bh).isEmpty {
+        bad.append("lineBoxes: an empty group list produced boxes")
+    }
+
+    // 8. The widening is a superset, strictly, and it lowers `inkOutsideText`.
+    //
+    //    One recognised word box on the left, one unrecognised line of the same shape on
+    //    the right, ink under both. Without this, `lineBoxes` returning boxes that land
+    //    entirely inside `region` would satisfy check 7 and price nothing at all — the
+    //    widening would read "free" on every page, which is the failure this whole column
+    //    set exists to avoid.
+    let ww = 200, wh = 100
+    var wGrey = [UInt8](repeating: 255, count: ww * wh)
+    for y in 40..<50 { for x in 10..<40 { wGrey[y * ww + x] = 0 } }   // recognised
+    for y in 40..<50 { for x in 120..<150 { wGrey[y * ww + x] = 0 } } // missed
+    let wordBox = SearchableWriter.BoundingBox(x: 10.0 / 200, y: 40.0 / 100,
+                                               width: 30.0 / 200, height: 10.0 / 100)
+    let narrow = Flattener.textRegionMask([wordBox], width: ww, height: wh)
+    var missed = Line()
+    missed.minX = 120; missed.maxX = 149; missed.minY = 40; missed.maxY = 49
+    let widened = Flattener.textRegionMask([wordBox] + lineBoxes([missed], width: ww, height: wh),
+                                           width: ww, height: wh)
+    let grew = zip(narrow, widened).contains { !$0 && $1 }
+    let shrank = zip(narrow, widened).contains { $0 && !$1 }
+    if !grew { bad.append("widening: the widened region is no larger than the shipped one") }
+    if shrank { bad.append("widening: the widened region LOST pixels the shipped one had") }
+    let before = outsideFraction(wGrey, keep: narrow, width: ww, height: wh, threshold: 128)
+    let after = outsideFraction(wGrey, keep: widened, width: ww, height: wh, threshold: 128)
+    if !(after < before) {
+        bad.append(String(format: "widening: inkOutsideText did not fall, %.4f -> %.4f",
+                          before, after))
+    }
+
+    // 9. The byte columns are a Balanced measurement, and nothing in this file says so
+    //    with a literal. `mrcLayers` is called on its default `backgroundDownsample`;
+    //    if either constant moves, every historical row stops being comparable silently.
+    //    `score-text-route` pins the same claim for the same reason — a sibling, not a
+    //    duplicate: two tools, two call sites, one fact.
+    if Flattener.mrcBackgroundDownsample != Prefs.PhotoDetail.balanced.downsample {
+        bad.append("bytes: mrcLayers' default background factor"
+                   + " \(Flattener.mrcBackgroundDownsample) is not Balanced's"
+                   + " \(Prefs.PhotoDetail.balanced.downsample)")
+    }
+
     return bad
 }
 
@@ -691,7 +835,7 @@ let args = CommandLine.arguments
 if args.contains("--self-test") {
     let bad = selfTest()
     if bad.isEmpty {
-        print("score-shape-term: self-test ok (6 checks)")
+        print("score-shape-term: self-test ok (9 checks)")
         exit(0)
     }
     FileHandle.standardError.write(Data(
@@ -744,6 +888,41 @@ let dumpDirectory: URL? = {
     return url
 }()
 
+/// C28 question 4. Whether to price the widening in bytes.
+///
+/// A knob rather than always-on because it changes what this tool costs by an order of
+/// magnitude: two `mrcLayers` calls and two `jbig2` encodes a page, against the single
+/// grey render every other column shares. A sweep that wants only the shape columns —
+/// which is every sweep this tool has run so far — should not start paying for an encoder.
+///
+/// Refused loudly on any other value, for `INKBAR`'s reason: `WIDENBYTES=0` or
+/// `WIDENBYTES=yes` silently printing eleven dashes reads as "measured, and it costs
+/// nothing", which is the worst answer this tool could give.
+let widenBytes: Bool = {
+    guard let raw = ProcessInfo.processInfo.environment["WIDENBYTES"], !raw.isEmpty
+    else { return false }
+    guard raw == "1" else {
+        FileHandle.standardError.write(Data(
+            "WIDENBYTES=\(raw) is not understood; the only accepted value is 1\n".utf8))
+        exit(2)
+    }
+    return true
+}()
+
+/// The encoder, located only when the byte columns were asked for — this tool is useful
+/// on a machine with no jbig2 and must stay so.
+let jbig2Tool: String? = {
+    guard widenBytes else { return nil }
+    guard let found = JBIG2.encoder else {
+        FileHandle.standardError.write(Data(
+            "WIDENBYTES=1 but jbig2 was not found; there are no bytes to measure\n".utf8))
+        exit(3)
+    }
+    return found
+}()
+
+func bytes(_ url: URL) -> Int { (try? Data(contentsOf: url).count) ?? 0 }
+
 /// One page, alone in its own PDF: `Flattener.flatten` takes a document, and the
 /// recognition below must run on the bitmap the app publishes (R40).
 func isolate(_ index: Int) -> URL? {
@@ -759,24 +938,33 @@ func isolate(_ index: Int) -> URL? {
 /// The rim sweep's columns are generated from `rimRadii` rather than typed out, so the
 /// header and the row cannot disagree about how many there are — which is the defect T14,
 /// A12.3 and T18 each are, in a header written by hand beside a row written by hand.
+/// The byte columns, in one list for the same reason: the header and the row read it, and
+/// the `-` filler on a row that did not measure them is `count` dashes rather than eleven
+/// typed by hand. Appended AFTER `verdict` so the 31 columns every committed
+/// `SHAPETERM-*.tsv` was written against stay a byte-identical prefix.
+let wideColumns = ["wideN", "wideInkOut", "stenPx", "wideStenPx",
+                   "shipSten", "wideSten", "shipBytes", "wideBytes", "byteDelta",
+                   "shipBg", "wideBg"]
 let columns = ["page", "w", "h", "otsu", "inkPx", "outPx", "inkOut", "mapFrac",
                "stenFrac", "stenD3", "glyphN", "glyphH", "glyphRun",
                "ccN", "txtN", "txtPx", "txtShare",
                "lineN", "linePx", "lineShare", "topLine"]
     + rimRadii.flatMap { ["rim\($0)N", "rim\($0)Px", "rim\($0)Top"] }
-    + ["verdict"]
+    + ["verdict"] + wideColumns
 func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
          inkPx: String = "-", outPx: String = "-", inkOut: String = "-",
          mapFrac: String = "-", stenFrac: String = "-", stenD3: String = "-",
          glyphN: String = "-", glyphH: String = "-", glyphRun: String = "-",
          ccN: String = "-", txtN: String = "-", txtPx: String = "-", txtShare: String = "-",
          lineN: String = "-", linePx: String = "-", lineShare: String = "-",
-         topLine: String = "-", rim: [String]? = nil, verdict: String) {
+         topLine: String = "-", rim: [String]? = nil, verdict: String,
+         wide: [String]? = nil) {
     let fields = ["p\(page)", w, h, otsu, inkPx, outPx, inkOut, mapFrac,
                   stenFrac, stenD3, glyphN, glyphH, glyphRun,
                   ccN, txtN, txtPx, txtShare, lineN, linePx, lineShare, topLine]
         + (rim ?? [String](repeating: "-", count: rimRadii.count * 3))
         + [verdict.replacingOccurrences(of: "\t", with: " ")]
+        + (wide ?? [String](repeating: "-", count: wideColumns.count))
     precondition(fields.count == columns.count)
     print(fields.joined(separator: "\t"))
 }
@@ -784,6 +972,11 @@ func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
 print(columns.joined(separator: "\t"))
 var identityFailed = 0, measured = 0
 var dumpMissing: [String] = []
+/// Pages where `WIDENBYTES` was asked for and one of the two layerings declined — an
+/// `mrcLayers` that returned nil or a jbig2 that failed. Counted and reported rather than
+/// left as a dash, because "the widening costs nothing" and "nothing was measured" print
+/// the same way otherwise.
+var wideRefused = 0
 
 for index in pages {
     guard let single = isolate(index), let page = doc.page(at: index - 1) else { continue }
@@ -905,6 +1098,74 @@ for index in pages {
         rimResult.append((r, rc, rlines))
     }
 
+    // C28 question 4 at the `textRegionMask` seam: what the widening costs in bytes.
+    //
+    // Two `mrcLayers` calls on the same page differing in ONE property — the box list —
+    // so the two totals cannot come from two pieces of code that drifted. It is
+    // `score-text-route`'s `layered` / `layeredAtBar` pattern with the boxes substituted
+    // instead of the bar, and on a page whose `lineN` is 0 it is the same call twice,
+    // which is a determinism control every such row carries for free.
+    //
+    // `backgroundDownsample` is left at the default argument deliberately: passing a
+    // literal here would be a second copy of shipped arithmetic (T15's shape), and the
+    // self-test pins that the default *is* `PhotoDetail.balanced.downsample`, so every
+    // byte figure below is a Balanced measurement and stays comparable to the rest of
+    // this campaign's.
+    var wideFields: [String]? = nil
+    var shipMask: URL? = nil, wideMask: URL? = nil
+    if widenBytes, let jbig2 = jbig2Tool {
+        let extra = lineBoxes(found, width: w, height: h)
+        let wideBoxes = boxes + extra
+        let wideRegion = Flattener.textRegionMask(wideBoxes, width: w, height: h)
+        let wideInkOut = Flattener.inkOutsideText(grey, region: wideRegion,
+                                                 width: w, height: h, threshold: otsu)
+        // The stencil's own ink, from the same `sauvola` the columns above use. This is
+        // the column that says whether the missed ink actually ENTERED the stencil rather
+        // than the region merely growing around it: the map's components come from Otsu
+        // and the stencil from Sauvola, and nothing guarantees the two agree on a pale
+        // line. Counted over the whole page, not the interior window — the stencil is not
+        // interior-cropped, and mixing the two frames is the trap sub-step 4 recorded.
+        func stencilPixels(_ keep: [Bool]) -> Int {
+            guard sauvola.count == w * h, keep.count == w * h else { return 0 }
+            var n = 0
+            for i in 0..<(w * h) where sauvola[i] && keep[i] { n += 1 }
+            return n
+        }
+        func price(_ list: [SearchableWriter.BoundingBox], _ stem: String)
+            -> (sten: Int, total: Int, bg: String, mask: URL)? {
+            guard let layers = Flattener.mrcLayers(for: page, boxes: list, into: work,
+                                                   stem: stem, inColour: first.isColour)
+            else { return nil }
+            let out = work.appendingPathComponent("\(stem).jbig2")
+            guard (try? JBIG2.encode(png: layers.mask, to: out, using: jbig2)) != nil
+            else { return nil }
+            let sten = bytes(out)
+            // A zero-byte stream is a jbig2 that ran and produced nothing, which would
+            // otherwise be summed into a total that looks like a cheap page.
+            guard sten > 0 else { return nil }
+            return (sten, sten + bytes(layers.background) + bytes(layers.foreground),
+                    "\(layers.backgroundWidth)x\(layers.backgroundHeight)", layers.mask)
+        }
+        let ship = price(boxes, "ms\(index)")
+        let wide = price(wideBoxes, "mw\(index)")
+        if ship == nil || wide == nil { wideRefused += 1 }
+        // Held for `SHAPEDUMP` below: the two stencils are the only positive control a
+        // byte column can have. `wideStenPx > stenPx` says ink entered the 1-bit layer;
+        // only reading the two PNGs at 1:1 over the same rect says the WORDS did.
+        shipMask = ship?.mask
+        wideMask = wide?.mask
+        wideFields = ["\(extra.count)",
+                      String(format: "%.4f", wideInkOut),
+                      "\(stencilPixels(region))", "\(stencilPixels(wideRegion))",
+                      ship.map { "\($0.sten)" } ?? "-",
+                      wide.map { "\($0.sten)" } ?? "-",
+                      ship.map { "\($0.total)" } ?? "-",
+                      wide.map { "\($0.total)" } ?? "-",
+                      ship.flatMap { s in
+                          wide.map { String(format: "%+d", $0.total - s.total) } } ?? "-",
+                      ship?.bg ?? "-", wide?.bg ?? "-"]
+    }
+
     measured += 1
     row(index, w: "\(w)", h: "\(h)", otsu: "\(otsu)",
         inkPx: "\(inkPx)", outPx: "\(outPx)",
@@ -921,7 +1182,8 @@ for index in pages {
         lineShare: outPx > 0 ? String(format: "%.4f", Double(linePx) / Double(outPx)) : "-",
         topLine: topLine, rim: rimFields,
         verdict: identity ? "ok"
-            : String(format: "⛔ mapFrac %.6f != inkOut %.6f", mapFrac, inkOut))
+            : String(format: "⛔ mapFrac %.6f != inkOut %.6f", mapFrac, inkOut),
+        wide: wideFields)
 
     if let dump = dumpDirectory {
         let stem = "\(src.deletingPathExtension().lastPathComponent.prefix(40))-p\(index)"
@@ -975,6 +1237,16 @@ for index in pages {
             paint(&rimOnly, entry.comps, entry.lines.flatMap(\.members), through: trimmed)
             promised.append(("\(stem)-rim\(entry.radius)-lines.png", { maskPNG(rimOnly) }))
         }
+        // C28 question 4's positive control: production's own two stencils, copied rather
+        // than rebuilt here, so what a reader looks at is the PNG `mrcLayers` handed to
+        // jbig2 and the byte columns counted. Only present under `WIDENBYTES=1`, and the
+        // per-page accounting line below counts them like every other promised file.
+        if let ship = shipMask {
+            promised.append(("\(stem)-stencil-ship.png", { try? Data(contentsOf: ship) }))
+        }
+        if let wide = wideMask {
+            promised.append(("\(stem)-stencil-wide.png", { try? Data(contentsOf: wide) }))
+        }
         var wrote = 0
         for (name, make) in promised {
             guard let data = make(),
@@ -995,5 +1267,6 @@ for index in pages {
 print("")
 print("pages measured \(measured)"
       + (identityFailed > 0 ? "; ⛔ IDENTITY FAILED on \(identityFailed)" : "")
+      + (wideRefused > 0 ? "; ⚠️ widening not priced on \(wideRefused)" : "")
       + (dumpMissing.isEmpty ? "" : "; ⚠️ dump missing \(dumpMissing.joined(separator: ", "))"))
 if identityFailed > 0 { exit(6) }

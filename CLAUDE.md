@@ -49,7 +49,9 @@ reports it as of 2026-08-20** — that was the entry's question 5, invariant 1's
 an eighth, with that page's own fraction beside it, on the success path only and with **no bar on the
 fraction** (the campaign proved the losers and non-losers interleave when sorted by it, and one
 measured loser prints `0.0000`, so any filter drops a known loser). ⛔ It is a report and not a fix —
-the pages are still degraded, and C28 stays OPEN on questions 3 and 4 (question 2 CLOSED 2026-08-21).
+the pages are still degraded, and C28 stays OPEN — ⚠️ but as of **2026-08-22 all five of its questions
+are MEASURED** (question 2 closed 2026-08-21; question 4's last seam priced 2026-08-22), so what is left
+of this entry is **the decision and the wiring**, not another measurement.
 ✅ **QUESTION 3 HAS ITS FIRST MEASUREMENT, 2026-08-21, AND A SHAPE TERM SEPARATES WHERE FIVE SCALARS
 DID NOT** — `Tools/score-shape-term.swift` (new) counts **text lines** in the ink outside the
 recognised words at the page's own type scale, calibrating on the stencil's own components, and over 13
@@ -151,7 +153,9 @@ the drawing). ⚠️ Not settled: the collar's effect on the **map**
 rather than on accepted lines is not printed, so "0 accepted-line pixels removed" is not "0 map pixels
 removed" on the **nine** pages whose columns did not move; radii above 3 are still unrun; the sample is
 still 3 true plates of 10 and the seam is ~181 layered pages of which the collar has now been asked
-about 83; and the `textRegionMask` seam is **still unpriced** — this sub-step makes it no cheaper. ⚠️ The
+about 83; and the `textRegionMask` seam was **unpriced when this was written** — ✅ **it is priced as of
+2026-08-22, see the block below, and it is 1,020x cheaper than the layering seam** — this sub-step made
+it no cheaper. ⚠️ The
 **local** variant is no way out either: a per-group exemption trusting the collar would still admit
 16,290 of 16,294 accepted-line pixels on these ten.
 ✅ **THE SUB-BAR POPULATION IS INVENTORIED FOR PICTURES 2026-08-22 AND IT HOLDS NO PRINTED PLATE** —
@@ -208,8 +212,40 @@ first term in this campaign whose money mostly lands on pages that lose content.
 protection**: the bar rescues **15 of 16** losers and the term **13** — the two extra are hand-made
 marks costing +575,066 B — and **neither reaches `_1939_Former students` p2**. ⚠️ Bytes are at the
 default Photo detail, page by page through `score-text-route`, and the *local* variant would be
-cheaper, so +2,362,625 B is an upper bound. The `textRegionMask` seam is still unpriced and **nothing
-is wired**.
+cheaper, so +2,362,625 B is an upper bound. **Nothing is wired.**
+✅ **AND THE `textRegionMask` SEAM IS PRICED 2026-08-22 — the last thing under this entry unpriced at
+any scale, so all five of its questions now have a measurement.** `WIDENBYTES=1` on
+`Tools/score-shape-term.swift` hands production's own `mrcLayers` **one synthetic box per accepted line
+group** (it reads `boxes` only to refuse an empty list and to build `textRegionMask`, so nothing in
+`Sources/` moves and there is no second override seam). Over the **same 16 pages** the layering wiring
+refuses: **789,825 → 792,140 B, +2,315 B, 1.0029x** against **+2,362,625 B** — **0.098%, 1,020x
+cheaper** — **2.12%** of the spend on pages that lose nothing against 15.5%, and **6 of the 16 get
+CHEAPER** because `fillHoles` hands the background a smoother image (stencil +4,391 B, tone layers
+−2,076 B, measured). Per document: the same **~18.42 pages for +2,728 B** against +2,694,515 B, which is
+**0.068% of C26's shipped ~4.0 MB**. ⛔ **But it is NOT the same protection, and that is the sharpest
+thing in the section**: refusing the shrink keeps the whole background, protecting all **73,370**
+out-of-stencil ink pixels on those 16 pages, while the widening admits only the accepted groups —
+**36,709 px, 50.03%** of them, per page 5.4% to 96.9%, and **24.1%** on `Scott_TK` p3, a measured
+content-loser. **Quote the coverage beside the ratio: 1,020x cheaper at half the coverage.**
+✅ The positive control is at 1:1 and two-sided: `Jones et al_2010`
+p7's **estimating equation** is blank white in the shipped stencil and fully legible in the widened one
+for **+369 B** — ⚠️ **the benefit is read at 1:1 on 1 of the 13 losers**; the other twelve have only a
+stencil that grew. A cross-tool control rides with it: `shipBytes` is byte-identical to
+`SHAPETERM-BYTES-2026-08-21.tsv`'s `layered` on **16 of 16** rows. ⚠️ It spans two binaries, two
+processes and the encoders' determinism — **not** `mrcLayers`, `textRegionMask` or `JBIG2`, which are
+the same shipped code in both; a first draft called it "the strongest control in this campaign" and the
+review refused that. ⛔ **Cheap in bytes is not cheap in correctness.** The same run
+measured the other half: on `1881 - Harry Wilcox` p2 the widening turns a pen ornament into a hard-edged
+1-bit blob (**R57's failure mode**, on a page that loses nothing, +2,078 B), 4 of the 10 picture pages
+admit ink at all, and — the hazard worth more than the price — **a widened region lowers
+`inkOutsideText`, so widening moves every page TOWARD the all-text verdict that shrinks backgrounds
+8x**: `1954 - Why` p4 reads 0.0540 → **0.0524** against a bar of 0.045 — ⚠️ this widening bought 0.0016 and
+the bar is 0.0079 away, so flipping it needs ~5x this effect, and the picture page nearest the bar
+(`1954 - Why` p6 at 0.0493) has `lineN` 0 and cannot move at all. A more generous rule
+re-destroys the cartoon C26's bar move rescued. ⚠️ It buys no searchability (a synthetic box carries no
+string; `SearchableWriter` still has nothing to draw), 26 pages at Balanced only, and the 57 non-firing
+sub-bar pages cost 0 **by construction** rather than by measurement. `WIDEN-STENCIL-2026-08-22.tsv`;
+**nothing is wired.**
 ✅ **THE CORPUS FIGURE IS MEASURED 2026-08-21 and it is question 4's last owed number at the LAYERING
 seam** — `Tools/stratify-corpus.py` (new; `--control` asserts eleven of C26's published band figures
 off the committed sweep before it is asked anything new, of which **five are estimator-sensitive** and
@@ -251,7 +287,8 @@ published `Disk:3` dilation lands **0.721x–1.007x**, and ImageMagick's OTSU eq
 `Flattener.otsuThreshold` on **13 of 13** pages over a 69-level range — so that recipe's published
 0.56x–16.0x spread is bounded on pages with ink to divide by, and its extremes all sit on `inkOut`
 0.0001–0.0051, a small-denominator candidate that is **not measured**. Nothing is wired: `Sources/` is
-untouched, and question 4's byte price is still owed (the *area* a local exemption would keep is
+untouched. ✅ Question 4's byte price is owed no longer — the layering seam 2026-08-21, the
+`textRegionMask` seam 2026-08-22 — and note the *area* a local exemption would keep is
 0.12%–1.04% of the page on the six losers, which is not a byte figure and must not be quoted as one).
 ✅ **Question 2's 1/2 HALF IS MEASURED 2026-08-20 and it does NOT reproduce.** The 109 layered pages the
 bar does *not* read as all text keep the caller's factor, which on the default Photo detail is **2**;
@@ -611,7 +648,7 @@ omitted all three; the review of C27's sweep counted that as the third such omis
 targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
-`SUBBARPIX-2026-08-22.tsv` — and are
+`SUBBARPIX-2026-08-22.tsv` and `WIDEN-STENCIL-2026-08-22.tsv` — and are
 evidence for one run, not
 claims about the present. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls
