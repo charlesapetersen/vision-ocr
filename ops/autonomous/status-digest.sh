@@ -99,10 +99,18 @@ fi
 #
 # Counted HERE, above the state case, because both readers need it: the WORKING branch's hint at ~line 160
 # and add_need() at ~line 330. Getting that order wrong is how the pointer below came to point at nothing.
+#
+# ⚠️ `.escalated` COUNTS AS HANDLED TOO, and leaving it out made the digest contradict itself within one
+# screen: `--details` printed "escalated to you · rescue COMPLETE" for a strand while "Needs you" printed
+# "no triage assignment — snapshot or assignment failed" about the same one. Neither the snapshot nor the
+# assignment had failed; a session had escalated it deliberately (or the owner parked it). An escalation
+# already has its own delivery channel — the prompt tells a session to append to `## NEEDS OWNER`, which
+# this digest surfaces a few lines below — so counting it here as well would double-report it AND make it a
+# need that can never go down, which is the failure this whole change exists to stop.
 orph_assigned=0; orph_waiting=0
 if _owk_all="$(orphaned_work 2>/dev/null)"; then
   for _owd in $_owk_all; do
-    if [ -f "$STATE/triage/$(basename "$_owd").md" ]; then
+    if [ -f "$STATE/triage/$(basename "$_owd").md" ] || [ -f "$STATE/triage/$(basename "$_owd").escalated" ]; then
       orph_assigned=$((orph_assigned + 1))
     else
       orph_waiting=$((orph_waiting + 1))

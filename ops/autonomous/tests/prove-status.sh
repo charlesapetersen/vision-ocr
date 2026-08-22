@@ -35,7 +35,7 @@
 # works and aborts if it does not — the one check that must never be taken on trust.
 #
 # USAGE:  ops/autonomous/tests/prove-status.sh [path/to/status-digest.sh]
-# EXPECTED RESULT: 48 passed, 0 failed — MEASURED 2026-08-22, not inherited (it read 39 before section [11]
+# EXPECTED RESULT: 49 passed, 0 failed — MEASURED 2026-08-22, not inherited (it read 39 before section [11]
 # and the assigned-vs-waiting change, then 44 before the icon and live-session assertions; this project's own
 # habit is to leave such a number stale, so run it rather than trusting this line). Three independent falsifications, all actually run:
 #   * against the renderer as it stood before this work — 14 passed / 26 failed, with sections [1], [6]
@@ -435,6 +435,18 @@ rm -rf "$VISIONOCR_STATE/triage"
 # triage assignment — the daemon could not hand it to a session" while the session was running in that very
 # worktree. Section [8] pins the HINT during a live session and never looked at "Needs you", which is
 # precisely how 44/0 coexisted with the defect. This is the missing half.
+# ⛔ AND `.escalated` IS HANDLED, NOT WAITING. Leaving it out of the count made the digest contradict itself
+# inside one screen — measured on the real state dir 2026-08-22: `--details` printed "escalated to you ·
+# rescue COMPLETE" for a strand while "Needs you" printed "no triage assignment — snapshot or assignment
+# failed" about that same strand. Both halves cannot be true. An escalation reaches the owner through
+# `## NEEDS OWNER`, which this digest already renders, so counting it again here would double-report it and
+# create a need that can never clear.
+mkdir -p "$VISIONOCR_STATE/triage"; : > "$VISIONOCR_STATE/triage/auto-wt.escalated"
+printf '%s' "$(run_digest)" | grep -qi "no triage assignment" \
+  && bad "an ESCALATED strand is counted as unassigned — the digest says 'assignment failed' about a strand it also says is escalated" \
+  || ok "an escalated strand is handled, not a fresh need — it reaches the owner via NEEDS OWNER instead"
+rm -rf "$VISIONOCR_STATE/triage"
+
 session_on                      # live session, worktree still dirty, still no triage file
 printf '%s' "$(run_digest)" | grep -qi "no triage assignment" \
   && bad "a healthy live session raises a FALSE owner need for its own dirty worktree" \
