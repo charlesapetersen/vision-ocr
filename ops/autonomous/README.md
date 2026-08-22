@@ -1031,6 +1031,30 @@ best thing in the fix and is false — a strand with an upstream set passes `-d`
 (verified: no `.gitmodules`, `push.autoSetupRemote` unset, all live `auto/*` upstreams empty), and the fix
 is to use the test `housekeeping()` already uses: `git merge-base --is-ancestor <branch> origin/main`.
 
+⛔ **AND `branch -d` IS WRONG IN THE OTHER DIRECTION TOO — found by running this entry's own procedure, one
+command from the end, on the commit that first published it.** The review's case was a false ACCEPT. The
+one that actually fired is a false **REFUSAL**: a strand has no upstream by default, so `-d` falls back to
+**HEAD**, and from the primary checkout HEAD is local `main` — which *nothing in this daemon
+fast-forwards*, because `housekeeping()` only ever reads `origin/main`. Measured 2026-08-22 while removing
+`ddedec6`'s own worktree: local `main` `3078fb0`, `origin/main` `ddedec6`, `merge-base --is-ancestor`
+confirming the branch WAS an ancestor of `origin/main` — and `git branch -d` still answered *"the branch …
+is not fully merged"* and hinted at the **denied** `-D`. A session following the block as first published
+would have dead-ended exactly where the old one did, one command later. The block now sets the upstream
+first:
+
+```sh
+git branch --set-upstream-to=origin/main <branch>   # aims -d at the ref precondition (c) is about
+git branch -d <branch>                              # "merged to 'refs/remotes/origin/main', but not to HEAD"
+```
+
+✅ Which resolves the review's finding rather than dodging it: with the upstream pointed at `origin/main`,
+`-d` *does* enforce (c) — but only because that line put the right ref in front of it, and never on its
+own. An eighth assertion pins the line, and its negative control is `ddedec6` itself, the commit that
+published the block without it. ⚠️ Note what this cost: the defect was in a fix that had already been
+adversarially reviewed and had seven green assertions over it. What caught it was *executing the
+procedure*, which is `CONTRIBUTING.md` §4c — a branch that only runs when something else goes wrong had
+never run.
+
 ⚠️ **Why the existing test could not catch it, and why the FIRST FIX passed its own new test.** §[17]
 asserted that an assignment *was written* and that it *named the worktree* — the two things a fixture
 notices — and nothing read the procedure inside it. The section now extracts the step-2 and step-3
@@ -1056,13 +1080,14 @@ which was false in a section whose subject is checks that cannot fail.
 
 ### The harnesses, and what they caught
 
-`prove-daemon.sh` **117** assertions and `prove-status.sh` **48/0**, measured 2026-08-22 — against a stated 92
-⚠️ **`prove-daemon.sh`'s 117 is a TOTAL and the pass count depends on machine load** — read its header. D17's
-seven were added on a busy machine, and the honest form of that run is a PAIR: the unmodified tree at
+`prove-daemon.sh` **118** assertions and `prove-status.sh` **48/0**, measured 2026-08-22 — against a stated 92
+⚠️ **`prove-daemon.sh`'s 118 is a TOTAL and the pass count depends on machine load** — read its header. D17's
+eight were added on a busy machine, and the honest form of that run is a PAIR: the unmodified tree at
 `3078fb0` scored **102 passed / 6 failed** (108 assertions even reaching the end) and the modified tree
-**115 passed / 2 failed**, the two a strict **subset** of the six, all in §[3]/§[4]/§[4b], with §[4b]'s own
-vacuity guard firing. Two runs of the *same* modified tree gave 5 failures then 2, from that same subset,
-which is the flakiness measured rather than asserted. Comparing the sets is what said "busy machine" rather
+**113 passed / 5 failed**, the five a strict **subset** of the six, all in §[3]/§[4]/§[4b]/§[5], with §[4b]'s own
+vacuity guard firing. Across the FOUR runs this fix went through, the environmental failure count was 3,
+then 1, then 2, then 5 — every one from that same subset of six and never anything else, which is the
+flakiness measured rather than asserted. Comparing the sets is what said "busy machine" rather
 than "my edit broke it"; a single run could not have. Quoting a bare pass count off this harness is how it
 rots —
 (itself stale: D12's own section three screens up records 96) and 39. `prove-daemon.sh` §[17] gained

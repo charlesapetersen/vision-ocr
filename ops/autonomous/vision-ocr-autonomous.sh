@@ -1295,6 +1295,7 @@ YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
      git -C <worktree> status --porcelain              # must now be EMPTY. If it is not, read the next box
      git worktree remove <worktree>
      git merge-base --is-ancestor <branch> origin/main # the real (c). NOT branch -d's guard — see below
+     git branch --set-upstream-to=origin/main <branch> # WITHOUT THIS THE NEXT LINE REFUSES — see below
      git branch -d <branch>
    ⛔ `checkout HEAD -- .` AND NOT `checkout -- <paths>`, both halves measured 2026-08-22. `checkout --`
    restores from the INDEX, so on a staged change it is a NO-OP and `worktree remove` still refuses (tested:
@@ -1321,12 +1322,21 @@ YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
    has been denied` — the procedure's terminal step forbidden by its own launcher, 1,041 lines up the same
    file. The denial is right; the instruction was wrong. It is a guard and not a wall — the matcher is by
    prefix, so it is the procedure above that keeps a strand safe, not the denylist. Follow the procedure.
-   ⚠️ WHY (c) IS ITS OWN COMMAND AND NOT `branch -d`'s DOING. `branch -d` refuses a branch not fully merged
-   into **its upstream, or into HEAD if no upstream is set** — `git help branch`, read 2026-08-22 — and
-   neither of those is `origin/main`. A strand with an upstream set is "merged into its upstream" trivially,
-   so `-d` would delete a branch that is AHEAD of origin/main, which is the one irreversible mistake in this
-   whole procedure. `merge-base --is-ancestor … origin/main` is the test `housekeeping()` itself uses. This
-   step claimed for a few hours that `-d` "enforces (c) for you"; it does not, and no local shortcut does.
+   ⛔ WHY THE `--set-upstream-to` LINE IS THERE, AND WITHOUT IT THE LAST LINE FAILS. `branch -d` refuses a
+   branch not fully merged into **its upstream, or into HEAD if no upstream is set** — `git help branch`,
+   read 2026-08-22 — and by default a strand has no upstream, so it is checked against **your HEAD**. Run
+   from the primary checkout, HEAD is local `main`, which NOTHING in this daemon fast-forwards
+   (`housekeeping()` only reads `origin/main`). MEASURED 2026-08-22, on the commit that first published this
+   very block: local `main` at `3078fb0`, `origin/main` at `ddedec6`, the branch a verified ancestor of
+   `origin/main` — and `branch -d` still said *"the branch … is not fully merged"* and hinted at the denied
+   `-D`. Pointing the upstream at `origin/main` first makes `-d` test the RIGHT ref; it then deletes and
+   says so out loud: *"merged to 'refs/remotes/origin/main', but not yet merged to HEAD"*.
+   ✅ So `-d` DOES end up enforcing (c) — but only because that line put `origin/main` in front of it, and
+   ⛔ never on its own. This step claimed for a few hours that `-d` "enforces (c) for you" with no upstream
+   set; that is false in BOTH directions — a false REFUSAL from the primary checkout (measured above), and
+   a false ACCEPT on a strand whose upstream is some other branch it happens to be merged into. Keep
+   `merge-base --is-ancestor` as the explicit check: it answers before you touch anything, and it is the
+   test `housekeeping()` itself uses.
 3. If it holds UNIQUE work: adopt it. Rebase onto main, resolve conflicts KEEPING BOTH SIDES where the
    two are different measurements, run the suite through `test-lock.sh`, commit, push. That is a normal
    item and may be the whole session.

@@ -24,16 +24,17 @@
 # as a second layer. preflight() PROVES the interposition works before any daemon is launched, and aborts
 # if it does not — the one check that must never be taken on trust.
 #
-# EXPECTED RESULT: 117 assertions, 0 skipped — RUN 2026-08-22, not inherited (110 before D17's seven). This
+# EXPECTED RESULT: 118 assertions, 0 skipped — RUN 2026-08-22, not inherited (110 before D17's eight). This
 # line read "75 passed" while the harness was actually running 86 assertions, and then "92" while D12's own
 # section three files away recorded 96 — which is the same way a measured number rots into an asserted one
 # that ops/autonomous/README.md's own table records two rows of. Re-measure it when you add a section.
-# ⛔ IT IS A TOTAL, NOT "117 passed", AND THE DIFFERENCE IS LOAD: §[3]/§[4]/§[4b] drive a real daemon on 1s
+# ⛔ IT IS A TOTAL, NOT "118 passed", AND THE DIFFERENCE IS LOAD: §[3]/§[4]/§[4b] drive a real daemon on 1s
 # timings and fail under contention, taking the assertions below them with them. MEASURED 2026-08-22 on a
 # busy machine, runs back to back: the UNMODIFIED tree at 3078fb0 scored 102 passed / 6 failed (only
-# 108 assertions even reached), and the tree carrying D17's seven scored 115 passed / 2 failed — the two a
-# strict SUBSET of the six, same sections, and the set shrank between two runs of the SAME tree (5, then 2),
-# which is the flakiness stated as a measurement. §[4b]'s own vacuity guard fired ("origin/main unchanged
+# 108 assertions even reached), and the tree carrying D17's eight scored 113 passed / 5 failed — the five a
+# strict SUBSET of the six, same sections. Over the FOUR runs this fix went through, the environmental
+# failure count was 3, then 1, then 2, then 5 — every one drawn from that same subset of six and never
+# anything else. That spread IS the measurement. §[4b]'s vacuity guard fired ("origin/main unchanged
 # — the stub is broken and every assertion below is vacuous"), which is the harness saying so itself.
 # So: a red §[3]/§[4]/§[4b] on a loaded machine is the INSTRUMENT. Re-run quiet before believing it, and
 # never read a failure there as evidence about a change elsewhere — run the baseline too and compare sets,
@@ -787,6 +788,16 @@ if [ -f "$STATE/triage/orphan-wt.md" ]; then
   printf '%s\n' "$_step2" | grep -q 'branch -d' \
     && ok "…and step 2 offers the no-force route (restore, plain remove, branch -d), which is the one a session can actually run" \
     || bad "step 2's only route is 'remove --force' / 'branch -D', and --force is denied at the tool layer — the instruction is a dead end (measured 2026-08-22)"
+  # ⛔ AND THE ROUTE HAS TO ACTUALLY COMPLETE. `branch -d` checks the branch's UPSTREAM, or HEAD if none is
+  # set — never `origin/main`. A strand has no upstream by default, so from the primary checkout `-d` is
+  # checked against local `main`, which NOTHING in this daemon fast-forwards (`housekeeping()` only reads
+  # `origin/main`). MEASURED 2026-08-22, on the commit that first published the removal block, by running
+  # it: local `main` 3078fb0, `origin/main` ddedec6, the branch a verified ancestor of `origin/main` — and
+  # `-d` refused with "not fully merged" and hinted at the DENIED `-D`. So the block must point the upstream
+  # at `origin/main` first, which both clears the refusal and makes `-d` check the ref (c) is actually about.
+  printf '%s\n' "$_step2" | grep -q 'set-upstream-to=origin/main' \
+    && ok "…and it points the branch's upstream at origin/main first, without which that final 'branch -d' refuses from the primary checkout and hints at the denied -D" \
+    || bad "step 2 ends at 'branch -d' with no upstream set — measured 2026-08-22, that REFUSES from the primary checkout whose local main is behind origin/main, so the route dead-ends one command from the finish"
   [ "$(printf '%s\n' "$_step2" | wc -l | tr -d ' ')" -ge 3 ] \
     && ok "negative control: the step-2 range matched a paragraph too" \
     || bad "the step-2 awk range selected nothing — the check above cannot fail for the right reason"

@@ -52,18 +52,26 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue.
   removal block and is the copy to follow — it is generated from the daemon and cannot drift from it. In
   outline: `git -C <wt> checkout HEAD -- .`, confirm `git -C <wt> status --porcelain` is EMPTY, then plain
   `git worktree remove <wt>`, then `git merge-base --is-ancestor <branch> origin/main`, then
-  `git branch -d <branch>`. FOUR preconditions, all of them, cited in your SESSION LOG, or you leave it alone:
+  `git branch --set-upstream-to=origin/main <branch>`, then `git branch -d <branch>`. ⛔ That
+  second-to-last command is NOT optional and not tidiness — without it `-d` is checked against your HEAD,
+  which from the primary checkout is a local `main` nothing here fast-forwards, and it REFUSES a branch
+  that is provably an ancestor of `origin/main` while hinting at the denied `-D`. Measured 2026-08-22 by
+  hitting it, one command from the finish. FOUR preconditions, all of them, cited in your SESSION LOG, or
+  you leave it alone:
     (a) the content is provably already on main, established by CONTENT and not by filename;
     (b) the assignment file says the rescue is **COMPLETE**. A PARTIAL one holds tracked changes only, so it
         does not back up what you are about to delete — copy the untracked files out first;
     (c) `git rev-list --count origin/main..<branch>` is **0**. A branch that is AHEAD has commits that are in
         no working-tree patch (that patch is a diff against the branch tip), so deleting it makes them
         unreachable. Land them or leave the branch alone, however superseded its dirty files look.
-        ⛔ `branch -d` does NOT check this for you — measured 2026-08-22 against `git help branch`, its guard
-        is the branch's UPSTREAM, or HEAD if no upstream is set, and neither of those is `origin/main`. A
-        strand with an upstream set passes `-d` trivially even when it is ahead. `merge-base --is-ancestor`
-        is the real test and is what `housekeeping()` uses. This prompt claimed `-d` enforced (c) for a few
-        hours on 2026-08-22; it does not;
+        ⛔ `branch -d` does NOT check this for you by itself — measured 2026-08-22 against `git help branch`,
+        its guard is the branch's UPSTREAM, or HEAD if no upstream is set, and by default neither of those is
+        `origin/main`. It is wrong in BOTH directions: a false ACCEPT on a strand whose upstream is some other
+        branch it is merged into, and — measured by hitting it — a false REFUSAL from the primary checkout,
+        where HEAD is a local `main` behind `origin/main`. The `--set-upstream-to=origin/main` above is what
+        aims `-d` at the right ref; keep `merge-base --is-ancestor` as well, because it answers BEFORE you
+        touch anything and it is the test `housekeeping()` uses. This prompt claimed a bare `-d` enforced (c)
+        for a few hours on 2026-08-22; it does not;
     (d) the rescue trio is filed FIRST, as `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak` when other
         work replaced it, or `LANDED-as-<sha>-<name>.…` when you or an earlier session landed that same work.
         The rescue directory carries both and they do not mean the same thing. Move the `.complete` marker
