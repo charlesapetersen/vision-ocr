@@ -48,17 +48,42 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue.
   plus 112 lines of tests that `git grep` finds NOWHERE on origin/main, because the commit that appeared to
   replace it had landed only the tool half. **`git grep` the new symbols on origin/main before you conclude
   anything.**
-  ⚠️ You may `git worktree remove --force` and `git branch -D` a strand you have PROVEN superseded, and only
-  then. That is the single exception to STEP 3's never-force rule, and it has FOUR preconditions — all of
-  them, cited in your SESSION LOG, or you do not force:
+  ⚠️ You may TAKE OUT a strand you have PROVEN superseded, and only then. The ASSIGNMENT FILE carries the
+  removal block and is the copy to follow — it is generated from the daemon and cannot drift from it. In
+  outline: `git -C <wt> checkout HEAD -- .`, confirm `git -C <wt> status --porcelain` is EMPTY, then plain
+  `git worktree remove <wt>`, then `git merge-base --is-ancestor <branch> origin/main`, then
+  `git branch -d <branch>`. FOUR preconditions, all of them, cited in your SESSION LOG, or you leave it alone:
     (a) the content is provably already on main, established by CONTENT and not by filename;
     (b) the assignment file says the rescue is **COMPLETE**. A PARTIAL one holds tracked changes only, so it
         does not back up what you are about to delete — copy the untracked files out first;
     (c) `git rev-list --count origin/main..<branch>` is **0**. A branch that is AHEAD has commits that are in
-        no working-tree patch (that patch is a diff against the branch tip), and `git branch -D` makes them
-        unreachable. Land them or leave the branch alone, however superseded its dirty files look;
-    (d) the rescue trio is filed as `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak` FIRST.
-  No proof, no force — leave it and say why.
+        no working-tree patch (that patch is a diff against the branch tip), so deleting it makes them
+        unreachable. Land them or leave the branch alone, however superseded its dirty files look.
+        ⛔ `branch -d` does NOT check this for you — measured 2026-08-22 against `git help branch`, its guard
+        is the branch's UPSTREAM, or HEAD if no upstream is set, and neither of those is `origin/main`. A
+        strand with an upstream set passes `-d` trivially even when it is ahead. `merge-base --is-ancestor`
+        is the real test and is what `housekeeping()` uses. This prompt claimed `-d` enforced (c) for a few
+        hours on 2026-08-22; it does not;
+    (d) the rescue trio is filed FIRST, as `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak` when other
+        work replaced it, or `LANDED-as-<sha>-<name>.…` when you or an earlier session landed that same work.
+        The rescue directory carries both and they do not mean the same thing. Move the `.complete` marker
+        with them, or the next cycle re-snapshots the worktree you just filed.
+  No proof, no removal — leave it and say why.
+  ⛔ UNTRACKED FILES ARE WHERE THIS STOPS, and stopping is correct. `checkout` cannot restore a path git does
+  not track, `worktree remove` refuses on a `??` alone, and `git clean` / `rm -r` / `rm -rf` are all denied.
+  So account for each untracked file BY NAME: if it is on main, plain `rm <file>` is permitted and clears it
+  (an untracked DIRECTORY has no permitted route, which is also the right answer); if it is NOT on main,
+  LEAVE THE WORKTREE and say so — the rescue net is known to list untracked files in `.status` that its
+  `.patch` does not hold, so what is in front of you may be the only copy. ⚠️ And do not reason "a file I
+  cannot restore is a file whose content I have not proved is on main": that is false, and it was in this
+  prompt for a few hours on 2026-08-22. A strand's new `.tsv` that a later commit landed satisfies (a)
+  completely and is still untracked at the strand's own HEAD.
+  ⛔ DO NOT REACH FOR `--force`, and do not waste a call finding out why. The `--force` and `-f` forms of
+  worktree removal, and the capital-`D` form of branch deletion, are in the daemon's OWN denylist
+  (`vision-ocr-autonomous.sh`, the `DENY` array) and reach every session as `--disallowedTools`, where deny
+  wins over allow. This paragraph told sessions to run them anyway until 2026-08-22, when one tried and got
+  `Permission to use Bash … has been denied`. The denial is right, and it is a guard rather than a wall —
+  the matcher works by prefix, so what keeps a strand safe is the procedure above, not the denylist.
   ⛔ ESCALATE ONLY FOR AUTHORITY, NEVER FOR DIFFICULTY — and this applies to your whole session, not just to
   triage. The owner's instruction, 2026-08-22: *"I'm relatively non-technical and in no position to judge
   these decisions myself."* Handing him a technical choice does not get it decided; it gets it deferred and
@@ -80,6 +105,15 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue.
   on the escalation path: deletion means resolved, the daemon re-assigns anything with neither name, and
   every later session would then spend its one item re-deciding the same strand and append another duplicate
   `NEEDS OWNER` entry. A `.escalated` file is not offered to you — leave those alone.
+  ⛔ AND "RESOLVED" MEANS THE WORKTREE IS GONE, NOT JUST THE FILE — this is the half that bit, measured
+  2026-08-22. Deleting the triage file is what marks a strand resolved, and therefore what makes it
+  ELIGIBLE AGAIN; `housekeeping()` never reaps a DIRTY worktree, so a strand whose file you delete and
+  whose worktree you leave comes straight back. It happened on the ADOPTION path, where the procedure
+  stopped at `push`: `f5bdbea` landed `vo-20260822-073825-10384`'s 97 lines of `BUGS.md` at 14:05:36 and
+  the daemon re-assigned the same strand at 14:09:59, four minutes later. That is a loop with no exit —
+  each following session spends its one item re-proving content that is already on main. So whichever of
+  the five steps you took, before you delete the file check `git worktree list`: if the strand is still
+  there and you called it resolved, you have not finished.
   If you finish triage with budget left, STOP anyway: one item.
 
 STEP 2 — PICK EXACTLY ONE ITEM (only if STEP 1.5 found nothing):

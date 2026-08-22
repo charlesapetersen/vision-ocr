@@ -24,10 +24,20 @@
 # as a second layer. preflight() PROVES the interposition works before any daemon is launched, and aborts
 # if it does not — the one check that must never be taken on trust.
 #
-# EXPECTED RESULT: 110 passed, 0 failed, 0 skipped — RUN 2026-08-22, not inherited. This line read "75 passed" while the
-# harness was actually running 86 assertions, and then "92" while D12's own section three files away recorded
-# 96 — which is the same way a measured number rots into an asserted one that ops/autonomous/README.md's own
-# table records two rows of. Re-measure it when you add a section.
+# EXPECTED RESULT: 117 assertions, 0 skipped — RUN 2026-08-22, not inherited (110 before D17's seven). This
+# line read "75 passed" while the harness was actually running 86 assertions, and then "92" while D12's own
+# section three files away recorded 96 — which is the same way a measured number rots into an asserted one
+# that ops/autonomous/README.md's own table records two rows of. Re-measure it when you add a section.
+# ⛔ IT IS A TOTAL, NOT "117 passed", AND THE DIFFERENCE IS LOAD: §[3]/§[4]/§[4b] drive a real daemon on 1s
+# timings and fail under contention, taking the assertions below them with them. MEASURED 2026-08-22 on a
+# busy machine, runs back to back: the UNMODIFIED tree at 3078fb0 scored 102 passed / 6 failed (only
+# 108 assertions even reached), and the tree carrying D17's seven scored 115 passed / 2 failed — the two a
+# strict SUBSET of the six, same sections, and the set shrank between two runs of the SAME tree (5, then 2),
+# which is the flakiness stated as a measurement. §[4b]'s own vacuity guard fired ("origin/main unchanged
+# — the stub is broken and every assertion below is vacuous"), which is the harness saying so itself.
+# So: a red §[3]/§[4]/§[4b] on a loaded machine is the INSTRUMENT. Re-run quiet before believing it, and
+# never read a failure there as evidence about a change elsewhere — run the baseline too and compare sets,
+# which is the only thing that distinguished "my edit broke it" from "this machine is busy" that day.
 # ⚠️ THE 2026-08-22 ADDITIONS FOUND THREE DEFECTS BEFORE THEY EVER RAN FOR REAL, which is the argument for
 # writing them. The first run of the [17] additions scored 101/2 and BOTH failures were genuine: `add -A`
 # swallowed a build artefact because the fixture's `.gitignore` sat in $REPO rather than in the linked
@@ -733,6 +743,74 @@ if [ -f "$STATE/triage/orphan-wt.md" ]; then
     || bad "the assignment does not name the worktree — a task nobody can act on"
   grep -q 'assigned:' "$L" && ok "…and the log says it was assigned rather than escalated" \
                            || bad "the assignment is silent in the log"
+  # ⛔ THE ADOPTION PATH MUST END BY REMOVING THE STRAND, and until 2026-08-22 it did not. Step 3 stopped
+  # at "commit, push", so an adopting session landed the content, deleted its triage `.md` — which is what
+  # marks a strand resolved, and therefore what makes it ELIGIBLE AGAIN — and left the worktree dirty on
+  # disk. `housekeeping()` never reaps a dirty worktree, so the next cycle re-assigned the same strand.
+  # MEASURED: `f5bdbea` adopted `vo-20260822-073825-10384` at 14:05:36 and the daemon re-assigned it at
+  # 14:09:59, four minutes later. That is a LOOP, not a one-off: every following session spends its one
+  # item re-proving content that is already on main. The two checks below read the step-3 paragraph out of
+  # the assignment the daemon actually wrote, so they pin the instruction rather than the prose around it.
+  # ⚠️ THE PREDICATE IS THE REMOVAL'S TWO ENDPOINTS — the restore it starts with and the branch deletion it
+  # ends with — and NOT the string `worktree remove`. Measured: the first draft grepped for that string, and
+  # when step 3 was rewritten to REFERENCE step 2's block rather than repeat it, the check went red over a
+  # correct document. Worse, before the rewrite the same grep had gone GREEN on `worktree remove --force`,
+  # the denied form. One token, wrong in both directions. These two survive either shape, because a step 3
+  # that inlines the block names them and a step 3 that cites it names them as the block's bounds.
+  _step3="$(awk '/^3\. If it holds UNIQUE work/,/^4\. If it is TRIVIAL/' "$STATE/triage/orphan-wt.md")"
+  if printf '%s\n' "$_step3" | grep -q 'checkout HEAD' && printf '%s\n' "$_step3" | grep -q 'branch -d'; then
+    ok "…and the ADOPTION path itself carries the removal through to the end, so an adopted strand is not re-assigned next cycle"
+  else
+    bad "step 3 stops before removing the source strand — it stays dirty on disk and the daemon re-assigns it every cycle (measured 2026-08-22: f5bdbea, re-assigned 4 min later)"
+  fi
+  # …and under the right NAME. `SUPERSEDED-by-` is step 2's word and it is the wrong one here: an adopting
+  # session did not replace the work with different work, it landed that same work. The rescue directory
+  # already carries both conventions (five `LANDED-as-*` sets and five `SUPERSEDED-by-*`, counted
+  # 2026-08-22), and the session that adopted this strand picked `LANDED-as-` correctly with the template
+  # telling it nothing.
+  printf '%s\n' "$_step3" | grep -q 'LANDED-as-' \
+    && ok "…and files the rescue trio as LANDED-as-<sha>, which is what the adoption path did by convention while the template said only SUPERSEDED-by-" \
+    || bad "step 3 does not name the LANDED-as- filing, so an adopting session either invents a name or reuses step 2's wrong one"
+  # ⚠️ NEGATIVE CONTROL for both: the awk range must have SELECTED something. An empty $step3 makes the two
+  # greps fail for a reason that has nothing to do with the instruction — a renamed step heading would then
+  # read as the defect, and after the fix a broken range would read as a pass on the whole assignment text.
+  [ "$(printf '%s\n' "$_step3" | wc -l | tr -d ' ')" -ge 3 ] \
+    && ok "negative control: the step-3 range actually matched a paragraph, so the two checks above are reading step 3 and not an empty string" \
+    || bad "the step-3 awk range selected nothing — those two checks cannot fail for the right reason"
+  # ⚠️ AND STEP 2 MUST OFFER THE NO-FORCE ROUTE, because MEASURED 2026-08-22 the force was never needed and
+  # a session cannot use it: `git worktree remove --force` is DENIED at the tool layer. Once the three
+  # preconditions hold the dirty files are redundant twice over — on main and in the rescue patch — so
+  # `checkout --` makes the worktree clean, after which plain `remove` and `branch -d` both succeed (a
+  # strand 0 ahead of origin/main is an ancestor, which is exactly what lower-case `-d` accepts). An
+  # instruction whose only route is a denied command sends every session to a dead end.
+  _step2="$(awk '/^2\. If SUPERSEDED/,/^3\. If it holds UNIQUE work/' "$STATE/triage/orphan-wt.md")"
+  printf '%s\n' "$_step2" | grep -q 'branch -d' \
+    && ok "…and step 2 offers the no-force route (restore, plain remove, branch -d), which is the one a session can actually run" \
+    || bad "step 2's only route is 'remove --force' / 'branch -D', and --force is denied at the tool layer — the instruction is a dead end (measured 2026-08-22)"
+  [ "$(printf '%s\n' "$_step2" | wc -l | tr -d ' ')" -ge 3 ] \
+    && ok "negative control: the step-2 range matched a paragraph too" \
+    || bad "the step-2 awk range selected nothing — the check above cannot fail for the right reason"
+  # ⛔ AND THE ONE CHECK THAT WOULD HAVE CAUGHT THE FIRST DRAFT OF THIS FIX. Every check above is a PRESENCE
+  # test, and a presence test is green over a document that ALSO says the wrong thing. Measured: the first
+  # draft of D17 added the cleanup clause to step 3 and ended it with `remove --force` / `branch -D` — so
+  # `grep 'worktree remove'` matched, on the forbidden command, and the assertion printed PASS over exactly
+  # the defect the entry was opened for. The adversarial review of that diff found it; this check is what
+  # makes the machine find it next time. It reads the WHOLE assignment, not one step, because the denied
+  # form must not appear as an instruction anywhere in it.
+  # ⚠️ Two exemptions, and they are why this greps for the COMMAND rather than the word "force": the
+  # assignment legitimately explains that `--force` is denied, and that explanation must survive. So the
+  # pattern is the imperative form — a backtick-quoted command — and prose about it is allowed.
+  if grep -qE '`git worktree remove (--force|-f)|`git branch -D' "$STATE/triage/orphan-wt.md"; then
+    bad "the assignment still gives a DENIED command as an instruction (remove --force / branch -D are in this daemon's own DENY array) — a session following it gets 'Permission … denied' and the strand comes back next cycle"
+  else
+    ok "…and no step hands a session a command the daemon's own denylist forbids, which is the check the first draft of this fix failed"
+  fi
+  # ⚠️ NEGATIVE CONTROL for that one: prove the pattern can MATCH, or a typo in the regex reads as a pass
+  # over any document at all. Run it against the pre-fix instruction text this fix removed.
+  printf '%s\n' '   `git worktree remove --force <worktree>` and `git branch -D <branch>`.' > "$T/denied-form.txt"
+  grep -qE '`git worktree remove (--force|-f)|`git branch -D' "$T/denied-form.txt" \
+    && ok "negative control: that pattern does match the pre-fix instruction line, so the check above can fail" \
+    || bad "the denied-command pattern matches nothing even on the literal pre-fix line — the check above asserts nothing"
 else
   bad "NO TRIAGE ASSIGNMENT for a stranded worktree — it stays 'needs owner' forever, which is the 2026-08-22 complaint"
 fi

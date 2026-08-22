@@ -1264,9 +1264,11 @@ report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan w
       case "$_ahead" in
         0|'') : ;;
         *) printf '  ⛔ THOSE COMMITS ARE NOT IN THE WORKING-TREE PATCH (it is a diff against the branch TIP).\n'
-           printf '     %s holds them. `git branch -D` makes them unreachable — so a strand that is\n' "$_rescue/$_rb.commits.patch"
-           printf '     ahead of origin/main MAY NOT be force-removed on a files-only comparison, however\n'
-           printf '     superseded its dirty files look. Land them, or leave the branch alone.\n' ;;
+           printf '     %s holds them. Deleting the branch makes them unreachable — so a strand that is\n' "$_rescue/$_rb.commits.patch"
+           printf '     ahead of origin/main MAY NOT be removed on a files-only comparison, however\n'
+           printf '     superseded its dirty files look. Land them, or leave the branch alone. This is\n'
+           printf '     precondition (c), and `git merge-base --is-ancestor <branch> origin/main` is the\n'
+           printf '     test for it — NOT `branch -d`, whose guard is the upstream or HEAD, never origin/main.\n' ;;
       esac
       printf '\n'
       printf 'dirty paths:\n'
@@ -1282,16 +1284,71 @@ YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
    over the data rows. For code, `git grep` the new symbols on origin/main — if a symbol is absent, that
    half did NOT land, whatever the commit subject suggests.
 2. If SUPERSEDED: say so in the SESSION LOG with the evidence (which commit, which columns matched),
-   `mv` the rescue trio to `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak`, then
-   `git worktree remove --force <worktree>` and `git branch -D <branch>`.
-   ⚠️ `--force` is normally forbidden here and this is the ONE case that earns it. THREE preconditions,
-   all of them, or do not force: (a) the content is provably already on main, by content and not by
-   filename; (b) the rescue patch says COMPLETE above — a PARTIAL one does not back what you are about to
-   delete; (c) `git rev-list --count origin/main..<branch>` is **0**. A branch that is ahead has commits
-   in NO patch this loop wrote, and `branch -D` makes them unreachable. Cite all three in the log.
+   `mv` the rescue trio to `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak` — plus the `.complete`
+   marker if there is one, or the next cycle re-snapshots the same worktree. FOUR preconditions, all of
+   them, cited in the log, or you leave the strand alone: (a) the content is provably already on main, by
+   content and not by filename; (b) the rescue patch says COMPLETE above — a PARTIAL one does not back up
+   what you are about to delete; (c) `git rev-list --count origin/main..<branch>` is **0**, because a branch
+   that is ahead has commits in NO patch this loop wrote; (d) the trio is filed BEFORE you delete anything.
+   ✅ THEN THE REMOVAL, and every command in it is one a session is allowed to run:
+     git -C <worktree> checkout HEAD -- .              # tracked: modified, STAGED and deleted, in one go
+     git -C <worktree> status --porcelain              # must now be EMPTY. If it is not, read the next box
+     git worktree remove <worktree>
+     git merge-base --is-ancestor <branch> origin/main # the real (c). NOT branch -d's guard — see below
+     git branch -d <branch>
+   ⛔ `checkout HEAD -- .` AND NOT `checkout -- <paths>`, both halves measured 2026-08-22. `checkout --`
+   restores from the INDEX, so on a staged change it is a NO-OP and `worktree remove` still refuses (tested:
+   ` M  f.txt` staged, unchanged by `checkout -- f.txt`, cleared by `checkout HEAD -- .`) — and a strand
+   whose session died inside the pre-commit hook is exactly that shape. `.` and not the assignment's `dirty
+   paths:` list, because that list is raw `git status --porcelain`: a session copying ` M BUGS.md` out of it
+   runs `checkout -- M BUGS.md`, and this file's own `.status` parser has already been broken by spaces,
+   quoting and renames (see the comment ~120 lines above), never mind the U+00A0 in this corpus's filenames.
+   ⛔ UNTRACKED CONTENT IS THE CASE THIS ROUTE DOES NOT COVER, AND THAT IS A GUARD RATHER THAN A GAP.
+   `checkout` cannot restore a path git does not know (`error: pathspec … did not match`), `worktree remove`
+   refuses on `??` alone (measured: *"contains modified or untracked files, use --force to delete it"*), and
+   `git clean` / `rm -r` / `rm -rf` are ALL in the DENY array. So stop and account for each untracked file
+   BY NAME: if it is on main, plain `rm <file>` is permitted and clears it (a whole untracked DIRECTORY is
+   not — `rm -r` is denied — and that is the right answer too); if it is NOT on main, LEAVE THE WORKTREE and
+   say so, because the rescue net is known to record untracked files in `.status` that its `.patch` does not
+   contain, so the file in front of you may be the only copy. ⚠️ Do NOT reason "a file I cannot restore is a
+   file whose content I have not proved is on main" — that is false and was published here for a few hours:
+   a strand's new `.tsv` that a later commit landed satisfies (a) completely and is still untracked at the
+   strand's own HEAD.
+   ⛔ AND DO NOT REACH FOR `--force`. The `--force` and `-f` forms of worktree removal, and the capital-`D`
+   form of branch deletion, are all three in this script's own DENY array (see it above, beside `rm -rf` and
+   `commit --no-verify`) and go to every session as `--disallowedTools`, where DENY WINS OVER ALLOW. Until
+   2026-08-22 this step told a session to run exactly those, and the call came back `Permission to use Bash …
+   has been denied` — the procedure's terminal step forbidden by its own launcher, 1,041 lines up the same
+   file. The denial is right; the instruction was wrong. It is a guard and not a wall — the matcher is by
+   prefix, so it is the procedure above that keeps a strand safe, not the denylist. Follow the procedure.
+   ⚠️ WHY (c) IS ITS OWN COMMAND AND NOT `branch -d`'s DOING. `branch -d` refuses a branch not fully merged
+   into **its upstream, or into HEAD if no upstream is set** — `git help branch`, read 2026-08-22 — and
+   neither of those is `origin/main`. A strand with an upstream set is "merged into its upstream" trivially,
+   so `-d` would delete a branch that is AHEAD of origin/main, which is the one irreversible mistake in this
+   whole procedure. `merge-base --is-ancestor … origin/main` is the test `housekeeping()` itself uses. This
+   step claimed for a few hours that `-d` "enforces (c) for you"; it does not, and no local shortcut does.
 3. If it holds UNIQUE work: adopt it. Rebase onto main, resolve conflicts KEEPING BOTH SIDES where the
    two are different measurements, run the suite through `test-lock.sh`, commit, push. That is a normal
    item and may be the whole session.
+   ⛔ THEN REMOVE THE SOURCE STRAND — adoption is NOT finished at `push`, and until 2026-08-22 this step
+   said it was. File the rescue trio as `LANDED-as-<your sha>-<name>.{patch,base,status}.bak` (and its
+   `.complete`) — `LANDED-as-`, NOT step 2's `SUPERSEDED-by-`, because you landed that same work rather than
+   replacing it with different work — then run STEP 2'S REMOVAL BLOCK VERBATIM, `checkout HEAD -- .` through
+   `branch -d`, including the untracked-content stop. Do not invent a shortcut and do not use `--force`:
+   it is denied, and step 2 says why.
+   ⛔ RE-CHECK (c) HERE, DO NOT INHERIT IT. Step 2's (a) is now true because your own commit made it, but
+   this is the ONLY step that rewrites history — "rebase onto main" — so the strand branch you are about to
+   delete is not the object step 2 measured. If you rebased the STRAND's branch, its commits are no longer
+   the ones origin/main holds, and they are in no patch this loop wrote (a working-tree patch is a diff
+   against the branch tip). Run `git merge-base --is-ancestor <branch> origin/main` again, after the push,
+   and if it fails leave the branch alone however finished the work feels.
+   ⚠️ MEASURED, and it is a LOOP rather than untidiness: `f5bdbea` adopted `vo-20260822-073825-10384`'s 97
+   lines of `BUGS.md` at 14:05:36, filed the trio as `LANDED-as-f5bdbea-*` (the right name, with this
+   template telling it nothing), deleted this assignment — and left the worktree. The daemon re-assigned
+   the SAME strand at 14:09:59, four minutes later. Deleting the `.md` is what marks a strand resolved and
+   therefore what makes it eligible again, and `housekeeping()` never reaps a DIRTY worktree, so the pair
+   repeats every cycle forever: each following session spends its one item re-proving content already on
+   main. Leaving the worktree is not the safe option — it is the one that costs a session a cycle.
 4. If it is TRIVIAL (docs already landed, an empty file, a stray build artefact): remove it as in 2 and
    log one line.
 5. ESCALATE ONLY FOR AUTHORITY, NEVER FOR DIFFICULTY. The test is not "is this consequential?" — it is

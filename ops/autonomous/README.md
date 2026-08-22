@@ -396,11 +396,16 @@ sessions. Safety is structural: **no `--force`, ever**, so git itself refuses an
 untracked content, which means housekeeping *cannot* destroy in-progress work; and **merged-only**, so a ref
 is touched only when it is an ancestor of `origin/main` and therefore provably pushed.
 
-⚠️ **That property still holds for `housekeeping()` and is no longer the whole story.** Since 2026-08-22 the
-worktrees it declines to touch are snapshotted and handed to a session, which **may** `--force` one it has
-proven superseded, under three preconditions (content already on main, the rescue marked COMPLETE, and the
-branch not ahead of `origin/main`). So "nothing can force-remove a dirty worktree" is false at the level of
-the *system* while remaining true of this function. D15 below is the mechanism and the reasoning. It is purely local (no
+⚠️ **That property still holds for `housekeeping()`, and since D17 it holds for the SYSTEM too.** Since
+2026-08-22 the worktrees it declines to touch are snapshotted and handed to a session, which may take one
+out once it has proven it superseded — under four preconditions (content already on main, the rescue marked
+COMPLETE, the branch not ahead of `origin/main`, and the trio filed first). ⛔ **This paragraph said that
+session "may `--force`" it, and therefore that *"nothing can force-remove a dirty worktree" is false at the
+level of the system*. Both halves are wrong as of D17**, which is the fourth place that error was published
+and the one D17's own first draft missed — a session cannot force anything (the three forcing forms are in
+the daemon's `DENY` array) and does not need to: it restores the tracked files, which are on main and in the
+rescue patch, and stops on untracked content rather than destroying it. So no-`--force` is a property of the
+whole system again. D15 and D17 below are the mechanism and the reasoning. It is purely local (no
 `git fetch`), so it cannot hang the loop on a dead network.
 
 ⚠️ **Scope is deliberately narrow — `auto/*` only.** The owner works in `work/*` worktrees by hand. The
@@ -946,10 +951,12 @@ Assignment is also skipped while a session is live — both call sites run after
 no-op today, but D14 means a mid-run session's scratch `.tsv` now looks like a strand, and a third call
 site added later would otherwise hand a session its own worktree to triage.
 
-**`--force` earns its exception here.** A session may `git worktree remove --force` a strand it has
-**proven** superseded, and only after filing the rescue trio as `SUPERSEDED-by-<sha>-<name>.*.bak`, with
-the commit and the evidence cited in its SESSION LOG. That is the one carve-out from CLAUDE.md's
-never-force rule, and it is conditional on proof rather than on convenience.
+⛔ **This paragraph used to read "`--force` earns its exception here" and it was wrong twice — see D17.**
+A session may take out a strand it has **proven** superseded, and only after filing the rescue trio, with
+the commit and the evidence cited in its SESSION LOG; the proof requirement stands. But the *command* was
+`git worktree remove --force`, which is in this daemon's own `DENY` array, and the removal turns out to
+need no force at all. There is no carve-out from CLAUDE.md's never-force rule, because nothing here needs
+one.
 
 ### D16 · The digest told the reader to look at its own blank space — FIXED
 
@@ -966,9 +973,98 @@ RED either: RED is reserved for a strand nothing is assigned to, because paintin
 how a status surface trains its reader to ignore red. Precedence is unchanged — WORKING still outranks
 this, which `prove-status.sh` §[8] pins.
 
+### D17 · The triage procedure's last step was a command the daemon forbids, and it never said to remove the strand — FIXED
+
+**What happened, and it is two defects with one cause.** D15 gave a session a decision procedure that ends
+in removing the strand, and neither of its two ends worked.
+
+*The adoption path did not end.* Step 3 — "it holds UNIQUE work: adopt it" — read *"rebase, run the suite,
+commit, push"* and stopped there, saying nothing about the worktree the work came out of. Deleting the
+assignment file is what marks a strand **resolved**, and therefore what makes it **eligible again**; and
+`housekeeping()` reaps an `auto/*` worktree only if it is clean, so a dirty one is skipped every cycle
+forever (D15's own founding measurement). Those two facts compose into a loop with no exit. Measured:
+`f5bdbea` adopted `vo-20260822-073825-10384`'s 97 lines of `BUGS.md` at **14:05:36**, filed the rescue trio
+as `LANDED-as-f5bdbea-*`, deleted the assignment — and left the worktree. The daemon re-assigned **the same
+strand** at **14:09:59**, four minutes later, and the session that got it spent its one item re-proving
+content that was already on main. Left alone this repeats every cycle, one session per cycle.
+
+*And the removal itself was un-runnable.* Step 2's terminal command was `git worktree remove --force` plus
+`git branch -D`. Both — and `git worktree remove -f` — are in **this daemon's own `DENY` array**, beside
+`rm -rf` and `commit --no-verify`, and go to every session as `--disallowedTools`, where the header two
+lines above the array says **DENY WINS OVER ALLOW**. So the procedure's last step was forbidden by the
+launcher **in the same file** — at `3078fb0`, the denylist entry is line 245 and the instruction to run it
+line 1286, **1,041 lines apart**. Measured: the call returned `Permission to use Bash …
+has been denied`. **FOUR** places said a session "may" force — the assignment template, `resume-prompt.txt`
+STEP 1.5, this README's D15, and this README's `housekeeping()` section ~550 lines above D17 — and the
+denylist had said otherwise since before any of them. (This entry's own first draft counted three and
+missed the fourth, in the file it was editing. A single `grep force` would have found it, which is
+`CONTRIBUTING.md` §4b again.)
+
+**The fix.** ⛔ **The force was never needed for the tracked files, and must never be used on the untracked
+ones.** Once the preconditions hold, a strand's dirty *tracked* content is redundant twice over — on main,
+and in the rescue patch — so restoring it discards nothing, the worktree becomes clean, and plain
+`git worktree remove` accepts it. Measured 2026-08-22 on the real strand: `checkout HEAD -- .`, `remove`,
+`branch -d` — no force, no refusal overridden. Step 3 now runs that same block, filing under
+`LANDED-as-<sha>` rather than step 2's `SUPERSEDED-by-` (an adopting session landed that same work; it did
+not replace it — and `f5bdbea` picked the right name with the template telling it nothing), and re-checks
+(c) rather than inheriting it, because step 3 is the only step that *rebases* and so the branch it deletes
+is not the object step 2 measured.
+
+⛔ **Three things the adversarial review of this fix corrected, all verified by running git, and each was a
+wrong claim rather than a rough edge.** (1) The command was `checkout -- <paths>`, which restores from the
+**index**: on a *staged* change it is a no-op, so `worktree remove` still refuses — and a session that died
+inside the pre-commit hook leaves exactly that shape. `checkout HEAD -- .` clears modified, staged and
+deleted paths in one go (tested: ` M  f.txt` staged, unchanged by `checkout -- f.txt`, cleared by
+`checkout HEAD -- .`). `.` rather than the assignment's `dirty paths:` list, because that list is raw
+`status --porcelain` and a session copying ` M BUGS.md` out of it runs `checkout -- M BUGS.md`. (2) The
+route did not cover **untracked** content at all, which is the commonest strand shape here — a measurement
+sweep produces one new `.tsv` and nothing else (D14), and `prove-daemon.sh`'s own §[17] fixture is exactly
+that. `checkout` cannot restore an untracked path, `worktree remove` refuses on a `??` alone (measured:
+*"contains modified or untracked files, use --force to delete it"*), and `git clean`/`rm -r`/`rm -rf` are
+all denied. The procedure now **stops** there and accounts for each file by name — `rm <file>` if it is on
+main, leave the worktree if it is not, because the rescue net is known to list untracked files in `.status`
+that its `.patch` does not hold. That is a guard, not a gap. (3) ⛔ **`branch -d` does NOT test against
+`origin/main`.** `git help branch`: the branch must be merged *"in its upstream branch, or in HEAD if no
+upstream was set"*. This entry claimed `-d` "enforces precondition (c) for you", which would have been the
+best thing in the fix and is false — a strand with an upstream set passes `-d` trivially while ahead of
+`origin/main`, which is the one irreversible mistake in the whole procedure. Latent rather than live today
+(verified: no `.gitmodules`, `push.autoSetupRemote` unset, all live `auto/*` upstreams empty), and the fix
+is to use the test `housekeeping()` already uses: `git merge-base --is-ancestor <branch> origin/main`.
+
+⚠️ **Why the existing test could not catch it, and why the FIRST FIX passed its own new test.** §[17]
+asserted that an assignment *was written* and that it *named the worktree* — the two things a fixture
+notices — and nothing read the procedure inside it. The section now extracts the step-2 and step-3
+paragraphs from the assignment the daemon actually wrote, with a length check on each `awk` range so a
+renamed heading cannot make either read as a pass over an empty string. ⛔ **But every one of those is a
+PRESENCE test, and a presence test is green over a document that also says the wrong thing.** The first
+draft of this fix added the cleanup clause to step 3 and ended it with the two denied commands — so
+`grep 'worktree remove'` matched, *on the forbidden command*, and printed PASS over precisely the defect
+D17 was opened for. The review caught it; the seventh assertion is the absence test that makes the machine
+catch it next time, over the whole assignment, matching the backtick-quoted imperative so that prose
+*about* the denial still survives — with its own negative control run against the literal pre-fix line,
+because a typo in that regex would read as a pass over any document at all.
+⚠️ **And the step-3 predicate was wrong in BOTH directions before it settled, which is the smaller lesson
+worth keeping.** It grepped for the string `worktree remove`. Before the review that was satisfied *only* by
+`worktree remove --force` — green on the denied command. After the fix, step 3 was rewritten to CITE step
+2's block rather than repeat it, and the same grep went red over a correct document. One token, a false
+pass and then a false fail. It now tests the removal's two endpoints, `checkout HEAD` and `branch -d`,
+which survive either shape: a step 3 that inlines the block names them, and a step 3 that cites it names
+them as the block's bounds. Both are absent from the pre-fix text, so it still bites. ⚠️ Of the seven, **five** were
+watched failing against the genuine 14:09:59 assignment; the two `awk`-range length controls **passed**
+pre-fix, as vacuity guards should. An earlier draft of this paragraph said "all five were watched failing",
+which was false in a section whose subject is checks that cannot fail.
+
 ### The harnesses, and what they caught
 
-`prove-daemon.sh` **110/0/0** and `prove-status.sh` **48/0**, both measured 2026-08-22 — against a stated 92
+`prove-daemon.sh` **117** assertions and `prove-status.sh` **48/0**, measured 2026-08-22 — against a stated 92
+⚠️ **`prove-daemon.sh`'s 117 is a TOTAL and the pass count depends on machine load** — read its header. D17's
+seven were added on a busy machine, and the honest form of that run is a PAIR: the unmodified tree at
+`3078fb0` scored **102 passed / 6 failed** (108 assertions even reaching the end) and the modified tree
+**115 passed / 2 failed**, the two a strict **subset** of the six, all in §[3]/§[4]/§[4b], with §[4b]'s own
+vacuity guard firing. Two runs of the *same* modified tree gave 5 failures then 2, from that same subset,
+which is the flakiness measured rather than asserted. Comparing the sets is what said "busy machine" rather
+than "my edit broke it"; a single run could not have. Quoting a bare pass count off this harness is how it
+rots —
 (itself stale: D12's own section three screens up records 96) and 39. `prove-daemon.sh` §[17] gained
 assertions and a new §[17b]; `prove-status.sh` gained a new §[11] and two assertions in §[8]/§[11].
 ⚠️ Totals only, deliberately: an earlier draft of this paragraph claimed a *delta* ("eight assertions", then
