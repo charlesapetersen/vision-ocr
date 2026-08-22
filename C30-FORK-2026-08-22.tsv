@@ -1,0 +1,19 @@
+run	page	window	reqImgW	reqImgH	boxes	words	inkRows	inkRowsInVoid	bareShare	largestVoid	largestInkVoid	bareShareInkRuns	longestInkRun	note
+recogniser-observations	1	full	3307	4488	42	273	767	341	0.4446	413	335	0.4198	171	make-observations on src.pdf, otsu=146
+published-text-layer	1	full	3307	4488	296	296	767	352	0.4589	414	336	0.4198	171	pdftotext -bbox on the app output; a DIFFERENT recognition run
+recogniser-observations	2	full	3307	4409	40	433	761	187	0.2457	250	187	0.2076	110	make-observations on src.pdf, otsu=148
+published-text-layer	2	full	3307	4409	445	445	761	221	0.2904	253	188	0.2089	110	pdftotext -bbox on the app output; a DIFFERENT recognition run
+recogniser-observations	3	full	3307	4409	36	344	801	264	0.3296	140	132	0.3171	76	make-observations on src.pdf, otsu=148
+published-text-layer	3	full	3307	4409	346	346	801	286	0.3571	162	150	0.3221	79	pdftotext -bbox on the app output; a DIFFERENT recognition run
+recogniser-observations	4	full	3307	4409	31	260	761	325	0.4271	131	69	0.3890	50	make-observations on src.pdf, otsu=144
+published-text-layer	4	full	3307	4409	314	313	761	300	0.3942	137	71	0.3456	43	pdftotext -bbox on the app output; a DIFFERENT recognition run
+recogniser-observations	5	full	3307	4409	38	295	745	184	0.2470	192	81	0.2295	68	make-observations on src.pdf, otsu=144
+published-text-layer	5	full	3307	4409	279	277	745	320	0.4295	207	167	0.4255	98	pdftotext -bbox on the app output; a DIFFERENT recognition run
+recogniser-observations	6	full	3307	4409	48	397	807	215	0.2664	149	72	0.2007	72	make-observations on src.pdf, otsu=148
+published-text-layer	6	full	3307	4409	421	419	807	175	0.2169	150	65	0.1809	55	pdftotext -bbox on the app output; a DIFFERENT recognition run
+scope-whole-page-png	1	full	3308	4489	45	286	767	350	0.4563	413	335	0.4198	171	CONTROL: the image path reproduces the pdf path above
+scope-top-half	1	rows0-561	3308	2244	50	316	372	7	0.0188	131	7	0.0000	7	same pixels, recognised as their own image
+scope-whole-page-png	1	rows0-561	3308	4489	45	286	372	15	0.0403	135	15	0.0000	9	the whole-page run scored over the same window
+scope-bottom-half	1	rows561-1123	3308	2245	25	222	395	34	0.0861	58	30	0.0759	30	same pixels, recognised as their own image
+scope-whole-page-png	1	rows561-1123	3308	4489	45	286	395	335	0.8481	413	335	0.8152	171	the whole-page run scored over the same window
+scope-void-crop	1	rows584-996	3308	1648	25	277								the void alone: 277 words where the whole page returned none of it

@@ -19,7 +19,24 @@ boxes, and what the tests don't cover.
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **four entries are open as
 of 2026-08-20: `C27`, `C28`, `C29` and `C30`. `C26` is `FIXED`.** `C30` is the owner's second JSTOR
 finding and the widest of them: whole blocks of clean body text get no text layer, and all four of this
-project's text-layer instruments count only the words Vision returned, so `words=100%` is silent about it. `C29` is the owner's JSTOR finding — a
+project's text-layer instruments count only the words Vision returned, so `words=100%` is silent about it.
+⛔ **C30's FORK IS SETTLED ON THE BLOCK IT WAS OPENED ON as of 2026-08-22 — page 1's void is RECOGNISER
+RECALL and not the writer** (`C30-FORK-2026-08-22.tsv`, adopted out of a stranded worktree): the published
+layer holds **2,101** word boxes against **2,002** words in 235 observations from a fresh run, so
+document-wide the writer publishes *more* than the recogniser returns, and the five named missing strings
+read **0 in the observations and 0 in the published layer**. ⛔ **PAGE 5 IS THE EXCEPTION AND IT IS NOT
+SETTLED** — there the published layer is both shorter (277 words against 295) and barer (0.4295 against
+0.2470) than a fresh run, so a writer drop of order ten lines is not excluded; a draft of this said "the
+fork is settled" flat, and the adversarial review refused it from the same artefact. The control that
+would close it — a second and third whole-page recognition of page 5, which is what settled page 1 — is
+minutes and was **not run**. ⛔ **And the loss is a property of the IMAGE HANDED TO ONE REQUEST, not of the type**: over the
+same pixels at the same 400 dpi, page 1's bottom half goes from **84.81% bare to 8.61% — 9.85x less —
+purely by being its own request**, and the two halves return **1.88x** the words the whole page does.
+⚠️ Three things it does NOT settle: no crop size is established as sufficient (recall keeps improving as the
+request shrinks — a gradient, not a threshold), it is **one document and one page** for the scope
+experiment, and the *why* is untested — if the mechanism is a working-resolution downscale inside
+`VNRecognizeTextRequest` then **"render at a higher DPI" is refuted in advance** while tiling is not, and
+`Recogniser` has no tiling seam. C30 stays **OPEN**: the fork is not the fix. `C29` is the owner's JSTOR finding — a
 born-digital cover page rasterised and re-OCR'd because `hasDigitalText` votes per DOCUMENT and never
 samples page 1 at all on a document of 5+ pages. `C26` and `C27` were found on one document after
 `1.13.0` shipped; `C28` was opened out of C26's own campaign. `C26` lost
@@ -681,16 +698,26 @@ omitted all three; the review of C27's sweep counted that as the third such omis
 targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
-`SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv` and `WIDEN-LAYERS-2026-08-22.tsv` — and are
+`SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv` and
+`C30-FORK-2026-08-22.tsv` — and are
 evidence for one run, not
-claims about the present. ⛔ **Two of these have no instrument in the tree at all, and both say so by
+claims about the present. ⛔ **THREE of these have no instrument in the tree at all, and all three say so by
 decision rather than by neglect**: `GUTTER-CENSUS-2026-08-20.tsv`, whose poppler+python
-reimplementation was deliberately not committed (`18fae9e`), and `WIDEN-LAYERS-2026-08-22.tsv`, which
+reimplementation was deliberately not committed (`18fae9e`); `C30-FORK-2026-08-22.tsv`, whose throwaway
+Python pass is at `$STATE/c30-instrument/` with a README carrying its inputs' sha256s, because the tool
+version C30 asks for wants a `--self-test` and a `Tools/` commit pays the full suite; and
+`WIDEN-LAYERS-2026-08-22.tsv`, which
 came from a `Flattener` override seam C28 rejected — its own header says so, and the seam survives only
 outside the tree as
-`$STATE/rescue/REJECTED-not-on-main-vo-20260822-014509-85956.patch.bak`. ⚠️ A first draft called the
-second of those "the one file here whose instrument is not in this repository"; the review of that diff
-found the first two lines above it. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
+`$STATE/rescue/REJECTED-not-on-main-vo-20260822-014509-85956.patch.bak`. ⚠️ **`SUBBARPIX-2026-08-22.tsv`
+is deliberately NOT in that count** and a reader will reach for it: it added no tool either, but it is
+reproducible from tools that ARE committed — an `awk` filter on `INKBAR-2026-08-19.tsv`, one `pdftoppm` a
+page and `score-shape-term`'s `SHAPEDUMP`. The three named above are reproducible from nothing in the
+tree, which is the line this count draws. ⚠️ A first draft called
+`WIDEN-LAYERS-2026-08-22.tsv` "the one file here whose instrument is not in this repository"; the review of
+that diff found `GUTTER-CENSUS-2026-08-20.tsv` in the same list, and `C30-FORK-2026-08-22.tsv` made it
+three later the SAME DAY, 2026-08-22 — so this count has been wrong twice in one day and is worth
+re-deriving from the list rather than read. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls
 born-digital.
 [TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas

@@ -1405,11 +1405,21 @@ happens.**
       (context: BUGS.md C28 `#### Are there PICTURES in the sub-bar 73?`)
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
-      43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ⛔ **STEP 1 IS THE FORK,
-      AND IT IS ONE RUN**: dump what the recogniser returned with `Tools/make-observations.swift` and see
-      whether its observations cover the voids. If they do, the loss is in `SearchableWriter`/`compose`; if
-      they do not, it is recogniser recall and a different fix. **Settle that before proposing anything** —
-      the entry says in terms that the mechanism is not diagnosed. ⛔ **AND DO NOT TRUST `words=`, `start=`,
+      43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ✅ **STEP 1, THE FORK, IS
+      SETTLED ON THE BLOCK IT WAS OPENED ON as of 2026-08-22 — page 1's void is RECOGNISER RECALL and not
+      the writer. DO NOT RE-RUN THAT PART**; ⛔ but **PAGE 5 IS NOT SETTLED and closing it is the FIRST
+      thing to do here** — one `make-observations` invocation, twice, on page 5 alone, because there the
+      published layer is shorter (277 words against 295) and barer (0.4295 against 0.2470) than a fresh
+      run and a writer drop is not excluded. It is minutes and it decides whether C30 is one mechanism or
+      two. See `BUGS.md` C30 `#### What page 5 leaves open`. The evidence for both halves is in the ticked
+      `c30-fork` sub-box below, in `BUGS.md` C30 `#### The fork, settled 2026-08-22`, and in
+      `C30-FORK-2026-08-22.tsv`. This line used to tell you to settle the fork first and to say the mechanism
+      was undiagnosed; the first is now half done and the second is false. ⛔ **What the fork LEAVES is a different job from the one this box
+      was written for**: the loss is a property of the image handed to ONE REQUEST (page 1's bottom half goes
+      84.81% bare → 8.61% purely by being its own request), so the candidate fix is TILING — which
+      `Recogniser` has no seam for and which nothing has priced in time. And if the mechanism is a
+      working-resolution downscale inside `VNRecognizeTextRequest`, **"render at a higher DPI" is refuted in
+      advance**: do not spend a session on it. ⛔ **AND DO NOT TRUST `words=`, `start=`,
       `end=`, `probe-line-coverage` OR `probe-line-edges` HERE**: all four count only the words Vision
       returned, so they read 100% on a page that lost a third of its text. Any new instrument must be able
       to fail a page while `words=` passes it, or it has inherited the same blind spot. A generated fixture
@@ -1419,6 +1429,48 @@ happens.**
       subset where the missed ink is also DESTROYED at 1/8, this is the general case where it is merely
       unsearchable. C28 is mid-campaign so it keeps its place, but this may deserve to jump it: it is the
       app's central promise and the owner reports seeing it on other documents too. Owner's call.
+  - [x] **c30-fork** — **DONE 2026-08-22. The fork is settled on the block it was opened on: page 1's void
+        is RECOGNISER RECALL, not the writer — and the loss is a property of the image handed to one
+        request, not of the type.** Do not re-run that part; ⛔ **page 5 is the exception, is NOT settled,
+        and is the umbrella item's first step** (see above and `#### What page 5 leaves open`).
+        `C30-FORK-2026-08-22.tsv` (18 rows, 15 columns) and `BUGS.md` C30
+        `#### The fork, settled 2026-08-22` carry it. Three things say the recogniser never returned the
+        text: the published layer holds **2,101** word boxes against **2,002** words in 235 observations
+        from a fresh run (document-wide the writer publishes MORE than the recogniser returns, so nothing
+        block-scale is dropped between them at that scale — ⚠️ **page 5 inverts it, 277 against 295**); the
+        five named missing strings read **0 in the observations and 0 in the published layer**; and the void
+        measure over the recogniser's OWN boxes reads bare 0.4446 / 0.2457 /
+        0.3296 / 0.4271 / 0.2470 / 0.2664 on pages 1-6. ✅ The instrument reproduced the entry's own
+        headline before it was asked anything new — longest ink void on page 1 = **171** rows from both box
+        sets **digit for digit**, document floor **31.56%** against the entry's "30%"; ⚠️ its per-page table
+        is close but exact on NONE of the six (two within a point), and the figures quoted are the published
+        layer's, which a draft did not say. ⛔ The mechanism measurement: over the
+        same pixels at 400 dpi, page 1's bottom half goes **84.81% bare → 8.61%, 9.85x less, purely by
+        being its own request**, and the two halves return **1.88x** the whole page's words. Controls: the
+        page as a PNG reproduces the PDF path (45 obs / 286 words vs 42 / 273), and three independent
+        whole-page runs leave the same void. ⚠️ Not settled: no crop size is sufficient (a gradient, not a
+        threshold), one document and one page for the scope test, and the *why* is untested.
+        ⛔ **C30 STAYS OPEN and its umbrella box stays `[ ]`** — the fork is not the fix.
+        ⚠️ **This was ADOPTED, not run here**: the work was done by a session the owner stopped mid-flight
+        on 2026-08-22 (`vo-20260822-073825-10384`), and its BUGS.md was single-copy in `/private/tmp` for
+        five hours. **TWO adversarial review passes over the adoption diff found 9 defects in the draft's
+        prose and 12 more in the revision that fixed them; all 21 are fixed in what landed**, which is why
+        this box reads more cautiously than the draft did. The list below is the first pass and is **not
+        exhaustive** — pass 2's are in the entry, and the sharpest of them is a check that could not fail
+        (a `grep` for a two-word phrase in `pdftotext -bbox` XML always returns 0, because every word is
+        its own element):
+        page 5's inversion unreported and "the layer is as good as the recognition it was handed" refuted by
+        the same two rows; "the fork is settled" flat, where only page 1 is; "the void alone returns 277
+        words, more than the whole page's 286" (277 < 286 — the surviving claim is words-per-pixel);
+        "digit for digit" over a per-page table that reproduces two of six; a word-diff pair (160/253) that
+        reproduces by no method; **412** rows quoted as a column when no column holds it; "one day after the
+        run" for the same day; "an independent extractor" for the same `pdftotext` pass (2,096 words against
+        2,101 `<word>` elements); and a `$STATE/c30-instrument/` that did not exist until the adoption
+        created it. ⚠️ Two limits the review also established and the entry now records: the crop step of the
+        mechanism experiment is **not reproducible** from the surviving record (no crop script, and the PNGs
+        are 3308 px where the recogniser's own render is 3307), and `artefact.py` **alone** regenerates the
+        TSV byte-identically — the other two scripts are the earlier exploratory pass.
+        (context: BUGS.md C30 `#### The fork, settled 2026-08-22`)
 - [ ] **born-digital-page** — a born-digital cover page is rasterised to 1-bit and re-OCR'd because the
       digital-text test votes per DOCUMENT. On the JSTOR download this was found on, page 1's vector text,
       its embedded fonts and a 197x267 colour JPEG became one 1-bit raster, and the text layer went from

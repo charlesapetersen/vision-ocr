@@ -8149,11 +8149,26 @@ substitution risk. Written down here so nobody re-derives "3x too big" from the 
 
 *(found 2026-08-20 by the owner, on a second JSTOR/ProQuest download and reported as "only about half
 of the first page is actually selectable, and significant non-selectable text on all the other pages".
-He adds that he has seen the same on other PDFs. Measured below and CONFIRMED. Mechanism NOT
-diagnosed — see `#### The fork that has to be settled first`.)*
+He adds that he has seen the same on other PDFs. Measured below and CONFIRMED. ⛔ **The fork IS SETTLED
+ON THE BLOCK IT WAS OPENED ON as of 2026-08-22 — page 1's void is RECOGNISER RECALL, not the writer —
+and the mechanism has its first measurement: the loss is a property of the IMAGE HANDED TO ONE REQUEST,
+not of the type. See `#### The fork, settled 2026-08-22`. This preamble said "Mechanism NOT diagnosed"
+until then.** ⚠️ **Page 5 is the one page where it is NOT settled**, and a draft of that section said
+"the fork is settled" flat: there the published layer is both shorter and barer than a fresh
+recognition, so a writer drop is not excluded on it. The section's `#### What page 5 leaves open` names
+the one control that would close it and says why it was not run.)*
 
 **The document.** `1951 - Briefer Book Notes.pdf` (*Management Review* 40:3, March 1951; producer
-`Apache FOP 1.0`; 6 pages, 595x808 pt; in `~/Downloads`, **not** in `testdocs/`). The input is a raw
+`Apache FOP 1.0`; 6 pages; **not** in `testdocs/`). ⛔ **The page size is NOT uniform and this entry said
+it was**: `pdfinfo` reads **595.275 x 807.874 pt on page 1 and 595.275 x 793.700 on pages 2-6**, which the
+2026-08-22 artefact carries independently as `reqImgH` **4488** against **4409** at 400 dpi. "6 pages,
+595x808 pt" was page 1's size stated as the document's — found by the second review pass of the fork
+adoption, and worth more than a nit here: **invariant 5 exists because single-size assumptions hide
+geometry bugs**, and any fixture generated for C30 should keep this document's two sizes. ⚠️ It is **no longer in `~/Downloads`**
+as this entry said — as of 2026-08-22 the source and the app's own output are
+`~/Desktop/Zotero PDF Transfer folder/1951 - Briefer Book Notes{,.ocr}.pdf`, which is where the fork
+was settled from. A path outside the repo is not a fixture and will move again; the entry's own
+"a fixture, and this document is not one" is the standing requirement. The input is a raw
 scan with **no usable text layer** — 78 characters on page 1, the ProQuest citation header, and 0 on
 pages 2-6 — so there is no reference read to compare against and nothing was stripped. The app added
 2,101 words. The complaint is what it did **not** add.
@@ -8208,6 +8223,12 @@ entry; it is silent about it.**
 
 #### The fork that has to be settled first
 
+⛔ **SETTLED 2026-08-22 on page 1, and the answer there is the second bullet: RECOGNISER RECALL. Do not
+re-run that — `#### The fork, settled 2026-08-22` carries it, with `C30-FORK-2026-08-22.tsv`.** ⚠️ **Page
+5 still needs the run this section describes**, and it is the one page where the first bullet is live:
+its published layer is shorter and barer than a fresh recognition. This section is kept
+as written because it is the reasoning the answer was got by, and because page 5 has not had it yet.
+
 **Did Vision not return those words, or did the writer drop them?** The two have different fixes and
 nothing measured here distinguishes them. `Tools/make-observations.swift` dumps what the recogniser
 returned for a PDF; comparing its observation geometry against the voids answers it in one run:
@@ -8225,14 +8246,213 @@ idea (that the skipped type is simply smaller) was **inconclusive and is not evi
 measured *taller* than covered ones, but the segmentation that produced both merges lines into blocks
 up to 423 px, so it compared block sizes rather than type sizes. Recorded so nobody quotes it.
 
+#### The fork, settled 2026-08-22 — page 1's void is recogniser recall, the scope of one request is why, and page 5 is the page it does not settle
+
+**Artefact: `C30-FORK-2026-08-22.tsv`, 18 rows, 15 columns — run at 07:39-07:51 on 2026-08-22 and
+committed the same day, when this section was adopted out of a stranded worktree.** ⚠️ Read the file,
+not a `column -t` of it:
+the `scope-void-crop` row leaves seven columns empty and `column -t` closes the gap, which reads as a
+short row. It is not one — every row is 15 fields by construction, one printer over one `COLS` array
+(`artefact.py:129/210-212`), and `awk -F'\t' '{print NF}'` reads 15 on all 19 lines. ✅ **And the file
+regenerates**: the adoption review re-ran `artefact.py` over the surviving working directory and got a
+**byte-identical** TSV, which is the one thing here that is a control across a re-execution rather than a
+re-reading. ⚠️ It is not a control on the recogniser — the observation JSONs it reads were already on
+disk — so it says the arithmetic is reproducible, not that a fresh recognition returns the same boxes.
+
+Everything below was produced by running
+code, not reasoned: `Tools/make-observations.swift` built against `Sources/` for the recogniser's own
+output, `pdftotext -bbox` for the published text layer, `pdftoppm -r 100 -gray` for the page's ink, and
+one Python pass that writes **the TSV's** numbers so none of those is retyped from a terminal.
+⚠️ **Four figures below are NOT in the TSV** and a draft said every published number was, then said three:
+the five string counts are `print`ed to stdout (`artefact.py:216-220`); the word-diff pair is produced by
+nothing in the record (re-derived at adoption — see the refusal at the end of this section); the retracted
+"412" lived in a docstring; and page 5's "146 more inked rows" is a product of two columns, not a column.
+✅ Against that, the strongest control in the directory: `voids.py` is a **separate implementation** of the
+void measure, and on page 1 it reproduces the artefact's **whole row** on both box sets —
+42/767/341/0.4446/413/335 and 296/767/352/0.4589/414/336 — not just the one figure.
+
+**Three things say the recogniser never returned the text this entry was opened on, and none of them is
+the writer.** ⚠️ Read what each one's set is before quoting it: the first is a document total that page 5
+inverts, the second is five strings on page 1, and the third is six pages of a cross-run comparison. The
+page whose loss the owner reported is settled by all three plus a crop control; the other five pages rest
+on the third alone.
+
+1. **The count bound, and it holds on five pages of six.** The published layer holds **2,101 word
+   boxes** — numerically the entry's own figure, though ⚠️ **not by an independent route**: the same
+   `pdftotext` counts **2,096** *words* — a plain `pdftotext out.pdf -` invocation
+   (`artefact.py:141-144`), not the `-bbox` pass, and the five-word gap is its line-break
+   **de-hyphenation** (`Com-`+`pany,`, `McGraw-`+`Hill` and three more), not an element holding zero or
+   two words — against 2,101 `<word>` *elements*, and the exact
+   agreement with the entry's "the app added 2,101 words" is evidence the original figure was the same
+   element count rather than a second extractor — against **2,002 words in 235 line observations**
+   (p1=42 p2=40 p3=36 p4=31 p5=38 p6=48) from a fresh recognition of the same source. Document-wide the
+   writer published **more** words than the recogniser returned, so nothing block-scale is being dropped
+   between them at that scale. (A bound, not a per-word audit: the two are different runs.)
+   ⛔ **PAGE 5 INVERTS IT, and a document total is what hid that** — published words against observation
+   words, page by page: **296/273, 445/433, 346/344, 313/260, 277/295, 419/397**. On page 5 the writer
+   published **18 fewer** words than a fresh run returned, and it is the page whose published void is the
+   barest of the six **on `bareShareInkRuns` (0.4255)** — ⚠️ **not on `bareShare`, where page 1 is barer
+   at 0.4589 against page 5's 0.4295**. A draft said "the barest of the six" unqualified, which is the
+   very mistake the run-definition warning below is about. **A ratio is a claim about its own set** — the same lesson C28 records
+   against the stencil-ink ratio — and this one is a claim about the document, not about page 5. See
+   `#### What page 5 leaves open`.
+2. **The named text is absent from BOTH.** `General`, `PUBLIC OPINION`, `Cantril`,
+   `ECONOMICS OF NATIONAL`, `Lincoln` — **0 occurrences in the observations, 0 in the published
+   layer**, and 1 each in the crop run below. ⚠️ Counted over each run's *joined* observation text
+   (`artefact.py:216-220`). A raw `grep -o` over a `make-observations` JSON dump **double-reads any string
+   that is present**, because the dump carries a page-level `text` key beside the per-observation ones:
+   measured, `voidcrop.json` reads 2 for each of the five. ⛔ It does **not** double-read a zero, and a
+   draft of this warning implied a reader could see the 2 in `obs.json` — `grep -o` reads **0** there for
+   all five, because the strings are genuinely absent. Count observations or grep the joined text.
+   ⛔ **AND THE RE-VERIFICATION THAT WAS RUN AT ADOPTION IS TWO-FIFTHS A CHECK THAT CANNOT FAIL** — this
+   register's signature defect, found by the second review pass of the adoption diff. `grep -c` over the
+   recogniser's own `obs.txt` and `grep -o … | wc -l` over `pdftotext -bbox`'s XML did read **0** for all
+   five, but the XML half **cannot return anything else** for `PUBLIC OPINION` and
+   `ECONOMICS OF NATIONAL`: `-bbox` puts every word in its own `<word>` element, so a two-word string
+   never matches. Control, measured: `grep -o "BRIEFER BOOK" out.bbox.xml` reads **0** while those words
+   ARE in the layer and plain `pdftotext` finds the phrase. ✅ So the independent re-verification covers
+   **three** strings against the layer — `General`, `Cantril`, `Lincoln` — and all five against the
+   observations; the two multi-word zeroes rest on `artefact.py`'s own joined-text count, which reads
+   0/0/1 for all five and was re-run at adoption.
+3. **The geometry.** The same void measure run against the **recogniser's own observations** reads
+   bare **0.4446 / 0.2457 / 0.3296 / 0.4271 / 0.2470 / 0.2664** on pages 1-6, i.e. a quarter to a half
+   of every page's inked rows sit in 20+-row runs holding no observation box at all. Against the
+   published layer the same measure reads **0.4589 / 0.2904 / 0.3571 / 0.3942 / 0.4295 / 0.2169**.
+   ⚠️ A draft read that pair as "the layer is as good as the recognition it was handed", and the
+   adversarial review of it refused the sentence from the same two rows: **published − observations is
+   +0.0143 / +0.0447 / +0.0275 / −0.0329 / +0.1825 / −0.0495**, so the sign is not even constant and
+   **page 5 is 4.1x the next-largest positive gap.** What the pair supports is that a quarter to a half
+   of every page's inked rows are bare in BOTH box sets — not that the two agree page by page.
+
+✅ **The instrument reproduces this entry's own headline before it was asked anything new — exactly on
+one figure of three, and close on the other two.** Under the entry's run definition — runs of >=20
+consecutive rows that are *inked* AND uncovered — the longest such run on page 1 is **171**, from both
+box sets independently, which is the entry's "largest single void is 171 rows" **digit for digit**. The
+document-level floor is **31.56%** against the published layer (**29.36%** against the observations)
+against the entry's **30%**. ⛔ Per page it is **not** digit for digit and a draft said it was: the
+published layer reads **42.0 / 20.9 / 32.2 / 34.6 / 42.6 / 18.1%** against the entry's
+**43 / 17 / 33 / 32 / 40 / 15**, which is +23% relative on p2 and +21% on p6 — ⚠️ **none of the six matches
+exactly and two are within a point** (p1 by 1.0, p3 by 0.8); a draft said "two of six agree" without
+saying what agreement meant — and those are the PUBLISHED figures, which the draft quoted without saying
+so. The observation side reads **42.0 / 20.8 / 31.7 / 38.9 / 23.0 / 20.1%**, 17 points off the entry on
+p5. So
+this is a reproduction of the entry's *shape and its one exact number*, not of its table.
+⚠️ **Two run definitions live in the TSV and they are not interchangeable**: `bareShare` runs over
+*uncovered* rows (blank lines do not break a run) and reads **413** rows on page 1's largest
+(`largestVoid`; the published layer's is 414) against **171** in the `longestInkRun` column over the same
+block — ⚠️ and it is `longestInkRun` that holds the 171, not `bareShareInkRuns`, which is a share.
+⛔ A draft put **412** there, which is in no column of the file — it is the pixel height of the crop
+that was cut for the 1:1 read (`void1-1.png`, 827x412) and of the `rows584-996` window, i.e. a number
+somebody chose rather than one the instrument printed. In a sentence whose whole point is *quote the
+column, not "the void"*, that is the mistake it warns about. ✅ Positive control at 1:1: page 1's void was cropped and read, and it is exactly the block this
+entry quotes — `General`, the `PUBLIC OPINION—1935-1946 … Hadley Cantril` paragraph and the
+`ECONOMICS OF NATIONAL SECURITY … G. A. Lincoln` paragraph, clean crisp type.
+
+⛔ **AND THE MECHANISM HAS ITS FIRST MEASUREMENT: THE LOSS IS A PROPERTY OF THE IMAGE HANDED TO ONE
+REQUEST, NOT OF THE TYPE.** Page 1, every run at the app's own **400 dpi**, so nothing below varies
+the render — ⚠️ **within a pixel, and this is the one step the record cannot reproduce**: the four PNGs
+are 3308 px wide where `make-observations`' own render of the same page is 3307x4488, and **no crop
+script survives** in the working directory (only the `obs*.sh` that consume the PNGs), so how each
+window was cut is not written down. The four heights, 4489 / 2244 / 2245 / 1648, are internally
+consistent and the two halves sum to the whole; that is all the record supports:
+
+| what was recognised | image | observations | words | bare over the page's bottom half |
+|---|---|---|---|---|
+| the whole page | 3308x4489 | 45 | 286 | **0.8481** |
+| its bottom half alone | 3308x2245 | 25 | 222 | **0.0861** |
+| its top half alone | 3308x2244 | 50 | 316 | — |
+| the void alone | 3308x1648 | 25 | **277** | — |
+
+**Over the same pixels the bottom half goes from 84.81% bare to 8.61% — 9.85x less — purely by being
+its own request.** The void alone returns **277 words — 96.9% of what the whole page returned (286), out
+of 36.7% of its height** — and all five named strings. ⛔ A first draft of this said "more than the whole
+page's 286", which is false by nine words; the claim that survives is the *ratio of words to pixels
+recognised*, not a bigger absolute count. Top and bottom halves together are **75 observations / 538 words
+against the whole page's 45 / 286 — 1.88x the words from the same pixels at the same resolution.**
+
+✅ **The control that makes those crops mean anything**: the whole page fed in as a **PNG** reproduces
+the PDF path — 45 observations / 286 words / bare 0.4563 against 42 / 273 / 0.4446 — so the crops' gain
+is not an artefact of entering through an image instead of a PDF. ✅ **And it is not run-to-run luck**:
+**three** independent whole-page recognitions leave the same void — the app's shipped output, the PDF
+path and the PNG path.
+
+⚠️ **What this does NOT settle.** (a) **No crop size is established as sufficient**: the bottom-half run
+still misses `ECONOMICS OF NATIONAL SECURITY` and `Lincoln`, which the 1,648-px crop returns, so recall
+keeps improving as the request shrinks and this is a gradient rather than a threshold. (b) **One
+document, one page for the scope experiment.** (c) The *why* is still unmeasured — a working-resolution
+downscale inside `VNRecognizeTextRequest`, so that recall tracks text height **relative to the image**,
+is the obvious candidate and this entry does not test it; note that if that is the mechanism then
+"render at a higher DPI" is refuted in advance (the ratio does not move) while tiling is not.
+(d) Nothing here prices tiling: more requests per page is more time, and `Recogniser` has no tiling seam.
+⛔ **REFUSED as an instrument: a word-level diff between the observations and the published layer** — and
+the reason is now stronger than the draft's, because **the draft's own numbers do not reproduce.** It said
+"160 observation words absent from the layer and 253 the other way", and nothing in the record computes
+that pair (`artefact.py` has no word diff). Re-derived twice at adoption, by two people writing the
+extraction independently: whole-document multiset **146 / 245** and per-page-summed **160 / 259** taking
+each `<word>` element's text verbatim; **146 / 240** and **160 / 254** splitting the published text on
+whitespace. ⛔ **And a third tokenisation moves BOTH**: decoding the XML entities the "verbatim" route
+leaves encoded gives **136 / 235** and **150 / 249**. ⚠️ A draft of this paragraph said "the first number
+is method-independent" off the 146/146 agreement of the first two routes, and the second review pass
+refuted it — that agreement is a coincidence of two unrelated ten-token artefacts (ten observation words
+carrying `&apos;`/`&amp;`/`&quot;`, against ten hyphen-split fragments that plain `pdftotext` re-joins into
+five words: `Com-`+`pany,`, `McGraw-`+`Hill` and three more). **The refusal is stronger for it**: a diff
+whose answer depends on how you tokenise cannot separate a writer drop
+from two runs of the same recogniser, and it reads both directions at once regardless. The fork rests on
+the count bound, the string absence and the crop test, and not on that diff.
+
+#### What page 5 leaves open
+
+⛔ **Page 5 is the one page of the six where the writer is NOT exonerated, and the draft of the section
+above claimed the fork settled without saying so.** Two columns of the same artefact:
+the published layer holds **277** words against a fresh run's **295**, and its bare share is **0.4295**
+against **0.2470** — `bareShareInkRuns` **0.4255** against **0.2295**, `longestInkRun` **98** against
+**68**. That is **146 more inked rows inside 20+-row bare runs**; the render is 100 dpi, so ~1.46 inches
+of inked page height, which at seven to nine lines to the inch is **on the order of ten lines of body
+type**. ⚠️ **Derived three times over, and 146 is not a column either** — it is
+`bareShareInkRuns` x `inkRows` (317 − 171), while the file's own `inkRowsInVoid` pair gives **320 − 184 =
+136**; then it assumes a leading; then it treats inked rows as contiguous page height, and page 5 has 745
+inked rows of 1,103, so the span is nearer 2.1 inches. Every one of those errs toward *understating* the
+loss. Nothing on page 5 was read at 1:1; that is the next reader's job and it is cheaper than any of this
+arithmetic.
+
+**Why it cannot be called either way.** The published layer came from the app's own recognition and the
+observations from a fresh one, so the page-5 gap is equally consistent with (a) the app's run returning
+less than this one, i.e. still recall, and (b) the writer dropping what the app's run returned. ⛔ **The
+draft resolved that by calling the gap "run variance … up to 0.18 absolute" — which is circular**, since
+the gap is the thing to be explained. The variance that IS measured is page 1's, where three independent
+whole-page recognitions read 0.4589 / 0.4446 / 0.4563 — a spread of **0.0143**, a **thirteenth** of page
+5's 0.1825. ⚠️ A draft said "an eighth"; `0.1825 / 0.0143` is **12.76**, and this is the number that
+carries "the page-5 gap cannot be run variance", so it is worth dividing rather than estimating.
+
+**The one control that would close it, and why it did not run**: a second and third whole-page
+recognition of page 5, exactly what was done for page 1. It is one `make-observations` invocation per
+run and it was not asked for, because the session doing the work was stopped mid-flight and the section
+was written from what it already had. **Whoever takes C30 next should run it first** — it is minutes,
+and it decides whether this entry is one mechanism or two.
+
 #### What a fix has to satisfy
 
 - **An instrument that starts from the PAGE, not from the observations.** Whatever it is, it must be
   able to report a page as bad while `words=` reads 100%, or it has inherited the blind spot. The
   ink-void measure above is a starting shape and is deliberately crude; the tool version belongs in
-  `Tools/` with a `--self-test`.
-- **A fixture, and this document is not one** — it is in `~/Downloads` and `testdocs/` holds nothing of
-  this shape. Generated fixtures are the standing preference (owner, 2026-08-20).
+  `Tools/` with a `--self-test`. ⚠️ **The 2026-08-22 fork run built one and did NOT commit it** — a
+  throwaway Python pass, because `Tools/` is in the pre-commit suite regex and the fork was a docs-only
+  commit. ⛔ **A draft of this bullet claimed it was "kept at `$STATE/c30-instrument/`" and that directory
+  did not exist**: the scripts were single-copy in `/private/tmp/c30-work/`, which is the volatile half of
+  the 2026-08-20 lesson again. ⚠️ That draft was never committed — it is the stranded worktree
+  `vo-20260822-073825-10384`, filed at `$STATE/rescue/`, so `git log -S` finds the retracted claim in no
+  version of this file. Corrected when this section was adopted on 2026-08-22 — `artefact.py`,
+  `voids.py` and `bbox2tsv.py` are now **actually** at `$STATE/c30-instrument/`, with the source PDF's
+  sha256 and the `pdftoppm`/`pdftotext` invocations beside them in a `README`. Its two run definitions,
+  its three constants (`INK_ROW_FRACTION` 0.005, `VOID_MIN_ROWS` 20, `BOX_PAD_PX` 2 — verified by
+  reading `artefact.py:11-13`) and both box producers are described above precisely enough to rebuild;
+  the tool is the next bounded step, not a rediscovery.
+- **A fixture, and this document is not one** — as of 2026-08-22 it is in
+  `~/Desktop/Zotero PDF Transfer folder/`, it was in `~/Downloads` when this entry was written, and
+  `testdocs/` holds nothing of this shape. That it moved in two days is the argument. Generated
+  fixtures are the standing preference (owner, 2026-08-20). ⚠️ **A generated fixture has to reproduce
+  the mechanism, not the symptom**: what the scope experiment above says is needed is a page of dense
+  small type tall enough that one request drops blocks of it, so a two-line fixture cannot pin this.
 - **The corpus figure has to be re-established afterwards**, because `words=` on 233 documents is
   currently the project's headline claim about its own text layer and it does not mean what it appears
   to mean.
