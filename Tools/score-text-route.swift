@@ -68,8 +68,13 @@
 // the constant changes and nothing else.
 //
 // ⛔ **PICK THE BAR FROM THE PAGE, NOT FROM THIS HEADER — `INKBAR=0.08` CAN COMPARE A PAGE
-// WITH ITSELF.** The two verdicts are `inkOut < shipped && noPaleDrawing` and
-// `inkOut < INKBAR && noPaleDrawing`, so a page on the same side of both bars is published
+// WITH ITSELF.** Both verdicts are production's own `pageIsAllText()`, which since
+// `fbf6d87` has THREE terms — `inkOut < bar`, the pale-drawing extent, and
+// `textLineGroupsOutsideText` — and only the first of them moves with `INKBAR`. (This
+// paragraph described the guard as `inkOut < bar && noPaleDrawing` until 2026-08-23, which
+// was a two-term description of a three-term guard in the very file whose two-term
+// *replica* was the defect being fixed. C28 `#### The replica retired`.) So a page on the
+// same side of both bars is published
 // identically twice: `barVerdict` matches `verdict`, `barDelta` prints `same`, and `INKDUMP`
 // writes **byte-identical** tone layers while still reporting "wrote 7 file(s)". Measured
 // 2026-08-20 on `Broadhead - 1994` p3 (`inkOut` 0.0450) at `INKBAR=0.08`: `all-text` both
@@ -437,6 +442,38 @@ func detailSuffix(factor: Int) -> String {
     factor == Flattener.mrcBackgroundDownsample ? "" : "-d\(factor)"
 }
 
+/// The `verdict` column's answer, and whether this file's own replica of the shipped
+/// guard agreed with it.
+///
+/// ⛔ **`production` wins whenever there is one, and that is the whole point of this
+/// function.** `pageIsAllText()` has been replicated in this file three times and the
+/// replica has been wrong three times — a missing pale-drawing clause (C26's sibling
+/// sweep, 2026-08-18), a missing `keepEveryPixel` (C28 question 2b, 2026-08-21), and a
+/// missing shape term (C28's wiring, found 2026-08-23 by the adversarial review of
+/// `6d0caa1`). CONTRIBUTING 4b's shape three times in one `let`. ⚠️ Count the ordinals
+/// carefully, because three documents got them out of step: this is the **third repair**
+/// (two clauses were added before it), and it is not a third clause — it stops the
+/// copying altogether, which would have been a fourth *copy* of the guard.
+/// `Flattener.MRCLayers.shrunkAsAllText` is the verdict production actually took on the
+/// page, so the tool reads it back the way it already reads `backgroundWidth` back.
+///
+/// ⛔ **And the third term could not have been mirrored anyway.**
+/// `textLineGroupsOutsideText` takes the Sauvola *stencil*, which `mrcLayers` builds
+/// privately (`sauvolaMask` ∩ `textRegionMask`) and does not publish as a `[Bool]`. A
+/// replica would have had to reproduce that too — a second copy of a different shipped
+/// function to keep a copy of this one honest.
+///
+/// `production` is `nil` only when the page was never layered — no words, or
+/// `mrcLayers` refused it — in which case production took no all-text decision at all
+/// and the replica is the only answer available. It is reported rather than trusted:
+/// `disagrees` is what the run prints, so a drift shows up as a number instead of as a
+/// silently wrong column. `nil` is deliberately NOT a disagreement — there is nothing
+/// to disagree with, and counting it as one would put every no-words page in the count.
+func layeringVerdict(production: Bool?, replica: Bool) -> (allText: Bool, disagrees: Bool) {
+    guard let production else { return (replica, false) }
+    return (production, production != replica)
+}
+
 // Runs on every invocation, `score-mrc` and `score-threshold-loss`'s pattern. Cheap
 // enough to be unconditional, and the point of it is the FOURTH row: a run that wrote
 // nothing and lost nothing is the silent failure, and it is the one a reader would
@@ -497,6 +534,63 @@ for (factor, want) in [
          + "\"\(detailSuffix(factor: factor))\", wanted \"\(want)\"; two Photo detail "
          + "settings could overwrite each other in one INKDUMP directory; "
          + "measuring nothing\n").utf8))
+    exit(5)
+}
+
+// `layeringVerdict`'s contract, pinned. Rows 3 and 4 are the ones that bite: they are the
+// shape the 2026-08-23 defect had — the replica says `all-text` over a page production
+// refused, and the sub-bar pages C28 exists for are exactly where the two differ. A
+// `layeringVerdict` whose second `return` hands back the replica (the guard left intact)
+// passes rows 1, 2, 5 and 6 and fails 3 and 4, which is what makes this table able to fail
+// at all: measured, exit 5 naming row 3, since the loop stops at the first mismatch.
+//
+// ⛔ **WHAT IT DOES NOT PIN, said plainly, because the alternative is an eleventh check
+// that cannot fail.** This is the *resolver's* contract and not the `verdict` column's
+// provenance. Reintroduce the historical defect at the call site — `let allText =
+// replicaAllText`, or pass `production: nil` — and all six rows still pass, because nothing
+// in this table reaches the call site. Nor could anything in the suite: `run_tests.sh` runs
+// no tool self-tests, and catching that needs a real page through `mrcLayers`. So what the
+// design buys is not detection but harmlessness plus disclosure — a drift is confined to
+// pages that never layered, and any divergence on a page that did is printed. Found by the
+// adversarial review of this diff, which was right that "the `verdict` column's source of
+// truth, pinned" claimed the stronger thing.
+//
+// Row 5 is the fallback and row 6 its twin: with no production verdict the replica IS the
+// answer, and neither may be counted as a disagreement — a page with no words would
+// otherwise inflate the divergence count the run prints, and a count that fires on the
+// ordinary case cannot report the extraordinary one.
+//
+// ⚠️ The case count is asserted below. A mutant that deleted rows would otherwise look
+// like a pass, which is the failure `sweep-ink-bar.py`'s own `EXPECTED_CHECKS` records
+// verbatim ("a mutant that made 19 cases DISAPPEAR looked like a pass") and which the two
+// tables above this one are still open to.
+let layeringVerdictCases: [(Bool?, Bool, Bool, Bool)] = [
+    (Bool?(true), true, true, false),    // production and replica agree: all-text
+    (Bool?(false), false, false, false), // …and agree the other way
+    (Bool?(false), true, false, true),   // ⚠️ THE DEFECT'S SHAPE: production refused, replica did not
+    (Bool?(true), false, true, true),    // ⚠️ and the same drift the other way round
+    (Bool?.none, true, true, false),     // never layered: the replica is all there is
+    (Bool?.none, false, false, false),   // …and it is not a disagreement either
+]
+if layeringVerdictCases.count != 6 {
+    FileHandle.standardError.write(Data(
+        ("score-text-route: self-test failed — the layeringVerdict table has "
+         + "\(layeringVerdictCases.count) cases, not 6; rows were added or deleted and the "
+         + "table can no longer be read as covering both drift directions and both arms of "
+         + "the `nil` fallback; measuring nothing\n").utf8))
+    exit(5)
+}
+for (production, replica, wantAllText, wantDisagrees) in layeringVerdictCases
+where layeringVerdict(production: production, replica: replica)
+        != (allText: wantAllText, disagrees: wantDisagrees) {
+    let got = layeringVerdict(production: production, replica: replica)
+    FileHandle.standardError.write(Data(
+        ("score-text-route: self-test failed — layeringVerdict(production: "
+         + "\(production.map(String.init(describing:)) ?? "nil"), replica: \(replica)) is "
+         + "(allText: \(got.allText), disagrees: \(got.disagrees)), wanted "
+         + "(allText: \(wantAllText), disagrees: \(wantDisagrees)); the `verdict` column "
+         + "would be this file's replica of `pageIsAllText()` rather than production's own "
+         + "answer, which has been wrong three times; measuring nothing\n").utf8))
     exit(5)
 }
 
@@ -563,6 +657,22 @@ var allTextLayered = 0, allTextBilevel = 0, allTextPages = 0
 // both this lesson.
 var movedPages = 0, movedShipped = 0, movedAtBar = 0
 var stencilMoved = 0, comparedPages = 0, replicaDisagreed = 0
+// The `verdict` column's replica against production's own `shrunkAsAllText`, on the
+// shipped run. Separate from `replicaDisagreed`, which is the *bar* seam's tripwire and
+// needs an `INKBAR` to fire at all — this one is counted on every layered page, priced or
+// not, which is the only reason the 2026-08-23 defect would have been visible in a plain
+// run. See `layeringVerdict`.
+// ⚠️ `verdictPages` and NOT `counted` is the denominator, because the two count different
+// sets: this one is incremented where the verdict is taken, and `counted` further down,
+// past a `guard layered > 0, bilevel > 0` that a failed JBIG2 encode trips. A page that
+// disagreed and then failed to encode would otherwise land in the numerator and not the
+// denominator — "1 of 0", a fraction over two different sets, which is the shape T14's
+// `merged=M/N` was refused for.
+var verdictReplicaDisagreed = 0, verdictPages = 0
+// The same count for the priced bar's verdict, kept separate because its denominator is
+// the priced pages and not the layered ones, and because under a lower `INKBAR` the two
+// sides diverge for a *different* reason from the shipped side's.
+var barVerdictReplicaDisagreed = 0, barVerdictPages = 0
 
 for index in pages {
     guard let single = isolate(index), let page = doc.page(at: index - 1) else { continue }
@@ -667,6 +777,22 @@ for index in pages {
     // a replica of a shipped guard missing a clause, made reachable by a new seam rather
     // than by an edit to the guard.
     //
+    // ⛔ **AND IT HAPPENED A THIRD TIME, which is why this expression is no longer the
+    // answer.** `fbf6d87` (C28's wiring, 2026-08-22) gave `pageIsAllText()` a THIRD
+    // refusal condition — `textLineGroupsOutsideText`, a shape term — and this replica
+    // was not updated, so between 2026-08-22 and 2026-08-23 the tool printed
+    // `verdict=all-text` and counted pages into the `allText*` aggregates on exactly the
+    // sub-bar pages the new term refuses: the 16-of-73 population C28 exists for, wrong
+    // in the direction that HIDES C28. Found by the adversarial review of `6d0caa1`; no
+    // committed TSV moves, because every one of them pre-dates the wiring.
+    //
+    // So what follows is a REPLICA and no longer the verdict. `allText` is read back from
+    // `Flattener.MRCLayers.shrunkAsAllText` below — production's own answer on the page —
+    // and this expression survives for the two jobs a read-back cannot do: it is the only
+    // answer available on a page that was never layered, and it is the cross-check whose
+    // disagreement the run reports. See `layeringVerdict` for why the shape term could not
+    // have been mirrored here even by someone who remembered to try.
+    //
     // `extent` is hoisted to a `let` because C26's priced bar needs the same value
     // for both verdicts. Only the first term moves with `INKBAR`, so computing the
     // second twice would be two chances to disagree about one page.
@@ -675,12 +801,12 @@ for index in pages {
                                        dpi: dpi).extent
     let noPaleDrawing = extent <= Flattener.paleDrawingThreshold
     let keepEveryPixel = photoBackgroundDownsample <= 1
-    let allText = !keepEveryPixel
+    let replicaAllText = !keepEveryPixel
         && inkOut < Flattener.textPageInkOutsideThreshold && noPaleDrawing
     // C26. The same page against the bar being priced. A *lower* bar can only take
     // pages off the shrink, but the sign is not assumed: `INKBAR` above the shipped
     // value is legal and prices the other direction.
-    let allTextAtBar = priceBar.map { !keepEveryPixel && inkOut < $0 && noPaleDrawing }
+    let replicaAllTextAtBar = priceBar.map { !keepEveryPixel && inkOut < $0 && noPaleDrawing }
 
     // --- layered, exactly as it ships ---
     var layered = 0, stencilBytes = 0, shippedBackgroundWidth = 0
@@ -752,6 +878,65 @@ for index in pages {
             }
         }
         Flattener.textPageInkOutsideThresholdOverride = nil
+    }
+
+    // --- the verdict, read back from production rather than replicated ---
+    //
+    // Here rather than beside the replica because it needs `mrcLayers` to have run: the
+    // flag is production's own `allText`, carried out on the layers it built. Both
+    // verdicts come from the same place, and the bar's from the layers built while the
+    // override was set, so the pair still differs in exactly the bar and nothing else.
+    //
+    // A page that never layered keeps the replica, and its `disagrees` is false by
+    // construction — see `layeringVerdict`.
+    let shippedVerdict = layeringVerdict(production: shippedLayers?.shrunkAsAllText,
+                                         replica: replicaAllText)
+    let allText = shippedVerdict.allText
+    // ⛔ **The BAR side is resolved and reported too, not just the shipped one.** A first
+    // version kept only `.allText` here and threw the `disagrees` flag away — and the bar
+    // side is precisely where the divergence lives under a lower `INKBAR`: the replica says
+    // `all-text` because `inkOut < bar`, while production refuses on the shape term. Half
+    // the reporting this repair exists for would have been silently discarded, in the
+    // column `barVerdict`. Found by the adversarial review of this diff.
+    let barVerdictPair = replicaAllTextAtBar.map {
+        layeringVerdict(production: barLayers?.shrunkAsAllText, replica: $0)
+    }
+    let allTextAtBar = barVerdictPair?.allText
+    // Counted and named, not silently corrected. A divergence means either a term this
+    // file does not mirror or a seam that stopped being read, and both are things a
+    // reader of the TSV needs told; the alternative is a column that quietly changed
+    // meaning, which is what the last three repairs of the replica were.
+    //
+    // ⚠️ On stderr and in the summary, NOT appended to the `verdict` column.
+    // `Tools/sweep-ink-bar.py` matches that field with an exact `== "all-text"` (it
+    // `.split(" ")[0]`s only `barVerdict`), so a token added here would silently drop the
+    // page out of every count that consumer prints — an instrument repair breaking the
+    // instrument downstream of it. Verified by reading that parser rather than assumed:
+    // `parse_tool_output` breaks at the first blank line, so the summary lines this run
+    // adds are never parsed, and `run_document` reads stderr **only** for the exits in
+    // `CONFIG_EXITS`, all of which happen above the page loop.
+    //
+    // ⚠️ Emitted above the `guard layered > 0, bilevel > 0` further down, so a page whose
+    // 1-bit encode then fails is named here and prints `FAIL encode failed` in its row.
+    // Left that way deliberately: the verdict *was* taken on that page, and a divergence
+    // suppressed because a later step failed is the silence this whole repair is about.
+    verdictPages += 1
+    if shippedVerdict.disagrees {
+        verdictReplicaDisagreed += 1
+        FileHandle.standardError.write(Data(
+            ("VERDICT p\(index): production says "
+             + "\(allText ? "all-text" : "picture") and this file's replica of "
+             + "`pageIsAllText()` says \(replicaAllText ? "all-text" : "picture") — "
+             + "production's answer is the one in the row\n").utf8))
+    }
+    if barVerdictPair != nil { barVerdictPages += 1 }
+    if barVerdictPair?.disagrees == true {
+        barVerdictReplicaDisagreed += 1
+        FileHandle.standardError.write(Data(
+            ("VERDICT-AT-BAR p\(index): at the priced bar production says "
+             + "\((allTextAtBar ?? false) ? "all-text" : "picture") and the replica says "
+             + "\((replicaAllTextAtBar ?? false) ? "all-text" : "picture") — "
+             + "`barVerdict` carries production's answer\n").utf8))
     }
 
     // --- C26 sub-step 4: the layers themselves, for a reader rather than a total ---
@@ -845,7 +1030,7 @@ for index in pages {
     // one: `layeredAtBar` is a second run of `mrcLayers` either way, so an equal pair
     // of byte counts is this row's own negative control on the seam.
     var barVerdict = "-", barBytes = "-", barDelta = "-"
-    if let moved = allTextAtBar {
+    if let moved = allTextAtBar, let replicaMoved = replicaAllTextAtBar {
         barVerdict = moved ? "all-text" : "picture"
         if movedStencil { stencilMoved += 1; barVerdict += " STENCIL-MOVED" }
         if layeredAtBar > 0 {
@@ -853,10 +1038,31 @@ for index in pages {
             // Production's own answer, not the replica's: the two factors differ, so a
             // page whose verdict moved must come back a different width. A row where
             // the replica and the layers disagree is either a dead seam or a term this
-            // file does not mirror (`keepEveryPixel`, the megapixel caps), and it is
-            // named rather than averaged into the total.
+            // file does not mirror, and it is named rather than averaged into the total.
+            //
+            // ⛔ **THE COMMON CAUSE IS NOW THE SHAPE TERM, NOT A DEAD SEAM, and a reader
+            // who does not know that will chase the wrong thing.** The unmirrored terms
+            // used to be `keepEveryPixel` and the megapixel caps, both rare. Since
+            // `fbf6d87` the replica is also missing `textLineGroupsOutsideText`
+            // **deliberately** — it cannot mirror it, see `layeringVerdict` — and that term
+            // decides 16 of the 73 sub-bar pages C28 is about. So on this campaign's own
+            // population `REPLICA-DISAGREES` is *expected*, and it is the `VERDICT` /
+            // `VERDICT-AT-BAR` stderr lines that tell the two apart: a shape-term
+            // divergence prints one of those on the same page, a dead override does not
+            // (production would agree with the replica on both bars and only the widths
+            // would fail to move). Read them together. Found by the adversarial review of
+            // the diff that made the shape term the common case.
+            //
+            // ⛔ **Both sides of this comparison must be the REPLICA's, and that is what
+            // makes it a dead-seam tripwire rather than a tautology.** The `verdict`
+            // column now reads `shrunkAsAllText` back from production (2026-08-23), so
+            // writing this against `moved`/`allText` would compare production's flags with
+            // production's widths — and an override that stopped being read would move
+            // neither, so the tripwire would go quiet in exactly the case it exists for.
+            // The replica is the independent thing here; that is the whole reason it is
+            // still computed on a page that layered.
             let widthMoved = barBackgroundWidth != shippedBackgroundWidth
-            if widthMoved != (moved != allText) {
+            if widthMoved != (replicaMoved != replicaAllText) {
                 barVerdict += " REPLICA-DISAGREES"
                 replicaDisagreed += 1
             }
@@ -896,6 +1102,30 @@ print("")
 print("Photo detail: \(Prefs.PhotoDetail.allCases.first { $0.downsample == photoBackgroundDownsample }?.label ?? "?")"
       + " — background downsample \(photoBackgroundDownsample)x, foreground "
       + "\(Flattener.mrcForegroundDownsample)x (the app varies only the background)")
+// Printed above the `counted > 0` guard and NOT gated on `priceBar`, both
+// deliberately: this is the verdict's own provenance, and it is owed on a run that
+// measured no picture-route page just as much as on one that measured twelve. A first
+// version sat *below* that guard while its comment said "printed unconditionally,
+// including the zero" — false for exactly the run where `verdictPages >= 1` and
+// `counted == 0`, i.e. every page reaching the layering decision and then failing its
+// 1-bit encode. Found by the adversarial review of this diff. Between `fbf6d87` and
+// 2026-08-23 the replica was a term short and every sub-bar page C28 exists for was
+// mis-labelled `all-text` while the run printed clean, so a count that appears only
+// when it is non-zero cannot tell a reader the check ran at all.
+print("verdict source: `MRCLayers.shrunkAsAllText` read back from production; this "
+      + "file's replica of `pageIsAllText()` disagreed on \(verdictReplicaDisagreed) of "
+      + "\(verdictPages) page(s) that reached the layering decision"
+      + (barVerdictPages > 0
+         ? ", and on \(barVerdictReplicaDisagreed) of \(barVerdictPages) at the priced bar"
+         : ""))
+if verdictReplicaDisagreed > 0 || barVerdictReplicaDisagreed > 0 {
+    print("  ⚠️ every disagreement is on stderr as a VERDICT or VERDICT-AT-BAR line. The "
+          + "rows are production's answer, so the totals above stand. ⛔ On C28's own "
+          + "population a disagreement is EXPECTED and is not a fault: the replica cannot "
+          + "mirror `textLineGroupsOutsideText`, which decides 16 of the 73 sub-bar pages. "
+          + "What it would mean elsewhere is that the replica has drifted from the shipped "
+          + "guard again — it has three times")
+}
 guard counted > 0 else { print("no picture-route pages measured"); finish() }
 print("\(counted) picture-route pages: layered \(totalLayered) B, 1-bit \(totalBilevel) B, "
       + String(format: "delta %+d B (%.0f B/page)",
@@ -942,10 +1172,18 @@ if let bar = priceBar {
         // broken instrument — the exact misreading the `INKBAR` range guard above
         // exists to prevent, arriving by a different door.
         if replicaDisagreed > 0 {
+            // ⛔ The ORDER of the two candidate causes matters and it was the other way
+            // round until 2026-08-23. Since `fbf6d87` the shape term is the common one —
+            // the replica cannot mirror it and it decides 16 of the 73 sub-bar pages — so
+            // telling a reader to suspect a dead override first sends them after the rare
+            // cause on this campaign's own population. The `VERDICT` / `VERDICT-AT-BAR`
+            // lines on stderr are what distinguish them.
             print("  ⚠️ this file's replica of the guard and the widths `mrcLayers` "
                   + "returned disagree on \(replicaDisagreed) of \(comparedPages) priced "
-                  + "page(s) — suspect a dead override or an unmirrored term before "
-                  + "reading any total above")
+                  + "page(s). Expected where the shape term decides the page — the replica "
+                  + "cannot mirror it — and a VERDICT or VERDICT-AT-BAR line on stderr "
+                  + "names those. Only where no such line was printed does this mean a dead "
+                  + "override, which would leave every total above meaningless")
         }
     }
 }

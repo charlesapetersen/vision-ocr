@@ -152,10 +152,46 @@ which these fixtures do run through, so whether they would kill such a mutant is
 ⛔ **THAT COMMIT LANDED AS `6d0caa1` ON 2026-08-23, SUITE `1,223/1,223`, AND THE ADVERSARIAL REVIEW OF ITS
 OWN DIFF REFUTED THREE OF ITS CLAIMS — one of them a real defect that is now the queue's
 `alltext-replica`.** ⛔ **The sibling sweep said "two answers, both addressed" and there were THREE**:
-`Tools/score-text-route.swift:678` still replicates `pageIsAllText()` with **two terms against the shipped
-guard's three**, so the instrument reads `all-text` on exactly the sub-bar pages the wired shape term
-refuses — **wrong in the direction that HIDES C28**, and `sweep-ink-bar.py` inherits it. ⚠️ No published
-figure moves (every committed TSV pre-dates the wiring), and it is the **third** repair of that one `let`.
+`Tools/score-text-route.swift:678` replicated `pageIsAllText()` with **two terms against the shipped
+guard's three**, so the instrument read `all-text` on exactly the sub-bar pages the wired shape term
+refuses — **wrong in the direction that HIDES C28**, and `sweep-ink-bar.py` inherited it. ⚠️ No published
+figure moves (every committed TSV pre-dates the wiring), and it was the **third** repair of that one `let`.
+✅ **FIXED 2026-08-23, AND THE THIRD REPAIR IS NOT A THIRD CLAUSE — the tool reads
+`Flattener.MRCLayers.shrunkAsAllText` back instead of deciding for itself; read `#### The replica retired`.**
+The replica survives only as the answer on a page that never layered and as a cross-check whose
+disagreement the run prints. ⛔ **Measured on `Ford_1941_Speech_.pdf`, all six sampled pages, two binaries
+differing in exactly this tool: p6 goes `all-text` → `picture` and p1–p5 do not move**, and `verdict` is
+the only one of the thirteen fields that differs on any row — the label moved and nothing else, because the
+bytes were always production's. ⚠️ Do not call that "twelve columns": `page` is the row key and three bar
+columns are the literal `-` with no `INKBAR` set, so **eight carry information**, and there are three bar
+columns rather than four. The flip is term 3's alone, from the row's own columns (`inkOut` 0.0056 against a
+bar of 0.045, `extent` 0.01498 against 0.05). ⚠️ p1 is the sharper control: it is labelled `loses` too and
+does **not** move, because its loss is a hand-made mark at `lineN` 0. ⛔ **The aggregate was the larger
+lie**: `6 of them read all-text: layered 436,633 B` → `5 … 224,977 B`, so **211,656 B — 48.5%** — belonged
+to a page production does not shrink, in the summary line `Tools/README.md` points at as pricing TODO item
+1 (⚠️ whose own cited 8.2 KB/page that cell already records as unreproducible, C25). ⚠️ **48.5% is a
+six-page sample's number, not the corpus's** — the un-shrunk page necessarily dominates such an aggregate —
+and no corpus version exists. ⛔ **And the priced-bar per-page cost was out by exactly 2x while the row
+beside it said otherwise**: `INKBAR=0.0005` over p4/p6 read `2 of 2 … 100,626 B/page` and now reads `1 of
+2 … 201,252 B/page`, because p6 is `picture` at both bars and its own `barDelta` printed `same` in the same
+output, so one unchanged delta was divided by two pages instead of one. ⚠️ A draft said "out by 3.2x" from
+5.76/1.79; the review refused it as a ratio of ratios over two different sets. The absolute delta is
+identical (+201,252 B) — `layeredAtBar` was always production's bytes. ✅ A six-row `layeringVerdict` table
+exits **5**, was watched failing against a sabotage of its second `return` (the `nil` guard left intact),
+and asserts its own case count; ⛔ **but it pins the RESOLVER and not the column — reintroduce the
+historical defect at the call site and all six rows still pass**, which is said in place rather than
+papered over, and nothing in the suite can catch a fourth drift. ⚠️ **The `REPLICA-DISAGREES` tripwire is
+now noisy on C28's own population** — the replica cannot mirror the shape term, so a disagreement is
+*expected* on the 16 of 73, and a first draft offered one such firing as proof the dead-seam detector
+survived when the override was demonstrably alive in that run; the new `VERDICT` / `VERDICT-AT-BAR` stderr
+lines are what tell the two apart. It also had to be deliberately kept on the replica's own pair or it
+would have compared production with itself. ✅ Sibling sweep: nobody else replicates the guard —
+`score-mrc` asserts the constant on fixtures and already reads production's factor back,
+`score-threshold-loss` says outright it cannot print this verdict, `score-shape-term`'s `verdict` is a
+status string, and `sweep-ink-bar.py` only consumes the column (`--self-test` run, 71 checks green — a
+no-op control, since the diff does not touch it), which is why the divergence goes to stderr and to the
+prose summary rather than into the field it matches with an exact `== "all-text"`: verified by reading that
+parser, which breaks at the first blank line and reads stderr only on the config exits.
 The other two are prose, corrected in `BUGS.md` here and still wrong in the code comments until the
 queue's `c28-comment-fixes` lands: the 3 × 3 baseline is **not** in the rim check's scene (that check has
 its own `rimMap`; the real cause is its own 2 × 6 stubs shrinking to 2 × 3 under the r=3 collar), and the

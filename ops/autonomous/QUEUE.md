@@ -1992,8 +1992,54 @@ happens.**
       so the arm that skips on a busy machine ran and passed. Both figures are the same harness on two
       machine states, which is what that arm is for. It is **58/0/0** now.)
       (origin: README.md §Defects D7's closing note; both entries began in RUN.md's NEEDS OWNER)
-- [ ] **alltext-replica** — ⛔ **`Tools/score-text-route.swift`'s hand-written copy of `pageIsAllText()`
-      still has TWO terms and the shipped guard has THREE.** Found 2026-08-23 by the adversarial review of
+- [x] **alltext-replica** — **DONE 2026-08-23.** ✅ **The column stopped being a replica: it reads
+      `Flattener.MRCLayers.shrunkAsAllText` back from production**, and the hand-written expression survives
+      only as the answer on a page that never layered and as a **printed** cross-check
+      (`layeringVerdict(production:replica:)`, a `disagrees` flag, a `VERDICT p<n>:` line on stderr, and a
+      summary count printed on every run *including zero*). ⛔ **Measured on `Ford_1941_Speech_.pdf`, all
+      six sampled pages, two binaries differing in exactly this tool: p6 goes `all-text` → `picture` and
+      p1–p5 do not move**, with `verdict` the only one of the thirteen fields differing on any row — ⚠️ not
+      "twelve columns": `page` is the row key and three bar columns are the literal `-` with no `INKBAR`
+      set, so **eight** carry information — the label moved
+      and nothing else, because the bytes were always production's. The flip is term 3's alone from the row
+      itself (`inkOut` 0.0056 against 0.045, `extent` 0.01498 against 0.05). ⚠️ p1 is the sharper control:
+      labelled `loses` too and correctly unmoved, its loss being a hand-made mark at `lineN` 0.
+      ⛔ **Two consequences bigger than the column.** The all-text aggregate — the summary line
+      `Tools/README.md` points at as pricing TODO item 1, ⚠️ whose own cited 8.2 KB/page that cell already
+      records as unreproducible (C25) — fell **436,633 → 224,977 B**, so **48.5%** of it was a page
+      production never shrinks. ⚠️ That share is a six-page sample's, not the corpus's: the un-shrunk page
+      necessarily dominates such an aggregate, and no corpus version exists. And the priced-bar **per-page
+      cost was out by exactly 2x** while the row beside it disagreed: `INKBAR=0.0005` over p4/p6 read `2 of
+      2 … 100,626 B/page`, now `1 of 2 … 201,252 B/page`, because p6 is `picture` at both bars and its own
+      `barDelta` printed `same` in the same output — one unchanged delta divided by two pages instead of
+      one. ⚠️ A draft said "out by 3.2x" from 5.76/1.79; the review of the diff refused it as a ratio of
+      ratios over two different sets. The absolute delta is identical (+201,252 B) — `layeredAtBar` was
+      always production's bytes.
+      ✅ Watched failing: sabotaging the function's second `return` (the `nil` guard left intact) exits **5**
+      naming row 3 of the new six-row table, whose case count is itself asserted. ⚠️ The loop exits on the
+      first mismatch, so rows 1–2 are measured passing and 4–6 unreached — row 4 breaks by inspection, not
+      by measurement. ⛔ **And the table pins the RESOLVER, not the column**: reintroduce the historical
+      defect at the call site and all six rows still pass, and nothing in the suite could catch it, so what
+      the design buys is harmlessness plus disclosure rather than detection. Said in place.
+      ⛔ **Both verdict columns are reported; a first version discarded the bar side's flag**, which is where
+      the divergence lives under a lower `INKBAR` — there is now a `VERDICT-AT-BAR` line and a second count.
+      ⛔ **The `REPLICA-DISAGREES` tripwire had to be deliberately kept on the replica's own pair** — against
+      the read-back it would compare production with itself, and a dead override moves neither side, so it
+      would have gone quiet in the one case it exists for. ⚠️ **It is also now NOISY on C28's population**:
+      the replica cannot mirror the shape term, so a disagreement is expected on the 16 of 73, and a draft
+      offered one such firing as proof the dead-seam detector survived while the override was demonstrably
+      alive in that run. The `VERDICT` / `VERDICT-AT-BAR` lines are what separate the two, and the code
+      comment and end-of-run warning both say so now. ✅ Sibling sweep: nobody else replicates the
+      guard (`score-mrc` asserts the constant on fixtures and already reads production's factor back;
+      `score-threshold-loss`'s header says it cannot print this verdict; `score-shape-term`'s `verdict` is a
+      status string; `sweep-ink-bar.py` only consumes the column, `--self-test` run and green at 71 checks —
+      a no-op control, since the diff does not touch it).
+      ⚠️ **One correction to this box's own instructions**: the tool has **no `--self-test` flag** — its
+      self-tests are unconditional and exit 5, so nothing gates them (the hook self-tests Python tools
+      only). `BUGS.md` C28 `#### The replica retired` carries all of it.
+      The defect as it stood:
+      ⛔ **`Tools/score-text-route.swift`'s hand-written copy of `pageIsAllText()`
+      had TWO terms and the shipped guard has THREE.** Found 2026-08-23 by the adversarial review of
       `6d0caa1`, and verified by reading both: line 678 is
       `!keepEveryPixel && inkOut < Flattener.textPageInkOutsideThreshold && noPaleDrawing`, while
       `Sources/Flattener.swift` grew `textLineGroupsOutsideText` as a third refusal condition in `fbf6d87`
