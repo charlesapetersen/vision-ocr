@@ -858,30 +858,81 @@ func selfTest() -> [String] {
         let x0 = 120 + k * 6
         for y in 70..<80 { for x in x0..<(x0 + 3) { pGrey[y * pw + x] = 0 } }
     }
+    // ⛔ …and THREE MORE baselines the rule must REFUSE — added 2026-08-22, because check
+    // 10 as it stood was blind to three of the six constants it compares. A 3x10 mark
+    // against a 3x10 calibration sits in the MIDDLE of every band: height 10 in [5, 30],
+    // `medianRun` 3 under 6. So loosening this file's own `shapeRunHigh`,
+    // `shapeHeightHigh` or `shapeHeightLow` left both copies at one group and the port
+    // check agreed while the copy had drifted — over the file every published C28 figure
+    // came from. Each of these puts a group just past a different bar: four 8x10 marks
+    // are refused on `medianRun` (8 > 2.0 x 3), four 3x36 on the height ceiling
+    // (36 > 3.0 x 10) and four 3x3 on the height floor (3 < 0.5 x 10, and area 9 clears
+    // `shapeMinimumArea` so it is the floor that refuses them and not the speck test). A
+    // copy that loosens any one of the three finds a group `Flattener` does not. The
+    // suite's own fixture for the first two is `Tests/main.swift`'s four-dash trio;
+    // `BUGS.md` C28 `#### The owed fixture` is why both exist.
+    // ⚠️ Measured: the 3x3 baseline is in the rim check's scene as well, so a
+    // `shapeHeightLow` loosening trips *two* checks rather than one (`rim: r=3 read 2
+    // lines not 1` comes along with the port divergence). Over-detection, not a false
+    // positive — the shipped build reads `ok (10 checks)` with all three baselines in.
+    for k in 0..<4 {
+        let x0 = 20 + k * 14
+        for y in 15..<25 { for x in x0..<(x0 + 8) { pGrey[y * pw + x] = 0 } }
+    }
+    for k in 0..<4 {
+        let x0 = 20 + k * 6
+        for y in 30..<33 { for x in x0..<(x0 + 3) { pGrey[y * pw + x] = 0 } }
+    }
+    for k in 0..<4 {
+        let x0 = 20 + k * 6
+        for y in 58..<94 { for x in x0..<(x0 + 3) { pGrey[y * pw + x] = 0 } }
+    }
     let pRecognised = SearchableWriter.BoundingBox(x: 18.0 / 200, y: 39.0 / 100,
                                                   width: 30.0 / 200, height: 12.0 / 100)
     let pNarrow = Flattener.textRegionMask([pRecognised], width: pw, height: ph)
-    /// This file's own answer, through this file's own five functions.
-    func pMine(_ keep: [Bool]) -> Int {
+    /// The out-of-region components this file finds. **One copy**, called by both the
+    /// group count and the fixture guard: the first version of the guard built this array
+    /// a second time inline, which is a third copy of three lines nothing ties together —
+    /// the mistake the rim check's own map builder was written to avoid.
+    func pComps(_ keep: [Bool]) -> [Comp] {
         let win = interiorWindow(width: pw, height: ph)
         let m = inkOutsideMap(pGrey, region: keep, width: pw, height: ph,
                               threshold: 128).map
+        return components(m, width: pw, height: ph, x0: win.x0, y0: win.y0,
+                          x1: win.x1, y1: win.y1)
+    }
+    /// This file's own answer, through this file's own five functions.
+    func pMine(_ keep: [Bool]) -> Int {
+        let win = interiorWindow(width: pw, height: ph)
         let gc = components(pStencil, width: pw, height: ph, x0: win.x0, y0: win.y0,
                             x1: win.x1, y1: win.y1).filter { $0.area >= shapeMinimumArea }
-        let cs = components(m, width: pw, height: ph, x0: win.x0, y0: win.y0,
-                            x1: win.x1, y1: win.y1)
+        let cs = pComps(keep)
         let gh = median(gc.map(\.height))
         return lines(cs, accepted: textish(cs, glyphHeight: gh,
                                            glyphRun: median(gc.map(\.medianRun))),
                      glyphHeight: gh).count
     }
-    //     The fixture must actually produce a group, or this is check 8 again. Asserted
-    //     before the two copies are compared, so a fixture that drifted reports itself
-    //     rather than making the comparison vacuous.
+    //     The fixture must produce EXACTLY the one group it was built to produce, or this
+    //     is check 8 again. Asserted before the two copies are compared, so a fixture that
+    //     drifted reports itself rather than making the comparison vacuous.
+    //     ⛔ `!= 1` and not `< 1`, and the review of this diff is why: with `< 1` the four
+    //     refused baselines could start being ACCEPTED — the exact drift they were added to
+    //     detect — and this guard would wave a count of 2 through while both copies agreed.
     let pMineNarrow = pMine(pNarrow)
-    if pMineNarrow < 1 {
-        bad.append("port: the fixture makes \(pMineNarrow) line groups, so the"
-                   + " comparison below cannot fail — check 8's own mistake")
+    if pMineNarrow != 1 {
+        bad.append("port: the fixture makes \(pMineNarrow) line groups rather than 1, so"
+                   + " the comparison below cannot fail — check 8's own mistake")
+    }
+    //     …and all FOUR baselines must be there and whole: 5 missed + 4 too-wide + 4
+    //     too-tall + 4 too-short = 17 out-of-region components. This catches a baseline
+    //     the padded box swallowed or a neighbour it merged with; it does NOT catch one
+    //     clipped from an end, which stays four components — that is what pinning the
+    //     group count at exactly 1 above is for, and the two guards are complementary
+    //     rather than belt-and-braces.
+    let pCompN = pComps(pNarrow).count
+    if pCompN != 17 {
+        bad.append("port: the fixture has \(pCompN) out-of-region components, not 17, so"
+                   + " a baseline is missing or merged and the refusals prove nothing")
     }
     let pPortNarrow = Flattener.textLineGroupsOutsideText(pGrey, stencil: pStencil,
                                                           region: pNarrow, width: pw,
@@ -925,6 +976,10 @@ if args.contains("--self-test") {
         // function until 2026-08-22, and a count that does not move when a check is
         // added is worth less than no count, because it reads as corroboration. If you
         // add a group, change this number in the same edit.
+        // ⚠️ Still TEN, and deliberately: 2026-08-22 added two fixture guards *inside*
+        // group 10 rather than an eleventh group, and this literal counts groups. A draft
+        // read 11 and made the number uncountable — the exact failure the comment above
+        // describes, committed in the same hour as the comment.
         print("score-shape-term: self-test ok (10 checks)")
         exit(0)
     }

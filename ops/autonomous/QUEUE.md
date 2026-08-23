@@ -1332,6 +1332,64 @@ happens.**
       the tool's 2026-08-21 figure with a live guard over it rather than a figure re-derived from shipped
       code. Re-running it is cheap and is the way to convert the guard into a measurement.
       (origin: BUGS.md C28 `#### THE DECISION`)
+- [x] **c28-owedfixture** — **DONE 2026-08-22. The fixture `Tools/mutate.py` said was owed now exists, and
+      `shapeRunHigh` is no longer a KNOWN SURVIVOR.** Do not redo it; `BUGS.md` C28
+      `#### The owed fixture` carries every number. **No shipped behaviour moves** — this is
+      `Tests/main.swift`, `Tools/mutate.py` and two comments.
+      Why it was owed: every non-type-shaped fixture the suite had was **one 8-connected component**, and
+      one component can never reach `lineMinimumMembers` = 4, so `c28GroupsBar` and `c28GroupsC26` read 0 at
+      *every* value of `shapeRunHigh` and the **grouping** did all the refusing. The catalogue named the
+      fixture it wanted — *"four short solid dashes on a baseline"* — and there are three now, in the clear
+      strip below the last padded word box, at an **asserted** `glyphHeight` 25.0 / `glyphRun` 5.0: four
+      5x30 strokes are **1 group** (the positive control), four 20x30 are **0** (`shapeRunHigh`), four 5x120
+      are **0** (`shapeHeightHigh`, new mutant, catalogue 100 → **101**).
+      ⛔ **The thing to quote is that the two refusals carry the SAME out-of-region ink by construction** —
+      4x20x30 and 4x5x120 are both 2,400 px, both `inkOut` 0.0205 — **while the control that fires has a
+      quarter of it**, so quantity does not separate them and is *inverted* against the one that fires.
+      ✅ **Both mutants were watched failing, and each fixture is attributable to ONE constant**: at
+      `shapeRunHigh` = 99.0 the wide one goes 0 → 1 and the tall one stays 0; at `shapeHeightHigh` = 99.0
+      the reverse. Both substitutions verified APPLIED by running `catalogue()`'s own anchored regex.
+      ⛔ **But "watched failing" is a BINARY here, not a red check**: neither ran through `mutate.py`
+      (baseline suite + ~45 min a mutant), the probe carried its own copy of **both** `makeScannedPDF` and
+      the surface construction, and `mutate.py --self-test` never touches `CONSTANTS`. What the suite adds
+      is that the type scale and all three `inkOut` values are asserted **in bands** — a first draft
+      asserted only the scale-free ratios while claiming the literals were pinned, which the review of the
+      diff refuted. ⚠️ The calibration check is a **mirror** of the term's own calibration step, so it pins
+      the fixture and is blind to a change in the calibration itself.
+      ✅ **THE SIBLING WAS FIXED IN THE SAME COMMIT and it is the sharper half.**
+      `Tools/score-shape-term.swift`'s **port check** — the gate comparing its copy of the five functions
+      against the shipped ones, in the file every published C28 figure came from — had a fixture of five
+      3x10 marks against a 3x10 calibration, the **middle** of every band, so loosening the tool's own
+      `shapeRunHigh`, `shapeHeightHigh` or `shapeHeightLow` left both copies at one group and the self-test
+      passed over a drifted port. **Three** refused baselines added, one per constant (four 8x10 on run,
+      four 3x36 on the height ceiling, four 3x3 on the floor) plus **two complementary guards**: the group
+      count pinned at exactly **1** and the map's component count at **17**. ⛔ Both, because neither
+      catches the other's failure — the count is blind to a baseline clipped from an END (still four
+      components) and the exact-1 is what catches a baseline that started being ACCEPTED. A first draft had
+      `< 1` and 13; the second adversarial pass refuted both from a worked example. ✅ Run **four** ways:
+      shipped `self-test ok (10 checks)` exit 0; the tool's `shapeRunHigh` = 99.0,
+      `shapeHeightHigh` = 99.0 and `shapeHeightLow` = 0.0 each exit **5** on a port divergence. All three
+      passed before. ⚠️ Printed count stays **10** — the guards went inside group 10 and the literal counts
+      groups; `Tools/README.md`'s copy said **9** while the tool printed 10 and is corrected here.
+      ⛔ **Of the seven new suite checks, only the two group-count refusals have watched-failing
+      evidence**; the calibration, band, below-bar, equality and positive-control checks are executed for
+      the first time by this commit's hook run. Said out loud rather than left to be assumed.
+      ✅ **It also answers the previous session's item 1**: `score-mrc`'s `--self-test`, which asserts this
+      same verdict on a real-Vision-boxes fixture and is gated by nothing, is **GREEN** — measured, exit 0.
+      ⛔ **But green by CONSTRUCTION**: `selftest-alltext`'s `inkOutsideText` is **exactly 0.0**, read to ten
+      decimal places by a probe that forced that assertion to print its own detail, so the term's
+      `guard outside > 0` answers 0 before labelling anything. That fixture pins terms 1 and 2 and is blind
+      to the third — it pins the guard's FIRST term, is silent about the second, and the tool now says so.
+      ⚠️ **`shapeMinimumArea` is left unpinned on a NARROW argument**: at its shipped value, in
+      `textShaped`, an 8-connected component's area is at least its height and the height test already
+      demands `h ≥ shapeHeightLow * glyphHeight`, so above a median glyph of **8 px** the area guard is
+      satisfied before it is asked. ⛔ That does not license three things the first draft implied: it is
+      conditional on the 8 px (72-DPI corpus scans can fall under it), it says nothing about *raising* the
+      constant (4 → 99 refuses tall thin marks, which is not the height bar renamed), and the constant is
+      separately live in `textLineGroupsOutsideText`'s **calibration** filter, which these fixtures do run
+      through — so whether they would kill such a mutant is **unmeasured**. `shapeHeightLow` and
+      `lineGapFactor` stay one-sided.
+      (origin: BUGS.md C28 `#### The owed fixture`)
 - [x] **c28-stencilseam** — **DONE 2026-08-22. Question 4's last owed number: what it costs to let the
       accepted line groups into the 1-bit stencil, and it is 1,020x cheaper than the layering seam over
       the same 16 pages.** Do not re-run it; `WIDEN-STENCIL-2026-08-22.tsv` (26 rows, 44 columns) and

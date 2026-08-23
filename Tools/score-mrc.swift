@@ -906,6 +906,24 @@ func selfTest() -> [String] {
     // `2`, which is what the mirrored copy used unconditionally, an all-text page
     // must come back shrunk by `textPageBackgroundDownsample`. Reporting 2 and 4
     // here was the whole 10.5–18.3x overstatement.
+    //
+    // ⚠️ **WHAT THIS FIXTURE DOES NOT COVER, MEASURED 2026-08-22.** C28 wired a third
+    // term into `pageIsAllText()` that day, and this self-test — the only fixture outside
+    // `Tests/main.swift` asserting the shrink verdict, and gated by nothing — was named as
+    // the place it might have gone red unnoticed. It did not: against the wired build the
+    // whole self-test exits 0. But it is green **by construction rather than by
+    // measurement**. `selftest-alltext`'s `inkOutsideText` is **exactly 0.0**, read to ten
+    // decimal places by a probe that forced this very assertion to print it — and that
+    // quotient being 0 is enough, because `inkOutsideText` counts `outside` only over the
+    // pixels it also counts in `total`, so a zero quotient means a zero numerator and the
+    // `total == 0` branch returns 0 with an empty numerator too. The shape term recomputes
+    // that same numerator over the same window with the same threshold and region, so its
+    // own `guard outside > 0` answers 0 before it labels anything, and that answer cannot
+    // change at any value of any of the five shape constants. So this fixture pins the
+    // guard's FIRST term, is silent about the second (nothing here distinguishes a
+    // pale-drawing verdict), and is blind by construction to the third. The third is
+    // pinned in `Tests/main.swift`, which the hook runs. `BUGS.md` C28
+    // `#### The owed fixture`.
     if let text = run(.allText), expectMeasured(.allText, text) {
         expect("the all-text fixture's ink is all text",
                text.inkOutsideText >= 0

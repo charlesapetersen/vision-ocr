@@ -17,7 +17,12 @@ the layering seam and not the 1,020x cheaper stencil widening, then `#### The wi
 negative control — two binaries one term apart, the fixture's background **153** px against a ceiling of
 154 without the term and **612** px with it, and the same page with that word recognised shrunk on both —
 and for the one thing it does **not** claim: no corpus sweep was re-run, so "12 of 12" is still the
-tool's 2026-08-21 figure, now with a live port check over it.
+tool's 2026-08-21 figure, now with a live port check over it. ✅ **`#### The owed fixture` (2026-08-22)
+then closed the two things that wiring left behind, changing no shipped behaviour**: `shapeRunHigh` is no
+longer a known-survivor mutant — the fixture `mutate.py` itself asked for now exists, three ways, with a
+positive control — and `score-mrc`'s ungated `--self-test` is **green under the third term but green by
+construction**, because its all-text fixture's `inkOutsideText` is exactly 0.0 and the term cannot reach
+it at any value of any constant.
 **`C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
 (`textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's decision on a complete campaign, so the 16
 corpus pages the sweep named keep their tone layers at the caller's factor) and the next day the
@@ -8237,7 +8242,9 @@ commit, which is the only suite run this change has had. **18** new `check` call
 `Tests/main.swift`, sixteen of them on the happy path and two the `mrcLayers`-returned-nil arms, counted
 after the review deleted one — and `makeScannedPDF` grew two defaulted
 parameters (`extra`, `bar`) so a mark can be placed deliberately outside a given box set — shape and
-quantity varied separately. The `nil` half is covered by a `runLimit` **parameter** rather than a mutable
+quantity varied separately. (⚠️ `bar` became the plural `bars: [NSRect]` on 2026-08-22; see
+`#### The owed fixture`, which is also where the "four or more non-type-shaped components" sentence two
+paragraphs below is discharged.) The `nil` half is covered by a `runLimit` **parameter** rather than a mutable
 static: at the shipped `maximumShapeRuns` = 8,000,000 no fixture a suite can build reaches the
 truncation branch, so without a seam it would ship never having executed, which is exactly what R31, R32
 and H2 were. Both directions are asserted — `nil` at a limit of 1, *not* `nil` at the shipped limit on
@@ -8254,7 +8261,10 @@ pinned by is one solid component and the *grouping* refuses it — so of the fiv
 `lineMinimumMembers` is pinned, `shapeHeightLow` and `lineGapFactor` one-sidedly, and **`shapeRunHigh`,
 `shapeHeightHigh` and `shapeMinimumArea` not at all**. The fixture that would close it is four or more
 non-type-shaped components on one baseline, and it is owed. Kept in the catalogue rather than dropped, so
-the gap is somewhere a tool will print it. ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
+the gap is somewhere a tool will print it. ✅ **That fixture EXISTS as of 2026-08-22 and this paragraph is
+discharged by `#### The owed fixture`** — `shapeRunHigh` and `shapeHeightHigh` are both pinned and both
+watched failing; `shapeMinimumArea` is left unpinned there for a stated reason rather than for want of a
+fixture. ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
 hours, and this session paid one suite. What stands in its place is the by-hand equivalent above: two
 binaries one term apart, executed, 153 against 612. ⛔ **And one wrong reading is deliberately absent
 rather than forgotten**: `groups ?? 0 == 0`, a too-dense page waved through instead of refused, is a
@@ -8307,6 +8317,136 @@ seam's. It does not touch the `PhotoDetail.smallest` loss on the *other* populat
 that is the outcome `#### What this entry is NOT` says is worth aiming at, and it needs its own
 measurement. And the corpus price, **~18 pages and +2,694,515 B**, is a per-document stratified estimate
 carried over from `#### The corpus figure`, not a number this session measured.
+
+#### The owed fixture — `shapeRunHigh` was a known-survivor mutant and is not one any more, and `score-mrc`'s self-test is green **by construction** rather than by measurement — MEASURED 2026-08-22
+
+Two things the wiring left behind, both named in the session that shipped it, both closed here. Nothing
+about the shipped behaviour moves: this is `Tests/main.swift`, `Tools/mutate.py` and two comments.
+
+**1. `score-mrc`'s `--self-test` is GREEN under the third term — and it could not have been anything
+else.** It was flagged as the sharpest thing owed, because it layers a real 11 pt fixture with real Vision
+boxes and asserts both tone factors equal the shrunk ones, the hook runs `--self-test` on **Python** tools
+only, and `run_tests.sh` runs none — so a term-3 regression there would have been silent until someone
+needed the tool. Built and run: the whole self-test exits **0**. ⛔ **But the green is not evidence about
+the third term.** `selftest-alltext`'s `inkOutsideText` is **exactly 0.0**, read to ten decimal places by
+a probe that forced that very assertion to print its own detail string, so every ink pixel in the interior
+window is inside a padded word box, `textLineGroupsOutsideText`'s own `guard outside > 0` answers 0 before
+it labels anything, and **the answer cannot change at any value of any of the five shape constants.** That
+fixture pins terms 1 and 2 of the guard and is structurally blind to the third. Recorded in the tool's own
+comment beside the assertion, because "the self-test covers the shrink verdict" is the sentence a reader
+would otherwise carry away from it.
+
+**2. `shapeRunHigh` was a KNOWN SURVIVOR and the fixture the catalogue asked for now exists.** The entry
+for it in `Tools/mutate.py` said what would kill it — *"a fixture with FOUR OR MORE non-type-shaped
+components in one horizontal band — four short solid dashes on a baseline, say"* — because every
+non-type-shaped fixture the suite had was **one 8-connected component**, and one component can never reach
+`lineMinimumMembers` = 4, so `c28GroupsBar` and `c28GroupsC26` read 0 at *every* value of the constant and
+the **grouping** was doing all the refusing. Three fixtures now, on one baseline in the clear strip below
+the last padded word box, measured at `glyphHeight` **25.0** and `glyphRun` **5.0** (asserted, not assumed
+— the accept band is a height in [12.5, 75.0] with `medianRun` ≤ 10.0, and a change in font rendering
+would otherwise move a fixture across a bar in silence):
+
+| fixture | four marks | out-of-region ink | components / accepted | groups |
+|---|---|---|---|---|
+| positive control | 5x30 | 600 px, `inkOut` 0.0052 | 4 / 4 | **1** |
+| too wide (`shapeRunHigh`) | 20x30 | 2,400 px, `inkOut` 0.0205 | 4 / 0 | **0** |
+| too tall (`shapeHeightHigh`) | 5x120 | 2,400 px, `inkOut` 0.0205 | 4 / 0 | **0** |
+
+⛔ **The two refusals carry the SAME out-of-region ink by construction** — 4 × 20 × 30 and 4 × 5 × 120 are
+both 2,400 px, and both measure `inkOut` 0.0205 — **and the control that fires has a quarter of it.** So
+this trio says what no ink ratio in this campaign has managed: nothing about quantity separates the two
+refused pages from each other, and quantity is *inverted* against the one that fires. All three sit below
+the shipped bar (0.0052 / 0.0205 / 0.0205 against 0.045), which is what makes them reach the third term at
+all, and that is asserted too — otherwise term 1 would refuse the page and every check above it would be
+green over code it never ran.
+
+⛔ **WHICH OF THE SEVEN NEW CHECKS HAS WATCHED-FAILING EVIDENCE, because "MEASURED" in this heading is
+about the fixtures and not about the checks.** Two do: the two group-count refusals, each against a
+binary with one constant substituted. Five do not — the calibration reading, the ink bands, the
+below-the-bar conjunction, the equality and the positive control were reasoned from the probe's numbers
+and are executed for the first time by the pre-commit hook's suite run on this commit. That is the
+cheaper half of what CONTRIBUTING asks for, and it is stated rather than left to be assumed.
+
+⚠️ **Two of those checks are weaker than they read, and the review of this diff is why both say so in
+place.** (1) The three `inkOut` values are pinned **in bands** (`[0.004, 0.007]` and `[0.018, 0.023]`)
+because everything else in the block is scale-free: a render change shrinking each mark's
+below-threshold footprint by 40% would preserve the ratios, the equality, the calibration and all three
+group counts while the geometry the sabotages were measured on had gone. A first draft asserted only the
+ratios and *claimed* the literals were pinned. (2) The equality check is not about the term at all —
+nothing the shape rule does can make it red. What it actually guards is the too-tall fixture's **four rows
+of clearance** from the last padded word box (box 13 ends at row 1260, the 5 × 120 bar starts at 1264), so
+a `mrcBoxPadding` large enough to reach it would split each bar in two and the ink would stop matching.
+That the 5 × 200 version splits into eight components is the same fact from the other side, and it is why
+the fixture is 120 tall rather than 200.
+
+⚠️ **And the calibration check is a MIRROR, which bounds what it can catch.** It re-derives the median
+stencil height and run the way the term does, so it pins **the fixture** — a font or render change moving
+the type scale, and with it every bar the literals sit against, goes red — and it is blind to a change in
+the *calibration itself*: widen production's `sized` filter and the mirror widens with it, agreeing at a
+value neither had before. That is the hazard `interiorWindow`'s own comment records, and its remedy — one
+shared copy — is not available here, because the term does not expose what it calibrated on.
+
+✅ **BOTH MUTANTS WERE WATCHED FAILING, and the two fixtures are attributable to ONE CONSTANT EACH.** Two
+binaries built from `Sources/` with one constant substituted at `mutate.py`'s own value: at
+`shapeRunHigh` = **99.0** the too-wide fixture goes 0 → **1 group** while the too-tall one **stays at 0**;
+at `shapeHeightHigh` = **99.0** the too-tall fixture goes 0 → **1** while the too-wide one **does not
+move**. The positive control reads 1 in both. So neither check is a duplicate of the other, and neither is
+the grouping in disguise. `shapeHeightHigh` is added to the catalogue on the strength of that, taking it
+from 100 to **101**, and both substitutions were verified to APPLY by running `catalogue()`'s own anchored
+regex against `Flattener.swift` rather than by reading it.
+
+⛔ **"Watched failing" here means a binary, not a red check, and the gap is wider than the phrase.**
+Neither mutant was run **through** `mutate.py` — a scoped run is a baseline suite plus ~45 minutes a
+mutant, the same trade the wiring session took — and the sabotage drove the shipped functions through a
+probe's copy of **both** `makeScannedPDF` *and* the surface construction (`c28Surfaces` / `c28Boxes`), so
+what it establishes is that the term flips on that geometry, not that `Tests/main.swift` goes red. Nothing
+will ever check the kill automatically either: `mutate.py`'s own `--self-test` covers the log reader and
+the estimate and never touches `CONSTANTS` or `catalogue()`. What the suite adds is that the fixtures'
+type scale and all three `inkOut` values are asserted in bands, so a geometry that had drifted away from
+the probe's reports itself. Both caveats are recorded in the catalogue beside the two rows.
+
+⚠️ **`shapeMinimumArea` stays unpinned, and the argument is narrower than a first draft of this section
+claimed.** **At its shipped value**, in `textShaped`, it cannot be the deciding term: an 8-connected
+component spanning `[minY, maxY]` owns at least one run in every one of those rows, so its area is at
+least its height, and the height test already demands `h ≥ shapeHeightLow * glyphHeight` — so wherever the
+median glyph is at least `shapeMinimumArea / shapeHeightLow` = **8 px** tall the area guard has been
+satisfied before it is asked. ⛔ **Three things that does not license**, all three from the review of this
+diff: it is conditional on that 8 px, and `Flattener`'s own resolution comment records 72-DPI scans in the
+corpus that can fall under it; it says nothing about *raising* the constant, because a 4 → 99 mutant
+refuses tall thin marks and is **not** the height bar under another name; and the constant is separately
+live in `textLineGroupsOutsideText`'s **calibration** filter, which these fixtures do run through, so
+whether the calibration check would catch such a mutant is **unmeasured** rather than settled either way.
+`shapeHeightLow` and `lineGapFactor` remain pinned one way only.
+
+✅ **THE SIBLING IS FIXED IN THE SAME COMMIT, and it was the sharper of the two.** CONTRIBUTING 4b asks who
+else does this; the answer is `Tools/score-shape-term.swift`'s **port check** — the gate that compares its
+own copy of the five functions against the shipped ones on every measured page, and the control this
+entry calls the one it "would be worth least without". Its port fixture was five 3 × 10 marks against a
+3 × 10 calibration, which sits in the **middle** of every band (height 10 in [5, 30], `medianRun` 3 under
+6) — so loosening the tool's own `shapeRunHigh`, `shapeHeightHigh` or `shapeHeightLow` left **both** copies
+at one group, the port check agreed, and the self-test passed over a copy that had drifted. **Three**
+refused baselines were added, one per named constant — four 8 × 10 marks (run 8 > 6), four 3 × 36 (height
+ceiling, 36 > 30) and four 3 × 3 (height floor, 3 < 5, with area 9 clearing `shapeMinimumArea` so it is the
+floor that refuses them and not the speck test) — and **two complementary guards**: the group count pinned
+at **exactly 1**, and the map's out-of-region component count at **17** (5 + 4 + 4 + 4). ⛔ **Both guards,
+because neither catches the other's failure**: the count catches a baseline the padded box swallowed or a
+neighbour it merged with and is blind to one clipped from an end, which stays four components; the
+exact-1 catches a baseline that started being *accepted*, which is the drift the baselines exist to detect
+and which a `>= 1` guard would have waved through. The first draft had `< 1` and 13, and the second review
+of this diff refuted both from a worked example — a margin change clipping the tall baseline to height 30
+makes it accepted, leaves the count at 13, and takes the `shapeHeightHigh` sensitivity away in silence.
+✅ **Run, all four ways**: shipped reads `self-test ok (10 checks)` and exits 0; the tool's `shapeRunHigh`
+at 99.0, its `shapeHeightHigh` at 99.0 and its `shapeHeightLow` at 0.0 each exit **5** on a port
+divergence. All three passed before. ⚠️ One side effect, measured rather than predicted: the 3 × 3
+baseline is in the **rim check's** scene too, so a `shapeHeightLow` loosening trips that check as well
+(`rim: r=3 read 2 lines not 1`) — over-detection, and the shipped build reads `ok (10 checks)` with all
+three baselines in, which is the reading that matters. ⚠️ **Three bounds.** It is the tool's copy that was sabotaged, not
+`Flattener`'s, so what is proven is that the check now *notices* a divergence in the direction a drifting
+port would take. The sabotages give byte-identical messages, so the diagnostic names the divergence and
+not the constant. And the printed count stayed **10** deliberately: two guards were added *inside* group
+10 rather than as an eleventh group, and that literal counts groups — a draft read 11 and made the number
+uncountable, which is the failure the literal's own comment warns about. `Tools/README.md`'s copy of it
+said **9** while the tool printed 10 and is corrected to 10 here, its second staleness.
 
 #### What this entry is NOT
 

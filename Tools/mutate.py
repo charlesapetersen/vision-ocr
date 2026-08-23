@@ -198,18 +198,43 @@ CONSTANTS = [
     # never refuse a page and the missed-word fixture goes back to being stored at an
     # eighth — which is the defect C28 is open for, planted.
     ("Flattener.swift", "lineMinimumMembers", "4", "99"),
-    # ⛔ …and this one is here as a KNOWN SURVIVOR against today's checks, which T5 says
-    # is a gap in the checks rather than a value nothing depends on. It was added with a
-    # comment claiming the suite's scanner-rule fixture is "held out by this number
-    # alone"; the adversarial review of that diff refuted it. A solid fill is ONE
-    # 8-connected component, and one component can never reach `lineMinimumMembers` = 4,
-    # so `c28GroupsBar` reads 0 at every value of `shapeRunHigh` — the fixture is held out
-    # by the GROUPING. `shapeHeightHigh` and `shapeMinimumArea` are unpinned in both
-    # directions for the same reason, and `shapeHeightLow`/`lineGapFactor` only one way.
-    # What would kill it is a fixture with FOUR OR MORE non-type-shaped components in one
-    # horizontal band — four short solid dashes on a baseline, say — and that fixture is
-    # owed. Kept rather than dropped so the gap is in the catalogue and not only in prose.
+    # ✅ …and this one WAS a known survivor and is not one any more, 2026-08-22. It was
+    # added with a comment claiming the suite's scanner-rule fixture was "held out by this
+    # number alone"; the adversarial review of that diff refuted it, because a solid fill
+    # is ONE 8-connected component and one component can never reach `lineMinimumMembers`
+    # = 4 — so `c28GroupsBar` read 0 at every value of `shapeRunHigh` and the fixture was
+    # held out by the GROUPING. The entry then named the fixture it wanted: "FOUR OR MORE
+    # non-type-shaped components in one horizontal band — four short solid dashes on a
+    # baseline, say". `Tests/main.swift` builds it now, three ways, with a positive control
+    # of four narrow strokes that IS a line group so the two refusals cannot be satisfied
+    # by marks that simply failed to group.
+    #
+    # ⚠️ NOT run through this tool, and the substitute is weaker than a red check: a scoped
+    # run is a baseline suite plus ~45 min. What was executed instead is a binary built
+    # from `Sources/` with `shapeRunHigh = 99.0`, driving the shipped
+    # `textLineGroupsOutsideText` over a PROBE's copy of the fixture builder AND of the
+    # surface construction — so what it proves is that the term flips on that geometry,
+    # not that `Tests/main.swift` goes red. The suite's own contribution is that the
+    # fixtures' type scale and all three of their `inkOut` values are asserted in bands,
+    # so a geometry that had drifted away from the probe's reports itself.
     ("Flattener.swift", "shapeRunHigh", "2.0", "99.0"),
+    # …and its sibling, added with the same fixture on 2026-08-22 and attributable to it
+    # alone: at 99.0 the four 5x120 strokes clear a height band that shipped ends at 75.0,
+    # so the too-tall fixture reads 1 while the too-wide one does not move. Executed the
+    # same way, with the same caveat.
+    #
+    # ⚠️ `shapeMinimumArea` is deliberately still absent, and the argument is narrower than
+    # "no fixture". **At its shipped value**, in `textShaped`, it cannot be the deciding
+    # term: an 8-connected component spanning `[minY, maxY]` owns a run in every one of
+    # those rows, so area >= height, and the height test already demands
+    # `h >= shapeHeightLow * glyphHeight` — so wherever the median glyph is >= 8 px the area
+    # guard is satisfied before it is asked. That is conditional on the 8 px (72-DPI corpus
+    # scans can fall under it), it says nothing about RAISING the constant (4 -> 99 refuses
+    # tall thin marks, which is not the height bar under another name), and the constant is
+    # separately live in `textLineGroupsOutsideText`'s calibration filter, which those
+    # fixtures do run through — so whether they would kill such a mutant is unmeasured
+    # rather than settled. `shapeHeightLow` and `lineGapFactor` remain one-sided.
+    ("Flattener.swift", "shapeHeightHigh", "3.0", "99.0"),
     # The quarter inch that separates a drawing from show-through. Large, so every
     # pale mark is type-sized and the drawing is never found.
     ("Flattener.swift", "typeCeilingInches", "0.25", "99.0"),

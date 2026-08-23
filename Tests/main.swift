@@ -173,13 +173,19 @@ func inkFractionMRC(of url: URL, page index: Int) -> Double {
 /// `figure` puts a block of solid ink on the sheet at the given raster rect, which is
 /// C26's case in miniature — a mark that is ink, is outside every recognised word, and
 /// is small. Defaulted to `nil`, so the twenty-odd existing callers are unchanged.
-/// `extra` draws one more line at its own `y` instead of on the 78 px ladder, and `bar`
-/// fills a solid rectangle. Both exist for C28's wiring fixture, which needs a mark it
+/// `extra` draws one more line at its own `y` instead of on the 78 px ladder, and `bars`
+/// fills solid rectangles. Both exist for C28's wiring fixture, which needs a mark it
 /// can place deliberately outside a given set of word boxes — a line of type in one case
 /// and a scanner rule in the other, so that shape and quantity can be varied separately.
+///
+/// `bars` is a LIST and was a single optional until 2026-08-22. It is plural because the
+/// term the fixtures feed reads the *grouping* of marks as well as their shape, and one
+/// rectangle can only ever be one 8-connected component — which is precisely how
+/// `shapeRunHigh` came to be a known-survivor mutant with a fixture that could not reach
+/// it. Four rectangles is the smallest thing that can.
 func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white,
                     figure: NSRect? = nil, extra: (String, CGFloat)? = nil,
-                    bar: NSRect? = nil) {
+                    bars: [NSRect] = []) {
     let w = 1224, h = 1584
     guard let rep = NSBitmapImageRep(
         bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
@@ -207,9 +213,9 @@ func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white,
         NSColor.black.setFill()
         figure.fill()
     }
-    if let bar {
+    if !bars.isEmpty {
         NSColor.black.setFill()
-        bar.fill()
+        for bar in bars { bar.fill() }
     }
     NSGraphicsContext.current?.flushGraphics()
     NSGraphicsContext.restoreGraphicsState()
@@ -2201,7 +2207,7 @@ do {
     makeScannedPDF(at: c28Missed, lines: c28Dense, extra: ("value.", 1364 - 78 * 14))
     let c28Bar = tmp.appendingPathComponent("c28-scanner-bar.pdf")
     makeScannedPDF(at: c28Bar, lines: c28Dense,
-                   bar: NSRect(x: 60, y: 200, width: 900, height: 26))
+                   bars: [NSRect(x: 60, y: 200, width: 900, height: 26)])
 
     // The fixture has to STAY where it was measured, or every check under it stops
     // saying anything about C28. Measured 0.0107 — a fifth of the bar, so the first
@@ -2248,6 +2254,169 @@ do {
     check("C28 — C26's own ink-figure fixture is not a line group, so C26 still tests C26",
           c28Renders(c26Small, boxes: c26Boxes) && c28GroupsC26 == 0,
           "\(c28GroupsC26 as Any)")
+
+    // ⛔ THE FIXTURE `Tools/mutate.py` SAYS IS OWED — 2026-08-22.
+    //
+    // Both refusals above are held out by the **grouping** as well as by the shape, which
+    // is what makes them useless as coverage. A scanner rule and an ink figure are each
+    // ONE 8-connected component — the shape rule does refuse both, and the comment twelve
+    // lines up is right that C26's figure is refused on its median run — but one component
+    // can never reach `lineMinimumMembers` = 4 either, so `c28GroupsBar` and `c28GroupsC26`
+    // read 0 at *every* value of `shapeRunHigh` and neither can tell the two terms apart.
+    // The catalogue carries that constant as a KNOWN
+    // SURVIVOR saying exactly which fixture would kill it — "four or more
+    // non-type-shaped components in one horizontal band — four short solid dashes on a
+    // baseline, say" — and this is that fixture, three ways. `shapeHeightHigh` was
+    // unpinned in both directions for the same reason and is pinned by the third.
+    //
+    // Every literal here was measured by a probe driving this same code before any check
+    // was written, and the type scale it rests on is READ BACK below rather than assumed —
+    // though read back by a mirror of the term's own calibration step, which is a bound on
+    // what that reading can catch and `c28Calibration`'s own comment says so. This page
+    // reads `glyphHeight` **25.0** and `glyphRun` **5.0**, so the accept band is a height
+    // in [12.5, 75.0] with `medianRun` <= 10.0, and the four marks sit 60 px apart against
+    // a `lineGapFactor * glyphHeight` of 75.0 — one band, one run, four members. So the
+    // grouping is never what refuses these three, which is the whole point of the set.
+    /// Four solid marks on one baseline, in the clear strip below the last padded word
+    /// box that the scanner rule above already occupies.
+    func c28Dashes(_ w: CGFloat, _ h: CGFloat) -> [NSRect] {
+        (0..<4).map { i in NSRect(x: 200 + 60 * CGFloat(i), y: 200, width: w, height: h) }
+    }
+    /// The page's own type scale, the way the term takes it: the median height and median
+    /// run of the *stencil*'s components.
+    ///
+    /// ⚠️ **What this pins and what it cannot.** It is a second copy of the four lines at
+    /// `Flattener.textLineGroupsOutsideText`'s calibration step, so it pins **this
+    /// fixture** — a font or render change that moved the type scale, and with it every
+    /// bar the three literals below sit against, would go red — and it is blind to a
+    /// change in the *calibration itself*: widen production's `sized` filter and this
+    /// mirror widens with it, agreeing at a value neither had before. That is the hazard
+    /// `interiorWindow`'s own comment records, and the remedy there — one shared copy — is
+    /// not available here, because the term does not expose what it calibrated on. Read
+    /// this as a guard on the fixture, not as a check on the function.
+    func c28Calibration(_ url: URL) -> (height: Double, run: Double) {
+        guard let s = c28Surfaces(url, boxes: c28Boxes(14)) else { return (-1, -1) }
+        let win = Flattener.interiorWindow(width: s.w, height: s.h)
+        guard let comps = Flattener.shapeComponents(s.stencil, width: s.w, height: s.h,
+                                                    x0: win.x0, y0: win.y0,
+                                                    x1: win.x1, y1: win.y1)
+        else { return (-1, -1) }
+        let sized = comps.filter { $0.area >= Flattener.shapeMinimumArea }
+        guard !sized.isEmpty else { return (-1, -1) }
+        let hs = sized.map(\.height).sorted(), rs = sized.map(\.medianRun).sorted()
+        return (Double(hs[hs.count / 2]), Double(rs[rs.count / 2]))
+    }
+
+    let c28Stroke = tmp.appendingPathComponent("c28-four-strokes.pdf")
+    makeScannedPDF(at: c28Stroke, lines: c28Dense, bars: c28Dashes(5, 30))
+    let c28TooWide = tmp.appendingPathComponent("c28-four-wide.pdf")
+    makeScannedPDF(at: c28TooWide, lines: c28Dense, bars: c28Dashes(20, 30))
+    let c28TooTall = tmp.appendingPathComponent("c28-four-tall.pdf")
+    makeScannedPDF(at: c28TooTall, lines: c28Dense, bars: c28Dashes(5, 120))
+
+    // All three fixtures carry the same fourteen lines of type, so one calibration reading
+    // covers the set — and it is read off the too-tall one, because that is the only fixture
+    // whose marks come near the last padded word box and so the only one whose stencil a
+    // clipping change could alter.
+    let c28Cal = c28Calibration(c28TooTall)
+    check("C28 — the four-dash fixtures' type scale is where their literals were measured",
+          c28Cal.height == 25.0 && c28Cal.run == 5.0,
+          "glyphHeight \(c28Cal.height), glyphRun \(c28Cal.run), so the run bar is "
+            + "\(Flattener.shapeRunHigh * c28Cal.run) and the height band "
+            + "[\(Flattener.shapeHeightLow * c28Cal.height), "
+            + "\(Flattener.shapeHeightHigh * c28Cal.height)]")
+
+    // The positive control FIRST, because it is what makes the two refusals mean
+    // anything: four strokes at the page's own stroke width ARE accepted, and four
+    // accepted members in one band ARE a line group. Without it a fixture whose marks had
+    // drifted out of the band, or too far apart, would satisfy both checks below while
+    // testing nothing — C24's eleventh check and A11.5 in one.
+    let c28StrokeGroups = c28Groups(c28Stroke, boxes: c28Boxes(14))
+    let c28StrokeInk = c28InkOut(c28Stroke, boxes: c28Boxes(14)) ?? -1
+    check("C28 — four narrow strokes on one baseline outside the words ARE a line group",
+          c28StrokeGroups == 1, "\(c28StrokeGroups as Any)")
+
+    // `shapeRunHigh`, from the far side of its own bar. The SAME four positions, the same
+    // baseline, the same count — four times the stroke width and four times the ink.
+    // Measured `inkOutsideText` 0.0205 against the control's 0.0052, so if the term read
+    // quantity rather than shape this is the page it would fire *harder* on.
+    // ⛔ Watched failing: with `shapeRunHigh` at the catalogue's own mutant value of 99.0,
+    // all four components are accepted and this reads 1, while the tall fixture below
+    // stays at 0 — so the two are attributable to one constant each and neither is a
+    // duplicate of the other.
+    let c28WideGroups = c28Groups(c28TooWide, boxes: c28Boxes(14))
+    let c28WideInk = c28InkOut(c28TooWide, boxes: c28Boxes(14)) ?? -1
+    check("…and the same four at 4x the stroke width and 4x the ink are NO line group",
+          c28WideGroups == 0 && c28WideInk > c28StrokeInk * 3,
+          "groups \(c28WideGroups as Any), "
+            + String(format: "inkOut %.4f vs the strokes' %.4f", c28WideInk, c28StrokeInk))
+
+    // `shapeHeightHigh`, the same way — and this pair is sharper than any ink ratio,
+    // because the tall fixture and the wide one carry the same out-of-region ink BY
+    // CONSTRUCTION: 4 x 20 x 30 and 4 x 5 x 120 are both 2,400 px, both measured 0.0205.
+    // One is refused for its stroke width and one for its height, nothing about quantity
+    // tells them apart, and the control that DOES fire has a quarter of their ink.
+    // ⛔ Watched failing at `shapeHeightHigh` = 99.0, where the wide fixture does not move.
+    let c28TallGroups = c28Groups(c28TooTall, boxes: c28Boxes(14))
+    let c28TallInk = c28InkOut(c28TooTall, boxes: c28Boxes(14)) ?? -1
+    check("…and four strokes four times too TALL are no line group either",
+          c28TallGroups == 0, "\(c28TallGroups as Any)")
+    // ⚠️ This one is not about the term at all, and the comment above used to imply it was.
+    // Nothing the shape rule does can make it red. What it actually guards is the too-tall
+    // fixture's **four rows of clearance** from the last padded word box: box 13's padded
+    // region ends at row 1260 and the 5x120 bar starts at 1264, so a `mrcBoxPadding` large
+    // enough to reach it would eat the bar's top rows and the ink would stop matching. (At
+    // 5x200 the bar starts three rows INSIDE the region and each one splits in two, which
+    // is why the fixture is 120 tall and not 200 — the same fact from the other side.)
+    // ⚠️ The tolerance is 1e-5 and not exact: `total` is ~117,000 px, so one differing ink
+    // pixel moves this by ~8.5e-6 and a bit-exact comparison would be asserting the PDF
+    // round-trip's antialiasing. A clipped baseline moves it by ~6e-4, sixty times the
+    // tolerance, so the guard the check is here for is untouched. Measured equal to four
+    // decimal places, with the probe reporting 2,400 out-of-region pixels on each.
+    check("…on the same out-of-region ink as the too-wide four, so only shape separates them",
+          c28TallInk > 0 && abs(c28TallInk - c28WideInk) < 1e-5,
+          String(format: "%.8f vs %.8f", c28TallInk, c28WideInk))
+
+    // ⛔ THE LITERALS, PINNED IN BANDS — and this is the check the rest of the block rests
+    // on, because every ratio above is scale-free. Without it a render change that shrank
+    // each mark's below-threshold footprint by 40% would leave the ratios, the equality,
+    // the calibration and all three group counts intact while the geometry the two
+    // sabotages were measured on had gone. Measured 0.0052 / 0.0205 / 0.0205, and the bands
+    // are wide enough for antialiasing and far too narrow for a mark that moved. This is
+    // the pattern the missed-word fixture above already uses on its own `inkOut`.
+    check("C28 — the four-dash fixtures carry the ink they were measured carrying",
+          c28StrokeInk >= 0.004 && c28StrokeInk <= 0.007
+            && c28WideInk >= 0.018 && c28WideInk <= 0.023
+            && c28TallInk >= 0.018 && c28TallInk <= 0.023,
+          String(format: "%.4f (wanted [0.004, 0.007]) / %.4f / %.4f (both [0.018, 0.023])",
+                 c28StrokeInk, c28WideInk, c28TallInk))
+
+    // All three have to stay under the bar, or term 1 refuses the page and the third term
+    // is never consulted — which would make every check above green over a page that
+    // never reached the code they are about. `> 0` on all three, not just the first: these
+    // come from a `?? -1`, and -1 is below the bar too.
+    check("…and all three sit below the shipped bar, so term 1 lets them through",
+          c28StrokeInk > 0 && c28WideInk > 0 && c28TallInk > 0
+            && c28StrokeInk < Flattener.textPageInkOutsideThreshold
+            && c28WideInk < Flattener.textPageInkOutsideThreshold
+            && c28TallInk < Flattener.textPageInkOutsideThreshold,
+          String(format: "%.4f / %.4f / %.4f vs %.3f", c28StrokeInk, c28WideInk,
+                 c28TallInk, Flattener.textPageInkOutsideThreshold))
+
+    // ⚠️ `shapeMinimumArea` stays unpinned, and the reason is narrower than a first draft
+    // of this comment claimed. In `textShaped`, **at its shipped value**, it cannot be the
+    // deciding term: an 8-connected component spanning `[minY, maxY]` owns at least one run
+    // in every one of those rows, so its area is at least its height, and the height test
+    // already demands `h >= shapeHeightLow * glyphHeight` — so wherever the median glyph is
+    // at least `shapeMinimumArea / shapeHeightLow` = 8 px tall, the area guard has been
+    // satisfied before it is asked. This page's glyph is 25 px. ⛔ Three things that does
+    // NOT license. It is conditional on that 8 px: `Flattener`'s own resolution comment
+    // records 72-DPI scans in the corpus, where it can fail. It says nothing about
+    // *raising* the constant — a 4 -> 99 mutant refuses tall thin marks and is not the
+    // height bar under another name. And the constant is separately live in
+    // `textLineGroupsOutsideText`'s **calibration** filter, which these fixtures do run
+    // through, so whether the calibration check above would catch such a mutant is
+    // unmeasured rather than argued either way. Left as a named gap for those reasons.
 
     // ⛔ THE VERDICT, end to end through `mrcLayers`, and this is the check that was
     // watched failing before the wiring existed: without the third term the page is
@@ -2332,7 +2501,7 @@ do {
           c28Window == (100, 200, 1500, 3000), "\(c28Window)")
     let c28Border = tmp.appendingPathComponent("c28-border-only.pdf")
     makeScannedPDF(at: c28Border, lines: c28Dense,
-                   bar: NSRect(x: 8, y: 200, width: 40, height: 900))
+                   bars: [NSRect(x: 8, y: 200, width: 40, height: 900)])
     let c28BorderInk = c28InkOut(c28Border, boxes: c28Boxes(14)) ?? -1
     let c28BorderGroups = c28Groups(c28Border, boxes: c28Boxes(14))
     check("…so a mark in that border is ink to neither the fraction nor the term",

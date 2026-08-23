@@ -103,6 +103,52 @@ never reach `lineMinimumMembers`, so both copies read 0 and agreed trivially, an
 `return 0` passed the whole self-test. Found by building the sabotage and running it (CONTRIBUTING 4a);
 it has its own five-mark fixture now and the sabotage goes red. That is the tenth check in this
 project's history that could not fail.
+✅ **THE OWED FIXTURE EXISTS AS OF 2026-08-22 AND `shapeRunHigh` IS NO LONGER A KNOWN SURVIVOR** — read
+`#### The owed fixture`. Nothing shipped moves; this is `Tests/main.swift`, `Tools/mutate.py` and two
+comments. Every non-type-shaped fixture the suite had was **one 8-connected component**, and one
+component can never reach `lineMinimumMembers` = 4, so the **grouping** was doing all the refusing and the
+constant read the same at every value — which is why `mutate.py` carried it saying so and naming the
+fixture it wanted (*"four short solid dashes on a baseline"*). Three now exist, calibrated at an asserted
+`glyphHeight` **25.0** / `glyphRun` **5.0**: four 5x30 strokes are **1 group** (the positive control), four
+20x30 are **0** (`shapeRunHigh`), four 5x120 are **0** (`shapeHeightHigh`, added to the catalogue, 100 →
+**101**). ⛔ **The pair to quote is the two refusals carrying the SAME out-of-region ink by construction**
+— 4x20x30 and 4x5x120 are both 2,400 px, both `inkOut` 0.0205 — **while the control that fires has a
+quarter of it**, so nothing about quantity separates the refused pages and quantity is *inverted* against
+the one that fires. ✅ **Both mutants were watched failing and each fixture is attributable to ONE
+constant**: at `shapeRunHigh` = 99.0 the wide one goes 0 → 1 and the tall one stays 0; at
+`shapeHeightHigh` = 99.0 the reverse. ⛔ **But "watched failing" here is a BINARY, not a red check**:
+neither was run through `mutate.py` (a scoped run is a baseline suite plus ~45 min a mutant), the probe
+carried its own copy of **both** the fixture builder and the surface construction, and `mutate.py`'s
+`--self-test` never touches `CONSTANTS` — so what the suite adds is that the type scale and all three
+`inkOut` values are asserted **in bands**, and a geometry that drifted away from the probe's reports
+itself. ⚠️ The calibration check is a **mirror** of the term's own calibration step: it pins the fixture
+and is blind to a change in the calibration itself, which is `interiorWindow`'s recorded hazard with its
+remedy unavailable (the term does not expose what it calibrated on).
+✅ **AND THE SIBLING WAS FIXED IN THE SAME COMMIT — it is the sharper of the two.**
+`Tools/score-shape-term.swift`'s **port check**, the gate comparing its copy of the five functions against
+the shipped ones on every measured page, had a fixture of five 3x10 marks against a 3x10 calibration — the
+**middle** of every band — so loosening the tool's own `shapeRunHigh`, `shapeHeightHigh` or
+`shapeHeightLow` left both copies at one group and the self-test passed over a drifted port, in the file
+every published C28 figure came from. **Three** refused baselines were added, one per constant (four 8x10
+on run, four 3x36 on the height ceiling, four 3x3 on the floor) plus **two complementary guards** — the
+group count pinned at exactly **1** and the map's component count at **17**. ⛔ Both, because neither
+catches the other's failure: the count is blind to a baseline clipped from an end (still four components)
+and the exact-1 is what catches a baseline that started being *accepted*. A first draft had `< 1` and 13
+and the second review refuted both from a worked example. ✅ Run **four** ways: shipped
+`self-test ok (10 checks)`, exit 0; the tool's `shapeRunHigh` = 99.0, `shapeHeightHigh` = 99.0 and
+`shapeHeightLow` = 0.0 each exit **5** on a port divergence. All three passed before. ⚠️ The printed count
+stays **10** on purpose — the guards went inside group 10, and that literal counts groups. ✅ **And `score-mrc`'s `--self-test`, named as the
+sharpest thing owed because it asserts this same verdict on a real-Vision-boxes fixture and is gated by
+nothing, is GREEN** — measured, exit 0. ⛔ **But green by CONSTRUCTION, not by measurement**:
+`selftest-alltext`'s `inkOutsideText` is **exactly 0.0**, so the term's own `guard outside > 0` answers 0
+before it labels anything and cannot change at any value of any of the five constants. That fixture pins
+the guard's FIRST term, is silent about the second, and is blind to the third. ⚠️ `shapeMinimumArea` stays
+unpinned on a **narrower** argument than a first draft of this gave: at its shipped value, in
+`textShaped`, an 8-connected component's area is at least its height and the height test already demands
+`h ≥ shapeHeightLow * glyphHeight`, so above a median glyph of **8 px** the area guard is satisfied before
+it is asked — but that is conditional on the 8 px (72-DPI corpus scans can fall under it), it says nothing
+about *raising* the constant, and the constant is separately live in the term's **calibration** filter,
+which these fixtures do run through, so whether they would kill such a mutant is **unmeasured**.
 ✅ **QUESTION 3 HAS ITS FIRST MEASUREMENT, 2026-08-21, AND A SHAPE TERM SEPARATES WHERE FIVE SCALARS
 DID NOT** — `Tools/score-shape-term.swift` (new) counts **text lines** in the ink outside the
 recognised words at the page's own type scale, calibrating on the stencil's own components, and over 13
