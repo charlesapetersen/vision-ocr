@@ -572,7 +572,11 @@ _classify_red() {
   local s IFS=' '
   for s in $steps; do
     case "$s" in
-      staleness|queue-coherence) doc_list="${doc_list:+$doc_list }$s" ;;
+      # `queue-coherence-selftest` is warn-only in the gate today, so it cannot appear in a RED line at all;
+      # it is listed anyway because this `case` is an EXACT match with `has_code=1` underneath, so promoting
+      # it to a hard step would otherwise report a DOCUMENT failure as a CODE regression. Added 2026-08-23
+      # with the step itself, so the two cannot drift apart later.
+      staleness|queue-coherence|queue-coherence-selftest) doc_list="${doc_list:+$doc_list }$s" ;;
       *)                        has_code=1 ;;
     esac
   done

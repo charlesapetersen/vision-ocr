@@ -35,7 +35,13 @@ loudly rather than running work out of order. Tick the box in the **same commit*
   item is done when the entry closes. `check-queue-coherence.sh` therefore asserts that an open item's
   `origin:` entry is still OPEN, and a ticked one's is CLOSED.
 - **`(context: …)`** means *that entry explains why this matters* and is **not** a status claim. Use it
-  whenever the background is a CLOSED entry, which is the common case for standing work.
+  whenever the background is a CLOSED entry, which is the common case for standing work — and equally when it
+  is an OPEN one, which is the case for a finished sub-step of a campaign whose parent stays `[ ]` by design
+  (every `c28-*` box below). ⚠️ **Because it is not a status claim, `check-queue-coherence.sh` does not
+  resolve it at all**: `cited()` scans `(origin: …)` clauses only, so a `context:` cite is exempt from
+  `TICKED-OPEN` *and* from `WOULD-REDO` *and* from `CITE-MISSING`. Measured 2026-08-23, and pinned by that
+  script's `--self-test`; the sub-box bullet further down asserted the opposite for four days, and the
+  numbers that settled it are there.
 
 Getting this wrong is not a lint nit. `tools-compile` and `mutants` below originally cited their closed
 provenance entries as `origin:`, and the coherence check caught it on its first real run. The consequence
@@ -56,9 +62,34 @@ than reasoned — the first attempt broke the coherence check twice:
   Measured: that produced `DUPLICATE-TAG` *and* `TICKED-OPEN`, and left the parent citing nothing at all.
 - It needs **its own tag**. Reusing the parent's is a duplicate, and `(blocked-on: …)` then resolves to
   whichever came first.
-- It must cite **no register entry**. ⛔ `(context: …)` does NOT exempt it — the check is
-  `[ "$st" = "x" ] && [ "$n_open" -gt 0 ]`, which never looks at *which* cite word was used, so any `[x]`
-  citing a still-OPEN entry is drift. The parent keeps the cite; the sub-box carries none.
+- It must not carry an **`(origin: …)`** cite. ⛔ **This bullet said "it must cite **no register entry**" and
+  gave a reason that is FALSE, and it stood from 2026-08-19 to 2026-08-23 while sixteen TICKED boxes depended
+  on the opposite.** The claim was that `(context: …)` "does NOT exempt it — the check is
+  `[ "$st" = "x" ] && [ "$n_open" -gt 0 ]`, which never looks at *which* cite word was used". That condition
+  is real, but `n_open` is counted from `cited()`, and `cited()` scans `/\(origin:[^)]*\)/` **only** — the
+  word `context` appears nowhere in the parser, so the cite word is *exactly* what it looks at. ✅ **MEASURED
+  2026-08-23, not reasoned**: over a fixture matrix of eight items, a `[x]` on an OPEN entry is reported
+  through `origin:` and silent through `context:`, and an `[ ]` on a CLOSED entry likewise — and on this file
+  **as it stood at `ad5861d`, before the box recording this work was added**, the shipped check reads
+  `OK 56 items 6 cited`, exit 0, while one line of `cited()` widened to harvest `context:` turns that into
+  **24 findings (16 `TICKED-OPEN`, 8 `WOULD-REDO`) over 31 cited items**, every one of them correct
+  bookkeeping. (⚠️ The item total is 57 with that box in; the six BUGS.md-citing items do not move, because
+  it cites a README defect and not the register.) ⛔ **Fourteen of the sixteen `TICKED-OPEN` are the `c28-*`
+  sub-boxes this very section tells you how to write**, so enforcing the rule as written would have flagged
+  its own convention; two of the eight `WOULD-REDO` are `tools-compile` and `mutants`, the pair the semantics
+  bullets above were written for, each of which says CLOSED inside its own cite text (two different strings —
+  read them at those items rather than trusting one quotation for both). ✅ So the parent keeps the
+  `(origin: …)` and the sub-box carries
+  a `(context: …)`, which is what every `c28-*` box already does. The gate for this is
+  `check-queue-coherence.sh --self-test`, added the same day and watched failing against two sabotages of
+  `cited()` and two of the guard it feeds — widen `cited()` to `context:` and seven of its fifteen checks go
+  red; stop it harvesting `origin:` and seven do, which is what stops a checker that reports *nothing* from
+  passing; loosen `TICKED-OPEN`'s `-gt 0` to `-ge 0` and two do, which is the sabotage the first version of
+  that self-test could not see at all.
+  ⚠️ **The cost of the exemption, so it is a decision and not a discovery**: a `context:` cite is
+  **unvalidated in every direction**. Write `context:` where you meant `origin:` and no status is ever
+  compared; name a tag that does not exist and not even `CITE-MISSING` fires. Both are pinned by that
+  self-test, so they can change on purpose and not by accident.
 
 ## How to SIZE an item — and why an unbounded verb strands a worktree
 
@@ -2106,6 +2137,47 @@ happens.**
       that disagreement was the reason this item was not optional). ⚠️ `Tests/`/`Tools/` are both in the
       suite regex: FULL-HOOK commit, comment-only, so `1,223/1,223` is the expected result.
       (context: BUGS.md C28 `#### The owed fixture`)
+- [x] **queue-cite-rule** — **DONE 2026-08-23.** ⛔ **This file's own sub-box rule asserted the OPPOSITE of
+      what `check-queue-coherence.sh` does about `(context: …)`, and stood wrong from 2026-08-19 to
+      2026-08-23 while sixteen TICKED boxes depended on the real behaviour.** Nominated by the previous
+      session's log as "worth an item" after it read the two and found they disagreed. ✅ **The measurement
+      settled which side was wrong, on this file at `ad5861d` with one line of `cited()` widened**: shipped
+      it reads `OK 56 items 6 cited`, exit 0; harvesting `context:` as well it reads **24 findings — 16 `TICKED-OPEN`,
+      8 `WOULD-REDO`** over 31 cited items, and every one is correct bookkeeping — **fourteen of the sixteen
+      are the `c28-*` sub-boxes the wrong rule's own section tells you how to write**, and two are
+      `tools-compile` and `mutants`, the pair the `origin:`/`context:` bullets exist for, **each of which
+      says CLOSED inside its own cite text** — two different strings, so do not quote one for both. So the
+      prose moved, not the script. ✅ **The fix is a GATE**:
+      `check-queue-coherence.sh --self-test`, fifteen checks in six deliberately different kinds (positive
+      controls, negative controls on the rule, the two AGREEING quadrants, the `N_CITED` count, and an
+      inverted row that VANISHES under the sabotage, and the CITE-MISSING and non-register-cite rows the review
+      added), watched failing against **seven** `shasum`-distinct
+      sabotages, all exit 5 with kill sets no other sabotage's set contains — 7 of 15 widening `cited()` to
+      `context:`, 7 of 15 stopping it harvesting `origin:`, **2 of 15 loosening `TICKED-OPEN`'s
+      `-gt 0` to `-ge 0`** and 3 of 15 stubbing `status_of()` closed. ⛔ **That third sabotage SURVIVED the
+      first version of this self-test at 0 red and exit 0** — every ticked row it had either carried an open
+      cite or no cite at all, so nothing could tell "has an open cite" from "cites anything"; the fix is the
+      2x2 of {`[x]`,`[ ]`} against {cite OPEN, cite CLOSED} per CONTRIBUTING §4d, two cells of which had
+      never been written down. Wired **warn-only** into
+      `health-gate.sh` ahead of the check it protects, on the direction of failure: a hard step would park
+      the run over a self-test on a checker that is itself warn-only. ⚠️ It pins the cite-word
+      discrimination and the two verdicts, and **not** the greedy span rule, the fence skipping,
+      `DUPLICATE-TAG`, or the mirror-`next-item.sh` property the header calls load-bearing — what is missing
+      there is another KIND of row, not another cite-word row. Ops-only commit, so no suite.
+      (origin: ops/autonomous/README.md D18)
+- [ ] **register-dup-tag** — `BUGS.md` carries **two `### R63` headings** (lines 12145 and 12618), so the two
+      register readers disagree about the register's size: `ops/autonomous/bugs-entry.sh --list` emits **169**
+      rows and `check-queue-coherence.sh`'s inline fallback **168**, the fallback deduping via `seen[tag]`.
+      Measured 2026-08-23 by the adversarial review of `queue-cite-rule`, which also corrected that script's
+      comment claiming the fallback was a *"verbatim copy"* of the same rules. ⚠️ **No live consequence
+      today** — both headings are `FIXED` and `status_of` takes the first match — but the answer becomes
+      dependent on whether `bugs-entry.sh` happens to be executable the moment the two statuses diverge, and
+      a duplicate REGISTER tag is the one class `check-queue-coherence.sh` flags in `QUEUE.md` and never in
+      `BUGS.md`. Decide whether the second `R63` is a distinct entry needing its own tag or a stray heading,
+      then consider whether either reader should REPORT a duplicate register tag rather than silently pick
+      one. ⚠️ `check-queue-coherence.sh --self-test` is structurally blind to this (its fixture register has
+      no duplicate tag and only `FIXED`/`OPEN`), so a fix wants its own fixture row.
+      (context: ops/autonomous/README.md D18)
 - [ ] **lock-reentrancy** — ⛔ **`test-lock.sh`'s reentrancy escape is in the `run` branch ONLY, so wrapping
       a `git commit` in the lock DEADLOCKS against its own pre-commit hook.** Measured 2026-08-22: a session
       ran `test-lock.sh run --label session -- git commit`. `run` exports `VISIONOCR_TEST_LOCK_HELD=1`

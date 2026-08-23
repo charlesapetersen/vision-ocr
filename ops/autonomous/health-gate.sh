@@ -259,6 +259,28 @@ step hooks-configured _check_hooks_configured
 # script has is how a reader comes to trust a number nobody measured — precisely the failure this repo's
 # verification discipline is built around.
 step_warn staleness       "$OPS/check-staleness.sh"
+# ⚠️ THE CHECKER'S OWN SELF-TEST RUNS FIRST, and it is here rather than in a `tests/` harness because
+# nothing was checking this checker. Added 2026-08-23 after `QUEUE.md`'s sub-box rule was found asserting
+# the OPPOSITE of what `cited()` does about `(context: …)` — the prose stood wrong for four days while
+# sixteen TICKED boxes depended on the real behaviour, and no gate could see it. Fixtures only: it writes to
+# its own `mktemp` dir, reads neither `QUEUE.md` nor `BUGS.md`, and costs milliseconds.
+# ⛔ WARN-ONLY ON PURPOSE, and the argument is the DIRECTION OF FAILURE rather than the cost. A hard step
+# here would PARK the whole run over a self-test on a checker that is itself warn-only — a bigger
+# consequence than anything the checker buys. So a broken self-test is as loud as a broken check and no
+# louder, which is proportionate; `tools-compile` is hard because a tool that will not type-check breaks a
+# session's instruments, and this does not.
+# ⚠️ The step NAME is in `vision-ocr-autonomous.sh`'s `_classify_red()` case list even though a warn can
+# never reach a `HEALTH GATE: RED` line: that case is an EXACT match with `*) has_code=1` underneath it, so
+# promoting this to a hard `step` without touching the classifier would report a document failure as a code
+# regression. Pre-empted there rather than left as a trap.
+# ⚠️ AND THE NAME IS IN `_lane_ran`'s DOCUMENT-COHERENCE CONJUNCTION BELOW, which is not optional: without it
+# a red self-test still let the GREEN line claim `+ document coherence` while naming the failure in the same
+# sentence — measured, `HEALTH GATE: GREEN (… + document coherence) — KNOWN FAILURES:
+# queue-coherence-selftest` — which is the self-contradicting summary line `_lane_ran` exists to prevent, and
+# the worst case for it: a red self-test means `cited()` is provably drifted, so `queue-coherence`'s own `✓`
+# is exactly the claim that can no longer stand. Found by the adversarial review of the commit that added
+# this step, after the classifier had been remembered and this had not.
+step_warn queue-coherence-selftest "$OPS/check-queue-coherence.sh" --self-test
 step_warn queue-coherence "$OPS/check-queue-coherence.sh"
 
 # EVERY tool, ~26 s — see (b) above. Hard step: a tool that does not type-check is a fact about the
@@ -327,12 +349,17 @@ fi
 # prefix, the em dash and the space-separated step names are all load-bearing bytes.
 #
 # DEFENSIVE, and say so plainly so a future reader does not go looking for a live branch that is not
-# there: `_classify_red` classifies ONLY `staleness` and `queue-coherence` as DOCUMENT steps and treats
-# every other name as a CODE regression. Both of those run through step_warn, which never touches
+# there: `_classify_red` classifies ONLY `staleness`, `queue-coherence` and `queue-coherence-selftest` as
+# DOCUMENT steps and treats every other name as a CODE regression. ⚠️ That list was TWO names until
+# 2026-08-23 and this paragraph said "ONLY … Both … either" while the classifier held three — caught by the
+# adversarial review of the commit that added the third, which is D18's own failure mode (an ops comment
+# asserting the opposite of the code) reappearing ninety lines below the change that caused it, in the same
+# file. If you add a fourth, this sentence is the second thing to edit.
+# All THREE run through step_warn, which never touches
 # $fails — so as this file stands TODAY the daemon's document-only branch is UNREACHABLE. It is kept on
 # both sides because the classification is what stops a doc nit being reported to the owner as "a
-# reproducible build/suite regression on a broken tree", and because the day someone promotes either
-# check to a hard step, the daemon must already know it is a document step.
+# reproducible build/suite regression on a broken tree", and because the day someone promotes any of
+# them to a hard step, the daemon must already know it is a document step.
 # ═════════════════════════════════════════════════════════════════════════════════════════════════════
 echo
 if [ -n "$fails" ]; then
@@ -354,7 +381,7 @@ if [ "$QUICK" != 1 ]; then
   _lane_ran suite && ran="$ran + suite (locked)"
   _lane_ran build && ran="$ran + ./build.sh"
 fi
-_lane_ran staleness && _lane_ran queue-coherence && ran="$ran + document coherence"
+_lane_ran queue-coherence-selftest && _lane_ran staleness && _lane_ran queue-coherence && ran="$ran + document coherence"
 [ "${VISIONOCR_GATE_GUI:-0}" = 1 ]   && _lane_ran gui-vm       && ran="$ran + gui-vm"
 [ "${VISIONOCR_GATE_FAULT:-0}" = 1 ] && _lane_ran fault-inject && ran="$ran + fault-inject"
 # Said LOUDLY and last, inside the parens (a ';' separator, so it cannot be mistaken for one of the

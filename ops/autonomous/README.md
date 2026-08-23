@@ -1113,6 +1113,153 @@ and never cleaned it up, so from §[7] onward the sandbox permanently held a dir
 could clear. Harmless for as long as nothing put orphans into `needs`; the moment an unassigned strand
 raised one, §[10]'s closing assertion went red — correctly.
 
+## Defects found 2026-08-23, from a session reading the checker it was about to trust
+
+### D18 · The queue's own rule about `(context: …)` asserted the OPPOSITE of what the checker does, and nothing could see it — FIXED
+
+**What happened.** `QUEUE.md`'s "RECORDING A FINISHED SUB-STEP" section told every session that a sub-box
+"must cite **no register entry**", on the stated ground that *"`(context: …)` does NOT exempt it — the check
+is `[ "$st" = "x" ] && [ "$n_open" -gt 0 ]`, which never looks at which cite word was used"*. That condition
+is quoted correctly and the inference from it is false: `n_open` is counted from `cited()`, and `cited()`
+matches `/\(origin:[^)]*\)/` and nothing else. The word `context` does not occur in the parser, so the cite
+word is *precisely* what it looks at. The rule stood from **2026-08-19 to 2026-08-23** — introduced in
+`50e3854`, dated by `git log -S 'does NOT exempt it' -- ops/autonomous/QUEUE.md`, which returns that one
+commit.
+
+**Why nothing caught it.** `ops/autonomous/tests/` holds **five** files — `prove-daemon.sh`,
+`prove-status.sh`, `prove-stop.sh`, `prove-test-lock.sh`, `mutate-test-lock.sh` — and none for
+`check-queue-coherence.sh`. ⚠️ Nor for `next-item.sh` or `check-staleness.sh`, so this is one instance of a
+gap rather than the whole of it; what makes this instance the sharp one is that the file whose entire job is
+to make a class of drift LOUD had no gate of its own, so its own documentation could contradict it
+indefinitely. A checker with no self-test is an assertion nobody has audited.
+
+**The measurement that settled which side was wrong**, on the real tree, one line of `cited()` widened to
+`/\((origin|context):[^)]*\)/` and nothing else touched:
+
+| `cited()` harvests | verdict on `QUEUE.md` at `ad5861d` |
+|---|---|
+| `origin:` only (shipped) | `OK 56 items 6 cited`, exit 0 |
+| `origin:` and `context:` | **24 findings — 16 `TICKED-OPEN`, 8 `WOULD-REDO`** — over 31 cited items, exit 1 |
+
+⛔ **All 24 are correct bookkeeping, and the composition is the argument.** Fourteen of the sixteen
+`TICKED-OPEN` are `c28-*` sub-boxes — written the way the very section carrying the wrong rule tells you to
+write them, so enforcing it as documented would have flagged its own convention on fourteen rows; the other
+two are `c30-fork` and `alltext-replica`, the same shape against `C30` and `C28`. Two of the eight
+`WOULD-REDO` are `tools-compile` and `mutants`, the pair the `origin:`-vs-`context:` bullets were written for
+in the first place, and **each says CLOSED inside its own cite text** — `(context: BUGS.md C25 and T16 —
+both CLOSED; they are why this gate matters, not the work itself)` and `(context: BUGS.md T5 — CLOSED; it
+records how to tell a real gap from a value nothing depends on)`. ⚠️ Those are **two different strings**: a
+draft of this entry quoted the first as though it were both items' text, which is the kind of one-instance
+generalisation this README's own D17 was caught making. That is 24 of 56 items crying wolf, which is the
+failure the checker's own "WHAT IS **NOT** DRIFT" block exists to prevent. So the script is right and the
+prose was wrong, and the prose is what moved.
+
+**The fix is a gate, not a wording change.** `check-queue-coherence.sh --self-test` (fixtures only; its own
+`mktemp` dir, reads neither `QUEUE.md` nor `BUGS.md`, milliseconds) runs an eight-row cite-word matrix against
+a two-entry register fixture — `C98` FIXED, `C99` OPEN — and asserts fifteen things in six deliberately
+different kinds, because none catches the others' failure:
+
+1. **positive controls** — rows `a`, `c` and `f` must produce `TICKED-OPEN` / `WOULD-REDO`, tag and entry
+   named. This is what stops "no findings" reading as "the exemption holds": a checker sabotaged to harvest
+   nothing at all reports a clean tree, and would pass a self-test built only of negatives.
+2. **negative controls on the rule** — the two `context:` rows (`b`, `d`) must produce nothing.
+3. **the other two quadrants** — rows `g` and `h`, the *agreeing* `origin:` combinations (`[x]` citing a
+   CLOSED entry, `[ ]` citing an OPEN one), which must also be silent. See the defect below; these were the
+   ones missing.
+4. **the counts** — `8 items, 5 citing BUGS.md` and `3 item(s) disagree`, read off the summary line.
+   `N_CITED` is the one that bites: it moves under a context-harvesting change even where a finding's
+   presence happens not to.
+5. **an inverted row** — `f-mixed` carries *both* cite words on one `[ ]` item, so harvesting `context:`
+   makes its finding **vanish** (the open `C99` stops `n_open` being 0) instead of appear. Guards 1–4 all
+   catch a finding appearing; only this one catches the sabotage by a finding disappearing.
+
+Row `e`, `e-context-missing`, pins the exemption's **cost** rather than the rule: a `context:` cite naming a
+tag that is not in the register raises nothing, not even `CITE-MISSING`. That follows from "not a status
+claim" and is not an oversight for the next reader to fix — but it must not change by accident either.
+
+⛔ **AND THE FIRST VERSION OF THIS SELF-TEST COULD NOT FAIL AGAINST ONE WHOLE SABOTAGE CLASS — found by
+running it, in the adversarial pass on this very diff, which is the only reason it is not shipping as the
+eleventh such check.** It had six rows and eleven checks, and against `TICKED-OPEN`'s guard loosened from
+`[ "$n_open" -gt 0 ]` to `-ge 0` — "report every ticked item that cites anything", the condition's entire
+meaning gone — it scored **0 red, exit 0**. The cause is that every ticked row it had either carried an open
+cite (reported under both the real guard and the sabotage) or **no cite at all** (skipped by
+`[ -n "$cites" ]` before any verdict is reached), so no row could tell the two conditions apart.
+CONTRIBUTING §4d is both the lesson and the remedy — *enumerate the states against the doors, do not reason
+about pairs*: the doors are {`[x]`, `[ ]`} × {cite OPEN, cite CLOSED}, and **two of the four cells had never
+been written down**. Rows `g` and `h` are those cells. ⚠️ Note what this says about the ORIGINAL six: they
+were chosen by reasoning about which sabotages seemed likely, and that reasoning missed a one-character edit
+to the guard the whole file exists to evaluate.
+
+✅ **WATCHED FAILING — FOUR sabotages, `shasum`-distinct copies, one edit each, all exit 5** (CONTRIBUTING
+§2/§4a), all re-measured against the final file rather than rescaled from an earlier round:
+
+| sabotage | red | the checks that catch it |
+|---|---|---|
+| `cited()` widened to `/\((origin\|context):…/` | **7 of 15** | rows b, d, e, f + both counts |
+| `cited()` narrowed to `/\(provenance:…/` (harvests nothing) | **7 of 15** | exit code, rows a, c, f + both counts |
+| `TICKED-OPEN`'s `[ "$n_open" -gt 0 ]` → `-ge 0` | **2 of 15** | **row g** + finding total |
+| `status_of()` stubbed to return closed for every tag | **3 of 15** | rows a, **h**, i |
+| the whole `CITE-MISSING` verdict disabled (`if [ -n "$unknown" ]` → `if false`) | **2 of 15** | **row i** + finding total |
+| the `if (cl !~ /BUGS\.md/) continue` guard removed | **3 of 15** | **row j** + both counts |
+| two lines inserted above the queue fixture, shifting every row | **3 of 15** | rows a, c, f |
+
+⛔ **The kill sets are the argument that the guards are not redundant**: no sabotage's set contains
+another's; `g` is the only **row** that catches the `-ge 0` sabotage, and `h` the only **silence assertion**
+that catches the `status_of()` one (row `a`'s positive control fires there too, since a closed `C99` removes
+its finding — said precisely because a draft of this claimed both were sole outright). The fifth
+is a different kind of control — it sabotages the FIXTURE rather than the code, and it is there because the
+three positive controls assert the finding's **reported line number** as well as its tag and entry
+(`… a-origin-open 3 C99`), so it proves those assertions are exact rather than loose prefix matches. ⚠️ It
+is also a real constraint on editing: insert a row in the middle of that heredoc and three checks go red
+until the expected line numbers are corrected. That is the intended trade — the alternative is an assertion
+that would not notice the checker reporting the wrong line. Shipped:
+`self-test ok (15 checks)`, exit 0, run from the worktree root and from `/` by absolute path, and the real
+tree still green —
+`OK 58 items 6 cited`, the two new ones being this fix's own ticked box and `register-dup-tag`. ⚠️ **Every `56` above is the count at
+`ad5861d`, before those boxes existed**, and the two must not be conflated: the *item* total moves with any
+queue edit, while `6 cited` is the number the finding counts are actually about and it does not move here,
+because the new box cites this README and not the register.
+
+**Wired warn-only into `health-gate.sh`, ahead of the check it protects.** ⛔ Warn-only on the direction of
+failure, not the cost: a hard step would PARK the whole run over a self-test on a checker that is itself
+warn-only, which is a larger consequence than anything the checker buys. `tools-compile` is hard because a
+tool that will not type-check breaks a session's instruments; this does not. ⚠️ The step name
+`queue-coherence-selftest` was added to `vision-ocr-autonomous.sh`'s `_classify_red()` case list in the same
+commit even though a warn can never reach a `HEALTH GATE: RED` line — that `case` is an exact match with
+`*) has_code=1` underneath, so promoting this to a hard `step` later would otherwise report a **document**
+failure as a **code regression**. Pre-empted rather than left as a trap.
+
+⛔ **AND THE `✓` ON THAT STEP WAS AMBIGUOUS UNTIL IT WAS CONTROLLED, which is the whole hazard in
+miniature.** `step_warn` discards a passing step's output, and `check-queue-coherence.sh` with the argument
+*dropped* also exits 0 — so `✓ queue-coherence-selftest` in the gate log is consistent with the self-test
+never having run. Reading `step_warn`'s `shift 2` / `"$@"` says the argument is forwarded; that is reasoning,
+not evidence. Measured instead, by extracting the real `step_warn` from `health-gate.sh` and calling it
+against a probe script that exits 5 iff it receives `--self-test`: `⚠ probe-selftest (rc=5)` with the probe's
+own `probe: got --self-test` printed beneath it, and `✓ probe-noarg` on the same probe called without it. So
+the argument does arrive, and the gate's `✓` means what it says. A gate step whose pass is indistinguishable
+from its own no-op is the eleventh check that could not fail, and this one came within a control of being it.
+
+⚠️ **What this does NOT cover, re-derived by SABOTAGE rather than by reading** — the first version of this
+paragraph was written from the code and was itself incomplete, which is exactly how two of the exemptions
+above came to be unpinned. Each of these was confirmed still green under a one-line deletion: the greedy
+item-span rule, the fence/blockquote skipping, `DUPLICATE-TAG`, and the tag-shape test
+(`^[A-Za-z]+[0-9]+([.][0-9]+)*$` — remove it and the real tree reports `CITE-MISSING C24b … FIXED`), plus the
+mirror-`next-item.sh` property the file's header calls load-bearing. So **three of the checker's four verdict
+classes** are now exercised — `TICKED-OPEN`, `WOULD-REDO`, `CITE-MISSING` — and `DUPLICATE-TAG` is not. A
+second cite-word row is not what is missing; a second *kind* of row is, and rows `i` and `j` are the evidence,
+since each was added only after a sabotage walked through the gate.
+
+⚠️ **Two side-findings, recorded rather than fixed here.** (1) This script's own comment claimed its inline
+register fallback was a *"verbatim copy"* of `bugs-entry.sh`'s rules. Measured, the two disagree on the real
+register — **169 rows against 168** — because `BUGS.md` carries **two `### R63` headings** (lines 12145 and
+12618) and only the fallback dedupes, via `seen[tag]`. Harmless today (both `FIXED`, first match wins) and
+live the moment those two statuses diverge; the comment is corrected in place and the duplicate is carried as
+the queue's `register-dup-tag`. ⚠️ `--self-test` is structurally blind to it — its fixture register has no
+duplicate tag and only `FIXED`/`OPEN`, never `WONTFIX`, `NO DEFECT` or `HALF FIXED`, so it stays green with
+`bugs-entry.sh` un-executable or absent. (2) Of the fifteen checks, one — `[ -r "$st_self" ]` — appears in no
+sabotage's kill set and is belt-and-braces rather than an independent assertion, so **fourteen is the honest
+count of checks that distinguish something**, and it is written here rather than rounded up.
+
 ## What this deliberately does not have
 
 The sibling daemon has eleven helper scripts and thirteen proof harnesses. Most of what is missing here is

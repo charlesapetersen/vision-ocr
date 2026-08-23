@@ -44,6 +44,32 @@
 #   * AN ITEM WITH NO `(origin: …)` CITE IS SKIPPED SILENTLY. Several legitimately come from `TODO.md` prose
 #     or from `Tools/` (`fault-inject`, `zotero-2`, `annot-r3`), which have no tag space at all; there is
 #     nothing to compare and their absence is correct writing, not an omission.
+#   * SO IS A `(context: …)` CITE, IN BOTH DIRECTIONS — and this is the one a reader has to be TOLD, because
+#     `cited()` scans for `(origin: …)` clauses only and the word `context` appears nowhere in the parser, so
+#     the exemption is invisible unless you notice what is ABSENT. `QUEUE.md`'s own "How to write an item"
+#     section is the semantics: an `origin:` cite says *this item IS that entry*, a `context:` cite says only
+#     *that entry explains why this matters*, and a footnote is not a status claim, so there are never two
+#     status claims to have drifted. MEASURED 2026-08-23 on the real tree, one line of `cited()` changed:
+#     harvesting `context:` as well takes this file from `OK 56 items 6 cited`, exit 0, to **24 findings —
+#     16 TICKED-OPEN and 8 WOULD-REDO** over 31 cited items, and every one of the 24 is correct bookkeeping.
+#     Fourteen of the sixteen `TICKED-OPEN` are `c28-*` sub-step boxes (finished sub-steps of a campaign
+#     whose parent stays open BY DESIGN — the whole reason that convention exists) and the other two are
+#     `c30-fork` and `alltext-replica`; two of the eight `WOULD-REDO` are `tools-compile` and `mutants`, the
+#     pair the semantics section was written for, each of which says CLOSED inside its own cite text —
+#     `(context: BUGS.md C25 and T16 — both CLOSED; they are why this gate matters, not the work itself)`
+#     and `(context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a value nothing depends
+#     on)`. (⚠️ Those are two different strings; a draft here quoted the first as if it were both.) That is
+#     24 of 56 items crying wolf, which is the exact failure this block exists to prevent. `--self-test`
+#     pins the exemption; the one-line sabotage that harvests `context:` turns it red.
+#     ⚠️ EVERY `56` HERE IS THE COUNT AT `ad5861d`. The tree now reads 58 — `queue-cite-rule` and
+#     `register-dup-tag`, the boxes this work added — and the item total moves with any queue edit while `6 cited` does not, because
+#     that box cites a README defect and not the register. `6 cited` is the number these findings are about.
+#     ⚠️ THE COST, stated rather than left to be discovered: a `context:` cite is UNVALIDATED. Write
+#     `context:` where you meant `origin:` and no status is ever compared; name a tag that does not exist
+#     and no `CITE-MISSING` fires either. Both halves are pinned by `--self-test` — the second by rows e and
+#     i TOGETHER, and only since the adversarial review: row e alone asserted the ABSENCE of a string the
+#     fixture gave the checker no way to produce, so the whole `CITE-MISSING` verdict could be deleted with
+#     the self-test still green. Row i is the positive control.
 #   * SO IS AN ORIGIN THAT NAMES A FILE OTHER THAN `BUGS.md` — `(origin: REVIEW-2026-08-14.md A1.4)`,
 #     `(origin: TODO.md §"2. The Zotero library sweep")`. The REVIEW file has its own tag space (dotted
 #     `A6.1` forms) and its own strike-through-in-place convention; only the register's tags are checkable
@@ -68,11 +94,12 @@
 #   a parenthesised `(origin: …)` clause. If that ever needs to change, it changes in both files together.
 #
 # USAGE:  check-queue-coherence.sh [ROOT]        (ROOT defaults to this script's grandparent)
+#         check-queue-coherence.sh --self-test   (fixtures only; touches no real queue and no register)
 # OUTPUT: one human line per finding, then a summary, then a machine-readable block — one finding per line,
 #         prefixed `queue-coherence:`, mirroring `context-budget.sh`'s `context-budget: OVER <file>`
 #         convention. The daemon's `_classify_red()` matches the step name `queue-coherence`; keep it stable.
 # EXIT:   0 in sync · 1 drift · 2 bad input (no queue, no register, or a queue with no recognisable items —
-#         surfaced rather than reported as "nothing to check").
+#         surfaced rather than reported as "nothing to check") · 5 a --self-test assertion failed.
 #         QUEUE_COHERENCE_QUIET=1 silences the success line; it NEVER silences a finding.
 #
 # Warn-only in the health gate. Read-only: no edits, no commits, no build, no suite.
@@ -82,6 +109,163 @@ set -uo pipefail
 # `timeout` then fail silently and loops report bogus results. This runs from the health gate and from a git
 # hook, both of which are exactly that context, so set it rather than inherit nothing.
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
+
+# ---- --self-test ------------------------------------------------------------------------------------------
+# WHY IT EXISTS. This file's whole job is to make one kind of drift LOUD, and until 2026-08-23 nothing
+# checked the checker: `ops/autonomous/tests/` holds harnesses for the daemon, the stop path, the test lock
+# and the digest, and none for this. That is how `QUEUE.md`'s sub-box rule came to assert the OPPOSITE of what
+# this script does about `(context: …)` and stayed wrong while 16 ticked boxes depended on the real behaviour.
+# A checker with no self-test is an assertion nobody has audited.
+#
+# ⚠️ IT MUST NOT BE ABLE TO PASS VACUOUSLY, which is this register's most repeated failure (ten checks that
+# could not fail). Six guards, deliberately of different kinds, because none catches the others' failure:
+#   (1) POSITIVE CONTROLS — rows a, c and f MUST produce their findings, tag and entry named. If the fixture
+#       stops parsing (a checkbox regex change, a span change) these go missing and the self-test is red, so
+#       "no findings" can never read as "the exemption holds".
+#   (2) NEGATIVE CONTROLS ON THE RULE — the two `context:` rows (b, d) must produce NO finding.
+#   (3) THE OTHER TWO QUADRANTS — rows g and h, the AGREEING `origin:` combinations (`[x]` on a CLOSED entry,
+#       `[ ]` on an OPEN one), which must also be silent. These complete a 2x2 of {`[x]`,`[ ]`} against
+#       {cite OPEN, cite CLOSED}; see the note beside them for the sabotage that survived without them.
+#   (4) THE COUNTS — `N_ITEMS` and `N_CITED` are asserted from the summary line. `N_CITED` is the one that
+#       bites: harvesting `context:` moves it even where a finding's presence or absence happens not to move.
+#   (5) AN INVERTED ROW — `f-mixed` carries BOTH cite words on one `[ ]` item, so harvesting `context:` makes
+#       its finding VANISH (the open C99 would stop `n_open` being 0) rather than appear. Guards (1)-(4) all
+#       catch a finding appearing; only this one catches the sabotage by a finding disappearing, and a change
+#       that trips only this row is a real change in meaning.
+# Row e, `e-context-missing`, pins the COST rather than the rule: a `context:` cite naming a tag that is not
+# in the register raises nothing. That is not an oversight to be fixed by whoever reads it next — it is what
+# "not a status claim" implies — but it must not change by accident either.
+#
+# WATCHED FAILING 2026-08-23 (CONTRIBUTING §2/§4a) — FOUR `shasum`-distinct sabotages, one edit each, all
+# re-measured against the final file, all exit 5. The distinct kill sets are the argument that the guards are
+# not redundant:
+#   * `cited()`'s `/\(origin:[^)]*\)/` widened to `/\((origin|context):[^)]*\)/` → **7 of 15** red
+#     (rows b, d, e, f and both counts) — f by its finding VANISHING, which is the point of that row;
+#   * the same match narrowed to `/\(provenance:[^)]*\)/`, so it harvests nothing → **7 of 15**, the
+#     exit-code check among them, because a checker that finds nothing exits 0 and would otherwise look
+#     exactly like a coherent tree;
+#   * `TICKED-OPEN`'s guard loosened, `[ "$n_open" -gt 0 ]` → `-ge 0` → **2 of 15**, row g and the finding
+#     total. ⛔ THIS ONE SURVIVED THE FIRST VERSION OF THIS SELF-TEST AT 0 RED AND EXIT 0 — see the note at
+#     guard (3);
+#   * `status_of()` stubbed to return closed for every tag → **3 of 15**, rows a, h and i;
+#   * the whole `CITE-MISSING` verdict disabled (`if [ -n "$unknown" ]` → `if false`) → **2 of 15**, row i
+#     and the finding total. ⛔ THIS ALSO SURVIVED GREEN until the adversarial review — see rows e/i;
+#   * the `if (cl !~ /BUGS\.md/) continue` guard removed, so a non-register cite is resolved → **3 of 15**,
+#     row j and both counts. ⛔ ALSO SURVIVED GREEN, and on the real tree it manufactures 8 phantom findings,
+#     one of them on this file's own `[x] queue-cite-rule` box.
+# Every sabotage is killed by a set no other sabotage's set contains; `g` is the only ROW that catches the
+# third, `h` the only SILENCE assertion that catches the fourth (row `a` fires there too), `i` the only check
+# that catches the fifth, and `j` the only one that catches the sixth.
+# A seventh sabotage breaks the FIXTURE rather than the code — two lines inserted above the queue heredoc,
+# shifting every row → **3 of 15**, rows a/c/f — which is what proves the positive controls assert the
+# finding's reported LINE NUMBER and are not loose prefix matches. Its cost is that inserting a row in the
+# middle of that heredoc reddens three checks until the expected line numbers are corrected; that is the
+# intended trade against an assertion blind to the checker naming the wrong line.
+if [ "${1:-}" = "--self-test" ]; then
+  st_fail=0; st_checks=0
+  st_dir="$(mktemp -d -t vo-cqc-selftest)" || { echo "self-test: cannot make a temp dir" >&2; exit 5; }
+  trap 'rm -rf "$st_dir"' EXIT
+  st_say() { st_checks=$(( st_checks + 1 )); }
+  st_want() {   # st_want <label> <needle>   — the needle MUST appear in the captured output
+    st_say
+    case "$st_out" in *"$2"*) : ;; *) echo "self-test: FAIL $1 — expected to find: $2" >&2; st_fail=1 ;; esac
+  }
+  st_reject() { # st_reject <label> <needle> — the needle must NOT appear
+    st_say
+    case "$st_out" in *"$2"*) echo "self-test: FAIL $1 — should NOT have found: $2" >&2; st_fail=1 ;; *) : ;; esac
+  }
+
+  # The register fixture. `C98` closed, `C99` open, and no other entry — so a row's verdict is attributable
+  # to its own cite word and nothing else. Written in the register's real `### <TAG> · … — <STATUS>` shape so
+  # `bugs-entry.sh --list --file` parses it exactly as it parses BUGS.md.
+  cat > "$st_dir/BUGS.md" <<'ST_BUGS'
+# self-test register fixture
+
+### C98 · an entry that shipped — FIXED
+
+body
+
+### C99 · an entry still being worked — OPEN
+
+body
+ST_BUGS
+
+  # The queue fixture: the cite-word matrix. EIGHT items, of which exactly three must be findings — rows a,
+  # c and f. Rows a/c/g/h are the full 2x2 of {`[x]`,`[ ]`} against {cite OPEN, cite CLOSED} on `origin:`.
+  cat > "$st_dir/QUEUE.md" <<'ST_QUEUE'
+# self-test queue fixture
+
+- [x] **a-origin-open** — ticked, origin cite on an OPEN entry: drift. (origin: BUGS.md C99)
+- [x] **b-context-open** — ticked, context cite on an OPEN entry: NOT drift. (context: BUGS.md C99)
+- [ ] **c-origin-closed** — open, origin cite on a CLOSED entry: drift. (origin: BUGS.md C98)
+- [ ] **d-context-closed** — open, context cite on a CLOSED entry: NOT drift. (context: BUGS.md C98)
+- [ ] **e-context-missing** — open, context cite on a tag that does not exist: NOT reported. (context: BUGS.md C77)
+- [ ] **f-mixed** — open, BOTH cite words; only the origin half counts. (origin: BUGS.md C98) (context: BUGS.md C99)
+- [x] **g-origin-ticked-closed** — ticked, origin cite on a CLOSED entry: agreement, silent. (origin: BUGS.md C98)
+- [ ] **h-origin-open-open** — open, origin cite on an OPEN entry: agreement, silent. (origin: BUGS.md C99)
+- [ ] **i-origin-missing** — origin cite on a tag that is NOT in the register: CITE-MISSING. (origin: BUGS.md C77)
+- [ ] **j-origin-elsewhere** — origin cite naming another file: skipped, silent. (origin: ops/autonomous/README.md D18)
+ST_QUEUE
+
+  # Re-invoke THIS file by an absolute path resolved from `$0`, not `$0` itself: a relative `$0` is only
+  # valid from the caller's cwd, and the summary line the count assertions read is what a wrong path would
+  # silently take away. `QUEUE_COHERENCE_QUIET=0` is set explicitly so a caller's exported QUIET cannot
+  # remove a line an assertion depends on — the health gate is exactly such a caller.
+  st_self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+  st_say; [ -r "$st_self" ] || { echo "self-test: FAIL cannot resolve myself at $st_self" >&2; st_fail=1; }
+  st_out="$(VISIONOCR_QUEUE="$st_dir/QUEUE.md" VISIONOCR_BUGS="$st_dir/BUGS.md" \
+            QUEUE_COHERENCE_QUIET=0 bash "$st_self" 2>&1)"; st_rc=$?
+
+  st_say; [ "$st_rc" = 1 ] || { echo "self-test: FAIL exit — expected 1 (drift), got $st_rc" >&2; st_fail=1; }
+
+  # GUARD (1) positive controls — the origin rows must be reported, with the tag, the LINE and the entry.
+  # The line number is asserted on purpose: without it these would pass a checker reporting the wrong line.
+  st_want  "origin/ticked/open"  "queue-coherence: TICKED-OPEN a-origin-open 3 C99"
+  st_want  "origin/open/closed"  "queue-coherence: WOULD-REDO c-origin-closed 5 C98"
+  # GUARD (5) the inverted row — vanishes under a context-harvesting sabotage rather than appearing.
+  st_want  "mixed/origin-half"   "queue-coherence: WOULD-REDO f-mixed 8 C98"
+  # GUARD (2) negative controls on the rule itself, in both directions.
+  st_reject "context/ticked/open" "b-context-open"
+  st_reject "context/open/closed" "d-context-closed"
+  # Row e — the exemption's COST: an unresolvable context cite raises nothing, not even CITE-MISSING.
+  # ⛔ ROW i IS WHAT MAKES THAT PAIR MEAN ANYTHING, and its absence was the ELEVENTH check-that-could-not-fail
+  # in this project's history — caught by the adversarial pass on the commit that added this block, not by
+  # reasoning. Measured: with the whole `if [ -n "$unknown" ] … finding "cite" …` verdict DELETED from this
+  # file, the self-test still read `ok`, exit 0, while the checker answered "every cite resolves and agrees"
+  # over a typo'd `(origin: …)` cite. The reject below asserted the absence of a string the fixture gave the
+  # checker no way to produce, and was additionally implied by the reject above it (only row e carried an
+  # unresolvable tag, so any `CITE-MISSING` in the output necessarily named `e-context-missing`). Row i is
+  # the positive control that fixes both, and it is also the only coverage this self-test has of the
+  # checker's THIRD verdict class.
+  st_reject "context/missing-tag" "e-context-missing"
+  st_want   "origin/missing-tag" "queue-coherence: CITE-MISSING i-origin-missing 11 C77"
+  st_reject "context/missing-tag-not-cite-missing" "CITE-MISSING e-context-missing"
+  # Row j — the "clause must name BUGS.md" guard (`if (cl !~ /BUGS\.md/) continue`), which was ALSO unpinned
+  # and is what keeps this file's own `[x] queue-cite-rule` box silent, since that box cites a README defect.
+  # Delete that guard and the real tree grows 8 phantom findings, one of them on that very box.
+  st_reject "origin/other-file-is-skipped" "j-origin-elsewhere"
+  # GUARD (3) THE OTHER TWO QUADRANTS — the AGREEING `origin:` rows, which must stay silent. ⛔ These were MISSING
+  # from the first version of this self-test and their absence made it survive a real sabotage: with
+  # `TICKED-OPEN`'s guard loosened from `[ "$n_open" -gt 0 ]` to `-ge 0` — i.e. "report every ticked item
+  # that cites anything", the condition's whole meaning gone — the self-test scored 0 red and exit 0. It
+  # could not see it, because every ticked row it had either carried an open cite (reported either way) or no
+  # cite at all (skipped by the `[ -n "$cites" ]` guard before any verdict). CONTRIBUTING §4d is the lesson
+  # and the remedy: enumerate the states against the doors instead of reasoning about pairs. The doors here
+  # are {`[x]`, `[ ]`} × {cite OPEN, cite CLOSED}, and two of the four cells were never written down.
+  # Watched failing, and stated precisely because a draft of this comment over-claimed: with that `-ge 0`
+  # sabotage `g` is the only ROW that goes red (the finding total goes with it, but that is a count, not a
+  # row); with `status_of()` stubbed to return closed for every tag, `h` is the only SILENCE assertion that
+  # goes red — row `a`'s positive control fires too, since a closed C99 removes its finding.
+  st_reject "origin/ticked/closed-is-agreement" "g-origin-ticked-closed"
+  st_reject "origin/open/open-is-agreement"     "h-origin-open-open"
+  # GUARD (4) the counts. N_CITED = 5 (four single-origin rows plus the mixed one); 8 items in all. This is
+  # what moves even when a finding's presence happens not to.
+  st_want  "summary counts"      "(10 items, 6 citing BUGS.md)"
+  st_want  "finding total"       "4 item(s) disagree"
+
+  if [ "$st_fail" = 0 ]; then echo "check-queue-coherence: self-test ok ($st_checks checks)"; exit 0; fi
+  echo "check-queue-coherence: SELF-TEST FAILED" >&2; exit 5
+fi
 
 ROOT="${1:-$(cd "$(dirname "$0")/../.." && pwd)}"
 SELFDIR="$(cd "$(dirname "$0")" && pwd)"
@@ -106,7 +290,16 @@ finding() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$FIND"; }
 # ---- the register ----------------------------------------------------------------------------------------
 # `bugs-entry.sh` is the definition of record for what a tag and a status are; this file must agree with it
 # and with `next-item.sh` or the three of them will contradict each other about whether an entry is closed.
-# The inline fallback is a verbatim copy of the same three rules (anchored tag, status after the LAST em
+# ⛔ "VERBATIM COPY" IS NOT TRUE OF THE OUTPUT, measured 2026-08-23 over the real `BUGS.md`: `bugs-entry.sh
+# --list` emits **169 rows** and this fallback **168**, because the register carries TWO `### R63` headings
+# (lines 12145 and 12618) and only the fallback dedupes, via `seen[tag]`. No live consequence today — both
+# are `FIXED` and `status_of` takes the first match — but `status_of`'s answer becomes dependent on whether
+# `bugs-entry.sh` happens to be executable the moment those two statuses diverge, and a duplicate REGISTER
+# tag is the one class this file flags in `QUEUE.md` and never in `BUGS.md`. Carried as the queue's
+# `register-dup-tag`. ⚠️ `--self-test` is structurally blind to it: its fixture register has no duplicate
+# tag and only `FIXED`/`OPEN`, never `WONTFIX`, `NO DEFECT` or `HALF FIXED`, so it stays green with
+# `bugs-entry.sh` un-executable or absent.
+# The inline fallback is a copy of the same three rules (anchored tag, status after the LAST em
 # dash — entry titles carry their own em dashes — closed iff FIXED/WONTFIX/NO DEFECT).
 if [ -x "$SELFDIR/bugs-entry.sh" ]; then
   "$SELFDIR/bugs-entry.sh" --list --file "$BUGS" 2>/dev/null \
