@@ -205,6 +205,17 @@ STEP 3 — DO IT. The non-negotiables, from CLAUDE.md and CONTRIBUTING.md:
   * **Never write a real corpus.** `testdocs/` is 1.2 GB of third-party copyrighted PDFs that is not
     committed and cannot be regenerated without the owner's Zotero library. Read it; never write it. Test
     output goes to `mktemp` scratch. File safety beats getting it done.
+  * ⛔ **NEVER WRAP `git commit` IN `test-lock.sh` — IT DEADLOCKS AGAINST ITS OWN HOOK.** The lock above is
+    for a suite YOU run; the pre-commit hook takes the same lock itself (`.githooks/pre-commit` calls
+    `test-lock.sh acquire`), so a commit run inside `test-lock.sh run -- git commit` waits on a lock its own
+    parent holds. `test-lock.sh` HAS a reentrancy escape (`VISIONOCR_TEST_LOCK_HELD=1`) and it does **not**
+    save you: it lives only in the `run` branch, and the hook uses `acquire`, which never reads it.
+    Measured 2026-08-22 — 20 minutes of waiting with **no `tests` process running at all**, then a refusal
+    at the hook's 60-minute stuck-lock guard; `suite-timings.tsv` records it as
+    `pre-commit 19199  3994  143`. ~80 minutes of suite time bought nothing and the session landed nothing.
+    **Just run `git commit` bare, detached, per STEP 4.** ⚠️ And if you must kill one, `pkill -f <msgfile>`
+    does not reach the hook chain — kill the pid from `test-lock.sh status`, or its process group. The
+    underlying defect is the queue's `lock-reentrancy`; until it lands, this paragraph is the fix.
   * **NEVER `git commit --no-verify`** (it is denied at the tool layer too). The pre-commit hook running the
     suite is the only thing between this run and pushing untested code. If the suite fails, fix it or stop.
   * **Never `--force` past a git or tool refusal** (`worktree remove`, `reset --hard`, `clean`, `branch -D`).

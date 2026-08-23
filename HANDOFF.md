@@ -78,7 +78,7 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 1,200 checks measured 2026-08-21; 8-45 min depending on load (it runs real OCR)
+./run_tests.sh        # 1,223 checks measured 2026-08-23; 8-75 min depending on load (it runs real OCR)
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —
@@ -526,7 +526,7 @@ usually running.
 links. Everything else is shipped, archived, or declined on measurement: deskew twice,
 columns once, per-page background factor twice, JPEG 2000 twice, and the refusals are
 *held* by checks rather than remembered (see "the engine's competence" below). The
-suite is at **1,200 checks** (measured 2026-08-21) and it **needs nothing installed
+suite is at **1,223 checks** (measured 2026-08-23) and it **needs nothing installed
 to run** — the mac-ocr dependency is gone.
 
 **Two of this app's qualities are Vision's, not this codebase's**, and that is

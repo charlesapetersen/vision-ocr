@@ -1331,7 +1331,7 @@ happens.**
       (2) `SHAPETERM-73` has **not** been re-run under the port check, so "12 of 12 type-losers" remains
       the tool's 2026-08-21 figure with a live guard over it rather than a figure re-derived from shipped
       code. Re-running it is cheap and is the way to convert the guard into a measurement.
-      (origin: BUGS.md C28 `#### THE DECISION`)
+      (context: BUGS.md C28 `#### THE DECISION`)
 - [x] **c28-owedfixture** — **DONE 2026-08-22. The fixture `Tools/mutate.py` said was owed now exists, and
       `shapeRunHigh` is no longer a KNOWN SURVIVOR.** Do not redo it; `BUGS.md` C28
       `#### The owed fixture` carries every number. **No shipped behaviour moves** — this is
@@ -1389,7 +1389,7 @@ happens.**
       separately live in `textLineGroupsOutsideText`'s **calibration** filter, which these fixtures do run
       through — so whether they would kill such a mutant is **unmeasured**. `shapeHeightLow` and
       `lineGapFactor` stay one-sided.
-      (origin: BUGS.md C28 `#### The owed fixture`)
+      (context: BUGS.md C28 `#### The owed fixture`)
 - [x] **c28-stencilseam** — **DONE 2026-08-22. Question 4's last owed number: what it costs to let the
       accepted line groups into the 1-bit stencil, and it is 1,020x cheaper than the layering seam over
       the same 16 pages.** Do not re-run it; `WIDEN-STENCIL-2026-08-22.tsv` (26 rows, 44 columns) and
@@ -1992,6 +1992,68 @@ happens.**
       so the arm that skips on a busy machine ran and passed. Both figures are the same harness on two
       machine states, which is what that arm is for. It is **58/0/0** now.)
       (origin: README.md §Defects D7's closing note; both entries began in RUN.md's NEEDS OWNER)
+- [ ] **alltext-replica** — ⛔ **`Tools/score-text-route.swift`'s hand-written copy of `pageIsAllText()`
+      still has TWO terms and the shipped guard has THREE.** Found 2026-08-23 by the adversarial review of
+      `6d0caa1`, and verified by reading both: line 678 is
+      `!keepEveryPixel && inkOut < Flattener.textPageInkOutsideThreshold && noPaleDrawing`, while
+      `Sources/Flattener.swift` grew `textLineGroupsOutsideText` as a third refusal condition in `fbf6d87`
+      (C28's wiring, 2026-08-22) and this was never updated. ⛔ **This is the THIRD repair of the SAME
+      expression** — the comment directly above it records the first (a replica missing R56's pale-drawing
+      clause, found by C26's own sibling sweep) and the second (`keepEveryPixel`) — so it is CONTRIBUTING
+      4b's shape three times in one `let`. **Failure**: the tool now prints `verdict=all-text` and counts
+      pages into `allTextLayered` / `allTextBilevel` / `allTextPages` on exactly the sub-bar pages the
+      shape term refuses — the 16-of-73 population C28 exists for — so the instrument is wrong in the
+      direction that HIDES C28. ⚠️ **No published figure moves**: every committed TSV pre-dates `fbf6d87`.
+      ⚠️ `sweep-ink-bar.py` consumes this tool, so it inherits the same wrong verdict.
+      ✅ **The fix is probably free and already in the tree**: `Flattener.MRCLayers.shrunkAsAllText` is
+      production's own verdict and the tool already holds `shippedLayers` — read the verdict back rather
+      than replicating it a fourth time, which is the remedy `WIDEN-LAYERS-2026-08-22.tsv` already used.
+      ⚠️ `Tools/` is in the suite regex, so this is a FULL-HOOK commit; and a failing check first, since
+      the tool has a `--self-test`. (context: BUGS.md C28 `#### The wiring, SHIPPED`; `Tools/score-text-route.swift:672-683`)
+- [ ] **c28-comment-fixes** — three prose claims inside `6d0caa1` that the review caught after the commit
+      was already in flight, all verified wrong by reading and none affecting behaviour or any check.
+      Correct them where they sit, in the code comments the docs-only follow-up could not reach.
+      1. **`Tools/score-shape-term.swift:874-877` states a false mechanism.** It says the new 3x3 baseline
+         "is in the **rim check's** scene as well", so a `shapeHeightLow` loosening trips two checks. It is
+         not: the rim check builds its own 128x128 `rimMap` at lines 700-708 and `pGrey` is not declared
+         until line 845. The *observation* is right and so is the quoted diagnostic — the real cause is the
+         rim scene's own five 2x6 stubs losing three rows to the r=3 collar, becoming 2x3, which
+         `shapeHeightLow = 0.0` then lets clear a floor of 5. Someone editing the 3x3 baseline would expect
+         the rim check to move with it, and it will not.
+      2. **`Tests/main.swift:2394-2396` claims a protection the architecture does not provide.** The
+         below-bar check's comment says that otherwise "term 1 refuses the page and the third term is never
+         consulted", making every check above green over unreached code. Every new check calls
+         `Flattener.textLineGroupsOutsideText` **directly** through `c28Groups`; `pageIsAllText()` is never
+         invoked, so term 1 cannot gate anything. The check's real value is fixture *realism* — that
+         production would consult term 3 on such a page — and it should say so.
+      3. **`Tests/main.swift:2371-2372` has the direction backwards.** "At 5x200 the bar starts three rows
+         INSIDE the region" — it starts three rows **above** it (bar rows 1184-1383, padded region
+         1187-1259), which is *why* each bar splits in two; one starting inside could only be truncated.
+         The number 3 and the eight-components conclusion are right.
+      ⚠️ 1 and 2 are also published in `BUGS.md` and in this file, and **those copies were corrected in the
+      docs-only follow-up** — so the register and the code now disagree until this lands. That is the
+      reason this item is not optional. ⚠️ `Tests/`/`Tools/` are both in the suite regex: FULL-HOOK commit,
+      comment-only, so `1,223/1,223` is the expected result. (context: BUGS.md C28 `#### The owed fixture`)
+- [ ] **lock-reentrancy** — ⛔ **`test-lock.sh`'s reentrancy escape is in the `run` branch ONLY, so wrapping
+      a `git commit` in the lock DEADLOCKS against its own pre-commit hook.** Measured 2026-08-22: a session
+      ran `test-lock.sh run --label session -- git commit`. `run` exports `VISIONOCR_TEST_LOCK_HELD=1`
+      (line 426) and honours it (line 400) — but `.githooks/pre-commit` line 129 calls
+      `"$LOCK_SH" acquire`, and the `acquire` dispatch at line 393 never reads that variable. The hook then
+      waited on a lock its own parent held, with **no `tests` process running at all**, and was refused at
+      its 60-minute stuck-lock guard. `suite-timings.tsv` has the corpse: `pre-commit 19199  3994  143` —
+      66 minutes, killed. Net ~80 minutes of suite time for nothing, and the strand it stranded is what
+      `6d0caa1` finally landed.
+      ⛔ **THE OBVIOUS FIX IS THE DANGEROUS ONE, which is why this is an item and not a one-liner.** Simply
+      honouring the variable in `acquire` means any stale or exported `VISIONOCR_TEST_LOCK_HELD` lets a
+      SECOND suite start — the one failure this lock exists to prevent (882/883 -> 877/879, two failures
+      unrelated to any change, because both suites share `~/Library/Preferences/tests.plist`). A correct
+      fix needs the paired `release` to become a reentrant no-op in the same breath, and the variable
+      trusted only when the lock is genuinely held by a live ancestor — `lock-report`'s ancestry
+      classification is the machinery that already exists for that. Watch it fail first: the deadlock
+      reproduces in seconds with a `--wait 10`.
+      ⚠️ Until it lands, the mitigation is documentation, and `resume-prompt.txt` STEP 4 now carries it:
+      never wrap `git commit` in the lock. (context: `ops/autonomous/test-lock.sh:393-402,426`;
+      `.githooks/pre-commit:129`; RUN.md's 2026-08-22 session entry)
 - [ ] **tsv-header-drift** — the sibling sweep from C26's 2026-08-18 instrument commit, both halves
       measured by grep on that day and neither empty. CONTRIBUTING §5 asks a tool that prints a TSV
       for "one `row(...)` printer over one `columns` array, with the width asserted", because

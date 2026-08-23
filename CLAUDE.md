@@ -149,6 +149,18 @@ unpinned on a **narrower** argument than a first draft of this gave: at its ship
 it is asked — but that is conditional on the 8 px (72-DPI corpus scans can fall under it), it says nothing
 about *raising* the constant, and the constant is separately live in the term's **calibration** filter,
 which these fixtures do run through, so whether they would kill such a mutant is **unmeasured**.
+⛔ **THAT COMMIT LANDED AS `6d0caa1` ON 2026-08-23, SUITE `1,223/1,223`, AND THE ADVERSARIAL REVIEW OF ITS
+OWN DIFF REFUTED THREE OF ITS CLAIMS — one of them a real defect that is now the queue's
+`alltext-replica`.** ⛔ **The sibling sweep said "two answers, both addressed" and there were THREE**:
+`Tools/score-text-route.swift:678` still replicates `pageIsAllText()` with **two terms against the shipped
+guard's three**, so the instrument reads `all-text` on exactly the sub-bar pages the wired shape term
+refuses — **wrong in the direction that HIDES C28**, and `sweep-ink-bar.py` inherits it. ⚠️ No published
+figure moves (every committed TSV pre-dates the wiring), and it is the **third** repair of that one `let`.
+The other two are prose, corrected in `BUGS.md` here and still wrong in the code comments until the
+queue's `c28-comment-fixes` lands: the 3 × 3 baseline is **not** in the rim check's scene (that check has
+its own `rimMap`; the real cause is its own 2 × 6 stubs shrinking to 2 × 3 under the r=3 collar), and the
+below-bar check is **not** a reachability guard (every new check calls `textLineGroupsOutsideText`
+directly, so `pageIsAllText()`'s term 1 gates nothing — what it buys is fixture realism).
 ✅ **QUESTION 3 HAS ITS FIRST MEASUREMENT, 2026-08-21, AND A SHAPE TERM SEPARATES WHERE FIVE SCALARS
 DID NOT** — `Tools/score-shape-term.swift` (new) counts **text lines** in the ink outside the
 recognised words at the page's own type scale, calibrating on the stencil's own components, and over 13
@@ -844,8 +856,10 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,200 checks measured 2026-08-21; 8-45 min depending on machine load, real OCR
-                      # measured 474 s quiet -> 2,719 s under the C24b campaign. Never size a
+./run_tests.sh        # 1,223 checks measured 2026-08-23; 8-75 min depending on machine load, real OCR
+                      # measured 474 s quiet -> 2,719 s under the C24b campaign, and 4,191 s
+                      # (69m51s) holding the lock on 6d0caa1 -- suite-timings.tsv, not a stopwatch.
+                      # Never size a
                       # timeout off one sample: ops/autonomous/README.md keeps the ledger.
 ```
 

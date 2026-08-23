@@ -8289,7 +8289,24 @@ assertion in the repository outside `Tests/main.swift`. Nothing gates it (the pr
 broken this commit — but if the term finds one group in that fixture's glyph rims it is red the next time
 anyone runs it, and the rim is exactly where this campaign's three false positives live. **Unmeasured, and
 owed.** Found by the adversarial review of this diff, which is also why the paragraph no longer says the
-sweep found one sibling. (3) *Who else has a copy of `inkOutsideText`'s interior window?*
+sweep found one sibling.
+⛔ **AND IT MISSED A THIRD, WHICH IS THE ONE THAT MATTERS — found 2026-08-23, verified by reading both
+sides, and carried as the queue's `alltext-replica`.** `Tools/score-text-route.swift:678` holds a
+hand-written copy of `pageIsAllText()` that still reads
+`!keepEveryPixel && inkOut < Flattener.textPageInkOutsideThreshold && noPaleDrawing` — **two terms against
+the shipped guard's three.** The wiring commit added the third and never updated it. So the tool now
+prints `verdict=all-text`, and counts pages into `allTextLayered` / `allTextBilevel` / `allTextPages`, on
+exactly the sub-bar pages the shape term refuses — the 16 of 73 this entry exists for — which means the
+instrument is now wrong **in the direction that hides C28**, and `Tools/sweep-ink-bar.py` inherits it.
+⚠️ **No published figure moves**: every committed TSV pre-dates the wiring. ⛔ **It is the THIRD repair of
+that same `let`** — the comment directly above it records the first (a replica missing R56's pale-drawing
+clause, itself found by C26's sibling sweep) and the second (`keepEveryPixel`) — so this expression alone
+has now produced CONTRIBUTING 4b's shape three times, and the remedy is to stop replicating it: production
+already publishes its own verdict as `Flattener.MRCLayers.shrunkAsAllText`, the tool already holds
+`shippedLayers`, and `WIDEN-LAYERS-2026-08-22.tsv` was measured by reading that back rather than
+recomputing it. ⚠️ **The sweep that missed it is the one in `#### The owed fixture` below**, whose commit
+message says "who else asserts these constants — two answers, both addressed". There were three, and the
+third was reachable by the same grep. (3) *Who else has a copy of `inkOutsideText`'s interior window?*
 ⛔ **`pageMarks` did, character for character, with a comment saying it was meant to BE that inset** — so
 there were two copies in `Flattener` before this change and the term would have made three. All of it now
 calls one `interiorWindow`, and the refactor is controlled: `c26Small` reads **0.0551**, reproducing the
@@ -8356,9 +8373,20 @@ would otherwise move a fixture across a bar in silence):
 both 2,400 px, and both measure `inkOut` 0.0205 — **and the control that fires has a quarter of it.** So
 this trio says what no ink ratio in this campaign has managed: nothing about quantity separates the two
 refused pages from each other, and quantity is *inverted* against the one that fires. All three sit below
-the shipped bar (0.0052 / 0.0205 / 0.0205 against 0.045), which is what makes them reach the third term at
-all, and that is asserted too — otherwise term 1 would refuse the page and every check above it would be
-green over code it never ran.
+the shipped bar (0.0052 / 0.0205 / 0.0205 against 0.045), and that is asserted too.
+⛔ **CORRECTED 2026-08-23, by the adversarial review of this commit's own diff.** That last assertion was
+published saying it is "what makes them reach the third term at all — otherwise term 1 would refuse the
+page and every check above it would be green over code it never ran". **That is false, and it claims a
+protection the test architecture neither needs nor provides**: all seven checks call
+`Flattener.textLineGroupsOutsideText` **directly** through `c28Groups`, and `pageIsAllText()` is never
+invoked by any of them, so term 1 cannot gate anything here. What the below-bar check is actually worth is
+fixture **realism** — evidence that production *would* consult term 3 on a page like this, which is what
+makes the trio evidence about C28 rather than about an unreachable configuration. It is a real check with
+a real (if unlikely) failure mode — the shipped constant dropping below 0.023 — but it is not a
+reachability guard. ⚠️ **The code comment at `Tests/main.swift:2394-2396` still states the wrong version**;
+correcting it is a full-hook commit and is carried as the queue's `c28-comment-fixes`, so the register and
+the comment disagree until that lands. This is the third claim in this campaign refuted by the review of
+the diff that made it.
 
 ⛔ **WHICH OF THE SEVEN NEW CHECKS HAS WATCHED-FAILING EVIDENCE, because "MEASURED" in this heading is
 about the fixtures and not about the checks.** Two do: the two group-count refusals, each against a
@@ -8437,10 +8465,19 @@ of this diff refuted both from a worked example — a margin change clipping the
 makes it accepted, leaves the count at 13, and takes the `shapeHeightHigh` sensitivity away in silence.
 ✅ **Run, all four ways**: shipped reads `self-test ok (10 checks)` and exits 0; the tool's `shapeRunHigh`
 at 99.0, its `shapeHeightHigh` at 99.0 and its `shapeHeightLow` at 0.0 each exit **5** on a port
-divergence. All three passed before. ⚠️ One side effect, measured rather than predicted: the 3 × 3
-baseline is in the **rim check's** scene too, so a `shapeHeightLow` loosening trips that check as well
-(`rim: r=3 read 2 lines not 1`) — over-detection, and the shipped build reads `ok (10 checks)` with all
-three baselines in, which is the reading that matters. ⚠️ **Three bounds.** It is the tool's copy that was sabotaged, not
+divergence. All three passed before. ⚠️ One side effect, measured rather than predicted: a
+`shapeHeightLow` loosening trips the **rim check** as well (`rim: r=3 read 2 lines not 1`) —
+over-detection, and the shipped build reads `ok (10 checks)` with all three baselines in, which is the
+reading that matters. ⛔ **The MECHANISM published beside that was wrong, corrected 2026-08-23 by the
+adversarial review of this commit's diff**: it said the 3 × 3 baseline "is in the rim check's scene too".
+It is not. The rim check builds its own 128 × 128 `rimMap` at `Tools/score-shape-term.swift:700-708`, and
+`pGrey` — the scene the three new baselines live in — is not declared until line 845. The real cause is
+the rim scene's **own** five 2 × 6 stubs, which lose three rows to the r=3 collar, become 2 × 3, and then
+clear a floor of 5 once `shapeHeightLow` is 0.0. The observation and the quoted diagnostic string are
+both right; only the cause was. It matters because someone editing the 3 × 3 baseline would expect the rim
+check's sensitivity to move with it, and it will not. ⚠️ **The code comment at
+`Tools/score-shape-term.swift:874-877` still states the wrong version** — a full-hook commit, carried as
+the queue's `c28-comment-fixes`. ⚠️ **Three bounds.** It is the tool's copy that was sabotaged, not
 `Flattener`'s, so what is proven is that the check now *notices* a divergence in the direction a drifting
 port would take. The sabotages give byte-identical messages, so the diagnostic names the divergence and
 not the constant. And the printed count stayed **10** deliberately: two guards were added *inside* group
