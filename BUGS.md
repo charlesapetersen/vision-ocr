@@ -28,9 +28,18 @@ changes nothing in `Sources/`**: `Tools/score-text-route.swift` had a hand-writt
 `pageIsAllText()` two terms deep against the shipped guard's three, so it printed `all-text` on exactly
 the sub-bar pages this entry exists for — **wrong in the direction that hides C28**. It now reads
 `MRCLayers.shrunkAsAllText` back from production. Measured on `Ford_1941_Speech_.pdf`: **p6 flips
-`all-text` → `picture` and p1–p5 do not**, twelve other columns byte-identical on 6 of 6 rows; the
+`all-text` → `picture` and p1–p5 do not**, every other column byte-identical on 6 of 6 rows; the
 all-text aggregate falls **436,633 → 224,977 B** (48.5% of it was a page production never shrinks); and
-the priced-bar summary was out by **3.2x** on one pair while the `barDelta` column beside it read `same`.
+the priced-bar per-page cost was out by **exactly 2x** (100,626 → **201,252 B/page**) while the `barDelta`
+column beside it read `same`.
+⛔ **THIS HEADER CARRIED TWO OF THAT SECTION'S OWN RETRACTED DRAFT FIGURES UNTIL 2026-08-23**, found by
+the sibling sweep of `c28-comment-fixes` and corrected here: it said "twelve other columns", which the
+section itself refuses — `page` is the row key and three bar columns are the literal `-` with no `INKBAR`
+set, so **eight** carry information — and it said "out by **3.2x**", a ratio of ratios (5.76/1.79) over
+two different sets that the review of `0707699`'s own diff refused, where the figure to quote is the
+per-page cost at 2x. **Three** other copies were already right — the section below, `CLAUDE.md` and
+`Tools/README.md` — so this summary was the only stale one, which is the failure mode this header is most
+prone to and the reason its own instructions say to move it in the same commit.
 **`C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
 (`textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's decision on a complete campaign, so the 16
 corpus pages the sweep named keep their tone layers at the caller's factor) and the next day the
@@ -8391,19 +8400,36 @@ both 2,400 px, and both measure `inkOut` 0.0205 — **and the control that fires
 this trio says what no ink ratio in this campaign has managed: nothing about quantity separates the two
 refused pages from each other, and quantity is *inverted* against the one that fires. All three sit below
 the shipped bar (0.0052 / 0.0205 / 0.0205 against 0.045), and that is asserted too.
-⛔ **CORRECTED 2026-08-23, by the adversarial review of this commit's own diff.** That last assertion was
+⛔ **CORRECTED 2026-08-23, by the adversarial review of `6d0caa1`'s own diff** (⚠️ this read "this
+commit's own diff", which stopped being unambiguous once a second correction from a *different* commit's
+review landed in the same paragraph below — both are dated 2026-08-23, so name the hash). That last
+assertion was
 published saying it is "what makes them reach the third term at all — otherwise term 1 would refuse the
 page and every check above it would be green over code it never ran". **That is false, and it claims a
-protection the test architecture neither needs nor provides**: all seven checks call
-`Flattener.textLineGroupsOutsideText` **directly** through `c28Groups`, and `pageIsAllText()` is never
-invoked by any of them, so term 1 cannot gate anything here. What the below-bar check is actually worth is
+protection the test architecture neither needs nor provides**: all seven checks reach the shipped code
+**directly**, and `pageIsAllText()` is never invoked by any of them, so term 1 cannot gate anything here.
+⚠️ **This said "all seven call `textLineGroupsOutsideText` through `c28Groups`", which is loose, and is
+corrected 2026-08-23 by the review of `c28-comment-fixes`' diff — a second correction to this paragraph,
+from a different commit's review than the one that opened it**: two go through `c28Groups` alone, one (the
+too-wide refusal, which asserts a group count *and* an ink ratio) through both, three through `c28InkOut`
+into `inkOutsideText` alone, and the calibration reading through `c28Calibration` into `shapeComponents`.
+⚠️ A draft of this correction said "three / three / one", which double-counts the too-wide check and sums
+to eight. The load-bearing half — that not one of the seven goes through the guard — is unaffected, and the
+corrected code comment states the split rather than the shorthand.
+What the below-bar check is actually worth is
 fixture **realism** — evidence that production *would* consult term 3 on a page like this, which is what
 makes the trio evidence about C28 rather than about an unreachable configuration. It is a real check with
 a real (if unlikely) failure mode — the shipped constant dropping below 0.023 — but it is not a
-reachability guard. ⚠️ **The code comment at `Tests/main.swift:2394-2396` still states the wrong version**;
-correcting it is a full-hook commit and is carried as the queue's `c28-comment-fixes`, so the register and
-the comment disagree until that lands. This is the third claim in this campaign refuted by the review of
-the diff that made it.
+reachability guard. ✅ **The code comment is CORRECTED as of 2026-08-23** — the queue's
+`c28-comment-fixes`, so the register and the comment agree again. It now says the check buys fixture
+realism, names the reason term 1 cannot gate the trio (`c28Layers` is called on `c28Missed` **only**, so
+`mrcLayers` and with it `pageIsAllText()` never see the three dash fixtures at all — verified by grep, not
+by reading the one line), and records that it pins term 1 **alone**, with term 2
+(`paleDrawing(…).extent`) sitting between and unpinned here. The check's own description moved with it,
+"so term 1 lets them through" → "so term 1 would not refuse them", which asserts nothing new and stops the
+name contradicting the comment above it; nothing anchors on either string (`Tools/mutate.py`,
+`Tools/*.sh` and `.githooks/` all grepped). This is the third claim in this campaign refuted by the review
+of the diff that made it.
 
 ⛔ **WHICH OF THE SEVEN NEW CHECKS HAS WATCHED-FAILING EVIDENCE, because "MEASURED" in this heading is
 about the fixtures and not about the checks.** Two do: the two group-count refusals, each against a
@@ -8420,9 +8446,25 @@ group counts while the geometry the sabotages were measured on had gone. A first
 ratios and *claimed* the literals were pinned. (2) The equality check is not about the term at all —
 nothing the shape rule does can make it red. What it actually guards is the too-tall fixture's **four rows
 of clearance** from the last padded word box (box 13 ends at row 1260, the 5 × 120 bar starts at 1264), so
-a `mrcBoxPadding` large enough to reach it would split each bar in two and the ink would stop matching.
-That the 5 × 200 version splits into eight components is the same fact from the other side, and it is why
-the fixture is 120 tall rather than 200.
+a `mrcBoxPadding` large enough to reach it would eat the bar's top rows and the ink would stop matching.
+⛔ **This read "would split each bar in two" until 2026-08-23, and the mechanism is TRUNCATION rather than
+splitting** — the padded region grows down from box 13 onto the bar's top, and it can never be strictly
+inside a bar that runs on to row 1383, so there is nothing below it left to strand. Found by the sibling
+sweep of the `c28-comment-fixes` item. ⛔ **Two counting corrections a draft of this sentence needed, both
+from the review of that item's own diff.** (1) It is the **second and last** instance of this direction
+confusion in the tree — the other is `Tests/main.swift`'s "three rows INSIDE the region", corrected in the
+same commit — and a draft called it "the fourth in this section", which was the *claim ordinal* from the
+queue's list dressed up as an instance count. This register has been burned three times by counting one
+thing and publishing another; that is the shape. (2) The follow-up that missed it is `2de4e50`, dated
+**2026-08-23 01:28**, not 2026-08-22 — and the text it missed was created by `6d0caa1` at 2026-08-23
+00:10, so no 2026-08-22 pass could have reached any of these claims at all. The *reason* it was missed
+stands: that pass was scoped to the two claims the review had named. The check bites either way: truncated rows stop counting as
+out-of-region ink and the equality breaks. That the 5 × 200 version **does** split, into eight components,
+is the same fact from the other side — its bar starts at row 1184, three rows *above* the padded region's
+1187, and runs through it to 1383 — and it is why the fixture is 120 tall rather than 200. Both ranges are
+derivable from the fixture rather than asserted: `makeScannedPDF` draws its bars into a 1224 × 1584
+bottom-up frame and the page comes back at 144 DPI, so `c28Dashes(_, h)` at `y = 200` occupies top-down
+rows `[1384 − h, 1384)`.
 
 ⚠️ **And the calibration check is a MIRROR, which bounds what it can catch.** It re-derives the median
 stencil height and run the way the term does, so it pins **the fixture** — a font or render change moving
@@ -8489,12 +8531,29 @@ reading that matters. ⛔ **The MECHANISM published beside that was wrong, corre
 adversarial review of this commit's diff**: it said the 3 × 3 baseline "is in the rim check's scene too".
 It is not. The rim check builds its own 128 × 128 `rimMap` at `Tools/score-shape-term.swift:700-708`, and
 `pGrey` — the scene the three new baselines live in — is not declared until line 845. The real cause is
-the rim scene's **own** five 2 × 6 stubs, which lose three rows to the r=3 collar, become 2 × 3, and then
-clear a floor of 5 once `shapeHeightLow` is 0.0. The observation and the quoted diagnostic string are
+the rim scene's **own** five 2 × 6 stubs, which lose three rows to the r=3 collar and become 2 × 3 — which
+the shipped floor of `shapeHeightLow * 10` = 5 refuses and a floor of 0 accepts. ⚠️ **Said as "clear a
+floor of 5" until 2026-08-23, which is backwards**: the stub does not clear the bar, the bar drops under
+the stub. Five of them on one baseline then make a group and the rim check reads two lines where it wants
+one. The observation and the quoted diagnostic string are
 both right; only the cause was. It matters because someone editing the 3 × 3 baseline would expect the rim
-check's sensitivity to move with it, and it will not. ⚠️ **The code comment at
-`Tools/score-shape-term.swift:874-877` still states the wrong version** — a full-hook commit, carried as
-the queue's `c28-comment-fixes`. ⚠️ **Three bounds.** It is the tool's copy that was sabotaged, not
+check's sensitivity to move with it, and it will not. ✅ **The code comment is CORRECTED as of 2026-08-23
+— the queue's `c28-comment-fixes` — AND THE REPLACEMENT MECHANISM IS NOW MEASURED RATHER THAN READ OFF
+THE SOURCE.** Three binaries, `shasum`-distinct, every one `rc=0`, differing from the shipped tool by one
+`let` and one range: shipped exits **0** on `ok (10 checks)`; `shapeHeightLow = 0.0` exits **5** with the
+rim line plus three port lines; and the same constant with the 3 × 3 baseline's `for y in 30..<33` emptied
+to `30..<30` **still exits 5 with the identical rim message**. That third build is the control the
+correction needed — the rim failure survives the 3 × 3 baseline's removal, so the two scenes are
+unconnected as a matter of measurement and not only of reading. ⚠️ **The first attempt at it was a broken
+instrument and its numbers were discarded**: a `run_in_background` command with a trailing `&` inside it
+left the first script's shell alive after the harness reported it complete, so two copies wrote the same
+`main.swift` paths and both sabotage builds ended `error: input file … was modified during the build`,
+rc=1, with byte-identical binary *sizes*. The outputs happened to agree with the clean re-run, which is
+the dangerous kind of luck — CONTRIBUTING §3 in the shell again. ✅ And one unplanned positive control
+came out of it: the 17-component fixture guard added in `6d0caa1` fired for the first time against a
+sabotage of the **fixture** rather than of a constant, reading `13 out-of-region components, not 17, so a
+baseline is missing or merged and the refusals prove nothing` — exactly its stated purpose.
+⚠️ **Three bounds.** It is the tool's copy that was sabotaged, not
 `Flattener`'s, so what is proven is that the check now *notices* a divergence in the direction a drifting
 port would take. The sabotages give byte-identical messages, so the diagnostic names the divergence and
 not the constant. And the printed count stayed **10** deliberately: two guards were added *inside* group

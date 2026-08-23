@@ -192,11 +192,34 @@ status string, and `sweep-ink-bar.py` only consumes the column (`--self-test` ru
 no-op control, since the diff does not touch it), which is why the divergence goes to stderr and to the
 prose summary rather than into the field it matches with an exact `== "all-text"`: verified by reading that
 parser, which breaks at the first blank line and reads stderr only on the config exits.
-The other two are prose, corrected in `BUGS.md` here and still wrong in the code comments until the
-queue's `c28-comment-fixes` lands: the 3 × 3 baseline is **not** in the rim check's scene (that check has
+The other two are prose: the 3 × 3 baseline is **not** in the rim check's scene (that check has
 its own `rimMap`; the real cause is its own 2 × 6 stubs shrinking to 2 × 3 under the r=3 collar), and the
-below-bar check is **not** a reachability guard (every new check calls `textLineGroupsOutsideText`
-directly, so `pageIsAllText()`'s term 1 gates nothing — what it buys is fixture realism).
+below-bar check is **not** a reachability guard (every new check reaches the shipped code directly —
+three through `c28Groups`, three through `c28InkOut`, one through `c28Calibration` — so
+`pageIsAllText()`'s term 1 gates nothing and what the check buys is fixture realism).
+✅ **BOTH CODE COMMENTS ARE CORRECTED AS OF 2026-08-23 — the queue's `c28-comment-fixes` landed, so the
+register and the comments agree again — AND IT WAS SIX CLAIMS RATHER THAN THREE**, seven if the header's
+two retracted figures are counted apart. The three the review had named, plus three the sibling sweep found
+in `BUGS.md` and `2de4e50` had not reached. The first of those three: it said a larger `mrcBoxPadding`
+"would split each bar in two", where the mechanism is **truncation** (the padded region grows down onto
+the bar's top and can never be strictly inside a bar running on to row 1383). A third code comment went
+with them —
+`Tests/main.swift`'s "at 5 × 200 the bar starts three rows INSIDE the region", which is the wrong direction
+and cannot be the mechanism, since a bar starting inside could only be truncated and never split. The row
+ranges are now derived in place rather than asserted (bars land in top-down rows `[1384 − h, 1384)`, so
+1264 at h=120 and **1184** at h=200 against a padded region of 1187-1259), and ⛔ **the corrected rim
+mechanism is MEASURED rather than reasoned**: three binaries one `let` apart put the rim failure on the rim
+scene's own stubs with the 3 × 3 baseline emptied out. The other two the sweep found are both in
+`BUGS.md`: its **file header** still carried two of `#### The replica retired`'s retracted draft figures
+("twelve other columns", where eight carry information, and "out by 3.2x", where the per-page cost is out
+by exactly 2x) — the load-bearing summary stale while three other copies, this file among them, were
+right — and its own account of the reachability claim said "all seven checks call
+`textLineGroupsOutsideText` through `c28Groups`", which is loose in exactly the place that claim is about.
+⚠️ **The review of this diff refuted two of its own corrections**: "the fourth instance in this section"
+was a claim ordinal masquerading as an instance count (there are **two**, both fixed), and the follow-up
+that missed them is `2de4e50` on **2026-08-23**, not 2026-08-22 — the text it missed did not exist until
+`6d0caa1` the same morning. Comment- and document-only: nothing shipped moves and no check was added or
+removed.
 ✅ **QUESTION 3 HAS ITS FIRST MEASUREMENT, 2026-08-21, AND A SHAPE TERM SEPARATES WHERE FIVE SCALARS
 DID NOT** — `Tools/score-shape-term.swift` (new) counts **text lines** in the ink outside the
 recognised words at the page's own type scale, calibrating on the stencil's own components, and over 13

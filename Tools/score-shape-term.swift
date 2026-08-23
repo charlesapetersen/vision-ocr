@@ -871,10 +871,31 @@ func selfTest() -> [String] {
     // copy that loosens any one of the three finds a group `Flattener` does not. The
     // suite's own fixture for the first two is `Tests/main.swift`'s four-dash trio;
     // `BUGS.md` C28 `#### The owed fixture` is why both exist.
-    // ⚠️ Measured: the 3x3 baseline is in the rim check's scene as well, so a
-    // `shapeHeightLow` loosening trips *two* checks rather than one (`rim: r=3 read 2
-    // lines not 1` comes along with the port divergence). Over-detection, not a false
-    // positive — the shipped build reads `ok (10 checks)` with all three baselines in.
+    // ⚠️ A `shapeHeightLow` loosening does trip *two* checks rather than one — `rim: r=3
+    // read 2 lines not 1` arrives beside the port divergence — but ⛔ **NOT because this
+    // 3x3 baseline is shared with the rim check, which is what this comment claimed until
+    // 2026-08-23.** The observation was right and the mechanism beside it was wrong: the
+    // rim check builds its own 128x128 `rimMap` up at `rimLines`, and `pGrey` — the scene
+    // these three baselines live in — does not exist until this block. The rim failure is
+    // the rim scene's OWN five 2x6 stubs: the r=3 collar clears three of their six rows,
+    // leaving 2x3 — which the shipped floor of `shapeHeightLow * 10` = 5 refuses, and
+    // which a floor of 0 accepts. The stub does not clear the bar; the bar drops under
+    // the stub. Five of them on one baseline then make a group, and the rim check reads
+    // two lines where it wants one.
+    // It matters because someone editing the 3x3 baseline here would expect the rim
+    // check's sensitivity to move with it, and it will not.
+    //
+    // ⛔ **MEASURED, not reasoned — three binaries, `shasum`-distinct, all `rc=0`:**
+    // shipped reads `ok (10 checks)` with all three baselines in and exits 0;
+    // `shapeHeightLow = 0.0` exits **5** with the rim line plus three port lines; and the
+    // same constant with THIS baseline's `for y in 30..<33` emptied to `30..<30` still
+    // exits **5** with the **identical** rim message. The rim failure survives the 3x3
+    // baseline's removal, which is the control that separates the two scenes. So:
+    // over-detection, not a false positive. ✅ That third build also exercised the
+    // 17-component fixture guard for the first time against a sabotage of the *fixture*
+    // rather than of a constant — it reads `13 out-of-region components, not 17, so a
+    // baseline is missing or merged and the refusals prove nothing`, which is exactly the
+    // case it was added for.
     for k in 0..<4 {
         let x0 = 20 + k * 14
         for y in 15..<25 { for x in x0..<(x0 + 8) { pGrey[y * pw + x] = 0 } }

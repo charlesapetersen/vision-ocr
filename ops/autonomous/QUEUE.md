@@ -2056,7 +2056,32 @@ happens.**
       than replicating it a fourth time, which is the remedy `WIDEN-LAYERS-2026-08-22.tsv` already used.
       ⚠️ `Tools/` is in the suite regex, so this is a FULL-HOOK commit; and a failing check first, since
       the tool has a `--self-test`. (context: BUGS.md C28 `#### The wiring, SHIPPED`; `Tools/score-text-route.swift:672-683`)
-- [ ] **c28-comment-fixes** — three prose claims inside `6d0caa1` that the review caught after the commit
+- [x] **c28-comment-fixes** — DONE 2026-08-23. ⚠️ **It was SIX claims, not three** — seven if the header's
+      two retracted figures are counted apart. All three below are corrected in place, and claim 1's
+      replacement mechanism is **measured** rather than reasoned: three binaries one `let` apart, and the
+      rim failure survives the 3x3 baseline being emptied out, which is the control that proves the two
+      scenes are unconnected. The sibling sweep (CONTRIBUTING 4b) then found three more that `2de4e50`,
+      the docs-only follow-up — **2026-08-23 01:28, not 2026-08-22; the text it missed did not exist until
+      `6d0caa1` at 00:10 the same morning** — did not reach, all in `BUGS.md`: (4) the same
+      truncation-vs-splitting direction
+      confusion as claim 3, in the register's own copy of the clearance argument; (5) the file **header**
+      still carrying two of `#### The replica retired`'s own retracted draft figures ("twelve other
+      columns" and "out by 3.2x"), in the load-bearing status summary; and (6) "all seven checks call
+      `textLineGroupsOutsideText` through `c28Groups`", where two go through `c28Groups` alone, one through
+      both, three through `c28InkOut` alone and one through `c28Calibration` — loose in exactly the place
+      claim 2 is about.
+      ⚠️ The review of this item's own diff then refuted two of its corrections and improved a third:
+      "the fourth instance in this section" was a claim ordinal masquerading as an instance count (there
+      are **two**); the follow-up's date was wrong; and the missed-word fixture's "the verdict below is the
+      third term's" — which a draft of this box called simply correct — is a LIVE attribution that this
+      commit now argues rather than asserts, because `paleDrawing` reads the render and not the boxes, so
+      the positive control (same PDF, one more box, IS shrunk) is what rules term 2 out. Drop that control
+      and the attribution is unpinned.
+      ⚠️ Checked and NOT affected: `Tests/main.swift`'s "term 1 was reached and answered" is right, because
+      `c28Missed` is the one fixture that does reach `mrcLayers` → `pageIsAllText()`; and
+      `Tools/README.md` never published either mechanism.
+      **The item as filed:**
+      three prose claims inside `6d0caa1` that the review caught after the commit
       was already in flight, all verified wrong by reading and none affecting behaviour or any check.
       Correct them where they sit, in the code comments the docs-only follow-up could not reach.
       1. **`Tools/score-shape-term.swift:874-877` states a false mechanism.** It says the new 3x3 baseline
@@ -2077,9 +2102,10 @@ happens.**
          1187-1259), which is *why* each bar splits in two; one starting inside could only be truncated.
          The number 3 and the eight-components conclusion are right.
       ⚠️ 1 and 2 are also published in `BUGS.md` and in this file, and **those copies were corrected in the
-      docs-only follow-up** — so the register and the code now disagree until this lands. That is the
-      reason this item is not optional. ⚠️ `Tests/`/`Tools/` are both in the suite regex: FULL-HOOK commit,
-      comment-only, so `1,223/1,223` is the expected result. (context: BUGS.md C28 `#### The owed fixture`)
+      docs-only follow-up** — so the register and the code disagreed until this landed (they agree now;
+      that disagreement was the reason this item was not optional). ⚠️ `Tests/`/`Tools/` are both in the
+      suite regex: FULL-HOOK commit, comment-only, so `1,223/1,223` is the expected result.
+      (context: BUGS.md C28 `#### The owed fixture`)
 - [ ] **lock-reentrancy** — ⛔ **`test-lock.sh`'s reentrancy escape is in the `run` branch ONLY, so wrapping
       a `git commit` in the lock DEADLOCKS against its own pre-commit hook.** Measured 2026-08-22: a session
       ran `test-lock.sh run --label session -- git commit`. `run` exports `VISIONOCR_TEST_LOCK_HELD=1`

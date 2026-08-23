@@ -2212,6 +2212,16 @@ do {
     // The fixture has to STAY where it was measured, or every check under it stops
     // saying anything about C28. Measured 0.0107 — a fifth of the bar, so the first
     // term of the guard passes comfortably and the verdict below is the third term's.
+    // ⚠️ Unlike the three dash fixtures below, this one really does reach
+    // `pageIsAllText()` — `c28Layers` is called on it and on nothing else — so "the third
+    // term's" is a live attribution rather than a figure of speech, and this check pins
+    // only term 1 of the three. What pins term 2 is the POSITIVE CONTROL further down, and
+    // it took the review of `c28-comment-fixes` to notice the argument was never written:
+    // `paleDrawing(pageMarks(grey, …), dpi:)` reads the render and **not** the boxes, so
+    // if term 2 refused this page it would refuse the one-more-box version identically and
+    // that control — same PDF, same render, IS shrunk as all text — could not pass. It
+    // does, so term 2 passes and the verdict is term 3's. Drop the positive control and
+    // this attribution goes back to being unpinned.
     let c28MissedInk = c28InkOut(c28Missed, boxes: c28Boxes(14)) ?? -1
     check("C28 — the missed-word fixture sits well below the bar, so term 1 passes",
           c28MissedInk >= 0.005 && c28MissedInk <= 0.030,
@@ -2366,8 +2376,20 @@ do {
     // fixture's **four rows of clearance** from the last padded word box: box 13's padded
     // region ends at row 1260 and the 5x120 bar starts at 1264, so a `mrcBoxPadding` large
     // enough to reach it would eat the bar's top rows and the ink would stop matching. (At
-    // 5x200 the bar starts three rows INSIDE the region and each one splits in two, which
-    // is why the fixture is 120 tall and not 200 — the same fact from the other side.)
+    // 5x200 the bar starts three rows **ABOVE** the padded region, not inside it — rows
+    // 1184-1383 against 1187-1259 — so the region erases its middle and each bar splits
+    // in two, eight components; that is why the fixture is 120 tall and not 200. ⚠️ This
+    // parenthesis said INSIDE until 2026-08-23, which is the wrong direction and cannot
+    // be the mechanism: a bar starting inside the region could only be truncated, never
+    // split. The number 3 and the eight components were right. Both row ranges are
+    // derivable from the fixture: `makeScannedPDF` draws bars into a 1224x1584 bottom-up
+    // frame and the page comes back at 144 DPI, so `c28Dashes(_, h)` at `y = 200`
+    // occupies top-down rows `[1384 - h, 1384)` — 1264 at h=120, 1184 at h=200 — while
+    // box 13 sits at rows 1199-1247 and `mrcBoxPadding`'s 25% of 48 adds 12 either side.
+    // ⚠️ Every range in this paragraph is INCLUSIVE, so the padded region's 1259 is the
+    // same edge as "ends at row 1260" three lines up, which is the exclusive `y1` —
+    // deliberately both, because the code holds the exclusive form and the arithmetic
+    // reads in the inclusive one. Two numbers, one boundary.)
     // ⚠️ The tolerance is 1e-5 and not exact: `total` is ~117,000 px, so one differing ink
     // pixel moves this by ~8.5e-6 and a bit-exact comparison would be asserting the PDF
     // round-trip's antialiasing. A clipped baseline moves it by ~6e-4, sixty times the
@@ -2391,11 +2413,23 @@ do {
           String(format: "%.4f (wanted [0.004, 0.007]) / %.4f / %.4f (both [0.018, 0.023])",
                  c28StrokeInk, c28WideInk, c28TallInk))
 
-    // All three have to stay under the bar, or term 1 refuses the page and the third term
-    // is never consulted — which would make every check above green over a page that
-    // never reached the code they are about. `> 0` on all three, not just the first: these
-    // come from a `?? -1`, and -1 is below the bar too.
-    check("…and all three sit below the shipped bar, so term 1 lets them through",
+    // ⚠️ What this buys is fixture REALISM, and the comment here claimed *reachability*
+    // until 2026-08-23. The architecture does not provide it: every check above reaches
+    // the shipped code **directly** — of the seven, two go through `c28Groups` into
+    // `Flattener.textLineGroupsOutsideText` alone, one (the too-wide refusal) through
+    // both, three through `c28InkOut` into `Flattener.inkOutsideText` alone, and the type
+    // scale through `c28Calibration` into `shapeComponents` — and `pageIsAllText()` is
+    // never invoked on these three fixtures at all, because `c28Layers` — the only route
+    // to `mrcLayers` in this block — is called on `c28Missed` only. So term 1 cannot gate
+    // them and none of them could have gone green over unreached code. What being under
+    // the bar does say is that these are pages production would still be deciding by the
+    // time it reached the third term; a page over the bar is refused at term 1 and the
+    // shape rule never runs on it in production, which would leave all three fixtures
+    // arguing about a code path their own geometry never sees. ⚠️ It pins term 1 only, so
+    // it is not the whole of that: term 2 (`paleDrawing(…).extent`) sits between,
+    // unpinned here and carried out of C26 as the queue's `paledraw-term`. `> 0` on all
+    // three, not just the first: these come from a `?? -1`, and -1 is below the bar too.
+    check("…and all three sit below the shipped bar, so term 1 would not refuse them",
           c28StrokeInk > 0 && c28WideInk > 0 && c28TallInk > 0
             && c28StrokeInk < Flattener.textPageInkOutsideThreshold
             && c28WideInk < Flattener.textPageInkOutsideThreshold
