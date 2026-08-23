@@ -531,6 +531,12 @@ enum Flattener {
     /// When `pngDirectory` is given, each page is also written there as a 1-bit
     /// PNG so an external encoder can compress it better than CoreGraphics can.
     /// Only black-and-white mode produces those, since JBIG2 is bilevel-only.
+    ///
+    /// ⚠️ **The returned array — and `onPage` — are populated inside that same
+    /// `if let pngDirectory`.** A call without one rebuilds every page and
+    /// returns `[]`, so `pages.count` is not a page count: read the destination
+    /// document. Written down because a C29 probe read `rebuilt=0` off a healthy
+    /// nine-page rebuild and was on its way to being filed as a throw.
     @discardableResult
     static func flatten(
         _ source: URL,

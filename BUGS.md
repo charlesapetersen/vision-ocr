@@ -8,7 +8,13 @@ Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
 **Four open: `C27`, `C28`, `C29` and `C30` — and `C28` is `HALF FIXED` as of 2026-08-22, its shape term
 WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were measured.**
-It rescues **13 of the 16** measured content losses, and its failure direction is bytes rather than
+✅ **`C29` has the FIXTURE it said it needed first, as of 2026-08-23, and today's wrong answer is PINNED**
+(`#### The fixture, and today's answer PINNED`): a nine-page JSTOR shape whose cover page reads 302
+characters and is not a page-sized image, whose other eight pages ALL clear the 120-character bar so the
+character count decides nothing, and whose sample is `[1, 3, 5, 7]` — index 0 appearing only at page
+counts 1-4 over a 400-count sweep. The routing change is the **second of two commits**; C29 stays `OPEN`.
+**Back to C28**, whose shape term this paragraph interrupted: it rescues **13 of the 16** measured content
+losses, and its failure direction is bytes rather than
 content: `bgFactor = allText ? max(caller, 8) : caller`, so a term that only ever refuses the verdict can
 only ever store a page at *more* resolution. What keeps it open is three hand-made marks, one of them
 (`_1939_Former students` p2, `outPx` **0**) unreachable from this seam at any value of any constant,
@@ -9060,6 +9066,113 @@ substitution risk. Written down here so nobody re-derives "3x too big" from the 
   this file", and it has NOT been run here** — the mechanism above is read from the source with the
   arithmetic enumerated, and the *consequence* is what was measured in the output. Run it first; this
   project's rule is that the instrument is wrong before the code.
+
+#### The fixture, and today's answer PINNED — 2026-08-23
+
+✅ **THE FIXTURE THIS ENTRY SAID IT NEEDED FIRST NOW EXISTS, AND THE MECHANISM ABOVE IS MEASURED RATHER
+THAN ENUMERATED BY HAND.** `Tests/main.swift`'s `makeBornDigitalCoverPDF(at:coverPages:scanPages:)` writes
+the JSTOR shape into one document: a cover page of vector text plus a 121x74 colour mark, then N
+already-OCR'd scans (a 1224x1584 bitmap with an invisible text layer over it). Nothing shipped changes
+behaviour; the only `Sources/` edit in this commit is a doc comment.
+
+⛔ **THIS IS THE FIRST OF TWO COMMITS AND IT PINS THE WRONG ANSWER ON PURPOSE.** A fixture that went red on
+arrival would refuse every later commit through the pre-commit hook, so the **three** checks marked
+`PINNED` assert what the app does **today** and the routing change is what flips them: `hasDigitalText`
+false, `filesWithDigitalText` empty, and the rebuild's page 1 a raster with no text. Everything else in the
+block is an invariant or a description of the fixture and must stay green — in particular *"the rebuild
+keeps all nine pages"*, which a routing change must **never** flip, because a changed page count is
+invariant-1 loss. The queue box now carries the answer to its own BOUND question: **two commits, one
+session each.** ⚠️ Only the "don't ship a red check" half of this is `gutter-floor`'s sub-step 0: that one
+rewords an assertion until it is TRUE and names it an `ENGINE ASSUMPTION` about a third-party limit whose
+remedy is declined, where this pins **this project's own defect** with the fix scheduled next.
+⚠️ **And which LAYER the pins sit at is not settled.** `hasDigitalText`'s only production consumer is
+`OCRModel.filesWithDigitalText` — the pre-flight **warning** — while routing hands the whole file to one
+`Flattener.flatten` call (`Model.swift:1931`). If the passthrough is built in `Model` rather than in
+`flatten`, the two rebuild-side pins stay green and only the first two move.
+
+**What the fixture measures.** Every figure below is read off the fixture by a scratch probe built from the
+shipped `Sources/`. ⚠️ **The suite asserts BANDS, not these exact figures**, on three of the ten rows — the
+character count as `>= 120`, the mark as `>0 && <900` and `>0 && <72` — so those three are what the
+fixture reads today rather than what the suite holds. The sample list is asserted exactly:
+
+| | reads | why it matters |
+|---|---|---|
+| cover page, characters | **302** (incl. 32 spaces, 5 newlines) | clears `hasDigitalText`'s 120 bar — which counts total characters of a whitespace-*trimmed* string, interior spaces included, so this is the same quantity |
+| cover page, `pageIsAnImage` | **false** | the per-page signal already says "do not rebuild this one" |
+| cover page, largest raster | **121 px, ~14 DPI** | a real mark, refused as a page raster **twice over** — a fixture with *no* image would pass for the wrong reason |
+| the other 8 pages, `pageIsAnImage` | **8 of 8** | they are scans |
+| the other 8 pages, over the 120 bar | **8 of 8** | **so on this document the character count decides nothing** |
+| `sampleIndices(count: 9, wanted: 4)` | **[1, 3, 5, 7]** | pages 2, 4, 6, 8 |
+| counts in 1…400 whose sample holds index 0 | **[1, 2, 3, 4]** | no document of five or more pages can see its own cover |
+| `hasDigitalText` | **false** — PINNED | so the cover is rebuilt with the scans |
+| `filesWithDigitalText` | **[]** | the user is not warned either |
+| the rebuild's page 1 | a page-sized raster, **0 characters** — PINNED | the exact text is gone |
+
+⛔ **The check that says what the defect IS, rather than what it does**: `hasDigitalText`'s own per-page
+predicate — `text.count >= 120 && !pageIsAnImage(page)` — applied by hand to the one page it never applies
+it to, **says digital**. So a fix needs no new signal, only a per-page decision. ⚠️ **This is deliberately
+not a complaint about `sampleIndices`**, and the suite's existing *"a partial sample skips page 1, which is
+the least informative page"* check stays right and untouched: sampling interior pages is a reasonable way
+to ask what a document is *mostly* made of.
+
+✅ **A NON-VACUITY CONTROL RIDES WITH IT.** The same builder at `coverPages: 3, scanPages: 1` **is** called
+digital, so the `false` above is about this document's *shape* and not about a builder that failed to draw
+any text.
+
+✅ **WATCHED FAILING (CONTRIBUTING 4a), THREE SABOTAGES, EACH REDDING A DIFFERENT SET.** Built in scratch
+against the six `Sources/` files of `HELPER_SOURCES` (the seventh, `Helper/main.swift`, carries its own
+`@main` and cannot be linked into a probe) rather than through the suite, so each cost ~80 s to build
+instead of ~45 min. ⚠️ **The `reds` column is the PROBE's and understates the suite twice**: `hasdt` also
+reds the `filesWithDigitalText` pin, which the probe cannot link, and `samp` also reds the two pre-existing
+`sampleIndices` checks:
+
+| binary | sabotage | reds | result |
+|---|---|---|---|
+| baseline | — | — | **14/14** |
+| `samp` | `sampleIndices`: `($0 + 1) * count / (n + 1)` → `$0 * count / (n + 1)` | both sampling checks (the sample becomes `[0, 1, 3, 5]`) | **12/14** |
+| `img2` | `pageIsAnImage`: `pixelWidth >= 900 && dpi >= 72` → `>= 100 && dpi >= 1` | cover-is-born-digital, the per-page-predicate check, **and the non-vacuity control** | **11/14** |
+| `hasdt` | `hasDigitalText`: `sampleIndices(count: doc.pageCount, wanted: 4)` → `[0]` | the `PINNED` verdict — the fix direction in miniature | **13/14** |
+
+⛔ **AND A FOURTH SABOTAGE THAT REDS NOTHING, WHICH IS THE MORE USEFUL RESULT.** Dropping the width bar
+**alone** — `pixelWidth >= 900` → `>= 100`, the obvious one-token attack on the cover-is-born-digital
+check — reads **14/14**. `largestImage` reports DPI as *pixels over the PAGE's width*, so the cover's
+121 px mark across a 612 pt sheet is **~14 DPI** and the `dpi >= 72` floor refuses it independently of the
+width. The fixture's cover is therefore refused as a page raster by **two of `pageIsAnImage`'s three
+terms**, which is why `img2` has to move two of them. ⚠️ This was **predicted wrongly and then measured**:
+the first draft of this section named the one-token width sabotage as the demonstration. ⚠️ **And the
+redundancy is a property of THIS mark, not of the design**: on a 612 pt page `dpi >= 72` is exactly
+`pixelWidth >= 612`, so the DPI floor is the weaker of the two, and a mark of 700 px would be refused once
+with every check still green.
+
+⚠️ **Two of the fifteen checks add no independent failure mode**, said here rather than counted quietly.
+The per-page-predicate check is the literal conjunction of two checks above it, so no change to `Sources/`
+can red it alone — it is a *restatement* of the defect and not separate evidence — and the sample check
+would have been implied by the pre-existing 1…40 × 1…13 sweep had it only asserted that index 0 is absent,
+which is why it asserts the exact list `[1, 3, 5, 7]` instead.
+
+⛔ **AND THE INSTRUMENT WAS WRONG BEFORE THE CODE WAS, exactly as this project's rule predicts.** The first
+draft of the consequence check read `Flattener.flatten(...).count == 9` and got **0** on a healthy
+nine-page rebuild — `rebuilt.append` and `onPage` both live inside `if let pngDirectory`, so a call without
+one returns `[]`. It was one step from being filed as a throw. The check reads the destination document
+instead, and `Flattener.flatten`'s doc comment now says so, which is the whole of this commit's
+`Sources/` diff.
+
+⚠️ **What "watched failing" does NOT carry here.** The probe holds its own **copy** of the fixture builder
+and of the check block, extracted from `Tests/main.swift` mechanically, so what was watched is the
+predicate rather than the suite's exact code; and it cannot link `OCRModel`, so the `filesWithDigitalText`
+row is asserted in the suite only. No sabotage went through `Tools/mutate.py` (a scoped run is a baseline
+suite plus ~45 min a mutant).
+
+⚠️ **What this sub-step does NOT do.** It does not run `Tools/classify-source.swift`, and the excuse is
+only half good: the file C29 was found on
+(`~/Downloads/Hughes - The Knitting of Racial Groups in Industry.pdf`) is **no longer on this machine**,
+but this commit creates a fixture the tool *can* be pointed at, and doing so costs a build and one
+invocation. **The entry's own "run the instrument first" note therefore still stands and is owed to the
+second commit.** Nor does it measure the *quality* of the OCR that replaces the cover's exact text: nothing
+in the block runs recognition, so "and the OCR is worse" remains the register's reading of the real
+document. It adds no mutant to `Tools/mutate.py`, no
+`fault-inject` case (no error branch was added) and no `CHANGELOG` paragraph (nothing user-visible moved).
+It does not touch the routing: **C29 stays OPEN.**
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
 

@@ -9562,6 +9562,121 @@ func makeDigitalPDF(at url: URL, lines: [String], pages: Int = 3) {
     pdf.closePDF()
 }
 
+/// C29's shape: **born-digital cover pages in front of a run of already-OCR'd
+/// scans**, which is what a JSTOR download is.
+///
+/// A cover page draws real vector text plus a small colour mark — the
+/// publisher's logo — and carries no page-sized raster at all. A scan page is
+/// this app's ordinary input: a full-page bitmap with an invisible text layer
+/// over it. So **every page of the document clears `hasDigitalText`'s
+/// 120-character bar**, and the whole decision rests on `pageIsAnImage`. That is
+/// the sharp part of the register entry: on the nine-page document C29 was found
+/// on, all nine pages carried 388-3,777 non-space characters, because JSTOR
+/// ships its own OCR layer over the scans.
+///
+/// Both page counts are parameters because the defect has a page-count
+/// boundary. `sampleIndices` cannot choose index 0 once a document is longer
+/// than `wanted`, so a nine-page file's cover page is never looked at, while a
+/// four-page one's is — and `coverPages` is what lets a control build a document
+/// this same builder calls digital, so a red verdict below cannot be the fixture
+/// simply failing to draw text.
+///
+/// Deliberately not built by widening `makeScannedPDF` or `makeDecoyPDF`: each
+/// of those writes one page and closes the file, and this shape is the two of
+/// them *in one document*. Growing a builder that a hundred unrelated checks
+/// read is the coupling `95b23c3` paid a suite run to learn about.
+func makeBornDigitalCoverPDF(at url: URL, coverPages: Int = 1, scanPages: Int) {
+    var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    guard coverPages > 0, scanPages >= 0,
+          let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
+
+    // The cover: vector text and a 121x74 colour mark, page 1's own shape in the
+    // register entry. 13 pt at 18 pt leading is a metadata block, not a
+    // paragraph — and it still clears 120 characters, which is the point.
+    let coverFont = CTFontCreateWithName("Helvetica" as CFString, 13, nil)
+    let coverLines = [
+        "American Sociological Association",
+        "The Knitting of Racial Groups in Industry",
+        "Author(s): Everett Cherrington Hughes",
+        "Source: American Sociological Review, Vol. 11, No. 5 (Oct., 1946)",
+        "Published by: American Sociological Association",
+        "Stable URL: https://example.invalid/stable/2087513",
+    ]
+    for c in 1...coverPages {
+        pdf.beginPDFPage(nil)
+        pdf.setTextDrawingMode(.fill)
+        var y: CGFloat = 700
+        for line in coverLines {
+            let ct = CTLineCreateWithAttributedString(
+                NSAttributedString(string: "\(line) [\(c)]", attributes: [.font: coverFont]))
+            pdf.textPosition = CGPoint(x: 72, y: y)
+            CTLineDraw(ct, pdf)
+            y -= 18
+        }
+        // A small colour raster, well under `pageIsAnImage`'s 900 px bar. It is
+        // here because the register's page 1 has two images on it and a fixture
+        // with none would pass that test for the wrong reason.
+        if let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: 121, pixelsHigh: 74,
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+           let ctx = NSGraphicsContext(bitmapImageRep: rep) {
+            NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = ctx
+            NSColor(calibratedRed: 0.60, green: 0.05, blue: 0.10, alpha: 1).setFill()
+            NSRect(x: 0, y: 0, width: 121, height: 74).fill()
+            NSColor.white.setFill()
+            NSRect(x: 14, y: 22, width: 93, height: 30).fill()
+            NSGraphicsContext.current?.flushGraphics(); NSGraphicsContext.restoreGraphicsState()
+            if let cg = rep.cgImage {
+                pdf.draw(cg, in: CGRect(x: 72, y: 630, width: 60.5, height: 37))
+            }
+        }
+        pdf.endPDFPage()
+    }
+
+    // The scans: a page-sized bitmap with an invisible text layer, which is what
+    // an already-OCR'd scan is and what the rebuild exists to replace.
+    if scanPages > 0 {
+        for p in 1...scanPages {
+            pdf.beginPDFPage(nil)
+            let w = 1224, h = 1584
+            if let rep = NSBitmapImageRep(
+                bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
+                bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+               let ctx = NSGraphicsContext(bitmapImageRep: rep) {
+                NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = ctx
+                NSColor.white.setFill(); NSRect(x: 0, y: 0, width: w, height: h).fill()
+                var y = CGFloat(h - 220)
+                for i in 1...12 {
+                    ("Scanned line \(i) of page \(p + coverPages) as printed"
+                        as NSString).draw(at: NSPoint(x: 130, y: y), withAttributes: [
+                            .font: NSFont(name: "Helvetica", size: 44)
+                                ?? NSFont.systemFont(ofSize: 44),
+                            .foregroundColor: NSColor.black])
+                    y -= 78
+                }
+                NSGraphicsContext.current?.flushGraphics()
+                NSGraphicsContext.restoreGraphicsState()
+                if let cg = rep.cgImage { pdf.draw(cg, in: box) }
+            }
+            pdf.setTextDrawingMode(.invisible)
+            let font = CTFontCreateWithName("Helvetica" as CFString, 18, nil)
+            var y: CGFloat = 700
+            for i in 1...12 {
+                let ct = CTLineCreateWithAttributedString(NSAttributedString(
+                    string: "Scanned line \(i) of page \(p + coverPages) as printed",
+                    attributes: [.font: font]))
+                pdf.textPosition = CGPoint(x: 65, y: y)
+                CTLineDraw(ct, pdf)
+                y -= 39
+            }
+            pdf.endPDFPage()
+        }
+    }
+    pdf.closePDF()
+}
+
 do {
     resetPrefs()
     let dir = tmp.appendingPathComponent("digital")
@@ -9674,6 +9789,156 @@ do {
               Flattener.sampleIndices(count: 0, wanted: 4).isEmpty
               && Flattener.sampleIndices(count: 10, wanted: 0).isEmpty
               && Flattener.sampleIndices(count: 10, wanted: -1).isEmpty)
+    }
+
+    // C29. The shape neither of the three fixtures above has: a born-digital
+    // cover page in FRONT of a run of already-OCR'd scans — the standard JSTOR
+    // download. On the file this was found on, page 1's vector text, its two
+    // embedded images and its four fonts became one 2550x3333 1-bit raster, and
+    // the text layer went from the exact string "American Sociological
+    // Association" to `AMFAKAN FOCAX ONCAL ASSOXUTION`. A search that worked on
+    // the input fails on the output.
+    //
+    // ⛔ This block PINS TODAY'S WRONG ANSWER on purpose. C29's fix is a
+    // per-page decision and it is a separate commit; a fixture that went red on
+    // arrival would refuse every later commit through the pre-commit hook. The
+    // THREE checks marked PINNED are the ones the routing change is expected to
+    // flip; everything else here is an invariant or a description of the
+    // fixture and must stay green. ⚠️ Which LAYER the fix lands at is not
+    // settled: `hasDigitalText`'s only production consumer is
+    // `OCRModel.filesWithDigitalText` → the pre-flight *warning*, while routing
+    // hands the whole file to one `Flattener.flatten` call
+    // (`Model.swift:1931`). If the passthrough is built in `Model` rather than
+    // in `flatten`, the two rebuild-side pins below stay green and it is the
+    // first two that move. `BUGS.md` C29.
+    do {
+        let jstor = dir.appendingPathComponent("born-digital-cover.pdf")
+        makeBornDigitalCoverPDF(at: jstor, scanPages: 8)
+        let jd = PDFDocument(url: jstor)
+        check("the C29 fixture is a nine-page document", jd?.pageCount == 9,
+              "pages=\(jd?.pageCount ?? -1)")
+
+        // 1. The fixture has the shape, page by page. Without this the verdict
+        //    below could just as well come from a document that is all scan.
+        let cover = jd?.page(at: 0)
+        let coverText = (cover?.string ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        check("…whose cover page carries real text, well clear of the "
+              + "120-character bar", coverText.count >= 120,
+              "chars=\(coverText.count)")
+        check("…and reads as born-digital page by page, because it has no "
+              + "page-sized raster on it",
+              cover.map { !Flattener.pageIsAnImage($0) } == true)
+        // The mark is here so that "not a page-sized image" is a real test rather
+        // than the trivial answer for a page carrying no images at all. ⛔ It is
+        // refused by two of `pageIsAnImage`'s three terms, measured rather than
+        // reasoned: dropping the 900 px bar to 100 on its own changes nothing,
+        // because `largestImage` reports DPI as pixels over the PAGE's width, so
+        // 121 px across 612 pt is ~14 DPI, under the 72 floor. ⚠️ That
+        // redundancy is a property of THIS mark, not of the design — on a 612 pt
+        // page `dpi >= 72` is exactly `pixelWidth >= 612`, so the DPI floor is
+        // the weaker of the two and a mark of 700 px would be refused only once.
+        let mark = cover.flatMap { Flattener.largestImage(of: $0) }
+        check("…even though it does carry a small colour mark, refused as a page "
+              + "raster twice over — under 900 px wide AND under 72 DPI",
+              (mark?.pixelWidth ?? 0) > 0 && (mark?.pixelWidth ?? 0) < 900
+                  && (mark?.dpi ?? 0) > 0 && (mark?.dpi ?? 0) < 72,
+              "markPx=\(mark?.pixelWidth ?? -1) markDPI="
+                  + String(format: "%.1f", mark?.dpi ?? -1))
+
+        var scanLike = 0, overBar = 0
+        for i in 1..<(jd?.pageCount ?? 1) {
+            guard let p = jd?.page(at: i) else { continue }
+            if Flattener.pageIsAnImage(p) { scanLike += 1 }
+            let t = (p.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if t.count >= 120 { overBar += 1 }
+        }
+        check("…while its other eight pages are already-OCR'd scans",
+              scanLike == 8, "pageIsAnImage on \(scanLike) of 8")
+        check("…every one of which clears the 120-character bar too, so on this "
+              + "document the character count decides nothing",
+              overBar == 8, "over the bar on \(overBar) of 8")
+
+        // 2. The sharp part of the entry, measured instead of enumerated by
+        //    hand. `sampleIndices` returns `($0 + 1) * count / (n + 1)`, whose
+        //    first term is >= 1 for every document longer than `wanted`.
+        let sampled = Flattener.sampleIndices(count: 9, wanted: 4)
+        // The exact list, not just "0 is absent": the pre-existing sweep at "a
+        // partial sample skips page 1" already covers count 9 / wanted 4, so an
+        // absence test here would assert nothing new.
+        check("C29: the four pages sampled are 2, 4, 6 and 8 — never the cover",
+              sampled == [1, 3, 5, 7], "\(sampled)")
+        let seesPageOne = (1...400).filter {
+            Flattener.sampleIndices(count: $0, wanted: 4).contains(0)
+        }
+        check("…and index 0 is sampled only on documents of four pages or "
+              + "fewer, so no document of five or more can see its own cover",
+              seesPageOne == [1, 2, 3, 4], "\(seesPageOne.prefix(8))")
+        // Not a complaint about `sampleIndices`: sampling interior pages is a
+        // reasonable way to ask what a document is *mostly* made of, and the
+        // check above at "a partial sample skips page 1" pins that on purpose.
+        // The defect is deciding a PER-PAGE question with a document-wide
+        // majority, and the per-page signal already exists and is already
+        // trusted — here is `hasDigitalText`'s own per-page predicate applied by
+        // hand to the one page it never applies it to.
+        check("…while that same per-page predicate, applied to the cover page, "
+              + "says digital — so a fix needs no new signal, only a per-page "
+              + "decision",
+              coverText.count >= 120
+                  && cover.map { !Flattener.pageIsAnImage($0) } == true)
+
+        check("C29, PINNED: the document reads as carrying no digital text at "
+              + "all, so its cover page is rebuilt along with the scans",
+              !Flattener.hasDigitalText(jstor))
+        check("C29, PINNED: …and the batch pre-flight flags nothing, so the "
+              + "user is not warned either",
+              OCRModel.filesWithDigitalText(in: [jstor], password: nil).isEmpty)
+
+        // 3. The consequence, in the one step that causes it. Not vacuous about
+        //    the fixture: the same builder makes a document `hasDigitalText`
+        //    calls digital as soon as the covers are a sampled majority, so a
+        //    false verdict above is about this document's SHAPE and not about a
+        //    fixture that failed to draw any text.
+        let mostlyCover = dir.appendingPathComponent("cover-heavy.pdf")
+        makeBornDigitalCoverPDF(at: mostlyCover, coverPages: 3, scanPages: 1)
+        check("the control: three of the same cover pages and one scan IS "
+              + "called digital, so the builder really draws born-digital pages",
+              Flattener.hasDigitalText(mostlyCover))
+
+        // ⚠️ Read the OUTPUT, not `flatten`'s return value: that array is only
+        // appended to inside `if let pngDirectory`, so a call without one
+        // returns `[]` on a perfectly healthy nine-page rebuild. A probe written
+        // while this block was drafted read `rebuilt=0` and was about to be
+        // filed as a throw.
+        let rebuilt = dir.appendingPathComponent("born-digital-cover-flat.pdf")
+        _ = try? Flattener.flatten(jstor, to: rebuilt, mode: .auto)
+        let rd = PDFDocument(url: rebuilt)
+        // NOT a pin — an invariant. A routing change that alters the page count
+        // is invariant-1 content loss, so this one must stay green whatever the
+        // fix does.
+        check("the rebuild keeps all nine pages", rd?.pageCount == 9,
+              "pages=\(rd?.pageCount ?? -1)")
+        if let rd, let p1 = rd.page(at: 0) {
+            check("C29, PINNED: and the cover page comes out as a page-sized "
+                  + "raster, which is the rasterisation the entry measured",
+                  Flattener.pageIsAnImage(p1))
+            let after = (p1.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            // ⚠️ Weak on its own, said in place rather than dressed up:
+            // `flatten`'s contract is "image-only pages", so EVERY rebuilt page
+            // loses its text — including the `already-ocrd` decoy above, where
+            // that is correct. What this pins is that the born-digital cover is
+            // not EXEMPTED, and it is the pair with the raster check that
+            // carries it. The entry's own "and the OCR of it is worse" is not
+            // measured here: nothing in this block runs recognition. The
+            // instrument for that is `observations(of:)`, used on a born-digital
+            // rebuild ~5,800 lines above; wiring it in is owed to C29's second
+            // commit.
+            check("C29, PINNED: …with its exact text gone",
+                  after.isEmpty, "chars=\(after.count)")
+        } else {
+            check("C29: the rebuild is readable, so the two pins above ran",
+                  false, "could not open \(rebuilt.lastPathComponent)")
+        }
     }
 
     // 4. The batch-level pre-flight picks out exactly the digital ones.

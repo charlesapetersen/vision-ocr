@@ -62,7 +62,18 @@ experiment, and the *why* is untested — if the mechanism is a working-resoluti
 `VNRecognizeTextRequest` then **"render at a higher DPI" is refuted in advance** while tiling is not, and
 `Recogniser` has no tiling seam. C30 stays **OPEN**: the fork is not the fix. `C29` is the owner's JSTOR finding — a
 born-digital cover page rasterised and re-OCR'd because `hasDigitalText` votes per DOCUMENT and never
-samples page 1 at all on a document of 5+ pages. `C26` and `C27` were found on one document after
+samples page 1 at all on a document of 5+ pages. ✅ **It has a FIXTURE as of 2026-08-23 and today's wrong
+answer is PINNED** — `Tests/main.swift`'s `makeBornDigitalCoverPDF`, and `BUGS.md` C29
+`#### The fixture, and today's answer PINNED`. The cover page reads **302** characters and
+`pageIsAnImage` **false** while all eight scans clear the same 120-character bar, so **the character count
+decides nothing** and the whole verdict rests on a sample of `[1, 3, 5, 7]`; over counts 1-400 index 0
+appears only at **1, 2, 3 and 4**. ⛔ **The `PINNED` checks assert the WRONG answer on purpose** — a
+fixture red on arrival refuses every later commit through the hook — so the routing change is the
+**second of two commits** and C29 stays **OPEN**. ⚠️ Not a complaint about `sampleIndices`: the suite's
+existing "a partial sample skips page 1" check stays right, and the defect is deciding a per-page question
+with a document-wide majority. ⚠️ One instrument trap came out of it: `Flattener.flatten`'s returned array
+is appended to only inside `if let pngDirectory`, so a call without one rebuilds every page and returns
+`[]` — read the destination document, not `pages.count`. `C26` and `C27` were found on one document after
 `1.13.0` shipped; `C28` was opened out of C26's own campaign. `C26` lost
 content at the DEFAULT Photo detail setting; `C27` discards spot colour and is fidelity rather
 than loss. ⛔ **C26's CONSTANT HAS MOVED — `Flattener.textPageInkOutsideThreshold` is `0.045`, not
@@ -973,7 +984,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,232 checks measured 2026-08-23; 8-75 min depending on machine load, real OCR
+./run_tests.sh        # 1,247 checks measured 2026-08-23; 8-75 min depending on machine load, real OCR
                       # measured 474 s quiet -> 2,719 s under the C24b campaign, and 4,191 s
                       # (69m51s) holding the lock on 6d0caa1 -- suite-timings.tsv, not a stopwatch.
                       # Never size a

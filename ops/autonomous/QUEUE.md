@@ -645,6 +645,30 @@ happens.**
       dark it is.
       ⚠️ **The release gate cannot see this class either** — same `score-gate.swift` limitation C26
       records. Do not accept a green gate as evidence.
+      ⚠️ **READ THIS BEFORE TAKING THIS ITEM: every `c28-*` sub-box below is ticked, and the last few
+      autonomous sessions to reach this box as their first `ok` took the next item instead** — 2026-08-23's
+      three sessions all did, and their reasons are in `$STATE/RUN.md`'s SESSION LOG. This box stays `[ ]`
+      because C28 is genuinely `HALF FIXED` and not closed. So a later session does not spend its item
+      re-deriving what is left, here it is with what each piece costs: **(a)** **six** mutants are in the
+      catalogue and have never been run through `Tools/mutate.py` — three from `c28-decide-and-wire`
+      (`fbf6d87`: `lineMinimumMembers`, `shapeRunHigh`, `C28-alltext-ignores-shape`), one from
+      `c28-owedfixture` (`6d0caa1`: `shapeHeightHigh`) and two from `depth-cap` (`95b23c3`) — and a scoped
+      run is a baseline suite plus **44-58 min a mutant** (`CLAUDE.md`'s figure, from `mutation-log.tsv`'s
+      newest five; `mutate.py:19-30` forbids quoting a per-mutant number from prose, so read the log);
+      **(b)** no corpus sweep has been re-run since the shape term was wired, so "12 of 12 type-losers" is
+      still the tool's 2026-08-21 figure — a 233-document sweep measured **105.6 min** the last time one
+      ran; **(c)** the **three hand-made marks the wired term does not rescue**, one of which
+      (`_1939_Former students` p2, `outPx` **0**) no value of any constant here can reach, because the
+      page-wide Otsu is blind to pale pencil upstream of the map — a signal this campaign has not found,
+      i.e. research rather than a bounded item; and **(d)** the entry buys **no searchability**, which is
+      `C30`'s ground. ⚠️ `mrc-endtoend` also cites this entry as `context:`, so "nothing open points at
+      C28" would be wrong. If you take this item, take exactly ONE mutant from (a) and budget a baseline
+      suite in front of it.
+      ⚠️ **This paragraph was added 2026-08-23 by a session that then took the next item, and the
+      adversarial review of its own diff refuted two of its five claims** — it said "three mutants from
+      `c28-owedfixture` and two from `depth-cap`", which is **six from three sub-steps, not five from two**,
+      and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
+      counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
 - [x] **c28-nearmiss** — **DONE 2026-08-20.** C28's first sub-step: the eight pages nearest the shipped
       bar from below (`inkOut` 0.0353-0.0450) rendered at both factors and read at 1:1. **4 of the 8
@@ -1691,8 +1715,54 @@ happens.**
       pin current behaviour, flip it in the second commit). So either the fixture pins today's wrong
       behaviour and the routing commit flips it, or both are one commit and the session must be told to
       expect a single long one. Whichever it is, one session does ONE of them.
+      ✅ **ANSWERED 2026-08-23: TWO COMMITS, and the FIRST ONE HAS LANDED.** The fixture pins today's wrong
+      behaviour and the routing commit flips it — `gutter-floor`'s sub-step 0 shape, chosen because the
+      alternative buys a 45-90 minute suite for a half-finished routing change. See the `c29-fixture`
+      sub-box below and `BUGS.md` C29 `#### The fixture, and today's answer PINNED`.
+      ⛔ **WHAT IS LEFT IS THE SECOND COMMIT — the per-page routing — and the THREE `PINNED` checks are
+      what it is expected to flip**: `hasDigitalText` false, `filesWithDigitalText` empty, and the rebuild's
+      page 1 a page-sized raster with 0 characters. ⚠️ *"The rebuild keeps all nine pages"* is deliberately
+      NOT pinned — a routing change that alters the page count is invariant-1 loss and must stay green.
+      ⚠️ **Which layer the pins sit at is unsettled**: `hasDigitalText`'s only production consumer is
+      `OCRModel.filesWithDigitalText` (the pre-flight *warning*), while routing hands the whole file to one
+      `Flattener.flatten` call at `Model.swift:1931`, so a passthrough built in `Model` leaves the two
+      rebuild-side pins green. Do NOT re-build the fixture and do NOT
+      re-derive the sampling arithmetic; both are measured. Read the entry's `#### What a fix has to satisfy`
+      first — five constraints, of which the two easiest to miss are that a passed-through page must not
+      receive a SECOND text layer, and that whatever asserts the `SearchableWriter` invariants has to know
+      which pages were passed through rather than reporting a page it never wrote.
+      ⚠️ **The fixture builder is `makeBornDigitalCoverPDF(at:coverPages:scanPages:)`** and it is deliberately
+      not a widening of `makeScannedPDF` / `makeDecoyPDF` — growing a builder a hundred unrelated checks read
+      is the coupling `95b23c3` paid a suite run to learn about. `coverPages` exists so the non-vacuity
+      control can build a document `hasDigitalText` calls digital.
+      ⚠️ **One instrument trap from the fixture commit, worth knowing before the routing one**:
+      `Flattener.flatten`'s returned array is appended to only inside `if let pngDirectory`, so a call
+      without one rebuilds every page and returns `[]`. Read the destination document, not `pages.count`.
+      Its doc comment says so now.
       ⚠️ Placed ahead of `C27` by the owner 2026-08-20 on this project's own precedence — content loss
       outranks fidelity, the same call that put C26 before C27 — and behind `C28`, which is mid-campaign.
+  - [x] **c29-fixture** — **DONE 2026-08-23.** C29's first commit: the fixture the entry named as the first
+        thing a fix needs, plus the checks that pin today's answer so the routing commit has something to
+        flip. `testdocs/` holds no born-digital-cover document and the file C29 was found on is no longer on
+        this machine, so it is generated, per `Tools/make-plate-fixtures.swift`'s precedent.
+        **Measured on the fixture** (⚠️ the suite asserts BANDS on three of these — `>= 120` for the
+        characters and `>0 && <900` / `>0 && <72` for the mark — so those are what it reads today, not what
+        is held): cover page **302** characters, 32 of them spaces, and
+        `pageIsAnImage` **false** with a **121 px / ~14 DPI** colour mark on it; the other **8 of 8** pages both
+        `pageIsAnImage` and over the 120-character bar, so **the character count decides nothing on this
+        document**; `sampleIndices(count: 9, wanted: 4)` = **[1, 3, 5, 7]**; over counts 1-400 index 0 is
+        sampled only at **[1, 2, 3, 4]**; `hasDigitalText` **false** and `filesWithDigitalText` **[]**; the
+        rebuild's page 1 a page-sized raster with **0** characters.
+        ✅ **Watched failing**, three sabotages in scratch (~80 s to build each, against ~45 min for a
+        suite): `sampleIndices`' step → **12/14**; `pageIsAnImage`'s width AND DPI terms together →
+        **11/14**; `hasDigitalText`'s sample → `[0]` → **13/14**, which is the fix direction in miniature.
+        ⛔ **A fourth reds NOTHING and is the more useful result**: the width bar alone (`>= 900` → `>= 100`)
+        reads 14/14, because `largestImage` reports DPI over the PAGE's width, so the 121 px mark is ~14 DPI
+        and the 72 floor refuses it independently. Predicted wrongly, then measured.
+        ⚠️ The probe carries its own COPY of the builder and the block and cannot link `OCRModel`; no
+        sabotage went through `mutate.py`. Nothing shipped changes behaviour — the only `Sources/` edit is
+        `Flattener.flatten`'s doc comment. (context: BUGS.md C29
+        `#### The fixture, and today's answer PINNED`)
 - [ ] **gutter-floor** — the reading-order DECLINE rests on "0.19% of observations cross a gutter", and
       the population that produced it excludes the pages that fail. `score-reading-order.swift`'s ink test
       needs a quiet run of `0.035 * width`; a page without one is counted `singleColumn` and `continue`d,
