@@ -1,0 +1,12 @@
+run	page	window	reqImgW	reqImgH	boxes	words	inkRows	inkRowsInVoid	bareShare	largestVoid	largestInkVoid	bareShareInkRuns	longestInkRun	note
+published-shipped	1	full			296	296	767	352	0.4589	414	336	0.4198	171	pdftotext -bbox on out.pdf
+published-shipped	5	full			279	277	745	320	0.4295	207	167	0.4255	98	pdftotext -bbox on out.pdf
+published-fresh-e2e	1	full			296	296	767	352	0.4589	414	336	0.4198	171	pdftotext -bbox on fresh-e2e.pdf
+published-fresh-e2e	5	full			279	277	745	320	0.4295	207	167	0.4255	98	pdftotext -bbox on fresh-e2e.pdf
+run2	1	full	3307	4488	42	273	767	341	0.4446	413	335	0.4198	171	make-observations on src.pdf, otsu=146
+run2	5	full	3307	4409	38	295	745	184	0.2470	192	81	0.2295	68	make-observations on src.pdf, otsu=144
+run2-minus-ASSAME-box	5	full	3307	4409	37	294	745	288	0.3866	335	185	0.3678	98	SENSITIVITY: the same run with its one 1-box junk observation removed
+run3	1	full	3307	4488	42	273	767	341	0.4446	413	335	0.4198	171	make-observations on src.pdf, otsu=146
+run3	5	full	3307	4409	38	295	745	184	0.2470	192	81	0.2295	68	make-observations on src.pdf, otsu=144
+run4	1	full	3307	4488	42	273	767	341	0.4446	413	335	0.4198	171	make-observations on src.pdf, otsu=146
+run4	5	full	3307	4409	38	295	745	184	0.2470	192	81	0.2295	68	make-observations on src.pdf, otsu=144

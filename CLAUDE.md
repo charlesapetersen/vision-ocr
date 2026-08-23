@@ -25,12 +25,33 @@ project's text-layer instruments count only the words Vision returned, so `words
 RECALL and not the writer** (`C30-FORK-2026-08-22.tsv`, adopted out of a stranded worktree): the published
 layer holds **2,101** word boxes against **2,002** words in 235 observations from a fresh run, so
 document-wide the writer publishes *more* than the recogniser returns, and the five named missing strings
-read **0 in the observations and 0 in the published layer**. ⛔ **PAGE 5 IS THE EXCEPTION AND IT IS NOT
-SETTLED** — there the published layer is both shorter (277 words against 295) and barer (0.4295 against
-0.2470) than a fresh run, so a writer drop of order ten lines is not excluded; a draft of this said "the
-fork is settled" flat, and the adversarial review refused it from the same artefact. The control that
-would close it — a second and third whole-page recognition of page 5, which is what settled page 1 — is
-minutes and was **not run**. ⛔ **And the loss is a property of the IMAGE HANDED TO ONE REQUEST, not of the type**: over the
+read **0 in the observations and 0 in the published layer**. ✅ **AND PAGE 5, THE ONE EXCEPTION, IS
+SETTLED THE SAME WAY AS OF 2026-08-23 — the fork is closed on the whole document and C30 is ONE
+mechanism, not two** (`C30-PAGE5-2026-08-23.tsv`, `#### Page 5, settled 2026-08-23`). Three consecutive
+whole-document recognitions are **byte-identical**, so run variance on this path is **0.0000** — which
+also re-labels page 1's 0.0143, whose three members are three different *paths* (published, PDF-render,
+PNG) and not three runs. The shipped output reproduces from today's build on all nine measure columns of
+both pages. ⛔ **98 of page 5's 146-row gap is ONE 115-px observation whose entire text is the nonsense
+word `ASSAME`** — remove it and the fresh page-5 `bareShare` goes 0.2470 → **0.3866** and the gap
+0.1825 → **0.0429**, 3.00x page 1's rather than 12.76x, so `bareShare` credits a BOX and not a READING.
+Only **46** rows, three lines, are a band where the layer is genuinely worse — the ceiling on a writer
+drop is three lines, not the ten this file used to say — and the published layer holds a line
+(`PROVIDING FACTS AND FIGURES FOR COLLECTIVE BARGAINING-THE`, verified at 1:1) that no fresh observation
+contains **and whose words — `COLLECTIVE`, `BARGAINING`, `PROVIDING`, `FACTS`, `FIGURES`, `CONTROLLER` —
+are absent from page 5's fresh text altogether**, so no regrouping and no hyphen join can produce it.
+⛔ **Do NOT restate that as "a writer can only remove": the review of this diff refuted that maxim from
+`SearchableWriter.swift:889-892`, where `joiningHyphenatedWords` rewrites an observation's text and may
+take a word from the NEXT page.** The substring absence is what carries the claim, not the maxim.
+⛔ **The finding worth more than the verdict: production
+recognises `Flattener.flatten`'s REBUILT BITMAPS (`Model.swift:1919`/`:1922`; the bitmap arm is measured
+to have run rather than `Recogniser.swift:141`'s render fallback, because `pdfimages` reads `jbig2` on
+all six pages) while `make-observations`
+recognises a plain render of the source page, so EVERY instrument C30 has used measures a different
+image than the app does** — same 3307x4409 geometry, different pixels. ⚠️ Not claimed: that the writer
+drops nothing (the pipeline's own observations were not captured; replicating the recognition step is the
+`alltext-replica` mistake; and `deduplicated`, `SearchableWriter.swift:706-733`, is a removing path
+nothing here measured), and "byte-identical" is three runs of one build on one machine.
+⛔ **And the loss is a property of the IMAGE HANDED TO ONE REQUEST, not of the type**: over the
 same pixels at the same 400 dpi, page 1's bottom half goes from **84.81% bare to 8.61% — 9.85x less —
 purely by being its own request**, and the two halves return **1.88x** the words the whole page does.
 ⚠️ Three things it does NOT settle: no crop size is established as sufficient (recall keeps improving as the
@@ -849,25 +870,29 @@ omitted all three; the review of C27's sweep counted that as the third such omis
 targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
-`SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv` and
-`C30-FORK-2026-08-22.tsv` — and are
+`SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv`,
+`C30-FORK-2026-08-22.tsv` and `C30-PAGE5-2026-08-23.tsv` — and are
 evidence for one run, not
-claims about the present. ⛔ **THREE of these have no instrument in the tree at all, and all three say so by
+claims about the present. ⛔ **FOUR of these have no instrument in the tree at all, and all four say so by
 decision rather than by neglect**: `GUTTER-CENSUS-2026-08-20.tsv`, whose poppler+python
-reimplementation was deliberately not committed (`18fae9e`); `C30-FORK-2026-08-22.tsv`, whose throwaway
+reimplementation was deliberately not committed (`18fae9e`); `C30-FORK-2026-08-22.tsv` **and
+`C30-PAGE5-2026-08-23.tsv`**, whose throwaway
 Python pass is at `$STATE/c30-instrument/` with a README carrying its inputs' sha256s, because the tool
-version C30 asks for wants a `--self-test` and a `Tools/` commit pays the full suite; and
-`WIDEN-LAYERS-2026-08-22.tsv`, which
+version C30 asks for wants a `--self-test` and a `Tools/` commit pays the full suite (the page-5 pass is
+`page5.py` there, and it `exec`s `artefact.py`'s own function block rather than copying it, so the two
+cannot drift — which also means it is unreproducible from the tree for the same reason its parent is);
+and `WIDEN-LAYERS-2026-08-22.tsv`, which
 came from a `Flattener` override seam C28 rejected — its own header says so, and the seam survives only
 outside the tree as
 `$STATE/rescue/REJECTED-not-on-main-vo-20260822-014509-85956.patch.bak`. ⚠️ **`SUBBARPIX-2026-08-22.tsv`
 is deliberately NOT in that count** and a reader will reach for it: it added no tool either, but it is
 reproducible from tools that ARE committed — an `awk` filter on `INKBAR-2026-08-19.tsv`, one `pdftoppm` a
-page and `score-shape-term`'s `SHAPEDUMP`. The three named above are reproducible from nothing in the
+page and `score-shape-term`'s `SHAPEDUMP`. The four named above are reproducible from nothing in the
 tree, which is the line this count draws. ⚠️ A first draft called
 `WIDEN-LAYERS-2026-08-22.tsv` "the one file here whose instrument is not in this repository"; the review of
 that diff found `GUTTER-CENSUS-2026-08-20.tsv` in the same list, and `C30-FORK-2026-08-22.tsv` made it
-three later the SAME DAY, 2026-08-22 — so this count has been wrong twice in one day and is worth
+three later the SAME DAY, 2026-08-22 — so this count has been wrong twice in one day, went to **four** on
+2026-08-23 with `C30-PAGE5-2026-08-23.tsv`, and is worth
 re-deriving from the list rather than read. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls
 born-digital.

@@ -1527,15 +1527,24 @@ happens.**
 - [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ✅ **STEP 1, THE FORK, IS
-      SETTLED ON THE BLOCK IT WAS OPENED ON as of 2026-08-22 — page 1's void is RECOGNISER RECALL and not
-      the writer. DO NOT RE-RUN THAT PART**; ⛔ but **PAGE 5 IS NOT SETTLED and closing it is the FIRST
-      thing to do here** — one `make-observations` invocation, twice, on page 5 alone, because there the
-      published layer is shorter (277 words against 295) and barer (0.4295 against 0.2470) than a fresh
-      run and a writer drop is not excluded. It is minutes and it decides whether C30 is one mechanism or
-      two. See `BUGS.md` C30 `#### What page 5 leaves open`. The evidence for both halves is in the ticked
-      `c30-fork` sub-box below, in `BUGS.md` C30 `#### The fork, settled 2026-08-22`, and in
-      `C30-FORK-2026-08-22.tsv`. This line used to tell you to settle the fork first and to say the mechanism
-      was undiagnosed; the first is now half done and the second is false. ⛔ **What the fork LEAVES is a different job from the one this box
+      SETTLED ON THE WHOLE DOCUMENT — page 1 on 2026-08-22 and PAGE 5 ON 2026-08-23. It is RECOGNISER
+      RECALL and not the writer, C30 is ONE mechanism, and DO NOT RE-RUN ANY OF IT.** ⚠️ **What that does
+      NOT say: that the writer drops nothing.** The pipeline's own observations were never captured and
+      `deduplicated` (`SearchableWriter.swift:706-733`) is an unmeasured removing path, so a PARTIAL drop
+      on top is not excluded — what the page-5 run moved is the ceiling, from "order of ten lines" to
+      three. The evidence is in
+      the two ticked sub-boxes below, in `BUGS.md` C30 `#### The fork, settled 2026-08-22` and
+      `#### Page 5, settled 2026-08-23`, and in `C30-FORK-2026-08-22.tsv` and `C30-PAGE5-2026-08-23.tsv`.
+      This line used to say page 5 was open and to name its control as the first thing to do; that control
+      ran, and it also said the mechanism was undiagnosed, which is false.
+      ⛔ **THE ONE THING FROM PAGE 5 THAT CHANGES HOW YOU WORK HERE: production recognises
+      `Flattener.flatten`'s REBUILT BITMAPS (`Sources/Model.swift:1919`/`:1922`), and `make-observations`
+      recognises a PLAIN RENDER of the source page.** Same geometry, different pixels — so every
+      instrument this entry has used measures a different image than the app does, and a new one that
+      starts from `make-observations` inherits that. ⛔ **And do not quote `bareShare` as a content
+      measure**: on page 5 one 115-px observation reading the single word `ASSAME` accounts for 98 of the
+      146-row published-vs-fresh gap, and removing it moves the fresh share 0.2470 → 0.3866. It credits a
+      box, not a reading. ⛔ **What the fork LEAVES is a different job from the one this box
       was written for**: the loss is a property of the image handed to ONE REQUEST (page 1's bottom half goes
       84.81% bare → 8.61% purely by being its own request), so the candidate fix is TILING — which
       `Recogniser` has no seam for and which nothing has priced in time. And if the mechanism is a
@@ -1552,8 +1561,9 @@ happens.**
       app's central promise and the owner reports seeing it on other documents too. Owner's call.
   - [x] **c30-fork** — **DONE 2026-08-22. The fork is settled on the block it was opened on: page 1's void
         is RECOGNISER RECALL, not the writer — and the loss is a property of the image handed to one
-        request, not of the type.** Do not re-run that part; ⛔ **page 5 is the exception, is NOT settled,
-        and is the umbrella item's first step** (see above and `#### What page 5 leaves open`).
+        request, not of the type.** Do not re-run that part; ✅ **page 5 was the exception and it is
+        settled too, 2026-08-23 — see the `c30-page5` sub-box below**; this line read "is NOT settled,
+        and is the umbrella item's first step" until then.
         `C30-FORK-2026-08-22.tsv` (18 rows, 15 columns) and `BUGS.md` C30
         `#### The fork, settled 2026-08-22` carry it. Three things say the recogniser never returned the
         text: the published layer holds **2,101** word boxes against **2,002** words in 235 observations
@@ -1592,6 +1602,53 @@ happens.**
         are 3308 px where the recogniser's own render is 3307), and `artefact.py` **alone** regenerates the
         TSV byte-identically — the other two scripts are the earlier exploratory pass.
         (context: BUGS.md C30 `#### The fork, settled 2026-08-22`)
+  - [x] **c30-page5** — **DONE 2026-08-23. The control the fork owed was run and page 5 settles the same
+        way page 1 did: the gap is two recognitions of two DIFFERENT IMAGES, not the writer, so C30 is ONE
+        mechanism.** Do not re-run it. `C30-PAGE5-2026-08-23.tsv` (11 rows, 15 columns, the fork file's
+        shape) and `BUGS.md` C30 `#### Page 5, settled 2026-08-23` carry it. **(1)** Three consecutive
+        whole-document `make-observations` runs are **byte-identical** (one sha256 for all three), so run
+        variance on this path is **0.0000** — and page 1's published 0.0143 is therefore not run noise
+        either: its three members are three different *paths*. **(2)** A full
+        `makeSearchablePDF(rebuild:true, .auto)` today reproduces the shipped `.ocr.pdf`'s layer on all
+        nine measure columns of **both** pages, so no build or settings drift is in the way. **(3)** The
+        146-row gap decomposes: **98 rows** are a band the fresh run "covers" with ONE 115-px observation
+        reading the single word `ASSAME` (seven lines of type at 1:1, lost by **both** paths); **46 rows**
+        are the one band where the layer is genuinely worse, three prose lines with the published layer's
+        own lines running straight from `yMin` 423 to 483; the rest is boundary jitter. Removing the junk
+        box moves the fresh share 0.2470 → **0.3866** and the gap to **3.00x** page 1's, not 12.76x.
+        **(4)** The published layer holds a line — `PROVIDING FACTS AND FIGURES FOR COLLECTIVE
+        BARGAINING-THE`, verified at 1:1 — that **no** fresh observation contains, and a writer can only
+        remove — ⛔ NOT because "a writer can only remove", a maxim this diff's own review refuted from
+        `SearchableWriter.swift:889-892`, but because those WORDS are absent from page 5's fresh text
+        altogether, so no regrouping or hyphen join reaches them. **(5)** `Sources/Model.swift:1919`
+        and `:1922` say why, and the bitmap arm is MEASURED to have run rather than
+        `Recogniser.swift:141`'s render fallback (`pdfimages` reads `jbig2` on all six pages):
+        production recognises `Flattener.flatten`'s
+        rebuilt bitmaps, `make-observations` a plain render.
+        ⚠️ **Not claimed**: that the writer drops nothing (the pipeline's own observations were not
+        captured — replicating the recognition step in an instrument is the `alltext-replica` mistake), so
+        a partial drop on top is not excluded; what moved is the ceiling, from "order of ten lines" to
+        **three**. And "byte-identical" is three runs of one build on one machine.
+        ⚠️ Instrument at `$STATE/c30-instrument/page5.py`, not in `Tools/` for the same reason the fork's
+        pass is not; it `exec`s `artefact.py`'s function block instead of copying it, and exits non-zero
+        if the cut line or the junk observation it re-scores without is gone.
+        ✅ Page 5 also turns out to be a **second instance of C30's founding symptom**: **23** lines of
+        crisp 1951 type have no text layer over them, **13** of them missed by *both* paths, counted by
+        eye on exact crops band by band (5 / 7 / 3 / 4 / 4). ⚠️ Count per band and by eye: at 100 dpi the
+        interline gaps clear `INK_ROW_FRACTION`, so every band reads as one run, and a draft that lumped
+        two bands together counted a line **both** paths recognised.
+        (context: BUGS.md C30 `#### Page 5, settled 2026-08-23`)
+- [ ] **obs-drift-comment** — **one comment, and it is the most-read statement of a belief measured false
+      on 2026-08-23.** `Tools/make-observations.swift:16-22` says going through `Recogniser.extract` means
+      "the instrument's input and the product's output **cannot drift apart**". True of Extract Text ▸
+      JSON, FALSE of the searchable pipeline: production recognises `Flattener.flatten`'s rebuilt bitmaps
+      (`Sources/Model.swift:1919`/`:1922`) and `extract` recognises `Recogniser.render`'s plain render of
+      the source page — same geometry, different pixels. Every C30 instrument is built on this tool, so
+      the comment is what a next reader trusts. ⚠️ **It is a `Tools/` file, so the commit pays the FULL
+      SUITE (40-90 min)** — which is why 2026-08-23's docs-only page-5 commit could not carry it and put
+      the correction in `BUGS.md`, `ARCHITECTURE.md` and `CLAUDE.md` instead. Ride it along on the next
+      commit that runs the suite for another reason rather than paying a suite for a comment.
+      (context: BUGS.md C30 `#### Page 5, settled 2026-08-23`)
 - [ ] **born-digital-page** — a born-digital cover page is rasterised to 1-bit and re-OCR'd because the
       digital-text test votes per DOCUMENT. On the JSTOR download this was found on, page 1's vector text,
       its embedded fonts and a 197x267 colour JPEG became one 1-bit raster, and the text layer went from

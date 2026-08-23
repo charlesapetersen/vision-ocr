@@ -40,6 +40,25 @@ two different sets that the review of `0707699`'s own diff refused, where the fi
 per-page cost at 2x. **Three** other copies were already right — the section below, `CLAUDE.md` and
 `Tools/README.md` — so this summary was the only stale one, which is the failure mode this header is most
 prone to and the reason its own instructions say to move it in the same commit.
+✅ **`C30`'s FORK IS CLOSED ON THE WHOLE DOCUMENT as of 2026-08-23 — page 5, the one page
+`#### The fork, settled 2026-08-22` did not settle, settles the same way page 1 did, so C30 is ONE
+mechanism and not two.** `#### Page 5, settled 2026-08-23` and `C30-PAGE5-2026-08-23.tsv`: three
+consecutive whole-document recognitions are **byte-identical** (run variance **0.0000**, which also
+re-labels page 1's 0.0143 — that spread is three different *paths*, not three runs), the shipped output
+reproduces from today's build on all nine measure columns of both pages, **98 of page 5's 146-row gap is
+one 115-px observation whose entire text is `ASSAME`** (sensitivity: remove it and the gap falls
+0.1825 → **0.0429**, 3.00x page 1's rather than 12.76x), and the published layer holds a line that no
+fresh observation contains **and whose words are absent from page 5's fresh text altogether**, so no
+regrouping or hyphen join can have produced it. ⚠️ **A partial writer drop on top of that is NOT
+excluded** — the pipeline's own observations were never captured, and `deduplicated` is a removing path
+nothing here measured; what moved is the ceiling, from "order of ten lines" to **three**. ⛔ **The finding
+worth more than the verdict:
+production recognises `Flattener.flatten`'s REBUILT BITMAPS (`Model.swift:1919`/`:1922`, and `pdfimages`
+reads `jbig2` on all six pages, so the bitmap arm demonstrably ran rather than
+`Recogniser.swift:141`'s render fallback) while
+`make-observations` recognises a plain render, so every instrument C30 has used measures a different
+image than the app does.** C30 stays **OPEN**: the fork is not the fix, and **23** lines of clean 1951
+type on page 5 have no text layer over them at all — **13** of them missed by *both* paths.
 **`C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
 (`textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's decision on a complete campaign, so the 16
 corpus pages the sweep named keep their tone layers at the caller's factor) and the next day the
@@ -8860,10 +8879,19 @@ He adds that he has seen the same on other PDFs. Measured below and CONFIRMED. �
 ON THE BLOCK IT WAS OPENED ON as of 2026-08-22 — page 1's void is RECOGNISER RECALL, not the writer —
 and the mechanism has its first measurement: the loss is a property of the IMAGE HANDED TO ONE REQUEST,
 not of the type. See `#### The fork, settled 2026-08-22`. This preamble said "Mechanism NOT diagnosed"
-until then.** ⚠️ **Page 5 is the one page where it is NOT settled**, and a draft of that section said
-"the fork is settled" flat: there the published layer is both shorter and barer than a fresh
-recognition, so a writer drop is not excluded on it. The section's `#### What page 5 leaves open` names
-the one control that would close it and says why it was not run.)*
+until then.** ✅ **AND PAGE 5, THE ONE PAGE THAT SECTION DID NOT SETTLE, IS SETTLED 2026-08-23 THE SAME
+WAY — so the fork is closed on the whole document and C30 is ONE mechanism, not two.** See
+`#### Page 5, settled 2026-08-23`: three consecutive whole-document recognitions are **byte-identical**
+(run variance 0.0000, not "up to 0.18"), the shipped output reproduces from today's build on all nine
+measure columns, **98 of page 5's 146-row gap is one 115-px observation reading the single word
+`ASSAME`**, and the published layer holds a line whose words are **absent from page 5's fresh text
+altogether**, so no regrouping or hyphen join over the fresh observations can produce it and the two are
+different recognitions. ⚠️ **Not excluded: a PARTIAL writer drop on top of that** — the pipeline's own
+observations were never captured — but the ceiling falls from "order of ten lines" to **three**.
+⛔ **The finding worth more than that verdict: production
+recognises `Flattener.flatten`'s REBUILT BITMAPS and `make-observations` recognises a plain render, so
+every instrument this entry has used measures a different image than the app does.** This preamble read
+"Page 5 is the one page where it is NOT settled" until 2026-08-23.)*
 
 **The document.** `1951 - Briefer Book Notes.pdf` (*Management Review* 40:3, March 1951; producer
 `Apache FOP 1.0`; 6 pages; **not** in `testdocs/`). ⛔ **The page size is NOT uniform and this entry said
@@ -8920,6 +8948,9 @@ them are blind to a word it never returned.** Read from the source:
 - `Tools/probe-line-edges.swift` — *"for each recognised line on ONE page: is its first word
   selectable"*.
 
+⛔ **And as of 2026-08-23 they do not even do that cleanly**: production recognises the rebuilt bitmap
+while every one of these re-renders the page, so "the recogniser" they measure against is not the run
+that produced the layer — `#### Page 5, settled 2026-08-23`.
 That is four instruments measuring **the writer against the recogniser**, and none measuring **the
 recogniser against the page**. `probe-line-coverage`'s own header already says the 15% rect "exists in
 three places… one idea in three shells, not three instruments"; this entry is the next level of that
@@ -8934,7 +8965,8 @@ entry; it is silent about it.**
 re-run that — `#### The fork, settled 2026-08-22` carries it, with `C30-FORK-2026-08-22.tsv`.** ⚠️ **Page
 5 still needs the run this section describes**, and it is the one page where the first bullet is live:
 its published layer is shorter and barer than a fresh recognition. This section is kept
-as written because it is the reasoning the answer was got by, and because page 5 has not had it yet.
+as written because it is the reasoning the answer was got by. ⚠️ It also said "and because page 5 has
+not had it yet" until 2026-08-23; page 5 has had it now — `#### Page 5, settled 2026-08-23`.
 
 **Did Vision not return those words, or did the writer drop them?** The two have different fixes and
 nothing measured here distinguishes them. `Tools/make-observations.swift` dumps what the recogniser
@@ -8953,7 +8985,7 @@ idea (that the skipped type is simply smaller) was **inconclusive and is not evi
 measured *taller* than covered ones, but the segmentation that produced both merges lines into blocks
 up to 423 px, so it compared block sizes rather than type sizes. Recorded so nobody quotes it.
 
-#### The fork, settled 2026-08-22 — page 1's void is recogniser recall, the scope of one request is why, and page 5 is the page it does not settle
+#### The fork, settled 2026-08-22 — page 1's void is recogniser recall, the scope of one request is why, and page 5 is the page it does not settle (page 5 SETTLED separately 2026-08-23, two sections down)
 
 **Artefact: `C30-FORK-2026-08-22.tsv`, 18 rows, 15 columns — run at 07:39-07:51 on 2026-08-22 and
 committed the same day, when this section was adopted out of a stranded worktree.** ⚠️ Read the file,
@@ -9002,7 +9034,7 @@ on the third alone.
    at 0.4589 against page 5's 0.4295**. A draft said "the barest of the six" unqualified, which is the
    very mistake the run-definition warning below is about. **A ratio is a claim about its own set** — the same lesson C28 records
    against the stencil-ink ratio — and this one is a claim about the document, not about page 5. See
-   `#### What page 5 leaves open`.
+   `#### What page 5 leaves open`, and then `#### Page 5, settled 2026-08-23`, which answers it.
 2. **The named text is absent from BOTH.** `General`, `PUBLIC OPINION`, `Cantril`,
    `ECONOMICS OF NATIONAL`, `Lincoln` — **0 occurrences in the observations, 0 in the published
    layer**, and 1 each in the crop run below. ⚠️ Counted over each run's *joined* observation text
@@ -9107,7 +9139,13 @@ whose answer depends on how you tokenise cannot separate a writer drop
 from two runs of the same recogniser, and it reads both directions at once regardless. The fork rests on
 the count bound, the string absence and the crop test, and not on that diff.
 
-#### What page 5 leaves open
+#### What page 5 leaves open — ✅ ANSWERED 2026-08-23 by the section after this one
+
+⚠️ **This section is kept as the QUESTION, not as the answer.** Its control was run on 2026-08-23 and
+page 5 settles the same way page 1 did: the gap is two recognitions of two *different images*, not the
+writer. Two of the figures reasoned out below do not survive that run — "on the order of ten lines of
+body type" over-estimates by about 3x, and the **12.76x** ratio is carried by one junk observation.
+Read `#### Page 5, settled 2026-08-23` before quoting anything here.
 
 ⛔ **Page 5 is the one page of the six where the writer is NOT exonerated, and the draft of the section
 above claimed the fork settled without saying so.** Two columns of the same artefact:
@@ -9135,10 +9173,171 @@ carries "the page-5 gap cannot be run variance", so it is worth dividing rather 
 recognition of page 5, exactly what was done for page 1. It is one `make-observations` invocation per
 run and it was not asked for, because the session doing the work was stopped mid-flight and the section
 was written from what it already had. **Whoever takes C30 next should run it first** — it is minutes,
-and it decides whether this entry is one mechanism or two.
+and it decides whether this entry is one mechanism or two. ✅ **It was run 2026-08-23. Next section.**
+
+#### Page 5, settled 2026-08-23 — the gap is two recognitions of two DIFFERENT IMAGES, and 98 of its 146 rows are one junk box
+
+⛔ **THE WRITER IS NOT IMPLICATED ON PAGE 5 EITHER, so C30 is ONE mechanism and not two.** The control
+the section above asked for was run — `C30-PAGE5-2026-08-23.tsv`, 11 rows, 15 columns, same shape and
+same measure as `C30-FORK-2026-08-22.tsv` — and it went further than the section asked, because the
+first result made the rest cheap.
+
+**1. Run-to-run variance on this path is 0.0000, not small.** Three consecutive whole-document
+`make-observations` runs from one build produced **byte-identical** JSON (sha256
+`ce9f94fc007e7ccc4b8479df9279a48c9058ee569f5ded2da64acc743e8ffaa2` on all three), so `bareShare` spread
+over the three is **0.0000** on page 1 and **0.0000** on page 5. ✅ The section's refusal of the draft's
+"run variance" explanation was right, and now has a number under it rather than an argument.
+⛔ **But it also corrects what page 1's 0.0143 IS.** That spread is not run noise: its three members are
+the published layer (0.4589), the PDF-path fresh run (0.4446) and the PNG-path fresh run (0.4563) —
+three *different paths*, one of them the app's own. Calling it "the variance that IS measured" invited
+the reading that repeating a run moves the number. It does not move at all. ⚠️ **Two consequences, and
+they pull opposite ways — hold both.** The comparison is *better founded* than the section claimed,
+because 0.0143 turns out to be the same kind of quantity as page 5's 0.1825 (published against fresh) and
+not a noise floor of a different kind. But its *magnitude* is not: point 3 below shows 0.1825 is carried
+by one junk box and 0.0143 is not, so **12.76x is a real like-for-like ratio of two inflated-and-clean
+numbers, and 3.00x is the one to quote.**
+
+**2. The artefact is reproducible end to end from today's build, so no build or settings drift is
+in the way.** A full `OCRModel.makeSearchablePDF(rebuild: true, rebuildMode: .auto)` over the same
+source produced a text layer whose nine measure columns are identical to the shipped
+`1951 - Briefer Book Notes.ocr.pdf`'s on **both** pages. **The nine** — every column of the file except
+the row key `page`, the constant `window`/`note`, and the two `reqImg*` a layer row has no value for —
+are `boxes`, `words`, `inkRows`, `inkRowsInVoid`, `bareShare`, `largestVoid`, `largestInkVoid`,
+`bareShareInkRuns`, `longestInkRun`; page 1 against page 5 they read 296/279, 296/277, 767/745, 352/320,
+0.4589/0.4295, 414/207, 336/167, 0.4198/0.4255, 171/98. Same five bare bands on page 5, too. ⚠️ The two PDFs are not byte-identical (they differ in
+file identity, same 552,440 bytes); the claim is over the measured columns. ✅ Two more controls ride
+with it: the published rows reproduce `C30-FORK-2026-08-22.tsv`'s on all nine measure columns on both
+pages, and the fresh-observation rows reproduce its `recogniser-observations` rows on all nine — from a
+different build, on the day after the artefact's own run.
+
+**3. The 146-row gap decomposes exactly, and 98 of it is a box that reads one nonsense word.** The
+≥20-row bare ink bands on page 5, in 100-dpi rows: published `(129,196) (202,299) (435,480) (810,861)
+(889,941)` = **317** inked rows; fresh `(124,191) (811,861) (890,941)` = **171**. So:
+
+   - **(202,299), 98 rows — no content difference at all.** The fresh run "covers" this band with **one
+     observation, 115.4 px tall on a 1,103-px page, whose entire text is `ASSAME`.** Read at 1:1 the band
+     holds **seven lines** of crisp body type, the whole of the *"STORES AND UNIONS: A Study of the Growth
+     of Unionism in Dry Goods and Department Stores…"* book note. **Both** paths lost that text. Only the
+     box differs. ⚠️ Its neighbour `(129,196)`, **five** lines and the whole of the *"CONTROLLER'S ROLE. A
+     survey by Earl Brooks…"* note, is bare in **both** sets and so contributes nothing to the gap; rows
+     197-201 between them hold **0** dark pixels, the paragraph break. A draft of this bullet had the two
+     notes as one eleven-line band and attributed both to the junk box.
+   - **(435,480), 46 rows — the one band where the published layer is genuinely worse.** Three fresh
+     observations of real prose, read at 1:1 as three full lines (*"within the greater Los Angeles area.
+     Includes data on the size, composition and organi- / zational setup of the industrial engineering
+     department, practices in developing and applying / standards as a basis for wage incentives…"*),
+     and the published layer has no word box there: its lines run straight from `yMin` 423 to `yMin` 483,
+     which is the line before and the line after.
+   - the remaining **2** rows are one extra row apiece on the last two shared bands (`810` against `811`,
+     `889` against `890`); the first shared band is **68 rows in both**, sitting five rows lower in the
+     published set. `0 + 98 + 46 + 1 + 1 = 146`, exactly.
+
+   ✅ **Sensitivity, measured rather than argued**: re-scoring the same run with that one junk box
+   removed takes page 5's fresh `bareShare` **0.2470 → 0.3866** and `longestInkRun` **68 → 98** — equal to
+   the published layer's 98. The published-minus-fresh gap falls **0.1825 → 0.0429**, which is **3.00x**
+   page 1's 0.0143, not 12.76x. ⛔ **So `bareShare` and `bareShareInkRuns` credit a BOX, not a READING** —
+   one observation of one nonsense word counts seven lines of type as covered — and that is what carried
+   the previous section's headline ratio. Quote the bands, not the share. It is the same lesson as the
+   stencil-ink ratio and as the run of shares C28 has refused.
+   ✅ **The control that makes 3.00x a fair comparison: page 1 has no junk box to remove.** Its tallest
+   observation is **26.0 px with 5 words** on a 1,123-px page, against page 5's **115.4 px with 1** on a
+   1,103-px page — 4.4x taller and holding one word against five. So page 1's 0.0143 needs no
+   correction and page 5's 0.1825 does, which is exactly why the ratio moves and the numerator is the
+   only thing that moves it.
+
+**4. The direction that decides it: the published layer holds a line NO fresh observation contains.** Of
+page 5's 38 fresh observations, **34 match a published line**; the four that do not are the `ASSAME` box
+and the three prose lines of (435,480). Of the published layer's 33 lines, **one matches no fresh
+observation** — `PROVIDING FACTS AND FIGURES FOR COLLECTIVE BARGAINING-THE` at `yMin` **110**, verified
+at 1:1 as real ink at the top of the page. ⛔ **A draft of this bullet carried the maxim "a writer can
+only remove; it cannot invent a line", and that is FALSE of this writer** — the review of this diff
+refuted it from `Sources/SearchableWriter.swift:889-892`, where `joiningHyphenatedWords` rewrites an
+observation's text, on by default, and `compose` (`:303`) offers it the *next page's* observations as
+continuation candidates. The function's own doc says so: *"no path here can drop text, only add it."*
+✅ **The claim survives on a narrower and measured footing instead: the published line's WORDS ARE NOT IN
+THE FRESH PAGE-5 TEXT AT ALL.** Case-insensitive substring, `COLLECTIVE`, `BARGAINING`, `PROVIDING`,
+`FACTS`, `FIGURES` and `CONTROLLER` each read **absent**. So no tokenisation, no line-versus-fragment
+merge and no hyphen join over the fresh observations can produce it — hyphen joining splices existing
+observation text and takes one word from the next page, not an eight-word heading — and the objection
+that a published "line" is `pdftotext`'s grouping while an observation is a Vision fragment cannot reach
+it either, because the characters are not there to regroup. ⚠️ The three words do occur **elsewhere in
+the document**, so the absence is page 5's, which is the page the comparison is about. That is why the
+verdict rests on the substring test and not on the 34-of-38 alignment, whose unit mismatch the review
+rightly refused: 34 matched observations map onto 32 matched lines, so many-to-one merging is live in
+that comparison and this entry has already refused a tokenisation-dependent diff two sections above.
+So the published layer is the product of a *different recognition*, and page 5's disagreement runs in
+**both** directions — which is recall, not a drop.
+
+**5. Why the two recognitions differ is production's own documented behaviour, not an inference about
+settings.** ⛔ **It IS conditional, and the review of this diff was right to say so — but the condition is
+MEASURED here rather than assumed.** `Model.swift:1919` gates the bitmap path on `willRebuild`, and
+`Recogniser.recogniseDocument` falls back at `Recogniser.swift:141` to `render(page:settings:)` — the very
+function `make-observations` uses — when `bitmaps` is empty, which would collapse this whole bullet. It
+was not empty: `pdfimages -list` reads **`jbig2` on all six pages** of both the shipped output and the
+fresh end-to-end one, and JBIG2 is produced only from those bitmaps, so the bitmap arm demonstrably ran
+on this document. With that established, `Sources/Model.swift:1922-1924` says what it is — *"The page
+bitmaps are what recognition reads now, so the pixels
+drawn onto the page are exactly the pixels Vision is given"* — the pipeline recognises
+`Flattener.flatten`'s **rebuilt page bitmaps**. `Recogniser.extract`, which is what `make-observations`
+calls, recognises `Recogniser.render(page:settings:)`, the **plain render of the source page**. Same
+geometry (both 3307x4409 at 400 dpi on page 5, from the observations' own `reqImgW`/`reqImgH` and from
+`pdfimages -list` on the output), different pixels. Under this entry's own established mechanism — recall
+is a property of the image handed to one request — a disagreement in both directions is exactly what two
+different images predict. ⚠️ Both paths take `Prefs.Snapshot.current()`, so settings are not the
+difference.
+
+⛔ **WHAT THIS DOES NOT CLAIM.** It does not prove the writer drops *nothing*: the pipeline's own
+observations were not captured (nothing exposes them, and replicating the recognition step in an
+instrument is the `alltext-replica` mistake), so a *partial* drop layered on top of the image difference
+is not excluded. ⚠️ **And `SearchableWriter` has a documented removing path this section did not
+measure**: `deduplicated` (`SearchableWriter.swift:706-733`) drops an observation whose text equals a
+kept one within `dx < h` and `dy < h * duplicateBaselineFraction`, so some part of the 295→277 word gap
+may be the writer doing its job on the *same* recognition rather than a different one. Raw against
+`prepared()` counts on the fresh observations would size it; that was not run. What moved is the ceiling: the section above put it at "on the order of ten lines"; the
+most the artefact now leaves room for is **three lines**, and those three are equally explained by (4)
+and (5). ⚠️ One document, one page, one machine; "byte-identical" is three consecutive runs of one build
+against one input and says nothing about Vision's determinism in general.
+
+⛔ **AND THE FINDING WORTH MORE THAN THE VERDICT: EVERY C30 INSTRUMENT BUILT ON `make-observations` IS
+MEASURING A DIFFERENT IMAGE THAN PRODUCTION RECOGNISES.** That is (5) turned on this entry's own tools.
+The fork's page-1 conclusion survives it — both paths miss the same 171 rows, and the three whole-page
+runs that settled it were all on the plain-render path — but the published-against-fresh *comparison*
+that runs through both sections is not like for like, and neither section said so. **Anything built for
+`#### What a fix has to satisfy` must recognise the rebuilt bitmap, or measure a page production never
+saw.** ✅ It also puts a candidate mechanism on the table that this entry did not have: production hands
+Vision a **flattened** page where the instrument hands it a grey render. It is a candidate and nothing
+more — page 1's void is missed by the plain render too, so thresholding is not the whole of C30.
+
+✅ **And page 5 is a second instance of C30's founding symptom, not merely a fork question.** Counted by
+eye on exact crops of a `pdftoppm -r 300` render, band by band: `(129,196)` **5**, `(202,299)` **7**,
+`(435,480)` **3**, `(810,861)` **4**, `(889,941)` **4** — so **23 lines** of crisp 1951 body type have no
+text layer over them in the published output, and **13 of the 23** (the 5 and the 8) are bare in
+**both** paths. ⚠️ Counted by eye because a row-ink threshold will not do it: at 100 dpi the interline
+gaps of this type still clear `INK_ROW_FRACTION`, so all five bands read as **one** run each; sweeping
+the fraction from 2% to 20% moves `(202,299)` over 6/7/7/8 and `(810,861)` over 2/4/4/3. ⛔ A draft of
+this paragraph said "nine" for `(810,941)` and "twenty" for the total: the ninth line there is
+*"SALES PROMOTION. By Alfred Gross and Dale Houghton. The Ronald Press"*, which sits in the 27-row gap
+**between** the two bands and which both paths **did** recognise. It is the line that proves the count
+has to be per band.
+
+**Instrument.** `$STATE/c30-instrument/page5.py`, beside the fork's own throwaway pass and deliberately
+not in `Tools/` for the same reason (a `Tools/` commit pays the full suite; the tool version with a
+`--self-test` is still the step this entry asks for). It does **not** re-implement the measure: it
+`exec`s everything above `artefact.py`'s `rows = []` line, so the two passes cannot drift, and it exits
+non-zero if that line is gone or if the junk observation it re-scores without is not there to remove.
+⚠️ Its `published-*` rows leave `reqImgW`/`reqImgH` empty — a layer has no request — so `column -t`
+collapses them and the rows *look* short. All 11 rows are 15 fields; the same trap the fork file's
+`scope-void-crop` row carries.
 
 #### What a fix has to satisfy
 
+- ⛔ **It must recognise the REBUILT BITMAP, not a re-render.** Added 2026-08-23 out of
+  `#### Page 5, settled 2026-08-23`: production recognises `Flattener.flatten`'s bitmaps and
+  `Recogniser.extract` recognises `Recogniser.render`'s plain render of the source, so a tool built the
+  obvious way measures a page production never saw. `Tools/score-corpus.swift:114` already has this bug
+  in the other direction — it hardcodes `recogniseDocument(visible: out, bitmaps: [])`, forcing the
+  render fallback, so its `words=` divides a layer made from the rebuilt bitmap by a recognition of a
+  re-render of the output.
 - **An instrument that starts from the PAGE, not from the observations.** Whatever it is, it must be
   able to report a page as bad while `words=` reads 100%, or it has inherited the blind spot. The
   ink-void measure above is a starting shape and is deliberately crude; the tool version belongs in
@@ -13423,7 +13622,11 @@ the helper: the helper writes one file *per page*, a top-level object, not the a
 pages the probes decode. **`Tools/make-observations.swift`** is the missing step, and it
 is a wrapper rather than a new measurement — `Recogniser.extract` at `textFormat = .json`
 already emits exactly the array the probes decode, so the instrument's input is the same
-bytes a user gets from Extract Text ▸ JSON and the two cannot drift. It refuses, at exit
+bytes a user gets from Extract Text ▸ JSON and the two cannot drift. ⚠️ **That is a claim about
+Extract Text, NOT about the searchable pipeline** — measured 2026-08-23, `Recogniser.extract`
+recognises a plain render while `makeSearchablePDF` recognises `Flattener.flatten`'s rebuilt
+bitmaps, so this tool's observations are not the ones the text layer was written from
+(C30 `#### Page 5, settled 2026-08-23`). It refuses, at exit
 3, rather than hand a probe an empty file to report a clean run over.
 
 **6 · There are three instruments, not four**, and the documents said four in three

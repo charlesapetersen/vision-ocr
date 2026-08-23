@@ -56,7 +56,10 @@ from [`makeSearchablePDF`](Sources/Model.swift#L438):
    because it needs the word boxes. R35, R38 and R49–R53 all live there, and neither it
    nor the colour route appeared anywhere in this map until 2026-08-14.
 6. **Recognise** — [`Recogniser.recogniseDocument`](Sources/Recogniser.swift),
-   over the bitmaps step 5 just wrote. Two routes, and they produce identical
+   over the bitmaps step 5 just wrote — **or, when `bitmaps` is empty, over a fresh
+   `Recogniser.render` of the visible PDF (`Recogniser.swift:141`), which is a
+   different image; BUGS.md C30 `#### Page 5, settled 2026-08-23` turns on which arm
+   runs. Two routes, and they produce identical
    observations because they run the same function:
    - **In a helper process** (`recogniseViaHelper` → `visionocr-recognise`) when
      the batch has something to overlap with, which is `helperIsWorthIt`: more
