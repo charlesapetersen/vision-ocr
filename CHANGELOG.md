@@ -14,6 +14,19 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+**A page with unrecognised words on it is no longer treated as a page of nothing but text.** When every
+mark on a page is text the recogniser boxed, both tone layers are stored at an eighth and a sixteenth of
+the page's resolution — which is the right thing to do, and was being done to pages that also carried
+*type the recogniser had missed*. Words present in your scan then survived only in that shrunk
+background, illegible, and in no text layer either. The layering decision now also asks whether the ink
+outside the recognised words is *shaped* like lines of type, at the page's own type scale, and keeps the
+resolution when it is (BUGS.md C28). Measured over the corpus: about 18 pages in 16,987 stop being
+shrunk, for roughly 2.7 MB more output in total, and 13 of the 16 pages measured losing content keep it.
+No page loses anything it kept before — the change can only ever store a page at *more* resolution than
+it did, never less. Three pages that lose only a hand-made mark — a pencilled annotation, an inked
+margin number — are still not covered, and one of those is invisible to this signal for a reason
+recorded in the register.
+
 **"Smallest files" no longer promises that nothing is lost from your photographs.** The setting's
 description used to end *"though nothing is lost from them"*, and that is measurably untrue: on a
 scanned page whose small print falls outside the words the recogniser boxed, a third of the

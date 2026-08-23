@@ -1300,6 +1300,38 @@ happens.**
       the local variant. **Nothing is wired** — `Sources/` untouched, so no mutant and no
       `fault-inject.sh` case owed — and the `textRegionMask` seam is still unpriced at **any** scale.
       (context: BUGS.md C28 `#### The corpus figure`)
+- [x] **c28-decide-and-wire** — **DONE 2026-08-22. C28's decision was taken and the shape term is WIRED
+      into `pageIsAllText()` as a third refusal condition.** Do not re-decide it; `BUGS.md` C28
+      `#### THE DECISION` and `#### The wiring, SHIPPED` carry the reasoning, the three rejected
+      alternatives and every measurement. The entry is now `HALF FIXED`, which is why the **C28 box above
+      stays `[ ]`**: three hand-made marks are still unprotected and one of them
+      (`_1939_Former students` p2, `outPx` 0) is unreachable from this seam at any value of any constant.
+      **The seam is the LAYERING one, not `textRegionMask`.** The argument is the direction of failure and
+      not the price: `bgFactor = allText ? max(caller, 8) : caller`, so a term that only ever refuses the
+      verdict can only ever store a page at *more* resolution — worst case bytes, never content. The
+      1,020x cheaper stencil widening fails the other way in three measured directions (R57's blob on a
+      pen ornament, 50.03% of the protection, and it *lowers* `inkOutsideText` so it pushes pages toward
+      the very verdict it is fixing).
+      ⛔ **The negative control is the thing to read before touching any of this**: two binaries differing
+      in exactly the third term put the fixture's background at **153 px against a ceiling of 154**
+      without it and **612 px** with it, and the same PDF with one more box is **153 / shrunk on both** —
+      so the flip is the term's and not the fixture leaving the all-text class.
+      ⛔ **AND THE PORT CHECK IS NOW A GATE ON THIS TOOL**: every figure C28 published came from
+      `score-shape-term.swift`'s copy of the five functions, and what ships is a port, so the tool calls
+      `Flattener.textLineGroupsOutsideText` on its own surfaces on every measured page, prints
+      `port agreed on N`, and **exits 7** on disagreement. ✅ It was RUN: `port agreed on 5` over
+      `Jones et al_2010` p2/p3/p5/p7/p9 (firing on three), with `lineN` reproducing
+      `SHAPETERM-73-2026-08-21.tsv` digit for digit — **1 / 0 / 4 / 3 / 0**. ⚠️ Five pages of 73. ⚠️ Its `--self-test` check 10 **could not
+      fail** in its first version (it reused check 8's single-block fixture, and one component can never
+      reach `lineMinimumMembers`) — found by building a sabotaged port and running it, which is the tenth
+      such check in this project's history. It has its own five-mark fixture now and the sabotage goes red.
+      ⚠️ **What is still owed, and neither is a blocker**: (1) the mutant campaign — three mutants were
+      added (catalogue 97 → 100, all three verified as APPLIED) and **none was run**, because a scoped run
+      is a baseline suite plus 44-58 min a mutant; the by-hand equivalent above was executed instead.
+      (2) `SHAPETERM-73` has **not** been re-run under the port check, so "12 of 12 type-losers" remains
+      the tool's 2026-08-21 figure with a live guard over it rather than a figure re-derived from shipped
+      code. Re-running it is cheap and is the way to convert the guard into a measurement.
+      (origin: BUGS.md C28 `#### THE DECISION`)
 - [x] **c28-stencilseam** — **DONE 2026-08-22. Question 4's last owed number: what it costs to let the
       accepted line groups into the 1-bit stencil, and it is 1,020x cheaper than the layering seam over
       the same 16 pages.** Do not re-run it; `WIDEN-STENCIL-2026-08-22.tsv` (26 rows, 44 columns) and

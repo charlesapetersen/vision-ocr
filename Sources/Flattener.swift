@@ -1591,18 +1591,357 @@ enum Flattener {
     static func inkOutsideText(_ grey: [UInt8], region: [Bool],
                                width w: Int, height h: Int, threshold: UInt8) -> Double {
         guard w > 0, h > 0, grey.count >= w * h, region.count >= w * h else { return 1 }
-        let mx = w / 16, my = h / 16
-        let x1 = max(w - mx, mx + 1), y1 = max(h - my, my + 1)
+        let win = interiorWindow(width: w, height: h)
         var outside = 0, total = 0
-        for y in my..<min(y1, h) {
+        for y in win.y0..<win.y1 {
             let row = y * w
-            for x in mx..<min(x1, w) where grey[row + x] < threshold {
+            for x in win.x0..<win.x1 where grey[row + x] < threshold {
                 total += 1
                 if !region[row + x] { outside += 1 }
             }
         }
         // No ink at all is a blank page, and a blank page has no picture on it.
         return total > 0 ? Double(outside) / Double(total) : 0
+    }
+
+    /// The window `inkOutsideText` walks: the outer sixteenth ignored on every side.
+    ///
+    /// **One copy, because the shape term below has to walk the SAME window.** C28's
+    /// whole instrument rests on the identity that the shape rule reads the ink
+    /// `inkOutsideText` divided by — `score-shape-term.swift` asserts it on every
+    /// printed row and exits 6 otherwise — and two copies of this arithmetic is a
+    /// check that cannot fail, which is a shape this register has recorded ten times.
+    /// So `inkOutsideText` was changed to call this rather than the term being given
+    /// its own; the values are unchanged, which the suite's C26 block pins by
+    /// comparing a published `inkOutsideText` against an independently derived one.
+    static func interiorWindow(width w: Int, height h: Int)
+        -> (x0: Int, y0: Int, x1: Int, y1: Int) {
+        let mx = w / 16, my = h / 16
+        let x1 = max(w - mx, mx + 1), y1 = max(h - my, my + 1)
+        return (mx, my, min(x1, w), min(y1, h))
+    }
+
+    // MARK: - C28: is the ink outside the recognised words SHAPED like text?
+
+    /// A map component shorter than this many median glyph heights is not a glyph.
+    ///
+    /// 0.5 rather than something tighter because a lower-case `o` and a cap `H` are
+    /// already 2x apart in one line of type, and the median lands between them.
+    static let shapeHeightLow = 0.5
+    /// And taller than this many is not one either. 3.0 admits a display line and a
+    /// two-line-tall brace; it refuses the gutter shadow and the platen edge, which is
+    /// what the four non-losing pages of C28 sub-step 1 are made of.
+    static let shapeHeightHigh = 3.0
+    /// A component whose median horizontal run is wider than this many median glyph
+    /// runs is a solid thing rather than a stroke. This is the term that refuses a
+    /// scanner edge that happens to be the right height.
+    static let shapeRunHigh = 2.0
+    /// Fewer pixels than this is a speck. Dust and JPEG ringing both make them in
+    /// quantity.
+    static let shapeMinimumArea = 4
+    /// A line group needs this many accepted components. Four, so that two words of
+    /// two letters do not make a line out of noise.
+    ///
+    /// ⚠️ Measured cost, both directions: at 4 the term reads 0 on C26's two founding
+    /// cartoons (`1954 - Why` p6/p7 give 372 and 785 accepted pixels that never reach
+    /// four members on a baseline) and it is also what stops a printer's ornament of
+    /// **664** accepted components from grouping at all. So this is a two-sided trade
+    /// and not a value to relax casually — `BUGS.md` C28
+    /// `#### Are there PICTURES in the sub-bar 73?` is the measurement.
+    static let lineMinimumMembers = 4
+    /// …and no gap between adjacent members wider than this many glyph heights, which
+    /// is what stops a mark at each margin from being read as one line spanning the page.
+    static let lineGapFactor = 3.0
+
+    /// The most horizontal runs the shape analysis will label, whatever the page is.
+    ///
+    /// **R24 and R29's shape, bounded before it shipped rather than after.** The run
+    /// list and its union-find parent array are both proportional to the ink in the
+    /// page, and `maximumMRCPageMegapixels` allows 100 MP — an alternating pixel field
+    /// at that size is 50 million runs, which is 1.2 GB of `Run` plus 400 MB of parent
+    /// on top of the ~500 MB this function's caller is already holding in `grey`,
+    /// `mask`, `region` and `inverse`. Both R24 and R29 were an allocation bounded in
+    /// one place and left unbounded in its twin.
+    ///
+    /// 8,000,000 caps `runs` at 192 MB and `parent` at 64 MB. ⛔ **That pair is NOT the peak, and a
+    /// draft of this comment presented it as one** — the review of C28's wiring diff did the rest of the
+    /// arithmetic: at the cap with maximal fragmentation the *components* dominate, roughly 384 MB of
+    /// `ShapeComponent` plus a separately heap-allocated `runLengths` for each, plus a `slot` dictionary
+    /// of the same order — order a gigabyte, not 256 MB, and the `map` this function's caller builds is
+    /// another `w * h` on top. The bound is therefore a bound on the *labelling*, which is the term this
+    /// file can cap cheaply, and not a statement of peak footprint. ⚠️ **The trigger rate is not measured**:
+    /// no page in C28's 73-page population or its 10 picture pages came near it, but
+    /// none was instrumented for it either, so this is a memory bound whose cost is
+    /// reasoned rather than a threshold that was swept.
+    ///
+    /// **Exceeding it returns `nil`, which the caller reads as "do not treat this page
+    /// as all text".** That is the safe direction and it is safe for a reason specific
+    /// to this seam: refusing the all-text verdict only ever stores a page at *more*
+    /// resolution (`bgFactor = allText ? max(caller, 8) : caller`), so the worst a
+    /// truncation can cost is bytes on a page too dense to analyse. It cannot lose
+    /// content, which is why no report is owed for it under invariant 1.
+    static let maximumShapeRuns = 8_000_000
+
+    /// A maximal horizontal run of set pixels. `x1` is exclusive.
+    fileprivate struct ShapeRun { let y: Int, x0: Int, x1: Int }
+
+    /// One connected component, kept as statistics rather than as pixels: a page of
+    /// newsprint has hundreds of thousands of these and its pixel lists would not fit.
+    struct ShapeComponent {
+        var minX = Int.max, maxX = Int.min, minY = Int.max, maxY = Int.min
+        var area = 0
+        var runLengths: [Int] = []
+        var width: Int { maxX - minX + 1 }
+        var height: Int { maxY - minY + 1 }
+        /// The stroke-width proxy: the median of this component's own row runs. A stem
+        /// of type is 2-6 px at these resolutions; a gutter shadow is hundreds.
+        var medianRun: Int {
+            guard !runLengths.isEmpty else { return 0 }
+            let s = runLengths.sorted()
+            return s[s.count / 2]
+        }
+        fileprivate mutating func add(_ r: ShapeRun) {
+            minX = min(minX, r.x0); maxX = max(maxX, r.x1 - 1)
+            minY = min(minY, r.y);  maxY = max(maxY, r.y)
+            area += r.x1 - r.x0
+            runLengths.append(r.x1 - r.x0)
+        }
+    }
+
+    /// 8-connected components of `mask`, over the half-open window only.
+    ///
+    /// Run-based rather than pixel-based: the run lengths are the stroke-width proxy,
+    /// so finding them first and labelling *them* costs one pass instead of two.
+    ///
+    /// `nil` when the run count would exceed `runLimit`. See `maximumShapeRuns` for why
+    /// the bound exists and why `nil` is the safe answer rather than a partial one.
+    ///
+    /// `runLimit` is a defaulted parameter and not a `static var`, so the truncation
+    /// branch can be *executed* by a check rather than reasoned about — CONTRIBUTING
+    /// 4c: R31, R32 and H2 were all careful code in branches nothing ever entered. At
+    /// the shipped 8,000,000 no fixture a suite can build reaches it, so a seam is the
+    /// only way that branch ever runs. A parameter rather than a mutable static
+    /// deliberately: `CLAUDE.md` records that `static var` has produced defects here,
+    /// and C28 refused a second override property beside
+    /// `textPageInkOutsideThresholdOverride`.
+    static func shapeComponents(_ mask: [Bool], width w: Int, height h: Int,
+                                x0: Int, y0: Int, x1: Int, y1: Int,
+                                runLimit: Int = maximumShapeRuns) -> [ShapeComponent]? {
+        guard w > 0, h > 0, mask.count >= w * h, x0 < x1, y0 < y1 else { return [] }
+        var runs: [ShapeRun] = []
+        var rowStart: [Int] = []
+        for y in y0..<y1 {
+            rowStart.append(runs.count)
+            var x = x0
+            let row = y * w
+            while x < x1 {
+                if mask[row + x] {
+                    let s = x
+                    while x < x1, mask[row + x] { x += 1 }
+                    runs.append(ShapeRun(y: y, x0: s, x1: x))
+                    if runs.count > runLimit { return nil }
+                } else {
+                    x += 1
+                }
+            }
+        }
+        rowStart.append(runs.count)
+        guard !runs.isEmpty else { return [] }
+
+        var parent = Array(0..<runs.count)
+        func find(_ a: Int) -> Int {
+            var r = a
+            while parent[r] != r { parent[r] = parent[parent[r]]; r = parent[r] }
+            return r
+        }
+        func union(_ a: Int, _ b: Int) {
+            let ra = find(a), rb = find(b)
+            if ra != rb { parent[max(ra, rb)] = min(ra, rb) }
+        }
+        // Two pointers down each pair of adjacent rows. 8-connectivity, so runs that
+        // only touch at a corner are one component: `a.x0 <= b.x1 && b.x0 <= a.x1`
+        // with `x1` exclusive is exactly that.
+        if rowStart.count >= 3 {
+            for band in 1..<(rowStart.count - 1) {
+                var i = rowStart[band - 1], j = rowStart[band]
+                let iEnd = rowStart[band], jEnd = rowStart[band + 1]
+                while i < iEnd, j < jEnd {
+                    let a = runs[i], b = runs[j]
+                    if a.x0 <= b.x1, b.x0 <= a.x1 { union(i, j) }
+                    if a.x1 < b.x1 { i += 1 } else { j += 1 }
+                }
+            }
+        }
+
+        var slot = [Int: Int](minimumCapacity: runs.count / 4 + 1)
+        var comps: [ShapeComponent] = []
+        for (i, r) in runs.enumerated() {
+            let root = find(i)
+            if let k = slot[root] {
+                comps[k].add(r)
+            } else {
+                slot[root] = comps.count
+                var c = ShapeComponent()
+                c.add(r)
+                comps.append(c)
+            }
+        }
+        return comps
+    }
+
+    /// Which of `comps` are shaped like type at this page's own scale.
+    ///
+    /// Every term is a ratio against the page's own recognised type, so nothing here
+    /// is a size in pixels and the rule travels across the corpus's 72-600 DPI without
+    /// a constant that describes the scanner.
+    static func textShaped(_ comps: [ShapeComponent],
+                           glyphHeight: Double, glyphRun: Double) -> [Int] {
+        guard glyphHeight > 0, glyphRun > 0 else { return [] }
+        return comps.indices.filter { i in
+            let c = comps[i]
+            guard c.area >= shapeMinimumArea else { return false }
+            let hh = Double(c.height)
+            guard hh >= shapeHeightLow * glyphHeight, hh <= shapeHeightHigh * glyphHeight
+            else { return false }
+            return Double(c.medianRun) <= shapeRunHigh * glyphRun
+        }
+    }
+
+    /// One accepted line group: components sharing a horizontal band with no wide gap.
+    struct TextLine {
+        var members: [Int] = []
+        var minX = Int.max, maxX = Int.min, minY = Int.max, maxY = Int.min
+        var area = 0
+    }
+
+    /// Group accepted components into lines: same horizontal band, no adjacent gap
+    /// wider than `lineGapFactor` glyph heights, at least `lineMinimumMembers` members.
+    ///
+    /// The band test is vertical *overlap* rather than a shared centre line, because a
+    /// descender and a cap on the same line of type do not share a centre.
+    static func textLines(_ comps: [ShapeComponent], accepted: [Int],
+                          glyphHeight: Double) -> [TextLine] {
+        guard glyphHeight > 0 else { return [] }
+        let sorted = accepted.sorted { comps[$0].minY < comps[$1].minY }
+        var bands: [[Int]] = []
+        for i in sorted {
+            let c = comps[i]
+            var placed = false
+            for b in bands.indices {
+                // The band's current extent, taken from its last member: bands are
+                // built in increasing `minY`, so the newest member is the one a
+                // candidate can touch.
+                let last = comps[bands[b].last!]
+                let lo = max(c.minY, last.minY), hi = min(c.maxY, last.maxY)
+                let overlap = hi - lo + 1
+                if overlap > 0, Double(overlap) >= 0.5 * Double(min(c.height, last.height)) {
+                    bands[b].append(i)
+                    placed = true
+                    break
+                }
+            }
+            if !placed { bands.append([i]) }
+        }
+        var out: [TextLine] = []
+        for band in bands {
+            let ordered = band.sorted { comps[$0].minX < comps[$1].minX }
+            var run: [Int] = []
+            func flush() {
+                if run.count >= lineMinimumMembers {
+                    var l = TextLine()
+                    for i in run {
+                        let c = comps[i]
+                        l.members.append(i)
+                        l.minX = min(l.minX, c.minX); l.maxX = max(l.maxX, c.maxX)
+                        l.minY = min(l.minY, c.minY); l.maxY = max(l.maxY, c.maxY)
+                        l.area += c.area
+                    }
+                    out.append(l)
+                }
+                run = []
+            }
+            for i in ordered {
+                if let prev = run.last {
+                    let gap = comps[i].minX - comps[prev].maxX
+                    if Double(gap) > lineGapFactor * glyphHeight { flush() }
+                }
+                run.append(i)
+            }
+            flush()
+        }
+        return out
+    }
+
+    private static func medianOf(_ xs: [Int]) -> Double {
+        guard !xs.isEmpty else { return 0 }
+        let s = xs.sorted()
+        return Double(s[s.count / 2])
+    }
+
+    /// How many text-shaped LINE GROUPS the page's ink outside `region` contains.
+    ///
+    /// **C28.** The 1-bit stencil is the intersection of an adaptive binarisation with
+    /// the geometry of the words Vision recognised, so prose the recogniser missed is
+    /// in neither the stencil nor the text layer and survives only in the background —
+    /// which on a page read as all text is stored at an eighth of its resolution.
+    /// Measured over the whole 73-page sub-bar population, this count is `>= 1` on
+    /// **12 of 12** pages that lose typeset content, **1 of 4** losing only a hand-made
+    /// mark, **0 of 6** degraded-but-legible and **3 of 51** that lose nothing — and all
+    /// three of those firings are the *rim* of recognised type, glyph tops poking
+    /// outside a word box on a line that IS in the text layer. `SHAPETERM-73-2026-08-21.tsv`.
+    ///
+    /// ⛔ **It is NOT a picture detector and must not be used as one.** Measured on ten
+    /// picture pages the same week, it fires on 6 of 10 — halftone dots, photograph
+    /// grain inside a plate, a pen ornament's feather strokes — and reads 0 on two pages
+    /// whose content loss C26 measured at 1:1. That is why C28's decision wires it here,
+    /// at the *layering* seam where refusing the verdict only ever keeps resolution, and
+    /// **not** into `textRegionMask`, where admitting those same marks to the 1-bit
+    /// stencil is R57's failure mode. `BUGS.md` C28 `#### THE DECISION`.
+    ///
+    /// The calibration is the page's own recognised type: `stencil`'s components supply
+    /// the median glyph height and the median stroke run every ratio above is taken
+    /// against. A page with no stencil components has nothing to calibrate on, and the
+    /// answer there is 0 rather than a guess.
+    ///
+    /// `nil` means the page was too dense to label within `maximumShapeRuns`; see that
+    /// constant for why the caller must read `nil` as "not all text".
+    static func textLineGroupsOutsideText(_ grey: [UInt8], stencil: [Bool],
+                                          region: [Bool], width w: Int, height h: Int,
+                                          threshold: UInt8,
+                                          runLimit: Int = maximumShapeRuns) -> Int? {
+        guard w > 0, h > 0, grey.count >= w * h,
+              stencil.count >= w * h, region.count >= w * h else { return 0 }
+        let win = interiorWindow(width: w, height: h)
+
+        // The map: interior ink `region` does not cover — `inkOutsideText`'s own
+        // numerator, over the window that function walks, blanked outside it rather
+        // than cropped to it so every component rect is already in the page's frame.
+        var map = [Bool](repeating: false, count: w * h)
+        var outside = 0
+        for y in win.y0..<win.y1 {
+            let row = y * w
+            for x in win.x0..<win.x1 where grey[row + x] < threshold {
+                if !region[row + x] { map[row + x] = true; outside += 1 }
+            }
+        }
+        guard outside > 0 else { return 0 }
+
+        // The calibration: the recognised glyphs are the stencil's own components.
+        guard let glyphComps = shapeComponents(stencil, width: w, height: h,
+                                               x0: win.x0, y0: win.y0,
+                                               x1: win.x1, y1: win.y1,
+                                               runLimit: runLimit) else { return nil }
+        let sized = glyphComps.filter { $0.area >= shapeMinimumArea }
+        let glyphHeight = medianOf(sized.map(\.height))
+        let glyphRun = medianOf(sized.map(\.medianRun))
+        guard glyphHeight > 0, glyphRun > 0 else { return 0 }
+
+        guard let comps = shapeComponents(map, width: w, height: h,
+                                          x0: win.x0, y0: win.y0,
+                                          x1: win.x1, y1: win.y1,
+                                          runLimit: runLimit) else { return nil }
+        let accepted = textShaped(comps, glyphHeight: glyphHeight, glyphRun: glyphRun)
+        return textLines(comps, accepted: accepted, glyphHeight: glyphHeight).count
     }
 
     // MARK: - Shape: what is on the page, rather than how dark it is
@@ -1919,9 +2258,17 @@ enum Flattener {
                           minimumContrast: Double = minimumMarkContrast) -> Marks {
         var out = Marks()
         guard w > 0, h > 0, grey.count >= w * h, dpi > 0 else { return out }
-        let mx = w / 16, my = h / 16
-        let cx1 = max(w - mx, mx + 1), cy1 = max(h - my, my + 1)
-        let rows = my..<min(cy1, h), cols = mx..<min(cx1, w)
+        // CONTRIBUTING 4b, found by C28's sibling sweep: this was a third copy of
+        // `inkOutsideText`'s inset, character for character, and the comment above
+        // already said it was meant to BE that inset. Three copies of an arithmetic
+        // whose whole job is to be the same one is how a comment comes to describe
+        // something that has since drifted, so both places in this file now call
+        // `interiorWindow`. Behaviour-preserving: `mx`, `my` and both half-open ends
+        // are the same expressions, and R56/R57's routing fixtures are what would
+        // have caught it if they were not.
+        let win = interiorWindow(width: w, height: h)
+        let mx = win.x0, my = win.y0
+        let rows = my..<win.y1, cols = mx..<win.x1
         guard rows.count > 0, cols.count > 0 else { return out }
 
         // Property 3: the paper's level is the mode of everything the threshold calls
@@ -2752,9 +3099,36 @@ enum Flattener {
                                          threshold: pageThreshold)
             measuredInkOutside = outside
             guard outside < bar else { return false }
-            return paleDrawing(pageMarks(grey, width: w, height: h,
-                                         threshold: pageThreshold, dpi: dpi),
-                               dpi: dpi).extent <= paleDrawingThreshold
+            guard paleDrawing(pageMarks(grey, width: w, height: h,
+                                        threshold: pageThreshold, dpi: dpi),
+                              dpi: dpi).extent <= paleDrawingThreshold else { return false }
+            // C28, decided 2026-08-22. The two terms above are quantities — how much
+            // ink is outside the words, and how pale a drawing is — and both are
+            // measured NOT to order the loss: sorted by `inkOutsideText` the eight
+            // pages nearest the bar read lose / no / lose / no / no / lose / no / lose,
+            // and `paleDrawing(…).extent` reads 0.00000 on two of the pages that lose
+            // the most. This third term is a SHAPE, which is R56's lesson in a third
+            // place: not how dark a mark is but whether it is laid out like a line of
+            // type. Over the 73 sub-bar pages it reads >= 1 on 12 of 12 that lose
+            // typeset content and 3 of 51 that lose nothing.
+            //
+            // **Third and not first, deliberately.** It is the dearest of the three
+            // (two connected-component passes over the full-resolution render), so it
+            // is asked only about the pages the cheap terms would already have shrunk
+            // 8x — which is both the cheapest placement and the one that changes the
+            // fewest pages. The reordering of `paleDrawing` from a `return` to a
+            // `guard` is what makes that possible and changes no verdict.
+            //
+            // **`nil` refuses the page.** A page too dense to label within
+            // `maximumShapeRuns` is not asserted to be all text; refusing only ever
+            // stores it at more resolution, never less. See `textLineGroupsOutsideText`
+            // and `BUGS.md` C28 `#### THE DECISION` for why this seam and not
+            // `textRegionMask`, where the same term admits halftone dots to the 1-bit
+            // stencil and is R57's failure mode.
+            let groups = textLineGroupsOutsideText(grey, stencil: mask, region: region,
+                                                   width: w, height: h,
+                                                   threshold: pageThreshold)
+            return groups == 0
         }
         let allText = !keepEveryPixel && pageIsAllText()
         let bgFactor = allText

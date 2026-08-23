@@ -6,7 +6,19 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Four open: `C27`, `C28`, `C29` and `C30`. `C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
+**Four open: `C27`, `C28`, `C29` and `C30` — and `C28` is `HALF FIXED` as of 2026-08-22, its shape term
+WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were measured.**
+It rescues **13 of the 16** measured content losses, and its failure direction is bytes rather than
+content: `bgFactor = allText ? max(caller, 8) : caller`, so a term that only ever refuses the verdict can
+only ever store a page at *more* resolution. What keeps it open is three hand-made marks, one of them
+(`_1939_Former students` p2, `outPx` **0**) unreachable from this seam at any value of any constant,
+because the page-wide Otsu is blind to pale pencil upstream of the map. Read `#### THE DECISION` for why
+the layering seam and not the 1,020x cheaper stencil widening, then `#### The wiring, SHIPPED` for the
+negative control — two binaries one term apart, the fixture's background **153** px against a ceiling of
+154 without the term and **612** px with it, and the same page with that word recognised shrunk on both —
+and for the one thing it does **not** claim: no corpus sweep was re-run, so "12 of 12" is still the
+tool's 2026-08-21 figure, now with a live port check over it.
+**`C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
 (`textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's decision on a complete campaign, so the 16
 corpus pages the sweep named keep their tone layers at the caller's factor) and the next day the
 three pages it was opened on were **rendered and the drawings are back**:
@@ -4513,7 +4525,7 @@ The case against the number stands on the ordering: no value of it puts the ten 
 already clear it, because two of the ten carry no colour and one page that keeps its colour reads
 0.00236.
 
-### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — OPEN
+### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — HALF FIXED (the shape term is WIRED 2026-08-22 and rescues 13 of the 16 measured losses; three hand-made marks remain, one of them unreachable from this seam)
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move
 the bar **and** open this as its own entry rather than fold it into C26. **Four sub-steps worked
 2026-08-20 and they cover the whole population** — the eight near-misses in
@@ -8121,6 +8133,178 @@ in either widening artefact ever flipped `pageIsAllText()`'s verdict, so the cor
 fixture for the flip. The section above says that debt out loud — *"whatever wiring C28 eventually takes
 owes that fixture again, because this corpus will not supply it"* — and the wiring pays it in
 `Tests/main.swift` rather than borrowing a corpus page that does not exist.
+
+#### The wiring, SHIPPED — 2026-08-22, and the entry goes to `HALF FIXED`
+
+**What changed.** `Flattener.pageIsAllText()` has a third refusal condition. The five shape functions
+this campaign measured with are ported from `Tools/score-shape-term.swift` into `Flattener` —
+`shapeComponents`, `textShaped`, `textLines`, and `textLineGroupsOutsideText` over them — and a page
+whose ink outside the recognised words holds at least one text-shaped line group is no longer read as
+all text, so its tone layers keep the caller's factor instead of `max(caller, 8)` and `max(caller, 16)`.
+`region` is untouched, the stencil is untouched, `textRegionMask` is untouched, and no constant moved.
+The rule is `#### THE DECISION` above; this section is what it cost and what was executed to check it.
+
+**⛔ The negative control, and it is the whole of the evidence that the check bites.** Two binaries were
+built from trees differing in **exactly** the third term — verified file by file, with `pageMarks`'s
+window unification applied to *both* so it could not contaminate the comparison — and the same fixture
+was put through `mrcLayers` on each at Balanced:
+
+| | background | foreground | `shrunkAsAllText` | `inkOutsideText` | verdict |
+|---|---|---|---|---|---|
+| without the third term | **153** px of 1224 | 76 | `true` | 0.0107 | SHRUNK |
+| with it | **612** px of 1224 | 306 | `false` | 0.0107 | NOT SHRUNK |
+
+The ceiling the check asserts against is 154, so pre-fix the check is **red at 153** and post-fix green
+at 612 — CONTRIBUTING §2, watched failing, by executing rather than by reasoning. ✅ **And the control
+that makes it mean something is the same PDF twice**: with one more box, so the fifteenth line IS
+recognised, the page reads 153 / 76 / `true` / SHRUNK on **both** binaries. Same pixels, same render,
+same Otsu — the only difference is whether that word is in the text layer. So the flip is the term's and
+not the fixture drifting out of the all-text class, which is the way C24's eleventh check and A11.5 both
+failed to test anything.
+
+**The fixture C28 said this corpus could not supply, built.** Fourteen lines of body text with word
+boxes aligned to them, plus one short unrecognised word low on the page — `Jones et al_2010` p2's
+measured loss ("value.", at `inkOut` 0.0008) in miniature. ⛔ **A draft of this paragraph justified the
+new fixture by claiming the C26 one has "a good deal of its own type outside its boxes", and the
+adversarial review of this diff refuted it from this diff's own numbers**: `c26Boxes` pad to rows
+`[75 + 110.9i, 195 + 110.9i)`, 119 px of box on a 110.9 px pitch, so the boxes **overlap** and their union
+is contiguous — all three lines are inside, which is also the only reading consistent with `c26Small`
+measuring `inkOut` 0.0551 over a 900 px figure and **0** groups. The real reason a new fixture was needed
+is narrower and is the whole of it: the C26 fixture has no unboxed *line*, so it cannot exercise a
+verdict flip at all. Measured at 1224x1584 / 144 DPI:
+`inkOutsideText` **0.0107** (a fifth of the bar, so term 1 passes comfortably), `paleDrawing(…).extent`
+**0.00000** (term 2 passes), and the term finds **one** group — `103x33+130+1270`, five accepted
+components of six, the period refused on height. The alignment is the point: the C26 fixture forty lines
+above puts ten boxes on a 0.07 pitch over text on a 78 px one, so much of its own type falls outside its
+boxes and a fixture like that cannot separate *"there is unrecognised type here"* from *"the boxes are
+wrong"*.
+
+**⛔ Shape and not quantity, executed on a second fixture.** A solid 900x26 platen rule outside the
+boxes reads `inkOutsideText` **0.1671** — **15.6x** the missed word's — over **22,984** out-of-region ink
+pixels against the word's **1,238**, i.e. **18.6x** the ink, and the term reads **0** on it. If the rule
+were reading how *much* ink is outside the words, that is the page it would fire hardest on.
+⛔ **But it is refused by the GROUPING, not by `shapeRunHigh`, and a draft of this said otherwise** — the
+review of this diff worked it out: a solid fill is **one** 8-connected component, and one component can
+never reach `lineMinimumMembers` = 4, so `c28GroupsBar` is 0 at *every* value of `shapeRunHigh`. That
+matches `#### Are there PICTURES in the sub-bar 73?`, which measured the same thing on a printer's
+ornament (664 accepted components, **0** grouped) and concluded in those words that *the bound is the
+GROUPING, not the component test*. The consequence for coverage is in the mutant paragraph below. This is the tenth quantity this campaign
+has put up and refused, and the first that was refused by the shipped code rather than by a tool.
+
+**✅ And C26's own fixtures still measure C26**, which was the risk worth checking before anything else
+was written: `c26Small` reads `inkOut` 0.0551 with **0** groups and `c26Big` 0.0940 with **0**. Their ink
+figures are single blobs whose median run is 6x the page's own glyph run, so `shapeRunHigh` refuses them
+— which means no C26 check moves, and none did. ⚠️ That is now pinned by a check of its own rather than
+left to luck: a future loosening of these five numbers that started firing there would otherwise turn
+C26's *"the old bar shrinks it again"* red for a reason having nothing to do with C26.
+
+**⛔ THE PORT IS CHECKED AGAINST THE TOOL THAT MEASURED IT, and this is the control the section would be
+worth least without.** Every figure in `#### THE DECISION` — 12 of 12, 3 of 51, +2,362,625 B — was
+produced by `score-shape-term.swift`'s copy of these five functions, and what ships is a *port*. Two
+copies of an arithmetic where one supplies the evidence for the other is this register's most repeated
+instrument defect, and a divergence here would be **silent**. So the tool now calls
+`Flattener.textLineGroupsOutsideText` on its own `grey`/`stencil`/`region`/Otsu on **every measured
+page**, prints `port agreed on N` in its summary, and **exits 7** on any disagreement — an exit and not a
+warning, because a divergence makes every row the file ever published a claim about code that is not
+running. Its `--self-test` asserts the same thing on a bitmap, in both directions, so a machine with no
+`testdocs/` catches it too.
+
+✅ **AND IT WAS RUN ON REAL CORPUS PAGES: `port agreed on 5`, with the term firing on three of them.**
+`Jones et al_2010` pages 2, 3, 5, 7 and 9 — chosen because that document holds three firing pages and
+two clean ones — through the tool's own pipeline, and the shipped `Flattener` port matched the tool's
+copy on **5 of 5**. It is two controls at once, because `lineN` also reproduces
+`SHAPETERM-73-2026-08-21.tsv` digit for digit on all five rows — **1 / 0 / 4 / 3 / 0**, with `inkOut`
+**0.0008 / 0.0000 / 0.0353 / 0.0137 / 0.0000** — so the tool has not drifted either, and the agreement
+spans counts of 1, 3 and 4 rather than only zeros. ⚠️ **Five pages of 73, in one document.** The port
+check is now a gate on any future run of that tool, so the remaining 68 are covered the next time
+anything sweeps them; what is *measured today* is 5. "12 of 12 type-losers" therefore remains the tool's
+2026-08-21 figure with a live guard over it and a five-page spot check under it, not a figure re-derived
+from shipped code over the whole population.
+
+⛔ **The self-test half of that check COULD NOT FAIL in its first version, and only running it found
+that.** It reused check 8's fixture, whose out-of-region mark is a single solid block — and one component
+can never reach `lineMinimumMembers` = 4, so both copies read 0 and agreed trivially. A port sabotaged to
+`return 0` passed the entire self-test. That is the **tenth** check in this project's history that could
+not fail, and it was written by the same session that was quoting the other nine. It has its own
+five-mark fixture now, the sabotaged port goes red naming the divergence (*"Flattener says 0 and this file
+says 1"*), and the fixture asserts that it produces a group at all before the two copies are compared, so
+a fixture that drifts reports itself instead of going quiet. ⚠️ The self-test's *count* was a stale
+literal too — it printed "9 checks" with ten groups in the function — corrected, with a note saying that
+a count which does not move when a check is added is worth less than no count.
+
+**The suite.** Nineteen new `check` call sites in `Tests/main.swift` — seventeen on the happy path and
+two the `mrcLayers`-returned-nil arms, counted rather than estimated — and `makeScannedPDF` grew two defaulted
+parameters (`extra`, `bar`) so a mark can be placed deliberately outside a given box set — shape and
+quantity varied separately. The `nil` half is covered by a `runLimit` **parameter** rather than a mutable
+static: at the shipped `maximumShapeRuns` = 8,000,000 no fixture a suite can build reaches the
+truncation branch, so without a seam it would ship never having executed, which is exactly what R31, R32
+and H2 were. Both directions are asserted — `nil` at a limit of 1, *not* `nil` at the shipped limit on
+the same page — because the first alone is satisfied by a function that always truncates.
+
+**Mutants: three added, catalogue 97 → 100, and none of them NOT-APPLIED** (all three anchors verified to
+match the source exactly once, which is the check the `paleDrawingThreshold` entry exists to remember).
+`const/lineMinimumMembers` 4 → 99 removes the term's ability to refuse anything;
+`const/shapeRunHigh` 2.0 → 99.0 makes the platen rule "shaped like type";
+`logic/C28-alltext-ignores-shape` throws the verdict away while still paying for it, which no constant
+mutant can reach. ⛔ **One of the three is a KNOWN SURVIVOR and it is recorded as one**: the review of this
+diff showed `shapeRunHigh` at 99 changes no check in the tree, because the fixture it was supposed to be
+pinned by is one solid component and the *grouping* refuses it — so of the five shape numbers,
+`lineMinimumMembers` is pinned, `shapeHeightLow` and `lineGapFactor` one-sidedly, and **`shapeRunHigh`,
+`shapeHeightHigh` and `shapeMinimumArea` not at all**. The fixture that would close it is four or more
+non-type-shaped components on one baseline, and it is owed. Kept in the catalogue rather than dropped, so
+the gap is somewhere a tool will print it. ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
+hours, and this session paid one suite. What stands in its place is the by-hand equivalent above: two
+binaries one term apart, executed, 153 against 612. ⛔ **And one wrong reading is deliberately absent
+rather than forgotten**: `groups ?? 0 == 0`, a too-dense page waved through instead of refused, is a
+mutant **no fixture can kill**, because nothing a suite can build reaches 8,000,000 runs. C24's seam is
+the precedent for planting both readings of a `nil`; the reason it does not apply is that its `nil` was
+reachable from a fixture and this one is not. `mutate.py`'s entry says so where a reader will meet it.
+
+**The sibling sweep** (CONTRIBUTING 4b) asked three questions and found one real sibling. (1) *Who else
+decides a downsample factor from an all-text judgement?* Nothing — `textPageBackgroundDownsample` and
+`textPageForegroundDownsample` have one call site each, both in `mrcLayers`. (2) *Who else labels
+connected components?* `markComponents` does, and it is **not** reusable here: `MarkComponent` carries no
+run lengths, so it cannot supply `medianRun` — the stroke-width proxy, measured above to be the term
+that refuses the platen rule single-handed — and it labels a `[Int32]` per pixel on the *reduced* 150-ppi
+grid, which is the allocation its own doc comment says it exists to avoid. A run-based pass is what makes
+full resolution affordable, and full resolution is what the calibration needs. So: a sibling, examined,
+and left alone with the reason recorded. ⛔ **And the sweep asked the wrong question once**: "who reads
+these two constants" found nothing outside `mrcLayers`, but *"who else asserts the all-text verdict"*
+finds `Tools/score-mrc.swift`'s `--self-test`, which layers a real 11 pt fixture with **real Vision boxes**
+and asserts both factors equal the shrunk ones — and that file's own comment says it is the only shrink
+assertion in the repository outside `Tests/main.swift`. Nothing gates it (the pre-commit hook runs
+`--self-test` on **Python** tools only, and `run_tests.sh` runs no tool self-tests), so it cannot have
+broken this commit — but if the term finds one group in that fixture's glyph rims it is red the next time
+anyone runs it, and the rim is exactly where this campaign's three false positives live. **Unmeasured, and
+owed.** Found by the adversarial review of this diff, which is also why the paragraph no longer says the
+sweep found one sibling. (3) *Who else has a copy of `inkOutsideText`'s interior window?*
+⛔ **`pageMarks` did, character for character, with a comment saying it was meant to BE that inset** — so
+there were two copies in `Flattener` before this change and the term would have made three. All of it now
+calls one `interiorWindow`, and the refactor is controlled: `c26Small` reads **0.0551**, reproducing the
+figure this register published for it, and R56/R57's routing fixtures are what would have caught a drift.
+⚠️ The two *tools* keep their own copies deliberately: `score-shape-term`'s exists to be an independent
+transcription that its `mapFrac` identity is asserted against, and making it call the shipped function
+would turn that assertion into a tautology.
+
+**⚠️ Two instrument consequences, both found by the review of this diff.** (1) The term sits *inside*
+`pageIsAllText()`, so `Tools/score-text-route.swift`'s `verdict`/`barVerdict` columns and
+`Tools/sweep-ink-bar.py`'s `layered`/`shrunk` columns now measure **the bar AND the shape term**, not the
+bar. The committed sweeps are evidence for their own run and are unaffected; what is affected is the one
+measurement this entry says is still worth taking — whether `textPageInkOutsideThreshold` can go back up —
+because its instrument is now confounded by the thing being priced. (2) Runtime is **unmeasured**: two
+full-resolution component passes plus a `w * h` map on every layered page that clears terms 1 and 2. The
+text above calls it "the dearest of the three" without a number, and `CLAUDE.md`'s own rule is never to
+size a cost off reasoning, so that phrase is a ranking and not a measurement.
+
+**⚠️ What this wiring does not do.** It rescues **13 of the 16** measured content losses and leaves three
+hand-made marks, one of which — `_1939_Former students` p2, `outPx` **0** — no value of any constant here
+can reach, because the page-wide Otsu is blind to pale pencil upstream of the map. It buys **no
+searchability**: the words are still not in the text layer, which is `C30`'s territory and not this
+seam's. It does not touch the `PhotoDetail.smallest` loss on the *other* population (the 109 pages at
+1/3, where pages are not read as all text). It does not let `textPageInkOutsideThreshold` go back up —
+that is the outcome `#### What this entry is NOT` says is worth aiming at, and it needs its own
+measurement. And the corpus price, **~18 pages and +2,694,515 B**, is a per-document stratified estimate
+carried over from `#### The corpus figure`, not a number this session measured.
 
 #### What this entry is NOT
 

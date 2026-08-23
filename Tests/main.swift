@@ -173,8 +173,13 @@ func inkFractionMRC(of url: URL, page index: Int) -> Double {
 /// `figure` puts a block of solid ink on the sheet at the given raster rect, which is
 /// C26's case in miniature — a mark that is ink, is outside every recognised word, and
 /// is small. Defaulted to `nil`, so the twenty-odd existing callers are unchanged.
+/// `extra` draws one more line at its own `y` instead of on the 78 px ladder, and `bar`
+/// fills a solid rectangle. Both exist for C28's wiring fixture, which needs a mark it
+/// can place deliberately outside a given set of word boxes — a line of type in one case
+/// and a scanner rule in the other, so that shape and quantity can be varied separately.
 func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white,
-                    figure: NSRect? = nil) {
+                    figure: NSRect? = nil, extra: (String, CGFloat)? = nil,
+                    bar: NSRect? = nil) {
     let w = 1224, h = 1584
     guard let rep = NSBitmapImageRep(
         bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
@@ -195,9 +200,16 @@ func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white,
         (line as NSString).draw(at: NSPoint(x: 130, y: y), withAttributes: attrs)
         y -= 78
     }
+    if let extra {
+        (extra.0 as NSString).draw(at: NSPoint(x: 130, y: extra.1), withAttributes: attrs)
+    }
     if let figure {
         NSColor.black.setFill()
         figure.fill()
+    }
+    if let bar {
+        NSColor.black.setFill()
+        bar.fill()
     }
     NSGraphicsContext.current?.flushGraphics()
     NSGraphicsContext.restoreGraphicsState()
@@ -2100,6 +2112,232 @@ do {
     let c28Unmeasured = OCRModel.shrunkTextPageSummary([(page: 2, inkOutside: nil)])
     check("…and an unmeasured page names itself without inventing a fraction",
           c28Unmeasured.contains("p2") && !c28Unmeasured.contains("%"), c28Unmeasured)
+
+    // MARK: C28's wiring — the shape term as a third refusal condition
+    //
+    // **The fixture C28 said this corpus could not supply.** The entry's
+    // `#### The same price without the collar` records that no page in either widening
+    // artefact ever flipped `pageIsAllText()`'s verdict — 0 flips over 26 rows in both
+    // files — and says out loud that *"whatever wiring C28 eventually takes owes that
+    // fixture again, because this corpus will not supply it"*. This is that fixture, and
+    // it is built rather than borrowed for exactly that reason.
+    //
+    // The shape of it: fourteen lines of ordinary body text with boxes ALIGNED to them,
+    // and a fifteenth short word low on the page with no box over it — one word Vision
+    // missed on a page of type, which is `Jones et al_2010` p2's measured failure
+    // ("value.", at `inkOut` 0.0008) in miniature. The alignment matters: the C26
+    // fixture forty lines above uses ten boxes on a 0.07 pitch over text on a 78 px one,
+    // so a good deal of its own type falls outside its boxes, and a fixture like that
+    // cannot separate "there is unrecognised type here" from "the boxes are wrong".
+    //
+    // All four numbers below were measured by a probe driving this same code at
+    // 1224x1584 / 144 DPI before any check was written, and the band literals are the
+    // measurement rather than the constants — writing `< textPageInkOutsideThreshold`
+    // would make this check follow the constant if it ever moved, which is the trap
+    // C26's own band comment records catching.
+    let c28Dense = (0..<14).map { i in "line \(i) of ordinary body text on this page" }
+    /// Boxes over the first `n` of those lines. A line drawn at bitmap `y = 1364 - 78i`
+    /// occupies top-down rows about `[188 + 78i, 230 + 78i]`, and `textRegionMask` pads
+    /// by `mrcBoxPadding` on top of that.
+    func c28Boxes(_ n: Int) -> [SearchableWriter.BoundingBox] {
+        (0..<n).map { i in
+            SearchableWriter.BoundingBox(x: 0.10, y: (185.0 + 78.0 * Double(i)) / 1584.0,
+                                         width: 0.78, height: 48.0 / 1584.0)
+        }
+    }
+    /// The render `mrcLayers` would take, plus the two masks the term reads.
+    func c28Surfaces(_ url: URL, boxes: [SearchableWriter.BoundingBox])
+        -> (grey: [UInt8], stencil: [Bool], region: [Bool], w: Int, h: Int, otsu: UInt8)? {
+        guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return nil }
+        let box = Flattener.fullBox(of: page)
+        let dpi = Flattener.rebuildDPI(of: page)
+        let scale = dpi / 72.0
+        let w = max(Int((box.width * scale).rounded()), 1)
+        let h = max(Int((box.height * scale).rounded()), 1)
+        guard let grey = Flattener.renderGrey(page, box: box, scale: scale,
+                                              width: w, height: h, from: .mediaBox)
+        else { return nil }
+        let region = Flattener.textRegionMask(boxes, width: w, height: h)
+        var stencil = Flattener.sauvolaMask(grey, width: w, height: h,
+                                            window: Flattener.sauvolaWindow(dpi: dpi,
+                                                                            width: w,
+                                                                            height: h))
+        guard stencil.count == w * h else { return nil }
+        for i in 0..<(w * h) where !region[i] { stencil[i] = false }
+        return (grey, stencil, region, w, h, Flattener.otsuThreshold(of: grey))
+    }
+    /// The term over one fixture. `nil` means either the run bound was hit or the page
+    /// would not render, and those are told apart by `c28Renders` rather than by a
+    /// second layer of optional — a `Int??` in a `check` message is unreadable and
+    /// `.some(.some(1))` in the assertion is worse.
+    func c28Groups(_ url: URL, boxes: [SearchableWriter.BoundingBox],
+                   runLimit: Int = Flattener.maximumShapeRuns) -> Int? {
+        guard let s = c28Surfaces(url, boxes: boxes) else { return nil }
+        return Flattener.textLineGroupsOutsideText(s.grey, stencil: s.stencil,
+                                                   region: s.region, width: s.w,
+                                                   height: s.h, threshold: s.otsu,
+                                                   runLimit: runLimit)
+    }
+    func c28Renders(_ url: URL, boxes: [SearchableWriter.BoundingBox]) -> Bool {
+        c28Surfaces(url, boxes: boxes) != nil
+    }
+    func c28InkOut(_ url: URL, boxes: [SearchableWriter.BoundingBox]) -> Double? {
+        guard let s = c28Surfaces(url, boxes: boxes) else { return nil }
+        return Flattener.inkOutsideText(s.grey, region: s.region, width: s.w, height: s.h,
+                                        threshold: s.otsu)
+    }
+    /// The layers this fixture publishes at Balanced. Balanced and not the parameter
+    /// default for the reason `c26Layers` gives: a factor of 1 is `keepEveryPixel` and
+    /// switches the whole rule off.
+    func c28Layers(_ url: URL, boxes: [SearchableWriter.BoundingBox],
+                   stem: String) -> Flattener.MRCLayers? {
+        guard let doc = PDFDocument(url: url), let page = doc.page(at: 0) else { return nil }
+        return Flattener.mrcLayers(for: page, boxes: boxes, into: c26Dir, stem: stem,
+                                   backgroundDownsample: Prefs.PhotoDetail.balanced.downsample,
+                                   inColour: true)
+    }
+
+    let c28Missed = tmp.appendingPathComponent("c28-missed-word.pdf")
+    makeScannedPDF(at: c28Missed, lines: c28Dense, extra: ("value.", 1364 - 78 * 14))
+    let c28Bar = tmp.appendingPathComponent("c28-scanner-bar.pdf")
+    makeScannedPDF(at: c28Bar, lines: c28Dense,
+                   bar: NSRect(x: 60, y: 200, width: 900, height: 26))
+
+    // The fixture has to STAY where it was measured, or every check under it stops
+    // saying anything about C28. Measured 0.0107 — a fifth of the bar, so the first
+    // term of the guard passes comfortably and the verdict below is the third term's.
+    let c28MissedInk = c28InkOut(c28Missed, boxes: c28Boxes(14)) ?? -1
+    check("C28 — the missed-word fixture sits well below the bar, so term 1 passes",
+          c28MissedInk >= 0.005 && c28MissedInk <= 0.030,
+          String(format: "%.4f, wanted [0.005, 0.030]", c28MissedInk))
+    check("…and below the shipped bar, which is what makes it reach the shape term",
+          c28MissedInk < Flattener.textPageInkOutsideThreshold,
+          String(format: "%.4f vs %.3f", c28MissedInk,
+                 Flattener.textPageInkOutsideThreshold))
+
+    // The term itself, on the same pixels twice. **This pair is the whole argument**:
+    // one PDF, one render, one Otsu — the only thing that changes is whether the
+    // fifteenth line has a box over it. Measured 1 and 0.
+    let c28GroupsMissed = c28Groups(c28Missed, boxes: c28Boxes(14))
+    check("C28 — one unrecognised word of type on a page of type is one line group",
+          c28GroupsMissed == 1, "\(c28GroupsMissed as Any)")
+    let c28GroupsBoxed = c28Groups(c28Missed, boxes: c28Boxes(15))
+    check("…and the SAME pixels with that word recognised are no line group at all",
+          c28GroupsBoxed == 0, "\(c28GroupsBoxed as Any)")
+
+    // ⛔ Shape and not quantity, which is the claim the whole term rests on and the one
+    // this register has refused for six shares and four scalars. The scanner bar is a
+    // solid 900x26 rule outside the boxes: measured `inkOutsideText` **0.1671**, 15.6x
+    // the missed word's, and it is 22,984 out-of-region ink pixels against the word's
+    // 1,238 — 18.6x. If the term were reading how MUCH ink is outside the words rather
+    // than what shape it is, this is the page it would fire hardest on.
+    let c28BarInk = c28InkOut(c28Bar, boxes: c28Boxes(14)) ?? -1
+    let c28GroupsBar = c28Groups(c28Bar, boxes: c28Boxes(14))
+    check("C28 — a solid scanner rule with 15x the out-of-region ink is no line group",
+          c28GroupsBar == 0 && c28BarInk > c28MissedInk * 5,
+          "groups \(c28GroupsBar as Any), inkOut "
+            + String(format: "%.4f vs the word's %.4f", c28BarInk, c28MissedInk))
+
+    // …and the C26 fixture forty lines above reads 0 too, which is what keeps THOSE
+    // checks measuring C26. Its 30x30 ink figure is one component whose median run is
+    // 6x the page's own glyph run, so `shapeRunHigh` refuses it — measured, and worth
+    // pinning: a future loosening of these five numbers that started firing here would
+    // silently turn C26's "the old bar shrinks it again" check red for a reason that
+    // has nothing to do with C26.
+    let c28GroupsC26 = c28Groups(c26Small, boxes: c26Boxes)
+    check("C28 — C26's own ink-figure fixture is not a line group, so C26 still tests C26",
+          c28Renders(c26Small, boxes: c26Boxes) && c28GroupsC26 == 0,
+          "\(c28GroupsC26 as Any)")
+
+    // ⛔ THE VERDICT, end to end through `mrcLayers`, and this is the check that was
+    // watched failing before the wiring existed: without the third term the page is
+    // read as all text and both tone layers go to an eighth and a sixteenth.
+    let c28Full = c26FullWidth(c28Missed)
+    let c28Ceiling = c28Full / Flattener.textPageBackgroundDownsample + 1
+    if let missed = c28Layers(c28Missed, boxes: c28Boxes(14), stem: "c28missed") {
+        check("C28 — a page with one unrecognised word of type is not shrunk as all text",
+              missed.backgroundWidth > c28Ceiling,
+              "\(missed.backgroundWidth) wide of \(c28Full), ceiling \(c28Ceiling)")
+        check("…its foreground with it, so both layers move together",
+              missed.foregroundWidth
+                > c28Full / Flattener.textPageForegroundDownsample + 1,
+              "\(missed.foregroundWidth) wide of \(c28Full)")
+        check("…and it does not report itself as stored at an eighth, because it is not",
+              missed.shrunkAsAllText == false,
+              "flag \(missed.shrunkAsAllText), \(missed.backgroundWidth) wide")
+        // The fraction still comes back, because term 1 was reached and answered. A
+        // `nil` here would mean the closure had been short-circuited before it measured
+        // anything, which is what `PhotoDetail.maximum` does and this page must not.
+        check("…and still carries the fraction the first term measured",
+              missed.inkOutsideText != nil
+                && abs(missed.inkOutsideText! - c28MissedInk) < 1e-6,
+              String(format: "%.6f vs %.6f", missed.inkOutsideText ?? -1, c28MissedInk))
+    } else {
+        check("C28's missed-word layering", false, "mrcLayers returned nil")
+    }
+    // ⛔ AND THE POSITIVE CONTROL ON THE SAME PDF, which is what stops the check above
+    // being satisfiable by a fixture that simply is not an all-text page. Same file,
+    // same render, same everything — one more box — and it IS shrunk. Without this
+    // pair, a fixture that had drifted out of the all-text class entirely would pass
+    // the check above while testing nothing, which is the shape of C24's eleventh check
+    // and A11.5.
+    if let boxed = c28Layers(c28Missed, boxes: c28Boxes(15), stem: "c28boxed") {
+        check("C28 — …and the same page with that word recognised IS shrunk as all text",
+              boxed.backgroundWidth <= c28Ceiling,
+              "\(boxed.backgroundWidth) wide of \(c28Full), ceiling \(c28Ceiling)")
+        check("…and reports itself as stored at an eighth, which is the report C28 shipped",
+              boxed.shrunkAsAllText == true,
+              "flag \(boxed.shrunkAsAllText), \(boxed.backgroundWidth) wide")
+    } else {
+        check("C28's recognised-word control layering", false, "mrcLayers returned nil")
+    }
+
+    // CONTRIBUTING 4c: the failure branch, EXECUTED. `maximumShapeRuns` is a memory
+    // bound at 8,000,000 runs and no fixture a suite can build reaches it, so without
+    // the `runLimit` seam this branch would ship never having run — which is what R31,
+    // R32 and H2 all were. A limit of 1 is reached by the second run on any page.
+    //
+    // Both halves matter: `nil` at a limit of 1, and NOT nil at the shipped limit on
+    // the same page. Without the second, a function that returned `nil` unconditionally
+    // would pass the first.
+    let c28Truncated = c28Groups(c28Missed, boxes: c28Boxes(14), runLimit: 1)
+    check("C28 — a page too dense to label within the run bound answers nil",
+          c28Renders(c28Missed, boxes: c28Boxes(14)) && c28Truncated == nil,
+          "\(c28Truncated as Any)")
+    check("…and the same page at the shipped bound does not, so the seam is not the answer",
+          c28GroupsMissed != nil, "\(c28GroupsMissed as Any)")
+    // ⛔ AND HERE IS A GAP, NAMED RATHER THAN PAPERED OVER. A check stood here asserting
+    // `(Optional<Int>.none == 0) == false` — "so the wiring refuses the page". It was the
+    // ELEVENTH check in this project's history that could not fail: that is true by the
+    // language, unconditionally, it never touched `Flattener` at all, and it would have
+    // stayed green with the wiring changed to `groups ?? 0 == 0`, to `groups != 1`, or to
+    // `return true`. Deleted by the adversarial review of the diff that added it.
+    //
+    // What is left uncovered is that `nil` is OBEYED. The two checks above prove `nil` is
+    // *produced* (a `runLimit` of 1 reaches the branch, and the shipped bound does not),
+    // and reading `mrcLayers` says `return groups == 0` yields `false` for `nil` — but
+    // nothing executes that, because no fixture can make production truncate at 8,000,000
+    // runs. `mutate.py` records the matching hole: the `groups ?? 0 == 0` mutant is
+    // deliberately absent because nothing could kill it. Closing this wants the call site
+    // to take the same parameter-shaped seam `textLineGroupsOutsideText` got, which is a
+    // change to `mrcLayers`' signature rather than a check, so it is not smuggled in here.
+
+    // The shape term walks `inkOutsideText`'s OWN window, which is the identity C28's
+    // instrument rests on — `score-shape-term` asserts it on every printed row and
+    // exits 6 otherwise. One copy of the arithmetic now serves both, so this pins that
+    // the shared copy still ignores the outer sixteenth on both sides of the identity:
+    // a mark placed only in that border is ink to neither.
+    let c28Window = Flattener.interiorWindow(width: 1600, height: 3200)
+    check("C28 — the shared interior window is the outer sixteenth on every side",
+          c28Window == (100, 200, 1500, 3000), "\(c28Window)")
+    let c28Border = tmp.appendingPathComponent("c28-border-only.pdf")
+    makeScannedPDF(at: c28Border, lines: c28Dense,
+                   bar: NSRect(x: 8, y: 200, width: 40, height: 900))
+    let c28BorderInk = c28InkOut(c28Border, boxes: c28Boxes(14)) ?? -1
+    let c28BorderGroups = c28Groups(c28Border, boxes: c28Boxes(14))
+    check("…so a mark in that border is ink to neither the fraction nor the term",
+          c28BorderInk == 0 && c28BorderGroups == 0,
+          String(format: "%.4f, groups ", c28BorderInk) + "\(c28BorderGroups as Any)")
 
     // `Tools/score-text-route.swift` reuses the shipped run's JBIG2 stencil for its
     // priced run instead of encoding it twice, on the grounds that the stencil reads

@@ -826,6 +826,92 @@ func selfTest() -> [String] {
                    + " \(Prefs.PhotoDetail.balanced.downsample)")
     }
 
+    // 10. ⛔ THE PORT CHECK, without a corpus. C28's wiring put a copy of this file's
+    //     five functions into `Flattener`, and `pageIsAllText()` consults that copy —
+    //     so every figure this tool has published is a claim about the shipped rule
+    //     only for as long as the two agree. `main` compares them on every measured
+    //     page; this compares them on a bitmap, so a machine with no `testdocs/` still
+    //     catches a divergence.
+    //
+    //     ⛔ **ITS OWN BITMAP, and the first version reused check 8's and COULD NOT
+    //     FAIL.** Check 8's missed mark is a single solid block, and one component can
+    //     never reach `lineMinimumMembers` — so both copies read 0 and agreed trivially.
+    //     Measured, not reasoned: a sabotaged port hard-wired to `return 0` passed the
+    //     whole self-test. That is the tenth check in this project's history that could
+    //     not fail, and the only thing that found it was building the sabotage and
+    //     running it (CONTRIBUTING 4a). So this fixture has FIVE glyph-shaped marks on a
+    //     baseline outside the boxes, which is a real group of five members, and the
+    //     sabotage now goes red on it.
+    let pw = 200, ph = 100
+    var pGrey = [UInt8](repeating: 255, count: pw * ph)
+    var pStencil = [Bool](repeating: false, count: pw * ph)
+    // Five recognised glyph-shaped marks — the calibration: height 10, run 3.
+    for k in 0..<5 {
+        let x0 = 20 + k * 6
+        for y in 40..<50 { for x in x0..<(x0 + 3) {
+            pGrey[y * pw + x] = 0
+            pStencil[y * pw + x] = true
+        } }
+    }
+    // …and five of the same shape on their own baseline, with no box over them.
+    for k in 0..<5 {
+        let x0 = 120 + k * 6
+        for y in 70..<80 { for x in x0..<(x0 + 3) { pGrey[y * pw + x] = 0 } }
+    }
+    let pRecognised = SearchableWriter.BoundingBox(x: 18.0 / 200, y: 39.0 / 100,
+                                                  width: 30.0 / 200, height: 12.0 / 100)
+    let pNarrow = Flattener.textRegionMask([pRecognised], width: pw, height: ph)
+    /// This file's own answer, through this file's own five functions.
+    func pMine(_ keep: [Bool]) -> Int {
+        let win = interiorWindow(width: pw, height: ph)
+        let m = inkOutsideMap(pGrey, region: keep, width: pw, height: ph,
+                              threshold: 128).map
+        let gc = components(pStencil, width: pw, height: ph, x0: win.x0, y0: win.y0,
+                            x1: win.x1, y1: win.y1).filter { $0.area >= shapeMinimumArea }
+        let cs = components(m, width: pw, height: ph, x0: win.x0, y0: win.y0,
+                            x1: win.x1, y1: win.y1)
+        let gh = median(gc.map(\.height))
+        return lines(cs, accepted: textish(cs, glyphHeight: gh,
+                                           glyphRun: median(gc.map(\.medianRun))),
+                     glyphHeight: gh).count
+    }
+    //     The fixture must actually produce a group, or this is check 8 again. Asserted
+    //     before the two copies are compared, so a fixture that drifted reports itself
+    //     rather than making the comparison vacuous.
+    let pMineNarrow = pMine(pNarrow)
+    if pMineNarrow < 1 {
+        bad.append("port: the fixture makes \(pMineNarrow) line groups, so the"
+                   + " comparison below cannot fail — check 8's own mistake")
+    }
+    let pPortNarrow = Flattener.textLineGroupsOutsideText(pGrey, stencil: pStencil,
+                                                          region: pNarrow, width: pw,
+                                                          height: ph, threshold: 128)
+    if pPortNarrow != pMineNarrow {
+        bad.append("port: Flattener says \(pPortNarrow.map { "\($0)" } ?? "nil")"
+                   + " and this file says \(pMineNarrow) over the missed baseline")
+    }
+    //     …and the other direction on the same pixels: box the missed baseline too and
+    //     both must read 0. Without this a port that returned the RIGHT non-zero count
+    //     for the wrong reason would still pass above.
+    let pMissed = SearchableWriter.BoundingBox(x: 118.0 / 200, y: 69.0 / 100,
+                                               width: 30.0 / 200, height: 12.0 / 100)
+    let pWide = Flattener.textRegionMask([pRecognised, pMissed], width: pw, height: ph)
+    let pPortWide = Flattener.textLineGroupsOutsideText(pGrey, stencil: pStencil,
+                                                        region: pWide, width: pw,
+                                                        height: ph, threshold: 128)
+    if pPortWide != 0 || pMine(pWide) != 0 {
+        bad.append("port: with the baseline recognised the counts are"
+                   + " \(pPortWide.map { "\($0)" } ?? "nil") and \(pMine(pWide)), not 0 and 0")
+    }
+    //     …and the run bound, which nothing else in this file and no corpus page can
+    //     reach at the shipped 8,000,000. CONTRIBUTING 4c: an error branch that has
+    //     never executed is R31, R32 and H2.
+    if Flattener.textLineGroupsOutsideText(pGrey, stencil: pStencil, region: pNarrow,
+                                           width: pw, height: ph, threshold: 128,
+                                           runLimit: 1) != nil {
+        bad.append("port: a run limit of 1 did not truncate")
+    }
+
     return bad
 }
 
@@ -835,7 +921,11 @@ let args = CommandLine.arguments
 if args.contains("--self-test") {
     let bad = selfTest()
     if bad.isEmpty {
-        print("score-shape-term: self-test ok (9 checks)")
+        // ⚠️ A LITERAL, so it goes stale silently — it read 9 with ten groups in the
+        // function until 2026-08-22, and a count that does not move when a check is
+        // added is worth less than no count, because it reads as corroboration. If you
+        // add a group, change this number in the same edit.
+        print("score-shape-term: self-test ok (10 checks)")
         exit(0)
     }
     FileHandle.standardError.write(Data(
@@ -971,6 +1061,8 @@ func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
 
 print(columns.joined(separator: "\t"))
 var identityFailed = 0, measured = 0
+/// C28's port check: the shipped `Flattener` rule against this file's own copy.
+var portAgreed = 0, portDisagreed = 0
 var dumpMissing: [String] = []
 /// Pages where `WIDENBYTES` was asked for and one of the two layerings declined — an
 /// `mrcLayers` that returned nil or a jbig2 that failed. Counted and reported rather than
@@ -1078,6 +1170,30 @@ for index in pages {
         "\(l.maxX - l.minX + 1)x\(l.maxY - l.minY + 1)+\(l.minX)+\(l.minY)"
     }
     let topLine = biggest.map(rect) ?? "-"
+
+    // ⛔ THE PORT CHECK, added 2026-08-22 with C28's wiring, and it is the only thing
+    // that says the shipped rule is the rule this tool measured. Every figure in C28's
+    // decision — 12 of 12 type-losers, 3 of 51 non-losers, +2,362,625 B — was produced
+    // by the five functions ABOVE in this file, and `pageIsAllText()` now consults a
+    // port of them in `Flattener`. Two copies of an arithmetic, one of which supplies
+    // the evidence for the other, is this register's most repeated instrument defect;
+    // and unlike the identity guard on `mapFrac` a divergence here would be **silent**,
+    // because nothing else in this tool reads the shipped function.
+    //
+    // So: same `grey`, same `stencil`, same `region`, same Otsu, and the two counts must
+    // agree on every page. Counted rather than only warned about, because "the check is
+    // there" and "the check ran" are different claims and the summary line below is what
+    // tells them apart.
+    let portN = Flattener.textLineGroupsOutsideText(grey, stencil: stencil, region: region,
+                                                    width: w, height: h, threshold: otsu)
+    if portN == found.count {
+        portAgreed += 1
+    } else {
+        portDisagreed += 1
+        FileHandle.standardError.write(Data(
+            ("port-check p\(index + 1): Flattener says \(portN.map { "\($0)" } ?? "nil") "
+             + "and this tool says \(found.count)\n").utf8))
+    }
 
     // The rim sweep. Each radius gets its own components pass over its own trimmed map,
     // not a filter over `comps`: cutting a collar out of the map can SPLIT a component as
@@ -1266,7 +1382,14 @@ for index in pages {
 
 print("")
 print("pages measured \(measured)"
+      + "; port agreed on \(portAgreed)"
       + (identityFailed > 0 ? "; ⛔ IDENTITY FAILED on \(identityFailed)" : "")
+      + (portDisagreed > 0 ? "; ⛔ PORT DISAGREED on \(portDisagreed)" : "")
       + (wideRefused > 0 ? "; ⚠️ widening not priced on \(wideRefused)" : "")
       + (dumpMissing.isEmpty ? "" : "; ⚠️ dump missing \(dumpMissing.joined(separator: ", "))"))
 if identityFailed > 0 { exit(6) }
+// C28. A silent divergence between the shipped rule and this tool's copy would
+// make every figure this file has ever published a claim about code that is not
+// running, so it is an exit and not a warning. 7 rather than 6 so a caller can
+// tell the two instrument failures apart.
+if portDisagreed > 0 { exit(7) }

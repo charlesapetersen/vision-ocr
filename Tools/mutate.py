@@ -192,6 +192,24 @@ CONSTANTS = [
     # does NOT select it: `--only` is a substring of the id, and the id is built from the
     # constant's own name. Use `--only textPageInk`.
     ("Flattener.swift", "textPageInkOutsideThreshold", "0.045", "0.08"),
+    # C28's wiring, 2026-08-22. Two of the shape rule's five numbers, chosen because
+    # each is load-bearing in a *different* direction and the suite has a check sized
+    # against each. 99 members means no line group ever forms, so the third term can
+    # never refuse a page and the missed-word fixture goes back to being stored at an
+    # eighth — which is the defect C28 is open for, planted.
+    ("Flattener.swift", "lineMinimumMembers", "4", "99"),
+    # ⛔ …and this one is here as a KNOWN SURVIVOR against today's checks, which T5 says
+    # is a gap in the checks rather than a value nothing depends on. It was added with a
+    # comment claiming the suite's scanner-rule fixture is "held out by this number
+    # alone"; the adversarial review of that diff refuted it. A solid fill is ONE
+    # 8-connected component, and one component can never reach `lineMinimumMembers` = 4,
+    # so `c28GroupsBar` reads 0 at every value of `shapeRunHigh` — the fixture is held out
+    # by the GROUPING. `shapeHeightHigh` and `shapeMinimumArea` are unpinned in both
+    # directions for the same reason, and `shapeHeightLow`/`lineGapFactor` only one way.
+    # What would kill it is a fixture with FOUR OR MORE non-type-shaped components in one
+    # horizontal band — four short solid dashes on a baseline, say — and that fixture is
+    # owed. Kept rather than dropped so the gap is in the catalogue and not only in prose.
+    ("Flattener.swift", "shapeRunHigh", "2.0", "99.0"),
     # The quarter inch that separates a drawing from show-through. Large, so every
     # pale mark is type-sized and the drawing is never found.
     ("Flattener.swift", "typeCeilingInches", "0.25", "99.0"),
@@ -303,6 +321,28 @@ OPERATORS = [
      "if true,\n           inkCoverage(", "R38-ink-needs-tone"),
     ("Flattener.swift", "if let seen = walkedAt[identity], seen <= depth { return }",
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
+    # C28's wiring as a MECHANISM rather than as a constant, 2026-08-22, and it is the
+    # sibling of `R56-alltext-sees-drawings` below: the third term still runs, still
+    # pays for both component passes, and its answer is thrown away. A constant mutant
+    # cannot reach this — `lineMinimumMembers` at 99 changes what the term FINDS, and
+    # this changes whether the verdict listens. The by-hand equivalent was executed on
+    # the way in: two binaries one term apart put the missed-word fixture's background
+    # at 153 px against a ceiling of 154 without it and 612 px with it.
+    #
+    # ⚠️ Its twin is NOT here and that is deliberate rather than an omission. The other
+    # wrong reading — `groups ?? 0 == 0`, i.e. a page too dense to label being waved
+    # through as all text instead of refused — is a mutant **no fixture can kill**,
+    # because nothing a suite can build reaches `maximumShapeRuns` (8,000,000 runs).
+    # Planting it would add a known survivor to the catalogue and T5's job is telling a
+    # gap in the checks from a value nothing depends on; this one is neither. What
+    # covers that reading instead is the `runLimit` parameter and the two checks that
+    # execute the branch through it. C24's seam is the precedent for planting BOTH
+    # readings of a `nil`, and the reason it does not apply here is that its `nil` was
+    # reachable from a fixture and this one is not.
+    ("Flattener.swift",
+     "            return groups == 0\n",
+     "            return true\n",
+     "C28-alltext-ignores-shape"),
     # R56's second half, and the one a constant mutant cannot reach. Closing R56 in
     # `isPicture` alone would have moved the harm rather than removed it: the page
     # reaches the picture path and `mrcLayers` then stores it at an eighth of its

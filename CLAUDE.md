@@ -17,7 +17,8 @@ paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **four entries are open as
-of 2026-08-20: `C27`, `C28`, `C29` and `C30`. `C26` is `FIXED`.** `C30` is the owner's second JSTOR
+of 2026-08-20: `C27`, `C28`, `C29` and `C30`. `C26` is `FIXED`, and `C28` went to `HALF FIXED` on
+2026-08-22 when its shape term was WIRED into `pageIsAllText()`.** `C30` is the owner's second JSTOR
 finding and the widest of them: whole blocks of clean body text get no text layer, and all four of this
 project's text-layer instruments count only the words Vision returned, so `words=100%` is silent about it.
 ⛔ **C30's FORK IS SETTLED ON THE BLOCK IT WAS OPENED ON as of 2026-08-22 — page 1's void is RECOGNISER
@@ -66,9 +67,42 @@ reports it as of 2026-08-20** — that was the entry's question 5, invariant 1's
 an eighth, with that page's own fraction beside it, on the success path only and with **no bar on the
 fraction** (the campaign proved the losers and non-losers interleave when sorted by it, and one
 measured loser prints `0.0000`, so any filter drops a known loser). ⛔ It is a report and not a fix —
-the pages are still degraded, and C28 stays OPEN — ⚠️ but as of **2026-08-22 all five of its questions
-are MEASURED** (question 2 closed 2026-08-21; question 4's last seam priced 2026-08-22), so what is left
-of this entry is **the decision and the wiring**, not another measurement.
+the pages were still degraded — ⚠️ but as of **2026-08-22 all five of its questions
+are MEASURED** (question 2 closed 2026-08-21; question 4's last seam priced 2026-08-22), so what was left
+of this entry was **the decision and the wiring**, not another measurement.
+✅ **BOTH WERE TAKEN 2026-08-22 AND C28 IS NOW `HALF FIXED`** — read `#### THE DECISION` and
+`#### The wiring, SHIPPED` before touching any of it. The shape term is a **third refusal condition in
+`pageIsAllText()`**, after the ink fraction and the pale-drawing terms, so it is only ever evaluated on
+the pages that would otherwise be shrunk 8x. ⛔ **The seam is the LAYERING one and the argument is the
+DIRECTION OF FAILURE, not the price**: `bgFactor = allText ? max(caller, 8) : caller`, so a term that
+only ever makes the verdict false can only ever store a page at *more* resolution — its worst case is
+bytes and it cannot lose content on any page at any setting. The 1,020x cheaper stencil widening was
+**rejected** for failing the other way in three measured directions (R57's blob on `Wilcox` p2's pen
+ornament on a page that loses nothing; **50.03%** of the protection rather than all of it; and it
+*lowers* `inkOutsideText`, pushing every page toward the very all-text verdict it is meant to fix), and
+the `lineN >= 1 AND rim1N >= 1` conjunction was rejected as post-hoc whose only benefit here is bytes on
+two pages that lose nothing. ⛔ **The negative control is what to quote**: two binaries differing in
+exactly the third term put the fixture's background at **153 px against a ceiling of 154** without it and
+**612 px** with it, and the same PDF with one more word box reads **153 / shrunk on both** — so the flip
+is the term's, not the fixture leaving the all-text class. ⚠️ **What keeps it OPEN**: it rescues **13 of
+the 16** measured losses and leaves three hand-made marks, one of which (`_1939_Former students` p2,
+`outPx` **0**) no value of any constant here can reach, because the page-wide Otsu is blind to pale
+pencil upstream of the map. It buys **no searchability** — the words are still not in the text layer,
+which is `C30`'s ground. ⛔ **And two things it does NOT claim.** (1) The mutant campaign was **not
+run**: three mutants were added (catalogue 97 → **100**, all three verified APPLIED, not NOT-APPLIED)
+and a scoped run is a baseline suite plus 44-58 min a mutant. (2) **No corpus sweep was re-run**, so
+"12 of 12 type-losers" is still the tool's 2026-08-21 figure — what is new is a **port check**:
+`Tools/score-shape-term.swift` now calls the shipped `Flattener.textLineGroupsOutsideText` on its own
+surfaces on every measured page, prints `port agreed on N` and **exits 7** on disagreement, because every
+figure C28 published came from the tool's copy and what ships is a port. ✅ **It was RUN on corpus pages
+and reads `port agreed on 5`** — `Jones et al_2010` p2/p3/p5/p7/p9, the term firing on three of them, and
+`lineN` reproducing `SHAPETERM-73-2026-08-21.tsv` digit for digit (**1 / 0 / 4 / 3 / 0**), so the tool has
+not drifted either. ⚠️ Five pages of 73, in one document. ⚠️ That check's `--self-test`
+half **could not fail** in its first version — it reused a fixture whose single out-of-region block can
+never reach `lineMinimumMembers`, so both copies read 0 and agreed trivially, and a port sabotaged to
+`return 0` passed the whole self-test. Found by building the sabotage and running it (CONTRIBUTING 4a);
+it has its own five-mark fixture now and the sabotage goes red. That is the tenth check in this
+project's history that could not fail.
 ✅ **QUESTION 3 HAS ITS FIRST MEASUREMENT, 2026-08-21, AND A SHAPE TERM SEPARATES WHERE FIVE SCALARS
 DID NOT** — `Tools/score-shape-term.swift` (new) counts **text lines** in the ink outside the
 recognised words at the page's own type scale, calibrating on the stencil's own components, and over 13
