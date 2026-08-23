@@ -8028,6 +8028,100 @@ eventually takes owes that fixture again, because this corpus will not supply it
 instrument is not in this repository; the seam's source is filed outside the tree as
 `$STATE/rescue/REJECTED-not-on-main-vo-20260822-014509-85956.patch.bak`.
 
+#### THE DECISION — 2026-08-22, and it is the LAYERING seam, not the stencil one
+
+**All five questions are measured, so what was left was a choice between three shapes and this section
+is that choice.** It is taken autonomously and the reasoning is written out because the owner's standing
+instruction is that a hard technical call inside `Sources/` is not his to make — *"I'm relatively
+non-technical and in no position to judge these decisions myself"* — and a parked decision is answered a
+day later with whatever was recommended anyway. Nothing here is new measurement: every number below is
+quoted from a section above, and where a number was never measured this section says so instead of
+estimating it.
+
+**THE DECISION: wire the shape term as a THIRD REFUSAL CONDITION inside `pageIsAllText()`** — a page
+whose ink outside the recognised words contains at least one text-shaped line group is not an all-text
+page, so its tone layers keep the caller's factor instead of being forced to 8x/16x. `region` stays the
+**recognised** one, the stencil stays confined, and `textRegionMask` does not move.
+
+**Why this seam and not the 1,020x cheaper one — the argument is about the DIRECTION OF FAILURE, not
+about bytes.** Read off the shipped code at `mrcLayers`: `bgFactor = allText ? max(caller, 8) : caller`,
+and `max(caller, 8) >= caller` for every caller. So a term that only ever makes `pageIsAllText()` return
+**false** can only ever store a page at *more* resolution than it does today. Its worst case is bytes.
+It cannot introduce a content loss, on any page, at any setting — which is the asymmetry invariant 1
+asks for and the reason this is a smaller decision than the price tables make it look.
+The stencil widening has the opposite shape. Measured in `#### The price at the textRegionMask seam`,
+it is 1,020x cheaper and it fails toward harm in three separate ways: it turns `1881 - Harry Wilcox`
+p2's pen ornament into a hard-edged 1-bit blob, which is **R57's failure mode on a page that loses
+nothing**; it delivers only **50.03%** of the protection (36,709 of 73,370 out-of-stencil ink pixels,
+**24.1%** on `Scott_TK` p3, a measured content-loser); and it **lowers `inkOutsideText`**, so every
+widened page moves toward the all-text verdict that shrinks backgrounds 8x — `1954 - Why` p4 reads
+0.0540 → 0.0524 against a bar of 0.045. A fix whose own mechanism pushes pages into the defect it is
+fixing is the wrong fix however cheap it is. It also buys **no searchability**: a synthetic box carries
+no string, so `SearchableWriter` still has nothing to draw, which means the cheap seam does not even
+address the half of this entry a reader would notice first.
+
+**What it costs, all quoted:** sampled, `inkOut < 0.045 AND lineN == 0` refuses the shrink on **16 of
+the 73**, **789,825 → 3,152,450 B, +2,362,625 B, 3.99x**, with **15.5%** of the spend on pages that lose
+nothing. Per document over the whole 16,987-page corpus (`Tools/stratify-corpus.py`), it refuses **~18
+of the ~127** pages still shrunk 8x/16x for **+2,694,515 B** and rescues **~14.7 of the ~19** that lose
+content, with **18.0%** of the spend buying nothing. That is **~67% of C26's shipped ~4.0 MB** —
+incremental to a bill this project has already decided it could afford, on the owner's own arithmetic at
+the 2026-08-19 check-in that *~4.0 MB of corpus output is a cheap price for not destroying words*. The
+alternative that was rejected on price is the cheapest page-wide bar rescuing the same pages: **~60
+pages and +8,289,863 B**, 2.1x C26's whole bill, with **61.0%** of it landing on pages a reader cannot
+tell apart. The term is the first candidate in this campaign whose money mostly lands on pages that lose
+content, and that is what decided it against the bar.
+
+**What it protects and what it does not, quoted from `#### The same shape term over ALL 73`:** `lineN
+>= 1` reads **12 of 12** pages that lose typeset content, **1 of 4** losing only a hand-made mark, **0
+of 6** degraded-but-legible and **3 of 51** that lose nothing. So the wiring rescues **13 of the 16**
+measured content losses and leaves **three hand-made marks** unprotected. ⛔ **And one of those misses
+is not this rule's to fix**: `_1939_Former students` p2 has `outPx` **0** — the page-wide Otsu cannot see
+pale pencil on a shadowed sheet, so the map is empty upstream of any shape rule, and **no** value of any
+constant in this term reaches it. That is why this wiring leaves the entry `HALF FIXED` rather than
+`FIXED`: three hand-made marks stay unprotected and one of the three is unreachable from this seam at
+any setting of any constant.
+
+**Three things that were rejected, each with the measurement that rejected it.**
+1. ⛔ **The `lineN >= 1 AND rim1N >= 1` conjunction**, which `#### The rim fix, MEASURED` calls the best
+   rule this campaign has measured (**12 of 12** type-losers, **1 of 51** non-losers, on 14 pages rather
+   than 16). Rejected for the wiring anyway, on two grounds the section states itself: it is **post-hoc**
+   — a conjunction chosen after seeing those 73 pages, which is the objection this entry raises against
+   six shares and four scalars — while the five numbers behind `lineN` were *"written before any page was
+   run and not adjusted after"*; and its entire benefit at this seam is **bytes on two pages that lose
+   nothing**, because it keeps all twelve type-losers. Paying a second full-page dilation pass and a
+   post-hoc conjunction to save the byte cost of two pages nobody can see is the wrong trade, and the
+   collar's own mechanism is measured **non-monotone** (at r=1 a 1-px collar splits a three-component rim
+   into four and manufactures a firing of its own on `Xin Qu et al_2018` p28). The conjunction stays
+   available: it is a second condition, so adding it later strictly shrinks the set and cannot un-rescue
+   a page this wiring protects.
+2. ⛔ **The stencil widening** (`textRegionMask` + the accepted groups), for the three failure directions
+   above. Its seam was already refused in `Tools/score-shape-term.swift`'s own header, and
+   `#### The same price without the collar` refused a second override beside
+   `textPageInkOutsideThresholdOverride`. This decision does not reopen either.
+3. ⛔ **Leaving the entry open as a documented loss on ~19 pages of 16,987.** Rejected because the loss
+   is invariant 1 — content present in the source, absent from the text layer, illegible in the image —
+   and because the only argument for waiting was a byte price that is now measured at two thirds of a
+   bill already accepted. `#### The report, SHIPPED` made the loss *visible*; a report is not a fix, and
+   this entry has said so since 2026-08-20.
+
+**What is deliberately NOT in this decision.** No constant moves: `textPageInkOutsideThreshold` stays at
+0.045 (the entry's own note that a fix here might let it go back *up* is a separate measurement and is
+not taken on trust). `paleDrawingThreshold` and the `paledraw-term` triage item are untouched. The five
+shape constants ship at the values they were written at, unadjusted. And the term is placed **after** the
+two existing guards rather than before them, so it is only ever evaluated on the pages that would
+otherwise be shrunk 8x — which is both the cheapest placement and the one that changes the fewest pages.
+
+**⚠️ What this decision does not know.** The corpus figure is a per-document stratified *estimate* whose
+one assumption — that a document's unsampled pages behave like its sampled ones — is nowhere measured;
+the protection figures are from a 73-page sampled population, not a census; the `PhotoDetail.smallest`
+loss measured in `#### The same loss at 1/3` is a **different** population (the 109 pages at 1/3, not
+these 73) and this wiring does not reach it, because those pages are not read as all text; and no page
+in either widening artefact ever flipped `pageIsAllText()`'s verdict, so the corpus does not supply a
+fixture for the flip. The section above says that debt out loud — *"whatever wiring C28 eventually takes
+owes that fixture again, because this corpus will not supply it"* — and the wiring pays it in
+`Tests/main.swift` rather than borrowing a corpus page that does not exist.
+
 #### What this entry is NOT
 
 - **Not C26.** C26 is the page-wide bar and it is shipped. This is the mechanism, and the two named
