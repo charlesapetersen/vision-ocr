@@ -8232,8 +8232,10 @@ a fixture that drifts reports itself instead of going quiet. ⚠️ The self-tes
 literal too — it printed "9 checks" with ten groups in the function — corrected, with a note saying that
 a count which does not move when a check is added is worth less than no count.
 
-**The suite.** Nineteen new `check` call sites in `Tests/main.swift` — seventeen on the happy path and
-two the `mrcLayers`-returned-nil arms, counted rather than estimated — and `makeScannedPDF` grew two defaulted
+**The suite.** **1,216 / 1,216 passed, no skips** — the count the pre-commit hook reported on the wiring
+commit, which is the only suite run this change has had. **18** new `check` call sites in
+`Tests/main.swift`, sixteen of them on the happy path and two the `mrcLayers`-returned-nil arms, counted
+after the review deleted one — and `makeScannedPDF` grew two defaulted
 parameters (`extra`, `bar`) so a mark can be placed deliberately outside a given box set — shape and
 quantity varied separately. The `nil` half is covered by a `runLimit` **parameter** rather than a mutable
 static: at the shipped `maximumShapeRuns` = 8,000,000 no fixture a suite can build reaches the
