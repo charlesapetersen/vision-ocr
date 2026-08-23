@@ -1554,8 +1554,14 @@ is the one that is wrong. **The half that needs no threshold closed 2026-08-16**
 other half **closed 2026-08-17** — needing no threshold either, which is the sentence the
 three days between them went on establishing: the constant the entry assumed wanted
 recalibrating judges all three pages it faces correctly. `## C24's wiring, measured —
-2026-08-17` at the end of this entry is the gate run and the close; the sections before it
-are the measurement campaigns it rests on, in date order.)*
+2026-08-17` is the gate run and the close; the sections before it are the measurement
+campaigns it rests on, in date order. **One section now sits after the close** —
+`#### The two caps, and the chain they are equal on`, 2026-08-23 — because the wiring left
+one of its own promises unkept: it made the drawn walk production without re-measuring the
+depth cap the old comment said would want re-measuring *"then"*. It changes no behaviour and
+the entry stays `FIXED`, but it does record a **latent divergence between the two image walks
+on chains of bare forms**, carried out as the queue's `bare-form-reach`. This parenthesis
+said "at the end of this entry" until that section was added.)*
 
 **What closed: a page that draws no XObject at all has no image, whatever its
 `/Resources` can reach.** That needs no coverage rule, no CTM tracking and no constant —
@@ -2453,6 +2459,190 @@ because restricting to the names the page invokes is a fact about the content st
 "recalibration" is one page at the constant's own boundary rather than a population; and
 the `walkedAt` defect does not exist — its symptom was area-versus-width, verified on the
 document it was observed in. The corpus gate run is the one item that stands.)*
+
+#### The two caps, and the chain they are equal on — 2026-08-23
+
+**The entry stays `FIXED`. Nothing shipped changes behaviour here**: `drawnLargestImage`'s
+`case "Form"` still refuses at `s.depth < 3` and `largestImage`'s inner `walk` still refuses
+at `depth < 4`. What changes is that the claim *"those are two numbers for one reach"* stops
+being a sentence — and, in the course of measuring it, **stops being true unconditionally.**
+This section is the queue's `depth-cap` item and the owner's decision of 2026-08-18,
+executed, plus one correction to the decision itself.
+
+**Why it was owed.** The mismatch has been "noticed" and nearly changed on a premise that
+was wrong about the case it was argued over. The 2026-08-17 decision — *set the drawn cap
+to `< 4`* — rested on a latent divergence, *"a page nesting images four levels deep would
+get a different answer depending on which path it took"*, retracted the next day on the
+control flow: the two walks count in **different frames**. `largestImage` counts resource
+*dictionaries*, starting at the page's own at `walk(resources, depth: 0)` and refusing
+`depth 4`. `drawnLargestImage` counts *forms entered* — `guard s.depth < 3` at
+`Flattener.swift:3653`, then `s.depth += 1` at `:3684` before the form's body is scanned. On
+a chain whose forms each carry their own `/Resources`, both therefore see an image listed in
+the resources of **three nested forms** and neither sees one a level deeper. There, `< 4` on
+the drawn walk would let it enter a fourth form and see an image the dictionary walk cannot
+— **creating** the divergence the change was proposed to remove.
+
+⛔ **AND THAT EQUALITY IS A PROPERTY OF THAT CHAIN, NOT OF THE TWO CONSTANTS. On a chain of
+BARE forms the two reaches are not equal, the drawn walk is strictly the narrower, and the
+retracted premise's shape is real.** A form carrying no `/Resources` of its own resolves its
+names against the scope that invoked it. The dictionary walk therefore **does not descend it
+and loses nothing** — the image is listed in the invoker's dictionary, which that walk has
+already scanned — while the drawn walk **must** follow the `Do` operators wherever they sit
+and spends a level on every form it enters, bare or not. So each bare form in a chain narrows
+one walk and not the other. **The gap grows with the number of bare forms, so no pair of caps
+closes it**, which is a reason to leave both alone rather than a reason to raise either:
+`< 4` would only move the boundary to five bare forms.
+
+**Measured, page 14 of the fixture** — four bare levels over an 1800 px image:
+`largestImage` answers **1800 px**, `drawnLargestImage` answers **`.noImage`**.
+⛔ **And it costs the product, which is the sharper half.** `rebuildDPI(of:)` routes
+`.unreadable` to `largestImage` and `.noImage` to `rebuildDPI(from: nil)`, so the 1800 px
+answer the dictionary walk is holding is **discarded** and the page rebuilds at
+`fallbackRebuildDPI` = 300 instead of its own 211.8 DPI. 1800 px clears both
+`minimumScanPixelWidth` (600) and `minimumPlausibleScanDPI` (150), so this is a resolution
+the policy would have trusted, not one it would have refused anyway — the check asserts that
+second clause rather than leaving it to the reader.
+
+⛔ **Found by the adversarial review of THIS diff, and the draft it reviewed had committed the
+unconditional claim to `Flattener`'s own comment** — the same failure mode as the
+`make-observations.swift` comment this very commit corrects, in the same commit. Both caps'
+comments now carry the scope and point at each other, so neither can be "reconciled" alone.
+
+⚠️ **Latent, not a measured victim, and the bound is weak.** No corpus page has this shape:
+`c17b3f3` moved the drawn cap from `< 4` to `< 3` and its 16,987-page sweep was
+byte-identical, which no page with exactly four bare levels could have been. That is **one
+cap over one corpus**, and it says nothing about `largestImage`'s `< 4`, which has **never
+been moved over the corpus at all** — nor could that sweep stand in for it, since the
+dictionary walk reads `/Resources` whether or not the form is drawn. So these rows **pin the
+behaviour rather than bless it**, and the decision of whether to fix it is the queue's new
+`bare-form-reach`. It is not reopened as a defect: nothing measured loses anything, and the
+page a reader would have to construct to be harmed does not exist in 16,987 of them.
+
+⛔ **The corpus can never be the instrument for the equal half either.** This entry's own
+comment records `< 4` and `< 3` producing byte-identical sweeps, so the verification the
+2026-08-17 decision prescribed for itself was **guaranteed to pass whatever the caps said**.
+A fixture is the only thing that can see any of this, which is `A1.3`'s precedent in this
+same suite: it already carries *"both outline walks truncate at the same depth"* because that
+mirror-walk pair really did truncate at different depths. **Equal reach recorded only in
+prose is what let this be re-litigated into a wrong decision once already.**
+
+**The fixture: pages 11-14 of `shared-resources.pdf`.** Pages 11-13 are ONE chain of four
+nested resource-carrying forms — page → `/FA` → `/FB` → `/FC` → `/FD`, where `FC` draws a
+1200 px image and `FD` a 2400 px one — **entered at three different levels by three pages**.
+That is what makes each refusal attributable to the cap rather than to the fixture: *the
+object refused on one page is found on the next, unchanged*. Page 14 is a separate chain of
+four **bare** forms over an 1800 px image, and is the counterexample above.
+
+| page | enters at | third level holds | fourth level holds | dict walk | drawn walk |
+|---|---|---|---|---|---|
+| 11 | `/FA` | `FC`'s 1200 px | `FD`'s 2400 px | **1200** | **1200** |
+| 12 | `/FB` | `FD`'s 2400 px | — | **2400** (wins on area) | **2400** |
+| 13 | `/FW`, a wrapper above `/FA` | — | `FC`'s 1200 px | **nil** | **`.noImage`** |
+| 14 | `/FP1`, all four bare | — | `/ImE`'s 1800 px | **1800** | **`.noImage`** |
+
+Page 13's fourth-level cell is the one to read twice: the image refused there is the *same
+object page 11 finds*, one level further from the page, which is what makes its `nil` the
+cap's and not an empty chain's. Page 14's is the same image its own dictionary walk returns.
+
+**Nine checks run on that**, and three design points in them are worth more than the rows.
+(1) **Three of the nine name an absolute width** — the two 1200 rows and the 2400 row —
+because agreement alone is satisfied by both caps moving together: under a joint +1 the
+agreement row stays **green** and those three go red. That is the whole reason the widths are
+there, and it is simulated rather than asserted. (2) **The agreement row spans pages 11-13
+and deliberately NOT page 14**, because the invariant is false there; the scope is the
+finding. (3) **The premise row gates nothing — it reports.** What it buys is the non-vacuity
+of the two *absence* rows (pages 13 and 14), where without it `.noImage` could mean "nothing
+drawn" rather than "too deep to reach"; the rows asserting 1200 and 2400 could not be
+satisfied by an early return at all. ⚠️ It is **not** a reachability guard, and saying so is
+this register's own retraction of exactly that overclaim for `C28` one commit earlier.
+`logic/C24b-no-image-is-not-unknown` is why the shape is worth stating at all: page **8** of
+this fixture is the page that kills it and the seven before it could not.
+
+⚠️ **One reading of shipped behaviour is pinned without being endorsed.** Pages 13 and 14
+both draw an XObject and `drawnLargestImage` returns `.noImage` rather than `.unreadable`,
+because the depth guard returns without setting the flag. On page 13 it costs nothing —
+`largestImage` is `nil` there too, so both arms of `rebuildDPI` reach the fallback either way
+— and page 14 is precisely where it stops costing nothing. That is why the two are separate
+rows rather than one.
+
+**The sabotage, run 2026-08-23 — WATCHED FAILING, and four of the seven rows it could reach
+go red.** A
+binary one token from the shipped one (`s.depth < 3` → `< 4`, i.e.
+`logic/C24-drawn-cap-reaches-further` applied by hand) was built and run to the end of this
+block, and it reports:
+
+```
+FAIL …and the drawn walk answers the same width from the same page
+     — largest(dpi: 282.35, pixelWidth: 2400)
+FAIL C24 — both walks reach exactly as far as each other on all three
+     — largest(282.35, 2400) / largest(282.35, 2400) / largest(141.18, 1200)
+FAIL C24 — a page whose every image is four forms down reads as no image
+     — nil / largest(dpi: 141.18, pixelWidth: 1200)
+FAIL …and it rebuilds at the fallback rather than at a resolution nobody read — 141.2
+                                             (375 checks reached, 371 ok, 4 FAIL)
+```
+
+Read the third line: on page 13 the sabotaged drawn walk reaches `FC`'s 1200 px while
+`largestImage` still answers `nil` — **the two walks disagreeing, printed**, which is the
+outcome the fixture exists to make visible. And the fourth is the divergence reaching the
+product: 141.2 DPI where the shipped build takes the 300 fallback.
+**The three rows that stay green are the three that should**: the premise, the
+`largestImage`-only row (the dictionary cap was not touched), and the negative control, where
+2400 is the answer at both caps. ⚠️ **Scope of this run, stated exactly.** It was built before
+page 14 existed, so it witnesses the pages 11-13 rows and **not** page 14's two; under the
+same sabotage those would also go red (the drawn walk would enter the fourth bare form and
+return 1800), but that is **reasoned, not watched**. And the second mutant,
+`C24-dictionary-cap-reaches-further`, was **not** built here — the correctness review of this
+diff simulated it against the code and puts three rows red, `largestImage`-side, which is
+consistent with the arithmetic above but is not a run.
+
+**Two mutants, catalogue 101 → 103**, one per cap and a matched set:
+`logic/C24-drawn-cap-reaches-further` (`s.depth < 3` → `< 4`) and
+`logic/C24-dictionary-cap-reaches-further` (`depth < 4` → `< 5`). ✅ Both `find` strings were
+checked **unique** in `Sources/Flattener.swift` by hand, so neither will be reported
+NOT-APPLIED — `mutate.py --self-test` never touches `OPERATORS`, so nothing automated asserts
+that. ⚠️ **Neither has been run through `Tools/mutate.py`** — a scoped run is a baseline suite
+plus ~45 min a mutant — so they are catalogued and not yet graded, and the kill evidence is
+the sabotage binary above rather than a `mutation-log.tsv` row.
+
+⛔ **GROWING THE FIXTURE BROKE A CHECK ABOUT SOMETHING ELSE, AND THE SUITE IS WHAT CAUGHT IT
+— after two adversarial reviews of the same diff did not.** The `rebuildDPIOverride` block
+200 lines below asserted `flattened.count == 10`, a literal copy of this fixture's length
+kept nowhere near the fixture, so pages 11-14 turned *"`flatten` renders every overridden
+page at that resolution"* red: `[2550, 765, 765, …]`, fourteen entries where it wanted ten.
+The row's actual subject — every page but the declined one moving to the override, and that
+one staying on the 300 fallback — was **satisfied throughout**; only the count was wrong. It
+reads `sd.pageCount` now. ⚠️ Worth knowing *why* both reviews missed it: both were aimed at
+the new block, and one was told explicitly not to re-check fixture arithmetic. **A fixture
+shared by unrelated checks is a coupling that neither a diff-scoped review nor a
+fixture-scoped one sees.** The length was the only such literal in the block — swept.
+
+**The sibling sweep.** ⛔ *Who else recurses with a bound, and who else carries a copy of
+either walk?* (a) **There is no third PDF-content walk**: `CGPDFScannerCreate`,
+`CGPDFContentStreamCreate` and `CGPDFDictionaryGetDictionary` appear in
+`Sources/Flattener.swift` and nowhere else in the tree. (b) **No tool carries a copy** —
+`Tools/score-drawn-images.swift` calls `Flattener.drawsAnyXObject`, `.largestImage`,
+`.drawnLargestImage` and `.rebuildDPI(from:)` directly, which is why nothing there goes out
+of step, and it is the T15 shape this project pays for when a tool reimplements instead.
+(c) **The one other bounded recursion in `Sources/` is this section's own precedent** —
+`SearchableWriter.swift:412` and `:581`, both `guard depth < maximumOutlineDepth`, already
+pinned by the `A1.3` check. Nothing else is affected.
+
+**The comments.** `drawnLargestImage`'s `case "Form"` comment used to justify `< 3` by
+*instrument symmetry* — the drawn-versus-dictionary sweep isolating one variable — and to
+say that if the walk were ever wired into `rebuildDPI` the cap *"wants re-measuring then"*.
+`c17b3f3` did that wiring on 2026-08-17 and revisited neither. It now states the
+frame-of-reference difference first, because that is what makes two numbers legible and stops
+another reader "noticing" the mismatch, gives the honest production reason — **three levels
+is what shipped** — and carries the bare-form exception beside it. `largestImage`'s guard
+gained the reciprocal note, including that it is the **wider** of the two and that raising it
+widens rather than equalises.
+⚠️ **This entry's own copy of the expired justification is left standing on purpose.** The
+2026-08-16 bullet in `### What the review of this diff found` still reads *"The two walks
+disagreed about how deep to look, which is a confound in the one instrument built to isolate
+a single variable"*, and `git grep -n depth BUGS.md` reaches it before this section. It is
+a true record of what that review found and why `< 3` was chosen **then**; it is not the
+current reason, and this sentence is the pointer that says so rather than an edit to history.
 
 ### C25 · `score-text-route` has never compiled, and three documents cite it as the evidence — FIXED
 *(found 2026-08-15 while fixing A12.2, by trying to build it)*

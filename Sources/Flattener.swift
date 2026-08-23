@@ -3415,6 +3415,22 @@ enum Flattener {
         var walkedAt: [UnsafeRawPointer: Int] = [:]
 
         func walk(_ resources: CGPDFDictionaryRef, depth: Int) {
+            // Resource *dictionaries* counted from the page's own at 0, so refusing 4 means
+            // images inside three nested resource-carrying forms are in reach and a fourth is
+            // not. `drawnLargestImage` writes `< 3` for the same reach on such a chain,
+            // because it counts *forms entered*; pages 11-13 of `shared-resources.pdf` pin
+            // the two equal there. Do not "reconcile" the numbers — see that guard's comment.
+            //
+            // ⚠️ **This walk is the WIDER of the two, and a bare form is why.** The `case
+            // "Form"` arm below descends only a form that has `/Resources`, and it loses
+            // nothing by skipping the rest: a bare form's names resolve in the invoker's
+            // dictionary, which is the one being scanned right now. So a chain of bare forms
+            // costs this walk no depth at all while costing the drawn walk one level each,
+            // and on four bare levels this walk answers an image the drawn walk does not
+            // reach — page 14 of the fixture. ⛔ **Raising this cap does not equalise
+            // anything**; it widens the wider walk. The queue's `bare-form-reach` holds the
+            // decision, and `< 4` has never been moved over the corpus, so the byte-identical
+            // sweep the other guard cites is not evidence about this number.
             guard depth < 4 else { return }
             // Identity, not contents: CoreGraphics resolves an indirect
             // reference to the same dictionary pointer every time, which is what
@@ -3619,17 +3635,53 @@ enum Flattener {
                     s.height = Int(h)
                 }
             case "Form":
-                // **`< 3`, not `< 4`, so this reaches exactly as far as `largestImage`.**
-                // That walk starts at the page's dictionary at depth 0 and refuses depth 4,
-                // so it sees images listed in a form three levels down and no further. A
-                // form entered here at `s.depth == 3` would be a fourth level, and an image
-                // it draws would show up as a drawn-versus-dictionary difference caused by
-                // the two caps disagreeing rather than by what the page draws — a confound
-                // in the one instrument built to isolate that variable. Measured over the
-                // corpus: `< 4` and `< 3` produce byte-identical sweeps, so nothing here
-                // nests that deep and the symmetry costs nothing. If this is ever wired
-                // into `rebuildDPI`, the cap becomes a question about pages rather than
-                // about agreement, and wants re-measuring then.
+                // **`< 3` here and `< 4` in `largestImage` are two numbers for ONE reach on a
+                // chain whose forms each carry their own `/Resources`, because the two count
+                // in different frames.** That walk counts resource *dictionaries*, starting
+                // at the page's own at `depth 0`, and refuses `depth 4`; this one counts
+                // *forms entered*, incrementing after the guard, and refuses a fourth. On
+                // such a chain both therefore see an image inside three nested forms and
+                // neither sees one inside a fourth, so raising this to `< 4` would let the
+                // drawn walk enter a fourth form and see an image the dictionary walk cannot
+                // — *creating* the divergence such a change is always proposed to remove.
+                // Read the frames before "fixing" the mismatch.
+                //
+                // ⛔ **The two reaches are NOT equal in general, and the exception is bare
+                // forms.** Below, a form carrying no `/Resources` of its own is still entered
+                // and still costs a level; in `largestImage` such a form is not descended at
+                // all and costs nothing, because its names live in the invoker's dictionary,
+                // which that walk has already scanned. So each bare form in a chain narrows
+                // THIS walk and not that one, and the drawn reach is strictly the smaller of
+                // the two. **The gap grows with the number of bare forms, so no pair of caps
+                // closes it** — which is a reason to leave both alone rather than a reason to
+                // raise either. Measured on page 14 of `Tests/main.swift`'s
+                // `shared-resources.pdf`: four bare levels, `largestImage` answers 1800 px,
+                // this walk answers `.noImage`, and because `rebuildDPI` routes `.noImage` to
+                // the fallback rather than to `largestImage` the way it routes `.unreadable`,
+                // the page loses a resolution that was read. ⚠️ Latent — no corpus page has
+                // that shape, on the weak bound below — and the queue's `bare-form-reach`
+                // carries the decision. Found by the adversarial review of the diff that
+                // added the fixture, which had asserted equal reach unconditionally here.
+                //
+                // The production reason for three is that three is what shipped. A scan
+                // nested deeper behind resource-carrying forms is not mis-measured, it is not
+                // measured: both walks answer nothing, and `rebuildDPI` takes
+                // `fallbackRebuildDPI` exactly as it does for a page with no image on it.
+                // Nothing in the corpus nests that deep — moving THIS cap between `< 4` and
+                // `< 3` produced byte-identical sweeps over all 16,987 pages (`c17b3f3`),
+                // which is also why a corpus sweep can never verify any of this and pages
+                // 11-14 of the fixture do: one chain of four nested resource-carrying forms
+                // entered at three levels, asserting both walks find the third level and
+                // neither finds the fourth, plus the bare-form page where they differ.
+                // ⚠️ That sweep says nothing about `largestImage`'s `< 4`, which has never
+                // been moved over the corpus.
+                //
+                // This comment used to justify `< 3` by instrument symmetry — the
+                // drawn-versus-dictionary sweep isolating one variable — and to say that if
+                // the walk were ever wired into `rebuildDPI` the cap "wants re-measuring
+                // then". `c17b3f3` did that wiring in 2026-08-17 and revisited neither. The
+                // re-measurement is the fixture named above (2026-08-23); the decision is
+                // unchanged, and what moved is the scope of the claim beside it.
                 guard s.depth < 3, let table = s.table else { return }
                 // A form need not carry `/Resources`; PDF then resolves its names against
                 // the scope that **invoked** it, which is not the same thing as the page.

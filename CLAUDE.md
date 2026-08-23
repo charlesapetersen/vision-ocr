@@ -806,7 +806,38 @@ answers because production held a wrong one. (c) **One row is named as an unsett
 surprise**: `Sherman_1986` p1 moves 219 → 182 recognised words on a **0.38%** resolution
 change, non-monotone (the 300 fallback reads 224, above both), with only 14 words of embedded
 text so nothing can grade it. **`pageIsAnImage` was deliberately not wired** — 2 pages would
-flip, and it feeds D1's corpus gate, which is R55's territory. **What led up to that close
+flip, and it feeds D1's corpus gate, which is R55's territory.
+⛔ **DO NOT "RECONCILE" THE TWO WALKS' DEPTH CAPS — `drawnLargestImage` refuses at
+`s.depth < 3` and `largestImage` at `depth < 4`, and those are two numbers for ONE reach
+ON A CHAIN WHOSE FORMS EACH CARRY THEIR OWN `/Resources`**, because they count in different
+frames: forms *entered* against resource *dictionaries* counted from the page's own at 0.
+There both see an image inside three nested forms and neither sees a fourth, so raising
+either *creates* the divergence such a change is always proposed to remove — which is why
+the 2026-08-17 decision to set the drawn cap to `< 4` was retracted the next day.
+✅ **That equality was prose until 2026-08-23 and is now MEASURED**
+(`#### The two caps, and the chain they are equal on`): nine checks over pages 11-14 of
+`shared-resources.pdf`, one chain of four nested forms entered at three levels, so the object
+refused on one page is *found* on the next. ⛔ **AND MEASURING IT FOUND THE SCOPE — a chain
+of BARE forms is where the two are NOT equal, the drawn walk being strictly the narrower**:
+a form with no `/Resources` costs the drawn walk a level and the dictionary walk nothing
+(that walk does not descend it and loses nothing, since the names live in the invoker's
+dictionary it already scanned). Page 14 measures it — `largestImage` **1800 px**,
+`drawnLargestImage` **`.noImage`** — and because `rebuildDPI` routes `.noImage` to the
+fallback rather than to `largestImage` the way it routes `.unreadable`, **that page rebuilds
+at 300 instead of its own 211.8 DPI, discarding a resolution that WAS read.** The gap grows
+with the number of bare forms, so **no pair of caps closes it**, which is a reason to leave
+both alone rather than to raise either. ⚠️ **Latent**: `c17b3f3`'s byte-identical 16,987-page
+sweep says no corpus page has the shape, but that is one cap over one corpus and says nothing
+about `largestImage`'s `< 4`, never moved over it — the decision is the queue's
+`bare-form-reach`, and C24 is **not** reopened. Found by the adversarial review of the diff
+that added the fixture, which had asserted equal reach unconditionally in `Flattener`'s own
+comment. ⛔ **The corpus can never be the instrument here** — `< 4` and `< 3` are
+byte-identical over all 16,987 pages, so the sweep that decision prescribed as its own
+verification was guaranteed to pass while proving nothing about the only case at issue.
+⚠️ Two mutants were catalogued with it (101 → **103**), both verified to match uniquely by
+hand, and **neither has been run through `mutate.py`**; the kill evidence is a one-token
+sabotage binary, which is weaker. Nothing shipped moved — two comments, checks and a fixture.
+**What led up to C24's close
 is measured as of 2026-08-17** — read the entry's `C24b` and `C24's wiring` sections before
 planning anything there: `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swift` report
 what a page actually draws, the 45 are **39 smaller and 6 wider** (which retires the
@@ -942,7 +973,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,223 checks measured 2026-08-23; 8-75 min depending on machine load, real OCR
+./run_tests.sh        # 1,232 checks measured 2026-08-23; 8-75 min depending on machine load, real OCR
                       # measured 474 s quiet -> 2,719 s under the C24b campaign, and 4,191 s
                       # (69m51s) holding the lock on 6d0caa1 -- suite-timings.tsv, not a stopwatch.
                       # Never size a

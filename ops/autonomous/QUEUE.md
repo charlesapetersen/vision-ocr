@@ -159,11 +159,24 @@ happens.**
   following it literally would corrupt output.
 - **`drawnLargestImage`'s `depth < 3` STAYS, and "make it `< 4` to match `largestImage`" is refused**
   (owner, 2026-08-18 — it was *decided* the other way on 2026-08-17 and retracted the next day on the
-  code). The two numbers are the same reach in different frames: `largestImage` counts resource-dictionary
-  levels from the page (`depth: 0` is the page, `< 4` refused), the drawn walk counts forms entered
-  (`< 3` refuses a fourth). Both reach three nested forms; at four both are blind and both fall back.
-  Raising it would CREATE a divergence, not close one. Do not re-derive this from the number mismatch —
-  the `depth-cap` item carries the full reasoning and the check that pins it.
+  code). The two numbers are the same reach in different frames **when every form in the chain carries its
+  own `/Resources`**: `largestImage` counts resource-dictionary levels from the page (`depth: 0` is the
+  page, `< 4` refused), the drawn walk counts forms entered (`< 3` refuses a fourth). On such a chain both
+  reach three nested forms; at four both are blind and both fall back. Raising it would CREATE a
+  divergence, not close one. Do not re-derive this from the number mismatch — the `depth-cap` item carries
+  the full reasoning. ✅ **And as of 2026-08-23 the check exists**: nine rows over pages 11-14 of
+  `Tests/main.swift`'s `shared-resources.pdf`. This bullet said "and the check that pins it" while no such
+  check existed, and recording equal reach in prose alone is what let it be re-litigated into a wrong
+  decision once already.
+  ⛔ **AND THE CHECK NARROWED THE DECISION: on a chain of BARE forms the two reaches are NOT equal** — a
+  form with no `/Resources` costs the drawn walk a level and the dictionary walk nothing, so the drawn
+  reach is strictly the smaller and the gap grows with the number of bare forms. That makes the refusal
+  above *stronger*, not weaker (no pair of caps equalises them, so raising either buys nothing), but the
+  unconditional phrasing is wrong and was corrected here. The new `bare-form-reach` item holds the
+  question of whether the divergence itself should be fixed.
+  ⛔ **A corpus sweep can never stand in for any of it** — `< 4` and `< 3` are byte-identical over all
+  16,987 pages, so the verification the 2026-08-17 decision prescribed was guaranteed to pass, and that
+  measurement covers only the DRAWN cap: `largestImage`'s `< 4` has never been moved over the corpus.
 
 ## The queue
 
@@ -1639,8 +1652,18 @@ happens.**
         interline gaps clear `INK_ROW_FRACTION`, so every band reads as one run, and a draft that lumped
         two bands together counted a line **both** paths recognised.
         (context: BUGS.md C30 `#### Page 5, settled 2026-08-23`)
-- [ ] **obs-drift-comment** — **one comment, and it is the most-read statement of a belief measured false
-      on 2026-08-23.** `Tools/make-observations.swift:16-22` says going through `Recogniser.extract` means
+- [x] **obs-drift-comment** — DONE 2026-08-23: the comment now says the SHAPE cannot drift from the
+      product's — which is what compiling against `Sources/` buys — and then says in full what it does
+      NOT buy, naming `Model.swift:1919`/`:1922` against `Recogniser.render` and C30's page 5 as the
+      measured case. **It rode along on `depth-cap`'s suite exactly as this box asked**, so no suite was
+      paid for a comment. ⛔ **And it was TWO comments, not one** — the sibling sweep found the same
+      refuted belief in `Sources/Recogniser.swift`'s `extract` doc comment ("PDFs go page by page through
+      the same path the searchable pipeline uses"), which is closer to the code than the one this box
+      names and survived because it wraps across two lines. Both corrected in the same commit.
+      **At seeding** (⚠️ and the line range went stale when the comment grew — the phrase quoted below
+      sat at `:25-26` of a block running to `:38` by the time it was fixed):
+      **one comment, and it is the most-read statement of a belief measured false
+      on 2026-08-23.** `Tools/make-observations.swift:16-22` said going through `Recogniser.extract` means
       "the instrument's input and the product's output **cannot drift apart**". True of Extract Text ▸
       JSON, FALSE of the searchable pipeline: production recognises `Flattener.flatten`'s rebuilt bitmaps
       (`Sources/Model.swift:1919`/`:1922`) and `extract` recognises `Recogniser.render`'s plain render of
@@ -1817,7 +1840,21 @@ happens.**
       about. The entry argues the statistic is wrong rather than the number: a page with 3% of its
       area at 0.8 saturation is not a page with a uniform 0.03 cast, and a mean cannot separate them.
       (origin: BUGS.md C27)
-- [ ] **depth-cap** — `Flattener.drawnLargestImage`'s `case "Form"` branch caps recursion at `depth < 3`
+- [x] **depth-cap** — DONE 2026-08-23, as the decision below prescribes: `< 3` KEPT, both comments
+      rewritten to state the frame-of-reference difference and to point at each other, and **nine checks**
+      over new pages 11-14 of `shared-resources.pdf` — one chain of four nested forms entered at three
+      levels, so the object refused on one page is *found* on the next. ⛔ **And measuring it NARROWED the
+      claim the item was written to pin: the two reaches are equal only on a chain whose forms each carry
+      `/Resources`, and on a BARE chain the drawn walk is strictly narrower** (page 14: `largestImage`
+      1800 px, `drawnLargestImage` `.noImage`, and the page rebuilds at the 300 fallback instead of its own
+      211.8 DPI). Found by the adversarial review of this diff, which caught the unconditional version on
+      its way into `Flattener`'s own comment. The decision does not move — no pair of caps closes that gap
+      — and the divergence itself is the new `bare-form-reach`. Two mutants catalogued (101 → **103**),
+      both verified to match uniquely, ⚠️ neither run through `mutate.py`; the kill evidence is a one-token
+      sabotage binary. Nothing shipped moved. Read `BUGS.md` C24
+      `#### The two caps, and the chain they are equal on`. `obs-drift-comment` rode along on the same
+      suite. **At seeding:**
+      `Flattener.drawnLargestImage`'s `case "Form"` branch caps recursion at `depth < 3`
       while `largestImage` caps at `< 4`, and **the stated reason for the mismatch expired when `c17b3f3`
       made the drawn walk production**. That comment says so itself: the symmetry existed so the
       drawn-versus-dictionary sweep isolated one variable, and *"if this is ever wired into `rebuildDPI`,
@@ -1854,6 +1891,35 @@ happens.**
       re-litigated into a wrong decision once already. One commit, one suite run, and the item retires
       instead of riding along. (context: BUGS.md C24 — CLOSED, and `c17b3f3` is the wiring; the entry is why
       this matters, not the work itself)
+- [ ] **bare-form-reach** — **the two image walks DO diverge, and it is bare forms rather than the caps.**
+      A Form XObject carrying no `/Resources` of its own resolves its names in the invoker's scope.
+      `largestImage`'s walk therefore does not descend it and loses nothing (the image is listed in the
+      dictionary it is already scanning); `drawnLargestImage` must follow the `Do` operators and spends a
+      depth level on every form it enters, bare or not. So each bare form narrows the drawn walk alone,
+      **the drawn reach is strictly the smaller, and the gap grows with the number of bare forms** — no
+      pair of caps closes it, which is why `depth-cap` refused to move either. ⛔ **The cost is real, not
+      cosmetic**: `rebuildDPI(of:)` routes `.unreadable` to `largestImage` but routes `.noImage` to
+      `rebuildDPI(from: nil)`, so on four bare levels a resolution the dictionary walk DID read is
+      discarded and the page rebuilds at the 300 fallback. Measured on page 14 of `shared-resources.pdf`:
+      1800 px / 211.8 DPI thrown away, and 1800 clears both `minimumScanPixelWidth` and
+      `minimumPlausibleScanDPI`, so the policy would have trusted it.
+      ⚠️ **LATENT — decide whether it is worth fixing before writing any code.** No corpus page has the
+      shape: `c17b3f3` moved the drawn cap `< 4` → `< 3` and its 16,987-page sweep was byte-identical,
+      which no page with exactly four bare levels could have been. That bound is **weak** — one cap, one
+      corpus, and it says nothing about `largestImage`'s `< 4`, which has never been moved over the corpus
+      and reads `/Resources` whether the form is drawn or not. So step 1 is a **measurement, not a fix**:
+      count corpus pages by bare-form nesting depth (`score-drawn-images` already calls production's walks
+      and is the place to add a column). If the answer is zero at every depth, the honest close is
+      `WONTFIX` with the number written down.
+      ⛔ **Do NOT raise either cap** — that is the refused decision above, and it only moves the boundary
+      to five bare forms. If a fix is wanted, the shape to price is making the drawn walk not charge a
+      level for a form it did not have to re-scope, or returning `.unreadable` rather than `.noImage` when
+      the depth guard is what stopped it — the second is one line and routes the page to `largestImage`,
+      which already has the answer. ⚠️ Both change shipped routing on some page somewhere, so either needs
+      the corpus gate, and `.unreadable` is load-bearing elsewhere (T14's "an instrument that knows when it
+      is not measuring") — read that before overloading it.
+      (context: BUGS.md C24 `#### The two caps, and the chain they are equal on`, which measured this and
+      explains why C24 was NOT reopened for it)
 - [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
       HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite
       figure was corrected to a MEASURED 1,127 in HANDOFF.md, TECHNICAL.md and ARCHITECTURE.md; TODO.md's

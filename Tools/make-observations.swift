@@ -16,10 +16,30 @@ import Foundation
 // It is a wrapper, not a second measurement. `Recogniser.extract` with
 // `textFormat = .json` already emits exactly the array the probes decode —
 // `[{page, pageCount, width, height, source, text, observations:[…]}]` — and it
-// is the same code path the user's own Extract Text ▸ JSON produces. Going
-// through it rather than re-deriving the shape here means the instrument's input
-// and the product's output cannot drift apart, which is the reason
-// `Tools/README.md` gives for compiling these tools against `Sources/` at all.
+// is the same code path the user's own Extract Text ▸ JSON produces. `Tools/README.md`
+// gives the reason for compiling these tools against `Sources/` at all, and it is the
+// wider one: they exercise the shipped code rather than a reimplementation of it, the
+// lesson a hand-written replica taught the hard way. What follows from that here is
+// that the SHAPE of this output cannot drift from the product's.
+//
+// ⛔ **What it does NOT give you is the searchable pipeline's own recognition, and
+// this comment claimed otherwise until 2026-08-23** — it said going through
+// `extract` meant "the instrument's input and the product's output cannot drift
+// apart", full stop. That is true of Extract Text ▸ JSON, whose output this *is*.
+// It is false of the searchable PDF: `OCRModel` recognises `Flattener.flatten`'s
+// REBUILT BITMAPS whenever `Model.swift:1919`'s `willRebuild` gate says so (the
+// bitmaps are handed on at `Model.swift:2005`, and `Recogniser.swift:141` is the arm
+// that takes them), while `extract` recognises `Recogniser.render`'s plain render of
+// the source page. Same page, different pixels — and on a document with a crop box not
+// even the same geometry, since `render` rasterises `Flattener.displayBox` and
+// `flatten` `Flattener.fullBox`. Measured on `BUGS.md` C30's document, they return
+// different WORDS: page 5's published layer holds a line no fresh observation from
+// this tool contains. So a run of this tool is a *second* recognition of a *different*
+// image, not a copy of the one the product made. Every C30 instrument is built on
+// it, which is why the correction is here and not only in the register.
+// ⚠️ The line numbers above are a gate and a hand-off, not the recognition itself;
+// `Sources/Recogniser.swift`'s `extract` doc comment carries the same correction
+// closer to the code, and was the sibling this one's own sweep missed.
 //
 // The probes only decode `page`, `text` and `boundingBox`; the extra keys are
 // ignored by their `Decodable` synthesis. That is deliberate — they read the

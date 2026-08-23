@@ -4131,6 +4131,15 @@ do {
     // not the page, which is what tells resource *scope* apart from the page's dictionary.
     // **Page 10 came with the wiring** — a logo, so the drawn answer is one the policy
     // *refuses*, which is the only way a check can see that the drawn *width* reaches it.
+    // **Pages 11-14 came on 2026-08-23** and are about the two walks' depth caps rather
+    // than about sharing. Pages 11-13 are one chain of four nested forms entered at three
+    // different levels, which is what makes "`< 4` and `< 3` are one reach" a measurement
+    // instead of a sentence — **and page 14 is the counterexample that bounds it**: the same
+    // four levels built from BARE forms, where the two walks answer differently. They are on
+    // this fixture because a form chain wants somewhere to live, not because they need
+    // object 4. Each of pages 11-13's forms carries its own `/Resources`, and must, since a
+    // page reaching the 3000 px plate at depth 0 could not see a depth cap at all; page
+    // 14's carry none, which is the entire difference between it and page 11.
     do {
         let quietStream = "BT /F1 12 Tf 72 700 Td (no image here) Tj ET\n"
         let drawStream = "q 612 0 0 792 0 0 cm /Im0 Do Q\n"
@@ -4145,13 +4154,31 @@ do {
         let logoCall = "q 40 0 0 30 0 0 cm /Im4 Do Q\n"
         let outerBody = "q /Fin Do Q\n"
         let innerBareCall = "q /Ix Do Q\n"
+        // The depth chain, pages 11-13. One chain of four nested forms, entered at three
+        // different levels, so the same objects answer three different questions.
+        let deepestBody = "q 612 0 0 792 0 0 cm /ImD Do Q\n"
+        let thirdBody = "q 612 0 0 792 0 0 cm /ImC Do Q\nq /FD Do Q\n"
+        let secondBody = "q /FC Do Q\n"
+        let firstBody = "q /FB Do Q\n"
+        let wrapBody = "q /FA Do Q\n"
+        let enterAtFirst = "q /FA Do Q\n"
+        let enterAtSecond = "q /FB Do Q\n"
+        let enterAtWrap = "q /FW Do Q\n"
+        // Page 14, the counterexample: the same four levels built from forms that carry NO
+        // `/Resources` of their own. The two walks part company here, and the whole reason
+        // this page exists is in the check block below.
+        let bareDeepest = "q 612 0 0 792 0 0 cm /ImE Do Q\n"
+        let bareThird = "q /FP4 Do Q\n"
+        let bareSecond = "q /FP3 Do Q\n"
+        let bareFirst = "q /FP2 Do Q\n"
+        let enterAtBare = "q /FP1 Do Q\n"
 
         var objects: [String] = []
         objects.append("<< /Type /Catalog /Pages 2 0 R >>")
         objects.append("<< /Type /Pages /Kids "
                        + "[3 0 R 6 0 R 9 0 R 12 0 R 16 0 R 18 0 R 21 0 R 24 0 R 29 0 R "
-                       + "32 0 R] "
-                       + "/Count 10 >>")
+                       + "32 0 R 40 0 R 43 0 R 47 0 R 55 0 R] "
+                       + "/Count 14 >>")
         objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
                        + "/Resources 4 0 R /Contents 7 0 R >>")          // draws nothing
         // `/Ix` is the 3000 px plate *here*, and object 28's form defines the same name as a
@@ -4273,6 +4300,110 @@ do {
         objects.append("<< /Length \(logoCall.utf8.count) >>\nstream\n"
                        + logoCall + "endstream")
 
+        // **The depth cap, pages 11-13.** `largestImage` refuses `depth 4` counting
+        // resource *dictionaries* from the page's own at 0; `drawnLargestImage` refuses
+        // `s.depth 3` counting *forms entered*. Different numbers, and the claim is that
+        // they are the same reach — images inside three nested forms, and no further.
+        // Prose said so; nothing measured it, and `< 4` versus `< 3` is byte-identical
+        // over all 16,987 corpus pages, so the corpus cannot see it either.
+        //
+        // ONE chain — page → A → B → C → D, where C draws a 1200 px image and D a bigger
+        // 2400 px one — entered at three different levels by three pages. That is what
+        // makes the refusals attributable to the cap rather than to the fixture: the
+        // object refused on one page is *found* on the next, unchanged.
+        //
+        //   page 11 enters at A: C is the third level (1200 found), D the fourth (refused)
+        //   page 12 enters at B: D is the third level, and 2400 wins on area
+        //   page 13 enters at W, one wrapper above A: nothing is within reach at all
+        //
+        // Object 46 (`/FW`) exists only for page 13 and is why that page can say what the
+        // *policy* does when both walks go blind — the fallback, as the rewritten comment
+        // in `Flattener.drawnLargestImage` now states.
+        objects.append("<< /Type /XObject /Subtype /Image /Width 2400 /Height 3200 "
+                       + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
+                       + ">>\nstream\nabc\nendstream")                  // 34: /ImD
+        objects.append("<< /Type /XObject /Subtype /Image /Width 1200 /Height 1600 "
+                       + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
+                       + ">>\nstream\nabc\nendstream")                  // 35: /ImC
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Resources << /XObject << /ImD 34 0 R >> >> "
+                       + "/Length \(deepestBody.utf8.count) "
+                       + ">>\nstream\n" + deepestBody + "endstream")    // 36: /FD
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Resources << /XObject << /ImC 35 0 R /FD 36 0 R >> >> "
+                       + "/Length \(thirdBody.utf8.count) "
+                       + ">>\nstream\n" + thirdBody + "endstream")      // 37: /FC
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Resources << /XObject << /FC 37 0 R >> >> "
+                       + "/Length \(secondBody.utf8.count) "
+                       + ">>\nstream\n" + secondBody + "endstream")     // 38: /FB
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Resources << /XObject << /FB 38 0 R >> >> "
+                       + "/Length \(firstBody.utf8.count) "
+                       + ">>\nstream\n" + firstBody + "endstream")      // 39: /FA
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 41 0 R /Contents 42 0 R >>")       // 40: four deep
+        objects.append("<< /XObject << /FA 39 0 R >> >>")
+        objects.append("<< /Length \(enterAtFirst.utf8.count) >>\nstream\n"
+                       + enterAtFirst + "endstream")
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 44 0 R /Contents 45 0 R >>")       // 43: three deep
+        objects.append("<< /XObject << /FB 38 0 R >> >>")
+        objects.append("<< /Length \(enterAtSecond.utf8.count) >>\nstream\n"
+                       + enterAtSecond + "endstream")
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Resources << /XObject << /FA 39 0 R >> >> "
+                       + "/Length \(wrapBody.utf8.count) "
+                       + ">>\nstream\n" + wrapBody + "endstream")       // 46: /FW
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 48 0 R /Contents 49 0 R >>")       // 47: all too deep
+        objects.append("<< /XObject << /FW 46 0 R >> >>")
+        objects.append("<< /Length \(enterAtWrap.utf8.count) >>\nstream\n"
+                       + enterAtWrap + "endstream")
+
+        // **Page 14 — the same four levels, built from BARE forms, where the two walks
+        // DISAGREE.** A form without `/Resources` resolves its names against the scope that
+        // invoked it, so every name here — all four forms and the image — lives in the
+        // page's own `/Resources` dictionary and nothing below it defines anything.
+        //
+        // That single difference splits the two walks, because they charge for a bare form
+        // differently. The dictionary walk only descends a form that HAS `/Resources`
+        // (`Flattener.swift`, `case "Form"`: no `/Resources`, nothing appended to
+        // `nestedResources`), and it does not need to — a bare form's image is listed in the
+        // invoker's dictionary, which it already scanned. So it finds `/ImE` at `depth 0`
+        // and never spends a level. The drawn walk has no such shortcut: the `Do` that draws
+        // the image is four streams down, and `s.depth += 1` runs for every form entered
+        // whether or not it carried resources. It is refused at the fourth and never sees
+        // the operator.
+        //
+        // 1800 px so the width is nobody else's on this fixture, and comfortably over both
+        // `minimumScanPixelWidth` and `minimumPlausibleScanDPI` — the point of the row below
+        // is that a resolution the policy WOULD have trusted is discarded, so the image must
+        // not be one the policy would refuse anyway.
+        objects.append("<< /Type /XObject /Subtype /Image /Width 1800 /Height 2400 "
+                       + "/ColorSpace /DeviceGray /BitsPerComponent 8 /Length 3 "
+                       + ">>\nstream\nabc\nendstream")                  // 50: /ImE
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Length \(bareDeepest.utf8.count) "
+                       + ">>\nstream\n" + bareDeepest + "endstream")    // 51: /FP4, bare
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Length \(bareThird.utf8.count) "
+                       + ">>\nstream\n" + bareThird + "endstream")      // 52: /FP3, bare
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Length \(bareSecond.utf8.count) "
+                       + ">>\nstream\n" + bareSecond + "endstream")     // 53: /FP2, bare
+        objects.append("<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+                       + "/Length \(bareFirst.utf8.count) "
+                       + ">>\nstream\n" + bareFirst + "endstream")      // 54: /FP1, bare
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       + "/Resources 56 0 R /Contents 57 0 R >>")       // 55: four bare deep
+        // Every name the chain uses, in one dictionary: the forms resolve here because they
+        // carry nothing, and `/ImE` is here because that is the only place it could be.
+        objects.append("<< /XObject << /ImE 50 0 R /FP1 54 0 R /FP2 53 0 R "
+                       + "/FP3 52 0 R /FP4 51 0 R >> >>")
+        objects.append("<< /Length \(enterAtBare.utf8.count) >>\nstream\n"
+                       + enterAtBare + "endstream")
+
         var pdf = "%PDF-1.4\n"
         var offsets: [Int] = []
         for (i, body) in objects.enumerated() {
@@ -4288,8 +4419,8 @@ do {
         let shared = dir.appendingPathComponent("shared-resources.pdf")
         try? pdf.write(to: shared, atomically: true, encoding: .isoLatin1)
         let sd = PDFDocument(url: shared)
-        check("the shared-/Resources fixture is a readable ten-page PDF",
-              sd?.pageCount == 10, "\(sd?.pageCount ?? -1) pages")
+        check("the shared-/Resources fixture is a readable fourteen-page PDF",
+              sd?.pageCount == 14, "\(sd?.pageCount ?? -1) pages")
         if let sd, let quiet = sd.page(at: 0), let drawing = sd.page(at: 1) {
             // The premise first. Without these two the checks below would pass over a
             // fixture that simply has no image in it, which is a different page and
@@ -4496,6 +4627,168 @@ do {
                   Flattener.rebuildDPI(of: drawing) == 3000 / sheetPt,
                   String(format: "%.1f", Flattener.rebuildDPI(of: drawing)))
 
+            // MARK: C24 — the two walks' depth caps, and the case where they part company
+            //
+            // `largestImage` refuses `depth 4` and `drawnLargestImage` refuses `s.depth 3`,
+            // and the mismatch has been "noticed" once already and nearly changed on a
+            // premise that was wrong *about the case it was argued over*: the two count in
+            // different frames — resource *dictionaries* from the page's own at 0, against
+            // *forms entered* — so on a chain of forms that each carry their own
+            // `/Resources`, both see an image inside three nested forms and neither sees a
+            // fourth. There, raising either number by one CREATES a divergence rather than
+            // closing one.
+            //
+            // ⛔ **But equality is a property of that chain, not of the two constants**, and
+            // the adversarial review of this diff is what established it: a form with NO
+            // `/Resources` costs the drawn walk a depth level and costs the dictionary walk
+            // nothing, so on a bare chain the drawn walk is strictly the narrower of the two
+            // and the retracted premise's shape is real. Page 14 measures it. No pair of
+            // caps can equalise them — the gap grows with the number of bare forms — which
+            // is why the decision is still to leave both alone.
+            //
+            // Equal reach recorded only in prose is what let this be re-litigated, and
+            // `A1.3` is the precedent for the remedy: `Tests/main.swift` already carries
+            // "both outline walks truncate at the same depth" because that mirror-walk pair
+            // really did truncate at different depths. Note that the corpus cannot stand in
+            // for these rows — `< 4` and `< 3` are byte-identical over all 16,987 pages, so
+            // a sweep passes whatever the caps say, which is exactly why this is a fixture.
+            //
+            // One chain of four nested forms, entered at three levels (pages 11-13), then
+            // the bare-form counterexample (page 14). **Three of the nine rows below name
+            // an absolute width**, because agreement alone is satisfied by both caps moving
+            // together — under a joint +1 the agreement row stays green and those three go
+            // red. The other rows are the premise, the pure-agreement row the widths exist
+            // to backstop, and the two that assert an absence.
+            guard let fourDeep = sd.page(at: 10), let threeDeep = sd.page(at: 11),
+                  let allTooDeep = sd.page(at: 12), let bareChain = sd.page(at: 13) else {
+                check("the shared-/Resources fixture's pages 11-14 are readable", false)
+                resetPrefs()
+                exit(1)
+            }
+            // The premise. It gates nothing — it reports — and what it buys is the
+            // non-vacuity of the two absence rows below (pages 13 and 14), where without it
+            // `.noImage` could mean "nothing drawn" rather than "too deep to reach". The
+            // rows asserting 1200 and 2400 could not be satisfied by an early return at all,
+            // so they do not need it. ⚠️ Do NOT read this as a reachability guard: the same
+            // overclaim was retracted for C28 on 2026-08-23, one commit before this one.
+            // `logic/C24b-no-image-is-not-unknown` is the reason the shape is worth stating
+            // — page 8 of this fixture is the page that kills it, and the seven before it
+            // could not.
+            check("C24 — the four depth pages all draw an XObject",
+                  Flattener.drawsAnyXObject(fourDeep) == true
+                      && Flattener.drawsAnyXObject(threeDeep) == true
+                      && Flattener.drawsAnyXObject(allTooDeep) == true
+                      && Flattener.drawsAnyXObject(bareChain) == true,
+                  "\(String(describing: Flattener.drawsAnyXObject(fourDeep))) / "
+                  + "\(String(describing: Flattener.drawsAnyXObject(threeDeep))) / "
+                  + "\(String(describing: Flattener.drawsAnyXObject(allTooDeep))) / "
+                  + "\(String(describing: Flattener.drawsAnyXObject(bareChain)))")
+            // Three nested forms down is in reach; the 2400 px image one level deeper is
+            // not, and it would win on area if it were seen.
+            check("C24 — the dictionary walk sees an image three nested forms down",
+                  Flattener.largestImage(of: fourDeep)?.pixelWidth == 1200,
+                  "\(Flattener.largestImage(of: fourDeep)?.pixelWidth ?? -1)")
+            check("…and the drawn walk answers the same width from the same page",
+                  Flattener.drawnLargestImage(of: fourDeep)
+                      == .largest(dpi: 1200 / sheetPt, pixelWidth: 1200),
+                  "\(Flattener.drawnLargestImage(of: fourDeep))")
+            // The negative control, and the row that makes the two above attributable to the
+            // cap: the SAME form objects, entered one level higher, put the 2400 px image at
+            // the third level — where both walks find it and it wins on area. So the refusal
+            // above is depth and not a malformed stream, an unresolvable name or an image the
+            // walks would reject anyway.
+            check("…while entering that chain a level higher finds the deeper 2400 px image",
+                  Flattener.largestImage(of: threeDeep)?.pixelWidth == 2400
+                      && Flattener.drawnLargestImage(of: threeDeep)
+                          == .largest(dpi: 2400 / sheetPt, pixelWidth: 2400),
+                  "\(Flattener.largestImage(of: threeDeep)?.pixelWidth ?? -1) / "
+                  + "\(Flattener.drawnLargestImage(of: threeDeep))")
+            // The invariant itself, stated so a reader can grep for it, on all three pages
+            // at once — including the one where the shared answer is "nothing".
+            // ⛔ **Pages 11-13 and NOT page 14, deliberately.** The invariant holds on a
+            // chain whose forms each carry `/Resources`; page 14 is the same four levels
+            // built from bare forms and the two walks differ there, so adding it would make
+            // this row red. The scope is the finding, not a convenience — see the row after
+            // the next.
+            check("C24 — both walks reach exactly as far as each other on all three",
+                  [fourDeep, threeDeep, allTooDeep].allSatisfy { page in
+                      switch Flattener.drawnLargestImage(of: page) {
+                      case .largest(_, let px): return Flattener.largestImage(of: page)?.pixelWidth == px
+                      case .noImage: return Flattener.largestImage(of: page) == nil
+                      case .unreadable: return false
+                      }
+                  },
+                  "\(Flattener.drawnLargestImage(of: fourDeep)) / "
+                  + "\(Flattener.drawnLargestImage(of: threeDeep)) / "
+                  + "\(Flattener.drawnLargestImage(of: allTooDeep))")
+            // And what the policy does when both walks go blind. Nothing is lost — the page
+            // is rebuilt at the fallback, exactly as a page with no image at all is — which
+            // is the sentence the rewritten comment in `Flattener` now carries in place of
+            // the instrument-symmetry justification that expired when the walk went
+            // production. ⚠️ `.noImage` rather than `.unreadable` on a page that *does* draw
+            // an image is a deliberate reading of shipped behaviour and not a claim that it
+            // is the better one: the depth guard returns without setting the flag. It costs
+            // nothing **on this page** because `largestImage` is nil here too, so both arms
+            // of `rebuildDPI` land on the fallback either way — and page 14 below is where
+            // that stops being true, which is why the two rows are worth having separately.
+            check("C24 — a page whose every image is four forms down reads as no image",
+                  Flattener.largestImage(of: allTooDeep) == nil
+                      && Flattener.drawnLargestImage(of: allTooDeep) == .noImage,
+                  "\(String(describing: Flattener.largestImage(of: allTooDeep))) / "
+                  + "\(Flattener.drawnLargestImage(of: allTooDeep))")
+            check("…and it rebuilds at the fallback rather than at a resolution nobody read",
+                  Flattener.rebuildDPI(of: allTooDeep) == Flattener.fallbackRebuildDPI,
+                  String(format: "%.1f", Flattener.rebuildDPI(of: allTooDeep)))
+
+            // MARK: C24 — where the two reaches are NOT equal: a chain of bare forms
+            //
+            // ⛔ **The equality above is a property of the chain, not of the two constants,
+            // and this page is the counterexample.** Found by the adversarial review of the
+            // diff that added the rows above, which is the only reason it is here: the diff
+            // as drafted asserted equal reach unconditionally, in `Flattener`'s own comment.
+            //
+            // The mechanism, and it is not a constant: the dictionary walk descends only a
+            // form that HAS `/Resources`, and it loses nothing by skipping the others,
+            // because a bare form's names live in the invoker's dictionary — which it has
+            // already scanned. The drawn walk has to follow the `Do` operators wherever they
+            // are, and `s.depth += 1` runs for every form it enters. So each bare form in a
+            // chain costs the drawn walk a level and the dictionary walk nothing, and the
+            // drawn reach is strictly the narrower of the two. **The gap grows with the
+            // number of bare forms, so no pair of caps closes it** — which is exactly why
+            // the decision is to change neither, and why "the two numbers are one reach"
+            // now travels with the chain it is true of.
+            //
+            // This is also the retracted 2026-08-17 premise's own shape, arrived at from the
+            // other direction: *"a page nesting images four levels deep would get a different
+            // answer depending on which path it took"*. That premise was retracted because it
+            // was wrong about the all-`/Resources` chain it was argued over. It is right
+            // here — and it still does not argue for `< 4`, because `< 4` would only move the
+            // boundary to five bare forms.
+            //
+            // ⚠️ **Latent, not a measured victim.** No corpus page has this shape: `c17b3f3`
+            // moved the drawn cap from `< 4` to `< 3` and its 16,987-page sweep was
+            // byte-identical, which no page with exactly four bare levels could have been.
+            // That bound is weak — it is one cap over one corpus — so what these rows do is
+            // pin the behaviour rather than bless it. The queue's `bare-form-reach` carries
+            // the decision.
+            check("C24 — a bare-form chain is where the two walks part company",
+                  Flattener.largestImage(of: bareChain)?.pixelWidth == 1800
+                      && Flattener.drawnLargestImage(of: bareChain) == .noImage,
+                  "\(Flattener.largestImage(of: bareChain)?.pixelWidth ?? -1) / "
+                  + "\(Flattener.drawnLargestImage(of: bareChain))")
+            // And what that costs the product, which is the row that matters: `.noImage` is
+            // NOT routed to `largestImage` the way `.unreadable` is, so the 1800 px answer
+            // the dictionary walk holds is discarded and the page rebuilds at the fallback.
+            // 1800 px on a 612 pt sheet is 211.8 DPI — over `minimumScanPixelWidth` and over
+            // `minimumPlausibleScanDPI` — so this is a resolution the policy would have
+            // trusted, not one it would have refused anyway.
+            check("…and the product discards a resolution the dictionary walk did read",
+                  Flattener.rebuildDPI(of: bareChain) == Flattener.fallbackRebuildDPI
+                      && Flattener.rebuildDPI(from: Flattener.largestImage(of: bareChain))
+                          != Flattener.fallbackRebuildDPI,
+                  String(format: "%.1f vs %.1f", Flattener.rebuildDPI(of: bareChain),
+                         Flattener.rebuildDPI(from: Flattener.largestImage(of: bareChain))))
+
             // MARK: C24 — a measurement override reaches every page the rebuild renders
             //
             // `Flattener.rebuildDPIOverride` is the seam C24b's blocker needed:
@@ -4583,10 +4876,16 @@ do {
             let flattened = (try? Flattener.flatten(
                 shared, to: overrideDir.appendingPathComponent("out.pdf"),
                 mode: .auto, pngDirectory: overrideDir)) ?? []
+            // ⚠️ `sd.pageCount`, not a literal. This row read `count == 10` and went RED when
+            // pages 11-14 were added on 2026-08-23: the fixture's length was written down in
+            // two places and only one of them is next to the fixture. Deriving it stops a
+            // later chain from breaking a check about something else — and note the suite is
+            // what caught this, after two adversarial reviews of the same diff did not,
+            // because both were looking at the new block.
             check("…and `flatten` renders every overridden page at that resolution",
-                  flattened.count == 10 && flattened.dropFirst()
+                  flattened.count == sd.pageCount && flattened.dropFirst()
                       .allSatisfy { $0.pixelWidth == overrideWidth(atDPI: probeDPI) },
-                  "\(flattened.map(\.pixelWidth))")
+                  "\(flattened.count) of \(sd.pageCount): \(flattened.map(\.pixelWidth))")
             check("…and leaves the declined page on the shipped fallback in the same run",
                   flattened.first?.pixelWidth
                       == overrideWidth(atDPI: Flattener.fallbackRebuildDPI),

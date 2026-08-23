@@ -207,7 +207,17 @@ enum Recogniser {
     /// dependency change is not a reason to break its input.
     ///
     /// Images are recognised directly; PDFs go page by page through the same
-    /// path the searchable pipeline uses.
+    /// *recognition* call the searchable pipeline uses — `recognise(_:settings:)` — but
+    /// **not over the same pixels**, and this sentence said "the same path" until
+    /// 2026-08-23. Here every page goes through `render(_:settings:)`, a plain render of
+    /// the source page. The searchable pipeline rebuilds the page first and recognises
+    /// `Flattener.flatten`'s bitmaps whenever `OCRModel.willRebuild` says so, and on a
+    /// document with a crop box the two are not even the same geometry — `render`
+    /// rasterises `Flattener.displayBox`, `flatten` `Flattener.fullBox`. So this is a *second*
+    /// recognition of a *different* image, not a copy of the one the product made:
+    /// measured on `BUGS.md` C30's document, where page 5's published text layer holds a
+    /// line no run of this path returns. `Tools/make-observations.swift` is the instrument
+    /// built on it and carries the same correction.
     static func extract(from file: URL, to target: URL,
                         settings: Prefs.Snapshot, password: String? = nil,
                         isCancelled: () -> Bool = { false }) throws {

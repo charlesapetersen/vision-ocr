@@ -423,6 +423,36 @@ OPERATORS = [
     ("Flattener.swift", "guard s.depth < 3, let table = s.table else { return }",
      "guard s.depth < 0, let table = s.table else { return }",
      "C24b-form-not-followed"),
+    # The same guard at the OTHER boundary, and the two below are a matched set. The two
+    # walks' caps are `< 3` here and `< 4` in `largestImage`: different numbers for the same
+    # reach *on a chain whose forms each carry their own `/Resources`*, because one counts
+    # forms entered and the other counts resource dictionaries from the page's own at 0.
+    # Loosening either by one makes that walk see an image inside a FOURTH nested form while
+    # the other still cannot — the divergence a reader who "reconciles" the numbers believes
+    # they are removing, and the reason the 2026-08-17 decision to set this to `< 4` was
+    # retracted. ⚠️ On a chain of BARE forms the reaches are not equal to begin with (this
+    # walk spends a level on a bare form and that one does not), which is page 14 of
+    # `shared-resources.pdf` and the queue's `bare-form-reach`; it does not change what
+    # either mutant does.
+    #
+    # Corpus reachability is asymmetric and the two halves are not the same kind of claim:
+    # moving THIS cap between `< 4` and `< 3` was measured byte-identical over all 16,987
+    # pages (`c17b3f3`), while `largestImage`'s `< 4` has never been moved over the corpus at
+    # all — and that walk reads `/Resources` whether or not the form is drawn, so the first
+    # measurement does not carry over to it. Either way pages 11-14 of `shared-resources.pdf`
+    # are what can kill these; both mutants were added 2026-08-23 with those pages.
+    # ✅ Both `find` strings were checked UNIQUE in `Sources/Flattener.swift` by hand, so
+    # neither will be reported NOT-APPLIED (T7's lesson, recorded at `run`'s `hits != 1`) —
+    # `--self-test` never touches OPERATORS, so nothing automated asserts that.
+    # ⚠️ Not yet run through this tool — the kills are recorded as one-token sabotage
+    # BINARIES, which is weaker; see `BUGS.md` C24's `#### The two caps, and the chain they are equal on` for
+    # exactly which rows were watched going red and which are reasoned.
+    ("Flattener.swift", "guard s.depth < 3, let table = s.table else { return }",
+     "guard s.depth < 4, let table = s.table else { return }",
+     "C24-drawn-cap-reaches-further"),
+    ("Flattener.swift", "guard depth < 4 else { return }",
+     "guard depth < 5 else { return }",
+     "C24-dictionary-cap-reaches-further"),
     # …and the narrower version of the same blindness: a form is followed, but only when it
     # carries `/Resources` of its own. PDF resolves a bare form's names in the scope that
     # invoked it, and dropping that fallback loses the image again.
@@ -501,7 +531,10 @@ OPERATORS = [
     # The policy handed the drawn DPI but not the drawn *width*, so `minimumScanPixelWidth`
     # judges a number no page measured. Every page of `shared-resources.pdf` but the tenth
     # ends in a resolution the policy already trusts, which is why that page was added with
-    # this wiring: on the other nine this mutant answers identically. Run by hand before it
+    # this wiring: on the other thirteen this mutant answers identically — it read "the other
+    # nine" until 2026-08-23, when pages 11-14 were added; the verdict does not move, because
+    # pages 11 and 12 answer 1200 px and 2400 px, both over `minimumScanPixelWidth`, and
+    # pages 13 and 14 never reach the `.largest` branch at all. Run by hand before it
     # was catalogued and it takes **three** rows red — the tenth page's, plus two C9 rows on
     # `born.pdf`, whose 16 px logo reaches the same branch. So this one was already reachable;
     # what the tenth page adds is a page where the two walks *disagree* and the answer turns
