@@ -47,7 +47,7 @@ consecutive whole-document recognitions are **byte-identical** (run variance **0
 re-labels page 1's 0.0143 — that spread is three different *paths*, not three runs), the shipped output
 reproduces from today's build on all nine measure columns of both pages, **98 of page 5's 146-row gap is
 one 115-px observation whose entire text is `ASSAME`** (sensitivity: remove it and the gap falls
-0.1825 → **0.0429**, 3.00x page 1's rather than 12.76x), and the published layer holds a line that no
+0.1825 → **0.0429**, 2.995x page 1's rather than 12.729x), and the published layer holds a line that no
 fresh observation contains **and whose words are absent from page 5's fresh text altogether**, so no
 regrouping or hyphen join can have produced it. ⚠️ **A partial writer drop on top of that is NOT
 excluded** — the pipeline's own observations were never captured, and `deduplicated` is a removing path
@@ -9144,7 +9144,8 @@ the count bound, the string absence and the crop test, and not on that diff.
 ⚠️ **This section is kept as the QUESTION, not as the answer.** Its control was run on 2026-08-23 and
 page 5 settles the same way page 1 did: the gap is two recognitions of two *different images*, not the
 writer. Two of the figures reasoned out below do not survive that run — "on the order of ten lines of
-body type" over-estimates by about 3x, and the **12.76x** ratio is carried by one junk observation.
+body type" over-estimates by about 3x at band scale, and the **12.76x** ratio is carried by one junk
+observation (and is 12.729x off the integer counts).
 Read `#### Page 5, settled 2026-08-23` before quoting anything here.
 
 ⛔ **Page 5 is the one page of the six where the writer is NOT exonerated, and the draft of the section
@@ -9194,8 +9195,10 @@ the reading that repeating a run moves the number. It does not move at all. ⚠�
 they pull opposite ways — hold both.** The comparison is *better founded* than the section claimed,
 because 0.0143 turns out to be the same kind of quantity as page 5's 0.1825 (published against fresh) and
 not a noise floor of a different kind. But its *magnitude* is not: point 3 below shows 0.1825 is carried
-by one junk box and 0.0143 is not, so **12.76x is a real like-for-like ratio of two inflated-and-clean
-numbers, and 3.00x is the one to quote.**
+by one junk box and 0.0143 is not, so **12.729x is a like-for-like ratio of one inflated number to one
+clean one, and 2.995x is the one to quote.** ⚠️ Both figures here are off the INTEGER counts
+(`(320-184)/745` against `(352-341)/767`); the 4-dp shares round to 12.76 and to a falsely exact "3.00",
+and a draft of this section printed both of those.
 
 **2. The artefact is reproducible end to end from today's build, so no build or settings drift is
 in the way.** A full `OCRModel.makeSearchablePDF(rebuild: true, rebuildMode: .auto)` over the same
@@ -9221,7 +9224,10 @@ different build, on the day after the artefact's own run.
      box differs. ⚠️ Its neighbour `(129,196)`, **five** lines and the whole of the *"CONTROLLER'S ROLE. A
      survey by Earl Brooks…"* note, is bare in **both** sets and so contributes nothing to the gap; rows
      197-201 between them hold **0** dark pixels, the paragraph break. A draft of this bullet had the two
-     notes as one eleven-line band and attributed both to the junk box.
+     notes as one eleven-line band and attributed both to the junk box. ⚠️ **"Bare in both" is a claim about
+READINGS, not about the same rows**: the fresh band is `(124,191)`, five rows higher, because rows 192-196
+are inside the `ASSAME` box and rows 124-128 are inside the published heading's. The 68 = 68 is two 5-row
+coverage differences of opposite sign cancelling, both caused by this section's own two headline objects.
    - **(435,480), 46 rows — the one band where the published layer is genuinely worse.** Three fresh
      observations of real prose, read at 1:1 as three full lines (*"within the greater Los Angeles area.
      Includes data on the size, composition and organi- / zational setup of the industrial engineering
@@ -9234,12 +9240,12 @@ different build, on the day after the artefact's own run.
 
    ✅ **Sensitivity, measured rather than argued**: re-scoring the same run with that one junk box
    removed takes page 5's fresh `bareShare` **0.2470 → 0.3866** and `longestInkRun` **68 → 98** — equal to
-   the published layer's 98. The published-minus-fresh gap falls **0.1825 → 0.0429**, which is **3.00x**
-   page 1's 0.0143, not 12.76x. ⛔ **So `bareShare` and `bareShareInkRuns` credit a BOX, not a READING** —
+   the published layer's 98. The published-minus-fresh gap falls **0.1825 → 0.0429**, which is **2.995x**
+   page 1's 0.0143, not 12.729x (both off the integer counts — the rounded shares give 3.00 and 12.76). ⛔ **So `bareShare` and `bareShareInkRuns` credit a BOX, not a READING** —
    one observation of one nonsense word counts seven lines of type as covered — and that is what carried
    the previous section's headline ratio. Quote the bands, not the share. It is the same lesson as the
    stencil-ink ratio and as the run of shares C28 has refused.
-   ✅ **The control that makes 3.00x a fair comparison: page 1 has no junk box to remove.** Its tallest
+   ✅ **The control that makes 2.995x a fair comparison: page 1 has no junk box to remove.** Its tallest
    observation is **26.0 px with 5 words** on a 1,123-px page, against page 5's **115.4 px with 1** on a
    1,103-px page — 4.4x taller and holding one word against five. So page 1's 0.0143 needs no
    correction and page 5's 0.1825 does, which is exactly why the ratio moves and the numerator is the
@@ -9281,7 +9287,11 @@ drawn onto the page are exactly the pixels Vision is given"* — the pipeline re
 `Flattener.flatten`'s **rebuilt page bitmaps**. `Recogniser.extract`, which is what `make-observations`
 calls, recognises `Recogniser.render(page:settings:)`, the **plain render of the source page**. Same
 geometry (both 3307x4409 at 400 dpi on page 5, from the observations' own `reqImgW`/`reqImgH` and from
-`pdfimages -list` on the output), different pixels. Under this entry's own established mechanism — recall
+`pdfimages -list` on the output), different pixels. ⚠️ **"Different pixels" is REASONED, not measured** — nothing here compared a
+`Flattener.flatten` bitmap against a `Recogniser.render` output; it is read off the two call sites
+(`Model.swift:2006` passes `bitmaps`, `Recogniser.swift:222`'s `extract` calls `render`), with
+`pdfimages` reporting the published page images as **1 bpc**. Under this entry's own established
+mechanism — recall
 is a property of the image handed to one request — a disagreement in both directions is exactly what two
 different images predict. ⚠️ Both paths take `Prefs.Snapshot.current()`, so settings are not the
 difference.
@@ -9289,13 +9299,20 @@ difference.
 ⛔ **WHAT THIS DOES NOT CLAIM.** It does not prove the writer drops *nothing*: the pipeline's own
 observations were not captured (nothing exposes them, and replicating the recognition step in an
 instrument is the `alltext-replica` mistake), so a *partial* drop layered on top of the image difference
-is not excluded. ⚠️ **And `SearchableWriter` has a documented removing path this section did not
+is not excluded. ⛔ **AND THE "THREE LINES" CEILING IS NOT SOMETHING THIS INSTRUMENT CAN MEASURE** — the
+second review of this diff refuted it. `VOID_MIN_ROWS` is 20 and page 5's line pitch is ~13 rows
+(consecutive published `yMin`s 368/381/384/397/410/423), so **one** line dropped between two covered lines
+leaves an uncovered run of ~9-13 rows and raises **no band at all**. The decomposition bounds drops of
+**two or more consecutive lines** and says nothing about scattered single-line or sub-line ones — of which
+there is room for several, since the layer holds 277 words against 295 and only ~28 of those sit in the
+three unmatched observations. Read "three lines" as the ceiling on *band-visible* loss, which is what it
+is. ⚠️ **And `SearchableWriter` has a documented removing path this section did not
 measure**: `deduplicated` (`SearchableWriter.swift:706-733`) drops an observation whose text equals a
 kept one within `dx < h` and `dy < h * duplicateBaselineFraction`, so some part of the 295→277 word gap
 may be the writer doing its job on the *same* recognition rather than a different one. Raw against
-`prepared()` counts on the fresh observations would size it; that was not run. What moved is the ceiling: the section above put it at "on the order of ten lines"; the
-most the artefact now leaves room for is **three lines**, and those three are equally explained by (4)
-and (5). ⚠️ One document, one page, one machine; "byte-identical" is three consecutive runs of one build
+`prepared()` counts on the fresh observations would size it; that was not run. What moved is the ceiling on BAND-VISIBLE loss: the section above put it at "on the order
+of ten lines"; the most the artefact leaves room for at that scale is **three lines**, and those three are
+equally explained by (4) and (5). ⚠️ One document, one page, one machine; "byte-identical" is three consecutive runs of one build
 against one input and says nothing about Vision's determinism in general.
 
 ⛔ **AND THE FINDING WORTH MORE THAN THE VERDICT: EVERY C30 INSTRUMENT BUILT ON `make-observations` IS
@@ -9325,6 +9342,9 @@ not in `Tools/` for the same reason (a `Tools/` commit pays the full suite; the 
 `--self-test` is still the step this entry asks for). It does **not** re-implement the measure: it
 `exec`s everything above `artefact.py`'s `rows = []` line, so the two passes cannot drift, and it exits
 non-zero if that line is gone or if the junk observation it re-scores without is not there to remove.
+⚠️ **That guarantees the MEASURE, not the whole pass**: `page5.py` defines its own `boxes_of` instead of
+using the exec'd `obs_boxes`, so the observation-to-pixel-rect conversion is a third copy in that
+directory — numerically equivalent today, checked by this diff's review, and unguarded.
 ⚠️ Its `published-*` rows leave `reqImgW`/`reqImgH` empty — a layer has no request — so `column -t`
 collapses them and the rows *look* short. All 11 rows are 15 fields; the same trap the fork file's
 `scope-void-crop` row carries.

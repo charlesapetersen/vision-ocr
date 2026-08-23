@@ -1531,8 +1531,9 @@ happens.**
       RECALL and not the writer, C30 is ONE mechanism, and DO NOT RE-RUN ANY OF IT.** ⚠️ **What that does
       NOT say: that the writer drops nothing.** The pipeline's own observations were never captured and
       `deduplicated` (`SearchableWriter.swift:706-733`) is an unmeasured removing path, so a PARTIAL drop
-      on top is not excluded — what the page-5 run moved is the ceiling, from "order of ten lines" to
-      three. The evidence is in
+      on top is not excluded — what the page-5 run moved is the ceiling on BAND-VISIBLE loss, from "order of
+      ten lines" to three. ⛔ At `VOID_MIN_ROWS` 20 against a ~13-row line pitch, one dropped line raises
+      no band, so scattered single-line drops are not bounded by this instrument at all. The evidence is in
       the two ticked sub-boxes below, in `BUGS.md` C30 `#### The fork, settled 2026-08-22` and
       `#### Page 5, settled 2026-08-23`, and in `C30-FORK-2026-08-22.tsv` and `C30-PAGE5-2026-08-23.tsv`.
       This line used to say page 5 was open and to name its control as the first thing to do; that control
@@ -1615,7 +1616,7 @@ happens.**
         reading the single word `ASSAME` (seven lines of type at 1:1, lost by **both** paths); **46 rows**
         are the one band where the layer is genuinely worse, three prose lines with the published layer's
         own lines running straight from `yMin` 423 to 483; the rest is boundary jitter. Removing the junk
-        box moves the fresh share 0.2470 → **0.3866** and the gap to **3.00x** page 1's, not 12.76x.
+        box moves the fresh share 0.2470 → **0.3866** and the gap to **2.995x** page 1's, not 12.729x (off the integer counts; the 4-dp shares round to a falsely exact 3.00).
         **(4)** The published layer holds a line — `PROVIDING FACTS AND FIGURES FOR COLLECTIVE
         BARGAINING-THE`, verified at 1:1 — that **no** fresh observation contains, and a writer can only
         remove — ⛔ NOT because "a writer can only remove", a maxim this diff's own review refuted from

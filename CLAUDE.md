@@ -33,9 +33,11 @@ also re-labels page 1's 0.0143, whose three members are three different *paths* 
 PNG) and not three runs. The shipped output reproduces from today's build on all nine measure columns of
 both pages. ⛔ **98 of page 5's 146-row gap is ONE 115-px observation whose entire text is the nonsense
 word `ASSAME`** — remove it and the fresh page-5 `bareShare` goes 0.2470 → **0.3866** and the gap
-0.1825 → **0.0429**, 3.00x page 1's rather than 12.76x, so `bareShare` credits a BOX and not a READING.
-Only **46** rows, three lines, are a band where the layer is genuinely worse — the ceiling on a writer
-drop is three lines, not the ten this file used to say — and the published layer holds a line
+0.1825 → **0.0429**, 2.995x page 1's rather than 12.729x, so `bareShare` credits a BOX and not a READING.
+Only **46** rows, three lines, are a band where the layer is genuinely worse — the ceiling on BAND-VISIBLE
+loss is three lines, not the ten this file used to say — ⛔ and it is only band-visible loss: at
+`VOID_MIN_ROWS` 20 against a ~13-row line pitch, ONE dropped line raises no band, so scattered
+single-line drops are not bounded at all — and the published layer holds a line
 (`PROVIDING FACTS AND FIGURES FOR COLLECTIVE BARGAINING-THE`, verified at 1:1) that no fresh observation
 contains **and whose words — `COLLECTIVE`, `BARGAINING`, `PROVIDING`, `FACTS`, `FIGURES`, `CONTROLLER` —
 are absent from page 5's fresh text altogether**, so no regrouping and no hyphen join can produce it.
