@@ -2354,6 +2354,16 @@ do {
     // all four components are accepted and this reads 1, while the tall fixture below
     // stays at 0 — so the two are attributable to one constant each and neither is a
     // duplicate of the other.
+    // ✅ AND THIS IS THE CHECK THAT KILLS `const/shapeRunHigh` — measured 2026-08-23 by a
+    // scoped `mutate.py` run: `killed`, 3,475 s, `1246/1247 passed`, and this is the ONLY
+    // `FAIL` line in the run's output (`groups Optional(1), inkOut 0.0205 vs the strokes'
+    // 0.0052`). So the paragraph above is a red check now rather than a probe binary's
+    // reading over its own copy of the fixture builder, and the tall check below stayed
+    // GREEN in that same run — that direction of the attribution, from the suite's side.
+    // ⚠️ Only that direction: `shapeHeightHigh` has never been run through the tool, so its
+    // own kill is still the probe's. And the run's output is not in the tree
+    // (`Tools/mutation-out/` is gitignored, overwritten per run) — `BUGS.md` C28
+    // `#### shapeRunHigh RUN through mutate.py` quotes the FAIL line and is the durable copy.
     let c28WideGroups = c28Groups(c28TooWide, boxes: c28Boxes(14))
     let c28WideInk = c28InkOut(c28TooWide, boxes: c28Boxes(14)) ?? -1
     check("…and the same four at 4x the stroke width and 4x the ink are NO line group",

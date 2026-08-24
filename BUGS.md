@@ -28,7 +28,13 @@ then closed the two things that wiring left behind, changing no shipped behaviou
 longer a known-survivor mutant — the fixture `mutate.py` itself asked for now exists, three ways, with a
 positive control — and `score-mrc`'s ungated `--self-test` is **green under the third term but green by
 construction**, because its all-text fixture's `inkOutsideText` is exactly 0.0 and the term cannot reach
-it at any value of any constant.
+it at any value of any constant. ✅ **And that fixture is a RED CHECK as of 2026-08-23, not a probe's
+reading** — `#### shapeRunHigh RUN through mutate.py`: the mutant is `killed`, 3,475 s, `1246/1247 passed`,
+by **exactly one** `FAIL` line, the check `6d0caa1` added at 00:10 the same day. **Two** claims of the
+section above go from argued to measured off the *green* checks in the same run (the too-tall fixture, the
+two grouping fixtures) — ⛔ a third was drafted off the calibration check and **retracted** by the review of
+this diff, because that check cannot fail at any value of this constant. ⚠️ `shapeHeightHigh` is still
+probe-only — six mutants this entry and `depth-cap` catalogued and never ran, now **five**.
 ✅ **`#### The replica retired` (2026-08-23) then repaired the instrument the wiring broke, and it too
 changes nothing in `Sources/`**: `Tools/score-text-route.swift` had a hand-written copy of
 `pageIsAllText()` two terms deep against the shipped guard's three, so it printed `all-text` on exactly
@@ -8496,7 +8502,8 @@ non-type-shaped components on one baseline, and it is owed. Kept in the catalogu
 the gap is somewhere a tool will print it. ✅ **That fixture EXISTS as of 2026-08-22 and this paragraph is
 discharged by `#### The owed fixture`** — `shapeRunHigh` and `shapeHeightHigh` are both pinned and both
 watched failing; `shapeMinimumArea` is left unpinned there for a stated reason rather than for want of a
-fixture. ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
+fixture. ✅ **And `shapeRunHigh`'s pin is a RED CHECK as of 2026-08-23, `killed` by exactly one check
+through a scoped run — `#### shapeRunHigh RUN through mutate.py`.** ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
 hours, and this session paid one suite. What stands in its place is the by-hand equivalent above: two
 binaries one term apart, executed, 153 against 612. ⛔ **And one wrong reading is deliberately absent
 rather than forgotten**: `groups ?? 0 == 0`, a too-dense page waved through instead of refused, is a
@@ -8697,8 +8704,11 @@ the grouping in disguise. `shapeHeightHigh` is added to the catalogue on the str
 from 100 to **101**, and both substitutions were verified to APPLY by running `catalogue()`'s own anchored
 regex against `Flattener.swift` rather than by reading it.
 
-⛔ **"Watched failing" here means a binary, not a red check, and the gap is wider than the phrase.**
-Neither mutant was run **through** `mutate.py` — a scoped run is a baseline suite plus ~45 minutes a
+⛔ **"Watched failing" there meant a binary, not a red check, and the gap was wider than the phrase.**
+✅ **One of the two has been run since, and one has not — `#### shapeRunHigh RUN through mutate.py`, the
+last section of this entry's owed-fixture material, 2026-08-23. Everything in this paragraph still stands
+of `shapeHeightHigh`.**
+Neither mutant was run **through** `mutate.py` when this was written — a scoped run is a baseline suite plus ~45 minutes a
 mutant, the same trade the wiring session took — and the sabotage drove the shipped functions through a
 probe's copy of **both** `makeScannedPDF` *and* the surface construction (`c28Surfaces` / `c28Boxes`), so
 what it establishes is that the term flips on that geometry, not that `Tests/main.swift` goes red. Nothing
@@ -8775,6 +8785,90 @@ not the constant. And the printed count stayed **10** deliberately: two guards w
 10 rather than as an eleventh group, and that literal counts groups — a draft read 11 and made the number
 uncountable, which is the failure the literal's own comment warns about. `Tools/README.md`'s copy of it
 said **9** while the tool printed 10 and is corrected to 10 here, its second staleness.
+
+#### `shapeRunHigh` RUN through `mutate.py` — killed by exactly ONE check, and the same run turns two ARGUED claims of the section above into measured ones — 2026-08-23
+
+`#### The owed fixture`'s last paragraph ("watched failing there meant a binary") is why this exists: of
+the two mutants that fixture was built for, one is a red check now and one is still a probe's reading.
+**`const/shapeRunHigh` (2.0 → 99.0) is `killed`, 3,475 s**, appended to `Tools/mutation-log.tsv`. Read off
+the run's own kept output rather than the tool's summary line: baseline **1,247 checks, green**, mutant
+**`1246/1247 passed`** — the same 1,247 ran — and **exactly one `FAIL` line in the whole file**:
+
+```
+FAIL …and the same four at 4x the stroke width and 4x the ink are NO line group
+     — groups Optional(1), inkOut 0.0205 vs the strokes' 0.0052
+```
+
+⛔ **AND THE TOOL COULD NOT HAVE TOLD ME THE COUNT WAS THE SAME.** `mutate.py`'s `MISMATCH` verdict — "the
+suite passed but a different number of checks ran, so this is not the suite we calibrated against" — is
+reachable only from `elif proc.returncode == 0`. This exit was **1** (`exit=1`, the kept log's first line),
+so the verdict was `killed` whatever `total` had been, and **a check-count change on a KILL is something
+this tool never looks at**. The hand-read `1246/1247` above is the only guard there is. ⚠️ A draft of this
+section had it exactly backwards — "the same 1,247 ran, which is what rules out the tool's `MISMATCH`
+verdict" — crediting the instrument with a check it does not perform. Found by the review of this diff,
+which read `run()`.
+
+⛔ **The number that matters is the ONE, not the kill.** C24's override seam is the precedent —
+`logic/C24-override-nil-means-fallback` is killed by exactly one check, and that check did not exist in the
+commit the register credited with pinning the seam, so against the nine checks that commit shipped the
+count was zero. This is the same shape read the other way round: the single objecting check is the one
+`6d0caa1` added **earlier the same day** (00:10:53, against this run's 19:00:58 — ⚠️ a draft said "the
+previous morning", which is the off-by-one-day this entry's own comment-fix section had already paid for
+once), which is precisely what "known survivor" meant here. ⚠️ **Derived, not separately run.** What is
+*measured* is that this check objects and that **every other check in the suite holds** — one `FAIL` line
+in 1,739 — which covers the two the review of `6d0caa1` named as the candidates and the several others over
+the same term besides; that the pre-`6d0caa1` count was zero follows from that plus `git`, and no
+pre-`6d0caa1` binary was mutated to confirm it.
+
+✅ **TWO CLAIMS OF THE SECTION ABOVE GO FROM ARGUED TO MEASURED, and they are the run's real yield.** Both
+are *green* checks under the mutant, which is why they are readable at all — a kill by one check says as
+much about the 1,246 that held as about the one that broke.
+
+| what it was | what this run measures |
+|---|---|
+| the too-tall check is not the too-wide one in disguise — **a probe's** two binaries | its check stayed **green** at `shapeRunHigh` = 99.0, in the suite |
+| `c28GroupsBar` / `c28GroupsC26` read 0 at *every* value because the **grouping** holds them out — **reasoned** by the review of `6d0caa1` from "a solid fill is one 8-connected component" | both stayed **green** at 99.0 |
+
+⛔ **AND A THIRD ROW WAS IN THIS TABLE AND IS RETRACTED, because it was a check that CANNOT FAIL under this
+mutant — the eleventh, in the section about the tenth.** The draft counted the four-dash fixtures'
+calibration check (`glyphHeight` 25.0 / `glyphRun` 5.0) as evidence that this constant cannot move the type
+scale its literals sit against. It is not evidence: `c28Calibration` reads `interiorWindow`,
+`shapeComponents` and `shapeMinimumArea` and nothing else, so `shapeRunHigh` enters that check **only
+through its detail string**, which cannot affect pass or fail. Its green is guaranteed at every value, the
+draft even noted the detail string while still counting the row, and the yield was inflated by a third.
+Found by the review of this diff, verified by reading `c28Calibration` and both occurrences of the constant
+in `Sources/Flattener.swift`.
+
+⚠️ **What it does not touch.** `shapeHeightHigh` is still probe-only — one of the six mutants this entry
+and `depth-cap` catalogued and never ran, now **five** — and its `mutate.py` comment said "executed the
+same way, with the same caveat" while pointing at a paragraph that no longer states that caveat, so it
+carries the caveat itself now. ✅ One half of it *is* measured, from this run: its fixture's check is green
+at `shapeRunHigh` = 99.0, so whatever kills it is not the run bar under another name. Nor does a green
+check under *this* mutant say anything about `shapeMinimumArea`, which is separately live in the
+calibration filter and stays deliberately uncatalogued.
+
+⛔ **NEITHER ARTEFACT BEHIND THIS SECTION IS IN THE TREE, AND THE TSV ROW IS NOT A SUBSTITUTE FOR EITHER.**
+`Tools/mutation-out/` is in `.gitignore` (line 16, confirmed with `git check-ignore -v`) and `run()`
+rewrites `const_shapeRunHigh.log` in `"w"` mode on the next run of the same mutant, so the file the `FAIL`
+line and the `1246/1247` were read out of is single-copy and overwritable; the console output carrying
+`baseline: 1247 checks, green` was left in `/tmp` and is not even that. What survives in the repository is
+the four-field `mutation-log.tsv` row — `killed 3475 1 check(s): …` — which holds the verdict, the duration
+and the objecting check's *name*, and **not** the baseline count, the mutant's tally, or the fact that only
+one line failed. That is why the `FAIL` line is quoted verbatim above rather than cited: this section IS the
+durable copy. The register keeps a census of measurements whose instrument is not in the tree for exactly
+this reason; this is a measurement whose *output* is not.
+
+⚠️ **One calibration fact to budget from, and it cuts the other way from the last one.** The startup line
+read **"roughly 87-115 minutes … Budget the 115"** off the log's newest five rows, and the run took
+**6,541 s (109 min)** — measured, because it was wrapped in `ops/autonomous/test-lock.sh run` and the row
+is in `$STATE/suite-timings.tsv` (`mutate-shapeRunHigh 6541 0 4.18`). The mutant suite is **3,475 s** of
+that from the tool's own clock, leaving **3,066 s** for the rsync and the baseline by subtraction. So the
+estimate's high end held here, where the C24b
+campaign recorded it **4.22x low** — one scoped run of one mutant against a five-mutant campaign, so this
+is a second data point and not a correction to that one. 3,475 s is a new maximum for the five-row window
+the estimate reads, so the range it prints will widen. `coverage: 73 of 103` catalogue entries have a
+verdict now, and the run's own census puts **30** at no row at all — a larger number than the six this
+entry's queue box counts, because that six is only what C28 and `depth-cap` added.
 
 #### The replica retired — the `verdict` column reads production's own answer instead of copying the guard a fourth time — FIXED 2026-08-23
 

@@ -150,12 +150,28 @@ fixture it wanted (*"four short solid dashes on a baseline"*). Three now exist, 
 quarter of it**, so nothing about quantity separates the refused pages and quantity is *inverted* against
 the one that fires. ✅ **Both mutants were watched failing and each fixture is attributable to ONE
 constant**: at `shapeRunHigh` = 99.0 the wide one goes 0 → 1 and the tall one stays 0; at
-`shapeHeightHigh` = 99.0 the reverse. ⛔ **But "watched failing" here is a BINARY, not a red check**:
-neither was run through `mutate.py` (a scoped run is a baseline suite plus ~45 min a mutant), the probe
-carried its own copy of **both** the fixture builder and the surface construction, and `mutate.py`'s
+`shapeHeightHigh` = 99.0 the reverse. ⛔ **"Watched failing" there was a BINARY, not a red check**: at the
+time neither had been run through `mutate.py` (a scoped run is a baseline suite plus ~45 min a mutant), the
+probe carried its own copy of **both** the fixture builder and the surface construction, and `mutate.py`'s
 `--self-test` never touches `CONSTANTS` — so what the suite adds is that the type scale and all three
 `inkOut` values are asserted **in bands**, and a geometry that drifted away from the probe's reports
-itself. ⚠️ The calibration check is a **mirror** of the term's own calibration step: it pins the fixture
+itself.
+✅ **`shapeRunHigh` IS A RED CHECK AS OF 2026-08-23 — RUN through `mutate.py` and `killed`, 3,475 s,
+`1246/1247 passed`, by EXACTLY ONE `FAIL` line** (`#### shapeRunHigh RUN through mutate.py`;
+`Tools/mutation-log.tsv`). ⛔ **The one is the point, not the kill**: that single objecting check did not
+exist before `6d0caa1`, committed 00:10:53 the SAME day, which is what "known survivor" meant — the same
+shape as C24's override seam, read the other way round. ✅ **And the run's real yield is its GREEN checks —
+two claims that were argued are now measured**: the too-tall fixture's check holds at 99.0 (so the pair is
+one constant each from the *suite's* side on that side of it, not only the probe's), and `c28GroupsBar` and
+`c28GroupsC26` hold (so the **grouping** does refuse them at this value too, as `6d0caa1`'s review reasoned
+rather than measured). ⛔ **A THIRD was drafted and RETRACTED by the review of that diff, and it is the
+lesson**: the calibration check's green is NOT evidence, because `c28Calibration` never reads this
+constant — it enters that check only through the detail string — so the row was an eleventh check that
+could not fail, written into the section about the tenth. ⚠️ `shapeHeightHigh` is **still probe-only** (six
+catalogued-and-never-run mutants → **five**), the run's own output is NOT in the tree
+(`Tools/mutation-out/` is gitignored and overwritten per run, so the quoted `FAIL` line is the durable
+copy), and the estimator's high end held this time (**6,541 s** lock-measured against "budget the 115"),
+which is a second data point beside C24b's 4.22x-low reading and not a correction to it. ⚠️ The calibration check is a **mirror** of the term's own calibration step: it pins the fixture
 and is blind to a change in the calibration itself, which is `interiorWindow`'s recorded hazard with its
 remedy unavailable (the term does not expose what it calibrated on).
 ✅ **AND THE SIBLING WAS FIXED IN THE SAME COMMIT — it is the sharper of the two.**

@@ -647,14 +647,28 @@ happens.**
       records. Do not accept a green gate as evidence.
       ⚠️ **READ THIS BEFORE TAKING THIS ITEM: every `c28-*` sub-box below is ticked, and the last few
       autonomous sessions to reach this box as their first `ok` took the next item instead** — 2026-08-23's
-      three sessions all did, and their reasons are in `$STATE/RUN.md`'s SESSION LOG. This box stays `[ ]`
+      three sessions all did, and their reasons are in `$STATE/RUN.md`'s SESSION LOG. ✅ **The fourth TOOK
+      it, 2026-08-23 evening, and did exactly one mutant from (a) — which is what this paragraph was written
+      to make possible, so it works: read (a) for what one costs before deciding.** This box stays `[ ]`
       because C28 is genuinely `HALF FIXED` and not closed. So a later session does not spend its item
-      re-deriving what is left, here it is with what each piece costs: **(a)** **six** mutants are in the
-      catalogue and have never been run through `Tools/mutate.py` — three from `c28-decide-and-wire`
-      (`fbf6d87`: `lineMinimumMembers`, `shapeRunHigh`, `C28-alltext-ignores-shape`), one from
-      `c28-owedfixture` (`6d0caa1`: `shapeHeightHigh`) and two from `depth-cap` (`95b23c3`) — and a scoped
-      run is a baseline suite plus **44-58 min a mutant** (`CLAUDE.md`'s figure, from `mutation-log.tsv`'s
-      newest five; `mutate.py:19-30` forbids quoting a per-mutant number from prose, so read the log);
+      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **ONE of the six is RUN as
+      of 2026-08-23 and FIVE are left** — `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
+      check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`), and the five still with no row are
+      `lineMinimumMembers` and `C28-alltext-ignores-shape` from `c28-decide-and-wire` (`fbf6d87`),
+      `shapeHeightHigh` from `c28-owedfixture` (`6d0caa1`), and `C24-drawn-cap-reaches-further` +
+      `C24-dictionary-cap-reaches-further` from `depth-cap` (`95b23c3`). ⚠️ **That five is this entry's
+      share, not the catalogue's**: the same run's own census prints **30** entries with no row at all and
+      `coverage: 73 of 103`, so do not read "five left" as "five in the catalogue". ⛔ **And the other 25
+      are owned by NO box** — the `mutants` item scopes itself to the *survivor* list twice over ("work the
+      survivors", "the live survivor list"), which is the 2 `SURVIVED` rows and not a never-run entry, so
+      "the mutants item owns the rest" (this sentence's first draft) was wrong. Nobody has claimed them;
+      that is a gap in this file, not in the catalogue. **The cost is now measured rather than quoted**:
+      baseline + one mutant took **6,541 s
+      (109 min)** — wrap it in `test-lock.sh run` as this session did and the row lands in
+      `$STATE/suite-timings.tsv` for free — against a startup line reading "roughly 87-115 minutes …
+      Budget the 115", so the
+      estimator's high end held on this one (it was 4.22x low on the C24b campaign — read the log, not
+      either number: `mutate.py:19-30` forbids quoting a per-mutant figure from prose);
       **(b)** no corpus sweep has been re-run since the shape term was wired, so "12 of 12 type-losers" is
       still the tool's 2026-08-21 figure — a 233-document sweep measured **105.6 min** the last time one
       ran; **(c)** the **three hand-made marks the wired term does not rescue**, one of which
@@ -1394,8 +1408,11 @@ happens.**
       reach `lineMinimumMembers`) — found by building a sabotaged port and running it, which is the tenth
       such check in this project's history. It has its own five-mark fixture now and the sabotage goes red.
       ⚠️ **What is still owed, and neither is a blocker**: (1) the mutant campaign — three mutants were
-      added (catalogue 97 → 100, all three verified as APPLIED) and **none was run**, because a scoped run
-      is a baseline suite plus 44-58 min a mutant; the by-hand equivalent above was executed instead.
+      added (catalogue 97 → 100, all three verified as APPLIED) and **none was run** at the time, because a
+      scoped run is a baseline suite plus 44-58 min a mutant; the by-hand equivalent above was executed
+      instead. ✅ **ONE of the three has been run since — `const/shapeRunHigh`, `killed` by exactly one
+      check, 2026-08-23** (the `C28` box's (a); `BUGS.md` `#### shapeRunHigh RUN through mutate.py`);
+      `lineMinimumMembers` and `C28-alltext-ignores-shape` are still unrun.
       (2) `SHAPETERM-73` has **not** been re-run under the port check, so "12 of 12 type-losers" remains
       the tool's 2026-08-21 figure with a live guard over it rather than a figure re-derived from shipped
       code. Re-running it is cheap and is the way to convert the guard into a measurement.
@@ -1417,7 +1434,11 @@ happens.**
       ✅ **Both mutants were watched failing, and each fixture is attributable to ONE constant**: at
       `shapeRunHigh` = 99.0 the wide one goes 0 → 1 and the tall one stays 0; at `shapeHeightHigh` = 99.0
       the reverse. Both substitutions verified APPLIED by running `catalogue()`'s own anchored regex.
-      ⛔ **But "watched failing" is a BINARY here, not a red check**: neither ran through `mutate.py`
+      ✅ **`shapeRunHigh` RAN through `mutate.py` on 2026-08-23 and is `killed` by exactly ONE check** —
+      3,475 s, `1246/1247 passed`; see the `C28` box's (a) and `BUGS.md`
+      `#### shapeRunHigh RUN through mutate.py`. The paragraph below still stands of `shapeHeightHigh`.
+      ⛔ **But "watched failing" was a BINARY here, not a red check**: neither had run through `mutate.py`
+      when this was written — `shapeRunHigh` has since, `shapeHeightHigh` has not —
       (baseline suite + ~45 min a mutant), the probe carried its own copy of **both** `makeScannedPDF` and
       the surface construction, and `mutate.py --self-test` never touches `CONSTANTS`. What the suite adds
       is that the type scale and all three `inkOut` values are asserted **in bands** — a first draft
