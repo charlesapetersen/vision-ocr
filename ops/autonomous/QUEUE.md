@@ -651,14 +651,20 @@ happens.**
       it, 2026-08-23 evening, and did exactly one mutant from (a) — which is what this paragraph was written
       to make possible, so it works: read (a) for what one costs before deciding.** This box stays `[ ]`
       because C28 is genuinely `HALF FIXED` and not closed. So a later session does not spend its item
-      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **ONE of the six is RUN as
-      of 2026-08-23 and FIVE are left** — `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
-      check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`), and the five still with no row are
-      `lineMinimumMembers` and `C28-alltext-ignores-shape` from `c28-decide-and-wire` (`fbf6d87`),
+      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **TWO of the six are RUN as
+      of 2026-08-23 and FOUR are left** — `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
+      check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`), and
+      `logic/C28-alltext-ignores-shape` — **the wiring as a mechanism** — is `killed`, 3,407 s, by
+      **exactly three**, all of them added by `fbf6d87`, the commit that shipped the wiring
+      (`BUGS.md` `#### C28-alltext-ignores-shape RUN through mutate.py`; that run also fixed a
+      truncation defect it found in `mutate.py`'s own `FAIL`-line parse). The four still with no row are
+      `lineMinimumMembers` from `c28-decide-and-wire` (`fbf6d87`),
       `shapeHeightHigh` from `c28-owedfixture` (`6d0caa1`), and `C24-drawn-cap-reaches-further` +
-      `C24-dictionary-cap-reaches-further` from `depth-cap` (`95b23c3`). ⚠️ **That five is this entry's
-      share, not the catalogue's**: the same run's own census prints **30** entries with no row at all and
-      `coverage: 73 of 103`, so do not read "five left" as "five in the catalogue". ⛔ **And the other 25
+      `C24-dictionary-cap-reaches-further` from `depth-cap` (`95b23c3`).
+      ⚠️ **A one-sided `logic` mutant has no green yield** — read the second run's section before crediting
+      a green check under one to anything; that is where the previous run's retraction came from. ⚠️ **That FOUR is this entry's
+      share, not the catalogue's**: the newer run's census prints **29** entries with no row at all and
+      `coverage: 74 of 103`, so do not read "four left" as "four in the catalogue". ⛔ **And the other 25
       are owned by NO box** — the `mutants` item scopes itself to the *survivor* list twice over ("work the
       survivors", "the live survivor list"), which is the 2 `SURVIVED` rows and not a never-run entry, so
       "the mutants item owns the rest" (this sentence's first draft) was wrong. Nobody has claimed them;
@@ -1410,9 +1416,13 @@ happens.**
       ⚠️ **What is still owed, and neither is a blocker**: (1) the mutant campaign — three mutants were
       added (catalogue 97 → 100, all three verified as APPLIED) and **none was run** at the time, because a
       scoped run is a baseline suite plus 44-58 min a mutant; the by-hand equivalent above was executed
-      instead. ✅ **ONE of the three has been run since — `const/shapeRunHigh`, `killed` by exactly one
-      check, 2026-08-23** (the `C28` box's (a); `BUGS.md` `#### shapeRunHigh RUN through mutate.py`);
-      `lineMinimumMembers` and `C28-alltext-ignores-shape` are still unrun.
+      instead. ✅ **TWO of the three have been run since, both 2026-08-23 and both `killed`** — the `C28`
+      box's (a): `const/shapeRunHigh` by exactly one check
+      (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`), and `logic/C28-alltext-ignores-shape`, the
+      wiring itself, by **exactly three — all three added by this very commit**, so the by-hand control
+      above (153 px against a ceiling of 154) is now a red check's own message
+      (`BUGS.md` `#### C28-alltext-ignores-shape RUN through mutate.py`). Only
+      `const/lineMinimumMembers` is still unrun.
       (2) `SHAPETERM-73` has **not** been re-run under the port check, so "12 of 12 type-losers" remains
       the tool's 2026-08-21 figure with a live guard over it rather than a figure re-derived from shipped
       code. Re-running it is cheap and is the way to convert the guard into a measurement.

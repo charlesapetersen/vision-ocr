@@ -841,6 +841,48 @@ ABORTED_DETAIL = re.compile(r"^exit \d+, no FAIL line")
 # puts the floor of every estimate below anything this machine has done in months.
 ESTIMATE_SAMPLE = 5
 
+def objecting_checks(out):
+    """The FAIL lines a mutant's suite printed, whole, in the order printed.
+
+    ⛔ **It does not split the name off the detail, and that is the point.**
+    `check()` in Tests/main.swift prints `FAIL <name>` or `FAIL <name> — <detail>`,
+    and the same `" — "` occurs *inside* 38 of the suite's check names. So
+    `FAIL a — b` is genuinely AMBIGUOUS — it is "name `a`, detail `b`" and "name
+    `a — b`, no detail", and nothing in the line distinguishes them. **No split is
+    correct**, which is why this keeps the line.
+
+    `run` split at the FIRST separator for the whole of this tool's history, which
+    truncated every name containing one. Measured on the rows it damaged: **at least
+    7 of the log's 83**, and the honest count is a floor because a truncation that
+    leaves a readable sentence is invisible to inspection — `logic/C24-page-draws-
+    nothing` records the bare tag `C24`, five rows record
+    `…and a page carrying a pale drawing does not` where the check ends
+    `— R56's other half`, and this run recorded `C28`. Five of those NAMES are
+    recoverable from `Tests/main.swift`, because the truncated head matches exactly
+    one description; the `C24` one is not, because a bare `C24` matches **nine**.
+    None of the six is recoverable in the format below, which keeps the whole line:
+    their details went with `mutation-out/`, gitignored and rewritten per run.
+
+    ⚠️ Splitting at the LAST separator instead — the obvious fix, and the one this
+    function shipped as a draft — is **not** a fix: it truncates a name whose
+    separator is its own and which was called with no detail (`C24 — the rebuild-DPI
+    override is nil until something sets it`, Tests/main.swift, is exactly that
+    shape), and it corrupts the 22 call sites whose *detail* holds a separator,
+    where the first-separator split was right. Keeping the line is wrong in no case.
+    """
+    lines = []
+    for line in out.splitlines():
+        line = line.strip()
+        # A prefix, not a substring: `"FAIL" in line` would collect a check whose
+        # own text says FAIL, and the count below is what a row's `N check(s)` is.
+        if line != "FAIL" and not line.startswith("FAIL "):
+            continue
+        # The log this feeds is TSV and `record` does not sanitise. A tab inside a
+        # check's own text would add a field and put every later column under the
+        # wrong header — the defect class T14, A12.3 and T18 each paid for once.
+        lines.append(" ".join(line[5:].split()))
+    return lines
+
 
 def logged_seconds(path=None):
     """Durations of suite runs that ran to completion, oldest first.
@@ -1239,6 +1281,58 @@ def self_test():
     check("run() returns before anything that copies a tree or starts a suite",
           rc == 0 and tripped == [])
 
+    # `objecting_checks`, the parse that puts a check's name into
+    # `mutation-log.tsv`. It had no coverage here at all while being the only route
+    # from a red check to the durable record, and it truncated at the first
+    # separator — so a `killed` row recorded `C28` where the check is a sentence.
+    # ⚠️ **Cases (1)-(3) are mutually redundant AS DETECTORS and are kept anyway.**
+    # Measured over eight implementations: any parse that splits at all goes red on
+    # all three, so their columns are identical and (2) and (3) catch no mutant (1)
+    # misses. They stay because they are the three real shapes that make splitting
+    # unfixable, and the next reader's instinct is to "fix" this by splitting at the
+    # last separator instead — (2) is that patch's counter-example, in the tree.
+    # **(4), (5) and (6) are each load-bearing**: exactly one wrong implementation
+    # in that sweep is caught by each and by nothing else here.
+    #
+    # (1) The line this run actually produced, verbatim from `mutation-out/`. Both
+    # the first-separator split and the last-separator one truncate it.
+    real_c28 = ("  FAIL C28 — a page with one unrecognised word of type is not "
+                "shrunk as all text — 153 wide of 1224, ceiling 154")
+    check("a FAIL line is kept whole, separators and detail and all",
+          objecting_checks(real_c28)
+          == ["C28 — a page with one unrecognised word of type is not shrunk as all "
+              "text — 153 wide of 1224, ceiling 154"])
+    # (2) The case that kills the last-separator split, which is the fix a reader
+    # will propose. A real check name, called with NO detail: its own separator is
+    # the last one on the line, so `rsplit` records the bare tag `C24`.
+    check("…including a name whose own separator is the last thing on the line",
+          objecting_checks(
+              "  FAIL C24 — the rebuild-DPI override is nil until something sets it")
+          == ["C24 — the rebuild-DPI override is nil until something sets it"])
+    # (3) Two separators in one name — the `tonal-plate` check builds exactly this
+    # by concatenation, and a split-at-the-second implementation passes (1) and (2).
+    check("…and a name carrying TWO separators is not cut at either",
+          objecting_checks("FAIL tonal-plate routes to the picture path — R57 — "
+                           "1-bit makes it a solid black blob")
+          == ["tonal-plate routes to the picture path — R57 — 1-bit makes it a "
+              "solid black blob"])
+    # (4) The log is TSV and `record` does not sanitise, so a tab in a check's own
+    # text would add a field. Nothing else here would notice.
+    check("a tab inside a check's text cannot add a TSV field",
+          objecting_checks("  FAIL a name\twith a tab — and\ta detail")
+          == ["a name with a tab — and a detail"])
+    # (5) A prefix and not a substring: `"FAIL" in line` collects prose about
+    # failing, and the length of this list is a row's `N check(s)` count.
+    check("a line that merely mentions FAIL is not a failing check",
+          objecting_checks("  ok   the writer reports FAILURE loudly\n"
+                           "FAILURES: 0\n  FAIL the real one — d") == ["the real one — d"])
+    # (6) Order and the `ok` rejection — catches a set/dedup, a first-only return,
+    # and a parse that collects the passing lines too.
+    check("every FAIL is collected in order, once each, and no `ok` line is",
+          objecting_checks("  ok   first is fine\n  FAIL b — d\n  ok   c\n"
+                           "  FAIL a — d\n  FAIL b — d\n")
+          == ["b — d", "a — d", "b — d"])
+
     print(f"self-test: {len(failures)} failure(s)")
     return 1 if failures else 0
 
@@ -1359,8 +1453,7 @@ def run(argv=None):
                                if l.strip().endswith("passed")), "suite green")
             else:
                 verdict = "killed"
-                fails = [l.strip()[5:].strip().split(" — ")[0]
-                         for l in out.splitlines() if l.strip().startswith("FAIL")]
+                fails = objecting_checks(out)
                 if fails:
                     detail = f"{len(fails)} check(s): " + "; ".join(fails[:3])
                 else:

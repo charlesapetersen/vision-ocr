@@ -124,7 +124,9 @@ the 16** measured losses and leaves three hand-made marks, one of which (`_1939_
 pencil upstream of the map. It buys **no searchability** — the words are still not in the text layer,
 which is `C30`'s ground. ⛔ **And two things it does NOT claim.** (1) The mutant campaign was **not
 run**: three mutants were added (catalogue 97 → **100**, all three verified APPLIED, not NOT-APPLIED)
-and a scoped run is a baseline suite plus 44-58 min a mutant. (2) **No corpus sweep was re-run**, so
+and a scoped run is a baseline suite plus 44-58 min a mutant. ✅ **TWO of those three have been run
+since — `const/shapeRunHigh` and `logic/C28-alltext-ignores-shape`, both `killed`, 2026-08-23; only
+`const/lineMinimumMembers` is left.** (2) **No corpus sweep was re-run**, so
 "12 of 12 type-losers" is still the tool's 2026-08-21 figure — what is new is a **port check**:
 `Tools/score-shape-term.swift` now calls the shipped `Flattener.textLineGroupsOutsideText` on its own
 surfaces on every measured page, prints `port agreed on N` and **exits 7** on disagreement, because every
@@ -168,10 +170,36 @@ rather than measured). ⛔ **A THIRD was drafted and RETRACTED by the review of 
 lesson**: the calibration check's green is NOT evidence, because `c28Calibration` never reads this
 constant — it enters that check only through the detail string — so the row was an eleventh check that
 could not fail, written into the section about the tenth. ⚠️ `shapeHeightHigh` is **still probe-only** (six
-catalogued-and-never-run mutants → **five**), the run's own output is NOT in the tree
+catalogued-and-never-run mutants → **five**, and → **four** with the wiring mutant below), the run's own output is NOT in the tree
 (`Tools/mutation-out/` is gitignored and overwritten per run, so the quoted `FAIL` line is the durable
 copy), and the estimator's high end held this time (**6,541 s** lock-measured against "budget the 115"),
-which is a second data point beside C24b's 4.22x-low reading and not a correction to it. ⚠️ The calibration check is a **mirror** of the term's own calibration step: it pins the fixture
+which is a second data point beside C24b's 4.22x-low reading and not a correction to it.
+✅ **AND THE WIRING ITSELF IS A RED CHECK AS OF 2026-08-23 — `logic/C28-alltext-ignores-shape` RUN and
+`killed`, 3,407 s, `1244/1247 passed`, by EXACTLY THREE `FAIL` lines** (`#### C28-alltext-ignores-shape RUN
+through mutate.py`). All three checks were added by `fbf6d87`, the commit
+that shipped the wiring — where `shapeRunHigh`'s arrived a commit later and C24's seam had none — ⛔ **but a
+draft called that "the headline" and the review of it refuted the framing: a mutant planting back the defect
+a commit fixed is killed by that commit's checks BY CONSTRUCTION, because CONTRIBUTING requires the failing
+test first.** ⛔ **And do not quote the `153 wide of 1224, ceiling 154` as the probe and the suite agreeing
+about the term** — 153 is `1224 / textPageBackgroundDownsample` and the ceiling is that plus one, so any
+shrunk page of that width prints the pair; the mutant's applied-ness is instead measured from the compiler
+(`'groups' was never used`). ⛔ **It has NO
+green yield, said in advance rather than retracted afterwards**: `return true` is one-sided, so the only
+checks it can falsify are those asserting a page reaching term 3 is not all text, and the two that look
+most like yield cannot fail — the `inkOutsideText` assertion (that field is assigned *before* term 1's
+guard, verified by reading the source) and the positive control (the mutant forces what it asserts, so the
+pair's own guard is never exercised). ⚠️ All three failures sit on **one** fixture, and the universal over
+the other 1,244 is an argument with the near misses read, not an inspection — "did not fail", not "cannot".
+⛔ **And the run found a
+defect in `mutate.py` by using it**: the row recorded the first check as the bare tag `C28`, because `run()`
+split each `FAIL` line at the **first** `" — "` — a separator inside **38 of 1,236** check descriptions —
+damaging **7 of the log's 83 rows** (a first draft said 2, from a detector that could only see a truncation
+leaving a bare tag). ⛔ **`FAIL a — b` is AMBIGUOUS, so the fix is to keep the whole line and not to split
+at all**; the draft's `rsplit` was refuted from two real call sites. Six self-test checks (30 → **36**), the
+first three measured mutually redundant and recorded as such, **both rejected parses watched failing**; this
+run's row repaired byte-identically to what the fixed tool writes, the other six not repairable. Sibling
+sweep: nothing else splits on that separator.
+⚠️ The calibration check is a **mirror** of the term's own calibration step: it pins the fixture
 and is blind to a change in the calibration itself, which is `interiorWindow`'s recorded hazard with its
 remedy unavailable (the term does not expose what it calibrated on).
 ✅ **AND THE SIBLING WAS FIXED IN THE SAME COMMIT — it is the sharper of the two.**

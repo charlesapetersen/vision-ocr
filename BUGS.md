@@ -35,6 +35,25 @@ section above go from argued to measured off the *green* checks in the same run 
 two grouping fixtures) — ⛔ a third was drafted off the calibration check and **retracted** by the review of
 this diff, because that check cannot fail at any value of this constant. ⚠️ `shapeHeightHigh` is still
 probe-only — six mutants this entry and `depth-cap` catalogued and never ran, now **five**.
+✅ **THE WIRING ITSELF IS A RED CHECK AS OF 2026-08-23 — `#### C28-alltext-ignores-shape RUN through
+mutate.py`**: `logic/C28-alltext-ignores-shape` (`return groups == 0` → `return true`) is `killed`, 3,407 s,
+`1244/1247 passed`, by **exactly three** `FAIL` lines, and **all three were added by `fbf6d87`, the commit
+that shipped the wiring** — the first of this entry's three mutants whose behaviour change shipped with its
+own biting checks, where `shapeRunHigh`'s came a commit later and C24's seam had none. The first failure
+prints `153 wide of 1224, ceiling 154`, the same two numbers as the by-hand control in `#### THE DECISION`.
+⛔ **It has NO green yield and that is stated in advance rather than retracted**: `return true` is one-sided,
+so the only checks it can falsify are the three, and the two that most look like yield (the `inkOutsideText`
+assertion, whose field is set *before* term 1's guard; the positive control, which the mutant forces) are
+named there as unable to fail. ⚠️ All three sit on **one** fixture. ⛔ **And the run found a defect in
+`mutate.py`**: it recorded the first check as the bare tag `C28`, because `run()` split each `FAIL` line at
+the **first** `" — "` — a separator inside **38 of 1,236** check descriptions — damaging **7 of the log's
+83 rows**, of which a first draft found 2 because its detector could only see a truncation leaving a bare
+tag. ⛔ **`FAIL a — b` is ambiguous, so the fix is to keep the whole line and NOT to split**: the draft's
+`rsplit` was refuted by the review from two real call sites (a name whose own separator is last, called with
+no detail; 22 details that carry one). Six self-test checks (30 → **36**), the first three measured
+mutually redundant and said so in place, both rejected parses watched failing. This run's row is repaired
+byte-identically to what the fixed tool writes; the other six cannot be, though five of their names are
+recoverable from the tree. Four of the six catalogued-and-never-run mutants are left, from five.
 ✅ **`#### The replica retired` (2026-08-23) then repaired the instrument the wiring broke, and it too
 changes nothing in `Sources/`**: `Tools/score-text-route.swift` had a hand-written copy of
 `pageIsAllText()` two terms deep against the shipped guard's three, so it printed `all-text` on exactly
@@ -8503,9 +8522,13 @@ the gap is somewhere a tool will print it. ✅ **That fixture EXISTS as of 2026-
 discharged by `#### The owed fixture`** — `shapeRunHigh` and `shapeHeightHigh` are both pinned and both
 watched failing; `shapeMinimumArea` is left unpinned there for a stated reason rather than for want of a
 fixture. ✅ **And `shapeRunHigh`'s pin is a RED CHECK as of 2026-08-23, `killed` by exactly one check
-through a scoped run — `#### shapeRunHigh RUN through mutate.py`.** ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
-hours, and this session paid one suite. What stands in its place is the by-hand equivalent above: two
-binaries one term apart, executed, 153 against 612. ⛔ **And one wrong reading is deliberately absent
+through a scoped run — `#### shapeRunHigh RUN through mutate.py`.** ✅ **AND SO IS THE WIRING'S OWN, a day
+later and in the same shape — `logic/C28-alltext-ignores-shape`, `killed` by exactly three checks, all of
+them `fbf6d87`'s: `#### C28-alltext-ignores-shape RUN through mutate.py`. So the by-hand equivalent no
+longer stands in place of anything on this pair; only `lineMinimumMembers` is still owed.**
+⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
+hours, and each of those sessions paid one suite for one mutant. What stood in its place was the by-hand
+equivalent above: two binaries one term apart, executed, 153 against 612. ⛔ **And one wrong reading is deliberately absent
 rather than forgotten**: `groups ?? 0 == 0`, a too-dense page waved through instead of refused, is a
 mutant **no fixture can kill**, because nothing a suite can build reaches 8,000,000 runs. C24's seam is
 the precedent for planting both readings of a `nil`; the reason it does not apply is that its `nil` was
@@ -8869,6 +8892,147 @@ is a second data point and not a correction to that one. 3,475 s is a new maximu
 the estimate reads, so the range it prints will widen. `coverage: 73 of 103` catalogue entries have a
 verdict now, and the run's own census puts **30** at no row at all — a larger number than the six this
 entry's queue box counts, because that six is only what C28 and `depth-cap` added.
+
+#### `C28-alltext-ignores-shape` RUN through `mutate.py` — the WIRING is pinned by three checks the wiring commit added itself, this mutant has NO green yield by construction, and using the instrument found a defect in it — 2026-08-23
+
+The second of `fbf6d87`'s three mutants, and the one a constant cannot reach: the wiring as a
+**mechanism**. `Sources/Flattener.swift`'s `return groups == 0` → `return true`, so the third term still
+runs, still pays both connected-component passes, and its answer is thrown away. **`logic/C28-alltext-ignores-shape`
+is `killed`, 3,407 s**, appended to `Tools/mutation-log.tsv`. Read off the run's own kept output rather than
+the summary line: baseline **1,247 checks, green**; mutant **`1244/1247 passed`** — the same 1,247 ran — and
+**exactly three `FAIL` lines in 1,753**, consecutive:
+
+```
+FAIL C28 — a page with one unrecognised word of type is not shrunk as all text — 153 wide of 1224, ceiling 154
+FAIL …its foreground with it, so both layers move together — 76 wide of 1224
+FAIL …and it does not report itself as stored at an eighth, because it is not — flag true, 153 wide
+```
+
+✅ **THE MUTANT IS MEASURED TO HAVE BEEN APPLIED, and by the compiler rather than by inference** — the kept
+log carries `Sources/Flattener.swift:3134: warning: initialization of immutable value 'groups' was never
+used`. That is also the direct evidence for "the third term still runs and still pays both
+connected-component passes": the call is still there and its result is now dead.
+
+⚠️ **What the `153` does and does not corroborate.** `#### THE DECISION` records the wiring's by-hand
+control as two binaries one term apart putting the fixture's background at **153 px against a ceiling of
+154**, and the first `FAIL` line prints `153 wide of 1224, ceiling 154` — the same two numbers, from the
+suite, on this build. ⛔ **Do not read that as the probe and the suite agreeing about the term**: 153 is
+`1224 / textPageBackgroundDownsample` and the ceiling is that plus one, so *any* shrunk page of that width
+prints the pair, and the identical string already appears in this file from an unrelated C26 fixture. What
+it confirms is the fixture's width and that the page was shrunk — the refutation is the *checks*, not the
+arithmetic. A draft called it "the same reading"; the review of this diff refused that.
+
+✅ **All three objecting checks were added by `fbf6d87`, the commit that shipped the wiring.** `git log -S`
+over each of the three descriptions returns `fbf6d87` and nothing else, and `git show` has them as pure
+`+` lines. That contrasts with the two precedents this entry cites — `const/shapeRunHigh` is killed by one
+check `6d0caa1` added *after* the mutant was catalogued, and `logic/C24-override-nil-means-fallback` by one
+check that **did not exist** in the commit the register credited with pinning that seam — and the three here
+are end-to-end through `mrcLayers` rather than over a helper.
+⛔ **But a first draft called this "the headline" and it is closer to a tautology than a discovery**: a
+mutant that plants back the defect a commit fixed is killed by that commit's checks **by construction**,
+because CONTRIBUTING requires the failing test first, and `Tests/main.swift` says so in place — *"this is
+the check that was watched failing before the wiring existed"*. The `shapeRunHigh` contrast is weaker still,
+since `fbf6d87`'s own message **declared** it a known survivor: that gap was disclosed at the time, not
+discovered now. What is worth recording is the narrow fact — the checks exist, they bite, and they are the
+wiring commit's own. ⚠️ **Derived, not separately run**: what is *measured* is that these three object and
+that the other 1,244 hold; that the count at `fbf6d87` was three follows from that plus `git`, and no
+`fbf6d87` binary was mutated.
+
+⛔ **THIS MUTANT HAS NO GREEN YIELD AT ALL, AND THAT IS SAID IN ADVANCE RATHER THAN RETRACTED AFTERWARDS.**
+`shapeRunHigh` is a constant and two-sided, so its *green* checks turned two argued claims into measured
+ones. `return true` is **one-sided**: it can only ever make the verdict MORE often all-text. So the only
+checks it can falsify are the ones asserting that a page which *reaches* term 3 is **not** all text — and
+that is exactly the three above. Every other check that could bear on the verdict is green under it for a
+reason that has nothing to do with this term: refused earlier by term 1 or term 2, or asserting the shrunk
+direction the mutant forces, or bypassing the closure entirely (`c28Groups` / `c28InkOut` call the shipped
+functions directly). ⚠️ **That is an argument over 1,244 checks and not an inspection of them** — the near
+misses were read (the plate fixture, C26's two ink-figure pages, the `PhotoDetail.maximum` block, the
+run-report checks) and hold, so the honest form of the universal is *"did not fail, and the ones that could
+have were checked"* rather than *"cannot"*. Two individual checks **can** be shown unable to fail, and both
+are named here so a later session does not count them as yield:
+
+* **`…and still carries the fraction the first term measured`** printed `ok` on the line immediately after
+  the three failures. It **cannot fail** under any value of this term: `measuredInkOutside = outside` is
+  assigned *before* `guard outside < bar`, so the field is set whenever term 1 is reached, whatever a later
+  term answers. Verified by reading `Sources/Flattener.swift`, not inferred from the green.
+* **the positive control** — `…and the same page with that word recognised IS shrunk as all text` and its
+  `shrunkAsAllText == true` partner — asserts precisely what the mutant forces, so its green is guaranteed.
+  That pair exists to stop the negative check being satisfiable by a fixture that has drifted out of the
+  all-text class, and **this mutant does not exercise that guard**: it kills through the negative half only.
+
+⚠️ **What that leaves is a concentration worth naming.** All three objecting checks are on **one** fixture,
+`c28Missed` — one unrecognised word of type on a page of type. The wiring's negative direction is pinned
+three ways on a single page, and per the bullet above the mutant cannot test the pair's own guard, so
+"three checks" is three assertions about one page rather than three independent pages. ⚠️ Note that this
+scope fact is itself read off the **green** set — nothing else in the suite reaches term 3 with
+`groups != 0` — so "no green yield" means no *claim about the shape term* is licensed by a green, not that
+the greens are informationless.
+
+⛔ **AND USING THE INSTRUMENT FOUND A DEFECT IN THE INSTRUMENT, which is the half of this run with a fix in
+it.** The row `mutate.py` wrote recorded the first objecting check as the bare tag **`C28`**. `run()` split
+each `FAIL` line on the **first** `" — "` for the whole of this tool's history (`git log -S` puts that
+expression in `328d393`, the tool's first commit) — and that separator is inside the check *names* in this
+suite, not only between a name and its detail: **38 of 1,236** `check("` descriptions contain it, a floor,
+because a name built by concatenation across lines is out of that count's reach.
+⛔ **THE FIX IS NOT TO SPLIT BETTER, IT IS NOT TO SPLIT.** `check()` prints `FAIL <name>` or
+`FAIL <name> — <detail>`, so **`FAIL a — b` is ambiguous** — "name `a`, detail `b`" and "name `a — b`, no
+detail" produce the identical line and nothing distinguishes them. ⚠️ **A draft of this commit shipped the
+obvious repair, `rsplit` at the last separator, and the adversarial review of it refuted that from two real
+call sites**: `C24 — the rebuild-DPI override is nil until something sets it` is called with **no detail**,
+so its own separator is the last one on the line and `rsplit` truncates it to `C24` exactly as `split` did;
+and **22** call sites carry a separator inside the *detail*, where the first-separator split was right and
+`rsplit` would have corrupted them. So `objecting_checks()` keeps the whole line (with whitespace collapsed,
+because the log is TSV and `record` does not sanitise a tab). It is wrong in no case, and it is a smaller
+change than the draft it replaced.
+**Six** self-test checks (30 → **36**), and ⛔ **their redundancy is measured and recorded in place rather
+than claimed away**: over eight implementations, any parse that splits at all reddens the first three, so
+their columns are identical and cases (2) and (3) catch no mutant (1) misses — kept because they are the
+shapes that make splitting unfixable, and (2) is the counter-example to the next reader's instinct, in the
+tree. Cases (4), (5) and (6) — the tab, the prefix-not-substring, the order-and-duplicates — are each
+caught by exactly one implementation in that sweep and by nothing else here. ✅ **Both rejected parses were
+watched FAILING in the real harness**, `exit 1` each, and the file restored byte-identical after.
+⛔ **The damage is SEVEN of the log's 83 rows and not the two a first draft claimed** — its detector looked
+for "a bare register tag", which can only ever find a truncation that leaves one, and 5 of the 7 leave a
+readable sentence. Cross-referencing every recorded name against the tree's own `check(` descriptions finds
+**6 pre-existing** (five recording `…and a page carrying a pale drawing does not` where the check ends
+`— R56's other half`; one, `logic/C24-page-draws-nothing`, recording `C24`) plus this run's. ⚠️ **Still a
+floor**: that method cannot see a truncation whose head matches no current description, so a check since
+reworded or deleted is invisible to it.
+✅ **This run's row is repaired in full** — `Tools/mutation-out/` still holds its log, and the repaired
+field is byte-identical to what the fixed tool writes when driven over it, verified rather than
+hand-assembled. ⛔ **The other six are not, and the reason is sharper than "the logs are gone".** Five have a
+**unique** continuation in `Tests/main.swift`, so their *names* are recoverable; the `C24` one has **nine**
+and is not. ⚠️ **The instrument trap is worth more than the count**: the cross-reference script that found
+them took the *first* candidate, so it "recovered" a name for that row too, and the name it offered was the
+wrong one of nine. But no old row can be restored to the format the tool now writes either way, because that
+format keeps the whole line and their details went with their logs. Sibling sweep: **nothing else splits on
+that separator** anywhere in `Tools/`, `.githooks/`, `ops/`, `Sources/` or `Tests/`, and the log's other
+consumers read ids and durations rather than the detail (`check-queue-coherence.sh` names the file only in
+comments). ⚠️ Two residues stay open and are named because this register's history is claims that lived in
+one place: `objecting_checks` is pinned at the **function** and not at its one call site — reintroduce the
+inline split at `run()` and all 36 checks stay green, which is `#### The replica retired`'s finding of the
+same day — and the `N check(s): ` prefix, the `"; "` join and the `[:3]` cap have no check on them.
+
+⛔ **NEITHER ARTEFACT IS IN THE TREE AND THE ROW IS STILL NOT A SUBSTITUTE**, exactly as the section above
+records: `Tools/mutation-out/` is gitignored and overwritten per run, and the console output is in `/tmp`.
+The row now holds all three *names*, which it did not before this commit, but never the baseline count, the
+`1244/1247`, or the fact that only three lines failed. The three `FAIL` lines are quoted verbatim above
+because **this section is the durable copy.**
+
+⚠️ **Cost, to budget from.** The startup line read **"roughly 87-116 minutes … Budget the 116"** and the run
+took **6,463 s (107.7 min)** lock-measured — `$STATE/suite-timings.tsv`,
+`mutate-alltext-ignores-shape 6463 0 4.68`. The mutant suite is **3,407 s** of that on the tool's own clock,
+leaving **3,056 s** for the rsync and the baseline by subtraction. So the estimator's high end has now held
+**twice running**, against the C24b campaign's 4.22x-low reading — two scoped single-mutant runs against one
+five-mutant campaign, which is a pattern in the cheap case and still not a correction to the dear one.
+`coverage: 74 of 103` catalogue entries have a verdict, from 73, and the census puts **29** at no row, from
+30 — ⚠️ both halves move together for the same reason, and a draft of this line updated only the coverage.
+
+⚠️ **What it does not touch.** Of `fbf6d87`'s three, `const/lineMinimumMembers` is the one still unrun;
+with `shapeHeightHigh` (`6d0caa1`) and the two `depth-cap` mutants (`95b23c3`) that is **four** left of the
+six this entry and `depth-cap` catalogued, from five. It says nothing about the twin reading
+`mutate.py` deliberately does not catalogue (`groups ?? 0 == 0`, unreachable at 8,000,000 runs), and nothing
+about `shapeMinimumArea`, which stays uncatalogued and live in the calibration filter.
 
 #### The replica retired — the `verdict` column reads production's own answer instead of copying the guard a fourth time — FIXED 2026-08-23
 

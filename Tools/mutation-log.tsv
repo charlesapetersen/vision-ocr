@@ -80,3 +80,4 @@ logic/C24b-unresolved-name-is-not-nothing	killed	2621	1 check(s): …while a `Do
 logic/C24-override-ignored	killed	3453	5 check(s): …and setting it changes what rebuildDPI answers; …and the inverted closure still moves the page it does claim; …and `flatten` renders every overridden page at that resolution
 logic/C24-override-nil-means-fallback	killed	3014	1 check(s): …and a declined page keeps its OWN answer, not the fallback
 const/shapeRunHigh	killed	3475	1 check(s): …and the same four at 4x the stroke width and 4x the ink are NO line group
+logic/C28-alltext-ignores-shape	killed	3407	3 check(s): C28 — a page with one unrecognised word of type is not shrunk as all text — 153 wide of 1224, ceiling 154; …its foreground with it, so both layers move together — 76 wide of 1224; …and it does not report itself as stored at an eighth, because it is not — flag true, 153 wide
