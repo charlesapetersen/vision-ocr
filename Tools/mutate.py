@@ -217,10 +217,15 @@ CONSTANTS = [
     # replaces said it was, and all such a binary can establish is that the term flips on
     # that geometry. ⛔ The kill rests on that ONE check, and it did not exist before
     # `6d0caa1`, committed 00:10:53 the SAME day: that is what "known survivor" meant here.
-    # ✅ Two things the same run MEASURED that had been argued: the too-TALL fixture's check
-    # stayed green at 99.0, so the pair is one constant each from the suite's side and not
-    # only the probe's; and `c28GroupsBar` / `c28GroupsC26` stayed green, so the GROUPING
-    # does hold them out at this value too, as the review of `6d0caa1` reasoned.
+    # ⛔ Two things were published as MEASURED off that run's greens and are PART-RETRACTED
+    # 2026-08-24 down to one, by the review of the sibling entry's run. A green is evidence
+    # only if the mutant changes that check's INPUT: (a) the too-TALL fixture's green was
+    # guaranteed — its bars are 5 px wide, medianRun 5, already under the shipped bar of 10,
+    # and it stays refused by its HEIGHT at both values; (b) `c28GroupsBar`'s says nothing
+    # about grouping — its rule is one component of medianRun 884, still refused by the SHAPE
+    # rule at a bar of 495. ✅ Only `c28GroupsC26` carries it: medianRun 30 is accepted at
+    # 495, so `lineMinimumMembers` = 4 is what refuses it. The kill, the one objecting check
+    # and the attribution (which rests on the two REDS, one per run) are untouched.
     # ⛔ A THIRD was drafted and retracted: the four-dash calibration check's green is NOT
     # evidence about this constant, because `c28Calibration` reads `interiorWindow`,
     # `shapeComponents` and `shapeMinimumArea` and nothing else — `shapeRunHigh` reaches it
@@ -235,15 +240,21 @@ CONSTANTS = [
     # …and its sibling, added with the same fixture on 2026-08-22 and attributable to it
     # alone: at 99.0 the four 5x120 strokes clear a height band that shipped ends at 75.0,
     # so the too-tall fixture reads 1 while the too-wide one does not move.
-    # ⚠️ THIS ONE IS STILL PROBE-ONLY, and the sentence above no longer covers it: it said
-    # "executed the same way, with the same caveat" and pointed at `shapeRunHigh`'s
-    # paragraph, which as of 2026-08-23 records a scoped run instead of that caveat. The
-    # caveat as it stood: a binary built from `Sources/` with this constant at 99.0, driving
-    # the shipped `textLineGroupsOutsideText` over a PROBE's copy of both the fixture builder
-    # and the surface construction, so what it establishes is that the term flips on that
-    # geometry and not that `Tests/main.swift` goes red. ✅ One half of it IS measured now,
-    # from the other mutant's run: this fixture's check stayed GREEN at `shapeRunHigh` = 99.0,
-    # so whatever kills it is not the run bar wearing a different name.
+    # ✅ RUN 2026-08-24 and PROBE-ONLY NO LONGER: `killed`, 3,415 s, `1246/1247 passed`, by
+    # EXACTLY ONE check — the too-tall fixture's — while the too-wide check stayed green, the
+    # mirror image of `shapeRunHigh`'s run the day before. So the pair is attributable one
+    # constant each from the SUITE's side in both directions, and `BUGS.md` C28
+    # `#### shapeHeightHigh RUN through mutate.py` is the durable copy of the FAIL line.
+    # ⛔ It has NO informative green, and the review of that run's diff retracted BOTH that
+    # were claimed
+    # in advance. A monotonicity argument bounds which WAY a check can move and says nothing
+    # about whether the mutant changes its input at all. This constant has one call site (an
+    # upper bound in `textShaped`) and is absent from the calibration filter, so the accepted
+    # set is monotone in it — but raising the ceiling from 3*glyphHeight = 75 px to 2,475 px
+    # can only admit a component TALLER than 75 px, and every component on the too-wide and
+    # control pages is 30 px tall with the map holding nothing but those bars. Same input,
+    # same count, cannot fail. So this mutant's reachable surface is the pages carrying a map
+    # component taller than 3*glyphHeight, which in the whole suite is `c28TooTall` alone.
     #
     # ⚠️ `shapeMinimumArea` is deliberately still absent, and the argument is narrower than
     # "no fixture". **At its shipped value**, in `textShaped`, it cannot be the deciding

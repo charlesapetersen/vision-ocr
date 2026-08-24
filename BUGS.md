@@ -33,8 +33,17 @@ reading** — `#### shapeRunHigh RUN through mutate.py`: the mutant is `killed`,
 by **exactly one** `FAIL` line, the check `6d0caa1` added at 00:10 the same day. **Two** claims of the
 section above go from argued to measured off the *green* checks in the same run (the too-tall fixture, the
 two grouping fixtures) — ⛔ a third was drafted off the calibration check and **retracted** by the review of
-this diff, because that check cannot fail at any value of this constant. ⚠️ `shapeHeightHigh` is still
-probe-only — six mutants this entry and `depth-cap` catalogued and never ran, now **five**.
+this diff, because that check cannot fail at any value of this constant. ✅ **AND SO IS THE OTHER HALF OF
+THE PAIR AS OF 2026-08-24 — `#### shapeHeightHigh RUN through mutate.py`**: `const/shapeHeightHigh`
+(`3.0` → `99.0`) is `killed`, 3,415 s, `1246/1247 passed`, by **exactly one** `FAIL` line, the too-tall
+fixture's — so nothing in the owed-fixture material is probe-only any more, and six mutants this entry and
+`depth-cap` catalogued and never ran, now **three**. ⛔ **It has NO informative green either, and the
+review of its own diff had to retract both I claimed in advance**: a monotonicity argument bounds which way
+a check can move and says nothing about whether the mutant changes its input at all, and raising a ceiling
+from 75 px to 2,475 px changes nothing on two fixtures whose every component is 30 px tall. ⛔ **The same
+argument part-retracts the yield of the run above** — of its three credited greens only `c28GroupsC26`'s
+was ever evidence; see that section's part-retraction. The kills, the objecting-check counts, the costs and
+the attribution all stand.
 ✅ **THE WIRING ITSELF IS A RED CHECK AS OF 2026-08-23 — `#### C28-alltext-ignores-shape RUN through
 mutate.py`**: `logic/C28-alltext-ignores-shape` (`return groups == 0` → `return true`) is `killed`, 3,407 s,
 `1244/1247 passed`, by **exactly three** `FAIL` lines, and **all three were added by `fbf6d87`, the commit
@@ -53,7 +62,8 @@ tag. ⛔ **`FAIL a — b` is ambiguous, so the fix is to keep the whole line and
 no detail; 22 details that carry one). Six self-test checks (30 → **36**), the first three measured
 mutually redundant and said so in place, both rejected parses watched failing. This run's row is repaired
 byte-identically to what the fixed tool writes; the other six cannot be, though five of their names are
-recoverable from the tree. Four of the six catalogued-and-never-run mutants are left, from five.
+recoverable from the tree. Four of the six catalogued-and-never-run mutants were left after that run, from
+five — ✅ **three after `#### shapeHeightHigh RUN through mutate.py`, 2026-08-24.**
 ✅ **`#### The replica retired` (2026-08-23) then repaired the instrument the wiring broke, and it too
 changes nothing in `Sources/`**: `Tools/score-text-route.swift` had a hand-written copy of
 `pageIsAllText()` two terms deep against the shipped guard's three, so it printed `all-text` on exactly
@@ -8522,7 +8532,14 @@ the gap is somewhere a tool will print it. ✅ **That fixture EXISTS as of 2026-
 discharged by `#### The owed fixture`** — `shapeRunHigh` and `shapeHeightHigh` are both pinned and both
 watched failing; `shapeMinimumArea` is left unpinned there for a stated reason rather than for want of a
 fixture. ✅ **And `shapeRunHigh`'s pin is a RED CHECK as of 2026-08-23, `killed` by exactly one check
-through a scoped run — `#### shapeRunHigh RUN through mutate.py`.** ✅ **AND SO IS THE WIRING'S OWN, a day
+through a scoped run — `#### shapeRunHigh RUN through mutate.py`. `shapeHeightHigh`'s is one too as of
+2026-08-24, the same way and by the other fixture's check —
+`#### shapeHeightHigh RUN through mutate.py` — so this paragraph's "not at all" bucket is empty and
+`shapeMinimumArea` is the only one of the five still not pinned at all, for the stated reason. ⚠️ Not the
+only one without a *catalogue mutant*: `shapeHeightLow` and `lineGapFactor` have none either, and are
+pinned one-sidedly as the sentence above says.
+`shapeHeightLow` and `lineGapFactor` remain pinned one-sidedly, which the sentence above already says and
+this does not upgrade.** ✅ **AND SO IS THE WIRING'S OWN, a day
 later and in the same shape — `logic/C28-alltext-ignores-shape`, `killed` by exactly three checks, all of
 them `fbf6d87`'s: `#### C28-alltext-ignores-shape RUN through mutate.py`. So the by-hand equivalent no
 longer stands in place of anything on this pair; only `lineMinimumMembers` is still owed.**
@@ -8728,9 +8745,11 @@ from 100 to **101**, and both substitutions were verified to APPLY by running `c
 regex against `Flattener.swift` rather than by reading it.
 
 ⛔ **"Watched failing" there meant a binary, not a red check, and the gap was wider than the phrase.**
-✅ **One of the two has been run since, and one has not — `#### shapeRunHigh RUN through mutate.py`, the
-last section of this entry's owed-fixture material, 2026-08-23. Everything in this paragraph still stands
-of `shapeHeightHigh`.**
+✅ **BOTH HAVE BEEN RUN SINCE, AND THIS PARAGRAPH NO LONGER STANDS OF EITHER —
+`#### shapeRunHigh RUN through mutate.py` (2026-08-23) and `#### shapeHeightHigh RUN through mutate.py`
+(2026-08-24), each `killed` by exactly one check, each check the other fixture's.** The probe's two
+readings both reproduced as red checks; what is written below is what the probe alone could and could not
+establish, kept because that limit is the lesson and not because the readings were wrong.
 Neither mutant was run **through** `mutate.py` when this was written — a scoped run is a baseline suite plus ~45 minutes a
 mutant, the same trade the wiring session took — and the sabotage drove the shipped functions through a
 probe's copy of **both** `makeScannedPDF` *and* the surface construction (`c28Surfaces` / `c28Boxes`), so
@@ -8809,7 +8828,7 @@ not the constant. And the printed count stayed **10** deliberately: two guards w
 uncountable, which is the failure the literal's own comment warns about. `Tools/README.md`'s copy of it
 said **9** while the tool printed 10 and is corrected to 10 here, its second staleness.
 
-#### `shapeRunHigh` RUN through `mutate.py` — killed by exactly ONE check, and the same run turns two ARGUED claims of the section above into measured ones — 2026-08-23
+#### `shapeRunHigh` RUN through `mutate.py` — killed by exactly ONE check, and its claim to have turned two ARGUED claims into measured ones is PART-RETRACTED 2026-08-24 down to one — 2026-08-23
 
 `#### The owed fixture`'s last paragraph ("watched failing there meant a binary") is why this exists: of
 the two mutants that fixture was built for, one is a red check now and one is still a probe's reading.
@@ -8852,6 +8871,27 @@ much about the 1,246 that held as about the one that broke.
 | the too-tall check is not the too-wide one in disguise — **a probe's** two binaries | its check stayed **green** at `shapeRunHigh` = 99.0, in the suite |
 | `c28GroupsBar` / `c28GroupsC26` read 0 at *every* value because the **grouping** holds them out — **reasoned** by the review of `6d0caa1` from "a solid fill is one 8-connected component" | both stayed **green** at 99.0 |
 
+⛔ **BOTH ROWS OF THAT TABLE ARE PART-RETRACTED AS OF 2026-08-24, and only one of the three greens in them
+was ever evidence** — found by the adversarial review of `#### shapeHeightHigh RUN through mutate.py`, which
+made the same mistake in the other direction and so had the argument to hand. The test a green must pass is
+not "could this check move in principle" but **"does the mutant change this check's input at all"**, and at
+`shapeRunHigh` = 99.0 the run bar goes 10 → 495 px:
+* **row 1 is withdrawn.** The too-tall fixture's bars are 5 px wide, `medianRun` **5**, already under the
+  shipped bar of 10 — so a looser run bar admits nothing on that page and the fixture stays refused by its
+  **height** (120 > 75) at both values. Its green was guaranteed. ⚠️ The *claim* it was offered for is
+  nevertheless true, and is now measured from the reds instead: the tall check reddens under
+  `const/shapeHeightHigh` (2026-08-24) and the wide check under this mutant, one constant each.
+* **row 2 is half withdrawn.** `c28GroupsBar`'s rule is one component with a `medianRun` near **900**, so at
+  99.0 the **shape** rule still refuses it and the grouping is never reached — its green says nothing about
+  grouping. ✅ `c28GroupsC26` does carry the row: its figure's `medianRun` is **30**, 6x a `glyphRun` of 5,
+  so at a bar of 495 the shape rule accepts it and only `lineMinimumMembers` = 4 refuses it. That green is
+  the grouping refusing, measured.
+⚠️ **`Tests/main.swift:2270-2275` said this before either run** — *"`c28GroupsBar` and `c28GroupsC26` read 0
+at **every** value of `shapeRunHigh`"* — so the correction sat in the tree while two sessions published past
+it. ⛔ **What does NOT move**: the kill, `1246/1247`, the one objecting check, the cost, and the attribution.
+This is a retraction of *yield*, which is the third time this entry has had to make one, and the mechanism
+was the same all three times.
+
 ⛔ **AND A THIRD ROW WAS IN THIS TABLE AND IS RETRACTED, because it was a check that CANNOT FAIL under this
 mutant — the eleventh, in the section about the tenth.** The draft counted the four-dash fixtures'
 calibration check (`glyphHeight` 25.0 / `glyphRun` 5.0) as evidence that this constant cannot move the type
@@ -8865,8 +8905,16 @@ in `Sources/Flattener.swift`.
 ⚠️ **What it does not touch.** `shapeHeightHigh` is still probe-only — one of the six mutants this entry
 and `depth-cap` catalogued and never ran, now **five** — and its `mutate.py` comment said "executed the
 same way, with the same caveat" while pointing at a paragraph that no longer states that caveat, so it
-carries the caveat itself now. ✅ One half of it *is* measured, from this run: its fixture's check is green
-at `shapeRunHigh` = 99.0, so whatever kills it is not the run bar under another name. Nor does a green
+carries the caveat itself now. ⛔ **A draft of this sentence claimed one half of it was measured by this
+run — "its fixture's check is green at `shapeRunHigh` = 99.0, so whatever kills it is not the run bar under
+another name" — and that is RETRACTED 2026-08-24: the tall fixture's bars have `medianRun` 5 against a
+shipped bar of 10, so a bar of 495 was never going to bind and the green was guaranteed.** What rules the
+run bar out is the fixture's arithmetic, which the suite asserts; the run added nothing to it.
+✅ **THE OTHER HALF WAS MEASURED THE NEXT DAY, AND PROPERLY — `#### shapeHeightHigh RUN through mutate.py`,
+2026-08-24: `killed`, 3,415 s, by exactly one check, the too-tall fixture's. So each of the two constants
+has its own RED on its own fixture, one per scoped run, which is the attribution this paragraph wanted and
+is not a green's to carry.** Nothing in this section is probe-only any more; the paragraph is kept as the
+record of what was owed. Nor does a green
 check under *this* mutant say anything about `shapeMinimumArea`, which is separately live in the
 calibration filter and stays deliberately uncatalogued.
 
@@ -8939,8 +8987,9 @@ that the other 1,244 hold; that the count at `fbf6d87` was three follows from th
 `fbf6d87` binary was mutated.
 
 ⛔ **THIS MUTANT HAS NO GREEN YIELD AT ALL, AND THAT IS SAID IN ADVANCE RATHER THAN RETRACTED AFTERWARDS.**
-`shapeRunHigh` is a constant and two-sided, so its *green* checks turned two argued claims into measured
-ones. `return true` is **one-sided**: it can only ever make the verdict MORE often all-text. So the only
+`shapeRunHigh` is a constant and two-sided, so its *green* checks were credited with turning two argued
+claims into measured ones — ⚠️ **part-retracted 2026-08-24 down to one; see that section.** `return true`
+is **one-sided**: it can only ever make the verdict MORE often all-text. So the only
 checks it can falsify are the ones asserting that a page which *reaches* term 3 is **not** all text — and
 that is exactly the three above. Every other check that could bear on the verdict is green under it for a
 reason that has nothing to do with this term: refused earlier by term 1 or term 2, or asserting the shrunk
@@ -9030,9 +9079,157 @@ five-mutant campaign, which is a pattern in the cheap case and still not a corre
 
 ⚠️ **What it does not touch.** Of `fbf6d87`'s three, `const/lineMinimumMembers` is the one still unrun;
 with `shapeHeightHigh` (`6d0caa1`) and the two `depth-cap` mutants (`95b23c3`) that is **four** left of the
-six this entry and `depth-cap` catalogued, from five. It says nothing about the twin reading
+six this entry and `depth-cap` catalogued, from five — ✅ **`shapeHeightHigh` ran on 2026-08-24 and it is
+three.** It says nothing about the twin reading
 `mutate.py` deliberately does not catalogue (`groups ?? 0 == 0`, unreachable at 8,000,000 runs), and nothing
 about `shapeMinimumArea`, which stays uncatalogued and live in the calibration filter.
+
+#### `shapeHeightHigh` RUN through `mutate.py` — the second half of the attribution pair is a red check, it has NO informative green and neither did the run before it, and a comment sat one line under the killing check saying the shape rule could not redden it — MEASURED 2026-08-24
+
+✅ **`const/shapeHeightHigh` (`Sources/Flattener.swift`, `3.0` → `99.0`) is `killed`, 3,415 s, by EXACTLY
+ONE check.** Baseline **1,247 green**; mutant **`1246/1247 passed`**, and the objecting line is the only
+`FAIL` in **1,739** lines of output:
+
+```
+  FAIL …and four strokes four times too TALL are no line group either — Optional(1)
+```
+
+So the last of `6d0caa1`'s three fixtures is a red check rather than a probe binary's reading, and
+`#### The owed fixture`'s "watched failing" paragraph is now measured on **both** sides of the pair. That
+was the one thing that section, `Tests/main.swift:2363` and this entry's file header all named as still
+probe-only.
+
+⛔ **The two fixtures are separated BY CONSTRUCTION, and the run only confirms arithmetic the suite already
+asserts.** `c28Calibration` pins the fixtures' type scale at `glyphHeight` **25.0** / `glyphRun` **5.0**, so
+the shipped bands are height `[12.5, 75]` px and run `≤ 10` px. Read the three fixtures against them:
+
+| fixture | h × w | height vs `[12.5, 75]` | `medianRun` vs `≤ 10` | shipped | at 99.0 |
+|---|---|---|---|---|---|
+| control, four 5×30 | 30 × 5 | 30, inside | 5, passes | accepted → **1 group** | 1 group |
+| too wide, four 20×30 | 30 × 20 | 30, inside | **20, refused** | refused → **0** | **0** |
+| too tall, four 5×120 | 120 × 5 | **120 > 75, refused** | 5, passes | refused → **0** | accepted → **1** |
+
+The too-wide fixture's refusal is `medianRun` **20** against a run bar of **10** — a term this mutant does
+not touch at any value — so it *cannot* move, and the ceiling it fails is not the one being raised. At 99.0
+the height band becomes `[12.5, 2475]`, which admits the 120-px bar and nothing else on either page. One
+constant each, derivable from the asserted calibration and now confirmed from the suite's side.
+
+⛔ **APPLIED-NESS IS THE TOOL'S OWN GATE, NOT AN INFERENCE FROM THE KILL.** `run()`'s `hits != 1` branch
+(`mutate.py:1427-1428` as committed here — cite the branch, not the line, since a comment edit in the same
+file moves it) prints
+and records **`NOT-APPLIED`** when its anchored pattern misses *or matches more than once* (`hits != 1`),
+and the row reads `killed`, so the substitution is verified applied by the machinery rather than by reading
+the source. The behavioural half agrees: the check reports `Optional(1)` where the baseline's green implies
+0 — ⚠️ *implies*, because `check()` prints its detail only on failure, so no baseline run ever printed the
+0 and this is inference from a pass, not a second measurement.
+
+⛔ **THIS MUTANT HAS NO INFORMATIVE GREEN EITHER, AND MY OWN PREDICTION FILE SAID IT DID — the adversarial
+review of this diff refuted that from the fixtures' own arithmetic, and the retraction is the most useful
+thing in this section.** The reasoning I wrote in advance was half right and applied wrongly.
+The half that is right: `shapeHeightHigh` has exactly **one** call site (`Flattener.swift:1810`, an upper
+bound in `textShaped`) and is **absent from the calibration filter** (`:1940` filters on `shapeMinimumArea`
+alone), so the *accepted set* is monotone in it; and the group **count** is genuinely *not* monotone in the
+accepted set, because `textLines` bands greedily in `minY` order and takes each band's extent from its
+**last** member, so an added component can divert the ones after it. ⛔ **But that is an algorithm, and it
+never gets a chance to bite here.** Raising an upper bound from `3 × glyphHeight` = **75 px** to
+**2,475 px** can only admit a component *taller than 75 px*, and on the two pages I credited there is no
+such component:
+* `c28TooWide` is four 20×30 bars — **30 px tall**, and the suite pins the page's whole out-of-region ink
+  at **2,400 px** (`Tests/main.swift`'s own ink-equality comment), which is exactly 4 × 20 × 30, so the map
+  is the four bars and nothing else;
+* `c28Stroke` is four 5×30 bars — 30 px tall, **600 px**, and 600 over that page's own interior total of
+  ~115,300 is the asserted `inkOut` **0.0052** against the wide page's 0.0205, so its map is the four bars
+  too. ⚠️ Not 600/117,000, which is 0.0051: 117,000 is the *wide and tall* pages' total, and the stroke page
+  carries 1,800 px less bar ink. The border check independently pins the fourteen lines of type at **0**
+  out-of-region ink, which is why the map is the bars and nothing else.
+
+Both sets sit inside `[12.5, 75]` already. So `accepted` is **identical, not a superset**, on both pages,
+`textLines` is handed the same input, and the counts are 0 and 1 at every value of this constant.
+**Neither check could have failed.** The section's own sentence *"admits the 120-px bar and nothing else on
+either page"* is the refutation, and I wrote it three paragraphs above the claim it kills.
+
+⛔ **The general lesson, which is the reason this is written out rather than quietly deleted**: a
+monotonicity argument bounds *which direction* a check can move, and it says nothing about *whether the
+input changes at all*. The second question is answered by the fixture's geometry against the mutated bar,
+not by the call graph. Asking only the first is how a "cannot fail" check gets credited as yield — the
+eleventh such check was retracted in this entry on 2026-08-23, and this is the twelfth, argued the other
+way round and caught by the same gate.
+
+⚠️ **So the reachable surface of `const/shapeHeightHigh` is exactly the pages carrying a map component
+taller than `3 × glyphHeight`** — and on the four-dash set that is `c28TooTall` alone. ⛔ **"In the whole
+suite" is DERIVED, not run**: no enumeration of every other fixture's map was made, and a single `FAIL` is
+consistent with that claim without establishing it. One red check, no informative green — the same shape as
+the wiring mutant, and here too it is said with the arithmetic rather than left as a count. ✅ **The attribution survives intact, because it rests on the two REDS and not on any
+green**: the wide check reddens under `shapeRunHigh` and not under `shapeHeightHigh`, the tall check the
+other way round, each measured in its own scoped run. One constant each, from the suite's side, two runs.
+
+⚠️ **Two greens are worth naming as unable to fail anyway**, because both look like the sharpest ones in
+the block:
+* **`c28Calibration`** — `shapeHeightHigh` enters it only through its **detail string**. It reads the type
+  scale and `shapeMinimumArea`, neither of which this constant touches. Not credited a second time.
+* **the border check** (`…so a mark in that border is ink to neither the fraction nor the term`) — its
+  40×900 bar is 900 px tall and *would* clear a 2,475-px ceiling. It is refused **twice over** before the
+  ceiling is reached: the bar sits at x ∈ [8, 48) against an `interiorWindow` starting at x = 76, so the
+  map is empty and `textLineGroupsOutsideText`'s `guard outside > 0 else { return 0 }`
+  (`Flattener.swift:1933`) answers first — and even inside the window its `medianRun` of 40 exceeds the run
+  bar of 10. **The window and the run term refuse it, not the height ceiling.**
+
+⛔ **AND USING THE INSTRUMENT FOUND A COMMENT THAT CONTRADICTS THIS RESULT, which is the half of this run
+with a fix in it.** `Tests/main.swift:2384` opens *"⚠️ This one is not about the term at all… **Nothing the
+shape rule does can make it red.**"* That sentence is true of the ink-equality check **below** it, which is
+what it was written about — and it sits **immediately after** the too-tall groups check, which this run has
+now measured as the sole killer of a shape-rule constant. Read top-down, the file said the killing check
+could not be reddened by the shape rule. Every other comment in the block precedes the check it describes,
+so nothing warns a reader that this "this one" points forward. **Fixed by naming its check** rather than
+by moving it: the sentence now says *"the ink-equality check BELOW"*, and a line records that the check
+above it is a red one. Comment only — no assertion changed.
+
+✅ **A free cross-check of yesterday's fix rode along.** This row is the **first written by** `eefdb52`'s
+repaired `objecting_checks()` — the row above it carries the new format because that session repaired it by
+hand, so this is the first the fixed code produced — and it keeps the detail after the separator —
+`… no line group either — Optional(1)` — where the old first-`" — "` split would have truncated it to the
+description alone and thrown `Optional(1)` away. So the fix is confirmed on a live row rather than only on
+its six self-test checks. ⚠️ **Bounded**: this description contains no internal separator, so the row
+exercises the *keep-the-detail* half only and says nothing about the 38 descriptions that carry one.
+
+⚠️ **Cost.** Lock-measured **6,567 s (109.5 min)** — `$STATE/suite-timings.tsv`,
+`mutate-shapeHeightHigh 6567 0 6.09` — against a startup line reading **"roughly 87-116 minutes … Budget
+the 116"**. The mutant suite is **3,415 s** of that on the tool's own clock, leaving 3,152 s for the rsync
+and the baseline by subtraction. **The estimator's high end has now held three times running** on scoped
+single-mutant runs (6,541 / 6,463 / 6,567 s), against the C24b campaign's 4.22x-low reading — still a
+pattern in the cheap case and not a correction to the dear one. `coverage: 75 of 103`, from 74; the census
+puts **28** entries at no row, from 29 (both halves move together).
+
+⚠️ **What it does not touch.** `const/lineMinimumMembers` (`fbf6d87`) and the two `depth-cap` mutants
+(`95b23c3`) are **three** left of the six this entry and `depth-cap` catalogued, from four. It says nothing
+about `shapeMinimumArea`, which stays uncatalogued and is the one shape constant live in the **calibration**
+filter these fixtures run through — so whether they would kill such a mutant is still unmeasured. And **25**
+of the 28 catalogue entries with no row remain owned by no queue box — the other three are this entry's own
+share above — because the `mutants` item scopes itself to the *survivor* list, which is the 2 `SURVIVED`
+rows and not a never-run entry. Third session running to note it.
+
+⛔ **AND THE SAME REVIEW CAUGHT THE PREVIOUS RUN'S GREEN YIELD, WHICH THIS SECTION HAD QUOTED AND BUILT ON.**
+`#### shapeRunHigh RUN through mutate.py` credits two claims to that run's greens; **one of the two is
+construction and so is the third green this entry never doubted**, on the same
+input-does-not-change argument as above, with the run bar going 10 → 495 px:
+* **the too-tall fixture's green under `shapeRunHigh`** is not evidence. Its bars are 5 px wide, `medianRun`
+  **5**, already far under the shipped bar of 10 — so raising that bar admits nothing on that page, and the
+  fixture stays refused by its **height** (120 > 75) at both values. It could not have moved.
+* **`c28GroupsBar`'s green** is not evidence about the grouping. Its solid scanner rule is one component
+  with a `medianRun` near **900**, so at 99.0 it is still refused by the **shape** rule and the grouping is
+  never consulted.
+* ✅ **`c28GroupsC26`'s green IS evidence**, and it is the one that carries that paragraph. Its ink figure is
+  30×30, so `medianRun` **30** — the suite's own comment puts it at 6x a `glyphRun` of 5 — and at a bar of
+  495 the shape rule *accepts* it, leaving only `lineMinimumMembers` = 4 to refuse one component. That is
+  the grouping doing the refusing. ⚠️ **One caveat: that page's type scale is not asserted anywhere**
+  (`c28Calibration` runs on `c28TooTall` only), so the `glyphRun` of 5 is the probe comment's. The
+  load-bearing half survives any plausible value — 30 ≤ 99 × `glyphRun` for any `glyphRun` ≥ 1 — but the
+  height band needs `glyphHeight` ≥ 10, which nothing pins.
+⚠️ **`Tests/main.swift:2270-2275` said as much before either run** — *"`c28GroupsBar` and `c28GroupsC26`
+read 0 at **every** value of `shapeRunHigh`"* — so the correction was available in the tree the whole time
+and two sessions read past it. Corrected in that section and in `CLAUDE.md`; **the kill, the count of
+objecting checks and the cost in that section are untouched**, and so is the attribution, which was never
+a green's to carry.
 
 #### The replica retired — the `verdict` column reads production's own answer instead of copying the guard a fourth time — FIXED 2026-08-23
 

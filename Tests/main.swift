@@ -2358,12 +2358,23 @@ do {
     // scoped `mutate.py` run: `killed`, 3,475 s, `1246/1247 passed`, and this is the ONLY
     // `FAIL` line in the run's output (`groups Optional(1), inkOut 0.0205 vs the strokes'
     // 0.0052`). So the paragraph above is a red check now rather than a probe binary's
-    // reading over its own copy of the fixture builder, and the tall check below stayed
-    // GREEN in that same run — that direction of the attribution, from the suite's side.
-    // ⚠️ Only that direction: `shapeHeightHigh` has never been run through the tool, so its
-    // own kill is still the probe's. And the run's output is not in the tree
+    // reading over its own copy of the fixture builder. ⛔ The tall check below also stayed
+    // GREEN in that run and that green was published as the other half of the attribution
+    // until 2026-08-24, when it was retracted: those bars' `medianRun` is 5, already under
+    // the shipped bar of 10, so a bar of 495 could not move them and they stay refused by
+    // HEIGHT at both values. The attribution comes from the two REDS, one per scoped run.
+    // ✅ AND THE OTHER DIRECTION IS MEASURED TOO, 2026-08-24: `const/shapeHeightHigh` is
+    // `killed`, 3,415 s, `1246/1247 passed`, by the too-tall check below as its ONLY FAIL.
+    // So the pair is attributable one constant each from the suite's side in both directions
+    // — and note that comes from the two REDS, one per run, not from this check's green
+    // under that mutant. ⛔ That green is construction: these four are 30 px tall and this
+    // page's whole out-of-region ink is the four bars, so a ceiling widening from
+    // [12.5, 75] to [12.5, 2475] changes nothing here and the check could not have moved.
+    // What refuses them at both values is `medianRun` 20 against a run bar of 10, at the
+    // asserted calibration (25.0 / 5.0). And the runs' output is not in the tree
     // (`Tools/mutation-out/` is gitignored, overwritten per run) — `BUGS.md` C28
-    // `#### shapeRunHigh RUN through mutate.py` quotes the FAIL line and is the durable copy.
+    // `#### shapeRunHigh RUN through mutate.py` and `#### shapeHeightHigh RUN through
+    // mutate.py` quote the FAIL lines and are the durable copies.
     let c28WideGroups = c28Groups(c28TooWide, boxes: c28Boxes(14))
     let c28WideInk = c28InkOut(c28TooWide, boxes: c28Boxes(14)) ?? -1
     check("…and the same four at 4x the stroke width and 4x the ink are NO line group",
@@ -2377,12 +2388,23 @@ do {
     // One is refused for its stroke width and one for its height, nothing about quantity
     // tells them apart, and the control that DOES fire has a quarter of their ink.
     // ⛔ Watched failing at `shapeHeightHigh` = 99.0, where the wide fixture does not move.
+    // ✅ AND THIS IS THE CHECK THAT KILLS `const/shapeHeightHigh` — measured 2026-08-24 by a
+    // scoped `mutate.py` run: `killed`, 3,415 s, `1246/1247 passed`, and this is the ONLY
+    // `FAIL` line in the run's output (`Optional(1)`), with the wide check above staying
+    // green. ⛔ So do NOT read the next comment as saying otherwise: it is about the
+    // ink-equality check further down, not this one. `BUGS.md` C28
+    // `#### shapeHeightHigh RUN through mutate.py` is the durable copy.
     let c28TallGroups = c28Groups(c28TooTall, boxes: c28Boxes(14))
     let c28TallInk = c28InkOut(c28TooTall, boxes: c28Boxes(14)) ?? -1
     check("…and four strokes four times too TALL are no line group either",
           c28TallGroups == 0, "\(c28TallGroups as Any)")
-    // ⚠️ This one is not about the term at all, and the comment above used to imply it was.
-    // Nothing the shape rule does can make it red. What it actually guards is the too-tall
+    // ⚠️ The INK-EQUALITY CHECK BELOW — not the groups check just above — is not about the
+    // term at all, and the comment above the TALL check used to imply it was. Nothing the
+    // shape rule does can make the ink check red. ⛔ This sentence opened "This one" until
+    // 2026-08-24, one line under a check that a `mutate.py` run had by then measured as the
+    // sole killer of a shape-rule constant, and every other comment in this block precedes
+    // the check it describes — so read top-down it denied exactly the result above it.
+    // What the INK CHECK actually guards is the too-tall
     // fixture's **four rows of clearance** from the last padded word box: box 13's padded
     // region ends at row 1260 and the 5x120 bar starts at 1264, so a `mrcBoxPadding` large
     // enough to reach it would eat the bar's top rows and the ink would stop matching. (At

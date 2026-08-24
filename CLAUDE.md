@@ -162,18 +162,46 @@ itself.
 `1246/1247 passed`, by EXACTLY ONE `FAIL` line** (`#### shapeRunHigh RUN through mutate.py`;
 `Tools/mutation-log.tsv`). ⛔ **The one is the point, not the kill**: that single objecting check did not
 exist before `6d0caa1`, committed 00:10:53 the SAME day, which is what "known survivor" meant — the same
-shape as C24's override seam, read the other way round. ✅ **And the run's real yield is its GREEN checks —
-two claims that were argued are now measured**: the too-tall fixture's check holds at 99.0 (so the pair is
-one constant each from the *suite's* side on that side of it, not only the probe's), and `c28GroupsBar` and
-`c28GroupsC26` hold (so the **grouping** does refuse them at this value too, as `6d0caa1`'s review reasoned
-rather than measured). ⛔ **A THIRD was drafted and RETRACTED by the review of that diff, and it is the
+shape as C24's override seam, read the other way round. ⛔ **Its claimed GREEN yield was three checks and
+is PART-RETRACTED as of 2026-08-24 down to one** — the too-tall check could not move (5-px bars, `medianRun`
+5, already under the shipped bar of 10; it stays refused by its height at both values) and `c28GroupsBar` is
+still refused by the *shape* rule at a bar of 495, so neither says what it was credited with; only
+**`c28GroupsC26`** does, its `medianRun` 30 being accepted at 99.0 so that `lineMinimumMembers` is what
+refuses it. The pair's attribution is unharmed — it rests on the two **reds**, this run's and 2026-08-24's,
+not on a green. ⛔ **A THIRD was drafted and RETRACTED by the review of that diff, and it is the
 lesson**: the calibration check's green is NOT evidence, because `c28Calibration` never reads this
 constant — it enters that check only through the detail string — so the row was an eleventh check that
-could not fail, written into the section about the tenth. ⚠️ `shapeHeightHigh` is **still probe-only** (six
-catalogued-and-never-run mutants → **five**, and → **four** with the wiring mutant below), the run's own output is NOT in the tree
+could not fail, written into the section about the tenth. ✅ **`shapeHeightHigh` IS A RED CHECK TOO AS OF
+2026-08-24, so the pair is measured from the suite's side in BOTH directions and nothing in the owed-fixture
+material is probe-only** (`#### shapeHeightHigh RUN through mutate.py`): `3.0` → `99.0` is `killed`,
+**3,415 s**, `1246/1247 passed`, by **exactly one** `FAIL` — the too-tall fixture's — while the too-wide
+check stays green, which is the mirror image of `shapeRunHigh`'s run. Six catalogued-and-never-run mutants
+→ **five**, → **four** with the wiring mutant below, → **three** with this one.
+⛔ **It has NO informative green either, and the review of its own diff RETRACTED both the run had claimed
+in advance — this is the lesson of the third scoped run and it corrects the FIRST as well** (the second,
+`alltext-ignores-shape`, claimed no green yield at all). The test a green
+must pass is not "could this check move in principle" but **"does the mutant change this check's input at
+all"**. A monotonicity argument answers only the first: `shapeHeightHigh` has one call site and is absent
+from the calibration filter, so the *accepted set* is monotone in it, and `textLines`' greedy `minY`
+banding off each band's **last** member does make the group **count** non-monotone — but raising the
+ceiling from `3 × glyphHeight` = **75 px** to **2,475 px** can only admit a component taller than 75 px,
+and on both fixtures credited (four 20×30 and four 5×30) every component is **30 px** tall and the map is
+nothing but those bars. Identical input, identical count, cannot fail. ⛔ **And the same argument
+part-retracts the run above**: of the three greens it credited, the too-tall check could not move (its
+bars' `medianRun` 5 was already under the shipped bar of 10) and `c28GroupsBar` is still refused by the
+*shape* rule at 99.0, so only **`c28GroupsC26`** ever showed the grouping refusing anything —
+`Tests/main.swift:2270-2275` said so before either run. ⚠️ **What survives both retractions**: the kills,
+the objecting-check counts, the costs, and the attribution, which rests on the two **reds** across two
+runs and never needed a green. Two greens are worth naming as unable to fail: `c28Calibration` again, and
+the border check, whose 900-px bar would clear the 2,475-px ceiling but is refused twice upstream — by
+`interiorWindow` and the term's `guard outside > 0`, and by a `medianRun` of 40 against a run bar of 10. ⛔ **And the run's own fix**: `Tests/main.swift` carried *"This one is not about the
+term at all… Nothing the shape rule does can make it red"* on the line **after** the check the run measured
+as the sole killer — true of the ink check below it, false of the one above — so the sentence now names its
+check. The runs' own output is NOT in the tree
 (`Tools/mutation-out/` is gitignored and overwritten per run, so the quoted `FAIL` line is the durable
-copy), and the estimator's high end held this time (**6,541 s** lock-measured against "budget the 115"),
-which is a second data point beside C24b's 4.22x-low reading and not a correction to it.
+copy), and the estimator's high end held this time (**6,541 s** lock-measured against "budget the 115") —
+and on the two scoped runs since, **6,463 s** and **6,567 s**, so it has now held **three times running**.
+Three data points beside C24b's 4.22x-low reading and not a correction to it.
 ✅ **AND THE WIRING ITSELF IS A RED CHECK AS OF 2026-08-23 — `logic/C28-alltext-ignores-shape` RUN and
 `killed`, 3,407 s, `1244/1247 passed`, by EXACTLY THREE `FAIL` lines** (`#### C28-alltext-ignores-shape RUN
 through mutate.py`). All three checks were added by `fbf6d87`, the commit

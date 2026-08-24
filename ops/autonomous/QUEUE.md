@@ -651,29 +651,42 @@ happens.**
       it, 2026-08-23 evening, and did exactly one mutant from (a) — which is what this paragraph was written
       to make possible, so it works: read (a) for what one costs before deciding.** This box stays `[ ]`
       because C28 is genuinely `HALF FIXED` and not closed. So a later session does not spend its item
-      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **TWO of the six are RUN as
-      of 2026-08-23 and FOUR are left** — `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
-      check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`), and
+      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **THREE of the six are RUN
+      as of 2026-08-24 and THREE are left** — `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
+      check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`);
       `logic/C28-alltext-ignores-shape` — **the wiring as a mechanism** — is `killed`, 3,407 s, by
       **exactly three**, all of them added by `fbf6d87`, the commit that shipped the wiring
       (`BUGS.md` `#### C28-alltext-ignores-shape RUN through mutate.py`; that run also fixed a
-      truncation defect it found in `mutate.py`'s own `FAIL`-line parse). The four still with no row are
-      `lineMinimumMembers` from `c28-decide-and-wire` (`fbf6d87`),
-      `shapeHeightHigh` from `c28-owedfixture` (`6d0caa1`), and `C24-drawn-cap-reaches-further` +
+      truncation defect it found in `mutate.py`'s own `FAIL`-line parse); and `const/shapeHeightHigh` is
+      `killed`, 3,415 s, by **exactly one** — the too-tall fixture's check, the mirror of `shapeRunHigh`'s
+      — which finishes the attribution pair from the suite's side and leaves nothing in C28's owed-fixture
+      material probe-only (`BUGS.md` `#### shapeHeightHigh RUN through mutate.py`; that run also fixed a
+      comment in `Tests/main.swift` that sat one line under the killing check denying the shape rule could
+      redden it). The three still with no row are
+      `lineMinimumMembers` from `c28-decide-and-wire` (`fbf6d87`) and `C24-drawn-cap-reaches-further` +
       `C24-dictionary-cap-reaches-further` from `depth-cap` (`95b23c3`).
       ⚠️ **A one-sided `logic` mutant has no green yield** — read the second run's section before crediting
-      a green check under one to anything; that is where the previous run's retraction came from. ⚠️ **That FOUR is this entry's
-      share, not the catalogue's**: the newer run's census prints **29** entries with no row at all and
-      `coverage: 74 of 103`, so do not read "four left" as "four in the catalogue". ⛔ **And the other 25
+      a green check under one to anything; that is where the previous run's retraction came from.
+      ⛔ **And the THIRD run had no informative green either, after claiming two in advance — read its
+      retraction before crediting any green anywhere.** The test is not "could this check move in
+      principle" (a monotonicity argument, which `shapeHeightHigh` passes) but **"does the mutant change
+      this check's input at all"**: raising a ceiling from 75 px to 2,475 px changes nothing on two
+      fixtures whose every component is 30 px tall. The same argument part-retracts **`shapeRunHigh`'s**
+      three credited greens down to one — that is the FIRST scoped run; the second (`alltext-ignores-shape`)
+      claimed none. **Kills, counts, costs and attribution stand in all three** — attribution
+      rests on the reds. Decide it per mutant, from the fixture geometry and not from the call graph. ⚠️ **That THREE is this entry's
+      share, not the catalogue's**: the newest run's census prints **28** entries with no row at all and
+      `coverage: 75 of 103`, so do not read "three left" as "three in the catalogue". ⛔ **And the other 25
       are owned by NO box** — the `mutants` item scopes itself to the *survivor* list twice over ("work the
       survivors", "the live survivor list"), which is the 2 `SURVIVED` rows and not a never-run entry, so
       "the mutants item owns the rest" (this sentence's first draft) was wrong. Nobody has claimed them;
-      that is a gap in this file, not in the catalogue. **The cost is now measured rather than quoted**:
-      baseline + one mutant took **6,541 s
-      (109 min)** — wrap it in `test-lock.sh run` as this session did and the row lands in
-      `$STATE/suite-timings.tsv` for free — against a startup line reading "roughly 87-115 minutes …
-      Budget the 115", so the
-      estimator's high end held on this one (it was 4.22x low on the C24b campaign — read the log, not
+      that is a gap in this file, not in the catalogue. ⚠️ 25 is still right after the third run: this
+      entry's share fell by one and the census fell by one with it. **The cost is now measured rather than
+      quoted**: baseline + one mutant has taken **6,541 / 6,463 / 6,567 s (109 / 108 / 109 min)** over the
+      three scoped runs — wrap it in `test-lock.sh run` as those sessions did and the row lands in
+      `$STATE/suite-timings.tsv` for free — against startup lines reading "roughly 87-115 … Budget the 115"
+      and then "87-116 … Budget the 116", so the
+      estimator's high end has held on all three (it was 4.22x low on the C24b campaign — read the log, not
       either number: `mutate.py:19-30` forbids quoting a per-mutant figure from prose);
       **(b)** no corpus sweep has been re-run since the shape term was wired, so "12 of 12 type-losers" is
       still the tool's 2026-08-21 figure — a 233-document sweep measured **105.6 min** the last time one
@@ -1446,9 +1459,16 @@ happens.**
       the reverse. Both substitutions verified APPLIED by running `catalogue()`'s own anchored regex.
       ✅ **`shapeRunHigh` RAN through `mutate.py` on 2026-08-23 and is `killed` by exactly ONE check** —
       3,475 s, `1246/1247 passed`; see the `C28` box's (a) and `BUGS.md`
-      `#### shapeRunHigh RUN through mutate.py`. The paragraph below still stands of `shapeHeightHigh`.
-      ⛔ **But "watched failing" was a BINARY here, not a red check**: neither had run through `mutate.py`
-      when this was written — `shapeRunHigh` has since, `shapeHeightHigh` has not —
+      `#### shapeRunHigh RUN through mutate.py`. ✅ **AND `shapeHeightHigh` RAN on 2026-08-24, also `killed`
+      by exactly ONE check — the other fixture's — 3,415 s, `1246/1247 passed`
+      (`BUGS.md` `#### shapeHeightHigh RUN through mutate.py`), so the paragraph below stands of NEITHER and
+      nothing here is probe-only. ⛔ That run's review also part-retracted the GREEN yield of both `const`
+      runs: of the **five** greens the two sections credited (three in `shapeRunHigh`'s, two claimed in
+      advance in `shapeHeightHigh`'s), only `c28GroupsC26`'s was ever evidence, because a monotonicity
+      argument says nothing about whether a mutant changes a check's input at all. The kills,
+      the counts, the costs and the attribution stand.**
+      ⛔ **And "watched failing" was a BINARY here, not a red check**: neither had run through `mutate.py`
+      when this was written —
       (baseline suite + ~45 min a mutant), the probe carried its own copy of **both** `makeScannedPDF` and
       the surface construction, and `mutate.py --self-test` never touches `CONSTANTS`. What the suite adds
       is that the type scale and all three `inkOut` values are asserted **in bands** — a first draft
