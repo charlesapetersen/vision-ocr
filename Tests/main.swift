@@ -1300,7 +1300,15 @@ do {
         let pages = (try? Flattener.flatten(src, to: dir.appendingPathComponent("\(sub).pdf"),
                                             mode: mode, pngDirectory: out)) ?? []
         return pages.map {
-            switch $0.content { case .bilevel: return "bilevel"; case .jpeg: return "jpeg" }
+            // C29's third case is named rather than folded into either of the
+            // other two: this helper's whole job is to say which route a page
+            // took, and a passthrough returning "bilevel" would make every
+            // check below it green for the wrong reason.
+            switch $0.content {
+            case .bilevel: return "bilevel"
+            case .jpeg: return "jpeg"
+            case .passthrough: return "passthrough"
+            }
         }
     }
 
@@ -1397,6 +1405,13 @@ do {
             case .jpeg(let j):
                 streams.append(JBIG2.Page(stream: .jpeg(j), pixelWidth: p.pixelWidth,
                                           pixelHeight: p.pixelHeight, boxSize: p.boxSize))
+            // C29. `JBIG2.Page` has no case for a page with no image stream, which
+            // is the whole reason a passthrough page sends its document down the
+            // Flate route. Contributing nothing here is what production's `onPage`
+            // closure does, so the count mismatch it causes is reproduced rather
+            // than papered over — and this loop passes no `passThrough` set, so it
+            // cannot arise from `mixedSrc`.
+            case .passthrough: break
             }
         }
         let assembled = dir.appendingPathComponent("mixed-images.pdf")
@@ -2146,6 +2161,27 @@ do {
     check("…and a long list is truncated from the front, with the count still complete",
           c29Long.hasPrefix("9 page(s) ") && c29Long.contains(" …")
             && c29Long.contains("p1") && !c29Long.contains("p4"), c29Long)
+
+    // C29's routing half. The report now carries TWO lines about born-digital pages
+    // — what was kept and what the passthrough could not reach — and the pair is only
+    // worth having if a reader can tell them apart at a glance.
+    let c29Kept = OCRModel.passedThroughPageSummary([1])
+    check("C29 — the passthrough line leads with the count and names the page too",
+          c29Kept.hasPrefix("1 page(s) ") && c29Kept.contains("p1"), c29Kept)
+    // ⛔ The pair, not either row. Both strings open with the same nine words, so a
+    // reader — and this check — has to be able to separate them on the words that say
+    // which way it went. The `!` conjuncts are the half that bites: they are what
+    // fails if the two summaries are ever collapsed into one, or if one is copied to
+    // make the other and the verb is left behind.
+    check("…and the two lines say opposite things about the same nine opening words",
+          c29Kept.contains("copied through unchanged")
+            && c29Kept.contains("still exact")
+            && !c29Kept.contains("replaced by OCR")
+            && !c29Note.contains("copied through unchanged"), c29Kept)
+    let c29KeptLong = OCRModel.passedThroughPageSummary(Array(1...9))
+    check("…and it truncates from the front with a complete count, like its twin",
+          c29KeptLong.hasPrefix("9 page(s) ") && c29KeptLong.contains(" …")
+            && c29KeptLong.contains("p1") && !c29KeptLong.contains("p4"), c29KeptLong)
 
     // MARK: C28's wiring — the shape term as a third refusal condition
     //
@@ -9954,6 +9990,14 @@ do {
     // Association" to `AMFAKAN FOCAX ONCAL ASSOXUTION`. A search that worked on
     // the input fails on the output.
     //
+    // ⛔ SUPERSEDED HEADER, kept because the paragraph below is the record of what was
+    // pinned and why. (A) SHIPPED on 2026-08-25: the routing exists, block 3b below
+    // exercises it, and **not one of the four `PINNED` assertions moved** — the first two
+    // are about the pre-flight warning, which the routing never consults, and the last two
+    // are `flatten` called with no `passThrough` set, which is still its contract and is
+    // now the negative control. All four are re-worded to statements. ⚠️ The count below
+    // says THREE and there were FOUR, and the layer question it calls unsettled is settled
+    // by the fix: the passthrough is in `flatten`, driven by a set `Model` computes.
     // ⛔ This block PINS TODAY'S WRONG ANSWER on purpose. C29's fix is a
     // per-page decision and it is a separate commit; a fixture that went red on
     // arrival would refuse every later commit through the pre-commit hook. The
@@ -10042,11 +10086,21 @@ do {
               coverText.count >= 120
                   && cover.map { !Flattener.pageIsAnImage($0) } == true)
 
-        check("C29, PINNED: the document reads as carrying no digital text at "
-              + "all, so its cover page is rebuilt along with the scans",
+        // ⛔ These two were `PINNED` rows — the wrong answer asserted on purpose —
+        // and the routing did NOT flip them, which is the finding and not an
+        // oversight. `hasDigitalText`'s only production consumer is the batch
+        // pre-flight *warning*; the routing decision is per page and never consults
+        // it. So the document-wide vote is still 0 of 4 and the warning is still
+        // quiet — and that is now the right answer rather than the defect, because
+        // there is nothing left to warn about: page 1 keeps its own text. The vote's
+        // own remaining defect is the tie-break (`Schwaller`, 167 of 300 born-digital
+        // pages voting 2-2 and losing), which is a separate finding in `BUGS.md` C29
+        // and is about the WARNING, not about what gets rasterised.
+        check("C29: the document-wide vote still reads 'no digital text', because "
+              + "it never samples the cover — and the routing no longer needs it to",
               !Flattener.hasDigitalText(jstor))
-        check("C29, PINNED: …and the batch pre-flight flags nothing, so the "
-              + "user is not warned either",
+        check("C29: …so the batch pre-flight stays quiet, which is correct now "
+              + "that the cover page is not rasterised",
               OCRModel.filesWithDigitalText(in: [jstor], password: nil).isEmpty)
 
         // 3. The consequence, in the one step that causes it. Not vacuous about
@@ -10073,9 +10127,17 @@ do {
         // fix does.
         check("the rebuild keeps all nine pages", rd?.pageCount == 9,
               "pages=\(rd?.pageCount ?? -1)")
+        // ⛔ THE NEGATIVE CONTROL, and it used to be the pin. `flatten` with no
+        // `passThrough` set still rasterises everything — that is its historical
+        // contract, it is what every tool and every committed measurement in this
+        // repository was taken through, and it is the arm C29's founding
+        // measurement describes. Two of the checks below therefore assert the WRONG
+        // answer on purpose, exactly as they did as `PINNED` rows; what changed is
+        // that they now say which arm they are about, and the routed arm beside them
+        // says the other thing.
         if let rd, let p1 = rd.page(at: 0) {
-            check("C29, PINNED: and the cover page comes out as a page-sized "
-                  + "raster, which is the rasterisation the entry measured",
+            check("C29: with no passthrough asked for, the cover page still comes "
+                  + "out as a page-sized raster — the arm the entry measured",
                   Flattener.pageIsAnImage(p1))
             let after = (p1.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             // ⚠️ Weak on its own, said in place rather than dressed up:
@@ -10083,16 +10145,215 @@ do {
             // loses its text — including the `already-ocrd` decoy above, where
             // that is correct. What this pins is that the born-digital cover is
             // not EXEMPTED, and it is the pair with the raster check that
-            // carries it. The entry's own "and the OCR of it is worse" is not
-            // measured here: nothing in this block runs recognition. The
-            // instrument for that is `observations(of:)`, used on a born-digital
-            // rebuild ~5,800 lines above; wiring it in is owed to C29's second
-            // commit.
-            check("C29, PINNED: …with its exact text gone",
+            // carries it.
+            check("C29: …with its exact text gone",
                   after.isEmpty, "chars=\(after.count)")
         } else {
-            check("C29: the rebuild is readable, so the two pins above ran",
+            check("C29: the rebuild is readable, so the two controls above ran",
                   false, "could not open \(rebuilt.lastPathComponent)")
+        }
+
+        // ⛔ 3b. THE ROUTING, and the two rows the fixture commit pinned the wrong
+        //    answer on. `passThrough` is the set `Flattener.digitalTextPages` finds —
+        //    production's own composition, in the order production composes it — so
+        //    what is measured here is `Model`'s two lines minus the literal argument.
+        //    ⚠️ That argument is what nothing in this suite can see: no check runs a
+        //    document end-to-end through `makeSearchablePDF` (the queue's
+        //    `mrc-endtoend`), so a build that computed the set and passed `[]` would
+        //    be green here. Stated rather than dressed up, and recorded in `BUGS.md`
+        //    C29 as what the fix does not cover.
+        let routedSet = Set(Flattener.digitalTextPages(in: jstor))
+        let routed = dir.appendingPathComponent("born-digital-cover-routed.pdf")
+        // ⚠️ The directory has to EXIST. `flatten` throws `pageFailed` when `writePNG`
+        // cannot write, so a missing `pngDirectory` reads as a one-page rebuild and an
+        // empty array — which is what the first run of these rows measured, and it is
+        // the instrument being wrong before the code, again.
+        let routedPNGs = dir.appendingPathComponent("routed-pngs")
+        try? FileManager.default.createDirectory(at: routedPNGs, withIntermediateDirectories: true)
+        let routedPages = (try? Flattener.flatten(jstor, to: routed, mode: .auto,
+                                                  pngDirectory: routedPNGs,
+                                                  passThrough: routedSet)) ?? []
+        let td = PDFDocument(url: routed)
+        // First, because a fix that loses a page is invariant-1 content loss and
+        // every other row here would still be green.
+        check("C29: the routed rebuild keeps all nine pages too",
+              td?.pageCount == 9, "pages=\(td?.pageCount ?? -1)")
+        // The array stays DENSE — one entry per source page, passthrough included —
+        // because `sourceCropBoxes[index + 1]`, `pageTotal` and every key in `byPage`
+        // are array positions read as page numbers. A short array here is the
+        // off-by-one that would shift every later page's text onto its neighbour.
+        check("C29: …and returns one entry per page with the cover marked "
+              + "passthrough and the eight scans not",
+              routedPages.count == 9
+                  && routedPages.enumerated().allSatisfy { index, page in
+                      if case .passthrough = page.content { return index == 0 }
+                      return index != 0
+                  },
+              "entries=\(routedPages.count) kinds="
+                  + routedPages.map {
+                      switch $0.content {
+                      case .bilevel: return "b"
+                      case .jpeg: return "j"
+                      case .passthrough: return "p"
+                      }
+                  }.joined())
+        if let td, let p1 = td.page(at: 0) {
+            let kept = (p1.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            // Exact equality against the SOURCE page's own string, not a count and
+            // not a substring: `AMFAKAN FOCAX ONCAL ASSOXUTION` has the right length.
+            check("C29: the routed cover page keeps its exact text, character for "
+                  + "character", kept == coverText && !coverText.isEmpty,
+                  "kept=\(kept.count) source=\(coverText.count) equal=\(kept == coverText)")
+            check("C29: …and it is no longer a page-sized raster, so the routing "
+                  + "moved and not just the character count",
+                  !Flattener.pageIsAnImage(p1))
+            // The other eight must NOT change: an already-OCR'd scan is the app's
+            // main input and rebuilding it is the whole point.
+            var stillRasters = 0
+            for i in 1..<td.pageCount where td.page(at: i).map({ Flattener.pageIsAnImage($0) }) == true {
+                stillRasters += 1
+            }
+            check("C29: …while all eight already-OCR'd scans are still rasterised",
+                  stillRasters == 8, "rasters=\(stillRasters) of 8")
+        } else {
+            check("C29: the routed rebuild is readable, so the rows above ran",
+                  false, "could not open \(routed.lastPathComponent)")
+        }
+        // ⛔ THE HALF A PAGE-COUNT CHECK CANNOT SEE: which page each page's text
+        //    lands on. `recogniseDocument` used to key its work list by position in
+        //    the image list, and a page with no image makes that list one shorter
+        //    than the document — so page 3's observations would be recorded against
+        //    page 2, silently, on a file whose page count is right and whose text
+        //    layer is whole. The fixture's scan pages each say "of page N" in their
+        //    own ink, which is what makes this answerable at all.
+        //    ⛔ BOTH ARMS, and that is not thoroughness for its own sake: the helper
+        //    route is the one whose keying is a REMAP — it hands out a shortened image
+        //    list and keys the answers back by position in it — so an off-by-one there
+        //    would be invisible to the in-process arm, which walks the same list it
+        //    built. `fellBack` is asserted empty for the reason the r40-parity block
+        //    records: a fallback would silently test the in-process path twice.
+        if !routedPages.isEmpty {
+            let settings = Prefs.Snapshot.current()
+            var routeFellBack: [String] = []
+            let arms: [(String, [Int: [SearchableWriter.Observation]])] = [
+                ("in-process", (try? Recogniser.recogniseDocument(
+                    visible: routed, bitmaps: routedPages, settings: settings)) ?? [:]),
+                ("the helper", (try? Recogniser.recogniseDocument(
+                    visible: routed, bitmaps: routedPages, settings: settings,
+                    useHelper: true, onFallback: { routeFellBack.append($0) })) ?? [:]),
+            ]
+            // ⛔ `helperPath() != nil` is not belt-and-braces: with the helper absent,
+            // `useHelper: true` takes the in-process branch WITHOUT calling
+            // `onFallback`, so `routeFellBack.isEmpty` would be true and this check
+            // would pass while the two arms below were one arm run twice. That is the
+            // could-not-fail shape, in the row written to prevent it.
+            check("C29: the helper arm really went to the helper, so the two arms "
+                  + "below are two routes and not one twice",
+                  routeFellBack.isEmpty && Recogniser.helperPath() != nil,
+                  "fellBack=\(routeFellBack.joined(separator: "; ")) "
+                      + "helper=\(Recogniser.helperPath() ?? "nil")")
+            for (name, observed) in arms {
+                let gaps = SearchableWriter.missingPages(in: observed, of: 9)
+                // Empty, not absent. `missingPages` reads an absent key as a page the
+                // recogniser skipped and `Model` refuses to publish the whole document
+                // over one — so "no entry" and "an empty entry" are opposite outcomes.
+                check("C29: \(name) visits all nine pages and records the "
+                      + "passthrough as an EMPTY entry rather than leaving it out",
+                      gaps.isEmpty && observed[1]?.isEmpty == true,
+                      "gaps=\(gaps) page1=\(observed[1].map { "\($0.count)" } ?? "absent")")
+                var onOwnPage = 0, texted = 0
+                for page in 2...9 {
+                    let text = (observed[page] ?? []).map(\.text).joined(separator: " ")
+                    if !text.isEmpty { texted += 1 }
+                    if text.contains("of page \(page)") { onOwnPage += 1 }
+                }
+                // The second conjunct is the non-vacuity: eight empty pages satisfy
+                // "nothing landed on the wrong page" perfectly.
+                check("C29: …and under \(name) every scan's own words land on its "
+                      + "own page, so the gap in the image list shifted nothing",
+                      onOwnPage == 8 && texted == 8,
+                      "onOwnPage=\(onOwnPage) texted=\(texted) of 8")
+            }
+        }
+
+        // ⛔ 3c. A ROTATED passthrough page. `#### The routing half, RE-SCOPED` named
+        //    this as unmeasured in so many words — the engine assumption was pinned
+        //    only on upright pages, and invariant 5 exists because a fixture without a
+        //    rotated page is structurally blind to geometry. The passthrough arm uses
+        //    `renderGrey`'s drawing transform character for character, which is what
+        //    gets /Rotate right; this is the row that says so rather than the comment.
+        let sidewaysDigital = dir.appendingPathComponent("sideways-digital.pdf")
+        do {
+            // Landscape, real vector text, no image: born digital and turned upright
+            // by /Rotate, which is how a sideways sheet is normally shipped.
+            var landscape = CGRect(x: 0, y: 0, width: 792, height: 612)
+            if let pdf = CGContext(sidewaysDigital as CFURL, mediaBox: &landscape, nil) {
+                pdf.beginPDFPage(nil)
+                let font = CTFontCreateWithName("Helvetica" as CFString, 18, nil)
+                var y: CGFloat = 540
+                for i in 1...12 {
+                    let line = CTLineCreateWithAttributedString(NSAttributedString(
+                        string: "Sideways born-digital line \(i) of running prose",
+                        attributes: [.font: font]))
+                    pdf.textPosition = CGPoint(x: 60, y: y)
+                    CTLineDraw(line, pdf)
+                    y -= 40
+                }
+                pdf.endPDFPage()
+                pdf.closePDF()
+            }
+        }
+        if let sd = PDFDocument(url: sidewaysDigital), let sp = sd.page(at: 0) {
+            sp.rotation = 90
+            let upright = dir.appendingPathComponent("sideways-digital-rotated.pdf")
+            sd.write(to: upright)
+            // Read back off the WRITTEN file, not off `sp`: whether PDFKit carries a
+            // rotation through `write(to:)` is the thing this fixture rests on.
+            let uprightPage = PDFDocument(url: upright)?.page(at: 0)
+            let sourceText = (uprightPage?.string ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let display = uprightPage.map { Flattener.fullBox(of: $0) } ?? .zero
+            // Non-vacuity first: a fixture whose rotation did not survive the write,
+            // or whose text is under the bar, would make every row below meaningless.
+            check("C29: the rotated born-digital fixture is rotated, born digital "
+                  + "and portrait once /Rotate is applied",
+                  uprightPage?.rotation == 90
+                      && sourceText.count >= 120
+                      && display.height > display.width,
+                  "rotation=\(uprightPage?.rotation ?? -1) "
+                      + "chars=\(sourceText.count) "
+                      + "box=\(Int(display.width))x\(Int(display.height))")
+            let sideOut = dir.appendingPathComponent("sideways-through.pdf")
+            let sidePNGs = dir.appendingPathComponent("side-pngs")
+            try? FileManager.default.createDirectory(at: sidePNGs, withIntermediateDirectories: true)
+            _ = try? Flattener.flatten(upright, to: sideOut, mode: .auto,
+                                       pngDirectory: sidePNGs, passThrough: [1])
+            let outPage = PDFDocument(url: sideOut)?.page(at: 0)
+            let outBox = outPage?.bounds(for: .mediaBox) ?? .zero
+            // The same assertion the rotated *raster* rebuild already makes: the
+            // published box is the box a reader sees, not the unrotated one. A
+            // passthrough that forgot /Rotate would come out 792x612.
+            //
+            // ⚠️ This row holds on BOTH arms and is green under the passthrough
+            // sabotage — the raster arm declares the same box — so it is an
+            // invariant and not a pin. The text row below it is the one that moves,
+            // and the pair is what says the turn was applied to content that is
+            // still text rather than to a picture of it.
+            check("C29: a rotated passthrough page is published at the size a reader "
+                  + "sees, with the turn baked in",
+                  Int(outBox.width) == Int(display.width)
+                      && Int(outBox.height) == Int(display.height),
+                  "\(Int(outBox.width))x\(Int(outBox.height)) vs "
+                      + "\(Int(display.width))x\(Int(display.height))")
+            let outText = (outPage?.string ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            check("C29: …and its exact text still survives the turn",
+                  outText == sourceText && !sourceText.isEmpty,
+                  "out=\(outText.count) source=\(sourceText.count) "
+                      + "equal=\(outText == sourceText)")
+        } else {
+            check("C29: the rotated born-digital fixture built, so the rows above ran",
+                  false, "could not open \(sidewaysDigital.lastPathComponent)")
         }
 
         // 4. C29's REPORT — the second commit's first half. The loss above is
@@ -10197,6 +10458,12 @@ do {
               c29Quiet.isEmpty && ocrdChars < 120,
               "pages=\(c29Quiet) chars=\(ocrdChars)")
 
+        // ⛔ SUPERSEDED HEADER: (A) shipped 2026-08-25, so "priced rather than started" and
+        //    "nothing here routes anything" are both spent — block 3b above routes, and the
+        //    suite total in this paragraph (1256/1259) is two commits stale. The ENGINE
+        //    ASSUMPTION rows themselves are unchanged and still worth having: they pin the
+        //    CoreGraphics behaviour the fix rests on, in a scene that is deliberately not
+        //    production's, so a future CoreGraphics change reds them here first.
         // 5. C29's SECOND commit, priced rather than started: the one behaviour
         //    the passthrough rests on. A born-digital page can only be "passed
         //    through" if some operator this app already runs copies its text into

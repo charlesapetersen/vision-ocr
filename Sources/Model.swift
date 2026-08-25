@@ -1945,7 +1945,18 @@ final class OCRModel: ObservableObject {
         /// route replaces nothing — and reported on the success exit, for A9.2's
         /// reason: a note about a file that failed its page-count gate describes a
         /// document nobody has.
+        ///
+        /// **Since the routing landed this is the RESIDUE, not the population.**
+        /// Every born-digital page the walk names is asked for as a passthrough, so
+        /// this list holds only the ones `flatten` could not honour — a page PDFKit
+        /// hands over with no `CGPDFPage` behind it, which is the same state
+        /// `renderGrey` has a fallback for. Empty on every document measured.
         var digitalTextPages: [Int] = []
+        /// C29. The 1-based pages `flatten` copied through unrasterised, read back
+        /// off what it actually did rather than off what it was asked for — the two
+        /// differ by exactly the residue above, and reporting the request would let
+        /// the note claim a passthrough that did not happen.
+        var passedThroughPages: [Int] = []
 
         // Rebuild when there's an old text layer to strip, and also whenever
         // JBIG2 is wanted — it needs the per-page bitmaps.
@@ -1967,10 +1978,28 @@ final class OCRModel: ObservableObject {
             // it, on a fallback that only runs when jbig2/qpdf are missing.
             try? FileManager.default.createDirectory(at: pngDir,
                                                      withIntermediateDirectories: true)
+            // C29. Which pages to keep rather than rasterise, decided BEFORE the
+            // rebuild because the rebuild is what acts on it. Asked of `file` and
+            // never of the rebuilt copy: the copy is a raster on almost every page,
+            // so it reads "not born digital" everywhere and the question can only be
+            // put to the original.
+            //
+            // ⚠️ This walk used to run *after* `flatten`, and the reason recorded
+            // there — "a document that throws in `flatten` does not pay for a walk
+            // whose answer is discarded" — is spent: the answer is now an input, so
+            // it cannot be discarded. The cancellation guard is kept, and for the
+            // measured reason it was added: this is a whole-document text
+            // extraction, and a 600-page book cancelled at page 3 was paying 600
+            // page extractions for a note nobody would ever see. Cancelled here
+            // means an empty set, which is the pre-C29 behaviour, and `flatten`
+            // breaks out of its own loop on the next line anyway.
+            let passThrough: Set<Int> = control.isCancelled
+                ? []
+                : Set(Flattener.digitalTextPages(in: file, password: password))
             do {
                 bitmaps = try Flattener.flatten(
                     file, to: rebuilt, mode: rebuildMode, password: password,
-                    pngDirectory: pngDir,
+                    pngDirectory: pngDir, passThrough: passThrough,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Rebuilding page \(d) of \(t)", rebuildShare(d, t)) },
                     // Compress and discard each page as it is produced. Holding
@@ -2005,6 +2034,18 @@ final class OCRModel: ObservableObject {
                                 // Carried through, or the merge declares a
                                 // three-channel stream as /DeviceGray.
                                 isColour: page.isColour))
+                        case .passthrough:
+                            // C29. Deliberately nothing. A page with no bitmap has
+                            // nothing to encode, and its absence from `encoded` is
+                            // what makes `encoded.count == bitmaps.count` fail below
+                            // and sends a mixed document down the Flate route — the
+                            // route that can carry a page whose pixels are its own.
+                            // `JBIG2.assemble` writes one image stream per page and
+                            // has nowhere to put a page that has none, so this is
+                            // the fallback doing what it already existed to do
+                            // rather than a new guard. The price is bytes on mixed
+                            // documents only, and it is `BUGS.md` C29 (B).
+                            break
                         }
                     } : nil)
                 visible = rebuilt
@@ -2016,20 +2057,19 @@ final class OCRModel: ObservableObject {
                 for (index, page) in bitmaps.enumerated() {
                     if let crop = page.sourceCropBox { sourceCropBoxes[index + 1] = crop }
                 }
-                // C29, and asked of `file` rather than of `visible`: the rebuilt copy
-                // is a raster on every page, so it reads "not born digital"
-                // everywhere and the question can only be put to the original.
-                // After the rebuild rather than before it, so a document that throws
-                // in `flatten` does not pay for a walk whose answer is discarded.
-                // Not on a cancelled run: `flatten` returns NORMALLY when cancelled
-                // (`if isCancelled() { break }`, then `return rebuilt`), so control
-                // reaches here with the user already waiting, and this walk is a
-                // whole-document text extraction. Measured cost is the point — the
-                // review of this diff found a 600-page book paying 600 page
-                // extractions after a cancel at page 3.
-                if !control.isCancelled {
-                    digitalTextPages = Flattener.digitalTextPages(in: file, password: password)
+                // C29. What HAPPENED, read off the array `flatten` returned, not
+                // what was asked for a few lines above. The two differ by exactly
+                // the pages the passthrough could not be honoured on, and both are
+                // reported — the first as a passthrough, the second as the loss this
+                // entry was opened for, because a page that fell back to rasterising
+                // has had its exact text replaced and invariant 1's words are "must
+                // report it". No second walk of the document: the request is already
+                // in hand and the outcome is a field on each entry.
+                passedThroughPages = bitmaps.enumerated().compactMap { index, page in
+                    if case .passthrough = page.content { return index + 1 }
+                    return nil
                 }
+                digitalTextPages = passThrough.subtracting(passedThroughPages).sorted()
             } catch {
                 // Same as below: a cancelled jbig2 child surfaces here as a
                 // throw, and is a cancellation, not a broken file.
@@ -2144,12 +2184,27 @@ final class OCRModel: ObservableObject {
             // is C20's shape. A note on success rather than a failure, because a
             // blank page is a legitimate thing to find and refusing to publish would
             // make an empty scan unprocessable.
-            if byPage.values.allSatisfy(\.isEmpty) {
-                emptyDocumentNote = pageTotal == 1
+            //
+            // C29: over the pages that were RECOGNISED, not over all of them. A
+            // passed-through page is recorded as `[]` so `missingPages` can tell it
+            // from a skip, and reading those empties as "no text was found" would
+            // put a false alarm about pale drawings on a page that came out perfect
+            // — worst of all on an all-passthrough document, where every entry is
+            // empty and nothing was rasterised at all. An empty `recognised` set is
+            // that case, and it gets no note: nothing was read because nothing
+            // needed reading.
+            let recognised = Set(byPage.keys).subtracting(passedThroughPages)
+            if !recognised.isEmpty, recognised.allSatisfy({ byPage[$0]?.isEmpty ?? true }) {
+                // `recognised.count`, not `pageTotal`: the two are the same number on
+                // every document with no passthrough page in it — which is every
+                // document this string has ever been shown on — and on a mixed one
+                // the count that belongs in the sentence is the number of pages the
+                // sentence is about.
+                emptyDocumentNote = recognised.count == 1
                     ? "no text was found on the page — if it is not blank, the page "
                         + "image may have been reduced to nothing (see the release notes "
                         + "on pale drawings and tonal plates)"
-                    : "no text was found on any of its \(pageTotal) pages — if they are "
+                    : "no text was found on any of its \(recognised.count) pages — if they are "
                         + "not blank, the page images may have been reduced to nothing "
                         + "(see the release notes on pale drawings and tonal plates)"
             }
@@ -2506,6 +2561,12 @@ final class OCRModel: ObservableObject {
         if !digitalTextPages.isEmpty {
             digitalTextPageNote(Self.digitalTextPageSummary(digitalTextPages))
         }
+        // C29's routing half. The same channel, because a reader wants both facts in
+        // one place and the two lists are disjoint by construction: this one is what
+        // was kept, the one above is what the passthrough could not reach.
+        if !passedThroughPages.isEmpty {
+            digitalTextPageNote(Self.passedThroughPageSummary(passedThroughPages))
+        }
         // `filter { !$0.isEmpty }`, not `compactMap`: `sizeNote` returns an empty string
         // rather than nil unless the copy grew, so joining on it put a leading " — " in
         // front of the message every ordinary run showed the user.
@@ -2627,9 +2688,17 @@ final class OCRModel: ObservableObject {
     /// text, and is never named — the same "any filter drops a known loser" shape C28
     /// rejected, inherited here from a bar chosen for a different question. Refuted by
     /// the adversarial review of this diff, which is why the sentence now says which
-    /// stage has no bar. Raising or removing that bar is a decision for the routing
-    /// commit, where the false-positive cost is measurable against a fix rather than
-    /// against a report.
+    /// stage has no bar.
+    ///
+    /// ⛔ **That bar is now the routing's bar too, and it is STILL not raised.** The
+    /// same 120 characters that keep a short born-digital page out of this report keep
+    /// it out of `passThrough`, so it is rasterised and loses its exact text and no
+    /// note anywhere mentions it. The routing commit was supposed to be where that
+    /// became measurable, and it is not measured: lowering the bar admits part titles
+    /// and plate captions to the passthrough, where a false positive costs a page
+    /// nothing ever recognises rather than a spurious line in a log. That trade needs
+    /// a population and has none. `BUGS.md` C29 carries it as what the fix does not
+    /// reach.
     ///
     /// Three at most and then `…`, the shape `unplacedSummary` and
     /// `shrunkTextPageSummary` already use, and for their reason: this line goes into
@@ -2645,8 +2714,16 @@ final class OCRModel: ObservableObject {
     /// ⚠️ Deliberately not a failure, and deliberately not a refusal to convert. The
     /// file is whole and its page count is right; what changed is that one text layer
     /// was replaced by a worse one. Invariant 1's words are "must report it", and this
-    /// is the report — **not** the fix. C29 stays open: the fix is a per-page
-    /// passthrough, and `JBIG2.assemble` cannot express a page with no image stream.
+    /// is the report.
+    ///
+    /// ⛔ **Since the passthrough landed this names the RESIDUE, not the population.**
+    /// Every page `Flattener.digitalTextPages` finds is asked for as a passthrough, so
+    /// the only way to reach this string is a page `flatten` could not honour — one
+    /// PDFKit hands over with no `CGPDFPage` behind it, the same state `renderGrey`
+    /// has a fallback for. That page really did lose its exact text, so the wording
+    /// stays exactly as it was; what changed is how rare it is. The pages that WERE
+    /// kept are `passedThroughPageSummary`'s, and the two lists are disjoint by
+    /// construction — one is the request minus the outcome, the other is the outcome.
     nonisolated static func digitalTextPageSummary(_ pages: [Int]) -> String {
         let detail = pages.prefix(3).map { "p\($0)" }.joined(separator: "; ")
         // The list last and the `…` after it, so a truncated run cannot end
@@ -2655,6 +2732,29 @@ final class OCRModel: ObservableObject {
         return "\(pages.count) page(s) already carried text of their own and were "
             + "rasterised and recognised anyway, so on those pages the exact text has "
             + "been replaced by OCR of a picture of it: \(detail)"
+            + (pages.count > 3 ? " …" : "")
+    }
+
+    /// C29's routing half. What the run report says about born-digital pages the
+    /// rebuild **kept** instead of rasterising.
+    ///
+    /// The same three-then-`…` shape, the same page-numbers-never-content rule (A4.1),
+    /// and the count leading for the same reason: the count is the part that has to be
+    /// complete. Said even though nothing was lost, because a rebuild is advertised as
+    /// removing the old text layer and this is the one place it deliberately does not
+    /// — a user comparing before and after should be able to find out why one page's
+    /// text is character-for-character the original's while every other page's is OCR.
+    ///
+    /// ⚠️ It is **not** the fix's own verification and must not be read as one. It says
+    /// which pages were asked to be copied through and were; it says nothing about the
+    /// bytes that arrived, and `SearchableWriter` draws no text layer over these pages,
+    /// so a passthrough that silently produced a blank page would print this same
+    /// line. What pins the bytes is `Tests/main.swift`'s C29 block, on the fixture.
+    nonisolated static func passedThroughPageSummary(_ pages: [Int]) -> String {
+        let detail = pages.prefix(3).map { "p\($0)" }.joined(separator: "; ")
+        return "\(pages.count) page(s) already carried text of their own and were "
+            + "copied through unchanged rather than rasterised, so their exact text "
+            + "is still exact: \(detail)"
             + (pages.count > 3 ? " …" : "")
     }
 

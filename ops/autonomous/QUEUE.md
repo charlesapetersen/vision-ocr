@@ -1946,10 +1946,23 @@ happens.**
       blocker is `Recogniser`, which keys its work list and its results by array position (`:146`, `:163`).
       ⛔ **And do NOT add a page-index field "to be safe": positional keying is CORRECT today** (`flatten`
       throws rather than skips), so a field added before the commit that creates a gap is a seam with no
-      caller — the shape C28 rejected. **Take (A) as one session.**
-      ⛔ **WHAT IS LEFT IS THE SECOND COMMIT — the per-page routing — and the THREE `PINNED` checks are
-      what it is expected to flip**: `hasDigitalText` false, `filesWithDigitalText` empty, and the rebuild's
-      page 1 a page-sized raster with 0 characters. ⚠️ *"The rebuild keeps all nine pages"* is deliberately
+      caller — the shape C28 rejected.
+      ✅ **(A) IS SHIPPED AS OF 2026-08-25 AND C29 IS `HALF FIXED` — see the `c29-routing-a` sub-box and
+      `BUGS.md` C29 `#### (A) SHIPPED`. WHAT IS LEFT OF THIS ITEM IS (B) PLUS ONE DECISION, and the two are
+      separate sessions.** (B) is the JBIG2 route: a mixed document now falls to Flate by arithmetic, which
+      costs ~3x the bytes at the same resolution **and** throws away a whole `jbig2enc` pass the `onPage`
+      closure already paid for — so (B) is *measure the cost on a mixed document, then either splice the
+      original page in with `qpdf` (`JBIG2.overlay`, already in the pipeline) or decide the fallback is the
+      answer*. The decision is the **120-character bar** in `Flattener.pageHasDigitalText`: under it a short
+      born-digital page is still rasterised and is now named by **neither** report line, and lowering it
+      trades a spurious log line for a page nothing ever recognises. ⚠️ Neither is startable without a
+      population, so do not take either as "one commit" without reading the entry first — which is the same
+      mistake this box already made once.
+      ⛔ **THAT PARAGRAPH IS SPENT: (A) landed and NOT ONE of those assertions moved** — the first two are
+      about the pre-flight warning, which the routing never consults, and the third is `flatten` with no
+      `passThrough` set, which is still the contract and is now the negative control. All four were re-worded
+      to statements; the routing's evidence is new opt-in rows beside them.
+      ⛔ **The count in this box was THREE and there were FOUR.** ⚠️ *"The rebuild keeps all nine pages"* is deliberately
       NOT pinned — a routing change that alters the page count is invariant-1 loss and must stay green.
       ⚠️ **Which layer the pins sit at is unsettled**: `hasDigitalText`'s only production consumer is
       `OCRModel.filesWithDigitalText` (the pre-flight *warning*), while routing hands the whole file to one
@@ -2060,6 +2073,36 @@ happens.**
         dominated by page count. It says nothing about the JBIG2 fallback, which runs the other way and also
         discards a whole jbig2 encode pass (the guard is at `:2174`, the encode at `:1985-1995`).
         (context: BUGS.md C29 `#### The routing half, RE-SCOPED`)
+  - [x] **c29-routing-a** — **DONE 2026-08-25. (A) IS SHIPPED AND C29 IS `HALF FIXED`.** The born-digital
+        page is copied through instead of rasterised: a third `RebuiltPage.Content` case carrying no URL, a
+        `passThrough: Set<Int>` on `Flattener.flatten`, and `makeSearchablePDF` asking
+        `Flattener.digitalTextPages` **before** the rebuild rather than after it, so one value both routes
+        and reports. `BUGS.md` C29 `#### (A) SHIPPED` is the whole of it. On the fixture the cover page
+        keeps its **302 characters, character for character equal to the source's**, where it read 0, and
+        the eight already-OCR'd scans are still rasterised.
+        ⛔ **The defect that mattered was in `Recogniser`, not in `flatten`** — it keyed results by position
+        in the *image* list, so one page without a bitmap would have put every later page's text one page
+        out on a file whose page count is right. `imageURL(of:)` returns `URL?`, the work list carries page
+        numbers, and **both** arms are checked (in-process and the helper's remap) with a per-page witness in
+        the fixture's own ink. A passthrough page is recorded in `byPage` as `[]`, never absent; the
+        empty-document note now asks its question of the pages that were **recognised**.
+        ⛔ **THE DECISION: `passThrough` is DATA with a default of `[]`.** So ~30 existing `flatten` call
+        sites in `Tests/`/`Tools/` and every committed measurement taken through one are unchanged by
+        construction. The rejected option — deriving the set inside `flatten`, needing no argument in
+        production — is *more* honest about the wiring and has an unmeasured blast radius, because several
+        test fixtures ARE vector-text pages with no page-sized raster.
+        ⚠️ **AND THAT IS THE COST: no check can see the literal argument at `Model`'s call site.** A build
+        that computed the set and passed `[]` would be green, because nothing runs a document end-to-end
+        through `makeSearchablePDF` — which is the queue's own `mrc-endtoend`, and reading it before touching
+        this again is the point.
+        ⛔ **WHAT IS LEFT, and why the umbrella box stays `[ ]`:** **(B)** the JBIG2 route, whose byte cost on
+        a mixed document is still unmeasured and which also discards a whole `jbig2enc` pass; and the
+        **120-character bar**, under which a short born-digital page is still rasterised and is now named by
+        **neither** report line. Lowering that bar was supposed to become measurable here against a fix, and
+        it is not measured — a false positive now costs a page nothing ever recognises.
+        ⚠️ Rotation is measured for /Rotate 90 only; the crop box is a code-identity argument and not a
+        measurement; no corpus document has been run through a passthrough.
+        (origin: BUGS.md C29 `#### (A) SHIPPED`)
 - [ ] **gutter-floor** — the reading-order DECLINE rests on "0.19% of observations cross a gutter", and
       the population that produced it excludes the pages that fail. `score-reading-order.swift`'s ink test
       needs a quiet run of `0.035 * width`; a page without one is counted `singleColumn` and `continue`d,

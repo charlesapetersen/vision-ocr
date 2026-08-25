@@ -1056,6 +1056,15 @@ for index in pages {
     switch first.content {
     case .bilevel: kind = "bilevel"
     case .jpeg: kind = first.isColour ? "jpeg-colour" : "jpeg"
+    // C29. Unreachable from here — this tool passes no `passThrough` set, so
+    // `flatten` rasterises every page exactly as it did before that parameter
+    // existed, which is what keeps `C30-VOIDS-2026-08-25.tsv` and
+    // `C30-TILES-2026-08-25.tsv` reproducible from this tool. Handled rather than
+    // defaulted so that a run which DOES ask for production's routing gets a SKIP
+    // with a reason instead of a void measured on a page that has no bitmap.
+    case .passthrough:
+        row(index, verdict: "SKIP page was passed through, so there is no bitmap")
+        continue
     }
 
     // ⛔ No render fallback. The whole point of this tool is that the pixels and the boxes

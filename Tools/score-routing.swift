@@ -57,13 +57,19 @@ let pngs = tmp.appendingPathComponent("p")
 try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
 let pages = (try? Flattener.flatten(input, to: tmp.appendingPathComponent("o.pdf"),
                                     mode: .auto, pngDirectory: pngs)) ?? []
-var bi = 0, gs = 0, col = 0, bytes = 0
+var bi = 0, gs = 0, col = 0, through = 0, bytes = 0
 for p in pages {
     switch p.content {
     case .bilevel(let u): bi += 1; bytes += (try? Data(contentsOf: u).count) ?? 0
     case .jpeg(let u):
         if p.isColour { col += 1 } else { gs += 1 }
         bytes += (try? Data(contentsOf: u).count) ?? 0
+    // C29, unreachable from here (no `passThrough` set is passed) and counted
+    // rather than folded into one of the three above, because a page with no
+    // bitmap contributes no bytes and would drag the KB/page figure down as if
+    // it had been compressed well.
+    case .passthrough: through += 1
     }
 }
-print("\(label)\tbilevel=\(bi) greyscale=\(gs) colour=\(col)\t\(bytes/max(pages.count,1)/1024) KB/page\tbytes=\(bytes)\tpages=\(pages.count)")
+print("\(label)\tbilevel=\(bi) greyscale=\(gs) colour=\(col) passthrough=\(through)"
+      + "\t\(bytes/max(pages.count - through, 1)/1024) KB/page\tbytes=\(bytes)\tpages=\(pages.count)")

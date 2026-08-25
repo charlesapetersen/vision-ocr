@@ -6,13 +6,28 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Four open: `C27`, `C28`, `C29` and `C30` — and `C28` is `HALF FIXED` as of 2026-08-22, its shape term
-WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were measured.**
+**Four open: `C27`, `C28`, `C29` and `C30` — and TWO of them are `HALF FIXED`: `C28` as of 2026-08-22, its
+shape term WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were
+measured, and `C29` as of 2026-08-25, its born-digital page now COPIED THROUGH instead of rasterised.**
+✅ **`C29`'s routing half (A) SHIPPED 2026-08-25** — `#### (A) SHIPPED`. A third `RebuiltPage.Content` case
+carrying no URL, a `passThrough: Set<Int>` on `flatten`, and `makeSearchablePDF` asking
+`Flattener.digitalTextPages` **before** the rebuild instead of after it: the fixture's cover page comes out
+with its **302 characters, character for character equal to the source's**, where it read 0. ⛔ **The defect
+that mattered was not in `flatten` but in `Recogniser`**, which keyed its results by position in the *image*
+list — one page without a bitmap would have shifted every later page's text onto the page before it, on a
+file whose page count is right; the work list now carries page numbers and a passthrough page is recorded as
+an **empty** entry rather than left absent, because `missingPages` refuses a whole document over a gap.
+`JBIG2.assemble` needed no change: `encoded.count == bitmaps.count` fails and the Flate fallback was already
+there. ⚠️ **What no check can see is the literal argument at `Model`'s call site** — nothing runs a document
+end-to-end through `makeSearchablePDF` — and what (A) does not reach is **(B)**, the JBIG2 byte cost, and the
+**120-character bar**, under which a short born-digital page is still rasterised and now no report line
+names it.
 ✅ **`C29` has the FIXTURE it said it needed first, as of 2026-08-23, and today's wrong answer is PINNED**
 (`#### The fixture, and today's answer PINNED`): a nine-page JSTOR shape whose cover page reads 302
 characters and is not a page-sized image, whose other eight pages ALL clear the 120-character bar so the
 character count decides nothing, and whose sample is `[1, 3, 5, 7]` — index 0 appearing only at page
-counts 1-4 over a 400-count sweep. The routing change is the **second of two commits**; C29 stays `OPEN`.
+counts 1-4 over a 400-count sweep. ⛔ **All four pins were re-worded to statements by (A) and NOT ONE of the
+four assertions moved** — the routing's evidence is new opt-in rows beside them; read the routing section.
 ✅ **AND IT HAS A REPORT AS OF 2026-08-25, so the loss is no longer silent** — `#### The report, SHIPPED`.
 The run report names every page that was born digital and got rasterised anyway; `hasDigitalText(in:)` now
 votes through an extracted per-page `pageHasDigitalText`, and run A of the watch-it-fail pair reds two
@@ -20,7 +35,9 @@ votes through an extracted per-page `pageHasDigitalText`, and run A of the watch
 dead duplicate. ⛔ **The population is 42 documents and 392 pages of 16,987, not this entry's one**
 (`C29-CORPUS-2026-08-25.tsv`), `hasDigitalText` is `false` on **38 of the 42**, and the corpus turned up a
 **second mechanism**: `Schwaller` is 167 born-digital pages of 300 and still reads `false`, because its
-sample votes 2–2 and `digital * 2 > sampled` loses ties. It is the report and **not** the fix.
+sample votes 2–2 and `digital * 2 > sampled` loses ties. It was the report and not the fix; the fix is (A),
+above, and that tie-break is still unfixed — it decides the **warning** and no longer decides what gets
+rasterised.
 ✅ **AND THE ROUTING HALF IS RE-SCOPED AS OF 2026-08-25, ON A MEASURED PREMISE** — `#### The routing half,
 RE-SCOPED`. `CGContext.drawPDFPage` copies a born-digital page into a new PDF with its text intact
 **character for character** (302 chars, exact string, over three hops) where the rasterising arm of the same
@@ -32,9 +49,11 @@ work list and its results by array position (`:146`, `:163`) and whose `imageURL
 non-optional URL. ⛔ **And the third `Content` case costs 20 sites that pattern-match the enum, of which the
 8 exhaustive `switch`es are the SAFE half** — but only **one** of the 12 `if case`/`guard case` sites is
 genuinely silent, `Tools/score-text-route.swift:713`, which would print `already 1-bit` for a passthrough
-page into a TSV this register quotes; **five of the twelve red at run time** and a draft's claim about
-`Tests/main.swift:3049`/`:5752` was refuted by the review of this diff. Still **OPEN**: this priced the
-second commit and did not start it.
+page into a TSV this register quotes — ⛔ **wrong: there are TWO, `Tools/score-shape-term.swift:1172` being
+the same `guard case` with the same string, found when (A) was written** — ; **five of the twelve red at run
+time** and a draft's claim about
+`Tests/main.swift:3049`/`:5752` was refuted by the review of this diff. ✅ **Every prediction in that section
+held when (A) was written**, including the one silent site, which is now two verdicts.
 **Back to C28**, whose shape term this paragraph interrupted: it rescues **13 of the 16** measured content
 losses, and its failure direction is bytes rather than
 content: `bgFactor = allText ? max(caller, 8) : caller`, so a term that only ever refuses the verdict can
@@ -9815,7 +9834,14 @@ and `INKBAR=0.0005`'s `1 of 2 … 201,252 B/page, 5.76x` all come back the same.
   hand-drawn mark. ⚠️ Those are two different counts and this bullet conflated them in its first
   draft — caught by the numbers audit of this diff.
 
-### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — OPEN
+### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — HALF FIXED
+
+⛔ **HALF FIXED as of 2026-08-25: the page is no longer rasterised — see `#### (A) SHIPPED`.** A born-digital
+page is copied through with `drawPDFPage` and keeps its exact text; the loss this entry was opened for does
+not happen on any page clearing the 120-character bar. What keeps it open is **(B)**, the JBIG2 route's
+unmeasured byte cost on a mixed document, and **the 120-character bar itself**, under which a short
+born-digital page is still rasterised and is now named by no report line at all. Read that section before
+anything else here: the title and the whole account below it describe the behaviour **before** the fix.
 
 *(found 2026-08-20 by the owner on a JSTOR download, not by a sweep. The file is
 `~/Downloads/Hughes - The Knitting of Racial Groups in Industry.pdf` and is **not in `testdocs/`** —
@@ -10359,6 +10385,153 @@ decide the fallback is the answer. (B) is a measurement plus a decision; (A) is 
 * ⚠️ **Measured on the fixture, not on a corpus document.** `testdocs/` holds nothing of this shape, which is
   why the fixture exists; the corpus population is `C29-CORPUS-2026-08-25.tsv`'s 42 documents and none of
   them has been run through a passthrough.
+
+#### (A) SHIPPED — 2026-08-25: a born-digital page is copied through instead of rasterised
+
+**The page is no longer rasterised.** `Flattener.RebuiltPage.Content` has a third case, `passthrough`,
+carrying no URL; `flatten` takes a `passThrough: Set<Int>` of 1-based page numbers and copies each of them
+through with the `getDrawingTransform` + `drawPDFPage` pair `renderGrey` already uses; and
+`makeSearchablePDF` asks `Flattener.digitalTextPages(in: file)` **before** the rebuild and hands the answer
+in. On C29's own fixture the cover page comes out carrying its **302 characters, character for character
+equal to the source page's own string**, where it read 0 before, and the eight already-OCR'd scans are still
+rasterised. C29 goes **OPEN → HALF FIXED**: what is left is (B), the JBIG2 route's byte cost, and the
+120-character bar.
+
+**The three places the array's density is load-bearing, and how each is satisfied.** `flatten` returns one
+`RebuiltPage` per source page whether it rasterised it or not, so `bitmaps` is still indexed by page number
+and `sourceCropBoxes[index + 1]` and `pageTotal = bitmaps.count` are unchanged. What is *not* dense any
+more is the **image** list, and that is where the defect would have been: `Recogniser.recogniseDocument`
+built its work list as `bitmaps.map(imageURL(of:))` and keyed the results by position in it, so one page
+without a bitmap would have shifted every later page's observations onto the page before it — a file whose
+page count is right and whose text layer is whole, with every page's text one page out. `imageURL(of:)` now
+returns `URL?` and the work list carries the page number explicitly; the helper's answers are keyed back
+through it. ⛔ **A passthrough page is recorded in `byPage` as an EMPTY array and never left absent**:
+`SearchableWriter.missingPages` is `byPage[$0] == nil` and `Model.swift`'s call to it **refuses the whole
+document** over a gap, so absent and empty are opposite outcomes here rather than synonyms.
+
+**The JBIG2 route needed no change, exactly as the re-scope predicted.** The `onPage` closure appends
+nothing to `encoded` for a passthrough page, so `encoded.count == bitmaps.count` fails and the document
+falls to the Flate route through a condition that already existed and already meant "the encoder could not
+cover every page". `JBIG2.assemble` is untouched.
+
+**The empty-document note had to move with it.** `byPage.values.allSatisfy(\.isEmpty)` reads a passthrough
+page's `[]` as "no text was found", so an all-passthrough document would have published a false alarm about
+pale drawings on pages that came out perfect. It now asks the question of the pages that were **recognised**
+— `Set(byPage.keys).subtracting(passedThroughPages)` — and says nothing at all when that set is empty. The
+sentence's page count comes from the same set, which is the same number as `pageTotal` on every document
+with no passthrough page in it, i.e. on every document this string has ever been shown on.
+
+⛔ **THE REPORT IS NOW TWO LINES, AND THE OLD ONE IS THE RESIDUE RATHER THAN THE POPULATION.**
+`passedThroughPageSummary` names what was kept; `digitalTextPageSummary` keeps its old wording and its old
+meaning — a page that really did lose its exact text — but the only way to reach it is now a page `flatten`
+could **not** honour, which is a page PDFKit hands over with no `CGPDFPage` behind it (the same state
+`renderGrey` has a fallback for). The two lists are the request and the outcome: `passedThroughPages` is
+read off the returned array, `digitalTextPages` is the request minus it, so the note cannot claim a
+passthrough that did not happen and cannot go quiet about one that failed. Both go down the one existing
+channel, whose own comment already recorded that calling it twice logs both lines.
+
+⛔ **THE DECISION, AND THE OPTION REJECTED.** `passThrough` is **data with a default of `[]`**, not a
+predicate `flatten` evaluates itself and not a Bool. Three reasons, in order of weight. (1) The caller that
+has to *report* which pages were passed through is the same caller that decides, so one value serves both
+and they cannot disagree — the alternative is two evaluations of `pageHasDigitalText` on one file and a
+second answer to a question already answered, which is the shape `Model`'s own `willRebuild` comment is
+about. (2) A default of `[]` is `flatten`'s historical contract — "image-only pages" — so **every one of the
+~30 existing call sites in `Tests/` and `Tools/`, and every committed measurement taken through one, is
+unchanged by construction** rather than by inspection; `C30-VOIDS-2026-08-25.tsv` and
+`C30-TILES-2026-08-25.tsv` in particular stay reproducible from the tool that made them. (3) The rejected
+option — `flatten` deriving the set itself, so production gets the passthrough with no argument — is *more*
+honest about the wiring (see the ⚠️ below) and was refused because its blast radius is unmeasured: several
+test fixtures are vector-text pages with no page-sized raster, which is exactly `pageHasDigitalText`'s
+definition, so an unknown number of routing, JBIG2 and MRC checks would have started measuring a
+passthrough page while claiming to measure a bilevel one. That is a guess either way, and the direction
+that cannot silently move an existing measurement is the one to take first.
+
+⚠️ **WHAT NOTHING IN THE SUITE CAN SEE, AND IT IS THE COST OF THAT DECISION: the literal argument at
+`Model`'s `flatten` call site.** The checks compose `digitalTextPages` and `flatten(passThrough:)` in
+production's own order, so the mechanism and the decision are both pinned — but a build that computed the
+set and passed `[]` would be **green**, because nothing runs a document end-to-end through
+`makeSearchablePDF` (the queue's `mrc-endtoend`, and the same gap `#### The report, SHIPPED` records for its
+own channel-to-report wiring). ⛔ **Stated rather than dressed up, and a draft of this sentence overstated it
+in the way that matters: NOT ONE of the four `PINNED` assertions flipped.** All four are byte-identical
+before and after — `!hasDigitalText(jstor)`, `filesWithDigitalText(…).isEmpty`, `pageIsAnImage(p1)`,
+`after.isEmpty` — because the first two are about the pre-flight warning and the last two are about
+`flatten` **called with no `passThrough` set**, which is still today's contract and is now the negative
+control. What the fix adds is new rows beside them that opt in. Every one of the four is re-worded, none is
+deleted, and the routing's own evidence is those new rows plus the one-token sabotage — which is weaker than
+a red row on production's own path, and that is the whole content of this paragraph. Caught by the
+adversarial review of this diff, in three files at once.
+
+⚠️ **The two `PINNED` rows about the VOTE, and why they were never going to move.** `hasDigitalText` still reads
+false on the fixture and the batch pre-flight still flags nothing. Its only production consumer is that
+warning, and the routing decision is per page and never consults it — so the document-wide vote is still
+0 of 4 and now does not matter, because there is nothing left to warn about. The vote's own remaining
+defect is the tie-break (`Schwaller`, 167 born-digital pages of 300, voting 2–2 and losing), which is about
+the **warning** and not about what gets rasterised. Both rows are re-worded from pins to statements.
+
+**Sibling sweep.** *Who else reads `RebuiltPage.Content`* — 20 sites; the 8 exhaustive `switch`es all
+gained a case (`Sources/Model.swift`, `Sources/Recogniser.swift`, `Tools/score-text-voids.swift`,
+`Tools/score-rebuild-dpi.swift`, `Tools/score-routing.swift`, `Tools/score-text-route.swift`,
+`Tests/main.swift` ×2), and the one genuinely silent `if case` the re-scope named —
+`Tools/score-text-route.swift`'s `guard case .jpeg … else { verdict: "already 1-bit" }` — is now two
+verdicts, because a passthrough page printing `already 1-bit` into a TSV this register quotes is a lie no
+compiler and no check would catch. ⛔ **There were TWO of those, not one, and the review of this diff found
+the second**: `Tools/score-shape-term.swift`'s is character-for-character the same `guard case` with the same
+`already 1-bit` string, in the file every published C28 figure came from. Both are fixed. The remaining
+`if case` sites are unreachable **from their own callers**
+rather than from the type: no tool and no other check passes a `passThrough` set. *Who else keys a
+dictionary by array position* — `sourceCropBoxes[index + 1]`, `pageTotal`, `encoded[index]` in the JBIG2
+relayer and `spentBitmaps`; the first two are safe because the array stays dense, the third is on a route a
+passthrough page cannot reach, the fourth is append-only. *Who else asserts the rebuilt copy has no text* —
+nothing does; `willRebuild` asks `hasEmbeddedText` of the **source**. *Who else calls `drawPDFPage` into a
+`CGPDFContext`* — `SearchableWriter.compose`, which is hop 2 of the three the engine assumption measures.
+
+⛔ **WHAT (A) DOES NOT REACH, and the first two are the ones a reader will assume are covered.**
+
+* ⛔ **The 120-character bar is unchanged, so a SHORT born-digital page still loses its exact text and now
+  nothing mentions it either.** `pageHasDigitalText` requires 120 characters, so a born-digital half-title
+  of seventy characters is not in `passThrough`, is rasterised, and is named by neither report line. Its
+  loss was already unreported before this commit, so nothing regressed — but the routing was supposed to be
+  where lowering the bar became measurable against a fix, and it is **not measured**: a false positive now
+  costs a page nothing ever recognises, rather than a spurious line in a log, and that trade needs a
+  population nobody has built.
+* ⛔ **A FALSE POSITIVE IS NOW EXPENSIVE, AND `pageIsAnImage` HAS TWO KNOWN ONES.** Its own doc comment
+  already records them — a scan digitised at 800 px across a Letter sheet is under the `pixelWidth >= 900`
+  bar, and a scan whose bitmap is drawn **inline** (`BI`/`ID`/`EI`) is invisible to `drawsAnyXObject` — and
+  before this commit each cost one spurious line in a log. It now costs the app's whole function on that
+  page: such a page goes into `passThrough`, is copied through, gets `byPage[p] = []`, is **never
+  recognised**, and the report says its text "is still exact" when what survives is somebody else's stale
+  OCR. Neither class has been seen (5 of the corpus's 392 firings were read at 1:1 and all five were real),
+  neither is excluded, and **nothing here measures the direction that got worse.** Found by the adversarial
+  review of this diff, which also caught `CHANGELOG.md` asserting the opposite as fact.
+* ⛔ **ONE PASSTHROUGH PAGE TURNS OFF MRC RE-LAYERING FOR THE WHOLE DOCUMENT, and that is bigger than the
+  bytes.** The relayering loop lives inside the same `wantJBIG2, encoded.count == expected,
+  encoded.count == bitmaps.count` branch as the JBIG2 assembly, so falling back to Flate takes C26's and
+  C28's entire layering machinery with it — not just a compression. Said here because the first draft of
+  this section, and of the changelog and the queue box, priced only "~3x the bytes".
+* ⛔ **(B) is untouched and its cost is still unmeasured.** A mixed document now takes the Flate route, which
+  is roughly 3x the JBIG2 route's bytes at the same resolution, **and** discards a whole `jbig2enc` pass
+  that the `onPage` closure has already paid for by the time the count guard is evaluated. No document of
+  this shape has been run both ways.
+* ⚠️ **The passthrough arm ignores `mode`.** Black & White and Grayscale are instructions everywhere else in
+  `flatten`, and a passed-through page keeps its colour under both. Defensible — a born-digital page is not a
+  scan and there is nothing to threshold — but it is a decision nobody made deliberately, and it is
+  unmeasured. Found by the same review.
+* ⚠️ **The two recognition arms count progress differently now.** The in-process loop reports against
+  `bitmaps.count`; `recogniseViaHelper` reports against its own image list, which is shorter. Cosmetic —
+  it is a progress string — but the in-process comment claims a property the helper arm does not have.
+* ⚠️ **The crop box is still unexamined on a passthrough page.** The two lines that compute `sourceCropBox`
+  are byte-identical to the raster arm's and are handed the same `pageBox`, so C23's mapping is the same
+  code rather than a second answer — but that is a code-identity argument and not a measurement, and no
+  fixture here has a trimmed passthrough page.
+* ⚠️ **Rotation IS measured now, and only for /Rotate 90.** A landscape born-digital page turned upright by
+  `page.rotation = 90` publishes at the size a reader sees and keeps its exact text. 270°, 180° and a
+  rotated *and* cropped page are unrun; the box row is green on both arms (the raster arm declares the same
+  box), so it is an invariant rather than a pin and the text row beside it is what moves.
+* ⚠️ **A `nil` `pageRef` falls back to rasterising**, and the report's first line is what says so — which is
+  why the request-minus-outcome derivation exists rather than reporting the request. Never observed;
+  `renderGrey` has a fallback for the same state.
+* ⚠️ **Still the fixture and not the corpus.** None of `C29-CORPUS-2026-08-25.tsv`'s 42 documents has been
+  run through a passthrough, and no byte figure is published for a real document.
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
 

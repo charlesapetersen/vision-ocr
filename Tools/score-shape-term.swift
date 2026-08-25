@@ -1169,6 +1169,17 @@ for index in pages {
         row(index, verdict: "SKIP flatten produced nothing")
         continue
     }
+    // C29. Two verdicts, not one, for the reason `score-text-route` carries verbatim:
+    // a passthrough page printing `already 1-bit` into a TSV this register quotes is a
+    // lie no compiler and no check would catch. Unreachable from here — this tool
+    // passes no `passThrough` set — and separated anyway, because "unreachable" is a
+    // property of this tool's arguments and not of the type. ⛔ Found by the
+    // adversarial review of the diff that fixed the sibling: the two sites are
+    // character-for-character the same shape, and the first sweep claimed only one.
+    if case .passthrough = first.content {
+        row(index, verdict: "passed through, no bitmap")
+        continue
+    }
     guard case .jpeg(let jpegURL) = first.content else {
         row(index, verdict: "already 1-bit")
         continue

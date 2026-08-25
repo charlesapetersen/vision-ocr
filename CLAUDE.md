@@ -17,8 +17,9 @@ paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.
 
 Planning lives in four files. [BUGS.md](BUGS.md) is the defect register — **four entries are open as
-of 2026-08-20: `C27`, `C28`, `C29` and `C30`. `C26` is `FIXED`, and `C28` went to `HALF FIXED` on
-2026-08-22 when its shape term was WIRED into `pageIsAllText()`.** `C30` is the owner's second JSTOR
+of 2026-08-20: `C27`, `C28`, `C29` and `C30`. `C26` is `FIXED`, and TWO of the four are `HALF FIXED` —
+`C28` on 2026-08-22 when its shape term was WIRED into `pageIsAllText()`, and `C29` on 2026-08-25 when the
+born-digital page stopped being rasterised.** `C30` is the owner's second JSTOR
 finding and the widest of them: whole blocks of clean body text get no text layer, and all four of this
 project's text-layer instruments count only the words Vision returned, so `words=100%` is silent about it.
 ⛔ **C30's FORK IS SETTLED ON THE BLOCK IT WAS OPENED ON as of 2026-08-22 — page 1's void is RECOGNISER
@@ -119,8 +120,11 @@ answer is PINNED** — `Tests/main.swift`'s `makeBornDigitalCoverPDF`, and `BUGS
 `pageIsAnImage` **false** while all eight scans clear the same 120-character bar, so **the character count
 decides nothing** and the whole verdict rests on a sample of `[1, 3, 5, 7]`; over counts 1-400 index 0
 appears only at **1, 2, 3 and 4**. ⛔ **The `PINNED` checks assert the WRONG answer on purpose** — a
-fixture red on arrival refuses every later commit through the hook — so the routing change is the
-**second of two commits** and C29 stays **OPEN**. ⚠️ Not a complaint about `sampleIndices`: the suite's
+fixture red on arrival refuses every later commit through the hook — so the routing change was the
+**second of two commits**, and ⛔ **all four pins were re-worded when (A) landed and NOT ONE of the four
+assertions moved** — the first two are about the pre-flight warning, which the routing never consults, and
+the last two are about `flatten` called with no `passThrough` set, which is still the contract and is now the
+negative control. The routing's evidence is new opt-in rows beside them plus a one-token sabotage. ⚠️ Not a complaint about `sampleIndices`: the suite's
 existing "a partial sample skips page 1" check stays right, and the defect is deciding a per-page question
 with a document-wide majority. ✅ **AND THE LOSS IS NO LONGER SILENT AS OF 2026-08-25 — the run report names
 every born-digital page a rebuild rasterised** (`BUGS.md` C29 `#### The report, SHIPPED`; C28 question 5's
@@ -135,10 +139,11 @@ library metadata cover) rather than JSTOR's, five firings read at 1:1 and all fi
 ⛔ **The corpus also found a SECOND mechanism the entry did not have**: `Schwaller` is **167 born-digital
 pages of 300 — a real majority — and still reads `false`**, because its four-page sample votes **2–2** and
 `digital * 2 > sampled` is strict, so a tie loses; a genuinely mixed document therefore votes for the answer
-that hides the defect. That is the tie-break's fault, not the sampling's. ⚠️ **It is the report and NOT the
-fix** — the page is still rasterised — and C29 stays **OPEN**; the routing change is bigger than the queue's
-"one commit" assumed, because `JBIG2.assemble` cannot express a page with no image stream and five `Tools/`
-files read `RebuiltPage.Content` (four of them exhaustively).
+that hides the defect. That is the tie-break's fault, not the sampling's, ⚠️ **it is still unfixed, and after
+(A) it decides only the WARNING** — nothing about what gets rasterised. ⚠️ **That commit was the report and
+NOT the fix**; the routing change was bigger than the queue's "one commit" assumed, because five `Tools/`
+files read `RebuiltPage.Content` (four of them exhaustively) — ⛔ though its other reason,
+"`JBIG2.assemble` cannot express a page with no image stream", turned out **not** to be the blocker.
 ✅ **THAT ROUTING HALF IS RE-SCOPED AS OF 2026-08-25, ON A MEASURED PREMISE** (`BUGS.md` C29
 `#### The routing half, RE-SCOPED`): **`CGContext.drawPDFPage` copies a born-digital page into a new PDF with
 its text intact character for character** — 302 chars, exact string equality, over **three** hops, against
@@ -163,10 +168,34 @@ is a seam with no caller, the shape C28 rejected. ⛔ **And "skips the page" is 
 `SearchableWriter.missingPages` is `byPage[$0] == nil` and a non-empty result **refuses the whole document**
 (`Model.swift:2120`), while `byPage.values.allSatisfy(\.isEmpty)` (`:2151`) would print a false *"no text was
 found"* on an all-passthrough document. So the routing half is **two** commits, (A) the Flate passthrough and
-(B) the JBIG2 route, and C29 stays **OPEN**: this priced the second commit and did not start it. ⛔ **Quote
+(B) the JBIG2 route. ⛔ **Quote
 the byte DELTA, never the ratio** — 31,223 B on nine pages, 0.981x, against a first draft's 0.739x off a
-3-page variant: the delta is one page's arm and the ratio is dominated by page count. ⚠️ Two more limits: the channel-to-report **wiring is
-covered by no check** (nothing runs a document end-to-end through `makeSearchablePDF`), and an
+3-page variant: the delta is one page's arm and the ratio is dominated by page count.
+✅ **(A) SHIPPED 2026-08-25 AND C29 IS NOW `HALF FIXED` — the born-digital page is COPIED THROUGH and keeps
+its exact text** (`BUGS.md` C29 `#### (A) SHIPPED`): a third `RebuiltPage.Content` case carrying no URL, a
+`passThrough: Set<Int>` on `flatten`, and `makeSearchablePDF` asking `Flattener.digitalTextPages` **before**
+the rebuild rather than after it, so one value both routes and reports. The fixture's cover page reads its
+**302 characters, character for character equal to the source's**, where it read 0, and the eight
+already-OCR'd scans are still rasterised. ⛔ **The defect that mattered was in `Recogniser` and not in
+`flatten`**: it keyed results by position in the *image* list, so one page without a bitmap would have put
+every later page's text one page out on a file whose page count is right — the work list now carries page
+numbers, both arms (in-process **and** the helper's remap) are checked with a per-page witness in the
+fixture's own ink, and a passthrough page is recorded as an **empty** entry rather than left absent.
+`JBIG2.assemble` needed no change, exactly as the re-scope predicted. ⛔ **The decision to quote: `passThrough`
+is DATA with a default of `[]`, not a predicate `flatten` evaluates itself** — so ~30 existing call sites in
+`Tests/` and `Tools/`, and every committed measurement taken through one, are unchanged by construction; the
+rejected option (deriving it inside `flatten`, which would need no argument in production) is more honest
+about the wiring and has an unmeasured blast radius, because several test fixtures ARE vector-text pages with
+no page-sized raster. ⚠️ **And that is the cost: no check can see the literal argument at `Model`'s call
+site** — a build that computed the set and passed `[]` would be green, since nothing runs a document
+end-to-end through `makeSearchablePDF` (the queue's `mrc-endtoend`, and the same gap the report's own
+channel-to-report wiring has). ⛔ **Two things (A) does NOT reach**: **(B)**, whose byte cost is still
+unmeasured and which also discards a whole `jbig2enc` pass the `onPage` closure already paid for; and the
+**120-character bar**, under which a short born-digital page is still rasterised and is now named by
+**neither** report line — the routing was supposed to make that trade measurable and it is not measured.
+⚠️ Rotation is measured for /Rotate 90 only, the crop box is a code-identity argument rather than a
+measurement, and none of the corpus's 42 affected documents has been run through a passthrough. ⚠️ One
+further limit carried forward: an
 *already-OCR'd* scan's text layer is also replaced and deliberately is **not** reported, which is a
 judgement made in the quiet direction. ⚠️ One instrument trap came out of the fixture commit:
 `Flattener.flatten`'s returned array
@@ -1241,7 +1270,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,259 checks measured 2026-08-25 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
+./run_tests.sh        # 1,275 checks measured 2026-08-25 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->

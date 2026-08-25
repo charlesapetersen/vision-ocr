@@ -612,6 +612,23 @@ enum Flattener {
             /// because the JBIG2 merge has to declare the right colour space
             /// and a colour stream labelled /DeviceGray renders as garbage.
             case jpeg(URL)
+            /// C29. The source page copied through with `drawPDFPage` instead of
+            /// rasterised, because it was born digital: its own text, fonts and
+            /// images reach the destination unchanged.
+            ///
+            /// **It carries no URL because there is no bitmap**, and that is the
+            /// point rather than an omission — nothing to hand jbig2enc, nothing
+            /// to hand Vision, and nothing to draw a second text layer over. The
+            /// three consequences, each load-bearing somewhere else:
+            /// `Recogniser.imageURL(of:)` returns nil and the page is recorded in
+            /// `byPage` as an **empty** array rather than left absent
+            /// (`SearchableWriter.missingPages` refuses a document over an absent
+            /// one); `Model`'s `onPage` closure appends nothing to `encoded`, so
+            /// `encoded.count == bitmaps.count` fails and a mixed document takes
+            /// the Flate route by arithmetic rather than by a new guard; and
+            /// `pixelWidth`/`pixelHeight` are **0**, which only the JBIG2 route
+            /// reads and it is the route this case cannot reach.
+            case passthrough
         }
         let content: Content
         let pixelWidth: Int
@@ -647,6 +664,22 @@ enum Flattener {
     /// returns `[]`, so `pages.count` is not a page count: read the destination
     /// document. Written down because a C29 probe read `rebuilt=0` off a healthy
     /// nine-page rebuild and was on its way to being filed as a throw.
+    ///
+    /// `passThrough` names the 1-based pages to copy through **unrasterised**
+    /// (C29). It is data rather than a predicate on purpose: the caller that has
+    /// to *report* which pages were passed through is the same caller that
+    /// decides, so one value serves both and the two cannot disagree. It defaults
+    /// to empty, which is this function's historical contract — "image-only
+    /// pages" — so every existing caller, and every committed measurement taken
+    /// through one, is unchanged by construction.
+    ///
+    /// ⚠️ **A page named here is passed through whether or not it is born
+    /// digital.** `Flattener.digitalTextPages(in:)` is what production asks, and
+    /// naming a scan instead would publish a page nothing ever recognised. The
+    /// guard is not here because a second predicate call inside this loop is a
+    /// second answer to a question the caller has already answered — the shape
+    /// `Model`'s `willRebuild` comment is about — and the check that the two are
+    /// composed correctly is `BUGS.md` C29's, not this function's.
     @discardableResult
     static func flatten(
         _ source: URL,
@@ -654,6 +687,7 @@ enum Flattener {
         mode: Mode,
         password: String? = nil,
         pngDirectory: URL? = nil,
+        passThrough: Set<Int> = [],
         isCancelled: () -> Bool = { false },
         progress: (Int, Int) -> Void = { _, _ in },
         onPage: ((RebuiltPage) throws -> Void)? = nil
@@ -696,6 +730,57 @@ enum Flattener {
             // The whole sheet, not the crop: a rebuild that kept only the crop
             // would silently discard everything outside it. See fullBox.
             let box = fullBox(of: page)
+
+            // C29. A born-digital page is copied through rather than rasterised:
+            // its exact text survives, where a rebuild replaced it with OCR of a
+            // picture of itself (`American Sociological Association` came out
+            // `AMFAKAN FOCAX ONCAL ASSOXUTION`).
+            //
+            // `drawPDFPage` into a `CGPDFContext` is the operator the app already
+            // runs on every page it publishes (`SearchableWriter.compose`), and
+            // that it preserves the text is measured rather than assumed —
+            // `Tests/main.swift`'s four `ENGINE ASSUMPTION` rows read 302
+            // characters through three hops against 0 from the rasterising arm.
+            //
+            // The drawing transform is `renderGrey`'s, deliberately character for
+            // character minus the scale: rotation, cropping and centring are the
+            // part of this that has silently produced blank pages before, and a
+            // hand-rolled translate drew rotated pages off the canvas entirely.
+            // Not extracted into a shared helper in this commit — changing the
+            // rendering path inside a routing fix is the shape this project's
+            // regressions have, and there are now three copies rather than two.
+            if passThrough.contains(index + 1), let cgPage = page.pageRef {
+                var pageBox = CGRect(origin: .zero, size: box.size)
+                let boxData = withUnsafeBytes(of: &pageBox) { Data($0) } as CFData
+                pdf.beginPDFPage([kCGPDFContextMediaBox as String: boxData] as CFDictionary)
+                pdf.saveGState()
+                pdf.concatenate(cgPage.getDrawingTransform(
+                    .mediaBox, rect: pageBox, rotate: 0, preserveAspectRatio: true))
+                pdf.drawPDFPage(cgPage)
+                pdf.restoreGState()
+                pdf.endPDFPage()
+
+                // Same crop treatment as a rasterised page: the rebuilt sheet
+                // carries only a media box and `compose` puts the crop on the
+                // published one. C23, and `RebuiltPage.sourceCropBox` says why.
+                let region = SearchableWriter.cropRegion(of: page, on: pageBox)
+                if pngDirectory != nil {
+                    // An entry, always, and inside the same `if let pngDirectory`
+                    // the two arms below use — the returned array has to stay
+                    // dense or `bitmaps` stops being indexed by page number, which
+                    // is what `sourceCropBoxes[index + 1]`, `pageTotal` and
+                    // `byPage` all rest on. 0 pixels because there is no bitmap;
+                    // only the JBIG2 route reads those two fields, and a
+                    // passthrough page is what stops that route being taken.
+                    let entry = RebuiltPage(content: .passthrough, pixelWidth: 0,
+                                            pixelHeight: 0, boxSize: box.size,
+                                            sourceCropBox: region == pageBox ? nil : region)
+                    rebuilt.append(entry)
+                    try onPage?(entry)
+                }
+                progress(index + 1, count)
+                continue
+            }
 
             // Render at the scan's own resolution: no upsampling, no lost
             // detail — but only when that resolution is believable. See

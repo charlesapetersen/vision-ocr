@@ -140,12 +140,43 @@ enum Recogniser {
         // failure, which is the same idiom the flatten step already uses.
         if !bitmaps.isEmpty {
             let total = bitmaps.count
+            // C29. A passed-through page has no bitmap, so it is not in the work
+            // list — and it is recorded as an **empty** array rather than left
+            // out, because absent and empty are opposite outcomes downstream:
+            // `SearchableWriter.missingPages` is `byPage[$0] == nil` and
+            // `Model.swift`'s call to it *refuses the whole document* over a gap
+            // ("The recogniser returned nothing for page(s) 1 of 9"). An empty
+            // entry says "visited, nothing to draw", which is exactly true of a
+            // page that kept its own text layer.
+            //
+            // ⛔ This is why the work list is keyed EXPLICITLY from here on.
+            // Position in `bitmaps` is still position in the document — `flatten`
+            // returns one entry per page whether it rasterised it or not — but
+            // position in the *image* list no longer is, and everything below
+            // used to rely on the two being the same.
+            var work: [(page: Int, image: URL)] = []
+            for (index, page) in bitmaps.enumerated() {
+                if let url = imageURL(of: page) {
+                    work.append((page: index + 1, image: url))
+                } else {
+                    byPage[index + 1] = []
+                }
+            }
             if useHelper, let helper = helperPath() {
                 do {
-                    return try recogniseViaHelper(
-                        images: bitmaps.map(imageURL(of:)), settings: settings,
+                    let recognised = try recogniseViaHelper(
+                        images: work.map(\.image), settings: settings,
                         helper: helper, isCancelled: isCancelled, onPage: onPage,
                         register: register)
+                    // Keyed back onto page numbers. `if let` and not `?? []`: the
+                    // helper promises an entry for every image it was given and
+                    // throws otherwise, so a missing one is a broken promise, and
+                    // filling it with `[]` would hide a page from `missingPages`
+                    // — the one net that catches a silently untexted page.
+                    for (offset, item) in work.enumerated() {
+                        if let obs = recognised[offset + 1] { byPage[item.page] = obs }
+                    }
+                    return byPage
                 } catch let cancellation as Failure {
                     throw cancellation
                 } catch {
@@ -160,13 +191,20 @@ enum Recogniser {
                                + "the app instead, which is slower.")
                 }
             }
-            for (index, page) in bitmaps.enumerated() {
+            for item in work {
                 if isCancelled() { throw Failure.cancelled }
-                onPage(index, total)
-                guard let image = loadImage(page) else {
-                    throw Failure.unreadablePage(index + 1)
+                // The page number, not the position in the work list: a document
+                // with a passthrough page in it would otherwise count "page 8 of
+                // 9" while recognising page 9. ⚠️ The HELPER arm does not have this
+                // property — `recogniseViaHelper` counts against the image list it
+                // was handed, which is shorter — so the two arms' progress strings
+                // disagree on a mixed document. Cosmetic, and recorded rather than
+                // fixed: `BUGS.md` C29 `#### (A) SHIPPED` names it.
+                onPage(item.page - 1, total)
+                guard let image = loadImage(at: item.image) else {
+                    throw Failure.unreadablePage(item.page)
                 }
-                byPage[index + 1] = try recognise(image, settings: settings)
+                byPage[item.page] = try recognise(image, settings: settings)
             }
             onPage(total, total)
             return byPage
@@ -332,15 +370,22 @@ enum Recogniser {
     /// Split out from `loadImage` because the helper wants the *path* — it does
     /// its own decoding, in its own process, through the function below, so the
     /// two routes cannot drift into decoding the same file differently.
-    static func imageURL(of page: Flattener.RebuiltPage) -> URL {
+    ///
+    /// **`nil` for a page `flatten` passed through** (C29): it wrote no bitmap,
+    /// because the page kept its own text and there is nothing to recognise. The
+    /// optional is the whole reason `recogniseDocument` keys its work list by page
+    /// number — this function used to be total, and every caller read position in
+    /// the image list as position in the document.
+    static func imageURL(of page: Flattener.RebuiltPage) -> URL? {
         switch page.content {
         case .bilevel(let url), .jpeg(let url): return url
+        case .passthrough: return nil
         }
     }
 
-    /// The bitmap `flatten` wrote for a page, decoded.
+    /// The bitmap `flatten` wrote for a page, decoded, or nil when it wrote none.
     static func loadImage(_ page: Flattener.RebuiltPage) -> CGImage? {
-        loadImage(at: imageURL(of: page))
+        imageURL(of: page).flatMap { loadImage(at: $0) }
     }
 
     /// One decode, used by the app and by the helper process alike.

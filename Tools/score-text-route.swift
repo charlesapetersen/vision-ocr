@@ -708,8 +708,22 @@ for index in pages {
     switch first.content {
     case .bilevel: route = "bilevel"
     case .jpeg: route = first.isColour ? "colour" : "grey"; isColour = first.isColour
+    // C29, unreachable from here: this tool passes no `passThrough` set.
+    case .passthrough: route = "passthrough"
     }
     // A page already on the 1-bit route is not what this is about.
+    //
+    // ⛔ Two `verdict`s, not one. This was a single `guard case .jpeg` whose `else`
+    // printed `already 1-bit` for everything that was not a JPEG, and C29's third
+    // `Content` case would have made that string a **lie in a committed TSV** — the
+    // one genuinely silent site of the twenty that read this enum, because the
+    // failure is a mislabelled row rather than a compiler error or a red check.
+    // Unreachable today for the reason above; separated anyway, because "unreachable"
+    // is a property of this tool's arguments and not of the type.
+    if case .passthrough = first.content {
+        row(index, route, verdict: "passed through, no bitmap")
+        continue
+    }
     guard case .jpeg(let jpegURL) = first.content else {
         row(index, route, verdict: "already 1-bit")
         continue

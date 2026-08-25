@@ -50,6 +50,16 @@ from [`makeSearchablePDF`](Sources/Model.swift#L438):
    [`JBIG2.encode`](Sources/JBIG2.swift#L75) immediately and deletes the PNG, so
    bitmaps don't accumulate.
 
+   ⛔ **Except for the pages named in `passThrough`** (C29, since 2026-08-25), which are
+   copied through with `drawPDFPage`. `Model` decides that set by asking
+   `Flattener.digitalTextPages` **before** the rebuild, so one value both routes and
+   reports. ⚠️ Only the extracted TEXT is measured, character for character; the fonts and
+   image streams are carried by the same operator and are asserted nowhere. Three consequences worth knowing at this altitude: such
+   a page has **no bitmap**, so `Recogniser` skips it and records an *empty* entry rather
+   than none; it contributes nothing to `encoded`, so `encoded.count == bitmaps.count`
+   fails and the whole document takes the **Flate route**; and the returned array stays
+   one entry per source page, because array position is read as page number downstream.
+
    A picture page is later **re-layered** by
    [`Flattener.mrcLayers`](Sources/Flattener.swift#L1521) — a 1-bit stencil confined to
    Vision's word boxes plus two downsampled tone layers — which happens after step 6
@@ -219,7 +229,7 @@ If something ever does drive it directly, these are the things that would bite:
 
 ## What the tests don't cover
 
-1,259 checks (measured 2026-08-25 by this commit's own pre-commit run), real OCR, and **~225 s measured 2026-08-24**. The old advice here was "no single duration,
+1,275 checks (measured 2026-08-25 by this commit's own pre-commit run), real OCR, and **~225 s measured 2026-08-24**. The old advice here was "no single duration,
 so plan against the load, not a number" — that was wrong about the cause: the spread (416-632 s quiet, ~37-40 min with other
 work alongside, ~45 min per run during the C24b campaign) was overwhelmingly the SCHEDULING BAND, not load. Until 2026-08-24
 the daemon's plist set `ProcessType=Background`, which darwin-bg-clamps every child to the efficiency cores, and `run_tests.sh`

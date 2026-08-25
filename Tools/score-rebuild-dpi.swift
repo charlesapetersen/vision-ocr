@@ -262,6 +262,9 @@ for (label, dpi) in queued {
         switch only.content {
         case .bilevel: route = "bilevel"
         case .jpeg: route = only.isColour ? "colour" : "grey"
+        // C29, unreachable: this tool passes no `passThrough` set. Named so the
+        // route column cannot silently read "bilevel" for a page with no bitmap.
+        case .passthrough: route = "passthrough"
         }
     } catch {
         // The reason goes to stderr and the row says only "failed". A message in a

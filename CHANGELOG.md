@@ -14,6 +14,22 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+**A page that already has real text of its own is now kept as it is, instead of being turned into a picture
+and re-read.** This is the fix for the report described in the next entry. Making a mixed PDF searchable used
+to rebuild every page as an image, so a born-digital cover sheet or title page came out carrying OCR of a
+picture of its own words — *American Sociological Association* became `AMFAKAN FOCAX ONCAL ASSOXUTION`, and a
+search that worked on the original failed on the copy. Such pages are now copied through untouched: their
+text, their fonts and their colour images arrive exactly as they were, and the report says which pages were
+kept as well as which were not; what is measured is the page's text, character for character, not its fonts
+or its image streams. Scanned pages are rebuilt as before — re-reading those is what the app is for — with
+one caveat that is a limitation rather than a promise: the test for "already a picture" needs the page's
+image to be at least 900 pixels wide and drawn as a normal XObject, so a *very* low-resolution scan, or one
+whose image is written inline, can be mistaken for a born-digital page and kept with its old OCR instead of
+being re-read. Two more limits: a mixed file is written with the older, larger page compression and loses the
+layered-image saving with it, so it can come out noticeably bigger; and a *short* born-digital page — under
+about two lines of text — is still rebuilt, because two lines is the bar the app uses to tell a real page of
+text from a plate or a part title (BUGS.md C29).
+
 **The run report now tells you when a page that already had real text of its own was turned into a picture
 and re-read.** Some PDFs are a mixture: a library or a publisher puts born-digital pages — a download cover
 sheet, a title page, sometimes whole chapters — in front of or among scanned ones. Making such a file
@@ -23,7 +39,9 @@ happened silently: the page count is right and the file has a text layer, so not
 report now names those pages, with the complete count first. Measured over the 233-document test corpus,
 392 pages in 42 documents are of this shape, and on 38 of the 42 nothing else in the app mentions it at all
 — including one 300-page book of which 167 pages are born digital (BUGS.md C29). This is a report and not
-yet a fix: those pages are still rebuilt. Pages that only ever carried OCR text are deliberately not
+yet a fix: those pages are still rebuilt — the entry above is the fix, and it landed in the same unreleased
+batch, so on a page of two lines or more this note now names pages that were **kept** rather than pages that
+were lost. Pages that only ever carried OCR text are deliberately not
 reported — re-reading those is what the app is for.
 
 **A page with unrecognised words on it is no longer treated as a page of nothing but text.** When every
