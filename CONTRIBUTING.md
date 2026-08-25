@@ -102,8 +102,13 @@ Section 2 says to reintroduce the defect and watch the test fail. Nine checks in
 is the part a person forgets. So:
 
 ```sh
-python3 Tools/mutate.py --only <substring>   # after changing a constant or a guard
-python3 Tools/mutate.py                      # the whole catalogue — ~65 HOURS, see the tool's header
+python3 Tools/mutate.py --only <substring>   # after changing a constant or a guard: ~250 s a mutant plus a
+                                             # baseline suite (479 s end to end, measured 2026-08-24)
+python3 Tools/mutate.py                      # the whole catalogue — ~7 h at that rate, and it said
+                                             # ~65 HOURS until 2026-08-24, when `1dbaafd` took a 16.2x
+                                             # clamp off the suite. Read the tool's header — but NOT its
+                                             # startup estimate, which spans five clamped-era log rows and
+                                             # is 14.5x high until four more scoped runs age them out.
 ```
 
 Add a mutant when you add a constant or a guard worth protecting. A survivor is

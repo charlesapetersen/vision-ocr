@@ -2234,6 +2234,14 @@ do {
     // The term itself, on the same pixels twice. **This pair is the whole argument**:
     // one PDF, one render, one Otsu — the only thing that changes is whether the
     // fifteenth line has a box over it. Measured 1 and 0.
+    //
+    // ✅ The FIRST of the pair is one of the five checks that kills
+    // `const/lineMinimumMembers` (4 -> 99) — measured 2026-08-24, `killed`, 246 s,
+    // `1242/1247 passed`, reading `Optional(0)`. ⛔ The SECOND cannot fail under it and
+    // is not evidence about that constant: raising the bar only ever removes groups, so
+    // a check asserting 0 reads 0 at both values. Every `groups == 0` assertion in this
+    // block is in that position — `BUGS.md` C28 `#### lineMinimumMembers RUN through
+    // mutate.py` names all six rather than leaving a reader to credit them.
     let c28GroupsMissed = c28Groups(c28Missed, boxes: c28Boxes(14))
     check("C28 — one unrecognised word of type on a page of type is one line group",
           c28GroupsMissed == 1, "\(c28GroupsMissed as Any)")
@@ -2341,6 +2349,10 @@ do {
     // accepted members in one band ARE a line group. Without it a fixture whose marks had
     // drifted out of the band, or too far apart, would satisfy both checks below while
     // testing nothing — C24's eleventh check and A11.5 in one.
+    // ✅ And it is a RED CHECK, not only an argument: it is the second of the five that
+    // kill `const/lineMinimumMembers` (4 -> 99), measured 2026-08-24 — four members in
+    // one band are a group at 4 and are not at 99, so this check is what says the
+    // GROUPING is doing the accepting here and not the component test alone.
     let c28StrokeGroups = c28Groups(c28Stroke, boxes: c28Boxes(14))
     let c28StrokeInk = c28InkOut(c28Stroke, boxes: c28Boxes(14)) ?? -1
     check("C28 — four narrow strokes on one baseline outside the words ARE a line group",
@@ -2487,6 +2499,22 @@ do {
     // ⛔ THE VERDICT, end to end through `mrcLayers`, and this is the check that was
     // watched failing before the wiring existed: without the third term the page is
     // read as all text and both tone layers go to an eighth and a sixteenth.
+    // ✅ THREE OF THE FOUR checks in this `if` are killed by TWO catalogued mutants
+    // reaching them from the two ends of `return groups == 0`, both measured:
+    // `logic/C28-alltext-ignores-shape` (2026-08-23) makes the verdict ignore the count,
+    // and `const/lineMinimumMembers` (2026-08-24) drops the count below what the wiring
+    // refuses on. Their rows carry the same three `FAIL` lines. ⛔ **THREE of four, not
+    // three** — the fourth, the `inkOutsideText` assertion at the end of this block, is
+    // green under both, because that field is assigned BEFORE term 1's guard and no
+    // shape-rule constant can move it. A draft of this comment said "the three checks in
+    // this `if`", which credits the fourth to the kill.
+    // ⛔ And the positive-control pair BELOW is killed by neither and cannot be — but NOT
+    // because either mutant "forces the all-text verdict", which was this comment's first
+    // reason and is false: terms 1 and 2 still run and still refuse a page over either
+    // bar. The real reason is the strong one: `c28Groups` on that page reads **0 at 4 and
+    // 0 at 99**, so the check's input is byte-identical and it cannot fail. That is the
+    // standard 2026-08-24's retraction set — does the mutant change this check's INPUT —
+    // and a monotonicity argument does not meet it.
     let c28Full = c26FullWidth(c28Missed)
     let c28Ceiling = c28Full / Flattener.textPageBackgroundDownsample + 1
     if let missed = c28Layers(c28Missed, boxes: c28Boxes(14), stem: "c28missed") {

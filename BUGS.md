@@ -63,7 +63,17 @@ no detail; 22 details that carry one). Six self-test checks (30 → **36**), the
 mutually redundant and said so in place, both rejected parses watched failing. This run's row is repaired
 byte-identically to what the fixed tool writes; the other six cannot be, though five of their names are
 recoverable from the tree. Four of the six catalogued-and-never-run mutants were left after that run, from
-five — ✅ **three after `#### shapeHeightHigh RUN through mutate.py`, 2026-08-24.**
+five — ✅ **three after `#### shapeHeightHigh RUN through mutate.py`, and TWO after
+`#### lineMinimumMembers RUN through mutate.py`, both 2026-08-24; the two left are `depth-cap`'s and
+nothing in this entry's own material is unrun.** ⛔ **That last run found the SIBLING of the truncation
+above, in the same field**: `run()` also capped the *list* at `fails[:3]`, so a row killed by five named
+three. It was already live — swept over all **84** rows, **five earlier rows lost 10 names** — the count
+was right in every one, and the fix keeps them all (`killed_detail`, two more self-test checks, 36 →
+**38**, both watched failing at `[:3]`, and the raised-cap `[:6]` watched failing too). ⛔ **And that run's
+own cost retires "the estimator's high end has held": 479 s against a startup line reading "roughly 100-116
+minutes" — 14.5x HIGH**, because `estimate_minutes` spans the five newest log rows and all five were
+clamped-era. The mirror of C24b's 4.22x-low reading, from the same window; it self-heals over the next four
+runs and is **not** patched.
 ✅ **`#### The replica retired` (2026-08-23) then repaired the instrument the wiring broke, and it too
 changes nothing in `Sources/`**: `Tools/score-text-route.swift` had a hand-written copy of
 `pageIsAllText()` two terms deep against the shipped guard's three, so it printed `all-text` on exactly
@@ -2180,9 +2190,11 @@ is how this register got C13. It is named so the next sweep does not have to red
 Separately, `--list` reported **89 mutants** when this was written, not the 84 that
 `ops/autonomous/resume-prompt.txt` and `vision-ocr-autonomous.sh` both asserted in the present
 tense — the C24b five had been added without either being updated. Both corrected here, along
-with the "~55 HOURS" figure they carried: at the measured ~45 min per mutant the full
-catalogue is nearer **65 hours**, so that number was about right by luck and wrong in its
-reasoning. **And the same defect immediately recurred**: by `d83ddc5`, hours later, `--list`
+with the "~55 HOURS" figure they carried: at the then-measured ~45 min per mutant the full
+catalogue was nearer **65 hours**, so that number was about right by luck and wrong in its
+reasoning. ⚠️ **Both figures are clamped-era and neither is current**: `1dbaafd` took a 16.2x
+clamp off the suite on 2026-08-24 and the next scoped run measured **246 s** a mutant, so the
+catalogue is ~7 h — which is this paragraph's own lesson landing on this paragraph. **And the same defect immediately recurred**: by `d83ddc5`, hours later, `--list`
 printed **91** while six files still said 89 — measured 2026-08-17 by running it on that
 commit. C24's wiring takes it to **94**. A count asserted in prose goes stale the next time
 anyone adds a tuple, which has now happened three times (84 → 89 → 91 → 94); the durable
@@ -8519,7 +8531,8 @@ the same page — because the first alone is satisfied by a function that always
 
 **Mutants: three added, catalogue 97 → 100, and none of them NOT-APPLIED** (all three anchors verified to
 match the source exactly once, which is the check the `paleDrawingThreshold` entry exists to remember).
-`const/lineMinimumMembers` 4 → 99 removes the term's ability to refuse anything;
+`const/lineMinimumMembers` 4 → 99 removes the term's ability to refuse anything a suite can build (⚠️ not
+in general — a run of ≥ 99 members still groups; corrected 2026-08-24);
 `const/shapeRunHigh` 2.0 → 99.0 makes the platen rule "shaped like type";
 `logic/C28-alltext-ignores-shape` throws the verdict away while still paying for it, which no constant
 mutant can reach. ⛔ **One of the three is a KNOWN SURVIVOR and it is recorded as one**: the review of this
@@ -8542,7 +8555,19 @@ pinned one-sidedly as the sentence above says.
 this does not upgrade.** ✅ **AND SO IS THE WIRING'S OWN, a day
 later and in the same shape — `logic/C28-alltext-ignores-shape`, `killed` by exactly three checks, all of
 them `fbf6d87`'s: `#### C28-alltext-ignores-shape RUN through mutate.py`. So the by-hand equivalent no
-longer stands in place of anything on this pair; only `lineMinimumMembers` is still owed.**
+longer stands in place of anything on this pair.** ✅ **AND THE THIRD OF THE THREE IS RUN AS OF 2026-08-24,
+so ALL THREE MUTANTS THIS PARAGRAPH ADDED ARE `killed` AND NOTHING HERE IS OWED** —
+`const/lineMinimumMembers` is `killed` by **five** checks — the only kill in the log that reaches C28's term
+*and* its wiring, which is the claim to quote; ⚠️ **not** the widest, as a first draft of this said
+(`logic/C24-unknown-is-not-no` announces six): `#### lineMinimumMembers RUN through mutate.py`.
+⚠️ **What it pins is a RAISING of the constant, and the lowering direction is UNMEASURED** — a draft said
+"pins the constant only in the direction that raises it", which reads as a finding about the other
+direction and is not one. Lowering is the live question this campaign keeps naming (3b's false negatives,
+`SUBBARPIX`'s ornament page, `Xin Qu` p20's three lost values) and **no mutant asks it**; whether the
+missed-word fixture carries a sub-four run that a lower bar would group is not established anywhere.
+⚠️ So this paragraph's own contrast above — "`lineMinimumMembers` is pinned, `shapeHeightLow` and
+`lineGapFactor` one-sidedly" — needs its qualifier too: all three are pinned one-sidedly, and this run
+measured which side for the first.
 ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
 hours, and each of those sessions paid one suite for one mutant. What stood in its place was the by-hand
 equivalent above: two binaries one term apart, executed, 153 against 612. ⛔ **And one wrong reading is deliberately absent
@@ -9080,7 +9105,8 @@ five-mutant campaign, which is a pattern in the cheap case and still not a corre
 ⚠️ **What it does not touch.** Of `fbf6d87`'s three, `const/lineMinimumMembers` is the one still unrun;
 with `shapeHeightHigh` (`6d0caa1`) and the two `depth-cap` mutants (`95b23c3`) that is **four** left of the
 six this entry and `depth-cap` catalogued, from five — ✅ **`shapeHeightHigh` ran on 2026-08-24 and it is
-three.** It says nothing about the twin reading
+three, and `lineMinimumMembers` ran the same day and it is TWO, both of them `depth-cap`'s.** It says
+nothing about the twin reading
 `mutate.py` deliberately does not catalogue (`groups ?? 0 == 0`, unreachable at 8,000,000 runs), and nothing
 about `shapeMinimumArea`, which stays uncatalogued and live in the calibration filter.
 
@@ -9197,11 +9223,20 @@ exercises the *keep-the-detail* half only and says nothing about the 38 descript
 the 116"**. The mutant suite is **3,415 s** of that on the tool's own clock, leaving 3,152 s for the rsync
 and the baseline by subtraction. **The estimator's high end has now held three times running** on scoped
 single-mutant runs (6,541 / 6,463 / 6,567 s), against the C24b campaign's 4.22x-low reading — still a
-pattern in the cheap case and not a correction to the dear one. `coverage: 75 of 103`, from 74; the census
+pattern in the cheap case and not a correction to the dear one.
+⛔ **RETRACTED AS A FORWARD CLAIM THE NEXT DAY, 2026-08-24: the FOURTH scoped run broke it in the other
+direction — 479 s against "roughly 100-116 minutes", 14.5x HIGH** — because `1dbaafd` took a 16.2x clamp
+off the suite while the estimator's window was still five clamped-era rows. So the estimator has now been
+wrong both ways off the same window and "held three times running" is history, not guidance:
+`#### lineMinimumMembers RUN through mutate.py`. ⚠️ The three durations above are untouched; it is the
+sentence about what they predict that is withdrawn.
+`coverage: 75 of 103`, from 74; the census
 puts **28** entries at no row, from 29 (both halves move together).
 
 ⚠️ **What it does not touch.** `const/lineMinimumMembers` (`fbf6d87`) and the two `depth-cap` mutants
-(`95b23c3`) are **three** left of the six this entry and `depth-cap` catalogued, from four. It says nothing
+(`95b23c3`) are **three** left of the six this entry and `depth-cap` catalogued, from four — ✅ **two after
+`#### lineMinimumMembers RUN through mutate.py`, 2026-08-24, and both of the two are `depth-cap`'s.** It
+says nothing
 about `shapeMinimumArea`, which stays uncatalogued and is the one shape constant live in the **calibration**
 filter these fixtures run through — so whether they would kill such a mutant is still unmeasured. And **25**
 of the 28 catalogue entries with no row remain owned by no queue box — the other three are this entry's own
@@ -9230,6 +9265,148 @@ read 0 at **every** value of `shapeRunHigh`"* — so the correction was availabl
 and two sessions read past it. Corrected in that section and in `CLAUDE.md`; **the kill, the count of
 objecting checks and the cost in that section are untouched**, and so is the attribution, which was never
 a green's to carry.
+
+#### `lineMinimumMembers` RUN through `mutate.py` — the last of `fbf6d87`'s three, killed by FIVE checks reaching the term and the wiring from the two ends of one expression, and the first scoped run since the clamp came off: 246 s against an estimate of 100-116 MINUTES — MEASURED 2026-08-24
+
+✅ **`const/lineMinimumMembers` (`Sources/Flattener.swift`, `4` → `99`) is `killed`, 246 s, by EXACTLY
+FIVE checks.** Baseline **1,247 green**; mutant **`1242/1247 passed`**, and these are the only `FAIL` lines
+in **1,739** lines of output (the run's own log; `Tools/mutation-out/` is gitignored and overwritten per
+run, so this block is the durable copy):
+
+```
+  FAIL C28 — one unrecognised word of type on a page of type is one line group — Optional(0)
+  FAIL C28 — four narrow strokes on one baseline outside the words ARE a line group — Optional(0)
+  FAIL C28 — a page with one unrecognised word of type is not shrunk as all text — 153 wide of 1224, ceiling 154
+  FAIL …its foreground with it, so both layers move together — 76 wide of 1224
+  FAIL …and it does not report itself as stored at an eighth, because it is not — flag true, 153 wide
+```
+
+So the three mutants `fbf6d87` and `6d0caa1` left are all run: `shapeRunHigh`, `shapeHeightHigh` and this
+one. **Nothing in C28's owed-fixture or wiring material is probe-only.** ✅ **The five were PREDICTED, by
+name and in order, in a file timestamped before the run finished** (`/tmp/lmm-prediction.md`, not
+committed) — so the *kill set* was called in advance, which is what the prediction discipline is for.
+⚠️ **The evidence for that is an mtime in `/tmp`** (22:49 against the run's 22:55:48 completion row), which
+is not durable and is worth naming in a section whose other half is about exactly that problem: a later
+reader has this sentence and nothing else.
+⛔ **The prediction did NOT otherwise survive: a draft of this line claimed it was "the first time in these
+four scoped runs that the advance prediction survived the review intact", which is a claim about a review
+that had not run yet — the eleventh-check failure mode one level up.** The review then refuted two of the
+prediction's own reasons (it said the mutant "forces all-text on every page", and it undercounted the
+`c28InkOut` greens), and found that this section's first draft had dropped a green the prediction did carry.
+What is measured is the five names and their order; what a prediction cannot do is certify its own audit.
+
+⛔ **WHAT MAKES IT WIDE IS THAT ONE MUTANT REACHES BOTH HALVES OF C28's FIX.** Two of the five are the
+term's own counts going 1 → 0; the other three are the wiring's, and
+they are **byte-identical in `mutation-log.tsv` to the three that killed `logic/C28-alltext-ignores-shape`**
+on 2026-08-23. The two mutants arrive there from the two ends of `return groups == 0`: that one makes the
+verdict ignore the count, this one drops the count below what the wiring refuses on. ⚠️ **That is not
+redundancy** — a suite that had lost
+only the term's checks would still kill one of the two, and only this one shows that a term returning a
+*wrong* 0 (rather than a term nobody consults) reaches the shrink.
+⛔ **A draft of this paragraph opened "THIS IS THE WIDEST KILL IN THE LOG" and the review refuted it from
+this same section's own sweep, six paragraphs down**: `logic/C24-unknown-is-not-no` announces **six**, and
+three other rows announce five, so this is a four-way tie for second. The superlative was in five PLACES
+across FOUR files — a claim ordinal is not an instance count, which is this register's own recorded
+mistake — and what survives is the "reaches both halves" claim, the one worth quoting. ⚠️ **And "makes the count
+0" is loose in the direction that matters** — `textLines` still emits any run of ≥ 99 members, so the
+mutant drops the count on the fixtures rather than in general.
+
+⛔ **NO INFORMATIVE GREEN, SAID IN ADVANCE AND NOT RETRACTED AFTERWARDS.** The mutant is **strictly
+one-sided**: `Flattener.textLines`' `flush()` resets `run` whether or not it emits, so raising
+`lineMinimumMembers` removes groups and can never add one. Therefore every `groups == 0` assertion in the
+block reads 0 at **4** and at **99** — identical input, identical answer, **cannot fail at any value above
+4**. There are **six** of them and none is evidence about this constant: the recognised-word twin, the
+solid scanner rule, C26's ink figure, the too-wide dashes, the too-tall dashes, the border-only mark. The
+layering positive-control pair (`boxed` IS shrunk / reports the flag `true`) cannot fail either, **and the
+reason matters**: ⛔ a draft of this section said the mutant "forces the all-text verdict" and that every
+page becomes all-text under it, which is **false** — terms 1 and 2 of `pageIsAllText()` still run and still
+refuse a page over either bar, and `textLines` still emits any run of **≥ 99** members, so the count is not
+forced to 0 in general. The correct argument is the strong one, and it was available: that page's
+`c28Groups` reads **0 at 4 and 0 at 99**, so the pair's input is byte-identical. ⛔ **That distinction is
+the whole of 2026-08-24's lesson** — a one-sidedness argument bounds the DIRECTION a check could move and
+answers nothing about whether the mutant changes its input, and leaning on "forces" is the weak form
+dressed up. The **fourth** check of the layering block — the `inkOutsideText` assertion — is green too, for
+a third reason: that field is assigned before term 1's guard. ⚠️ It was in the advance prediction and fell
+out of the first draft of this section, and the same draft called the layering block "the three checks in
+this `if`" where there are four. **Five** `c28InkOut` checks (two bands, two below-bar, one equality) and
+`c28Calibration` are upstream of grouping entirely — a draft said "three band checks" — and the truncation
+pair's `nil` comes from the `runLimit` bound with `Optional(0) != nil` still true. ⚠️ **No total is given
+on purpose**: a draft gave one, it was wrong, and the families are what carry the argument — six
+`groups == 0`, two layering positive controls, one `inkOutsideText`, five `c28InkOut`, the calibration
+check, the truncation pair, and the interior-window equality. Each is named so a later reader can check the
+reason rather than the sum. ⚠️ **The window check was missing from a draft of this list**, which is worse
+than a wrong total in a sentence inviting a reader to audit by family: 23 of the block's checks run, five
+are the reds, so eighteen greens must be accounted for and seventeen were.
+⚠️ The universal over the other 1,242 is an argument with the near misses read, not an
+inspection — "did not fail", not "cannot".
+
+⛔ **AND THE COST IS THE OTHER RESULT: 246 s FOR THE MUTANT AND 479 s FOR THE WHOLE SCOPED RUN, AGAINST A
+STARTUP LINE READING "roughly 100-116 minutes … Budget the 116".** That is **14.5x HIGH** on the high end
+(6,960 s / 479 s; the low end is 12.6x), where the previous three runs had it holding (6,541 / 6,463 /
+6,567 s against "budget the 115/116"). The end-to-end figure is lock-measured and its durable copy is
+`$STATE/suite-timings.tsv`'s `mutate-lineMinimumMembers 479 0 3.47`, quoted here the way the three runs
+before it quoted theirs; 479 − 246 = **233 s** is the baseline suite plus the rsync, against a 225 s suite
+row the same evening. The cause is not the estimator's arithmetic but its input:
+`estimate_minutes` spans the **5 newest rows** of
+`Tools/mutation-log.tsv`, all five of which were clamped-era (3,014-3,475 s) **at the moment it printed
+that line**, and `1dbaafd` removed the 16.2x clamp the same day. ⚠️ **One term is unnamed and it co-varies**:
+the load column reads **3.47** here against 4.18 / 4.68 / 6.09 on the three runs compared, on a machine
+whose own tool header says contention moves the per-run cost more than the suite's size does. The
+mutant-to-mutant ratio is 3,415 → 246 = **13.9x** against a 16.2x clamp, so the clamp dominates — but it is
+not the only term. ⛔ **AND IT DOES NOT SELF-HEAL GRADUALLY, WHICH A DRAFT OF THIS SAID** ("in falling
+proportion"): the high end is `max(window)`, so it stays put until the last clamped row leaves. Measured by
+driving `estimate_minutes` over this log with successive 250 s rows appended: **116 / 116 / 114 / 114**, then
+**8** in one step. The LOW end heals immediately — with this run's own row in the window the printed range
+is already `8-116`, so the next reader sees a range 14x wide rather than a wrong number, which is a
+different failure and a more legible one. Nothing in `mutate.py` can distinguish the two eras from the log
+alone — the rows carry no build flags and no scheduling band — and the tool's header already says to read
+the startup line rather than any figure in prose, which is why this is recorded rather than patched.
+**The lesson is the mirror of the C24b campaign's 4.22x
+LOW reading, from the same estimator over the same five-row window**: a rate read off history is wrong in
+whichever direction history has just moved.
+
+⛔ **AND USING THE INSTRUMENT FOUND A SECOND TRUNCATION DEFECT IN THE FIELD THE PREVIOUS RUN FIXED —
+`run()` wrote `"; ".join(fails[:3])`, so this row announced `5 check(s)` and named THREE.** Fixed in the
+same commit by extracting `killed_detail(fails)`, which keeps them all, with two `--self-test` checks
+(36 → **38**) **both watched failing** against the exact historical `[:3]`. ⛔ **The cap was already LIVE,
+and reading the log refuted this section's own first draft**, which said nothing had ever hit it: swept
+over the **84** rows that pre-date this run (85 with its own, which is the sixth `N > 3`) for `N check(s)`
+with `N > 3`, **five earlier rows were truncated and 10 names went with them** — `logic/A4.2-update-url-scheme` (5 announced, 3 named), `logic/R82-reserve-taller-scale`
+(5/3), `logic/R23-copyOutline-bound` (4/3), `logic/C24-unknown-is-not-no` (6/3) and
+`logic/C24-override-ignored` (5/3). ✅ **The COUNT is right in all five**, so every damaged row states its
+own incompleteness and no number in the log is wrong; what is gone is *which* checks, and none of the 10 is
+recoverable from the tree — `Tools/mutation-out/` is gitignored and overwritten per run. They are
+recoverable by re-running those five mutants, which post-clamp is minutes each; **not done here.**
+⚠️ Do not read the two defects' row counts as disjoint sets: **7** damaged by the 2026-08-23 split and
+**5** by this cap, in the same field, unswept for overlap. ⚠️ **A marked cap (`…; and 2 more`) was the
+other option and was rejected**: same edit, honest about the loss, and still leaves the names
+unrecoverable — which is the thing a later session needs. The console line is truncated separately
+(`detail[:70]`), so the display and the durable record were never the same decision. **This run's own row
+was repaired to all five names by running the fixed `killed_detail(objecting_checks(…))` over the run's own
+output**, so the repair is byte-identical to what the tool now writes rather than hand-typed; the other
+five rows are not repairable. **Sibling sweep: no consumer outside `mutate.py` parses `detail` at all**
+(swept over `Tools/`, `ops/`, `.githooks/` and the documents). ⛔ **But "nothing machine-reads that field"
+was the first draft's claim and it is FALSE — `logged_seconds` does**, at `ABORTED_DETAIL.match(f[3])`, an
+anchored `^exit \d+, no FAIL line` that drops crashed runs from the estimate. It is safe only because every
+`killed_detail` string begins `N check(s): `, which that pattern cannot match at any length — so the prefix
+is load-bearing rather than cosmetic, and the second new self-test check, written to pin the count, pins it
+too. That is the unbounded decision's actual justification, and the draft had the wrong reason under the
+right call.
+
+⛔ **APPLIED-NESS IS THE TOOL'S OWN GATE, NOT AN INFERENCE FROM THE KILL** — `run()`'s `hits != 1` branch
+records `NOT-APPLIED` when the anchored pattern misses or matches more than once, and the row reads
+`killed`. ⚠️ And `score-shape-term`'s port check is **not** among the objecting checks and could not be:
+`run_tests.sh` invokes no tool self-test (read it — 98 lines), so the tool's own copy of the five functions
+is never compared against the mutated `Flattener` at all. A reader who expected the port gate to fire here
+would be wrong about what the suite runs.
+
+⚠️ **What this does NOT settle.** It says nothing about *lowering* `lineMinimumMembers`, which is the
+direction C28's own campaign keeps naming as the live question — 3b's false negatives on `1954 - Why`
+p6/p7 and `SUBBARPIX`'s printer's-ornament page (664 accepted components, **0** grouped) both turn on
+relaxing this constant, and `Xin Qu` p20's thirteen values already cost three at the shipped value, so it
+is a measured two-sided trade and a mutant that raises the bar is blind to all of it. `lineGapFactor`, the
+other half of the grouping, has **no catalogue entry**. Census: **27** catalogue entries with no row at all
+(from 28), `coverage: 76 of 103`.
 
 #### The replica retired — the `verdict` column reads production's own answer instead of copying the guard a fourth time — FIXED 2026-08-23
 

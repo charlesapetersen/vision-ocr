@@ -65,6 +65,20 @@ Two consequences, both load-bearing:
     by driving these functions over `git show`'s copy of the pre-campaign log. So the
     fix removed a stale *constant*; it did not make the estimate survive a change in
     load, and nothing in this file can, because the term that moved is not in the log.
+
+    ⛔ **AND IT IS WRONG IN THE OTHER DIRECTION AS OF 2026-08-24, WHICH IS WHY "BUDGET
+    THE HIGH END" IS NOT ENOUGH ON ITS OWN.** `1dbaafd` removed a 16.2x clamp from the
+    suite (`ProcessType=Background` in the daemon's plist, inherited by every child,
+    plus `run_tests.sh` passing no `-O`). The next scoped run — `const/lineMinimumMembers`
+    — took **246 s for the mutant and 479 s end to end**, against a startup line reading
+    "roughly 100-116 minutes": **14.5x HIGH**, off the same five-row window that was
+    4.22x low in 2026-08-17. Nothing here can tell the two eras apart, because the log
+    records no build flags and no scheduling band. It self-heals as post-clamp rows push
+    the clamped five out of the window — four more scoped runs — and until then the
+    startup line is the worst number available rather than the best. **The rule that
+    survives both failures is the one this header already gives**: a rate read off
+    history is wrong in whichever direction history has just moved, so date every figure
+    and prefer `$STATE/suite-timings.tsv` rows dated after 2026-08-24.
   * **A duration measured here is not a reading of the suite's size.** The rsync below
     excludes `testdocs`, and one draft of this paragraph argued from that exclusion
     that a mutation run must therefore be much *faster* than a full `./run_tests.sh`.
@@ -194,9 +208,38 @@ CONSTANTS = [
     ("Flattener.swift", "textPageInkOutsideThreshold", "0.045", "0.08"),
     # C28's wiring, 2026-08-22. Two of the shape rule's five numbers, chosen because
     # each is load-bearing in a *different* direction and the suite has a check sized
-    # against each. 99 members means no line group ever forms, so the third term can
-    # never refuse a page and the missed-word fixture goes back to being stored at an
-    # eighth — which is the defect C28 is open for, planted.
+    # against each. 99 members means no line group forms on any fixture a suite can
+    # build, so the third term stops refusing and the missed-word fixture goes back to
+    # being stored at an eighth — which is the defect C28 is open for, planted.
+    # ⚠️ NOT "no line group ever forms": `textLines` still emits a run of >= 99 members,
+    # which is why the retraction below says the count is dropped on the fixtures rather
+    # than in general. This sentence said "ever" until 2026-08-24, twenty-five lines above
+    # the paragraph correcting it.
+    #
+    # ✅ RUN THROUGH THIS TOOL 2026-08-24 AND KILLED — 246 s, `1242/1247 passed`, by
+    # **exactly five** checks — NOT the widest kill in this log (a first draft said so
+    # and the sweep below refutes it: `logic/C24-unknown-is-not-no` announces six, and
+    # three other rows announce five, so this is a four-way tie for second), but the only
+    # one that reaches C28's term AND its wiring in the same run. Two are the term's own
+    # counts going 1 -> 0 (the missed word; the four-stroke positive control) and three
+    # are the wiring's, byte-identical in the row to the three that killed
+    # `logic/C28-alltext-ignores-shape` — that mutant made the verdict ignore the
+    # count, this one drops the count below what the wiring refuses on, and they arrive
+    # at the same place from the two ends of `return groups == 0`. `BUGS.md` C28
+    # `#### lineMinimumMembers RUN through mutate.py` is the durable copy of all five.
+    #
+    # ⛔ **NO informative green, said in advance and not retracted after.** Raising the
+    # bar is strictly one-sided — `flush()` resets `run` whether or not it emits, so a
+    # higher bar removes groups and never adds one — but that is only half an argument,
+    # and the half the 2026-08-24 retraction says is insufficient. What carries it is
+    # that every `groups == 0` assertion (boxed, scanner bar, C26's ink figure,
+    # too-wide, too-tall, border-only) reads 0 at 4 AND at 99: identical input,
+    # identical answer, cannot fail. The two layering positive controls cannot fail for
+    # the same reason — their page reads 0 at both values. ⛔ NOT because the mutant
+    # "forces" the all-text verdict, which a draft of this said and is false: terms 1
+    # and 2 still run and still refuse a page over either bar, and a run of >= 99
+    # members would still group. The test is "does the mutant change this check's input
+    # at all", never "could this check move in principle".
     ("Flattener.swift", "lineMinimumMembers", "4", "99"),
     # ✅ …and this one WAS a known survivor and is not one any more, 2026-08-22. It was
     # added with a comment claiming the suite's scanner-rule fixture was "held out by this
@@ -895,6 +938,65 @@ def objecting_checks(out):
     return lines
 
 
+def killed_detail(fails):
+    """The `detail` field of a `killed` row: the count, then EVERY objecting check.
+
+    ⛔ **It keeps them all, and that is the fix.** `run()` wrote
+    `"; ".join(fails[:3])` for the whole of this tool's history, and the loss lands in
+    the field that is the only DURABLE copy: `Tools/mutation-out/` is gitignored and
+    rewritten per run, so once the next mutant runs, a name not in this row exists
+    nowhere a later session can read. That is the **second** truncation defect in this
+    one field — the first was `objecting_checks`' split at the first separator, fixed
+    2026-08-23 — which is why the sibling was worth looking for at all.
+
+    ⛔ **It was already live, and reading the log refutes the first draft of this
+    docstring.** That draft said nothing had ever hit the cap and
+    `const/lineMinimumMembers` (killed by five, three named) was the first — a claim
+    about the log made without reading it. Swept over all 84 rows for `N check(s)`
+    with `N > 3`: **five earlier rows were truncated and 10 names went with them** —
+    `logic/A4.2-update-url-scheme` (5 announced, 3 named),
+    `logic/R82-reserve-taller-scale` (5/3), `logic/R23-copyOutline-bound` (4/3),
+    `logic/C24-unknown-is-not-no` (6/3) and `logic/C24-override-ignored` (5/3). The
+    COUNT is right in all five, so every row states its own incompleteness and no
+    number in the log is wrong; what is gone is which checks. ⚠️ None of the 10 is
+    recoverable from the tree, for the same reason the split defect's six are not.
+    They are recoverable by re-running those five mutants, which after the 2026-08-24
+    ProcessType/`-O` fixes is minutes each rather than the ~45 it was when they ran —
+    not done here, and not a claim that it is free.
+
+    ⚠️ Do not read the two defects' row counts as disjoint: 7 damaged by the split and
+    5 by the cap, in the same field, unswept for overlap.
+
+    ⚠️ A MARKED cap (`…; and 2 more`) was the other option and is rejected: it costs
+    the same edit, makes the row honest about the loss and still leaves the names
+    unrecoverable, which is the thing a later session needs. Completeness costs a
+    reader nothing here, because the console line is truncated separately
+    (`detail[:70]` in `run`) — the console was never the durable copy and the two
+    truncations were never the same decision.
+
+    ⚠️ Unbounded on purpose. A `logic` mutant broad enough to redden fifty checks
+    would write a long row; a long row is legible and a short one that dropped
+    forty-seven names is not. So length is a reader's problem and silence is a
+    correctness one.
+
+    ⛔ **One consumer DOES machine-read this field, and a draft of this docstring said
+    none did.** `logged_seconds` tests it with `ABORTED_DETAIL.match(f[3])` — an
+    anchored `^exit \\d+, no FAIL line` — to drop crashed runs from the estimate. It is
+    safe because every string this function returns starts with `"{n} check(s): "`,
+    which that pattern can never match however long the row gets. ⚠️ Note what that
+    means: the `N check(s): ` prefix is not cosmetic, it is what keeps a `killed` row
+    out of the aborted bucket — and it is pinned by the second of the two self-test
+    checks below, which was written for the count and turns out to guard this too.
+    Nothing else parses the field (swept 2026-08-24 over `Tools/`, `ops/`, `.githooks/`
+    and the documents).
+
+    ⚠️ `killed_detail([])` returns `"0 check(s): "` with a trailing space and is
+    unpinned. Unreachable from `run`, which guards on `if fails:` and takes the
+    crash branch otherwise, so it is latent rather than live.
+    """
+    return f"{len(fails)} check(s): " + "; ".join(fails)
+
+
 def logged_seconds(path=None):
     """Durations of suite runs that ran to completion, oldest first.
 
@@ -908,7 +1010,12 @@ def logged_seconds(path=None):
     source.
 
     **The coverage figure for `--self-test` is 21 of 26 mutations killed**, measured
-    2026-08-17 by applying each one to a copy of this file and running the flag. Every
+    2026-08-17 by applying each one to a copy of this file and running the flag.
+    ⚠️ That denominator predates `killed_detail` and its two checks (36 -> 38,
+    2026-08-24): three mutations of that function are killed by them by inspection
+    (`len(fails)` -> `len(fails[:n])`, dropping the count prefix, `"; "` -> `", "`), but
+    nobody re-ran the campaign, so 26 is stale in the direction that flatters it and is
+    left alone rather than argued upward — which is what this paragraph says to do. Every
     mutation, its verdict and its killing checks are in
     `SELFTEST-MUTANTS-2026-08-17.tsv`, so the count is auditable and re-derivable
     rather than a sentence. It read "12 of 14" for a few hours on 2026-08-17, written from
@@ -1345,6 +1452,36 @@ def self_test():
                            "  FAIL a — d\n  FAIL b — d\n")
           == ["b — d", "a — d", "b — d"])
 
+    # `killed_detail`, the OTHER half of the same field, and the half that had no
+    # coverage at all. (7) is the case that found it: the row for
+    # `const/lineMinimumMembers` announced `5 check(s)` and named three, because
+    # `run()` joined `fails[:3]` — and the sweep that followed found the cap had
+    # already truncated five EARLIER rows and taken 10 names with them, so this was a
+    # live defect and not a latent one. Written so that a cap at ANY value goes red,
+    # not just at three: a "fix" raising it to four passes a test written against five
+    # alone, and (8) is what catches that (watched failing at `[:6]`, which (7) passes).
+    seven = [f"check number {i}" for i in range(1, 6)]
+    check("a killed row lists EVERY objecting check, not the first three",
+          killed_detail(seven)
+          == "5 check(s): check number 1; check number 2; check number 3; "
+             "check number 4; check number 5")
+    # (8) The count and the names cannot disagree, at any width. This is the property
+    # a later session reads the row FOR — `mutation-out/` is gitignored, so a name
+    # missing here is a name gone. Checked over 1..8 rather than at one width so no
+    # cap survives, and by substring per name rather than by re-splitting on `"; "`,
+    # which a check description could itself contain.
+    widths_ok = True
+    for n in range(1, 9):
+        names = [f"objecting check {j} — with a separator" for j in range(n)]
+        d = killed_detail(names)
+        if not d.startswith(f"{n} check(s): "):
+            widths_ok = False
+        for nm in names:
+            if nm not in d:
+                widths_ok = False
+    check("…and its `N check(s)` count is the number of names it actually carries",
+          widths_ok)
+
     print(f"self-test: {len(failures)} failure(s)")
     return 1 if failures else 0
 
@@ -1467,7 +1604,7 @@ def run(argv=None):
                 verdict = "killed"
                 fails = objecting_checks(out)
                 if fails:
-                    detail = f"{len(fails)} check(s): " + "; ".join(fails[:3])
+                    detail = killed_detail(fails)
                 else:
                     # Nonzero exit with no FAIL line is a crash or a hang, which
                     # counts as killed but for a different reason worth seeing.

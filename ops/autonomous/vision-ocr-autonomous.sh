@@ -235,8 +235,15 @@ STATUS_CMD="${VISIONOCR_STATUS_CMD:-$REPO/ops/autonomous/status-digest.sh}"
 # comment gave. It said "the full catalogue is ~70 min", which was arithmetic on a 2-4 min suite. Measured
 # 2026-08-17 by the C24b campaign: ~45 min per mutant (2621-2719 s) over the whole catalogue — whose size
 # is `python3 Tools/mutate.py --list | tail -1` and NOT a number written here, this comment having said 84
-# and then 89 while the tool printed 91 — so the full catalogue is on the order of 65 HOURS and no watchdog
-# setting makes it survivable; the resume prompt forbids it outright instead. Note the per-mutant figure is
+# and then 89 while the tool printed 91, and 103 on 2026-08-24 — so the full catalogue was on the order of
+# 65 HOURS and no watchdog setting made it survivable; the resume prompt forbids it outright instead.
+# ⛔ BOTH figures in that sentence are CLAMPED-ERA as of 2026-08-24: `1dbaafd` removed
+# `ProcessType=Background` plus a missing `-O` (16.2x together), and the next scoped run measured 246 s per
+# mutant and 479 s end to end — so the catalogue is ~7 h rather than 65, and HB_HARD's 3600 s now clears a
+# whole scoped run (479 s) where it used to be outrun by one (6,541-6,567 s end to end). ⚠️ NOT "outrun by
+# one mutant": the largest single mutant in the log is 3,475 s, under 3600 all along — it was the RUN that
+# outran it. The prohibition stands on the per-mutant analysis and doc-sync cost, which the clamp does not
+# touch. Note the per-mutant figure is
 # a reading of the machine and not of the suite: the same catalogue recorded ~630 s per mutant THAT MORNING
 # (09:47, committed 09:59 in 41815b9 — this comment said "the evening before", which put both readings in
 # the same half of the day and garbled the only argument it was making), across four checks of growth, so

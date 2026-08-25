@@ -122,7 +122,7 @@ happens.**
 | docs, the register, this file, a `.tsv` | **free** — the hook prints "no code staged, skipping the suite" and it lands in seconds |
 | `Sources/` `Helper/` `Tests/` `Tools/` `build.sh` `run_tests.sh` | **one full suite**, **~225 s measured 2026-08-24** — read `$STATE/suite-timings.tsv`, and IGNORE rows dated before 2026-08-24: the 474-5554 s spread was `ProcessType=Background` + a missing `-O`, 16.2x, now fixed |
 | a NEW check | **two** suite runs — the watch-it-fail control, then the hook's green run |
-| a scoped `mutate.py` run | **a baseline suite plus one suite per mutant.** The ~45 min/mutant on record (five took 4h27m) is clamped-era; `mutate.py` estimates from `Tools/mutation-log.tsv`, so ask it rather than quoting a figure |
+| a scoped `mutate.py` run | **a baseline suite plus one suite per mutant** — **479 s end to end measured 2026-08-24** for baseline + one. The ~45 min/mutant on record (five took 4h27m) is clamped-era. ⛔ Its own startup estimate said **100-116 minutes** for that 479 s run — **14.5x high**, because it spans the five newest `mutation-log.tsv` rows and they were all clamped-era. It self-heals over the next four scoped runs; until then trust neither the estimate nor a figure quoted in prose, and budget from `$STATE/suite-timings.tsv` rows dated after 2026-08-24 |
 
 **The rules that follow from it.**
 
@@ -651,8 +651,9 @@ happens.**
       it, 2026-08-23 evening, and did exactly one mutant from (a) — which is what this paragraph was written
       to make possible, so it works: read (a) for what one costs before deciding.** This box stays `[ ]`
       because C28 is genuinely `HALF FIXED` and not closed. So a later session does not spend its item
-      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **THREE of the six are RUN
-      as of 2026-08-24 and THREE are left** — `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
+      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **FOUR of the six are RUN
+      as of 2026-08-24 and TWO are left, and BOTH of the two are `depth-cap`'s — nothing in C28's own
+      material is unrun** — `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
       check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`);
       `logic/C28-alltext-ignores-shape` — **the wiring as a mechanism** — is `killed`, 3,407 s, by
       **exactly three**, all of them added by `fbf6d87`, the commit that shipped the wiring
@@ -662,9 +663,22 @@ happens.**
       — which finishes the attribution pair from the suite's side and leaves nothing in C28's owed-fixture
       material probe-only (`BUGS.md` `#### shapeHeightHigh RUN through mutate.py`; that run also fixed a
       comment in `Tests/main.swift` that sat one line under the killing check denying the shape rule could
-      redden it). The three still with no row are
-      `lineMinimumMembers` from `c28-decide-and-wire` (`fbf6d87`) and `C24-drawn-cap-reaches-further` +
-      `C24-dictionary-cap-reaches-further` from `depth-cap` (`95b23c3`).
+      redden it); and `const/lineMinimumMembers` is `killed`, **246 s**, by **exactly FIVE** — the only
+      kill in the log that reaches C28's term *and* its wiring (⚠️ **not** the widest: a first draft said
+      so and `logic/C24-unknown-is-not-no` announces six), the three wiring
+      lines being byte-identical to `alltext-ignores-shape`'s because the two arrive from the two ends of
+      `return groups == 0` (`BUGS.md` `#### lineMinimumMembers RUN through mutate.py`; that run also fixed
+      the SIBLING of the previous run's truncation defect — `run()` capped the objecting-check *list* at
+      `fails[:3]`, already live, **five earlier rows had lost 10 names**). **The two still with no row are
+      `C24-drawn-cap-reaches-further` + `C24-dictionary-cap-reaches-further` from `depth-cap`
+      (`95b23c3`)** — so a session taking (a) next takes one of those, and note `depth-cap`'s own box is
+      where they were catalogued.
+      ⛔ **READ THE COST LINE BELOW BEFORE BUDGETING: the clamp came off on 2026-08-24 (`1dbaafd`,
+      `fa2204a`) and this run measured 479 s END TO END for baseline + one mutant, against a startup line
+      still reading "roughly 100-116 minutes" — 14.5x HIGH.** The estimator spans the five newest log rows
+      and they were all clamped-era; it self-heals over the next four scoped runs. So (a) is now a
+      ~10-minute machine cost, not a three-hour session, and the three-sessions-running claim that "the
+      estimator's high end has held" is retired.
       ⚠️ **A one-sided `logic` mutant has no green yield** — read the second run's section before crediting
       a green check under one to anything; that is where the previous run's retraction came from.
       ⛔ **And the THIRD run had no informative green either, after claiming two in advance — read its
@@ -675,19 +689,25 @@ happens.**
       three credited greens down to one — that is the FIRST scoped run; the second (`alltext-ignores-shape`)
       claimed none. **Kills, counts, costs and attribution stand in all three** — attribution
       rests on the reds. Decide it per mutant, from the fixture geometry and not from the call graph. ⚠️ **That THREE is this entry's
-      share, not the catalogue's**: the newest run's census prints **28** entries with no row at all and
-      `coverage: 75 of 103`, so do not read "three left" as "three in the catalogue". ⛔ **And the other 25
+      share, not the catalogue's**: after the fourth run the census prints **27** entries with no row at all
+      and `coverage: 76 of 103`, so do not read "two left" as "two in the catalogue". ⚠️ This sentence
+      said 28 / 75 / "three left" until 2026-08-24, six lines above the line that updated the census. ⛔ **And the other 25
       are owned by NO box** — the `mutants` item scopes itself to the *survivor* list twice over ("work the
       survivors", "the live survivor list"), which is the 2 `SURVIVED` rows and not a never-run entry, so
       "the mutants item owns the rest" (this sentence's first draft) was wrong. Nobody has claimed them;
-      that is a gap in this file, not in the catalogue. ⚠️ 25 is still right after the third run: this
-      entry's share fell by one and the census fell by one with it. **The cost is now measured rather than
-      quoted**: baseline + one mutant has taken **6,541 / 6,463 / 6,567 s (109 / 108 / 109 min)** over the
-      three scoped runs — wrap it in `test-lock.sh run` as those sessions did and the row lands in
-      `$STATE/suite-timings.tsv` for free — against startup lines reading "roughly 87-115 … Budget the 115"
-      and then "87-116 … Budget the 116", so the
-      estimator's high end has held on all three (it was 4.22x low on the C24b campaign — read the log, not
-      either number: `mutate.py:19-30` forbids quoting a per-mutant figure from prose);
+      that is a gap in this file, not in the catalogue. ⚠️ 25 is still right after the third run **and
+      after the fourth**: this entry's share fell by one each time and the census fell with it, 28 → **27**.
+      **The cost is now measured rather than
+      quoted**: baseline + one mutant took **6,541 / 6,463 / 6,567 s (109 / 108 / 109 min)** over the
+      first three scoped runs and **479 s (8 min)** over the fourth — wrap it in `test-lock.sh run` as those
+      sessions did and the row lands in
+      `$STATE/suite-timings.tsv` for free — against startup lines reading "roughly 87-115 … Budget the 115",
+      then "87-116 … Budget the 116", then "100-116 … Budget the 116". ⛔ **So the estimator's high end held
+      on the first three and is 14.5x HIGH on the fourth**, because the clamp came off between them
+      (`1dbaafd`) while its five-row window was still clamped-era — the mirror of the 4.22x-LOW reading on
+      the C24b campaign, from the same window. **Read the log, never either number**:
+      `mutate.py:19-30` forbids quoting a per-mutant figure from prose, and both failures are that rule
+      being right;
       **(b)** no corpus sweep has been re-run since the shape term was wired, so "12 of 12 type-losers" is
       still the tool's 2026-08-21 figure — a 233-document sweep measured **105.6 min** the last time one
       ran; **(c)** the **three hand-made marks the wired term does not rescue**, one of which
@@ -1434,8 +1454,10 @@ happens.**
       (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`), and `logic/C28-alltext-ignores-shape`, the
       wiring itself, by **exactly three — all three added by this very commit**, so the by-hand control
       above (153 px against a ceiling of 154) is now a red check's own message
-      (`BUGS.md` `#### C28-alltext-ignores-shape RUN through mutate.py`). Only
-      `const/lineMinimumMembers` is still unrun.
+      (`BUGS.md` `#### C28-alltext-ignores-shape RUN through mutate.py`). ✅ **And
+      `const/lineMinimumMembers` RAN on 2026-08-24 — `killed`, 246 s, by five checks — so none of this
+      sub-step's three mutants is unrun** (`BUGS.md` `#### lineMinimumMembers RUN through mutate.py`).
+      This line read "Only `const/lineMinimumMembers` is still unrun" until then.
       (2) `SHAPETERM-73` has **not** been re-run under the port check, so "12 of 12 type-losers" remains
       the tool's 2026-08-21 figure with a live guard over it rather than a figure re-derived from shipped
       code. Re-running it is cheap and is the way to convert the guard into a measurement.
@@ -2121,19 +2143,30 @@ happens.**
       (context: BUGS.md C25 and T16 — both CLOSED; they are why this gate matters, not the work itself)
 - [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
-      scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~65 hours
-      at the C24b campaign's measured ~45 min per mutant over the whole catalogue, whose size is
+      scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~7 hours
+      at the **246 s per mutant measured 2026-08-24**, over a catalogue whose size is
       `python3 Tools/mutate.py --list | tail -1` and not a number written here — this line said 89 while
-      the tool printed 91, and C24's wiring made it 94. Not the ~55 hours it claimed off a 39m30s sample
-      nor the ~70 minutes before that; read the estimate the tool prints at startup instead, and note it
-      was 4.22x low the one time anyone checked it out of sample —
-      and never
+      the tool printed 91, C24's wiring made it 94, and it printed **103** on 2026-08-24.
+      ⛔ **THE ~65 HOURS AND ~45 MIN/MUTANT THIS LINE CARRIED UNTIL 2026-08-24 WERE CLAMPED-ERA**
+      (`1dbaafd` removed `ProcessType=Background` + a missing `-O`, 16.2x). ⛔ **And do NOT substitute the
+      tool's startup estimate, which this line used to tell you to read: it is currently 14.5x HIGH** —
+      it spans the five newest `mutation-log.tsv` rows and they were clamped-era, so it printed
+      "roughly 100-116 minutes" over a run that took 479 s. Its high end is `max(window)`, so it does not
+      budge until the last clamped row leaves: it already prints **8-116**, and over the next FOUR scoped
+      runs the high end reads **116 / 114 / 114 / 8** — the drop lands ON the fourth. Budget from
+      `$STATE/suite-timings.tsv` rows dated after 2026-08-24 instead. ⚠️ It has now been wrong **both
+      ways** off that same window — 4.22x low on the C24b campaign, 14.5x high here — which is the
+      standing reason not to read a rate off history.
+      And never
       while `Sources/` is being edited. The work item is the live survivor list in
       `Tools/mutation-log.tsv`.
-      ⛔ **BOUND: ONE mutant per session, and commit its row before starting another.** A baseline suite
-      plus ~45 min per mutant means two can exceed the 4 h `MAXRUN` on a busy machine, and a scoped run
-      that matches more mutants than you counted is the shape that strands a worktree — five took
-      **4h27m** end to end against the 20-55 minutes the tool predicted. Check the match count with
+      ⛔ **BOUND: ONE mutant per session, and commit its row before starting another.** ⚠️ The 4 h
+      `MAXRUN` argument for that bound is clamped-era arithmetic — a baseline plus one mutant measured
+      **479 s** on 2026-08-24, so two no longer threaten `MAXRUN` — but the bound stands on the other two
+      reasons, which the clamp does not touch: a scoped run that matches more mutants than you counted is
+      the shape that strands a worktree (five once took **4h27m** end to end against the 20-55 minutes the
+      tool predicted), and each mutant needs its own analysis, doc-sync and adversarial review, which is
+      the expensive half now that the machine is cheap. Check the match count with
       `--list` BEFORE running; if your substring matches more than one, narrow it or take the first.
       (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a
       value nothing depends on)

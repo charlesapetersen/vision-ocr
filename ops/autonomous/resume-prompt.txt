@@ -165,10 +165,16 @@ STEP 3 — DO IT. The non-negotiables, from CLAUDE.md and CONTRIBUTING.md:
     2-4 minutes under load, so on this machine there are exactly TWO shapes that work: "free and instant", or
     "detached, then polled". STEP 4 spells the shape out for `git commit`; it applies verbatim to all of
     these, and **three separate sessions each lost time rediscovering that one gate at a time**:
-        ./run_tests.sh                     ~43 min   (2,552 / 2,575 / 2,615 s measured 2026-08-17)
+        ./run_tests.sh                     ~225 s    (measured 2026-08-24, POST-clamp. The ~43 min on record
+                                                     — 2,552 / 2,575 / 2,615 s — is 11.3x-11.6x this, and the
+                                                     16.2x quoted elsewhere is the `3,643 -> 225` pair on ONE
+                                                     commit: `ProcessType=Background` plus a missing `-O`,
+                                                     fixed in `1dbaafd`. Do not cross the two sets)
         Tools/check-tools-compile.sh       >120 s    (killed at the ceiling with NO output; QUEUE.md's ~26s
                                                      is a quiet-machine figure)
-        python3 Tools/mutate.py --only …   ~45 min per mutant, plus a full baseline suite
+        python3 Tools/mutate.py --only …   ~250 s per mutant, plus a full baseline suite (479 s end to end
+                                                     for baseline + one, measured 2026-08-24; the ~45 min on
+                                                     record is clamped-era)
         Tools/fault-inject.sh              treat as expensive
         swiftc / a Sources rebuild + probe ~80 s cold, but **>8 min under contention** — measured, after it
                                                      killed two runs of the same measurement arm mid-`swiftc`
@@ -182,22 +188,27 @@ STEP 3 — DO IT. The non-negotiables, from CLAUDE.md and CONTRIBUTING.md:
     this register's entries are one instance of a pattern that had several.
   * **A mutant** in `Tools/mutate.py` if you changed a constant or a guard, run scoped
     (`python3 Tools/mutate.py --only <substring>`), with the row appended to `Tools/mutation-log.tsv`.
-    ⛔ **NEVER the full catalogue.** This line said "~70 minutes", which was arithmetic on a 2-4 minute
-    suite. **Measured 2026-08-17 by the C24b campaign**: 2621-2719 s per mutant, so ~45 min each, over
-    the whole catalogue — **run `python3 Tools/mutate.py --list | tail -1` for the count instead of
-    trusting a number written here.** This line has said 84, then 89, and was stale each time: it
-    printed **91** on `d83ddc5` while six files still said 89, C24's wiring took it to 94, and it
-    printed **97** on 2026-08-20 (all measured, by running it — and the 94 stood in this sentence for
-    three days, which is the sentence's own point). At ~45 min each the full catalogue is on the order
-    of **65 HOURS**.
-    Not a thing to start in a session.
-    A SCOPED run costs a **baseline suite plus ~45 min per mutant**, and the baseline is a full run that
-    is easy to forget: five mutants took **4h27m end to end**, against the "20-55 minutes" the tool
-    printed before starting. Budget it like several commits, not like a check — and read the estimate the
-    tool prints at startup, not any number written here. ⚠️ That estimate is the best number available and
-    it is still not a forecast: driven over the log as it stood before that campaign it says 47-63 min
-    against the 267 the campaign took, 4.22x low, because the term that moves the cost (contention for the
-    one core the suite pins) is not in the log. Budget its HIGH end and then some.
+    ⛔ **NEVER the full catalogue** — **run `python3 Tools/mutate.py --list | tail -1` for the count
+    instead of trusting a number written here.** This line has said 84, then 89, and was stale each
+    time: it printed **91** on `d83ddc5` while six files still said 89, C24's wiring took it to 94, it
+    printed **97** on 2026-08-20 and **103** on 2026-08-24 (all measured, by running it — and the 94
+    stood in this sentence for three days, which is the sentence's own point).
+    ⛔ **THE PER-MUTANT COST FELL 11x ON 2026-08-24 AND EVERY FIGURE THIS PARAGRAPH USED TO CARRY WAS
+    CLAMPED-ERA.** `1dbaafd` removed `ProcessType=Background` + the missing `-O` (16.2x together), so
+    the C24b campaign's 2,621-2,719 s per mutant, the "~45 min each", the "65 HOURS" for the catalogue
+    and the "five mutants took 4h27m" all describe a machine that no longer exists. **Measured
+    post-clamp, 2026-08-24: 246 s for one mutant and 479 s end to end for baseline + one.** So a SCOPED
+    run is now **a baseline suite plus ~250 s a mutant** — minutes, not a session — and the baseline is
+    still a full run that is easy to forget.
+    ⛔ **AND DO NOT SUBSTITUTE THE TOOL'S STARTUP ESTIMATE FOR THAT: IT IS CURRENTLY 14.5x HIGH.** It
+    reads the five newest `Tools/mutation-log.tsv` rows, all five of which were clamped-era, so it
+    printed "roughly 100-116 minutes" over the 479 s run above. It self-heals as post-clamp rows push
+    the clamped ones out of its five-row window — four more scoped runs — and nothing in the log
+    distinguishes the two eras, so it cannot know. ⚠️ **It has now been wrong both ways off that same
+    window**: 4.22x LOW on the C24b campaign (47-63 min announced against 267), 14.5x HIGH here. A rate
+    read off history is wrong in whichever direction history has just moved. Budget from
+    `$STATE/suite-timings.tsv` rows dated after 2026-08-24, and treat both the estimate and any figure
+    in prose — including this one — as needing a date beside it.
     A **`Tools/fault-inject.sh` case** if you added an error branch.
     ⚠️ Do not edit `Sources/` while `mutate.py` is running. ⚠️ And `mutate.py` does NOT take the suite
     lock: check `ops/autonomous/test-lock.sh status` first. It will not yield to a health gate or a hook

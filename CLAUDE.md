@@ -124,9 +124,29 @@ the 16** measured losses and leaves three hand-made marks, one of which (`_1939_
 pencil upstream of the map. It buys **no searchability** — the words are still not in the text layer,
 which is `C30`'s ground. ⛔ **And two things it does NOT claim.** (1) The mutant campaign was **not
 run**: three mutants were added (catalogue 97 → **100**, all three verified APPLIED, not NOT-APPLIED)
-and a scoped run is a baseline suite plus 44-58 min a mutant. ✅ **TWO of those three have been run
-since — `const/shapeRunHigh` and `logic/C28-alltext-ignores-shape`, both `killed`, 2026-08-23; only
-`const/lineMinimumMembers` is left.** (2) **No corpus sweep was re-run**, so
+and a scoped run was a baseline suite plus 44-58 min a mutant. ✅ **ALL THREE HAVE NOW BEEN RUN AND ALL
+THREE ARE `killed`** — `const/shapeRunHigh` and `logic/C28-alltext-ignores-shape` on 2026-08-23, and
+`const/lineMinimumMembers` on 2026-08-24 by **five** checks — the only kill in the log that reaches C28's
+term *and* its wiring (⚠️ **not** the widest, which a first draft claimed and this diff's own sweep
+refuted: `logic/C24-unknown-is-not-no` announces six): the term's two counts go 1 → 0 and the wiring's three
+`FAIL` lines are byte-identical to `alltext-ignores-shape`'s, the two arriving from the two ends of
+`return groups == 0` (`#### lineMinimumMembers RUN through mutate.py`). ⚠️ **No mutant asks the LOWERING
+direction and it is unmeasured** — lowering is the two-sided trade this entry keeps naming, `lineGapFactor`
+has no catalogue entry at all, and a draft of this claimed the run "pins the constant only upward", which
+overstates what a raising mutant establishes. ⛔ **And that run retires the estimator claim three sessions
+published: 479 s against a startup line reading "roughly 100-116 minutes", 14.5x HIGH**, because
+`estimate_minutes` spans the five newest log rows and all five were clamped-era **when it printed that
+line** — the mirror of C24b's 4.22x-low reading. ⚠️ It does **not** self-heal gradually: the high end is
+`max(window)`, so it stays put until the last clamped row leaves: with this run's own row in the window it
+already prints **8-116**, and over the next FOUR scoped runs the high end reads **116 / 114 / 114 / 8** — the
+drop lands ON the fourth, not after it (measured twice, by driving `estimate_minutes` over the log with
+post-clamp rows appended; a draft wrote the sequence as 116/116/114/114 in a sentence that framed it as the
+next four, which implies five). Deliberately not patched. ⛔ **Using the tool also found the SIBLING of the truncation
+defect the run before it fixed**: `run()` capped the objecting-check *list* at `fails[:3]`, so a row killed
+by five named three, and it was already live — **five earlier rows had lost 10 names** (the count was right
+in all five, so no number in the log is wrong; which checks is what is gone, and none of the 10 is
+recoverable from the tree). `killed_detail` keeps them all; two self-test checks, 36 → **38**, both watched
+failing at `[:3]` and the second also at a merely raised `[:6]`. (2) **No corpus sweep was re-run**, so
 "12 of 12 type-losers" is still the tool's 2026-08-21 figure — what is new is a **port check**:
 `Tools/score-shape-term.swift` now calls the shipped `Flattener.textLineGroupsOutsideText` on its own
 surfaces on every measured page, prints `port agreed on N` and **exits 7** on disagreement, because every
@@ -176,7 +196,9 @@ could not fail, written into the section about the tenth. ✅ **`shapeHeightHigh
 material is probe-only** (`#### shapeHeightHigh RUN through mutate.py`): `3.0` → `99.0` is `killed`,
 **3,415 s**, `1246/1247 passed`, by **exactly one** `FAIL` — the too-tall fixture's — while the too-wide
 check stays green, which is the mirror image of `shapeRunHigh`'s run. Six catalogued-and-never-run mutants
-→ **five**, → **four** with the wiring mutant below, → **three** with this one.
+→ **five**, → **four** with the wiring mutant below, → **three** with this one, → **two** with
+`const/lineMinimumMembers` on 2026-08-24 — and the two left are both `depth-cap`'s, so nothing in C28's own
+material is unrun.
 ⛔ **It has NO informative green either, and the review of its own diff RETRACTED both the run had claimed
 in advance — this is the lesson of the third scoped run and it corrects the FIRST as well** (the second,
 `alltext-ignores-shape`, claimed no green yield at all). The test a green
@@ -200,8 +222,14 @@ as the sole killer — true of the ink check below it, false of the one above �
 check. The runs' own output is NOT in the tree
 (`Tools/mutation-out/` is gitignored and overwritten per run, so the quoted `FAIL` line is the durable
 copy), and the estimator's high end held this time (**6,541 s** lock-measured against "budget the 115") —
-and on the two scoped runs since, **6,463 s** and **6,567 s**, so it has now held **three times running**.
-Three data points beside C24b's 4.22x-low reading and not a correction to it.
+and on the two scoped runs after it, **6,463 s** and **6,567 s**, so it held **three times running**.
+⛔ **THE FOURTH BROKE IT IN THE OTHER DIRECTION AND "three times running" IS NO LONGER THE CLAIM TO QUOTE**:
+`const/lineMinimumMembers`, 2026-08-24, took **479 s** against a startup line reading "roughly 100-116
+minutes" — **14.5x HIGH** — because `1dbaafd` removed the 16.2x clamp while the estimator's window was still
+five clamped-era rows. So the estimator has now been **4.22x low** (C24b) and **14.5x high** (this) off the
+same five-row window: a rate read off history is wrong in whichever direction history has just moved, and
+the tool's own rule — read the startup line, never a figure in prose — is what both failures argue for.
+It self-heals over the next four scoped runs and was deliberately not patched.
 ✅ **AND THE WIRING ITSELF IS A RED CHECK AS OF 2026-08-23 — `logic/C28-alltext-ignores-shape` RUN and
 `killed`, 3,407 s, `1244/1247 passed`, by EXACTLY THREE `FAIL` lines** (`#### C28-alltext-ignores-shape RUN
 through mutate.py`). All three checks were added by `fbf6d87`, the commit
@@ -226,7 +254,15 @@ leaving a bare tag). ⛔ **`FAIL a — b` is AMBIGUOUS, so the fix is to keep th
 at all**; the draft's `rsplit` was refuted from two real call sites. Six self-test checks (30 → **36**), the
 first three measured mutually redundant and recorded as such, **both rejected parses watched failing**; this
 run's row repaired byte-identically to what the fixed tool writes, the other six not repairable. Sibling
-sweep: nothing else splits on that separator.
+sweep: nothing else splits on that separator. ⛔ **But that sweep asked about the SPLIT and not about the
+FIELD, and the field had a second truncation — found 2026-08-24 by the next run**: `run()` also capped the
+objecting-check *list* at `fails[:3]`, so a row killed by five named three. Already live, swept over all
+**84** rows: **five earlier rows lost 10 names** (`A4.2-update-url-scheme`, `R82-reserve-taller-scale`,
+`R23-copyOutline-bound`, `C24-unknown-is-not-no`, `C24-override-ignored`). ✅ The COUNT is right in every
+one, so each row states its own incompleteness and no number in the log is wrong; which checks is what is
+gone, and none of the 10 is recoverable from the tree. `killed_detail` keeps them all; **two** self-test
+checks (36 → **38**), both watched failing at `[:3]` and the second also at a merely raised `[:6]`, which
+is what makes it non-redundant.
 ⚠️ The calibration check is a **mirror** of the term's own calibration step: it pins the fixture
 and is blind to a change in the calibration itself, which is `interiorWindow`'s recorded hazard with its
 remedy unavailable (the term does not expose what it calibrated on).

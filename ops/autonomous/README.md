@@ -482,8 +482,12 @@ author had already run nine mutants of his own — one of the survivors turned `
 change to `test-lock.sh`; it starts with a pristine control, because a campaign whose control is red is
 measuring the harness rather than the mutants, and every run is `prove-test-lock.sh` against a copy — no suite,
 no build, minutes rather than the per-mutant cost of `Tools/mutate.py` (~45 min measured under the
-pre-2026-08-24 clamp; expect roughly a tenth of that now, unmeasured — `mutate.py` derives its own estimate
-from `Tools/mutation-log.tsv`, so ask the tool rather than this sentence). A `SURVIVED` row is either a
+pre-2026-08-24 clamp; ✅ **"roughly a tenth of that now" was written here as a prediction and is MEASURED as
+of 2026-08-24 — `const/lineMinimumMembers` took 246 s, and 479 s end to end with its baseline, so 1/11**.
+⛔ And do NOT "ask the tool" for this one yet, which is what the rest of this sentence used to say:
+`mutate.py` estimates off the five newest `mutation-log.tsv` rows, all five were clamped-era, and it
+printed "roughly 100-116 minutes" over that 479 s run — **14.5x high**, self-healing over four more scoped
+runs). A `SURVIVED` row is either a
 check that cannot fail or a value nothing depends on (`BUGS.md` T5); a `NOT-APPLIED` row means the edit did not
 match, so it tested nothing and must be re-expressed rather than counted — two entries needed that, and one of
 the two then exposed a check that asserted nothing.
@@ -624,8 +628,10 @@ three separate times:
 
 - `Tools/check-tools-compile.sh` over every tool — killed at 120 s with no output (~05:00), against a QUEUE
   estimate of ~26 s that was a quiet-machine figure;
-- `python3 Tools/mutate.py --only …` — ~45 min per mutant under the pre-2026-08-24 clamp, far less now
-  (it estimates from its own log; do not quote a figure from here), and it does not take the suite lock itself;
+- `python3 Tools/mutate.py --only …` — ~45 min per mutant under the pre-2026-08-24 clamp; **246 s measured
+  2026-08-24**, 479 s end to end with its baseline. ⛔ Do NOT fall back on its own estimate for now: that
+  spans five clamped-era log rows and printed "roughly 100-116 minutes" over the 479 s run. It does not take
+  the suite lock itself;
 - a plain `Sources/` + probe rebuild — ~80 s cold, **>8 min under contention**, which killed two runs of the
   same measurement arm mid-`swiftc` at the 10-minute ceiling.
 
