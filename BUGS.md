@@ -127,6 +127,22 @@ reads `jbig2` on all six pages, so the bitmap arm demonstrably ran rather than
 `make-observations` recognises a plain render, so every instrument C30 has used measures a different
 image than the app does.** C30 stays **OPEN**: the fork is not the fix, and **23** lines of clean 1951
 type on page 5 have no text layer over them at all — **13** of them missed by *both* paths.
+✅ **AND IT HAS AN INSTRUMENT IN THE TREE AS OF 2026-08-25 — `Tools/score-text-voids.swift`, the tool
+`#### What a fix has to satisfy` has asked for since 2026-08-22 and the first C30 measurement taken on the
+pixels production actually recognises** (`#### The instrument, in Tools/ as of 2026-08-25`,
+`C30-VOIDS-2026-08-25.tsv`). It divides rows of ink by rows of ink no word box covers, so its numerator is
+unreachable from the observation list and a page can fail it while `words=` reads 100% — group 5 of its
+10-group `--self-test` is that property as a check, not a claim. ⛔ **Quote its page-derived column and not
+its shares**: `inkRows` reproduces `C30-FORK-2026-08-22.tsv`'s at **0.9913x-1.0007x on 6 of 6 pages** across
+a different rasteriser and 4x the resolution, and page 1's longest inked-and-unboxed run is **683** rows at
+400 dpi = **170.75** at 100 dpi against the fork's **171** — this entry's founding headline, reproduced
+through a different image. The recognition-derived shares diverge **0.7767x-1.7077x** and that divergence is
+C30's own finding rather than a defect. ⚠️ It is an instrument: nothing in `Sources/` moved, no page gained
+a text layer, and the tiling candidate is still neither built nor priced. ⛔ **One thing does not port and
+it was measured: `Flattener.otsuThreshold` clamps to `[90, 230]` and `artefact.py`'s does not**, so the
+shipped function reads 90 where the reference reads 0 on a two-valued buffer — same argmax, the clamp is the
+whole difference, and it selects the same pixels only *because* the buffer is bimodal, i.e. on a `.bilevel`
+page and not a `jpeg` one.
 **`C26` is `FIXED` as of 2026-08-20** — its constant moved 2026-08-19
 (`textPageInkOutsideThreshold` 0.08 -> 0.045, the owner's decision on a complete campaign, so the 16
 corpus pages the sweep named keep their tone layers at the caller's factor) and the next day the
@@ -10657,6 +10673,191 @@ directory — numerically equivalent today, checked by this diff's review, and u
 collapses them and the rows *look* short. All 11 rows are 15 fields; the same trap the fork file's
 `scope-void-crop` row carries.
 
+#### The instrument, in Tools/ as of 2026-08-25 — and it agrees with the throwaway pass on the page's own ink to within 0.9% on 6 of 6 pages
+
+✅ **`Tools/score-text-voids.swift` (new) is the tool `#### What a fix has to satisfy` has asked for since
+2026-08-22, and the `$STATE/c30-instrument/README` calls "the next bounded step, not a rediscovery".** It
+divides *rows of ink* by *rows of ink that no word box covers*, so its numerator cannot be reached from the
+observation list and a page can fail it while `words=`, `start=`/`end=`, `probe-line-coverage` and
+`probe-line-edges` all pass it. `--self-test` is **10 groups**, exit 5, and group 5 is that property as a
+check rather than as a claim: a fixture whose every box sits exactly on ink — perfect by any
+observation-based measure — reads **40 of its 64 inked rows with no box over them**.
+
+⛔ **It recognises the REBUILT BITMAP, which is the first bullet below and the thing every earlier C30
+instrument got wrong.** Pixels and boxes both come from one `Recogniser.loadImage(page)` of what
+`Flattener.flatten` wrote, and there is **no render fallback**: a page whose bitmap will not decode prints a
+`SKIP` with a reason rather than a number measured on some other image. Both `RebuiltPage.Content` cases are
+handled — ⚠️ and that matters here, because `score-shape-term` and `score-text-route`, the only two tools
+that flatten-then-recognise at all, both skip `.bilevel` with `verdict: "already 1-bit"`, and **all six pages
+of C30's document are `.bilevel`**. Neither could have been pointed at this document.
+
+✅ **AND THAT CLAIM IS MEASURED RATHER THAN ARCHITECTURAL, which is the strongest control in this section.**
+If the tool really recognises what production recognised, its word count should match the **published
+layer's** and not the plain-render path's — and it does: `words` equals `C30-FORK-2026-08-22.tsv`'s
+`published-text-layer` box count **exactly on 4 of 6 pages** (296 / 445 / 279 / 421 on pages 1, 2, 5, 6) and
+is within 14 and 7 on the other two (332 against 346, 307 against 314), while against that file's
+`recogniser-observations` — the `make-observations` plain render — it is exact on **0 of 6** and off by 8 to
+**47**. Four exact integer matches on counts between 279 and 445, against a comparand that is never exact,
+is not a coincidence. ⚠️ **No mechanism is claimed for the two that differ**: `SearchableWriter` both
+removes (`deduplicated`) and rewrites (`joiningHyphenatedWords`) between observation and published box, and
+this entry has already refuted "a writer can only remove", so the direction of those two gaps is not
+evidence of anything and was not chased. ⚠️ The two counts are also not the same *kind* of count — the
+published figure is `pdftotext -bbox`'s `<word>` elements and this tool's is a whitespace split of the
+observation text — which is why the four are read as exact agreement and the two as near agreement, not as a
+ratio.
+
+**What it reads on C30's own document** (`C30-VOIDS-2026-08-25.tsv`, 6 rows, 20 columns; the source's sha256
+is the one `$STATE/c30-instrument/README` records, `6e6ddbe…504`, verified before the run):
+`bareShare` **0.4195 / 0.2084 / 0.2883 / 0.3294 / 0.4187 / 0.1528** and `voidShare`
+**0.4453 / 0.2447 / 0.3433 / 0.3690 / 0.4218 / 0.2069** on pages 1-6, `bare` on **6 of 6**.
+
+⛔ **THE VALIDATION IS THE PAGE-DERIVED COLUMN, NOT THE SHARES.** `inkRows` — how much of the sheet holds
+ink, which no recognition enters — reproduces `C30-FORK-2026-08-22.tsv`'s at **0.9913x-1.0007x on 6 of 6
+pages** after dividing by 4 for the resolution (767.50 against 767, 757.00/761, 796.00/801, 756.00/761,
+739.75/745, 800.00/807). That is a different rasteriser (the fork's `pdftoppm -r 100 -gray` PGM against a
+decode of the rebuilt 1-bit bitmap), a different resolution and an independent implementation landing within
+0.9% on every page, which is the strongest thing said here about the port. ✅ **And the entry's own headline
+reproduces**: page 1's `longBare` is **683** rows at 400 dpi = **170.75** at 100 dpi against the fork's
+`longestInkRun` of **171** — the "largest void 171 rows of crisp 1951 type" this entry was opened on,
+arrived at through a different image and a different recognition. Pages 2 and 3 agree within a row too
+(109.25/110, 77.00/76).
+
+⚠️ **The recognition-derived columns are NOT expected to agree and their divergence is C30's own finding,
+not a defect.** `voidShare` against the fork's `bareShare` reads **1.0016x / 0.9959x / 1.0416x / 0.8640x /
+1.7077x / 0.7767x**: pages 1-2 inside 0.5%, then it spreads both ways. Two recognitions of two different
+images is exactly what `#### Page 5, settled 2026-08-23` established, so a reader who finds these columns
+differing has found nothing. ⚠️ **And p5 is the largest divergence, which is the page the register already
+flags**: the tool reads **0.4218** against a published raw **0.2470** and a junk-box-removed **0.3866**, so
+it lands nearer the corrected figure (1.091x) than the raw one (1.708x) — consistent with production's
+recognition having no equivalent of the 115-px `ASSAME` box, **but not evidence of it**: the tool prints no
+observation text and nothing here inspected production's strings.
+
+⛔ **Two column identifications, taken off the artefact rather than inferred.** `C30-FORK-2026-08-22.tsv`'s
+header settles which definition the register has been quoting: its `bareShare` is `inkRowsInVoid / inkRows`,
+i.e. `artefact.py`'s **`measure`** — this tool's `voidShare`, not its `bareShare` — while
+`bareShareInkRuns` / `longestInkRun` are `measure_inkruns`, which is this tool's `bareShare` / `longBare`.
+So the entry's published "bare 0.4446 / 0.2457 / …" is the *uncovered-run* measure and the "171 rows" is the
+*inked-run* one, and **the two names do not line up between the two files.** Both are printed here for that
+reason. ⚠️ Do not read p4's `longBare` of **171** as agreement with the headline: that is 171 rows at 400
+dpi on page 4, and the headline is 171 at 100 dpi on page 1 — a coincidence in the digits and nothing more.
+
+⛔ **The one thing that does NOT port, measured rather than assumed: `Flattener.otsuThreshold` clamps to
+`[90, 230]` (`Flattener.swift:1070`) and `artefact.py`'s `otsu` does not.** On a two-valued buffer the
+shipped function reads **90** where the reference reads **0**; the argmax is identical, because every `t` in
+[0, 254] ties on a bimodal histogram and both implementations take the first maximum, so the clamp is the
+whole difference. It does not move the ink — both thresholds select exactly the pixels at 0 — and group 2
+pins the value *and* that consequence. ⚠️ **The equivalence is a property of a two-valued image, so it
+covers a `.bilevel` page and not a `jpeg` one**, where the clamp can bind for real and this tool's `inkRows`
+is then production's answer rather than the reference's. That is the right way round for an instrument
+measuring what production recognised, and it is why a `jpeg` row here is not comparable to a reference
+figure even after the resolution is accounted for. ⚠️ Nothing here says the clamp is wrong:
+`stratify-corpus.py` measured ImageMagick's unclamped OTSU equal to the shipped one on 13 of 13 corpus pages
+over a 69-level range, so on real scans the floor does not bind.
+
+**The constants are held as physical lengths, not row counts.** The reference's `VOID_MIN_ROWS` 20 and
+`BOX_PAD_PX` 2 are 100-dpi row counts; this tool measures a 400-dpi bitmap, where 20 rows is a twentieth of
+an inch and every interline gap clears it. So they are 0.20 in and 0.02 in — which *are* 20 and 2 at 100
+dpi — scaled by each page's own resolution and printed per row as `minRows` / `padRows` (80 and 8 on this
+document). `INK_ROW_FRACTION` is a fraction of the row's width and needs no scaling. `VOIDMININCH` varies
+the first, refused at exit 2 on anything that is not a positive number.
+
+**Watched failing seven ways** (CONTRIBUTING §2/§4a), each a one-token change, each with its own kill set —
+and one of them refuted its own prediction, which is why there are seven and not five:
+
+| sabotage | what it plants back | reddens |
+|---|---|---|
+| A | the per-run ink counter reads only ink a box covers | groups 5, 6 — **`longestInk` only** |
+| B | `rowConstants` returns raw row counts, not lengths | group 8, on the 400-dpi arm alone |
+| C | `.rounded()` for Python's `.toNearestOrEven` | group 9's half-row pair |
+| D | `inkRunMeasure` runs over covered rows, not uncovered | groups 6, 7 — **and NOT group 4** |
+| E | the void-ink accumulator inverted | groups 5, 6, 7 |
+| F | `int()` truncation of the ink-row need becomes a rounding | group 3's w=300 arm alone |
+| G | the void-run counter never increments | groups 5, 6, 7 — the `runs` field |
+
+⛔ **F and G exist because the adversarial review of this diff found two of the checks worthless as first
+written**, and both are shapes this register already names. Group 3's truncation check *re-computed the
+expression under test*, `max(1, Int(inkRowFraction * Double(w)))`, character for character — the
+`c28Calibration` mirror — and the property was **unpinnable on the fixture anyway**, because `0.005 * 200`
+is exactly `1.0`, so truncation, rounding and ceiling all agree at w=200 and every inked row there has 40
+dark pixels. It now exercises `inkedRows` at **w=300**, where the product is 1.5 and one dark pixel
+separates the reference's `int()` from a rounding; **F reddens it and nothing else.** And `voidN` was a
+printed column that **no check asserted** — the one quantity in the file the reference cannot pin, since it
+returns no count — so groups 5-7 now pin it at 1, 1 and **2**, the 2 being the informative one because
+boxing the band splits one void into two margins; **G reddens all three.**
+
+⛔ **Sabotage A did not do what it was written to do, and that is the entry worth carrying.** It was
+predicted to zero `voidInk`, the tool's headline column, and it did not: `voidInk` is accumulated in a
+*second* loop the sabotage never touched, so A only ever moved `longestInk`. The column the whole tool
+exists to print would have gone unwatched on a run that looked like it had covered it — so **E was written
+and run afterwards** purely to put a red under `voidInk` / `voidShare`, and it reddens groups 5, 6 and 7.
+⛔ **And sabotage D is the C28 lesson in a new place**: group 4's expectation `(0, 0.0, 8)` is *identical*
+under D, because fixture 1's three recognised lines are also 8 rows long, so the check nearest the defect
+cannot see it and **group 6 is the only thing that catches it**. Neither of those is visible from the call
+graph; both came from building the sabotage and running it.
+
+⚠️ **What is asserted but NOT watched failing**: `greyBytes`' Core Graphics row order. Group 1 pins it, and
+it was written *because* reasoning about CG's two y conventions is how a measure ends up upside down, but no
+sabotage was run against it.
+
+⛔ **THE SELF-TEST RUNS ON EVERY INVOCATION, and a first draft of this got that decision backwards off a
+census that was wrong three ways.** The draft left it flag-gated and said "the pre-commit hook runs
+`--self-test` for staged `Tools/*.py` only, so all eight Swift tools carrying one — this is the ninth — are
+type-checked and never run", recording the gap instead of closing it. Measured by opening the eight files:
+**seven** other Swift tools carry a self-test, **six of them run it unconditionally**
+(`score-line-separation`, `score-mrc`, `score-routing-census`, `score-run-width`, `score-text-route`,
+`score-threshold-loss` — and `score-text-route:476-478` states the reason, *"cheap enough to be
+unconditional"*), `score-shape-term` is the **only** flag-gated one, and **`score-skew` has none at all**
+(its `Deskew.selfTest` is a production per-page check, not a tool self-test). So the draft presented the
+minority pattern as the norm while arguing for it from the absence of a gate. ✅ **This tool now follows the
+majority**: `selfTest()` runs before anything is measured and exits 5 on failure, and `--self-test` just
+does that and stops. The gate's absence is real and unchanged — a flag-gated Swift self-test is type-checked
+by `check-tools-compile.sh` and never run — but it now applies to exactly **one** tool, `score-shape-term`,
+which is worth its own item and is not touched here.
+
+⛔ **THE BLIND SPOT THAT CHANGES WHAT EVERY NUMBER ABOVE MEANS, and it is the adversarial review of this
+diff's sharpest find: COVERAGE IS ROW-WISE, so a box anywhere on a row covers the whole row.** `x` is
+discarded and never enters the measure. A page whose left column was recognised and whose right column was
+dropped reads `bareRows` **0**, `voidInk` **0** and verdict `clean` — indistinguishable from a perfect page
+— and so do a lost marginal note beside recognised body text, a dropped table column, and the unrecognised
+half of a two-up scan. C30 is *"whole blocks of clean body text get no text layer"*, and a side-by-side
+block is exactly the case this cannot see. **So every figure in this section is a LOWER BOUND on the loss
+and not a measurement of it**, including the six `bareShare`/`voidShare` values and the 683-row run. It is
+faithful to the reference, which is row-wise too, so this is a limit of the measure and not a defect in the
+port — and it is why the fork's headline reproducing is evidence about the port rather than about the page.
+
+⛔ **AND THE SIBLING, because "no existing instrument can see this" would have been FALSE** (CONTRIBUTING
+4b; the draft claimed it and the review refuted it). `Flattener.inkOutsideText`
+(`Sources/Flattener.swift:1707`) already answers a version of this question and two committed tools already
+print it: `score-shape-term`'s `inkPx`/`outPx`/`inkOut`/`lineN` and `score-text-route`'s `inkOut`. It is
+**strictly stronger on the x axis** — a pixel measure, so it sees the dropped column this one cannot — and
+**weaker on run structure**, returning one fraction and unable to say "171 contiguous rows"; and it walks
+`Flattener.interiorWindow`, ignoring the outer sixteenth, where this walks the whole sheet. On group 5's own
+fixture `inkOut` would be non-zero, so `score-shape-term` does **not** read that page as perfect. The
+defensible claim is the narrow one: this is the only instrument here that reports unboxed ink **as runs**,
+and the four blind by construction are the four observation-derived ones — `words=`, `start=`/`end=`,
+`probe-line-coverage`, `probe-line-edges` — not "every existing instrument".
+
+⚠️ **`voidInk > 0` is a weak boolean.** Any run of ≥ `minRows` uncovered rows is a void, so both margins of
+every page qualify, and one inked speck in a margin — platen edge, gutter shadow — lifts `voidInk` off
+zero. Blank margins contribute nothing, being uninked, so the *shares* are not inflated by margins as such;
+the boolean is what is weak, and `clean` may be close to unreachable on real scans.
+`Flattener.inkOutsideText` drops the outer sixteenth for this reason and this tool deliberately does not,
+because cropping would break the agreement with the reference that is its only external validation.
+⚠️ That the boolean fires on most real pages is a prediction from the mechanism and **not** a measurement:
+`bare` on 6 of 6 of one document cannot distinguish the two.
+
+⚠️ **What this does not do.** It is an instrument and **C30 stays OPEN**: nothing in `Sources/` moves, no
+page gains a text layer, and the tiling candidate the fork left is neither built nor priced. It measures a
+box's *presence*, never the string under it — `bareShare` credits a box and not a reading, which is the
+`ASSAME` lesson — and at any `VOIDMININCH` a single dropped line raises no band, asserted as group 4, where
+five whole unrecognised lines with blank gaps between them read `bareRows` **0**. One document, six pages.
+⚠️ **And it cannot yet ask C30's own open question.** `inkedRows`, `inkRunMeasure` and `voidMeasure` all
+take `lo`/`hi`, which is what the reference's band arm uses, but `main` only ever passes `0, h` — so there
+is no way to measure a named band from the command line. A `VOIDROWS=lo-hi` knob is a few lines and is
+deliberately left undone rather than shipped untested; note that it would give *band-scoped measurement of a
+whole-page recognition*, which is **not** the crop experiment (that recognises a crop), so it is a
+convenience and not the scope question.
+
 #### What a fix has to satisfy
 
 - ⛔ **It must recognise the REBUILT BITMAP, not a re-render.** Added 2026-08-23 out of
@@ -10669,7 +10870,13 @@ collapses them and the rows *look* short. All 11 rows are 15 fields; the same tr
 - **An instrument that starts from the PAGE, not from the observations.** Whatever it is, it must be
   able to report a page as bad while `words=` reads 100%, or it has inherited the blind spot. The
   ink-void measure above is a starting shape and is deliberately crude; the tool version belongs in
-  `Tools/` with a `--self-test`. ⚠️ **The 2026-08-22 fork run built one and did NOT commit it** — a
+  `Tools/` with a `--self-test`. ✅ **DISCHARGED 2026-08-25 — it is `Tools/score-text-voids.swift`, and
+  the section `#### The instrument, in Tools/ as of 2026-08-25` is where to read what it establishes
+  and what it does not.** Both of this bullet's two demands are met and pinned: the numerator is rows of
+  ink no box covers, which the observation list cannot reach, and group 5 of its self-test is a fixture
+  reading 40 of 64 inked rows unboxed while every box on it sits exactly on ink. ⚠️ **The rest of this
+  bullet is history from here on** — it is kept because the retraction in it is worth keeping, not
+  because anything below is still owed. ⚠️ **The 2026-08-22 fork run built one and did NOT commit it** — a
   throwaway Python pass, because `Tools/` is in the pre-commit suite regex and the fork was a docs-only
   commit. ⛔ **A draft of this bullet claimed it was "kept at `$STATE/c30-instrument/`" and that directory
   did not exist**: the scripts were single-copy in `/private/tmp/c30-work/`, which is the volatile half of

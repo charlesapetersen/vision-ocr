@@ -60,7 +60,28 @@ purely by being its own request**, and the two halves return **1.88x** the words
 request shrinks — a gradient, not a threshold), it is **one document and one page** for the scope
 experiment, and the *why* is untested — if the mechanism is a working-resolution downscale inside
 `VNRecognizeTextRequest` then **"render at a higher DPI" is refuted in advance** while tiling is not, and
-`Recogniser` has no tiling seam. C30 stays **OPEN**: the fork is not the fix. `C29` is the owner's JSTOR finding — a
+`Recogniser` has no tiling seam. C30 stays **OPEN**: the fork is not the fix.
+✅ **BUT IT HAS AN INSTRUMENT IN THE TREE AS OF 2026-08-25 — `Tools/score-text-voids.swift`, the tool
+`#### What a fix has to satisfy` had asked for since 2026-08-22, and the first C30 measurement taken on the
+pixels production actually recognises** (`BUGS.md` C30 `#### The instrument, in Tools/ as of 2026-08-25`,
+`C30-VOIDS-2026-08-25.tsv`). Rows of ink divided by rows of ink no word box covers, so the numerator is
+unreachable from the observation list and a page can fail it while `words=` reads 100% — group 5 of its
+10-group `--self-test` is that property as a check rather than a claim. ⛔ **Quote the page-derived column,
+never the shares**: `inkRows` reproduces `C30-FORK-2026-08-22.tsv`'s at **0.9913x-1.0007x on 6 of 6 pages**
+across a different rasteriser and 4x the resolution, and page 1's longest inked-and-unboxed run is **683**
+rows at 400 dpi = **170.75** at 100 dpi against the fork's **171**, this entry's founding headline through a
+different image. The recognition-derived shares diverge **0.7767x-1.7077x**, and that divergence is C30's
+own finding rather than a defect. ✅ **That it recognises PRODUCTION's image is measured, not architectural**:
+its word count equals the published layer's box count **exactly on 4 of 6 pages** (296 / 445 / 279 / 421) and
+the `make-observations` plain render's on **0 of 6**, off by 8 to 47 there. ⛔ **It also settled which definition the register has been quoting, off
+the fork file's header rather than by inference**: that file's `bareShare` is `inkRowsInVoid / inkRows`,
+which is this tool's `voidShare` and NOT its `bareShare` — the two files' names do not line up, so both
+definitions are printed. ⛔ **And one thing does not port, measured: `Flattener.otsuThreshold` clamps to
+`[90, 230]` and `artefact.py`'s does not**, so the shipped one reads 90 where the reference reads 0 on a
+two-valued buffer — same argmax, the clamp is the whole difference, and the two select the same pixels only
+*because* the buffer is bimodal, i.e. on a `.bilevel` page and not a `jpeg` one. ⚠️ Nothing in `Sources/`
+moved and no page gained a text layer: the tiling candidate is still neither built nor priced, and this
+measures a box's *presence* and never the string under it. `C29` is the owner's JSTOR finding — a
 born-digital cover page rasterised and re-OCR'd because `hasDigitalText` votes per DOCUMENT and never
 samples page 1 at all on a document of 5+ pages. ✅ **It has a FIXTURE as of 2026-08-23 and today's wrong
 answer is PINNED** — `Tests/main.swift`'s `makeBornDigitalCoverPDF`, and `BUGS.md` C29
@@ -1082,7 +1103,8 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
 `SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv`,
-`C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv` and `C29-CORPUS-2026-08-25.tsv` — and are
+`C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv`, `C29-CORPUS-2026-08-25.tsv` and
+`C30-VOIDS-2026-08-25.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -1103,7 +1125,11 @@ outside the tree as
 is deliberately NOT in that count** and a reader will reach for it: it added no tool either, but it is
 reproducible from tools that ARE committed — an `awk` filter on `INKBAR-2026-08-19.tsv`, one `pdftoppm` a
 page and `score-shape-term`'s `SHAPEDUMP`. The five named above are reproducible from nothing in the
-tree, which is the line this count draws. ⚠️ A first draft called
+tree, which is the line this count draws. ⚠️ **`C30-VOIDS-2026-08-25.tsv` is NOT in that count either and a
+reader scanning for `C30-*` will assume it is**: it is the first C30 artefact whose instrument IS committed
+— `Tools/score-text-voids.swift`, with a 10-group `--self-test` — so the count stays **five** while the list
+grows. That also spends the reason the other two are outside: the tool version C30 was asking for now
+exists, so a future C30 measurement has no excuse to be unreproducible from the tree. ⚠️ A first draft called
 `WIDEN-LAYERS-2026-08-22.tsv` "the one file here whose instrument is not in this repository"; the review of
 that diff found `GUTTER-CENSUS-2026-08-20.tsv` in the same list, and `C30-FORK-2026-08-22.tsv` made it
 three later the SAME DAY, 2026-08-22 — so this count has been wrong twice in one day, went to **four** on

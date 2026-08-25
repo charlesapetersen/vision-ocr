@@ -1682,11 +1682,76 @@ happens.**
       returned, so they read 100% on a page that lost a third of its text. Any new instrument must be able
       to fail a page while `words=` passes it, or it has inherited the same blind spot. A generated fixture
       is the standing preference; `testdocs/` holds nothing of this shape and the document itself is not in
-      it. (origin: BUGS.md C30)
+      it. ✅ **THE INSTRUMENT DEBT IS DISCHARGED 2026-08-25 — `Tools/score-text-voids.swift` exists, with a
+      10-group `--self-test`, and it is the FIRST C30 artefact reproducible from the tree; see the
+      `c30-tool` sub-box.** So "any new instrument must be able to fail a page while `words=` passes it" is
+      no longer a thing to build: it is built, and group 5 is that property as a check. What is left of
+      this item is the FIX — tiling — and nothing else. (origin: BUGS.md C30)
       ⚠️ Placed straight after `C28` because it is the same root cause seen from the other side — C28 is the
       subset where the missed ink is also DESTROYED at 1/8, this is the general case where it is merely
       unsearchable. C28 is mid-campaign so it keeps its place, but this may deserve to jump it: it is the
       app's central promise and the owner reports seeing it on other documents too. Owner's call.
+  - [x] **c30-tool** — **DONE 2026-08-25.** The tool C30's `#### What a fix has to satisfy` had asked for
+        since 2026-08-22 and the `$STATE/c30-instrument/README` called "the next bounded step, not a
+        rediscovery": `Tools/score-text-voids.swift`, a port of `artefact.py`'s two run definitions that
+        takes its pixels AND its boxes from one `Recogniser.loadImage(page)` of what `Flattener.flatten`
+        wrote, with **no render fallback**. Do not re-derive it. `C30-VOIDS-2026-08-25.tsv` (6 rows, 20
+        columns) and `BUGS.md` C30 `#### The instrument, in Tools/ as of 2026-08-25` carry it.
+        ⛔ **The validation to quote is the PAGE-DERIVED column and not the shares**: `inkRows` reproduces
+        `C30-FORK-2026-08-22.tsv`'s at **0.9913x-1.0007x on 6 of 6 pages** after scaling for resolution —
+        a different rasteriser, 4x the resolution, an independent implementation — and page 1's `longBare`
+        of **683** at 400 dpi is **170.75** at 100 dpi against the fork's **171**, the entry's founding
+        headline through a different image. The recognition-derived shares diverge **0.7767x-1.7077x**, and
+        that divergence is C30's own finding rather than a defect.
+        ✅ **That it recognises PRODUCTION's image is MEASURED, not architectural** — the control worth
+        reusing: `words` equals the fork file's `published-text-layer` box count **exactly on 4 of 6 pages**
+        (296 / 445 / 279 / 421) and the `make-observations` plain render's on **0 of 6**, off by 8 to 47
+        there. ⚠️ No mechanism claimed for the two that differ.
+        ⛔ **Two things it found that were not the point.** (1) `Flattener.otsuThreshold` **clamps to
+        `[90, 230]`** and `artefact.py`'s `otsu` does not, so the shipped one reads 90 where the reference
+        reads 0 on a two-valued buffer — same argmax, the clamp is the whole difference, and they select the
+        same pixels only *because* the buffer is bimodal, so the equivalence covers a `.bilevel` page and
+        **not** a `jpeg` one. (2) The fork file's `bareShare` is `inkRowsInVoid / inkRows`, i.e. this tool's
+        `voidShare` and **not** its `bareShare` — established off that file's header rather than inferred,
+        so **the two files' column names do not line up**, and the entry's "0.4446 / 0.2457 / …" is the
+        uncovered-run measure while its "171 rows" is the inked-run one.
+        ⛔ **And the process lesson, which is the C28 one in a new place**: of **seven** one-token
+        sabotages watched failing, the one written to zero `voidInk` — the tool's headline column — **only
+        moved `longestInk`**, because the two are accumulated in different loops, so another was written
+        afterwards purely to redden `voidInk`; and the sabotage of `inkRunMeasure`'s `!covered` leaves
+        group 4 **green** because its expectation is identical under the defect, group 6 being the only
+        check that catches it. Neither was visible from the call graph; both came from building the
+        sabotage and running it.
+        ⛔ **The adversarial review of this diff found NINETEEN items and five of them were false claims
+        the diff itself introduced** — read them before writing another instrument here, because four are
+        shapes this register already names. (1) The header mapped the register's published shares to the
+        wrong one of the tool's own two columns, contradicting the README added in the same commit. (2) It
+        said "all eight Swift tools carrying a `--self-test` are never run": measured, **six of seven run
+        it unconditionally**, `score-skew` has none, and `score-shape-term` is the only flag-gated one — so
+        the minority pattern was being presented as the norm, and the tool now runs its self-test
+        unconditionally instead of documenting a gap. (3) It credited the ImageMagick-OTSU comparison to
+        `stratify-corpus.py`, which contains no Otsu at all; it is `score-shape-term`'s. (4) "The only two
+        tools that flatten-then-recognise" — `score-rebuild-dpi` does too. (5) The truncation check was a
+        **mirror** of the expression under test *and* unpinnable on its fixture (`0.005 * 200` is exactly
+        1.0), and `voidN` was a printed column **nothing asserted**; both are real reds now (sabotages F
+        and G). ⚠️ Two invariant-1 items were fixed with it: a page that would not isolate produced **no
+        row, no message and exit 0**, and an unparseable page argument was silently dropped — both
+        inherited verbatim from `score-shape-term`, where they remain.
+        ⛔ **AND THE FINDING THAT CHANGES WHAT THE NUMBERS MEAN: coverage is ROW-WISE, so a box anywhere on
+        a row covers the whole row.** A dropped column, a lost marginal note or the unrecognised half of a
+        two-up scan reads `clean`. Every figure above is a **lower bound** on the loss. Faithful to the
+        reference, which is row-wise too — and `Flattener.inkOutsideText` (via `score-shape-term`'s
+        `outPx`/`inkOut`) is the sibling that IS two-dimensional, which is why "no existing instrument can
+        see this" was refused.
+        ⚠️ **What it does NOT do**: nothing in `Sources/` moves, no page gains a text layer, the tiling
+        candidate is neither built nor priced, it measures a box's *presence* and never the string under it
+        (the `ASSAME` lesson), and at any `VOIDMININCH` a single dropped line raises no band — group 4 is
+        five whole unrecognised lines reading `bareRows` 0. One document, six pages.
+        ⚠️ **The gate it needed does not exist and that is now a ONE-TOOL problem**: the hook runs
+        `--self-test` for staged `Tools/*.py` only, so a flag-gated Swift self-test is type-checked and
+        never run. This tool runs its own unconditionally, so the only Swift tool here still exposed is
+        **`score-shape-term`** — worth its own item, and not touched here.
+        (context: BUGS.md C30 `#### The instrument, in Tools/ as of 2026-08-25`)
   - [x] **c30-fork** — **DONE 2026-08-22. The fork is settled on the block it was opened on: page 1's void
         is RECOGNISER RECALL, not the writer — and the loss is a property of the image handed to one
         request, not of the type.** Do not re-run that part; ✅ **page 5 was the exception and it is
