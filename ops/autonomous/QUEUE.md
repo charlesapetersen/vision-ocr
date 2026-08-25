@@ -122,7 +122,7 @@ happens.**
 | docs, the register, this file, a `.tsv` | **free** — the hook prints "no code staged, skipping the suite" and it lands in seconds |
 | `Sources/` `Helper/` `Tests/` `Tools/` `build.sh` `run_tests.sh` | **one full suite**, **~225 s measured 2026-08-24** — read `$STATE/suite-timings.tsv`, and IGNORE rows dated before 2026-08-24: the 474-5554 s spread was `ProcessType=Background` + a missing `-O`, 16.2x, now fixed |
 | a NEW check | **two** suite runs — the watch-it-fail control, then the hook's green run |
-| a scoped `mutate.py` run | **a baseline suite plus one suite per mutant** — **479 s end to end measured 2026-08-24** for baseline + one. The ~45 min/mutant on record (five took 4h27m) is clamped-era. ⛔ Its own startup estimate said **100-116 minutes** for that 479 s run — **14.5x high**, because it spans the five newest `mutation-log.tsv` rows and they were all clamped-era. It self-heals over the next four scoped runs; until then trust neither the estimate nor a figure quoted in prose, and budget from `$STATE/suite-timings.tsv` rows dated after 2026-08-24 |
+| a scoped `mutate.py` run | **a baseline suite plus one suite per mutant** — **479 s end to end measured 2026-08-24** for baseline + one. The ~45 min/mutant on record (five took 4h27m) is clamped-era. ⛔ Its own startup estimate said **100-116 minutes** for that 479 s run — **14.5x high**, because it spans the five newest `mutation-log.tsv` rows and they were all clamped-era. It self-heals as post-clamp ROWS push the clamped ones out of that five-row window — a two-mutant run ages two at once, so it is not counted in runs; until then trust neither the estimate nor a figure quoted in prose, and budget from `$STATE/suite-timings.tsv` rows dated after 2026-08-24. Second reading, 2026-08-25: **12-174 min** printed for a **705 s** run, 14.8x high |
 
 **The rules that follow from it.**
 
@@ -651,9 +651,22 @@ happens.**
       it, 2026-08-23 evening, and did exactly one mutant from (a) — which is what this paragraph was written
       to make possible, so it works: read (a) for what one costs before deciding.** This box stays `[ ]`
       because C28 is genuinely `HALF FIXED` and not closed. So a later session does not spend its item
-      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **FOUR of the six are RUN
-      as of 2026-08-24 and TWO are left, and BOTH of the two are `depth-cap`'s — nothing in C28's own
-      material is unrun** — `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
+      re-deriving what is left, here it is with what each piece costs: **(a)** ✅ **DISCHARGED — ALL SIX
+      ARE RUN AS OF 2026-08-25 AND (a) IS NO LONGER WORK. A session reaching this box should read (b), (c)
+      and (d) and then take the next item.** The last two went together, being the two ends of one nine-row
+      check block on one fixture: `logic/C24-drawn-cap-reaches-further` `killed` in **227 s** by **six**
+      objecting checks and `logic/C24-dictionary-cap-reaches-further` `killed` in **244 s** by **three**,
+      **705 s** end to end with the baseline, kill sets predicted by name and in order beforehand
+      (`BUGS.md` C24 `#### Both caps RUN through mutate.py`). ⛔ **The 6-against-3 is a product fact and
+      worth carrying out of here: a loosened DICTIONARY cap is invisible at `rebuildDPI`'s seam on every
+      page whose drawn walk says `.noImage`** — ⛔ **REFUTED by the review of that same diff and kept here
+      as the warning: it is FOUR rows against one, only two of the nine reach `rebuildDPI` at all, and
+      `Flattener.pageIsAnImage` reads `largestImage` with no drawn walk in front of it and FLIPS on fixture
+      page 13 under the dictionary mutant. The three is a COVERAGE BOUNDARY, not a product fact**, and it
+      is carried as a ⚠️ on `bare-form-reach`.
+      ⚠️ **Never-run entries in the CATALOGUE are a different population and now have their own item,
+      `mutants-never-run` (25 of them)** — this six was always C28's and `depth-cap`'s share. The four
+      earlier ones, for the record: `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
       check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`);
       `logic/C28-alltext-ignores-shape` — **the wiring as a mechanism** — is `killed`, 3,407 s, by
       **exactly three**, all of them added by `fbf6d87`, the commit that shipped the wiring
@@ -669,14 +682,14 @@ happens.**
       lines being byte-identical to `alltext-ignores-shape`'s because the two arrive from the two ends of
       `return groups == 0` (`BUGS.md` `#### lineMinimumMembers RUN through mutate.py`; that run also fixed
       the SIBLING of the previous run's truncation defect — `run()` capped the objecting-check *list* at
-      `fails[:3]`, already live, **five earlier rows had lost 10 names**). **The two still with no row are
-      `C24-drawn-cap-reaches-further` + `C24-dictionary-cap-reaches-further` from `depth-cap`
-      (`95b23c3`)** — so a session taking (a) next takes one of those, and note `depth-cap`'s own box is
-      where they were catalogued.
+      `fails[:3]`, already live, **five earlier rows had lost 10 names**). ⚠️ This sentence read *"the two
+      still with no row are `C24-drawn-cap-reaches-further` + `C24-dictionary-cap-reaches-further` from
+      `depth-cap` (`95b23c3`)"* until 2026-08-25, when both were run; `depth-cap`'s own box is where they
+      were catalogued and now carries their verdicts.
       ⛔ **READ THE COST LINE BELOW BEFORE BUDGETING: the clamp came off on 2026-08-24 (`1dbaafd`,
       `fa2204a`) and this run measured 479 s END TO END for baseline + one mutant, against a startup line
       still reading "roughly 100-116 minutes" — 14.5x HIGH.** The estimator spans the five newest log rows
-      and they were all clamped-era; it self-heals over the next four scoped runs. So (a) is now a
+      and they were all clamped-era; it self-heals as post-clamp ROWS age the clamped ones out, not as runs pass. So (a) is now a
       ~10-minute machine cost, not a three-hour session, and the three-sessions-running claim that "the
       estimator's high end has held" is retired.
       ⚠️ **A one-sided `logic` mutant has no green yield** — read the second run's section before crediting
@@ -689,14 +702,18 @@ happens.**
       three credited greens down to one — that is the FIRST scoped run; the second (`alltext-ignores-shape`)
       claimed none. **Kills, counts, costs and attribution stand in all three** — attribution
       rests on the reds. Decide it per mutant, from the fixture geometry and not from the call graph. ⚠️ **That THREE is this entry's
-      share, not the catalogue's**: after the fourth run the census prints **27** entries with no row at all
-      and `coverage: 76 of 103`, so do not read "two left" as "two in the catalogue". ⚠️ This sentence
-      said 28 / 75 / "three left" until 2026-08-24, six lines above the line that updated the census. ⛔ **And the other 25
-      are owned by NO box** — the `mutants` item scopes itself to the *survivor* list twice over ("work the
-      survivors", "the live survivor list"), which is the 2 `SURVIVED` rows and not a never-run entry, so
-      "the mutants item owns the rest" (this sentence's first draft) was wrong. Nobody has claimed them;
-      that is a gap in this file, not in the catalogue. ⚠️ 25 is still right after the third run **and
-      after the fourth**: this entry's share fell by one each time and the census fell with it, 28 → **27**.
+      share, not the catalogue's**: after the fifth run — the two-mutant `depth-cap` one, 2026-08-25 — the
+      census prints **25** entries with no row at all and `coverage: 78 of 103`, so do not read this
+      entry's own count as the catalogue's. ⚠️ These figures were **27 / 76** after the fourth run and
+      28 / 75 before it, each time stated six lines above the line that updated them. ✅ **The 25 are owned
+      by the queue's `mutants-never-run` as of 2026-08-25**, which is the first box to claim them: the
+      `mutants` item scopes itself to the *survivor* list twice over ("work the survivors", "the live
+      survivor list"), which is the 2 `SURVIVED` rows and not a never-run entry, so "the mutants item owns
+      the rest" (an earlier draft of this sentence) was wrong, and "nobody has claimed them" — true for
+      four consecutive sessions that each flagged it — is now false. ⚠️ 25 held after the third and fourth
+      runs by coincidence: this entry's share fell by one each time and the census fell with it,
+      28 → 27; the fifth took **two at once**, which is why the census moved to 25 while this entry's share
+      went to zero.
       **The cost is now measured rather than
       quoted**: baseline + one mutant took **6,541 / 6,463 / 6,567 s (109 / 108 / 109 min)** over the
       first three scoped runs and **479 s (8 min)** over the fourth — wrap it in `test-lock.sh run` as those
@@ -1993,9 +2010,33 @@ happens.**
       211.8 DPI). Found by the adversarial review of this diff, which caught the unconditional version on
       its way into `Flattener`'s own comment. The decision does not move — no pair of caps closes that gap
       — and the divergence itself is the new `bare-form-reach`. Two mutants catalogued (101 → **103**),
-      both verified to match uniquely, ⚠️ neither run through `mutate.py`; the kill evidence is a one-token
-      sabotage binary. Nothing shipped moved. Read `BUGS.md` C24
-      `#### The two caps, and the chain they are equal on`. `obs-drift-comment` rode along on the same
+      both verified to match uniquely. ✅ **BOTH RUN AND `killed` 2026-08-25, so the one-token sabotage
+      binary is no longer the evidence**: the drawn cap by **six** objecting checks in 227 s, the
+      dictionary cap by **three** in 244 s, **705 s** end to end with the baseline, kill sets predicted by
+      name and in order before the run. ✅ **Page 14's two rows, which the register recorded as *reasoned,
+      not watched*, are now watched**, and the dictionary mutant — never built at all — reddens **three**
+      rows, the count that diff's review had simulated (⚠️ it never named which three).
+      ⛔ **AND THE RUN'S SHARPEST FINDING IS THAT THE THREE IS A COVERAGE BOUNDARY.** A draft called
+      6-against-3 a product fact, on the grounds that the extra rows are the ones reaching
+      `rebuildDPI(of:)`, which routes `.noImage` to `rebuildDPI(from: nil)`. The review refuted it by
+      counting — **four** rows red under the drawn cap alone, and only **two** of the nine reach
+      `rebuildDPI` at all — and then by finding the second consumer: **`Flattener.pageIsAnImage`
+      (`Flattener.swift:304-307`) reads `largestImage` with NO drawn walk in front of it**, from
+      `Model.swift:886`'s text-extraction skip marker and from `hasDigitalText`, C29's own vote, and on
+      page 13 the dictionary mutant takes `largestImage` `nil` → 1200 px at 141.18 DPI and flips that
+      predicate **false → true**. Nothing pins it on pages 11-14. ⚠️ Deliberately not fixed in the same
+      commit as the log rows counting three; it rides on this box's own `bare-form-reach`. ⚠️ Two of the
+      nine rows are red under **neither**: the premise row reads `drawsAnyXObject`, which has no depth
+      guard in either direction, and page 12's control has nothing below `/FD` for a fourth level to admit
+      — so a *narrowing* mutant reaches page 12 and not the premise, and one is catalogued and killed
+      (`logic/C24b-form-not-followed`), against a draft here that said none was. ⛔ **And the joint-+1
+      claim the absolute-width rows exist for is not graded and is one third REFUTED** — `mutate.py`
+      applies one mutant at a time, and page 12's 2400 row is green under each cap separately and would be
+      green under a joint +1, so **two** of the three widths would go red, not three. Nothing shipped
+      moved then or now; the 2026-08-25 commit repaired one failure-detail string that had printed only the
+      drawn walk's answers on the row comparing both. Read `BUGS.md` C24
+      `#### The two caps, and the chain they are equal on` and `#### Both caps RUN through mutate.py`.
+      `obs-drift-comment` rode along on the same
       suite. **At seeding:**
       `Flattener.drawnLargestImage`'s `case "Form"` branch caps recursion at `depth < 3`
       while `largestImage` caps at `< 4`, and **the stated reason for the mismatch expired when `c17b3f3`
@@ -2061,8 +2102,22 @@ happens.**
       which already has the answer. ⚠️ Both change shipped routing on some page somewhere, so either needs
       the corpus gate, and `.unreadable` is load-bearing elsewhere (T14's "an instrument that knows when it
       is not measuring") — read that before overloading it.
+      ⚠️ **A SECOND CONSUMER OF `largestImage` WAS FOUND 2026-08-25 AND IT HAS NO DRAWN WALK IN FRONT OF
+      IT, so this item's "the answer is discarded" is narrower than the exposure.**
+      `Flattener.pageIsAnImage` (`Flattener.swift:304-307`) reads `largestImage` directly, and is called
+      from `Model.swift:886` — the text-extraction skip marker, invariant-1 territory — and from
+      `hasDigitalText` (`:386`), which is **`C29`'s own routing vote**. So on a bare-form page the two
+      walks' disagreement does not merely cost a rebuild resolution: `pageIsAnImage` answers off the
+      dictionary walk while `rebuildDPI` answers off the drawn one, and **nothing in the suite pins
+      `pageIsAnImage` on fixture pages 11-14**. Measured through the dictionary-cap mutant, which takes
+      page 13's `largestImage` `nil` → 1200 px at 141.18 DPI and flips that predicate false → true with no
+      check objecting. **The bounded piece here is a check pinning `pageIsAnImage` on those four pages**;
+      it was deliberately left out of the 2026-08-25 commit because adding it changes the objecting-check
+      count the two fresh `mutation-log.tsv` rows record, and re-running is ~250 s a mutant. Whoever takes
+      this item should add it and re-run `--only cap-reaches-further` in the same session.
       (context: BUGS.md C24 `#### The two caps, and the chain they are equal on`, which measured this and
-      explains why C24 was NOT reopened for it)
+      explains why C24 was NOT reopened for it, and `#### Both caps RUN through mutate.py` for the
+      `pageIsAnImage` finding)
 - [x] **stale-docs** — reconcile the status claims that have gone stale behind the work. DONE 2026-08-16:
       HANDOFF.md's "four entries are open" (naming R54-R57, all closed) became the one that is; the suite
       figure was corrected to a MEASURED 1,127 in HANDOFF.md, TECHNICAL.md and ARCHITECTURE.md; TODO.md's
@@ -2157,6 +2212,13 @@ happens.**
       `$STATE/suite-timings.tsv` rows dated after 2026-08-24 instead. ⚠️ It has now been wrong **both
       ways** off that same window — 4.22x low on the C24b campaign, 14.5x high here — which is the
       standing reason not to read a rate off history.
+      ⛔ **THE "FOUR RUNS" ABOVE IS ONE RUN SHORT, AND THE HEALING IS COUNTED IN ROWS: `ESTIMATE_SAMPLE` is
+      5 ROWS, not 5 runs.** 2026-08-25's two-mutant `depth-cap` run aged **two** clamped rows at once, so
+      the window is already `[3407, 3415, 246, 227, 244]`: the next 1-mutant run prints ~`8-114`, and the
+      high end reaches single digits after **two more mutant rows** — which one more two-mutant run
+      supplies by itself. That run read **14.8x** high (`12-174` printed, **705 s** measured for a baseline
+      and two mutants), and its LOW end was within 5% — the first time the low end has been usable,
+      because three post-clamp rows are now in the window.
       And never
       while `Sources/` is being edited. The work item is the live survivor list in
       `Tools/mutation-log.tsv`.
@@ -2168,8 +2230,61 @@ happens.**
       tool predicted), and each mutant needs its own analysis, doc-sync and adversarial review, which is
       the expensive half now that the machine is cheap. Check the match count with
       `--list` BEFORE running; if your substring matches more than one, narrow it or take the first.
+      ⚠️ **ONE EXCEPTION WAS TAKEN DELIBERATELY, 2026-08-25, and it is recorded here rather than folded
+      into the bound: a MATCHED PAIR over ONE fixture is one analysis, not two.** The `depth-cap` session
+      ran both `cap-reaches-further` mutants in one `--only`, because they are the two ends of one nine-row
+      check block on one fixture, so a single prediction file covered both and one set of paragraphs
+      doc-synced both — the same shape as `shapeRunHigh`/`shapeHeightHigh`, which cost two whole sessions
+      for two halves of one attribution. **The bound is unchanged for unrelated mutants**, and the run
+      satisfied its first reason rather than dodging it: the match count was read from `--list` before
+      starting and was exactly the two intended. Machine cost **705 s**; the session's expense was
+      context, as the bound says. ⛔ Do NOT read this as "two is now fine" — read it as "a pair sharing a
+      fixture is one item". ⚠️ **It broke the bound's SECOND clause too, and that is named rather than
+      redefined**: one `--only` invocation ran and `record()`ed both rows before any commit, so "commit its
+      row before starting another" did not happen. The clause protects against losing a verdict to a
+      stranded worktree; what stood in for it here is that both rows were appended by the tool itself and
+      the worktree was pushed in one commit. **A pair is exempt from that clause only because it is one
+      invocation** — two separate `--only` runs in one session are not, and the bound is unchanged for
+      them.
       (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a
       value nothing depends on)
+- [ ] **mutants-never-run** — the **25** catalogue entries with **NO ROW AT ALL**, which until 2026-08-25
+      were owned by no box in this file. `mutate.py` prints them itself at the END of a campaign, under
+      *"N mutant(s) in the catalogue with NO ROW AT ALL — never applied, so nothing is known about them"*.
+      ⛔ **There is no free way to read that census: `--only nothing-matches-this` returns before the
+      loop** (`startup_line`'s `n_todo <= 0` branch, then `main`'s `if not proceed: return 0`), and the
+      census is printed after it — measured, it prints `0 mutants … nothing to do` and no census at all, so
+      do not send a session there the way the `mutants` box's free-estimate line reads. Derive it instead:
+      the ids from `python3 Tools/mutate.py --list` minus the distinct first column of
+      `Tools/mutation-log.tsv`. That derivation gave **25** on 2026-08-25 against a catalogue of 103 and 78
+      rows, and ⚠️ one logged id (`logic/R39-auto-vs-engine`) is not in the catalogue at all, so the two
+      sets are not nested. ⛔ **This is NOT the `mutants` item above** — that one
+      scopes itself to the *survivor* list twice over (*"work the survivors"*, *"the live survivor list"*),
+      which is the **2** `SURVIVED` rows, and a never-applied entry is a different thing: a survivor is a
+      measured gap, and a never-run entry is an unopened envelope. Four consecutive session logs flagged
+      the gap and asked the next one to add the item; the fifth added it.
+      **What one is worth.** A never-run mutant can come back three ways, and only the first is the
+      boring one: `killed` (the checks hold), `SURVIVED` (a real gap, or a value nothing depends on —
+      `BUGS.md` T5 is how to tell those apart), or **`NOT-APPLIED`**, which means the `find` string has
+      drifted out of `Sources/` and the entry has been silently protecting nothing. T7 is why that third
+      verdict exists at all, and nothing automated asserts a `find` string still matches:
+      `--self-test` never touches `OPERATORS`.
+      **Cost, measured rather than quoted.** Post-clamp, a baseline plus one mutant was **479 s**
+      (2026-08-24) and a baseline plus two **705 s** (2026-08-25). So one is ~8 minutes of machine time and
+      the session's real expense is the analysis — see the `mutants` box's BOUND, which applies here
+      unchanged, including its one recorded exception for a matched pair over one fixture. Do **not** run
+      the full catalogue: ~7 h.
+      ⚠️ **Take them in an order, and predict before you run.** The five runs since 2026-08-23 all wrote
+      the expected kill set down first, and the two things that came out of those runs — the two
+      truncation defects in `mutate.py`'s own `FAIL`-line parse, and a one-sided failure detail on a row
+      comparing two walks — were both found by *using* the instrument, not by the verdict. A prediction
+      that lands is worth less than the retraction when one does not: three of the five runs retracted a
+      "green yield" they had claimed in advance, and the rule that survived is that a green is evidence
+      only if **the mutant changes that check's input at all**.
+      ⚠️ Several of the 25 are `logic/A5.3-*` and `logic/A7.1-*` clusters, so a substring may match more
+      than one — `--list` first, per the bound.
+      (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a value nothing depends on,
+      and `Tools/mutation-log.tsv` is the log this item reads)
 - [ ] **fault-inject** — confirm each sabotage is still refused by the real build step. It builds into a
       scratch copy of the tree, so it is safe unattended.
       ⛔ **BOUND: the case list is `FAULTS` at the foot of the script — 7 as of 2026-08-20, read it rather

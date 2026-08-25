@@ -74,8 +74,12 @@ Two consequences, both load-bearing:
     "roughly 100-116 minutes": **14.5x HIGH**, off the same five-row window that was
     4.22x low in 2026-08-17. Nothing here can tell the two eras apart, because the log
     records no build flags and no scheduling band. It self-heals as post-clamp rows push
-    the clamped five out of the window — four more scoped runs — and until then the
-    startup line is the worst number available rather than the best. **The rule that
+    the clamped five out of the window — counted in ROWS, not runs, so the two-mutant
+    `cap-reaches-further` run on 2026-08-25 aged two at once and left
+    `[3407, 3415, 246, 227, 244]`, two rows from clear — and until then the startup line
+    is the worst number available rather than the best. That run read **14.8x** high
+    (`12-174` printed, **705 s** measured for a baseline and two mutants), so the failure
+    is twice in the same direction and not one bad row. **The rule that
     survives both failures is the one this header already gives**: a rate read off
     history is wrong in whichever direction history has just moved, so date every figure
     and prefer `$STATE/suite-timings.tsv` rows dated after 2026-08-24.
@@ -520,9 +524,18 @@ OPERATORS = [
     # ✅ Both `find` strings were checked UNIQUE in `Sources/Flattener.swift` by hand, so
     # neither will be reported NOT-APPLIED (T7's lesson, recorded at `run`'s `hits != 1`) —
     # `--self-test` never touches OPERATORS, so nothing automated asserts that.
-    # ⚠️ Not yet run through this tool — the kills are recorded as one-token sabotage
-    # BINARIES, which is weaker; see `BUGS.md` C24's `#### The two caps, and the chain they are equal on` for
-    # exactly which rows were watched going red and which are reasoned.
+    # ✅ BOTH RUN through this tool 2026-08-25 and both `killed` — 227 s by SIX objecting
+    # checks (the drawn one) and 244 s by THREE (the dictionary one). The asymmetry is a
+    # product fact rather than fixture bias: the three rows only the drawn mutant reddens are
+    # the three that reach `rebuildDPI(of:)`, which routes `.noImage` to
+    # `rebuildDPI(from: nil)` and never consults `largestImage` — so a loosened DICTIONARY cap
+    # is invisible at the seam on every page whose drawn walk goes blind.
+    # ⚠️ Two of that block's nine rows are red under NEITHER, said in advance: the premise row
+    # reads `drawsAnyXObject`, which has no depth guard at all, and page 12's control has
+    # nothing below `/FD` for a fourth level to admit. A NARROWING mutant would redden both,
+    # and none is catalogued. See `BUGS.md` C24's `#### Both caps RUN through mutate.py` for
+    # the tallies and `#### The two caps, and the chain they are equal on` for which rows the
+    # earlier one-token sabotage BINARY had watched and which it only reasoned about.
     ("Flattener.swift", "guard s.depth < 3, let table = s.table else { return }",
      "guard s.depth < 4, let table = s.table else { return }",
      "C24-drawn-cap-reaches-further"),

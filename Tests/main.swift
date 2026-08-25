@@ -4716,8 +4716,12 @@ do {
             // One chain of four nested forms, entered at three levels (pages 11-13), then
             // the bare-form counterexample (page 14). **Three of the nine rows below name
             // an absolute width**, because agreement alone is satisfied by both caps moving
-            // together — under a joint +1 the agreement row stays green and those three go
-            // red. The other rows are the premise, the pure-agreement row the widths exist
+            // together — under a joint +1 the agreement row stays green and **two of those
+            // three** go red. ⛔ Not three: measured 2026-08-25, page 12's 2400 row is green
+            // under EACH cap alone, the two mutants touch disjoint functions, and that row
+            // ANDs one answer from each — so a joint +1 leaves it green, because nothing
+            // exists below `/FD` for a fourth level to admit. This comment said three until
+            // then. The other rows are the premise, the pure-agreement row the widths exist
             // to backstop, and the two that assert an absence.
             guard let fourDeep = sd.page(at: 10), let threeDeep = sd.page(at: 11),
                   let allTooDeep = sd.page(at: 12), let bareChain = sd.page(at: 13) else {
@@ -4770,6 +4774,19 @@ do {
             // built from bare forms and the two walks differ there, so adding it would make
             // this row red. The scope is the finding, not a convenience — see the row after
             // the next.
+            // ⚠️ **The detail names BOTH walks, and that is a repair rather than a
+            // flourish.** It printed the drawn walk's three answers alone until 2026-08-25,
+            // which is half of what this row compares — so when
+            // `logic/C24-dictionary-cap-reaches-further` was first run through `mutate.py`
+            // that day, its `FAIL` line read
+            // `largest(dpi: 141.1764705882353, pixelWidth: 1200) / largest(dpi:
+            // 282.3529411764706, pixelWidth: 2400) / noImage` — **identical to the string a
+            // build with the shipped cap would have produced**, because the walk that moved
+            // was the one the detail did not name. (Not "what a passing build prints":
+            // `check` prints a detail only on failure.) A failure detail that cannot tell the
+            // mutant from the shipped build says nothing about which walk diverged, which is
+            // the whole question on this row. Watched failing under that mutant, by hand,
+            // before this wording was kept.
             check("C24 — both walks reach exactly as far as each other on all three",
                   [fourDeep, threeDeep, allTooDeep].allSatisfy { page in
                       switch Flattener.drawnLargestImage(of: page) {
@@ -4778,9 +4795,10 @@ do {
                       case .unreadable: return false
                       }
                   },
-                  "\(Flattener.drawnLargestImage(of: fourDeep)) / "
-                  + "\(Flattener.drawnLargestImage(of: threeDeep)) / "
-                  + "\(Flattener.drawnLargestImage(of: allTooDeep))")
+                  [("p11", fourDeep), ("p12", threeDeep), ("p13", allTooDeep)].map { named in
+                      let dict = Flattener.largestImage(of: named.1).map { "\($0.pixelWidth)" } ?? "nil"
+                      return "\(named.0) dict=\(dict) drawn=\(Flattener.drawnLargestImage(of: named.1))"
+                  }.joined(separator: " / "))
             // And what the policy does when both walks go blind. Nothing is lost — the page
             // is rebuilt at the fallback, exactly as a page with no image at all is — which
             // is the sentence the rewritten comment in `Flattener` now carries in place of

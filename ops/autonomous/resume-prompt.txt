@@ -197,15 +197,20 @@ STEP 3 — DO IT. The non-negotiables, from CLAUDE.md and CONTRIBUTING.md:
     CLAMPED-ERA.** `1dbaafd` removed `ProcessType=Background` + the missing `-O` (16.2x together), so
     the C24b campaign's 2,621-2,719 s per mutant, the "~45 min each", the "65 HOURS" for the catalogue
     and the "five mutants took 4h27m" all describe a machine that no longer exists. **Measured
-    post-clamp, 2026-08-24: 246 s for one mutant and 479 s end to end for baseline + one.** So a SCOPED
+    post-clamp, 2026-08-24: 246 s for one mutant and 479 s end to end for baseline + one**, and
+    **2026-08-25: 227 s and 244 s, 705 s end to end for a baseline and TWO.** So a SCOPED
     run is now **a baseline suite plus ~250 s a mutant** — minutes, not a session — and the baseline is
     still a full run that is easy to forget.
-    ⛔ **AND DO NOT SUBSTITUTE THE TOOL'S STARTUP ESTIMATE FOR THAT: IT IS CURRENTLY 14.5x HIGH.** It
+    ⛔ **AND DO NOT SUBSTITUTE THE TOOL'S STARTUP ESTIMATE FOR THAT: IT IS CURRENTLY ~15x HIGH.** It
     reads the five newest `Tools/mutation-log.tsv` rows, all five of which were clamped-era, so it
-    printed "roughly 100-116 minutes" over the 479 s run above. It self-heals as post-clamp rows push
-    the clamped ones out of its five-row window — four more scoped runs — and nothing in the log
+    printed "roughly 100-116 minutes" over the 479 s run above, then "roughly 12-174 … Budget the 174"
+    over the 705 s one — 14.5x, then **14.8x**. It self-heals as post-clamp rows push the clamped ones
+    out of its five-row window, and ⚠️ **that is counted in ROWS, not runs — a two-mutant run ages two at
+    once**, so the "four more scoped runs" this line used to say holds only for one-mutant runs; the window
+    now holds `[3407, 3415, 246, 227, 244]` and **two more mutant rows** clear it, which arrives SOONER
+    than four runs rather than later. Nothing in the log
     distinguishes the two eras, so it cannot know. ⚠️ **It has now been wrong both ways off that same
-    window**: 4.22x LOW on the C24b campaign (47-63 min announced against 267), 14.5x HIGH here. A rate
+    window**: 4.22x LOW on the C24b campaign (47-63 min announced against 267), ~15x HIGH twice. A rate
     read off history is wrong in whichever direction history has just moved. Budget from
     `$STATE/suite-timings.tsv` rows dated after 2026-08-24, and treat both the estimate and any figure
     in prose — including this one — as needing a date beside it.

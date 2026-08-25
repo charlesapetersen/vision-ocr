@@ -141,7 +141,16 @@ line** — the mirror of C24b's 4.22x-low reading. ⚠️ It does **not** self-h
 already prints **8-116**, and over the next FOUR scoped runs the high end reads **116 / 114 / 114 / 8** — the
 drop lands ON the fourth, not after it (measured twice, by driving `estimate_minutes` over the log with
 post-clamp rows appended; a draft wrote the sequence as 116/116/114/114 in a sentence that framed it as the
-next four, which implies five). Deliberately not patched. ⛔ **Using the tool also found the SIBLING of the truncation
+next four, which implies five). Deliberately not patched. ⛔ **THE FOUR-RUN FORM HOLDS ONLY FOR ONE-MUTANT
+RUNS, BECAUSE THE HEALING IS COUNTED IN ROWS, corrected 2026-08-25**: `ESTIMATE_SAMPLE` is 5 rows, not 5
+runs, so the two-mutant `depth-cap` run aged **two** clamped rows at once and the window is already
+`[3407, 3415, 246, 227, 244]` — the next 1-mutant run prints ~`8-114`, the high end reaches single digits
+after **two more mutant rows**, and the drop therefore lands on the THIRD run from there rather than the
+fourth. ⚠️ Sooner, not later: a draft called the published sequence "one run short", which is the wrong
+direction. That run read **14.8x** high (`12-174` printed, **705 s** measured), the third reading of this
+estimator and the second in the same direction; ⚠️ its LOW end came within 5%, which is new but is **not**
+evidence the window has healed — that figure was printed from the *pre-run* window, whose one post-clamp
+row happened to be the `min`. ⛔ **Using the tool also found the SIBLING of the truncation
 defect the run before it fixed**: `run()` capped the objecting-check *list* at `fails[:3]`, so a row killed
 by five named three, and it was already live — **five earlier rows had lost 10 names** (the count was right
 in all five, so no number in the log is wrong; which checks is what is gone, and none of the 10 is
@@ -197,8 +206,10 @@ material is probe-only** (`#### shapeHeightHigh RUN through mutate.py`): `3.0` �
 **3,415 s**, `1246/1247 passed`, by **exactly one** `FAIL` — the too-tall fixture's — while the too-wide
 check stays green, which is the mirror image of `shapeRunHigh`'s run. Six catalogued-and-never-run mutants
 → **five**, → **four** with the wiring mutant below, → **three** with this one, → **two** with
-`const/lineMinimumMembers` on 2026-08-24 — and the two left are both `depth-cap`'s, so nothing in C28's own
-material is unrun.
+`const/lineMinimumMembers` on 2026-08-24, → **ZERO** with `depth-cap`'s pair on 2026-08-25 (C24
+`#### Both caps RUN through mutate.py`) — so that six is fully discharged. ⚠️ It was never the census:
+**25** catalogue entries still have no row at all, and they are the queue's `mutants-never-run` as of the
+same day.
 ⛔ **It has NO informative green either, and the review of its own diff RETRACTED both the run had claimed
 in advance — this is the lesson of the third scoped run and it corrects the FIRST as well** (the second,
 `alltext-ignores-shape`, claimed no green yield at all). The test a green
@@ -229,7 +240,8 @@ minutes" — **14.5x HIGH** — because `1dbaafd` removed the 16.2x clamp while 
 five clamped-era rows. So the estimator has now been **4.22x low** (C24b) and **14.5x high** (this) off the
 same five-row window: a rate read off history is wrong in whichever direction history has just moved, and
 the tool's own rule — read the startup line, never a figure in prose — is what both failures argue for.
-It self-heals over the next four scoped runs and was deliberately not patched.
+It self-heals as post-clamp ROWS push the clamped ones out of its five-row
+window — not as *runs* pass, since a two-mutant run ages two at once — and was deliberately not patched.
 ✅ **AND THE WIRING ITSELF IS A RED CHECK AS OF 2026-08-23 — `logic/C28-alltext-ignores-shape` RUN and
 `killed`, 3,407 s, `1244/1247 passed`, by EXACTLY THREE `FAIL` lines** (`#### C28-alltext-ignores-shape RUN
 through mutate.py`). All three checks were added by `fbf6d87`, the commit
@@ -954,8 +966,35 @@ comment. ⛔ **The corpus can never be the instrument here** — `< 4` and `< 3`
 byte-identical over all 16,987 pages, so the sweep that decision prescribed as its own
 verification was guaranteed to pass while proving nothing about the only case at issue.
 ⚠️ Two mutants were catalogued with it (101 → **103**), both verified to match uniquely by
-hand, and **neither has been run through `mutate.py`**; the kill evidence is a one-token
-sabotage binary, which is weaker. Nothing shipped moved — two comments, checks and a fixture.
+hand. ✅ **BOTH ARE RUN AND `killed` AS OF 2026-08-25, so the one-token sabotage binary is no
+longer the evidence** (`#### Both caps RUN through mutate.py`): the drawn cap by **six**
+objecting checks, the dictionary cap by **three**, 227 s and 244 s, **705 s** end to end with
+the baseline, kill sets predicted by name and in order before the run started. ⛔ **DO NOT
+QUOTE THE 6-AGAINST-3 AS A PRODUCT FACT — a draft did and the review of that diff refuted it
+twice by counting.** It is **four** rows red under the drawn cap alone against one under the
+dictionary cap, and only **two** of the nine reach `rebuildDPI(of:)` at all. And the reason
+those two cannot move under the dictionary cap — `rebuildDPI(of:)` routes `.noImage` to
+`rebuildDPI(from: nil)` and only `.unreadable` to `largestImage` — is true of **that seam and
+not of the product**: ⛔ **`Flattener.pageIsAnImage` reads `largestImage` with NO drawn walk in
+front of it** (`Flattener.swift:304-307`), from `Model.swift:886`'s text-extraction skip marker
+and from `hasDigitalText`, which is C29's own vote — and on page 13 the dictionary mutant takes
+`largestImage` `nil` → 1200 px at 141.18 DPI, flipping that predicate **false → true**.
+**Nothing pins `pageIsAnImage` on pages 11-14, so the three is a COVERAGE BOUNDARY**, carried
+as a ⚠️ on `bare-form-reach` and deliberately not fixed in the same commit as the log rows that
+count three. ✅ Page 14's two rows were *reasoned* by the 2026-08-23 section and are now
+**watched**; the dictionary mutant had never been built at all, and its count of three is
+confirmed — ⚠️ which three, that record never named. ⚠️ Two of the nine are red under
+**neither**: the premise row reads `drawsAnyXObject`, which has no depth guard in either
+direction, and page 12's control has nothing below `/FD` for a fourth level to admit (a
+*narrowing* mutant reaches page 12 and not the premise — and one is catalogued and killed,
+`logic/C24b-form-not-followed`, against a draft here that said none was). ⛔ **And the joint-+1
+claim the absolute-width rows exist for is not graded and is one third REFUTED** — `mutate.py`
+applies one mutant at a time, page 12's 2400 row is green under each cap separately and would
+be green under a joint +1, so **two** of the three widths would go red rather than three.
+Nothing shipped moved — two comments, checks and a fixture, plus a
+2026-08-25 repair to one failure-detail string that printed only the drawn walk's answers on
+the row comparing both, which is why the dictionary mutant's `FAIL` line came out
+byte-identical to a passing build's.
 **What led up to C24's close
 is measured as of 2026-08-17** — read the entry's `C24b` and `C24's wiring` sections before
 planning anything there: `Flattener.drawnLargestImage` and `Tools/score-drawn-images.swift` report
