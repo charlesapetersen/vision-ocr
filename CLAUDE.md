@@ -107,7 +107,30 @@ type does NOT reproduce the void** — three generated single-column pages at 40
 **41.7 / 33.3 / 27.8 px** giving line pitches of 52.1 / 40.0 / 31.9 against this document's ~52, so two of
 the three are denser and the first is the same; `obsN` equal to the drawn line count on **3 of 3** and
 `bareRows` **0** — so the fixture bullet's own prescription is refused and the
-ingredient is unknown. ⚠️ Still not a fix: `Recogniser` has no tiling seam, a seam cuts the lines that
+ingredient is unknown.
+✅ **AND THAT SECTION'S OWN OWED DEBT IS DISCHARGED THE SAME DAY — the tool's refusals are WATCHED**
+(`BUGS.md` C30 `#### The tool's refusals, WATCHED as of 2026-08-25`): `Tools/fault-inject.sh text_voids`,
+**8 rows**, `8 passed, 0 failed`, and it is the **fourth** Swift tool of the thirty-one in `Tools/` whose
+own refusals any case exercises — after `score-mrc`, `pdf-extract-pages` and `make-observations`
+(`make-plate-fixtures` is compiled by two cases as a fixture generator and has no non-zero exit of its
+own). ⛔ **Four MORE tools have a dump path no case exercises, and the sweep's own first draft got every one
+of their exit codes wrong** — `score-mrc` (`MRC_DUMP` → exit **6**, which `mrc_refuses` never reaches),
+`score-text-route` (exit **4**, and the file has no `exit(7)` at all), `score-threshold-loss` (exit 6, and
+**no** validation of `--dump`), and ⛔ **`score-shape-term`, which is not an unexercised exit but a MISSING
+one — it prints `⚠️ dump missing …` and exits 0 on a failed `SHAPEDUMP` write, this paragraph's own headline
+live in the tool every published C28 figure came from.** Recorded, not fixed. ⛔ **The finding is worth
+more than the green: cut the two new terms out of the exit-7 condition and the tool still PRINTS
+`⛔ 2 TEXT DUMPS FAILED TO WRITE` and exits 0** — a loud diagnostic under a green status, which every caller
+keying on the status reads as success while every reader who scrolls reads as failure. Two one-token
+sabotages, `6 passed, 2 failed` each on **disjoint** pairs, named and counted before each run; the
+`TILETEXT`-needs-`TILES` row is **two** rows because a single `elif` chain short-circuits on the exit code
+and leaves the directory-absence clause unwatched — measured that way first, then split. ⚠️ Exit 7's third
+branch (`bands.isEmpty`) is **unreachable from the command line** rather than unwatched (`bandRanges`
+returns `[]` only for a height of 0 — reasoned off the guards, not measured), and the band row asserts which
+arm fired so a green row cannot be the wrong one. ⚠️ Exits **6** and **3** still have no row; the band row
+rests on Vision refusing a ≤2-px dimension, which is Apple's behaviour and not this repo's; and
+`fault-inject.sh` is in no hook, so a red row here refuses no commit.
+⚠️ Still not a fix: `Recogniser` has no tiling seam, a seam cuts the lines that
 straddle it (so these are a floor on the benefit), whether the gain is the band's area or its shape is
 untested (bands run 1.47:1 / 2.95:1 / 5.89:1 on page 1's 3307x4488 sheet and 1.50 / 3.00 / 6.00 on the
 other five, which are 4409 tall), and the time cost of `n` requests a page is unmeasured. ⚠️ `TILES=1` is

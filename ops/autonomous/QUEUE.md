@@ -1745,8 +1745,65 @@ happens.**
         ⚠️ **Owed, and named rather than left implicit**: no `Tools/fault-inject.sh` case was added, the two
         new `exit(2)` refusals were exercised by hand only, and exit 7's other two branches — a band
         contributing no boxes, a failed dump write — have never been watched going red. That is the
-        sharpest thing left on this tool.
+        sharpest thing left on this tool. ✅ **DISCHARGED 2026-08-25 by `c30-refusals` below.**
         (context: BUGS.md C30 `#### The crop experiment, in Tools/ as of 2026-08-25`)
+  - [x] **c30-refusals** — **DONE 2026-08-25. The debt the `c30-tiles` box named as "the sharpest thing left
+        on this tool" is paid: `Tools/fault-inject.sh text_voids`, 8 rows, `8 passed, 0 failed`.** Do not
+        re-derive it. `BUGS.md` C30 `#### The tool's refusals, WATCHED as of 2026-08-25` carries it.
+        `score-text-voids` is the **fourth** Swift tool of the thirty-one in `Tools/` whose own refusals any
+        case exercises, after `score-mrc`, `pdf-extract-pages` and `make-observations` —
+        `make-plate-fixtures` is compiled by two cases as a fixture generator and has no non-zero exit of
+        its own.
+        ⛔ **THE FINDING IS WORTH MORE THAN THE GREEN.** Cut the two new terms out of the exit-7 condition
+        (`score-text-voids.swift:1260`) and the tool still **prints** `⛔ 2 TEXT DUMPS FAILED TO WRITE` and
+        `⛔ 50 BANDS PRODUCED NOTHING` in its summary — and **exits 0**. A loud diagnostic under a green exit
+        status is worse than a silent one: every caller keying on the status reads success while every
+        reader who scrolls reads failure, and the two disagree.
+        ✅ **WATCHED FAILING TWICE, on disjoint pairs, each named and counted before the run.** (A) the
+        exit-7 condition → `6 passed, 2 failed`, both exit-7 rows. (B) `guard tiles != nil || true`
+        (`:895`) → `6 passed, 2 failed`, the two rows (A) leaves green, with the failure detail reading
+        `exit 0, wanted 2:` and **nothing after the colon**.
+        ⛔ **(B) IS ALSO WHY THAT ROW IS TWO ROWS**: written as one `elif` chain the exit-code clause
+        short-circuits, so the directory-absence assertion was never evaluated — measured that way first
+        (`5 passed, 1 failed` over seven rows), then split, because an unwatched assertion inside a case
+        whose purpose is watching assertions is this register's own repeating defect.
+        ⚠️ **Exit 7's third branch is not unwatched — it is unreachable from the CLI**: `bandRanges` returns
+        `[]` only for a height of 0 (`:446`) and `tiles` is validated 1…64 (`:868`). ⛔ That is reasoned off
+        the two guards and **not** measured; what is measured is that `TILES=64` on the 50-row fixture gives
+        **50** bands, and the band row requires `produced no bands on a` to be ABSENT so a green row cannot
+        be the wrong arm.
+        ⚠️ **What it does not cover**: exits **6** and **3** have no row; the TILE-IDENTITY branch of exit 7
+        keeps only the ad-hoc watching the tiles section records; the band row rests on Vision refusing a
+        ≤2-px dimension, which is Apple's behaviour rather than this repo's; and `fault-inject.sh` is in no
+        hook, so a red row refuses no commit. It adds a **second** `swiftc -O` build against all of
+        `Sources/` to a full `fault-inject.sh` run.
+        ⛔ **THE SIBLING SWEEP FOUND FOUR MORE TOOLS WITH A DUMP PATH NO CASE EXERCISES, and its own first
+        draft got every one of their exit codes wrong** — it generalised "a dump-directory `exit(2)` beside
+        a 'the dump wrote nothing' exit" over all four when exactly **one** has that shape. From the source:
+        `score-mrc` is the clean match (`MRC_DUMP` → exit 6 at `:1100`, which `mrc_refuses` never reaches —
+        that case drives only its exit-3 PATH refusals); `score-text-route`'s dump failure is exit **4**
+        (`dumpExitCode`, `:424-427`; the file has **no `exit(7)`** and 5 is a self-test failure); and
+        `score-threshold-loss` has exit 6 for `--dump wrote no image` (`:731`) but **no validation of
+        `--dump` at all** (`:601-604`). ⛔ **The fourth is not an unexercised exit but a MISSING one, and it
+        is this item's own headline live in a sibling**: `score-shape-term` prints `⚠️ dump missing …`
+        (`:1476`) and exits **0** on a failed `SHAPEDUMP` write — a loud diagnostic under a green status, in
+        the tool every published C28 figure came from. Recorded, not fixed: it is C28's instrument and wants
+        its own failing check. Each needs its own build and its own fixture, so each is its own item; two of
+        the five image writers are already the queue's `silent-image-writes`.
+        ⛔ **AND THE ADVERSARIAL REVIEW OF THIS DIFF REMOVED TWO ASSERTIONS THAT COULD NOT FAIL — from the
+        case whose whole point is that assertions get watched.** The band row's `produced no bands on a`
+        clause was logically forced (`bandFailed` is counted inside `for band in bands`, so `bands.isEmpty`
+        implies `bandFailed == 0`; with the clause before it green the absence is guaranteed), and two
+        `grep "^p1<TAB>"` clauses claimed to catch "the fixture never opened", which exits **1** and is
+        caught a clause earlier. ⛔ **It also found the inverse row green on a build that recognises
+        NOTHING**: `measured` increments before any observation test, so exit 0, a printed `p1` row and two
+        dumps all survive it — and `dumpText` joins zero strings into a 1-byte file, so even `[ -s ]`
+        passes. The row asserts `obsN > 0` now. It also restored the empty-`sources` guard `argv_writers`
+        carries (an empty array under `set -u` on bash 3.2 aborts the run instead of reddening a row) and
+        stopped a `bad` message naming a log its own next statement deleted. ⚠️ These are shell assertions,
+        not `check()` calls: do **not** fold them into the register's running count of checks that could
+        not fail.
+        (context: BUGS.md C30 `#### The tool's refusals, WATCHED as of 2026-08-25`)
       ⚠️ Placed straight after `C28` because it is the same root cause seen from the other side — C28 is the
       subset where the missed ink is also DESTROYED at 1/8, this is the general case where it is merely
       unsearchable. C28 is mid-campaign so it keeps its place, but this may deserve to jump it: it is the
@@ -2943,6 +3000,26 @@ happens.**
       2026-08-20; it is where this was found, not the work. Was `origin:` until C26 closed and the
       coherence check read it as a status claim, which is the mistake §"How to write an item" records
       `tools-compile` and `mutants` making)
+- [ ] **shapedump-exit** — **`Tools/score-shape-term.swift` counts its failed dump writes, names them, and
+      then exits 0.** `dumpMissing` collects every `SHAPEDUMP` file it promised and did not write
+      (`:1457`), the summary appends `; ⚠️ dump missing …` (`:1476`), and the only exits after it are **6**
+      for `identityFailed` and **7** for `portDisagreed` — so a run whose PNGs never reached disk returns
+      success. ⛔ **This is the exact shape C30's `c30-refusals` was written about — a loud diagnostic under
+      a green exit status — living in the tool EVERY published C28 figure came from**, and its dumps are
+      what `SUBBARPIX-2026-08-22.tsv` and the C28 1:1 readings were made from. Found 2026-08-25 by the
+      sibling sweep of `c30-refusals`, recorded rather than fixed because it is C28's instrument and wants
+      its own failing check.
+      ⚠️ **It is a SIXTH image writer, not one of `silent-image-writes`' five.** That census is C26's,
+      2026-08-19, and `score-shape-term`'s `SHAPEDUMP` landed 2026-08-21 — so this does not reopen that
+      item and that item's two remaining writers (`make-plate-fixtures`, `make_icon`) are unaffected.
+      ⚠️ It is also the *nearest miss* of the five: `silent-image-writes` prescribes
+      `score-text-route`'s `INKDUMP` shape — "count what was promised against what reached disk, name the
+      missing files, and exit non-zero" — and this tool does the first two and not the third.
+      **The work**: make it exit (a code distinct from 6 and 7), a `Tools/fault-inject.sh` row modelled on
+      `text_voids`' read-only-directory row, and watch it fail. ⚠️ A `Tools/` file pays the full suite, so
+      budget a commit; and check whether any committed C28 measurement was taken through a partial dump
+      before changing what the tool returns. (origin: BUGS.md C30
+      `#### The tool's refusals, WATCHED as of 2026-08-25`)
 - [ ] **sweep-exit5** — `Tools/sweep-ink-bar.py`'s `CONFIG_EXITS` does not include
       `score-text-route`'s exit **5** (self-test failed, nothing measured), added 2026-08-19 by C26's
       sub-step (4). A systematic self-test failure would therefore be **recorded as 233 failed

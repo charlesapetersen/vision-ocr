@@ -529,7 +529,256 @@ fault_argv_writers() {
   rm -rf "$SB"
 }
 
-FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers"
+# C30. `Tools/score-text-voids.swift`'s refusals. The crop experiment (2026-08-25)
+# added three `exit(2)` guards and two new ways to reach `exit(7)`, and its own
+# section named the debt: the `exit(2)`s had been "exercised by hand only", and of
+# exit 7's three branches only TILE-IDENTITY had ever been watched going red. An
+# error branch nobody has executed is not a safeguard — CONTRIBUTING §4c, and R31,
+# R32 and H2 are why this file exists.
+#
+# ⚠️ WHAT IT SABOTAGES, precisely, because the file header says "sabotages one thing,
+# runs the real build step" and neither half is true here. It runs no build step: the
+# subject is a `Tools/` tool, as in `mrc_refuses` and `argv_writers`. And only ONE of
+# its eight rows sabotages anything — the read-only dump directory, which is this
+# file's `chmod -x` technique pointed at a destination instead of a program. The
+# other seven feed hostile argv and environment, `argv_writers`-style, or assert the
+# inverse.
+#
+# ⛔ Why a 12x12 pt page has to be built here. `bandFailed` fires when a band will
+# not crop or its request throws, and Vision refuses an image with a dimension of
+# 2 px or less. `TILES` is capped at 64, so provoking it on a 3300-row fixture
+# would need ~1,650 bands and cannot be asked for: the page has to be small enough
+# that a 64-way split lands under Vision's floor. 12x12 pt rebuilds to 50x50 px at
+# 300 dpi, and 64 bands of a 50-row sheet are 50 one-row bands.
+#
+# ⚠️ THE BAND ROW DEPENDS ON A VISION BEHAVIOUR, not on this repo. If Apple lets a
+# 1-row image through, that row goes red — which is the right signal (the branch
+# no longer fires and nobody is watching it) and not a build failure. This file is
+# not in the pre-commit hook, so a red row here refuses no commit.
+fault_text_voids() {
+  local name target out rc
+  target="$(uname -m)-apple-macos13.0"
+  sandbox
+
+  # Built in the sandbox against `Sources/`, the way `mrc_refuses` builds `score-mrc`:
+  # this tool takes its pixels from `Flattener.flatten` and its boxes from
+  # `Recogniser`, so it cannot be compiled alone.
+  mkdir -p "$SB/h" && cp "$SB/Tools/score-text-voids.swift" "$SB/h/main.swift"
+  local sources=()
+  for f in "$SB"/Sources/*.swift; do
+    [ "$(basename "$f")" = "App.swift" ] && continue
+    sources+=("$f")
+  done
+  # `argv_writers` carries this guard and the first draft of this case dropped it:
+  # under `set -u` on bash 3.2 an empty array expansion is a fatal *unbound
+  # variable*, which aborts the whole run mid-case instead of reporting a red row.
+  if [ "${#sources[@]}" -eq 0 ]; then
+    bad "Sources/ has Swift files to build against" "no Sources/*.swift in the sandbox"
+    return
+  fi
+  if ! swiftc -O -o "$SB/score-text-voids" -target "$target" \
+       "${sources[@]}" "$SB/h/main.swift" >"$SB/voids-build.log" 2>&1; then
+    bad "score-text-voids builds" \
+        "$(grep -m1 'error:' "$SB/voids-build.log" || echo "see $SB/voids-build.log")"
+    return
+  fi
+  local tool="$SB/score-text-voids"
+
+  # A real page of type, from the suite's own fixture generator. ⚠️ NEVER `testdocs/`
+  # — the same rule `argv_writers` carries, for the same reason.
+  # ⚠️ Neither of these two failures removes the sandbox, and `argv_writers` records
+  # the reason: the `bad` message names a log that lives inside it. Deleting it here
+  # would point a maintainer at a path that no longer exists.
+  if ! swiftc -o "$SB/plates" -target "$target" \
+       "$SB/Tools/make-plate-fixtures.swift" >"$SB/plates.log" 2>&1; then
+    bad "make-plate-fixtures builds" \
+        "$(grep -m1 'error:' "$SB/plates.log" || echo "see $SB/plates.log")"
+    return
+  fi
+  mkdir -p "$SB/plates.d"
+  "$SB/plates" "$SB/plates.d" >/dev/null 2>&1
+  local page="$SB/plates.d/text-only.pdf"
+  if [ ! -s "$page" ]; then
+    bad "the fixture page exists" "make-plate-fixtures wrote no text-only.pdf"
+    return
+  fi
+
+  # The smallest legal PDF that PDFKit will open, at the page size argued for above.
+  # Hand-written because nothing in the tree makes a page this small, and validated
+  # by the band row itself: a malformed file exits 1 at `cannot open`, which that
+  # row reports as a failure rather than passing quietly.
+  /usr/bin/python3 - "$SB/tiny.pdf" <<'PY'
+import sys
+w = h = 12
+body = b"0 0 0 rg 1 1 %d %d re f\n" % (w - 2, h - 2)
+objs = [b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %d %d] /Contents 4 0 R "
+        b"/Resources << >> >>" % (w, h),
+        b"<< /Length %d >>\nstream\n" % len(body) + body + b"endstream"]
+out, offs = b"%PDF-1.4\n", []
+for i, o in enumerate(objs, 1):
+    offs.append(len(out))
+    out += b"%d 0 obj\n" % i + o + b"\nendobj\n"
+xref = len(out)
+out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1)
+for o in offs:
+    out += b"%010d 00000 n \n" % o
+out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (
+    len(objs) + 1, xref)
+open(sys.argv[1], "wb").write(out)
+PY
+
+  # --- the exit(2) refusals the crop experiment added -------------------------
+  # None of these opens the PDF: the guards run before `PDFDocument(url:)`, so the
+  # page argument is a placeholder and these rows cost nothing.
+
+  # ⛔ The one the section calls out by name. `TILETEXT` alone used to create the
+  # directory, write nothing and exit 0 — a missing dump reading exactly like "the
+  # strings matched nothing".
+  #
+  # ⚠️ TWO ROWS, NOT ONE, and the split is the point. Written as a single `elif`
+  # chain the exit-code clause short-circuits, so restoring the old behaviour reddens
+  # it on the code alone and the directory clause is never evaluated — an assertion
+  # nobody has watched, inside a case whose whole purpose is that they get watched.
+  # Apart, one sabotage reddens both.
+  local dumpdir="$SB/never-made"
+  out="$(TILETEXT="$dumpdir" "$tool" "$page" 1 2>&1 >/dev/null)"; rc=$?
+
+  name="TILETEXT without TILES is refused, and says why"
+  if [ "$rc" -ne 2 ]; then
+    bad "$name" "exit $rc, wanted 2: $(head -1 <<<"$out")"
+  elif ! grep -q "needs TILES=n" <<<"$out"; then
+    bad "$name" "exit 2 with the wrong diagnostic: $(head -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # ⚠️ Green whenever the tool exits BEFORE `createDirectory` — a self-test failure, a
+  # usage refusal, a `VOIDMININCH` refusal — so it is only meaningful while the row
+  # above is green. Left unguarded rather than gated on `rc == 2`, because gating it
+  # would make it SKIP under the sabotage it exists to catch instead of going red.
+  name="…and leaves no dump directory behind for a later run to read as this run's"
+  if [ -e "$dumpdir" ]; then
+    bad "$name" "$dumpdir exists after a refusal"
+  else
+    ok "$name"
+  fi
+
+  name="TILETEXT at an unwritable path is refused before anything is measured"
+  out="$(TILES=1 TILETEXT=/dev/null/nope "$tool" "$page" 1 2>&1 >/dev/null)"; rc=$?
+  if [ "$rc" -eq 2 ] && grep -q "is not a writable directory" <<<"$out"; then
+    ok "$name"
+  else
+    bad "$name" "exit $rc, said: $(head -1 <<<"$out")"
+  fi
+
+  # Both ends of the range and a non-number. The ceiling is what stops a typo
+  # starting ten thousand requests, so it is asserted rather than assumed.
+  name="TILES outside 1…64, and TILES that is not a number, are refused"
+  local bads=0 t
+  for t in 0 65 two -1; do
+    out="$(TILES="$t" "$tool" "$page" 1 2>&1 >/dev/null)"; rc=$?
+    if [ "$rc" -ne 2 ] || ! grep -q "whole number of bands" <<<"$out"; then
+      bads=$((bads+1)); say "TILES=$t gave exit $rc: $(head -1 <<<"$out")"
+    fi
+  done
+  if [ "$bads" -eq 0 ]; then ok "$name"; else bad "$name" "$bads of 4 values were not refused"; fi
+
+  name="VOIDMININCH that is not a positive number of inches is refused"
+  out="$(VOIDMININCH=0 "$tool" "$page" 1 2>&1 >/dev/null)"; rc=$?
+  if [ "$rc" -eq 2 ] && grep -q "positive number of inches" <<<"$out"; then
+    ok "$name"
+  else
+    bad "$name" "exit $rc, said: $(head -1 <<<"$out")"
+  fi
+
+  # --- exit 7's two never-watched branches ------------------------------------
+
+  # ⛔ The dump write, failed for real rather than simulated. The directory EXISTS,
+  # so `createDirectory(withIntermediateDirectories: true)` succeeds at startup and
+  # the exit-2 guard above cannot answer this; the write inside `dumpText` is what
+  # fails, which is the branch the two silent image writers in `Tools/` get wrong.
+  # ⚠️ No restore trap, unlike `mrc_refuses`: `chmod 755` is unconditional and there
+  # is no `return` between, and the subject is a directory inside a throwaway sandbox
+  # rather than a user's own `jbig2`. An interrupt here leaks a 555 directory under
+  # `mktemp -d` and nothing else.
+  name="a dump directory that cannot be written is exit 7, not a quiet zero"
+  local rodir="$SB/readonly-dump"
+  mkdir -p "$rodir" && chmod 555 "$rodir"
+  out="$(TILES=1 TILETEXT="$rodir" "$tool" "$page" 1 2>&1)"; rc=$?
+  chmod 755 "$rodir"
+  if [ "$rc" -ne 7 ]; then
+    bad "$name" "exit $rc, wanted 7: $(tail -1 <<<"$out")"
+  elif ! grep -q "TEXT DUMPS FAILED TO WRITE" <<<"$out"; then
+    bad "$name" "exit 7 without naming the failed dumps: $(tail -1 <<<"$out")"
+  elif ! grep -q "could not write p1-whole.txt" <<<"$out"; then
+    bad "$name" "exit 7 but the row does not name the file it could not write"
+  else
+    ok "$name"
+  fi
+
+  # ⛔ A band that contributes no boxes, and it must be the `bandFailed` arm of
+  # `tileBandFailures` rather than the `bands.isEmpty` one. The third clause is what
+  # discriminates: `bands contributed no boxes` is emitted ONLY from `bandFailed > 0`,
+  # where the empty-bands arm says `produced no bands on a <h>-row page`. So matching
+  # on exit 7 alone would be green on either arm and this is not.
+  #
+  # ⚠️ A fourth clause asserting the empty-bands string is ABSENT was written and
+  # REMOVED: `bandFailed` is counted inside `for band in bands`, so `bands.isEmpty`
+  # implies `bandFailed == 0` and the two are mutually exclusive — with clause three
+  # green, that assertion is forced and could not fail. A fifth, `grep "^p1<TAB>"`,
+  # went the same way: its message said "the tiny fixture never opened", but a
+  # fixture that will not open exits 1 at `cannot open` and clause one already has
+  # it, while reaching here at all means the row was printed. Both found by the
+  # adversarial review of this diff — the twelve checks in this register that could
+  # not fail are why it is run.
+  name="bands that contribute no boxes are exit 7, and it is bandFailed not empty-bands"
+  out="$(TILES=64 "$tool" "$SB/tiny.pdf" 1 2>&1)"; rc=$?
+  if [ "$rc" -ne 7 ]; then
+    bad "$name" "exit $rc, wanted 7: $(tail -1 <<<"$out")"
+  elif ! grep -q "BANDS PRODUCED NOTHING" <<<"$out"; then
+    bad "$name" "exit 7 without the band summary: $(tail -1 <<<"$out")"
+  elif ! grep -q "bands contributed no boxes" <<<"$out"; then
+    bad "$name" "exit 7, but by the empty-bands arm rather than bandFailed: $(tail -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # --- the inverse row, CONTRIBUTING §4d --------------------------------------
+  # A tool that refused everything would pass every row above.
+  #
+  # ⛔ IT ASSERTS `obsN`, NOT "a row was printed", and the difference is the whole
+  # value of the row. A build whose recognition returned NOTHING still exits 0
+  # (`measured` is incremented before any observation test), still prints a `p1` row
+  # (verdict `no-words`), and still writes both dumps — `dumpText` joins zero strings
+  # into a 1-byte file, so even `[ -s ]` is satisfied. So the three obvious clauses
+  # were all green on a tool that had stopped working, which the adversarial review
+  # of this diff found. `obsN > 0` is the one that is not.
+  name="…and a writable dump directory still recognises the page and writes both arms"
+  local okdir="$SB/good-dump" obs
+  mkdir -p "$okdir"
+  out="$(TILES=1 TILETEXT="$okdir" "$tool" "$page" 1 2>&1)"; rc=$?
+  obs="$(awk -F'\t' '$1 == "p1" { print $9 }' <<<"$out")"
+  if [ "$rc" -ne 0 ]; then
+    bad "$name" "exit $rc: $(tail -1 <<<"$out")"
+  elif [ -z "$obs" ]; then
+    bad "$name" "exit 0 and no p1 row to read obsN from"
+  elif [ "$obs" -le 0 ]; then
+    bad "$name" "exit 0 with obsN $obs — the page was measured and nothing was read"
+  elif [ ! -s "$okdir/p1-whole.txt" ] || [ ! -s "$okdir/p1-tiled-1.txt" ]; then
+    bad "$name" "exit 0 with $(ls "$okdir" | wc -l | tr -d ' ') of 2 dumps written"
+  else
+    ok "$name"
+  fi
+
+  # Same reason as `argv_writers`: `mrc_refuses` clears the script's EXIT trap, so
+  # on a full run nothing else removes this sandbox — and it holds a whole-repo
+  # rsync plus two binaries linked against all of `Sources/`.
+  rm -rf "$SB"
+}
+
+FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids"
 
 if [ "${1:-}" = "--list" ]; then
   for f in $FAULTS; do echo "  $f"; done; exit 0

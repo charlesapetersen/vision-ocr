@@ -184,6 +184,23 @@ stretched boxes — words per observation is flat (8.63 whole against 8.60 at ei
 dpi, glyph 41.7/33.3/27.8 px, `obsN` equal to the drawn line count on 3 of 3 — so the fixture bullet's own
 prescription is refused and the ingredient is still unknown. ⚠️ Still an instrument: nothing in `Sources/`
 moved, `Recogniser` has no tiling seam, and the time cost of `n` requests a page is unmeasured.
+✅ **AND THAT SECTION'S OWN OWED DEBT IS DISCHARGED THE SAME DAY — the tool's refusals are WATCHED**
+(`#### The tool's refusals, WATCHED as of 2026-08-25`): `Tools/fault-inject.sh text_voids`, **8 rows**,
+`8 passed, 0 failed`, the FOURTH Swift tool of the thirty-one in `Tools/` whose own refusals any case
+exercises.
+⛔ **The finding is worth more than the green: with the two new terms cut out of the exit-7 condition the
+tool still PRINTS `⛔ 2 TEXT DUMPS FAILED TO WRITE` and exits 0** — a loud diagnostic under a green status,
+which every caller that keys on the status reads as success. Two one-token sabotages, `6 passed, 2 failed`
+each on **disjoint** pairs, both predicted by name before the run. ⚠️ Exit 7's third branch
+(`bands.isEmpty`) is **unreachable from the command line** rather than unwatched — `bandRanges` returns `[]`
+only for a height of 0, reasoned off the guards and not measured — and the band row asserts which arm fired
+so a green row cannot be the wrong one. ⚠️ Exits **6** and **3** still have no row, the band row depends on
+Vision refusing a ≤2-px dimension rather than on anything in this repo, and `fault-inject.sh` is in no hook.
+⛔ **The sibling sweep found the same headline LIVE in `Tools/score-shape-term.swift` — it prints
+`⚠️ dump missing …` and exits 0 on a failed `SHAPEDUMP` write** (`:1476`; 6 is identity and 7 is the port
+check), in the tool every published C28 figure came from. Recorded, not fixed; it is the queue's
+`shapedump-exit`. ⚠️ And the sweep's own first draft had every one of four sibling exit codes wrong — read
+the section, not a summary.
 ⛔ **One thing does not port and
 it was measured: `Flattener.otsuThreshold` clamps to `[90, 230]` and `artefact.py`'s does not**, so the
 shipped function reads 90 where the reference reads 0 on a two-valued buffer — same argmax, the clamp is the
@@ -11334,6 +11351,123 @@ full suite and would want a `--self-test`, and the three parameters above plus `
 shape are the whole recipe. **So the ingredient that makes one request drop a block is still unknown**,
 and it is not density, not glyph size and not page megapixels (3400x4400 against this document's
 3307x4488).
+
+#### The tool's refusals, WATCHED as of 2026-08-25 — exit 7 had three branches and one of them had ever fired
+
+The crop experiment left a debt, and its **queue box** — `ops/autonomous/QUEUE.md`'s `c30-tiles`, not the
+section above, which never carried the sentence — named it: *"no `Tools/fault-inject.sh` case was added, the
+two new `exit(2)` refusals were exercised by hand only, and exit 7's other two branches — a band contributing
+no boxes, a failed dump write — have never been watched going red. That is the sharpest thing left on this
+tool."* (`Tools/README.md` carried a differently-worded variant of the same debt.) It is discharged.
+`Tools/fault-inject.sh text_voids` is **8 rows** and reads `8 passed, 0 failed`; nothing in `Sources/` moves
+and **C30 stays OPEN**. ⚠️ **The quoted "two" is wrong and is quoted anyway**: `9332deb` added **three**
+`exit(2)` guards to this tool (`TILES` range, `TILETEXT`-needs-`TILES`, `TILETEXT`-unwritable) and
+`VOIDMININCH`'s is older, so the case has four refusal rows against a box that promised two.
+
+⚠️ **The sibling sweep, and it is the frame for the rest of this section.** `Tools/` holds **31** Swift
+tools. Before this, **three** of them had their own refusals exercised by anything — `score-mrc`
+(`mrc_refuses`, its exit-3 PATH refusals), `pdf-extract-pages` and `make-observations` (`argv_writers`,
+their exit-2 argv guards). `score-text-voids` is the fourth. ⚠️ `make-plate-fixtures` is *compiled* by
+`argv_writers` and now by this case, but it is a fixture generator and not a subject: it has no non-zero
+exit at all. ⛔ **Three more tools have a dump path no case exercises, and the sweep's own first draft got
+every one of their exit codes wrong** — it wrote *"a dump-directory `exit(2)` beside a 'the dump wrote
+nothing' exit"* and applied it to four tools, of which exactly **one** has that shape. Read from the source
+instead: **`score-mrc`** is the clean match (`MRC_DUMP` → `stop(…, code: 6)`, `:1100`, which
+`mrc_refuses` never reaches — that case only drives its exit-3 PATH refusals); **`score-text-route`**'s dump
+failure is exit **4** (`dumpExitCode`, `:424-427`; the file contains **no `exit(7)` at all**, and 5 is a
+self-test failure); **`score-threshold-loss`** has exit 6 for `--dump wrote no image` (`:731`) but **no
+validation of `--dump` whatever** — `:601-604` takes the path and checks nothing.
+⛔ **AND THE FOURTH IS NOT AN UNEXERCISED EXIT, IT IS A MISSING ONE — this section's own headline, live in a
+sibling.** `Tools/score-shape-term.swift` collects `dumpMissing` and prints `⚠️ dump missing …` in its
+summary (`:1476`), and then exits **6** on `identityFailed` and **7** on `portDisagreed` and **0** on a
+failed `SHAPEDUMP` write. A loud diagnostic under a green exit status, in the tool every published C28
+figure came from. Found by the adversarial review of this diff, recorded rather than fixed: it is C28's
+instrument, not C30's, and it wants its own failing check. Each of the four needs its own build and its own
+fixture, so each is its own item; two of the five image writers are already the queue's
+`silent-image-writes`.
+
+⛔ **THE RESULT WORTH MORE THAN THE GREEN, and it is what an unwatched exit code costs.** With the two new
+terms cut out of the exit-7 condition (`score-text-voids.swift:1260`, `|| tileBandFailures > 0 ||
+textWriteFailures > 0` removed), the tool still **prints** `⛔ 2 TEXT DUMPS FAILED TO WRITE` and `⛔ 50 BANDS
+PRODUCED NOTHING` in its summary line — and **exits 0**. A loud diagnostic under a green exit status is
+worse than a silent one, because every caller that keys on the status reads success while every reader who
+scrolls sees the warning: the two disagree and the machine believes the wrong one. That is the
+silent-success defect `score-corpus` and `score-threshold-loss` both had, one layer up.
+
+✅ **WATCHED FAILING, twice, with the reddened rows named and counted before each run.**
+**(A)** the exit-7 condition above → **exactly two** of the eight red, `6 passed, 2 failed`, both of them the
+exit-7 rows, the five refusal rows and the inverse row untouched. **(B)** the `TILETEXT`-needs-`TILES` guard
+neutered to `guard tiles != nil || true` (`:895`) → **exactly two** red, `6 passed, 2 failed`, and they are
+two rows sabotage A leaves green. Under (B) the failure detail is `exit 0, wanted 2:` with **nothing after
+the colon** — no diagnostic at all — which is that guard's own recorded history (*"`TILETEXT` alone created
+the directory, wrote nothing and exited 0"*) reproduced.
+
+⛔ **AND (B) IS WHY THAT ROW IS TWO ROWS.** Written as one `elif` chain — exit code, then directory, then
+diagnostic — the exit-code clause **short-circuits**, so sabotage B reddened it on the code alone and the
+directory-absence clause was never evaluated. It was measured that way first (`5 passed, 1 failed` over a
+seven-row version) and split afterwards, because an assertion nobody has watched, inside a case whose entire
+purpose is that assertions get watched, is this register's own repeating defect. Apart, one sabotage reddens
+both. ⚠️ The first row's *diagnostic* clause is still only reached once the exit code is already right, so it
+is watched for presence and not independently, and the second row is green whenever the tool exits before
+`createDirectory` at all — left unguarded rather than gated on `rc == 2`, because gating it would make it
+**skip** under the sabotage it exists to catch instead of going red.
+
+⛔ **AND THE ADVERSARIAL REVIEW OF THIS DIFF DELETED TWO ASSERTIONS THAT COULD NOT FAIL, out of the case
+whose entire purpose is that assertions get watched.** (1) The band row's `produced no bands on a`-is-absent
+clause was **logically forced**: `bandFailed` is counted inside `for band in bands`, so `bands.isEmpty`
+implies `bandFailed == 0`, and with the clause before it green the absence is guaranteed. What actually
+discriminates the two arms is that preceding clause, because `bands contributed no boxes` is emitted only
+from `bandFailed > 0` — so the discrimination claim survives and the assertion carrying it did not. (2) Two
+`grep "^p1<TAB>"` clauses said they caught "the fixture never opened", which exits **1** at `cannot open`
+and is caught a clause earlier; reaching them at all means the row was printed.
+⛔ **The review's sharpest find is the third: the inverse row was green on a build that recognises
+NOTHING.** `measured` is incremented before any observation test (`:1117`), so exit 0 survives; the `p1` row
+still prints with verdict `no-words`; and `dumpText` joins zero strings into a **1-byte** file, so `[ -s ]`
+passes on both dumps. All three obvious clauses green on a tool that had stopped working. The row reads
+`obsN` out of the TSV and requires it positive now — the same shape as `argv_writers`' inverse row, which
+asserts the reported observation count rather than the file's existence. ⚠️ **These are shell assertions and
+not `check()` calls**: do not fold them into this register's running count of checks that could not fail.
+The review also restored the empty-`sources` guard `argv_writers` carries (an empty array under `set -u` on
+bash 3.2 aborts the whole run instead of reddening a row) and stopped a `bad` message from naming a log its
+own next statement deleted.
+
+⛔ **Exit 7's THIRD branch is not unwatched — it is unreachable from the command line, and the case asserts
+which branch fired.** `bandRanges` returns `[]` only for `h <= 0` or `tiles <= 0` (`:446`), `tiles` is
+validated `1…64` at `:868`, and a page that opened has a positive height — so `bands.isEmpty` needs a
+zero-row bitmap and is a guard against a future caller rather than a reachable state. ⚠️ That is read off the
+two guards, **not** measured. What *is* measured is the corroboration: on the 50-row fixture `TILES=64`
+produces **50 bands**, not none, and the band row matches `bands contributed no boxes` while requiring
+`produced no bands on a` to be **absent** — so a green row cannot be the wrong branch. Keying on exit 7 alone
+would have been green on either.
+
+⛔ **Provoking `bandFailed` needs a 12x12 pt page, and the arithmetic is why.** Vision refuses an image with
+a dimension of 2 px or less (`The image is too small in at least one dimension 50 x 2 (each dimension has to
+be more than 2 pixels)` — ⚠️ **verbatim from the run, and its `50 x 2` is Vision's own wording for a
+one-row band**; the bands here are `rows 0…1`, `1…2`, … and a reader who "corrects" the quote to `50 x 1`
+is correcting the measurement to match the arithmetic), and `TILES` is capped at 64 — so a 3300-row fixture would need ~1,650 bands to
+reach that floor and cannot be asked for. The case hand-writes a 453-byte single-page PDF that `flatten`
+rebuilds to **50x50 px at 300 dpi**; 64 bands of a 50-row sheet are **50 one-row bands**, every one of which
+throws. ⚠️ Hand-written because nothing in the tree makes a page this small, and validated by the row that
+uses it: a malformed file exits 1 at `cannot open`, which that row reports as a failure rather than passing
+quietly. ⚠️ **That row depends on an Apple behaviour, not on this repo.** If Vision ever accepts a 1-row
+image it goes red, which is the correct signal — the branch stopped firing and nobody was watching it — and
+it refuses no commit, because `fault-inject.sh` is not in the pre-commit hook.
+
+✅ **The inverse row is CONTRIBUTING §4d's and it is not decoration**: a tool that refused everything would
+pass all seven rows above it. A legitimate `TILES=1 TILETEXT=<writable>` run exits 0, prints a measured `p1`
+row and writes **both** dumps — the second half asserted because the failure this knob exists to prevent is
+a dump that is absent while the run reads clean.
+
+⚠️ **What it costs and what it does not cover.** The case adds a **second** `swiftc -O` build against all of
+`Sources/` to a full `fault-inject.sh` run (`mrc_refuses` is the first), plus a `make-plate-fixtures` build
+and **55** `VNRecognizeTextRequest`s — three whole pages, two one-band arms, and the band row's **50**
+one-row bands, which throw at once and are the slowest thing here after the two builds. ⚠️ A draft said
+"three real recognitions", counting only the whole pages. It removes its own sandbox for the reason `argv_writers` records —
+`mrc_refuses` clears the script's `EXIT` trap and takes the shared cleanup with it. Not covered: **exit 6**
+(the whole-page identity arm) and **exit 3** (measured nothing) have no row here, and exit 7's TILE-IDENTITY
+branch keeps the ad-hoc watching the crop-experiment section records rather than gaining one. ⚠️ It reads
+`Tools/make-plate-fixtures.swift`'s `text-only.pdf` and **never `testdocs/`** — `argv_writers`' rule, for
+the same reason.
 
 #### What a fix has to satisfy
 
