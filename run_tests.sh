@@ -23,7 +23,31 @@ for f in Sources/*.swift; do
   SOURCES+=("$f")
 done
 
-swiftc -o "$BIN" \
+# ⛔ `-O` IS LOAD-BEARING ON THIS BINARY AND ON $HELPER — DO NOT DROP IT. There was no optimization flag
+# here until 2026-08-24, so the suite ran `Flattener`'s pixel loops at `-Onone` while the shipped app has
+# always run them optimized (`build.sh` passes `-O` at :47/:68/:96/:104 — four lanes over two binaries,
+# app and helper). Measured that day, same commit `8d00504`, same 1,247 checks, same machine, normal
+# scheduling band: 709 s -> 225 s total, and the TEST PHASE alone 618 s -> 103 s = 6.0x. Compile grew
+# 91 s -> 122 s (~24 s of that is this binary, ~7 s the helper), which is why the total is 3.15x and not
+# 6x. Compile is now 54% of the run, so THE NEXT WIN HERE IS BUILD CACHING, NOT MORE OPTIMIZATION.
+# $HELPER at `-O` also makes the suite test what actually ships, matching `build.sh:104`.
+#
+# ⛔ NEVER `-Ounchecked` — and NOT for the reason it looks like. The R24/A7.1 probe family at lines 15-22
+# DISCARDS its results (`_ = Flattener.hasDigitalText(url)`, …) and the check at `Tests/main.swift:10895`
+# is "the hostile conversions do not take the process down": these checks pin GUARDS THAT PREVENT a trap,
+# they do not assert that one happens. So under `-Ounchecked` a regression that removed a guard would
+# WRAP SILENTLY instead of trapping and that check would pass VACUOUSLY — the failure mode is a green
+# suite, not a red one. `-Ounchecked` also deletes `Sources/JBIG2.swift:235`'s `precondition`.
+# ⛔ AND NEVER `-wmo`, which is the obvious next "make it faster" step. `swiftc -O` here emits
+# `-primary-file` per source (verified with `-driver-print-jobs`), i.e. NO whole-module optimization, and
+# that is the only thing stopping `Tests/main.swift` from inlining `Sources/` bodies. Add `-wmo` and those
+# discarded probe calls become dead-code-eliminable, so R24 could go green without running what it names.
+# ⚠️ The one check `-O` could genuinely have broken is the R40 parity block (`Tests/main.swift:5609` and
+# a second copy at :5697): it compares `confidence` and all four bounding-box components with EXACT float
+# inequality between TWO SEPARATELY COMPILED binaries, whose inlining decisions differ. Verified safe
+# rather than assumed: Swift enables no fast-math, and an FMA detector returns bit-identical results at
+# `-Onone`, `-O` and `-Ounchecked` on Apple Swift 6.3.3. Suite was 1,247/1,247 with no skips under `-O`.
+swiftc -O -o "$BIN" \
   -target "$(uname -m)-apple-macos13.0" \
   "${SOURCES[@]}" \
   Tests/main.swift
@@ -37,7 +61,7 @@ swiftc -o "$BIN" \
 # pre-commit hook report "TESTS FAILED" over a suite that had never run, which
 # names the wrong cause (R43). The refusal is right; the diagnosis was not.
 HELPER="build/visionocr-recognise"
-if ! swiftc -o "$HELPER" \
+if ! swiftc -O -o "$HELPER" \
   -target "$(uname -m)-apple-macos13.0" \
   Sources/Prefs.swift Sources/Runner.swift Sources/Recogniser.swift \
   Sources/SearchableWriter.swift Sources/Flattener.swift Sources/JBIG2.swift \

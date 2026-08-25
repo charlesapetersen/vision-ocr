@@ -69,9 +69,54 @@
   <!-- A LaunchAgent loads in the GUI login session. So this survives a daemon CRASH but NOT a logout or a
        reboot, and reboot-survival is deliberately out of scope: bringing the run back after a reboot means
        a LaunchDaemon in a root domain with no logged-in user's keychain, TCC grants or `caffeinate`
-       assertion — none of which this daemon can work without. Background is the right ProcessType for a
-       long loop that must not be treated as interactive by the scheduler. -->
+       assertion — none of which this daemon can work without. -->
+  <!-- ⛔ WAS `Background` UNTIL 2026-08-24, AND THAT COST 5.14x ON EVERY SUITE RUN. Measured end to
+       end, same commit `8d00504`, same 1,247 checks, same machine still holding 4.0 GB of swap: 709 s
+       in the normal band against a mean of 3,643 s over the daemon's four runs (3,362 / 3,610 / 3,617
+       / 3,982). `Background` is darwin-bg — lowest QoS, I/O throttled, threads restricted to the
+       E-cores — and per `man taskpolicy` ("All children of the specified program also inherit these
+       policies") ALL CHILDREN INHERIT IT, so the clamp reached launchd -> daemon loop -> claude
+       session -> git commit -> pre-commit hook -> run_tests.sh -> build/tests. It also SURVIVES THE
+       PARENT'S DEATH: a detached mutation campaign stayed clamped after the daemon was booted out.
+       Two microbenchmarks put the band's cost at 5.4x and 6.6x, which BRACKET the 5.14x end-to-end
+       figure rather than confirm it.
+       ⛔ AND IT CANNOT BE ESCAPED FROM INSIDE, so do not "fix" this in `test-lock.sh` instead —
+       measured 2026-08-24: `taskpolicy -B -p $$` inside a darwin-bg process leaves PRI=4, leaves its
+       children at PRI=4, and does not improve the benchmark (1.811 -> 1.991 s, i.e. no escape; that
+       spread is run-to-run noise on a contended machine). `-B` works only from OUTSIDE, on another
+       pid. This plist is the only lever.
+       ⚠️ `PRI` IS THE DISCRIMINATOR, NOT `nice`: penalized is PRI=4, normal is PRI=31+, and NI=5 on
+       its own costs ~3%. Reading NI as evidence of the band cost one killed measurement that day.
+       ⚠️ WHY `Standard`: documented as "equivalent to no ProcessType being set", which the same man
+       page says still applies LIGHT CPU/IO throttling — that is the intended deference, and it is why
+       no `Nice` key is set. A `Nice 5` was drafted and dropped: its only measurement was on an IDLE
+       machine (~3%), where nice by definition costs nothing, and the verify step below cannot tell a
+       honoured `Nice` from a silently ignored one. `Interactive` means "no resource limitations" and
+       is for work a user waits on. NOT `Adaptive`: it moves between Background and Interactive on XPC
+       transaction activity, and this daemon opens none, so it would sit in Background — the bug again.
+       ⚠️ INFERENCE, NOT MEASUREMENT: the 709 s run came from a shell in the normal band, not from
+       launchd under `ProcessType Standard`. That `Standard` lands in that same band is the assumption
+       this change rests on, which is what the check below is for.
+       ⚠️ VERIFY AFTER THE NEXT `start` — `-O` landed in `run_tests.sh` in the same change, so the
+       target is BOTH fixes together: the first `pre-commit` row in `$STATE/suite-timings.tsv` should
+       be ~225 s. ~700 s means the band fix landed and `-O` did not; ~3,600 s means neither did, and
+       `Interactive` is the fallback for a `Standard` that throttles more than "lightly".
+       ⚠️ AND THIS ONLY REACHES THE `keepalive` LANE: `daemon.sh`'s `nohup` lane never touches this
+       plist, so a daemon started that way inherits the launching shell's band instead.
+       ⛔ THE TIMEOUT CONSTANTS WERE ALL DERIVED FROM CLAMPED RUNS — `MAXRUN`/`GATE_MAXRUN` (14400),
+       `HB_HARD` (3600), `test-lock.sh`'s `WAIT_DEFAULT`/`MAXAGE`, and the hook's own duplicated
+       `hook_wait`. DO NOT RESCALE THEM BY ANY RATIO ON THIS PAGE: the mean-of-four above is exactly
+       the method `vision-ocr-autonomous.sh:193` and `test-lock.sh:65` forbid in capitals — "the WORST
+       row in suite-timings.tsv you are willing to survive, plus headroom; never the mean, never one
+       run" — two overruns PARK the run, and `GATE_MAXRUN` has already been under-sized twice. None of
+       them is purely suite-bound either: `GATE_MAXRUN` carries a 3,600 s lock-wait term this change
+       does not shrink, and `MAXRUN` bounds a whole session dominated by model latency. Re-derive from
+       the worst NEW row once enough have accumulated, or leave them oversized — oversized is safe.
+       ⚠️ CONCURRENCY, CORRECTED: the suite ran at ~95% of ONE core in the run measured here, but do
+       not generalise that to "it can only ever take one core" — the batch path is an `OperationQueue`
+       at `Sources/Model.swift:1292` whose `maxConcurrentOperationCount` is `Prefs.defaultConcurrency`
+       = min(perflevel0.logicalcpu, 8) = 6 on this M3 Pro, with Vision threaded on top. -->
   <key>ProcessType</key>
-  <string>Background</string>
+  <string>Standard</string>
 </dict>
 </plist>
