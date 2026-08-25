@@ -71,7 +71,27 @@ appears only at **1, 2, 3 and 4**. ⛔ **The `PINNED` checks assert the WRONG an
 fixture red on arrival refuses every later commit through the hook — so the routing change is the
 **second of two commits** and C29 stays **OPEN**. ⚠️ Not a complaint about `sampleIndices`: the suite's
 existing "a partial sample skips page 1" check stays right, and the defect is deciding a per-page question
-with a document-wide majority. ⚠️ One instrument trap came out of it: `Flattener.flatten`'s returned array
+with a document-wide majority. ✅ **AND THE LOSS IS NO LONGER SILENT AS OF 2026-08-25 — the run report names
+every born-digital page a rebuild rasterised** (`BUGS.md` C29 `#### The report, SHIPPED`; C28 question 5's
+shape, closed the same way while its entry stayed open). `hasDigitalText(in:)` now votes through an
+extracted `Flattener.pageHasDigitalText`, and the watch-it-fail run that cuts the raster term out of it reds
+**two pre-existing `PINNED` checks** — which is the evidence the extraction is wired into the product and
+not the dead duplicate `willRebuild`'s comment warns about. ⛔ **The population is 42 documents and 392
+pages of 16,987, not the one this entry was opened on** (`C29-CORPUS-2026-08-25.tsv`), **28 of the 42 fire
+on exactly one page** — and the dominant real shape is a **repository download sheet** (HeinOnline, SSOAR, a
+library metadata cover) rather than JSTOR's, five firings read at 1:1 and all five true positives.
+`hasDigitalText` reads **false on 38 of the 42**, so on those the report is the only thing that mentions it.
+⛔ **The corpus also found a SECOND mechanism the entry did not have**: `Schwaller` is **167 born-digital
+pages of 300 — a real majority — and still reads `false`**, because its four-page sample votes **2–2** and
+`digital * 2 > sampled` is strict, so a tie loses; a genuinely mixed document therefore votes for the answer
+that hides the defect. That is the tie-break's fault, not the sampling's. ⚠️ **It is the report and NOT the
+fix** — the page is still rasterised — and C29 stays **OPEN**; the routing change is bigger than the queue's
+"one commit" assumed, because `JBIG2.assemble` cannot express a page with no image stream and four `Tools/`
+files switch exhaustively over `RebuiltPage.Content`. ⚠️ Two more limits: the channel-to-report **wiring is
+covered by no check** (nothing runs a document end-to-end through `makeSearchablePDF`), and an
+*already-OCR'd* scan's text layer is also replaced and deliberately is **not** reported, which is a
+judgement made in the quiet direction. ⚠️ One instrument trap came out of the fixture commit:
+`Flattener.flatten`'s returned array
 is appended to only inside `if let pngDirectory`, so a call without one rebuilds every page and returns
 `[]` — read the destination document, not `pages.count`. `C26` and `C27` were found on one document after
 `1.13.0` shipped; `C28` was opened out of C26's own campaign. `C26` lost
@@ -1062,10 +1082,14 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
 `SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv`,
-`C30-FORK-2026-08-22.tsv` and `C30-PAGE5-2026-08-23.tsv` — and are
+`C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv` and `C29-CORPUS-2026-08-25.tsv` — and are
 evidence for one run, not
-claims about the present. ⛔ **FOUR of these have no instrument in the tree at all, and all four say so by
-decision rather than by neglect**: `GUTTER-CENSUS-2026-08-20.tsv`, whose poppler+python
+claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
+decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
+per-page walk of all 16,987 corpus pages for C29's report, whose probe is at
+`$STATE/c29-instrument/corpus.swift` with the one-page diagnostic `page.swift` beside it — made it five, for
+the same reason C30's two are outside: the committed-tool version wants a `--self-test` and a printer
+discipline, and a `Tools/` commit pays the full suite): `GUTTER-CENSUS-2026-08-20.tsv`, whose poppler+python
 reimplementation was deliberately not committed (`18fae9e`); `C30-FORK-2026-08-22.tsv` **and
 `C30-PAGE5-2026-08-23.tsv`**, whose throwaway
 Python pass is at `$STATE/c30-instrument/` with a README carrying its inputs' sha256s, because the tool
@@ -1078,12 +1102,13 @@ outside the tree as
 `$STATE/rescue/REJECTED-not-on-main-vo-20260822-014509-85956.patch.bak`. ⚠️ **`SUBBARPIX-2026-08-22.tsv`
 is deliberately NOT in that count** and a reader will reach for it: it added no tool either, but it is
 reproducible from tools that ARE committed — an `awk` filter on `INKBAR-2026-08-19.tsv`, one `pdftoppm` a
-page and `score-shape-term`'s `SHAPEDUMP`. The four named above are reproducible from nothing in the
+page and `score-shape-term`'s `SHAPEDUMP`. The five named above are reproducible from nothing in the
 tree, which is the line this count draws. ⚠️ A first draft called
 `WIDEN-LAYERS-2026-08-22.tsv` "the one file here whose instrument is not in this repository"; the review of
 that diff found `GUTTER-CENSUS-2026-08-20.tsv` in the same list, and `C30-FORK-2026-08-22.tsv` made it
 three later the SAME DAY, 2026-08-22 — so this count has been wrong twice in one day, went to **four** on
-2026-08-23 with `C30-PAGE5-2026-08-23.tsv`, and is worth
+2026-08-23 with `C30-PAGE5-2026-08-23.tsv` and to **five** on 2026-08-25 with
+`C29-CORPUS-2026-08-25.tsv`, and is worth
 re-deriving from the list rather than read. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls
 born-digital.
@@ -1131,7 +1156,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,247 checks measured 2026-08-23; ~225 s measured 2026-08-24, real OCR
+./run_tests.sh        # 1,255 checks measured 2026-08-25 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->

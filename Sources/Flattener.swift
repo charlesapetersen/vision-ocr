@@ -306,6 +306,75 @@ enum Flattener {
         return largest.pixelWidth >= 900 && largest.dpi >= 72 && largest.dpi <= 1400
     }
 
+    /// Is **this page** born digital — real text of its own, over no page-sized
+    /// raster?
+    ///
+    /// C29. This is the exact predicate `hasDigitalText(in:)` applies to each
+    /// *sampled* page, lifted out and given a name so that the per-page question
+    /// can be asked per page. It is not a new signal: the entry's sharpest
+    /// finding is that the signal a fix needs already exists and is already
+    /// trusted, and only the **decision** was document-wide.
+    ///
+    /// ⛔ Extracted **and called from `hasDigitalText(in:)`**, which is the whole
+    /// point. `Model.swift`'s `willRebuild` comment records what the other shape
+    /// costs: a predicate lifted out "so the prose can be checked" and left with
+    /// no production caller is a duplicate of the thing under test that agrees
+    /// with it by construction, and six checks stayed green over one while the
+    /// product went back to lying. One definition, two callers, one vote — and
+    /// the suite watched it: cutting the raster term out of this function reds
+    /// `hasDigitalText`'s own pins, which is what says the wiring is real.
+    ///
+    /// ⛔ **It inherits every blindness `pageIsAnImage` has, and the one that bites
+    /// is its WIDTH BAR, not the resource cap.** A first draft named only the
+    /// `depth < 4` cap (C24's bare-form chain) — which `c17b3f3`'s 16,987-page sweep
+    /// found no corpus page of, so it bounds nothing real. The live one is
+    /// `pixelWidth >= 900`: an already-OCR'd scan digitised at 800 px across a Letter
+    /// sheet is 94 DPI, in range, under the width bar, so `pageIsAnImage` reads false
+    /// and a page that never had exact text is reported as having lost some. That is a
+    /// FALSE invariant-1 report on the app's own main input class. Not seen — 5 of the
+    /// 392 corpus firings were read at 1:1 and all five were real — but not excluded
+    /// either. Found by the adversarial review of this diff.
+    static func pageHasDigitalText(_ page: PDFPage) -> Bool {
+        // 120 characters is about two lines. Below that a page is a plate, a
+        // blank, or a part title, and says nothing either way.
+        let text = page.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return text.count >= 120 && !pageIsAnImage(page)
+    }
+
+    /// The 1-based numbers of the pages a rebuild rasterises **even though they
+    /// are born digital** — C29, and invariant 1's "must report it".
+    ///
+    /// A rebuild renders every page to a raster and recognises that, so a page
+    /// that carried exact text of its own comes out carrying OCR of a picture of
+    /// that text instead. On the JSTOR download C29 was found on, page 1's
+    /// *American Sociological Association* came out `AMFAKAN FOCAX ONCAL
+    /// ASSOXUTION`: a search that worked on the input fails on the output. That
+    /// is one text layer replaced by a worse one, and nothing said so.
+    ///
+    /// Measured over the 233-document corpus, 2026-08-25: **42 documents and 392
+    /// pages of 16,987** hold at least one such page, and on **38 of the 42**
+    /// `hasDigitalText` returns false — so on those the run report is the only
+    /// thing that mentions it at all.
+    ///
+    /// ⚠️ Every page is walked, where `hasEmbeddedText` stops at the first hit and
+    /// `hasDigitalText` reads four. It is affordable **only** because the caller
+    /// is already about to render every one of these pages at its own resolution:
+    /// this is one PDFKit text extraction plus one resource-dictionary walk a page,
+    /// against one full-page rasterise **and one OCR pass** a page. ⚠️ The text
+    /// extraction is the dominant term and a first draft of this comment omitted it
+    /// (the review of this diff caught that), so on a text-heavy book the walk is not
+    /// as cheap as "a dictionary walk" suggests — only cheap enough. It is also the
+    /// fourth `open` of the same URL in `makeSearchablePDF`. Do not call it on the
+    /// non-rebuild route — nothing is replaced there, so there is nothing to report —
+    /// and the caller guards it on cancellation.
+    static func digitalTextPages(in url: URL, password: String? = nil) -> [Int] {
+        guard let doc = open(url, password: password) else { return [] }
+        return (0..<doc.pageCount).compactMap { index in
+            guard let page = doc.page(at: index), pageHasDigitalText(page) else { return nil }
+            return index + 1
+        }
+    }
+
     /// `wanted` page indices spread through a document of `count` pages, in
     /// ascending order and **never repeating**.
     ///
@@ -380,10 +449,11 @@ enum Flattener {
         for i in indices {
             guard let page = doc.page(at: i) else { continue }
             sampled += 1
-            let text = page.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            // 120 characters is about two lines. Below that a page is a plate,
-            // a blank, or a part title, and says nothing either way.
-            if text.count >= 120, !pageIsAnImage(page) { digital += 1 }
+            // Through `pageHasDigitalText`, not a copy of its two terms: C29's
+            // report asks the same question of every page, and two copies of one
+            // rule is how `classify-source.swift` came to disagree with this
+            // function for a week (A12.4, cited above).
+            if pageHasDigitalText(page) { digital += 1 }
         }
         guard sampled > 0 else { return false }
         return digital * 2 > sampled

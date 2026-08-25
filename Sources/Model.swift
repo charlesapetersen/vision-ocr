@@ -1536,6 +1536,17 @@ final class OCRModel: ObservableObject {
                             text: "\(file.lastPathComponent): \(text)", kind: .info))
                     }
                 }
+                // C29, and the same shape for the same reason: a rebuild replaces a
+                // born-digital page's exact text with OCR of a raster of it, which is
+                // a text layer dropped, which invariant 1 says has to be said out
+                // loud. A separate closure from the one above so that a file suffering
+                // both losses reports both.
+                let digitalTextPageNote: (String) -> Void = { text in
+                    DispatchQueue.main.async {
+                        self?.log.append(LogLine(
+                            text: "\(file.lastPathComponent): \(text)", kind: .info))
+                    }
+                }
 
                 if isSearchable {
                     Self.makeSearchablePDF(
@@ -1548,7 +1559,8 @@ final class OCRModel: ObservableObject {
                         control: control, useHelper: useHelper,
                         progress: note, fellBack: fellBack,
                         tookJBIG2Route: tookJBIG2Route,
-                        shrunkTextPageNote: shrunkTextPageNote, report: report)
+                        shrunkTextPageNote: shrunkTextPageNote,
+                        digitalTextPageNote: digitalTextPageNote, report: report)
                     return
                 }
 
@@ -1826,6 +1838,12 @@ final class OCRModel: ObservableObject {
         /// *counted*, and sharing either would make the report describe something
         /// other than what happened (R41).
         shrunkTextPageNote: @escaping (String) -> Void = { _ in },
+        /// Called at most once per document, when pages that were already born
+        /// digital were rasterised and re-recognised anyway (C29). Its own channel
+        /// beside `shrunkTextPageNote` rather than sharing it, for R41's reason: the
+        /// two describe different losses on different pages, and one document can
+        /// suffer both, so a shared channel would report one and swallow the other.
+        digitalTextPageNote: @escaping (String) -> Void = { _ in },
         report: @escaping (Runner.Result.Outcome, String) -> Void
     ) {
         // Shares of the wall clock, measured on a 22-page run: rebuilding and
@@ -1906,6 +1924,13 @@ final class OCRModel: ObservableObject {
         /// pages whose source hid part of it. Empty on the non-rebuild route,
         /// where `compose` reads the real thing off the user's own file.
         var sourceCropBoxes: [Int: CGRect] = [:]
+        /// C29. The 1-based pages of the user's own file that were born digital and
+        /// got rasterised and re-recognised anyway, so their exact text came out as
+        /// OCR of a picture of itself. Filled on the rebuild route only — the other
+        /// route replaces nothing — and reported on the success exit, for A9.2's
+        /// reason: a note about a file that failed its page-count gate describes a
+        /// document nobody has.
+        var digitalTextPages: [Int] = []
 
         // Rebuild when there's an old text layer to strip, and also whenever
         // JBIG2 is wanted — it needs the per-page bitmaps.
@@ -1975,6 +2000,20 @@ final class OCRModel: ObservableObject {
                 // page's own space, keyed the way `compose` numbers pages.
                 for (index, page) in bitmaps.enumerated() {
                     if let crop = page.sourceCropBox { sourceCropBoxes[index + 1] = crop }
+                }
+                // C29, and asked of `file` rather than of `visible`: the rebuilt copy
+                // is a raster on every page, so it reads "not born digital"
+                // everywhere and the question can only be put to the original.
+                // After the rebuild rather than before it, so a document that throws
+                // in `flatten` does not pay for a walk whose answer is discarded.
+                // Not on a cancelled run: `flatten` returns NORMALLY when cancelled
+                // (`if isCancelled() { break }`, then `return rebuilt`), so control
+                // reaches here with the user already waiting, and this walk is a
+                // whole-document text extraction. Measured cost is the point — the
+                // review of this diff found a 600-page book paying 600 page
+                // extractions after a cancel at page 3.
+                if !control.isCancelled {
+                    digitalTextPages = Flattener.digitalTextPages(in: file, password: password)
                 }
             } catch {
                 // Same as below: a cancelled jbig2 child surfaces here as a
@@ -2445,6 +2484,13 @@ final class OCRModel: ObservableObject {
         // the two cannot drift apart. This describes pages in the file that just
         // landed.
         if let message = shrunkTextPageMessage { shrunkTextPageNote(message) }
+        // C29, on the success path and beside the other two for their reason. Built
+        // here rather than held as a string: unlike C28's, this list is complete the
+        // moment the rebuild returns, so there is nothing to gain by formatting it
+        // early and one thing to lose — a second place that decides when it fires.
+        if !digitalTextPages.isEmpty {
+            digitalTextPageNote(Self.digitalTextPageSummary(digitalTextPages))
+        }
         // `filter { !$0.isEmpty }`, not `compactMap`: `sizeNote` returns an empty string
         // rather than nil unless the copy grew, so joining on it put a leading " — " in
         // front of the message every ordinary run showed the user.
@@ -2548,6 +2594,52 @@ final class OCRModel: ObservableObject {
         return "\(pages.count) page(s) were read as holding nothing but recognised text, "
             + "so the rest of the page was stored at an eighth — anything the recogniser "
             + "missed on them is degraded: \(detail)"
+            + (pages.count > 3 ? " …" : "")
+    }
+
+    /// C29. What the run report says about born-digital pages that were rasterised
+    /// and re-recognised anyway.
+    ///
+    /// **Every page it is GIVEN is named, with no threshold applied here**, for the
+    /// reason `shrunkTextPageSummary` gives about its fraction: nothing measured
+    /// separates a page whose OCR came out as good as its own text from one that came
+    /// out `AMFAKAN FOCAX ONCAL ASSOXUTION`, so a bar in this function would drop
+    /// pages on a quantity that does not order them.
+    ///
+    /// ⛔ **But membership is NOT unfiltered, and a draft of this comment said it
+    /// was.** `Flattener.pageHasDigitalText` requires 120 characters, so a
+    /// born-digital half-title of seventy characters is rasterised, loses its exact
+    /// text, and is never named — the same "any filter drops a known loser" shape C28
+    /// rejected, inherited here from a bar chosen for a different question. Refuted by
+    /// the adversarial review of this diff, which is why the sentence now says which
+    /// stage has no bar. Raising or removing that bar is a decision for the routing
+    /// commit, where the false-positive cost is measurable against a fix rather than
+    /// against a report.
+    ///
+    /// Three at most and then `…`, the shape `unplacedSummary` and
+    /// `shrunkTextPageSummary` already use, and for their reason: this line goes into
+    /// a file the user is invited to send to someone, and a 300-page born-digital
+    /// report would otherwise put 300 page numbers in it. The count leads, because
+    /// the count is the part that has to be complete.
+    ///
+    /// ⛔ A4.1 governs this string as it governs the other two: page numbers, never
+    /// content. "Show what the text was before and after" is the natural next
+    /// enhancement and is exactly what A4.1 took *out* of `unplacedSummary`, which
+    /// carried 72 characters of the user's own document.
+    ///
+    /// ⚠️ Deliberately not a failure, and deliberately not a refusal to convert. The
+    /// file is whole and its page count is right; what changed is that one text layer
+    /// was replaced by a worse one. Invariant 1's words are "must report it", and this
+    /// is the report — **not** the fix. C29 stays open: the fix is a per-page
+    /// passthrough, and `JBIG2.assemble` cannot express a page with no image stream.
+    nonisolated static func digitalTextPageSummary(_ pages: [Int]) -> String {
+        let detail = pages.prefix(3).map { "p\($0)" }.joined(separator: "; ")
+        // The list last and the `…` after it, so a truncated run cannot end
+        // " … ." — `shrunkTextPageSummary` records finding that by reading the
+        // two branches rather than by running one.
+        return "\(pages.count) page(s) already carried text of their own and were "
+            + "rasterised and recognised anyway, so on those pages the exact text has "
+            + "been replaced by OCR of a picture of it: \(detail)"
             + (pages.count > 3 ? " …" : "")
     }
 

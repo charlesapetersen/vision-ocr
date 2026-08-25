@@ -13,6 +13,14 @@ WIRED into `pageIsAllText()` as a third refusal condition once all five of its q
 characters and is not a page-sized image, whose other eight pages ALL clear the 120-character bar so the
 character count decides nothing, and whose sample is `[1, 3, 5, 7]` — index 0 appearing only at page
 counts 1-4 over a 400-count sweep. The routing change is the **second of two commits**; C29 stays `OPEN`.
+✅ **AND IT HAS A REPORT AS OF 2026-08-25, so the loss is no longer silent** — `#### The report, SHIPPED`.
+The run report names every page that was born digital and got rasterised anyway; `hasDigitalText(in:)` now
+votes through an extracted per-page `pageHasDigitalText`, and run A of the watch-it-fail pair reds two
+**pre-existing `PINNED` checks**, which is what says the extraction is wired into the product rather than a
+dead duplicate. ⛔ **The population is 42 documents and 392 pages of 16,987, not this entry's one**
+(`C29-CORPUS-2026-08-25.tsv`), `hasDigitalText` is `false` on **38 of the 42**, and the corpus turned up a
+**second mechanism**: `Schwaller` is 167 born-digital pages of 300 and still reads `false`, because its
+sample votes 2–2 and `digital * 2 > sampled` loses ties. It is the report and **not** the fix.
 **Back to C28**, whose shape term this paragraph interrupted: it rescues **13 of the 16** measured content
 losses, and its failure direction is bytes rather than
 content: `bgFactor = allText ? max(caller, 8) : caller`, so a term that only ever refuses the verdict can
@@ -9971,6 +9979,166 @@ in the block runs recognition, so "and the OCR is worse" remains the register's 
 document. It adds no mutant to `Tools/mutate.py`, no
 `fault-inject` case (no error branch was added) and no `CHANGELOG` paragraph (nothing user-visible moved).
 It does not touch the routing: **C29 stays OPEN.**
+
+#### The report, SHIPPED — 2026-08-25, and the population is 42 documents rather than one
+
+✅ **SOMETHING SAYS IT NOW.** Until this commit the loss at the top of this entry was completely silent:
+the published file's page count is right, its text layer is whole, and one page's exact text has quietly
+become OCR of a picture of itself. Invariant 1's words are *"every path that can drop a page, a line or a
+text layer must report it"*, and there was no report. There is one now — `OCRModel.digitalTextPageSummary`,
+through a `digitalTextPageNote` channel of its own, on the success path, into the log and so into the run
+report. ⛔ **It is the report and NOT the fix**, and it is C28 question 5's shape deliberately: that
+question was closed the same way while its entry stayed open. The four `PINNED` checks above are untouched
+and still green, because nothing about the routing moved.
+
+**What shipped**, and it is three named things:
+
+* `Flattener.pageHasDigitalText(_ page:)` — this entry's own sharpest sentence made executable. The
+  per-page predicate was an inline expression inside `hasDigitalText(in:)`'s sample loop; it now has a name,
+  and ⛔ **`hasDigitalText(in:)` CALLS IT** rather than keeping a copy. That direction is the point:
+  `Model.swift`'s `willRebuild` comment records what the other shape costs — a predicate lifted out "so the
+  prose can be checked", asserted against by six checks, and called by nothing, which agrees with the thing
+  under test by construction while the product goes back to lying.
+* `Flattener.digitalTextPages(in:password:)` — the 1-based list, every page walked.
+* `OCRModel.digitalTextPageSummary(_:)` — the sentence, with **no bar of any kind** on which pages are
+  named, for `shrunkTextPageSummary`'s reason: nothing measured here separates a page whose OCR came out as
+  good as its own text from one that came out `AMFAKAN FOCAX ONCAL ASSOXUTION`. The count leads and at most
+  three pages follow, `unplacedSummary`'s shape, because this line lands in a file the user is invited to
+  send to someone.
+
+⛔ **THE POPULATION IS 42 DOCUMENTS AND 392 PAGES, NOT THIS ENTRY'S ONE — measured over the whole corpus on
+2026-08-25** (`C29-CORPUS-2026-08-25.tsv`, 233 rows, 0 unreadable). **392 pages of 16,987, in 42 of 233
+documents**, and the shape of the distribution is what makes the note worth having: **28 of the 42 fire on
+exactly one page** — the cover-sheet case this entry was opened on — seven more fire on two, three or six,
+and a long tail of seven documents runs 19, 22, 23, 25, 32, 51 and **167** pages (28 + 7 + 7 = 42). ⛔ **And on 38 of the 42, `hasDigitalText` returns `false`**, so on those the run
+report is the only thing in the product that mentions it at all; the other 4 at least get the pre-flight
+warning before the user proceeds.
+
+⛔ **THE 300-PAGE DOCUMENT IS A SECOND MECHANISM AND THIS ENTRY DID NOT HAVE IT.** Above, the sharp finding
+is that page 1 is never sampled on a document of 5+ pages. `Schwaller - 2026 - Silicon Valley Landscapes`
+is 300 pages of which **167 are born digital — 55.7%, a real majority** — and `hasDigitalText` still says
+`false`. Its sample is pages **61, 121, 181, 241**: read one page at a time, 61 and 121 are born digital
+(2,878 and 1,985 characters, `pageIsAnImage` false) and 181 and 241 are already-OCR'd scans (1,701 and
+1,978 characters, `pageIsAnImage` **true**). That is **2 of 4 — a tie — and `digital * 2 > sampled` is a
+STRICT majority, so a tie loses.** A genuinely mixed document, which is the only kind this defect can occur
+on, therefore votes for the answer that hides it. ⚠️ Note what this is *not*: the sample was roughly
+representative (50% against 55.7%), so the wrong answer here is the **tie-break's** and not the sampling's
+— a different mechanism from the one above, on the same vote. ✅ **Corroborated by a second instrument
+written earlier and for another purpose**: `Tools/classify-source.swift`'s own comment already names
+`Schwaller` as *"genuinely mixed: 2 of 5 sampled pages are 2,640 px plates and 2 draw no image at all"* — a
+different sample size, a different stride, the same verdict about the document.
+
+✅ **THE FIRINGS WERE SPOT-CHECKED RATHER THAN COUNTED, because the first suspicion has to be the
+instrument** — `pageIsAnImage` reads `largestImage`, whose `depth < 4` resource cap could make a scan read
+"not an image" and so read born digital. Five were read one page at a time and **all five are true
+positives**:
+
+| page | chars | `largestImage` | what it is |
+|---|---|---|---|
+| `1954 - Why` p1 | 1,348 | 720 px, 84.7 DPI | a library metadata cover sheet — *"[21] Why? / by National Foremen's Institute, Inc., 1954 / In Copyright…"* |
+| `1935_Title Page` p1 | 740 | 200 px, 36.0 DPI | a HeinOnline download cover — *"DATE DOWNLOADED: Tue Nov 3 …"* |
+| `Burke - The Expansion of American Higher Education` p1 | 2,156 | 826 px, 99.9 DPI | an SSOAR repository cover — *"www.ssoar.info"* |
+| `Mudge_2018_Leftism Reinvented` p67 | 2,184 | 645 px, 100.1 DPI | born-digital body text of a Harvard UP book, 19 of its 372 pages |
+| `Henry Morgenthau papers` p188 | 1,350 | **nil** | a finding-aid page with no image on it at all |
+
+So the dominant real-world shape is not C29's JSTOR cover but **the repository download sheet** — a
+born-digital page a library prepends to a scan — and the app rasterises and re-OCRs it on 28 corpus
+documents. ⚠️ Five of 392 were read; the other 387 are the probe's word.
+
+✅ **WATCHED FAILING, TWO RUNS, KILL SETS PREDICTED BY NAME BEFOREHAND** (the predictions are at
+`$STATE/c29-instrument/predictions.md`, written before either run). Against the real suite rather than a
+scratch probe, which is now the *cheaper* option as well as the stronger one — the 16.2x clamp came off on
+2026-08-24, so a suite is ~250 s where the fixture commit's probes were ~80 s each against a ~45 min suite.
+
+| run | sabotage | result | objecting checks |
+|---|---|---|---|
+| baseline | — | **1254/1254** | — |
+| A | `pageHasDigitalText` loses its `!pageIsAnImage` term | **1249/1254** | **five** |
+| B | `digitalTextPageSummary` `.prefix(3)` → `.suffix(3)`, **and** `digitalTextPages` `index + 1` → `index` | **1252/1255** | **three, exactly the three predicted, none other** |
+
+⛔ **RUN A IS THE ONE THAT MATTERS, AND NOT FOR ITS NEW CHECKS: two of its five reds are the PRE-EXISTING
+`PINNED` checks.** Cutting the raster term out of the extracted predicate reds *"C29, PINNED: the document
+reads as carrying no digital text at all"* and *"…and the batch pre-flight flags nothing"* — because
+`hasDigitalText`'s sample `[1, 3, 5, 7]` is four scans, all four now counted digital, `4 * 2 > 4`. **That is
+the evidence that the extraction is wired into the product and is not a dead duplicate**, which is the
+exact failure `willRebuild`'s comment describes and the only reason this refactor was worth doing at all.
+The other three reds are the new list checks (`agree` 9 → 1, `[1]` → `[1…9]`, `[1,2,3]` → `[1,2,3,4]`).
+
+⛔ **AND RUN A REFUTED A CONTROL THIS DIFF HAD ALREADY WRITTEN.** Two of the eight predicted reds stayed
+**green**, and the reason is a check that was green for a reason other than the one it stated: the `ocrd`
+decoy (`makeDecoyPDF`, one `CTLine` of `"previously recognised text " × 12`) was offered as *"an
+already-OCR'd scan names no pages at all, so the note is quiet on the ordinary document"* — and it survives
+a predicate cut down to `text.count >= 120` alone, which can only mean **its extracted text is under 120
+characters**, so what it pins is the *character* term and never the raster term. 324 characters were
+written; `page.string` does not see that many. Replaced by a check over the **eight scan pages of C29's own
+fixture**, each of which clears the character bar (the block already asserts that) so that only the raster
+term can refuse them — `overBar == 8 && refused == 8`, and run A reds it. **Found by running the sabotage,
+not by reading the diff.** ⛔ **And the replacement's own first comment was wrong in turn, which is the part
+worth keeping**: it called the decoy "the CHARACTER control", and the review of this diff refuted that from
+`makeDecoyPDF` — the decoy draws a **1224x1584** raster into a **612x792** box, so `dpi` is 144 and
+`pixelWidth` clears 900, and it is refused **independently by both terms**. Remove either and it stays
+green, so it controls for neither. It is kept as a fixture assertion, because `ocrdChars` is the measured
+number the retraction above rests on. Two wrong readings of one three-line check, both caught from outside
+it.
+
+⛔ **Sibling sweep (CONTRIBUTING 4b): who else holds this rule, and who else replaces a text layer
+silently.** The `text.count >= 120 && !pageIsAnImage` rule now has **exactly one** definition in the tree
+(`Sources/Flattener.swift`, grep `>= 120` over `Sources/ Tools/ Helper/` returns that one line), and no tool
+re-implements it — `Tools/classify-source.swift` calls `Flattener.hasDigitalText(in:)`, which T17 made it do
+after A12.4, so it inherits this extraction for free and cannot drift.
+⛔ **BUT THE SWEEP'S SECOND HALF WAS WRONG AS FIRST WRITTEN, AND WHAT IT MISSED IS A SIBLING OF EXACTLY THIS
+DEFECT: the Extract Text route loses the same text on the same pages and is STILL SILENT.** This paragraph
+said *"the one remaining path that replaces a text layer is the already-OCR'd scan"*. `Recogniser.extract`
+renders **every** page and recognises the render — it never reads `page.string` — so in Extract Text ▸
+TXT/JSON a born-digital page's exact text is replaced by OCR of a picture of it in the produced file. The
+only thing in front of that route is `filesWithDigitalText`, i.e. **the document-wide vote this entry exists
+to condemn**, which `C29-CORPUS-2026-08-25.tsv` shows returning `false` on 38 of the 42 affected documents.
+So dropping `Burke - The Expansion of American Higher Education.pdf` into Extract Text gives no warning,
+OCRs its SSOAR cover sheet off a raster, and says nothing — the new channel is wired into
+`makeSearchablePDF` only. **Not fixed here** (a second channel on a second route is its own commit) and
+**named** rather than left inside a sweep that claimed it did not exist. Found by the adversarial review of
+this diff. The other paths into the run report are `shrunkTextPageNote` (C28), `unplacedSummary`,
+`marksNote`, `emptyDocumentNote`, `sizeNote`, `fellBack` and `tookJBIG2Route`; the already-OCR'd scan is the
+one whose silence is a judgement rather than a gap, below.
+
+⚠️ **What this does NOT do**, said here rather than left to be found:
+
+* It **does not stop the loss.** The page is still rasterised, still re-recognised, and its exact text is
+  still gone from the published copy. C29 stays **OPEN** and the routing change is still owed.
+* ⛔ **The report itself has a 120-character bar on membership, inherited rather than chosen.**
+  `pageHasDigitalText` needs 120 characters, so a born-digital **half-title** of seventy characters is
+  rasterised, loses its exact text and is never named — the same "any filter drops a known loser" shape C28
+  refused, arriving here through a bar picked for a different question. `digitalTextPageSummary`'s doc
+  comment claimed "no bar of any kind"; that was refuted by the review of this diff and now says which stage
+  has none. Whether to lower it is a routing-commit decision, where the false-positive cost can be measured
+  against a fix instead of against a report.
+* ⛔ **`pageIsAnImage`'s WIDTH bar is the live false-positive risk, not the resource cap** the first draft of
+  the code comment named. An already-OCR'd scan at 800 px across a Letter sheet is 94 DPI — in range, under
+  the 900 px bar — so it reads born digital and would be reported as having lost exact text it never had.
+  Not observed (all five firings read at 1:1 were real) and not excluded (387 of 392 are the probe's word).
+* ⛔ **The wiring is not covered by any check.** The three new functions are tested; the path
+  `digitalTextPages` → `digitalTextPageNote` → `log` → `RunReport` is not, because nothing in the suite runs
+  a document end-to-end through `makeSearchablePDF` — the queue's `mrc-endtoend` item, and C28's own report
+  has the same hole recorded ("the one part no check reaches"). What *is* established is that the parameter
+  has a default, so every existing call site compiles unchanged.
+* It adds **no mutant** to `Tools/mutate.py`. The `prefix(3)` cap is pinned by a check that was watched
+  going red, which is the evidence a mutant buys, at one suite instead of two; the 120 bar is already
+  reachable through `hasDigitalText`'s catalogue entries. No `fault-inject` case: no error branch was added,
+  and `digitalTextPages` returns `[]` on an unreadable file rather than throwing, which is
+  `hasEmbeddedText`'s existing convention.
+* ⚠️ **It draws a line, and the line is a judgement.** An *already-OCR'd scan* also has its text layer
+  replaced — by Vision's OCR instead of the vendor's — and is deliberately **not** reported, because that is
+  the app's entire purpose and warning about it would put a notice in front of the main use case (the same
+  reasoning the suite's *"an already-OCR'd SCAN is not treated as digital text"* check already records).
+  What is reported is **exact** text replaced by OCR. If that line is drawn wrong, it is drawn wrong in the
+  quiet direction.
+* ⚠️ **The corpus figure's instrument is not in the tree** — see the file list in `CLAUDE.md`, which this
+  commit corrects from four such files to five. The probe is at `$STATE/c29-instrument/corpus.swift` with
+  the one-page diagnostic beside it as `page.swift`.
+* ⚠️ It still **does not run `Tools/classify-source.swift`** on the fixture, which the sub-step above owed to
+  this commit. What it does instead is stronger on the question the tool was wanted for — the tool asks
+  `hasDigitalText` per *document*, and this walked 16,987 pages per *page* — but the owed invocation is a
+  different thing and is **not** discharged. It carries forward.
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
 

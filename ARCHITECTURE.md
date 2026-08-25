@@ -219,7 +219,7 @@ If something ever does drive it directly, these are the things that would bite:
 
 ## What the tests don't cover
 
-1,247 checks (measured 2026-08-23), real OCR, and **~225 s measured 2026-08-24**. The old advice here was "no single duration,
+1,255 checks (measured 2026-08-25 by this commit's own pre-commit run), real OCR, and **~225 s measured 2026-08-24**. The old advice here was "no single duration,
 so plan against the load, not a number" — that was wrong about the cause: the spread (416-632 s quiet, ~37-40 min with other
 work alongside, ~45 min per run during the C24b campaign) was overwhelmingly the SCHEDULING BAND, not load. Until 2026-08-24
 the daemon's plist set `ProcessType=Background`, which darwin-bg-clamps every child to the efficiency cores, and `run_tests.sh`

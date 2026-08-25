@@ -1853,6 +1853,35 @@ happens.**
         sabotage went through `mutate.py`. Nothing shipped changes behaviour — the only `Sources/` edit is
         `Flattener.flatten`'s doc comment. (context: BUGS.md C29
         `#### The fixture, and today's answer PINNED`)
+  - [x] **c29-report** — **DONE 2026-08-25.** Not the routing: **the loss is no longer silent.** Invariant 1
+        says every path that can drop a text layer must report it, and this one reported nothing — so the run
+        report now names every born-digital page a rebuild rasterised, C28 question 5's shape exactly (that
+        question closed the same way while its entry stayed open). Do not re-do it; `BUGS.md` C29
+        `#### The report, SHIPPED` carries the whole of it. Three things shipped:
+        `Flattener.pageHasDigitalText` (this entry's own per-page predicate, extracted **and called from**
+        `hasDigitalText(in:)`, so it is not the dead duplicate `willRebuild`'s comment warns about),
+        `Flattener.digitalTextPages(in:password:)`, and `OCRModel.digitalTextPageSummary`, on a
+        `digitalTextPageNote` channel of its own. Suite **1255**; watch-it-fail run A **1249/1254 by five**,
+        of which **two are pre-existing `PINNED` checks** — that pair is the evidence the extraction is wired
+        into the product; run B **1252/1255 by exactly the three predicted and none other**.
+        ⛔ **THREE THINGS A LATER SESSION SHOULD TAKE FROM IT.** (1) **The population is 42 documents and 392
+        pages of 16,987, not this entry's one** — `C29-CORPUS-2026-08-25.tsv` — and the dominant real shape
+        is a **repository download sheet** (HeinOnline, SSOAR, a library metadata cover), with 28 of the 42
+        firing on exactly one page. `hasDigitalText` is `false` on **38 of the 42**. (2) **A SECOND MECHANISM
+        the entry did not have**: `Schwaller` is 167 born-digital pages of **300** and still reads `false`,
+        because its four-page sample votes **2–2** and `digital * 2 > sampled` is strict, so a tie loses —
+        the tie-break's fault, not the sampling's. Whatever the routing fix does, do not build it on this
+        vote. (3) ⛔ **THE ROUTING HALF IS NOT ONE COMMIT, and the box above still assumes it is.** Mapped
+        this session rather than guessed: `RebuiltPage.Content` has exactly two cases and both carry an image
+        URL; `JBIG2.assemble` **cannot express a page with no image stream** (it writes a fresh minimal PDF
+        from scratch, one stream per page); four `Tools/` files switch exhaustively over `Content`; and
+        `Model` keys crop boxes *and* observations off `bitmaps.enumerated()`, so a gap silently shifts every
+        later page. **Re-scope it before starting.**
+        ⚠️ **Two limits stated in place**: the channel-to-report **wiring is covered by no check** (nothing in
+        the suite runs a document end-to-end through `makeSearchablePDF` — the `mrc-endtoend` item), and the
+        owed `Tools/classify-source.swift` invocation is **still owed** — the corpus walk answers a wider
+        question and does not discharge it.
+        (context: BUGS.md C29 `#### The report, SHIPPED`)
 - [ ] **gutter-floor** — the reading-order DECLINE rests on "0.19% of observations cross a gutter", and
       the population that produced it excludes the pages that fail. `score-reading-order.swift`'s ink test
       needs a quiet run of `0.035 * width`; a page without one is counted `singleColumn` and `continue`d,

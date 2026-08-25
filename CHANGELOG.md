@@ -14,6 +14,18 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+**The run report now tells you when a page that already had real text of its own was turned into a picture
+and re-read.** Some PDFs are a mixture: a library or a publisher puts born-digital pages — a download cover
+sheet, a title page, sometimes whole chapters — in front of or among scanned ones. Making such a file
+searchable rebuilds every page as an image and recognises it, so on those pages exact text is replaced by
+OCR of a picture of that text, and a phrase you could previously search for may no longer be found. That
+happened silently: the page count is right and the file has a text layer, so nothing looked wrong. The
+report now names those pages, with the complete count first. Measured over the 233-document test corpus,
+392 pages in 42 documents are of this shape, and on 38 of the 42 nothing else in the app mentions it at all
+— including one 300-page book of which 167 pages are born digital (BUGS.md C29). This is a report and not
+yet a fix: those pages are still rebuilt. Pages that only ever carried OCR text are deliberately not
+reported — re-reading those is what the app is for.
+
 **A page with unrecognised words on it is no longer treated as a page of nothing but text.** When every
 mark on a page is text the recogniser boxed, both tone layers are stored at an eighth and a sixteenth of
 the page's resolution — which is the right thing to do, and was being done to pages that also carried

@@ -2119,6 +2119,34 @@ do {
     check("…and an unmeasured page names itself without inventing a fraction",
           c28Unmeasured.contains("p2") && !c28Unmeasured.contains("%"), c28Unmeasured)
 
+    // C29's line, and the same shape for the same reasons — the complete count
+    // first, at most three pages after it, A4.1's "page numbers, never content".
+    // Beside C28's rather than in C29's own block because these two strings are
+    // the ones that have to keep agreeing about that shape: they land in the same
+    // report, one under the other, on a document that suffers both.
+    let c29Note = OCRModel.digitalTextPageSummary([1])
+    check("C29 — the run-report line leads with the complete count and names the page",
+          c29Note.hasPrefix("1 page(s) ") && c29Note.contains("p1"), c29Note)
+    // Says WHICH loss it is. The report may carry C28's line as well, and "some
+    // pages were affected" beside it tells the reader nothing they can act on.
+    check("…and says what was lost: text of their own, replaced by OCR",
+          c29Note.contains("text of their own") && c29Note.contains("replaced by OCR"),
+          c29Note)
+    // ⛔ A4.1 is enforced by the SIGNATURE here and deliberately has no check.
+    // `digitalTextPageSummary` takes `[Int]`, so no character of the user's
+    // document can reach it and any assertion that none does would pass at every
+    // value of everything — the eleventh-check-that-cannot-fail shape this
+    // register has now caught eleven times. What needs watching is the type: the
+    // natural next enhancement is "say what the text said before and after",
+    // which is exactly what A4.1 took *out* of `unplacedSummary`, and it arrives
+    // as a widened parameter rather than as a changed string.
+    let c29Long = OCRModel.digitalTextPageSummary(Array(1...9))
+    // Truncated from the FRONT, pinned the way C28's is: without `contains("p1")`
+    // a `.suffix(3)` implementation satisfies every other conjunct here.
+    check("…and a long list is truncated from the front, with the count still complete",
+          c29Long.hasPrefix("9 page(s) ") && c29Long.contains(" …")
+            && c29Long.contains("p1") && !c29Long.contains("p4"), c29Long)
+
     // MARK: C28's wiring — the shape term as a third refusal condition
     //
     // **The fixture C28 said this corpus could not supply.** The entry's
@@ -10017,6 +10045,97 @@ do {
             check("C29: the rebuild is readable, so the two pins above ran",
                   false, "could not open \(rebuilt.lastPathComponent)")
         }
+
+        // 4. C29's REPORT — the second commit's first half. The loss above is
+        //    real and, until this landed, entirely silent: the file's page count
+        //    is right, its text layer is whole, and one page's exact text has
+        //    quietly become OCR of a picture of itself. Invariant 1's words are
+        //    "every path that can drop a page, a line or a text layer must
+        //    report it", and this is that report. It is NOT the fix — see the
+        //    entry — so every pin above stays green and stays pinned.
+        //
+        //    `pageHasDigitalText` is the by-hand conjunction above given a name.
+        //    This asserts the extraction did not change the rule, over all nine
+        //    pages rather than over the one that matters: a faithful extraction
+        //    has to agree on the eight it says NO to as well.
+        if let doc = PDFDocument(url: jstor) {
+            var agree = 0, byHand = 0
+            for i in 0..<doc.pageCount {
+                guard let p = doc.page(at: i) else { continue }
+                let t = (p.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let hand = t.count >= 120 && !Flattener.pageIsAnImage(p)
+                if hand { byHand += 1 }
+                if Flattener.pageHasDigitalText(p) == hand { agree += 1 }
+            }
+            // The second conjunct is the non-vacuity: `agree == 9` alone is
+            // satisfied by two functions that both always return false.
+            check("C29: pageHasDigitalText agrees with the by-hand conjunction on "
+                  + "all nine pages, and says yes to exactly one of them",
+                  agree == 9 && byHand == 1, "agree=\(agree) byHand=\(byHand)")
+        } else {
+            check("C29: the fixture opens, so the extraction check ran", false)
+        }
+        // The list the report is built from. `[1]` and not "non-empty": the
+        // interesting half is the EIGHT it leaves out, on a document where all
+        // nine pages clear the 120-character bar because JSTOR ships an OCR
+        // layer on the scans too. A walk that named all nine would be useless
+        // and would still be non-empty.
+        let c29Pages = Flattener.digitalTextPages(in: jstor)
+        check("C29: the report's page list is exactly the cover page",
+              c29Pages == [1], "pages=\(c29Pages)")
+        // Ordered and 1-based, over three covers rather than one — a walk that
+        // returned indices, or a set, passes the check above and fails this one.
+        let c29Many = Flattener.digitalTextPages(in: mostlyCover)
+        check("…and on three covers it is [1, 2, 3]: 1-based, in order, all of them",
+              c29Many == [1, 2, 3], "pages=\(c29Many)")
+        // ⛔ THE CONTROL THAT DECIDES WHETHER THIS NOTE IS WORTH HAVING: the
+        // ordinary corpus document is an already-OCR'd scan — text on every page,
+        // over a page-sized raster — and a report that fired on one would be
+        // useless. This asks it of the eight scan pages of THIS fixture, each of
+        // which clears the 120-character bar (the check above says so), so the
+        // only thing that can refuse them is the raster term. Sabotage A confirms
+        // it bites: drop `!pageIsAnImage` and this goes red at 0 of 8.
+        if let doc = PDFDocument(url: jstor) {
+            var refused = 0, overBar = 0
+            for i in 1..<doc.pageCount {
+                guard let p = doc.page(at: i) else { continue }
+                let t = (p.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                if t.count >= 120 { overBar += 1 }
+                if !Flattener.pageHasDigitalText(p) { refused += 1 }
+            }
+            check("C29: all eight already-OCR'd scans clear the character bar and "
+                  + "are refused anyway, so it is the raster term that keeps this "
+                  + "report quiet on an ordinary document",
+                  overBar == 8 && refused == 8, "overBar=\(overBar) refused=\(refused)")
+        } else {
+            // Not tidiness: without this the only check that pins the raster term
+            // vanishes on an unopenable fixture and the run still prints a green
+            // total, which is the silent-failure shape this whole entry is about.
+            // The block 40 lines above carries the same `else` for the same reason.
+            check("C29: the fixture opens, so the raster-term control ran", false)
+        }
+        // ⛔ And the SEPARATE `ocrd` decoy PINS NEITHER TERM — this comment has now
+        // been wrong twice about it, and both corrections came from outside. A draft
+        // offered it as the raster control above; sabotage A left it green, which
+        // established (with `ocrdChars` below) that its extracted text is under the
+        // 120 bar — one `CTLine` at 24 pt is not 324 characters as far as
+        // `page.string` is concerned. The next draft therefore called it the CHARACTER
+        // control, and the adversarial review of this diff refuted that too:
+        // `makeDecoyPDF` draws a 1224x1584 raster into a 612x792 box, so `dpi` is 144
+        // and `pixelWidth` clears 900, and the decoy is refused INDEPENDENTLY by both
+        // terms. Remove either one and it stays green. So what is left is a fixture
+        // assertion — the decoy is doubly refused — kept because `ocrdChars` is the
+        // measured number the retraction above rests on, with the count in the detail
+        // rather than in a comment that can go stale. ⚠️ `embeddedText` reads
+        // `doc.string` where the predicate reads `page.string`, so this row can also
+        // move on a PDFKit change with no product change at all.
+        let c29Quiet = Flattener.digitalTextPages(in: ocrd)
+        let ocrdChars = embeddedText(of: ocrd)
+            .trimmingCharacters(in: .whitespacesAndNewlines).count
+        check("…and the one-line decoy is refused TWICE OVER — under the character "
+              + "bar and a page-sized raster — so it controls for neither term alone",
+              c29Quiet.isEmpty && ocrdChars < 120,
+              "pages=\(c29Quiet) chars=\(ocrdChars)")
     }
 
     // 4. The batch-level pre-flight picks out exactly the digital ones.
