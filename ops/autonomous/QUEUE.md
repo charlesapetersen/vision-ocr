@@ -1934,6 +1934,19 @@ happens.**
       behaviour and the routing commit flips it — `gutter-floor`'s sub-step 0 shape, chosen because the
       alternative buys a 45-90 minute suite for a half-finished routing change. See the `c29-fixture`
       sub-box below and `BUGS.md` C29 `#### The fixture, and today's answer PINNED`.
+      ⛔ **THAT ANSWER IS SUPERSEDED AND THE COUNT IS NOW THREE — read `BUGS.md` C29
+      `#### The routing half, RE-SCOPED` (2026-08-25) BEFORE STARTING; the `c29-rescope` sub-box carries
+      it.** The fixture commit landed, the report commit landed, and the routing half is **two more**: (A)
+      the Flate-route passthrough — a third `RebuiltPage.Content` case carrying no URL, the 20 sites that
+      read that enum, the passthrough arm in `flatten`, the recognition skip, the report re-worded; (B) the
+      JBIG2 route, which is a `qpdf` splice or a measurement plus a decision to live with the Flate
+      fallback. ⛔ **The blocker is NOT `JBIG2.assemble`**, which is what the `c29-report` box below says:
+      the JBIG2 arm is guarded by `encoded.count == bitmaps.count` (`Model.swift:2174-2175`) whose `else` at
+      `:2376` **is** the Flate route, so a mixed document falls back by arithmetic with no new guard. The
+      blocker is `Recogniser`, which keys its work list and its results by array position (`:146`, `:163`).
+      ⛔ **And do NOT add a page-index field "to be safe": positional keying is CORRECT today** (`flatten`
+      throws rather than skips), so a field added before the commit that creates a gap is a seam with no
+      caller — the shape C28 rejected. **Take (A) as one session.**
       ⛔ **WHAT IS LEFT IS THE SECOND COMMIT — the per-page routing — and the THREE `PINNED` checks are
       what it is expected to flip**: `hasDigitalText` false, `filesWithDigitalText` empty, and the rebuild's
       page 1 a page-sized raster with 0 characters. ⚠️ *"The rebuild keeps all nine pages"* is deliberately
@@ -2006,7 +2019,47 @@ happens.**
         the suite runs a document end-to-end through `makeSearchablePDF` — the `mrc-endtoend` item), and the
         owed `Tools/classify-source.swift` invocation is **still owed** — the corpus walk answers a wider
         question and does not discharge it.
+        ⛔ **ITS OWN (3) IS PART-REFUTED — see the `c29-rescope` sub-box.** "`JBIG2.assemble` cannot express a
+        page with no image stream" is true and is **not** the blocker, because the JBIG2 arm is already
+        guarded by a count the passthrough breaks; and it is **five** `Tools/` files switching over `Content`
+        rather than four (`score-text-voids.swift` landed the same day this box was written), of which four
+        switch exhaustively. What survives intact: the `bitmaps.enumerated()` keying, and "re-scope it before
+        starting", which is what happened.
         (context: BUGS.md C29 `#### The report, SHIPPED`)
+  - [x] **c29-rescope** — **DONE 2026-08-25.** Not the routing either: the routing half PRICED, on a measured
+        premise, because `c29-report` ended by saying it was not one commit and had to be re-scoped before
+        anyone started. `BUGS.md` C29 `#### The routing half, RE-SCOPED` is the whole of it; do not re-derive
+        it. **What was measured**: `CGContext.drawPDFPage` copies a born-digital page into a new PDF with its
+        text intact **character for character** — 302 chars, exact string equality, over **three** hops,
+        against **0** from the same helper's rasterising arm — so the Flate route can carry a passthrough
+        page using an operator `SearchableWriter.compose` already runs on every page it publishes
+        (`SearchableWriter.swift:296`). Four `ENGINE ASSUMPTION` checks pin it; the sabotage (`i == 0` →
+        `i == -1`, the passthrough arm rasterising) reds **exactly three of the four**, `1256/1259`, the
+        raster control staying green because it rasterises either way — predicted by name and count before
+        the run.
+        ⛔ **THREE FINDINGS THAT CHANGE WHAT (A) COSTS.** (1) The JBIG2 arm is guarded by
+        `encoded.count == bitmaps.count` (`Model.swift:2174-2175`) whose `else` at `:2376` is the Flate route,
+        so a mixed document falls back **by arithmetic** — no `JBIG2.assemble` change in (A). The price is
+        bytes (the JBIG2 route is ~1/3 of Flate at the same resolution) and it is **unmeasured**, which is
+        (B). (2) The blocker is `Recogniser`: `bitmaps.map(imageURL(of:))` (`:146`), results keyed by
+        `bitmaps.enumerated()` (`:163`), `imageURL(of:)` returning a non-optional URL out of a two-case
+        switch (`:336`). A dense array plus a third `Content` case keeps position == page number everywhere.
+        (3) **20 sites pattern-match `RebuiltPage.Content`, and the 8 exhaustive `switch`es are the SAFE
+        half** — but only **one** of the 12 `if case`/`guard case` sites is genuinely silent,
+        `Tools/score-text-route.swift:713`, which would print `already 1-bit` for a passthrough page into a
+        TSV this register quotes; **five of the twelve red at run time**.
+        ⛔ **AND (A) HAS TWO GATES THE SECTION ALMOST MISSED, both found by the review of this diff:** a
+        passthrough page must be recorded in `byPage` as `[]` and never left ABSENT, because
+        `SearchableWriter.missingPages` is `byPage[$0] == nil` and a non-empty result refuses the whole
+        document (`Model.swift:2120`); and `byPage.values.allSatisfy(\.isEmpty)` (`:2151`) would print a
+        false *"no text was found"* on an all-passthrough document.
+        ⚠️ **Nothing routes and nothing in `Sources/` moved.** The three `PINNED` rows still pin today's
+        wrong answer. ⛔ **Quote the byte DELTA and never the ratio**: 1,603,065 B against 1,634,288 B on the
+        nine-page fixture, the passthrough page **31,223 B cheaper**, 0.981x — a first draft published
+        0.739x off a 3-page variant, and the delta is stable because it is one page's arm while the ratio is
+        dominated by page count. It says nothing about the JBIG2 fallback, which runs the other way and also
+        discards a whole jbig2 encode pass (the guard is at `:2174`, the encode at `:1985-1995`).
+        (context: BUGS.md C29 `#### The routing half, RE-SCOPED`)
 - [ ] **gutter-floor** — the reading-order DECLINE rests on "0.19% of observations cross a gutter", and
       the population that produced it excludes the pages that fail. `score-reading-order.swift`'s ink test
       needs a quiet run of `0.035 * width`; a page without one is counted `singleColumn` and `continue`d,

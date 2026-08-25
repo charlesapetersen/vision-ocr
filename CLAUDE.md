@@ -137,8 +137,35 @@ pages of 300 — a real majority — and still reads `false`**, because its four
 `digital * 2 > sampled` is strict, so a tie loses; a genuinely mixed document therefore votes for the answer
 that hides the defect. That is the tie-break's fault, not the sampling's. ⚠️ **It is the report and NOT the
 fix** — the page is still rasterised — and C29 stays **OPEN**; the routing change is bigger than the queue's
-"one commit" assumed, because `JBIG2.assemble` cannot express a page with no image stream and four `Tools/`
-files switch exhaustively over `RebuiltPage.Content`. ⚠️ Two more limits: the channel-to-report **wiring is
+"one commit" assumed, because `JBIG2.assemble` cannot express a page with no image stream and five `Tools/`
+files read `RebuiltPage.Content` (four of them exhaustively).
+✅ **THAT ROUTING HALF IS RE-SCOPED AS OF 2026-08-25, ON A MEASURED PREMISE** (`BUGS.md` C29
+`#### The routing half, RE-SCOPED`): **`CGContext.drawPDFPage` copies a born-digital page into a new PDF with
+its text intact character for character** — 302 chars, exact string equality, over **three** hops, against
+**0** from the same helper's rasterising arm — so the Flate route can carry a passthrough page with the
+operator `SearchableWriter.compose` already runs on every page it publishes (`SearchableWriter.swift:296`).
+Four `ENGINE ASSUMPTION` checks pin it, and the one-token sabotage reds **exactly three of the four**
+(`1256/1259`), the raster control staying green because it rasterises either way — predicted before the run.
+⛔ **The JBIG2 sentence above is TRUE AND NOT THE BLOCKER**: the JBIG2 arm is guarded by
+`encoded.count == bitmaps.count` (`Model.swift:2174-2175`) whose `else` at `:2376` **is** the Flate route, so
+a mixed document falls back by arithmetic with no new guard. The blocker is `Recogniser`, which keys its work
+list and its results by array position (`:146`, `:163`) and whose `imageURL(of:)` returns a non-optional URL
+out of a two-case switch (`:336`). ⛔ **And the third `Content` case costs 20 sites that pattern-match the
+enum, of which the 8 exhaustive `switch`es are the SAFE half** — but only **one** of the 12
+`if case`/`guard case` sites is genuinely silent, `Tools/score-text-route.swift:713`, printing
+`already 1-bit` for a passthrough page into a TSV this register quotes; **five of the twelve red at run
+time**, and a draft's claim about `Tests/main.swift:3049`/`:5752` was refuted by the review of that diff
+(`:5752` labels a third case *bilevel* and is a detail string printed only on failure; `:3049` feeds a
+condition and goes red). ⛔ **Do NOT add a page-index field "to be safe": positional keying is CORRECT
+today**, because `flatten` throws rather than skips and its only path to a short array, **given a
+`pngDirectory`**, is a cancellation `Model` returns on — a field added before the commit that creates the gap
+is a seam with no caller, the shape C28 rejected. ⛔ **And "skips the page" is not "records `[]`":**
+`SearchableWriter.missingPages` is `byPage[$0] == nil` and a non-empty result **refuses the whole document**
+(`Model.swift:2120`), while `byPage.values.allSatisfy(\.isEmpty)` (`:2151`) would print a false *"no text was
+found"* on an all-passthrough document. So the routing half is **two** commits, (A) the Flate passthrough and
+(B) the JBIG2 route, and C29 stays **OPEN**: this priced the second commit and did not start it. ⛔ **Quote
+the byte DELTA, never the ratio** — 31,223 B on nine pages, 0.981x, against a first draft's 0.739x off a
+3-page variant: the delta is one page's arm and the ratio is dominated by page count. ⚠️ Two more limits: the channel-to-report **wiring is
 covered by no check** (nothing runs a document end-to-end through `makeSearchablePDF`), and an
 *already-OCR'd* scan's text layer is also replaced and deliberately is **not** reported, which is a
 judgement made in the quiet direction. ⚠️ One instrument trap came out of the fixture commit:
@@ -1214,7 +1241,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,255 checks measured 2026-08-25 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
+./run_tests.sh        # 1,259 checks measured 2026-08-25 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->

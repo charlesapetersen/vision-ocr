@@ -21,6 +21,20 @@ dead duplicate. ⛔ **The population is 42 documents and 392 pages of 16,987, no
 (`C29-CORPUS-2026-08-25.tsv`), `hasDigitalText` is `false` on **38 of the 42**, and the corpus turned up a
 **second mechanism**: `Schwaller` is 167 born-digital pages of 300 and still reads `false`, because its
 sample votes 2–2 and `digital * 2 > sampled` loses ties. It is the report and **not** the fix.
+✅ **AND THE ROUTING HALF IS RE-SCOPED AS OF 2026-08-25, ON A MEASURED PREMISE** — `#### The routing half,
+RE-SCOPED`. `CGContext.drawPDFPage` copies a born-digital page into a new PDF with its text intact
+**character for character** (302 chars, exact string, over three hops) where the rasterising arm of the same
+helper reads **0**, and four `ENGINE ASSUMPTION` checks pin it. ⛔ **The JBIG2 blocker is not where the
+report's map put it**: the JBIG2 arm is guarded by `encoded.count == bitmaps.count`
+(`Model.swift:2174-2175`) whose `else` **is** the Flate route, so a mixed document falls back by arithmetic
+and `JBIG2.assemble` need not change in the first commit. The real blocker is `Recogniser`, which keys its
+work list and its results by array position (`:146`, `:163`) and whose `imageURL(of:)` returns a
+non-optional URL. ⛔ **And the third `Content` case costs 20 sites that pattern-match the enum, of which the
+8 exhaustive `switch`es are the SAFE half** — but only **one** of the 12 `if case`/`guard case` sites is
+genuinely silent, `Tools/score-text-route.swift:713`, which would print `already 1-bit` for a passthrough
+page into a TSV this register quotes; **five of the twelve red at run time** and a draft's claim about
+`Tests/main.swift:3049`/`:5752` was refuted by the review of this diff. Still **OPEN**: this priced the
+second commit and did not start it.
 **Back to C28**, whose shape term this paragraph interrupted: it rescues **13 of the 16** measured content
 losses, and its failure direction is bytes rather than
 content: `bgFactor = allText ? max(caller, 8) : caller`, so a term that only ever refuses the verdict can
@@ -10207,6 +10221,144 @@ one whose silence is a judgement rather than a gap, below.
   this commit. What it does instead is stronger on the question the tool was wanted for — the tool asks
   `hasDigitalText` per *document*, and this walked 16,987 pages per *page* — but the owed invocation is a
   different thing and is **not** discharged. It carries forward.
+
+#### The routing half, RE-SCOPED — 2026-08-25, and the JBIG2 blocker is not where it was thought to be
+
+⛔ **THE PREMISE THE WHOLE FIX RESTS ON IS NOW MEASURED, AND IT HOLDS: `CGContext.drawPDFPage` copies a
+born-digital page into a new PDF with its text intact, character for character.** Over the fixture's cover
+page the copy reads **302 characters, the same string** — exact equality, not a matching count — and the
+same helper *rasterising* the same page reads **0**. It survives **three** hops, which matters because the
+Flate route makes two (`flatten` writes the rebuilt copy, `compose` draws that copy again,
+`SearchableWriter.swift:296`). So a page can be passed through with an operator this app already runs on
+every page it publishes, and four checks in `Tests/main.swift` now pin it as an `ENGINE ASSUMPTION`: green
+today, red if CoreGraphics ever stops preserving it, which is when this section would have to be redone.
+✅ **WATCHED FAILING RATHER THAN REASONED**: with the passthrough arm sabotaged to rasterise (`i == 0` →
+`i == -1`, one token) the suite reads **1256/1259** and **exactly three of the four** rows go red —
+`through=0 source=302`, `twice=0`, `through=false raster=false` — while the raster row stays green, because
+it rasterises either way. The count, the three names and that one exemption were predicted before the run.
+
+**The Flate route can carry a passthrough page; the JBIG2 route cannot.** `compose` draws each page of
+`visible` with `drawPDFPage` under `drawImages`, which defaults to true
+(`SearchableWriter.swift:288-298`) — so if `flatten` draws the source page through instead of drawing a
+raster, the content reaches the published file with no new plumbing at all. On the JBIG2 route `compose` is
+called with **`drawImages: false`** (`Model.swift:2318`): it writes the invisible text layer only, and the
+page's pixels come from `JBIG2.assemble`, which writes one image stream per page and has nowhere to put a
+page that has no image. That half of the previous section's map is confirmed.
+
+⛔ **BUT THE JBIG2 ROUTE DOES NOT HAVE TO CHANGE IN THE FIRST COMMIT, AND THAT IS THE FINDING THAT MOVES THE
+BOUNDARY.** The JBIG2 arm is guarded — `wantJBIG2, encoded.count == expected, encoded.count ==
+bitmaps.count, let qpdf = JBIG2.merger` (`Model.swift:2174-2175`) — and its `else` at `Model.swift:2376`
+**is** the Flate route, already written, already the fallback for "the encoder could not cover every page".
+A passthrough page contributes no entry to `encoded` (the `onPage` closure at `Model.swift:1981` is where
+entries are made), so `encoded.count != bitmaps.count` and a mixed document falls to Flate through a
+condition that already exists and already means what is wanted. **No `JBIG2.assemble` change, no new
+guard.** ⚠️ The price is bytes, on mixed documents only: the JBIG2 route is roughly a third of the Flate
+route at the same resolution (`Model.swift:2162-2164`), and **that cost is unmeasured** — no document with
+this shape has been run both ways. It is the second commit's decision, not a blocker on the first.
+
+⛔ **The real blocker is `Recogniser`, not `JBIG2`.** `recogniseDocument` builds its work list as
+`bitmaps.map(imageURL(of:))` (`Recogniser.swift:146`) and keys the results by `bitmaps.enumerated()`
+(`:163`), while `imageURL(of:)` (`:336`) returns a **non-optional** `URL` out of a two-case switch. A
+passthrough page has no image, so either the image list goes short of the array — and every later page's
+observations shift onto the wrong page — or the array itself develops a gap, and `sourceCropBoxes[index +
+1]` (`Model.swift:2016-2018`) and `pageTotal = bitmaps.count` (`:2048`) shift with it. ⚠️ Note what this
+also says: **positional keying is CORRECT today.** `flatten` throws on a page it cannot render
+(`Failure.pageFailed`) rather than skipping it — there is no `continue` in the loop and `try onPage?` throws
+out of the function — and its only path to a *short* array, **given a `pngDirectory`**, is cancellation,
+which `Model` returns on (`Model.swift:2041`). So an explicit page-index field added now would be a seam
+with no caller, which is the shape C28 rejected. Add it in the commit that creates the gap, not before.
+⚠️ **The `pngDirectory` qualifier is not decoration and a draft of this sentence omitted it**: `flatten`
+returns `[]` on a call without one, which its own doc comment (`Flattener.swift:644-649`) and
+`Model.swift:2048`'s `bitmaps.isEmpty ? PDFPageCount(visible) : bitmaps.count` both exist because of. That
+is a short array with no gap in it, and every in-tree caller that needs the array passes a directory — but
+the universal without the qualifier is refuted by the file it is about.
+
+**The answer that keeps the array dense.** One `RebuiltPage` per source page, always, with a **third
+`Content` case carrying no URL**. Then array position still equals page number at every site above, the
+JBIG2 guard fails by arithmetic, recognition skips the page because it has no image to recognise, and
+nothing is drawn over it — which is the constraint `#### What a fix has to satisfy` names as easiest to miss.
+
+⛔ **BUT "SKIPS" AND "RECORDS `[]`" ARE THE SAME WORD HERE AND OPPOSITE OUTCOMES IN THE CODE, and a draft of
+this section had it wrong.** A passthrough page must be recorded in `byPage` as an **empty array**, never
+left absent: `SearchableWriter.missingPages` is `byPage[$0] == nil` (`SearchableWriter.swift:658-661`),
+called at `Model.swift:2120`, and a non-empty result is a **hard refusal** — *"The recogniser returned
+nothing for page(s) 1 of 9; nothing was written."* `Model.swift:2113-2117`'s own comment is that exact
+distinction. And a second gate reads the same map: `if byPage.values.allSatisfy(\.isEmpty)`
+(`Model.swift:2151`) prints *"no text was found on the page…"*, so a document that is **entirely**
+passthrough would publish a false alarm about a page that came out perfect. Both are (A)'s work, and both
+were found by the adversarial review of this diff rather than by writing the routing.
+
+⛔ **THE COST OF THAT THIRD CASE, COUNTED RATHER THAN ESTIMATED: 20 sites read `RebuiltPage.Content`, and the
+dangerous half is not the half that was named.** **8** are exhaustive `switch`es and would break the build,
+which is the safe kind of cost: `Tools/score-rebuild-dpi.swift:262`, `Tools/score-routing.swift:62`,
+`Tools/score-text-route.swift:708`, `Tools/score-text-voids.swift:1056`, `Sources/Model.swift:1981`,
+`Sources/Recogniser.swift:336`, `Tests/main.swift:1303` and `:1391`. The other **12** are `if case` /
+`guard case` and **compile silently**: `Tools/score-shape-term.swift:1172`,
+`Tools/score-text-route.swift:713` and `:1013`, and `Tests/main.swift:3049`, `:3089`, `:3107`, `:5751`,
+`:5752`, `:9489`, `:12092`, `:12315`, `:12367`.
+
+⛔ **AND THE "SILENT" HALF IS SMALLER THAN A DRAFT OF THIS CLAIMED — REFUTED BY THE ADVERSARIAL REVIEW OF
+THIS DIFF, WHICH READ THE LINES.** That draft said `Tests/main.swift:3049` and `:5752` would *"report a
+passthrough page as a jpeg page from a check that stays green"*, and both halves are wrong: `:5752` labels a
+third case **bilevel**, not jpeg, and it is a `detail` argument, which `check` prints **only on failure**
+(`Tests/main.swift:105-110`); `:3049` feeds `routed()`, whose output **is** the condition at `:3051`, so a
+third case reaching it goes **RED**. **Five of the twelve red at run time** (`:3049`, `:3089`, `:9489`,
+`:12092`, `:12315`), which is the good outcome. ✅ **The genuinely silent mislabel is in a committed
+instrument rather than a test**: `Tools/score-text-route.swift:713`'s
+`guard case .jpeg(…) else { row(index, route, verdict: "already 1-bit"); continue }` would print
+`already 1-bit` for a passthrough page, into a TSV this register quotes. That one site is the claim to
+carry.
+
+⚠️ Two sites are deliberately NOT in the count: `Sources/JBIG2.swift:372` and `Sources/Model.swift:2235`
+read `JBIG2.Page.stream`, a different enum with a `.jpeg` case of its own (`:2235` is a `guard case`, not a
+switch). ⚠️ And the count is of sites that **pattern-match** the enum: `Tests/main.swift:12095` reads it by
+string interpolation and is a twenty-first reader that a third case cannot break. ⚠️ It is **five** `Tools/`
+files rather than the four `ops/autonomous/QUEUE.md` and `CLAUDE.md` recorded — `score-text-voids.swift`
+landed the same day those sentences were written — of which four switch exhaustively and the fifth uses a
+`guard`. ⚠️ A draft attributed that four to `#### The report, SHIPPED`; the count is not in that section.
+⚠️ **The `Tests/main.swift` numbers are as of this commit and that file gains lines constantly** — three of
+them were published **125 lines stale, by this diff's own insertions**, caught by the review of it and then
+shifted again by the review's own fixes. Re-derive them by pattern, not by trusting the number.
+
+**So the routing half is still two commits, but the boundary moves.** **(A)** the third `Content` case, the
+20 sites, the passthrough arm in `flatten`, the recognition skip, and the report re-worded from "lost its
+text" to "passed through" — Flate-route only, JBIG2 falling back by arithmetic. **(B)** the JBIG2 route:
+either splice the original page in with `qpdf`, which is already in the pipeline for the text-layer merge
+(`JBIG2.overlay`, `Model.swift:2364`), or measure the Flate fallback's byte cost on a mixed document and
+decide the fallback is the answer. (B) is a measurement plus a decision; (A) is the code.
+
+⚠️ **What this section does NOT establish**, said here rather than left to be found:
+
+* **Nothing routes.** `flatten` still rasterises page 1, the three `PINNED` rows above still pin that, and
+  C29 stays **OPEN**. This priced the second commit; it did not start it.
+* ⛔ **QUOTE THE BYTE DELTA AND NEVER THE RATIO.** On the nine-page fixture the checks actually use, through
+  the same helper, the passthrough copy is **1,603,065 B** against the rasterised copy's **1,634,288 B** —
+  the passthrough page is **31,223 B cheaper**, 0.981x. A first draft published **0.739x** off a *3-page*
+  variant built by a scratch probe with a different helper (87,933 against 119,022, delta 31,089), and the
+  review of this diff caught it: **the delta is stable at ~31 KB because it is one page's arm, and the ratio
+  is dominated by how many other pages there are.** The same lesson as the stencil-ink ratio and C26's
+  5.96x — a ratio is a claim about its own set. And it says nothing about the JBIG2 fallback's cost, which
+  runs the other way and is the figure (B) needs. ✅ **No artefact file and no un-committed instrument**: the
+  byte pair is reproducible from the tree by extracting `makeBornDigitalCoverPDF` and
+  `copyPDFRasterisingAllBut` from `Tests/main.swift` into a scratch `swiftc` file, which is how it was
+  measured, so `CLAUDE.md`'s count of five artefacts with no instrument in the tree does not move.
+* ⚠️ **The fallback also throws away work, not only bytes.** The count guard is evaluated at
+  `Model.swift:2174`, long after the `onPage` closure has already paid `JBIG2.encode` for every bilevel page
+  (`Model.swift:1985-1995`). A mixed document therefore runs the whole jbig2 encode and then discards it, so
+  (B)'s measurement is bytes **plus** a wasted encode pass.
+* ⚠️ **Rotation is unmeasured.** `Flattener.fullBox` swaps width and height for 90°/270°
+  (`Flattener.swift:918-925`); the test helper uses a raw `.mediaBox` with `rotate: 0`, and the fixture has
+  no rotated page. So the engine assumption is pinned only on upright pages — which is the shape invariant 5
+  exists for, and (A) has to ask it of a rotated passthrough.
+* ⚠️ **The reader on both sides is PDFKit's `page.string`**, so the round-trip rows can move on a PDFKit
+  change with no product change — the same caveat the `ocrdChars` row above carries.
+* ⚠️ **The crop box is unexamined.** A passthrough page's crop is the source's own and needs no remap into a
+  rebuilt sheet, which looks like a simplification of C23's problem rather than a new instance of it — but
+  `sourceCropBox` is `nil`-when-untrimmed and nothing here tested a trimmed passthrough page. C23's own
+  entry is where that has to be read before (A) is written.
+* ⚠️ **Measured on the fixture, not on a corpus document.** `testdocs/` holds nothing of this shape, which is
+  why the fixture exists; the corpus population is `C29-CORPUS-2026-08-25.tsv`'s 42 documents and none of
+  them has been run through a passthrough.
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
 

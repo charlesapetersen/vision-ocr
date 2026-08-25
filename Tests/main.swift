@@ -9783,6 +9783,55 @@ func makeBornDigitalCoverPDF(at url: URL, coverPages: Int = 1, scanPages: Int) {
     pdf.closePDF()
 }
 
+/// Copies `source` into a fresh PDF page by page, the way the **Flate route**
+/// publishes: page 1 either drawn through with `drawPDFPage` — the passthrough
+/// C29's routing fix needs — or rasterised at 200 DPI, which is what
+/// `Flattener.flatten` does to every page today. Later pages are rasterised
+/// either way, so the two outputs differ in exactly one page and one operator.
+///
+/// It is not a copy of production: it is the smallest scene that puts the one
+/// CoreGraphics behaviour C29's fix rests on under a check. `drawPDFPage` into a
+/// `CGPDFContext` is already how `SearchableWriter.compose` publishes every page
+/// (`SearchableWriter.swift:296`), and drawing a page into a bitmap context is
+/// what `flatten` does, so both arms use operators the app already runs.
+func copyPDFRasterisingAllBut(
+    _ source: URL, to out: URL, drawFirstPageThrough: Bool
+) {
+    guard let doc = PDFDocument(url: source), let first = doc.page(at: 0)?.pageRef
+    else { return }
+    var box = first.getBoxRect(.mediaBox)
+    guard let pdf = CGContext(out as CFURL, mediaBox: &box, nil) else { return }
+    for i in 0..<doc.pageCount {
+        guard let cgPage = doc.page(at: i)?.pageRef else { continue }
+        var pageBox = cgPage.getBoxRect(.mediaBox)
+        // Invariant 4: CFData, never an NSValue, or every page inherits page
+        // one's size.
+        let boxData = withUnsafeBytes(of: &pageBox) { Data($0) } as CFData
+        pdf.beginPDFPage([kCGPDFContextMediaBox as String: boxData] as CFDictionary)
+        if i == 0 && drawFirstPageThrough {
+            pdf.saveGState()
+            pdf.concatenate(cgPage.getDrawingTransform(
+                .mediaBox, rect: pageBox, rotate: 0, preserveAspectRatio: true))
+            pdf.drawPDFPage(cgPage)
+            pdf.restoreGState()
+        } else if let cs = CGColorSpace(name: CGColorSpace.linearGray) {
+            let scale: CGFloat = 200.0 / 72.0
+            let w = Int(pageBox.width * scale), h = Int(pageBox.height * scale)
+            if let bmp = CGContext(
+                data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                space: cs, bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+                bmp.setFillColor(gray: 1, alpha: 1)
+                bmp.fill(CGRect(x: 0, y: 0, width: w, height: h))
+                bmp.scaleBy(x: scale, y: scale)
+                bmp.drawPDFPage(cgPage)
+                if let img = bmp.makeImage() { pdf.draw(img, in: pageBox) }
+            }
+        }
+        pdf.endPDFPage()
+    }
+    pdf.closePDF()
+}
+
 do {
     resetPrefs()
     let dir = tmp.appendingPathComponent("digital")
@@ -10147,6 +10196,101 @@ do {
               + "bar and a page-sized raster — so it controls for neither term alone",
               c29Quiet.isEmpty && ocrdChars < 120,
               "pages=\(c29Quiet) chars=\(ocrdChars)")
+
+        // 5. C29's SECOND commit, priced rather than started: the one behaviour
+        //    the passthrough rests on. A born-digital page can only be "passed
+        //    through" if some operator this app already runs copies its text into
+        //    a new PDF *as text*. `CGContext.drawPDFPage` is that operator, and
+        //    it is not our code — so this is an ENGINE ASSUMPTION, green today
+        //    and red if CoreGraphics ever stops preserving it, which is exactly
+        //    when the re-scope in `BUGS.md` C29 would have to be redone.
+        //
+        //    ⛔ Read the pair, not either row. The passthrough row alone is
+        //    satisfied by a fixture whose text survives anything; the raster row
+        //    is the same helper, same page, same file, differing in one operator,
+        //    and it reads 0. That pair is what makes this about `drawPDFPage`.
+        //    ⚠️ But `rasterText.isEmpty` is ONE-SIDED — a blank page satisfies it
+        //    too — so the pair alone is not the control it reads as. What closes
+        //    that is the `pageIsAnImage` conjunct on the last row; see there.
+        //
+        //    ⛔ WATCHED FAILING, not reasoned: with the passthrough arm sabotaged
+        //    to rasterise (`i == 0` → `i == -1`, one token) the suite reads
+        //    **1256/1259** and exactly THREE of these four rows go red —
+        //    `through=0 source=302 equal=false`, `twice=0 equal=false`, and the
+        //    last row — while the raster row stays green, because it rasterises
+        //    either way. That count and that exemption were predicted before the
+        //    run. ⚠️ The last row's detail string gained a third field after that
+        //    run, so its quoted text above is from the two-field version.
+        //
+        //    ⚠️ What it does NOT establish: that the fix works. Nothing here
+        //    routes anything — `flatten` still rasterises page 1 and the three
+        //    PINNED rows above still pin that. It establishes that the Flate
+        //    route CAN carry a passthrough page, which is the premise the
+        //    decomposition in the entry is built on. The JBIG2 route cannot, for
+        //    a reason no check here can see: `compose` runs with
+        //    `drawImages: false` on it (`Model.swift:2318`) and the page content
+        //    comes from `JBIG2.assemble`, which writes one image stream per page.
+        let through = dir.appendingPathComponent("c29-passthrough.pdf")
+        let flattened = dir.appendingPathComponent("c29-rasterised.pdf")
+        copyPDFRasterisingAllBut(jstor, to: through, drawFirstPageThrough: true)
+        copyPDFRasterisingAllBut(jstor, to: flattened, drawFirstPageThrough: false)
+        let throughText = (PDFDocument(url: through)?.page(at: 0)?.string ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let rasterText = (PDFDocument(url: flattened)?.page(at: 0)?.string ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // Exact string equality, not the character count: a count can match
+        // while the glyphs are mangled, which is the very failure C29 is —
+        // `AMFAKAN FOCAX ONCAL ASSOXUTION` is 30 characters and so is the truth.
+        check("C29 ENGINE ASSUMPTION: drawPDFPage copies a born-digital page into "
+              + "a new PDF with its text intact, character for character",
+              throughText == coverText && !coverText.isEmpty,
+              "through=\(throughText.count) source=\(coverText.count) "
+                  + "equal=\(throughText == coverText)")
+        check("…while the same helper rasterising the same page leaves no text at "
+              + "all, so the row above is about the operator and not the fixture",
+              rasterText.isEmpty, "chars=\(rasterText.count)")
+        // Both hops, because the Flate route makes two: `flatten` writes the
+        // rebuilt copy and `compose` draws that copy again
+        // (`SearchableWriter.swift:296`). A round trip that degraded on the
+        // second pass would break the fix while passing the row above.
+        let twice = dir.appendingPathComponent("c29-passthrough-twice.pdf")
+        copyPDFRasterisingAllBut(through, to: twice, drawFirstPageThrough: true)
+        let twiceText = (PDFDocument(url: twice)?.page(at: 0)?.string ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        check("…and survives the SECOND hop too, which the Flate route makes "
+              + "because compose draws the rebuilt copy again",
+              twiceText == coverText, "twice=\(twiceText.count) equal="
+                  + "\(twiceText == coverText)")
+        // The report and the fix have to agree about the same page: a passed-through
+        // page must still read born-digital in the OUTPUT, or `digitalTextPages`
+        // would go on naming a page that no longer lost anything.
+        //
+        // ⛔ THE `pageIsAnImage` CONJUNCT IS LOAD-BEARING AND IS WHY THIS ROW EXISTS
+        // IN THIS FORM. Without it nothing in this block asserts that the raster arm
+        // rasterised anything: `CGColorSpace(name:)` returning nil skips the whole
+        // `else if` body, the page comes out BLANK, and a blank page satisfies
+        // `rasterText.isEmpty` and `!pageHasDigitalText` identically — so all four
+        // rows would stay green over a helper that draws nothing, which is the
+        // twelfth check-that-cannot-fail this project has caught. Measured by the
+        // adversarial review of this diff, by planting an invalid colour-space name:
+        // nine blank pages, 3,399 bytes, four green rows. With this conjunct the
+        // raster page has to be a real 1700 px sheet at 200 DPI, which clears
+        // `pageIsAnImage`'s bars (`Flattener.swift:304-307`) and reds when blank.
+        if let tp = PDFDocument(url: twice)?.page(at: 0),
+           let rp = PDFDocument(url: flattened)?.page(at: 0) {
+            check("…and the copy still reads born-digital page by page, where the "
+                  + "rasterised one is a page-sized raster instead — the report and "
+                  + "a fix would agree, and the raster arm really rasterised",
+                  Flattener.pageHasDigitalText(tp)
+                      && !Flattener.pageHasDigitalText(rp)
+                      && Flattener.pageIsAnImage(rp),
+                  "through=\(Flattener.pageHasDigitalText(tp)) "
+                      + "raster=\(Flattener.pageHasDigitalText(rp)) "
+                      + "rasterIsImage=\(Flattener.pageIsAnImage(rp))")
+        } else {
+            check("C29: both copies open, so the born-digital-in-the-output row ran",
+                  false)
+        }
     }
 
     // 4. The batch-level pre-flight picks out exactly the digital ones.
