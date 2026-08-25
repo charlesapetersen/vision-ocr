@@ -66,7 +66,7 @@ experiment, and the *why* is untested — if the mechanism is a working-resoluti
 pixels production actually recognises** (`BUGS.md` C30 `#### The instrument, in Tools/ as of 2026-08-25`,
 `C30-VOIDS-2026-08-25.tsv`). Rows of ink divided by rows of ink no word box covers, so the numerator is
 unreachable from the observation list and a page can fail it while `words=` reads 100% — group 5 of its
-10-group `--self-test` is that property as a check rather than a claim. ⛔ **Quote the page-derived column,
+13-group `--self-test` is that property as a check rather than a claim. ⛔ **Quote the page-derived column,
 never the shares**: `inkRows` reproduces `C30-FORK-2026-08-22.tsv`'s at **0.9913x-1.0007x on 6 of 6 pages**
 across a different rasteriser and 4x the resolution, and page 1's longest inked-and-unboxed run is **683**
 rows at 400 dpi = **170.75** at 100 dpi against the fork's **171**, this entry's founding headline through a
@@ -80,8 +80,38 @@ definitions are printed. ⛔ **And one thing does not port, measured: `Flattener
 `[90, 230]` and `artefact.py`'s does not**, so the shipped one reads 90 where the reference reads 0 on a
 two-valued buffer — same argmax, the clamp is the whole difference, and the two select the same pixels only
 *because* the buffer is bimodal, i.e. on a `.bilevel` page and not a `jpeg` one. ⚠️ Nothing in `Sources/`
-moved and no page gained a text layer: the tiling candidate is still neither built nor priced, and this
-measures a box's *presence* and never the string under it. `C29` is the owner's JSTOR finding — a
+moved and no page gained a text layer, and this measures a box's *presence* and never the string under it.
+✅ **AND THE TILING CANDIDATE IS PRICED AS OF 2026-08-25, ON ALL SIX PAGES RATHER THAN ONE HALF OF ONE**
+(`BUGS.md` C30 `#### The crop experiment, in Tools/ as of 2026-08-25`, `C30-TILES-2026-08-25.tsv`, 24 rows):
+`TILES=n` runs the same page as `n` horizontal bands, each its own request, lifts the boxes back into the
+page's frame and scores the union against the same ink with the same constants — so the fork's
+**phenomenon** is reproducible from the tree for the first time. ⚠️ Not its headline: that was a *half-page*
+figure (84.81% → 8.61%) and this tool has no half-page mode, so nobody can get those two numbers from it. Over the six pages the void goes **5,561 bare rows → 404 at
+eight bands, 13.76x fewer**, **4 of 6** pages reading 0, words **2,080 → 3,577**. ⛔ **It is NOT monotone in
+the band count and no band count is established as sufficient**: `TILES=4` is worse in aggregate than
+`TILES=2` (2,487 against 1,663) and p3 reads **918 → 0 → 255 → 216** over 1/2/4/8, so "a gradient, not a
+threshold" is too kind — it is not even ordered. ⚠️ On p6 at four bands the tiled arm returns **fewer**
+observations than the whole page (49 against 50) while returning **more** words (511 against 421), so that
+row is fewer boxes carrying more text and **not** "tiling loses boxes outright", which the review of this
+diff refuted from the same row. ⛔ **The padding is a confound the row counts cannot see, and it is not small**: `coveredRows` pads every
+box by 8 rows top and bottom, and the tiled arm has 175 more boxes, which bounds padding's share of the
+5,157-row improvement at **54.3%** — so the row columns alone do not say the recovery is box extent.
+✅ **What does is content**: words per observation is flat (8.63 whole against 8.60 at eight
+bands), and the new `TILETEXT=<dir>` dump gives **752** distinct 4+-character tokens gained against **146**
+lost, gained > lost on **6 of 6** pages, with `CONTROLLER` — one of the six words page 5's section names —
+returned by the tiled arm and by no whole-page recognition. ⚠️ Two corrections it forces: five of those six
+words ARE in the whole-page recognition of production's bitmap, so *"absent from page 5's fresh text
+altogether"* is a fact about the **plain-render** path and not about the page; and ⛔ **dense clean synthetic
+type does NOT reproduce the void** — three generated single-column pages at 400 dpi, **em** sizes
+**41.7 / 33.3 / 27.8 px** giving line pitches of 52.1 / 40.0 / 31.9 against this document's ~52, so two of
+the three are denser and the first is the same; `obsN` equal to the drawn line count on **3 of 3** and
+`bareRows` **0** — so the fixture bullet's own prescription is refused and the
+ingredient is unknown. ⚠️ Still not a fix: `Recogniser` has no tiling seam, a seam cuts the lines that
+straddle it (so these are a floor on the benefit), whether the gain is the band's area or its shape is
+untested (bands run 1.47:1 / 2.95:1 / 5.89:1 on page 1's 3307x4488 sheet and 1.50 / 3.00 / 6.00 on the
+other five, which are 4409 tall), and the time cost of `n` requests a page is unmeasured. ⚠️ `TILES=1` is
+blind to the remap — at one band the scale is 1.0 — so what pins that arithmetic is the tool's group 13 and
+not the run-path control. `C29` is the owner's JSTOR finding — a
 born-digital cover page rasterised and re-OCR'd because `hasDigitalText` votes per DOCUMENT and never
 samples page 1 at all on a document of 5+ pages. ✅ **It has a FIXTURE as of 2026-08-23 and today's wrong
 answer is PINNED** — `Tests/main.swift`'s `makeBornDigitalCoverPDF`, and `BUGS.md` C29
@@ -1103,8 +1133,8 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-73-2026-08-21.tsv`, `SHAPETERM-RIM-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
 `SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv`,
-`C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv`, `C29-CORPUS-2026-08-25.tsv` and
-`C30-VOIDS-2026-08-25.tsv` — and are
+`C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv`, `C29-CORPUS-2026-08-25.tsv`,
+`C30-VOIDS-2026-08-25.tsv` and `C30-TILES-2026-08-25.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -1125,11 +1155,13 @@ outside the tree as
 is deliberately NOT in that count** and a reader will reach for it: it added no tool either, but it is
 reproducible from tools that ARE committed — an `awk` filter on `INKBAR-2026-08-19.tsv`, one `pdftoppm` a
 page and `score-shape-term`'s `SHAPEDUMP`. The five named above are reproducible from nothing in the
-tree, which is the line this count draws. ⚠️ **`C30-VOIDS-2026-08-25.tsv` is NOT in that count either and a
-reader scanning for `C30-*` will assume it is**: it is the first C30 artefact whose instrument IS committed
-— `Tools/score-text-voids.swift`, with a 10-group `--self-test` — so the count stays **five** while the list
+tree, which is the line this count draws. ⚠️ **`C30-VOIDS-2026-08-25.tsv` and `C30-TILES-2026-08-25.tsv`
+are NOT in that count either and a
+reader scanning for `C30-*` will assume they are**: both come from `Tools/score-text-voids.swift`, whose
+`--self-test` is **13** groups, so the count stays **five** while the list
 grows. That also spends the reason the other two are outside: the tool version C30 was asking for now
-exists, so a future C30 measurement has no excuse to be unreproducible from the tree. ⚠️ A first draft called
+exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file
+is that rule being kept, since it re-measures the fork's own headline through committed code. ⚠️ A first draft called
 `WIDEN-LAYERS-2026-08-22.tsv` "the one file here whose instrument is not in this repository"; the review of
 that diff found `GUTTER-CENSUS-2026-08-20.tsv` in the same list, and `C30-FORK-2026-08-22.tsv` made it
 three later the SAME DAY, 2026-08-22 — so this count has been wrong twice in one day, went to **four** on

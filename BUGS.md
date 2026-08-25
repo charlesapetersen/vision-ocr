@@ -132,13 +132,26 @@ type on page 5 have no text layer over them at all — **13** of them missed by 
 pixels production actually recognises** (`#### The instrument, in Tools/ as of 2026-08-25`,
 `C30-VOIDS-2026-08-25.tsv`). It divides rows of ink by rows of ink no word box covers, so its numerator is
 unreachable from the observation list and a page can fail it while `words=` reads 100% — group 5 of its
-10-group `--self-test` is that property as a check, not a claim. ⛔ **Quote its page-derived column and not
+13-group `--self-test` is that property as a check, not a claim. ⛔ **Quote its page-derived column and not
 its shares**: `inkRows` reproduces `C30-FORK-2026-08-22.tsv`'s at **0.9913x-1.0007x on 6 of 6 pages** across
 a different rasteriser and 4x the resolution, and page 1's longest inked-and-unboxed run is **683** rows at
 400 dpi = **170.75** at 100 dpi against the fork's **171** — this entry's founding headline, reproduced
 through a different image. The recognition-derived shares diverge **0.7767x-1.7077x** and that divergence is
-C30's own finding rather than a defect. ⚠️ It is an instrument: nothing in `Sources/` moved, no page gained
-a text layer, and the tiling candidate is still neither built nor priced. ⛔ **One thing does not port and
+C30's own finding rather than a defect.
+✅ **AND THE TILING CANDIDATE IS PRICED AS OF 2026-08-25, ON ALL SIX PAGES INSTEAD OF ONE HALF OF ONE**
+(`#### The crop experiment, in Tools/ as of 2026-08-25`, `C30-TILES-2026-08-25.tsv`): `TILES=n` recognises
+the same page as `n` horizontal bands and scores the union against the same ink, and over the six pages the
+void goes **5,561 bare rows → 404 at eight bands, 13.76x fewer**, with **4 of 6** pages reading 0 and words
+**2,080 → 3,577**. ⛔ **But it is NOT monotone and no band count is sufficient**: `TILES=4` is worse in
+aggregate than `TILES=2` (2,487 against 1,663), p3 reads **918 → 0 → 255 → 216** over 1/2/4/8, and on p6 at
+four bands the tiled arm returns **fewer** observations than the whole page. ✅ The recovery is text and not
+stretched boxes — words per observation is flat (8.63 whole against 8.60 at eight bands) and the new
+`TILETEXT=` dump shows **752** distinct 4+-character tokens gained against **146** lost, gained > lost on
+6 of 6 pages. ⛔ **Dense clean synthetic type does NOT reproduce the void** — three generated pages at 400
+dpi, glyph 41.7/33.3/27.8 px, `obsN` equal to the drawn line count on 3 of 3 — so the fixture bullet's own
+prescription is refused and the ingredient is still unknown. ⚠️ Still an instrument: nothing in `Sources/`
+moved, `Recogniser` has no tiling seam, and the time cost of `n` requests a page is unmeasured.
+⛔ **One thing does not port and
 it was measured: `Flattener.otsuThreshold` clamps to `[90, 230]` and `artefact.py`'s does not**, so the
 shipped function reads 90 where the reference reads 0 on a two-valued buffer — same argmax, the clamp is the
 whole difference, and it selects the same pixels only *because* the buffer is bimodal, i.e. on a `.bilevel`
@@ -10679,7 +10692,8 @@ collapses them and the rows *look* short. All 11 rows are 15 fields; the same tr
 2026-08-22, and the `$STATE/c30-instrument/README` calls "the next bounded step, not a rediscovery".** It
 divides *rows of ink* by *rows of ink that no word box covers*, so its numerator cannot be reached from the
 observation list and a page can fail it while `words=`, `start=`/`end=`, `probe-line-coverage` and
-`probe-line-edges` all pass it. `--self-test` is **10 groups**, exit 5, and group 5 is that property as a
+`probe-line-edges` all pass it. `--self-test` is **13 groups** (10 when this section was written; the crop
+experiment below added three), exit 5, and group 5 is that property as a
 check rather than as a claim: a fixture whose every box sits exactly on ink — perfect by any
 observation-based measure — reads **40 of its 64 inked rows with no box over them**.
 
@@ -10858,6 +10872,144 @@ deliberately left undone rather than shipped untested; note that it would give *
 whole-page recognition*, which is **not** the crop experiment (that recognises a crop), so it is a
 convenience and not the scope question.
 
+#### The crop experiment, in `Tools/` as of 2026-08-25 — tiling recovers 13.8x of the void, and it is NOT monotone in the band count
+
+The fork's sharpest sentence — *"the loss is a property of the IMAGE HANDED TO ONE REQUEST, not of the
+type"* — rested on **one half of one page of one document**, measured by a throwaway that is in no
+version of this tree. So the only candidate fix this entry has was unpriced, and the section above listed
+`TILES` nowhere: `VOIDROWS` was named as the deliberately-unshipped knob and its own note says it would
+**not** be the crop experiment.
+
+`TILES=n` on `Tools/score-text-voids.swift` is that experiment. It runs the same page a second time as `n`
+equal horizontal bands, each its own `VNRecognizeTextRequest`, lifts every band's boxes back into the
+page's frame and scores the union against the **same ink rows with the same constants** — so the
+whole-page columns and the `t…` columns in one row are two recognitions of one image, differing only in
+how many requests it was cut into. `C30-TILES-2026-08-25.tsv`, 24 rows in 28 columns: all six pages of
+this entry's own document at `TILES` **1 / 2 / 4 / 8**.
+
+⛔ **THE RESULT, and read the second half of it before quoting the first.** Over the six pages, the
+whole-page arm leaves **5,561** inked rows with no box on them and returns **2,080** words in **241**
+observations. At `TILES=8` that is **404** bare rows — **13.76x fewer** — **3,577** words (**1.72x**) in
+**416** observations, and **4 of the 6 pages read `tBareRows` 0**. Page 1's founding 683-row void goes to
+**188**. ⛔ **But it is not monotone in the band count and no band count is sufficient**: in aggregate
+`TILES=4` is **worse than `TILES=2`** (2,487 against 1,663 bare rows), and page by page the ordering
+reverses in both directions — p3 reads **918 → 0 → 255 → 216** over 1/2/4/8 (best at *two* bands), p2
+**631 → 89 → 581 → 0**, p6 **489 → 81 → 579 → 0**. The entry's "a gradient, not a threshold" is therefore
+too kind: it is not even ordered. ⛔ **A draft of this said "so tiling can lose boxes outright" off `p6` at
+`TILES=4`, where the tiled arm returns FEWER observations than the whole page (49 against 50), and the
+review of this diff refuted it from the same row**: that row also reads **511** words against **421**, so
+it is fewer boxes carrying *more* text and nothing is shown to be lost. What is genuinely worse on it is
+`tBareRows` **579** against 489, which is one sentence earlier — the supported statement was available and
+the unsupported inference was nearly published in four documents.
+
+⛔ **AND THE PADDING IS A CONFOUND THE ROW COUNTS CANNOT SEE — read this before quoting the 13.76x.**
+`coveredRows` pads every box by `padRows`, 8 rows at 400 dpi, so each box covers up to 16 rows it does not
+sit on, and the tiled arm has **175 more boxes** over the six pages. That bounds the padding's contribution
+at **2,800 rows of the observed 5,157-row improvement — 54.3%** (a loose upper bound: padded ranges
+overlap, and on two of the four pages reading 0 the bound is the same order as the whole improvement). So
+the row columns alone do NOT establish that the recovery is box *extent*, and no run varies `padRows` —
+`VOIDMININCH` moves `minRows` only. Found by the adversarial review of this diff, which is why it leads
+here.
+✅ **What DOES establish it is content is the pair below** — coverage is row-wise, so more boxes cover more
+rows whatever they say, and a remap that inflated box heights would read as a triumph. Two measurements
+refuse that. (1) **Words per observation is flat** across every arm: 8.63 whole,
+then 9.37 / 9.30 / **8.60** at 2 / 4 / 8 bands, so the tiled arm's extra boxes carry the same amount of
+text each as the whole page's. (2) **The strings**, via the new `TILETEXT=<dir>`, which writes both arms'
+observations one to a line: over the six pages at `TILES=8` the tiled arm gains **752** distinct
+alphabetic tokens of 4+ characters and loses **146** — **5.15x**, and gained exceeds lost on **6 of 6**
+pages (132/12, 118/45, 107/17, 146/30, 146/18, 103/24). ⚠️ **The rule, so these are re-derivable, and the
+dumps themselves are NOT committed**: per page, `tr -cs 'A-Za-z' '\n'` over each arm's dump, upper-cased,
+tokens of length ≥ 4, `sort -u`, then `comm` the two sets — so they are counts of *distinct* tokens per
+page and not of occurrences, and a re-run of `TILES=8 TILETEXT=…` reproduces them. This register keeps a
+count of artefacts reproducible from nothing in the tree; these figures are the *dump's*, not the TSV's,
+and get none of that discipline beyond this sentence. Read at 1:1 the gains on page 1 are this
+document's own subject matter — `AGRICULTURE`, `CAPITALIST`, `MOBILIZATION`, `PRINCETON`, `UNIVERSITY`,
+`UNEMPLOYMENT` — beside real OCR noise (`ACONOMIC`, `EILECTS`, `WHIC`), and **most of the "lost" tokens
+are the whole-page arm's own fragments of a word the tiled arm read whole**: `FORESEE` + `SEABLE` against
+`FORESEEABLE`, `IDEOLOGICA` against `IDEOLOGICAL`, `EGRATED` against `TEGRATED`. So 146 is an over-count
+of real loss and the 5.15x is a lower bound. ✅ **One single-word control from this entry's own text**:
+`CONTROLLER`, one of the six words `#### Page 5, settled 2026-08-23` names, is returned by the tiled arm
+and by **no** whole-page recognition of that page.
+⚠️ **And a correction that section needs**: five of those six words — `COLLECTIVE`, `BARGAINING`,
+`PROVIDING`, `FACTS`, `FIGURES` — **are** in the whole-page recognition of production's own bitmap. That
+does not contradict it: its claim is about the `make-observations` **plain render**, a different image, and
+`ASSAME` is absent here for the same reason. But "absent from page 5's fresh text altogether" must be read
+as a fact about that path and not about the page.
+
+✅ **Two identity controls, both run — and read what the first does NOT cover.** `TILES=1` is the whole
+sheet cropped to itself and remapped by the identity map, so every `t…` column must equal its whole-page
+twin: it does, on **6 of 6** pages, and a divergence exits **7** rather than being printed as a benefit
+nobody could attribute. ✅ **And exit 7 was WATCHED FIRING on a real page**, which is what makes that arm
+evidence rather than an assertion: a build whose union drops one observation per band reads `TILE-IDENTITY
+one band diverged … obsN 46->45, words 296->281` on page 1 and exits **7**. ⛔ **The useful detail is which
+of the five compared terms did NOT move: `bareRows` 1288->1288 and `longBare` 683->683.** An identity check
+written on the bare-row columns alone — the ones this section quotes — would have been green over a
+one-box-per-band loss; it bites through `obsN`, `words` and `voidInk`. ⛔ **It is blind to the remap**, which a draft of this section credited it with in
+three documents: at one band the scale factor is exactly 1.0 and the offset is 0, so an inverted scale, an
+unscaled height, an unscaled y and a mis-scaled offset are all the identity there. The remap is group 13's
+job, and the review of this diff also found that group's fixture had `y: 0`, which left the `box.y * scale`
+term — the one deciding where a box lands inside its band — multiplied by nothing and pinned by nothing;
+the fixture is `y: 0.25` now, where an unscaled y reads (175, 225) against the asserted (125, 175). And the eleven
+whole-page columns are **byte-identical across all four arms** — four independent recognitions of one
+rebuilt bitmap — with the `TILES=8` arm re-run from a **second binary** (the one that added `TILETEXT`)
+and byte-identical on all 27 measure columns — ⚠️ **of which 17 carry information**: `page` is the row key,
+`tiles` is the arm label, and `kind` / `dpi` / `otsu` / `minRows` / `padRows` / `verdict` are constant on
+all 24 rows. (That is C28's own "do not call it twelve columns" trap, applied here before someone else
+applies it.) So this is determinism across a code change and not just across runs. ✅ **A stronger control
+the first draft missed**: all nineteen whole-page columns are byte-identical to
+`C30-VOIDS-2026-08-25.tsv`'s on **6 of 6** pages — a different binary, a different day, the same numbers.
+⚠️ The second binary's own output was not retained, so that half is a statement about a run and not a file
+in the tree. ✅ **And the committed file reproduces byte-identically from a THIRD binary — the one built
+after this diff's review changed the tool** (group 13's fixture, the band-failure split, the `TILETEXT`
+refusals), all four arms re-run, `diff` empty: so no review fix moved a measured number.
+
+⚠️ **What it does NOT establish.** A band boundary cuts lines and nothing overlaps, so up to `n - 1` lines
+straddle a seam — that cost is *in* these numbers, which makes them a floor on tiling's benefit and not a
+ceiling. Whether the per-band gain comes from the smaller area or from the band's shape is **untested**:
+the sheet is 3307x4488, so the bands run **1.47:1** at two, **2.95:1** at four and **5.89:1** at eight,
+and a wide strip is a shape Vision was never measured on here. Nothing in
+`Sources/` moves: `Recogniser` still has no tiling seam, no page gains a text layer, and the **time** cost
+of `n` requests a page is not measured. Coverage is still row-wise, so a tiled arm that recovers one
+column of a two-column page reads as well as one that recovers both. One document, six pages. ⛔ **And
+nothing here weakens the advance refutation of "render at a higher DPI"** — every arm reads the same
+400-dpi bitmap.
+
+⚠️ **A sibling sweep, in the commit**: `cropping(to:)` appears **nowhere else** in `Sources/`, `Tools/`,
+`Helper/` or `Tests/` — the only two call sites are the ones this diff adds — so the Core-Graphics
+y-convention hazard is this code's alone (group 11 pins it, and the sabotage that first reddened it did so
+through the *nil* guard rather than the content assertion — a two-band fixture puts the flipped convention
+out of bounds, so the fixture is three bands of three greys and the flip now reddens in bounds; ⚠️ and what
+that group establishes is that `cropping`'s y AGREES with `greyImage`'s, not that either is top-down, since
+each band is a uniform grey). ⛔ **The `Recogniser.recognise` count: 16 qualified call sites outside
+`Recogniser.swift`, of which nine are outside `Tests/`, and every one of the sixteen hands it a WHOLE PAGE
+except the one this diff adds.** ⚠️ A draft said "the nine … hands it one whole-page image", which both
+undercounts (it silently dropped `Tests/main.swift`'s six) and is falsified by the diff's own new line —
+and the count is load-bearing, because it is what "`Recogniser` has no tiling seam" rests on. The claim
+that survives is the one about the sixteen.
+
+⛔ **A GENERATED FIXTURE OF DENSE CLEAN TYPE DOES NOT REPRODUCE THIS, MEASURED THE SAME DAY** — which is a
+result the `#### What a fix has to satisfy` bullet below needs, because that bullet says what is wanted is
+"a page of dense small type tall enough that one request drops blocks of it". It is not sufficient. Text
+was drawn into a bitmap at 400 dpi and embedded in a 612x792 page, the way `Tests/main.swift`'s
+`makeScannedPDF` builds a scan, single column, Times, at **7.5 / 6 / 5 pt** on 1.25 / 1.2 / 1.15 leading —
+**em sizes** of **41.7 / 33.3 / 27.8 px** at 400 dpi (⚠️ em, not a measured glyph height: Times' cap height
+at 7.5 pt is nearer 27 px, and `glyphHeight` means a measured median component height elsewhere in this
+register, so do not read these as that quantity), giving line pitches of **52.1 / 40.0 / 31.9 px** against
+this document's ~52 — so **two of the three are denser and the first is the same pitch**, which is what a
+draft's flat "denser than ~52" got wrong — and **72 / 94 / 118** lines a page. `score-text-voids` reads `obsN` **72 / 94 / 118** — exactly one
+observation per drawn line — `bareRows` **0** and verdict `clean` on all three. ⚠️ A two-column 7.5 pt
+variant of the same page returns `obsN` **95** against **144** drawn lines and still reads `bareRows` 0
+and `clean` — ⚠️ **consistent with** the row-wise blindness and NOT a demonstration of it, which a draft
+claimed in a sentence its own hedge withdrew: showing blindness needs content shown missing while the
+measure reads clean, and nothing here was shown missing (an observation can span or split lines, and no
+1:1 read was done). ⚠️ None of the four synthetic rows was added to any artefact, so no `w`/`h`/`dpi`/
+`otsu` is recorded and a reader cannot check that the rebuild landed at 400 dpi.
+⚠️ **The generator is deliberately not committed**: it publishes no artefact, a `Tools/` file pays the
+full suite and would want a `--self-test`, and the three parameters above plus `makeScannedPDF`'s own
+shape are the whole recipe. **So the ingredient that makes one request drop a block is still unknown**,
+and it is not density, not glyph size and not page megapixels (3400x4400 against this document's
+3307x4488).
+
 #### What a fix has to satisfy
 
 - ⛔ **It must recognise the REBUILT BITMAP, not a re-render.** Added 2026-08-23 out of
@@ -10888,6 +11040,13 @@ convenience and not the scope question.
   its three constants (`INK_ROW_FRACTION` 0.005, `VOID_MIN_ROWS` 20, `BOX_PAD_PX` 2 — verified by
   reading `artefact.py:11-13`) and both box producers are described above precisely enough to rebuild;
   the tool is the next bounded step, not a rediscovery.
+- ⛔ **DENSE SMALL TYPE IS NOT THE INGREDIENT, measured 2026-08-25** — read
+  `#### The crop experiment, in Tools/ as of 2026-08-25` before spending a session on the fixture bullet
+  below, because its own prescription was tried and refused. Generated single-column pages at this
+  document's own 400 dpi, at glyph heights **41.7 / 33.3 / 27.8 px** — *denser in pixel line pitch than
+  this document's ~52* — over 72 / 94 / 118 lines a page, read `obsN` equal to the drawn line count on
+  **3 of 3** and `bareRows` **0**. So a fixture that reproduces the mechanism needs something this
+  session did not find, and it is not density, glyph size or page megapixels.
 - **A fixture, and this document is not one** — as of 2026-08-22 it is in
   `~/Desktop/Zotero PDF Transfer folder/`, it was in `~/Downloads` when this entry was written, and
   `testdocs/` holds nothing of this shape. That it moved in two days is the argument. Generated

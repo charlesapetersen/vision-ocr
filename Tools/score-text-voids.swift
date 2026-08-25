@@ -166,8 +166,58 @@
 //   /tmp/score-text-voids --self-test
 //   /tmp/score-text-voids "<pdf>" [page…]        # 1-indexed; default: a spread of 12
 //   VOIDMININCH=0.10 /tmp/score-text-voids "<pdf>" 1
+//   TILES=4 /tmp/score-text-voids "<pdf>" 1      # the crop experiment, below
+//   TILES=8 TILETEXT=/tmp/dump /tmp/score-text-voids "<pdf>" 5   # …and what it read
 //
 // ⚠️ The copied file must be named `main.swift` or swiftc rejects top-level code.
+//
+// ## `TILES=n` — the crop experiment
+//
+// C30's sharpest finding is that the loss is a property of the image handed to ONE request
+// and not of the type: over the same pixels at the same 400 dpi, page 1's bottom half went
+// from 84.81% bare to 8.61% purely by being its own request. That was a throwaway pass on
+// **one half of one page of one document** and it is reproducible from nothing in this
+// tree, which is why tiling — the only candidate fix the entry has — is unpriced.
+//
+// `TILES=n` runs the same page a second time as `n` equal horizontal bands, each its own
+// `VNRecognizeTextRequest`, lifts every band's boxes back into the page's frame and scores
+// the union against the SAME ink rows with the SAME constants. The whole-page columns and
+// the `t…` columns in one row are therefore two recognitions of one image, differing only
+// in how many requests it was cut into.
+//
+// ⛔ **What it does NOT settle, and the disclosures that go with any figure from it.**
+//   * **A band boundary cuts lines.** Nothing overlaps the bands, so up to `n - 1` lines
+//     straddle a seam and can come back halved, doubled or not at all. That is a real cost
+//     of naive tiling and it is *in* these numbers — read them as a floor on tiling's
+//     benefit, not as its ceiling.
+//   * **A box is a box.** The measure sees a box's presence and never the string under it,
+//     so a band that returns `ASSAME` over a real line counts as covered. C30's page-5
+//     section is where that trap cost a headline.
+//   * **Coverage is row-wise**, as everywhere else in this tool: a box anywhere on a row
+//     covers the row, so a tiled arm that recovers one column of a two-column page reads
+//     as well as one that recovers both.
+//   * ⛔ **THE PADDING IS A CONFOUND AND IT IS NOT SMALL.** `coveredRows` pads every box
+//     by `padRows` top and bottom — 8 rows at 400 dpi, so up to 16 free rows a box — and
+//     the tiled arm has more boxes. On C30's document that is 175 extra boxes over six
+//     pages, bounding the padding's contribution at 2,800 rows of an observed 5,157-row
+//     improvement: **54.3%**, a loose upper bound because padded ranges overlap. So the
+//     row counts alone cannot say the recovery is box *extent*; what says it is content is
+//     `TILETEXT` and the flat words-per-observation. Found by the adversarial review of
+//     the commit that added this mode, which is why it is here and not in a footnote.
+//   * ⚠️ **"Differing only in how many requests" is not true at every SETTING.**
+//     `makeRequest` sets `minimumTextHeight` as a fraction of the image
+//     (`Sources/Recogniser.swift:423`), so with `minTextHeightOn` the two arms differ by an
+//     n-fold effective glyph floor as well. It defaults off, so the committed artefact is
+//     unaffected — but a run with it on is measuring two things.
+//   * **It is not a fix and not a seam.** Nothing in `Sources/` tiles anything;
+//     `Recogniser` has no tiling seam and this tool does not add one.
+// ✅ **`TILES=1` is an identity control that runs on real pages**: one band is the whole
+// sheet, cropped to itself and remapped by the identity map, so every `t…` column must
+// equal its whole-page twin. A divergence exits **7** rather than being printed as a
+// tiling benefit nobody can attribute.
+// ✅ **`TILETEXT=<dir>` writes both arms' strings**, one observation a line, so a reader
+// can name what came back instead of trusting `tWords`. Use it: the columns count boxes,
+// and C30 has already been misled once by a box whose whole text was `ASSAME`.
 //
 // ⛔ **THE SELF-TEST RUNS ON EVERY INVOCATION**, not only under `--self-test`, and refuses
 // to measure anything if it fails. That is `score-mrc`, `score-threshold-loss`,
@@ -185,11 +235,16 @@
 // presented as the norm; this file now follows the majority instead of documenting a gap.
 //
 // Exit codes: 0 ok · 1 the PDF will not open · 2 usage, a page argument that is not a
-// positive integer, or a `VOIDMININCH` that is not a positive number · **3 it measured no
-// pages** (the silent-success defect `score-corpus` and `score-threshold-loss` both had) ·
-// 5 a failed self-test · **6 the geometry identity failed on some page** — the decoded
-// bitmap's dimensions disagreed with the `RebuiltPage` that named it, so the rows are
-// still printed but no share on that page means anything.
+// positive integer, a `VOIDMININCH` that is not a positive number, or a `TILES` that is
+// not a whole number of bands in 1…64 · **3 it measured no pages** (the silent-success
+// defect `score-corpus` and `score-threshold-loss` both had) · 5 a failed self-test ·
+// **6 the geometry identity failed on some page** — the decoded bitmap's dimensions
+// disagreed with the `RebuiltPage` that named it, so the rows are still printed but no
+// share on that page means anything · **7 the tile arm cannot be trusted** — `TILES=1`
+// diverged from the whole page, some band contributed no boxes, `TILES` produced no bands
+// at all, or a `TILETEXT` dump failed to write. ⚠️ That last one says nothing about the
+// arm being the same request; it is here because a run whose dump is missing must not be
+// read as a run whose strings matched nothing.
 
 import AppKit
 import CoreGraphics
@@ -376,6 +431,56 @@ func greyImage(_ grey: [UInt8], width w: Int, height h: Int) -> CGImage? {
                    bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
                    bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
                    decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+}
+
+// MARK: - The crop experiment (TILES)
+
+/// The `tiles` horizontal bands of a page `h` rows tall, top-first, as half-open row
+/// ranges in the grey buffer's frame (row 0 = the top of the sheet).
+///
+/// Integer division on purpose: band `i` runs `i * h / tiles` up to `(i + 1) * h / tiles`,
+/// so the ranges PARTITION `[0, h)` exactly — no gap, no overlap, and the last band
+/// absorbs the remainder because `tiles * h / tiles == h`. Group 12 pins that on a height
+/// the tile count does not divide.
+func bandRanges(height h: Int, tiles: Int) -> [(top: Int, bottom: Int)] {
+    guard h > 0, tiles > 0 else { return [] }
+    var out: [(top: Int, bottom: Int)] = []
+    for i in 0..<tiles {
+        let top = i * h / tiles
+        let bottom = (i + 1) * h / tiles
+        if top < bottom { out.append((top, bottom)) }
+    }
+    return out
+}
+
+/// The rect to hand `CGImage.cropping(to:)` for a band whose TOP row is `top` in the grey
+/// buffer's frame.
+///
+/// ⛔ **Which y this is, is MEASURED and not reasoned.** Core Graphics has two y
+/// conventions and this tool already carries one check (group 1) written because reasoning
+/// about them is how a whole measure ends up upside down. Group 11 crops a buffer whose
+/// top five rows are the only dark ones and asserts the band comes back dark, so a flipped
+/// convention here is a red check rather than a silent 180-degree error in every tile row.
+func bandRect(top: Int, height: Int, width: Int) -> CGRect {
+    CGRect(x: 0, y: top, width: width, height: height)
+}
+
+/// A band's box lifted back into the whole page's normalised frame.
+///
+/// The box arrives normalised to the BAND — Vision normalises to whatever image it was
+/// handed — with a top-left origin, because `Recogniser.recognise` has already flipped it
+/// (`Sources/Recogniser.swift:471-479`). So only y and height move, and both scale by the
+/// band's share of the sheet. Group 13 pins it through `pixelBoxes`.
+func remapped(_ box: SearchableWriter.BoundingBox,
+              bandTop: Int, bandHeight: Int,
+              pageHeight: Int) -> SearchableWriter.BoundingBox {
+    guard pageHeight > 0, bandHeight > 0 else { return box }
+    let scale = Double(bandHeight) / Double(pageHeight)
+    return SearchableWriter.BoundingBox(
+        x: box.x,
+        y: Double(bandTop) / Double(pageHeight) + box.y * scale,
+        width: box.width,
+        height: box.height * scale)
 }
 
 // MARK: - Self-test
@@ -587,6 +692,125 @@ func selfTest() -> [String] {
                             height: h, lo: 0, hi: h, pad: padRows)
     if empty.contains(true) { bad.append("coveredRows: a box off the sheet covered rows") }
 
+    // 11. ⛔ WHICH END OF THE IMAGE `cropping(to:)` COUNTS FROM, MEASURED. `bandRect` puts
+    //     the band's top row straight into the rect's `y`, which is only right if
+    //     `CGImage.cropping(to:)` uses a TOP-LEFT origin. Group 1 exists because reasoning
+    //     about Core Graphics' two y conventions once turned a whole measure upside down;
+    //     this is the same hazard one function further on, and a flipped convention here
+    //     would put every tile's boxes on the wrong half of the sheet while the counts
+    //     stayed plausible.
+    //     ⚠️ THREE bands of five rows and not two, and the reason is a sabotage: on a
+    //     two-band fixture the flipped convention lands OUT OF BOUNDS, `cropping` returns
+    //     nil, and the failure that fires is the "could not crop" guard — so the
+    //     assertion about *which pixels came back* would never have been watched failing.
+    //     Measured by building that sabotage (`y: top + height` on a 10-row fixture) and
+    //     reading which line went red. With three distinct greys every wrong band is a
+    //     valid band and the content assertions are what bite.
+    //     ⛔ **WHAT THIS ESTABLISHES, exactly, after the review of this diff cut it down**:
+    //     that `cropping(to:)`'s y AGREES with `greyImage`'s and `greyBytes`' — not that
+    //     any of the three is top-down. Each band here is a single uniform grey, so
+    //     `greyBytes`' row order cannot enter, and flipping all three would leave this
+    //     group and group 1 green. The run path composes `cropping` with
+    //     `Recogniser.loadImage`, which no check in this file touches. What the group does
+    //     buy is that a flip in `bandRect` ALONE — the change a maintainer would make —
+    //     is a red check and not a silent 180-degree error in every tile row.
+    let bandRows = [UInt8(0), UInt8(128), UInt8(255)]
+    var band = [UInt8](repeating: 0, count: 20 * 15)
+    for y in 0..<15 { for x in 0..<20 { band[y * 20 + x] = bandRows[y / 5] } }
+    if let image = greyImage(band, width: 20, height: 15) {
+        for (i, want) in bandRows.enumerated() {
+            guard let crop = image.cropping(to: bandRect(top: i * 5, height: 5, width: 20)),
+                  let read = greyBytes(of: crop) else {
+                bad.append("bandRect(top: \(i * 5)): could not crop the fixture")
+                continue
+            }
+            if read.width != 20 || read.height != 5 {
+                bad.append("bandRect(top: \(i * 5)): crop is \(read.width)x\(read.height), "
+                           + "not 20x5")
+            }
+            if read.grey.contains(where: { $0 != want }) {
+                let saw = Set(read.grey).sorted()
+                bad.append("bandRect(top: \(i * 5)): band \(i) came back \(saw), not all "
+                           + "\(want) — cropping does not count y from the top")
+            }
+        }
+    } else {
+        bad.append("bandRect: could not build the fixture")
+    }
+
+    // 12. `bandRanges` PARTITIONS the sheet. The divisible case is arithmetic; the case
+    //     that matters is a height the tile count does not divide, where dropping the
+    //     remainder would leave the bottom rows in no band at all — rows this tool would
+    //     then report as void because nothing could ever cover them.
+    func flat(_ ranges: [(top: Int, bottom: Int)]) -> [[Int]] {
+        ranges.map { [$0.top, $0.bottom] }
+    }
+    let even = bandRanges(height: 300, tiles: 4)
+    if flat(even) != [[0, 75], [75, 150], [150, 225], [225, 300]] {
+        bad.append("bandRanges(300, 4): \(even) not four 75-row bands")
+    }
+    let odd = bandRanges(height: 10, tiles: 3)
+    if flat(odd) != [[0, 3], [3, 6], [6, 10]] {
+        bad.append("bandRanges(10, 3): \(odd) — the last band must absorb the remainder")
+    }
+    //     ⚠️ The partition properties below are REDUNDANT GIVEN THOSE TWO LITERALS and are
+    //     labelled so rather than left reading as independent coverage — the adversarial
+    //     review of this diff called them dead, and it is right: no change to `bandRanges`
+    //     can red them while the literals hold. They are kept as the *statement* of what
+    //     the literals are for, and they would bite if either literal were ever relaxed to
+    //     a shape assertion. The load-bearing case is the `(10, 3)` one above.
+    for ranges in [even, odd] {
+        let covered = ranges.reduce(0) { $0 + ($1.bottom - $1.top) }
+        let contiguous = zip(ranges, ranges.dropFirst()).allSatisfy { $0.bottom == $1.top }
+        if !contiguous || ranges.first?.top != 0 {
+            bad.append("bandRanges: \(ranges) is not a contiguous partition from row 0")
+        }
+        if covered != (ranges.last?.bottom ?? 0) {
+            bad.append("bandRanges: \(ranges) covers \(covered) rows, not the sheet")
+        }
+    }
+    //     And the identity arm the run path leans on: one tile is the whole sheet.
+    if flat(bandRanges(height: 4400, tiles: 1)) != [[0, 4400]] {
+        bad.append("bandRanges(4400, 1) is not the whole sheet, so TILES=1 is not an "
+                   + "identity control")
+    }
+
+    // 13. `remapped`, through `pixelBoxes` — a band-normalised box back in the page's
+    //     frame. Band 2 of 3 on h=300 is rows 100…200, and a box at band-y 0.25 of band
+    //     height 0.5 is page rows **125…175**.
+    //     ⛔ ALL THREE TERMS ARE PINNED, and the fixture's `y` is 0.25 rather than 0
+    //     BECAUSE OF THAT: the adversarial review of this diff found that at `y: 0` the
+    //     `box.y * scale` term — the one that decides where a box lands *inside* its band,
+    //     and the only new arithmetic that can silently misplace every tiled box — is
+    //     multiplied by nothing, so deleting the scale, inverting it or dropping the whole
+    //     term left both assertions green. At 0.25 an unscaled y reads (175, 225) and an
+    //     inverted scale (325, 375). An implementation that offsets and forgets to scale
+    //     the HEIGHT reads (125, 275), and one that scales and forgets to offset (25, 75).
+    let inBand = SearchableWriter.BoundingBox(x: 0.2, y: 0.25, width: 0.3, height: 0.5)
+    let lifted = remapped(inBand, bandTop: 100, bandHeight: 100, pageHeight: 300)
+    let liftedPx = pixelBoxes([lifted], height: 300)
+    if liftedPx.count != 1 || abs(liftedPx[0].top - 125) > 1e-9
+        || abs(liftedPx[0].bottom - 175) > 1e-9 {
+        bad.append("remapped: \(liftedPx) not [(125, 175)]")
+    }
+    if abs(lifted.x - 0.2) > 1e-12 || abs(lifted.width - 0.3) > 1e-12 {
+        bad.append("remapped: x/width moved (\(lifted.x), \(lifted.width)) — a horizontal "
+                   + "band split must not touch either")
+    }
+    //     And the one-tile identity at the box level. ⚠️ Declared as REDUNDANT rather than
+    //     left looking load-bearing: every mutation of `remapped` that reds this also reds
+    //     the band-2 assertion above, so it can never be the sole red — the shape this
+    //     register has recorded eleven times. It is kept because it is the *run* path's
+    //     `TILES=1` control written down as arithmetic, and ⛔ because that control is
+    //     weaker than three documents used to say: at one band `scale` is exactly 1.0 and
+    //     `bandTop` is 0, so a `TILES=1` divergence can come from the crop or the union
+    //     and NEVER from this function.
+    let whole = remapped(inBand, bandTop: 0, bandHeight: 300, pageHeight: 300)
+    if whole.x != inBand.x || whole.y != inBand.y
+        || whole.width != inBand.width || whole.height != inBand.height {
+        bad.append("remapped over one whole-sheet band is not the identity")
+    }
+
     return bad
 }
 
@@ -611,8 +835,9 @@ if args.contains("--self-test") {
     // ⚠️ A LITERAL, and `score-shape-term:996-999` records it going stale silently while
     // `:1000-1003` records the next hazard: guards added *inside* a group must not move
     // this number, because it counts GROUPS. 2026-08-25's review added assertions to
-    // groups 3, 5, 6 and 7 and it stayed 10, which is correct.
-    print("score-text-voids: self-test ok (10 checks)")
+    // groups 3, 5, 6 and 7 and it stayed 10, which is correct. The crop experiment added
+    // three whole groups the same day, so it moved to 13.
+    print("score-text-voids: self-test ok (13 checks)")
     exit(0)
 }
 guard args.count > 1 else {
@@ -631,6 +856,74 @@ let minimumInches: Double = {
     }
     return value
 }()
+
+/// `TILES=n` runs the SAME page a second time as `n` horizontal bands, each its own
+/// `VNRecognizeTextRequest`, and prints the `t…` columns beside the whole-page ones. Unset
+/// means no second arm and every `t…` column reads `-`.
+///
+/// The ceiling is arbitrary and is there so a typo cannot start ten thousand requests.
+let tiles: Int? = {
+    guard let raw = ProcessInfo.processInfo.environment["TILES"], !raw.isEmpty
+    else { return nil }
+    guard let value = Int(raw), value >= 1, value <= 64 else {
+        FileHandle.standardError.write(Data(
+            "TILES=\(raw) is not a whole number of bands in 1…64\n".utf8))
+        exit(2)
+    }
+    return value
+}()
+
+/// `TILETEXT=<dir>` writes each measured page's two recognitions as text, one observation
+/// a line: `p<N>-whole.txt` and `p<N>-tiled-<bands>.txt`.
+///
+/// ⛔ It exists because the `t…` columns count BOXES. C30's page-5 section is where a
+/// 115-px observation reading the single nonsense word `ASSAME` moved a headline by 98
+/// rows, so "the tiled arm returns 1.72x the words" is worth nothing until someone can
+/// read what the words are. `Tools/make-observations` dumps strings too, but of
+/// `Recogniser.render`'s plain render — a different image — so for production's own bitmap
+/// this is the only dump there is.
+///
+/// ⛔ **The band count is IN the tiled filename** and `TILETEXT` without `TILES` is refused
+/// at exit 2, both because of the review of this diff: without the first, one directory
+/// reused across `TILES=2` and `TILES=8` silently overwrites and a stale file reads as this
+/// run's; without the second, `TILETEXT` alone created the directory, wrote nothing and
+/// exited 0 — which is exactly the "a missing dump must not read as *the strings matched
+/// nothing*" failure this knob was added to prevent.
+let textDirectory: URL? = {
+    guard let raw = ProcessInfo.processInfo.environment["TILETEXT"], !raw.isEmpty
+    else { return nil }
+    guard tiles != nil else {
+        FileHandle.standardError.write(Data(
+            "TILETEXT=\(raw) needs TILES=n: there is no tiled arm to dump\n".utf8))
+        exit(2)
+    }
+    let url = URL(fileURLWithPath: raw)
+    do {
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    } catch {
+        // ⛔ Not swallowed. Two of the five image writers in `Tools/` drop a failed write
+        // silently and that is an open queue item; a dump directory that does not exist
+        // must not read as "the strings matched nothing".
+        FileHandle.standardError.write(Data(
+            "TILETEXT=\(raw) is not a writable directory: \(error.localizedDescription)\n"
+                .utf8))
+        exit(2)
+    }
+    return url
+}()
+
+/// One recognition's strings, in the order Vision returned them.
+func dumpText(_ observations: [SearchableWriter.Observation],
+              page: Int, arm: String, to directory: URL) -> String? {
+    let url = directory.appendingPathComponent("p\(page)-\(arm).txt")
+    let body = observations.map { $0.text }.joined(separator: "\n") + "\n"
+    do {
+        try Data(body.utf8).write(to: url, options: .atomic)
+        return nil
+    } catch {
+        return "could not write \(url.lastPathComponent): \(error.localizedDescription)"
+    }
+}
 
 let src = URL(fileURLWithPath: args[1])
 Prefs.register(migrate: false)
@@ -684,17 +977,24 @@ func isolate(_ index: Int) -> URL? {
 let columns = ["page", "kind", "w", "h", "dpi", "otsu", "minRows", "padRows",
                "obsN", "words", "inkRows",
                "bareRows", "bareShare", "longBare",
-               "voidInk", "voidShare", "voidN", "longVoid", "voidLongInk", "verdict"]
+               "voidInk", "voidShare", "voidN", "longVoid", "voidLongInk",
+               "tiles", "tObsN", "tWords", "tBareRows", "tBareShare", "tLongBare",
+               "tVoidInk", "tVoidShare", "verdict"]
 func row(_ page: Int, kind: String = "-", w: String = "-", h: String = "-",
          dpi: String = "-", otsu: String = "-", minRows: String = "-",
          padRows: String = "-", obsN: String = "-", words: String = "-",
          inkRows: String = "-", bareRows: String = "-", bareShare: String = "-",
          longBare: String = "-", voidInk: String = "-", voidShare: String = "-",
          voidN: String = "-", longVoid: String = "-", voidLongInk: String = "-",
+         tiles: String = "-", tObsN: String = "-", tWords: String = "-",
+         tBareRows: String = "-", tBareShare: String = "-", tLongBare: String = "-",
+         tVoidInk: String = "-", tVoidShare: String = "-",
          verdict: String) {
     let fields = ["p\(page)", kind, w, h, dpi, otsu, minRows, padRows,
                   obsN, words, inkRows, bareRows, bareShare, longBare,
                   voidInk, voidShare, voidN, longVoid, voidLongInk,
+                  tiles, tObsN, tWords, tBareRows, tBareShare, tLongBare,
+                  tVoidInk, tVoidShare,
                   verdict.replacingOccurrences(of: "\t", with: " ")]
     precondition(fields.count == columns.count)
     print(fields.joined(separator: "\t"))
@@ -703,6 +1003,7 @@ func row(_ page: Int, kind: String = "-", w: String = "-", h: String = "-",
 print(columns.joined(separator: "\t"))
 
 var measured = 0, barePages = 0, voidPages = 0, worstBare = 0, identityFailed = 0
+var tileIdentityFailed = 0, tileBandFailures = 0, textWriteFailures = 0
 
 for index in pages {
     // ⛔ A ROW FOR EVERY PAGE ASKED FOR, whatever happens to it. This was a bare
@@ -813,9 +1114,108 @@ for index in pages {
     // the worst page in any sweep — when what happened is that recognition returned
     // nothing. That is a total recall failure and worth seeing, but it must not be quoted
     // beside a page that lost a block. `obsN` discloses it too; this makes it unmissable.
-    let verdict = observations.isEmpty
+    var verdict = observations.isEmpty
         ? "no-words — recognition returned nothing, so every share below is trivially high"
         : (ir.bare > 0 ? "bare" : (vm.voidInk > 0 ? "void" : "clean"))
+
+    // The crop experiment. Same pixels, same measure, the only difference being how many
+    // requests they were handed to — which is what C30's fork measured on one half of one
+    // page and could not reproduce from the tree.
+    var tileFields: (tiles: String, obsN: String, words: String, bareRows: String,
+                     bareShare: String, longBare: String, voidInk: String,
+                     voidShare: String) = ("-", "-", "-", "-", "-", "-", "-", "-")
+    if let tiles {
+        let bands = bandRanges(height: h, tiles: tiles)
+        var union: [SearchableWriter.Observation] = []
+        var bandFailed = 0
+        var bandNotes: [String] = []
+        for band in bands {
+            let bandHeight = band.bottom - band.top
+            // ⛔ Counted and reported with its ROWS and its REASON, never swallowed. A band
+            // that will not crop or whose request throws removes every box it would have
+            // contributed, which INFLATES the tile arm's void — the direction that would
+            // make tiling look useless — so a silent skip here is a wrong answer, not a
+            // missing one. ⚠️ The two failures are reported apart because the review of
+            // this diff found one `guard` conflating them, and the thrown error is printed
+            // rather than dropped by a `try?`. ⚠️ A band that succeeds with ZERO
+            // observations is *not* a failure and is not counted here — it is the finding,
+            // not the fault.
+            guard let crop = image.cropping(
+                    to: bandRect(top: band.top, height: bandHeight, width: w)) else {
+                bandFailed += 1
+                bandNotes.append("rows \(band.top)…\(band.bottom) would not crop")
+                continue
+            }
+            let got: [SearchableWriter.Observation]
+            do {
+                got = try Recogniser.recognise(crop, settings: settings)
+            } catch {
+                bandFailed += 1
+                bandNotes.append("rows \(band.top)…\(band.bottom) threw "
+                                 + "\(error.localizedDescription)")
+                continue
+            }
+            for o in got {
+                union.append(SearchableWriter.Observation(
+                    boundingBox: remapped(o.boundingBox, bandTop: band.top,
+                                          bandHeight: bandHeight, pageHeight: h),
+                    text: o.text, confidence: o.confidence))
+            }
+        }
+        let tWords = union.reduce(0) {
+            $0 + $1.text.split(whereSeparator: { $0.isWhitespace }).count
+        }
+        let tCovered = coveredRows(pixelBoxes: pixelBoxes(union.map { $0.boundingBox },
+                                                          height: h),
+                                   height: h, lo: 0, hi: h, pad: padRows)
+        let tir = inkRunMeasure(inked: inked, covered: tCovered, lo: 0, hi: h,
+                                minRows: minRows)
+        let tvm = voidMeasure(inked: inked, covered: tCovered, lo: 0, hi: h,
+                              minRows: minRows)
+        tileFields = ("\(bands.count)", "\(union.count)", "\(tWords)", "\(tir.bare)",
+                      String(format: "%.4f", tir.share), "\(tir.longest)",
+                      "\(tvm.voidInk)", String(format: "%.4f", tvm.share))
+        if let textDirectory {
+            for note in [dumpText(observations, page: index, arm: "whole", to: textDirectory),
+                         dumpText(union, page: index, arm: "tiled-\(bands.count)",
+                                  to: textDirectory)] {
+                if let note { textWriteFailures += 1; verdict += " ⛔ \(note)" }
+            }
+        }
+        // ⛔ A sheet too short to band at all. `bandRanges`' guard returns `[]`, which would
+        // otherwise compute every `t…` column from an empty union — i.e. print the whole
+        // page's ink as the tiled arm's void — with no reason and exit 0. Named here rather
+        // than left to the guard, and it is why the `tiles` column prints `bands.count`
+        // (what was measured) while the summary prints the requested `tiles`.
+        if bands.isEmpty {
+            tileBandFailures += 1
+            verdict += " ⛔ TILES=\(tiles) produced no bands on a \(h)-row page"
+        }
+        if bandFailed > 0 {
+            tileBandFailures += bandFailed
+            verdict += " ⛔ \(bandFailed) of \(bands.count) bands contributed no boxes: "
+                + bandNotes.joined(separator: "; ")
+        }
+        // ⛔ THE IDENTITY ARM, and read what it does NOT cover. One band IS the whole
+        // sheet, cropped to itself and remapped by the identity map (group 13's last
+        // assertion), so every `t…` column must equal its whole-page twin. A divergence
+        // means the CROP or the UNION is wrong — ⚠️ **not the remap**: at one band `scale`
+        // is exactly 1.0 and `bandTop` is 0, so an inverted scale, an unscaled height, an
+        // unscaled y and a mis-scaled offset are all the identity here, and this arm is
+        // blind to every one of them. That is group 13's job, and the review of this diff
+        // is why both say so. What it buys is a run-path check that a tiling "benefit" is
+        // not the crop or the union manufacturing boxes.
+        if bands.count == 1, bandFailed == 0,
+           union.count != observations.count || tWords != words
+            || tir.bare != ir.bare || tir.longest != ir.longest
+            || tvm.voidInk != vm.voidInk {
+            tileIdentityFailed += 1
+            verdict += " ⛔ TILE-IDENTITY one band diverged from the whole page: "
+                + "obsN \(observations.count)->\(union.count), words \(words)->\(tWords), "
+                + "bareRows \(ir.bare)->\(tir.bare), longBare \(ir.longest)->\(tir.longest), "
+                + "voidInk \(vm.voidInk)->\(tvm.voidInk)"
+        }
+    }
 
     row(index, kind: kind, w: "\(w)", h: "\(h)", dpi: String(format: "%.1f", dpi),
         otsu: "\(otsu)", minRows: "\(minRows)", padRows: "\(padRows)",
@@ -823,7 +1223,11 @@ for index in pages {
         bareRows: "\(ir.bare)", bareShare: String(format: "%.4f", ir.share),
         longBare: "\(ir.longest)", voidInk: "\(vm.voidInk)",
         voidShare: String(format: "%.4f", vm.share), voidN: "\(vm.runs)",
-        longVoid: "\(vm.longest)", voidLongInk: "\(vm.longestInk)", verdict: verdict)
+        longVoid: "\(vm.longest)", voidLongInk: "\(vm.longestInk)",
+        tiles: tileFields.tiles, tObsN: tileFields.obsN, tWords: tileFields.words,
+        tBareRows: tileFields.bareRows, tBareShare: tileFields.bareShare,
+        tLongBare: tileFields.longBare, tVoidInk: tileFields.voidInk,
+        tVoidShare: tileFields.voidShare, verdict: verdict)
 }
 
 print("")
@@ -831,9 +1235,22 @@ print("pages measured \(measured)"
       + "; bareRows > 0 on \(barePages)"
       + "; voidInk > 0 on \(voidPages)"
       + "; longest inked-and-unboxed run \(worstBare)"
+      + (tiles != nil ? "; tiles \(tiles!)" : "")
+      + (tileBandFailures > 0 ? "; ⛔ \(tileBandFailures) BANDS PRODUCED NOTHING" : "")
+      + (textWriteFailures > 0
+         ? "; ⛔ \(textWriteFailures) TEXT DUMPS FAILED TO WRITE" : "")
+      + (tileIdentityFailed > 0
+         ? "; ⛔ TILE-IDENTITY FAILED on \(tileIdentityFailed)" : "")
       + (identityFailed > 0 ? "; ⛔ IDENTITY FAILED on \(identityFailed)" : "")
       + (measured == 0 ? "; ⛔ MEASURED NOTHING" : ""))
 if identityFailed > 0 { cleanup(); exit(6) }
+// ⛔ Before the exit-3 check on purpose: a run whose TILES=1 arm disagreed with the whole
+// page measured something, so exit 3 would never fire, and a tile column nobody can trust
+// is worse than no tile column. Exit 7 rather than folding it into 6, because 6 says the
+// PIXELS are not the page's and 7 says the second ARM is not the same request.
+if tileIdentityFailed > 0 || tileBandFailures > 0 || textWriteFailures > 0 {
+    cleanup(); exit(7)
+}
 // The silent-success defect `score-corpus` and `score-threshold-loss` both had: a run that
 // measured no page printed a header, a cheerful summary and exit 0, which reads exactly
 // like "there is nothing wrong with those pages".

@@ -1683,10 +1683,70 @@ happens.**
       to fail a page while `words=` passes it, or it has inherited the same blind spot. A generated fixture
       is the standing preference; `testdocs/` holds nothing of this shape and the document itself is not in
       it. ✅ **THE INSTRUMENT DEBT IS DISCHARGED 2026-08-25 — `Tools/score-text-voids.swift` exists, with a
-      10-group `--self-test`, and it is the FIRST C30 artefact reproducible from the tree; see the
+      13-group `--self-test`, and it is the FIRST C30 artefact reproducible from the tree; see the
       `c30-tool` sub-box.** So "any new instrument must be able to fail a page while `words=` passes it" is
-      no longer a thing to build: it is built, and group 5 is that property as a check. What is left of
-      this item is the FIX — tiling — and nothing else. (origin: BUGS.md C30)
+      no longer a thing to build: it is built, and group 5 is that property as a check.
+      ✅ **AND TILING IS PRICED AS OF 2026-08-25 — see the `c30-tiles` sub-box.** `TILES=n` on that same
+      tool measures it on all six pages instead of one half of one, and the answer is **13.76x less void at
+      eight bands** but ⛔ **NOT MONOTONE in the band count** (four bands is worse than two in aggregate;
+      one page loses observations outright), so the fix is not "pick a band count".
+      ⛔ **THIS LINE SAID "what is left of this item is the FIX — tiling — and nothing else" AND THAT WAS
+      WRONG IN TWO WAYS.** (1) The entry's `#### What a fix has to satisfy` still carries an undischarged
+      bullet — **a generated fixture** — and a fix cannot be verified without one, because the document is
+      on the owner's Desktop and `testdocs/` holds nothing of this shape. (2) That bullet's own prescription
+      is now **refused**: dense clean synthetic type at this document's own resolution does not reproduce
+      the void (three pages, em 41.7/33.3/27.8 px at 400 dpi giving line pitches 52.1/40.0/31.9 against this
+      document's ~52, `obsN` equal to the drawn line count on 3 of 3), so
+      the missing ingredient is unknown and finding it is a research step, not a bounded one. What is left
+      is therefore: the fixture ingredient (research), then the seam. (origin: BUGS.md C30)
+  - [x] **c30-tiles** — **DONE 2026-08-25. The crop experiment is in the tree and the only candidate fix is
+        priced.** `TILES=n` and `TILETEXT=<dir>` on `Tools/score-text-voids.swift`, plus
+        `C30-TILES-2026-08-25.tsv` (24 rows, 28 columns) and `BUGS.md` C30
+        `#### The crop experiment, in Tools/ as of 2026-08-25`. Nothing in `Sources/` moved. Do not re-run
+        it; do not re-derive the fork's half-page figure, which this supersedes with six whole pages.
+        ⛔ **The result has two halves and the second is the one a fix has to answer.** Over the six pages
+        the whole-page arm leaves **5,561** bare rows and returns **2,080** words in 241 observations; at
+        `TILES=8` that is **404** bare rows (**13.76x** fewer), **3,577** words in 416 observations, and
+        **4 of 6** pages read 0. ⛔ **But it is not monotone**: `TILES=4` is worse in aggregate than
+        `TILES=2` (2,487 against 1,663) and p3 reads **918 → 0 → 255 → 216** over 1/2/4/8, so no band count
+        is established as sufficient and the ordering is not even monotone. ⚠️ On p6 at four bands the tiled
+        arm returns **fewer** observations than the whole page (49 against 50) while returning **more**
+        words (511 against 421) — fewer boxes carrying more text, and **not** "tiling loses boxes
+        outright", which the review of this diff refuted from that same row.
+        ⛔ **AND THE PADDING IS A CONFOUND THE ROW COUNTS CANNOT SEE**: `coveredRows` pads every box by 8
+        rows top and bottom and the tiled arm has **175 more boxes**, bounding padding's share of the
+        5,157-row improvement at **54.3%** — loose, and no run varies `padRows`. So the row columns alone do
+        not establish that the recovery is box extent. Found by the review of this diff.
+        ✅ **Three controls, all run.** `TILES=1` is the whole sheet cropped to itself and remapped by the
+        identity map, so every `t…` column must equal its whole-page twin — it did on 6 of 6, and a
+        divergence exits **7**. ⛔ **That arm is BLIND TO THE REMAP** (at one band the scale is 1.0 and the
+        offset 0), which a draft credited it with; the remap is pinned by the tool's group 13, whose fixture
+        had `y: 0` — pinning the y-scale by nothing — until this diff's review moved it to `y: 0.25`. The
+        nineteen whole-page columns are **byte-identical across all four arms** and to
+        `C30-VOIDS-2026-08-25.tsv` on 6 of 6, and the `TILES=8` arm reproduced byte-identically from a
+        **second binary**, so determinism spans a code change. And the recovery is **text and not stretched
+        boxes**: words per observation is flat
+        (8.63 whole against 8.60 at eight bands) and `TILETEXT` gives **752** distinct 4+-character tokens
+        gained against **146** lost, gained > lost on 6 of 6, with `CONTROLLER` — one of the six words the
+        page-5 section names — returned by the tiled arm and by no whole-page recognition. ⚠️ Most of the
+        146 are the whole-page arm's own *fragments* of a word the tiled arm read whole (`FORESEE` +
+        `SEABLE` against `FORESEEABLE`), so 146 over-counts real loss.
+        ⚠️ **Two corrections it forces on the register.** Five of those six page-5 words ARE in the
+        whole-page recognition of production's bitmap, so *"absent from page 5's fresh text altogether"* is
+        a fact about the **plain-render** path and not about the page. And ⛔ **dense clean synthetic type
+        does not reproduce the void**, which refuses the fixture bullet's own prescription.
+        ⚠️ **What it does not do**: no seam in `Sources/`, no page gains a text layer, the **time** cost of
+        `n` requests a page is unmeasured, a band boundary cuts the lines that straddle it (so these are a
+        floor on the benefit), whether the gain is the band's area or its shape is untested, and coverage is
+        still row-wise. One document, six pages.
+        ✅ **Exit 7's `TILES=1` branch WAS watched firing on a real page** (a build dropping one observation
+        a band reads `obsN 46->45, words 296->281` and exits 7), and ⛔ **`bareRows` and `longBare` did not
+        move under it** — an identity check on the bare-row columns alone would have been green.
+        ⚠️ **Owed, and named rather than left implicit**: no `Tools/fault-inject.sh` case was added, the two
+        new `exit(2)` refusals were exercised by hand only, and exit 7's other two branches — a band
+        contributing no boxes, a failed dump write — have never been watched going red. That is the
+        sharpest thing left on this tool.
+        (context: BUGS.md C30 `#### The crop experiment, in Tools/ as of 2026-08-25`)
       ⚠️ Placed straight after `C28` because it is the same root cause seen from the other side — C28 is the
       subset where the missed ink is also DESTROYED at 1/8, this is the general case where it is merely
       unsearchable. C28 is mid-campaign so it keeps its place, but this may deserve to jump it: it is the
