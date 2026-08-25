@@ -10000,9 +10000,15 @@ and still green, because nothing about the routing moved.
   prose can be checked", asserted against by six checks, and called by nothing, which agrees with the thing
   under test by construction while the product goes back to lying.
 * `Flattener.digitalTextPages(in:password:)` — the 1-based list, every page walked.
-* `OCRModel.digitalTextPageSummary(_:)` — the sentence, with **no bar of any kind** on which pages are
-  named, for `shrunkTextPageSummary`'s reason: nothing measured here separates a page whose OCR came out as
-  good as its own text from one that came out `AMFAKAN FOCAX ONCAL ASSOXUTION`. The count leads and at most
+* `OCRModel.digitalTextPageSummary(_:)` — the sentence. **Every page it is GIVEN is named, with no
+  threshold applied in this function**, for `shrunkTextPageSummary`'s reason: nothing measured here
+  separates a page whose OCR came out as good as its own text from one that came out `AMFAKAN FOCAX ONCAL
+  ASSOXUTION`. ⛔ **Membership is a different stage and it is NOT unfiltered — see the 120-character limit
+  below**, which is the correction the review of `591d3f3` made to this function's own comment. ⚠️ **That
+  correction missed this bullet**: `591d3f3` fixed the code comment and published the retracted "no bar of
+  any kind" wording here in the same commit, so the summary was stale from the moment it landed while the
+  code was right — the load-bearing-summary-goes-stale shape the C28 material records twice, found by the
+  review of the adoption that pushed it. The count leads and at most
   three pages follow, `unplacedSummary`'s shape, because this line lands in a file the user is invited to
   send to someone.
 
