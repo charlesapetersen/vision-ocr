@@ -83,13 +83,21 @@ JOB="com.${LABEL}.autonomous"
 # ~45 min per run under the C24b campaign's overnight load. (This said 80-632 s: the 80 s and 89 s rows it
 # read as a floor are `exit 133` crashes, not fast suites — BUGS.md C24b. A constant sized off 80 s is
 # sized off a suite that died.) The health gate that wraps it measured 44m53s.
+# ✅ ⛔ AND EVERY FIGURE ABOVE WAS CLAMPED-ERA — RESOLVED 2026-08-24, CAUSE WAS NOT LOAD. This plist set
+# ProcessType=Background (darwin-bg: lowest QoS, I/O throttled, E-cores, inherited by every child) and
+# run_tests.sh passed no -O. Together 16.2x: 3,643 s -> 225 s, same commit, same 1,247 checks, machine still
+# swapping. A real pre-commit hook then measured 236 s. So the spread these constants were sized against was
+# mostly WHO LAUNCHED THE RUN, and loadavg explains 7% of it with its extremes inverted. Full account:
+# com.visionocr.autonomous.plist's ProcessType comment. ⛔ THE CONSTANTS BELOW ARE DELIBERATELY NOT
+# RESCALED: oversized is the safe direction, two overruns PARK the run, and rescaling by a ratio is the
+# method this very block forbids. Re-derive from the worst row dated AFTER 2026-08-24, or leave them.
 # There is no single correct number here: this is a personal
 # laptop that throttles, and the daemon exists to keep it busy. So the constants below are sized off the
 # WORST observed run plus headroom, not off a mean or a single sample, and `test-lock.sh` now records every
 # run to $STATE/suite-timings.tsv with its load average so the next person re-derives from data. Two of
 # them were wrong by enough to cause real failures — see each one.
 INTERVAL="${VISIONOCR_INTERVAL:-90}"      # gap between cycles while the run is PRODUCTIVE. Sessions here run
-                                          # long (every code commit triggers a ~40 min suite via the
+                                          # long (every code commit triggers a suite via the
                                           # pre-commit hook), so this is near-back-to-back in practice.
 # ⚠️ LEFT AT 1800 DELIBERATELY, after a change to 9600 was proposed and REFUTED. The tempting argument is
 # "a session now runs 95 minutes, so a 30-minute staleness window condemns a healthy session's lock" — and
@@ -116,6 +124,8 @@ MAXRUN="${VISIONOCR_MAXRUN:-14400}"       # OUTER wall-clock backstop (4 h). The
 # worst pre-commit row is 5554 s (92.6 min).
 # ⛔ AND LOADAVG DOES NOT PREDICT WHERE A RUN LANDS, so there is no quiet-machine discount to bank on: the
 # 14 pre-commit rows span 474-5554 s, with 864 s measured at loadavg 12.64 and 3569 s at 3.59.
+# ✅ WHY, established 2026-08-24: the predictor was the SCHEDULING BAND, not load — see the block at the top
+# of this file. The observation stands; the "no discount to bank on" conclusion no longer follows.
 # A CODE commit under this repo's own discipline needs TWO of those runs -- the watch-the-new-check-fail
 # control, then the hook's green run -- so 2 x 5554 s plus the session's own work is ~12300 s, and 9000 s
 # cannot fit it.
@@ -176,7 +186,15 @@ MAX_NOCOMPLETE="${VISIONOCR_MAX_NOCOMPLETE:-5}"
 # `check-tools-compile.sh` over EVERY tool rather than the staged ones, and the document-coherence checks.
 # Those are NOT cheap: the gate runs the suite too, and on 2026-08-16 it measured 44m53s all in. The owner's
 # standing decision (2026-08-16) is to KEEP the suite in the gate — it is the one check that does not trust
-# the hook, and it is not the throughput bottleneck, since any code commit already pays ~40 min in the hook.
+# the hook, and it is not the throughput bottleneck, since any code commit already pays for a suite in the
+# hook (~40 min when that was decided; 236 s measured 2026-08-24, which makes the decision cheaper still).
+# ⚠️ What the 2026-08-24 measurements DID show about this gate, recorded rather than acted on: its suite is
+# on average the 5.2nd run of run_tests.sh over the same code, because GATE_EVERY counts ALL commits and
+# ~60% are docs-only; one interval in eight had zero code commits and still ran a full suite over
+# byte-identical code. Its ./build.sh step, by contrast, has measured unique value — run_tests.sh excludes
+# App.swift entirely and the hook builds only when one of three files is staged, which 0 of 94 commits
+# triggered, so this gate was the only thing compiling App.swift at all. If the cadence is ever revisited,
+# cut the SUITE from the gate, not the gate.
 # `VISIONOCR_GATE_QUICK=1` drops the suite AND ./build.sh if that is ever wanted; what remains is
 # tools-compile plus the document checks. Deliberately NOT given a duration here — nobody has timed the
 # quick gate, and the only bound available (44m53s minus the suite) still includes the build that QUICK
@@ -224,7 +242,9 @@ STATUS_CMD="${VISIONOCR_STATUS_CMD:-$REPO/ops/autonomous/status-digest.sh}"
 # the same half of the day and garbled the only argument it was making), across four checks of growth, so
 # contention moves it more than size does (BUGS.md C24b).
 # The real case this must not kill is the ordinary one: a session sitting inside its own
-# `git commit`, which is CPU-busy and silent for the hook's ~40 min. 3000 left only ten minutes of headroom
+# `git commit`, which is CPU-busy and silent for the hook's suite (~40 min pre-2026-08-24, 236 s measured
+# after — so this cap's headroom argument is now enormously slack, and left that way on purpose).
+# 3000 left only ten minutes of headroom
 # over that, and a commit that also waited on the suite lock would have been killed as a runaway while doing
 # exactly what it was told to. 60 min is one suite plus half again.
 HB_POLL="${VISIONOCR_HB_POLL:-20}"
@@ -1035,7 +1055,7 @@ health_watchdog() {
     # "waiting on the suite lock" with HB_IDLE_N polls, i.e. 60 seconds of tolerance, and that was never
     # true: `test-lock.sh acquire` polls in `sleep 5`, so the tree sits at ~0% CPU with no subagent and no
     # stream events for as long as the wait lasts, and this killed it at HB_STALL + HB_IDLE_N×HB_POLL =
-    # 660 s. A single suite is ~40 minutes, so ANY session that queued behind the health gate was killed as
+    # 660 s. A single suite was ~40 minutes then (236 s since 2026-08-24), so ANY session that queued behind the health gate was killed as
     # wedged while doing exactly what the lock told it to do — and raising the lock wait to 3600 s without
     # this would have made that the normal outcome rather than a rare one.
     #

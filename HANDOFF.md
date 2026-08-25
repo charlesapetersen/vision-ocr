@@ -78,7 +78,9 @@ cancellable one is gone, and that is where the complexity was.
 ./build.sh            # -> build/VisionOCR.app
 ./build.sh --install  # also install to /Applications
 ./build.sh --run      # install and launch
-./run_tests.sh        # 1,247 checks measured 2026-08-23; 8-75 min depending on load (it runs real OCR)
+./run_tests.sh        # 1,247 checks measured 2026-08-23; ~225 s measured 2026-08-24 (it runs real OCR).
+                      # Pre-2026-08-24 figures (8-75 min) are clamped-era: ProcessType=Background
+                      # plus a missing -O cost 16.2x. See the plist's ProcessType comment.
 ```
 
 Requirements: macOS 13+ and the Xcode command line tools. **Nothing else** —

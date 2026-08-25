@@ -89,7 +89,14 @@ EOF
 # measured 44m53s the same evening. Understating it is not a cosmetic slip: an unattended session budgeted
 # four minutes for its commit, backgrounded it, ended its turn while this hook was still running, and killed
 # the commit — 95 minutes of finished, green work never landed. A caller who knows it is forty minutes waits.
-echo "pre-commit: running ./run_tests.sh (~40 minutes on this machine; it runs real OCR)…"
+# ✅ AND SAYING THE REAL NUMBER MEANS CHANGING IT AGAIN, 2026-08-24: it is now ~4 MINUTES. Everything above
+# was measured while the daemon's launchd plist set ProcessType=Background — darwin-bg, E-cores, inherited by
+# every child including this hook — and while run_tests.sh passed no -O. Together 16.2x. A real hook run
+# measured 236 s afterwards. The 2026-08-16 lesson is unchanged and is why this line is still printed at all:
+# understating it killed a commit. Overstating it by 10x has the mirror cost — a caller who budgets forty
+# minutes for a four-minute hook waits idle, or worse, concludes it is wedged. See the ProcessType comment in
+# ops/autonomous/com.visionocr.autonomous.plist.
+echo "pre-commit: running ./run_tests.sh (~4 minutes on this machine; it runs real OCR)…"
 log=$(mktemp -t vrg-precommit)
 # ONE SUITE AT A TIME, machine-wide. `build/tests` has no bundle identifier, so
 # UserDefaults.standard lands in ~/Library/Preferences/tests.plist keyed by the
@@ -118,7 +125,9 @@ LOCK_SH="ops/autonomous/test-lock.sh"
 if [ -x "$LOCK_SH" ]; then
   # VISIONOCR_TEST_LOCK_PID makes THIS hook the holder of record, so if the
   # commit is interrupted the lock is reclaimable the moment this pid is gone.
-  # ⚠️ THE WAIT MUST EXCEED ONE SUITE. This was `--wait 1800` against a suite measured at 39m30s, so the
+  # ⚠️ THE WAIT MUST EXCEED ONE SUITE. 3600 now exceeds it by ~15x (236 s measured 2026-08-24), and is
+  # deliberately NOT reduced: waiting is cheaper than breaking a lock, and a queue behind a mutation
+  # campaign is still long. This was `--wait 1800` against a suite measured at 39m30s, so the
   # hook gave up NINE MINUTES BEFORE a healthy run could possibly have finished — and then blamed the run
   # it was queued behind, in a message asserting the lock "never freed". Written out here rather than left
   # to test-lock.sh's default so the number sits next to the sentence that quotes it.
@@ -129,7 +138,7 @@ if [ -x "$LOCK_SH" ]; then
   if ! VISIONOCR_TEST_LOCK_PID=$$ "$LOCK_SH" acquire --label "pre-commit $$" --wait "$hook_wait"; then
     echo >&2
     echo "pre-commit: another test suite has held the lock for $((hook_wait / 60)) minutes — longer than the" >&2
-    echo "            ~40 min a healthy suite takes, so it is stuck rather than merely slow. Refusing" >&2
+    echo "            ~4 min a healthy suite takes, so it is stuck rather than merely slow. Refusing" >&2
     echo "            rather than running a second suite, which would corrupt BOTH runs' results." >&2
     echo "            Check who holds it:  $LOCK_SH status" >&2
     exit 1

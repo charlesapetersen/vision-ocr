@@ -323,7 +323,7 @@ fi
 
 
 # ---- [11] THE TIMING LEDGER — every caller shape must write the SAME row -----------------------------------
-# The suite has no single duration on this machine (416-632 s on a quiet one, ~37-40 min loaded, ~45 min per
+# The suite's duration was thought to vary with load (416-632 s quiet, ~37-40 min loaded, ~45 min per
 # run under the C24b campaign's overnight load), so the
 # constants in this file are meant to be re-derived from a ledger rather than from prose. That only works if
 # the ledger sees every run, and there are TWO caller shapes: the health gate and every session use `run`,

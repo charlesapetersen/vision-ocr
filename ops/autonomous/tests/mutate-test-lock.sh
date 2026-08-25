@@ -11,7 +11,8 @@
 # `SELFTEST-MUTANTS-2026-08-17.tsv` are the precedent for keeping the artefact.
 #
 # ⚠️ IT RUNS NO SUITE AND NO BUILD. Every run is `prove-test-lock.sh` against a copy: fully sandboxed, ~60 s
-# each, so the whole catalogue is ~18 minutes rather than the ~45 min PER MUTANT that `Tools/mutate.py` costs.
+# each, so the whole catalogue is ~18 minutes. (`Tools/mutate.py` cost ~45 min PER MUTANT under the
+# pre-2026-08-24 clamp; far less now, and it estimates from its own log — do not quote a figure from here.)
 # ⚠️ That still exceeds a 10-minute command ceiling, so a full pass may need chunking with `--only`; the
 # 2026-08-19 artefact was assembled that way, and each row is a real harness run either way.
 #

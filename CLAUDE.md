@@ -1056,9 +1056,15 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,247 checks measured 2026-08-23; 8-75 min depending on machine load, real OCR
-                      # measured 474 s quiet -> 2,719 s under the C24b campaign, and 4,191 s
-                      # (69m51s) holding the lock on 6d0caa1 -- suite-timings.tsv, not a stopwatch.
+./run_tests.sh        # 1,247 checks measured 2026-08-23; ~225 s measured 2026-08-24, real OCR
+                      # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
+                      # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
+                      # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->
+                      # 225 s, same commit, same 1,247 checks. The old spread -- 474 s quiet,
+                      # 2,719 s under C24b, 4,191 s on 6d0caa1 -- was mostly WHO LAUNCHED IT, not
+                      # load. Full account: ops/autonomous/com.visionocr.autonomous.plist.
+                      # Read $STATE/suite-timings.tsv for rows dated after 2026-08-24; earlier ones
+                      # are not comparable.
                       # Never size a
                       # timeout off one sample: ops/autonomous/README.md keeps the ledger.
 ```

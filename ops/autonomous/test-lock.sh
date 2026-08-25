@@ -71,6 +71,9 @@ WAIT_DEFAULT="${VISIONOCR_TEST_LOCK_WAIT:-3600}"
 # suite"; against a 39m30s suite it is only 2.3x, and the gate that wraps one measured 44m53s — so this is
 # now the tightest of the three margins, not the loosest. Kept at 5400 because breaking a lock is worse
 # than waiting for one, but it must be re-derived, not inherited, if the suite grows again.
+# ✅ 2026-08-24: the suite is 236 s measured (ProcessType=Background plus a missing -O had cost 16.2x), so
+# BOTH margins here are now ~15-20x rather than 2.3x. Deliberately not reduced — breaking a lock is still
+# worse than waiting for one, and every figure in this comment predates the fix.
 MAXAGE="${VISIONOCR_TEST_LOCK_MAXAGE:-5400}"
 
 # WHOSE pid owns the lock. For `run` this script stays alive as the command's parent, so its own `$$` is the
@@ -412,7 +415,8 @@ case "$CMD" in
     trap 'exit 130' INT
     # ⚠️ TIME EVERY RUN, because a single wall-clock sample of this suite is not a fact about the suite.
     # Measured on one laptop on 2026-08-16: the same suite took 416-632 s in the morning's mutation runs and
-    # 37m43s at 20:31 with a daemon session and an interactive session both live. This is a personal machine
+    # 37m43s at 20:31 with a daemon session and an interactive session both live. (2026-08-24: that gap was
+    # the scheduling band, not load — see the plist's ProcessType comment. Now 236 s.) This is a personal machine
     # under wildly varying load, and it thermally throttles — so any constant derived from one timing is a
     # guess wearing a number's clothes. The project has been doing exactly that: "3-6 min" was never
     # measured at all (939680e says so in its own message: "DURATIONS ARE NOT MEASURED … inherited, not

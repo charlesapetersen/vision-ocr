@@ -207,8 +207,8 @@ case "$VERB" in
     #       in ops/autonomous/resume-prompt.txt. If that prompt is reworded, this pattern must move with it,
     #       or `stop` starts silently leaving a live budget-spending session behind.
     #   (c) an in-flight health gate — `bash health-gate.sh` -> build + suite, matched by NEITHER of the
-    #       above (same bare-child class as (b)), so without it `stop` leaves a full build and a ~40 min
-    #       suite running, holding the suite lock for the best part of an hour;
+    #       above (same bare-child class as (b)), so without it `stop` leaves a full build and a
+    #       suite running (~40 min pre-2026-08-24, ~4 min after), holding the suite lock;
     #   (d) the run-log compactor, which the daemon runs BETWEEN cycles, i.e. exactly when the loop is not
     #       inside a session and a `stop` is most likely to land.
     # None of these patterns can match daemon.sh itself, nor an interactive Claude session.

@@ -58,7 +58,7 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PA
 
 # Repo root = two levels up from this script, as installed (ops/autonomous/health-gate.sh).
 # VISIONOCR_GATE_ROOT overrides it. That override exists FOR TESTING and is documented here rather than
-# hidden: the gate's own steps are a real build and a real ~40 min OCR suite (the whole gate measured
+# hidden: the gate's own steps are a real build and a real OCR suite (~4 min since 2026-08-24; the whole gate measured
 # 44m53s on 2026-08-16), so the only way to exercise
 # its reporting (the RED verdict line, which step's tail gets quoted, the SKIPPED/KNOWN-FAILURE wording)
 # without running them is to point it at a tree of stubs. Production never sets it.

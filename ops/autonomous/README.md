@@ -121,7 +121,30 @@ Every timing constant in this daemon was originally derived from a suite believe
 That figure was never measured by anyone: the commit that last touched it says so in its own message —
 *"DURATIONS ARE NOT MEASURED … I did not time the run, so that figure is inherited, not established."*
 
-It was timed on 2026-08-16, and the answer is that **the suite has no single duration on this machine**:
+✅ **RESOLVED 2026-08-24, AND THE ANSWER WAS NOT "LOAD" — IT WAS THE SCHEDULING BAND PLUS A MISSING `-O`.**
+This section stood for eight days concluding that the suite "has no single duration on this machine" and that
+one should "plan against the load, not a number". The variance was real; the diagnosis was wrong. Two
+defects, measured end to end at `8d00504` with 1,247 checks on a machine still holding 4.0 GB of swap:
+
+| defect | ratio | |
+|---|---|---|
+| `ProcessType=Background` in this daemon's launchd plist | **5.14x** | 3,643 s → 709 s |
+| `run_tests.sh` passed no `-O` (test phase 618 → 103 s) | **3.15x** | 709 s → 225 s |
+| together | **16.2x** | **3,643 s → 225 s** |
+
+`Background` is darwin-bg — lowest QoS, I/O throttled, threads on the E-cores — and `man taskpolicy` says
+all children inherit it, so the clamp reached launchd → daemon loop → claude session → `git commit` →
+pre-commit hook → `run_tests.sh` → `build/tests`, and it survived the parent's death. **So the "what else
+was running" column below is really a "who launched it" column**: the fast rows are the owner's hand-started
+runs, the slow ones are the daemon's. Loadavg explains **7%** of the variance with its extremes INVERTED
+(474 s at load 3.47 beside 3,569 s at load 3.59); durations went **UP** across the 2026-08-21 reboot, so the
+wired-memory leak cost ~3%, not 500%; and memory pressure is excluded, because the 709 s run happened while
+the machine was swapping. Full account, including why it cannot be fixed in `test-lock.sh`: the `ProcessType`
+comment in `com.visionocr.autonomous.plist`.
+
+⚠️ **The table below is KEPT AS THE RECORD AND IS NOT REWRITTEN — every row really did take that long.** But
+no row in it is comparable to a run dated after 2026-08-24, and neither is any pre-2026-08-24 row of
+`$STATE/suite-timings.tsv`. What it was originally timed for, on 2026-08-16:
 
 | when | duration | what else was running |
 |---|---|---|
@@ -186,9 +209,17 @@ Two constants were wrong by enough to cause real failures:
 - **Both wall-clock caps were 9000, and neither was sized against the ledger's worst row.** `MAXRUN` and
   `GATE_MAXRUN` were derived against a 39m30s suite. `suite-timings.tsv`'s 14 pre-commit rows span
   **474-5554 s** (8-93 min), and loadavg does not predict where a run lands — 864 s was measured at 12.64,
-  3569 s at 3.59 — so there is no quiet-machine discount to size against. A CODE commit needs TWO of those
-  runs (the watch-the-new-check-fail control, then the hook's green run), and a gate is one plus up to a
-  3600 s lock wait, so both caps sat under worst-case runtime. Now 14400. What 9000 cost on 2026-08-19: four
+  3569 s at 3.59 — so there is no quiet-machine discount to size against. ✅ **That last sentence was true
+  and its cause is now known (2026-08-24): the predictor was never load, it was the scheduling band — see
+  the top of this section.** A gate is one suite plus up to a 3600 s lock wait, so both caps sat under
+  worst-case runtime. Now 14400. ⛔ **DO NOT RESCALE THEM BY THE 16.2x, OR BY ANY RATIO.** The rule this
+  file states two bullets down still holds — worst row you are willing to survive, plus headroom, never a
+  mean and never one run — two overruns PARK the run, `GATE_MAXRUN` has already been under-sized twice, and
+  `GATE_MAXRUN` carries a 3600 s lock-wait term the fix does not shrink. Oversized is the safe direction.
+  ⚠️ **And "a CODE commit needs TWO of those runs" was measured FALSE on 2026-08-24**: pairing every ledger
+  row against every commit gives a 1:1 hook-to-commit match, and only 3 of 38 code commits have a recorded
+  control run — sessions correctly follow `resume-prompt.txt`'s "letting the HOOK be your suite run is the
+  cheaper order". The control run is the discipline for a NEW CHECK, not a per-commit cost. What 9000 cost on 2026-08-19: four
   consecutive sessions committed work but completed no item, and the fifth was 27 min into its own hook, on
   course to miss a 20:13 backstop, when the owner stopped the daemon and landed C26 by hand.
 
@@ -450,7 +481,9 @@ author had already run nine mutants of his own — one of the survivors turned `
 `1 suite plus a probe child`, i.e. it silenced the alarm that the whole file exists to raise. Run it after any
 change to `test-lock.sh`; it starts with a pristine control, because a campaign whose control is red is
 measuring the harness rather than the mutants, and every run is `prove-test-lock.sh` against a copy — no suite,
-no build, minutes rather than the ~45 min *per mutant* `Tools/mutate.py` costs. A `SURVIVED` row is either a
+no build, minutes rather than the per-mutant cost of `Tools/mutate.py` (~45 min measured under the
+pre-2026-08-24 clamp; expect roughly a tenth of that now, unmeasured — `mutate.py` derives its own estimate
+from `Tools/mutation-log.tsv`, so ask the tool rather than this sentence). A `SURVIVED` row is either a
 check that cannot fail or a value nothing depends on (`BUGS.md` T5); a `NOT-APPLIED` row means the edit did not
 match, so it tested nothing and must be re-expressed rather than counted — two entries needed that, and one of
 the two then exposed a check that asserted nothing.
@@ -591,7 +624,8 @@ three separate times:
 
 - `Tools/check-tools-compile.sh` over every tool — killed at 120 s with no output (~05:00), against a QUEUE
   estimate of ~26 s that was a quiet-machine figure;
-- `python3 Tools/mutate.py --only …` — ~45 min per mutant, and it does not take the suite lock itself;
+- `python3 Tools/mutate.py --only …` — ~45 min per mutant under the pre-2026-08-24 clamp, far less now
+  (it estimates from its own log; do not quote a figure from here), and it does not take the suite lock itself;
 - a plain `Sources/` + probe rebuild — ~80 s cold, **>8 min under contention**, which killed two runs of the
   same measurement arm mid-`swiftc` at the 10-minute ceiling.
 

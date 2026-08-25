@@ -26,7 +26,7 @@ before doing any work; that is the only figure here that tracks the machine. Wan
 without starting a campaign: `python3 Tools/mutate.py --only nothing-matches-this`.
 That prints the range and **stops**. It did neither until 2026-08-17: it printed no
 numbers at all and then fell through to the rsync and a full baseline suite, so the
-one command this header advertised as free cost ~45 minutes in a tool that does not
+one command this header advertised as free cost ~45 minutes (clamped-era; see below) in a tool that does not
 take `test-lock.sh`. `startup_line` is what stops it now. The self-test pins both halves — what
 `startup_line` returns, and that `run` acts on it: a review mutated `if not proceed:` to
 `if False:` and the harness stayed green, so the check that drives `run` with tripwires
@@ -787,7 +787,7 @@ def already_done(path=None):
     three times over (T14, A12.3, T18). It is the more expensive one of the two, not
     the cheaper: a malformed row accepted here means a mutant **treated as already
     recorded and never run**, which is a silent gap in the gate. Refusing it costs one
-    re-run of a mutant, ~45 minutes — and one thing it DOES report falsely, which is
+    re-run of a mutant, ~45 minutes on the pre-2026-08-24 clamp — and one thing it DOES report falsely, which is
     worth knowing before widening the guard again: `run`'s closing "never applied, so
     nothing is known about them" line is computed from this dict, so a refused row makes
     a mutant that *has* a verdict on disk read as one that has none. The trade is
@@ -1008,7 +1008,8 @@ def startup_line(n_mutants, n_todo, seconds):
     The branch it replaces printed "nothing to do" and then fell straight through to
     the rsync and a full baseline suite, while this file's header advertised
     `--only nothing-matches-this` as the free way to read the estimate. It was neither
-    free nor informative: no numbers, ~45 minutes, and `mutate.py` does not take
+    free nor informative: no numbers, one suite run per mutant (~45 min before the
+    2026-08-24 ProcessType/-O fixes, far less after), and `mutate.py` does not take
     `ops/autonomous/test-lock.sh`, so the advertised no-op could corrupt a hook's suite.
 
     Pulled out of `run` because `run` cannot be driven from a self-test — it parses

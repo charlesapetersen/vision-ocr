@@ -120,9 +120,9 @@ happens.**
 | what a commit touches | what it costs |
 |---|---|
 | docs, the register, this file, a `.tsv` | **free** — the hook prints "no code staged, skipping the suite" and it lands in seconds |
-| `Sources/` `Helper/` `Tests/` `Tools/` `build.sh` `run_tests.sh` | **one full suite**, measured 474-5554 s — read `$STATE/suite-timings.tsv` and never quote one figure |
+| `Sources/` `Helper/` `Tests/` `Tools/` `build.sh` `run_tests.sh` | **one full suite**, **~225 s measured 2026-08-24** — read `$STATE/suite-timings.tsv`, and IGNORE rows dated before 2026-08-24: the 474-5554 s spread was `ProcessType=Background` + a missing `-O`, 16.2x, now fixed |
 | a NEW check | **two** suite runs — the watch-it-fail control, then the hook's green run |
-| a scoped `mutate.py` run | **a baseline suite plus ~45 min per mutant** (five took 4h27m end to end) |
+| a scoped `mutate.py` run | **a baseline suite plus one suite per mutant.** The ~45 min/mutant on record (five took 4h27m) is clamped-era; `mutate.py` estimates from `Tools/mutation-log.tsv`, so ask it rather than quoting a figure |
 
 **The rules that follow from it.**
 
@@ -2207,7 +2207,8 @@ happens.**
       ⚠️ **BOUND: the replay mode only.** Do NOT re-cut the corpus, do not change the sampling defaults, and
       do not touch `--exclude-manifest`. Verify by restoring into a scratch `--dest` and diffing the file
       list against `manifest.tsv`, not by overwriting `testdocs/`.
-      ⚠️ `Tools/` is inside the pre-commit suite regex, so this is a FULL-HOOK commit (~40 min), unlike the
+      ⚠️ `Tools/` is inside the pre-commit suite regex, so this is a FULL-HOOK commit (~4 min since
+      2026-08-24; it was ~40 min before), unlike the
       ops-only work around it. It also needs the `--self-test` both Python tools here carry — `py_compile`
       is the whole gate a Python tool used to get, and it cannot see a parser that accepts a malformed row.
       Reading the Zotero library is fine; writing it is the `corpus-write` hold, which this does not touch.
