@@ -1539,8 +1539,11 @@ final class OCRModel: ObservableObject {
                 // C29, and the same shape for the same reason: a rebuild replaces a
                 // born-digital page's exact text with OCR of a raster of it, which is
                 // a text layer dropped, which invariant 1 says has to be said out
-                // loud. A separate closure from the one above so that a file suffering
-                // both losses reports both.
+                // loud. ⚠️ A separate closure from the one above, but NOT because
+                // sharing would lose a report — this one is byte-identical to it and
+                // both are logged, so one closure called twice would log both lines.
+                // See the parameter's own doc comment: the "would swallow the other"
+                // reason was refuted from these two call sites.
                 let digitalTextPageNote: (String) -> Void = { text in
                     DispatchQueue.main.async {
                         self?.log.append(LogLine(
@@ -1840,9 +1843,21 @@ final class OCRModel: ObservableObject {
         shrunkTextPageNote: @escaping (String) -> Void = { _ in },
         /// Called at most once per document, when pages that were already born
         /// digital were rasterised and re-recognised anyway (C29). Its own channel
-        /// beside `shrunkTextPageNote` rather than sharing it, for R41's reason: the
-        /// two describe different losses on different pages, and one document can
-        /// suffer both, so a shared channel would report one and swallow the other.
+        /// beside `shrunkTextPageNote` rather than sharing it.
+        ///
+        /// ⛔ **NOT for R41's reason, and a draft of this said it was.** R41 is about
+        /// a *logged* channel against a *counted* one — which is what the comment
+        /// above correctly says of `shrunkTextPageNote` against `fellBack` — and
+        /// **both of these are logged**. The two closures are byte-identical and are
+        /// called at adjacent unconditional `if`s, so one shared `(String) -> Void`
+        /// called twice would log both lines and swallow nothing. The claim that
+        /// "a shared channel would report one and swallow the other" was a
+        /// **fabricated failure mode**, refuted by reading the two call sites; it is
+        /// recorded here rather than deleted because a duplicate closure was added on
+        /// the strength of it. What the separation is actually worth: it is free, and
+        /// either channel may later grow a count or a bar of its own — at which point
+        /// R41 *would* apply. Found by the adversarial review of the adoption that
+        /// pushed `591d3f3`.
         digitalTextPageNote: @escaping (String) -> Void = { _ in },
         report: @escaping (Runner.Result.Outcome, String) -> Void
     ) {

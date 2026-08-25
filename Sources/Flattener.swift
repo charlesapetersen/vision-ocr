@@ -334,6 +334,21 @@ enum Flattener {
     /// FALSE invariant-1 report on the app's own main input class. Not seen — 5 of the
     /// 392 corpus firings were read at 1:1 and all five were real — but not excluded
     /// either. Found by the adversarial review of this diff.
+    ///
+    /// ⛔ **AND THE WIDTH BAR IS NOT THE ONLY LIVE ONE — there is a SECOND, and it is
+    /// the INLINE IMAGE.** `pageIsAnImage` reads `largestImage`, which opens with
+    /// `guard drawsAnyXObject(page) != false`, and `drawsAnyXObject` counts **only the
+    /// `Do` operator**. A scan whose bitmap is drawn inline in the content stream
+    /// (`BI` / `ID` / `EI`) therefore reports "draws no XObject", `largestImage`
+    /// returns `nil`, `pageIsAnImage` is false, and an already-OCR'd page with 120
+    /// characters on it is reported as having lost exact text it never had — the same
+    /// false report as the width bar, by a different door. ⚠️ **The `nil` bucket is
+    /// populated**: the corpus table in `BUGS.md` C29 has a firing whose `largestImage`
+    /// is `nil` (`Henry Morgenthau papers` p188). That one was read at 1:1 and is a
+    /// true positive — it is a finding aid, not an inline-image scan — but only 5 of
+    /// the 392 firings were read at all, so nothing excludes the class. Found by the
+    /// adversarial review of the adoption that pushed `591d3f3`, which is the second
+    /// review to add a blindness to this list.
     static func pageHasDigitalText(_ page: PDFPage) -> Bool {
         // 120 characters is about two lines. Below that a page is a plate, a
         // blank, or a part title, and says nothing either way.
@@ -359,15 +374,40 @@ enum Flattener {
     /// ⚠️ Every page is walked, where `hasEmbeddedText` stops at the first hit and
     /// `hasDigitalText` reads four. It is affordable **only** because the caller
     /// is already about to render every one of these pages at its own resolution:
-    /// this is one PDFKit text extraction plus one resource-dictionary walk a page,
-    /// against one full-page rasterise **and one OCR pass** a page. ⚠️ The text
+    /// this is one PDFKit text extraction a page, plus — **on the pages that clear the
+    /// character bar** — one whole-content-stream scan and one resource-dictionary
+    /// walk, against one full-page rasterise **and one OCR pass** a page. ⚠️ The text
     /// extraction is the dominant term and a first draft of this comment omitted it
     /// (the review of this diff caught that), so on a text-heavy book the walk is not
-    /// as cheap as "a dictionary walk" suggests — only cheap enough. It is also the
+    /// as cheap as "a dictionary walk" suggests — only cheap enough. ⛔ **And the
+    /// content-stream scan was omitted TOO, by the same comment, and found by the next
+    /// review**: `pageIsAnImage` → `largestImage` opens with
+    /// `guard drawsAnyXObject(page) != false`, and that builds a `CGPDFOperatorTable`
+    /// and runs `CGPDFScannerScan` over the page's **entire** content stream, once per
+    /// page, with no memo of any kind. ⚠️ **"On the pages that clear the bar" is load
+    /// bearing and a draft of this correction missed it**: `&&` short-circuits, so a
+    /// page under 120 characters pays the text extraction ALONE — which is why a book
+    /// of plates is cheap here and a text-heavy one is not. ⚠️ And do **not** reach for
+    /// `largestImage`'s 5.09 s to price this: that figure is R25's *dictionary re-walk*
+    /// blowup at 60 forms, the cost the `walkedAt` memo REMOVED, and it prices neither
+    /// the scanner nor today's walk. **This cost comment has now been corrected twice
+    /// for an omitted term; price it by reading the call chain, not by reading this
+    /// sentence.** It is also the
     /// fourth `open` of the same URL in `makeSearchablePDF`. Do not call it on the
     /// non-rebuild route — nothing is replaced there, so there is nothing to report —
     /// and the caller guards it on cancellation.
     static func digitalTextPages(in url: URL, password: String? = nil) -> [Int] {
+        // ⛔ `[]` on a file that will not open is a SILENT answer, and the DIRECTION is
+        // what a draft of this got wrong: it was justified as "`hasEmbeddedText`'s
+        // existing convention", but that function returning `false` on failure makes
+        // the app do *more* work — it declines to suppress a rebuild — whereas `[]`
+        // here makes the app **say nothing**, and is indistinguishable at the call site
+        // from "no affected pages". That is the shape invariant 1 forbids, in the
+        // function written to satisfy it. Kept rather than changed because the caller
+        // has just opened this same URL successfully through `flatten`, so production
+        // reaches it only on a file that stopped being readable mid-run — but it is a
+        // LIMIT, not an inherited convention, and nothing checks it. Refuted by the
+        // adversarial review of the adoption that pushed `591d3f3`.
         guard let doc = open(url, password: password) else { return [] }
         return (0..<doc.pageCount).compactMap { index in
             guard let page = doc.page(at: index), pageHasDigitalText(page) else { return nil }

@@ -10051,8 +10051,10 @@ So the dominant real-world shape is not C29's JSTOR cover but **the repository d
 born-digital page a library prepends to a scan — and the app rasterises and re-OCRs it on 28 corpus
 documents. ⚠️ Five of 392 were read; the other 387 are the probe's word.
 
-✅ **WATCHED FAILING, TWO RUNS, KILL SETS PREDICTED BY NAME BEFOREHAND** (the predictions are at
-`$STATE/c29-instrument/predictions.md`, written before either run). Against the real suite rather than a
+✅ **WATCHED FAILING, THREE RUNS, KILL SETS PREDICTED BY NAME BEFOREHAND** (the predictions are at
+`$STATE/c29-instrument/predictions.md` for A and B and `predictions-sabC.md` for C, each written before its
+own run; ⚠️ **it was two runs until 2026-08-25 and the third exists to repair a claim the first two did not
+support** — see run C below). Against the real suite rather than a
 scratch probe, which is now the *cheaper* option as well as the stronger one — the 16.2x clamp came off on
 2026-08-24, so a suite is ~250 s where the fixture commit's probes were ~80 s each against a ~45 min suite.
 
@@ -10061,6 +10063,22 @@ scratch probe, which is now the *cheaper* option as well as the stronger one —
 | baseline | — | **1254/1254** | — |
 | A | `pageHasDigitalText` loses its `!pageIsAnImage` term | **1249/1254** | **five** |
 | B | `digitalTextPageSummary` `.prefix(3)` → `.suffix(3)`, **and** `digitalTextPages` `index + 1` → `index` | **1252/1255** | **three, exactly the three predicted, none other** |
+| **C** (2026-08-25) | **run A's sabotage again, against the SHIPPED 1255-check tree** | **1249/1255** | **six, exactly the six predicted and in order** |
+
+⛔ **RUN C EXISTS BECAUSE RUNS A AND B LEFT A RED THAT WAS REASONED AND PUBLISHED AS MEASURED**, and the
+arithmetic in the table above is what gives it away: the shipped tree is **1255** checks (the hook of
+`591d3f3` measured `1255/1255`) while run A's denominator is **1254**. The check added *in response to* run
+A — *"all eight already-OCR'd scans clear the character bar and are refused anyway"*, the **only** check in
+the tree that isolates the raster term — therefore did not exist when run A ran, yet both this entry and
+the check's own comment asserted *"run A reds it"* / *"Sabotage A confirms it bites"*. Established from the
+log rather than reasoned: `grep -c` for that check in run A's log returns **0**, and run A's five `FAIL`
+lines are exactly the two `PINNED` checks plus `agree`, `pages=[1…9]` and `pages=[1,2,3,4]`. ✅ **Run C
+repaired it and the substance held**: the same one-token sabotage against the shipped tree reds **six**,
+run A's five plus this one at **`overBar=8 refused=0`**, matching a prediction written before the run
+(`$STATE/c29-instrument/` and `/tmp/c29-sabC-predictions.md`), 245 s. So the claim was true and only its
+provenance was false — which is exactly the case where nobody would have looked. ⚠️ Note also that
+`baseline 1254/1254` is **not** the shipped tree's baseline; `591d3f3`'s own hook is (`1255/1255`). Found by
+the adversarial review of the adoption that pushed `591d3f3`.
 
 ⛔ **RUN A IS THE ONE THAT MATTERS, AND NOT FOR ITS NEW CHECKS: two of its five reds are the PRE-EXISTING
 `PINNED` checks.** Cutting the raster term out of the extracted predicate reds *"C29, PINNED: the document
@@ -10078,14 +10096,29 @@ a predicate cut down to `text.count >= 120` alone, which can only mean **its ext
 characters**, so what it pins is the *character* term and never the raster term. 324 characters were
 written; `page.string` does not see that many. Replaced by a check over the **eight scan pages of C29's own
 fixture**, each of which clears the character bar (the block already asserts that) so that only the raster
-term can refuse them — `overBar == 8 && refused == 8`, and run A reds it. **Found by running the sabotage,
-not by reading the diff.** ⛔ **And the replacement's own first comment was wrong in turn, which is the part
+term can refuse them — `overBar == 8 && refused == 8`. **Found by running the sabotage, not by reading the
+diff** — ⛔ **but "and run A reds it", which this sentence said until 2026-08-25, was false: run A predates
+this check. It is run C that reds it, at `overBar=8 refused=0`; see the run table above.** ⛔ **And the replacement's own first comment was wrong in turn, which is the part
 worth keeping**: it called the decoy "the CHARACTER control", and the review of this diff refuted that from
 `makeDecoyPDF` — the decoy draws a **1224x1584** raster into a **612x792** box, so `dpi` is 144 and
 `pixelWidth` clears 900, and it is refused **independently by both terms**. Remove either and it stays
 green, so it controls for neither. It is kept as a fixture assertion, because `ocrdChars` is the measured
 number the retraction above rests on. Two wrong readings of one three-line check, both caught from outside
 it.
+
+⚠️ **WHAT THESE CHECKS DO NOT PIN, and it is the 120 itself in ONE direction.** The agreement check
+(`agree == 9 && byHand == 1`) compares the shipped predicate against a **by-hand copy carrying its own
+literal 120 and its own call to the same `pageIsAnImage`** — so it is blind to any change *inside*
+`pageIsAnImage` (both sides move together), and blind to the bar over the whole range **[0, 302]**: the
+fixture's cover page is 302 characters, and the eight scans clear 120 but are refused by the raster term at
+every bar, so moving the shipped constant to 200 — or to **0** — changes neither side and reds nothing.
+`c29Pages == [1]` pins it only from **above** (a bar over 302 drops the cover). So **no check added here
+would kill a mutant that LOWERED the constant**, which is the direction that would make the report name
+blank pages and plates; the entry's claim that "the 120 bar is already reachable through `hasDigitalText`'s
+catalogue entries" is a claim about mutants elsewhere and is **not** evidence about this block. Found by the
+adversarial review of the adoption that pushed `591d3f3`; unmeasured, and deliberately not fixed here — a
+fixture page between 0 and 120 characters is what would pin it, and that is the routing commit's fixture
+work.
 
 ⛔ **Sibling sweep (CONTRIBUTING 4b): who else holds this rule, and who else replaces a text layer
 silently.** The `text.count >= 120 && !pageIsAnImage` rule now has **exactly one** definition in the tree

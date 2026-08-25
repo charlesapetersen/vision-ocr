@@ -10093,8 +10093,19 @@ do {
         // over a page-sized raster — and a report that fired on one would be
         // useless. This asks it of the eight scan pages of THIS fixture, each of
         // which clears the 120-character bar (the check above says so), so the
-        // only thing that can refuse them is the raster term. Sabotage A confirms
-        // it bites: drop `!pageIsAnImage` and this goes red at 0 of 8.
+        // only thing that can refuse them is the raster term.
+        //
+        // ⛔ IT BITES, MEASURED — but by run **C** on 2026-08-25, and this line said
+        // "Sabotage A confirms it" until then. Run A CANNOT have measured it, because
+        // this check did not exist yet: `grep -c` for it in run A's own log returns
+        // **0**, run A's five `FAIL` lines are the two `PINNED` checks plus the three
+        // list checks, and run A's total is `1249/1254` against a shipped tree of
+        // **1255** — the check was written in response to run A and added afterwards.
+        // So the one check in this tree that isolates the raster term had a red that
+        // was REASONED and published as measured, which is this register's cardinal
+        // sin. Run C repaired it: the same sabotage against the shipped 1255-check
+        // tree gives **1249/1255 by six** — run A's five plus this one at
+        // `overBar=8 refused=0` — exactly the six predicted, in order, beforehand.
         if let doc = PDFDocument(url: jstor) {
             var refused = 0, overBar = 0
             for i in 1..<doc.pageCount {
