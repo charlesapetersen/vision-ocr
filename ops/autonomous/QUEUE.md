@@ -2481,8 +2481,10 @@ happens.**
       discarding saturation outside the sheet, and a locality term — over the 40 pages above the noise
       band, and including `1954 - Why` p4~~ — ✅ **(a) IS DONE 2026-08-26; see the block below and
       `BUGS.md` C27 `#### The two mask terms, MEASURED`. Do not re-do it.**
-      (b) **the byte price** of keeping colour on those pages, unpriced and the reason this cannot
-      close on the harm alone (R49/R50's trade); (c) **split the one number** that gates both
+      ~~(b) **the byte price** of keeping colour on those pages, unpriced and the reason this cannot
+      close on the harm alone (R49/R50's trade)~~ — ✅ **(b) IS DONE 2026-08-26; see the second block
+      below and `BUGS.md` C27 `#### The byte price, MEASURED`. Do not re-run it.**
+      (c) **split the one number** that gates both
       `isPicture` and `shouldKeepColour`, because nothing can be given back to the colour decision
       while a change to it also moves the route (C9). The constant is still not a
       session's to move.
@@ -2539,6 +2541,23 @@ happens.**
       **two** published largest-component shares do not reproduce — `Schwaller` p101's 44.7% (0.36367
       here) and `1954 - Why` p7's 7.6% (0.06942) — both on pages the entry flags as cold/warm divergent,
       and the arithmetic of that gap does not cover the first.
+      ✅ **ITEM (b) IS DONE 2026-08-26 — so a session starting here starts at (c), and (c) is the LAST
+      thing under this entry.** `Tools/score-mrc.swift` gained `MRC_COLOUR=colour|grey` and
+      `MRC_PAGES=<list>`, and `C27-COLOURBYTES-2026-08-26.tsv` is the run: 90 rows, three arms over one
+      page set of 30 pages in 18 documents, Photo detail Balanced. **Do not re-run it and do not re-add
+      the knobs.** ⛔ **The number to quote is +93.0 KB over 13 pages, `1.048x`** — the grey-published
+      pages whose all-text verdict does not move — against the `1.080x` the colour this app ALREADY keeps
+      costs on 11 pages of the same file, so keeping colour on C27's pages is proportionally the cheaper
+      of the two. ⛔ **NOT the naive +475.0 KB / 1.230x over all 16: 80.4% of that is
+      `pageIsAllText()` flipping**, because the colour arm hands Vision a colour JPEG, the word boxes come
+      back different on 21 of 30 pages and on 6 the background moves between /8 and /2 — a finding about
+      C28 as much as C27, and one that overstates (b) by 5.1x if quoted. ⚠️ **3 of the entry's ten pages
+      get NO ROW**: they are 1-bit today, a page off the picture route has no colour decision to price,
+      and they are exactly (c)'s ground — so (b) prices 7 of the ten. ⚠️ No corpus figure, one Photo
+      detail setting, nothing in `Sources/` moved, and which of `pageIsAllText()`'s other two terms does
+      the refusing on the three grey→colour flips is unmeasured (`inkOut` is 0.0022-0.0166 against a bar
+      of 0.045, so it is not term 1, and `score-mrc` prints neither of the others). ⚠️ Debt carried:
+      `Tools/fault-inject.sh` has no case for either new refusal — all six were watched by hand, exit 2.
       (origin: BUGS.md C27)
 - [x] **depth-cap** — DONE 2026-08-23, as the decision below prescribes: `< 3` KEPT, both comments
       rewritten to state the frame-of-reference difference and to point at each other, and **nine checks**

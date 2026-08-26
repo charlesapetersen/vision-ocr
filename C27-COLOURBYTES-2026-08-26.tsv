@@ -1,0 +1,106 @@
+# C27 (b): the byte price of keeping colour, measured 2026-08-26 by Tools/score-mrc.swift.
+# Three arms over ONE page set, one binary, `MRC_PAGES` per document:
+#   ship-*        no MRC_COLOUR  — what the app publishes today
+#   force-colour  MRC_COLOUR=colour
+#   force-grey    MRC_COLOUR=grey
+# `wantC` is `Flattener.shouldKeepColour`'s own answer for the page, so the arm that AGREES
+# with it is a no-op and its row must reproduce the ship-* row exactly: it does on 30 of 30.
+# Population: the 29 picture-route rows of C27-MASKTERMS-2026-08-26.tsv, plus `1954 - Why` p2
+# (the founding colour-KEPT page) and the three 1-bit pages of the entry's ten. 33 pages
+# requested in 20 documents; 30 have rows. The three without are `2013 - Silicon Valley
+# Program Transcript` p13/p26 and `HarpersMagazine-1938-05-0019577` p4, which are 1-bit today:
+# a page off the picture route has no colour decision to price, which is C27 (c).
+# Photo detail Balanced (background /2, foreground /4) throughout.
+# Reproduce: MRC_PAGES=<pages> [MRC_COLOUR=colour|grey] score-mrc <one document>, per row of
+#   the manifest in BUGS.md C27 "#### The byte price, MEASURED".
+file	page	px	dpi	route	boxes	inkOut	nowKB	maskKB	bgKB	fgKB	mrcKB	bgF	fgF	ratio	kept	mrcPSNR	nowPSNR	note	arm	wantC	pubKB
+1881 - Harry Wilcox.pdf	4	4000x2626	317.5	colour	60	0.5207	1221.1	38.4	371.2	51.7	461.3	2.0	4.0	2.65x	mrc	33.62	55.89	-	ship-colour	yes	461.3
+1881 - Harry Wilcox.pdf	7	3737x2482	300.1	colour	26	0.5232	1103.4	27.4	305.0	47.6	380.1	2.0	4.0	2.90x	mrc	32.85	52.10	-	ship-colour	yes	380.1
+1954 - Why.pdf	2	1224x1584	144.0	colour	9	0.1085	235.7	6.4	53.8	12.1	72.4	2.0	4.0	3.26x	mrc	32.22	41.01	-	ship-colour	yes	72.4
+1954 - Why.pdf	4	1224x946	111.3	grey	63	0.0540	269.7	19.2	35.4	11.8	66.4	2.0	4.0	4.06x	mrc	25.26	41.69	-	ship-grey	no	66.4
+1954 - Why.pdf	7	1224x946	111.3	grey	60	0.0660	254.1	18.4	34.5	11.0	63.9	2.0	4.0	3.98x	mrc	24.99	41.85	-	ship-grey	no	63.9
+1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	4	3024x3441	72.0	colour	40	0.0287	1543.8	26.9	18.2	4.7	49.7	8.0	16.0	31.05x	mrc	28.37	38.12	-	ship-colour	yes	49.7
+1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	7	3010x3397	72.0	colour	87	0.2574	1294.3	27.7	275.4	30.6	333.7	2.0	4.0	3.88x	mrc	32.43	39.45	-	ship-colour	yes	333.7
+Albanese_1997_Senate Will Examine Stock Option Bill.pdf	2	1696x2200	300.0	colour	175	0.3011	838.1	46.2	135.7	53.1	235.0	2.0	4.0	3.57x	mrc	24.19	40.76	-	ship-colour	yes	235.0
+Atkinson_1939_Atkinson on firings_.pdf	2	1935x2592	72.0	colour	44	0.0580	807.3	42.9	196.2	48.1	287.2	2.0	4.0	2.81x	mrc	28.12	40.65	-	ship-colour	yes	287.2
+Atkinson_1939_Atkinson on firings_.pdf	3	1935x2592	72.0	grey	45	0.0388	770.9	47.2	182.7	46.6	276.5	2.0	4.0	2.79x	mrc	27.58	41.06	-	ship-grey	no	276.5
+Black_0000_The Scandal of Educational Testing.pdf	2	1020x1391	150.0	grey	237	0.4642	486.2	32.0	72.1	20.2	124.3	2.0	4.0	3.91x	mrc	21.52	37.72	-	ship-grey	no	124.3
+Black_0000_The Scandal of Educational Testing.pdf	3	1020x1388	150.0	grey	284	0.2251	520.0	34.4	77.4	22.5	134.3	2.0	4.0	3.87x	mrc	20.77	37.29	-	ship-grey	no	134.3
+Davis_2005_Optimism of the Will_Nation.pdf	2	2438x3263	300.0	grey	166	0.1429	1590.6	71.6	153.3	127.0	352.0	2.0	4.0	4.52x	mrc	21.62	41.24	-	ship-grey	no	352.0
+Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	5	1600x2201	200.3	grey	66	0.6425	597.5	32.1	102.6	28.7	163.4	2.0	4.0	3.66x	mrc	27.08	39.74	-	ship-grey	no	163.4
+Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	9	1609x2206	200.1	grey	68	0.5772	536.1	33.2	108.0	27.9	169.1	2.0	4.0	3.17x	mrc	27.96	41.11	-	ship-grey	no	169.1
+Ford_1941_Speech_.pdf	3	1935x2592	72.0	grey	34	0.0107	731.2	28.5	9.8	3.6	41.9	8.0	16.1	17.43x	mrc	28.19	41.80	-	ship-grey	no	41.9
+Ford_1941_Speech_.pdf	5	1935x2592	72.0	grey	32	0.0022	747.9	30.0	9.9	3.5	43.4	8.0	16.1	17.24x	mrc	27.67	41.73	-	ship-grey	no	43.4
+Glazer_2002_Higher Ed_New Republic.pdf	1	1590x2177	200.1	grey	190	0.0648	849.6	62.2	155.2	54.8	272.2	2.0	4.0	3.12x	mrc	22.72	39.70	-	ship-grey	no	272.2
+Kelly_2014_Orders of Magnitude_TLS.pdf	3	2092x2664	186.8	colour	191	0.5557	1402.6	47.2	199.8	59.9	306.9	2.0	4.0	4.57x	mrc	23.89	38.59	-	ship-colour	yes	306.9
+Merriam_1920_Daughter of Pan_The Montanan (The Frontier).pdf	1	1935x2592	72.0	colour	90	0.1797	904.6	38.6	199.0	29.1	266.7	2.0	4.0	3.39x	mrc	29.32	38.86	-	ship-colour	yes	266.7
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	9	2076x2650	390.0	colour	47	0.0282	769.0	46.2	15.5	4.3	65.9	8.0	16.1	11.66x	mrc	25.62	42.57	-	ship-colour	yes	65.9
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	17	1949x2592	370.0	colour	45	0.0000	731.4	44.6	12.3	4.0	60.9	8.0	16.1	12.01x	mrc	25.55	42.01	-	ship-colour	yes	60.9
+Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	101	2641x3418	310.7	grey	25	0.6606	823.8	25.9	114.7	71.0	211.5	2.0	4.0	3.89x	mrc	26.94	44.57	-	ship-grey	no	211.5
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	2	969x1419	150.0	grey	31	0.0006	208.3	13.8	3.4	1.6	18.8	8.0	16.1	11.08x	mrc	29.03	40.74	-	ship-grey	no	18.8
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	3	992x1441	150.1	grey	35	0.0123	231.9	15.8	3.8	1.8	21.5	8.0	16.0	10.80x	mrc	28.63	40.48	-	ship-grey	no	21.5
+_1939_Former students to Board re Merriam_.pdf	7	1935x2592	72.0	colour	33	0.0001	800.2	32.1	13.4	3.3	48.7	8.0	16.1	16.42x	mrc	27.65	40.38	-	ship-colour	yes	48.7
+_1939_Former students to Board re Merriam_.pdf	13	1935x2592	72.0	colour	36	0.0156	762.3	25.8	171.4	32.5	229.7	2.0	4.0	3.32x	mrc	30.12	40.75	-	ship-colour	yes	229.7
+_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	1	1159x1573	140.0	colour	224	0.0257	528.4	36.6	72.9	26.0	135.5	2.0	4.0	3.90x	mrc	23.92	35.68	-	ship-colour	yes	135.5
+_1973_Committee Against Racism_.pdf	2	1276x1651	150.1	grey	80	0.0000	775.5	43.8	4.8	2.5	51.1	8.0	16.2	15.16x	mrc	19.83	37.71	-	ship-grey	no	51.1
+_1973_Committee Against Racism_.pdf	3	1275x1650	150.0	grey	80	0.0000	802.2	46.7	3.8	2.4	53.0	8.0	16.1	15.14x	mrc	19.38	37.59	-	ship-grey	no	53.0
+1881 - Harry Wilcox.pdf	4	4000x2626	317.5	colour	60	0.5207	1221.1	38.4	371.2	51.7	461.3	2.0	4.0	2.65x	mrc	33.62	55.89	-	force-colour	yes	461.3
+1881 - Harry Wilcox.pdf	7	3737x2482	300.1	colour	26	0.5232	1103.4	27.4	305.0	47.6	380.1	2.0	4.0	2.90x	mrc	32.85	52.10	-	force-colour	yes	380.1
+1954 - Why.pdf	2	1224x1584	144.0	colour	9	0.1085	235.7	6.4	53.8	12.1	72.4	2.0	4.0	3.26x	mrc	32.22	41.01	-	force-colour	yes	72.4
+1954 - Why.pdf	4	1224x946	111.3	colour	63	0.0540	283.5	19.2	38.6	12.8	70.7	2.0	4.0	4.01x	mrc	25.17	41.09	-	force-colour	no	70.7
+1954 - Why.pdf	7	1224x946	111.3	colour	60	0.0660	268.6	18.4	37.6	12.2	68.2	2.0	4.0	3.94x	mrc	24.89	41.02	-	force-colour	no	68.2
+1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	4	3024x3441	72.0	colour	40	0.0287	1543.8	26.9	18.2	4.7	49.7	8.0	16.0	31.05x	mrc	28.37	38.12	-	force-colour	yes	49.7
+1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	7	3010x3397	72.0	colour	87	0.2574	1294.3	27.7	275.4	30.6	333.7	2.0	4.0	3.88x	mrc	32.43	39.45	-	force-colour	yes	333.7
+Albanese_1997_Senate Will Examine Stock Option Bill.pdf	2	1696x2200	300.0	colour	175	0.3011	838.1	46.2	135.7	53.1	235.0	2.0	4.0	3.57x	mrc	24.19	40.76	-	force-colour	yes	235.0
+Atkinson_1939_Atkinson on firings_.pdf	2	1935x2592	72.0	colour	44	0.0580	807.3	42.9	196.2	48.1	287.2	2.0	4.0	2.81x	mrc	28.12	40.65	-	force-colour	yes	287.2
+Atkinson_1939_Atkinson on firings_.pdf	3	1935x2592	72.0	colour	46	0.0166	814.4	48.0	195.1	50.3	293.4	2.0	4.0	2.78x	mrc	27.56	40.53	-	force-colour	no	293.4
+Black_0000_The Scandal of Educational Testing.pdf	2	1020x1391	150.0	colour	237	0.4645	493.4	32.0	74.0	20.8	126.7	2.0	4.0	3.89x	mrc	21.53	37.72	-	force-colour	no	126.7
+Black_0000_The Scandal of Educational Testing.pdf	3	1020x1388	150.0	colour	323	0.1877	534.3	35.5	76.4	23.5	135.4	2.0	4.0	3.95x	mrc	21.05	35.99	-	force-colour	no	135.4
+Davis_2005_Optimism of the Will_Nation.pdf	2	2438x3263	300.0	colour	166	0.1436	1631.1	71.7	163.1	129.3	364.1	2.0	4.0	4.48x	mrc	21.61	41.19	-	force-colour	no	364.1
+Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	5	1600x2201	200.3	colour	66	0.6425	625.6	32.1	110.3	29.9	172.3	2.0	4.0	3.63x	mrc	27.02	39.28	-	force-colour	no	172.3
+Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	9	1609x2206	200.1	colour	68	0.5772	562.3	33.2	115.3	29.1	177.6	2.0	4.0	3.17x	mrc	27.89	40.29	-	force-colour	no	177.6
+Ford_1941_Speech_.pdf	3	1935x2592	72.0	colour	32	0.0166	770.1	28.3	181.7	43.4	253.4	2.0	4.0	3.04x	mrc	30.00	41.18	-	force-colour	no	253.4
+Ford_1941_Speech_.pdf	5	1935x2592	72.0	colour	32	0.0022	787.0	30.0	11.4	4.0	45.4	8.0	16.1	17.35x	mrc	27.46	41.09	-	force-colour	no	45.4
+Glazer_2002_Higher Ed_New Republic.pdf	1	1590x2177	200.1	colour	190	0.0551	877.8	62.6	160.2	57.0	279.8	2.0	4.0	3.14x	mrc	22.69	39.24	-	force-colour	no	279.8
+Kelly_2014_Orders of Magnitude_TLS.pdf	3	2092x2664	186.8	colour	191	0.5557	1402.6	47.2	199.8	59.9	306.9	2.0	4.0	4.57x	mrc	23.89	38.59	-	force-colour	yes	306.9
+Merriam_1920_Daughter of Pan_The Montanan (The Frontier).pdf	1	1935x2592	72.0	colour	90	0.1797	904.6	38.6	199.0	29.1	266.7	2.0	4.0	3.39x	mrc	29.32	38.86	-	force-colour	yes	266.7
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	9	2076x2650	390.0	colour	47	0.0282	769.0	46.2	15.5	4.3	65.9	8.0	16.1	11.66x	mrc	25.62	42.57	-	force-colour	yes	65.9
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	17	1949x2592	370.0	colour	45	0.0000	731.4	44.6	12.3	4.0	60.9	8.0	16.1	12.01x	mrc	25.55	42.01	-	force-colour	yes	60.9
+Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	101	2641x3418	310.7	colour	26	0.6589	890.3	25.9	133.7	74.9	234.5	2.0	4.0	3.80x	mrc	26.85	42.46	-	force-colour	no	234.5
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	2	969x1419	150.0	colour	29	0.0040	233.8	13.8	50.0	13.6	77.5	2.0	4.0	3.02x	mrc	30.95	37.13	-	force-colour	no	77.5
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	3	992x1441	150.1	colour	33	0.0121	260.1	15.9	4.4	2.2	22.5	8.0	16.0	11.57x	mrc	28.30	37.07	-	force-colour	no	22.5
+_1939_Former students to Board re Merriam_.pdf	7	1935x2592	72.0	colour	33	0.0001	800.2	32.1	13.4	3.3	48.7	8.0	16.1	16.42x	mrc	27.65	40.38	-	force-colour	yes	48.7
+_1939_Former students to Board re Merriam_.pdf	13	1935x2592	72.0	colour	36	0.0156	762.3	25.8	171.4	32.5	229.7	2.0	4.0	3.32x	mrc	30.12	40.75	-	force-colour	yes	229.7
+_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	1	1159x1573	140.0	colour	224	0.0257	528.4	36.6	72.9	26.0	135.5	2.0	4.0	3.90x	mrc	23.92	35.68	-	force-colour	yes	135.5
+_1973_Committee Against Racism_.pdf	2	1276x1651	150.1	colour	81	0.0000	790.6	43.8	5.2	2.9	52.0	8.0	16.2	15.21x	mrc	19.79	37.22	-	force-colour	no	52.0
+_1973_Committee Against Racism_.pdf	3	1275x1650	150.0	colour	77	0.0022	817.8	46.7	78.3	39.8	164.8	2.0	4.0	4.96x	mrc	19.80	36.72	-	force-colour	no	164.8
+1881 - Harry Wilcox.pdf	4	4000x2626	317.5	grey	67	0.5618	1130.8	36.2	346.4	44.2	426.8	2.0	4.0	2.65x	mrc	33.96	58.35	-	force-grey	yes	426.8
+1881 - Harry Wilcox.pdf	7	3737x2482	300.1	grey	28	0.5722	1023.8	26.6	280.4	41.0	348.0	2.0	4.0	2.94x	mrc	33.18	60.84	-	force-grey	yes	348.0
+1954 - Why.pdf	2	1224x1584	144.0	grey	9	0.2280	212.4	5.9	47.3	9.4	62.5	2.0	4.0	3.40x	mrc	32.63	42.71	-	force-grey	yes	62.5
+1954 - Why.pdf	4	1224x946	111.3	grey	63	0.0540	269.7	19.2	35.4	11.8	66.4	2.0	4.0	4.06x	mrc	25.26	41.69	-	force-grey	no	66.4
+1954 - Why.pdf	7	1224x946	111.3	grey	60	0.0660	254.1	18.4	34.5	11.0	63.9	2.0	4.0	3.98x	mrc	24.99	41.85	-	force-grey	no	63.9
+1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	4	3024x3441	72.0	grey	41	0.0520	1457.6	26.5	293.3	45.3	365.2	2.0	4.0	3.99x	mrc	30.90	38.50	-	force-grey	yes	365.2
+1976 - Regis McKenna Papers - Early Career, 1965-1981.pdf	7	3010x3397	72.0	grey	83	0.2535	1203.6	27.8	251.4	26.4	305.6	2.0	4.0	3.94x	mrc	32.55	39.97	-	force-grey	yes	305.6
+Albanese_1997_Senate Will Examine Stock Option Bill.pdf	2	1696x2200	300.0	grey	174	0.3021	776.4	46.1	122.2	48.7	217.0	2.0	4.0	3.58x	mrc	24.38	42.50	-	force-grey	yes	217.0
+Atkinson_1939_Atkinson on firings_.pdf	2	1935x2592	72.0	grey	45	0.0001	762.4	45.4	11.1	3.9	60.3	8.0	16.1	12.64x	mrc	26.33	41.23	-	force-grey	yes	60.3
+Atkinson_1939_Atkinson on firings_.pdf	3	1935x2592	72.0	grey	45	0.0388	770.9	47.2	182.7	46.6	276.5	2.0	4.0	2.79x	mrc	27.58	41.06	-	force-grey	no	276.5
+Black_0000_The Scandal of Educational Testing.pdf	2	1020x1391	150.0	grey	237	0.4642	486.2	32.0	72.1	20.2	124.3	2.0	4.0	3.91x	mrc	21.52	37.72	-	force-grey	no	124.3
+Black_0000_The Scandal of Educational Testing.pdf	3	1020x1388	150.0	grey	284	0.2251	520.0	34.4	77.4	22.5	134.3	2.0	4.0	3.87x	mrc	20.77	37.29	-	force-grey	no	134.3
+Davis_2005_Optimism of the Will_Nation.pdf	2	2438x3263	300.0	grey	166	0.1429	1590.6	71.6	153.3	127.0	352.0	2.0	4.0	4.52x	mrc	21.62	41.24	-	force-grey	no	352.0
+Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	5	1600x2201	200.3	grey	66	0.6425	597.5	32.1	102.6	28.7	163.4	2.0	4.0	3.66x	mrc	27.08	39.74	-	force-grey	no	163.4
+Ehrenreich_2000_Maid to order_Harper's Magazine.pdf	9	1609x2206	200.1	grey	68	0.5772	536.1	33.2	108.0	27.9	169.1	2.0	4.0	3.17x	mrc	27.96	41.11	-	force-grey	no	169.1
+Ford_1941_Speech_.pdf	3	1935x2592	72.0	grey	34	0.0107	731.2	28.5	9.8	3.6	41.9	8.0	16.1	17.43x	mrc	28.19	41.80	-	force-grey	no	41.9
+Ford_1941_Speech_.pdf	5	1935x2592	72.0	grey	32	0.0022	747.9	30.0	9.9	3.5	43.4	8.0	16.1	17.24x	mrc	27.67	41.73	-	force-grey	no	43.4
+Glazer_2002_Higher Ed_New Republic.pdf	1	1590x2177	200.1	grey	190	0.0648	849.6	62.2	155.2	54.8	272.2	2.0	4.0	3.12x	mrc	22.72	39.70	-	force-grey	no	272.2
+Kelly_2014_Orders of Magnitude_TLS.pdf	3	2092x2664	186.8	grey	186	0.5599	1331.6	46.9	180.5	58.2	285.6	2.0	4.0	4.66x	mrc	23.89	39.59	-	force-grey	yes	285.6
+Merriam_1920_Daughter of Pan_The Montanan (The Frontier).pdf	1	1935x2592	72.0	grey	95	0.1805	853.2	38.6	184.2	26.8	249.6	2.0	4.0	3.42x	mrc	29.35	39.44	-	force-grey	yes	249.6
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	9	2076x2650	390.0	grey	46	0.0734	710.1	44.3	204.0	54.1	302.4	2.0	4.0	2.35x	mrc	28.99	43.58	-	force-grey	yes	302.4
+Riesman - 1954 - Individualism reconsidered, and other essays.pdf	17	1949x2592	370.0	grey	46	0.0000	677.8	44.6	10.7	3.6	58.9	8.0	16.1	11.51x	mrc	25.61	43.02	-	force-grey	yes	58.9
+Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	101	2641x3418	310.7	grey	25	0.6606	823.8	25.9	114.7	71.0	211.5	2.0	4.0	3.89x	mrc	26.94	44.57	-	force-grey	no	211.5
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	2	969x1419	150.0	grey	31	0.0006	208.3	13.8	3.4	1.6	18.8	8.0	16.1	11.08x	mrc	29.03	40.74	-	force-grey	no	18.8
+Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	3	992x1441	150.1	grey	35	0.0123	231.9	15.8	3.8	1.8	21.5	8.0	16.0	10.80x	mrc	28.63	40.48	-	force-grey	no	21.5
+_1939_Former students to Board re Merriam_.pdf	7	1935x2592	72.0	grey	34	0.0001	748.2	32.1	11.8	2.8	46.7	8.0	16.1	16.02x	mrc	27.70	41.06	-	force-grey	yes	46.7
+_1939_Former students to Board re Merriam_.pdf	13	1935x2592	72.0	grey	37	0.0001	718.3	26.1	156.8	30.2	213.1	2.0	4.0	3.37x	mrc	30.20	41.42	-	force-grey	yes	213.1
+_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York.pdf	1	1159x1573	140.0	grey	223	0.0261	503.0	36.6	69.0	24.8	130.4	2.0	4.0	3.86x	mrc	23.69	37.61	-	force-grey	yes	130.4
+_1973_Committee Against Racism_.pdf	2	1276x1651	150.1	grey	80	0.0000	775.5	43.8	4.8	2.5	51.1	8.0	16.2	15.16x	mrc	19.83	37.71	-	force-grey	no	51.1
+_1973_Committee Against Racism_.pdf	3	1275x1650	150.0	grey	80	0.0000	802.2	46.7	3.8	2.4	53.0	8.0	16.1	15.14x	mrc	19.38	37.59	-	force-grey	no	53.0

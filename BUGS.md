@@ -551,6 +551,13 @@ ordering improves — 68 of 104 real-against-already-keeping pairs inverted unde
 under `sheetFrac` — ⚠️ but it does not reach zero, no bar is proposed, and this entry's own published
 *"0.49%"* for `Ford_1941` p5 was computed from the LOCALITY figure while stated as the outside-the-sheet
 one (`sheetFrac` is 0.00448).
+✅ **AND THE BYTE PRICE IS MEASURED THE SAME DAY — C27's item (b), `C27-COLOURBYTES-2026-08-26.tsv` and
+C27 `#### The byte price, MEASURED`: keeping the colour costs +93.0 KB over 13 pages, `1.048x`, which is
+CHEAPER in proportion than the `1.080x` the colour this app already keeps costs on 11 pages of the same
+population.** ⛔ **Its larger finding is about C28 rather than C27: the colour decision changes the word
+boxes Vision returns on 21 of 30 pages and flips `pageIsAllText()`'s verdict on 6 of them**, moving the
+background factor between /8 and /2 — so 80.4% of the naive +475.0 KB aggregate is that flip and not the
+colour, and quoting the naive figure overstates (b) by 5.1x.
 Read C27's `#### The population, swept`, `#### ⛔ And the ten pages were LOOKED AT` and
 `#### The two mask terms, MEASURED` before
 planning anything here; the constant is untouched and nothing shipped reads the fraction.
@@ -5117,7 +5124,11 @@ characterised for the ten pages looked at; ✅ **(a) the two terms the masks ask
 saturation outside the sheet, and a locality term, separately rather than as the one signal this
 section first proposed and the review refuted — WAS MEASURED 2026-08-26 over exactly the set named
 here, the 40 pages above the noise band including `1954 - Why` p4: read
-`#### The two mask terms, MEASURED`.** So what is *not* measured is
+`#### The two mask terms, MEASURED`.** ✅ **AND (b) WAS MEASURED 2026-08-26 — `#### The byte price,
+MEASURED`: +93.0 KB over 13 pages, `1.048x`, against the `1.080x` the colour this app already keeps
+costs on 11 pages of the same population. So (b) is no longer "not measured" and the R49/R50 trade has
+its number; what it does not have is a corpus figure or the three 1-bit pages, which are (c).** The
+paragraph below is kept as the record of what was owed. So what is *not* measured is
 (b) **what keeping the colour costs in bytes** on those pages —
 the R49/R50 trade, unpriced here, and the reason this cannot be closed on the harm alone, and (c)
 that one number still gates both `isPicture` and `shouldKeepColour`, so nothing can be given back
@@ -5289,7 +5300,9 @@ page's number is not a bound** — this entry's noise-floor lesson, in its own t
 
 ⚠️ **What this does NOT do.** Nothing in `Sources/` moves, no bar is proposed and the constant is
 untouched; **(b) the byte price and (c) the one number gating both `isPicture` and `shouldKeepColour`
-are exactly where they were**, and those two are now all that is left under this entry. `edgeShare` is
+are exactly where they were**, and those two are now all that is left under this entry — ✅ **(b) was
+measured the same day, in `#### The byte price, MEASURED`, so what is left under this entry is (c)
+alone.** `edgeShare` is
 a proxy for the sheet's edge and **is not** the edge: a bleed rule or a red band printed to the trim is
 border-connected too and would be discarded, a false positive no column here can tell from a scan
 surround — the negative control for it is `sheetFrac == satFrac` on a page whose colour is interior,
@@ -5300,6 +5313,143 @@ The 50 rows are a sample of 441, itself a sample of 16,987. And the
 eight columns say nothing about *what* the colour is: a colour photograph and a knockout banner are
 both "one big component" (`Schwaller` p101, `satN` 124 / `topPx` 3,464; `2013` p13, `satN` **2** /
 `topPx` 6,756).
+
+#### The byte price, MEASURED — 2026-08-26
+
+**Item (b), and the number is 1.048x.** `Tools/score-mrc.swift` gained `MRC_COLOUR=colour|grey` and
+`MRC_PAGES=<list>`, and the run is `C27-COLOURBYTES-2026-08-26.tsv` — 90 data rows, three arms over one
+page set of 30 pages in 18 documents, at Photo detail Balanced. Nothing in `Sources/` moved and no
+constant is proposed.
+
+**Why the forcing knob rather than a lower bar.** `pictureSaturationThreshold` gates the ROUTE as well
+as the colour — C9's "the same number charged twice", which this entry's item (c) is about — so a bar low
+enough to keep a page's colour also changes which pages are picture pages, and a byte figure taken that
+way is two changes added together. `MRC_COLOUR` changes the colour decision and nothing else.
+
+**The population.** The 29 picture-route rows of `C27-MASKTERMS-2026-08-26.tsv`, plus `1954 - Why` p2 —
+the founding page that *keeps* its red — and the three 1-bit pages of `#### ⛔ And the ten pages were
+LOOKED AT`. ⛔ **Those three produce no row at all, which is the honest shape of the answer**:
+`2013 - Silicon Valley Program Transcript` p13/p26 and `HarpersMagazine-1938-05` p4 are off the picture
+route today, and a page with no picture route has no colour decision to price. 33 requested, 30 measured,
+and the missing three are named in the file's own preamble. **So (b) prices 7 of the ten and not ten.**
+
+The manifest, because `MRC_PAGES` applies to every document in an invocation and the run is therefore one
+invocation per document per arm — 60 in all, about 50 minutes:
+
+```
+1881 - Harry Wilcox                                      4,7
+1954 - Why                                               2,4,7
+1976 - Regis McKenna Papers - Early Career, 1965-1981    4,7
+2013 - Silicon Valley Program Transcript                 13,26
+Albanese_1997_Senate Will Examine Stock Option Bill      2
+Atkinson_1939_Atkinson on firings_                       2,3
+Black_0000_The Scandal of Educational Testing            2,3
+Davis_2005_Optimism of the Will_Nation                   2
+Ehrenreich_2000_Maid to order_Harper's Magazine          5,9
+Ford_1941_Speech_                                        3,5
+Glazer_2002_Higher Ed_New Republic                       1
+HarpersMagazine-1938-05-0019577                          4
+Kelly_2014_Orders of Magnitude_TLS                       3
+Merriam_1920_Daughter of Pan_The Montanan (The Frontier)  1
+Riesman - 1954 - Individualism reconsidered, …            9,17
+Schwaller - 2026 - Silicon Valley Landscapes …           101
+Stanford_1891_Jane Stanford opening day speech …         2,3
+_1939_Former students to Board re Merriam_               7,13
+_1967_Yearly Increase of 15% Expected by Ampex_…         1
+_1973_Committee Against Racism_                          2,3
+```
+
+**⛔ THE PRICE, on the 13 grey-published pages whose all-text verdict does not move: 1,949.6 →
+2,042.6 KB, +93.0 KB, `1.048x`** — per page **+0.9 to +23.0 KB, 1.008x to 1.109x**. That is the whole of
+item (b)'s number and it is small.
+
+✅ **And the comparand is in the same file rather than argued for.** The 11 pages the app **already**
+publishes in colour, forced grey, read 2,530.9 → 2,344.2 KB — so the colour the app keeps today already
+costs **+186.7 KB, `1.080x`** on those pages. **Keeping colour on the pages C27 names is therefore
+proportionally CHEAPER than the colour this app already pays for** (1.048x against 1.080x), on 13 pages
+against 11 of one population. Against R49/R50's trade this is the cheap direction, which is what item (b)
+was owed.
+
+⛔ **THE FINDING WORTH MORE THAN THE PRICE, AND IT IS ABOUT C28: the colour decision moves
+`pageIsAllText()`'s verdict, and that swing is 4x larger than the colour's own cost.** Vision is handed
+the page's JPEG, so a colour arm hands it a colour image — production's own behaviour — and the word
+boxes come back different on **21 of the 30** pages. On **6 of the 30** the resulting `inkOutsideText`
+and text-region change flips the all-text verdict, moving the background factor between **/8 and /2**:
+the three grey→colour flips read **113.7 → 495.7 KB, +382.0 KB, `4.360x`** and the three colour→grey ones
+**402.8 → 727.9 KB, `1.807x`** — including `Atkinson_1939` p2 going the *other* way, 287.2 → **60.3 KB,
+`0.210x`**, because forcing grey *gained* it the shrink. ⛔ **So the naive aggregate over all 16
+grey-published pages — +475.0 KB, 1.230x — is 80.4% a mechanism that is not the colour** (382.0 of
+475.0), and quoting it would have overstated item (b) by **5.1x**.
+
+⚠️ **What the flip is NOT established to be.** On all three grey→colour flips `inkOut` is **0.0022,
+0.0040 and 0.0166** against a bar of 0.045, so `pageIsAllText()`'s **first** term is not what refuses —
+it must be the pale-drawing extent or C28's shape term, and `score-mrc` prints neither, so which one
+fires is unmeasured. What is measured is that the verdict moved and the direction of the bytes.
+⚠️ Nor is it a fidelity claim: nothing here reads a page at 1:1, so "the colour arm's background is at /2"
+is a byte fact and not a statement about what a reader sees. The `mrcPSNR` column moves too, and on a
+flipped row it is comparing against a different source basis (three planes against one), so it is not a
+like-for-like fidelity comparison across arms.
+
+✅ **Three controls, and the first is inside the knob.** (1) The arm that AGREES with a page's own `wantC`
+verdict is a no-op, and its row reproduces the shipped row on **all 19 pre-existing columns on 30 of 30
+pages** — 14 `wantC=yes` pages under `MRC_COLOUR=colour` and 16 `wantC=no` pages under `MRC_COLOUR=grey`.
+(2) Across the code change: the tool built from `3a8e79e` and the tool built from this commit, both with
+no knobs set, are **byte-identical on the 19 pre-existing columns over 14 rows in 6 documents** — the
+control that spans a real diff rather than two processes. (3) The three new columns are **appended** after
+`note`, so `MRC-2026-08-15/`'s five committed files stay comparable by position, and two self-test checks
+pin that — one on the first nineteen names and one on the last three. ⚠️ (2) is a *determinism* control on
+the shared columns and not a check against a committed artefact: `MRC-2026-08-15/`'s own rows cannot be
+reproduced today, because `textPageInkOutsideThreshold` moved 0.08 → 0.045 on 2026-08-19 and C28's shape
+term was wired on 2026-08-22, and both change `pageIsAllText()` and therefore `bgF`/`bgKB`/`mrcKB`. What
+appending buys is that a reader can still line the columns up.
+
+⚠️ **What (b) does NOT settle.** No corpus figure: 13 pages of the 29 picture-route rows of a 50-row
+file, itself 50 of `SATFRAC-2026-08-19.tsv`'s 441, itself a sample of 16,987 — and no stratified estimate
+was run. One Photo detail setting (Balanced). The price is the *route's* colour, not a bar: it says what
+keeping the colour costs on a page already on the picture route, and says nothing about what admitting a
+new page to that route costs, which is (c). And the three 1-bit pages of the ten are exactly the pages
+(c) is about, so (b) and (c) do not cover the ten between them until (c) runs.
+
+⛔ **SEVEN CORRECTIONS FROM THE ADVERSARIAL REVIEW OF THIS DIFF, and the first two change what may be
+quoted.**
+
+1. ⛔ **"30 pages in 20 documents" was WRONG in three files and is fixed to 18.** 20 is the *requested*
+   count; the two documents that produced no rows are exactly `2013 - Silicon Valley Program Transcript`
+   and `HarpersMagazine-1938-05-0019577`. The artefact's own preamble had it right and the prose flattened
+   it.
+2. ⛔ **THE 13-PAGE SET IS *picture-route pages published grey*, NOT "the pages carrying colour", and the
+   1.048x-against-1.080x sentence quoted a ratio over a set that is not the one it names.** Six of the 13
+   sit below the lowest `satFrac` of the entry's own ten (`1954 - Why` p4, 0.01360) and one — `Black_0000`
+   p2 — reads **0.00000**; between them they carry **+40.9 KB, 44.0% of the +93.0**. Restricted to the
+   **7** pages of the entry's own ten it is **852.0 → 904.1 KB, +52.1 KB, `1.0612x`**, so the margin over
+   the app's own 1.080x narrows from 3.1% to **1.8%**. *A ratio is a claim about its own set* — this
+   register's own rule, broken in the sentence that cites the rule's own trade.
+3. ⚠️ **And that comparison is a SELECTION EFFECT.** The 11 comparand pages read `satFrac`
+   0.00236–0.15669 with nine above 0.034 against the 13's median 0.01360; the app keeps colour *because* a
+   page has more of it, so a higher premium there is what the selection guarantees. Direction and
+   arithmetic hold; "C27's pages are the cheaper kind" does not follow.
+4. ⚠️ **80.4% is an UPPER BOUND, not a split**: the 382.0 KB on the flipped pages contains those pages'
+   own colour cost at the unshrunk factor, which this seam cannot separate — scaling the 11-page premium
+   onto them puts ~37 KB of the 382.0 on the colour and the share nearer 72%. C29's *"the route AND the
+   MRC re-layering together, and cannot be separated at this seam"*, in a second place. And **5.1x
+   overstates the +475.0 KB form of (b), not the ratio form** (1.230/1.0477 = **1.174x**); the swing being
+   "4x larger" is 3 pages against 13, where **per page it is 127.3 against 7.2 KB, 17.8x**.
+5. ⛔ **"21 of 30" is a COUNT difference and therefore a FLOOR — it is 25 of 30.** On four more pages the
+   box count is equal while the recognition-derived columns move: `1954 - Why` p2 holds 9 boxes in both
+   arms and reads `inkOut` **0.1085 against 0.2280**, 2.1x, `maskKB` 6.4 against 5.9. So the ink map itself
+   moves with the colour decision, and "different boxes → the verdict flips" is not established as the
+   whole mechanism.
+6. ⛔ **The negative control's "all 19 pre-existing columns" is 7 columns that CANNOT disagree; only 12
+   carry information.** `file`/`page` are the row key, `px` is equal on 30 of 30 and `dpi` derives from it,
+   `route` **is** the arm by construction, and `kept`/`note` are the literals `mrc` and `-` on 90 of 90
+   rows. The correction this register already made at *"twelve columns … eight carry information"*. ✅ It
+   is not vacuous, though: the DISagreeing arm matches on **0 of 30**. ⚠️ And because `kept` is `mrc` on
+   every row of this run, **`pubKB == mrcKB` on 90 of 90** — one of the three appended columns is
+   byte-identical to a pre-existing one on this population, and what distinguishes them is the self-test's
+   `pubKB` check on a fixture where the layers win, not this file.
+7. ⚠️ **The `mrcPSNR` carve-out is the ARM's, not the flip's**: the source basis goes from one plane to
+   three whenever the arm does, so it moves on **13 of the 13 non-flipping pages** too (25.26 → 25.17, and
+   so on). Nothing in this file is a like-for-like fidelity comparison across arms, on any row.
 
 ### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — HALF FIXED (the shape term is WIRED 2026-08-22 and rescues 13 of the 16 measured losses; three hand-made marks remain, one of them unreachable from this seam)
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move

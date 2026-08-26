@@ -60,6 +60,15 @@
 // beside it. Pages the app would decline to layer get a row too, with the reason
 // in the `note` column; four of them used to be a bare `continue`.
 //
+// ⚠️ **C27 (b) added `arm`, `wantC` and `pubKB` on 2026-08-26**, and the first two
+// exist because MRC_COLOUR below can make this tool print a row for a decision the
+// app does NOT take. `wantC` is `shouldKeepColour`'s own answer for the page and
+// `arm` says which decision the row measured, so a forced row can never be read as
+// production's. `pubKB` is what the app would publish for that page under that arm —
+// the single JPEG, or the three layers when they came out smaller — and it is the
+// quantity C27's byte price is denominated in. It is what the closing
+// `as published` total adds up, from the same expression.
+//
 // Lines before the header begin with `#` — they say which downsample factors the
 // run used and where each came from, because a table of sizes with no record of
 // the settings that produced them is how `FEATURES.md` came to quote a figure
@@ -80,6 +89,31 @@
 //                     detail knob; MRC_FG has no user control and defaults to
 //                     `Flattener.mrcForegroundDownsample`. This is how the sweep
 //                     behind the Photo detail settings was run.
+//   MRC_PAGES=4,7     measure exactly these 1-based pages of EVERY document in the
+//                     invocation, instead of the three-page sample. C27's population
+//                     is named pages of named documents and the sample reaches almost
+//                     none of them, so its run is one invocation per document. A page
+//                     past the end lands in `refused` and is named on stderr rather
+//                     than dropped. Refused (exit 2) on anything that is not a
+//                     comma-separated list of positive integers, `MRC_PAGES=` and
+//                     `MRC_PAGES=4,,7` included.
+//   MRC_COLOUR=colour force the colour decision on every picture page instead of
+//         |grey       asking `shouldKeepColour`. **C27 (b): the byte price of keeping
+//                     spot colour.** The constant cannot be moved to ask this —
+//                     `pictureSaturationThreshold` gates the ROUTE as well as the
+//                     colour, so a lower bar changes which pages are picture pages at
+//                     the same time, and the byte figure would be two changes added
+//                     together. Refused (exit 2) on any other value.
+//
+//                     **The negative control is free and it is inside the knob**: on a
+//                     page whose own verdict is already colour, `MRC_COLOUR=colour`
+//                     must reproduce the shipped row byte for byte, and `wantC` is
+//                     what says which pages those are. So the price is the difference
+//                     between two runs of ONE binary, with the rows that should not
+//                     have moved available in the same pair of files.
+//
+//                     ⛔ It is not a seam and not a proposal. Nothing in `Sources/`
+//                     reads it and no constant moves; a `force-` row is a price.
 //   MRC_BLIND=1       layer with a Sauvola stencil that is *not* confined to
 //                     Vision's word boxes. Deliberately not the shipped route:
 //                     it is where the smeared-photograph measurement in
@@ -160,6 +194,99 @@ let foregroundDownsample = Int(environment["MRC_FG"] ?? "")
     ?? Flattener.mrcForegroundDownsample
 let blind = environment["MRC_BLIND"] != nil
 let dumpDirectory = environment["MRC_DUMP"]
+
+/// C27 (b). Which colour decision the run measures on every picture page.
+///
+/// `shipped` is `Flattener.shouldKeepColour`'s own answer, which is what every row
+/// this tool printed before 2026-08-26 was. The two forcing values exist because
+/// C27's open question is what the *other* answer costs, and the constant cannot be
+/// moved to ask it: `pictureSaturationThreshold` gates the ROUTE as well as the
+/// colour (C9's "the same number charged twice"), so a bar low enough to keep a
+/// page's colour also changes which pages are picture pages, and a byte figure taken
+/// that way would be two changes added together. Forcing the decision here changes
+/// the colour and nothing else about the page.
+///
+/// ⛔ **It is not a proposal and it is not a seam.** Nothing in `Sources/` reads it,
+/// no constant moves, and a `force-` row is a price rather than a recommendation —
+/// the same standing the refused luminance candidate in `score-threshold-loss` has.
+///
+/// Sibling sweep (CONTRIBUTING 4b): `Flattener.shouldKeepColour` has one production call
+/// site and two in `Tools/`. The other is `score-picture-codec.swift:124`, which reads it
+/// **negated, as a filter** — R34's question is JPEG-against-JPEG-2000 fidelity on the
+/// grey picture pages, so forcing the arm there would change the population rather than
+/// price an arm, and it is deliberately left alone.
+enum ColourArm: String {
+    case shipped, colour, grey
+
+    /// What the row's `arm` column says. The `shipped` arm prints the verdict it
+    /// inherited rather than the bare word, so a file holding rows from more than one
+    /// run can never leave a reader guessing which decision produced a byte count —
+    /// the failure `MRC_BG`'s banner exists to prevent, one column over.
+    func label(shipWants: Bool) -> String {
+        switch self {
+        case .shipped: return shipWants ? "ship-colour" : "ship-grey"
+        case .colour: return "force-colour"
+        case .grey: return "force-grey"
+        }
+    }
+}
+
+/// Refusals here write and `exit` directly instead of going through `stop`, because
+/// `scratch` does not exist yet — which is the whole reason this block sits above it.
+/// Exit **2**: nothing was measured and the self-test is not what refused. 3 is a
+/// missing helper, 4 a failed self-test, 5 a drifted row width, 6 a lost dump.
+func refuseConfiguration(_ message: String) -> Never {
+    FileHandle.standardError.write(Data(message.utf8))
+    exit(2)
+}
+
+let colourArm: ColourArm = {
+    guard let raw = environment["MRC_COLOUR"] else { return .shipped }
+    guard let arm = ColourArm(rawValue: raw) else {
+        refuseConfiguration(
+            "score-mrc: MRC_COLOUR=\(raw) is not one of shipped, colour, grey.\n"
+            + "           Unset it to measure what the app decides for itself.\n")
+    }
+    return arm
+}()
+
+/// The exact pages to measure, 1-based, instead of the three-page sample.
+///
+/// C27's population is named pages of named documents — `Ford_1941` p5,
+/// `HarpersMagazine` p4, `1954 - Why` p7 — and the sample below reaches almost none
+/// of them, so without this the tool cannot be pointed at the entry's own population
+/// at all. It applies to **every** document in the invocation, which is why C27's own
+/// run is one invocation per document.
+///
+/// A page number past the end of a document is not silently dropped: it lands in
+/// `refused` and is named on stderr, exactly like a page that will not load.
+///
+/// ⚠️ **Page selection is now spelled FOUR ways across `Tools/`, and the sibling sweep
+/// for this change is the record of it rather than a fix.** `--pages 41,78` is a LIST in
+/// `score-reading-order`, `score-run-width`, `score-skew` and `score-threshold-loss`;
+/// `PAGES=n` is a COUNT in `score-routing-census` and — in the same tool as the flag —
+/// `score-threshold-loss`; `score-text-route` reads trailing integer arguments; and this
+/// is the first `*_PAGES` env list. **The sharpest part is that one tool already uses
+/// `PAGES` and `--pages` for two different quantities**, so a reader who learned
+/// `PAGES=n` there can read `MRC_PAGES=4,7` as "sample four pages, then seven". It is a
+/// list. The env form was kept because every other knob this tool has is `MRC_`-prefixed
+/// env and a lone flag would be a second convention inside one interface; the prefix is
+/// what stops it colliding with the count.
+let requestedPages: [Int]? = {
+    guard let raw = environment["MRC_PAGES"] else { return nil }
+    // `omittingEmptySubsequences: false`, so `MRC_PAGES=4,,7` and `MRC_PAGES=` are
+    // refusals rather than a silently shorter list. A dropped page number here would
+    // be a measurement of a population nobody asked for.
+    let parts = raw.split(separator: ",", omittingEmptySubsequences: false)
+        .map { $0.trimmingCharacters(in: .whitespaces) }
+    let numbers = parts.compactMap { Int($0) }
+    guard numbers.count == parts.count, numbers.allSatisfy({ $0 >= 1 }) else {
+        refuseConfiguration(
+            "score-mrc: MRC_PAGES=\(raw) must be a comma-separated list of 1-based\n"
+            + "           page numbers. Unset it for the three-page sample.\n")
+    }
+    return numbers
+}()
 
 let scratch = URL(fileURLWithPath: NSTemporaryDirectory())
     .appendingPathComponent("mrc-\(UUID().uuidString)")
@@ -383,9 +510,16 @@ func blindLayers(grey: [UInt8], width w: Int, height h: Int,
 /// (the trailing box count had no name), and `score-corpus` emitted a 10-field
 /// SKIP row under a 9-column header inside a fix for a reporting defect. A
 /// mis-sized row is now a refusal, not a column nobody can name.
+/// C27 (b) appended three columns on 2026-08-26 and put them at the **end**, after
+/// the free-text `note`, which reads oddly and is deliberate: `MRC-2026-08-15/`'s
+/// five committed files carry exactly the first nineteen, so appending is what lets
+/// a run of today's tool be checked column-for-column against them. Inserting `arm`
+/// next to `route`, where it belongs semantically, would have shifted twelve columns
+/// and made every earlier artefact incomparable by position.
 let columns = ["file", "page", "px", "dpi", "route", "boxes", "inkOut", "nowKB",
                "maskKB", "bgKB", "fgKB", "mrcKB", "bgF", "fgF", "ratio", "kept",
-               "mrcPSNR", "nowPSNR", "note"]
+               "mrcPSNR", "nowPSNR", "note",
+               "arm", "wantC", "pubKB"]
 
 /// Nil when the row does not match the header, so the guard itself is testable
 /// rather than being an `exit` the self-test cannot reach.
@@ -462,6 +596,22 @@ struct Outcome {
     /// colour render failed inside `mrcLayers` — both of which mean the artefact
     /// measured here is grey, which is what the assertion cares about.
     var isColour = false
+    /// C27 (b). `shouldKeepColour`'s own answer for this page, whatever arm the run
+    /// forced. A forced row still has to carry it: the verdict is what C27 is about,
+    /// and a file of `force-colour` rows with no record of which pages the app would
+    /// have kept anyway prices nothing.
+    var shipWantsColour = false
+    /// What the app would publish for this page under this arm — the three layers
+    /// when they came out smaller than the single JPEG, that JPEG otherwise. This is
+    /// the quantity C27 (b) is a price in, so it is printed rather than left to the
+    /// reader to derive from `kept`.
+    var published = 0
+    /// The row exactly as it was handed to `emit`, so the self-test can assert what
+    /// lands in a named column and not merely that the field count is right. The
+    /// eleventh check in this register that could not fail was two printed columns of
+    /// `score-threshold-loss` asserted by nothing (2026-08-26); a self-test that runs
+    /// with `printing: false` cannot see a printer, so it reads this instead.
+    var cells: [String] = []
 }
 
 /// Reproduces `flatten`'s picture decision, then asks the shipped layering what
@@ -478,6 +628,7 @@ func measure(_ page: PDFPage, label: String, index: Int,
              background: Int = backgroundDownsample,
              foreground: Int = foregroundDownsample,
              blindStencil: Bool = blind,
+             arm: ColourArm = colourArm,
              printing: Bool = true) -> Outcome {
     var outcome = Outcome()
     let box = Flattener.fullBox(of: page)
@@ -514,8 +665,24 @@ func measure(_ page: PDFPage, label: String, index: Int,
     // What ships today, built exactly as `flatten` builds it: colour when
     // Automatic keeps the colour and both colour steps succeed, grey otherwise —
     // including the fall-through, which is a real path and not a formality.
-    let wantColour = Flattener.shouldKeepColour(mode: .auto, saturation: saturation,
-                                               pixels: wide * high)
+    let shipWantsColour = Flattener.shouldKeepColour(mode: .auto, saturation: saturation,
+                                                     pixels: wide * high)
+    outcome.shipWantsColour = shipWantsColour
+    // C27 (b). `shipped` is the app's own answer; the two forcing arms are how the
+    // other answer gets priced without moving a constant that also gates the route.
+    // Note what is NOT forced: the megapixel bound inside `shouldKeepColour` is part
+    // of the shipped verdict, so `MRC_COLOUR=colour` on a page over it prices a
+    // colour render the app would never attempt. No corpus page is near it — the
+    // widest `cells` in `THRESHOLD-LOSS-2026-08-18.tsv` is 3.84 M — but the row would
+    // not say so, which is why `wantC` is printed beside `arm`.
+    let wantColour: Bool
+    switch arm {
+    case .shipped: wantColour = shipWantsColour
+    case .colour: wantColour = true
+    case .grey: wantColour = false
+    }
+    let armLabel = arm.label(shipWants: shipWantsColour)
+    let wantCell = shipWantsColour ? "yes" : "no"
     var isColour = false
     var sourceRGBA: [UInt8]?
     var nowEncoded: (data: Data, image: CGImage)?
@@ -542,11 +709,20 @@ func measure(_ page: PDFPage, label: String, index: Int,
     /// prints the page rather than dropping it. A tool that silently skips is
     /// invariant 1's shape in the instrument — `score-gate` had it (T9) and so
     /// did this one, which used `continue` for all four of its refusals.
+    ///
+    /// The cells are recorded on the outcome **before** the `printing` guard, so the
+    /// self-test — which never prints — still sees the row a corpus run would have
+    /// emitted. A declined page publishes its single JPEG, which is why `pubKB` is a
+    /// number here while every layer column is a dash.
     func decline(_ why: String, boxes: Int, inkOut: String) {
+        outcome.published = now.data.count
+        let cells = [label, "\(index + 1)", "\(w)x\(h)", String(format: "%.1f", dpi),
+                     route, "\(boxes)", inkOut, kb(now.data.count), "-", "-", "-", "-",
+                     "-", "-", "-", "jpeg", "-", "-", why,
+                     armLabel, wantCell, kb(now.data.count)]
+        outcome.cells = cells
         guard printing else { return }
-        emit([label, "\(index + 1)", "\(w)x\(h)", String(format: "%.1f", dpi), route,
-              "\(boxes)", inkOut, kb(now.data.count), "-", "-", "-", "-", "-", "-",
-              "-", "jpeg", "-", "-", why])
+        emit(cells)
     }
 
     // The boxes come from the *flattened* page, which is what the app recognises
@@ -660,6 +836,29 @@ func measure(_ page: PDFPage, label: String, index: Int,
         nowPSNR = psnr(source, back)
     }
 
+    // The app keeps whichever is smaller — `after < before` in `makeSearchablePDF`,
+    // a strict `<`, so a tie keeps the JPEG. Three layers are not always cheaper than
+    // one image, and a total that assumed they were would describe a route the app
+    // declines to take. One expression, read by `kept` and by `pubKB`: the two used to
+    // be the same predicate written twice, which is C20's shape.
+    let keptLayers = mrc < now.data.count
+    outcome.published = keptLayers ? mrc : now.data.count
+    // Built above the `printing` guard on purpose. The self-test measures with
+    // `printing: false`, so a row constructed after the guard is a row it cannot
+    // assert anything about — which is how two columns of `score-threshold-loss`
+    // shipped asserted by nothing on 2026-08-26.
+    outcome.cells = [
+        label, "\(index + 1)", "\(w)x\(h)", String(format: "%.1f", dpi), route,
+        "\(boxes.count)", inkOut, kb(now.data.count), kb(maskBytes),
+        kb(backgroundBytes), kb(foregroundBytes), kb(mrc),
+        String(format: "%.1f", outcome.backgroundFactor),
+        String(format: "%.1f", outcome.foregroundFactor),
+        String(format: "%.2fx", Double(now.data.count) / Double(max(mrc, 1))),
+        keptLayers ? "mrc" : "jpeg",
+        decibels(mrcPSNR), decibels(nowPSNR),
+        blindStencil ? "blind" : "-",
+        armLabel, wantCell, kb(outcome.published)]
+
     guard printing else { return outcome }
 
     // ⚠️ **Every failure in here used to be silent, and `dumped += 1` counted the page
@@ -700,19 +899,7 @@ func measure(_ page: PDFPage, label: String, index: Int,
         }
     }
 
-    emit([label, "\(index + 1)", "\(w)x\(h)", String(format: "%.1f", dpi), route,
-          "\(boxes.count)", inkOut, kb(now.data.count), kb(maskBytes),
-          kb(backgroundBytes), kb(foregroundBytes), kb(mrc),
-          String(format: "%.1f", outcome.backgroundFactor),
-          String(format: "%.1f", outcome.foregroundFactor),
-          String(format: "%.2fx", Double(now.data.count) / Double(max(mrc, 1))),
-          // The app keeps whichever is smaller — `after < before` in
-          // `makeSearchablePDF`. Three layers are not always cheaper than one
-          // image, and a total that assumed they were would describe a route the
-          // app declines to take.
-          mrc < now.data.count ? "mrc" : "jpeg",
-          decibels(mrcPSNR), decibels(nowPSNR),
-          blindStencil ? "blind" : "-"])
+    emit(outcome.cells)
     return outcome
 }
 
@@ -849,7 +1036,12 @@ func selfTest() -> [String] {
 
     /// One fixture through `measure`, at the shipped factors. Returns nil when the
     /// page never got far enough for the assertions to mean anything.
-    func run(_ kind: SelfTestPage) -> Outcome? {
+    ///
+    /// `arm` defaults to `.shipped` rather than to the run's `MRC_COLOUR`, for the
+    /// same reason the three factors default to the shipped constants: a self-test
+    /// that inherited a forced arm would have to re-derive `shouldKeepColour`'s answer
+    /// to know what to expect, and both fixtures exist to pin that answer.
+    func run(_ kind: SelfTestPage, arm: ColourArm = .shipped) -> Outcome? {
         let url = scratch.appendingPathComponent(kind.rawValue + ".pdf")
         guard writeSelfTestPage(kind, to: url) else {
             failures.append("could not build the \(kind.rawValue) fixture"); return nil
@@ -872,7 +1064,17 @@ func selfTest() -> [String] {
         return measure(page, label: kind.rawValue + ".pdf", index: 0,
                        background: Flattener.mrcBackgroundDownsample,
                        foreground: Flattener.mrcForegroundDownsample,
-                       blindStencil: false, printing: false)
+                       blindStencil: false, arm: arm, printing: false)
+    }
+
+    /// One cell of the row `measure` built, by column NAME. Nil when the column is
+    /// not in the header at all, which is a different failure from a wrong value and
+    /// is reported as one — a renamed column would otherwise make every assertion
+    /// below silently pass on an index that no longer means what it says.
+    func cell(_ outcome: Outcome, _ column: String) -> String? {
+        guard let at = columns.firstIndex(of: column),
+              at < outcome.cells.count else { return nil }
+        return outcome.cells[at]
     }
 
     /// The properties both fixtures must have, whatever else differs.
@@ -901,6 +1103,42 @@ func selfTest() -> [String] {
     expect("a short row is refused", rowText(["one"]) == nil, "it was accepted")
     expect("a full row is printed",
            rowText([String](repeating: "x", count: columns.count)) != nil, "it was refused")
+
+    // C27 (b), and this pair is about the committed artefacts rather than about
+    // today's run. `MRC-2026-08-15/`'s five files carry the first nineteen columns in
+    // this order; the three C27 added are at the END so that stays true. A future
+    // insertion in the middle would compile, print a plausible table, and quietly make
+    // every one of those files incomparable by position — which is the failure mode
+    // this project has hit three times by counting tabs in a header (T14, A12.3, T18).
+    expect("MRC-2026-08-15's nineteen columns keep their positions",
+           Array(columns.prefix(19)) == ["file", "page", "px", "dpi", "route", "boxes",
+                                         "inkOut", "nowKB", "maskKB", "bgKB", "fgKB",
+                                         "mrcKB", "bgF", "fgF", "ratio", "kept",
+                                         "mrcPSNR", "nowPSNR", "note"],
+           columns.prefix(19).joined(separator: " "))
+    expect("C27's three columns are appended, not inserted",
+           Array(columns.suffix(3)) == ["arm", "wantC", "pubKB"],
+           columns.suffix(3).joined(separator: " "))
+
+    // The `arm` column's four strings, from the function that builds them, before any
+    // fixture is rendered. `ship-colour` against `force-colour` is the pair a reader
+    // most needs kept apart: both describe a colour row and only one of them is the
+    // app's own answer, so a label that collapsed them would turn a price into a
+    // claim about what the app does.
+    expect("the shipped arm names the verdict it inherited",
+           ColourArm.shipped.label(shipWants: true) == "ship-colour"
+               && ColourArm.shipped.label(shipWants: false) == "ship-grey",
+           ColourArm.shipped.label(shipWants: true) + " / "
+               + ColourArm.shipped.label(shipWants: false))
+    expect("a forced arm says so whichever way the verdict went",
+           ColourArm.colour.label(shipWants: false) == "force-colour"
+               && ColourArm.colour.label(shipWants: true) == "force-colour"
+               && ColourArm.grey.label(shipWants: true) == "force-grey"
+               && ColourArm.grey.label(shipWants: false) == "force-grey",
+           [ColourArm.colour.label(shipWants: false),
+            ColourArm.colour.label(shipWants: true),
+            ColourArm.grey.label(shipWants: true),
+            ColourArm.grey.label(shipWants: false)].joined(separator: " / "))
 
     // Fixture 1 — R50 fires. The assertion this tool exists to keep: at the shipped
     // `2`, which is what the mirrored copy used unconditionally, an all-text page
@@ -939,6 +1177,52 @@ func selfTest() -> [String] {
                String(format: "%.1fx, expected %dx", text.foregroundFactor,
                       Flattener.textPageForegroundDownsample))
         expect("an all-text page is grey", !text.isColour, "it came back colour")
+
+        // C27 (b), read out of the row `measure` built rather than off the Outcome, so
+        // the assertion covers the cell a corpus file would carry and not just the
+        // field behind it.
+        expect("the all-text fixture's own verdict is grey",
+               !text.shipWantsColour && cell(text, "wantC") == "no"
+                   && cell(text, "arm") == "ship-grey",
+               "wantC \(cell(text, "wantC") ?? "absent"), "
+                   + "arm \(cell(text, "arm") ?? "absent")")
+        // `pubKB` is the number C27 (b) is a price in, so it is asserted against the
+        // rule rather than against a literal: on this fixture R50's shrink fires, so
+        // the three layers must be the cheaper side and `pubKB` must be `mrcKB`.
+        if let mrc = text.mrc {
+            expect("an all-text page publishes its layers, and pubKB is them",
+                   text.published == mrc && text.published < text.now
+                       && cell(text, "pubKB") == kb(mrc)
+                       && cell(text, "kept") == "mrc",
+                   "published \(text.published), mrc \(mrc), now \(text.now), "
+                       + "pubKB \(cell(text, "pubKB") ?? "absent")")
+        }
+
+        // The forcing arm, in the direction C27 needs: a page the app publishes in
+        // grey, priced in colour. This is the whole of `MRC_COLOUR=colour`, and it is
+        // asserted on a fixture rather than reasoned about because the arm has to reach
+        // `renderRGB`, `jpegRGB` AND `mrcLayers(inColour:)` — three places it could
+        // fall through to grey without saying so, each of which is a real production
+        // path (`flatten`'s comment: "colour is an improvement on grey, not a
+        // requirement").
+        if let forced = run(.allText, arm: .colour), forced.isPictureRoute {
+            expect("forcing colour on a grey page reaches the colour route",
+                   forced.isColour, "it came back grey — the arm did not take")
+            expect("a forced row still reports the page's own verdict",
+                   !forced.shipWantsColour && cell(forced, "wantC") == "no"
+                       && cell(forced, "arm") == "force-colour"
+                       && cell(forced, "route") == "colour",
+                   "wantC \(cell(forced, "wantC") ?? "absent"), "
+                       + "arm \(cell(forced, "arm") ?? "absent"), "
+                       + "route \(cell(forced, "route") ?? "absent")")
+            // The direction of the price, which is the finding the corpus run reports.
+            // Three planes of a page whose planes are nearly identical cannot be
+            // cheaper than one of them; if this ever went the other way the tool would
+            // be measuring something else.
+            expect("keeping colour on a grey page costs bytes",
+                   forced.published > text.published,
+                   "\(forced.published) forced against \(text.published) shipped")
+        }
     }
 
     // Fixture 2 — the colour route, and R50 *not* firing. Both halves were
@@ -960,6 +1244,30 @@ func selfTest() -> [String] {
                Int(plate.foregroundFactor.rounded()) == Flattener.mrcForegroundDownsample,
                String(format: "%.1fx, expected %dx", plate.foregroundFactor,
                       Flattener.mrcForegroundDownsample))
+
+        // C27 (b), the other direction. This fixture is the one page in the tool whose
+        // shipped verdict is `yes`, so it is the only place `ship-colour` can be pinned
+        // — and `MRC_COLOUR=grey` on it is the reverse price: what the app already
+        // spends to keep a colour page's colour.
+        expect("the colour fixture's own verdict is colour",
+               plate.shipWantsColour && cell(plate, "wantC") == "yes"
+                   && cell(plate, "arm") == "ship-colour",
+               "wantC \(cell(plate, "wantC") ?? "absent"), "
+                   + "arm \(cell(plate, "arm") ?? "absent")")
+        if let forced = run(.colourPlate, arm: .grey), forced.isPictureRoute {
+            expect("forcing grey on a colour page reaches the grey route",
+                   !forced.isColour, "it came back colour — the arm did not take")
+            expect("a forced-grey row still reports the page's own verdict",
+                   forced.shipWantsColour && cell(forced, "wantC") == "yes"
+                       && cell(forced, "arm") == "force-grey"
+                       && cell(forced, "route") == "grey",
+                   "wantC \(cell(forced, "wantC") ?? "absent"), "
+                       + "arm \(cell(forced, "arm") ?? "absent"), "
+                       + "route \(cell(forced, "route") ?? "absent")")
+            expect("the colour this page already keeps costs bytes",
+                   forced.published < plate.published,
+                   "\(forced.published) grey against \(plate.published) as shipped")
+        }
     }
     return failures
 }
@@ -1006,6 +1314,17 @@ print("# background /\(backgroundDownsample) "
       + ", foreground /\(foregroundDownsample) "
       + (environment["MRC_FG"] == nil ? "(shipped default)" : "(MRC_FG)")
       + " — before R50's all-text shrink, which is a floor and can only raise them")
+// C27 (b). Named for the same reason MRC_BG's line is: a file of colour rows with no
+// record that the colour was FORCED reads as the app's own output. The `arm` column
+// says it per row as well, because a reader who greps out a row loses the banner.
+if colourArm != .shipped {
+    print("# MRC_COLOUR=\(colourArm.rawValue) (C27 b): every picture page is forced to"
+          + " that colour decision. `wantC` is what `shouldKeepColour` answered")
+}
+if let requested = requestedPages {
+    print("# MRC_PAGES=\(requested.map(String.init).joined(separator: ","))"
+          + " — these pages of EVERY document below, not the three-page sample")
+}
 print(columns.joined(separator: "\t"))
 
 var pages = 0, layered = 0, declined = 0, unreadable = 0, refused = 0
@@ -1025,9 +1344,11 @@ for path in CommandLine.arguments.dropFirst() {
     // Distinct for every page count: `n/3 < n/2 < 3n/4` holds for all n >= 5, and
     // n <= 4 takes every page. A12.8 found `score-text-route` measuring page 1
     // three times at n=5; this sampling does not have that defect.
-    let indices = document.pageCount <= 4
-        ? Array(0..<document.pageCount)
-        : [document.pageCount / 3, document.pageCount / 2, document.pageCount * 3 / 4]
+    let indices = requestedPages?.map { $0 - 1 }
+        ?? (document.pageCount <= 4
+            ? Array(0..<document.pageCount)
+            : [document.pageCount / 3, document.pageCount / 2,
+               document.pageCount * 3 / 4])
     for index in indices {
         guard let page = document.page(at: index) else {
             refused += 1
@@ -1049,14 +1370,19 @@ for path in CommandLine.arguments.dropFirst() {
         guard outcome.isPictureRoute else { continue }
         pages += 1
         nowTotal += outcome.now
+        // `outcome.published`, not `min(mrc, now)` recomputed here: the column and the
+        // total are one definition now, so a reader can add up `pubKB` and get this
+        // number. They agreed in bytes before — `min` and the strict `<` differ only on
+        // a tie, where both give the same count — but they were two expressions for one
+        // rule, which is the shape C20 was.
         if let mrc = outcome.mrc {
             layered += 1
             mrcTotal += mrc
-            publishedTotal += min(mrc, outcome.now)
+            publishedTotal += outcome.published
             if mrc >= outcome.now { mrcLostTo += 1 }
         } else {
             declined += 1
-            publishedTotal += outcome.now
+            publishedTotal += outcome.published
         }
     }
 }

@@ -1179,8 +1179,31 @@ own bar.
 ⚠️ It also contradicts half of a guess the entry made: `Levy and Temin - 2007` p23/p45 have
 `HarpersMagazine` p4's cast signature (`satN` 1,046/1,077, `topPx` 5) rather than the chart's coloured
 series the entry supposed, while `AI 2027` p24 does have a real mark — and neither Levy page was dumped,
-so that is the terms classifying them and not a reading. What remains: the byte price of keeping the
-colour, and
+so that is the terms classifying them and not a reading.
+✅ **AND THE BYTE PRICE — ITEM (b) — IS MEASURED AS OF 2026-08-26, THROUGH `Tools/score-mrc.swift`'s NEW
+`MRC_COLOUR=colour|grey` AND `MRC_PAGES=` KNOBS** (`BUGS.md` C27 `#### The byte price, MEASURED`,
+`C27-COLOURBYTES-2026-08-26.tsv`, 90 rows: three arms over one page set of 30 pages in 18 documents).
+⛔ **Keeping the colour costs +93.0 KB over the 13 grey-published pages whose all-text verdict holds —
+`1.048x`, per page 1.008x-1.109x — which is proportionally CHEAPER than the `1.080x` the colour this app
+ALREADY keeps costs on 11 pages of the same file** (2,530.9 → 2,344.2 KB forced grey). Against R49/R50's
+trade that is the cheap direction. ⛔ **The knob and not a lower bar, because
+`pictureSaturationThreshold` gates the ROUTE as well as the colour (C9), so a bar low enough to keep a
+page's colour is two changes added together.** ⛔ **THE FINDING WORTH MORE THAN THE PRICE IS ABOUT C28:
+the colour decision changes the word boxes Vision returns on 21 of 30 pages and flips
+`pageIsAllText()`'s verdict on 6 of them**, moving the background between /8 and /2 — the three
+grey→colour flips read 113.7 → 495.7 KB (`4.360x`) and `Atkinson_1939` p2 goes the *other* way, 287.2 →
+**60.3 KB** (`0.210x`), because forcing grey *gained* it the shrink. **So the naive aggregate over all 16
+grey-published pages, +475.0 KB / 1.230x, is 80.4% that flip and not the colour, and quoting it
+overstates (b) by 5.1x — quote +93.0 KB and 1.048x.** ⚠️ On all three grey→colour flips `inkOut` is
+0.0022-0.0166 against a bar of 0.045, so term 1 is **not** what refuses; `score-mrc` prints neither the
+pale-drawing extent nor the shape term, so which of the two fires is unmeasured. ⚠️ **3 of the entry's
+ten pages produce NO ROW** — they are 1-bit today and a page off the picture route has no colour decision
+to price — so (b) prices 7 of the ten, and those three are exactly (c)'s ground. No corpus figure, one
+Photo detail setting, nothing in `Sources/` moved. ✅ Three controls: the arm that agrees with a page's
+own verdict reproduces the shipped row on all 19 pre-existing columns on **30 of 30** pages; the tool
+before and after this diff is byte-identical on those 19 over 14 rows in 6 documents; and the three new
+columns are appended after `note` so `MRC-2026-08-15/`'s five files stay comparable by position, with two
+self-test checks pinning it. ⛔ **The review of this diff corrected SEVEN things and TWO change what may be quoted — read `#### The byte price, MEASURED`'s own corrections list.** The 13 are *picture-route pages published GREY*, not *pages carrying colour*: six sit below the lowest `satFrac` of the entry's ten and one reads 0.00000, so restricted to the **7** pages of that ten it is **+52.1 KB, `1.0612x`** and the margin over the app's own 1.080x is 1.8% rather than 3.1% — and that comparison is a selection effect besides. **80.4% is an upper bound, not a split** (~72% once the flipped pages' own colour cost is scaled in), 5.1x overstates the +475.0 KB form and not the 1.230x form (which is 1.174x), "21 of 30" is a floor and the real figure is **25 of 30**, and the negative control's 19 columns are **12** that carry information plus 7 that cannot disagree. What remains under C27 is
 separating the one number that gates both `isPicture` and `shouldKeepColour`. ⚠️ And one instrument fact from that run:
 `saturation(of:)` is **not a pure function of the page** — read cold it differs from read after a
 full-resolution render of the same page (`1954 - Why` p7: 0.02831 vs 0.03033), production renders grey
@@ -1336,7 +1359,7 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `C30-VOIDS-2026-08-25.tsv`, `C30-TILES-2026-08-25.tsv`, `C29-MARKS-2026-08-26.tsv` and
 `GUTTER-RECONCILE-2026-08-26.tsv` + `GUTTER-SAMPLED-2026-08-26.tsv` +
 `GUTTER-BANDS-2026-08-26.tsv` + `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` and
-`C27-MASKTERMS-2026-08-26.tsv` — and are
+`C27-MASKTERMS-2026-08-26.tsv` and `C27-COLOURBYTES-2026-08-26.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -1389,6 +1412,14 @@ its 21 pre-existing columns reproduce `SATFRAC-2026-08-19.tsv` digit for digit o
 checkable against an earlier artefact *and* re-derivable from the tree. ⚠️ Not a superlative: `C29-MARKS`
 and `WIDEN-STENCIL` also reproduce an earlier artefact, and a draft of this sentence called it "the
 strongest statement of the rule so far", which is the form this register has already refused twice.
+⚠️ **Nor is `C27-COLOURBYTES-2026-08-26.tsv`, a SIXTH time, and now there are TWO `C27-` files of which
+NEITHER is outside — so the prior a reader just formed from the note above is the right one and the count
+stays five.** It comes from `Tools/score-mrc.swift`, whose self-test also runs on every invocation. ⛔ **It
+is the first file in this list that cannot be checked against an earlier artefact of its own tool and says
+so**: `MRC-2026-08-15/`'s five committed score-mrc files pre-date C26's bar move (0.08 → 0.045) and C28's
+wired shape term, both of which change `pageIsAllText()` and therefore its `bgF`/`bgKB`/`mrcKB` columns —
+so what its three new columns being **appended** buys is that the nineteen still line up, not that they
+still agree. Its control is the two binaries either side of its own diff.
 The rule this count actually draws is *"reproducible from nothing in the tree"*, and it is worth
 re-deriving from the list rather than counting prefixes. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file
