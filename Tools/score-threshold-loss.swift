@@ -75,8 +75,26 @@
 // PAGES=n samples n pages per document (default 2, spread through it).
 // SATFLOOR=n is C27's, and it is the only knob here about colour: what counts as a
 // saturated pixel when asking how much of a page carries ink of its own colour
-// (default 0.25, refused outside 0…1). It sets the `satFrac` column and is printed
-// beside it on every row.
+// (default 0.25, refused outside 0…1). It sets the `satFrac` column and **the eight
+// mask-term columns beside it**, and is printed on every row.
+// SATRUNS=n is the run limit `Flattener.shapeComponents` truncates the mask at (default
+// its shipped 8,000,000, refused below 1 and refused unparseable). Nothing needs it to
+// measure: it exists so the tool's refusal on a truncated mask can be RUN —
+// `SATRUNS=1 … one.pdf` exits 6 on the first page that CARRIES COLOUR — rather than
+// reasoned about, which is CONTRIBUTING 4c. ⛔ Not "any page": a page whose mask is
+// entirely below the floor yields no runs at all, so `shapeComponents` returns `[]`
+// rather than `nil` and the row prints. See the guard's own comment below.
+//
+// ⚠️ **C27's TWO MASK TERMS are the last eight columns, added 2026-08-26.** The entry's
+// `#### ⛔ And the ten pages were LOOKED AT` proposed ONE signal — a locality or
+// largest-connected-region test — and the review of that diff refuted it from the dumped
+// masks: `Ford_1941` p5's largest component holds 88.2% of its counted pixels in one
+// border ring, so a locality test alone ranks the page it exists to reject top of the
+// corpus. The two terms it asked for instead are **outside the sheet**
+// (`edgeN`/`edgeShare`/`sheetFrac`) and **locality** (`satN`/`topPx`/`topShare`/
+// `topRun`), with `satPx` beside them so every share has its numerator. Read `MaskTerms`
+// for what each one is and for the false positive `edgeShare` cannot see. ⛔ **No bar is
+// proposed on any of them**: this entry has refused six single scalars.
 //
 // ⚠️ **This tool is C27's population instrument as well as C26's**, and the two
 // questions read different columns. C26 is about the 1-bit route erasing a mark;
@@ -192,6 +210,114 @@ func contentLostToThreshold(_ grey: [UInt8], width w: Int, height h: Int,
     return total > 0 ? Double(lost) / Double(total) : 0
 }
 
+// MARK: - C27's two mask terms
+
+/// The two terms C27's dumped masks asked for, taken over the **same pixels `satFrac`
+/// counts** and never over a second render.
+///
+/// `BUGS.md` C27 `#### ⛔ And the ten pages were LOOKED AT` proposed one signal — "a
+/// locality or largest-connected-region test" — and the review of that diff refuted it
+/// from the masks themselves: `Ford_1941` p5's largest component holds **88.2%** of its
+/// counted pixels in one border ring, against 44.7% on `Schwaller` p101 and 7.6% on
+/// `1954 - Why` p7, so a locality test *alone* ranks the page it exists to reject top
+/// of the corpus and the weakest real page nearly last. What the pictures said instead
+/// is that there are **two** problems and they want two terms:
+///
+///   * **Outside the sheet.** `Ford_1941` p5 is a photograph of a sheet on a darker
+///     surround and 88% of its counted pixels lie outside the paper; C26's
+///     `RIESMAN_1942` p10 is the same artefact charged against the other decision. The
+///     cheap form of "outside the sheet" is *connected to the border of the render*,
+///     which is the phrase that section already uses for it. `edgeShare` is that
+///     share, `edgeN` how many components carry it, and `sheetFrac` is `satFrac` with
+///     them discarded.
+///   * **Locality.** `HarpersMagazine-1938-05` p4 carries no ink of its own and reads
+///     2.0% — a page-wide cast of ~1,290 components whose largest is **6 px**. A mark
+///     is one region; a cast is thousands of specks. `satN`, `topPx`, `topShare` and
+///     `topRun` are that.
+///
+/// ⛔ **Neither is proposed as a bar.** This entry has refused six single scalars and
+/// both constants it is about are means; these are measurements, and the whole point of
+/// measuring them *separately* is that the one-signal version was refuted.
+///
+/// ⚠️ **`edgeShare` is a proxy and it is not the sheet's edge.** A real mark that runs
+/// to the trim — a bleed rule, a red band printed off the page — is border-connected
+/// too and is discarded by this term. That is a false positive this tool cannot tell
+/// from a scan surround, and the negative control for it is `sheetFrac` beside
+/// `satFrac` on a page whose colour is interior: on those two the columns are equal.
+struct MaskTerms {
+    /// Pixels above the floor — `satFrac`'s own numerator, recomputed here so the two
+    /// can be checked against each other rather than trusted.
+    let satPx: Int
+    /// 8-connected components of those pixels.
+    let satN: Int
+    /// How many of them touch the render's border, and how many pixels they hold.
+    let edgeN: Int, edgePx: Int
+    /// The largest component by area: its pixels, and the median of its own row runs
+    /// (`ShapeComponent.medianRun`, the stroke-width proxy — 2-6 px on a stem of type).
+    let topPx: Int, topRun: Int
+    /// The denominator both fractions are taken over: the thumbnail's pixel count.
+    let pixels: Int
+
+    var fraction: Double { pixels > 0 ? Double(satPx) / Double(pixels) : 0 }
+    /// `satFrac` with every border-connected component discarded.
+    var sheetFrac: Double { pixels > 0 ? Double(satPx - edgePx) / Double(pixels) : 0 }
+    var edgeShare: Double { satPx > 0 ? Double(edgePx) / Double(satPx) : 0 }
+    var topShare: Double { satPx > 0 ? Double(topPx) / Double(satPx) : 0 }
+}
+
+/// Both terms from one walk of the thumbnail, through production's own
+/// `forEachSaturation` and `shapeComponents`.
+///
+/// **One walk and production's correction, for the reason `saturatedFraction`'s doc
+/// comment already gives**: the von Kries correction exists once, and a second copy of
+/// it in a tool is R23's and R29's shape exactly. So this builds the mask from the
+/// values that function yields, in raster order, and hands it to the same component
+/// routine `pageMarks` uses.
+///
+/// `nil` — refuse, do not default — on either of the two ways this can fail to describe
+/// the page: a walk that did not cover it (`forEachSaturation` guards the buffer length
+/// itself and returns having yielded nothing, which would otherwise leave an all-false
+/// mask reading as *"no colour on this page"*, the most plausible-looking wrong answer
+/// available to a sweep whose whole question is which pages carry colour), and
+/// `shapeComponents` exceeding `runLimit`. `runLimit` is threaded through so the second
+/// branch can be *executed* rather than reasoned about — CONTRIBUTING 4c.
+func maskTerms(ofRGBA buffer: [UInt8], width: Int, height: Int, above floor: Double,
+               runLimit: Int = Flattener.maximumShapeRuns) -> MaskTerms? {
+    let pixels = width * height
+    guard pixels > 0 else {
+        return MaskTerms(satPx: 0, satN: 0, edgeN: 0, edgePx: 0, topPx: 0, topRun: 0,
+                         pixels: 0)
+    }
+    var mask = [Bool](repeating: false, count: pixels)
+    var seen = 0
+    Flattener.forEachSaturation(ofRGBA: buffer, width: width, height: height) {
+        if $0 > floor, seen < pixels { mask[seen] = true }
+        seen += 1
+    }
+    guard seen == pixels else { return nil }
+    guard let comps = Flattener.shapeComponents(mask, width: width, height: height,
+                                                x0: 0, y0: 0, x1: width, y1: height,
+                                                runLimit: runLimit)
+    else { return nil }
+    var satPx = 0, edgeN = 0, edgePx = 0, topPx = 0, topRun = 0
+    for c in comps {
+        satPx += c.area
+        // `minX == 0` means a run starts at column 0, i.e. the component holds a pixel
+        // there — so for these four the bounding box touching the border and the
+        // component touching it are the same statement, exactly, and not a bound.
+        if c.minX == 0 || c.minY == 0 || c.maxX == width - 1 || c.maxY == height - 1 {
+            edgeN += 1
+            edgePx += c.area
+        }
+        if c.area > topPx {
+            topPx = c.area
+            topRun = c.medianRun
+        }
+    }
+    return MaskTerms(satPx: satPx, satN: comps.count, edgeN: edgeN, edgePx: edgePx,
+                     topPx: topPx, topRun: topRun, pixels: pixels)
+}
+
 // MARK: - One columns array, one row printer
 
 /// CONTRIBUTING §5: a tool that prints a TSV gets one `columns` array and one `row(…)`
@@ -257,10 +383,23 @@ func contentLostToThreshold(_ grey: [UInt8], width w: Int, height h: Int,
 /// the page. `sweep-ink-bar.py` records a resume at a different `INKBAR` mixing two
 /// measurements into one file; a floor that exists only in the invoking shell is that
 /// defect waiting for its second run. `SATFLOOR=n` sets it, default 0.25.
+///
+/// **The last eight are C27's TWO MASK TERMS**, added 2026-08-26 and documented on
+/// `MaskTerms` above: `satPx` (`satFrac`'s own numerator, so a reader can recover the
+/// count), `satN`/`topPx`/`topShare`/`topRun` (locality — a mark is one region, a
+/// page-wide cast is thousands of specks), and `edgeN`/`edgeShare`/`sheetFrac`
+/// (outside the sheet — `satFrac` with every border-connected component discarded).
+/// They come **after** `satFloor` deliberately: appending leaves the 21 columns
+/// `THRESHOLD-LOSS-2026-08-18.tsv` and `SATFRAC-2026-08-19.tsv` hold at the same field
+/// indices, so both files stay readable by the same `cut -f` and the earlier figures
+/// stay checkable against a new run. `tsv-header-drift` is the queue item about the
+/// other direction.
 let columns = ["document", "page", "otsu", "ink", "tone", "sat", "lost",
                "extent", "cover", "cells", "factor", "route",
                "paleC", "besideInk", "paleTall", "inkTall", "unionTall",
-               "bandOnly", "bandTall", "satFrac", "satFloor"]
+               "bandOnly", "bandTall", "satFrac", "satFloor",
+               "satPx", "satN", "topPx", "topShare", "topRun",
+               "edgeN", "edgeShare", "sheetFrac"]
 
 // MARK: - Where the pale layer's cells went (C26 sub-step 2)
 
@@ -579,6 +718,172 @@ func selfTest() -> [String] {
                                      width: 32, height: 32)
     expect("cream stock corrects to no colour at all", cream < 0.0001,
            String(format: "%.6f", cream))
+
+    // C27's TWO MASK TERMS, on the shapes the dumped masks named. Every fixture is a
+    // 32x32 sheet of white paper with red pixels on it, so the floor and the paper
+    // correction are the same ones the column above was just checked with, and every
+    // asserted fraction is exact in binary (36/1024, 160/1024) — so these are `==`.
+    func sheet(_ set: (Int, Int) -> Bool) -> [UInt8] {
+        var out = [UInt8](repeating: 255, count: 1024 * 4)
+        for y in 0..<32 {
+            for x in 0..<32 where set(x, y) {
+                let i = (y * 32 + x) * 4
+                out[i] = 255; out[i + 1] = 0; out[i + 2] = 0
+            }
+        }
+        return out
+    }
+    func mark6(_ x0: Int, _ y0: Int) -> (Int, Int) -> Bool {
+        { x, y in x >= x0 && x < x0 + 6 && y >= y0 && y < y0 + 6 }
+    }
+    func terms(_ buffer: [UInt8], _ label: String) -> MaskTerms {
+        guard let t = maskTerms(ofRGBA: buffer, width: 32, height: 32, above: 0.25) else {
+            failures.append("mask terms refused the \(label) fixture")
+            return MaskTerms(satPx: -1, satN: -1, edgeN: -1, edgePx: -1, topPx: -1,
+                             topRun: -1, pixels: 1024)
+        }
+        return t
+    }
+    // The pair this term exists for. 36 single specks against one 6x6 mark: the SAME
+    // `satFrac`, exactly, and the same relationship to every bar that could be set on
+    // it — which is `HarpersMagazine-1938-05` p4 (a page-wide cast of ~1,290
+    // components, largest 6 px, no ink of its own) against a real mark, in 1,024
+    // pixels. If these two ever stop separating, the locality columns measure nothing
+    // and a corpus run taken with them is a page of plausible rows.
+    // The two buffers are HOISTED and not re-typed at their second use below. The
+    // review of this diff found the first version building each of them twice — once
+    // for `terms(…)` and again, character for character, for the `saturatedFraction`
+    // control — which is `score-shape-term`'s recorded hazard exactly: two inline
+    // copies held in sync by hand, so the control compares two buffers rather than two
+    // walks of one.
+    let castBuffer = sheet { x, y in x % 4 == 2 && y % 4 == 2 && x < 24 && y < 24 }
+    let ringBuffer = sheet { x, y in
+        x == 0 || x == 31 || y == 0 || y == 31 || mark6(10, 10)(x, y)
+    }
+    let speckled = terms(castBuffer, "scattered cast")
+    let mark = terms(sheet(mark6(10, 10)), "interior mark")
+    expect("satFrac cannot tell a cast from a mark",
+           speckled.satPx == 36 && mark.satPx == 36
+           && speckled.fraction == mark.fraction,
+           "\(speckled.satPx) vs \(mark.satPx) px, "
+           + String(format: "%.7f vs %.7f", speckled.fraction, mark.fraction))
+    expect("locality can", speckled.satN == 36 && speckled.topPx == 1
+                           && mark.satN == 1 && mark.topPx == 36,
+           "cast \(speckled.satN) comps / top \(speckled.topPx), "
+           + "mark \(mark.satN) comps / top \(mark.topPx)")
+    // The stroke-width proxy travels with it: a speck's own row run is 1 px, a 6x6
+    // mark's is 6. This is the column that says a cast is not thin type.
+    expect("topRun is the largest component's own run",
+           speckled.topRun == 1 && mark.topRun == 6,
+           "\(speckled.topRun) vs \(mark.topRun)")
+    // ⛔ And the T, because every fixture above is a SQUARE or a 1x1 speck, where
+    // `medianRun`, `width` and `height` are all the same integer — so `topRun` could
+    // have been the component's width or its height and the check above would still
+    // pass. Found by the review of this diff. This T has a 6-wide bar over a 1-wide
+    // stem: runs [6, 1, 1, 1, 1], median **1**, against width 6, height 6 and area 11,
+    // so it separates `medianRun` from all three at once.
+    let tee = terms(sheet { x, y in
+        (y == 20 && x >= 8 && x < 14) || (x == 10 && y >= 21 && y < 26)
+    }, "T-shaped mark")
+    expect("topRun is the median RUN and not the component's width, height or area",
+           tee.satN == 1 && tee.topPx == 11 && tee.topRun == 1,
+           "\(tee.satN) comps, top \(tee.topPx) px, run \(tee.topRun)")
+    // Outside the sheet. A border ring plus the same interior mark: `satFrac` counts
+    // both, `sheetFrac` counts only the mark — and it lands on the mark-only fixture's
+    // own `satFrac`, which is the identity that says the term subtracts the ring and
+    // nothing else. The two SHARE columns are asserted here too: the ring is both the
+    // border-connected set and the largest component, so `edgeShare` and `topShare`
+    // are the same 124/160 — and until the review of this diff neither column was read
+    // by any check at all, in a file where five committed rows exercise their
+    // divide-by-zero guard.
+    let ringed = terms(ringBuffer, "border ring plus mark")
+    expect("a border ring is counted by satFrac and discarded by sheetFrac",
+           ringed.satPx == 160 && ringed.edgeN == 1 && ringed.edgePx == 124
+           && ringed.sheetFrac == mark.fraction && ringed.fraction != ringed.sheetFrac
+           && ringed.edgeShare == Double(124) / Double(160)
+           && ringed.topShare == Double(124) / Double(160),
+           "\(ringed.satPx) px, \(ringed.edgeN) edge comps, \(ringed.edgePx) edge px, "
+           + String(format: "sheet %.7f vs mark %.7f, edgeShare %.7f, topShare %.7f",
+                    ringed.sheetFrac, mark.fraction, ringed.edgeShare, ringed.topShare))
+    // ⛔ The blank sheet, which is the case the two share columns' `satPx > 0` guards
+    // exist for and the one no check reached before this diff was reviewed. It is not
+    // hypothetical: FIVE of `C27-MASKTERMS-2026-08-26.tsv`'s 50 rows read `satPx` 0, so
+    // relaxing either guard to `>=` publishes `nan` in two columns on real pages while
+    // every other check here stays green.
+    let blank = terms(sheet { _, _ in false }, "blank paper")
+    expect("a page with no colour reads 0 in every share rather than nan",
+           blank.satPx == 0 && blank.satN == 0 && blank.edgeN == 0
+           && blank.topPx == 0 && blank.topRun == 0
+           && blank.fraction == 0 && blank.sheetFrac == 0
+           && blank.topShare == 0 && blank.edgeShare == 0,
+           "\(blank.satPx) px, \(blank.satN) comps, "
+           + String(format: "top %.7f edge %.7f sheet %.7f",
+                    blank.topShare, blank.edgeShare, blank.sheetFrac))
+    // `topPx` is the LARGEST component and not the first one found. A speck at row 2
+    // and a 6x6 mark at row 10 come back in raster order, so `comps.first` reads 1
+    // here and `max` reads 36 — the ring fixture above cannot see this, because there
+    // the largest component is also the first.
+    let late = terms(sheet { x, y in (x == 5 && y == 2) || mark6(10, 10)(x, y) },
+                     "speck before mark")
+    // `topShare` is asserted HERE and not only on the ring, because on the ring the
+    // largest component IS the border-connected set — `topPx == edgePx == 124` — so a
+    // `topShare` that returned `edgeShare`'s expression would pass there. On this
+    // fixture they are 36/37 and 0.
+    expect("topPx is the largest component, not the first",
+           late.satN == 2 && late.topPx == 36 && late.topRun == 6
+           && late.topShare == Double(36) / Double(37) && late.edgeShare == 0,
+           "\(late.satN) comps, top \(late.topPx) px, run \(late.topRun), "
+           + String(format: "topShare %.7f edgeShare %.7f", late.topShare,
+                    late.edgeShare))
+    // All four border clauses, one side at a time, with the inset as the negative
+    // control. An off-by-one in any of them — `maxX == width` rather than `width - 1` —
+    // reads as "nothing touches the border" on that side and silently promotes a scan
+    // surround into `sheetFrac`.
+    for (name, x0, y0, want) in [("left", 0, 10, 1), ("right", 26, 10, 1),
+                                 ("top", 10, 0, 1), ("bottom", 10, 26, 1),
+                                 ("inset by one", 1, 1, 0)] {
+        let t = terms(sheet(mark6(x0, y0)), name)
+        expect("a mark on the \(name) border is \(want == 1 ? "" : "not ")border-connected",
+               t.satPx == 36 && t.edgeN == want
+               && t.sheetFrac == (want == 1 ? 0 : mark.fraction),
+               "\(t.satPx) px, \(t.edgeN) edge comps, "
+               + String(format: "sheet %.7f", t.sheetFrac))
+    }
+    // The control the sweep itself runs on every row: these components are the pixels
+    // `satFrac` counted, so their total area over the page is that fraction. Two
+    // independent walks of one buffer, and the tool exits 6 if they ever disagree.
+    for (name, t, buffer) in [("cast", speckled, castBuffer),
+                              ("ring", ringed, ringBuffer)] {
+        let published = Flattener.saturatedFraction(ofRGBA: buffer, width: 32,
+                                                    height: 32, above: 0.25)
+        expect("the \(name) fixture's components are satFrac's own pixels",
+               t.fraction == published,
+               String(format: "%.7f vs %.7f", t.fraction, published))
+    }
+    // Both refusals, executed. A buffer too short for the page yields nothing at all
+    // from `forEachSaturation`, which would otherwise leave an all-false mask reading
+    // as a page with no colour on it; a run limit the mask exceeds is
+    // `shapeComponents`' own truncation, and `runLimit` is a parameter so this branch
+    // runs rather than being reasoned about (CONTRIBUTING 4c).
+    expect("a buffer too short for the page is refused, not read as colourless",
+           maskTerms(ofRGBA: [1, 2, 3], width: 32, height: 32, above: 0.25) == nil,
+           "something was measured")
+    expect("a mask over the run limit is refused",
+           maskTerms(ofRGBA: sheet { x, y in x % 4 == 2 && y % 4 == 2 },
+                     width: 32, height: 32, above: 0.25, runLimit: 1) == nil,
+           "something was measured")
+    // ⚠️ What this last one pins is the two `pixels > 0` ternaries on `fraction` and
+    // `sheetFrac` — relax either to `>=` and it goes red on a NaN. It does NOT pin the
+    // early return above them: delete that `guard` and the walk still yields nothing,
+    // `seen == 0 == pixels` passes, `shapeComponents` returns `[]` on its own `w > 0`
+    // guard, and the answer is identical. Said here rather than papered over, because
+    // `thumbnailSize` floors both dimensions at 1, so a zero-size page is unreachable
+    // from this tool's own call path and the early return is belt-and-braces by
+    // decision. Found by the review of this diff.
+    let empty = maskTerms(ofRGBA: [], width: 0, height: 0, above: 0.25)
+    expect("a zero-size page is 0 rather than NaN or nil",
+           empty?.satPx == 0 && empty?.fraction == 0 && empty?.sheetFrac == 0,
+           empty == nil ? "nil" : String(format: "%.7f", empty!.fraction))
     return failures
 }
 
@@ -621,6 +926,47 @@ if !(satFloor > 0 && satFloor < 1) {
     FileHandle.standardError.write(Data(
         ("SATFLOOR must be above 0 and below 1 (got \(satFloor)); saturation is "
          + "(hi - lo) / hi, so 0 counts every anti-aliased pixel and 1 counts none\n").utf8))
+    exit(2)
+}
+// The run limit `Flattener.shapeComponents` truncates at, exposed so the refusal above
+// it can be RUN from the command line rather than reasoned about — which is exactly why
+// the branch needs a seam if it is ever to execute.
+// ⛔ **`SATRUNS=1` refuses a page that CARRIES colour and NOT "any document"** — the
+// first draft of this comment said any, and the review of this diff traced it out:
+// `shapeComponents` trips the limit only inside its run-finding loop, and above that
+// sits `guard !runs.isEmpty else { return [] }`, so a page whose mask is entirely below
+// the floor yields zero runs, returns an empty list rather than `nil`, and prints a
+// complete row. Five of `C27-MASKTERMS-2026-08-26.tsv`'s own 50 rows are that shape
+// (`satPx` 0), so the counterexample is in this tool's own artefact.
+// ⚠️ It is a measurement knob and not a route: on a page with colour a limit below the
+// shipped one exits 6 rather than printing, so it cannot quietly put a truncated column
+// in a file — and `shapeComponents` returns `nil` or the whole list, never a partial
+// one, which is what makes that guarantee the list's and not this comment's.
+// ⚠️ **Do not reason the shipped 8,000,000 out of one page's size.** A draft here said
+// "a ~40 DPI thumbnail is ~150,000 pixels, so its runs cannot exceed half that"; that is
+// letter-at-40-DPI, and `maximumThumbnailEdge` is 4,000, so a thumbnail can be 16 M
+// pixels and an alternating field of one is 8 M runs — the limit exactly, not 50x clear
+// of it. This file's own rows recover denominators of 1.5 M to 3.2 M pixels
+// (`satPx / satFrac`), 10x-21x that draft's figure. C27's noise-floor lesson in a second
+// place: one page's number is not a bound.
+// ⛔ An unparseable value is REFUSED here where `PAGES` and `SATFLOOR` fall back,
+// deliberately: those two have a printed column saying which value produced the file and
+// this has none, so `SATRUNS=1O` would run normally and read as *"the refusal did not
+// fire"* — the one thing this knob exists to rule out.
+let satRunsRaw = ProcessInfo.processInfo.environment["SATRUNS"]
+if let raw = satRunsRaw, Int(raw) == nil {
+    FileHandle.standardError.write(Data(
+        ("SATRUNS is not a number (got \(raw)); it is the run limit `shapeComponents` "
+         + "truncates at, and it has no column, so a typo would read as the refusal "
+         + "not firing rather than as a bad value\n").utf8))
+    exit(2)
+}
+let satRuns = Int(satRunsRaw ?? "") ?? Flattener.maximumShapeRuns
+if satRuns < 1 {
+    FileHandle.standardError.write(Data(
+        ("SATRUNS must be at least 1 (got \(satRuns)); it is the run limit "
+         + "`shapeComponents` truncates at, and 0 refuses every page that carries "
+         + "colour\n").utf8))
     exit(2)
 }
 
@@ -685,6 +1031,31 @@ for path in argv {
                                       height: thumb.height)
         let satFrac = Flattener.saturatedFraction(ofRGBA: thumb.buffer, width: thumb.width,
                                                  height: thumb.height, above: satFloor)
+        // C27's two mask terms, over the SAME thumbnail and the same floor — never a
+        // second render, for the reason `saturationThumbnail`'s own doc comment gives.
+        guard let terms = maskTerms(ofRGBA: thumb.buffer, width: thumb.width,
+                                    height: thumb.height, above: satFloor,
+                                    runLimit: satRuns) else {
+            FileHandle.standardError.write(Data(
+                ("no mask terms for \(label) p\(i + 1) though the thumbnail rendered "
+                 + "(\(thumb.width)x\(thumb.height), run limit \(satRuns)); measuring "
+                 + "nothing rather than printing a page with no colour on it\n").utf8))
+            exit(6)
+        }
+        // The control, on every row rather than once in the self-test: these components
+        // ARE the pixels `satFrac` counted, so their total area over the page is that
+        // fraction, bit for bit — two walks of one buffer through two production
+        // functions, and the same integers over the same denominator. A divergence
+        // means the mask and the column have stopped describing one population, which
+        // is the whole premise of measuring the terms here instead of on a second
+        // render, so it refuses rather than prints.
+        guard terms.fraction == satFrac else {
+            FileHandle.standardError.write(Data(
+                ("mask terms and satFrac disagree on \(label) p\(i + 1): "
+                 + String(format: "%.7f from %d px against %.7f", terms.fraction,
+                          terms.satPx, satFrac) + "\n").utf8))
+            exit(6)
+        }
         let lost = contentLostToThreshold(grey, width: w, height: h, threshold: t)
         // The shipped shape signal, from the same grey buffer at the same threshold and
         // the same dpi `mrcLayers` computes — it renders `fullBox` at `rebuildDPI` from
@@ -750,7 +1121,20 @@ for path in argv {
                               // this tool refuses by name. A column that exists to say
                               // which floor produced the file must not round two accepted
                               // floors onto a refused one.
-                              String(format: "%.5f", satFloor)])
+                              String(format: "%.5f", satFloor),
+                              // C27's two mask terms. `satPx` is an integer count and
+                              // not a fraction on purpose: `satFrac` at %.5f cannot
+                              // resolve one pixel of a 150,000-pixel thumbnail, and
+                              // `topPx`/`topShare` are meaningless without the
+                              // numerator they are shares of — the same argument
+                              // `cells` and `factor` are printed for above.
+                              String(terms.satPx), String(terms.satN),
+                              String(terms.topPx),
+                              String(format: "%.5f", terms.topShare),
+                              String(terms.topRun),
+                              String(terms.edgeN),
+                              String(format: "%.5f", terms.edgeShare),
+                              String(format: "%.5f", terms.sheetFrac)])
         else {
             FileHandle.standardError.write(Data(
                 "row width does not match the \(columns.count) columns\n".utf8))

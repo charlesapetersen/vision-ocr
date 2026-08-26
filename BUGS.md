@@ -539,8 +539,20 @@ cast the paper correction left standing — 48x what another page of the same sc
 typescript's 4.08% is 88% photographed surround from outside the sheet. **So no bar on `satFrac`
 separates the populations, and neither does the single locality test first proposed here: measured,
 that would rank the scan-border page top of the corpus.** Two terms, not one — R56's lesson in a
-second place.
-Read C27's `#### The population, swept` and `#### ⛔ And the ten pages were LOOKED AT` before
+second place. ✅ **AND BOTH TERMS ARE MEASURED AS OF 2026-08-26, in `Tools/score-threshold-loss.swift`'s
+last eight columns and `C27-MASKTERMS-2026-08-26.tsv`** (50 rows: the 40 pages above the noise band plus
+10 same-scan controls, all 21 pre-existing columns reproducing `SATFRAC-2026-08-19.tsv` digit for digit
+on 50 of 50). ⛔ **"Two terms, not one" is now a measurement rather than an inference: each term
+separates exactly the artefact it was proposed for and NEITHER separates both** — `sheetFrac` puts
+`Ford_1941` p5 at 0.00448 against a floor of 0.01326 over the eight real-colour pages (2.96x) and is
+blind to `HarpersMagazine` p4 (`edgeN` 0, unmoved); `topPx` puts `HarpersMagazine` p4 at 6 px against a
+floor of 124 (20.7x) and is useless on `Ford_1941` p5, whose largest component is 55,743 px. The
+ordering improves — 68 of 104 real-against-already-keeping pairs inverted under `satFrac`, **27 of 104**
+under `sheetFrac` — ⚠️ but it does not reach zero, no bar is proposed, and this entry's own published
+*"0.49%"* for `Ford_1941` p5 was computed from the LOCALITY figure while stated as the outside-the-sheet
+one (`sheetFrac` is 0.00448).
+Read C27's `#### The population, swept`, `#### ⛔ And the ten pages were LOOKED AT` and
+`#### The two mask terms, MEASURED` before
 planning anything here; the constant is untouched and nothing shipped reads the fraction.
 **⚠️ That is no longer C26's population**: the term C26 turns on is `inkOutsideText`, and the sweep
 of *that* is a separate run — it is `INKBAR-2026-08-19.tsv`, below. **What was measured 2026-08-18 is
@@ -5021,6 +5033,11 @@ diluted by the surrounding type — a photograph whose saturated pixels cover 6.
 *quantity* of colour, which is biased away from the pages where colour carries meaning — a chart's
 coloured series is a little colour and all of the information. The unexamined pages above the noise
 band include `AI 2027` p24 and `Levy and Temin - 2007` p23/p45, modern reports of exactly that kind.
+⛔ **HALF OF THAT GUESS IS CONTRADICTED as of 2026-08-26 — see `#### The two mask terms, MEASURED`.**
+`AI 2027` p24 does carry one real mark (`topPx` **135**, `topRun` **27**), but `Levy and Temin` p23/p45
+read `satN` **1,046**/**1,077** with `topPx` **5** px — `HarpersMagazine` p4's page-wide-cast signature,
+not a chart's coloured series. ⚠️ Neither Levy page has been dumped, so that is the two terms putting
+them in a class and not a reading of the page.
 **C26 was reclassified from fidelity to an invariant-1 defect by this same "look at the pages" step**
 days earlier, so "fidelity" here means *on the ten looked at*.
 
@@ -5043,7 +5060,11 @@ days earlier, so "fidelity" here means *on the ten looked at*.
 * **`Ford_1941_Speech_` p5's colour is a small red library stamp, but that is not what was
   counted.** Measured by the review of this diff over the dumped mask: **88% of the counted pixels
   lie in the photographed border-connected surround *outside* the sheet**, and excluding them
-  leaves the page at **0.49%** — below `1954 - Why` p4's 1.36%. This page is the closest to the bar
+  leaves the page at **0.49%** — below `1954 - Why` p4's 1.36%. ⛔ **BOTH NUMBERS IN THAT SENTENCE ARE
+  CORRECTED 2026-08-26 — the border-connected share is 0.89016, the 88% is the LARGEST COMPONENT's
+  0.88223, and excluding the border-connected set leaves 0.448% rather than 0.49%.** The two sets are
+  within 0.8 points on this page, which is why one was quoted as the other; see
+  `#### The two mask terms, MEASURED`. The verdict does not move. This page is the closest to the bar
   in the whole corpus (`sat` 0.057 against 0.060), and what nearly promotes it is the scan's
   background. Compare C26's `RIESMAN_1942` p10, whose only non-stencil ink is a pale scanner-edge
   strip: the same artefact, charged against a different decision.
@@ -5052,7 +5073,10 @@ days earlier, so "fidelity" here means *on the ten looked at*.
 single test the first version of this section proposed.** It said the answer "looks like a locality
 or largest-connected-region test", and the review of this diff refuted that from the dumped masks:
 **`Ford_1941` p5's largest connected component holds 88.2% of its counted pixels in one border
-ring, against 44.7% for `Schwaller` p101 and 7.6% for `1954 - Why` p7** — so a largest-region test
+ring, against 44.7% for `Schwaller` p101 and 7.6% for `1954 - Why` p7** (⚠️ measured again through
+committed code 2026-08-26, `topShare` reads **0.88223**, **0.36367** and **0.06942** — the first
+reproduces and the other two, both on pages this entry flags as cold/warm divergent, do not; see
+`#### The two mask terms, MEASURED`) — so a largest-region test
 *alone* ranks the page it was meant to reject top of the corpus, and ranks the weakest real page
 nearly last. What the pictures actually say is that there are **two** problems and they need two
 terms: saturation **outside the sheet** has to be discarded (`Ford_1941` p5, and C26's
@@ -5089,10 +5113,11 @@ resolution, which is unmeasured. So nothing committed reads it cold today. It is
 would settle a floor — measured, it settled that there is no floor to settle.
 
 **What remains, and none of it is the constant.** The population is sized and the harm is
-characterised for the ten pages looked at; what is *not* measured is (a) the **two** terms the masks
-ask for — discarding saturation outside the sheet, and a locality term — separately rather than as
-the one signal this section first proposed and the review refuted, measured over the 40 pages above
-the noise band and including `1954 - Why` p4, which defines the bar and was never dumped,
+characterised for the ten pages looked at; ✅ **(a) the two terms the masks ask for — discarding
+saturation outside the sheet, and a locality term, separately rather than as the one signal this
+section first proposed and the review refuted — WAS MEASURED 2026-08-26 over exactly the set named
+here, the 40 pages above the noise band including `1954 - Why` p4: read
+`#### The two mask terms, MEASURED`.** So what is *not* measured is
 (b) **what keeping the colour costs in bytes** on those pages —
 the R49/R50 trade, unpriced here, and the reason this cannot be closed on the harm alone, and (c)
 that one number still gates both `isPicture` and `shouldKeepColour`, so nothing can be given back
@@ -5106,6 +5131,175 @@ so the route cost of moving the number is small and the argument against moving 
 The case against the number stands on the ordering: no value of it puts the ten above the pages that
 already clear it, because two of the ten carry no colour and one page that keeps its colour reads
 0.00236.
+
+#### The two mask terms, MEASURED — 2026-08-26
+
+**`Tools/score-threshold-loss.swift` prints them and `C27-MASKTERMS-2026-08-26.tsv` is the run** — 50
+rows in 26 documents: the **40 pages of `SATFRAC-2026-08-19.tsv` above the noise band**
+(`satFrac >= 0.0012`, this entry's own ~0.12%-at-0.25 floor) plus the other 10 sampled pages of those
+same documents as same-scan controls. **`1954 - Why` p4 is in it** — the page that defines the headline
+bar and the one page of the ten never dumped. ⚠️ **And note what sets the two headline margins below:
+`1954 - Why` p4 is the argmin of BOTH floors**, so the least image-verified page of the ten is the one
+pinning them. Eight columns, appended *after* `satFloor` so the earlier files keep their field indices
+and all three stay readable by the same `cut -f`: `satPx`, `satN`, `topPx`, `topShare`, `topRun`
+(locality) and `edgeN`, `edgeShare`, `sheetFrac` (outside the sheet). ⚠️ **The column counts are 12 /
+21 / 29, each a true prefix of the next** — `THRESHOLD-LOSS-2026-08-18.tsv` has **12**, not the 21 a
+first draft of this paragraph gave it, which is a field-count slip in the one sentence that is about
+field indices, in the register of a repo whose own gate row names three of those (T14, A12.3, T18).
+
+**The control first, because the terms are worth nothing without it.** All 21 pre-existing columns
+reproduce `SATFRAC-2026-08-19.tsv` **digit for digit on 50 of 50 rows**, and every row of the new file
+is a row of that one — so the eight appended columns moved nothing beneath them and the sampling is
+the same. Beside it, on **every row** rather than once in the self-test: the components' total area
+over the thumbnail must equal `satFrac` bit for bit — two walks of one buffer through two production
+functions, `forEachSaturation` and `shapeComponents` — and the tool **exits 6** rather than printing if
+they ever disagree.
+
+⛔ **THE RESULT: EACH TERM SEPARATES EXACTLY THE ARTEFACT IT WAS PROPOSED FOR AND NEITHER SEPARATES
+BOTH, so "two terms, not one" is a measurement now rather than an inference.**
+
+* `sheetFrac` — `satFrac` with every border-connected component discarded — puts **`Ford_1941` p5 at
+  0.00448** against a floor of **0.01326** over the eight real-colour pages, **2.96x** clear. It is
+  **blind** to `HarpersMagazine` p4, which has `edgeN` **0** and does not move at all (0.02017 either
+  way).
+* `topPx` — the largest component's area — puts **`HarpersMagazine` p4 at 6 px** against a floor of
+  **124 px** over the same eight, **20.7x** clear. It is **useless** on `Ford_1941` p5, whose largest
+  component is **55,743 px**, the **fourth** largest in the file. ⚠️ A draft said *sixth*, which is
+  that page's rank by **`satN`** (3,073) — two columns conflated in the sentence whose whole point is
+  that they are different terms. ⛔ **And do not read the two margins as comparable, or `topPx` as a
+  ranking**: one is a ratio of area fractions and the other of raw pixel counts spanning four orders of
+  magnitude, and as an *ordering* `topPx` is **worse** than the statistic it would replace — **81 of
+  104** real-against-already-keeping pairs inverted under `topPx` against **68 of 104** under
+  `satFrac`. It earns its place as half of a pair, not as a scalar.
+
+✅ **The published locality figure reproduces through committed code where the instrument note says it
+can.** `Ford_1941` p5's `topShare` reads **0.88223** against this entry's **88.2%**, and
+`2013 - Silicon Valley Program Transcript` p13/p26 read `satN` **2** with `topShare` **0.99985** —
+*"the whole count is the banner"*, in two integers. ⛔ **The two that do NOT reproduce are exactly the
+two pages this entry flags as cold/warm divergent** — `Schwaller` p101 **44.7% → 0.36367** and
+`1954 - Why` p7 **7.6% → 0.06942** — ⚠️ **but do not read that as explained**: the cold/warm gap on
+`Schwaller` p101's `satFrac` is +1.1% while its `topShare` moves **−18.64% relative**, so the arithmetic
+does not cover it. Two candidates, neither tested: the cold mask, and a connectivity difference in the
+original hand measurement (8-connected here, and 4-connected would move it the *wrong* way).
+
+⛔ **And the terms correct this entry's own arithmetic on the page the whole argument came from.** It
+published *"88% of the counted pixels lie in the photographed border-connected surround outside the
+sheet, and excluding them leaves the page at 0.49%"* — measured, the **border-connected** share is
+**0.89016** and the **largest component's** is **0.88223**, two different sets, and `sheetFrac` is
+**0.00448**, not 0.49%. The published 0.49% is `satFrac × (1 − 0.88)` — i.e. it was computed from the
+*locality* figure, rounded to two figures, while being stated as the outside-the-sheet one; the
+unrounded `satFrac × (1 − 0.88223)` is 0.481%, so even the locality reading does not give 0.49% at full
+precision. On this page the two shares are within 0.8 points,
+which is why the slip was invisible — and it is the one page where the two terms nearly coincide,
+because there the largest component **is** the border ring.
+
+✅ **The ordering improves, which is what this entry says the case against the constant rests on.**
+Over the eight real-colour pages against the **13** sampled pages that already keep their colour
+(`sat >= 0.06`): **68 of 104 pairs inverted under `satFrac`, 27 of 104 under `sheetFrac`** — 65.4% →
+26.0%, **2.5x fewer** — and the number of already-keeping pages ranked above each of the eight falls
+from **7–12** to **3–6**. ⚠️ A draft of this sentence said *seven* keepers while quoting the same
+denominator, which 8 × 7 = 56 refutes on its own; the count is **13**, and 441 − 428 = 13 is this
+entry's own — so **the keeper arm is the COMPLETE sampled keeper population, not a subset of it**,
+which is a strengthening the draft missed. ⛔ **Do not set 68 of 104 beside this entry's own "58 of
+5,564 pairs inverted"** — that is the *mean* over 13 × 428, this is `satFrac` against `sheetFrac` over
+8 × 13, and reading one against the other looks like a 63x deterioration. ⚠️ **Nor is the improvement
+in the term the entry's ordering case is about**: that case is against the **mean**, and nothing in
+this run measures the mean's ordering — 68 → 27 compares two candidate *replacements* for it.
+⚠️ **It does not reach zero and no bar is proposed**: the lowest
+already-keeping page reads `sheetFrac` **0.00019** (`Merriam_1920` p1, 99.7% border-connected), below
+all eight, so the populations still overlap at the bottom under both columns — and **three keepers
+(`Kelly_2014` p3, `1976 - Regis McKenna` p7, `Albanese_1997` p2) sit above all eight** under
+`sheetFrac`, so the pair separates the ten from the two artefacts and **not** from the pages that
+already clear the bar.
+
+⛔ **`satN` and `topRun` are refused as scalars, the same way the six before them were.** The cast is
+~1,290 components — but the **eight highest component counts in the file belong to pages whose largest
+component runs 7,109–178,219 px**, **five** of them pages that already keep their colour (**8 of 8** on
+`route == picture`; a draft said six, which is neither reading), so `satN` alone ranks a page carrying
+one big mark top. ⚠️ Not *"ranks a photograph top"*, which a draft said: the top-`satN` page is
+`1976 - Regis McKenna` p7, which is **not one of the ten and was never dumped**, so what is in the data
+is the huge largest component and not what is printed on the sheet. And **five of the 50 rows read
+`topRun` 1 while only three look like casts**: `_1967_Yearly Increase` p1 keeps its colour at `topRun` 1
+with `topPx` **159** (a hairline, not a speck), and `AI 2027` p48 is `topPx` 1 at `satFrac` 0.00005.
+Both need `topPx` beside them. ⚠️ **The five is exact and the three is CIRCULAR** — casts three and four
+are the `Levy and Temin` pages below, classified by these very columns on pages nobody has looked at, so
+the refusal rests on the two demonstrable non-casts and not on the count.
+
+⚠️ **The conjunction is a LEAD, and POST-HOC.** `sheetFrac >= 0.0132 AND topPx >= 124` selects **14 of
+50** — **8 of 8** real-colour pages, **0 of 2** artefacts (each excluded by a *different* term), and 6
+pages that already keep their colour. Both thresholds were read off these rows *after* seeing them,
+which is exactly the objection this entry raises against six shares. ⛔ **And it REJECTS the one page it
+was not fitted on**: `AI 2027` p24, which this section calls a real coloured mark two paragraphs down,
+reads `sheetFrac` **0.01298 — 1.67% under the bar**. So "8 of 8" is 8 of the 8 the thresholds were cut
+against and **8 of 9** against every page this entry calls real colour, with the only quasi-held-out
+case failing. What is not post-hoc is the 2.96x and 20.7x margins and the inversion count.
+⚠️ **One boundary to name rather than defend**: the population is `satFrac >= 0.0012`, a floor this
+entry itself retracted as a corpus constant (`HarpersMagazine` p4 reads 16.8x it), so it bounds the run
+and orders nothing. What keeps it honest is that *this entry* named "the 40 pages above the noise band"
+as the set to measure **before** the run, so the population is pre-registered rather than chosen after
+the fact.
+
+⚠️ **It also splits a guess this entry made about three unexamined pages, and one half of the guess is
+wrong.** `AI 2027` p24 has a real mark — `satN` 199, `topPx` **135**, `topRun` **27**, `edgeShare` 0 —
+as the entry supposed. **`Levy and Temin - 2007` p23 and p45 do not**: `satN` **1,046** and **1,077**
+with `topPx` **5** px and `topRun` **1**, which is `HarpersMagazine` p4's signature and not *"a chart's
+coloured series"*. ⚠️ Neither Levy page was dumped, so that is the terms putting them in a class and
+not a reading of the page.
+
+✅ **Watched failing, two one-token sabotages with DISJOINT red sets predicted by name before the
+run**: `if c.area > topPx` → `if topPx == 0` (take the first component rather than the largest) reds
+**exactly one** check, *"topPx is the largest component, not the first"*, at `2 comps, top 1 px, run
+1`; `c.maxX == width - 1` → `c.maxX == width` reds **exactly one**, *"a mark on the right border is
+border-connected"*, at `36 px, 0 edge comps`. Both exit **4**. The `late` fixture exists for the first
+— every other fixture's largest component is also its first — and the four-sides loop for the second,
+where only the right clause can catch a mark spanning x 26–31 of 32. ✅ Every refusal **runs** rather
+than being reasoned about (CONTRIBUTING 4c): `SATRUNS=1` exits **6** on `1954 - Why.pdf` (*"no mask
+terms for 1954 - Why p4 though the thumbnail rendered (440x340, run limit 1)"*), `SATRUNS=0` and
+`SATRUNS=1O` exit **2**, and the too-short buffer is in the self-test. ⚠️ None is in
+`Tools/fault-inject.sh` — watched by hand, and owed. ✅ A fresh build re-run of `1954 - Why.pdf`
+reproduces that document's two rows in the file on all 29 columns, which is determinism on this path
+rather than a control across a code change.
+
+⛔ **AND THE ADVERSARIAL REVIEW OF THIS DIFF FOUND THAT TWO OF THE EIGHT COLUMNS WERE ASSERTED BY
+NOTHING — `topShare` and `edgeShare` — which is the class this register has now recorded ELEVEN times.**
+Neither string appeared anywhere in the self-test. Both are `satPx > 0 ? … : 0`, and **five of this
+file's own 50 rows read `satPx` 0**, so relaxing either guard to `>=` publishes `nan` in a committed
+column on real pages with the whole self-test green. ✅ Three checks answer it and each was watched red
+by a one-token sabotage, again on **disjoint** predicted sets: a **blank-paper** fixture (`satPx >= 0`
+on `edgeShare` → red at `edge nan`); the **ring**, where both shares are the same 124/160; and — because
+on the ring the largest component *is* the border-connected set, so a `topShare` returning `edgeShare`'s
+expression would pass there — the **speck-before-mark** fixture, where they are 36/37 and 0
+(`Double(topPx)` → `Double(edgePx)` → red at `topShare 0.0000000`). ⛔ **The review also found `topRun`'s
+fixtures were all SQUARES or 1x1 specks**, where `medianRun`, `width` and `height` are one integer, so
+`topRun = c.width` passed everything: a **T** fixture answers it — runs [6, 1, 1, 1, 1], median **1**,
+against width 6, height 6 and area 11 — and `c.width` reds exactly that one check. ⚠️ Two findings
+recorded rather than fixed: the zero-size-page check pins the two `pixels > 0` ternaries and **not** the
+early return above them (delete that `guard` and the answer is identical), and `fault-inject.sh` still
+has no case. ⛔ **And one CODE-DOC claim of this diff's was measured false by the reviewer and is
+corrected in three places**: *"`SATRUNS=1` on any document is the refusal"*. `shapeComponents` trips its
+limit only inside the run-finding loop, above which sits `guard !runs.isEmpty else { return [] }`, so a
+page whose mask is entirely below the floor returns an empty list rather than `nil` and prints a
+complete row — the counterexample being those same five rows. The narrow claim that survives is the one
+that matters: `shapeComponents` returns `nil` or the whole list, never a truncated one, so a truncated
+column can never reach a file. ⚠️ A fourth: the header reasoned the shipped 8,000,000 out of *"a ~40 DPI
+thumbnail is ~150,000 pixels"*, which is letter-at-40-DPI; `maximumThumbnailEdge` is 4,000, so a
+thumbnail can be 16 M pixels and an alternating field of one is 8 M runs — the limit exactly. This
+file's own rows recover 1.5 M–3.2 M pixel denominators from `satPx / satFrac`, 10x–21x that figure. **One
+page's number is not a bound** — this entry's noise-floor lesson, in its own tool's comment.
+
+⚠️ **What this does NOT do.** Nothing in `Sources/` moves, no bar is proposed and the constant is
+untouched; **(b) the byte price and (c) the one number gating both `isPicture` and `shouldKeepColour`
+are exactly where they were**, and those two are now all that is left under this entry. `edgeShare` is
+a proxy for the sheet's edge and **is not** the edge: a bleed rule or a red band printed to the trim is
+border-connected too and would be discarded, a false positive no column here can tell from a scan
+surround — the negative control for it is `sheetFrac == satFrac` on a page whose colour is interior,
+which is **28 of the 50** rows (`edgeN == 0` holds on 33, but five of those carry no counted colour at
+all and `0 == 0` is not a control). ⚠️ Nor is it the *shipped* answer to a scanner rim, which is
+`Flattener.interiorWindow` — a second mechanism for the same idea, and nothing here compares the two.
+The 50 rows are a sample of 441, itself a sample of 16,987. And the
+eight columns say nothing about *what* the colour is: a colour photograph and a knockout banner are
+both "one big component" (`Schwaller` p101, `satN` 124 / `topPx` 3,464; `2013` p13, `satN` **2** /
+`topPx` 6,756).
 
 ### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — HALF FIXED (the shape term is WIRED 2026-08-22 and rescues 13 of the 16 measured losses; three hand-made marks remain, one of them unreachable from this seam)
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move

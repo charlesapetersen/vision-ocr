@@ -2477,10 +2477,10 @@ happens.**
       the populations, and the single locality test first proposed for it would rank that scan-border
       page top of the corpus — TWO terms, not one.** R56's lesson in a second place.
       Read `#### The population, swept` and `#### ⛔ And the ten pages were LOOKED AT`.
-      ⛔ **NEXT, and each is one bounded item:** (a) the **two mask terms measured separately** —
-      discarding saturation outside the sheet, and a locality term (`Flattener.pageMarks` has an
-      8-connected component routine already) — over the 40 pages above the noise band, and including
-      `1954 - Why` p4, which defines the headline bar and is the one page of the ten never dumped;
+      ⛔ **NEXT, and each is one bounded item:** ~~(a) the **two mask terms measured separately** —
+      discarding saturation outside the sheet, and a locality term — over the 40 pages above the noise
+      band, and including `1954 - Why` p4~~ — ✅ **(a) IS DONE 2026-08-26; see the block below and
+      `BUGS.md` C27 `#### The two mask terms, MEASURED`. Do not re-do it.**
       (b) **the byte price** of keeping colour on those pages, unpriced and the reason this cannot
       close on the harm alone (R49/R50's trade); (c) **split the one number** that gates both
       `isPicture` and `shouldKeepColour`, because nothing can be given back to the colour decision
@@ -2516,6 +2516,29 @@ happens.**
       text pages down the picture path and costs bytes on every one — the trade R49 and R50 were
       about. The entry argues the statistic is wrong rather than the number: a page with 3% of its
       area at 0.8 saturation is not a page with a uniform 0.03 cast, and a mean cannot separate them.
+      ✅ **ITEM (a) ABOVE IS DONE 2026-08-26 — the entry's TWO mask terms are MEASURED, so a session
+      starting here starts at (b), the byte price.** `Tools/score-threshold-loss.swift` gained eight columns
+      (`satPx`, `satN`, `topPx`, `topShare`, `topRun`, `edgeN`, `edgeShare`, `sheetFrac`) and a
+      `SATRUNS=n` seam, and `C27-MASKTERMS-2026-08-26.tsv` is the run — 50 rows in 26 documents: the 40
+      pages of `SATFRAC-2026-08-19.tsv` above the noise band plus 10 same-scan controls, **`1954 - Why`
+      p4 among them**, with all 21 pre-existing columns reproducing that file digit for digit on 50 of
+      50. **Do not re-run it and do not re-add the columns.** ⛔ The result to carry forward: **each
+      term separates exactly the artefact it was proposed for and NEITHER separates both** — `sheetFrac`
+      clears `Ford_1941` p5 at 0.00448 against a floor of 0.01326 (2.96x) and is blind to
+      `HarpersMagazine` p4; `topPx` clears `HarpersMagazine` p4 at 6 px against a floor of 124 (20.7x)
+      and is useless on `Ford_1941` p5 — so *"a locality term instead"* was still one term, and the
+      pair is what works. The ordering improves (68 of 104 inverted pairs under `satFrac`, **27 of
+      104** under `sheetFrac`) and `satN`/`topRun` are refused alone — as is `topPx`, whose own ordering
+      is **worse** than `satFrac`'s (81 of 104). ⚠️ **No bar is proposed, nothing
+      in `Sources/` moved, the pair does NOT separate the ten from the pages that already keep their
+      colour (three of those still outrank all eight), and the conjunction that does separate all ten is
+      post-hoc AND rejects the one page it was not fitted on (`AI 2027` p24, 1.67% under its own bar)** —
+      read `BUGS.md` C27 `#### The two mask terms, MEASURED` before proposing a rule. ⚠️ Two debts it
+      leaves: `Tools/fault-inject.sh` has no case for the three refusals (all watched by hand,
+      `SATRUNS=1` → exit 6 on a page carrying colour, `SATRUNS=0` and `SATRUNS=1O` → exit 2), and
+      **two** published largest-component shares do not reproduce — `Schwaller` p101's 44.7% (0.36367
+      here) and `1954 - Why` p7's 7.6% (0.06942) — both on pages the entry flags as cold/warm divergent,
+      and the arithmetic of that gap does not cover the first.
       (origin: BUGS.md C27)
 - [x] **depth-cap** — DONE 2026-08-23, as the decision below prescribes: `< 3` KEPT, both comments
       rewritten to state the frame-of-reference difference and to point at each other, and **nine checks**

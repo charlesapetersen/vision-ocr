@@ -1150,7 +1150,37 @@ correction left standing, 48x what another page of the same scan reads, and a 19
 is 88% photographed surround from outside the sheet. **So the noise floor is per-page, no bar on the
 fraction separates the populations either, and the single locality test first proposed would rank
 that scan-border page top of the corpus — two terms, not one.** R56's lesson in a second place.
-What remains: those two terms measured separately, the byte price of keeping the colour, and
+✅ **BOTH TERMS ARE MEASURED AS OF 2026-08-26 — `Tools/score-threshold-loss.swift`'s last eight columns
+and `C27-MASKTERMS-2026-08-26.tsv`, 50 rows: the 40 pages above the noise band plus 10 same-scan
+controls, with all 21 pre-existing columns reproducing `SATFRAC-2026-08-19.tsv` digit for digit on 50 of
+50** (`BUGS.md` C27 `#### The two mask terms, MEASURED`). ⛔ **"Two terms, not one" is now measured
+rather than inferred: each separates exactly the artefact it was proposed for and NEITHER separates
+both** — `sheetFrac` (`satFrac` with border-connected components discarded) puts `Ford_1941` p5 at
+**0.00448** against a floor of **0.01326** over the eight real-colour pages, **2.96x**, and is blind to
+`HarpersMagazine` p4 (`edgeN` **0**, unmoved at 0.02017); `topPx` puts `HarpersMagazine` p4 at **6 px**
+against a floor of **124**, **20.7x**, and is useless on `Ford_1941` p5, whose largest component is
+**55,743 px**. ✅ The ordering improves, which is what the entry says its case rests on: **68 of 104**
+real-against-already-keeping pairs inverted under `satFrac`, **27 of 104** under `sheetFrac`.
+⛔ **It corrects the entry's own arithmetic on the page the argument came from: the published *"0.49%"*
+for `Ford_1941` p5 was `satFrac × (1 − 0.882)`, i.e. computed from the LOCALITY figure while stated as
+the outside-the-sheet one — the border-connected share is 0.89016 and `sheetFrac` is 0.00448.** ⛔ **And
+`satN` and `topRun` are refused as scalars like the six before them**: the eight highest component
+counts belong to pages whose largest component runs 7,109–178,219 px (five of those eight already keep
+their colour, 8 of 8 by `route`), and 5 of the 50 rows read `topRun` 1 while only 3 *look like* casts —
+⚠️ and that 3 is circular, two of the three being classified by these very columns on pages nobody has
+dumped. ⛔ **`topPx` is not a ranking either: as an ordering it is WORSE than the column it would
+replace, 81 of 104 inverted pairs against `satFrac`'s 68.** ⚠️ No bar is proposed, nothing in
+`Sources/` moved, `edgeShare` is a proxy that would also discard a red band printed to the trim, and
+the pair separates the ten from the two artefacts but **not** from the pages that already clear the bar
+— three keepers still outrank all eight under `sheetFrac`. ⛔ **The conjunction that does separate all
+ten (`sheetFrac >= 0.0132 AND topPx >= 124`, 8 of 8 real and 0 of 2 artefacts) is POST-HOC and it
+REJECTS the one page it was not fitted on** — `AI 2027` p24, at `sheetFrac` 0.01298, 1.67% under its
+own bar.
+⚠️ It also contradicts half of a guess the entry made: `Levy and Temin - 2007` p23/p45 have
+`HarpersMagazine` p4's cast signature (`satN` 1,046/1,077, `topPx` 5) rather than the chart's coloured
+series the entry supposed, while `AI 2027` p24 does have a real mark — and neither Levy page was dumped,
+so that is the terms classifying them and not a reading. What remains: the byte price of keeping the
+colour, and
 separating the one number that gates both `isPicture` and `shouldKeepColour`. ⚠️ And one instrument fact from that run:
 `saturation(of:)` is **not a pure function of the page** — read cold it differs from read after a
 full-resolution render of the same page (`1954 - Why` p7: 0.02831 vs 0.03033), production renders grey
@@ -1305,7 +1335,8 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv`, `C29-CORPUS-2026-08-25.tsv`,
 `C30-VOIDS-2026-08-25.tsv`, `C30-TILES-2026-08-25.tsv`, `C29-MARKS-2026-08-26.tsv` and
 `GUTTER-RECONCILE-2026-08-26.tsv` + `GUTTER-SAMPLED-2026-08-26.tsv` +
-`GUTTER-BANDS-2026-08-26.tsv` + `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` — and are
+`GUTTER-BANDS-2026-08-26.tsv` + `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` and
+`C27-MASKTERMS-2026-08-26.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -1348,6 +1379,16 @@ so the count stays **five** while the list grows by two. ⚠️ **Nor are `GUTTE
 `GUTTER-BANDS-SHIPPED-2026-08-26.tsv`, a FOURTH time, and now there are FIVE `GUTTER-*` files of which
 exactly one is outside** — the two new ones come from the same committed tool's `--gutter` mode under
 `INKFLOOR=0.02` and at the shipped floor, so the count stays **five** while the list grows by two again.
+⚠️ **Nor is `C27-MASKTERMS-2026-08-26.tsv`, a FIFTH time, and here the trap is neither a prefix nor a
+neighbour — it is that `C27-` has never appeared in this list before, so a reader has no prior to go on.**
+It comes from `Tools/score-threshold-loss.swift`, whose self-test runs on **every invocation** and refuses
+to measure if it fails, so the count stays **five** while the list grows a fifth time. ⚠️ Do not read the
+run of ⚠️ notes above as "everything with a `C`-prefix was outside once": `C30-VOIDS` and `C30-TILES`
+never were, and this file never was either. What it does have is both halves of the discipline at once —
+its 21 pre-existing columns reproduce `SATFRAC-2026-08-19.tsv` digit for digit on 50 of 50 rows, so it is
+checkable against an earlier artefact *and* re-derivable from the tree. ⚠️ Not a superlative: `C29-MARKS`
+and `WIDEN-STENCIL` also reproduce an earlier artefact, and a draft of this sentence called it "the
+strongest statement of the rule so far", which is the form this register has already refused twice.
 The rule this count actually draws is *"reproducible from nothing in the tree"*, and it is worth
 re-deriving from the list rather than counting prefixes. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file
