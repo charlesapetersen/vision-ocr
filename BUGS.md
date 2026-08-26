@@ -34,10 +34,18 @@ place), `assemble` REFUSES such a page rather than skipping it, `JBIG2.splice` i
 user's own file, and `overlay` takes a page list passed as BOTH `--from` and `--to` so the spliced page is
 never stamped and never wrapped in the form XObject C23 measured translating a cropped page by (50, 96).
 ⛔ **Two refusals: an OUTLINE (`--empty --pages` drops the `/Outlines` tree) — 16 of the 42 affected
-corpus documents, so 26 of 42 get the splice — and a READER'S MARK on the passthrough page, which is a
+corpus documents — and a READER'S MARK on the passthrough page, which is a
 REGRESSION guard and not a byte one: measured, the splice carries `/Annots` and the `/Highlight` behind it, so
 the transplant would add a second copy and then refuse the whole document.** Fixture 49,425 B on both arms
 before, **44,970 against 49,425** after; suite **1,281 -> 1,314**.
+✅ **BOTH REFUSALS ARE PRICED ON THE POPULATION AS OF 2026-08-26 AND THE ANSWER IS 22 OF 42, NOT THE 26 THIS
+FILE PUBLISHED — the two are DISJOINT, 16 with an outline and 4 with a mark**
+(`Tools/score-annot-marks.swift`, `C29-MARKS-2026-08-26.tsv`,
+`#### The population re-measured, 2026-08-26`). ⛔ **The `/Annots`-count clause the re-measurement was
+opened for fires on 0 of the 392 born-digital pages** — `rawAnnots == surfacedN` on 392 of 392 — so the
+figure moved for the ORDINARY reason, a real highlight on a born-digital page in 4 documents. ✅ The outline
+column reproduces the published 16 through PDFKit where the original used `qpdf`. ⛔ **`/Link`'s exclusion is
+what makes the fix reach anything: 776 of the 830 annotations on those pages are links.**
 ⛔ **THAT REFUSAL'S PREDICATE ANSWERED "NO MARKS" WHERE IT COULD NOT SEE, and its seven review findings are
 WORKED as of 2026-08-26 — `#### The seven review findings, WORKED`.** `Annotations.anyCopiableMark` read
 `false` on a file PDFKit could not open at all, which sends it to the splice where a missed mark is copied
@@ -223,7 +231,7 @@ prescription is refused and the ingredient is still unknown. ⚠️ Still an ins
 moved, `Recogniser` has no tiling seam, and the time cost of `n` requests a page is unmeasured.
 ✅ **AND THAT SECTION'S OWN OWED DEBT IS DISCHARGED THE SAME DAY — the tool's refusals are WATCHED**
 (`#### The tool's refusals, WATCHED as of 2026-08-25`): `Tools/fault-inject.sh text_voids`, **8 rows**,
-`8 passed, 0 failed`, the FOURTH Swift tool of the thirty-one in `Tools/` whose own refusals any case
+`8 passed, 0 failed`, the FOURTH Swift tool of the thirty-two in `Tools/` whose own refusals any case
 exercises.
 ⛔ **The finding is worth more than the green: with the two new terms cut out of the exit-7 condition the
 tool still PRINTS `⛔ 2 TEXT DUMPS FAILED TO WRITE` and exits 0** — a loud diagnostic under a green status,
@@ -9897,7 +9905,9 @@ byte cost on a mixed document — ⛔ **MEASURED 2026-08-25, +936,161 B / 3.13x,
 "unmeasured" is spent — ✅ **and (B) is now SHIPPED, 2026-08-25: `#### (B) SHIPPED`, the born-digital page
 spliced into the JBIG2 document with `qpdf --empty --pages` so one such page no longer costs every other page
 its compression, refused only on a document with an outline (16 of the 42) or a reader's mark on the
-passthrough page (which would otherwise make the transplant refuse the whole file)** — and so what keeps this
+passthrough page (4 of the 42, disjoint from those 16, measured 2026-08-26 — so **22 of 42 get the splice**
+and the 26 this entry published is retracted; which would otherwise make the transplant refuse the whole
+file)** — and so what keeps this
 entry open is **the 120-character bar alone**, under which a short
 born-digital page is still rasterised and is now named by no report line at all. Read that section before
 anything else here: the title and the whole account below it describe the behaviour **before** the fix.
@@ -10775,10 +10785,12 @@ is measured on the *rebuilt* sheet, whose media box was normalised to the origin
    is not in that file has nowhere to send an entry pointing **at** the passthrough page. A document with
    both keeps exactly today's behaviour — the Flate route, correct and larger. **Priced, not guessed: 16 of
    the 42 affected corpus documents carry an outline** (`qpdf --json --json-key=outlines` over all 42 of
-   `C29-CORPUS-2026-08-25.tsv`, 2026-08-25), so **26 of 42 get the splice** — and `1954 - Why.pdf` is not
-   one of the 16, so the document this entry's 3.13x came from is in the benefiting set. ⚠️ That 26 was
-   measured against the mark predicate as it stood on 2026-08-25 and has **not** been re-measured against
-   the `/Annots`-count clause added the next day; see `#### The seven review findings, WORKED`.
+   `C29-CORPUS-2026-08-25.tsv`, 2026-08-25) — and `1954 - Why.pdf` is not
+   one of the 16, so the document this entry's 3.13x came from is in the benefiting set. ⛔ **This said
+   "so 26 of 42 get the splice", which subtracted only ONE of the two refusals. Measured 2026-08-26 it is
+   22 of 42** — the mark refusal takes four more, disjoint from these sixteen —
+   `#### The population re-measured, 2026-08-26`. ✅ That section also re-reads this very column with
+   `SearchableWriter.readOutline` instead of `qpdf` and gets **16** again, `1954 - Why.pdf` at 0.
 2. **A reader's mark on a passthrough page.** ⛔ **Measured, and it would have made a document FAIL to
    publish**: `qpdf --empty --pages` carries `/Annots` and the `/Highlight` behind it (PDFKit-built
    two-page fixture, 1 highlight in and 1 highlight out), so the spliced page arrives already holding the
@@ -10970,9 +10982,111 @@ moved below its own `removeItem`.
 and the four unmodelled subtypes other than `/Polygon` are reasoned rather than measured. ⛔ **And the clause
 is new on the path EVERY mixed document takes while the published "26 of 42 get the splice" was measured
 without it** — a `null` left in `/Annots` by an incremental update is counted here and not surfaced by PDFKit,
-so that document silently loses (B)'s compression. The re-measurement is cheap (PDFKit only, no qpdf, no
-rebuild, over `C29-CORPUS-2026-08-25.tsv`'s 42) and is carried as the queue's `c29-count-clause-corpus`. And
-the **120-character bar** is still untouched.
+so that document silently loses (B)'s compression. ✅ **THAT RE-MEASUREMENT RAN 2026-08-26 and the answer is
+22 of 42; see the next section.** And the **120-character bar** is still untouched.
+
+#### The population re-measured, 2026-08-26 — 26 of 42 is 22 of 42, and the new clause is not why
+
+`Tools/score-annot-marks.swift` (new), `C29-MARKS-2026-08-26.tsv`, **392 born-digital pages in the 42
+documents of `C29-CORPUS-2026-08-25.tsv`**. The queue item was `c29-count-clause-corpus`, opened because the
+`/Annots`-count clause landed on the path every mixed document takes a day *after* the population figure was
+published.
+
+⛔ **THE CLAUSE THE ITEM WAS OPENED ABOUT NEVER FIRES ON THIS POPULATION, and the column that carries that is
+`rawAnnots` against `surfacedN`, equal on 392 of 392 rows** — so on this corpus PDFKit surfaces every entry
+the page's own `/Annots` array holds, and the concrete shape the item named, *a `null` left in `/Annots` by an
+incremental update*, does not occur. `nilN` is 0 on all 392 and no page read `blind`. ⚠️ **Read that off
+`rawAnnots`/`surfacedN` and NOT off the `clause=count 0`, which is a weaker statement**: the label names the
+*decisive* clause, so a page holding both a mark and a hidden annotation would read `subtype` while the clause
+fired. The equality is what excludes it. The clause costs this population nothing, and its only demonstrated
+bite is still the unit row over synthesized counts that `pageCarriesMark`'s own comment already admits.
+
+⛔ **BUT THE FIGURE MOVES ANYWAY, AND IT IS THE ORDINARY ANSWER THAT MOVES IT: 26 of 42 → 22 of 42.** Four
+documents carry a **real reader's mark on a born-digital page** — `clause=subtype` on **8 pages in 4
+documents** — and so keep the Flate route. The two refusals are **DISJOINT**: 16 with an outline, 4 with a
+mark, 0 all-passthrough, 20 refused, **22 eligible**. The four are `Canby_1929_Comment on Several Subjects`
+(p3-p4, 19 marks — 11 `/Highlight`, 4 `/Underline`, 2 `/FreeText`, 2 `/Text`),
+`Davis_2005_Optimism of the Will_Nation` (p2-p4),
+`Kazin_1955_The Writer and the ` (p6) and `Kelly_2014_Orders of Magnitude_TLS` (p1-p2, 25 marks with five
+`/Stamp`, all five on p1 and all five of this file's). ⚠️ **Both parenthesised breakdowns were wrong in a
+first draft — "a `/Text`" and "four `/Stamp`" — while the histogram three paragraphs down said 2 and 5**, so
+the section contradicted itself in the direction of the smaller number; the review of this diff counted them.
+So the refusal is doing exactly what it was written for: those are the documents on which a spliced
+page would have arrived already holding the mark and `transplant`'s `found.count == wanted.count` would have
+**refused the whole file**.
+
+✅ **The control: the outline column reproduces the published 16 through a DIFFERENT READER.** That 16 came
+from `qpdf --json --json-key=outlines`; this run asks production's own `SearchableWriter.readOutline` (PDFKit)
+and reads 16 as well, with `1954 - Why.pdf` at `outlineN` 0 exactly as `#### (B) SHIPPED` said. That is the
+only cross-check here across two *different* readers. ⚠️ **There is a second, weaker one, and a first draft of
+this section discarded it with a false universal** ("nothing else in it is cross-checked"):
+`(doc, digitalN)` and `(doc, pages)` reproduce `C29-CORPUS-2026-08-25.tsv`'s `digitalPages` and `pages` on
+**42 of 42**. Same `Flattener.digitalTextPages` both times, so it is a determinism re-run rather than two
+readers — the distinction this register draws for `SHAPETERM-BYTES-2026-08-21.tsv` — but it is what says the
+shell glob resolved the intended 42 files, on filenames holding spaces and U+00A0. Refuted by the adversarial
+review of this diff, which ran the `diff`.
+
+⛔ **`/Link`'s exclusion from `copiedSubtypes` is what makes the fix reach anything at all, and the numbers
+say so loudly**: **776 of the 830** annotations on those 392 pages are `/Link` (36 `/Highlight`, 9
+`/Underline`, 5 `/Stamp`, 2 `/Text`, 2 `/FreeText`), and the 22 eligible documents carry **253** of them
+across 56 pages — **240 of the 253 on `Batzell`'s 51 pages alone**, the other 13 spread over five documents
+at 2 or 3 each. ⚠️ A first draft wrote 253 for Batzell, double-using the total from the sentence before it.
+Move `/Link` into the set and the splice refuses most of its own population — which is the reasoning
+`copiedSubtypes`' comment gives, priced on the population it matters on.
+
+**The instrument, and why its clause label is not `alltext-replica` again.** `pageCarriesMark` returns one
+`Bool` and cannot say which of its four routes to `true` fired, which is the whole question. So `clauseOf`
+never re-implements it: it calls the shipped predicate again with one clause neutralised and reads the
+difference — `rawAnnotationCount: surfaced.count` makes the `>` comparison false while leaving the subtype
+loop alone, `surfaced.compactMap { $0 }` removes the `nil` half of that loop. ⛔ **The label therefore names
+the clause that is DECISIVE, not the one that returns first**, and that distinction is the measurement: in
+the shipped predicate a page holding both a `/Highlight` and a longer `/Annots` array returns from the *count*
+clause, and calling that page `count` would have credited the new clause with a document the highlight had
+already refused. ⚠️ **The tool's own header asserted the other priority and its `--self-test` refused it on
+the first run** — `(["Highlight"], raw: 3)` — which is why the sentence above is a measurement rather than a
+claim. Watched failing, predicted before each build, three one-token sabotages with **disjoint** kill sets:
+neutralising with `rawAnnots` instead of `surfaced.count` reds **exactly 4** — the two `count` cases, each on
+both its label row and its law row; cutting `spliceEligible`'s mark refusal reds **exactly 2**, the one corner
+of the eight where the two differ plus the "exactly one corner splices" row beside it; and making
+`labelViolations` return `[]` unconditionally reds **exactly 9**, group 1c and nothing else. ⚠️ The first two
+counts were **3 and 1** before the review's finding below was worked: A's lost third check was the
+table-coverage row, which now reads the *expected* labels rather than the computed ones and so cannot move
+under a `clauseOf` sabotage at all — the relabelling, not a loss.
+
+⛔ **AND THE ELEVENTH CHECK IN THIS PROJECT'S HISTORY THAT COULD NOT FAIL WAS IN THIS FILE'S OWN FIRST DRAFT —
+fifteen of them, plus the whole of exit 6.** Each self-test case asserted its label *and* that
+`clause != .none` equalled `Annotations.pageCarriesMark` on the same inputs; the same comparison guarded every
+real page. But `clauseOf` returns `.none` from exactly one place — its opening guard, which **is** that call —
+so the check re-evaluated one pure function twice and could never differ. Measured rather than reasoned by the
+adversarial review of this diff: an exhaustive probe over every array of length 0-3 drawn from
+`{nil, Highlight, Link, Widget, Ink}` against `raw ∈ [-2, 5]`, **1,728 inputs, 0 violations under the shipped
+probe and 0 under two sabotages of it that break every label**. Worse than idle: the failure that matters is a
+mislabel *among* `count`/`subtype`/`nilType`/`blind`, and a comparison collapsing all four to "is it a mark"
+is structurally blind to it. ✅ **Replaced by `labelViolations`, laws relating the label to the PRINTED
+COLUMNS** — `blind` ⟺ `rawAnnots < 0`, `count` ⟹ `rawAnnots > surfacedN`, `nilType` ⟹ `nilN > 0`, `subtype`
+⟹ a `copiedSubtypes` member surfaced, `none` ⟹ none of those — which read the columns and the subtype *set*
+and never the predicate's control flow, so they are independent of the probe and live on real pages. Group 1c
+is nine deliberately WRONG labels each of which must be refused, so the laws cannot themselves go vacuous:
+that is the lesson of the tenth such check written as a check. ⛔ **And the self-test was flag-gated, which
+reverses this register's own decision** (`#### The self-test that nothing runs`): seven of the eight other
+Swift tools here run theirs unconditionally, the hook runs `--self-test` for staged `Tools/*.py` only, so a
+flag-gated Swift self-test is type-checked and never executed. It is unconditional now, and the printed count
+is a counter rather than a literal — **61 checks** in six groups. ✅ **And the rebuilt tool reproduces
+`C29-MARKS-2026-08-26.tsv` BYTE-IDENTICALLY over the same 42 paths, exit 0**, so the committed artefact is
+what the *revised* instrument prints and the new laws hold on all 392 real rows rather than only on
+fixtures.
+
+⚠️ **What it does NOT measure, and the column says so.** `splice` is eligibility at the **three cheap terms**
+of `Model.swift:2300-2305` — the outline, the mark, `encoded.count > carriedThrough.count`. The other three
+(`wantJBIG2`, `encoded.count == expected` / `== bitmaps.count`, `JBIG2.merger`) need a setting, a whole
+`flatten` plus a `jbig2enc` pass, and `qpdf` on `PATH`, and none of them is asked. A document this file calls
+`splice=yes` can still take the Flate route. ⚠️ `spliceEligible` **is** a replica of that three-term subset —
+the call site is inline in a 400-line function and cannot be called — pinned by a truth table and by nothing
+else, which is `score-text-route`'s `verdict` column's failure mode (three repairs of one `let`).
+⚠️ **And the scale of a real splice is now known to be far larger than anything that has been run**:
+`Schwaller - 2026` is **167 passthrough pages of 300** and `Batzell` **51 of 54**, both `splice=yes`, where
+every end-to-end run in this entry has had one passthrough page. Nothing here executed a splice, so that is a
+population fact and not a verification.
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
 
@@ -11583,7 +11697,8 @@ sabotage was run against it.
 census that was wrong three ways.** The draft left it flag-gated and said "the pre-commit hook runs
 `--self-test` for staged `Tools/*.py` only, so all eight Swift tools carrying one — this is the ninth — are
 type-checked and never run", recording the gap instead of closing it. Measured by opening the eight files:
-**seven** other Swift tools carry a self-test, **six of them run it unconditionally**
+**seven** other Swift tools carry a self-test — **eight since `score-annot-marks` landed on 2026-08-26**
+— **six of the seven ran it unconditionally, seven of the eight do now**
 (`score-line-separation`, `score-mrc`, `score-routing-census`, `score-run-width`, `score-text-route`,
 `score-threshold-loss` — and `score-text-route:476-478` states the reason, *"cheap enough to be
 unconditional"*), `score-shape-term` is the **only** flag-gated one, and **`score-skew` has none at all**
@@ -11592,7 +11707,9 @@ minority pattern as the norm while arguing for it from the absence of a gate. �
 majority**: `selfTest()` runs before anything is measured and exits 5 on failure, and `--self-test` just
 does that and stops. The gate's absence is real and unchanged — a flag-gated Swift self-test is type-checked
 by `check-tools-compile.sh` and never run — but it now applies to exactly **one** tool, `score-shape-term`,
-which is worth its own item and is not touched here.
+which is worth its own item and is not touched here. ⚠️ **`score-annot-marks` was drafted flag-gated on
+2026-08-26 and its own adversarial review cited this paragraph to refuse it**, so the census above is what
+kept that count at one; it would otherwise read two.
 
 ⛔ **THE BLIND SPOT THAT CHANGES WHAT EVERY NUMBER ABOVE MEANS, and it is the adversarial review of this
 diff's sharpest find: COVERAGE IS ROW-WISE, so a box anywhere on a row covers the whole row.** `x` is

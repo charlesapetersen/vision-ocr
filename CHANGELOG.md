@@ -20,10 +20,11 @@ layered-image saving with it, so a mixed file came out much larger: measured on 
 born-digital first page, 1.4 MB instead of 0.4 MB, and nine tenths of that difference was the layering rather
 than the compression itself. The kept page is now put back into the compressed document instead of the
 document being rebuilt the old way. Two files still take the old, larger route, deliberately: one that has
-bookmarks, because the step that puts the page back cannot carry a bookmark tree across — 16 of the 42 such
-documents in the test corpus have bookmarks — and one with a highlight or a note of your own on a
-born-digital page, because that page arrives already carrying the mark and copying it again would put two
-there. Both come out correct, only larger (BUGS.md C29).
+bookmarks, because the step that puts the page back cannot carry a bookmark tree across, and one with a
+highlight or a note of your own on a born-digital page, because that page arrives already carrying the mark
+and copying it again would put two there. Both come out correct, only larger. Measured over the 42 such
+documents in the test corpus: 16 have bookmarks and 4 have a mark of their own on such a page, so 22 are
+refused for neither reason (BUGS.md C29).
 
 **A page that already has real text of its own is now kept as it is, instead of being turned into a picture
 and re-read.** This is the fix for the report described in the next entry. Making a mixed PDF searchable used

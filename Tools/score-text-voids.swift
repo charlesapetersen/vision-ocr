@@ -222,14 +222,16 @@
 // ⛔ **THE SELF-TEST RUNS ON EVERY INVOCATION**, not only under `--self-test`, and refuses
 // to measure anything if it fails. That is `score-mrc`, `score-threshold-loss`,
 // `score-text-route`, `score-line-separation`, `score-routing-census` and
-// `score-run-width`'s pattern — six of the seven other Swift tools here that have one —
+// `score-run-width`'s pattern — seven of the EIGHT other Swift tools here that have one,
+// `score-annot-marks` having joined them on 2026-08-26 —
 // and `score-text-route:476-478` states the reason: "cheap enough to be unconditional".
 // It is a few hundred microseconds on three 200x300 buffers.
 // ⚠️ **The reason it is unconditional is a gate that does not exist**: the pre-commit hook
 // runs `--self-test` for staged `Tools/*.py` only, so a flag-gated Swift self-test is
 // type-checked by `check-tools-compile.sh` and never run. ⚠️ A first draft of this header
 // said "all eight Swift tools carrying one … are never run", and the census is wrong three
-// ways: seven others carry one, **six run it unconditionally**, `score-shape-term` is the
+// ways: seven others carried one on 2026-08-25 and **eight do since
+// `score-annot-marks` landed**, **all but one run it unconditionally**, `score-shape-term` is the
 // only flag-gated one, and `score-skew` has none at all (its `Deskew.selfTest` is a
 // production per-page check, not a tool self-test). The minority pattern was being
 // presented as the norm; this file now follows the majority instead of documenting a gap.
@@ -820,7 +822,7 @@ let args = CommandLine.arguments
 
 // UNCONDITIONAL, before anything is measured: `score-mrc`, `score-threshold-loss`,
 // `score-text-route`, `score-line-separation`, `score-routing-census` and
-// `score-run-width`'s pattern, six of the seven other Swift tools here that have a
+// `score-run-width`'s pattern, seven of the eight other Swift tools here that have a
 // self-test. `score-text-route:476-478` gives the reason — "cheap enough to be
 // unconditional" — and the gate that would otherwise run it does not exist: the
 // pre-commit hook runs `--self-test` for staged `Tools/*.py` only.

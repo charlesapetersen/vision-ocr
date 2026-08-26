@@ -219,12 +219,19 @@ enum Annotations {
     /// ⚠️ The false-positive direction is admitted: a page whose `/Annots` holds
     /// links PDFKit hides reads `true` and keeps the old route, which costs bytes
     /// on a document that would have been safe. That is the trade this whole
-    /// function is written around. ⚠️ **Unmeasured on the corpus**: this clause is
-    /// new on the path every mixed document takes, and the published "26 of 42
-    /// get the splice" was measured against the predicate without it. A `null`
-    /// left in `/Annots` by an incremental update would be counted here and not
-    /// surfaced by PDFKit, costing that document (B)'s compression silently.
-    /// Carried as the queue's `c29-count-clause-corpus`.
+    /// function is written around.
+    /// ✅ **MEASURED ON THE CORPUS 2026-08-26, and this clause costs it nothing:
+    /// it fires on 0 of the 392 born-digital pages in the 42 affected documents,
+    /// with `rawAnnots == surfacedN` on 392 of 392** — so on this corpus PDFKit
+    /// surfaces every entry the page's own `/Annots` array holds, and the `null`
+    /// left by an incremental update that motivated the clause does not occur.
+    /// `Tools/score-annot-marks.swift`, `C29-MARKS-2026-08-26.tsv`, `BUGS.md` C29
+    /// `#### The population re-measured, 2026-08-26`. ⛔ **The population figure
+    /// moved anyway — 26 of 42 is 22 of 42 — for the ORDINARY reason**: four
+    /// documents carry a real highlight on a born-digital page, disjoint from the
+    /// sixteen with an outline. That is this function refusing correctly, not a
+    /// defect. ⚠️ So the clause stays on a narrower footing than before: one
+    /// synthesized unit row, and now a population on which it is idle.
     static func pageCarriesMark(surfaced: [String?],
                                 rawAnnotationCount: Int) -> Bool {
         guard rawAnnotationCount >= 0 else { return true }

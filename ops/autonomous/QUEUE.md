@@ -1750,7 +1750,7 @@ happens.**
   - [x] **c30-refusals** — **DONE 2026-08-25. The debt the `c30-tiles` box named as "the sharpest thing left
         on this tool" is paid: `Tools/fault-inject.sh text_voids`, 8 rows, `8 passed, 0 failed`.** Do not
         re-derive it. `BUGS.md` C30 `#### The tool's refusals, WATCHED as of 2026-08-25` carries it.
-        `score-text-voids` is the **fourth** Swift tool of the thirty-one in `Tools/` whose own refusals any
+        `score-text-voids` is the **fourth** Swift tool of the thirty-two in `Tools/` whose own refusals any
         case exercises, after `score-mrc`, `pdf-extract-pages` and `make-observations` —
         `make-plate-fixtures` is compiled by two cases as a fixture generator and has no non-zero exit of
         its own.
@@ -1843,8 +1843,9 @@ happens.**
         the diff itself introduced** — read them before writing another instrument here, because four are
         shapes this register already names. (1) The header mapped the register's published shares to the
         wrong one of the tool's own two columns, contradicting the README added in the same commit. (2) It
-        said "all eight Swift tools carrying a `--self-test` are never run": measured, **six of seven run
-        it unconditionally**, `score-skew` has none, and `score-shape-term` is the only flag-gated one — so
+        said "all eight Swift tools carrying a `--self-test` are never run": measured, **six of seven ran
+        it unconditionally** (seven of eight since `score-annot-marks`, 2026-08-26), `score-skew` has none,
+        and `score-shape-term` is the only flag-gated one — so
         the minority pattern was being presented as the norm, and the tool now runs its self-test
         unconditionally instead of documenting a gap. (3) It credited the ImageMagick-OTSU comparison to
         `stratify-corpus.py`, which contains no Otsu at all; it is `score-shape-term`'s. (4) "The only two
@@ -2165,7 +2166,8 @@ happens.**
         supposed to become measurable here against a fix, and it is not measured — a false positive now costs
         a page nothing ever recognises. Beside it, two things (B) left by decision rather than by neglect:
         a document with an **outline** and a document with a **reader's mark on its born-digital page** both
-        keep the old, larger route (16 of the 42 for the first), and **stripping `/Annots` off a spliced
+        keep the old, larger route (measured 2026-08-26: **16 of the 42** for the first and **4** for the
+        second, disjoint, so **22 of 42 splice**), and **stripping `/Annots` off a spliced
         page** is the better fix for the second.
         ⚠️ Rotation is measured for /Rotate 90 only; the crop box is a code-identity argument and not a
         measurement; no corpus document has been run through a passthrough. ✅ **THAT LAST CLAUSE IS FALSE AS
@@ -3070,7 +3072,9 @@ happens.**
       ⛔ **TWO REFUSALS, and the second one prevents a REGRESSION rather than buying bytes.** An **outline**
       keeps the old route, because `--empty --pages` drops the `/Outlines` tree and an entry
       pointing AT the passthrough page has nowhere to go — priced at **16 of the 42** affected corpus
-      documents, so 26 of 42 get the splice, and `1954 - Why.pdf` is not one of the 16. And a **reader's
+      documents, and `1954 - Why.pdf` is not one of the 16. ⛔ **This said "so 26 of 42 get the splice",
+      which subtracted only ONE of the two refusals; measured 2026-08-26 it is 22 of 42** — see the
+      `c29-count-clause-corpus` sub-box. And a **reader's
       mark on a passthrough page** keeps it too: measured, `qpdf --empty --pages` carries `/Annots` and the
       `/Highlight` behind it, so the spliced page arrives already holding the mark, `Annotations.transplant`
       adds a second copy and its own `found.count == wanted.count` then **refuses the whole document** — the
@@ -3110,17 +3114,49 @@ happens.**
         MIDDLE and a LAST position for the first time. Suite **1,314 → 1,336**. ⚠️ Left: an encrypted document
         end to end, the 120-character bar, and `c29-count-clause-corpus` below.
         (context: BUGS.md C29 `#### The seven review findings, WORKED`)
-  - [ ] **c29-count-clause-corpus** — **the `/Annots`-count clause is new on the path EVERY mixed document
-        takes, and the published population figure was measured without it.**
-        `Annotations.pageCarriesMark` refuses a page whose raw `/Annots` array is longer than what PDFKit
-        surfaced (`Sources/Annotations.swift`), which is a *new* way for a document to lose C29 (B)'s
-        compression — silently, with no report line. ⛔ **"16 of the 42 carry an outline, so 26 of 42 get the
-        splice" predates it**, so that 26 is not known to be current. A `null` left in `/Annots` by an
-        incremental update is the concrete shape: `CGPDFArrayGetCount` counts it and PDFKit does not surface
-        it. ✅ **Cheap and needs nothing new**: PDFKit only, no qpdf, no rebuild — walk
-        `C29-CORPUS-2026-08-25.tsv`'s 42 documents, and for each firing page print `rawAnnots`, the surfaced
-        subtype list and which clause answered. ⚠️ Do NOT quote the old 26 again until this has run.
-        (context: BUGS.md C29 `#### The seven review findings, WORKED`, "What this does not reach")
+  - [x] **c29-count-clause-corpus** — **DONE 2026-08-26. The population is 22 of 42, not 26 — and the clause
+        this item was opened about fires on 0 of the 392 born-digital pages.** `Tools/score-annot-marks.swift`
+        (new, 51-check `--self-test`), `C29-MARKS-2026-08-26.tsv`, `BUGS.md` C29
+        `#### The population re-measured, 2026-08-26`. `rawAnnots == surfacedN` on **392 of 392** rows, `nilN`
+        0 everywhere, no page `blind` — so on this corpus PDFKit surfaces every entry a page's own `/Annots`
+        array holds and the `null`-from-an-incremental-update shape does not occur. ⛔ **The figure moved for
+        the ORDINARY reason: four documents carry a real highlight on a born-digital page** (`Canby_1929`,
+        `Davis_2005`, `Kazin_1955`, `Kelly_2014`; `clause=subtype` on 8 pages), **disjoint from the 16 with an
+        outline** — 16 + 4 + 0 all-passthrough = 20 refused, 22 eligible. That is the refusal working, not a
+        defect, so nothing shipped moved. ✅ The outline column reproduces the published 16 through
+        `SearchableWriter.readOutline` where the original used `qpdf --json`, `1954 - Why.pdf` at 0 both times
+        — the run's only cross-check against an earlier artefact. ⛔ **`/Link`'s exclusion is what makes the
+        fix reach anything: 776 of the 830 annotations on those pages are links**, 253 of them on the 22
+        eligible documents. ⚠️ `splice` is eligibility at the **three cheap terms** of `Model.swift:2300-2305`
+        and not a prediction, and `spliceEligible` is a replica of that subset pinned by a truth table and
+        nothing else. ⚠️ **New, and carried out of here so it is not lost: a real splice is far bigger than
+        anything ever run** — `Schwaller - 2026` is 167 passthrough pages of 300 and `Batzell` 51 of 54, both
+        eligible, where every end-to-end run has had ONE. Named as `c29-splice-scale` below.
+        (context: BUGS.md C29 `#### The population re-measured, 2026-08-26`)
+  - [ ] **annot-marks-refusals** — **`Tools/score-annot-marks.swift` has four error branches and no
+        `Tools/fault-inject.sh` row.** Exit 2 (no paths, or `--self-test` with paths beside it), exit 3 (a
+        file that would not open, or one holding no born-digital page — named on stderr, never silently
+        skipped), exit 5 (the self-test, which runs on every invocation), exit 6 (a clause label breaking a
+        law its own printed columns imply). CONTRIBUTING §4c is the reason and `score-text-voids`' own
+        `text_voids` case is the model — it would be the **FIFTH** Swift tool of the thirty-two whose own
+        refusals any case exercises, after `score-mrc`, `pdf-extract-pages`, `make-observations` and
+        `score-text-voids`. ⚠️ Exit 6 is the interesting one and the hardest: it needs a page on which
+        `clauseOf` mislabels, which the shipped probe never does — so the case has to sabotage the tool, and
+        `text_voids`' rows are the precedent for how. ⚠️ Exits 2 and 5 are cheap. A `Tools/` file pays the
+        full suite, so budget one commit, and `fault-inject.sh` is in no hook, so a red row here refuses no
+        commit. Named by the tool's own header rather than left implicit.
+        (origin: BUGS.md C29 `#### The population re-measured, 2026-08-26`)
+  - [ ] **c29-splice-scale** — **every end-to-end splice ever run has had ONE passthrough page, and the
+        population holds 167 of 300.** Found 2026-08-26 by `c29-count-clause-corpus`:
+        `C29-MARKS-2026-08-26.tsv` has `Schwaller - 2026` at `digitalN` **167** of 300 pages and `Batzell` at
+        **51** of 54, both `splice=yes`, against fixtures and corpus runs that have exercised a single
+        passthrough page at first, middle and last position. `JBIG2.spliceArguments` interleaves a `--pages`
+        token run per contiguous block, so a 167-page alternation is a much longer argument vector and a much
+        longer `--from`/`--to` page list on `overlay` than anything measured. ⚠️ **Nothing here says it is
+        broken** — this is an untested shape, not a defect — and the cheap first step is `JBIG2.pageRange` /
+        `spliceArguments` over a synthesized 300-page/167-passthrough set, which is pure and needs no PDF.
+        The expensive step is one real end-to-end run on `Schwaller`, which is a 300-page rebuild.
+        (context: BUGS.md C29 `#### The population re-measured, 2026-08-26`, last paragraph)
 - [ ] **shapedump-exit** — **`Tools/score-shape-term.swift` counts its failed dump writes, names them, and
       then exits 0.** `dumpMissing` collects every `SHAPEDUMP` file it promised and did not write
       (`:1457`), the summary appends `; ⚠️ dump missing …` (`:1476`), and the only exits after it are **6**

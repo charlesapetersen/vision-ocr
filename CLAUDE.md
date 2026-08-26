@@ -110,7 +110,7 @@ the three are denser and the first is the same; `obsN` equal to the drawn line c
 ingredient is unknown.
 ✅ **AND THAT SECTION'S OWN OWED DEBT IS DISCHARGED THE SAME DAY — the tool's refusals are WATCHED**
 (`BUGS.md` C30 `#### The tool's refusals, WATCHED as of 2026-08-25`): `Tools/fault-inject.sh text_voids`,
-**8 rows**, `8 passed, 0 failed`, and it is the **fourth** Swift tool of the thirty-one in `Tools/` whose
+**8 rows**, `8 passed, 0 failed`, and it is the **fourth** Swift tool of the thirty-two in `Tools/` whose
 own refusals any case exercises — after `score-mrc`, `pdf-extract-pages` and `make-observations`
 (`make-plate-fixtures` is compiled by two cases as a fixture generator and has no non-zero exit of its
 own). ⛔ **Four MORE tools have a dump path no case exercises, and the sweep's own first draft got every one
@@ -241,7 +241,7 @@ case keeps `encoded` DENSE (a short array would have layered one page's word box
 `--from` and `--to` so the spliced page is never stamped and never wrapped in the form XObject C23 measured
 translating a cropped page by (50, 96). ⛔ **Two refusals, and the SECOND prevents a REGRESSION rather than
 buying bytes: an OUTLINE (`--empty --pages` drops the `/Outlines` tree) — 16 of the 42 affected
-corpus documents, so 26 of 42 get the splice — and a READER'S MARK on the passthrough page**, because the
+corpus documents — and a READER'S MARK on the passthrough page**, because the
 splice carries `/Annots` and the `/Highlight` behind it (measured), so `Annotations.transplant` would add a
 second copy and its own count check would then refuse the whole document. Fixture **49,425 B on both arms
 before, 44,970 against 49,425 after**; suite **1,281 → 1,314**. ⚠️ `1954 - Why.pdf` was NOT re-run, so the
@@ -285,9 +285,23 @@ adoption — the password "control" that asserted the same `true` the `isLocked`
 while a sabotage to `return 0` left the whole suite green. The passthrough page also goes through real qpdf at
 a **MIDDLE** and a **LAST** position for the first time — `[ASMONE, SRCTWO, ASMTWO]` and
 `[ASMONE, ASMTWO, SRCTHREE]`, where every qpdf-backed run (B) shipped had it at page 1. Suite **1,314 →
-1,336**. ⚠️ Still unreached: an encrypted document end to end through the splice, the 120-character bar, and
-⛔ **the count clause's effect on the corpus — it is new on the path every mixed document takes while the
-published "26 of 42 get the splice" was measured without it** (queue: `c29-count-clause-corpus`).
+1,336**. ⚠️ Still unreached: an encrypted document end to end through the splice, and the 120-character bar.
+✅ **THE POPULATION IS RE-MEASURED AS OF 2026-08-26 AND IT IS 22 OF 42, NOT 26 — the two refusals are
+DISJOINT, 16 with an outline and 4 with a reader's mark** (`Tools/score-annot-marks.swift`,
+`C29-MARKS-2026-08-26.tsv`, `BUGS.md` C29 `#### The population re-measured, 2026-08-26`; 392 born-digital
+pages). ⛔ **The `/Annots`-count clause that re-measurement was opened for fires on 0 of the 392 —
+`rawAnnots == surfacedN` on 392 of 392, `nilN` 0, no page `blind`** — so the figure moved for the ORDINARY
+reason, a real highlight on a born-digital page in 4 documents (`Canby_1929`, `Davis_2005`, `Kazin_1955`,
+`Kelly_2014`), which is the refusal working rather than a defect. ✅ The outline column reproduces the
+published 16 through `SearchableWriter.readOutline` where the original used `qpdf --json`, `1954 - Why.pdf`
+at 0 both times — the run's only cross-check against an earlier artefact. ⛔ **`/Link`'s exclusion from
+`copiedSubtypes` is what makes the fix reach anything: 776 of the 830 annotations on those pages are links,
+and the 22 eligible documents carry 253 of them.** ⚠️ Its `splice` column is eligibility at the **three
+cheap terms** of `Model.swift:2300-2305` and not a prediction — `wantJBIG2`, the two `encoded.count`
+equalities and `JBIG2.merger` are not asked — and `spliceEligible` is a replica of that subset pinned by a
+truth table and nothing else. ⚠️ **And it found that a real splice is far bigger than anything run: 167
+passthrough pages of 300 on `Schwaller - 2026` and 51 of 54 on `Batzell`, both eligible**, where every
+end-to-end run has had one.
 MRC "is an improvement on a working page, never a requirement") was refused on **size, not risk**. ⛔ What (A) and (B)
 still do NOT reach is the **120-character bar**, under which a short born-digital page is rasterised and is
 named by **neither** report line — still not measured, and now the only thing under this entry besides (B)'s
@@ -1289,7 +1303,7 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
 `SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv`,
 `C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv`, `C29-CORPUS-2026-08-25.tsv`,
-`C30-VOIDS-2026-08-25.tsv` and `C30-TILES-2026-08-25.tsv` — and are
+`C30-VOIDS-2026-08-25.tsv`, `C30-TILES-2026-08-25.tsv` and `C29-MARKS-2026-08-26.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -1314,7 +1328,10 @@ tree, which is the line this count draws. ⚠️ **`C30-VOIDS-2026-08-25.tsv` an
 are NOT in that count either and a
 reader scanning for `C30-*` will assume they are**: both come from `Tools/score-text-voids.swift`, whose
 `--self-test` is **13** groups, so the count stays **five** while the list
-grows. That also spends the reason the other two are outside: the tool version C30 was asking for now
+grows. ⚠️ **Nor is `C29-MARKS-2026-08-26.tsv`, whose `C29-` prefix makes it look like `C29-CORPUS`'s
+sibling and is not**: it comes from `Tools/score-annot-marks.swift`, in the tree with a 51-check
+`--self-test`, so the count stays **five** a second time — and it is the same rule being kept as the tiles
+file, since C29's own earlier population walk is one of the five. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file
 is that rule being kept, since it re-measures the fork's own headline through committed code. ⚠️ A first draft called
 `WIDEN-LAYERS-2026-08-22.tsv` "the one file here whose instrument is not in this repository"; the review of
