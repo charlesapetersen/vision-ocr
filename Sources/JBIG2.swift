@@ -718,10 +718,22 @@ enum JBIG2 {
     /// not sufficient verification — but a page count that is *wrong* is proof,
     /// and it is the one thing an interleave can get wrong silently.
     ///
-    /// ⚠️ **`--empty --pages` keeps no document-level structure**, so an outline
-    /// written into `assembled` would be dropped here. `Model` keeps a document
-    /// with both an outline and a passthrough page off this route for that
-    /// reason; it is not something this function can repair.
+    /// ⚠️ **`--empty --pages` drops the `/Outlines` tree**, so an outline written
+    /// into `assembled` would be lost here. `Model` keeps a document with both an
+    /// outline and a passthrough page off this route for that reason; it is not
+    /// something this function can repair.
+    ///
+    /// ⛔ Do NOT widen that to "keeps no document-level structure", which is what
+    /// this comment said until 2026-08-25 and which is **measured false**: qpdf
+    /// 12.3.2 carried `/PageLabels` through one `--empty --pages` run — a 10-page
+    /// corpus document given decimal labels with `--set-page-labels 1:D`, two
+    /// pages then taken out of it, key still present in the result. The
+    /// overstatement matters because it invites a *second* refusal for structure
+    /// that survives.
+    /// ⚠️ **The narrow claim is all that one reading supports**: one input, not in
+    /// the tree, and with the *source* first in the `--pages` list. Production
+    /// puts `assembled` first whenever page 1 is not a passthrough, and the two
+    /// orders need not behave alike — nothing has asked.
     static func splice(source: URL, password: String?, into assembled: URL,
                        passthrough: [Int], pageCount: Int, to destination: URL,
                        using qpdf: String,

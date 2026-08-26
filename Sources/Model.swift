@@ -2254,9 +2254,9 @@ final class OCRModel: ObservableObject {
 
             // `outline.isEmpty || carriedThrough.isEmpty` is C29 (B)'s one
             // refusal, and it is the honest half of the fix rather than an
-            // oversight. `JBIG2.splice` runs `qpdf --empty --pages`, which keeps
-            // no document-level structure, so an outline written into the
-            // assembled file would be dropped — and the alternative, renumbering
+            // oversight. `JBIG2.splice` runs `qpdf --empty --pages`, which drops
+            // the `/Outlines` tree, so an outline written into the
+            // assembled file would be lost — and the alternative, renumbering
             // every destination across a page that is not in that file, has
             // nowhere to send an entry that points AT the passthrough page. A
             // document with both keeps exactly today's behaviour: the Flate

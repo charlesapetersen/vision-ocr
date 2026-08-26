@@ -240,13 +240,54 @@ case keeps `encoded` DENSE (a short array would have layered one page's word box
 `JBIG2.splice` interleaves with `qpdf --empty --pages`, and `overlay` takes a page list passed as BOTH
 `--from` and `--to` so the spliced page is never stamped and never wrapped in the form XObject C23 measured
 translating a cropped page by (50, 96). ⛔ **Two refusals, and the SECOND prevents a REGRESSION rather than
-buying bytes: an OUTLINE (`--empty --pages` carries no document-level structure) — 16 of the 42 affected
+buying bytes: an OUTLINE (`--empty --pages` drops the `/Outlines` tree) — 16 of the 42 affected
 corpus documents, so 26 of 42 get the splice — and a READER'S MARK on the passthrough page**, because the
 splice carries `/Annots` and the `/Highlight` behind it (measured), so `Annotations.transplant` would add a
 second copy and its own count check would then refuse the whole document. Fixture **49,425 B on both arms
 before, 44,970 against 49,425 after**; suite **1,281 → 1,314**. ⚠️ `1954 - Why.pdf` was NOT re-run, so the
-product figure to quote is still (B) MEASURED's 3.13x; rotation, an encrypted source and a trimmed
-passthrough page are all right by construction and unmeasured.
+product figure to quote is still (B) MEASURED's 3.13x; rotation and a trimmed
+passthrough page are right by construction and unmeasured.
+✅ **THAT COMMIT'S OWN SEVEN REVIEW FINDINGS ARE WORKED AS OF 2026-08-26, adopted from a stranded worktree and
+CORRECTED ON THE WAY IN — `BUGS.md` C29 `#### The seven review findings, WORKED`.**
+`Annotations.anyCopiableMark` answered `false` — *"no marks, take the splice"* — on a file PDFKit could not
+open, and `false` is the answer that risks the whole document: a missed mark arrives on the spliced page twice
+and `transplant`'s `found.count == wanted.count` **publishes nothing**. Every "cannot tell" **about a page it
+reached** answers `true` now, so the blindnesses cost bytes and never output.
+⚠️ **It is NOT "a product defect" and the strand's *"the user gets no file at all"* is RETRACTED**: both
+branches are unreachable from today's pipeline, because `Model`'s call site needs a non-empty `carriedThrough`
+and that descends from `Flattener.open`, which returns `nil` on an unopenable file AND on one still locked —
+so a non-empty passthrough set is proof the file opened and unlocked. R31/R32/H2, and the `CHANGELOG.md`
+paragraph promising the user an observable change goes with it. ⛔ **A fourth "cannot tell" is still `false`** —
+the `continue` on a page past `pageCount` — so "three of them" is not a closed set.
+⛔ **AND ONE OF THE TWO "REFUTATIONS BY MEASUREMENT" THE STRAND PUBLISHED WAS ITSELF WRONG, SHIPPED AS AN
+`ENGINE ASSUMPTION` THAT WAS RED ON A CLEAN BUILD. That is worth more than any of the fixes.** It claimed a
+locked document *"reports its pages and surfaces its subtypes, Names are not encrypted"*; measured 2026-08-26,
+`pageCount` is **1**, `annotations` is **EMPTY**, and the page dictionary is out of reach so the raw `/Annots`
+count is **-1**. Its sabotage had cut `isLocked` out and disabled only the `> surfaced.count` clause, leaving
+`guard rawAnnotationCount >= 0` in place, and read that clause's `true` as *"the loop ran"*. **Suspect the
+instrument — including a sabotage.** ✅ The conclusion survives on a footing it did not have: cut the `isLocked`
+line and the suite is **1336/1336**, so nothing can watch it fail — belt-and-braces, kept because the day a
+locked page's dictionary becomes readable the raw count is **0** and the answer flips to the dangerous
+direction, with a row that reds on that day. (2) holds with its arithmetic fixed: **five of fifteen**
+`copiedSubtypes` have no `PDFAnnotationSubtype` constant, not four of fourteen —
+`PDFAnnotationUtilities.h:66-78` declares 13 and `/Line` was added to the set — `/Squiggly` is among the five,
+and `/Polygon` is the only one measured, n = 1 of 5.
+⛔ **Do NOT write "`--empty --pages` keeps no document-level structure" again — measured false, qpdf 12.3.2**:
+`--set-page-labels 1:D` on a 10-page corpus document, then a two-page splice, leaves `/PageLabels` present
+(⚠️ one input, source first in the `--pages` list; production puts `assembled` first when page 1 is not a
+passthrough). The narrow claim, that it drops `/Outlines`, is what `Model`'s refusal rests on. ⛔ **The
+overstatement was SIX occurrences in FIVE files, not "five places" — the strand's sweep counted files and left
+`BUGS.md`'s own statement of the refusal carrying it.** ✅ Also **four** checks that **could not fail** replaced:
+a `!fileExists` on a path `assemble` never writes (now a 37-byte **sentinel** watched red at
+`bytes=0 expected=37`), `spec([4,2],5) == spec([2,4],5)` which `Set` makes one expression, and two found on the
+adoption — the password "control" that asserted the same `true` the `isLocked` refusal gives (now a locked
+**link-only** fixture asserted `false` WITH the password), and `rawAnnotationCount`, whose `-1` was pinned
+while a sabotage to `return 0` left the whole suite green. The passthrough page also goes through real qpdf at
+a **MIDDLE** and a **LAST** position for the first time — `[ASMONE, SRCTWO, ASMTWO]` and
+`[ASMONE, ASMTWO, SRCTHREE]`, where every qpdf-backed run (B) shipped had it at page 1. Suite **1,314 →
+1,336**. ⚠️ Still unreached: an encrypted document end to end through the splice, the 120-character bar, and
+⛔ **the count clause's effect on the corpus — it is new on the path every mixed document takes while the
+published "26 of 42 get the splice" was measured without it** (queue: `c29-count-clause-corpus`).
 MRC "is an improvement on a working page, never a requirement") was refused on **size, not risk**. ⛔ What (A) and (B)
 still do NOT reach is the **120-character bar**, under which a short born-digital page is rasterised and is
 named by **neither** report line — still not measured, and now the only thing under this entry besides (B)'s
@@ -1328,7 +1369,9 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,281 checks measured 2026-08-25 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
+./run_tests.sh        # 1,336 checks measured 2026-08-26 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
+                      # ⚠️ This line read 1,281 while the suite was 1,314 — two commits landed without
+                      # touching it. Re-derive it from your own run, never from a figure in prose.
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->

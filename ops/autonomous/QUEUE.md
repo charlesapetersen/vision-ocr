@@ -3068,7 +3068,7 @@ happens.**
       cropped page by (50, 96); `setCropBoxes` skips it, because that map's rects are measured on the
       *rebuilt* sheet whose media box was normalised to the origin.
       ⛔ **TWO REFUSALS, and the second one prevents a REGRESSION rather than buying bytes.** An **outline**
-      keeps the old route, because `--empty --pages` carries no document-level structure and an entry
+      keeps the old route, because `--empty --pages` drops the `/Outlines` tree and an entry
       pointing AT the passthrough page has nowhere to go — priced at **16 of the 42** affected corpus
       documents, so 26 of 42 get the splice, and `1954 - Why.pdf` is not one of the 16. And a **reader's
       mark on a passthrough page** keeps it too: measured, `qpdf --empty --pages` carries `/Annots` and the
@@ -3085,6 +3085,42 @@ happens.**
       the transplant is the only writer, which is the better fix for refusal 2 and wants its own commit —
       another qpdf JSON pass on the publish path is where C23 bit twice.
       (context: BUGS.md C29 `#### (B) SHIPPED`)
+  - [x] **c29-splice-review** — **DONE 2026-08-26**, adopted from a stranded worktree and corrected on the way
+        in. The seven findings that commit's own adversarial review left unfixed, worked as one item —
+        `BUGS.md` C29 `#### The seven review findings, WORKED`.
+        `Annotations.anyCopiableMark` answered `false` on a file PDFKit could not open, and `false` takes the
+        splice, where a missed mark is copied twice and `transplant` **refuses the whole document**. Every
+        "cannot tell" **about a page it reached** answers `true` now — bytes, never output — behind a pure
+        `pageCarriesMark(surfaced:rawAnnotationCount:)` that also refuses when a page's raw `/Annots` array
+        is longer than what PDFKit surfaced. ⚠️ **NOT "a product defect": both branches are unreachable from
+        today's pipeline**, because a non-empty passthrough set proves `Flattener.open` succeeded — R31/R32/H2,
+        and the strand's `CHANGELOG.md` paragraph promising an observable change is removed.
+        ⛔ **ONE of the two "refutations by measurement" the strand published was ITSELF WRONG and shipped as
+        an `ENGINE ASSUMPTION` that was RED ON A CLEAN BUILD** — a locked document reports `pageCount` 1,
+        surfaces **NO** annotations, and its page dictionary is out of reach so the raw count is **-1**; the
+        strand's sabotage had left `guard rawAnnotationCount >= 0` in place and read its `true` as "the loop
+        ran". ✅ The conclusion survives, measured: cut the `isLocked` line and the suite is **1336/1336**, so
+        nothing can watch it fail — belt-and-braces, kept because the day that dictionary becomes readable the
+        raw count is 0 and the answer flips to the dangerous direction. The other refutation holds with its
+        arithmetic fixed: **five of fifteen** `copiedSubtypes` lack a `PDFAnnotationSubtype` constant, not four
+        of fourteen, `/Squiggly` among them, `/Polygon` the only one measured. ⛔ The `--empty --pages`
+        overstatement was **six occurrences in five files**, not "five places" — the strand's sweep counted
+        files. ✅ **Four** checks that could not fail replaced (two found on the adoption: the password
+        "control" and the raw reader's ordinary answer), and the passthrough page goes through real qpdf at a
+        MIDDLE and a LAST position for the first time. Suite **1,314 → 1,336**. ⚠️ Left: an encrypted document
+        end to end, the 120-character bar, and `c29-count-clause-corpus` below.
+        (context: BUGS.md C29 `#### The seven review findings, WORKED`)
+  - [ ] **c29-count-clause-corpus** — **the `/Annots`-count clause is new on the path EVERY mixed document
+        takes, and the published population figure was measured without it.**
+        `Annotations.pageCarriesMark` refuses a page whose raw `/Annots` array is longer than what PDFKit
+        surfaced (`Sources/Annotations.swift`), which is a *new* way for a document to lose C29 (B)'s
+        compression — silently, with no report line. ⛔ **"16 of the 42 carry an outline, so 26 of 42 get the
+        splice" predates it**, so that 26 is not known to be current. A `null` left in `/Annots` by an
+        incremental update is the concrete shape: `CGPDFArrayGetCount` counts it and PDFKit does not surface
+        it. ✅ **Cheap and needs nothing new**: PDFKit only, no qpdf, no rebuild — walk
+        `C29-CORPUS-2026-08-25.tsv`'s 42 documents, and for each firing page print `rawAnnots`, the surfaced
+        subtype list and which clause answered. ⚠️ Do NOT quote the old 26 again until this has run.
+        (context: BUGS.md C29 `#### The seven review findings, WORKED`, "What this does not reach")
 - [ ] **shapedump-exit** — **`Tools/score-shape-term.swift` counts its failed dump writes, names them, and
       then exits 0.** `dumpMissing` collects every `SHAPEDUMP` file it promised and did not write
       (`:1457`), the summary appends `; ⚠️ dump missing …` (`:1476`), and the only exits after it are **6**

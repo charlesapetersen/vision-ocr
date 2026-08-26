@@ -99,29 +99,163 @@ enum Annotations {
     /// **PDFKit rather than the qpdf probe `transplant` uses**, and the trade is
     /// stated rather than hidden: this runs on every mixed document before the
     /// rebuild, and paying a whole qpdf pass to ask about one page is the wrong
-    /// price. What the cheaper reader cannot see is an annotation PDFKit does not
-    /// surface — an inline dictionary, or a reference with a non-zero generation.
-    /// Those are cases `transplant` **refuses outright on either route**, so they
-    /// are not this function's to catch: it is choosing between two correct outputs,
-    /// not standing between the user and a broken one.
+    /// price.
+    ///
+    /// ⛔ **Every "cannot tell" about a page it reached is answered TRUE, and the
+    /// direction is the whole of it.** `true` keeps the document on the route it
+    /// took before C29 (B) — measured at 3.13x the bytes on `1954 - Why.pdf`, and
+    /// it cannot lose content. `false` sends it to the splice, where a mark this
+    /// function failed to see arrives on the page a second time and
+    /// `transplant`'s own `found.count == wanted.count` **refuses the whole
+    /// document**, publishing nothing. So the cheap reader's blindnesses cost
+    /// bytes, never output.
+    /// ⚠️ **One "cannot tell" is still `false`**: the `continue` below, on a page
+    /// number past `pageCount`. Left because the caller's page numbers come from
+    /// the same PDFKit `pageCount`, so a mismatch means the file changed under
+    /// the run; named here rather than fixed, so the next reader does not take
+    /// the sentence above as universal.
+    /// ⚠️ **And the two branches below are unreachable from today's pipeline.**
+    /// `Model`'s call site needs a non-empty `carriedThrough`, which descends
+    /// from `Flattener.digitalTextPages` → `Flattener.open`, and that returns
+    /// `nil` on an unopenable file AND on one still locked after the unlock
+    /// attempt — so a non-empty passthrough set is proof this file opened and
+    /// unlocked. R31, R32 and H2 are why they still get the right answer.
+    /// ⚠️ This comment used to say the function "is choosing between two correct
+    /// outputs, not standing between the user and a broken one" — false in
+    /// direction while three of its answers were `false` by omission, and the
+    /// adversarial review of the commit that shipped it is what said so.
     ///
     /// `Link` and `Widget` are not marks, which is what makes this usable at all:
     /// 3,991 of the corpus's 4,867 annotations are JSTOR and ProQuest links, and a
     /// born-digital cover sheet is where they live.
     static func anyCopiableMark(in file: URL, password: String?,
                                 onPages pages: [Int]) -> Bool {
-        guard !pages.isEmpty, let document = PDFDocument(url: file) else { return false }
+        guard !pages.isEmpty else { return false }
+        guard let document = PDFDocument(url: file) else { return true }
         if document.isLocked, let password { _ = document.unlock(withPassword: password) }
+        // ⛔ `unlock`'s result was DISCARDED here, and the review of the commit
+        // that shipped this said a document staying locked reports `pageCount` 0,
+        // so every page below is skipped and the answer comes back "no marks"
+        // over a file not one annotation of which has been read.
+        // ⚠️ **The page count is wrong and the consequence is right, measured
+        // 2026-08-26.** A PDFKit-encrypted fixture reports `pageCount` **1**, so
+        // the loop below runs — and `page.annotations` comes back **EMPTY**, and
+        // `pageRef.dictionary` is out of reach so `rawAnnotationCount` answers
+        // **-1**. All three are pinned as `ENGINE ASSUMPTION` rows in
+        // `Tests/main.swift`.
+        // ⛔ **So NOTHING CAN WATCH THIS LINE FAIL, and that IS measured**: cut
+        // it out and the suite is **1336/1336** (2026-08-26), because
+        // `pageCarriesMark`'s `guard rawAnnotationCount >= 0` answers `true`
+        // first. It is belt-and-braces, not load-bearing. It stays for a reason
+        // the two rows make concrete rather than for tidiness: if PDFKit ever
+        // makes a locked page's dictionary readable while still hiding its
+        // annotations, `rawAnnotationCount` returns **0** and the answer flips to
+        // `false` — the dangerous direction — and this line is the only thing
+        // that survives that change. R31, R32 and H2 are the precedent for a
+        // branch nothing executes.
+        // ⛔ **A draft of this comment reached the same "nothing can watch it"
+        // conclusion from a premise that is false in every part** — that PDFKit
+        // surfaces a locked document's subtypes because Names are not encrypted,
+        // so the ordinary loop finds the mark — and asserted it as an ENGINE
+        // ASSUMPTION that was **red on a clean build**. Its sabotage cut this
+        // line out AND disabled `pageCarriesMark`'s
+        // `rawAnnotationCount > surfaced.count` clause, saw the mark still found,
+        // and read that as "the loop ran". It had not: the `>= 0` clause one line
+        // above was still there and is what answered. Suspect the instrument —
+        // including a sabotage.
+        // Asking `isLocked` again rather than reading `unlock`'s Bool also covers
+        // `password == nil`, which never calls it at all.
+        if document.isLocked { return true }
         for page in pages {
             guard page >= 1, page <= document.pageCount,
                   let subject = document.page(at: page - 1) else { continue }
-            for annotation in subject.annotations {
-                // PDFKit reports the subtype without its leading slash.
-                guard let type = annotation.type else { continue }
-                if copiedSubtypes.contains("/" + type) { return true }
+            // PDFKit reports the subtype without its leading slash.
+            if pageCarriesMark(surfaced: subject.annotations.map(\.type),
+                               rawAnnotationCount: rawAnnotationCount(of: subject)) {
+                return true
             }
         }
         return false
+    }
+
+    /// The decision `anyCopiableMark` makes about one page, separated from the
+    /// reading of it so it can be pinned without a PDF on the machine —
+    /// `JBIG2.spliceArguments`' shape, and for the same reason.
+    ///
+    /// `surfaced` is the subtype of every annotation PDFKit reported, in order,
+    /// with `nil` where it could not read one. `rawAnnotationCount` is how many
+    /// entries the page's own `/Annots` array holds, or a negative number if
+    /// that array could not be read at all.
+    ///
+    /// ⛔ **The count asks what a subtype list cannot.** An annotation PDFKit
+    /// declines to surface at all is invisible to every membership test there
+    /// is: the array is simply shorter, and no loop over it can know. qpdf reads
+    /// `/Subtype` off the dictionary and does not care what PDFKit models, so
+    /// `transplant` would copy a mark this reader never saw.
+    ///
+    /// ⚠️ **It is a net, and the hazard that motivated it did not reproduce on
+    /// the one subtype anybody measured.** The review's reasoning was that four
+    /// of the fourteen `copiedSubtypes` have no `PDFAnnotationSubtype` constant.
+    /// ⛔ The count is wrong in both halves, measured off the SDK header
+    /// 2026-08-26: `copiedSubtypes` holds **15** (`/Line` was added deliberately
+    /// and nobody updated the sentence) and `PDFAnnotationUtilities.h:66-78`
+    /// declares **13** constants, so it is **five** — `/Squiggly`, `/Polygon`,
+    /// `/PolyLine`, `/Caret`, `/FileAttachment`. Measured 2026-08-25: PDFKit
+    /// surfaces a `/Polygon` anyway and reports `type` as the raw name, so the
+    /// list catches it and this clause never fires. ⚠️ **n = 1 of the five, and
+    /// it is the least likely of them to be on a real page** — `/Squiggly` is a
+    /// wavy underline Preview and Acrobat both write, and it is reasoned from
+    /// `/Polygon` rather than measured. Kept because it costs one comparison and
+    /// the engine assumption it covers is pinned in `Tests/main.swift`.
+    ///
+    /// ⛔ **The two clauses are NOT equally idle, and the difference is measured.**
+    /// The `>= 0` blindness guard has a real-PDF bite: a locked document's page
+    /// dictionary is out of reach, so it answers `-1` → `true`, and it is what
+    /// keeps such a file off the splice when `anyCopiableMark`'s own `isLocked`
+    /// refusal is removed (suite 1336/1336 with that line cut, 2026-08-26). The
+    /// `> surfaced.count` clause is the one whose only demonstrated bite is a
+    /// unit row over synthesized counts.
+    ///
+    /// ⚠️ The false-positive direction is admitted: a page whose `/Annots` holds
+    /// links PDFKit hides reads `true` and keeps the old route, which costs bytes
+    /// on a document that would have been safe. That is the trade this whole
+    /// function is written around. ⚠️ **Unmeasured on the corpus**: this clause is
+    /// new on the path every mixed document takes, and the published "26 of 42
+    /// get the splice" was measured against the predicate without it. A `null`
+    /// left in `/Annots` by an incremental update would be counted here and not
+    /// surfaced by PDFKit, costing that document (B)'s compression silently.
+    /// Carried as the queue's `c29-count-clause-corpus`.
+    static func pageCarriesMark(surfaced: [String?],
+                                rawAnnotationCount: Int) -> Bool {
+        guard rawAnnotationCount >= 0 else { return true }
+        if rawAnnotationCount > surfaced.count { return true }
+        for type in surfaced {
+            guard let type else { return true }
+            if copiedSubtypes.contains("/" + type) { return true }
+        }
+        return false
+    }
+
+    /// How many entries the page's own `/Annots` array holds, or `-1` if the
+    /// page's dictionary could not be read at all.
+    ///
+    /// A page with no `/Annots` key has none, which is 0 rather than unknown:
+    /// `/Annots` is not an inheritable attribute, so an absent key is an answer
+    /// and not a blindness.
+    ///
+    /// ⚠️ Internal rather than `private` so the suite can pin the number it
+    /// returns and not only the `-1`. It was private, and a sabotage to
+    /// `return 0` left the WHOLE suite green: every fixture answered through the
+    /// subtype list, or through a `0 > n` that is false either way. A reader
+    /// whose loud failure is covered and whose ordinary answer is not can be
+    /// wrong on every real document without a red row.
+    static func rawAnnotationCount(of page: PDFPage) -> Int {
+        guard let reference = page.pageRef,
+              let dictionary = reference.dictionary else { return -1 }
+        var array: CGPDFArrayRef?
+        guard CGPDFDictionaryGetArray(dictionary, "Annots", &array),
+              let array else { return 0 }
+        return CGPDFArrayGetCount(array)
     }
 
     /// The annotation keys whose numbers live in the *page's* coordinate space, and so

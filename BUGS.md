@@ -33,12 +33,32 @@ would have layered one page's word boxes onto another's pixels — `(A)`'s `Reco
 place), `assemble` REFUSES such a page rather than skipping it, `JBIG2.splice` interleaves it back out of the
 user's own file, and `overlay` takes a page list passed as BOTH `--from` and `--to` so the spliced page is
 never stamped and never wrapped in the form XObject C23 measured translating a cropped page by (50, 96).
-⛔ **Two refusals: an OUTLINE (`--empty --pages` carries no document-level structure) — 16 of the 42 affected
+⛔ **Two refusals: an OUTLINE (`--empty --pages` drops the `/Outlines` tree) — 16 of the 42 affected
 corpus documents, so 26 of 42 get the splice — and a READER'S MARK on the passthrough page, which is a
 REGRESSION guard and not a byte one: measured, the splice carries `/Annots` and the `/Highlight` behind it, so
 the transplant would add a second copy and then refuse the whole document.** Fixture 49,425 B on both arms
-before, **44,970 against 49,425** after; suite **1,281 -> 1,314**. What is still untouched is the
-**120-character bar**, under which a short born-digital page is rasterised and no report line names it.
+before, **44,970 against 49,425** after; suite **1,281 -> 1,314**.
+⛔ **THAT REFUSAL'S PREDICATE ANSWERED "NO MARKS" WHERE IT COULD NOT SEE, and its seven review findings are
+WORKED as of 2026-08-26 — `#### The seven review findings, WORKED`.** `Annotations.anyCopiableMark` read
+`false` on a file PDFKit could not open at all, which sends it to the splice where a missed mark is copied
+twice and `transplant` **refuses the whole document**; every "cannot tell" about a page it reached answers
+`true` now, costing bytes instead of output. ⚠️ **NOT a product defect: both branches are unreachable from
+today's pipeline**, because a non-empty passthrough set is proof `Flattener.open` succeeded — R31/R32/H2, and
+a first draft's *"the user gets no file at all"* is retracted. ⛔ **AND ONE OF THE TWO "REFUTATIONS BY
+MEASUREMENT" THE WORK SHIPPED WITH WAS ITSELF WRONG — asserted as an `ENGINE ASSUMPTION` that was RED ON A
+CLEAN BUILD.** A locked document reports `pageCount` 1 and surfaces **NO** annotations, and its page dictionary
+is out of reach, so the raw `/Annots` count is **-1**: the draft's sabotage had left the `>= 0` blindness guard
+in place and read its `true` as *"the loop ran"*. ✅ The conclusion survives on a measured footing — cut the
+`isLocked` line and the suite is **1336/1336**, so nothing can watch it fail — and the second refutation holds
+with its arithmetic fixed: **five of fifteen** `copiedSubtypes` have no `PDFAnnotationSubtype` constant, not
+four of fourteen, `/Squiggly` among them, and `/Polygon` is the only one measured. ⛔ **And `--empty --pages`
+DOES keep `/PageLabels`, qpdf 12.3.2**, so "no document-level structure" was an overstatement — corrected in
+**six occurrences across five files**, the sixth being this file's own statement of the refusal, which the
+strand's file-counting sweep missed. Four checks that **could not fail** are replaced (two of them found on the
+adoption: the password control and the raw reader's ordinary answer), and the passthrough page goes through
+real qpdf at a MIDDLE and a LAST position for the first time. Suite **1,314 -> 1,336**, no skips. What is still
+untouched is the **120-character bar**, under which a short
+born-digital page is rasterised and no report line names it.
 ✅ **`C29` has the FIXTURE it said it needed first, as of 2026-08-23, and today's wrong answer is PINNED**
 (`#### The fixture, and today's answer PINNED`): a nine-page JSTOR shape whose cover page reads 302
 characters and is not a page-sized image, whose other eight pages ALL clear the 120-character bar so the
@@ -10750,13 +10770,15 @@ is measured on the *rebuilt* sheet, whose media box was normalised to the origin
 
 ⛔ **TWO REFUSALS, AND THE SECOND ONE PREVENTS A REGRESSION RATHER THAN BUYING BYTES.**
 
-1. **An outline.** `qpdf --empty --pages` keeps no document-level structure, so an outline written into the
-   assembled catalogue would be dropped by the splice, and renumbering every destination across a page that
+1. **An outline.** `qpdf --empty --pages` drops the `/Outlines` tree, so an outline written into the
+   assembled catalogue would be lost by the splice, and renumbering every destination across a page that
    is not in that file has nowhere to send an entry pointing **at** the passthrough page. A document with
    both keeps exactly today's behaviour — the Flate route, correct and larger. **Priced, not guessed: 16 of
    the 42 affected corpus documents carry an outline** (`qpdf --json --json-key=outlines` over all 42 of
    `C29-CORPUS-2026-08-25.tsv`, 2026-08-25), so **26 of 42 get the splice** — and `1954 - Why.pdf` is not
-   one of the 16, so the document this entry's 3.13x came from is in the benefiting set.
+   one of the 16, so the document this entry's 3.13x came from is in the benefiting set. ⚠️ That 26 was
+   measured against the mark predicate as it stood on 2026-08-25 and has **not** been re-measured against
+   the `/Annots`-count clause added the next day; see `#### The seven review findings, WORKED`.
 2. **A reader's mark on a passthrough page.** ⛔ **Measured, and it would have made a document FAIL to
    publish**: `qpdf --empty --pages` carries `/Annots` and the `/Highlight` behind it (PDFKit-built
    two-page fixture, 1 highlight in and 1 highlight out), so the spliced page arrives already holding the
@@ -10802,6 +10824,155 @@ every guard deleted.
 * **The fixture's own ratio must not be quoted.** Its scan pages are bilevel and MRC skips bilevel, so it
   has no MRC component at all while the corpus figure is 90.8% re-layering. `#### (B) MEASURED` says quote
   3.13x; this section adds the corpus document run through the fix and nothing else.
+
+#### The seven review findings, WORKED — 2026-08-26: the predicate answered "no marks" where it could not see, and the "refutation" that shipped with it was itself wrong
+
+`#### (B) SHIPPED`'s adversarial review left **seven** findings unfixed and the session log named them as one
+small item for the next session. All seven are worked here, in one commit, **adopted from a stranded worktree
+on 2026-08-26 and corrected on the way in**. ⛔ **The direction fix is the substance**:
+`Annotations.anyCopiableMark` returned `false` — *"no marks, take the splice"* — on inputs it had not read.
+`false` sends the document to the splice, where a mark this reader missed arrives on the page a second time and
+`Annotations.transplant`'s `found.count == wanted.count` **refuses the whole document**. `true` keeps the
+pre-(B) route: 3.13x the bytes on `1954 - Why.pdf`, and it cannot lose content. **So every "cannot tell" about
+a page it reached now answers `true`** — the cheap reader's blindnesses cost bytes, never output. The comment
+claiming this function "is choosing between two correct outputs, not standing between the user and a broken
+one" is deleted; it was false in direction while three of its answers were `false` by omission.
+
+⛔ **BUT IT IS NOT "A PRODUCT DEFECT" AND THE FIRST DRAFT'S "the user gets no file at all" IS RETRACTED —
+both branches are UNREACHABLE from today's pipeline.** `Model.swift:2303` is only reached with a non-empty
+`carriedThrough`, which descends from `Flattener.digitalTextPages` → `Flattener.open`, and that returns `nil`
+on an unopenable file **and** on one still locked after the unlock attempt — so a non-empty passthrough set is
+proof the file opened and unlocked. Production reaches these only on a file that stopped being readable
+mid-run, which is the argument `digitalTextPages` already writes about its own `[]`. This is the R31 / R32 / H2
+shape — the right answer in a branch nothing executes — and the same framing the strand itself used one
+paragraph later for `isLocked`. ⚠️ **Consequence: the `CHANGELOG.md` paragraph the strand wrote promised the
+user an observable behaviour change, and is removed.** Found by the adversarial review of the adoption.
+
+⛔ **AND A FOURTH "CANNOT TELL" IS STILL `false`, so "three of them" is not a closed set**: the `continue` on a
+page number past `pageCount`. Left — the caller's page numbers come from the same PDFKit `pageCount` — and
+named in the function's own comment so the next reader does not read "every" as universal.
+
+⛔ **ONE OF THE TWO "REFUTATIONS BY MEASUREMENT" THE STRAND PUBLISHED WAS ITSELF WRONG, AND IT SHIPPED AS A
+CHECK THAT WAS RED ON A CLEAN BUILD. That is the most valuable thing in this section.**
+
+1. **"A locked PDF reads `pageCount == 0` and returns false."** The strand answered *"it does not — PDFKit
+   reports the page count and surfaces the annotation subtypes anyway, because Names are not encrypted"*, and
+   asserted that as an `ENGINE ASSUMPTION`. ⛔ **Measured 2026-08-26 on the adoption: the page count is 1 and
+   `page.annotations` is EMPTY.** That row was red on a clean build — found by running a one-token sabotage of
+   an unrelated guard and getting **two** `FAIL` lines where one was predicted, the second being a row the
+   sabotage could not reach. ⛔ **How the strand got there is the lesson**: its sabotage cut `isLocked` out and
+   disabled `pageCarriesMark`'s `rawAnnotationCount > surfaced.count` clause, saw the mark still found, and
+   read that as *"the loop ran"*. It had not. The `guard rawAnnotationCount >= 0` clause one line above was
+   still in place and is what answered. **Suspect the instrument — including a sabotage.**
+   ✅ **The conclusion it drew survives, on a foundation it did not have**: the `isLocked` refusal has NO check
+   that can watch it fail, and that is now MEASURED rather than reasoned — cut the line out and the suite is
+   **1336/1336**, because a locked page's dictionary is out of reach so `rawAnnotationCount` answers **-1** and
+   the blindness guard returns `true` first. Three `ENGINE ASSUMPTION` rows pin the three engine facts
+   (`pageCount` ≥ 1, `annotations` empty, raw count −1). ⚠️ **So the line is belt-and-braces, and the reason to
+   keep it is concrete rather than tidy**: if PDFKit ever makes a locked page's dictionary readable while still
+   hiding its annotations, the raw count becomes **0** and the answer flips to the dangerous direction — the
+   `-1` row goes red on that day, and this line is the only thing that survives it.
+2. **"4 of the 14 `copiedSubtypes` have no `PDFAnnotationSubtype` constant."** ⛔ **Wrong in both halves,
+   measured off the SDK header 2026-08-26: it is FIVE of FIFTEEN.** `copiedSubtypes` holds 15 — `/Line` was
+   added deliberately and nobody updated the sentence — and `PDFAnnotationUtilities.h:66-78` declares **13**
+   constants, so `/Squiggly` is unmodelled too. The hazard inferred from it still does not occur: a `/Polygon`
+   written into a page's `/Annots` comes back with the array holding **1** and PDFKit surfacing
+   **`["Polygon"]`**, the raw name, so the membership test answers it and the count clause never fires.
+   ⚠️ **n = 1 of the five, and it is the least likely of the five to be on a real page** — `/Squiggly` is a
+   wavy underline Preview and Acrobat both write. The generalisation is reasoned.
+   ✅ The clause stays as a net — `pageCarriesMark` refuses when a page's raw `/Annots` array is **longer** than
+   what PDFKit surfaced, the one question a subtype list cannot ask, since an annotation PDFKit declines to
+   surface is a *missing* entry no loop over that array can see. ⛔ **And the two clauses are not equally
+   idle**: the `>= 0` blindness guard has a real-PDF bite — the locked document above — while the
+   `> surfaced.count` clause's only demonstrated bite is a unit row over synthesized counts.
+3. **The reader behind them was half-pinned, and the covered half was the loud one.** `rawAnnotationCount`
+   was `private` with only its `-1` reachable from a check; sabotage it to `return 0` and the **whole suite
+   stayed green**, because every fixture answered through the subtype list or through a `0 > n` that is false
+   either way. So it could have been feeding 0 to the clause on every real document with nothing noticing. It
+   is internal now, with two rows pinning the number it returns — **1** on the link fixture, **0** on a page
+   whose dictionary is readable and holds no `/Annots` key. Found by the adversarial review of the adoption.
+4. **The password path had no check either, and the row that looked like one could not fail.** *"…the same
+   document WITH its password unlocks and is read rather than refused"* asserted `true` — which is also what
+   the `isLocked` refusal answers — and its second conjunct unlocked a **separate** `PDFDocument` the test
+   opened itself, so it measured the engine. Delete `document.unlock(...)` and it stays green while every
+   password-protected document takes the Flate route for ever. The control is a locked **link-only** fixture
+   asserted **`false`** with the correct password and **`true`** without it: the unlock is the only route to
+   that `false`. Found by the adversarial review of the adoption.
+
+✅ **The decision worth quoting: `pageCarriesMark(surfaced:rawAnnotationCount:)` is PURE and separate from the
+reading**, `JBIG2.spliceArguments`' own shape and for the same reason — six rows pin the decision with no PDF
+on the machine, including the non-vacuity one (`surfaced: []`, `rawAnnotationCount: 0` reads **false**)
+without which "answer true when unsure" could be implemented as "answer true" and would turn C29 (B) off on
+every document.
+
+⛔ **TWO MORE CHECKS THAT COULD NOT FAIL, in the block that shipped (B) itself.** Both were `01aebe3`'s own,
+and both are replaced by an assertion with a named way to go red:
+* `!FileManager.default.fileExists(atPath: refusedOut.path)` — `assemble` never writes that path on any
+  refusing route, so the row was a statement about a file nothing had ever touched: green on a build with the
+  guard deleted, and green on a build that never ran the call. It is a **sentinel** now — 37 bytes written
+  there first, and the row asserts they are still there byte for byte. Watched failing: moving `assemble`'s
+  passthrough guard below its own `try? fm.removeItem(at: destination)` reds it at **`bytes=0 expected=37`**,
+  which is the truncated-file shape invariant 2 exists to stop.
+* `spec([4, 2], 5) == spec([2, 4], 5)` — `spliceArguments` reads `passthrough` only through a `Set`, so the
+  two sides are one expression and no implementation of the interleave can make them differ. It asserts the
+  literal `asm 1 src 2 asm 2 src 4 asm 3` now.
+
+✅ **AND THE PASSTHROUGH PAGE GOES THROUGH REAL qpdf SOMEWHERE OTHER THAN PAGE 1 FOR THE FIRST TIME.** Every
+qpdf-backed run (B) shipped put it at position 1 — the single shape a `page1 == coverText` row catches by
+itself, and the one an off-by-one in the assembled file's own numbering cannot reach, because nothing
+precedes it. Three source pages of readable text against two assembled ones, spliced three ways and read back
+page by page: **`[ASMONE, SRCTWO, ASMTWO]`** at a middle passthrough, **`[ASMONE, ASMTWO, SRCTHREE]`** at a
+last one, and **`[SRCONE, ASMONE, ASMTWO]`** at the shipped first one. ⚠️ Gated on `JBIG2.merger` alone —
+`splice` is qpdf and nothing else, so jbig2enc's absence does not silence these.
+
+⛔ **And `--empty --pages` does NOT "keep no document-level structure" — measured, qpdf 12.3.2.** Giving a
+10-page corpus document decimal page labels with `--set-page-labels 1:D` and then splicing two pages out of
+it leaves `/PageLabels` **present** in the result. The true claim is the narrow one, that it drops the
+`/Outlines` tree, which is what `Model`'s refusal rests on and is unaffected. ⚠️ **The narrow claim is all one
+reading supports**: one input, not in the tree, and with the *source* first in the `--pages` list, where
+production puts `assembled` first whenever page 1 is not a passthrough. ⛔ **And the sibling sweep for it
+UNDERCOUNTED: it is SIX occurrences in FIVE files, not five places.** The strand's own list —
+`Sources/JBIG2.swift`, `Sources/Model.swift`, this file's header, `CLAUDE.md`, `ops/autonomous/QUEUE.md` — is a
+list of *files*, and this file held **two**: the header and `#### (B) SHIPPED`'s refusal 1, which is the
+register's own *statement of the refusal* and therefore the copy a reader plans from. It was still carrying the
+overstatement while four other places were corrected, which is exactly what the correction says it is trying to
+prevent. Fixed on the adoption, 2026-08-26; the same shape as the 2026-08-16 `stale-docs` item, which fixed one
+mention in `HANDOFF.md` and missed a second deeper in the same file.
+
+⚠️ Two smaller ones, for completeness — the first draft of this paragraph said *three* and described two. The
+mark-fixture row asserted only that `write` returned `true`, which left the **Link** row green for the wrong
+reason on a fixture whose annotation had not persisted — a page with no annotations carries no mark either; it
+asserts now that each fixture surfaces exactly the subtype it is named for, and says *three* rows below rather
+than the four it claimed. The password row counted two occurrences of `--password=hunter2` where qpdf enforces
+**position** (`--password must follow a file name`, exit 2), so a build emitting both in a row counted 2 and
+would have died at the process; it asserts both directions of "belonging to the file named before it" now.
+
+⛔ **No `mutate.py` entry was added, and that is a decision rather than an omission.** CONTRIBUTING 4a asks
+for one when a guard is added, and its purpose is durable evidence that a check bites. Here the evidence is
+suite runs with the red rows named and counted BEFORE each run, which is what a mutant row records, while the
+catalogue's own debt is 25 entries with no row at all (`mutants-never-run`) — so more un-run entries would add
+to exactly the ledger that item exists to work off. The sabotages are described precisely enough to be
+rebuilt: the `PDFDocument(url:)` guard's `true` → `false`, the `isLocked` line deleted,
+`rawAnnotationCount` forced to `return 0`, `document.unlock(...)` deleted, and `assemble`'s passthrough guard
+moved below its own `removeItem`.
+
+⛔ **The runs, and what each one bought** (all 2026-08-26, this machine, post-clamp, ~5-6 min each):
+* `PDFDocument(url:) → return false`: **1329/1331**, predicted ONE red and got **TWO**. The extra was the
+  strand's own `ENGINE ASSUMPTION` row about a locked document, which this sabotage cannot reach — so the diff
+  was **red on a clean build** and the strand had never run it in its final state. Its published `1327/1330`
+  is a **denominator short of the diff it describes**, which is the arithmetic that says the same thing.
+* `isLocked` line deleted: **1336/1336**, predicted "red iff the raw count is 0" and green is the answer — the
+  measurement that turned "nothing can watch it fail" from a reasoned claim into a read one.
+* Clean: **1336/1336**, no skips.
+
+⚠️ **What this does not reach.** No encrypted document has been through the splice end to end — only
+`anyCopiableMark` has seen one. The `> surfaced.count` clause has no fixture that makes it fire on a real PDF,
+and the four unmodelled subtypes other than `/Polygon` are reasoned rather than measured. ⛔ **And the clause
+is new on the path EVERY mixed document takes while the published "26 of 42 get the splice" was measured
+without it** — a `null` left in `/Annots` by an incremental update is counted here and not surfaced by PDFKit,
+so that document silently loses (B)'s compression. The re-measurement is cheap (PDFKit only, no qpdf, no
+rebuild, over `C29-CORPUS-2026-08-25.tsv`'s 42) and is carried as the queue's `c29-count-clause-corpus`. And
+the **120-character bar** is still untouched.
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
 

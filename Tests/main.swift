@@ -1424,8 +1424,16 @@ do {
               spec([2, 4], 5))
         // Reading it in ascending order is the whole of the interleave, so an
         // unsorted argument must not be honoured as given.
+        //
+        // ⛔ THE LITERAL, not `spec([4, 2], 5) == spec([2, 4], 5)`, which is what
+        // this row asserted until 2026-08-25 and which COULD NOT FAIL:
+        // `spliceArguments` reads `passthrough` only through a `Set`, so the two
+        // sides are the same expression and no implementation of the interleave
+        // can make them differ. Naming the string is what makes the row bite —
+        // a build that walked the argument as handed over would put `src 4`
+        // before `src 2` and land here.
         check("C29 (B): …the page list is read in order, not as handed over",
-              spec([4, 2], 5) == spec([2, 4], 5), spec([4, 2], 5))
+              spec([4, 2], 5) == "asm 1 src 2 asm 2 src 4 asm 3", spec([4, 2], 5))
         check("C29 (B): the arguments are an --empty --pages list ending in "
               + "the destination",
               args([1], 3).first == "--empty" && args([1], 3)[1] == "--pages"
@@ -1433,11 +1441,26 @@ do {
               args([1], 3).joined(separator: " "))
         // Per file spec and not once: qpdf reads `--password=` as belonging
         // to the file named before it, and the source appears twice here.
+        //
+        // ⛔ POSITION, not a count. Until 2026-08-25 this row counted two
+        // occurrences of `--password=hunter2`, and qpdf enforces *where* they
+        // are: `--password must follow a file name`, exit 2. So a build that
+        // emitted both passwords in a row, or put one after the assembled file,
+        // counted 2 and would have failed at the process. The two clauses are
+        // the two halves of "belonging to the file named before it": every
+        // password follows a source path, and every source path is followed by
+        // one.
+        let pwArgs = args([2, 4], 5, password: "hunter2")
+        let pwIndices = pwArgs.indices.filter { pwArgs[$0] == "--password=hunter2" }
+        let srcIndices = pwArgs.indices.filter { pwArgs[$0] == src.path }
         check("C29 (B): a password rides on every source segment and on no "
-              + "assembled one",
-              args([2, 4], 5, password: "hunter2")
-                  .filter { $0 == "--password=hunter2" }.count == 2,
-              args([2, 4], 5, password: "hunter2").joined(separator: " "))
+              + "assembled one, in the place qpdf reads it",
+              pwIndices.count == 2 && srcIndices.count == 2
+                  && pwIndices.allSatisfy { $0 > 0 && pwArgs[$0 - 1] == src.path }
+                  && srcIndices.allSatisfy {
+                      $0 + 1 < pwArgs.count && pwArgs[$0 + 1] == "--password=hunter2"
+                  },
+              pwArgs.joined(separator: " "))
         check("C29 (B): …and an absent one adds nothing",
               !args([1], 3).contains { $0.hasPrefix("--password") },
               args([1], 3).joined(separator: " "))
@@ -1511,6 +1534,16 @@ do {
             pixelWidth: 10, pixelHeight: 10,
             boxSize: CGSize(width: 612, height: 792))
         let refusedOut = dir.appendingPathComponent("passthrough-assembly.pdf")
+        // ⛔ A SENTINEL, and it is what makes the row below able to fail. Until
+        // 2026-08-25 that row read `!fileExists(refusedOut)` — and `assemble`
+        // never writes that path on any refusing path, so it was a statement
+        // about a file nothing had ever touched: green on a build with the guard
+        // deleted, green on a build that never ran the call. A byte written here
+        // first turns it into a real question — did `assemble` open its
+        // destination before validating the page list? — which is invariant 2's
+        // own words, and an implementation that truncated first lands here.
+        let sentinel = Data("not a PDF, and must survive a refusal".utf8)
+        try? sentinel.write(to: refusedOut)
         var assembleMessage = "(no throw)"
         do {
             try JBIG2.assemble([unreadable, passthroughPage], to: refusedOut)
@@ -1520,8 +1553,11 @@ do {
               assembleMessage.contains("keeps its own content")
                   && assembleMessage.contains("Page 2"),
               assembleMessage)
-        check("C29 (B): …and leaves no file where a reader could open it",
-              !FileManager.default.fileExists(atPath: refusedOut.path))
+        check("C29 (B): …and refuses before it touches its destination, so what "
+              + "was at that path is still there byte for byte",
+              (try? Data(contentsOf: refusedOut)) == sentinel,
+              "bytes=\(((try? Data(contentsOf: refusedOut)) ?? Data()).count) "
+                  + "expected=\(sentinel.count)")
         // The control that stops the pair above being "assemble throws on
         // anything": the same list with the passthrough page taken out reaches
         // the unreadable stream instead, and says something else entirely.
@@ -1565,8 +1601,38 @@ do {
                 forType: .link, withProperties: nil))
             linked = doc.write(to: linkSrc)
         }
-        check("C29 (B): the mark fixtures were written, or the four rows below "
-              + "prove nothing", marked && linked, "marked=\(marked) linked=\(linked)")
+        /// What PDFKit can actually see on page 1 of a fixture, which is what the
+        /// rows below are really about.
+        func surfacedTypes(_ url: URL) -> [String] {
+            (PDFDocument(url: url)?.page(at: 0)?.annotations ?? [])
+                .map { $0.type ?? "(nil)" }
+        }
+        /// The `/Annots` entries the page's own dictionary holds — the quantity
+        /// `Annotations.rawAnnotationCount` reads, computed here rather than
+        /// reused, because this is measuring production and not calling it.
+        func rawAnnots(_ url: URL) -> Int {
+            guard let page = PDFDocument(url: url)?.page(at: 0),
+                  let reference = page.pageRef,
+                  let dictionary = reference.dictionary else { return -1 }
+            var array: CGPDFArrayRef?
+            guard CGPDFDictionaryGetArray(dictionary, "Annots", &array),
+                  let array else { return 0 }
+            return CGPDFArrayGetCount(array)
+        }
+        // ⛔ THE ANNOTATION, not `write` returning true — and this is the row that
+        // was vacuous. `marked && linked` says only that two files reached disk;
+        // if `addAnnotation` had not persisted, the highlight row below would go
+        // red honestly but the **Link** row would go GREEN for the wrong reason,
+        // because a page with no annotations at all carries no mark either. So
+        // the fixture has to be shown to hold the thing it is named for. ⚠️ And
+        // it is three rows below, not the four this row claimed until
+        // 2026-08-25.
+        check("C29 (B): the mark fixtures hold the annotations they are named "
+              + "for, or the three rows below prove nothing",
+              marked && linked && surfacedTypes(markSrc) == ["Highlight"]
+                  && surfacedTypes(linkSrc) == ["Link"],
+              "marked=\(marked) linked=\(linked) mark=\(surfacedTypes(markSrc)) "
+                  + "link=\(surfacedTypes(linkSrc))")
         check("C29 (B): a reader's highlight on the page asked about is a mark",
               Annotations.anyCopiableMark(in: markSrc, password: nil, onPages: [1]))
         check("C29 (B): …a page that is not asked about is not one",
@@ -1577,6 +1643,304 @@ do {
               + "JSTOR cover sheet take the splice at all",
               !Annotations.anyCopiableMark(in: linkSrc, password: nil, onPages: [1]),
               "link count=\(PDFDocument(url: linkSrc)?.page(at: 0)?.annotations.count ?? -1)")
+
+        // MARK: C29 (B) — the predicate's blind spots, found by the review of
+        // the commit that shipped it
+        //
+        // ⛔ EVERY "CANNOT TELL" HAS TO BE `true`, AND THREE OF THEM WERE
+        // `false`. `false` here sends the document to the splice, where a mark
+        // this reader failed to see arrives on the page a second time and
+        // `Annotations.transplant`'s `found.count == wanted.count` refuses the
+        // WHOLE DOCUMENT. `true` keeps the pre-C29-(B) route: 3.13x the bytes on
+        // `1954 - Why.pdf`, and it cannot lose content. So the direction of the
+        // wrong answer is the whole design, and these rows pin it in both
+        // directions — the last one is what stops "answer true when unsure"
+        // being answered by returning true always.
+        //
+        // ⚠️ **These two branches are UNREACHABLE from today's pipeline, and the
+        // rows are worth having anyway.** `Model.swift`'s call site is guarded on
+        // a non-empty `carriedThrough`, which descends from
+        // `Flattener.digitalTextPages` → `Flattener.open`, and that returns `nil`
+        // both when `PDFDocument(url:)` fails AND when the document is still
+        // locked after the unlock attempt — so a non-empty passthrough set is
+        // proof the file opened and unlocked. Production reaches these only on a
+        // file that stopped being readable mid-run, which is the argument
+        // `digitalTextPages` already writes about its own `[]`. R31, R32 and H2
+        // are why an unreachable branch still gets the right answer and a check.
+        // ⚠️ A first draft of this section called it "a product defect" whose
+        // failure was "the user gets no file at all"; the adversarial review of
+        // the adoption refuted that from `Flattener.open`'s own two returns.
+        let missingSrc = dir.appendingPathComponent("c29-no-such-source.pdf")
+        check("C29 (B): a source PDFKit cannot open at all is a mark, because "
+              + "the alternative is splicing a file nothing has read",
+              Annotations.anyCopiableMark(in: missingSrc, password: nil,
+                                          onPages: [1])
+                  && !FileManager.default.fileExists(atPath: missingSrc.path),
+              "exists=\(FileManager.default.fileExists(atPath: missingSrc.path))")
+
+        // ⛔ THE REVIEW'S PREMISE FOR THIS ONE IS HALF RIGHT, AND THE HALF THAT
+        // MATTERS IS THE HALF THAT HOLDS — measured 2026-08-26, on the adoption
+        // of the strand that first wrote this block. The finding read *"a locked
+        // PDF reads `pageCount == 0` and returns false"*. The page count is
+        // wrong: a PDFKit-encrypted fixture reports **1**. The consequence is
+        // right: `annotations` comes back **EMPTY**, so the per-page loop finds
+        // nothing and, without the `isLocked` refusal, the answer would come from
+        // whatever `pageCarriesMark` makes of an empty list.
+        //
+        // ⛔ A DRAFT OF THIS BLOCK CLAIMED THE OPPOSITE — *"a locked document
+        // reports its pages and surfaces its subtypes"* — and asserted it as an
+        // ENGINE ASSUMPTION that is **red on a clean build**. How it got there is
+        // the lesson: its sabotage cut out `isLocked` and disabled
+        // `pageCarriesMark`'s `rawAnnotationCount > surfaced.count` clause, saw
+        // the mark still found, and concluded the loop had run. It had not. The
+        // `guard rawAnnotationCount >= 0` clause one line above was still in
+        // place, and that is what answered. CONTRIBUTING §3, in a review's own
+        // sabotage: the conclusion was read off a green row rather than off the
+        // value that produced it.
+        let lockedSrc = dir.appendingPathComponent("c29-locked.pdf")
+        var lockedWritten = false
+        if let doc = PDFDocument(url: markSrc) {
+            lockedWritten = doc.write(to: lockedSrc, withOptions: [
+                .userPasswordOption: "hunter2",
+                .ownerPasswordOption: "hunter2"])
+        }
+        let lockedDoc = PDFDocument(url: lockedSrc)
+        let lockedOnOpen = lockedDoc?.isLocked ?? false
+        check("C29 (B): the locked fixture was written and opens locked, or the "
+              + "three rows below prove nothing",
+              lockedWritten && lockedOnOpen,
+              "written=\(lockedWritten) locked=\(lockedOnOpen)")
+        // ENGINE ASSUMPTION: PDFKit reads a locked document's page TREE and not
+        // its annotations. Both halves are asserted, because they fail for
+        // opposite reasons: the first goes red if PDFKit ever hides the page
+        // tree, the second the day it starts surfacing the annotations — and the
+        // second is the day `anyCopiableMark`'s `isLocked` refusal would begin to
+        // matter for a reason other than the one below.
+        let lockedSurfaced = (lockedDoc?.page(at: 0)?.annotations ?? [])
+            .map { $0.type ?? "(nil)" }
+        check("ENGINE ASSUMPTION: a locked document reports its pages but "
+              + "surfaces NONE of its annotations, so C29 (B)'s isLocked refusal "
+              + "is exactly what finds a mark on one",
+              (lockedDoc?.pageCount ?? 0) >= 1 && lockedSurfaced.isEmpty,
+              "locked=\(lockedOnOpen) pages=\(lockedDoc?.pageCount ?? -1) "
+                  + "surfaced=\(lockedSurfaced) "
+                  + "rawAnnots=\(rawAnnots(lockedSrc))")
+        // ⛔ WHICH CLAUSE ANSWERS IF THE `isLocked` REFUSAL IS GONE, and the
+        // MEASURED answer is this one: with that line cut out the suite is
+        // **1336/1336** (2026-08-26), because `pageCarriesMark`'s
+        // `guard rawAnnotationCount >= 0` returns `true` before anything reads a
+        // subtype. So the refusal is belt-and-braces and nothing can watch it
+        // fail — the conclusion the draft of this block published, off a premise
+        // that was false in every part. ⛔ **This row is what makes it a
+        // measurement**: the day a locked page's dictionary becomes readable it
+        // goes red, and on that day `rawAnnotationCount` returns 0 and the
+        // predicate flips to the dangerous answer.
+        check("ENGINE ASSUMPTION: …and its page dictionary is out of reach as "
+              + "well, so the raw /Annots reader answers -1 on it",
+              rawAnnots(lockedSrc) == -1, "rawAnnots=\(rawAnnots(lockedSrc))")
+        check("C29 (B): …so a locked document carrying a mark keeps the old "
+              + "route either way, which is the answer that cannot lose content",
+              Annotations.anyCopiableMark(in: lockedSrc, password: nil,
+                                          onPages: [1]))
+        // ⛔ THE CONTROL THAT STOPS THE ROW ABOVE BEING "ANYTHING ENCRYPTED
+        // REFUSES", and the only thing in the tree that pins production's use of
+        // its `password` argument. It has to be a LINK-only locked fixture
+        // asserted **false**: on a locked HIGHLIGHT fixture `true` is also what
+        // the `isLocked` refusal answers, so deleting `document.unlock(...)`
+        // altogether would leave such a row green while every password-protected
+        // document took the Flate route for ever. Here the unlock is the only
+        // route to `false` — found by the adversarial review of this adoption.
+        let lockedLinkSrc = dir.appendingPathComponent("c29-locked-link.pdf")
+        var lockedLinkWritten = false
+        if let doc = PDFDocument(url: linkSrc) {
+            lockedLinkWritten = doc.write(to: lockedLinkSrc, withOptions: [
+                .userPasswordOption: "hunter2",
+                .ownerPasswordOption: "hunter2"])
+        }
+        check("C29 (B): the locked link-only fixture was written and opens "
+              + "locked, or the row below proves nothing",
+              lockedLinkWritten
+                  && (PDFDocument(url: lockedLinkSrc)?.isLocked ?? false),
+              "written=\(lockedLinkWritten) "
+                  + "locked=\(PDFDocument(url: lockedLinkSrc)?.isLocked ?? false)")
+        check("C29 (B): …while a locked document WITH its password is unlocked "
+              + "and READ — a Link inside one is still not a mark",
+              !Annotations.anyCopiableMark(in: lockedLinkSrc,
+                                           password: "hunter2", onPages: [1])
+                  && Annotations.anyCopiableMark(in: lockedLinkSrc,
+                                                 password: nil, onPages: [1]),
+              "withPassword="
+                  + "\(Annotations.anyCopiableMark(in: lockedLinkSrc, password: "hunter2", onPages: [1])) "
+                  + "without="
+                  + "\(Annotations.anyCopiableMark(in: lockedLinkSrc, password: nil, onPages: [1]))")
+        check("C29 (B): …and the marked one is read rather than refused once it "
+              + "is unlocked",
+              Annotations.anyCopiableMark(in: lockedSrc, password: "hunter2",
+                                          onPages: [1])
+                  && (PDFDocument(url: lockedSrc).map {
+                      $0.unlock(withPassword: "hunter2") && $0.pageCount == 1
+                  } ?? false),
+              "unlocks=\(PDFDocument(url: lockedSrc)?.unlock(withPassword: "hunter2") ?? false)")
+        // ⛔ THE NON-VACUITY ROW FOR THE WHOLE SECTION. If "unsure means yes"
+        // were implemented as "yes", every mixed document would keep the Flate
+        // route and C29 (B) would be off. An ordinary unannotated page must
+        // still read false.
+        check("C29 (B): …and an ordinary page with no annotations at all is not "
+              + "a mark, or the fix above turns the splice off",
+              !Annotations.anyCopiableMark(in: textPage, password: nil,
+                                           onPages: [1]))
+
+        // The decision, pinned without a PDF — `spliceArguments`' shape. The
+        // count clause is the one a subtype list cannot express: FIVE of the
+        // FIFTEEN `copiedSubtypes` have no `PDFAnnotationSubtype` constant, and
+        // an annotation PDFKit declines to surface is not a wrong entry in the
+        // array but a MISSING one, which no loop over that array can see.
+        // ⚠️ Five of fifteen, not the "four of the fourteen" a draft of this
+        // block said and the review it quotes claimed: `copiedSubtypes` holds 15
+        // (`/Line` was added deliberately and the count was never updated) and
+        // `PDFAnnotationUtilities.h:66-78` declares **13** constants, so
+        // `/Squiggly` is on the unmodelled list too — the one of the five a
+        // reader is most likely to have actually drawn.
+        func decides(_ surfaced: [String?], _ raw: Int) -> Bool {
+            Annotations.pageCarriesMark(surfaced: surfaced, rawAnnotationCount: raw)
+        }
+        check("C29 (B): a highlight PDFKit surfaced is a mark",
+              decides(["Highlight"], 1))
+        check("C29 (B): …a link is not, and neither is a link beside a form field "
+              + "— the JSTOR cover sheet's own shape",
+              !decides(["Link"], 1) && !decides(["Link", "Widget"], 2))
+        check("C29 (B): …an /Annots array LONGER than what PDFKit surfaced is a "
+              + "mark, because the entry it hid is the one qpdf would copy",
+              decides(["Link"], 2))
+        check("C29 (B): …an annotation whose subtype PDFKit could not read is a "
+              + "mark", decides([nil], 1))
+        check("C29 (B): …an /Annots array that could not be read at all is a mark",
+              decides([], -1))
+        check("C29 (B): …and a page with no annotations is not one, which is what "
+              + "keeps every ordinary document eligible", !decides([], 0))
+
+        // ⛔ AND THE READER ITSELF, IN BOTH DIRECTIONS. `pageCarriesMark` is pure
+        // and pinned above; `Annotations.rawAnnotationCount` is what feeds it,
+        // and until this pair existed only its `-1` was covered: sabotage it to
+        // `return 0` and the whole suite stayed green, because every fixture
+        // answered through the subtype list or through a `0 > n` that is false
+        // either way. So the clause could have been receiving 0 on every real
+        // document with nothing in the tree noticing. Found by the adversarial
+        // review of this adoption.
+        /// Production's own reader, over page 1 of a fixture. `-2` is this
+        /// helper's "the fixture would not open", kept distinct from the
+        /// function's own `-1` so a red row names which of the two happened.
+        func shippedRawAnnots(_ url: URL) -> Int {
+            guard let page = PDFDocument(url: url)?.page(at: 0) else { return -2 }
+            return Annotations.rawAnnotationCount(of: page)
+        }
+        check("C29 (B): the raw /Annots reader counts a page's real entries, not "
+              + "zero — one on the link fixture",
+              shippedRawAnnots(linkSrc) == 1, "raw=\(shippedRawAnnots(linkSrc))")
+        check("C29 (B): …and zero, not -1, on a page whose dictionary is readable "
+              + "and holds no /Annots key at all",
+              shippedRawAnnots(textPage) == 0,
+              "raw=\(shippedRawAnnots(textPage))")
+
+        // ⛔ AND THE OTHER HALF OF THE REVIEW'S FINDING IS MEASURED RATHER THAN
+        // REASONED, 2026-08-25. It said four of the fourteen `copiedSubtypes`
+        // have no `PDFAnnotationSubtype` constant — the count is wrong (five of
+        // fifteen, see above) and the hazard inferred from it does not occur.
+        // Measured: PDFKit reports `type` as the raw name anyway. `/Polygon`
+        // written into a page's `/Annots` comes back surfaced, as `"Polygon"`, so
+        // the membership test answers it and the count clause never fires.
+        // ⚠️ **n = 1 of the five.** `/Squiggly`, `/PolyLine`, `/Caret` and
+        // `/FileAttachment` are reasoned from this one reading, not measured, and
+        // the one measured is the least likely of the five to be on a real page.
+        let polySrc = dir.appendingPathComponent("c29-polygon.pdf")
+        if let doc = PDFDocument(url: textPage), let page = doc.page(at: 0) {
+            page.addAnnotation(PDFAnnotation(
+                bounds: CGRect(x: 60, y: 560, width: 120, height: 40),
+                forType: PDFAnnotationSubtype(rawValue: "/Polygon"),
+                withProperties: nil))
+            _ = doc.write(to: polySrc)
+        }
+        check("ENGINE ASSUMPTION: PDFKit surfaces an annotation whose subtype it "
+              + "has no constant for, and reports the raw name — so a /Polygon "
+              + "is a mark by the subtype test and not by the count",
+              rawAnnots(polySrc) == 1 && surfacedTypes(polySrc) == ["Polygon"]
+                  && Annotations.anyCopiableMark(in: polySrc, password: nil,
+                                                 onPages: [1]),
+              "raw=\(rawAnnots(polySrc)) surfaced=\(surfacedTypes(polySrc))")
+    }
+
+    // MARK: C29 (B) — the splice run for real, with the passthrough page NOT at
+    // the front
+    //
+    // The arithmetic above is pinned without qpdf; this is the one thing that
+    // needs it, and the reason is the review's. Every qpdf-backed run C29 (B)
+    // shipped put the passthrough page at position 1 — the single shape a
+    // `page1 == coverText` row catches by itself. A middle page and a last page
+    // are where the assembled file's own numbering goes wrong, because that file
+    // is indexed by how many encoded pages went before rather than by page
+    // number, and the result of getting it wrong is a three-page document with
+    // three pages in the wrong order. No page count can see that; reading the
+    // pages can. jbig2enc is not needed here and the block is not gated on it:
+    // `splice` is qpdf and nothing else.
+    if let qpdf = JBIG2.merger {
+        let orderDir = tmp.appendingPathComponent("c29-splice-order")
+        try? FileManager.default.createDirectory(at: orderDir,
+                                                withIntermediateDirectories: true)
+        /// One page per label, drawn as ordinary visible text so PDFKit reads it
+        /// straight back — which is what makes the page ORDER readable.
+        func labelledPDF(at url: URL, _ labels: [String]) {
+            var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+            guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
+            let font = CTFontCreateWithName("Helvetica" as CFString, 48, nil)
+            for label in labels {
+                pdf.beginPDFPage(nil)
+                pdf.textPosition = CGPoint(x: 72, y: 400)
+                CTLineDraw(CTLineCreateWithAttributedString(
+                    NSAttributedString(string: label, attributes: [.font: font])), pdf)
+                pdf.endPDFPage()
+            }
+            pdf.closePDF()
+        }
+        func pageStrings(_ url: URL) -> [String] {
+            guard let doc = PDFDocument(url: url) else { return [] }
+            return (0..<doc.pageCount).map {
+                (doc.page(at: $0)?.string ?? "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        let orderSrc = orderDir.appendingPathComponent("source.pdf")
+        let orderAsm = orderDir.appendingPathComponent("assembled.pdf")
+        labelledPDF(at: orderSrc, ["SRCONE", "SRCTWO", "SRCTHREE"])
+        labelledPDF(at: orderAsm, ["ASMONE", "ASMTWO"])
+        check("C29 (B): the page-order fixtures read back three pages and two, "
+              + "or the three rows below prove nothing",
+              pageStrings(orderSrc) == ["SRCONE", "SRCTWO", "SRCTHREE"]
+                  && pageStrings(orderAsm) == ["ASMONE", "ASMTWO"],
+              "src=\(pageStrings(orderSrc)) asm=\(pageStrings(orderAsm))")
+
+        func spliced(_ passthrough: [Int], _ label: String) -> [String] {
+            let out = orderDir.appendingPathComponent("\(label).pdf")
+            do {
+                try JBIG2.splice(source: orderSrc, password: nil, into: orderAsm,
+                                 passthrough: passthrough, pageCount: 3,
+                                 to: out, using: qpdf)
+            } catch { return ["(threw) \(error.localizedDescription)"] }
+            return pageStrings(out)
+        }
+        let middle = spliced([2], "middle")
+        let last = spliced([3], "last")
+        let first = spliced([1], "first")
+        check("C29 (B): a passthrough page in the MIDDLE comes out in the "
+              + "middle, with the assembled pages either side of it in order",
+              middle == ["ASMONE", "SRCTWO", "ASMTWO"], "\(middle)")
+        check("C29 (B): …a passthrough page LAST comes out last, after both "
+              + "assembled pages", last == ["ASMONE", "ASMTWO", "SRCTHREE"],
+              "\(last)")
+        // The shape that was already covered, kept as the control: it is the one
+        // an off-by-one in the assembled numbering cannot reach, because nothing
+        // precedes it.
+        check("C29 (B): …and the shape (B) shipped with, first, still comes "
+              + "first", first == ["SRCONE", "ASMONE", "ASMTWO"], "\(first)")
     }
 
     // A mixed book must assemble into one valid PDF carrying both filters.
