@@ -10157,11 +10157,17 @@ do {
         //    answer on. `passThrough` is the set `Flattener.digitalTextPages` finds —
         //    production's own composition, in the order production composes it — so
         //    what is measured here is `Model`'s two lines minus the literal argument.
-        //    ⚠️ That argument is what nothing in this suite can see: no check runs a
-        //    document end-to-end through `makeSearchablePDF` (the queue's
-        //    `mrc-endtoend`), so a build that computed the set and passed `[]` would
-        //    be green here. Stated rather than dressed up, and recorded in `BUGS.md`
-        //    C29 as what the fix does not cover.
+        //    ⚠️ That argument is what these rows cannot see: they compose the two
+        //    calls by hand, so a build that computed the set and passed `[]` is green
+        //    HERE. ✅ **No longer green in the file: block 6 below runs
+        //    `makeSearchablePDF` end to end on a document with a born-digital page
+        //    and reds on exactly that build** (`BUGS.md` C29 `#### (B) MEASURED`).
+        //    ⛔ This comment used to say "no check runs a document end-to-end through
+        //    `makeSearchablePDF`", which was ALREADY FALSE when it was written —
+        //    :379, :3741, :5134, :5186, :8648, :9450 and :13027 all do. The real gap
+        //    was narrower: none of them used a document with a born-digital page on
+        //    it. Corrected by the adversarial review of block 6's diff, which counted
+        //    them.
         let routedSet = Set(Flattener.digitalTextPages(in: jstor))
         let routed = dir.appendingPathComponent("born-digital-cover-routed.pdf")
         // ⚠️ The directory has to EXIST. `flatten` throws `pageFailed` when `writePNG`
@@ -10495,7 +10501,7 @@ do {
         //    route CAN carry a passthrough page, which is the premise the
         //    decomposition in the entry is built on. The JBIG2 route cannot, for
         //    a reason no check here can see: `compose` runs with
-        //    `drawImages: false` on it (`Model.swift:2318`) and the page content
+        //    `drawImages: false` on it (`Model.swift:2373`) and the page content
         //    comes from `JBIG2.assemble`, which writes one image stream per page.
         let through = dir.appendingPathComponent("c29-passthrough.pdf")
         let flattened = dir.appendingPathComponent("c29-rasterised.pdf")
@@ -10558,6 +10564,153 @@ do {
             check("C29: both copies open, so the born-digital-in-the-output row ran",
                   false)
         }
+
+        // ⛔ 6. C29 (B). THE WHOLE PIPELINE, and the one thing block 3b says nothing
+        //    in this suite can see: **the literal argument at `Model`'s `flatten`
+        //    call site**. Block 3b composes `digitalTextPages` and
+        //    `flatten(passThrough:)` by hand in production's order, so a build that
+        //    computed the set and then passed `[]` was green everywhere. These rows
+        //    run `OCRModel.makeSearchablePDF` end to end instead and read the
+        //    PUBLISHED file, so the argument is what they are about.
+        //
+        //    ⛔ THE PREMISE BLOCK 3b STATES IS TOO WIDE AND SO WAS THIS COMMENT'S
+        //    FIRST DRAFT: this file already ran `makeSearchablePDF` end to end at
+        //    :379, :3741, :5134, :5186, :8648, :9450 and :13027, and several of
+        //    those read the published file. The narrow truth is what matters and it
+        //    is enough: **none of them uses a document with a born-digital page on
+        //    it**, so none of them can see `passThrough`. Refuted by the
+        //    adversarial review of this diff, which counted the call sites; block
+        //    3b's own sentence is corrected in place for the same reason.
+        //
+        //    They also carry (B)'s measurement, which is why the arms are three runs
+        //    and not one: a mixed document falls to the **Flate** route by arithmetic
+        //    (`encoded.count == bitmaps.count` fails, `Model.swift:2229-2230`), and the
+        //    `else` at `:2431` is not only a cheaper compression — the **MRC
+        //    re-layering loop lives inside the JBIG2 branch** (`:2249-2356`), so one
+        //    passthrough page takes C26's and C28's whole layering machinery with it
+        //    for the entire document. The price is measured below on the scan pages
+        //    alone, where `useJBIG2` off reaches the identical `else`.
+        //
+        //    ⚠️ Deliberately a SMALL document. Three pages, not the nine-page fixture
+        //    above: every page here is a real rebuild plus a real `VNRecognizeTextRequest`
+        //    and this block already pays for six of them.
+        //
+        //    ⛔ GATED, because the route row asserts a JBIG2 verdict and a machine
+        //    without jbig2enc/qpdf would red it rather than skip it — a false failure
+        //    on somebody else's Mac, which is worse than an absent measurement. The
+        //    precedents in this file are the outline block (:5213) and the crop-box
+        //    block (:8764), and the census row below is theirs too: it asserts the
+        //    literal in `skipBlock`'s `checks:` against what actually ran, so the
+        //    skip line cannot go stale as rows are added. Found by the adversarial
+        //    review of this diff, which noted the block had no gate at all.
+        if JBIG2.encoder != nil, JBIG2.merger != nil {
+            let checksBeforeC29B = checks
+            let e2eDir = dir.appendingPathComponent("c29-e2e")
+            try? FileManager.default.createDirectory(at: e2eDir, withIntermediateDirectories: true)
+            let mixedSrc = e2eDir.appendingPathComponent("mixed.pdf")
+            makeBornDigitalCoverPDF(at: mixedSrc, coverPages: 1, scanPages: 2)
+            let mixedCoverText = (PDFDocument(url: mixedSrc)?.page(at: 0)?.string ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // The scan pages ON THEIR OWN, made by DELETING page 1 rather than by
+            // re-running the builder: the builder writes "of page \(p + coverPages)"
+            // into the ink, so a separately built two-page document would carry
+            // different words and compress differently. This way the two documents
+            // hold the SAME pixels and the byte pair below is about the route.
+            let scansOnly = e2eDir.appendingPathComponent("scans-only.pdf")
+            if let m = PDFDocument(url: mixedSrc) { m.removePage(at: 0); m.write(to: scansOnly) }
+
+            /// One end-to-end run. Returns the published bytes, whether the JBIG2
+            /// route was taken, the outcome, and the published page 1 string.
+            func publish(_ src: URL, label: String, jbig2: Bool)
+                -> (bytes: Int, tookJBIG2: Bool, ok: Bool, page1: String, pages: Int) {
+                resetPrefs()
+                d.set(jbig2, forKey: Prefs.useJBIG2)
+                let out = e2eDir.appendingPathComponent("\(label).ocr.pdf")
+                try? FileManager.default.removeItem(at: out)
+                var outcome: Runner.Result.Outcome?
+                var took = false
+                OCRModel.makeSearchablePDF(
+                    file: src, output: out, rebuild: true, rebuildMode: .auto,
+                    password: nil, control: RunControl(), progress: { _, _ in },
+                    tookJBIG2Route: { took = true },
+                    report: { o, _ in outcome = o })
+                let bytes = (try? FileManager.default
+                    .attributesOfItem(atPath: out.path)[.size] as? Int) ?? nil
+                let doc = PDFDocument(url: out)
+                let p1 = (doc?.page(at: 0)?.string ?? "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                resetPrefs()
+                return (bytes ?? -1, took, outcome == .succeeded, p1, doc?.pageCount ?? -1)
+            }
+
+            let mixedRun = publish(mixedSrc, label: "mixed", jbig2: true)
+            let scansJB = publish(scansOnly, label: "scans-jbig2", jbig2: true)
+            let scansFlate = publish(scansOnly, label: "scans-flate", jbig2: false)
+
+            // Non-vacuity before anything else: three runs that failed would satisfy
+            // several of the rows below by accident.
+            check("C29 (B): all three end-to-end runs published",
+                  mixedRun.ok && scansJB.ok && scansFlate.ok,
+                  "mixed=\(mixedRun.ok) jbig2=\(scansJB.ok) flate=\(scansFlate.ok)")
+            // Invariant, not a pin: a routing change that loses a page is invariant-1
+            // content loss. ⚠️ Not "every other row here would still be green", which
+            // an earlier draft claimed and the review of it refuted: losing page 1
+            // reds the exact-text row below as well. What this catches on its own is
+            // a lost SCAN page, which nothing else here looks at.
+            check("C29 (B): …with every page kept, three and two",
+                  mixedRun.pages == 3 && scansJB.pages == 2 && scansFlate.pages == 2,
+                  "mixed=\(mixedRun.pages) jbig2=\(scansJB.pages) flate=\(scansFlate.pages)")
+
+            // ⛔ THE ROW THE `passThrough: []` SABOTAGE REDS. Exact string equality
+            // against the source page, not a count: `AMFAKAN FOCAX ONCAL ASSOXUTION`
+            // has the right length. ⚠️ NOT "the only row in this file that reads a
+            // published file" — a draft said that and the review counted seven other
+            // end-to-end sites; what is unique is the born-digital page in the input.
+            check("C29 (B): the PUBLISHED cover page keeps its exact text, so the "
+                  + "passThrough argument at Model's own call site is wired",
+                  mixedRun.page1 == mixedCoverText && !mixedCoverText.isEmpty,
+                  "published=\(mixedRun.page1.count) source=\(mixedCoverText.count) "
+                      + "equal=\(mixedRun.page1 == mixedCoverText)")
+
+            // ⛔ TODAY'S ROUTE, PINNED so that a JBIG2 splice has something to flip.
+            // The all-scan pair beside it is what stops this being vacuous: the same
+            // builder's pages, the same settings, and they DO reach JBIG2 — so the
+            // mixed document's Flate route is the passthrough page's doing and not
+            // this machine missing a binary.
+            check("C29 (B): a mixed document takes the Flate route while the same "
+                  + "scan pages without the cover take JBIG2",
+                  !mixedRun.tookJBIG2 && scansJB.tookJBIG2 && !scansFlate.tookJBIG2,
+                  "mixed=\(mixedRun.tookJBIG2) jbig2Arm=\(scansJB.tookJBIG2) "
+                      + "flateArm=\(scansFlate.tookJBIG2)")
+
+            // (B)'s price, on the scan pages alone and therefore about the ROUTE
+            // rather than about page 1's content. `useJBIG2` off reaches the same
+            // `else` the count guard falls to, so this is the fallback's own code
+            // path — ⚠️ minus the wasted `jbig2enc` pass, which the fallback pays and
+            // this arm does not, so it is the BYTE cost and not the time cost.
+            let perPage = (scansFlate.bytes - scansJB.bytes) / 2
+            print("C29 (B) route price on 2 scan pages: JBIG2 \(scansJB.bytes) B, "
+                  + "Flate \(scansFlate.bytes) B, delta "
+                  + "\(scansFlate.bytes - scansJB.bytes) B, \(perPage) B/page; "
+                  + "mixed 3-page document \(mixedRun.bytes) B on the Flate route")
+            // A direction and not a threshold: what the decision needs is that the
+            // fallback is DEARER on the same pixels, and by how much is the printed
+            // line above rather than a bar nobody chose. A bar here would be a
+            // constant this project would then have to defend.
+            check("C29 (B): the Flate route really is the dearer one on the same "
+                  + "pixels, which is what the fallback costs a mixed document",
+                  scansFlate.bytes > scansJB.bytes && scansJB.bytes > 0,
+                  "jbig2=\(scansJB.bytes) flate=\(scansFlate.bytes) "
+                      + "delta=\(scansFlate.bytes - scansJB.bytes)")
+            check("the skip census figure for C29 (B)'s route pair is still right",
+                  checks - checksBeforeC29B + 1 == 6,
+                  "\(checks - checksBeforeC29B + 1) checks, census says 6")
+        } else {
+            skipBlock("C29 (B)'s end-to-end route pair", checks: 6,
+                      because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
+        }
+        resetPrefs()
     }
 
     // 4. The batch-level pre-flight picks out exactly the digital ones.

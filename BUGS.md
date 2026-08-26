@@ -18,10 +18,17 @@ list — one page without a bitmap would have shifted every later page's text on
 file whose page count is right; the work list now carries page numbers and a passthrough page is recorded as
 an **empty** entry rather than left absent, because `missingPages` refuses a whole document over a gap.
 `JBIG2.assemble` needed no change: `encoded.count == bitmaps.count` fails and the Flate fallback was already
-there. ⚠️ **What no check can see is the literal argument at `Model`'s call site** — nothing runs a document
-end-to-end through `makeSearchablePDF` — and what (A) does not reach is **(B)**, the JBIG2 byte cost, and the
-**120-character bar**, under which a short born-digital page is still rasterised and now no report line
-names it.
+there. ⛔ **BOTH OF (A)'s NAMED GAPS MOVED ON 2026-08-25 — `#### (B) MEASURED`.** The literal argument at
+`Model`'s call site **is** pinned now: six checks run a document end-to-end through `makeSearchablePDF` on a
+document with a born-digital page — the thing no earlier end-to-end check used — read the **published** file,
+and go red on a build that computes the set and passes `[]` (`1278/1280`, two `FAIL` lines, predicted). And
+**(B) is measured on a real corpus document run both ways** — `1954 - Why.pdf`, **1,375,847 B** on the Flate
+route against **439,686 B** on JBIG2, **+936,161 B, 3.13x**, of which ⛔ **90.8% is the LOST MRC
+RE-LAYERING and not the compression** (production's own `Layered 5 picture pages, saving 830 KB` against the
+Flate arm's nothing), so the decision is that **the fallback is not the answer**; the `qpdf --empty --pages` splice is
+demonstrated at **456,171 B** with nine `JBIG2Decode` streams surviving. ⛔ **Do not quote the generated
+fixture's 1.34x** — sparse synthetic type understates this 2.3x. What is still untouched is the
+**120-character bar**, under which a short born-digital page is rasterised and no report line names it.
 ✅ **`C29` has the FIXTURE it said it needed first, as of 2026-08-23, and today's wrong answer is PINNED**
 (`#### The fixture, and today's answer PINNED`): a nine-page JSTOR shape whose cover page reads 302
 characters and is not a page-sized image, whose other eight pages ALL clear the 120-character bar so the
@@ -9856,7 +9863,8 @@ and `INKBAR=0.0005`'s `1 of 2 … 201,252 B/page, 5.76x` all come back the same.
 ⛔ **HALF FIXED as of 2026-08-25: the page is no longer rasterised — see `#### (A) SHIPPED`.** A born-digital
 page is copied through with `drawPDFPage` and keeps its exact text; the loss this entry was opened for does
 not happen on any page clearing the 120-character bar. What keeps it open is **(B)**, the JBIG2 route's
-unmeasured byte cost on a mixed document, and **the 120-character bar itself**, under which a short
+byte cost on a mixed document — ⛔ **MEASURED 2026-08-25, +936,161 B / 3.13x, see `#### (B) MEASURED`, so
+"unmeasured" is spent and what is left of (B) is its IMPLEMENTATION** — and **the 120-character bar itself**, under which a short
 born-digital page is still rasterised and is now named by no report line at all. Read that section before
 anything else here: the title and the whole account below it describe the behaviour **before** the fix.
 
@@ -10242,8 +10250,10 @@ one whose silence is a judgement rather than a gap, below.
   the 900 px bar — so it reads born digital and would be reported as having lost exact text it never had.
   Not observed (all five firings read at 1:1 were real) and not excluded (387 of 392 are the probe's word).
 * ⛔ **The wiring is not covered by any check.** The three new functions are tested; the path
-  `digitalTextPages` → `digitalTextPageNote` → `log` → `RunReport` is not, because nothing in the suite runs
-  a document end-to-end through `makeSearchablePDF` — the queue's `mrc-endtoend` item, and C28's own report
+  `digitalTextPages` → `digitalTextPageNote` → `log` → `RunReport` is not. ⛔ **The REASON given here was too
+  wide and was corrected 2026-08-25**: this suite has run documents end-to-end through `makeSearchablePDF`
+  all along (seven sites in `Tests/main.swift`), and `#### (B) MEASURED` adds one with a born-digital page in
+  it. What no check reaches is the `log` → `RunReport` hop — the queue's `mrc-endtoend` item, and C28's own report
   has the same hole recorded ("the one part no check reaches"). What *is* established is that the parameter
   has a default, so every existing call site compiles unchanged.
 * It adds **no mutant** to `Tools/mutate.py`. The `prefix(3)` cap is pinned by a check that was watched
@@ -10284,7 +10294,7 @@ it rasterises either way. The count, the three names and that one exemption were
 `visible` with `drawPDFPage` under `drawImages`, which defaults to true
 (`SearchableWriter.swift:288-298`) — so if `flatten` draws the source page through instead of drawing a
 raster, the content reaches the published file with no new plumbing at all. On the JBIG2 route `compose` is
-called with **`drawImages: false`** (`Model.swift:2318`): it writes the invisible text layer only, and the
+called with **`drawImages: false`** (`Model.swift:2373`, corrected 2026-08-25 from a stale `:2318`): it writes the invisible text layer only, and the
 page's pixels come from `JBIG2.assemble`, which writes one image stream per page and has nowhere to put a
 page that has no image. That half of the previous section's map is confirmed.
 
@@ -10296,7 +10306,9 @@ A passthrough page contributes no entry to `encoded` (the `onPage` closure at `M
 entries are made), so `encoded.count != bitmaps.count` and a mixed document falls to Flate through a
 condition that already exists and already means what is wanted. **No `JBIG2.assemble` change, no new
 guard.** ⚠️ The price is bytes, on mixed documents only: the JBIG2 route is roughly a third of the Flate
-route at the same resolution (`Model.swift:2162-2164`), and **that cost is unmeasured** — no document with
+route at the same resolution (`Model.swift:2218-2219` — ⛔ **the citation here read `:2162-2164`, which is a
+`missingPages` line, corrected 2026-08-25**), and ⛔ **that cost IS MEASURED as of 2026-08-25**: see
+`#### (B) MEASURED`, where the delta turns out to be **90.8% MRC re-layering** rather than compression. No document with
 this shape has been run both ways. It is the second commit's decision, not a blocker on the first.
 
 ⛔ **The real blocker is `Recogniser`, not `JBIG2`.** `recogniseDocument` builds its work list as
@@ -10367,7 +10379,7 @@ shifted again by the review's own fixes. Re-derive them by pattern, not by trust
 20 sites, the passthrough arm in `flatten`, the recognition skip, and the report re-worded from "lost its
 text" to "passed through" — Flate-route only, JBIG2 falling back by arithmetic. **(B)** the JBIG2 route:
 either splice the original page in with `qpdf`, which is already in the pipeline for the text-layer merge
-(`JBIG2.overlay`, `Model.swift:2364`), or measure the Flate fallback's byte cost on a mixed document and
+(`JBIG2.overlay`, `Model.swift:2419`, corrected 2026-08-25 from a stale `:2364`), or measure the Flate fallback's byte cost on a mixed document and
 decide the fallback is the answer. (B) is a measurement plus a decision; (A) is the code.
 
 ⚠️ **What this section does NOT establish**, said here rather than left to be found:
@@ -10401,7 +10413,8 @@ decide the fallback is the answer. (B) is a measurement plus a decision; (A) is 
   entry is where that has to be read before (A) is written.
 * ⚠️ **Measured on the fixture, not on a corpus document.** `testdocs/` holds nothing of this shape, which is
   why the fixture exists; the corpus population is `C29-CORPUS-2026-08-25.tsv`'s 42 documents and none of
-  them has been run through a passthrough.
+  them had been run through a passthrough — ⛔ **one has as of 2026-08-25, `1954 - Why.pdf`; see
+`#### (B) MEASURED`.**
 
 #### (A) SHIPPED — 2026-08-25: a born-digital page is copied through instead of rasterised
 
@@ -10412,7 +10425,9 @@ through with the `getDrawingTransform` + `drawPDFPage` pair `renderGrey` already
 in. On C29's own fixture the cover page comes out carrying its **302 characters, character for character
 equal to the source page's own string**, where it read 0 before, and the eight already-OCR'd scans are still
 rasterised. C29 goes **OPEN → HALF FIXED**: what is left is (B), the JBIG2 route's byte cost, and the
-120-character bar.
+120-character bar. ✅ **(B)'s COST IS MEASURED AS OF 2026-08-25 and the decision is taken — see
+`#### (B) MEASURED`: 3.13x on a real corpus document, so the fallback is NOT the answer.** What is left of
+this entry is (B)'s implementation and the 120-character bar.
 
 **The three places the array's density is load-bearing, and how each is satisfied.** `flatten` returns one
 `RebuiltPage` per source page whether it rasterised it or not, so `bitmaps` is still indexed by page number
@@ -10525,7 +10540,9 @@ nothing does; `willRebuild` asks `hasEmbeddedText` of the **source**. *Who else 
   encoded.count == bitmaps.count` branch as the JBIG2 assembly, so falling back to Flate takes C26's and
   C28's entire layering machinery with it — not just a compression. Said here because the first draft of
   this section, and of the changelog and the queue box, priced only "~3x the bytes".
-* ⛔ **(B) is untouched and its cost is still unmeasured.** A mixed document now takes the Flate route, which
+* ⛔ **(B) is untouched here and its cost was unmeasured when this bullet was written — ⛔ IT IS MEASURED AS
+  OF 2026-08-25, `#### (B) MEASURED`: +936,161 B, 3.13x, and 90.8% of it is the lost MRC re-layering rather
+  than the compression this bullet blames.** A mixed document now takes the Flate route, which
   is roughly 3x the JBIG2 route's bytes at the same resolution, **and** discards a whole `jbig2enc` pass
   that the `onPage` closure has already paid for by the time the count guard is evaluated. No document of
   this shape has been run both ways.
@@ -10548,7 +10565,147 @@ nothing does; `willRebuild` asks `hasEmbeddedText` of the **source**. *Who else 
   why the request-minus-outcome derivation exists rather than reporting the request. Never observed;
   `renderGrey` has a fallback for the same state.
 * ⚠️ **Still the fixture and not the corpus.** None of `C29-CORPUS-2026-08-25.tsv`'s 42 documents has been
-  run through a passthrough, and no byte figure is published for a real document.
+  run through a passthrough, and no byte figure is published for a real document. ✅ **BOTH HALVES OF THIS
+  BULLET ARE DISCHARGED by `#### (B) MEASURED` below** — `1954 - Why.pdf` was run through a passthrough and
+  its byte figure is published.
+
+#### (B) MEASURED — 2026-08-25: the Flate fallback costs 3.13x on a real document, and the splice is available
+
+⛔ **THE NUMBER (B) WAS OPENED FOR, ON A REAL CORPUS DOCUMENT OF C29'S OWN SHAPE, RUN BOTH WAYS.**
+`testdocs/book/1954 - Why.pdf` — 10 pages, born-digital p1, row 1 of `C29-CORPUS-2026-08-25.tsv` — through
+two binaries that differ in **one token** at `Model.swift:1996` (`control.isCancelled` →
+`!control.isCancelled`, so an uncancelled run passes `[]`: the pre-(A) argument). Today's arm takes the
+**Flate** route and publishes **1,375,847 B** with page 1 carrying its **1,348 characters, exactly equal to
+the source page's string**. The `passThrough: []` arm takes the **JBIG2** route and publishes **439,686 B**
+with page 1 reading **1,382 characters that are NOT the source's** — C29's founding symptom, in a published
+file, on a corpus document. **The fallback costs +936,161 B, 3.13x, 93,616 B/page.**
+
+⛔ **AND 90.8% OF THAT DELTA IS THE LOST MRC RE-LAYERING, NOT JBIG2 COMPRESSION — measured from
+production's own progress line, and it is the most important number in this section.** The JBIG2 arm prints
+`Layered 5 picture pages, saving 830 KB` (`Model.swift:2357-2361`) = **849,920 B** of the 936,161 B; the
+Flate arm prints **nothing**, and that is measured rather than reasoned (`layered: (none — the MRC loop
+never ran)`). So the JBIG2 image coding and the container differences account for the remaining ~**86,241 B,
+9.2%**. ⛔ **THEREFORE `Model.swift:2218-2219`'s "roughly a third the size of the CoreGraphics route" IS NOT
+CONFIRMED BY THIS MEASUREMENT AND A DRAFT OF THIS SECTION SAID IT WAS.** 0.320x is a *confounded* ratio —
+JBIG2 plus C26/C28's whole layering machinery — and the compression-only part of it is nowhere near a third.
+The comment is neither confirmed nor refuted here; it is unmeasured. ⚠️ `savedBytes` is an image-stream
+before/after summed inside the route, so the two shares are not exactly additive with the file delta; read
+them as 90/10 and not as a decomposition to the byte.
+
+⛔ **AND THAT IS WHY THE GENERATED FIXTURE READS 1.342x — MRC, NOT TYPE DENSITY.** The suite's own two scan
+pages read JBIG2 **23,639 B** against Flate **31,724 B**, delta **8,085 B**. A draft explained the gap by
+the fixture's sparse 44 pt type; the real mechanism is that its scan pages are **bilevel**, and the MRC loop
+skips bilevel pages by design (`Model.swift:2259-2260`) — so the fixture has **no MRC component at all**
+while the corpus figure is 90.8% MRC. Predicted by the adversarial review of this diff and then measured.
+**Quote the corpus document's 3.13x and never the fixture's 1.34x**: the two sets differ by 2.3x, and they
+differ because they are measuring different things. The same lesson as C26's 5.96x and the stencil-ink
+ratio — a ratio is a claim about its own set.
+
+✅ **THE CONTROL THAT SAYS THE FALLBACK IS THE WHOLE DIFFERENCE, and it is exact.** The same clean binary on
+the same document with `useJBIG2` **off** publishes **1,375,847 B** — **byte-identical** to the
+`useJBIG2` **on** run. So a mixed document today publishes precisely what a user who turned JBIG2 off would
+get, and the `jbig2enc` pass the `onPage` closure pays before the count guard is evaluated is **entirely
+wasted**: 6.0 s against the JBIG2 arm's 9.9 s and the JBIG2-off arm's 4.9 s, so the wasted encode is about
+a fifth of the run on this document. ⚠️ Three wall-clock readings on one machine, not a timing study.
+
+**Why the Flate arm layers nothing at all.** `Flattener.mrcLayers` has exactly **one** production call site
+(`Model.swift:2301`) and it is inside the JBIG2 branch, so falling back to Flate takes C26's and C28's
+entire layering machinery with it rather than only a compression.
+⛔ **A DRAFT OF THIS SECTION SAID THE TWO HALVES "CANNOT BE SEPARATED AT THIS SEAM WITHOUT A SECOND
+OVERRIDE" AND THAT WAS FALSE — the separation was free, on the run that produced the number.** The
+`progress` closure the first probe discarded with `progress: { _, _ in }` already carries it. Refuted by the
+adversarial review of this diff; the split above is the repair, from a second pair of runs that filter
+`progress` for `"Layered "`.
+⚠️ On *this* document `shrunkNotes` is **0 on both arms**, so no page was published shrunk-as-all-text and
+none of the delta is bought by C28 degradation — on the very document C26 was opened on. ⛔ **Read that
+asymmetrically: 0 on the JBIG2 arm is a measurement (the loop ran, on five pages, and shrank none of them),
+and 0 on the Flate arm is BY CONSTRUCTION**, because `shrunkTextPageMessage` is assigned only inside the
+JBIG2 branch. Also caught by the review of this diff.
+
+✅ **AND THE FIX IS AVAILABLE WITH TOOLS ALREADY IN THE PIPELINE — DEMONSTRATED, NOT REASONED.** `qpdf`
+(already run by `JBIG2.overlay`, `Model.swift:2419`) splices a source page into an assembled JBIG2 document
+by page selection:
+
+    qpdf --empty --pages "1954 - Why.pdf" 1 <jbig2-output>.pdf 2-10 -- spliced.pdf
+    pdftotext -f 1 -l 1 spliced.pdf - | tr -d '[:space:]' | wc -c    # 1161, same as the source
+
+**456,171 B, 10 pages, page 1's extracted text character-count identical to the source's (1,161 non-space
+characters), and 9 surviving `JBIG2Decode` streams** — one per rebuilt page. Against today's 1,375,847 B
+that is **−919,676 B, 0.332x**, i.e. it recovers **98.2%** of the fallback's cost. ⚠️ The count is **1,161**;
+a draft published 1,162 with no recipe beside it, which is why the command is here now.
+⚠️ **What that demonstration is and is not.** It proves the *mechanism* is reachable — `qpdf --empty
+--pages` exists in the installed qpdf 12.3.2, page order is expressible, and JBIG2 streams survive the
+splice — and it does **not** implement (B): the spliced page 1 came from the *sabotage* arm's output, which
+had already rasterised and re-OCR'd it, so the real route would have **9** encoded pages against a
+**10**-page text layer, and the count guard, `JBIG2.assemble`'s page list and `JBIG2.overlay`'s
+page-for-page alignment all have to be made to agree. None of that is written or tested here.
+
+⛔ **THE DECISION: THE FALLBACK IS NOT THE ANSWER, AND (B) IS WORTH ITS COMMIT.** The population is **42
+documents of 233**, holding **2,090 pages of 16,987 (12.3%)** between them, of which **392 are the
+born-digital pages themselves** — the two page figures answer different questions and this entry has both:
+392 is what `#### The report, SHIPPED` counts, 2,090 is what pays the fallback, because the fallback is
+per **document**. **28 of the 42 fire on exactly one page, so a single page turns the route off for its
+whole document.** ⚠️ **Not "typically triples it"** — a draft said that, and pooling one document's ratio
+over 41 unrun ones is exactly the arithmetic the limits below forbid. The mechanism generalises; the
+magnitude does not. 3.13x on one such document, against a fix whose
+mechanism is one `qpdf` invocation of a kind the pipeline already makes, is not a trade to accept by
+silence. ⛔ **The option rejected, and why it was seriously considered**: living with the fallback costs
+nothing to build and cannot lose content — the Flate route is *correct*, and `Model.swift`'s own note that
+MRC "is an improvement on a working page, never a requirement" means the loss is bytes and only bytes. It is
+refused on size, not on risk. ⚠️ **And the counter-argument is real and is recorded rather than dismissed**:
+the splice puts new page-assembly logic on the path that publishes user content, which is invariant 2's
+ground and where C23 already bit twice — so it needs its own failing test first, and it must not be bolted
+onto a commit doing anything else.
+
+✅ **WHAT LANDED HERE IS THE MEASUREMENT AND ONE GAP CLOSED. Nothing in `Sources/` moved.** Six checks in
+`Tests/main.swift` (**1,275 → 1,281**), block 6 of the born-digital section, gated on `JBIG2.encoder`/`merger`
+with the file's own skip-census row, and they close the one thing `#### (A) SHIPPED` named as the cost of its
+own decision: *"a build that computed the set and passed `[]` would be green"*. ⛔ **The REASON that section
+gave — "nothing runs a document end-to-end through `makeSearchablePDF`" — was ALREADY FALSE when it was
+written**: `Tests/main.swift` does so at `:379`, `:3741`, `:5134`, `:5186`, `:8648`, `:9450` and `:13027`.
+The true gap was narrower and is enough: **none of them used a document with a born-digital page on it.**
+Counted by the adversarial review of this diff, and corrected in the four places the false universal had
+been copied to. These rows run it, read the **published** file, and pin today's route.
+✅ **WATCHED FAILING, PREDICTED BY NAME AND COUNT BEFORE THE RUN: `1278/1280`, exactly TWO `FAIL` lines** —
+⚠️ that pair is off the five-check version of the block; the gate and its census row were added afterwards
+by this diff's own review and are green, which is why the shipped total is 1,281 and the sabotage figure is
+quoted against 1,280. —
+the published-cover-text row (`published=284 source=302 equal=false`, the fixture's own founding symptom)
+and the route row (`mixed=true jbig2Arm=true flateArm=false`) — with the other three green and **all 1,275
+pre-existing checks green**, which is what says the new block carries this and nothing else moved.
+⛔ **The route row is NOT vacuous and that is why it has three arms**: the same builder's scan pages
+*without* the cover DO reach JBIG2 in the same run, so a Flate verdict on the mixed document is the
+passthrough page's doing rather than this machine missing a `jbig2` binary — the shape a one-armed row would
+have got wrong. It also asserts `#### What a fix has to satisfy`'s "the all-scan case must not change at
+all" as a live row rather than as prose.
+
+⚠️ **What (B)'s measurement does NOT establish.**
+
+* **One document.** 3.13x is `1954 - Why.pdf`'s number. The other 41 affected documents are unrun, and the
+  per-page figure is this document's, so **do not multiply 93,616 B by 2,090 pages** — that is the pooled
+  arithmetic C26's stratified estimate exists to refuse.
+* **An OUTLINE is a second confound and this document has none.** `Model.swift:2461-2478` runs the PDFKit
+  outline rewrite on the **Flate route only**, so on an outlined document the Flate arm pays an extra full
+  re-serialisation that is nowhere in this 3.13x. Verified absent here — `qpdf --json
+  --json-key=outlines` gives `[]` on `1954 - Why.pdf` — and **not** excluded on the other 41. Found by the
+  adversarial review of this diff.
+* **The suite's own rows carry no byte assertion.** The check asserts only that Flate is the *dearer*
+  direction, deliberately: a bar on the figure would be a constant this project would then have to defend,
+  and the fixture's own 1.34x is exactly the sort of number that would have been baked in wrongly. ⚠️ So the
+  fixture pair 23,639 / 31,724 is published here but pinned by a `print` into an uncommitted run log, not by
+  a check — read it as this run's number.
+* **No artefact file and no instrument in the tree.** The probe is at
+  `$STATE/c29b-instrument/main.swift` with its `swiftc` recipe and the one-token sabotage in the README
+  beside it — the same place and for the same reason as `$STATE/c29-instrument/` and `$STATE/c30-instrument/`
+  — because it reads `testdocs/`, which the suite must never touch. ⚠️ **`CLAUDE.md`'s count of five dated
+  artefacts with no instrument in the tree does not move, because this section publishes no `.tsv`** — the
+  numbers are in this prose and in the suite's own printed line.
+* **Suite cost.** Block 6 adds three full `makeSearchablePDF` runs over seven pages of rebuild and real
+  recognition. ⚠️ **The before/after suite duration was not recorded**, which is what the queue's
+  `mrc-endtoend` bound asks for; both runs were wall-clocked through `test-lock.sh` and the rows are in
+  `$STATE/suite-timings.tsv`, but no delta is published here.
+* **The 120-character bar is still untouched**, and it is now the only thing left under this entry besides
+  (B) itself.
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
 

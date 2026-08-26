@@ -209,15 +209,36 @@ is DATA with a default of `[]`, not a predicate `flatten` evaluates itself** —
 `Tests/` and `Tools/`, and every committed measurement taken through one, are unchanged by construction; the
 rejected option (deriving it inside `flatten`, which would need no argument in production) is more honest
 about the wiring and has an unmeasured blast radius, because several test fixtures ARE vector-text pages with
-no page-sized raster. ⚠️ **And that is the cost: no check can see the literal argument at `Model`'s call
-site** — a build that computed the set and passed `[]` would be green, since nothing runs a document
-end-to-end through `makeSearchablePDF` (the queue's `mrc-endtoend`, and the same gap the report's own
-channel-to-report wiring has). ⛔ **Two things (A) does NOT reach**: **(B)**, whose byte cost is still
-unmeasured and which also discards a whole `jbig2enc` pass the `onPage` closure already paid for; and the
-**120-character bar**, under which a short born-digital page is still rasterised and is now named by
-**neither** report line — the routing was supposed to make that trade measurable and it is not measured.
+no page-sized raster. ⛔ **THAT COST IS PAID AND (B) IS MEASURED AS OF 2026-08-25 — `BUGS.md` C29
+`#### (B) MEASURED`.** The literal argument at `Model`'s call site is pinned: six new checks run a document
+end-to-end through `makeSearchablePDF` **on a document with a born-digital page** and read the **published**
+file, and a build that computes the set and passes `[]` reads **1278/1280** by exactly the two rows predicted (`published=284 source=302` and
+`mixed=true jbig2Arm=true flateArm=false`), all 1,275 pre-existing checks staying green. ⛔ **And (B)'s
+number is off a REAL corpus document run both ways** — `1954 - Why.pdf`, 10 pages, born-digital p1, two
+binaries one token apart: **1,375,847 B** on today's Flate route with p1 keeping its **1,348 characters
+exactly**, against **439,686 B** on JBIG2 with p1 reading **1,382 characters that are not the source's**.
+**+936,161 B, 3.13x** — ⛔ **of which 90.8% is the LOST MRC RE-LAYERING and not the compression**, off
+production's own `Layered 5 picture pages, saving 830 KB` line against the Flate arm's nothing, so
+`Model.swift`'s "roughly a third" is neither confirmed nor refuted by this (a draft said it HELD; the ratio
+is confounded). ⛔ **And the generated
+fixture reads 1.342x and would have understated the decision 2.3x, so quote 3.13x and never 1.34x.** A
+`useJBIG2`-off control on the same document is **byte-identical** to today's run, which is what says the
+fallback is the whole difference and the `jbig2enc` pass is entirely wasted. ⚠️ The 3.13x is the route **and**
+the MRC re-layering together (`Flattener.mrcLayers` has one production call site, inside the same branch) and
+cannot be separated at this seam; on this document `shrunkNotes` is 0 both ways, so none of it is bought by
+content loss. ✅ **THE DECISION IS TAKEN: the fallback is NOT the answer** — 42 documents of 233 and 2,090
+pages of 16,987 (12.3%), 28 of the 42 firing on ONE page, so one page typically triples the document — and
+the fix's mechanism is **demonstrated rather than reasoned**: `qpdf --empty --pages src 1 jbig2 2-10 --`
+gives **456,171 B**, 10 pages, p1's text character-count identical to the source's and **nine surviving
+`JBIG2Decode` streams**, recovering 98.2% of the cost. ⚠️ That demonstration is the mechanism only — the
+spliced page came from the sabotage arm's output, so the real route's 9-encoded-against-10-page-text-layer
+alignment is unwritten — and the rejected option (live with the fallback, which cannot lose content because
+MRC "is an improvement on a working page, never a requirement") was refused on **size, not risk**. ⛔ What (A) and (B)
+still do NOT reach is the **120-character bar**, under which a short born-digital page is rasterised and is
+named by **neither** report line — still not measured, and now the only thing under this entry besides (B)'s
+implementation.
 ⚠️ Rotation is measured for /Rotate 90 only, the crop box is a code-identity argument rather than a
-measurement, and none of the corpus's 42 affected documents has been run through a passthrough. ⚠️ One
+measurement, and 1 of the corpus's 42 affected documents has now been run through a passthrough. ⚠️ One
 further limit carried forward: an
 *already-OCR'd* scan's text layer is also replaced and deliberately is **not** reported, which is a
 judgement made in the quiet direction. ⚠️ One instrument trap came out of the fixture commit:
@@ -1293,7 +1314,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,275 checks measured 2026-08-25 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
+./run_tests.sh        # 1,281 checks measured 2026-08-25 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->

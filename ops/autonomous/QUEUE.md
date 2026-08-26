@@ -2015,6 +2015,12 @@ happens.**
       trades a spurious log line for a page nothing ever recognises. ⚠️ Neither is startable without a
       population, so do not take either as "one commit" without reading the entry first — which is the same
       mistake this box already made once.
+      ✅ **(B)'s MEASUREMENT AND DECISION ARE DONE 2026-08-25 — see the `c29-b-measured` sub-box — AND THE
+      DECISION IS THAT THE FALLBACK IS NOT THE ANSWER: 3.13x on a real corpus document.** So what is left of
+      this umbrella is **(B)'s IMPLEMENTATION**, which is the new `c29-jbig2-splice` item near the bottom of
+      this file rather than a sub-box here, and the **120-character bar**, which is still unmeasured and
+      still wants a population. ⛔ **Do not re-measure the byte cost and do not re-derive the splice
+      recipe** — both are in `BUGS.md` C29 `#### (B) MEASURED`.
       ⛔ **THAT PARAGRAPH IS SPENT: (A) landed and NOT ONE of those assertions moved** — the first two are
       about the pre-flight warning, which the routing never consults, and the third is `flatten` with no
       `passThrough` set, which is still the contract and is now the negative control. All four were re-worded
@@ -2148,7 +2154,8 @@ happens.**
         construction. The rejected option — deriving the set inside `flatten`, needing no argument in
         production — is *more* honest about the wiring and has an unmeasured blast radius, because several
         test fixtures ARE vector-text pages with no page-sized raster.
-        ⚠️ **AND THAT IS THE COST: no check can see the literal argument at `Model`'s call site.** A build
+        ⚠️ **AND THAT WAS THE COST: no check could see the literal argument at `Model`'s call site — ⛔ CLOSED
+        2026-08-25 by `c29-b-measured`, whose block 6 reds on exactly that build.** A build
         that computed the set and passed `[]` would be green, because nothing runs a document end-to-end
         through `makeSearchablePDF` — which is the queue's own `mrc-endtoend`, and reading it before touching
         this again is the point.
@@ -2158,8 +2165,50 @@ happens.**
         **neither** report line. Lowering that bar was supposed to become measurable here against a fix, and
         it is not measured — a false positive now costs a page nothing ever recognises.
         ⚠️ Rotation is measured for /Rotate 90 only; the crop box is a code-identity argument and not a
-        measurement; no corpus document has been run through a passthrough.
+        measurement; no corpus document has been run through a passthrough. ✅ **THAT LAST CLAUSE IS FALSE AS
+        OF 2026-08-25 — one has, see `c29-b-measured` — and so is "(B)'s byte cost is still unmeasured".**
         (origin: BUGS.md C29 `#### (A) SHIPPED`)
+  - [x] **c29-b-measured** — **DONE 2026-08-25. (B)'s COST IS MEASURED AND THE DECISION IS TAKEN: the Flate
+        fallback costs 3.13x on a real corpus document, so it is NOT the answer.** Do not re-measure it and
+        do not re-derive the splice recipe; both are in `BUGS.md` C29 `#### (B) MEASURED`. `Sources/` did not
+        move — six checks in `Tests/main.swift`, **1,275 → 1,281**, gated on `JBIG2.encoder`/`merger` with the
+        file's own skip-census row.
+        ⛔ **The pair to quote: `testdocs/book/1954 - Why.pdf`, 10 pages, born-digital p1, TWO BINARIES ONE
+        TOKEN APART** (`Model.swift:1996`, `control.isCancelled` → `!control.isCancelled`, so an uncancelled
+        run passes `[]`). Today: **Flate, 1,375,847 B**, p1 keeping its **1,348 characters exactly equal to
+        the source's**. Pre-(A): **JBIG2, 439,686 B**, p1 reading **1,382 characters that are not the
+        source's** — C29's founding symptom in a published file, on a corpus document. **+936,161 B, 3.13x,
+        93,616 B/page** — ⛔ **and 90.8% of it is the LOST MRC RE-LAYERING, not compression** (production's own
+        `Layered 5 picture pages, saving 830 KB` against the Flate arm's nothing), so `Model.swift`'s "roughly
+        a third" is left unmeasured rather than confirmed; a draft of this box said it HELD.
+        ⛔ **AND THE GENERATED FIXTURE WOULD HAVE DECIDED THIS WRONGLY: its two scan pages read 1.342x**
+        (23,639 B against 31,724 B) — twelve lines of 44 pt Helvetica on white, where Flate is already near
+        JBIG2's best. **Quote 3.13x, never 1.34x**; the two sets differ 2.3x in the direction that matters.
+        ✅ **Control, exact**: `useJBIG2` **off** on the same document is **byte-identical** to `useJBIG2`
+        on, so the fallback is the whole difference and the `jbig2enc` pass is entirely wasted (6.0 s / 9.9 s
+        / 4.9 s over the three arms — ⚠️ three wall-clock readings, not a timing study).
+        ⚠️ **The 3.13x is the route AND the MRC re-layering in one figure** — `Flattener.mrcLayers` has one
+        production call site (`Model.swift:2301`), inside the same branch — and cannot be separated at this
+        seam. On this document `shrunkNotes` is 0 both ways, so none of it is bought by content loss.
+        ✅ **It also closes the gap `(A)` named as the cost of its own decision**: the literal `passThrough`
+        argument at `Model`'s call site is pinned now. Block 6 of the born-digital section runs
+        `makeSearchablePDF` end to end and reads the PUBLISHED file. ⛔ **`(A)`'s stated reason for that gap
+        — "nothing runs a document end-to-end through `makeSearchablePDF`" — was ALREADY FALSE**; seven sites
+        in `Tests/main.swift` do. The narrow truth is that none used a document with a born-digital page.
+        ✅ **WATCHED FAILING, named and counted first: `1278/1280`, exactly two `FAIL` lines** (⚠️ off the
+        five-check version; the gate and census row were added after, by this diff's own review) (`published=284 source=302 equal=false` and
+        `mixed=true jbig2Arm=true flateArm=false`), the other three green and **all 1,275 pre-existing checks
+        green**. ⛔ The route row has **three arms** on purpose: the same builder's scan pages without the
+        cover DO reach JBIG2 in the same run, so a one-armed row would have passed on a machine with no
+        `jbig2` binary.
+        ⚠️ **No byte figure is asserted** — the check asserts only that Flate is the dearer direction, and
+        the measured pair is printed. A bar would be a constant to defend, and the fixture's own 1.34x is
+        exactly what would have been baked in wrongly.
+        ⚠️ **No artefact and no instrument in the tree**: a scratch `swiftc` of
+        `$(ls Sources/*.swift | grep -v App.swift)` plus `/private/tmp/c29b-probe/main.swift`, because it
+        reads `testdocs/`. `CLAUDE.md`'s count of five artefacts-with-no-instrument does **not** move: this
+        publishes no `.tsv`.
+        (context: BUGS.md C29 `#### (B) MEASURED`)
 - [ ] **gutter-floor** — the reading-order DECLINE rests on "0.19% of observations cross a gutter", and
       the population that produced it excludes the pages that fail. `score-reading-order.swift`'s ink test
       needs a quiet run of `0.035 * width`; a page without one is counted `singleColumn` and `continue`d,
@@ -2471,7 +2520,12 @@ happens.**
       `triage/*.md`, not on `rescue/*.patch`. What is left: have STEP 1.5 also notice a patch that is neither
       `LANDED-as-*` nor `SUPERSEDED-by-*` nor matched by a live worktree. Still one free commit.
       (context: the rescue lines in `$STATE/daemon.log`, and `19f4131` as the worked example)
-- [ ] **mrc-endtoend** — nothing in the suite runs a document end-to-end through `makeSearchablePDF` down
+- [ ] **mrc-endtoend** — ⛔ **THE PREMISE IS TOO WIDE, corrected 2026-08-25: `Tests/main.swift` runs documents
+      end-to-end through `makeSearchablePDF` at :379, :3741, :5134, :5186, :8648, :9450 and :13027, and
+      `c29-b-measured` added block 6, which does it on a document with a born-digital page and reds on a
+      `passThrough: []` build. Re-scope this item to the hop that really is uncovered — `log` → `RunReport` —
+      before starting, and note its own "record the suite duration before and after" bound went UNMET by that
+      commit.** As written: nothing in the suite runs a document end-to-end through `makeSearchablePDF` down
       the MRC route. The three `.mrc` tests call `Flattener.mrcLayers` directly and assemble by hand, so
       `Model.swift`'s whole adoption loop — the `after < before` guard, the JBIG2 encode-failure branch and
       `shrunkTextPageSummary`'s wiring — has no end-to-end check. Pre-existing, and wider than the C28
@@ -3000,6 +3054,34 @@ happens.**
       2026-08-20; it is where this was found, not the work. Was `origin:` until C26 closed and the
       coherence check read it as a status claim, which is the mistake §"How to write an item" records
       `tools-compile` and `mutants` making)
+- [ ] **c29-jbig2-splice** — **C29 (B)'s IMPLEMENTATION. The measurement and the decision are DONE
+      (2026-08-25, `c29-b-measured`) and the decision is that the Flate fallback is NOT the answer: a mixed
+      document costs 3.13x, +936,161 B on the one real corpus document run both ways.** Carry a passthrough
+      page on the JBIG2 route instead of falling back for the whole document.
+      ⛔ **DO NOT RE-MEASURE and do not re-derive the recipe.** `BUGS.md` C29 `#### (B) MEASURED` has the byte
+      pair, the byte-identical `useJBIG2`-off control, the population (**42 documents of 233, 2,090 pages of
+      16,987, 28 of the 42 firing on ONE page**) and the rejected option with its reason.
+      ✅ **The mechanism is already demonstrated at the shell, so this is not exploratory**:
+      `qpdf --empty --pages src 1 <jbig2-output> 2-10 -- out.pdf` gives **456,171 B**, 10 pages, page 1's
+      extracted text character-count identical to the source's, and **nine surviving `JBIG2Decode` streams**
+      — 98.2% of the fallback's cost recovered, with the qpdf `JBIG2.overlay` already runs.
+      ⛔ **WHAT THE DEMONSTRATION DOES NOT COVER, AND IT IS THE WHOLE OF THE WORK.** The spliced page came
+      from the *sabotage* arm's output, which had already rasterised page 1. On the real route there are
+      **9 encoded pages against a 10-page text layer**, so three things must be made to agree: the count
+      guard (`wantJBIG2, encoded.count == expected, encoded.count == bitmaps.count`, `Model.swift:2229-2230` — a
+      passthrough page contributes nothing to `encoded` **by design**, see the `.passthrough` arm of the
+      `onPage` closure and its comment), `JBIG2.assemble`'s page list, and `JBIG2.overlay`'s page-for-page
+      alignment. ⚠️ `compose` runs with **`drawImages: false`** on this route (`Model.swift:2373`), which is
+      why the page's pixels come from `assemble` at all — a passthrough page needs its own content and
+      **no** second text layer, which is `#### What a fix has to satisfy`'s easiest-to-miss constraint.
+      ⛔ **BOUND: ONE session, and it is a `Sources/` commit on the PUBLISH path — invariant 2's ground,
+      where C23 bit twice.** A failing test first: the fixture and the end-to-end block already exist
+      (`makeBornDigitalCoverPDF`, block 6 of the born-digital section), and the row to flip is
+      `C29 (B): a mixed document takes the Flate route while the same scan pages without the cover take
+      JBIG2` — it pins today's answer on purpose, exactly so this item has something to flip. Add the byte
+      assertion then and not before; the existing rows deliberately assert only a direction.
+      ⚠️ Do not bolt this onto a commit doing anything else, and do not take the **120-character bar** with
+      it — that is still unmeasured and still wants a population. (origin: BUGS.md C29 `#### (B) MEASURED`)
 - [ ] **shapedump-exit** — **`Tools/score-shape-term.swift` counts its failed dump writes, names them, and
       then exits 0.** `dumpMissing` collects every `SHAPEDUMP` file it promised and did not write
       (`:1457`), the summary appends `; ⚠️ dump missing …` (`:1476`), and the only exits after it are **6**
