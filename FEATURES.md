@@ -507,6 +507,121 @@ tolerance was unpinned — every fixture was 40 rows deep, so `quiet` was the `m
 divisor passed; a 400-row fixture with 2-pixel and 3-pixel specks now pins it. (9) One check was written
 without the `else` its six siblings have, so it went green whenever the ink test returned nil.
 
+#### The two bands MEASURED as of 2026-08-26 — the uncounted class crosses 2.47x as often, and it is still under half a percent
+
+`gutter-floor`'s sub-step 2, and the first crossing measurement this feature has had since the
+undated run that produced the 0.19%. `Tools/score-reading-order.swift` gained `INKFLOOR=<fraction>`,
+which substitutes the ink test's floor **for the run only**, and `--gutter` went from **six columns to twelve** so
+that one sweep answers both halves: `wideGutters` / `narrowGutters` / `band` / `crossWide` /
+`crossNarrow` / `widestFrac`, the last being the census's own column arriving in this mode for the
+first time. ⚠️ `share` keeps its name and changes meaning — it is the band's OWN crossing share now,
+not `crossing / lines`, and the `worst` list sorts on it. Both artefacts are committed —
+`GUTTER-BANDS-2026-08-26.tsv` (91 rows, `INKFLOOR=0.02`) and `GUTTER-BANDS-SHIPPED-2026-08-26.tsv`
+(58 rows, the control at the shipped floor). All 233 documents, `samplePages(3)`, 645 pages
+attempted and 641 scored — the four unscored are `1935_Title Page` p3, `Clark_The graphic rating
+scale` p2, `Noble_1977` p2 and `_1985_Issue 2` p29, the same four sub-step 1 named — 135 s and 106 s.
+⚠️ Every page the sweep declines is counted and named on stderr, and that stderr is not committed.
+
+⛔ **THE TWO RATES.**
+
+| band | pages | observations | crossing its own gutter | rate |
+|---|---|---|---|---|
+| **wide** — carries a gutter the shipped 3.5% floor counts | 58 | 2,728 | **5** | **0.18%** |
+| **narrow** — qualifies only at the lowered 2.0% floor | 33 | 2,210 | **10** | **0.45%** |
+
+✅ **The wide band reproduces the published figure**: this file's *"5 observations of 2,674 cross
+one, 0.19%"* against **5 of 2,728, 0.18%** — the same COUNT of five, on a population 54 observations
+larger, across an interval this file does not date. ⚠️ **Not "the same five crossings"**: the earlier
+run's per-page rows were never committed (which is the gap `--census` was built to close), so whether
+the two runs' crossing pages coincide is not established and cannot now be. ⛔ **And the blind spot does NOT overturn the
+decline.** The uncounted class crosses **2.47x as often and twice as many times in absolute terms**,
+which is the finding, but 0.45% is still under half a percent — and the decline's *strongest*
+argument was never the rate: it is that the worst-scoring pages are a four-column table and a table
+of contents, where reading across is correct, and nothing in the metric distinguishes them. That is
+untouched. ⚠️ Those are the **interleaving** metric's worst pages, a different list from this
+section's, which is ordered by crossing share; do not read the two as one ranking. **The decision is the owner's (sub-step 3) and these are the numbers it rests on.**
+
+⛔ **Read `crossWide`, never `crossing`, and the control is what says why.** Lowering the floor ADDS
+narrow gutters to a wide-band page's list, so that page's `crossing` at 0.02 is not what it was at
+0.035. The same sweep at the shipped floor reads the wide band **58 pages / 2,728 observations / 5
+crossings — identical on all three — and row for row identical on all 58 rows** in `file`, `page`,
+`lines` and `crossWide`, while `crossing ANY` reads **5 against the lowered floor's 6**. So the
+confound is real, measured rather than reasoned, and it is exactly **one observation on one page**:
+`Nogales oral history.pdf` p46 is a wide-band page whose only crossing is of a narrow gutter that
+exists only because the floor moved. ⚠️ `crossing` is also not the sum of the two: on `w7787.pdf`
+p30 and `w7787 2.pdf` p30 one observation spans a wide gutter **and** a narrow one.
+
+✅ **The accounting closes exactly, against the previous sub-step's committed artefact.** 93 pages
+carry a qualifying gutter at 0.02 = 58 wide + 33 narrow + **2 that returned no observations**
+(`Hyman_2012` p15 and `NAYLOR_Arthur E.pdf` p2, both named on stderr with their band, both wide;
+⚠️ "no observations" and not "Vision returned nothing" — the guard's first clause is the RENDER, where
+Vision is never asked). So wide 58 + 2 = **60**, which is `GUTTER-SAMPLED-2026-08-26.tsv`'s own
+`withGutter`. ⛔ **And the narrow 33 must be decomposed with EXACT fractions, not the artefact's
+printed ones**: 29 pages have a widest-run fraction in [0.020, 0.035), **minus** `NAYLOR_Arthur E.pdf`
+p134 which the gutter test puts in the wide band, **plus 5** whose fraction is 0.0194-0.0199 while
+their run still clears `Int(0.02 × width)` (`Gowan and Demos - 1964` p2, `NAACP Pt. 15 Ser. A` p65,
+`Riesman_1964` p12, `Bullitt_1959` p5, `Part Two` p18) — 29 − 1 + 5 = 33, and 59 + 1 = 60 on the other
+side. ⚠️ **The reopen note's "27 in 18" and the sub-step-1 table's 28 are counts off a PRINTED 4-dp
+column**; a first draft of this paragraph wrote "28 + 5 = 33", which is arithmetic no reader can
+reproduce, and the adversarial review of this diff caught it. `minimumRun` truncates, so the counted
+set is slightly wider than any fraction band.
+
+⛔ **THAT RECONCILIATION FOUND A DEFECT IN THIS DIFF'S OWN BAND KEY, one page wide.** The band was
+first written as `widestFraction >= inkGutterFloor` and the wide set then came out **57** against the
+census's 60 rather than 58. The missing page is `NAYLOR_Arthur E.pdf` p134: a **45-px** quiet run on
+a **1286-px** page, where `Int(0.035 × 1286)` = 45 accepts it — so the shipped floor **does** count
+that page — while 45/1286 = **0.034992** is below 0.035 and the fraction called it narrow. The band
+key is now *"does it carry a gutter the shipped floor would have found"*, which is what makes
+`crossWide` over the wide band the shipped floor's own answer, and self-test group 8 pins that exact
+arithmetic on a synthetic 1286-px page. ⚠️ The 4-decimal `widestFrac` column **prints `0.0350` for
+that page**, so the two keys cannot be told apart by reading the artefact — only by the `band`
+column.
+
+⛔ **FOUR limits on the narrow band's 0.45%, and the second is the one that could change a
+decision.** (1) The 10 crossings sit on **8** of the 33 pages; 25 have none. (2) ⛔ **The headline is
+10% sensitive to one near-blank page, and the mechanism is the lowered floor re-admitting a word
+space.** `Friedman_1962` p2 is 788x1200 px with a tallest ink column of **25**, so
+`quiet = max(1, peak / 100)` degenerates to its floor of 1; its "gutter" is **20 px**, and the 3.5%
+floor exists precisely so that *"the space between words or a hanging indent is not a gutter"*. Vision
+returned **one** observation there and it crosses, giving a `share` of 100.0% and the top of the
+`worst` list. **Drop that page and the narrow band reads 9 of 2,209 = 0.407%, a ratio of 2.22x rather
+than 2.47x.** So read the counts, not the share — and note that the confound demonstration above rests
+on a sparse page too (`Nogales oral history.pdf` p46, tallest ink column 39 of 1,650 rows, 5
+observations). (3) ⛔ **The generated fixture and the corpus
+disagree by two orders of magnitude, and that is the question sub-step 3 hands over unanswered.**
+Sub-step 0's page welds **7 of 15 observations (47%)** at a 2.5% gutter; corpus pages in the same
+fraction band weld **0.45%**. The leading mechanism candidate is that the fixture is monospaced and
+justified both sides, so **every** line's gap equals the quiet run the ink test finds, where a real
+ragged column's typical gap is wider than its narrowest — which would make the fixture the worst case
+for a given quiet-run width rather than a representative one. ⚠️ **Not measured**: no em-relative or
+per-line gutter figure exists for any corpus page. ⛔ **And do NOT write "the sheet size is not the
+difference"** — a first draft did, off the fact that 2.5% of 612 pt and 2.5% of 1275 px at 150 DPI are
+the same 15.3 pt, which only says a percentage is scale-free *within one sheet*. The 91 measured
+gutter pages run **704 to 2,124 px** wide, so 2.5% of the sheet is **8.45 pt on one and 25.49 pt on
+another** — a 3.0x spread in the absolute gap, and absolute gap is exactly what a word space is
+measured in. That is unexamined, not excluded.
+
+⚠️ **And the document that reopened this item cannot be re-measured**: `Hughes - The Knitting of
+Racial Groups in Industry.pdf` is not in `testdocs/` and is no longer in `~/Downloads` on this
+machine (checked 2026-08-26). Every number above is corpus material; the founding page is evidence
+from a file nothing here can now open.
+
+⚠️ Provenance: one machine, one build, `PhotoDetail` defaults, 150 DPI for the ink test and
+`Recogniser.render`'s own resolution for recognition. The tool's `--self-test` is **8** groups and
+ran on both sweeps; **five** one-token sabotages were watched failing, each red set predicted by name
+first — the floor parameter wired back to the constant reds two clauses; `isWide` pointed at 0.02 reds
+one (⚠️ that pair is **nested, not disjoint**); `isWide` with a strict `>` reds **exactly** the
+45-of-1286 clause, which is what makes that fixture load-bearing; `widestFraction` divided by the
+height reds four; and `minimumRun` rounding instead of truncating reds **only** the 45-of-1300 clause.
+⛔ **The last two are the adversarial review's, and they earned their keep.** The height sabotage
+reddened a clause first written `widestFraction >= inkGutterFloor` — 0.06 against 0.035, which a
+height-divided 1.5 passes — so it was close to unfalsifiable and is pinned at 0.06 exactly now; and the
+1300-px fixture exists because 0.035 × 1286 = 45.01, where truncation and rounding agree, so the
+mechanism the band key rests on had **no** witness at all. ⚠️ Still not asserted: that
+`INKFLOOR` cannot move the self-test. With the knob unset `runFloor` and `inkGutterFloor` are equal, so
+an `isWide` reading `runFloor` would leave a bare `--self-test` green; only running the knob catches
+it, and the pre-commit hook does not run this file's self-test.
+
 **4, 5 and 6 — ARCHIVED 2026-08-13**, at the owner's decision, and recorded
 rather than deleted so nobody re-proposes them as new. They were: *show uncertain
 words instead of deleting them* (a review pass over low-confidence text, which is

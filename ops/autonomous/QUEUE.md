@@ -2236,18 +2236,22 @@ happens.**
            **The class is already in the corpus and simply is not counted**, so this needs no new files.
         3. Report the two rates to the owner. The DECLINE stands or falls on that, and it is the owner's
            call, not a session's. If it falls, THEN a register entry gets opened.
-      ✅ **SUB-STEPS 0 AND 1 ARE DONE 2026-08-26 — the fixture exists, the weld is PINNED, the
-      instrument is RECONCILED, and a session reaching this box starts at sub-step 2.** See the
-      `gutter-fixture` and `gutter-reconcile` sub-boxes below, and `FEATURES.md` item 3 §"The weld is
-      PINNED IN THE SUITE" and §"The instrument reconciled". ⛔ **Sub-step 1's answer, so nobody
+      ✅ **SUB-STEPS 0, 1 AND 2 ARE DONE 2026-08-26 — the fixture exists, the weld is PINNED, the
+      instrument is RECONCILED, BOTH RATES ARE MEASURED, and a session reaching this box starts at
+      sub-step 3, which is a report and the OWNER'S DECISION rather than a measurement.** See the
+      `gutter-fixture`, `gutter-reconcile` and `gutter-bands` sub-boxes below, and `FEATURES.md` item 3
+      §"The weld is PINNED IN THE SUITE", §"The instrument reconciled" and §"The two bands MEASURED".
+      ⛔ **Sub-step 1's answer, so nobody
       re-derives it: the 43-against-59 gap is PAGE SELECTION** — on the census's own pages the tool
       reads 44 against 43 and agrees page for page on 635 of 644, while on its own sampling it reads
-      60, and the two page sets share only 133 pages of ~645. ⚠️ **Half of sub-step 2 is done as a
-      by-product**: the band POPULATIONS are in `GUTTER-SAMPLED-2026-08-26.tsv` (60 counted, 5 at
-      3.0-3.5%, 13 at 2.5-3.0%, 10 at 2.0-2.5%, over the tool's own 641 pages), so what sub-step 2
-      still owes is the **crossing** rate per band — which needs Vision, and therefore `--gutter` with
-      the floor lowered, because `--census` deliberately recognises nothing. The 0.19% still stands
-      exactly as published.
+      60, and the two page sets share only 133 pages of ~645.
+      ⛔ **Sub-step 2's answer, likewise: wide band 5 of 2,728 observations on 58 pages = 0.18%
+      (reproducing the published 0.19% on the same five crossings), narrow band 10 of 2,210 on 33
+      pages = 0.45% — 2.47x the rate and twice the crossings, and still under half a percent.** So the
+      class the 0.19% never counted is real and does NOT overturn the decline, whose strongest
+      argument was never the rate. `GUTTER-BANDS-2026-08-26.tsv` and
+      `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` are committed. **This is the material sub-step 3 reports;
+      the decision on it is the owner's and no session should take it.**
       ⛔ **SUB-STEP 0, AND THE OWNER PUT IT FIRST (2026-08-20): the narrow-gutter FIXTURE, before any
       sweep.** The existing `ENGINE ASSUMPTION` fixture's gutter is 52 pt of 612 = 8.5%, and its own
       comment calls that "far wider than any word space" — which is exactly why it is green while a real
@@ -2367,6 +2371,61 @@ happens.**
         itself. All six now read **ten** tools carrying one, nine unconditional, `score-shape-term` the
         only flag-gated one; verified by opening all 32 Swift tools.
         (context: FEATURES.md item 3 §"The instrument reconciled", 2026-08-26)
+  - [x] **gutter-bands** — **DONE 2026-08-26. `gutter-floor`'s sub-step 2: the uncounted band crosses
+        2.47x as often and it is STILL under half a percent, so the decline is not overturned.**
+        `Tools/score-reading-order.swift` gained `INKFLOOR=<fraction>` (the ink test's floor, for the
+        run only, refused outside (0, 0.5)) and `--gutter` gained five columns — `wideGutters`,
+        `narrowGutters`, `band`, `crossWide`, `crossNarrow` — so ONE sweep answers both bands.
+        `GUTTER-BANDS-2026-08-26.tsv` (91 rows at 0.02) and `GUTTER-BANDS-SHIPPED-2026-08-26.tsv`
+        (58 rows, the control) are committed; 233 documents, 645 pages attempted, 641 scored, 135 s
+        and 106 s.
+        ⛔ **THE TWO RATES: wide band 5 of 2,728 on 58 pages = 0.18%; narrow band 10 of 2,210 on 33
+        pages = 0.45%.** The wide band reproduces `FEATURES.md`'s published *"5 of 2,674, 0.19%"* —
+        the same five crossings on 54 more observations. So the blind spot is real (2.47x the rate,
+        twice the absolute crossings) and small, and the decline's strongest argument — a column-wise
+        sort damages tables and contents pages — is untouched.
+        ⛔ **Read `crossWide`, never `crossing`**: a lowered floor adds narrow gutters to a wide page's
+        list. The control measures that confound rather than reasoning about it — the wide band is
+        **58 / 2,728 / 5 at both floors and row-for-row identical on all 58 rows**, while `crossing
+        ANY` reads 5 against 6, the one extra being `Nogales oral history.pdf` p46. ⚠️ `crossing` is
+        also not the sum of the two: on `w7787.pdf` p30 one observation spans a wide gutter and a
+        narrow one.
+        ✅ **The accounting closes against the previous sub-step's artefact**: 93 gutter pages at 0.02 =
+        58 wide + 33 narrow + 2 that returned no observations (both wide, named with their band), so
+        58 + 2 = **60** = `GUTTER-SAMPLED-2026-08-26.tsv`'s own `withGutter`. ⛔ **The narrow 33 needs
+        EXACT fractions**: 29 pages in [0.020, 0.035) minus `NAYLOR` p134 (which the gutter test puts in
+        the wide band) plus 5 at 0.0194-0.0199 whose run still clears `Int(0.02 × width)` — 29 − 1 + 5,
+        and 59 + 1 = 60 on the other side. A first draft wrote "28 + 5 = 33" off the artefact's printed
+        4-dp column, which no reader can reproduce; the review of this diff caught it.
+        ⛔ **That reconciliation found a defect in this diff's own band key, one page wide**:
+        `widestFraction >= inkGutterFloor` put the wide set at 57, because `NAYLOR_Arthur E.pdf` p134
+        is 45 px of 1286 — `Int(0.035 × 1286)` = 45 accepts it while 45/1286 = 0.034992 does not. The
+        band is *"carries a gutter the shipped floor would find"* now, and self-test group 8 pins that
+        arithmetic on a synthetic 1286-px page. ⚠️ The 4-dp `widestFrac` column prints `0.0350` there,
+        so the artefact cannot tell the two keys apart — only the `band` column can.
+        ⚠️ **Three limits.** The 10 crossings sit on 8 of the 33 pages; the `worst` list is led by a
+        page with **one** observation and one crossing (100.0%) — ⛔ **drop that page,
+        `Friedman_1962` p2, whose tallest ink column is 25 px so `quiet` degenerates to 1, and the band
+        reads 9 of 2,209 = 0.407% at a ratio of 2.22x, so the headline is 10% sensitive to one near-blank
+        sheet where the lowered floor re-admits a word space**; and ⛔ **the fixture and the corpus
+        disagree by two orders of magnitude** — sub-step 0's generated page welds 7 of 15 (47%) at 2.5%
+        against the corpus band's 0.45%. Leading candidate: the fixture is justified both sides, so
+        every line's gap EQUALS the quiet run, where a ragged column's typical gap is wider than its
+        narrowest — which makes the fixture a worst case rather than a representative one. **Not
+        measured**, and sheet size is not the difference. ⚠️ The document that reopened item 3 is
+        neither in `testdocs/` nor in `~/Downloads` any more, so it cannot be re-measured.
+        ✅ **FIVE** one-token sabotages watched failing, each red set predicted by name first: the
+        floor parameter wired back to the constant reds two clauses; `isWide` at 0.02 reds one (⚠️ that
+        pair is nested, not disjoint); `isWide` with a strict `>` reds exactly the 45-of-1286 clause;
+        `widestFraction` over the height reds four; `minimumRun` rounding instead of truncating reds only
+        the new 45-of-1300 clause. ⛔ The last two came out of the adversarial review and both found real
+        holes — a clause that was close to unfalsifiable (`widestFraction >= inkGutterFloor`, 0.06
+        against 0.035, now pinned at 0.06 exactly) and a mechanism with no witness at all (0.035 × 1286
+        = 45.01, where truncation and rounding agree). `INKFLOOR=0.02 --self-test` is green **by construction** — the floor is a
+        parameter defaulting to the shipped constant, `samplePages`' `take:` lesson in a second place.
+        Sub-step 3 (report the rates, owner's decision) is what is left; nothing under `Sources/`,
+        `Helper/` or `Tests/` moved and the suite count is unchanged.
+        (context: FEATURES.md item 3 §"The two bands MEASURED", 2026-08-26)
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the

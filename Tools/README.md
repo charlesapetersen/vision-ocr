@@ -210,7 +210,25 @@ multi-column pages. Three modes, and they exist because the obvious one has a ho
 - `--gutter`: bands from the **ink** instead. This is the mode to trust. If
   Vision welds lines across a gutter, the observations span both columns, the
   default mode sees no gap, and files the page as single-column — excluding the
-  one defect worth finding by the act of looking for it.
+  one defect worth finding by the act of looking for it. **`INKFLOOR=<fraction>`
+  (2026-08-26)** substitutes the ink test's floor for the run only — refused
+  outside (0, 0.5) — and the row now carries `wideGutters` / `narrowGutters` /
+  `band` / `crossWide` / `crossNarrow`, so **one** lowered-floor sweep answers both
+  bands. ⛔ **Read `crossWide` against `FEATURES.md`'s 0.19%, never `crossing`**: a
+  lower floor adds narrow gutters to a wide page's list, so `crossing` counts
+  gutters the published run never had. Measured, not reasoned — one observation on
+  one page, with `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` as the control, row for row
+  identical on all 58 wide-band rows. `band` means *"carries a gutter the shipped
+  floor would find"* and **not** `widestFrac >= 0.035`: the two disagree on a real
+  corpus page because `minimumRun` truncates, which cost this mode's first draft a
+  page. The four ways it can decline a page were bare `continue`s and are now
+  counted and named on stderr, its summary goes to stderr like the census's, and it
+  exits **3** rather than 0 over an empty TSV and **6** on a row whose field count
+  does not match its header. `INKFLOOR` is refused outside (0, 0.5), **above** the
+  shipped floor (which would drop pages the wide band is defined to hold) and in the
+  DEFAULT mode, whose bands come from the observations and never call the ink test.
+  ⚠️ `--census` honours it and its TSV has no floor column, so a lowered-floor
+  census is indistinguishable from a shipped-floor one in the file itself.
 - `--census` (2026-08-26): the ink test alone, **one row per sampled page**,
   Vision never asked, printing the widest interior quiet run whether or not it
   clears the 3.5% floor — so a lowered floor is derivable from a finished run.
@@ -225,10 +243,14 @@ multi-column pages. Three modes, and they exist because the obvious one has a ho
   quarter/half/three-quarter depth. `--gutter` prints a row only for a page it
   calls multi-column, which is what made the gap unworkable.
 
-`--self-test` (7 groups) runs on **every** invocation, exit 5 — the tenth Swift
+`--self-test` (8 groups) runs on **every** invocation, exit 5 — the tenth Swift
 tool here to carry one and the ninth to run it unconditionally. The ink test is a
 single function both `--gutter` and `--census` call, deliberately: a census mode
 with its own copy would be checking a replica of the instrument it is checking.
+⛔ Its floor is a **parameter** defaulting to the shipped constant, not a read of
+`INKFLOOR`, so the knob moves what a run counts and cannot move what the self-test
+asserts — `samplePages`' `take:` lesson in a second place, and `INKFLOOR=0.02
+--self-test` is green because of it.
 
 Neither metric can tell a table from prose, and the corpus pages that score worst
 are a four-column table and a table of contents, both read *correctly*. Render the

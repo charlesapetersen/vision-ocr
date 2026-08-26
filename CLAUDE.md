@@ -1304,7 +1304,8 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv`,
 `C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv`, `C29-CORPUS-2026-08-25.tsv`,
 `C30-VOIDS-2026-08-25.tsv`, `C30-TILES-2026-08-25.tsv`, `C29-MARKS-2026-08-26.tsv` and
-`GUTTER-RECONCILE-2026-08-26.tsv` + `GUTTER-SAMPLED-2026-08-26.tsv` — and are
+`GUTTER-RECONCILE-2026-08-26.tsv` + `GUTTER-SAMPLED-2026-08-26.tsv` +
+`GUTTER-BANDS-2026-08-26.tsv` + `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -1342,8 +1343,13 @@ file, since C29's own earlier population walk is one of the five. ⚠️ **Nor a
 `GUTTER-RECONCILE-2026-08-26.tsv` and `GUTTER-SAMPLED-2026-08-26.tsv`, a third time, and here the trap is
 sharper than a prefix**: they sit in the list one line above the very file whose instrument is NOT in the
 tree and whose question they answer, so a reader who sees three `GUTTER-*` files will assume all three are
-outside. Both come from `Tools/score-reading-order.swift --census`, whose `--self-test` is **7** groups —
-so the count stays **five** while the list grows by two. That also spends the reason the other two are outside: the tool version C30 was asking for now
+outside. Both come from `Tools/score-reading-order.swift --census`, whose `--self-test` is **8** groups —
+so the count stays **five** while the list grows by two. ⚠️ **Nor are `GUTTER-BANDS-2026-08-26.tsv` and
+`GUTTER-BANDS-SHIPPED-2026-08-26.tsv`, a FOURTH time, and now there are FIVE `GUTTER-*` files of which
+exactly one is outside** — the two new ones come from the same committed tool's `--gutter` mode under
+`INKFLOOR=0.02` and at the shipped floor, so the count stays **five** while the list grows by two again.
+The rule this count actually draws is *"reproducible from nothing in the tree"*, and it is worth
+re-deriving from the list rather than counting prefixes. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file
 is that rule being kept, since it re-measures the fork's own headline through committed code. ⚠️ A first draft called
 `WIDEN-LAYERS-2026-08-22.tsv` "the one file here whose instrument is not in this repository"; the review of

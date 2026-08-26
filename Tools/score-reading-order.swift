@@ -38,6 +38,62 @@
 //   score-reading-order --census [--pages-from <tsv>] <pdf>...   ink test only
 //   score-reading-order --self-test
 //
+// ## `INKFLOOR`, and the band the 0.19% never counted
+//
+// `gutter-floor`'s sub-step 2. The ink test's floor is `inkGutterFloor` = 3.5% of
+// the page width, and a page whose widest quiet run falls short of it has no
+// gutter, is counted `singleColumn` and is `continue`d — **out of both halves of
+// `FEATURES.md`'s 0.19% before one observation is read**. The census counted that
+// class, and the count depends on which key you ask with: over this tool's own 641
+// pages, **33** carry a gutter at 0.02 that the shipped floor refuses against
+// **60** it counts, while by exact fraction the 2.0-3.5% band is **29** against 59
+// at or above. ⛔ Never pair a fraction-derived count with a gutter-test one — the
+// printed 4-dp column gives a third answer, 28, and the difference is one real
+// page.
+//
+// `INKFLOOR=<fraction>` substitutes the floor for the run only, so one sweep at
+// 0.02 counts both classes, and every row carries the band it belongs to plus
+// crossing counted **against that band's own gutters**:
+//
+//   band          `wide` if the page carries a gutter the SHIPPED floor would
+//                 have found, else `narrow`. ⛔ NOT `widestFrac >=
+//                 inkGutterFloor`: `minimumRun` truncates, so the two differ on a
+//                 real corpus page and the fraction version undercounted the wide
+//                 band by one. See `wideBandPage` and self-test group 8.
+//   crossWide     observations spanning a qualifying gutter at least
+//                 `inkGutterFloor * width` wide.
+//   crossNarrow   observations spanning one narrower than that.
+//   share         ⛔ the band's OWN crossing share — `crossWide / lines` on a wide
+//                 page and `crossNarrow / lines` on a narrow one. The six-column
+//                 version printed `crossing / lines` under this same name, so a
+//                 row of an older run does not mean what a row of this one does.
+//                 The `worst` list is sorted on it and therefore changed with it.
+//   widestFrac    the widest interior quiet run with NO floor applied — the same
+//                 quantity `GUTTER-SAMPLED-2026-08-26.tsv`'s
+//                 `widest_interior_quiet_frac` holds, so the two files are
+//                 comparable column to column. ⚠️ It is printed to 4 dp, which is
+//                 not enough to re-derive `band` from it.
+//
+// ⛔ **Why crossing is split by the GUTTER and not only by the page.** Lowering
+// the floor ADDS narrow gutters to a wide-band page's list, so that page's
+// `crossing` at 0.02 is not what it was at 0.035 and a single column cannot be
+// compared with the published figure. `crossWide` can: a wide-band page's wide
+// gutters are exactly the gutters the shipped floor would have found, so
+// `crossWide` summed over the wide band **is** the 0.035 answer, and the narrow
+// band's own number is `crossNarrow` over the narrow band. Both come out of one
+// run; the alternative was two runs whose page sets are disjoint by band.
+//
+// ⚠️ The band boundary is the SHIPPED constant and the counting floor is the
+// override, which is why the two are separate values. `INKFLOOR` is refused
+// outside (0, 0.5), refused ABOVE the shipped floor (which would drop pages the
+// wide band is defined to hold), and refused in the default mode, whose bands come
+// from the observations and never call the ink test — but ALLOWED with
+// `--self-test`, because setting it and running one is the only way to show from
+// the command line that it moves no assertion. ⚠️ `--census` DOES honour it
+// and its TSV has no floor column, so a lowered-floor census is indistinguishable
+// from a shipped-floor one in the file — the floor is on stderr only. `--gutter` is
+// inferable, because a shipped-floor run has `narrowGutters` 0 on every row.
+//
 // ## `--census`, and the 43-against-59 gap it exists to close
 //
 // `FEATURES.md` item 3 says *"over 638 corpus pages, 59 with a real gutter"* from
@@ -67,17 +123,26 @@
 // 1-based 2, 35, 69 — against the census's 17, 34, 51 on the same document.
 // Self-test group 6.
 //
-// The ink test is now ONE function, `gutters(inGrey:width:height:)`, called by
+// The ink test is now ONE function, `gutters(inGrey:width:height:floor:)`,
+// called by
 // `--gutter` and `--census` both. It was inline in the `--gutter` branch, and a
 // census mode that carried its own copy would be measuring a replica of the
 // instrument it is trying to check — `alltext-replica`'s mistake, which this
 // project has now paid for three times.
 //
-// Exit codes: 0 ok · 2 usage · 3 it measured no pages (the silent-success defect
-// `score-corpus` and `score-threshold-loss` both had) · **4 a `--pages-from` row
-// named a page this run never scored** — a document that has moved or a page past
-// the end would otherwise make a short run look like agreement · 5 a failed
-// self-test. The self-test runs on **every** invocation, which is the majority
+// Exit codes: 0 ok · 2 usage, **including a malformed `INKFLOOR`** · 3 it measured
+// no pages (the silent-success defect `score-corpus` and `score-threshold-loss`
+// both had — refused by `--census` and, since sub-step 2, by `--gutter` as well) ·
+// **4 a `--pages-from` row named a page this run never scored** — a document that
+// has moved or a page past the end would otherwise make a short run look like
+// agreement · 5 a failed self-test · 6 a `--gutter` row whose field count does not
+// match its header. ⚠️ **6 is UNREACHABLE from the command line** — the only
+// caller passes a literal array, so it fires on an edit rather than on input, and
+// nothing watches it fail. It is here because counting tab escapes by eye has put
+// the wrong field count under a header three times in this repo (T14, A12.3, T18)
+// and this mode went from six columns to twelve in one diff.
+//
+// The self-test runs on **every** invocation, which is the majority
 // pattern here (`score-text-route:476-478`: "cheap enough to be unconditional")
 // and matters more than usual for this file, because the pre-commit hook runs
 // `--self-test` for staged `Tools/*.py` only.
@@ -120,6 +185,51 @@ let minimumGutter = 0.035
 /// silently move every `switches`/`interleaving`/`inversions` figure the default
 /// mode prints. The review of that diff caught it.
 let inkGutterFloor = 0.035
+/// The floor this RUN counts against: `INKFLOOR` if it is set and legal, else the
+/// shipped constant. ⛔ Two values rather than one mutable constant, deliberately.
+/// `inkGutterFloor` stays the shipped 3.5% because it is what the `wide`/`narrow`
+/// band boundary means, and because `gutters(...)`'s floor parameter defaults to
+/// it — so the self-test, which never passes the parameter, cannot be moved by an
+/// environment variable. That is `samplePages`' `take` lesson in a second place:
+/// a knob read from the global inside a function the self-test also calls makes
+/// `INKFLOOR=0.02` red a check about 3.5% and refuse to measure anything.
+let runFloor: Double = {
+    guard let raw = ProcessInfo.processInfo.environment["INKFLOOR"] else {
+        return inkGutterFloor
+    }
+    guard let value = Double(raw), value > 0, value < 0.5 else {
+        fputs("score-reading-order: INKFLOOR=\(raw) is not a fraction in (0, 0.5)\n",
+              stderr)
+        exit(2)
+    }
+    // ⛔ ABOVE the shipped floor is refused, not clamped. `band` and `isWide` are
+    // defined at `inkGutterFloor`, so a higher run floor drops pages that DO have
+    // a gutter the shipped floor counts: `crossWide` over the wide band would
+    // silently stop being the shipped floor's answer, and `narrowGutters` would be
+    // empty on every row while the summary still printed a narrow band. Found by
+    // the adversarial review of this diff, which had the header claiming the
+    // identity unconditionally.
+    guard value <= inkGutterFloor else {
+        fputs("score-reading-order: INKFLOOR=\(raw) is above the shipped floor "
+              + "\(inkGutterFloor); the band split is defined there, so a higher "
+              + "floor would drop pages the wide band is supposed to hold\n", stderr)
+        exit(2)
+    }
+    // Read and then quietly ignored is what this file refuses for `--pages-from`
+    // and `--census --gutter`, and the default reading-order mode never calls
+    // `inkTest` at all — its bands come from the observations. Same rule.
+    // ⚠️ `selfTestOnly` is ALLOWED through, and it is not a courtesy: the only
+    // way to demonstrate from the command line that `INKFLOOR` cannot move a
+    // self-test assertion is to set it and run one. A first version of this guard
+    // refused it and turned that demonstration into an exit 2.
+    guard gutter || census || selfTestOnly else {
+        fputs("score-reading-order: INKFLOOR applies to --gutter and --census; "
+              + "the default mode's bands come from the observations, not the "
+              + "ink\n", stderr)
+        exit(2)
+    }
+    return value
+}()
 /// A band needs this many observations before it is a column rather than a
 /// marginal note or a page number.
 let minimumBandLines = 4
@@ -234,9 +344,28 @@ struct Gutters {
     var widestFraction: Double { width > 0 ? Double(widestInterior) / Double(width) : 0 }
 }
 
+/// Is a qualifying gutter wide enough that the SHIPPED floor would have counted
+/// it? One implementation, two callers — the `--gutter` branch and the self-test —
+/// and the same expression `gutters` uses for `minimumRun`, integer truncation
+/// included, so a gutter is `wide` exactly when a default-floor run would have
+/// found it at all.
+func isWide(_ gutter: (low: Int, high: Int), width w: Int) -> Bool {
+    (gutter.high - gutter.low) >= Int(inkGutterFloor * Double(w))
+}
+
 /// The ink test, over a rendered grey page. **One implementation, two callers** —
 /// see the header. Nil means the page carried no ink at all.
-func gutters(inGrey grey: [UInt8], width w: Int, height h: Int) -> Gutters? {
+///
+/// ⛔ `floor` is a PARAMETER defaulting to the shipped constant, not a read of
+/// `runFloor`. The self-test calls this twelve times without it and twice with an
+/// explicit floor, so `INKFLOOR=0.02` moves what a RUN counts and cannot move what
+/// the self-test asserts. ⚠️ **The blind spot in that design**: if `isWide` or this
+/// default were changed to read `runFloor`, the two globals are EQUAL when
+/// `INKFLOOR` is unset, so no clause would move and a bare `--self-test` would stay
+/// green. Nothing here asserts the invariance itself — the self-test cannot see the
+/// environment — so it is watched only by running the knob.
+func gutters(inGrey grey: [UInt8], width w: Int, height h: Int,
+             floor: Double = inkGutterFloor) -> Gutters? {
     guard w > 0, h > 0, grey.count >= w * h else { return nil }
     let threshold = Flattener.otsuThreshold(of: grey)
     var ink = [Int](repeating: 0, count: w)
@@ -250,7 +379,7 @@ func gutters(inGrey grey: [UInt8], width w: Int, height h: Int) -> Gutters? {
     // gutter rather than a word space, and away from the margins so the blank
     // edge of the sheet is not mistaken for one.
     let quiet = max(1, peak / 100)
-    let minimumRun = Int(inkGutterFloor * Double(w))
+    let minimumRun = Int(floor * Double(w))
     let margin = Int(0.12 * Double(w))
     var qualifying: [(low: Int, high: Int)] = []
     var widest = 0
@@ -283,6 +412,8 @@ func gutters(inGrey grey: [UInt8], width w: Int, height h: Int) -> Gutters? {
 
 /// Render a page grey at 150 DPI and run the ink test on it. Nil means the page
 /// could not be rendered or carried no ink — counted, never dropped silently.
+/// ⛔ This is the ONE place `runFloor` reaches the ink test, and both measuring
+/// modes go through it, so nothing else has to remember to pass it.
 func inkTest(_ page: PDFPage) -> Gutters? {
     let box = Flattener.displayBox(of: page)
     let scale = 150.0 / 72.0
@@ -293,7 +424,7 @@ func inkTest(_ page: PDFPage) -> Gutters? {
                                           width: Int(wide), height: Int(high),
                                           from: .cropBox)
     else { return nil }
-    return gutters(inGrey: grey, width: Int(wide), height: Int(high))
+    return gutters(inGrey: grey, width: Int(wide), height: Int(high), floor: runFloor)
 }
 
 /// Everything here is arithmetic on synthetic pixels, so it is unconditional.
@@ -328,15 +459,23 @@ func selfTest() -> [String] {
 
     // 2. ⛔ THE CENSUS'S WHOLE SUB-THRESHOLD CLASS AS A CHECK. A 2.5% gap is
     //    refused as a gutter and is still REPORTED as the widest interior quiet
-    //    run — so the 27 pages `FEATURES.md` calls a blind spot are refused by
-    //    the floor and not missed by the detector, and a lowered floor is
-    //    derivable from a finished census without a second run.
+    //    run — so the sub-threshold pages `FEATURES.md` calls a blind spot are
+    //    refused by the floor and not missed by the detector, and a lowered floor
+    //    is derivable from a finished census without a second run. ⚠️ Do not put a
+    //    count in this comment: it has read 27 (the census's 644 pages by printed
+    //    fraction), and the same class is 29 by exact fraction and 33 by the
+    //    gutter test over this tool's own 641.
     if let g = gutters(inGrey: fixture(blank: 400..<425), width: w, height: h) {
         if !g.qualifying.isEmpty {
             bad.append("2.5% gap: \(g.qualifying.count) gutters, expected none")
         }
+        // ⚠️ The fraction is in the detail string because it is half the condition:
+        // a sabotage dividing `widestFraction` by the height reddened this clause
+        // with a message reading "widest 25 px, expected 25", which names the half
+        // that was right. Its sibling six lines up already printed both.
         if g.widestInterior != 25 || abs(g.widestFraction - 0.025) > 1e-9 {
-            bad.append("2.5% gap: widest \(g.widestInterior) px, expected 25")
+            bad.append("2.5% gap: widest \(g.widestInterior) px / "
+                       + "\(g.widestFraction), expected 25 and 0.025")
         }
         // Sub-step 2 needs to know WHERE the band a lowered floor would count is.
         if g.widestSpan?.low != 400 || g.widestSpan?.high != 425 {
@@ -465,6 +604,112 @@ func selfTest() -> [String] {
         || parsed["c.pdf"] != nil || parsed["file"] != nil || parsed.count != 2 {
         bad.append("parsePageList: \(parsed.mapValues { $0.sorted() })")
     }
+
+    // 8. ⛔ THE LOWERED FLOOR, AND THE BAND SPLIT IT MAKES NECESSARY.
+    //    `INKFLOOR` is the knob sub-step 2 runs on, and a knob wired to nothing
+    //    is the shape this project has shipped: the pair below is two-sided, so
+    //    a `floor` parameter that stopped reaching `minimumRun` reds here.
+    if let g = gutters(inGrey: fixture(blank: 400..<425), width: w, height: h,
+                       floor: 0.02) {
+        if g.qualifying.count != 1 || g.qualifying.first?.low != 400
+            || g.qualifying.first?.high != 425 {
+            bad.append("2.5% gap at floor 0.02: \(g.qualifying) not one at [400, 425)")
+        }
+    } else { bad.append("2.5% gap at floor 0.02: the ink test found no ink") }
+    // The same fixture at the shipped floor, so the row above is a difference the
+    // knob makes and not a property of the fixture. (Group 2 asserts this too, on
+    // the census's behalf; here it is the negative control of a pair.)
+    if let g = gutters(inGrey: fixture(blank: 400..<425), width: w, height: h),
+       !g.qualifying.isEmpty {
+        bad.append("2.5% gap at the shipped floor: \(g.qualifying.count) gutters")
+    }
+
+    // ⛔ A page can be in the WIDE band and still carry a narrow gutter, which is
+    //    why crossing is counted per gutter and not per page: lowering the floor
+    //    adds the 25-px run to this page's list, so its `crossing` at 0.02 is not
+    //    what it was at 0.035 while its `crossWide` is.
+    var twoGaps = [UInt8](repeating: 255, count: w * h)
+    for y in 0..<(h / 2) {
+        for x in 0..<w where !(400..<425).contains(x) && !(600..<660).contains(x) {
+            twoGaps[y * w + x] = 0
+        }
+    }
+    if let g = gutters(inGrey: twoGaps, width: w, height: h, floor: 0.02) {
+        let widths = g.qualifying.map { $0.high - $0.low }
+        let wide = g.qualifying.map { isWide($0, width: w) }
+        if widths != [25, 60] || wide != [false, true] {
+            bad.append("two gaps at floor 0.02: widths \(widths), wide \(wide), "
+                       + "expected [25, 60] and [false, true]")
+        }
+        // The widest run with NO floor applied, which is
+        // `GUTTER-SAMPLED-2026-08-26.tsv`'s column, so the two files' band
+        // populations mean the same thing. ⚠️ The FRACTION is pinned exactly and
+        // not as `>= inkGutterFloor`: the inequality was the first version and it
+        // is 0.06 against 0.035, which nothing plausible falsifies — a width/height
+        // swap in `widestFraction` would read 1.5 and pass it. 0.06 catches that.
+        if g.widestInterior != 60 || abs(g.widestFraction - 0.06) > 1e-9 {
+            bad.append("two gaps: widest \(g.widestInterior) px / "
+                       + "\(g.widestFraction), expected 60 and 0.06")
+        }
+    } else { bad.append("two gaps at floor 0.02: the ink test found no ink") }
+    // At the shipped floor the same page carries the wide gutter ALONE — which is
+    // what makes `crossWide` over the wide band the shipped floor's own answer.
+    if let g = gutters(inGrey: twoGaps, width: w, height: h) {
+        if g.qualifying.map({ $0.high - $0.low }) != [60]
+            || g.qualifying.map({ isWide($0, width: w) }) != [true] {
+            bad.append("two gaps at the shipped floor: \(g.qualifying)")
+        }
+    } else { bad.append("two gaps at the shipped floor: the ink test found no ink") }
+
+    // ⛔ THE BOUNDARY THAT SEPARATES THE TWO CANDIDATE BAND KEYS, and it is a real
+    //    corpus page rather than a hypothetical: `NAYLOR_Arthur E.pdf` p134 is a
+    //    45-px quiet run on a 1286-px page. `minimumRun` TRUNCATES, so
+    //    `Int(0.035 * 1286)` = 45 accepts it and the shipped floor counts the
+    //    page, while 45/1286 = 0.034992 is below 0.035 and a fraction test calls
+    //    it narrow. The band key is the gutter test, not the fraction — this is
+    //    the clause that says so, and it was found by reconciling a finished run
+    //    against `GUTTER-SAMPLED-2026-08-26.tsv` and coming up one page short.
+    let odd = 1286
+    var boundary = [UInt8](repeating: 255, count: odd * h)
+    for y in 0..<(h / 2) {
+        for x in 0..<odd where !(1049..<1094).contains(x) { boundary[y * odd + x] = 0 }
+    }
+    if let g = gutters(inGrey: boundary, width: odd, height: h) {
+        if g.qualifying.map({ $0.high - $0.low }) != [45] {
+            bad.append("45 px of 1286 at the shipped floor: \(g.qualifying), "
+                       + "expected one run of 45")
+        }
+        if g.qualifying.map({ isWide($0, width: odd) }) != [true] {
+            bad.append("45 px of 1286: isWide false, so the shipped floor would "
+                       + "not have counted a page it does count")
+        }
+        if !(g.widestFraction < inkGutterFloor) {
+            bad.append("45 px of 1286: widestFraction \(g.widestFraction) is not "
+                       + "below \(inkGutterFloor) — the two band keys no longer "
+                       + "disagree and this clause has stopped testing anything")
+        }
+    } else { bad.append("45 px of 1286: the ink test found no ink") }
+
+    // ⛔ THE TRUNCATION ITSELF, which the clause above does NOT pin: 0.035 x 1286
+    //    is 45.01, so `Int()` and `.rounded()` both give 45 and a change from one
+    //    to the other is invisible there. 0.035 x 1300 is 45.5, where truncation
+    //    accepts a 45-px run and rounding refuses it. The adversarial review of
+    //    this diff found that hole — the fixture was on the >=/> boundary and in
+    //    the MIDDLE of the truncate/round band.
+    let odd2 = 1300
+    var trunc = [UInt8](repeating: 255, count: odd2 * h)
+    for y in 0..<(h / 2) {
+        for x in 0..<odd2 where !(600..<645).contains(x) { trunc[y * odd2 + x] = 0 }
+    }
+    if let g = gutters(inGrey: trunc, width: odd2, height: h) {
+        if g.qualifying.map({ $0.high - $0.low }) != [45]
+            || g.qualifying.map({ isWide($0, width: odd2) }) != [true] {
+            bad.append("45 px of 1300: \(g.qualifying) / "
+                       + "\(g.qualifying.map { isWide($0, width: odd2) }) — "
+                       + "Int(0.035 * 1300) = 45 must accept a 45-px run, and a "
+                       + "rounding form giving 46 must not")
+        }
+    } else { bad.append("45 px of 1300: the ink test found no ink") }
     return bad
 }
 
@@ -475,7 +720,7 @@ if !selfTestFailures.isEmpty {
     exit(5)
 }
 if selfTestOnly {
-    print("score-reading-order: self-test ok (7 groups)")
+    print("score-reading-order: self-test ok (8 groups)")
     exit(0)
 }
 guard !files.isEmpty else {
@@ -594,6 +839,8 @@ if census {
     fputs("  documents passed but not in the list \(notRequested)\n", stderr)
     fputs("  page selection             "
           + (requestedPages == nil ? "samplePages(\(pages))" : "--pages-from") + "\n", stderr)
+    fputs(String(format: "  floor counted against      %.4f%@\n", runFloor,
+                 runFloor == inkGutterFloor ? "" : " INKFLOOR"), stderr)
     // Invariant 1's discipline in an instrument: a run that scored fewer pages
     // than it was asked for would otherwise read as agreement with whatever it
     // is being compared against.
@@ -626,17 +873,61 @@ if gutter {
     // Vision's observations cross a gutter that is physically there?** A line
     // that spans two columns is text read across the page, and no reordering can
     // repair it because the two halves are already welded into one string.
-    print("file\tpage\tgutters\tlines\tcrossing\tshare")
+    // ⛔ One `columns` array and one printer, with the width asserted —
+    // CONTRIBUTING's rule for a tool that prints a TSV. Counting tab escapes by
+    // eye has put the wrong number of fields under a header three times here
+    // (T14, A12.3, T18), and this mode went from six columns to twelve.
+    let columns = ["file", "page", "gutters", "wideGutters", "narrowGutters",
+                   "widestFrac", "band", "lines", "crossing", "crossWide",
+                   "crossNarrow", "share"]
+    func row(_ fields: [String]) {
+        guard fields.count == columns.count else {
+            fputs("score-reading-order: \(fields.count) fields under "
+                  + "\(columns.count) columns\n", stderr)
+            exit(6)
+        }
+        print(fields.joined(separator: "\t"))
+    }
+    print(columns.joined(separator: "\t"))
+
+    /// One band's running totals. `own` is crossing counted against **that band's
+    /// own gutters** — see the header: it is the only column comparable across
+    /// floors, because lowering the floor adds narrow gutters to a wide page's
+    /// list and moves `any`.
+    struct Tally { var pages = 0, lines = 0, own = 0, any = 0 }
+    var wideBand = Tally(), narrowBand = Tally()
     var physicallyMulti = 0, singleColumn = 0
-    var crossingTotal = 0, linesTotal = 0
-    var worstPages: [(String, Int, Double)] = []
+    // Invariant 1's discipline in an instrument, and the sibling of the census's
+    // `owed`: every page this mode declines to measure is counted and named,
+    // because a run that quietly skipped half the corpus reads as a low crossing
+    // rate. All four of these were bare `continue`s.
+    var unopened = 0, noPage = 0, noInk = 0, unrecognised = 0
+    var worstPages: [(String, Int, String, Double)] = []
     for path in files {
-        guard let document = Flattener.open(URL(fileURLWithPath: path), password: nil)
-        else { continue }
         let name = (path as NSString).lastPathComponent
+        guard let document = Flattener.open(URL(fileURLWithPath: path), password: nil)
+        else {
+            unopened += 1
+            fputs("would not open: \(name)\n", stderr)
+            continue
+        }
         for index in samplePages(document) {
-            guard let page = document.page(at: index) else { continue }
-            guard let ink = inkTest(page) else { continue }
+            guard let page = document.page(at: index) else {
+                noPage += 1
+                fputs("no page: \(name) p\(index + 1)\n", stderr)
+                continue
+            }
+            guard let ink = inkTest(page) else {
+                noInk += 1
+                // "or would not render": `inkTest` returns nil for six distinct
+                // reasons — a non-finite box, either dimension under 64 px, over
+                // `maximumPageMegapixels`, `renderGrey` nil, and `gutters`' own
+                // buffer and zero-peak guards — and this counter collapses them.
+                // The census branch's label already said so; this one said "no
+                // ink", which names one of the six.
+                fputs("no ink / would not render: \(name) p\(index + 1)\n", stderr)
+                continue
+            }
             let w = ink.width
             let gutters = ink.qualifying
             guard !gutters.isEmpty else {
@@ -644,46 +935,115 @@ if gutter {
                 continue
             }
             physicallyMulti += 1
+            let wideGutters = gutters.filter { isWide($0, width: w) }
+            let narrowGutters = gutters.filter { !isWide($0, width: w) }
+            // ⛔ The page's band is "does it carry a gutter the SHIPPED floor
+            // would have found", not `widestFraction >= inkGutterFloor`. The two
+            // are not the same test and the corpus separates them: `minimumRun`
+            // truncates, so on `NAYLOR_Arthur E.pdf` p134 a 45-px run of a
+            // 1286-px page clears `Int(0.035 * 1286)` = 45 while 45/1286 =
+            // 0.034992 is below 0.035. The fraction called that page narrow and
+            // the shipped floor counts it — found by reconciling this run's band
+            // sets against `GUTTER-SAMPLED-2026-08-26.tsv` and off by one page.
+            // This definition is what makes `crossWide` over the wide band the
+            // shipped floor's own answer. Self-test group 8.
+            let wideBandPage = !wideGutters.isEmpty
 
             guard let image = Recogniser.render(page, settings: settings),
                   let observations = try? Recogniser.recognise(image, settings: settings),
                   !observations.isEmpty
-            else { continue }
-            var crossing = 0
+            else {
+                unrecognised += 1
+                // The band is named here, not just the page: without it the band
+                // page counts do not add up to `pages with a real gutter` and a
+                // reader cannot tell which band lost the page.
+                // NOT "Vision returned nothing": the first clause of the guard
+                // is `Recogniser.render` returning nil, where Vision is never
+                // asked at all.
+                fputs("no observations (render or recognition): \(name) p\(index + 1) "
+                      + "(\(wideBandPage ? "wide" : "narrow") band)\n", stderr)
+                continue
+            }
+            var crossing = 0, crossWide = 0, crossNarrow = 0
             for o in observations {
                 let left = o.boundingBox.x * Double(w)
                 let right = (o.boundingBox.x + o.boundingBox.width) * Double(w)
                 // Crosses a gutter if it starts left of one and ends right of it.
-                if gutters.contains(where: { left < Double($0.low) && right > Double($0.high) }) {
-                    crossing += 1
+                func spans(_ list: [(low: Int, high: Int)]) -> Bool {
+                    list.contains { left < Double($0.low) && right > Double($0.high) }
                 }
+                if spans(gutters) { crossing += 1 }
+                if spans(wideGutters) { crossWide += 1 }
+                if spans(narrowGutters) { crossNarrow += 1 }
             }
-            crossingTotal += crossing
-            linesTotal += observations.count
-            let share = Double(crossing) / Double(observations.count)
-            worstPages.append((name, index + 1, share))
-            print(String(format: "%@\t%d\t%d\t%d\t%d\t%.1f%%", name, index + 1,
-                         gutters.count, observations.count, crossing, 100 * share))
+            let own = wideBandPage ? crossWide : crossNarrow
+            var tally = wideBandPage ? wideBand : narrowBand
+            tally.pages += 1
+            tally.lines += observations.count
+            tally.own += own
+            tally.any += crossing
+            if wideBandPage { wideBand = tally } else { narrowBand = tally }
+
+            let share = Double(own) / Double(observations.count)
+            let band = wideBandPage ? "wide" : "narrow"
+            worstPages.append((name, index + 1, band, share))
+            row([name, "\(index + 1)", "\(gutters.count)", "\(wideGutters.count)",
+                 "\(narrowGutters.count)",
+                 String(format: "%.4f", ink.widestFraction), band,
+                 "\(observations.count)", "\(crossing)", "\(crossWide)",
+                 "\(crossNarrow)", String(format: "%.2f%%", 100 * share)])
         }
     }
-    print("\n=== does Vision read across a physical gutter? ===")
-    print("  pages with a real gutter   \(physicallyMulti)")
-    print("  pages without one          \(singleColumn)")
-    if linesTotal > 0 {
-        print(String(format: "  observations crossing one  %d of %d (%.2f%%)",
-                     crossingTotal, linesTotal,
-                     100.0 * Double(crossingTotal) / Double(linesTotal)))
+    // ⛔ To STDERR, so the TSV redirected out of this mode is PURE ROWS like the
+    // census's and every other committed `*.tsv` here. It was on stdout with a
+    // prose block after it, which is the defect the review of sub-step 1 found in
+    // the census branch and fixed there only.
+    func report(_ line: String) { fputs(line + "\n", stderr) }
+    report("\n=== does Vision read across a physical gutter? ===")
+    report(String(format: "  floor counted against      %.4f%@ (shipped %.4f)",
+                  runFloor, runFloor == inkGutterFloor ? "" : " INKFLOOR",
+                  inkGutterFloor))
+    report("  pages with a real gutter   \(physicallyMulti)")
+    report("  pages without one          \(singleColumn)")
+    report("  documents that would not open \(unopened)")
+    report("  pages absent / no ink or render \(noPage) / \(noInk)")
+    report("  pages with no observations \(unrecognised)")
+    func band(_ name: String, _ t: Tally, _ own: String) {
+        report("  --- \(name) ---")
+        report("  pages / observations       \(t.pages) / \(t.lines)")
+        guard t.lines > 0 else { return }
+        report(String(format: "  crossing an OWN (%@) gutter %d of %d (%.2f%%)",
+                      own, t.own, t.lines,
+                      100.0 * Double(t.own) / Double(t.lines)))
+        report(String(format: "  crossing ANY gutter        %d of %d (%.2f%%)",
+                      t.any, t.lines, 100.0 * Double(t.any) / Double(t.lines)))
     }
-    for (name, page, share) in worstPages.sorted(by: { $0.2 > $1.2 }).prefix(8) {
-        print(String(format: "  worst: %@ p%d  %.1f%%", name, page, 100 * share))
+    // ⚠️ Read the OWN line against `FEATURES.md`'s 0.19%, never ANY: at a lowered
+    // floor ANY counts gutters the published run never had. The band names are
+    // the gutter test, not a fraction comparison — see `wideBandPage`.
+    band("wide band: carries a gutter the SHIPPED floor counts", wideBand, "wide")
+    band("narrow band: qualifies only at the LOWERED floor", narrowBand, "narrow")
+    for (name, page, band, share) in worstPages.sorted(by: { $0.3 > $1.3 }).prefix(8) {
+        report(String(format: "  worst: %@ p%d (%@)  %.1f%%", name, page, band,
+                      100 * share))
     }
-    print("""
+    report("""
 
   A share near zero means Vision keeps each column to itself, and the only
   question left is the order it returns them in — which the default mode
   measures. A large share means lines are being welded across the gutter, which
   reordering cannot fix and which is a much bigger piece of work.
 """)
+    // The silent-success defect `score-corpus` and `score-threshold-loss` both
+    // had, and which the census branch already refuses. ⚠️ Narrower than the
+    // census's, which keys on ROWS PRINTED: this keys on pages the ink test
+    // reached, so an all-single-column corpus, or one whose every gutter page
+    // fails recognition, still exits 0 over a header-only TSV. Those cases are
+    // visible in the counters above rather than in the status.
+    guard physicallyMulti + singleColumn > 0 else {
+        fputs("score-reading-order: measured no pages\n", stderr)
+        exit(3)
+    }
     exit(0)
 }
 
