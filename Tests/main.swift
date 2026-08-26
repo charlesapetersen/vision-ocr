@@ -1376,6 +1376,209 @@ do {
     // nothing had ever perturbed the constant to see whether the check bites.
     // Added there instead of duplicated here.
 
+    // MARK: C29 (B) — the splice's arithmetic, and the refusals around it
+    //
+    // Every row here runs with no jbig2enc and no qpdf on the machine, and it is
+    // deliberately OUTSIDE the `JBIG2.isAvailable` block below. `pageRange` and
+    // `spliceArguments` are pure, `splice`'s guards all throw before a process
+    // is started, and `assemble` refuses before it reads a file — so what
+    // decides which page comes out of which file is pinned everywhere. This
+    // file's own words, thirty lines up: a gated check is a check that does not
+    // exist on somebody's machine. It matters more than usual here, because a
+    // wrong page list publishes a document with the right number of pages in the
+    // wrong order, and no page count can see that.
+    do {
+        let src = URL(fileURLWithPath: "/tmp/c29-src.pdf")
+        let asm = URL(fileURLWithPath: "/tmp/c29-asm.pdf")
+        let out = URL(fileURLWithPath: "/tmp/c29-out.pdf")
+        func args(_ passthrough: [Int], _ pageCount: Int,
+                  password: String? = nil) -> [String] {
+            JBIG2.spliceArguments(source: src, password: password,
+                                  assembled: asm, passthrough: passthrough,
+                                  pageCount: pageCount, destination: out)
+        }
+        /// The file-and-range pairs only, which is what the page order IS.
+        func spec(_ passthrough: [Int], _ pageCount: Int) -> String {
+            args(passthrough, pageCount)
+                .dropFirst(2).dropLast(2)
+                .map { $0 == src.path ? "src" : ($0 == asm.path ? "asm" : $0) }
+                .joined(separator: " ")
+        }
+
+        check("C29 (B): a cover page comes from the source and the other "
+              + "nine from the assembled file, in that order",
+              spec([1], 10) == "src 1 asm 1-9", spec([1], 10))
+        // The one that catches an off-by-one, and the reason the assembled
+        // file is indexed by how many encoded pages went before rather than
+        // by page number: page 6 of the finished document is page 5 of the
+        // assembled one.
+        check("C29 (B): …a passthrough page in the middle splits the "
+              + "assembled run and does not shift it",
+              spec([5], 10) == "asm 1-4 src 5 asm 5-9", spec([5], 10))
+        check("C29 (B): …a passthrough page last leaves the assembled run "
+              + "in front of it", spec([3], 3) == "asm 1-2 src 3", spec([3], 3))
+        check("C29 (B): …two adjacent ones collapse into one source range",
+              spec([1, 2], 4) == "src 1-2 asm 1-2", spec([1, 2], 4))
+        check("C29 (B): …and two apart do not",
+              spec([2, 4], 5) == "asm 1 src 2 asm 2 src 4 asm 3",
+              spec([2, 4], 5))
+        // Reading it in ascending order is the whole of the interleave, so an
+        // unsorted argument must not be honoured as given.
+        check("C29 (B): …the page list is read in order, not as handed over",
+              spec([4, 2], 5) == spec([2, 4], 5), spec([4, 2], 5))
+        check("C29 (B): the arguments are an --empty --pages list ending in "
+              + "the destination",
+              args([1], 3).first == "--empty" && args([1], 3)[1] == "--pages"
+                  && Array(args([1], 3).suffix(2)) == ["--", out.path],
+              args([1], 3).joined(separator: " "))
+        // Per file spec and not once: qpdf reads `--password=` as belonging
+        // to the file named before it, and the source appears twice here.
+        check("C29 (B): a password rides on every source segment and on no "
+              + "assembled one",
+              args([2, 4], 5, password: "hunter2")
+                  .filter { $0 == "--password=hunter2" }.count == 2,
+              args([2, 4], 5, password: "hunter2").joined(separator: " "))
+        check("C29 (B): …and an absent one adds nothing",
+              !args([1], 3).contains { $0.hasPrefix("--password") },
+              args([1], 3).joined(separator: " "))
+
+        // `pageRange` is the other half: `--from`/`--to` on the merge, which
+        // is what leaves a spliced page unstamped. Collapsing runs is not
+        // tidiness — a 3,000-page book with one cover would otherwise put
+        // 2,999 numbers on the command line twice over.
+        check("C29 (B): a run of pages collapses to one range",
+              JBIG2.pageRange([2, 3, 4]) == "2-4", JBIG2.pageRange([2, 3, 4]))
+        check("C29 (B): …gaps break it and single pages stay single",
+              JBIG2.pageRange([1, 3, 4, 7]) == "1,3-4,7",
+              JBIG2.pageRange([1, 3, 4, 7]))
+        check("C29 (B): …it sorts, and it deduplicates, because a repeated "
+              + "page is one qpdf would copy twice",
+              JBIG2.pageRange([3, 1, 2]) == "1-3"
+                  && JBIG2.pageRange([1, 1, 2]) == "1-2",
+              "\(JBIG2.pageRange([3, 1, 2])) / \(JBIG2.pageRange([1, 1, 2]))")
+
+        // The refusals. Each of these would otherwise build a page list qpdf
+        // accepts and a reader cannot tell from a correct one, so they are
+        // errors rather than clamps — and none of them starts a process,
+        // which is why `/nonexistent` is a safe qpdf to hand over.
+        //
+        // ⛔ The MESSAGE, not the fact of a throw. `/nonexistent` throws too,
+        // out of `process.run()`, so a row reading "it threw" would be green
+        // on a build with every guard deleted. Asking which throw is what
+        // makes these rows able to fail.
+        func refusal(_ passthrough: [Int], _ pageCount: Int) -> String {
+            do {
+                try JBIG2.splice(source: src, password: nil, into: asm,
+                                 passthrough: passthrough, pageCount: pageCount,
+                                 to: out, using: "/nonexistent")
+                return "(no throw)"
+            } catch { return error.localizedDescription }
+        }
+        check("C29 (B): splice refuses an empty page list",
+              refusal([], 3).contains("no pages to put back"), refusal([], 3))
+        check("C29 (B): …refuses a document with nothing to splice into",
+              refusal([1, 2, 3], 3).contains("nothing to splice them into"),
+              refusal([1, 2, 3], 3))
+        check("C29 (B): …refuses a page number off the end",
+              refusal([4], 3).contains("do not fit"), refusal([4], 3))
+        check("C29 (B): …refuses page 0",
+              refusal([0], 3).contains("do not fit"), refusal([0], 3))
+        check("C29 (B): …refuses a repeated page",
+              refusal([2, 2], 4).contains("do not fit"), refusal([2, 2], 4))
+        // The control that stops the five above being "everything throws":
+        // the shape production hands over passes every guard and dies at the
+        // process instead, which is a DIFFERENT message.
+        check("C29 (B): …while the shape production hands over passes all "
+              + "five and reaches qpdf",
+              !refusal([1], 3).contains("Putting the original pages back"),
+              refusal([1], 3))
+
+        // `assemble` cannot draw a page whose content is in the user's own file,
+        // and it refuses rather than skipping. Skipping would write a document
+        // whose page count and page numbering both look right and whose text
+        // layer lands one page out from that page onward — the class invariant 1
+        // exists to stop, and the reason `Model` filters those pages out and
+        // splices them back rather than letting `assemble` cope.
+        let passthroughPage = JBIG2.Page(stream: .passthrough, pixelWidth: 0,
+                                         pixelHeight: 0,
+                                         boxSize: CGSize(width: 612, height: 792))
+        // A jpeg page pointing at a file that does not exist, FIRST. It is never
+        // read: the refusal happens before any stream is opened, which is what
+        // makes "Page 2" in the message evidence about ordering and not just
+        // about the page number.
+        let unreadable = JBIG2.Page(
+            stream: .jpeg(URL(fileURLWithPath: "/tmp/c29-no-such-page.jpg")),
+            pixelWidth: 10, pixelHeight: 10,
+            boxSize: CGSize(width: 612, height: 792))
+        let refusedOut = dir.appendingPathComponent("passthrough-assembly.pdf")
+        var assembleMessage = "(no throw)"
+        do {
+            try JBIG2.assemble([unreadable, passthroughPage], to: refusedOut)
+        } catch { assembleMessage = error.localizedDescription }
+        check("C29 (B): assemble refuses a passthrough page, names it, and does "
+              + "so before it opens any stream",
+              assembleMessage.contains("keeps its own content")
+                  && assembleMessage.contains("Page 2"),
+              assembleMessage)
+        check("C29 (B): …and leaves no file where a reader could open it",
+              !FileManager.default.fileExists(atPath: refusedOut.path))
+        // The control that stops the pair above being "assemble throws on
+        // anything": the same list with the passthrough page taken out reaches
+        // the unreadable stream instead, and says something else entirely.
+        let otherOut = dir.appendingPathComponent("passthrough-control.pdf")
+        var otherMessage = "(no throw)"
+        do { try JBIG2.assemble([unreadable], to: otherOut) }
+        catch { otherMessage = error.localizedDescription }
+        check("C29 (B): …while the same list without it fails for a different "
+              + "reason, so the refusal is the passthrough page's",
+              !otherMessage.contains("keeps its own content"), otherMessage)
+        // And an empty list is a third message, which is what says the guard
+        // added here did not simply swallow the one that was there before.
+        var emptyMessage = "(no throw)"
+        do { try JBIG2.assemble([], to: otherOut) }
+        catch { emptyMessage = error.localizedDescription }
+        check("C29 (B): …and an empty page list still refuses on its own terms",
+              emptyMessage.contains("no page images"), emptyMessage)
+
+        // C29 (B)'s second refusal, at the predicate. A spliced page arrives
+        // carrying the source's own `/Annots` — measured, `qpdf --empty --pages`
+        // keeps the key and the `/Highlight` behind it — so a reader's mark on a
+        // born-digital page would be transplanted onto a page that already has
+        // it and `Annotations.transplant` would then refuse the whole document.
+        // ⛔ The `Link` row is the one that makes the rule usable rather than a
+        // way of turning the fix off: 3,991 of the corpus's 4,867 annotations are
+        // JSTOR and ProQuest links, and a born-digital cover sheet is where they
+        // live. If a link counted, almost nothing would take the splice.
+        let markSrc = dir.appendingPathComponent("c29-marked.pdf")
+        var marked = false
+        if let doc = PDFDocument(url: textPage), let page = doc.page(at: 0) {
+            page.addAnnotation(PDFAnnotation(
+                bounds: CGRect(x: 60, y: 600, width: 200, height: 20),
+                forType: .highlight, withProperties: nil))
+            marked = doc.write(to: markSrc)
+        }
+        let linkSrc = dir.appendingPathComponent("c29-linked.pdf")
+        var linked = false
+        if let doc = PDFDocument(url: textPage), let page = doc.page(at: 0) {
+            page.addAnnotation(PDFAnnotation(
+                bounds: CGRect(x: 60, y: 600, width: 200, height: 20),
+                forType: .link, withProperties: nil))
+            linked = doc.write(to: linkSrc)
+        }
+        check("C29 (B): the mark fixtures were written, or the four rows below "
+              + "prove nothing", marked && linked, "marked=\(marked) linked=\(linked)")
+        check("C29 (B): a reader's highlight on the page asked about is a mark",
+              Annotations.anyCopiableMark(in: markSrc, password: nil, onPages: [1]))
+        check("C29 (B): …a page that is not asked about is not one",
+              !Annotations.anyCopiableMark(in: markSrc, password: nil, onPages: [2])
+                  && !Annotations.anyCopiableMark(in: markSrc, password: nil,
+                                                  onPages: []))
+        check("C29 (B): …and a Link is not a reader's mark, which is what lets a "
+              + "JSTOR cover sheet take the splice at all",
+              !Annotations.anyCopiableMark(in: linkSrc, password: nil, onPages: [1]),
+              "link count=\(PDFDocument(url: linkSrc)?.page(at: 0)?.annotations.count ?? -1)")
+    }
+
     // A mixed book must assemble into one valid PDF carrying both filters.
     if JBIG2.isAvailable {
         let mixedSrc = tmp.appendingPathComponent("auto-mixed.pdf")
@@ -1405,12 +1608,14 @@ do {
             case .jpeg(let j):
                 streams.append(JBIG2.Page(stream: .jpeg(j), pixelWidth: p.pixelWidth,
                                           pixelHeight: p.pixelHeight, boxSize: p.boxSize))
-            // C29. `JBIG2.Page` has no case for a page with no image stream, which
-            // is the whole reason a passthrough page sends its document down the
-            // Flate route. Contributing nothing here is what production's `onPage`
-            // closure does, so the count mismatch it causes is reproduced rather
-            // than papered over — and this loop passes no `passThrough` set, so it
-            // cannot arise from `mixedSrc`.
+            // C29. Nothing, because this loop passes no `passThrough` set and so
+            // cannot produce one — not because a passthrough page has no home in
+            // `JBIG2.Page`. ⛔ It had none until C29 (B) landed on 2026-08-25 and
+            // this comment said the absence "is the whole reason a passthrough
+            // page sends its document down the Flate route", which is now the
+            // opposite of what production does: `Stream.passthrough` keeps
+            // `encoded` dense and `JBIG2.splice` puts the page back. The block
+            // below is where that is pinned.
             case .passthrough: break
             }
         }
@@ -1421,6 +1626,7 @@ do {
         check("the mixed PDF opens with both pages",
               PDFDocument(url: assembled)?.pageCount == 2,
               "\(PDFDocument(url: assembled)?.pageCount ?? -1)")
+
         let raw = String(decoding: (try? Data(contentsOf: assembled)) ?? Data(),
                          as: UTF8.self)
         // MARK: MRC — three layers on one page
@@ -10622,10 +10828,13 @@ do {
 
             /// One end-to-end run. Returns the published bytes, whether the JBIG2
             /// route was taken, the outcome, and the published page 1 string.
-            func publish(_ src: URL, label: String, jbig2: Bool)
+            func publish(_ src: URL, label: String, jbig2: Bool, marks: Bool = false)
                 -> (bytes: Int, tookJBIG2: Bool, ok: Bool, page1: String, pages: Int) {
                 resetPrefs()
                 d.set(jbig2, forKey: Prefs.useJBIG2)
+                // Off in a reset domain — it is not in `Prefs.register`'s
+                // dictionary — so the annotated arm has to ask for it.
+                d.set(marks, forKey: Prefs.preserveAnnotations)
                 let out = e2eDir.appendingPathComponent("\(label).ocr.pdf")
                 try? FileManager.default.removeItem(at: out)
                 var outcome: Runner.Result.Outcome?
@@ -10647,20 +10856,28 @@ do {
             let mixedRun = publish(mixedSrc, label: "mixed", jbig2: true)
             let scansJB = publish(scansOnly, label: "scans-jbig2", jbig2: true)
             let scansFlate = publish(scansOnly, label: "scans-flate", jbig2: false)
+            // C29 (B)'s own before/after, on the SAME document rather than on
+            // its scan pages: `useJBIG2` off reaches the identical `else` the
+            // count guard used to fall to, so this arm is what a mixed document
+            // published until 2026-08-25.
+            let mixedFlate = publish(mixedSrc, label: "mixed-flate", jbig2: false)
 
-            // Non-vacuity before anything else: three runs that failed would satisfy
+            // Non-vacuity before anything else: four runs that failed would satisfy
             // several of the rows below by accident.
-            check("C29 (B): all three end-to-end runs published",
-                  mixedRun.ok && scansJB.ok && scansFlate.ok,
-                  "mixed=\(mixedRun.ok) jbig2=\(scansJB.ok) flate=\(scansFlate.ok)")
+            check("C29 (B): all four end-to-end runs published",
+                  mixedRun.ok && scansJB.ok && scansFlate.ok && mixedFlate.ok,
+                  "mixed=\(mixedRun.ok) jbig2=\(scansJB.ok) flate=\(scansFlate.ok) "
+                      + "mixedFlate=\(mixedFlate.ok)")
             // Invariant, not a pin: a routing change that loses a page is invariant-1
             // content loss. ⚠️ Not "every other row here would still be green", which
             // an earlier draft claimed and the review of it refuted: losing page 1
             // reds the exact-text row below as well. What this catches on its own is
             // a lost SCAN page, which nothing else here looks at.
             check("C29 (B): …with every page kept, three and two",
-                  mixedRun.pages == 3 && scansJB.pages == 2 && scansFlate.pages == 2,
-                  "mixed=\(mixedRun.pages) jbig2=\(scansJB.pages) flate=\(scansFlate.pages)")
+                  mixedRun.pages == 3 && scansJB.pages == 2 && scansFlate.pages == 2
+                      && mixedFlate.pages == 3,
+                  "mixed=\(mixedRun.pages) jbig2=\(scansJB.pages) "
+                      + "flate=\(scansFlate.pages) mixedFlate=\(mixedFlate.pages)")
 
             // ⛔ THE ROW THE `passThrough: []` SABOTAGE REDS. Exact string equality
             // against the source page, not a count: `AMFAKAN FOCAX ONCAL ASSOXUTION`
@@ -10673,16 +10890,68 @@ do {
                   "published=\(mixedRun.page1.count) source=\(mixedCoverText.count) "
                       + "equal=\(mixedRun.page1 == mixedCoverText)")
 
-            // ⛔ TODAY'S ROUTE, PINNED so that a JBIG2 splice has something to flip.
-            // The all-scan pair beside it is what stops this being vacuous: the same
-            // builder's pages, the same settings, and they DO reach JBIG2 — so the
-            // mixed document's Flate route is the passthrough page's doing and not
-            // this machine missing a binary.
-            check("C29 (B): a mixed document takes the Flate route while the same "
-                  + "scan pages without the cover take JBIG2",
-                  !mixedRun.tookJBIG2 && scansJB.tookJBIG2 && !scansFlate.tookJBIG2,
+            // ⛔ THE ROW C29 (B) FLIPPED, 2026-08-25. It read
+            // `!mixedRun.tookJBIG2` until the splice landed — today's answer
+            // pinned on purpose so that this item had something to turn over,
+            // which is the shape the fixture commit used for (A). The all-scan
+            // pair beside it is what stops it being vacuous in either direction:
+            // the same builder's pages, the same settings, and the `useJBIG2`-off
+            // arm still has to reach the `else`, so a build that stopped
+            // consulting the setting at all cannot be green here.
+            check("C29 (B): a mixed document now takes the JBIG2 route, like the "
+                  + "same scan pages without the cover, and the setting still "
+                  + "turns it off",
+                  mixedRun.tookJBIG2 && scansJB.tookJBIG2 && !scansFlate.tookJBIG2
+                      && !mixedFlate.tookJBIG2,
                   "mixed=\(mixedRun.tookJBIG2) jbig2Arm=\(scansJB.tookJBIG2) "
-                      + "flateArm=\(scansFlate.tookJBIG2)")
+                      + "flateArm=\(scansFlate.tookJBIG2) "
+                      + "mixedFlate=\(mixedFlate.tookJBIG2)")
+
+            // ⛔ AND THE ROUTE IS NOT THE POINT — THE STREAMS ARE. `tookJBIG2`
+            // says which branch ran; this says what reached the user's disk.
+            // A stream dictionary can never live inside an object stream (the
+            // PDF specification forbids it), so the filter name is greppable in
+            // the published bytes whatever qpdf did to the rest of the file —
+            // measured on a qpdf round trip of a corpus document before this was
+            // written, 9 lines of /DCTDecode in and 9 out.
+            //
+            // Two scan pages, so two streams: the born-digital page contributes
+            // none, which is the whole of the splice. The Flate arm of the same
+            // document must carry ZERO, or "2" would say nothing about the route.
+            func jbig2Streams(_ label: String) -> Int {
+                let url = e2eDir.appendingPathComponent("\(label).ocr.pdf")
+                let bytes = (try? Data(contentsOf: url)) ?? Data()
+                return String(decoding: bytes, as: UTF8.self)
+                    .components(separatedBy: "/JBIG2Decode").count - 1
+            }
+            check("C29 (B): the published mixed document really carries the scan "
+                  + "pages' JBIG2 streams, two of them, where the Flate arm of "
+                  + "the same document carries none",
+                  jbig2Streams("mixed") == 2 && jbig2Streams("mixed-flate") == 0,
+                  "mixed=\(jbig2Streams("mixed")) "
+                      + "mixedFlate=\(jbig2Streams("mixed-flate"))")
+
+            // The control that says the byte row below is about the ROUTE and not
+            // about page 1's content: both arms keep the cover's exact text, so
+            // the difference between them is not one of them losing it.
+            check("C29 (B): …and the Flate arm keeps the cover's exact text too, "
+                  + "so the byte delta is the route and not the page",
+                  mixedFlate.page1 == mixedCoverText,
+                  "flateArm=\(mixedFlate.page1.count) source=\(mixedCoverText.count)")
+
+            print("C29 (B) splice price on the 3-page mixed fixture: JBIG2 "
+                  + "\(mixedRun.bytes) B, Flate \(mixedFlate.bytes) B, delta "
+                  + "\(mixedFlate.bytes - mixedRun.bytes) B")
+            // A direction, not a threshold — the same reason the scan-page row
+            // below asserts no bar. ⚠️ And do NOT read this fixture's ratio as
+            // the product's: its scan pages are bilevel, MRC skips bilevel, and
+            // the corpus figure is 90.8% MRC re-layering. `BUGS.md` C29 (B) says
+            // quote 3.13x and never this file's number.
+            check("C29 (B): the mixed document is cheaper published through the "
+                  + "splice than through the fallback it used to take",
+                  mixedRun.bytes < mixedFlate.bytes && mixedRun.bytes > 0,
+                  "jbig2=\(mixedRun.bytes) flate=\(mixedFlate.bytes) "
+                      + "delta=\(mixedFlate.bytes - mixedRun.bytes)")
 
             // (B)'s price, on the scan pages alone and therefore about the ROUTE
             // rather than about page 1's content. `useJBIG2` off reaches the same
@@ -10703,11 +10972,52 @@ do {
                   scansFlate.bytes > scansJB.bytes && scansJB.bytes > 0,
                   "jbig2=\(scansJB.bytes) flate=\(scansFlate.bytes) "
                       + "delta=\(scansFlate.bytes - scansJB.bytes)")
+            // ⛔ C29 (B)'s SECOND REFUSAL, END TO END, and it is a REGRESSION
+            // guard rather than a byte one. A spliced page arrives carrying the
+            // source's own `/Annots` (measured: `qpdf --empty --pages` keeps both
+            // the key and the `/Highlight`), so with the splice and no refusal
+            // `Annotations.transplant` copies every mark onto a page that already
+            // has it and then refuses the whole document over its own
+            // `found.count == wanted.count` — whose comment says that case is
+            // "not reachable from the pipeline, where a staged rebuild starts
+            // with no annotations at all". The splice is what makes it reachable,
+            // so the row to watch is that the document PUBLISHES AT ALL.
+            let markedSrc = e2eDir.appendingPathComponent("marked.pdf")
+            var markedBuilt = false
+            if let source = PDFDocument(url: mixedSrc), let cover = source.page(at: 0) {
+                cover.addAnnotation(PDFAnnotation(
+                    bounds: CGRect(x: 60, y: 690, width: 300, height: 34),
+                    forType: .highlight, withProperties: nil))
+                markedBuilt = source.write(to: markedSrc)
+            }
+            let markedRun = publish(markedSrc, label: "marked", jbig2: true, marks: true)
+            let publishedMarks = PDFDocument(
+                url: e2eDir.appendingPathComponent("marked.ocr.pdf"))?
+                .page(at: 0)?.annotations.filter { $0.type == "Highlight" }.count ?? -1
+            check("C29 (B): the annotated fixture was built with a mark on its "
+                  + "born-digital page, or the three rows below prove nothing",
+                  markedBuilt
+                      && (PDFDocument(url: markedSrc)?.page(at: 0)?
+                          .annotations.contains { $0.type == "Highlight" } ?? false),
+                  "built=\(markedBuilt)")
+            check("C29 (B): a reader's mark on the born-digital page keeps the "
+                  + "document off the splice, and it still publishes",
+                  markedRun.ok && !markedRun.tookJBIG2 && markedRun.pages == 3,
+                  "ok=\(markedRun.ok) tookJBIG2=\(markedRun.tookJBIG2) "
+                      + "pages=\(markedRun.pages)")
+            check("C29 (B): …with the mark arriving exactly once",
+                  publishedMarks == 1, "highlights on published page 1: "
+                      + "\(publishedMarks)")
+            check("C29 (B): …and the cover page's exact text kept anyway, because "
+                  + "the refusal is about the route and not about (A)",
+                  markedRun.page1 == mixedCoverText,
+                  "marked=\(markedRun.page1.count) source=\(mixedCoverText.count)")
+
             check("the skip census figure for C29 (B)'s route pair is still right",
-                  checks - checksBeforeC29B + 1 == 6,
-                  "\(checks - checksBeforeC29B + 1) checks, census says 6")
+                  checks - checksBeforeC29B + 1 == 13,
+                  "\(checks - checksBeforeC29B + 1) checks, census says 13")
         } else {
-            skipBlock("C29 (B)'s end-to-end route pair", checks: 6,
+            skipBlock("C29 (B)'s end-to-end route pair", checks: 13,
                       because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
         }
         resetPrefs()

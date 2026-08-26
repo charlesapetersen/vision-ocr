@@ -1,4 +1,5 @@
 import Foundation
+import PDFKit
 
 /// Carries a reader's own marks — highlights, notes, ink, stamps — from the original
 /// document onto the rebuilt one.
@@ -82,6 +83,46 @@ enum Annotations {
         // Added deliberately, and recorded here so it is not mistaken for the spec.
         "/Line",
     ]
+
+    /// Whether any of `pages` carries a mark `transplant` would copy.
+    ///
+    /// **C29 (B) asks this of the SOURCE before a route is chosen.** A page spliced
+    /// into the JBIG2 document arrives with the source's own `/Annots` on it —
+    /// measured: `qpdf --empty --pages` carries both the `/Annots` key and the
+    /// `/Highlight` behind it — so the transplant would then add a *second* copy of
+    /// every mark and its own verification would refuse the whole document
+    /// (`found.count == wanted.count`, in `transplant`). The comment beside that
+    /// guard says the case is "not reachable from the pipeline, where a staged
+    /// rebuild starts with no annotations at all"; the splice is exactly what would
+    /// have made it reachable, so `Model` keeps such a document off that route.
+    ///
+    /// **PDFKit rather than the qpdf probe `transplant` uses**, and the trade is
+    /// stated rather than hidden: this runs on every mixed document before the
+    /// rebuild, and paying a whole qpdf pass to ask about one page is the wrong
+    /// price. What the cheaper reader cannot see is an annotation PDFKit does not
+    /// surface — an inline dictionary, or a reference with a non-zero generation.
+    /// Those are cases `transplant` **refuses outright on either route**, so they
+    /// are not this function's to catch: it is choosing between two correct outputs,
+    /// not standing between the user and a broken one.
+    ///
+    /// `Link` and `Widget` are not marks, which is what makes this usable at all:
+    /// 3,991 of the corpus's 4,867 annotations are JSTOR and ProQuest links, and a
+    /// born-digital cover sheet is where they live.
+    static func anyCopiableMark(in file: URL, password: String?,
+                                onPages pages: [Int]) -> Bool {
+        guard !pages.isEmpty, let document = PDFDocument(url: file) else { return false }
+        if document.isLocked, let password { _ = document.unlock(withPassword: password) }
+        for page in pages {
+            guard page >= 1, page <= document.pageCount,
+                  let subject = document.page(at: page - 1) else { continue }
+            for annotation in subject.annotations {
+                // PDFKit reports the subtype without its leading slash.
+                guard let type = annotation.type else { continue }
+                if copiedSubtypes.contains("/" + type) { return true }
+            }
+        }
+        return false
+    }
 
     /// The annotation keys whose numbers live in the *page's* coordinate space, and so
     /// have to move when the page's origin does.

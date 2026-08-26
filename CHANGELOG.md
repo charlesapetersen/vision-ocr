@@ -14,6 +14,17 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+**A mixed PDF — born-digital pages among scanned ones — now keeps the compact page compression for its
+scanned pages.** Until now, one page kept as it is turned that compression off for the whole file, and the
+layered-image saving with it, so a mixed file came out much larger: measured on a ten-page book with a
+born-digital first page, 1.4 MB instead of 0.4 MB, and nine tenths of that difference was the layering rather
+than the compression itself. The kept page is now put back into the compressed document instead of the
+document being rebuilt the old way. Two files still take the old, larger route, deliberately: one that has
+bookmarks, because the step that puts the page back cannot carry a bookmark tree across — 16 of the 42 such
+documents in the test corpus have bookmarks — and one with a highlight or a note of your own on a
+born-digital page, because that page arrives already carrying the mark and copying it again would put two
+there. Both come out correct, only larger (BUGS.md C29).
+
 **A page that already has real text of its own is now kept as it is, instead of being turned into a picture
 and re-read.** This is the fix for the report described in the next entry. Making a mixed PDF searchable used
 to rebuild every page as an image, so a born-digital cover sheet or title page came out carrying OCR of a
@@ -25,8 +36,9 @@ or its image streams. Scanned pages are rebuilt as before — re-reading those i
 one caveat that is a limitation rather than a promise: the test for "already a picture" needs the page's
 image to be at least 900 pixels wide and drawn as a normal XObject, so a *very* low-resolution scan, or one
 whose image is written inline, can be mistaken for a born-digital page and kept with its old OCR instead of
-being re-read. Two more limits: a mixed file is written with the older, larger page compression and loses the
-layered-image saving with it, so it can come out noticeably bigger; and a *short* born-digital page — under
+being re-read. Two more limits (the first of which the entry above now removes for most files): a mixed file is written
+with the older, larger page compression and loses the layered-image saving with it, so it can come out
+noticeably bigger; and a *short* born-digital page — under
 about two lines of text — is still rebuilt, because two lines is the bar the app uses to tell a real page of
 text from a plate or a part title (BUGS.md C29).
 

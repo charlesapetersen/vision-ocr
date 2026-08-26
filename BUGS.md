@@ -27,7 +27,17 @@ route against **439,686 B** on JBIG2, **+936,161 B, 3.13x**, of which ⛔ **90.8
 RE-LAYERING and not the compression** (production's own `Layered 5 picture pages, saving 830 KB` against the
 Flate arm's nothing), so the decision is that **the fallback is not the answer**; the `qpdf --empty --pages` splice is
 demonstrated at **456,171 B** with nine `JBIG2Decode` streams surviving. ⛔ **Do not quote the generated
-fixture's 1.34x** — sparse synthetic type understates this 2.3x. What is still untouched is the
+fixture's 1.34x** — sparse synthetic type understates this 2.3x. ✅ **(B) SHIPPED THE SAME DAY —
+`#### (B) SHIPPED`**: `JBIG2.Page.Stream` gains a `.passthrough` case so `encoded` stays DENSE (a short array
+would have layered one page's word boxes onto another's pixels — `(A)`'s `Recogniser` defect in a second
+place), `assemble` REFUSES such a page rather than skipping it, `JBIG2.splice` interleaves it back out of the
+user's own file, and `overlay` takes a page list passed as BOTH `--from` and `--to` so the spliced page is
+never stamped and never wrapped in the form XObject C23 measured translating a cropped page by (50, 96).
+⛔ **Two refusals: an OUTLINE (`--empty --pages` carries no document-level structure) — 16 of the 42 affected
+corpus documents, so 26 of 42 get the splice — and a READER'S MARK on the passthrough page, which is a
+REGRESSION guard and not a byte one: measured, the splice carries `/Annots` and the `/Highlight` behind it, so
+the transplant would add a second copy and then refuse the whole document.** Fixture 49,425 B on both arms
+before, **44,970 against 49,425** after; suite **1,281 -> 1,314**. What is still untouched is the
 **120-character bar**, under which a short born-digital page is rasterised and no report line names it.
 ✅ **`C29` has the FIXTURE it said it needed first, as of 2026-08-23, and today's wrong answer is PINNED**
 (`#### The fixture, and today's answer PINNED`): a nine-page JSTOR shape whose cover page reads 302
@@ -9864,7 +9874,11 @@ and `INKBAR=0.0005`'s `1 of 2 … 201,252 B/page, 5.76x` all come back the same.
 page is copied through with `drawPDFPage` and keeps its exact text; the loss this entry was opened for does
 not happen on any page clearing the 120-character bar. What keeps it open is **(B)**, the JBIG2 route's
 byte cost on a mixed document — ⛔ **MEASURED 2026-08-25, +936,161 B / 3.13x, see `#### (B) MEASURED`, so
-"unmeasured" is spent and what is left of (B) is its IMPLEMENTATION** — and **the 120-character bar itself**, under which a short
+"unmeasured" is spent — ✅ **and (B) is now SHIPPED, 2026-08-25: `#### (B) SHIPPED`, the born-digital page
+spliced into the JBIG2 document with `qpdf --empty --pages` so one such page no longer costs every other page
+its compression, refused only on a document with an outline (16 of the 42) or a reader's mark on the
+passthrough page (which would otherwise make the transplant refuse the whole file)** — and so what keeps this
+entry open is **the 120-character bar alone**, under which a short
 born-digital page is still rasterised and is now named by no report line at all. Read that section before
 anything else here: the title and the whole account below it describe the behaviour **before** the fix.
 
@@ -10706,6 +10720,88 @@ all" as a live row rather than as prose.
   `$STATE/suite-timings.tsv`, but no delta is published here.
 * **The 120-character bar is still untouched**, and it is now the only thing left under this entry besides
   (B) itself.
+
+#### (B) SHIPPED — 2026-08-25: the born-digital page is spliced into the JBIG2 document instead of turning the route off for the whole file
+
+⛔ **ONE BORN-DIGITAL PAGE NO LONGER COSTS EVERY OTHER PAGE ITS COMPRESSION.** `JBIG2.assemble` writes the
+pages it can encode, `JBIG2.splice` puts the passthrough pages back out of the user's own file with
+`qpdf --empty --pages`, and the text-layer merge is restricted to the pages that were encoded. On the
+suite's three-page fixture the published file goes **JBIG2 44,970 B against Flate 49,425 B, −4,455 B**, where the same fixture read **49,425 B on both arms, byte-identical**, before the change, ⚠️ **`1954 - Why.pdf` was NOT re-run through the fix**: this section ships the mechanism the demonstration priced, and the number to quote for the product is still `#### (B) MEASURED`'s 3.13x.
+
+**What carries the page.** A third `JBIG2.Page.Stream` case, `.passthrough`, so `encoded` stays **dense**
+and indexed by page. That is not tidiness: the MRC re-layering loop reads `byPage[index + 1]` and
+`source.page(at: index)` off that array's own indices (`Model.swift:2290-2293`), so a short `encoded` would
+have layered one page's word boxes onto another page's pixels from the passthrough page onward — the same
+positional-keying defect `#### (A) SHIPPED` found in `Recogniser`, in a second place. `Model` filters those
+entries out of the `assemble` call and `assemble` **refuses** one rather than skipping it: skipping writes a
+document whose page count and page numbering both look right and whose text layer lands one page out.
+
+**What keeps the page intact.** The splice is a page-object copy, so the page arrives with its own fonts,
+its own images, its `/Rotate` and its boxes, nothing scaled and nothing re-encoded. And the merge leaves it
+alone: `JBIG2.overlay` takes a `pages:` list and passes it as **both** `--from` and `--to`, which it can do
+because the text layer and the image document are page-for-page the same document. ⛔ **That is not a
+nicety either — C23 measured what stamping does to a page**: `qpdf --overlay` wraps the destination's
+content in a form XObject whose `/BBox` is the page's crop box and centres it on the media box, which
+translated a cropped page by (50, 96). A spliced page carries the source's own crop box, so it is exactly
+the page that would move. Measured before the code was written: `--to=2-3` over a three-page file leaves
+page 1's extracted text at **1,161 characters, identical to the input's**, while pages 2 and 3 carry both
+files' text. For the same reason a passthrough page is dropped from the `setCropBoxes` map — the rect there
+is measured on the *rebuilt* sheet, whose media box was normalised to the origin.
+
+⛔ **TWO REFUSALS, AND THE SECOND ONE PREVENTS A REGRESSION RATHER THAN BUYING BYTES.**
+
+1. **An outline.** `qpdf --empty --pages` keeps no document-level structure, so an outline written into the
+   assembled catalogue would be dropped by the splice, and renumbering every destination across a page that
+   is not in that file has nowhere to send an entry pointing **at** the passthrough page. A document with
+   both keeps exactly today's behaviour — the Flate route, correct and larger. **Priced, not guessed: 16 of
+   the 42 affected corpus documents carry an outline** (`qpdf --json --json-key=outlines` over all 42 of
+   `C29-CORPUS-2026-08-25.tsv`, 2026-08-25), so **26 of 42 get the splice** — and `1954 - Why.pdf` is not
+   one of the 16, so the document this entry's 3.13x came from is in the benefiting set.
+2. **A reader's mark on a passthrough page.** ⛔ **Measured, and it would have made a document FAIL to
+   publish**: `qpdf --empty --pages` carries `/Annots` and the `/Highlight` behind it (PDFKit-built
+   two-page fixture, 1 highlight in and 1 highlight out), so the spliced page arrives already holding the
+   mark, `Annotations.transplant` adds a second copy, and its own verification refuses the document —
+   `found.count == wanted.count`, whose comment reads *"not reachable from the pipeline, where a staged
+   rebuild starts with no annotations at all"*. The splice is what would have made it reachable. So
+   `Annotations.anyCopiableMark(in:password:onPages:)` is asked of the source before the route is chosen,
+   only when there **is** a passthrough page and only of those pages. ⛔ **`Link` is not a mark, and that
+   is what makes the rule usable rather than an off switch**: 3,991 of the corpus's 4,867 annotations are
+   JSTOR and ProQuest links, and a born-digital cover sheet is where they live. ⚠️ The better fix —
+   stripping `/Annots` off the spliced pages so the transplant is the only writer — is **not** this commit:
+   it puts another qpdf JSON pass on the publish path, which is where C23 bit twice.
+
+✅ **WATCHED FAILING, NAMED AND COUNTED BEFORE THE RUN.** With the `.passthrough` entry cut out of the
+`onPage` closure — one line, the pre-(B) state — the suite reads **1303/1306** and **exactly three** `FAIL`
+lines, the three predicted: the route row, the `/JBIG2Decode` stream-count row and the byte row. ⛔ **The
+byte row's detail is its own control**: `jbig2=49425 flate=49425 delta=0`, byte-identical, which reproduces
+`#### (B) MEASURED`'s exact `useJBIG2`-off control on the fixture — the fallback was the whole difference.
+Suite **1,281 -> 1,314**, no skips: **26** ungated rows pinning `pageRange`, `spliceArguments`,
+`splice`'s five arithmetic refusals, `assemble`'s refusal and `anyCopiableMark`, and **7** more end to end
+(block 6 goes 6 -> 13). ⛔ **The ungated half is deliberately OUTSIDE that file's `JBIG2.isAvailable`
+block**: the arithmetic deciding which page comes out of which file must be pinned on a machine with no
+qpdf, because a wrong page list publishes a document with the right number of pages in the wrong order and
+no page count sees that. ⚠️ **The five refusal rows assert the MESSAGE and not the fact of a throw** --
+they hand `splice` `/nonexistent` as its qpdf, which throws too, so "it threw" would have been green with
+every guard deleted.
+
+⚠️ **What this does NOT cover**, said here rather than left to be found.
+
+* **The 120-character bar** is untouched and still unmeasured. A short born-digital page is still rasterised
+  and is still named by neither report line.
+* **A document with an outline, and a document with a reader's mark on its born-digital page**, both keep
+  the old route by decision. Neither is reported as such: the output is correct, only larger, and A9.2's
+  decision is that the route is not news to the user. That is a bytes judgement, not invariant 1.
+* **Rotation on this route is unmeasured.** The splice copies the page object with its own `/Rotate`, so it
+  is right by construction rather than by measurement, and the suite's rotated born-digital fixture is used
+  by (A)'s rows and not by the end-to-end block.
+* **An encrypted source is untested.** `spliceArguments` puts `--password=` after each source file spec,
+  which is where qpdf reads it, and the pinned rows assert it appears once per source segment and never on
+  the assembled file — but no encrypted document has been run through the splice.
+* **A trimmed passthrough page is untested.** It keeps the source's own crop box by construction; nothing
+  measured one.
+* **The fixture's own ratio must not be quoted.** Its scan pages are bilevel and MRC skips bilevel, so it
+  has no MRC component at all while the corpus figure is 90.8% re-layering. `#### (B) MEASURED` says quote
+  3.13x; this section adds the corpus document run through the fix and nothing else.
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
 

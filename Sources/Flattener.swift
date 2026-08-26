@@ -770,8 +770,11 @@ enum Flattener {
                     // dense or `bitmaps` stops being indexed by page number, which
                     // is what `sourceCropBoxes[index + 1]`, `pageTotal` and
                     // `byPage` all rest on. 0 pixels because there is no bitmap;
-                    // only the JBIG2 route reads those two fields, and a
-                    // passthrough page is what stops that route being taken.
+                    // only the JBIG2 route reads those two fields, and it now
+                    // carries such a page rather than refusing it — `JBIG2.splice`,
+                    // C29 (B). ⛔ This comment said "a passthrough page is what
+                    // stops that route being taken" until 2026-08-25, which is now
+                    // the opposite of what production does.
                     let entry = RebuiltPage(content: .passthrough, pixelWidth: 0,
                                             pixelHeight: 0, boxSize: box.size,
                                             sourceCropBox: region == pageBox ? nil : region)

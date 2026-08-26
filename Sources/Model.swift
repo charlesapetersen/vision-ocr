@@ -2035,17 +2035,32 @@ final class OCRModel: ObservableObject {
                                 // three-channel stream as /DeviceGray.
                                 isColour: page.isColour))
                         case .passthrough:
-                            // C29. Deliberately nothing. A page with no bitmap has
-                            // nothing to encode, and its absence from `encoded` is
-                            // what makes `encoded.count == bitmaps.count` fail below
-                            // and sends a mixed document down the Flate route — the
-                            // route that can carry a page whose pixels are its own.
-                            // `JBIG2.assemble` writes one image stream per page and
-                            // has nowhere to put a page that has none, so this is
-                            // the fallback doing what it already existed to do
-                            // rather than a new guard. The price is bytes on mixed
-                            // documents only, and it is `BUGS.md` C29 (B).
-                            break
+                            // C29 (B). An entry with no stream, so this array
+                            // stays dense and indexed by page the way `bitmaps`
+                            // is. Until 2026-08-25 this appended nothing, and
+                            // the gap was what made `encoded.count ==
+                            // bitmaps.count` fail below and took the whole
+                            // document down the Flate route — measured at 3.13x
+                            // the bytes on `1954 - Why.pdf`, nine tenths of it
+                            // the MRC re-layering that lives inside the JBIG2
+                            // branch rather than the compression itself.
+                            //
+                            // Density is not a nicety here. The MRC loop reads
+                            // `byPage[index + 1]` and `source.page(at: index)`
+                            // off this array's own indices, so a short `encoded`
+                            // would layer one page's word boxes onto another's
+                            // pixels from the passthrough page onward.
+                            // `JBIG2.assemble` refuses a page it cannot draw and
+                            // `JBIG2.splice` puts it back afterwards, out of the
+                            // user's own file.
+                            //
+                            // 0 pixels because there is no bitmap: `pixelWidth`
+                            // and `pixelHeight` size an image XObject, and this
+                            // page has none. `boxSize` is real, and is the page
+                            // box `Flattener` measured.
+                            encoded.append(JBIG2.Page(
+                                stream: .passthrough, pixelWidth: 0,
+                                pixelHeight: 0, boxSize: page.boxSize))
                         }
                     } : nil)
                 visible = rebuilt
@@ -2226,8 +2241,68 @@ final class OCRModel: ObservableObject {
             // catalogue; the Flate route hands it back to PDFKit afterwards.
             let outline = SearchableWriter.readOutline(from: inputFile, password: password)
 
+            // C29 (B). The pages whose pixels are their own, read off `encoded`
+            // itself rather than off `passedThroughPages` beside it. The two
+            // hold the same numbers — both are derived from `bitmaps`, one page
+            // per entry — and deriving the JBIG2 route's copy from the array the
+            // route actually assembles means there is no second place for it to
+            // be true. Two arrays that must agree is the shape R23, R29 and C20
+            // are each made of.
+            let carriedThrough = encoded.indices
+                .filter { encoded[$0].stream.isPassthrough }
+                .map { $0 + 1 }
+
+            // `outline.isEmpty || carriedThrough.isEmpty` is C29 (B)'s one
+            // refusal, and it is the honest half of the fix rather than an
+            // oversight. `JBIG2.splice` runs `qpdf --empty --pages`, which keeps
+            // no document-level structure, so an outline written into the
+            // assembled file would be dropped — and the alternative, renumbering
+            // every destination across a page that is not in that file, has
+            // nowhere to send an entry that points AT the passthrough page. A
+            // document with both keeps exactly today's behaviour: the Flate
+            // route, correct and larger. Measured on the population that matters
+            // (`C29-CORPUS-2026-08-25.tsv`, 42 documents), so the price is in
+            // `BUGS.md` rather than guessed at here.
+            //
+            // `encoded.count > carriedThrough.count` because `assemble` refuses
+            // an empty page list, and an all-passthrough document would hand it
+            // one. That document needs no JBIG2 anyway — there is nothing on it
+            // to compress.
+            //
+            // C29 (B)'s SECOND refusal, and it prevents a REGRESSION rather than
+            // buying bytes: a spliced page arrives with the source's own
+            // `/Annots` still on it (measured — `qpdf --empty --pages` carries
+            // the key and the `/Highlight` behind it), so `Annotations.transplant`
+            // would add a second copy of every mark and then refuse the whole
+            // document over its own count check. Its comment there says that case
+            // is "not reachable from the pipeline, where a staged rebuild starts
+            // with no annotations at all", and the splice is what would have made
+            // it reachable. So a document with a reader's mark on a
+            // born-digital page keeps today's route, and its marks arrive exactly
+            // once. Asked only when there is a passthrough page and only of those
+            // pages: it opens the file with PDFKit, and a document with no
+            // passthrough page must not pay for a question about none.
+            //
+            // ⛔ NOT gated on `settings.preserveAnnotations`, and a draft of this
+            // was. `preserveAnnotations` is absent from `Prefs.register`'s
+            // dictionary, so it reads FALSE by default — and with the guard behind
+            // it, the shipped default took the splice whatever was on the page and
+            // published the source's own `/Annots` on it, where BOTH routes
+            // stripped them before (`compose` draws content, not annotations;
+            // `assemble` hand-writes three keys). That is a behaviour change
+            // nobody asked for and nothing reports. Found by the adversarial
+            // review of this diff.
+            //
+            // The alternative — stripping `/Annots` off the spliced pages so the
+            // transplant is the only writer — is better and is not this commit:
+            // it puts another qpdf JSON pass on the publish path, which is where
+            // C23 bit twice.
             if wantJBIG2, encoded.count == expected,
-               encoded.count == bitmaps.count, let qpdf = JBIG2.merger {
+               encoded.count == bitmaps.count,
+               outline.isEmpty || carriedThrough.isEmpty,
+               !Annotations.anyCopiableMark(in: file, password: password,
+                                            onPages: carriedThrough),
+               encoded.count > carriedThrough.count, let qpdf = JBIG2.merger {
                 usedJBIG2 = true
                 tookJBIG2 = true
 
@@ -2380,9 +2455,10 @@ final class OCRModel: ObservableObject {
                 // Check the *layer* here, not just the finished file.
                 //
                 // The guard below compares `produced == expected`, and on this
-                // route `produced` is the page count of the images PDF that
-                // `JBIG2.assemble` built — which comes from `encoded`, already
-                // known to match. `qpdf --overlay` stamps as many layer pages as
+                // route `produced` is the page count of the images PDF the merge
+                // ran on — which comes from `encoded`, already known to match,
+                // plus the passthrough pages the splice put back, which is
+                // checked where the splice happens. `qpdf --overlay` stamps as many layer pages as
                 // it has onto the images and leaves the rest bare, so a text
                 // layer that stopped short published a full-length, perfectly
                 // valid PDF whose later pages simply had no text, and the
@@ -2411,22 +2487,83 @@ final class OCRModel: ObservableObject {
                 // qpdf --overlay keeps this file's catalogue, and a PDFKit
                 // rewrite would re-encode every image stream and throw the
                 // compression away. See BUGS.md R19.
-                try JBIG2.assemble(encoded, outline: outline, to: imagesOnly)
+                //
+                // C29 (B). Without the passthrough pages, which `assemble`
+                // refuses: it hand-writes an image XObject per page and a
+                // born-digital page's content is fonts and operators in the
+                // user's own file. `splice` puts them back below, so this file is
+                // short by exactly `carriedThrough.count` pages and is not what
+                // gets published.
+                try JBIG2.assemble(encoded.filter { !$0.stream.isPassthrough },
+                                   outline: outline, to: imagesOnly)
                 for page in encoded { for u in page.stream.urls { try? FileManager.default.removeItem(at: u) } }
+                // C29 (B). The born-digital pages back in their own places,
+                // straight out of the user's file: qpdf copies a page object as
+                // it stands, so the page keeps its fonts, its own images, its
+                // `/Rotate` and its boxes, with nothing scaled and nothing
+                // re-encoded. `imagesForLayer` is what the merge runs on.
+                var imagesForLayer = imagesOnly
+                let spliced = work.appendingPathComponent("spliced.pdf")
+                if !carriedThrough.isEmpty {
+                    try control.adopting { register in
+                        try JBIG2.splice(source: file, password: password,
+                                         into: imagesOnly, passthrough: carriedThrough,
+                                         pageCount: expected, to: spliced,
+                                         using: qpdf, register: register)
+                    }
+                    // Invariant 1, and this is the one thing an interleave gets
+                    // wrong silently: a page list that names the wrong ranges
+                    // produces a perfectly valid PDF whose pages are in the
+                    // wrong order. A count that is wrong proves it; a count that
+                    // is right does not prove the order, which is what the
+                    // published-page-1 check in `Tests/main.swift` is for.
+                    let splicedPages = PDFPageCount(spliced)
+                    guard splicedPages == expected else {
+                        report(.failed, "Putting the original pages back covered "
+                            + "\(splicedPages) of \(expected) pages; nothing was "
+                            + "written.")
+                        return
+                    }
+                    imagesForLayer = spliced
+                }
                 // Registered so Cancel can interrupt the merge, which is the slow
                 // step on a large book and used to leave Cancel looking dead.
+                //
+                // C29 (B). The passthrough pages are left out of the merge on
+                // both sides. They have no observations to stamp — a page that
+                // kept its own text must not be given a second layer — and
+                // qpdf's stamping is not free: C23 measured it wrapping the
+                // destination's content in a form XObject whose `/BBox` is the
+                // page's crop box and centring that on the media box, which
+                // moved a cropped page by (50, 96). A spliced page carries the
+                // source's own crop box, so it is exactly the page that would
+                // move.
+                let stampedPages = (1...max(expected, 1))
+                    .filter { !carriedThrough.contains($0) }
                 try control.adopting { register in
-                    try JBIG2.overlay(text: textLayer, onto: imagesOnly,
-                                      to: staged, using: qpdf, register: register)
+                    try JBIG2.overlay(text: textLayer, onto: imagesForLayer,
+                                      to: staged, using: qpdf,
+                                      pages: carriedThrough.isEmpty ? nil : stampedPages,
+                                      register: register)
                 }
                 // C23. Last, and it has to be last — see `setCropBoxes`. Empty
                 // for the overwhelming majority of documents, which is a `return`
                 // on the first line rather than three more processes.
+                //
+                // C29 (B). Not for a passthrough page. Its crop box came through
+                // the splice on the page object itself, which is the source's own
+                // and is right by construction; the rect in this map is measured
+                // on the *rebuilt* sheet, whose media box was normalised to the
+                // origin, so applying it to a page whose own media box is not at
+                // the origin would shift the crop. Passing through means keeping
+                // what the source had.
                 try control.adopting { register in
-                    try JBIG2.setCropBoxes(sourceCropBoxes, in: staged, using: qpdf,
-                                           register: register)
+                    try JBIG2.setCropBoxes(
+                        sourceCropBoxes.filter { !carriedThrough.contains($0.key) },
+                        in: staged, using: qpdf, register: register)
                 }
                 try? FileManager.default.removeItem(at: imagesOnly)
+                try? FileManager.default.removeItem(at: spliced)
                 try? FileManager.default.removeItem(at: textLayer)
             } else {
                 // The Flate route. Same setting, or a user who turned joining on

@@ -2159,11 +2159,14 @@ happens.**
         that computed the set and passed `[]` would be green, because nothing runs a document end-to-end
         through `makeSearchablePDF` — which is the queue's own `mrc-endtoend`, and reading it before touching
         this again is the point.
-        ⛔ **WHAT IS LEFT, and why the umbrella box stays `[ ]`:** **(B)** the JBIG2 route, whose byte cost on
-        a mixed document is still unmeasured and which also discards a whole `jbig2enc` pass; and the
-        **120-character bar**, under which a short born-digital page is still rasterised and is now named by
-        **neither** report line. Lowering that bar was supposed to become measurable here against a fix, and
-        it is not measured — a false positive now costs a page nothing ever recognises.
+        ⛔ **WHAT IS LEFT, and why the umbrella box stays `[ ]` — (B) IS NOW OFF THIS LIST, SHIPPED
+        2026-08-25 as `c29-jbig2-splice`.** What remains is the **120-character bar**, under which a short
+        born-digital page is still rasterised and is named by **neither** report line. Lowering that bar was
+        supposed to become measurable here against a fix, and it is not measured — a false positive now costs
+        a page nothing ever recognises. Beside it, two things (B) left by decision rather than by neglect:
+        a document with an **outline** and a document with a **reader's mark on its born-digital page** both
+        keep the old, larger route (16 of the 42 for the first), and **stripping `/Annots` off a spliced
+        page** is the better fix for the second.
         ⚠️ Rotation is measured for /Rotate 90 only; the crop box is a code-identity argument and not a
         measurement; no corpus document has been run through a passthrough. ✅ **THAT LAST CLAUSE IS FALSE AS
         OF 2026-08-25 — one has, see `c29-b-measured` — and so is "(B)'s byte cost is still unmeasured".**
@@ -3054,34 +3057,34 @@ happens.**
       2026-08-20; it is where this was found, not the work. Was `origin:` until C26 closed and the
       coherence check read it as a status claim, which is the mistake §"How to write an item" records
       `tools-compile` and `mutants` making)
-- [ ] **c29-jbig2-splice** — **C29 (B)'s IMPLEMENTATION. The measurement and the decision are DONE
-      (2026-08-25, `c29-b-measured`) and the decision is that the Flate fallback is NOT the answer: a mixed
-      document costs 3.13x, +936,161 B on the one real corpus document run both ways.** Carry a passthrough
-      page on the JBIG2 route instead of falling back for the whole document.
-      ⛔ **DO NOT RE-MEASURE and do not re-derive the recipe.** `BUGS.md` C29 `#### (B) MEASURED` has the byte
-      pair, the byte-identical `useJBIG2`-off control, the population (**42 documents of 233, 2,090 pages of
-      16,987, 28 of the 42 firing on ONE page**) and the rejected option with its reason.
-      ✅ **The mechanism is already demonstrated at the shell, so this is not exploratory**:
-      `qpdf --empty --pages src 1 <jbig2-output> 2-10 -- out.pdf` gives **456,171 B**, 10 pages, page 1's
-      extracted text character-count identical to the source's, and **nine surviving `JBIG2Decode` streams**
-      — 98.2% of the fallback's cost recovered, with the qpdf `JBIG2.overlay` already runs.
-      ⛔ **WHAT THE DEMONSTRATION DOES NOT COVER, AND IT IS THE WHOLE OF THE WORK.** The spliced page came
-      from the *sabotage* arm's output, which had already rasterised page 1. On the real route there are
-      **9 encoded pages against a 10-page text layer**, so three things must be made to agree: the count
-      guard (`wantJBIG2, encoded.count == expected, encoded.count == bitmaps.count`, `Model.swift:2229-2230` — a
-      passthrough page contributes nothing to `encoded` **by design**, see the `.passthrough` arm of the
-      `onPage` closure and its comment), `JBIG2.assemble`'s page list, and `JBIG2.overlay`'s page-for-page
-      alignment. ⚠️ `compose` runs with **`drawImages: false`** on this route (`Model.swift:2373`), which is
-      why the page's pixels come from `assemble` at all — a passthrough page needs its own content and
-      **no** second text layer, which is `#### What a fix has to satisfy`'s easiest-to-miss constraint.
-      ⛔ **BOUND: ONE session, and it is a `Sources/` commit on the PUBLISH path — invariant 2's ground,
-      where C23 bit twice.** A failing test first: the fixture and the end-to-end block already exist
-      (`makeBornDigitalCoverPDF`, block 6 of the born-digital section), and the row to flip is
-      `C29 (B): a mixed document takes the Flate route while the same scan pages without the cover take
-      JBIG2` — it pins today's answer on purpose, exactly so this item has something to flip. Add the byte
-      assertion then and not before; the existing rows deliberately assert only a direction.
-      ⚠️ Do not bolt this onto a commit doing anything else, and do not take the **120-character bar** with
-      it — that is still unmeasured and still wants a population. (origin: BUGS.md C29 `#### (B) MEASURED`)
+- [x] **c29-jbig2-splice** — **DONE 2026-08-25. The born-digital page is SPLICED into the JBIG2 document, so
+      one such page no longer costs every other page in the file its compression.** `BUGS.md` C29
+      `#### (B) SHIPPED`. `JBIG2.Page.Stream` gains `.passthrough` so `encoded` stays **dense** — the MRC
+      loop keys `byPage[index + 1]` and `source.page(at: index)` off its indices, so a short array would
+      have layered one page's word boxes onto another's pixels, `(A)`'s `Recogniser` defect in a second
+      place; `assemble` **refuses** such a page rather than skipping it; `JBIG2.splice` interleaves with
+      `qpdf --empty --pages`; `overlay` takes a `pages:` list passed as **both** `--from` and `--to`, so the
+      spliced page is never stamped and so never wrapped in the form XObject C23 measured translating a
+      cropped page by (50, 96); `setCropBoxes` skips it, because that map's rects are measured on the
+      *rebuilt* sheet whose media box was normalised to the origin.
+      ⛔ **TWO REFUSALS, and the second one prevents a REGRESSION rather than buying bytes.** An **outline**
+      keeps the old route, because `--empty --pages` carries no document-level structure and an entry
+      pointing AT the passthrough page has nowhere to go — priced at **16 of the 42** affected corpus
+      documents, so 26 of 42 get the splice, and `1954 - Why.pdf` is not one of the 16. And a **reader's
+      mark on a passthrough page** keeps it too: measured, `qpdf --empty --pages` carries `/Annots` and the
+      `/Highlight` behind it, so the spliced page arrives already holding the mark, `Annotations.transplant`
+      adds a second copy and its own `found.count == wanted.count` then **refuses the whole document** — the
+      case whose comment there reads *"not reachable from the pipeline, where a staged rebuild starts with no
+      annotations at all"*. `Link` is not a mark (3,991 of the corpus's 4,867 annotations are links), which
+      is what keeps a JSTOR cover sheet eligible rather than turning the fix off.
+      ✅ Watched failing, named and counted first: the pre-(B) one-line state reads **1303/1306** with
+      **exactly three** `FAIL` lines, and the byte row's own detail is the control — `jbig2=49425
+      flate=49425 delta=0`, byte-identical, `#### (B) MEASURED`'s `useJBIG2`-off control reproduced.
+      ⚠️ Not covered: the **120-character bar**; rotation on this route (right by construction, unmeasured);
+      an encrypted source; a trimmed passthrough page; and **stripping `/Annots` off the spliced page** so
+      the transplant is the only writer, which is the better fix for refusal 2 and wants its own commit —
+      another qpdf JSON pass on the publish path is where C23 bit twice.
+      (context: BUGS.md C29 `#### (B) SHIPPED`)
 - [ ] **shapedump-exit** — **`Tools/score-shape-term.swift` counts its failed dump writes, names them, and
       then exits 0.** `dumpMissing` collects every `SHAPEDUMP` file it promised and did not write
       (`:1457`), the summary appends `; ⚠️ dump missing …` (`:1476`), and the only exits after it are **6**

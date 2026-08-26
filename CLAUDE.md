@@ -233,6 +233,20 @@ gives **456,171 B**, 10 pages, p1's text character-count identical to the source
 `JBIG2Decode` streams**, recovering 98.2% of the cost. ⚠️ That demonstration is the mechanism only — the
 spliced page came from the sabotage arm's output, so the real route's 9-encoded-against-10-page-text-layer
 alignment is unwritten — and the rejected option (live with the fallback, which cannot lose content because
+✅ **(B) SHIPPED 2026-08-25 — `BUGS.md` C29 `#### (B) SHIPPED`: the born-digital page is SPLICED into the
+JBIG2 document, so one such page no longer costs every other page its compression.** A `.passthrough` stream
+case keeps `encoded` DENSE (a short array would have layered one page's word boxes onto another's pixels —
+(A)'s `Recogniser` defect in a second place), `assemble` REFUSES such a page rather than skipping it,
+`JBIG2.splice` interleaves with `qpdf --empty --pages`, and `overlay` takes a page list passed as BOTH
+`--from` and `--to` so the spliced page is never stamped and never wrapped in the form XObject C23 measured
+translating a cropped page by (50, 96). ⛔ **Two refusals, and the SECOND prevents a REGRESSION rather than
+buying bytes: an OUTLINE (`--empty --pages` carries no document-level structure) — 16 of the 42 affected
+corpus documents, so 26 of 42 get the splice — and a READER'S MARK on the passthrough page**, because the
+splice carries `/Annots` and the `/Highlight` behind it (measured), so `Annotations.transplant` would add a
+second copy and its own count check would then refuse the whole document. Fixture **49,425 B on both arms
+before, 44,970 against 49,425 after**; suite **1,281 → 1,314**. ⚠️ `1954 - Why.pdf` was NOT re-run, so the
+product figure to quote is still (B) MEASURED's 3.13x; rotation, an encrypted source and a trimmed
+passthrough page are all right by construction and unmeasured.
 MRC "is an improvement on a working page, never a requirement") was refused on **size, not risk**. ⛔ What (A) and (B)
 still do NOT reach is the **120-character bar**, under which a short born-digital page is rasterised and is
 named by **neither** report line — still not measured, and now the only thing under this entry besides (B)'s

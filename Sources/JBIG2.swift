@@ -36,6 +36,19 @@ enum JBIG2 {
             /// `/SMask`. See `Flattener.mrcLayers`.
             case mrc(MRC)
 
+            /// C29 (B). A page whose pixels are its own: a born-digital page
+            /// `Flattener.flatten` copied through instead of rasterising, so
+            /// there is nothing to encode and nothing for `assemble` to draw.
+            /// `splice` takes it from the user's own file once the rest of the
+            /// document is assembled, which is what keeps the other pages'
+            /// JBIG2 compression on a mixed document — the whole of C29 (B).
+            ///
+            /// It carries no page number. The array holding it is dense and
+            /// indexed by page, which is what `Model`'s MRC loop, its
+            /// `byPage[index + 1]` and the splice's own page ranges all rest on;
+            /// a field here would be a second place for that to be true.
+            case passthrough
+
             /// Every file this stream owns, so the caller can clean up without
             /// knowing which kind it is. This was `url` returning one file, and
             /// an MRC page would have leaked the two it did not name.
@@ -43,6 +56,7 @@ enum JBIG2 {
                 switch self {
                 case .jbig2(let u), .jpeg(let u): return [u]
                 case .mrc(let m): return [m.mask, m.background, m.foreground]
+                case .passthrough: return []
                 }
             }
 
@@ -52,7 +66,15 @@ enum JBIG2 {
                 switch self {
                 case .jbig2, .jpeg: return 1
                 case .mrc: return 3
+                case .passthrough: return 0
                 }
+            }
+
+            /// Whether this page has to come out of the source file rather than
+            /// out of an encoded stream.
+            var isPassthrough: Bool {
+                if case .passthrough = self { return true }
+                return false
             }
         }
 
@@ -87,6 +109,14 @@ enum JBIG2 {
         case noPages
         case badPageBox(page: Int, size: CGSize)
         case cropBoxFailed(String)
+        /// C29 (B). `assemble` was handed a page whose pixels are its own. It
+        /// hand-writes image XObjects and has no way to carry a page's fonts,
+        /// its own images or its content stream, so it refuses rather than
+        /// writing a blank sheet in the right place — a plausible file with a
+        /// page missing is exactly what invariant 1 forbids. The caller's job is
+        /// to keep those pages out and to splice them in afterwards.
+        case cannotAssemblePassthrough(page: Int)
+        case spliceFailed(String)
 
         var errorDescription: String? {
             switch self {
@@ -101,6 +131,11 @@ enum JBIG2 {
                 return "Page \(page) reports an unusable size "
                     + "(\(size.width) x \(size.height)), so the compressed pages "
                     + "could not be given a page box that matches the text layer."
+            case .cannotAssemblePassthrough(let page):
+                return "Page \(page) keeps its own content and cannot be "
+                    + "assembled from an image stream; nothing was written."
+            case .spliceFailed(let m):
+                return "Putting the original pages back in failed: \(m)"
             }
         }
     }
@@ -188,6 +223,17 @@ enum JBIG2 {
         // Reporting a file nobody can open as a good result is the failure mode
         // invariant 1 exists to stop, so refuse instead.
         guard !pages.isEmpty else { throw Failure.noPages }
+
+        // C29 (B). Every page here gets an image XObject and a content stream
+        // that draws it; a passthrough page has neither, and its content is in
+        // the user's own file. The caller filters them out and `splice` puts
+        // them back — so this is a refusal and not a skip. Skipping would write
+        // a document whose page count and whose page numbering both look right
+        // and whose text layer lands one page out from page N onward, which is
+        // the class of failure invariant 1 exists to stop.
+        if let bad = pages.firstIndex(where: { $0.stream.isPassthrough }) {
+            throw Failure.cannotAssemblePassthrough(page: bad + 1)
+        }
 
         // Streamed to the file rather than accumulated in a Data. Building the
         // whole PDF in memory made peak usage the size of the output — measured
@@ -333,6 +379,10 @@ enum JBIG2 {
                         + "q \(w) 0 0 \(h) 0 0 cm /Im1 Do Q\n"
             case .jbig2, .jpeg:
                 content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
+            case .passthrough:
+                // Refused at the top of this function; the case is here so that
+                // adding a fourth stream kind cannot compile against a default.
+                throw Failure.cannotAssemblePassthrough(page: i + 1)
             }
             try beginObject(contentObject(i))
             try write("<< /Length \(content.utf8.count) >>\nstream\n\(content)endstream\nendobj\n")
@@ -395,6 +445,8 @@ enum JBIG2 {
                 try writeImage(objects[2], from: m.mask, width: page.pixelWidth,
                                height: page.pixelHeight, filter: "/JBIG2Decode",
                                bits: 1, space: "/DeviceGray", decode: maskDecode)
+            case .passthrough:
+                throw Failure.cannotAssemblePassthrough(page: i + 1)
             }
         }
 
@@ -575,15 +627,180 @@ enum JBIG2 {
         return String(format: "%.4f", d)
     }
 
+    // MARK: - Putting the original pages back — C29 (B)
+
+    /// One qpdf page range, with consecutive pages collapsed into `a-b`.
+    ///
+    /// Not tidiness. A 3,000-page book with one born-digital cover would
+    /// otherwise put 2,999 comma-separated numbers on the command line twice
+    /// over, once for `--from` and once for `--to`.
+    static func pageRange(_ pages: [Int]) -> String {
+        // Deduplicated as well as sorted: a repeated page would break a run at
+        // the repeat (equal, not one more) and then be named twice, which qpdf
+        // would honour by duplicating the page.
+        let sorted = Array(Set(pages)).sorted()
+        var runs: [String] = []
+        var i = 0
+        while i < sorted.count {
+            var j = i
+            while j + 1 < sorted.count, sorted[j + 1] == sorted[j] + 1 { j += 1 }
+            runs.append(i == j ? "\(sorted[i])" : "\(sorted[i])-\(sorted[j])")
+            i = j + 1
+        }
+        return runs.joined(separator: ",")
+    }
+
+    /// The qpdf arguments that interleave the assembled pages with the source's
+    /// own, so the finished document is page-for-page the original.
+    ///
+    /// `assembled` holds the pages that were encoded, in order, with the
+    /// passthrough pages absent from it altogether; `passthrough` is their
+    /// 1-based numbers in the *finished* document. So this is one decision per
+    /// page — take it from the source or take the next assembled page — with
+    /// consecutive pages from one file collapsed into a single file spec.
+    ///
+    /// Pure, and deliberately separate from `splice`, so it can be read and
+    /// pinned without a qpdf on the machine. Getting these ranges wrong
+    /// publishes a document with the right number of pages in the wrong order,
+    /// and no page count can see that.
+    static func spliceArguments(source: URL, password: String?, assembled: URL,
+                                passthrough: [Int], pageCount: Int,
+                                destination: URL) -> [String] {
+        guard pageCount >= 1 else { return [] }
+        let fromSource = Set(passthrough)
+        var segments: [(url: URL, from: Int, to: Int)] = []
+        var nextAssembled = 1
+        for page in 1...pageCount {
+            let isSource = fromSource.contains(page)
+            let url = isSource ? source : assembled
+            // The source is indexed by the page's own number; the assembled
+            // file by how many encoded pages have gone before it.
+            let number = isSource ? page : nextAssembled
+            if !isSource { nextAssembled += 1 }
+            if let last = segments.last, last.url == url, last.to + 1 == number {
+                segments[segments.count - 1].to = number
+            } else {
+                segments.append((url, number, number))
+            }
+        }
+        var arguments = ["--empty", "--pages"]
+        for segment in segments {
+            arguments.append(segment.url.path)
+            // Per file spec, not once: qpdf reads `--password=` as belonging to
+            // the file named before it, and the source can appear more than
+            // once. The assembled file is one this app just wrote, so it never
+            // needs one.
+            if segment.url == source, let password, !password.isEmpty {
+                arguments.append("--password=\(password)")
+            }
+            arguments.append(segment.from == segment.to
+                             ? "\(segment.from)" : "\(segment.from)-\(segment.to)")
+        }
+        arguments.append("--")
+        arguments.append(destination.path)
+        return arguments
+    }
+
+    /// Rebuilds `assembled` into `destination` with the passthrough pages taken
+    /// from the user's own file, in their own places.
+    ///
+    /// C29 (B). Before this, one born-digital page on a document turned the
+    /// whole document's JBIG2 compression off: the page contributes no encoded
+    /// stream, `Model`'s count guard failed, and the Flate route ran — measured
+    /// at 3.13x the bytes on `1954 - Why.pdf`, nine tenths of it the MRC
+    /// re-layering that lives inside the JBIG2 branch rather than the
+    /// compression. qpdf copies a page object as it stands, so the spliced page
+    /// keeps its own fonts, images, `/Rotate` and boxes with nothing scaled or
+    /// re-encoded.
+    ///
+    /// The caller must verify the destination's page count: a wrong range here
+    /// produces a valid PDF, and invariant 1's own words are that page count is
+    /// not sufficient verification — but a page count that is *wrong* is proof,
+    /// and it is the one thing an interleave can get wrong silently.
+    ///
+    /// ⚠️ **`--empty --pages` keeps no document-level structure**, so an outline
+    /// written into `assembled` would be dropped here. `Model` keeps a document
+    /// with both an outline and a passthrough page off this route for that
+    /// reason; it is not something this function can repair.
+    static func splice(source: URL, password: String?, into assembled: URL,
+                       passthrough: [Int], pageCount: Int, to destination: URL,
+                       using qpdf: String,
+                       register: (Process) -> Void = { _ in }) throws {
+        // Arithmetic first, and as refusals rather than clamps. Each of these
+        // would otherwise build a page list that qpdf accepts and a reader
+        // cannot tell from a correct one.
+        guard pageCount >= 1 else { throw Failure.spliceFailed("no pages") }
+        guard !passthrough.isEmpty else {
+            throw Failure.spliceFailed("no pages to put back")
+        }
+        guard passthrough.count < pageCount else {
+            throw Failure.spliceFailed("every page was passed through, so there "
+                                       + "is nothing to splice them into")
+        }
+        guard passthrough.allSatisfy({ $0 >= 1 && $0 <= pageCount }),
+              Set(passthrough).count == passthrough.count else {
+            throw Failure.spliceFailed("page numbers \(passthrough) do not fit a "
+                                       + "\(pageCount)-page document")
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: qpdf)
+        process.arguments = spliceArguments(
+            source: source, password: password, assembled: assembled,
+            passthrough: passthrough, pageCount: pageCount,
+            destination: destination)
+        let errPipe = Pipe()
+        process.standardError = errPipe
+        process.standardOutput = FileHandle.nullDevice
+
+        try process.run()
+        register(process)
+        let err = errPipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+
+        // 3 is qpdf's warning exit, which still produces valid output — the
+        // same reading `overlay` has always taken.
+        guard process.terminationStatus == 0 || process.terminationStatus == 3,
+              FileManager.default.fileExists(atPath: destination.path) else {
+            let message = String(decoding: err, as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            throw Failure.spliceFailed(message.isEmpty
+                ? "qpdf exited with code \(process.terminationStatus)" : message)
+        }
+    }
+
     // MARK: - Merging the text layer
 
     /// Lays `text` over `images` with qpdf, which rewrites page structure only —
     /// the JBIG2 streams are copied through untouched.
+    ///
+    /// `pages` restricts the merge to those 1-based pages, in both files at
+    /// once: this route's text layer and its image document are page-for-page
+    /// the same document, so the layer page and the destination page are the
+    /// same number. C29 (B) needs that, because a page left out of both is not
+    /// stamped at all — qpdf never wraps its content in a form XObject, and a
+    /// spliced born-digital page comes through exactly as its author wrote it.
+    /// Measured before it was written: `--to=2-3` over a three-page file leaves
+    /// page 1's extracted text identical to the input's, character for
+    /// character, while pages 2 and 3 carry both files' text.
+    ///
+    /// That matters more than it looks. C23 measured what stamping *does* to a
+    /// page: qpdf wraps the destination's content in a form XObject whose
+    /// `/BBox` is the page's crop box and centres it on the media box, which
+    /// translated a cropped page by (50, 96). A passthrough page carries the
+    /// source's own crop box, so stamping it would move it.
     static func overlay(text: URL, onto images: URL, to destination: URL,
-                        using qpdf: String, register: (Process) -> Void = { _ in }) throws {
+                        using qpdf: String, pages: [Int]? = nil,
+                        register: (Process) -> Void = { _ in }) throws {
+        var arguments = [images.path, "--overlay", text.path]
+        if let pages {
+            let range = pageRange(pages)
+            arguments += ["--from=\(range)", "--to=\(range)"]
+        }
+        arguments += ["--", destination.path]
         let process = Process()
         process.executableURL = URL(fileURLWithPath: qpdf)
-        process.arguments = [images.path, "--overlay", text.path, "--", destination.path]
+        process.arguments = arguments
         let errPipe = Pipe()
         process.standardError = errPipe
         process.standardOutput = FileHandle.nullDevice
