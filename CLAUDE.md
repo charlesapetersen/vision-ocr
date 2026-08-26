@@ -1386,9 +1386,12 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,336 checks measured 2026-08-26 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
+./run_tests.sh        # 1,343 checks measured 2026-08-26 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
                       # ⚠️ This line read 1,281 while the suite was 1,314 — two commits landed without
                       # touching it. Re-derive it from your own run, never from a figure in prose.
+                      # (1,336 -> 1,343: gutter-floor's narrow-gutter fixture added seven checks, and
+                      #  the review of that diff caught this line as the third instance of the warning
+                      #  above rather than a fourth.)
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->

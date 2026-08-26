@@ -2172,7 +2172,9 @@ happens.**
         ⚠️ Rotation is measured for /Rotate 90 only; the crop box is a code-identity argument and not a
         measurement; no corpus document has been run through a passthrough. ✅ **THAT LAST CLAUSE IS FALSE AS
         OF 2026-08-25 — one has, see `c29-b-measured` — and so is "(B)'s byte cost is still unmeasured".**
-        (origin: BUGS.md C29 `#### (A) SHIPPED`)
+        (context: BUGS.md C29 `#### (A) SHIPPED` — `context:` and not `origin:`, because this is one
+        finished half of an entry that stays OPEN; as `origin:` it read as a status claim and
+        `check-queue-coherence.sh` reported `TICKED-OPEN c29-routing-a`)
   - [x] **c29-b-measured** — **DONE 2026-08-25. (B)'s COST IS MEASURED AND THE DECISION IS TAKEN: the Flate
         fallback costs 3.13x on a real corpus document, so it is NOT the answer.** Do not re-measure it and
         do not re-derive the splice recipe; both are in `BUGS.md` C29 `#### (B) MEASURED`. `Sources/` did not
@@ -2234,6 +2236,10 @@ happens.**
            **The class is already in the corpus and simply is not counted**, so this needs no new files.
         3. Report the two rates to the owner. The DECLINE stands or falls on that, and it is the owner's
            call, not a session's. If it falls, THEN a register entry gets opened.
+      ✅ **SUB-STEP 0 IS DONE 2026-08-26 — the fixture exists, the weld is PINNED, and a session
+      reaching this box starts at sub-step 1.** See the `gutter-fixture` sub-box below and
+      `FEATURES.md` item 3 §"The weld is PINNED IN THE SUITE". The remaining three are untouched:
+      nothing has been swept and the 0.19% still stands exactly as published.
       ⛔ **SUB-STEP 0, AND THE OWNER PUT IT FIRST (2026-08-20): the narrow-gutter FIXTURE, before any
       sweep.** The existing `ENGINE ASSUMPTION` fixture's gutter is 52 pt of 612 = 8.5%, and its own
       comment calls that "far wider than any word space" — which is exactly why it is green while a real
@@ -2267,9 +2273,36 @@ happens.**
       converts this actionable item into an owner-only one. That happened to this box on 2026-08-20 and
       `next-item.sh` reported `hold gutter-floor` until the sentence above was rephrased. Same family as
       the sub-box span trap in this file's header.
-      (context: FEATURES.md item 3, reopened 2026-08-20; Tests/main.swift:5196)
+      (context: FEATURES.md item 3, reopened 2026-08-20; `Tests/main.swift`'s "the engine assumptions
+      two declined features rest on" block — named rather than cited by line, because this cite read
+      `Tests/main.swift:5196` while the block was at 6660 and pointed at unrelated code)
       ⚠️ This and `born-digital-page` are the same document class and share a fixture, so they sit
       together. **`C27` has now been passed by two items** — if the owner wants C27 first, move it up.
+  - [x] **gutter-fixture** — **DONE 2026-08-26. `gutter-floor`'s sub-step 0: a generated page at a 2.5%
+        gutter WELDS, and the suite pins it.** One generator called twice with the gutter as its only
+        argument: **7 of 15 observations span the gutter at 2.5%** (longest: `The first column begins here
+        and The second column sits beside the`) against **0 of 23 at 8.5%**. Seven checks, two of them
+        `ENGINE ASSUMPTION`s, and **exactly one of the seven is green because the engine welds** — per
+        this parent's own ⛔⛔ paragraph — the other six being a fixture that rendered, two calibrations,
+        a control and a character-count row. ⚠️ **A red there means Vision STOPPED welding, which is not
+        "re-open item 3" — item 3 is already reopened**; it means the reopen note has lost its trigger.
+        ✅ **Watched failing TWICE on DISJOINT pairs, each predicted by name beforehand**: narrow arm at
+        the wide gutter **1341/1343** (narrow calibration + weld assumption), wide arm at the narrow
+        gutter **1341/1343** (wide calibration + wide control). Suite **1,336 → 1,343**.
+        ⛔ **Do not read a threshold off it**: 0 / 0 / 7 / 7 / 9 / 9 crossings at 8.5 / 3.5 / 2.94 / 2.5 /
+        2.0 / 1.47%, and an earlier word pool at the same geometry welded at 3.5% and was not monotone —
+        the boundary and the count both move with the text, only existence is stable. ⚠️ **The 9 is a
+        CEILING**: the columns wrap to 10 and 9 lines on one baseline grid, so 9 pairs share a y and 2.0%
+        and below are saturation. ⛔ **And the character row is the one the review of this diff caught
+        as a check that COULD NOT FAIL** — `narrow.chars >= wide.chars * 0.9` is guaranteed by the
+        mechanism, since a weld ADDS a joining space; it is two-sided now. **569 welded against 561
+        clean** says a weld does not shrink text, ⚠️ but the 3.5% arm reads **557 with zero crossings**,
+        so this is not isolated — what it establishes is that no character or word count can *localise*
+        a weld, and `score-reading-order --gutter` is the instrument that can. ⚠️ One generated page,
+        monospaced and justified both sides so a single number describes the gutter; no proportional face
+        and no corpus page. All six widths are a scratch probe's and are NOT in the tree; the suite has
+        measured the two committed widths only. Sub-steps 1-3 are still open and no rate was re-run.
+        (context: FEATURES.md item 3 §"The weld is PINNED IN THE SUITE", 2026-08-26)
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the
@@ -3145,7 +3178,9 @@ happens.**
         `text_voids`' rows are the precedent for how. ⚠️ Exits 2 and 5 are cheap. A `Tools/` file pays the
         full suite, so budget one commit, and `fault-inject.sh` is in no hook, so a red row here refuses no
         commit. Named by the tool's own header rather than left implicit.
-        (origin: BUGS.md C29 `#### The population re-measured, 2026-08-26`)
+        (context: BUGS.md C29 `#### The population re-measured, 2026-08-26` — this item is a
+        `fault-inject.sh` row for a tool and does not close when C29 does, so `origin:` would have read
+        `WOULD-REDO` the moment that entry closed)
   - [ ] **c29-splice-scale** — **every end-to-end splice ever run has had ONE passthrough page, and the
         population holds 167 of 300.** Found 2026-08-26 by `c29-count-clause-corpus`:
         `C29-MARKS-2026-08-26.tsv` has `Schwaller - 2026` at `digitalN` **167** of 300 pages and `Batzell` at

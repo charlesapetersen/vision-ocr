@@ -6789,6 +6789,292 @@ assumptions: do {
           "\(crossing) observation(s) span both columns — reordering could not "
             + "repair this, the halves are already one string")
 
+    // ── The same question at a gutter a real page actually has ────────────────
+    //
+    // Labelled so that a fixture failure here gives up on the WELD checks and
+    // not on the skew ones below it. The guard used `break assumptions` first,
+    // which would have taken the two skew assumptions with it — R47's shape one
+    // scope in, and exactly what the label at the top of this block exists for.
+    welds: do {
+    // The check above is green partly because of its fixture: 52 pt of 612 is
+    // 8.5%, and its own comment calls that "far wider than any word space".
+    // `Hughes - The Knitting of Racial Groups in Industry` (JSTOR, *American
+    // Sociological Review* 11:5, 1946) welds its columns into single strings —
+    // one `Tm`, one `TJ`, quoted from the rebuilt content stream in
+    // `FEATURES.md` item 3's reopen note — and its gutter is roughly one wide
+    // word space. `Tools/score-reading-order.swift` cannot see that class at
+    // all: a page whose widest quiet run is under `0.035 * width` is counted
+    // `singleColumn` and `continue`d **before** it is ever recognised
+    // (`:190-196`), so it leaves BOTH halves of the published "0.19% of
+    // observations cross a gutter" before an observation exists. A poppler
+    // reimplementation of that test — not authoritative, and 43 against the
+    // tool's own 59 on the counted population — screens ~27 corpus pages in 18
+    // documents into that blind spot (`GUTTER-CENSUS-2026-08-20.tsv`; the
+    // 43-vs-59 gap is `gutter-floor` sub-step 1, unreconciled).
+    //
+    // So this pins where the engine's competence ends rather than asserting a
+    // repair. **It is green today because Vision welds** — bad news about the
+    // engine, good news about the check: the day Vision stops welding it goes
+    // RED, and a red here is not a broken suite and not a defect in this app.
+    // The block header above says what to do with one. A weld also cannot be
+    // repaired downstream at all: the halves arrive as one string, so no sort
+    // reaches them.
+    //
+    // ⛔ **Do not assert a crossing COUNT, and do not read a threshold off this
+    // fixture.** Over six gutter widths — 8.5% / 3.5% / 2.94% / 2.5% / 2.0% /
+    // 1.47% — the crossing count reads 0 / 0 / 7 / 7 / 9 / 9, so the weld
+    // appears somewhere between 3.5% and 2.94% *here*. Three things bound that.
+    // The 9 is a CEILING and not a gradient: the two columns wrap to 10 and 9
+    // justified lines on a shared baseline grid, so only 9 pairs share a y and
+    // only 9 observations can ever span the gutter — 2.0% and below are
+    // saturation. An earlier word pool at the *same* geometry welded 2
+    // observations at 3.5% and only 5 of 20 at 2.5%, so both the boundary and
+    // the count move with the TEXT, and that pool was not monotone in the gutter
+    // at all — Vision's line grouping flips between interpretations, the same
+    // instability the skew band below is deliberately widened for. And four of
+    // the six widths came from a scratch probe compiled from this worktree's own
+    // `Sources/` (so the same `Recogniser.recognise`) and are **not in the
+    // tree**; only the two below are reproducible from this file.
+
+    let columnOne = """
+    The first column begins here and carries several lines of ordinary prose so \
+    that the recogniser has a real block of text to group rather than a handful \
+    of stray words on an otherwise empty sheet of paper which it would read \
+    quite differently and would teach us rather less than we need to know.
+    """.split(separator: " ").map(String.init)
+    let columnTwo = """
+    The second column sits beside the first across a narrow gutter and says \
+    something different so that the two can never be confused for one another \
+    when the order they arrive in is what the checking code counts before \
+    deciding whether the page was read down the columns or across the sheet.
+    """.split(separator: " ").map(String.init)
+
+    /// Greedy-wrap to `columns` characters, then pad the inter-word gaps so that
+    /// every line of more than one word is exactly that wide — a single-word
+    /// last line cannot be justified and is returned as it is (`know.`, here).
+    /// Flush on BOTH sides is the whole reason this fixture is set in a
+    /// monospaced face: the gutter is then a rectangle, and one number describes
+    /// it. Against a ragged right edge the gap varies line by line and "a 2.5%
+    /// gutter" would not mean anything.
+    ///
+    /// ⚠️ A word longer than `columns` cannot be wrapped and is emitted whole,
+    /// overflowing the column — the `spaces >= gaps` guard is what lets it
+    /// through rather than dividing by a negative. The check below is what
+    /// catches it; the longest word in either pool is 11 of 33.
+    func justifyLines(_ words: [String], columns: Int) -> [String] {
+        var lines: [[String]] = [], current: [String] = [], width = 0
+        for w in words {
+            let extra = current.isEmpty ? w.count : w.count + 1
+            if width + extra > columns, !current.isEmpty {
+                lines.append(current); current = [w]; width = w.count
+            } else {
+                current.append(w); width += extra
+            }
+        }
+        if !current.isEmpty { lines.append(current) }
+        return lines.map { line in
+            let gaps = line.count - 1
+            let spaces = columns - line.reduce(0) { $0 + $1.count }
+            guard gaps > 0, spaces >= gaps else { return line.joined(separator: " ") }
+            let base = spaces / gaps, extra = spaces % gaps
+            var out = line[0]
+            for i in 1..<line.count {
+                out += String(repeating: " ", count: base + (i <= extra ? 1 : 0)) + line[i]
+            }
+            return out
+        }
+    }
+
+    /// The widest fully-quiet run of pixel columns strictly inside the page's
+    /// inked span, as a fraction of the page width. **Measured off the pixels,
+    /// not computed from the layout**, so that a font substitution reports
+    /// itself instead of moving the fixture silently: 15.3 pt at 200 dpi is 42.5
+    /// px of 1700 and this reads 43, i.e. one pixel of quantisation.
+    ///
+    /// ⚠️ This is the same KIND of quantity `score-reading-order`'s ink test
+    /// thresholds at 0.035, measured more strictly, and the two are not
+    /// interchangeable: that tool calls a column quiet at `ink <= max(1, peak /
+    /// 100)` where this one demands no dark pixel at all, it excludes runs
+    /// touching a 12% margin where this one only stays inside the inked span,
+    /// and it renders at 150 dpi off the display box against an Otsu threshold
+    /// where this renders at 200 dpi off the media box against a fixed 128. On a
+    /// generated page they agree; on a scan they need not, which is why the
+    /// tool's own bar is a fraction of the page's peak ink.
+    func inkedGutter(_ image: CGImage) -> Double {
+        // One byte a pixel is what `row[x]` assumes. It holds by construction
+        // below (DeviceGray, 8 bpc, no alpha); asserting it here means a change
+        // reads as a zero rather than as a plausible wrong number.
+        guard image.bitsPerPixel == 8,
+              let data = image.dataProvider?.data,
+              let base = CFDataGetBytePtr(data) else { return 0 }
+        var inked = [Bool](repeating: false, count: image.width)
+        for y in 0..<image.height {
+            let row = base + y * image.bytesPerRow
+            for x in 0..<image.width where !inked[x] {
+                if row[x] < 128 { inked[x] = true }
+            }
+        }
+        guard let first = inked.firstIndex(of: true),
+              let last = inked.lastIndex(of: true), first < last else { return 0 }
+        var best = 0, run = 0
+        for x in first...last {
+            if inked[x] { run = 0; continue }
+            run += 1
+            best = max(best, run)
+        }
+        return Double(best) / Double(image.width)
+    }
+
+    /// Two justified monospaced columns `gutter` points apart, recognised, and
+    /// the observations that span the gutter counted.
+    ///
+    /// The two arms below differ in this one argument — and in what the argument
+    /// moves, which is the right column's x and therefore the right margin,
+    /// 61.5 pt at 2.5% against 24.8 pt at 8.5%. Same pool, same face, same
+    /// recogniser, one number apart: that is what makes the weld attributable to
+    /// the gutter at THIS pool. It is not evidence that nothing else moves it —
+    /// the comment above records a second pool that welded at 3.5%.
+    func weld(gutter: CGFloat)
+        -> (inked: Double, obsN: Int, crossing: Int, chars: Int, longest: String)? {
+        let pageBox = CGRect(x: 0, y: 0, width: 612, height: 792)
+        let size: CGFloat = 12
+        let advance = size * 0.6                    // Courier advances 600/1000 em
+        let columnWidth = advance * 33
+        let leftEdge: CGFloat = 60
+        let rightEdge = leftEdge + columnWidth + gutter
+
+        // Full precision in the name: at `Int(gutter * 10)` two arms less than
+        // 0.1 pt apart would share a file, and the second would read the first.
+        let pdf = dir.appendingPathComponent("gutter-\(Int(gutter * 1000)).pdf")
+        var box = pageBox
+        guard let c = CGContext(pdf as CFURL, mediaBox: &box, nil) else { return nil }
+        c.beginPDFPage(nil)
+        c.setFillColor(CGColor(gray: 1, alpha: 1))
+        c.fill(pageBox)
+        let font = CTFontCreateWithName("Courier" as CFString, size, nil)
+        for (x, lines) in [(leftEdge, justifyLines(columnOne, columns: 33)),
+                           (rightEdge, justifyLines(columnTwo, columns: 33))] {
+            var y: CGFloat = 700
+            for line in lines {
+                let attributed = NSAttributedString(string: line, attributes: [
+                    .font: font, .foregroundColor: CGColor(gray: 0, alpha: 1)])
+                c.textPosition = CGPoint(x: x, y: y)
+                CTLineDraw(CTLineCreateWithAttributedString(attributed), c)
+                y -= 20
+            }
+        }
+        c.endPDFPage(); c.closePDF()
+
+        guard let cgPage = PDFDocument(url: pdf)?.page(at: 0)?.pageRef else { return nil }
+        let scale = 200.0 / 72.0
+        let W = Int((pageBox.width * scale).rounded())
+        let H = Int((pageBox.height * scale).rounded())
+        guard let ctx = CGContext(data: nil, width: W, height: H, bitsPerComponent: 8,
+                                  bytesPerRow: W, space: CGColorSpaceCreateDeviceGray(),
+                                  bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return nil }
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: W, height: H))
+        ctx.scaleBy(x: scale, y: scale)
+        ctx.concatenate(cgPage.getDrawingTransform(
+            .mediaBox, rect: CGRect(origin: .zero, size: pageBox.size),
+            rotate: 0, preserveAspectRatio: true))
+        ctx.drawPDFPage(cgPage)
+        guard let image = ctx.makeImage(),
+              let seen = try? Recogniser.recognise(image, settings: plain) else { return nil }
+
+        let low = Double(leftEdge + columnWidth) / 612.0
+        let high = Double(rightEdge) / 612.0
+        var spanning = 0, longest = ""
+        for o in seen {
+            let l = o.boundingBox.x, r = o.boundingBox.x + o.boundingBox.width
+            guard l < low, r > high else { continue }
+            spanning += 1
+            // Longest, not widest: this compares string length, and nothing
+            // here reads a box's width.
+            if o.text.count > longest.count { longest = o.text }
+        }
+        return (inkedGutter(image), seen.count, spanning,
+                seen.reduce(0) { $0 + $1.text.count }, longest)
+    }
+
+    // 15.3 pt of 612 is 2.50% — inside the census's 2.0-3.5% blind spot and on
+    // the boundary of its two lowest bins, so 10 of those ~27 pages sit BELOW
+    // this fixture's gutter. 52.0 pt is 8.50%, the fraction the fixture above
+    // uses.
+    guard let narrow = weld(gutter: 15.3), let wide = weld(gutter: 52.0) else {
+        check("both gutter fixtures rendered and recognised", false, "one did not")
+        break welds
+    }
+    let oneLines = justifyLines(columnOne, columns: 33)
+    let twoLines = justifyLines(columnTwo, columns: 33)
+
+    // Calibration. Without this a font substitution could move the gutter to
+    // somewhere the finding is not about while every check below stayed green.
+    check("the narrow-gutter fixture's inked gutter is where it was aimed",
+          narrow.inked >= 0.020 && narrow.inked <= 0.030,
+          String(format: "inked gutter %.4f of the page width, aimed at 0.0250 "
+                   + "(measured 0.0253); if this moved, the face or its metrics "
+                   + "did — nothing below is about 2.5%% any more", narrow.inked))
+    // The other half of the calibration, and it is what catches a word too long
+    // to wrap: an overflowing line would push ink into the gutter.
+    check("the fixture's justified lines fit their column",
+          (oneLines + twoLines).allSatisfy { $0.count <= 33 }
+            && (oneLines + twoLines).contains { $0.count == 33 },
+          "\(oneLines.count) and \(twoLines.count) lines, longest "
+            + "\((oneLines + twoLines).map(\.count).max() ?? 0) of 33 columns — "
+            + "so \(min(oneLines.count, twoLines.count)) line pairs share a y, "
+            + "which is the ceiling on the crossing count below")
+    // Not vacuous: a page with no text welds nothing, so without a floor here
+    // the assumption below would be green over an empty sheet. Both arms,
+    // because the character comparison at the foot needs a real denominator.
+    check("both gutter arms produced a real page to weld",
+          narrow.obsN >= 8 && narrow.chars > 400
+            && wide.obsN >= 8 && wide.chars > 400,
+          "narrow \(narrow.obsN) observations / \(narrow.chars) characters, "
+            + "wide \(wide.obsN) / \(wide.chars)")
+
+    check("ENGINE ASSUMPTION: at a ~2.5% gutter Vision welds across it",
+          narrow.crossing >= 1,
+          "\(narrow.crossing) of \(narrow.obsN) observations span the gutter "
+            + "(7 of 15 when this was written, against a ceiling of "
+            + "\(min(oneLines.count, twoLines.count)))"
+            + (narrow.longest.isEmpty ? "" : " — longest: \"\(narrow.longest)\"")
+            + " — a RED here means Vision stopped welding: the suite is not "
+            + "broken and this app did not change. Re-run "
+            + "Tools/score-reading-order.swift, re-measure FEATURES.md item 3, "
+            + "and delete this check in the same commit. If the fixture checks "
+            + "above are red too, it is the fixture and not the engine")
+    // The wide arm's own calibration, kept separate from its assumption so that
+    // a red is classifiable from the label alone.
+    check("the wide-gutter control's gutter is well clear of the 3.5% floor",
+          wide.inked > 0.08,
+          String(format: "inked gutter %.4f, aimed at 0.0850", wide.inked))
+    // The negative control: same pool, same recogniser, one argument apart. It
+    // is the pre-existing "no line is welded across the gutter" assumption
+    // asked again on THIS generator, which is what makes the weld above
+    // attributable to the gutter rather than to the fixture.
+    check("ENGINE ASSUMPTION: the same generator at 8.5% welds nothing",
+          wide.crossing == 0,
+          "\(wide.crossing) spanning observation(s) at an inked gutter of "
+            + String(format: "%.4f", wide.inked))
+    // Two-sided on purpose. `narrow.chars >= wide.chars * 0.9` was the first
+    // form and it could not fail: a weld ADDS a joining space, so the welded
+    // arm having at least as much text as the clean one is what the mechanism
+    // guarantees. What is worth asserting is that the two are CLOSE — a weld
+    // rearranges text rather than losing it — which reds in both directions.
+    // ⚠️ It is not isolated: the 3.5% arm reads 557 characters with ZERO
+    // crossings, below the welded arm's 569, so character count moves ±15
+    // across these widths independently of welding. What it does say is that no
+    // count of characters or of retained words can localise a weld; the one
+    // instrument that names them is `score-reading-order --gutter`, which is
+    // what `gutter-floor`'s remaining sub-steps are for.
+    check("a weld rearranges text rather than losing it",
+          abs(narrow.chars - wide.chars) <= 4 + 2 * narrow.crossing,
+          "\(narrow.chars) characters welded against \(wide.chars) clean, "
+            + "\(abs(narrow.chars - wide.chars)) apart over \(narrow.crossing) "
+            + "weld(s) (569 against 561, 8 apart over 7, when this was written)")
+    } // welds — the skew assumptions below are deliberately outside it
+
     // Skew. A generous band on purpose: Vision's line grouping genuinely flips
     // between interpretations, so a real page measured +2.0° at −2.73% while
     // +3.0° came back +0.08%. A tight bound here would be flaky, and a flaky

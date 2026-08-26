@@ -286,7 +286,9 @@ place — JSTOR's own OCR columnises this page correctly — so the rebuild is a
 file it was given. `pdftotext` on the output interleaves the columns visibly; on the input it does
 not. ⚠️ The suite's `ENGINE ASSUMPTION: no line is welded across the gutter` is GREEN over its
 generated fixture, whose gutter is 52 pt of 612 = **8.5%** and is justified in its own comment as
-*"far wider than any word space"*. This article's gutter is roughly a wide word space.
+*"far wider than any word space"*. This article's gutter is roughly a wide word space. ✅ **A second
+fixture at 2.5% was added 2026-08-26 and it WELDS — see "The weld is PINNED IN THE SUITE" below**, so this
+paragraph is no longer the only thing saying the 8.5% figure is why that check holds.
 
 **Why the corpus number did not see it — and this is the actionable part.**
 `Tools/score-reading-order.swift`'s ink test requires a quiet run of `0.035 * width` (**3.5%**), and a
@@ -327,6 +329,76 @@ and nothing in the metric distinguishes a table from prose. So what is reopened 
 **measurement**, not the feature. A weld also cannot be repaired by reordering — the halves are
 already one string — so if a fix is ever warranted it is upstream, in how the page is handed to the
 recogniser, not a sort applied afterwards.
+
+#### The weld is PINNED IN THE SUITE as of 2026-08-26 — a generated page reproduces it
+
+`gutter-floor`'s sub-step 0, which the owner put ahead of the sweep. `Tests/main.swift`'s engine-assumption
+block — the one whose 8.5% fixture the ⚠️ above is about — now carries a **second fixture at a 2.5%
+gutter**, from one generator called twice with the gutter as its only argument, and **at 2.5% Vision welds**:
+**7 of 15 observations span the gutter**, the longest reading
+`The first column begins here and The second column sits beside the`, against **0 of 23** at 8.5% from the
+same generator. So the JSTOR article's failure is not a property of that scan — a clean, generated,
+**107-word** page (19 justified lines in two columns) at a plausible journal gutter reproduces it.
+
+⛔ **It is pinned as an `ENGINE ASSUMPTION`, i.e. green BECAUSE the engine welds.** There is no fix to pair
+a red assertion with (the remedy is declined, and upstream rather than a sort), and a red suite refuses
+every commit that stages code — `Sources/`, `Helper/`, `Tests/`, `Tools/`, `build.sh`, `run_tests.sh` —
+through `.githooks/pre-commit`. So the check records where the engine's competence ends. ⚠️ **It goes RED
+the day Vision STOPS welding, and that is not "re-open item 3" — item 3 is already reopened** (2026-08-20,
+above); a red means the reopen note has lost its trigger and the decline can be re-affirmed on a fresh
+measurement. The check's own failure detail says so, and says the suite is not broken.
+
+**Seven checks, two of them `ENGINE ASSUMPTION`s, and exactly ONE of the seven is green because the engine
+welds.** The other six are a fixture that rendered, a fixture that is calibrated, and a control:
+- The gutter is **measured off the rendered pixels** rather than computed from the text positions —
+  **0.0253 against a layout 0.0250, which is one pixel of quantisation** (15.3 pt at 200 dpi is 42.5 px of
+  1700 and the quiet run reads 43). ⛔ A draft credited that to glyph side bearings and the review of this
+  diff refuted it by arithmetic: Courier's bearings would have put it near 0.028. The point survives
+  unchanged — reading it off the pixels is what makes a font substitution report itself, and a substituted
+  face moves the inked gutter clean out of the `[0.020, 0.030]` band because the column width is computed
+  from an assumed 0.6-em advance.
+- A second calibration asserts every justified line **fits its column** (longest 33 of 33), which is what
+  catches a word too long to wrap — `justifyLines` emits such a word whole and it would push ink into the
+  gutter.
+- A non-vacuity floor on **both** arms, because a page with no text welds nothing and because the character
+  comparison below needs a real denominator.
+- The 8.5% arm is the **negative control**: same pool, same face, same recogniser, one argument apart, so at
+  this pool the gutter is what flips the outcome. ⚠️ It is *not* evidence that nothing else does — the
+  paragraph below has a second pool that welded at 3.5%.
+- And the last one is what a character count can and cannot see: **569 welded characters against 561
+  clean**, so a weld does not shrink the text, it rearranges it. ⛔ **Its first form —
+  `narrow.chars >= wide.chars * 0.9` — COULD NOT FAIL**, because a weld *adds* a joining space, so the
+  welded arm holding at least as much text as the clean one is what the mechanism guarantees; the review of
+  this diff caught it. It is two-sided now (the arms must be *close*), and it reds in both directions.
+  ⚠️ **It is not isolated either**: the 3.5% arm reads **557** characters with **zero** crossings, below the
+  welded arm's 569, so character count moves ±15 across these widths independently of welding. What the row
+  does say is that no count of characters or of retained words can *localise* a weld — the corpus gate could
+  only ever see unlocalisable drift (R46) — and that the one instrument which names them is
+  `score-reading-order --gutter`, which is what sub-steps 1-3 are for.
+
+✅ **WATCHED FAILING TWICE, on DISJOINT pairs, each predicted by name before its run.** (A) the narrow arm
+given the wide gutter: **1341/1343**, red on the narrow calibration (0.0853 against the aimed 0.0253) and on
+the weld assumption (0 crossings). (B) the wide arm given the narrow gutter: **1341/1343**, red on the wide
+calibration and on the wide control (7 crossings where it demands 0). Suite **1,336 → 1,343**. ⚠️ Three of
+the seven were not watched red — the two fixture floors and the character row — and are stated as such
+rather than implied; the character row's first version is the one the review proved could not fail at all.
+
+⛔ **DO NOT READ A THRESHOLD OFF IT.** Over six widths the crossing count reads **0 / 0 / 7 / 7 / 9 / 9** at
+8.5% / 3.5% / 2.94% / 2.5% / 2.0% / **1.47%**, so the boundary sits between 3.5% and 2.94% *here*. Three
+things bound that. ⚠️ **The 9 is a CEILING, not a gradient**: the columns wrap to 10 and 9 lines on a shared
+baseline grid, so only **9 pairs share a y** and only 9 observations can ever span the gutter — 2.0% and
+below are saturation, and the suite prints that ceiling in the check's own detail. ⛔ An earlier word pool at
+the **same geometry** welded 2 observations at 3.5% and only 5 of 20 at 2.5%, and was not monotone in the
+gutter at all — so both the boundary and the count move with the TEXT; only the existence of a weld is
+stable, and it was byte-identical over three consecutive runs of one pool. ⚠️ **And the provenance: all six
+rows are a scratch probe's**, compiled from this worktree's own `Sources/` (so `Recogniser.recognise` is
+literally the same code) and **not in the tree**. What the SUITE has measured is the two committed widths,
+both out of the sabotage runs above: 8.5% → 23 observations, 0 crossings, inked 0.0853, and 2.5% → 7
+crossings, inked 0.0253 — agreeing with the probe's rows digit for digit on every figure either one prints.
+The 15-observation and 569/561 character figures are the probe's alone until this commit's own hook runs.
+⚠️ It is one generated page in a monospaced face, justified both sides so that a single number can describe
+the gutter at all; nothing here measures a proportional face and nothing here measures a corpus page.
+**Sub-steps 1-3 are untouched: no rate has been re-run and the 0.19% stands exactly as published.**
 
 **4, 5 and 6 — ARCHIVED 2026-08-13**, at the owner's decision, and recorded
 rather than deleted so nobody re-proposes them as new. They were: *show uncertain
