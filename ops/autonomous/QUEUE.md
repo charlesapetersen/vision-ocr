@@ -1844,7 +1844,7 @@ happens.**
         shapes this register already names. (1) The header mapped the register's published shares to the
         wrong one of the tool's own two columns, contradicting the README added in the same commit. (2) It
         said "all eight Swift tools carrying a `--self-test` are never run": measured, **six of seven ran
-        it unconditionally** (seven of eight since `score-annot-marks`, 2026-08-26), `score-skew` has none,
+        it unconditionally** (seven of eight since `score-annot-marks`, and eight of nine since `score-reading-order`, both 2026-08-26), `score-skew` has none,
         and `score-shape-term` is the only flag-gated one — so
         the minority pattern was being presented as the norm, and the tool now runs its self-test
         unconditionally instead of documenting a gap. (3) It credited the ImageMagick-OTSU comparison to
@@ -2236,10 +2236,18 @@ happens.**
            **The class is already in the corpus and simply is not counted**, so this needs no new files.
         3. Report the two rates to the owner. The DECLINE stands or falls on that, and it is the owner's
            call, not a session's. If it falls, THEN a register entry gets opened.
-      ✅ **SUB-STEP 0 IS DONE 2026-08-26 — the fixture exists, the weld is PINNED, and a session
-      reaching this box starts at sub-step 1.** See the `gutter-fixture` sub-box below and
-      `FEATURES.md` item 3 §"The weld is PINNED IN THE SUITE". The remaining three are untouched:
-      nothing has been swept and the 0.19% still stands exactly as published.
+      ✅ **SUB-STEPS 0 AND 1 ARE DONE 2026-08-26 — the fixture exists, the weld is PINNED, the
+      instrument is RECONCILED, and a session reaching this box starts at sub-step 2.** See the
+      `gutter-fixture` and `gutter-reconcile` sub-boxes below, and `FEATURES.md` item 3 §"The weld is
+      PINNED IN THE SUITE" and §"The instrument reconciled". ⛔ **Sub-step 1's answer, so nobody
+      re-derives it: the 43-against-59 gap is PAGE SELECTION** — on the census's own pages the tool
+      reads 44 against 43 and agrees page for page on 635 of 644, while on its own sampling it reads
+      60, and the two page sets share only 133 pages of ~645. ⚠️ **Half of sub-step 2 is done as a
+      by-product**: the band POPULATIONS are in `GUTTER-SAMPLED-2026-08-26.tsv` (60 counted, 5 at
+      3.0-3.5%, 13 at 2.5-3.0%, 10 at 2.0-2.5%, over the tool's own 641 pages), so what sub-step 2
+      still owes is the **crossing** rate per band — which needs Vision, and therefore `--gutter` with
+      the floor lowered, because `--census` deliberately recognises nothing. The 0.19% still stands
+      exactly as published.
       ⛔ **SUB-STEP 0, AND THE OWNER PUT IT FIRST (2026-08-20): the narrow-gutter FIXTURE, before any
       sweep.** The existing `ENGINE ASSUMPTION` fixture's gutter is 52 pt of 612 = 8.5%, and its own
       comment calls that "far wider than any word space" — which is exactly why it is green while a real
@@ -2303,6 +2311,62 @@ happens.**
         and no corpus page. All six widths are a scratch probe's and are NOT in the tree; the suite has
         measured the two committed widths only. Sub-steps 1-3 are still open and no rate was re-run.
         (context: FEATURES.md item 3 §"The weld is PINNED IN THE SUITE", 2026-08-26)
+  - [x] **gutter-reconcile** — **DONE 2026-08-26. `gutter-floor`'s sub-step 1: the 43-against-59 gap is
+        PAGE SELECTION, and the two ink tests agree on 635 of 644 pages.**
+        `Tools/score-reading-order.swift` gained `--census` (the ink test alone, one row per sampled
+        page, Vision never asked), `--pages-from <tsv>` (score exactly the pages another run scored) and
+        its first `--self-test`, 7 groups, unconditional. Two committed artefacts:
+        `GUTTER-RECONCILE-2026-08-26.tsv` (644 rows, the census's own pages) and
+        `GUTTER-SAMPLED-2026-08-26.tsv` (641 rows, the tool's own sampling).
+        ⛔ **THE NUMBERS.** Census 43 of 644 · this tool on the SAME pages **44** · this tool on its own
+        sampling **60** of 641 scored (4 no ink) · the recorded run 59 of 638. Page for page the two
+        agree on **635 of 644 (98.60%)**, median |Δ widest-fraction| **0.0000**, 619 of 644 within
+        0.005. The page sets share **133 pages of ~645 (20.6%)** and **153 of 233 documents share not
+        one page**, because `samplePages` takes page 2, the middle and **the last page** while the
+        census took quarter/half/three-quarter depth — 2/35/69 against 17/34/51 on a 69-page document.
+        ⛔ **Of the nine disagreements the BOX explains three** (`Boltanski_2006`, media 1031x727 against
+        crop 779x628, and `pdftoppm` renders the media box unless given `-cropbox`; the other six pages'
+        boxes are identical) **and the Otsu clamp is REFUTED for those nine** — over the 644 pages the
+        threshold runs 103-216, median 151, and **not one sits at either bound of `[90, 230]`**.
+        ⚠️ **Not "the clamp is unreachable on this corpus": one page of the 641 in
+        `GUTTER-SAMPLED-2026-08-26.tsv` (`Levy and Temin - 2007` p66) reads exactly 90** — the review of
+        this diff found that in the diff's own artefact. ⚠️ **`renderGrey` was never varied** and is the
+        leading candidate for the six unattributed pages (0.93% of pages, inside a 1.40% disagreement
+        rate). ✅ **The blind spot survives and the 27 DECOMPOSES**: 2.0-3.5% bands read **27 in 18
+        (62.8% of 43)** in the census's own file, **29 in 20 (65.9% of 44)** from this tool on the same
+        pages, and **28 in 21 (46.7% of 60)** on its own population — so 27 → 29 is implementation and
+        29 → 28 is page set, where a draft called 27-in-18 "the census page set's figure" and hid the
+        only implementation-side delta measured for this class.
+        ✅ **Watched failing three ways, disjoint red sets, each predicted by name first**: interiority
+        cut out of the run test → groups 3 and 4a; `samplePages`' span off by one page → group 6 only;
+        the 3.5% floor lowered to 2.0% → groups 2 and 5. ⛔ **One prediction was WRONG and it is the
+        useful one**: the interiority sabotage was predicted to red the trailing-gap case too and does
+        not, because a run reaching the last column is never flushed at all, so interiority is never
+        asked — the comment that gave interiority as the reason is corrected in place, and group 4 was
+        split so that one half is a watched red and the other says outright that no one-token change can
+        red it. ⚠️ Neither pass asks Vision, so **no crossing was measured and the 0.19% is untouched**;
+        a third identical pass came back byte-identical (⚠️ not committed, so that one is a claim about a
+        run). ⛔ **THE ADVERSARIAL REVIEW FOUND NINE THINGS AND TWO WERE IN THE ARTEFACT OR THE TOOL, not
+        the prose** — all nine fixed before the commit, and `FEATURES.md` §"The instrument reconciled"
+        lists them: `heightPx` truncated where the render rounds (wrong on 40 of 100 sampled rows, both
+        artefacts regenerated); the unconditional self-test read the caller-mutable `pages`, so
+        **`--pages 4` reddened a check about `--pages 3` and refused to measure anything**;
+        `--pages-from` was read, validated and ignored by `--gutter`, the mode sub-step 2 wants;
+        `owed` was seeded from the whole list so a one-document spot check exited 4; the summary block
+        sat inside the TSV where every other committed one here is pure rows; two self-test clauses
+        could not fail; the `peak / 100` tolerance was unpinned because every fixture was 40 rows deep;
+        and one check was written without the `else` its six siblings have.
+        ⛔ **The "sibling sweep" was wrong in BOTH of its halves and that is the lesson.** (1) Pointing
+        the ink test at `minimumGutter` looked like removing a duplicate and was not: that constant gates
+        the OBSERVATION-coverage gap in `bands`, so sub-step 2's *"lower the floor to 0.02"* would have
+        silently moved every `switches`/`interleaving`/`inversions` figure the default mode prints. The
+        ink test has its own `inkGutterFloor`, equal by coincidence and documented as such. (2) The
+        self-test census lives in **six** places, not the three claimed: `Tools/score-text-voids.swift`,
+        `Tools/README.md` **twice** (its own prose and the `score-text-voids` table row),
+        `Tools/score-annot-marks.swift`, `BUGS.md` and **this file** — two of which this diff made stale
+        itself. All six now read **ten** tools carrying one, nine unconditional, `score-shape-term` the
+        only flag-gated one; verified by opening all 32 Swift tools.
+        (context: FEATURES.md item 3 §"The instrument reconciled", 2026-08-26)
 - [ ] **C27** — spot colour is discarded because `pictureSaturationThreshold` is a bar on the page's
       MEAN saturation: the corpus's deliberately chosen two-ink fixture keeps its red on 1 page of 10.
       Fidelity, not content loss — no word or mark is lost — but the copy misrepresents how the

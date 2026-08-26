@@ -1303,7 +1303,8 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`, `SHAPETERM-BYTES-2026-08-21.tsv` and
 `SUBBARPIX-2026-08-22.tsv`, `WIDEN-STENCIL-2026-08-22.tsv`, `WIDEN-LAYERS-2026-08-22.tsv`,
 `C30-FORK-2026-08-22.tsv`, `C30-PAGE5-2026-08-23.tsv`, `C29-CORPUS-2026-08-25.tsv`,
-`C30-VOIDS-2026-08-25.tsv`, `C30-TILES-2026-08-25.tsv` and `C29-MARKS-2026-08-26.tsv` — and are
+`C30-VOIDS-2026-08-25.tsv`, `C30-TILES-2026-08-25.tsv`, `C29-MARKS-2026-08-26.tsv` and
+`GUTTER-RECONCILE-2026-08-26.tsv` + `GUTTER-SAMPLED-2026-08-26.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -1311,7 +1312,13 @@ per-page walk of all 16,987 corpus pages for C29's report, whose probe is at
 `$STATE/c29-instrument/corpus.swift` with the one-page diagnostic `page.swift` beside it — made it five, for
 the same reason C30's two are outside: the committed-tool version wants a `--self-test` and a printer
 discipline, and a `Tools/` commit pays the full suite): `GUTTER-CENSUS-2026-08-20.tsv`, whose poppler+python
-reimplementation was deliberately not committed (`18fae9e`); `C30-FORK-2026-08-22.tsv` **and
+reimplementation was deliberately not committed (`18fae9e`) — ⛔ **and it STAYS in the count on 2026-08-26,
+when `Tools/score-reading-order.swift --census` started asking that file's own question through committed
+code, because the two do not produce the same rows: they agree on 635 of its 644 pages and differ on nine,
+three of them because `pdftoppm` renders the MEDIA box while the tool renders the crop box. So the census's
+numbers are still reproducible from nothing in the tree; what has changed is that nobody needs to reproduce
+them** (`GUTTER-RECONCILE-2026-08-26.tsv`, `FEATURES.md` item 3 §"The instrument reconciled");
+`C30-FORK-2026-08-22.tsv` **and
 `C30-PAGE5-2026-08-23.tsv`**, whose throwaway
 Python pass is at `$STATE/c30-instrument/` with a README carrying its inputs' sha256s, because the tool
 version C30 asks for wants a `--self-test` and a `Tools/` commit pays the full suite (the page-5 pass is
@@ -1331,7 +1338,12 @@ reader scanning for `C30-*` will assume they are**: both come from `Tools/score-
 grows. ⚠️ **Nor is `C29-MARKS-2026-08-26.tsv`, whose `C29-` prefix makes it look like `C29-CORPUS`'s
 sibling and is not**: it comes from `Tools/score-annot-marks.swift`, in the tree with a 51-check
 `--self-test`, so the count stays **five** a second time — and it is the same rule being kept as the tiles
-file, since C29's own earlier population walk is one of the five. That also spends the reason the other two are outside: the tool version C30 was asking for now
+file, since C29's own earlier population walk is one of the five. ⚠️ **Nor are
+`GUTTER-RECONCILE-2026-08-26.tsv` and `GUTTER-SAMPLED-2026-08-26.tsv`, a third time, and here the trap is
+sharper than a prefix**: they sit in the list one line above the very file whose instrument is NOT in the
+tree and whose question they answer, so a reader who sees three `GUTTER-*` files will assume all three are
+outside. Both come from `Tools/score-reading-order.swift --census`, whose `--self-test` is **7** groups —
+so the count stays **five** while the list grows by two. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file
 is that rule being kept, since it re-measures the fork's own headline through committed code. ⚠️ A first draft called
 `WIDEN-LAYERS-2026-08-22.tsv` "the one file here whose instrument is not in this repository"; the review of

@@ -11697,8 +11697,9 @@ sabotage was run against it.
 census that was wrong three ways.** The draft left it flag-gated and said "the pre-commit hook runs
 `--self-test` for staged `Tools/*.py` only, so all eight Swift tools carrying one — this is the ninth — are
 type-checked and never run", recording the gap instead of closing it. Measured by opening the eight files:
-**seven** other Swift tools carry a self-test — **eight since `score-annot-marks` landed on 2026-08-26**
-— **six of the seven ran it unconditionally, seven of the eight do now**
+**seven** other Swift tools carry a self-test — **eight since `score-annot-marks` landed on 2026-08-26,
+and NINE since `score-reading-order` gained one later the same day, ten tools in all**
+— **six of the seven ran it unconditionally, eight of the nine do now**
 (`score-line-separation`, `score-mrc`, `score-routing-census`, `score-run-width`, `score-text-route`,
 `score-threshold-loss` — and `score-text-route:476-478` states the reason, *"cheap enough to be
 unconditional"*), `score-shape-term` is the **only** flag-gated one, and **`score-skew` has none at all**

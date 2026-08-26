@@ -444,8 +444,9 @@ let arguments = Array(CommandLine.arguments.dropFirst())
 
 // UNCONDITIONAL, before anything is measured: `score-mrc`, `score-threshold-loss`,
 // `score-text-route`, `score-line-separation`, `score-routing-census`, `score-run-width`
-// and `score-text-voids`' pattern — seven of the eight other Swift tools here with a
-// self-test, `score-shape-term` being the only flag-gated one. The reason is in
+// and `score-text-voids`' pattern — eight of the nine other Swift tools here with a
+// self-test since `score-reading-order` gained one on 2026-08-26, ten in all,
+// `score-shape-term` being the only flag-gated one. The reason is in
 // `score-text-route:476-478` ("cheap enough to be unconditional") and it is stronger
 // here, because this self-test is arithmetic over arrays of three elements. ⛔ **The gate
 // that would otherwise run it does not exist**: the pre-commit hook runs `--self-test`

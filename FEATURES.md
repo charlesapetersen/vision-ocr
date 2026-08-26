@@ -313,15 +313,18 @@ rendered, so it has been read by eye for a different defect while being filed si
 ⛔ **THE CENSUS ABOVE IS A REIMPLEMENTATION AND IS NOT AUTHORITATIVE.** It mirrors the ink test in
 poppler + Python (render grey at 150 DPI, Otsu, per-column ink, `quiet = peak/100`, `minimumRun`
 3.5%, 12% margins) so that it needed no `swiftc` build, and it disagrees with the Swift tool on the
-counted population — **43 against the recorded 59**. That gap is unexplained and is the first thing to
-reconcile; candidates are `samplePages` picking different pages, `Flattener.displayBox`/`.cropBox`
-versus `pdftoppm`'s default box, and `renderGrey`. Treat 27 as an order of magnitude, not a count.
-The authoritative instrument is the tool, and it has NOT been run — this is `gutter-floor` in the
-queue. The census itself is committed as `GUTTER-CENSUS-2026-08-20.tsv` (644 rows) so the 43-vs-59
-gap can be worked rather than re-derived. Its script is deliberately NOT committed: a file in
-`Tools/` owes a `--self-test` and staging one runs the full suite, which is 45-90 minutes bought for
-a screening script that the Swift tool is meant to replace. The method is stated in full above and
-is four lines of poppler; reproduce it or, better, run the tool.
+counted population — **43 against the recorded 59**. ✅ **RECONCILED 2026-08-26 — the gap is PAGE
+SELECTION, and on the same pages the two implementations agree on 635 of 644. See "The instrument
+reconciled" below.** Of the three candidates named here, `samplePages` is nearly the whole gap and the
+box is exactly three pages; the Otsu clamp is refuted; ⚠️ **`renderGrey` was never varied and is the
+leading surviving candidate for the six pages nothing explains** — no rasteriser was swapped, so this
+sentence must not be read as clearing it. Treat 27 as an order of magnitude, not a count — the tool
+reads **28 sub-threshold pages in 21 documents** over its own population. The census itself is committed as `GUTTER-CENSUS-2026-08-20.tsv` (644 rows) so the
+43-vs-59 gap could be worked rather than re-derived, which is what happened. Its script is
+deliberately NOT committed: a file in `Tools/` owes a `--self-test` and staging one runs the full
+suite, which is 45-90 minutes bought for a screening script that the Swift tool is meant to replace.
+⚠️ **That reason is now spent** — the tool carries the screening mode itself (`--census`, with a
+self-test, 2026-08-26), so the Python pass never needs reproducing.
 
 ⛔ **AND THE DECLINE'S STRONGEST FINDING STILL STANDS: a column-wise sort is net negative.** The
 worst-scoring pages are a four-column table and a table of contents, where reading ACROSS is correct,
@@ -399,6 +402,110 @@ The 15-observation and 569/561 character figures are the probe's alone until thi
 ⚠️ It is one generated page in a monospaced face, justified both sides so that a single number can describe
 the gutter at all; nothing here measures a proportional face and nothing here measures a corpus page.
 **Sub-steps 1-3 are untouched: no rate has been re-run and the 0.19% stands exactly as published.**
+
+#### The instrument reconciled as of 2026-08-26 — the 43-against-59 gap is PAGE SELECTION
+
+`gutter-floor`'s sub-step 1. `Tools/score-reading-order.swift` grew a `--census` mode — the ink test
+alone, one row per sampled page, Vision never asked — and a `--pages-from <tsv>` knob that takes the
+pages to score from the census file's own first two columns. That is what holds page selection fixed
+while two implementations of one test are compared, and it turns an unexplained gap into three
+numbers. `GUTTER-RECONCILE-2026-08-26.tsv` (644 rows, the census's own pages) and
+`GUTTER-SAMPLED-2026-08-26.tsv` (641 rows, the tool's own sampling) are both committed. Neither run
+asks Vision, so neither is a crossing measurement — **the 0.19% is untouched and sub-step 3 has
+nothing new to report to the owner yet.**
+
+⛔ **THE GAP IS WHICH PAGES, NOT WHICH IMPLEMENTATION, AND THE PAGE SETS BARELY MEET.** `samplePages`
+takes page 2, the middle and **the last page**; the census took quarter, half and three-quarter depth —
+`floor(count * k / 4)` for k = 1, 2, 3, which reproduces its own rows on **232 of its 233 documents**,
+so that rule is a verified inference and not a guess. Over the 233 documents the two sets are
+**645 pages against 644 sharing only 133 — 20.6%** — with **153 of the 233 documents sharing not one
+page**, and 46 of the 47 documents of three pages or fewer have identical sets, because there
+`samplePages` takes every page. On a 69-page document the two sets are 2/35/69 against 17/34/51.
+⚠️ **The 645-against-644 is a CHOSEN set against a SCORED one and the census probably chose 645 too**:
+its one exception to the rule is `1935_Title Page.pdf`, where it holds pages 1 and 2 and the rule wants
+1, 2 and 3 — and p3 is one of the four pages this tool found no ink on. So the likely honest pair is 645
+chosen either way, 644 scored against 641, with the census dropping silently where the tool names. So:
+
+| run | pages | qualifying gutters |
+|---|---|---|
+| the census, poppler + Python | 644 | **43** |
+| this tool, `--pages-from` the census | 644 | **44** |
+| this tool, its own `samplePages(3)` | 641 scored, 4 no ink | **60** |
+| the recorded `--gutter` run, undated above | 638 | **59** |
+
+**One page of implementation, sixteen of page selection** — ⚠️ that one is a NET: the gross is nine
+page-level disagreements, five where this tool counts a gutter and four where the census does. Page for
+page over the 644, the two agree on
+**635 (98.60%)**; the widest-interior-quiet-run fraction has a median absolute difference of **0.0000**,
+a mean of 0.0011, and **619 of 644 pages agree within 0.005**. The tool's own sampling reproduces the
+recorded run to **60 against 59** gutter pages over **641 against 638** scored — ⚠️ across an unknown
+interval, since the recorded run is undated in this file and the tool then stopped compiling on
+2026-08-14, so what that pair says is that the recorded figure reproduces, not how far it has travelled.
+The four pages this run found no ink on are named on stderr rather than dropped
+(`1935_Title Page` p3, `Clark_The graphic rating scale` p2, `Noble_1977` p2, `_1985_Issue 2` p29).
+⚠️ The same run logged three `Unexpected EOF in JBIG2 stream` errors from the renderer, which name no
+page, so whether they are these pages is not established.
+
+⛔ **Of the nine disagreements, the box explains THREE and nothing else explains the other six.**
+`pdftoppm` renders the **media** box unless it is given `-cropbox`, and this tool renders
+`Flattener.displayBox` — the crop box with `/Rotate` applied. On `Boltanski_2006` the two differ, and
+by a lot: media 1031x727 pt against crop 779x628, so the Python pass was reading a third more sheet.
+Its p50/p101/p152 read **0.0000** there and 0.0456-0.0511 here (measured with `pdfinfo -box`); the
+other six disagreeing pages have **identical** media and crop boxes, so the box is three pages and
+only three. ⛔ **The Otsu clamp is REFUTED as a mechanism for these nine**: `Flattener.otsuThreshold`
+clamps to `[90, 230]` where a reference implementation may not — a difference this project has recorded
+elsewhere — but over these 644 pages the threshold runs **103 to 216, median 151, and NOT ONE page sits
+at either bound**, so it cannot have caused any of the nine. ⚠️ **It is NOT "the clamp is unreachable on
+this corpus", and this diff's own second artefact refutes that wider reading**: in
+`GUTTER-SAMPLED-2026-08-26.tsv` one page of the 641 — `Levy and Temin - 2007` p66, a page whose tallest
+ink column is its full height — reads exactly **90**. Sparseness is not a common cause either: the four
+pages where the census sees a gutter and this tool sees none have tallest-ink-column counts of **147,
+265, 328 and 1583** against a corpus median of **367.5**, spanning the distribution. So **six of nine
+are unattributed** — 0.93% of the pages, within a 1.40% disagreement rate, and one page of the counted
+total. ⚠️ And a large
+fraction delta does not imply a disagreement: `Henry Morgenthau papers` p50 differs by 0.0471 and both
+runs still call it a gutter, because on a page with several wide bands "the widest" can be a different
+band.
+
+✅ **The blind spot survives the reconciliation, and the 27 decomposes cleanly into two steps.**
+Sub-threshold interior bands of 2.0-3.5%: the census's own file reads **27 pages in 18 documents,
+62.8% of its 43** — the reopen note's figure, re-derived from the committed rows. This tool on **the
+same 644 pages** reads **29 in 20 (65.9% of 44)**, and on its own population **28 in 21 (46.7% of
+60)**. So **27 → 29 is implementation and 29 → 28 is page selection**, and the ratio moves mostly
+because the denominator does. ⚠️ The earlier draft of this paragraph called 27-in-18 "the census page
+set's figure", which hides the only implementation-side delta measured for this band class; the review
+of this diff caught it. Both readings agree that the class is real and of the same order as half the
+counted population. The bands over the tool's own 641: **60 counted, 5 at 3.0-3.5%, 13 at 2.5-3.0%, 10
+at 2.0-2.5%, 553 under 2.0%.**
+
+⚠️ **What this does NOT do.** It measures no crossing, so it neither confirms nor moves the 0.19%: the
+`--census` mode skips recognition on purpose, because recognising 644 pages to measure a threshold on
+pixels is a cost with no answer in it. Sub-step 2 still has to run `--gutter` with the floor lowered,
+and the new `widestSpan` column is there so it can find the sub-threshold band on a page without
+rendering it again. Both passes are one machine, one build, at 150 DPI; a third pass over the census's
+pages came back **byte-identical**, so the measure is deterministic on this path — ⚠️ that third pass is
+not committed, so it is a claim about a run rather than something a reader can re-derive from the tree.
+
+⛔ **THE ADVERSARIAL REVIEW OF THIS DIFF FOUND NINE THINGS, AND TWO OF THEM WERE IN THE ARTEFACTS OR THE
+TOOL RATHER THAN IN THE PROSE.** (1) `heightPx` was printed as `Int(displayBox.height * 150 / 72)`,
+which truncates where the render `.rounded()`s: it disagreed with the height actually measured on **40
+of 100 sampled rows** (`w5093` p48, 1639 printed against 1640 rendered). Both artefacts were
+regenerated. (2) The unconditional self-test read the caller-mutable global `pages`, so
+**`--pages 4` reddened a check about `--pages 3` and refused to measure anything** — the sampler now
+takes `take:` as a parameter and the self-test pins both 3 and 4. (3) `--pages-from` was read, validated
+and then ignored by `--gutter`, which is the mode sub-step 2 wants: both that and `--census --gutter`
+now exit 2. (4) `owed` was seeded from every row of the list rather than from the documents passed, so a
+one-document spot check printed a correct TSV and exited 4 owing 641 pages. (5) The summary block was
+inside the TSV, where every other committed `*.tsv` here is pure rows; it goes to stderr. (6) Pointing
+the ink test at `minimumGutter` looked like removing a duplicate constant and was not — that constant
+gates the OBSERVATION-coverage gap in `bands`, so sub-step 2's *"lower the floor to 0.02"* would have
+silently moved every `switches`/`interleaving`/`inversions` figure the default mode prints. The ink test
+has its own `inkGutterFloor` now, equal by coincidence and documented as such. (7) One self-test clause
+could not fail (`widestSpan != nil` where `widestInterior != 0` already says it) and another was green
+with the guard it pinned deleted (`samplePages(count: 0)`); both replaced. (8) The `quiet = peak / 100`
+tolerance was unpinned — every fixture was 40 rows deep, so `quiet` was the `max(1, …)` floor and any
+divisor passed; a 400-row fixture with 2-pixel and 3-pixel specks now pins it. (9) One check was written
+without the `else` its six siblings have, so it went green whenever the ink test returned nil.
 
 **4, 5 and 6 — ARCHIVED 2026-08-13**, at the owner's decision, and recorded
 rather than deleted so nobody re-proposes them as new. They were: *show uncertain
