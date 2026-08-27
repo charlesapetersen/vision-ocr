@@ -3539,6 +3539,16 @@ enum Flattener {
     ///
     /// A measurement, not a decision: it will happily report 1.9 DPI for a page
     /// whose only image is a logo. Use `rebuildDPI` to render with.
+    ///
+    /// ⚠️ **No production caller as of 2026-08-26** — `Tests/main.swift` and two
+    /// `Tools/` comments are the whole of it — and that is load-bearing, not
+    /// trivia. This reads `largestImage` with **no drawn walk in front of it**, so
+    /// on a chain of bare Form XObjects it answers a resolution `rebuildDPI(of:)`
+    /// discards (`BUGS.md` C24 `#### The coverage boundary, CLOSED`, and the
+    /// queue's `bare-form-reach`). `pageIsAnImage` is the only such reader today,
+    /// and one check pins it on that fixture. **Adding a production caller here
+    /// re-opens that exposure with nothing watching**; pin it on
+    /// `shared-resources.pdf` pages 11-14 in the same commit if you do.
     static func nativeDPI(of page: PDFPage) -> Double? { largestImage(of: page)?.dpi }
 
     /// Does this page's content stream invoke **any** XObject?

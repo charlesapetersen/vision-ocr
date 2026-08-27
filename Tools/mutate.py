@@ -79,7 +79,18 @@ Two consequences, both load-bearing:
     `[3407, 3415, 246, 227, 244]`, two rows from clear — and until then the startup line
     is the worst number available rather than the best. That run read **14.8x** high
     (`12-174` printed, **705 s** measured for a baseline and two mutants), so the failure
-    is twice in the same direction and not one bad row. **The rule that
+    is twice in the same direction and not one bad row. ✅ **The window CLEARED on
+    2026-08-26, when a `--rerun` of the same pair added two rows: it is now
+    `[246, 227, 244, 292, 289]`, and a 1-mutant run prints `8-10` — whose high is
+    9.73 min, single digits, shown as 10 by this module's own `:.0f`. So the forecast
+    that went with it holds in substance and was 1.5 min low, because it was arithmetic
+    off the surviving rows' max of 246 and the two incoming rows are dearer than every
+    row they joined.** ⛔ That day's own `11-171` line is the **fourth and last
+    clamped-era reading**, 11.7x high over an 875 s run — NOT a reading of the cleared
+    window, because the startup line prints before the run and its span says
+    `227-3415 s each`. Re-estimating that same job from the cleared window gives
+    `11-15` against 14.6 measured. **No live reading from a cleared window exists yet.**
+    **The rule that
     survives both failures is the one this header already gives**: a rate read off
     history is wrong in whichever direction history has just moved, so date every figure
     and prefer `$STATE/suite-timings.tsv` rows dated after 2026-08-24.
@@ -132,6 +143,12 @@ flagged rather than believed.
 
 Results append to Tools/mutation-log.tsv; re-running skips mutants already
 recorded, so a campaign can be stopped and resumed.
+
+⚠️ `--rerun` appends a SECOND row for a name that already has one, and the LATER
+row is the current verdict — `already_done()` is last-row-wins. SEVEN names carry
+duplicates as of 2026-08-26 (`cut -f1 … | sort | uniq -d`), two of them this day's. The log has no date column, so two rows for one name
+are distinguishable only by file position: quote the last, and if the two differ
+in their `N check(s)` field, the earlier one is describing an older suite.
 """
 import argparse, json, os, re, shutil, subprocess, sys, time
 

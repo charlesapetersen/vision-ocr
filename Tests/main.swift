@@ -5348,8 +5348,11 @@ do {
             // a sweep passes whatever the caps say, which is exactly why this is a fixture.
             //
             // One chain of four nested forms, entered at three levels (pages 11-13), then
-            // the bare-form counterexample (page 14). **Three of the nine rows below name
-            // an absolute width**, because agreement alone is satisfied by both caps moving
+            // the bare-form counterexample (page 14). **Three of the ten rows below name
+            // an absolute width** (nine until 2026-08-26, when the `pageIsAnImage` row at
+            // the end of the block closed C24's coverage boundary — sections of `BUGS.md`
+            // dated before then count nine, and their four-against-one split is now four
+            // against two), because agreement alone is satisfied by both caps moving
             // together — under a joint +1 the agreement row stays green and **two of those
             // three** go red. ⛔ Not three: measured 2026-08-25, page 12's 2400 row is green
             // under EACH cap alone, the two mutants touch disjoint functions, and that row
@@ -5500,6 +5503,70 @@ do {
                           != Flattener.fallbackRebuildDPI,
                   String(format: "%.1f vs %.1f", Flattener.rebuildDPI(of: bareChain),
                          Flattener.rebuildDPI(from: Flattener.largestImage(of: bareChain))))
+
+            // MARK: C24 — the second consumer of the dictionary walk, with no drawn
+            // walk in front of it
+            //
+            // `Flattener.pageIsAnImage` (`Flattener.swift:304-307`) is `largestImage`
+            // and three bars — `pixelWidth >= 900`, `dpi >= 72`, `dpi <= 1400` — and
+            // nothing else. Its consumers are `Model.swift:886`'s
+            // text-extraction skip marker — invariant-1 territory — and
+            // `hasDigitalText`, which is `C29`'s own per-document vote. So on a
+            // bare-form page the two walks' disagreement is not only the discarded
+            // rebuild resolution the row above measures: **`pageIsAnImage` answers
+            // page 14 off the dictionary walk (1800 px, `true`) while `rebuildDPI`
+            // answers the same page off the drawn one (`.noImage`, the fallback)** —
+            // one page, two questions, two walks. Nothing in the suite said so until
+            // this row.
+            //
+            // ⛔ **This is the coverage boundary `BUGS.md` C24 `#### Both caps RUN
+            // through mutate.py` recorded and deliberately did not close.** That run
+            // measured `logic/C24-dictionary-cap-reaches-further` taking page 13's
+            // `largestImage` from `nil` to 1200 px at 141.18 DPI — which flips this
+            // predicate `false` → `true` — **with no check objecting**, and closing it
+            // in the same commit would have changed the objecting-check count the two
+            // fresh log rows were recording. It is watched failing under that mutant
+            // now: the p13 column is what goes red, and the mutant's row in
+            // `Tools/mutation-log.tsv` moves from three objecting checks to four.
+            //
+            // ⛔ **But p13 is ENTAILED by the row two above it, and the count should not be
+            // read as four independent facts.** `pageIsAnImage` opens `guard let largest =
+            // largestImage(of: page) else { return false }`, and `a page whose every image
+            // is four forms down reads as no image` already pins that `largestImage` is
+            // `nil` here — so the two go red beside each other and the fourth objection is
+            // a second objection to one fact. What this row buys that nothing else in the
+            // suite does is p14 and the two DPI bars, and neither of those is watched.
+            //
+            // ⚠️ **Only the p13 column is MEASURED as able to fail.** p11, p12 and p14
+            // are pinned and *reasoned*: putting the drawn walk in front of
+            // `pageIsAnImage` — one of the two fix shapes the queue's `bare-form-reach`
+            // prices — would red p14 alone (`true` → `false`, the drawn walk reading
+            // `.noImage` there), and no catalogued mutant asks that question. Named
+            // rather than credited, the way `shapeHeightHigh`'s greens were.
+            //
+            // ⚠️ Sibling sweep (CONTRIBUTING §4b): `Sources/` reads `largestImage` in
+            // three places. `rebuildDPI(of:)` reads it only from the `.unreadable`
+            // arm, i.e. behind the drawn walk, which is correct. `nativeDPI(of:)` has
+            // no production caller at all — only this file and two tool comments — so
+            // `pageIsAnImage` is the one production predicate with this exposure, and
+            // the row below is the whole of it **on this fixture** (the predicate is
+            // pinned in seven other places, on other documents). That BOUNDS the
+            // exposure rather than narrowing it — nothing got smaller; an unknown total
+            // became one — and it is a grep snapshot, so the thing keeping it true is
+            // the sentence added to `nativeDPI`'s own doc comment, not this one.
+            //
+            // The detail prints the dictionary width beside each verdict on purpose:
+            // the row above learned the hard way that a failure detail naming only the
+            // walk that did not move cannot tell the mutant from the shipped build.
+            check("C24 — pageIsAnImage answers off the dictionary walk on all four",
+                  [fourDeep, threeDeep, allTooDeep, bareChain]
+                      .map { Flattener.pageIsAnImage($0) } == [true, true, false, true],
+                  [("p11", fourDeep), ("p12", threeDeep), ("p13", allTooDeep),
+                   ("p14", bareChain)].map { named in
+                      let dict = Flattener.largestImage(of: named.1)
+                          .map { "\($0.pixelWidth)" } ?? "nil"
+                      return "\(named.0)=\(Flattener.pageIsAnImage(named.1)) dict=\(dict)"
+                  }.joined(separator: " "))
 
             // MARK: C24 — a measurement override reaches every page the rebuild renders
             //

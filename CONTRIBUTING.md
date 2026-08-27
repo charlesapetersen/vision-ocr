@@ -102,16 +102,19 @@ Section 2 says to reintroduce the defect and watch the test fail. Nine checks in
 is the part a person forgets. So:
 
 ```sh
-python3 Tools/mutate.py --only <substring>   # after changing a constant or a guard: ~250 s a mutant plus a
+python3 Tools/mutate.py --only <substring>   # after changing a constant or a guard: ~290 s a mutant plus a
                                              # baseline suite (479 s end to end for one, measured
-                                             # 2026-08-24; 705 s for two, 2026-08-25)
-python3 Tools/mutate.py                      # the whole catalogue — ~7 h at that rate, and it said
+                                             # 2026-08-24; 705 s for two, 2026-08-25; 875 s for two,
+                                             # 2026-08-26 — the rise is the suite growing 1,247 -> 1,344,
+                                             # not contention; budget from $STATE/suite-timings.tsv)
+python3 Tools/mutate.py                      # the whole catalogue — ~8 h at that rate, and it said
                                              # ~65 HOURS until 2026-08-24, when `1dbaafd` took a 16.2x
                                              # clamp off the suite. Read the tool's header — but NOT its
-                                             # startup estimate, which spans five clamped-era log rows and
-                                             # has read 14.5x then 14.8x high. It heals by ROWS, not runs:
-                                             # two more mutant rows clear the window, and a two-mutant run
-                                             # ages two at once.
+                                             # startup estimate, which has read 14.5x, 14.8x and 11.7x
+                                             # high. It heals by ROWS, not runs: two more mutant rows
+                                             # clear the window, and a two-mutant run ages two at once.
+                                             # ⚠️ The window DID clear on 2026-08-26 and no live reading
+                                             # has been taken from it yet — do not assume it is fixed.
 ```
 
 Add a mutant when you add a constant or a guard worth protecting. A survivor is

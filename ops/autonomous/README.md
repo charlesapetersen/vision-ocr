@@ -488,7 +488,11 @@ of 2026-08-24 — `const/lineMinimumMembers` took 246 s, and 479 s end to end wi
 `mutate.py` estimates off the five newest `mutation-log.tsv` rows, all five were clamped-era, and it
 printed "roughly 100-116 minutes" over that 479 s run — **14.5x high**, and then "12-174" over a 705 s one,
 **14.8x high**. It self-heals as post-clamp ROWS age the clamped ones out of that five-row window, not as
-runs pass: a two-mutant run ages two at once). A `SURVIVED` row is either a
+runs pass: a two-mutant run ages two at once. ✅ **The window CLEARED on 2026-08-26** — but that day's own
+`11-171` over an 875 s run, **11.7x high**, is the LAST CLAMPED-ERA reading and not a reading of the clear
+window: the startup line prints before the run, and its span says `227-3415 s`. **Nothing has been
+estimated from the clear window yet.** Budget ~290 s a mutant plus a baseline from
+`$STATE/suite-timings.tsv`, never from either end of the startup line). A `SURVIVED` row is either a
 check that cannot fail or a value nothing depends on (`BUGS.md` T5); a `NOT-APPLIED` row means the edit did not
 match, so it tested nothing and must be re-expressed rather than counted — two entries needed that, and one of
 the two then exposed a check that asserted nothing.

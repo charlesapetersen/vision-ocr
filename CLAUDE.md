@@ -387,7 +387,13 @@ runs, so the two-mutant `depth-cap` run aged **two** clamped rows at once and th
 `[3407, 3415, 246, 227, 244]` — the next 1-mutant run prints ~`8-114`, the high end reaches single digits
 after **two more mutant rows**, and the drop therefore lands on the THIRD run from there rather than the
 fourth. ⚠️ Sooner, not later: a draft called the published sequence "one run short", which is the wrong
-direction. That run read **14.8x** high (`12-174` printed, **705 s** measured), the third reading of this
+direction. ✅ **THE HEALING IS SPENT AS OF 2026-08-26**: the `bare-form-reach` re-run added the two rows
+and the window is clear for the first time — `[246, 227, 244, 292, 289]`. ⚠️ **The forecast holds in
+substance and its number was 1.5 min low**: a 1-mutant run's high is **9.73 min**, single digits, printed
+`10` by `:.0f` — because the arrival was forecast off the *surviving* rows' max of 246 and the two rows
+that came are dearer than every row they joined. ⛔ **A draft of this line said "REFUTED" and the review
+of that diff refuted the refutation.** Everything above this sentence is the record of the healing, not a
+live forecast. That run read **14.8x** high (`12-174` printed, **705 s** measured), the third reading of this
 estimator and the second in the same direction; ⚠️ its LOW end came within 5%, which is new but is **not**
 evidence the window has healed — that figure was printed from the *pre-run* window, whose one post-clamp
 row happened to be the `min`. ⛔ **Using the tool also found the SIBLING of the truncation
@@ -1300,7 +1306,9 @@ objecting checks, the dictionary cap by **three**, 227 s and 244 s, **705 s** en
 the baseline, kill sets predicted by name and in order before the run started. ⛔ **DO NOT
 QUOTE THE 6-AGAINST-3 AS A PRODUCT FACT — a draft did and the review of that diff refuted it
 twice by counting.** It is **four** rows red under the drawn cap alone against one under the
-dictionary cap, and only **two** of the nine reach `rebuildDPI(of:)` at all. And the reason
+dictionary cap, and only **two** of the nine reach `rebuildDPI(of:)` at all. ⚠️ **6-against-3 is
+6-against-4 from 2026-08-26 and the block is TEN rows**, so the split is four against **two**;
+the point stands and only the numerals move. And the reason
 those two cannot move under the dictionary cap — `rebuildDPI(of:)` routes `.noImage` to
 `rebuildDPI(from: nil)` and only `.unreadable` to `largestImage` — is true of **that seam and
 not of the product**: ⛔ **`Flattener.pageIsAnImage` reads `largestImage` with NO drawn walk in
@@ -1309,7 +1317,24 @@ and from `hasDigitalText`, which is C29's own vote — and on page 13 the dictio
 `largestImage` `nil` → 1200 px at 141.18 DPI, flipping that predicate **false → true**.
 **Nothing pins `pageIsAnImage` on pages 11-14, so the three is a COVERAGE BOUNDARY**, carried
 as a ⚠️ on `bare-form-reach` and deliberately not fixed in the same commit as the log rows that
-count three. ✅ Page 14's two rows were *reasoned* by the 2026-08-23 section and are now
+count three. ✅ **CLOSED 2026-08-26 AND THE THREE IS NOW FOUR** (`#### The coverage boundary,
+CLOSED`): one check pinning `pageIsAnImage` on all four pages, watched failing under that same
+mutant with **p13 the only column that moves**, both mutants re-run (**292 s** by six, **289 s**
+by four, **875 s** end to end, baseline **1,343 → 1,344**), and the drawn cap's six unchanged
+*as predicted*, because `pageIsAnImage` never calls `drawnLargestImage`. ⛔ **The sibling sweep
+is worth more than the row and it BOUNDS the exposure** (bounds, not narrows — "at least one,
+total unknown" became "exactly one"): `Sources/` reads `largestImage` in three places, and the
+third — `nativeDPI(of:)` — is ungated by the drawn walk too but has **no production caller at
+all**, so one check is the whole of the coverage *on this fixture*. ⚠️ That is a grep snapshot,
+so `nativeDPI`'s doc comment now carries it — the only edit in `Sources/`. ⚠️ Only p13 is measured
+as able to fail; p14's contribution — a drawn walk put in front of `pageIsAnImage` would red it
+alone — is reasoned, and no catalogued mutant asks it. ⛔ **And p13, the column that IS watched,
+is entailed by the `largestImage == nil` row already in the block** — the two red beside each
+other — so the 3 → 4 is real bookkeeping and not four independent facts. ⚠️ Estimator: the run
+**clears the window** (`[246, 227, 244, 292, 289]`), its own `11-171` line is the **last
+clamped-era reading** and not a reading of the clear window (the line prints before the run; its
+span says `227-3415 s`), and re-estimating this job from the clear window gives **11-15** against
+14.6 measured. ✅ Page 14's two rows were *reasoned* by the 2026-08-23 section and are now
 **watched**; the dictionary mutant had never been built at all, and its count of three is
 confirmed — ⚠️ which three, that record never named. ⚠️ Two of the nine are red under
 **neither**: the premise row reads `drawsAnyXObject`, which has no depth guard in either
@@ -1511,12 +1536,17 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,343 checks measured 2026-08-26 (this commit's own hook); ~225 s measured 2026-08-24, real OCR
+./run_tests.sh        # 1,344 checks measured 2026-08-26 (this commit's own mutate.py baseline); real OCR.
+                      # ~285-300 s measured 2026-08-26 over seven clean full-suite rows in
+                      # $STATE/suite-timings.tsv — NOT the ~225 s this line carried, which is 2026-08-24
+                      # at 1,247 checks. Do not budget off the 292/289 s mutant rows either: those build
+                      # a mutated tree.
                       # ⚠️ This line read 1,281 while the suite was 1,314 — two commits landed without
                       # touching it. Re-derive it from your own run, never from a figure in prose.
                       # (1,336 -> 1,343: gutter-floor's narrow-gutter fixture added seven checks, and
                       #  the review of that diff caught this line as the third instance of the warning
-                      #  above rather than a fourth.)
+                      #  above rather than a fourth. 1,343 -> 1,344: bare-form-reach's pageIsAnImage
+                      #  pin, one check, C24's coverage boundary closed.)
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->
