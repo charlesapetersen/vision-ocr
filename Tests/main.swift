@@ -13619,8 +13619,16 @@ do {
     // apart. One in every 32 pixels at full saturation — a red subhead and a rule on
     // otherwise white paper — against a uniform mid-tone cast over the whole sheet.
     // `saturation` returns the same number for both, *exactly* and not nearly, and it
-    // is below `pictureSaturationThreshold` for both, so the two-ink sheet is
+    // is below `colourSaturationThreshold` for both, so the two-ink sheet is
     // published in grey alongside the cast one. `saturatedFraction` separates them.
+    // ⛔ **`colourSaturationThreshold` and not `pictureSaturationThreshold`, corrected
+    // 2026-08-26 by the review of C27 (c)'s diff.** "Published in grey" is
+    // `shouldKeepColour`'s answer, and being under the ROUTE bar does not give it —
+    // `isPicture` has three signals, so a page under that bar can still be a picture
+    // page. The two bars are equal today, so no value moves; what moves is which
+    // constant the check's own name is about, and the day the owner lowers the colour
+    // bar to 0.02 this check goes red and says so instead of staying green under a
+    // name that has become a lie.
     // Both buffers are built so every quantity is exact in binary: 1/32 = 0.03125 and
     // (128 - 124) / 128 = 0.03125, so these are `==` checks and there is no tolerance
     // for a wrong implementation to pass through. (CONTRIBUTING §2: the same properties
@@ -13638,9 +13646,9 @@ do {
           spotMean == castMean && spotMean == 0.03125,
           String(format: "spot %.6f, cast %.6f", spotMean, castMean))
     check("…and the threshold refuses the colour on both of them",
-          spotMean <= Flattener.pictureSaturationThreshold
-            && castMean <= Flattener.pictureSaturationThreshold,
-          String(format: "%.5f vs %.2f", spotMean, Flattener.pictureSaturationThreshold))
+          spotMean <= Flattener.colourSaturationThreshold
+            && castMean <= Flattener.colourSaturationThreshold,
+          String(format: "%.5f vs %.2f", spotMean, Flattener.colourSaturationThreshold))
     // The floor is the caller's; 0.25 is what `score-threshold-loss` defaults to. It is
     // NOT chosen against the 0.000-0.008 figure in `saturation(ofRGBA:)`'s doc comment —
     // that is a mean over a page, not a per-pixel residue, and the per-pixel number in
@@ -13792,12 +13800,63 @@ do {
     check("…and colour is Automatic's decision alone",
           !Flattener.shouldKeepColour(mode: .grayscale, saturation: 0.3, pixels: 1000)
             && !Flattener.shouldKeepColour(mode: .blackAndWhite, saturation: 0.3, pixels: 1000))
-    check("the threshold is the same one that routes the page here",
+    // C27 (c), 2026-08-26: this decision has its own bar now, and it is equal to
+    // the route's, so no page's output moves. The check that used to sit here
+    // read `pictureSaturationThreshold` on both sides of the comparison and was
+    // therefore a MIRROR — it could not fail at any value of the constant. Three
+    // checks replace it, because at equal values no single one can separate the
+    // two constants:
+    //
+    //  * the ABSOLUTE pair is the evidence. Its literals do not move when either
+    //    constant does, so it reds under a mutant of `colourSaturationThreshold`
+    //    and stays green under one of `pictureSaturationThreshold`. MEASURED
+    //    both ways 2026-08-26 through `mutate.py --rerun --only Saturation`: the
+    //    colour mutant is `killed` by 11 checks including this one, the route
+    //    mutant by 5 not including it, and the two kill sets intersect in
+    //    EXACTLY ONE check — the equality below, which reads both constants.
+    //    `BUGS.md` C27 `#### The split, SHIPPED`; `Tools/mutation-log.tsv`.
+    //    ⚠️ Two limits on it. It has a blind window: any effective bar in
+    //    [0.06, 0.07) passes, so its granularity is 0.01 against the mirror's
+    //    0.001. And on its own it does not say WHICH constant is read — at equal
+    //    values the reverted implementation passes it too — so the weight rests
+    //    on the mutant pair and not on this expression.
+    //  * the EQUALITY is the no-op guarantee: it is what says this commit
+    //    changed no page. It reads BOTH constants, so it is a shared killer by
+    //    construction and is NOT evidence of the split.
+    //  * the MIRROR pair is kept and is named as unable to fail *at the
+    //    saturation bar* today: clause 1 is `!(c > c)` and clause 2 is
+    //    `c + 0.001 > c`, tautologies at every value of `c`. (It can still red
+    //    under a `mode` or `maximumColourPageMegapixels` mutant — the label is
+    //    scoped to this constant, which is the correction the review of this
+    //    diff made.) It becomes informative the moment the two values differ.
+    //    Written down rather than counted as evidence: this project has had
+    //    eleven checks that could not fail, and the ones that hurt were the ones
+    //    nobody had labelled.
+    //
+    // ⚠️ BOTH the absolute pair and the mirror pair are checks to EDIT on the day
+    // the owner moves the colour bar, not the equality alone: a bar of 0.03 makes
+    // `0.06 > 0.03` true and reds the absolute pair's first clause on a correct
+    // implementation. A first draft of this comment said the mirror would then be
+    // "the only thing that reds if `shouldKeepColour` is pointed back at the route
+    // bar", which the review of this diff refuted from the expressions — with the
+    // literals moved to straddle the new bar, the absolute pair reds under that
+    // reversion too.
+    check("the colour bar is read at its own value, not at the route's",
+          !Flattener.shouldKeepColour(mode: .auto, saturation: 0.06, pixels: 1000)
+            && Flattener.shouldKeepColour(mode: .auto, saturation: 0.07, pixels: 1000),
+          String(format: "colour bar %.3f, route bar %.3f",
+                 Flattener.colourSaturationThreshold,
+                 Flattener.pictureSaturationThreshold))
+    check("…and the split is a no-op at the shipped values, so no page moves",
+          Flattener.colourSaturationThreshold == Flattener.pictureSaturationThreshold,
+          String(format: "%.3f vs %.3f", Flattener.colourSaturationThreshold,
+                 Flattener.pictureSaturationThreshold))
+    check("…while the comparison against its own bar is strictly above",
           !Flattener.shouldKeepColour(mode: .auto,
-                                      saturation: Flattener.pictureSaturationThreshold,
+                                      saturation: Flattener.colourSaturationThreshold,
                                       pixels: 1000)
             && Flattener.shouldKeepColour(mode: .auto,
-                                          saturation: Flattener.pictureSaturationThreshold + 0.001,
+                                          saturation: Flattener.colourSaturationThreshold + 0.001,
                                           pixels: 1000))
 
     // And the half that renders as noise if it is wrong: a three-channel stream

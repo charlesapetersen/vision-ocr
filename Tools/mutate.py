@@ -195,6 +195,31 @@ CONSTANTS = [
     # catalogue wants the one the register records.
     ("Flattener.swift", "pictureInkMinimumTone", "0.03", "0.0"),
     ("Flattener.swift", "pictureSaturationThreshold", "0.06", "0.9"),
+    # C27 (c), 2026-08-26. The colour decision's own bar, split out of the route's
+    # on that day at the same value — so at shipped values NO CHECK CAN TELL THE
+    # TWO APART, and this pair of mutants is the only thing that can. The claim
+    # they measure is that each side has its own reader. RUN BOTH, or neither says
+    # anything: `python3 Tools/mutate.py --rerun --only Saturation`, and the
+    # `--rerun` is not optional, because `pictureSaturationThreshold` already has
+    # a row and a default run skips anything already logged.
+    # ⛔ **DISJOINT EXCEPT ONE, and the exception is by construction.** Measured
+    # 2026-08-26: the colour mutant is `killed` by **11** checks and the route
+    # mutant by **5**, intersecting in exactly one — *"…and the split is a no-op at
+    # the shipped values"*, which reads BOTH constants and therefore reds under
+    # either. A first draft of this comment claimed flat disjointness and the
+    # review of that diff refuted it from the check's own expression. Both sides
+    # have a killer that is NOT a mirror: the absolute `shouldKeepColour(0.07)`
+    # pair on the colour side, *"flat-colour routes to the picture path"* on the
+    # route side.
+    # ⚠️ The find string is anchored on the symbol name (`run`'s pattern is
+    # `(static (?:var|let) <name>[^=\n]*=\s*)<old>\b`), so the two 0.06 constants
+    # cannot be confused for one another — one match each, and `hits != 1` would
+    # refuse it if they could. Both were reported APPLIED in the run recorded in
+    # `BUGS.md` C27 `#### The split, SHIPPED`.
+    # ⚠️ The pre-split row for `pictureSaturationThreshold` says "1 check(s)" and
+    # is not wrong — it is stale by ADDITION. Four of today's five killers were
+    # written after it.
+    ("Flattener.swift", "colourSaturationThreshold", "0.06", "0.9"),
     # R56 / R57, the shape signals. Each mutant is the *defect*, not an arbitrary
     # perturbation, which is the rule R38's entry above sets out.
     #

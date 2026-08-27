@@ -114,7 +114,71 @@ enum Flattener {
 
     /// And any real colour means a page is not plain text — where "colour" means
     /// colour the page's own paper does not already have. See `saturation`.
+    ///
+    /// **This gates the ROUTE only, as of 2026-08-26.** It gated the colour
+    /// decision as well until then, which is C9's "the same number charged
+    /// twice" and is C27's item (c): nothing could be given back to the colour
+    /// decision without also admitting pages to the picture route and paying
+    /// bytes on every one of them (R49/R50's trade). `colourSaturationThreshold`
+    /// is that decision's own bar now, and the two are equal today.
     static let pictureSaturationThreshold = 0.06
+
+    /// …and this much before a page that is *already* on the picture route is
+    /// published in colour rather than in grey.
+    ///
+    /// **Split out of `pictureSaturationThreshold` for C27 (c) on 2026-08-26 and
+    /// deliberately equal to it, so the split changes no page's output.** What
+    /// it buys is that the two decisions can move independently. They could not
+    /// before, and that is why C27 (b) had to price the colour with a tool knob
+    /// (`score-mrc`'s `MRC_COLOUR=`) rather than with a lower bar: a bar low
+    /// enough to keep a page's colour also changed which pages were picture
+    /// pages, so the byte figure was two changes added together.
+    ///
+    /// Lowering this alone gives colour back to pages that reach
+    /// `shouldKeepColour` on their tone or their ink and are published grey
+    /// today, and it adds no page to the picture route — `wantColour` is
+    /// `!useBilevel && shouldKeepColour(…)`, and `useBilevel` is `isPicture`'s
+    /// answer, which this constant is not in.
+    ///
+    /// ⛔ **DO NOT QUOTE C27 (b)'s +93.0 KB / 1.048x AS WHAT LOWERING THIS
+    /// BUYS — no legal value of this constant selects that set.** Those 13 are
+    /// *picture-route pages published grey*, and their own mean saturation —
+    /// the statistic this bar is compared against — runs from **0.000** up to
+    /// 0.057 in `C27-MASKTERMS-2026-08-26.tsv`: four of them read 0.000–0.002,
+    /// one reads 0.000, and the comparison is a strict `>`, so a bar cannot
+    /// reach them at any non-negative value. (b)'s figure is what forcing the
+    /// decision costs on that set, not a price for a bar. Found by the
+    /// adversarial review of this diff, which also caught the sentence this
+    /// paragraph replaced restating a 1.048x-against-1.080x comparison the
+    /// register had already retracted twice as a selection effect.
+    ///
+    /// ⛔ **And there is a FLOOR under any useful value, which is C9 again.**
+    /// `saturation(ofRGBA:)` records black text on stocks from white to strong
+    /// ochre reading **0.000–0.008**. A bar under about 0.008 therefore
+    /// re-promotes every tone-routed cream-paper page to three channels — the
+    /// exact mechanism of the 709 MB monograph — on the pages the route bar no
+    /// longer screens for this decision. Between that floor and the pages worth
+    /// reaching the window may be empty; nothing here has measured it.
+    ///
+    /// **No ordering against the route bar is asserted, because neither
+    /// direction is unreachable.** Above it, a page whose only reason for being
+    /// on the picture route is its colour is published in grey — reachable, and
+    /// a bad idea: it pays the picture route's bytes for colour it then discards,
+    /// which is C9's shape reversed. Below it, a page routed by tone or ink keeps
+    /// colour it does not keep today. The suite pins the equality rather than an
+    /// inequality because both are reachable.
+    ///
+    /// It does not reach the three pages of C27's ten that are 1-bit today: a
+    /// page off the picture route never asks this question, because `&&`
+    /// short-circuits on `!useBilevel`. Those want the route bar, or a statistic
+    /// other than a mean — C27 measures `sheetFrac` and `topPx` and refuses each
+    /// of them as a single bar. ⛔ The register said those three were *"(c)'s
+    /// ground"*; measured off this call site, they are not, and that sentence is
+    /// corrected in C27's `#### The byte price, MEASURED`.
+    ///
+    /// ⚠️ The value is the owner's and not a session's (R55's precedent). The
+    /// split is the structural half; nothing here proposes a number.
+    static let colourSaturationThreshold = 0.06
 
     /// A pixel this bright is paper rather than ink, for the purpose of working
     /// out what colour the paper is.
@@ -1051,9 +1115,32 @@ enum Flattener {
     /// Extracted from `flatten` so the megapixel bound can be checked without
     /// allocating the page it describes — a check that has to render 100 MP to
     /// find out is a check nobody runs.
+    ///
+    /// The bar is `colourSaturationThreshold`, this decision's own since
+    /// 2026-08-26 and equal to the route's today (C27 (c)).
+    ///
+    /// Sibling sweep (CONTRIBUTING 4b): this is the only site in **`Sources/`**
+    /// that answers the *colour* question with a saturation bar, and `isPicture`
+    /// is the only other reader of a saturation bar there at all. Outside
+    /// `Sources/`, `Tools/` reads the *answer* rather than the bar
+    /// (`score-mrc`'s `shipWantsColour`, `score-picture-codec`'s population
+    /// filter), so both follow the split by construction.
+    ///
+    /// ⛔ **The sweep's first draft claimed every reader outside `Sources/` was a
+    /// route question and that was FALSE in five places** — three prose
+    /// statements in `score-mrc` and `Tools/README.md` that gave "the constant
+    /// gates both" as `MRC_COLOUR`'s reason for existing, and two *checks* named
+    /// after a colour outcome (*"…and the threshold refuses the colour on both of
+    /// them"*, in `Tests/main.swift` and in `score-threshold-loss`'s `selfTest`)
+    /// that were comparing against the route bar. All five are corrected in the
+    /// same commit; the checks now read `colourSaturationThreshold`, which is
+    /// what their names claim. Found by the adversarial review of this diff,
+    /// which noted that the draft had named the one harmless reader in
+    /// `score-mrc` and walked past the two false statements twenty lines above
+    /// it. **Do not restate the enumeration as exhaustive.**
     static func shouldKeepColour(mode: Mode, saturation: Double, pixels: Double) -> Bool {
         guard mode == .auto else { return false }
-        guard saturation > pictureSaturationThreshold else { return false }
+        guard saturation > colourSaturationThreshold else { return false }
         return pixels <= Double(maximumColourPageMegapixels) * 1_000_000
     }
 
@@ -1381,9 +1468,18 @@ enum Flattener {
     /// saturation — 0.078 to 0.089 measured across that book, against a 0.06
     /// threshold — so every page read as "coloured" while its ink coverage
     /// (0.11) and tone fraction (0.009) both said plainly that it was text. The
-    /// same number was then charged twice, because one constant gates both
-    /// `isPicture` and `shouldKeepColour`: the page lost the 1-bit route *and*
-    /// gained two channels. 1,185 KB/page against 48 KB/page as 1-bit.
+    /// same number was then charged twice, because **one constant gated both
+    /// `isPicture` and `shouldKeepColour` until 2026-08-26**: the page lost the
+    /// 1-bit route *and* gained two channels. 1,185 KB/page against 48 KB/page
+    /// as 1-bit. C27 (c) split the two — `colourSaturationThreshold` is the
+    /// colour half — and **the split does not undo this failure**: those pages
+    /// read 0.078–0.089, so they cleared *both* bars, and a separate colour bar
+    /// at the same value promotes them identically. (Strictly, the second half
+    /// is the colour bar's now rather than the route's; what is true of that book
+    /// is that both bars read the same statistic and the page cleared it.) What
+    /// the split changes is that the colour bar can be lowered without the route
+    /// following it — and `colourSaturationThreshold`'s own comment records that
+    /// lowering it far enough puts this failure back.
     ///
     /// Moving the threshold cannot fix it. Over the corpus the wrongly-promoted
     /// text pages span 0.061–0.113 and the genuinely coloured ones span
@@ -1405,8 +1501,13 @@ enum Flattener {
     /// so lies between the two chromaticities rather than at the neutral end.
     /// Measured on a sweep of stocks from white through cream, tan, manila and
     /// legal-pad yellow to a strong ochre, all with black text: **0.000 to
-    /// 0.008**, against a threshold of 0.06. The correction does not weaken as
-    /// the tint gets stronger, which was the thing worth checking.
+    /// 0.008**, against a threshold of 0.06 — **both** of them since 2026-08-26,
+    /// `pictureSaturationThreshold` and `colourSaturationThreshold`. The
+    /// correction does not weaken as the tint gets stronger, which was the thing
+    /// worth checking. ⚠️ This range is also the FLOOR under any future value of
+    /// the colour bar: at 0.008 or below it re-promotes every one of these pages,
+    /// which is what `colourSaturationThreshold`'s own comment says and where it
+    /// got the number.
     static func saturation(ofRGBA buffer: [UInt8], width: Int, height: Int) -> Double {
         let pixels = width * height
         guard pixels > 0, buffer.count >= pixels * 4 else { return 0 }
@@ -1461,7 +1562,10 @@ enum Flattener {
     /// `shouldKeepColour`'s own strict comparison against the mean.
     ///
     /// **C27 is the whole reason this exists, and no shipped decision reads it.**
-    /// The route and the colour decision both read the mean, and reaching 0.06
+    /// The route and the colour decision both read the mean — two constants
+    /// since 2026-08-26 (C27 (c)), both of them means, so the split changes
+    /// nothing about this paragraph, and 0.06 is still both their values — and
+    /// reaching 0.06
     /// there takes something like 6% of the sheet in saturated ink (C27 reasoned
     /// "roughly 8%" before this column existed; measured on ten real pages, `sat`
     /// and this fraction at a 0.15 floor differ by 0.69x-1.30x, which puts it

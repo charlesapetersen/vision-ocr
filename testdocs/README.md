@@ -52,7 +52,9 @@ it exercises that routing three ways at once — measured, on its sampled pages:
 | 2 | 0.276 | 0.192 | **0.178** | picture, **kept in colour** |
 | 6 | 0.094 | **0.164** | 0.043 | picture, greyscale |
 
-The red ink clears `pictureSaturationThreshold` (0.06) **on p2 and not on p6** — read the `sat`
+The red ink clears `pictureSaturationThreshold` (0.06) **on p2 and not on p6** — and since C27 (c)
+split the constants on 2026-08-26, whether it is KEPT is `colourSaturationThreshold` (also 0.06),
+so the table is unchanged and the two halves of `routed` now answer to different names — read the `sat`
 column above, not this sentence, which said "the red ink alone clears" it as though that were a
 property of the document until `C27` measured the consequence. The scan's own
 resolution — 111 DPI, where type is mostly anti-aliased edge — clears

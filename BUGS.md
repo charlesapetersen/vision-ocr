@@ -9,6 +9,17 @@ Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 **Four open: `C27`, `C28`, `C29` and `C30` — and TWO of them are `HALF FIXED`: `C28` as of 2026-08-22, its
 shape term WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were
 measured, and `C29` as of 2026-08-25, its born-digital page now COPIED THROUGH instead of rasterised.**
+✅ **`C27` HAS NO BOUNDED WORK LEFT AS OF 2026-08-26 — (c) SHIPPED, and its queue box is `[hold] needs:
+owner`** (`#### The split, SHIPPED`). `Flattener.colourSaturationThreshold` is the colour decision's own
+bar, 0.06, **equal to `pictureSaturationThreshold` so no page's output moves**; the two decisions can move
+independently for the first time. ⛔ **No failing test is possible for a no-op split and that is said in
+place**: the evidence is a mutant PAIR whose kill sets are **5 and 11 checks intersecting in exactly one**
+— the equality check, which reads both constants. ⛔ **The finding worth more than the split: (b)'s
++93.0 KB / 1.048x is NOT a price for this bar** — four of those 13 pages read a mean saturation of
+0.000–0.002, one reads 0.000 against a strict `>`, so no legal value reaches them — **and there is a floor
+of ~0.008 under any useful value**, below which every cream-paper text page is re-promoted to three
+channels (the 709 MB monograph's mechanism). The window between may be empty and is unmeasured. The entry
+is still OPEN because the pamphlet still loses its red; what remains is the owner's number.
 ✅ **`C29`'s routing half (A) SHIPPED 2026-08-25** — `#### (A) SHIPPED`. A third `RebuiltPage.Content` case
 carrying no URL, a `passThrough: Set<Int>` on `flatten`, and `makeSearchablePDF` asking
 `Flattener.digitalTextPages` **before** the rebuild instead of after it: the fixture's cover page comes out
@@ -4990,7 +5001,7 @@ observation that every word on every page survived stands untouched and untested
 2. **The 73 sampled pages in 22 documents still shrunk at 0.045**, and the 32.4% of the band's byte
    cost spent on two pages a reader cannot tell apart: both are `C28`, which is OPEN.
 
-### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN
+### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN (all three bounded items are DONE as of 2026-08-26 — (a) the mask terms, (b) the byte price, (c) the constant SPLIT — and what remains is the colour bar's VALUE, which is the owner's)
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct
 mechanism, distinct constant, distinct harm — fixing either one does not address the other.)*
 
@@ -5838,8 +5849,13 @@ appending buys is that a reader can still line the columns up.
 file, itself 50 of `SATFRAC-2026-08-19.tsv`'s 441, itself a sample of 16,987 — and no stratified estimate
 was run. One Photo detail setting (Balanced). The price is the *route's* colour, not a bar: it says what
 keeping the colour costs on a page already on the picture route, and says nothing about what admitting a
-new page to that route costs, which is (c). And the three 1-bit pages of the ten are exactly the pages
-(c) is about, so (b) and (c) do not cover the ten between them until (c) runs.
+new page to that route costs, which is (c). ⛔ **AND THIS PARAGRAPH'S NEXT SENTENCE WAS WRONG — corrected
+2026-08-26 when (c) shipped.** It said *"the three 1-bit pages of the ten are exactly the pages (c) is
+about, so (b) and (c) do not cover the ten between them until (c) runs"*. (c) turned out to be a split of
+the constant, and a split cannot reach those three at any value: `wantColour` is
+`!useBilevel && shouldKeepColour(…)`, `&&` short-circuits, and `useBilevel` is `isPicture`'s answer — so a
+1-bit page never asks the colour bar. Those three want the ROUTE bar or a statistic other than a mean, and
+after (c) they are still uncovered. See `#### The split, SHIPPED`.
 
 ⛔ **SEVEN CORRECTIONS FROM THE ADVERSARIAL REVIEW OF THIS DIFF, and the first two change what may be
 quoted.**
@@ -6071,7 +6087,115 @@ the review raised and this section deliberately leaves:
   Closing it wants a fixture document reaching the `indices` line; not done here, and named rather than
   implied.
 
-C27 stays **OPEN** on item (c), which is untouched.
+#### The split, SHIPPED — 2026-08-26
+
+**Item (c), the last thing under this entry a session could do, and it is a NO-OP by construction.**
+`Flattener.colourSaturationThreshold` exists, `shouldKeepColour` reads it instead of
+`pictureSaturationThreshold`, and it is **0.06 — the same value — so no page's output moves.** What the
+split buys is that the two decisions can now move independently, which is the thing this entry has been
+unable to do since it was opened: `pictureSaturationThreshold` gates the ROUTE, so every attempt to ask
+"what would keeping this colour cost" by moving it was two changes added together, and (b) had to force
+the decision with a tool knob (`score-mrc`'s `MRC_COLOUR=`) instead. Suite **1,344 → 1,346** (one mirror
+check removed, three added).
+
+**⛔ NO FAILING TEST IS POSSIBLE FOR THIS CHANGE, AND THAT IS THE HONEST STATEMENT RATHER THAN AN
+EXCUSE.** At equal values a build that undoes the split — `shouldKeepColour` pointed back at the route
+bar — behaves identically, so no check can separate them and CONTRIBUTING's failing-test-first rule has
+nothing to bite on. What CAN separate them is a mutant, and that is the evidence this section rests on.
+
+**The evidence: a mutant PAIR, run 2026-08-26 through `python3 Tools/mutate.py --rerun --only
+Saturation`.** Catalogue 103 → **104**; baseline **1,346 checks, green**; `705 s` end to end.
+
+| mutant | verdict | cost | objecting checks |
+| --- | --- | --- | --- |
+| `const/pictureSaturationThreshold` 0.06 → 0.9 | `killed` | 275 s | **5** |
+| `const/colourSaturationThreshold` 0.06 → 0.9 | `killed` | 277 s | **11** |
+
+⛔ **The kill sets intersect in EXACTLY ONE check, and it is the one that reads both constants** — *"…and
+the split is a no-op at the shipped values, so no page moves"*. Everything else is disjoint: the route
+mutant reds *flat-colour routes to the picture path*, *the fixture is genuinely coloured*, *…while a page
+with real colour on it is still detected* and *a full-bleed tinted plate keeps its colour*; the colour
+mutant reds *the colour bar is read at its own value, not at the route's*, *a colourful page inside the
+memory bound keeps its colour*, *Automatic keeps a colour page in colour*, *the colour page comes back
+marked as colour*, *…and the merged page is still coloured when drawn*, four `at NNN px wide the rebuild
+still looks like the original` PSNR rows and *Automatic's blurb mentions colour*. **Green under the route
+mutant and red under the colour mutant is possible only if `shouldKeepColour` reads the colour
+constant** — that implication is the whole content of the split. ✅ **And neither side rests on a mirror**:
+the route mutant's *flat-colour routes to the picture path* asserts a route at absolute signal values,
+and the colour side's killer is the absolute pair.
+
+⚠️ **The prediction was written before the run and was incomplete in both directions**, recorded rather
+than tidied: 4 of the route mutant's 5 were named (*flat-colour routes to the picture path* was missed)
+and 5 of the colour mutant's 11 (the six PSNR/blurb/merge consequences of a colour page being published
+grey were not foreseen). The shared-equality exception and the mirror pair's greenness were both
+predicted correctly. ⚠️ The pre-split log row for `const/pictureSaturationThreshold` reads *"1
+check(s)"*; that is **stale by addition**, not wrong — four of today's five killers were written after it.
+
+**The three checks that replaced one mirror, and which of them can fail.** The check that used to sit at
+this seam — *"the threshold is the same one that routes the page here"* — read
+`pictureSaturationThreshold` on BOTH sides of its comparison and was therefore a mirror: it could not
+fail at any value of the constant. Three replace it, and the suite says in place which is which:
+
+* the **ABSOLUTE** pair (`shouldKeepColour(0.06)` false, `shouldKeepColour(0.07)` true) is the evidence.
+  ⚠️ Two limits, from the review of this diff: it has a **blind window** — any effective bar in
+  [0.06, 0.07) passes, granularity 0.01 against the mirror's 0.001 — and **on its own it does not say
+  which constant is read**, because at equal values the reverted implementation passes it too. The weight
+  is on the mutant pair.
+* the **EQUALITY** check is the no-op guarantee — what says this commit changed no page — and it reads
+  both constants, so it is a shared killer by construction and **not** evidence of the split.
+* the **MIRROR** pair is kept and **labelled as unable to fail at the saturation bar**: `!(c > c)` and
+  `c + 0.001 > c` are tautologies at every `c`. (It can still red under a `mode` or
+  `maximumColourPageMegapixels` mutant, which is the review's scoping correction.)
+
+⚠️ **All three are checks to EDIT on the day the owner moves the bar, not the equality alone** — a
+first draft said the mirror would then be "the only thing that reds if `shouldKeepColour` is pointed back
+at the route bar", and the review refuted it from the expressions: with the literals moved to straddle a
+new bar, the absolute pair reds under that reversion too.
+
+**⛔ THE FINDING WORTH MORE THAN THE SPLIT: (b)'s +93.0 KB / 1.048x IS NOT A PRICE FOR THIS BAR, AND NO
+LEGAL VALUE OF IT SELECTS THAT SET.** Those 13 are *picture-route pages published grey*, and their own
+mean saturation — the statistic this bar is compared against — runs **0.000 to 0.057** in
+`C27-MASKTERMS-2026-08-26.tsv`: four read 0.000–0.002, `Black_0000` p2 reads **0.000**, and the
+comparison is a strict `>`, so no non-negative bar reaches them. (b) measured what *forcing* the decision
+costs on that set; it is not a forecast for a bar, and a first draft of this section's own code comment
+quoted it as one — restating, in a comment written after the correction landed, the
+1.048x-against-1.080x comparison this entry had already retracted twice as a selection effect.
+⛔ **And there is a FLOOR under any useful value, which is C9 again**: `Flattener.saturation(ofRGBA:)`
+records black text on stocks from white to strong ochre reading **0.000–0.008**, so a colour bar at or
+under ~0.008 re-promotes every tone-routed cream-paper page to three channels — the 709 MB monograph's
+exact mechanism, on the pages the route bar no longer screens for this decision. Between that floor and
+the pages worth reaching **the window may be empty, and nothing here has measured it.** Both figures are
+now in `colourSaturationThreshold`'s own doc comment, because that comment is what an owner picking the
+value would read.
+
+**⛔ Five statements outside `Sources/` were made false by the split, and the sweep's first draft found
+the one harmless reader in the same file and walked past two of them.** Three prose statements gave *"the
+constant cannot be moved to ask this — `pictureSaturationThreshold` gates the ROUTE as well as the
+colour"* as `MRC_COLOUR`'s reason for existing (`Tools/score-mrc.swift`'s usage block and its `ColourArm`
+doc comment, and `Tools/README.md`'s table cell) — the same shape as the three-places finding the
+previous C27 commit's review recorded, **in the same two files**. And two *checks* named after a colour
+outcome were comparing against the route bar: *"…and the threshold refuses the colour on both of them"*
+in `Tests/main.swift` and its CONTRIBUTING §2 twin in `score-threshold-loss`'s `selfTest()`. "Published in
+grey" is `shouldKeepColour`'s answer, and `isPicture` has two other signals, so being under the route bar
+never gave it. Both checks read `colourSaturationThreshold` now — no value moves, but the day the colour
+bar drops to 0.02 they go red instead of staying green under a name that has become a lie. All five are
+corrected in this commit.
+
+⛔ **And this entry itself was wrong about (c)'s scope.** `#### The byte price, MEASURED` said the three
+pages of the ten that are 1-bit today *"are exactly (c)'s ground"*. They are not: `wantColour` is
+`!useBilevel && shouldKeepColour(…)` (`Flattener.swift`), `&&` short-circuits, and `useBilevel` is
+`isPicture`'s answer — so a 1-bit page never asks this bar and the split cannot reach it at any value.
+Those three want the ROUTE bar or a different statistic. Corrected here rather than left standing.
+
+**⚠️ What this does NOT do.** It proposes no number — the value is the owner's (R55's precedent). It buys
+no fidelity today: the pamphlet still keeps its red on 1 page of 10, and nothing in the app behaves
+differently. It measures nothing about the corpus. And it does not make (a)'s refused terms usable — the
+conjunction that separates all ten is still post-hoc and still rejects `AI 2027` p24.
+
+C27 stays **OPEN**, and what is left is a number rather than a change: (a), (b) and (c) are all done, so
+the only remaining step is choosing the colour bar's value — which this entry has said twice is not a
+session's to move, and which the floor and the unreachable-set findings above make a harder decision than
+it looked. The queue box is `[hold] needs: owner` from 2026-08-26.
 
 ### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — HALF FIXED (the shape term is WIRED 2026-08-22 and rescues 13 of the 16 measured losses; three hand-made marks remain, one of them unreachable from this seam)
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move

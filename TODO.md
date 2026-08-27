@@ -242,7 +242,9 @@ It earns its place. Measured on its sampled pages, a text pamphlet routes to the
 | 6 | 0.094 | **0.164** | 0.043 | picture, greyscale |
 
 The red ink clears `pictureSaturationThreshold` **on p2 only** — the table's own second row is
-0.043, below the 0.06 bar, and `BUGS.md` C27 is what that costs. The scan's 111 DPI, where
+0.043, below the 0.06 bar, and `BUGS.md` C27 is what that costs. ⚠️ Since C27 (c) split the
+constants on 2026-08-26 the `routed` column's *colour* half is `colourSaturationThreshold`'s
+answer and the *route* half is this one's; both are 0.06, so the table is unchanged. The scan's 111 DPI, where
 type is mostly anti-aliased edge, clears `pictureToneThreshold`. `score-corpus`:
 `OK 3p start=99% end=99% off=-0.10 overlap=0/21 words=100%`, which moves no median
 and no worst case. **The corpus is 233 documents; every byte and character total

@@ -2492,10 +2492,11 @@ happens.**
       ~~(b) **the byte price** of keeping colour on those pages, unpriced and the reason this cannot
       close on the harm alone (R49/R50's trade)~~ — ✅ **(b) IS DONE 2026-08-26; see the second block
       below and `BUGS.md` C27 `#### The byte price, MEASURED`. Do not re-run it.**
-      (c) **split the one number** that gates both
-      `isPicture` and `shouldKeepColour`, because nothing can be given back to the colour decision
-      while a change to it also moves the route (C9). The constant is still not a
-      session's to move.
+      ~~(c) **split the one number** that gates both
+      `isPicture` and `shouldKeepColour`~~ — ✅ **(c) IS DONE 2026-08-26, so ALL THREE bounded items are
+      discharged and THIS BOX IS NOW `[hold] needs: owner` — the only remaining step is choosing the colour
+      bar's VALUE, which this box has said twice is not a session's to move.** See the last block below and
+      `BUGS.md` C27 `#### The split, SHIPPED`. Do not re-do it.
       ⚠️ **Instrument fact from the sweep, before re-measuring any single page:** `saturation(of:)`
       is **not** a pure function of the page — read cold it differs from read after a full-resolution
       render of the same page (`1954 - Why` p7: satFrac 0.02831 warm, 0.03033 cold, +7.1%; five of
@@ -2591,6 +2592,28 @@ happens.**
       PRINTS the column. (ii) One shared refusal message meant a sabotage swapping the repeat guard for
       `numbers.allSatisfy { $0 >= 2 }` left **all eight fault rows and all twelve table rows green** — a
       check credited with more than it asserts; the three-case parse reds three of them now.
+      ✅ **(c) SHIPPED 2026-08-26 AND THIS BOX IS `[hold] needs: owner` FROM THAT DATE — nothing bounded is
+      left under C27** (`BUGS.md` C27 `#### The split, SHIPPED`). `Flattener.colourSaturationThreshold` is
+      the colour decision's own bar and `shouldKeepColour` reads it; it is **0.06, equal to
+      `pictureSaturationThreshold`, so no page's output moves.** Suite **1,344 → 1,346** (one mirror check
+      out, three in). ⛔ **No failing test is possible for a no-op split, said in place rather than papered
+      over** — the evidence is a **mutant pair**, catalogue 103 → **104**, `--rerun --only Saturation`,
+      baseline **1,346 green**, 705 s: both `killed`, by **5** checks (route) and **11** (colour),
+      **intersecting in exactly ONE**, the equality check that reads both constants. ✅ Neither side rests on
+      a mirror. ⛔ **THE FINDING WORTH MORE THAN THE SPLIT, and it is what the owner's decision now turns on:
+      (b)'s +93.0 KB / 1.048x is NOT a price for this bar and no legal value selects that set** — four of
+      those 13 pages read a mean saturation of 0.000–0.002 and one reads **0.000** against a strict `>` —
+      ⛔ **and there is a FLOOR of ~0.008** (`saturation(ofRGBA:)`'s own white-to-ochre range), under which
+      every tone-routed cream-paper page is re-promoted to three channels: the 709 MB monograph's mechanism.
+      **The window between may be EMPTY and nothing has measured it**, so "lower the colour bar" is not yet
+      a shippable answer. ⛔ Five statements outside `Sources/` were made false by the split and are
+      corrected in the same commit (three prose copies of *"the constant cannot be moved to ask this"* in
+      `score-mrc` and `Tools/README.md` — the same three-places shape as (b)'s own review found, in the same
+      two files — plus two *checks* named after a colour outcome that compared against the route bar). ⛔ And
+      the register was wrong about (c)'s scope: the three 1-bit pages of the ten were called *"exactly (c)'s
+      ground"* and a split cannot reach them at any value, because `wantColour` is
+      `!useBilevel && shouldKeepColour(…)`. [hold] needs: owner — the colour bar's VALUE, and it is a
+      two-sided trade with a measured floor: read `#### The split, SHIPPED` before picking a number.
       (origin: BUGS.md C27)
 - [x] **depth-cap** — DONE 2026-08-23, as the decision below prescribes: `< 3` KEPT, both comments
       rewritten to state the frame-of-reference difference and to point at each other, and **nine checks**
@@ -2956,7 +2979,10 @@ happens.**
       the ids from `python3 Tools/mutate.py --list` minus the distinct first column of
       `Tools/mutation-log.tsv`. That derivation gave **25** on 2026-08-25 against a catalogue of 103 and 78
       rows, and ⚠️ one logged id (`logic/R39-auto-vs-engine`) is not in the catalogue at all, so the two
-      sets are not nested. ⛔ **This is NOT the `mutants` item above** — that one
+      sets are not nested. ⚠️ **The catalogue is 104 from 2026-08-26 (C27 (c)'s
+      `const/colourSaturationThreshold`) and the 25 does NOT move**, because that mutant was run in the
+      commit that added it — which is what this entry is for. Re-derive rather than adjust.
+      ⛔ **This is NOT the `mutants` item above** — that one
       scopes itself to the *survivor* list twice over (*"work the survivors"*, *"the live survivor list"*),
       which is the **2** `SURVIVED` rows, and a never-applied entry is a different thing: a survivor is a
       measured gap, and a never-run entry is an unopened envelope. Four consecutive session logs flagged

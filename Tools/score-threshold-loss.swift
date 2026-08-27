@@ -108,8 +108,11 @@
 //
 // ⚠️ **This tool is C27's population instrument as well as C26's**, and the two
 // questions read different columns. C26 is about the 1-bit route erasing a mark;
-// C27 is about `pictureSaturationThreshold` being a bar on the page's MEAN
-// saturation, which spot colour cannot reach — measured, `1954 - Why.pdf` keeps its
+// C27 is about a bar on the page's MEAN saturation, which spot colour cannot reach.
+// ⚠️ **Which bar depends on the question, since C27 (c) split them 2026-08-26:** the
+// red being DISCARDED is `colourSaturationThreshold`, the page being off the picture
+// route at all is `pictureSaturationThreshold`, and both are 0.06 today, so every
+// figure below reads the same either way. Measured, `1954 - Why.pdf` keeps its
 // red on 1 page of 10, and its discarded pages score `sat` 0.039-0.043 against 0.06
 // while 3-4% of each sheet is saturated red ink. `sat` is that mean; `satFrac` is the
 // share of the page above `satFloor`. The entry's own point is that no value of the
@@ -378,8 +381,10 @@ func maskTerms(ofRGBA buffer: [UInt8], width: Int, height: Int, above floor: Dou
 ///
 /// **`satFrac` and `satFloor` are C27's**, and they are the only columns here that say
 /// anything about *colour* rather than about the 1-bit route. `sat` is
-/// `Flattener.saturation`'s mean over the page, the number `pictureSaturationThreshold`
-/// (0.06) is compared against; reaching it takes something like 6% of the sheet in
+/// `Flattener.saturation`'s mean over the page, the number BOTH saturation bars
+/// (`pictureSaturationThreshold` for the route and, since 2026-08-26,
+/// `colourSaturationThreshold` for the colour — 0.06 each) are compared against;
+/// reaching it takes something like 6% of the sheet in
 /// saturated ink (C27 reasoned "roughly 8%" before this column existed; measured on ten
 /// real pages it is nearer 6% — `Flattener.saturatedFraction`'s doc comment has the
 /// arithmetic), so a two-ink pamphlet whose red subheads and rules come to 3-4% scores
@@ -649,8 +654,13 @@ func selfTest() -> [String] {
 
     // C27's two columns, on the pair of sheets `sat` cannot tell apart. One pixel in
     // 32 at full saturation (a red subhead on white paper) against a uniform mid-tone
-    // cast: the same mean, exactly, and both below `pictureSaturationThreshold`, so
-    // the two-ink sheet is published in grey along with the cast one. If `satFrac`
+    // cast: the same mean, exactly, and both below `colourSaturationThreshold`, so
+    // the two-ink sheet is published in grey along with the cast one. (⛔ The COLOUR
+    // bar and not the route's, corrected 2026-08-26 with C27 (c)'s split: "published
+    // in grey" is `shouldKeepColour`'s answer, and `isPicture` has two other signals,
+    // so being under the route bar does not give it. The two are equal today, so no
+    // number here moves — CONTRIBUTING §2, the same correction as the suite's copy.)
+    // If `satFrac`
     // ever stops separating them the column is measuring nothing, and a sweep of 233
     // documents taken with it would be 233 plausible rows — so this refuses to
     // measure rather than print them. Every number is exact in binary
@@ -668,8 +678,8 @@ func selfTest() -> [String] {
     let castMean = Flattener.saturation(ofRGBA: cast, width: 32, height: 32)
     expect("the mean cannot tell two ink from a cast", spotMean == castMean,
            String(format: "spot %.6f, cast %.6f", spotMean, castMean))
-    expect("…and refuses the colour on both", spotMean <= Flattener.pictureSaturationThreshold,
-           String(format: "%.5f vs %.2f", spotMean, Flattener.pictureSaturationThreshold))
+    expect("…and refuses the colour on both", spotMean <= Flattener.colourSaturationThreshold,
+           String(format: "%.5f vs %.2f", spotMean, Flattener.colourSaturationThreshold))
     let spotFrac = Flattener.saturatedFraction(ofRGBA: spot, width: 32, height: 32,
                                                above: 0.25)
     let castFrac = Flattener.saturatedFraction(ofRGBA: cast, width: 32, height: 32,

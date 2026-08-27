@@ -1165,7 +1165,9 @@ magazine scan reads 2.0%** — a page with no spot colour on it reads ~0.5% at a
 0.25, which is why `p1` (0.1% red by hand) ranks *below* `p3` (none), so marks at half a percent of a
 sheet are outside what the column can see and the floor is a printed parameter rather than a constant;
 and ⛔ **the mean gates the ROUTE as well as the colour, so two of this document's 1-bit pages hold as
-much saturated ink as its picture pages and a third nearly does** — C9's "the same number charged twice", which
+much saturated ink as its picture pages and a third nearly does** (⚠️ still true after C27 (c)'s split:
+that is TWO constants from 2026-08-26 but **both of them means**, so replacing the statistic is still one
+change in two places) — C9's "the same number charged twice", which
 makes "a fraction instead of a mean" cost bytes on pages nobody was complaining about. ⛔ **The
 441-page corpus sweep then RAN, 2026-08-19, and it is `SATFRAC-2026-08-19.tsv`** — 233 documents,
 12.2 min of measured time in one session (so the sizing guess held: no detached driver needed), every
@@ -1224,7 +1226,9 @@ so that is the terms classifying them and not a reading.
 ALREADY keeps costs on 11 pages of the same file** (2,530.9 → 2,344.2 KB forced grey). Against R49/R50's
 trade that is the cheap direction. ⛔ **The knob and not a lower bar, because
 `pictureSaturationThreshold` gates the ROUTE as well as the colour (C9), so a bar low enough to keep a
-page's colour is two changes added together.** ⛔ **THE FINDING WORTH MORE THAN THE PRICE IS ABOUT C28:
+page's colour is two changes added together.** ⚠️ **That reason is historical as of 2026-08-26** — C27 (c)
+split the constants, so `colourSaturationThreshold` now moves the colour with the route held fixed; the
+knob's remaining value is a page whose own mean no legal bar reaches, and both arms from one binary. ⛔ **THE FINDING WORTH MORE THAN THE PRICE IS ABOUT C28:
 the colour decision changes the word boxes Vision returns on 21 of 30 pages and flips
 `pageIsAllText()`'s verdict on 6 of them**, moving the background between /8 and /2 — the three
 grey→colour flips read 113.7 → 495.7 KB (`4.360x`) and `Atkinson_1939` p2 goes the *other* way, 287.2 →
@@ -1274,8 +1278,32 @@ the twelve new checks and eight new fault rows credited with more than they asse
 message meant a sabotage swapping the repeat guard for `numbers.allSatisfy { $0 >= 2 }` left every one of
 them green. The parse returns three cases now (`ok`/`malformed`/`repeated(Int)`), so that sabotage reds
 three rows where it reded none. ⚠️ No number in `C27-COLOURBYTES-2026-08-26.tsv` moves and nothing in
-`Sources/` moved. What remains under C27 is
-separating the one number that gates both `isPicture` and `shouldKeepColour`. ⚠️ And one instrument fact from that run:
+`Sources/` moved.
+✅ **THE ONE NUMBER IS SPLIT AS OF 2026-08-26 AND C27 HAS NO BOUNDED WORK LEFT — (c) SHIPPED, queue box now
+`[hold] needs: owner`** (`BUGS.md` C27 `#### The split, SHIPPED`). `Flattener.colourSaturationThreshold` is
+the colour decision's own bar and `shouldKeepColour` reads it; it is **0.06, equal to
+`pictureSaturationThreshold`, so no page's output moves** — the split is structural and proposes no number.
+⛔ **NO FAILING TEST IS POSSIBLE FOR A NO-OP SPLIT and that is said in place rather than papered over**: at
+equal values a build pointed back at the route bar behaves identically. The evidence is a **mutant PAIR**,
+`--rerun --only Saturation`, catalogue 103 → **104**, baseline **1,346 green**, 705 s: both `killed`, by
+**5** checks (route, 275 s) and **11** (colour, 277 s), **intersecting in exactly ONE** — the equality
+check, which reads both constants and is a shared killer by construction. ✅ Neither side rests on a mirror
+(*flat-colour routes to the picture path* on the route side, the absolute `shouldKeepColour(0.07)` pair on
+the colour side), and the third, MIRROR check is kept and **labelled unable to fail at this bar**.
+⛔ **THE FINDING WORTH MORE THAN THE SPLIT: (b)'s +93.0 KB / 1.048x IS NOT A PRICE FOR THIS BAR AND NO
+LEGAL VALUE SELECTS THAT SET** — those 13 are picture-route pages published grey, four read a mean
+saturation of 0.000–0.002 and `Black_0000` p2 reads **0.000** against a strict `>` — ⛔ **and there is a
+FLOOR of ~0.008**, `saturation(ofRGBA:)`'s own white-to-ochre range, under which every tone-routed
+cream-paper page is re-promoted to three channels: the 709 MB monograph's mechanism. **The window between
+may be empty and nothing has measured it.** ⛔ **Five statements outside `Sources/` were made false by the
+split and the sweep's first draft named the one harmless reader in the same file** — three prose copies of
+*"the constant cannot be moved to ask this"* (`score-mrc` twice, `Tools/README.md`), the same
+three-places shape as the previous C27 commit's review found **in the same two files**, plus two *checks*
+named after a colour outcome that compared against the route bar (`Tests/main.swift` and
+`score-threshold-loss`'s `selfTest` twin). ⛔ **And the entry was wrong about (c)'s scope**: the three
+1-bit pages of the ten were called *"exactly (c)'s ground"* and a split cannot reach them at any value,
+because `wantColour` is `!useBilevel && shouldKeepColour(…)` and `&&` short-circuits. ⚠️ It buys no
+fidelity today and measures nothing about the corpus. ⚠️ And one instrument fact from that run:
 `saturation(of:)` is **not a pure function of the page** — read cold it differs from read after a
 full-resolution render of the same page (`1954 - Why` p7: 0.02831 vs 0.03033), production renders grey
 first, and so must anything that wants to reproduce these numbers.
@@ -1625,7 +1653,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,344 checks measured 2026-08-26 (this commit's own mutate.py baseline); real OCR.
+./run_tests.sh        # 1,346 checks measured 2026-08-26 (this commit's own mutate.py baseline); real OCR.
                       # ~285-300 s measured 2026-08-26 over seven clean full-suite rows in
                       # $STATE/suite-timings.tsv — NOT the ~225 s this line carried, which is 2026-08-24
                       # at 1,247 checks. Do not budget off the 292/289 s mutant rows either: those build
@@ -1635,7 +1663,8 @@ git config core.hooksPath .githooks
                       # (1,336 -> 1,343: gutter-floor's narrow-gutter fixture added seven checks, and
                       #  the review of that diff caught this line as the third instance of the warning
                       #  above rather than a fourth. 1,343 -> 1,344: bare-form-reach's pageIsAnImage
-                      #  pin, one check, C24's coverage boundary closed.)
+                      #  pin, one check, C24's coverage boundary closed. 1,344 -> 1,346: C27 (c)'s split
+                      #  removed ONE mirror check and added THREE, so the net is +2 over a -1/+3.)
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->

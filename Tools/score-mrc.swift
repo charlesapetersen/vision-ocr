@@ -104,11 +104,18 @@
 //                     can pin which guard spoke and not merely which knob.
 //   MRC_COLOUR=colour force the colour decision on every picture page instead of
 //         |grey       asking `shouldKeepColour`. **C27 (b): the byte price of keeping
-//                     spot colour.** The constant cannot be moved to ask this —
-//                     `pictureSaturationThreshold` gates the ROUTE as well as the
-//                     colour, so a lower bar changes which pages are picture pages at
-//                     the same time, and the byte figure would be two changes added
-//                     together. Refused (exit 2) on any other value.
+//                     spot colour.** ⛔ **Its reason for existing CHANGED on
+//                     2026-08-26 and this block used to state the old one as
+//                     present tense.** Until C27 (c) split the constants, no bar
+//                     could be moved to ask this — `pictureSaturationThreshold`
+//                     gated the ROUTE as well as the colour, so a lower bar moved
+//                     which pages were picture pages at the same time and the byte
+//                     figure would have been two changes added together. Since the
+//                     split, `colourSaturationThreshold` CAN be moved to ask it.
+//                     What the knob still buys is (i) forcing the decision on a
+//                     page whose own saturation no legal bar reaches — four of
+//                     (b)'s 13 read a mean of 0.000-0.002 — and (ii) both arms in
+//                     one binary. Refused (exit 2) on any other value.
 //
 //                     ⛔ **It is NOT "the colour decision and nothing else", and this
 //                     tool's own run measured that.** A forced arm hands Vision a
@@ -215,12 +222,20 @@ let dumpDirectory = environment["MRC_DUMP"]
 ///
 /// `shipped` is `Flattener.shouldKeepColour`'s own answer, which is what every row
 /// this tool printed before 2026-08-26 was. The two forcing values exist because
-/// C27's open question is what the *other* answer costs, and the constant cannot be
-/// moved to ask it: `pictureSaturationThreshold` gates the ROUTE as well as the
-/// colour (C9's "the same number charged twice"), so a bar low enough to keep a
-/// page's colour also changes which pages are picture pages, and a byte figure taken
-/// that way would be two changes added together. Forcing the decision here holds the
-/// ROUTE fixed, which is the whole benefit over a lower bar.
+/// C27's open question is what the *other* answer costs, and until 2026-08-26 no
+/// constant could be moved to ask it: `pictureSaturationThreshold` gated the ROUTE as
+/// well as the colour (C9's "the same number charged twice"), so a bar low enough to
+/// keep a page's colour also changed which pages were picture pages, and a byte figure
+/// taken that way would have been two changes added together. Forcing the decision
+/// here holds the ROUTE fixed, which was the whole benefit over a lower bar.
+///
+/// ⛔ **C27 (c) SPLIT THE CONSTANTS ON 2026-08-26, so that reason is now historical
+/// and this comment stated it as present tense until then** — the third statement of
+/// its kind in this file, after the two the previous C27 commit's review corrected.
+/// `Flattener.colourSaturationThreshold` can be moved to ask the question with the
+/// route held fixed. What the knob still buys: a page whose own mean saturation no
+/// legal bar reaches (four of (b)'s 13 read 0.000-0.002, one reads 0.000 against a
+/// strict `>`), and both arms from one binary in one run.
 ///
 /// ⛔ **What it does NOT do is "change the colour and nothing else about the page" —
 /// this file said exactly that for one commit and the same commit's own run measured it
