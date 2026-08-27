@@ -1787,11 +1787,16 @@ happens.**
         that case drives only its exit-3 PATH refusals); `score-text-route`'s dump failure is exit **4**
         (`dumpExitCode`, `:424-427`; the file has **no `exit(7)`** and 5 is a self-test failure); and
         `score-threshold-loss` has exit 6 for `--dump wrote no image` (`:731`) but **no validation of
-        `--dump` at all** (`:601-604`). ⛔ **The fourth is not an unexercised exit but a MISSING one, and it
-        is this item's own headline live in a sibling**: `score-shape-term` prints `⚠️ dump missing …`
-        (`:1476`) and exits **0** on a failed `SHAPEDUMP` write — a loud diagnostic under a green status, in
-        the tool every published C28 figure came from. Recorded, not fixed: it is C28's instrument and wants
-        its own failing check. Each needs its own build and its own fixture, so each is its own item; two of
+        `--dump` at all** (`:601-604`). ⛔ **The fourth was not an unexercised exit but a MISSING one, and it
+        was this item's own headline live in a sibling**: `score-shape-term` printed `⚠️ dump missing …` and
+        exited **0** on a failed `SHAPEDUMP` write — a loud diagnostic under a green status, in the tool
+        every published C28 figure came from. ✅ **FIXED 2026-08-26 by `shapedump-exit` (exit 4, three
+        `fault-inject.sh shape_dump` rows, watched failing at `2 passed, 1 failed`), so this list of four is
+        a list of THREE and all three are unexercised exits rather than missing ones.** ⚠️ This paragraph
+        still read as live, present tense, with a `:1476` the fix had moved, until that commit swept it: it
+        was the FOURTH copy of the same sentence, after `CLAUDE.md`'s, the register header's and the entry's
+        own — the "count files, not occurrences" miscount this register keeps recording. Each of the
+        remaining three needs its own build and its own fixture, so each is its own item; two of
         the five image writers are already the queue's `silent-image-writes`.
         ⛔ **AND THE ADVERSARIAL REVIEW OF THIS DIFF REMOVED TWO ASSERTIONS THAT COULD NOT FAIL — from the
         case whose whole point is that assertions get watched.** The band row's `produced no bands on a`
@@ -3465,9 +3470,14 @@ happens.**
         file that would not open, or one holding no born-digital page — named on stderr, never silently
         skipped), exit 5 (the self-test, which runs on every invocation), exit 6 (a clause label breaking a
         law its own printed columns imply). CONTRIBUTING §4c is the reason and `score-text-voids`' own
-        `text_voids` case is the model — it would be the **FIFTH** Swift tool of the thirty-two whose own
-        refusals any case exercises, after `score-mrc`, `pdf-extract-pages`, `make-observations` and
-        `score-text-voids`. ⚠️ Exit 6 is the interesting one and the hardest: it needs a page on which
+        `text_voids` case is the model — it would be the **SEVENTH** Swift tool of the thirty-two whose own
+        refusals any case exercises, after `score-mrc`, `pdf-extract-pages`, `make-observations`,
+        `score-text-voids`, `score-drawn-images` and `score-shape-term`. ⚠️ **This line said FIFTH until
+        2026-08-26 and was stale twice over by then** — `drawn_census` took fifth for `score-drawn-images` in
+        `3e91dc5` and `shape_dump` took sixth for `score-shape-term` hours later — and the commit that
+        corrected it first wrote SIXTH, attributing the whole drift to itself. The count is the kind of figure
+        that goes stale in a neighbour's commit: re-derive it from `FAULTS=` and from which tool each case
+        drives as a *subject*, rather than reading it here. ⚠️ Exit 6 is the interesting one and the hardest: it needs a page on which
         `clauseOf` mislabels, which the shipped probe never does — so the case has to sabotage the tool, and
         `text_voids`' rows are the precedent for how. ⚠️ Exits 2 and 5 are cheap. A `Tools/` file pays the
         full suite, so budget one commit, and `fault-inject.sh` is in no hook, so a red row here refuses no
@@ -3486,15 +3496,69 @@ happens.**
         `spliceArguments` over a synthesized 300-page/167-passthrough set, which is pure and needs no PDF.
         The expensive step is one real end-to-end run on `Schwaller`, which is a 300-page rebuild.
         (context: BUGS.md C29 `#### The population re-measured, 2026-08-26`, last paragraph)
-- [ ] **shapedump-exit** — **`Tools/score-shape-term.swift` counts its failed dump writes, names them, and
-      then exits 0.** `dumpMissing` collects every `SHAPEDUMP` file it promised and did not write
-      (`:1457`), the summary appends `; ⚠️ dump missing …` (`:1476`), and the only exits after it are **6**
-      for `identityFailed` and **7** for `portDisagreed` — so a run whose PNGs never reached disk returns
-      success. ⛔ **This is the exact shape C30's `c30-refusals` was written about — a loud diagnostic under
-      a green exit status — living in the tool EVERY published C28 figure came from**, and its dumps are
-      what `SUBBARPIX-2026-08-22.tsv` and the C28 1:1 readings were made from. Found 2026-08-25 by the
-      sibling sweep of `c30-refusals`, recorded rather than fixed because it is C28's instrument and wants
-      its own failing check.
+- [x] **shapedump-exit** — ✅ **DONE 2026-08-26. It is exit 4 now, and the three-row
+      `fault-inject.sh shape_dump` watches it.** `BUGS.md` C28
+      `#### The instrument's own missing exit, FIXED 2026-08-26` carries the run; do not re-do it. In
+      outline: `if !dumpMissing.isEmpty { stop(4) }` placed **after** 6 and 7, so a run that also fails the
+      identity still reports the identity while the summary line names both; **4 borrowed from
+      `score-text-route`'s `INKDUMP`** rather than invented, because it is the same knob failing the same way
+      and the rows stay valid on it; and the summary clause was rewritten from `; ⚠️ dump missing <names>` to
+      `; ⛔ <n> SHAPEDUMP FILE(S) FAILED TO WRITE: <names>` — a count field it did not have, and a ⛔ because a
+      warning under a non-zero status is the same mismatch pointing the other way. **Watched failing at
+      `2 passed, 1 failed`** against the pre-fix tool, the red quoting the defect verbatim (`exit 0, wanted 4`,
+      seven files named, `SHAPEDUMP p1: 0 of 7 file(s) written`), and `3 passed, 0 failed` with the fix.
+      ⛔ **`stop(_:)` and not `exit`, and that is the review's finding rather than the item's: a top-level
+      `exit` does not run the `defer` that owns the tool's scratch directory, so exits 6 and 7 had been
+      leaking `work` — up to twelve pages of renders, and their layers and jbig2 streams under
+      `WIDENBYTES=1` — since 2026-08-22.** `score-text-route:606-620` routes its exits through a `finish()`
+      that removes `work` and says why; this tool had taken the exit code and not the cleanup. Measured with
+      a one-token variant that leaves a `shapeterm-<uuid>` behind where the shipped build leaves none.
+      ⚠️ Exits 1, 2 and 3 still leave an *empty* `work`; exit 5 predates its creation. Named, not fixed.
+      ⛔ **And the inverse row asserted NOTHING as first written — the eleventh check that could not fail in
+      this project's history, caught before landing.** `wrote`, `promised` and the directory listing all fall
+      together, so a `promised` list cut from seven entries to one reported `1 of 1`, wrote one file, and
+      passed all three rows (row B's `0 of [1-9][0-9]*` matches `0 of 1` too). It asserts a floor of **4** —
+      the unconditional PNGs, the rim masks being `rimRadii`'s business — plus those four **by name and by
+      `-s`**, and the cut is watched reddening **row C alone** at `2 passed, 1 failed`.
+      ⛔ **The fixture is the finding this box did not have**: the tool needs `.jpeg` page content and prints
+      `already 1-bit` otherwise, so `text-only.pdf` and `halftone.pdf` — the obvious fixtures, and the one
+      `text_voids` uses — read `pages measured 0`, promise no dump and have none to lose. `tonal-plate.pdf`
+      measures 1 page and writes 7 files, and a premise row asserts that so a fixture that stops routing that
+      way names its own cause instead of reddening the refusal row.
+      ✅ **This box's own last question is answered by the two binaries**: nothing a published C28 figure
+      rests on moves. One edit apart, on a dump that succeeds, they print **identical rows** and an identical
+      summary line and write **sha256-identical** PNGs; `--self-test` still reads `ok (10 checks)`. So the
+      rows are dump-independent and the only run this can move is one that was already failing.
+      ⛔ **A grep for `dump missing` over the committed artefacts is NOT evidence and a draft of this box
+      offered it as such**: that string can only appear on the summary line, and no committed TSV carries
+      that line at all, so the grep could not have come back the other way — a check that cannot fail, in
+      prose.
+      ⛔ Doc drift found on the way: the tool header's own exit-code list omitted **7**, live since
+      2026-08-22. ⚠️ Exits **1, 2, 3, 5, 6 and 7** still have no `fault-inject.sh` row — a draft said "1, 2
+      and 3", which leaves out the self-test and the two exits that invalidate the numbers, i.e. understates
+      the debt in the reassuring direction. No self-test group was added (the watcher is the fault-inject
+      case, which is `text_voids`' pattern), and `fault-inject.sh` is in no hook, so a red row here refuses no
+      commit. Nothing in `Sources/` moved.
+      ⚠️ **Two more limits worth reading before anyone credits the green.** The case runs **one** page, so the
+      accounting line's own recorded defect (`promised.count - dumpMissing.count`) is unwatched — `7 - 7` is 0
+      too. And `SHAPEDUMP` over a document whose sampled pages are all 1-bit still exits 0 with an empty
+      directory and no line about the dump: the status is right, but `score-text-route`'s two diagnostic lines
+      (*nothing to dump* against *wrote NOTHING*) have no counterpart here, which is the hazard this tool's
+      own `dumpDirectory` comment quotes. Named, not fixed; a follow-up is one `print` and one row.
+      ⚠️ **It did NOT take `annot-marks-refusals`' ordinal — `drawn_census` did, in this diff's own base
+      commit, hours earlier.** That box read FIFTH and was already stale on arrival; it reads SEVENTH now, and
+      a draft of this line mis-attributed the staleness to this commit while warning about exactly that.
+      **The finding, for the record** — **`Tools/score-shape-term.swift` counted its failed dump writes,
+      named them, and then exited 0.** `dumpMissing` collected every `SHAPEDUMP` file it promised and did not
+      write, the summary appended `; ⚠️ dump missing …`, and the only exits after it were **6** for
+      `identityFailed` and **7** for `portDisagreed` — so a run whose PNGs never reached disk returned
+      success. ⚠️ The `:1457`/`:1476` line numbers this box carried are gone with the fix; read the exits off
+      the tool's own header, which now lists all seven (⚠️ a draft of this line said five — that was the
+      count of the list *before* 4 and 7 were added to it, in the sentence adding them). ⛔ **This was the exact shape C30's `c30-refusals` was
+      written about — a loud diagnostic under a green exit status — living in the tool EVERY published C28
+      figure came from**, and its dumps are what `SUBBARPIX-2026-08-22.tsv` and the C28 1:1 readings were
+      made from. Found 2026-08-25 by the sibling sweep of `c30-refusals`, recorded rather than fixed at the
+      time because it is C28's instrument and wanted its own failing check.
       ⚠️ **It is a SIXTH image writer, not one of `silent-image-writes`' five.** That census is C26's,
       2026-08-19, and `score-shape-term`'s `SHAPEDUMP` landed 2026-08-21 — so this does not reopen that
       item and that item's two remaining writers (`make-plate-fixtures`, `make_icon`) are unaffected.
@@ -3504,8 +3568,12 @@ happens.**
       **The work**: make it exit (a code distinct from 6 and 7), a `Tools/fault-inject.sh` row modelled on
       `text_voids`' read-only-directory row, and watch it fail. ⚠️ A `Tools/` file pays the full suite, so
       budget a commit; and check whether any committed C28 measurement was taken through a partial dump
-      before changing what the tool returns. (origin: BUGS.md C30
-      `#### The tool's refusals, WATCHED as of 2026-08-25`)
+      before changing what the tool returns. (context: BUGS.md C30
+      `#### The tool's refusals, WATCHED as of 2026-08-25` — ⚠️ this was `origin:` until 2026-08-26, and
+      ticking the box under that cite makes `check-queue-coherence.sh` report `TICKED-OPEN … C30`, because
+      `origin:` means the item IS that entry and C30 is open. It never was: this is a `fault-inject.sh` row
+      for a tool C30's sweep happened to find, exactly the shape `annot-marks-refusals` records against
+      C29. Found by the adversarial review of the ticking commit, by running the checker.)
 - [ ] **sweep-exit5** — `Tools/sweep-ink-bar.py`'s `CONFIG_EXITS` does not include
       `score-text-route`'s exit **5** (self-test failed, nothing measured), added 2026-08-19 by C26's
       sub-step (4). A systematic self-test failure would therefore be **recorded as 233 failed

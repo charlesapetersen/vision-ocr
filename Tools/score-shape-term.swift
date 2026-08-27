@@ -232,9 +232,35 @@
 // bound on the widening rather than an estimate of it.
 //
 // Exit codes: 1 unreadable PDF, 2 a refused `SHAPEDUMP` or `WIDENBYTES`, **3 `WIDENBYTES`
-// was asked for and no jbig2 was found**, 5 a failed self-test,
-// **6 the identity above failed on some page** — the rows are still printed, because a
-// broken map is worth seeing, but no share column on that page means anything.
+// was asked for and no jbig2 was found**, **4 a `SHAPEDUMP` that did not write everything
+// it promised** — the rows are still printed and still valid on a 4, because only the dump
+// failed — 5 a failed self-test, **6 the identity above failed on some page** — the rows
+// are still printed, because a broken map is worth seeing, but no share column on that
+// page means anything — and **7 this tool's copy of the shape rule disagreed with the
+// shipped one**, which invalidates every figure the run printed.
+//
+// ⚠️ 6 and 7 are tested BEFORE 4, so a run that both loses its dump and fails the identity
+// reports the identity. The summary line names every failure that fired; the status carries
+// only the most severe, which is the one that says the numbers cannot be read.
+//
+// ⚠️ Two of those seven are newer than this list. **4 is `shapedump-exit`, 2026-08-26**: the
+// missing files had been counted and named in the summary since `SHAPEDUMP` landed on
+// 2026-08-21, under an exit status of 0 — a loud diagnostic that every caller keying on the
+// status reads as success, which is the defect `BUGS.md` C30
+// `#### The tool's refusals, WATCHED as of 2026-08-25` records against `score-text-voids`
+// and then found here, in the tool every published C28 figure came from. It is numbered 4 to
+// match `score-text-route`, whose `INKDUMP` — the same knob, the same failure — is exit 4
+// there for the same stated reason. **And 7 was absent from this list** while `exit(7)` had
+// been live below since 2026-08-22: doc drift found by the diff that added 4, in the
+// sentence that had to enumerate its neighbours.
+//
+// ⛔ All three instrument exits go through `stop(_:)`, which removes `work` first, and that
+// is not tidiness: an `exit` at top level does NOT run the `defer` that owns that directory
+// — measured 2026-08-26 with a standalone probe, and `score-text-route:606-620` carries the
+// same warning against the same mistake — so **6 and 7 had been leaking a scratch directory
+// holding up to twelve pages of renders and layers since 2026-08-22**, and routing 4 the
+// obvious way would have made it three. Found by the adversarial review of
+// `shapedump-exit`'s own diff, which is where the leak is recorded.
 //
 // Without `WIDENBYTES` it needs no jbig2 and never layers a page, which is what makes it
 // cheaper than `score-text-route` on the same pages. With it, it costs two full layerings
@@ -1473,10 +1499,40 @@ print("pages measured \(measured)"
       + (identityFailed > 0 ? "; ⛔ IDENTITY FAILED on \(identityFailed)" : "")
       + (portDisagreed > 0 ? "; ⛔ PORT DISAGREED on \(portDisagreed)" : "")
       + (wideRefused > 0 ? "; ⚠️ widening not priced on \(wideRefused)" : "")
-      + (dumpMissing.isEmpty ? "" : "; ⚠️ dump missing \(dumpMissing.joined(separator: ", "))"))
-if identityFailed > 0 { exit(6) }
+      + (dumpMissing.isEmpty ? ""
+         : "; ⛔ \(dumpMissing.count) SHAPEDUMP FILE(S) FAILED TO WRITE: "
+           + dumpMissing.joined(separator: ", ")))
+/// Exit, having removed the scratch directory the `defer` above owns.
+///
+/// ⛔ Not tidiness, and not new advice: an `exit` at top level **does not run that
+/// `defer`**, so every one of these three exits leaves `work` behind — up to twelve pages
+/// of grey renders and rebuilt PDFs, and under `WIDENBYTES=1` their layers and jbig2
+/// streams as well. `score-text-route:606-620` routes its own exits through `finish()` for
+/// exactly this reason and says so; this tool did not, so **6 and 7 had been leaking since
+/// 2026-08-22** and `shapedump-exit`'s first draft was about to make 4 a third. Found by
+/// the adversarial review of that diff, measured with a standalone probe (a top-level
+/// `defer` runs on fall-through and not under `exit`), and fixed for all three at once
+/// rather than for the new one alone.
+func stop(_ code: Int32) -> Never {
+    try? FileManager.default.removeItem(at: work)
+    exit(code)
+}
+if identityFailed > 0 { stop(6) }
 // C28. A silent divergence between the shipped rule and this tool's copy would
 // make every figure this file has ever published a claim about code that is not
 // running, so it is an exit and not a warning. 7 rather than 6 so a caller can
 // tell the two instrument failures apart.
-if portDisagreed > 0 { exit(7) }
+if portDisagreed > 0 { stop(7) }
+// `shapedump-exit`, 2026-08-26. The clause above printed `⚠️ dump missing …` under an
+// exit status of 0 for five days: the count was right, the names were right, and the
+// machine was told the run succeeded. The dumps are what `SUBBARPIX-2026-08-22.tsv` and
+// every C28 1:1 reading were made from, so a run that measured a page and wrote none of
+// its PNGs must not be indistinguishable from one that wrote all of them.
+//
+// Last, and 4 rather than 6 or 7, because nothing about the MEASUREMENT is wrong when
+// only the dump failed — the rows above are as good as on a clean run, which is exactly
+// what `score-text-route`'s header says about its own exit 4. The clause's ⚠️ became a ⛔
+// in the same edit, and its wording with it: `; ⚠️ dump missing <names>` is now
+// `; ⛔ <n> SHAPEDUMP FILE(S) FAILED TO WRITE: <names>`, because a warning under a
+// non-zero status is the same mismatch pointing the other way.
+if !dumpMissing.isEmpty { stop(4) }

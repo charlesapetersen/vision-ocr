@@ -113,12 +113,42 @@ ingredient is unknown.
 **8 rows**, `8 passed, 0 failed`, and it is the **fourth** Swift tool of the thirty-two in `Tools/` whose
 own refusals any case exercises — after `score-mrc`, `pdf-extract-pages` and `make-observations`
 (`make-plate-fixtures` is compiled by two cases as a fixture generator and has no non-zero exit of its
-own). ⛔ **Four MORE tools have a dump path no case exercises, and the sweep's own first draft got every one
+own). ✅ **`score-shape-term` is the SIXTH as of 2026-08-26 — `fault-inject.sh shape_dump`, 3 rows,
+`3 passed, 0 failed`** (`BUGS.md` C28 `#### The instrument's own missing exit, FIXED 2026-08-26`);
+⛔ **that diff's draft said FIFTH, which `drawn_census` had taken hours earlier in the same day's base
+commit, so `CLAUDE.md` would have carried two fifths 1,235 lines apart — re-derive the ordinal from
+`FAULTS=`, never from a sentence.**
+⛔ **Four MORE tools had a dump path no case exercises, and the sweep's own first draft got every one
 of their exit codes wrong** — `score-mrc` (`MRC_DUMP` → exit **6**, which `mrc_refuses` never reaches),
 `score-text-route` (exit **4**, and the file has no `exit(7)` at all), `score-threshold-loss` (exit 6, and
-**no** validation of `--dump`), and ⛔ **`score-shape-term`, which is not an unexercised exit but a MISSING
-one — it prints `⚠️ dump missing …` and exits 0 on a failed `SHAPEDUMP` write, this paragraph's own headline
-live in the tool every published C28 figure came from.** Recorded, not fixed. ⛔ **The finding is worth
+**no** validation of `--dump`), and ⛔ **`score-shape-term`, which was not an unexercised exit but a MISSING
+one — it printed `⚠️ dump missing …` and exited 0 on a failed `SHAPEDUMP` write, this paragraph's own headline
+live in the tool every published C28 figure came from.** ✅ **That fourth is FIXED 2026-08-26 and the list is
+now THREE, all of them unexercised rather than missing**: exit **4**, the number borrowed from
+`score-text-route`'s `INKDUMP` rather than invented, tested **after** 6 and 7 so the status still carries the
+failure that invalidates the numbers, and watched failing at `2 passed, 1 failed` against the pre-fix tool
+with the red quoting the defect verbatim (`exit 0, wanted 4`, seven files named, `0 of 7 file(s) written`).
+⛔ **The fixture is the finding: `text-only.pdf` and `halftone.pdf` read `pages measured 0`** — this tool
+needs `.jpeg` content and says `already 1-bit` otherwise — **so the obvious fixture promises no dump and has
+none to lose**; `tonal-plate.pdf` measures 1 page and writes 7 files, and a premise row asserts that so a
+fixture that stops routing that way names its own cause. ✅ No published C28 figure moves, measured: two
+binaries one edit apart print identical rows and an identical summary and write **sha256-identical** PNGs on
+a dump that succeeds, and `--self-test` still reads `ok (10 checks)`. ⛔ **A grep for `dump missing` over the
+committed artefacts is NOT evidence of that and a draft offered it as such** — the string can only appear on
+the summary line, which no committed TSV carries, so the grep could not have come back the other way.
+⛔ **The review of that diff also found a SECOND, OLDER defect in the same file: a top-level `exit` does not
+run the `defer` that owns the scratch directory, so exits 6 and 7 had been leaking `work` — up to twelve
+pages of renders — since 2026-08-22, and the fix's first draft was about to make 4 a third.** All three go
+through `stop(_:)` now; measured with a one-token variant that leaves a `shapeterm-<uuid>` behind where the
+shipped build leaves none. ⛔ **And the inverse row asserted NOTHING as first written**: `wrote`, `promised`
+and the directory listing all fall together, so a `promised` list cut from seven entries to one read
+`1 of 1` and passed all three rows — the eleventh check-that-cannot-fail in this project's history, caught
+before it landed, and it now asserts a floor of 4 plus the four unconditional PNGs by name, watched
+reddening alone under that cut. ⛔ Doc drift found on the way: the tool header's own exit list omitted
+**7**, live since 2026-08-22. ⚠️ Exits **1, 2, 3, 5, 6 and 7** of that tool still have no row (a draft said
+"1, 2 and 3", understating it in the reassuring direction), no self-test group was added (the watcher is the
+fault-inject case, `text_voids`' pattern), and `fault-inject.sh` is in no hook, so a red row refuses no
+commit. ⛔ **The finding is worth
 more than the green: cut the two new terms out of the exit-7 condition and the tool still PRINTS
 `⛔ 2 TEXT DUMPS FAILED TO WRITE` and exits 0** — a loud diagnostic under a green status, which every caller
 keying on the status reads as success while every reader who scrolls reads as failure. Two one-token

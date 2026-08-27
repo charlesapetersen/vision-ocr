@@ -1045,7 +1045,182 @@ PY
   rm -rf "$SB"
 }
 
-FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids drawn_census"
+# C28's instrument, `shapedump-exit`. `Tools/score-shape-term.swift` counted its failed
+# `SHAPEDUMP` writes, named them in the summary line, and exited **0** — from 2026-08-21,
+# when the dump landed, to 2026-08-26. `BUGS.md` C30
+# `#### The tool's refusals, WATCHED as of 2026-08-25` found it as the sibling of the defect
+# that case was written about and recorded it rather than fixing it, because it wants its own
+# failing check. This is that check, and exit **4** is the fix.
+#
+# ⚠️ WHAT IT SABOTAGES, in the same terms `text_voids` uses. It runs no build step other
+# than its own: the subject is a `Tools/` tool. One of its three rows sabotages anything —
+# the read-only dump directory, this file's `chmod -x` technique pointed at a destination
+# instead of a program — and the other two are the premise and the inverse.
+#
+# ⛔ WHY `tonal-plate.pdf` AND NOT `text-only.pdf`, measured 2026-08-26 rather than assumed:
+# this tool needs `.jpeg` page content (its `guard case .jpeg = first.content` — cited by
+# name, because that diff moved every line number in the file) and prints
+# `already 1-bit` for anything else, so on `text-only` and `halftone` it reads
+# `pages measured 0`, promises no dump and cannot lose one. `tonal-plate` is the fixture
+# whose header says it "must read as a picture", and it measures 1 page and writes 7 files.
+# A fixture that stopped routing that way reddens row B (exit 0 for want of a dump), which
+# is the right direction — but row A is what names the cause.
+fault_shape_dump() {
+  local name target out rc
+  target="$(uname -m)-apple-macos13.0"
+  sandbox
+
+  # Built in the sandbox against `Sources/`, exactly as `text_voids` builds its own
+  # subject: this tool drives `Flattener` and `Recogniser`, so it cannot be compiled alone.
+  mkdir -p "$SB/h" && cp "$SB/Tools/score-shape-term.swift" "$SB/h/main.swift"
+  local sources=()
+  for f in "$SB"/Sources/*.swift; do
+    [ "$(basename "$f")" = "App.swift" ] && continue
+    sources+=("$f")
+  done
+  # `argv_writers` and `text_voids` both carry this guard: under `set -u` on bash 3.2 an
+  # empty array expansion is a fatal *unbound variable*, which aborts the whole run
+  # mid-case instead of reporting a red row.
+  if [ "${#sources[@]}" -eq 0 ]; then
+    bad "Sources/ has Swift files to build against" "no Sources/*.swift in the sandbox"
+    return
+  fi
+  if ! swiftc -O -o "$SB/score-shape-term" -target "$target" \
+       "${sources[@]}" "$SB/h/main.swift" >"$SB/shape-build.log" 2>&1; then
+    bad "score-shape-term builds" \
+        "$(grep -m1 'error:' "$SB/shape-build.log" || echo "see $SB/shape-build.log")"
+    return
+  fi
+  local tool="$SB/score-shape-term"
+
+  # The suite's own fixture generator. ⚠️ NEVER `testdocs/` — the rule `argv_writers` and
+  # `text_voids` both carry, for the same reason.
+  # ⚠️ Neither of these two failures removes the sandbox: the `bad` message names a log
+  # that lives inside it.
+  if ! swiftc -o "$SB/plates" -target "$target" \
+       "$SB/Tools/make-plate-fixtures.swift" >"$SB/plates.log" 2>&1; then
+    bad "make-plate-fixtures builds" \
+        "$(grep -m1 'error:' "$SB/plates.log" || echo "see $SB/plates.log")"
+    return
+  fi
+  mkdir -p "$SB/plates.d"
+  "$SB/plates" "$SB/plates.d" >/dev/null 2>&1
+  local page="$SB/plates.d/tonal-plate.pdf"
+  if [ ! -s "$page" ]; then
+    bad "the fixture page exists" "make-plate-fixtures wrote no tonal-plate.pdf"
+    return
+  fi
+
+  # --- A. the premise -----------------------------------------------------------
+  # Without this row, a tool that measured nothing at all would make row B red and row C
+  # red with no statement of why. It is also the only row that runs without a dump, so it
+  # is what says the two below differ from a plain run in the dump alone.
+  name="the fixture page is measured, so there is a dump for the rows below to lose"
+  out="$("$tool" "$page" 1 2>&1)"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bad "$name" "exit $rc, wanted 0: $(tail -1 <<<"$out")"
+  elif ! grep -q "pages measured 1" <<<"$out"; then
+    bad "$name" "measured no page: $(tail -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # --- B. the exit this case exists for -----------------------------------------
+  # ⛔ The dump write, failed for real rather than simulated, and the directory EXISTS —
+  # so the startup `exit(2)` guard cannot answer this. `createDirectory(at:,
+  # withIntermediateDirectories: true)` succeeds on a directory that is already there
+  # whatever its mode, so the tool gets all the way to the per-file `data.write(to:)`,
+  # which is the branch the silent image writers in `Tools/` get wrong.
+  # ⚠️ No restore trap, and `text_voids`' identical row records the reason: `chmod 755` is
+  # unconditional with no `return` between, and the subject is a directory inside a
+  # throwaway sandbox rather than anything of the user's. ⛔ What an interrupt here leaks is
+  # the WHOLE sandbox and not just a 555 directory — `mrc_refuses` clears the script's EXIT
+  # trap (`trap - EXIT INT TERM`), so on a full run nothing removes `$SB` after that case.
+  # `text_voids` says "a 555 directory under `mktemp -d` and nothing else" and its own
+  # closing comment contradicts it; corrected here rather than copied, by the adversarial
+  # review of this case's diff.
+  name="a SHAPEDUMP directory that cannot be written is exit 4, not a quiet zero"
+  local rodir="$SB/readonly-dump"
+  mkdir -p "$rodir" && chmod 555 "$rodir"
+  out="$(SHAPEDUMP="$rodir" "$tool" "$page" 1 2>&1)"; rc=$?
+  chmod 755 "$rodir"
+  if [ "$rc" -ne 4 ]; then
+    bad "$name" "exit $rc, wanted 4: $(tail -1 <<<"$out")"
+  elif ! grep -q "SHAPEDUMP FILE(S) FAILED TO WRITE" <<<"$out"; then
+    bad "$name" "exit 4 without naming the failure: $(tail -1 <<<"$out")"
+  elif ! grep -q "tonal-plate-p1-source.png" <<<"$out"; then
+    bad "$name" "exit 4 but the summary does not name a file it could not write"
+  # The per-page accounting line has to agree with the exit, or one of the two is lying
+  # about the same run. `0 of 7` is what a 555 directory gives; the count is not pinned,
+  # because the rim sweep decides how many files a page promises.
+  # ⚠️ What this clause CANNOT see, on one page: the tool's own comment at the accounting
+  # line records a first version that printed `promised.count - dumpMissing.count`, a page
+  # count against a run-long list. On a single page `7 - 7` is also 0, so both
+  # implementations print the row this clause asserts. Watching that needs two dumping
+  # pages, which this case does not run.
+  elif ! grep -qE "SHAPEDUMP p1: 0 of [1-9][0-9]* file" <<<"$out"; then
+    bad "$name" "exit 4 but the page line does not report 0 written: $(grep -m1 'SHAPEDUMP p' <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # --- C. the inverse row, CONTRIBUTING §4d -------------------------------------
+  # A tool that exited 4 on every run would pass row B. This asserts the other side: a
+  # writable directory writes everything it promised, exits 0, and leaves the files on disk.
+  #
+  # ⛔ THE COUNTS ALONE ASSERT NOTHING, and the first draft of this row proved it. `wrote`,
+  # `promised` and the directory listing all fall together: cut six of the seven entries out
+  # of the tool's `promised` list and it reports `1 of 1`, one file lands, `ls` counts one,
+  # exit 0 — three green rows over a tool that dumps one seventh of the evidence
+  # `SUBBARPIX-2026-08-22.tsv` was read from, and row B's `0 of [1-9][0-9]*` matches `0 of 1`
+  # too. So the row asserts a FLOOR and the NAMES as well: the four unconditional PNGs (the
+  # grey render, the exact map, the accepted components, the accepted lines) must each be on
+  # disk and non-empty. Found by the adversarial review of this case's own diff — the eleventh
+  # check in this project's history that could not fail, caught before it landed rather than
+  # after.
+  # ⚠️ The rim masks are deliberately NOT named: `rimRadii` decides how many there are, so a
+  # row that pinned 7 would redden on a change that is not a defect. Four is the floor
+  # because those four entries are appended unconditionally.
+  name="…and a writable one writes every file it promised, exits 0, and leaves them there"
+  local okdir="$SB/writable-dump"
+  mkdir -p "$okdir"
+  out="$(SHAPEDUMP="$okdir" "$tool" "$page" 1 2>&1)"; rc=$?
+  local wrote promised ondisk missing base
+  wrote="$(sed -n 's/^SHAPEDUMP p1: \([0-9]*\) of \([0-9]*\) file.*/\1/p' <<<"$out")"
+  promised="$(sed -n 's/^SHAPEDUMP p1: \([0-9]*\) of \([0-9]*\) file.*/\2/p' <<<"$out")"
+  # `-s`, not a bare listing: a 0-byte PNG is a failed write that reached disk, and
+  # `text_voids`' own inverse row asserts its two dumps the same way.
+  missing=""
+  for base in source map textish lines; do
+    [ -s "$okdir/tonal-plate-p1-$base.png" ] || missing="$missing tonal-plate-p1-$base.png"
+  done
+  ondisk="$(ls -1 "$okdir" 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$rc" -ne 0 ]; then
+    bad "$name" "exit $rc, wanted 0: $(tail -1 <<<"$out")"
+  elif [ -z "$promised" ] || [ "$promised" -lt 4 ]; then
+    bad "$name" "promised ${promised:-no} file(s), wanted at least the 4 unconditional PNGs"
+  elif [ -n "$missing" ]; then
+    bad "$name" "reported $wrote of $promised written, but missing or empty:$missing"
+  elif [ "$wrote" != "$promised" ]; then
+    bad "$name" "wrote $wrote of $promised promised file(s)"
+  elif [ "$ondisk" != "$promised" ]; then
+    bad "$name" "$promised file(s) reported written, $ondisk on disk"
+  # ⚠️ Not entailed by the clauses above, and one sabotage reds it alone: invert the summary
+  # line's ternary so the ⛔ text prints when `dumpMissing` IS empty. The exit stays 0, all
+  # three counts still agree, and this is the only clause that objects.
+  elif grep -q "FAILED TO WRITE" <<<"$out"; then
+    bad "$name" "exit 0 with a failure named in the summary: $(tail -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # Same reason as `argv_writers` and `text_voids`: `mrc_refuses` clears the script's EXIT
+  # trap, so on a full run nothing else removes this sandbox — and it holds a whole-repo
+  # rsync plus two binaries linked against all of `Sources/`.
+  rm -rf "$SB"
+}
+
+FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids drawn_census shape_dump"
 
 if [ "${1:-}" = "--list" ]; then
   for f in $FAULTS; do echo "  $f"; done; exit 0
