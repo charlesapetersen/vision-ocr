@@ -1305,6 +1305,123 @@ duplicate tag and only `FIXED`/`OPEN`, never `WONTFIX`, `NO DEFECT` or `HALF FIX
 sabotage's kill set and is belt-and-braces rather than an independent assertion, so **fourteen is the honest
 count of checks that distinguish something**, and it is written here rather than rounded up.
 
+## Defects found 2026-08-27, from finishing D15's own residue
+
+### D19 · The inbox had a second half nothing could see — FIXED
+
+**What happened.** D15 gave the daemon an inbox — `$STATE/triage/<wt>.md` per stranded worktree, drained by
+STEP 1.5 ahead of the queue. `housekeeping()` then GCs an assignment once `/private/tmp` has swept its
+worktree, and deliberately **keeps** the rescue patch, because the patch is the durable copy. STEP 1.5 keyed
+on `triage/*.md` alone, so exactly at that moment a `$STATE/rescue/<name>.patch` exists that nothing points
+any session at. Measured 2026-08-27: **15 unfiled files** — three orphan trios, one re-snapshot and one
+half-filed pair, 6 to 10 days old by snapshot mtime — against **zero** live worktrees and **zero** triage
+files. The daemon's own log line for it (`vision-ocr-autonomous.sh:1438`, *"a later session can finish it,
+or rescue it by hand"*) was still addressed to nobody.
+
+⛔ **BUT THE HEADLINE OF THIS ENTRY IS NOT THAT MECHANISM, AND THE FIRST DRAFT SAID IT WAS — the residue
+does not instantiate it.** *"D15's fix is what created it"* was refuted by the adversarial review of this
+diff, from `$STATE/daemon.log`: there is **no** `rescued:` and **no** `assigned:` line for any of the four
+names, so none was written by the rescue net or ever sat in the triage inbox; the GC has fired **exactly
+once ever** (`2026-08-24 16:20:46 … dropped 1 triage assignment(s)`) and that strand's trio was already
+filed; and `vo-before-argv`'s `.base` holds a bare sha where the daemon writes `log -1 --format='%H %s'`, so
+it is hand-made. The residue is **pre-inbox**, a broader cause the fix happens to cover, and the GC-created
+case has **not happened yet**. Suspect the instrument — including when the instrument is a directory listing
+you have just explained.
+
+**The fix** is a second half to STEP 1.5: a lister, the decision rule, the filing convention, and a bound —
+an orphan whose content is on main is three `mv`s and **not** a session's item, so the session files it and
+goes on to STEP 2. Only an orphan whose content is genuinely *not* on main is an adoption. Without that
+bound, three landed patches would have consumed three sessions in a row.
+
+⛔ **THE REVIEW ALSO FOUND A CONTENT-LOSS PATH IN THE FIX ITSELF, and it is the sharpest thing here.** The
+first draft's lister skipped `*.commits.patch` with a bare `continue` and the 64 new lines never mentioned it
+again. `vision-ocr-autonomous.sh:1201-1206` writes that file precisely because the working-tree snapshot is
+`diff --cached HEAD`, relative to the branch **TIP** — so a strand with commits on it has them in neither
+`.patch` nor `.base`. Three consequences, all in the draft: the adoption arm said `git apply <n>.patch` and
+would have dropped the commits; the filing convention listed `.{patch,base,status}` and `.complete`, so
+filing a trio left the commits file behind, after which the lister was blind to it **forever** — this item's
+own complaint one level down; and `status-digest.sh:497` surfaces it only inside the live-worktree loop, so
+on the orphan path nothing surfaced it at all. Now: a second pass reports an unfiled `<n>.commits.patch` even
+when the trio is filed, the filing list includes it, and the adoption arm is `git am` then `git apply`.
+**Watched failing, both listers run verbatim over one nine-name fixture:**
+
+| | draft | shipped |
+|---|---|---|
+| `orphanB` (trio filed, commits file NOT) | `decided orphanB` — the commits file never mentioned, invisible for good | `decided orphanB` **+ `UNFILED COMMITS orphanB.commits.patch`** |
+| `orphanC` (orphan with commits) | `ORPHAN orphanC` | `ORPHAN orphanC  ⛔ + UNPUSHED COMMITS`, plus its own `UNFILED COMMITS` row |
+| `weird.untracked-notes.patch` (a hand-copied untracked file) | `ORPHAN weird.untracked-notes` — a false orphan | silent |
+
+The shipped text was extracted from `resume-prompt.txt` programmatically and run **byte for byte** as it
+appears there, giving identical output under `zsh`, `bash` and `sh`, and silence with rc 0 against the real
+now-clean directory. Running a prompt's own snippet rather than a retyped equivalent is the point: the two
+diverge exactly where a copy would.
+
+⛔ **And the sentence that would have disabled the guard for it: *"(c) and (d) are about a branch and a
+worktree that no longer exist."* False for both.** (d) is the filing convention in `$STATE/rescue` — the
+only thing this path actually does. (c) guards a branch ahead of `origin/main`, and `housekeeping()` deletes
+an `auto/*` branch only after `git merge-base --is-ancestor <br> origin/main` succeeds, so a branch holding
+unpushed commits is **provably never GC'd**: exactly when (c) matters, the branch is still there. The draft's
+evidence was `git branch --list 'auto/*'` on a day when all three strands happened to have no commits ahead
+— n=3 against a guard in the daemon's own source.
+
+⛔ **Two screens a reader will reach for are wrong, and both were tried before being written down.**
+
+1. **The `LANDED-as-` / `SUPERSEDED-by-` PREFIX.** The daemon re-snapshots a strand it has already been told
+   about (the skip is keyed on `.complete`, which moves with the filing), so a **decided** strand can have a
+   fresh unfiled trio beside its own filing: `vo-20260821-211049-63479.patch` sat next to
+   `SUPERSEDED-by-ef9786c-vo-20260821-211049-63479.patch.bak`. A prefix test hands that back as new work.
+   Keying on the **name** appearing in no filed `.bak` calls it `decided`.
+2. **`git apply --check -R`.** It looks like the perfect mechanical content test — if every hunk reverses,
+   the content is on main — and over the whole live residue it answered *"does not apply"* on **4 of 4**, of
+   which three are provably landed and the fourth was already filed. Both reasons are structural: the
+   surrounding lines have moved on since, and `vo-before-argv`'s content landed with its function **renamed**
+   (`fault_writer_guards` → `fault_argv_writers`), which no patch-identity test can see. **The file-by-file
+   content read D15 already prescribes is the only screen that works** — which is D15's own argument for why
+   the daemon does not judge, arriving a second time from the other direction.
+
+**The proofs of landing, by content:** `vo-20260816-184311-95643` added `Tools/score-drawn-images.swift` and
+`DRAWN-2026-08-16.tsv`, both in the tree, `git log --diff-filter=A -1` naming `db9481f` for each;
+`vo-before-argv`'s `fault_writer_guards` is in the tree **renamed** `fault_argv_writers`, added by `544b825`;
+`vo-20260816-224600-82042` is five `mutation-log.tsv` rows, all five byte-identical in the tree with zero
+removed lines, added by `1935d05`. ⚠️ The parent shas corroborate two of the three — `db9481f`'s parent is
+`939680e` and `544b825`'s is `4bcfd3f`, each strand's own base — but a shared parent is **not** a content
+proof and the first draft billed it as one, in the section whose whole subject is that identity tests are
+false negatives. Filed accordingly, plus one half-filed pair (`vo-20260817-072554-25857`, patch already filed
+and `.base`/`.status` left behind) tidied. Residue **15 → 0**.
+
+⚠️ **The lister is glob-free because both glob forms were measured failing.** The shell is zsh, whose
+`nomatch` aborts the loop before `ls` runs and is not silenced by `2>/dev/null`: `for p in *.patch` errored
+in the **clean** case — printing a failure where the right answer is silence — and `ls *.patch 2>/dev/null |
+while …` printed the same error while exiting 0 with no output. `ls | grep '\.patch$' | while read` has no
+glob in it.
+
+⚠️ **Four limits, stated rather than implied.** The ADOPTION arm is prescribed and **unrun** — all three
+live orphans had landed, and none carried a `.commits.patch`, so nothing has exercised a patch whose content
+is genuinely missing nor the `git am` step. A missing `.complete` marker does **not** mean "tracked only":
+that branch post-dates 2026-08-22, so every older snapshot lacks it regardless, and all three orphans here
+were markerless and whole (`.status` carried no `??` line). The wiring is a prompt instruction, not a gate —
+`check-staleness.sh` mentions neither `$STATE/rescue` nor `resume-prompt`, so nothing refuses a session that
+skips the check. And **nothing detects drift between the committed prompt and the running one**:
+`daemon.sh:447` is the only writer of `$STATE/resume-prompt.txt` and it runs at install/start only, so this
+change is rendered in by hand and a future edit that forgets to is undetectable. Carried as the queue's
+`prompt-render-drift` rather than fixed here.
+
+**Sibling sweep — three other readers of `$STATE/rescue`, not two, and the miscount hid the one that
+mattered.** `status-digest.sh` reads it at `:493`, `:494` and **`:497`** — that third line is
+`.commits.patch`, i.e. the artefact whose omission was this diff's own worst defect, so the undercount was in
+the reassuring direction. `vision-ocr-autonomous.sh` at `:1177`, `:1201`, `:1210`, `:1282`, `:1318`, `:1376`,
+`:1443`; and `tests/prove-daemon.sh` and `tests/prove-status.sh` both assert against it, neither on anything
+this diff changes (`prove-daemon.sh` keys on the `rescued:` line, which is untouched).
+⚠️ **`status-digest.sh:493-495` makes the same inference this entry calls an overstatement** — `.patch` with
+no `.complete` prints `rescue PARTIAL — tracked only` in red. It is sound in its **main** case, because that
+branch runs only for a currently-live orphan worktree, every one of which today's daemon snapshotted. It is
+not sound in two windows, both worth knowing rather than papering over: precondition (d) files the trio
+**before** `git worktree remove`, so in that gap the digest prints red `NO rescue patch` about a strand whose
+patch is safely filed; and a live worktree whose only snapshot predates 2026-08-22 reads `PARTIAL` falsely
+while the daemon is stopped, which is the case that block was written for. Not fixed here — it is display,
+not decision. `vision-ocr-autonomous.sh:1438` is the log line above; it now names the step that reads it,
+which is the whole of what this item was opened for.
+
 ## What this deliberately does not have
 
 The sibling daemon has eleven helper scripts and thirteen proof harnesses. Most of what is missing here is

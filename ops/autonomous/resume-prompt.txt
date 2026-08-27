@@ -27,7 +27,8 @@ STEP 1 — RECOVER STATE (always, first):
   Then skim `git log --oneline -20` and the newest `HANDOFF-*.md`.
   If RUN.md's "RUN STATUS:" line reads COMPLETE, there is nothing to do — stop immediately.
 
-STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue.
+STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue. It has TWO halves and an empty
+  `triage/` is NOT the whole answer — do the orphan-patch check further down this step before STEP 2.
     ls ~/.local/state/visionocr-autonomous/triage/*.md 2>/dev/null
   Each file is a STRANDED WORKTREE the daemon found, snapshotted and assigned to you. Read the oldest one
   and do what it says — it carries the worktree path, its base sha, its rescue patch and the decision
@@ -122,9 +123,76 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue.
   each following session spends its one item re-proving content that is already on main. So whichever of
   the five steps you took, before you delete the file check `git worktree list`: if the strand is still
   there and you called it resolved, you have not finished.
-  If you finish triage with budget left, STOP anyway: one item.
+  ⛔ THEN THE OTHER HALF OF THE INBOX, WHICH THIS STEP USED TO BE BLIND TO: A RESCUE PATCH WITH NO
+  WORKTREE. `housekeeping()` drops a triage assignment once /private/tmp has swept its worktree and
+  deliberately KEEPS the patch, so exactly then a `$STATE/rescue/*.patch` exists that nothing points any
+  session at — and older residue predating the inbox sits there too. Run this, in a SUBSHELL so a failed
+  `cd` cannot make a wrong cwd look clean and so you stay in your repo for the git commands below:
+      ( cd ~/.local/state/visionocr-autonomous/rescue || exit 1
+        ls | /usr/bin/grep '\.patch$' | while read -r p; do
+          case "$p" in *.commits.patch|*.untracked-*) continue;; esac
+          n="${p%.patch}"
+          if   ls | /usr/bin/grep -qF -- "-$n."; then echo "decided  $n"
+          elif [ -f "$n.commits.patch" ];       then echo "ORPHAN   $n  ⛔ + UNPUSHED COMMITS"
+          else                                       echo "ORPHAN   $n"; fi
+        done
+        ls | /usr/bin/grep '\.commits\.patch$' | while read -r c; do
+          n="${c%.commits.patch}"
+          ls | /usr/bin/grep -qF -- "-$n.commits." || echo "UNFILED COMMITS  $c"
+        done )
+  ⚠️ Silence means the inbox is clean. Do not "simplify" it back to a glob: both forms were measured aborting
+  under zsh's `nomatch` in exactly the CLEAN case, printing a failure where the right answer is silence
+  (README D19). A bare `.base`/`.status` beside a FILED `.patch.bak` is litter, not an orphan — `mv` the
+  strays under the same filing; a `.patch.partial` is an older snapshot a newer one displaced, not a partial
+  rescue.
+  ⛔ **`<n>.commits.patch` IS A SEPARATE ARTEFACT AND THE PATCH DOES NOT CONTAIN IT.** The working-tree
+  snapshot is `diff --cached HEAD`, i.e. relative to the branch TIP, so a strand with commits on it has them
+  in neither `.patch` nor `.base`. That is why the loop has a second pass: a commits file whose trio was
+  filed without it goes permanently invisible otherwise, which is this very step's original defect one level
+  down. File it WITH the trio (`LANDED-as-<sha>-<name>.commits.patch.bak`), and on the adoption arm
+  `git am <n>.commits.patch` BEFORE `git apply <n>.patch`.
+  ⛔ KEY ON THE NAME APPEARING IN NO FILED `.bak`, NOT ON THE `LANDED-as-`/`SUPERSEDED-by-` PREFIX. The
+  daemon re-snapshots any strand without a `.complete` marker, and the marker moves with the filing, so a
+  DECIDED strand can have a fresh unfiled trio beside its own filing: measured 2026-08-27,
+  `vo-20260821-211049-63479.patch` sat next to `SUPERSEDED-by-ef9786c-vo-20260821-211049-63479.patch.bak`. A
+  prefix test hands that back as new work; the name test calls it `decided`. ⚠️ Then `cmp` the fresh `.patch`
+  against the filed one before filing it under the same decision with a `.resnapshot-<HH-MM>` infix (the
+  precedent is in the directory): identical means a pure re-snapshot — all three historical ones are, 9 of 9
+  file pairs — and DIFFERENT means the strand was worked on after the decision, so re-decide it by content.
+  ⛔ AND DO NOT SCREEN WITH `git apply --check -R`. It looks like the perfect mechanical content test and it
+  is a FALSE NEGATIVE — measured 2026-08-27, "does not apply" on **4 of 4**, three of them landed: the
+  surrounding lines have moved on since, and one strand's content landed with its function RENAMED
+  (`fault_writer_guards` → `fault_argv_writers`), which no patch-identity test can see. Screen by CONTENT, as
+  the rest of this step already prescribes: `git grep` the new symbols, `git log --diff-filter=A -1 --
+  <added file>`, `git log -S<symbol> -- <file>`. ⚠️ A shared parent sha is CORROBORATION, not proof.
+  ⚠️ AN ORPHAN PATCH IS USUALLY NOT A SESSION'S WORK, and treating it like a triage file starves the queue —
+  all three live ones on 2026-08-27 were 6 to 10 days old by snapshot mtime and every one had landed. Filing
+  a trio whose content is on main is three `mv`s. So: screen the OLDEST orphan; if its content is on main,
+  FILE IT (`.{patch,base,status}`, plus `.complete` and `.commits.patch` if present) and go straight on to
+  STEP 2 **in the same session** — the same rule STEP 2 applies to an already-done queue item. Only an
+  orphan whose content is genuinely NOT on main is your one item, and then it is an ADOPTION: apply it in
+  your own `auto/` worktree, finish it, commit, push, file it `LANDED-as-<your sha>-<name>`.
+  ⚠️ Which of the four removal preconditions apply here, and the count is not the obvious one: **(a)** and
+  **(d)** apply in full — (d) IS the filing above, it is about `$STATE/rescue` and not about a worktree.
+  **(c)** applies whenever `<n>.commits.patch` exists: `housekeeping()` deletes an `auto/*` branch only
+  after `git merge-base --is-ancestor <br> origin/main`, so a branch AHEAD of main is never GC'd and is
+  probably still in the repo — `git branch --list 'auto/<stamp>*'` before you conclude the commits are
+  unreachable. Only (c)'s worktree half and (b)'s INSTRUMENT are gone: (b)'s question stands, but there is
+  no assignment file to read it off. ⛔ **And do NOT read a missing `.complete` as "tracked only"** — that
+  marker post-dates 2026-08-22, so every older snapshot lacks it whatever it holds, and all three orphans
+  here were markerless and WHOLE. `.status` is what answers: no `??` line means there was no untracked
+  content to miss. If there IS one, look for that path by name in the patch's `+++` list (git quotes paths
+  with spaces or non-ASCII in both, so compare the quoted forms) and do not automate the comparison — the
+  daemon's own comment records four false-positive classes an awk version got wrong.
+  ⚠️ **The residue was emptied on 2026-08-27 (15 unfiled files → 0), so the loop printing nothing is the
+  expected answer for a while and is not evidence it is broken.** ⛔ Those 15 were PRE-INBOX, not this
+  mechanism firing — `$STATE/daemon.log` carries no `rescued:` or `assigned:` line for any of them, and the
+  GC has fired once ever (README D19). The mechanism is real and its first instance has not happened yet.
+  If you finish triage with budget left, STOP anyway: one item. That applies to a triage FILE and to an
+  ADOPTED orphan patch; merely FILING an already-landed orphan is not an item and does not end your session.
 
-STEP 2 — PICK EXACTLY ONE ITEM (only if STEP 1.5 found nothing):
+STEP 2 — PICK EXACTLY ONE ITEM (only if STEP 1.5 found no triage file and no orphan you had to ADOPT —
+  merely filing an already-landed orphan does not stop you here):
     ops/autonomous/next-item.sh
   It prints every open queue item as `ok<TAB><tag><TAB><text>`, `blocked:<unmet><TAB>…` or `hold<TAB>…`, in
   order. Take the FIRST `ok` item. Never take a `blocked:` item (its prerequisite has not landed) and NEVER

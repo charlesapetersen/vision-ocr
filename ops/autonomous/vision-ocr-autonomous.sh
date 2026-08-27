@@ -1435,7 +1435,13 @@ EOP
     } > "$_triage/$_rb.md" 2>/dev/null || true
     log "  assigned: $_triage/$_rb.md — a session triages this; it is NOT waiting on the owner."
   done
-  log "  a later session can finish it, or rescue it by hand. The committed base plus \$STATE/rescue/*.patch"
+  # ⚠️ THIS LINE WAS ADDRESSED TO NOBODY UNTIL 2026-08-27 (README D19). The assignment above covers a LIVE
+  # worktree; once /private/tmp is swept, `housekeeping()` GCs the assignment and keeps the patch, and STEP
+  # 1.5 keyed on `triage/*.md` alone — so the durable copy this line boasts of was invisible. STEP 1.5 now
+  # lists `$STATE/rescue/*.patch` whose NAME appears in no filed `.bak` (the prefix is not the test: a
+  # re-snapshot puts an unfiled trio beside its own filing). Keep the two in step.
+  log "  a later session can finish it, or rescue it by hand — resume-prompt.txt STEP 1.5 lists an unfiled"
+  log "  \$STATE/rescue/*.patch even after this worktree is gone. The committed base plus that patch"
   log "  is the durable copy; the worktree itself is in /private/tmp and is NOT."
   return 0
 }

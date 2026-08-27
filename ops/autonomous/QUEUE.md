@@ -2833,7 +2833,7 @@ happens.**
       (`TODO.md`) against an actual 1,127. Run `ops/autonomous/check-staleness.sh` for the current list,
       and fix the documents rather than the check. (origin: TODO.md, and CLAUDE.md's own confession that
       its status paragraph "read 'nothing open' for a day after four entries were opened")
-- [ ] **rescue-adopt** — a session that dies before it commits leaves its work in `$STATE/rescue/*.patch`,
+- [x] **rescue-adopt** — a session that dies before it commits leaves its work in `$STATE/rescue/*.patch`,
       and **nothing ever tells the next session to look**. `vision-ocr-autonomous.sh` writes the patch and
       logs *"a later session can finish it, or rescue it by hand"*, but `resume-prompt.txt` contains no
       occurrence of `rescue`, `stranded` or `orphan` — so the next session pulls `origin/main` into a fresh
@@ -2868,6 +2868,32 @@ happens.**
       this item's original complaint in the one case the new mechanism creates. STEP 1.5 keys on
       `triage/*.md`, not on `rescue/*.patch`. What is left: have STEP 1.5 also notice a patch that is neither
       `LANDED-as-*` nor `SUPERSEDED-by-*` nor matched by a live worktree. Still one free commit.
+      ✅ **DONE 2026-08-27 — STEP 1.5 has both halves now, and the residue it was opened for was DRAINED in
+      the same session (15 unfiled files → 0).** `resume-prompt.txt` carries a glob-free lister, the decision
+      rule, the filing convention and the two false screens; the change is rendered into
+      `$STATE/resume-prompt.txt` as well as committed, because `daemon.sh` renders only at `start`. Full
+      account and every correction: `ops/autonomous/README.md` **D19**.
+      ⛔ **The rule is keyed on the NAME appearing in no filed `.bak`, not on the `LANDED-as-`/`SUPERSEDED-by-`
+      PREFIX** — measured, `vo-20260821-211049-63479.patch` sat unfiled beside its own
+      `SUPERSEDED-by-ef9786c-…` filing, so a prefix test hands a decided strand back as new work.
+      ⛔ **And the mechanical screen a reader will reach for is a FALSE NEGATIVE: `git apply --check -R` said
+      "does not apply" on 4 of 4**, three of them landed (`db9481f`, `1935d05`, `544b825`) — the surrounding
+      lines have moved on, and `vo-before-argv`'s content landed with its function RENAMED
+      (`fault_writer_guards` → `fault_argv_writers`), which no patch-identity test can see.
+      ⛔ **The adversarial review of the diff said REJECT and it was right twice.** (1) The draft's lister
+      `continue`d past `*.commits.patch` and never mentioned it again — a strand's UNPUSHED COMMITS are in
+      neither `.patch` nor `.base` (the snapshot is `diff --cached HEAD`, relative to the branch tip), so the
+      adoption arm would have dropped them and the filing convention would have made the file permanently
+      invisible: this item's own defect one level down. (2) The draft then said *"(c) and (d) are about a
+      branch and a worktree that no longer exist"*, which is false for both — (d) IS the filing, and
+      `housekeeping()` never deletes a branch that is not an ancestor of `origin/main`, so a branch with
+      unpushed commits provably survives. ⛔ **And the entry's own premise was refuted from
+      `$STATE/daemon.log`: none of the four names has a `rescued:` or `assigned:` line, the GC has fired once
+      ever, so the residue is PRE-INBOX and the mechanism's first instance has not happened yet.**
+      ⚠️ Three limits: the ADOPTION arm is prescribed and **unrun** (all three had landed, none carried a
+      `.commits.patch`); the wiring is a prompt instruction rather than a gate, so nothing refuses a session
+      that skips it; and nothing detects drift between the committed prompt and the rendered one — carried as
+      `prompt-render-drift` below.
       (context: the rescue lines in `$STATE/daemon.log`, and `19f4131` as the worked example)
 - [ ] **mrc-endtoend** — ⛔ **THE PREMISE IS TOO WIDE, corrected 2026-08-25: `Tests/main.swift` runs documents
       end-to-end through `makeSearchablePDF` at :379, :3741, :5134, :5186, :8648, :9450 and :13027, and
@@ -3316,6 +3342,24 @@ happens.**
       ⚠️ Until it lands, the mitigation is documentation, and `resume-prompt.txt` STEP 4 now carries it:
       never wrap `git commit` in the lock. (context: `ops/autonomous/test-lock.sh:393-402,426`;
       `.githooks/pre-commit:129`; RUN.md's 2026-08-22 session entry)
+- [ ] **prompt-render-drift** — ⛔ **nothing detects a divergence between the COMMITTED `resume-prompt.txt`
+      and the `$STATE/resume-prompt.txt` the daemon actually feeds every session.** `daemon.sh:447` is the
+      only writer (`sed s|__REPO__|…|`) and it runs on the install/start path alone, so a repo-only edit
+      changes nothing for a running daemon — measured 2026-08-27 while landing `rescue-adopt`, where the
+      `$STATE` copy was byte-equal to the PRE-diff committed file and every gate was green: `QUEUE.md` said
+      `[x]`, `next-item.sh` no longer offered the item, `README.md` said FIXED, and every running session
+      would still have been reading the old STEP 1.5. That session rendered it in by hand, which is the
+      mitigation and not the fix.
+      ⛔ **BOUND, and the cheap half is the whole of it**: one rule in `check-staleness.sh` comparing
+      `sed s|__REPO__|$REPO|g <committed>` against `$STATE/resume-prompt.txt` and reporting a mismatch. It is
+      already the DOCUMENT-classified, warn-only lane (README's *"document-vs-code RED classification is
+      defensive, not live"*), so a mismatch cannot fail a cycle — which is the right severity: the render is
+      the owner's `start`, not a session's. ⚠️ **Do NOT "fix" it by re-rendering every cycle instead**: that
+      silently replaces the prompt under a live session, and the daemon deliberately reads `$PROMPT` once per
+      session rather than tracking the tree. ⚠️ `check-staleness.sh` has **no `--self-test` and no harness in
+      `ops/autonomous/tests/`**, which is the same gap README D18 records against `check-queue-coherence.sh`;
+      add the check with a fixture pair or say why not.
+      (context: `ops/autonomous/daemon.sh:89-90,447`; `ops/autonomous/README.md` D19's fourth limit)
 - [ ] **tsv-header-drift** — the sibling sweep from C26's 2026-08-18 instrument commit, both halves
       measured by grep on that day and neither empty. CONTRIBUTING §5 asks a tool that prints a TSV
       for "one `row(...)` printer over one `columns` array, with the width asserted", because
