@@ -2645,6 +2645,50 @@ happens.**
       `!useBilevel && shouldKeepColour(…)`. [hold] needs: owner — the colour bar's VALUE, and it is a
       two-sided trade with a measured floor: read `#### The split, SHIPPED` before picking a number.
       (origin: BUGS.md C27)
+- [ ] **colour-bar-window** — measure the WINDOW between the ~0.008 floor and the pages worth
+      reaching, so the owner can pick `Flattener.colourSaturationThreshold`'s VALUE. This is the one
+      unmeasured sentence left under C27 — `#### The split, SHIPPED` says in terms *"between that floor
+      and the pages worth reaching the window may be empty, and nothing here has measured it."*
+      **Requested by the owner 2026-08-27.** ⛔ **This item ENDS IN A MEASUREMENT AND A RECOMMENDATION,
+      NOT A COMMIT TO `Sources/`.** The C27 box above is held for the owner because the VALUE is his,
+      twice stated; measuring the window is NOT, and that distinction is the whole reason this is a
+      separate box. Do not move the constant, and do not park the measurement back on him.
+      ⚠️ **NEVER WRITE EITHER HOLD MARKER OUT IN FULL INSIDE A BOX THAT IS NOT ITSELF HELD.**
+      `next-item.sh:100` tests the WHOLE item span — every continuation line, not the first — for the
+      bracketed hold word and for the owner-requirement phrase, so *quoting another box's status* inside
+      this one silently re-classifies THIS one as owner-only and an unattended session is never offered
+      it. The first two drafts of this box each did exactly that, 2026-08-27 (the second inside the
+      warning against the first), and `check-queue-coherence.sh` was GREEN through both — it checks
+      cites, not hold state. Say "held for the owner" in prose and cite the box by name instead.
+      ⛔ **DO NOT RE-RUN ANY SWEEP. THE DATA ALMOST CERTAINLY ALREADY EXISTS.** `SATFRAC-2026-08-19.tsv`
+      (233 documents, 441 pages, every document `rc=0`) and `C27-MASKTERMS-2026-08-26.tsv` (50 rows, 26
+      documents, 8 added columns) are both in the tree and both carry an explicit **do-not-re-run** in the
+      C27 box above. Start by asking what those two files can already answer; a new sweep is a last resort
+      and needs its own justification in the commit message.
+      **The two numbers that bound the window, and where each comes from.** FLOOR ~**0.008**:
+      `Flattener.saturation(ofRGBA:)` records black text on stocks from white to strong ochre reading
+      **0.000-0.008**, so a bar at or under it re-promotes every tone-routed cream-paper page to three
+      channels — the 709 MB monograph's exact mechanism (C9), now on pages the route bar no longer screens
+      for this decision. CEILING **0.06**: today's shipped value, unchanged by the split.
+      **What is actually unknown is the COLLATERAL at each candidate bar inside that window** — not whether
+      the founding pages clear it. `1954 - Why` p4/p6/p7/p9 read **0.039-0.043** on the mean, so the window
+      is NOT obviously empty; what nobody has counted is how many pages that carry no spot colour come
+      along at the same bar. That count is the deliverable.
+      ⛔ **DO NOT QUOTE +93.0 KB / 1.048x AS THIS BAR'S PRICE.** It is C27 item (b)'s figure for *forcing*
+      the decision on 13 picture-route pages published grey, and their own mean saturation runs
+      **0.000-0.057**: four read 0.000-0.002, `Black_0000` p2 reads **0.000**, and the comparison is a
+      strict `>`, so **no non-negative bar reaches them**. A first draft of the constant's own doc comment
+      already made this mistake once and the review caught it. If a price for the bar is wanted it has to
+      be measured over whatever set the bar actually selects.
+      ⚠️ **Two instrument facts to carry in, both from the C27 box above rather than rediscovered:**
+      `saturation(of:)` is **not a pure function of the page** (cold vs warm differ, `1954 - Why` p7 reads
+      0.03033 cold against 0.02831 warm, +7.1%), and across the 0.06 bar the distribution is a
+      **continuum** with a gap of 0.004 either side — so expect the window to be populated continuously
+      and do not go looking for a natural break to put the bar in.
+      ⚠️ If the honest answer is *"the window is empty"* or *"no value beats 0.06"*, **that is a result and
+      it closes this box** — report it and recommend leaving the constant alone. A negative result here is
+      worth as much as a positive one and must not be dressed up as a failure to find a number.
+      (context: BUGS.md C27)
 - [x] **depth-cap** — DONE 2026-08-23, as the decision below prescribes: `< 3` KEPT, both comments
       rewritten to state the frame-of-reference difference and to point at each other, and **nine checks**
       over new pages 11-14 of `shared-resources.pdf` — one chain of four nested forms entered at three
