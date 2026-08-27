@@ -2665,7 +2665,51 @@ happens.**
       re-litigated into a wrong decision once already. One commit, one suite run, and the item retires
       instead of riding along. (context: BUGS.md C24 — CLOSED, and `c17b3f3` is the wiring; the entry is why
       this matters, not the work itself)
-- [ ] **bare-form-reach** — **the two image walks DO diverge, and it is bare forms rather than the caps.**
+- [x] **bare-form-reach** — **DONE 2026-08-26, `WONTFIX` ON A CORPUS NUMBER. The measurement this item
+      asked for RAN, and the shape is on 0 of 16,987 pages with the corpus THREE FORM LEVELS SHORT
+      of being able to hold it.** `Tools/score-drawn-images.swift` gained the form-nesting census the ⚠️ below
+      prescribed ("count corpus pages by bare-form nesting depth … `score-drawn-images` is the place to
+      add a column") — three appended columns, `formDepth` / `bareDepth` / `nestVerdict` — and swept 233
+      documents in **23 s**. `DRAWN-CENSUS-2026-08-26.tsv`; `BUGS.md` C24
+      `#### The corpus census, MEASURED`.
+      ⛔ **Quote the TWO-TERM form.** The divergence needs a chain of `n` forms of which `b` are bare
+      with `n >= 4` **and** `n - b <= 3`; the corpus maxima are **1** and **0** (`formDepth` 0 on 16,268 pages
+      and 1 on 716, `bareDepth` 0 on all 16,984 measured, `diverges` / `capRefused` / `bothBlind` all
+      **0**). The guard refuses the FOURTH form entered, so 4 − 1 = **three** form levels short, plus a
+      bare form the corpus does not have anywhere. So it is not one page away from the shape.
+      ⚠️ A draft of this box and three other files said "two levels short" — the third form in a chain
+      IS entered (`2 < 3`) — corrected by re-deriving it from the guard rather than the sentence.
+      ⛔ **And this box said `formDepth >= 4 AND formDepth - bareDepth <= 3`, in the COLUMN names,
+      which is not a sound screen — corrected on the adoption 2026-08-26.** The two columns are
+      independent maxima over all of the page's chains, while `divergent` is decided per chain at the
+      image site, so their difference need not be any chain's `r`. Only `formDepth >= 4` screens
+      soundly (it IS an upper bound on every chain's `n`), and it is the term the corpus refuses on,
+      so no figure in this box moves. `BUGS.md`'s own statement used `n` and `b` and was right.
+      **The decision's second reason: no CORPUS page exercises the one-line fix.** `formDepth` is 1 at
+      most, so the drawn walk's `s.depth < 3` guard **never fires on any
+      corpus page** — returning `.unreadable` instead of `.noImage` would change nothing over 16,987
+      pages, so this corpus offers no evidence it helps a real document; and `.unreadable` is
+      load-bearing elsewhere (T14). The rejected option is stated in the register rather than implied.
+      ⛔ **A draft of this box called reason 2 decisive and overstated it three ways — refuted by the
+      adversarial review of the adopting diff.** It is NOT true that there is "no page on which to
+      measure that it harms": fixture page 14 is the shape and the suite pins it, so a fix could be
+      gated on the fixture. Corpus harm is **provably empty** (0 pages fire the guard), which argues
+      *for* the change rather than against it. And C28 rejected a seam with **no caller**, where this
+      guard has one and is merely unexercised. Reason 1 carries the decision; reason 2 does not.
+      ⚠️ Not claimed: the shape is constructible and PDF-legal (fixture page 14 IS it, and the suite
+      still pins today's discard there), it is 233 documents and one corpus, and the census measures
+      **structure** — "no page has the nesting" is not "no page loses resolution".
+      ⚠️ Carried forward, named and not fixed: the census is a **second implementation** of the drawn
+      traversal (46-check `--self-test`, on every invocation, watched failing five ways of which **two
+      sabotage `Sources/Flattener.swift`'s own caps**; `fault-inject.sh drawn_census`, 5 rows — the
+      fifth Swift tool of 32 with any watched refusal); its **exit 5 has no row and cannot get one**;
+      its `every diverges row had a dictionary answer` line is **vacuously true** on a corpus with no
+      such row; and the fault case's inverse row is the **only** thing pinning where the three new
+      columns land, because the self-test calls `formNesting` directly and stays green on a reordering.
+      ⚠️ The `pageIsAnImage` ⚠️ this item used to carry was discharged separately by the
+      `c24-pageisanimage-pin` sub-box below. **Nothing under `Sources/` moved but two comments.**
+      *(the original item follows, kept as the record of what was asked)*
+      **the two image walks DO diverge, and it is bare forms rather than the caps.**
       A Form XObject carrying no `/Resources` of its own resolves its names in the invoker's scope.
       `largestImage`'s walk therefore does not descend it and loses nothing (the image is listed in the
       dictionary it is already scanning); `drawnLargestImage` must follow the `Do` operators and spends a

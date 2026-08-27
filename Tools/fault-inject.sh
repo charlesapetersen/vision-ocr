@@ -854,7 +854,198 @@ PY
   rm -rf "$SB"
 }
 
-FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids"
+# `score-drawn-images`'s form-nesting census, added 2026-08-26 with the census itself.
+#
+# The census is a SECOND implementation of `drawnLargestImage`'s traversal — the queue's
+# `bare-form-reach` needed depths that neither shipped walk exposes — so the thing worth
+# watching is not that it refuses bad input but that **its self-test is in front of every
+# sweep and pins production's caps rather than its own model of them**. Rows 3 and 4 are
+# that claim, and they are why this case is worth its build time: row 4 sabotages
+# `Sources/Flattener.swift` and requires the TOOL to notice.
+#
+# ⛔ Exit 5 has NO row and cannot get one from here. It fires when a page reads `diverges`
+# while `largestImage` found nothing, which means the census's model of the dictionary
+# walk's reach is wrong — and every sabotage that produces that also reds the self-test,
+# which runs first and exits 4 (row 2 is exactly such a sabotage, and it exits 4). So exit 5
+# is a backstop for a corpus shape the nine fixture pages do not have; reaching it needs a
+# page nobody in the tree can build, and `argv_writers`' rule forbids reaching for
+# `testdocs/`. Recorded, not watched. Exit 1 (production disagreeing with the drawn arm) is
+# pre-existing and equally unwatched.
+fault_drawn_census() {
+  local name target out rc tool fields f
+  target="$(uname -m)-apple-macos13.0"
+  sandbox
+
+  # One page: the page's own dictionary holds both the image and a BARE form that draws it,
+  # so the census must answer formDepth 1 / bareDepth 1 and both shipped walks must answer
+  # 900. A page of plain type would read `flat 0 0`, and the inverse row would then pass over
+  # a census that had stopped traversing anything — which is what `text_voids`' own inverse
+  # row was rewritten for.
+  /usr/bin/python3 - "$SB/bare-form.pdf" <<'PY'
+import sys
+draw = b"q 1 0 0 1 0 0 cm /F Do Q\n"
+inner = draw.replace(b"/F ", b"/Im ")
+objs = [b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R "
+        b"/Resources << /XObject << /Im 5 0 R /F 6 0 R >> >> >>",
+        b"<< /Length %d >>\nstream\n" % len(draw) + draw + b"endstream",
+        b"<< /Type /XObject /Subtype /Image /Width 900 /Height 900 /ColorSpace /DeviceGray "
+        b"/BitsPerComponent 8 /Length 3 >>\nstream\nabc\nendstream",
+        # No /Resources: that is the whole subject.
+        b"<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] /Length %d >>\nstream\n"
+        % len(inner) + inner + b"endstream"]
+out, offs = b"%PDF-1.4\n", []
+for i, o in enumerate(objs, 1):
+    offs.append(len(out))
+    out += b"%d 0 obj\n" % i + o + b"\nendobj\n"
+xref = len(out)
+out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1)
+for o in offs:
+    out += b"%010d 00000 n \n" % o
+out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (
+    len(objs) + 1, xref)
+open(sys.argv[1], "wb").write(out)
+PY
+  if [ ! -s "$SB/bare-form.pdf" ]; then
+    bad "the bare-form fixture was written" "no bare-form.pdf in the sandbox"
+    return
+  fi
+
+  # `argv_writers` carries this guard and `text_voids`' first draft dropped it: under
+  # `set -u` on bash 3.2 an empty array expansion is a fatal unbound variable, which aborts
+  # the run mid-case instead of reporting a red row.
+  local sources=()
+  for f in "$SB"/Sources/*.swift; do
+    [ "$(basename "$f")" = "App.swift" ] && continue
+    sources+=("$f")
+  done
+  if [ "${#sources[@]}" -eq 0 ]; then
+    bad "Sources/ has Swift files to build against" "no Sources/*.swift in the sandbox"
+    return
+  fi
+
+  mkdir -p "$SB/h" && cp "$SB/Tools/score-drawn-images.swift" "$SB/h/main.swift"
+  if ! swiftc -O -o "$SB/drawn" -target "$target" "${sources[@]}" "$SB/h/main.swift" \
+       >"$SB/drawn.log" 2>&1; then
+    bad "score-drawn-images builds" \
+        "$(grep -m1 'error:' "$SB/drawn.log" || echo "see $SB/drawn.log")"
+    return
+  fi
+  tool="$SB/drawn"
+
+  # --- 1. the usage refusal ---------------------------------------------------
+  name="score-drawn-images with no argument is exit 2 and names the census columns"
+  out="$("$tool" 2>&1 >/dev/null)"; rc=$?
+  if [ "$rc" -ne 2 ]; then
+    bad "$name" "exit $rc, wanted 2: $(head -1 <<<"$out")"
+  elif ! grep -q 'Columns 14-16' <<<"$out"; then
+    bad "$name" "exit 2 without pointing at the census: $(head -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+
+  # --- 2/3. a sabotaged CENSUS, on both entry points --------------------------
+  # `r <= 3` -> `r <= 4` makes the divergence test fire on a chain of four
+  # resource-carrying forms, where `r = 4` and NEITHER walk reaches — fixture page 5. One
+  # token, and the smallest wrong answer the arithmetic can give.
+  mkdir -p "$SB/hs"
+  sed 's|if r <= 3 { s.out.divergent = true }|if r <= 4 { s.out.divergent = true }|' \
+      "$SB/h/main.swift" > "$SB/hs/main.swift"
+  if cmp -s "$SB/hs/main.swift" "$SB/h/main.swift"; then
+    bad "the census sabotage applies" "the r <= 3 test was not found in the tool"
+    return
+  fi
+  if ! swiftc -O -o "$SB/drawn-sab" -target "$target" "${sources[@]}" "$SB/hs/main.swift" \
+       >"$SB/drawn-sab.log" 2>&1; then
+    bad "the census-sabotaged build compiles" \
+        "$(grep -m1 'error:' "$SB/drawn-sab.log" || echo "see $SB/drawn-sab.log")"
+    return
+  fi
+
+  name="a census that mis-reads the dictionary walk's reach is exit 4, naming the page"
+  out="$("$SB/drawn-sab" --self-test 2>&1 >/dev/null)"; rc=$?
+  if [ "$rc" -ne 4 ]; then
+    bad "$name" "exit $rc, wanted 4: $(tail -1 <<<"$out")"
+  elif ! grep -q 'census p5 reads bothBlind' <<<"$out"; then
+    bad "$name" "exit 4 without naming p5: $(head -2 <<<"$out" | tr '\n' ' ')"
+  else
+    ok "$name"
+  fi
+
+  # ⛔ The row the "runs on every invocation" claim rests on, and it asserts the ABSENCE of
+  # the header rather than the exit code alone. A build that exited 4 *after* printing the
+  # TSV header would satisfy an exit-code-only row while having already emitted something a
+  # caller redirects and keeps — a truncated sweep that looks like a sweep, invariant 1's
+  # shape in an instrument.
+  name="…and it refuses the SWEEP path too, before any TSV reaches stdout"
+  out="$("$SB/drawn-sab" "$SB/bare-form.pdf" 2>/dev/null)"; rc=$?
+  if [ "$rc" -ne 4 ]; then
+    bad "$name" "exit $rc, wanted 4"
+  elif [ -n "$out" ]; then
+    bad "$name" "exit 4 but $(wc -l <<<"$out" | tr -d ' ') line(s) reached stdout"
+  else
+    ok "$name"
+  fi
+
+  # --- 4. PRODUCTION's cap, which is why this case is worth its build time ----
+  # The census is deliberately uncapped and cannot see either shipped cap, so if the
+  # self-test still passed when `largestImage`'s reach moved, the whole table would be the
+  # census agreeing with itself. It does not: exactly one row moves, page 5's, whose `r = 4`
+  # dictionary becomes reachable at `depth < 5`.
+  mkdir -p "$SB/psrc" && cp "$SB"/Sources/*.swift "$SB/psrc/" && rm -f "$SB/psrc/App.swift"
+  sed -i '' 's|            guard depth < 4 else { return }|            guard depth < 5 else { return }|' \
+      "$SB/psrc/Flattener.swift"
+  if cmp -s "$SB/psrc/Flattener.swift" "$SB/Sources/Flattener.swift"; then
+    bad "the largestImage cap sabotage applies" "the depth < 4 guard was not found"
+    return
+  fi
+  local psources=()
+  for f in "$SB"/psrc/*.swift; do psources+=("$f"); done
+  if ! swiftc -O -o "$SB/drawn-prod" -target "$target" "${psources[@]}" "$SB/h/main.swift" \
+       >"$SB/drawn-prod.log" 2>&1; then
+    bad "the cap-sabotaged build compiles" \
+        "$(grep -m1 'error:' "$SB/drawn-prod.log" || echo "see $SB/drawn-prod.log")"
+    return
+  fi
+
+  name="loosening largestImage's own depth cap reds the tool's self-test, at p5 alone"
+  out="$("$SB/drawn-prod" --self-test 2>&1 >/dev/null)"; rc=$?
+  if [ "$rc" -ne 4 ]; then
+    bad "$name" "exit $rc, wanted 4: $(tail -1 <<<"$out")"
+  elif ! grep -q 'census p5 largestImage answers nothing' <<<"$out"; then
+    bad "$name" "exit 4 but not by p5's dictionary answer: $(head -2 <<<"$out" | tr '\n' ' ')"
+  # ⚠️ ANCHORED, and the first draft of this row was not: a bare `grep -c FAIL` also matches
+  # the tool's own `SELF-TEST FAILED: 1 of 46 checks` summary line, so it read 2 and reported
+  # a defect that was its own. Measured by hitting it — suspect the instrument first.
+  elif [ "$(grep -c '^  FAIL' <<<"$out")" -ne 1 ]; then
+    bad "$name" "$(grep -c '^  FAIL' <<<"$out") rows red, wanted exactly 1"
+  else
+    ok "$name"
+  fi
+
+  # --- 5. the inverse row, CONTRIBUTING §4d -----------------------------------
+  # A tool that refused everything would pass every row above. This asserts the census
+  # produced a NON-TRIVIAL answer on a real file: `withinCap 1 1` on a page whose only
+  # structure is one bare form, with both shipped walks answering 900 beside it.
+  name="…and a clean build reads the bare-form page as withinCap, formDepth 1, bareDepth 1"
+  out="$("$tool" "$SB/bare-form.pdf" 2>/dev/null)"; rc=$?
+  fields="$(awk -F'\t' 'NR==2 { print NF"|"$14"|"$15"|"$16"|"$4"|"$8 }' <<<"$out")"
+  if [ "$rc" -ne 0 ]; then
+    bad "$name" "exit $rc"
+  elif [ "$fields" != "16|1|1|withinCap|900|900" ]; then
+    bad "$name" "NF|formDepth|bareDepth|nestVerdict|dictWidth|drawnWidth read \"$fields\", wanted 16|1|1|withinCap|900|900"
+  else
+    ok "$name"
+  fi
+
+  # Same reason as `argv_writers` and `text_voids`: `mrc_refuses` clears the script's EXIT
+  # trap, so on a full run nothing else removes this sandbox — and it holds a whole-repo
+  # rsync plus three binaries linked against all of `Sources/`.
+  rm -rf "$SB"
+}
+
+FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids drawn_census"
 
 if [ "${1:-}" = "--list" ]; then
   for f in $FAULTS; do echo "  $f"; done; exit 0

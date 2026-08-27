@@ -3642,9 +3642,21 @@ enum Flattener {
             // costs this walk no depth at all while costing the drawn walk one level each,
             // and on four bare levels this walk answers an image the drawn walk does not
             // reach — page 14 of the fixture. ⛔ **Raising this cap does not equalise
-            // anything**; it widens the wider walk. The queue's `bare-form-reach` holds the
-            // decision, and `< 4` has never been moved over the corpus, so the byte-identical
-            // sweep the other guard cites is not evidence about this number.
+            // anything**; it widens the wider walk. ⛔ **`< 4` has still never been moved over
+            // the corpus and the 2026-08-26 census does NOT stand in for it**, so the
+            // byte-identical sweep the other guard cites is not evidence about this number and
+            // neither is the census: `formNesting` installs one callback, `"Do"`, so it measures
+            // only chains a page actually DRAWS, while this walk descends `/Resources` whether
+            // the form is drawn or not — which is the very reason the register gives for the
+            // other sweep not covering this cap. A page can read `formDepth 1` with five
+            // undrawn resource levels under it. What the census DOES bound here is this cap
+            // restricted to drawn images (`n <= 3` implies `r <= 3`).
+            // ✅ It bounds the DRAWN cap outright: `formDepth` max **1** and `bareDepth` max
+            // **0** over the 16,984 pages it speaks for (3 of 16,987 read `partial`, where the
+            // maxima are floors). The queue's `bare-form-reach` is CLOSED `WONTFIX` on that
+            // number; C24 `#### The corpus census, MEASURED`. ⚠️ A draft of this comment said
+            // the census "covers both caps at once" and said 16,987; both were corrected by the
+            // adversarial review of the adopting diff, on the same day.
             guard depth < 4 else { return }
             // Identity, not contents: CoreGraphics resolves an indirect
             // reference to the same dictionary pointer every time, which is what
@@ -3872,9 +3884,24 @@ enum Flattener {
                 // `shared-resources.pdf`: four bare levels, `largestImage` answers 1800 px,
                 // this walk answers `.noImage`, and because `rebuildDPI` routes `.noImage` to
                 // the fallback rather than to `largestImage` the way it routes `.unreadable`,
-                // the page loses a resolution that was read. ⚠️ Latent — no corpus page has
-                // that shape, on the weak bound below — and the queue's `bare-form-reach`
-                // carries the decision. Found by the adversarial review of the diff that
+                // the page loses a resolution that was read. ⚠️ Latent — and as of 2026-08-26
+                // that is MEASURED directly rather than inferred from the weak bound below:
+                // the census in `Tools/score-drawn-images.swift` counts the nesting on every
+                // corpus page it can read and finds `formDepth` max **1** and `bareDepth` max
+                // **0** over **16,984** of 16,987 (3 read `partial`, where both maxima are
+                // floors), so the corpus is three form levels short of this guard ever firing
+                // and **0 pages have the shape, on either of its two terms**. The queue's
+                // `bare-form-reach` is CLOSED `WONTFIX` on that number; C24
+                // `#### The corpus census, MEASURED`. ⛔ **That entry ALSO records what the
+                // census does NOT license, and a draft of this comment got it wrong: the reason
+                // to leave this alone is that no CORPUS page exercises the guard, not that
+                // nothing anywhere does.** Page 14 above IS the shape, is in the tree, and the
+                // suite pins today's answer on it — so a change here could be gated on the
+                // fixture; what is missing is evidence about real documents, in both directions.
+                // The harm half of that is provably empty on this corpus rather than merely
+                // unmeasured, which is an argument for the change and not against it; the
+                // decision rests on the corpus absence plus `.unreadable` being load-bearing
+                // elsewhere (T14). Found by the adversarial review of the diff that
                 // added the fixture, which had asserted equal reach unconditionally here.
                 //
                 // The production reason for three is that three is what shipped. A scan

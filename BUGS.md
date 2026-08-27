@@ -1806,7 +1806,14 @@ campaigns it rests on, in date order. **One section now sits after the close** �
 one of its own promises unkept: it made the drawn walk production without re-measuring the
 depth cap the old comment said would want re-measuring *"then"*. It changes no behaviour and
 the entry stays `FIXED`, but it does record a **latent divergence between the two image walks
-on chains of bare forms**, carried out as the queue's `bare-form-reach`. This parenthesis
+on chains of bare forms**, carried out as the queue's `bare-form-reach` — ✅ **which is CLOSED
+`WONTFIX` on 2026-08-26 with the corpus number: the shape is on 0 of 16,987 pages and the
+deepest page in the corpus is THREE levels short of even reaching the drawn cap's refusal point.
+See `#### The corpus census, MEASURED`.** ⚠️ **This sentence read "TWO levels" for the length of
+one commit and was the last live copy of a number that same commit retracted in four files** —
+the sweep counted files and left this entry's own top-of-entry summary carrying it, which is
+verbatim the miscount the register records against the C29 strand ("SIX occurrences in FIVE
+files, not 'five places'"). Caught by the adversarial review of the adopting diff. This parenthesis
 said "at the end of this entry" until that section was added.)*
 
 **What closed: a page that draws no XObject at all has no image, whatever its
@@ -2756,15 +2763,28 @@ unconditional claim to `Flattener`'s own comment** — the same failure mode as 
 `make-observations.swift` comment this very commit corrects, in the same commit. Both caps'
 comments now carry the scope and point at each other, so neither can be "reconciled" alone.
 
-⚠️ **Latent, not a measured victim, and the bound is weak.** No corpus page has this shape:
-`c17b3f3` moved the drawn cap from `< 4` to `< 3` and its 16,987-page sweep was
-byte-identical, which no page with exactly four bare levels could have been. That is **one
-cap over one corpus**, and it says nothing about `largestImage`'s `< 4`, which has **never
-been moved over the corpus at all** — nor could that sweep stand in for it, since the
-dictionary walk reads `/Resources` whether or not the form is drawn. So these rows **pin the
-behaviour rather than bless it**, and the decision of whether to fix it is the queue's new
-`bare-form-reach`. It is not reopened as a defect: nothing measured loses anything, and the
-page a reader would have to construct to be harmed does not exist in 16,987 of them.
+⚠️ **Latent, not a measured victim** — ⛔ **and "the bound is weak" is RETRACTED for the DRAWN cap
+as of 2026-08-26, because a direct one exists: `#### The corpus census, MEASURED` counts the
+nesting itself and reads `formDepth` max **1** and `bareDepth` max **0** over the **16,984** pages
+of 16,987 it speaks for, so the corpus is THREE levels short of the refusal point rather than
+merely observed not to move.** ⛔ **It is NOT retracted for `largestImage`'s `< 4`, and a draft of
+this paragraph claimed the census "covers both caps at once" three lines above the sentence that
+refutes it.** `formNesting` installs one callback, `"Do"`, so it measures only chains a page
+DRAWS; the dictionary walk descends `/Resources` whether the form is drawn or not — which is
+exactly the reason given below for `c17b3f3`'s sweep not covering it, and it applies verbatim to
+the census. What the census bounds for that cap is its reach **restricted to drawn images**
+(`n <= 3` implies `r <= 3`), which is a narrower and true claim. Caught by the adversarial review
+of the adopting diff, in `Sources/Flattener.swift`'s own comment as well as here. What the
+paragraph used to rest on, kept as the record of why a
+sweep could not answer this: `c17b3f3` moved the drawn cap from `< 4` to `< 3` and its
+16,987-page sweep was byte-identical, which no page with exactly four bare levels could have
+been. That was **one cap over one corpus**, and it said nothing about `largestImage`'s `< 4`,
+which has **still never been moved over the corpus at all** — nor could that sweep stand in for
+it, since the dictionary walk reads `/Resources` whether or not the form is drawn. So these rows
+**pin the behaviour rather than bless it**, and the decision of whether to fix it was the
+queue's `bare-form-reach`, **closed `WONTFIX` 2026-08-26**. It is not reopened as a defect:
+nothing measured loses anything, and the page a reader would have to construct to be harmed does
+not exist in 16,987 of them.
 
 ⛔ **The corpus can never be the instrument for the equal half either.** This entry's own
 comment records `< 4` and `< 3` producing byte-identical sweeps, so the verification the
@@ -3166,6 +3186,239 @@ established": `$STATE/suite-timings.tsv` has seven clean full-suite runs on 2026
 **281-300 s** — including `pre-commit 2512 300` twenty-four minutes before this run and before
 this check existed — against 2026-08-25's 227-246 s at 1,247 checks. Suite growth accounts for
 it.
+
+#### The corpus census, MEASURED — the bare-form shape is on 0 of 16,987 pages, and the corpus is three form levels short of being able to hold it — 2026-08-26
+
+The queue's `bare-form-reach` asked for **a measurement and not a fix**, and this is it.
+`Tools/score-drawn-images.swift` gained a form-nesting census — three appended columns,
+`formDepth` / `bareDepth` / `nestVerdict` — and it ran over all **233 documents and 16,987
+pages** in **23 s** (metadata speed; no rendering, no OCR). `DRAWN-CENSUS-2026-08-26.tsv`.
+
+**The answer, and it is zero on both terms rather than one:**
+
+| column | corpus |
+|---|---|
+| `formDepth` (forms entered along the deepest chain) | **0 on 16,268 pages, 1 on 716.** Nothing deeper on any page the census speaks for. |
+| `bareDepth` (bare forms along the chain with the most) | **0 on all 16,984 measured pages.** Not one bare form in the corpus. |
+| `nestVerdict` | `flat` 16,268 · `withinCap` 716 · `partial` 3 · **`diverges` 0 · `capRefused` 0 · `bothBlind` 0** |
+
+⚠️ **The denominator of the two maxima is 16,984, not 16,987**, because the sweep excludes
+`partial` rows from both histograms and the maxima on those 3 pages are **floors** by the tool's
+own definition. Say "16,984 measured" and not "all 16,987": a draft said the latter in this
+section's opening line and in **both** `Sources/Flattener.swift` comments, all three corrected on
+the adoption. The harm claim is still safe on those 3 — they read `drawnKind=unreadable`, which
+`rebuildDPI` already routes to `largestImage` — but the *structural* claim is not.
+
+⛔ **Quote the two-term form, not "no page has the shape".** The divergence needs `n >= 4`
+**and** `n - b <= 3`, so it needs both a chain of four forms and at least one bare form in it.
+The corpus's maxima are **1** and **0**. So it is not one measurement away from the shape: the
+deepest page in 16,987 is **three form levels short** of the drawn cap's refusal point — the
+guard refuses the FOURTH form entered and the corpus maximum is **one** — and a divergence needs
+those same three levels *plus* a bare form, on a term whose corpus maximum is zero. ⚠️ **A draft
+of this section said "two levels short" in four files and it was wrong**: the third form in a
+chain is entered (`s.depth` is 2 at that point, and `2 < 3`), so the refusal needs `formDepth 4`
+and 4 − 1 = 3. Caught by re-deriving it from the guard rather than from the sentence. That is a
+stronger bound than
+the one this entry has been carrying, which was `c17b3f3`'s byte-identical sweep of the
+**drawn** cap — one cap, and silent about `largestImage`'s `< 4`, which has still never been
+moved over the corpus and now does not need to be.
+
+**THE DECISION: `WONTFIX`, and `bare-form-reach` closes on this number.** Two reasons, and
+the second is the one that decides it:
+
+1. The shape is absent from the corpus on both of its terms, with the margins above.
+2. **No CORPUS page exercises the one-line fix, and `.unreadable` is load-bearing elsewhere.**
+   The queue box priced it as returning `.unreadable` rather than `.noImage` when the depth
+   guard is what stopped the walk, which routes the page to `largestImage` — which already has
+   the answer. But `formDepth` is 1 at most, so **the drawn walk's `s.depth < 3` guard never
+   fires on any corpus page**: the fix would change nothing over 16,987 pages, so this corpus
+   offers no evidence that it helps a real document. And `.unreadable` is load-bearing elsewhere
+   (T14's "an instrument that knows when it is not measuring"), so overloading it to mean "the
+   cap stopped me" trades a measured nothing for an unmeasured something.
+
+   ⛔ **THE FIRST DRAFT OF THIS REASON OVERSTATED IT IN ALL FOUR FILES AND THE REVIEW OF THE
+   ADOPTING DIFF REFUTED IT TWICE — the correction is worth more than the reason.** (i) It said
+   *"there is no page on which to measure that it helps and none on which to measure that it
+   harms"*, and the second half is **false**: `shared-resources.pdf` page 14 IS the shape, is in
+   the tree, and the suite already pins today's answer on it — so a change here **could** be
+   gated, on the fixture. The true claim is "no *corpus* page", i.e. no evidence about real
+   documents. (ii) Worse, the harm half **runs the other way**: the guard fires iff
+   `formDepth >= 4`, which is 0 corpus pages, so corpus harm is *provably empty* rather than
+   merely unmeasured — an argument **for** the change, not against it. (iii) And "the
+   seam-with-no-caller shape C28 rejected" is **misapplied**: what C28 rejected was a field with
+   **no caller at all**; this guard has a caller and simply is not exercised by this corpus.
+   Unexercised is not dead. So reason 1 plus `.unreadable`'s other duty carries the decision on
+   its own, and reason 2 no longer claims to be decisive.
+
+⚠️ **What that does NOT say.** The shape is constructible and PDF-legal — `shared-resources.pdf`
+page 14 is it, and the suite pins today's answer there (1800 px read and discarded, the page
+rebuilding at the 300 fallback), so that pin stays as the record of what a file outside this
+corpus would get. It is 233 documents and one corpus. And this measures **structure**: it says
+no page has the nesting, not that no page loses resolution for some other reason.
+
+##### The instrument, and what pins it
+
+⚠️ **The census is a SECOND implementation of `drawnLargestImage`'s traversal, not a call into
+it** — neither shipped walk exposes its depths, and adding an accessor to `Flattener` for an
+instrument is a seam with no caller. Same `CGPDFOperatorTable`, same
+`formResources ?? inherited ?? streamDict` scope rule, same `/Width` plausibility guards; it
+differs in exactly two ways, both the point — no `depth < 3`, and it counts instead of
+measuring a width. The memo is keyed on `(stream, scope, depth, bare)` rather than production's
+`(stream, scope)`, because this walk wants **maxima** where production wants a first answer: a
+stream already scanned at depth 2 must still be scanned when a longer path arrives at depth 3,
+or `formDepth` understates itself. Bounded all the same, at `censusDepthBound²` visits per pair.
+✅ **And the maxima cannot be understated by the memo, read on the adoption**: both `max`
+assignments happen *before* the `seen.insert` guard, so a memo-skipped visit still records its own
+depth and bare count.
+
+⛔ **THE TWO COLUMNS ARE INDEPENDENT MAXIMA OVER ALL OF THE PAGE'S CHAINS, AND THE VERDICT IS NOT —
+which is why this section's rule is stated in `n` and `b` and must never be restated in the column
+names.** `score-drawn-images.swift:262-263` takes `max` of `formDepth` and of `bareDepth`
+separately, while `divergent` is decided at the image site from that chain's own
+`n = s.depth, r = s.depth - s.bare` (`:250-253`). So `formDepth - bareDepth` need not be any
+chain's `r`: a page with `formDepth` 5 down one chain and `bareDepth` 1 down another reads
+`5 - 1 = 4` and can still hold a divergence. **Only the first term screens soundly**, because
+`formDepth` genuinely is an upper bound on every chain's `n` — and it is the term the corpus
+refuses on (max **1**), so the `WONTFIX` above is unaffected and no figure moves. ⚠️ **`CLAUDE.md`
+and the queue box DID restate it in the columns and were corrected on the adoption, 2026-08-26** —
+the load-bearing summaries wrong while this section was right, which is the drift this register
+has caught four times before. The columns are reported as description; the verdict column is the
+answer.
+
+✅ **A 46-check `--self-test` over nine built pages, and it runs on EVERY invocation** — so a
+sweep cannot be taken from a build whose model has drifted. Every page asserts the census
+**and** `largestImage` **and** `drawnLargestImage`, which is the pairing that makes it a gate
+rather than the census agreeing with itself. The table brackets both walks' boundaries from
+both sides: p7 (`n=3, b=3`) and p6 (`n=4, b=4`) are one structural step apart and the drawn
+walk answers the first and not the second; p9 (`r=3`) and p5 (`r=4`) do the same for the
+dictionary walk; **p5 is the negative control at the same `formDepth` of 4 with no bare form**,
+where `r = 4` and neither walk reaches — so `formDepth >= 4` alone is not the divergence and
+the rows say which term does the work; and p8 is a second positive at `b = 2` rather than 4,
+which is why the verdict is `n - b <= 3` and not "every form in the chain is bare".
+
+⛔ **Watched failing five ways, every count predicted before the run, and TWO of the five are
+sabotages of `Sources/Flattener.swift` itself** — which is what earns the claim that the table
+pins production's caps and not the census's model of them:
+
+| sabotage | red |
+|---|---|
+| census does not enter a bare form (the dictionary walk's rule) | **12** checks, on p4/p6/p7/p8 |
+| census `n >= 4` → `n >= 5` | **3**, on p5/p6/p8 |
+| census `r <= 3` → `r <= 4` | **1**, p5 — the negative control |
+| **`Flattener.largestImage`'s `depth < 4` → `< 5`** | **1**, p5's dictionary answer, nothing → 1200 |
+| **`Flattener.drawnLargestImage`'s `s.depth < 3` → `< 4`** | **3**, p5/p6/p8's drawn answers |
+
+All five exit **4**, and all five reds above were **re-run on fresh binaries on the adoption**
+and reproduce check for check on the named pages. ⛔ **The "other arm stayed green" half is
+RETRACTED as evidence**: `formNesting` never calls `largestImage` or `drawnLargestImage`, and the
+three census sabotages edit the tool file only, so neither green can move at any value of
+anything — a check whose *input* the sabotage does not touch. That is the retraction this register
+published for `shapeHeightHigh` ("the test a green must pass is not *could this check move in
+principle* but *does the mutant change this check's input at all*"), being made a second time.
+**The attribution rests on the five reds and never needed a green.**
+
+✅ **`Tools/fault-inject.sh drawn_census`, 5 rows, `5 passed, 0 failed`** — the **fifth** Swift
+tool of the 32 whose own refusals any case exercises, after `score-mrc`, `pdf-extract-pages`,
+`make-observations` and `score-text-voids`. Its two load-bearing rows are the production-cap
+sabotage above and one asserting the self-test gates the **sweep** path: a sabotaged build run
+over a real PDF must exit 4 **with nothing on stdout**, because a build that exited 4 *after*
+printing the TSV header would satisfy an exit-code-only row while having emitted a truncated
+sweep that looks like a sweep — invariant 1's shape in an instrument.
+
+⛔ **Exit 5 has no row and cannot get one, said in place rather than counted as covered.** It
+fires when a page reads `diverges` while `largestImage` found nothing, i.e. when the census's
+model of the dictionary walk's reach is wrong — and every sabotage that produces that also reds
+the self-test, which runs first and exits 4 (the `r <= 4` row above is exactly such a sabotage,
+and it exits 4). So it is a backstop for a corpus shape the nine fixture pages do not have, and
+reaching it needs a page nobody in the tree can build. ⛔ **It also asserted nothing on this
+sweep**: its antecedent is the set of `diverges` rows, which is empty, so the run's
+`every diverges row had a dictionary answer, on all 16987 pages` line is **vacuously true** and
+must not be read as a control. Exit 1 (production disagreeing with the drawn arm) is
+pre-existing and equally unwatched; it printed `matched the drawn arm on all 16987 pages`, which
+is not vacuous. ⛔ **And exit 5 guards the HARMLESS direction**: it looks for
+`diverges && dict == nil`, whereas the arithmetic's real failure mode is
+`bothBlind && dict != nil` (see the `r = n - b` upper-bound correction above), which is
+unguardable because a `bothBlind` page may legitimately hold a shallow image.
+
+##### Six more gaps in the instrument, named by the adversarial review of the adopting diff
+
+Recorded, not fixed. None of them moves the corpus result; all six are about what the table
+would notice if the census drifted.
+
+1. ⛔ **`partial` and `capRefused` are asserted by NO check and no fault row.** Enumerated
+   against the `expected` table: `flat` (p1, p2), `withinCap` (p3/p4/p7/p9), `bothBlind` (p5),
+   `diverges` (p6/p8) — two of the six verdicts have no fixture. `partial` is the one **3
+   published corpus rows carry**, and it is the gate that excludes them from both histograms.
+2. ⛔ **`censusDepthBound` = 8 has no check at any value.** Sabotaged to `2` it would red three
+   verdicts; sabotaged to `80` it reds nothing.
+3. ⚠️ **Fault row 5 is weaker than "the only thing pinning where the columns land" claims.** Its
+   fixture page reads `formDepth 1 / bareDepth 1`, so a sabotage swapping the *emission order*
+   of those two fields leaves it green — both are 1 — and the self-test is blind to emission
+   order entirely, reading struct fields rather than the row. The row also reads `NR==2`, so
+   renaming the three header entries reds nothing, and `precondition(fields.count ==
+   columns.count)` cannot see either. A second fixture page with a resource-carrying form
+   (`1 / 0`) would close it for one field pair.
+4. ⚠️ **Two of the 46 checks are entailed by a neighbour**: `bareDepth <= formDepth` always, so
+   p1's and p2's `bareDepth is 0` cannot fail unless the `formDepth` check on the same page also
+   fails. That is precisely what the preceding commit (`bee2db1`) named about its own row, being
+   true again one commit later.
+5. ⚠️ **`flat` conflates "draws no form" with "the content stream yielded nothing".** `partial`
+   is set only inside the `Do` callback and at the depth bound, so a page whose stream tokenises
+   to nothing reads `formDepth 0, partial false` → `flat`, against the positive claim that
+   "0 means the page draws no form at all". Production keeps that distinction on purpose
+   (`.unreadable` against `.noImage`). Not realised here — all 719 census-file rows read
+   `drawsAny=yes` — but the 16,268 `flat` pages are unaudited for it.
+6. ⚠️ The self-test leaks its temp directory when it fails: the `defer` that removes it is not
+   run by `exit(4)`, so a `fault-inject drawn_census` run leaves three `drawn-census-<pid>`
+   directories in `NSTemporaryDirectory()`.
+
+##### The controls, and one instrument defect found by hitting it
+
+✅ **Columns 1-13 are byte-identical across the two binaries either side of this diff** over all
+16,987 rows — the tool built from `HEAD` and the tool built from this working tree, run over the
+same corpus. So the appended columns moved nothing, and the pre-existing summary reproduces
+C24's own published figures exactly: **39 `smaller`, 6 `wider`, 285 `noDictImage`, 3
+`unreadable`**. ✅ And `DRAWN-2026-08-16.tsv`'s column 6 — taken by the *old* production path
+before C24's wiring existed — equals this run's `dictRebuildDPI` on **48 of 48** rows.
+
+✅ Two internal consistency readings: the **3** `partial` rows are exactly the 3 `unreadable`
+pages, same document (`Astin__The Challenge of Open Admissions`), so nothing reads `partial` for
+want of depth; and the **719** `formDepth >= 1` pages include **`Lyons oral history` at 114 of 114**,
+which is what `drawnLargestImage`'s own doc comment says that document is (its scan one level
+down inside a form) — an independent confirmation the census finds real nesting where the
+register already said it is.
+
+⛔ **One defect in this work, found by running it, and it was the instrument.** The fault row
+asserting "exactly one check red" read **2** and reported a defect that was its own: a bare
+`grep -c 'FAIL'` also matches the tool's `SELF-TEST FAILED: 1 of 46 checks` summary line.
+Anchored to `^  FAIL`. ⚠️ And a second gap named rather than closed: the column-order sabotage
+(swapping the three appended fields) leaves the self-test **green** — it calls `formNesting`
+directly and never goes through `row(...)` — and reds only the fault case's inverse row. So
+that row is the **only** thing pinning where the census columns land.
+
+**Sibling sweep.** ⛔ `Tools/score-drawn-images.swift` is the **only** file in `Tools/` that
+re-implements a `CGPDFOperatorTable` walk (`git grep -l CGPDFOperatorTable` finds it and
+`Sources/Flattener.swift`, nothing else), so the drift hazard this section is careful about is
+unique to this file and the self-test is its whole gate. Six tools read `largestImage` or
+`drawnLargestImage`, all of them consuming the answer rather than asking about structure, and
+none moves because nothing in `Sources/` changed. ⚠️ **The sweep's own finding, which belongs to
+the queue's `tsv-header-drift` and is not fixed here**: **ten** tools carry the
+`fields.count == columns.count` width check, which asserts the **width** and not the
+**order** — `CONTRIBUTING.md` §5's row says "with the width asserted", accurately — and the only
+thing anywhere that pins order is a fault-inject row, which now exists for exactly one of the
+ten. ⛔ **A draft of this sentence said "twelve tools carry the `precondition(…)` idiom" and BOTH
+halves were wrong, counted on the adoption 2026-08-26**: `git grep -c` reads **10** files, one
+occurrence each, and **2 of the 10 are not a `precondition` at all** —
+`score-reading-order.swift:884` is a `guard … else` and `score-threshold-loss.swift:527` a
+ternary returning `nil`, which is a *refusal* rather than a trap and therefore not even the same
+failure mode. The count was written rather than grepped, in the sibling-sweep paragraph whose
+other two counts were both grepped and both hold. ⚠️ **And "twelve" is a real number of a
+different set, which is why the two must be said apart**: the *width-asserting* population is
+**12** — the ten above plus `score-mrc.swift:617` (a ternary over `cells`, which the `fields`
+grep misses) and `score-run-width.swift:146`, whose `precondition(columns.count == columnCount)`
+asserts the **header against a literal** rather than a row against the header, a different
+assertion again. Ten is the denominator for "exactly one of them has a fault row"; twelve is the
+denominator for "asserts width, not order".
 
 ### C25 · `score-text-route` has never compiled, and three documents cite it as the evidence — FIXED
 *(found 2026-08-15 while fixing A12.2, by trying to build it)*

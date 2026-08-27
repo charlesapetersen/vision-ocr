@@ -1291,12 +1291,53 @@ dictionary it already scanned). Page 14 measures it — `largestImage` **1800 px
 fallback rather than to `largestImage` the way it routes `.unreadable`, **that page rebuilds
 at 300 instead of its own 211.8 DPI, discarding a resolution that WAS read.** The gap grows
 with the number of bare forms, so **no pair of caps closes it**, which is a reason to leave
-both alone rather than to raise either. ⚠️ **Latent**: `c17b3f3`'s byte-identical 16,987-page
-sweep says no corpus page has the shape, but that is one cap over one corpus and says nothing
-about `largestImage`'s `< 4`, never moved over it — the decision is the queue's
-`bare-form-reach`, and C24 is **not** reopened. Found by the adversarial review of the diff
+both alone rather than to raise either. ✅ **AND IT IS NOW `WONTFIX` ON A CORPUS NUMBER, 2026-08-26
+— the shape is on 0 of 16,987 pages and the corpus is THREE FORM LEVELS SHORT of being able to hold it**
+(`Tools/score-drawn-images.swift`'s form-nesting census, `DRAWN-CENSUS-2026-08-26.tsv`, C24
+`#### The corpus census, MEASURED`; the queue's `bare-form-reach` closes on it and C24 is **not**
+reopened). ⛔ **Quote the TWO-TERM form**: the divergence needs a chain of `n` forms of which `b`
+are bare with `n >= 4` **and** `n - b <= 3`, and the corpus maxima are **1** and **0**. The guard
+refuses the
+FOURTH form entered, so 4 − 1 = **three** form levels short, and a divergence needs those three
+*plus* a bare form. ⚠️ **A draft said "two levels" in four files** — the third form in a chain IS
+entered, `2 < 3` — corrected by re-deriving it from the guard. ⛔ **AND THIS LINE AND THE QUEUE BOX
+STATED THAT RULE IN THE COLUMN NAMES — `formDepth >= 4 AND formDepth - bareDepth <= 3` — WHICH IS
+NOT SOUND AND WAS CORRECTED ON THE ADOPTION 2026-08-26**: the two columns are **independent maxima
+over all of the page's chains** (`score-drawn-images.swift:262-263` takes `max` of each separately)
+while `divergent` is decided per chain at the image site (`:250-253`), so their difference need not
+be any chain's `r` — a page with `formDepth` 5 on one chain and `bareDepth` 1 on another reads
+`5 − 1 = 4` and can still hold a divergence. Only the FIRST term screens soundly, because
+`formDepth` **is** an upper bound on every chain's `n`; and that is the term the corpus refuses on,
+so no published figure moves. `BUGS.md`'s own statement used `n` and `b` and was right. `formDepth` is 0 on
+16,268 pages and 1 on 716, `bareDepth` is 0 on all 16,984 measured pages, and `diverges`,
+`capRefused` and `bothBlind` are all **0**. ⛔ **So "the bound is weak" is RETRACTED**: it used to
+rest on `c17b3f3`'s byte-identical 16,987-page sweep, which was one cap over one corpus and said
+nothing about `largestImage`'s `< 4` — **still never moved over the corpus, and the census does NOT
+stand in for it.** ⛔ A draft of this line said it "covers both caps at once", three lines above the
+sentence that refutes it: `formNesting` installs one callback, `"Do"`, so it measures only chains a
+page DRAWS, while the dictionary walk descends `/Resources` drawn or not. What it bounds for that
+cap is its reach **restricted to drawn images** (`n <= 3` implies `r <= 3`) — narrower, and true.
+That matters because `pageIsAnImage` reads `largestImage` with no drawn walk in front of it.
+**The decision's SECOND reason: no CORPUS page exercises the one-line fix.**
+`formDepth` is 1 at most, so the drawn walk's `s.depth < 3` guard **never fires on any
+corpus page** — the fix would change nothing over 16,987 pages, so this corpus offers no evidence
+it helps a real document. ⛔ **A draft called that reason decisive and overstated it three ways,
+refuted by the review of the adopting diff**: there IS a page on which to measure harm (fixture
+page 14, pinned by the suite); corpus harm is **provably empty** rather than unmeasured, which
+argues *for* the change; and C28 rejected a seam with **no caller**, where this guard has one and
+is merely unexercised. Reason 1 plus `.unreadable`'s other duty (T14) carries the decision.
+⚠️ Not claimed: the shape is constructible and PDF-legal (fixture page 14 IS
+it, and the suite still pins today's discard there), it is 233 documents and one corpus, and the
+census measures **structure** — no page has the nesting, which is not "no page loses resolution".
+⚠️ The census is a **second implementation** of the drawn traversal, pinned by a 46-check
+`--self-test` that runs on every invocation and was watched failing five ways, **two of them
+sabotages of `Sources/Flattener.swift`'s own caps** (1 and 3 red checks), plus
+`fault-inject.sh drawn_census`, 5 rows — the **fifth** Swift tool of 32 whose refusals any case
+exercises. ⛔ Its exit **5** has no row and cannot get one (every sabotage that would reach it reds
+the self-test first, which exits 4), and its `every diverges row had a dictionary answer` line is
+**vacuously true** on a corpus with no such row. Found by the adversarial review of the diff
 that added the fixture, which had asserted equal reach unconditionally in `Flattener`'s own
-comment. ⛔ **The corpus can never be the instrument here** — `< 4` and `< 3` are
+comment. ⛔ **The corpus can never be the instrument for the EQUAL half** — `< 4` and `< 3` are
 byte-identical over all 16,987 pages, so the sweep that decision prescribed as its own
 verification was guaranteed to pass while proving nothing about the only case at issue.
 ⚠️ Two mutants were catalogued with it (101 → **103**), both verified to match uniquely by
@@ -1419,7 +1460,8 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `C30-VOIDS-2026-08-25.tsv`, `C30-TILES-2026-08-25.tsv`, `C29-MARKS-2026-08-26.tsv` and
 `GUTTER-RECONCILE-2026-08-26.tsv` + `GUTTER-SAMPLED-2026-08-26.tsv` +
 `GUTTER-BANDS-2026-08-26.tsv` + `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` and
-`C27-MASKTERMS-2026-08-26.tsv` and `C27-COLOURBYTES-2026-08-26.tsv` — and are
+`C27-MASKTERMS-2026-08-26.tsv` and `C27-COLOURBYTES-2026-08-26.tsv` and
+`DRAWN-CENSUS-2026-08-26.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -1480,6 +1522,23 @@ so**: `MRC-2026-08-15/`'s five committed score-mrc files pre-date C26's bar move
 wired shape term, both of which change `pageIsAllText()` and therefore its `bgF`/`bgKB`/`mrcKB` columns —
 so what its three new columns being **appended** buys is that the nineteen still line up, not that they
 still agree. Its control is the two binaries either side of its own diff.
+⚠️ **Nor is `DRAWN-CENSUS-2026-08-26.tsv`, a SEVENTH time, and here the trap is neither a prefix nor a
+neighbour but the FILE ITSELF: it is a FILTERED artefact, the only one in this list that is.** It comes
+from `Tools/score-drawn-images.swift`, in the tree with a 46-check `--self-test` that runs on every
+invocation, so the count stays **five** a seventh time. ⛔ **But it holds 719 data rows of 16,987** —
+**every page with `formDepth >= 1`**, the 3 `partial` ones among them — because the other 16,268 read
+`flat 0 0` and
+the full file is 2.4 MB; `DRAWN-2026-08-16.tsv`'s 48 rows are the precedent. ⚠️ **A draft of this line
+said "the 716 … plus the 3 `partial`", which is not a partition and double-counts**: all 719 rows read
+`formDepth 1`, the 3 partial included, and 716 is the *histogram's* count precisely because the sweep
+excludes `partial` from it. So the filter's second clause
+(`|| $16=="partial"`) selected **0 extra rows** — a clause that could not fire on this corpus. So its
+headline claim, *"0
+pages of 16,987 diverge"*, **cannot be verified from the file**: it rests on the run's stderr summary,
+which the register quotes, plus a 23-second re-run of the committed tool
+(`awk -F'\t' 'NR==1 || $14+0>=1 || $16=="partial"'` is the filter). That is the discipline being kept
+rather than bent — the tool is committed and the filter is written down — but a reader who counts rows
+will find the corpus missing, which none of the other files in this list does.
 The rule this count actually draws is *"reproducible from nothing in the tree"*, and it is worth
 re-deriving from the list rather than counting prefixes. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file
