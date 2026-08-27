@@ -509,6 +509,14 @@ without the `else` its six siblings have, so it went green whenever the ink test
 
 #### The two bands MEASURED as of 2026-08-26 — the uncounted class crosses 2.47x as often, and it is still under half a percent
 
+⛔ **THE `2.47x` IN THIS HEADING IS SUPERSEDED — it is `3.08x`, and every wide-band figure in this
+section is one crossing and four observations too high.** The corpus holds `w7787.pdf` twice, so 2 of
+the wide band's 5 crossings are one page counted twice; see §"Sub-step 3 REPORTED 2026-08-27" below,
+which corrects the table at `THE TWO RATES`, the "same COUNT of five" reproduction claim, the
+`58 + 2 = 60` accounting and limit (2)'s `2.22x`. **The under-half-a-percent conclusion is unchanged
+and the narrow band does not move at all.** The heading is left as written because it is what the
+2026-08-26 run published.
+
 `gutter-floor`'s sub-step 2, and the first crossing measurement this feature has had since the
 undated run that produced the 0.19%. `Tools/score-reading-order.swift` gained `INKFLOOR=<fraction>`,
 which substitutes the ink test's floor **for the run only**, and `--gutter` went from **six columns to twelve** so
@@ -529,12 +537,19 @@ scale` p2, `Noble_1977` p2 and `_1985_Issue 2` p29, the same four sub-step 1 nam
 | **wide** — carries a gutter the shipped 3.5% floor counts | 58 | 2,728 | **5** | **0.18%** |
 | **narrow** — qualifies only at the lowered 2.0% floor | 33 | 2,210 | **10** | **0.45%** |
 
+⛔ **The wide row is a duplicated page: deduplicated it is 57 / 2,724 / 4 / 0.147%. The narrow row
+stands.** §"Sub-step 3 REPORTED 2026-08-27".
+
 ✅ **The wide band reproduces the published figure**: this file's *"5 observations of 2,674 cross
 one, 0.19%"* against **5 of 2,728, 0.18%** — the same COUNT of five, on a population 54 observations
-larger, across an interval this file does not date. ⚠️ **Not "the same five crossings"**: the earlier
+larger, across an interval this file does not date. ⛔ **THAT COUNT OF FIVE IS FOUR, and this
+reproduction claim is the one the duplicate damages most**: one of the five is `w7787 2.pdf` p30,
+the same page as `w7787.pdf` p30. Whether the undated run double-counted it too cannot be established
+— which is the next sentence's point, arriving a day early. ⚠️ **Not "the same five crossings"**: the earlier
 run's per-page rows were never committed (which is the gap `--census` was built to close), so whether
 the two runs' crossing pages coincide is not established and cannot now be. ⛔ **And the blind spot does NOT overturn the
-decline.** The uncounted class crosses **2.47x as often and twice as many times in absolute terms**,
+decline.** The uncounted class crosses **2.47x as often and twice as many times in absolute terms**
+(⛔ **3.08x and 2.5x deduplicated**),
 which is the finding, but 0.45% is still under half a percent — and the decline's *strongest*
 argument was never the rate: it is that the worst-scoring pages are a four-column table and a table
 of contents, where reading across is correct, and nothing in the metric distinguishes them. That is
@@ -548,15 +563,21 @@ crossings — identical on all three — and row for row identical on all 58 row
 `lines` and `crossWide`, while `crossing ANY` reads **5 against the lowered floor's 6**. So the
 confound is real, measured rather than reasoned, and it is exactly **one observation on one page**:
 `Nogales oral history.pdf` p46 is a wide-band page whose only crossing is of a narrow gutter that
-exists only because the floor moved. ⚠️ `crossing` is also not the sum of the two: on `w7787.pdf`
-p30 and `w7787 2.pdf` p30 one observation spans a wide gutter **and** a narrow one.
+exists only because the floor moved. ⛔ **The control carries the duplicate too: deduplicated it is
+57 / 2,724 / 4 with `crossing ANY` 4 against 5. The one-observation confound is unaffected.**
+⚠️ `crossing` is also not the sum of the two: on `w7787.pdf`
+p30 and `w7787 2.pdf` p30 one observation spans a wide gutter **and** a narrow one. ⛔ **Those are ONE
+page, not two — the two files are byte-identical, which this sentence names the pair without noticing;
+see §"Sub-step 3 REPORTED 2026-08-27".**
 
 ✅ **The accounting closes exactly, against the previous sub-step's committed artefact.** 93 pages
 carry a qualifying gutter at 0.02 = 58 wide + 33 narrow + **2 that returned no observations**
 (`Hyman_2012` p15 and `NAYLOR_Arthur E.pdf` p2, both named on stderr with their band, both wide;
 ⚠️ "no observations" and not "Vision returned nothing" — the guard's first clause is the RENDER, where
 Vision is never asked). So wide 58 + 2 = **60**, which is `GUTTER-SAMPLED-2026-08-26.tsv`'s own
-`withGutter`. ⛔ **And the narrow 33 must be decomposed with EXACT fractions, not the artefact's
+`withGutter`. ⛔ **Deduplicated that is 92 = 57 + 33 + 2 and 57 + 2 = 59, and `withGutter` reads 59 too
+— the accounting still closes exactly, one page lower on both sides** (measured: `withGutter` 60, minus
+the one `w7787` row, 59). ⛔ **And the narrow 33 must be decomposed with EXACT fractions, not the artefact's
 printed ones**: 29 pages have a widest-run fraction in [0.020, 0.035), **minus** `NAYLOR_Arthur E.pdf`
 p134 which the gutter test puts in the wide band, **plus 5** whose fraction is 0.0194-0.0199 while
 their run still clears `Int(0.02 × width)` (`Gowan and Demos - 1964` p2, `NAACP Pt. 15 Ser. A` p65,
@@ -585,7 +606,9 @@ space.** `Friedman_1962` p2 is 788x1200 px with a tallest ink column of **25**, 
 floor exists precisely so that *"the space between words or a hanging indent is not a gutter"*. Vision
 returned **one** observation there and it crosses, giving a `share` of 100.0% and the top of the
 `worst` list. **Drop that page and the narrow band reads 9 of 2,209 = 0.407%, a ratio of 2.22x rather
-than 2.47x.** So read the counts, not the share — and note that the confound demonstration above rests
+than 2.47x.** ⛔ **That ratio is 2.77x against the deduplicated wide band (0.40742 / 0.14684) — this is
+the limit §"Sub-step 3 REPORTED 2026-08-27" claims to have ANSWERED, and its arithmetic was left wrong
+by that same section's own correction until the review of that diff caught it.** So read the counts, not the share — and note that the confound demonstration above rests
 on a sparse page too (`Nogales oral history.pdf` p46, tallest ink column 39 of 1,650 rows, 5
 observations). (3) ⛔ **The generated fixture and the corpus
 disagree by two orders of magnitude, and that is the question sub-step 3 hands over unanswered.**
@@ -621,6 +644,141 @@ mechanism the band key rests on had **no** witness at all. ⚠️ Still not asse
 `INKFLOOR` cannot move the self-test. With the knob unset `runFloor` and `inkGutterFloor` are equal, so
 an `isWide` reading `runFloor` would leave a bare `--self-test` green; only running the knob catches
 it, and the pre-commit hook does not run this file's self-test.
+
+#### Sub-step 3 REPORTED 2026-08-27 — the recommendation is that the DECLINE STANDS, and one of the two numbers it rests on moved
+
+`gutter-floor`'s sub-step 3, which is a report and the owner's decision rather than a measurement. The
+queue box is now `[hold] needs: owner` so no session takes the decision, and the `$STATE/RUN.md`
+escalation the owner reads was rewritten the same day to carry the corrected figures below —
+⚠️ **that last claim is about a file OUTSIDE the repository, so no hook and no reviewer can check it
+from the tree: if that entry still reads `2.47x`, it was not rewritten, and rewriting it is the one
+thing a later session may still do here** despite the box's "do not re-report". **Nothing in
+`Sources/` moved, and no new run of any TOOL was commissioned** — ⚠️ though the duplicate finding IS a
+new measurement, a `shasum -a 256` sweep over `testdocs/`; see the paragraph that says so and what it
+costs in reproducibility.
+
+✅ **BOTH PUBLISHED RATES REPRODUCE EXACTLY, re-derived this session rather than quoted.** `awk` over
+`GUTTER-BANDS-2026-08-26.tsv`'s own `band`, `lines`, `crossWide` and `crossNarrow` columns gives wide
+**58 pages / 2,728 observations / 5 crossings** and narrow **33 / 2,210 / 10** — the section above's
+table digit for digit — and the shipped-floor control reads **58 / 2,728 / 5** with `crossing ANY` at
+5 against the lowered floor's 6, also as published. ⛔ **Not "the first time the two files have been
+checked from the tree", which a draft of this claimed and the review of this diff refuted from the
+section above**: §"The two bands MEASURED" already cross-derives from both, row for row on all 58
+rows, and closes the 93-page accounting against `GUTTER-SAMPLED-2026-08-26.tsv`. This is a re-run of a
+published check, not a new one.
+
+⛔ **BUT THE WIDE BAND'S FIVE CROSSINGS ARE ON THREE DISTINCT PAGES, NOT FOUR, BECAUSE THE CORPUS
+HOLDS ONE DOCUMENT TWICE.** `w7787.pdf` and `w7787 2.pdf` are **byte-identical**: sha256
+`dea25fe616a2e33e…`, 316,460 B each, and their two `GUTTER-BANDS-2026-08-26.tsv` rows are identical in
+**eleven of twelve columns — everything but the file name** (`p30`, `lines=4`, `crossWide=1`,
+`widestFrac=0.0743`). ⛔ **Do NOT write "identical in all twelve columns" or "byte-identical rows":
+column 1 IS the file name and it differs by construction, which is the whole point.** Each row
+contributes one crossing, so **2 of the wide band's 5 are the same page of the same file counted
+twice.** Deduplicated the wide band is **57 pages / 2,724 observations / 4 crossings = 0.147%**,
+against the published 0.18%.
+
+⛔ **So the ratio the reopen turns on is 3.08x, not 2.47x, and the absolute gap is 2.5x rather than
+"twice" — the blind spot is relatively LARGER than published, not smaller.** The narrow band holds no
+`w7787` row at all, so **0.45% does not move**; the whole correction is on the other side of the
+comparison. ⚠️ That is true of the `band` column, which is what the rate is computed over — note both
+`w7787` rows nevertheless carry `crossNarrow=1`, so a reader who sums column 11 over the whole file
+gets **13** and not 10. ⛔ **The shipped-floor control carries the same duplicate and this report's own
+first draft dedupped one arm and not the other**: deduplicated it reads **57 / 2,724 / 4** with
+`crossing ANY` **4 against the lowered floor's 5**. The confound that control demonstrates — one
+observation on `Nogales oral history.pdf` p46 — is unaffected. ⚠️ Whether the undated run that produced
+the original *"5 of 2,674, 0.19%"* also double-counted that page **cannot be established** — its
+per-page rows were never committed, which is the same gap `--census` was built to close.
+
+⛔ **It is a duplicate in the LIBRARY, not a defect in `sample-zotero.py`.** `testdocs/manifest.tsv`
+rows 187-188 carry **different Zotero keys** — `JJDU7CH2` and `CR72NDRB` — so the sampler drew two
+distinct library items that happen to hold the same attachment. Nothing in `Tools/` is wrong. ✅ And
+the corpus holds **exactly one** such pair: `shasum -a 256` over all 233 files gives **232 distinct
+hashes**, one duplicated. ⛔ **That half of this section is reproducible from NOTHING IN THE TREE** —
+`.gitignore:9` is `testdocs/*` with only `README.md` and `manifest.tsv` exempted, so the sha256 and the
+byte size are a measurement over a corpus this repository does not hold, the class `CLAUDE.md` keeps a
+running count of. The Zotero-key half IS checkable, `manifest.tsv` being tracked. ⚠️ Every other figure
+in this section is re-derived from the two committed `GUTTER-BANDS` artefacts, **except** the
+7-of-15 fixture figure below, which is quoted from §"The two bands MEASURED".
+⚠️ **The pair is also an unplanned determinism control, and its scope is narrow enough to state
+exactly**: it says nothing in the `--gutter` pipeline keys on the file name, over **one page and four
+observations**, through a step that does ask Vision (where `--census` skips recognition on purpose).
+It is **not** a run-to-run, process-to-process or build-to-build statement — both rows come from **one
+invocation**, and the two names sort adjacent, so they were processed consecutively with maximally
+shared warm state, which is the arrangement least able to see the order-dependence this project has
+already measured elsewhere (C27 (c): `saturation(of:)` reads differently cold than after a
+full-resolution render of the same page). §"The two bands MEASURED"'s byte-identical third census pass
+is the stronger determinism statement; this one's only advantage over it is that recognition runs.
+
+✅ **AND LIMIT (2) ABOVE IS ANSWERED: THE SPARSE-PAGE SENSITIVITY IS NOT ONE-SIDED, AND THE RATIO
+SURVIVES A SYMMETRIC FILTER.** That section names the narrow band's 10% dependence on one near-blank
+page (`Friedman_1962` p2, one observation, `share` 100.0%) as *"the one that could change a
+decision"*. Applying the **same** cut to **both** bands shows the confound cuts both ways, though less
+than the raw counts suggest — 2 of the wide band's 5 crossings are on a 4-observation page, and that
+page is the `w7787` pair, so it is the duplicate rather than a second sparse page:
+
+| minimum observations on a page | wide | narrow | ratio |
+|---|---|---|---|
+| none, as published | 5 / 2,728 = 0.183% | 10 / 2,210 = 0.452% | 2.47x |
+| **none, deduplicated** | **4 / 2,724 = 0.147%** | 10 / 2,210 = 0.452% | **3.08x** |
+| ≥ 10 | 3 / 2,680 = 0.112% | 8 / 2,181 = 0.367% | 3.28x |
+| ≥ 20 | 3 / 2,553 = 0.118% | 6 / 2,150 = 0.279% | 2.37x |
+| ≥ 30 | 3 / 2,434 = 0.123% | 6 / 2,103 = 0.285% | 2.31x |
+
+⛔ **The three cut rows are ALREADY deduplicated and only the first row was ever contaminated** —
+`w7787` p30 has `lines=4`, so it falls below every cut and cannot enter any of them. That is the
+honest defence of this table and the review of this diff had to supply it: without it the table reads
+as re-publishing 0.183% and 2.47x twenty lines after declaring them superseded. Against the
+deduplicated baseline the sparse-page sensitivity is close to **symmetric** — the wide band loses 1
+crossing of 4 (**25%**) at ≥10 against the narrow band's 2 of 10 (**20%**) — not the 40%-against-20%
+asymmetry the raw counts stage.
+**The narrow band stays between 0.28% and 0.45% and the ratio between 2.31x and 3.28x at every cut**,
+so neither the headline nor the conclusion is an artefact of the sparse pages. ⚠️ **The cut points are
+post-hoc** — chosen after seeing the distribution (narrow: 5 pages under 10 observations, 4 at 10-29,
+24 at 30+; wide: 10 / 14 / 34) — and are offered as a robustness range rather than as a preferred
+number. ⚠️ Every cut sits below the deduplicated baseline on both sides, but **the wide band's own rate
+RISES across the cuts** (0.112 → 0.118 → 0.123) rather than falling, so the ratio moving up at ≥10 and
+down at ≥20/≥30 is numerators of 3 and 8, then 3 and 6, moving in integers — not a trend. A draft of
+this line wrote "3 and 6" for all three and called the series a fall; both were wrong.
+
+✅ **AND THE REST OF THE CORPUS ARTEFACTS WERE SWEPT IN THE SAME COMMIT, so "it has already bitten
+once" is a COUNT and not an open question.** `git grep -l 'w7787'` finds it in **eleven** committed
+data files — ten root TSVs plus `testdocs/manifest.tsv` — and the gutter crossing is the **only**
+numerator it enters. All 24 of its `INKBAR-2026-08-19.tsv` rows read `route=bilevel`, so it never
+reaches the layering decision and is in no C26/C28 numerator; `C29-CORPUS-2026-08-25.tsv` reads
+`hasDigitalText no`, `digitalPages 0`, so it is not one of C29's 42; `GUTTER-CENSUS-2026-08-20.tsv` and
+`GUTTER-RECONCILE-2026-08-26.tsv` read `0` qualifying gutters on all six rows — ⚠️ **because those two
+sample pages 7/15/22 where `GUTTER-SAMPLED` samples 2/16/30, not because the document has no gutter**;
+p30 is exactly the page that crosses; `SATFRAC-2026-08-19.tsv` and `THRESHOLD-LOSS-2026-08-18.tsv`
+read `1-bit` with `satFrac` 0.00000. ⛔ **What it does move is DENOMINATORS, and they are named rather
+than implied**: 233 documents → **232**, 16,987 pages → **16,957** (it is a **30-page** document — see
+below), 644 census pages → **641**, and `GUTTER-SAMPLED`'s `withGutter` 60 → **59**.
+⛔ **`manifest.tsv`'s `pages` column reads `3p` for both rows and that is pages SAMPLED, not pages** —
+`pdfinfo` says 30, `CORPUS-2026-08-15.tsv` says 30, and the crossing this whole section is about is on
+**page 30**. A draft of this report read `3p` as the document's length and published "one duplicated
+3-page document", 10x low in the reassuring direction, in two files.
+
+⛔ **THE RECOMMENDATION: the DECLINE STANDS and no register entry is opened.** The reopen was on the
+rate's threshold hole and only on that. The hole is real, it has now been measured twice over, and the
+corrected rate is **still under half a percent** — while the decline's two load-bearing findings were
+never touched by any of it: a column-wise sort damages the four-column table and the table of
+contents that score worst, with nothing in the metric to tell them from prose; and a weld cannot be
+repaired by sorting at all, because the halves are already one string. A 0.45% crossing rate does not
+buy a reordering that is negative on the pages it would also touch.
+
+⚠️ **The one residual risk, stated rather than buried, and it is this file's own unanswered
+question.** The generated fixture welds **7 of 15 observations (47%)** at a 2.5% gutter where corpus
+pages in the same band weld **0.45%** — two orders of magnitude. If the fixture is the worst case
+(monospaced and justified both sides, so every line's gap equals the quiet run the ink test finds)
+then 0.45% is the rate and the recommendation is safe. If instead something in the instrument still
+selects away the pages that fail, 0.45% is a **floor** and not a rate. Nothing has measured an
+em-relative or per-line gutter figure for any corpus page, so this is not excluded — it is a research
+step nobody has scoped, and it is the thing that would reopen item 3 a second time.
+
+⚠️ **And do not assume C30's tiling fixes this for free.** Both are the same *class* of fix — change
+the image handed to one `VNRecognizeTextRequest` rather than reorder its output, which is where this
+item says a fix would have to live — but C30's measured tiling is **horizontal bands**, and a
+horizontal band spans both columns and cannot separate them. A gutter weld would need a **vertical**
+split, which nothing has measured at all.
 
 **4, 5 and 6 — ARCHIVED 2026-08-13**, at the owner's decision, and recorded
 rather than deleted so nobody re-proposes them as new. They were: *show uncertain

@@ -2250,9 +2250,33 @@ happens.**
            **The class is already in the corpus and simply is not counted**, so this needs no new files.
         3. Report the two rates to the owner. The DECLINE stands or falls on that, and it is the owner's
            call, not a session's. If it falls, THEN a register entry gets opened.
-      ✅ **SUB-STEPS 0, 1 AND 2 ARE DONE 2026-08-26 — the fixture exists, the weld is PINNED, the
-      instrument is RECONCILED, BOTH RATES ARE MEASURED, and a session reaching this box starts at
-      sub-step 3, which is a report and the OWNER'S DECISION rather than a measurement.** See the
+      ✅ **ALL FOUR SUB-STEPS (0-3) ARE DONE AND THIS BOX IS `[hold] needs: owner` FROM 2026-08-27 —
+      nothing bounded is left in it.** [hold] needs: owner — sub-step 3 is the DECISION on whether the
+      item 3 DECLINE stands, which this box has always said is the owner's call and not a session's.
+      ⚠️ **Four, not the three the numbered list above names**: sub-step 0, the fixture, was added after
+      that list was written and the list was never renumbered.
+      The report it asks for is in `FEATURES.md` item 3 §"Sub-step 3 REPORTED 2026-08-27"; the
+      `$STATE/RUN.md` `## NEEDS OWNER` escalation was REWRITTEN on 2026-08-27 to carry the corrected
+      figures. ⛔ **If that entry still reads `2.47x`, the rewrite did not happen and updating it is the
+      one thing a later session may still do here** — the adopting session found the strand asserting it
+      was filed there when it was not, and a stale outbox is what the owner actually reads.
+      ⛔ **Otherwise do NOT re-report it and do NOT re-run any sub-step.** The
+      recommendation on the owner's desk is **the DECLINE STANDS and no register entry is opened**,
+      because the corrected rate is still under half a percent while the decline's two load-bearing
+      findings (a sort damages the table and the contents page that score worst; a weld cannot be
+      repaired by sorting, the halves being one string) were never touched by the reopen.
+      ⛔ **One published number MOVED on the way, and it is the report's own finding rather than a
+      re-measurement: the corpus holds `w7787.pdf` and `w7787 2.pdf` BYTE-IDENTICAL** (sha256
+      `dea25fe616a2e33e…`, 316,460 B, the two `GUTTER-BANDS` rows identical in **eleven of twelve**
+      columns — everything but the file name, which differs by construction), so **2 of the wide
+      band's 5 crossings are one page counted twice** — deduplicated the wide band is 4 of 2,724 =
+      **0.147%** and the ratio is **3.08x, not 2.47x**. The narrow band holds no `w7787` row, so
+      **0.45% does not move** and the conclusion is unchanged. ⚠️ It is a duplicate in the LIBRARY, not
+      a sampler defect (different Zotero keys, `manifest.tsv` rows 187-188), and it is the corpus's only
+      one — 233 files, **232 distinct sha256s**. Carried out of here as `corpus-duplicate` so it is not
+      closed by silence.
+      ✅ **SUB-STEPS 0, 1 AND 2 WERE DONE 2026-08-26 — the fixture exists, the weld is PINNED, the
+      instrument is RECONCILED and BOTH RATES ARE MEASURED.** See the
       `gutter-fixture`, `gutter-reconcile` and `gutter-bands` sub-boxes below, and `FEATURES.md` item 3
       §"The weld is PINNED IN THE SUITE", §"The instrument reconciled" and §"The two bands MEASURED".
       ⛔ **Sub-step 1's answer, so nobody
@@ -3749,6 +3773,55 @@ happens.**
       the same file".
       (context: found while adopting `3bf2648`, whose own nine checks left the reference stale; the
       measurement is in `CLAUDE.md` §Commands beside the count)
+
+- [ ] **corpus-duplicate** — ⛔ **`testdocs/` holds 233 FILES but 232 DISTINCT DOCUMENTS: `report/w7787.pdf`
+      and `report/w7787 2.pdf` are BYTE-IDENTICAL** (sha256 `dea25fe616a2e33e4ae4186707ac47e3f3fb035ea4e91de0e816ddd05a35e798`,
+      316,460 B each), measured 2026-08-27 by `shasum -a 256` over all 233 and `sort | uniq -d` — **exactly
+      one** duplicated hash in the corpus. ⛔ **It is NOT a `sample-zotero.py` defect and do not "fix" the
+      sampler**: `manifest.tsv` rows 187-188 carry **different Zotero keys** (`JJDU7CH2`, `CR72NDRB`), so two
+      distinct library items hold the same attachment file and the sampler drew both correctly. The duplicate
+      is in the owner's library.
+      **Why it is work rather than trivia**: a duplicate can land in a NUMERATOR. It already did once —
+      `gutter-floor` sub-step 3 found that 2 of the wide band's 5 gutter crossings are `w7787` p30 counted
+      twice, moving that band from 5/2,728 = 0.18% to 4/2,724 = **0.147%** and the published ratio from
+      2.47x to **3.08x** (`FEATURES.md` item 3 §"Sub-step 3 REPORTED 2026-08-27").
+      ✅ **THE SCREEN IS ALREADY DONE — this item is what is LEFT after it, not the whole sweep.**
+      `git grep -l 'w7787'` finds eleven committed data files (ten root TSVs plus `testdocs/manifest.tsv`)
+      and the gutter crossing is the **only** numerator it enters: `route=bilevel` on all 24
+      `INKBAR-2026-08-19.tsv` rows, `hasDigitalText no` / `digitalPages 0` in `C29-CORPUS-2026-08-25.tsv`,
+      `0` qualifying gutters on all six `GUTTER-CENSUS-2026-08-20.tsv` and `GUTTER-RECONCILE-2026-08-26.tsv`
+      rows, `1-bit` and `satFrac 0.00000` in `SATFRAC-2026-08-19.tsv`.
+      ⛔ **Use `git grep -l 'w7787'`, NOT `grep -l 'w7787' *.tsv`** — the latter returns 10 and misses
+      `testdocs/manifest.tsv`, which is a committed per-document artefact with `words=`/`overlap=` columns
+      carrying both rows, and is the very file this item cites for the Zotero keys. It also misses
+      `MRC-2026-08-15/` (checked separately: no `w7787` there, but the prescribed screen does not establish
+      that). ⚠️ And "the `*-2026-08-*.tsv` files `CLAUDE.md` lists" is a DIFFERENT set from either grep —
+      `DRAWN-2026-08-16/17`, `REBUILD-DPI-*`, `SELFTEST-MUTANTS-2026-08-17.tsv` and
+      `MUTANTS-test-lock-2026-08-19.tsv` are committed root TSVs that list omits; none holds `w7787`.
+      **So the bounded job that remains is the DENOMINATORS, said in place**: 233 documents → **232**,
+      16,987 pages → **16,957**, 644 census pages → **641**, `GUTTER-SAMPLED`'s `withGutter` 60 → **59**.
+      ⚠️ **Do NOT restate this as "every corpus figure is 1/233 out".** Most are page-weighted, several
+      sample only 3-12 pages a document, and this one duplicated document is below the printed precision
+      of nearly all of them — the failure mode that matters is a small integer numerator, as above, not the
+      denominator. ⛔ **But the DOCUMENT-COUNT denominators genuinely ARE 1/233 out** (`42 of 233`,
+      `10 documents of 233`, `233 documents`), and this register uses those constantly, so the hedge cuts
+      one way only. ⛔ **It is a 30-PAGE document, not a 3-page one — `manifest.tsv`'s `pages` column reads
+      `3p` and that is pages SAMPLED**; `pdfinfo` and `CORPUS-2026-08-15.tsv` both say 30, and this item's
+      own headline crossing is on page 30. The first draft read the sampled count as the length, 10x low in
+      the reassuring direction, in two files.
+      ⛔ **Do NOT re-cut the corpus**: `corpus-write`'s re-sample reasoning applies (a re-cut is a fresh
+      `random.seed(7)` sample with no replay-by-key mode, so every dated figure stops being reproducible at
+      once). ⚠️ **That reasoning does NOT reach deleting the one file, which is a different question** —
+      `testdocs/` came off the `corpus-write` hold on 2026-08-22, and removing a byte-identical copy
+      triggers no re-sample at all. The reason not to delete is that eleven committed artefacts carry rows
+      keyed to `w7787 2.pdf`, so deleting it makes them unreproducible one at a time instead of all at
+      once — and the pair has a real use besides: an unplanned **determinism control**, the same PDF
+      through the `--gutter` pipeline under two names producing rows identical in **eleven of twelve**
+      columns (the twelfth is the file name and differs by construction; ⛔ "all twelve" stood in three
+      files and is the phrase to avoid), at n = 1 page and 4 observations **within one invocation**, so it
+      is not a run-to-run or build-to-build statement. Document it; do not remove it.
+      (context: FEATURES.md item 3 §"Sub-step 3 REPORTED 2026-08-27"; found while reporting `gutter-floor`
+      sub-step 3, not by looking for it)
 
 ## HOLD — owner-only, never auto-executed
 

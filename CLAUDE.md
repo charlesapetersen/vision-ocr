@@ -1653,7 +1653,39 @@ three later the SAME DAY, 2026-08-22 — so this count has been wrong twice in o
 `C29-CORPUS-2026-08-25.tsv`, and is worth
 re-deriving from the list rather than read. **The corpus is 230 scans, not 233**: `CORPUS-2026-08-15.md` is
 the gate re-run after T17, and it names the two documents the app itself calls
-born-digital.
+born-digital — ⚠️ **plus one it calls hand-photographed, which this sentence omitted, so its arithmetic
+did not close**: the table is 230 + 2 + 1, and the third is `1954 - Why` (an upright-scanner capture, the
+verdict wrong, in the corpus by the owner's ruling; R55).
+⛔ **AND IT IS 233 FILES BUT 232 DISTINCT DOCUMENTS, measured 2026-08-27: `report/w7787.pdf` and
+`report/w7787 2.pdf` are BYTE-IDENTICAL** (sha256 `dea25fe616a2e33e…`, 316,460 B each; `shasum -a 256`
+over all 233 gives exactly one duplicated hash). ⛔ **So the table above closes twice and differently:
+230 + 2 + 1 = 233 FILES, and 229 + 2 + 1 = 232 DISTINCT DOCUMENTS — the duplicate is one of the SCANNED
+ones** (both `CORPUS-2026-08-15.tsv` rows read `scanned`), and the first draft of this correction
+repaired one arithmetic while opening the other in the sentence beside it. ⛔ **Not a `sample-zotero.py`
+defect — `manifest.tsv`
+rows 187-188 hold DIFFERENT Zotero keys** (`JJDU7CH2`, `CR72NDRB`), so two library items share one
+attachment and the sampler drew both correctly; the duplicate is upstream, in the library.
+⛔ **The failure mode is a small NUMERATOR, not the denominator, and it has bitten exactly once —
+counted, not guessed**: 2 of
+the 5 wide-band gutter crossings `FEATURES.md` item 3 published are that one page counted twice, taking
+that band from 0.18% to **0.147%** and its ratio from 2.47x to **3.08x**. The other ten committed
+artefacts holding it were swept the same day and it enters **no other numerator** — `route=bilevel` on
+all 24 `INKBAR` rows (so no C26/C28 figure), `hasDigitalText no` in `C29-CORPUS` (not one of the 42),
+0 qualifying gutters in `GUTTER-CENSUS`/`GUTTER-RECONCILE`. ⚠️ Do not generalise that to
+"every corpus figure is 1/233 out" — the page-weighted ones are not: **it is a 30-PAGE document**
+(`manifest.tsv`'s `3p` is pages SAMPLED, so 16,987 pages is itself 30 high and the distinct count is
+**16,957**, 0.18%), which is under the printed precision of nearly all of them. ⛔ **But the
+DOCUMENT-COUNT denominators genuinely are 1/233 out and this register is full of them** — `42 of 233`,
+`10 documents of 233`, `233 documents` — as are `644` census pages (→ 641) and `GUTTER-SAMPLED`'s
+`withGutter` 60 (→ 59). Carried as the queue's `corpus-duplicate`. ⛔ **Do not re-cut the corpus**
+(`corpus-write`'s re-sample reasoning: fresh `random.seed(7)`, no replay-by-key, every dated figure
+stops being reproducible at once) — ⚠️ **and note that reasoning does NOT reach deleting the one file,
+which is a different question**: `testdocs/` came off that hold on 2026-08-22. The reason not to delete
+is that eleven committed artefacts carry rows keyed to `w7787 2.pdf`, so deleting it makes them
+unreproducible one at a time instead of all at once. Note too the pair is an unplanned determinism
+control — the same PDF under two names produced rows identical in **eleven of twelve** columns, the
+twelfth being the file name itself; ⛔ **"all twelve" is the phrase to avoid, and it stood in three
+files.**
 [TODO.md](TODO.md) is decided-but-undone work, [FEATURES.md](FEATURES.md) is ideas
 with their costs and the reasons some are parked,
 [RESEARCH-2026-08-16.md](RESEARCH-2026-08-16.md) is what other tools do about the
@@ -1861,7 +1893,8 @@ version control at the time they had to be reconstructed from memory.
 
 ## Not committed
 
-`testdocs/` — 1.2 GB of third-party copyrighted PDFs, 233 of them. `testdocs/manifest.tsv` and
+`testdocs/` — 1.2 GB of third-party copyrighted PDFs, 233 files and **232 distinct documents** (one
+byte-identical pair; see the `corpus-duplicate` paragraph above). `testdocs/manifest.tsv` and
 `Tools/sample-zotero.py` let it be rebuilt from a Zotero library.
 
 ⚠️ **Two tools in `Tools/` WRITE `argv[2]`, so a glob could destroy a corpus document** —
