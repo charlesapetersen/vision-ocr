@@ -7538,7 +7538,11 @@ the first row still agrees, so "the page the shipped bar rescues does not report
 stays green against a flag hard-wired `false`. It is the negative direction, it is worth having
 against a flag hard-wired `true`, and the positive-direction check beside it is what does the killing.
 
-⛔ **What no check reaches, said plainly: the wiring from the layering loop to the log line.** The two
+⛔ **What no check reaches, said plainly: the wiring from the layering loop to the log line.**
+⚠️ **STOP — this paragraph and the next are FALSE as of 2026-08-27 and are kept as written because they
+are what the closing fixture was built against. Read `#### The loop covered end to end` below before you
+act on either.** A reader landing here used to get nineteen lines of a false claim before meeting the
+correction; the marker is the review of the adopting diff's finding. The two
 lines in `Model.swift` that collect the pages and the one that sends the note are not covered, because
 **no test in this suite runs a document through `makeSearchablePDF` down the MRC route at all** — the
 three places that build `.mrc` pages call `mrcLayers` directly and assemble by hand (verified by
@@ -7572,11 +7576,24 @@ already routed to the picture path, and the entry above records the suite having
 it works is structural rather than lucky: of `isPicture`'s five signals exactly one — `saturation` —
 looks at **colour**, while all three of `pageIsAllText()`'s terms (`inkOutsideText`, `paleDrawing`,
 the C28 shape term) are computed on the **grey** buffer. Yellow is the corner that separates them:
-saturation 1.0, luminance ~226 of 255, so it is above any Otsu threshold that divides black type from
-white paper and is **not ink at all**.
+saturation 1.0, luminance ~226 of 255, so on this page it is above the Otsu threshold that divides
+black type from white paper and is **not ink at all**.
 
-Measured over one builder, six arms, one argument apart (probe compiled against the same `Sources`
-closure `build.sh` gives the helper):
+⛔ **THAT SENTENCE SAID *"above ANY Otsu threshold"* IN THREE PLACES AND IT IS NOT STRUCTURAL — corrected
+2026-08-27 by the adversarial review of the adopting diff.** `Flattener.otsuThreshold` clamps its answer
+to **`[90, 230]`** (`Flattener.swift:1245`) and `inkOutsideText` counts `grey[i] < threshold`
+(`:1906`) — so at the clamp **ceiling** a grey of 226 IS ink, and the wash's margin is **four grey
+levels**, not a guarantee. What the table below establishes is the empirical half: `inkOutsideText`
+reads 0.00000 on all six arms, so the threshold came out at or below 226 on all six. The mechanism that
+IS structural is the other one — `saturation` reads colour and the three grey-side terms do not — and
+that is what the fixture rests on. ⚠️ Nothing in the fixture or its checks bounds the threshold, so a
+page whose histogram argmax landed at 230 would read the wash as ink and flip the verdict.
+
+Measured over one builder and six arms (probe compiled against the same `Sources` closure `build.sh`
+gives the helper). ⚠️ **Five of the six are one BUILDER ARGUMENT apart; the cyan row is not** — the
+committed builder hard-codes `NSColor(deviceRed: 1, green: 1, blue: 0, …)` with no colour parameter, so
+that arm took a source edit and is not reproducible from the fixture as it ships. A draft of this
+section said "one builder, six arms, one argument apart" of all six.
 
 | wash | route | `saturation(of:)` | `inkOutsideText` | all text | background | `after < before` |
 |---|---|---|---|---|---|---|
@@ -7637,6 +7654,57 @@ grades the fixture's second page**: `index + 1` → `index`, predicted to red **
 p2 name) and to leave the report check green, because that check asserts the SAME string the log
 carried rather than the sentence again. Predicted, unrun, and left here as a debt rather than implied —
 this session ran out of budget, not out of reasons.
+
+##### The debt discharged, a defect found in the fixture, and a THIRD sabotage — the ADOPTION, MEASURED 2026-08-27
+
+The commit above was complete and green in a stranded `/private/tmp` worktree and died before `push`.
+The adopting session pushed it, and three things came out of doing so.
+
+✅ **THE SECOND SABOTAGE IS RUN AND ITS PREDICTION HELD EXACTLY: `index + 1` → `index` gives
+`1354/1355`, ONE red, the p2 check**, printing its own defect verbatim —
+`washed-two.pdf: 1 page(s) … p1 (0.0% of its ink)`. The report hop stayed green, as predicted, because
+it asserts the same string the log carried. So the second page earns its place by measurement now and
+not by argument.
+
+⛔ **AND THE FIXTURE HAD A DEFECT THE CLOSING COMMIT SHIPPED WITH: `Flattener.flatten` was handed a
+DESTINATION EQUAL TO ITS OWN SOURCE.** `plain` is `dir/plain.pdf` and the local `route(_:_:)` built its
+destination as `dir/\(label).pdf`, so `route(plain, "plain")` wrote over the file it was reading —
+invariant 2's *"never write directly to the destination"* in miniature, and a real read/write race,
+since `flatten` opens the source and only then creates the destination `CGContext`, which truncates it
+while pages are still being pulled lazily. **Two consequences beyond the race, and the second is the
+serious one.** (1) Every check below the routing pair re-opened `washed`/`plain` and therefore measured
+the **rebuild**, where production hands `mrcLayers` the **source** page (`Model.swift:2323` opens
+`inputFile`, `:2367` takes `source.page(at:)`) — so the check labelled *"one page reaches BOTH the
+picture route and the all-text shrink"* was reading a JPEG re-encode of a render, and its
+`inkOutsideText < 0.001` was an unwitting bet on JPEG ringing at the wash edge. (2) ⛔ **`psat < 0.01`
+COULD NOT FAIL.** The reopened `plain` was the **bilevel rebuild** — black and white, mean saturation
+exactly 0 by construction — so the control's reading was *entailed* by the check above it asserting
+`plainRoute == "bilevel"`. The causation ran backwards from the direction this section claims for the
+pair. ⚠️ **No ordinal is claimed** for it among this project's checks-that-could-not-fail: the count is
+carried in prose in several places and this register has already published a wrong ordinal by counting
+sentences instead of re-deriving from the data (C28's own `shape_dump` FIFTH/SIXTH). ✅ **Fixed with a
+suffix** — `\(label)-rebuilt.pdf` — and the fixed tree is **`1355/1355`, no skips**, with all four
+ungated checks still green now that they read the SOURCE page. ⚠️ It is an honest improvement rather
+than a strong check: the builder draws black on white, so `psat` is near 0 by construction either way;
+what changed is that it is no longer *another check's assertion* that makes it so.
+
+✅ **A THIRD SABOTAGE, and it is the one that watches the ROUTING half the section's headline rests on:
+`washFraction: 0.08` → `0.0` gives `1353/1355`, EXACTLY the two predicted reds** —
+`plain=bilevel washed=bilevel` and `washed 0.00000, plain 0.00000, bar 0.060` — **while checks 3 and 4
+stay green**, because a plain page is still read as all text. ⛔ **That gap was real and the closing
+commit did not name it**: the only sabotage it ran was in `Model.swift`'s adoption loop, which cannot
+change what `mrcLayers` returns, so it reached only the gated four; the second reaches one gated check.
+**No sabotage reached checks 1-4 at all**, and their evidence was the six-arm probe — a binary outside
+the tree, which is verbatim the objection this entry raises against itself over `shapeRunHigh`
+(*"'Watched failing' there was a BINARY, not a red check"*). It is a red check now. ⚠️ Checks **3 and
+4** are still watched by no sabotage: they are green under all three, and the one-token candidate that
+would reach them is not obvious, since every wash that flips the route leaves the grey side alone —
+which is the fixture's whole mechanism working against its own instrumentation.
+
+⚠️ **One instrument trap, paid for**: the third sabotage's first run died at
+`error: input file 'Tests/main.swift' was modified during the build`, because the session edited a
+comment in that file while the build was live. `CLAUDE.md`'s rule about not editing `Sources/` under
+`mutate.py` is the same hazard one door along, and it costs a whole suite run.
 
 ⚠️ **What this does NOT reach.** The JBIG2 **encode-failure** branch and the `after < before`
 **reject** branch are both still uncovered — this fixture is 14.5x inside the guard, so it exercises

@@ -124,8 +124,11 @@ func resetPrefs() {
     d.set(false, forKey: Prefs.warnDigitalText)
     // Nor litter ~/Library/Logs on the machine running the suite. Several tests
     // drive a real batch through `start()`, and this pref defaults to on; the
-    // one test that checks the report turns it back on and cleans up after
-    // itself. The default is asserted separately, from the registered value.
+    // THREE tests that check the report turn it back on and clean up after
+    // themselves (grep `forKey: Prefs.writeRunReport`). This said "the one test"
+    // while there were two, and C28's end-to-end block made it three; corrected
+    // 2026-08-27 by the review of that block's own adoption.
+    // The default is asserted separately, from the registered value.
     d.set(false, forKey: Prefs.writeRunReport)
 }
 resetPrefs()
@@ -3647,10 +3650,16 @@ do {
     makeGreyValuePDF(at: densePDF, inkFraction: 0.25, toneFraction: 0.0)
     let cor = dir.appendingPathComponent("corroborated.pdf")
     makeGreyValuePDF(at: cor, inkFraction: 0.25, toneFraction: 0.06)
+    // `-rebuilt.pdf`: the sibling sweep of C28's end-to-end block, 2026-08-27. This helper
+    // is the one other place in the suite that builds a `flatten` DESTINATION in the same
+    // directory as its SOURCE from a caller-supplied label, and it is safe today only
+    // because the labels ("d", "c") happen not to equal the source stems ("dense",
+    // "corroborated") — `routed(densePDF, "dense")` would hand `flatten` its own input and
+    // reproduce the defect exactly. Safe by construction now rather than by coincidence.
     func routed(_ src: URL, _ sub: String) -> [String] {
         let out = dir.appendingPathComponent(sub)
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-        let pages = (try? Flattener.flatten(src, to: dir.appendingPathComponent("\(sub).pdf"),
+        let pages = (try? Flattener.flatten(src, to: dir.appendingPathComponent("\(sub)-rebuilt.pdf"),
                                             mode: .auto, pngDirectory: out)) ?? []
         return pages.map { if case .bilevel = $0.content { return "bilevel" } else { return "jpeg" } }
     }
@@ -15242,8 +15251,13 @@ resetPrefs()
 // one of its five that looks at colour; all three of `pageIsAllText()`'s terms —
 // `inkOutsideText`, `paleDrawing` and the C28 shape term — are computed on the GREY
 // buffer. Yellow is the corner that separates them: saturation 1.0, and a luminance of
-// ~226 of 255, so it sits above any Otsu threshold that divides black type from white
-// paper and is not ink at all. Measured 2026-08-27 (probe over this same fixture builder,
+// ~226 of 255, so on this page it sits above the Otsu threshold that divides black type
+// from white paper and is not ink at all. ⛔ NOT "above ANY Otsu threshold", which this
+// comment said until 2026-08-27: `otsuThreshold` clamps to [90, 230] and `inkOutsideText`
+// counts `grey[i] < threshold`, so at the ceiling a grey of 226 IS ink and the margin is
+// four grey levels. The `inkOutsideText` check below is what carries the empirical half;
+// the structural half is only that `saturation` reads colour and the grey terms do not.
+// Measured 2026-08-27 (probe over this same fixture builder,
 // the `Sources` closure `build.sh` compiles for the helper):
 //
 // | wash | route | `saturation(of:)` | `inkOutsideText` | all text | background | `after < before` |
@@ -15341,12 +15355,31 @@ do {
     let plain = dir.appendingPathComponent("plain.pdf")
     let washed = dir.appendingPathComponent("washed.pdf")
     makeWashedTextPDF(at: plain, pages: 1, washFraction: 0)
+    // ⚠️ `0.08` is WATCHED: set it to `0.0` and the two checks below go red (1353/1355,
+    // measured 2026-08-27), while checks 3 and 4 stay green because a plain page is still
+    // read as all text. That is the one-token sabotage the closing commit had not run, and
+    // it is what keeps the two routing checks from being watched only by a probe outside
+    // the tree — the objection C28 raises against itself elsewhere in this entry.
     makeWashedTextPDF(at: washed, pages: 1, washFraction: 0.08)
 
+    // ⛔ `-rebuilt.pdf` and NOT `\(label).pdf`, and the suffix is the whole fix for a real
+    // defect this block shipped with. `plain` IS `dir/plain.pdf`, so the first draft handed
+    // `flatten` a destination equal to its own source: `Flattener.swift` opens the source
+    // and only then creates the destination `CGContext`, which TRUNCATES the file it is
+    // still pulling pages from — invariant 2's *"never write directly to the destination"*
+    // in miniature. It cost two things beyond the race. Every check below re-opened
+    // `washed`/`plain` and therefore measured the REBUILD, where production hands
+    // `mrcLayers` the SOURCE page (`Model.swift:2323` opens `inputFile`, `:2367` takes
+    // `source.page(at:)`). And `psat < 0.01` became a check that CANNOT FAIL: the reopened
+    // `plain` was the bilevel rebuild, black and white, whose mean saturation is exactly 0
+    // by construction — so the control's reading was ENTAILED by the check above it
+    // asserting `plainRoute == "bilevel"`, which is the causation running backwards from
+    // the direction `BUGS.md` claims for this pair. Found by the adversarial review of the
+    // adopting diff, 2026-08-27.
     func route(_ src: URL, _ label: String) -> String {
         let out = dir.appendingPathComponent("png-\(label)")
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-        let rebuilt = (try? Flattener.flatten(src, to: dir.appendingPathComponent("\(label).pdf"),
+        let rebuilt = (try? Flattener.flatten(src, to: dir.appendingPathComponent("\(label)-rebuilt.pdf"),
                                              mode: .auto, pngDirectory: out)) ?? []
         guard let first = rebuilt.first else { return "none" }
         switch first.content {

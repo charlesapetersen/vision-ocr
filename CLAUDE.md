@@ -382,10 +382,16 @@ picture route and then be read as all text"* — and they are kept as written be
 fixture was built against. ⛔ **The fixture is a PURE YELLOW wash, and it works because the two decisions
 read different things**: of `isPicture`'s five signals exactly one, `saturation`, looks at COLOUR, while
 all three of `pageIsAllText()`'s terms are computed on the GREY buffer — yellow is saturation 1.0 at a
-luminance of ~226, so it is above any Otsu threshold dividing black type from white paper and is **not
-ink**. `inkOutsideText` is **0.00000 on all six measured arms** and the control (same builder, one
+luminance of ~226, so on this page it is above the Otsu threshold dividing black type from white paper and
+is **not ink**. ⛔ **"above ANY Otsu threshold" was published in three places and is NOT structural,
+corrected 2026-08-27**: `otsuThreshold` clamps to `[90, 230]` and `inkOutsideText` counts
+`grey[i] < threshold`, so at the ceiling a grey of 226 IS ink — the margin is **four grey levels** and the
+claim is empirical (0.00000 on all six arms means the threshold landed at or below 226 on all six). The
+structural half is the other one, that `saturation` reads colour and the three grey-side terms do not.
+`inkOutsideText` is **0.00000 on all six measured arms** and the control (same builder, one
 argument apart) goes **bilevel** where 8% of the sheet goes **jpeg** at saturation **0.15571** against a
-bar of 0.06. ⚠️ **4% already suffices (1.33x) and 8% ships for margin**, because `saturation(of:)` is
+bar of 0.06. ⚠️ Five of the six arms are one builder argument apart and the sixth, a cyan wash, is not —
+the builder hard-codes yellow, so that row took a source edit. ⚠️ **4% already suffices (1.33x) and 8% ships for margin**, because `saturation(of:)` is
 measured not to be a pure function of the page (C27: 0.02831 cold against 0.03033 after a full-resolution
 render), so 1.33x is a fixture that flakes on render order; 8% is 2.60x. ⛔ **The adoption guard was
 measured, not assumed — 7,777 B of three layers against 112,371 B of one JPEG, 14.5x inside
@@ -393,6 +399,21 @@ measured, not assumed — 7,777 B of three layers against 112,371 B of one JPEG,
 never reach `shrunkTextPages`. ⛔ **And the instrument was wrong first**: hand-placed boxes read
 `inkOutsideText` **0.63876 on the CONTROL**, a plain page of type; through real `Recogniser.recognise`
 output it reads 0.00000, with Vision returning 10 observations for the 10 drawn lines.
+✅ **THAT COMMIT WAS ADOPTED FROM A STRANDED WORKTREE THE SAME DAY AND THE ADOPTION FOUND THREE THINGS —
+`BUGS.md` C28 `##### The debt discharged, a defect found in the fixture, and a THIRD sabotage`.** (1) The
+sabotage the commit named as an unrun debt is **RUN and its prediction held exactly**: `index + 1` →
+`index` gives **1354/1355**, one red, the p2 check printing `p1 (0.0% of its ink)`. (2) ⛔ **The fixture
+handed `Flattener.flatten` a destination EQUAL TO ITS OWN SOURCE** (`dir/plain.pdf` both ways), so every
+check below the routing pair measured the **rebuild** where production measures the **source**, and
+`psat < 0.01` **could not fail** — the reopened `plain` was the bilevel rebuild, saturation exactly 0 by
+construction, so the control's reading was entailed by the check above it asserting `plainRoute ==
+"bilevel"`. Fixed with a `-rebuilt.pdf` suffix; fixed tree **1355/1355**, all four ungated checks still
+green on the source page. ⚠️ No ordinal is claimed among this project's checks-that-could-not-fail —
+re-derive it, never count sentences. (3) ✅ **A third sabotage now watches the ROUTING half**:
+`washFraction: 0.08` → `0.0` gives **1353/1355**, exactly two predicted reds, checks 3 and 4 green
+because a plain page is still all text. ⛔ Before it, **no sabotage reached checks 1-4** and their only
+evidence was a probe binary outside the tree — the objection this entry raises against itself over
+`shapeRunHigh`. ⚠️ Checks 3 and 4 are still watched by nothing.
 ⚠️ **Still uncovered, named rather than implied**: the JBIG2 encode-failure branch and the
 `after < before` REJECT arm (this fixture only ever exercises the adopt arm), and
 `progress("Layered N picture pages…")`, which is asserted by nothing on purpose — `Model.swift`'s own

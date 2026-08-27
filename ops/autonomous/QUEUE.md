@@ -976,7 +976,13 @@ happens.**
       suite already has a fixture `pageIsAllText()` accepts (`r50text`), but none known to reach the
       picture route and then be read as all text — and `Mode.grayscale`, the obvious shortcut, is
       refused by `canUseJBIG2` and takes the Flate route.
-      (context: BUGS.md C28)
+      ✅ **BOTH SENTENCES ABOVE WENT FALSE ON 2026-08-27 — `mrc-endtoend` below closed them with a
+      pure-yellow-wash fixture, and they are kept as written because they are what it was built
+      against.** ⛔ **This paragraph is the SIBLING THE CLOSING COMMIT'S OWN SWEEP MISSED**: `3bf2648`
+      corrected the copy in `BUGS.md` and listed seven files as carrying none, and `QUEUE.md` — a file
+      that commit was editing — was not on the list. Found by the adversarial review of the adopting
+      diff. The `Mode.grayscale` clause is NOT retracted: it is still true and still the trap.
+      (context: BUGS.md C28, and `#### The loop covered end to end` for the close)
 - [x] **c28-halfres** — **DONE 2026-08-20.** C28's question 2, first half: does the same loss reproduce
       at **1/2**, the factor every layered page that is NOT read as all text keeps on the default Photo
       detail? **No.** Sixteen of the 109 such pages were rendered and read at 1:1 against a 1/8
@@ -2920,6 +2926,22 @@ happens.**
       in `$STATE/RUN.md`.
       ⚠️ **Only ONE of the two sabotages was run** (budget) and the unrun one is named rather than implied.
       Still uncovered: the JBIG2 encode-failure branch and the `after < before` REJECT arm.
+      ✅ **ADOPTED FROM A STRANDED WORKTREE THE SAME DAY (`vo-20260827-022824-59565`, which died between
+      the hook and the push) AND THE ADOPTION CLOSED THE DEBT PLUS A DEFECT — `BUGS.md` C28
+      `##### The debt discharged, a defect found in the fixture, and a THIRD sabotage`.** The unrun
+      sabotage is **RUN**, prediction exact: `index + 1` → `index` = **1354/1355**, one red, the p2 check
+      printing `p1 (0.0% of its ink)`. ⛔ **The fixture handed `flatten` a destination EQUAL TO ITS OWN
+      SOURCE**, so the checks below the routing pair measured the *rebuild* where production measures the
+      *source*, and `psat < 0.01` **could not fail** (the reopened control was the bilevel rebuild, mean
+      saturation 0 by construction — entailed by the check above it). Fixed with a `-rebuilt.pdf` suffix,
+      fixed tree **1355/1355**. ✅ **And a THIRD sabotage now watches the routing half**:
+      `washFraction: 0.08` → `0.0` = **1353/1355**, exactly two predicted reds. ⛔ Before it, **no sabotage
+      reached the four ungated checks** and their only evidence was a probe binary outside the tree.
+      ⚠️ Checks 3 and 4 remain watched by nothing. ⚠️ **Step 3 is FILED, not answered**: the `## NEEDS
+      OWNER` entry this box promised did not exist — the strand died before writing it — and the adopting
+      session wrote it. The `[x]` is deliberate and is a judgement: the work landed and the keep/revert
+      opinion is the owner's with KEEP recommended, so the alternative (`[ ] [hold] needs: owner`) would
+      read as undone work. Say so if you disagree rather than re-doing the item.
       (origin, kept: ⛔ **THE PREMISE IS TOO WIDE, corrected 2026-08-25: `Tests/main.swift` runs documents
       end-to-end through `makeSearchablePDF` at :379, :3741, :5134, :5186, :8648, :9450 and :13027, and
       `c29-b-measured` added block 6, which does it on a document with a born-digital page and reds on a
