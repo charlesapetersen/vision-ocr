@@ -2938,10 +2938,16 @@ happens.**
       `washFraction: 0.08` → `0.0` = **1353/1355**, exactly two predicted reds. ⛔ Before it, **no sabotage
       reached the four ungated checks** and their only evidence was a probe binary outside the tree.
       ⚠️ Checks 3 and 4 remain watched by nothing. ⚠️ **Step 3 is FILED, not answered**: the `## NEEDS
-      OWNER` entry this box promised did not exist — the strand died before writing it — and the adopting
-      session wrote it. The `[x]` is deliberate and is a judgement: the work landed and the keep/revert
-      opinion is the owner's with KEEP recommended, so the alternative (`[ ] [hold] needs: owner`) would
-      read as undone work. Say so if you disagree rather than re-doing the item.
+      OWNER` entry this box promised is **PRESENT and was written by the strand's own session**, dated
+      2026-08-27, carrying the 310 s row and the KEEP recommendation. ⛔ **A draft of THIS line said it
+      did not exist and that the adopting session wrote it — false, and it is the one claim in that
+      commit that was asserted without reading the file it is about.** `$STATE/RUN.md` lives OUTSIDE the
+      repository, so it is the one artefact a stranded worktree cannot lose: the strand's `git status`
+      showed four modified files and none of them was RUN.md, which is exactly why nothing about RUN.md
+      was recoverable from the strand and had to be READ. The `[x]` is deliberate and is a judgement:
+      the work landed and the keep/revert opinion is the owner's with KEEP recommended, so the
+      alternative (`[ ] [hold] needs: owner`) would read as undone work. Say so if you disagree rather
+      than re-doing the item.
       (origin, kept: ⛔ **THE PREMISE IS TOO WIDE, corrected 2026-08-25: `Tests/main.swift` runs documents
       end-to-end through `makeSearchablePDF` at :379, :3741, :5134, :5186, :8648, :9450 and :13027, and
       `c29-b-measured` added block 6, which does it on a document with a born-digital page and reds on a
