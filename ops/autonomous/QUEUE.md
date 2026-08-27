@@ -2556,8 +2556,33 @@ happens.**
       and they are exactly (c)'s ground — so (b) prices 7 of the ten. ⚠️ No corpus figure, one Photo
       detail setting, nothing in `Sources/` moved, and which of `pageIsAllText()`'s other two terms does
       the refusing on the three grey→colour flips is unmeasured (`inkOut` is 0.0022-0.0166 against a bar
-      of 0.045, so it is not term 1, and `score-mrc` prints neither of the others). ⚠️ Debt carried:
-      `Tools/fault-inject.sh` has no case for either new refusal — all six were watched by hand, exit 2.
+      of 0.045, so it is not term 1, and `score-mrc` prints neither of the others).
+      ✅ **THE SWIFT REVIEW OF (b) SAID *REJECT* ON TWO BLOCKERS AND ALL FIVE OF ITS FINDINGS ARE WORKED
+      2026-08-26 — `BUGS.md` C27 `#### Five more from the SWIFT review of that diff, WORKED`. Do not
+      re-do it, and (c) is still the only thing open under this entry.** ⛔ **The defect:
+      `MRC_PAGES=1,1,1` DOUBLE-COUNTED**, under the sampling comment saying this tool does not have
+      A12.8's defect — measured on a pre-fix binary over `1954 - Why.pdf`, `MRC_PAGES=4,4,4` gives
+      `3 picture pages` / `today 809 KB` / `as published 199 KB` against `MRC_PAGES=4`'s 1 / 269 / 66. A
+      repeat is **refused** (exit 2, not de-duplicated), the parse returns three cases so twelve self-test
+      checks reach it, and the sabotage deleting the guard reds exactly the two duplicate rows.
+      ✅ **The debt this box recorded is DISCHARGED**: `Tools/fault-inject.sh`'s `mrc_refuses` carries eight
+      new rows — seven refusals at exit 2 plus 4d's inverse row, `10 passed, 0 failed`. ⛔ The other four
+      findings were false statements, the load-bearing one in THREE places (*"`MRC_COLOUR` changes the
+      colour decision and nothing else"*, refuted by the run beside it); plus no arm label on the summary
+      block, a megapixel reassurance quoting `cells` where the bound reads pixels (**16.87x low — the
+      measured largest corpus page is 64.84 MP** against 100, so "not over it" holds and "not near it" does
+      not), and *"five committed files"* where four of five carry the nineteen columns. ✅ Negative control:
+      the two binaries are byte-identical over `MRC_PAGES=2,4,7`, so **no number in
+      `C27-COLOURBYTES-2026-08-26.tsv` moves** (all 90 rows distinct on `(file, page, arm)`).
+      ⛔ **THE WORK WAS ADOPTED FROM A STRANDED WORKTREE AND CORRECTED ON THE WAY IN, 2026-08-26 — two
+      findings of the review of that adoption, both worth more than the fixes they landed with.** (i) The
+      strand's own correction of the megapixel figure **repeated the error it corrected**, 1.31x low in the
+      reassuring direction, by reconstructing `max(cells × factor²)` = 49.59 MP where `cells` counts the
+      INTERIOR WINDOW and `Flattener.swift` records the real number twenty lines from the constant; its
+      §4b sweep then found the same sentence live in `Tools/score-threshold-loss.swift`, the tool that
+      PRINTS the column. (ii) One shared refusal message meant a sabotage swapping the repeat guard for
+      `numbers.allSatisfy { $0 >= 2 }` left **all eight fault rows and all twelve table rows green** — a
+      check credited with more than it asserts; the three-case parse reds three of them now.
       (origin: BUGS.md C27)
 - [x] **depth-cap** — DONE 2026-08-23, as the decision below prescribes: `< 3` KEPT, both comments
       rewritten to state the frame-of-reference difference and to point at each other, and **nine checks**

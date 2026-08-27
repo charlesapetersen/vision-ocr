@@ -59,12 +59,22 @@
 //   * The megapixel guard below is `maximumPageMegapixels` (400), the bound on rendering.
 //     `mrcLayers` refuses to layer above `maximumMRCPageMegapixels` (100). So a page
 //     between the two gets a row here for a decision production never takes. No corpus
-//     page is affected — the widest `cells` in `THRESHOLD-LOSS-2026-08-18.tsv` is
-//     **3.84 M** (3,844,260), i.e. 3.8 megapixels, far under either bound, so the
-//     conclusion holds with room to spare. This line said 2.85 M until 2026-08-19: that
-//     was the file's FIRST DATA ROW and not its largest, and 40 of its 441 rows exceed it.
-//     C27's register entry and the autonomous queue carried the same wrong figure and are
-//     corrected in the same commit.
+//     page is affected — the largest page in the 233-document corpus is **64.84 MP**,
+//     measured, and recorded beside `maximumColourMRCPageMegapixels` in
+//     `Sources/Flattener.swift`. ⛔ **The margin on the layering bound is 1.54x, which is
+//     not "room to spare".**
+//     ⛔ **This line quoted `cells` as a pixel count, 16.87x low, and C27's own review
+//     caught it on 2026-08-26 — in the file that PRINTS the column.** It said *"the
+//     widest `cells` in `THRESHOLD-LOSS-2026-08-18.tsv` is 3.84 M (3,844,260), i.e. 3.8
+//     megapixels, far under either bound"*. `cells` is neither the page's pixels nor even
+//     its area: it is an analysis-grid count over `Flattener.interiorWindow` divided by
+//     `factor`, and that window drops `w/16` and `h/16` each side, so `cells × factor²`
+//     is 0.766 of `wide * high`. A tool must not read its own column as a quantity it is
+//     not — CONTRIBUTING §3. ⚠️ The FIRST correction here, 2026-08-19, was a *different*
+//     error in the same sentence: it said 2.85 M, which was the file's FIRST DATA ROW and
+//     not its largest, and 40 of its 441 rows exceed it. C27's register entry and the
+//     autonomous queue carried that one too and were corrected with it. Two corrections
+//     to one clause, both about which number it was reading.
 //
 //   mkdir -p /tmp/h && cp Tools/score-threshold-loss.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-threshold-loss -target "$(uname -m)-apple-macos13.0" \

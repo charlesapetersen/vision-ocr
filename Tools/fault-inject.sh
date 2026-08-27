@@ -253,6 +253,82 @@ fault_mrc_refuses() {
   else
     bad "$name" "exit $rc after restoring jbig2, said: $(tail -1 <<<"$out")"
   fi
+
+  # C27 (b)'s two knobs, and the debt the commit that added them recorded: all six of
+  # their refusals were watched BY HAND, which is the state CONTRIBUTING §4c exists to
+  # get out of. They are exit **2** — "nothing was measured and the self-test is not
+  # what refused" — and unlike the two above they need nothing taken away, so they ride
+  # on the binary this case has already built rather than paying a second ~80 s compile.
+  #
+  # ✅ **That parenthetical is MEASURED, 2026-08-26, and it is what stops these rows
+  # passing for the wrong reason: a FAILED SELF-TEST EXITS 4.** So a build whose
+  # self-test is broken — which is exactly the state the `Set` guard's own sabotage puts
+  # it in — cannot satisfy a row asserting 2, and "refused this value" stays
+  # distinguishable from "refused to run at all". Verified by running the sabotaged
+  # binary, not by reading the source.
+  #
+  # ⚠️ Every row asserts the CODE **and** greps the message, the discipline the two
+  # rows above keep: a tool that exits 2 for the wrong reason is indistinguishable from
+  # one that exits 2 for the right one, and exit 2 is this file's most crowded code.
+  #
+  # ⛔ **AND THE MESSAGE HAS TO NAME THE GUARD, NOT THE KNOB — the first version of this
+  # block failed that and the review of the diff measured it.** All five `MRC_PAGES` rows
+  # grepped one string that every `MRC_PAGES` refusal printed, so a sabotage swapping the
+  # repeat guard for `numbers.allSatisfy { $0 >= 2 }` left all eight rows green: `1,1,1`
+  # was still refused, `4,7` still accepted, and nothing here could tell WHICH guard had
+  # spoken. `parseRequestedPages` now returns a three-case result and the repeat gets its
+  # own sentence, so the `1,1,1` row greps `names page 1 more than once` and that
+  # sabotage reds it.
+  #
+  # ⚠️ And every row runs with NO document argument, so a refusal that did not fire
+  # would exit 0 over zero pages rather than measuring a corpus page — this case must
+  # never open `testdocs/`, for the same reason `argv_writers` must not.
+  local pair label
+  for pair in \
+    'MRC_COLOUR=bogus|one of shipped, colour, grey' \
+    'MRC_COLOUR=|one of shipped, colour, grey' \
+    'MRC_PAGES=|comma-separated list of' \
+    'MRC_PAGES=0|comma-separated list of' \
+    'MRC_PAGES=x|comma-separated list of' \
+    'MRC_PAGES=4,,7|comma-separated list of' \
+    'MRC_PAGES=1,1,1|names page 1 more than once'
+  do
+    label="${pair%%|*}"
+    name="score-mrc refuses $label"
+    out="$(env "$label" "$SB/score-mrc" 2>&1)"; rc=$?
+    if [ "$rc" -eq 2 ] && grep -qF "${pair#*|}" <<<"$out"; then
+      ok "$name"
+    else
+      bad "$name" "exit $rc, said: $(head -1 <<<"$out")"
+    fi
+  done
+
+  # The inverse row (CONTRIBUTING 4d): a guard that refused every value would pass all
+  # seven rows above and make both knobs useless. `MRC_PAGES=4,7` and
+  # `MRC_COLOUR=grey` together must be ACCEPTED — with no document to measure, that is
+  # exit 0 over zero pages, which is what "the configuration was accepted" looks like
+  # here.
+  #
+  # ⛔ `MRC_PAGES=1,1,1` is the row this block was added for. It is not a malformed
+  # value: it parsed, and then measured page 1 three times into `pages`, `nowTotal` and
+  # `publishedTotal`, printing a summary indistinguishable from three distinct pages —
+  # A12.8's defect in `score-text-route`, reproduced in the tool whose own comment said
+  # it did not have it.
+  #
+  # ⛔ **It greps the ARM BANNER and not just `picture pages`, because the weaker form
+  # could not tell "accepted" from "never read at all"** — a build with both knobs
+  # deleted exits 0 over zero pages and prints `picture pages` too, which makes the row a
+  # near-duplicate of the plain one at the top of this case. The banner only appears when
+  # `MRC_COLOUR` reached the tool and parsed, so it is the value's own footprint. Found by
+  # the review of the diff that added this row.
+  name="…and a well-formed pair of knobs is accepted"
+  out="$(env MRC_PAGES=4,7 MRC_COLOUR=grey "$SB/score-mrc" 2>&1)"; rc=$?
+  if [ "$rc" -eq 0 ] && grep -q "picture pages" <<<"$out" \
+     && grep -qF "[MRC_COLOUR=grey" <<<"$out"; then
+    ok "$name"
+  else
+    bad "$name" "exit $rc, said: $(tail -1 <<<"$out")"
+  fi
 }
 
 # T19. The two tools in `Tools/` that WRITE argv[2] — `pdf-extract-pages` and

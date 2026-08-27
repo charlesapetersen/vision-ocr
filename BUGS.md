@@ -558,6 +558,31 @@ population.** ⛔ **Its larger finding is about C28 rather than C27: the colour 
 boxes Vision returns on 21 of 30 pages and flips `pageIsAllText()`'s verdict on 6 of them**, moving the
 background factor between /8 and /2 — so 80.4% of the naive +475.0 KB aggregate is that flip and not the
 colour, and quoting the naive figure overstates (b) by 5.1x.
+✅ **AND (b)'s SWIFT REVIEW SAID *REJECT* ON TWO BLOCKERS; ALL FIVE ARE WORKED 2026-08-26 —
+`#### Five more from the SWIFT review of that diff, WORKED`.** ⛔ **One real defect: `MRC_PAGES=1,1,1`
+DOUBLE-COUNTED, under the sampling comment that denies exactly that** — measured on a pre-fix binary over
+`1954 - Why.pdf`, `MRC_PAGES=4,4,4` prints `3 picture pages`, `today 809 KB`, `as published 199 KB`
+against `MRC_PAGES=4`'s 1 page / 269 KB / 66 KB, so A12.8's `score-text-route` defect in a second tool. A
+repeat is refused now (exit 2), the parse returns THREE cases (`ok`/`malformed`/`repeated(Int)`) so twelve
+self-test checks can reach it and can say *which guard* refused, and `fault-inject.sh`'s `mrc_refuses`
+gains **eight** rows, `10 passed, 0 failed` — which discharges (b)'s own recorded debt.
+⛔ **The other four were false statements, and the load-bearing one stood in THREE places**: *"`MRC_COLOUR`
+changes the colour decision and nothing else"*, contradicted by the very run beside it. ⚠️ Also a missing
+arm label on the summary block, and a megapixel reassurance quoting `cells` where the bound reads pixels —
+**16.87x low: the measured largest corpus page is 64.84 MP against a bar of 100**, so "no corpus page is
+over it" holds and "none is near it" does not.
+✅ Negative control: the two binaries are byte-identical over `MRC_PAGES=2,4,7`, so no published figure
+moves.
+⛔ **THE WORK WAS ADOPTED FROM A STRANDED WORKTREE AND CORRECTED ON THE WAY IN, and the two corrections are
+worth more than the five fixes.** (i) The strand's own fix for the megapixel figure **repeated the class of
+error it was correcting** — 1.31x low, in the reassuring direction, under a §3 banner — by reconstructing
+`max(cells × factor²)` = 49.59 MP where `cells` counts `interiorWindow` (0.766 of the area) and
+`Sources/Flattener.swift` records the real 64.84 MP twenty lines from the constant; the §4b sweep it owed
+then found the same sentence live in `Tools/score-threshold-loss.swift`, **the tool that prints the
+column**. (ii) One shared refusal message left a sabotage swapping the repeat guard for
+`numbers.allSatisfy { $0 >= 2 }` with **all eight fault rows and all twelve table rows green** — the
+eleven-times-recorded shape of a check credited with more than it asserts. Both fixed and re-measured
+before the commit.
 Read C27's `#### The population, swept`, `#### ⛔ And the ten pages were LOOKED AT` and
 `#### The two mask terms, MEASURED` before
 planning anything here; the constant is untouched and nothing shipped reads the fraction.
@@ -5324,7 +5349,18 @@ constant is proposed.
 **Why the forcing knob rather than a lower bar.** `pictureSaturationThreshold` gates the ROUTE as well
 as the colour — C9's "the same number charged twice", which this entry's item (c) is about — so a bar low
 enough to keep a page's colour also changes which pages are picture pages, and a byte figure taken that
-way is two changes added together. `MRC_COLOUR` changes the colour decision and nothing else.
+way is two changes added together. `MRC_COLOUR` holds the **route** fixed, which is the whole benefit
+over a lower bar.
+⛔ **It does NOT "change the colour decision and nothing else" — this paragraph said exactly that until
+2026-08-26, and the findings below it measure that false in the same commit.** The knob changes the image
+Vision is handed, so the word boxes differ on 21 of 30 pages, `pageIsAllText()` flips on 6, and **80.4%**
+of the naive aggregate is that flip. So it is one change at the route and two downstream of it — which is
+why the number this section quotes is the +93.0 KB over the pages whose verdict HELD and not the
++475.0 KB. Found by the adversarial review of this section's own commit, which also found the tool's
+header comment and its `ColourArm` doc comment carrying the same unqualified sentence; all three are
+corrected 2026-08-26, and **the tool comment is the one that mattered** — the register's findings section
+priced the effect correctly on the day, so what a future reader met was a justification the artefact
+beside it refuted.
 
 **The population.** The 29 picture-route rows of `C27-MASKTERMS-2026-08-26.tsv`, plus `1954 - Why` p2 —
 the founding page that *keeps* its red — and the three 1-bit pages of `#### ⛔ And the ten pages were
@@ -5396,8 +5432,14 @@ pages** — 14 `wantC=yes` pages under `MRC_COLOUR=colour` and 16 `wantC=no` pag
 (2) Across the code change: the tool built from `3a8e79e` and the tool built from this commit, both with
 no knobs set, are **byte-identical on the 19 pre-existing columns over 14 rows in 6 documents** — the
 control that spans a real diff rather than two processes. (3) The three new columns are **appended** after
-`note`, so `MRC-2026-08-15/`'s five committed files stay comparable by position, and two self-test checks
-pin that — one on the first nineteen names and one on the last three. ⚠️ (2) is a *determinism* control on
+`note`, so **four of** `MRC-2026-08-15/`'s five committed files stay comparable by position, and two
+self-test checks pin that — one on the first nineteen names and one on the last three.
+⚠️ **"Five" until 2026-08-26, and the fifth file is the one worth naming**:
+`mirrored-instrument.tsv` has an **eleven**-name header over **twelve**-field rows — the T15-era artefact,
+and an instance of the very "12 fields under an 11-column header" defect the `columns` guard was written
+for — so it was never one of the files the assertion is about. Corrected in the tool header, in the
+check's doc comment, in the check's own NAME (which read "nineteen columns" of the directory as a whole)
+and in `Tools/README.md`. ⚠️ (2) is a *determinism* control on
 the shared columns and not a check against a committed artefact: `MRC-2026-08-15/`'s own rows cannot be
 reproduced today, because `textPageInkOutsideThreshold` moved 0.08 → 0.045 on 2026-08-19 and C28's shape
 term was wired on 2026-08-22, and both change `pageIsAllText()` and therefore `bgF`/`bgKB`/`mrcKB`. What
@@ -5450,6 +5492,197 @@ quoted.**
 7. ⚠️ **The `mrcPSNR` carve-out is the ARM's, not the flip's**: the source basis goes from one plane to
    three whenever the arm does, so it moves on **13 of the 13 non-flipping pages** too (25.26 → 25.17, and
    so on). Nothing in this file is a like-for-like fidelity comparison across arms, on any row.
+
+#### Five more from the SWIFT review of that diff, WORKED — 2026-08-26
+
+⛔ **The seven above came from the review of the register prose. A second, Swift-facing pass over the same
+diff said REJECT on two blockers, and it landed after the commit because the session ran out of budget** —
+so this section is that review's findings worked, in a follow-up whose whole subject is that the commit
+before it asserted things its own artefact refutes. Nothing user-facing was broken and nothing in
+`Sources/` moves here either; **one of the five is a real tool defect and the other four are false
+statements**, which is the split worth carrying: a comment that is wrong in this repo has cost more than a
+tool that is.
+
+⛔ **(1) THE DEFECT: `MRC_PAGES=1,1,1` DOUBLE-COUNTED, UNDER A COMMENT AT THE SAMPLING SITE DENYING IT.**
+`Tools/score-mrc.swift`'s three-page sample carries *"A12.8 found `score-text-route` measuring page 1
+three times at n=5; this sampling does not have that defect"* — and the line directly beneath it took the
+caller's list verbatim, so a repeat measured one page as many times as it was named, adding it into
+`pages`, `nowTotal`, `publishedTotal` and the layered ratio each time. ⛔ **Measured 2026-08-26 on a
+binary built from `5b7962b`'s own `score-mrc.swift` — the pre-fix tool, not a sabotage — over
+`1954 - Why.pdf`: `MRC_PAGES=4,4,4` prints three byte-identical rows, `=== 3 picture pages: 3 layered`,
+`today 809 KB` and `as published 199 KB`, against `MRC_PAGES=4`'s `1 picture pages`, `269 KB` and
+`66 KB`.** Exactly 3x on both totals, from one page, with nothing in the summary saying so. The
+comment's arithmetic (`n/3 < n/2 < 3n/4`) is a fact about the sample and says nothing about a list nobody
+derived from `pageCount`, so it read as covering the line below it while covering only the line above.
+✅ **Refused rather than de-duplicated** (`Set(numbers).count == numbers.count`, exit 2): a caller who
+wrote a page twice does not have the population they think they have, and silently collapsing the list
+would print a two-page total under a three-page request. The `Set` is over the array rather than a sort,
+so the ORDER the caller asked for is still kept — pinned by a `7,4` row.
+⛔ **The parse is now a FUNCTION returning nil, not a top-level closure calling `refuseConfiguration`** —
+the same reason `rowText` returns nil instead of exiting, and the reason this defect was found by reading
+rather than by a red row: an `exit` in a top-level `let` is a branch no check can reach twice.
+**Twelve self-test checks as a table**, four accepted and eight refused, and the sabotage that deletes the
+one guard reds **exactly the two duplicate rows** (`1,1,1` and `4,7,4`) with the other ten green.
+⛔ **AND THE FIRST VERSION OF ALL THAT COULD NOT TELL WHICH GUARD REFUSED — the review of this diff
+measured it, and it is the sharper half of finding (1).** With one `nil` refusal and one shared message,
+every `MRC_PAGES` row in `fault-inject.sh` and both duplicate rows in the table pinned only *which knob*
+objected: a sabotage swapping `Set(numbers).count == numbers.count` for `numbers.allSatisfy { $0 >= 2 }`
+still refuses `1,1,1`, still accepts `4,7`, and left **all eight fault rows and all twelve table rows
+green**. So the one-token deletion was caught and a *wrong guard in the same place* was not — the shape this
+register calls a check credited with more than it asserts. ✅ **Fixed by making the parse return three
+cases** (`ok`/`malformed`/`repeated(Int)`), so the repeat names the page it refused and gets a message of
+its own; the table asserts `.repeated(1)` and `.repeated(4)` rather than "a refusal", and the `1,1,1` fault
+row greps `names page 1 more than once`. **Measured on three binaries 2026-08-26: shipped self-test green
+at exit 0; the guard DELETED reds exactly rows 11 and 12; the WRONG guard reds THREE — `1` (`ok([1])`
+against `malformed`), `1,1,1` and `4,7,4` — where before it reded none.** ⚠️ It is also the better
+diagnostic: the old single message foregrounded *DISTINCT* for six refusals that have nothing to do with
+distinctness.
+✅ **And the debt the (b) commit recorded is discharged in the same place**: `Tools/fault-inject.sh`'s
+`mrc_refuses` had no case for either knob's refusals — all six were watched by hand — and now carries
+**eight** rows, seven refusals at exit 2 plus 4d's inverse row (`MRC_PAGES=4,7 MRC_COLOUR=grey` accepted),
+each asserting the code AND grepping the message, because exit 2 is this tool's most crowded code. They
+ride on the binary that case already builds, so they add no second compile. ⚠️ Every row runs with **no
+document argument** — this case must never open `testdocs/`. **`10 passed, 0 failed` measured 2026-08-26.**
+✅ **Exit 2 being the right code to assert is measured rather than assumed: a FAILED SELF-TEST EXITS 4** —
+so a build whose self-test is broken, which is the state every sabotage above puts it in, cannot satisfy a
+row asserting 2, and "refused this value" stays distinguishable from "refused to run at all".
+⛔ **And the INVERSE row's first version could not tell "accepted" from "never read at all"** — a second
+finding of the review, and the same defect class as the message above. `exit 0` plus `grep "picture pages"`
+also holds for a build with **both knobs deleted**, which made the row a near-duplicate of the plain
+`…and measures again once it is back` row above it. It greps `[MRC_COLOUR=grey` as well now, which only
+(3)'s new banner can print, so the value's arrival at the tool is what the row observes. ⚠️ That is the two
+findings composing: (3) added a footprint and 4d's row now uses it.
+
+⛔ **(2) A FALSE LOAD-BEARING JUSTIFICATION IN THREE PLACES, and it is the one a future reader meets.**
+*"`MRC_COLOUR` changes the colour decision and nothing else"* stood in the tool's header comment, in its
+`ColourArm` doc comment and in this entry's own "Why the forcing knob rather than a lower bar" paragraph —
+while the findings section fifteen lines away prices the second-order effect at **80.4%** of the naive
+aggregate. What the knob actually buys over a lower bar is that the **route** is held fixed; downstream of
+the route it is one change with a measured second effect. All three now say so and point at the finding.
+⚠️ The register's *findings* were right on the day; it is the justification and the two comments that were
+wrong, which is the more dangerous direction — a reader who trusts the comment never reaches the artefact.
+
+⚠️ **(3) THE SUMMARY BLOCK HAD NO ARM LABEL.** `=== N picture pages …`, `today N KB` and `as published
+N KB` printed identically on a forced run and a shipped one, and `as published` is the line whose own
+comment says it is the number to quote — so a pasted total carried no record of which decision produced
+it. The `arm` column's stated rationale (*"a reader who greps out a row loses the banner"*) applies one
+level up and had been applied one level down only. A `[MRC_COLOUR=… — FORCED, not the app's own decision]`
+suffix now rides on the header line, **suffixed rather than prefixed** so the `=== N picture pages`
+opening that `fault-inject.sh` greps for is byte-identical. ⚠️ **The reason given for suffixing was not the
+reason, corrected 2026-08-26**: that grep is a *substring* match, so a prefix would have matched too. What
+the suffix actually buys is the byte-identical **opening**, which is what lets a forced run and a shipped
+one be compared line for line — and, as it turns out, a footprint the inverse fault row can grep for.
+
+⚠️ **(4) THE MEGAPIXEL REASSURANCE QUOTED THE WRONG QUANTITY, 16.87x LOW — CONTRIBUTING §3.** It cited
+*"the widest `cells` in `THRESHOLD-LOSS-2026-08-18.tsv` is 3.84 M"* to say no page approaches
+`maximumColourPageMegapixels` = 100. `cells` is the **analysis-grid** count over the **interior window**
+with a `factor` beside it, not a pixel count; what `shouldKeepColour` reads is `wide * high`.
+⛔ **The number to quote is `Flattener`'s own: the largest page in the 233-document corpus is
+64.84 MP, measured, recorded beside `maximumColourMRCPageMegapixels` itself (`Sources/Flattener.swift`) —
+so the widest is 65% of the bound, and the `cells` figure understated by 64.84 / 3.84426 = 16.87x.**
+✅ **The conclusion survives** — no corpus page is over the bound — ⛔ **but "no corpus page is NEAR it"
+does not**, so a page in the band is a thing that can happen rather than a thing that cannot.
+
+⛔ **AND THE FIRST FIX FOR (4) REPEATED THE CLASS OF ERROR IT WAS CORRECTING, 1.31x LOW IN THE REASSURING
+DIRECTION, UNDER A §3 BANNER READING "Recomputed here, not reasoned" — refuted by the review of THIS diff
+and worth more than the correction.** It reconstructed `max(cells × factor²)` = **49.59 MP** (`___` p1,
+cells 1,377,544 at factor 6) and called that the widest page, i.e. *"half"* the bound. But `pageMarks`
+counts cells over `Flattener.interiorWindow`, which drops `w/16` and `h/16` each side, so `cells × factor²`
+is (14/16)² = **0.766** of `wide * high` — verified on committed data: `Atkinson_1939` p2 is 1935x2592 and
+its interior is 1695 × 2268 = **3,844,260**, exactly that row's `cells` at factor 1. 49.59 / 0.766 = 64.8,
+which reproduces the measured 64.84 to three digits — **so the reconstruction's only real value is as a
+cross-check on a number the tree already had.** ⛔ **A §4b sweep of the constant's own name would have found
+it with no arithmetic at all**, which is the lesson: the register reached for a reconstruction of a
+quantity that was measured twenty lines from the constant under discussion. ⚠️ The named page, its `cells`,
+its `factor` and the 12.9x ratio were all arithmetically correct; what was wrong was believing `cells ×
+factor²` is a page.
+
+✅ **AND THE SWEEP THAT CORRECTION OWED FOUND A SECOND INSTANCE, in the tool that PRINTS the column** —
+`Tools/score-threshold-loss.swift`, arguing the same bound off the same *"3.84 M … far under either bound,
+so the conclusion holds with room to spare"* sentence. Corrected 2026-08-26; the margin is **1.54x**, not
+room to spare. ⚠️ **That clause has now been corrected twice, both times about which number it was
+reading**: on 2026-08-19 for quoting the file's FIRST DATA ROW rather than its largest, and today for
+reading `cells` as pixels. ⚠️ A third instance is RECORDED AND NOT FIXED — `BUGS.md`'s timing forecast
+around line 4822 sets `887,616 cells` against `3.84 M cells` where `pageMarks` iterates pixels, so the real
+spread is ~56x rather than 4.3x. Same direction, different entry, and touching it is not this commit's
+business.
+
+⚠️ **(5) "`MRC-2026-08-15/`'s FIVE committed files carry exactly the first nineteen" is FOUR of five, and
+the fifth is the interesting one.** `mirrored-instrument.tsv` has an **eleven**-name header over
+**twelve**-field rows (measured: header `NF=11`, 72 data rows at `NF=12`) — which is precisely the *"12
+fields under an 11-column header"* artefact the `columns` guard's own comment cites as its founding defect.
+So it was never one of the files the assertion is about, and a check asserting five would have been
+asserting something false about the only artefact that proves the rule. Corrected in four places: the tool
+header, the check's doc comment, the check's own NAME (it read "MRC-2026-08-15's nineteen columns", a claim
+about the directory) and `Tools/README.md`.
+⛔ **It is a §4b MISS rather than a discovery, and saying so is the point — the tree has recorded the right
+answer since 2026-08-15**: `MRC-2026-08-15/README.md` says *"`mirrored-instrument.tsv` has the **old**
+11-column header and prints integer KB, with a twelfth unnamed field… **The other four carry the current
+19-column header**"*, and `HANDOFF-2026-08-15-evening.md` says it too. So "five" was refutable from a file
+committed **inside the directory being counted**, which is how it shipped at all: the claim was made by
+counting `ls` output instead of reading the README beside it.
+
+✅ **THE NEGATIVE CONTROL, and it is what says no published figure can move**: the two binaries — pre-fix
+from `5b7962b` and post-fix — are **byte-identical over `MRC_PAGES=2,4,7` on `1954 - Why.pdf`**, preamble,
+header, all three data rows and all three summary lines. So the refusal is reachable only by a caller who
+named a page twice, and C27's own run never did — **all 90 data rows of
+`C27-COLOURBYTES-2026-08-26.tsv` are distinct on `(file, page, arm)`, 90 of 90**, which is the property a
+double-counted invocation would have broken. ⚠️ Read off the DATA and not off the preamble: a first draft
+of this sentence said it had checked *"every `MRC_PAGES=` preamble line"* of that file, and the file
+carries a hand-written manifest instead of the tool's own per-invocation `# MRC_PAGES=` line — there was
+nothing there to check. CONTRIBUTING §3 applies to one's own account of where a number came from.
+✅ And the arm banner is watched both ways on the same document:
+`MRC_COLOUR=grey` appends `[MRC_COLOUR=grey — FORCED, not the app's own decision]` and an unset run
+appends nothing, with the `=== 2 picture pages: 2 layered, 0 declined ===` opening byte-identical across
+the pair — which is what keeps `fault-inject.sh`'s `grep "picture pages"` matching.
+
+✅ **EVERY MEASUREMENT ABOVE WAS RE-RUN BY THE SESSION THAT COMMITTED IT, 2026-08-26, AND THIS IS THE
+REASON RATHER THAN THE THOROUGHNESS.** The work was ADOPTED from a stranded worktree whose session died
+before committing, so what arrived was prose asserting runs nobody could show — the exact shape of the
+"an entry without evidence is a rumour" rule, aimed at itself. So the five were re-measured on fresh
+binaries: the pre-fix double count digit for digit (`MRC_PAGES=4,4,4` → three byte-identical rows,
+`=== 3 picture pages: 3 layered, 0 declined ===`, `today 809 KB`, `as published 199 KB`, against
+`MRC_PAGES=4`'s `1 picture pages` / `269 KB` / `66 KB`, on a binary built from `5b7962b:Tools/score-mrc.swift`);
+today's tool refusing the same list at **exit 2**; the sabotage that deletes the one `Set` guard reding
+**exactly the two** duplicate rows with the other ten green; the two binaries **byte-identical at 953
+bytes** over `MRC_PAGES=2,4,7`; the banner present and absent over an otherwise identical opening; and
+`fault-inject.sh mrc_refuses` reading **10 passed, 0 failed**. ⛔ **And re-running it added one fact the
+strand did not have, which is what keeps the eight new rows from passing by accident: a FAILED SELF-TEST
+EXITS 4, not 2.** Every one of those rows asserts exit 2, so a build whose self-test is broken — the state
+every sabotage here puts it in — cannot satisfy them; the two codes being different is what makes
+"refused the value" distinguishable from "refused to run at all" in this file's most crowded exit code.
+⛔ **All five reproduced. What did NOT survive the review of the adoption is the strand's own correction of
+(4)** — 1.31x low in the reassuring direction, refuted above — **so the adopted work was not merely
+re-measured, it was corrected on the way in**, and the same review found the message-discrimination gap
+that made the twelve checks and the eight rows weaker than they were credited with. Both were fixed before
+the commit and both re-measured: **five binaries in all, three of them sabotages.**
+
+⚠️ **What this section does NOT do.** No number in `C27-COLOURBYTES-2026-08-26.tsv` moves, per the control
+above. Nothing in `Sources/` or `Helper/`
+moved, no constant changed, and **(b)'s figures stand as published**: +93.0 KB / 1.048x. The other items
+the review raised and this section deliberately leaves:
+
+* **A page in `(88, 100]` MP prints `route=colour` over grey layer bytes** — latent, and (4) is now the
+  reason to take it seriously rather than to dismiss it, the widest corpus page being 64.84 of 100.
+  ⚠️ **Two corrections to how this was first written**: the bound is
+  `maximumColourMRCPageMegapixels` = **88** (`Flattener.swift`), not the 100 the sentence justified itself
+  against, so the band is (88, 100] and the margin to it is 64.84/88 = **0.74x**; and it is **not
+  `force-colour`-specific** — a genuinely saturated page in that band takes the same mismatch on the
+  **shipped** arm, because `route` is the tool's own `isColour` and `layers.isColour` is read only for the
+  PSNR comparison.
+* **The `decline` path's three new cells are asserted by nothing**, because no fixture declines.
+* **`Int` accepts alias forms, so `MRC_PAGES=+4` and `MRC_PAGES=0004` are both taken as 4** — the second
+  found by the review of this diff, same class as the first. ✅ Neither can defeat the new guard: `4,+4`
+  and `4,0004` are **refused**, because `Int` normalises before the repeat test.
+* ⛔ **THE TWELVE CHECKS PIN THE PARSE AND NOT ITS CONSUMER, which is `layeringVerdict`'s recorded hazard
+  in a second place.** Every row calls `parseRequestedPages` directly, so a build that kept the function
+  and parsed inline at the `requestedPages` closure — bypassing it — would leave all twelve green. What
+  covers the seam end to end is `fault-inject.sh`, **which no hook runs**: the pre-commit hook compiles
+  staged tools and runs `--self-test` for staged **Python** tools only, so neither new check is gated.
+  Closing it wants a fixture document reaching the `indices` line; not done here, and named rather than
+  implied.
+
+C27 stays **OPEN** on item (c), which is untouched.
 
 ### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — HALF FIXED (the shape term is WIRED 2026-08-22 and rescues 13 of the 16 measured losses; three hand-made marks remain, one of them unreachable from this seam)
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move

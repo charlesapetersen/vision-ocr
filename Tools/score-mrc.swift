@@ -96,7 +96,12 @@
 //                     past the end lands in `refused` and is named on stderr rather
 //                     than dropped. Refused (exit 2) on anything that is not a
 //                     comma-separated list of positive integers, `MRC_PAGES=` and
-//                     `MRC_PAGES=4,,7` included.
+//                     `MRC_PAGES=4,,7` included — **and on a REPEATED page**, because
+//                     `MRC_PAGES=1,1,1` otherwise counted one page three times into
+//                     every total (found by the review of the commit that added this,
+//                     2026-08-26; it is A12.8's defect in a second place). The repeat
+//                     refusal has a message of its OWN, naming the page — so a check
+//                     can pin which guard spoke and not merely which knob.
 //   MRC_COLOUR=colour force the colour decision on every picture page instead of
 //         |grey       asking `shouldKeepColour`. **C27 (b): the byte price of keeping
 //                     spot colour.** The constant cannot be moved to ask this —
@@ -104,6 +109,17 @@
 //                     colour, so a lower bar changes which pages are picture pages at
 //                     the same time, and the byte figure would be two changes added
 //                     together. Refused (exit 2) on any other value.
+//
+//                     ⛔ **It is NOT "the colour decision and nothing else", and this
+//                     tool's own run measured that.** A forced arm hands Vision a
+//                     colour JPEG instead of a grey one, so the word boxes come back
+//                     different on 21 of 30 sampled pages and `pageIsAllText()` flips
+//                     on 6 — moving `bgF` between /8 and /2, which is a background
+//                     resolution change and not a colour one. What the knob buys over
+//                     a lower bar is that the ROUTE is held fixed; downstream of the
+//                     route it is one change with a measured second-order effect, and
+//                     80.4% of the naive aggregate is that effect rather than colour.
+//                     See `BUGS.md` C27 `#### The byte price, MEASURED`.
 //
 //                     **The negative control is free and it is inside the knob**: on a
 //                     page whose own verdict is already colour, `MRC_COLOUR=colour`
@@ -203,8 +219,18 @@ let dumpDirectory = environment["MRC_DUMP"]
 /// moved to ask it: `pictureSaturationThreshold` gates the ROUTE as well as the
 /// colour (C9's "the same number charged twice"), so a bar low enough to keep a
 /// page's colour also changes which pages are picture pages, and a byte figure taken
-/// that way would be two changes added together. Forcing the decision here changes
-/// the colour and nothing else about the page.
+/// that way would be two changes added together. Forcing the decision here holds the
+/// ROUTE fixed, which is the whole benefit over a lower bar.
+///
+/// ⛔ **What it does NOT do is "change the colour and nothing else about the page" —
+/// this file said exactly that for one commit and the same commit's own run measured it
+/// false.** A forced arm hands Vision a colour JPEG rather than a grey one, so the
+/// recogniser's word boxes differ on 21 of 30 sampled pages, `pageIsAllText()` flips on
+/// 6, and `bgF` moves between /8 and /2 — **80.4%** of the naive +475.0 KB aggregate is
+/// that flip rather than the colour, which is why the number C27 quotes is the +93.0 KB
+/// over the 13 pages whose verdict HELD. So a `force-` row is one change at the route
+/// and two downstream of it, and `bgF` beside `pubKB` is what lets a reader tell which
+/// they are looking at. (`BUGS.md` C27 `#### The byte price, MEASURED`.)
 ///
 /// ⛔ **It is not a proposal and it is not a seam.** Nothing in `Sources/` reads it,
 /// no constant moves, and a `force-` row is a price rather than a recommendation —
@@ -272,8 +298,33 @@ let colourArm: ColourArm = {
 /// list. The env form was kept because every other knob this tool has is `MRC_`-prefixed
 /// env and a lone flag would be a second convention inside one interface; the prefix is
 /// what stops it colliding with the count.
-let requestedPages: [Int]? = {
-    guard let raw = environment["MRC_PAGES"] else { return nil }
+///
+/// ⛔ **The parse is a function returning a THREE-CASE result rather than an inline closure
+/// so the self-test can reach it** — the same reason `rowText` returns nil instead of
+/// exiting. The first version was a closure calling `refuseConfiguration` directly, which
+/// no check can call twice, and its duplicate defect (below) was found by reading rather
+/// than by a red row.
+///
+/// ⛔ **Three cases and not `[Int]?`, because ONE refusal value cannot say WHICH GUARD
+/// refused — the review of the commit that added the repeat guard measured that gap.**
+/// With a shared `nil` and a shared message, every `MRC_PAGES` row in
+/// `fault-inject.sh` and both duplicate rows in the table below pinned only *which knob*
+/// objected: a sabotage replacing `Set(numbers).count == numbers.count` with
+/// `numbers.allSatisfy { $0 >= 2 }` still refused `1,1,1`, still accepted `4,7`, and left
+/// **all eight** fault rows and both table rows green. Naming the repeated page is what
+/// makes "refused for being a repeat" a distinct, falsifiable observation — and it is the
+/// better diagnostic besides, since the old message foregrounded DISTINCT for six
+/// refusals that have nothing to do with distinctness.
+enum PagesParse: Equatable {
+    /// A list of distinct 1-based page numbers, in the order the caller wrote them.
+    case ok([Int])
+    /// Not a comma-separated list of positive integers at all.
+    case malformed
+    /// Well-formed, but this page is named more than once.
+    case repeated(Int)
+}
+
+func parseRequestedPages(_ raw: String) -> PagesParse {
     // `omittingEmptySubsequences: false`, so `MRC_PAGES=4,,7` and `MRC_PAGES=` are
     // refusals rather than a silently shorter list. A dropped page number here would
     // be a measurement of a population nobody asked for.
@@ -281,11 +332,43 @@ let requestedPages: [Int]? = {
         .map { $0.trimmingCharacters(in: .whitespaces) }
     let numbers = parts.compactMap { Int($0) }
     guard numbers.count == parts.count, numbers.allSatisfy({ $0 >= 1 }) else {
-        refuseConfiguration(
-            "score-mrc: MRC_PAGES=\(raw) must be a comma-separated list of 1-based\n"
-            + "           page numbers. Unset it for the three-page sample.\n")
+        return .malformed
     }
-    return numbers
+    // ⛔ **A REPEATED PAGE IS REFUSED, and this is the defect the adversarial review of
+    // the commit that added this knob found (2026-08-26).** `MRC_PAGES=1,1,1` measured
+    // page 1 three times, added it into `pages`, `nowTotal` and `publishedTotal` three
+    // times, and printed a summary indistinguishable from three distinct pages — which
+    // is *exactly* A12.8's defect in `score-text-route`, under the comment at the
+    // sampling site that says this path does not have it. Verified by running before the
+    // fix: three identical rows, `=== 3 picture pages`, `today 809 KB`.
+    //
+    // Refused rather than de-duplicated, because a caller who wrote a page twice does
+    // not have the population they think they have and silently collapsing the list
+    // would print a two-page total under a three-page request. The insert-and-test loop
+    // rather than a `Set` count, because it reports WHICH page repeated — see the
+    // three-case rationale above — and it keeps the ORDER the caller asked for, which a
+    // sort would not.
+    var seen = Set<Int>()
+    for page in numbers where !seen.insert(page).inserted { return .repeated(page) }
+    return .ok(numbers)
+}
+
+let requestedPages: [Int]? = {
+    guard let raw = environment["MRC_PAGES"] else { return nil }
+    switch parseRequestedPages(raw) {
+    case .ok(let numbers):
+        return numbers
+    case .malformed:
+        refuseConfiguration(
+            "score-mrc: MRC_PAGES=\(raw) must be a comma-separated list of\n"
+            + "           1-based page numbers. Unset it for the three-page sample.\n")
+    case .repeated(let page):
+        // A message of its own, so a check can tell this refusal from the one above.
+        refuseConfiguration(
+            "score-mrc: MRC_PAGES=\(raw) names page \(page) more than once, and a\n"
+            + "           repeated page is counted into every total once per mention.\n"
+            + "           Name each page at most once.\n")
+    }
 }()
 
 let scratch = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -511,11 +594,18 @@ func blindLayers(grey: [UInt8], width w: Int, height h: Int,
 /// SKIP row under a 9-column header inside a fix for a reporting defect. A
 /// mis-sized row is now a refusal, not a column nobody can name.
 /// C27 (b) appended three columns on 2026-08-26 and put them at the **end**, after
-/// the free-text `note`, which reads oddly and is deliberate: `MRC-2026-08-15/`'s
-/// five committed files carry exactly the first nineteen, so appending is what lets
+/// the free-text `note`, which reads oddly and is deliberate: **FOUR of `MRC-2026-08-15/`'s
+/// five committed files** carry exactly the first nineteen, so appending is what lets
 /// a run of today's tool be checked column-for-column against them. Inserting `arm`
 /// next to `route`, where it belongs semantically, would have shifted twelve columns
 /// and made every earlier artefact incomparable by position.
+///
+/// ⚠️ **"Five" was wrong for one commit and the fifth file is the interesting one.**
+/// `mirrored-instrument.tsv` has an **eleven**-name header — and its first data row
+/// carries **twelve** fields, which is the very "12 fields under an 11-column header"
+/// artefact the paragraph above cites as this guard's founding defect. So it is not a
+/// comparable file, it is the pre-fix one, and a check asserting five would have been
+/// asserting something false about the only artefact that proves the rule.
 let columns = ["file", "page", "px", "dpi", "route", "boxes", "inkOut", "nowKB",
                "maskKB", "bgKB", "fgKB", "mrcKB", "bgF", "fgF", "ratio", "kept",
                "mrcPSNR", "nowPSNR", "note",
@@ -672,9 +762,32 @@ func measure(_ page: PDFPage, label: String, index: Int,
     // other answer gets priced without moving a constant that also gates the route.
     // Note what is NOT forced: the megapixel bound inside `shouldKeepColour` is part
     // of the shipped verdict, so `MRC_COLOUR=colour` on a page over it prices a
-    // colour render the app would never attempt. No corpus page is near it — the
-    // widest `cells` in `THRESHOLD-LOSS-2026-08-18.tsv` is 3.84 M — but the row would
-    // not say so, which is why `wantC` is printed beside `arm`.
+    // colour render the app would never attempt.
+    //
+    // ⚠️ **The reassurance here quoted the wrong quantity, and CONTRIBUTING §3 is why:
+    // `cells` is the ANALYSIS GRID count over the INTERIOR WINDOW with a `factor` beside
+    // it, not a pixel count.** It said "the widest `cells` in
+    // `THRESHOLD-LOSS-2026-08-18.tsv` is 3.84 M", where the quantity `shouldKeepColour`
+    // reads is `wide * high`.
+    //
+    // ⛔ **The number to quote is `Flattener`'s own, 64.84 MP against a bar of 100 —
+    // 65% of it, not "far under" and not "half"** — measured over the 233-document
+    // corpus and recorded beside `maximumColourMRCPageMegapixels` itself. So the
+    // `cells` figure understated by **16.87x** (64.84 / 3.84426), and a §4b sweep of the
+    // constant's own name would have found the right figure with no reconstruction at
+    // all. ⚠️ **A first fix reconstructed `max(cells × factor²)` = 49.59 MP (`___` p1,
+    // cells 1,377,544 at factor 6) and called that the widest page — 1.31x low, in the
+    // reassuring direction, i.e. the same class of error one line up.** `pageMarks`
+    // counts cells over `interiorWindow`, which drops `w/16` and `h/16` each side, so
+    // `cells × factor²` is (14/16)² = **0.766** of `wide * high`; 49.59 / 0.766 = 64.8,
+    // which reproduces the measured 64.84 and is the only thing that reconstruction is
+    // good for. Verified on committed data: `Atkinson_1939` p2 is 1935x2592, its
+    // interior 1695 × 2268 = 3,844,260, exactly that row's `cells` at factor 1.
+    //
+    // Either way the conclusion survives — no corpus page is over the bound — but "no
+    // corpus page is NEAR it" does not, so a page in the band is a thing that can happen
+    // rather than a thing that cannot. The row would not say so, which is why `wantC` is
+    // printed beside `arm`.
     let wantColour: Bool
     switch arm {
     case .shipped: wantColour = shipWantsColour
@@ -1104,13 +1217,48 @@ func selfTest() -> [String] {
     expect("a full row is printed",
            rowText([String](repeating: "x", count: columns.count)) != nil, "it was refused")
 
+    // `MRC_PAGES`, as a table rather than as prose, because the review of the commit
+    // that added the knob found the one row nobody had thought of — a REPEAT, which
+    // measured one page three times into every total under a comment at the sampling
+    // site saying this tool does not have A12.8's defect. The parse is a function so
+    // this can call it; the first version exited from a top-level closure, and an
+    // `exit` is a branch no check can reach twice.
+    //
+    // The accepted rows matter as much as the refusals (CONTRIBUTING 4d's inverse row):
+    // a guard that refused everything would satisfy every refusal below and make the
+    // tool useless, and `7,4` is there because the ORDER the caller asked for is kept —
+    // this is not a sorted set.
+    //
+    // ⛔ **The two repeat rows assert `.repeated(n)` and NOT merely "a refusal", and that
+    // is the difference between a check and a check that cannot fail.** Against a single
+    // `nil` refusal, a sabotage swapping the repeat guard for `numbers.allSatisfy { $0 >=
+    // 2 }` refuses `1,1,1` for the wrong reason, accepts `4,7`, and leaves every row here
+    // green — measured by the review of this diff. Naming the page makes the mechanism
+    // observable: that sabotage now reds row 11, because `.malformed != .repeated(1)`.
+    let pagesCases: [(String, PagesParse)] = [
+        ("4,7", .ok([4, 7])), ("7,4", .ok([7, 4])), ("1", .ok([1])), (" 4 , 7 ", .ok([4, 7])),
+        ("", .malformed), ("4,,7", .malformed), ("0", .malformed), ("-1", .malformed),
+        ("x", .malformed), ("4,x", .malformed),
+        ("1,1,1", .repeated(1)), ("4,7,4", .repeated(4)),
+    ]
+    for (raw, want) in pagesCases {
+        expect("MRC_PAGES=\(raw) parses to \(want)",
+               parseRequestedPages(raw) == want,
+               String(describing: parseRequestedPages(raw)))
+    }
+
     // C27 (b), and this pair is about the committed artefacts rather than about
-    // today's run. `MRC-2026-08-15/`'s five files carry the first nineteen columns in
-    // this order; the three C27 added are at the END so that stays true. A future
-    // insertion in the middle would compile, print a plausible table, and quietly make
-    // every one of those files incomparable by position — which is the failure mode
+    // today's run. **Four of** `MRC-2026-08-15/`'s five files carry the first nineteen
+    // columns in this order; the three C27 added are at the END so that stays true. A
+    // future insertion in the middle would compile, print a plausible table, and quietly
+    // make every one of those files incomparable by position — which is the failure mode
     // this project has hit three times by counting tabs in a header (T14, A12.3, T18).
-    expect("MRC-2026-08-15's nineteen columns keep their positions",
+    //
+    // ⚠️ The name said "five" until 2026-08-26. `mirrored-instrument.tsv` is the fifth
+    // and it has an 11-name header over 12-field rows — the T15-era artefact, and the
+    // instance of the very defect this check guards, so it was never one of the files
+    // this assertion is about.
+    expect("MRC-2026-08-15's four 19-column files keep their positions",
            Array(columns.prefix(19)) == ["file", "page", "px", "dpi", "route", "boxes",
                                          "inkOut", "nowKB", "maskKB", "bgKB", "fgKB",
                                          "mrcKB", "bgF", "fgF", "ratio", "kept",
@@ -1344,6 +1492,13 @@ for path in CommandLine.arguments.dropFirst() {
     // Distinct for every page count: `n/3 < n/2 < 3n/4` holds for all n >= 5, and
     // n <= 4 takes every page. A12.8 found `score-text-route` measuring page 1
     // three times at n=5; this sampling does not have that defect.
+    //
+    // ⚠️ **That sentence covers the SAMPLE only, and it read as though it covered the
+    // line below it for one commit.** `MRC_PAGES` takes the caller's list verbatim, so
+    // `MRC_PAGES=1,1,1` DID have exactly A12.8's defect until `parseRequestedPages`
+    // started refusing repeats — the guard is what makes the claim true of both arms of
+    // this `??`, not the arithmetic above, which says nothing about a list nobody
+    // derived from `pageCount`.
     let indices = requestedPages?.map { $0 - 1 }
         ?? (document.pageCount <= 4
             ? Array(0..<document.pageCount)
@@ -1387,9 +1542,21 @@ for path in CommandLine.arguments.dropFirst() {
     }
 }
 
+// C27 (b), and this label was MISSING for one commit — found by the adversarial review
+// of the commit that added the arm. The three summary lines printed identically on a
+// forced run and on a shipped one, and `as published` is the line whose own comment says
+// it is the number to quote, so a pasted total carried no record of which decision
+// produced it. The `arm` COLUMN's rationale — "a reader who greps out a row loses the
+// banner" — applies one level up as well: a reader who pastes the summary loses the
+// preamble. Suffixed rather than prefixed so the `=== N picture pages` opening that
+// `fault-inject.sh`'s `mrc_refuses` greps for is byte-identical.
+let armBanner = colourArm == .shipped
+    ? ""
+    : "   [MRC_COLOUR=\(colourArm.rawValue) — FORCED, not the app's own decision]"
 print("\n=== \(pages) picture pages: \(layered) layered, \(declined) declined ==="
       + (unreadable > 0 ? "   \(unreadable) document(s) would not open" : "")
-      + (refused > 0 ? "   \(refused) page(s) could not be measured — see stderr" : ""))
+      + (refused > 0 ? "   \(refused) page(s) could not be measured — see stderr" : "")
+      + armBanner)
 if layered > 0 {
     print("today  \(nowTotal / 1024) KB   layered \(mrcTotal / 1024) KB   "
           + String(format: "%.2fx smaller over the pages that layered",

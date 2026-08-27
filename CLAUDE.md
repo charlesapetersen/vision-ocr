@@ -1202,8 +1202,43 @@ to price — so (b) prices 7 of the ten, and those three are exactly (c)'s groun
 Photo detail setting, nothing in `Sources/` moved. ✅ Three controls: the arm that agrees with a page's
 own verdict reproduces the shipped row on all 19 pre-existing columns on **30 of 30** pages; the tool
 before and after this diff is byte-identical on those 19 over 14 rows in 6 documents; and the three new
-columns are appended after `note` so `MRC-2026-08-15/`'s five files stay comparable by position, with two
-self-test checks pinning it. ⛔ **The review of this diff corrected SEVEN things and TWO change what may be quoted — read `#### The byte price, MEASURED`'s own corrections list.** The 13 are *picture-route pages published GREY*, not *pages carrying colour*: six sit below the lowest `satFrac` of the entry's ten and one reads 0.00000, so restricted to the **7** pages of that ten it is **+52.1 KB, `1.0612x`** and the margin over the app's own 1.080x is 1.8% rather than 3.1% — and that comparison is a selection effect besides. **80.4% is an upper bound, not a split** (~72% once the flipped pages' own colour cost is scaled in), 5.1x overstates the +475.0 KB form and not the 1.230x form (which is 1.174x), "21 of 30" is a floor and the real figure is **25 of 30**, and the negative control's 19 columns are **12** that carry information plus 7 that cannot disagree. What remains under C27 is
+columns are appended after `note` so **four of** `MRC-2026-08-15/`'s five files stay comparable by position, with two
+self-test checks pinning it (⚠️ the register and the tool both said *five* until 2026-08-26; the fifth,
+`mirrored-instrument.tsv`, is an 11-name header over 12-field rows — the very defect the `columns` guard
+exists for). ⛔ **The review of this diff corrected SEVEN things and TWO change what may be quoted — read `#### The byte price, MEASURED`'s own corrections list.** The 13 are *picture-route pages published GREY*, not *pages carrying colour*: six sit below the lowest `satFrac` of the entry's ten and one reads 0.00000, so restricted to the **7** pages of that ten it is **+52.1 KB, `1.0612x`** and the margin over the app's own 1.080x is 1.8% rather than 3.1% — and that comparison is a selection effect besides. **80.4% is an upper bound, not a split** (~72% once the flipped pages' own colour cost is scaled in), 5.1x overstates the +475.0 KB form and not the 1.230x form (which is 1.174x), "21 of 30" is a floor and the real figure is **25 of 30**, and the negative control's 19 columns are **12** that carry information plus 7 that cannot disagree.
+✅ **AND A SECOND, SWIFT-FACING REVIEW OF THE SAME DIFF SAID *REJECT* ON TWO BLOCKERS — ITS FIVE FINDINGS
+ARE WORKED 2026-08-26, ADOPTED FROM A STRANDED WORKTREE AND RE-MEASURED ON THE WAY IN**
+(`BUGS.md` C27 `#### Five more from the SWIFT review of that diff, WORKED`). ⛔ **Re-measured because what
+a strand hands over is prose asserting runs nobody can show** — all five reproduce, and re-running them
+found the fact that keeps the eight new `fault-inject.sh` rows from passing by accident: **a failed
+self-test exits 4, not 2**, so a build whose self-test is broken cannot satisfy a row asserting exit 2.
+⛔ **The defect: `MRC_PAGES=1,1,1` DOUBLE-COUNTED, under the sampling comment that denies exactly that** —
+one page measured three times into `pages`/`nowTotal`/`publishedTotal`, A12.8's `score-text-route` defect
+reproduced in the tool whose own comment says it does not have it. A repeat is **refused** now (not
+de-duplicated: a collapsed list prints a two-page total under a three-page request), the parse is a
+**function returning nil** rather than a top-level closure calling `refuseConfiguration` so twelve
+self-test checks can reach it, and the sabotage deleting the one guard reds **exactly the two** duplicate
+rows. ✅ The (b) commit's own `fault-inject.sh` debt is discharged with it — `mrc_refuses` carries **eight**
+new rows, seven refusals plus 4d's inverse row.
+⛔ **The other four were FALSE STATEMENTS, and the one that mattered is that
+*"`MRC_COLOUR` changes the colour decision and nothing else"* stood in THREE places** — the tool header,
+its `ColourArm` doc comment and the register's own justification paragraph — while the findings section
+fifteen lines away prices the second-order effect at 80.4%. What the knob buys is that the **route** is
+held fixed; downstream of it there is a measured second effect. ⚠️ Also: the summary block printed no arm
+label, so a pasted `as published` total carried no record of which decision produced it; and ⛔ **the
+megapixel reassurance quoted `cells` where the bound reads pixels, 16.87x low — the measured largest corpus
+page is 64.84 MP against a bar of 100, so "no corpus page is NEAR it" is refuted even though "none is over
+it" holds.** ⛔ **AND THE STRAND'S OWN FIX FOR THAT REPEATED THE ERROR IT CORRECTED, 1.31x low in the
+reassuring direction, under a §3 banner: it reconstructed `max(cells × factor²)` = 49.59 MP and called that
+the widest page, where `cells` counts the INTERIOR WINDOW (`w/16` and `h/16` dropped each side, so 0.766 of
+the area) and `Flattener.swift` records the real 64.84 MP twenty lines from the constant.** Refuted by the
+review of the adoption, and the §4b sweep it owed found the same sentence live in
+`Tools/score-threshold-loss.swift` — the tool that PRINTS the `cells` column. ⛔ **That review also found
+the twelve new checks and eight new fault rows credited with more than they asserted**: one shared refusal
+message meant a sabotage swapping the repeat guard for `numbers.allSatisfy { $0 >= 2 }` left every one of
+them green. The parse returns three cases now (`ok`/`malformed`/`repeated(Int)`), so that sabotage reds
+three rows where it reded none. ⚠️ No number in `C27-COLOURBYTES-2026-08-26.tsv` moves and nothing in
+`Sources/` moved. What remains under C27 is
 separating the one number that gates both `isPicture` and `shouldKeepColour`. ⚠️ And one instrument fact from that run:
 `saturation(of:)` is **not a pure function of the page** — read cold it differs from read after a
 full-resolution render of the same page (`1954 - Why` p7: 0.02831 vs 0.03033), production renders grey
