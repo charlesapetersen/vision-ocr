@@ -2895,7 +2895,32 @@ happens.**
       that skips it; and nothing detects drift between the committed prompt and the rendered one — carried as
       `prompt-render-drift` below.
       (context: the rescue lines in `$STATE/daemon.log`, and `19f4131` as the worked example)
-- [ ] **mrc-endtoend** — ⛔ **THE PREMISE IS TOO WIDE, corrected 2026-08-25: `Tests/main.swift` runs documents
+- [x] **mrc-endtoend** — **DONE 2026-08-27, RE-SCOPED FIRST AS THE BOX ASKED. Suite 1,346 → 1,355, all
+      green, no skips.** The blocker was one page, and what supplies it is a **pure yellow wash**: of
+      `isPicture`'s five signals exactly one (`saturation`) reads COLOUR, while all three `pageIsAllText()`
+      terms read the GREY buffer — yellow is saturation 1.0 at luminance ~226, so it is above any Otsu
+      threshold dividing black type from white paper and is **not ink**. Measured over six arms one
+      builder-argument apart: control **bilevel** at saturation 0.00000, 8% wash **jpeg** at **0.15571**
+      against a bar of 0.06, `inkOutsideText` **0.00000 on all six**, `shrunkAsAllText` true, background
+      **153 of 1224**. ⛔ **The adoption guard was measured rather than assumed — 7,777 B of three layers
+      against 112,371 B of one JPEG, 14.5x inside `after < before`** — because a fixture failing it would
+      route, be read as all text and still never reach `shrunkTextPages`. ⛔ **And the instrument was wrong
+      first**: hand-placed boxes read `inkOutsideText` **0.63876 on the CONTROL**, a plain page of type;
+      through real `Recogniser.recognise` output it reads 0.00000.
+      **The re-scope, stated:** the premise sentence was false and stays in the register as what the fixture
+      was built against. What was really uncovered was the MRC route *and* `log` → `RunReport`, and both are
+      covered now — 4 ungated checks for the routing half, 5 gated on `JBIG2.isAvailable` (declared through
+      `skipBlock`) for the batch. The document is **two pages with the washed one SECOND**, which is what
+      pins `shrunkTextPages.append((index + 1, …))`.
+      **Step 2, answered with its resolution stated:** one row, **310 s** at loadavg 4.87, against the seven
+      most recent clean `pre-commit` rows of **262–300 s**. ⚠️ **The delta is NOT resolvable from one
+      sample** — 310 s sits inside the pre-existing clean-row spread and the loadavg differs — so what can
+      be said is what the block DOES: two `flatten` calls, one `recogniseDocument`, one `mrcLayers`, and one
+      real two-page OCR batch. **Step 3 is the owner's and the measurement says KEEP**; see `## NEEDS OWNER`
+      in `$STATE/RUN.md`.
+      ⚠️ **Only ONE of the two sabotages was run** (budget) and the unrun one is named rather than implied.
+      Still uncovered: the JBIG2 encode-failure branch and the `after < before` REJECT arm.
+      (origin, kept: ⛔ **THE PREMISE IS TOO WIDE, corrected 2026-08-25: `Tests/main.swift` runs documents
       end-to-end through `makeSearchablePDF` at :379, :3741, :5134, :5186, :8648, :9450 and :13027, and
       `c29-b-measured` added block 6, which does it on a document with a born-digital page and reds on a
       `passThrough: []` build. Re-scope this item to the hop that really is uncovered — `log` → `RunReport` —

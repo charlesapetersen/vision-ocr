@@ -374,6 +374,30 @@ measured loser prints `0.0000`, so any filter drops a known loser). ⛔ It is a 
 the pages were still degraded — ⚠️ but as of **2026-08-22 all five of its questions
 are MEASURED** (question 2 closed 2026-08-21; question 4's last seam priced 2026-08-22), so what was left
 of this entry was **the decision and the wiring**, not another measurement.
+✅ **AND THAT REPORT IS COVERED END TO END AS OF 2026-08-27 — the gap the report's own section named and
+could not close** (`BUGS.md` C28 `#### The loop covered end to end`, the queue's `mrc-endtoend`). Two of
+that section's sentences are now false — *"no test in this suite runs a document through
+`makeSearchablePDF` down the MRC route at all"* and *"no fixture in this suite is known to reach the
+picture route and then be read as all text"* — and they are kept as written because they are what the
+fixture was built against. ⛔ **The fixture is a PURE YELLOW wash, and it works because the two decisions
+read different things**: of `isPicture`'s five signals exactly one, `saturation`, looks at COLOUR, while
+all three of `pageIsAllText()`'s terms are computed on the GREY buffer — yellow is saturation 1.0 at a
+luminance of ~226, so it is above any Otsu threshold dividing black type from white paper and is **not
+ink**. `inkOutsideText` is **0.00000 on all six measured arms** and the control (same builder, one
+argument apart) goes **bilevel** where 8% of the sheet goes **jpeg** at saturation **0.15571** against a
+bar of 0.06. ⚠️ **4% already suffices (1.33x) and 8% ships for margin**, because `saturation(of:)` is
+measured not to be a pure function of the page (C27: 0.02831 cold against 0.03033 after a full-resolution
+render), so 1.33x is a fixture that flakes on render order; 8% is 2.60x. ⛔ **The adoption guard was
+measured, not assumed — 7,777 B of three layers against 112,371 B of one JPEG, 14.5x inside
+`after < before`** — because a fixture failing that guard would route, be read as all text, and still
+never reach `shrunkTextPages`. ⛔ **And the instrument was wrong first**: hand-placed boxes read
+`inkOutsideText` **0.63876 on the CONTROL**, a plain page of type; through real `Recogniser.recognise`
+output it reads 0.00000, with Vision returning 10 observations for the 10 drawn lines.
+⚠️ **Still uncovered, named rather than implied**: the JBIG2 encode-failure branch and the
+`after < before` REJECT arm (this fixture only ever exercises the adopt arm), and
+`progress("Layered N picture pages…")`, which is asserted by nothing on purpose — `Model.swift`'s own
+comment records it as a transient stage label that never reaches the log, so there is no durable string
+to assert.
 ✅ **BOTH WERE TAKEN 2026-08-22 AND C28 IS NOW `HALF FIXED`** — read `#### THE DECISION` and
 `#### The wiring, SHIPPED` before touching any of it. The shape term is a **third refusal condition in
 `pageIsAllText()`**, after the ink fraction and the pale-drawing terms, so it is only ever evaluated on

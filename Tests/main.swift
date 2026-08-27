@@ -15227,6 +15227,283 @@ do {
 
 resetPrefs()
 
+// MARK: - C28 — the MRC layering loop, end to end
+//
+// **The gap `BUGS.md` C28 §"The report, SHIPPED" named and could not close.** Its own
+// words: *"What no check reaches, said plainly: the wiring from the layering loop to the
+// log line … no test in this suite runs a document through `makeSearchablePDF` down the
+// MRC route at all"*, and *"the whole MRC adoption loop, including the `after < before`
+// guard, has no end-to-end check"*. The blocker was a fixture: a page `isPicture` routes
+// to the picture path AND `pageIsAllText()` then accepts. The suite had the second half
+// (`r50text`) and not the first.
+//
+// **What supplies the first half is a PURE YELLOW wash, and the reason it works is that
+// the two decisions read different things.** `isPicture`'s saturation signal is the only
+// one of its five that looks at colour; all three of `pageIsAllText()`'s terms —
+// `inkOutsideText`, `paleDrawing` and the C28 shape term — are computed on the GREY
+// buffer. Yellow is the corner that separates them: saturation 1.0, and a luminance of
+// ~226 of 255, so it sits above any Otsu threshold that divides black type from white
+// paper and is not ink at all. Measured 2026-08-27 (probe over this same fixture builder,
+// the `Sources` closure `build.sh` compiles for the helper):
+//
+// | wash | route | `saturation(of:)` | `inkOutsideText` | all text | background | `after < before` |
+// |---|---|---|---|---|---|---|
+// | none | bilevel | 0.00000 | 0.00000 | yes | 153/1224 | n/a, never layered |
+// | 4%   | jpeg    | 0.07952 | 0.00000 | yes | 153/1224 | 7,672 < 111,959 |
+// | 8%   | jpeg    | 0.15571 | 0.00000 | yes | 153/1224 | 7,777 < 112,371 |
+// | 20%  | jpeg    | 0.36457 | 0.00000 | yes | 153/1224 | 7,970 < 112,733 |
+//
+// ⚠️ **4% of the sheet is already enough** (0.07952 against a bar of 0.06, 1.33x) and 8%
+// is what ships here, for margin: `saturation(of:)` is measured NOT to be a pure function
+// of the page — C27 records 0.02831 cold against 0.03033 after a full-resolution render of
+// the same page — so a 1.33x margin is a fixture that can flake on the order the suite
+// happens to render in. 8% is 2.60x and still a band, not a plate.
+//
+// ⛔ **`Flattener.Mode.grayscale` is NOT the shortcut**, and the register says so in
+// advance: it puts every page on the `.jpeg` branch, but `Mode.canUseJBIG2` is
+// `self != .grayscale` and `wantsJBIG2` ANDs it, so Grayscale takes the Flate route and
+// never layers at all.
+
+/// `pages` raster pages of black Helvetica on white, the LAST of which carries a pure
+/// yellow band covering `washFraction` of the sheet.
+///
+/// **Not a parameter on `makeScannedPDF`.** That helper has a single-page contract and
+/// about forty call sites; a fixture for this needs two pages so that the summary naming
+/// **p2** is what pins `shrunkTextPages.append((index + 1, …))`, and widening the older
+/// helper to reach that would put every one of those call sites in the blast radius of a
+/// fixture built for one check.
+///
+/// The band is low on the sheet and clear of the text: it must be outside every word box
+/// for `inkOutsideText` to be reading what this fixture claims, and well inside the outer
+/// sixteenth that `inkOutsideText` ignores, or it would be discounted as a scan edge and
+/// the fixture would pass for the wrong reason.
+func makeWashedTextPDF(at url: URL, pages: Int, washFraction: Double) {
+    let pxW = 1224, pxH = 1584
+    let lines = [
+        "An ordinary page of body text",
+        "with a second line of it here",
+        "and a third for good measure",
+        "so that the recogniser has",
+        "enough words to box up and",
+        "the stencil covers most of",
+        "the ink that is on the sheet",
+        "which is what the all-text",
+        "rule is asking about here",
+        "and nothing else at all",
+    ]
+    var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    guard pages > 0, let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
+    for page in 1...pages {
+        guard let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: pxW, pixelsHigh: pxH,
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+            let ctx = NSGraphicsContext(bitmapImageRep: rep) else { return }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = ctx
+        NSColor.white.setFill()
+        NSRect(x: 0, y: 0, width: pxW, height: pxH).fill()
+        if page == pages, washFraction > 0 {
+            let bandW = Double(pxW) * 0.70
+            let bandH = Double(pxW * pxH) * washFraction / bandW
+            NSColor(deviceRed: 1, green: 1, blue: 0, alpha: 1).setFill()
+            NSRect(x: Double(pxW) * 0.15, y: 140, width: bandW, height: bandH).fill()
+        }
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont(name: "Helvetica", size: 44) ?? NSFont.systemFont(ofSize: 44),
+            .foregroundColor: NSColor.black,
+        ]
+        var y = CGFloat(pxH - 220)
+        for line in lines {
+            (line as NSString).draw(at: NSPoint(x: 130, y: y), withAttributes: attrs)
+            y -= 78
+        }
+        NSGraphicsContext.current?.flushGraphics()
+        NSGraphicsContext.restoreGraphicsState()
+        guard let cg = rep.cgImage else { return }
+        pdf.beginPDFPage(nil)
+        pdf.draw(cg, in: box)
+        pdf.endPDFPage()
+    }
+    pdf.closePDF()
+}
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("mrc-endtoend")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+    // --- the routing half, which nothing had run ----------------------------
+    //
+    // Ungated on purpose: these four touch no external tool, so they are checks that
+    // exist on a machine with no jbig2 and no qpdf. The end-to-end block below cannot
+    // be, and a gated check is a check that does not exist on somebody's machine.
+    let plain = dir.appendingPathComponent("plain.pdf")
+    let washed = dir.appendingPathComponent("washed.pdf")
+    makeWashedTextPDF(at: plain, pages: 1, washFraction: 0)
+    makeWashedTextPDF(at: washed, pages: 1, washFraction: 0.08)
+
+    func route(_ src: URL, _ label: String) -> String {
+        let out = dir.appendingPathComponent("png-\(label)")
+        try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+        let rebuilt = (try? Flattener.flatten(src, to: dir.appendingPathComponent("\(label).pdf"),
+                                             mode: .auto, pngDirectory: out)) ?? []
+        guard let first = rebuilt.first else { return "none" }
+        switch first.content {
+        case .bilevel: return "bilevel"
+        case .jpeg: return "jpeg"
+        case .passthrough: return "passthrough"
+        }
+    }
+
+    // ⛔ The PAIR, not the washed page alone. Both fixtures come out of one builder one
+    // argument apart, so the wash is the only difference between them — which is what
+    // makes the flip attributable to the wash rather than to anything else about a page
+    // of generated Helvetica. Asserted the way C28's own negative control is.
+    let plainRoute = route(plain, "plain"), washedRoute = route(washed, "washed")
+    check("C28 — a page of type goes to the bilevel route, and a yellow wash on the same "
+            + "page sends it to the picture route",
+          plainRoute == "bilevel" && washedRoute == "jpeg",
+          "plain=\(plainRoute) washed=\(washedRoute)")
+
+    // The mechanism, in a band. Without this the check above is satisfied by a fixture
+    // that has drifted into being a picture for some other reason — a darker wash
+    // reaching `pictureToneThreshold`, say — and the whole argument for why the two
+    // decisions can both hold is that this one is COLOUR and theirs is grey.
+    if let wdoc = PDFDocument(url: washed), let wpage = wdoc.page(at: 0),
+       let pdoc = PDFDocument(url: plain), let ppage = pdoc.page(at: 0) {
+        let wsat = Flattener.saturation(of: wpage), psat = Flattener.saturation(of: ppage)
+        check("…and it is the SATURATION signal that routes it, not tone or ink",
+              wsat > Flattener.pictureSaturationThreshold && wsat < 0.30 && psat < 0.01,
+              String(format: "washed %.5f, plain %.5f, bar %.3f, wanted (bar, 0.30)",
+                     wsat, psat, Flattener.pictureSaturationThreshold))
+
+        // The other half: `pageIsAllText()` still accepts it, through real Vision boxes
+        // rather than hand-placed ones. ⚠️ The first version of the probe behind this
+        // section hand-placed boxes from the builder's own geometry and read
+        // `inkOutsideText` **0.63876 on the control** — the boxes were wrong, not the
+        // page. Suspect the instrument.
+        let boxes = (observations(of: washed)[1] ?? []).map(\.boundingBox)
+        let mrcDir = dir.appendingPathComponent("layers")
+        try? FileManager.default.createDirectory(at: mrcDir, withIntermediateDirectories: true)
+        if !boxes.isEmpty,
+           let layers = Flattener.mrcLayers(for: wpage, boxes: boxes, into: mrcDir,
+                                            stem: "washed", inColour: true) {
+            let scale = Flattener.rebuildDPI(of: wpage) / 72.0
+            let fullW = Int((Flattener.fullBox(of: wpage).width * scale).rounded())
+            check("…while `pageIsAllText()` accepts it anyway, so one page reaches BOTH "
+                    + "the picture route and the all-text shrink",
+                  layers.shrunkAsAllText
+                    && layers.backgroundWidth
+                        <= fullW / Flattener.textPageBackgroundDownsample + 1,
+                  "flag \(layers.shrunkAsAllText), background \(layers.backgroundWidth) "
+                    + "of \(fullW) at 1x")
+            // Why it is accepted, stated as a number rather than left to the flag: the
+            // wash contributes NO ink, so all three grey-side terms see the plain page.
+            // A wash dark enough to read as ink would push this over 0.045 and the flag
+            // above would go false — this is the check that says which it is.
+            check("…because the wash is invisible to the grey side: it adds no ink at all",
+                  (layers.inkOutsideText ?? 1) < 0.001,
+                  layers.inkOutsideText.map { String(format: "%.5f", $0) } ?? "nil")
+        } else {
+            check("the layering for C28's end-to-end fixture", false,
+                  "boxes \(boxes.count), mrcLayers returned nil")
+        }
+    } else {
+        check("C28's end-to-end fixture opens", false, "PDFDocument returned nil")
+    }
+
+    // --- the log -> RunReport hop, on a real batch --------------------------
+    if JBIG2.isAvailable {
+        let inDir = dir.appendingPathComponent("in"), outDir = dir.appendingPathComponent("out")
+        for u in [inDir, outDir] {
+            try? FileManager.default.createDirectory(at: u, withIntermediateDirectories: true)
+        }
+        // TWO pages, the washed one SECOND. The summary naming p2 rather than p1 is what
+        // pins `shrunkTextPages.append((index + 1, …))`: on a one-page fixture an
+        // off-by-one there is invisible, because the only page there is is page 1.
+        let doc = inDir.appendingPathComponent("washed-two.pdf")
+        makeWashedTextPDF(at: doc, pages: 2, washFraction: 0.08)
+        d.set(false, forKey: Prefs.openWhenDone)
+        d.set(true, forKey: Prefs.writeRunReport)
+
+        final class Box: @unchecked Sendable { var model: OCRModel? }
+        let box = Box()
+        var started = false
+        Task { @MainActor in
+            let m = OCRModel()
+            m.besideOriginal = false
+            m.outputFolder = outDir
+            _ = m.add([doc])
+            box.model = m
+            m.start()
+            started = true
+        }
+        _ = pump(until: { started }, seconds: 5)
+        _ = pump(until: { MainActor.assumeIsolated { box.model?.isRunning == true } }, seconds: 30)
+        let done = pump(until: {
+            MainActor.assumeIsolated { box.model?.isRunning == false }
+        }, seconds: 180)
+        check("C28 — a document with a picture-route page finishes end to end", done)
+
+        MainActor.assumeIsolated {
+            guard let m = box.model else { check("the model exists", false); return }
+            let lines = m.log.map(\.text)
+            // The sentence `shrunkTextPageSummary` builds, found in the REAL log of a
+            // REAL run rather than by calling the pure function with synthetic tuples —
+            // which is what the three checks beside `c28Note` already do, and what they
+            // cannot say anything about is whether the loop ever calls it.
+            // ⛔ `?? ""` and NOT `if let`, and this is the point rather than a style
+            // choice. The first draft of this block put the two checks below inside an
+            // `if let c28`, so a build that stopped producing the line at all would make
+            // them VANISH rather than fail — the count would drop by two and nothing
+            // would go red. That is the eleventh-check-that-cannot-fail shape in a new
+            // form: not a check that asserts nothing, but a check that is not there to
+            // assert it. Caught by predicting the sabotage's kill set before running it.
+            let c28 = lines.first {
+                $0.contains("were read as holding nothing but recognised text")
+            } ?? ""
+            check("…and the C28 line the layering loop builds reaches the model's log",
+                  !c28.isEmpty, lines.joined(separator: " | ").prefix(300).description)
+            // ⛔ Scoped to that LINE and not to the whole log: every other line of a run
+            // names the file, and `washed-two.pdf` would satisfy a `contains("p2")` over
+            // the joined log on a build that named the wrong page.
+            check("…naming the washed page, which is p2 and not p1",
+                  c28.contains("p2") && !c28.contains("p1"), c28)
+            check("…and leading with a complete count of one page",
+                  c28.hasPrefix("washed-two.pdf: 1 page(s) "), c28)
+            // The hop this item was re-scoped to. `log` -> `RunReport.Context.log` ->
+            // the written file: the report is the only record that outlives the window,
+            // and `progress(…)` beside this line in `Model.swift` is a transient stage
+            // label that never reaches it.
+            //
+            // ⛔ `!c28.isEmpty &&` is load-bearing: `body.contains("")` is TRUE, so
+            // without it this check passes vacuously on exactly the build that has
+            // stopped producing the line. It asserts the SAME string the log carried
+            // rather than the sentence again, which is what makes it a check about the
+            // HOP — an off-by-one upstream leaves it green, because the report is
+            // faithfully carrying whatever the log said.
+            if let report = m.lastReport {
+                let body = (try? String(contentsOf: report, encoding: .utf8)) ?? ""
+                check("…and the SAME line survives the hop into the written run report",
+                      !c28.isEmpty && body.contains(c28),
+                      "log line \(c28.isEmpty ? "absent" : "present"), "
+                        + "report \(body.count) B")
+                try? FileManager.default.removeItem(at: report)
+            } else {
+                check("the run report for C28's end-to-end document", false, "no lastReport")
+            }
+        }
+        resetPrefs()
+    } else {
+        skipBlock("C28's MRC loop end to end", checks: 5,
+                  because: "jbig2 or qpdf is not installed, so no page takes the MRC route")
+    }
+    resetPrefs()
+}
+
+resetPrefs()
+
 // A11.7. Measured, not documented. The census used to live in `ARCHITECTURE.md` as
 // a number that was wrong by 57, and five of the eight blocks left no trace at all
 // when they skipped.

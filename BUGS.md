@@ -7557,6 +7557,95 @@ the layering loop, but `Mode.canUseJBIG2` is `self != .grayscale` and `wantsJBIG
 Grayscale takes the Flate route and never layers at all. Worth opening as its own item rather than
 leaving in a commit message.
 
+✅ **BOTH PARAGRAPHS ABOVE ARE CLOSED AS OF 2026-08-27 AND TWO OF THEIR SENTENCES ARE NOW FALSE** —
+*"no test in this suite runs a document through `makeSearchablePDF` down the MRC route at all"* and
+*"no fixture in this suite is known to reach the picture route and then be read as all text"*. They are
+kept as written because they are what the fixture was built against, and because the second one names
+the reason the first stood for five days. Read `#### The loop covered end to end` below. ⚠️ The
+Grayscale sentence is **not** retracted — it is still true and is still the trap it was written to be.
+
+#### The loop covered end to end, and the fixture is a colour the two decisions read differently — MEASURED 2026-08-27
+
+**The blocker was never the loop, it was one page.** `pageIsAllText()` needs a page `isPicture` has
+already routed to the picture path, and the entry above records the suite having the second half
+(`r50text`) and not the first. What supplies the first half is a **pure yellow wash**, and the reason
+it works is structural rather than lucky: of `isPicture`'s five signals exactly one — `saturation` —
+looks at **colour**, while all three of `pageIsAllText()`'s terms (`inkOutsideText`, `paleDrawing`,
+the C28 shape term) are computed on the **grey** buffer. Yellow is the corner that separates them:
+saturation 1.0, luminance ~226 of 255, so it is above any Otsu threshold that divides black type from
+white paper and is **not ink at all**.
+
+Measured over one builder, six arms, one argument apart (probe compiled against the same `Sources`
+closure `build.sh` gives the helper):
+
+| wash | route | `saturation(of:)` | `inkOutsideText` | all text | background | `after < before` |
+|---|---|---|---|---|---|---|
+| none | **bilevel** | 0.00000 | 0.00000 | yes | 153/1224 | n/a, never layered |
+| yellow 4% | jpeg | 0.07952 | 0.00000 | yes | 153/1224 | 7,672 < 111,959 |
+| yellow 8% | jpeg | 0.15571 | 0.00000 | yes | 153/1224 | 7,777 < 112,371 |
+| yellow 12% | jpeg | 0.22864 | 0.00000 | yes | 153/1224 | 7,763 < 112,724 |
+| yellow 20% | jpeg | 0.36457 | 0.00000 | yes | 153/1224 | 7,970 < 112,733 |
+| cyan 12% | jpeg | 0.09934 | 0.00000 | yes | 153/1224 | 7,688 < 112,146 |
+
+⛔ **Quote the PAIR, never the washed row alone.** The control and the fixture come out of one builder
+one argument apart, so the wash is the only difference between them, and it is the control's `bilevel`
+that makes the flip attributable to the wash rather than to anything else about a page of generated
+Helvetica. `inkOutsideText` is **0.00000 on all six**, which is the mechanism stated as a number: the
+wash adds no ink, so all three grey-side terms see the plain page.
+
+⚠️ **4% of the sheet is already enough and 8% is what ships**, for margin rather than for effect:
+0.07952 against a bar of 0.06 is **1.33x**, and `saturation(of:)` is measured *not* to be a pure
+function of the page — C27's own `#### The split, SHIPPED` records 0.02831 cold against 0.03033 after a
+full-resolution render of the same page — so a 1.33x margin is a fixture that can flake on whatever
+order the suite happens to render in. 8% is **2.60x** and still a band, not a plate. The saturation
+figure is asserted in a band `(bar, 0.30)` for that reason, so a fixture that drifted into being a
+picture for some *other* reason reports itself instead of passing.
+
+⛔ **The adoption guard was measured rather than assumed, and it is not close: 7,777 B of three layers
+against 112,371 B of one JPEG, 14.5x cheaper.** `Model.swift`'s own comment says three layers are not
+always cheaper than one image, so a fixture that failed `after < before` would take the picture route,
+be read as all text, and still never reach `shrunkTextPages` — a green fixture proving nothing. That
+was measured in the probe rather than discovered at suite time.
+
+⛔ **The instrument was wrong first, and this is the part worth reading.** The probe's first version
+hand-placed word boxes from the builder's own drawing geometry and read `inkOutsideText` **0.63876 on
+the CONTROL** — a plain page of type with no wash on it, i.e. 64% of its ink outside its own words.
+The page was fine; the boxes were wrong. Re-run through real `Recogniser.recognise` output it reads
+**0.00000**, and Vision returns **10 observations for the 10 drawn lines** on all six arms. Suspect the
+instrument — including when the instrument is thirty lines of your own arithmetic.
+
+**What the suite now covers, and it is two hops rather than one.** The routing half is **ungated**
+(four checks, no external tool, so they exist on a machine with no jbig2 and no qpdf). The
+`log` → `RunReport` half needs a real batch and is gated on `JBIG2.isAvailable`, five checks, declared
+through `skipBlock` so a skip is counted rather than silent. The document is **two pages with the
+washed one SECOND**, and that is the second page earning its place: on a one-page fixture an off-by-one
+in `shrunkTextPages.append((index + 1, …))` is invisible, because the only page there is is page 1.
+
+⛔ **One flaw in this diff's own first draft, caught by predicting the sabotage's kill set before
+running it.** The p2 and count checks sat inside an `if let c28`, so a build that stopped producing the
+line at all would have made them **vanish rather than fail** — the total would drop by two and nothing
+would go red. That is the check-that-cannot-fail shape in a new form: not a check that asserts nothing,
+but a check that is not *there* to assert it. It is `?? ""` now, and the report check carries an
+explicit `!c28.isEmpty &&` because `body.contains("")` is `true` — without it that check passes
+vacuously on exactly the build that has stopped producing the line.
+
+✅ **WATCHED FAILING, kill set predicted BY NAME AND COUNT before the run: `layers.shrunkAsAllText` →
+`false` in the adoption loop gives `1351/1355`, exactly the FOUR predicted reds** — the log line, the p2
+name, the complete count and the report hop. That is what says the chain from the loop to the written
+file is live rather than merely present. ⚠️ **The SECOND sabotage was NOT run, and it is the one that
+grades the fixture's second page**: `index + 1` → `index`, predicted to red **exactly one** check (the
+p2 name) and to leave the report check green, because that check asserts the SAME string the log
+carried rather than the sentence again. Predicted, unrun, and left here as a debt rather than implied —
+this session ran out of budget, not out of reasons.
+
+⚠️ **What this does NOT reach.** The JBIG2 **encode-failure** branch and the `after < before`
+**reject** branch are both still uncovered — this fixture is 14.5x inside the guard, so it exercises
+the adopt arm only, and nothing here makes `JBIG2.encode` fail. `progress("Layered N picture pages…")`
+is still asserted by nothing, and deliberately: `Model.swift`'s own comment records it as a transient
+stage label that never reaches the log, so there is no durable string to assert. The `relayered` and
+`savedBytes` counters are exercised but their arithmetic is not asserted. And this is one generated
+page, not a corpus page.
+
 #### The same loss at 1/2, RENDERED over 16 of the 109 — it does not reproduce, and a draft of this section nearly retracted a correct claim of its own campaign — MEASURED 2026-08-20
 
 **This is question 2's first half.** The 109 layered pages the shipped bar does *not* read as all text
