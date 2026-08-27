@@ -46,11 +46,28 @@ fi
 # ones, which is seconds rather than the two minutes the whole of Tools/ costs.
 # Existing files only: a staged *deletion* is still a staged path, and passing one
 # would make the checker refuse a commit whose whole content is removing a tool.
+#
+# `sh` is in the pattern from 2026-08-27 (BUGS.md T20). T16 added `bash -n` over
+# Tools/*.sh to check-tools-compile.sh and left this selector at swift|py, so the
+# shell arm had never run at commit time in the twelve days since. Measured
+# through this hook with a syntactically broken Tools/vm-gui-check.sh staged
+# ALONE: no "type-checking the staged tools" line was printed at all, the whole
+# suite ran (1355/1355, ~5 min of real OCR), and the commit was ALLOWED — the one
+# check relevant to the only staged file being the one skipped. With `sh` here
+# the same staged set reads `0 Swift, 0 Python, 1 shell` and refuses in about a
+# second. It is the cheapest arm there is, and it now covers
+# check-tools-compile.sh itself.
+#
+# ⚠️ Two things it still does NOT reach, both measured, both the queue's
+# `hook-selfcheck`: a commit staging only .githooks/pre-commit exits at "no code
+# staged" above, before this block; and the sweep behind it globs Tools/ and
+# .githooks/ only, so run_tests.sh, ops/autonomous/test-lock.sh and build.sh --
+# all three run BY this hook, all three able to refuse a commit -- are unchecked.
 staged_tools=""
 while IFS= read -r f; do
   [ -n "$f" ] && [ -f "$f" ] && staged_tools="$staged_tools $f"
 done <<EOF
-$(echo "$staged" | grep -E '^Tools/.*\.(swift|py)$' || true)
+$(echo "$staged" | grep -E '^Tools/.*\.(swift|py|sh)$' || true)
 EOF
 if [ -n "${staged_tools// /}" ]; then
   echo "pre-commit: type-checking the staged tools…"

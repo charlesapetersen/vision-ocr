@@ -18032,6 +18032,19 @@ it, and the first would have refused this very commit.**
    `bash -n` on `Tools/*.sh` is now part of the run, and it is the check that would have caught
    defect 1 before it reached the hook. `py_compile` and `bash -n` are both syntax-only and the
    header says so: a Python body of `return no_such_function(1)` compiles clean.
+   ⛔ **THAT MIDDLE CLAUSE IS FALSE FROM BOTH ENDS, corrected 2026-08-27 — see `T20`.** (a) `bash -n`
+   **cannot** catch defect 1 at all: that defect is a *runtime* unbound-variable error, and syntax is
+   all `bash -n` reads. Measured — `set -u; A=(); printf '%s\n' "${A[@]}"` gives `bash -n` exit **0**
+   and runtime exit **1**, `A[@]: unbound variable`. This script's own header says as much a few lines
+   up (*"the first version of this file shipped a bug `bash -n` cannot catch either"*), so the clause
+   contradicts the file it is about. (b) Separately, the arm was unreachable from the hook for
+   **twelve days**: `bash -n` was added to the *script* and the hook's selector stayed
+   `'^Tools/.*\.(swift|py)$'`, so a staged, broken `Tools/*.sh` was silently dropped — measured,
+   banner `1 Swift, 0 Python, 0 shell`. The selector reads `swift|py|sh` now, which fixes (b) and
+   cannot fix (a). ⚠️ The first draft of that T20 correction conceded (b) and asserted *"by hand it
+   was true"*, putting a NEW false claim into this entry; the adversarial review of that diff refuted
+   it from this script's own header.
+
 ### T17 · The corpus gate linked the app's page test and then computed its own — FIXED
 *(found by `REVIEW-2026-08-14.md` A12.4; fixed 2026-08-15, and the entry's stated
 mechanism turned out to be wrong)*
@@ -18403,6 +18416,131 @@ three factors), `score-routing` and `picture-signals` (a label, rest unread), `s
 but `argv[1]` is the population label, so a glob measures 232 of 233 documents and names the
 population after document 1. It has published no committed TSV, so nothing on disk is known to
 be wrong from it. They stay the queue's `argv-shape` item.
+
+### T20 · T16 added a shell arm to the tool checker and left the hook's selector at `swift|py`, so it had never run at commit time — FIXED
+*(found 2026-08-27 by the queue's `tools-compile` item — running the full sweep, then asking the
+question the item's own title asks: what does "over *every* tool, not just the staged ones" leave
+out on the staged side. Fixed the same day. Every claim below that says "measured" was run; the
+adversarial review of this diff refuted six of its first draft's and they are corrected in place,
+not quietly.)*
+
+**The full sweep is GREEN and that is the item's answer.** `Tools/check-tools-compile.sh` over
+everything, 2026-08-27: **32 Swift, 6 Python, 4 shell (3 in `Tools/` plus `.githooks/pre-commit`) —
+42 files, `all clear`, exit 0.** Nothing in the tree fails to build. ⚠️ That is a **type-check**, not
+a build: the script's own header records that it cannot see a link failure. ⚠️ And it is the tree as
+of that run — `.githooks/pre-commit`, one of the 42, is edited by this very commit, so the green
+describes the tree one token earlier. The four real-hook runs below execute the edited copy.
+
+✅ **THE GREEN IS WATCHED, which is the only reason to quote it.** Three one-token sabotages,
+one per language arm, in a single sweep: `noSuchFunctionAtAll()` appended to `Tools/pdf-info.swift`
+(C25's exact class — a call to something that is not there), `def (` to `Tools/sweep-zotero.py`,
+an unclosed `if true; then` to `Tools/vm-gui-check.sh`. Result: **exactly three `FAIL` lines naming
+exactly those three, `3 tool(s) do not build.`, exit 1** — each arm red independently, each with the
+right diagnostic (`cannot find 'noSuchFunctionAtAll' in scope` under both the standalone and the
+with-`Sources/` attempt; `SyntaxError: invalid syntax`; `syntax error: unexpected end of file`).
+All three reverted; `git status` empty.
+
+⛔ **THE DEFECT IS ON THE STAGED SIDE AND IT IS T16's OWN.** T16 defect 3 added `bash -n` over
+`Tools/*.sh` to the script. The hook's selector was left at `'^Tools/.*\.(swift|py)$'`. **So the
+shell arm existed in the script and was unreachable from the hook for twelve days.** Both landed
+2026-08-15 — the selector in `259e871` at 12:17:08, the shell arm in `0a928f2` at 15:53:32 (`git
+log -S`), and the selector was never anything else in between — against 2026-08-27, so **twelve
+days, derived rather than asserted**. ⚠️ T16's own entry confesses that an earlier draft of it
+invented "eleven days"; the first draft of THIS entry then wrote eleven back into four files, off
+the same one-day date slip. Twelve.
+
+**Measured through the real hook, and predicted before each run.** A syntactically broken
+`Tools/vm-gui-check.sh` and a broken `Tools/pdf-info.swift` staged together:
+
+```
+pre-commit: type-checking the staged tools…
+check-tools-compile: 1 Swift, 0 Python, 0 shell, 6 at a time      ← the staged .sh dropped
+FAIL Tools/pdf-info.swift
+```
+
+After the fix, same staged set, prediction stated first: `1 Swift, 0 Python, **1 shell**`, **two**
+`FAIL` lines, `2 tool(s) do not build.` And the broken `.sh` **alone**, post-fix, reads
+`0 Swift, 0 Python, 1 shell` and refuses in about a second.
+
+⛔ **THE RUN THAT SHOWS THE HARM IS THE FOURTH ONE, AND THE FIRST DRAFT DID NOT HAVE IT.** Those
+three all end in a refusal — two because a broken `.swift` was staged beside the `.sh`, one because
+the fix was in — so none of them is a commit *succeeding* with a broken shell tool. The review of
+this diff caught that the entry priced a harm it had never once exhibited. So it was run: pre-fix
+hook, broken `Tools/vm-gui-check.sh` staged **alone**. The hook prints **no**
+`type-checking the staged tools…` line at all — the block is skipped on an empty selection — goes
+straight to `running ./run_tests.sh`, and the commit is allowed. ⛔ **The sharp form of the cost:
+`^Tools/` matches the suite gate, so that commit pays the full suite of real OCR (285–308 s by
+`$STATE/suite-timings.tsv`, not the "~4 minutes" the hook still prints) and skips the one-second
+check that is the only one relevant to the file it staged.**
+
+**The fix is one token** — `swift|py` → `swift|py|sh` — plus the comment recording why.
+`check-tools-compile.sh` accepts a `.sh` path argument already (verified:
+`Tools/check-tools-compile.sh Tools/vm-gui-check.sh` reads `0 Swift, 0 Python, 1 shell`,
+`all clear`, exit 0), a staged *deletion* is still dropped by the existing `[ -f "$f" ]`, and the
+Python `--self-test` loop below is independent.
+✅ **What it buys that was not the point: `check-tools-compile.sh` now gates ITSELF at commit
+time**, where staging it alone previously selected nothing. ⚠️ With the edge that follows — a
+checker that fails spuriously now blocks the commit that would fix it. The file documents that
+self-gating hazard for the sweep already; this extends it to the hook.
+⚠️ **The one path that can newly refuse a correct commit**: `check-tools-compile.sh` skips a
+**zsh**-shebanged script when it classifies by shebang, on the stated ground that `bash -n` is the
+wrong parser for one — but classification **by extension** is unconditional, so a zsh script named
+`Tools/*.sh` would now be `bash -n`'d at commit time. All three `Tools/*.sh` are `#!/bin/bash`
+today, so nothing refuses now.
+⚠️ **And one novelty, stated narrowly because the first draft overstated it**: `0 Swift, 0 Python,
+1 shell` is the first argument list the hook can produce with `SWIFT_TOOLS` **and** `PY_TOOLS` empty
+at once. The guards themselves were never unexercised — an all-`.py` or all-`.swift` commit produced
+a one-kind list routinely, and `SH_TOOLS` was empty on every hook run there has ever been.
+
+⛔ **A SECOND GAP IS MEASURED AND DELIBERATELY LEFT — a commit staging only `.githooks/pre-commit`
+is checked by nothing until `health-gate.sh`'s next full sweep, i.e. up to ~10 commits later.** The
+suite gate's regex is `^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)` and has no
+`.githooks/`, so such a commit exits at *"pre-commit: no code staged, skipping the suite"* **before**
+the tool block below it. Measured by staging this fix alone and running the hook: exit 0, that one
+line, nothing else.
+⛔ **It is not a one-token fix, and the first draft's reason for saying so was WRONG.** Moving the
+tool block above the early exit closes nothing by itself, because that block's selector is
+`^Tools/…` and does not match `.githooks/` — a hook-only commit selects zero tools and the block is
+skipped, so nothing is invoked and nothing is refused. The real fix is **two** edits, widening the
+selector to reach `.githooks/` *and* moving it up, and it is THAT pair which lands a
+docs-plus-hook commit in front of the `command -v swiftc` guard, where `check-tools-compile.sh`
+exits 1 with no swiftc — newly refusing a commit, which the hook's own lock comment forbids in terms
+(*"This guard must never be the reason a commit cannot happen"*). It needs a design, not a token,
+and it is the queue's `hook-selfcheck`.
+
+⛔ **THE SUPERLATIVE THIS ENTRY INHERITED IS FALSE, AND IT IS THE FINDING WORTH MORE THAN THE FIX.**
+`check-tools-compile.sh`'s header calls `.githooks/pre-commit` *"the only script whose failure
+refuses every commit"*, and the first draft of this entry repeated it in three files. The hook
+**runs three other shell scripts**, and a failure in any of them refuses commits too:
+`run_tests.sh`, `ops/autonomous/test-lock.sh` (a parse failure there exits non-zero and the hook
+reports a 60-minute stuck lock — the wrong cause, on every code commit) and `./build.sh` on a UI
+commit. **None of the three is in the 42-file sweep**: it globs `Tools/*.{swift,py,sh}` and
+`.githooks/*` and nothing else, while **18 tracked `.sh` files live outside `Tools/`** (16 under
+`ops/autonomous/`, plus `build.sh` and `run_tests.sh`). ⛔ **`build.sh` and `run_tests.sh` are named
+by the suite gate itself as things that can change behaviour, and the selector this entry widened is
+still anchored `^Tools/`** — so staging a broken `run_tests.sh` still gets no `bash -n`; it is simply
+executed and reported as a test failure. **This fix closed the smallest gap in its own class.** The
+rest is `hook-selfcheck`'s ground and is written into that box.
+
+**Sibling sweep.** `.githooks/pre-commit` is the only file that selects staged paths for a check —
+`git grep -- '--name-only'` repo-wide returns that file's line 13 and this sentence, nothing else.
+⚠️ **It holds SEVEN greps of `$staged`, not the three a first draft counted**, of which four gate
+something: line 32's suite gate (the second gap above), line 61's tool check (fixed here), line 91's
+Python `--self-test` loop — `'^Tools/.*\.py$'`, **correctly** so, since that loop runs
+`python3 <f> --self-test` and there is no shell equivalent — and line 180's `./build.sh` trigger on
+`^Sources/(App|ContentView|SettingsView)\.swift$`. The other three (lines 16–18) feed the
+no-test warning. ⚠️ **Two hand-written lists are named and neither is fixed**: line 180's three
+names, which are exactly the three app/view files that exist today, and line 18's literal
+`'^BUGS.md$'` — the same list-goes-stale class, three lines above where the first draft named only
+the first of them.
+
+⚠️ **What this does not claim.** No `Tools/` file changed and no measurement in this register moves.
+The green sweep is one run of one tree on one machine. `bash -n` is syntax only — a shell tool whose
+logic is wrong still passes — and the selector matches `Tools/sub/x.sh` while the sweep's glob does
+not descend, which is pre-existing for `.swift`/`.py` and now extends to `.sh` (no tracked file
+under `Tools/` has a directory component today). The fix is watched by the four real-hook runs above
+and by nothing durable: `fault-inject.sh` has no case for the hook, and adding one needs the hook
+runnable against a synthetic index.
 
 ---
 ## The interface

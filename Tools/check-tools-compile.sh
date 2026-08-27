@@ -131,11 +131,23 @@ else
   for f in Tools/*.py;    do [ -f "$f" ] && PY_TOOLS+=("$f"); done
   for f in Tools/*.sh;    do [ -f "$f" ] && SH_TOOLS+=("$f"); done
   # And the hook, which is not in Tools/ and was the one shell script nothing
-  # checked — while being the only one whose failure refuses *every* commit. The
-  # bash-3.2 defect described above shipped in this file and would have refused
-  # the commit that added it; the same class of defect in the hook cannot even be
-  # worked around by staging different files. `git config core.hooksPath` may
-  # point elsewhere, but the committed copy is what a new clone installs.
+  # checked. The bash-3.2 defect described above shipped in this file and would
+  # have refused the commit that added it; the same class of defect in the hook
+  # cannot even be worked around by staging different files. `git config
+  # core.hooksPath` may point elsewhere, but the committed copy is what a new
+  # clone installs.
+  #
+  # ⛔ THIS SAID the hook was "the only one whose failure refuses *every* commit"
+  # and that is FALSE, corrected 2026-08-27 (BUGS.md T20). The hook also RUNS
+  # run_tests.sh, ops/autonomous/test-lock.sh and ./build.sh, and a failure in any
+  # of them refuses commits too — test-lock.sh's while reporting a 60-minute stuck
+  # lock, i.e. the wrong cause. NONE of the three is reachable from the globs
+  # below, which stop at Tools/ and .githooks/, while 18 tracked *.sh live outside
+  # Tools/; build.sh and run_tests.sh are named by the hook's own suite gate as
+  # things that can change behaviour. Widening this is the queue's
+  # `hook-selfcheck` and is deliberately not done here — it is a scope decision,
+  # not an oversight: ops/autonomous/ holds the daemon, and a syntax gate over it
+  # wants its own argument.
   #
   # Through the shebang sniff, and `quiet`: a hooks directory holds `*.sample`
   # files and READMEs, and a gate that refuses a commit over a Markdown file is

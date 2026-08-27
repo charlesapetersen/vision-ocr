@@ -12,6 +12,25 @@ failing test first, adversarial review of your own diff, and a pre-commit hook
 that refuses a commit whose tests do not pass. It exists because this project has
 repeatedly shipped regressions *inside fixes for other bugs*.
 
+⛔ **Know what the hook does and does NOT gate, corrected 2026-08-27 (`BUGS.md` T20).** Its
+staged-tool type-check reads `swift|py|sh`; it read `swift|py` for **twelve days**, so T16's
+`bash -n` arm existed in `Tools/check-tools-compile.sh` and had **never run at commit time** —
+measured through the hook, banner `1 Swift, 0 Python, 0 shell` over a staged, broken
+`Tools/*.sh`, and measured again with that `.sh` staged ALONE, where the pre-fix hook prints no
+type-check line at all, runs the whole suite and **allows the commit**. The full sweep itself is
+green over all 42 files and **watched** (three one-token sabotages, one per arm, exactly three
+reds).
+⛔ **The bigger half is what the sweep CANNOT see, and it makes a superlative in
+`check-tools-compile.sh`'s own header false**: the hook also runs `run_tests.sh`,
+`ops/autonomous/test-lock.sh` and `build.sh`, a failure in any of which refuses commits, and
+**none is in the sweep** — it globs `Tools/*.{swift,py,sh}` and `.githooks/*` only, while **18
+tracked `.sh` live outside `Tools/`**. `build.sh` and `run_tests.sh` are named by the suite gate
+itself, yet the selector fixed here is still anchored `^Tools/`. ⚠️ **Also still true and
+deliberately left**: a commit staging only `.githooks/pre-commit` exits at *"no code staged"*
+before the tool block, so it is checked by nothing until `health-gate.sh`'s next full sweep, up
+to ~10 commits later. Both are the queue's `hook-selfcheck`, and neither is a one-liner — the two
+obvious fixes are refuted in that box, one of them having been refuted in this diff's own review.
+
 Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page
 boxes, and what the tests don't cover.

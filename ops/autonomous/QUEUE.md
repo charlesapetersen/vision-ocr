@@ -2994,7 +2994,47 @@ happens.**
       reading of the machine's load; a minimal fixture may cost seconds. Step 1 is one code commit and
       therefore one suite run; steps 2-3 are free.
       (context: BUGS.md C28 §"The report, SHIPPED", and the outbox entry drained 2026-08-20)
-- [ ] **tools-compile** — run `Tools/check-tools-compile.sh` over *every* tool, not just the staged ones,
+- [x] **tools-compile** — **DONE 2026-08-27. The sweep is GREEN over all 42 files and the report is
+      `BUGS.md` T20.** `32 Swift, 6 Python, 4 shell` (3 in `Tools/` plus `.githooks/pre-commit`),
+      `all clear`, exit 0 — **nothing in the tree fails to build**, so the "fix at most ONE" half of the
+      bound below was never reached. Do not re-run it: the standing coverage is
+      `ops/autonomous/health-gate.sh`'s `step tools-compile`, which runs this same full sweep every ~10
+      commits, and the hook covers the staged subset every commit.
+      ✅ **The green is WATCHED, which is the only reason to quote it.** Three one-token sabotages in one
+      sweep, one per language arm — `noSuchFunctionAtAll()` into `Tools/pdf-info.swift`, `def (` into
+      `Tools/sweep-zotero.py`, an unclosed `if true; then` into `Tools/vm-gui-check.sh` — gave **exactly
+      three `FAIL` lines naming exactly those three**, `3 tool(s) do not build.`, exit 1. All reverted.
+      ⛔ **AND THE ITEM'S OWN QUESTION — "not just the staged ones" — FOUND A REAL DEFECT ON THE STAGED
+      SIDE, fixed in the same commit: T16 added `bash -n` over `Tools/*.sh` to the SCRIPT and left the
+      hook's selector at `'^Tools/.*\.(swift|py)$'`, so the shell arm had never run at commit time in the
+      TWELVE days since** (both landed 2026-08-15 — `259e871` 12:17, `0a928f2` 15:53 — against
+      2026-08-27; a first draft said eleven, off a one-day date slip). Measured through the real hook
+      with a broken `.sh` and a broken `.swift` staged together: `1 Swift, 0 Python, **0 shell**`. After
+      the one-token fix (`swift|py|sh`), same staged set, prediction stated first: `1 Swift, 0 Python,
+      **1 shell**` and two `FAIL` lines. ⛔ **And the run that shows the HARM is a fourth one the first
+      draft did not have** — the review of this diff caught that the entry priced a harm it had never
+      exhibited: pre-fix hook, broken `.sh` staged ALONE, no type-check line printed at all, full suite
+      run, **commit allowed**. `^Tools/` matches the suite gate, so that commit pays 285–308 s of real
+      OCR (`$STATE/suite-timings.tsv`, not the "~4 minutes" the hook prints) and skips the one-second
+      check on the only file it staged.
+      ⛔ **THE FINDING WORTH MORE THAN THE FIX, and it is `hook-selfcheck`'s ground: the sweep cannot see
+      three shell scripts the hook ITSELF runs** — `run_tests.sh`, `ops/autonomous/test-lock.sh` (whose
+      parse failure makes the hook blame a 60-minute stuck lock, the wrong cause) and `build.sh`. It
+      globs `Tools/*.{swift,py,sh}` and `.githooks/*` only, while **18 tracked `.sh` live outside
+      `Tools/`**; `build.sh` and `run_tests.sh` are named by the suite gate itself and the selector fixed
+      here is still anchored `^Tools/`. **This closed the smallest gap in its own class**, and it falsifies
+      `check-tools-compile.sh`'s header calling the hook *"the only script whose failure refuses every
+      commit"*.
+      ⚠️ **A SECOND GAP IS MEASURED AND DELIBERATELY LEFT: a commit staging only `.githooks/pre-commit` is
+      checked by NOTHING** — the suite gate has no `.githooks/`, so it exits at *"no code staged"* before
+      the tool block. Verified by staging that very fix alone and running the hook. It is **not** a
+      one-token fix — see `hook-selfcheck` below, where BOTH obvious one-liners are refuted, one of them
+      by the review of this very diff — so it is that item rather than a tack-on here. ⚠️ Nothing in `Tools/` changed and no committed measurement moves; the sweep is
+      one run of one tree on one machine, and `swiftc -typecheck` / `bash -n` / `py_compile` are all
+      short of a real build, which the script's header already says.
+      (context: BUGS.md T20)
+      **The original text, kept as the record of the shape this was worked to:**
+      run `Tools/check-tools-compile.sh` over *every* tool, not just the staged ones,
       and REPORT what does not build. ⛔ **BOUND: the sweep and its report are ONE free commit; each tool
       you then fix is its own commit and its own suite run, so fix at most ONE per session and leave the
       rest listed here.** *"Fix or delete what does not build"* was this line until 2026-08-20; if the
@@ -3009,6 +3049,46 @@ happens.**
       Quoting a duration here again would just re-create the trap: every duration in this repo has turned
       out to be a reading of the machine's load.
       (context: BUGS.md C25 and T16 — both CLOSED; they are why this gate matters, not the work itself)
+- [ ] **hook-selfcheck** — **the hook cannot check itself, and the tool sweep cannot see three shell
+      scripts the hook runs. Both measured 2026-08-27** (`BUGS.md` T20's last two sections).
+      ⛔ **The wider half first, because it is the one a reader will miss.** The sweep globs
+      `Tools/*.{swift,py,sh}` and `.githooks/*` and nothing else, but the hook also executes
+      `run_tests.sh`, `ops/autonomous/test-lock.sh` and `./build.sh` — a failure in any of which refuses
+      commits, and `test-lock.sh`'s does it while reporting a 60-minute stuck lock, i.e. the wrong cause.
+      **18 tracked `.sh` live outside `Tools/`** (16 under `ops/autonomous/`). `build.sh` and
+      `run_tests.sh` are named by the suite gate itself as things that can change behaviour, yet the
+      staged-tool selector T20 widened is still anchored `^Tools/`, so staging a broken `run_tests.sh`
+      still gets no `bash -n` — it is executed and reported as a test failure. ⚠️ That also falsifies
+      `check-tools-compile.sh`'s own header, which calls `.githooks/pre-commit` *"the only script whose
+      failure refuses every commit"*; correcting that sentence is part of this item.
+      **The narrower half:** a commit staging only `.githooks/pre-commit`. The suite gate's regex is
+      `^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)` and carries no `.githooks/`, so such a
+      commit exits at *"pre-commit: no code staged, skipping the suite"* **before** the staged-tool block
+      below it. So the one script whose failure refuses every commit — and the one
+      `check-tools-compile.sh`'s header says it added coverage for — is the one the hook cannot check.
+      Verified by staging T20's own fix alone and running the hook: exit 0, that one line, nothing else.
+      Today it is caught only by `health-gate.sh`'s full sweep, i.e. up to ~10 commits later.
+      ⛔ **BOUND: this is a DESIGN, not a token, and both obvious one-liners are wrong — do not ship
+      either.** (1) Adding `.githooks/` to the suite gate makes a one-word hook comment pay a 285–308 s
+      suite of real OCR, which is the trade the docs-only exit exists to avoid. (2) Moving the
+      staged-tool block above the early exit **closes nothing by itself** — that block's selector is
+      `^Tools/…` and does not match `.githooks/`, so a hook-only commit selects zero tools and the block
+      is skipped. ⛔ **The first draft of this box rejected (2) for the wrong reason** (that it would put
+      a docs-plus-hook commit in front of the `command -v swiftc` guard and newly refuse it); the
+      adversarial review of that diff refuted it by simulating the selector. The swiftc objection is
+      real but attaches to the **pair** — widen the selector to reach `.githooks/` *and* move it up —
+      which is the actual fix, and `check-tools-compile.sh` does exit 1 with no swiftc, so that pair
+      would newly refuse a commit, which the hook's own lock comment forbids in terms (*"This guard must
+      never be the reason a commit cannot happen — it is here to make evidence trustworthy, not to add a
+      way to fail"*). A workable shape is probably an inline `bash -n` on the staged hook, needing
+      neither swiftc nor the sweep, placed before the early exit — but that is a proposal, not a
+      measurement, and it wants the argument written down before the edit.
+      ⚠️ **Watch it fail first and note what that costs**: the natural negative control is a staged hook
+      with a syntax error, and a hook that will not parse is the one file where a bad experiment blocks
+      your own commit. Do it in an `auto/` worktree, keep the broken copy out of the index until you have
+      the fix, and `bash -n .githooks/pre-commit` before every commit in that session.
+      ⚠️ Free commit either way: `.githooks/` is not in the suite regex, which is the defect and is also
+      why fixing it costs no suite. (context: BUGS.md T20)
 - [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
       scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~7 hours
