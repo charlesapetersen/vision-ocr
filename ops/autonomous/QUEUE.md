@@ -3694,6 +3694,33 @@ happens.**
       first honest step is triage rather than code: does the blind term lose anything the first term
       does not already refuse? Read C26 §"The drawings are INK" and §"What C26's close does NOT cover"
       before starting. (context: `BUGS.md` C26 — FIXED 2026-08-20; it is the evidence, not the work)
+- [ ] **staleness-selfref** — ⛔ **`ops/autonomous/check-staleness.sh` CANNOT SEE DRIFT IN THE CHECK COUNT,
+      because it takes `CLAUDE.md` §Commands as its own reference** — it prints
+      `CHECK-COUNT-REFERENCE <n> CLAUDE.md claimed-not-measured` and then compares every other document to
+      that line, so when THAT line is the stale one every document agrees with it and the gate is silent.
+      **Measured 2026-08-27** on the tree that had just run **1,355/1,355**: the reference read **1,346**,
+      the gate reported **one** claim, and that one was a **FALSE POSITIVE** — `CLAUDE.md`'s clamp-era
+      sentence *"225 s, same commit, same 1,247 checks"*, a deliberate historical record with no ISO date
+      on its own line, which the script's dated-line exemption therefore does not reach. So the gate was
+      simultaneously blind to the real drift and noisy about a correct line, which is the worst pair.
+      ⚠️ **The obvious fix is refused by the script's own header**: *"Only `./run_tests.sh` can say how many
+      checks the suite has … this gate must never start a second suite"*, and that is right — two suites at
+      once corrupt both (CLAUDE.md §Environment traps). So this is NOT "make the gate measure it". Two
+      candidates that do not start a suite: read the newest `PASS`/`ok` count out of
+      `$STATE/suite-timings.tsv` or the last suite log if either records it (**unverified — neither is
+      known to carry a check count**, and `suite-timings.tsv`'s columns are `when label seconds rc
+      loadavg1`, which do NOT), or drop the single-reference model and report *"the documents disagree"*
+      without electing a winner, which is what the gate's own TRUTH block already says it can honestly
+      claim. ⚠️ Whichever, the clamp-era false positive needs its own answer — probably an explicit
+      historical marker rather than a wider date regex, since the sentence is inside a `sh` fence where
+      the script already has special handling.
+      ⚠️ Scope note: two dated figures in `HANDOFF.md` (**:81** and **:531**, both *"1,247 checks measured
+      2026-08-23"*) are 108 checks stale and are EXEMPT by the gate's dated-line rule, deliberately — they
+      read as point-in-time records. Decide whether that exemption is what is wanted for a *living*
+      document's §Commands block, which is the same trap CLAUDE.md records as "a second mention deeper in
+      the same file".
+      (context: found while adopting `3bf2648`, whose own nine checks left the reference stale; the
+      measurement is in `CLAUDE.md` §Commands beside the count)
 
 ## HOLD — owner-only, never auto-executed
 

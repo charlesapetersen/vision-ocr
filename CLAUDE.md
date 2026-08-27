@@ -1677,8 +1677,9 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,346 checks measured 2026-08-26 (this commit's own mutate.py baseline); real OCR.
-                      # ~285-300 s measured 2026-08-26 over seven clean full-suite rows in
+./run_tests.sh        # 1,355 checks measured 2026-08-27, no skips, 308 s at loadavg 4.40
+                      # ($STATE/suite-timings.tsv row `adopt-3bf2648`); real OCR.
+                      # ~285-308 s measured 2026-08-26/27 over eight clean full-suite rows in
                       # $STATE/suite-timings.tsv — NOT the ~225 s this line carried, which is 2026-08-24
                       # at 1,247 checks. Do not budget off the 292/289 s mutant rows either: those build
                       # a mutated tree.
@@ -1688,7 +1689,21 @@ git config core.hooksPath .githooks
                       #  the review of that diff caught this line as the third instance of the warning
                       #  above rather than a fourth. 1,343 -> 1,344: bare-form-reach's pageIsAnImage
                       #  pin, one check, C24's coverage boundary closed. 1,344 -> 1,346: C27 (c)'s split
-                      #  removed ONE mirror check and added THREE, so the net is +2 over a -1/+3.)
+                      #  removed ONE mirror check and added THREE, so the net is +2 over a -1/+3.
+                      #  1,346 -> 1,355: mrc-endtoend's yellow-wash fixture, four ungated routing
+                      #  checks and five gated on JBIG2.isAvailable.)
+                      # ⛔ AND IT HAPPENED AGAIN: `3bf2648` added those nine and left this line at
+                      # 1,346. The ADOPTING session caught it, not the committing one — no ordinal is
+                      # claimed for it, because this register has already published a wrong one by
+                      # counting sentences instead of re-deriving from the data.
+                      # ⛔ `ops/autonomous/check-staleness.sh` CANNOT catch this, measured 2026-08-27:
+                      # it takes THIS LINE as its reference (`CHECK-COUNT-REFERENCE … CLAUDE.md
+                      # claimed-not-measured`) and compares the other documents to it, so drift in the
+                      # reference itself is invisible — a stale reference is self-consistent. On the
+                      # tree that shipped 1,355 checks it reported exactly one claim, and that one is a
+                      # FALSE POSITIVE on the clamp-era sentence 15 lines below ("same 1,247 checks"),
+                      # which is a deliberate historical record. Carried as the queue's
+                      # `staleness-selfref`.
                       # ⚠️ EVERY FIGURE ABOVE 700 s IN THIS REPO IS CLAMPED-ERA. Until 2026-08-24
                       # the daemon's plist set ProcessType=Background (darwin-bg, E-cores, inherited
                       # by every child) and run_tests.sh passed no -O: together 16.2x. 3,643 s ->
