@@ -81,8 +81,39 @@ while IFS= read -r f; do
     *.sh) ;;
     *.*)  continue ;;
     *)
-      case "$(git show ":$f" 2>/dev/null | head -1)" in
-        '#!'*bash*|'#!'*/sh|'#!'*' sh') ;;
+      # ⛔ A SHEBANG MAY CARRY FLAGS, and the two `sh` patterns used to require the
+      # LINE to end at `sh` — so `#!/bin/sh -e` was classified as
+      # not-a-shell-script and skipped here AND by the sweep. Measured 2026-08-27
+      # through this hook: such a file with an unterminated `if` was committed
+      # clean, rc=0, while `#!/bin/sh`, `#!/bin/bash -e` and `#!/usr/bin/env bash`
+      # were all refused. The `bash` pattern never had the defect because
+      # `*bash*` is unanchored on the right; it is left exactly as it was, so the
+      # asymmetry below is deliberate — see the classifier in
+      # Tools/check-tools-compile.sh, which carries the argument.
+      # ⛔ The lazy repair `'#!'*/sh*` is WRONG: it matches `/shibboleth/run`, and
+      # zsh must stay skipped because `bash -n` is the wrong parser for it. Hence
+      # every `sh` alternative is anchored on `/` or a space at BOTH ends.
+      # The tab fold is bash's own `${//}`, not `tr`: this arm must not acquire an
+      # external dependency whose absence would silently empty the line and skip
+      # the file, which is the silent-skip-in-a-gate this hook refuses elsewhere.
+      # ⛔ THE 512-BYTE BOUND IS NOT TIDINESS. bash 3.2's `${var//}` is O(n²) and
+      # the fold runs BEFORE the `#!` test, so every extensionless staged file paid
+      # it whatever its content: measured, 5 MB on one line takes 6.185 s against
+      # 0.046 s bounded — 134x — while the paragraph above claims this arm "costs
+      # milliseconds". 512 is the kernel's own shebang limit, so nothing a shebang
+      # can mean is lost. Found by the adversarial review of this diff.
+      # ⚠️ THE CR BEHAVIOUR IS NOT A POLICY, it is what these patterns happen to
+      # do, and all three forms were measured: `#!/bin/sh<CR>` is skipped and
+      # really is unrunnable (`bad interpreter: /bin/sh^M`), while
+      # `#!/bin/sh -e<CR>` and `#!/bin/bash<CR>` are BOTH classified as shell. The
+      # residue is stated rather than dressed up: a CRLF `#!/bin/sh` script with a
+      # syntax error is silently skipped here. Not fixed, because folding CR would
+      # give this gate jurisdiction over files that cannot run at all.
+      # The accept/refuse table is `Tools/fault-inject.sh hook_parses` rows 8-16.
+      shebang=$(git show ":$f" 2>/dev/null | head -1)
+      shebang=${shebang:0:512}
+      case "${shebang//$'\t'/ }" in
+        '#!'*bash*|'#!'*/sh|'#!'*/sh' '*|'#!'*' sh'|'#!'*' sh '*) ;;
         *) continue ;;
       esac ;;
   esac

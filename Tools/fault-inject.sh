@@ -1399,6 +1399,135 @@ fault_hook_parses() {
     ok "$n7"
   fi
 
+  # -- 8-16. THE ACCEPT/REFUSE TABLE for the shebang arm of the classifier.
+  #       One extensionless staged file per row, every one carrying the SAME
+  #       shell-invalid body (`if (`) with only the shebang line differing — so a
+  #       row's verdict is attributable to the classifier and to nothing else.
+  #       `refuse` means the hook classified it as shell and `bash -n` caught the
+  #       body; `allow` means it was skipped, which is the right answer for a file
+  #       `bash -n` is the wrong parser for.
+  #       ⛔ ROWS 8, 9 AND 10 ARE THE DEFECT (BUGS.md T21): pre-fix they read
+  #       ALLOW, because the two `sh` patterns required the shebang LINE to end at
+  #       `sh`, so a flag after it took the file out of the set entirely.
+  #       ⚠️ ROWS 11 AND 12 ARE CONTROLS and are green on both sides. 12 is the
+  #       evidence that the `sh` arms were the outlier rather than the whole
+  #       classifier being wrong: `*bash*` is unanchored on the right and already
+  #       took flags, which is why the `bash` pattern was left alone. Neither is a
+  #       check that cannot fail: cutting `'#!'*/sh` reds 11, and tightening
+  #       `*bash*` to `'#!'*bash` reds 12, each alone.
+  #       ⛔ ROW 15 IS THE LAZY-REPAIR TRAP. The one-token fix `'#!'*/sh*` passes
+  #       rows 8-10 and REFUSES this one, so it is what distinguishes the shipped
+  #       pattern from the fix somebody reaches for first.
+  #       ⚠️ Rows 13 and 14 (zsh) are green pre-fix too — they are what stops the
+  #       repair from being an unanchored `*sh*`, not evidence about T21 itself.
+  #       ⛔ ROW 16 IS APPENDED OUT OF GROUP ORDER ON PURPOSE, so that rows 8-15
+  #       keep the numbers the register already quotes. It exists because the
+  #       adversarial review of this diff found that deleting the `'#!'*' sh'`
+  #       alternative reddened NOTHING — `#!/usr/bin/env sh` with no flags is the
+  #       second commonest `sh` form and is one of the two patterns T21's own
+  #       mechanism sentence names, so the table was incomplete exactly where the
+  #       defect is described. With it, every alternative in the pattern has a row.
+  shebangrow() {
+    local want="$1" line="$2" label="${3:-$2}"
+    local verb="refused"; [ "$want" = allow ] && verb="allowed"
+    local n="a staged extensionless \`$label\` is $verb"
+    newrepo
+    printf '%s\nif (\n' "$line" > "$R/.githooks/shebang-probe"
+    git -C "$R" add .githooks/shebang-probe
+    armhook; attempt
+    if [ "$want" = refuse ]; then
+      if [ "$rc" -eq 0 ]; then
+        bad "$n" "commit ALLOWED — the shebang was not classified as shell"
+      elif grep -q 'no code staged' <<<"$out"; then
+        # ⚠️ CANNOT FAIL as things stand, and named rather than dressed up: the
+        # docs-only exit is `exit 0`, which the clause above has already excluded.
+        # It becomes reachable only if that exit stops being 0. Row 1's
+        # pre-existing shape has the same property.
+        bad "$n" "reached the docs-only exit: $(tail -1 <<<"$out")"
+      elif ! grep -q 'shebang-probe' <<<"$out"; then
+        bad "$n" "refused without naming the file: $(tail -1 <<<"$out")"
+      else
+        ok "$n"
+      fi
+    else
+      if [ "$rc" -ne 0 ]; then
+        bad "$n" "exit $rc — bash -n was applied to it: $(tail -1 <<<"$out")"
+      elif ! grep -q 'no code staged' <<<"$out"; then
+        # ⚠️ CANNOT FAIL either: with `.githooks/shebang-probe` the only staged
+        # set, the docs-only exit is the sole exit-0 path, so rc == 0 entails this
+        # string. It guards a future widening of that exit's regex and nothing
+        # today. Both clauses found by the adversarial review of this diff.
+        bad "$n" "allowed without reaching the docs-only exit: $(tail -1 <<<"$out")"
+      else
+        ok "$n"
+      fi
+    fi
+  }
+  shebangrow refuse '#!/bin/sh -e'
+  shebangrow refuse '#!/usr/bin/env sh -eu'
+  shebangrow refuse $'#!/bin/sh\t-e' '#!/bin/sh<TAB>-e'
+  shebangrow refuse '#!/bin/sh'
+  shebangrow refuse '#!/bin/bash -e'
+  shebangrow allow  '#!/usr/bin/env zsh'
+  shebangrow allow  '#!/bin/zsh -f'
+  shebangrow allow  '#!/opt/shibboleth/run'
+  shebangrow refuse '#!/usr/bin/env sh'
+
+  # -- 17-19. THE OTHER COPY. The hook's classifier is a deliberate MIRROR of
+  #       Tools/check-tools-compile.sh's `classify_by_shebang`, so a fix to one is
+  #       half a fix and the divergence is invisible until a file hits both. These
+  #       drive the sweep directly: its argument resolver ends in a bare "$want",
+  #       so a scratch path outside Tools/ resolves and reaches the same case.
+  #       ⚠️ Each asserts the SELECTION — the banner's shell count, matched WITH
+  #       its commas so `1 shell` cannot also match `21 shell` — because "exit 1"
+  #       alone is also what a missing swiftc prints. For that same reason the
+  #       banner clause is tested FIRST in every row: the review of this diff
+  #       measured row 18 reporting "bash -n was applied to a zsh shebang" on a
+  #       swiftc-less box, which is T20's report-the-wrong-cause shape.
+  #       ⛔ ROW 19 EXISTS BECAUSE THE OTHER TWO DID NOT WATCH THE TAB FOLD.
+  #       Measured by the review: delete `${line//$'\t'/ }` from the sweep and rows
+  #       17 and 18 both stay green while the two classifiers diverge on tabs.
+  #       ⚠️ Three rows against the hook's nine, so the sweep's copy is watched for
+  #       selection, for the skip and for the fold, and NOT for every alternative.
+  local n17="check-tools-compile selects an extensionless \`#!/bin/sh -e\` script"
+  printf '#!/bin/sh -e\nif (\n' > "$sc/flagged-sh"
+  out="$(cd "$REPO" && Tools/check-tools-compile.sh "$sc/flagged-sh" 2>&1)"; rc=$?
+  if ! grep -q ', 1 shell,' <<<"$out"; then
+    bad "$n17" "not selected: $(grep -E 'Swift,|swiftc is not' <<<"$out" | head -1)"
+  elif [ "$rc" -eq 0 ]; then
+    bad "$n17" "exit 0 over a script that does not parse: $(tail -1 <<<"$out")"
+  elif ! grep -qF "FAIL $sc/flagged-sh" <<<"$out"; then
+    bad "$n17" "exit $rc with no FAIL line for the file: $(tail -1 <<<"$out")"
+  else
+    ok "$n17"
+  fi
+
+  local n18="check-tools-compile skips an extensionless zsh script, and says so"
+  printf '#!/usr/bin/env zsh\nif (\n' > "$sc/zsh-probe"
+  out="$(cd "$REPO" && Tools/check-tools-compile.sh "$sc/zsh-probe" 2>&1)"; rc=$?
+  if ! grep -q ', 0 shell,' <<<"$out"; then
+    bad "$n18" "selected as shell: $(grep -E 'Swift,|swiftc is not' <<<"$out" | head -1)"
+  elif [ "$rc" -ne 0 ]; then
+    bad "$n18" "exit $rc — bash -n was applied to a zsh shebang: $(tail -1 <<<"$out")"
+  elif ! grep -q 'is not .swift, .py or .sh' <<<"$out"; then
+    bad "$n18" "skipped with no note naming the file: $(tail -1 <<<"$out")"
+  else
+    ok "$n18"
+  fi
+
+  local n19="check-tools-compile folds a tab, so it selects \`#!/bin/sh<TAB>-e\`"
+  printf '#!/bin/sh\t-e\nif (\n' > "$sc/tabbed-sh"
+  out="$(cd "$REPO" && Tools/check-tools-compile.sh "$sc/tabbed-sh" 2>&1)"; rc=$?
+  if ! grep -q ', 1 shell,' <<<"$out"; then
+    bad "$n19" "not selected: $(grep -E 'Swift,|swiftc is not' <<<"$out" | head -1)"
+  elif [ "$rc" -eq 0 ]; then
+    bad "$n19" "exit 0 over a script that does not parse: $(tail -1 <<<"$out")"
+  elif ! grep -qF "FAIL $sc/tabbed-sh" <<<"$out"; then
+    bad "$n19" "exit $rc with no FAIL line for the file: $(tail -1 <<<"$out")"
+  else
+    ok "$n19"
+  fi
+
   rm -rf "$sc"; SC=""
 }
 

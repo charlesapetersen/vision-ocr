@@ -3308,7 +3308,8 @@ happens.**
       `test-lock.sh` and `build.sh` meet that same ground word for word.
       ⛔ **Watched: `Tools/fault-inject.sh hook_parses`, SEVEN rows, `5 passed, 2 failed` against the
       pre-fix hook** — exactly the two defect rows red — and
-      `7 passed, 0 failed` after; plus two binaries one edit apart over a broken
+      `7 passed, 0 failed` after. ⚠️ **Both counts are 2026-08-27's and the case is 19 rows from
+      2026-08-28** (`shebang-flags`); run it rather than reading a count here. Plus two binaries one edit apart over a broken
       `ops/autonomous/tests/prove-status.sh`, where the old sweep prints `5 shell`/`all clear`/exit 0
       and the widened one `22 shell`/`FAIL`/exit 1.
       ⛔ **This said *"and all five inverse rows green"* as if that were evidence, and it is NOT —
@@ -3362,7 +3363,55 @@ happens.**
       the fix, and `bash -n .githooks/pre-commit` before every commit in that session.
       ⚠️ Free commit either way: `.githooks/` is not in the suite regex, which is the defect and is also
       why fixing it costs no suite. (context: BUGS.md T20)
-- [ ] **shebang-flags** — **a shebang carrying FLAGS after `/sh` is classified as not-a-shell-script by
+- [x] **shebang-flags** — **DONE 2026-08-28. Both classifiers fixed in one commit, with the
+      accept/refuse table this box asked for and SIX watched sabotages where it asked for one.**
+      `Tools/fault-inject.sh hook_parses` goes **7 rows → 19**: nine table rows driving the hook
+      (identical shell-invalid bodies, only the shebang differing, so a verdict is attributable to the
+      classifier alone) plus **three rows driving `Tools/check-tools-compile.sh` itself**, which had no
+      watcher of its own — the shape T20 was.
+      ⛔ **Watched failing first, and every red row was named before each of eight runs: `14 passed,
+      5 failed` against the pre-fix pair** — three flag rows (`#!/bin/sh -e`, `#!/usr/bin/env sh -eu`,
+      `#!/bin/sh<TAB>-e`) and BOTH sweep rows that need the fix, which red on the banner (`0 shell`)
+      and not on the exit code. `19 passed, 0 failed` after.
+      ⛔ **The bound this box set is what the row table earns: the one-token `'#!'*/sh*` passes every
+      flag row and REFUSES `#!/opt/shibboleth/run`** — measured, `18 passed, 1 failed`, row 15 red
+      ALONE. So every `sh` alternative is anchored at both ends:
+      `'#!'*bash*|'#!'*/sh|'#!'*/sh' '*|'#!'*' sh'|'#!'*' sh '*`.
+      ✅ **Every alternative in that pattern reds a row ALONE when cut, and each copy's tab fold reds
+      one**: lazy `*/sh*` → 15; no `/` anchor → 13, 14 **and 18** (`16 passed, 3 failed`); `*bash*`
+      tightened → 12; `'#!'*' sh'` cut → 16; sweep fold cut → 19; hook fold cut → 10.
+      ⛔ **The `bash` arm is DELIBERATELY left loose** — `*bash*` is unanchored on the right and never
+      had the defect, so tightening it is an unmeasured change that can only lose files
+      (`#!/usr/bin/bash-static`). Row 12 is therefore a control green on both sides, and the tightening
+      sabotage reds it **alone**, so it is not a check that cannot fail.
+      ⚠️ **Nothing in the shipped selection moves — ENTAILED, not measured**, and the first draft said
+      "measured": in default mode the shebang arm is reached for one file, `.githooks/pre-commit`,
+      whose `#!/bin/bash` the unchanged `*bash*` arm matches, so the sweep could not have disagreed.
+      What is measured is the arithmetic — `32 Swift, 6 Python, 22 shell`, T21's own 60 files,
+      `all clear` rc 0, and no tracked file carrying a flag-bearing shebang — which confirms this box's
+      own "pre-existing and currently harmless".
+      ⛔ **FOUR of the six sabotages, the 512-byte bound on the fold and five prose corrections came
+      from the adversarial review of this diff.** The bound is a real defect fix: bash 3.2's `${var//}`
+      is O(n²) and the fold runs before the `#!` test, so 5 MB on one line cost **6.185 s against
+      0.046 s bounded, 134x**, in an arm whose comment promises milliseconds.
+      ⛔ **And the CR sentence this box carried was WRONG.** Tabs are folded because the kernel really
+      does split a shebang on one (measured on Darwin); a CR is NOT folded, but *"because
+      `#!/bin/sh<CR>` names an interpreter that does not exist"* is true of that form only —
+      `#!/bin/sh -e<CR>` and `#!/bin/bash<CR>` are both classified as shell, and the second IS the
+      unrunnable case. The residue: **a CRLF `#!/bin/sh` script with a syntax error is silently
+      skipped.** Not fixed; folding CR would claim jurisdiction over files that cannot run.
+      ⚠️ **This box's own `(context:)` citation named a heading that does not exist** —
+      `# Selection mirrors check-tools-compile.sh's classifier` is a comment in `.githooks/pre-commit`
+      — so it is DROPPED rather than "left alone", and the `(origin:)` above resolves;
+      `check-queue-coherence.sh` goes `6 citing BUGS.md` → `7`. ⚠️ `fault-inject.sh` is in no hook, so
+      a red row here still refuses no commit.
+      (origin: BUGS.md T21 `#### The flag-carrying shebang, FIXED 2026-08-28`)
+      —— the item as it was written, MINUS its final `(context:)` line, kept as the record ——
+      ⛔ **One claim in it is measured FALSE and is left in place with this correction beside it: a lazy
+      `'#!'*/sh*` does NOT match `zsh`.** Neither `#!/bin/zsh` nor `#!/usr/bin/env zsh` contains `/sh`,
+      so what that repair really admits is `/shell` and `/shibboleth`; the zsh forms are refused by it
+      as well. A tightening decision read off the record alone would be misled.
+      **a shebang carrying FLAGS after `/sh` is classified as not-a-shell-script by
       both `classify_by_shebang` and the hook's mirror of it, so such a file is skipped by the sweep AND
       by the commit-time parse arm.** Measured end to end through the real hook 2026-08-27, on the
       adversarial review of T21's adoption: an extensionless staged file opening `#!/bin/sh -e` with an
@@ -3381,7 +3430,7 @@ happens.**
       commit** — `.githooks/pre-commit` and `Tools/check-tools-compile.sh`'s `classify_by_shebang` — or
       the two classifiers diverge, which is the thing T21's arm was written to mirror.
       ⚠️ Cost: `Tools/` is staged, so it pays the full suite; budget one commit.
-      (context: BUGS.md T21, `#### Selection mirrors check-tools-compile.sh's classifier`)
+      —— end of the record ——
 - [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
       scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~7 hours

@@ -42,7 +42,9 @@ row. The sweep's shell arm now takes **every tracked `*.sh`** from `git ls-files
 per directory — **4 shell → 22, 42 files → 60, `all clear`** — on the ground the file already
 accepted for the hook. ⛔ **Watched, and this is the one to quote: `Tools/fault-inject.sh
 hook_parses`, SEVEN rows, read `5 passed, 2 failed` against the pre-fix hook** — exactly the two
-defect rows red — and `7 passed, 0 failed` after; plus two binaries one
+defect rows red — and `7 passed, 0 failed` after. ⚠️ **SEVEN and `7 passed` are that day's figures and
+the case is 19 rows from 2026-08-28** (`shebang-flags`, twelve more); re-derive a row count by running
+the case, never from a sentence here. Plus two binaries one
 edit apart over a broken `ops/autonomous/tests/prove-status.sh`, where the old sweep prints
 `5 shell`/`all clear`/exit 0 and the widened one `22 shell`/`FAIL`/exit 1.
 ⛔ **DO NOT ADD *"and all five inverse rows green, which is what says the inverses are not passing by
@@ -57,8 +59,23 @@ real hook against a synthetic index — and **the reason a red row cannot start 
 SET**, `.githooks/…` or `ops/autonomous/…`, which the hook's suite gate does not match; that the
 scratch repo holds neither `run_tests.sh` nor `test-lock.sh` is a second, weaker reason. ⛔ Do not
 write *"first case that runs no build step"*: `missing_licence` runs `bundle-libs.py` and no compiler.
-⚠️ `bash -n` is syntax only, and it is blind to a `#!/bin/sh -e`-style shebang carrying flags
-(measured: such a file, broken, is committed clean — the queue's `shebang-flags`);
+⚠️ `bash -n` is syntax only. ✅ **The `#!/bin/sh -e` blindness this line used to carry as open is
+FIXED 2026-08-28 in BOTH classifiers** (`BUGS.md` T21 `#### The flag-carrying shebang`), watched at
+`14 passed, 5 failed` against the pre-fix pair with every red row named before each of eight runs, and
+`19 passed, 0 failed` after — the case goes **7 rows → 19**. ⛔ **The fix is NOT the one-token
+`'#!'*/sh*`, and row 15 is what says so**: that repair passes every flag row and refuses
+`#!/opt/shibboleth/run`, red ALONE. ✅ **Every alternative in the pattern reds a row alone when cut,
+and each copy's tab fold reds one** — six sabotages, four of them added by the adversarial review of
+that diff, which also found the fold was O(n²) over the whole first line (**5 MB: 6.185 s → 0.046 s
+bounded to 512 bytes, 134x**) in an arm that promises milliseconds. ⛔ **The `bash` arm is left loose
+on purpose** — `*bash*` never had the defect and tightening it can only lose files — so row 12 is a
+control green on both sides, and the tightening sabotage is what shows it can still fail. ⛔ **A CR is
+NOT folded and that is NOT a policy**: `#!/bin/sh<CR>` is skipped and is genuinely unrunnable, but
+`#!/bin/sh -e<CR>` and `#!/bin/bash<CR>` are both classified — so the residue is that **a CRLF
+`#!/bin/sh` script with a syntax error is silently skipped**, stated rather than fixed. ⚠️ Nothing in
+the shipped selection moves, and that is ENTAILED rather than measured — the arm is reached for one
+file whose `#!/bin/bash` the unchanged pattern matches — with the arithmetic measured beside it
+(`32 Swift, 6 Python, 22 shell`, `all clear`, zero files added on this tree).
 `fault-inject.sh` is in no hook and is opt-in in the health
 gate (`VISIONOCR_GATE_FAULT=1`), so a red row here refuses no commit.
 

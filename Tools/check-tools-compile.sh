@@ -97,9 +97,46 @@ SH_TOOLS=()
 # version of this glob added *every* file there to the `bash -n` set, which made a
 # `.githooks/README.md` refuse every commit while reporting every tool green.
 # That is T16's own failure mode, reintroduced by the fix for T16's own gap.
+#
+# ⛔ A SHEBANG MAY CARRY FLAGS, fixed 2026-08-27 (BUGS.md T21). The two `sh`
+# patterns used to require the LINE to end at `sh`, so `#!/bin/sh -e` fell to the
+# `*)` arm and was skipped by this sweep AND by the hook's mirror of it — measured
+# end to end through the real hook: an extensionless staged file opening
+# `#!/bin/sh -e` with an unterminated `if` was committed clean, rc=0, while
+# `#!/bin/sh`, `#!/bin/bash -e` and `#!/usr/bin/env bash` were all refused.
+# ⛔ The lazy repair `'#!'*/sh*` is WRONG: it matches `/shibboleth/run` and
+# `/shell/x`, and zsh must stay skipped for the reason above. So every `sh`
+# alternative is anchored at BOTH ends — on `/` or a space to the left, and on
+# end-of-line or a space to the right.
+# ⛔ THE `bash` PATTERN IS LEFT EXACTLY AS IT WAS and the asymmetry is deliberate.
+# `*bash*` is unanchored on the right, so it already admitted `#!/bin/bash -e` and
+# never had this defect; tightening it to match would be an unmeasured change that
+# can only LOSE files (`#!/usr/bin/bash-static`), and no shebang is known that
+# contains `bash` without being bash. Its one exposure — a zsh line mentioning
+# `bash` — is hypothetical, so it stays recorded rather than fixed.
+# ⚠️ Tabs are folded with bash's own `${//}` rather than `tr`, because the hook's
+# copy of this must not acquire an external dependency whose absence would empty
+# the line and silently skip the file — and the line is BOUNDED TO 512 BYTES
+# first, which is not tidiness: bash 3.2's `${var//}` is O(n²) and the fold runs
+# before the `#!` test, so 5 MB on one line costs 6.185 s against 0.046 s bounded
+# (134x, measured). 512 is the kernel's own shebang limit.
+# ⚠️ THE CR BEHAVIOUR IS NOT A POLICY, it is what these patterns happen to do, and
+# all three forms were measured: `#!/bin/sh<CR>` is skipped and really is
+# unrunnable (`bad interpreter: /bin/sh^M`), while `#!/bin/sh -e<CR>` and
+# `#!/bin/bash<CR>` are BOTH classified as shell. The residue is that a CRLF
+# `#!/bin/sh` script with a syntax error is silently skipped. Not fixed, because
+# folding CR would give this gate jurisdiction over files that cannot run at all.
+# The accept/refuse table is `Tools/fault-inject.sh hook_parses` rows 8-16, which
+# drives BOTH copies — ⚠️ but see rows 17-19: the sweep's copy has three rows
+# against the hook's nine, so it is watched for selection and for the tab fold and
+# NOT for every alternative in the pattern.
 classify_by_shebang() {
-  case "$(head -1 "$1" 2>/dev/null)" in
-    '#!'*bash*|'#!'*/sh|'#!'*' sh')  SH_TOOLS+=("$1") ;;
+  local line
+  line=$(head -1 "$1" 2>/dev/null)
+  line=${line:0:512}
+  case "${line//$'\t'/ }" in
+    '#!'*bash*|'#!'*/sh|'#!'*/sh' '*|'#!'*' sh'|'#!'*' sh '*)
+                                     SH_TOOLS+=("$1") ;;
     '#!'*python*)                    PY_TOOLS+=("$1") ;;
     *)
       [ "${2:-}" = "quiet" ] && return 0

@@ -19190,7 +19190,9 @@ with `bash` in it, and the two `sh` patterns require `/sh` or `' sh'` at the **e
 purpose — so the widened sweep inherits it too, and **no tracked file in this repo has such a
 shebang** (all 21 measured). Deliberately not fixed here: widening a `case` pattern wants its own
 failing row and its own watched sabotage, and this commit's arm already has two. Queued as
-`shebang-flags`.
+`shebang-flags`. ✅ **FIXED 2026-08-28 in BOTH copies, with the row table that item asked for and SIX
+sabotages where it asked for one — see `#### The flag-carrying shebang, FIXED 2026-08-28` at the foot
+of this entry.**
 
 #### The wider half, and the argument T20 said it owed
 
@@ -19397,6 +19399,111 @@ scripts would collide and under-report the failure count — measured, no collis
 ⚠️ The scratch directory `hook_parses` builds is now owned by `cleanup()` rather than by the case's
 last line, so an interrupted run does not leak a directory of git repositories — the same leak
 `score-shape-term`'s exits 6 and 7 carried until 2026-08-26.
+
+#### The flag-carrying shebang, FIXED 2026-08-28
+
+The blindness the review above found and left for the queue as `shebang-flags`. **Both classifiers
+read a shebang carrying FLAGS as not-a-shell-script**, so such a file was skipped by the sweep AND by
+the commit-time parse arm this entry exists to install. The mechanism is that `'#!'*bash*` is
+unanchored on the right while the two `sh` patterns — `'#!'*/sh` and `'#!'*' sh'` — required the LINE
+to end at `sh`, so one space after it took the file out of the set.
+
+⛔ **WATCHED FAILING FIRST, and every red row was named before each run — eight runs, eight exact
+hits.** `14 passed, 5 failed` against the pre-fix pair: the three flag-carrying hook rows
+(`#!/bin/sh -e`, `#!/usr/bin/env sh -eu`, `#!/bin/sh<TAB>-e`, each printing *"commit ALLOWED — the
+shebang was not classified as shell"*) plus **both** sweep rows that need the fix, which red on the
+banner (`0 Swift, 0 Python, 0 shell`) rather than on the exit code. `19 passed, 0 failed` after.
+`Tools/fault-inject.sh hook_parses` goes **7 rows → 19**.
+
+⛔ **THE FIX IS NOT THE ONE-TOKEN REPAIR, AND ROW 15 IS WHAT SAYS SO.** `'#!'*/sh*` passes every flag
+row and **refuses `#!/opt/shibboleth/run`** — measured, `18 passed, 1 failed`, that row red ALONE. So
+each `sh` alternative is anchored at both ends, on `/` or a space to the left and on end-of-line or a
+space to the right:
+
+    '#!'*bash*|'#!'*/sh|'#!'*/sh' '*|'#!'*' sh'|'#!'*' sh '*
+
+✅ **EVERY ALTERNATIVE IN THAT PATTERN NOW HAS A ROW THAT REDS ALONE WHEN IT IS CUT, and both copies'
+tab folds have one each** — six sabotages, each predicted and each exact: the lazy `'#!'*/sh*` reds 15;
+dropping the `/` anchor (`'#!'*sh`) reds **13, 14 and 18**, `16 passed, 3 failed`; tightening `*bash*`
+to `'#!'*bash` reds 12; cutting `'#!'*' sh'` reds 16; cutting the sweep's fold reds 19; cutting the
+hook's fold reds 10. **Four of those six sabotages exist because the adversarial review of this diff
+asked the question the first draft had not** — see the review paragraph below.
+
+⛔ **THE `bash` PATTERN IS DELIBERATELY LEFT LOOSE and the asymmetry is the decision, not an
+oversight.** `*bash*` never had the defect; tightening it to `'#!'*bash` is an unmeasured change that
+can only LOSE files (`#!/usr/bin/bash-static`), and its one exposure — a zsh shebang whose line
+mentions `bash` — is hypothetical. It is recorded rather than fixed. ✅ Row 12 (`#!/bin/bash -e`) is
+therefore a control green on both sides, and it is **not** a check that cannot fail: the tightening
+sabotage reds it **alone**, `18 passed, 1 failed`.
+
+✅ **BOTH COPIES, in one commit, and the second copy has three rows of its own.**
+`Tools/fault-inject.sh` rows 17-19 drive `Tools/check-tools-compile.sh`'s `classify_by_shebang`
+directly — its argument resolver ends in a bare `"$want"`, so a scratch path outside `Tools/` resolves.
+⚠️ **Three rows against the hook's nine, so the sweep's copy is watched for its SELECTION, its SKIP and
+its FOLD and not for every alternative** — said in place rather than credited as a mirror.
+
+⚠️ **NOTHING IN THE SHIPPED SELECTION MOVES, and the honest form is that this is ENTAILED rather than
+measured** — the first draft of this line said *"measured rather than assumed"* and the review refuted
+it. In default mode `classify_by_shebang` is reachable only from the `.githooks/*` loop, i.e. from one
+file, `.githooks/pre-commit`, whose `#!/bin/bash` is matched by the **unchanged** `*bash*` arm; every
+other shell file enters by `git ls-files` or an extension arm, none of which this diff touches. So a
+sweep that agreed could not have disagreed. What IS measured is the arithmetic beside it: the full
+sweep reads `32 Swift, 6 Python, 22 shell` — T21's own 60 files — `all clear`, rc 0, and **no tracked
+file carries a flag-bearing shebang** (all 21 tracked `*.sh` are `#!/bin/bash` or `#!/usr/bin/env bash`
+except `run-state-lib.sh`, which has none). The queue box's *"pre-existing and currently harmless"* is
+confirmed: this buys correctness rather than coverage today.
+
+⛔ **THE FOLD IS BOUNDED TO 512 BYTES AND THAT IS A DEFECT FIX, NOT TIDINESS — found by the review of
+this diff.** bash 3.2's `${var//}` is O(n²) and the fold runs *before* the `#!` test, so every
+extensionless staged file paid it whatever its content: **5 MB on one line costs 6.185 s against
+0.046 s bounded, 134x**, in an arm whose own comment fifteen lines above promises it *"costs
+milliseconds"*. It cannot refuse a commit, but a gate that looks hung is what people `--no-verify`
+past. 512 is the kernel's own shebang limit, so nothing a shebang can mean is lost.
+
+⛔ **THE CR BEHAVIOUR IS NOT A POLICY, and the first draft of this section claimed it was.** It said a
+CR is *"deliberately NOT folded"* because `#!/bin/sh<CR>` names an interpreter that does not exist —
+true of that one form and false of the others. Measured, all three: `#!/bin/sh<CR>` is skipped and
+really is unrunnable (`bad interpreter: /bin/sh^M`), while `#!/bin/sh -e<CR>` **is** classified as
+shell (and its interpreter resolves — the error is `/bin/sh: -: invalid option`) and `#!/bin/bash<CR>`
+is classified by the `*bash*` arm this diff re-endorses, which is exactly the unrunnable case the
+"policy" forbade. **The residue, stated rather than dressed up: a CRLF `#!/bin/sh` script with a syntax
+error is silently skipped by this gate.** Not fixed, because folding CR would give the gate
+jurisdiction over files that cannot run at all. The tab fold, by contrast, is justified — measured on
+Darwin, the kernel really does split a shebang on a tab — and is bash's own `${//}` and not `tr`,
+because a missing external command would empty the line and silently skip the file.
+
+⚠️ Sibling sweep: **there are exactly two shebang classifiers and no third**, and that conclusion was
+reached twice independently. ⛔ **A draft reported it as "fourteen other hits" and that number is
+wrong**: the grep as described — `head -1`/`head -n 1` over every tracked `*.sh` and `*.py` — returns
+**41 hits in 11 files**, 40 of them other than the classifier, and fourteen is only what remains after
+an exclusion the sentence did not state. The conclusion survives on a wider check than the number it
+was quoting: `sed -n 1p`, `awk NR==1`, `read -r <`, `file --mime` and `'^#!'` across `*.sh`, `*.py` and
+`*.swift` find nothing else that decides shell-ness, and only these two files run `bash -n` over code.
+⚠️ Two limits carried forward: `bash -n` is still syntax only, and `fault-inject.sh` is in no hook and
+is opt-in in the health gate (`VISIONOCR_GATE_FAULT=1`), so a red row here refuses no commit.
+⚠️ Two clauses in the new rows **cannot fail** and are labelled so in place rather than counted: the
+refuse branch's docs-only clause is excluded by the `rc == 0` test above it, and the allow branch's is
+entailed by `rc == 0` given a staged set of one `.githooks/` path. Both guard a future change to that
+exit and nothing today; row 1's pre-existing shape has the same property. **No ordinal is claimed** —
+re-derive it, never count sentences.
+
+⛔ **What the review of this diff found, beyond the two above.** (1) **The sweep's tab fold was watched
+by nothing**: removing it left the two sweep rows green while the classifiers diverged on tabs — the
+very "half a fix" this section is about, one level down. Row 19 exists for it. (2) **Cutting
+`'#!'*' sh'` reddened nothing**, so the table was incomplete at `#!/usr/bin/env sh`, the second
+commonest `sh` form and one of the two patterns this section's own mechanism sentence names. Row 16
+exists for it, appended out of group order so rows 8-15 keep the numbers the register quotes.
+(3) **Row 18 reported the WRONG CAUSE without `swiftc`** — *"bash -n was applied to a zsh shebang"*
+over `swiftc is not on PATH` — which is T20's own failure shape; the banner clause is tested first in
+all three sweep rows now, and their diagnostics name the swiftc case. (4) The banner greps were
+substring matches, so `1 shell` would also have matched `21 shell`; they carry their commas now.
+(5) ⛔ **The queue box's `(context:)` line was DELETED by this diff while its own prose called the
+record verbatim and the drift "left alone"** — both false. The drift is CLOSED instead: the ticked box
+carries an `(origin:)` cite naming this section, `check-queue-coherence.sh` goes `6 citing BUGS.md` →
+`7`, and the retained text is the item minus that one line, which is said where the record starts.
+(6) The retained record still asserts that `'#!'*/sh*` matches `zsh`; **it does not** — neither
+`#!/bin/zsh` nor `#!/usr/bin/env zsh` contains `/sh` — and a ⛔ beside it says so, because a future
+tightening decision would otherwise be misled by a claim in a box marked as history.
 
 ---
 ## The interface
