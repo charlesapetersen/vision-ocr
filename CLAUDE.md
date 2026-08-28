@@ -535,7 +535,19 @@ substance and its number was 1.5 min low**: a 1-mutant run's high is **9.73 min*
 `10` by `:.0f` — because the arrival was forecast off the *surviving* rows' max of 246 and the two rows
 that came are dearer than every row they joined. ⛔ **A draft of this line said "REFUTED" and the review
 of that diff refuted the refutation.** Everything above this sentence is the record of the healing, not a
-live forecast. That run read **14.8x** high (`12-174` printed, **705 s** measured), the third reading of this
+live forecast. ✅ **AND THE FORECAST IS SETTLED 2026-08-28 — the first RECORDED reading from the cleared
+window HELD, and the `10` it predicted is what printed**: baseline plus `const/maximumPageMegapixels`,
+**582 s** measured against a printed `8-10` (`$STATE/suite-timings.tsv`, `mutant 582 0 4.36`), high end
+**3.1% high** where the four clamped-era readings were 4.22x LOW and 14.5x, 14.8x and 11.7x high.
+⛔ **Not the first such reading, and four documents said it would be**: the C27 (c) Saturation run's rows
+sit BELOW `bare-form-reach`'s in the log, so its startup line already came off an all-post-clamp window and
+nobody recorded it. ⛔ **And only the HIGH end was ever forecast** (9.73 min, off the surviving rows' max of
+246) — the low 8 was not. ⚠️ n = 1 on a quiet machine, so the estimator is no longer known-broken rather
+than proven; budget from `suite-timings.tsv`. ⚠️ Related, same day: `const/maximumPageMegapixels`'s
+nineteen-day `SURVIVED` row is `killed` on re-run, so the live survivor list is **one**
+(`BUGS.md` T5 `#### The survivor list re-asked`) — and a re-run buys a verdict, not coverage, which stays
+`79 of 104` with the never-run census at 25.
+That run read **14.8x** high (`12-174` printed, **705 s** measured), the third reading of this
 estimator and the second in the same direction; ⚠️ its LOW end came within 5%, which is new but is **not**
 evidence the window has healed — that figure was printed from the *pre-run* window, whose one post-clamp
 row happened to be the `min`. ⛔ **Using the tool also found the SIBLING of the truncation

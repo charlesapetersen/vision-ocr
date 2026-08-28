@@ -89,7 +89,17 @@ Two consequences, both load-bearing:
     clamped-era reading**, 11.7x high over an 875 s run — NOT a reading of the cleared
     window, because the startup line prints before the run and its span says
     `227-3415 s each`. Re-estimating that same job from the cleared window gives
-    `11-15` against 14.6 measured. **No live reading from a cleared window exists yet.**
+    `11-15` against 14.6 measured. ✅ **The first RECORDED reading from the cleared
+    window was taken 2026-08-28 and it HELD**: `8-10` printed over a baseline plus
+    `const/maximumPageMegapixels`, **582 s** measured, inside the range with the high
+    end **3.1% high** — against 14.5x, 14.8x and 11.7x high off the clamped-era window.
+    ⛔ *"No live reading exists yet"* was already two days stale when it was written
+    here: the C27 (c) Saturation run's rows sit BELOW `bare-form-reach`'s in the log,
+    so its startup line came off an all-post-clamp window too and simply went
+    unrecorded. Reading a row's ERA off its position is the only way to tell, because
+    the log has no date column — which is this header's own standing warning.
+    ⚠️ n = 1, and the run was a quiet machine (loadavg 4.36); this is the estimator no
+    longer being known-broken, not the estimator being proven.
     **The rule that
     survives both failures is the one this header already gives**: a rate read off
     history is wrong in whichever direction history has just moved, so date every figure

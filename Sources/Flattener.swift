@@ -229,10 +229,35 @@ enum Flattener {
     /// A silent downscale would be the "publishing something plausible" that
     /// invariant 1 forbids.
     ///
-    /// 400 megapixels is ~19x the largest page in the 78-document corpus
-    /// (21.5 MP, a 3600x5967 journal scan), and is a 33x44 inch E-size sheet at
-    /// 600 DPI — so it does not reject real archival material. Measured across
-    /// all 4,992 corpus pages: none exceed 100 MP.
+    /// 400 megapixels is a 33x44 inch E-size sheet at 600 DPI, so it does not
+    /// reject real archival material.
+    ///
+    /// ⛔ **The slack it has over this corpus is 6.17x, not the ~19x this comment
+    /// claimed until 2026-08-28.** That figure was the *78-document* corpus's
+    /// (21.5 MP, a 3600x5967 journal scan). The corpus is 233 files and 16,987
+    /// pages now, and its largest page is **64.84 MP** — recorded in this file
+    /// beside `maximumColourMRCPageMegapixels` (**not** beside
+    /// `maximumColourPageMegapixels` just below, whose *"one 64.8 MP page"* is a
+    /// peak-RSS measurement and a different fact), and in
+    /// `Tools/score-threshold-loss.swift`. The companion reassurance goes the same
+    /// way: not "none exceed 100 MP over 4,992 pages" but **none over 72 MP over
+    /// 16,987**. (The corpus's one duplicated file cannot move a maximum.)
+    /// `REVIEW-2026-08-14.md` had this recorded as an open finding since
+    /// 2026-08-14, citing line numbers that have since moved.
+    ///
+    /// **Nothing pins the 400 itself, on purpose** — `BUGS.md` T5 refused to,
+    /// because pinning it would assert a number rather than a property, and it
+    /// recorded `Tools/mutate.py`'s `const/maximumPageMegapixels` (400 → 40,000)
+    /// as a legitimate SURVIVOR for that reason. ⛔ **It is `killed` as of
+    /// 2026-08-28, by one check written for something else**:
+    /// `maximumColourMRCPageMegapixels` is the *derivation* 400 × 5.5 / 25 = 88,
+    /// and the suite asserts that derivation rather than the literal 88, so moving
+    /// this constant alone reds it in either direction. ⚠️ What is pinned is the
+    /// **relation**, not the value: re-derive `maximumColourMRCPageMegapixels`
+    /// alongside and that check goes green again — though the *next* one along
+    /// ("…and it is below the grey one") then reds, so a deliberate raise is three
+    /// edits. Which is the property T5 wanted: the value stays the corpus's to
+    /// validate, not the suite's.
     static let maximumPageMegapixels = 400
 
     /// The most megapixels a page may be before its colour is given up.

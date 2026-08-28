@@ -105,22 +105,31 @@ is the part a person forgets. So:
 python3 Tools/mutate.py --only <substring>   # after changing a constant or a guard: ~290 s a mutant plus a
                                              # baseline suite (479 s end to end for one, measured
                                              # 2026-08-24; 705 s for two, 2026-08-25; 875 s for two,
-                                             # 2026-08-26 — the rise is the suite growing 1,247 -> 1,344,
-                                             # not contention; budget from $STATE/suite-timings.tsv)
+                                             # 2026-08-26; 582 s for one, 2026-08-28 — the rise is the
+                                             # suite growing 1,247 -> 1,355, not contention; budget from
+                                             # $STATE/suite-timings.tsv)
 python3 Tools/mutate.py                      # the whole catalogue — ~8 h at that rate, and it said
                                              # ~65 HOURS until 2026-08-24, when `1dbaafd` took a 16.2x
                                              # clamp off the suite. Read the tool's header — but NOT its
                                              # startup estimate, which has read 14.5x, 14.8x and 11.7x
                                              # high. It heals by ROWS, not runs: two more mutant rows
                                              # clear the window, and a two-mutant run ages two at once.
-                                             # ⚠️ The window DID clear on 2026-08-26 and no live reading
-                                             # has been taken from it yet — do not assume it is fixed.
+                                             # ✅ The window cleared 2026-08-26; its first RECORDED reading
+                                             # came 2026-08-28: `8-10` printed, 582 s measured, high end
+                                             # 3.1% high. Not the first such reading — the 2026-08-26
+                                             # Saturation run's window was clear too and nobody wrote its
+                                             # startup line down. n=1 — budget from suite-timings.tsv.
 ```
 
 Add a mutant when you add a constant or a guard worth protecting. A survivor is
 either a gap in the checks or a value nothing depends on, and T5 records how to
-tell those apart — two of the current survivors are correct and documented as
-such.
+tell those apart. ⛔ **There is ONE survivor as of 2026-08-28, not two, and the
+list ages silently**: `already_done()` is last-row-wins, so a verdict sits until
+somebody spends a `--rerun` on it. Both `SURVIVED` rows were the first campaign's
+— the only two in the log reading `478/478` — and re-asking one of them
+(`const/maximumPageMegapixels`) against today's 1,355 checks came back `killed`,
+by a check written for something else. `logic/R25-depth-aware-prune` is the
+remaining one and has not been re-run. T5 `#### The survivor list re-asked`.
 
 ## 4b. Sweep the siblings before you call it fixed
 

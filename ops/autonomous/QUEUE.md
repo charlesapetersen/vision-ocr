@@ -711,7 +711,9 @@ happens.**
       28 / 75 before it, each time stated six lines above the line that updated them. ✅ **The 25 are owned
       by the queue's `mutants-never-run` as of 2026-08-25**, which is the first box to claim them: the
       `mutants` item scopes itself to the *survivor* list twice over ("work the survivors", "the live
-      survivor list"), which is the 2 `SURVIVED` rows and not a never-run entry, so "the mutants item owns
+      survivor list"), which is the 2 `SURVIVED` rows (⛔ **ONE from 2026-08-28** — `maximumPageMegapixels`
+      was re-run and is `killed`; ⚠️ coverage does NOT move for a re-run, staying `79 of 104` with the
+      census at **25**, because the two are complements over one set) and not a never-run entry, so "the mutants item owns
       the rest" (an earlier draft of this sentence) was wrong, and "nobody has claimed them" — true for
       four consecutive sessions that each flagged it — is now false. ⚠️ 25 held after the third and fourth
       runs by coincidence: this entry's share fell by one each time and the census fell with it,
@@ -3463,11 +3465,34 @@ happens.**
       ⛔ **That run's own `11-171` line is the FOURTH and LAST CLAMPED-ERA reading, not a reading of the
       cleared window** — the startup line prints *before* the run and its span says `227-3415 s each`.
       11.7x high over **875 s (14.6 min)**. Re-estimating the same job from the cleared window gives
-      **11-15**, a high end within 0.2%. **No live reading from a cleared window exists yet, so do not
-      record the estimator as fixed.** Budget from `$STATE/suite-timings.tsv` either way.
+      **11-15**, a high end within 0.2%. ⛔ **THAT SENTENCE IS SPENT: the first RECORDED reading from the
+      cleared window was taken 2026-08-28 and it HELD** — printed *"roughly 8-10 minutes … Budget the
+      10"*, measured **582 s** (`$STATE/suite-timings.tsv`, `mutant 582 0 4.36`), inside the range with
+      the high end **3.1% high**. ⛔ **It was never going to be the FIRST such reading and this box said
+      it would be**: the C27 (c) Saturation run's rows sit BELOW `bare-form-reach`'s in the log, so its
+      startup line already came off an all-post-clamp window and went unrecorded. n = 1, so budget from
+      `$STATE/suite-timings.tsv` anyway; what has changed is that the estimator is no longer
+      known-broken, only unproven.
       And never
       while `Sources/` is being edited. The work item is the live survivor list in
       `Tools/mutation-log.tsv`.
+      ✅ **THE SURVIVOR LIST WAS STALE, NOT SHORT — worked 2026-08-28, and it is now ONE entry.** Both
+      live survivor verdicts were the FIRST campaign's and are the only rows anywhere in the log reading
+      `478/478 passed`; nothing had re-asked either while the suite went **478 → 1,355**. ⚠️ A bare
+      `grep SURVIVED` returns FOUR rows — two were killed by later rows — so read the tool's own closing
+      `N survivor(s)` list, not the grep.
+      `const/maximumPageMegapixels` (400 → 40,000) came back **`killed`, 292 s, by EXACTLY ONE check**
+      (*"the colour layering bound is the derivation, not a choice — 88 against a derived 8800.0 MP"*),
+      predicted by name before the run. ⛔ **What kills it was written for something else and pins a
+      RELATION, not the number** — `maximumColourMRCPageMegapixels` is the derivation `400 × 5.5 / 25`
+      and the suite asserts the derivation rather than the literal 88, which is T5's own point rather
+      than a gap. See `BUGS.md` T5 `#### The survivor list re-asked`.
+      ⚠️ **WHAT IS LEFT OF THIS ITEM IS `logic/R25-depth-aware-prune` AND NOTHING ELSE.** Its row carries
+      the same nineteen-day staleness; R25's entry says the case cannot be built (CoreGraphics walks the
+      shallower branch first in every arrangement tried), so a re-run is expected to CONFIRM. Take it as
+      one `--rerun --only R25-depth-aware` and tick this box on its row, whichever way it comes back.
+      ⚠️ Do not read *"expected to confirm"* as permission to skip it: that is exactly what was assumed
+      about `maximumPageMegapixels` for nineteen days.
       ⛔ **BOUND: ONE mutant per session, and commit its row before starting another.** ⚠️ The 4 h
       `MAXRUN` argument for that bound is clamped-era arithmetic — a baseline plus one mutant measured
       **479 s** on 2026-08-24, so two no longer threaten `MAXRUN` — but the bound stands on the other two
@@ -3509,7 +3534,8 @@ happens.**
       commit that added it — which is what this entry is for. Re-derive rather than adjust.
       ⛔ **This is NOT the `mutants` item above** — that one
       scopes itself to the *survivor* list twice over (*"work the survivors"*, *"the live survivor list"*),
-      which is the **2** `SURVIVED` rows, and a never-applied entry is a different thing: a survivor is a
+      which is the **1** `SURVIVED` row from 2026-08-28 (it was 2 until `maximumPageMegapixels` was
+      re-run and came back `killed`), and a never-applied entry is a different thing: a survivor is a
       measured gap, and a never-run entry is an unopened envelope. Four consecutive session logs flagged
       the gap and asked the next one to add the item; the fifth added it.
       **What one is worth.** A never-run mutant can come back three ways, and only the first is the

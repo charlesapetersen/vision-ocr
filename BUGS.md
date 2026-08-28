@@ -14357,6 +14357,11 @@ because each cost real time and every one was the instrument:
   downscale, per the R13 decision. 400 MP is ~19x the largest page in the corpus
   (21.5 MP) and a 33x44 inch sheet at 600 DPI, so it does not reject real archival
   material; measured across all 4,992 corpus pages, none exceed 100 MP.
+  ⛔ **Those two figures are the 78-document corpus's and are superseded 2026-08-28:
+  over 233 files and 16,987 pages the largest page is 64.84 MP, so the slack is
+  6.17x and not ~19x, and no page exceeds 72 MP rather than 100.** The E-size
+  arithmetic and the conclusion are unaffected. See T5
+  `#### The survivor list re-asked`.
 
 ### R21 · Cancel could not kill a grandchild — FIXED
 *(and the entry that described it was wrong about why)*
@@ -14577,7 +14582,10 @@ Two things measured while fixing it, both worth keeping:
 - **The limit is now exact.** The old comparison floor-divided by a million
   first, so a page of 400,999,999 px counted as 400 MP and was allowed. It is
   now compared against `400 × 1_000_000` directly. The corpus's largest page is
-  21.5 MP, so nothing real moves.
+  21.5 MP, so nothing real moves. ⛔ **21.5 MP is the 78-document corpus's; it is
+  64.84 MP over today's 233 files, corrected 2026-08-28 (T5
+  `#### The survivor list re-asked`). "Nothing real moves" holds either way — the
+  exactness fix only reaches a page within one megapixel of 400.**
 
 ### R25 · `largestImage`'s Form XObject walk has a depth cap but no visited set — FIXED
 *(2026-08-09 review; measured)*
@@ -20801,7 +20809,10 @@ survivors — the same two, both correct.** Every gap the first campaign found i
 closed, and the catalogue grew by the two mutants T7's ambiguity had been hiding
 plus two for the bundled-tool architecture check.
 
-**Two survivors are correct and stay.** `maximumPageMegapixels` 400 → 40,000 is
+**Two survivors are correct and stay.** *(⛔ Superseded 2026-08-28 — read
+`#### The survivor list re-asked` below before quoting this paragraph. One of the
+two is `killed` now, and the reason recorded here for leaving it is 3.1x wrong in
+the reassuring direction.)* `maximumPageMegapixels` 400 → 40,000 is
 a safety ceiling with deliberate slack, 19x the largest page in the corpus;
 pinning it would assert a number rather than a property, and its *behaviour* is
 already covered by the refusal check. `R25`'s depth-aware pruning survives for
@@ -20825,6 +20836,131 @@ own docstring.**
 
 A tool for detecting instruments that lie, lying twice in its first hour, is
 the most on-brand thing this register contains.
+
+#### The survivor list re-asked, 2026-08-28 — it was STALE, not short
+
+⛔ **Both LIVE survivor verdicts were the FIRST campaign's, and they are the only
+rows anywhere in the log that read `478/478 passed`** (`113 s` each, 2026-08-09).
+Nothing re-asked either while the suite went **478 → 1,355 checks**, so "two
+survivors, both correct" was a nineteen-day-old measurement being quoted as a
+present-tense property — in this entry, in `CONTRIBUTING.md` §4a and in two boxes
+of `ops/autonomous/QUEUE.md`. The survivor list is the one part of this harness
+nothing ages automatically: `already_done()` is last-row-wins, so a row sits until
+somebody spends a `--rerun` on it. ⚠️ **`grep SURVIVED` over the log returns FOUR
+rows, not two** — `const/sharedInkFraction` and `logic/C20-rightlimit-sameline` were
+each killed by a later row — so the two that matter are the two the tool's own
+closing `N survivor(s)` list prints, and a bare grep contradicts this paragraph.
+⚠️ And no total row count is quoted here on purpose: it moves on every mutant run,
+which is why three of `mutate.py`'s own docstrings say "all 79 rows" over a log that
+has not had 79 rows for four days. Left as found; the fix there is to stop quoting a
+count, not to update one.
+
+✅ **`const/maximumPageMegapixels` (400 → 40,000) is `killed`.**
+`--rerun --only maximumPageMegapixels`, baseline **`1355 checks, green`**, mutant
+**292 s**, and it reds **EXACTLY ONE** check:
+
+    the colour layering bound is the derivation, not a choice — 88 against a derived 8800.0 MP
+
+⛔ **What kills it was written for something else, and it pins a RELATION rather
+than the number — which is the property T5 asked for and deliberately declined to
+write.** `maximumColourMRCPageMegapixels` is *derived*, `400 × 5.5 / 25 = 88`
+(`Sources/Flattener.swift`, A3.1), and `Tests/main.swift` asserts the derivation
+instead of the literal 88. So moving this constant **alone** reds that check in
+either direction (40,000 derives 8800; 40 would derive 8). ⚠️ **What is pinned is
+therefore the RELATION and not the value** — re-derive `maximumColourMRCPageMegapixels`
+alongside it and this check goes green again. That is correct rather than a hole: a
+deliberate raise with the colour bound re-derived is exactly the change T5 says the
+corpus validates and the suite cannot. So T5's *reasoning* survives intact and only
+its verdict moves. ⛔ **A draft of this line said "moving BOTH together still passes"
+and that is FALSE** — `…and it is below the grey one, which is the whole point`
+asserts `maximumColourMRCPageMegapixels < maximumMRCPageMegapixels`, so a re-derived
+8800 against an unmoved 100 reds *that* check instead, and a coordinated raise is
+three edits rather than two. ⚠️ Reasoned from the four checks, not run: no mutant
+moves two constants at once.
+
+⛔ **The reason the paragraph above gave for leaving it is 3.0x wrong in the
+reassuring direction.** "19x the largest page in the corpus" was the
+**78-document** corpus's 21.5 MP. The corpus is 233 files and 16,987 pages, and its
+largest page is **64.84 MP** (`Sources/Flattener.swift`, beside
+`maximumColourMRCPageMegapixels`; `Tools/score-threshold-loss.swift`), so the slack
+is **6.17x** — and "none exceed 100 MP over 4,992 pages" is now **none over 72 MP
+over 16,987**. The duplicated corpus file cannot move a maximum, so the
+`corpus-duplicate` correction does not reach this. ⛔ **Quote 3.0x and not the 3.1x
+a draft of this line carried**: the honest ratio is `64.84 / 21.5` = **3.02x**, and
+3.1x came of dividing by the comment's own *rounded* "~19" — a ratio taken against a
+rounded operand, which this register has already retracted twice.
+⛔ **AND IT WAS NOT FOUND BY THIS RUN. `REVIEW-2026-08-14.md` had already recorded
+it, with these exact replacement figures**, under the MRC-memory finding; the line
+numbers it cites (`Flattener.swift:168-171`) have since moved, which is presumably
+why nobody acting on that file found it again. Credited rather than absorbed: what
+this run adds is the *consequence* — that the stale figure was T5's stated reason
+for leaving a mutant unpinned. That bullet is marked done there in the same commit.
+Corrected in **four** places: here, R20's own fix bullet, R24's "nothing real moves"
+line, and the doc comment beside the constant. ⚠️ **Three further `4,992` statements
+are left alone and named rather than swept** — C14's `**Fix:**` bullet
+("Exercised over all 4,992 corpus pages without a crash"), R15's file-descriptor
+arithmetic ("78 documents and **4,992 pages**", where the number is an *input* to
+"descriptors run out around document 40" rather than colour), and `CHANGELOG.md`'s
+released note about a batch dying at ~2,300 pages "against a corpus of 4,992". All
+three are records of what was measured then, none is this bound's justification, and
+the CHANGELOG one is shipped text. ⛔ A draft of this sentence said **two**, called
+C14's "the R19-era stress note" and R15's "the select-all entry", and gave a reason
+that is wrong for R15.
+
+⚠️ **The greens are named because four of them look like yield and are not.**
+`layering's worst case stays inside the render's`, `colour layering's worst case
+stays inside the render's too` and `the colour bound's worst case stays inside the
+grey one's` all read this constant on the **right** of a `<=`, so a raising mutant
+makes a true inequality truer — one-sided, falsifiable only by *lowering*. And
+`the refusal still names the page, its size and its DPI` asserts
+`message.contains("400")` over a message that interpolates the constant, so under
+the mutant it reads `40000 MP limit` and **`"40000"` contains `"400"`** — green by
+accident, not by structure. A fifth, `a merely enormous page is still refused, not
+rendered`, is green on a **1.29x** margin: its fixture declares 200,000 × 200,000 on
+a 612 × 792 box whose content stream is one space, so `drawsAnyXObject` answers
+`nil` → `.unreadable` → `rebuildDPI(from: largestImage(…))` = **23,529 DPI**, and the
+render is 200,000 × 258,824 = **51,765 MP**, still over the mutated 40,000 MP bar.
+⛔ **Name that branch when quoting the figure**: a content stream holding one `q`
+instead would give `.noImage` → `fallbackRebuildDPI` 300 → 8.4 MP, and the check
+would fail on the UNMUTATED build. ⚠️ The margin is arithmetic off the fixture and
+that branch, **not instrumented** — what is measured is only that the check stayed
+green. ⛔ **And only this fifth green is one the run could have taken away.** All
+five were written down before the run, but the first four are *entailed* by the
+mutant's direction, so `1 check(s)` confirms one prediction and merely fails to
+contradict four — which is the register's own rule (a green counts only if the
+mutant changes that check's input) applied to itself. A draft of this line said the
+run "confirms every one of them".
+
+⚠️ **`logic/R25-depth-aware-prune` was NOT re-run** — one mutant a session, per the
+queue's bound — so it is now the **only** survivor and its row carries the same
+nineteen-day staleness. R25's own entry says the case cannot be built (CoreGraphics
+walks the shallower branch first in every arrangement tried), so a re-run is
+expected to confirm rather than to move; nothing has asked it since the suite
+trebled, which is the whole point of this subsection.
+
+⛔ **NEITHER COVERAGE FIGURE MOVES, AND A DRAFT OF THIS SECTION SAID `78 → 79`.**
+`coverage` is `len(knownIDs & final)` and the never-run census is
+`knownIDs - final` over the same sets, so the two are complements and cannot move
+apart: **79 of 104 before and after, census 25 both times.** By construction a
+`--rerun` of an already-logged id cannot add coverage — `already_done()` is
+last-row-wins, which is the same property this subsection opens with, three
+paragraphs above the line that got it wrong. **A re-run buys a current verdict, not
+coverage.** `ops/autonomous/QUEUE.md` had it right while this entry had it wrong.
+
+⚠️ **Estimator: the first RECORDED reading from the cleared window, and it HELD.**
+It printed *"roughly 8-10 minutes … Budget the 10"* and the run took **582 s** end
+to end (`$STATE/suite-timings.tsv`, `mutant 582 0 4.36`) — inside the printed range,
+high end **3.1% high**, against four clamped-era readings of 4.22x LOW and 14.5x,
+14.8x and 11.7x high.
+⛔ **It is NOT the first such reading and four documents said it would be.** The
+window cleared on 2026-08-26 with `bare-form-reach`'s rows, and the C27 (c)
+Saturation run came *after* them — its two rows sit below theirs in the log — so its
+startup line was already computed from an all-post-clamp window. That reading was
+simply never written down, so *"no live reading from a cleared window exists yet"*
+was two days stale in `CLAUDE.md`, `CONTRIBUTING.md`, `Tools/mutate.py` and the
+`mutants` queue box. **What this run supplies is the first one anybody recorded**,
+which is a weaker claim and the one to quote. ⚠️ n = 1 at loadavg 4.36; the
+estimator is no longer known-broken, not proven.
 
 ### T6 · Three checks written for the bundling that cannot fail — FIXED
 *(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*
