@@ -1280,7 +1280,10 @@ ones are colour photographs or illustrations on pages of type** rather than spot
 is wider than the entry was opened for while staying fidelity *on the pages looked at*; (3) **two of
 the ten carry no ink of their own** — a 1938 magazine scan reads 2.0% from a page-wide cast the paper
 correction left standing, 48x what another page of the same scan reads, and a 1941 typescript's 4.08%
-is 88% photographed surround from outside the sheet. **So the noise floor is per-page, no bar on the
+is **89.0%** photographed surround from outside the sheet — ⛔ **89.0% (`edgeShare`, border-connected) and
+NOT the 88% three files carried until 2026-08-28, which is `topShare`, the LARGEST COMPONENT's share and a
+different set; the 2026-08-26 correction that established the distinction had not reached these copies.**
+**So the noise floor is per-page, no bar on the
 fraction separates the populations either, and the single locality test first proposed would rank
 that scan-border page top of the corpus — two terms, not one.** R56's lesson in a second place.
 ✅ **BOTH TERMS ARE MEASURED AS OF 2026-08-26 — `Tools/score-threshold-loss.swift`'s last eight columns
@@ -1390,7 +1393,53 @@ LEGAL VALUE SELECTS THAT SET** — those 13 are picture-route pages published gr
 saturation of 0.000–0.002 and `Black_0000` p2 reads **0.000** against a strict `>` — ⛔ **and there is a
 FLOOR of ~0.008**, `saturation(ofRGBA:)`'s own white-to-ochre range, under which every tone-routed
 cream-paper page is re-promoted to three channels: the 709 MB monograph's mechanism. **The window between
-may be empty and nothing has measured it.** ⛔ **Five statements outside `Sources/` were made false by the
+may be empty and nothing has measured it.**
+✅ **IT IS MEASURED AS OF 2026-08-28 AND THE RECOMMENDATION IS TO LEAVE 0.06 ALONE — the window is NOT
+empty and it is NOT usable** (`BUGS.md` C27 `#### The window, MEASURED`; the owner's `colour-bar-window`
+request, answered by joining `SATFRAC-2026-08-19.tsv`, `C27-MASKTERMS-2026-08-26.tsv` and
+`C27-COLOURBYTES-2026-08-26.tsv` with **no new sweep and no new artefact**). Only a picture-route page ever
+asks this bar (`&&` short-circuits), and of 441 sampled pages **61 are picture-route, 13 keep colour, 48 are
+grey, and 12 of the 48 have `sat` in (0.008, 0.06]**. ⛔ **THE RESULT IS THE ORDERING: the six pages worth
+reaching are ranks 6-11 of 12 on the statistic the bar reads, so no value admits one without admitting all
+five collateral pages above it** — and the top boundary is a **tie at `sat` 0.041** between
+`Stanford_1891` p2 (`satN` **14**, nothing above the entry's own 0.0012 noise band — ⛔ **not** "a page-wide
+cast", which a draft called it) and `1954 - Why` **p7** (the owner's own red-ink verdict), which no bar
+separates. ⛔ **A draft wrote that tie as `p4/p7` and p4 reads 0.039.** Best case **6 real of 11, 54.5%**, at
+`b` in [0.012, 0.022]. ⛔ **By bytes it is worse: 85.6% of the spend buys no colour over the WHOLE window**
+— the six worth reaching cost **+50.1 KB (1.0620x)** against **+297.7 KB (1.4415x)** on the six that come
+along — ⚠️ **and 85.6% is the whole window, which only `b <= 0.011` selects; at the recommended band it is
++290.1 KB and 85.3%, so do not print the two beside each other.** ⛔ **77.7% of the whole window's cost is
+TWO collateral pages whose `pageIsAllText()` verdict FLIPS** (`Ford_1941` p3 and `Stanford_1891` p2, `bgF`
+8→2, +270.2 KB), which is C28's ground bought through the wrong seam; **0 of the six real pages flip.**
+⛔ **THE DISCRIMINATOR CLAIM HAS TO BE STATED CAREFULLY, BECAUSE THE OBVIOUS FORM CANNOT FAIL: a draft said
+`sheetFrac >= 0.01326` "agrees with the eye-read verdict on 12 of 12" and 11 of the 12 agreements are unable
+to disagree** — the threshold is the argmin of the positive class and six of its eight fitting pages ARE
+those positives, while `sheetFrac <= satFrac` structurally puts all five unread negatives below it whatever
+is printed on them, leaving `Ford_1941` p5 as the one informative row. ✅ **The informative form is
+stronger: of ALL 48 grey picture-route pages only 7 have `satFrac >= 0.01326` and exactly the 6 eye-read
+real ones fire — 0 false positives over 48**, `topPx` alone agreeing on 7 of 12. ✅ Three controls: 0 of 12
+missing a mask-terms row (which is what removed the need for a sweep); all 12 read `wantC=no` and all 13
+above the bar `wantC=yes`, so "published grey" is `shouldKeepColour`'s own answer and not arithmetic on a
+3-dp column; and `force-grey` reproduces the ship arm on **16 of 16** pages that have both, on all 21
+non-`arm` columns (⛔ **a draft said `23 of 23` and no reading of the file yields 23 — this session's own
+`awk` was the instrument at fault**). ⚠️ **Sampled corpus at `PAGES=2` — 1.89 pages a document, NOT the
+"up to 12" a draft claimed — and DO NOT SCALE IT**, C26 measured a pooled scale-up 6x high on this corpus
+and its mechanism is the 12-per-document one, so the bias here is a different uncomputed number.
+⛔ **TWO of the five unread collateral pages have MARK-SHAPED columns and if either is real the recommended
+band moves**: `Glazer_2002` p1 (`topPx` **297**, `topRun` **51**, `edgeN` **0** — modern print, nothing
+border-connected) and `Stanford_1891` p3 (397 / 11), both thicker than either confirmed red-ink page, both
+refused only by *quantity*; p1 being real takes `b = 0.011` to **7 of 12, 58.3%**, beats the headline, moves
+the band off [0.012, 0.022] and drops the 0-false-positives result to 1 of 48 unrepairably. Carried as the
+queue's `colour-window-dump`. ⚠️ Also: **six of the eight** real pages are reachable by `sheetFrac`, not
+eight — `2013 - Silicon Valley Program Transcript` p13/p26 are 1-bit and no colour-side statistic reaches
+them; `Ford_1941` p5's surround share is **89.0%** (`edgeShare`) and not the 88% a draft used, which is
+`topShare` and a different set; exactly ONE of the five is a read page's sibling, not two; **Balanced IS the
+default** (a draft said otherwise); 232 distinct documents and 439 distinct rows, the duplicate entering no
+numerator; `1954 - Why` p6/p9 are not in the sample; and ⛔ **the five-collateral count is not robust to the
+cold/warm wobble — p7 reads 0.041 warm and 0.044 cold, which exceeds every gap in the top six rows and
+would make it THREE.** Warm is production's (grey is rendered first), so re-derive it warm and never read a
+0.001 gap as a separation. ⚠️ Nothing in `Sources/` moved and the
+value is still the owner's. ⛔ **Five statements outside `Sources/` were made false by the
 split and the sweep's first draft named the one harmless reader in the same file** — three prose copies of
 *"the constant cannot be moved to ask this"* (`score-mrc` twice, `Tools/README.md`), the same
 three-places shape as the previous C27 commit's review found **in the same two files**, plus two *checks*
