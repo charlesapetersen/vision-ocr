@@ -39,7 +39,12 @@ sandbox() {
         --exclude Tools/mutation-out "$REPO/" "$SB/"
   mkdir -p "$SB/build"
 }
-cleanup() { [ -n "${SB:-}" ] && rm -rf "$SB"; }
+cleanup() {
+  [ -n "${SB:-}" ] && rm -rf "$SB"
+  # `hook_parses` builds git repositories rather than a sandbox, so it has its own.
+  [ -n "${SC:-}" ] && rm -rf "$SC"
+  return 0
+}
 trap cleanup EXIT
 
 # A directory holding a shim that shadows a real tool on PATH.
@@ -1220,7 +1225,184 @@ fault_shape_dump() {
   rm -rf "$SB"
 }
 
-FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids drawn_census shape_dump"
+# T21. The hook could not check ITSELF. A commit staging only `.githooks/pre-commit`
+# exited at "no code staged, skipping the suite" BEFORE any check ran, and the
+# staged-tool block below that exit is anchored `^Tools/`, so a broken `run_tests.sh`
+# or `ops/autonomous/test-lock.sh` was EXECUTED rather than parsed and the refusal
+# named the wrong cause. Both closed 2026-08-27 by an inline `bash -n` over the
+# staged BLOBS, placed before that exit. These rows are the only durable watcher it
+# has: `check-tools-compile.sh` checks the committed hook, not the hook's behaviour
+# against an index, and no Swift check can reach a shell gate at all.
+#
+# ⚠️ A RED ROW HERE MUST NOT BE ABLE TO START A SUITE, and the operative reason is
+# NOT the one a first draft gave. Every row's staged set is `.githooks/…` or
+# `ops/autonomous/…`, and neither matches the hook's suite gate
+# (`^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)`) — measured with the
+# parse arm disabled, the output is "no code staged, skipping the suite" and the gate
+# is never reached. The second reason, which the first draft named as the first, is
+# that the scratch repo holds README.md and the one staged file and NOTHING else, so
+# even past that gate there is no `run_tests.sh` to run and `[ -x "$LOCK_SH" ]` is
+# false, i.e. no lock. Two independent reasons; the staged sets are the load-bearing
+# one.
+# ⚠️ Row 1 asserts what did NOT happen as well as the exit code, because `exit 1` on
+# its own does not say the parse check is what refused. Row 2, the other refusing
+# row, asserts only the code and the named path — a first draft of this comment
+# claimed "every row", which the review of this diff refuted by reading row 2. Row
+# 1's `run_tests.sh` clause is unreachable while the suite gate has no `.githooks/`
+# in it, and is kept as the tripwire for the day it does.
+#
+# The executing hook lives OUTSIDE the work tree, at `core.hooksPath`, so a row can
+# stage a hook that does not parse without disabling the hook under test — which is
+# the whole reason this case can exist at all.
+fault_hook_parses() {
+  local hook="$REPO/.githooks/pre-commit"
+  # SC, not a local: `cleanup` owns it, so an interrupted run does not leak a
+  # directory of git repositories. The same leak `score-shape-term`'s exits 6 and 7
+  # had until 2026-08-26, caught here by the review of this diff before it landed.
+  SC="$(mktemp -d)"
+  local sc="$SC"
+  local R out rc
+  mkdir -p "$sc/hooks"
+  cp "$hook" "$sc/hooks/pre-commit"; chmod +x "$sc/hooks/pre-commit"
+  printf '#!/bin/bash\nif [ 1 = 1 ]\n'      > "$sc/broken.sh"   # unterminated `if`
+  printf '#!/usr/bin/env bash\nfoo() {\n'   > "$sc/broken2.sh"  # unterminated function
+
+  # A fresh repo per row, so no row can inherit another's index. hooksPath is set by
+  # `armhook` and not here, so a row may COMMIT a file before the hook is watching.
+  newrepo() {
+    R="$(mktemp -d "$sc/repoXXXXXX")"
+    git -C "$R" init -q >/dev/null 2>&1
+    git -C "$R" config user.email fault-inject@example.invalid
+    git -C "$R" config user.name  fault-inject
+    git -C "$R" config commit.gpgsign false
+    mkdir -p "$R/.githooks" "$R/ops/autonomous"
+    echo readme > "$R/README.md"
+    git -C "$R" add README.md
+    git -C "$R" commit -q -m initial >/dev/null 2>&1
+  }
+  armhook() { git -C "$R" config core.hooksPath "$sc/hooks"; }
+  attempt() { out="$(cd "$R" && git commit -q -m x 2>&1)"; rc=$?; }
+
+  # -- 1. the defect row, and it pins the INDEX rather than the working tree: the
+  #       staged blob does not parse while the file on disk is the real hook.
+  local n1="a staged .githooks/pre-commit that does not parse refuses the commit"
+  newrepo
+  cp "$sc/broken.sh" "$R/.githooks/pre-commit"
+  git -C "$R" add .githooks/pre-commit
+  cp "$hook" "$R/.githooks/pre-commit"          # working tree sound; INDEX still broken
+  armhook; attempt
+  if [ "$rc" -eq 0 ]; then
+    bad "$n1" "commit ALLOWED with a staged hook that does not parse"
+  elif grep -q 'no code staged' <<<"$out"; then
+    bad "$n1" "reached the docs-only exit, so the check is AFTER it: $(tail -1 <<<"$out")"
+  elif ! grep -q '\.githooks/pre-commit' <<<"$out"; then
+    bad "$n1" "refused without naming the file: $(tail -1 <<<"$out")"
+  elif grep -q 'run_tests\.sh' <<<"$out"; then
+    bad "$n1" "reached the suite gate"
+  else
+    ok "$n1"
+  fi
+
+  # -- 2. the wider half: a script the hook RUNS, which `^Tools/` never selected.
+  local n2="a staged ops/autonomous/test-lock.sh that does not parse refuses the commit"
+  newrepo
+  cp "$sc/broken2.sh" "$R/ops/autonomous/test-lock.sh"
+  git -C "$R" add ops/autonomous/test-lock.sh
+  armhook; attempt
+  if [ "$rc" -eq 0 ]; then
+    bad "$n2" "commit ALLOWED with a staged test-lock.sh that does not parse"
+  elif ! grep -q 'ops/autonomous/test-lock\.sh' <<<"$out"; then
+    bad "$n2" "refused without naming the file: $(tail -1 <<<"$out")"
+  else
+    ok "$n2"
+  fi
+
+  # -- 3. the converse of row 1. A broken copy on DISK with a sound blob staged is a
+  #       work in progress, not a commit: `git commit` publishes the index.
+  local n3="a sound staged hook is allowed even with a broken copy in the working tree"
+  newrepo
+  cp "$hook" "$R/.githooks/pre-commit"
+  git -C "$R" add .githooks/pre-commit
+  cp "$sc/broken.sh" "$R/.githooks/pre-commit"  # working tree broken; INDEX sound
+  armhook; attempt
+  if [ "$rc" -ne 0 ]; then
+    bad "$n3" "exit $rc — refused over an UNSTAGED edit: $(tail -1 <<<"$out")"
+  else
+    ok "$n3"
+  fi
+
+  # -- 4. it does not newly refuse a correct commit, and it reaches the exit below.
+  local n4="a sound staged hook alone is allowed and still skips the suite"
+  newrepo
+  cp "$hook" "$R/.githooks/pre-commit"
+  git -C "$R" add .githooks/pre-commit
+  armhook; attempt
+  if [ "$rc" -ne 0 ]; then
+    bad "$n4" "exit $rc over a sound hook: $(tail -1 <<<"$out")"
+  elif ! grep -q 'no code staged' <<<"$out"; then
+    bad "$n4" "allowed without reaching the docs-only exit: $(tail -1 <<<"$out")"
+  else
+    ok "$n4"
+  fi
+
+  # -- 5. T16's own failure mode, which the first version of the sweep's `.githooks/*`
+  #       glob shipped: a Markdown file in the hooks directory refusing every commit.
+  #       ⛔ THE FIRST LINE IS A BASH SHEBANG ON PURPOSE. With shell-invalid text and
+  #       no shebang the file is refused by the extension arm AND by the shebang
+  #       sniff, so it was green under a sabotage of either and bought nothing row 6
+  #       does not — measured that way first by the review of this diff. A README that
+  #       opens on a snippet reaches only the extension arm, so this row now reds
+  #       alone when `*.*) continue` is cut.
+  local n5="a staged .githooks/README.md opening on a bash shebang is allowed"
+  newrepo
+  printf '#!/bin/bash\nif (\n' > "$R/.githooks/README.md"
+  git -C "$R" add .githooks/README.md
+  armhook; attempt
+  if [ "$rc" -ne 0 ]; then
+    bad "$n5" "exit $rc over a Markdown file: $(tail -1 <<<"$out")"
+  else
+    ok "$n5"
+  fi
+
+  # -- 6. the other arm of the classifier: extensionless, and NOT a shell shebang.
+  local n6="a staged extensionless python script is not parsed as shell"
+  newrepo
+  printf '#!/usr/bin/env python3\nif (\n' > "$R/.githooks/post-commit"
+  git -C "$R" add .githooks/post-commit
+  armhook; attempt
+  if [ "$rc" -ne 0 ]; then
+    bad "$n6" "exit $rc — bash -n was applied to a python shebang: $(tail -1 <<<"$out")"
+  else
+    ok "$n6"
+  fi
+
+  # -- 7. a staged DELETION is a staged path with no blob. The tool block below has
+  #       the same guard for the same reason: a commit whose whole content is removing
+  #       a script must not be refused because the script is not there to parse.
+  #       ⛔ THIS ROW CANNOT FAIL ON THE GUARD IT NAMES, measured by the review of this
+  #       diff: cut `git cat-file -e` out of the hook and it stays green, because
+  #       `git show` on a removed path writes an EMPTY file and `bash -n` on an empty
+  #       file exits 0. The row asserts the OUTCOME, which is real and worth pinning,
+  #       and the empty blob rather than the guard is what carries it. Said here
+  #       instead of dressed up: no ordinal is claimed among this project's
+  #       checks-that-could-not-fail — re-derive it, never count sentences.
+  local n7="a staged deletion of a shell script is allowed"
+  newrepo
+  cp "$hook" "$R/.githooks/pre-commit"
+  git -C "$R" add .githooks/pre-commit
+  git -C "$R" commit -q -m addhook >/dev/null 2>&1
+  git -C "$R" rm -q .githooks/pre-commit
+  armhook; attempt
+  if [ "$rc" -ne 0 ]; then
+    bad "$n7" "exit $rc over a staged deletion: $(tail -1 <<<"$out")"
+  else
+    ok "$n7"
+  fi
+
+  rm -rf "$sc"; SC=""
+}
+
+FAULTS="relocate build_continues missing_licence detach_fails helper mrc_refuses argv_writers text_voids drawn_census shape_dump hook_parses"
 
 if [ "${1:-}" = "--list" ]; then
   for f in $FAULTS; do echo "  $f"; done; exit 0

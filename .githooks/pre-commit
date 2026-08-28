@@ -23,6 +23,97 @@ if [ "$touches_sources" -gt 0 ] && [ "$touches_tests" -eq 0 ] && [ "$touches_bug
   echo "      Continuing; this is a warning, not a refusal."
 fi
 
+# Does every staged shell script parse? BUGS.md T21 — and it is HERE, above the
+# docs-only exit below, because that exit is what made this hook the one script it
+# could not check. Measured 2026-08-27: a commit staging only .githooks/pre-commit
+# matches none of the patterns below, so it printed "no code staged" and exited 0
+# with nothing checked, and a hook that does not parse refuses every LATER commit
+# with a bash error — recoverable only with --no-verify. The same exit hid
+# ops/autonomous/test-lock.sh, whose parse failure makes this hook report a
+# 60-minute stuck lock instead; run_tests.sh and build.sh do match, and were
+# EXECUTED rather than parsed, so their syntax errors arrived as "TESTS FAILED".
+#
+# Why an inline `bash -n` and not the staged-tool block further down. That block
+# delegates to check-tools-compile.sh, which exits 1 with no swiftc on PATH, so
+# moving it above this point — the only way to make it reach .githooks/ — would let
+# a docs-plus-hook commit be refused for a reason unrelated to its content. The
+# lock comment below forbids exactly that in terms. `bash -n` needs only `bash`,
+# which is running this file, and costs milliseconds. ⚠️ Not structural: the PATH
+# export above puts /opt/homebrew/bin first, so on a box with `brew install bash`
+# this arm would parse with 5.x while /bin/bash 3.2 runs the scripts. Measured on
+# this machine: `command -v bash` is /bin/bash 3.2.57, the same one.
+#
+# THE INDEX AND NOT THE WORKING TREE — A PROPERTY OF THIS ARM, NOT OF THIS HOOK.
+# `git commit` publishes the staged blob and a fresh clone installs the committed
+# copy, so a broken file on disk with a sound blob staged is work in progress and
+# not a commit; both directions have a row in `Tools/fault-inject.sh hook_parses`,
+# this arm's only durable watcher. ⛔ The blocks BELOW read the working tree —
+# check-tools-compile.sh `bash -n`s and type-checks the file on disk, and the
+# --self-test loop runs it from disk — so on a staged `Tools/*.sh` the two disagree
+# by design: a sound blob with a broken disk copy passes here and is refused there.
+# Found by the adversarial review of this diff, which is also where the corollary
+# came from: after this arm, T20's `sh` in that selector changes the outcome in
+# exactly one case, and it is that one. Named rather than reconciled — the sweep is
+# right to check the tree you have, and this arm is right to check what you publish.
+#
+# Selection mirrors check-tools-compile.sh's classifier: `*.sh` by extension,
+# unconditionally, and an extensionless path by its bash/sh shebang — so a zsh
+# script named *.sh would be bash -n'd here, the same exposure T20 recorded for the
+# sweep, and there is none today (of 21 tracked *.sh, 20 are bash and the 21st,
+# ops/autonomous/run-state-lib.sh, has no shebang at all because it is sourced —
+# which is why the extension arm cannot be shebang-driven). ⚠️ A staged `foo.bash`
+# or `foo.zsh` is skipped by `*.*`: this is every staged `*.sh` plus extensionless
+# bash/sh-shebanged paths, not "every shell script".
+shell_parse_failed=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  # A staged DELETION is a staged path with no blob to parse. Same guard and same
+  # reason as the `[ -f "$f" ]` in the tool block below: a commit whose whole
+  # content is removing a script must not be refused because it is not there.
+  # ⚠️ BELT AND BRACES, not the thing that makes a deletion pass, and the review of
+  # this diff measured it: with this line gone, `git show` on a removed path writes
+  # an EMPTY file and `bash -n` on an empty file exits 0, so the deletion is allowed
+  # either way. Kept because it says the intent and does not depend on that; and
+  # `hook_parses` row 7 therefore cannot fail on this line alone, which that row now
+  # says of itself.
+  git cat-file -e ":$f" 2>/dev/null || continue
+  case "${f##*/}" in
+    *.sh) ;;
+    *.*)  continue ;;
+    *)
+      case "$(git show ":$f" 2>/dev/null | head -1)" in
+        '#!'*bash*|'#!'*/sh|'#!'*' sh') ;;
+        *) continue ;;
+      esac ;;
+  esac
+  # ⛔ A FAILED mktemp MUST NOT REFUSE THE COMMIT. Without this guard `blob` is
+  # set-but-empty (which `set -u` does not catch), `bash -n ""` exits 127, and the
+  # arm reports that a sound script does not parse — a new way for a correct commit
+  # to fail, which is the one thing the paragraph above claims this arm cannot do.
+  # Found by the adversarial review of this diff. A full or unwritable TMPDIR is the
+  # real case; skipping is right, because a check that cannot read is not a verdict.
+  if ! blob=$(mktemp -t vrg-stagedsh 2>/dev/null) || [ -z "$blob" ]; then
+    echo "pre-commit: cannot make a temporary file, skipping the shell parse check." >&2
+    continue
+  fi
+  git show ":$f" >"$blob" 2>/dev/null
+  if ! bash -n "$blob" 2>"$blob.err"; then
+    echo "pre-commit: a staged shell script does not parse — commit refused." >&2
+    echo "            $f" >&2
+    # bash names the temporary file; say the path the committer recognises. ⚠️ A `|`,
+    # `&` or `\` in a repository path would corrupt this line — cosmetic, and only on
+    # the refusal path, which already names the file above.
+    sed "s|$blob|$f|g" "$blob.err" | head -5 | sed 's/^/            /' >&2
+    shell_parse_failed=1
+  fi
+  rm -f "$blob" "$blob.err"
+done <<EOF
+$staged
+EOF
+if [ "$shell_parse_failed" -ne 0 ]; then
+  exit 1
+fi
+
 # Docs-only commits do not need forty minutes of real OCR. Anything that can
 # change behaviour does: sources, tests, the build or test scripts, the tools.
 # Helper/ is in the list because R40 put shipped code there: it builds

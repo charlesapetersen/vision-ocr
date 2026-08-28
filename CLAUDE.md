@@ -17,19 +17,50 @@ staged-tool type-check reads `swift|py|sh`; it read `swift|py` for **twelve days
 `bash -n` arm existed in `Tools/check-tools-compile.sh` and had **never run at commit time** —
 measured through the hook, banner `1 Swift, 0 Python, 0 shell` over a staged, broken
 `Tools/*.sh`, and measured again with that `.sh` staged ALONE, where the pre-fix hook prints no
-type-check line at all, runs the whole suite and **allows the commit**. The full sweep itself is
-green over all 42 files and **watched** (three one-token sabotages, one per arm, exactly three
-reds).
-⛔ **The bigger half is what the sweep CANNOT see, and it makes a superlative in
+type-check line at all, runs the whole suite and **allows the commit**. The full sweep itself was
+green over all **42** files at that commit and **watched** (three one-token sabotages, one per arm,
+exactly three reds) — ⚠️ **42 is T20's figure and is no longer the sweep's: T21 widened the shell arm
+to every tracked `*.sh` and it is 60 files today**, re-measured on the adoption. This sentence stood
+in the present tense eighteen lines above `42 files → 60`, and T21's own review paragraph had
+recorded that as corrected while it was not.
+⛔ **The bigger half was what the sweep CANNOT see, and it made a superlative in
 `check-tools-compile.sh`'s own header false**: the hook also runs `run_tests.sh`,
 `ops/autonomous/test-lock.sh` and `build.sh`, a failure in any of which refuses commits, and
-**none is in the sweep** — it globs `Tools/*.{swift,py,sh}` and `.githooks/*` only, while **18
-tracked `.sh` live outside `Tools/`**. `build.sh` and `run_tests.sh` are named by the suite gate
-itself, yet the selector fixed here is still anchored `^Tools/`. ⚠️ **Also still true and
-deliberately left**: a commit staging only `.githooks/pre-commit` exits at *"no code staged"*
-before the tool block, so it is checked by nothing until `health-gate.sh`'s next full sweep, up
-to ~10 commits later. Both are the queue's `hook-selfcheck`, and neither is a one-liner — the two
-obvious fixes are refuted in that box, one of them having been refuted in this diff's own review.
+**none was in the sweep** — it globbed `Tools/*.{swift,py,sh}` and `.githooks/*` only, while **18
+of the 21 tracked `.sh` live outside `Tools/`**. A commit staging only `.githooks/pre-commit`
+exited at *"no code staged"* before the tool block, so **this hook was the one script it could not
+check**, and its own failure refuses every LATER commit with a bash error that only `--no-verify`
+gets past.
+✅ **BOTH ARE CLOSED AS OF 2026-08-27 (`BUGS.md` T21, the queue's `hook-selfcheck`), and the fix is
+NEITHER of the two one-liners that box refutes.** An inline `bash -n` over the staged BLOBS of
+staged shell scripts, placed **above** the docs-only exit: it needs only the interpreter already
+running the hook, so — unlike widening the staged-tool block, which delegates to a script that
+exits 1 with no `swiftc` — it cannot refuse a commit for an environment reason, which the hook's
+own lock comment forbids in terms. ⛔ **It reads the INDEX, not the working tree**: `git commit`
+publishes the staged blob and a fresh clone installs the committed copy, and both directions have a
+row. The sweep's shell arm now takes **every tracked `*.sh`** from `git ls-files` rather than a glob
+per directory — **4 shell → 22, 42 files → 60, `all clear`** — on the ground the file already
+accepted for the hook. ⛔ **Watched, and this is the one to quote: `Tools/fault-inject.sh
+hook_parses`, SEVEN rows, read `5 passed, 2 failed` against the pre-fix hook** — exactly the two
+defect rows red — and `7 passed, 0 failed` after; plus two binaries one
+edit apart over a broken `ops/autonomous/tests/prove-status.sh`, where the old sweep prints
+`5 shell`/`all clear`/exit 0 and the widened one `22 shell`/`FAIL`/exit 1.
+⛔ **DO NOT ADD *"and all five inverse rows green, which is what says the inverses are not passing by
+construction"* — that stood here, and the adversarial review of the adoption refuted it 2026-08-27.**
+The pre-fix hook has no parse arm, so it allows every commit whose staged set is `.githooks/…` or
+`ops/autonomous/…`, and rows 3-7 each assert `rc == 0`: against that hook they are green
+**necessarily**, so that run says nothing at all about them. **The attribution that survives is one
+row's**: cut the classifier's `*.*) continue` arm and the case reads `6 passed, 1 failed` with row 5
+red ALONE. Row 7 is labelled unable to fail; rows 3, 4 and 6 have no attribution.
+⚠️ **`hook_parses` is `fault-inject.sh`'s first case that does not call `sandbox()`** — it drives the
+real hook against a synthetic index — and **the reason a red row cannot start a suite is its STAGED
+SET**, `.githooks/…` or `ops/autonomous/…`, which the hook's suite gate does not match; that the
+scratch repo holds neither `run_tests.sh` nor `test-lock.sh` is a second, weaker reason. ⛔ Do not
+write *"first case that runs no build step"*: `missing_licence` runs `bundle-libs.py` and no compiler.
+⚠️ `bash -n` is syntax only, and it is blind to a `#!/bin/sh -e`-style shebang carrying flags
+(measured: such a file, broken, is committed clean — the queue's `shebang-flags`);
+`fault-inject.sh` is in no hook and is opt-in in the health
+gate (`VISIONOCR_GATE_FAULT=1`), so a red row here refuses no commit.
 
 Then: [HANDOFF.md](HANDOFF.md) for the design rationale and the mistakes already
 paid for, and [ARCHITECTURE.md](ARCHITECTURE.md) for the call path, the two page

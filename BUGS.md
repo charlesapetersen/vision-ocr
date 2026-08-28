@@ -18232,6 +18232,13 @@ mutant: medians over all files
 `.githooks/pre-commit` is in `check-tools-compile.sh`'s `bash -n` set now too — it was the
 one shell script nothing checked, while being the only one whose failure refuses *every*
 commit, and T16's own bash-3.2 defect is what that costs.
+⛔ **THAT SUPERLATIVE IS FALSE and this is the fourth place it stood — corrected on the adoption
+2026-08-27, not by the commit that claimed it.** The hook also RUNS `run_tests.sh`,
+`ops/autonomous/test-lock.sh` and `./build.sh`, and a failure in any of them refuses commits too
+(T20). ⛔ **T21's own entry says of this paragraph *"Fixed here"*, and it was not: that diff is
+**207 insertions and 0 deletions** in this file, so it could not have edited a line of it.** The
+sentence above is kept as written, with this marker under it, because it is what T20's sweep was
+measured against. `check-tools-compile.sh`'s shell arm has reached all three since T21.
 
 ### T19 · The two tools that write argv[2], where a shell glob puts a corpus document — FIXED
 *(found 2026-08-19 by the sibling sweep of C26's driver commit, which classified the argument
@@ -18521,18 +18528,42 @@ by the suite gate itself as things that can change behaviour, and the selector t
 still anchored `^Tools/`** — so staging a broken `run_tests.sh` still gets no `bash -n`; it is simply
 executed and reported as a test failure. **This fix closed the smallest gap in its own class.** The
 rest is `hook-selfcheck`'s ground and is written into that box.
+⛔ **BOTH BOLD CLAIMS IN THIS PARAGRAPH ARE NOW FALSE AND THE SECOND WAS FALSIFIED MECHANICALLY, not
+merely superseded — marked 2026-08-27 (T21), on the adversarial review of that adoption, which found
+that T21's own generic ✅ block below covered *"both named gaps"* and left these two mechanism
+sentences standing in the present tense.** *"None of the three is in the 42-file sweep"*: the sweep is
+**60 files** and all three are in it. *"Staging a broken `run_tests.sh` still gets no `bash -n`"*:
+measured false — T21's arm parses it from its staged blob **before** the suite gate is reached, so it
+is refused with *"a staged shell script does not parse"* and never executed. The sentences are kept as
+written because they are what T21 was scoped against; the ⛔ is the correction.
 
 **Sibling sweep.** `.githooks/pre-commit` is the only file that selects staged paths for a check —
 `git grep -- '--name-only'` repo-wide returns that file's line 13 and this sentence, nothing else.
 ⚠️ **It holds SEVEN greps of `$staged`, not the three a first draft counted**, of which four gate
-something: line 32's suite gate (the second gap above), line 61's tool check (fixed here), line 91's
+something: the suite gate (the second gap above), the tool check (fixed here), the
 Python `--self-test` loop — `'^Tools/.*\.py$'`, **correctly** so, since that loop runs
-`python3 <f> --self-test` and there is no shell equivalent — and line 180's `./build.sh` trigger on
+`python3 <f> --self-test` and there is no shell equivalent — and the `./build.sh` trigger on
 `^Sources/(App|ContentView|SettingsView)\.swift$`. The other three (lines 16–18) feed the
-no-test warning. ⚠️ **Two hand-written lists are named and neither is fixed**: line 180's three
-names, which are exactly the three app/view files that exist today, and line 18's literal
-`'^BUGS.md$'` — the same list-goes-stale class, three lines above where the first draft named only
-the first of them.
+no-test warning.
+⛔ **THE LINE NUMBERS THIS PARAGRAPH CITED ARE GONE, and three of them were WRONG WHEN WRITTEN —
+measured on the adoption 2026-08-27, which is also when T21 moved them.** It said 32 / 61 / 91 / 180;
+on the commit it was written against those four greps are at **32 / 70 / 100 / 189**, so three were
+stale by 9 the day they were published, and after T21's 91-line arm they are **123 / 161 / 191 / 280**.
+⛔ **T21's own review list flagged this and did two things wrong: it said the diff moved them by *"61
+more"* — it is **91**, the arm's whole insertion, and every one of the four shifts by exactly that —
+and it listed the item as corrected when the diff deleted no line of this file.** The citations are
+removed rather than renumbered, because a line number in a 20,000-line register is a fact with a
+half-life of one commit and this paragraph names each grep unambiguously without one. `line 13` and
+`lines 16–18` above happen to still hold, being upstream of the arm, and are the exception that shows
+why: they were not renumbered either. ⚠️ **The seven is still seven from this paragraph's point of
+view** — T21's arm adds an eighth `$staged` reference (its heredoc), which is why T21 says *"none of
+its other seven"*. ⚠️ **Two hand-written lists are named and neither is fixed**: the `./build.sh`
+trigger's three names, which are exactly the three app/view files that exist today, and line 18's
+literal `'^BUGS.md$'` — the same list-goes-stale class, three lines above where the first draft named
+only the first of them. ⛔ **That sentence said *"line 180's three names"* — a stale citation
+surviving inside the paragraph that declares the citations removed, caught by the adversarial review
+of the adoption; `line 18` is kept because it is upstream of T21's arm and still correct, which is the
+distinction the paragraph above draws.**
 
 ⚠️ **What this does not claim.** No `Tools/` file changed and no measurement in this register moves.
 The green sweep is one run of one tree on one machine. `bash -n` is syntax only — a shell tool whose
@@ -18541,6 +18572,292 @@ not descend, which is pre-existing for `.swift`/`.py` and now extends to `.sh` (
 under `Tools/` has a directory component today). The fix is watched by the four real-hook runs above
 and by nothing durable: `fault-inject.sh` has no case for the hook, and adding one needs the hook
 runnable against a synthetic index.
+
+✅ **BOTH OF THIS ENTRY'S TWO NAMED GAPS ARE CLOSED — see `### T21` below — and the last paragraph's
+last sentence is now false: `fault-inject.sh` HAS a case for the hook, and it is exactly the
+"runnable against a synthetic index" that looked like the obstacle.** The sentence is kept as
+written because it is what the case was built against.
+
+---
+### T21 · The hook could not check itself, and the sweep behind it could not see three scripts the hook runs — FIXED
+
+**Opened and fixed 2026-08-27**, out of T20's own last two sections (the queue's `hook-selfcheck`).
+Two gaps, one mechanism: **shell syntax was gated at commit time only for `^Tools/`**.
+
+⛔ **The narrow half is the sharp one, because the file it misses is this hook.** The suite gate's
+regex is `^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)`, it carries no `.githooks/`,
+and it sits **above** the staged-tool block — so a commit staging only `.githooks/pre-commit` printed
+*"pre-commit: no code staged, skipping the suite."* and exited 0 with nothing checked. **A hook that
+does not parse then refuses every LATER commit with a bash error, recoverable only with
+`--no-verify`** — the one class of defect that cannot be worked around by staging different files.
+
+⛔ **The wider half: `run_tests.sh`, `ops/autonomous/test-lock.sh` and `./build.sh` are RUN BY this
+hook and a failure in any of them refuses commits** — `test-lock.sh`'s while reporting a 60-minute
+stuck lock, i.e. the wrong cause. The two that DO match the suite gate were **executed rather than
+parsed**, so a syntax error in either arrived as *"TESTS FAILED"*. **18 of the 21 tracked `*.sh` live
+outside `Tools/`** (16 under `ops/autonomous/`), and none of the three was in the 42-file sweep.
+
+#### The design, and why neither one-liner
+
+Written down before the edit, because T20's box refutes both obvious fixes and the review of T20's
+own diff refuted its first reason for refuting one of them.
+
+1. **Add `.githooks/` to the suite gate.** Rejected: a one-word hook comment would pay a 285–308 s
+   suite of real OCR, which is the trade the docs-only exit exists to make.
+2. **Widen the staged-tool selector to `.githooks/` and move that block above the exit.** Rejected,
+   and note it is the **pair** that does the damage rather than either edit: that block delegates to
+   `check-tools-compile.sh`, which **exits 1 with no `swiftc` on PATH**, so the pair would newly
+   refuse a docs-plus-hook commit for a reason unrelated to its content. The hook's own lock comment
+   forbids that in terms — *"This guard must never be the reason a commit cannot happen — it is here
+   to make evidence trustworthy, not to add a way to fail."*
+3. **An inline `bash -n` over the staged blobs, above the exit.** ✅ **Taken.** It needs only the
+   interpreter already running the hook — no `swiftc`, no `python3`, no network — so it has **no
+   TOOL** on which it can fail; it is independent of `check-tools-compile.sh` and inherits neither
+   its `swiftc` requirement nor its ~26 s cost; and it runs in milliseconds.
+   ⛔ **This read *"no ENVIRONMENT on which it can fail"* and that absolute is refuted twice over —
+   corrected 2026-08-27 by the adversarial review of the adoption, which found the second half.** The
+   first is 100 lines below: an unguarded `mktemp` made it refuse a correct commit, which is an
+   environment on which it could fail. The guard fixes that case and **not the class** — measured,
+   `bash -n good.sh 2>/nonexistent-dir/err` exits **1**, so if the `2>"$blob.err"` redirect or the
+   `git show >"$blob"` write fails (a full volume), `! bash -n` is true and a sound script is reported
+   as not parsing. `mktemp` succeeding does not imply either write succeeds. The claim worth making is
+   the narrow one: it depends on **no tool the hook is not already running**.
+
+⛔ **It reads the INDEX, not the working tree.** `git commit` publishes the staged blob and a fresh
+clone installs the committed copy; a broken file on disk with a sound blob staged is work in
+progress, not a commit. **Both directions have a row**, so this is not an assertion about which one
+is right — it is pinned in both.
+
+**Selection mirrors `check-tools-compile.sh`'s classifier**: `*.sh` by extension, unconditionally,
+and an **extensionless** path by its bash/sh shebang. ⚠️ So a zsh script named `*.sh` would be
+`bash -n`'d here, **the same exposure T20 recorded for the sweep** — measured, there is none today:
+**20 of the 21** tracked `*.sh` are `#!/bin/bash` (5) or `#!/usr/bin/env bash` (15), and the 21st,
+`ops/autonomous/run-state-lib.sh`, has **no shebang at all** because it is sourced, which is why the
+extension arm cannot be shebang-driven. ⛔ **This sentence read *"all 21 tracked `*.sh` are
+`#!/bin/bash` or `#!/usr/bin/env bash`"* and then named the exception in its own next clause — self-
+contradictory, and contradicting this entry's own review paragraph below, which had already recorded
+it as 20 of 21. Corrected on the adoption 2026-08-27 by reading all 21 first lines.** What the
+sentence is *for* is unharmed: no tracked `*.sh` is a zsh script, and a file with no shebang is not
+one either. A staged **deletion** is skipped by a `git cat-file -e ":$f"` guard, the same guard
+and the same reason as the `[ -f "$f" ]` in the tool block: a commit whose whole content is removing
+a script must not be refused because the script is not there to parse.
+⛔ **THE CLASSIFIER HAS A GAP THE DOCS' OTHERWISE-EXHAUSTIVE LIST DID NOT NAME, found by the
+adversarial review of the adoption and MEASURED END TO END THROUGH THE REAL HOOK, 2026-08-27: a
+shebang carrying FLAGS after `/sh` matches none of the three patterns.** An extensionless staged file
+opening `#!/bin/sh -e` with an unterminated `if` is **committed clean, `rc=0`**, while `#!/bin/sh`,
+`#!/bin/bash -e` and `#!/usr/bin/env bash` are all refused — because `'#!'*bash*` catches anything
+with `bash` in it, and the two `sh` patterns require `/sh` or `' sh'` at the **end** of the line.
+⚠️ **It is PRE-EXISTING in `check-tools-compile.sh`'s `classify_by_shebang`** — the hook mirrors it on
+purpose — so the widened sweep inherits it too, and **no tracked file in this repo has such a
+shebang** (all 21 measured). Deliberately not fixed here: widening a `case` pattern wants its own
+failing row and its own watched sabotage, and this commit's arm already has two. Queued as
+`shebang-flags`.
+
+#### The wider half, and the argument T20 said it owed
+
+`check-tools-compile.sh`'s shell arm now takes **every tracked `*.sh`** from `git ls-files` rather
+than a glob per directory — **4 shell → 22, 42 files → 60, `all clear`**. ⛔ **The argument is the one
+T20 itself wrote down**: this file already reaches outside `Tools/` for `.githooks/pre-commit`, on the
+ground that a script whose failure refuses commits must be checked, and that ground applies to
+`run_tests.sh`, `test-lock.sh` and `build.sh` word for word. `git ls-files` rather than a list of
+directories for the same reason `SOURCES` is a glob — `ops/autonomous/tests/` is already a second
+level — and outside a work tree there is no index to ask, so `Tools/*.sh` is kept as the **fallback**
+and an **empty shell set now refuses** (`no shell scripts found — wrong directory?`), mirroring the
+`SOURCES` guard, because a silent skip in a gate reads as a pass. ⚠️ That guard cannot catch a
+**partial** loss — a selection that returned only `Tools/` would still pass it — which is why the
+count is printed.
+⛔ **"FLOOR" IS THE WRONG WORD AND IT STOOD IN THREE PLACES (here, the script and
+`Tools/README.md`) — corrected on the adoption 2026-08-27.** The code is `if [ -n "$SH_TRACKED" ] …
+else <the glob>`, an either/or, so a `git ls-files` that returns something **non-empty but partial**
+(a sparse checkout) skips the `Tools/` glob entirely: there is no guaranteed minimum, which is what
+"floor" claims. ⚠️ **And the count it prints can inflate as well as under-report, measured:**
+`git ls-files '*.sh'` lists a path **once per stage**, so in a repo with an unresolved merge conflict
+in `x.sh` it prints that path **three times** — the banner over-counts and the file is `bash -n`'d
+three times. Low impact (a conflicted working copy holds conflict markers and fails `bash -n` anyway),
+and there is no de-duplication. ⚠️ `git ls-files` has the same no-`-z` quoting exposure this entry
+names carefully for the hook's `--name-only`; it is stated for both now.
+
+#### Watched failing
+
+⛔ **`Tools/fault-inject.sh hook_parses`, SEVEN rows, read `5 passed, 2 failed` against the pre-fix
+hook** — exactly the two defect rows red (`commit ALLOWED with a staged hook that does not parse`,
+`commit ALLOWED with a staged test-lock.sh that does not parse`) and the five inverse rows green.
+`7 passed, 0 failed` after.
+⛔ **THAT SENTENCE ENDED *"which is what says the inverses are not passing by construction"* AND IT
+DREW THE INFERENCE BACKWARDS — REFUTED BY THE ADVERSARIAL REVIEW OF THE ADOPTION, 2026-08-27, and it
+is the worst kind of error this register catalogues: a check-that-cannot-fail argument made about its
+own control.** The pre-fix hook has **no parse arm at all**, so it allows every commit whose staged
+set is `.githooks/…` or `ops/autonomous/…` — and rows 3-7 each assert `rc == 0`, i.e. *allowed*.
+Against that hook they are green **necessarily**, by construction, which makes the pre-fix run the one
+control in this entry carrying **zero** information about whether an inverse row can fail. What does
+carry it is the sabotage set below: **row 5 reds ALONE** at `6 passed, 1 failed` when the classifier's
+`*.*) continue` arm is cut (re-measured on the adoption), and **row 7 is labelled unable to fail** on
+the guard it names. Rows 3, 4 and 6 have no attribution of their own and are not claimed to.
+⚠️ **The wrong form was quoted verbatim into `CLAUDE.md` and `ops/autonomous/QUEUE.md`; both are
+corrected in the same commit.** The refusal, verbatim:
+
+```
+pre-commit: a staged shell script does not parse — commit refused.
+            .githooks/pre-commit
+            .githooks/pre-commit: line 3: syntax error: unexpected end of file
+```
+
+— the second line being the committed path substituted back over the temporary file `bash` names.
+
+**The five inverse rows, each for a way this could newly refuse a correct commit:** a sound staged
+hook with a **broken copy in the working tree** (the index is what lands); a sound staged hook alone,
+which must still reach *"no code staged"*; a staged `.githooks/README.md` — **T16's own failure
+mode**, which the first version of the sweep's `.githooks/*` glob shipped; a staged extensionless
+file with a **python** shebang and shell-invalid text; and a staged **deletion**. ⛔ **Four of the
+five are attributable to one arm each and the fifth is not — see the review section below**, which is
+where the README fixture's first line became `#!/bin/bash` and where the deletion row is labelled
+unable to fail.
+
+⚠️ **`hook_parses` is `fault-inject.sh`'s first case that does not call `sandbox()`** — no whole-repo
+rsync, which is why it runs in **3.1 s** — and the first to touch the hook at all. ⛔ Do not say
+*"first case that runs no build step"*, which a draft did: `missing_licence` runs `bundle-libs.py` and
+no compiler, so that superlative is at best arguable. It drives the real hook against a synthetic
+index, the thing T20 named as the obstacle to having a case at all, and the executing hook is copied
+to a `core.hooksPath` **outside** the work tree — which is what lets a row stage a hook that does not
+parse without disabling the hook under test.
+⛔ **A red row must not be able to start a suite, and the operative reason is the STAGED SETS, not the
+fixture's contents.** Every row stages `.githooks/…` or `ops/autonomous/…`, and neither matches the
+suite gate's `^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)`: measured with the parse arm
+disabled, the hook prints *"no code staged, skipping the suite"* and the gate is never reached. The
+second, weaker reason — which a draft of this gave as the first — is that the scratch repo holds
+`README.md` and the one staged file and nothing else, so even past that gate there is no
+`run_tests.sh` and `[ -x "$LOCK_SH" ]` is false, i.e. no lock. Two independent reasons, stated in the
+right order.
+⚠️ **Row 1** asserts what did NOT happen as well as the exit code — it fails if the output holds
+`no code staged` (the check would be below the exit rather than above it) or `run_tests.sh` — because
+`exit 1` alone does not say the parse check is what refused. ⛔ **Row 2, the other refusing row, does
+not: it asserts the code and the named path only, so *"every row"* was false and is corrected here.**
+Row 1's `run_tests.sh` clause is unreachable while the suite gate carries no `.githooks/`, and is
+kept as the tripwire for the day it does.
+
+**The widening has its own negative control, two binaries one edit apart** over a working-tree
+`ops/autonomous/tests/prove-status.sh` with an unterminated function appended: the pre-widening sweep
+prints `32 Swift, 6 Python, 5 shell` and `all clear`, exit 0, and cannot see the file at all; the
+widened one prints `22 shell`, `FAIL ops/autonomous/tests/prove-status.sh` and exit 1, reproduced in a
+second clean run. ⛔ **The `5` wants explaining and the review of this diff was right to challenge it,
+because `3 Tools/*.sh + the hook` is 4 and `32 + 6 + 4` is the `42 files` this entry quotes
+elsewhere.** The fifth is `Tools/oldcheck.sh`, the untracked scratch copy of the old script the
+control was run from, which the old `Tools/*.sh` glob picks up and `git ls-files` does not — so the
+run happened and the number is real. ⛔ **That is also the sharpest thing about the widening: it moves
+the `Tools/` arm from DISK to INDEX, so it is not a superset of what it replaces** — an untracked,
+not-yet-`git add`ed `Tools/new.sh` was swept before and is not now (0 such files today, so no figure
+moves), and the control's own fifth file is the demonstration. ⚠️ `git ls-files` reads the index while
+`bash -n` reads the working tree, which is right for a sweep (it checks the tree you have) and is the
+opposite of the hook's rule (it checks what you publish); the two are deliberately different and each
+is stated where it applies.
+
+**Sibling sweep.** `git grep -- '--name-only'` still returns `.githooks/pre-commit:13` and prose,
+nothing else, so this hook remains the only file that selects staged paths for a check. **There are
+no tracked `*.py` outside `Tools/`**, so the hook's `--self-test` loop being anchored `^Tools/` costs
+nothing today — an `ops/autonomous/*.py` carrying `add_argument('--self-test'` would be missed, and
+that is a hazard about a file that does not exist rather than a defect. `bash -n` appears in no other
+tool. `.githooks/` holds exactly one tracked file. ⛔ **And the sweep found the corrected superlative
+still live in a fourth place the T20 commit did not reach: `T16`'s own entry above** (*"the one shell
+script nothing checked, while being the only one whose failure refuses every commit"*), present tense
+and unmarked, while `Tools/README.md`, `check-tools-compile.sh` and this file's own T20 section had all
+been corrected. **That is the third `⛔`-grade instance of this one pattern** — the
+load-bearing copy stale while the others are right.
+⛔ **THIS SENTENCE READ *"Fixed here"* AND THE FIX WAS NOT IN THE DIFF — corrected on the adoption
+2026-08-27, and it is the sharpest thing the adoption found.** The pre-adoption diff is **207
+insertions and 0 deletions** in `BUGS.md`, so no sentence of `T16`'s entry could have been touched by
+it; the same paragraph's `CLAUDE.md` item (*"green over all 42 files"* left present-tense eighteen
+lines above *"42 files → 60"*) was **also** listed as corrected under a heading reading *"each
+verified against the tree"* and was **also** still there, the `CLAUDE.md` hunk being confined to the
+block below it. ⛔ **AND IT IS THREE OF THE FIVE ITEMS IN THIS PARAGRAPH, NOT TWO — all three are
+`BUGS.md` or `CLAUDE.md` prose and all three are corrected on the adoption instead**: the shebang
+item (*"21 tracked `*.sh`, every one bash"* is 20 of 21) left the design paragraph above still
+reading *"all 21"*; the `CLAUDE.md` item; and the stale-hook-line-numbers item, whose own figure is
+wrong as well — *"moved by 61 more"* is **91**, the arm's whole insertion, measured 70 → 161,
+100 → 191, 189 → 280. The two items that DID land are the two that are code comments rather than
+register prose (*"THE INDEX, NOT THE WORKING TREE"* scoped to this arm; the count guard's
+characterisation), which is the pattern: **this diff's additions are all real and its edits to
+existing text are what went missing.** ⚠️ **The lesson is the numstat, not the sentences**: a review
+finding written into an entry as done is indistinguishable in prose from one that was done, and
+`git diff --numstat` tells them apart in seconds — **207 insertions, 0 deletions** in a file this
+entry claims **three** corrections to (this paragraph's shebang sentence and hook line numbers, plus
+`T16`'s superlative in the sibling-sweep paragraph above). Every item was re-checked against the tree
+on the adoption; the two code-comment ones are the ones that held.
+
+⚠️ **What this does not claim.** `bash -n` is **syntax only** — a script whose logic is wrong passes
+both arms — and it now says nothing more about the daemon than it says about a tool. Nothing in
+`Sources/`, `Helper/` or `Tests/` moved and no measurement in this register changes; the suite is
+paid because `Tools/` is staged, not because anything it covers moved. `fault-inject.sh` is in **no
+hook** and is **opt-in** in the health gate (`step_skippable`, `VISIONOCR_GATE_FAULT=1`), so a red
+row here refuses no commit — the same limitation `text_voids`, `drawn_census` and `shape_dump`
+carry. `hook_parses` is the **eleventh** case of `fault-inject.sh`; it exercises the hook's parse arm
+and **none of its other seven `$staged` greps** (seven, the number T20 established; a draft said six).
+The `sed` that substitutes the committed path for the temporary one would misfire on a repository path
+holding `|`, `&` or `\` — cosmetic, refusal-path only, and no path here holds one. ⚠️ It reads
+`git diff --cached --name-only` without `-z`, so a tracked path holding a character git quotes would
+arrive quoted and be skipped — **pre-existing**, shared with all seven of those greps, and every
+tracked path here is plain ASCII (the U+00A0 filenames `CLAUDE.md` warns about are in the untracked
+`testdocs/`). ⚠️ A staged `foo.bash` or `foo.zsh` is skipped by the `*.*` arm, so *"every staged shell
+script"* is loose: it is every staged `*.sh` plus extensionless bash/sh-shebanged paths **whose
+shebang carries no flags after `/sh`** (the third gap, added on the adoption and measured above). And
+`Tools/README.md` has no row for `fault-inject.sh` at all — noted, not fixed.
+⚠️ **One NEW way to refuse a commit that the list above did not have, found and measured by the review
+of the adoption: a shell script with CRLF line endings.** A staged `crlf.sh` whose `if/then/fi` is
+syntactically valid but ends its lines `\r\n` is refused (`bash -n` exits 2 — `fi\r` is not the
+reserved word). Arguably correct, since such a script does not run under bash either, but it **is** a
+new refusal and belongs on this list rather than being discovered by whoever hits it. There is no
+`.gitattributes` in this repo and no tracked `*.sh` has CRLF today, both checked, so nothing is
+refused now.
+⚠️ Two shapes inside the arm, named because they are cheap to misread. `git cat-file -e ":$f"` runs
+for **every** staged path, before the extension filter, so a 200-file docs commit spawns 200 git
+processes for a guard that only matters to a shell-script deletion — reordering costs nothing and was
+not done, because the guard's placement is what makes it read as belonging to the deletion case
+(reasoned, not measured). And `newrepo`/`armhook`/`attempt` in `fault_hook_parses` are global, bash
+having no local functions; no collision among the eleven cases today, checked by grep.
+
+#### The review of this diff, and the two things it found that mattered
+
+Sixteen findings; the two worth the section, plus what changed.
+
+⛔ **(1) THE ARM COULD REFUSE A CORRECT COMMIT — the one thing the design argument above says it
+cannot do.** `blob=$(mktemp -t vrg-stagedsh)` was unguarded, so a failed `mktemp` (a full or
+unwritable `TMPDIR`) left `blob` **set-but-empty**, which `set -u` does not catch. **Measured both
+ways, `mktemp` forced to fail, with a SOUND hook staged**: the pre-review form prints
+*"a staged shell script does not parse — commit refused"* over a file that parses, plus a
+`sed: first RE may not be empty`, exit **1**; the guarded form prints *"cannot make a temporary file,
+skipping the shell parse check"*, reaches *"no code staged"* and exits **0**. `bash -n ""` exits
+**127**, which is the mechanism. ⚠️ **Not reachable by pointing `TMPDIR` at a missing directory** —
+tried first, and macOS `mktemp -t` falls back to `/tmp`, so the guard needed a forced failure to
+measure. Skipping is the right answer: a check that cannot read is not a verdict.
+
+⛔ **(2) ROW 5 WATCHED NOTHING OF ITS OWN AND ROW 7 STILL WATCHES NOTHING.** The review built five
+one-change sabotages of the new block and ran the case against each. Row 5's `.githooks/README.md`
+held `if (` with no shebang, so it was refused by the extension arm **and** by the shebang sniff —
+green under a sabotage of either, and the `*.*) continue` arm had **no watcher at all**. Its first
+line is `#!/bin/bash` now, and the fixture is measured: cutting the extension arm gives
+**`6 passed, 1 failed`, row 5 red ALONE**. ⛔ **Row 7 cannot be fixed the same way and says so
+instead**: cut the `git cat-file -e` guard and the row stays green, because `git show` on a removed
+path writes an **empty** file and `bash -n` on an empty file exits 0 — so the outcome is carried by
+the empty blob and not by the guard. The guard is kept as belt and braces, the row asserts the
+outcome, and both the row and the hook now carry that sentence. ⚠️ **No ordinal is claimed** among
+this project's checks-that-could-not-fail; re-derive it rather than counting sentences.
+
+**Also corrected from that review, each verified against the tree**: *"THE INDEX, NOT THE WORKING
+TREE"* was asserted as a hook-wide invariant in three places and is a property of **this arm only** —
+the blocks below it read the file on disk, so a staged `Tools/*.sh` with a sound blob and a broken
+disk copy passes here and is refused there, and the corollary is that T20's `sh` in that selector now
+changes the outcome in exactly that one case; *"21 tracked `*.sh`, every one bash"* is **20 of 21**,
+the 21st (`run-state-lib.sh`) having no shebang, which the same sentence went on to admit; the count
+guard added to `check-tools-compile.sh` is **belt and braces rather than live protection**, because
+`SOURCES` empty already refuses 115 lines earlier, and nothing watches it; `CLAUDE.md` had been left
+saying the sweep is *"green over all 42 files"* eighteen lines above *"42 files → 60"*; T20's own
+sibling-sweep paragraph cites hook line numbers that were already stale and that this diff moved by
+61 more. **Two latent items are named and not fixed**: a future tracked `.githooks/*.sh` would be
+added to the shell set twice (by `git ls-files` and by the `.githooks/*` loop) and counted twice, and
+`$WORK/$(basename "$tool").failed` now pools basenames from five directories, so two same-named
+scripts would collide and under-report the failure count — measured, no collision among the 22 today.
+⚠️ The scratch directory `hook_parses` builds is now owned by `cleanup()` rather than by the case's
+last line, so an interrupted run does not leak a directory of git repositories — the same leak
+`score-shape-term`'s exits 6 and 7 carried until 2026-08-26.
 
 ---
 ## The interface

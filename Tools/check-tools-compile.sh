@@ -1,5 +1,11 @@
 #!/bin/bash
-# Does every tool in Tools/ still build — and does `.githooks/pre-commit` still parse?
+# Does every tool in Tools/ still build — and does every tracked shell script parse?
+#
+# The shell arm reaches the whole tree from 2026-08-27 (BUGS.md T21): 18 of the 21
+# tracked *.sh live outside Tools/, and three of THOSE are run by
+# `.githooks/pre-commit` itself — `run_tests.sh`, `ops/autonomous/test-lock.sh` and
+# `./build.sh` — so a syntax error in any of them refuses commits. That is the same
+# ground this file already accepted for the hook.
 #
 # Nothing asked that until BUGS.md C25, which found that
 # `Tools/score-text-route.swift` had **never compiled in any commit** — it called
@@ -129,25 +135,51 @@ if [ "$#" -gt 0 ]; then
 else
   for f in Tools/*.swift; do [ -f "$f" ] && SWIFT_TOOLS+=("$f"); done
   for f in Tools/*.py;    do [ -f "$f" ] && PY_TOOLS+=("$f"); done
-  for f in Tools/*.sh;    do [ -f "$f" ] && SH_TOOLS+=("$f"); done
-  # And the hook, which is not in Tools/ and was the one shell script nothing
-  # checked. The bash-3.2 defect described above shipped in this file and would
-  # have refused the commit that added it; the same class of defect in the hook
-  # cannot even be worked around by staging different files. `git config
-  # core.hooksPath` may point elsewhere, but the committed copy is what a new
-  # clone installs.
+  # EVERY TRACKED SHELL SCRIPT, not just Tools/ — widened 2026-08-27 (BUGS.md T21).
   #
   # ⛔ THIS SAID the hook was "the only one whose failure refuses *every* commit"
   # and that is FALSE, corrected 2026-08-27 (BUGS.md T20). The hook also RUNS
   # run_tests.sh, ops/autonomous/test-lock.sh and ./build.sh, and a failure in any
   # of them refuses commits too — test-lock.sh's while reporting a 60-minute stuck
-  # lock, i.e. the wrong cause. NONE of the three is reachable from the globs
-  # below, which stop at Tools/ and .githooks/, while 18 tracked *.sh live outside
-  # Tools/; build.sh and run_tests.sh are named by the hook's own suite gate as
-  # things that can change behaviour. Widening this is the queue's
-  # `hook-selfcheck` and is deliberately not done here — it is a scope decision,
-  # not an oversight: ops/autonomous/ holds the daemon, and a syntax gate over it
-  # wants its own argument.
+  # lock, i.e. the wrong cause. The glob that stopped at Tools/ could reach NONE of
+  # the three, while 18 of the 21 tracked *.sh live outside it. The ground this file
+  # already accepted for .githooks/pre-commit — a script whose failure refuses
+  # commits must be checked — applies to those three word for word, so the argument
+  # T20 said this widening owed is the one T20 itself wrote down.
+  #
+  # From `git ls-files` rather than a glob per directory, for the same reason
+  # SOURCES is a glob: a per-directory list has to be kept in step with the tree,
+  # and ops/autonomous/tests/ is already a second level. Outside a work tree there
+  # is no index to ask, so Tools/ is kept as the FALLBACK and the count guard below
+  # is what makes an empty selection loud — a silent skip in a gate reads as a pass.
+  # ⛔ FALLBACK and not "floor", corrected 2026-08-27 by the review of the adoption:
+  # this is an either/or, so a git ls-files that comes back non-empty but PARTIAL
+  # (a sparse checkout) skips the Tools/ glob entirely. There is no guaranteed
+  # minimum, which is what "floor" would promise.
+  # ⚠️ This is `bash -n`, i.e. syntax only, and it now says nothing more about the
+  # daemon than it says about a tool: a script whose logic is wrong still passes.
+  # ⚠️ Two more things the count cannot do, both measured: `git ls-files` lists a
+  # path once PER STAGE, so an unresolved merge conflict in x.sh prints it three
+  # times and the banner over-counts (harmless — a conflicted copy fails bash -n
+  # anyway); and it is read without -z, so a path git would quote arrives quoted,
+  # the same exposure the hook's --name-only has.
+  SH_TRACKED="$(git ls-files '*.sh' 2>/dev/null || true)"
+  if [ -n "$SH_TRACKED" ]; then
+    while IFS= read -r f; do
+      [ -n "$f" ] && [ -f "$f" ] && SH_TOOLS+=("$f")
+    done <<EOF
+$SH_TRACKED
+EOF
+  else
+    for f in Tools/*.sh; do [ -f "$f" ] && SH_TOOLS+=("$f"); done
+  fi
+  # And the hook, which is not in Tools/ and was the one shell script nothing
+  # checked. The bash-3.2 defect described above shipped in this file and would
+  # have refused the commit that added it; the same class of defect in the hook
+  # cannot even be worked around by staging different files. `git config
+  # core.hooksPath` may point elsewhere, but the committed copy is what a new
+  # clone installs. ⚠️ It is NOT in the set above: `git ls-files '*.sh'` cannot see
+  # an extensionless path, which is what the shebang sniff below is for.
   #
   # Through the shebang sniff, and `quiet`: a hooks directory holds `*.sample`
   # files and READMEs, and a gate that refuses a commit over a Markdown file is
@@ -161,6 +193,15 @@ else
       *)       classify_by_shebang "$f" quiet ;;
     esac
   done
+  # The same guard, and the same reason, as SOURCES above: this tree has 21 tracked
+  # *.sh plus the hook, so an empty shell set means the selection broke rather than
+  # that there is nothing to check. Placed after .githooks/ so it covers both routes
+  # into the set. ⚠️ It cannot catch a PARTIAL loss — a `git ls-files` that returned
+  # only Tools/ would still pass here — which is why the count is printed below.
+  if [ "${#SH_TOOLS[@]}" -eq 0 ]; then
+    echo "check-tools-compile: no shell scripts found — wrong directory?" >&2
+    exit 1
+  fi
 fi
 
 # One job per two cores, capped: this is pure compilation with no shared state, so

@@ -3073,7 +3073,16 @@ happens.**
       checked by NOTHING** — the suite gate has no `.githooks/`, so it exits at *"no code staged"* before
       the tool block. Verified by staging that very fix alone and running the hook. It is **not** a
       one-token fix — see `hook-selfcheck` below, where BOTH obvious one-liners are refuted, one of them
-      by the review of this very diff — so it is that item rather than a tack-on here. ⚠️ Nothing in `Tools/` changed and no committed measurement moves; the sweep is
+      by the review of this very diff — so it is that item rather than a tack-on here.
+      ✅ **BOTH OF THE TWO PARAGRAPHS ABOVE ARE HISTORY AS OF 2026-08-27 — `hook-selfcheck` landed and
+      `BUGS.md` T21 is FIXED, so read them in the past tense.** The sweep is **60 files** and all three
+      of those scripts are in it; a commit staging only `.githooks/pre-commit` is `bash -n`'d from its
+      staged blob before the docs-only exit; and staging a broken `run_tests.sh` is now **refused by the
+      parse arm and never executed** (measured, `rc=1`, *"a staged shell script does not parse"*), where
+      this box says it "still gets no `bash -n`". ⛔ Marked here rather than rewritten, because these
+      sentences are what `hook-selfcheck` was scoped against — and because the review of the T21
+      adoption found them still standing in the present tense in the box directly above the one that
+      diff ticked, which is this file's own version of the stale-load-bearing-copy pattern. ⚠️ Nothing in `Tools/` changed and no committed measurement moves; the sweep is
       one run of one tree on one machine, and `swiftc -typecheck` / `bash -n` / `py_compile` are all
       short of a real build, which the script's header already says.
       (context: BUGS.md T20)
@@ -3093,7 +3102,31 @@ happens.**
       Quoting a duration here again would just re-create the trap: every duration in this repo has turned
       out to be a reading of the machine's load.
       (context: BUGS.md C25 and T16 — both CLOSED; they are why this gate matters, not the work itself)
-- [ ] **hook-selfcheck** — **the hook cannot check itself, and the tool sweep cannot see three shell
+- [x] **hook-selfcheck** — ✅ **DONE 2026-08-27, both halves, `BUGS.md` T21.** The fix is the third
+      option this box guesses at and neither of the one-liners it refutes: an inline `bash -n` over the
+      **staged blobs** of staged shell scripts, placed **above** the docs-only exit. It needs only the
+      interpreter already running the hook, so it cannot refuse for an environment reason the way the
+      `swiftc`-dependent pair would; and the sweep's shell arm now takes **every tracked `*.sh`** from
+      `git ls-files` (**4 shell → 22, 42 files → 60, `all clear`**), on the ground T20 itself wrote
+      down — this file already reaches outside `Tools/` for the hook, and `run_tests.sh`,
+      `test-lock.sh` and `build.sh` meet that same ground word for word.
+      ⛔ **Watched: `Tools/fault-inject.sh hook_parses`, SEVEN rows, `5 passed, 2 failed` against the
+      pre-fix hook** — exactly the two defect rows red — and
+      `7 passed, 0 failed` after; plus two binaries one edit apart over a broken
+      `ops/autonomous/tests/prove-status.sh`, where the old sweep prints `5 shell`/`all clear`/exit 0
+      and the widened one `22 shell`/`FAIL`/exit 1.
+      ⛔ **This said *"and all five inverse rows green"* as if that were evidence, and it is NOT —
+      refuted by the adversarial review of the adoption, 2026-08-27.** The pre-fix hook has no parse
+      arm, so rows 3-7, which each assert `rc == 0`, are green **necessarily** against it. The one
+      inverse row with an attribution is row 5: cut the classifier's `*.*) continue` arm and the case
+      reads `6 passed, 1 failed` with row 5 red alone. Row 7 is labelled unable to fail. ⚠️ **It cost the suite after all** — this box's last
+      line says "free commit either way", which holds for the hook edit alone and stops holding once
+      the watcher goes in `Tools/fault-inject.sh`. ⚠️ Still limited, named rather than implied:
+      `bash -n` is syntax only, `fault-inject.sh` is in no hook and is opt-in in the health gate, and
+      the hook's Python `--self-test` loop is still `^Tools/` (no tracked `*.py` lives outside it
+      today, so that costs nothing yet).
+      **Everything below is the record of what was measured BEFORE the fix, kept as history:**
+      **the hook cannot check itself, and the tool sweep cannot see three shell
       scripts the hook runs. Both measured 2026-08-27** (`BUGS.md` T20's last two sections).
       ⛔ **The wider half first, because it is the one a reader will miss.** The sweep globs
       `Tools/*.{swift,py,sh}` and `.githooks/*` and nothing else, but the hook also executes
@@ -3133,6 +3166,26 @@ happens.**
       the fix, and `bash -n .githooks/pre-commit` before every commit in that session.
       ⚠️ Free commit either way: `.githooks/` is not in the suite regex, which is the defect and is also
       why fixing it costs no suite. (context: BUGS.md T20)
+- [ ] **shebang-flags** — **a shebang carrying FLAGS after `/sh` is classified as not-a-shell-script by
+      both `classify_by_shebang` and the hook's mirror of it, so such a file is skipped by the sweep AND
+      by the commit-time parse arm.** Measured end to end through the real hook 2026-08-27, on the
+      adversarial review of T21's adoption: an extensionless staged file opening `#!/bin/sh -e` with an
+      unterminated `if` is **committed clean, `rc=0`**, while `#!/bin/sh`, `#!/bin/bash -e` and
+      `#!/usr/bin/env bash` are all refused. The mechanism is that `'#!'*bash*` matches anything
+      containing `bash` while the two `sh` patterns — `'#!'*/sh` and `'#!'*' sh'` — require the line to
+      END there. ⚠️ **Pre-existing and currently harmless: no tracked file in this repo has such a
+      shebang** (all 21 tracked `*.sh` read, plus the hook), so this buys correctness rather than
+      coverage today and there is no page, byte or check to move.
+      ⛔ **BOUND: it is one `case` pattern, but do NOT land it as a one-token edit.** The pattern has to
+      admit `#!/bin/sh -e` and `#!/usr/bin/env sh -eu` while still REFUSING `#!/usr/bin/env zsh` and
+      `#!/bin/zsh -f` — `bash -n` is the wrong parser for zsh and the classifier skips it on purpose —
+      and a lazy `'#!'*/sh*` matches `/shell`, `/shibboleth` and `zsh`. So it wants a table of
+      accept/refuse shebangs as a `Tools/fault-inject.sh hook_parses` row (rows 5 and 6 are the
+      precedent), and the sabotage to watch is the pattern reverted. **Fix BOTH copies in the same
+      commit** — `.githooks/pre-commit` and `Tools/check-tools-compile.sh`'s `classify_by_shebang` — or
+      the two classifiers diverge, which is the thing T21's arm was written to mirror.
+      ⚠️ Cost: `Tools/` is staged, so it pays the full suite; budget one commit.
+      (context: BUGS.md T21, `#### Selection mirrors check-tools-compile.sh's classifier`)
 - [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
       scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~7 hours
