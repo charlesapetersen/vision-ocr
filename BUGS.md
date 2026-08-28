@@ -35,10 +35,29 @@ picture-route pages only 7 have `satFrac >= 0.01326` and exactly the 6 eye-read 
 positives over 48.** ⛔ **The tempting form of that — "agrees on 12 of 12 window pages" — is a check that
 CANNOT FAIL and was caught in draft**: the threshold is the argmin of the positive class and
 `sheetFrac <= satFrac` puts every unread negative out of its reach. ⚠️ Sampled corpus at `PAGES=2`, **do not
-scale it**; 5 of the 6 collateral pages have never been dumped and read, and **two of those five have
-mark-shaped columns thicker than either confirmed red-ink page** (`Glazer_2002` p1, `Stanford_1891` p3) —
-the direction that would make the recommendation too pessimistic, carried as the queue's
-`colour-window-dump`. The entry
+scale it**.
+⛔ **THE TWO PAGES THAT MEASUREMENT NAMED AS ITS OWN RISK WERE READ 2026-08-28 AND ONE OF THEM IS REAL, SO
+FIVE OF ITS FIGURES MOVE AND THE RECOMMENDATION FIRMS** (`#### The two unread window pages, READ`, the
+queue's `colour-window-dump`). **`Glazer_2002` p1 carries a printed red masthead rule (one component,
+297 px, stroke width 51) and the red "THE NEW REPUBLIC" brand banner in knockout type (four components,
+142 px) — 439 of its 758 counted pixels, and it is published GREY today**; the other 319 px across 65
+components are chroma fringe on the black display type, which is the mechanism this entry's first draft
+attributed to `HarpersMagazine` p4 and the review refuted **there**. **`Stanford_1891` p3 is brown foxing on
+the paper** — its two largest components, 725 of 795 counted pixels, and not one counted pixel on the
+typescript — **a THIRD artefact class that is on the sheet AND in one region, so `sheetFrac` keeps it and
+`topPx`/`topRun` read it as a mark**: 397 px at stroke width 11, 3.2x this register's own `topPx >= 124`
+mark floor, which is therefore refuted as a mark test on a reading. What moves: the curve's `b = 0.011`
+row **50.0% → 58.3%**, the headline **54.5% at [0.012, 0.022] → 58.3% at [0.008, 0.012)**, the spend share
+**85.6% → 83.4%**, the two flipped pages **90.8% → 93.1% of the collateral**, and *"six of the eight
+real-colour pages are reachable"* → **seven of the nine**. ⛔ **The `0 false positives over 48` becomes a
+false NEGATIVE and cannot be repaired**: the same bar fires on the same six, and reaching the seventh needs
+0.00550, which admits `Stanford_1891` p3 (0.00770) and `Atkinson_1939` p3 (0.00577) — **the real page sits
+BELOW both artefacts that reaching it costs**, so `sheetFrac`'s published **2.96x** margin is **1.23x**.
+✅ **RECOMMENDATION UNCHANGED AND FIRMER: leave 0.06 alone** — ⛔ **but `0.02` is no longer the number to
+want** (it misses the confirmed red page); the replacement is **~0.011**, which is 1.4x the ~0.008 floor
+against 0.02's 2.5x, so the fallback is worse placed rather than better. ⚠️ **Three of the five collateral
+pages are still unread and `Atkinson_1939` p3 is the one that matters**, because it is what fires at the
+repaired bar. The entry
 is still OPEN because the pamphlet still loses its red; what remains is the owner's number.
 ✅ **`C29`'s routing half (A) SHIPPED 2026-08-25** — `#### (A) SHIPPED`. A third `RebuiltPage.Content` case
 carrying no URL, a `passThrough: Set<Int>` on `flatten`, and `makeSearchablePDF` asking
@@ -596,10 +615,15 @@ last eight columns and `C27-MASKTERMS-2026-08-26.tsv`** (50 rows: the 40 pages a
 10 same-scan controls, all 21 pre-existing columns reproducing `SATFRAC-2026-08-19.tsv` digit for digit
 on 50 of 50). ⛔ **"Two terms, not one" is now a measurement rather than an inference: each term
 separates exactly the artefact it was proposed for and NEITHER separates both** — `sheetFrac` puts
-`Ford_1941` p5 at 0.00448 against a floor of 0.01326 over the eight real-colour pages (2.96x) and is
+`Ford_1941` p5 at 0.00448 against a floor of 0.01326 over the eight real-colour pages (2.96x — ⛔ **1.23x
+from 2026-08-28**, over NINE real pages, and at that floor it admits `Stanford_1891` p3 (read as foxing) and `Atkinson_1939` p3 (UNREAD): `#### The two unread
+window pages, READ`) and is
 blind to `HarpersMagazine` p4 (`edgeN` 0, unmoved); `topPx` puts `HarpersMagazine` p4 at 6 px against a
-floor of 124 (20.7x) and is useless on `Ford_1941` p5, whose largest component is 55,743 px. The
+floor of 124 (20.7x) and is useless on `Ford_1941` p5, whose largest component is 55,743 px — ⛔ **and that
+124-px floor is refuted as a MARK test 2026-08-28 by a 397-px brown paper stain with a stroke width of 11**.
+The
 ordering improves — 68 of 104 real-against-already-keeping pairs inverted under `satFrac`, **27 of 104**
+(⛔ **80 of 117 and 35 of 117 from 2026-08-28** over NINE real pages: both degrade, and 2.51x becomes 2.29x)
 under `sheetFrac` — ⚠️ but it does not reach zero, no bar is proposed, and this entry's own published
 *"0.49%"* for `Ford_1941` p5 was computed from the LOCALITY figure while stated as the outside-the-sheet
 one (`sheetFrac` is 0.00448).
@@ -5024,7 +5048,7 @@ observation that every word on every page survived stands untouched and untested
 2. **The 73 sampled pages in 22 documents still shrunk at 0.045**, and the 32.4% of the band's byte
    cost spent on two pages a reader cannot tell apart: both are `C28`, which is OPEN.
 
-### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN (all three bounded items are DONE as of 2026-08-26 — (a) the mask terms, (b) the byte price, (c) the constant SPLIT — and the WINDOW for the colour bar's value is MEASURED as of 2026-08-28, with a recommendation to leave 0.06 alone; the number itself is still the owner's)
+### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN (all three bounded items are DONE as of 2026-08-26 — (a) the mask terms, (b) the byte price, (c) the constant SPLIT — and the WINDOW for the colour bar's value is MEASURED as of 2026-08-28, with a recommendation to leave 0.06 alone that FIRMED the same day when the two pages that measurement named as its own risk were READ — one carries a printed red rule and a red brand banner and one is brown foxing; the number itself is still the owner's)
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct
 mechanism, distinct constant, distinct harm — fixing either one does not address the other.)*
 
@@ -5621,8 +5645,16 @@ BOTH, so "two terms, not one" is a measurement now rather than an inference.**
   0.00448** against a floor of **0.01326** over the eight real-colour pages, **2.96x** clear. It is
   **blind** to `HarpersMagazine` p4, which has `edgeN` **0** and does not move at all (0.02017 either
   way).
+  ⛔ **THE 2.96x IS SUPERSEDED AS OF 2026-08-28 AND SO IS THE CLAIM ABOVE IT: the real-colour set is NINE
+  pages, the floor is `Glazer_2002` p1's 0.00550, and the margin is 1.23x** — and at that floor this term
+  admits `Stanford_1891` p3 (0.00770, read as brown foxing) and `Atkinson_1939` p3 (0.00577), so it no
+  longer separates the real class from the artefacts at all. **What it still separates is `Ford_1941` p5**,
+  which stays below at 0.00448. Read `#### The two unread window pages, READ`.
 * `topPx` — the largest component's area — puts **`HarpersMagazine` p4 at 6 px** against a floor of
-  **124 px** over the same eight, **20.7x** clear. It is **useless** on `Ford_1941` p5, whose largest
+  **124 px** over the same eight, **20.7x** clear. ⛔ **And that 124-px floor is refuted as a MARK test
+  2026-08-28**: `Stanford_1891` p3's largest component is **397 px with a `medianRun` of 11**, 3.2x the
+  floor and 2.2x `1954 - Why` p4's stroke width, and it is a **brown paper stain** read at 1:1. A third
+  artefact class, on the sheet and in one region, which is where both of these terms are blind together. It is **useless** on `Ford_1941` p5, whose largest
   component is **55,743 px**, the **fourth** largest in the file. ⚠️ A draft said *sixth*, which is
   that page's rank by **`satN`** (3,073) — two columns conflated in the sentence whose whole point is
   that they are different terms. ⛔ **And do not read the two margins as comparable, or `topPx` as a
@@ -5692,6 +5724,19 @@ was not fitted on**: `AI 2027` p24, which this section calls a real coloured mar
 reads `sheetFrac` **0.01298 — 1.67% under the bar**. So "8 of 8" is 8 of the 8 the thresholds were cut
 against and **8 of 9** against every page this entry calls real colour, with the only quasi-held-out
 case failing. What is not post-hoc is the 2.96x and 20.7x margins and the inversion count.
+⛔ **BOTH OF THOSE ARE SUPERSEDED 2026-08-28 AND THE SWEEP THAT CORRECTED THE 2.96x MISSED THE INVERSION
+COUNT IN THIS SAME SENTENCE**, which is the shape this register keeps finding. Over NINE real-colour pages
+the pairs are 9 x 13 = **117**, not 104, and every figure degrades: `satFrac` **80 of 117 (68.4%)** against
+the published 68 of 104 (65.4%), `sheetFrac` **35 of 117 (29.9%)** against 27 of 104 (26.0%), the ratio
+**2.29x** rather than 2.51x, and the keepers ranked above a real page under `sheetFrac` **3-8** rather than
+3-6. Re-derived from `C27-MASKTERMS-2026-08-26.tsv`; **the published figures were better than the truth**,
+which is the direction this project treats as the worse error. Found by the adversarial review of the diff
+that corrected the 2.96x.
+⛔ **AND THE CONJUNCTION MISSES A SECOND REAL PAGE AS OF 2026-08-28**: `Glazer_2002` p1, read as a printed
+red rule plus a red brand banner, has `sheetFrac` **0.00550** and is refused by the same term — so "8 of 8"
+is **8 of 10** against every page this entry now calls real colour, and the 2.96x above is superseded by
+**1.23x**. ⚠️ The stain that came with it, `Stanford_1891` p3, does **not** fire the conjunction
+(0.00770 < 0.0132), so what this bullet's own arithmetic loses is a real page and not a spurious one.
 ⚠️ **One boundary to name rather than defend**: the population is `satFrac >= 0.0012`, a floor this
 entry itself retracted as a corpus constant (`HarpersMagazine` p4 reads 16.8x it), so it bounds the run
 and orders nothing. What keeps it honest is that *this entry* named "the 40 pages above the noise band"
@@ -6228,6 +6273,18 @@ measurement under it instead of a guess.**
 
 #### The window, MEASURED — 2026-08-28
 
+⛔ **FIVE FIGURES IN THIS SECTION ARE SUPERSEDED BY `#### The two unread window pages, READ` THE SAME DAY,
+because one of the two pages it names as unread turned out to carry a real mark.** Read that section before
+quoting anything here. What moves: the curve's **`b = 0.011` row** (6 real → **7**, 50.0% → **58.3%**), the
+**54.5% at [0.012, 0.022]** headline (→ **58.3% at [0.008, 0.012)**), **85.6%** of the spend buying no
+colour (→ **83.4%**), **90.8%** of the collateral being two flipped pages (→ **93.1%**), and *"six of the
+eight real-colour pages are reachable"* (→ **seven of the nine**). ⛔ **And the `0 false positives over
+all 48` result becomes a false NEGATIVE**: the same bar still fires on exactly the six it did, and one of
+the pages it does not fire on is now known to be real. **The RECOMMENDATION does not move and is firmer** —
+the bar that reaches the seventh page admits the whole window and sits 1.4x above the ~0.008 floor. The
+figures are left in place below rather than rewritten, because they are the arithmetic the later section
+re-derives against.
+
 **The sentence two sections up is answered, and it needed no new sweep: the window is NOT empty, and it is
 NOT usable.** The owner's request, 2026-08-27, carried as the queue's `colour-bar-window` — the one
 unmeasured sentence left under this entry. Measured by joining three artefacts already in the tree:
@@ -6310,16 +6367,23 @@ below, since a page's `real` label is not independent of its `satFrac` and `satF
 0.011       12     6     6           50.0%    +50.1KB  +297.7KB         14.4%
 ```
 
+⛔ **That last row is SUPERSEDED the same day — `12  7  5  58.3%  +57.7KB  +290.1KB  16.6%`**
+(`#### The two unread window pages, READ`). The other five reproduce exactly.
+
 At `b = 0.041` the fifth collateral page is the tie above and enters one tick lower, which is why the row
 reads 4. **The best any value reaches is 6 real pages of 11 — 54.5% — at `b` anywhere in [0.012, 0.022], and
-by bytes it never exceeds 14.7%.** Nothing between 0.024 and 0.036 is in the window, so 0.030 and 0.036 are
+by bytes it never exceeds 14.7%.** ⛔ **SUPERSEDED: 7 of 12 — 58.3% — at `b` in [0.008, 0.012), 16.6% by
+bytes** — a bar that admits the whole window and sits 1.4x above the ~0.008 floor, which is a *worse* place
+for the constant and not a better one. Nothing between 0.024 and 0.036 is in the window, so 0.030 and 0.036 are
 the same bar. ⚠️ No picture page reads `sat` exactly 0.060 and none reads 0.008–0.011, so `>` against `>=`
 changes nothing at either endpoint.
 
 **⛔ The price, over the set a bar actually selects — which is what the section above says it has to be
 measured over.** For the whole window: **1,482.9 → 1,830.7 KB, +347.8 KB, 1.2345x**, of which the six pages
 worth reaching are **808.6 → 858.7 KB, +50.1 KB, 1.0620x** and the six that come along are
-**674.3 → 972.0 KB, +297.7 KB, 1.4415x** — so **85.6% of the spend buys no colour**. ⚠️ **That 85.6% is the
+**674.3 → 972.0 KB, +297.7 KB, 1.4415x** — so **85.6% of the spend buys no colour**. ⛔ **SUPERSEDED the
+same day — 7 real pages at +57.7 KB against 5 at +290.1 KB, so it is 83.4%**
+(`#### The two unread window pages, READ`); the whole-window total does not move. ⚠️ **That 85.6% is the
 WHOLE window, which only a bar at or below 0.011 selects; at the recommended-precision band [0.012, 0.022]
 the collateral delta is +290.1 KB and the share is 85.3%** — a first draft printed the whole-window figure
 beside the best-case bar in all three files, which is the mismatch this very section's heading forbids.
@@ -6331,7 +6395,8 @@ other were **18.0%** (the shape term's wiring) and **61.0%** (the cheapest page-
 ⛔ **And 77.7% of the whole window's cost is TWO pages that are not about colour at all**: `Ford_1941` p3
 and `Stanford_1891` p2 flip out of the all-text class when promoted (`bgF` 8→2, 34→32 and 31→29 word boxes),
 so their background goes from an eighth to a half and they cost **+270.2 KB between them — 90.8% of the
-collateral**. That is (b)'s measured second-order effect landing entirely on the wrong side: **0 of the six
+collateral** (⛔ **93.1% from 2026-08-28**, the collateral class having lost `Glazer_2002` p1 to a reading;
+the +270.2 KB and the 77.7% do not move). That is (b)'s measured second-order effect landing entirely on the wrong side: **0 of the six
 real pages flip.** ⚠️ Not "pure waste" — leaving the all-text class is C28's protection, and buying it
 through a colour knob is the wrong seam, not a free lunch; whether either page is one of C28's 16 measured
 content-losers is **not established here**.
@@ -6344,16 +6409,23 @@ agreements are unable to disagree.** The threshold is the **argmin of the positi
 of those eight **are** the six `YES` rows here, so every positive agrees by construction. And `sheetFrac` is
 `satFrac` with a subset of components removed, so `sheetFrac <= satFrac` structurally (true on 50 of 50
 rows); the five unread negatives read `satFrac` 0.01116 / 0.01066 / 0.00784 / 0.00550 / 0.00052, **all below
-the threshold**, so they cannot fire whatever is printed on them. That leaves exactly **one** informative
+the threshold**, so they cannot fire whatever is printed on them. ⛔ **THAT LIST IS FOUR UNREAD NEGATIVES
+AND ONE READ POSITIVE AS OF 2026-08-28 — the 0.00550 is `Glazer_2002` p1 — AND THE CONSEQUENCE IS SHARPER
+THAN THE DIAGNOSIS: the draft check killed here for being unable to fail would TODAY read 11 of 12 and
+FAIL, on the one row it acquired.** The diagnosis was right; its arithmetic has a date on it. That leaves exactly **one** informative
 row — `Ford_1941` p5, `satFrac` 0.04082 falling to `sheetFrac` 0.00448 — which is the 2026-08-26 finding
 re-labelled. Worse, only **7** of the 12 pages have an eye-read verdict at all; the other five have an
-*absence* from a table. This register keeps a running count of checks that could not fail; that draft was
+*absence* from a table. (⛔ **NINE and three from 2026-08-28**, the two pages this section named as its own
+risk having been read.) This register keeps a running count of checks that could not fail; that draft was
 about to add one as a ✅ headline in three files.
 ✅ **The statement that IS informative, and it is a stronger result than the one it replaces**: because
 `sheetFrac <= satFrac`, the whole grey population can be screened. Of the **48** grey picture-route pages in
 the sample, only **7** have `satFrac >= 0.01326`, all 7 have a mask row, and **exactly the 6 eye-read
 real-colour ones fire** — so `sheetFrac >= 0.01326` has **0 false positives over all 48**, with one
-informative negative. The positives are still fitted; the 42 non-firing pages and `Ford_1941` p5 are not.
+informative negative. ⛔ **SUPERSEDED the same day, and the failure is on the OTHER side: the same bar
+fires on the same six and one of the pages it does NOT fire on is now known to be real, so it is 6 of 7
+real with one false NEGATIVE — and lowering it to reach the seventh admits ONE CONFIRMED ARTEFACT AND ONE UNREAD PAGE, both sitting ABOVE
+it.** `#### The two unread window pages, READ` has the screen at both bars. The positives are still fitted; the 42 non-firing pages and `Ford_1941` p5 are not.
 ⚠️ The conjunction `sheetFrac >= 0.0132 AND topPx >= 124` adds nothing here (all six positives clear 124),
 and `topPx` alone agrees on only **7 of 12**, which is the mask section's own finding that `topPx` is a
 worse ordering than the column it would replace. So the window's uselessness is not a shortage of signal;
@@ -6363,7 +6435,8 @@ it is that the signal is in a term nothing reads.
 buys more than half of what it spends, the best available bar still admits five pages that carry nothing,
 and the two dearest pages it admits are dear for a reason unrelated to colour. **Six of the eight**
 real-colour pages this entry was opened over are reachable — but by `sheetFrac`, which is measured, and not
-by moving this bar. ⛔ **SIX, not eight, and a first draft said eight in a sentence that contradicted its
+by moving this bar. (⛔ **SEVEN of the NINE from 2026-08-28**, `Glazer_2002` p1 having been read; and
+`sheetFrac` reaches six of those seven, which is that term's own correction below.) ⛔ **SIX, not eight, and a first draft said eight in a sentence that contradicted its
 own opening premise**: `2013 - Silicon Valley Program Transcript` p13/p26 are `route=1-bit`, and since
 `wantColour` is `!useBilevel && shouldKeepColour(…)` no colour-side statistic reaches them at any value —
 they want the route bar, exactly as `colourSaturationThreshold`'s own doc comment already says.
@@ -6372,7 +6445,10 @@ they want the route bar, exactly as `colourSaturationThreshold`'s own doc commen
 best-precision band [0.012, 0.022] and reaches all six real pages of the sampled window while admitting
 five that carry nothing. ⚠️ It is *not* a designed value: 0.02 appears in the section above only as the
 illustration of a bar at which the two renamed checks would go red, and nothing has measured its corpus
-cost.
+cost. ⛔ **0.02 IS NO LONGER THE NUMBER TO WANT, 2026-08-28: it misses `Glazer_2002` p1, now read as a real
+red rule and a red brand banner.** The replacement is **~0.011**, and it is a worse place for the constant
+rather than a better one — 1.4x the ~0.008 floor against 0.02's 2.5x. See
+`#### The two unread window pages, READ`.
 
 **⚠️ What this does NOT establish, named rather than implied.**
 - ⛔ **TWO OF THE FIVE UNREAD COLLATERAL PAGES HAVE MARK-SHAPED COLUMNS, AND IF EITHER IS REAL THE
@@ -6389,6 +6465,14 @@ cost.
   Neither page has been dumped. **That is one saturation thumbnail each, by the step the entry already used
   for the ten, and it is carried as the queue's `colour-window-dump`.** Found by the adversarial review of
   this diff, which read the columns the section had and had not printed.
+  ✅ **BOTH WERE READ 2026-08-28 AND THIS BULLET IS DISCHARGED — `#### The two unread window pages, READ`.**
+  `Glazer_2002` p1 **IS** real (a red masthead rule and a red brand banner) and `Stanford_1891` p3 is
+  **brown foxing on the paper**. Every prediction above holds except its *reason* for the
+  0-false-positives collapse: ⛔ it is a false **NEGATIVE**, not "1 of 48", and what makes it
+  unrepairable is not the 1.23x margin against `Ford_1941` p5 — which stays below the new floor — but
+  `Stanford_1891` p3 (0.00770) and `Atkinson_1939` p3 (0.00577) sitting **above** `Glazer_2002` p1's
+  0.00550. ⛔ And the recommendation **firms** rather than softening: the bar that reaches the seventh
+  real page admits the whole window and sits 1.4x above the ~0.008 floor.
 - **It is the SAMPLED corpus, and thinner than a first draft said.** 441 rows over 233 files; ⛔ the sweep
   ran at **`PAGES=2`**, per `SATFRAC-2026-08-19.tsv`'s own header — **1.89 pages a document, not the "up to
   12" that draft claimed**, which is the 12-per-document sweeps' figure (`INKBAR`, 2,129 rows) and was wrong
@@ -6401,7 +6485,10 @@ cost.
   contribute 2 rows each, so the distinct row count is **439 of 441**. ✅ **The duplicate enters no numerator
   here** — all four rows read `route=1-bit` with `satFrac` 0.00000, so 61 / 13 / 48 / 12 / 36 / 8 are
   untouched. `SATFRAC` was not in that finding's own sweep of eleven artefacts.
-- **5 of the 6 collateral pages have never been dumped and read.** Only `Ford_1941` p5 has an eye reading
+- **5 of the 6 collateral pages have never been dumped and read.** ⛔ **THREE of five from 2026-08-28**:
+  `Glazer_2002` p1 left the class (real) and `Stanford_1891` p3 was read (foxing), leaving `Ford_1941` p3,
+  `Atkinson_1939` p3 and `Stanford_1891` p2 — of which **`Atkinson_1939` p3 is the one that matters**,
+  because it fires at the repaired `sheetFrac` bar. Only `Ford_1941` p5 has an eye reading
   (*MISATTRIBUTED*). For the other five, "carries nothing worth keeping" rests on `sheetFrac`/`topPx` plus
   absence from the entry's ten — the direction that would make this recommendation **too pessimistic**.
   ⛔ **Exactly ONE of the five is the sibling of an already-read surround page** — `Ford_1941` p3
@@ -6429,7 +6516,9 @@ cost.
   — but only 1 of the 12 pages has been measured both ways, and a 0.001 gap must never be read as a
   separation.
 - **The `real` column is borrowed, not earned.** All six come from this entry's existing eye-read table;
-  no page was dumped or looked at in this measurement.
+  no page was dumped or looked at in this measurement. ✅ **Two of the twelve were dumped and read
+  2026-08-28** — the two this section named as the risk — so the column is now seven borrowed plus two
+  earned, and three rows still rest on an absence.
 - ⚠️ **Two figures here are NOT re-derivable from the three TSVs**, against this section's own opening
   guarantee: the `real` column and the `0.044` cold reading both come from this entry's prose. Everything
   else is.
@@ -6446,6 +6535,206 @@ committed TSV's numbers depend on the distinction (they do not — both columns 
 `C27-MASKTERMS-2026-08-26.tsv`, so no artefact moves), and the `PAGES=2` correction above was checked
 against `CLAUDE.md`'s other "up to 12 pages a document" statements, which are C26's `INKBAR` sweeps and are
 right as written.
+
+#### The two unread window pages, READ — 2026-08-28
+
+**ONE OF THE TWO IS A REAL MARK AND ONE IS A STAIN, and both verdicts change a published figure.** The
+bullet above named these two pages as the one thing that could move the recommendation, and it was carried
+as the queue's `colour-window-dump`. Read at 1:1: **`Glazer_2002_Higher Ed_New Republic` p1 carries a
+printed red masthead rule and a red brand banner** — a confirmed C27 loss this entry did not have —
+**while `Stanford_1891` p3's mark-shaped 397-px component is brown foxing on the paper.**
+⛔ **THE RECOMMENDATION HOLDS AND IS FIRMER, WHICH IS THE OPPOSITE OF WHAT THE BULLET EXPECTED.** The real
+page raises the best page-precision from **54.5% to 58.3%** exactly as predicted — but it does so only at a
+bar that admits the WHOLE window, and that bar sits **1.4x** above the ~0.008 floor at which every
+cream-paper text page is re-promoted to three channels. **So `0.02` stops being the number to want and its
+replacement, ~0.011, is worse placed rather than better.**
+
+**The instrument, and its control.** `$STATE/c27-instrument/dump.swift`, compiled against `Sources/` and
+deliberately **not** in `Tools/` for the reason `$STATE/c29-instrument/` and `$STATE/c30-instrument/` are
+not (a committed version wants a `--self-test`, and a `Tools/` commit pays the full suite). It is
+`Tools/score-threshold-loss.swift`'s own sequence in order: `renderGrey` at `rebuildDPI` — **the warm-up,
+because `saturation(of:)` is not a pure function of the page and production renders grey first** — then
+`saturationThumbnail`, then `saturation(ofRGBA:)` and `saturatedFraction(above: 0.25)`, then the mask from
+`forEachSaturation` handed to `shapeComponents`, character for character as `maskTerms` builds it. It
+refuses (exit 7) if the components' total area is not `satFrac`'s numerator, the same control that tool
+exits 6 on. ✅ **All TEN mask columns reproduce `C27-MASKTERMS-2026-08-26.tsv` digit for digit on both
+pages** — Glazer p1 `sat` 0.012 / `satFrac` 0.00550 / `satPx` 758 / `satN` 70 / `topPx` 297 / `topShare`
+0.39182 / `topRun` 51 / `edgeN` 0 / `edgeShare` 0.00000 / `sheetFrac` 0.00550 on a 317x435 thumbnail behind
+a 1590x2177 grey render at 200.1 DPI; Stanford p3 0.042 / 0.00784 / 795 / 13 / 397 / 0.49937 / 11 / 1 /
+0.01761 / 0.00770 on 264x384 behind 992x1441 at 150.1 DPI.
+⛔ **BUT THE TEN COLLAPSE TO SIX AND SEVEN, AND THE CONTROL DOES NOT COVER THE CROPS — a draft credited it
+with both and the review of this diff refuted both.** `satPx` cannot disagree with `satFrac`: the probe's
+own exit-7 guard *forces* `satPx / pixels == satFrac`. `topShare` is `topPx / satPx` exactly, and
+`edgeShare` and `sheetFrac` are two renderings of one quantity, `edgePx` — which on Glazer p1 is 0, so
+`edgeN` 0 forces both. **Informative: 6 of 10 on Glazer p1 and 7 of 10 on Stanford p3 — 13 facts of 20.**
+That is the same correction this entry already applied to (b)'s negative control (*"19 columns are 12 that
+carry information plus 7 that cannot disagree"*) and it was not applied here until the review. **And what
+it covers is the MASK ARRAY** — legitimately the `-mask.png`, painted straight off it — **not `cropPNG`'s
+thumbnail-px to page-points mapping**, an independent path with a clamp and a y-flip, which is where the
+verdicts come from. That mapping was checked separately by the review, against both pages' real media
+boxes, and holds; it is not what these ten columns say. **No new artefact and nothing in
+`Sources/` moved**, so the dated list is unchanged and the count of files reproducible from nothing in the
+tree stays **five**.
+
+**`Glazer_2002` p1 — REAL, and it is the class this entry was opened over.** Page 42 of *The New Republic*,
+3 June 2002; a three-column page of type under a black display masthead. Two red spot-colour marks:
+
+* **a solid red rule under the masthead — ONE component, 297 px, `medianRun` 51.** It is the `topPx`
+  component, and a median row run of 51 px on a 317-px-wide thumbnail is a rule and cannot be a glyph.
+  Read at 220 DPI over a 113x32 pt page rect at (66, 675).
+* **the red vertical brand banner down the left margin, carrying what reads as "THE NEW REPUBLIC" in
+  knockout white type — FOUR components, 142 px** (75 + 24 + 23 + 20), all inside the same 4-px-wide thumbnail column at
+  `x` 14, split by the knockout letters. Read at 220 DPI over a 28x62 pt rect at (14, 644).
+
+Together **439 of the 758 counted pixels — 57.9%.** ⛔ **The remaining 319 px across 65 components are
+chroma fringe on the black display type of "CAMBRIDGE DIARIST"**, verified at 1:1 on the two largest of
+them (27 px and 26 px) and unmistakable as magenta outlines on the dumped mask. ⚠️ **That is worth
+recording as an instrument fact rather than a defect**: this entry's first draft explained
+`HarpersMagazine` p4 as *"chroma fringing on black letters"* and the review of that diff **refuted it for
+that page** (a page-wide cast, ~1,290 components, median luminance paper-bright). The mechanism is real and
+was attributed to the wrong page — here it is **42.1% of `satFrac`'s own numerator**. ⛔ Same class as
+`2013 - Silicon Valley Program Transcript` p13/p26 in `#### ⛔ And the ten pages were LOOKED AT`'s table
+(*"red brand banner, knockout type"*), with one difference that matters: those two are on the **1-bit**
+route, where no colour-side statistic reaches them at any value, and **this one is picture-route and
+published grey today**, so it is the first confirmed real-colour page the colour bar itself could reach and
+does not.
+
+**`Stanford_1891` p3 — NOT real, and the way it fails is new.** An 1891 typescript on aged, browning paper.
+Its two largest components — **397 px (`medianRun` 11) and 328 px (`medianRun` 19), 725 of the 795 counted
+pixels, 91.2%** — are **brown foxing/water stains in the left margin**, read at 220 DPI over page rects
+54x77 pt at (0, 243) and 66x55 pt at (0, 318). **Not one counted pixel is on the typescript**; the mask
+picture is the evidence and it is unambiguous.
+⛔ **It is a THIRD artefact class and it defeats BOTH of the terms `#### The two mask terms, MEASURED`
+proposed.** It is *on the sheet* (`edgeN` 1, `edgeShare` 0.01761), so `sheetFrac` keeps 0.00770 of it and
+the outside-the-sheet term cannot see it; and it is *one large region with a stroke-width proxy of 11*, so
+the locality term reads it as a mark — `topPx` 397 clears the register's own `topPx >= 124` mark floor by
+**3.2x** and `topRun` 11 is **2.2x** `1954 - Why` p4's 5. **So `topPx`/`topRun` are refused as a mark test
+on a reading rather than by argument: the page that most looks like a mark by those columns carries no ink
+at all.** ⚠️ **Stated narrowly, because this register had already refused `topPx` as a scalar and as a
+ranking**: 124 was the *minimum of the real class*, and clearing a class minimum was never advanced as
+sufficient. **What is new is that the PAIR has a joint blind spot** — a mark-shaped artefact that is on the
+sheet — which *read them as a pair* does not cover, and it bites only at a `sheetFrac` bar low enough to
+reach `Glazer_2002` p1: at the published 0.0132 the stain is correctly refused. The review of this diff
+narrowed both halves of this sentence. ⚠️ It is also not `HarpersMagazine` p4's cast — 13 components
+against ~1,290, largest 397 px against 6 — which is why "a cast" was not the answer available by
+inspection of the columns.
+
+**⛔ What moves in `#### The window, MEASURED`, re-derived and not patched.** Every figure below comes from
+re-running the whole join over the three TSVs with the two new verdicts, by a separate code path.
+
+* **The precision curve: five of six rows reproduce exactly** (`b` 0.041 → 4 admits / 0 real / 4 coll /
+  0.0%; 0.040 → 6/1/5/16.7%; 0.038 → 8/3/5/37.5%; 0.036 → 10/5/5/50.0%; 0.022 → 11/6/5/54.5%). **Only the
+  last row moves**: `b = 0.011` was **12 / 6 / 6 / 50.0%** and is **12 / 7 / 5 / 58.3%**, byte-precision
+  14.4% → **16.6%**.
+* **So the best page-precision is 58.3% at `b` in [0.008, 0.012), not 54.5% at [0.012, 0.022]**
+  — ⛔ **HALF-OPEN AT THE TOP, and a first draft wrote `(0.008, 0.012]`, which is the OLD 54.5% figure**:
+  the bar admits `sat > b` and `Glazer_2002` p1 reads `sat` **0.012** exactly, so at `b = 0.012` it is
+  excluded and the row is 11 admits / 6 real again. The bottom is closed because no picture page reads
+  0.008-0.011. Caught by the review of this diff, which found the wrong interval restated in **eight**
+  places across four files. — and the
+  only bar that beats the old headline is the one that admits the entire window. **0.011 is 1.4x the
+  ~0.008 floor** where the 709 MB monograph's mechanism returns, against 0.02's 2.5x. **The fallback number
+  therefore moves from 0.02 to ~0.011 and gets less defensible, not more.**
+* **The spend shares: 85.6% → 83.4%** of the window's cost buys no colour (real **+50.1 → +57.7 KB**,
+  collateral **+297.7 → +290.1 KB**; the whole window is unchanged at **1,482.9 → 1,830.7 KB, +347.8 KB,
+  1.2345x**). ⚠️ The published 85.3%-at-the-recommended-band figure has **no replacement** rather than a new
+  value: the band is now the whole window, so 83.4% *is* its figure, and the mismatch that section's own
+  heading forbids cannot recur here.
+* **77.7% of the whole window's cost is still the same two pages** — `Ford_1941` p3 (+211.5 KB) and
+  `Stanford_1891` p2 (+58.7 KB), whose `pageIsAllText()` verdict flips `bgF` 8→2 — but that is now
+  **93.1% of the collateral rather than 90.8%**, because Glazer p1 left the collateral class. **0 of the
+  now-seven real pages flip**, unchanged.
+* ⛔ **The ORDERING result is not merely reproduced — it is now COMPLETE AND BACKWARDS.** Sorted by `sat`,
+  the four pages above 0.041 are all collateral (`Ford_1941` p5 0.057, `Ford_1941` p3 0.045,
+  `Atkinson_1939` p3 0.045, `Stanford_1891` p3 0.042) and the six at or below 0.039 are all real (⛔ **at or
+  below** — strictly below 0.039 is four pages, and a draft said six); the two classes
+  overlap in **exactly one place**, the 0.041 tie between `Stanford_1891` p2 and `1954 - Why` p7 that
+  section already names. So *"the six real pages occupy ranks 6-11 of 12"* becomes **the real class is the
+  contiguous BOTTOM of the window and every collateral page is at the top** — and because a bar admits from
+  the top it takes all four collateral pages before any real one. ⚠️ **Do not read rank numbers off a tie**:
+  0.041 and 0.045 are each held by two pages, so ranks 2-vs-3 and 5-vs-6 are print order.
+* **The EYE-READ real-colour count goes 8 → 9** (7 picture-route plus the 2 that are 1-bit), so *"six of
+  the eight real-colour pages are reachable"* becomes **seven of the nine**. ⛔ **Say EYE-READ, because the
+  set of pages this entry CALLS real colour is TEN** — `AI 2027` p24 is the tenth, and its label comes from
+  the mask columns rather than from anyone looking at it. Against that ten it is **seven of the ten**, and
+  the `8 of 8` conjunction figure below is `8 of 10`. The review of this diff caught the two counts sitting
+  ~100 lines apart in one file — of which `sheetFrac >= 0.01326` reaches
+  six. ⚠️ Glazer p1 is **not** an addition to `#### ⛔ And the ten pages were LOOKED AT`'s table: its
+  `satFrac` 0.00550 is under the 0.0012-band-plus that selected the ten, so that table's ten stand as
+  written and it is the eye-read *set* that grew.
+
+**⛔ What moves in `#### The two mask terms, MEASURED`, and this is the sharpest thing in the section.**
+That section's `sheetFrac` result was a floor of **0.01326** over the eight real-colour pages — held by
+`1954 - Why` p4 — against `Ford_1941` p5's 0.00448, **2.96x** clear. With nine real-colour pages the floor
+is **0.00550** and the margin is **1.23x**. ⛔ **And "0 false positives over all 48" cannot be repaired,
+for a reason the queue box did not have.**
+
+* At the published bar the screen still fires on exactly **6 of the 48** grey picture-route pages and all
+  six are real (re-derived here, 6 of 6) — **but it now MISSES a real page**, so it is 6 of 7 real with
+  **one false NEGATIVE**, not a false positive.
+* Lowered to Glazer p1's own 0.00550 it fires on **9 pages: 7 real and 2 not** — because `Stanford_1891`
+  p3 (0.00770) and `Atkinson_1939` p3 (0.00577) both sit **ABOVE** Glazer p1. **The real page it misses is
+  BELOW both artefacts that reaching it admits**, and one of those two is the stain read at 1:1 today. So
+  `sheetFrac` mis-orders this trio exactly as the mean mis-orders the window, in the term the previous
+  section's recommendation pointed at as *"the discriminator that works"*.
+* ⚠️ **The queue box's own reason was different and is not the operative one.** It said the result falls
+  "because p1's `sheetFrac` 0.00550 sits 1.23x above `Ford_1941` p5's 0.00448" — true of the margin, but
+  Ford p5 stays **below** the new floor and is still excluded. What kills it is the two pages in between.
+* ✅ **The screen is complete, so no unknown page can fire**: all **11** grey pages with
+  `satFrac >= 0.00550` have a mask row, and `sheetFrac <= satFrac` structurally puts the other 37 out of
+  reach at that bar.
+* ⚠️ The conjunction `sheetFrac >= 0.0132 AND topPx >= 124` is in the same shape and for the same reason —
+  Glazer p1's 0.00550 refuses it — so it too misses a confirmed real page. `Stanford_1891` p3 does **not**
+  fire it (0.00770 < 0.0132), so the conjunction is unharmed by the stain and harmed by the mark.
+
+**THE RECOMMENDATION, RESTATED: leave `Flattener.colourSaturationThreshold` at 0.06.** Unchanged in
+disposition and firmer in reasoning. Best page-precision 58.3%, best byte-precision 16.6%, and the only bar
+that reaches all seven real pages of the sampled window is one that admits five that carry nothing while
+sitting 1.4x above a floor with a 709 MB failure behind it. ⚠️ **The value is still the owner's, twice
+stated, and nothing in `Sources/` moved.**
+
+**⚠️ What this does NOT establish.**
+- **THREE of the five collateral pages are still unread**, not two: `Ford_1941` p3, `Atkinson_1939` p3 and
+  `Stanford_1891` p2. ⛔ **`Atkinson_1939` p3 is now the one that matters**, because it is the page that
+  fires at the repaired `sheetFrac` bar and would take 7-of-9 to 8-of-9 if it is real. It is the page whose
+  only sibling in the sample is one of the 13 keepers, and neither has ever been dumped.
+- **Two pages of 441 were read**, at `PAGES=2` on the sampled corpus. **Do not scale it** — C26's
+  arithmetic measured a pooled scale-up 6x high on this corpus.
+- **The verdicts are one reader's, at 1:1 on a 220 DPI render.** Glazer p1's red is unambiguous (a solid
+  rule and a knockout banner); Stanford p3's marks are unambiguously *stains*, but "carries nothing worth
+  keeping" is a judgement about a stain rather than a measurement.
+- ⛔ **The 439/319 split named the WRONG unread set in its first draft, and the review of this diff counted
+  it.** The probe ran `topN 4`, so exactly four crops exist and — by area, 297 / 75 / 27 / 26 — they are the
+  rule, ONE banner segment, and the two largest FRINGE components. **So three of the four banner
+  components, 68 px of the 439, have no 1:1 crop at all**: they are identified from the 4x-upscaled ~40 DPI
+  mask, where they sit in the same 4-px column as the segment that was read. The 63 remaining fringe
+  components were likewise not read individually.
+- ⚠️ **"THE NEW REPUBLIC" is one reader's at the resolution limit and is NOT corroborated.** The banner is
+  ~7 x 63 pt, a 21-px-wide column in the 220 DPI crop, and the page's own text layer — which does contain
+  `CAMBRIDGE`, `DIARIST` and `42 : JUNE 3, 2002`, corroborating the rest of the description — has **no**
+  occurrence of `REPUBLIC` there. **The C27 claim does not rest on the brand name**: it rests on the rule,
+  a 297-px component at `medianRun` 51 in printed red, read at 1:1.
+- ⚠️ **The probe's crop mapping assumes an unrotated page whose media box starts at the origin.**
+  `cropPNG` maps through `Flattener.fullBox`, whose origin is forced to `.zero`, and applies no `/Rotate` —
+  unlike the whole-page dump beside it, which goes through `getDrawingTransform`. Both pages qualify
+  (Glazer p1 media 572x783 at (0,0), `/Rotate` 0; Stanford p3 476x691.6 at (0,0), no `/Rotate`), so no
+  verdict here is affected — but `Stanford_1891` p2 in the same file has a media-box bottom of -0.01, so a
+  future page is not safe by default.
+- **Both dumps are WARM**, which is production's, and reproduce the warm columns. Neither page has been
+  read cold, and `#### The window, MEASURED`'s own wobble bullet applies unchanged.
+- **No committed TSV moves.** Every derived figure here comes from the three existing artefacts plus the
+  two verdicts.
+
+**✅ The sibling sweep: the 2.96x margin was live in SEVEN places across FOUR files**, and it is the third
+time in a row a C27 commit's sweep has found a stale figure in more copies than the diff that produced it
+touched. `BUGS.md`'s file header, `#### The two mask terms, MEASURED` itself, that section's post-hoc
+paragraph, `CLAUDE.md`'s C27 paragraph, `ops/autonomous/QUEUE.md`'s C27 box, the `colour-window-dump` box
+(which predicted the 1.23x and is corrected on its *reason* rather than its number), and
+**`Tools/README.md`'s `score-threshold-loss` cell** — which is why this commit stages a `Tools/` path and
+pays the suite for a documentation change. ⚠️ **Not swept for**: whether the *stroke-width* claims
+elsewhere need the stain (`Flattener.ShapeComponent.medianRun`'s own comment says *"a gutter shadow is
+hundreds"*, which a stain at 11 does not contradict), and no committed TSV carries the 2.96x at all, so no
+artefact moves.
 
 ### C28 · The stencil is confined to Vision's word boxes, so ink the recogniser missed is stored at an eighth of the page — HALF FIXED (the shape term is WIRED 2026-08-22 and rescues 13 of the 16 measured losses; three hand-made marks remain, one of them unreachable from this seam)
 *(opened 2026-08-19 out of `C26`'s sub-step 4, on the owner's decision at that day's check-in: move

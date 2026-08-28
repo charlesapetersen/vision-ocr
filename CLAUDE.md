@@ -1295,8 +1295,12 @@ both** — `sheetFrac` (`satFrac` with border-connected components discarded) pu
 **0.00448** against a floor of **0.01326** over the eight real-colour pages, **2.96x**, and is blind to
 `HarpersMagazine` p4 (`edgeN` **0**, unmoved at 0.02017); `topPx` puts `HarpersMagazine` p4 at **6 px**
 against a floor of **124**, **20.7x**, and is useless on `Ford_1941` p5, whose largest component is
-**55,743 px**. ✅ The ordering improves, which is what the entry says its case rests on: **68 of 104**
-real-against-already-keeping pairs inverted under `satFrac`, **27 of 104** under `sheetFrac`.
+**55,743 px**. ⛔ **BOTH MARGINS ARE SUPERSEDED 2026-08-28: the real-colour set is NINE pages, so
+`sheetFrac`'s floor is 0.00550 and its margin 1.23x — and at that floor it ADMITS two artefacts — while the
+124-px `topPx` floor is refuted as a mark test by a 397-px brown paper stain at stroke width 11.** See the
+`colour-window-dump` paragraph below. ✅ The ordering improves, which is what the entry says its case rests on: **68 of 104**
+real-against-already-keeping pairs inverted under `satFrac`, **27 of 104** under `sheetFrac` — ⛔ **80 of
+117 and 35 of 117 from 2026-08-28** over NINE real pages, so both degrade and 2.51x becomes 2.29x.
 ⛔ **It corrects the entry's own arithmetic on the page the argument came from: the published *"0.49%"*
 for `Ford_1941` p5 was `satFrac × (1 − 0.882)`, i.e. computed from the LOCALITY figure while stated as
 the outside-the-sheet one — the border-connected share is 0.89016 and `sheetFrac` is 0.00448.** ⛔ **And
@@ -1426,11 +1430,45 @@ non-`arm` columns (⛔ **a draft said `23 of 23` and no reading of the file yiel
 "up to 12" a draft claimed — and DO NOT SCALE IT**, C26 measured a pooled scale-up 6x high on this corpus
 and its mechanism is the 12-per-document one, so the bias here is a different uncomputed number.
 ⛔ **TWO of the five unread collateral pages have MARK-SHAPED columns and if either is real the recommended
-band moves**: `Glazer_2002` p1 (`topPx` **297**, `topRun` **51**, `edgeN` **0** — modern print, nothing
+band moves** (⛔ **and the rank claim above is a SIXTH moving figure the first draft's own "five figures
+move" list omitted — after the reading the real class is ranks 6-12 plus the 0.041 tie, i.e. the contiguous
+BOTTOM of the window; every "the six" above it should be read as seven**): `Glazer_2002` p1 (`topPx`
+**297**, `topRun` **51**, `edgeN` **0** — modern print, nothing
 border-connected) and `Stanford_1891` p3 (397 / 11), both thicker than either confirmed red-ink page, both
 refused only by *quantity*; p1 being real takes `b = 0.011` to **7 of 12, 58.3%**, beats the headline, moves
 the band off [0.012, 0.022] and drops the 0-false-positives result to 1 of 48 unrepairably. Carried as the
-queue's `colour-window-dump`. ⚠️ Also: **six of the eight** real pages are reachable by `sheetFrac`, not
+queue's `colour-window-dump`.
+✅ **BOTH WERE READ 2026-08-28 AND ONE IS REAL, SO FIVE OF THE FIGURES ABOVE MOVE — AND THE RECOMMENDATION
+FIRMS RATHER THAN SOFTENING** (`BUGS.md` C27 `#### The two unread window pages, READ`; the probe is
+`$STATE/c27-instrument/dump.swift`, outside the tree for the reason `c29-instrument` and `c30-instrument`
+are, and it reproduces all TEN published mask columns on both pages digit for digit). ⛔ **`Glazer_2002` p1
+carries a printed red masthead rule — ONE component, 297 px, stroke width 51, which is a rule and cannot be
+a glyph — plus the red "THE NEW REPUBLIC" brand banner in knockout type, FOUR components in one 4-px column,
+142 px: 439 of its 758 counted pixels, on a picture-route page published GREY today.** Same class as
+`2013 - Silicon Valley Program Transcript` p13/p26 in the entry's own ten, except those are 1-bit and this
+one the colour bar could reach. ⚠️ The other 319 px across 65 components are chroma fringe on the black
+display type — the mechanism a draft attributed to `HarpersMagazine` p4 and the review refuted **there**, so
+it is real and was pinned to the wrong page; 42.1% of `satFrac`'s numerator here.
+⛔ **`Stanford_1891` p3 is BROWN FOXING on the paper** — its two largest components, 725 of 795 counted
+pixels, and **not one counted pixel on the typescript** — **a THIRD artefact class that defeats BOTH mask
+terms at once**: it is on the sheet (`edgeN` 1, `edgeShare` 0.01761) so `sheetFrac` keeps it, and it is one
+big region at stroke width 11 so the locality term reads it as a mark. **`topPx` 397 is 3.2x the register's
+own `topPx >= 124` mark floor, which is therefore refused as a mark test on a reading rather than by
+argument.** ⚠️ Not `HarpersMagazine` p4's cast either: 13 components against ~1,290.
+**What moves**: the curve's `b = 0.011` row **50.0% → 58.3%** (five of six rows reproduce exactly), the
+headline **54.5% at [0.012, 0.022] → 58.3% at [0.008, 0.012)**, the spend share **85.6% → 83.4%**, the two
+flipped pages **90.8% → 93.1% of the collateral** (77.7% of the window unchanged), and *"six of the eight
+real-colour pages"* → **seven of the nine**. ⛔ **The `0 false positives over 48` becomes a false NEGATIVE
+and the queue box's stated REASON was wrong**: the same bar fires on the same six, reaching the seventh needs
+0.00550, and that admits `Stanford_1891` p3 (0.00770) and `Atkinson_1939` p3 (0.00577) — **the real page sits
+BELOW both artefacts that reaching it costs**, where the box blamed the 1.23x margin against `Ford_1941` p5,
+which stays below the new floor and is still excluded. The screen is complete: all 11 grey pages with
+`satFrac >= 0.00550` have a mask row and `sheetFrac <= satFrac` puts the other 37 out of reach.
+⛔ **So `0.02` is NO LONGER the number to want** — it misses the confirmed red page — and its replacement,
+**~0.011**, is a *worse* place for the constant: 1.4x the ~0.008 floor against 0.02's 2.5x. ⚠️ **THREE of
+the five collateral pages are still unread and `Atkinson_1939` p3 is the one that matters**, because it is
+what fires at the repaired bar; two pages of 441 were read, and no committed TSV moves.
+⚠️ Also: **six of the eight** real pages are reachable by `sheetFrac`, not
 eight — `2013 - Silicon Valley Program Transcript` p13/p26 are 1-bit and no colour-side statistic reaches
 them; `Ford_1941` p5's surround share is **89.0%** (`edgeShare`) and not the 88% a draft used, which is
 `topShare` and a different set; exactly ONE of the five is a read page's sibling, not two; **Balanced IS the

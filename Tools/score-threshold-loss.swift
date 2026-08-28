@@ -404,6 +404,17 @@ func maskTerms(ofRGBA buffer: [UInt8], width: Int, height: Int, above floor: Dou
 /// count), `satN`/`topPx`/`topShare`/`topRun` (locality — a mark is one region, a
 /// page-wide cast is thousands of specks), and `edgeN`/`edgeShare`/`sheetFrac`
 /// (outside the sheet — `satFrac` with every border-connected component discarded).
+///
+/// ⛔ **"A mark is one region" is NECESSARY AND NOT SUFFICIENT, measured 2026-08-28**
+/// (`BUGS.md` C27 `#### The two unread window pages, READ`). `Stanford_1891` p3's
+/// largest component is 397 px at `topRun` 11 — one region, a plausible stroke width,
+/// 3.2x the 124-px floor the real class sets — and read at 1:1 it is **brown foxing on
+/// the paper**. It is also ON the sheet (`edgeN` 1, `edgeShare` 0.01761), so the other
+/// term keeps it. That is the pair's joint blind spot, and it bites at any `sheetFrac`
+/// bar low enough to reach `Glazer_2002` p1 (0.00550), a page carrying real printed red.
+/// At the published 0.0132 the stain is still correctly refused.
+/// A substrate stain is neither a cast nor a mark, and neither column can tell.
+/// Do NOT read these four as a sufficient locality test.
 /// They come **after** `satFloor` deliberately: appending leaves the 21 columns
 /// `THRESHOLD-LOSS-2026-08-18.tsv` and `SATFRAC-2026-08-19.tsv` hold at the same field
 /// indices, so both files stay readable by the same `cut -f` and the earlier figures
