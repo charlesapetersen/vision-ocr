@@ -3486,6 +3486,28 @@ happens.**
       2026-08-25 exception ("a pair sharing a fixture is one item") argues the same mutant twice over one
       fixture is one item too.
       (context: BUGS.md R25 — FIXED; `#### It belongs here` is this item's specification)
+- [ ] **rescue-ignored** — **the rescue net reports `COMPLETE — tracked and untracked` over a strand whose
+      GITIGNORED files it did not copy.** Found 2026-08-29 while adopting `vo-20260828-060044-25839`: its
+      `Tools/mutation-out/logic_R25-depth-aware-prune.log` (103,159 B) was the ONLY evidence for the 280 s
+      row that adoption published, and it sat in neither the `.patch` nor the `.status` while
+      `$STATE/daemon.log` called the rescue COMPLETE. Copied out by hand to
+      `$STATE/rescue/vo-20260828-060044-25839.untracked-mutation-out-logic_R25-depth-aware-prune.log`.
+      ⛔ **This is NOT `ops/autonomous/README.md` D13, which is FIXED**: D13's payload was untracked but
+      **not ignored**, so `git status --porcelain` could see it and the net's own completeness test could
+      be taught to. A gitignored path is invisible to `--porcelain` by construction, so the same test
+      cannot be extended — it needs `--porcelain --ignored` or an explicit allowlist, and a blanket
+      `--ignored` would sweep `build/` and `Tools/mutation-out/`'s other logs into every snapshot.
+      ⚠️ **The banner is the defect, not the omission.** Copying every ignored file is wrong (`build/` is
+      hundreds of MB); what is wrong today is claiming "tracked and untracked" while silently covering
+      neither ignored paths nor, therefore, the artefact a mutation run leaves. The cheap fix is to say
+      what was actually copied, so a triaging session knows to look; the fuller one is a small allowlist
+      (`Tools/mutation-out/*.log` is the known case).
+      ⚠️ Cost: `ops/autonomous/` only, so a docs-and-shell commit — but `.sh` is staged, so the hook's
+      parse arm and the full suite both run. Budget one commit.
+      ⛔ **No ordinal**: a draft of the adopting diff called this "the second recorded time" and the
+      review refuted it — there is no recorded first for the *ignored* class.
+      (context: BUGS.md T5 `#### The same mutant twice` records the instance; no register entry is open
+      for the net itself)
 - [x] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
       scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~7 hours
@@ -3562,9 +3584,16 @@ happens.**
       `r25-depth-fixture` item, because a probe reading is not a red check and the one-mutant bound below
       puts the second `--rerun` in the next session.
       ⚠️ **Estimator, second recorded reading from the cleared window: 1.33x LOW** — printed `9-10`,
-      measured **800 s** end to end at loadavg 5.00 with a Time Machine backup live and loadavg **10.38**
-      during the compile. The mutant's own suite is **382 s** against the window's 275-292 at the same
-      1,355 checks, so contention and not suite size. n = 2, one held and one low.
+      measured **800 s** end to end at loadavg 5.00 with a Time Machine backup live. ⛔ **Three things in
+      this paragraph were wrong and are corrected 2026-08-29** (`BUGS.md` T5 `#### The same mutant twice`).
+      The window's **275 and 277 are at 1,346 and 289 at 1,344** — only 292 is at 1,355 — so "the window's
+      275-292 at the same 1,355 checks" was never true. **"So contention and not suite size" asserts as a
+      finding what `cab9901`'s own review downgraded to an INFERENCE in four files**, and the **10.38** it
+      quoted is an unrecorded instantaneous reading, not a run average. What IS measured: the mutant's own
+      suite is **382 s**, and the SAME mutant read **280 s** at the same 1,355 checks on the same base
+      `d88a426` — **1.36x, an upper bound** — so suite growth is excluded at exactly 0% and mutant identity
+      is bounded at **1.043x** (292 s against 280 s, two mutants ~46 min apart that day). WHICH term the
+      rest is remains unnamed. n = 2, one held and one low.
       ⛔ **BOUND: ONE mutant per session, and commit its row before starting another.** ⚠️ The 4 h
       `MAXRUN` argument for that bound is clamped-era arithmetic — a baseline plus one mutant measured
       **479 s** on 2026-08-24, so two no longer threaten `MAXRUN` — but the bound stands on the other two

@@ -21186,8 +21186,135 @@ FALSE, which the review caught: the window spans three suite sizes, `[292, 289]`
 only ONE row is comparable and the 1.39x end comes from a suite 11 checks smaller.**
 0.8% of growth does not buy 1.31x, so the term is something other than the
 catalogue; naming which is what nobody has done. ⚠️ This run's row puts **382** into
-the window (`[289, 275, 277, 292, 382]`), so the next 1-mutant run prints ~`9-13`
+the window, so the next 1-mutant run prints ~`9-13`
 minutes off a maximum whatever set it.
+
+#### The same mutant twice, 2026-08-29 — the 1.31x is CROSS-MUTANT and the pair is 1.36x
+
+⛔ **"Only ONE row is comparable" was true of the LOG's window and not of the evidence,
+and it was superseded the next day: `logic/R25-depth-aware-prune` has a SAME-MUTANT
+pair — 280 s against 382 s, 1.36x, and it is an UPPER BOUND.** The 280 s row was
+adopted from stranded worktree `vo-20260828-060044-25839`, assigned by the daemon at
+13:25:11 on 2026-08-29, on the **same base `d88a426`** — `cab9901`'s own parent — its
+run completing **2026-08-28 06:12:48**. ⚠️ **That is the `mutation-log.tsv` MTIME and
+the only witness there is**: neither the log nor the row carries a timestamp, and
+`record()` appends last, which is what makes the mtime the right witness. **30 h 35 m**
+before the 382 s run — ⚠️ *not* the 31 h that labels the 292-vs-382 pair one paragraph
+up, and the two must not be merged. Where 1.31x compared `const/maximumPageMegapixels`
+against `logic/R25-depth-aware-prune` and therefore conflated machine state with the
+two mutants' own costs, this pair holds the mutant fixed and puts **suite growth at
+exactly 0%** — both rows `1355/1355`, instrument-certified. ⚠️ **Quote 1.36x for the
+spread; 1.31x is the cross-mutant figure, and the paragraph above is kept as written
+because it is what this pair corrects.**
+
+✅ **WHAT THE VERDICT CERTIFIES, STATED EXACTLY — and it is one step short of what a
+draft of this claimed.** `run()` writes `SURVIVED` only on
+`proc.returncode == 0 AND total == baseline` (`Tools/mutate.py`), so each row is
+certified to have matched **its own run's baseline**; anything else is `MISMATCH`.
+⛔ **The 1,355 itself is the suite's PRINTED total, not the verdict's** — `total` is
+the last line ending `passed` *with* a `/`, `detail` the first line ending `passed`
+*without* that requirement, so they are parsed by different rules and coincide only
+because the output holds exactly one such line. **Verified in the 2026-08-28 log and
+NOT verifiable for 2026-08-29**, whose `mutation-out/` log is gitignored and
+overwritten per run. So "the instrument says both rows are 1,355" is right for the
+mechanism and one inference short for the string.
+✅ Corroborated by re-deriving that parse from the run's own saved output — ⛔ **not
+an independent observation, and a draft called it one**: `run()` builds the output
+string once, writes it to `mutation-out/` and parses `total` out of the same string.
+What it buys is that a reader can check the parse: **1,355 `ok` lines, 0 `FAIL`**,
+rescued out of volatile `/private/tmp` to
+`$STATE/rescue/vo-20260828-060044-25839.untracked-mutation-out-logic_R25-depth-aware-prune.log`
+(103,159 B) because it is gitignored and so sat in neither the `.patch` nor the
+`.status`.
+⛔ **AND THAT IS A HOLE IN THE RESCUE NET WEARING A GREEN BANNER: the daemon logged
+this strand `COMPLETE — tracked and untracked` while the only copy of a 103,159 B
+artefact stayed in `/private/tmp`.** ⚠️ **No ordinal is claimed and a draft claimed
+one** ("the second recorded time"): the nearest prior instance, `ops/autonomous/README.md`
+D13, is a different class — untracked-but-NOT-ignored, and **FIXED**. This class is
+*gitignored*, which `git status --porcelain` cannot see, so the net's completeness
+test cannot see it either. Carried as the queue's `rescue-ignored`; nothing here fixes it.
+
+⛔ **FOUR limits, and the FIRST is why 1.36x is a ceiling rather than a reading.**
+(1) **The daemon went down at 06:08:23 — SIGTERM, with a detached KILL backstop 8 s
+later — and TERMed the session's 6-process tree, 15 s INTO this very suite**, which
+ran 06:08:08 → 06:12:48 (`$STATE/daemon.log`). The run survived it — `exit=0`, 1,355
+`ok`, 0 `FAIL` — because it was outside the killed tree, which is also **why it wrote
+no timings row and never committed, i.e. why this strand exists at all**. Killing
+sibling processes can only FREE resources, so if it moved the 280 s at all it moved it
+**DOWN**, the direction that inflates 1.36x. Unmeasured, hence the bound.
+(2) The column times `suite(work)`, which **builds** the mutated tree as well as
+running it — true of both rows, so the pairing holds, but it is not a pure suite
+figure and the build is the more contention-sensitive half. (3) The missing
+`$STATE/suite-timings.tsv` row leaves the 2026-08-28 loadavg **unrecorded**, so the
+5.00-against-4.36 comparison above does not reach it. (4) n = 2. ⛔ **So this sharpens
+WHAT IS EXCLUDED and adds nothing to WHICH term it is** — that stays the inference the
+paragraph above records, and nobody has run the controlled experiment.
+
+⚠️ **"Held fixed" is PROVEN on one side and INFERRED on the other, and a draft stated
+it as measured for both.** For the 280 s run: the rescue `.base` reads `d88a426`, the
+strand's `status --porcelain` holds only the TSV, and its own `Tools/mutate.py` mtime
+is the worktree's creation time — never edited — so the R25 catalogue entry was
+`d88a426`'s. For the 382 s run the worktree is gone and `mutate.py` rsyncs *what is on
+disk*, not `HEAD`; the tree identity rests on `cab9901^ == d88a426` plus `cab9901`'s
+`Sources/`/`Tests/` changes being comment-only. Sound, and an inference.
+
+✅ **A CLEANER BOUND ON THE MUTANT-IDENTITY TERM FALLS OUT OF THE SAME DAY, and it is
+better support for the conclusion than this entry's own pair.**
+`const/maximumPageMegapixels` **292 s** and `logic/R25-depth-aware-prune` **280 s** are
+two DIFFERENT mutants ~46 minutes apart, both at 1,355 checks — **1.043x**. So mutant
+identity buys about 4% inside one machine-state window, which is what says the
+cross-mutant 1.31x was mostly not the mutants. ⚠️ Same-suite-size and same-day, **not**
+same-tree: the 292 s run's tree was `d88a426`'s content uncommitted (it ran 05:26, the
+commit is 05:51:34) — a qualification the "cross-mutant" characterisation of 1.31x
+also omits.
+
+✅ **Negative controls, measured over the two files rather than reasoned.** The
+estimator does **not** move: `estimate_minutes(1, …)` reads **(9.17, 12.73)** before
+and after, because the window goes `[289, 275, 277, 292, 382]` →
+`[275, 277, 292, 280, 382]` and both `min` (275) and `max` (382) are unchanged — the
+inserted row displaces `289` at 1,344, so the window now spans **two** suite sizes
+rather than three. `already_done()` still reads `SURVIVED` for the name (last-row-wins,
+and **all three** of its rows agree — the 2026-08-09 `113 s` at `478/478` as well) and
+still returns **80** mutants with a verdict, so `coverage` stays **79 of 104** — by
+construction, since a duplicate row adds no key. `--self-test` goes **38 → 39**.
+⚠️ **The row was inserted ABOVE the 382 s one rather than appended**, because the file
+is otherwise append-ordered and this run is 30 h 35 m older. ⛔ **"Nothing depends on
+the choice" is too broad and a draft said it: nothing the TOOL reads depends on it**
+— measured, not assumed, since either placement leaves the estimator the same
+five-row multiset and the same last-row verdict — **but the docstring's own reader
+rule does**, because under an append "quote the last" would have pointed at the
+older run.
+
+⛔ **AND IT FOUND THE RULE THE WHOLE LOG RESTS ON UNPINNED.** `already_done()` is
+last-row-wins, stated in `mutate.py`'s docstring and asserted by **nothing** — the four
+`already_done` self-test checks pin which rows are *admitted*, and pin it by **field
+count**, so they are silent both about which of two *admitted* rows is believed and
+about the verdict's own value. ⛔ **The load-bearing number is 2, not 10, and a draft
+led with the 10**: ten names carry duplicates today, but only **two** have a first row
+disagreeing with their last — `const/maximumPageMegapixels` and
+`const/sharedInkFraction`, **both `SURVIVED` → `killed`** — so a first-row-wins reading
+would today report **two dead mutants as live survivors**, off rows that are all
+well-formed. The converse, a survivor read as killed, is equally possible and is simply
+not instantiated on this log. This diff's own correctness rests on the rule. One check added,
+**two-sided on purpose** (the same pair in both orders), watched failing two ways:
+`done.setdefault(…)` (first-row-wins) and a "killed sticks" reading, **each reddening
+it ALONE, `self-test: 1 failure(s)`**. ✅ The second sabotage is what earns the
+two-sidedness: under "killed sticks" the first conjunct **passes**
+(`SURVIVED,killed` → `killed`) and only the second reds (`killed,SURVIVED` → `killed`,
+wanted `SURVIVED`), so a one-sided check would have been another of this project's
+checks that could not fail. ⚠️ No ordinal is claimed for it — re-derive that from the
+register, never by counting sentences. ✅ The review of this diff added a **third**
+sabotage of its own, max-seconds-wins, which also reds it alone.
+⚠️ **What the new check does NOT reach, named rather than implied, and it is the T7
+class**: tighten the admission guard to `parts[1] in VERDICTS` and the **entire**
+self-test still reads `0 failure(s)` while `run()`'s closing *"never applied, so
+nothing is known about them"* line — computed from this same dict, as `already_done`'s
+own docstring records — silently empties. That is a gap in the four admission checks,
+not in this one, and it is left open here.
+⛔ Doc rot found in the same docstring and fixed: it said **SEVEN** names carry
+duplicates "as of 2026-08-26", which was correct at `bee2db1` and reads **TEN** on
+2026-08-29. Replaced with the derivation rather than with a fresher number — this file
+already declines to quote a total row count for exactly that reason.
 
 ### T6 · Three checks written for the bundling that cannot fail — FIXED
 *(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*

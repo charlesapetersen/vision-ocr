@@ -112,11 +112,26 @@ python3 Tools/mutate.py --only <substring>   # after changing a constant or a gu
                                              # refuted 2026-08-29: one mutant took 800 s end to end and
                                              # 382 s for its own suite against 292 s at the SAME 1,355
                                              # checks 31 hours earlier — 1.31x, which 0.8% of suite
-                                             # growth cannot buy. ⚠️ WHAT the term is remains an
+                                             # growth cannot buy. ⛔ QUOTE 1.36x, NOT 1.31x: that pair
+                                             # is TWO DIFFERENT MUTANTS, and the SAME mutant
+                                             # (logic/R25-depth-aware-prune) has since been measured at
+                                             # 280 s and 382 s — same base d88a426, same 1,355 checks,
+                                             # 30 h 35 m apart — which puts suite growth at exactly 0%
+                                             # and holds mutant identity fixed as well. Adopted
+                                             # 2026-08-29 from a stranded worktree.
+                                             # ⛔ READ 1.36x AS AN UPPER BOUND: the daemon TERMed that
+                                             # session's 6-process tree 15 s into the 280 s suite, which
+                                             # survived it; freed siblings can only push that figure
+                                             # DOWN. BUGS.md T5 "#### The same mutant twice".
+                                             # ⚠️ WHAT the term is remains an
                                              # inference: a Time Machine backup was live, and this
                                              # repo's own ledger (ops/autonomous/README.md) measured
                                              # that the loadavg column does not order these durations.
-                                             # Recorded loadavgs are 5.00 against 4.36.
+                                             # Recorded loadavgs are 5.00 against 4.36 — and the
+                                             # 2026-08-28 R25 run has NO suite-timings row at all, so
+                                             # its own load is unrecorded. n = 2. What IS bounded is
+                                             # mutant identity: 292 s vs 280 s, two mutants ~46 min
+                                             # apart that day at 1,355 checks, is 1.043x.
 python3 Tools/mutate.py                      # the whole catalogue — ~8 h at that rate, and it said
                                              # ~65 HOURS until 2026-08-24, when `1dbaafd` took a 16.2x
                                              # clamp off the suite. Read the tool's header — but NOT its

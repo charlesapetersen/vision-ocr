@@ -549,8 +549,38 @@ and the second reading is 1.33x LOW** — `logic/R25-depth-aware-prune`'s re-run
 33.3% under", which is 25% — a draft mixed two denominators in one comparison**). ✅ **What is measured is
 that SUITE GROWTH cannot be the term**: 382 s against the one window row at the same **1,355** checks
 (292 s) is **1.31x**, and 0.8% of growth does not buy that — ⛔ **so "1.31x-1.39x at the SAME 1,355 checks"
-is FALSE and the review of this diff caught it: the window spans 1,344 / 1,346 / 1,355, and only one row is
-comparable.** ⚠️ **WHICH term it is stays an INFERENCE, and the stronger form this line first carried was
+is FALSE and the review of this diff caught it: the window spans 1,344 / 1,346 / 1,355.**
+⛔ **AND "ONLY ONE ROW IS COMPARABLE" FELL THE NEXT DAY: THE 1.31x IS CROSS-MUTANT, AND THE SAME MUTANT HAS
+A PAIR — 280 s AGAINST 382 s, 1.36x AND READ IT AS AN UPPER BOUND** (`BUGS.md` T5
+`#### The same mutant twice`). The 280 s row was adopted 2026-08-29 from stranded worktree
+`vo-20260828-060044-25839`, on the **same base `d88a426`** — `cab9901`'s own parent — its run completing
+**2026-08-28 06:12:48**, which is a **file mtime** and the only witness there is, **30 h 35 m** before the
+382 s run (⚠️ *not* the 31 h that labels the 292-vs-382 pair). 1.31x compared `const/maximumPageMegapixels`
+with `logic/R25-depth-aware-prune` and so conflated machine state with the two mutants' own costs; **1.36x
+holds the mutant fixed and puts suite growth at exactly 0%.** ⚠️ **Quote 1.36x; 1.31x is the cross-mutant
+figure.** ✅ **What the verdict certifies, exactly**: `SURVIVED` requires `total == baseline`, so each row
+matched **its own run's baseline** — anything else is `MISMATCH`; the **1,355** is the suite's printed
+total, and the two coincide because the output holds exactly one `…/… passed` line, verified in the
+2026-08-28 log and **not verifiable for 2026-08-29**, whose `mutation-out/` log is gitignored and
+overwritten per run. ⚠️ **"Held fixed" is PROVEN on the 280 side** (rescue `.base` = `d88a426`, strand
+clean but for the TSV, its `mutate.py` never edited) **and INFERRED on the 382 side**, whose worktree is
+gone — `mutate.py` rsyncs what is on disk, not `HEAD`, so the tree identity rests on `cab9901^ == d88a426`
+plus `cab9901`'s `Sources/`/`Tests/` edits being comment-only.
+⛔ **FOUR limits, and the first bounds the number.** (1) **The daemon went down at 06:08:23 — SIGTERM, KILL
+backstop 8 s later — and TERMed the session's 6-process tree 15 s INTO this very suite**, which ran
+06:08:08 → 06:12:48 (`$STATE/daemon.log`). The run survived it (`exit=0`, 1,355 `ok`, 0 `FAIL`), being
+outside the killed tree, which is also why it wrote no timings row and never committed. **Killing siblings
+can only free resources, so if it moved the 280 s it moved it DOWN** — the direction that inflates 1.36x.
+Unmeasured, hence "upper bound". (2) The column times `suite(work)`, which BUILDS the mutated tree as well
+as running it — true of both rows, so the pairing holds, but not a pure suite figure. (3) That missing
+`suite-timings.tsv` row leaves the 2026-08-28 loadavg **unrecorded**, so the 5.00-against-4.36 comparison
+below does not reach it. (4) n = 2.
+✅ **A CLEANER BOUND ON MUTANT IDENTITY comes free from the same day**: `const/maximumPageMegapixels`
+**292 s** and `logic/R25-depth-aware-prune` **280 s**, two DIFFERENT mutants ~46 min apart, both at 1,355 —
+**1.043x**. So mutant identity buys ~4% inside one machine-state window, which is what says the
+cross-mutant 1.31x was mostly not the mutants. ⚠️ Same-suite-size and same-day, **not** same-tree: the
+292 s run's tree was `d88a426`'s content uncommitted (it ran 05:26; the commit is 05:51:34).
+⚠️ **WHICH term it is stays an INFERENCE, and the stronger form this line first carried was
 refuted from this repo's own ledger**: `ops/autonomous/README.md` measured that the loadavg column does not
 order these durations and that OneDrive and CrashPlan barely move a 1-minute average, and it files the same
 contention story as an inference. A Time Machine backup was three hours in at ~39% of a core; the two runs'

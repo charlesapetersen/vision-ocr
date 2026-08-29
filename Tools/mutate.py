@@ -111,8 +111,52 @@ Two consequences, both load-bearing:
     took **382 s** against the one window row measured at the same **1,355** checks
     (292 s), i.e. **1.31x**, and 0.8% of growth does not buy that. ⛔ **"1.31x-1.39x at
     the SAME 1,355 checks" was in a draft and is FALSE — the window spans three suite
-    sizes** (`[292, 289]` at 1,344, `[275, 277]` at 1,346, `[292]` at 1,355), so only one
-    row is comparable and the 1.39x end came off a suite 11 checks smaller.
+    sizes** (`[292, 289]` at 1,344, `[275, 277]` at 1,346, `[292]` at 1,355), and the
+    1.39x end came off a suite 11 checks smaller.
+    ⛔ **BUT "only ONE row is comparable" IS SUPERSEDED AS OF 2026-08-29, AND THE 1.31x
+    IS CROSS-MUTANT: `logic/R25-depth-aware-prune` HAS A SAME-MUTANT PAIR AND IT IS
+    280 s AGAINST 382 s — 1.36x.** The 280 s row was adopted from stranded worktree
+    `vo-20260828-060044-25839`, on the SAME base (`d88a426`, `cab9901`'s parent), its
+    run completing **2026-08-28 06:12:48** — ⚠️ that is the `mutation-log.tsv` MTIME,
+    the only witness there is, since neither the log nor the row carries a timestamp.
+    **30 h 35 m** before the 382 s run, not the 31 h that labels the 292-vs-382 pair.
+    1.31x compared TWO DIFFERENT MUTANTS and therefore conflated machine state with the
+    two mutants' own costs; 1.36x holds the mutant fixed and puts suite growth at
+    **exactly 0%** — both rows `1355/1355`. ⚠️ **Quote 1.36x for the
+    spread and 1.31x only as the cross-mutant figure it is** — and read 1.36x as an
+    UPPER BOUND, per the first limit below.
+    ✅ **What the verdict certifies, stated exactly**: `run()` writes `SURVIVED` only on
+    `proc.returncode == 0 AND total == baseline`, so each row is certified to have
+    matched **its own run's baseline** — anything else is `MISMATCH`. The **1,355**
+    itself is the suite's printed total, and the two coincide because the output holds
+    exactly one `…/… passed` line, verified in the 2026-08-28 log and NOT verifiable
+    for 2026-08-29, whose `mutation-out/` log is gitignored and overwritten per run.
+    ⚠️ **Held fixed is PROVEN on one side and INFERRED on the other.** For 280 s:
+    the rescue `.base` reads `d88a426`, the strand's `status --porcelain` holds only
+    the TSV, and its `Tools/mutate.py` mtime is the worktree's creation, so the R25
+    catalogue entry was `d88a426`'s. For 382 s the worktree is gone and `mutate.py`
+    rsyncs what is on disk, not `HEAD`; the tree identity is inferred from
+    `cab9901^ == d88a426` plus `cab9901`'s `Sources/`/`Tests/` changes being
+    comment-only. Sound, but an inference.
+    ⛔ **FOUR limits, and the first is the one that bounds the number.** (1) The daemon
+    went down at **06:08:23** (`$STATE/daemon.log`, SIGTERM, KILL backstop 8 s later)
+    and TERMed the session's 6-process tree — **15 s into this very suite**, which ran
+    06:08:08 → 06:12:48. The run survived it (`exit=0`, 1,355 `ok`, 0 `FAIL`), being
+    outside the killed tree, which is also why it wrote no timings row and never
+    committed. Killing siblings can only FREE resources, so if it moved the 280 s at
+    all it moved it DOWN — the direction that inflates 1.36x. Unmeasured, hence "upper
+    bound". (2) The column times `suite(work)`, which BUILDS the mutated tree as well
+    as running it; true of both rows, so the pairing holds, but it is not a pure suite
+    figure and the build is the more contention-sensitive half. (3) That missing
+    `$STATE/suite-timings.tsv` row means the 2026-08-28 loadavg is unrecorded and
+    cannot be set against the 382 s run's 5.00. (4) n = 2.
+    ✅ **A CLEANER BOUND ON THE MUTANT-IDENTITY TERM comes free from the same day**:
+    `const/maximumPageMegapixels` **292 s** and `logic/R25-depth-aware-prune` **280 s**
+    are two DIFFERENT mutants ~46 minutes apart, both at 1,355 checks — **1.043x**. So
+    mutant identity buys ~4% within one machine-state window, which is what says the
+    cross-mutant 1.31x was mostly not the mutants. ⚠️ The 292 s run's tree was
+    `d88a426`'s content UNCOMMITTED (it ran 05:26, the commit is 05:51:34), so that
+    pair is same-suite-size and same-day but not same-tree.
     ⚠️ **WHICH term it is stays an INFERENCE and the stronger form was refuted by the
     review of that diff.** A Time Machine backup was three hours into a run at ~39% of a
     core alongside CrashPlan and OneDrive, and the two runs' recorded loadavgs are 5.00
@@ -177,10 +221,21 @@ Results append to Tools/mutation-log.tsv; re-running skips mutants already
 recorded, so a campaign can be stopped and resumed.
 
 ⚠️ `--rerun` appends a SECOND row for a name that already has one, and the LATER
-row is the current verdict — `already_done()` is last-row-wins. SEVEN names carry
-duplicates as of 2026-08-26 (`cut -f1 … | sort | uniq -d`), two of them this day's. The log has no date column, so two rows for one name
+row is the current verdict — `already_done()` is last-row-wins. ⛔ **DERIVE the
+duplicate count, never read one from this line** (`cut -f1 … | sort | uniq -d`): it
+said SEVEN "as of 2026-08-26", correct at `bee2db1` and stale by 2026-08-29 — a count
+in prose goes stale on every `--rerun` of a recorded name, which is why this file
+declines to quote a total row count either. The log has no date column, so two rows for one name
 are distinguishable only by file position: quote the last, and if the two differ
 in their `N check(s)` field, the earlier one is describing an older suite.
+⚠️ **`logic/R25-depth-aware-prune` carries THREE rows, in run order ON PURPOSE**: its
+280 s row ran 30 h 35 m BEFORE its 382 s one and was inserted above it on adoption
+(2026-08-29), because this file is otherwise append-ordered and appending would have
+misstated the order. ⛔ **Nothing the TOOL reads depends on that choice** — all three
+verdicts are `SURVIVED` so last-row-wins is unmoved, and either placement leaves the
+estimator the same five-row multiset (both measured). **What does depend on it is the
+human rule two lines up**: under an append, "quote the last" would have pointed at the
+OLDER run.
 """
 import argparse, json, os, re, shutil, subprocess, sys, time
 
@@ -1380,6 +1435,26 @@ def self_test():
           "h" not in already_done(log_of(("h", "killed", 998))))
     check("the header is not a mutant id, and an absent log records nothing",
           "mutant" not in already_done(log_of()) and already_done(p + ".nope") == {})
+
+    # LAST-ROW-WINS, the rule this file's own docstring states and nothing asserted.
+    # It is what decides the CURRENT verdict of every re-run name in the log. Derive
+    # the exposure rather than trusting this comment (`cut -f1 … | uniq -d`, then
+    # compare each name's first row with its last): on 2026-08-29 ten names carried
+    # duplicates and TWO of them disagreed first-against-last, both SURVIVED -> killed,
+    # so a first-row-wins reading would have reported two dead mutants as live
+    # survivors off rows that are all well-formed. The converse — a survivor read as
+    # killed — is equally possible and is simply not instantiated today.
+    # The four checks above pin which rows are ADMITTED, by FIELD COUNT, and are silent
+    # both about which of two admitted rows is believed and about the verdict's value.
+    #
+    # Two-sided on purpose: the same pair in both orders. One direction alone is
+    # satisfied by any implementation that happens to return "killed" — including a
+    # constant — and this project has a long history of checks that could not fail.
+    check("two rows for one name: the LATER row is the verdict, in both orders",
+          already_done(log_with([("c", "SURVIVED", 283, "d"),
+                                 ("c", "killed", 284, "d")])).get("c") == "killed"
+          and already_done(log_with([("c", "killed", 284, "d"),
+                                     ("c", "SURVIVED", 283, "d")])).get("c") == "SURVIVED")
 
     # THE DEFECT, pinned as one exact tuple rather than a handful of thresholds.
     # 6 runs (5 mutants + baseline) over the five newest rows, min 80 s and max
