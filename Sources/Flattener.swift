@@ -3755,6 +3755,25 @@ enum Flattener {
         // first reached at depth 3 has its own children cut off by the depth cap,
         // and a later path arriving at depth 1 — which *would* explore them —
         // must not be turned away by the earlier, poorer visit.
+        // ✅ **Reasoned from 2026-08-09 to 2026-08-29; there is now a measurement, and
+        // the case is one a fixture reaches.** On two-entry `/XObject` dictionaries
+        // `CGPDFDictionaryApplyBlock` was measured to hand back the SECOND entry
+        // written first (4 files, 2 key sequences x 2 object assignments; larger
+        // dictionaries and other key names are UNMEASURED), so putting the LONG route
+        // second makes CoreGraphics walk it first — and over that one traversal a plain
+        // visited set answers `nil` where this map answers 777.
+        // ⚠️ **That last reading is a REPLICA of this function, not this function**
+        // (`alltext-replica`'s shape, labelled): no single build can run both prune
+        // rules over one traversal, so the split is measured outside the tree and the
+        // only production corroboration is that `Tests/main.swift`'s 60-form check —
+        // which needs a shared `/Resources` to resolve to ONE pointer, this memo's
+        // load-bearing assumption — is green under both rules.
+        // ⛔ **The suite does not yet build the splitting page**: its two "reachable by
+        // two routes" fixtures vary the two keys' NAMES, which the yield order ignores,
+        // and both write the long route first — so `logic/R25-depth-aware-prune`
+        // survives them and this line is unpinned. R25 `#### It belongs here`; queue
+        // item `r25-depth-fixture`. Do not read the survivor as "nothing depends on
+        // this".
         var walkedAt: [UnsafeRawPointer: Int] = [:]
 
         func walk(_ resources: CGPDFDictionaryRef, depth: Int) {

@@ -854,7 +854,13 @@ thing and fixing the thing next to it are still different acts.
 
 **Three tests in this round did not bite when first written**, and each is
 recorded where it happened rather than quietly corrected: R25's depth fixture
-(CoreGraphics walks the shallower branch first, so the case cannot be built),
+(CoreGraphics walks the shallower branch first, so the case cannot be built —
+⛔ **the SECOND clause falls as of 2026-08-29 and the first does not: the case IS
+buildable, and the fixture's failure to bite is the fixture's own fault rather than
+CoreGraphics's, because the yield order reads an entry's POSITION and the fixture
+varies the two keys' NAMES. On both of its members the shallower route genuinely is
+yielded first — so "walks the shallower branch first" is confirmed there and
+"cannot be built" is refuted. See R25 `#### It belongs here`**),
 U20's timing bound (4,000 files walk faster than any threshold, so the property
 had to be restated without the clock), and C20's selection probe (twice — one
 fixed row missed a one-point run, then the scan ran into the neighbour's box).
@@ -14640,6 +14646,54 @@ identity-only. The depth key costs one `Int` per dictionary and removes the
 question, which is why it is there. If someone later finds the fixture that
 splits them, it belongs here.
 
+#### It belongs here: the fixture that splits them, MEASURED 2026-08-29
+
+⛔ **Two claims in the paragraph above are REFUTED BY MEASUREMENT, and the one that
+matters is *"varying the object numbers the keys point at"* — that is exactly the
+arrangement that splits them, and it was named as one already tried.** Measured on
+this date, out of the re-run of `logic/R25-depth-aware-prune` (`SURVIVED`, `382 s`,
+`1355/1355`; T5 `#### The last survivor re-asked` carries the run and the probes):
+
+* `CGPDFDictionaryApplyBlock` hands back a dictionary's entries in **reverse file
+  order — the SECOND key written comes back first**, on 4 files covering 2 key
+  sequences x 2 object assignments. It is a function of POSITION, not of the key's
+  name (⚠️ measured at two entries and over the names `A` and `Z`; the
+  generalisation to arbitrary `n` and arbitrary names is NOT measured). So *"in every arrangement tried …
+  handed back the branch leading to the shallower route first"* is a fact about the
+  arrangements, not about CoreGraphics.
+* `Tests/main.swift`'s `depthFixture` writes `<</\(longKey) 6 0 R/\(shortKey) 9 0 R>>`
+  — **the long chain is the first entry in both files** — so its "both orderings"
+  pair varies the key names, which the order ignores, and holds the positions fixed.
+  Both members walk the SHORT route first; the pair covers one order twice.
+* Swap the two object numbers (short route = object 6, long route = object 9) and the
+  LONG route is yielded first in both key orders. Running both prune rules over that
+  one traversal: **depth-aware 777, identity-only `nil`** on both, against **777 /
+  777** on both of today's fixtures. That is the fixture: write the `shortKey` entry
+  FIRST rather than renumbering the routes, or the builder's `longKey` parameter ends
+  up naming the short one.
+
+⛔ **THERE IS NO INSTRUMENT DISAGREEMENT TO ADJUDICATE, and a draft of this section
+manufactured one — refuted by the review of this diff out of the deleted line
+itself.** The 2026-08-09 work DID leave an artefact, in the comment this commit
+rewrites: *"it is not alphabetical — measured on this fixture it yields `["Z",
+"A"]`"*. On `depth-az.pdf`, whose file order is `A, Z`, reverse file order predicts
+exactly `Z, A` — **which is what today's probe prints.** The one recorded reading
+from that day AGREES with this one. What falls is only the prose summary's
+*"and varying the object numbers the keys point at"*, whose referent is
+unrecoverable, and **the parsimonious reading is that the variation it describes
+kept the long route first** — not that an instrument lied. That earlier measurement
+is kept in the rewritten comment rather than deleted with the claim it supported.
+⚠️ Today's reading is still a REPLICA of `walk` (`/tmp/r25-prune-probe.swift`,
+outside the tree) and the split is measured through it, not through production; the
+cross-check that matters is in T5 and it is two cells, not four.
+
+⚠️ **So the conclusion of the paragraph above stands and its reasoning does not**:
+the depth key is right, and it is right for a case a fixture CAN reach. The fixture
+is not in the suite yet — that needs a second `--rerun` of the same mutant to make
+it a red check rather than a probe reading, which the `mutants` queue box's
+one-mutant bound puts in the next session. Carried as the queue's
+`r25-depth-fixture`.
+
 ### R26 · `pageTooLarge` tells the user to change a setting that cannot reach the rebuild — FIXED
 *(2026-08-09 review; confirmed by grep — the setting genuinely is not wired here)*
 
@@ -20819,7 +20873,12 @@ already covered by the refusal check. `R25`'s depth-aware pruning survives for
 the reason R25 already records — CoreGraphics walks the shallower branch first in
 every arrangement tried, so the case cannot be built. The harness independently
 confirming a limitation this register had already written down is the outcome
-that gives the rest of it credibility.
+that gives the rest of it credibility. *(⛔ **THE SENTENCE BEFORE THIS ONE — the
+REASON — IS SUPERSEDED, and with it this one's claim to credibility: the limitation
+was written down wrong, so the harness confirming it confirmed the wrong thing** — measured 2026-08-29: the yield order reads an entry's
+POSITION and the fixture varies the two keys' NAMES, so it covers one traversal
+order twice and the case IS buildable. `R25` still survives, and it survives as a
+GAP. Read `#### The last survivor re-asked` below.)*
 
 **The harness was wrong twice before it was right, and both are recorded in its
 own docstring.**
@@ -20936,7 +20995,12 @@ queue's bound — so it is now the **only** survivor and its row carries the sam
 nineteen-day staleness. R25's own entry says the case cannot be built (CoreGraphics
 walks the shallower branch first in every arrangement tried), so a re-run is
 expected to confirm rather than to move; nothing has asked it since the suite
-trebled, which is the whole point of this subsection.
+trebled, which is the whole point of this subsection. ⛔ **SUPERSEDED 2026-08-29:
+it WAS re-run and it did confirm — and the reason quoted here for expecting that is
+the half that fell.** The suite's fixture cannot discriminate it, so the survival
+says nothing about CoreGraphics. `#### The last survivor re-asked` below. ⚠️ The
+review of that diff caught this paragraph as the one site the sweep missed while
+correcting the same sentence in two others.
 
 ⛔ **NEITHER COVERAGE FIGURE MOVES, AND A DRAFT OF THIS SECTION SAID `78 → 79`.**
 `coverage` is `len(knownIDs & final)` and the never-run census is
@@ -20960,7 +21024,170 @@ simply never written down, so *"no live reading from a cleared window exists yet
 was two days stale in `CLAUDE.md`, `CONTRIBUTING.md`, `Tools/mutate.py` and the
 `mutants` queue box. **What this run supplies is the first one anybody recorded**,
 which is a weaker claim and the one to quote. ⚠️ n = 1 at loadavg 4.36; the
-estimator is no longer known-broken, not proven.
+estimator is no longer known-broken, not proven. ⛔ **THAT LAST SENTENCE IS THE ONE
+TO CARRY FORWARD AND THE NEXT READING PROVED IT RIGHT: n = 2 as of 2026-08-29 and
+the second read 1.33x LOW.** See `#### The last survivor re-asked` below.
+
+#### The last survivor re-asked, 2026-08-29 — it SURVIVED, and it is a GAP IN THE CHECKS rather than a value nothing depends on
+
+✅ **`logic/R25-depth-aware-prune` came back `SURVIVED`** — `--rerun --only
+R25-depth-aware`, baseline **`1355 checks, green`**, mutant **382 s**,
+**`1355/1355 passed`**, no objecting check. So the verdict of 2026-08-09 stands
+against a suite nearly three times the size, `coverage` unmoved at **79 of 104** and
+the never-run census at **25**, exactly as the section above says a `--rerun` must
+leave them. **Predicted before the run, in writing, with the reasoning below and
+"CHECKS PREDICTED TO OBJECT: none".**
+⚠️ **`SURVIVED` is also exactly the row a silently UNAPPLIED mutant prints, and this
+one has no compiler witness — so say what stands behind it.** An identity-only prune
+compiles clean and changes nothing observable outside the divergent case, unlike
+`logic/C28-alltext-ignores-shape`, whose applied-ness was read off
+`'groups' was never used`. What stands behind it is `mutate.py`'s own
+`hits != 1 → NOT-APPLIED` guard plus the pattern's uniqueness: `walkedAt` occurs in
+`Sources/Flattener.swift` three times and the catalogue's search string matches
+exactly one of them. ⚠️ Raised by the review of this diff, which verified the
+uniqueness rather than taking it on trust.
+
+⛔ **But the REASON recorded for it since 2026-08-09 is REFUTED BY MEASUREMENT, and
+that is worth more than the verdict.** R25's entry says depth-awareness is
+"reasoned, not measured" and that the case "cannot be built" because "in every
+arrangement tried, `CGPDFDictionaryApplyBlock` handed back the branch leading to the
+*shallower* route first". Measured 2026-08-29: **the order is a function of the
+entry's POSITION in the dictionary and not of its NAME — all four fixtures yield the
+SECOND key written first**, i.e. reverse file order.
+
+    fixture                                    yield order
+    depth-az.pdf   <</A 6 0 R/Z 9 0 R>>        Z=SHORT, A=LONG
+    depth-za.pdf   <</Z 6 0 R/A 9 0 R>>        A=SHORT, Z=LONG
+    new, long second, A/Z                      Z=LONG,  A=SHORT
+    new, long second, Z/A                      A=LONG,  Z=SHORT
+
+⛔ **So the suite's "both orderings" pair varies the one thing the framework's order
+does not depend on, and holds constant the one thing it does.**
+`Tests/main.swift`'s `depthFixture` writes `<</\(longKey) 6 0 R/\(shortKey) 9 0 R>>`,
+so the long chain is the FIRST entry in **both** files whatever the two keys are
+called — and reverse file order therefore walks the SHORT route first in both. The
+pair covers one traversal order twice. Its comment's claim that *"whichever order the
+framework uses, one of the two puts the long chain first, and identity-only pruning
+loses that one's image"* is **false**, and it stood 57 lines above a second
+comment on the same fixture saying the pair is *"**not** a discriminating test of
+the depth-awareness itself"* — the two contradicted each other in one file for
+twenty-one days, and this run settles which is wrong. Both comments are corrected in
+this commit. ⚠️ The second comment's *verdict* was right; its stated *reason*
+(CoreGraphics prefers the shallower branch) is right only by accident of how the
+fixture was written, and is what this run refutes.
+
+✅ **AND THE FIXTURE THAT SPLITS THEM EXISTS, MEASURED — R25's own closing sentence
+("if someone later finds the fixture that splits them, it belongs here") is answered
+by putting the LONG route at the SECOND entry of the page's `/XObject` dictionary.**
+Over one traversal, both prune rules run side by side (⚠️ the two `no` rows are
+corroborated by production through the suite's own checks; the two `YES` rows are
+the replica alone):
+
+    fixture                              depth-aware   identity-only   splits?
+    suite depth-az.pdf (long is key 1)   777           777             no
+    suite depth-za.pdf (long is key 1)   777           777             no
+    NEW   long is key 2, A/Z             777           nil             YES
+    NEW   long is key 2, Z/A             777           nil             YES
+
+⛔ **The edit is NOT "one token" and it is NOT "renumber the routes", both of which a
+draft of this said**: write the `shortKey` entry first —
+`<</\(shortKey) 9 0 R/\(longKey) 6 0 R>>` — because renumbering leaves the builder's
+`longKey` parameter naming the SHORT route and its two check labels then read
+`(/A long)` over the route that is not long. And keeping the existing pair as well
+means parameterising the builder, which is more than a token either way.
+
+⛔ **So this survivor is a GAP IN THE CHECKS, not "a value nothing depends on" —
+which reverses this entry's own classification of it, and it is the second of the
+two 2026-08-09 survivor reasons to fall inside two days.** ⚠️ Not *"the first
+survivor measured to be a gap"*: that is a superlative over a population of two. The prune rule is
+load-bearing on a page a fixture can build; nothing in the suite builds that page.
+
+⚠️ **The instrument is a REPLICA of `largestImage`'s `walk`, which is the shape this
+repo calls the `alltext-replica` mistake, and it is labelled rather than excused.**
+It is a throwaway probe outside the tree (`/tmp/r25-prune-probe.swift`), and it is
+there because no single build of production can run both prune rules over one
+traversal. ⛔ **A draft of this claimed its fidelity was "measured on 4 of 4 cells
+where production can be observed", and the review of this diff cut that to TWO
+INDEPENDENT OBSERVATIONS.** The two depth-aware cells are real: the suite asserts
+`pixelWidth == 777` through the real function on both suite fixtures and the
+baseline is green. The two identity-only cells are **entailed by this section's own
+order finding** — with the short route yielded first, S is reached at depth 1, the
+image is found at depth 3, and the later arrival at depth 2 is refused *identically*
+by both rules (`seen = 1 <= 2` and `walkedAt[S] != nil`), so **the mutation is INERT
+on both suite fixtures** and this run's `1355/1355` on those two checks was
+guaranteed. ⛔ **So NO cell observes production in the regime where the two rules
+diverge, which is the regime the split claim is about** — and "every cell where
+production can be observed" was false besides: production *can* be observed on the
+new fixtures, by adding them to the suite, which is exactly the deferred work below.
+✅ **One production cell does bear on the replica's load-bearing assumption, and the
+draft failed to count it**: the split depends entirely on CoreGraphics resolving
+`10 0 R` to the SAME pointer from two different parents (`Flattener.swift`'s
+`unsafeBitCast`), and `Tests/main.swift`'s *"60 forms sharing one Resources
+dictionary do not fan out"* — 5.09 s → under 2 s — is green at baseline **and** under
+the mutant, which is that assumption holding in production. ⚠️ Its direction of
+failure is also the safe one: a pointer that differed would make the memo miss and
+give a false NEGATIVE, never a false split. ⚠️ Remaining omissions, labelled: the
+replica does not run `largestImage`'s opening
+`guard drawsAnyXObject(page) != false`, which answers the same on the new fixtures
+because their content stream is byte-identical to the pair's — **entailed, not
+measured**; and it omits `maximumDeclaredImageSide` (200,000 against a 777-px image)
+and the media-box arithmetic (which needs only `widthPt > 0`), both inert here by
+inspection.
+
+⚠️ **NOT DONE, and deliberately: the fixture is not in the suite.** Putting it there
+needs a second `--rerun` of this same mutant to turn a probe reading into a red
+check, because a check whose only red is a binary is the shape this register flagged
+over `shapeRunHigh`'s owed fixture. Carried as the queue's `r25-depth-fixture`,
+fully specified.
+⛔ **THE REASON GIVEN FOR DEFERRING IT WAS A MISQUOTE, AND THE REVIEW OF THIS DIFF
+REFUTED IT.** This paragraph first said the `mutants` box *"says in terms that two
+separate `--only` runs in one session are not exempt"*. That clause governs
+BOOKKEEPING — *"commit its row before starting another"* — and its remedy is to
+commit the first row before the second run, which this commit does anyway; nothing
+in the box forbids re-asking the SAME id twice, and 800 s sits well under `MAXRUN`.
+⚠️ **So the honest reason is the SESSION's budget and not the queue's rule**: this
+session had already spent most of it on the run, the probes and this review, and
+landing the fixture means a second ~800 s run plus a second adversarial pass on a
+larger diff. The option of doing both in one session was available and was rejected
+on that ground alone. ⛔ **The cost of deferring is named rather than hidden**: five
+files now carry *"the fixture that splits them exists, MEASURED"* on replica-only
+evidence, with the next session told not to re-derive it — so if that session's
+`--rerun` comes back `SURVIVED` instead of `killed`, every one of the five is wrong
+and the queue item says where to look first.
+
+⚠️ **Estimator, the SECOND recorded reading from the cleared window, and it read
+1.33x LOW where the first read 3.1% high.** Printed *"roughly 9-10 minutes … Budget
+the 10"* off a window of `[292, 289, 275, 277, 292]`; measured **800 s = 13.3 min**
+end to end (`$STATE/suite-timings.tsv`, `mutant-r25 800 0 5.00`), so **800 s is
+33.3% OVER the budgeted 600** — ⛔ **and not "600 was 33.3% under", which is the form
+a draft of this used: 600 against 800 is 25% under, and the sentence set it beside a
+`3.1% high` anchored on the measured value, so one comparison carried two
+denominators.** The `1.33x` ratio form is the house convention (cf. `14.5x HIGH`) and
+is the one to quote.
+⛔ **The cause is CONTENTION as an INFERENCE and not as a finding, and the review of
+this diff refuted the stronger form this paragraph first carried — using this repo's
+own ledger.** `ops/autonomous/README.md` records that the loadavg column **does not
+order the durations** (474 s / 2,552 s / 2,669 s against 2.39 / 3.47 / 4.20; and
+864 s at 12.64 against 3,569 s at 3.59), that the successor finding is *"the
+predictor was never load, it was the scheduling band"*, and that OneDrive and
+CrashPlan — two of the three processes named here — **do not move a 1-minute load
+average much**, which is why it files the identical inference as an inference. So:
+a Time Machine backup was three hours into a run at ~39% of a core throughout,
+alongside CrashPlan and OneDrive; the two runs' **recorded** loadavgs are **5.00**
+against **4.36**, a 15% difference, and the **10.38** a draft quoted is an
+unrecorded instantaneous reading taken during the baseline compile — not comparable
+with a run average, and named here rather than used as evidence. **Nobody ran the
+controlled experiment.**
+✅ **What IS measured is that suite growth cannot be the term.** The mutant's own
+suite took **382 s** against the one window row measured at the same **1,355**
+checks (292 s) — **1.31x** — ⛔ **and "1.31x-1.39x at the SAME 1,355 checks" is
+FALSE, which the review caught: the window spans three suite sizes, `[292, 289]` at
+1,344 (`bare-form-reach`), `[275, 277]` at 1,346 (C27 (c)) and `[292]` at 1,355, so
+only ONE row is comparable and the 1.39x end comes from a suite 11 checks smaller.**
+0.8% of growth does not buy 1.31x, so the term is something other than the
+catalogue; naming which is what nobody has done. ⚠️ This run's row puts **382** into
+the window (`[289, 275, 277, 292, 382]`), so the next 1-mutant run prints ~`9-13`
+minutes off a maximum whatever set it.
 
 ### T6 · Three checks written for the bundling that cannot fail — FIXED
 *(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*

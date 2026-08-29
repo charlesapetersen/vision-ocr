@@ -105,9 +105,18 @@ is the part a person forgets. So:
 python3 Tools/mutate.py --only <substring>   # after changing a constant or a guard: ~290 s a mutant plus a
                                              # baseline suite (479 s end to end for one, measured
                                              # 2026-08-24; 705 s for two, 2026-08-25; 875 s for two,
-                                             # 2026-08-26; 582 s for one, 2026-08-28 — the rise is the
-                                             # suite growing 1,247 -> 1,355, not contention; budget from
+                                             # 2026-08-26; 582 s for one, 2026-08-28 — that rise was the
+                                             # suite growing 1,247 -> 1,355; budget from
                                              # $STATE/suite-timings.tsv)
+                                             # ⛔ "not contention" stood here as a general claim and is
+                                             # refuted 2026-08-29: one mutant took 800 s end to end and
+                                             # 382 s for its own suite against 292 s at the SAME 1,355
+                                             # checks 31 hours earlier — 1.31x, which 0.8% of suite
+                                             # growth cannot buy. ⚠️ WHAT the term is remains an
+                                             # inference: a Time Machine backup was live, and this
+                                             # repo's own ledger (ops/autonomous/README.md) measured
+                                             # that the loadavg column does not order these durations.
+                                             # Recorded loadavgs are 5.00 against 4.36.
 python3 Tools/mutate.py                      # the whole catalogue — ~8 h at that rate, and it said
                                              # ~65 HOURS until 2026-08-24, when `1dbaafd` took a 16.2x
                                              # clamp off the suite. Read the tool's header — but NOT its
@@ -128,8 +137,18 @@ list ages silently**: `already_done()` is last-row-wins, so a verdict sits until
 somebody spends a `--rerun` on it. Both `SURVIVED` rows were the first campaign's
 — the only two in the log reading `478/478` — and re-asking one of them
 (`const/maximumPageMegapixels`) against today's 1,355 checks came back `killed`,
-by a check written for something else. `logic/R25-depth-aware-prune` is the
-remaining one and has not been re-run. T5 `#### The survivor list re-asked`.
+by a check written for something else. T5 `#### The survivor list re-asked`.
+⛔ **The other one, `logic/R25-depth-aware-prune`, was re-asked on 2026-08-29 and
+`SURVIVED` — and it is measured to be a GAP in the checks rather than a value
+nothing depends on** (⚠️ *"the first such survivor"* would be a superlative over a
+population of two, the other killed the day before). The fixture written to discriminate
+it varies the two keys' NAMES, and CoreGraphics's yield order reads their POSITION,
+so its "both orderings" pair covers one order twice; swapping the two object numbers
+splits the two prune rules (depth-aware 777, identity-only nil). Measured through a
+replica, not yet a red check — which is why the fixture is a queue item
+(`r25-depth-fixture`) and not this line. T5 `#### The last survivor re-asked` and
+R25 `#### It belongs here`. **The lesson to carry: a fixture built "both ways round"
+is only two ways round if it varies what the thing under test actually reads.**
 
 ## 4b. Sweep the siblings before you call it fixed
 

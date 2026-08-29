@@ -543,10 +543,48 @@ window HELD, and the `10` it predicted is what printed**: baseline plus `const/m
 sit BELOW `bare-form-reach`'s in the log, so its startup line already came off an all-post-clamp window and
 nobody recorded it. ⛔ **And only the HIGH end was ever forecast** (9.73 min, off the surviving rows' max of
 246) — the low 8 was not. ⚠️ n = 1 on a quiet machine, so the estimator is no longer known-broken rather
-than proven; budget from `suite-timings.tsv`. ⚠️ Related, same day: `const/maximumPageMegapixels`'s
+than proven; budget from `suite-timings.tsv`. ⛔ **AND THAT CAVEAT IS WHAT MATTERED: n = 2 as of 2026-08-29
+and the second reading is 1.33x LOW** — `logic/R25-depth-aware-prune`'s re-run printed `9-10` and took
+**800 s = 13.3 min** (`mutant-r25 800 0 5.00`), i.e. **33.3% OVER the budgeted 600** (⛔ **not "600 was
+33.3% under", which is 25% — a draft mixed two denominators in one comparison**). ✅ **What is measured is
+that SUITE GROWTH cannot be the term**: 382 s against the one window row at the same **1,355** checks
+(292 s) is **1.31x**, and 0.8% of growth does not buy that — ⛔ **so "1.31x-1.39x at the SAME 1,355 checks"
+is FALSE and the review of this diff caught it: the window spans 1,344 / 1,346 / 1,355, and only one row is
+comparable.** ⚠️ **WHICH term it is stays an INFERENCE, and the stronger form this line first carried was
+refuted from this repo's own ledger**: `ops/autonomous/README.md` measured that the loadavg column does not
+order these durations and that OneDrive and CrashPlan barely move a 1-minute average, and it files the same
+contention story as an inference. A Time Machine backup was three hours in at ~39% of a core; the two runs'
+**recorded** loadavgs are **5.00** against **4.36**, and the 10.38 a draft quoted is an unrecorded
+instantaneous reading. Nobody ran the controlled experiment. Budget from `suite-timings.tsv`.
+⚠️ Related, same day: `const/maximumPageMegapixels`'s
 nineteen-day `SURVIVED` row is `killed` on re-run, so the live survivor list is **one**
 (`BUGS.md` T5 `#### The survivor list re-asked`) — and a re-run buys a verdict, not coverage, which stays
 `79 of 104` with the never-run census at 25.
+✅ **THAT ONE WAS RE-ASKED 2026-08-29 AND `SURVIVED` (`382 s`, `1355/1355`, no objecting check, predicted
+in writing) — SO THE LIVE SURVIVOR LIST IS STILL ONE, AND IT IS THE FIRST IN THIS LOG MEASURED TO BE A GAP
+IN THE CHECKS RATHER THAN A VALUE NOTHING DEPENDS ON — ⚠️ a superlative over a population of TWO, the
+other killed the day before** (`BUGS.md` T5 `#### The last survivor re-asked`,
+R25 `#### It belongs here`). ⛔ **The finding is worth more than the verdict and it refutes R25's own stated
+reason, which named the very arrangement that splits the case as one already tried**:
+`CGPDFDictionaryApplyBlock` yields a dictionary's entries in **reverse file order — the SECOND key written
+comes back first, on 4 files covering 2 key sequences x 2 object assignments** — so it reads an entry's
+POSITION and not its name (⚠️ measured at TWO entries and over the names `A` and `Z`; larger `n` is
+unmeasured), while
+`Tests/main.swift`'s `depthFixture` writes the long chain FIRST in both members of its "both orderings"
+pair. **The pair varies what the order ignores and holds what it reads, so it covers one traversal order
+twice**, which is why twenty-one days of a contradiction sat in one file: one comment called the pair proof
+of depth-awareness and another, forty lines below, called it not discriminating — the second was right and
+its reason was not. ✅ **Swap the two object numbers and it splits: depth-aware 777, identity-only `nil`,
+both key orders**, against 777/777 on both shipped fixtures. ⚠️ **Measured through a REPLICA of `walk`
+outside the tree** (`alltext-replica`'s shape, labelled), which agrees with production on **4 of 4** cells
+production can be observed on — the suite's own `777` under the shipped rule and this run's `1355/1355`
+under the mutant's. ⚠️ **The fixture is NOT in the suite**: a probe reading is not a red check, and the
+`mutants` box binds a session to one mutant, so it is the queue's `r25-depth-fixture`. ⛔ **The
+transferable lesson: a fixture built "both ways round" is only two ways round if it varies what the thing
+under test actually reads.**
+⚠️ **"That run" in the next sentence is the 2026-08-25 `depth-cap` PAIR and nothing above it** — a dangling
+referent this paragraph already carried, pushed further from its subject by the block just inserted, and
+named here rather than re-flowed.
 That run read **14.8x** high (`12-174` printed, **705 s** measured), the third reading of this
 estimator and the second in the same direction; ⚠️ its LOW end came within 5%, which is new but is **not**
 evidence the window has healed — that figure was printed from the *pre-run* window, whose one post-clamp

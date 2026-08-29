@@ -14439,21 +14439,37 @@ do {
               String(describing: found))
     }
 
-    // The pruning has to be depth-aware, and this is what proves it. A plain
-    // "have I seen this dictionary" set gets it wrong: dictionary S is reached
-    // first down the long chain, at a depth where the cap stops its subtree
-    // being explored, and marking it seen there turns away the short path that
-    // would have explored it. The image sits three levels under S, so only the
-    // short path can reach it:
+    // Why the pruning has to be depth-aware. A plain "have I seen this dictionary"
+    // set gets it wrong: dictionary S is reached first down the long chain, at a
+    // depth where the cap stops its subtree being explored, and marking it seen
+    // there turns away the short path that could have explored it. The image sits
+    // three levels under S, so only the short path can reach it:
     //
     //   page(0) ─ long(1) ─ B ─ S(2) ─ E ─ (3) ─ F ─ image at 4   past the cap
     //           └ short ─────── S(1) ─ E ─ (2) ─ F ─ image at 3   in range
     //
-    // Which sibling is walked first is CGPDFDictionaryApplyBlock's business, and
-    // it is not alphabetical — measured on this fixture it yields ["Z", "A"].
-    // So build it both ways round and require both: whichever order the
-    // framework uses, one of the two puts the long chain first, and identity-only
-    // pruning loses that one's image.
+    // Which sibling is walked first is CGPDFDictionaryApplyBlock's business, and it
+    // is not alphabetical — measured on this fixture it yields ["Z", "A"].
+    // ⛔ **That reading is 2026-08-08's and it still holds. What this comment used to
+    // conclude from it does NOT: "so build it both ways round and require both:
+    // whichever order the framework uses, one of the two puts the long chain first,
+    // and identity-only pruning loses that one's image" is FALSE, measured
+    // 2026-08-29** (BUGS.md R25 `#### It belongs here`, out of
+    // `logic/R25-depth-aware-prune`'s re-run). The order depends on the entry's
+    // POSITION and not on its name — the SECOND key written comes back first, on 4
+    // files covering 2 key sequences × 2 object assignments — and the builder below
+    // puts `longKey` at object 6 and `shortKey` at object 9 in BOTH files, so the
+    // long chain is the first entry either way and reverse order walks the SHORT
+    // route first in both. The pair varies the one thing the order ignores and holds
+    // the one thing it reads: it covers one traversal order twice, which is why the
+    // mutant survives it. The comment below the loop was right and this one was not.
+    // ⚠️ The fixture that DOES split them is measured (depth-aware 777,
+    // identity-only nil, both key orders) and is not yet in this suite, because a
+    // probe reading is not a red check — queue item `r25-depth-fixture`. ⛔ **The
+    // edit is NOT "renumber the routes", which would leave `longKey` naming the
+    // short one: write the `shortKey` entry FIRST**, i.e.
+    // `<</\(shortKey) 9 0 R/\(longKey) 6 0 R>>`, so the parameter names stay honest
+    // and the check labels below keep meaning what they say.
     func depthFixture(named name: String, longKey: String, shortKey: String) -> URL {
         let bodies = [
             "<</Type/Catalog/Pages 2 0 R>>",
@@ -14496,12 +14512,17 @@ do {
         return url
     }
 
-    // Both orderings, because which sibling CGPDFDictionaryApplyBlock hands back
-    // first is not ours to choose. This is a guard that pruning does not lose an
-    // image reachable by two routes of different lengths — it is *not* a
-    // discriminating test of the depth-awareness itself. See R25: in every
-    // arrangement tried, CoreGraphics walked the shallower branch first, which
-    // is exactly the order in which identity-only pruning would also be correct.
+    // Two KEY NAMINGS — not two traversal orders, which is what the comment above
+    // the builder claimed until 2026-08-29. This is a guard that pruning does not
+    // lose an image reachable by two routes of different lengths, and it is *not* a
+    // discriminating test of the depth-awareness itself: measured, both members walk
+    // the SHORT route first, so identity-only pruning passes both and
+    // `logic/R25-depth-aware-prune` survives them. ⛔ The reason R25 gave for that —
+    // "CoreGraphics walked the shallower branch first in every arrangement tried" —
+    // is right here only by accident of the builder: the order reads the entry's
+    // POSITION, and `longKey` is written first in both files. Swap the builder's two
+    // object numbers and CoreGraphics yields the LONG route first in both, where
+    // identity-only pruning loses the image. See BUGS.md R25 `#### It belongs here`.
     for (name, long, short) in [("depth-az.pdf", "A", "Z"), ("depth-za.pdf", "Z", "A")] {
         let page = PDFDocument(url: depthFixture(named: name, longKey: long,
                                                  shortKey: short))?.page(at: 0)

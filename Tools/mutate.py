@@ -100,10 +100,32 @@ Two consequences, both load-bearing:
     the log has no date column — which is this header's own standing warning.
     ⚠️ n = 1, and the run was a quiet machine (loadavg 4.36); this is the estimator no
     longer being known-broken, not the estimator being proven.
+    ⛔ **AND THAT CAVEAT IS THE ONE THAT PAID OFF. n = 2 as of 2026-08-29 and the SECOND
+    recorded reading from the cleared window was 1.33x LOW**: `9-10` printed off a window
+    of `[292, 289, 275, 277, 292]` for a baseline plus `logic/R25-depth-aware-prune`,
+    **800 s = 13.3 min** measured (`$STATE/suite-timings.tsv`, `mutant-r25 800 0 5.00`),
+    i.e. **800 s is 33.3% OVER the budgeted 600** — ⛔ not "600 was 33.3% under", which is
+    25%; a draft mixed two denominators into one comparison. The `1.33x` ratio form is
+    this header's own convention and is the one to quote.
+    ✅ **What is measured is that the SUITE cannot be the term**: that mutant's own suite
+    took **382 s** against the one window row measured at the same **1,355** checks
+    (292 s), i.e. **1.31x**, and 0.8% of growth does not buy that. ⛔ **"1.31x-1.39x at
+    the SAME 1,355 checks" was in a draft and is FALSE — the window spans three suite
+    sizes** (`[292, 289]` at 1,344, `[275, 277]` at 1,346, `[292]` at 1,355), so only one
+    row is comparable and the 1.39x end came off a suite 11 checks smaller.
+    ⚠️ **WHICH term it is stays an INFERENCE and the stronger form was refuted by the
+    review of that diff.** A Time Machine backup was three hours into a run at ~39% of a
+    core alongside CrashPlan and OneDrive, and the two runs' recorded loadavgs are 5.00
+    and 4.36 — but `ops/autonomous/README.md` measured that the loadavg column does NOT
+    order these durations, that those two processes barely move a 1-minute average, and
+    that the later predictor was the scheduling band; it files this same story as an
+    inference and nobody has run the controlled experiment. So the estimator is not merely
+    unproven: it cannot be corrected from this log, which records neither load nor a date.
     **The rule that
-    survives both failures is the one this header already gives**: a rate read off
+    survives all three failures is the one this header already gives**: a rate read off
     history is wrong in whichever direction history has just moved, so date every figure
-    and prefer `$STATE/suite-timings.tsv` rows dated after 2026-08-24.
+    and prefer `$STATE/suite-timings.tsv` rows dated after 2026-08-24 — and do not reach
+    for the loadavg column as the correction, which the ledger says it is not.
   * **A duration measured here is not a reading of the suite's size.** The rsync below
     excludes `testdocs`, and one draft of this paragraph argued from that exclusion
     that a mutation run must therefore be much *faster* than a full `./run_tests.sh`.
@@ -476,6 +498,13 @@ OPERATORS = [
     # plants the original defect: ink alone routes a page to pictures again.
     ("Flattener.swift", "if tone > pictureInkMinimumTone,\n           inkCoverage(",
      "if true,\n           inkCoverage(", "R38-ink-needs-tone"),
+    # ⛔ THE LIVE SURVIVOR, and as of 2026-08-29 the only one — re-asked against 1,355
+    # checks and still `SURVIVED` (382 s, no objecting check). It is a GAP IN THE CHECKS
+    # and not a value nothing depends on: the two fixtures written to discriminate it
+    # vary the two /XObject keys' NAMES, and `CGPDFDictionaryApplyBlock` yields entries
+    # in reverse FILE ORDER, so both of them walk the short route first. Swap the two
+    # object numbers and the rules diverge — depth-aware 777, identity-only nil.
+    # Prescribed as the queue's `r25-depth-fixture`; BUGS.md R25 `#### It belongs here`.
     ("Flattener.swift", "if let seen = walkedAt[identity], seen <= depth { return }",
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
     # C28's wiring as a MECHANISM rather than as a constant, 2026-08-22, and it is the

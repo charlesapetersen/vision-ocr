@@ -3433,7 +3433,60 @@ happens.**
       the two classifiers diverge, which is the thing T21's arm was written to mirror.
       ⚠️ Cost: `Tools/` is staged, so it pays the full suite; budget one commit.
       —— end of the record ——
-- [ ] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
+- [ ] **r25-depth-fixture** — **put the fixture that splits depth-aware from identity-only pruning INTO the
+      suite, and turn a probe reading into a red check.** Measured 2026-08-29 out of `mutants`' last
+      re-run: `Tests/main.swift`'s `depthFixture` builds
+      `<</\(longKey) 6 0 R/\(shortKey) 9 0 R>>`, so the LONG chain is the first entry in both members of
+      its "both orderings" pair — and `CGPDFDictionaryApplyBlock` yields a dictionary's entries in
+      **reverse file order** (the second key written comes back first, over 4 files covering 2 key
+      sequences x 2 object assignments), which means it reads an entry's POSITION and not its name.
+      ⚠️ Measured at TWO entries and over the names `A` and `Z` only; larger dictionaries are unmeasured. **The pair therefore varies what the order ignores and
+      holds what it reads: both members walk the SHORT route first, and
+      `logic/R25-depth-aware-prune` survives them** (`SURVIVED`, 382 s, `1355/1355`, 2026-08-29).
+      ⛔ **THE EFFECT IS ALREADY MEASURED — do not re-derive it — AND THE EDIT IS *NOT* "RENUMBER THE
+      ROUTES", which a draft of this box said and the review of that diff refuted**: object 6 is the long
+      chain's head and object 9 the short route's in the probe too, and renumbering them would leave the
+      builder's `longKey` parameter naming the SHORT route, so the two new checks would print
+      `(/A long)` over the route that is not long. **Write the `shortKey` entry FIRST** —
+      `<</\(shortKey) 9 0 R/\(longKey) 6 0 R>>` — keeping both key orders. Nor is it one token: keeping
+      the existing pair as well means parameterising the builder, as the probe had to.
+      Over one traversal, both prune rules side by side, read off
+      `/tmp/r25-prune-probe.swift` (a throwaway replica of `walk`, outside the tree):
+
+          fixture                              depth-aware   identity-only
+          suite depth-az.pdf (long is key 1)   777           777
+          suite depth-za.pdf (long is key 1)   777           777
+          NEW   long is key 2, A/Z             777           nil
+          NEW   long is key 2, Z/A             777           nil
+
+      **STEPS.** (1) Add the two swapped fixtures beside the existing pair, asserting `pixelWidth == 777`
+      through the real `Flattener.largestImage` — keep the existing two, which are the regression guard
+      they always were. (2) `--rerun --only R25-depth-aware` and **predict `killed` by exactly the two new
+      checks** before you start; the existing two must stay green, which is what says the new pair and not
+      the old one is doing the work. (3) Doc-sync: R25 `#### It belongs here` and T5
+      `#### The last survivor re-asked` both say the fixture is owed and why it was not landed in the same
+      session; `CONTRIBUTING.md` §4a and `CLAUDE.md` both call R25 the live survivor. If it comes back
+      `killed`, the live survivor list goes to **ZERO** and all four of those say so.
+      ⚠️ **If the new checks come back GREEN under the mutant, the FIRST place to look is POINTER
+      IDENTITY, not the guard** — corrected by the review of the diff that wrote this box, which had the
+      priority the wrong way round. The split depends entirely on CoreGraphics resolving `10 0 R` to the
+      SAME pointer from two different parent dictionaries (`Flattener.swift`'s `unsafeBitCast`), and on
+      the two shipped fixtures that assumption is untestable because the short route finds the image
+      before the memo can matter. ✅ Its production corroboration is
+      `Tests/main.swift`'s *"60 forms sharing one Resources dictionary do not fan out"* (5.09 s → under
+      2 s), green at baseline and under this mutant. ⚠️ Second place: the replica omits `largestImage`'s
+      opening `guard drawsAnyXObject(page) != false`; the new fixtures' content stream is byte-identical
+      to the pair's, so it must answer the same — **entailed, not measured**. Either way a green new check
+      has found something better than a fixture.
+      ⚠️ Bounded: two fixtures, two checks, one `--rerun`, ~800 s of machine time. ⛔ **What kept this
+      out of the session that measured it was that SESSION's budget, not this file's one-mutant bound —
+      corrected by the review of that diff, which read the bound and found it governs BOOKKEEPING
+      ("commit its row before starting another") and does not forbid re-asking the same id.** So do not
+      cite the bound as a reason to defer it again; 800 s sits well under `MAXRUN`, and the recorded
+      2026-08-25 exception ("a pair sharing a fixture is one item") argues the same mutant twice over one
+      fixture is one item too.
+      (context: BUGS.md R25 — FIXED; `#### It belongs here` is this item's specification)
+- [x] **mutants** — work the survivors in `Tools/mutation-log.tsv`. A surviving mutant is either a gap in
       the checks or a value nothing depends on, and `BUGS.md` T5 records how to tell those apart. Run it
       scoped (`python3 Tools/mutate.py --only <substring>`), never the full catalogue — that is ~7 hours
       at the **246 s per mutant measured 2026-08-24**, over a catalogue whose size is
@@ -3493,6 +3546,25 @@ happens.**
       one `--rerun --only R25-depth-aware` and tick this box on its row, whichever way it comes back.
       ⚠️ Do not read *"expected to confirm"* as permission to skip it: that is exactly what was assumed
       about `maximumPageMegapixels` for nineteen days.
+      ✅ **DONE 2026-08-29 — RE-RUN, `SURVIVED`, AND THIS BOX IS TICKED ON ITS ROW.** Baseline
+      `1355 checks, green`, mutant **382 s**, `1355/1355 passed`, **no objecting check**, predicted in
+      writing before the run. `coverage` unmoved at **79 of 104**, census **25**, exactly as a `--rerun`
+      must leave them. ⛔ **The verdict confirmed and the REASON did not**: R25's "the case cannot be
+      built" named *"varying the object numbers the keys point at"* as an arrangement already tried, and
+      that is exactly the arrangement that splits it. `CGPDFDictionaryApplyBlock` yields entries in
+      **reverse file order** (the second key written comes back first, over 4 files covering 2 key
+      sequences x 2 object assignments), so it reads POSITION and not name, while `depthFixture` writes
+      the long chain FIRST in both members of its
+      "both orderings" pair — **the pair covers one traversal order twice.** Swap the two object numbers
+      and both prune rules diverge: **depth-aware 777, identity-only nil.** So this is the first survivor
+      in the log measured to be a **GAP in the checks**. `BUGS.md` T5
+      `#### The last survivor re-asked` and R25 `#### It belongs here`; the fixture is the new
+      `r25-depth-fixture` item, because a probe reading is not a red check and the one-mutant bound below
+      puts the second `--rerun` in the next session.
+      ⚠️ **Estimator, second recorded reading from the cleared window: 1.33x LOW** — printed `9-10`,
+      measured **800 s** end to end at loadavg 5.00 with a Time Machine backup live and loadavg **10.38**
+      during the compile. The mutant's own suite is **382 s** against the window's 275-292 at the same
+      1,355 checks, so contention and not suite size. n = 2, one held and one low.
       ⛔ **BOUND: ONE mutant per session, and commit its row before starting another.** ⚠️ The 4 h
       `MAXRUN` argument for that bound is clamped-era arithmetic — a baseline plus one mutant measured
       **479 s** on 2026-08-24, so two no longer threaten `MAXRUN` — but the bound stands on the other two
