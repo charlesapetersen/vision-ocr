@@ -209,8 +209,11 @@ nothing in this entry's own material is unrun.** ✅ **AND ZERO AFTER `C24`'s
 baseline and both. ⚠️ **The dictionary cap's three is 2026-08-25's and is now FOUR**: that run's own
 finding was that the three was a *coverage boundary* — `Flattener.pageIsAnImage` flipping on fixture
 page 13 with nothing pinning it — and `#### The coverage boundary, CLOSED` closed it on 2026-08-26 with
-one check and a `--rerun` (292 s by six, 289 s by four, 875 s end to end, baseline **1,343 → 1,344**). ⚠️ **That does NOT empty the catalogue**: 25 entries still have no row at all, they are
-owned by the queue's own `mutants-never-run` item as of the same day, and this six was always C28's and
+one check and a `--rerun` (292 s by six, 289 s by four, 875 s end to end, baseline **1,343 → 1,344**). ⚠️ **That does NOT empty the catalogue**: 25 entries still had no row at all — **24 from
+2026-08-30**, when `const/textPageInkOutsideThreshold` became the first one worked off
+(T5 `#### The first never-run mutant`) — they are
+owned by the queue's own `mutants-never-run` item as of **2026-08-25** (⚠️ this read
+*"as of the same day"* and the 2026-08-30 insertion broke the referent), and this six was always C28's and
 `depth-cap`'s share rather than the census. ⛔ **That last run found the SIBLING of the truncation
 above, in the same field**: `run()` also capped the *list* at `fails[:3]`, so a row killed by five named
 three. It was already live — swept over all **84** rows, **five earlier rows lost 10 names** — the count
@@ -12869,7 +12872,7 @@ would have died at the process; it asserts both directions of "belonging to the 
 ⛔ **No `mutate.py` entry was added, and that is a decision rather than an omission.** CONTRIBUTING 4a asks
 for one when a guard is added, and its purpose is durable evidence that a check bites. Here the evidence is
 suite runs with the red rows named and counted BEFORE each run, which is what a mutant row records, while the
-catalogue's own debt is 25 entries with no row at all (`mutants-never-run`) — so more un-run entries would add
+catalogue's own debt is 25 entries with no row at all (`mutants-never-run`; **24 from 2026-08-30**) — so more un-run entries would add
 to exactly the ledger that item exists to work off. The sabotages are described precisely enough to be
 rebuilt: the `PDFDocument(url:)` guard's `true` → `false`, the `isLocked` line deleted,
 `rawAnnotationCount` forced to `return 0`, `document.unlock(...)` deleted, and `assemble`'s passthrough guard
@@ -21439,6 +21442,165 @@ not in this one, and it is left open here.
 duplicates "as of 2026-08-26", which was correct at `bee2db1` and reads **TEN** on
 2026-08-29. Replaced with the derivation rather than with a fresher number — this file
 already declines to quote a total row count for exactly that reason.
+
+#### The first never-run mutant, 2026-08-30 — C26's own bar, `killed` by SIX, and a mutant that transiently disarms three checks
+
+✅ **`const/textPageInkOutsideThreshold` (`0.045` → `0.08`) is `killed`, 298 s, baseline
+`1361 checks, green`, by EXACTLY SIX objecting checks — the first entry worked off the
+queue's `mutants-never-run` census, and the prediction held on verdict, count and
+identity.** The mutant **reverts the owner's own
+2026-08-19 decision** (C26's bar move), which is why it was taken first out of the 24
+remaining: no mutant had ever been applied to the constant C26 and C28 are both about.
+Written down before the run, at
+`$STATE/rescue/PREDICTION-mutants-never-run-const-textPageInkOutsideThreshold-2026-08-30.md`.
+⚠️ **What "the prediction held" reaches, stated exactly rather than generously, because
+the review of this diff cut two axes off a draft's list.** Verdict, count and the six
+identities held; **one** detail string was written out verbatim (row 3's
+`153 wide of 1224, ceiling 154`) plus all three of row 1's numbers, not "two of the six".
+And **ORDER is near-empty content**: `check()` prints in execution order, the six are at
+ascending line numbers, and the prediction was itself written in file order — so the order
+could not have come out differently and is not evidence of anything.
+
+The six, in the order the run printed them. ⚠️ **They are NOT all on one fixture and a
+draft said they were**: row 1 is on the 40x40 in-memory buffer at `Tests/main.swift:2246`
+(`smallScore` **0.0554**), rows 2-6 on the `c26Small` PDF (`smallInk` **0.0551**). The two
+numbers differing is the tell.
+
+1. *C26 — …and the bar now refuses it, which is the fix* — `0.0554 vs threshold 0.080,
+   wanted (bar, 0.0660]` — ⛔ and this one cannot **pass** rather than merely failing; see
+   below.
+2. *C26 — …and the shipped bar now refuses it, which is the fix* — `0.0551 vs 0.080`.
+3. *C26 — a page with a small ink figure outside the words is not shrunk* —
+   `153 wide of 1224, ceiling 154`.
+4. *…its foreground too, so both layers move together* — `76 wide of 1224`.
+5. *C28 — the page the shipped bar rescues does not report itself as shrunk* —
+   `flag true, 153 wide, ceiling 154`.
+6. *…and asking again with no override leaves the page at the caller's factor* —
+   `153 wide of 1224`.
+
+⚠️ **Row 1 is a red that CANNOT PASS, so the informative kill set is FIVE and the six is
+what `mutate.py` records.** Its assertion is
+`smallScore > threshold && smallScore <= 0.0660`, and at a bar of 0.08 that band is empty
+for *every* reading of `smallScore` — so the row observes that the constant moved and
+nothing about the page. That is the exact mirror of this entry's own rule that a green
+which cannot fail is not evidence, and it is owed the same treatment. ⚠️ **The nearby
+warning is about a DIFFERENT check and a draft credited this one with it**: the empty-band
+hazard is written out at `Tests/main.swift:2517-2523`, over `smallInk`'s band; the comment
+above row 1 (`:2248-2256`) gives a different reason for its literal upper edge — that
+writing it as the constant would make the check agree with any future value.
+
+✅ **Rows 3-6 were predicted off THREE PASSING CHECKS rather than reasoned, and the
+attribution is one check per row rather than one check for all four.** The block that
+substitutes the **old** 0.08 bar through `textPageInkOutsideThresholdOverride` is green
+today and asserts what this fixture does at a bar of 0.08, with C28's shape term wired:
+`Tests/main.swift:2591` (background) entails rows **3 and 6**, `:2594` (foreground) entails
+row **4**, and `:2601` (the C28 positive-direction twin) entails row **5**. So
+`153 wide of 1224, ceiling 154` could be written down verbatim instead of guessed.
+
+⛔ **NOT the widest kill in the log, and this register has published a wrong superlative
+here before.** Six is joint **SECOND**: `const/colourSaturationThreshold` announces
+**11**, and six ties `logic/C24-unknown-is-not-no` and both
+`logic/C24-drawn-cap-reaches-further` rows. Re-derive from
+`Tools/mutation-log.tsv`, never from a sentence.
+
+⛔ **THE FINDING WORTH MORE THAN THE VERDICT, AND IT IS THE SAME FACT AS THE CHEAP
+PREDICTION: those three checks are exactly the three this mutant DISARMS.** The block
+driving `textPageInkOutsideThresholdOverride` with the **old** `0.08` bar substitutes a
+value the mutant has just made the shipped one, so `bar: 0.08` and `bar: nil` compute an
+identical `bar` at `Flattener.swift:3430` and the three compare **identically configured
+runs** — green necessarily, not by observation. ⚠️ *"With itself"* is the wrong phrase and
+a draft used it: `:2570-2575`'s own comment records that the render is not provably a pure
+function of the page, which is why that block asserts to `1e-6` and not `1e-9`.
+⛔ **The block holds FOUR checks, not three.** The fourth, `:2605`
+(*"…and it carries the fraction the decision was taken on"*), is disarmed too, and is
+excluded only because it was **already** unable to fail for an unrelated reason —
+`measuredInkOutside` is assigned before term 1's guard (`Flattener.swift:3433-3434`), so
+its input never moves at any value of the constant. A reader counting the block finds four.
+⛔ **NOT a new class, and a draft claimed it was — refuted by the review of this diff from
+this entry's own neighbours**: `const/lineMinimumMembers` (2026-08-24) recorded **six**
+`groups == 0` assertions that its applied mutant left unable to fail, and
+`logic/C28-alltext-ignores-shape` recorded two more. What is actually new is narrower and
+worth keeping: the disarmed checks are the **override seam's**, and the asymmetry is
+structural — whichever value ships, the seam's checks are written against the *other* one
+(their own comments say so in the mirror direction, *"Substituting 0.045 was the pricing
+question while 0.08 shipped"*), so a mutant that moves the constant **to** the substituted
+value silently disarms exactly the checks written to catch that seam.
+⚠️ **Not a defect and not a gap** — six other checks kill this mutant, and the three would
+only matter to a mutant nothing else objected to. ✅ **And there is a concrete such mutant
+sitting in the census**: `logic/C26-inkbar-override-ignored` (`Tools/mutate.py:616-619`,
+planting `let bar = textPageInkOutsideThreshold` and so deleting the seam) is **still
+never-run**, and those three checks are its designated killers. So they are not dead
+weight, and it is the obvious next pick off `mutants-never-run` — with a prediction that
+follows from this run rather than needing a fresh one.
+
+⚠️ **Two rows were flagged UNCERTAIN in the prediction and both stayed green — and the
+estimate behind them was a RE-DERIVATION of a figure the file already carries, not a lucky
+guess.** `bigInk > bar` (`:2535`) and *"a figure page above the bar is not shrunk"*
+(`:2631`) both turn on `c26Big`'s fraction, which no run **prints**. It was estimated from
+the fixtures' geometry — a 40x40 figure against `c26Small`'s 30x30 is 1.778x the ink
+outside the words, and `inkOutsideText` is `outside / (outside + inside)`
+(`Flattener.swift:1928-1937`, verified), giving `bigInk ≈ 0.0940`, which clears 0.08 by
+**1.17x**. ⛔ **`Tests/main.swift:2447` states 0.0940 outright** — *"40x40 reads 0.0940 …
+measured 2026-08-18 by a probe driving this same code"* — so the arithmetic reproduced a
+documented figure and the prediction's "uncertain" label was over-cautious about the value
+while right about the inequality. ✅ **And the inequality is now MEASURED rather than
+estimated**: `:2535` asserts `bigInk > textPageInkOutsideThreshold` and stayed **green
+under a shipped bar of 0.08**. Had it been 0.079 the count would have been eight. What
+stays unpinned is that no run prints the value, not the inequality.
+
+⛔ **An instrument trap, found by using the instrument: `Tools/mutation-log.tsv` HAS NO
+HEADER ROW.** Line 1 is `const/baselineFraction  killed  114  …`. The `mutants-never-run`
+box prescribes deriving the census as `--list` ids minus the log's distinct first column,
+and an `awk -F'\t' 'NR>1'` — the reflex over a `.tsv` — drops that row and **invents one
+extra never-run entry that has a verdict: 26 against 25 as the log stood before this run,
+and 25 against 24 after it** (both computed; the two states are named because the wrong
+number is the one a reader will carry forward). ⛔ **And a hand derivation is off by one in
+the OTHER direction just as easily**: `already_done()` returns **81** distinct ids after
+this row, one of which (`logic/R39-auto-vs-engine`) is not in the catalogue, so counting
+all of them as covered gives a census of **23** and understates the gap. The tool's own
+arithmetic, `len(knownIDs & set(final))`, is right in both directions; a hand derivation
+has two ways to be wrong and they point opposite ways. ⚠️ The box's own dated `103 − 78 = 25` is
+consistent with this once "78 rows" is read as *in-catalogue* logged ids rather than
+distinct log rows, so no published figure moves.
+
+**Bookkeeping.** `coverage` **79 → 80 of 104**, the never-run census **25 → 24**, the log
+**96 → 97** rows, `0 survivor(s)` unchanged. ⚠️ Four earlier statements of
+`79 of 104` in this file are **records of their own runs' before-and-after** and are kept
+as written — ⛔ **and a draft named the wrong four; these are the grep's**: `:21114`
+(`#### The survivor list re-asked, 2026-08-28`), `:21142` **and** `:21260` (both inside
+`#### The last survivor re-asked, 2026-08-29`), and `:21404`
+(`#### The same mutant twice`'s duplicate-row paragraph, whose whole point is that a
+duplicate row adds no key). `#### The fixture, IN THE SUITE` carries no such pair at all.
+
+⚠️ **Estimator, the FIFTH recorded reading from the cleared window and the fourth inside
+its printed range**: it printed *"roughly 9-13 minutes … Budget the 13"* and the run took
+**598 s = 9.97 min** end to end (`/tmp/mut-run.log` birth 02:31:59, last write 02:41:57).
+The high end is **1.304x** over-budgeted and the low end **9.70%** under the measured time.
+⛔ **Against the `mutants-never-run` box's OWN cost figure it is 1.25x, so that box
+under-budgets**: the box says *"a baseline plus one mutant was 479 s … so one is ~8
+minutes"*, and 598 s is 1.249x that. A draft called the box's figure "right"; this register
+files 33.3% over as a finding, so 25% over cannot be a confirmation.
+⚠️ **"Recorded" here means written up in this register, which is a LOOSER test than the one
+that excluded the C27 Saturation reading** (that one was excluded for having no write-up
+despite coming off a clear window) — so the ordinal is a count of write-ups, not of runs.
+⚠️ **No `$STATE/suite-timings.tsv` row exists for this run, and that was avoidable rather
+than structural.** `mutate.py` neither takes the suite lock nor writes a timings row, but
+all four earlier cleared-window readings have a row appended **by hand**
+(`mutant`, `mutant-r25`, `mutant-r25b-derived`, `mutant-r25c`), so this session simply did
+not append one and the loadavg is gone. ⛔ **Not "the same limit the 2026-08-28 row
+carries", which a draft said and is backwards**: `2026-08-28 05:26:37 mutant 582 0 4.36`
+*has* its loadavg — the 2026-08-28 measurement missing a row is the stranded **280 s** run.
+✅ **A SECOND SAME-DAY CROSS-MUTANT PAIR AT A FIXED SUITE SIZE FALLS OUT OF THIS RUN, and a
+draft of this paragraph threw it away on a false date.** `logic/R25-depth-aware-prune`'s
+**296 s** ran the **same day** — `799ad3a`, 2026-08-30 01:12:45, its suite at
+`suite-timings.tsv` `mutant-r25c 593` at 01:06:39, **~85 minutes** before this one — and
+both baselines print **1,361 checks**, so suite growth is 0% and machine state is one
+window. **298 against 296 is 1.007x.** ⛔ **It CORROBORATES the 1.043x mutant-identity
+bound and does not tighten it, and the review of this diff proposed the wrong direction: an
+upper bound over two readings is the LARGER of them.** What it adds is a second independent
+pair agreeing that mutant identity buys little. ⚠️ The 296 s row's `1359/1361` is prose in
+`R25 #### The fixture, IN THE SUITE` rather than a log field, since a `killed` row records
+no suite total. n = 1 for this mutant, nothing in `Sources/` moved, and the run adds one log row.
 
 ### T6 · Three checks written for the bundling that cannot fail — FIXED
 *(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*

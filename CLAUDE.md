@@ -591,7 +591,9 @@ instantaneous reading. Nobody ran the controlled experiment. Budget from `suite-
 ⚠️ Related, same day: `const/maximumPageMegapixels`'s
 nineteen-day `SURVIVED` row is `killed` on re-run, so the live survivor list is **one**
 (`BUGS.md` T5 `#### The survivor list re-asked`) — and a re-run buys a verdict, not coverage, which stays
-`79 of 104` with the never-run census at 25.
+`79 of 104` with the never-run census at 25. ⛔ **That pair reads `80 of 104` and 24 from 2026-08-30**,
+when the first never-run entry was worked off; the sentence above keeps its own run's tense, because what
+it measured is that a *re-run* leaves coverage alone.
 ✅ **THAT ONE WAS RE-ASKED 2026-08-29 AND `SURVIVED` (`382 s`, `1355/1355`, no objecting check, predicted
 in writing) — SO THE LIVE SURVIVOR LIST WAS STILL ONE THEN (⛔ **it is ZERO from 2026-08-30, see below**),
 AND IT IS THE FIRST IN THIS LOG MEASURED TO BE A GAP
@@ -634,6 +636,36 @@ the yield-order reading is still two entries and the names `A` and `Z`, and no c
 this shape. ⛔ **The
 transferable lesson: a fixture built "both ways round" is only two ways round if it varies what the thing
 under test actually reads.**
+✅ **AND THE NEVER-RUN CENSUS IS BEING WORKED AS OF 2026-08-30 — `const/textPageInkOutsideThreshold`
+(`0.045` → `0.08`, i.e. C26's bar move REVERSED) is `killed`, 298 s, baseline `1361 checks, green`, by
+EXACTLY SIX objecting checks, every one predicted by name and in order before the run** (`BUGS.md` T5
+`#### The first never-run mutant`; census **25 → 24**, coverage **79 → 80 of 104**, survivor list still 0).
+⛔ **Six is joint SECOND and not the widest — `const/colourSaturationThreshold` announces 11.** ⚠️ **Row 1
+is a red that CANNOT PASS** (its band `(bar, 0.0660]` is empty at 0.08), so it says the constant moved and
+nothing about the page: the informative kill set is **five**, the mirror of this register's own rule about
+greens that cannot fail. Rows 3-6 were predicted off **three** *passing* checks — the block substituting the
+old 0.08 bar already asserts what this mutant does to that fixture — so `153 wide of 1224, ceiling 154` was
+written down verbatim beforehand. ⛔ **The finding worth more than the verdict, and it is the SAME FACT: the
+mutant transiently DISARMS those three checks**, because `bar: 0.08` and `bar: nil` compute an identical bar
+once 0.08 is the shipped value. ⛔ **NOT a new class — a draft said so and the review refuted it from
+`const/lineMinimumMembers`, whose applied mutant left six `groups == 0` assertions unable to fail.** What is
+new is that these are the OVERRIDE SEAM's, and the asymmetry is structural: whichever value ships, the
+seam's checks substitute the other one. ⚠️ Not a defect — six other checks kill it — and the block holds
+**four**, the fourth already unable to fail for an unrelated reason. ✅ **The next census pick follows:
+`logic/C26-inkbar-override-ignored` is still never-run and those three are its designated killers.**
+⛔ **An instrument trap for the next session: `Tools/mutation-log.tsv` HAS NO HEADER ROW**, so the
+box's prescribed census derivation is wrong under the reflex `awk 'NR>1'` — that drops line 1 and invents
+one extra never-run entry that has a verdict (26 against 25 before this row, 25 against 24 after), while
+counting all 81 logged ids as covered gives 23 and understates it. Use the tool's own
+`len(knownIDs & set(final))`. ⚠️ Estimator: **fifth** write-up from the cleared window and the fourth inside
+its range — printed `9-13`, measured **598 s = 9.97 min** end to end, high end 1.304x over-budgeted, and
+**1.25x the queue box's own 479 s figure, so that box under-budgets.** ⚠️ **No `suite-timings.tsv` row
+exists for it** — `mutate.py` neither takes the suite lock nor writes one, but all four earlier readings
+have a hand-appended row, so the missing loadavg is this session's omission and not a limit.
+⚠️ **298 s against `logic/R25-depth-aware-prune`'s 296 s is a SECOND same-day cross-mutant pair at a fixed
+1,361 checks** (~85 min apart, `799ad3a` 01:12) — **1.007x**, which **corroborates** the 1.043x
+mutant-identity bound rather than tightening it, an upper bound over two readings being the larger.
+⛔ A draft called that row "the previous day" and threw the pair away on it.
 ⚠️ **"That run" in the next sentence is the 2026-08-25 `depth-cap` PAIR and nothing above it** — a dangling
 referent this paragraph already carried, pushed further from its subject by the block just inserted, and
 named here rather than re-flowed.

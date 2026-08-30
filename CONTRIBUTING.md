@@ -186,7 +186,11 @@ with both named makes that green entailed, and it is inert by construction besid
 first commit held two rows, both killed) but for the first time over a catalogue of 104;
 `coverage` stays **79 of 104**,
 so ⚠️ **an empty survivor list is not coverage — 25 catalogue entries still have no row
-at all** (the queue's `mutants-never-run`). R25 `#### The fixture, IN THE SUITE`, T5
+at all** (the queue's `mutants-never-run`). ⛔ **That pair reads `80 of 104` and 24 later
+the SAME DAY**, when `const/textPageInkOutsideThreshold` became the first census entry
+worked off — `killed` by six checks, survivor list still 0 — which is the separation this
+sentence asserts, measured rather than argued (T5 `#### The first never-run mutant`).
+R25 `#### The fixture, IN THE SUITE`, T5
 `#### The last survivor re-asked`. **The lesson to carry: a fixture built "both ways
 round" is only two ways round if it varies what the thing under test actually reads.**
 

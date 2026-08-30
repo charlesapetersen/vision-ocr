@@ -668,7 +668,7 @@ happens.**
       three is now FOUR** — one check, both mutants re-run (292 s / 6 unchanged, 289 s / 4), baseline
       1,343 → 1,344.
       ⚠️ **Never-run entries in the CATALOGUE are a different population and now have their own item,
-      `mutants-never-run` (25 of them)** — this six was always C28's and `depth-cap`'s share. The four
+      `mutants-never-run` (25 of them, **24 from 2026-08-30**)** — this six was always C28's and `depth-cap`'s share. The four
       earlier ones, for the record: `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
       check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`);
       `logic/C28-alltext-ignores-shape` — **the wiring as a mechanism** — is `killed`, 3,407 s, by
@@ -715,7 +715,9 @@ happens.**
       was re-run and is `killed` — ⛔ **and ZERO from 2026-08-30, when `logic/R25-depth-aware-prune` was
       killed too, which is exactly why the survivor list was never the same question as this box**;
       ⚠️ coverage does NOT move for a re-run, staying `79 of 104` with the
-      census at **25**, because the two are complements over one set) and not a never-run entry, so "the mutants item owns
+      census at **25**, because the two are complements over one set — ⛔ **the pair is `80 of 104` and 24
+      from 2026-08-30**, when this box's first entry was worked off; the clause keeps its own tense
+      because what it states is a property of a *re-run*) and not a never-run entry, so "the mutants item owns
       the rest" (an earlier draft of this sentence) was wrong, and "nobody has claimed them" — true for
       four consecutive sessions that each flagged it — is now false. ⚠️ 25 held after the third and fourth
       runs by coincidence: this entry's share fell by one each time and the census fell with it,
@@ -3667,7 +3669,9 @@ happens.**
       **`0 survivor(s)`** — ⚠️ not for the first time ever (the log's first commit held two killed rows)
       but for the first time over a catalogue of 104. ⚠️ **That does NOT retire `mutants-never-run`**:
       `coverage` is still `79 of 104` and 25 entries have no row at all, so an empty survivor list and
-      coverage are different questions. `BUGS.md` R25 `#### The fixture, IN THE SUITE`.
+      coverage are different questions — ⛔ **`80 of 104` and 24 from later the same day, with the
+      survivor list still 0, which is that separation measured rather than argued.**
+      `BUGS.md` R25 `#### The fixture, IN THE SUITE`.
       ⚠️ **Estimator, second recorded reading from the cleared window: 1.33x LOW** — printed `9-10`,
       measured **800 s** end to end at loadavg 5.00 with a Time Machine backup live. ⛔ **Three things in
       this paragraph were wrong and are corrected 2026-08-29** (`BUGS.md` T5 `#### The same mutant twice`).
@@ -3705,8 +3709,9 @@ happens.**
       them.
       (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a
       value nothing depends on)
-- [ ] **mutants-never-run** — the **25** catalogue entries with **NO ROW AT ALL**, which until 2026-08-25
-      were owned by no box in this file. `mutate.py` prints them itself at the END of a campaign, under
+- [ ] **mutants-never-run** — the catalogue entries with **NO ROW AT ALL** — **25 on 2026-08-25**, when
+      until then they were owned by no box in this file, and **24 from 2026-08-30**, one worked off; the
+      count is deliberately not restated as a bare number, because it moves by one per session. `mutate.py` prints them itself at the END of a campaign, under
       *"N mutant(s) in the catalogue with NO ROW AT ALL — never applied, so nothing is known about them"*.
       ⛔ **There is no free way to read that census: `--only nothing-matches-this` returns before the
       loop** (`startup_line`'s `n_todo <= 0` branch, then `main`'s `if not proceed: return 0`), and the
@@ -3718,6 +3723,48 @@ happens.**
       sets are not nested. ⚠️ **The catalogue is 104 from 2026-08-26 (C27 (c)'s
       `const/colourSaturationThreshold`) and the 25 does NOT move**, because that mutant was run in the
       commit that added it — which is what this entry is for. Re-derive rather than adjust.
+      ⛔ **AND WHEN YOU RE-DERIVE IT BY HAND, DO NOT SKIP LINE 1: `Tools/mutation-log.tsv` HAS NO HEADER
+      ROW.** Line 1 is `const/baselineFraction  killed  114  …`. The reflex `awk -F'\t' 'NR>1{print $1}'`
+      over a `.tsv` drops it and **invents a 26th never-run entry that has a verdict** — measured
+      2026-08-30, by making the mistake. ⛔ **The opposite slip is just as easy and points the other way**:
+      `already_done()` returns **81** distinct ids as of 2026-08-30 and one of them is not in the catalogue,
+      so counting all 81 as covered gives **23** and *understates* the gap. The tool's own arithmetic is
+      `len(knownIDs & set(final))` and is right in both directions; a two-line python driving
+      `already_done()` and `catalogue()` off the real module is the cheap way to get it (it needs no suite
+      and no build). ⚠️ The dated `103 − 78 = 25` above is consistent once "78 rows" is read as
+      *in-catalogue* logged ids rather than distinct log rows, so no published figure moves.
+      ✅ **PROGRESS — the census is being worked, and it is 25 → 24 as of 2026-08-30.** The first entry
+      taken was **`const/textPageInkOutsideThreshold`** (`0.045` → `0.08`), chosen because it reverts the
+      owner's own 2026-08-19 C26 decision: the most-argued constant in the register and no mutant had ever
+      been applied to it. **`killed`, 298 s, baseline `1361 checks, green`, by EXACTLY SIX objecting
+      checks**, all six predicted by name and in order first (prediction filed at
+      `$STATE/rescue/PREDICTION-mutants-never-run-const-textPageInkOutsideThreshold-2026-08-30.md`).
+      Coverage **79 → 80 of 104**, log **96 → 97** rows, `0 survivor(s)` unchanged. Machine cost **598 s
+      end to end** for a baseline plus one, inside the printed `9-13` — ⛔ **but 1.25x this box's own
+      479 s / "~8 minutes" figure below, so THAT figure under-budgets and should not be planned off**; it
+      is the fifth write-up from the cleared window and the fourth inside its range. Full account and the
+      two things worth more than the verdict — six is joint SECOND rather than the widest, and the mutant
+      **transiently disarms three existing checks, which are the same three that made the prediction
+      cheap** — in `BUGS.md` T5 `#### The first never-run mutant`.
+      ⚠️ **The box stays `[ ]`: 24 to go**, and the remaining list is
+      printed by any campaign's closing census (or the derivation above).
+      ✅ **AND THE NEXT PICK IS ALREADY CHOSEN BY THIS RUN: `logic/C26-inkbar-override-ignored`**, which is
+      in the 24 and whose designated killers are exactly the three checks this mutant disarms — so its
+      prediction follows from this run instead of needing a fresh one, and running it is what shows those
+      three are not dead weight. `logic/C26-inkbar-nil-refuses-the-page` is in the 24 with it.
+      ⚠️ **Append a `$STATE/suite-timings.tsv` row by hand when you do** — `mutate.py` neither takes the
+      suite lock nor writes one, all four earlier cleared-window readings have a hand-appended row, and
+      this session forgot, so its loadavg is gone.
+      ⚠️ **Two cheap lessons for whoever takes the next one.** (1) Check `hits == 1` for the pattern before
+      spending the run — it costs one `python3 -c` and no build. `Flattener.swift` has **three** comment
+      lines carrying this constant's name, one of them (`:1877`) carrying both the name and `0.045`, plus two
+      naming the Override. ⚠️ `mutate.py:1753` refuses `hits != 1` as NOT-APPLIED, so a comment hit can only
+      read `SURVIVED` if the DECLARATION has stopped matching — T7's case, not this one; a draft of this
+      bullet said "seven doc-comment lines" and credited the anchor with the whole guard.
+      (2) Predict the reds off *passing* checks where one exists. Four of these six were entailed by three
+      green checks that already assert what the mutant does to that fixture, so their detail strings were
+      derivable verbatim — though only row 3's was actually written out — and the two rows the prediction
+      flagged as UNCERTAIN were the two with no such check behind them.
       ⛔ **This is NOT the `mutants` item above** — that one
       scopes itself to the *survivor* list twice over (*"work the survivors"*, *"the live survivor list"*),
       which is the **1** `SURVIVED` row from 2026-08-28 (it was 2 until `maximumPageMegapixels` was
