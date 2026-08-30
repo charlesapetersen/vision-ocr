@@ -3739,7 +3739,10 @@ happens.**
       owner's own 2026-08-19 C26 decision: the most-argued constant in the register and no mutant had ever
       been applied to it. **`killed`, 298 s, baseline `1361 checks, green`, by EXACTLY SIX objecting
       checks**, all six predicted by name and in order first (prediction filed at
-      `$STATE/rescue/PREDICTION-mutants-never-run-const-textPageInkOutsideThreshold-2026-08-30.md`).
+      `$STATE/rescue/LANDED-as-0d563d4-…-const-textPageInkOutsideThreshold-2026-08-30-prediction.md`).
+      ⛔ **This cited a `PREDICTION-…` name until 2026-08-30 and no such file exists** — the rescue
+      directory re-files a prediction as `LANDED-as-<sha>-<name>-prediction.md` when the work lands, so
+      **write the citation with the sha you are about to push, or fix it in a docs-only follow-up.**
       Coverage **79 → 80 of 104**, log **96 → 97** rows, `0 survivor(s)` unchanged. Machine cost **598 s
       end to end** for a baseline plus one, inside the printed `9-13` — ⛔ **but 1.25x this box's own
       479 s / "~8 minutes" figure below, so THAT figure under-budgets and should not be planned off**; it
@@ -3752,7 +3755,7 @@ happens.**
       (`let bar = textPageInkOutsideThreshold`) — `killed`, 297 s, baseline `1361 checks, green`, mutant
       `1357/1361 passed`, by EXACTLY FOUR objecting checks**, all four named in order first and **two of the
       four detail strings verbatim** (prediction filed at
-      `$STATE/rescue/PREDICTION-mutants-never-run-logic-C26-inkbar-override-ignored-2026-08-30.md`).
+      `$STATE/rescue/LANDED-as-a5d6d1e-…-logic-C26-inkbar-override-ignored-2026-08-30-prediction.md`).
       Census **24 → 23**, coverage **80 → 81 of 104**, log **97 → 98** rows, `0 survivor(s)` unchanged,
       598 s end to end again — *identical to the run above, to the second*, so the 479 s figure below is
       1.25x low **twice** and is the number in this box most worth replacing. ⛔ **Four is no superlative in

@@ -21452,7 +21452,10 @@ identity.** The mutant **reverts the owner's own
 2026-08-19 decision** (C26's bar move), which is why it was taken first out of the 24
 remaining: no mutant had ever been applied to the constant C26 and C28 are both about.
 Written down before the run, at
-`$STATE/rescue/PREDICTION-mutants-never-run-const-textPageInkOutsideThreshold-2026-08-30.md`.
+`$STATE/rescue/LANDED-as-0d563d4-mutants-never-run-const-textPageInkOutsideThreshold-2026-08-30-prediction.md`
+— ⛔ **this cited a `PREDICTION-…` name until 2026-08-30 and no such file exists**: that
+directory's convention is to re-file a prediction as `LANDED-as-<sha>-<name>-prediction.md` once
+the work lands, so a citation written *before* the commit is stale by the time anyone reads it.
 ⚠️ **What "the prediction held" reaches, stated exactly rather than generously, because
 the review of this diff cut two axes off a draft's list.** Verdict, count and the six
 identities held; **one** detail string was written out verbatim (row 3's
@@ -21629,7 +21632,8 @@ shipped 0.045 whatever it substituted.
 **Verdict `killed`, 297 s, baseline `1361 checks, green`, mutant `1357/1361 passed`, by
 EXACTLY FOUR objecting checks — every one named in order before the run, and two of the four
 detail strings written down VERBATIM.** Prediction filed as
-`$STATE/rescue/PREDICTION-mutants-never-run-logic-C26-inkbar-override-ignored-2026-08-30.md`.
+`$STATE/rescue/LANDED-as-a5d6d1e-mutants-never-run-logic-C26-inkbar-override-ignored-2026-08-30-prediction.md`
+(re-filed under that name on the push; see the correction in the section above).
 The four, as the log row records them:
 
 1. `C26 — …and substituting the old 0.08 bar shrinks it again — 612 wide of 1224, ceiling 154`
