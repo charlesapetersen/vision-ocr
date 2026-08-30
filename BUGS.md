@@ -21516,6 +21516,13 @@ function of the page, which is why that block asserts to `1e-6` and not `1e-9`.
 excluded only because it was **already** unable to fail for an unrelated reason —
 `measuredInkOutside` is assigned before term 1's guard (`Flattener.swift:3433-3434`), so
 its input never moves at any value of the constant. A reader counting the block finds four.
+⛔ **AND THE DISARMED SET IS FIVE, NOT FOUR — corrected 2026-08-30 by the next run; see
+`#### The seam's other end` below.** The fifth is `:3255`, the mask pair, which is **not in
+this block** and is the only check in the file whose subject is a *comparison* between the
+`nil` arm and the substituted arm; at a shipped 0.08 both arms compute 0.08, so it compares
+identically configured runs by the same arithmetic used for the other four. It is the
+sharpest of the five because its own comment (`:3247-3251`) states the precondition it loses
+in terms.
 ⛔ **NOT a new class, and a draft claimed it was — refuted by the review of this diff from
 this entry's own neighbours**: `const/lineMinimumMembers` (2026-08-24) recorded **six**
 `groups == 0` assertions that its applied mutant left unable to fail, and
@@ -21532,6 +21539,11 @@ planting `let bar = textPageInkOutsideThreshold` and so deleting the seam) is **
 never-run**, and those three checks are its designated killers. So they are not dead
 weight, and it is the obvious next pick off `mutants-never-run` — with a prediction that
 follows from this run rather than needing a fresh one.
+✅ **RUN THE SAME DAY AND `killed` — see `#### The seam's other end` below**, which is what
+says those three are not dead weight. ⛔ **And the prediction inherited from this section was
+one check SHORT: the real kill set is FOUR**, the fourth being `:2634`, whose substituted
+**0.15** is outside the three disarmed checks entirely — so a fresh prediction was needed
+after all, and *"instead of needing a fresh one"* is retracted.
 
 ⚠️ **Two rows were flagged UNCERTAIN in the prediction and both stayed green — and the
 estimate behind them was a RE-DERIVATION of a figure the file already carries, not a lucky
@@ -21601,6 +21613,162 @@ upper bound over two readings is the LARGER of them.** What it adds is a second 
 pair agreeing that mutant identity buys little. ⚠️ The 296 s row's `1359/1361` is prose in
 `R25 #### The fixture, IN THE SUITE` rather than a log field, since a `killed` row records
 no suite total. n = 1 for this mutant, nothing in `Sources/` moved, and the run adds one log row.
+
+#### The seam's other end, 2026-08-30 — `logic/C26-inkbar-override-ignored` is `killed` by FOUR, and the two mutants' kill sets are DISJOINT
+
+The second entry off the never-run census, and it is the pick the section above named: the
+mutant that **deletes the measurement seam** rather than moving the constant behind it.
+`Tools/mutate.py:616-619`, `Sources/Flattener.swift:3430`:
+
+    -            let bar = textPageInkOutsideThresholdOverride ?? textPageInkOutsideThreshold
+    +            let bar = textPageInkOutsideThreshold
+
+so `Flattener.textPageInkOutsideThresholdOverride` is never read and every caller gets the
+shipped 0.045 whatever it substituted.
+
+**Verdict `killed`, 297 s, baseline `1361 checks, green`, mutant `1357/1361 passed`, by
+EXACTLY FOUR objecting checks — every one named in order before the run, and two of the four
+detail strings written down VERBATIM.** Prediction filed as
+`$STATE/rescue/PREDICTION-mutants-never-run-logic-C26-inkbar-override-ignored-2026-08-30.md`.
+The four, as the log row records them:
+
+1. `C26 — …and substituting the old 0.08 bar shrinks it again — 612 wide of 1224, ceiling 154`
+2. `…its foreground with it, which is the eighth and the sixteenth together — 306 wide of 1224`
+3. `C28 — …and the same page under the old bar reports that it was shrunk — flag false, 612 wide, ceiling 154`
+4. `…and raising the bar past it shrinks it, so the seam is the comparand — 612 wide of 1224`
+
+Rows 1 and 3 were predictable verbatim off the SHIPPED arm's own committed figure
+(`Tests/main.swift:2545-2546`, *"153 wide of 1224 before, 612 after"*), and rows 2 and 4 were
+flagged UNCERTAIN **on their widths only** — correctly, since neither 306 nor the big
+fixture's `bigFull` is stated anywhere. ⛔ **The widths are NOT both "the caller's Balanced
+factors" and a draft said so**: 612 is `1224 / 2`, Balanced's own background factor
+(`Prefs.swift:54`), but 306 is `1224 / 4` from `Flattener.mrcForegroundDownsample`
+(`Flattener.swift:1726`, `:3339`), which `c26Layers` never varies — it passes
+`backgroundDownsample:` only (`Tests/main.swift:2483-2489`). So the arithmetic is legible after
+the fact and was not available before it.
+
+⛔ **THE FINDING WORTH MORE THAN THE VERDICT: THE SEAM'S TWO MUTANTS HAVE DISJOINT KILL SETS.**
+`const/…`'s six (2026-08-30, 02:3x) and this one's four intersect in **nothing** — verified by
+reading both `Tools/mutation-log.tsv` rows and mapping each name to its check line, not by
+argument. The const mutant's six are `{:2258, :2531, :2548, :2551, :2561, :2618}` and this
+one's four are `{:2591, :2594, :2601, :2634}`.
+⛔ **"Each other's complement" is the wrong mechanism and a draft of this paragraph gave it —
+refuted by the review of this diff, from the two rows themselves, in four particulars.** (1) The
+const move kills **4 of the 5** `nil`-arm layering checks, not the block: `:2631` stays green,
+because the big fixture's 0.0940 refuses the page at 0.045 and at 0.08 alike. (2) **Two of its
+six are in neither block** — `:2258` and `:2531` read `textPageInkOutsideThreshold` directly and
+call `c26Layers` not at all. (3) This mutant kills **3 of the 4** checks in the `0.08` block,
+`:2605` having been inert already. (4) **One of its four is outside that block**: `:2634`
+substitutes 0.15, not 0.08. What survives is the disjointness itself and the reason each set
+exists — one block is written against the shipped arm and one against a substituted arm.
+
+⛔ **AND THE ASYMMETRY IS THE ASSERTION *FORM*, NOT THE MUTANT'S DIRECTION — a draft wrote
+*"only the constant-move direction can disarm"* eight lines above the sentence refuting it, and
+the review of this diff caught it. This is `R25`'s shape in a second place: two claims in one
+section, forty lines apart, and the second is right.** Both mutants collapse configurations —
+the const move collapses `bar: 0.08` onto `bar: nil`, and deleting the read collapses **every**
+substituted value onto the shipped constant, including the 0.15 arm, which is the **wider**
+collapse of the two. What decides the outcome is what the check asserts about the collapsed
+arms: a check whose subject is the **difference** between two collapsed arms is disarmed
+(`:3255`, under **both** mutants), and a check making an **absolute** assertion about a collapsed
+arm goes red whenever the collapsed configuration violates it (`:2591`, `:2594`, `:2601`, and
+`:2634`, whose 0.15 arm collapses to 0.045 and still reds). ⚠️ What is true of *direction* is
+narrower and is kept: deleting the read leaves the `nil` arm's input **identical**, which makes
+those greens **not evidence** — not unable to fail in general.
+
+⛔ **THE FIFTH DISARMED CHECK, WHICH CORRECTS THE SECTION ABOVE: it said FOUR and the
+collapse class is FIVE — and this was PREDICTED in writing before the run** (the prediction
+file's *"Greens predicted"* section names it first, with the same arithmetic and the same
+quotation). `Tests/main.swift:3252-3257` — *"the stencil is the same bytes whatever the tone
+layers are shrunk by"* — pairs `c26maskA` (`bar: nil`) against `c26maskB` (`bar: 0.08`) and is
+the **only** check in the file whose subject is a comparison between the two arms rather than an
+absolute assertion about one. It is green under **both** mutants and, ⚠️ **on its byte-equality
+clause**, unable to fail under both: at a shipped 0.08 the two arms compute 0.08, and under this
+mutant they both compute 0.045. Its other clause, `da != nil` (`:3256`), still bites if
+`mrcLayers` stops writing a mask at all, so *"unable to fail"* unqualified would overstate it.
+Measured green here (run log line 287, `ok`); for the constant mutant it is green *in the record*
+(absent from that row's six) and the collapse is the same arithmetic that section used for its
+own four. ⛔ **And it is the sharpest of the five because its own comment says so**: `:3247-3251`
+reads *"The two bars have to produce two different tone-layer factors, or this compares a run
+against itself"* — written 2026-08-19 when 0.045 became the shipped bar and the pair had to be
+re-paired — so the hazard is stated in place and is nonetheless reachable from **both** ends of
+the seam, with nothing watching either.
+⚠️ **FIVE is a closed count over an enumeration, not an impression**: all eight `c26Layers(`
+call sites were read (`:2541`, `:2590`, `:2617`, `:2629`, `:2630`, `:2666`, `:3252`, `:3253`),
+the substituted-0.08 sites are exactly `:2590`, `:2666` and `:3253`, and `:2666`'s check is
+excluded for the reason below — leaving the block's four plus `:3255`.
+⚠️ Not a defect: four other checks kill this mutant and six kill the other, and the register's
+own rule is that a disarmed check matters only to a mutant nothing else objects to.
+⛔ **`Tests/main.swift:2667`'s Maximum check is NOT in this class and a draft put it there.**
+It asks for `bar: 0.08` too, but `keepEveryPixel` short-circuits `pageIsAllText()` at
+`PhotoDetail.maximum` (`Flattener.swift:3418`, `:3466`), so the mutated line is never executed
+on that call — blind to this constant at *every* value, which is a different thing from
+disarmed by a mutant.
+
+✅ **AND THE SEAM'S ONE CONSTANT-MOVE-PROOF *ARMED* CHECK IS IDENTIFIED, which is the
+transferable half.** Row 4 above (`:2634`) substitutes **0.15** — a value
+`textPageInkOutsideThreshold` has never held and would not plausibly take — so it is the only
+seam check whose substituted value a constant move cannot land on, and it stayed green under
+`const/…` while going red here. The rule: **a seam check driven with a value the constant might
+one day take is disarmable by a constant move; one driven with a value it never will is not.**
+⛔ **"Armed" is load-bearing in that sentence, not decoration**: `:2667` also survives every
+constant move, and trivially, because `keepEveryPixel` means it never reads the bar at all.
+⚠️ Stated as a rule off n = 1 seam and two mutants; it is an argument from the collapse
+mechanism, not a measurement over other seams.
+
+⛔ **No green is claimed as yield, said in advance rather than retracted afterwards.** **Six**
+checks drive `bar: nil` — `:2548`, `:2551`, `:2561`, `:2576`, `:2618`, `:2631` — and for a `nil`
+override `?? textPageInkOutsideThreshold` already yields the shipped constant, so the mutant does
+not change their input at all: identical input, identical output, cannot fail **under this
+mutant**. ⛔ **A draft of this sentence said FIVE and omitted `:2576`** (*"…and carries the
+fraction that refused it, not a recomputation"*, green at run log line 243), which is the
+understating-in-the-reassuring-direction slip this register has recorded before; `:2605` is a
+seventh green that is not yield, already inert for the `measuredInkOutside` reason. `:2500` and
+`:3273` read the *assignment*, which the mutant does not touch. This is the rule three earlier
+runs retracted a claimed green yield to arrive at.
+
+**Bookkeeping.** `coverage` **80 → 81 of 104**, the never-run census **24 → 23**, the log
+**97 → 98** rows, `0 survivor(s)` unchanged. ⛔ **FOUR objecting checks is NOT a superlative in
+either direction** — derived from the log rather than from a sentence, the distribution is
+11×1, 6×4, 5×5, 4×3, 3×23, 2×20, 1×34, so this row is one of **three** tied at four with **ten**
+rows wider. ✅ **The next census pick follows the same way this one did:
+`logic/C26-inkbar-nil-refuses-the-page`** (`Tools/mutate.py:620-623`, `?? 0` in place of
+`?? textPageInkOutsideThreshold`, so a `nil` override refuses every page instead of meaning
+"the shipped bar") is the seam's third and last mutant and is still in the 23 — the reading
+C24's seam shipped **unpinned**, where the nearer wrong reading then survived nine checks.
+⚠️ Its prediction does **not** follow from either run: it moves the `nil` arm, which both
+runs so far left alone.
+
+⚠️ **Estimator, the SIXTH recorded reading from the cleared window and the fifth inside its
+printed range: it printed the same `roughly 9-13 minutes … Budget the 13` and the run took
+598 s = 9.97 min end to end** (`/tmp/vo-mut.log` birth 05:39:41, last write 05:49:39) —
+**identical to the previous run's 598 s to the second**, which is the closest two readings of
+this estimator have ever come. High end 1.304x over-budgeted, low end 9.70% under. ⚠️ **The
+identity is one machine on one morning and is not a claim about the estimator's precision**;
+what it does say is that the `mutants-never-run` box's 479 s figure is 1.25x low **twice**, so
+that figure should be replaced rather than treated as one run's bad luck.
+✅ **A `$STATE/suite-timings.tsv` row was appended by hand this time** — the omission the
+section above records — as `2026-08-30 05:49:39  mutant-c26-inkbar-override  598  0  3.52`.
+⛔ **Its loadavg is NOT the column's definition and the row is therefore weaker than a
+`test-lock.sh`-written one**: that column is *"the 1-minute load average AT THE END of the
+run"* (`ops/autonomous/test-lock.sh:356-358`) and 3.52 was read at **05:51:48**, 2 m 09 s after
+the last write, by which time a 1-minute average has largely decayed. The reading at the run's
+**start** was **5.27** (`uptime`, 05:39:41), so the run met a busier machine than its own row
+says. `mutate.py` writes no row and takes no lock, so this is the best a hand append can do
+without changing the tool.
+✅ **A THIRD same-day cross-mutant pair at a fixed suite size, and it is the tightest yet:**
+`const/textPageInkOutsideThreshold` **298 s** (02:3x) against this mutant's **297 s** (05:4x),
+~3 h 08 m apart, both baselines printing **1,361 checks** — **1.003x**. ⛔ **It CORROBORATES
+the 1.043x mutant-identity bound and does not tighten it**, for the reason the section above
+had to be corrected on: an upper bound over several readings is the **largest** of them. Three
+pairs now agree that mutant identity buys little (1.043x, 1.007x, 1.003x).
+⛔ **BUT "inside one machine-state window" is an ASSUMPTION on this pair and not a reading, and
+a draft asserted it**: the gap is **3 h 07 m 42 s** against the other two pairs' ~46 min and
+~85 min, the const run has **no `suite-timings.tsv` row at all** (the ledger jumps
+`01:17:43 pre-commit` → `03:11:52 pre-commit` → this run's row), and this run's own 3.52 is the
+decayed reading two paragraphs up. So the widest-gap pair is also the one with the least
+evidence that the machine held still. ⚠️ Nothing in `Sources/`, `Tests/` or `Helper/` moved, no
+check was added or removed, no shipped behaviour changed, and the run adds one log row.
 
 ### T6 · Three checks written for the bundling that cannot fail — FIXED
 *(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*

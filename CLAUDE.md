@@ -543,9 +543,13 @@ window HELD, and the `10` it predicted is what printed**: baseline plus `const/m
 sit BELOW `bare-form-reach`'s in the log, so its startup line already came off an all-post-clamp window and
 nobody recorded it. ⛔ **And only the HIGH end was ever forecast** (9.73 min, off the surviving rows' max of
 246) — the low 8 was not. ⚠️ n = 1 on a quiet machine, so the estimator is no longer known-broken rather
-than proven; budget from `suite-timings.tsv`. ⛔ **n = 4 as of 2026-08-30 and THREE of the four are inside
-the printed range** — 2026-08-30's two runs both printed `9-13` and measured 593 s (clocked) and ~617 s
-(derived, ±60 s), so the budgeted 13 min is 1.32x the measured, over-budgeted. ⛔ **AND THE CAVEAT IS WHAT
+than proven; budget from `suite-timings.tsv`. ⛔ **n = 6 as of 2026-08-30 and FIVE of the six are inside
+the printed range** — 2026-08-30's FOUR runs all printed `9-13`: the two `R25` ones measured 593 s
+(clocked) and ~617 s (derived, ±60 s), and the two never-run-census ones measured **598 s each**, so the
+budgeted 13 min is 1.30x-1.32x the measured, over-budgeted. ⛔ **This sentence read `n = 4` / THREE while
+carrying today's date, so it was stale by two the moment the never-run runs landed** — a present-tense
+claim that dates itself is the one `check-staleness.sh` cannot see (it has no mutation-figure arm),
+and the register carried both figures ~130 lines apart until 2026-08-30. ⛔ **AND THE CAVEAT IS WHAT
 MATTERED: n = 2 as of 2026-08-29 and the second reading is 1.33x LOW** — `logic/R25-depth-aware-prune`'s re-run printed `9-10` and took
 **800 s = 13.3 min** (`mutant-r25 800 0 5.00`), i.e. **33.3% OVER the budgeted 600** (⛔ **not "600 was
 33.3% under", which is 25% — a draft mixed two denominators in one comparison**). ✅ **What is measured is
@@ -591,9 +595,10 @@ instantaneous reading. Nobody ran the controlled experiment. Budget from `suite-
 ⚠️ Related, same day: `const/maximumPageMegapixels`'s
 nineteen-day `SURVIVED` row is `killed` on re-run, so the live survivor list is **one**
 (`BUGS.md` T5 `#### The survivor list re-asked`) — and a re-run buys a verdict, not coverage, which stays
-`79 of 104` with the never-run census at 25. ⛔ **That pair reads `80 of 104` and 24 from 2026-08-30**,
-when the first never-run entry was worked off; the sentence above keeps its own run's tense, because what
-it measured is that a *re-run* leaves coverage alone.
+`79 of 104` with the never-run census at 25. ⛔ **That pair reads `81 of 104` and 23 from 2026-08-30**,
+when the first TWO never-run entries were worked off; the sentence above keeps its own run's tense, because
+what it measured is that a *re-run* leaves coverage alone. ⚠️ It moves by one a session — re-derive it from
+`len(knownIDs & set(final))`, never from a sentence here.
 ✅ **THAT ONE WAS RE-ASKED 2026-08-29 AND `SURVIVED` (`382 s`, `1355/1355`, no objecting check, predicted
 in writing) — SO THE LIVE SURVIVOR LIST WAS STILL ONE THEN (⛔ **it is ZERO from 2026-08-30, see below**),
 AND IT IS THE FIRST IN THIS LOG MEASURED TO BE A GAP
@@ -651,8 +656,37 @@ once 0.08 is the shipped value. ⛔ **NOT a new class — a draft said so and th
 `const/lineMinimumMembers`, whose applied mutant left six `groups == 0` assertions unable to fail.** What is
 new is that these are the OVERRIDE SEAM's, and the asymmetry is structural: whichever value ships, the
 seam's checks substitute the other one. ⚠️ Not a defect — six other checks kill it — and the block holds
-**four**, the fourth already unable to fail for an unrelated reason. ✅ **The next census pick follows:
-`logic/C26-inkbar-override-ignored` is still never-run and those three are its designated killers.**
+**four**, the fourth already unable to fail for an unrelated reason — ⛔ **and the DISARMED SET IS FIVE,
+corrected 2026-08-30 by the next run: `Tests/main.swift:3255`, the mask pair, is not in that block and is
+the only check whose subject is a COMPARISON of the two arms, disarmed by BOTH of the seam's mutants while
+its own comment states in terms the precondition it loses.**
+✅ **AND THAT NEXT PICK RAN THE SAME DAY — `logic/C26-inkbar-override-ignored`, the mutant that DELETES the
+seam (`let bar = textPageInkOutsideThreshold`), is `killed`, 297 s, baseline `1361 checks, green`, mutant
+`1357/1361`, by EXACTLY FOUR objecting checks, all four named in order first and TWO of the four detail
+strings verbatim** (`BUGS.md` T5 `#### The seam's other end`; census **24 → 23**, coverage **80 → 81 of
+104**, log **97 → 98** rows, survivor list still 0). ⛔ **Four is no superlative either way — the log's
+whole distribution is 11×1, 6×4, 5×5, 4×3, 3×23, 2×20, 1×34, so TEN rows are wider and THIRTY-FOUR
+narrower** (a draft printed only the top four buckets, which carries the wide half of that claim and not
+the narrow one). ⛔ **THE FINDING: THE SEAM'S TWO MUTANTS
+HAVE DISJOINT KILL SETS** — `{:2258, :2531, :2548, :2551, :2561, :2618}` against
+`{:2591, :2594, :2601, :2634}`, intersecting in nothing, read off both log rows and mapped to check lines.
+⛔ **"Each other's complement" is NOT the mechanism and a draft said it was**: two of the const mutant's six
+are in neither block, it kills 4 of the 5 `nil`-arm layering checks rather than the block, and one of this
+mutant's four substitutes 0.15 rather than 0.08. ⛔ **AND THE ASYMMETRY IS THE ASSERTION *FORM*, NOT THE
+DIRECTION — a draft wrote "only the constant-move direction can disarm" eight lines above the sentence
+refuting it, and the review of that diff caught it (`R25`'s shape a second time).** Both mutants collapse
+configurations, and deleting the read is the WIDER collapse (every substituted value, 0.15 included). What
+decides the outcome is the check's form: a check asserting the *difference* between two collapsed arms is
+disarmed (`:3255`, under both), and one making an *absolute* assertion about a collapsed arm reds when the
+collapsed configuration violates it. ⚠️ What survives of direction is narrower: deleting the read leaves the
+`nil` arm's input identical, which makes those greens **not evidence** rather than unable to fail in general.
+✅ **And the seam's one constant-move-proof ARMED check is identified**: `:2634` substitutes **0.15**, a
+value the constant has never held, so no constant move can land on it — green under the const mutant, red
+here. ⛔ **"Armed" is load-bearing**: `:2667` also survives every constant move, trivially, never reading
+the bar at all. ⚠️ That rule is an argument from the collapse mechanism over one seam and two mutants, not
+a measurement over others. ✅ **The next pick is the seam's third and last, `logic/C26-inkbar-nil-refuses-the-page`**
+(`?? 0`, so a `nil` override refuses every page) — the reading C24's seam shipped unpinned; ⚠️ **its
+prediction does NOT follow from either run**, both having left the `nil` arm alone.
 ⛔ **An instrument trap for the next session: `Tools/mutation-log.tsv` HAS NO HEADER ROW**, so the
 box's prescribed census derivation is wrong under the reflex `awk 'NR>1'` — that drops line 1 and invents
 one extra never-run entry that has a verdict (26 against 25 before this row, 25 against 24 after), while
@@ -661,11 +695,21 @@ counting all 81 logged ids as covered gives 23 and understates it. Use the tool'
 its range — printed `9-13`, measured **598 s = 9.97 min** end to end, high end 1.304x over-budgeted, and
 **1.25x the queue box's own 479 s figure, so that box under-budgets.** ⚠️ **No `suite-timings.tsv` row
 exists for it** — `mutate.py` neither takes the suite lock nor writes one, but all four earlier readings
-have a hand-appended row, so the missing loadavg is this session's omission and not a limit.
+have a hand-appended row, so the missing loadavg is this session's omission and not a limit. ✅ **The
+`override-ignored` run appended one (`mutant-c26-inkbar-override 598 0 3.52`) — but its loadavg is NOT the
+column's definition**: that column is the 1-minute average AT THE END of the run and 3.52 was read 2 m 09 s
+after the last write, where the reading at the run's START was **5.27**, so a hand-appended row is weaker
+than a `test-lock.sh`-written one and reads the machine as quieter than the run met it.
+⚠️ **The estimator is now SIX write-ups from the cleared window, five inside the range, and the two
+never-run runs measured 598 s EACH — identical to the second** (printed `9-13` both times), so the box's
+479 s figure is 1.25x low **twice** and should be replaced rather than treated as one run's bad luck.
 ⚠️ **298 s against `logic/R25-depth-aware-prune`'s 296 s is a SECOND same-day cross-mutant pair at a fixed
 1,361 checks** (~85 min apart, `799ad3a` 01:12) — **1.007x**, which **corroborates** the 1.043x
 mutant-identity bound rather than tightening it, an upper bound over two readings being the larger.
-⛔ A draft called that row "the previous day" and threw the pair away on it.
+⛔ A draft called that row "the previous day" and threw the pair away on it. ⚠️ **A THIRD such pair, the
+tightest yet, from the same day: 298 s against `override-ignored`'s 297 s, ~3 h 08 m apart, both baselines
+1,361 — 1.003x.** Three pairs now agree; ⛔ **the bound stays 1.043x, because an upper bound over several
+readings is the LARGEST of them.**
 ⚠️ **"That run" in the next sentence is the 2026-08-25 `depth-cap` PAIR and nothing above it** — a dangling
 referent this paragraph already carried, pushed further from its subject by the block just inserted, and
 named here rather than re-flowed.

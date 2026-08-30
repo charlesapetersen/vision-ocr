@@ -107,14 +107,19 @@ Two consequences, both load-bearing:
     i.e. **800 s is 33.3% OVER the budgeted 600** — ⛔ not "600 was 33.3% under", which is
     25%; a draft mixed two denominators into one comparison. The `1.33x` ratio form is
     this header's own convention and is the one to quote.
-    ⛔ **n = 4 as of 2026-08-30 and THREE of the four are INSIDE the printed range**, so
+    ⛔ **n = 6 as of 2026-08-30 and FIVE of the six are INSIDE the printed range**, so
     the run of bad readings is over rather than continuing: 2026-08-28 inside, 2026-08-29
-    outside (1.33x low), and 2026-08-30's two runs of `logic/R25-depth-aware-prune` both
+    outside (1.33x low), 2026-08-30's two runs of `logic/R25-depth-aware-prune` both
     inside — `9-13` printed, **593 s** clocked (`$STATE/suite-timings.tsv`,
     `mutant-r25c 593 0 4.47`) and ~617 s derived (±60 s, row `mutant-r25b-derived`, which
-    carries that label so nobody budgets off it as a clocked figure). Budgeted 13 min is
-    **1.32x** the measured — over-budgeted, the safe direction. ⚠️ Still n = 4 on one
-    machine; budget from `suite-timings.tsv`, not from this paragraph.
+    carries that label so nobody budgets off it as a clocked figure) — and 2026-08-30's
+    two never-run-census runs, `9-13` printed and **598 s each**, the second of which is
+    row `mutant-c26-inkbar-override` (the first has no row; that session's omission).
+    Budgeted 13 min is **1.30x-1.32x** the measured — over-budgeted, the safe direction.
+    ⛔ **This paragraph read `n = 4` / THREE with today's date on it until 2026-08-30, so
+    it was stale by two the moment those two runs landed** — a present-tense figure that
+    dates itself, and `check-staleness.sh` has no mutation-figure arm to catch it.
+    ⚠️ Still one machine; budget from `suite-timings.tsv`, not from this paragraph.
     ✅ **What is measured is that the SUITE cannot be the term**: that mutant's own suite
     took **382 s** against the one window row measured at the same **1,355** checks
     (292 s), i.e. **1.31x**, and 0.8% of growth does not buy that. ⛔ **"1.31x-1.39x at
