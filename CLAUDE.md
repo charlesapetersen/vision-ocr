@@ -543,8 +543,10 @@ window HELD, and the `10` it predicted is what printed**: baseline plus `const/m
 sit BELOW `bare-form-reach`'s in the log, so its startup line already came off an all-post-clamp window and
 nobody recorded it. ⛔ **And only the HIGH end was ever forecast** (9.73 min, off the surviving rows' max of
 246) — the low 8 was not. ⚠️ n = 1 on a quiet machine, so the estimator is no longer known-broken rather
-than proven; budget from `suite-timings.tsv`. ⛔ **AND THAT CAVEAT IS WHAT MATTERED: n = 2 as of 2026-08-29
-and the second reading is 1.33x LOW** — `logic/R25-depth-aware-prune`'s re-run printed `9-10` and took
+than proven; budget from `suite-timings.tsv`. ⛔ **n = 4 as of 2026-08-30 and THREE of the four are inside
+the printed range** — 2026-08-30's two runs both printed `9-13` and measured 593 s (clocked) and ~617 s
+(derived, ±60 s), so the budgeted 13 min is 1.32x the measured, over-budgeted. ⛔ **AND THE CAVEAT IS WHAT
+MATTERED: n = 2 as of 2026-08-29 and the second reading is 1.33x LOW** — `logic/R25-depth-aware-prune`'s re-run printed `9-10` and took
 **800 s = 13.3 min** (`mutant-r25 800 0 5.00`), i.e. **33.3% OVER the budgeted 600** (⛔ **not "600 was
 33.3% under", which is 25% — a draft mixed two denominators in one comparison**). ✅ **What is measured is
 that SUITE GROWTH cannot be the term**: 382 s against the one window row at the same **1,355** checks
@@ -591,7 +593,8 @@ nineteen-day `SURVIVED` row is `killed` on re-run, so the live survivor list is 
 (`BUGS.md` T5 `#### The survivor list re-asked`) — and a re-run buys a verdict, not coverage, which stays
 `79 of 104` with the never-run census at 25.
 ✅ **THAT ONE WAS RE-ASKED 2026-08-29 AND `SURVIVED` (`382 s`, `1355/1355`, no objecting check, predicted
-in writing) — SO THE LIVE SURVIVOR LIST IS STILL ONE, AND IT IS THE FIRST IN THIS LOG MEASURED TO BE A GAP
+in writing) — SO THE LIVE SURVIVOR LIST WAS STILL ONE THEN (⛔ **it is ZERO from 2026-08-30, see below**),
+AND IT IS THE FIRST IN THIS LOG MEASURED TO BE A GAP
 IN THE CHECKS RATHER THAN A VALUE NOTHING DEPENDS ON — ⚠️ a superlative over a population of TWO, the
 other killed the day before** (`BUGS.md` T5 `#### The last survivor re-asked`,
 R25 `#### It belongs here`). ⛔ **The finding is worth more than the verdict and it refutes R25's own stated
@@ -608,8 +611,27 @@ its reason was not. ✅ **Swap the two object numbers and it splits: depth-aware
 both key orders**, against 777/777 on both shipped fixtures. ⚠️ **Measured through a REPLICA of `walk`
 outside the tree** (`alltext-replica`'s shape, labelled), which agrees with production on **4 of 4** cells
 production can be observed on — the suite's own `777` under the shipped rule and this run's `1355/1355`
-under the mutant's. ⚠️ **The fixture is NOT in the suite**: a probe reading is not a red check, and the
-`mutants` box binds a session to one mutant, so it is the queue's `r25-depth-fixture`. ⛔ **The
+under the mutant's.
+✅ **AND THE FIXTURE IS IN THE SUITE AS OF 2026-08-30, SO THE SURVIVOR LIST IS ZERO — `mutate.py` prints
+`0 survivor(s)`** (`BUGS.md` R25 `#### The fixture, IN THE SUITE`). `--rerun --only R25-depth-aware`,
+baseline **`1361 checks, green`**, mutant **296 s**, **`1359/1361 passed`**, `killed` by **exactly the two
+new checks**, every element predicted in writing first, twice. ⛔ **NOT "for the first time in this log's
+history", which a draft said and the review refuted from git**: at `328d393` the log held two rows, both
+`killed`. What is new is an empty list over a catalogue of 104 rather than of two. ⛔ **The attribution is
+the objecting-check LIST, not the old pair's green** — with two failures out of 1,361 and both named, that
+green is entailed, and this register already records it as *guaranteed* because the mutation is inert on
+those two fixtures; a draft called it the attribution and the review refuted that by arithmetic. ✅ What it
+DOES retire is *"no cell observes production in the regime where the two rules diverge"*: the depth-aware
+readings are the baseline's greens and the identity-only ones the mutant's reds, printing `largestImage nil`
+through the real `Flattener.largestImage` — **eight cells all observed, six of them independent**, against
+two on 2026-08-29. ⛔ **The edit writes the `shortKey` entry FIRST rather than renumbering the routes**,
+because object 6 is the long chain's head in all four members and renumbering would leave the `longKey`
+parameter naming the SHORT route. ✅ **And the review of that diff found the sharper thing: nothing pinned
+the yield order, so a macOS change would have turned the new pair back into a copy of the old one silently.**
+Four premise rows now read the order off each fixture and assert which route is walked first — and they
+cannot pass degenerately, because the four assert opposite things in pairs off one helper. ⚠️ Not widened:
+the yield-order reading is still two entries and the names `A` and `Z`, and no corpus page is known to have
+this shape. ⛔ **The
 transferable lesson: a fixture built "both ways round" is only two ways round if it varies what the thing
 under test actually reads.**
 ⚠️ **"That run" in the next sentence is the 2026-08-25 `depth-cap` PAIR and nothing above it** — a dangling
@@ -1964,7 +1986,9 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,355 checks measured 2026-08-27, no skips, 308 s at loadavg 4.40
+./run_tests.sh        # 1,361 checks measured 2026-08-30, no skips — `mutate.py`'s own baseline line
+                      # reads `1361 checks, green` (r25-depth-fixture's --rerun). For DURATION use
+                      # 308 s at loadavg 4.40 measured 2026-08-27 at 1,355 checks
                       # ($STATE/suite-timings.tsv row `adopt-3bf2648`); real OCR.
                       # ~285-308 s measured 2026-08-26/27 over eight clean full-suite rows in
                       # $STATE/suite-timings.tsv — NOT the ~225 s this line carried, which is 2026-08-24
@@ -1978,7 +2002,12 @@ git config core.hooksPath .githooks
                       #  pin, one check, C24's coverage boundary closed. 1,344 -> 1,346: C27 (c)'s split
                       #  removed ONE mirror check and added THREE, so the net is +2 over a -1/+3.
                       #  1,346 -> 1,355: mrc-endtoend's yellow-wash fixture, four ungated routing
-                      #  checks and five gated on JBIG2.isAvailable.)
+                      #  checks and five gated on JBIG2.isAvailable. 1,355 -> 1,357:
+                      #  r25-depth-fixture's two swapped depth fixtures, the pair that kills
+                      #  logic/R25-depth-aware-prune. 1,357 -> 1,361: four premise rows pinning
+                      #  CGPDFDictionaryApplyBlock's yield order, which the adversarial review of
+                      #  that diff asked for — without them a flipped order retires the pair
+                      #  silently. Both figures were measured; only 1,361 shipped.)
                       # ⛔ AND IT HAPPENED AGAIN: `3bf2648` added those nine and left this line at
                       # 1,346. The ADOPTING session caught it, not the committing one — no ordinal is
                       # claimed for it, because this register has already published a wrong one by
@@ -1986,7 +2015,10 @@ git config core.hooksPath .githooks
                       # ⛔ `ops/autonomous/check-staleness.sh` CANNOT catch this, measured 2026-08-27:
                       # it takes THIS LINE as its reference (`CHECK-COUNT-REFERENCE … CLAUDE.md
                       # claimed-not-measured`) and compares the other documents to it, so drift in the
-                      # reference itself is invisible — a stale reference is self-consistent. On the
+                      # reference itself is invisible — a stale reference is self-consistent. ⚠️ The
+                      # PARENTHESIS is 2026-08-27's: the reference is whichever file asserting the
+                      # highest figure was modified last, and on 2026-08-30 the gate credits
+                      # CONTRIBUTING.md. The defect is the same either way. On the
                       # tree that shipped 1,355 checks it reported exactly one claim, and that one is a
                       # FALSE POSITIVE on the clamp-era sentence 15 lines below ("same 1,247 checks"),
                       # which is a deliberate historical record. Carried as the queue's

@@ -14642,7 +14642,8 @@ the results.
 
 So the two "reachable by two routes" checks in the suite are regression guards
 against pruning losing an image; neither discriminates depth-aware from
-identity-only. The depth key costs one `Int` per dictionary and removes the
+identity-only. ⛔ **FOUR as of 2026-08-30, and two of them DO discriminate** —
+`#### The fixture, IN THE SUITE`. The depth key costs one `Int` per dictionary and removes the
 question, which is why it is there. If someone later finds the fixture that
 splits them, it belongs here.
 
@@ -14685,14 +14686,114 @@ kept the long route first** — not that an instrument lied. That earlier measur
 is kept in the rewritten comment rather than deleted with the claim it supported.
 ⚠️ Today's reading is still a REPLICA of `walk` (`/tmp/r25-prune-probe.swift`,
 outside the tree) and the split is measured through it, not through production; the
-cross-check that matters is in T5 and it is two cells, not four.
+cross-check that matters is in T5 and it is two cells, not four. ✅ **That sentence is
+2026-08-29's and the next section retires it: both diverging cells are now read
+through production.**
 
 ⚠️ **So the conclusion of the paragraph above stands and its reasoning does not**:
-the depth key is right, and it is right for a case a fixture CAN reach. The fixture
-is not in the suite yet — that needs a second `--rerun` of the same mutant to make
-it a red check rather than a probe reading, which the `mutants` queue box's
-one-mutant bound puts in the next session. Carried as the queue's
-`r25-depth-fixture`.
+the depth key is right, and it is right for a case a fixture CAN reach. ✅ **And the
+fixture is IN the suite as of 2026-08-30 — see `#### The fixture, IN THE SUITE`
+below.**
+
+#### The fixture, IN THE SUITE, 2026-08-30 — the mutant is `killed` and the survivor list is ZERO
+
+✅ **The two swapped fixtures are in `Tests/main.swift` and they are RED CHECKS, not a
+probe reading.** `--rerun --only R25-depth-aware`, baseline **`1361 checks, green`**,
+mutant **296 s**, **`1359/1361 passed`**, verdict **`killed`** by **exactly two**
+objecting checks, and `mutate.py`'s closing line reads **`0 survivor(s)`**.
+⛔ **NOT "for the first time in this log's history" — that superlative was in a draft and
+the review of this diff refuted it from git**: at `328d393`, the log's own first commit,
+the file held two rows and both read `killed`, so the tool printed `0 survivor(s)` then
+too. What is new is an empty list over a catalogue of 104 rather than of two.
+**Predicted in writing before each run started** (`$STATE/rescue/`
+`r25-depth-fixture-2026-08-30-prediction.md`): the baseline count, the verdict, both
+objecting checks by name, and every check that had to stay green. Every element held,
+twice. The five relevant lines of the mutant's suite log, in log order:
+
+      ok   60 forms sharing one Resources dictionary do not fan out
+      ok   depth-az-long2.pdf really walks the long route first, or the check below covers a traversal order twice
+      FAIL an image reachable by two routes survives pruning (/A long, long route first) — largestImage nil
+      ok   depth-za-long2.pdf really walks the long route first, or the check below covers a traversal order twice
+      FAIL an image reachable by two routes survives pruning (/Z long, long route first) — largestImage nil
+
+⛔ **THE ATTRIBUTION IS THE OBJECTING-CHECK LIST, NOT THE OLD PAIR'S GREEN — and a draft
+of this said otherwise, which the review of this diff refuted by arithmetic.**
+`mutate.py` names the two new labels and no others (`2 check(s)`, `1359/1361`), so with a
+1,361-check total and two failures the old pair's green is *entailed* rather than
+independently observed. Worse, this register already records those two greens as
+**guaranteed**: the mutation is INERT on them, because with the short route yielded first
+S is reached at depth 1 and the later arrival at depth 2 is refused identically by both
+rules (`seen = 1 <= 2` and `walkedAt[S] != nil`). Calling an inert control "the
+attribution" is this project's check-that-cannot-fail pattern dressed up as a virtue. The
+old pair is the **regression guarantee**, which is why it was kept rather than replaced.
+✅ **The green that IS informative is the 60-form check** — it needs a shared
+`/Resources` to resolve to ONE pointer, the memo's load-bearing assumption — and it is
+green on both sides.
+
+✅ **The FAIL lines carry `largestImage nil`, so the identity-only cell's own VALUE is
+now a production reading and not an inference.** That detail string exists because the
+review of this diff found the four assertions printed nothing: a nil `PDFDocument`, an
+unparsable xref, a refusal by `largestImage`'s opening guard and a genuinely lost image
+all reddened identically. So what this run observes is `nil`, exactly the replica's
+prediction, and not merely *"≠ 777"*.
+
+⛔ **What this retires, stated exactly: `#### It belongs here`'s and T5's *"NO cell
+observes production in the regime where the two rules diverge"*.** Both diverging
+readings are now production's — the depth-aware one is the baseline's green through the
+real `Flattener.largestImage`, the identity-only one is the mutant's red through that
+same function with one guard changed. ⚠️ **Do not restate that as "4 of 4 cells", which
+a draft did and the review refuted for mixing two denominators**: the table is four
+fixtures x two rule columns = **eight** cells, all eight now observed, of which **six are
+independent** — the old pair's two identity-only cells still cannot disagree. On
+2026-08-29 two of the eight were independent.
+
+✅ **AND THE PAIR IS NOW GUARDED AGAINST ROTTING SILENTLY, which is the review's sharper
+find and worth more than the kill.** Nothing pinned `CGPDFDictionaryApplyBlock`'s yield
+order — it appeared in `Tests/main.swift` only inside a comment — so the day a macOS
+update flips it, both new fixtures would become copies of the regression guard, stay green
+under this mutant, and nothing would say so: a check unable to fail arriving by clock
+rather than by construction, in the very item created to repair one. Four premise rows now
+read the order off each fixture through `CGPDFDictionaryApplyBlock` and assert which route
+is walked first, so each label is checked rather than trusted. ⛔ **They cannot pass
+degenerately: the four assert OPPOSITE things in pairs off one helper**, so a constant
+answer reds two and an empty array reds all four. All four are green at baseline and under
+the mutant, as predicted — the mutant touches one guard inside `Flattener.walk` and
+nothing CoreGraphics does.
+
+⛔ **The edit was not one token.** The builder takes a `longEntryFirst: Bool` and writes
+the `shortKey` entry FIRST when it is false — `<</\(shortKey) 9 0 R/\(longKey) 6 0 R>>` —
+rather than renumbering the two routes, because object 6 is the long chain's head in all
+four members and renumbering would leave the `longKey` parameter naming the SHORT route,
+printing `(/A long)` over the route that is not long. ✅ The two shipped fixtures are
+**byte-identical** to before: the `longEntryFirst == true` branch is character-for-character
+the old string, verified by the review of this diff.
+
+⚠️ **What is NOT claimed.** The yield-order measurement is still two entries and the names
+`A` and `Z`; the premise rows pin what this fixture sees, they do not widen the reading.
+The suite gains coverage of the divergent regime on a fixture, not on a corpus page — no
+corpus page is known to have this shape, and R25's own close never claimed one did. And
+`largestImage`'s opening `guard drawsAnyXObject(page) != false` is still **entailed rather
+than measured** on the new fixtures: their content stream is byte-identical to the pair's,
+and the pair passes it. ⚠️ **The mutant's red is also joint evidence and not a pure
+reading of the guard**: under identity-only pruning the short route is turned away only if
+`10 0 R` resolves to ONE pointer from objects 8 and 9, so the red says the depth term is
+load-bearing **and** that pointer identity holds across two different parents — the first
+production reading of the second, which `#### It belongs here` called untestable on the
+shipped pair.
+
+⚠️ **The estimator, and it is NOT the first reading inside its range — a draft said so and
+the review refuted it from this file**: the 2026-08-28 reading (582 s against a printed
+`8-10`) was inside too, and only 2026-08-29's (800 s against `9-10`) was not. Both of
+today's runs printed *"roughly 9-13 minutes … Budget the 13"* and both landed inside:
+**593 s = 9.88 min** clocked on the run this section quotes (launched 00:56:46, finished
+01:06:39; `$STATE/suite-timings.tsv`, `mutant-r25c 593 0 4.47`) and **~617 s** on the
+earlier run the review sent back — ⚠️ that one is DERIVED, ±60 s, its start a
+minute-resolution `ls` plus a 20-second sleep, and its row is labelled
+`mutant-r25b-derived` in the ledger so nobody budgets off it as a clocked figure. In the
+house ratio form the budgeted 13 min is **1.32x** the measured, i.e. over-budgeted, the
+safe direction. ⛔ Do not quote per-end percentages off the ±60 s figure. So the cleared
+window has four recorded readings and **three are inside**. The exact number the tool
+itself reports for a suite is **296 s**.
 
 ### R26 · `pageTooLarge` tells the user to change a setting that cannot reach the rebuild — FIXED
 *(2026-08-09 review; confirmed by grep — the setting genuinely is not wired here)*
@@ -20878,7 +20979,10 @@ REASON — IS SUPERSEDED, and with it this one's claim to credibility: the limit
 was written down wrong, so the harness confirming it confirmed the wrong thing** — measured 2026-08-29: the yield order reads an entry's
 POSITION and the fixture varies the two keys' NAMES, so it covers one traversal
 order twice and the case IS buildable. `R25` still survives, and it survives as a
-GAP. Read `#### The last survivor re-asked` below.)*
+GAP. Read `#### The last survivor re-asked` below.)* *(⛔ **AND AS OF 2026-08-30 IT
+DOES NOT SURVIVE: the buildable case is in the suite and the mutant is `killed`, so
+BOTH of this paragraph's two survivors are gone and `mutate.py` prints
+`0 survivor(s)`.** R25 `#### The fixture, IN THE SUITE`.)*
 
 **The harness was wrong twice before it was right, and both are recorded in its
 own docstring.**
@@ -21119,6 +21223,14 @@ guaranteed. ⛔ **So NO cell observes production in the regime where the two rul
 diverge, which is the regime the split claim is about** — and "every cell where
 production can be observed" was false besides: production *can* be observed on the
 new fixtures, by adding them to the suite, which is exactly the deferred work below.
+✅ **THAT SENTENCE IS 2026-08-29's AND IT IS RETIRED 2026-08-30**: the fixtures are in
+the suite, so the depth-aware readings are the baseline's greens and the identity-only
+ones the mutant's reds (`largestImage nil`, printed), all through the real
+`Flattener.largestImage`. ⚠️ **The table is EIGHT cells — four fixtures x two rule
+columns — and all eight are now observed, of which SIX are independent**: the old pair's
+two identity-only cells are still inert by construction, exactly as this paragraph says.
+A draft wrote "4 of 4", mixing this paragraph's denominator with the table's. R25
+`#### The fixture, IN THE SUITE`.
 ✅ **One production cell does bear on the replica's load-bearing assumption, and the
 draft failed to count it**: the split depends entirely on CoreGraphics resolving
 `10 0 R` to the SAME pointer from two different parents (`Flattener.swift`'s
@@ -21139,6 +21251,18 @@ needs a second `--rerun` of this same mutant to turn a probe reading into a red
 check, because a check whose only red is a binary is the shape this register flagged
 over `shapeRunHigh`'s owed fixture. Carried as the queue's `r25-depth-fixture`,
 fully specified.
+✅ **THAT DEBT IS DISCHARGED 2026-08-30 AND THE VERDICT ABOVE IS SUPERSEDED — the same
+mutant is now `killed` and the survivor list is ZERO.** `--rerun --only
+R25-depth-aware`, baseline **`1361 checks, green`**, mutant **296 s**,
+**`1359/1361 passed`**, `killed` by **exactly the two new checks**, `mutate.py` printing
+**`0 survivor(s)`**; `coverage` stays **79 of 104** and the never-run census **25**,
+exactly as a `--rerun` must leave them. Predicted in writing before the run, every
+element held. ⛔ **The attribution is the objecting-check LIST and not the old pair's
+green, which is entailed by the arithmetic and inert by construction** — a draft claimed
+the greens and the review of that diff refuted it, from this very paragraph's own
+*"was guaranteed"*. Full account, including the eight cells and the estimator, is
+R25 `#### The fixture, IN THE SUITE`. ⚠️ **So the `SURVIVED` row above is history:
+`already_done()` is last-row-wins, and the last row for this id now reads `killed`.**
 ⛔ **THE REASON GIVEN FOR DEFERRING IT WAS A MISQUOTE, AND THE REVIEW OF THIS DIFF
 REFUTED IT.** This paragraph first said the `mutants` box *"says in terms that two
 separate `--only` runs in one session are not exempt"*. That clause governs

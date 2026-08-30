@@ -107,6 +107,14 @@ Two consequences, both load-bearing:
     i.e. **800 s is 33.3% OVER the budgeted 600** — ⛔ not "600 was 33.3% under", which is
     25%; a draft mixed two denominators into one comparison. The `1.33x` ratio form is
     this header's own convention and is the one to quote.
+    ⛔ **n = 4 as of 2026-08-30 and THREE of the four are INSIDE the printed range**, so
+    the run of bad readings is over rather than continuing: 2026-08-28 inside, 2026-08-29
+    outside (1.33x low), and 2026-08-30's two runs of `logic/R25-depth-aware-prune` both
+    inside — `9-13` printed, **593 s** clocked (`$STATE/suite-timings.tsv`,
+    `mutant-r25c 593 0 4.47`) and ~617 s derived (±60 s, row `mutant-r25b-derived`, which
+    carries that label so nobody budgets off it as a clocked figure). Budgeted 13 min is
+    **1.32x** the measured — over-budgeted, the safe direction. ⚠️ Still n = 4 on one
+    machine; budget from `suite-timings.tsv`, not from this paragraph.
     ✅ **What is measured is that the SUITE cannot be the term**: that mutant's own suite
     took **382 s** against the one window row measured at the same **1,355** checks
     (292 s), i.e. **1.31x**, and 0.8% of growth does not buy that. ⛔ **"1.31x-1.39x at
@@ -553,13 +561,20 @@ OPERATORS = [
     # plants the original defect: ink alone routes a page to pictures again.
     ("Flattener.swift", "if tone > pictureInkMinimumTone,\n           inkCoverage(",
      "if true,\n           inkCoverage(", "R38-ink-needs-tone"),
-    # ⛔ THE LIVE SURVIVOR, and as of 2026-08-29 the only one — re-asked against 1,355
-    # checks and still `SURVIVED` (382 s, no objecting check). It is a GAP IN THE CHECKS
-    # and not a value nothing depends on: the two fixtures written to discriminate it
-    # vary the two /XObject keys' NAMES, and `CGPDFDictionaryApplyBlock` yields entries
-    # in reverse FILE ORDER, so both of them walk the short route first. Swap the two
-    # object numbers and the rules diverge — depth-aware 777, identity-only nil.
-    # Prescribed as the queue's `r25-depth-fixture`; BUGS.md R25 `#### It belongs here`.
+    # ✅ THE LAST SURVIVOR, `killed` 2026-08-30 — so the survivor list is EMPTY. ⛔ Not
+    # "for the first time ever": at `328d393`, this log's first commit, it held two rows
+    # and both read `killed`. What is new is an empty list over a catalogue of 104.
+    # It was a GAP IN THE CHECKS and not a value nothing depends on: the two fixtures
+    # written to discriminate it varied the two /XObject keys' NAMES, and
+    # `CGPDFDictionaryApplyBlock` yields entries in reverse FILE ORDER, so both of them
+    # walked the short route first and the mutation was inert on both. Two fixtures that
+    # write the SHORT key first — long route second, hence yielded first — split the two
+    # rules, and they are in the suite now: baseline `1361 checks, green`, mutant 296 s,
+    # `1359/1361 passed`, killed by exactly those two. ⛔ The attribution is that
+    # objecting-check LIST, not the older pair's green, which two failures out of 1,361
+    # already entail and which is inert by construction anyway. ⚠️ Do NOT read an empty
+    # survivor list as coverage: 25 catalogue entries still have no row at all.
+    # BUGS.md R25 `#### The fixture, IN THE SUITE`.
     ("Flattener.swift", "if let seen = walkedAt[identity], seen <= depth { return }",
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
     # C28's wiring as a MECHANISM rather than as a constant, 2026-08-22, and it is the

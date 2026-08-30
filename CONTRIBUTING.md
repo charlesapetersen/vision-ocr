@@ -110,12 +110,14 @@ python3 Tools/mutate.py --only <substring>   # after changing a constant or a gu
                                              # $STATE/suite-timings.tsv)
                                              # ⛔ "not contention" stood here as a general claim and is
                                              # refuted 2026-08-29: one mutant took 800 s end to end and
-                                             # 382 s for its own suite against 292 s at the SAME 1,355
-                                             # checks 31 hours earlier — 1.31x, which 0.8% of suite
+                                             # 382 s for its own suite against 292 s at the same suite
+                                             # size — both 1,355 checks as of 2026-08-29 — 31 hours
+                                             # earlier: 1.31x, which 0.8% of suite
                                              # growth cannot buy. ⛔ QUOTE 1.36x, NOT 1.31x: that pair
                                              # is TWO DIFFERENT MUTANTS, and the SAME mutant
                                              # (logic/R25-depth-aware-prune) has since been measured at
-                                             # 280 s and 382 s — same base d88a426, same 1,355 checks,
+                                             # 280 s and 382 s — same base d88a426, and as of
+                                             # 2026-08-29 both at 1,355 checks,
                                              # 30 h 35 m apart — which puts suite growth at exactly 0%
                                              # and holds mutant identity fixed as well. Adopted
                                              # 2026-08-29 from a stranded worktree.
@@ -131,7 +133,19 @@ python3 Tools/mutate.py --only <substring>   # after changing a constant or a gu
                                              # 2026-08-28 R25 run has NO suite-timings row at all, so
                                              # its own load is unrecorded. n = 2. What IS bounded is
                                              # mutant identity: 292 s vs 280 s, two mutants ~46 min
-                                             # apart that day at 1,355 checks, is 1.043x.
+                                             # apart that day, both at 1,355 checks as of 2026-08-29,
+                                             # is 1.043x.
+                                             # ⚠️ The suite is 1,361 checks as of 2026-08-30
+                                             # (r25-depth-fixture): 0.44% growth, which on this
+                                             # block's own arithmetic is far too small to matter,
+                                             # so the rows above stay comparable. Recorded only so
+                                             # a later reader can see which size each was taken at.
+                                             # ⛔ n = 4 on the estimator as of 2026-08-30 and THREE
+                                             # of the four are inside the printed range: two runs
+                                             # that day printed 9-13 and measured 593 s (clocked,
+                                             # `mutant-r25c`) and ~617 s (derived +/-60 s, whose
+                                             # row is labelled `mutant-r25b-derived` for that
+                                             # reason). Budgeted 13 min is 1.32x the measured.
 python3 Tools/mutate.py                      # the whole catalogue — ~8 h at that rate, and it said
                                              # ~65 HOURS until 2026-08-24, when `1dbaafd` took a 16.2x
                                              # clamp off the suite. Read the tool's header — but NOT its
@@ -147,23 +161,34 @@ python3 Tools/mutate.py                      # the whole catalogue — ~8 h at t
 
 Add a mutant when you add a constant or a guard worth protecting. A survivor is
 either a gap in the checks or a value nothing depends on, and T5 records how to
-tell those apart. ⛔ **There is ONE survivor as of 2026-08-28, not two, and the
-list ages silently**: `already_done()` is last-row-wins, so a verdict sits until
-somebody spends a `--rerun` on it. Both `SURVIVED` rows were the first campaign's
+tell those apart. ⛔ **There are ZERO survivors as of 2026-08-30, and the list ages
+silently either way**: `already_done()` is last-row-wins, so a verdict sits until
+somebody spends a `--rerun` on it — an empty list means nobody has re-asked, not that
+nothing can survive. (It read ONE as of 2026-08-28 and TWO before that.)
+Both of those `SURVIVED` rows were the first campaign's
 — the only two in the log reading `478/478` — and re-asking one of them
-(`const/maximumPageMegapixels`) against today's 1,355 checks came back `killed`,
-by a check written for something else. T5 `#### The survivor list re-asked`.
+(`const/maximumPageMegapixels`) against a suite that stood at 1,355 checks as of
+2026-08-28 came back `killed`, by a check written for something else. T5
+`#### The survivor list re-asked`.
 ⛔ **The other one, `logic/R25-depth-aware-prune`, was re-asked on 2026-08-29 and
 `SURVIVED` — and it is measured to be a GAP in the checks rather than a value
 nothing depends on** (⚠️ *"the first such survivor"* would be a superlative over a
 population of two, the other killed the day before). The fixture written to discriminate
 it varies the two keys' NAMES, and CoreGraphics's yield order reads their POSITION,
 so its "both orderings" pair covers one order twice; swapping the two object numbers
-splits the two prune rules (depth-aware 777, identity-only nil). Measured through a
-replica, not yet a red check — which is why the fixture is a queue item
-(`r25-depth-fixture`) and not this line. T5 `#### The last survivor re-asked` and
-R25 `#### It belongs here`. **The lesson to carry: a fixture built "both ways round"
-is only two ways round if it varies what the thing under test actually reads.**
+splits the two prune rules (depth-aware 777, identity-only nil).
+✅ **THE GAP IS CLOSED 2026-08-30 AND THERE ARE NO SURVIVORS: that fixture is in the
+suite and the mutant is `killed`.** Baseline **`1361 checks, green`**, mutant **296 s**,
+**`1359/1361 passed`**, `killed` by **exactly the two new checks**. ⛔ **The attribution
+is the objecting-check LIST and not the old pair's green** — two failures out of 1,361
+with both named makes that green entailed, and it is inert by construction besides.
+`mutate.py` prints **`0 survivor(s)`** — ⚠️ **not for the first time ever** (the log's
+first commit held two rows, both killed) but for the first time over a catalogue of 104;
+`coverage` stays **79 of 104**,
+so ⚠️ **an empty survivor list is not coverage — 25 catalogue entries still have no row
+at all** (the queue's `mutants-never-run`). R25 `#### The fixture, IN THE SUITE`, T5
+`#### The last survivor re-asked`. **The lesson to carry: a fixture built "both ways
+round" is only two ways round if it varies what the thing under test actually reads.**
 
 ## 4b. Sweep the siblings before you call it fixed
 

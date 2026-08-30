@@ -14457,27 +14457,33 @@ do {
     // 2026-08-29** (BUGS.md R25 `#### It belongs here`, out of
     // `logic/R25-depth-aware-prune`'s re-run). The order depends on the entry's
     // POSITION and not on its name — the SECOND key written comes back first, on 4
-    // files covering 2 key sequences × 2 object assignments — and the builder below
-    // puts `longKey` at object 6 and `shortKey` at object 9 in BOTH files, so the
-    // long chain is the first entry either way and reverse order walks the SHORT
-    // route first in both. The pair varies the one thing the order ignores and holds
-    // the one thing it reads: it covers one traversal order twice, which is why the
-    // mutant survives it. The comment below the loop was right and this one was not.
-    // ⚠️ The fixture that DOES split them is measured (depth-aware 777,
-    // identity-only nil, both key orders) and is not yet in this suite, because a
-    // probe reading is not a red check — queue item `r25-depth-fixture`. ⛔ **The
-    // edit is NOT "renumber the routes", which would leave `longKey` naming the
-    // short one: write the `shortKey` entry FIRST**, i.e.
-    // `<</\(shortKey) 9 0 R/\(longKey) 6 0 R>>`, so the parameter names stay honest
-    // and the check labels below keep meaning what they say.
-    func depthFixture(named name: String, longKey: String, shortKey: String) -> URL {
+    // files covering 2 key sequences × 2 object assignments — so the two key
+    // NAMINGS below cover one traversal order twice, and `longEntryFirst` is what
+    // varies the thing the framework actually reads. The comment below the loop was
+    // right and this one was not.
+    // ✅ **The fixture that DOES split the two prune rules is IN THIS SUITE as of
+    // 2026-08-30, and it is a red check rather than a probe reading**: the
+    // `longEntryFirst: false` pair kills `logic/R25-depth-aware-prune` by exactly
+    // those two checks (BUGS.md R25 `#### The fixture, IN THE SUITE`). ⛔ **It writes
+    // the `shortKey` entry FIRST rather than renumbering the routes** — object 6 is
+    // the long chain's head and object 9 the short route's in all four members —
+    // because renumbering would leave the `longKey` parameter naming the SHORT route
+    // and the check labels below would then read `(/A long)` over the route that is
+    // not long.
+    func depthFixture(named name: String, longKey: String, shortKey: String,
+                      longEntryFirst: Bool) -> URL {
         let bodies = [
             "<</Type/Catalog/Pages 2 0 R>>",
             "<</Type/Pages/Kids[3 0 R]/Count 1>>",
             "<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources 5 0 R/Contents 4 0 R>>",
             "<</Length 1>>\nstream\n \nendstream",
-            // 5: the page's resources, holding both routes to S
-            "<</XObject<</\(longKey) 6 0 R/\(shortKey) 9 0 R>>>>",
+            // 5: the page's resources, holding both routes to S. WHICH ENTRY IS
+            // WRITTEN FIRST is the whole discriminator, because the framework yields
+            // the second one first: `longEntryFirst: false` puts the long chain
+            // second, so it is walked first and reaches S at a depth whose subtree
+            // the cap refuses.
+            longEntryFirst ? "<</XObject<</\(longKey) 6 0 R/\(shortKey) 9 0 R>>>>"
+                           : "<</XObject<</\(shortKey) 9 0 R/\(longKey) 6 0 R>>>>",
             // 6: first form of the long chain → 7
             "<</Type/XObject/Subtype/Form/BBox[0 0 10 10]/Resources 7 0 R/Length 0>>\nstream\n\nendstream",
             // 7: → form B
@@ -14512,22 +14518,83 @@ do {
         return url
     }
 
-    // Two KEY NAMINGS — not two traversal orders, which is what the comment above
-    // the builder claimed until 2026-08-29. This is a guard that pruning does not
-    // lose an image reachable by two routes of different lengths, and it is *not* a
-    // discriminating test of the depth-awareness itself: measured, both members walk
-    // the SHORT route first, so identity-only pruning passes both and
-    // `logic/R25-depth-aware-prune` survives them. ⛔ The reason R25 gave for that —
-    // "CoreGraphics walked the shallower branch first in every arrangement tried" —
-    // is right here only by accident of the builder: the order reads the entry's
-    // POSITION, and `longKey` is written first in both files. Swap the builder's two
-    // object numbers and CoreGraphics yields the LONG route first in both, where
-    // identity-only pruning loses the image. See BUGS.md R25 `#### It belongs here`.
-    for (name, long, short) in [("depth-az.pdf", "A", "Z"), ("depth-za.pdf", "Z", "A")] {
-        let page = PDFDocument(url: depthFixture(named: name, longKey: long,
-                                                 shortKey: short))?.page(at: 0)
-        check("an image reachable by two routes survives pruning (/\(long) long)",
-              page.flatMap { Flattener.largestImage(of: $0) }?.pixelWidth == 777)
+    /// The page's `/XObject` keys in the order `CGPDFDictionaryApplyBlock` hands them
+    /// back. ⛔ **This is the FRAMEWORK's order and nothing in this repo controls it**,
+    /// which is why the loop below reads it instead of trusting it: measured 2026-08-29
+    /// to be reverse file order, at two entries and over the names `A` and `Z` only. The
+    /// day it changes, the two `long route first` fixtures stop discriminating and would
+    /// go green under `logic/R25-depth-aware-prune` with nothing to say so — a check
+    /// unable to fail, arriving by clock rather than by construction. Found by the
+    /// adversarial review of the diff that added them.
+    func xobjectKeysInYieldOrder(_ url: URL) -> [String] {
+        guard let page = PDFDocument(url: url)?.page(at: 0),
+              let dictionary = page.pageRef?.dictionary else { return [] }
+        var resources: CGPDFDictionaryRef?
+        guard CGPDFDictionaryGetDictionary(dictionary, "Resources", &resources),
+              let resources else { return [] }
+        var xobjects: CGPDFDictionaryRef?
+        guard CGPDFDictionaryGetDictionary(resources, "XObject", &xobjects),
+              let xobjects else { return [] }
+        final class Names { var found: [String] = [] }
+        let names = Names()
+        CGPDFDictionaryApplyBlock(xobjects, { key, _, info in
+            Unmanaged<Names>.fromOpaque(info!).takeUnretainedValue()
+                .found.append(String(cString: key))
+            return true
+        }, Unmanaged.passUnretained(names).toOpaque())
+        return names.found
+    }
+
+    // FOUR fixtures in two pairs, and only the second pair discriminates. Each pair
+    // varies the two /XObject keys' NAMES, which is what the comment above the
+    // builder claimed was two traversal orders until 2026-08-29; measured, the
+    // framework reads an entry's POSITION and yields the SECOND key written first,
+    // so the naming changes nothing and `longEntryFirst` is the discriminator:
+    //
+    //   longEntryFirst: true   long is entry 1, so the SHORT route is yielded first.
+    //                          S is reached at depth 1, the image at depth 3, and the
+    //                          later arrival at depth 2 is refused IDENTICALLY by both
+    //                          prune rules (`seen = 1 <= 2` and `walkedAt[S] != nil`).
+    //                          Both give 777: a regression guard against pruning
+    //                          losing an image reachable two ways, and *not* a
+    //                          discriminating test — the mutation is inert on it.
+    //   longEntryFirst: false  long is entry 2, so the LONG route is yielded first.
+    //                          Identity-only pruning marks S at depth 2, the cap
+    //                          refuses its subtree, and the short route is then turned
+    //                          away as already seen. Depth-aware 777, identity-only
+    //                          nil — measured 2026-08-30 as a RED CHECK.
+    //
+    // So the first pair must stay GREEN under `logic/R25-depth-aware-prune` and the
+    // second pair must go RED, which is what says the new pair and not the old one is
+    // doing the work. Measured: `killed`, by exactly those two checks.
+    // See BUGS.md R25 `#### The fixture, IN THE SUITE`.
+    for (name, long, short, longFirst, order) in [
+        ("depth-az.pdf", "A", "Z", true, "short route first"),
+        ("depth-za.pdf", "Z", "A", true, "short route first"),
+        ("depth-az-long2.pdf", "A", "Z", false, "long route first"),
+        ("depth-za-long2.pdf", "Z", "A", false, "long route first"),
+    ] {
+        let url = depthFixture(named: name, longKey: long, shortKey: short,
+                               longEntryFirst: longFirst)
+        // PREMISE, and it is what keeps the pair below honest. Every label claims
+        // which route is walked FIRST, and that is the framework's answer rather
+        // than this fixture's, so assert it. ⛔ Note the four rows assert OPPOSITE
+        // things in pairs — two "short", two "long", off one helper — so no single
+        // degenerate answer makes them all green: a constant reads two of them
+        // wrong and an empty array reds all four. It also subsumes "does the file
+        // parse": an unopenable fixture yields no keys and reds here, where the
+        // assertion below would have printed the same bare FAIL as a lost image.
+        let keys = xobjectKeysInYieldOrder(url)
+        let wanted = longFirst ? short : long
+        check("\(name) really walks the \(longFirst ? "short" : "long") route "
+                  + "first, or the check below covers a traversal order twice",
+              keys.first == wanted,
+              "yield order \(keys), wanted /\(wanted) first")
+        let page = PDFDocument(url: url)?.page(at: 0)
+        let found = page.flatMap { Flattener.largestImage(of: $0) }
+        check("an image reachable by two routes survives pruning "
+                  + "(/\(long) long, \(order))",
+              found?.pixelWidth == 777, "largestImage \(String(describing: found))")
     }
 }
 

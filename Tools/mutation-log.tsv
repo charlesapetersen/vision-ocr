@@ -92,3 +92,5 @@ const/colourSaturationThreshold	killed	277	11 check(s): Automatic keeps a colour
 const/maximumPageMegapixels	killed	292	1 check(s): the colour layering bound is the derivation, not a choice — 88 against a derived 8800.0 MP
 logic/R25-depth-aware-prune	SURVIVED	280	1355/1355 passed
 logic/R25-depth-aware-prune	SURVIVED	382	1355/1355 passed
+logic/R25-depth-aware-prune	killed	291	2 check(s): an image reachable by two routes survives pruning (/A long, long route first); an image reachable by two routes survives pruning (/Z long, long route first)
+logic/R25-depth-aware-prune	killed	296	2 check(s): an image reachable by two routes survives pruning (/A long, long route first) — largestImage nil; an image reachable by two routes survives pruning (/Z long, long route first) — largestImage nil

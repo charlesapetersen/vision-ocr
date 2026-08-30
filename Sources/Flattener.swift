@@ -3762,18 +3762,24 @@ enum Flattener {
         // dictionaries and other key names are UNMEASURED), so putting the LONG route
         // second makes CoreGraphics walk it first — and over that one traversal a plain
         // visited set answers `nil` where this map answers 777.
-        // ⚠️ **That last reading is a REPLICA of this function, not this function**
-        // (`alltext-replica`'s shape, labelled): no single build can run both prune
-        // rules over one traversal, so the split is measured outside the tree and the
-        // only production corroboration is that `Tests/main.swift`'s 60-form check —
-        // which needs a shared `/Resources` to resolve to ONE pointer, this memo's
-        // load-bearing assumption — is green under both rules.
-        // ⛔ **The suite does not yet build the splitting page**: its two "reachable by
-        // two routes" fixtures vary the two keys' NAMES, which the yield order ignores,
-        // and both write the long route first — so `logic/R25-depth-aware-prune`
-        // survives them and this line is unpinned. R25 `#### It belongs here`; queue
-        // item `r25-depth-fixture`. Do not read the survivor as "nothing depends on
-        // this".
+        // ⚠️ That 2026-08-29 reading was a REPLICA of this function
+        // (`alltext-replica`'s shape): no single build can run both prune rules over
+        // one traversal, so the split was measured outside the tree.
+        // ✅ **THE GUARD BELOW — `if let seen = walkedAt[identity], seen <= depth` inside
+        // `walk` — IS PINNED AS OF 2026-08-30, and both diverging readings are now
+        // PRODUCTION's.** (The referent is named because this fixture has already cost
+        // twenty-one days to one misplaced one.) `Tests/main.swift` builds four "reachable by two routes"
+        // fixtures; the two that write the SHORT key first put the long route second, so
+        // CoreGraphics walks it first, and they assert 777 through this function. Under
+        // `logic/R25-depth-aware-prune` — this `if` with the depth term removed — those
+        // two go RED, printing `largestImage nil`, and the other two stay GREEN
+        // (`1359/1361 passed`, `killed`, 296 s) — which is what says the depth term and
+        // not the memo is what saves the image. Four further rows assert, per fixture,
+        // WHICH route the framework yields first, so a changed yield order reports itself
+        // instead of quietly retiring the discriminating pair. ⚠️ The memo's own load-bearing assumption is separate and is
+        // corroborated by the 60-form check, which needs a shared `/Resources` to
+        // resolve to ONE pointer and is green under both rules. R25
+        // `#### The fixture, IN THE SUITE`.
         var walkedAt: [UnsafeRawPointer: Int] = [:]
 
         func walk(_ resources: CGPDFDictionaryRef, depth: Int) {

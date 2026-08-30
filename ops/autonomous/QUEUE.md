@@ -712,7 +712,9 @@ happens.**
       by the queue's `mutants-never-run` as of 2026-08-25**, which is the first box to claim them: the
       `mutants` item scopes itself to the *survivor* list twice over ("work the survivors", "the live
       survivor list"), which is the 2 `SURVIVED` rows (⛔ **ONE from 2026-08-28** — `maximumPageMegapixels`
-      was re-run and is `killed`; ⚠️ coverage does NOT move for a re-run, staying `79 of 104` with the
+      was re-run and is `killed` — ⛔ **and ZERO from 2026-08-30, when `logic/R25-depth-aware-prune` was
+      killed too, which is exactly why the survivor list was never the same question as this box**;
+      ⚠️ coverage does NOT move for a re-run, staying `79 of 104` with the
       census at **25**, because the two are complements over one set) and not a never-run entry, so "the mutants item owns
       the rest" (an earlier draft of this sentence) was wrong, and "nobody has claimed them" — true for
       four consecutive sessions that each flagged it — is now false. ⚠️ 25 held after the third and fourth
@@ -3433,7 +3435,45 @@ happens.**
       the two classifiers diverge, which is the thing T21's arm was written to mirror.
       ⚠️ Cost: `Tools/` is staged, so it pays the full suite; budget one commit.
       —— end of the record ——
-- [ ] **r25-depth-fixture** — **put the fixture that splits depth-aware from identity-only pruning INTO the
+- [x] **r25-depth-fixture** — ✅ **DONE 2026-08-30. The two swapped fixtures are in `Tests/main.swift`, the
+      mutant is `killed`, and `mutate.py` prints `0 survivor(s)`.** Baseline **`1361 checks, green`**,
+      mutant **296 s**, **`1359/1361 passed`**, `killed` by **exactly the two new checks** — predicted by
+      name in writing before each run, with the baseline count and every check that had to stay green.
+      ⛔ **NOT "for the first time in this log's history"**, which the first draft said in five places: at
+      `328d393` the log held two rows and both read `killed`. What is new is an empty list over a catalogue
+      of 104. ⛔ **And the attribution is the objecting-check LIST, not the old pair's green** — two failures
+      out of 1,361 with both named entails that green, and this register already calls it *guaranteed*
+      because the mutation is inert on those fixtures; calling an inert control the attribution is the
+      check-that-cannot-fail pattern sold as a virtue. ✅ **It retired a claim rather than only adding a
+      check**: R25 and T5 both said *"no cell observes production in the regime where the two rules
+      diverge"*, and all of it is production now — the reds print `largestImage nil`, so the identity-only
+      VALUE is observed and not inferred. ⚠️ The table is **eight** cells (four fixtures x two rules), all
+      observed, **six independent**; "4 of 4" mixed two denominators.
+      ⛔ **THE REVIEW OF THE FIRST DRAFT FOUND THE THING WORTH MORE THAN THE KILL AND IT COST A SECOND RUN:
+      nothing pinned `CGPDFDictionaryApplyBlock`'s yield order**, so a macOS change would have turned the
+      new pair back into a copy of the old one — both green under this mutant, nothing reporting it — in the
+      very item created to repair a check that could not fail. Four premise rows now read the order off each
+      fixture and assert which route is walked first; they cannot pass degenerately, because the four assert
+      opposite things in pairs off one helper. The four assertions also gained detail strings, which is
+      where `largestImage nil` comes from. ✅ **The pointer-identity contingency did not fire, and the
+      mutant's RED is itself the measurement it was flagged for**: under identity-only pruning the short
+      route is turned away only if `10 0 R` resolves to ONE pointer from objects 8 and 9, so the red is joint
+      evidence for pointer identity and for the depth term — the first such reading on two different
+      parents, which the box called untestable on the shipped pair. ⚠️ It is therefore not a pure
+      observation of the guard.
+      ⚠️ Estimator: ⛔ **not "the first reading inside its range"**, which a draft said — 2026-08-28's was
+      inside too. Both of today's runs printed `9-13` and both landed inside: **593 s = 9.88 min** clocked
+      (`$STATE/suite-timings.tsv`, `mutant-r25c 593 0 4.47`) and **~617 s** derived (±60 s, row
+      `mutant-r25b-derived`). Budgeted 13 min is **1.32x** the measured, over-budgeted. Do not quote per-end
+      percentages off a ±60 s figure. Quote the tool's own **296 s** for a suite. Doc-sync landed in
+      `BUGS.md` R25 (`#### The fixture, IN THE SUITE`) + T5 + R25's own two-checks sentence, `CLAUDE.md`
+      (two places plus its check-count line, 1,355 → 1,361), `CONTRIBUTING.md` §4a **and** its `mutate.py`
+      cost block, `Tools/mutate.py`'s catalogue comment **and** its estimator header,
+      `Sources/Flattener.swift`'s memo comment, `REVIEW-2026-08-14.md`'s own "both key orderings" claim, and
+      this file in three places — eleven sites against the box's four, and the last three were found by the
+      review's sibling sweep rather than by the box.
+      —— the specification as it was written, kept as the record ——
+      **put the fixture that splits depth-aware from identity-only pruning INTO the
       suite, and turn a probe reading into a red check.** Measured 2026-08-29 out of `mutants`' last
       re-run: `Tests/main.swift`'s `depthFixture` builds
       `<</\(longKey) 6 0 R/\(shortKey) 9 0 R>>`, so the LONG chain is the first entry in both members of
@@ -3551,7 +3591,8 @@ happens.**
       And never
       while `Sources/` is being edited. The work item is the live survivor list in
       `Tools/mutation-log.tsv`.
-      ✅ **THE SURVIVOR LIST WAS STALE, NOT SHORT — worked 2026-08-28, and it is now ONE entry.** Both
+      ✅ **THE SURVIVOR LIST WAS STALE, NOT SHORT — worked 2026-08-28, and it was ONE entry then; it is
+      ZERO as of 2026-08-30, see the block below.** Both
       live survivor verdicts were the FIRST campaign's and are the only rows anywhere in the log reading
       `478/478 passed`; nothing had re-asked either while the suite went **478 → 1,355**. ⚠️ A bare
       `grep SURVIVED` returns FOUR rows — two were killed by later rows — so read the tool's own closing
@@ -3583,6 +3624,15 @@ happens.**
       `#### The last survivor re-asked` and R25 `#### It belongs here`; the fixture is the new
       `r25-depth-fixture` item, because a probe reading is not a red check and the one-mutant bound below
       puts the second `--rerun` in the next session.
+      ✅ **THAT ITEM LANDED 2026-08-30 AND THE GAP IS CLOSED, SO THE SURVIVOR LIST IS ZERO.** The two
+      swapped fixtures are in the suite and the same mutant is now **`killed`** — baseline
+      `1361 checks, green`, mutant **296 s**, `1359/1361 passed`, by **exactly the two new checks**, which
+      is the attribution (the old pair's green is entailed by that arithmetic, not a second observation).
+      `mutate.py` prints
+      **`0 survivor(s)`** — ⚠️ not for the first time ever (the log's first commit held two killed rows)
+      but for the first time over a catalogue of 104. ⚠️ **That does NOT retire `mutants-never-run`**:
+      `coverage` is still `79 of 104` and 25 entries have no row at all, so an empty survivor list and
+      coverage are different questions. `BUGS.md` R25 `#### The fixture, IN THE SUITE`.
       ⚠️ **Estimator, second recorded reading from the cleared window: 1.33x LOW** — printed `9-10`,
       measured **800 s** end to end at loadavg 5.00 with a Time Machine backup live. ⛔ **Three things in
       this paragraph were wrong and are corrected 2026-08-29** (`BUGS.md` T5 `#### The same mutant twice`).
