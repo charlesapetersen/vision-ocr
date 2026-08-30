@@ -140,9 +140,11 @@ python3 Tools/mutate.py --only <substring>   # after changing a constant or a gu
                                              # block's own arithmetic is far too small to matter,
                                              # so the rows above stay comparable. Recorded only so
                                              # a later reader can see which size each was taken at.
-                                             # ⛔ n = 7 on the estimator as of 2026-08-30 and SIX
-                                             # of the seven are inside the printed range: FIVE runs
-                                             # that day, four printing 9-13 — 593 s (clocked,
+                                             # ⛔ n = 8 on the estimator as of 2026-08-30 and SIX
+                                             # of the eight are inside the printed range — FIVE of
+                                             # them from that day's SIX runs, the sixth being
+                                             # 2026-08-28's 8-10/582 s. That day's four printing
+                                             # 9-13 were — 593 s (clocked,
                                              # `mutant-r25c`), ~617 s (derived +/-60 s, whose
                                              # row is labelled `mutant-r25b-derived` for that
                                              # reason), and 598 s twice off the never-run census
@@ -150,6 +152,14 @@ python3 Tools/mutate.py --only <substring>   # after changing a constant or a gu
                                              # first has no row, that session's omission) — and
                                              # the fifth printing 10-13, ~618 s derived +/-30 s,
                                              # row `mutant-c26-inkbar-nil`.
+                                             # ⛔ The SIXTH is the one outside, and its printed range
+                                             # is a SINGLE VALUE: A11.1-publishVerified-gate printed
+                                             # 10-10 and measured 595 s exactly — inside the
+                                             # unrounded [582, 596] s span that produced it but 5 s
+                                             # (0.8%) under the printed 600 s floor. The window has
+                                             # homogenised to a 2.4% spread, so `:.0f` can no longer
+                                             # express the interval: a degenerate range means the
+                                             # rows agree, NOT that the estimate is exact.
                                              # Budgeted 13 min is 1.26x-1.32x the measured on THOSE
                                              # FIVE. Not every reading: 2026-08-29's 800 s was 33.3%
                                              # OVER budget. And 1.26x is not the fifth run's news —
@@ -199,14 +209,15 @@ with both named makes that green entailed, and it is inert by construction besid
 first commit held two rows, both killed) but for the first time over a catalogue of 104;
 `coverage` stays **79 of 104**,
 so ⚠️ **an empty survivor list is not coverage — 25 catalogue entries still have no row
-at all** (the queue's `mutants-never-run`). ⛔ **That pair reads `82 of 104` and 22 later
+at all** (the queue's `mutants-never-run`). ⛔ **That pair reads `83 of 104` and 21 later
 the SAME DAY**, when `const/textPageInkOutsideThreshold`, then
-`logic/C26-inkbar-override-ignored` and then `logic/C26-inkbar-nil-refuses-the-page`
-became the first three census entries worked off — `killed` by six checks, by four and by
-eleven, survivor list still 0 all three times — which is the
+`logic/C26-inkbar-override-ignored`, then `logic/C26-inkbar-nil-refuses-the-page` and then
+`logic/A11.1-publishVerified-gate`
+became the first four census entries worked off — `killed` by six checks, by four, by
+eleven and by three, survivor list still 0 all four times — which is the
 separation this sentence asserts, measured rather than argued (T5
-`#### The first never-run mutant`, `#### The seam's other end` and
-`#### The seam's second and last`). ⚠️ It moves by one a
+`#### The first never-run mutant`, `#### The seam's other end`,
+`#### The seam's second and last` and `#### Invariant 2's own gate`). ⚠️ It moves by one a
 session; re-derive it rather than reading it here.
 R25 `#### The fixture, IN THE SUITE`, T5
 `#### The last survivor re-asked`. **The lesson to carry: a fixture built "both ways

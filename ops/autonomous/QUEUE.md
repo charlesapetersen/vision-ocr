@@ -668,7 +668,7 @@ happens.**
       three is now FOUR** — one check, both mutants re-run (292 s / 6 unchanged, 289 s / 4), baseline
       1,343 → 1,344.
       ⚠️ **Never-run entries in the CATALOGUE are a different population and now have their own item,
-      `mutants-never-run` (25 of them, **24 from 2026-08-30**)** — this six was always C28's and `depth-cap`'s share. The four
+      `mutants-never-run` (25 of them, **21 from 2026-08-30**)** — this six was always C28's and `depth-cap`'s share. The four
       earlier ones, for the record: `const/shapeRunHigh` is `killed`, 3,475 s, by **exactly one**
       check (`BUGS.md` `#### shapeRunHigh RUN through mutate.py`);
       `logic/C28-alltext-ignores-shape` — **the wiring as a mechanism** — is `killed`, 3,407 s, by
@@ -715,8 +715,8 @@ happens.**
       was re-run and is `killed` — ⛔ **and ZERO from 2026-08-30, when `logic/R25-depth-aware-prune` was
       killed too, which is exactly why the survivor list was never the same question as this box**;
       ⚠️ coverage does NOT move for a re-run, staying `79 of 104` with the
-      census at **25**, because the two are complements over one set — ⛔ **the pair is `82 of 104` and 22
-      from 2026-08-30**, when this box's first THREE entries were worked off; the clause keeps its own tense
+      census at **25**, because the two are complements over one set — ⛔ **the pair is `83 of 104` and 21
+      from 2026-08-30**, when this box's first FOUR entries were worked off; the clause keeps its own tense
       because what it states is a property of a *re-run*) and not a never-run entry, so "the mutants item owns
       the rest" (an earlier draft of this sentence) was wrong, and "nobody has claimed them" — true for
       four consecutive sessions that each flagged it — is now false. ⚠️ 25 held after the third and fourth
@@ -3669,7 +3669,7 @@ happens.**
       **`0 survivor(s)`** — ⚠️ not for the first time ever (the log's first commit held two killed rows)
       but for the first time over a catalogue of 104. ⚠️ **That does NOT retire `mutants-never-run`**:
       `coverage` is still `79 of 104` and 25 entries have no row at all, so an empty survivor list and
-      coverage are different questions — ⛔ **`82 of 104` and 22 from later the same day, over THREE census
+      coverage are different questions — ⛔ **`83 of 104` and 21 from later the same day, over FOUR census
       entries worked off, with the survivor list still 0, which is that separation measured rather than
       argued.**
       `BUGS.md` R25 `#### The fixture, IN THE SUITE`.
@@ -3711,7 +3711,7 @@ happens.**
       (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a
       value nothing depends on)
 - [ ] **mutants-never-run** — the catalogue entries with **NO ROW AT ALL** — **25 on 2026-08-25**, when
-      until then they were owned by no box in this file, and **23 from 2026-08-30**, two worked off; the
+      until then they were owned by no box in this file, and **21 from 2026-08-30**, four worked off; the
       count is deliberately not restated as a bare number, because it moves by one per session. `mutate.py` prints them itself at the END of a campaign, under
       *"N mutant(s) in the catalogue with NO ROW AT ALL — never applied, so nothing is known about them"*.
       ⛔ **There is no free way to read that census: `--only nothing-matches-this` returns before the
@@ -3728,8 +3728,9 @@ happens.**
       ROW.** Line 1 is `const/baselineFraction  killed  114  …`. The reflex `awk -F'\t' 'NR>1{print $1}'`
       over a `.tsv` drops it and **invents a 26th never-run entry that has a verdict** — measured
       2026-08-30, by making the mistake. ⛔ **The opposite slip is just as easy and points the other way**:
-      `already_done()` returns **81** distinct ids as of 2026-08-30 and one of them is not in the catalogue,
-      so counting all 81 as covered gives **23** and *understates* the gap. The tool's own arithmetic is
+      `already_done()` returns **84** distinct ids as of 2026-08-30 (81 earlier the same day) and one of
+      them is not in the catalogue,
+      so counting all 84 as covered gives **20** and *understates* the gap. The tool's own arithmetic is
       `len(knownIDs & set(final))` and is right in both directions; a two-line python driving
       `already_done()` and `catalogue()` off the real module is the cheap way to get it (it needs no suite
       and no build). ⚠️ The dated `103 − 78 = 25` above is consistent once "78 rows" is read as
@@ -3769,7 +3770,7 @@ happens.**
       precondition it loses. ⛔ **The asymmetry is the assertion FORM and not the mutant's direction** — a
       draft of that section said only a constant move can disarm and was refuted by its own next paragraph,
       `R25`'s shape a second time. Full account in `BUGS.md` T5 `#### The seam's other end`.
-      ⚠️ **The box stays `[ ]`: 22 to go as of 2026-08-30**, and the remaining list is
+      ⚠️ **The box stays `[ ]`: 21 to go as of 2026-08-30**, and the remaining list is
       printed by any campaign's closing census (or the derivation above).
       ✅ **AND THE NEXT PICK FOLLOWED AGAIN — AND IT RAN, SO READ THE BLOCK BELOW THIS ONE:
       `logic/C26-inkbar-nil-refuses-the-page`**
@@ -3820,7 +3821,7 @@ happens.**
       (`Flattener.swift:3430`); two are seam entries. Next pick:
       `logic/A11.1-publishVerified-gate`** (`Tools/mutate.py`'s tuple with id `A11.1-publishVerified-gate`), which deletes `incompleteRefusal`'s
       throw from `Model.swift` so a short staged document is **published** instead of refused. That is
-      **invariant 2**, and it is the strongest entry left in the 22. ⛔ **It comes with a prediction to TEST
+      **invariant 2**, and it was the strongest entry left in the 22. ⛔ **It came with a prediction to TEST
       rather than originate**: its own catalogue comment records a hand run before it joined the catalogue —
       *"3 checks red, and the good file at the destination went from 107,847 bytes to 809"* — ⚠️ taken when
       the suite was **862** checks — ⛔ **which the comment RULES OUT in its previous sentence**: 862/862
@@ -3828,13 +3829,71 @@ happens.**
       it the tenth un-failable check. The three reds post-date A11.1's own checks and their suite size is
       recorded nowhere. Read 3 as a **floor to check** because the suite is **1,361** today, not because
       it was taken at 862. T10/A11.1's un-failable check guarded exactly this gate, which is why it wants a row.
+      ✅ **IT RAN 2026-08-30 AND THE HAND RUN REPRODUCES DIGIT FOR DIGIT — `killed`, 295 s, baseline
+      `1361 checks, green`, mutant `1357/1360 passed`, by EXACTLY THREE objecting checks, all three named
+      in the log's order before the run** (prediction filed at
+      `$STATE/rescue/PREDICTION-logic-A11.1-publishVerified-gate-2026-08-30.md`, kept under that name
+      rather than re-filed, per the lesson two runs above). Census **22 → 21**, coverage **82 → 83 of
+      104**, log **99 → 100** rows, `0 survivor(s)` unchanged, **595 s** end to end. The comment's `3` and
+      its byte pair both hold: `107847 bytes before, 809 after`, which this session's prediction had
+      explicitly declined to forecast. ⚠️ **The span that stability covers still cannot be stated** — the
+      hand run's suite size is recorded nowhere, so *"stable across 499 checks of growth"* is the sentence
+      not to write.
+      ⛔ **THE FINDING WORTH MORE THAN THE VERDICT, AND IT IS LESSON (5) FOR THIS BOX: THE SUITE'S PRINTED
+      TOTAL FELL TO 1,360, BECAUSE ONE OF THE BLOCK'S OWN CHECKS SITS INSIDE THE `catch` THE MUTANT MAKES
+      UNREACHABLE.** `Tests/main.swift:9950` runs only when `publishVerified` throws, so with the throw
+      deleted it is **absent, not red** — measured, the string `refusal reaches the caller` appears **0**
+      times in the mutant's output and the tallies are 1357 `ok` + 3 `FAIL`. **A check written inside a
+      `catch` cannot kill a mutant that removes the throw**, and had it been the block's only guard the
+      exit code would have been 0 and `run()` would have logged **`MISMATCH`** — *"the verdict means
+      nothing"* — so invariant 2's mutant would have come back as a calibration complaint rather than a
+      kill or a survival. **`:9954`'s `refused` FLAG asserted outside the catch is the shape to copy when
+      you write a check for a throw** — ⛔ **but not "what saves the block", which a draft said in three
+      files: THREE of its assertions are outside the catch (`:9954`, `:9957`, `:9960`) and any one of them
+      kills.** ⚠️ **No first is claimed, and the reason a draft gave was false**: `run()` writes the
+      `N/M passed` line into every **`SURVIVED`** row's detail and six rows carry one. What holds is that
+      no **`killed`** row records a total, the verdict that would record a drop is `MISMATCH` (routed there
+      by construction at exit 0), and the log has **0** of those; with `mutation-out/` gitignored and
+      overwritten per run, whether an earlier row did the same is unanswerable from the tree. ⛔ And the
+      block above's *"the
+      suite total drops by five"* is a **different** mechanism — checks gated on `JBIG2.isAvailable`, a
+      property of the machine, not of the mutant.
+      ⚠️ **A claim the PRODUCT makes about itself is CONSISTENT with this run and NOT measured by it** — a
+      draft said it "held". `Model.swift:1786-1790` says `publishVerified` is *"defence in depth, not the
+      closing of a hole"*; *"has no end-to-end trigger"* is `Tests/main.swift:10022`'s phrase.
+      **Not one end-to-end check moved, but that is ENTAILED** — the mutant is one-sided and three earlier
+      gates (`:2588`, the outline count, `guard after == expected` at `:2660`) make the deleted line a
+      no-op end to end. What the run adds is that **no end-to-end fixture in this suite reaches
+      `publishVerified` with a short file**. ⛔ **ALL SIXTEEN greens in that block are unchanged-input, so
+      it has no informative green — a draft said "seven", which is the THIRD occurrence of the split this
+      file already ⛔-flagged over the identical shape.** Four look strongest and are the emptiest:
+      `:9921`/`:9922`/`:9924`/`:9927` call `incompleteRefusal` **directly** and the mutant
+      deletes the *call*, not the function, so their input is byte-identical; three are the inverse row,
+      which runs a *complete* file that passes the deleted gate anyway; the other nine are premise or
+      folder rows. Full account in `BUGS.md` T5
+      `#### Invariant 2's own gate`.
+      ✅ **The next pick, and it is chosen for the SHAPE of its prediction rather than its subject:
+      `logic/R60-retry-reservations`** (`Tools/mutate.py`'s tuple with id `R60-retry-reservations`), which
+      passes `alsoClaimed: [], releasing: []` so a retry claims the output path the batch it came from
+      reserved away from it — content destruction on the user's file. ⛔ **Its catalogue comment predicts
+      the exact converse of what A11.1 measured**: the unit checks *"pass `alsoClaimed`/`releasing`
+      explicitly and would survive this, which is why the end-to-end check exists — it is what goes red"*.
+      So it forecasts a kill concentrated in an **end-to-end** check with the seam checks unable to fail,
+      where A11.1's kill was entirely at the seam. ⚠️ **Unlike A11.1 there is no NUMBER to test** — that
+      comment records no count and no suite size — so predict it off the code, and note lesson (4): predict
+      from what the mutant makes TRUE.
       ✅ **A `$STATE/suite-timings.tsv` row was appended by hand for the second run** —
       `2026-08-30 05:49:39  mutant-c26-inkbar-override  598  0  3.52` — the omission the first run records.
       ⛔ **Read that loadavg as WEAK, and append yours at the END of the run**: the column is defined as the
       1-minute average *at the end* (`test-lock.sh:356-358`), 3.52 was read 2 m 09 s after the last write,
       and the reading at that run's start was **5.27**. `mutate.py` neither takes the suite lock nor writes
       a row, so a hand append is all there is.
-      ⚠️ **THREE cheap lessons for whoever takes the next one** (two until 2026-08-30). (1) Check
+      ⚠️ **THREE cheap lessons for whoever takes the next one** (two until 2026-08-30) — ⛔ **and the
+      numbering runs to FIVE, because (4) and (5) were found by running and live in the run blocks above
+      rather than here**: (4) *predict from what the mutant makes TRUE, not from which checks touch what it
+      moves* (the `inkbar-nil` block, whose forecast was exactly inverted), and (5) *a check inside a
+      `catch` cannot kill a mutant that removes the throw — assert a flag OUTSIDE it* (the A11.1 block).
+      They are named rather than worked here; each block above is its own worked example. (1) Check
       `hits == 1` for the pattern before
       spending the run — it costs one `python3 -c` and no build. `Flattener.swift` has **three** comment
       lines carrying this constant's name, one of them (`:1877`) carrying both the name and `0.045`, plus two

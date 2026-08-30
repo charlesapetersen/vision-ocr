@@ -543,11 +543,17 @@ window HELD, and the `10` it predicted is what printed**: baseline plus `const/m
 sit BELOW `bare-form-reach`'s in the log, so its startup line already came off an all-post-clamp window and
 nobody recorded it. ⛔ **And only the HIGH end was ever forecast** (9.73 min, off the surviving rows' max of
 246) — the low 8 was not. ⚠️ n = 1 on a quiet machine, so the estimator is no longer known-broken rather
-than proven; budget from `suite-timings.tsv`. ⛔ **n = 7 as of 2026-08-30 and SIX of the seven are inside
-the printed range** — 2026-08-30's FIVE runs: four printed `9-13` (the two `R25` ones measured 593 s
-clocked and ~617 s derived ±60 s, the two C26-seam census ones **598 s each**) and the fifth, the seam's
-second mutant, printed `10-13` and measured **~618 s derived, ±30 s**, so the budgeted 13 min is
-1.26x-1.32x the measured across **that day's five runs** — ⛔ **not "every time": 2026-08-29's 800 s ran
+than proven; budget from `suite-timings.tsv`. ⛔ **n = 8 as of 2026-08-30 and SIX of the eight are inside
+the printed range — FIVE of them from 2026-08-30's SIX runs, the sixth being 2026-08-28's `8-10`/582 s.**
+That day's six: four printed `9-13` (the two `R25` ones measured 593 s
+clocked and ~617 s derived ±60 s, the two C26-seam census ones **598 s each**), the fifth, the seam's
+second mutant, printed `10-13` and measured **~618 s derived, ±30 s**, and ⛔ **the sixth is the one
+OUTSIDE and its range is a SINGLE VALUE**: `logic/A11.1-publishVerified-gate` printed `10-10` and
+measured **595 s exactly**, which is inside the unrounded span [582, 596] s that produced it but **5 s
+(0.8%) below the printed 600 s floor** — the window has homogenised to a 2.4% spread and `:.0f` can no
+longer express the interval, so a degenerate range means the rows agree with each other and NOT that
+the estimate is exact. So the budgeted 13 min is
+1.26x-1.32x the measured across **that day's five 9-13/10-13 runs** — ⛔ **not "every time": 2026-08-29's 800 s ran
 33.3% OVER its budget, which is the caveat this register already carries** — and ⛔ **the 1.26x is not
 the fifth run's news**: 780/617 was already 1.264, so the previous `1.30x` had silently taken its
 minimum over the clocked rows only and excluded the derived one. ⛔ **This sentence read `n = 4` / THREE while
@@ -599,8 +605,8 @@ instantaneous reading. Nobody ran the controlled experiment. Budget from `suite-
 ⚠️ Related, same day: `const/maximumPageMegapixels`'s
 nineteen-day `SURVIVED` row is `killed` on re-run, so the live survivor list is **one**
 (`BUGS.md` T5 `#### The survivor list re-asked`) — and a re-run buys a verdict, not coverage, which stays
-`79 of 104` with the never-run census at 25. ⛔ **That pair reads `82 of 104` and 22 from 2026-08-30**,
-when the first THREE never-run entries were worked off; the sentence above keeps its own run's tense, because
+`79 of 104` with the never-run census at 25. ⛔ **That pair reads `83 of 104` and 21 from 2026-08-30**,
+when the first FOUR never-run entries were worked off; the sentence above keeps its own run's tense, because
 what it measured is that a *re-run* leaves coverage alone. ⚠️ It moves by one a session — re-derive it from
 `len(knownIDs & set(final))`, never from a sentence here.
 ✅ **THAT ONE WAS RE-ASKED 2026-08-29 AND `SURVIVED` (`382 s`, `1355/1355`, no objecting check, predicted
@@ -734,10 +740,52 @@ measurement moves, because `--only` selects by id. ⛔ **Sweep the pattern `muta
 mutant id — an id grep reaches three of the nine.** ✅ **Next pick: `logic/A11.1-publishVerified-gate`** (`mutate.py`'s `A11.1-publishVerified-gate` tuple),
 invariant 2's own gate, whose catalogue comment carries a hand-run *"3 checks red"* from a 862-check era
 to test rather than trust.
+✅ **IT RAN 2026-08-30 AND THE HAND RUN REPRODUCES DIGIT FOR DIGIT — `killed`, 295 s, baseline
+`1361 checks, green`, mutant `1357/1360 passed`, by EXACTLY THREE, all three named in the log's order
+first, and the comment's byte pair holding at `107847 bytes before, 809 after`** (`BUGS.md` T5
+`#### Invariant 2's own gate`; census **22 → 21**, coverage **82 → 83 of 104**, log **99 → 100** rows,
+`0 survivor(s)` unchanged, 595 s end to end). ⚠️ The byte pair is what the prediction explicitly declined
+to forecast, and **the span that stability covers still cannot be stated** — the hand run's suite size is
+recorded nowhere, so *"stable across 499 checks of growth"* is the sentence not to write; the 862 in the
+comment is the PRE-fix suite, where the same deletion produced **zero** reds.
+⛔ **THE FINDING: THE SUITE'S PRINTED TOTAL FELL TO 1,360, BECAUSE ONE OF THE BLOCK'S OWN CHECKS SITS
+INSIDE THE `catch` THE MUTANT MAKES UNREACHABLE.** `Tests/main.swift:9950` runs only when
+`publishVerified` throws, so with the throw deleted it is **absent, not red** — measured, the string
+`refusal reaches the caller` appears **0** times in the mutant's output and the tallies are 1357 `ok` + 3
+`FAIL`. ⛔ **So a check written inside a `catch` cannot kill a mutant that removes the throw, and had it
+been the block's only guard the run would have logged `MISMATCH`** — *"the verdict means nothing"* — since
+`run()` reaches that branch only when the exit code is 0: invariant 2's mutant would have come back as
+neither a kill nor a survival. ⛔ **But "what saves the block is `:9954`" is WRONG and a draft said it in
+three files: THREE of the block's assertions sit outside the catch — `:9954`'s flag, `:9957`'s byte
+comparison, `:9960`'s survival of `staged` — and any one of them kills.** The flag is the shape to *copy*,
+being the one that asserts the throw. ⚠️ **No first is claimed, and the reason a draft gave was false**:
+`run()` writes the `N/M passed` line into every **`SURVIVED`** row's detail and six rows carry one. What
+holds is that **no `killed` row records a total**, the verdict that would record a drop is `MISMATCH`
+(routed there by construction at exit 0), and the log holds **0** of those; with `mutation-out/`
+gitignored and overwritten per run, whether an earlier row did the same is unanswerable from the tree.
+⛔ **And the *"total drops by five"* above is a DIFFERENT mechanism**: checks
+gated on `JBIG2.isAvailable`, a property of the machine rather than of the mutant.
+⚠️ **A claim the PRODUCT makes about itself is CONSISTENT with this run and is not measured by it** — a
+draft said it "held". `Model.swift:1786-1790` says `publishVerified` is *"defence in depth, not the
+closing of a hole"*; *"has no end-to-end trigger"* is `Tests/main.swift:10022`'s phrase, not
+`Model.swift`'s. **Not one end-to-end check moved, but that is ENTAILED**: the mutant is one-sided, and
+with `incompleteRefusal` at `:2588`, the outline branch adopting `outlined` only when its count equals
+`expected`, and the annotation branch's `guard after == expected` at `:2660`, the deleted line is a
+**no-op end to end**. What the run adds is that **no end-to-end fixture in this suite reaches
+`publishVerified` with a short file**. ⛔ **ALL SIXTEEN greens in that block are unchanged-input, so it
+has no informative green — a draft said "seven", the third occurrence of the split this register has
+already ⛔-flagged twice.** Four look strongest and are the emptiest: `:9921`/`:9922`/`:9924`/`:9927` call
+`incompleteRefusal` **directly**, and the mutant deletes the *call* and not the function, so their input
+is byte-identical; three are the inverse row, which runs a *complete* file that passes the deleted gate
+anyway; the other nine are premise or folder rows. ✅ **Next pick: `logic/R60-retry-reservations`**,
+chosen for the SHAPE of its forecast — its catalogue comment predicts the converse of what A11.1 measured,
+a kill concentrated in an **end-to-end** check with the seam checks surviving. ⚠️ It carries no count and
+no suite size, so there is no number to test: predict it off the code.
 ⛔ **An instrument trap for the next session: `Tools/mutation-log.tsv` HAS NO HEADER ROW**, so the
 box's prescribed census derivation is wrong under the reflex `awk 'NR>1'` — that drops line 1 and invents
 one extra never-run entry that has a verdict (26 against 25 before this row, 25 against 24 after), while
-counting all 81 logged ids as covered gives 23 and understates it. Use the tool's own
+counting all logged ids as covered understates it (81 gave 23 that morning; 84 gives 20 by
+this session's row). Use the tool's own
 `len(knownIDs & set(final))`. ⚠️ Estimator: **fifth** write-up from the cleared window and the fourth inside
 its range — printed `9-13`, measured **598 s = 9.97 min** end to end, high end 1.304x over-budgeted, and
 **1.25x the queue box's own 479 s figure, so that box under-budgets.** ⚠️ **No `suite-timings.tsv` row
@@ -747,12 +795,22 @@ have a hand-appended row, so the missing loadavg is this session's omission and 
 column's definition**: that column is the 1-minute average AT THE END of the run and 3.52 was read 2 m 09 s
 after the last write, where the reading at the run's START was **5.27**, so a hand-appended row is weaker
 than a `test-lock.sh`-written one and reads the machine as quieter than the run met it.
-⚠️ **The estimator is now SEVEN write-ups from the cleared window, six inside the range, and the first two
+⚠️ **The estimator is now EIGHT write-ups from the cleared window, six inside the range, and the first two
 never-run runs measured 598 s EACH — identical to the second** (printed `9-13` both times), so the box's
 479 s figure is 1.25x low **twice** and should be replaced rather than treated as one run's bad luck.
-⚠️ The seventh, the seam's third mutant, printed `10-13` and measured **~618 s derived, ±30 s** (a
+⚠️ The seventh, the seam's second mutant, printed `10-13` and measured **~618 s derived, ±30 s** (a
 `suite-timings.tsv` row WAS appended, `mutant-c26-inkbar-nil 618 0 4.26`, with the loadavg read ~30 s after
 the last write rather than 2 m 09 s) — so the box's figure is 1.29x low a **third** time.
+⛔ **THE EIGHTH IS THE SECOND ONE OUTSIDE THE RANGE AND ITS RANGE IS A SINGLE VALUE, WHICH IS A NEW
+FAILURE MODE OF THE PRINTED LINE RATHER THAN OF THE ESTIMATE.** `logic/A11.1-publishVerified-gate` printed
+`10-10` off a window of `291-298 s each` and measured **595 s = 9.92 min** exactly (07:20:21 → 07:30:16;
+row `mutant-a11.1-publishverified 595 0 3.64`, whose loadavg was read **8 s** after the last write and is
+therefore the closest any hand-appended row has come to the column's definition). The ends are
+`2 x 291 = 582 s` and `2 x 298 = 596 s` — 9.7 and 9.93 min — which `:.0f` prints as the same 10, so the
+measurement is **inside the unrounded span it came from** and **5 s (0.8%) below the printed 600 s floor**.
+⛔ **So do not read `10-10` as an exact forecast: it means the five window rows agree with each other to
+2.4%, not that the estimate is precise**, and at this spread the printed integers can no longer express the
+interval computed. The 479 s box figure is 1.24x low a **fourth** time.
 ⚠️ **298 s against `logic/R25-depth-aware-prune`'s 296 s is a SECOND same-day cross-mutant pair at a fixed
 1,361 checks** (~85 min apart, `799ad3a` 01:12) — **1.007x**, which **corroborates** the 1.043x
 mutant-identity bound rather than tightening it, an upper bound over two readings being the larger.

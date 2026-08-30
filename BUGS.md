@@ -209,11 +209,12 @@ nothing in this entry's own material is unrun.** ✅ **AND ZERO AFTER `C24`'s
 baseline and both. ⚠️ **The dictionary cap's three is 2026-08-25's and is now FOUR**: that run's own
 finding was that the three was a *coverage boundary* — `Flattener.pageIsAnImage` flipping on fixture
 page 13 with nothing pinning it — and `#### The coverage boundary, CLOSED` closed it on 2026-08-26 with
-one check and a `--rerun` (292 s by six, 289 s by four, 875 s end to end, baseline **1,343 → 1,344**). ⚠️ **That does NOT empty the catalogue**: 25 entries still had no row at all — **22 from
-2026-08-30**, when `const/textPageInkOutsideThreshold`, `logic/C26-inkbar-override-ignored` and
-`logic/C26-inkbar-nil-refuses-the-page` became the first three worked off, `killed` by six, four
-and eleven, leaving coverage at **82 of 104** (T5 `#### The first never-run mutant`,
-`#### The seam's other end`, `#### The seam's second and last`) — they are
+one check and a `--rerun` (292 s by six, 289 s by four, 875 s end to end, baseline **1,343 → 1,344**). ⚠️ **That does NOT empty the catalogue**: 25 entries still had no row at all — **21 from
+2026-08-30**, when `const/textPageInkOutsideThreshold`, `logic/C26-inkbar-override-ignored`,
+`logic/C26-inkbar-nil-refuses-the-page` and `logic/A11.1-publishVerified-gate` became the first four
+worked off, `killed` by six, four, eleven and three, leaving coverage at **83 of 104** (T5
+`#### The first never-run mutant`,
+`#### The seam's other end`, `#### The seam's second and last`, `#### Invariant 2's own gate`) — they are
 owned by the queue's own `mutants-never-run` item as of **2026-08-25** (⚠️ this read
 *"as of the same day"* and the 2026-08-30 insertion broke the referent), and this six was always C28's and
 `depth-cap`'s share rather than the census. ⛔ **That last run found the SIBLING of the truncation
@@ -12877,7 +12878,7 @@ would have died at the process; it asserts both directions of "belonging to the 
 ⛔ **No `mutate.py` entry was added, and that is a decision rather than an omission.** CONTRIBUTING 4a asks
 for one when a guard is added, and its purpose is durable evidence that a check bites. Here the evidence is
 suite runs with the red rows named and counted BEFORE each run, which is what a mutant row records, while the
-catalogue's own debt is 25 entries with no row at all (`mutants-never-run`; **24 from 2026-08-30**) — so more un-run entries would add
+catalogue's own debt is 25 entries with no row at all (`mutants-never-run`; **21 from 2026-08-30**) — so more un-run entries would add
 to exactly the ledger that item exists to work off. The sabotages are described precisely enough to be
 rebuilt: the `PDFDocument(url:)` guard's `true` → `false`, the `isLocked` line deleted,
 `rawAnnotationCount` forced to `return 0`, `document.unlock(...)` deleted, and `assemble`'s passthrough guard
@@ -22016,6 +22017,175 @@ is what made it the tenth un-failable check. The three reds necessarily post-dat
 checks and their suite size is recorded nowhere. **Read 3 as a floor because the suite has
 grown to 1,361, not because it was taken at 862** — and that un-failable check is exactly why
 this one is worth a row rather than an assumption.
+
+#### Invariant 2's own gate, 2026-08-30 — `logic/A11.1-publishVerified-gate` is `killed` by THREE, and the suite's printed TOTAL falls because one of its guards lives inside the `catch`
+
+The fourth entry off the never-run census, and the pick the section above named.
+`Tools/mutate.py`'s tuple with id `A11.1-publishVerified-gate`, in `publishVerified`
+(`Sources/Model.swift:1796-1802`; the deleted lines are **`:1798-1800`** and `try publish` is `:1801` —
+the wider range is the function, not the hunk):
+
+    -        if let refusal = incompleteRefusal(staged, expecting: expected) {
+    -            throw Failure.incompleteResult(refusal)
+    -        }
+             try publish(staged, to: output)
+
+so `publishVerified` becomes `publish` and a staged file **shorter than the source is moved over the
+user's destination** instead of refused. That is **CLAUDE.md invariant 2**, and it is the gate
+`REVIEW-2026-08-14.md` A11.1 found guarded by a check that could not fail.
+
+**Verdict `killed`, 295 s, baseline `1361 checks, green`, mutant `1357/1360 passed`, by EXACTLY
+THREE objecting checks — all three named IN THE LOG'S ORDER before the run.** Prediction filed as
+`$STATE/rescue/PREDICTION-logic-A11.1-publishVerified-gate-2026-08-30.md`, cited under the name it
+actually has on disk and ⛔ **deliberately NOT re-filed as `LANDED-as-<sha>-…`**, following the
+section above rather than the two before it, whose citations that rename broke. The three, with the
+`check(` line beside each:
+
+1. `Tests/main.swift:9954` `publishing a short result over a good one is refused —
+   publishVerified returned without throwing`
+2. `:9957` `…and the previous good output is byte-for-byte intact — 107847 bytes before, 809 after`
+3. `:9960` `…and the truncated file never moved to the destination` — no detail argument
+
+⚠️ **A grep trap in the log itself: the row immediately above this one also ends in `809`** — that is
+`logic/C26-inkbar-nil-refuses-the-page`'s `report 809 B`, a run-report **file size**, where this row's
+809 is the truncated **PDF's** size. Two unrelated quantities, one numeral, adjacent lines of
+`Tools/mutation-log.tsv`.
+
+⚠️ **One detail string was written down verbatim beforehand (row 1) and one deliberately was not**:
+row 2's byte pair was flagged in the prediction as free to have moved, and row 3's *absence* of a
+detail was flagged as uncertain and is now settled. So this run's predictive claim is weaker than the
+`override-ignored` run's two-verbatim and stronger than `inkbar-nil`'s names-and-order-only.
+
+⛔ **THE FINDING WORTH MORE THAN THE VERDICT: THE SUITE'S PRINTED TOTAL FALLS TO 1,360, AND IT FALLS
+BECAUSE ONE OF THE BLOCK'S OWN CHECKS SITS INSIDE THE `catch` THIS MUTANT MAKES UNREACHABLE.**
+`Tests/main.swift:9950` — *"…and the refusal reaches the caller as the same sentence"* — runs only
+when `publishVerified` throws. With the throw deleted it is **not executed at all**: not red,
+**absent**. Measured rather than reasoned — the string `refusal reaches the caller` appears **0**
+times in the mutant's output, and the tallies are **1357 `ok` + 3 `FAIL` = 1360** against a baseline
+of 1,361, with the three `FAIL` lines contiguous and **the absent line's slot immediately ABOVE them** —
+between `ok the previous good output has every page` and the first `FAIL`, since `:9950` precedes
+`:9954`. ⛔ **A draft put the gap below the three FAILs and that was backwards**; the `ok a complete
+result does publish` on the next line is `:9975`, which prints in both arms.
+⛔ **The corollary is the transferable half: a check written inside a `catch` cannot kill a mutant
+that removes the throw, and if it were the block's only guard the run would report neither a kill nor
+a survival.** With no other red the exit code is 0, and `run()` (`Tools/mutate.py`, the
+`total != baseline` branch, reached only when `proc.returncode == 0`) would then log **`MISMATCH`** —
+whose own definition in `TIMED_VERDICTS`' comment is *"the verdict means nothing"* — so invariant 2's
+mutant would have come back as a calibration complaint.
+⛔ **BUT "WHAT SAVES THIS BLOCK IS `:9954`" IS WRONG AND A DRAFT SAID IT IN THREE FILES: THREE of the
+block's assertions sit outside the catch and ANY ONE of them kills.** `:9957`'s byte comparison and
+`:9960`'s survival of `staged` are as far outside it as `:9954`'s flag, and all three are red in the
+log. The flag is the shape to *copy* — it is the one that asserts the **throw**, which is the property
+the deleted line carries — but the block is not one check deep, and saying it was overstated its own
+fragility.
+⚠️ **No first is claimed, and the reason a draft gave was FALSE.** It said
+*"`Tools/mutation-log.tsv` records no total for any row"*; `run()` writes the `N/M passed` line into the
+detail field of every **`SURVIVED`** row, and six rows carry one (`478/478` twice, `1069/1069`,
+`1077/1077`, `1355/1355` twice). The conclusion survives on a better footing: **no `killed` row records
+a total** (a killed row carries the objecting-check list instead), the one verdict that *would* record a
+drop is **`MISMATCH`** — because `total != baseline` at exit 0 is routed there by construction — and the
+log holds **0** `MISMATCH` rows. With `mutation-out/` gitignored and overwritten per run, whether an
+earlier row also dropped its total is **unanswerable from the tree**. ⛔ **And the section above's
+*"the suite total drops by five"* is a DIFFERENT mechanism**: that is four checks gated on
+`JBIG2.isAvailable` not running on a machine without jbig2, a property of the machine. This one is
+the mutant removing an executed check on any machine.
+⚠️ **The block holds a SECOND catch-resident check and it is not the same thing**: `:9973`
+(`check("a complete result publishes", false, …)`) is a failure *report* that is meant never to run, and
+it runs in neither arm. So a reader who greps 21 `check(` calls against 19 printed lines is looking at
+**two** absences with one explanation — `:9950` is an assertion silently skipped, `:9973` is a reporter
+correctly idle.
+
+✅ **THE CATALOGUE COMMENT'S HAND RUN REPRODUCES DIGIT FOR DIGIT, INCLUDING THE PAIR THIS SESSION
+DECLINED TO PREDICT.** It recorded *"3 checks red, and the good file at the destination went from
+107,847 bytes to 809"*; the run prints **3** and **`107847 bytes before, 809 after`**. So the fixture's
+two byte **counts** are stable between the hand run and today, which is what makes the comment's 3 a
+figure to read rather than a rumour — ⛔ **and "byte-stable" is the word to avoid, which a draft used**:
+content equality was not measured and is not observable from the log.
+⚠️ **The span that stability covers cannot be stated**: the hand run's suite
+size is recorded nowhere, and the 862 in the sentence before it is the **pre-fix** suite where the
+same deletion produced **zero** reds. So "stable across 499 checks of growth" is exactly the sentence
+not to write.
+
+⚠️ **THE PRODUCT CLAIM IS CONSISTENT WITH THIS RUN AND IS NOT MEASURED BY IT — a draft claimed it
+"HELD" and the review of this diff refuted the framing.** `Model.swift:1786-1790` says
+`publishVerified` is *"defence in depth, not the closing of a hole"* and that *"every path to `publish`
+already verified what it was about to publish"*; the words *"has no end-to-end trigger"* are
+`Tests/main.swift:10022`'s, not `Model.swift`'s, and a draft attributed both to `Model.swift:1775-1795`.
+All three reds are at the seam and **not one end-to-end check moves** — but that is **entailed**, not
+evidence: the mutant is one-sided (deleting a refusal can only turn refusals into publications), and
+given the three earlier gates — `incompleteRefusal` at `:2588`, the outline branch adopting `outlined`
+only when `PDFPageCount(outlined) == expected`, and the annotation branch's `guard after == expected`
+at `:2660` — `incompleteRefusal(finished)` is nil at the call site `:2675` on every path, so the deleted
+line is a **no-op end to end**. **What the run adds is narrower and worth having: no end-to-end fixture
+in this suite reaches `publishVerified` with a short file.** ⛔ Nor may the folder end-to-end
+(`:10039-10048`) be offered as support for it — this session's own prediction filed those four checks
+under *"Greens I claim are NOT evidence … Unchanged"*, and a draft then promoted them.
+⚠️ So the kill is entirely the seam's, which is the situation A11.1's fix was built for — splitting
+the verify-then-move pair into a named function is what let a check drive it at all.
+
+⛔ **ALL SIXTEEN GREENS IN THAT BLOCK ARE UNCHANGED-INPUT, SO IT HAS NO INFORMATIVE GREEN — and a draft
+said "seven", which is the very split the section above ⛔-flagged over the identical shape, now the
+THIRD occurrence of that pattern.** The block (`Tests/main.swift:9890-10049`) holds 21 `check(` calls, 2
+of them in `catch`es, so 19 execute and the log prints exactly 19 lines: 16 `ok` + 3 `FAIL`. Of the
+sixteen, four look strongest and are the emptiest — `:9921`, `:9922`, `:9924`, `:9927` call
+`OCRModel.incompleteRefusal` **directly**, and the mutant deletes the *call* and not the function, so
+their input is byte-identical; three are the inverse row (`:9975`, `:9981`, `:9983`, CONTRIBUTING 4d),
+which exercises a *complete* file that passes the deleted gate anyway — working as designed, and aimed
+at a different mutant, one that refuses everything; and the remaining nine are premise rows computed
+before `publishVerified` is called (`:9907`, `:9915`, `:9941`, `:10031`, and `:10012`) or the four
+folder rows (`:10039`, `:10041`, `:10043`, `:10045`), whose staged file is complete. ⚠️ **`:10012`, the pre-cancelled run, is green here for a THIRD reason — the run never
+reaches `publish` at all** — and ⛔ **it must not be called "the block's own un-failable check", which a
+draft of this paragraph did**: its comment records that the claim that version of it USED to make (*"the
+good file at the destination is untouched"*, true of every possible implementation) was un-failable, and
+says in terms that the check as it now stands *"bites on the outcome and only on the outcome: delete that
+`if control.isCancelled` and this goes red"*. So it is a **repaired** un-failable check, not a live one,
+and it is unable to fail under **this** mutant specifically rather than in general.
+
+⚠️ **Estimator: eighth write-up from the cleared window, and the FIRST whose printed range is a single
+value.** Printed `10-10 minutes` off a window of `291-298 s each`, measured **595 s = 9.92 min**
+end to end (07:20:21 → 07:30:16, both from `date` and the log row's mtime; the mutant's own 295 s is
+exact). ⛔ **Read that as 0.8% BELOW the printed floor, not as a bullseye**: the two ends are
+`2 × 291 = 582 s` and `2 × 298 = 596 s`, i.e. 9.7 and 9.93 min, which `:.0f` prints as the same 10 —
+so the measured 595 s is **inside the unrounded span [582, 596] s** and 5 s under the printed 600.
+The range collapsed because the window has homogenised: all five rows are post-clamp AND all at
+1,355-1,361 checks; the **durations** span 291-298 s, a **2.4%** spread. ⛔ A draft hung that 2.4% off
+the check counts, whose spread is **0.44%** (1361/1355). ⚠️ And note the check-count half is inferred
+from dates rather than read: four of the five window rows are `killed` and carry no total.
+✅ **The `suite-timings.tsv` row is the closest any HAND-APPENDED row has come to this column's
+definition** — `mutant-a11.1-publishverified 595 0 3.64`, loadavg read **8 s** after the last write
+against the previous rows' ~30 s and 2 m 09 s. ⛔ **Not "the strongest reading the column has had",
+which a draft said**: `test-lock.sh:432` calls `note_timing` immediately after the suite returns, so
+every tool-written row (`pre-commit …`, `health-gate`) already reads the average at the instant the
+definition names (`ops/autonomous/test-lock.sh:356-358`). `mutate.py` still neither takes the suite lock
+nor writes a row, which is why a hand append is all there is here.
+
+⚠️ **Three more same-day cross-mutant pairs at a fixed 1,361 checks, and NONE is an independent
+measurement.** 295 s against `logic/C26-inkbar-nil-refuses-the-page`'s **298 s** is **1.010x**,
+against `const/textPageInkOutsideThreshold`'s **298 s** **1.010x**, against
+`logic/C26-inkbar-override-ignored`'s **297 s** **1.007x** — ⛔ **but the reason they are not independent
+is that all three share this run's new 295 s reading**, not that they are "arithmetic over the same three
+members", which a draft wrote and which mis-counts: four rows are involved (295, 298, 298, 297). All
+corroborate the **1.043x** mutant-identity bound
+and none tightens it, an upper bound over several readings being the largest of them.
+
+⚠️ Nothing in `Sources/`, `Tests/` or `Helper/` moved, no check was added or removed, no shipped
+behaviour changed, and the run adds one log row. Census **22 → 21**, coverage **82 → 83 of 104**, log
+**99 → 100** rows, `0 survivor(s)` unchanged. ⚠️ Lesson (1) was discharged before the run
+(`len(re.findall(pattern, src))` = **1**) and lesson (3)'s trap reproduced on the way —
+`src.count(pattern)` reads **0** on the same pattern, because a logic mutant's pattern is
+`re.escape(old)`.
+
+✅ **The next census pick, chosen for the SHAPE of its forecast rather than by ranking the 21 left
+(⛔ a draft called it "the strongest of the 21", which no ranking was done to support):
+`logic/R60-retry-reservations`** (`Tools/mutate.py`'s tuple with id `R60-retry-reservations`), which
+passes `alsoClaimed: [], releasing: []` so a retry claims the output path the batch it came from
+reserved away from it — **content destruction on the user's file**. ⛔ **It carries a prediction of
+the opposite shape to this run's, which is why it is worth taking next**: its catalogue comment says
+the unit checks *"pass `alsoClaimed`/`releasing` explicitly and would survive this, which is why the
+end-to-end check exists — it is what goes red"*. So it predicts a kill set concentrated in an
+**end-to-end** check with the seam checks unable to fail, where this run measured the exact
+converse. ⚠️ That comment records no count and no suite size, so unlike A11.1 there is no number to
+test — predict it off the code.
 
 ### T6 · Three checks written for the bundling that cannot fail — FIXED
 *(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*

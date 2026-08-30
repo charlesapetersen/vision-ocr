@@ -107,20 +107,36 @@ Two consequences, both load-bearing:
     i.e. **800 s is 33.3% OVER the budgeted 600** — ⛔ not "600 was 33.3% under", which is
     25%; a draft mixed two denominators into one comparison. The `1.33x` ratio form is
     this header's own convention and is the one to quote.
-    ⛔ **n = 7 as of 2026-08-30 and SIX of the seven are INSIDE the printed range**, so
+    ⛔ **n = 8 as of 2026-08-30 and SIX of the eight are INSIDE the printed range**, so
     the run of bad readings is over rather than continuing: 2026-08-28 inside, 2026-08-29
     outside (1.33x low), 2026-08-30's two runs of `logic/R25-depth-aware-prune` both
     inside — `9-13` printed, **593 s** clocked (`$STATE/suite-timings.tsv`,
     `mutant-r25c 593 0 4.47`) and ~617 s derived (±60 s, row `mutant-r25b-derived`, which
     carries that label so nobody budgets off it as a clocked figure) — and 2026-08-30's
-    THREE never-run-census runs: `9-13` printed and **598 s each** for the first two, the
+    FOUR never-run-census runs: `9-13` printed and **598 s each** for the first two, the
     second of which is row `mutant-c26-inkbar-override` (the first has no row; that
     session's omission), then `10-13` printed and **~618 s** derived (±30 s, row
-    `mutant-c26-inkbar-nil`).
+    `mutant-c26-inkbar-nil`), then `logic/A11.1-publishVerified-gate`, the eighth reading
+    and the SECOND one outside (2026-08-29's 800 s is the first).
     Budgeted 13 min is **1.26x-1.32x** the measured **on those five** — over-budgeted, the safe
-    direction. ⛔ **Not on all seven**: 2026-08-29's 800 s was 33.3% OVER its budget. ⛔ **And the
+    direction. ⛔ **Not on all eight**: 2026-08-29's 800 s was 33.3% OVER its budget. ⛔ **And the
     1.26x low end is not the newest run's**: 780/617 was already 1.264, so the earlier `1.30x`
     had taken its minimum over the clocked rows only.
+    ⛔ **THE EIGHTH READING IS THE ONE THAT NEEDS THE ARITHMETIC WRITTEN OUT, because its
+    printed range is a SINGLE VALUE and reading it as a bullseye would be wrong in the
+    flattering direction.** `logic/A11.1-publishVerified-gate` printed `10-10` off a window
+    of `291-298 s each` and measured **595 s = 9.92 min** (07:20:21 → 07:30:16; its own
+    mutant suite was 295 s exact; row `mutant-a11.1-publishverified 595 0 3.64`). The two
+    ends are `2 x 291 = 582 s` and `2 x 298 = 596 s`, i.e. 9.7 and 9.93 min, which `:.0f`
+    prints as the same 10 — so the measurement is **inside the unrounded span [582, 596] s**
+    and **5 s (0.8%) BELOW the printed 600 s floor**, which is why it counts as outside.
+    The range collapsed because the window has homogenised: five post-clamp rows at
+    1,355-1,361 checks whose DURATIONS span 291-298 s, a 2.4% spread — ⛔ a draft hung that
+    2.4% off the check counts, whose own spread is 0.44%, and the check-count half is
+    inferred from dates besides, four of the five rows being `killed` with no total
+    recorded. **So a degenerate range means the window agrees with
+    itself, not that the estimate is exact** — and at this spread `:.0f` can no longer
+    express the interval it computed.
     ⛔ **This paragraph read `n = 4` / THREE with today's date on it until 2026-08-30, so
     it was stale by two the moment those two runs landed** — a present-tense figure that
     dates itself, and `check-staleness.sh` has no mutation-figure arm to catch it.
@@ -583,7 +599,9 @@ OPERATORS = [
     # `1359/1361 passed`, killed by exactly those two. ⛔ The attribution is that
     # objecting-check LIST, not the older pair's green, which two failures out of 1,361
     # already entail and which is inert by construction anyway. ⚠️ Do NOT read an empty
-    # survivor list as coverage: 25 catalogue entries still have no row at all.
+    # survivor list as coverage: 25 catalogue entries had no row at all when this was
+    # written and 21 do as of 2026-08-30 — re-derive it with
+    # `len(knownIDs & set(already_done()))`, never from this comment.
     # BUGS.md R25 `#### The fixture, IN THE SUITE`.
     ("Flattener.swift", "if let seen = walkedAt[identity], seen <= depth { return }",
      "if walkedAt[identity] != nil { return }", "R25-depth-aware-prune"),
