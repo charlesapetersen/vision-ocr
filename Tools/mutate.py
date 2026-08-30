@@ -107,15 +107,20 @@ Two consequences, both load-bearing:
     i.e. **800 s is 33.3% OVER the budgeted 600** — ⛔ not "600 was 33.3% under", which is
     25%; a draft mixed two denominators into one comparison. The `1.33x` ratio form is
     this header's own convention and is the one to quote.
-    ⛔ **n = 6 as of 2026-08-30 and FIVE of the six are INSIDE the printed range**, so
+    ⛔ **n = 7 as of 2026-08-30 and SIX of the seven are INSIDE the printed range**, so
     the run of bad readings is over rather than continuing: 2026-08-28 inside, 2026-08-29
     outside (1.33x low), 2026-08-30's two runs of `logic/R25-depth-aware-prune` both
     inside — `9-13` printed, **593 s** clocked (`$STATE/suite-timings.tsv`,
     `mutant-r25c 593 0 4.47`) and ~617 s derived (±60 s, row `mutant-r25b-derived`, which
     carries that label so nobody budgets off it as a clocked figure) — and 2026-08-30's
-    two never-run-census runs, `9-13` printed and **598 s each**, the second of which is
-    row `mutant-c26-inkbar-override` (the first has no row; that session's omission).
-    Budgeted 13 min is **1.30x-1.32x** the measured — over-budgeted, the safe direction.
+    THREE never-run-census runs: `9-13` printed and **598 s each** for the first two, the
+    second of which is row `mutant-c26-inkbar-override` (the first has no row; that
+    session's omission), then `10-13` printed and **~618 s** derived (±30 s, row
+    `mutant-c26-inkbar-nil`).
+    Budgeted 13 min is **1.26x-1.32x** the measured **on those five** — over-budgeted, the safe
+    direction. ⛔ **Not on all seven**: 2026-08-29's 800 s was 33.3% OVER its budget. ⛔ **And the
+    1.26x low end is not the newest run's**: 780/617 was already 1.264, so the earlier `1.30x`
+    had taken its minimum over the clocked rows only.
     ⛔ **This paragraph read `n = 4` / THREE with today's date on it until 2026-08-30, so
     it was stale by two the moment those two runs landed** — a present-tense figure that
     dates itself, and `check-staleness.sh` has no mutation-figure arm to catch it.

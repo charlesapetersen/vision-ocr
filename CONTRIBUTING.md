@@ -140,15 +140,21 @@ python3 Tools/mutate.py --only <substring>   # after changing a constant or a gu
                                              # block's own arithmetic is far too small to matter,
                                              # so the rows above stay comparable. Recorded only so
                                              # a later reader can see which size each was taken at.
-                                             # ⛔ n = 6 on the estimator as of 2026-08-30 and FIVE
-                                             # of the six are inside the printed range: FOUR runs
-                                             # that day printed 9-13 — 593 s (clocked,
+                                             # ⛔ n = 7 on the estimator as of 2026-08-30 and SIX
+                                             # of the seven are inside the printed range: FIVE runs
+                                             # that day, four printing 9-13 — 593 s (clocked,
                                              # `mutant-r25c`), ~617 s (derived +/-60 s, whose
                                              # row is labelled `mutant-r25b-derived` for that
                                              # reason), and 598 s twice off the never-run census
                                              # (the second is `mutant-c26-inkbar-override`; the
-                                             # first has no row, that session's omission).
-                                             # Budgeted 13 min is 1.30x-1.32x the measured.
+                                             # first has no row, that session's omission) — and
+                                             # the fifth printing 10-13, ~618 s derived +/-30 s,
+                                             # row `mutant-c26-inkbar-nil`.
+                                             # Budgeted 13 min is 1.26x-1.32x the measured on THOSE
+                                             # FIVE. Not every reading: 2026-08-29's 800 s was 33.3%
+                                             # OVER budget. And 1.26x is not the fifth run's news —
+                                             # 780/617 was already 1.264; the earlier 1.30x had
+                                             # excluded the derived row from its minimum.
                                              # ⛔ This read n = 4 / THREE under today's own date
                                              # until 2026-08-30 — a present-tense figure that
                                              # dates itself, which `check-staleness.sh` has no
@@ -193,12 +199,14 @@ with both named makes that green entailed, and it is inert by construction besid
 first commit held two rows, both killed) but for the first time over a catalogue of 104;
 `coverage` stays **79 of 104**,
 so ⚠️ **an empty survivor list is not coverage — 25 catalogue entries still have no row
-at all** (the queue's `mutants-never-run`). ⛔ **That pair reads `81 of 104` and 23 later
-the SAME DAY**, when `const/textPageInkOutsideThreshold` and then
-`logic/C26-inkbar-override-ignored` became the first two census entries worked off —
-`killed` by six checks and by four, survivor list still 0 both times — which is the
+at all** (the queue's `mutants-never-run`). ⛔ **That pair reads `82 of 104` and 22 later
+the SAME DAY**, when `const/textPageInkOutsideThreshold`, then
+`logic/C26-inkbar-override-ignored` and then `logic/C26-inkbar-nil-refuses-the-page`
+became the first three census entries worked off — `killed` by six checks, by four and by
+eleven, survivor list still 0 all three times — which is the
 separation this sentence asserts, measured rather than argued (T5
-`#### The first never-run mutant` and `#### The seam's other end`). ⚠️ It moves by one a
+`#### The first never-run mutant`, `#### The seam's other end` and
+`#### The seam's second and last`). ⚠️ It moves by one a
 session; re-derive it rather than reading it here.
 R25 `#### The fixture, IN THE SUITE`, T5
 `#### The last survivor re-asked`. **The lesson to carry: a fixture built "both ways

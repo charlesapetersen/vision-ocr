@@ -209,9 +209,11 @@ nothing in this entry's own material is unrun.** ✅ **AND ZERO AFTER `C24`'s
 baseline and both. ⚠️ **The dictionary cap's three is 2026-08-25's and is now FOUR**: that run's own
 finding was that the three was a *coverage boundary* — `Flattener.pageIsAnImage` flipping on fixture
 page 13 with nothing pinning it — and `#### The coverage boundary, CLOSED` closed it on 2026-08-26 with
-one check and a `--rerun` (292 s by six, 289 s by four, 875 s end to end, baseline **1,343 → 1,344**). ⚠️ **That does NOT empty the catalogue**: 25 entries still had no row at all — **24 from
-2026-08-30**, when `const/textPageInkOutsideThreshold` became the first one worked off
-(T5 `#### The first never-run mutant`) — they are
+one check and a `--rerun` (292 s by six, 289 s by four, 875 s end to end, baseline **1,343 → 1,344**). ⚠️ **That does NOT empty the catalogue**: 25 entries still had no row at all — **22 from
+2026-08-30**, when `const/textPageInkOutsideThreshold`, `logic/C26-inkbar-override-ignored` and
+`logic/C26-inkbar-nil-refuses-the-page` became the first three worked off, `killed` by six, four
+and eleven, leaving coverage at **82 of 104** (T5 `#### The first never-run mutant`,
+`#### The seam's other end`, `#### The seam's second and last`) — they are
 owned by the queue's own `mutants-never-run` item as of **2026-08-25** (⚠️ this read
 *"as of the same day"* and the 2026-08-30 insertion broke the referent), and this six was always C28's and
 `depth-cap`'s share rather than the census. ⛔ **That last run found the SIBLING of the truncation
@@ -3082,7 +3084,7 @@ walks return the same 2400 either way. Neither is a gap: the premise reports (it
 absence rows their non-vacuity) and page 12 is the control whose staying green is what makes
 page 11's refusal the cap's. ⛔ **A draft added "a *narrowing* mutant would redden both; none is
 catalogued", and the review refuted both halves**: `logic/C24b-form-not-followed`
-(`mutate.py:499-501`) narrows this very `find` string to `s.depth < 0` and is `killed` at
+(the tuple with id `C24b-form-not-followed`) narrows this very `find` string to `s.depth < 0` and is `killed` at
 `mutation-log.tsv:75`, and the premise row cannot be reddened by a cap mutant in **either**
 direction — `drawsAnyXObject` has no depth guard, which is this paragraph's own stated reason
 one clause earlier. Page 12's control is the one a narrowing mutant reaches.
@@ -8211,7 +8213,10 @@ The adopting session pushed it, and three things came out of doing so.
 ✅ **THE SECOND SABOTAGE IS RUN AND ITS PREDICTION HELD EXACTLY: `index + 1` → `index` gives
 `1354/1355`, ONE red, the p2 check**, printing its own defect verbatim —
 `washed-two.pdf: 1 page(s) … p1 (0.0% of its ink)`. The report hop stayed green, as predicted, because
-it asserts the same string the log carried. So the second page earns its place by measurement now and
+it asserts the same string the log carried. ⚠️ **One cross-reference trap: the prediction cites the CONDITION line of each check
+(`:2302`, `:2305`, `:2402`, …) where this section cites the `check(` line (`:2301`, `:2304`, `:2401`,
+…).** Both are internally consistent and this section's are the ones `grep` finds, but a reader
+checking the two files against each other will read the one-line offsets as a discrepancy. So the second page earns its place by measurement now and
 not by argument.
 
 ⛔ **AND THE FIXTURE HAD A DEFECT THE CLOSING COMMIT SHIPPED WITH: `Flattener.flatten` was handed a
@@ -11234,7 +11239,7 @@ the height band becomes `[12.5, 2475]`, which admits the 120-px bar and nothing 
 constant each, derivable from the asserted calibration and now confirmed from the suite's side.
 
 ⛔ **APPLIED-NESS IS THE TOOL'S OWN GATE, NOT AN INFERENCE FROM THE KILL.** `run()`'s `hits != 1` branch
-(`mutate.py:1427-1428` as committed here — cite the branch, not the line, since a comment edit in the same
+(`mutate.py`'s `a MISMATCH row IS a duration` self-test check as committed here — cite the branch, not the line, since a comment edit in the same
 file moves it) prints
 and records **`NOT-APPLIED`** when its anchored pattern misses *or matches more than once* (`hits != 1`),
 and the row reads `killed`, so the substitution is verified applied by the machinery rather than by reading
@@ -15782,7 +15787,10 @@ it.**
   own header says `pushedinheritedpageresources: false`. So a document with `/Rotate 90`
   on its `/Pages` node sailed past the brand-new rotation refusal and had its marks copied
   into a swapped frame. Verified both ways on one page: on the page it threw, on the
-  parent it carried. The offset box had the same hole.
+  parent it carried. ⚠️ **One cross-reference trap: the prediction cites the CONDITION line of each check
+(`:2302`, `:2305`, `:2402`, …) where this section cites the `check(` line (`:2301`, `:2304`, `:2401`,
+…).** Both are internally consistent and this section's are the ones `grep` finds, but a reader
+checking the two files against each other will read the one-line offsets as a discrepancy. The offset box had the same hole.
 - **Geometry behind an indirect reference was left in the old space.** The worst shape was
   an indirect `/QuadPoints` with a direct `/Rect`: a viewer draws text markup from
   `/QuadPoints`, so the highlight rendered 24.69 pt from the words it marked **while the
@@ -15790,7 +15798,10 @@ it.**
   rectangle instead of moving it.
 - **The `failedStream` flag was dead code** — `return nil` executed before it was ever
   read — so a lost appearance stream published a stamp with an empty `/AP`, drawn as
-  nothing, reported as carried. Found by fault injection, not by reading.
+  nothing, reported as carried. ⚠️ **One cross-reference trap: the prediction cites the CONDITION line of each check
+(`:2302`, `:2305`, `:2402`, …) where this section cites the `check(` line (`:2301`, `:2304`, `:2401`,
+…).** Both are internally consistent and this section's are the ones `grep` finds, but a reader
+checking the two files against each other will read the one-line offsets as a discrepancy. Found by fault injection, not by reading.
 - **The adoption was unpaired: R15 verbatim, at a new site.** Measured at **204 open file
   descriptors for 200 documents**, linear, against Foundation's ceiling near 2,560 — so a
   sweep of the ~16,000-document library it exists for would have died an eighth of the way
@@ -21537,7 +21548,7 @@ question while 0.08 shipped"*), so a mutant that moves the constant **to** the s
 value silently disarms exactly the checks written to catch that seam.
 ⚠️ **Not a defect and not a gap** — six other checks kill this mutant, and the three would
 only matter to a mutant nothing else objected to. ✅ **And there is a concrete such mutant
-sitting in the census**: `logic/C26-inkbar-override-ignored` (`Tools/mutate.py:616-619`,
+sitting in the census**: `logic/C26-inkbar-override-ignored` (`Tools/mutate.py`'s tuple with id `C26-inkbar-override-ignored`,
 planting `let bar = textPageInkOutsideThreshold` and so deleting the seam) is **still
 never-run**, and those three checks are its designated killers. So they are not dead
 weight, and it is the obvious next pick off `mutants-never-run` — with a prediction that
@@ -21621,7 +21632,7 @@ no suite total. n = 1 for this mutant, nothing in `Sources/` moved, and the run 
 
 The second entry off the never-run census, and it is the pick the section above named: the
 mutant that **deletes the measurement seam** rather than moving the constant behind it.
-`Tools/mutate.py:616-619`, `Sources/Flattener.swift:3430`:
+`Tools/mutate.py`'s tuple with id `C26-inkbar-override-ignored`, `Sources/Flattener.swift:3430`:
 
     -            let bar = textPageInkOutsideThresholdOverride ?? textPageInkOutsideThreshold
     +            let bar = textPageInkOutsideThreshold
@@ -21736,12 +21747,17 @@ runs retracted a claimed green yield to arrive at.
 either direction** — derived from the log rather than from a sentence, the distribution is
 11×1, 6×4, 5×5, 4×3, 3×23, 2×20, 1×34, so this row is one of **three** tied at four with **ten**
 rows wider. ✅ **The next census pick follows the same way this one did:
-`logic/C26-inkbar-nil-refuses-the-page`** (`Tools/mutate.py:620-623`, `?? 0` in place of
+`logic/C26-inkbar-nil-refuses-the-page`** (`Tools/mutate.py`'s tuple with id `C26-inkbar-nil-refuses-the-page`, `?? 0` in place of
 `?? textPageInkOutsideThreshold`, so a `nil` override refuses every page instead of meaning
 "the shipped bar") is the seam's third and last mutant and is still in the 23 — the reading
 C24's seam shipped **unpinned**, where the nearer wrong reading then survived nine checks.
 ⚠️ Its prediction does **not** follow from either run: it moves the `nil` arm, which both
 runs so far left alone.
+✅ **IT RAN THE SAME DAY AND IS `killed` BY ELEVEN — see `#### The seam's second and last`
+below — ⛔ **retitled: the catalogue's override seam is a PAIR, so this is its SECOND; the "third"
+in the sentence above counts `const/textPageInkOutsideThreshold`, which is a constant entry.** ⛔ **The forecast in the sentence above was exactly inverted and that is that
+section's headline**: the six `nil`-arm checks are the ones the third mutant **cannot** red,
+five of them disarmed by construction, and all eleven reds land outside this block.
 
 ⚠️ **Estimator, the SIXTH recorded reading from the cleared window and the fifth inside its
 printed range: it printed the same `roughly 9-13 minutes … Budget the 13` and the run took
@@ -21773,6 +21789,233 @@ a draft asserted it**: the gap is **3 h 07 m 42 s** against the other two pairs'
 decayed reading two paragraphs up. So the widest-gap pair is also the one with the least
 evidence that the machine held still. ⚠️ Nothing in `Sources/`, `Tests/` or `Helper/` moved, no
 check was added or removed, no shipped behaviour changed, and the run adds one log row.
+
+#### The seam's second and last, 2026-08-30 — `logic/C26-inkbar-nil-refuses-the-page` is `killed` by ELEVEN, and NOT ONE of them is in the seam's own test block
+
+The third entry off the never-run census, and the pick the two sections above named.
+⛔ **"The seam's THIRD" is what the queue box, `CLAUDE.md` and a draft of this heading all said, and
+the review of this diff refuted it from the catalogue: the override seam holds TWO entries**, the
+pair whose ids are `C26-inkbar-override-ignored` and `C26-inkbar-nil-refuses-the-page`, and whose
+shared comment calls them *"the pair C24's seam taught this
+register to write"*. `const/textPageInkOutsideThreshold` is a `CONSTANTS` entry that moves 0.045 → 0.08
+and never touches `textPageInkOutsideThresholdOverride`; the register's own section for it is titled
+*"C26's own bar"*. So this is the seam's **second and last** mutant and the **third** to change the
+value compared at `Flattener.swift:3430`. ⚠️ Inherited rather than new — the section above already wrote
+*"the seam's two mutants"* of a set including the constant — but *"all three of its mutants"* reads to a
+next session as *the catalogue holds three seam entries*, and it holds two.
+`Tools/mutate.py`'s tuple with id `C26-inkbar-nil-refuses-the-page`, `Sources/Flattener.swift:3430`:
+
+    -            let bar = textPageInkOutsideThresholdOverride ?? textPageInkOutsideThreshold
+    +            let bar = textPageInkOutsideThresholdOverride ?? 0
+
+so a `nil` override means **"refuse the page"** rather than *"the shipped bar"* — the reading
+`textPageInkOutsideThresholdOverride`'s own doc comment and `Flattener.swift:3427-3429` both
+warn against, and the reading C24's seam shipped **unpinned**, where the *nearer* wrong one
+then survived nine checks. `inkOutsideText` is a fraction and is `>= 0`, so
+`guard outside < 0` can never hold: on the `nil` arm — production, and every `mrcLayers` call
+that substitutes nothing — `pageIsAllText()` returns `false` for **every** page at every Photo
+detail below Maximum. On any arm with a non-nil override the function is byte-identical to
+today.
+
+**Verdict `killed`, 298 s, baseline `1361 checks, green`, mutant `1350/1361 passed`, by EXACTLY
+ELEVEN objecting checks — all eleven named before the run, and IN THE ORDER the log printed
+them.** Prediction filed as
+`$STATE/rescue/PREDICTION-logic-C26-inkbar-nil-refuses-the-page-2026-08-30.md` — cited under the name
+it ACTUALLY has on disk, and ⛔ **deliberately NOT re-filed as `LANDED-as-<sha>-…`, which is the
+convention the two runs above used and which broke both of their citations** (the previous commit was a
+docs-only follow-up for exactly that). A file that keeps its name is a citation that keeps resolving; a
+draft of this line invented `LANDED-as-<sha>-mutants-never-run-…`, an infix no such file has ever
+carried. ⚠️ **One cross-reference trap: the prediction cites the CONDITION line of each check
+(`:2302`, `:2305`, `:2402`, …) where this section cites the `check(` line (`:2301`, `:2304`, `:2401`,
+…).** Both are internally consistent and this section's are the ones `grep` finds, but a reader
+checking the two files against each other will read the one-line offsets as a discrepancy. ⚠️ **One cross-reference trap: the prediction cites the CONDITION line of each check
+(`:2302`, `:2305`, `:2402`, …) where this section cites the `check(` line (`:2301`, `:2304`, `:2401`,
+…).** Both are internally consistent and this section's are the ones `grep` finds, but a reader
+checking the two files against each other will read the one-line offsets as a discrepancy. ⚠️ **Names and order only — no detail string was written down**, unlike the
+previous run's two, and the widths the rows carry (612, 306, 1275) were not forecast.
+The eleven, as the log row records them, with the `check(` line beside each:
+
+1. `:2301` `a text page's background is shrunk by the text-page factor — 612 wide of 1224 at 1x`
+2. `:2304` `…and its foreground harder still — 306 wide of 1224 at 1x`
+3. `:2401` `…but Balanced still shrinks a text page — 612 wide of 1224 at 1x`
+4. `:3185` `C28 — …and the same page with that word recognised IS shrunk as all text — 612 wide of 1224, ceiling 154`
+5. `:3188` `…and reports itself as stored at an eighth, which is the report C28 shipped — flag false, 612 wide`
+6. `:3538` `a page of type alone still takes the all-text shrink — 1275 wide of 2550, text-page limit 319`
+7. `:15515` `…while pageIsAllText() accepts it anyway, so one page reaches BOTH the picture route and the all-text shrink — flag false, background 612 of 1224 at 1x`
+8. `:15587` `…and the C28 line the layering loop builds reaches the model's log` — ⚠️ detail elided;
+    the log row carries a four-clause run summary ending in the run-report path. Rows 9 and 10 carry
+    none in the log.
+9. `:15592` `…naming the washed page, which is p2 and not p1`
+10. `:15594` `…and leading with a complete count of one page`
+11. `:15609` `…and the SAME line survives the hop into the written run report — log line absent, report 809 B`
+
+⚠️ **Eleven is not eleven independent facts.** Rows 8-11 are **one** consequence: with no page
+read as all text `shrunkTextPages` is empty, `shrunkTextPageSummary` is never called, the log
+line is absent and `c28` is `""`, so all four fall together — and they are **gated on
+`JBIG2.isAvailable`**, so on a machine without jbig2 or qpdf this mutant is killed by **seven**
+and the suite total drops by five rather than the four going red. Rows 1-2 are one fixture at
+one setting and rows 4-5 one call. ⛔ **Eleven is nonetheless the widest kill set of the three
+over this seam and JOINT WIDEST in the log** — recomputed over all 99 rows the distribution is
+11×2, 6×4, 5×5, 4×3, 3×23, 2×20, 1×34 (91 rows carry a count; the other 8 are **six
+`SURVIVED` rows and two `exit 133` crashes** — ⛔ a draft wrote *"`SURVIVED`, `NOT-APPLIED` or crashes"*
+and **the log holds no `NOT-APPLIED` row at all**, which is a category with zero members named in the
+one sentence whose whole job is an exact recount), so nothing is wider and exactly one row ties it,
+`const/colourSaturationThreshold`. ⚠️ A draft of this line said *"joint SECOND-widest … exactly
+one row is wider"* in the same sentence as *"it ties this one"*, which is self-contradictory;
+the arithmetic above is the answer and the previous section's `11×1` was that figure **before**
+this row.
+
+⛔ **THE FINDING WORTH MORE THAN THE VERDICT: THE SEAM'S OWN TEST BLOCK KILLS NOTHING.** All
+eleven sit **outside** `Tests/main.swift:2420-2639` — the `// MARK: C26 — the priced-bar seam` section,
+from its header to where `// MARK: C28 — the page says out loud that it was shrunk` opens. ⛔ **A draft
+cited `:2483-2680`, which starts mid-block at `func c26Layers(` and ends mid-statement, swallowing the
+whole adjacent C28 MARK section including `:2667` — a check this register has already ruled is not a
+seam check, because `keepEveryPixel` short-circuits before the bar is read.** ⚠️ **And the claim is
+about that contiguous block, not about every check that drives the seam**: `:3255` and `:3273` are two
+further `c26Layers`-driven seam checks outside it, and they do not red either — the next paragraph
+depends on `:3255` being outside. The conclusion survives every boundary tried (`:2401` is inside the
+R50 MARK section that opens at `:2182`). And
+the queue box's forecast — *"expect the SIX `nil`-arm checks (`:2548`, `:2551`, `:2561`,
+`:2576`, `:2618`, `:2631`) to be where the reds are"* — is **exactly inverted**. Five of those
+six assert that the page is **not** shrunk on the `nil` arm, and a mutant that refuses every
+page satisfies them **by construction**:
+
+    :2548  "C26 — a page with a small ink figure outside the words is not shrunk"
+    :2551  "…its foreground too, so both layers move together"
+    :2561  "C28 — the page the shipped bar rescues does not report itself as shrunk"
+    :2618  "…and asking again with no override leaves the page at the caller's factor"
+    :2631  "C26 — a figure page above the bar is not shrunk"
+
+— all five `ok` in the run (log lines 240-242, 248-249).
+
+⛔ **TWO DIFFERENT THINGS ARE TRUE OF THOSE GREENS AND A DRAFT OF THIS SECTION CONFLATED THEM,
+splitting the six five-and-one where the 2026-08-24 rule splits them nought-and-six — refuted
+by the review of this diff, from the section immediately above, which ⛔-flagged a draft for the
+same split over the same six.** (1) **By the rule — *does the mutant change this check's input
+at all* — none of the six is evidence, and neither is anything else in the block.** All sixteen
+of the block's checks run on **byte-identical input**: the `nil` arm because `c26Small`'s
+`smallInk` ≈ 0.055 is above the shipped 0.045 *and* above 0, so that arm refuses the page at
+both bars and `backgroundWidth` is 612 either way; the `0.08` and `0.15` arms because a non-nil
+override never reaches the mutated `??`. That is the same finding the previous section recorded
+of the deletion mutant, in a second place. (2) **Separately and more strongly, five of the six
+are UNFALSIFIABLE under this mutant for ANY fixture, not just this one** — they assert *not
+shrunk* on the `nil` arm and the mutant makes every page not-shrunk — which is why no fixture
+change could have made the queue box's forecast come true. ⚠️ **(2) is a property of the mutant
+and (1) of the fixture, and only (1) is what the greens themselves show.** The sixth, `:2576`,
+is under (1) alone: it asserts the *fraction*, which `measuredInkOutside` records **before**
+term 1's guard (`Flattener.swift:3433-3434`), so it would still be measured and still equal
+`c26InkOut`'s even on a fixture the mutant did move.
+⛔ **And "the block's other eight checks" was wrong twice over — refuted by enumeration.** Over
+`:2420-2639` there are 19 `check(` lines of which 4 are `else`-branch diagnostics, so **fifteen
+execute**; minus the six `nil`-arm ones the others are **nine** — **five** on a substituted arm
+(`:2591`, `:2594`, `:2601`, `:2605` at 0.08 and `:2634` at 0.15) and **four** that never call
+`c26Layers` at all (`:2500`, `:2523`, `:2531`, `:2535`, which read the override property, the fixture's
+band or `inkOutsideText` directly). ⚠️ `:2667` — 0.08 at `PhotoDetail.maximum` — is a sixth
+substituted-arm check and is byte-identical too, but it sits in the **C28** MARK section rather than
+this one, which is the boundary error above in a second place. Eight matches no reading of the block.
+
+**So the seam's nearer wrong reading is caught, and by nothing its own author wrote.** What
+kills it is collateral from **four fixtures in three other entries** — R50's text page at
+default and at Balanced (rows 1-3), C28's shape-term **positive control** (rows 4-5), R56's
+`text-only.pdf` plate fixture (row 6), and C28's end-to-end yellow wash (rows 7-11). ⚠️ That is
+a fact about *coverage*, not a defect: the mutant is killed eleven ways and nothing is owed.
+⛔ **But it is C24's shape read from the other side, and it is the transferable one: a block
+written to pin a seam pins the arm the block VARIES, and is structurally blind to the arm it
+leaves at the default.** Every `nil`-arm check here asserts the same one-sided thing — *not
+shrunk* — because the fixture was built so the shipped bar refuses it; there is no `nil`-arm
+check anywhere in that block asserting a page IS shrunk, and that is the only shape that could
+red.
+
+✅ **AND `:3255` STAYS ARMED UNDER THIS ONE, WHICH COMPLETES THE PREVIOUS SECTION'S HEADLINE
+AND NARROWS IT.** The mask pair — *"the stencil is the same bytes whatever the tone layers are
+shrunk by"*, `c26maskA` (`bar: nil`) against `c26maskB` (`bar: 0.08`) — is disarmed by the
+seam's other **two** mutants, and that section's *"disarmed by both"* should be read as **two
+of the three**. This mutant moves the `nil` arm's bar **down**, 0.045 → 0, and on `c26Small`
+(`smallInk` ≈ 0.055) that arm was already refusing the page, so the pair is still
+unshrunk-against-shrunk and its input does not move at all. Predicted in writing; green in the
+run (log line 287). ⚠️ Green-and-armed is **not** evidence either — unchanged input is
+unchanged input — so what this buys is the correction, not a kill.
+
+⛔ **THE THREE KILL SETS OVER ONE LINE ARE PAIRWISE DISJOINT, 21 DISTINCT CHECKS** — one line,
+`Flattener.swift:3430`, and not one seam: two of the three mutants are the seam pair and the third is
+the constant behind it.**
+`const/textPageInkOutsideThreshold`'s six `{:2258, :2531, :2548, :2551, :2561, :2618}`, the
+deletion's four `{:2591, :2594, :2601, :2634}`, and this one's eleven
+`{:2301, :2304, :2401, :3185, :3188, :3538, :15515, :15587, :15592, :15594, :15609}` intersect
+pairwise in **nothing** — read off the three log rows and mapped to check lines, not argued.
+⚠️ **Disjointness is not surprising here and should not be dressed up as one**: each mutant
+collapses a different pair of configurations, and a check can only red where the collapsed
+configuration violates an absolute assertion it makes. What is worth keeping is the *shape* of
+the third set — it is the only one of the three that leaves the seam's block entirely, and it
+is the only one whose reds are, to a check, assertions that a page IS shrunk.
+
+⚠️ **Estimator, the SEVENTH recorded reading from the cleared window and the SIXTH inside its
+printed range** (⚠️ **that ordinal counts cleared-window readings, not census entries or seam
+mutants — three different populations run through this section and a draft crossed two of them**): it printed `roughly 10-13 minutes … Budget the 13` and the run took
+**618 s ≈ 10.3 min** end to end, high end 1.26x over-budgeted. ⛔ **618 s is derived, not
+clocked, ±30 s**: the log's last write is 06:37:33 and the launch was not timestamped, so it is
+`end − launch` off shell history rather than a measured interval — the mutant's own **298 s** is
+the tool's figure and is exact. ✅ **A `$STATE/suite-timings.tsv` row was appended**, as
+`2026-08-30 06:37:33  mutant-c26-inkbar-nil  618  0  4.26`, and this time the loadavg was read
+**~30 s after** the last write rather than the previous row's 2 m 09 s — closer to the column's
+definition (`ops/autonomous/test-lock.sh:356-358`) though still not written by the lock.
+⚠️ **Two more same-day pairs at a fixed 1,361 checks, and NEITHER is independent of the third.**
+This mutant's **298 s** against `logic/C26-inkbar-override-ignored`'s **297 s**, 47 m 54 s apart
+(`suite-timings.tsv`, 05:49:39 against 06:37:33), is **1.003x** — ⛔ **but that is the SAME 297 s the
+third pair used, so the ratio is reproduced by arithmetic rather than re-measured, and "corroborates
+for the third time" would over-count the independent evidence.** Against
+`const/textPageInkOutsideThreshold`'s **298 s** it is **1.000x**, the tightest reading in the log, and a
+draft of this paragraph left it unreported while picking the shared-member pair. Both corroborate the
+1.043x mutant-identity bound and neither tightens it, an upper bound over several readings being the
+largest. ⚠️ Nothing in `Sources/`, `Tests/` or `Helper/` moved, no check was added or
+removed, no shipped behaviour changed, and the run adds one log row. Census **23 → 22**,
+coverage **81 → 82 of 104**, log **98 → 99** rows, `0 survivor(s)` unchanged.
+
+⛔ **Sibling sweep over EVERY `mutate.py:<line>` citation in the tree — NINE of them, and EIGHT were
+wrong. A draft of this paragraph found three and called that the sweep; the review of this diff found
+the other five, plus one this commit BROKE.**
+THE THREE THAT NAMED THE WRONG MUTANT: the two sections above cited the deletion mutant as
+`:616-619`, which is its **comment block**, and both that section and
+`ops/autonomous/QUEUE.md`'s `mutants-never-run` box cited *this* mutant as `:620-623`, which lands on
+the **other** entry's tuple — a reader following it would build the deletion and record it under this
+id. The two entries share a `find` string byte for byte, so in prose the citation is the only thing
+distinguishing them.
+⛔ **AND THE FIRST FIX WAS ITSELF STALE ON ARRIVAL, WHICH IS THE SHARPEST THING HERE AND IS WHY THE
+REPAIR IS NOT A NUMBER.** This commit edits `mutate.py`'s header, so every tuple below it moves: the
+repaired `:621-624` and `:625-628` were the PRE-diff lines, `:625-628` post-diff straddled **both**
+tuples — exactly the failure the paragraph exists to fix, manufactured by the same diff — and the
+corrected numbers then moved a second time when the review's own findings were written up. Caught by
+the adversarial review, twice. ✅ **So every catalogue citation in this register now names the tuple's
+ID instead of its lines** (`--only` selects by id, so the id is what a reader needs anyway), and the
+three non-catalogue ones name a function or a check description. A line number into a file this commit
+edits cannot survive this commit; an id can.
+⛔ **THE FIVE THE ID-GREP COULD NOT REACH, four stale before this commit and one broken BY it**:
+`BUGS.md:3087` cited `:499-501` for `logic/C24b-form-not-followed` (really `:661-663`, wrong by ~160
+lines); `QUEUE.md` cited `:1753` for the `hits != 1` refusal (`:1760`), `:980` and `:973` for the two
+pattern builders (`:987` and `:980`) and `:1752` for `len(re.findall(...))` (`:1759`) — **four of those
+inside the very queue box this commit edits, a few lines from its own insertions**; and
+`BUGS.md:11239`'s `:1427-1428` was RIGHT at `HEAD` and was broken by this header edit,
+⛔ **which its own parenthetical had predicted in terms — *"cite the branch, not the line, since a
+comment edit in the same file moves it"*.** All nine are now anchored rather than numbered.
+⚠️ **Nothing was measured wrong by any of them**: `mutate.py --only` selects by id and never by line,
+and every log row carries the id the tool wrote, so no verdict, count or kill list moves. ⛔ **Two
+transferable halves. (1) A line citation into a catalogue of adjacent same-shaped tuples is the
+cheapest thing in this register to get wrong and the hardest to notice. (2) `grep -n '"<id>"'`
+re-derives an ID citation and reaches NONE of the other six — sweep the pattern `mutate\.py:[0-9]`
+instead, which is what found them.**
+
+✅ **The next census pick, and it is the strongest one left: `logic/A11.1-publishVerified-gate`**
+(`Tools/mutate.py`'s tuple with id `A11.1-publishVerified-gate`) — it deletes `incompleteRefusal`'s throw from `Model.swift` so a
+short staged document is **published** rather than refused, which is **invariant 2**. ⛔ **It
+carries a prediction in its own catalogue comment that this run can test rather than
+originate**: run by hand before the catalogue got it, *"3 checks red, and the good file at the
+destination went from 107,847 bytes to 809"*. ⛔ **The 862 in the sentence before that is NOT
+the hand run's suite size, and a draft of this line said it was — the comment rules it out**:
+862/862 is the **pre-fix** suite, where deleting this same gate produced **zero** reds, which
+is what made it the tenth un-failable check. The three reds necessarily post-date A11.1's own
+checks and their suite size is recorded nowhere. **Read 3 as a floor because the suite has
+grown to 1,361, not because it was taken at 862** — and that un-failable check is exactly why
+this one is worth a row rather than an assumption.
 
 ### T6 · Three checks written for the bundling that cannot fail — FIXED
 *(2026-08-09 third review. The third consecutive round to add checks of this kind while looking for them.)*

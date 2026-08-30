@@ -715,8 +715,8 @@ happens.**
       was re-run and is `killed` — ⛔ **and ZERO from 2026-08-30, when `logic/R25-depth-aware-prune` was
       killed too, which is exactly why the survivor list was never the same question as this box**;
       ⚠️ coverage does NOT move for a re-run, staying `79 of 104` with the
-      census at **25**, because the two are complements over one set — ⛔ **the pair is `81 of 104` and 23
-      from 2026-08-30**, when this box's first TWO entries were worked off; the clause keeps its own tense
+      census at **25**, because the two are complements over one set — ⛔ **the pair is `82 of 104` and 22
+      from 2026-08-30**, when this box's first THREE entries were worked off; the clause keeps its own tense
       because what it states is a property of a *re-run*) and not a never-run entry, so "the mutants item owns
       the rest" (an earlier draft of this sentence) was wrong, and "nobody has claimed them" — true for
       four consecutive sessions that each flagged it — is now false. ⚠️ 25 held after the third and fourth
@@ -3669,7 +3669,7 @@ happens.**
       **`0 survivor(s)`** — ⚠️ not for the first time ever (the log's first commit held two killed rows)
       but for the first time over a catalogue of 104. ⚠️ **That does NOT retire `mutants-never-run`**:
       `coverage` is still `79 of 104` and 25 entries have no row at all, so an empty survivor list and
-      coverage are different questions — ⛔ **`81 of 104` and 23 from later the same day, over TWO census
+      coverage are different questions — ⛔ **`82 of 104` and 22 from later the same day, over THREE census
       entries worked off, with the survivor list still 0, which is that separation measured rather than
       argued.**
       `BUGS.md` R25 `#### The fixture, IN THE SUITE`.
@@ -3769,10 +3769,11 @@ happens.**
       precondition it loses. ⛔ **The asymmetry is the assertion FORM and not the mutant's direction** — a
       draft of that section said only a constant move can disarm and was refuted by its own next paragraph,
       `R25`'s shape a second time. Full account in `BUGS.md` T5 `#### The seam's other end`.
-      ⚠️ **The box stays `[ ]`: 23 to go**, and the remaining list is
+      ⚠️ **The box stays `[ ]`: 22 to go as of 2026-08-30**, and the remaining list is
       printed by any campaign's closing census (or the derivation above).
-      ✅ **AND THE NEXT PICK FOLLOWS AGAIN: `logic/C26-inkbar-nil-refuses-the-page`**
-      (`Tools/mutate.py:620-623`, `?? 0` for `?? textPageInkOutsideThreshold`, so a `nil` override refuses
+      ✅ **AND THE NEXT PICK FOLLOWED AGAIN — AND IT RAN, SO READ THE BLOCK BELOW THIS ONE:
+      `logic/C26-inkbar-nil-refuses-the-page`**
+      (`Tools/mutate.py`'s tuple with id `C26-inkbar-nil-refuses-the-page`, `?? 0` for `?? textPageInkOutsideThreshold`, so a `nil` override refuses
       every page instead of meaning *"the shipped bar"*) — the seam's third and last mutant, still in the 23,
       and the reading C24's own seam shipped **unpinned**, where the nearer wrong reading then survived nine
       checks. ⚠️ **Its prediction does NOT follow from either run**: both left the `nil` arm's input
@@ -3781,6 +3782,52 @@ happens.**
       FIRST run killed — but predict it off the code, not off that row, and note that the first run killed
       only **four** of the six plus two checks that read the constant directly, so "roughly" is doing real
       work in that sentence.
+      ⛔ **THAT FORECAST RAN 2026-08-30 AND WAS EXACTLY INVERTED — read it as a worked example of how to
+      get a prediction wrong, not as guidance.** `logic/C26-inkbar-nil-refuses-the-page` is **`killed`,
+      298 s, baseline `1361 checks, green`, mutant `1350/1361 passed`, by EXACTLY ELEVEN objecting checks,
+      all eleven named AND IN ORDER before the run** (prediction filed at
+      `$STATE/rescue/LANDED-as-<sha>-…-logic-C26-inkbar-nil-refuses-the-page-2026-08-30-prediction.md`).
+      Census **23 → 22**, coverage **81 → 82 of 104**, log **98 → 99** rows, `0 survivor(s)` unchanged.
+      **NOT ONE of the eleven is in the seam's own test block** (`Tests/main.swift:2420-2639`, the
+      `// MARK: C26 — the priced-bar seam` section; ⚠️ `:3255` and `:3273` are two further seam checks
+      outside it and do not red either): the six
+      `nil`-arm checks named above are the ones this mutant **cannot** red, because five of them assert the
+      page is *not* shrunk on the `nil` arm and a mutant setting the bar to 0 refuses every page, so their
+      assertion is unfalsifiable under it whatever fixture they are given. ⛔ **But do NOT report that as
+      "five disarmed, the sixth unchanged-input": by the 2026-08-24 rule ALL SIXTEEN checks in that block
+      are unchanged-input**, the `nil` arm because `smallInk` ≈ 0.055 is above 0.045 and above 0 alike and
+      the substituted arms because they never reach the mutated `??` — so no green there is evidence, and
+      the five/one split was refuted by the review of this diff (it is the split the section above already
+      ⛔-flagged a draft for, over the same six).
+      The eleven are collateral from **four fixtures in three other entries** (R50 x2 settings, C28's
+      shape-term positive control, R56's `text-only.pdf`, C28's end-to-end yellow wash — the last four of
+      which are ONE consequence and are gated on `JBIG2.isAvailable`, so without jbig2 the kill set is
+      **seven**). ⛔ **Eleven is JOINT WIDEST in the log** — recomputed over all 99 rows the distribution is
+      11×2, 6×4, 5×5, 4×3, 3×23, 2×20, 1×34, tied with `const/colourSaturationThreshold`. ✅ `:3255`, the
+      mask pair, stays **ARMED** under this one, so the block above's *"disarmed by both"* is **two of the
+      three**. ⛔ **The three kill sets over this one seam are pairwise DISJOINT, 21 distinct checks.**
+      ⛔ **The transferable lesson, and it is why the forecast failed: a block written to pin a seam pins
+      the arm it VARIES and is structurally blind to the arm it leaves at the default.** Every `nil`-arm
+      check in that block asserts the same one-sided thing (*not shrunk*), because the fixture was built so
+      the shipped bar refuses it; nothing in it asserts a `nil`-arm page IS shrunk, which is the only shape
+      that could red. **So predict from what a mutant makes TRUE, not from which checks touch the arm it
+      moves** — that is lesson (4), and it is the one this box would most like the next session to have.
+      Full account in `BUGS.md` T5 `#### The seam's second and last`.
+      ✅ **THE SEAM IS NOW FULLY COVERED — BOTH of its mutants have rows — so the next pick leaves it:**
+      ⛔ **This box said "the seam's third and last" and the catalogue says PAIR**: the override seam is the pair
+      `C26-inkbar-override-ignored` and `C26-inkbar-nil-refuses-the-page`, two entries, while `const/textPageInkOutsideThreshold` is a
+      `CONSTANTS` entry that never reads the override. Three mutants reach one LINE
+      (`Flattener.swift:3430`); two are seam entries. Next pick:
+      `logic/A11.1-publishVerified-gate`** (`Tools/mutate.py`'s tuple with id `A11.1-publishVerified-gate`), which deletes `incompleteRefusal`'s
+      throw from `Model.swift` so a short staged document is **published** instead of refused. That is
+      **invariant 2**, and it is the strongest entry left in the 22. ⛔ **It comes with a prediction to TEST
+      rather than originate**: its own catalogue comment records a hand run before it joined the catalogue —
+      *"3 checks red, and the good file at the destination went from 107,847 bytes to 809"* — ⚠️ taken when
+      the suite was **862** checks — ⛔ **which the comment RULES OUT in its previous sentence**: 862/862
+      is the *pre-fix* suite, where deleting this same gate produced **zero** reds, and that is what made
+      it the tenth un-failable check. The three reds post-date A11.1's own checks and their suite size is
+      recorded nowhere. Read 3 as a **floor to check** because the suite is **1,361** today, not because
+      it was taken at 862. T10/A11.1's un-failable check guarded exactly this gate, which is why it wants a row.
       ✅ **A `$STATE/suite-timings.tsv` row was appended by hand for the second run** —
       `2026-08-30 05:49:39  mutant-c26-inkbar-override  598  0  3.52` — the omission the first run records.
       ⛔ **Read that loadavg as WEAK, and append yours at the END of the run**: the column is defined as the
@@ -3791,7 +3838,7 @@ happens.**
       `hits == 1` for the pattern before
       spending the run — it costs one `python3 -c` and no build. `Flattener.swift` has **three** comment
       lines carrying this constant's name, one of them (`:1877`) carrying both the name and `0.045`, plus two
-      naming the Override. ⚠️ `mutate.py:1753` refuses `hits != 1` as NOT-APPLIED, so a comment hit can only
+      naming the Override. ⚠️ `mutate.py`'s `run()` refuses `hits != 1` as NOT-APPLIED, so a comment hit can only
       read `SURVIVED` if the DECLARATION has stopped matching — T7's case, not this one; a draft of this
       bullet said "seven doc-comment lines" and credited the anchor with the whole guard.
       (2) Predict the reds off *passing* checks where one exists. Four of these six were entailed by three
@@ -3802,10 +3849,11 @@ happens.**
       the reader's reflex rather than the lesson's prescription, unlike the census trap above, where the
       box **did** prescribe the wrong derivation — **: `catalogue()`'s
       `pattern` field is a REGEX and never a literal** — `re.escape(old)` for a logic mutant
-      (`mutate.py:980`) and a grouped `(static let NAME…=\s*)VALUE\b` for a constant (`:973`) — **so the
+      (`catalogue()`'s logic branch) and a grouped `(static let NAME…=\s*)VALUE\b` for a constant
+      (its const branch) — **so the
       reflex `src.count(entry['pattern'])` reads 0 hits on a pattern that matches perfectly, which looks
       exactly like the NOT-APPLIED case you are checking for.** Use
-      `len(re.findall(entry['pattern'], src))`, which is the tool's own arithmetic at `:1752`. Both
+      `len(re.findall(entry['pattern'], src))`, which is the tool's own arithmetic in `run()`. Both
       C26-inkbar entries read 1 that way.
       ⛔ **This is NOT the `mutants` item above** — that one
       scopes itself to the *survivor* list twice over (*"work the survivors"*, *"the live survivor list"*),
