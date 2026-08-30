@@ -139,12 +139,32 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue. It has TWO h
         ls | /usr/bin/grep '\.commits\.patch$' | while read -r c; do
           n="${c%.commits.patch}"
           ls | /usr/bin/grep -qF -- "-$n.commits." || echo "UNFILED COMMITS  $c"
+        done
+        ls | /usr/bin/grep -- '\.ignored-' | while read -r g; do
+          case "$g" in *.bak|LANDED-as-*|SUPERSEDED-by-*|REJECTED-*) continue;; esac
+          ls | /usr/bin/grep -qF -- "-$g" || echo "UNFILED IGNORED  $g"
         done )
   ⚠️ Silence means the inbox is clean. Do not "simplify" it back to a glob: both forms were measured aborting
   under zsh's `nomatch` in exactly the CLEAN case, printing a failure where the right answer is silence
-  (README D19). A bare `.base`/`.status` beside a FILED `.patch.bak` is litter, not an orphan — `mv` the
-  strays under the same filing; a `.patch.partial` is an older snapshot a newer one displaced, not a partial
-  rescue.
+  (README D19). A bare `.base`/`.status`/`.ignored-*` beside a FILED `.patch.bak` is litter, not an orphan —
+  `mv` the strays under the same filing; a `.patch.partial` is an older snapshot a newer one displaced, not a
+  partial rescue.
+  ⛔ **THE THIRD PASS IS NOT OPTIONAL AND IT IS THE `.commits.patch` LESSON A SECOND TIME.** From 2026-08-30
+  the daemon writes `<n>.ignored-<flattened path>` for an ALLOWLISTED GITIGNORED artefact — today one glob,
+  `:(glob)Tools/mutation-out/*.log`, because a mutation run's log is gitignored, overwritten per run, and the
+  only record of its own duration and kill list (README D20). Such a file matches NEITHER of the two passes
+  above (`\.patch$` and `\.commits\.patch$`), so a trio filed without it would go permanently invisible —
+  exactly the defect pass 2 exists for, one level down. ⛔ **It keys on the ARTEFACT'S OWN filed name
+  (`-$g`), not on the strand being decided** — measured 2026-08-30 over five synthetic directories: a
+  `-$n.` test, which is what pass 1 uses, reads `SUPERSEDED-by-<sha>-<name>.patch.bak` as proof and stays
+  SILENT over exactly the left-behind copy this pass exists for. It is per-artefact and so also right where
+  a strand has two copies and one is filed, which pass 2's per-strand shape would miss.
+  ⚠️ **Two conventions exist for this one class and both
+  are live**: hand copies made BEFORE 2026-08-30 use `.untracked-<flattened, no leading `Tools/`>` — see
+  `LANDED-as-6ff07fc-vo-20260828-060044-25839.untracked-mutation-out-logic_R25-depth-aware-prune.log`, which
+  IS the 103,159 B log D20 was opened on — and are the same class under the wrong word. Pass 1 skips
+  `*.untracked-*` and the daemon's own counters read only `^<n>\.ignored-`, so a session grepping one
+  convention misses the other. Read both.
   ⛔ **`<n>.commits.patch` IS A SEPARATE ARTEFACT AND THE PATCH DOES NOT CONTAIN IT.** The working-tree
   snapshot is `diff --cached HEAD`, i.e. relative to the branch TIP, so a strand with commits on it has them
   in neither `.patch` nor `.base`. That is why the loop has a second pass: a commits file whose trio was
@@ -168,8 +188,9 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue. It has TWO h
   ⚠️ AN ORPHAN PATCH IS USUALLY NOT A SESSION'S WORK, and treating it like a triage file starves the queue —
   all three live ones on 2026-08-27 were 6 to 10 days old by snapshot mtime and every one had landed. Filing
   a trio whose content is on main is three `mv`s. So: screen the OLDEST orphan; if its content is on main,
-  FILE IT (`.{patch,base,status}`, plus `.complete` and `.commits.patch` if present) and go straight on to
-  STEP 2 **in the same session** — the same rule STEP 2 applies to an already-done queue item. Only an
+  FILE IT (`.{patch,base,status}`, plus `.complete`, `.commits.patch` and every `<n>.ignored-*` if present)
+  and go straight on to STEP 2 **in the same session** — the same rule STEP 2 applies to an
+  already-done queue item. Only an
   orphan whose content is genuinely NOT on main is your one item, and then it is an ADOPTION: apply it in
   your own `auto/` worktree, finish it, commit, push, file it `LANDED-as-<your sha>-<name>`.
   ⚠️ Which of the four removal preconditions apply here, and the count is not the obvious one: **(a)** and
@@ -184,6 +205,14 @@ STEP 1.5 — DRAIN THE TRIAGE INBOX FIRST. This OUTRANKS the queue. It has TWO h
   content to miss. If there IS one, look for that path by name in the patch's `+++` list (git quotes paths
   with spaces or non-ASCII in both, so compare the quoted forms) and do not automate the comparison — the
   daemon's own comment records four false-positive classes an awk version got wrong.
+  ⛔ **AND `.status` DOES NOT ANSWER FOR A GITIGNORED PATH — it cannot see one, and neither can the patch**
+  (`add -A` honours `.gitignore`, deliberately, or the rescue would be a copy of somebody's `build/`). Since
+  2026-08-30 the daemon copies an ALLOWLISTED few out as `<n>.ignored-<flattened path>` — today one glob,
+  `Tools/mutation-out/*.log`, because a mutation run's log is gitignored, overwritten per run and the only
+  record of its own duration and kill list (README D20). Those files are part of the trio's filing and are
+  named in the list above. Anything ELSE a strand left in a gitignored directory is in NO copy at all:
+  `git -C <wt> ls-files --others --ignored --exclude-standard` is what lists it, and on the orphan path the
+  worktree is usually already gone, so there is nothing to look at and nothing to recover.
   ⚠️ **The residue was emptied on 2026-08-27 (15 unfiled files → 0), so the loop printing nothing is the
   expected answer for a while and is not evidence it is broken.** ⛔ Those 15 were PRE-INBOX, not this
   mechanism firing — `$STATE/daemon.log` carries no `rescued:` or `assigned:` line for any of them, and the

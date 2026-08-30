@@ -24,7 +24,15 @@
 # as a second layer. preflight() PROVES the interposition works before any daemon is launched, and aborts
 # if it does not — the one check that must never be taken on trust.
 #
-# EXPECTED RESULT: 118 assertions, 0 skipped — RUN 2026-08-22, not inherited (110 before D17's eight). This
+# EXPECTED RESULT: 126 assertions, 0 skipped — RUN 2026-08-30, not inherited (118 before D20's eight, itself
+# 110 before D17's eight). ⚠️ D20's eight were WATCHED THREE WAYS: against the pre-fix daemon this harness read
+# 120 passed / 6 failed, exactly the six predicted by name and in order; against the fixed tree 126/0/0; and
+# against a one-token sabotage widening the copy allowlist to `Tools/mutation-out/*` it read 125 passed /
+# 1 failed, the allowlist-is-a-filter row alone, also predicted first. That third run exists because that row
+# is VACUOUS pre-fix — nothing is copied at all, so it cannot be red there — which is the second of two greens
+# labelled in place; the other is the negative control, whose real job is pinning the fixture's appended
+# `.gitignore` line (see the block itself; its first stated reason was wrong and the review said so). This
+# line read "118 passed" when the total was 118, which the note below already warns is the wrong reading. This
 # line read "75 passed" while the harness was actually running 86 assertions, and then "92" while D12's own
 # section three files away recorded 96 — which is the same way a measured number rots into an asserted one
 # that ops/autonomous/README.md's own table records two rows of. Re-measure it when you add a section.
@@ -690,6 +698,19 @@ mkdir -p "$OW/build" && printf 'ignored-noise-%s\n' "$$" > "$OW/build/artifact.o
 # swallowed a build artefact that nothing had told it to ignore. It does not need to be tracked: git reads
 # .gitignore out of the working tree whether or not it is in the index.
 printf 'build/\n' > "$OW/.gitignore"
+# ⛔ AND A GITIGNORED ARTEFACT THAT IS EVIDENCE — the THIRD class, and the one no test over the patch and
+# the `.status` could ever have caught, because a gitignored path is absent from BOTH by construction:
+# `add -A` honours .gitignore (pinned above, load-bearing) and `status --porcelain` cannot see one at all.
+# Measured 2026-08-29 on `vo-20260828-060044-25839`: its
+# `Tools/mutation-out/logic_R25-depth-aware-prune.log` (103,159 B) was the ONLY evidence for the 280 s suite
+# row that strand's adoption published, and this loop had logged "COMPLETE — tracked and untracked" while
+# holding neither. The fix is a narrow copy ALLOWLIST plus a banner that names what it covers.
+# ⚠️ THE NON-MATCHING SIBLING IS HALF THE FIXTURE: without it every assertion below is satisfied by
+# "copy the whole ignored tree", which is the copy-not-a-patch regression the `build/` row exists to refuse.
+mkdir -p "$OW/Tools/mutation-out"
+printf 'mutation-evidence-%s\n' "$$" > "$OW/Tools/mutation-out/logic_probe.log"
+printf 'not-allowlisted-%s\n'   "$$" > "$OW/Tools/mutation-out/logic_probe.txt"
+printf 'Tools/mutation-out/\n' >> "$OW/.gitignore"
 # Prove the PREMISE before asserting on the response: if the detector does not see this worktree, a missing
 # patch says nothing about the rescue code.
 seen_orph="$(VISIONOCR_REPO="$REPO" bash -c '. "$1"; REPO="$2" orphaned_work' _ \
@@ -722,6 +743,34 @@ if [ -f "$STATE/rescue/orphan-wt.patch" ]; then
   grep -q 'PARTIAL rescue' "$L" \
     && bad "reported PARTIAL on a snapshot that captured everything — inverted, or add -A really failed" \
     || ok "…and it does not cry PARTIAL over a complete snapshot"
+  # ---- the GITIGNORED class: five separate claims, not five phrasings of one -----------------------------
+  # ⛔ NEGATIVE CONTROL FIRST. ⚠️ Its stated reason was wrong in the first draft of this block — "what makes
+  # the four below capable of failing" — and the review of that diff refuted it: the log check and the banner
+  # `case` assert about `$L` and do not depend on the patch at all, so only the COPY check does. What this row
+  # genuinely buys, and nothing else in the section does, is that the fixture's APPENDED `.gitignore` line took
+  # effect: if `Tools/mutation-out/` were not ignored inside `$OW` (a linked worktree has its own working tree
+  # — see the note above, which the first version of this fixture got wrong in $REPO) then `add -A` would
+  # swallow the log and this row goes red. The ignore rule is asserted by nothing else.
+  grep -q "mutation-evidence-$$" "$STATE/rescue/orphan-wt.patch" \
+    && bad "NEGATIVE CONTROL FAILED: the patch holds the GITIGNORED log, so the allowlist checks below cannot fail" \
+    || ok "negative control: the patch cannot hold the gitignored log, so only an explicit copy can"
+  _ign="$STATE/rescue/orphan-wt.ignored-Tools-mutation-out-logic_probe.log"
+  { [ -f "$_ign" ] && grep -q "mutation-evidence-$$" "$_ign"; } \
+    && ok "…and the ALLOWLISTED gitignored artefact is copied out beside the trio (a mutation run's log is the only evidence it leaves — 2026-08-29)" \
+    || bad "the allowlisted gitignored artefact was NOT copied out: no patch can hold it and no .status can name it, so /private/tmp is its only copy"
+  ls "$STATE/rescue" 2>/dev/null | grep -q 'logic_probe\.txt' \
+    && bad "the copy allowlist took a NON-matching ignored file — it is a filter, or build/ is next and this stops being a patch" \
+    || ok "…and it leaves the non-matching ignored sibling alone, so the allowlist is a filter and not a tree copy"
+  grep -q 'gitignored artefact' "$L" \
+    && ok "…and the log names the gitignored copies, so a triaging session knows they exist" \
+    || bad "the gitignored copies are silent in the log — an omission nobody can see is the whole defect"
+  # ⛔ AND THE BANNER ITSELF, which is what the queue item calls the defect: "COMPLETE — tracked and
+  # untracked" reads as "everything" over a snapshot that covers neither ignored paths nor the artefact a
+  # mutation run leaves. The predicate is that the line NAMES the class it cannot hold.
+  case "$(grep -m1 'rescued: ' "$L" 2>/dev/null)" in
+    *gitignored*) ok "…and the COMPLETE banner names the one class a patch cannot hold, so it no longer reads as 'everything'" ;;
+    *) bad "the COMPLETE banner still claims tracked-and-untracked without naming the gitignored gap (2026-08-29)" ;;
+  esac
   # ⚠️ NEGATIVE CONTROL, mandatory here: every assertion above is satisfied by a patch that happens to be
   # complete for the wrong reason, so prove the coverage check can FAIL. Run the PRE-FIX command on the same
   # worktree and assert it comes out short — if this ever passes, the fixture stopped exercising the bug and
@@ -822,6 +871,23 @@ if [ -f "$STATE/triage/orphan-wt.md" ]; then
   grep -qE '`git worktree remove (--force|-f)|`git branch -D' "$T/denied-form.txt" \
     && ok "negative control: that pattern does match the pre-fix instruction line, so the check above can fail" \
     || bad "the denied-command pattern matches nothing even on the literal pre-fix line — the check above asserts nothing"
+  # ---- and the ASSIGNMENT must repeat neither the overclaim nor the omission ------------------------------
+  # ⛔ THIS IS THE COPY THAT MATTERS, because resume-prompt.txt tells a session the assignment file is the one
+  # to follow — "generated from the daemon and cannot drift from it". Precondition (b) reads it and grants a
+  # removal on it, so a `(COMPLETE — tracked and untracked)` line here is the sentence that gets a gitignored
+  # artefact deleted. Three claims: it names the class no patch holds, it names the copies that DO exist, and
+  # it says so in a strand-specific way rather than as boilerplate that could be printed over anything.
+  grep -q 'GITIGNORED' "$STATE/triage/orphan-wt.md" \
+    && ok "…and the assignment names the gitignored class, so precondition (b) is not read as 'the backup is whole'" \
+    || bad "the assignment's COMPLETE line is unqualified — a session removes a strand on it and takes the only copy of a gitignored artefact with it"
+  grep -q 'orphan-wt.ignored-Tools-mutation-out-logic_probe.log' "$STATE/triage/orphan-wt.md" \
+    && ok "…and it names the ignored copies by path, so they are filed with the trio rather than found by luck" \
+    || bad "the assignment does not name the ignored copies, so a session filing the trio leaves them behind as litter"
+  # ⚠️ AND THE FILING INSTRUCTION HAS TO CARRY THEM, or the copies become exactly the stray `.base`/`.status`
+  # litter the orphan lister already has to special-case. Step 2 is where the trio is named.
+  printf '%s\n' "$_step2" | grep -q 'ignored-' \
+    && ok "…and step 2's filing list includes the .ignored-* copies alongside the trio and the .complete marker" \
+    || bad "step 2 files the trio and not the .ignored-* copies — they stay in \$STATE/rescue unattached to any decision"
 else
   bad "NO TRIAGE ASSIGNMENT for a stranded worktree — it stays 'needs owner' forever, which is the 2026-08-22 complaint"
 fi

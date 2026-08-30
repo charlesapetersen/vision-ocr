@@ -1108,6 +1108,34 @@ health_watchdog() {
 # $1 is the lead-in, so the log still reads as prose on both paths without the caller re-deriving anything.
 report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan was found and reported
   local _orph _d _rescue _rb _ridx _tmp _complete _ahead _un _triage _assign
+  local _ig _igflat _igb _ignn _ignb _ignnames _ignc
+  # The copy ALLOWLIST for GITIGNORED artefacts. One entry per line, each with the reason it is here; see the
+  # block at the copy loop below for why it is an allowlist and not `--ignored`.
+  #   :(glob)Tools/mutation-out/*.log — a mutation run's log is the ONLY record of its objecting-check list
+  #     and its duration, `Tools/mutation-out/` is gitignored and overwritten per run, and BUGS.md T5 quotes
+  #     such a log for a number that exists nowhere else.
+  # ⛔ `:(glob)` IS LOAD-BEARING, NOT DECORATION. A git pathspec's bare `*` CROSSES `/` — measured
+  # 2026-08-30: with `Tools/mutation-out/{x.log, sub-y.log, sub/y.log}` present the plain pattern returns all
+  # three and `:(glob)` returns two. That matters because the destination name is the path with `/` folded to
+  # `-`, so `sub/y.log` and `sub-y.log` collide on ONE file: the second `cp` destroyed the first while the
+  # counter said 2, in the function whose whole job is never to lose work. TWO guards, because either alone is
+  # thin — this one narrows the match, and the `[ -e ]` skip at the copy keeps the FIRST of any pair that
+  # still collides (which is also this loop's half of "first snapshot wins; never overwrite a saved rescue",
+  # the rule the `.patch.partial` rename below keeps: the PARTIAL path never writes `.complete`, so without it
+  # every later cycle would overwrite these copies with a NEWER run's log and the older one is unrecoverable).
+  # ⛔ NEVER ADD A GLOB THAT CAN MATCH `*.patch`. resume-prompt.txt STEP 1.5's orphan lister keys on
+  # `\.patch$` and would hand a copied artefact back to a session as an unfiled rescue.
+  # ⚠️ THE SIZE BOUND IS A CONVENTION OF HOW `mutate.py` IS USED, NOT A PROPERTY OF THE GLOB, and there is no
+  # count or byte cap here. Measured in the primary checkout 2026-08-30, this one glob matches **45 files,
+  # 2,120,099 B** (28,869-83,767 B each) — a strand that ran a wide campaign would copy that much. Still
+  # orders off a worktree's `build/`, and the log line names the count AND the bytes, so it is legible rather
+  # than silent; a cap that truncated quietly would be worse than either.
+  # ⚠️ AND THE GLOB BOUNDS THE PATH SHAPES THIS HANDLES: a path with a SPACE is fine (`ls-files` does not quote
+  # one and the `cp` is quoted, verified 2026-08-30), but `core.quotePath` quotes a non-ASCII path so the `cp`
+  # fails and `|| continue` drops it, and a newline in a name breaks `read -r`. Unreachable through
+  # `mutate.py`'s own naming (`m["id"].replace("/", "_")` — flat and ASCII); if the allowlist ever grows,
+  # switch to `--others -z` with `read -r -d ''`.
+  local _ignlist=( ':(glob)Tools/mutation-out/*.log' )
   _orph="$(orphaned_work)" || return 1
 
   # ⚠️ DO NOT BLAME THIS SESSION, AND DO NOT REPEAT IT EVERY CYCLE. A dirty `auto/*` worktree is
@@ -1196,6 +1224,47 @@ report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan w
     mv "$_tmp" "$_rescue/$_rb.patch" 2>/dev/null || true
     git -C "$_d" log -1 --format='%H %s' > "$_rescue/$_rb.base"   2>/dev/null || true
     git -C "$_d" status --porcelain      > "$_rescue/$_rb.status" 2>/dev/null || true
+    # ⛔ AND A GITIGNORED PATH IS IN NEITHER OF THOSE TWO FILES. That is a THIRD class, not a variant of the
+    # untracked one D13 fixed, and no test over the patch and the `.status` could ever have caught it: `add -A`
+    # honours .gitignore — deliberately, pinned by prove-daemon.sh [17], because it is what keeps this a few-KB
+    # patch instead of a copy of a worktree's `build/` — and `status --porcelain` cannot see an ignored path at
+    # all. So both files agreed, and both were silent.
+    # MEASURED 2026-08-29 on `vo-20260828-060044-25839`: its
+    # `Tools/mutation-out/logic_R25-depth-aware-prune.log` (103,159 B) was the ONLY evidence for the 280 s
+    # suite row that strand's adoption published, it sat in neither the patch nor the `.status`, and this loop
+    # had logged the rescue "COMPLETE — tracked and untracked" over it. A session had to find it by hand.
+    #
+    # ⚠️ THE ANSWER IS NOT `--porcelain --ignored` OR `ls-files --ignored` WITHOUT A PATHSPEC. A blanket sweep
+    # pulls in `build/` (hundreds of MB) and every other log in `Tools/mutation-out/` — the copy-not-a-patch
+    # failure the paragraph above exists to refuse. So: a narrow allowlist (declared at the top of this
+    # function, with the reason for each entry), plus a banner that NAMES what was copied. The banner is the
+    # half that matters most: an omission a reader can see is a limit, and one they cannot is a lie.
+    # ⚠️ `ls-files --others --ignored --exclude-standard -- <pathspec>` is git answering the question, which is
+    # the same reason the PARTIAL branch below uses `ls-files` rather than parsing the patch's `+++` lines.
+    # The pathspec must stay QUOTED — unquoted, the shell would expand the glob against the DAEMON's cwd
+    # instead of the strand's worktree and match nothing.
+    _ignn=0; _ignb=0; _ignnames=''
+    while IFS= read -r _ig; do
+      [ -n "$_ig" ] || continue
+      _igflat="$(printf '%s' "$_ig" | tr '/' '-')"
+      # First wins, like the `.patch` above: a repeated cycle must not replace an older run's log with a newer
+      # one, and two paths that still flatten alike must not silently become one file.
+      if [ -e "$_rescue/$_rb.ignored-$_igflat" ]; then
+        log "  ⚠️ kept the existing $_rb.ignored-$_igflat rather than overwriting it with $_ig — first snapshot wins."
+        continue
+      fi
+      cp "$_d/$_ig" "$_rescue/$_rb.ignored-$_igflat" 2>/dev/null || continue
+      _ignn=$(( _ignn + 1 ))
+      # ⚠️ The byte read is a two-step on purpose. `_ignb=$(( _ignb + $(wc -c < f 2>/dev/null …) ))` looks
+      # equivalent and is not: the `2>` cannot suppress a FAILED REDIRECT (the redirect is processed first), so
+      # a file that vanished between the `cp` and here puts two lines on the daemon's stderr — the second being
+      # `operand expected` from the empty substitution — and leaves `_ignb` behind an already-incremented
+      # `_ignn`. Measured 2026-08-30 in bash 3.2.57 under `set -uo pipefail`.
+      _igb="$(wc -c < "$_rescue/$_rb.ignored-$_igflat" 2>/dev/null | tr -d ' ')"
+      _ignb=$(( _ignb + ${_igb:-0} ))
+      _ignnames="$_ignnames $_rb.ignored-$_igflat"
+    done < <(git -C "$_d" ls-files --others --ignored --exclude-standard -- "${_ignlist[@]}" 2>/dev/null)
+    [ "$_ignn" -gt 0 ] && log "  rescued $_ignn gitignored artefact(s) that NO patch can hold ($_ignb bytes, allowlist '${_ignlist[*]}'):$_ignnames"
     # ⛔ UNPUSHED COMMITS ARE NOT IN THAT PATCH AT ALL, and a session is about to be offered `--force`.
     # `diff --cached HEAD` is relative to the branch TIP, so a strand with commits on it has those commits
     # in neither the patch nor the base file — and `git branch -D` makes them unreachable. `housekeeping()`
@@ -1208,7 +1277,11 @@ report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan w
     fi
     if [ "$_complete" = 1 ]; then
       : > "$_rescue/$_rb.complete"
-      log "  rescued: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes, COMPLETE — tracked and untracked) — /private/tmp does not survive a reboot; this does."
+      # ⛔ THE BANNER NAMES WHAT IT DOES NOT COVER, and that clause is the fix for the 2026-08-29 defect rather
+      # than decoration. "COMPLETE — tracked and untracked" is TRUE and reads as "everything"; a session acting
+      # on it deletes a strand whose gitignored artefact exists nowhere else. Say the class, and say whether
+      # the allowlist above caught anything, so the omission is legible at the point the claim is made.
+      log "  rescued: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes, COMPLETE — every tracked and untracked path; gitignored paths are in NO patch, $_ignn copied out by allowlist) — /private/tmp does not survive a reboot; this does."
     else
       # The fallback's gap is exactly one thing and git will name it exactly, so do not re-derive it by
       # parsing the patch. An earlier version compared `.status` against the patch's own diff headers with
@@ -1216,7 +1289,7 @@ report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan w
       # change, a path with a space (git appends a TAB to the `+++` line), and a UTF-8 path (git quotes the
       # whole `"b/…"` operand). `ls-files --others --exclude-standard` is git answering the actual question.
       _un="$(git -C "$_d" ls-files --others --exclude-standard 2>/dev/null | tr '\n' ' ')"
-      log "  ⚠️ PARTIAL rescue: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes) holds TRACKED changes only — 'add -A' failed, so UNTRACKED content is NOT in it: ${_un:-(none)} — copy that by hand NOW."
+      log "  ⚠️ PARTIAL rescue: $_rescue/$_rb.patch ($(wc -c < "$_rescue/$_rb.patch" | tr -d ' ') bytes) holds TRACKED changes only — 'add -A' failed, so UNTRACKED content is NOT in it: ${_un:-(none)} — copy that by hand NOW. Gitignored paths are in NO patch either; $_ignn copied out by allowlist."
     fi
   done
   # ---- ASSIGN IT, DO NOT ESCALATE IT ---------------------------------------------------------------
@@ -1280,7 +1353,7 @@ report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan w
       # whose patch was never written — tells a session a durable copy exists when it may not, and gives it
       # no way to tell a COMPLETE patch from a TRACKED-ONLY one. Both facts are on disk; print them.
       if [ -f "$_rescue/$_rb.complete" ]; then
-        printf 'rescue:    %s  (COMPLETE — tracked and untracked)\n' "$_rescue/$_rb.patch"
+        printf 'rescue:    %s  (COMPLETE — every tracked and untracked path)\n' "$_rescue/$_rb.patch"
       elif [ -f "$_rescue/$_rb.patch" ]; then
         printf 'rescue:    %s\n' "$_rescue/$_rb.patch"
         printf '  ⛔ PARTIAL — TRACKED CHANGES ONLY. Untracked content is NOT in it:\n'
@@ -1289,6 +1362,28 @@ report_and_rescue_orphans() {   # $1 = lead-in phrase; returns 0 if any orphan w
       else
         printf '  ⛔ NO RESCUE PATCH EXISTS for this worktree — the snapshot failed. /private/tmp is the\n'
         printf '     ONLY copy of this work. Do NOT remove the worktree under any circumstances; copy it out.\n'
+      fi
+      # ⛔ AND THIS IS THE COPY THAT MATTERS, because resume-prompt.txt says the ASSIGNMENT FILE is the one to
+      # follow — "generated from the daemon and cannot drift from it" — and precondition (b) grants a removal
+      # on the line above. So the line above must not read as "the backup is whole": a gitignored path is in
+      # NO patch and cannot appear in the `dirty paths:` list below either, which is raw `status --porcelain`.
+      # Printed for ALL THREE patch branches, because the coverage gap is orthogonal to which one fired.
+      # ⚠️ Re-derived from the directory, NOT from the snapshot loop's `$_ignn`: that variable belongs to
+      # whichever strand that loop finished on, and this is a SECOND loop over the same list.
+      # ⚠️ ANCHORED, and an unanchored `grep -F` was wrong in a way that reads as reassurance: a FILED copy is
+      # `SUPERSEDED-by-<sha>-<name>.ignored-….bak`, which CONTAINS `<name>.ignored-`, and precondition (d)
+      # files the trio BEFORE the worktree is removed — so in that window this printed already-filed `.bak`
+      # files under "the only copies outside the worktree". `$_rb` is `vo-<stamp>-<pid>`, no regex
+      # metacharacter but the `.`, which is escaped.
+      _ignc="$(ls "$_rescue" 2>/dev/null | grep "^$_rb\.ignored-" | tr '\n' ' ')"
+      if [ -n "$_ignc" ]; then
+        printf '  ⚠️ GITIGNORED paths are in NO patch. These were copied out by allowlist and are the only\n'
+        printf '     copies outside the worktree — file them WITH the trio, or they become litter:\n'
+        printf '     %s\n' "$_ignc"
+      else
+        printf '  ⚠️ GITIGNORED paths are in NO patch, and none matched the copy allowlist. If this strand ran\n'
+        printf '     mutate.py or wrote into a gitignored directory, that output exists ONLY in the worktree —\n'
+        printf '     `git -C %s ls-files --others --ignored --exclude-standard` lists it. Look before removing.\n' "$_d"
       fi
       _ahead="$(git -C "$_d" rev-list --count origin/main..HEAD 2>/dev/null || echo '?')"
       printf 'unpushed commits on its branch: %s\n' "$_ahead"
@@ -1315,11 +1410,16 @@ YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
    over the data rows. For code, `git grep` the new symbols on origin/main — if a symbol is absent, that
    half did NOT land, whatever the commit subject suggests.
 2. If SUPERSEDED: say so in the SESSION LOG with the evidence (which commit, which columns matched),
-   `mv` the rescue trio to `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak` — plus the `.complete`
-   marker if there is one, or the next cycle re-snapshots the same worktree. FOUR preconditions, all of
+   `mv` the rescue trio to `SUPERSEDED-by-<sha>-<name>.{patch,base,status}.bak` — plus the `.complete` marker
+   if there is one, or the next cycle re-snapshots the same worktree, and plus every `<name>.ignored-*` copy
+   listed above, which no patch holds and which is otherwise left in the rescue directory attached to no
+   decision at all. FOUR preconditions, all of
    them, cited in the log, or you leave the strand alone: (a) the content is provably already on main, by
    content and not by filename; (b) the rescue patch says COMPLETE above — a PARTIAL one does not back up
-   what you are about to delete; (c) `git rev-list --count origin/main..<branch>` is **0**, because a branch
+   what you are about to delete, and COMPLETE reaches no gitignored path at all: check that each copy named
+   above is in the rescue directory and file it under (d). ⛔ (a) does NOT apply to those copies and must not
+   be attempted on them — a gitignored path is never on main, which is the whole reason they exist;
+   (c) `git rev-list --count origin/main..<branch>` is **0**, because a branch
    that is ahead has commits in NO patch this loop wrote; (d) the trio is filed BEFORE you delete anything.
    ✅ THEN THE REMOVAL, and every command in it is one a session is allowed to run:
      git -C <worktree> checkout HEAD -- .              # tracked: modified, STAGED and deleted, in one go
@@ -1373,7 +1473,9 @@ YOUR JOB — decide and EXECUTE. Do not hand this back to the owner.
    item and may be the whole session.
    ⛔ THEN REMOVE THE SOURCE STRAND — adoption is NOT finished at `push`, and until 2026-08-22 this step
    said it was. File the rescue trio as `LANDED-as-<your sha>-<name>.{patch,base,status}.bak` (and its
-   `.complete`) — `LANDED-as-`, NOT step 2's `SUPERSEDED-by-`, because you landed that same work rather than
+   `.complete`, and every `<name>.ignored-*` copy — those hold what no patch can, so leaving them behind
+   detaches the one class of evidence from the decision that disposed of it) —
+   `LANDED-as-`, NOT step 2's `SUPERSEDED-by-`, because you landed that same work rather than
    replacing it with different work — then run STEP 2'S REMOVAL BLOCK VERBATIM, `checkout HEAD -- .` through
    `branch -d`, including the untracked-content stop. Do not invent a shortcut and do not use `--force`:
    it is denied, and step 2 says why.
@@ -1439,7 +1541,10 @@ EOP
   # worktree; once /private/tmp is swept, `housekeeping()` GCs the assignment and keeps the patch, and STEP
   # 1.5 keyed on `triage/*.md` alone — so the durable copy this line boasts of was invisible. STEP 1.5 now
   # lists `$STATE/rescue/*.patch` whose NAME appears in no filed `.bak` (the prefix is not the test: a
-  # re-snapshot puts an unfiled trio beside its own filing). Keep the two in step.
+  # re-snapshot puts an unfiled trio beside its own filing). Keep the two in step. ⛔ THAT INCLUDES THE
+  # `.ignored-*` COPIES THIS FUNCTION NOW WRITES: they match neither `\.patch$` nor `\.commits\.patch$`, so
+  # STEP 1.5 gained a THIRD pass for them (2026-08-30, README D20) — the `.commits.patch` invisibility one
+  # level down. If you add an artefact kind here, add its pass there in the same commit.
   log "  a later session can finish it, or rescue it by hand — resume-prompt.txt STEP 1.5 lists an unfiled"
   log "  \$STATE/rescue/*.patch even after this worktree is gone. The committed base plus that patch"
   log "  is the durable copy; the worktree itself is in /private/tmp and is NOT."

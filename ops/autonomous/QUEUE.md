@@ -3526,7 +3526,42 @@ happens.**
       2026-08-25 exception ("a pair sharing a fixture is one item") argues the same mutant twice over one
       fixture is one item too.
       (context: BUGS.md R25 — FIXED; `#### It belongs here` is this item's specification)
-- [ ] **rescue-ignored** — **the rescue net reports `COMPLETE — tracked and untracked` over a strand whose
+- [x] **rescue-ignored** — ✅ **DONE 2026-08-30, BOTH halves the box offered: the banner tells the truth AND a
+      one-glob allowlist copies the known case out.** `ops/autonomous/README.md` **D20**.
+      `report_and_rescue_orphans()` declares `_ignlist=( ':(glob)Tools/mutation-out/*.log' )` with its reason,
+      copies each match out as `<name>.ignored-<flattened path>` through
+      `ls-files --others --ignored --exclude-standard -- <pathspec>`, and both log lines plus the triage
+      assignment now name the class and the count. The assignment names the copies **by path**, steps 2 and 3
+      file them with the trio, and `resume-prompt.txt` STEP 1.5 gained a **third lister pass** so a copy left
+      behind is reported rather than invisible. ⛔ **The allowlist may never admit a `*.patch` glob** — STEP
+      1.5's orphan lister keys on `\.patch$` and would hand a copied artefact back as an unfiled rescue; the
+      code says so where the list is declared. **Watched, predicted in writing first**: `prove-daemon.sh` [17]
+      **118 → 126** assertions, and against the pre-fix daemon it read **120 passed / 6 failed**, exactly the
+      six named in advance and in order; fixed tree **126 / 0 / 0**. ⚠️ **Two of the eight are labelled unable
+      to fail pre-fix** — the negative control (which actually buys that the fixture's appended `.gitignore`
+      took effect, and whose first stated reason the review refuted) and the allowlist-is-a-filter check,
+      vacuous until a copy loop exists. ✅ **That one is WATCHED too**: widening the glob to
+      `Tools/mutation-out/*` reads **125 passed / 1 failed**, that row alone, predicted before the run.
+      ⛔ **THE ADVERSARIAL REVIEW OF THIS DIFF RETURNED *REJECT* WITH THREE BLOCKERS AND ALL FIFTEEN FINDINGS
+      ARE WORKED — READ D20.** The sharpest: a git pathspec's bare `*` **crosses `/`**, so `sub/y.log` and
+      `sub-y.log` folded to ONE destination and the second `cp` destroyed the first while the counter said 2 —
+      hence `:(glob)` plus an `[ -e ] && continue` first-wins skip; the lister's third pass had to key on the
+      artefact's own filed name (`-$g`) because a `-$n.` test is silent over exactly the left-behind copy; and
+      precondition (b)'s reworded text asked a session to prove a gitignored path was on main, which is
+      impossible by the entry's own premise. **Sibling swept and fixed in the same commit**:
+      `status-digest.sh:493` makes the same claim tersely (`rescue COMPLETE`) and now carries
+      `· gitignored: N copied out (no patch holds any)` on every row — unconditionally, because the count that
+      most needs printing is 0.
+      ⛔ **AND THIS BOX'S OWN COST NOTE BELOW IS WRONG, measured from `.githooks/pre-commit`**: the parse arm
+      DOES run on `ops/autonomous/*.sh` (`:80`, basename `*.sh`, any directory) and the **suite does NOT** —
+      `:154` gates it on `^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)`, which no
+      `ops/autonomous/` path matches. So this item's evidence is `prove-daemon.sh` and not the suite, and
+      `prove-daemon.sh` is in no hook, so a red row refuses no commit. ⚠️ **Six limits, in D20**, the two worth
+      naming here being that the allowlist is ONE pathspec with **no count or byte cap** (it matches 45 files /
+      2,120,099 B in the primary checkout today) and that the prompt half is rendered into
+      `$STATE/resume-prompt.txt` by hand (`prompt-render-drift`).
+      — the item as it was written —
+      **the rescue net reports `COMPLETE — tracked and untracked` over a strand whose
       GITIGNORED files it did not copy.** Found 2026-08-29 while adopting `vo-20260828-060044-25839`: its
       `Tools/mutation-out/logic_R25-depth-aware-prune.log` (103,159 B) was the ONLY evidence for the 280 s
       row that adoption published, and it sat in neither the `.patch` nor the `.status` while

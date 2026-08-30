@@ -1125,8 +1125,15 @@ which was false in a section whose subject is checks that cannot fail.
 
 ### The harnesses, and what they caught
 
-`prove-daemon.sh` **118** assertions and `prove-status.sh` **48/0**, measured 2026-08-22 — against a stated 92
-⚠️ **`prove-daemon.sh`'s 118 is a TOTAL and the pass count depends on machine load** — read its header. D17's
+`prove-daemon.sh` **126** assertions (118 until D20, 2026-08-30) and `prove-status.sh` **48/0**, measured
+2026-08-22 — against a stated 92
+⛔ **The 118 stood here after D20's eight landed in the header and was caught by the review of that diff**, in
+the section titled *"The harnesses, and what they caught"*, which is exactly the rot the harness's own header
+warns about (`"75"` while 86, `"92"` while 96). ⚠️ **`check-staleness.sh` is structurally blind to it**:
+`:71` exempts a check-count claim the prose itself dates or puts in the past, and *"measured 2026-08-22"*
+does both, so the gate reads a stale reference as a deliberate historical record. Same shape as the queue's
+`staleness-selfref`.
+⚠️ **`prove-daemon.sh`'s total is a TOTAL and the pass count depends on machine load** — read its header. D17's
 eight were added on a busy machine, and the honest form of that run is a PAIR: the unmodified tree at
 `3078fb0` scored **102 passed / 6 failed** (108 assertions even reaching the end) and the modified tree
 **113 passed / 5 failed**, the five a strict **subset** of the six, all in §[3]/§[4]/§[4b]/§[5], with §[4b]'s own
@@ -1421,6 +1428,107 @@ patch is safely filed; and a live worktree whose only snapshot predates 2026-08-
 while the daemon is stopped, which is the case that block was written for. Not fixed here — it is display,
 not decision. `vision-ocr-autonomous.sh:1438` is the log line above; it now names the step that reads it,
 which is the whole of what this item was opened for.
+
+### D20 · The rescue net said "tracked and untracked" over a class it holds neither of — FIXED
+
+**What happened.** D13 taught the snapshot to see UNTRACKED files (`add -A` into a scratch index) and, in the
+same breath, made `add -A` honouring `.gitignore` **load-bearing** — that is what keeps the rescue a few-KB
+patch instead of a copy of a worktree's `build/`. `prove-daemon.sh` [17] pins it with an `ignored-noise-$$`
+row. Both halves are right. What nobody said out loud is that they leave a **third class**: a gitignored path
+is in the patch by construction never, and in the `.status` beside it never either, because
+`status --porcelain` cannot see one at all. Two files, both silent, and the log line over them read
+`COMPLETE — tracked and untracked` — a sentence that is true and reads as *everything*.
+
+⛔ **MEASURED 2026-08-29, on the one artefact class in this repo that is evidence and is gitignored.**
+Adopting `vo-20260828-060044-25839`, its `Tools/mutation-out/logic_R25-depth-aware-prune.log` (103,159 B) was
+the **only** record of the 280 s suite row that adoption published — `Tools/mutation-out/` is gitignored and
+overwritten per run, so there is no second copy anywhere — and `$STATE/daemon.log` had called that rescue
+COMPLETE. The session found it by hand. ⛔ **No ordinal is claimed**: a draft of the adopting diff called it
+"the second recorded time" and the review refuted that — D13's payload was untracked but **not ignored**, so
+`--porcelain` could see it and the completeness test could be taught to. There is no recorded first for the
+*ignored* class.
+
+**The fix is the BANNER plus a narrow allowlist, and the banner is the half that matters.** Copying every
+ignored path is wrong and stays refused — `build/` is hundreds of MB — so `--porcelain --ignored` and a bare
+`ls-files --ignored` are both out. What lands is: (1) `_ignlist`, one pathspec
+(`:(glob)Tools/mutation-out/*.log`) declared at the top of `report_and_rescue_orphans()` with the reason it is
+there, copied out as `<name>.ignored-<flattened path>` via
+`ls-files --others --ignored --exclude-standard -- <pathspec>` — git answering the question, the same reason
+the PARTIAL branch uses `ls-files` rather than parsing the patch's `+++` lines; (2) both log lines name the
+class and the count; (3) the triage assignment names the class **and the copies by path**, for all three patch
+branches, because the gap is orthogonal to which one fired; (4) steps 2 and 3 of the assignment file those
+copies with the trio; and (5) `resume-prompt.txt` STEP 1.5 gains a **third lister pass** for them.
+⛔ **(5) IS A BLOCKER THE REVIEW OF THIS DIFF FOUND, NOT A NICETY, and without it this fix reproduces the
+defect it is about.** The lister's two passes key on `\.patch$` and `\.commits\.patch$`; an `.ignored-*` file
+matches neither, so a trio filed without it would go **permanently invisible** — verbatim the case pass 2
+exists for. ⛔ **And the third pass keys on the ARTEFACT'S OWN filed name (`-$g`), not on the strand being
+decided.** Measured 2026-08-30 over five synthetic directories: pass 1's `-$n.` test reads
+`SUPERSEDED-by-<sha>-<name>.patch.bak` as proof and stays **silent** over exactly the left-behind copy — the
+first draft of the pass did that and printed nothing in case C. Being per-artefact, it is also right where a
+strand has two copies and one is filed, which pass 2's per-strand shape would miss. Silence over the real
+directory (117 files) in all five cases.
+⛔ **THE ALLOWLIST MAY NEVER ADMIT A `*.patch` GLOB**, and the code says so where the list is declared:
+STEP 1.5's orphan lister keys on `\.patch$`, so a copied artefact under that suffix would be handed back to
+a session as an unfiled rescue — the fix creating the defect one level down, D19's own shape.
+⛔ **`:(glob)` IS LOAD-BEARING AND THE FIRST DRAFT DID NOT HAVE IT — a silent overwrite in the one function
+whose job is never to lose work.** A git pathspec's bare `*` **crosses `/`**. Measured 2026-08-30 with
+`Tools/mutation-out/{x.log, sub-y.log, sub/y.log}` present: the plain pattern returns all three, `:(glob)`
+returns two — and because the destination folds `/` to `-`, `sub/y.log` and `sub-y.log` land on ONE name, so
+the second `cp` destroyed the first while the counter said 2. Two guards now, since either alone is thin: the
+narrowed pathspec, and an `[ -e ] && continue` skip at the copy that keeps the FIRST of any pair that still
+collides. ⛔ **That skip is also this loop's half of the function's own "first snapshot wins, never overwrite a
+saved rescue" rule** — the PARTIAL path never writes `.complete`, so every later cycle re-enters the copy loop
+and would have replaced run A's log with run B's, and A's is unrecoverable by construction.
+⛔ **AND TWO NAMING CONVENTIONS FOR THIS ONE CLASS ARE NOW LIVE, which D20's own first draft claimed a sibling
+sweep over and did not look at the directory it is about.** Hand copies made before 2026-08-30 use
+`.untracked-<flattened, no leading `Tools/`>` — including
+`LANDED-as-6ff07fc-vo-20260828-060044-25839.untracked-mutation-out-logic_R25-depth-aware-prune.log`, which
+**is** the 103,159 B log this entry was opened on. Same class, wrong word. The new code and the digest read
+only `^<name>\.ignored-`, and the lister's pass 1 skips `*.untracked-*`, so a session grepping one convention
+misses the other. Not unified (renaming a filed artefact breaks the one thing a filing is for); written down
+in the prompt and here instead.
+
+**Watched, and the prediction was written first.** `prove-daemon.sh` [17] gains **eight** assertions,
+118 → **126**. Against the pre-fix daemon: **120 passed, 6 failed**, exactly the six named in advance and in
+order (the copy absent, the log silent, the banner unqualified, and the assignment's three). Two of the eight
+are labelled in place as unable to fail there: the negative control (the patch must NOT hold the gitignored
+log — true of every build, which is its point) and the allowlist-is-a-filter check, which is vacuous until a
+copy loop exists. Its sabotage is widening the glob to `Tools/mutation-out/*`, which is what the
+non-allowlisted `logic_probe.txt` sibling in the fixture is for.
+
+**Sibling sweep — one other reader makes the same claim in a terser voice, and it is fixed here too.**
+`status-digest.sh:493` prints `rescue COMPLETE` off the same marker, which reads as "whole" for the same
+reason; every stranded-worktree row now carries `· gitignored: N copied out (no patch holds any)`.
+⛔ **UNCONDITIONALLY, and the first draft printed it only when N was non-zero** — which left the overclaim
+standing in exactly the case this entry is about, a strand whose artefact is not on the allowlist, whose row
+would then read a bare `rescue COMPLETE`. The count that most needs printing is **0**. Kept to a count rather
+than a sentence because the daemon's banner and the assignment carry the explanation and this is one summary
+row. The other readers of `$STATE/rescue` were checked and do not make the claim: `prove-status.sh` asserts on
+the triage/needs-you wiring and never greps the `Stranded worktrees` line, and
+`vision-ocr-autonomous.sh:1443`'s hand-rescue line points at STEP 1.5 rather than describing coverage. A
+literal sweep for `tracked and untracked` across the repo finds only `BUGS.md` and `QUEUE.md` prose recording
+the pre-fix banner (legitimate history) and the two daemon lines this diff changes; no code greps it.
+⛔ **The QUEUE box's own cost note was WRONG and the tick says so**: `.githooks/pre-commit:80` runs the
+`bash -n` parse arm on any staged `*.sh` in any directory (basename match), but `:154` gates the SUITE on
+`^(Sources/|Helper/|Tests/|Tools/|build\.sh|run_tests\.sh)`, which no `ops/autonomous/` path matches. Parse
+arm yes, suite no — so this commit's evidence is `prove-daemon.sh`, not the suite.
+⚠️ **Six limits, stated rather than implied.** (1) The allowlist is **one pathspec**, chosen because it is the
+one case that has actually bitten — anything else a strand leaves in a gitignored directory is still
+uncovered, and the assignment now says so and prints the `ls-files` command to find it. (2) There is **no
+count or byte cap**: measured in the primary checkout 2026-08-30 that one pathspec matches **45 files,
+2,120,099 B** (28,869–83,767 B each), so the "1–2 files a strand" bound is a convention of how `mutate.py` is
+used and not a property of the glob — the log line names the count and the bytes, which makes it legible
+rather than silent, and a cap that truncated quietly would be worse. (3) The path shapes it handles are
+bounded: a **space** is fine (verified — `ls-files` does not quote one and the `cp` is quoted), a non-ASCII
+path is quoted by `core.quotePath` so the `cp` fails and `|| continue` drops it, and a newline breaks
+`read -r`; unreachable through `mutate.py`'s own flat ASCII naming. (4) `cp … || continue` means an unreadable
+artefact is skipped and the count understates by one **without saying which** — the D13 lesson applied only as
+far as never aborting the snapshot. (5) **Rollout is split**: the daemon half goes live on the next daemon
+start, the prompt half only when `$STATE/resume-prompt.txt` is re-rendered, and `daemon.sh:447` renders at
+install/start only — so this landing re-rendered it by hand and verified byte-identity modulo `__REPO__`
+(`prompt-render-drift` again). Between the two, copies would be written while the orphan path's instruction
+said nothing about them: the litter case, in the window the fix opens. (6) Nothing is gated —
+`prove-daemon.sh` is in no hook, so a red row here refuses no commit.
 
 ## What this deliberately does not have
 

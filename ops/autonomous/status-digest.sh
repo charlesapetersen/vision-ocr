@@ -494,8 +494,20 @@ if [ "$DETAILS" = 1 ]; then
       elif [ -f "$STATE/rescue/$_obn.patch" ];   then _orc="${RED}rescue PARTIAL — tracked only${OFF}"
       else                                            _orc="${RED}NO rescue patch${OFF}"
       fi
+      # ⚠️ AND THE GITIGNORED COUNT, which is the sibling of `vision-ocr-autonomous.sh`'s banner: no patch
+      # holds a gitignored path, so `rescue COMPLETE` alone reads as "whole". This is the same overclaim in a
+      # terser voice — kept terse (a count, not a sentence) because the daemon's own banner and the triage
+      # assignment carry the explanation, and this line is one row of a summary.
+      # ⛔ UNCONDITIONAL, and the first draft of this printed only when the count was NON-ZERO — which is the
+      # overclaim surviving in exactly the case README D20 is about, a strand whose gitignored artefact is not
+      # on the one-glob allowlist and whose row would then read a bare `rescue COMPLETE`. The count that
+      # matters most to print is 0.
+      # ⚠️ ANCHORED: a FILED copy is `SUPERSEDED-by-<sha>-<name>.ignored-….bak` and CONTAINS
+      # `<name>.ignored-`, so an unanchored match counts a disposed artefact as a live one.
+      _oig="$(ls "$STATE/rescue" 2>/dev/null | grep -c "^$_obn\.ignored-")"
+      case "$_oig" in ''|*[!0-9]*) _oig=0 ;; esac
       printf '    %s\n' "${_owd/#$HOME/~}"
-      printf '      %s · %s%s\n' "$_ost" "$_orc" \
+      printf '      %s · %s · gitignored: %s copied out (no patch holds any)%s\n' "$_ost" "$_orc" "$_oig" \
         "$([ -f "$STATE/rescue/$_obn.commits.patch" ] && printf ' · has unpushed commits, saved separately')"
     done
   fi
