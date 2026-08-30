@@ -429,6 +429,38 @@ happens.**
       - [x] **C26-stencil-open** — the stencil question opened as its own register entry (`C28`) on
         2026-08-19, the third of the owner's three commits and the last thing FOCUS item 3 asked for.
         Docs plus two corrected doc comments; no constant moved. Same no-cite rule as the box above.
+- [ ] **campaign-next-step** — the three items after this one (`C28`, `text-layer-recall`,
+      `born-digital-page`) are the first three `ok` items the resolver prints and EVERY session since
+      2026-08-28 has skipped all three, on the written guidance that they are open campaigns rather than
+      bounded items. The queue's head is therefore inert: the daemon has been running on
+      self-instrumentation (`mutants-never-run`, `mutants`, `r25-depth-fixture`, `rescue-ignored`) for
+      7 of its last 11 sessions while a shipped OCR-quality defect sits unworked. Reordering cannot fix
+      that — STEP 2 says take the FIRST `ok` item and the sessions are obeying “do ONE bounded item”
+      correctly. What is missing is a bounded NEXT STEP inside each campaign.
+      ⛔ **BOUND: three entries, ONE free commit, NO code, NO measurement and NO new instrument.** For
+      EACH of the three, read the register entry end to end first (`ops/autonomous/bugs-entry.sh C28`,
+      `C30`, `C29`) and then do exactly ONE of:
+      **(a)** write its next bounded sub-step as an OPEN sub-box under it — §“RECORDING A FINISHED
+      SUB-STEP” for placement (after the parent's cite line, own tag, `context:` not `origin:`) and
+      §“How to SIZE an item” for the envelope, with the bound written as a NUMBER; or
+      **(b)** mark the parent owner-only, with the two markers §“How to write an item” shows on its
+      third line, naming the ONE decision required. ⛔ Write those markers only on the parent's own
+      line — the resolver tests them against an item's WHOLE greedy span, so quoting them in prose
+      inside a span silently turns that item into an owner-only one. Measured 2026-08-30, by doing it:
+      this box itself resolved as owner-only on its first run for exactly that reason. ⚠️ The test for
+      (b) is permission or irreversibility, **NOT difficulty** — owner, 2026-08-22: handing him a
+      technical call does not get it decided, it comes back as whatever was recommended. A hard call
+      inside `Sources/` is (a) with a recommendation, not (b).
+      ⛔ **DO NOT RE-DERIVE, RE-RUN OR RE-MEASURE ANYTHING.** All three entries are dense with
+      DO-NOT-RE-RUN clauses and approaches already refuted in advance — `text-layer-recall` alone
+      refutes “render at a higher DPI” outright, names TILING as the only candidate fix with no seam in
+      `Recogniser` and no price, and forbids `words=`, `start=`, `end=`, `probe-line-coverage`,
+      `probe-line-edges` and `bareShare` as content measures. The deliverable is a POINTER to the next
+      step, never the step.
+      (context: BUGS.md C28, C30 and C29 — all three OPEN; this item is the queue-order repair the owner
+      asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
+      because it is a repair to this file, and closes when the three next steps exist — not when any
+      campaign does)
 - [ ] **C28** — the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
@@ -3940,8 +3972,44 @@ happens.**
       only if **the mutant changes that check's input at all**.
       ⚠️ Several of the 25 are `logic/A5.3-*` and `logic/A7.1-*` clusters, so a substring may match more
       than one — `--list` first, per the bound.
+      ⛔ **RECORD EACH LANDED MUTANT AS ITS OWN TICKED SUB-BOX BELOW THIS ENTRY'S CITE LINE — the
+      prose “Census N → N-1” line is invisible to the daemon and it PARKED THE RUN on 2026-08-30 at
+      08:10.** `completed_items()` counts ticked boxes here and closed register entries in `BUGS.md`, and a
+      landed mutant advances NEITHER: the verdict goes into `BUGS.md` T5 as a `####` subsection of an
+      entry that is already CLOSED, and this box stays `[ ]` by design until all 25 are done. So four
+      consecutive sessions read as “committed but completed nothing”, `nocomplete.count` walked to
+      5/5, and the daemon stopped itself with every one of those sessions having pushed reviewed,
+      suite-green work. ⚠️ **This is the SECOND time this exact shape has parked this run** — the first
+      was 2026-08-19, four sessions, and it is what §“RECORDING A FINISHED SUB-STEP” at the top of this
+      file was written for. Follow its three constraints: after the parent's cite line, its own tag, and
+      `(context: …)` never `(origin: …)`. One tick per session keeps the 5-session guard armed for the
+      case it is actually for — an item that is genuinely stuck.
       (context: BUGS.md T5 — CLOSED; it records how to tell a real gap from a value nothing depends on,
       and `Tools/mutation-log.tsv` is the log this item reads)
+      - [x] **nrm-1-inkbar-const** — `const/textPageInkOutsideThreshold` (`0.045` → `0.08`), the first
+        entry off the census: `killed`, 298 s, baseline `1361 checks, green`, by EXACTLY SIX objecting
+        checks, all six predicted by name and in order first. Census **25 → 24**, coverage **79 → 80 of
+        104**. Landed `0d563d4`. Ticked because the sub-step finished, NOT the item above: 21 remain.
+        (context: BUGS.md T5 `#### The first never-run mutant`)
+      - [x] **nrm-2-inkbar-override** — `logic/C26-inkbar-override-ignored`, the mutant that DELETES the
+        seam: `killed`, 297 s, mutant `1357/1361 passed`, by EXACTLY FOUR objecting checks, all four
+        named in order first. Census **24 → 23**, coverage **80 → 81 of 104**. Landed `a5d6d1e` plus the
+        docs-only `9bb3e55`. The finding worth more than the verdict is that the seam's two mutants have
+        DISJOINT kill sets.
+        (context: BUGS.md T5 `#### The seam's other end`)
+      - [x] **nrm-3-inkbar-nil** — `logic/C26-inkbar-nil-refuses-the-page`, the seam's third and last:
+        `killed`, 298 s, mutant `1350/1361 passed`, by EXACTLY ELEVEN objecting checks, all eleven named
+        AND in order before the run — against a forecast of six, so read it as a worked example of
+        getting a prediction wrong. Census **23 → 22**, coverage **81 → 82 of 104**. Landed `4878b0c`.
+        (context: BUGS.md T5)
+      - [x] **nrm-4-inv2-gate** — `logic/A11.1-publishVerified-gate` (deletes the page-count gate, so a
+        short staged file is published over the user's destination — **invariant 2**): `killed`, 295 s,
+        by EXACTLY THREE objecting checks, all three named in the log's order first. Census **22 → 21**,
+        coverage **82 → 83 of 104**, log **99 → 100** rows. Landed `993b0b5`. ⚠️ Its finding is a rule
+        for every later run: **the printed total FELL to 1,360 because `Tests/main.swift:9950` sits
+        inside the `catch` the mutant makes unreachable** — absent, not red. Assert a flag OUTSIDE the
+        catch, or the verdict can read `MISMATCH` and mean nothing.
+        (context: BUGS.md T5 `#### Invariant 2's own gate`)
 - [ ] **fault-inject** — confirm each sabotage is still refused by the real build step. It builds into a
       scratch copy of the tree, so it is safe unattended.
       ⛔ **BOUND: the case list is `FAULTS` at the foot of the script — 7 as of 2026-08-20, read it rather
