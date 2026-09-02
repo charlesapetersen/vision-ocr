@@ -429,7 +429,56 @@ happens.**
       - [x] **C26-stencil-open** — the stencil question opened as its own register entry (`C28`) on
         2026-08-19, the third of the owner's three commits and the last thing FOCUS item 3 asked for.
         Docs plus two corrected doc comments; no constant moved. Same no-cite rule as the box above.
-- [ ] **campaign-next-step** — the three items after this one (`C28`, `text-layer-recall`,
+- [x] **campaign-next-step** — **DONE 2026-09-02. All three campaigns now name a bounded next step, and
+      none of the three is owner-only.** Route (a) was taken for each, on the reading the box itself
+      prescribes — the test for (b) is permission or irreversibility, not difficulty, and nothing here
+      publishes, writes `testdocs/` or the Zotero library, spends money or destroys anything: `C28` →
+      `c28-bar-attribution` (one field on `Flattener.MRCLayers` plus one appended column on
+      `Tools/score-text-route.swift`, so a `verdict` is attributable to the bar or to the shape term; one
+      code commit, two suite runs), `text-layer-recall` →
+      `c30-tiles-time` (5 timed invocations of one document, 0 lines of code, a FREE commit),
+      `born-digital-page` → `c29-shortpage-pin` (1 builder parameter, 1 fixture page, 4 checks, 1
+      catalogue row, no mutant run; one code commit). Each sub-box carries its bound as a NUMBER, its
+      cost off `$STATE/suite-timings.tsv`, the approaches its entry refutes in advance, and **the step
+      after it**, so the successor is cheap to write.
+      ⛔ **THE REPAIR IS NOT THE THREE BOXES — IT IS THE STANDING RULE THEY ALL CARRY: the session that
+      ticks a sub-box WRITES THE NEXT ONE before it stops.** Three boxes go inert again the moment they
+      are ticked; the rule is what does not. It is stated once at the top of each parent (where a session
+      reads it before the wall of history) and once in each sub-box (where a session is standing when it
+      ticks).
+      ⛔ **AND THE POINTER IS IN THE RESOLVER'S OWN OUTPUT, WHICH IS WHAT MAKES THIS MECHANICAL RATHER THAN
+      COSMETIC.** `next-item.sh` builds an item's printed text from the FIRST PHYSICAL LINE of the box only
+      (`cur_text` off the checkbox line, truncated at 147 chars) — continuation lines go into the span and
+      are never printed — so each of the three first lines now opens `NEXT BOUNDED STEP: the <tag> sub-box
+      below. The defect: …`. Measured: the three `ok` lines carry the tag ahead of the truncation. A
+      pointer buried in a ~360-line box relies on the session reading top-down; this one does not.
+      ⛔ **DO NOT RE-WRAP THOSE THREE FIRST LINES TO THIS FILE'S ~100-COLUMN WIDTH.** They are the only
+      long lines here and they are long on purpose: a wrap moves the pointer onto a CONTINUATION line,
+      which goes into the greedy span and is **never printed**, so the resolver output would silently lose
+      the tag while the box still read correctly to a human. That is the same class as the span trap two
+      paragraphs up — a formatting tidy-up with an invisible functional cost.
+      ⚠️ **Two things this did NOT do, named rather than implied.** (1) It did NOT change the resolver's
+      ORDER — `C28` is still the first `ok`. The fix is the pointer, in both layers, and NOT the position;
+      reordering was refused by this box's own reasoning. ⛔ **And the `ok` count moves by TWO, not three**
+      — measured **27 → 29**, because ticking this box removes one while the three sub-boxes add three; a
+      draft said three, which is the additions counted without the subtraction. `hold` is **5 → 5**, which
+      is the negative control on the span trap this box's own third line warns about: had any new text
+      carried the two markers, an item would have flipped to owner-only silently. (2) Nothing was measured
+      about the product and no entry status moved — QUEUE.md only, so `BUGS.md`, `CLAUDE.md` and
+      `CHANGELOG.md` are correctly untouched. `completed_items()` **229 → 230**, which is what resets the
+      five-session no-progress streak that parked the run.
+      ⚠️ **All three pickings came from reading the entries, and each is the entry's OWN nomination rather
+      than this session's idea** — C28 names the confounded bar instrument as *"the one measurement this
+      entry says is still worth taking"*, C30's own "What it does NOT establish" leaves the **time** cost
+      of `n` requests a page unmeasured, and C29's fixture review left *"no check added here would kill a
+      mutant that LOWERED the constant"* as an explicit debt. Four code facts each box cites were verified
+      by grep on 2026-09-02 rather than taken from prose: the `120` literal's line, the 0 `mutate.py` rows
+      touching it, the 4 builder call sites, and `score-text-voids.swift` having no clock.
+      ⚠️ **What this box asked for, kept verbatim below as the record**, because it is the statement the
+      three sub-boxes were written against and a reader checking whether they satisfy it needs the original
+      wording rather than a summary of it.
+      —— the original item, as written 2026-08-30 ——
+      The three items after this one (`C28`, `text-layer-recall`,
       `born-digital-page`) are the first three `ok` items the resolver prints and EVERY session since
       2026-08-28 has skipped all three, on the written guidance that they are open campaigns rather than
       bounded items. The queue's head is therefore inert: the daemon has been running on
@@ -461,13 +510,27 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-bar-attribution` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-bar-attribution` SUB-BOX, IMMEDIATELY AFTER THIS BOX'S CITE
+      LINE. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.** Written 2026-09-02 by
+      `campaign-next-step`, which exists because every session from 2026-08-28 skipped this item and the
+      queue's head went inert while the daemon ran on self-instrumentation. It is C28's OWN nomination:
+      publish the shape term's answer on `Flattener.MRCLayers` and print it as one appended column, so a
+      page's `verdict` says whether the **bar** or the **shape term** refused it — which is what has to
+      exist before the entry's one remaining measurement is askable at all. ⚠️ It needs the `Sources/`
+      field: the term takes the Sauvola stencil and `mrcLayers` does not publish it, so the tool cannot
+      call the term itself. The sub-box carries the correction and why.
+      ⛔ **STANDING RULE FOR THIS CAMPAIGN, and it is the whole point of `campaign-next-step`: the session
+      that ticks a sub-box here WRITES THE NEXT ONE before it stops.** Every other `c28-*` sub-box below is
+      ticked, and that is exactly why the parent read as unbounded — a campaign with no named next step is
+      a campaign a session is right to skip. One named step is what makes it takeable, and it stops being
+      takeable the moment the last one is ticked without a successor.
       ✅ **THE TWO CODE COMMENTS ARE CORRECTED as of sub-step 3, 2026-08-20** —
       `Sources/Flattener.swift` and `Tests/main.swift` no longer stop at C26 sub-step 4's 13 pages and
       7 prose losses; both now carry the campaign total. That was the last residue of the owner's
@@ -781,6 +844,57 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
+- [ ] **c28-bar-attribution** — **C28's OWN NOMINATED NEXT STEP, and it is an INSTRUMENT REPAIR rather
+      than a measurement.** The entry says the one measurement still worth taking is whether
+      `Flattener.textPageInkOutsideThreshold` can go back UP now the shape term ships — *"which is the
+      outcome worth aiming at"* — and it says in terms why nobody can take it: with the term inside
+      `pageIsAllText()`, `Tools/score-text-route.swift`'s `verdict` and `barVerdict` measure **the bar AND
+      the term together**, so *"they still cannot price `textPageInkOutsideThreshold` going back up"*.
+      Un-confound the instrument and that measurement becomes askable; leave it and this entry has no next
+      measurement at all.
+      ⛔ **BOUND: ONE new field on `Flattener.MRCLayers`, ONE column APPENDED after `score-text-route`'s
+      last field, ONE check plus ONE `--self-test` group, and NO sweep.** One code commit — but budget
+      **TWO** suite runs, ~600 s: §"How to SIZE an item"'s cost table prices a NEW check at two, the
+      watch-it-fail control and then the hook's green run. The three most recent `pre-commit` rows in
+      `$STATE/suite-timings.tsv` read 297 / 300 / 296 s and the 2026-09-01 `health-gate` row 299 s, all at
+      1,361 checks. ⚠️ Re-derive from the ledger's tail; `CLAUDE.md`'s wider `~285-308 s` is eight rows
+      from 2026-08-26/27 at **1,355** checks.
+      ⛔ **IT NEEDS A `Sources/` FIELD AND A DRAFT OF THIS BOX GOT THAT WRONG — the correction is the most
+      useful thing in it.** The draft said *"one `Tools/` file, no `Sources/` change"* and prescribed
+      calling `Flattener.textLineGroupsOutsideText` from the tool. **That is not possible**, for the reason
+      `Tools/README.md`'s own `score-text-route` cell already records: the term takes the **Sauvola
+      stencil**, which `mrcLayers` builds privately as `sauvolaMask` ∩ `textRegionMask` and *"does not
+      publish as a `[Bool]`"* — which is also why the retired replica could never have mirrored the third
+      term. So the field is the deliverable, not a convenience.
+      ✅ **THE SHAPE IS ALREADY SET TWICE OVER, so this is a precedent and not a new seam**: `MRCLayers`
+      carries `shrunkAsAllText` and `inkOutsideText` — verified 2026-09-02, both `var`s with defaults on
+      that struct — and both exist so an instrument can read production's answer back rather than
+      recompute it. Add the term's own answer beside them (an optional count, `inkOutsideText`'s shape),
+      assign it where the term is evaluated, print it as the appended column.
+      ⛔ **DO NOT WRITE A FOURTH REPLICA OF THE GUARD.** That tool's two-term replica of `pageIsAllText()`
+      was repaired three times and then retired by reading `shrunkAsAllText` back instead of deciding for
+      itself — `BUGS.md` C28 `#### The replica retired` — and the third omission made it print `all-text`
+      on exactly the sub-bar pages C28 exists for, **wrong in the direction that hides the defect**.
+      Building the stencil in the tool to avoid touching `Sources/` is that mistake a fourth time.
+      ⛔ **AND DO NOT "UNIFY" `score-shape-term`'s COPY WHILE YOU ARE THERE.** The entry keeps that one
+      deliberately: it *"exists to be an independent transcription that its `mapFrac` identity is asserted
+      against, and making it call the shipped function would turn that assertion into a tautology"*. Two
+      tools, two rules, on purpose — this is the trap a tidying instinct walks into.
+      ⛔ **No second override seam beside `textPageInkOutsideThresholdOverride`** — refused in
+      `#### The same price without the collar`, and with the tool half in place such a seam would have no
+      caller, which is the shape C28 has already rejected once.
+      ⚠️ **APPEND, never insert.** `MRC-2026-08-15/`'s files are compared by column POSITION, and
+      `C27-COLOURBYTES-2026-08-26.tsv` paid two self-test checks to keep that true.
+      ⚠️ **What this is NOT: the sweep.** Pricing the bar back up needs a population and is the step AFTER
+      this one — write it as the next sub-box when you tick this one.
+      ⚠️ **If this turns out blocked**, the alternative of the same size is the **`after < before` REJECT
+      arm**, which `#### The loop covered end to end` names as uncovered alongside the JBIG2
+      encode-failure branch: one fixture page and 2 checks in `Tests/main.swift`, and if no builder
+      argument reaches the arm, record the refusal rather than adding a seam.
+      ⛔ **Whoever ticks this box writes C28's next sub-box before stopping.**
+      (context: BUGS.md C28 `#### The wiring, SHIPPED` and `#### What this entry is NOT` — `context:` and
+      not `origin:`, because C28 stays OPEN by design while its sub-steps close, and an `origin:` cite here
+      would read as a status claim and report `TICKED-OPEN` the day it is ticked)
 - [x] **c28-nearmiss** — **DONE 2026-08-20.** C28's first sub-step: the eight pages nearest the shipped
       bar from below (`inkOut` 0.0353-0.0450) rendered at both factors and read at 1:1. **4 of the 8
       lose content** — two lines of running prose each on `Broadhead - 1994` p3 and `Jones et al_2010`
@@ -1698,11 +1812,20 @@ happens.**
       6 of 6, and the review independently reproduced a third row (Regis p4). ⚠️ A re-run of unchanged
       code, not a control across a change.
       (context: BUGS.md C28 `#### Are there PICTURES in the sub-bar 73?`)
-- [ ] **text-layer-recall** — whole blocks of clean body text come out with no text layer over them: on
+- [ ] **text-layer-recall** — NEXT BOUNDED STEP: the `c30-tiles-time` sub-box below. The defect: whole blocks of clean body text come out with no text layer over them: on
       the document this was found on, **30% of the inked height sits in runs of 20+ rows with no word box**,
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ✅ **STEP 1, THE FORK, IS
       SETTLED ON THE WHOLE DOCUMENT — page 1 on 2026-08-22 and PAGE 5 ON 2026-08-23. It is RECOGNISER
-      RECALL and not the writer, C30 is ONE mechanism, and DO NOT RE-RUN ANY OF IT.** ⚠️ **What that does
+      RECALL and not the writer, C30 is ONE mechanism, and DO NOT RE-RUN ANY OF IT.**
+      ✅ **THE NEXT BOUNDED STEP IS THE `c30-tiles-time` SUB-BOX, IMMEDIATELY AFTER THIS BOX'S CITE LINE.
+      TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.** Written 2026-09-02 by `campaign-next-step`,
+      because every session from 2026-08-28 skipped this item on the reading that what is left is research
+      plus a seam. That reading is right about the FIX and wrong about the WORK: the entry's own "What it
+      does NOT establish" leaves the **time** cost of `n` requests a page unmeasured, and pricing it is 5
+      timed runs of an existing committed tool and a FREE commit. ⛔ **The standing rule for this campaign:
+      the session that ticks a sub-box here WRITES THE NEXT ONE before it stops** — that is what stops the
+      item going inert again, and `c30-tiles-time` already names its own successor so the first one is
+      cheap. ⚠️ **What that does
       NOT say: that the writer drops nothing.** The pipeline's own observations were never captured and
       `deduplicated` (`SearchableWriter.swift:706-733`) is an unmeasured removing path, so a PARTIAL drop
       on top is not excluded — what the page-5 run moved is the ceiling on BAND-VISIBLE loss, from "order of
@@ -1746,6 +1869,58 @@ happens.**
       document's ~52, `obsN` equal to the drawn line count on 3 of 3), so
       the missing ingredient is unknown and finding it is a research step, not a bounded one. What is left
       is therefore: the fixture ingredient (research), then the seam. (origin: BUGS.md C30)
+  - [ ] **c30-tiles-time** — **PRICE TILING IN TIME. The entry names it in its own words, and it is the
+        cheapest step left under this item — a FREE commit.** ⛔ **NOT "the last unpriced dimension", which
+        a draft of this box said**: the same paragraph also leaves **area against shape** untested, and
+        coverage is still row-wise. It is *an* unpriced dimension and the only free one.
+        `#### The crop experiment`'s "What it does NOT establish" says it flatly:
+        *"the **time** cost of `n` requests a page is not measured."* Void and words are priced on all six
+        pages; wall-clock is not, and it is the term that decides whether tiling could ever be on by
+        default rather than a setting nobody turns on.
+        ⛔ **BOUND: 5 timed invocations of ONE document — no `TILES`, then `TILES=1/2/4/8` — 0 lines of
+        code, 0 new tools, and one `####` section in `BUGS.md` C30.** Docs-only, so the hook prints
+        *"no code staged"* and it lands in seconds. ⚠️ **Cheapest step under THIS item, NOT in this file** —
+        `register-dup-tag` is docs-only as well (`BUGS.md` plus an `ops/autonomous/` fixture row, neither in
+        the suite regex), and a draft of this line claimed a file-wide superlative it cannot support over 97
+        items. What is true is narrower and is still the reason to take it: C30's other two candidate steps
+        both pay the suite, so this is the only free one the campaign has.
+        ⚠️ **The tool has NO CLOCK — verified 2026-09-02: `Tools/score-text-voids.swift` contains no
+        `Date()`, `CFAbsoluteTime`, `clock_gettime` or `DispatchTime` (0 matches) — so time it from
+        OUTSIDE and do NOT add one.** Adding a clock turns this into a `Tools/` commit and buys the whole
+        suite for a number an external stopwatch already gives.
+        ✅ **The differencing is what makes 5 runs enough, and it was verified by reading the code rather
+        than assumed**: the whole-page recognition, `inkRuns` and the void measure all run
+        UNCONDITIONALLY, and the tiled arm sits entirely inside `if let tiles` — `score-text-voids.swift`
+        at the `// The crop experiment.` comment, one screen above the band loop — so the tiled arm is
+        purely ADDITIVE. `T(n) - T(0)` therefore isolates it and `(T(n) - T(0)) / n` is the per-request
+        cost, with `T(0)` the no-`TILES` run. ⚠️ Cite the comment, not a line number: a line number here
+        would be the fourth stale `<file>:<line>` citation this queue has published.
+        ⚠️ **WRITE THE PREDICTION DOWN FIRST — the two answers mean opposite things.** If Vision's cost
+        tracks the page's AREA, n bands over one sheet cost about one whole page plus n fixed overheads
+        and tiling is nearly free; if it tracks the REQUEST, eight bands cost about eight pages and
+        tiling is a setting at best. Predicting after the fact is how this project has read a machine's
+        load as a property of a change.
+        ⛔ **SAY WHICH DOCUMENT, AND SAY WHAT THE NUMBER DOES NOT COVER.** The document C30 was opened on
+        is on the owner's Desktop and is **not** in `testdocs/`, so a figure taken on it is unreproducible
+        from the tree — the rule the five un-instrumented artefacts in `CLAUDE.md`'s list are counted by.
+        A page already reachable from the tree keeps it reproducible and costs the geometry match. Either
+        is allowed; neither silently.
+        ⚠️ **It prices the TOOL's requests, not the app's.** Production recognises `Flattener.flatten`'s
+        REBUILT BITMAPS and this tool recognises what it renders itself — the instrument trap this whole
+        item carries — so report it as the cost of `n` requests, never as the app's cost.
+        ⛔ **NOT this box, and both are named here so nobody re-derives them**: *"render at a higher DPI"*
+        is refuted in advance, and a `Recogniser` tiling seam is refused until a band count is
+        established — the price is *"not even ordered"* (`TILES=4` worse in aggregate than `TILES=2`, p3
+        reading 918 / 0 / 255 / 216 over 1/2/4/8), so a seam built now is a seam with no caller, the shape
+        C28 rejected.
+        ⚠️ **The step AFTER this one, identified here so nobody re-reads 88 KB for it**: split **area**
+        from **shape**. The same section says *"Whether the per-band gain comes from the smaller area or
+        from the band's shape is untested"* — bands run 1.47:1 / 2.95:1 / 5.89:1 — and separating them
+        needs equal-area square-ish tiles against equal-area wide strips, i.e. one `Tools/` knob plus 2
+        `--self-test` groups (13 → 15), which pays the suite and is therefore NOT this box.
+        ⛔ **Whoever ticks this box writes C30's next sub-box before stopping.**
+        (context: BUGS.md C30 `#### The crop experiment, in Tools/ as of 2026-08-25` — `context:` and not
+        `origin:`, because C30 stays OPEN while its sub-steps close)
   - [x] **c30-tiles** — **DONE 2026-08-25. The crop experiment is in the tree and the only candidate fix is
         priced.** `TILES=n` and `TILETEXT=<dir>` on `Tools/score-text-voids.swift`, plus
         `C30-TILES-2026-08-25.tsv` (24 rows, 28 columns) and `BUGS.md` C30
@@ -2022,7 +2197,7 @@ happens.**
       the correction in `BUGS.md`, `ARCHITECTURE.md` and `CLAUDE.md` instead. Ride it along on the next
       commit that runs the suite for another reason rather than paying a suite for a comment.
       (context: BUGS.md C30 `#### Page 5, settled 2026-08-23`)
-- [ ] **born-digital-page** — a born-digital cover page is rasterised to 1-bit and re-OCR'd because the
+- [ ] **born-digital-page** — NEXT BOUNDED STEP: the `c29-shortpage-pin` sub-box below. The defect: a born-digital cover page is rasterised to 1-bit and re-OCR'd because the
       digital-text test votes per DOCUMENT. On the JSTOR download this was found on, page 1's vector text,
       its embedded fonts and a 197x267 colour JPEG became one 1-bit raster, and the text layer went from
       exact to `AMFAKAN FOCAX ONCAL ASSOXUTION` — so a search that worked on the input fails on the output.
@@ -2032,6 +2207,14 @@ happens.**
       NOT this item** — that is the JBIG2 generic-vs-symbol encoder mode, it is measured in the entry, and
       the lossless remedy is refused by jbig2enc 0.32. Do not reach for `-s`. Needs a FIXTURE first:
       `testdocs/` has no born-digital-cover document. (origin: BUGS.md C29)
+      ✅ **THE NEXT BOUNDED STEP IS THE `c29-shortpage-pin` SUB-BOX, THE LAST BOX BEFORE `c29-fixture`.
+      TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.** Written 2026-09-02 by `campaign-next-step`,
+      because every session from 2026-08-28 skipped this item although both routing halves have shipped
+      and the entry states in one sentence what is left. It is the **120-character bar**, pinned from
+      BELOW: the fixture block pins it only from above, and the entry's own review recorded that *"no check
+      added here would kill a mutant that LOWERED the constant"*. ⛔ **The standing rule for this campaign:
+      the session that ticks a sub-box here WRITES THE NEXT ONE before it stops** — `c29-shortpage-pin`
+      already names its own successor (the sub-120 population), so the first one is cheap.
       ⛔ **BOUND: decide FIRST whether this is one code commit or two, and write the answer here before
       starting.** It looks like two — the fixture, then the per-page routing — and two code commits is two
       suite runs, 1.5-3 h by the ledger, which does not fit one session safely. But they may not be
@@ -2098,6 +2281,51 @@ happens.**
       Its doc comment says so now.
       ⚠️ Placed ahead of `C27` by the owner 2026-08-20 on this project's own precedence — content loss
       outranks fidelity, the same call that put C26 before C27 — and behind `C28`, which is mid-campaign.
+  - [ ] **c29-shortpage-pin** — **PIN THE 120-CHARACTER BAR FROM BELOW. It is the entry's own owed fixture
+        work, and as of 2026-08-25 the entry calls it *"the only thing left under this entry besides (B)
+        itself"* — and (B) has since shipped.** `#### The population re-measured, 2026-08-26` closes *"And
+        the **120-character bar** is still untouched."* The debt is stated flatly by the fixture commit's
+        own adversarial review: that block pins the bar only from **above** (a bar over 302 drops the cover
+        page), so *"no check added here would kill a mutant that LOWERED the constant"* — the direction
+        that would make the report name blank pages and plates — and *"a fixture page between 0 and 120
+        characters is what would pin it, and that is the routing commit's fixture work."* Both routing
+        commits landed without it.
+        ⛔ **BOUND: 1 optional builder parameter on `makeBornDigitalCoverPDF` (default-preserving — **4**
+        call sites, verified 2026-09-02, all in `Tests/main.swift`), 1 fixture page, 4 checks, 1
+        `Tools/mutate.py` logic row, and NO mutant RUN.** `Tests/` and `Tools/` only, **no `Sources/`
+        change**. One code commit, **296-300 s** of suite off `$STATE/suite-timings.tsv`'s three most
+        recent `pre-commit` rows (297 / 300 / 296 s at 1,361 checks). ⚠️ **NO mutant run is the bound**:
+        the catalogue row is written so a LATER session can run it, and adding the row costs nothing while
+        running it costs a baseline plus ~290-300 s.
+        ⚠️ **`text.count >= 120` is a BARE LITERAL at `Sources/Flattener.swift:445`, and NO `mutate.py`
+        row touches `hasDigitalText` or `pageHasDigitalText` at all — both verified 2026-09-02, the second
+        at 0 matches.** So the catalogue row is a `logic` one on that expression and a `CONSTANTS` one is
+        not expressible; the entry's aside that the bar is *"already reachable through `hasDigitalText`'s
+        catalogue entries"* is not supported by the catalogue, and the entry itself says that claim *"is
+        not evidence about this block"*.
+        ⛔ **PIN TODAY'S ANSWER; DO NOT FLIP IT.** A sub-120 born-digital page is rasterised today and is
+        named by **neither** report line, and the four checks assert exactly that — not in
+        `digitalTextPages`, not in `passThrough`, rebuilt, unreported. This is `c29-fixture`'s own shape,
+        and the reason is mechanical: **a fixture red on arrival refuses every later commit through the
+        pre-commit hook.** Whether to LOWER the bar is the step after; the entry calls that *"a
+        routing-commit decision"* needing a population nobody has built.
+        ⛔ **The `ocrd` decoy is NOT the sub-120 control.** It draws a **1224x1584** raster into a 612x792
+        box, so `dpi` is 144 and `pixelWidth` clears 900, and it is refused **independently by both
+        terms**: remove either and it stays green, so it controls for neither. Build the page; do not
+        borrow one.
+        ⚠️ **Do not widen `makeScannedPDF` / `makeDecoyPDF` instead** — growing a builder a hundred
+        unrelated checks read is the coupling `95b23c3` paid a suite run to learn about, which is why
+        `makeBornDigitalCoverPDF` exists separately at all. Its own `coverPages` parameter is the precedent
+        for adding one more.
+        ⚠️ **The step AFTER this one, identified here so nobody re-reads 107 KB for it**: the sub-120
+        **population** — how many corpus pages read `!pageIsAnImage` with 0 < trimmed characters < 120 —
+        which is what prices lowering the bar. ⛔ Do not answer it from `Tools/classify-source.swift`'s
+        document aggregates: it samples 5 pages and prints only `charsPerPage`. And do not pool — *"do not
+        multiply 93,616 B by 2,090 pages"*, the arithmetic C26's stratified estimate exists to refuse.
+        ⛔ **Whoever ticks this box writes C29's next sub-box before stopping.**
+        (context: BUGS.md C29 `#### The fixture, and today's answer PINNED` and
+        `#### The population re-measured, 2026-08-26` — `context:` and not `origin:`, because C29 stays
+        OPEN while its sub-steps close)
   - [x] **c29-fixture** — **DONE 2026-08-23.** C29's first commit: the fixture the entry named as the first
         thing a fix needs, plus the checks that pin today's answer so the routing commit has something to
         flip. `testdocs/` holds no born-digital-cover document and the file C29 was found on is no longer on
