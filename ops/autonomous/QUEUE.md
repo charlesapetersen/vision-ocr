@@ -853,7 +853,8 @@ happens.**
       Un-confound the instrument and that measurement becomes askable; leave it and this entry has no next
       measurement at all.
       ⛔ **BOUND: ONE new field on `Flattener.MRCLayers`, ONE column APPENDED after `score-text-route`'s
-      last field, ONE check plus ONE `--self-test` group, and NO sweep.** One code commit — but budget
+      last field, the matching widening of `Tools/sweep-ink-bar.py`'s `TOOL_COLUMNS`, ONE check, and NO
+      corpus sweep.** TWO `Tools/` files, one code commit — but budget
       **TWO** suite runs, ~600 s: §"How to SIZE an item"'s cost table prices a NEW check at two, the
       watch-it-fail control and then the hook's green run. The three most recent `pre-commit` rows in
       `$STATE/suite-timings.tsv` read 297 / 300 / 296 s and the 2026-09-01 `health-gate` row 299 s, all at
@@ -883,8 +884,22 @@ happens.**
       ⛔ **No second override seam beside `textPageInkOutsideThresholdOverride`** — refused in
       `#### The same price without the collar`, and with the tool half in place such a seam would have no
       caller, which is the shape C28 has already rejected once.
-      ⚠️ **APPEND, never insert.** `MRC-2026-08-15/`'s files are compared by column POSITION, and
-      `C27-COLOURBYTES-2026-08-26.tsv` paid two self-test checks to keep that true.
+      ⛔ **APPENDING IS NOT ENOUGH HERE, AND A DRAFT OF THIS BOX SAID IT WAS — THIS IS THE FINDING TO
+      READ FIRST.** `Tools/sweep-ink-bar.py:132-135` hardcodes `TOOL_COLUMNS` as exactly **13** names and
+      `parse_tool_output` at `:192-195` tests `header != TOOL_COLUMNS` — an **exact list equality, not a
+      prefix test** — so a 14th column makes the sweep return `header drift` for **every one of 233
+      documents**, and `row()` at `:172-173` raises `SystemExit` on a width mismatch on purpose. Verified
+      2026-09-02 by reading both. So the sweep is part of the commit, its `--self-test` runs in the hook for
+      a staged `Tools/*.py`, and its `EXPECTED_CHECKS = 71` may move. ⚠️ **The hazard was three sentences
+      from the quote this box already takes**: `Tools/README.md`'s `score-text-route` cell records that
+      `sweep-ink-bar.py` matches `verdict` with an exact `== "all-text"`, so a marker in that FIELD would
+      drop pages out of every count it prints — which is why the answer is a new column plus the consumer,
+      not a token on an existing one. ⚠️ Append rather than insert for the ordinary reason too
+      (`MRC-2026-08-15/`'s files are compared by column POSITION), but that is `score-mrc`'s artefact
+      family and NOT this tool's, so it is not the clearance a reader will take it for.
+      ⚠️ **`score-text-route.swift`'s self-test is not organised into numbered groups** the way
+      `score-text-voids`' 13 are, so "one `--self-test` group" has no counterpart there — add the check in
+      whatever shape that file already uses.
       ⚠️ **What this is NOT: the sweep.** Pricing the bar back up needs a population and is the step AFTER
       this one — write it as the next sub-box when you tick this one.
       ⚠️ **If this turns out blocked**, the alternative of the same size is the **`after < before` REJECT
@@ -892,7 +907,13 @@ happens.**
       encode-failure branch: one fixture page and 2 checks in `Tests/main.swift`, and if no builder
       argument reaches the arm, record the refusal rather than adding a seam.
       ⛔ **Whoever ticks this box writes C28's next sub-box before stopping.**
-      (context: BUGS.md C28 `#### The wiring, SHIPPED` and `#### What this entry is NOT` — `context:` and
+      ⛔ **CITE `#### The replica retired`, NOT `#### The wiring, SHIPPED`, and a draft of this box got it
+      backwards.** The confounding sentence is verbatim in `#### The replica retired`; the copy in
+      `#### The wiring, SHIPPED` is followed immediately by *"⛔ CORRECTION 2026-08-23: that sentence was
+      FALSE WHEN WRITTEN"*, so a cite pointing there sends a reader to what reads as a refutation. The
+      premise is live — the retirement made `verdict` production's own three-term answer — but read it at
+      the section that holds it.
+      (context: BUGS.md C28 `#### The replica retired` and `#### What this entry is NOT` — `context:` and
       not `origin:`, because C28 stays OPEN by design while its sub-steps close, and an `origin:` cite here
       would read as a status claim and report `TICKED-OPEN` the day it is ticked)
 - [x] **c28-nearmiss** — **DONE 2026-08-20.** C28's first sub-step: the eight pages nearest the shipped
@@ -1817,6 +1838,9 @@ happens.**
       43% on its first page, largest void 171 rows of crisp 1951 type read by eye. ✅ **STEP 1, THE FORK, IS
       SETTLED ON THE WHOLE DOCUMENT — page 1 on 2026-08-22 and PAGE 5 ON 2026-08-23. It is RECOGNISER
       RECALL and not the writer, C30 is ONE mechanism, and DO NOT RE-RUN ANY OF IT.**
+      ⚠️ **"What that does NOT say" three paragraphs down refers to the SETTLED FORK sentence just above
+      this insertion, not to the pointer block** — a dangling referent this file already carries once, and
+      pushed further from its subject by the block below, so it is named here rather than re-flowed.
       ✅ **THE NEXT BOUNDED STEP IS THE `c30-tiles-time` SUB-BOX, IMMEDIATELY AFTER THIS BOX'S CITE LINE.
       TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.** Written 2026-09-02 by `campaign-next-step`,
       because every session from 2026-08-28 skipped this item on the reading that what is left is research
@@ -1893,8 +1917,22 @@ happens.**
         UNCONDITIONALLY, and the tiled arm sits entirely inside `if let tiles` — `score-text-voids.swift`
         at the `// The crop experiment.` comment, one screen above the band loop — so the tiled arm is
         purely ADDITIVE. `T(n) - T(0)` therefore isolates it and `(T(n) - T(0)) / n` is the per-request
-        cost, with `T(0)` the no-`TILES` run. ⚠️ Cite the comment, not a line number: a line number here
-        would be the fourth stale `<file>:<line>` citation this queue has published.
+        cost **only if the run is ONE PAGE** — see the next two bullets, both of which a draft of this box
+        got wrong. ⚠️ Cite the comment, not a line number: a line number here would be the fourth stale
+        `<file>:<line>` citation this queue has published.
+        ⛔ **THE DIVISOR IS `n x pages`, NOT `n`, AND THIS TOOL MEASURES MANY PAGES PER INVOCATION** — its
+        own header defaults to a spread of 12, and `C30-TILES-2026-08-25.tsv` is 24 rows = 6 pages x 4
+        arms. Over `P` pages `T(n) - T(0) = P * n * c`, so dividing by `n` alone reports a per-request cost
+        **P times high** — 6x on the six-page set. Either bound the run to ONE page or divide by
+        `n x pages`, and say which.
+        ⛔ **n = 1 PER CONFIGURATION IS REFUSED BY THIS FILE'S OWN RULE 5** (*"Never size against a quiet
+        machine"*). The decision rule here is "about one page, nearly free" against "about eight pages, a
+        setting at best", and that ratio is inside the variance this ledger has already measured: the SAME
+        mutant on the SAME work read 280 s and 382 s, **1.36x** (`BUGS.md` T5), and `saturation(of:)` is
+        not even a pure function of its page (0.02831 cold against 0.03033 warm). Subtracting two noisy
+        numbers makes it worse, not better. So take **at least 2 reps of `T(0)` and of `T(8)`** — still
+        free — report the spread beside the difference, and read the loadavg. ⚠️ And budget off the
+        ledger's WORST rows, **403 s and 415 s** (2026-08-29), not its recent tail.
         ⚠️ **WRITE THE PREDICTION DOWN FIRST — the two answers mean opposite things.** If Vision's cost
         tracks the page's AREA, n bands over one sheet cost about one whole page plus n fixed overheads
         and tiling is nearly free; if it tracks the REQUEST, eight bands cost about eight pages and
@@ -2283,15 +2321,18 @@ happens.**
       outranks fidelity, the same call that put C26 before C27 — and behind `C28`, which is mid-campaign.
   - [ ] **c29-shortpage-pin** — **PIN THE 120-CHARACTER BAR FROM BELOW. It is the entry's own owed fixture
         work, and as of 2026-08-25 the entry calls it *"the only thing left under this entry besides (B)
-        itself"* — and (B) has since shipped.** `#### The population re-measured, 2026-08-26` closes *"And
-        the **120-character bar** is still untouched."* The debt is stated flatly by the fixture commit's
+        itself"* — and (B) has since shipped.** ⛔ **The sentence *"And the **120-character bar** is still
+        untouched"* closes `#### The seven review findings, WORKED`, NOT
+        `#### The population re-measured, 2026-08-26` as a draft of this box said — it sits two lines above
+        that heading, so a session following the wrong cite will not find the sentence this box rests on.** The debt is stated flatly by the fixture commit's
         own adversarial review: that block pins the bar only from **above** (a bar over 302 drops the cover
         page), so *"no check added here would kill a mutant that LOWERED the constant"* — the direction
         that would make the report name blank pages and plates — and *"a fixture page between 0 and 120
         characters is what would pin it, and that is the routing commit's fixture work."* Both routing
         commits landed without it.
-        ⛔ **BOUND: 1 optional builder parameter on `makeBornDigitalCoverPDF` (default-preserving — **4**
-        call sites, verified 2026-09-02, all in `Tests/main.swift`), 1 fixture page, 4 checks, 1
+        ⛔ **BOUND: 1 optional builder parameter on `makeBornDigitalCoverPDF` (default-preserving — **3**
+        call sites: `Tests/main.swift:10947`, `:11044`, `:11543`, re-derived 2026-09-02), 1 fixture page,
+        4 checks, 1
         `Tools/mutate.py` logic row, and NO mutant RUN.** `Tests/` and `Tools/` only, **no `Sources/`
         change**. One code commit, **296-300 s** of suite off `$STATE/suite-timings.tsv`'s three most
         recent `pre-commit` rows (297 / 300 / 296 s at 1,361 checks). ⚠️ **NO mutant run is the bound**:
@@ -2323,9 +2364,10 @@ happens.**
         document aggregates: it samples 5 pages and prints only `charsPerPage`. And do not pool — *"do not
         multiply 93,616 B by 2,090 pages"*, the arithmetic C26's stratified estimate exists to refuse.
         ⛔ **Whoever ticks this box writes C29's next sub-box before stopping.**
-        (context: BUGS.md C29 `#### The fixture, and today's answer PINNED` and
-        `#### The population re-measured, 2026-08-26` — `context:` and not `origin:`, because C29 stays
-        OPEN while its sub-steps close)
+        (context: BUGS.md C29 `#### The fixture, and today's answer PINNED` — which holds the
+        *"no check added here would kill a mutant that LOWERED the constant"* debt verbatim — and
+        `#### The seven review findings, WORKED`, which closes on the bar being untouched. `context:` and
+        not `origin:`, because C29 stays OPEN while its sub-steps close)
   - [x] **c29-fixture** — **DONE 2026-08-23.** C29's first commit: the fixture the entry named as the first
         thing a fix needs, plus the checks that pin today's answer so the routing commit has something to
         flip. `testdocs/` holds no born-digital-cover document and the file C29 was found on is no longer on
