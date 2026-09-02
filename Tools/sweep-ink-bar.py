@@ -82,7 +82,7 @@ hold for all 233 documents. Recording those as 233 `error` rows would produce a
 complete-looking TSV of nothing, so they abort. Exit 1 (this file will not open)
 is a property of the one document and is recorded.
 
-**The tool's header is checked, not assumed.** `score-text-route` prints its 13
+**The tool's header is checked, not assumed.** `score-text-route` prints its 15
 columns from one `columns` array; if that array changes, every field in this
 file's output would shift one place to the left of its name. `TOOL_COLUMNS` below
 is compared to the header line on every document and a mismatch aborts. Three
@@ -128,11 +128,17 @@ import argparse, errno, fcntl, os, subprocess, sys, tempfile, time
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # `score-text-route.swift`'s `columns`, in order. Compared against the header line
-# of every document's run; a mismatch aborts rather than shifting 15 fields under
-# 15 names that no longer describe them.
+# of every document's run; a mismatch aborts rather than shifting 17 fields under
+# 17 names that no longer describe them.
+#
+# ⛔ This list is an EXACT equality test in `parse_tool_output`, not a prefix test, so
+# a column appended over there without this line moving returns `header drift` for all
+# 233 documents. `lineN`/`lineNAtBar` were added 2026-09-02 (C28's shape term, so a
+# `picture` verdict is attributable to the bar or to the term) and this is the widening
+# that goes with them.
 TOOL_COLUMNS = ["page", "route", "sat", "tone", "inkOut", "layered", "1bit",
                 "delta", "verdict", "extent", "barVerdict", "layeredAtBar",
-                "barDelta"]
+                "barDelta", "lineN", "lineNAtBar"]
 
 # The one printer's one column list, `document` and `status` in front of the
 # tool's own. Nothing measured is dropped on the way through: the column that
@@ -160,7 +166,7 @@ EXPECTED_CHECKS = 71
 
 
 def row(document, status, fields=None):
-    """One row, width asserted. `fields` is the tool's 13, or None for a status row."""
+    """One row, width asserted. `fields` is the tool's 15, or None for a status row."""
     body = list(fields) if fields is not None else ["-"] * len(TOOL_COLUMNS)
     out = [document, status] + body
     # `SystemExit`, not `assert`: `python3 -O` (or `PYTHONOPTIMIZE=1` in the launch
@@ -803,11 +809,19 @@ def self_test():
     header = "\t".join(TOOL_COLUMNS)
     # The two row shapes the real tool prints, taken from the 2026-08-19 control run
     # over `1954 - Why.pdf`: a priced grey page the bar moves, and an already-1-bit
-    # page that carries nothing but its verdict.
+    # page that carries nothing but its verdict. ⚠️ The `lineN`/`lineNAtBar` pair was
+    # appended by hand when those columns landed 2026-09-02, and the values are the ones
+    # the tool would print on this row rather than filler: `verdict` is `all-text`, so
+    # all three terms passed at the shipped bar and the shape term answered `0`, while
+    # `barVerdict` is `picture` at a LOWER priced bar, where term 1 refuses first and
+    # the shape term is therefore never asked. ⛔ These literals are the reason a widened
+    # `TOOL_COLUMNS` reds 15 cases here rather than none — which is the self-test
+    # working, and is why the fixture is not derived from `TOOL_COLUMNS`: a fixture that
+    # widened itself would let a real width defect through.
     good = (f"{header}\n"
             "p4\tgrey\t0.01\t0.5\t0.0540\t22762\t70000\t+4523\tall-text\t"
-            "0.00000\tpicture\t67976\t+45214\n"
-            "p1\tbilevel\t-\t-\t-\t-\t-\t-\talready 1-bit\t-\t-\t-\t-\n"
+            "0.00000\tpicture\t67976\t+45214\t0\t-\n"
+            "p1\tbilevel\t-\t-\t-\t-\t-\t-\talready 1-bit\t-\t-\t-\t-\t-\t-\n"
             "\n"
             "2 picture-route pages: layered 1 B, 1-bit 2 B, delta +1 B (1 B/page)\n")
 
@@ -1038,9 +1052,9 @@ def self_test():
     # is owed as well, which is what this pins; `owe(...)` on the fragment alone is the
     # mutant it kills.
     three = (f"{header}\n"
-             "p1\tgrey\t0.01\t0.5\t0.0540\t1\t2\t+1\tall-text\t0.0\tpicture\t3\t+2\n"
-             "p2\tgrey\t0.01\t0.5\t0.0540\t1\t2\t+1\tall-text\t0.0\tpicture\t3\t+2\n"
-             "p3\tgrey\t0.01\t0.5\t0.0540\t1\t2\t+1\tall-text\t0.0\tpicture\t3\t+2\n"
+             "p1\tgrey\t0.01\t0.5\t0.0540\t1\t2\t+1\tall-text\t0.0\tpicture\t3\t+2\t0\t-\n"
+             "p2\tgrey\t0.01\t0.5\t0.0540\t1\t2\t+1\tall-text\t0.0\tpicture\t3\t+2\t0\t-\n"
+             "p3\tgrey\t0.01\t0.5\t0.0540\t1\t2\t+1\tall-text\t0.0\tpicture\t3\t+2\t0\t-\n"
              "\n3 picture-route pages: layered 1 B, 1-bit 2 B, delta +1 B (1 B/page)\n")
     args.out = os.path.join(tmp, "midkey.tsv")
     args.binary = stub("midkey.py", stdout=three)

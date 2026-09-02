@@ -486,6 +486,24 @@ evidence was a probe binary outside the tree — the objection this entry raises
 `progress("Layered N picture pages…")`, which is asserted by nothing on purpose — `Model.swift`'s own
 comment records it as a transient stage label that never reaches the log, so there is no durable string
 to assert.
+✅ **AND THE INSTRUMENT IS UN-CONFOUNDED AS OF 2026-09-02 — a `picture` verdict is attributable to the BAR
+or to the TERM for the first time** (`BUGS.md` C28 `#### The third term reported`, the queue's
+`c28-bar-attribution`). `pageIsAllText()` is three refusals and only two had a column — `inkOut` is term
+1's quantity and `extent` term 2's — so `#### The replica retired`'s closing sentence, that `verdict` and
+`barVerdict` *"still cannot price `textPageInkOutsideThreshold` going back up"*, was true and is now
+superseded in place. `Flattener.MRCLayers.shapeTermAnswer` carries the term's own answer out and
+`score-text-route` prints it as `lineN` / `lineNAtBar`. ⛔ **THREE CASES AND NOT THE `Int?` THE QUEUE BOX
+PRESCRIBED**: `textLineGroupsOutsideText` returns `nil` for *too dense to label*, which the wiring reads as
+a REFUSAL, so an optional count would have folded that into *never asked* and credited the bar with a
+refusal the term made — the same confound one level down. ⛔ **And a PAIR of columns, not the one the box
+bounded it at, because one cannot answer the question**: the term is only evaluated on a page terms 1 and 2
+already accepted, so at the shipped bar it is never asked about the pages a HIGHER bar would newly admit —
+which is exactly the population — and those read `lineN` `-` by construction. ⛔ **The previous session's
+blocker is confirmed by MEASUREMENT rather than by reading, and it cost more than the one line it
+predicted**: widening `sweep-ink-bar.py`'s `TOOL_COLUMNS` alone reds **15 of its own 71 self-test checks**,
+because its two fixture stdouts are literal 13-field rows — the guard working, and why they were widened by
+hand rather than derived. ⚠️ **Not the measurement**: pricing the bar upward needs a population and no
+sweep ran, no committed artefact moves, and nothing in `Sources/` or `Helper/` reads the new field.
 ✅ **BOTH WERE TAKEN 2026-08-22 AND C28 IS NOW `HALF FIXED`** — read `#### THE DECISION` and
 `#### The wiring, SHIPPED` before touching any of it. The shape term is a **third refusal condition in
 `pageIsAllText()`**, after the ink fraction and the pale-drawing terms, so it is only ever evaluated on
@@ -631,7 +649,7 @@ production can be observed on — the suite's own `777` under the shipped rule a
 under the mutant's.
 ✅ **AND THE FIXTURE IS IN THE SUITE AS OF 2026-08-30, SO THE SURVIVOR LIST IS ZERO — `mutate.py` prints
 `0 survivor(s)`** (`BUGS.md` R25 `#### The fixture, IN THE SUITE`). `--rerun --only R25-depth-aware`,
-baseline **`1361 checks, green`**, mutant **296 s**, **`1359/1361 passed`**, `killed` by **exactly the two
+baseline **`1361 checks, green` as of 2026-08-30**, mutant **296 s**, **`1359/1361 passed`**, `killed` by **exactly the two
 new checks**, every element predicted in writing first, twice. ⛔ **NOT "for the first time in this log's
 history", which a draft said and the review refuted from git**: at `328d393` the log held two rows, both
 `killed`. What is new is an empty list over a catalogue of 104 rather than of two. ⛔ **The attribution is
@@ -671,7 +689,7 @@ corrected 2026-08-30 by the next run: `Tests/main.swift:3255`, the mask pair, is
 the only check whose subject is a COMPARISON of the two arms, disarmed by BOTH of the seam's mutants while
 its own comment states in terms the precondition it loses.**
 ✅ **AND THAT NEXT PICK RAN THE SAME DAY — `logic/C26-inkbar-override-ignored`, the mutant that DELETES the
-seam (`let bar = textPageInkOutsideThreshold`), is `killed`, 297 s, baseline `1361 checks, green`, mutant
+seam (`let bar = textPageInkOutsideThreshold`), is `killed`, 297 s, baseline `1361 checks, green` as of 2026-08-30, mutant
 `1357/1361`, by EXACTLY FOUR objecting checks, all four named in order first and TWO of the four detail
 strings verbatim** (`BUGS.md` T5 `#### The seam's other end`; census **24 → 23**, coverage **80 → 81 of
 104**, log **97 → 98** rows, survivor list still 0). ⛔ **Four is no superlative either way — the log's
@@ -812,7 +830,7 @@ measurement is **inside the unrounded span it came from** and **5 s (0.8%) below
 2.4%, not that the estimate is precise**, and at this spread the printed integers can no longer express the
 interval computed. The 479 s box figure is 1.24x low a **fourth** time.
 ⚠️ **298 s against `logic/R25-depth-aware-prune`'s 296 s is a SECOND same-day cross-mutant pair at a fixed
-1,361 checks** (~85 min apart, `799ad3a` 01:12) — **1.007x**, which **corroborates** the 1.043x
+1,361 checks as of 2026-08-30** (~85 min apart, `799ad3a` 01:12) — **1.007x**, which **corroborates** the 1.043x
 mutant-identity bound rather than tightening it, an upper bound over two readings being the larger.
 ⛔ A draft called that row "the previous day" and threw the pair away on it. ⚠️ **A THIRD such pair, the
 tightest yet, from the same day: 298 s against `override-ignored`'s 297 s, ~3 h 08 m apart, both baselines
@@ -925,7 +943,12 @@ a commit fixed is killed by that commit's checks BY CONSTRUCTION, because CONTRI
 test first.** ⛔ **And do not quote the `153 wide of 1224, ceiling 154` as the probe and the suite agreeing
 about the term** — 153 is `1224 / textPageBackgroundDownsample` and the ceiling is that plus one, so any
 shrunk page of that width prints the pair; the mutant's applied-ness is instead measured from the compiler
-(`'groups' was never used`). ⛔ **It has NO
+(`'groups' was never used`). ⛔ **THAT WITNESS IS GONE AS OF 2026-09-02 and nothing measured moves with
+it**: `c28-bar-attribution` added `measuredShapeTerm = groups.map { … }` on the line above the `return`, so
+`groups` is read whatever the `return` says and the mutant now compiles clean. The mutant still matches
+uniquely (one `return groups == 0` in `Sources/`) and is still killed by the same three checks; what is
+lost is a free applied-ness signal, and it is recorded here rather than left for a session to look for.
+⛔ **It has NO
 green yield, said in advance rather than retracted afterwards**: `return true` is one-sided, so the only
 checks it can falsify are those asserting a page reaching term 3 is not all text, and the two that look
 most like yield cannot fail — the `inkOutsideText` assertion (that field is assigned *before* term 1's
@@ -2170,8 +2193,19 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,361 checks measured 2026-08-30, no skips — `mutate.py`'s own baseline line
-                      # reads `1361 checks, green` (r25-depth-fixture's --rerun). For DURATION use
+./run_tests.sh        # 1,364 checks, no skips. ⛔ THIS LINE MUST STAY UNDATED AND MUST CARRY THE
+                      # CURRENT COUNT: check-staleness.sh treats a check-count claim whose own line or
+                      # the line before it carries a date as HISTORY and drops it from the live pool,
+                      # then reports each file's highest LIVE claim against the reference. So dating
+                      # this one hands the role to whatever stale figure is highest further down —
+                      # measured 2026-09-02 by doing it, which surfaced 1361 at :652 and then 1355 at
+                      # :584, neither of them a defect. The date belongs in the sentence below, not
+                      # here. Measured 2026-09-02: c28-bar-attribution's two sabotage runs both
+                      # printed `/1364`. The 1,361 in the mutant-run records ~1,500 lines ABOVE this
+                      # block is 2026-08-30 — `1361 checks, green`, r25-depth-fixture's --rerun; three
+                      # of those (:652, :691, :833) were dated in place the same day so they read as
+                      # history, which is correct writing and NOT what keeps this line clean. What
+                      # keeps this line clean is that it is undated and current. For DURATION use
                       # 308 s at loadavg 4.40 measured 2026-08-27 at 1,355 checks
                       # ($STATE/suite-timings.tsv row `adopt-3bf2648`); real OCR.
                       # ~285-308 s measured 2026-08-26/27 over eight clean full-suite rows in
@@ -2191,7 +2225,11 @@ git config core.hooksPath .githooks
                       #  logic/R25-depth-aware-prune. 1,357 -> 1,361: four premise rows pinning
                       #  CGPDFDictionaryApplyBlock's yield order, which the adversarial review of
                       #  that diff asked for — without them a flipped order retires the pair
-                      #  silently. Both figures were measured; only 1,361 shipped.)
+                      #  silently. Both figures were measured; only 1,361 shipped.
+                      #  1,361 -> 1,364: c28-bar-attribution's three shape-term readback checks —
+                      #  the refusing page, the accepting control, and the Maximum page that never
+                      #  asks. Measured off both sabotage runs, which printed 1362/1364 and
+                      #  1363/1364; the green figure is the hook's own run.)
                       # ⛔ AND IT HAPPENED AGAIN: `3bf2648` added those nine and left this line at
                       # 1,346. The ADOPTING session caught it, not the committing one — no ordinal is
                       # claimed for it, because this register has already published a wrong one by

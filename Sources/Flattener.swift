@@ -3014,6 +3014,50 @@ enum Flattener {
         /// beside a page and worthless as a filter, which is why the caller names
         /// every accepted page instead of thresholding on it.
         var inkOutsideText: Double? = nil
+        /// C28. What `pageIsAllText()`'s **third** term — the shape term — answered on
+        /// this page, or that it was never asked.
+        ///
+        /// `inkOutsideText` above carries term 1's quantity for the same reason, and
+        /// this is the same seam a third time: an instrument reads production's own
+        /// answer back rather than deciding for itself. `score-text-route.swift`'s
+        /// replica of this guard was repaired three times and then retired for
+        /// exactly that (`BUGS.md` C28 `#### The replica retired`), and it can never
+        /// mirror this term at all — the term takes the Sauvola stencil, which
+        /// `mrcLayers` builds privately and does not publish as a `[Bool]`.
+        ///
+        /// ⛔ **Three cases and not two, which is what makes the column attributable.**
+        /// The guard is a chain: term 1 (the ink bar), then term 2 (the pale drawing),
+        /// then this. A page refused by either of the first two never reaches the term
+        /// at all, and `PhotoDetail.maximum` short-circuits the whole closure. So a
+        /// `picture` verdict beside `.notAsked` was refused by the BAR, and one beside
+        /// `.groups(n)` with `n > 0` was refused by the TERM — which is the
+        /// distinction `verdict` and `barVerdict` cannot make on their own, and the
+        /// reason `textPageInkOutsideThreshold` cannot be priced going back up today.
+        ///
+        /// ⛔ **`unlabelable` is a REFUSAL, not a missing answer, so it must not fold
+        /// into `.notAsked`.** `textLineGroupsOutsideText` returns `nil` when the page
+        /// exceeds `maximumShapeRuns`, and the wiring reads that as "not asserted to be
+        /// all text" — i.e. the term refused the page. Collapsing it into the
+        /// not-asked case would credit the bar with a refusal the term made, which is
+        /// the confound this field exists to remove, one level down.
+        var shapeTermAnswer: ShapeTermAnswer = .notAsked
+    }
+
+    /// C28. `pageIsAllText()`'s third term's answer, carried out on `MRCLayers`.
+    ///
+    /// See `MRCLayers.shapeTermAnswer` for why this is three cases rather than an
+    /// `Int?`.
+    enum ShapeTermAnswer: Equatable {
+        /// The term was never reached: `PhotoDetail.maximum` short-circuited the
+        /// guard, or term 1 or term 2 refused the page first.
+        case notAsked
+        /// The term ran and counted this many text-shaped line groups in the ink
+        /// outside the recognised words. **`0` is the only value that accepts the
+        /// page**; anything higher is the term refusing it.
+        case groups(Int)
+        /// The term ran and could not label the page within `maximumShapeRuns`.
+        /// `pageIsAllText()` reads this as a refusal.
+        case unlabelable
     }
 
     /// Peak bytes per pixel while layering a *colour* page.
@@ -3422,6 +3466,11 @@ enum Flattener {
         // stays `nil` — which is the difference between reporting the decision and
         // paying for a decision nobody takes.
         var measuredInkOutside: Double?
+        // C28. The third term's answer, carried out for the same reason and assigned
+        // in the same place — at the term, not before it. A page refused by term 1 or
+        // term 2 never reaches the assignment and keeps `.notAsked`, which is the
+        // whole information content of this field: it says WHICH term refused.
+        var measuredShapeTerm = ShapeTermAnswer.notAsked
         func pageIsAllText() -> Bool {
             let pageThreshold = otsuThreshold(of: grey)
             // C26. The bar is substitutable so a tool can price a different one; `nil`
@@ -3461,6 +3510,7 @@ enum Flattener {
             let groups = textLineGroupsOutsideText(grey, stencil: mask, region: region,
                                                    width: w, height: h,
                                                    threshold: pageThreshold)
+            measuredShapeTerm = groups.map { ShapeTermAnswer.groups($0) } ?? .unlabelable
             return groups == 0
         }
         let allText = !keepEveryPixel && pageIsAllText()
@@ -3549,7 +3599,8 @@ enum Flattener {
                          foregroundWidth: fw, foregroundHeight: fh,
                          isColour: inColour,
                          shrunkAsAllText: allText,
-                         inkOutsideText: measuredInkOutside)
+                         inkOutsideText: measuredInkOutside,
+                         shapeTermAnswer: measuredShapeTerm)
     }
 
     // MARK: - Resolution

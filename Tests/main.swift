@@ -2668,6 +2668,17 @@ do {
               untouched.inkOutsideText == nil && untouched.shrunkAsAllText == false,
               "fraction \(untouched.inkOutsideText.map { "\($0)" } ?? "nil"), "
                 + "flag \(untouched.shrunkAsAllText)")
+        // C28, 2026-09-02. The same argument for the third term, and it is the case that
+        // gives the new column its meaning: `-` is "the term was never asked", not "the
+        // term answered zero". A build that hoisted the assignment out of the closure to
+        // report it — the defect the paragraph above records being found and removed once
+        // already for `inkOutsideText` — would put a `.groups(…)` here and reds this.
+        //
+        // ⚠️ Stated rather than implied: `.notAsked` is also the field's DEFAULT, so this
+        // check alone cannot catch an assignment that was deleted. The two checks in the
+        // shape-term block above are what catch that, and they red together under it.
+        check("…and reports no shape-term answer either, because the term was not reached",
+              untouched.shapeTermAnswer == .notAsked, "\(untouched.shapeTermAnswer)")
     } else {
         check("the Maximum-detail layering for C28", false, "mrcLayers returned nil")
     }
@@ -3172,6 +3183,24 @@ do {
               missed.inkOutsideText != nil
                 && abs(missed.inkOutsideText! - c28MissedInk) < 1e-6,
               String(format: "%.6f vs %.6f", missed.inkOutsideText ?? -1, c28MissedInk))
+        // C28, 2026-09-02. And it carries the THIRD term's answer out too, which is what
+        // makes a `picture` verdict attributable. `inkOutsideText` above is term 1's
+        // quantity and `extent` is term 2's; until this field existed the term that
+        // actually refused this page reported nothing, so `score-text-route`'s `verdict`
+        // column could not say whether the bar or the shape rule held a page back — the
+        // confound the register cites for why `textPageInkOutsideThreshold` cannot be
+        // priced going back up.
+        //
+        // The comparand is `c28GroupsMissed`, the same page through
+        // `Flattener.textLineGroupsOutsideText` called DIRECTLY at line ~2893, so this
+        // asserts the transport and not the term: production's carried-out answer
+        // against the term's own, on one page. Pinned as `.groups(1)` via that value
+        // rather than as a literal, so a fixture drift that changed the count reds the
+        // check above it first and this one reads as the transport still working.
+        check("…and carries the shape term's own answer, which is the term that refused it",
+              c28GroupsMissed.map { missed.shapeTermAnswer == .groups($0) } ?? false,
+              "\(missed.shapeTermAnswer) vs textLineGroupsOutsideText's "
+                + "\(c28GroupsMissed as Any)")
     } else {
         check("C28's missed-word layering", false, "mrcLayers returned nil")
     }
@@ -3188,6 +3217,18 @@ do {
         check("…and reports itself as stored at an eighth, which is the report C28 shipped",
               boxed.shrunkAsAllText == true,
               "flag \(boxed.shrunkAsAllText), \(boxed.backgroundWidth) wide")
+        // C28, 2026-09-02. The ACCEPTING answer, and it is the other end of the pair
+        // above: without it a build that hard-wired `shapeTermAnswer` to a refusing
+        // value would still satisfy the missed-word check, because that page IS refused.
+        //
+        // ⚠️ It is NOT entailed by the flag beside it, and the distinction is the one
+        // this register keeps making about greens. `shrunkAsAllText == true` does entail
+        // that the term RETURNED 0 — `pageIsAllText()` ends `return groups == 0` — but it
+        // says nothing about what was carried out on the struct, which is the only thing
+        // an instrument reads. A build assigning `.unlabelable` unconditionally leaves
+        // the flag green and reds this alone; that is the sabotage it was watched under.
+        check("…and its shape-term answer is the accepting one, 0 groups",
+              boxed.shapeTermAnswer == .groups(0), "\(boxed.shapeTermAnswer)")
     } else {
         check("C28's recognised-word control layering", false, "mrcLayers returned nil")
     }

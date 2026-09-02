@@ -4211,7 +4211,7 @@ figures is the section above's, digit for digit, through a different process. p2
    recording them would build a **complete-looking TSV of 233 identical failures**, which is the
    silent-success shape in a new costume. Those abort with the document unwritten, so a later run
    retries it. Exit 1 ("this file will not open") is the one document's own problem and is recorded.
-4. **The tool's header is compared, not assumed.** `score-text-route` prints 13 columns from one
+4. **The tool's header is compared, not assumed.** `score-text-route` prints 15 columns from one
    `columns` array; if that array gains or renames a column, every field in the sweep's output would
    sit one place from its name. T14, A12.3 and T18 are three field-count defects in this register,
    and a *renamed* column is refused as well as an extra one.
@@ -11667,7 +11667,11 @@ successful run the `VERDICT p<n>:` line is discarded. A sweep sees neither.
 was always right and it was the *report* that was wrong, which is invariant 1's other half and the same
 shape as `#### Something reports it`. It does not un-confound the one measurement this entry says is still
 worth taking: with the term inside `pageIsAllText()`, `verdict` and `barVerdict` now measure the bar **and**
-the shape term, so they still cannot price `textPageInkOutsideThreshold` going back up. ⚠️ **Runtime is
+the shape term, so they still cannot price `textPageInkOutsideThreshold` going back up.
+⛔ **THAT SENTENCE IS THE COMMISSION FOR `#### The third term reported` (2026-09-02) AND IS SUPERSEDED BY
+IT — kept as written, because it is what that repair was built against.** `lineN` and `lineNAtBar` now
+carry the third term's own answer, so the confound it names is gone; what is NOT gone is the measurement
+itself, which needs a population. ⚠️ **Runtime is
 not measurable here and the file says so rather than quoting a delta**: three runs over the same six
 pages read **85.69 s** (before), **87.28 s** (after) and **84.82 s** (after, rebuilt) — the spread between
 two runs of the *same* code is larger than the difference between the two codes, which is what a `Bool`
@@ -11680,6 +11684,126 @@ the divergence count, because the numerator was incremented before the `guard la
 that `counted` sits after, so a page that disagreed and then failed to encode would have printed a
 fraction over two different sets). The verdicts, the twelve byte-identical columns, `436,633 → 224,977`,
 and `INKBAR=0.0005`'s `1 of 2 … 201,252 B/page, 5.76x` all come back the same.
+
+#### The third term reported — a `picture` verdict is attributable to the bar or to the term for the first time — SHIPPED 2026-09-02
+
+`#### The replica retired` closes by naming what it could not do: *"with the term inside `pageIsAllText()`,
+`verdict` and `barVerdict` now measure the bar **and** the shape term, so they still cannot price
+`textPageInkOutsideThreshold` going back up."* That sentence is this section's commission, and the thing
+it describes is now reported.
+
+`pageIsAllText()` is a chain of three refusals — the ink bar, the pale drawing, the shape term — and two of
+the three already had a column. `inkOut` is term 1's quantity and `extent` is term 2's; term 3's answer
+appeared **nowhere**, so a row reading `verdict=picture` could have been refused by any of them and no
+column said which. `Flattener.MRCLayers` gains `shapeTermAnswer`, assigned where the term is evaluated,
+and `Tools/score-text-route.swift` prints it as **`lineN`** (the shipped run) and **`lineNAtBar`** (the
+`INKBAR` run).
+
+⛔ **THREE CASES AND NOT AN `Int?`, WHICH IS THE DESIGN DECISION WORTH QUOTING.** The commissioning queue
+box prescribed *"an optional count, `inkOutsideText`'s shape"*, and that shape is one case short.
+`textLineGroupsOutsideText` returns `Int?` and its `nil` means **too dense to label within
+`maximumShapeRuns`** — which the wiring reads as a refusal (`return groups == 0` is false). So an `Int?`
+field would have folded *the term refused for density* into *the term was never asked*, *"crediting the bar
+with a refusal the term made"* — the very confound this section exists to remove, one level down. The field
+is `enum ShapeTermAnswer { notAsked, groups(Int), unlabelable }` and the column has four tokens: `-`, `0`,
+`N`, `dense`.
+
+⛔ **AND IT IS A PAIR OF COLUMNS, NOT THE ONE THE BOX BOUNDED IT AT — the reason is that one column cannot
+answer the question it was commissioned for.** The term is only *evaluated* on a page terms 1 and 2 already
+accepted, so at the shipped bar it is never asked about the pages a **higher** bar would newly admit:
+those are exactly the population "can the bar go back up" is about, and on the shipped side they read `-`
+by construction. `lineNAtBar` is the same term under `INKBAR`, where they do get asked. This is also the
+file's own idiom three times over (`verdict`/`barVerdict`, `layered`/`layeredAtBar`, and `barDelta`), so
+the pair is a precedent rather than a new shape. ⚠️ The two can differ only in whether the term was
+**asked**: its count takes grey, the stencil, the region and the page Otsu, and the override enters none of
+them, so two different numbers on one row would be an instrument fault and not a finding. Reasoned off the
+call site, **not measured** — no fixture in the suite runs both sides.
+
+✅ **THE PREVIOUS SESSION'S BLOCKER IS CONFIRMED BY MEASUREMENT RATHER THAN BY READING, AND IT COST MORE
+THAN THE ONE LINE IT PREDICTED.** `c6fa490` found by reading that `Tools/sweep-ink-bar.py` compares
+`TOOL_COLUMNS` for **exact list equality**, so an appended column would return `header drift` for all 233
+documents. Widening that list is indeed one line — and doing only that puts the sweep's own `--self-test`
+at **71 checks, 15 failures**, because its two fixture stdouts are hand-written literal 13-field rows
+(`good` and `three`, from the 2026-08-19 control run over `1954 - Why.pdf`) and every case that parses
+them reds. **That is the guard working**, and it is why those literals were widened by hand rather than
+derived from `TOOL_COLUMNS`: a fixture that widened itself would let a real width defect through. After:
+**71 checks, 0 failures**, `EXPECTED_CHECKS` unmoved.
+
+**What was watched failing**, predictions written down before each run and both exact:
+
+* **Sabotage A** — the assignment made unconditional and wrong inside the closure
+  (`measuredShapeTerm = .unlabelable`). Predicted **two** reds, the missed-word and recognised-word checks,
+  with the Maximum check green because that closure is never called. Measured: **`1362/1364 passed`,
+  exactly those two, and BOTH detail strings verbatim** — `unlabelable vs textLineGroupsOutsideText's
+  Optional(1)` and `unlabelable`.
+* **Sabotage B** — the assignment hoisted out of the closure, which is the defect `inkOutsideText`'s own
+  comment records being found and removed once already. Predicted **one** red, the Maximum check, with the
+  other two green because the closure overwrites the hoisted value on any page that reaches the term.
+  Applied as a one-token change to the declaration's own initial value
+  (`ShapeTermAnswer.notAsked` → `.groups(0)`), which is that defect's effect exactly. Measured:
+  **`1363/1364 passed`, exactly that one, detail string `groups(0)` as written down**.
+
+So the three reds are **disjoint across the two sabotages** — {1, 2} and {3} — and each check is
+attributable to a different way of getting the carrying wrong. Suite **1,361 → 1,364**.
+⚠️ **The Maximum check's green under sabotage A is not evidence and this section says so rather than
+counting it**: `.notAsked` is the field's own default, so a build that deleted the assignment outright
+would leave it green too. What catches that is the other two, which red together under it.
+
+✅ **AND THE TOOL'S OWN NEW SELF-TEST TABLE IS WATCHED, WHICH THE FIRST DRAFT HAD NOT DONE.** The
+adversarial review's finding was that `lineNToken` *"copied `layeringVerdict`'s seam and not its
+discipline"*: `run_tests.sh` runs no tool self-tests and `check-tools-compile.sh` is `swiftc -typecheck`,
+so four fresh branches were proved to PARSE and nothing more. A five-row table now sits beside the three
+already there, with its case count asserted for the reason theirs are. ⛔ **Proving it EXECUTES took a real
+page, and the two cheap attempts both proved nothing** — the tool's usage exit is at `:253` and the PDF is
+opened before `:480`, so `<no args>` and `<a path that does not exist>` return before the self-test on the
+shipped and sabotaged builds alike, indistinguishably. Measured on `testdocs/document/(F) Dickens.pdf` p1,
+two binaries one token apart (the `unlabelable` row's expected token `dense` → `-`): the sabotaged one
+prints `self-test failed — lineNToken(unlabelable) is "dense", wanted "-"` and measures nothing, the
+shipped one prints the run. ⚠️ That same run is the only end-to-end sighting of the new header —
+15 columns ending `lineN  lineNAtBar` — and its one page is `already 1-bit`, so both read `-` and **no
+non-dash token has been observed in a real row**. Corpus read-only; nothing written.
+
+⛔ **NO CATALOGUED MUTANT REDS ANY OF THE THREE, AND THAT IS SAID IN ADVANCE RATHER THAN DISCOVERED
+LATER.** `logic/C28-alltext-ignores-shape` leaves the term running and its count unchanged, and
+`const/lineMinimumMembers` moves `c28GroupsMissed` and `missed.shapeTermAnswer` **together** — the
+missed-word check is an identity between those two, so it is green under both **by construction**. The
+recognised-word check reads 0 at both values of that constant. So these checks add nothing to either kill
+set, and the two sabotages above are the whole of their watching. ⚠️ **No mutant was added**: nothing here
+is a constant or a guard — the verdict logic is untouched, and `?? .unlabelable` maps an existing return
+value rather than deciding anything.
+
+⚠️ **What is NOT pinned, named rather than implied.** `.unlabelable` is unreachable through `mrcLayers` in
+this suite: that function exposes no `runLimit` seam, and the existing pair of checks that *does* reach the
+density branch calls `textLineGroupsOutsideText` directly. So that third case is carried by the type and
+asserted end to end by nothing. Adding a seam to reach it is refused for the reason C28 has already refused
+one — a seam whose only caller is a test.
+
+⚠️ **And what this is NOT: the measurement.** Pricing `textPageInkOutsideThreshold` upward needs a
+population, and nothing here ran a sweep. Every committed artefact is untouched, and nothing in the app's
+output moves: `shapeTermAnswer` is carried, never read by `Sources/` or `Helper/`, and no verdict, factor
+or byte count depends on it.
+
+⛔ **IT DOES BREAK ONE THING AND THE DIFF'S OWN FIRST DRAFT REASSURED AGAINST IT WHILE CHECKING THE WRONG
+CONSUMER — this is the review of this diff's finding and it is worth more than the columns.** That draft
+said *"`Tools/stratify-corpus.py` — **the one other consumer** of `INKBAR-2026-08-19.tsv` — reads by header
+name, so a wider file is forward-compatible"*. Both halves of that are true (`read_tsv` is
+`dict(zip(header, cells))` with `need_columns` beside it, and it pads short rows) and **it is the wrong
+file**: `sweep-ink-bar.py`'s OWN `--report` mode reads that artefact, and its `completed()` guard tests
+`first not in ([""], COLUMNS)` — an exact list equality, `COLUMNS` being `document`/`status` plus
+`TOOL_COLUMNS`, so 15 → **17**. Measured: `python3 Tools/sweep-ink-bar.py --report INKBAR-2026-08-19.tsv`
+printed the band histogram and the byte totals before this commit and now **exits 1** with
+`header is [...15...], not this tool's [...17...]`. The header-drift guard the previous session's blocker
+was about, fired by the same commit from the other side.
+⚠️ **Left rather than fixed, with the reason.** The refusal is LOUD and names its own cause; the guard is
+shared with the RESUME path, where accepting a narrower header would be wrong outright (a resume would
+append 17-field rows under a 15-column header, which is the misalignment the guard exists for), so the
+repair is a separate reader for `--report` plus its own self-test rows and not a widened constant.
+`c28-bar-pilot`, the next sub-box, takes its page list from that file by `awk` and does not need
+`--report`. Carried as the queue's `sweep-report-legacy`.
+⛔ **Its own self-test cannot see this and that is structural**: every fixture in it is built from the live
+`TOOL_COLUMNS` and `row()`, so it is self-consistent by construction — including the case named *"a TSV
+written under different columns is refused, not appended to"*, which passes for the same reason. A
+committed artefact is the only witness, and nothing runs the tool against one.
 
 #### The instrument's own missing exit, FIXED 2026-08-26 — `SHAPEDUMP` counted its failed writes, named every one of them, and returned 0
 
@@ -21160,7 +21284,10 @@ leave them. **Predicted before the run, in writing, with the reasoning below and
 one has no compiler witness — so say what stands behind it.** An identity-only prune
 compiles clean and changes nothing observable outside the divergent case, unlike
 `logic/C28-alltext-ignores-shape`, whose applied-ness was read off
-`'groups' was never used`. What stands behind it is `mutate.py`'s own
+`'groups' was never used`. ⛔ **RETIRED 2026-09-02 — `#### The third term reported` put a second reader of
+`groups` on the line above the `return`, so this mutant compiles clean now and the warning no longer
+fires. It is still uniquely matched and still killed by the same three checks; only the free
+applied-ness signal is gone.** What stands behind it is `mutate.py`'s own
 `hits != 1 → NOT-APPLIED` guard plus the pattern's uniqueness: `walkedAt` occurs in
 `Sources/Flattener.swift` three times and the catalogue's search string matches
 exactly one of them. ⚠️ Raised by the review of this diff, which verified the

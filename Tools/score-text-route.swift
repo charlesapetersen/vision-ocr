@@ -594,6 +594,46 @@ where layeringVerdict(production: production, replica: replica)
     exit(5)
 }
 
+// C28, 2026-09-02. `lineNToken`'s four cases, in the shape of the three tables above.
+//
+// Added by the adversarial review of the diff that introduced the function, whose finding
+// was that it *copied `layeringVerdict`'s seam and not its discipline*: nothing in this
+// repo executes a `Tools/` self-test except the tool itself, `run_tests.sh` runs none, and
+// `check-tools-compile.sh` is `swiftc -typecheck` — so four freshly written branches were
+// proved to PARSE and nothing more.
+//
+// ⛔ **Row 4 is the one that could not otherwise be reached at all.** `.unlabelable` is
+// unreachable through `mrcLayers`, which calls `textLineGroupsOutsideText` with no
+// `runLimit` argument, so `dense` can be produced by no run of this tool today. It is here
+// because the register's whole reason for the enum is that `unlabelable` must not fold
+// into `-`, and a token nothing exercises is how that would silently stop being true.
+//
+// ⚠️ The case count is asserted below, for the reason the table above gives.
+let lineNTokenCases: [(Flattener.ShapeTermAnswer?, String)] = [
+    (Flattener.ShapeTermAnswer?.none, "-"),  // no layers on this side — no priced bar, or mrcLayers gave nothing
+    (.some(.notAsked), "-"),                 // ⚠️ the term was never asked; NOT "zero groups"
+    (.some(.groups(0)), "0"),                // asked, and the only answer that accepts the page
+    (.some(.groups(3)), "3"),                // asked, and refusing — the term held the page, not the bar
+    (.some(.unlabelable), "dense"),          // asked, and refusing for density
+]
+if lineNTokenCases.count != 5 {
+    FileHandle.standardError.write(Data(
+        ("score-text-route: self-test failed — the lineNToken table has "
+         + "\(lineNTokenCases.count) cases, not 5; rows were added or deleted and the table "
+         + "can no longer be read as covering all four tokens plus the absent side; "
+         + "measuring nothing\n").utf8))
+    exit(5)
+}
+for (answer, want) in lineNTokenCases where lineNToken(answer) != want {
+    FileHandle.standardError.write(Data(
+        ("score-text-route: self-test failed — lineNToken("
+         + "\(answer.map(String.init(describing:)) ?? "nil")) is \"\(lineNToken(answer))\", "
+         + "wanted \"\(want)\"; `lineN` and `lineNAtBar` would misreport which term of "
+         + "`pageIsAllText()` refused a page, and collapsing a refusal into `-` credits the "
+         + "bar with it; measuring nothing\n").utf8))
+    exit(5)
+}
+
 /// Exit, carrying an incomplete dump in the status. Two `exit`s below reach the end of
 /// the run — the "no picture-route pages measured" guard and the normal fall-through —
 /// and a dump failure has to survive both. The totals are printed either way, because
@@ -622,7 +662,7 @@ func finish() -> Never {
                       wrote: dumpedPages, missing: dumpMissing))
 }
 
-/// The one printer, and the thirteen columns in one place.
+/// The one printer, and the fifteen columns in one place.
 ///
 /// Every row came out of its own `print` before, and two of the four were the wrong
 /// width: the `already 1-bit` row printed **10** fields under this 9-column header
@@ -632,20 +672,85 @@ func finish() -> Never {
 /// right, which is the argument for not counting dashes at all. Third instance of
 /// this shape in the register: T14's SKIP row, A12.3's `score-mrc`, this.
 ///
-/// The last four are C26's. `extent` is `paleDrawing(…).extent`, the guard's *second*
-/// term, printed so a row that does not move can be read for which term held it;
-/// `barVerdict`, `layeredAtBar` and `barDelta` are `-` unless `INKBAR` is set.
+/// Four of the last five are C26's. `extent` is `paleDrawing(…).extent`, the guard's
+/// *second* term, printed so a row that does not move can be read for which term held
+/// it; `barVerdict`, `layeredAtBar` and `barDelta` are `-` unless `INKBAR` is set.
+///
+/// `lineN` and `lineNAtBar` are C28's and are the guard's **third** term, added
+/// 2026-09-02 so a `picture` verdict is attributable. `inkOut` and `extent` already
+/// name what terms 1 and 2 measured, and until these columns existed the shape term's
+/// answer appeared nowhere — so a row reading `verdict=picture` could have been refused
+/// by the bar or by the term and no column said which. That is the reason the register
+/// gives for this file and `barVerdict` "still cannot price
+/// `textPageInkOutsideThreshold` going back up".
+///
+/// ⛔ **A PAIR, not one column, and the AT-BAR side is the one the pricing needs.** The
+/// box that commissioned this prescribed one appended column; two is this file's own
+/// idiom — `verdict`/`barVerdict`, `layered`/`layeredAtBar` — and one column cannot
+/// answer the question, which is why the deviation was taken. The term is only
+/// *evaluated* on a page terms 1 and 2 already accepted, so at the shipped bar it is
+/// never asked about the pages a HIGHER bar would newly admit: those read `lineN` `-`
+/// by construction, and `-` on the side that cannot see them is no information at all.
+/// `lineNAtBar` is the same term under `INKBAR`, which is where those pages get asked.
+/// ⚠️ The two can only differ in whether the term was ASKED. Its count is
+/// bar-independent — `textLineGroupsOutsideText` takes grey, stencil, region and the
+/// page Otsu, and the override enters none of them — so a row printing two different
+/// numbers is an instrument fault and not a finding.
+///
+/// ⛔ **It is production's own answer read back from `MRCLayers.shapeTermAnswer`, NOT
+/// a replica.** This file's replica of `pageIsAllText()` was repaired three times and
+/// then retired (`BUGS.md` C28 `#### The replica retired`), and it cannot mirror this
+/// term even in principle: the term takes the Sauvola stencil, which `mrcLayers`
+/// builds privately and does not publish as a `[Bool]`. ⚠️ `score-shape-term.swift`
+/// prints a column of the same name that IS an independent transcription — deliberate
+/// there, because its `mapFrac` identity is asserted against it, and making it call the
+/// shipped function would turn that assertion into a tautology. Two tools, two rules,
+/// on purpose. Do not "unify" them.
+///
+/// ⛔ **Three tokens plus the dash, and `-` is not "zero groups".** `-` is the term
+/// never having been asked (`PhotoDetail.maximum`, or term 1 or term 2 refusing first,
+/// or a run that built no layers on this side), `0` is the term running and accepting,
+/// `N` is the term refusing with N line groups, and `dense` is the term refusing
+/// because it could not label the page within `maximumShapeRuns`. Reading `dense` as
+/// `-` would credit the bar with a refusal the term made.
+/// ⚠️ **`lineNAtBar` has a FIFTH token, `n/a`, and it comes from the caller rather than
+/// from `lineNToken`**: a priced bar was asked for and could not be run at all, because
+/// the shipped stencil failed to encode and `stencilBytes > 0` gates the second
+/// layering. It is `barBytes`'s own token for the same condition on the same row, kept
+/// distinct for `barBytes`'s own stated reason — a `grep` over a corpus log must not
+/// read an instrument failure as an answer. The four above are the term's; this one is
+/// the run's.
+///
+/// ⛔ **APPENDED, and the consumer moves with them.** `Tools/sweep-ink-bar.py` compares
+/// this header for **exact list equality** (`parse_tool_output`), so a column added
+/// here without widening its `TOOL_COLUMNS` returns `header drift` for all 233
+/// documents. Verified by reading that parser, not assumed.
 let columns = ["page", "route", "sat", "tone", "inkOut", "layered", "1bit",
-               "delta", "verdict", "extent", "barVerdict", "layeredAtBar", "barDelta"]
+               "delta", "verdict", "extent", "barVerdict", "layeredAtBar", "barDelta",
+               "lineN", "lineNAtBar"]
 func row(_ page: Int, _ route: String = "-", sat: String = "-", tone: String = "-",
          inkOut: String = "-", layered: String = "-", bilevel: String = "-",
          delta: String = "-", verdict: String, extent: String = "-",
-         barVerdict: String = "-", layeredAtBar: String = "-", barDelta: String = "-") {
+         barVerdict: String = "-", layeredAtBar: String = "-", barDelta: String = "-",
+         lineN: String = "-", lineNAtBar: String = "-") {
     let fields = ["p\(page)", route, sat, tone, inkOut, layered, bilevel, delta,
                   verdict.replacingOccurrences(of: "\t", with: " "),
-                  extent, barVerdict, layeredAtBar, barDelta]
+                  extent, barVerdict, layeredAtBar, barDelta, lineN, lineNAtBar]
     precondition(fields.count == columns.count)
     print(fields.joined(separator: "\t"))
+}
+
+/// `MRCLayers.shapeTermAnswer` as this file's `lineN` / `lineNAtBar` token.
+///
+/// A `nil` argument is a run that has no layers on that side to read back — no priced
+/// bar was set, or `mrcLayers` returned nothing — which is the same absence the dash
+/// rows already print and not a fourth case of the term's own.
+func lineNToken(_ answer: Flattener.ShapeTermAnswer?) -> String {
+    switch answer {
+    case .none, .some(.notAsked): return "-"
+    case .some(.groups(let n)):   return "\(n)"
+    case .some(.unlabelable):     return "dense"
+    }
 }
 
 print(columns.joined(separator: "\t"))
@@ -893,6 +998,21 @@ for index in pages {
         }
         Flattener.textPageInkOutsideThresholdOverride = nil
     }
+    // C28, 2026-09-02. `lineNAtBar`'s token, resolved HERE rather than at the printer, so
+    // that the three states the guard above can leave behind stay three.
+    //
+    // ⛔ **`-` and `n/a` are different answers and this column must not collapse them, for
+    // the same reason `barBytes` does not** — a `grep` over a corpus log must not read an
+    // instrument failure as "the term said nothing". No priced bar was asked for is `-`;
+    // a priced bar that could not be RUN, because the shipped stencil failed to encode and
+    // `stencilBytes > 0` gates the whole second layering, is `n/a`. Found by the
+    // adversarial review of the diff that added this column, which caught it printing `-`
+    // for the second case eight lines from the `barBytes = "n/a"` that exists to prevent
+    // exactly that conflation.
+    let barLineN: String
+    if priceBar == nil { barLineN = "-" }
+    else if stencilBytes == 0 { barLineN = "n/a" }
+    else { barLineN = lineNToken(barLayers?.shapeTermAnswer) }
 
     // --- the verdict, read back from production rather than replicated ---
     //
@@ -1034,7 +1154,14 @@ for index in pages {
         row(index, route, sat: String(format: "%.3f", sat),
             tone: String(format: "%.3f", tone),
             inkOut: String(format: "%.4f", inkOut),
-            verdict: "FAIL encode failed")
+            verdict: "FAIL encode failed",
+            // C28, 2026-09-02. The verdict WAS taken on this page — `mrcLayers` ran and
+            // `shippedLayers` holds its answer — and only the 1-bit comparison failed, so
+            // withholding term 3's answer here would suppress a real reading because a
+            // LATER step failed. That is the same argument this file already makes for the
+            // `VERDICT` stderr line, and `inkOut` on the line above is already printed on
+            // this row for it. Found by the adversarial review of this diff.
+            lineN: lineNToken(shippedLayers?.shapeTermAnswer))
         continue
     }
 
@@ -1103,7 +1230,14 @@ for index in pages {
         delta: String(format: "%+d", bilevel - layered),
         verdict: allText ? "all-text" : "picture",
         extent: String(format: "%.5f", extent),
-        barVerdict: barVerdict, layeredAtBar: barBytes, barDelta: barDelta)
+        barVerdict: barVerdict, layeredAtBar: barBytes, barDelta: barDelta,
+        // C28. Production's own answer on each side, read back rather than replicated —
+        // the same seam `verdict` was repaired onto in 2026-08-23. The shipped side
+        // attributes today's `picture`; the at-bar side is the one that can see a page
+        // a higher bar would newly admit, because at the shipped bar the term is never
+        // asked about it. Both are `-` where the term was not reached.
+        lineN: lineNToken(shippedLayers?.shapeTermAnswer),
+        lineNAtBar: barLineN)
 }
 
 print("")

@@ -510,22 +510,21 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-bar-attribution` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-bar-pilot` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-bar-attribution` SUB-BOX, IMMEDIATELY AFTER THIS BOX'S CITE
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-bar-pilot` SUB-BOX, IMMEDIATELY AFTER THIS BOX'S CITE
       LINE. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.** Written 2026-09-02 by
-      `campaign-next-step`, which exists because every session from 2026-08-28 skipped this item and the
-      queue's head went inert while the daemon ran on self-instrumentation. It is C28's OWN nomination:
-      publish the shape term's answer on `Flattener.MRCLayers` and print it as one appended column, so a
-      page's `verdict` says whether the **bar** or the **shape term** refused it — which is what has to
-      exist before the entry's one remaining measurement is askable at all. ⚠️ It needs the `Sources/`
-      field: the term takes the Sauvola stencil and `mrcLayers` does not publish it, so the tool cannot
-      call the term itself. The sub-box carries the correction and why.
+      `campaign-next-step` and re-pointed the same day by `c28-bar-attribution`, which is now ticked: the
+      instrument it repaired is in the tree, so the entry's one remaining measurement is askable for the
+      first time and the pilot is what asks it on a named page set. This box exists because every session
+      from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
+      self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
+      box's FIRST PHYSICAL LINE, so a wrap moves the pointer where the resolver cannot see it.
       ⛔ **STANDING RULE FOR THIS CAMPAIGN, and it is the whole point of `campaign-next-step`: the session
       that ticks a sub-box here WRITES THE NEXT ONE before it stops.** Every other `c28-*` sub-box below is
       ticked, and that is exactly why the parent read as unbounded — a campaign with no named next step is
@@ -844,7 +843,56 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-bar-attribution** — **C28's OWN NOMINATED NEXT STEP, and it is an INSTRUMENT REPAIR rather
+- [ ] **c28-bar-pilot** — **ASK C28's ONE REMAINING MEASUREMENT ON A NAMED PAGE SET, NOT ON A CORPUS.**
+      `c28-bar-attribution` un-confounded the instrument on 2026-09-02, so
+      `Tools/score-text-route.swift` now prints `lineNAtBar` — what `pageIsAllText()`'s **third** term
+      answers about a page at a *priced* bar, which at the shipped bar it is never asked. The question
+      the entry has been carrying since 2026-08-23 is therefore askable for the first time: **of the
+      pages a higher `textPageInkOutsideThreshold` would newly admit, how many would the shape term
+      refuse anyway?** Every one it refuses is a page the bar could stop paying for.
+      ⛔ **BOUND: the population is ALREADY NAMED IN A COMMITTED ARTEFACT and must be taken from it, not
+      re-swept.** `INKBAR-2026-08-19.tsv` holds 2,129 measured page rows and this register already
+      counts **17 sampled rows with `inkOut` in [0.045, 0.08)**, spread over **10 documents of 233** —
+      that is the band, and an `awk` filter over the committed file is how you get the document list.
+      One `INKBAR=0.08` invocation per document, ~10 of them; read `lineNAtBar` per row. **No corpus
+      sweep**, no `sweep-ink-bar.py` run, and nothing in `Sources/`.
+      ⛔ **DO NOT RE-RUN `sweep-ink-bar.py` OVER 233 DOCUMENTS.** That is 105.6 min of measured time and
+      it answers a question this step does not ask; the corpus form is the step AFTER the pilot, and
+      only if the pilot's answer is interesting. ⚠️ Note that `INKBAR-2026-08-19.tsv` pre-dates both the
+      bar move and the wired shape term, so its **`verdict` and byte columns are historical** — what you
+      are taking from it is the page LIST, which is `inkOut` and `page`, and `inkOut` is bar-independent.
+      Say so in the write-up rather than quoting its verdicts as current.
+      ⚠️ **`INKBAR=0.08` is right for THIS band and wrong nearly everywhere else** — the tool's own
+      README cell and `#### The eight near-misses` both record that a bar at or above a page's own
+      `inkOut` compares the page with itself and prints two byte-identical layers. 0.08 reaches exactly
+      `inkOut` in [0.045, 0.08), which is this band by construction. Do not reuse the number elsewhere.
+      ⚠️ **What a refusal on `lineNAtBar` does and does not buy.** It says the shape term would hold the
+      page back at the higher bar, so moving the bar costs nothing on that page — it does NOT say the
+      page loses nothing today, and it is not a byte figure. The bytes are `layeredAtBar` and they are
+      already in the tool's output; report them beside the counts or the step is half an answer.
+      ⚠️ **`0` on `lineNAtBar` is the interesting direction and the dangerous one**: it is a page the
+      higher bar WOULD shrink 8x with no term refusing it, which is the loss C28 exists for. Read at
+      least one such page at 1:1 before recommending anything, the way every sub-step of this campaign
+      has. ⛔ **And do not recommend a bar.** The value is the owner's — C26's was, on this same
+      constant, and `#### THE DECISION` records why. This step reports counts and bytes.
+      ⛔ **DO NOT REACH FOR `sweep-ink-bar.py --report` ON `INKBAR-2026-08-19.tsv` — IT EXITS 1 AS OF
+      2026-09-02** and the reason is this campaign's own last commit: that file is 15 columns and the
+      widened `COLUMNS` is 17. Use `awk` over it, which is what this box prescribes. The repair is the
+      queue's `sweep-report-legacy`; it is not a prerequisite for this item.
+      ⚠️ **`lineNAtBar` is not a numeric column and `stratify-corpus.py`'s `--where` is numeric.** Two
+      of its tokens are words — `dense` (the term refused for density) and `n/a` (the priced run could
+      not be made at all) — so a filter like `--where lineNAtBar:ge:1` silently excludes both, which
+      reproduces this very commit's confound one level down in the consumer. Filter on `verdict` and
+      read the token, or count the words separately and say how many there were.
+      ⚠️ Committing a TSV makes it a dated artefact: name it `C28-BARPILOT-<date>.tsv`, and note in
+      `CLAUDE.md`'s dated-artefact list which side of the "reproducible from the tree" line it falls on
+      (it is reproducible — `score-text-route` is committed and carries a self-test).
+      ⛔ **Whoever ticks this box writes C28's next sub-box before stopping.**
+      (context: BUGS.md C28 `#### The third term reported` and `#### What this entry is NOT` —
+      `context:` and not `origin:`, because C28 stays OPEN by design while its sub-steps close, and an
+      `origin:` cite here would report `TICKED-OPEN` the day it is ticked)
+- [x] **c28-bar-attribution** — **DONE 2026-09-02.** **C28's OWN NOMINATED NEXT STEP, and it was an
+      INSTRUMENT REPAIR rather
       than a measurement.** The entry says the one measurement still worth taking is whether
       `Flattener.textPageInkOutsideThreshold` can go back UP now the shape term ships — *"which is the
       outcome worth aiming at"* — and it says in terms why nobody can take it: with the term inside
@@ -852,6 +900,29 @@ happens.**
       the term together**, so *"they still cannot price `textPageInkOutsideThreshold` going back up"*.
       Un-confound the instrument and that measurement becomes askable; leave it and this entry has no next
       measurement at all.
+      ✅ **SHIPPED — `Flattener.MRCLayers.shapeTermAnswer`, printed by `score-text-route` as `lineN` and
+      `lineNAtBar`** (`BUGS.md` C28 `#### The third term reported`). Suite **1,361 → 1,364**; three checks,
+      watched failing under two sabotages with both predictions exact and disjoint kill sets — `1362/1364`
+      with the two shape-term checks red and both detail strings verbatim, `1363/1364` with the Maximum
+      check red alone.
+      ⛔ **TWO OF THIS BOX'S OWN PRESCRIPTIONS WERE WRONG AND THE CORRECTIONS ARE THE USEFUL PART.**
+      (1) *"an optional count, `inkOutsideText`'s shape"* is one case short:
+      `textLineGroupsOutsideText` returns `nil` for **too dense to label**, which the wiring reads as a
+      REFUSAL, so an `Int?` would have folded that into *never asked* and credited the bar with a refusal
+      the term made — this box's own confound, one level down. It is a three-case enum and the column has
+      four tokens (`-`, `0`, `N`, `dense`). (2) *"ONE column APPENDED"* cannot answer the question the box
+      commissions: the term is only EVALUATED on a page terms 1 and 2 already accepted, so at the shipped
+      bar it is never asked about the pages a HIGHER bar would newly admit — exactly the population — and
+      those read `lineN` `-` by construction. It is a PAIR, which is this file's own idiom three times
+      over (`verdict`/`barVerdict`, `layered`/`layeredAtBar`).
+      ✅ **AND THE BLOCKER BELOW IS CONFIRMED BY MEASUREMENT AND COST MORE THAN THE ONE LINE IT
+      PREDICTED**: widening `sweep-ink-bar.py`'s `TOOL_COLUMNS` alone puts its own `--self-test` at
+      **71 checks, 15 failures**, because its two fixture stdouts are literal 13-field rows. Widened by
+      hand rather than derived from `TOOL_COLUMNS` — a fixture that widened itself would let a real width
+      defect through — and 71/0 after. `EXPECTED_CHECKS` did not move.
+      ⚠️ **No mutant was added and none was owed**: nothing here is a constant or a guard, the verdict
+      logic is untouched, and `?? .unlabelable` maps an existing return rather than deciding anything.
+      No `fault-inject.sh` case either — no new error branch.
       ⛔ **BOUND: ONE new field on `Flattener.MRCLayers`, ONE column APPENDED after `score-text-route`'s
       last field, the matching widening of `Tools/sweep-ink-bar.py`'s `TOOL_COLUMNS`, ONE check, and NO
       corpus sweep.** TWO `Tools/` files, one code commit — but budget
@@ -4889,6 +4960,29 @@ happens.**
       `origin:` means the item IS that entry and C30 is open. It never was: this is a `fault-inject.sh` row
       for a tool C30's sweep happened to find, exactly the shape `annot-marks-refusals` records against
       C29. Found by the adversarial review of the ticking commit, by running the checker.)
+- [ ] **sweep-report-legacy** — ⛔ **`Tools/sweep-ink-bar.py --report` CANNOT READ
+      `INKBAR-2026-08-19.tsv` ANY MORE, and the commit that broke it is `c28-bar-attribution`
+      (2026-09-02).** That file is 15 columns; `TOOL_COLUMNS` went to 15 when `lineN`/`lineNAtBar`
+      landed, so `COLUMNS` (`document` + `status` + the tool's) is **17**, and `completed()` tests
+      `first not in ([""], COLUMNS)` — an exact list equality. Measured: the command printed the band
+      histogram and the byte totals before that commit and now **exits 1** with
+      `header is [...15...], not this tool's [...17...]`. Found by the adversarial review of that diff,
+      whose own prose had checked `stratify-corpus.py` (forward-compatible, reads by header name) and
+      missed this tool's own consumer of the same artefact.
+      ⛔ **DO NOT JUST WIDEN OR LOOSEN THE GUARD — `completed()` IS THE RESUME PATH TOO.** A resume over
+      a 15-column file must still refuse, because appending 17-field rows under a 15-column header is
+      precisely the misalignment the guard exists for and the register has three field-count defects
+      (T14, A12.3, T18) behind it. The shape wanted is a reader `--report` uses that accepts a header
+      which is a **proper prefix** of `COLUMNS`, pads the short rows, and says in the output which
+      columns the file predates — with resume left strict.
+      ⚠️ **Its `--self-test` is structurally blind to this and cannot be the gate**: every fixture is
+      built from the live `TOOL_COLUMNS` and `row()`, so it is self-consistent whatever those hold —
+      including the case named *"a TSV written under different columns is refused, not appended to"*.
+      A committed artefact is the only witness, so the new check must read one (or a literal copy of one
+      file's header) rather than a generated fixture. `EXPECTED_CHECKS` moves with it.
+      ⚠️ Bounded: one `Tools/*.py` file, no `Sources/`, no sweep, no corpus. The hook runs that file's
+      `--self-test` for a staged `Tools/*.py`, so the gate is free.
+      (context: BUGS.md C28 `#### The third term reported`)
 - [ ] **sweep-exit5** — `Tools/sweep-ink-bar.py`'s `CONFIG_EXITS` does not include
       `score-text-route`'s exit **5** (self-test failed, nothing measured), added 2026-08-19 by C26's
       sub-step (4). A systematic self-test failure would therefore be **recorded as 233 failed
