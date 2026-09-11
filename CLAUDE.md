@@ -644,7 +644,32 @@ bar of 75, so the positive control reds below **56/25 = 2.24** and a raise is in
 is INCLUSIVE, so a mark on columns 200…204 gives `260 - 204 = 56` and 55 is the count of empty columns —
 which also makes the draft's *"blind to every value above 2.2"* **false**, since `[2.2, 2.24)` reds it too.
 ⚠️ The raising direction has no fixture, and the claim that a raising mutant would change no check's input
-here is REASONED rather than measured. ⚠️ Estimator, the **ninth** write-up from the cleared window and the
+here is REASONED rather than measured.
+⛔ **BOTH OF THOSE FELL ON 2026-09-11 AND THE HEADLINE FINDING DID NOT — `c28-gap-fixture` built the
+fixture, and the kill sets went five → SIX and stayed BYTE-IDENTICAL** (`BUGS.md` C28
+`#### The gap term's own fixture`). `c28GapSplit` puts the same four 5×30 marks at 200 / 260 / **420** /
+480, gaps 56 / **156** / 56 against the 75 px bar, so the band breaks into two runs of two and the term
+reads 0; the inverse row `c28GapJoined` (56 / 66 / 56) reads 1. Three mutants, every element predicted in
+writing first: `const/lineGapFactor` → 0.0 **killed, 293 s, `1362/1368`, SIX**;
+`const/lineMinimumMembers` → 99 **killed, 295 s, `1362/1368`, SIX** and `True` field to field against it;
+`const/lineGapFactor-raised` → 99.0 **killed, 296 s, `1367/1368`, ONE**. ⛔ **THE LESSON: the inverse row
+reds under BOTH collapsing mutants, so a check both mutants collapse on the SAME FIXTURE can never
+separate two constants — every such check asserts the same un-collapsed answer** (⚠️ not a universal over
+all future checks: a ≥ 99-member band would be disjoint in the lowering direction, refuted in the entry).
+What separates them is the raising mutant's kill set, which intersects the other two in **NOTHING**, so
+the split check separates the gap term from every other grouping mutant IN THE CATALOGUE — ⛔ **not from
+every conceivable one, and a draft said "attributable to the gap term alone": at `lineMinimumMembers` = 2
+each run of two IS a group and the same check reds.** ✅ Which makes that fixture the first able to see
+`lineMinimumMembers` LOWERED, C28's own two-sided trade, asked by no entry. ⚠️ The bracket is now
+two-sided — **[2.64, 6.24)**, derived from the
+fixtures' geometry and not measured at its endpoints — where it was a floor of 2.24. ⚠️ Catalogue
+**105 → 106**, coverage **84 of 105 → 85 of 106**, census **still 21** a second time, log **101 → 104**,
+suite **1,364 → 1,368**, `0 survivor(s)` unchanged; re-derive all of them. ⛔ **And the box's own
+prescribed catalogue line would have made the FIRST duplicate id in the catalogue** — `catalogue()` keyed
+the id on the constant's NAME and `already_done()` is last-row-wins, so the new mutant would have read as
+already recorded and been skipped; a fifth tuple element overrides the id now and `--self-test` asserts
+uniqueness (39 → 40 checks, watched reddening alone).
+⚠️ Estimator, the **ninth** write-up from the cleared window and the
 **second** with a degenerate printed range: `10-10` off five rows reading 295-298 s, measured **592 s**
 end to end — inside the unrounded [590, 596] s span and 1.3% under the printed 600 s floor, `A11.1`'s
 failure mode exactly, so read a single-value range as the rows agreeing and never as precision.
@@ -938,6 +963,12 @@ present-tense count, which is the one shape `check-staleness.sh` cannot see (it 
 the same trap this file already records against its own mutation-figure sentences. ⚠️ **The numerator does
 NOT move with it**: the ninth measured **592 s** against a printed `10-10`, so it is the THIRD reading
 outside the printed range, and **six of the nine** is the form to quote — 6 inside + 3 outside = 9.
+⛔ **AND IT IS STILL NINE AFTER 2026-09-11's THREE MUTANT RUNS, WHICH IS THE POINT OF SAYING SO HERE.**
+`c28-gap-fixture` ran two invocations that each printed a range (`14-15` and `10-10`) and **neither was
+clocked from a wall-clock start**, so neither is a reading and the tally does not move — a session that
+counts *runs* rather than *recorded readings* will make this line false in the direction that looks like
+progress. ⚠️ Do not reconstruct those two from the mtimes in `#### The gap term's own fixture`: the
+finishes are recorded and the starts are not.
 ⚠️ The seventh, the seam's second mutant, printed `10-13` and measured **~618 s derived, ±30 s** (a
 `suite-timings.tsv` row WAS appended, `mutant-c26-inkbar-nil 618 0 4.26`, with the loadavg read ~30 s after
 the last write rather than 2 m 09 s) — so the box's figure is 1.29x low a **third** time.
@@ -2344,7 +2375,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,364 checks, no skips. ⛔ THIS LINE MUST STAY UNDATED AND MUST CARRY THE
+./run_tests.sh        # 1,368 checks, no skips. ⛔ THIS LINE MUST STAY UNDATED AND MUST CARRY THE
                       # CURRENT COUNT: check-staleness.sh treats a check-count claim whose own line or
                       # the line before it carries a date as HISTORY and drops it from the live pool,
                       # then reports each file's highest LIVE claim against the reference. So dating
@@ -2380,7 +2411,11 @@ git config core.hooksPath .githooks
                       #  1,361 -> 1,364: c28-bar-attribution's three shape-term readback checks —
                       #  the refusing page, the accepting control, and the Maximum page that never
                       #  asks. Measured off both sabotage runs, which printed 1362/1364 and
-                      #  1363/1364; the green figure is the hook's own run.)
+                      #  1363/1364; the green figure is the hook's own run.
+                      #  1,364 -> 1,368: c28-gap-fixture's two gap fixtures — the split page's 0,
+                      #  the joined page's 1 (the inverse row), one calibration reading over both,
+                      #  and the split page's ink. Measured by a clean suite run BEFORE any
+                      #  mutant, and corroborated by all three mutant runs printing /1368.)
                       # ⛔ AND IT HAPPENED AGAIN: `3bf2648` added those nine and left this line at
                       # 1,346. The ADOPTING session caught it, not the committing one — no ordinal is
                       # claimed for it, because this register has already published a wrong one by

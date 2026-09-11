@@ -2940,13 +2940,27 @@ do {
     // though read back by a mirror of the term's own calibration step, which is a bound on
     // what that reading can catch and `c28Calibration`'s own comment says so. This page
     // reads `glyphHeight` **25.0** and `glyphRun` **5.0**, so the accept band is a height
-    // in [12.5, 75.0] with `medianRun` <= 10.0, and the four marks sit 60 px apart against
-    // a `lineGapFactor * glyphHeight` of 75.0 — one band, one run, four members. So the
+    // in [12.5, 75.0] with `medianRun` <= 10.0, and the four marks are pitched 60 px apart
+    // against a `lineGapFactor * glyphHeight` of 75.0 — one band, one run, four members.
+    // ⛔ **60 is the PITCH and is not what `Flattener.swift:2199` compares**: `maxX` is
+    // INCLUSIVE, so the gap it reads is `260 - 204` = **56**. The conclusion is the same
+    // either way (both are under 75) and the numeral was corrected 2026-09-11 by the gap
+    // block ~200 lines below, which had spelled out the right derivation while this line
+    // still carried the wrong quantity. So the
     // grouping is never what refuses these three, which is the whole point of the set.
-    /// Four solid marks on one baseline, in the clear strip below the last padded word
-    /// box that the scanner rule above already occupies.
+    /// Solid marks on one baseline, at the given left edges, in the clear strip below
+    /// the last padded word box that the scanner rule above already occupies.
+    ///
+    /// The x list is a parameter only so that the two GAP fixtures further down are the
+    /// same marks as these three with one distance changed. Had they their own builder,
+    /// a drift in stroke width, height or baseline could move one set and not the other
+    /// and the pair would stop being a comparison — the reason `c28Stroke` exists at all,
+    /// one level up. `c28Dashes` is the original four at x = 200 + 60i.
+    func c28Marks(_ w: CGFloat, _ h: CGFloat, at xs: [CGFloat]) -> [NSRect] {
+        xs.map { NSRect(x: $0, y: 200, width: w, height: h) }
+    }
     func c28Dashes(_ w: CGFloat, _ h: CGFloat) -> [NSRect] {
-        (0..<4).map { i in NSRect(x: 200 + 60 * CGFloat(i), y: 200, width: w, height: h) }
+        c28Marks(w, h, at: [200, 260, 320, 380])
     }
     /// The page's own type scale, the way the term takes it: the median height and median
     /// run of the *stencil*'s components.
@@ -3128,6 +3142,101 @@ do {
             && c28TallInk < Flattener.textPageInkOutsideThreshold,
           String(format: "%.4f / %.4f / %.4f vs %.3f", c28StrokeInk, c28WideInk,
                  c28TallInk, Flattener.textPageInkOutsideThreshold))
+
+    // ⛔ THE GAP TERM, WHICH NONE OF THE THREE FIXTURES ABOVE CAN REACH. `textLines`
+    // flushes a run when the gap to the next member exceeds `lineGapFactor * glyphHeight`,
+    // and on every fixture in this suite that quantity was never the deciding one:
+    // `c28Stroke`'s four marks sit 56 px apart against a bar of 3.0 x 25.0 = 75 and make
+    // one run at any value at or above 2.24, while the other two are refused by the
+    // COMPONENT test before the grouping is asked at all. So the two scoped runs that DO
+    // move the grouping — `const/lineMinimumMembers` (4 -> 99, 2026-08-24) and
+    // `const/lineGapFactor` (3.0 -> 0.0, 2026-09-10) — are killed by the SAME checks with
+    // byte-identical detail strings: both plant the same wrong answer
+    // (`textLineGroupsOutsideText` returning 0) by different arithmetic, so those checks
+    // pin the GROUPING and neither constant. ⚠️ It was FIVE when that was written and is
+    // SIX from 2026-09-11, because the inverse row below joined both sets; the identity is
+    // the claim and the count is the day's. `BUGS.md` C28 `#### The grouping's other
+    // constant` and `#### The gap term's own fixture`.
+    //
+    // ⛔ THE ARITHMETIC THE PAIR BELOW IS BUILT FROM, which is derivation and not a guess.
+    // `ShapeComponent.maxX` is INCLUSIVE (`maxX = max(maxX, r.x1 - 1)`), so a 5-px mark at
+    // x = 200 owns columns 200...204 and `Flattener.swift:2199` reads the gap to a mark at
+    // 260 as `260 - 204` = **56** — not the 55 empty columns between them, which is not
+    // what that line compares. Against a bar of 75, 56 does not flush and 156 does:
+    //
+    //   split    200 / 260 / 420 / 480 — gaps 56, **156**, 56 — the band breaks into two
+    //            runs of two, neither reaching `lineMinimumMembers` = 4, so the term
+    //            reads **0**. At `lineGapFactor` = 99.0 the bar is 2475, the 156 no longer
+    //            flushes, one run of four survives and it reads **1**.
+    //   joined   200 / 260 / 330 / 390 — gaps 56, 66, 56 — one run of four at the shipped
+    //            value, so it reads **1**.
+    //
+    // ⛔ The SPLIT check is the first check in this suite that separates the gap term from
+    // every OTHER grouping mutant in the catalogue: it is red under `lineGapFactor` = 99.0
+    // and green under both of the others, because two runs of two are no group at 4 and no
+    // group at 99, and lowering `lineGapFactor` only adds flushes so it reads 0 there too.
+    // ⛔ **"No move of `lineMinimumMembers` can red it" is FALSE and the adversarial review
+    // of this diff caught it: at `lineMinimumMembers` = 2 each run of two IS a group, the
+    // split page reads 2, and this check reds ALONE** — the same singleton kill set as the
+    // raising gap mutant. So the attribution is over the CATALOGUE (where the only
+    // `lineMinimumMembers` entry is 4 -> 99) and not over every conceivable mutant, and the
+    // bound is one-sided in the same way the rest of this block is. ✅ Worth more than the
+    // correction: that makes this fixture the first one that can see `lineMinimumMembers`
+    // LOWERED, which is the direction C28's standing two-sided trade is about and which no
+    // catalogue entry asks. Reasoned from `Flattener.swift:2181`, not measured.
+    // ⚠️ The JOINED check is the INVERSE ROW and is deliberately
+    // NOT that — it reds under BOTH grouping constants, and that is what it is for:
+    // without it a fixture whose marks had drifted out of the accepted class would
+    // satisfy the 0-check while testing nothing, which is C24's eleventh check and the
+    // reason `c28Stroke` exists one level up. It was MEASURED taking both lowering
+    // mutants' kill sets from five to six, leaving them still identical to each other;
+    // what separates the two constants is the split check, not a count.
+    let c28GapSplit = tmp.appendingPathComponent("c28-gap-split.pdf")
+    makeScannedPDF(at: c28GapSplit, lines: c28Dense,
+                   bars: c28Marks(5, 30, at: [200, 260, 420, 480]))
+    let c28GapJoined = tmp.appendingPathComponent("c28-gap-joined.pdf")
+    makeScannedPDF(at: c28GapJoined, lines: c28Dense,
+                   bars: c28Marks(5, 30, at: [200, 260, 330, 390]))
+
+    // The bar these two are built against is `lineGapFactor * glyphHeight`, so the 75 has
+    // to be this page's 75 and not one inherited from a sibling. `c28Cal` above is read
+    // off `c28TooTall` alone, which is a different PDF: assert the scale on the two
+    // fixtures whose gaps are being compared to it, or the derivation above is only as
+    // good as that inheritance.
+    let c28SplitCal = c28Calibration(c28GapSplit)
+    let c28JoinedCal = c28Calibration(c28GapJoined)
+    check("C28 — the gap pair's own type scale is the one their 56/156 px gaps are read "
+            + "against",
+          c28SplitCal.height == 25.0 && c28SplitCal.run == 5.0
+            && c28JoinedCal.height == 25.0 && c28JoinedCal.run == 5.0,
+          "split \(c28SplitCal), joined \(c28JoinedCal), so the gap bar is "
+            + "\(Flattener.lineGapFactor * c28SplitCal.height)")
+
+    let c28SplitGroups = c28Groups(c28GapSplit, boxes: c28Boxes(14))
+    check("C28 — four accepted marks split by one gap wider than the bar are NO line group",
+          c28SplitGroups == 0, "\(c28SplitGroups as Any)")
+
+    let c28JoinedGroups = c28Groups(c28GapJoined, boxes: c28Boxes(14))
+    check("…and the same four with that one gap back under the bar ARE one line group",
+          c28JoinedGroups == 1, "\(c28JoinedGroups as Any)")
+
+    // The split page's 0 is the answer a MISSING mark gives too — drop the third and the
+    // remaining three read 0 for the wrong reason — and the joined page's own count would
+    // not catch it, being a different file. So pin the ink two ways, and the SECOND is the
+    // one that guards it. ⛔ The band alone does not: it is `c28Stroke`'s [0.004, 0.007],
+    // fitted to that fixture and not to this failure, and three marks of four read
+    // ~0.0039 — under the floor by **2.3%**, which the adversarial review of this diff
+    // measured and called too little margin to rest on. The EQUALITY does: this page and
+    // `c28Stroke` carry the same four 5x30 marks, translated, so their out-of-region ink
+    // must agree, and one missing mark moves it by ~0.0013 — **13x** the tolerance here.
+    // 1e-4 rather than the 1e-5 the tall/wide pair uses because these two are different
+    // PDFs at different x, where that pair is one page's marks against another's.
+    let c28SplitInk = c28InkOut(c28GapSplit, boxes: c28Boxes(14)) ?? -1
+    check("…and the split page carries all four of its marks, not three",
+          c28SplitInk >= 0.004 && c28SplitInk <= 0.007
+            && abs(c28SplitInk - c28StrokeInk) < 1e-4,
+          String(format: "%.5f (wanted [0.004, 0.007] and within 1e-4 of the strokes' %.5f)",
+                 c28SplitInk, c28StrokeInk))
 
     // ⚠️ `shapeMinimumArea` stays unpinned, and the reason is narrower than a first draft
     // of this comment claimed. In `textShaped`, **at its shipped value**, it cannot be the

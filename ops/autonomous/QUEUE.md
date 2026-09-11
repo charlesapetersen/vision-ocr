@@ -510,15 +510,15 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-gap-fixture` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-heightlow-fixture` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-gap-fixture` SUB-BOX — SEARCH FOR THAT TAG, IT IS
-      ~330 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-heightlow-fixture` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ~340 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
@@ -530,7 +530,13 @@ happens.**
       time 2026-09-10 by `c28-shape-gap-mutant`, now ticked: `lineGapFactor` has a mutant and is
       `killed`, and the successor `c28-gap-fixture` comes from that run's own finding rather than from
       the ticked box's nomination — the five reds are shared byte for byte with
-      `const/lineMinimumMembers`, so no check asserts the gap quantity.** This box exists because every session
+      `const/lineMinimumMembers`, so no check asserts the gap quantity.** ⚠️ **Re-pointed a FIFTH time
+      2026-09-11 by `c28-gap-fixture`, now ticked: the gap term has its attribution
+      (`const/lineGapFactor-raised`, `killed` by ONE check no other CATALOGUED grouping mutant reaches) — and the
+      successor again comes from that run's own finding, because the inverse row it added reds under
+      BOTH collapsing mutants and took both kill sets to SIX while leaving them byte-identical. So
+      `c28-heightlow-fixture` is written to ask the direction question FIRST rather than to add a
+      mutant and discover its reds are shared.** This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
       box's FIRST PHYSICAL LINE, so a wrap moves the pointer where the resolver cannot see it.
@@ -852,8 +858,79 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-gap-fixture** — **GIVE `lineGapFactor`'S RAISING DIRECTION A FIXTURE, AND WITH IT THE FIRST
-      CHECK IN THIS SUITE THAT IS ATTRIBUTABLE TO THE GAP TERM ALONE.**
+- [ ] **c28-heightlow-fixture** — **GIVE `shapeHeightLow` THE ONE DIRECTION NO OTHER SHAPE CONSTANT CAN
+      IMITATE, AND ASK THAT QUESTION BEFORE ADDING THE MUTANT RATHER THAN AFTER.**
+      ✅ **Written 2026-09-11 by `c28-gap-fixture` out of that run's own finding.** TWO of the shape
+      term's six constants still have no catalogue entry — `shapeHeightLow` and `shapeMinimumArea` —
+      and this box takes the first. ⛔ **Do NOT write "the last with no check asserting the quantity
+      it controls": `BUGS.md` classes `shapeHeightLow` as pinned ONE-SIDEDLY, so a check does object
+      to raising it, and a draft of this line said both things in one sentence — the exact shape
+      `BUGS.md:10690` records as corrected the day before.** What is true and is the reason to take
+      it: its unpinned direction is the LOWERING one, and its recorded reason for having no entry is
+      `score-shape-term`'s port check, which is a TOOL self-test and not a suite check at all.
+      `shapeMinimumArea` is the weaker case and goes second.
+      ⛔ **DO NOT JUST ADD `("Flattener.swift", "shapeHeightLow", "0.5", "3.0")` AND RUN IT. That is the
+      mistake `c28-gap-fixture` measured.** Raising `shapeHeightLow` to 3.0 makes the height band
+      `[75, 75]` and refuses the three dash fixtures' 30 px marks — but so does LOWERING
+      `shapeHeightHigh` to 0.5, which gives `[12.5, 12.5]` and refuses them too. Two constants, one
+      wrong answer, and the kill sets would be shared byte for byte exactly as `lineGapFactor`'s and
+      `lineMinimumMembers`'s are. **Ask first: in which direction do `shapeHeightLow` and
+      `shapeHeightHigh` stop agreeing?** Answer: `shapeHeightLow` LOWERED admits components that are
+      too SHORT, and no value of `shapeHeightHigh` can admit those — a ceiling cannot lift a floor.
+      ⛔ **THE FIXTURE, AND IT IS ARITHMETIC.** `c28Marks(5, 8, at: [200, 260, 320, 380])` — the SAME
+      builder and the SAME four positions as `c28Stroke`, only 8 px tall instead of 30. At the
+      asserted `glyphHeight` 25.0 the accept band is `[12.5, 75.0]`, so 8 < 12.5 is refused by the
+      FLOOR and the term reads **0**; at `shapeHeightLow` = 0.0 the band is `[0, 75]`, the marks are
+      accepted (area 40 ≥ `shapeMinimumArea` 4, `medianRun` 5 ≤ the run bar of 10), the four sit in one
+      band with gaps of 56 px under a 75 px bar, and it reads **1**. Rows `[1376, 1384)` top-down, well
+      clear of box 13's padded region ending at 1259, and x 200…384 well inside `interiorWindow`.
+      ✅ **THE INVERSE ROW ALREADY EXISTS AND COSTS NOTHING — this is the first time this campaign gets
+      one free**, because `c28Marks` is now shared: `c28Stroke` is the same four positions at 30 px
+      reading 1, so the pair differs in HEIGHT alone. Say so rather than building a third page.
+      ⚠️ **Predict the cross-table in writing before running, and name what you did NOT check.** The
+      new 0-check should stay green under `shapeHeightHigh` in both directions, under
+      `lineMinimumMembers` and under both `lineGapFactor` entries, and red under
+      `const/shapeHeightLow-lowered` alone. ⛔ **The prediction that can fail, and it is the same one
+      `c28-gap-fixture` flagged**: lowering a floor ADMITS components, so a page reading 0 elsewhere in
+      the suite can read non-zero and stop being shrunk as all text. Enumerate the fixtures that reach
+      `pageIsAllText()` or say you did not.
+      **THEN ADD THE CATALOGUE ENTRY** — `("Flattener.swift", "shapeHeightLow", "0.5", "0.0",
+      "shapeHeightLow-lowered")`, the **fifth-element id override**, because `shapeHeightLow` may well
+      want a raising entry later and `catalogue()`'s ids must stay unique; `--self-test` refuses a
+      collision now. Run it `--rerun --only shapeHeightLow`.
+      ⛔ **DO NOT run the full catalogue** (106 entries), **do not edit `Sources/` while `mutate.py`
+      runs**, and **check `ops/autonomous/test-lock.sh status` first — `mutate.py` does not take the
+      lock.** Budget a baseline suite plus ~295 s; read the startup estimate off the tool and ⛔ **never
+      read a single-value range as precision** — 2026-09-11's two invocations printed `14-15` and
+      `10-10` and NEITHER was clocked, so they are not readings and the estimator tally is still nine.
+      ⚠️ This touches `Tests/main.swift`, so the commit pays the full suite through the hook. One commit.
+      ⛔ **Whoever ticks this box writes C28's next sub-box before stopping** (the campaign's standing
+      rule). What remains after it is `shapeMinimumArea`, whose reason is stated above and is the
+      weaker kind — an argument, not a check — and which is separately live in the term's own
+      CALIBRATION filter, where these fixtures do run through it and nobody has measured whether that
+      would kill such a mutant.
+      (context: BUGS.md C28 `#### The gap term's own fixture`, `#### The owed fixture` and
+      `#### The grouping's other constant` — `context:` and not `origin:`, because C28 stays OPEN by
+      design while its sub-steps close)
+- [x] **c28-gap-fixture** — **DONE 2026-09-11.** `const/lineGapFactor-raised` (3.0 → 99.0) is `killed`,
+      296 s, `1367/1368`, by **EXACTLY ONE** check — the split page's — and its kill set intersects the
+      other two grouping mutants' in **nothing**, so the gap term has its attribution over the
+      CATALOGUE (⚠️ **not over every mutant** — at `lineMinimumMembers` = 2 the same check reds, caught
+      by the adversarial review, which makes the split fixture the first able to see that constant
+      LOWERED). ⛔ **And the
+      box's own supersession paragraph was HALF WRONG, which is the finding**: the inverse row reds
+      under `const/lineMinimumMembers` too, so BOTH lowering sets went five → **six** and compared
+      byte-identical again (`True` field to field, 293 s / 295 s, `1362/1368` each). A kill set can
+      separate two constants only by being disjoint, and checks added in the direction both mutants
+      collapse are shared by construction. ⛔ **The box's prescribed catalogue line
+      `("Flattener.swift", "lineGapFactor", "3.0", "99.0")` would have been the catalogue's FIRST
+      DUPLICATE ID** — `already_done()` is keyed on `const/<name>` and is last-row-wins, so the new
+      mutant would have read as already recorded and been skipped; a fifth tuple element overrides the
+      id and `--self-test` now asserts uniqueness (39 → 40, watched reddening alone). Suite
+      **1,364 → 1,368**, catalogue **105 → 106**, coverage **85 of 106**, census still **21**.
+      `BUGS.md` C28 `#### The gap term's own fixture`.
+      **— the box as it was written: GIVE `lineGapFactor`'S RAISING DIRECTION A FIXTURE, AND WITH IT
+      THE FIRST CHECK IN THIS SUITE THAT IS ATTRIBUTABLE TO THE GAP TERM ALONE. —**
       ✅ **Written 2026-09-10 by `c28-shape-gap-mutant` out of that run's own finding, not off a
       candidate list** — the box it succeeds nominated "the other two uncatalogued constants"
       (`shapeHeightLow`, `shapeMinimumArea`) and the run found something sharper: `const/lineGapFactor`

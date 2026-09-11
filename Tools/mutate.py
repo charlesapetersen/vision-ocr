@@ -371,7 +371,8 @@ CONSTANTS = [
     # the flipped checks were watched failing against 0.08 before the constant moved —
     # so what this entry buys is that the same experiment stays runnable. ⚠️ `--only C26`
     # does NOT select it: `--only` is a substring of the id, and the id is built from the
-    # constant's own name. Use `--only textPageInk`.
+    # constant's own name. Use `--only textPageInk`. ⚠️ True of 105 of the 106 entries as of
+    # 2026-09-11 — `const/lineGapFactor-raised` carries an explicit id, see `catalogue()`.
     ("Flattener.swift", "textPageInkOutsideThreshold", "0.045", "0.08"),
     # C28's wiring, 2026-08-22. Two of the shape rule's five numbers, chosen because
     # each is load-bearing in a *different* direction and the suite has a check sized
@@ -486,6 +487,12 @@ CONSTANTS = [
     # what changed for the second is the REASON, which is now measured rather than assumed.
     # `BUGS.md` C28 `#### The grouping's other constant` says the same thing in two places, and
     # the draft this replaces contradicted both of them in the file the register sends readers to.
+    # ⛔ **AND THE `lineGapFactor` HALF FELL THE NEXT DAY, 2026-09-11 — `c28-gap-fixture` BUILT the
+    # fixture this line says the suite does not have.** It is pinned BOTH ways now
+    # (`const/lineGapFactor` and `const/lineGapFactor-raised`, one catalogue entry each) and the
+    # suite brackets it into [2.64, 6.24) where it held only a floor of 2.24. `shapeHeightLow` is
+    # what this sentence still describes, and it is the last one-sided constant of the six.
+    # `BUGS.md` C28 `#### The gap term's own fixture`.
     ("Flattener.swift", "shapeHeightHigh", "3.0", "99.0"),
     # The grouping's OTHER constant, and the third route into `return groups == 0`.
     # `textLines` flushes a run when the gap to the next member exceeds
@@ -544,10 +551,16 @@ CONSTANTS = [
     # the mutant changes its input). Because every run at 0.0 is a sub-chain of a run at 3.0, a
     # fixture reading 0 groups at the shipped value reads 0 at 0.0 as well, so every `groups == 0`
     # assertion in the block is unable to fail: `c28GroupsBoxed`, `c28GroupsBar`, `c28GroupsC26`,
-    # `c28WideGroups`, `c28TallGroups`, the border check, AND `Tests/main.swift:3230`'s
+    # `c28WideGroups`, `c28TallGroups`, the border check, AND `Tests/main.swift:3340`'s
     # `.groups(0)` — ⛔ the seventh was missing from this list until the adoption caught it, because
-    # the draft reused `lineMinimumMembers`'s six-name list from 2026-08-24 and `:3200`/`:3230` were
-    # added 2026-09-02. And the two that look like yield are emptier still: the `shapeTermAnswer`
+    # the draft reused `lineMinimumMembers`'s six-name list from 2026-08-24 and it and the `shapeTermAnswer` transport check beside it were
+    # added 2026-09-02. ⛔ **AND AN EIGHTH JOINED IT 2026-09-11 and this list was short AGAIN, twice
+    # running, which is what says a list like this must be re-derived and never appended to from
+    # memory**: `c28SplitGroups == 0`, the gap fixture's own check, measured green under this mutant
+    # in the run that added it. ⚠️ It is the only one of the eight that is NOT unable to fail in
+    # general — it reds under `const/lineGapFactor-raised` and would red at
+    # `lineMinimumMembers` = 2 — so it is *this mutant's* unchanged input and not a dead check.
+    # And the two that look like yield are emptier still: the `shapeTermAnswer`
     # transport check compares against `c28GroupsMissed`, so BOTH sides go 1 -> 0 and the equality
     # holds, and the `inkOutsideText` assertion reads a field assigned before term 1's guard.
     # ⚠️ **The `runLimit` pair cannot fail either, but calling it "unchanged input" was wrong**:
@@ -563,13 +576,44 @@ CONSTANTS = [
     # `:2199` reads. So the control reds for any value below 56/25 = **2.24**, and ⛔ *"blind to
     # every value above 2.2"* is FALSE — `[2.2, 2.24)` reds it too. Corrected on adoption 2026-09-11
     # in a block whose own fixture comment exists to warn about exactly this ("Every range in this
-    # paragraph is INCLUSIVE ... Two numbers, one boundary", `Tests/main.swift:3081`).
+    # paragraph is INCLUSIVE ... Two numbers, one boundary", `Tests/main.swift:3095`).
     # ⚠️ And no check asserts these marks' x extents, so 56 is DERIVED from the rect and the
     # component rule rather than measured; antialiased bleed would move it. What holds regardless is
     # that 0.0 is inside the reachable band rather than an arbitrary extreme, and that a RAISE is
     # inert on THIS fixture (bar 75 -> 2475, one run either way) — ⚠️ the wider claim that a raise is
     # invisible to the whole suite is argued from the upstream refusals above, not from this bracket.
+    # ⛔ **THAT WIDER CLAIM IS MEASURED FALSE FROM 2026-09-11 and the entry below is why**: a raise
+    # is still inert on `c28Dashes`, but `c28GapSplit` reds under it, so the suite's bracket on this
+    # constant is two-sided — [2.64, 6.24) — and no longer a floor. Kept as written because it is
+    # what the entry below was added against.
     ("Flattener.swift", "lineGapFactor", "3.0", "0.0"),
+    # ✅ AND THE OTHER DIRECTION, AS OF 2026-09-11 — the prediction three paragraphs up
+    # ("a raising mutant would change no check's INPUT in this suite") was correct about
+    # the suite AS IT STOOD and is now refuted on purpose: `c28-gap-fixture` built the band
+    # that paragraph says no fixture had. `c28GapSplit` puts four accepted 5x30 marks at
+    # x = 200 / 260 / 420 / 480, gaps of 56, **156** and 56 px against a bar of
+    # `lineGapFactor * glyphHeight` = 3.0 x 25.0 = 75, so the band breaks into two runs of
+    # two, neither reaches `lineMinimumMembers` = 4 and the term reads 0. At 99.0 the bar
+    # is 2475, the 156 stops flushing, and one run of four reads 1.
+    # ⛔ **THIS IS THE ONLY `CONSTANTS` ENTRY WHOSE ID IS NOT ITS CONSTANT'S NAME**, and
+    # `catalogue()` explains why in full: two entries for one constant would otherwise
+    # share `const/lineGapFactor`, and `already_done()` is keyed on the id. ⚠️ *"the only
+    # entry in the CATALOGUE"* would be false and the adversarial review of this diff
+    # caught it — `catalogue()` returns OPERATORS too, and `mrc-stencil-polarity` is a
+    # `static let` moved under a `logic/` id, which is the rejected alternative named two
+    # sentences down.
+    # ⛔ **AND IT IS THE POINT OF THE PAIR RATHER THAN A SECOND HELPING**: the LOWERING
+    # mutant above and `const/lineMinimumMembers` are killed by the same checks byte for
+    # byte, so neither red set says which constant moved. This one's kill set is reached by
+    # NEITHER of them — two runs of two are no group at 4 and no group at 99 — so it is the
+    # first attribution the shape term's gap constant has had. ⛔ **What it is NOT is
+    # unreachable by any move of `lineMinimumMembers`, and a draft said that**: at
+    # `lineMinimumMembers` = 2 each run of two IS a group, the split page reads 2, and the
+    # same single check reds. The attribution is over the CATALOGUE, whose only
+    # `lineMinimumMembers` entry raises it. ✅ That also makes the split fixture the first
+    # one able to see `lineMinimumMembers` LOWERED — C28's own two-sided trade, still
+    # asked by no entry. `BUGS.md` C28 `#### The gap term's own fixture`.
+    ("Flattener.swift", "lineGapFactor", "3.0", "99.0", "lineGapFactor-raised"),
     # The quarter inch that separates a drawing from show-through. Large, so every
     # pale mark is type-sized and the drawing is never found.
     ("Flattener.swift", "typeCeilingInches", "0.25", "99.0"),
@@ -1086,9 +1130,23 @@ OPERATORS = [
 
 def catalogue():
     out = []
-    for f, name, old, new in CONSTANTS:
+    for entry in CONSTANTS:
+        f, name, old, new = entry[:4]
+        # ⛔ A FIFTH ELEMENT OVERRIDES THE ID, and it exists because the id was derived
+        # from the constant's NAME alone while `already_done()` is keyed on the id and is
+        # last-row-wins. So a second entry for a constant that already has one — the two
+        # DIRECTIONS of `lineGapFactor`, which is the case that found this — would have
+        # produced the catalogue's first duplicate id, and the consequence is silent in
+        # the direction that loses work: the new mutant reads as already recorded, is
+        # skipped without `--rerun`, and shares one log row and one coverage slot with a
+        # mutant it has nothing to do with. `--only` would select both under either name.
+        # The alternative was an OPERATORS entry, which buys a unique id by calling a
+        # constant move `logic/` and giving up the anchored declaration pattern below;
+        # rejected for that. `self_test` asserts uniqueness, so the next entry that
+        # collides says so instead of being absorbed.
+        ident = entry[4] if len(entry) > 4 else name
         out.append({
-            "id": f"const/{name}", "file": f, "kind": "constant",
+            "id": f"const/{ident}", "file": f, "kind": "constant",
             # Anchored to the declaration so a bare number elsewhere is not hit.
             "pattern": rf"(static (?:var|let) {re.escape(name)}[^=\n]*=\s*){re.escape(old)}\b",
             "replacement": rf"\g<1>{new}",
@@ -1785,6 +1843,20 @@ def self_test():
                 widths_ok = False
     check("…and its `N check(s)` count is the number of names it actually carries",
           widths_ok)
+
+    # (9) The catalogue's ids are unique. ⛔ Not hygiene: `already_done()` is keyed on the
+    # id and is last-row-wins, so a duplicate makes the SECOND entry read as already
+    # recorded — it is skipped without `--rerun`, both share one log row and one coverage
+    # slot, and `--only` cannot tell them apart. Every one of those failures is silent and
+    # in the direction of doing less work than the log claims. This was reachable from
+    # 2026-09-11, when `lineGapFactor` became the first constant with two entries; the
+    # fifth-element override in `catalogue()` is the escape and this is what says it was
+    # used. ⚠️ Over the real catalogue and not a fixture, because the property wanted is
+    # of the shipped table — a fixture would only test `collections.Counter`.
+    ids = [m["id"] for m in catalogue()]
+    dupes = sorted({i for i in ids if ids.count(i) > 1})
+    check(f"every catalogue id is unique ({len(ids)} entries)" + (f" — {dupes}" if dupes else ""),
+          not dupes)
 
     print(f"self-test: {len(failures)} failure(s)")
     return 1 if failures else 0

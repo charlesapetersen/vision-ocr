@@ -196,6 +196,21 @@ kill sets, each collapsing a different configuration of one comparison. So the q
 to ask of a kill is not "did the mutant die" but **"does any check assert the quantity
 this constant controls"** — and when none does, say so. What separated these two was
 arithmetic on a fixture's geometry (a 56 px gap against a 75 px bar), not a check.
+✅ **AND THE FIX FOR THAT IS NOT "ADD A CHECK", MEASURED 2026-09-11.** A fixture was
+built whose band splits at one 156 px gap, and the new inverse row it needs reds under
+**both** of those mutants — so both kill sets went five → **six** and compared
+byte-identical again. That is structural and worth carrying: **a check that reds when a
+mutant collapses an answer is a check asserting the un-collapsed answer, so any check
+both mutants collapse ON THE SAME FIXTURE is shared by construction.** ⚠️ Not a universal
+— a fixture whose band has ≥ 99 members still groups at `lineMinimumMembers` = 99, so one
+split by a wide gap would be disjoint; nobody has built it, and the point stands for
+every fixture that does exist. The separation came from mutating the *other way* —
+`const/lineGapFactor-raised` (3.0 → 99.0), `killed` by ONE check whose kill set
+intersects those six in **nothing**. So the follow-up question is **"in which direction
+do these two constants stop agreeing, and is there a mutant for it"**. ⚠️ And answer it
+about the CATALOGUE, not about all mutants: that same check would red at
+`lineMinimumMembers` = 2, which no entry asks. `BUGS.md` C28
+`#### The gap term's own fixture`.
 ⚠️ **Two numerals in this paragraph were wrong in the commit that drafted it and are
 corrected here, and both are one failure**: a figure re-typed from a sibling document
 instead of re-derived from the code. That trio is not *"the C26 override seam's three
