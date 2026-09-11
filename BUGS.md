@@ -237,7 +237,13 @@ and the census still **21** as of 2026-09-10, when `const/lineGapFactor` was ADD
 so the numerator and the denominator moved together and the census did not move at all: C28
 `#### The grouping's other constant`; **`85 of 106`** and the census **still 21** as of 2026-09-11, when
 `const/lineGapFactor-raised` did the same thing a second time — C28
-`#### The gap term's own fixture`** — (T5
+`#### The gap term's own fixture`** — ⛔ **and `88 of 109` with the census **still 21** by the end of
+2026-09-11, three more add-and-run steps having done the same thing three more times:
+`const/shapeHeightLow-lowered` (`#### The height floor's own fixture`), `const/shapeMinimumArea`
+(`#### The area floor's own fixture`, which logged TWO rows, a `SURVIVED` and a `killed`) and
+`const/lineMinimumMembers-lowered` (`#### The member floor's other direction`). This sentence sat at
+`85 of 106` through the first two of those, which is the drift it warns about happening to itself —
+re-derive the pair from `mutate.py`, never from here** — (T5
 `#### The first never-run mutant`,
 `#### The seam's other end`, `#### The seam's second and last`, `#### Invariant 2's own gate`) — they are
 owned by the queue's own `mutants-never-run` item as of **2026-08-25** (⚠️ this read
@@ -10719,6 +10725,11 @@ so ALL THREE MUTANTS THIS PARAGRAPH ADDED ARE `killed` AND NOTHING HERE IS OWED*
 direction and is not one. Lowering is the live question this campaign keeps naming (3b's false negatives,
 `SUBBARPIX`'s ornament page, `Xin Qu` p20's three lost values) and **no mutant asks it**; whether the
 missed-word fixture carries a sub-four run that a lower bar would group is not established anywhere.
+⛔ **BOTH CLAUSES FELL 2026-09-11 AND THE SECOND FOR FREE** (`#### The member floor's other
+direction`): `const/lineMinimumMembers-lowered` (4 → 2) asks the direction and is `killed`, and
+`c28GroupsMissed == 1` stayed green under it — so that fixture provably carries no band run of 2 or
+3 outside its one group, lowering being able only to add. ⚠️ The *product* lowering question this
+paragraph goes on to name is a different one and is still unanswered.
 ⚠️ So this paragraph's own contrast above — "`lineMinimumMembers` is pinned, `shapeHeightLow` and
 `lineGapFactor` one-sidedly" — needs its qualifier too: all three are pinned one-sidedly, and this run
 measured which side for the first. ⛔ **THE ARITHMETIC OF THAT SENTENCE IS INVERTED AS OF 2026-09-11 AND
@@ -10726,7 +10737,15 @@ IT IS KEPT AS WRITTEN**: `lineGapFactor` is pinned both ways from `#### The gap 
 `shapeHeightLow` both ways from `#### The height floor's own fixture`, while **`lineMinimumMembers` — the
 one this sentence calls pinned — is now the only one of the three whose catalogued mutant has no
 attributable kill set at all**, sharing its six checks byte for byte with `lineGapFactor`'s lowering
-entry. The contrast has swapped ends.
+entry. The contrast has swapped ends. ⛔ **AND SWAPPED BACK LATER THE SAME DAY —
+`const/lineMinimumMembers-lowered` (4 → 2) is `killed` by exactly one check
+(`#### The member floor's other direction`), so all three are now pinned both ways.** ⚠️ But the
+attribution is of a different KIND from the other two: that one check is also
+`const/lineGapFactor-raised`'s sole killer, so what separates the two constants is the detail string
+`Optional(2)` against `Optional(1)` and not a disjoint set. ⚠️ **The LOWERING QUESTION this paragraph
+names is a different question and is still unanswered** — it is the product trade (does relaxing the
+grouping rescue 3b's false negatives, and what does it cost on an ornament page), which no mutant
+prices; the mutant establishes coverage of the direction, not the trade.
 ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
 hours, and each of those sessions paid one suite for one mutant. What stood in its place was the by-hand
 equivalent above: two binaries one term apart, executed, 153 against 612. ⛔ **And one wrong reading is deliberately absent
@@ -12778,7 +12797,11 @@ rules out the obvious mutant:
   the successor box.
 
 ✅ **So the term's six constants now carry FOUR pairwise-disjoint singleton kill sets, one per fixture,
-read off `Tools/mutation-log.tsv` rather than argued:**
+read off `Tools/mutation-log.tsv` rather than argued:** ⚠️ **FOUR is this section's own day and the
+figure is FIVE from later on 2026-09-11** (`#### The area floor's own fixture` adds the too-small
+four) — ⛔ **and it stays FIVE after the sixth singleton arrives**, because
+`const/lineMinimumMembers-lowered`'s one check is `const/lineGapFactor-raised`'s
+(`#### The member floor's other direction`). Re-derive it; the two predicates diverge from here.
 
 ⚠️ **They are four DIFFERENT TREES and the table must not be read as one measurement.**
 `const/shapeRunHigh` is 2026-08-23 at suite **1,247** (3,475 s, clamped-era) and `const/shapeHeightHigh`
@@ -13088,7 +13111,19 @@ stay accepted and grouped, so the new check stays green — and not re-measured 
 
 — so **five of the six** constants have a mutant whose reds are one named check, and
 `lineMinimumMembers` is still the one that does not, its only entry sharing six checks byte for byte
-with `lineGapFactor`'s lowering entry. ⛔ **Five here is a count of SINGLETONS and is a different
+with `lineGapFactor`'s lowering entry.
+⛔ **SUPERSEDED THE SAME DAY AND KEPT AS WRITTEN, because the way it stops being true is the next
+step's whole finding** (`#### The member floor's other direction`): `const/lineMinimumMembers-lowered`
+(4 → 2) is `killed` by exactly one check, so the SINGLETON count goes **five → six** and every
+constant has one — but that sixth is `c28GapSplit`'s check, which is **already
+`const/lineGapFactor-raised`'s**, so the **pairwise-disjoint** count stays **five** and the sixth
+constant is separated by the DETAIL STRING (`Optional(2)` against `Optional(1)`) rather than by the
+set. ⛔ **Three predicates now, not two: singletons (6), pairwise-disjoint singletons (5), constants
+with an entry (6).** ⚠️ **And the FIVE carries the hedge this section already gives the other two:
+`const/shapeRunHigh` and `const/shapeHeightHigh` were measured at suite 1,247 (2026-08-23/24) and
+neither has been re-run since `c28GapSplit`, `c28TooShort` or `c28TooSmall` existed, so that they
+are still singletons at 1,374 is reasoned.**
+⛔ **Five here is a count of SINGLETONS and is a different
 predicate from the "FOUR pairwise-disjoint" this entry published earlier on 2026-09-11 and from the
 "five constants with an ENTRY" it corrected the same day** — three predicates, three counts, and the
 register has already published one of them under another's name. Re-derive each from
@@ -13162,6 +13197,190 @@ than a gap: its start (05:16:02) was written by a **previous** tool call, not by
 launched it, so the gap between them is unmeasured and `05:16:02 → 05:25:55 = 593 s` is an upper
 bound rather than a duration. Do not count it, and do not read its 593 s as having exceeded its own
 `[578, 592] s` span.
+
+#### The member floor's other direction — the kill set came back a SINGLETON that is NOT DISJOINT, and what separates the two constants is the DETAIL STRING rather than the set — MEASURED 2026-09-11
+
+`lineMinimumMembers` was the last of the shape term's six constants whose catalogued mutant had no
+attributable kill: `const/lineMinimumMembers` (4 → 99) is `killed` by **six** checks byte for byte
+identical to `const/lineGapFactor`'s (3.0 → 0.0), so neither red set says which constant moved
+(`#### The grouping's other constant`, `#### The gap term's own fixture`). This step closes that,
+and it needed **no new page** — the fixture that can see the constant LOWERED was built by
+`c28-gap-fixture` and its own comment already named the reading.
+
+**THE DIRECTION QUESTION, ASKED BEFORE THE MUTANT WAS WRITTEN** — the campaign's standing rule
+(`CONTRIBUTING.md` §4a), now paid for four times. Which other constant can imitate LOWERING this
+one? ⛔ **ONE OF THE FIVE CAN, AT THE LEVEL OF THE KILL SET, AND NONE CAN AT THE LEVEL OF THE COUNT
+THE CHECK PRINTS** — the first draft of this paragraph said *"none of the five"* three sentences
+above the sentence refuting it, and the review of this diff caught it. `lineGapFactor` RAISED reds
+the very same check ALONE: at 99.0 the 156 px gap stops flushing, one run of four survives and the
+page reads **1** where a floor of 2 reads **2**. `lineGapFactor` LOWERED only adds flushes, which
+shortens runs and can never carry one to 2. Of the ADMISSION terms, **three** —
+`shapeRunHigh`, `shapeHeightHigh`, `shapeHeightLow` — can only change which components reach
+`textLines`, and on `c28GapSplit` all four marks are already accepted at the shipped values.
+⛔ **`shapeMinimumArea` IS NOT ONE OF THEM AND A DRAFT PUT IT THERE, which is the identical error
+`CONTRIBUTING.md` §4a already records itself catching in four files.** It is live in TWO places —
+`textShaped`'s first guard (`Flattener.swift:2137`) and the calibration's `sized` filter (`:2268`),
+which sets `glyphHeight` and therefore the gap bar `lineGapFactor * glyphHeight` — so it could in
+principle red this check without touching `accepted` at all, by moving the bar past 156. What
+excludes it is a **measurement** and not this argument: `const/shapeMinimumArea` (4 → 99) is
+`killed` by a different single check, and `c28SplitCal` asserts this page's `glyphHeight` at 25.0
+with the `sized` filter at 99. ⚠️ And "no move changes `accepted`" is one-sided even for the three:
+in the LOWERING direction an admission term admits components that are currently refused, and at a
+floor of 2 only two in one band are needed — the argument holds for the raising moves the catalogue
+carries and is not a general one.
+
+✅ **THE RUN.** `const/lineMinimumMembers-lowered` (4 → 2), scoped, `--only
+lineMinimumMembers-lowered`: **`killed`, 297 s, baseline `1374 checks, green`, mutant
+`1373/1374 passed`, by EXACTLY ONE check** —
+
+```
+FAIL C28 — four accepted marks split by one gap wider than the bar are NO line group — Optional(2)
+```
+
+— `Tests/main.swift:3231`. Every element was written to
+`$STATE/c28-members-lowered-prediction-2026-09-11.md` before the run and every element held: the
+verdict, the count, the check's name, and the `Optional(2)` detail string.
+
+##### THE FINDING: a singleton kill set is not the same thing as an attributable one
+
+`const/lineGapFactor-raised` (3.0 → 99.0) is also `killed` by **exactly one** check, and it is
+**this same check**. So the two mutants' kill sets are **identical as sets**, and the five
+pairwise-disjoint singletons this entry published hours earlier do not become six. What separates
+the two constants is what that one check *prints*:
+
+| mutant | objecting | the one check | its detail |
+|---|---|---|---|
+| `const/lineGapFactor-raised` `3.0` → `99.0` | 1 | `c28GapSplit` | `Optional(1)` — one run of four |
+| `const/lineMinimumMembers-lowered` `4` → `2` | 1 | `c28GapSplit` | `Optional(2)` — two runs of two |
+
+⛔ **AND THE SUPERLATIVE WAS SWEPT RATHER THAN ASSERTED — this is NOT the log's first pair of
+mutants sharing one singleton kill set.** A sweep of all 108 rows for `1 check(s)` groups two older
+rows under one byte-identical string, and exactly one such pair exists: `const/markCellsPerInch`
+(`killed`, 416 s) and `const/minimumPlateFill` (`killed`, 632 s), both killed by *"a page frame is
+not a plate, so its tone is never asked about"*, **both logged with no count**. So the finding is
+not the sharing; it is that **the separation is a property of what the FAIL LINE carries** —
+`c28GapSplit`'s assertion puts `"\(c28SplitGroups as Any)"` into its detail and the two mutants come
+apart.
+⛔ **BUT THAT PAIR IS NOT AN ILLUSTRATION OF IT, AND A DRAFT OF THIS PARAGRAPH SAID IT WAS — refuted
+by the review of this diff from the tree.** `Tests/main.swift:3868` *does* print two quantities
+(`"%.4f from the frame against %.4f over the sheet"`); the count is missing from the **log**, not
+from the check, because those two rows pre-date 2026-08-23 and were written by the `run()` that
+split each `FAIL` line at the first `" — "` — the truncation defect this register already records
+as damaging 7 of 83 rows, six unrepairable. ⚠️ **So the rule is reasoned from what `check()` writes
+and is measured by nothing: this log holds NO example of a sentence-detail check failing to
+separate two mutants.** What is measured is the positive half — that a printed count does separate
+them.
+
+⚠️ **What that does NOT establish**: that no *other* catalogued mutant prints `Optional(2)` on this
+check. That is a claim about all 109 entries and **21 of them have no verdict at all**, so nothing
+here measures it. The attribution is over the catalogue as run, exactly as
+`#### The gap term's own fixture` bounded its own.
+
+##### The second result, which the hazard enumeration bought for nothing
+
+⛔ **Lowering the member floor is the ADMITTING direction, so the hazard was bigger than the last
+four steps' and it was enumerated in writing BEFORE the run rather than discovered in the kill
+set.** A floor of 2 can manufacture a group out of any PAIR of accepted components sharing a band
+within `lineGapFactor * glyphHeight`, so every check asserting a page IS all text or IS shrunk was
+listed first. **Five were named AT RISK and none of the five moved**: R50's text page at the default
+factor (background and foreground, two checks) and at Balanced, R56's `text-only.pdf`, and C28's own
+end-to-end yellow wash. So on all five `textLineGroupsOutsideText` returns 0 with the floor at **2**,
+where the shipped green says only that it returns 0 at 4.
+
+⛔ **THE REASON THOSE FIVE WERE PICKED IS FALSE AND THE REVIEW OF THIS DIFF REFUTED IT FROM THE
+FIXTURES — IT IS RECORDED RATHER THAN QUIETLY REPAIRED, BECAUSE IT IS THE ONE ELEMENT OF THE
+PREDICTION THAT DID NOT HOLD.** The prediction file says they are *"exactly the pages whose boxes
+come from real `Recogniser` output, which is where rim ink lives"*. **Four of the five are
+hand-computed fractional grids** — `Tests/main.swift:2291` builds R50's as
+`(0..<10).map { BoundingBox(x: 0.10, y: 0.06 + Double(i) * 0.07, …) }` and `:3904` R56's the same
+way — and only the yellow wash reads Vision (`:15891`). ⛔ **And the one that does is the one where
+the term cannot reach the constant**: its own comment records the wash as contributing NO ink, so
+`inkOutsideText` is ~0, and `Flattener.swift:2260`'s `guard outside > 0 else { return 0 }` answers
+before a component is labelled — the `c28BorderGroups` case exactly. ⚠️ *"asserts
+`inkOutsideText < 0.001` and therefore HAS out-of-region ink"* was a non-sequitur; 0 satisfies that
+bound.
+
+⚠️ **So state what survives narrowly.** The run rules out, on four pages of generated type, that a
+floor of 2 groups whatever ink falls outside a coarse rectangular box grid — which is a real
+reading and is **not** the real-recogniser rim-ink reading it was predicted as. ⚠️ **Four bounds.**
+(1) It is generated fixtures, not the corpus, and it says nothing about `SUBBARPIX`'s printer's
+ornament (664 accepted components) or about C26's two cartoons (372 and 785 accepted pixels), which
+is the *rescue* half of the trade and stays unpriced. (2) Whether those greens are **informative**
+or **unchanged-input** is unmeasured: nothing prints the size of the accepted set, so an empty
+`accepted` is not ruled out, and on the wash it is positively likely. (3) The five refusal fixtures'
+zero-asserting checks are unchanged-input for a stronger reason — the mutant does not touch
+`textShaped`, so `accepted` is byte-identical, and the drawn marks are refused by the component test
+(`c28TooWide`'s `medianRun` 20 > 10, `c28TooTall`'s 120 > 75, `c28TooShort`'s 8 < 12.5, the scanner
+rule and C26's ink figure each ONE refused component), while `c28BorderGroups` never reaches the
+grouping at all. ⛔ (4) **`c28GroupsBoxed` and the `.groups(0)` check on the same page are NOT in
+that group**, which a draft folded them into: the prediction declined to settle them by argument,
+`#### The area floor's own fixture` records that page's input as one that DOES move, and nothing
+prints its `accepted` size — so their greens are measured and not entailed.
+✅ **One green IS worth promoting and it was free**: `c28GroupsMissed == 1` held at a floor of 2, and
+lowering the floor can only add groups, so the missed-word page provably carries **no band run of 2
+or 3** outside its one group — which is exactly what `#### The shape term, WIRED`'s own paragraph
+calls *"not established anywhere"*.
+
+⛔ **AND THE SIBLING SWEEP RE-DERIVED THAT SET RATHER THAN COPYING IT, WHICH IS HOW IT FOUND THAT
+EVERY PUBLISHED LIST OF IT IS SHORT: it is NINE.** The nine, by line in this commit's tree:
+`:2898` `c28GroupsBoxed`, `:2909` `c28GroupsBar`, `:2921` `c28GroupsC26`, `:3055` `c28WideGroups`,
+`:3074` `c28TallGroups`, `:3232` `c28SplitGroups`, `:3306` `c28ShortGroups`, `:3576`
+`boxed.shapeTermAnswer == .groups(0)`, `:3625` `c28BorderGroups`. ⛔ **The three published lists are
+SEVEN, EIGHT and EIGHT, not "eight twice", and a draft of this sentence said the latter**:
+`#### The gap term's own fixture` (`BUGS.md:12556`) says **SEVEN** in bold and omits BOTH
+`c28ShortGroups` and `c28SplitGroups`; `Tools/mutate.py`'s parallel list from the same step says
+eight, omitting `c28ShortGroups`; `#### The area floor's own fixture`'s eight omits the `.groups(0)`
+transport check. ⚠️ **This is the THIRD time running that such a list has been short**, which
+`Tools/mutate.py`'s own comment predicted in terms after the second — *"a list like this must be
+re-derived and never appended to from memory"* — and the mechanism is a grep that does not match:
+`c28GroupsBoxed == 0` does not contain the string `Groups == 0`, and `c28GroupsC26 == 0` does not
+contain `c28[A-Za-z]* == 0`, so the obvious pattern silently drops members.
+⚠️ **Two things about the NINE itself, so it is not read as more than it is.** It is the SYNTACTIC
+reading — an assertion whose literal is a group count of 0 — and the three earlier lists are
+per-mutant *"unable to fail under THIS mutant"* enumerations, which is a different predicate; and
+under the ENTAILMENT reading `Tests/main.swift:3570` states (`shrunkAsAllText == true` entails the
+term returned 0) every all-text assertion joins it and the figure is larger. ⚠️ Nothing here
+measures that larger set. ⚠️ No published figure moves either way — what moves is the list.
+
+##### What is still not pinned
+
+⚠️ **This mutant does NOT answer the lowering question C28's entry keeps naming**, and the two must
+not be run together. That question is a **product** one — does relaxing the grouping rescue the
+cartoons 3b measured as false negatives, and what does it cost on a page of ornament — and it is
+priced by no run here. What this establishes is the **coverage** fact: the constant's lowering
+direction now has a mutant and that mutant is killed, where before it was *"asked by no entry"*.
+⚠️ The value 2 is a mutation value and is **not** a proposal: nothing here recommends moving the
+shipped 4.
+
+⚠️ **Bookkeeping, re-derived from the tool and not from a sentence**: catalogue **108 → 109**,
+coverage **87 of 108 → 88 of 109**, log **107 → 108** rows, never-run census **still 21** a fifth
+time, `0 survivor(s)` unchanged, suite **1,374 → 1,374** — ⛔ **this step adds no check**, the
+fixture and its assertion having been in the tree since `c28-gap-fixture`. Nothing in `Sources/`
+moved and no committed artefact changes.
+
+⚠️ **Estimator: the TWELFTH reading, the SIXTH outside the printed range — 6 inside + 6 outside =
+12 — and the FIFTH degenerate `10-10`.** Printed `10-10` off a window reading `291-296 s each`,
+clocked **06:18:52 → 06:28:50 = 598 s = 9.97 min** from a `date` written before the launch.
+⛔ **AND IT IS A NEW FAILURE MODE OF THE LINE RATHER THAN A REPEAT: it is the first COUNTED
+degenerate reading that falls OUTSIDE the unrounded span it came from, and on the HIGH side.**
+⚠️ **COUNTED is load-bearing and its exception is four paragraphs up**: the area step's uncounted
+first run read 593 s against its own `[578, 592] s` span and is excluded as an upper bound rather
+than a duration, so this superlative is over READINGS and not over runs. The window's
+ends are `2 × 291 = 582 s` and `2 × 296 = 592 s`; 598 s is **6 s (1.0%) above** that top while still
+**2 s (0.3%) below** the printed 600 s floor. The four earlier degenerate readings all sat *inside*
+their unrounded span, so *"a degenerate range means the rows agree with each other"* still holds and
+*"the measurement sat just under the printed floor and inside the span"* no longer describes all of
+them. Row appended as `mutant-members-lowered 598 0 ?`. ⛔ **The loadavg is the sentinel and that is
+deliberate**, for the reason the previous step's row carries one: it could only be read minutes
+late, and a late number is worse than none. ⚠️ **`?` and not the `-` this row first carried and the
+`mutant-area` row above it still does** — `test-lock.sh`'s `note_timing` writes `${load:-?}`, so `?`
+is the writer's own sentinel and a reader grepping for it would miss a `-`. Nothing parses the
+column either way.
+⛔ **AND `CLAUDE.md` WAS STALE AT TEN WHEN THIS RUN STARTED**: the eleventh reading was written into
+this file (`#### The area floor's own fixture`) and into the queue box and **not** into `CLAUDE.md`,
+whose tally still read *"6 inside + 4 outside = 10"*. That is the failure this register already
+names — an undated present-tense count that `check-staleness.sh` has no arm for — and it is
+corrected there in this commit rather than left for the count to drift by two.
 
 #### What this entry is NOT
 

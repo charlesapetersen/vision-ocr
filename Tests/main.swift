@@ -3184,6 +3184,21 @@ do {
     // correction: that makes this fixture the first one that can see `lineMinimumMembers`
     // LOWERED, which is the direction C28's standing two-sided trade is about and which no
     // catalogue entry asks. Reasoned from `Flattener.swift:2181`, not measured.
+    // ✅ MEASURED 2026-09-11 AND THE REASONING HELD DIGIT FOR DIGIT. A catalogue entry asks it
+    // now — `const/lineMinimumMembers-lowered` (4 -> 2) — and it is `killed`, 297 s, baseline
+    // `1374 checks, green`, mutant `1373/1374 passed`, by THIS CHECK ALONE, printing exactly
+    // the predicted `Optional(2)`.
+    // ⛔ SO THIS CHECK IS THE SOLE KILLER OF **TWO** CATALOGUED MUTANTS AND THEIR KILL SETS ARE
+    // IDENTICAL. What tells them apart is the detail string this line prints — `Optional(1)`
+    // for `const/lineGapFactor-raised` (the 156 px gap stops flushing, one run of four) against
+    // `Optional(2)` here (the gap still flushes, two runs of two each reach a floor of 2). ⛔ DO
+    // NOT "TIDY" `"\(c28SplitGroups as Any)"` INTO A SENTENCE: it is the only thing separating
+    // the two constants. ⛔ The tempting illustration is NOT one, and the review of that diff
+    // refuted it: `const/markCellsPerInch` and `const/minimumPlateFill` do share one singleton
+    // whose LOGGED string carries no count, but that check prints two quantities (`:3868`) and
+    // the log lost them to the first-`" — "` split defect fixed 2026-08-23. So the rule is
+    // reasoned from what `check()` writes and is NOT measured off that pair. `BUGS.md` C28
+    // `#### The member floor's other direction`.
     // ⚠️ The JOINED check is the INVERSE ROW and is deliberately
     // NOT that — it reds under BOTH grouping constants, and that is what it is for:
     // without it a fixture whose marks had drifted out of the accepted class would

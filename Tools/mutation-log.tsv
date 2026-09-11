@@ -105,3 +105,4 @@ const/lineMinimumMembers	killed	295	6 check(s): C28 — one unrecognised word of
 const/shapeHeightLow-lowered	killed	291	1 check(s): C28 — four marks of an accepted stroke width but under the height FLOOR are no line group — Optional(1)
 const/shapeMinimumArea	SURVIVED	293	1371/1371 passed
 const/shapeMinimumArea	killed	294	1 check(s): C28 — four marks small in AREA but inside the height band and under the run bar ARE a line group — Optional(0)
+const/lineMinimumMembers-lowered	killed	297	1 check(s): C28 — four accepted marks split by one gap wider than the bar are NO line group — Optional(2)

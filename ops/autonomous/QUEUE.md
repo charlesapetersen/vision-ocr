@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-members-lowered` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-grouping-trade` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-members-lowered` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-grouping-trade` SUB-BOX — SEARCH FOR THAT TAG, IT IS
       ~350 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
@@ -548,6 +548,14 @@ happens.**
       cheaper — `lineMinimumMembers` is the one constant of the six still without an attributable kill,
       and the fixture that can see it LOWERED (`c28GapSplit`, two runs of two) is already in the tree,
       so `c28-members-lowered` costs a mutant and no new page. The trade stays as the step AFTER it.
+      ⚠️ **Re-pointed an EIGHTH time 2026-09-11 by `c28-members-lowered`, now ticked, and the
+      constant-ATTRIBUTION campaign is complete as well: all six constants have a mutant killed by
+      exactly one check.** ⛔ **But the sixth is not what the ticked box hoped for and the difference
+      is the finding — `const/lineMinimumMembers-lowered`'s one check is `c28GapSplit`'s, which is
+      ALREADY `const/lineGapFactor-raised`'s, so PAIRWISE-DISJOINT singletons stay FIVE while
+      SINGLETONS go to SIX, and what separates the two constants is the DETAIL STRING (`Optional(2)`
+      against `Optional(1)`) rather than the set.** So the successor is the one the box before last
+      nominated and the box before this one deferred: the two-sided grouping trade, `c28-grouping-trade`.
       This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
@@ -870,60 +878,113 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-members-lowered** — **THE ONE CONSTANT OF THE SIX WITH NO ATTRIBUTABLE KILL, AND THE
-      FIXTURE THAT CAN SEE IT ALREADY EXISTS.**
-      ✅ **Written 2026-09-11 by `c28-area-fixture` out of that run's own leftovers, and it is the first
-      C28 sub-box since 2026-09-02 that is NOT a constant-coverage step** — all six constants now have a
-      fixture and an entry (`BUGS.md` C28 `#### The area floor's own fixture`).
-      `lineMinimumMembers` is the last of the six whose catalogued mutant's reds belong to it alone:
-      `const/lineMinimumMembers` (4 → 99) is `killed` by SIX checks **byte for byte identical** to
-      `const/lineGapFactor`'s (3.0 → 0.0), so neither red set says which constant moved.
-      ⛔ **ASK THE DIRECTION QUESTION FIRST — the campaign's standing rule, now paid for THREE times**
-      (`CONTRIBUTING.md` §4a). Which other constant can imitate LOWERING `lineMinimumMembers`? The
-      entry already records the answer in passing: `c28GapSplit` puts four accepted 5×30 marks at
-      200 / 260 / 420 / 480, so the band breaks into two runs of TWO, and at
-      `lineMinimumMembers` = 2 each run IS a group — the page reads **2** where its check asserts **0**.
-      No value of `lineGapFactor` produces that, because lowering it splits runs further (more runs of
-      one, still no group at 4) and raising it JOINS the two runs into one group of four, which is the
-      existing `lineGapFactor-raised` entry and reads 1 rather than 2. So the two stop agreeing in the
-      lowering direction, and that is where the disjoint set should be.
-      ⚠️ **Predict the cross-table in writing BEFORE the run and name what you did not check** — the last
-      three boxes all did and all three held on every element, which is what makes a surprise mean
-      something. Catalogue it as
-      `("Flattener.swift", "lineMinimumMembers", "4", "2", "lineMinimumMembers-lowered")` — ⛔ **the
-      fifth element is REQUIRED**, `already_done()` being keyed on the id and last-row-wins, so without
-      it the new mutant shares `const/lineMinimumMembers`'s row and is silently skipped; that is the
-      defect `c28-gap-fixture` found and `--self-test` now asserts against.
-      ⛔ **THE HAZARD IS REAL AND BIGGER THAN THE LAST THREE, SO ENUMERATE IT BEFORE THE RUN RATHER THAN
-      DISCOVERING IT IN THE KILL SET.** Lowering the member floor is the ADMITTING direction, so it can
-      manufacture groups out of **pairs** of rim-of-recognised-type components on any fixture whose page
-      reaches term 3 — which is exactly the class `c28GroupsMissed`'s rim flecks, R50's text page, the
-      MRC end-to-end yellow wash and `c26Small` sit in. A kill set of one is the hope; a kill set of
-      five with four of them collateral is the likely outcome and is still informative, **provided the
-      collateral is named first**. List every check asserting a page IS all text or IS shrunk, and say
-      which you expect to move.
-      ⚠️ It is also the CONTENT-SAFE direction — more groups means the term refuses MORE pages and keeps
-      MORE resolution, so its worst case is bytes — which is what makes it cheap to be wrong about.
-      ⛔ **DO NOT run the full catalogue** (108 entries), **do not edit `Sources/` while `mutate.py`
-      runs**, and **check `ops/autonomous/test-lock.sh status` first — `mutate.py` does not take the
-      lock.** Budget a baseline suite plus ~295 s; read the startup estimate off the tool and ⛔ **never
-      read a single-value range as precision** — the tally is **eleven** readings, six inside the printed
-      range, and **four** of the five outside were degenerate `10-10` lines the measurement sat just
-      below — ⛔ **not all five: 2026-08-29's `logic/R25-depth-aware-prune` re-run printed a
-      NON-degenerate `9-10` and measured 800 s, 33.3% OVER, and a draft of this box erased it in the
-      reassuring direction.**
-      ⚠️ **A second, smaller debt rides along and should be taken only if it is free**: the new
-      `c28TooSmall` check asserts 1, so it reds under `const/lineMinimumMembers` (4 → 99) and
-      `const/lineGapFactor` (3.0 → 0.0) too, whose published SIX-check rows therefore understate them by
-      one. That is REASONED, not measured. If this box's run leaves budget, `--rerun --only
-      lineMinimumMembers` settles it; if not, leave it and say so.
+- [ ] **c28-grouping-trade** — **PRICE THE TWO-SIDED TRADE THE ENTRY NAMES MOST OFTEN AND HAS NEVER
+      PRICED. The constant campaign is over; this is a PRODUCT question and the first C28 sub-box
+      since 2026-09-02 that is not about a mutant.**
+      ✅ **Written 2026-09-11 by `c28-members-lowered`, and it is the successor `c28-area-fixture`
+      nominated and `c28-members-lowered` deferred as "the step AFTER it". Both constant campaigns are
+      now complete — FIVE refusal fixtures (`c28GapSplit` serves both grouping constants), SIX
+      catalogue entries and SIX singleton kill sets OF WHICH FIVE ARE DISTINCT — so nothing about the
+      constants is left to cover** (`BUGS.md` C28 `#### The member floor's other direction`).
+      **THE QUESTION, in the entry's own words**: `lineMinimumMembers` = 4 and `lineGapFactor` = 3.0
+      are what read **0** on C26's two founding cartoons (`1954 - Why` p6/p7, **372** and **785**
+      accepted `textish` pixels that never reach four members on a baseline — C28
+      `#### Are there PICTURES in the sub-bar 73?`), and they are also what stops `SUBBARPIX`'s
+      printer's ornament — **664 accepted components, 0 groups** — from firing. **Does relaxing the
+      grouping rescue the cartoons, and what does it cost on the ornament?** Nobody has run it.
+      ⛔ **DO IT AS A MEASUREMENT AND NOT AS A CHANGE — `Sources/` must not move in this box.** The
+      instrument already exists and already varies these two numbers on real pages:
+      `Tools/score-shape-term.swift` carries its own copy of the five functions plus a PORT CHECK that
+      exits 5 if the copy and the shipped one disagree (`BUGS.md` C28, `#### The owed fixture`'s
+      sibling paragraph). ⚠️ **Read that port check's own hazard first**: the copy is what you would
+      vary, and varying it is exactly what the port check refuses — so the box's first job is to
+      decide whether to add a knob to the TOOL (with the port check disarmed for the varied constant
+      and said so in the row) or to price it with two binaries one token apart, which is what every
+      earlier C28 byte figure used. Say which, and why, before measuring.
+      **THE POPULATION IS ALREADY NAMED AND IS SMALL**: the two cartoon pages, the ornament page, and
+      the `SHAPETERM-73-2026-08-21.tsv` rows — 73 pages in 22 documents, of which **12 lose typeset
+      content, 4 lose only a hand-made mark, 6 are degraded-but-legible and 51 lose nothing**, with
+      `lineN` already printed for every one at the shipped constants. So the deliverable is a
+      `lineN`-at-relaxed-constants column beside the existing one, over a population that costs no
+      sweep: `awk` on the committed TSV names the documents.
+      ⛔ **STATE THE TRADE AS TWO NUMBERS, NOT ONE**: how many of the 16 measured content-losers the
+      relaxed rule newly rescues, AND how many of the 51 non-losers it newly refuses (the byte cost,
+      at `score-text-route`'s per-page prices). The entry has refused **six shares and four scalars**
+      for being one number where two were needed (⚠️ `BUGS.md:10522` is the durable copy of that
+      count — re-derive it there, a draft of this box incremented it to seven from a sibling
+      sentence); do not add another.
+      ⚠️ **The mutant run says something small about the COST half already and it must not be
+      overstated**: at `lineMinimumMembers` = 2 the term still returns 0 on all five all-text pages
+      named at risk, and `c28GroupsMissed` still reads 1. ⛔ **Four of those five are hand-computed
+      box grids and the fifth has `inkOutsideText` ~0, so the term short-circuits there** — read it
+      as generated fixtures, not as real rim ink, and it is silent about the ornament.
+      ⛔ **DO NOT propose a value.** C26's bar move was the owner's call on a complete campaign
+      (2026-08-19, R55's precedent) and this is the same shape of decision. Produce the table; the
+      number is his.
+      ⚠️ **Budget**: no mutant is needed and no suite is needed if `Sources/` does not move — but a
+      `Tools/` commit pays the full suite through the hook (~300 s), so plan for one commit, not two.
       ⛔ **Whoever ticks this box writes C28's next sub-box before stopping** (the campaign's standing
-      rule). ⚠️ **And when this one is ticked the constant-attribution question is closed entirely**, so
-      the successor must come from the entry's open questions: the standing two-sided trade (does
-      relaxing the grouping rescue C26's two cartoons, and what does it cost on a printer's ornament) is
-      the one the entry names most often and has never been priced.
-      (context: BUGS.md C28 `#### The area floor's own fixture` and `#### The gap term's own fixture` —
-      `context:` and not `origin:`, because C28 stays OPEN by design while its sub-steps close)
+      rule).
+      (context: BUGS.md C28 `#### Are there PICTURES in the sub-bar 73?` and
+      `#### The member floor's other direction` — `context:` and not `origin:`, because C28 stays OPEN
+      by design while its sub-steps close)
+
+- [x] **c28-members-lowered** — **DONE 2026-09-11, AND THE RESULT IS A QUALIFIER ON THE WORD
+      "ATTRIBUTABLE" RATHER THAN THE CLEAN SIXTH SINGLETON THIS BOX ASKED FOR.**
+      `const/lineMinimumMembers-lowered` (4 → 2) is **`killed`, 297 s, baseline `1374 checks, green`,
+      mutant `1373/1374 passed`, by EXACTLY ONE check** — `c28GapSplit`'s (`Tests/main.swift:3231`),
+      printing the predicted `Optional(2)`. Every element of the MEASUREMENT prediction held: verdict,
+      count, check name, detail string. ⛔ **One element did NOT — the prediction's REASON for its
+      at-risk list, see below.**
+      ⛔ **THE FINDING: that one check is ALREADY `const/lineGapFactor-raised`'s sole killer, so the
+      two kill sets are IDENTICAL AS SETS.** SINGLETONS go five → **six** and every constant has one;
+      **PAIRWISE-DISJOINT singletons stay FIVE**. What separates the two constants is the DETAIL
+      STRING — `Optional(1)`, one run of four, against `Optional(2)`, two runs of two.
+      ⛔ **And the superlative was SWEPT rather than asserted, which is what makes it usable: this is
+      NOT the log's first shared singleton.** `const/markCellsPerInch` and `const/minimumPlateFill`
+      share one whose logged string carries **no count at all**, and they are separated by nothing.
+      ✅ **So the transferable rule is about the ASSERTION and not the mutant: a check that prints the
+      quantity it asserts can tell two mutants apart; one that prints a sentence cannot, and the log
+      cannot recover the difference afterwards.** `Tests/main.swift` now says so where the string is.
+      ✅ **The hazard enumeration bought a second result.** Five checks were named AT RISK before the
+      run and **none moved**, so at a floor of 2 the term still returns 0 on all five.
+      ⛔ **But the REASON for picking them was false and the review of the diff refuted it from the
+      fixtures: four of the five are hand-computed fractional box grids, not real `Recogniser`
+      output, and the fifth (the yellow wash) has `inkOutsideText` ~0, so `guard outside > 0` answers
+      before the constant is read.** It is recorded rather than repaired, being the one element of
+      the prediction that did not hold. ⚠️ Generated fixtures, not the corpus; silent about the
+      ornament page and C26's cartoons; informativeness unmeasured, nothing printing `accepted`'s
+      size. ✅ One green IS promoted: `c28GroupsMissed == 1` held at a floor of 2, so that page
+      carries no band run of 2 or 3 — which C28's own wiring section calls "not established
+      anywhere".
+      ⛔ **The sibling sweep re-derived the zero-asserting set instead of copying it and found it is
+      NINE — the three published lists are SEVEN, EIGHT and EIGHT and every one is short, the THIRD
+      time running.** `#### The gap term's own fixture`'s SEVEN omits `c28ShortGroups` AND
+      `c28SplitGroups`; `mutate.py`'s eight omits `c28ShortGroups`; `#### The area floor's own
+      fixture`'s eight omits the `.groups(0)` transport check. The mechanism is a grep that silently
+      drops members: `c28GroupsBoxed == 0` does not contain the string `Groups == 0`. ⚠️ NINE is the
+      syntactic reading; the entailment reading is larger and nothing measures it.
+      ⚠️ **The ride-along debt was NOT taken and the reason is arithmetic, not budget alone**:
+      `--only` is a plain substring of the id (`mutate.py:2088`), and `lineMinimumMembers` is a PREFIX
+      of `lineMinimumMembers-lowered`, so the prescribed `--rerun --only lineMinimumMembers` now costs
+      **two** mutants plus a baseline, not one. The collapsing pair's six-check rows still understate
+      by one (`c28TooSmall` asserts 1), unchanged by this step, and that stays reasoned. ⚠️ Second
+      constant with this property — `lineGapFactor` has it too.
+      ⚠️ Bookkeeping, re-derived from the tool: catalogue **108 → 109**, coverage **87 of 108 → 88 of
+      109**, log **107 → 108**, census **still 21** a fifth time, `0 survivor(s)` unchanged, suite
+      **unchanged at 1,374** — this step adds no check, the fixture having been in the tree since
+      `c28-gap-fixture`. Nothing in `Sources/` moved.
+      ⚠️ Estimator: the **TWELFTH** reading and the **SIXTH** outside the printed range — 6 + 6 = 12.
+      Printed `10-10`, clocked 06:18:52 → 06:28:50 = **598 s**, row `mutant-members-lowered 598 0 -`.
+      ⛔ **The FIFTH degenerate `10-10` but the FIRST COUNTED one that falls outside the unrounded
+      span it came from, and on the HIGH side** (⚠️ COUNTED: the area step's uncounted first run read
+      593 s against `[578, 592]`) (`[582, 592] s`, so 6 s above it and still 2 s under the printed
+      600 floor). ⛔ **And `CLAUDE.md`'s tally was stale at TEN when this run started** — the eleventh
+      went into `BUGS.md` and the queue and not into `CLAUDE.md` — corrected in the same commit.
+      (context: BUGS.md C28 `#### The member floor's other direction` — `context:` and not `origin:`,
+      because C28 stays OPEN by design while its sub-steps close; a ticked box citing it as `origin:`
+      is what `check-queue-coherence.sh` reads as TICKED-OPEN, measured by doing it)
+
 - [x] **c28-area-fixture** — **DONE 2026-09-11, AND THE RESULT WORTH QUOTING IS THE RUN THAT CAME
       FIRST.** The box asked whether `shapeMinimumArea` was already pinned before building it a fixture,
       because it is the only one of the six live in TWO places — `textShaped`'s first guard and the

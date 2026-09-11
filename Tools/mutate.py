@@ -409,6 +409,73 @@ CONSTANTS = [
     # members would still group. The test is "does the mutant change this check's input
     # at all", never "could this check move in principle".
     ("Flattener.swift", "lineMinimumMembers", "4", "99"),
+    # …AND THE SAME CONSTANT FROM THE OTHER END, 2026-09-11. The entry above is the
+    # COLLAPSING direction and it shares its whole kill set with `const/lineGapFactor`
+    # (3.0 -> 0.0) byte for byte — six checks, same order, same detail strings — because
+    # both plant the same wrong answer (`textLineGroupsOutsideText` returning 0) by
+    # different arithmetic. So neither red set says which constant moved, and
+    # `lineMinimumMembers` was the last of the term's six without an attributable kill.
+    # Placed here rather than at the end of the C28 cluster for the reason
+    # `lineGapFactor-raised` is placed beside `lineGapFactor`: a reader who finds one
+    # direction of a constant should find the other in the same glance.
+    #
+    # ⛔ THE DIRECTION QUESTION, ASKED BEFORE THE MUTANT WAS WRITTEN (the campaign's
+    # standing rule, paid for FOUR times). Which other constant can imitate LOWERING
+    # this one? ⛔ ONE CAN AT THE LEVEL OF THE SET AND NONE AT THE LEVEL OF THE COUNT —
+    # a draft said "none of the five" two sentences above the sentence refuting it.
+    # `lineGapFactor` RAISED reds the same check ALONE, but by JOINING the two runs into
+    # one of four: the page reads **1** there and **2** here, which is what a detail
+    # string records and a count does not. `lineGapFactor` LOWERED only adds flushes,
+    # which shortens runs and can never carry one to 2. THREE of the others —
+    # `shapeRunHigh`, `shapeHeightHigh`, `shapeHeightLow` — only change which components
+    # reach `textLines`, and on the fixture below all four marks are already accepted at
+    # the shipped values. ⛔ `shapeMinimumArea` IS NOT ONE OF THOSE THREE and a draft put
+    # it there, which is the error CONTRIBUTING §4a already records catching in four
+    # files: it is also the calibration's `sized` filter, so it sets `glyphHeight` and
+    # therefore the gap bar. What excludes it is MEASUREMENT — its own mutant is killed
+    # by a different single check, and `c28SplitCal` asserts this page's 25.0 at a
+    # `sized` filter of 99.
+    #
+    # THE FIXTURE IS ALREADY IN THE TREE and this entry costs no new page: `c28GapSplit`
+    # puts four accepted 5x30 marks at 200 / 260 / 420 / 480, gaps 56 / 156 / 56 against
+    # a 75 px `lineGapFactor * glyphHeight`, so the band breaks into two runs of TWO. At
+    # the shipped 4 neither run groups and the term reads 0; at 2 each run IS a group and
+    # it reads 2. That was written into `Tests/main.swift:3178-3186` by `c28-gap-fixture`
+    # as a correction to its own draft — the check is NOT unreachable by a move of
+    # `lineMinimumMembers` — and this entry is that sentence turned into a measurement.
+    #
+    # ⛔ THE HAZARD IS THE ADMITTING DIRECTION AND IT WAS ENUMERATED BEFORE THE RUN, not
+    # discovered in the kill set. A floor of 2 can manufacture a group out of any PAIR of
+    # accepted components sharing a band, so every check asserting a page IS all text or
+    # IS shrunk is exposed — five of them read their boxes from real `Recogniser` output
+    # (R50's text page at default and at Balanced, R56's `text-only.pdf`, C28's
+    # end-to-end yellow wash) and rim ink is where pairs would come from. All five were
+    # named in writing first. The five refusal fixtures' zero-asserting checks are
+    # unchanged-input: the mutant does not touch `textShaped`, so `accepted` is
+    # byte-identical, and a set of size 0 or 1 cannot reach a floor of 2 either.
+    # ⚠️ `c28GroupsBoxed` and the `.groups(0)` check on its page are NOT in that group —
+    # their `accepted` is rim ink and nothing prints its size.
+    #
+    # ✅ RUN THROUGH THIS TOOL 2026-09-11 AND KILLED — 297 s, baseline `1374 checks,
+    # green`, mutant `1373/1374 passed`, by **exactly one** check: the split page's, with
+    # the predicted `Optional(2)`. Every element held against a prediction written to a
+    # file first. **NONE of the five named at-risk checks moved**, so at a floor of 2 the
+    # term still returns 0 on all five real-`Recogniser` pages — strictly stronger than
+    # the shipped green, which rules out only runs of >= 4.
+    # ⛔ THE FINDING, AND IT IS A QUALIFIER ON THE WORD "ATTRIBUTABLE": that one check is
+    # ALSO `const/lineGapFactor-raised`'s sole killer, so the two kill SETS are identical
+    # and the pairwise-disjoint count stays five while the singleton count goes to six.
+    # What separates the two constants is the DETAIL STRING — `Optional(2)` against
+    # `Optional(1)` — and a sweep of all 108 rows for `1 check(s)` found the one older
+    # pair that shares a singleton: `const/markCellsPerInch` and `const/minimumPlateFill`,
+    # whose LOGGED string carries no count. ⛔ That pair is NOT an illustration of the
+    # rule and a draft said it was: the check prints two quantities and the LOG lost them
+    # to the pre-2026-08-23 first-`" — "` split. So "a printed count separates two
+    # mutants, a sentence does not" is measured on its positive half only.
+    # ⚠️ This is a COVERAGE result and not the product question. Whether relaxing the
+    # member floor rescues C26's cartoons, and what it costs on a page of ornament, is
+    # priced by no run — and 2 is a mutation value, not a proposal.
+    ("Flattener.swift", "lineMinimumMembers", "4", "2", "lineMinimumMembers-lowered"),
     # ✅ …and this one WAS a known survivor and is not one any more, 2026-08-22. It was
     # added with a comment claiming the suite's scanner-rule fixture was "held out by this
     # number alone"; the adversarial review of that diff refuted it, because a solid fill
@@ -569,9 +636,19 @@ CONSTANTS = [
     # added 2026-09-02. ⛔ **AND AN EIGHTH JOINED IT 2026-09-11 and this list was short AGAIN, twice
     # running, which is what says a list like this must be re-derived and never appended to from
     # memory**: `c28SplitGroups == 0`, the gap fixture's own check, measured green under this mutant
-    # in the run that added it. ⚠️ It is the only one of the eight that is NOT unable to fail in
+    # in the run that added it (⚠️ `:3427` is stale; it is `Tests/main.swift:3576` today).
+    # ⚠️ It is the only one of the eight that is NOT unable to fail in
     # general — it reds under `const/lineGapFactor-raised` and would red at
     # `lineMinimumMembers` = 2 — so it is *this mutant's* unchanged input and not a dead check.
+    # ⛔ **"would red at 2" IS MEASURED AS OF 2026-09-11 — `const/lineMinimumMembers-lowered`
+    # reds it ALONE, `Optional(2)`** — and ⛔ **THIS LIST IS SHORT A THIRD TIME, which is this
+    # comment's own prophecy landing on itself: the set is NINE.** This eight omits
+    # `c28ShortGroups` (added by `c28-heightlow-fixture`) and the area entry's eight omits
+    # `Tests/main.swift:3561`. Re-derive it — and note that the obvious grep MISSES members,
+    # `c28GroupsBoxed == 0` not containing the string `Groups == 0`. `BUGS.md` C28
+    # `#### The member floor's other direction` lists all nine by line. ⚠️ And this list
+    # is EIGHT while the sibling in that section's own `#### The gap term's own fixture`
+    # is SEVEN — two different short lists from one step, not "eight twice".
     # And the two that look like yield are emptier still: the `shapeTermAnswer`
     # transport check compares against `c28GroupsMissed`, so BOTH sides go 1 -> 0 and the equality
     # holds, and the `inkOutsideText` assertion reads a field assigned before term 1's guard.
@@ -625,6 +702,14 @@ CONSTANTS = [
     # `lineMinimumMembers` entry raises it. ✅ That also makes the split fixture the first
     # one able to see `lineMinimumMembers` LOWERED — C28's own two-sided trade, still
     # asked by no entry. `BUGS.md` C28 `#### The gap term's own fixture`.
+    # ⛔ **IT IS ASKED BY AN ENTRY FROM LATER THE SAME DAY AND THE "first attribution"
+    # ABOVE NEEDS ITS QUALIFIER**: `const/lineMinimumMembers-lowered` (4 -> 2) is `killed`
+    # by this same one check, so the two kill sets are IDENTICAL AS SETS and neither is
+    # disjoint from the other. What separates them is the detail string the check prints —
+    # `Optional(1)` here, one run of four, against `Optional(2)` there, two runs of two.
+    # So this row's attribution is over every catalogued mutant EXCEPT that one, and
+    # against that one it rests on the count rather than on the set. `BUGS.md` C28
+    # `#### The member floor's other direction`.
     ("Flattener.swift", "lineGapFactor", "3.0", "99.0", "lineGapFactor-raised"),
     # THE HEIGHT FLOOR, and the fifth of the shape term's six constants to get an entry —
     # `shapeMinimumArea` is the last, and it got its own entry hours later on the same day;
