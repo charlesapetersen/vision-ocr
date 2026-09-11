@@ -542,7 +542,30 @@ and it refuses them for nothing** — `Xin Qu` p20 (`lineNAtBar` **13**), `_1973
 (4/3/1), `Atkinson_1939` p2 (2), `Glazer_2002` p1 (2) — the classes cited from C26's own per-page render
 table rather than re-read. ⚠️ **Seven is that table's own five-bucket partition and `Riesman - 1954` p16
 is the arguable page: it is filed as a hand-drawn mark and loses trailing text lines too, and it is in the
-ADMITTED set — so on the wider reading it is 7 of 8 and one page losing text goes through.** ⛔ **And the
+ADMITTED set — so on the wider reading it is 7 of 8 and one page losing text goes through.**
+✅ **THAT READING WAS TAKEN 2026-09-10 AND THE WIDER ONE IS REFUTED, SO `7 of 7` STANDS UNQUALIFIED** —
+⛔ **but the first draft's ARGUMENT was wrong and the adversarial review of that diff refuted it from
+`Sources/`, which is worth more than the verdict.** It read `stencil.png` and `stencil-bar.png` being
+byte-identical as *"the published glyphs are the same bytes at either bar"*. **They are not**: an MRC
+page draws background then foreground and **the stencil is the foreground's `/SMask`**
+(`JBIG2.swift:372-379`), so the stencil gives the glyph SHAPE while its TONE comes from the foreground
+and everything uncovered from the background — and p16 crosses the bar, so `bgFactor` 2 → 8 and
+`fgFactor` 4 → 16 (`Flattener.swift:3517-3520`). **A stencil reading is silent about both arms because
+it is the same file on both.** ✅ So the page was **composited the way the PDF draws it** and read at
+1:1 on both: the last three lines are **fully legible on both**, the darkest pixel in a 900×150 rect
+going **12 → 42 of 255** while the rect mean holds (116.6 → 117.6) — tone, not form, because
+`textRegionMask` runs before the bar is read so the letterforms are bar-invariant. ⛔ **The same
+composite KILLS THE BRACKET** — continuous with two distinct ticks at the shipped bar, a faint broken
+smear with the ticks gone at 0.08 — which is C28's mechanism in one image: stencilled type survives, a
+background-only hand-made mark does not. ⚠️ The stencil-coverage ratios (**0.767 / 0.801 / 0.819**
+against **1.097 / 1.087 / 1.026**, C28's real losses **0.0000**) are a SCREEN saying those lines are
+stencilled at all, **not** a legibility measure. ⛔ **The only out-of-stencil TEXT on p16 is a
+three-character fragment of the FACING leaf**, and the `ink AND NOT dilate(stencil, Disk:3)` map holds
+otherwise only the pen bracket, its two ticks, the gutter and the page edges. ⚠️ **The r=0 map reads the
+bottom third's glyph RIMS as a loss (114,057 px against 81,531)** — the rim artefact sub-step 2 records,
+and how *"the trailing text lines"* came to be listed. ⚠️ The dumps were not retained; re-run
+`INKBAR=0.08 INKDUMP=<dir>` on that page to reproduce any of it.
+⛔ **And the
 money points the other way from the harm: 58.3% of what the move recovers lands on the TWO pages this
 register has named since 2026-08-19 as buying nothing** (`RIESMAN_1942` p10 alone is 702,280 B, **42.6%**
 of the whole recovery), while **22.2%** is bought by re-destroying content outright. ⛔ **That 960,463 B is
@@ -553,6 +576,34 @@ hand-drawn bracket — and p6 was **read at 1:1 in that session**: 612 × 473 le
 no line left in it, C26's founding failure mode. ⚠️ **17 sampled rows of 2,129 in 10 documents of 233 and
 NOT a corpus figure** — do not pool it, this corpus has already made a pooled scale-up **5.96x** high —
 one Photo detail, and **no bar is recommended: the value is the owner's, as it was on 2026-08-19.**
+✅ **AND THE CORPUS FIGURE EXISTS AS OF 2026-09-10 — per document, no sweep, no new artefact, three runs
+of `Tools/stratify-corpus.py` over committed files** (`BUGS.md` C28 `#### The same question at corpus
+scale, and the owed reading`). ⛔ **Quote 36.3%, not 44.4%: corpus-wide the term retains 1,435,971 B of
+3,955,576 B, so the sampled share overstates what it holds by 1.22x.** The move is worth **~2.5 MB over
+~10.50 pages of 16,987** (10.50 pages, −2,519,605 B) against the **~21 pages and ~4.0 MB** C26
+published for it before the term (21.42 is this step's precision on that same estimate, not C26's
+figure), and the term refuses **10.92 of the 21.42 pages, 51.0%**, for **0 B**.
+⛔ **THE MECHANISM OF THE DROP IS ONE LONG DOCUMENT, which is the hazard the tool's own `--help` names**:
+`Riesman - 1954` is 25 pages sampled 12 deep (factor **2.0833**) and holds 3 of the 7 admitted rows —
+**47.8%** of the admitted arm measured, **65.1%** after scaling — while the refused arm has **5 of its 7
+documents sampled completely** and so does not inflate. ⛔ **And the pooled/stratified factor is NOT a
+constant across the three arms — 5.96x / 5.32x / 6.58x — so none of them may be carried to another**,
+C26's four-arm lesson on a fourth population. ⛔ **The loss classes are NOT scaled and must not be** (no
+rule assigns one to an unsampled page), ✅ **but inside a fully-sampled document there is no unsampled
+page, so on the exact subtotal they are complete — and there the money points away from the harm
+HARDER: 89.2% of the admitted exact bytes is `RIESMAN_1942` p10, which loses nothing, 10.8% is the two
+`1954 - Why` cartoons, and 0 B degrades anything** (⚠️ n = 3 rows). ⚠️ Retained is **47.1%** on the exact
+subtotal, 44.4% sampled, 36.3% corpus — one quantity over three populations. ✅ Controls: `--control`
+passed (**11** published C26 figures), `--self-test` **54 checks**, the hand-appended `band` column's 16
+rows **identical as a set** to INKBAR's own `inkOut` filter, and — the one that can fail —
+**`INKBAR-2026-08-19.tsv`'s `layeredAtBar` equals `C28-BARPILOT-2026-09-02.tsv`'s `layered` on 16 of 16
+band rows** across fourteen days and two binaries, which shows per document as an exact negation on the
+three documents whose band rows are all admitted. ⛔ **Two claimed controls CANNOT FAIL and the review
+of that diff caught them labelled as though they could**: *"the two arms partition the band"* is
+entailed, `eq`/`ne` on one column being exact complements over one file with the same `--sample`; and
+*"summing the per-document differences, derived independently of the two totals"* is `Σ(a−b) ≡ Σa − Σb`.
+⚠️ The three output modes round differently — `--tsv` sums to 3,955,577, `--verbose` to 3,955,574, the
+report prints 3,955,576 — and the exact-fraction retained figure is **1,435,971**.
 ⚠️ `lineNAtBar`'s `dense` and `n/a` tokens appear on 0 of the 80 rows — ⛔ **but NOT in the same sense,
 corrected on adoption: `n/a`'s absence is measured and `dense`'s is BY CONSTRUCTION**, since `mrcLayers`
 passes no `runLimit` and the tool's own header records that `dense` is producible by no run of it.

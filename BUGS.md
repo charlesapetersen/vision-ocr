@@ -14,9 +14,19 @@ outcome worth aiming at"*** (`#### The bar priced against the term`, `C28-BARPIL
 sweep): of the **16** sampled pages a `textPageInkOutsideThreshold` of 0.08 would newly admit, the shape
 term refuses **9** at `barDelta same`, so the move is worth **1,648,035 B** where it was worth
 **2,965,653 B** before the term — **44.4% retained for free** — and the term refuses **7 of 7** pages in that band that
-lose running prose or table data (⚠️ 7 of 8 on the wider reading of `Riesman - 1954` p16, stated in the
-section). ⛔ **58.3% of what the move recovers lands on the two pages this entry
-already calls free, and 22.2% re-destroys content**, so the numbers do not point one way; **no bar is
+lose running prose or table data. ✅ **AND IT IS SCALED TO THE CORPUS AS OF 2026-09-10, WITH THE OWED
+1:1 READING TAKEN AND `7 of 7` SETTLED** (`#### The same question at corpus scale, and the owed
+reading`; no sweep, no new artefact, three runs of `Tools/stratify-corpus.py` over committed files).
+⛔ **Per document the move is worth ~2.5 MB over ~10.50 pages of 16,987 where this register has been
+quoting C26's ~4.0 MB over ~21 pages, and 44.4% is NOT the corpus retention — that is 36.3%, so the
+sampled figure overstates what the term holds by 1.22x**, because the admitted pages concentrate in one
+25-page document sampled 12 deep. `Riesman - 1954` p16's *"trailing text lines"* read legibly in the
+**composited** page at BOTH bars — ⛔ **the first draft argued that from the stencil alone and the
+review of that diff refuted it, the stencil being the foreground's `/SMask` and the same file on both
+arms** — so the wider `7 of 8` reading is refuted, on the composite.
+⛔ **58.3% of what the move recovers lands on the two pages this entry
+already calls free, and 22.2% re-destroys content** — **89.2% free on the exact, no-scaling subtotal** —
+so the numbers do not point one way; **no bar is
 recommended and the value stays the owner's.** `C28` remains `HALF FIXED` — this prices a decision rather
 than taking one, and 17 sampled rows in 10 documents of 233 is **not** a corpus figure.
 ✅ **`C27` HAS NO BOUNDED WORK LEFT AS OF 2026-08-26 — (c) SHIPPED, and its queue box is `[hold] needs:
@@ -11979,7 +11989,11 @@ bar *was* 0.08 and no shape term existed. ⛔ **Read that as the split it is: th
 ⛔ **THE FINDING WORTH MORE THAN THE RATIO: THE TERM REFUSES ALL SEVEN PAGES IN THIS BAND THAT LOSE
 RUNNING PROSE OR TABLE DATA, AND IT REFUSES THEM FOR NOTHING** — ⚠️ seven on this entry's own
 five-bucket partition, **7 of 8 on the wider reading of `Riesman - 1954` p16**, which is spelled out
-below rather than left to the reader. Cross-tabulating `lineNAtBar` against
+below rather than left to the reader. ✅ **THAT READING WAS TAKEN 2026-09-10 AND THE WIDER ONE IS
+REFUTED: p16's trailing lines are IN the stencil (0.767–0.819 stencil-ink/source-ink against
+1.026–1.097 on upper lines, where C28's real losses read 0.0000) and the stencil is byte-identical at
+both bars, so `7 of 7` stands unqualified** — `#### The same question at corpus scale, and the owed
+reading`. Cross-tabulating `lineNAtBar` against
 C26's own per-page render table (the 13-row **The answer, per page** table under
 `#### Sub-step 4, the benefit`, 2026-08-19) plus `#### The rendered proof on the founding pages` (the
 three `1954 - Why` cartoons, 2026-08-20) — **cited, not re-read, except p6 below**:
@@ -12015,6 +12029,13 @@ exclusive by construction (7+1+2+1+2 = 13) and that section records that its own
 place this page at all. p16 is in the **admitted** set here. **So if its trailing lines are counted as
 running prose, the term refuses 7 of 8 rather than 7 of 7 and one page losing text is let through.**
 Both readings are stated; neither is re-read, and the underlying page is unchanged either way.
+✅ **SETTLED 2026-09-10 AND IT IS `7 of 7` — kept as written because it is what the reading was taken
+against.** `#### The same question at corpus scale, and the owed reading` re-ran `INKDUMP` on p16: the
+trailing lines read stencil-ink/source-ink **0.767 / 0.801 / 0.819** over the last three lines against
+**1.097 / 1.087 / 1.026** on three upper ones, they are legible in the stencil at 1:1, and the stencil
+is **byte-identical at both bars** — so they are published the same way whichever value the constant
+holds and no reading of them can move this page between the two sets. The only out-of-stencil text on
+p16 is a **three-character fragment of the FACING leaf**. The ⚠️ is retired, not carried.
 
 ⛔ **AND THE THREE OUTRIGHT LOSSES IT ADMITS ARE EXACTLY QUESTION 3b's KNOWN BLIND SPOT, REPRODUCED ON
 THE BAND ABOVE THE BAR RATHER THAN THE 73 BELOW IT.** Two cartoons and a hand-made mark: 3b measured
@@ -12139,6 +12160,202 @@ the reason is the successor step**: `WIDEN-LAYERS-2026-08-22.tsv` is the in-tree
 `Tools/stratify-corpus.py` has **no `#`-line handling** and it is the tool `c28-bar-corpus` is prescribed
 to run over this very file — so the header would break the next measurement to buy a comment. And nothing in `Sources/` moved, no committed artefact was re-run, and C28
 stays **HALF FIXED** — this prices a decision, it does not take one.
+⛔ **THAT REASON IS FALSE AND `c28-bar-corpus` REFUTED IT BY RUNNING THE TOOL, 2026-09-10.**
+`stratify-corpus.py`'s `read_tsv` (`:130-146`) skips `#` lines and its docstring says so in terms —
+*"Every dated record in this repo carries a `# bar=… corpus=… binary=…` provenance line under its
+header, so skipping `#` is not optional politeness"* — and `INKBAR-2026-08-19.tsv`'s **line 2 is exactly
+such a line**, skipped in all three of that step's runs (2,131 file lines, `rows read 2129`). So the
+header would have cost nothing, and `C28-BARPILOT-2026-09-02.tsv`'s lack of one is now **unexplained
+rather than justified**. ⚠️ It was still not added on 2026-09-10: the strand's binary path went with its
+worktree, and a provenance line naming a binary nobody can point at is worse than none. Carried.
+
+#### The same question at corpus scale, and the owed reading — MEASURED 2026-09-10
+
+`#### The bar priced against the term` (2026-09-02) answered on **17 sampled rows in 10 documents of
+233** and said in terms that it was not a corpus figure. This is the stratified scale-up, taken with
+`Tools/stratify-corpus.py` over the two committed artefacts and the committed census. **No sweep ran, no
+`sweep-ink-bar.py` invocation, nothing in `Sources/` or `Tools/` moved, and no artefact was added** — the
+whole of the arithmetic below is three invocations of a tool that has been in the tree since 2026-08-21.
+
+**THE MAGNITUDE, AND IT IS THE ONE THE OWNER WOULD BE HANDED.** Per document, `Σ_d hit_d · pages_d /
+sampled_d`, census `CORPUS-2026-08-15.tsv` (233 files — **232 distinct documents**, the queue's
+`corpus-duplicate`; 16,987 pages, **86 sampled completely**), sample `INKBAR-2026-08-19.tsv` (2,129
+rows). ⚠️ The duplicate is `route=bilevel` on all 24 of its `INKBAR` rows, so it enters no numerator
+here; only the document denominators are 1/233 out, as that item records:
+
+| arm | sampled | stratified | of which **exact** | what it is |
+|---|---|---|---|---|
+| the whole band, pre-term | 16 pages, +2,965,653 B | **21.42 pages, +3,955,576 B** | 8 pages, +1,489,670 B | what moving the bar back to 0.08 used to be worth |
+| the term **admits** | 7 pages, −1,648,035 B | **10.50 pages, −2,519,605 B** | 3 pages, −787,374 B | what it is worth **today** |
+| the term **refuses** | 9 pages, 0 B | **10.92 pages, 0 B** | 5 pages, 0 B | what the term already holds, for nothing |
+
+⛔ **SO THE 44.4% IS NOT THE CORPUS FIGURE AND IT OVERSTATES WHAT THE TERM RETAINS BY 1.22x: corpus-wide
+the term retains 1,435,971 B of 3,955,576 B, which is 36.3%.** The bar move is worth **~2.5 MB over ~10.5
+pages of 16,987** where this register has been quoting C26's **~4.0 MB over ~21 pages**. The term refuses
+**10.92 of the 21.42 pages, 51.0%** — against **9 of 16, 56.3%**, sampled.
+⚠️ **The first row is NOT a new measurement**: it is exactly what `stratify-corpus.py --control`
+asserts, i.e. C26's own published band estimate, and it is quoted here as the denominator the other two
+are read against. Only rows 2 and 3 are new.
+
+⛔ **THE MECHANISM OF THE 44.4% → 36.3% DROP IS ONE LONG DOCUMENT, WHICH IS THE HAZARD THE TOOL'S OWN
+`--help` NAMES.** `Riesman - 1954` is 25 pages with 12 sampled — a scale-up factor of **2.0833** — and it
+carries **3 of the 7** admitted rows. On measured bytes it is **47.8%** of the admitted arm (787,686 of
+1,648,035); after scaling it is **65.1%** (1,641,013 of 2,519,605) and **59.5%** of the admitted pages.
+The refused arm has no comparable concentration: its largest contributors are `Broadhead - 1994` (3.25
+pages) and `Xin Qu et al_2018` (2.67), and **5 of its 7 documents are sampled completely**. So the
+admitted arm inflates under scaling and the refused arm does not, and the retained share falls.
+
+⛔ **AND THE POOLED/STRATIFIED FACTOR IS NOT A CONSTANT ACROSS THE THREE ARMS — 5.96x, 5.32x, 6.58x — so
+no single correction exists and none may be carried between them.** That is this register's own published
+lesson (C26 measured 4.58x / 5.48x / 6.57x / 6.93x over four arms of one population and recorded that
+*"a ratio is a claim about its own set"*), reproduced here on a fourth.
+
+✅ **THE THIRD NUMERATOR IS DELIBERATELY NOT SCALED, AND THE EXACT SUBTOTAL IS WHAT LETS IT BE STATED
+CORPUS-WIDE ANYWAY.** The loss classes are eye-read verdicts on 16 named pages, cited from C26's
+2026-08-19 render table; no rule assigns one to an unsampled page, so scaling them would invent data.
+Sampled, the split is unchanged from the pilot: of the 7 admitted pages **5 lose content and 2 do not**,
+and by bytes **960,463 B (58.3%) buys nothing, 365,160 B (22.2%) re-destroys content outright and
+322,412 B (19.6%) degrades a graphic or a pencil mark**. ⛔ **But inside a fully-sampled document there
+IS no unsampled page, so on the exact subtotal the loss classes are complete — and there the money points
+away from the harm HARDER, not less.** The admitted arm's exact part is 3 pages in 2 documents,
+−787,374 B, of which **702,280 B — 89.2% — is `RIESMAN_1942` p10, which loses nothing**, and 85,094 B
+(10.8%) is `1954 - Why` p6+p7, the two cartoons; **0 B degrades anything.** The refused arm's exact part
+is 5 pages in 5 documents holding **702,296 B** the term retains for free, **3 of them losing running
+prose** (`Atkinson_1939` p2, `_1973_Committee Against Racism_` p4, `Glazer_2002` p1). ⚠️ **n = 3 rows on
+the admitted side**, so 89.2% is a share within a subset, not a corpus rate; what it is free of is the
+unsampled-page assumption, which is the only thing the exact subtotal buys.
+⚠️ Retained **within the fully-sampled documents** is 702,296 of 1,489,670 B, **47.1%** — higher than the
+sampled 44.4% and the corpus 36.3%. The three shares are one quantity over three populations and the
+spread between them is the estimator's whole point; quote **36.3%** as the corpus answer.
+
+✅ **AND THE OWED 1:1 READING WAS TAKEN, ON THE PAGE THE PILOT NAMED — `Riesman - 1954` p16 — AND IT
+SETTLES `7 of 7`. ⛔ BUT THE FIRST READING'S ARGUMENT WAS WRONG AND THE ADVERSARIAL REVIEW OF THIS DIFF
+REFUTED IT FROM `Sources/`; THAT IS WORTH MORE THAN THE VERDICT, WHICH SURVIVED THE RE-READING.** The
+pilot carried a ⚠️ that p16 might be a page losing running prose in the ADMITTED set, which would make
+the headline `7 of 8`; C26's table lists *"a hand-drawn margin bracket, the trailing text lines, the
+gutter"* outside its stencil and records only the bracket's fate. A fresh `INKBAR=0.08 INKDUMP=<dir>`
+run of `Tools/score-text-route.swift` on that page, built from today's tree:
+
+* ⛔ **THE REFUTED ARGUMENT, kept because it is the trap.** The draft read `stencil.png` and
+  `stencil-bar.png` being byte-identical as meaning *"the published glyphs on those lines are the same
+  bytes at 0.045 and at 0.08"*. **They are not.** `JBIG2.assemble` draws an MRC page as background then
+  foreground and **the stencil is not drawn at all — it is the foreground's `/SMask`**
+  (`Sources/JBIG2.swift:372-379`, `:440-447`). So the stencil supplies the glyph **shape**; the glyph's
+  **tone** is sampled from the foreground JPEG and everything the stencil does not cover from the
+  background — and p16 **crosses** the bar (`barDelta` −280,066), so `bgFactor` goes 2 → 8 and `fgFactor`
+  4 → 16 (`Sources/Flattener.swift:3517-3520`). A reading of the stencil alone is silent about both arms,
+  because it **is the same file on both**: the very property the draft leant on is what makes it unable
+  to answer. ⚠️ What survives of that argument is narrower and is still load-bearing: `textRegionMask`
+  runs strictly **before** the bar is read (`Flattener.swift:3420` against `:3479`), so the
+  **letterforms** are bar-invariant at full resolution whatever the tone does.
+* ✅ **SO THE PAGE WAS COMPOSITED THE WAY THE PDF DRAWS IT — background upscaled, foreground upscaled and
+  masked by the stencil, drawn over — AND READ AT 1:1 ON BOTH ARMS.** Over a 900×150 rect at (300, 2440)
+  on the 2139×2693 frame, **the last three lines are fully legible on both**: `many of my own
+  contempora…` / `the earlier group had more assu…` / `nize that there is a lot to be sa…`. What moves is
+  **tone, not form**: the darkest pixel in that rect goes **12 → 42 of 255** while the rect mean barely
+  moves (**116.6 → 117.6**), so peak contrast against ~250 paper falls about **12.6%** and nothing in it
+  becomes unreadable. ⚠️ That is a reading of three lines on one page, and the tone loss is real and
+  unmeasured elsewhere — it is *"degraded and still legible"*, the class C28 sub-step 2b already names,
+  not *"lost"*.
+* ⛔ **The same composite KILLS THE BRACKET, and that is C28's mechanism in one image.** Over a 200×260
+  rect at (400, 1690): shipped, a continuous fine stroke with its **two tick marks separate and
+  distinct**; at 0.08, a faint broken smear with **the ticks gone**. Same page, same bar move, same
+  composite — the stencilled type survives and the background-only hand-made mark does not. That
+  reproduces C26's *"broken into disconnected blobs"* and its *"pen bracket and its two tick marks"* from
+  a different session and a different build.
+* **What IS outside the stencil on p16**, by the `ink AND NOT dilate(stencil, Disk:3)` map this campaign
+  uses — ink being `-auto-threshold OTSU` on the dumped `-source.png`, the stencil its dumped
+  `-stencil.png`, 81,531 px at r=3: the pen bracket and its two tick marks, the gutter shadow strip, the
+  left and bottom page edges, and **one three-character fragment, `rac`** — which sits at x ≈ 2060–2130,
+  to the RIGHT of the gutter strip at x ≈ 1959–2010, so it is a line-beginning of the **facing leaf** and
+  not p16's own text. ⚠️ **The r=0 map (114,057 px) shows the bottom third's glyphs as rims and would
+  read as a loss**; that is the rim artefact `#### Sub-step 2` records and the reason `Disk:3` is the
+  published recipe, and it is exactly how *"the trailing text lines"* came to be listed.
+* ⚠️ **The stencil-coverage ratios are a SCREEN and not a legibility measure — say which they are.** Over
+  1290×40 rects at x = 300 on the same frame, stencil-ink/source-ink (black pixels in `-stencil.png`
+  divided by pixels below the source's own Otsu, both over the rect) reads **0.767 / 0.801 / 0.819** at
+  y = 2540 / 2495 / 2450 against **1.097 / 1.087 / 1.026** at y = 300 / 400 / 1500, where C28's real
+  losses read **0.0000**. It can exceed 1 because the stencil is a Sauvola mask and the denominator a
+  page-wide Otsu, which disagree at glyph edges. All it establishes is that those lines **are stencilled
+  at all**; what says they are legible is the composite above.
+* ✅ **A determinism re-run came free with it** — ⛔ **and it is NOT a control across a code change**:
+  the fresh run's row reproduces `C28-BARPILOT-2026-09-02.tsv`'s p16 row **digit for digit on all 15 tool
+  columns** (`inkOut` 0.0565, `layered` 350,342, `layeredAtBar` 70,276, `barDelta` −280,066, `lineN` `-`,
+  `lineNAtBar` 0), eight days apart — but `d9486a2` is the commit that *added* that TSV and it touched no
+  `Sources/` or `Tools/` file, so the two builds are of **source-identical trees**. The register's own
+  wording for this case, on `SHAPETERM-BYTES-2026-08-21.tsv`, is *"a determinism re-run rather than a
+  control across a code change"*.
+* ⚠️ **PROVENANCE: the dumps were NOT retained** — `/tmp/p16dump`, seven files, gone with the scratch
+  directory — so every figure in these bullets is re-derivable only by re-running the command above on
+  that page and re-cutting the named rects. Stencil sha256 in full:
+  `3fde63ffe97cfff1d6433a82d57f91012513daa0b2245692fe066fe069e7fc69`, identical on both arms, which
+  `score-text-route` **checks per page and reports in its summary** (`the stencil was byte-identical on
+  all 1 priced page(s)`) — ⛔ there is **no exit code** attached to a moved stencil, so *"asserts"* is the
+  wrong word for it.
+
+**So `Riesman - 1954` p16's prose survives the move and its hand-made mark does not: the pilot's
+`7 of 7` stands and the ⚠️ it carried is retired rather than carried forward.** ⚠️ It does **not** change
+any byte figure: p16 was in the admitted set before the reading and is in it after.
+⚠️ **And it leaves a tension inside this entry's own buckets, stated rather than smoothed over**:
+**280,066 B — 76.7% of the 365,160 B (22.2%) bucket labelled *"re-destroys content outright"* — is this
+very page's bracket.** The two sentences are consistent only because `7 of 7` counts **running prose and
+table data** and the bucket counts **content of any kind**, the hand-made mark included. Read the two
+together or neither.
+
+**THE CONTROLS.** (1) `--control` passed — **11 of C26's published band figures asserted off the
+committed sweep before the tool was asked anything new**, five of them estimator-sensitive. (2)
+`--self-test`, **54 checks, 0 failed**. (3) ⛔ **The selection is gated on `band`, a HAND-APPENDED column,
+so it was cross-checked against the tool-derived one**: the 16 `band=yes` (document, page) pairs are
+**identical as a set** to INKBAR's own `inkOut:ge:0.045 AND inkOut:lt:0.08 AND barDelta:ne:same`, `diff`
+empty on 16 of 16.
+⛔ **(4) AND HALF OF (5) CANNOT FAIL, AND THE ADVERSARIAL REVIEW OF THIS DIFF CAUGHT THEM LABELLED AS
+THOUGH THEY COULD — the twelfth-and-thirteenth-order instance of this register's oldest failure, and no
+ordinal is claimed.** (4), *"the two selections **partition** the band exactly — 10.92 + 10.50 = 21.42
+pages and 5 + 3 = 8 exact"*, is **entailed** by (3): the two arms are `barDelta:ne:same` and
+`barDelta:eq:same` over one column of one file, `eq`/`ne` compare as strings and are therefore exact
+complements for any cell value, and both runs pass the same `--sample`, so the weights are identical. It
+is arithmetic wearing three runs as a costume. And in (5), *"summing the ten per-document differences
+gives 1,435,971 B, derived independently of the two totals"* is the identity `Σ(a−b) ≡ Σa − Σb`.
+✅ **WHAT IS LEFT OF (5) IS A REAL CONTROL AND IT IS THE STRONGEST THING IN THE RUN — THE
+CROSS-FILE BYTE AGREEMENT, WIDENED ON THE REVIEW'S OWN SUGGESTION FROM 7 ROWS TO 16.** Across fourteen
+days, two binaries and `822f8d2` between them, **`INKBAR-2026-08-19.tsv`'s `layeredAtBar` equals
+`C28-BARPILOT-2026-09-02.tsv`'s `layered` on 16 of 16 band rows**, and the pilot's own published control
+is the other direction on the 7 admitted (`INKBAR.layered == pilot.layeredAtBar`, 390,249 B, 7 of 7). Per
+document that shows up as an exact **negation** on the three documents whose band rows are all admitted —
+`Riesman - 1954` 787,686 / −787,686, `Jones et al_2010` 72,975 / −72,975, `RIESMAN_1942` 702,280 /
+−702,280 — and on `1954 - Why`, where p4 is refused and p6/p7 admitted, 130,308 − 85,094 = **45,214** is
+p4's own contribution. Any drift in `mrcLayers`, the encoders or the override seam reds it.
+(6) The mandatory identity check did not fire, so
+all 80 pilot rows exist in the 2,129-row sample — the pilot is a proper subset of its own denominator.
+
+⛔ **THE SELECTION TRAPS THE BOX WARNED OF, CHECKED RATHER THAN TRUSTED.** `--where` is numeric and
+`lineNAtBar` is not a numeric column, so none of the three selections touches it: they are gated on `band`
+and `barDelta`. Token census on all 80 rows: `lineN`/`lineNAtBar` hold only `-` and integers — **`n/a` on
+0 of 80** (measured) and `dense` producible by no run of that tool (by construction). And
+⛔ **`barVerdict:eq:picture` would have been worse than "drops the numerator": it selects 14 rows,
+**0** of them `band=yes`** — a set **disjoint** from both arms — because all 9 refused rows read
+`picture REPLICA-DISAGREES`.
+
+⚠️ **AN INSTRUMENT NOTE, FOUND BY USING IT, AND IT GOES BOTH WAYS.** The three output modes disagree on
+the same arm because only the report rounds the **total** — `--tsv` and `--verbose` round or truncate
+each **document**. Measured on the band arm: `--tsv`'s column sums to **3,955,577**, `--verbose`'s to
+**3,955,574**, and the report prints **3,955,576** against an exact-fraction **3,955,576.4167**. The
+retained figure is **1,435,971.1667**, so **1,435,971** is right; a reader who reconciles per document
+off `--tsv` lands on it and off `--verbose` on **1,435,970**. ⛔ **Do not explain the gap by the two
+`.5` values — a first draft of this note did and it is wrong**: `--tsv` prints `Riesman`'s 1,641,012.5 as
+1,641,013 and `Broadhead`'s 620,704.5 as 620,704, i.e. in **opposite** directions, so the two cancel and
+the surplus is elsewhere. Not a defect and not filed as one; recorded because a reader who reconciles two
+output modes will find a digit that does not match, and which digit depends on which mode.
+
+⚠️ **WHAT THIS DOES NOT ESTABLISH.** The estimator assumes a document's unsampled pages behave like its
+sampled ones — that is why the exact subtotal is printed beside every figure, and it is **8 pages and
+1,489,670 B of the band, 6 documents of the 10**. The loss classes are not scaled and the sampled 58.3%
+is not a corpus share: the seven admitted rows carry weights from **1.0000 to 2.0833** and **both**
+groups span that range (the two free pages at 1.0000 and 2.0833; the five content-losers at 1.0000,
+1.0000, 1.2500, 2.0833, 2.0833), so the direction of any reweighting is not even predictable from the
+sampling structure, let alone computable. Bytes are one Photo detail (Balanced) and one machine. And
+⛔ **no bar is recommended — the value is the owner's, as it was on 2026-08-19, and `#### THE DECISION`
+records why.** C28 stays **HALF FIXED**: this prices a decision at corpus scale, it does not take one.
 
 #### What this entry is NOT
 
@@ -12149,6 +12366,10 @@ stays **HALF FIXED** — this prices a decision, it does not take one.
   `#### The bar priced against the term`: the shape term refuses 9 of the 16 for 0 bytes, so the move is
   worth 1,648,035 B rather than the 2,965,653 B it used to cost, and 58.3% of that lands on the two
   pages this entry has always said buy nothing.** Still not a recommendation: the value is the owner's.
+  ✅ **AND SCALED PER DOCUMENT 2026-09-10 — `#### The same question at corpus scale, and the owed
+  reading`: ~10.50 pages of 16,987 and ~2.5 MB, against the **~21 pages and ~4.0 MB C26 published** for
+  the same move before the term existed (21.42 is this step's own precision on the same estimate, not
+  C26's figure). The corpus retention is 36.3%, not the sampled 44.4%.**
 - **Not R56 or R57.** Those are the 1-bit route — a pale mark thresholded away — and both are `FIXED`.
   The route here is the opposite one, and per fact 4 above the 1-bit route does not carry this defect.
 - **Not visible to the release gate.** `Tools/score-gate.swift` cannot see this class by its own

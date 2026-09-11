@@ -510,21 +510,23 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-bar-corpus` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-shape-gap-mutant` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-bar-corpus` SUB-BOX — SEARCH FOR THAT TAG, IT IS ~330 LINES
-      BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-shape-gap-mutant` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ~330 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
       `campaign-next-step`, re-pointed the same day by `c28-bar-attribution` and again by
-      `c28-bar-pilot`, both now ticked: the instrument is in the tree, the pilot ran on the 10 named
-      documents, and what is left is the corpus scale-up of its answer. This box exists because every session
+      `c28-bar-pilot`, and re-pointed again 2026-09-10 by `c28-bar-corpus` — all three now ticked: the
+      instrument is in the tree, the pilot ran on the 10 named documents, the corpus scale-up is taken
+      and the owed 1:1 read is done. What is left of the BAR question is the owner's decision and not a
+      session's, so the campaign turns to the term's own unpinned constants. This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
       box's FIRST PHYSICAL LINE, so a wrap moves the pointer where the resolver cannot see it.
@@ -846,7 +848,111 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-bar-corpus** — **SCALE THE PILOT'S ANSWER TO THE CORPUS, WITH A COMMITTED TOOL AND NO SWEEP.**
+- [ ] **c28-shape-gap-mutant** — **THREE OF THE SHAPE TERM'S SIX CONSTANTS HAVE NO MUTANT AT ALL. TAKE
+      `lineGapFactor` FIRST: IT IS THE ONE THE ENTRY'S OWN TWO-SIDED TRADE TURNS ON.**
+      ✅ **Verified by running `python3 Tools/mutate.py --list` and grepping `Sources/Flattener.swift`,
+      not assumed — the failure mode the `c28-bar-corpus` box shipped and its own adoption had to
+      refute.** `Flattener` declares six constants for term 3 — `shapeHeightLow` (0.5, `:1963`),
+      `shapeHeightHigh` (3.0, `:1967`), `shapeRunHigh` (2.0, `:1971`), `shapeMinimumArea` (4, `:1974`),
+      `lineMinimumMembers` (4, `:1984`), `lineGapFactor` (3.0, `:1987`) — and the 104-entry catalogue
+      holds **three** of them: `shapeRunHigh`, `shapeHeightHigh`, `lineMinimumMembers`, all three run and
+      all three `killed`. **`shapeHeightLow`, `shapeMinimumArea` and `lineGapFactor` have no entry**, so
+      nothing in this project knows whether any check would object to moving them.
+      ⛔ **WHY `lineGapFactor` AND NOT THE OTHER TWO.** It is the one constant of the six that the
+      register names as a measured blind spot and then records as unasked: question **3b** (2026-08-21)
+      put the term's false negatives on C26's two cartoons down to *"the **grouping**
+      (`lineMinimumMembers` / `lineGapFactor`), not the component test"* — `textish` 372 and 785 px, **0
+      groups** — and `SUBBARPIX` (2026-08-22) found a printer's ornament with **664 accepted components
+      and 0 grouped**. `C28`'s own summary says in terms that *"`lineGapFactor` has no catalogue entry at
+      all"* and that the **lowering** direction is unmeasured. The other two already carry recorded
+      reasons for their state (`shapeMinimumArea`'s narrow satisfied-before-it-is-asked argument under
+      `#### The owed fixture`, restated at `Tools/mutate.py:469-479`; `shapeHeightLow` is exercised by
+      `score-shape-term`'s port check). ⚠️ **`lineGapFactor` is NOT unmentioned** — a draft of this box
+      said so and the review of that diff refuted it from `Tools/mutate.py:479`, whose closing clause is
+      *"`shapeHeightLow` and `lineGapFactor` remain one-sided"* — **but that records the gap and gives no
+      reason for it**, which is the distinction to keep.
+      **THE STEP, and it is the shape the last six sessions have run.** Add ONE catalogue entry in
+      `Tools/mutate.py`, verify by hand that its pattern matches **uniquely** in `Sources/`, predict the
+      objecting checks **by name and in order, in writing, before the run**, then
+      `python3 Tools/mutate.py --rerun --only lineGapFactor`, and append the row. Budget a baseline suite
+      plus ~250 s — measured ~600 s end to end on this machine — and ⛔ **read the startup estimate off
+      the tool, never off a figure in prose**; the window is clear and the last eight readings are in
+      `BUGS.md` T5.
+      ⚠️ **A `SURVIVED` is a RESULT here, not a failure of the step.** ⛔ **And split the VERDICT from
+      the COUNT before predicting — a draft of this box did not, and the review of that diff supplied
+      the half it was missing.** The constant is read at exactly one executable site
+      (`Flattener.swift:2199`; the other two hits are the declaration at `:1987` and a doc comment at
+      `:2151`), and the **verdict** is monotone in it: widening the gap only suppresses flushes, runs
+      only get longer, a run of `≥ lineMinimumMembers` survives merging, so `groups == 0` can go
+      `true → false` and never back — the direction C28 has argued cannot lose content. ⚠️ **The COUNT
+      is not monotone**: two qualifying runs in one band merge into **one** group, so `lineN` can
+      *decrease*. `score-shape-term`'s `lineN`, `score-text-route`'s `lineN`/`lineNAtBar` and the
+      suite's `c28Groups` assertions are all on the **count**, so that is where a kill most likely
+      arrives. This is the register's recorded `textLines` non-monotonicity in a second place. Predict
+      both before running, and if it survives say what that means about the checks rather than
+      reaching for another mutant.
+      ⛔ **DO NOT run the full catalogue** (104 entries), **do not edit `Sources/` while `mutate.py`
+      runs**, and **check `ops/autonomous/test-lock.sh status` first — `mutate.py` does not take the
+      lock.**
+      ⛔ **Whoever ticks this box writes C28's next sub-box before stopping** (the campaign's standing
+      rule), and the two obvious candidates are the other two uncatalogued constants.
+      (context: BUGS.md C28 `#### THE DECISION`, `#### The owed fixture` and
+      `#### Sub-step 3b, the population` — `context:` and not `origin:`, because C28 stays OPEN by
+      design while its sub-steps close)
+- [x] **c28-bar-corpus** — **DONE 2026-09-10.** **SCALE THE PILOT'S ANSWER TO THE CORPUS, WITH A
+      COMMITTED TOOL AND NO SWEEP.**
+      ✅ **RAN AS PRESCRIBED — three invocations of `Tools/stratify-corpus.py` over committed files, no
+      sweep, no new artefact, nothing in `Sources/` or `Tools/` staged** (`BUGS.md` C28 `#### The same
+      question at corpus scale, and the owed reading`). Per document: the band is **21.42 pages of
+      16,987, +3,955,576 B** (which is `--control`'s own assertion, i.e. C26's published estimate), the
+      term **admits 10.50 pages, −2,519,605 B** and **refuses 10.92 pages for 0 B**. ⛔ **So the corpus
+      retention is 36.3%, not the sampled 44.4% — the sampled figure overstates what the term holds by
+      1.22x — and the move is worth ~2.5 MB where this register has been quoting ~4.0 MB.** The
+      mechanism is one long document (`Riesman - 1954`, 25 pages sampled 12 deep, factor 2.0833, 65.1%
+      of the admitted arm after scaling against 47.8% measured), which is the hazard the tool's `--help`
+      names. Pooled/stratified is **5.96x / 5.32x / 6.58x** across the three arms — not a constant, and
+      not carryable.
+      ✅ **THE OWED 1:1 READ WAS TAKEN AND `7 of 7` IS SETTLED** — ⛔ **but the first reading's ARGUMENT
+      was wrong and the adversarial review refuted it from `Sources/`, which is the finding.** The draft
+      argued from the STENCIL being byte-identical at both bars; an MRC page draws background then
+      foreground and the **stencil is the foreground's `/SMask`**, so it is the same file on both arms
+      and silent about them, while p16 crosses the bar (`bgFactor` 2 → 8, `fgFactor` 4 → 16). ✅ Re-taken
+      on the **composited** page: the last three lines are fully legible on BOTH arms (darkest pixel
+      12 → 42 of 255, rect mean 116.6 → 117.6 — tone, not form), while the **same composite kills the
+      bracket**. The wider `7 of 8` is refuted, on the composite.
+      ⛔ **ONE CORRECTION TO THIS BOX'S OWN PRESCRIPTION, AND IT IS IN THE SAME DIRECTION AS THE LAST
+      TWO.** The box said an `eq:picture` selection *"silently drops the whole numerator"*. Measured, it
+      is worse: `barVerdict:eq:picture` selects **14 rows of which 0 are `band=yes`** — a set **disjoint**
+      from both arms, 13 out-of-band rows plus the boundary row — so it would not have under-counted the
+      answer, it would have answered a different question at full confidence.
+      ✅ **TWO CONTROLS THE BOX DID NOT ASK FOR, added because the selection needed them.** (1) Both arms
+      are gated on `band`, a **hand-appended** column, so it was cross-checked against the tool-derived
+      filter: the 16 `band=yes` pairs are **identical as a set** to INKBAR's own
+      `inkOut:ge:0.045 AND inkOut:lt:0.08 AND barDelta:ne:same`. (2) The cross-file byte agreement:
+      **INKBAR's `layeredAtBar` equals the pilot's `layered` on 16 of 16 band rows**, across fourteen
+      days and two binaries, showing per document as an exact **negation** on the three documents whose
+      band rows are all admitted.
+      ⛔ **AND TWO CLAIMED CONTROLS COULD NOT FAIL — caught by the adversarial review, labelled as though
+      they could.** *"The two arms partition the band"* is entailed by (1): `eq`/`ne` on one column of
+      one file are exact complements and both runs pass the same `--sample`. *"Summing the per-document
+      differences, derived independently of the two totals"* is `Σ(a−b) ≡ Σa − Σb`. The 16-of-16 above is
+      the review's own widening of the one that remains real, from 7 rows.
+      ✅ **AND THE THIRD NUMERATOR GOT A CORPUS-VALID FORM THE BOX DID NOT ANTICIPATE.** The box forbids
+      scaling the loss classes and that was obeyed — but **inside a fully-sampled document there is no
+      unsampled page**, so on the exact subtotal they are complete, and there the money points away from
+      the harm HARDER: **89.2%** of the admitted exact bytes is the one page that loses nothing.
+      ⚠️ **Instrument note, found by using it**: the three output modes round differently — `--tsv` sums
+      to 3,955,577, `--verbose` to 3,955,574, the report prints 3,955,576. The exact-fraction answer is
+      1,435,971.
+      ⛔ **AND THE PILOT BOX'S `#`-HEADER REASON IS REFUTED BY RUNNING THE TOOL**: `stratify-corpus.py`
+      DOES skip `#` lines (`read_tsv`, `:130-146`, and its docstring says so), and
+      `INKBAR-2026-08-19.tsv`'s own line 2 is such a line, skipped in all three runs. So the pilot's
+      artefact could have carried a provenance header; its absence is now unexplained rather than
+      justified, and is carried (the strand's binary path is not recoverable, and inventing one is
+      worse than none).
+      ⚠️ No mutant and no `fault-inject.sh` case were owed: no constant moved, no guard moved, no error
+      branch was added, and nothing under `Tools/` was staged — so the hook took its docs-only path.
+      — the box as it was written, kept as the record —
       `c28-bar-pilot` ran 2026-09-02 and its answer is interesting in the direction the box required:
       over the **16** sampled pages a bar of 0.08 would newly admit, the shape term refuses **9** at
       `barDelta same`, so the move is worth **1,648,035 B** where it used to cost **2,965,653 B** — the
@@ -918,7 +1024,9 @@ happens.**
       16 newly-admitted pages are refused by the shape term at `barDelta same`; 7 read `lineNAtBar` 0.**
       3,804,222 → 2,156,187 B, 1.76x, against 838,569 B pre-term: the move is worth **1,648,035 B**, the
       term retains **1,317,618 B (44.4%)**. The term refuses **7 of 7** prose/table-data losers in the
-      band (⚠️ 7 of 8 on the wider reading of `Riesman - 1954` p16) and **58.3%** of the recovery lands on
+      band (⚠️ 7 of 8 on the wider reading of `Riesman - 1954` p16 — ✅ **read 2026-09-10 by
+      `c28-bar-corpus` and the wider reading is REFUTED on the composited page, so `7 of 7` stands**)
+      and **58.3%** of the recovery lands on
       the two pages the register already calls free — ⛔ **which is C26's own published 32.4% over a
       smaller denominator, not a new number.**
       `1954 - Why` p6 read at 1:1 (612 × 473 legible → 153 × 118 blot), the box's own requirement.
