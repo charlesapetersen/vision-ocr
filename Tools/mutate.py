@@ -476,8 +476,100 @@ CONSTANTS = [
     # tall thin marks, which is not the height bar under another name), and the constant is
     # separately live in `textLineGroupsOutsideText`'s calibration filter, which those
     # fixtures do run through — so whether they would kill such a mutant is unmeasured
-    # rather than settled. `shapeHeightLow` and `lineGapFactor` remain one-sided.
+    # rather than settled. ⛔ **`lineGapFactor` HAS A CATALOGUE ENTRY AS OF 2026-09-10 — it is
+    # immediately below — and this sentence is kept as written because it is what that entry was
+    # added against.** ⛔ **But it is STILL ONE-SIDED and a draft of this line said otherwise,
+    # corrected on adoption 2026-09-11: "one-sided" here means PINNED ONE WAY ONLY, not "has no
+    # entry", and the new mutant pins the LOWERING direction alone** — the raising direction has
+    # no fixture in this suite at all (see the bracket at the end of that entry). So
+    # `shapeHeightLow` AND `lineGapFactor` both remain one-sided, exactly as this sentence said;
+    # what changed for the second is the REASON, which is now measured rather than assumed.
+    # `BUGS.md` C28 `#### The grouping's other constant` says the same thing in two places, and
+    # the draft this replaces contradicted both of them in the file the register sends readers to.
     ("Flattener.swift", "shapeHeightHigh", "3.0", "99.0"),
+    # The grouping's OTHER constant, and the third route into `return groups == 0`.
+    # `textLines` flushes a run when the gap to the next member exceeds
+    # `lineGapFactor * glyphHeight`, so at 0.0 EVERY positive gap flushes, every run is one
+    # member long and `run.count >= lineMinimumMembers` is never satisfied: the term returns 0 and
+    # C28's third refusal condition stops existing. ⚠️ Near-total, not total — the gap is
+    # `comps[i].minX - comps[prev].maxX` against a STRICT `>`, so components that overlap in x have
+    # `gap <= 0` and still share a run; no fixture here has that shape.
+    # ⛔ Two corrections to that sentence, both made on adoption 2026-09-11. (1) The run is built
+    # against `run.last` only, so the shape is a CHAIN of consecutive overlaps and not a MUTUALLY
+    # overlapping set — strictly easier to meet than the draft claimed. (2) *"and no page of type
+    # does, glyphs on a line being disjoint in x"* is an UNMEASURED universal and is dropped: these
+    # components are map fragments rather than glyphs (this campaign's own three false positives are
+    # the rim of a recognised `469.`, where a 1-px collar split one component into four), and italic
+    # or kerned bounding boxes overlap while their glyphs do not. ⚠️ It does need real bbox overlap:
+    # `maxX` is INCLUSIVE, so two merely touching components read `gap == 1` and do flush.
+    # That is the same collapse
+    # `const/lineMinimumMembers` (4 -> 99) plants from the other end — there the bar rises above
+    # the run length, here the run length is cut to one.
+    #
+    # ⛔ THE LOWERING DIRECTION AND NOT 3.0 -> 99.0, on the verdict/count split. What is monotone
+    # downward is the VERDICT and not the count: every run at a lower factor is a SUB-CHAIN of a run
+    # at a higher one, so `groups == 0` can never become non-zero, while a non-zero count can RISE
+    # (one run of 8 split by a small gap into two runs of 4 reads 1 -> 2). ⛔ *"Adding flushes can
+    # only take `groups` non-zero -> 0"* stood here and is false in that second case, corrected on
+    # adoption 2026-09-11; the sub-chain form is both true and what the no-green claim below needs.
+    # So a low value can only make `pageIsAllText()` more permissive — the direction that puts the
+    # 8x background shrink back on a page carrying unrecognised prose, i.e. the direction that
+    # loses content. Raising it is the direction C28 argues cannot lose content (its worst case is
+    # bytes), and — reasoned, not measured, so recorded as a prediction — a raising mutant would
+    # change no check's INPUT in this suite: every fixture reading 0 groups does so because its
+    # components are refused UPSTREAM by the component test (`c28Bar`, `c26Small`, `c28TooWide`,
+    # `c28TooTall`) or because it has none (`c28GroupsBoxed`), and no fixture has two qualifying
+    # runs in one band to merge. That is the "unchanged input" green this file has retracted three
+    # times, so it was not the mutant to add.
+    #
+    # ✅ RUN 2026-09-10 and `killed` — **289 s, `1359/1364 passed`, by EXACTLY FIVE checks, and the
+    # prediction written down before the run held on every element including the detail strings**:
+    # the five `FAIL` lines are **byte-identical to `const/lineMinimumMembers`'s logged five**, same
+    # checks in the same order, `identical detail strings: True` compared field to field out of this
+    # file's log. ⛔ **THE FINDING: TWO DIFFERENT CONSTANTS THAT COLLAPSE ONE ANSWER SHARE ONE KILL
+    # SET** — the opposite of the three mutants that reach `Flattener.swift:3479`, whose sets are
+    # pairwise disjoint, and the reason is that those collapse different configurations while these
+    # two produce the *same* wrong answer (`textLineGroupsOutsideText` returning 0) by different
+    # arithmetic. ⛔ Two framings corrected on adoption 2026-09-11: that trio is NOT *"the C26
+    # override seam's three mutants"* — the seam is a PAIR and the third is a `CONSTANTS` entry that
+    # never touches the override, which `CLAUDE.md` already ⛔-flags — and these two are NOT *"over
+    # one expression"*: they are read at `:2183` and `:2199`, SIXTEEN LINES APART, so the contrast
+    # implied by "one line" against "one expression" runs the wrong way round. So the
+    # five checks are attributable to the grouping and NOT to either constant: neither mutant's red
+    # set can tell you which constant moved, and only the 56-against-75 bracket below separates them.
+    # `BUGS.md` C28 `#### The grouping's other constant` is the durable copy of the FAIL lines.
+    # ⛔ It has NO informative green, said in advance rather than retracted after — and the reason is
+    # the SUB-CHAIN argument above, not the mutant's one-sidedness, which is the weak form this file
+    # has retracted three times (it answers whether the check could move in principle, not whether
+    # the mutant changes its input). Because every run at 0.0 is a sub-chain of a run at 3.0, a
+    # fixture reading 0 groups at the shipped value reads 0 at 0.0 as well, so every `groups == 0`
+    # assertion in the block is unable to fail: `c28GroupsBoxed`, `c28GroupsBar`, `c28GroupsC26`,
+    # `c28WideGroups`, `c28TallGroups`, the border check, AND `Tests/main.swift:3230`'s
+    # `.groups(0)` — ⛔ the seventh was missing from this list until the adoption caught it, because
+    # the draft reused `lineMinimumMembers`'s six-name list from 2026-08-24 and `:3200`/`:3230` were
+    # added 2026-09-02. And the two that look like yield are emptier still: the `shapeTermAnswer`
+    # transport check compares against `c28GroupsMissed`, so BOTH sides go 1 -> 0 and the equality
+    # holds, and the `inkOutsideText` assertion reads a field assigned before term 1's guard.
+    # ⚠️ **The `runLimit` pair cannot fail either, but calling it "unchanged input" was wrong**:
+    # `:3248` reads `c28GroupsMissed`, which goes `Optional(1)` -> `Optional(0)`, so its input DOES
+    # change and `!= nil` simply survives it. Corrected on adoption; the conflation of "cannot fail"
+    # with "unchanged input" is the one this file ⛔-flags three times.
+    # ⚠️ What the suite BRACKETS is one-sided too, and it is worth knowing before anyone moves this
+    # number: `c28Dashes` puts the four 5x30 strokes at x = 200 + 60i against a `glyphHeight` the
+    # suite asserts at 25.0 and a shipped bar of 75 px. ⛔ **The gap the code computes is 56 px, not
+    # the 55 a draft of this carried in five places** — `ShapeComponent.maxX` is INCLUSIVE
+    # (`maxX = max(maxX, r.x1 - 1)`, `width = maxX - minX + 1`), so a mark on columns 200...204
+    # gives `260 - 204 = 56`; 55 is the count of EMPTY columns between them, which is not what
+    # `:2199` reads. So the control reds for any value below 56/25 = **2.24**, and ⛔ *"blind to
+    # every value above 2.2"* is FALSE — `[2.2, 2.24)` reds it too. Corrected on adoption 2026-09-11
+    # in a block whose own fixture comment exists to warn about exactly this ("Every range in this
+    # paragraph is INCLUSIVE ... Two numbers, one boundary", `Tests/main.swift:3081`).
+    # ⚠️ And no check asserts these marks' x extents, so 56 is DERIVED from the rect and the
+    # component rule rather than measured; antialiased bleed would move it. What holds regardless is
+    # that 0.0 is inside the reachable band rather than an arbitrary extreme, and that a RAISE is
+    # inert on THIS fixture (bar 75 -> 2475, one run either way) — ⚠️ the wider claim that a raise is
+    # invisible to the whole suite is argued from the upstream refusals above, not from this bracket.
+    ("Flattener.swift", "lineGapFactor", "3.0", "0.0"),
     # The quarter inch that separates a drawing from show-through. Large, so every
     # pale mark is type-sized and the drawing is never found.
     ("Flattener.swift", "typeCeilingInches", "0.25", "99.0"),

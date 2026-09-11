@@ -620,7 +620,35 @@ refuted: `logic/C24-unknown-is-not-no` announces six): the term's two counts go 
 `return groups == 0` (`#### lineMinimumMembers RUN through mutate.py`). ⚠️ **No mutant asks the LOWERING
 direction and it is unmeasured** — lowering is the two-sided trade this entry keeps naming, `lineGapFactor`
 has no catalogue entry at all, and a draft of this claimed the run "pins the constant only upward", which
-overstates what a raising mutant establishes. ⛔ **And that run retires the estimator claim three sessions
+overstates what a raising mutant establishes.
+⛔ **`lineGapFactor` HAS ONE AS OF 2026-09-10 AND THAT CLAUSE IS SUPERSEDED IN PLACE — the FIRST clause
+still holds, they being different questions** (`BUGS.md` C28 `#### The grouping's other constant`).
+`const/lineGapFactor` (3.0 → 0.0) is `killed`, **289 s**, `1359/1364 passed`, by **exactly five** checks
+predicted by name, in order and with their detail strings before the run. ⛔ **THE FINDING: those five
+`FAIL` lines are BYTE-IDENTICAL to `const/lineMinimumMembers`'s five** — same checks, same order, compared
+field to field out of the log — so **two constants producing ONE wrong answer share ONE kill set**, the
+opposite of the **three mutants that reach `Flattener.swift:3479`** and their pairwise-disjoint sets, and
+**those five checks are therefore attributable to the GROUPING and to neither constant**. ⛔ **Two framings
+in that sentence were wrong and the adoption's review caught both 2026-09-11**: those three are NOT *"the
+C26 override seam's"* — the seam is a PAIR, which the paragraph ~200 lines below already ⛔-flags — and
+these two are NOT *"over one expression"*, being read at `Flattener.swift:2183` and `:2199`, **sixteen
+lines apart**, so the implied contrast with "one line" runs backwards. ⚠️ It does not
+answer the lowering question above: it mutates the OTHER constant, in the direction that REMOVES groups,
+so 3b's false negatives are still unasked by any mutant. ⚠️ Catalogue **104 → 105**, coverage **83 of 104
+→ 84 of 105**, census **still 21** — numerator and denominator moved together, so the census figure is
+unchanged and *"83 → 84"* alone would read as progress and is not — log **100 → 101**, `0 survivor(s)`
+unchanged; re-derive all of them from `mutate.py`, never from here. ⚠️ **What the suite brackets is
+one-sided**: `c28Dashes`' adjacent gap is **56 px** against an asserted `glyphHeight` of 25.0 and a shipped
+bar of 75, so the positive control reds below **56/25 = 2.24** and a raise is inert on that fixture.
+⛔ **56 and 2.24, NOT the 55 and 2.2 this commit's draft carried in five places** — `ShapeComponent.maxX`
+is INCLUSIVE, so a mark on columns 200…204 gives `260 - 204 = 56` and 55 is the count of empty columns —
+which also makes the draft's *"blind to every value above 2.2"* **false**, since `[2.2, 2.24)` reds it too.
+⚠️ The raising direction has no fixture, and the claim that a raising mutant would change no check's input
+here is REASONED rather than measured. ⚠️ Estimator, the **ninth** write-up from the cleared window and the
+**second** with a degenerate printed range: `10-10` off five rows reading 295-298 s, measured **592 s**
+end to end — inside the unrounded [590, 596] s span and 1.3% under the printed 600 s floor, `A11.1`'s
+failure mode exactly, so read a single-value range as the rows agreeing and never as precision.
+⛔ **And that run retires the estimator claim three sessions
 published: 479 s against a startup line reading "roughly 100-116 minutes", 14.5x HIGH**, because
 `estimate_minutes` spans the five newest log rows and all five were clamped-era **when it printed that
 line** — the mirror of C24b's 4.22x-low reading. ⚠️ It does **not** self-heal gradually: the high end is
@@ -807,7 +835,7 @@ IN ORDER BEFORE THE RUN — and the seam is now fully covered, BOTH of its mutan
 (`BUGS.md` T5 `#### The seam's second and last`; ⛔ **the catalogue's override seam is a PAIR — the queue
 box and a draft here called this "the seam's third", counting `const/textPageInkOutsideThreshold`, which
 is a `CONSTANTS` entry that never touches the override; three mutants reach one LINE,
-`Flattener.swift:3430`, and two are seam entries**; census **23 → 22**, coverage **81 → 82 of 104**, log
+`Flattener.swift:3479`, and two are seam entries**; census **23 → 22**, coverage **81 → 82 of 104**, log
 **98 → 99** rows, `0 survivor(s)` unchanged). ⛔ **THE FINDING: NOT ONE OF THE ELEVEN IS IN THE SEAM'S
 OWN TEST BLOCK** (`Tests/main.swift:2420-2639`, the `// MARK: C26 — the priced-bar seam` section — ⚠️
 `:3255` and `:3273` are two further seam checks outside it and do not red either)**, and the forecast
@@ -900,9 +928,16 @@ have a hand-appended row, so the missing loadavg is this session's omission and 
 column's definition**: that column is the 1-minute average AT THE END of the run and 3.52 was read 2 m 09 s
 after the last write, where the reading at the run's START was **5.27**, so a hand-appended row is weaker
 than a `test-lock.sh`-written one and reads the machine as quieter than the run met it.
-⚠️ **The estimator is now EIGHT write-ups from the cleared window, six inside the range, and the first two
+⚠️ **The estimator is now NINE write-ups from the cleared window, six inside the range, and the first two
 never-run runs measured 598 s EACH — identical to the second** (printed `9-13` both times), so the box's
 479 s figure is 1.25x low **twice** and should be replaced rather than treated as one run's bad luck.
+⛔ **NINE and not the EIGHT this sentence carried until 2026-09-11, corrected on the adoption of
+`const/lineGapFactor`'s run: that reading was written up ~280 lines ABOVE this tally and left it stale, so
+the diff that took the ninth reading was the one that made this line false.** It is an UNDATED
+present-tense count, which is the one shape `check-staleness.sh` cannot see (it has no estimator arm) —
+the same trap this file already records against its own mutation-figure sentences. ⚠️ **The numerator does
+NOT move with it**: the ninth measured **592 s** against a printed `10-10`, so it is the THIRD reading
+outside the printed range, and **six of the nine** is the form to quote — 6 inside + 3 outside = 9.
 ⚠️ The seventh, the seam's second mutant, printed `10-13` and measured **~618 s derived, ±30 s** (a
 `suite-timings.tsv` row WAS appended, `mutant-c26-inkbar-nil 618 0 4.26`, with the loadavg read ~30 s after
 the last write rather than 2 m 09 s) — so the box's figure is 1.29x low a **third** time.

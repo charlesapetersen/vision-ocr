@@ -232,7 +232,10 @@ page 13 with nothing pinning it — and `#### The coverage boundary, CLOSED` clo
 one check and a `--rerun` (292 s by six, 289 s by four, 875 s end to end, baseline **1,343 → 1,344**). ⚠️ **That does NOT empty the catalogue**: 25 entries still had no row at all — **21 from
 2026-08-30**, when `const/textPageInkOutsideThreshold`, `logic/C26-inkbar-override-ignored`,
 `logic/C26-inkbar-nil-refuses-the-page` and `logic/A11.1-publishVerified-gate` became the first four
-worked off, `killed` by six, four, eleven and three, leaving coverage at **83 of 104** (T5
+worked off, `killed` by six, four, eleven and three, leaving coverage at **83 of 104** — ⛔ **`84 of 105`
+and the census still **21** as of 2026-09-10, when `const/lineGapFactor` was ADDED and run in one session,
+so the numerator and the denominator moved together and the census did not move at all: C28
+`#### The grouping's other constant`** — (T5
 `#### The first never-run mutant`,
 `#### The seam's other end`, `#### The seam's second and last`, `#### Invariant 2's own gate`) — they are
 owned by the queue's own `mutants-never-run` item as of **2026-08-25** (⚠️ this read
@@ -10677,7 +10680,20 @@ through a scoped run — `#### shapeRunHigh RUN through mutate.py`. `shapeHeight
 only one without a *catalogue mutant*: `shapeHeightLow` and `lineGapFactor` have none either, and are
 pinned one-sidedly as the sentence above says.
 `shapeHeightLow` and `lineGapFactor` remain pinned one-sidedly, which the sentence above already says and
-this does not upgrade.** ✅ **AND SO IS THE WIRING'S OWN, a day
+this does not upgrade.**
+⛔ **THE `lineGapFactor` HALF OF ALL THREE SENTENCES ABOVE IS SUPERSEDED 2026-09-10 AND THEY ARE KEPT AS
+WRITTEN, being what the entry was added against** (`#### The grouping's other constant`):
+`const/lineGapFactor` (3.0 → 0.0) is in the catalogue and is `killed` by five checks. **So TWO of the six
+are still without a catalogue mutant — `shapeHeightLow` and `shapeMinimumArea` — and only ONE of those two
+is unexplained**, `shapeMinimumArea` being the "for the stated reason" case this paragraph already
+separates. ⛔ **A draft of these two sentences opened *"the one still without a catalogue mutant is
+`shapeHeightLow` alone"* and then said `shapeMinimumArea` has none either, contradicting itself inside one
+sentence; corrected on the adoption 2026-09-11.** ⚠️ And the new entry does not
+upgrade `lineGapFactor` past one-sided either: it pins the **lowering** direction, and the suite has no
+fixture that can see a raising. ⛔ **One pre-existing miscount this paragraph walks past rather than
+fixes, named because reading it closely is what surfaced it**: `:10668` says *"of the five shape numbers"*
+and then lists **six**. The count of numbers is six throughout; the sentence's own enumeration is right and
+its numeral is wrong. ✅ **AND SO IS THE WIRING'S OWN, a day
 later and in the same shape — `logic/C28-alltext-ignores-shape`, `killed` by exactly three checks, all of
 them `fbf6d87`'s: `#### C28-alltext-ignores-shape RUN through mutate.py`. So the by-hand equivalent no
 longer stands in place of anything on this pair.** ✅ **AND THE THIRD OF THE THREE IS RUN AS OF 2026-08-24,
@@ -10920,7 +10936,10 @@ corpus that can fall under it; it says nothing about *raising* the constant, bec
 refuses tall thin marks and is **not** the height bar under another name; and the constant is separately
 live in `textLineGroupsOutsideText`'s **calibration** filter, which these fixtures do run through, so
 whether the calibration check would catch such a mutant is **unmeasured** rather than settled either way.
-`shapeHeightLow` and `lineGapFactor` remain pinned one way only.
+`shapeHeightLow` and `lineGapFactor` remain pinned one way only. ⚠️ **That stays TRUE of both as of
+2026-09-10 and the reason changed for one of them**: `lineGapFactor` now has a catalogue mutant
+(`#### The grouping's other constant`), but it is the LOWERING direction and the suite's positive control
+is blind to every value above 2.2, so *"one way only"* is now measured for it rather than assumed.
 
 ✅ **THE SIBLING IS FIXED IN THE SAME COMMIT, and it was the sharper of the two.** CONTRIBUTING 4b asks who
 else does this; the answer is `Tools/score-shape-term.swift`'s **port check** — the gate that compares its
@@ -11532,6 +11551,11 @@ relaxing this constant, and `Xin Qu` p20's thirteen values already cost three at
 is a measured two-sided trade and a mutant that raises the bar is blind to all of it. `lineGapFactor`, the
 other half of the grouping, has **no catalogue entry**. Census: **27** catalogue entries with no row at all
 (from 28), `coverage: 76 of 103`.
+⛔ **THAT `lineGapFactor` SENTENCE IS SUPERSEDED 2026-09-10 — it has one, and it is `killed` by THESE FIVE
+CHECKS, byte for byte** (`#### The grouping's other constant`). The census figures in the line above are
+this run's own before-and-after and are kept as such. ⚠️ **What the new entry does NOT do is answer the
+lowering question this paragraph names**: it mutates the *other* constant and in the direction that
+removes groups, so 3b's false negatives and `SUBBARPIX`'s ornament page are still unasked by any mutant.
 
 #### The replica retired — the `verdict` column reads production's own answer instead of copying the guard a fourth time — FIXED 2026-08-23
 
@@ -12356,6 +12380,157 @@ groups span that range (the two free pages at 1.0000 and 2.0833; the five conten
 sampling structure, let alone computable. Bytes are one Photo detail (Balanced) and one machine. And
 ⛔ **no bar is recommended — the value is the owner's, as it was on 2026-08-19, and `#### THE DECISION`
 records why.** C28 stays **HALF FIXED**: this prices a decision at corpus scale, it does not take one.
+
+#### The grouping's other constant — `lineGapFactor` had no mutant at all, and the one added for it shares a kill set with `lineMinimumMembers` byte for byte, so those five checks pin the GROUPING and neither constant — MEASURED 2026-09-10
+
+✅ **`const/lineGapFactor` (`Sources/Flattener.swift`, `3.0` → `0.0`) is `killed`, 289 s, by EXACTLY FIVE
+checks, and the prediction written down before the run held on every element including the five detail
+strings** (`Tools/mutation-log.tsv`; the run's own output is `Tools/mutation-out/const_lineGapFactor.log`,
+gitignored and overwritten per run, so this block is the durable copy). Baseline **`1364 checks, green`**;
+mutant **`1359/1364 passed`**, and these are the only 5 `FAIL` lines in **1,858** lines of output:
+⚠️ **The mutant's output was rescued and re-read on the adoption 2026-09-11** — the daemon's allowlisted
+gitignored copy in `$STATE/rescue`, where the five `FAIL` lines and the `1359/1364` below were verified
+against this block rather than taken on the strand's word. ⛔ **The BASELINE figure has no such copy and
+this block did not say so**: `mutate.py` writes no baseline log and `mutation-log.tsv` has no baseline
+field, so *"`1364 checks, green`"* is the tool's own printed line (`mutate.py:1818`) recorded by a session
+whose stdout is gone. What carries it is structural rather than documentary — the tool returns 2 without
+running a mutant if the baseline is absent or holds a `FAIL`, so **a row existing at all proves the
+baseline was green**, and `1359/1364` corroborates the 1,364. Named here because the predecessor section
+was scrupulous about exactly this kind of gap (*"the evidence for that is an mtime in `/tmp`"*).
+
+```
+FAIL C28 — one unrecognised word of type on a page of type is one line group — Optional(0)
+FAIL C28 — four narrow strokes on one baseline outside the words ARE a line group — Optional(0)
+FAIL C28 — a page with one unrecognised word of type is not shrunk as all text — 153 wide of 1224, ceiling 154
+FAIL …its foreground with it, so both layers move together — 76 wide of 1224
+FAIL …and it does not report itself as stored at an eighth, because it is not — flag true, 153 wide
+```
+
+**Why it was owed.** `Flattener` declares six constants for term 3 and the catalogue held **three** of
+them — `shapeRunHigh`, `shapeHeightHigh`, `lineMinimumMembers`, all run and all `killed`. `lineGapFactor`
+had **no entry**, and it is the one of the three missing that this entry names as a measured blind spot and
+then records as unasked: sub-step **3b** put the term's false negatives on C26's two cartoons down to
+*"the **grouping** (`lineMinimumMembers` / `lineGapFactor`), not the component test"*, and `SUBBARPIX`
+found a printer's ornament with **664 accepted components and 0 grouped**. Catalogue **104 → 105**,
+coverage **83 of 104 → 84 of 105**, log **100 → 101** rows, `0 survivor(s)` unchanged, and the never-run
+census **stays 21** — a new entry given a verdict in the same session does not move it. ⚠️ Re-derive all
+four from `mutate.py`'s own output, never from this sentence; and note the coverage denominator moved with
+the numerator, so *"83 → 84"* on its own would read as progress against a fixed catalogue and is not.
+
+⛔ **THE FINDING IS WORTH MORE THAN THE KILL, AND IT IS THE OPPOSITE OF THE C26 OVERRIDE SEAM'S: the five
+`FAIL` lines are BYTE-IDENTICAL to `const/lineMinimumMembers`'s logged five** — same five checks, same
+order, same detail strings, compared field to field out of the log rather than by eye
+(`identical detail strings: True`). The **three mutants that reach `Flattener.swift:3479`** have
+**pairwise disjoint** kill sets; these two have the **same** one. ⛔ **Two framings in that sentence were
+wrong and the adversarial review of the adoption caught both, 2026-09-11.** (1) It read *"the SEAM's three
+mutants"*, which is the attribution `CLAUDE.md` already ⛔-flags: the catalogue's override seam is a
+**PAIR**, and the third of the three is a `CONSTANTS` entry that never touches the override. (2) It
+contrasted *"one line"* with *"one expression"* to suggest these two are the tighter pair, and the
+granularity runs the **other way** — they are read at `Flattener.swift:2183` and `:2199`, **sixteen lines
+apart**, where the trio genuinely shares one source line. What survives, and is the whole finding, is that
+two constants producing one wrong ANSWER share a kill set while three collapsing different
+CONFIGURATIONS of one comparison do not. The mechanism is that the trio's mutants
+collapse different configurations of a comparison, while these two produce the **same wrong answer** —
+`textLineGroupsOutsideText` returning 0 — by different arithmetic: `lineMinimumMembers` 4 → 99 raises the
+bar above the run length, `lineGapFactor` 3.0 → 0.0 cuts the run length to one, since a flush on **any**
+positive gap leaves every accepted component alone in its run. ⚠️ **Near-total and not total, and the
+distinction is worth stating because the pre-run prediction overstated it as *"0 on every page"*:** the
+gap is `comps[i].minX - comps[prev].maxX` against a strict `>`, so components that **overlap in x** have
+`gap <= 0` and still share a run. ⛔ **Two corrections to that, both from the adoption.** The run is built
+against `run.last` alone, so the shape is a **CHAIN** of consecutive overlaps and not the *"four mutually
+x-overlapping"* set the draft described — strictly easier to meet. And *"on no page of type, glyphs on a
+line being horizontally disjoint"* is an **unmeasured universal** and is withdrawn: these components are
+map fragments rather than glyphs — this campaign's own three false positives are **the rim of a recognised
+`469.`, where a 1-px collar split one component into four** — and italic or kerned bounding boxes overlap
+where the glyphs do not. ⚠️ It does need real bbox overlap: `maxX` is INCLUSIVE, so two merely **touching**
+components read `gap == 1` and do flush. What is checkable, and all that is now claimed, is that **no
+fixture here has that shape.** ⛔ **So those five checks
+are attributable to the GROUPING and to neither constant.** Neither mutant's red set can say which of the
+two moved, and that is a property of the checks rather than of the mutants: all five assert the grouping's
+*outcome* and none asserts a gap or a member count. The one thing that does separate them is the bracket
+below, which is arithmetic on a fixture and not a check.
+
+⚠️ **WHAT THE SUITE BRACKETS, and it is one-sided.** `c28Dashes` (`Tests/main.swift:2949`) puts the four
+5×30 strokes at `x = 200 + 60i` against a `glyphHeight` the suite asserts at **25.0** and a shipped bar of
+`3.0 × 25 = 75 px`. ⛔ **THE GAP THE CODE COMPUTES IS 56 px, NOT THE 55 THIS COMMIT'S DRAFT CARRIED IN FIVE
+PLACES — corrected on the adoption 2026-09-11, and it moves the bracket.** `ShapeComponent.maxX` is
+**INCLUSIVE** (`maxX = max(maxX, r.x1 - 1)` with `width = maxX - minX + 1`,
+`Sources/Flattener.swift:2024-2036`), so a 5-px mark on columns 200…204 has `maxX` **204** and `:2199`
+reads `260 - 204 = 56`; **55 is the number of EMPTY columns between the two marks**, which is not the
+quantity the comparison takes. So the positive control reds for any value below **56/25 = 2.24**, and
+⛔ **"blind to every value above 2.2" is FALSE: `[2.2, 2.24)` reds it too.** ⚠️ The draft quoted `:2199`'s
+expression correctly and then did the arithmetic with an exclusive `maxX` — in a block whose own comment
+exists to warn about this (*"Every range in this paragraph is INCLUSIVE … Two numbers, one boundary"*,
+`Tests/main.swift:3081`). ⚠️ And **no check asserts these marks' x extents**, so 56 is DERIVED from the
+rect and the component rule rather than measured; antialiased bleed would move it. What holds either way:
+`0.0` is inside the reachable band rather than an arbitrary extreme, and a RAISE is inert **on this
+fixture** (the bar goes 75 → 2,475 and the four dashes are one run at both), so **the raising direction has
+no fixture in this suite at all** — ⚠️ that wider claim rests on the upstream refusals listed below and not
+on this bracket, which is about `c28Dashes` alone.
+
+⛔ **WHY THE LOWERING DIRECTION AND NOT `3.0 → 99.0`, on the verdict/count split the queue box required.**
+The verdict is monotone in this constant downward — every run at a lower factor is a sub-chain of a run at a
+higher one, so `groups == 0` can never become non-zero (⛔ **and not the *"adding flushes can only take
+`groups` non-zero → 0"* this read before the adoption, which is false of a count that can rise 1 → 2**), so
+a low value can only make `pageIsAllText()` **more** permissive — which puts the 8× background shrink back
+on a page carrying unrecognised prose, i.e. it is the direction that loses content. Raising it is the
+direction this entry argues cannot lose content (its worst case is bytes). ⚠️ **And the claim about the
+raising mutant is REASONED, not measured, so it is recorded as a prediction**: it would change no check's
+*input* here, because every fixture reading 0 groups does so either because its components are refused
+**upstream** by the component test (`c28Bar`, `c26Small`, `c28TooWide`, `c28TooTall`) or because it has
+none (`c28GroupsBoxed`), and no fixture in the suite has two qualifying runs in one band to merge. That is
+the "unchanged input" green this register has retracted three times, which is why it was not the mutant
+added. ⚠️ The COUNT is non-monotone in the raising direction — two qualifying runs in one band merge into
+one group, so `lineN` can *decrease*.
+⛔ **AND IT IS NON-MONOTONE DOWNWARD TOO, so *"lowering removes groups monotonically"* stood here and is
+FALSE — corrected on the adoption 2026-09-11, out of this section's own `gap <= 0` mechanism.** One band
+holding an x-overlapping chain of four, a small positive gap, then another chain of four is **one** run of
+eight at 3.0 and **two** runs of four at 0.0: `groups` reads 1 → **2**. What is monotone is the **verdict**,
+and by a different argument — every run at the lower factor is a **SUB-CHAIN** of a run at the higher one,
+so `groups == 0` can never become non-zero. That is the form the paragraph below needs, and the count
+sentence cannot stand in for it.
+
+⛔ **IT HAS NO INFORMATIVE GREEN, and this is said in advance rather than retracted afterwards.** ⛔ **The
+reason is the SUB-CHAIN argument just above and NOT the mutant's one-sidedness, which is the weak form this
+register has retracted three times** — one-sidedness answers whether a check could move in principle, where
+the test 2026-08-24 settled on is *does the mutant change this check's input*. Because a fixture reading 0
+groups at 3.0 has no run of four to sub-divide, it reads 0 at 0.0 as well, so **every** `groups == 0`
+assertion in the block is unable to fail: `c28GroupsBoxed`, `c28GroupsBar`, `c28GroupsC26`, `c28WideGroups`,
+`c28TallGroups`, the border check — the six `#### lineMinimumMembers RUN through mutate.py` names — **and
+`Tests/main.swift:3230`'s `.groups(0)`, which makes SEVEN.** ⛔ **The seventh was missing from a list this
+section called exhaustive, caught on the adoption: the draft reused the 2026-08-24 six-name list, and
+`:3200`/`:3230` were added 2026-09-02 by `c28-bar-attribution` — so the list was complete for the block as
+it stood a fortnight earlier.** Two more look
+like yield and are emptier still: the `shapeTermAnswer` transport check compares production's carried-out
+answer against `c28GroupsMissed`, so **both sides go 1 → 0 together** and `.groups(0) == .groups(0)`
+holds; and the `inkOutsideText` assertion reads a field assigned **before** term 1's guard. ⚠️ **The
+`runLimit` pair cannot fail either, but *"unchanged input"* was the wrong label and is corrected here**:
+the bound is hit before grouping, yet `Tests/main.swift:3248` reads `c28GroupsMissed`, which goes
+`Optional(1)` → `Optional(0)`, so its input DOES change and `!= nil` merely survives it — the very
+conflation of *cannot fail* with *unchanged input* this register ⛔-flags three times. `c28Calibration`
+reads `shapeComponents` and `shapeMinimumArea` and never the grouping. ⚠️ The universal
+over the other 1,359 checks is an argument with the near misses read, not an inspection — *"did not
+fail"*, not *"cannot"*. ⚠️ **And its evidence is thinner than `#### lineMinimumMembers RUN through
+mutate.py`'s, which enumerated by family on purpose**: the block runs 27 checks, 5 red, and eleven of the
+22 greens are accounted for above. Unnamed are the five `c28InkOut` checks, the layering positive-control
+pair, the window equality, the mask-bytes pair and the override-not-left check.
+
+⚠️ **Estimator, the NINTH write-up from the cleared window and the SECOND whose printed range is a single
+value.** The tool printed **`10-10`** off a window reading `295-298 s each` and the run measured
+**592 s = 9.87 min** end to end (20:14:07 → 20:23:59). The unrounded ends are `2 × 295 = 590 s` and
+`2 × 298 = 596 s`, so the measurement sits **inside the span that produced it** and **8 s (1.3%) below the
+printed 600 s floor** — the same failure mode as `logic/A11.1-publishVerified-gate`'s `10-10`/595 s, for
+the same reason: the window has homogenised to about 1% here, and `:.0f` cannot express the interval.
+⛔ **A degenerate range means the five rows agree with each other, NOT that the estimate is exact.** The
+mutant's own suite was **289 s**, which is **below** all five window rows. ⚠️ No `suite-timings.tsv` row
+was written — `mutate.py` neither takes the suite lock nor writes one — and this session did not
+hand-append one, so the loadavg is unrecorded, as it was for the first never-run run.
+
+⚠️ **What it does NOT establish.** No constant moved and nothing in `Sources/`, `Helper/` or `Tests/` was
+touched, so no shipped behaviour and no published figure moves. It says nothing about `shapeHeightLow` or
+`shapeMinimumArea`, which still have no entry. It does not measure the *relaxing* direction the campaign
+actually wants priced — whether loosening the grouping would rescue C26's two cartoons and what that costs
+in false positives on a printer's ornament — which remains this entry's open two-sided trade.
 
 #### What this entry is NOT
 

@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-shape-gap-mutant` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-gap-fixture` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-shape-gap-mutant` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-gap-fixture` SUB-BOX — SEARCH FOR THAT TAG, IT IS
       ~330 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
@@ -526,7 +526,11 @@ happens.**
       `c28-bar-pilot`, and re-pointed again 2026-09-10 by `c28-bar-corpus` — all three now ticked: the
       instrument is in the tree, the pilot ran on the 10 named documents, the corpus scale-up is taken
       and the owed 1:1 read is done. What is left of the BAR question is the owner's decision and not a
-      session's, so the campaign turns to the term's own unpinned constants. This box exists because every session
+      session's, so the campaign turns to the term's own unpinned constants. ⚠️ **Re-pointed a fourth
+      time 2026-09-10 by `c28-shape-gap-mutant`, now ticked: `lineGapFactor` has a mutant and is
+      `killed`, and the successor `c28-gap-fixture` comes from that run's own finding rather than from
+      the ticked box's nomination — the five reds are shared byte for byte with
+      `const/lineMinimumMembers`, so no check asserts the gap quantity.** This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
       box's FIRST PHYSICAL LINE, so a wrap moves the pointer where the resolver cannot see it.
@@ -848,8 +852,145 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-shape-gap-mutant** — **THREE OF THE SHAPE TERM'S SIX CONSTANTS HAVE NO MUTANT AT ALL. TAKE
-      `lineGapFactor` FIRST: IT IS THE ONE THE ENTRY'S OWN TWO-SIDED TRADE TURNS ON.**
+- [ ] **c28-gap-fixture** — **GIVE `lineGapFactor`'S RAISING DIRECTION A FIXTURE, AND WITH IT THE FIRST
+      CHECK IN THIS SUITE THAT IS ATTRIBUTABLE TO THE GAP TERM ALONE.**
+      ✅ **Written 2026-09-10 by `c28-shape-gap-mutant` out of that run's own finding, not off a
+      candidate list** — the box it succeeds nominated "the other two uncatalogued constants"
+      (`shapeHeightLow`, `shapeMinimumArea`) and the run found something sharper: `const/lineGapFactor`
+      and `const/lineMinimumMembers` are `killed` by the **same five checks with byte-identical detail
+      strings**, so **no check in the tree asserts the quantity `lineGapFactor` controls** and its five
+      reds are attributable to the grouping rather than to it (`BUGS.md` C28
+      `#### The grouping's other constant`).
+      ⛔ **THE FIXTURE, AND IT IS ARITHMETIC RATHER THAN A GUESS.** `c28Dashes` puts four 5×30 strokes at
+      `x = 200 + 60i`, so every adjacent gap is **56 px** against a `glyphHeight` the suite asserts at
+      **25.0** and a shipped bar of `3.0 × 25 = 75 px` — one run, one group. Build the **same four with
+      ONE gap wider than 75 px** (e.g. members at 200 / 260 / 420 / 480: gaps 56, **156**, 56), so at the
+      shipped value the band splits **2 + 2**, neither run reaches `lineMinimumMembers` = 4, and the term
+      reads **0**. ✅ **A check asserting 0 there reds under a RAISE of `lineGapFactor` alone**: at 99.0
+      the 156 px gap no longer flushes, the band is one run of four and it reads **1**. It stays green
+      under `lineMinimumMembers` 4 → 99 (0 either way), under `lineGapFactor` → 0.0 (0 either way), and
+      under `shapeRunHigh`/`shapeHeightHigh` (this is the already-accepted 5×30 geometry).
+      ⛔ **56/156/56 AND NOT THE 55/155/55 THIS BOX WAS FIRST WRITTEN WITH — corrected on the adoption
+      2026-09-11, and re-derive it rather than trusting either**: `ShapeComponent.maxX` is INCLUSIVE
+      (`maxX = max(maxX, r.x1 - 1)`), so a 5-px mark at x = 200 has `maxX` 204 and `Flattener.swift:2199`
+      reads `260 - 204 = 56`. 55 is the count of empty columns, which is not what the code compares. The
+      conclusion is unchanged (56 ≤ 75 does not flush, 156 > 75 does), but these are the numbers a session
+      builds to. ⚠️ **The new PDF's own calibration is NOT pinned by anything**: `c28Calibration` is read
+      off `c28TooTall` alone, so the 25.0 this arithmetic rests on is inherited from a different fixture —
+      assert it on the new one, or the box's "arithmetic rather than a guess" is only as good as that
+      inheritance. ⚠️ **Predict
+      that cross-table before running anything, and say which catalogue entries you did NOT check.**
+      **THEN ADD THE SECOND CATALOGUE ENTRY** — `("Flattener.swift", "lineGapFactor", "3.0", "99.0")` —
+      and run it scoped. ⛔ **That converts a PREDICTION into a measurement, and the prediction is on
+      record to be refuted**: `Tools/mutate.py`'s new comment and the register both say a raising mutant
+      *"would change no check's input in this suite"*, reasoned from there being no band with two
+      qualifying runs. **This fixture creates exactly that band, so the run should KILL it — and if it
+      SURVIVES, suspect the fixture first** (did the 156 px gap actually split? read `lineN`), not the
+      checks.
+      ⚠️ **Two things to get right, both learned here.** (1) The new check must assert **0**, not "fewer
+      groups than the control" — a relative assertion between two arms is the shape that got disarmed at
+      the C26 override seam, twice. (2) Add the **inverse row**: the same four positions with that gap
+      narrowed back under 75 px must read **1**, or a fixture whose marks had drifted out of the accepted
+      class would satisfy the 0-check while testing nothing — C24's eleventh check, and the reason
+      `c28Stroke` exists at all.
+      ⛔ **AND WRITE THIS DOWN BEFORE YOU RUN ANYTHING, because executing this box SUPERSEDES the finding
+      that created it — flagged by the adoption's review 2026-09-11 rather than discovered afterwards.**
+      That inverse row reads **1** at the shipped value and **0** under `const/lineGapFactor` → 0.0, so it
+      is a SIXTH objecting check for the already-logged mutant: a `--rerun` of `lineGapFactor` after this
+      box lands reports **six**, not five, and *"byte-identical to `lineMinimumMembers`'s five"* becomes a
+      statement about 2026-09-10 and not about the tree. That is the outcome to want — it is the first
+      check attributable to the gap term — but the register's convention is that a figure whose
+      supersession is foreseen gets superseded in the commit that foresees it, so say so in
+      `#### The grouping's other constant` when you tick this, and do not let a later session find the
+      five and the six disagreeing with no note between them.
+      ⛔ **DO NOT run the full catalogue** (105 entries), **do not edit `Sources/` while `mutate.py`
+      runs**, and **check `ops/autonomous/test-lock.sh status` first — `mutate.py` does not take the
+      lock.** Budget a baseline suite plus ~290 s; read the startup estimate off the tool and ⛔ **never
+      read a single-value range as precision** — it printed `10-10` on 2026-09-10 against 592 s measured.
+      ⚠️ This touches `Tests/main.swift`, so unlike the last four C28 sub-steps the commit pays the full
+      suite through the hook. Budget one commit.
+      ⛔ **Whoever ticks this box writes C28's next sub-box before stopping** (the campaign's standing
+      rule). What remains after it is `shapeHeightLow` and `shapeMinimumArea`, the two constants with no
+      catalogue entry — ⚠️ **and BOTH carry a recorded reason for their state, so neither is the
+      "unexplained" one**: `shapeMinimumArea`'s is `Tools/mutate.py`'s satisfied-before-it-is-asked
+      argument above an 8 px median glyph, and `shapeHeightLow`'s is `score-shape-term`'s port check,
+      which this very file states ~65 lines below. ⛔ **A draft of this line called `shapeHeightLow` "the
+      unexplained one" while the preserved box below explained it — two present-tense claims disagreeing
+      in one file, caught by the adoption's review 2026-09-11.** What is true is narrower and is the
+      reason to take either: a recorded reason is not a check, and neither reason survives being asked
+      *"does any check assert the quantity this constant controls"* — which is the rule
+      `CONTRIBUTING.md` gained from this run.
+      (context: BUGS.md C28 `#### The grouping's other constant`, `#### The owed fixture` and
+      `#### lineMinimumMembers RUN through mutate.py` — `context:` and not `origin:`, because C28 stays
+      OPEN by design while its sub-steps close)
+- [x] **c28-shape-gap-mutant** — **DONE 2026-09-10** (⛔ the box's own opening line said *"THREE OF THE
+      SHAPE TERM'S SIX CONSTANTS HAVE NO MUTANT AT ALL"* and it is **TWO** now — the marker is moved up
+      here from 37 lines below, on the adoption 2026-09-11, because a box's FIRST PHYSICAL LINE is the one
+      `next-item.sh` prints and is the wrong place to leave a stale present-tense count).
+      **— the box as it was written: THREE OF THE SHAPE TERM'S SIX CONSTANTS HAVE NO
+      MUTANT AT ALL. TAKE `lineGapFactor` FIRST: IT IS THE ONE THE ENTRY'S OWN TWO-SIDED TRADE TURNS
+      ON. —**
+      ✅ **RAN AS PRESCRIBED — one catalogue entry, its pattern verified unique by running the tool's own
+      regex, the prediction written down in full before the run, `--rerun --only lineGapFactor`, row
+      appended** (`BUGS.md` C28 `#### The grouping's other constant`).
+      `const/lineGapFactor` (3.0 → 0.0) is **`killed`, 289 s, `1359/1364 passed`, by EXACTLY FIVE
+      checks**, baseline **`1364 checks, green`**. **The prediction held on every element**: verdict,
+      count, the five names in order, their five detail strings, and the suite line.
+      ⛔ **THE FINDING IS WORTH MORE THAN THE KILL, AND IT IS WHY THE SUCCESSOR IS NOT THIS BOX'S OWN
+      NOMINATION: the five `FAIL` lines are BYTE-IDENTICAL to `const/lineMinimumMembers`'s five** — same
+      checks, same order, compared field to field out of the log (`identical detail strings: True`) — so
+      **two constants producing ONE wrong answer share ONE kill set**, the opposite of the **three
+      mutants that reach `Flattener.swift:3479`** and their pairwise-disjoint sets — ⛔ **not "the C26
+      override seam's three", the seam being a PAIR, and not "over one expression", these two being read
+      sixteen lines apart at `:2183` and `:2199`; both framings corrected on the adoption 2026-09-11, the
+      first of them a repeat of an error `CLAUDE.md` already ⛔-flags.** Both plant the *same wrong
+      answer* (`textLineGroupsOutsideText` returning 0) by different arithmetic. **So those five checks
+      pin the GROUPING and neither constant**, and the only thing that separates the two is arithmetic on
+      a fixture's geometry rather than any check. That is now `c28-gap-fixture`.
+      ⛔ **THE LOWERING DIRECTION, AND THE BOX'S OWN VERDICT/COUNT SPLIT IS WHAT CHOSE IT.** Lowering is
+      monotone on the verdict — adding flushes can only take `groups` non-zero → 0 — so it is the
+      direction that makes `pageIsAllText()` MORE permissive and puts the 8× shrink back on a page
+      carrying unrecognised prose, i.e. the content-losing one. ⚠️ **And the case against `3.0 → 99.0` is
+      REASONED, not measured, and is recorded as a refutable prediction**: every fixture reading 0 groups
+      does so because its components are refused upstream or it has none, and no band has two qualifying
+      runs to merge — so a raising mutant would be the "unchanged input" green this register has
+      retracted three times. `c28-gap-fixture` exists to make that prediction testable.
+      ⚠️ **What the suite BRACKETS is one-sided, and this box did not anticipate it**: the positive
+      control's **56 px** gap against a 75 px bar means it reds for any value below **56/25 = 2.24**, and
+      a raise is inert on that fixture. So `0.0` is inside the reachable band rather than an arbitrary
+      extreme, and the raising direction has no fixture at all.
+      ⛔ **Two numerals here were wrong as written and are corrected on the adoption 2026-09-11**: the gap
+      is **56** and not 55 (`ShapeComponent.maxX` is inclusive, so 55 counts the empty columns rather than
+      the quantity `Flattener.swift:2199` compares), which makes the bar **2.24**; and *"blind to every
+      value above it"* is therefore **false**, since `[2.2, 2.24)` reds the control too.
+      ⛔ **One overstatement caught in my own draft before committing**: *"the term returns 0 on every
+      page"* is not true — the gap is `minX - prev.maxX`, so components that OVERLAP in x have
+      `gap <= 0` and still share a run. Near-total, not total; no fixture here has
+      that shape. The pre-run prediction file carries the overstatement and is deliberately left as the
+      honest record of what was predicted.
+      ⛔ **AND IT WAS NOT ACTUALLY CAUGHT — the claim above was FALSE WHEN WRITTEN, which the adoption's
+      review found 2026-09-11 and is the sharpest thing in this box.** The corrected sentence went into
+      the comment's ⚠️ clause and the **uncorrected** one stayed 25 lines below it in the same comment
+      (`Tools/mutate.py`, *"the same wrong answer (`groups == 0` on every page)"*), so the file both
+      corrected and asserted the claim while this box announced the correction as complete. Fixed on the
+      adoption. ⚠️ Two further overstatements in the same sentence went with it: the run is built against
+      `run.last`, so the shape is a **chain** of consecutive overlaps and not a *mutually* overlapping
+      set, and *"no page of type has that shape"* was an **unmeasured universal** and is withdrawn —
+      these components are map fragments, and this campaign's own false positives include a rim that a
+      1-px collar split into four. ⛔ **The transferable lesson: a correction that does not delete the
+      sentence it corrects has not landed, and a box that reports it as landed is worse than silence.**
+      ⚠️ **Bookkeeping, all of it re-derived from `mutate.py`'s own output**: catalogue **104 → 105**,
+      coverage **83 of 104 → 84 of 105**, log **100 → 101** rows, `0 survivor(s)` unchanged, and the
+      never-run census **still 21** — numerator and denominator moved together, so *"83 → 84"* alone
+      would read as progress against a fixed catalogue and is not.
+      ⚠️ Estimator, the **ninth** write-up from the cleared window and the **second** with a degenerate
+      printed range: `10-10` off five rows reading 295-298 s, measured **592 s** end to end — inside the
+      unrounded [590, 596] s span and **1.3% under the printed 600 s floor**, `A11.1`'s failure mode
+      exactly. No `suite-timings.tsv` row was written and none hand-appended, so the loadavg is
+      unrecorded.
+      ⚠️ No `fault-inject.sh` case was owed (no error branch), and nothing in `Sources/`, `Helper/` or
+      `Tests/` was touched, so no shipped behaviour and no published figure moves.
+      — the box as it was written, kept as the record —
       ✅ **Verified by running `python3 Tools/mutate.py --list` and grepping `Sources/Flattener.swift`,
       not assumed — the failure mode the `c28-bar-corpus` box shipped and its own adoption had to
       refute.** `Flattener` declares six constants for term 3 — `shapeHeightLow` (0.5, `:1963`),

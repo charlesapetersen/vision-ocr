@@ -184,7 +184,27 @@ python3 Tools/mutate.py                      # the whole catalogue — ~8 h at t
 
 Add a mutant when you add a constant or a guard worth protecting. A survivor is
 either a gap in the checks or a value nothing depends on, and T5 records how to
-tell those apart. ⛔ **There are ZERO survivors as of 2026-08-30, and the list ages
+tell those apart.
+⛔ **And a KILL is not automatically an ATTRIBUTION — measured 2026-09-10.**
+`const/lineGapFactor` and `const/lineMinimumMembers` are two different constants read
+at two different lines, and their kill sets are the **same five checks with
+byte-identical detail strings**, because both plant the *same wrong answer*
+(`textLineGroupsOutsideText` returning 0) by different arithmetic. Those five checks
+therefore pin the **grouping** and say nothing about which constant moved. Compare the
+**three mutants that reach `Flattener.swift:3479`**, which have pairwise **disjoint**
+kill sets, each collapsing a different configuration of one comparison. So the question
+to ask of a kill is not "did the mutant die" but **"does any check assert the quantity
+this constant controls"** — and when none does, say so. What separated these two was
+arithmetic on a fixture's geometry (a 56 px gap against a 75 px bar), not a check.
+⚠️ **Two numerals in this paragraph were wrong in the commit that drafted it and are
+corrected here, and both are one failure**: a figure re-typed from a sibling document
+instead of re-derived from the code. That trio is not *"the C26 override seam's three
+mutants"* — the seam is a **pair** and the third entry never touches the override, which
+`CLAUDE.md` already ⛔-flags — and the gap is **56 px**, not 55, because
+`ShapeComponent.maxX` is inclusive and 55 counts the empty columns between two marks
+rather than the quantity `Flattener.swift:2199` compares.
+`BUGS.md` C28 `#### The grouping's other constant`.
+⛔ **There are ZERO survivors as of 2026-08-30, and the list ages
 silently either way**: `already_done()` is last-row-wins, so a verdict sits until
 somebody spends a `--rerun` on it — an empty list means nobody has re-asked, not that
 nothing can survive. (It read ONE as of 2026-08-28 and TWO before that.)
