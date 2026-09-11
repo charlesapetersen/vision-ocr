@@ -1,0 +1,81 @@
+document	page	route	sat	tone	inkOut	layered	1bit	delta	verdict	extent	barVerdict	layeredAtBar	barDelta	lineN	lineNAtBar	band	newAdmit	lossClass
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p2	grey	0.000	0.151	0.0140	58099	54025	-4074	all-text	0.02106	all-text	58099	same	0	0	no	-	-
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p3	grey	0.000	0.150	0.0450	244731	53696	-191035	picture	0.02457	picture	244731	same	2	2	boundary	no	prose
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p4	grey	0.000	0.156	0.0193	58877	55235	-3642	all-text	0.03009	all-text	58877	same	0	0	no	-	-
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p5	grey	0.000	0.156	0.0405	59251	55591	-3660	all-text	0.02959	all-text	59251	same	0	0	no	-	-
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p6	grey	0.000	0.154	0.0767	249633	55182	-194451	picture	0.03511	picture REPLICA-DISAGREES	249633	same	-	4	yes	yes	prose
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p7	grey	0.000	0.158	0.0370	58442	54916	-3526	all-text	0.03260	all-text	58442	same	0	0	no	-	-
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p8	grey	0.000	0.146	0.0465	247120	53183	-193937	picture	0.03460	picture REPLICA-DISAGREES	247120	same	-	1	yes	yes	prose
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p9	grey	0.000	0.148	0.0590	247259	51087	-196172	picture	0.03360	picture REPLICA-DISAGREES	247259	same	-	3	yes	yes	prose
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p10	grey	0.000	0.152	0.0441	59041	52857	-6184	all-text	0.03460	all-text	59041	same	0	0	no	-	-
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p11	grey	0.000	0.147	0.1034	244337	52036	-192301	picture	0.03410	picture	244337	same	-	-	no	-	-
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p12	grey	0.000	0.162	0.0410	63955	58471	-5484	all-text	0.03159	all-text	63955	same	0	0	no	-	-
+bookSection/Broadhead - 1994 - Regionalism and the Upper Class.pdf	p13	grey	0.000	0.122	0.1210	208267	42514	-165753	picture	0.03661	picture	208267	same	-	-	no	-	-
+book/1954 - Why.pdf	p1	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+book/1954 - Why.pdf	p2	colour	0.178	0.192	0.1072	74081	5862	-68219	picture	0.00000	picture	74081	same	-	-	no	-	-
+book/1954 - Why.pdf	p3	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+book/1954 - Why.pdf	p4	grey	0.039	0.144	0.0540	67976	21399	-46577	picture	0.00000	picture REPLICA-DISAGREES	67976	same	-	1	yes	yes	drawing
+book/1954 - Why.pdf	p5	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+book/1954 - Why.pdf	p6	grey	0.043	0.164	0.0493	62397	18973	-43424	picture	0.00000	all-text	20708	-41689	-	0	yes	yes	drawing
+book/1954 - Why.pdf	p7	grey	0.041	0.148	0.0660	65412	20315	-45097	picture	0.00029	all-text	22007	-43405	-	0	yes	yes	drawing
+book/1954 - Why.pdf	p8	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+book/1954 - Why.pdf	p9	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+book/1954 - Why.pdf	p10	grey	0.041	0.992	0.9735	31577	105	-31472	picture	0.00000	picture	31577	same	-	-	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p2	colour	0.130	0.925	0.9446	559596	76627	-482969	picture	0.00000	picture	559596	same	-	-	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p4	colour	0.099	0.324	0.0094	181339	17963	-163376	picture	0.36111	picture	181339	same	-	-	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p6	colour	0.086	0.166	0.0000	57080	41525	-15555	all-text	0.00000	all-text	57080	same	0	0	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p8	colour	0.107	0.255	0.0526	314476	49883	-264593	picture	0.00025	all-text	65039	-249437	-	0	yes	yes	pencil
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p10	colour	0.101	0.145	0.0000	42044	28059	-13985	all-text	0.00995	all-text	42044	same	0	0	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p12	colour	0.069	0.131	0.0000	33743	20878	-12865	all-text	0.01004	all-text	33743	same	0	0	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p14	colour	0.063	0.144	0.0000	63912	46097	-17815	all-text	0.00000	all-text	63912	same	0	0	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p16	colour	0.133	0.326	0.0565	350342	55102	-295240	picture	0.00000	all-text	70276	-280066	-	0	yes	yes	mark
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p18	colour	0.092	0.262	0.0676	310438	37329	-273109	picture	0.00000	all-text	52255	-258183	-	0	yes	yes	none
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p20	colour	0.103	0.265	0.0022	66684	50091	-16593	all-text	0.00000	all-text	66684	same	0	0	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p22	colour	0.121	0.197	0.0013	303522	46644	-256878	picture	0.07030	picture	303522	same	-	-	no	-	-
+book/Riesman - 1954 - Individualism reconsidered, and other essays.pdf	p24	colour	0.118	0.293	0.0015	70002	52449	-17553	all-text	0.02023	all-text	70002	same	0	0	no	-	-
+document/Atkinson_1939_Atkinson on firings_.pdf	p1	colour	0.063	0.123	0.0000	50889	36304	-14585	all-text	0.00386	all-text	50889	same	0	0	no	-	-
+document/Atkinson_1939_Atkinson on firings_.pdf	p2	colour	0.061	0.160	0.0580	294122	46868	-247254	picture	0.00944	picture REPLICA-DISAGREES	294122	same	-	2	yes	yes	prose
+document/Atkinson_1939_Atkinson on firings_.pdf	p3	grey	0.045	0.157	0.0388	283176	49351	-233825	picture	0.00053	picture	283176	same	3	3	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p1	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p2	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p3	grey	0.000	0.019	0.1501	560618	43463	-517155	picture	0.01021	picture	560618	same	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p4	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p5	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p6	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p7	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p8	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p9	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+document/RIESMAN_1942_American Law Institute Proceedings_.pdf	p10	grey	0.000	0.024	0.0614	830574	66594	-763980	picture	0.01693	all-text	128294	-702280	-	0	yes	yes	none
+document/_1973_Committee Against Racism_.pdf	p1	grey	0.006	0.047	0.0000	41402	33907	-7495	all-text	0.00000	all-text	41402	same	0	0	no	-	-
+document/_1973_Committee Against Racism_.pdf	p2	grey	0.001	0.066	0.0000	52376	45501	-6875	all-text	0.00000	all-text	52376	same	0	0	no	-	-
+document/_1973_Committee Against Racism_.pdf	p3	grey	0.002	0.064	0.0000	54244	50130	-4114	all-text	0.00000	all-text	54244	same	0	0	no	-	-
+document/_1973_Committee Against Racism_.pdf	p4	grey	0.003	0.058	0.0779	165151	45257	-119894	picture	0.00000	picture REPLICA-DISAGREES	165151	same	-	5	yes	yes	prose
+journalArticle/1944_Options picking up.pdf	p1	grey	0.005	0.195	0.0569	153326	39592	-113734	picture	0.00000	picture REPLICA-DISAGREES	153326	same	-	4	yes	yes	graphic
+journalArticle/1944_Options picking up.pdf	p2	grey	0.007	0.307	0.6686	137135	35995	-101140	picture	0.00156	picture	137135	same	-	-	no	-	-
+journalArticle/1944_Options picking up.pdf	p3	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p2	grey	0.001	0.050	0.0008	125156	31496	-93660	picture	0.00000	picture	125156	same	1	1	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p3	grey	0.003	0.049	0.0000	37354	30732	-6622	all-text	0.00000	all-text	37354	same	0	0	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p4	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p5	grey	0.001	0.046	0.0353	118981	29138	-89843	picture	0.00000	picture	118981	same	4	4	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p6	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p7	grey	0.001	0.046	0.0137	119311	29519	-89792	picture	0.00000	picture	119311	same	3	3	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p9	grey	0.002	0.051	0.0000	38433	31930	-6503	all-text	0.00000	all-text	38433	same	0	0	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p10	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p11	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p12	grey	0.001	0.041	0.0461	104645	24392	-80253	picture	0.00000	all-text	31670	-72975	-	0	yes	yes	graphic
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p13	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Jones et al_2010_The Productivity Effects of Stock Option Schemes.pdf	p14	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p3	grey	0.001	0.047	0.0000	23783	22084	-1699	all-text	0.00000	all-text	23783	same	0	0	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p5	grey	0.001	0.044	0.0000	22674	20453	-2221	all-text	0.00000	all-text	22674	same	0	0	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p8	grey	0.001	0.043	0.0015	22084	20048	-2036	all-text	0.00000	all-text	22084	same	0	0	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p10	grey	0.001	0.041	0.0016	21135	18804	-2331	all-text	0.00000	all-text	21135	same	0	0	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p13	grey	0.001	0.047	0.0014	23605	21572	-2033	all-text	0.00000	all-text	23605	same	0	0	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p15	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p18	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p20	grey	0.002	0.040	0.0752	62659	17180	-45479	picture	0.00000	picture REPLICA-DISAGREES	62659	same	-	13	yes	yes	prose
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p23	grey	0.001	0.046	0.0014	22804	21168	-1636	all-text	0.00000	all-text	22804	same	0	0	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p25	grey	0.001	0.045	0.0014	22854	21103	-1751	all-text	0.00000	all-text	22854	same	0	0	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p28	grey	0.001	0.047	0.0016	24693	21368	-3325	all-text	0.00000	all-text	24693	same	0	0	no	-	-
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	p30	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-
+magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	p1	grey	0.012	0.095	0.0648	278692	63760	-214932	picture	0.00000	picture REPLICA-DISAGREES	278692	same	-	2	yes	yes	prose
+magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	p2	bilevel	-	-	-	-	-	-	already 1-bit	-	-	-	-	-	-	no	-	-

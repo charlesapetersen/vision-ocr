@@ -504,6 +504,12 @@ predicted**: widening `sweep-ink-bar.py`'s `TOOL_COLUMNS` alone reds **15 of its
 because its two fixture stdouts are literal 13-field rows — the guard working, and why they were widened by
 hand rather than derived. ⚠️ **Not the measurement**: pricing the bar upward needs a population and no
 sweep ran, no committed artefact moves, and nothing in `Sources/` or `Helper/` reads the new field.
+⛔ **THE HEADING IS SUPERSEDED THE SAME DAY AND ITS THREE CLAUSES ARE NOT — kept as written.** The
+measurement WAS taken on 2026-09-02 by `c28-bar-pilot` (`C28-BARPILOT-2026-09-02.tsv`, the ✅ block ~20
+lines below), and what it got wrong is the INFERENCE and not a fact: **no sweep ran then and none has run
+since** — the population is an `awk` filter on `INKBAR-2026-08-19.tsv` plus one `INKBAR=0.08` invocation a
+document — so *"needs a population"* was satisfied without one. ⚠️ `no committed artefact moves` also
+still holds: a new artefact was **added**, which is not the same thing.
 ✅ **BOTH WERE TAKEN 2026-08-22 AND C28 IS NOW `HALF FIXED`** — read `#### THE DECISION` and
 `#### The wiring, SHIPPED` before touching any of it. The shape term is a **third refusal condition in
 `pageIsAllText()`**, after the ink fraction and the pale-drawing terms, so it is only ever evaluated on
@@ -522,7 +528,37 @@ is the term's, not the fixture leaving the all-text class. ⚠️ **What keeps i
 the 16** measured losses and leaves three hand-made marks, one of which (`_1939_Former students` p2,
 `outPx` **0**) no value of any constant here can reach, because the page-wide Otsu is blind to pale
 pencil upstream of the map. It buys **no searchability** — the words are still not in the text layer,
-which is `C30`'s ground. ⛔ **And two things it does NOT claim.** (1) The mutant campaign was **not
+which is `C30`'s ground.
+✅ **AND THE MOVE THIS ENTRY CALLS *"the outcome worth aiming at"* IS PRICED AS OF 2026-09-02, ON THE
+BAND THAT WOULD ACTUALLY MOVE** (`BUGS.md` C28 `#### The bar priced against the term`,
+`C28-BARPILOT-2026-09-02.tsv`, 80 rows in 10 documents; no sweep — the population is an `awk` filter on
+`INKBAR-2026-08-19.tsv` and one `INKBAR=0.08` invocation a document). Of the **16** pages a bar of 0.08
+would newly admit, the shape term refuses **9** and `barDelta` reads `same` on **9 of 9**, so those nine
+cost the bar nothing: the 16 go **3,804,222 → 2,156,187 B, 1.76x**, against the **838,569 B** the same 16
+cost when the bar *was* 0.08 and no term existed — so **the move is worth 1,648,035 B where it used to
+cost 2,965,653, and the term retains the other 1,317,618 B (44.4%) at zero content risk.**
+⛔ **THE FINDING: the term refuses ALL SEVEN pages in this band that lose running prose or table data,
+and it refuses them for nothing** — `Xin Qu` p20 (`lineNAtBar` **13**), `_1973` p4 (5), `Broadhead` p6/p9/p8
+(4/3/1), `Atkinson_1939` p2 (2), `Glazer_2002` p1 (2) — the classes cited from C26's own per-page render
+table rather than re-read. ⚠️ **Seven is that table's own five-bucket partition and `Riesman - 1954` p16
+is the arguable page: it is filed as a hand-drawn mark and loses trailing text lines too, and it is in the
+ADMITTED set — so on the wider reading it is 7 of 8 and one page losing text goes through.** ⛔ **And the
+money points the other way from the harm: 58.3% of what the move recovers lands on the TWO pages this
+register has named since 2026-08-19 as buying nothing** (`RIESMAN_1942` p10 alone is 702,280 B, **42.6%**
+of the whole recovery), while **22.2%** is bought by re-destroying content outright. ⛔ **That 960,463 B is
+NOT a new number — it is C26's own published 32.4% of the band's cost over a smaller denominator**, the
+same bytes unmoved because `lineNAtBar` is 0 on both pages. ⛔ **The three outright losses it admits are exactly question 3b's known
+blind spot on a different population** — `1954 - Why` p6/p7's cartoons and `Riesman - 1954` p16's
+hand-drawn bracket — and p6 was **read at 1:1 in that session**: 612 × 473 legible against 153 × 118 with
+no line left in it, C26's founding failure mode. ⚠️ **17 sampled rows of 2,129 in 10 documents of 233 and
+NOT a corpus figure** — do not pool it, this corpus has already made a pooled scale-up **5.96x** high —
+one Photo detail, and **no bar is recommended: the value is the owner's, as it was on 2026-08-19.**
+⚠️ `lineNAtBar`'s `dense` and `n/a` tokens appear on 0 of the 80 rows — ⛔ **but NOT in the same sense,
+corrected on adoption: `n/a`'s absence is measured and `dense`'s is BY CONSTRUCTION**, since `mrcLayers`
+passes no `runLimit` and the tool's own header records that `dense` is producible by no run of it.
+⛔ **And its `layered` column is the 0.045 arm while `INKBAR-2026-08-19.tsv`'s column of the same name is
+the 0.08 arm** — that file pre-dates the bar move, so comparing the two by name inverts the result.
+⛔ **And two things it does NOT claim.** (1) The mutant campaign was **not
 run**: three mutants were added (catalogue 97 → **100**, all three verified APPLIED, not NOT-APPLIED)
 and a scoped run was a baseline suite plus 44-58 min a mutant. ✅ **ALL THREE HAVE NOW BEEN RUN AND ALL
 THREE ARE `killed`** — `const/shapeRunHigh` and `logic/C28-alltext-ignores-shape` on 2026-08-23, and
@@ -2027,7 +2063,7 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `GUTTER-RECONCILE-2026-08-26.tsv` + `GUTTER-SAMPLED-2026-08-26.tsv` +
 `GUTTER-BANDS-2026-08-26.tsv` + `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` and
 `C27-MASKTERMS-2026-08-26.tsv` and `C27-COLOURBYTES-2026-08-26.tsv` and
-`DRAWN-CENSUS-2026-08-26.tsv` — and are
+`DRAWN-CENSUS-2026-08-26.tsv` and `C28-BARPILOT-2026-09-02.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -2105,6 +2141,35 @@ which the register quotes, plus a 23-second re-run of the committed tool
 (`awk -F'\t' 'NR==1 || $14+0>=1 || $16=="partial"'` is the filter). That is the discipline being kept
 rather than bent — the tool is committed and the filter is written down — but a reader who counts rows
 will find the corpus missing, which none of the other files in this list does.
+⚠️ **Nor is `C28-BARPILOT-2026-09-02.tsv`, an EIGHTH time.** It comes from
+`Tools/score-text-route.swift`, committed and carrying a self-test, so the count stays **five** an eighth
+time. ⛔ **And it is NOT a filtered artefact — `DRAWN-CENSUS`'s *"the only one in this list that is"*
+STILL HOLDS, corrected on adoption 2026-09-10 when the draft of this note declared it false.** The two are
+different things: `DRAWN-CENSUS` **omits rows its own run produced** (719 of 16,987, so a reader who counts
+rows finds the corpus missing), where what is selected here is the **POPULATION** — an `awk` filter
+`NR>1 && $7+0>=0.045 && $7+0<0.08` over `INKBAR-2026-08-19.tsv` names 10 documents — and the file then
+carries **every row the tool printed** over those ten. Measured: its per-document row counts are
+**identical to `INKBAR-2026-08-19.tsv`'s own sample** on 10 of 10 (12/12/12/12/10/10/4/3/3/2 = **80 rows
+in 10 documents, not 80 of 16,987**), which is why 63 of them are controls outside the band. Selecting a
+population is what every sampled artefact in this list already does.
+⛔ **Two things a reader will get wrong.** (1) Its `layered` column is the
+**0.045** arm and `INKBAR-2026-08-19.tsv`'s `layered` is the **0.08** arm: that file pre-dates the bar
+move, so the two columns of that name are opposite arms and comparing them by name inverts the result.
+⛔ **This is not academic — it changes the sign of the prescribed corpus invocation**: `stratify-corpus.py`
+computes `--bytes BEFORE,AFTER` as `after − before`, so the string that reads **+2,965,653** against
+`INKBAR` reads **−1,648,035** against this file.
+(2) It is reproducible from the tree in the sense this count draws, but **not to the byte across a
+`Sources/` change** — `layeredAtBar` reads production's shape term, so a future change to
+`textLineGroupsOutsideText` or to `pageIsAllText()` moves it by design. ⚠️ **The column that cannot move
+under the TERM is `layered`, and only on the 16 band rows** — a draft said *"the column that must not
+move"* flatly, which is false: `layered` reads production too, and on the 17th row (`Broadhead` p3, the
+boundary) it **already moved**, 56,226 → 244,731 B, under exactly that term. On the 16 it is
+term-3-immune because they sit above the shipped bar and `lineN` reads `-` on 16 of 16, and there it
+reproduces `INKBAR-2026-08-19.tsv`'s 0.045 arm digit for digit today.
+⚠️ **And three of its 19 columns are not tool output**: the tool prints 15, `document` is prepended, and
+`band` / `newAdmit` / `lossClass` are appended by hand — `lossClass` an eye-read verdict from C26's render
+table, derivable from no tool in the tree. A `#` provenance header was rejected because
+`stratify-corpus.py` has no `#`-line handling and is the tool prescribed to read this file.
 The rule this count actually draws is *"reproducible from nothing in the tree"*, and it is worth
 re-deriving from the list rather than counting prefixes. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file

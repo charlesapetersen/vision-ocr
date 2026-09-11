@@ -9,6 +9,16 @@ Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 **Four open: `C27`, `C28`, `C29` and `C30` — and TWO of them are `HALF FIXED`: `C28` as of 2026-08-22, its
 shape term WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were
 measured, and `C29` as of 2026-08-25, its born-digital page now COPIED THROUGH instead of rasterised.**
+✅ **`C28`'s ONE REMAINING MEASUREMENT IS TAKEN AS OF 2026-09-02 AND IT IS THE MOVE THE ENTRY CALLS *"the
+outcome worth aiming at"*** (`#### The bar priced against the term`, `C28-BARPILOT-2026-09-02.tsv`, no
+sweep): of the **16** sampled pages a `textPageInkOutsideThreshold` of 0.08 would newly admit, the shape
+term refuses **9** at `barDelta same`, so the move is worth **1,648,035 B** where it was worth
+**2,965,653 B** before the term — **44.4% retained for free** — and the term refuses **7 of 7** pages in that band that
+lose running prose or table data (⚠️ 7 of 8 on the wider reading of `Riesman - 1954` p16, stated in the
+section). ⛔ **58.3% of what the move recovers lands on the two pages this entry
+already calls free, and 22.2% re-destroys content**, so the numbers do not point one way; **no bar is
+recommended and the value stays the owner's.** `C28` remains `HALF FIXED` — this prices a decision rather
+than taking one, and 17 sampled rows in 10 documents of 233 is **not** a corpus figure.
 ✅ **`C27` HAS NO BOUNDED WORK LEFT AS OF 2026-08-26 — (c) SHIPPED, and its queue box is `[hold] needs:
 owner`** (`#### The split, SHIPPED`). `Flattener.colourSaturationThreshold` is the colour decision's own
 bar, 0.06, **equal to `pictureSaturationThreshold` so no page's output moves**; the two decisions can move
@@ -4473,6 +4483,12 @@ inkOutsideText over the 182 rows that carry one:
 an anomaly: `bookSection/Broadhead - 1994` p3 prints `inkOut` **0.0450** at the column's four decimals
 and reads `all-text` at the bar too, so its true value is just under 0.045 and it is `same` with real
 bytes. A reader who subtracts 16 from 17 and looks for a missing page will find rounding.
+⛔ **`all-text at the bar too` IS HISTORICAL AS OF 2026-09-02 AND IS KEPT AS WHAT WAS TRUE WHEN WRITTEN:
+that page reads `picture` at BOTH bars today**, because C28's shape term was wired on 2026-08-22 and
+refuses it with `lineN` **2** — which also gives its sub-0.045 `inkOut` a witness that does not depend
+on the fourth decimal, since the term is only *asked* on a page term 1 accepted. It loses two lines of
+running prose (C28 sub-step 1), so what rescued it is the term and not any value of this bar. See C28
+`#### The bar priced against the term`.
 **16 of 2,129 sampled pages is 0.75%; 16 of the 89 pages actually at risk is 18.0%**, and the moved
 pages come from **10 documents of 233 (4.3%)**.
 
@@ -11671,7 +11687,14 @@ the shape term, so they still cannot price `textPageInkOutsideThreshold` going b
 ⛔ **THAT SENTENCE IS THE COMMISSION FOR `#### The third term reported` (2026-09-02) AND IS SUPERSEDED BY
 IT — kept as written, because it is what that repair was built against.** `lineN` and `lineNAtBar` now
 carry the third term's own answer, so the confound it names is gone; what is NOT gone is the measurement
-itself, which needs a population. ⚠️ **Runtime is
+itself, which needs a population. ⛔ **THAT LAST CLAUSE WAS TAKEN THE SAME DAY AND IS CORRECTED HERE ON
+ADOPTION 2026-09-10 — `#### The bar priced against the term`, and it needed NO sweep**: the population
+came from an `awk` filter on `INKBAR-2026-08-19.tsv` plus one `INKBAR=0.08` invocation a document.
+⚠️ **This is the twin of the copy in `CLAUDE.md`, and the adopting session's first sweep fixed that one
+and left this one standing** — the exact shape this register logs against itself two entries away
+(*"the strand's sweep counted files and left `BUGS.md`'s own statement of the refusal carrying it"*).
+Both are current-tense; a third copy in `QUEUE.md` sits inside a ticked box as its record and is
+correctly left alone. ⚠️ **Runtime is
 not measurable here and the file says so rather than quoting a delta**: three runs over the same six
 pages read **85.69 s** (before), **87.28 s** (after) and **84.82 s** (after, rebuilt) — the spread between
 two runs of the *same* code is larger than the difference between the two codes, which is what a `Bool`
@@ -11920,12 +11943,212 @@ status is right (nothing failed, and it matches `score-text-route`'s own `dumpEx
 diagnostic lines that tool prints — *nothing to dump* against *wrote NOTHING* — have no counterpart here,
 which is the hazard this tool's own `dumpDirectory` comment quotes. Named, not fixed.
 
+#### The bar priced against the term, on the band that would move — MEASURED 2026-09-02
+
+`#### The third term reported` (2026-09-02) shipped the instrument; this is the measurement it was built
+for, and it is the one
+this entry has been carrying since 2026-08-23. ⚠️ **Named rather than called *"the section above"*, which
+the draft did and which is wrong here**: the section physically above is 2026-08-26's `SHAPEDUMP` exit,
+because C28's sections are not in date order. `#### What this entry is NOT` says a fix here may let
+`textPageInkOutsideThreshold` go **back up** and calls that *"the outcome worth aiming at"*. **Now that
+the shape term is inside `pageIsAllText()` and `lineNAtBar` reports it, that move can be priced for the
+first time: of the pages a higher bar would newly admit, how many does the term refuse anyway?** Every
+one it refuses is a page the bar is paying for and does not need to.
+
+`C28-BARPILOT-2026-09-02.tsv`, 80 measured page rows in 10 documents. **No sweep**: the population is
+taken from `INKBAR-2026-08-19.tsv` by `awk` on `inkOut`, one `INKBAR=0.08` invocation of
+`Tools/score-text-route.swift` per document, at the default (Balanced) Photo detail.
+
+**THE ANSWER: 9 of the 16, and every one of the nine is free.** The band `[0.045, 0.08)` — the pages
+term 1 refuses today and a bar of 0.08 would newly admit — holds **17 sampled rows in 10 documents of
+233**, which is this register's own published count, and **16 of them genuinely flip** (below). At the
+priced bar:
+
+| `lineNAtBar` | n | what it means | bytes the bar move recovers |
+|---|---|---|---|
+| ≥ 1 | **9** | the shape term refuses the page anyway | **0** — `barDelta same` on 9 of 9 |
+| 0 | **7** | all three terms accept; the page is shrunk 8x | **1,648,035 B** |
+
+So the 16 go **3,804,222 B → 2,156,187 B, 1.76x**, against the **838,569 B** those same 16 cost when the
+bar *was* 0.08 and no shape term existed. ⛔ **Read that as the split it is: the bar move used to be worth
++2,965,653 B and it is now worth 1,648,035 B — 55.6% — because the term retains the other 1,317,618 B,
+44.4%, at zero content risk.** Both endpoints are re-derived from the committed file rather than quoted
+(`awk` over `INKBAR-2026-08-19.tsv`'s own `layered`/`layeredAtBar` on the same 16 rows: 838,569 →
+3,804,222, gap 2,965,653, 185,353 B/page).
+
+⛔ **THE FINDING WORTH MORE THAN THE RATIO: THE TERM REFUSES ALL SEVEN PAGES IN THIS BAND THAT LOSE
+RUNNING PROSE OR TABLE DATA, AND IT REFUSES THEM FOR NOTHING** — ⚠️ seven on this entry's own
+five-bucket partition, **7 of 8 on the wider reading of `Riesman - 1954` p16**, which is spelled out
+below rather than left to the reader. Cross-tabulating `lineNAtBar` against
+C26's own per-page render table (the 13-row **The answer, per page** table under
+`#### Sub-step 4, the benefit`, 2026-08-19) plus `#### The rendered proof on the founding pages` (the
+three `1954 - Why` cartoons, 2026-08-20) — **cited, not re-read, except p6 below**:
+
+* **Refused, 9**: `Xin Qu et al_2018` p20 (`lineNAtBar` **13**, the correlation matrix's last column),
+  `_1973_Committee Against Racism_` p4 (**5**, seven lines of body text), `Broadhead - 1994` p6/p9/p8
+  (**4** / **3** / **1**, three, three and one line of body text), `Atkinson_1939` p2 (**2**, two lines
+  of 1939 typescript), `Glazer_2002` p1 (**2**, two lines plus both column rules) — **that is 7 of 7**
+  — plus `1954 - Why` p4 (**1**, one of C26's founding cartoons) and `1944_Options picking up` p1
+  (**4**, a sidebar box frame and three word fragments).
+* **Admitted, 7**: `1954 - Why` p6 and p7 (**the other two founding cartoons**), `Riesman - 1954` p16
+  (a hand-drawn margin bracket), `Jones et al_2010` p12 (four table rules and four en-dash cells),
+  `Riesman - 1954` p8 (a pencil slash, degraded not destroyed), and `Riesman - 1954` p18 +
+  `RIESMAN_1942` p10, the **two pages this register has named since 2026-08-19 as buying nothing**.
+
+⛔ **So the money and the harm point opposite ways, and this is the number for the decision: 58.3% of
+what raising the bar recovers lands on the two pages that lose nothing** — `RIESMAN_1942` p10 alone is
+702,280 B, **42.6%** of the whole recovery, and `Riesman - 1954` p18 is 258,183 B, 15.7% — while
+**22.2%** (365,160 B) is bought by re-destroying content outright and **19.6%** (322,412 B) by
+degrading a graphic or a pencil mark. 960,463 + 365,160 + 322,412 = 1,648,035.
+⛔ **THAT 960,463 B IS NOT A NEW NUMBER AND MUST NOT BE READ AS ONE: IT IS THIS ENTRY'S OWN PUBLISHED
+32.4%, OVER A DIFFERENT DENOMINATOR.** C26 has said since 2026-08-19 that *"32.4% of the band's byte cost
+lands on two pages a reader cannot tell apart"*, and re-deriving those two pages from
+`INKBAR-2026-08-19.tsv` gives 702,280 + 258,183 = **960,463 B**, which is **0.3239** of 2,965,653 and
+**0.5828** of 1,648,035 — the same bytes, unmoved, because `lineNAtBar` is 0 on both so the term changed
+nothing for them. **58.3% and 32.4% are one measurement at two scopes**, and the share rises only because
+the term shrank the denominator.
+⚠️ **AND THE `7 of 7` RESTS ON THE REGISTER'S OWN PARTITION, WHICH PUTS ONE ARGUABLE PAGE ON THE OTHER
+SIDE — say it in place, because the ambiguity cuts against this section's headline.**
+`#### Sub-step 4, the benefit` assigns `Riesman - 1954` p16 to *"loses a hand-drawn mark outright"* and
+notes in the same breath that it loses *"that page's trailing text lines"* too; its five buckets are
+exclusive by construction (7+1+2+1+2 = 13) and that section records that its own first draft could not
+place this page at all. p16 is in the **admitted** set here. **So if its trailing lines are counted as
+running prose, the term refuses 7 of 8 rather than 7 of 7 and one page losing text is let through.**
+Both readings are stated; neither is re-read, and the underlying page is unchanged either way.
+
+⛔ **AND THE THREE OUTRIGHT LOSSES IT ADMITS ARE EXACTLY QUESTION 3b's KNOWN BLIND SPOT, REPRODUCED ON
+THE BAND ABOVE THE BAR RATHER THAN THE 73 BELOW IT.** Two cartoons and a hand-made mark: 3b measured
+`lineN` **0** on `1954 - Why` p6 and p7 in a different instrument on 2026-08-21 and named the *grouping*
+(`lineMinimumMembers` / `lineGapFactor`) as the miss, and the shape term's three surviving losses under
+`#### THE DECISION` are hand-made marks. Nothing here is a new failure mode; what is new is that the
+same blind spot is what the bar would be paying to cover.
+
+✅ **THE 1:1 READING, on one of the seven, as this campaign's every sub-step has taken.** `1954 - Why`
+p6, `lineNAtBar` **0**, `INKDUMP` at both bars from the same run: the shipped background is **612 × 473**
+and the drawing — a figure knocking books off a shelf — is whole and legible; the 0.08 background is
+**153 × 118** and it is an indistinct dark blot with no line in it. That is C26's founding failure mode,
+and it says in one page why the 1,648,035 B is not a recommendation.
+⚠️ **PROVENANCE, CORRECTED ON ADOPTION 2026-09-10 — the draft said *"Read at 1:1 in this session, not
+cited"*, and after adoption *"this session"* would have named the wrong one.** It was read by the
+**stranded** session of 2026-09-02, whose worktree `/private/tmp` has since swept and whose `INKDUMP`
+output is therefore gone; the adopting session did **not** re-read it and this is the one claim in this
+section not re-derivable from the tree. ✅ **What corroborates it independently is an earlier artefact of
+this register's own**: C26 published **612 px against 153 px** and *"at 1:1 the cartoons are whole and
+legible where they were smudges"* for this very page on 2026-08-20
+(`#### The rendered proof on the founding pages`). So the two **widths** reproduce a figure published
+eleven days earlier by a different instrument, and what rests on the lost dumps alone is the two
+**heights** and the phrase *"no line in it"*.
+⛔ **AND THE READING WAS SPENT ON THE PAGE OF THE SEVEN THAT NEEDED IT LEAST — said here rather than
+left for a reader to notice.** All seven admitted pages already carry published 1:1 readings (five in
+C26's 13-row table, p6 and p7 in `#### The rendered proof on the founding pages`), and p6 is the most
+thoroughly documented of them. **The page that would have paid is `Riesman - 1954` p16**, the one this
+section's own `7 of 7` turns on: C26's table lists a hand-drawn margin bracket, **the trailing text
+lines** and the gutter outside its stencil, and records only the bracket's fate as shipped — so a 1:1
+read of those trailing lines is what would settle **7 of 7 against 7 of 8**, and nothing in this run
+asked it. Carried into `c28-bar-corpus` as owed rather than fixed here, because an `INKDUMP` re-run is a
+build plus real recognition and this commit stages no code.
+
+⛔ **AND DO NOT RECOMMEND A BAR OFF THIS.** The value is the owner's — it was on this same constant on
+2026-08-19, and `#### THE DECISION` records why. This section reports counts and bytes.
+
+**The controls — and the one the result actually rests on was MISSING from the draft, added on adoption
+2026-09-10.** ⛔ **EVERY BYTE OF THE 1,648,035 COMES FROM THE SEVEN ADMITTED ROWS' `layeredAtBar`, and all
+four of the draft's controls priced the other arm.** ✅ **THE CONTROL THAT PINS THE HEADLINE**:
+`layeredAtBar` on those seven reproduces `INKBAR-2026-08-19.tsv`'s **`layered`** — that file's 0.08 arm —
+**digit for digit on 7 of 7, 390,249 B**, across fourteen days, two binaries and `822f8d2` between them.
+It is a fresh `mrcLayers` run at 0.08 under today's code, so unlike (1) it **can** fail.
+(1) `layered` at the shipped bar sums to **3,804,222 B** over the 16, matching that file's 0.045 arm row
+by row and not merely in total. ⛔ **Its stated conclusion is RETRACTED on adoption — it was another
+check that could not fail** (⚠️ no ordinal claimed; this register has published a wrong one by counting
+sentences). The draft read it as *"what says the byte path did not move under the term"*, and the term
+**cannot** move those sixteen: it is refusal **3**, reached only on a page terms 1 and 2 accepted, and all
+sixteen sit at or above the shipped bar — so `lineN` reads `-` on **16 of 16** by construction, which the
+artefact itself prints. ⛔ **And where the claim IS testable it is FALSE, from this section's own data**:
+`Broadhead - 1994` p3 is the one band row the term was asked at the shipped bar, and its shipped bytes
+went **56,226 → 244,731 B** between that file and this one — the term moving the byte path, by
++188,505 B. What (1) does say is that the 0.045 arm is determinate across the interval.
+(2) `inkOut` reproduces that file on all 17 band rows (assigned before term 1's guard, so bar-independent).
+(3) 31 rows print a non-dash `lineN` and `lineN == lineNAtBar` on all 31; (4) `lineNAtBar` is asked on
+**47** rows against `lineN`'s **31**, and **47 − 31 = 16** is exactly the newly-admitted population.
+⚠️ **Neither is evidence for the ratio and the draft counted them as though they were**: (3) compares two
+`mrcLayers` calls over one page differing only in an override **term 3 does not read**, and the table's
+own `barDelta same` **on 9 of 9** likewise *follows* from `lineNAtBar >= 1` — a page refused at both bars
+gets the same `bgFactor` and therefore the same bytes — rather than corroborating it.
+✅ **A FIFTH SPANS TWO IMPLEMENTATIONS OF THE TERM.**
+`#### The same shape term on PICTURES` measured the three `1954 - Why` cartoons on 2026-08-21 through
+`Tools/score-shape-term.swift` — the **independent transcription** this entry keeps deliberately — and
+published `lineN` **1** on p4 and **0** on p6 and p7.
+`lineNAtBar` here is **1 / 0 / 0** on the same three pages, read back from production's own
+`MRCLayers.shapeTermAnswer` through a different tool eleven days later. ⚠️ **Agreement and not identity**:
+the two run the term over different images (that tool builds its own surfaces; this one reads what
+`mrcLayers` computed), so the three values matching is a cross-implementation check and **not** a
+determinism one — and it is three pages. ⛔ **The draft called it *"the strongest of the five"* and that
+superlative is STRUCK on adoption — the form this register has already ⛔-refused twice** — because it is
+the weakest reading of the five, not the strongest: **two of the three agreeing values are `0`**, the
+modal answer and question 3b's own known blind spot, so only p4's **1** discriminates; and since
+2026-08-23 that tool's **port check exits 7 on divergence**, so the two copies are held together by a gate
+rather than being independent of each other.
+✅ **A SIXTH, found on adoption and free from the artefact.** All **9** refused rows carry `barVerdict`
+`picture REPLICA-DISAGREES` and the other **71** rows carry nothing — `score-text-route`'s 2-term replica
+of `pageIsAllText()` cannot mirror term 3, so it disagrees on **exactly** the pages the term refuses and
+nowhere else. That is the refusal attributed to term 3 a second time, from a different code path.
+⛔ **And it has an operational consequence for the corpus step: those nine rows do NOT match
+`barVerdict:eq:picture`, so a selection gated on that string silently drops the entire refused set.**
+
+⛔ **THE 17-AGAINST-16 IS NOT NEWS — C26 `#### Sub-step 3b, the population` PUBLISHED IT ON 2026-08-19
+AND IN THESE TERMS** (*"the seventeenth is the boundary and not an anomaly … a reader who subtracts 16
+from 17 and looks for a missing page will find rounding"*). What is new is a **second, non-rounding
+witness for the same page and a change of verdict under it.** `Broadhead - 1994` p3 prints `inkOut`
+**0.0450** and is picked up by any filter on the printed column, but its `lineN` is **2** — the term was
+*asked* at the shipped bar, which can only happen if term 1 accepted the page, so its true value is
+under 0.045 without anyone having to reason about the fourth decimal. ⛔ **And the verdict moved: that
+section recorded p3 as `all-text` at BOTH bars — shrunk either way — and today it is `picture` at both,
+because the shape term wired on 2026-08-22 refuses it.** So a page whose two lines of running prose
+(C28 sub-step 1) **no bar move could ever have reached** is rescued by the term instead, which is the
+same mechanism as the 7-of-7 above seen from the other side of the bar. It carries `band=boundary` and
+`newAdmit=no` in the artefact and enters no numerator above.
+
+⚠️ **An instrument trap, hit rather than reasoned, and it is a live instance of the queue's
+`argv-shape`.** The first driver loop passed each document's page list through a `read` with
+`IFS=$'\t'`, so `" 4 6 7"` reached the tool as **one argument**; `score-text-route` `continue`s silently
+on an argument that does not parse as `Int`, so it fell back to its default 12-page sample and printed a
+summary that read like an answer to the question asked. Caught because the row count was wrong, not
+because anything complained. It cost nothing here — the default sample is the same `sampleIndices` that
+produced `INKBAR-2026-08-19.tsv`, so it is a **superset** containing all 17 band rows plus 63 control
+rows, and the artefact is the superset — and a re-run of `1954 - Why` with the three page arguments
+parsed correctly prints rows **identical** to the sample run's. But the shape is exactly the one T19
+fixed in the two *writers* and left recorded in the six that mis-measure.
+
+⚠️ **What this does NOT establish, named rather than implied.** It is **17 sampled rows of 2,129 in 10
+documents of 233 — not a corpus figure**, and it must not be pooled into one: `sampleIndices` takes up to
+12 pages a document whatever its length, and this register has already retracted a pooled scale-up on
+this corpus as **5.96x high**. The loss classes are **cited** from C26's 2026-08-19 render table and its
+founding-page render, not re-read, except `1954 - Why` p6. Bytes are one Photo detail (Balanced) and one
+machine. `lineNAtBar`'s two word tokens are **unexercised — and CORRECTED on adoption, because the two are not
+unexercised in the same way and the draft ran them together.** `n/a` is absent on **0 of 80 rows**, which
+is a measurement. ⛔ **`dense` is absent BY CONSTRUCTION and could not have come back otherwise**:
+`mrcLayers` calls `textLineGroupsOutsideText` with **no `runLimit` argument**, so `dense` is producible by
+no run of this tool at all — `Tools/score-text-route.swift`'s own header says so in terms, and that is why
+its token table carries a row for it. So the density arm is still seen by nothing outside the suite, and
+saying so costs this run no credit it was owed.
+⚠️ **Three of the file's 19 columns are not tool output.** `score-text-route` prints 15; `document` is
+prepended as every artefact in this register does; and **`band`, `newAdmit` and `lossClass` are appended
+by hand**, `lossClass` being an eye-read verdict transcribed from C26's per-page render table and
+derivable from no tool in the tree. ⛔ **A `#` provenance header was REJECTED rather than forgotten, and
+the reason is the successor step**: `WIDEN-LAYERS-2026-08-22.tsv` is the in-tree precedent for one, but
+`Tools/stratify-corpus.py` has **no `#`-line handling** and it is the tool `c28-bar-corpus` is prescribed
+to run over this very file — so the header would break the next measurement to buy a comment. And nothing in `Sources/` moved, no committed artefact was re-run, and C28
+stays **HALF FIXED** — this prices a decision, it does not take one.
+
 #### What this entry is NOT
 
 - **Not C26.** C26 is the page-wide bar and it is shipped. This is the mechanism, and the two named
   failures of the bar (73 pages still shrunk, 32.4% of the cost on two pages that lose nothing) are
   what a fix here would retire. If this is fixed, `textPageInkOutsideThreshold` may well be able to go
-  *back up*, which is the outcome worth aiming at.
+  *back up*, which is the outcome worth aiming at. ✅ **PRICED on the band that would move, 2026-09-02 —
+  `#### The bar priced against the term`: the shape term refuses 9 of the 16 for 0 bytes, so the move is
+  worth 1,648,035 B rather than the 2,965,653 B it used to cost, and 58.3% of that lands on the two
+  pages this entry has always said buy nothing.** Still not a recommendation: the value is the owner's.
 - **Not R56 or R57.** Those are the 1-bit route — a pale mark thresholded away — and both are `FIXED`.
   The route here is the opposite one, and per fact 4 above the 1-bit route does not carry this defect.
 - **Not visible to the release gate.** `Tools/score-gate.swift` cannot see this class by its own

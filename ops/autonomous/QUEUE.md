@@ -510,18 +510,21 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-bar-pilot` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-bar-corpus` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-bar-pilot` SUB-BOX, IMMEDIATELY AFTER THIS BOX'S CITE
-      LINE. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.** Written 2026-09-02 by
-      `campaign-next-step` and re-pointed the same day by `c28-bar-attribution`, which is now ticked: the
-      instrument it repaired is in the tree, so the entry's one remaining measurement is askable for the
-      first time and the pilot is what asks it on a named page set. This box exists because every session
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-bar-corpus` SUB-BOX — SEARCH FOR THAT TAG, IT IS ~330 LINES
+      BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
+      corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
+      phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
+      `campaign-next-step`, re-pointed the same day by `c28-bar-attribution` and again by
+      `c28-bar-pilot`, both now ticked: the instrument is in the tree, the pilot ran on the 10 named
+      documents, and what is left is the corpus scale-up of its answer. This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
       box's FIRST PHYSICAL LINE, so a wrap moves the pointer where the resolver cannot see it.
@@ -843,7 +846,99 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-bar-pilot** — **ASK C28's ONE REMAINING MEASUREMENT ON A NAMED PAGE SET, NOT ON A CORPUS.**
+- [ ] **c28-bar-corpus** — **SCALE THE PILOT'S ANSWER TO THE CORPUS, WITH A COMMITTED TOOL AND NO SWEEP.**
+      `c28-bar-pilot` ran 2026-09-02 and its answer is interesting in the direction the box required:
+      over the **16** sampled pages a bar of 0.08 would newly admit, the shape term refuses **9** at
+      `barDelta same`, so the move is worth **1,648,035 B** where it used to cost **2,965,653 B** — the
+      term retains **44.4%** for free — and it refuses **7 of 7** pages in that band that lose running
+      prose or table data — ⚠️ **7 of 8 on the wider reading of `Riesman - 1954` p16, which the register
+      files as a hand-made mark and which loses trailing text lines too; it is in the ADMITTED set.**
+      ⛔ **But that is 17 sampled rows of 2,129 in 10 documents of 233 and the
+      register forbids pooling it**: `sampleIndices` takes up to 12 pages a document whatever its
+      length, and this corpus has already produced a pooled scale-up measured **5.96x high**. So the
+      owner cannot be given a magnitude until the per-document stratified estimate is taken.
+      ✅ **THE TOOL EXISTS AND ITS `--help`'s SECOND EXAMPLE IS THIS SHAPE** — `--rows` a subset,
+      `--sample` the sweep it was drawn from, both named — **and the help says in terms that the second
+      is *"the one that generalises"***. ⛔ **CORRECTED ON ADOPTION 2026-09-10, and the correction is the
+      point: the draft said the FIRST example and flagged it *"verified by running, not assumed"*. Run
+      it — the first example is `--rows INKBAR-2026-08-19.tsv --sample INKBAR-2026-08-19.tsv`, the SAME
+      file both sides, which is exactly the shape this box must not copy.** (It could not have named
+      this artefact either: the help is committed and predates it.) A claim carrying *"verified by
+      running"* that running refutes is the worst form this register has — re-run the help, do not read
+      the invocation here.
+      It prints an **exact** no-scaling subtotal beside every estimate (86 of 233 documents are sampled
+      completely) — quote that subtotal, it is the part resting on no assumption about an unsampled page.
+      ⛔ **AND THE ARMS ARE SWAPPED BETWEEN THE TWO FILES, SO THE COPIED ARGUMENT STRING CHANGES SIGN.**
+      `--bytes BEFORE,AFTER` is computed as `after − before` (`stratify-corpus.py:259`).
+      `INKBAR-2026-08-19.tsv` pre-dates C26's bar move, so its `layered` is the **0.08** arm and
+      `layeredAtBar` the **0.045** arm; `C28-BARPILOT-2026-09-02.tsv` is the other way round. The string
+      `--bytes layered,layeredAtBar` therefore reads **+2,965,653** against INKBAR and **−1,648,035**
+      against the pilot. Decide the direction deliberately and say which arm is which in the write-up.
+      ⛔ **BOUND: NO NEW SWEEP, NO `sweep-ink-bar.py` RUN, NOTHING IN `Sources/`, AND STAGE NO FILE
+      UNDER `Tools/`.** Everything needed is committed. Staging a `Tools/` file puts the commit inside
+      the pre-commit suite regex and buys ~300 s for arithmetic; a docs-plus-artefact commit is free.
+      Run `--control` first — it asserts eleven of C26's published band figures off the committed sweep
+      before the tool is asked anything new — and say in the write-up that it passed.
+      ⚠️ **`--where` IS NUMERIC AND `lineNAtBar` IS NOT A NUMERIC COLUMN.** Its tokens include `dense`
+      and `n/a`, which a `--where lineNAtBar:ge:1` silently excludes — the confound `c28-bar-attribution`
+      was opened to remove, one level down in the consumer. ✅ **On this artefact both are absent (0 of
+      80 rows) and NEITHER absence is a licence**: gate the selection on `band`/`newAdmit` or on
+      `barDelta:ne:same`, and assert the token census rather than trusting this sentence.
+      ⛔ **CORRECTED ON ADOPTION: only `n/a`'s absence is MEASURED. `dense` is absent BY CONSTRUCTION** —
+      `mrcLayers` passes no `runLimit`, so the tool's own header records that `dense` is producible by no
+      run of it — and the draft called both "measured".
+      ⛔ **DO NOT GATE ON `barVerdict:eq:picture` EITHER, and this one WOULD have bitten**: all **9**
+      refused rows — the entire saving the estimate is for — read `picture REPLICA-DISAGREES`, not
+      `picture`, because `score-text-route`'s 2-term replica cannot mirror term 3 and fires on exactly
+      those nine. An `eq:picture` selection silently drops the whole numerator.
+      ⚠️ **The estimate needs THREE numerators, not one, or it answers a different question**: the
+      pages the term refuses (the bar's saving), the pages it admits (the bar's cost), and — separately —
+      the admitted pages that LOSE CONTENT. The pilot's own headline is that those point opposite ways
+      (58.3% of the recovery lands on two pages that lose nothing), and a single corpus number hides it.
+      ⛔ **The loss classes cannot be scaled and must not be.** They are eye-read verdicts on 16 named
+      pages, cited from C26's per-page render table; there is no rule that assigns one to an unsampled
+      page. Scale the **counts and bytes**; report the loss split as the sampled fact it is.
+      ⚠️ **ONE 1:1 READ IS OWED AND IT IS CHEAP — `Riesman - 1954` p16, carried over from the pilot.**
+      The pilot's `7 of 7` becomes `7 of 8` if that page's **trailing text lines** are counted as running
+      prose; C26's render table lists them outside its stencil and records only the hand-drawn bracket's
+      fate, and p16 is in the ADMITTED set, so it is the one page whose reading moves this campaign's
+      headline. The pilot spent its only fresh read on `1954 - Why` p6, which already had two published
+      1:1 readings. ⚠️ **An `INKDUMP` re-run is a build plus real recognition, so this breaks the box's
+      own "stage no `Tools/` file" bound only if the tool is edited — running it is free.** If it is not
+      done here, say so and carry it again rather than letting `7 of 7` harden.
+      ⛔ **AND DO NOT RECOMMEND A BAR.** The value is the owner's — it was on this same constant on
+      2026-08-19 and `#### THE DECISION` records why. This step ends in a magnitude and a paragraph the
+      owner can read, appended to `## NEEDS OWNER` in `$STATE/RUN.md` if it changes what he was told.
+      ⛔ **Whoever ticks this box writes C28's next sub-box before stopping.**
+      (context: BUGS.md C28 `#### The bar priced against the term` and `#### What this entry is NOT` —
+      `context:` and not `origin:`, because C28 stays OPEN by design while its sub-steps close)
+- [x] **c28-bar-pilot** — **DONE 2026-09-02.** **ASK C28's ONE REMAINING MEASUREMENT ON A NAMED PAGE SET, NOT ON A CORPUS.**
+      ✅ **RAN AS PRESCRIBED — `C28-BARPILOT-2026-09-02.tsv`, 80 rows in the 10 named documents, no
+      sweep, nothing in `Sources/`** (`BUGS.md` C28 `#### The bar priced against the term`). **9 of the
+      16 newly-admitted pages are refused by the shape term at `barDelta same`; 7 read `lineNAtBar` 0.**
+      3,804,222 → 2,156,187 B, 1.76x, against 838,569 B pre-term: the move is worth **1,648,035 B**, the
+      term retains **1,317,618 B (44.4%)**. The term refuses **7 of 7** prose/table-data losers in the
+      band (⚠️ 7 of 8 on the wider reading of `Riesman - 1954` p16) and **58.3%** of the recovery lands on
+      the two pages the register already calls free — ⛔ **which is C26's own published 32.4% over a
+      smaller denominator, not a new number.**
+      `1954 - Why` p6 read at 1:1 (612 × 473 legible → 153 × 118 blot), the box's own requirement.
+      ⛔ **TWO CORRECTIONS TO THIS BOX'S OWN PRESCRIPTION.** (1) *"this register already counts 17
+      sampled rows"* is right about the filter and wrong about the population: **`Broadhead - 1994` p3
+      prints `inkOut` 0.0450 by ROUNDING** and its `lineN` is **2**, i.e. the term was asked at the
+      shipped bar, so term 1 accepted it there and the page is held back by the TERM and not the bar.
+      The population is **16**; the 17th is a boundary row and enters no numerator. (2) The box says to
+      pass one `INKBAR=0.08` invocation per document with the band's pages as arguments — ⛔ **and a
+      malformed page argument is SILENTLY IGNORED**: `score-text-route` `continue`s on anything that
+      does not parse as `Int`, so a driver loop that passed `" 4 6 7"` as one word fell back to the
+      tool's default 12-page sample and printed a summary reading like an answer. A live instance of
+      this queue's own `argv-shape`. It cost nothing — the default sample is the same `sampleIndices`
+      that produced `INKBAR-2026-08-19.tsv`, so it is a superset holding all 17 band rows plus 63
+      controls, and an explicit-args re-run of `1954 - Why` prints identical rows — but **verify the row
+      count against the population you asked for**, because nothing complains.
+      ⚠️ **No mutant and no `fault-inject.sh` case were owed**: no constant moved, no guard moved,
+      nothing in `Sources/` or `Tools/` was touched, and no error branch was added. The commit is
+      docs-plus-artefact, so the hook skipped the suite by its own docs-only gate.
+      — the box as it was written, kept as the record —
       `c28-bar-attribution` un-confounded the instrument on 2026-09-02, so
       `Tools/score-text-route.swift` now prints `lineNAtBar` — what `pageIsAllText()`'s **third** term
       answers about a page at a *priced* bar, which at the shipped bar it is never asked. The question
@@ -1912,8 +2007,10 @@ happens.**
       ⚠️ **"What that does NOT say" three paragraphs down refers to the SETTLED FORK sentence just above
       this insertion, not to the pointer block** — a dangling referent this file already carries once, and
       pushed further from its subject by the block below, so it is named here rather than re-flowed.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c30-tiles-time` SUB-BOX, IMMEDIATELY AFTER THIS BOX'S CITE LINE.
-      TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.** Written 2026-09-02 by `campaign-next-step`,
+      ✅ **THE NEXT BOUNDED STEP IS THE `c30-tiles-time` SUB-BOX — SEARCH FOR THAT TAG, IT IS ~60 LINES
+      BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here too; corrected 2026-09-10 by the
+      `c28-bar-pilot` adoption's sibling sweep, which found the identical phrase in both campaign boxes.) Written 2026-09-02 by `campaign-next-step`,
       because every session from 2026-08-28 skipped this item on the reading that what is left is research
       plus a seam. That reading is right about the FIX and wrong about the WORK: the entry's own "What it
       does NOT establish" leaves the **time** cost of `n` requests a page unmeasured, and pricing it is 5
