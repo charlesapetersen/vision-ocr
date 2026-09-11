@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-heightlow-fixture` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-area-fixture` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-heightlow-fixture` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-area-fixture` SUB-BOX — SEARCH FOR THAT TAG, IT IS
       ~340 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
@@ -536,7 +536,12 @@ happens.**
       successor again comes from that run's own finding, because the inverse row it added reds under
       BOTH collapsing mutants and took both kill sets to SIX while leaving them byte-identical. So
       `c28-heightlow-fixture` is written to ask the direction question FIRST rather than to add a
-      mutant and discover its reds are shared.** This box exists because every session
+      mutant and discover its reds are shared.** ⚠️ **Re-pointed a SIXTH time 2026-09-11 by
+      `c28-heightlow-fixture`, now ticked: asking that question first WORKED —
+      `const/shapeHeightLow-lowered` is `killed` by one check disjoint from all five of the term's other
+      mutants, and every element of the prediction held — so the successor `c28-area-fixture` is the
+      last of the constant-coverage sub-boxes and the one after it must come from the entry's own open
+      questions rather than from this list.** This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
       box's FIRST PHYSICAL LINE, so a wrap moves the pointer where the resolver cannot see it.
@@ -858,8 +863,87 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-heightlow-fixture** — **GIVE `shapeHeightLow` THE ONE DIRECTION NO OTHER SHAPE CONSTANT CAN
-      IMITATE, AND ASK THAT QUESTION BEFORE ADDING THE MUTANT RATHER THAN AFTER.**
+- [ ] **c28-area-fixture** — **ASK WHETHER `shapeMinimumArea` IS ALREADY PINNED BEFORE BUILDING IT A
+      FIXTURE, BECAUSE IT IS THE FIRST OF THE SIX THAT IS LIVE IN TWO PLACES AT ONCE.**
+      ✅ **Written 2026-09-11 by `c28-heightlow-fixture` out of that run's own leftovers.**
+      `shapeMinimumArea` is now the LAST of the shape term's six constants with no catalogue entry —
+      `shapeHeightLow` got one the same day (`BUGS.md` C28 `#### The height floor's own fixture`) — and
+      its reason for having none is an ARGUMENT rather than a check, which is the weaker kind this
+      campaign keeps retracting.
+      ⛔ **THE ARGUMENT IS ALREADY KNOWN TO BE CONDITIONAL, and on the constant the previous box
+      moved.** `BUGS.md` `#### The owed fixture` says the area guard cannot be the deciding term because
+      `area >= height >= shapeHeightLow * glyphHeight`, so it is satisfied above an 8 px median glyph.
+      That is conditional on the 8 px (72-DPI corpus scans fall under it) AND on `shapeHeightLow` — at
+      the 0.0 the new mutant substitutes, the area guard is the ONLY lower bound in `textShaped`. So the
+      argument holds at shipped values and says nothing about the constant being *watched*.
+      ⛔ **ASK THE DIRECTION QUESTION FIRST — that is now this campaign's standing rule and it has paid
+      twice** (`CONTRIBUTING.md` §4a). Which other constant can imitate a move of `shapeMinimumArea`?
+      In `textShaped` the answer is **none**, and the reason is sharper than the height case: area is
+      not a function of height or of `medianRun`, so a component that is **inside** the height band and
+      **under** the run bar and yet small in area — 4 × 16 = 64 px, height 16 ≥ 12.5, `medianRun` 4 ≤ 10
+      — is refused by `shapeMinimumArea` **alone**. Four of those at `c28Dashes`' positions (gap
+      `260 - 203` = **57** ≤ 75) group at the shipped 4 and are refused at 99.
+      ⛔ **BUT THE CONFOUND IS REAL AND IS WHY THIS BOX ASKS BEFORE BUILDING: `shapeMinimumArea` IS LIVE
+      IN THE CALIBRATION TOO.** `textLineGroupsOutsideText` filters the stencil's glyph components by
+      `$0.area >= shapeMinimumArea` before taking `glyphHeight` and `glyphRun`
+      (`Sources/Flattener.swift:2267`), and `c28Calibration` mirrors that filter, so at 99 the median
+      glyph height and run may both MOVE — which moves every bar the whole block's literals sit
+      against. **So step one is a cheap question with a large answer: run
+      `("Flattener.swift", "shapeMinimumArea", "4", "99")` and see whether the calibration checks that
+      already exist kill it** — ⚠️ **THREE checks over FOUR readings, and do not write "four checks":
+      `c28Cal` is one, the `c28SplitCal`/`c28JoinedCal` pair is asserted by a single check, and
+      `c28ShortCal` is one. If they do,
+      the constant is pinned in the raising direction by checks already in the tree, the entry is one
+      line, and what is left is an attribution question — is the kill the calibration's or
+      `textShaped`'s — which `BUGS.md` names as **unmeasured** in two places. **Only build a fixture if
+      the run says one is needed.** That keeps it one commit either way.
+      ⚠️ **Predict the cross-table in writing BEFORE the run and name what you did not check** — the
+      previous two boxes both did and both predictions held on every element, which is what makes a
+      surprise mean something. Note that `shapeMinimumArea` is an `Int`, so the replacement is `99` and
+      not `99.0`; no fifth-element id override is needed unless a second direction is added later.
+      ⛔ **DO NOT run the full catalogue** (107 entries), **do not edit `Sources/` while `mutate.py`
+      runs**, and **check `ops/autonomous/test-lock.sh status` first — `mutate.py` does not take the
+      lock.** Budget a baseline suite plus ~295 s; read the startup estimate off the tool and ⛔ **never
+      read a single-value range as precision** — the tally is **ten** readings, six inside the printed
+      range, and the three outside were all degenerate `10-10` lines that the measurement sat below.
+      ⚠️ If the answer needs no new fixture the commit may not touch `Tests/main.swift` at all, in which
+      case it is `Tools/` plus documents and still pays the full suite through the hook. One commit.
+      ⛔ **Whoever ticks this box writes C28's next sub-box before stopping** (the campaign's standing
+      rule). ⚠️ **And this is the LAST of the constant-coverage sub-boxes**, so the successor has to come
+      from somewhere else: the two candidates the entry names itself are `lineMinimumMembers`'s missing
+      attribution (its only catalogued mutant shares six checks byte for byte with `lineGapFactor`'s, and
+      `c28GapSplit` is measured able to see it LOWERED — a direction no entry asks) and the campaign's
+      standing two-sided trade, whether relaxing the grouping rescues C26's two cartoons and what it
+      costs on a printer's ornament.
+      (context: BUGS.md C28 `#### The height floor's own fixture` and `#### The owed fixture` —
+      `context:` and not `origin:`, because C28 stays OPEN by design while its sub-steps close)
+- [x] **c28-heightlow-fixture** — **DONE 2026-09-11.** `const/shapeHeightLow-lowered` (0.5 → 0.0) is
+      `killed`, **291 s**, `1370/1371`, by **EXACTLY ONE** check — the too-short page's — and its kill
+      set intersects the term's five other mutants' in **nothing**, so the shape term now carries **four
+      pairwise-disjoint singleton kill sets** (too-wide / too-tall / too-short / gap-split), i.e. **FOUR
+      of its six constants have a mutant whose reds belong to it alone** — ⛔ **not five, which the draft
+      said in three files one line under its own table; two exceptions of six is four, and the true five
+      is the count of constants with an ENTRY.** ✅ **The finding is that there was
+      no surprise: the prediction — verdict, `1370/1371`, the count of one, the check's name, its detail
+      string, a fixture-by-fixture cross-table and a named list of what would red if it were wrong — was
+      written to a file before the build and held on every element.** The disjointness was DESIGNED, by
+      asking this box's own direction question first; the box's rejected mutant would have been shared
+      byte for byte. ✅ **The hazard this box named did NOT fire and was measured rather than assumed**:
+      every check in the suite asserting a shrunk background was enumerated first, four named at risk
+      (the MRC text fixture's two arms, `raised`, R50's text page), and none moved — nor did any
+      pre-existing check move when the fixture was merely added (`1371/1372`, the only `FAIL` a
+      deliberately-failing measuring row put there to read the ink literals out of the real code).
+      ⚠️ The direction newly pinned is the **cheap** one — lowering the floor keeps more resolution, so
+      its worst case is bytes, and the content-losing direction was already pinned by `c28Stroke`. The
+      **PAIR** of checks is green exactly on **(0.32, 1.2]** where the suite held a ceiling alone, both
+      endpoints derived and not measured — ⛔ **and that is not the SUITE's green interval, which
+      `c28GroupsMissed` makes narrower; the draft of this said "the bracket" in three files.**
+      Suite **1,368 → 1,371**, catalogue **106 → 107**, log **104 → 105**, coverage **85 of 106 → 86 of
+      107**, census still **21**, `0 survivor(s)`. Estimator: the **tenth** reading, `10-10` printed and
+      **585 s** clocked — FOURTH outside the printed range, so **6 inside + 4 outside**.
+      `BUGS.md` C28 `#### The height floor's own fixture`.
+      **— the box as it was written: GIVE `shapeHeightLow` THE ONE DIRECTION NO OTHER SHAPE CONSTANT CAN
+      IMITATE, AND ASK THAT QUESTION BEFORE ADDING THE MUTANT RATHER THAN AFTER. —**
       ✅ **Written 2026-09-11 by `c28-gap-fixture` out of that run's own finding.** TWO of the shape
       term's six constants still have no catalogue entry — `shapeHeightLow` and `shapeMinimumArea` —
       and this box takes the first. ⛔ **Do NOT write "the last with no check asserting the quantity
@@ -5431,6 +5515,28 @@ happens.**
       first honest step is triage rather than code: does the blind term lose anything the first term
       does not already refuse? Read C26 §"The drawings are INK" and §"What C26's close does NOT cover"
       before starting. (context: `BUGS.md` C26 — FIXED 2026-08-20; it is the evidence, not the work)
+- [ ] **tests-line-citations** — ⛔ **`Tests/main.swift:<line>` CITATIONS ACROSS THE TREE ARE STALE BY
+      VARYING AMOUNTS, AND THE OFFSET IS NOT THE REPAIR — MEASURED 2026-09-11.** Two commits in a row
+      have named this debt and grown it: `c28-gap-fixture` shifted lines by 9 and 84 and repaired six of
+      about twenty, `c28-heightlow-fixture` shifted them by 81 and 87 and repaired three.
+      ⛔ **The finding that makes this a sweep rather than a one-liner**: `CLAUDE.md`,
+      this file and `BUGS.md:22795` all cite `Tests/main.swift:3255` (and `:3252-3257`) for **the mask
+      pair**, which is at **`:3492`** — **237 lines out, so ~150 of that predates both commits.** A
+      uniform `+87` would therefore make some citations worse. Each one has to be re-derived by grepping
+      the check or comment it NAMES.
+      ⛔ **Sweep the pattern `Tests/main\.swift:[0-9]`, not any one symbol or tag** — the precedent is
+      the `mutate.py:<line>` sweep of 2026-08-30, which found NINE citations of which EIGHT were wrong,
+      three of them naming the wrong mutant entirely, and one broken by the very commit doing the sweep.
+      About twenty distinct line numbers are cited; `grep -rn 'Tests/main\.swift:[0-9]'` over `*.md`,
+      `*.py`, `*.swift` and `*.sh` is the population.
+      ⚠️ **Nothing measured depends on any of them**, so this is a documentation repair and not a defect
+      — which is exactly why two sessions have correctly left it. Take it when the queue is otherwise
+      dear: it is docs-only, so the commit is free (no suite through the hook), and the whole cost is
+      reading. ⚠️ **A citation that names nothing checkable is the trap**: if a cited line's subject
+      cannot be found by grep, say so in the commit rather than guessing a nearby line — and consider
+      replacing the number with the symbol, which is what `mutate.py`'s own repair should have done.
+      (context: BUGS.md C28 `#### The height floor's own fixture`, the debt paragraph — `context:` and
+      not `origin:`, because this is a repair to citations rather than to a register entry)
 - [ ] **staleness-selfref** — ⛔ **`ops/autonomous/check-staleness.sh` CANNOT SEE DRIFT IN THE CHECK COUNT,
       because it takes `CLAUDE.md` §Commands as its own reference** — it prints
       `CHECK-COUNT-REFERENCE <n> CLAUDE.md claimed-not-measured` and then compares every other document to

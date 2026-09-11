@@ -10697,7 +10697,13 @@ being what the successor was built against: `c28-gap-fixture` BUILT that fixture
 `lineGapFactor` is pinned in both directions by a catalogue entry each and the suite brackets it into
 **[2.64, 6.24)** where it held only a floor of 2.24 (`#### The gap term's own fixture`). ⚠️ **The
 `shapeHeightLow`/`shapeMinimumArea` arithmetic in the sentences above does NOT move** — neither gained an
-entry, and `lineGapFactor` already had one when they were written. ⛔ **One pre-existing miscount this paragraph walks past rather than
+entry, and `lineGapFactor` already had one when they were written. ⛔ **THE `shapeHeightLow` HALF OF
+*THAT* HELD FOR ONE COMMIT AND IS SUPERSEDED 2026-09-11** (`#### The height floor's own fixture`):
+`const/shapeHeightLow-lowered` (0.5 → 0.0) is in the catalogue and `killed` by one check, so **`TWO of
+the six` is now ONE — `shapeMinimumArea`, the "for the stated reason" case — and `shapeHeightLow` is
+pinned in BOTH directions**, with the new PAIR of checks green exactly on **(0.32, 1.2]** where the
+suite held a ceiling alone — ⚠️ **the pair's interval and not the suite's, which `c28GroupsMissed` makes
+narrower.** ⛔ **One pre-existing miscount this paragraph walks past rather than
 fixes, named because reading it closely is what surfaced it**: `:10668` says *"of the five shape numbers"*
 and then lists **six**. The count of numbers is six throughout; the sentence's own enumeration is right and
 its numeral is wrong. ✅ **AND SO IS THE WIRING'S OWN, a day
@@ -10715,7 +10721,12 @@ direction and is not one. Lowering is the live question this campaign keeps nami
 missed-word fixture carries a sub-four run that a lower bar would group is not established anywhere.
 ⚠️ So this paragraph's own contrast above — "`lineMinimumMembers` is pinned, `shapeHeightLow` and
 `lineGapFactor` one-sidedly" — needs its qualifier too: all three are pinned one-sidedly, and this run
-measured which side for the first.
+measured which side for the first. ⛔ **THE ARITHMETIC OF THAT SENTENCE IS INVERTED AS OF 2026-09-11 AND
+IT IS KEPT AS WRITTEN**: `lineGapFactor` is pinned both ways from `#### The gap term's own fixture` and
+`shapeHeightLow` both ways from `#### The height floor's own fixture`, while **`lineMinimumMembers` — the
+one this sentence calls pinned — is now the only one of the three whose catalogued mutant has no
+attributable kill set at all**, sharing its six checks byte for byte with `lineGapFactor`'s lowering
+entry. The contrast has swapped ends.
 ⚠️ **The campaign was NOT run** — at 44-58 min a mutant plus a baseline suite that is
 hours, and each of those sessions paid one suite for one mutant. What stood in its place was the by-hand
 equivalent above: two binaries one term apart, executed, 153 against 612. ⛔ **And one wrong reading is deliberately absent
@@ -10950,8 +10961,15 @@ is blind to every value above 2.2, so *"one way only"* is now measured for it ra
 ⛔ **FALSE OF `lineGapFactor` FROM 2026-09-11 — it is pinned BOTH ways and the suite is no longer blind
 above the control's bar** (`#### The gap term's own fixture`): `const/lineGapFactor-raised` (3.0 → 99.0)
 is `killed` by one check, and the two new gap fixtures bracket the constant into **[2.64, 6.24)**.
-⚠️ `shapeHeightLow` is untouched and the sentence stands for it. ⛔ **And the `2.2` above is the wrong
-numeral** — the control's gap is **56 px** against a `glyphHeight` of 25.0, so its bar is **2.24**, a
+⚠️ `shapeHeightLow` is untouched and the sentence stands for it. ⛔ **AND FALSE OF `shapeHeightLow` FROM
+2026-09-11 TOO, so nothing in this sentence survives** (`#### The height floor's own fixture`):
+`const/shapeHeightLow-lowered` (0.5 → 0.0) is `killed` by one check, and with `c28TooShort` beside
+`c28Stroke` that PAIR of checks is green exactly on **(0.32, 1.2]** (⚠️ the pair's interval, not the
+suite's). What remains of this paragraph is its
+FIRST half — `shapeMinimumArea`'s calibration question — ⚠️ and note that the redundancy argument above
+is itself conditional on `shapeHeightLow`, since `area >= height >= shapeHeightLow * glyphHeight` is what
+makes the area guard unreachable: at 0.0 the area guard IS the deciding lower bound. ⛔ **And the `2.2`
+above is the wrong numeral** — the control's gap is **56 px** against a `glyphHeight` of 25.0, so its bar is **2.24**, a
 correction this register carries in three other places and which had not reached this copy.
 
 ✅ **THE SIBLING IS FIXED IN THE SAME COMMIT, and it was the sharper of the two.** CONTRIBUTING 4b asks who
@@ -12525,7 +12543,7 @@ the test 2026-08-24 settled on is *does the mutant change this check's input*. B
 groups at 3.0 has no run of four to sub-divide, it reads 0 at 0.0 as well, so **every** `groups == 0`
 assertion in the block is unable to fail: `c28GroupsBoxed`, `c28GroupsBar`, `c28GroupsC26`, `c28WideGroups`,
 `c28TallGroups`, the border check — the six `#### lineMinimumMembers RUN through mutate.py` names — **and
-`Tests/main.swift:3340`'s `.groups(0)`, which makes SEVEN.** ⛔ **The seventh was missing from a list this
+`Tests/main.swift:3427`'s `.groups(0)`, which makes SEVEN.** ⛔ **The seventh was missing from a list this
 section called exhaustive, caught on the adoption: the draft reused the 2026-08-24 six-name list, and
 `:3200`/`:3230` were added 2026-09-02 by `c28-bar-attribution` — so the list was complete for the block as
 it stood a fortnight earlier.** Two more look
@@ -12533,7 +12551,7 @@ like yield and are emptier still: the `shapeTermAnswer` transport check compares
 answer against `c28GroupsMissed`, so **both sides go 1 → 0 together** and `.groups(0) == .groups(0)`
 holds; and the `inkOutsideText` assertion reads a field assigned **before** term 1's guard. ⚠️ **The
 `runLimit` pair cannot fail either, but *"unchanged input"* was the wrong label and is corrected here**:
-the bound is hit before grouping, yet `Tests/main.swift:3358` reads `c28GroupsMissed`, which goes
+the bound is hit before grouping, yet `Tests/main.swift:3445` reads `c28GroupsMissed`, which goes
 `Optional(1)` → `Optional(0)`, so its input DOES change and `!= nil` merely survives it — the very
 conflation of *cannot fail* with *unchanged input* this register ⛔-flags three times. `c28Calibration`
 reads `shapeComponents` and `shapeMinimumArea` and never the grouping. ⚠️ The universal
@@ -12556,7 +12574,8 @@ hand-append one, so the loadavg is unrecorded, as it was for the first never-run
 
 ⚠️ **What it does NOT establish.** No constant moved and nothing in `Sources/`, `Helper/` or `Tests/` was
 touched, so no shipped behaviour and no published figure moves. It says nothing about `shapeHeightLow` or
-`shapeMinimumArea`, which still have no entry. It does not measure the *relaxing* direction the campaign
+`shapeMinimumArea`, which still have no entry. ⛔ **`shapeHeightLow` gained one 2026-09-11 —
+`#### The height floor's own fixture` — so of the six only `shapeMinimumArea` is left.** It does not measure the *relaxing* direction the campaign
 actually wants priced — whether loosening the grouping would rescue C26's two cartoons and what that costs
 in false positives on a printer's ornament — which remains this entry's open two-sided trade.
 
@@ -12683,7 +12702,9 @@ were wrong and one had been broken by the very commit doing the sweep. Nothing m
 of them.
 
 ⚠️ **What it does NOT establish.** It still says nothing about `shapeHeightLow` or `shapeMinimumArea`,
-which have no catalogue entry. It does not price the **relaxing** direction the campaign actually wants —
+which have no catalogue entry. ⛔ **The `shapeHeightLow` half held for one commit: it has one from
+2026-09-11 — see `#### The height floor's own fixture` below, which is this section's own lesson spent
+rather than re-learned — so `shapeMinimumArea` is the only one of the six left.** It does not price the **relaxing** direction the campaign actually wants —
 whether loosening the grouping rescues C26's two cartoons and what that costs on a printer's ornament —
 which is this entry's standing two-sided trade and is untouched by a mutant that only asks whether a check
 notices.
@@ -12706,6 +12727,239 @@ two mutation-out logs of the first run are stamped **01:04:32** and **01:09:28**
 against that mutant's logged `took` of **296 s**, so `mutate.py` adds **nothing measurable between
 mutants** — the mutated write, the suite build, the restore and the log append are the suite cost and the
 per-mutant model is the suite alone. ⚠️ n = 1 interval at 1 s resolution.
+
+#### The height floor's own fixture — the direction question was asked BEFORE the mutant this time, and the kill set came back a SINGLETON disjoint from all five of the term's other mutants — MEASURED 2026-09-11
+
+✅ **`const/shapeHeightLow-lowered` (`Sources/Flattener.swift`, `0.5` → `0.0`) is `killed`, 291 s,
+`1370/1371 passed`, by EXACTLY ONE check.** Baseline **`1371 checks, green`**; the sole `FAIL` in
+**1,865** lines of output is
+
+```
+C28 — four marks of an accepted stroke width but under the height FLOOR are no line group — Optional(1)
+```
+
+**The prediction was written to a file BEFORE the build, the suite and the mutant** — verdict, the
+`1370/1371`, the count of one, the check's name, its detail string, a fixture-by-fixture cross-table with
+a reason per row, and a named list of what would red if it were wrong — **and it held on every element.**
+
+⛔ **THE FINDING IS THAT THERE WAS NO SURPRISE, WHICH IS THE POINT: the disjointness was DESIGNED HERE
+RATHER THAN DISCOVERED AFTERWARDS.** The section above paid for that lesson — a check added in the
+direction two constants agree is shared by construction — and this step spent it. The question asked
+first was *in which direction do `shapeHeightLow` and `shapeHeightHigh` stop agreeing*, and the answer
+rules out the obvious mutant:
+
+- **RAISING** `shapeHeightLow` to 3.0 collapses the accept band to `[75, 75]` and refuses `c28Stroke`'s
+  four 30 px marks — **but so does lowering `shapeHeightHigh` to 0.5**, which gives `[12.5, 12.5]` and
+  refuses the same four. One wrong answer, two constants, and the kill sets would have come back shared
+  byte for byte exactly as `const/lineGapFactor`'s and `const/lineMinimumMembers`'s do. ⚠️ **Two hedges
+  the review of this diff required**: the two collapses are not the SAME collapse in general —
+  `ShapeComponent.height` is an `Int`, so `[12.5, 12.5]` admits nothing while `[75, 75]` admits a 75-px
+  component, and they agree only on these fixtures — and **neither of those two mutants exists**
+  (`const/shapeHeightHigh` is 3.0 → 99.0, and there is no `shapeHeightLow` raising entry), so *"would have
+  matched byte for byte"* is an argument from the arithmetic and **not a measurement**.
+- **LOWERING** it cannot be imitated by any other constant in the term, and the reason is structural
+  rather than a property of this fixture: in `textShaped` `shapeHeightHigh` occurs **only** as an upper
+  bound (`hh <= shapeHeightHigh * glyphHeight`), so no value of it admits a component the floor refuses —
+  a ceiling cannot lift a floor — and `shapeRunHigh`, `lineMinimumMembers` and `lineGapFactor` are
+  *additional* refusals reached at or after the height band, so loosening any of them cannot admit a
+  component `textShaped` has already dropped.
+  ⛔ **`shapeMinimumArea` IS THE EXCEPTION AND THE FIRST DRAFT OF THIS LIST PUT IT IN THE SAFE GROUP IN
+  FOUR FILES — refuted by the adversarial review of this diff, from `Sources/`.** It is not downstream at
+  all: it is `textShaped`'s FIRST guard, *before* the height band, **and** it is
+  `textLineGroupsOutsideText`'s `sized` filter, which is what computes `glyphHeight` — so LOWERING it
+  admits specks into the median, which lowers the floor, which is exactly "admitting a component the
+  floor refused". The diff contradicted itself, because the successor box it writes in the same commit
+  says so outright. ✅ **The conclusion survives on an argument the first draft never made, and it is two
+  inequalities that do not meet**: admitting these marks needs `0.5 × gh <= 8`, i.e. `gh <= 16`, while
+  keeping their 56 px gaps un-flushed needs `3.0 × gh >= 56`, i.e. `gh >= 18.67`. Any calibration low
+  enough to admit them is too low to group them, so the term reads 0 at every value of
+  `shapeMinimumArea` — and a speck-widened median breaks `medianRun 5 <= 2 × glyphRun` as well.
+  ⚠️ Reasoned from the two comparisons, not measured: no `shapeMinimumArea` mutant has been run, which is
+  the successor box.
+
+✅ **So the term's six constants now carry FOUR pairwise-disjoint singleton kill sets, one per fixture,
+read off `Tools/mutation-log.tsv` rather than argued:**
+
+⚠️ **They are four DIFFERENT TREES and the table must not be read as one measurement.**
+`const/shapeRunHigh` is 2026-08-23 at suite **1,247** (3,475 s, clamped-era) and `const/shapeHeightHigh`
+2026-08-24 at **1,247** (3,415 s) — both predate `c28TooShort`, `c28GapSplit` AND `c28GapJoined`, so their
+“1” is a count against a suite holding none of the other three fixtures — while `lineGapFactor-raised`
+is at **1,368** and this row at **1,371**. Same shape as this register's own *“same-suite-size, not
+same-tree”* caveat; what the table does establish is that the four detail strings name four distinct
+checks.
+
+| mutant | objecting | the one check |
+|---|---|---|
+| `const/shapeRunHigh` `2.0` → `99.0` | 1 | the too-WIDE four (`c28TooWide`) |
+| `const/shapeHeightHigh` `3.0` → `99.0` | 1 | the too-TALL four (`c28TooTall`) |
+| `const/shapeHeightLow-lowered` `0.5` → `0.0` | 1 | the too-SHORT four (`c28TooShort`) |
+| `const/lineGapFactor-raised` `3.0` → `99.0` | 1 | the gap-SPLIT four (`c28GapSplit`) |
+| `const/lineGapFactor` `3.0` → `0.0` | 6 | — shared, byte for byte, with … |
+| `const/lineMinimumMembers` `4` → `99` | 6 | … the row above |
+
+**FOUR of the six constants have a mutant whose reds belong to it alone. `lineMinimumMembers` is one of
+the two that do not** — its only catalogued entry shares its six with `lineGapFactor`'s lowering entry —
+**and `shapeMinimumArea` is the other, having no entry at all.** ⛔ **A draft of this said "five of the
+six" in three files, one line under the table that says four, and the adversarial review of this diff
+caught it by subtraction: two exceptions out of six is four.** The **five** that is true in the tree is a
+different predicate — `shapeHeightLow` is the fifth of the six to get an *entry* — and this is that
+figure re-typed onto the wrong one, which is the failure this register names as re-typing a numeral from
+a sibling document instead of re-deriving it.
+
+⛔ **AND THE VALUE 0.0 WAS ALREADY IN THIS PROJECT AS A SABOTAGE, WHICH IS WHY THE CONSTANT HAD NO
+CATALOGUE ENTRY AND IS NOT A REASON TO LEAVE IT WITHOUT ONE.** `Tools/score-shape-term.swift`'s **port
+check** has been watched failing at exactly `shapeHeightLow = 0.0` since 2026-08-23 (`exit 5` on a port
+divergence, plus a side effect on the rim check, where five 2 × 6 stubs collared down to 2 × 3 clear a
+floor of 0 and make a group). ✅ That corroborates the choice of value independently — 0.0 is a reachable
+substitution and not an arbitrary extreme — ⛔ **but it is a TOOL self-test over the tool's own copy of
+these five functions, so it says nothing about whether any check in `Tests/main.swift` notices**, which
+is what a catalogue entry asks and what this run answers. The two are not substitutes, and the reason
+recorded for having no entry was the first one.
+
+##### The fixture, and it is arithmetic
+
+`c28TooShort` is `c28Dashes(5, 8)`: `c28Stroke`'s four marks at the **same four x positions**, the
+**same 5 px stroke width** and the **same baseline**, 8 px tall instead of 30. So the pair differs in
+**height alone**, and ✅ **the inverse row cost no new check, free a second time** (⛔ **not *"the second
+ time running"*: `c28-gap-fixture` PAID a check for its own inverse row, `c28GapJoined`'s 1 — caught by
+the review of this diff, and no first instance is cited anywhere**) — it is that
+existing positive control (*"four narrow strokes on one baseline outside the words ARE a line group"*),
+which `c28Marks`' shared builder is what makes possible. ⚠️ **And its green under THIS mutant is
+unchanged input, so it is not evidence about the constant** — lowering a floor only admits, and
+`c28Stroke`'s out-of-region ink is its four marks alone (0.005199 × 115,406 = 600 = 4 × 5 × 30), so there
+is nothing new to admit. What it asserts is the FIXTURE's other end, which is what an inverse row is for.
+
+At this page's asserted `glyphHeight` **25.0** the band is `[12.5, 75.0]`:
+
+- **shipped** — `8 < 12.5`, all four are refused by the FLOOR, `accepted` is empty, `textLines` is handed
+  nothing and the term reads **0**;
+- **lowered** — at `0.0` the band is `[0, 75.0]`, each mark clears `shapeMinimumArea` (5 × 8 = **40** ≥ 4)
+  and the run bar (`medianRun` 5 ≤ 2.0 × 5 = 10), the four share one band with gaps of **56 px** under a
+  75 px `lineGapFactor * glyphHeight`, four members reach `lineMinimumMembers`, and it reads **1**.
+
+Rows come out of the same derivation the tall fixture's clearance does — a bar at bitmap `y = 200` of
+height `h` occupies top-down rows `[1384 - h, 1384)`, so `[1376, 1384)` here, **116 rows** below box 13's
+padded region — and x 200…384 is well inside `interiorWindow`'s `[76, 1148)`.
+
+⛔ **The 0 is guarded two ways and neither half is redundant, because 0 is also what a blank page, a page
+whose marks landed inside `region`, and a page that lost one of its four marks all give** — and in that
+last case the mutant would leave the check **green** (three members never reach `lineMinimumMembers`),
+i.e. a check that cannot fail rather than a check that failed. ✅ It needs **no** guard against marks
+rendering TALLER than the floor: those would be accepted and grouped and the 0-check would already be
+red. The two halves see different things: the RATIO to `c28Stroke` is blind to both pages drifting
+together (one builder moves both and leaves 8/30 intact) and the BAND sees that; the band is blind to a
+page that kept its ink while changing its geometry and the ratio sees that. **Both literals are
+measurements, taken by running this suite with the assertion deliberately failing rather than by
+arithmetic**: `inkOut` **0.001392** against the strokes' **0.005199**, ratio **0.26769** where 8/30 is
+0.266667, an excess of **0.38%** against a tolerance 4.9x that. Three marks of four would read 0.2008
+(**13x** the tolerance away) and marks that came back 9 px tall ~0.30 (**6.7x**).
+⛔ **THE 0.38% IS THE DENOMINATOR AND NOT ANTIALIASING, and the draft named the wrong cause — refuted by
+the adversarial review of this diff out of `inkOutsideText` itself, which is worth more than the check.**
+That function returns `outside / total` with `total` counting **all** interior ink, the marks included
+(`Flattener.swift:1928-1937`), so the two pages have **different denominators**: the stroke page carries
+440 more ink pixels. Solving the two committed literals for the text ink gives `T ≈ 114,800` and an area
+ratio of **0.26665 — 8/30 to within 0.006%**, and `(T + A_s)/(T + A_h) = 1.00383` reproduces the measured
+0.26769 exactly. **So there is no detectable bleed on these marks at all**, and the ⚠️ *"antialiased bleed
+would move either endpoint"* hedge on the `(0.32, 1.2]` interval is bounded far tighter than it is
+written — by data this session already had. ⚠️ The 0.2008 and ~0.30 figures are computed *with* the
+denominator effect and are unaffected; the same paragraph used the effect and mislabelled it.
+
+##### ⚠️ The direction this pins is the CHEAP one, and the register should say so
+
+Lowering the floor admits components, which can only make the term return **more** groups, which makes
+`pageIsAllText()` refuse **more** pages and keep **more** resolution: its worst case is bytes.
+**RAISING** it is the direction that puts the 8x shrink back on a page carrying unrecognised prose — the
+content-losing direction — **and that one was already pinned**, by `c28Stroke`'s positive control, which
+is exactly why this register classed the constant as one-sided rather than unpinned. What this entry buys
+is not the dangerous direction but **reachability**: it is the only one of the two a fixture can tell
+apart from `shapeHeightHigh`.
+
+✅ **And with it the PAIR brackets the constant two-sidedly where it held a ceiling alone**: the accept
+rule is `hh >= shapeHeightLow * glyphHeight`, so `c28Stroke`'s 30 px marks are refused once
+`f × 25 > 30` (**f > 1.2**) and `c28TooShort`'s 8 px marks are admitted once `f × 25 <= 8`
+(**f ≤ 0.32**) — **those two checks** are green together exactly on **(0.32, 1.2]**, with the shipped 0.5
+inside. ⛔ **That is NOT the SUITE's green interval and this diff's own draft wrote it as one in three
+files before catching itself**: `c28GroupsMissed` asserts **1** over the word `value.`, whose x-height
+components sit a little under the 25 px median, so a floor raised past them leaves the ascender alone,
+the count drops to 0 and that check reds **well below 1.2**. The suite's interval is therefore **at most**
+(0.32, 1.2] and probably narrower — ⚠️ reasoned from the typeface and not measured, because no check
+asserts that word's component heights, which is the same gap the marks' own heights have. ⚠️ **Both
+endpoints of the pair's interval are DERIVED from the drawn rects and the accept rule at
+`Flattener.swift:2137`, not measured** — antialiased bleed would move either — the same caveat the gap
+section's `[2.64, 6.24)` carries. What *is* measured is one value on each side of it (`0.0`, through this
+run, and `3.0`, through the identical arithmetic that makes `c28Stroke` red under a raise — ⚠️ that second
+one is reasoned, since no raising mutant has been run).
+
+##### The prediction that could have failed, and did not
+
+⛔ The queue box flagged one hazard and it is real: **lowering a floor ADMITS components, so any fixture
+reaching `pageIsAllText()` and asserted to BE shrunk could stop being shrunk** if four newly-admitted
+short components landed in one band within 75 px of each other. Every check in this suite asserting a
+shrunk background was enumerated in the prediction file before the run, with four named as genuinely at
+risk — the MRC text fixture's two arms, `raised`, and R50's text page — because those are pages of real
+type with real Vision boxes, and this campaign's own corpus finding is that out-of-region ink there is
+the **rim of recognised type**, glyph tops, which is precisely the short-component class this mutant
+admits. **Measured: none of them moved. One objecting check — and the run before it, the suite with the
+fixture added and a deliberately-failing measuring row, read `1371/1372` with that row as its only
+`FAIL`, so the fixture moved no pre-existing check either.** ⚠️ That is a fact about these fixtures and
+not about the corpus: it says this suite holds no page whose rim reaches four members in a band, which is
+the same gap `#### The owed fixture` was opened on one level up. ⚠️ **And one row of that prediction is
+REASONED and asserted by nothing**: `c28GroupsBoxed` reads 0 because `c28Boxes(15)`'s padded rows
+1265…1337 cover the extra word's ~1280…1322, so `outside` is 0 — 15 rows of margin either side, worked
+out on the review of this diff and true, but no check reads `c28InkOut(c28Missed, boxes: c28Boxes(15))`.
+If `outside` were merely small rather than exactly 0, that row's immunity would be luck: at a floor of 0
+a speck of area ≥ 4 is admissible at ANY height.
+
+##### What this does and does not move
+
+Suite **1,368 → 1,371**, catalogue **106 → 107**, log **104 → 105** rows, coverage **85 of 106 → 86 of
+107**, census **still 21**, `0 survivor(s)` unchanged — ⚠️ re-derive every one of those from `mutate.py`,
+never from here. ⛔ **Nothing in `Sources/` or `Helper/` was touched, no constant moved, and no published
+figure moves.**
+
+⚠️ **One argument elsewhere is CONDITIONAL on the constant this mutant moves, and ALL FOUR copies now
+say so — ⛔ the draft said "both", having counted two of the four.** They are `Tools/mutate.py`,
+`Tests/main.swift`, this entry's own `#### The owed fixture` and **`CLAUDE.md`**, which the first sweep
+missed: the counted-files shape this register already ⛔-flags, caught by the review of this diff. The reason for leaving `shapeMinimumArea` alone is that
+`area >= height >= shapeHeightLow * glyphHeight` makes the area guard redundant above an 8 px median
+glyph, so at `shapeHeightLow` = 0.0 that guard becomes the **only** lower bound in `textShaped` and
+IS the deciding term. On this fixture its four marks clear it 10x (40 px against 4), which is why the
+mutant reads 1 and not 0.
+
+⚠️ **What it does NOT establish.** It says nothing about `shapeMinimumArea`, which still has no
+catalogue entry and whose *calibration* half — that constant is live in
+`textLineGroupsOutsideText`'s own `sized` filter as well as in `textShaped`, so a mutant moves the
+accept rule and the type scale it is measured against **together** — is the successor step. It does not
+price the **relaxing** direction the campaign actually wants (whether loosening the grouping rescues
+C26's two cartoons and what that costs on a printer's ornament), which is this entry's standing
+two-sided trade. And it buys no searchability: a refused verdict keeps resolution and puts no word in the
+text layer, which is `C30`'s ground.
+
+⛔ **A DEBT THIS COMMIT ADDS TO, AND MEASURING IT REFUTED THE MECHANICAL FIX SOMEBODY WILL REACH FOR.**
+The new block inserts **+81** lines after old `Tests/main.swift:3240` and **+6** after old `:3254`, so
+every `Tests/main.swift:<line>` citation past those points is stale by 81 or 87. The **three inside the
+blocks this commit edits** are repaired here (`Tools/mutate.py`'s `:3340` → `:3427`, and this entry's
+`:3340` → `:3427` and `:3358` → `:3445`, each verified by grepping the cited check rather than by adding
+87). ⛔ **The rest are NOT, and the reason is that the offset is not the repair**: `CLAUDE.md`,
+`ops/autonomous/QUEUE.md` and `BUGS.md:22795` all cite `Tests/main.swift:3255` (and `:3252-3257`) for
+**the mask pair**, which is at **`:3492`** — 237 lines out, i.e. **already stale by ~150 before this
+commit touched anything**. So the citations are stale by *varying* amounts from several different
+commits, a uniform `+87` would make some of them worse, and each one has to be re-derived by grepping
+the thing it names. ⚠️ **Sweep the pattern `Tests/main\.swift:[0-9]`, not any one symbol** — the
+`mutate.py:<line>` sweep of 2026-08-30 found nine citations of which eight were wrong and one had been
+broken by the very commit doing the sweep. Nothing measured depends on any of them; carried as the
+queue's `tests-line-citations`, named here for the second commit running and now with the measurement
+that says why it is a sweep and not an offset.
+
+⚠️ **Estimator: the TENTH reading from the cleared window, and the numerator does not move with it.**
+Printed `10-10` off a window reading `289-296 s each`, **clocked 02:08:09 → 02:17:54 = 585 s = 9.75 min**
+(`$STATE/suite-timings.tsv` row `mutant-heightlow 585 0 3.34`, the loadavg read ~1 min after the last
+write and therefore weaker than the column's definition). That is **inside the unrounded `[578, 592] s`
+span** the window produces and **15 s (2.5%) below the printed 600 s floor** — A11.1's failure mode a
+third time, so the form to quote is **6 inside + 4 outside = 10**, and a single-value range still means
+the five rows agree to 2.4% rather than that the estimate is exact. ⛔ The two invocations recorded in the
+section above were **not** clocked and are still not readings; this one was clocked from a wall-clock
+start written to a file before the run.
 
 #### What this entry is NOT
 

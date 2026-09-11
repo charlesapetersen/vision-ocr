@@ -211,6 +211,31 @@ do these two constants stop agreeing, and is there a mutant for it"**. ⚠️ An
 about the CATALOGUE, not about all mutants: that same check would red at
 `lineMinimumMembers` = 2, which no entry asks. `BUGS.md` C28
 `#### The gap term's own fixture`.
+✅ **AND THAT QUESTION PAID FOR ITSELF THE SAME DAY, WHICH IS THE REASON IT IS HERE.**
+`const/shapeHeightLow-lowered` (0.5 → 0.0) is `killed` by **exactly one** check whose kill
+set intersects the term's five other mutants' in nothing — because the direction was chosen
+by asking the question first rather than discovered after a run. The obvious mutant was the
+wrong one: **raising** `shapeHeightLow` to 3.0 gives the accept band `[75, 75]` and refuses
+the four 30 px marks, but **so does lowering `shapeHeightHigh` to 0.5**, which gives
+`[12.5, 12.5]` and refuses the same four — one wrong answer by two routes, and the sets would
+have matched byte for byte again. The **lowering** direction cannot be imitated, and the test
+that establishes it is the one worth copying: **read what each constant does in the
+expression.** `shapeHeightHigh` appears only as an upper bound, so no value of it can admit a
+component a floor refused; `shapeRunHigh`, `lineMinimumMembers` and `lineGapFactor` are
+additional refusals reached at or after the height band, so loosening any of them cannot
+admit what the floor already dropped. ⛔ **And the method catches its own first draft, which
+is why it is the method: that draft said "the other four", putting `shapeMinimumArea` in the
+safe group in four files, and the adversarial review refuted it from `Sources/`.** That
+constant is `textShaped`'s FIRST guard *and* the `sized` filter that computes `glyphHeight`,
+so lowering it lowers the very floor at issue — the one constant of the six that is upstream
+rather than downstream. ✅ The conclusion survived on a different argument (two inequalities
+that do not meet: admitting the marks needs `glyphHeight ≤ 16`, grouping them needs
+`≥ 18.67`), which is the shape to expect — **a right answer for a wrong reason is still a
+finding, and reading the expression is what tells them apart.** ⚠️ **The cost of choosing
+the reachable direction is that it may not be the dangerous one** — lowering this floor keeps
+*more* resolution, so its worst case is bytes, and the content-losing direction was already
+pinned by a check that existed. Say which one you pinned.
+`BUGS.md` C28 `#### The height floor's own fixture`.
 ⚠️ **Two numerals in this paragraph were wrong in the commit that drafted it and are
 corrected here, and both are one failure**: a figure re-typed from a sibling document
 instead of re-derived from the code. That trio is not *"the C26 override seam's three

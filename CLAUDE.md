@@ -669,6 +669,44 @@ prescribed catalogue line would have made the FIRST duplicate id in the catalogu
 the id on the constant's NAME and `already_done()` is last-row-wins, so the new mutant would have read as
 already recorded and been skipped; a fifth tuple element overrides the id now and `--self-test` asserts
 uniqueness (39 → 40 checks, watched reddening alone).
+✅ **AND THAT LESSON WAS SPENT RATHER THAN RE-LEARNED THE SAME DAY — `const/shapeHeightLow-lowered`
+(0.5 → 0.0) is `killed`, 291 s, `1370/1371`, by EXACTLY ONE check, and the direction question was asked
+BEFORE the mutant** (`BUGS.md` C28 `#### The height floor's own fixture`). ⛔ **The obvious mutant was the
+wrong one and the arithmetic says why: RAISING `shapeHeightLow` to 3.0 gives the band [75, 75] and
+refuses `c28Stroke`'s 30 px marks — but so does lowering `shapeHeightHigh` to 0.5, giving [12.5, 12.5],
+so the two kill sets would have been shared byte for byte.** LOWERING cannot be imitated, structurally:
+`shapeHeightHigh` occurs in `textShaped` only as an upper bound, so no value of it admits a component the
+floor refuses, and `shapeRunHigh`, `lineMinimumMembers` and `lineGapFactor` are *additional* refusals
+reached at or after the height band. ⛔ **`shapeMinimumArea` IS NOT — a draft said "the other four" in
+four files and the review of that diff refuted it from `Sources/`**: it is `textShaped`'s FIRST guard and
+also the `sized` filter that computes `glyphHeight`, so lowering it lowers the floor. ✅ The conclusion
+survives on two inequalities that do not meet — admitting these marks needs `gh ≤ 16`, grouping them
+needs `gh ≥ 18.67` — so no value of it reds the check (⚠️ reasoned, no such mutant has been run). ✅ **So the term's six
+constants now carry FOUR pairwise-disjoint SINGLETON kill sets, one per fixture — too-wide
+(`shapeRunHigh`), too-tall (`shapeHeightHigh`), too-short (`shapeHeightLow-lowered`), gap-split
+(`lineGapFactor-raised`) — so FOUR of the six have a mutant whose reds belong to it alone.**
+⛔ **NOT five, which a draft said in three files one line under its own table: two exceptions out of six
+is four.** The true five is a different predicate — `shapeHeightLow` is the fifth of the six to get an
+*entry*.
+`lineMinimumMembers` is the one that does not (its only entry shares six with `lineGapFactor`'s lowering
+entry) and `shapeMinimumArea` is the one with no entry at all. The fixture is `c28Dashes(5, 8)`:
+`c28Stroke`'s four marks at the same x and the same 5 px width, **8 px tall instead of 30**, so the pair
+differs in HEIGHT ALONE and the inverse row was free a second time. ⚠️ **The direction newly pinned is
+the CHEAP one and the register should not imply otherwise**: lowering the floor admits components, which
+only makes the term refuse MORE pages and keep MORE resolution, so its worst case is bytes — RAISING is
+the content-losing direction and `c28Stroke` already pinned it, which is what "one-sided" meant.
+⚠️ The bracket is two-sided now — **the PAIR of checks is green exactly on (0.32, 1.2]**, both endpoints
+DERIVED from the drawn rects and `Flattener.swift:2137` rather than measured — where it was a ceiling
+alone. ⛔ **That is NOT the suite's green interval and this diff's draft said so in three files before
+catching itself**: `c28GroupsMissed` asserts 1 over a word whose x-height components sit just under the
+25 px median, so it reds well below 1.2 and the suite's interval is at most (0.32, 1.2] (reasoned, not
+measured). ✅ **The hazard the queue box
+named did NOT fire, measured rather than assumed**: every check in the suite asserting a SHRUNK
+background was enumerated before the run (four named at risk — the MRC text fixture's two arms, `raised`,
+R50's text page — because rim-of-recognised-type is exactly the short-component class admitted), and
+none moved. ⚠️ Catalogue **106 → 107**, coverage **85 of 106 → 86 of 107**, census **still 21** a third
+time, log **104 → 105**, suite **1,368 → 1,371**, `0 survivor(s)` unchanged; re-derive all of them.
+Nothing in `Sources/` moved.
 ⚠️ Estimator, the **ninth** write-up from the cleared window and the
 **second** with a degenerate printed range: `10-10` off five rows reading 295-298 s, measured **592 s**
 end to end — inside the unrounded [590, 596] s span and 1.3% under the printed 600 s floor, `A11.1`'s
@@ -953,7 +991,7 @@ have a hand-appended row, so the missing loadavg is this session's omission and 
 column's definition**: that column is the 1-minute average AT THE END of the run and 3.52 was read 2 m 09 s
 after the last write, where the reading at the run's START was **5.27**, so a hand-appended row is weaker
 than a `test-lock.sh`-written one and reads the machine as quieter than the run met it.
-⚠️ **The estimator is now NINE write-ups from the cleared window, six inside the range, and the first two
+⚠️ **The estimator is now TEN write-ups from the cleared window, six inside the range, and the first two
 never-run runs measured 598 s EACH — identical to the second** (printed `9-13` both times), so the box's
 479 s figure is 1.25x low **twice** and should be replaced rather than treated as one run's bad luck.
 ⛔ **NINE and not the EIGHT this sentence carried until 2026-09-11, corrected on the adoption of
@@ -963,12 +1001,20 @@ present-tense count, which is the one shape `check-staleness.sh` cannot see (it 
 the same trap this file already records against its own mutation-figure sentences. ⚠️ **The numerator does
 NOT move with it**: the ninth measured **592 s** against a printed `10-10`, so it is the THIRD reading
 outside the printed range, and **six of the nine** is the form to quote — 6 inside + 3 outside = 9.
-⛔ **AND IT IS STILL NINE AFTER 2026-09-11's THREE MUTANT RUNS, WHICH IS THE POINT OF SAYING SO HERE.**
-`c28-gap-fixture` ran two invocations that each printed a range (`14-15` and `10-10`) and **neither was
-clocked from a wall-clock start**, so neither is a reading and the tally does not move — a session that
-counts *runs* rather than *recorded readings* will make this line false in the direction that looks like
-progress. ⚠️ Do not reconstruct those two from the mtimes in `#### The gap term's own fixture`: the
-finishes are recorded and the starts are not.
+⛔ **AND IT WAS STILL NINE AFTER 2026-09-11's FIRST THREE MUTANT RUNS, WHICH IS THE POINT OF SAYING SO
+HERE.** `c28-gap-fixture` ran two invocations that each printed a range (`14-15` and `10-10`) and
+**neither was clocked from a wall-clock start**, so neither is a reading and the tally did not move — a
+session that counts *runs* rather than *recorded readings* will make this line false in the direction
+that looks like progress. ⚠️ Do not reconstruct those two from the mtimes in
+`#### The gap term's own fixture`: the finishes are recorded and the starts are not.
+⛔ **THE TENTH IS THE SAME DAY'S FOURTH RUN AND IT IS THE FOURTH OUTSIDE THE PRINTED RANGE, SO THE
+NUMERATOR STAYS AT SIX: 6 inside + 4 outside = 10.** (⛔ **FOURTH, not “third”, which the draft wrote in
+two files one paragraph under its own “6 + 3 = 9” — caught by the review of this diff. “A11.1's failure
+mode a THIRD time” is a different and correct claim: third degenerate printed range.**) `const/shapeHeightLow-lowered` printed `10-10` off a
+window reading `289-296 s each` and measured **585 s = 9.75 min**, clocked 02:08:09 → 02:17:54 from a
+start written to a file before the run (row `mutant-heightlow 585 0 3.34`, loadavg read ~1 min after the
+last write). That is **inside the unrounded [578, 592] s span** and **15 s (2.5%) below the printed 600 s
+floor** — `A11.1`'s failure mode a third time. `BUGS.md` C28 `#### The height floor's own fixture`.
 ⚠️ The seventh, the seam's second mutant, printed `10-13` and measured **~618 s derived, ±30 s** (a
 `suite-timings.tsv` row WAS appended, `mutant-c26-inkbar-nil 618 0 4.26`, with the loadavg read ~30 s after
 the last write rather than 2 m 09 s) — so the box's figure is 1.29x low a **third** time.
@@ -1150,7 +1196,9 @@ the guard's FIRST term, is silent about the second, and is blind to the third. �
 unpinned on a **narrower** argument than a first draft of this gave: at its shipped value, in
 `textShaped`, an 8-connected component's area is at least its height and the height test already demands
 `h ≥ shapeHeightLow * glyphHeight`, so above a median glyph of **8 px** the area guard is satisfied before
-it is asked — but that is conditional on the 8 px (72-DPI corpus scans can fall under it), it says nothing
+it is asked — ⚠️ **and that argument is conditional on `shapeHeightLow` as well as on the 8 px, which is
+the FOURTH copy of it in the tree and the one a 2026-09-11 sweep missed: at the 0.0 that constant's own
+mutant substitutes, the area guard is the ONLY lower bound in `textShaped` and is the deciding term** — but that is conditional on the 8 px (72-DPI corpus scans can fall under it), it says nothing
 about *raising* the constant, and the constant is separately live in the term's **calibration** filter,
 which these fixtures do run through, so whether they would kill such a mutant is **unmeasured**.
 ⛔ **THAT COMMIT LANDED AS `6d0caa1` ON 2026-08-23, SUITE `1,223/1,223`, AND THE ADVERSARIAL REVIEW OF ITS
@@ -2375,7 +2423,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,368 checks, no skips. ⛔ THIS LINE MUST STAY UNDATED AND MUST CARRY THE
+./run_tests.sh        # 1,371 checks, no skips. ⛔ THIS LINE MUST STAY UNDATED AND MUST CARRY THE
                       # CURRENT COUNT: check-staleness.sh treats a check-count claim whose own line or
                       # the line before it carries a date as HISTORY and drops it from the live pool,
                       # then reports each file's highest LIVE claim against the reference. So dating
@@ -2415,7 +2463,13 @@ git config core.hooksPath .githooks
                       #  1,364 -> 1,368: c28-gap-fixture's two gap fixtures — the split page's 0,
                       #  the joined page's 1 (the inverse row), one calibration reading over both,
                       #  and the split page's ink. Measured by a clean suite run BEFORE any
-                      #  mutant, and corroborated by all three mutant runs printing /1368.)
+                      #  mutant, and corroborated by all three mutant runs printing /1368.
+                      #  1,368 -> 1,371: c28-heightlow-fixture's too-short four — the height
+                      #  FLOOR's refusal, that page's own calibration reading, and the ink
+                      #  band-plus-ratio that says it carries four marks and not three. Its
+                      #  inverse row is c28Stroke's existing positive control, so it costs no
+                      #  check. Measured off `mutate.py`'s own baseline (`1371 checks, green`)
+                      #  and the mutant's `1370/1371`.)
                       # ⛔ AND IT HAPPENED AGAIN: `3bf2648` added those nine and left this line at
                       # 1,346. The ADOPTING session caught it, not the committing one — no ordinal is
                       # claimed for it, because this register has already published a wrong one by

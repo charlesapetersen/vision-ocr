@@ -493,6 +493,14 @@ CONSTANTS = [
     # suite brackets it into [2.64, 6.24) where it held only a floor of 2.24. `shapeHeightLow` is
     # what this sentence still describes, and it is the last one-sided constant of the six.
     # `BUGS.md` C28 `#### The gap term's own fixture`.
+    # ⛔ **AND THE `shapeHeightLow` HALF FELL THE DAY AFTER THAT, 2026-09-11 — see
+    # `const/shapeHeightLow-lowered` at the end of this list. So of the six, `shapeMinimumArea`
+    # alone is now uncatalogued, and this paragraph's FIRST sentence is the only live claim
+    # left in it.** ⚠️ That first sentence's argument is itself conditional on the constant
+    # that entry moves: `area >= height >= shapeHeightLow * glyphHeight` is what makes the
+    # area guard redundant, so at `shapeHeightLow` = 0.0 the area guard becomes the only
+    # lower bound in `textShaped` and IS the deciding term — on the new fixture its four
+    # marks clear it 10x (40 px against 4), which is why that mutant reads 1 and not 0.
     ("Flattener.swift", "shapeHeightHigh", "3.0", "99.0"),
     # The grouping's OTHER constant, and the third route into `return groups == 0`.
     # `textLines` flushes a run when the gap to the next member exceeds
@@ -551,7 +559,7 @@ CONSTANTS = [
     # the mutant changes its input). Because every run at 0.0 is a sub-chain of a run at 3.0, a
     # fixture reading 0 groups at the shipped value reads 0 at 0.0 as well, so every `groups == 0`
     # assertion in the block is unable to fail: `c28GroupsBoxed`, `c28GroupsBar`, `c28GroupsC26`,
-    # `c28WideGroups`, `c28TallGroups`, the border check, AND `Tests/main.swift:3340`'s
+    # `c28WideGroups`, `c28TallGroups`, the border check, AND `Tests/main.swift:3427`'s
     # `.groups(0)` — ⛔ the seventh was missing from this list until the adoption caught it, because
     # the draft reused `lineMinimumMembers`'s six-name list from 2026-08-24 and it and the `shapeTermAnswer` transport check beside it were
     # added 2026-09-02. ⛔ **AND AN EIGHTH JOINED IT 2026-09-11 and this list was short AGAIN, twice
@@ -614,6 +622,68 @@ CONSTANTS = [
     # one able to see `lineMinimumMembers` LOWERED — C28's own two-sided trade, still
     # asked by no entry. `BUGS.md` C28 `#### The gap term's own fixture`.
     ("Flattener.swift", "lineGapFactor", "3.0", "99.0", "lineGapFactor-raised"),
+    # THE HEIGHT FLOOR, and the fifth of the shape term's six constants to get an entry —
+    # `shapeMinimumArea` is the last, and its reason is the paragraph above.
+    #
+    # ⛔ THE LOWERING DIRECTION, AND THE CHOICE IS THE WHOLE POINT OF THE ENTRY. Raising
+    # `shapeHeightLow` to 3.0 collapses the band to [75, 75] and refuses `c28Stroke`'s four
+    # 30 px marks — but so does lowering `shapeHeightHigh` to 0.5, which gives [12.5, 12.5]
+    # and refuses the same four. Two constants, one wrong answer, and the kill sets would
+    # come back shared byte for byte exactly as `const/lineGapFactor`'s and
+    # `const/lineMinimumMembers`'s do. That is the mistake `c28-gap-fixture` measured, and
+    # this entry is written to avoid repeating it rather than to discover it again. ✅ The
+    # LOWERING direction cannot be imitated by any value of any other constant OF THE TERM'S SIX
+    # (⛔ *"any other constant here"* stood here and is over-broad: lowering `maximumShapeRuns`
+    # makes `shapeComponents` return nil, so the term returns nil, so the new check reds — the
+    # path `Tests/main.swift`'s runLimit pair already drives. It is deliberately uncatalogued):
+    # `shapeHeightHigh` occurs in `textShaped` only as an upper bound
+    # (`hh <= shapeHeightHigh * glyphHeight`), so no value of it admits a component the floor
+    # refuses — a ceiling cannot lift a floor — and `shapeRunHigh`, `shapeMinimumArea`,
+    # `lineMinimumMembers` and `lineGapFactor` are *additional* refusals reached at or after the
+    # height band, so loosening any of them cannot admit a component `textShaped` has dropped.
+    # ⛔ `shapeMinimumArea` IS THE EXCEPTION and a draft of this list put it in the safe group in
+    # four files; the review of that diff refuted it from `Sources/`. It is `textShaped`'s FIRST
+    # guard, before the height band, AND the `sized` filter that computes `glyphHeight` — so
+    # lowering it lowers the floor itself, which is exactly the imitation being ruled out.
+    # ✅ The conclusion survives on two inequalities that do not meet: admitting these marks needs
+    # `0.5 * gh <= 8` (gh <= 16) and keeping their 56 px gaps un-flushed needs `3.0 * gh >= 56`
+    # (gh >= 18.67), so any calibration low enough to admit them is too low to group them, and a
+    # speck-widened median breaks `medianRun 5 <= 2 * glyphRun` besides. ⚠️ Reasoned from the two
+    # comparisons; no `shapeMinimumArea` mutant has been run.
+    #
+    # ⚠️ SO THE DIRECTION THIS ENTRY PINS IS THE CHEAP ONE, AND THAT IS WORTH STATING RATHER
+    # THAN LEAVING A READER TO ASSUME OTHERWISE. Lowering the floor admits components, which
+    # can only make the term return MORE groups, which makes `pageIsAllText()` refuse MORE
+    # pages and keep MORE resolution: its worst case is bytes. RAISING it is the direction
+    # that puts the 8x shrink back on a page carrying unrecognised prose, i.e. the direction
+    # that loses content — and that one was already pinned, by `c28Stroke`'s positive
+    # control. What this entry buys is not the dangerous direction but REACHABILITY: it is
+    # the only one of the two a fixture can tell apart from `shapeHeightHigh`, and a mutant
+    # whose reds cannot be attributed is what `CONTRIBUTING.md` §4a now warns about.
+    #
+    # ✅ WITH IT THE PAIR BRACKETS THIS CONSTANT TWO-SIDEDLY where it held a ceiling alone:
+    # the accept rule is `hh >= shapeHeightLow * glyphHeight`, so `c28Stroke`'s 30 px marks
+    # are refused once `f * 25 > 30` (f > 1.2) and `c28TooShort`'s 8 px marks are admitted
+    # once `f * 25 <= 8` (f <= 0.32) — **those two checks** are green together exactly on
+    # (0.32, 1.2], with the shipped 0.5 inside. ⛔ **That is NOT the same as the SUITE's green
+    # interval and must not be written as one**: `c28GroupsMissed` asserts 1 over the word
+    # `value.`, whose x-height components are a little under the 25 px median, so a floor
+    # raised past them leaves the ascender alone and it reads 0 — which reds somewhere well
+    # below 1.2. The suite's own interval is therefore at most (0.32, 1.2] and probably
+    # narrower; ⚠️ reasoned from the typeface, not measured, because no check asserts that
+    # word's component heights. ⚠️ Both endpoints of the PAIR's interval are DERIVED from the
+    # drawn rects and the accept rule too, not measured — antialiased bleed would move either
+    # — the same caveat the 56 px gap above carries. What the ink guards in `Tests/main.swift`
+    # do assert is that the two pages carry four marks each in the 8/30 ratio.
+    #
+    # THE FIXTURE, `c28TooShort`: `c28Dashes(5, 8)`, i.e. `c28Stroke`'s four marks at the
+    # same four x positions and the same 5 px stroke width, 8 px tall instead of 30 — so the
+    # pair differs in HEIGHT alone and the inverse row is that existing positive control
+    # rather than a third page. At the asserted `glyphHeight` 25.0 the band is [12.5, 75.0],
+    # 8 < 12.5, all four are refused by the floor and the term reads 0; at 0.0 the band is
+    # [0, 75.0], each mark clears `shapeMinimumArea` (40 >= 4) and the run bar (5 <= 10), the
+    # four share one band with 56 px gaps under a 75 px bar, and it reads 1.
+    ("Flattener.swift", "shapeHeightLow", "0.5", "0.0", "shapeHeightLow-lowered"),
     # The quarter inch that separates a drawing from show-through. Large, so every
     # pale mark is type-sized and the drawing is never found.
     ("Flattener.swift", "typeCeilingInches", "0.25", "99.0"),

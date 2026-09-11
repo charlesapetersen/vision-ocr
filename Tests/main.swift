@@ -3238,6 +3238,94 @@ do {
           String(format: "%.5f (wanted [0.004, 0.007] and within 1e-4 of the strokes' %.5f)",
                  c28SplitInk, c28StrokeInk))
 
+    // ⛔ THE HEIGHT FLOOR, AND IT IS THE ONE DIRECTION NO OTHER SHAPE CONSTANT CAN IMITATE.
+    // `shapeHeightLow` was the last of the term's six constants pinned in ONE direction
+    // only. RAISING it is already caught by the positive control 200 lines above: at 3.0 the
+    // accept band collapses to [75, 75], `c28Stroke`'s 30 px marks are refused and its 1
+    // goes to 0. LOWERING it was caught by nothing in this suite.
+    //
+    // ⛔ And the lowering direction is the one to build for, which is not a preference but
+    // the lesson the gap block above paid for. A RAISING mutant here would be imitated
+    // exactly by `shapeHeightHigh` → 0.5: that gives the band [12.5, 12.5] and refuses the
+    // very same 30 px marks, so the two kill sets would come back shared byte for byte the
+    // way `lineGapFactor`'s and `lineMinimumMembers`'s do, and neither would say which
+    // constant moved. The lowering direction **cannot** be imitated: in `textShaped`
+    // `shapeHeightHigh` occurs only as an upper bound (`hh <= shapeHeightHigh * glyphHeight`),
+    // so no value of it admits a component the floor refuses. A ceiling cannot lift a floor.
+    //
+    // ⛔ THE ARITHMETIC, which is derivation and not a guess. `c28Dashes(5, 8)` is
+    // `c28Stroke`'s four marks — the same four x positions, the same 5 px stroke width, the
+    // same baseline — 8 px tall instead of 30, so the pair differs in HEIGHT ALONE and the
+    // inverse row is that positive control rather than a third page. At this page's asserted
+    // `glyphHeight` 25.0 the band is [12.5, 75.0]:
+    //
+    //   shipped   8 < 12.5, so all four are refused by the FLOOR, `accepted` is empty and
+    //             `textLines` is handed nothing — the term reads **0**.
+    //   lowered   at `shapeHeightLow` = 0.0 the band is [0, 75.0]; each mark clears
+    //             `shapeMinimumArea` (5 x 8 = 40 >= 4) and the run bar (`medianRun` 5 <=
+    //             2.0 x 5 = 10), the four share one band with gaps of 56 px under a 75 px
+    //             `lineGapFactor * glyphHeight`, and four members reach
+    //             `lineMinimumMembers` — it reads **1**.
+    //
+    // The rows come out of the same derivation the tall fixture's clearance does: a bar at
+    // bitmap `y = 200` of height h occupies top-down rows `[1384 - h, 1384)`, so [1376, 1384)
+    // here — 116 rows below box 13's padded region, which ends at 1259 — and x 200...384 is
+    // well inside `interiorWindow`'s [76, 1148).
+    let c28TooShort = tmp.appendingPathComponent("c28-four-short.pdf")
+    makeScannedPDF(at: c28TooShort, lines: c28Dense, bars: c28Dashes(5, 8))
+
+    // The 12.5 the refusal rests on is `shapeHeightLow * glyphHeight`, so it has to be THIS
+    // page's 12.5 and not one inherited from a sibling PDF — the same reason the gap pair
+    // reads its own scale back rather than borrowing `c28Cal`, which comes off `c28TooTall`.
+    let c28ShortCal = c28Calibration(c28TooShort)
+    check("C28 — the too-short fixture's own type scale is what its 8 px marks are refused "
+            + "against",
+          c28ShortCal.height == 25.0 && c28ShortCal.run == 5.0,
+          "\(c28ShortCal), so the height floor is "
+            + "\(Flattener.shapeHeightLow * c28ShortCal.height) and the ceiling "
+            + "\(Flattener.shapeHeightHigh * c28ShortCal.height)")
+
+    let c28ShortGroups = c28Groups(c28TooShort, boxes: c28Boxes(14))
+    check("C28 — four marks of an accepted stroke width but under the height FLOOR are no "
+            + "line group",
+          c28ShortGroups == 0, "\(c28ShortGroups as Any)")
+
+    // ⛔ What that 0 has to be protected from, and what it does NOT need protecting from.
+    // It is also the answer a blank page gives, a page whose marks landed inside `region`
+    // gives, and a page that lost one of its four marks gives — and in the last case the
+    // mutant would leave the check GREEN (three members never reach `lineMinimumMembers`),
+    // which is a check that cannot fail rather than a check that failed. ✅ It does NOT need
+    // protecting from marks that rendered TALLER than the floor: those would be accepted and
+    // grouped, and the check above would already be red. So the guard is one-sided on
+    // purpose, and both halves of it are needed. The BAND says there is out-of-region ink and
+    // roughly the right amount of it. The RATIO to `c28Stroke` is what pins the count and the
+    // height together, because the two fixtures carry four marks of identical width at
+    // identical x and differ only in height. And the two halves catch different things: the
+    // ratio is blind to both pages drifting TOGETHER (one builder, so a change to it moves
+    // both and leaves 8/30 intact) and the band is what sees that; the band is blind to a
+    // page that kept its ink while changing its geometry and the ratio is what sees that.
+    // Measured, by a run of this suite with the assertion deliberately failing so the
+    // numbers came out of the real code rather than out of arithmetic: `inkOut` **0.001392**
+    // against the strokes' **0.005199**, a ratio of **0.26769** where 8/30 is 0.266667 — and
+    // the tolerance below is 4.9x that 0.38% excess. ⛔ **That excess is the DENOMINATOR, not
+    // antialiasing, and the draft of this comment named the wrong cause — refuted by the
+    // adversarial review of this diff from `inkOutsideText` itself.** That function returns
+    // `outside / total` with `total` counting ALL interior ink, the marks included
+    // (`Flattener.swift:1928-1937`), so the two pages have different denominators: the stroke
+    // page carries 440 more ink pixels. Solving the two literals for the text ink gives
+    // `T ≈ 114,800` and an area ratio of **0.26665 — 8/30 to within 0.006%** — so there is no
+    // detectable bleed at all and the 0.38% is `(T + A_s)/(T + A_h)` exactly.
+    // Three marks of four would read 0.2008 (13x the tolerance away) and marks that came back
+    // 9 px tall ~0.30 (6.7x).
+    let c28ShortInk = c28InkOut(c28TooShort, boxes: c28Boxes(14)) ?? -1
+    let c28ShortRatio = c28StrokeInk > 0 ? c28ShortInk / c28StrokeInk : -1
+    check("…and it carries all four of them, at the height that floor refuses",
+          c28ShortInk >= 0.0012 && c28ShortInk <= 0.0016
+            && abs(c28ShortRatio - 8.0 / 30.0) <= 0.005,
+          String(format: "inkOut %.6f (wanted [0.0012, 0.0016]) and %.5f of the strokes' "
+                   + "%.6f (wanted 8/30 = 0.26667 +/- 0.005)",
+                 c28ShortInk, c28ShortRatio, c28StrokeInk))
+
     // ⚠️ `shapeMinimumArea` stays unpinned, and the reason is narrower than a first draft
     // of this comment claimed. In `textShaped`, **at its shipped value**, it cannot be the
     // deciding term: an 8-connected component spanning `[minY, maxY]` owns at least one run
@@ -3252,6 +3340,12 @@ do {
     // `textLineGroupsOutsideText`'s **calibration** filter, which these fixtures do run
     // through, so whether the calibration check above would catch such a mutant is
     // unmeasured rather than argued either way. Left as a named gap for those reasons.
+    // ⚠️ And the first of those three is sharper than it reads: the redundancy argument is
+    // `area >= height >= shapeHeightLow * glyphHeight`, so it is conditional on
+    // `shapeHeightLow` as well as on the 8 px — at the value `const/shapeHeightLow-lowered`
+    // substitutes (0.0) the area guard becomes the ONLY lower bound in `textShaped` and is
+    // the deciding term. `c28TooShort` above clears it 10x (40 px against 4), which is why
+    // that mutant reads 1 rather than 0.
 
     // ⛔ THE VERDICT, end to end through `mrcLayers`, and this is the check that was
     // watched failing before the wiring existed: without the third term the page is
