@@ -467,8 +467,11 @@ CONSTANTS = [
     # same count, cannot fail. So this mutant's reachable surface is the pages carrying a map
     # component taller than 3*glyphHeight, which in the whole suite is `c28TooTall` alone.
     #
-    # ⚠️ `shapeMinimumArea` is deliberately still absent, and the argument is narrower than
-    # "no fixture". **At its shipped value**, in `textShaped`, it cannot be the deciding
+    # ⛔ `shapeMinimumArea` WAS "deliberately still absent" AND IS NOT — it got its entry
+    # 2026-09-11, at the END of this list, and the bare mutant `SURVIVED` before a fixture
+    # existed. The rest of this paragraph is kept because its argument is still the right
+    # one for the LOWERING direction, which remains unrun. **At its shipped value**, in
+    # `textShaped`, it cannot be the deciding
     # term: an 8-connected component spanning `[minY, maxY]` owns a run in every one of
     # those rows, so area >= height, and the height test already demands
     # `h >= shapeHeightLow * glyphHeight` — so wherever the median glyph is >= 8 px the area
@@ -494,9 +497,10 @@ CONSTANTS = [
     # what this sentence still describes, and it is the last one-sided constant of the six.
     # `BUGS.md` C28 `#### The gap term's own fixture`.
     # ⛔ **AND THE `shapeHeightLow` HALF FELL THE DAY AFTER THAT, 2026-09-11 — see
-    # `const/shapeHeightLow-lowered` at the end of this list. So of the six, `shapeMinimumArea`
-    # alone is now uncatalogued, and this paragraph's FIRST sentence is the only live claim
-    # left in it.** ⚠️ That first sentence's argument is itself conditional on the constant
+    # `const/shapeHeightLow-lowered` at the end of this list. ⛔ **AND THE LAST HALF FELL THE
+    # SAME DAY: `shapeMinimumArea` is catalogued too, so ALL SIX now have an entry and this
+    # paragraph has no live claim left in it at all — it is kept as the record of an argument
+    # that turned out to be about the lowering direction only.** ⚠️ That first sentence's argument is itself conditional on the constant
     # that entry moves: `area >= height >= shapeHeightLow * glyphHeight` is what makes the
     # area guard redundant, so at `shapeHeightLow` = 0.0 the area guard becomes the only
     # lower bound in `textShaped` and IS the deciding term — on the new fixture its four
@@ -623,7 +627,8 @@ CONSTANTS = [
     # asked by no entry. `BUGS.md` C28 `#### The gap term's own fixture`.
     ("Flattener.swift", "lineGapFactor", "3.0", "99.0", "lineGapFactor-raised"),
     # THE HEIGHT FLOOR, and the fifth of the shape term's six constants to get an entry —
-    # `shapeMinimumArea` is the last, and its reason is the paragraph above.
+    # `shapeMinimumArea` is the last, and it got its own entry hours later on the same day;
+    # see the bottom of this block.
     #
     # ⛔ THE LOWERING DIRECTION, AND THE CHOICE IS THE WHOLE POINT OF THE ENTRY. Raising
     # `shapeHeightLow` to 3.0 collapses the band to [75, 75] and refuses `c28Stroke`'s four
@@ -649,7 +654,10 @@ CONSTANTS = [
     # `0.5 * gh <= 8` (gh <= 16) and keeping their 56 px gaps un-flushed needs `3.0 * gh >= 56`
     # (gh >= 18.67), so any calibration low enough to admit them is too low to group them, and a
     # speck-widened median breaks `medianRun 5 <= 2 * glyphRun` besides. ⚠️ Reasoned from the two
-    # comparisons; no `shapeMinimumArea` mutant has been run.
+    # comparisons, and about the LOWERING direction, which is still unrun. ⛔ A
+    # `shapeMinimumArea` mutant HAS been run since (4 -> 99, 2026-09-11) and it leaves this
+    # check green — those marks are refused by area where they were refused by height — so
+    # the raising direction is measured and only the lowering one is reasoned.
     #
     # ⚠️ SO THE DIRECTION THIS ENTRY PINS IS THE CHEAP ONE, AND THAT IS WORTH STATING RATHER
     # THAN LEAVING A READER TO ASSUME OTHERWISE. Lowering the floor admits components, which
@@ -684,6 +692,63 @@ CONSTANTS = [
     # [0, 75.0], each mark clears `shapeMinimumArea` (40 >= 4) and the run bar (5 <= 10), the
     # four share one band with 56 px gaps under a 75 px bar, and it reads 1.
     ("Flattener.swift", "shapeHeightLow", "0.5", "0.0", "shapeHeightLow-lowered"),
+    # THE AREA FLOOR, and the LAST of the shape term's six constants to get an entry. The
+    # other five are `shapeRunHigh`, `shapeHeightHigh`, `shapeHeightLow`, `lineGapFactor`
+    # (two directions) and `lineMinimumMembers`.
+    #
+    # ⛔ THIS ONE IS DIFFERENT FROM THE OTHER FIVE AND THE DIFFERENCE IS WHY IT WAS ASKED
+    # BEFORE IT WAS FIXTURED: it is live in TWO places. `textShaped`'s first guard
+    # (`Flattener.swift:2135`) and the calibration's `sized` filter (`:2267`), which is
+    # upstream of `glyphHeight` and `glyphRun` and therefore upstream of every bar the other
+    # five are multiplied into. So in principle a move of it can imitate a move of any of
+    # them, by moving what they are a ratio of — the imitation problem `c28-gap-fixture`
+    # measured, one level up.
+    #
+    # ✅ MEASURED 2026-09-11, AND IT DOES NOT — which took a run of its own, because the
+    # bare mutant against the suite as it stood came back **`SURVIVED`, 293 s,
+    # `1371/1371 passed`**, nothing objecting. All four calibration readings held at
+    # 25.0 / 5.0 with the `sized` filter at 99, and that is a measurement rather than an
+    # argument: `c28Calibration` reads this constant itself, so the mirror filtered at 99
+    # too and the literal it is compared against is the third party.
+    # ⚠️ THE MECHANISM BELOW IS REASONED AND THE MEDIANS ARE WHAT WAS MEASURED — the two
+    # must not be quoted as one thing. At a 44 px Helvetica em the only stencil components
+    # carrying under 99 px of ink should be the i-dots (~20-25 px each, 3 a line, 42 over
+    # `c28Dense`'s 14 lines), every letter clearing it on the thinnest reading — an `l` at
+    # ~4 x 34 = 136, an `i` stem at ~4.5 x 25 = 112 — so the height median stays inside the
+    # x-height block and the dropped dots' `medianRun` is the median itself. No component
+    # census was taken; what the run establishes is that `glyphHeight` 25.0 and `glyphRun`
+    # 5.0 both HOLD, which is what `c28Cal`, the `c28SplitCal`/`c28JoinedCal` pair and
+    # `c28ShortCal` assert.
+    #
+    # ⛔ A DRAFT SAID THE MUTANT IS "MONOTONE IN THE REFUSING DIRECTION, so every check
+    # asserting ZERO groups is unfalsifiable under it". REFUTED by the review of that diff
+    # from this repo's own standard: `textLines` bands greedily off each band's LAST member
+    # and flushes on a gap, so removing a component can split one run into two groups — the
+    # count is not monotone in the accepted set, and the test is *"does the mutant change
+    # this check's INPUT"* rather than *"could the count move in principle"*.
+    # ⚠️ AND THE ZERO-ASSERTING SET IS **EIGHT**, NOT SEVEN — `c28BorderGroups` was missing
+    # from the draft's list in four files: `c28TooWide`, `c28TooTall`, `c28TooShort`,
+    # `c28GapSplit`, `c28GroupsBoxed`, `c28GroupsBar`, `c28GroupsC26`, `c28BorderGroups`.
+    # `c28TooShort` is worth naming: its four 5x8 marks are refused by the height floor at
+    # the shipped value and by the AREA floor at 99 (40 < 99), so the answer holds while its
+    # reason changes silently underneath. ⛔ And the kill SURFACE was never three checks —
+    # the `const/lineMinimumMembers` row below shows six, the three group checks plus the
+    # three `c28Missed` WIRING rows, which assert a width and a flag rather than a count.
+    #
+    # THE FIXTURE, `c28TooSmall`: `c28Dashes(4, 16)`, i.e. `c28Stroke`'s four marks at the
+    # same four x positions, 4 px wide and 16 px tall. At the asserted `glyphHeight` 25.0
+    # every OTHER term accepts them — 16 >= 12.5, 16 <= 75.0, `medianRun` 4 <= 10, and the
+    # `260 - 203` = 57 px gaps are under the 75 px bar — so the area guard is the only term
+    # that can refuse: 64 >= 4 accepts and reads 1, 64 < 99 refuses and reads 0. The inverse
+    # row is `c28Stroke`'s existing positive control (150 px of ink, accepted at both
+    # values), so the pair differs in AREA alone and costs no third page.
+    # ⛔ ITS CHECK IS **NOT** DISJOINT FROM THE GROUPING MUTANTS' AND MUST NOT BE WRITTEN AS
+    # IF IT WERE — predicted before the run rather than found after it. It asserts 1, so it
+    # also reds under `const/lineMinimumMembers` (4 -> 99) and `const/lineGapFactor`
+    # (3.0 -> 0.0), exactly as `c28-gap-fixture` measured of its own inverse row. What the
+    # attribution rests on is that this mutant's set is a SINGLETON where theirs are seven:
+    # no other catalogued mutant reds this check ALONE.
+    ("Flattener.swift", "shapeMinimumArea", "4", "99"),
     # The quarter inch that separates a drawing from show-through. Large, so every
     # pale mark is type-sized and the drawing is never found.
     ("Flattener.swift", "typeCeilingInches", "0.25", "99.0"),

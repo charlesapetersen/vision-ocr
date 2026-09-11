@@ -681,13 +681,18 @@ reached at or after the height band. ⛔ **`shapeMinimumArea` IS NOT — a draft
 four files and the review of that diff refuted it from `Sources/`**: it is `textShaped`'s FIRST guard and
 also the `sized` filter that computes `glyphHeight`, so lowering it lowers the floor. ✅ The conclusion
 survives on two inequalities that do not meet — admitting these marks needs `gh ≤ 16`, grouping them
-needs `gh ≥ 18.67` — so no value of it reds the check (⚠️ reasoned, no such mutant has been run). ✅ **So the term's six
+needs `gh ≥ 18.67` — so no value of it reds the check (⚠️ reasoned in the LOWERING direction, which is
+what that argument is about and where it is still unrun; ✅ **the RAISING direction is measured green as
+of the same day** — `const/shapeMinimumArea` 4 → 99 leaves `c28ShortGroups` at 0, those marks being
+refused by area where they were refused by height). ✅ **So the term's six
 constants now carry FOUR pairwise-disjoint SINGLETON kill sets, one per fixture — too-wide
 (`shapeRunHigh`), too-tall (`shapeHeightHigh`), too-short (`shapeHeightLow-lowered`), gap-split
 (`lineGapFactor-raised`) — so FOUR of the six have a mutant whose reds belong to it alone.**
 ⛔ **NOT five, which a draft said in three files one line under its own table: two exceptions out of six
 is four.** The true five is a different predicate — `shapeHeightLow` is the fifth of the six to get an
-*entry*.
+*entry*. ⚠️ **BOTH counts are superseded the same day by the paragraph below (five singletons, six
+entries) and BOTH are kept as written, because the correction they record is about telling the two
+predicates apart and that is the thing a reader still needs.**
 `lineMinimumMembers` is the one that does not (its only entry shares six with `lineGapFactor`'s lowering
 entry) and `shapeMinimumArea` is the one with no entry at all. The fixture is `c28Dashes(5, 8)`:
 `c28Stroke`'s four marks at the same x and the same 5 px width, **8 px tall instead of 30**, so the pair
@@ -707,6 +712,54 @@ R50's text page — because rim-of-recognised-type is exactly the short-componen
 none moved. ⚠️ Catalogue **106 → 107**, coverage **85 of 106 → 86 of 107**, census **still 21** a third
 time, log **104 → 105**, suite **1,368 → 1,371**, `0 survivor(s)` unchanged; re-derive all of them.
 Nothing in `Sources/` moved.
+✅ **AND THE SIXTH AND LAST CONSTANT GOT ITS FIXTURE THE SAME DAY — but the result worth quoting is the
+run that came FIRST, and it is a `SURVIVED`** (`BUGS.md` C28 `#### The area floor's own fixture`, the
+queue's `c28-area-fixture`). `shapeMinimumArea` is the only one of the six live in **two** places —
+`textShaped`'s first guard (`Flattener.swift:2135`) and the calibration's `sized` filter (`:2267`), which
+is upstream of every bar the other five are multiplied into — so the box asked whether it was already
+pinned before building it anything. Run against the suite as it stood: **`SURVIVED`, 293 s,
+`1371/1371 passed`, nothing objecting.** ⛔ **THE MEASUREMENT INSIDE THAT SURVIVAL IS THE FINDING: all
+FOUR calibration readings held at 25.0 / 5.0 with the filter at 99, so the calibration does not move —
+and it is informative only because of HOW the mirror is wired.** `c28Calibration` reads the constant
+itself, so the two copies moved together exactly as its doc comment warns; what makes the comparison
+mean anything is the **literal**, which is the third party. So that helper is blind where an assertion
+compares the two copies and **not** blind against a literal. ⚠️ The *mechanism* (only the i-dots fall
+under 99 px of ink) is reasoned — no component census was taken — and must not be quoted with the
+medians, which are measured.
+⛔ **A DRAFT SAID THE MUTANT IS MONOTONE IN THE REFUSING DIRECTION SO EVERY C28 CHECK ASSERTING ZERO
+GROUPS IS UNFALSIFIABLE, AND THE REVIEW OF THIS DIFF REFUTED IT FROM THIS SUITE'S OWN TEXT** — the
+standing test is *does the mutant change this check's INPUT*, and `textLines`' greedy banding makes
+the count non-monotone in the accepted set, which this file already records. ⚠️ **The set is EIGHT
+and the draft listed seven, omitting `c28BorderGroups`**; what survives is that every mark DRAWN on
+them clears 99, that `c28TooShort` keeps its answer while the reason under it changes silently
+(height floor at 4, area floor at 99), and that **`c28GroupsBoxed`'s green is NOT established**, its
+page carrying rim ink the filter can drop. ⛔ **And the kill SURFACE was never three checks —
+`const/lineMinimumMembers`'s row shows six, the three group checks plus three `c28Missed` WIRING
+rows — so the survival is MORE informative than the draft claimed, not less.** ✅ The fixture that closes it is `c28Dashes(4, 16)`, four
+marks every other term accepts (16 in [12.5, 75], `medianRun` 4 ≤ 10, gaps 57 ≤ 75, four members ≥ 4)
+and only the area guard refuses: **`killed`, 294 s, baseline `1374 checks, green`, `1373/1374`, EXACTLY
+ONE** check. ⛔ **Its kill set is a SINGLETON but the check is NOT exclusive, predicted before the run
+rather than found after: it asserts 1, so the two COLLAPSING grouping mutants red it too** — ⚠️ neither
+was re-run, so their six-check rows now understate them by one and that is reasoned. **So it is FIVE
+pairwise-disjoint singletons and SIX constants with an entry, and the one still without an attributable
+kill is `lineMinimumMembers`** — ⚠️ with the hedge the draft gave only to the collapsing pair: four of
+those five rows were measured against suites without `c28TooSmall` in them, so that they are STILL
+singletons with it is reasoned. ✅ **And the new check tightens the neighbouring constant's bracket as
+a side effect**: it needs 16 px marks to clear the height floor, so it reds above `f = 0.64` and the
+suite's green interval for `shapeHeightLow` goes from a reasoned *at most (0.32, 1.2]* to a DERIVED
+*at most (0.32, 0.64]*. ⚠️ The pair differs in TWO dimensions and cannot differ in one — area is
+a product — so the attribution is the kill set's and never the geometry's; and the ink literals are
+DERIVED from the too-short page's `T ≈ 114,800` model rather than read out of a deliberately-failing
+run, which is a step down from that page's. ⚠️ Catalogue **107 → 108**, coverage **86 of 107 → 87 of
+108**, census **still 21** a fourth time, log **105 → 107** (two rows, the `SURVIVED` kept because it is
+what says the fixture was needed), suite **1,371 → 1,374**, `0 survivor(s)` unchanged; re-derive all of
+them. Nothing in `Sources/` moved. ⚠️ Estimator: the **eleventh** reading and the **fifth** outside the
+printed range — `10-10` again, measured **592 s**, 8 s under the 600 s floor — and the first of that
+session's two runs is deliberately NOT counted, its start having been written by a previous tool call.
+⛔ **It is A11.1's failure mode a FOURTH time and not a fifth: *fifth outside the range* and *fourth
+degenerate printed range* are two counters, and a draft reused one ordinal for both.** ⛔ **And do not
+write that the degenerate line accounts for every outside reading — four of the five are degenerate
+and BELOW; the fifth is 2026-08-29's non-degenerate `9-10` measured at 800 s, 33.3% OVER.**
 ⚠️ Estimator, the **ninth** write-up from the cleared window and the
 **second** with a degenerate printed range: `10-10` off five rows reading 295-298 s, measured **592 s**
 end to end — inside the unrounded [590, 596] s span and 1.3% under the printed 600 s floor, `A11.1`'s
@@ -1192,8 +1245,10 @@ sharpest thing owed because it asserts this same verdict on a real-Vision-boxes 
 nothing, is GREEN** — measured, exit 0. ⛔ **But green by CONSTRUCTION, not by measurement**:
 `selftest-alltext`'s `inkOutsideText` is **exactly 0.0**, so the term's own `guard outside > 0` answers 0
 before it labels anything and cannot change at any value of any of the five constants. That fixture pins
-the guard's FIRST term, is silent about the second, and is blind to the third. ⚠️ `shapeMinimumArea` stays
-unpinned on a **narrower** argument than a first draft of this gave: at its shipped value, in
+the guard's FIRST term, is silent about the second, and is blind to the third. ⛔ **`shapeMinimumArea` STAYS UNPINNED ONLY IN THE LOWERING DIRECTION AS OF 2026-09-11** —
+the RAISING one has a mutant and a fixture (`BUGS.md` C28 `#### The area floor's own fixture`), and
+the bare mutant `SURVIVED` against the suite as it stood, which is what says this paragraph was
+right that nothing pinned it. Kept, on a **narrower** argument than a first draft of this gave: at its shipped value, in
 `textShaped`, an 8-connected component's area is at least its height and the height test already demands
 `h ≥ shapeHeightLow * glyphHeight`, so above a median glyph of **8 px** the area guard is satisfied before
 it is asked — ⚠️ **and that argument is conditional on `shapeHeightLow` as well as on the 8 px, which is
@@ -2423,7 +2478,7 @@ git config core.hooksPath .githooks
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,371 checks, no skips. ⛔ THIS LINE MUST STAY UNDATED AND MUST CARRY THE
+./run_tests.sh        # 1,374 checks, no skips. ⛔ THIS LINE MUST STAY UNDATED AND MUST CARRY THE
                       # CURRENT COUNT: check-staleness.sh treats a check-count claim whose own line or
                       # the line before it carries a date as HISTORY and drops it from the live pool,
                       # then reports each file's highest LIVE claim against the reference. So dating
@@ -2469,7 +2524,13 @@ git config core.hooksPath .githooks
                       #  band-plus-ratio that says it carries four marks and not three. Its
                       #  inverse row is c28Stroke's existing positive control, so it costs no
                       #  check. Measured off `mutate.py`'s own baseline (`1371 checks, green`)
-                      #  and the mutant's `1370/1371`.)
+                      #  and the mutant's `1370/1371`.
+                      #  1,371 -> 1,374: c28-area-fixture's too-small four — the AREA floor's
+                      #  refusal, that page's own calibration reading, and the ink band-plus-
+                      #  ratio. Same shape as the line above and the same free inverse row.
+                      #  Measured off `mutate.py`'s own baseline (`1374 checks, green`) and the
+                      #  mutant's `1373/1374`; the BARE mutant run before the fixture existed
+                      #  printed `1371/1371`, which is where the 1,371 above is corroborated.)
                       # ⛔ AND IT HAPPENED AGAIN: `3bf2648` added those nine and left this line at
                       # 1,346. The ADOPTING session caught it, not the committing one — no ordinal is
                       # claimed for it, because this register has already published a wrong one by

@@ -213,7 +213,9 @@ about the CATALOGUE, not about all mutants: that same check would red at
 `#### The gap term's own fixture`.
 ✅ **AND THAT QUESTION PAID FOR ITSELF THE SAME DAY, WHICH IS THE REASON IT IS HERE.**
 `const/shapeHeightLow-lowered` (0.5 → 0.0) is `killed` by **exactly one** check whose kill
-set intersects the term's five other mutants' in nothing — because the direction was chosen
+set intersects the term's **six** other mutants' in nothing (⛔ *five* when this was written
+and six from 2026-09-11, `const/shapeMinimumArea` having been catalogued the same week —
+re-derive it from `Tools/mutation-log.tsv`) — because the direction was chosen
 by asking the question first rather than discovered after a run. The obvious mutant was the
 wrong one: **raising** `shapeHeightLow` to 3.0 gives the accept band `[75, 75]` and refuses
 the four 30 px marks, but **so does lowering `shapeHeightHigh` to 0.5**, which gives

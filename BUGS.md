@@ -10678,7 +10678,7 @@ fixture. ✅ **And `shapeRunHigh`'s pin is a RED CHECK as of 2026-08-23, `killed
 through a scoped run — `#### shapeRunHigh RUN through mutate.py`. `shapeHeightHigh`'s is one too as of
 2026-08-24, the same way and by the other fixture's check —
 `#### shapeHeightHigh RUN through mutate.py` — so this paragraph's "not at all" bucket is empty and
-`shapeMinimumArea` is the only one of the five still not pinned at all, for the stated reason. ⚠️ Not the
+`shapeMinimumArea` is the only one of the five still not pinned at all, for the stated reason. ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.** ⚠️ Not the
 only one without a *catalogue mutant*: `shapeHeightLow` and `lineGapFactor` have none either, and are
 pinned one-sidedly as the sentence above says.
 `shapeHeightLow` and `lineGapFactor` remain pinned one-sidedly, which the sentence above already says and
@@ -10700,7 +10700,7 @@ being what the successor was built against: `c28-gap-fixture` BUILT that fixture
 entry, and `lineGapFactor` already had one when they were written. ⛔ **THE `shapeHeightLow` HALF OF
 *THAT* HELD FOR ONE COMMIT AND IS SUPERSEDED 2026-09-11** (`#### The height floor's own fixture`):
 `const/shapeHeightLow-lowered` (0.5 → 0.0) is in the catalogue and `killed` by one check, so **`TWO of
-the six` is now ONE — `shapeMinimumArea`, the "for the stated reason" case — and `shapeHeightLow` is
+the six` is now ONE — `shapeMinimumArea`, the "for the stated reason" case — ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.** — and `shapeHeightLow` is
 pinned in BOTH directions**, with the new PAIR of checks green exactly on **(0.32, 1.2]** where the
 suite held a ceiling alone — ⚠️ **the pair's interval and not the suite's, which `c28GroupsMissed` makes
 narrower.** ⛔ **One pre-existing miscount this paragraph walks past rather than
@@ -10943,7 +10943,7 @@ the estimate and never touches `CONSTANTS` or `catalogue()`. What the suite adds
 type scale and all three `inkOut` values are asserted in bands, so a geometry that had drifted away from
 the probe's reports itself. Both caveats are recorded in the catalogue beside the two rows.
 
-⚠️ **`shapeMinimumArea` stays unpinned, and the argument is narrower than a first draft of this section
+⚠️ **`shapeMinimumArea` stays unpinned ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.** Kept as written: and the argument is narrower than a first draft of this section
 claimed.** **At its shipped value**, in `textShaped`, it cannot be the deciding term: an 8-connected
 component spanning `[minY, maxY]` owns at least one run in every one of those rows, so its area is at
 least its height, and the height test already demands `h ≥ shapeHeightLow * glyphHeight` — so wherever the
@@ -11283,7 +11283,7 @@ six this entry and `depth-cap` catalogued, from five — ✅ **`shapeHeightHigh`
 three, and `lineMinimumMembers` ran the same day and it is TWO, both of them `depth-cap`'s.** It says
 nothing about the twin reading
 `mutate.py` deliberately does not catalogue (`groups ?? 0 == 0`, unreachable at 8,000,000 runs), and nothing
-about `shapeMinimumArea`, which stays uncatalogued and live in the calibration filter.
+about `shapeMinimumArea`, which stays uncatalogued and live in the calibration filter. ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.**
 
 #### `shapeHeightHigh` RUN through `mutate.py` — the second half of the attribution pair is a red check, it has NO informative green and neither did the run before it, and a comment sat one line under the killing check saying the shape rule could not redden it — MEASURED 2026-08-24
 
@@ -11412,7 +11412,7 @@ puts **28** entries at no row, from 29 (both halves move together).
 (`95b23c3`) are **three** left of the six this entry and `depth-cap` catalogued, from four — ✅ **two after
 `#### lineMinimumMembers RUN through mutate.py`, 2026-08-24, and both of the two are `depth-cap`'s.** It
 says nothing
-about `shapeMinimumArea`, which stays uncatalogued and is the one shape constant live in the **calibration**
+about `shapeMinimumArea`, ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.** which stays uncatalogued and is the one shape constant live in the **calibration**
 filter these fixtures run through — so whether they would kill such a mutant is still unmeasured. And **25**
 of the 28 catalogue entries with no row remain owned by no queue box — the other three are this entry's own
 share above — because the `mutants` item scopes itself to the *survivor* list, which is the 2 `SURVIVED`
@@ -12574,7 +12574,7 @@ hand-append one, so the loadavg is unrecorded, as it was for the first never-run
 
 ⚠️ **What it does NOT establish.** No constant moved and nothing in `Sources/`, `Helper/` or `Tests/` was
 touched, so no shipped behaviour and no published figure moves. It says nothing about `shapeHeightLow` or
-`shapeMinimumArea`, which still have no entry. ⛔ **`shapeHeightLow` gained one 2026-09-11 —
+`shapeMinimumArea`, which still have no entry. ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.** ⛔ **`shapeHeightLow` gained one 2026-09-11 —
 `#### The height floor's own fixture` — so of the six only `shapeMinimumArea` is left.** It does not measure the *relaxing* direction the campaign
 actually wants priced — whether loosening the grouping would rescue C26's two cartoons and what that costs
 in false positives on a printer's ornament — which remains this entry's open two-sided trade.
@@ -12704,7 +12704,7 @@ of them.
 ⚠️ **What it does NOT establish.** It still says nothing about `shapeHeightLow` or `shapeMinimumArea`,
 which have no catalogue entry. ⛔ **The `shapeHeightLow` half held for one commit: it has one from
 2026-09-11 — see `#### The height floor's own fixture` below, which is this section's own lesson spent
-rather than re-learned — so `shapeMinimumArea` is the only one of the six left.** It does not price the **relaxing** direction the campaign actually wants —
+rather than re-learned — so `shapeMinimumArea` is the only one of the six left.** ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.** It does not price the **relaxing** direction the campaign actually wants —
 whether loosening the grouping rescues C26's two cartoons and what that costs on a printer's ornament —
 which is this entry's standing two-sided trade and is untouched by a mutant that only asks whether a check
 notices.
@@ -12774,7 +12774,7 @@ rules out the obvious mutant:
   keeping their 56 px gaps un-flushed needs `3.0 × gh >= 56`, i.e. `gh >= 18.67`. Any calibration low
   enough to admit them is too low to group them, so the term reads 0 at every value of
   `shapeMinimumArea` — and a speck-widened median breaks `medianRun 5 <= 2 × glyphRun` as well.
-  ⚠️ Reasoned from the two comparisons, not measured: no `shapeMinimumArea` mutant has been run, which is
+  ⚠️ Reasoned from the two comparisons, not measured: no `shapeMinimumArea` mutant has been run, which is ⛔ **STALE 2026-09-11 — one has, 4 → 99, and it leaves this check GREEN; only the LOWERING direction, which is what this argument is about, is still unrun.** It was
   the successor box.
 
 ✅ **So the term's six constants now carry FOUR pairwise-disjoint singleton kill sets, one per fixture,
@@ -12799,7 +12799,7 @@ checks.
 
 **FOUR of the six constants have a mutant whose reds belong to it alone. `lineMinimumMembers` is one of
 the two that do not** — its only catalogued entry shares its six with `lineGapFactor`'s lowering entry —
-**and `shapeMinimumArea` is the other, having no entry at all.** ⛔ **A draft of this said "five of the
+**and `shapeMinimumArea` is the other, having no entry at all.** ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.** ⚠️ **And the FOUR is FIVE from that day**, which is a third predicate again — re-derive it. ⛔ **A draft of this said "five of the
 six" in three files, one line under the table that says four, and the adversarial review of this diff
 caught it by subtraction: two exceptions out of six is four.** The **five** that is true in the tree is a
 different predicate — `shapeHeightLow` is the fifth of the six to get an *entry* — and this is that
@@ -12926,7 +12926,7 @@ glyph, so at `shapeHeightLow` = 0.0 that guard becomes the **only** lower bound 
 IS the deciding term. On this fixture its four marks clear it 10x (40 px against 4), which is why the
 mutant reads 1 and not 0.
 
-⚠️ **What it does NOT establish.** It says nothing about `shapeMinimumArea`, which still has no
+⚠️ **What it does NOT establish.** It says nothing about `shapeMinimumArea`, ⛔ **STALE 2026-09-11: it HAS an entry and a fixture now — `#### The area floor's own fixture`, where the bare mutant `SURVIVED` first.** which at the time still had no
 catalogue entry and whose *calibration* half — that constant is live in
 `textLineGroupsOutsideText`'s own `sized` filter as well as in `textShaped`, so a mutant moves the
 accept rule and the type scale it is measured against **together** — is the successor step. It does not
@@ -12960,6 +12960,208 @@ third time, so the form to quote is **6 inside + 4 outside = 10**, and a single-
 the five rows agree to 2.4% rather than that the estimate is exact. ⛔ The two invocations recorded in the
 section above were **not** clocked and are still not readings; this one was clocked from a wall-clock
 start written to a file before the run.
+
+#### The area floor's own fixture — the mutant was run BEFORE the fixture, it `SURVIVED`, and that is the measurement that says the argument standing in its place was about a different direction — MEASURED 2026-09-11
+
+✅ **`const/shapeMinimumArea` (`Sources/Flattener.swift`, `4` → `99`) is `killed`, 294 s,
+`1373/1374 passed`, by EXACTLY ONE check.** Baseline **`1374 checks, green`**; the sole `FAIL` in
+**1,868** lines of output is
+
+```
+C28 — four marks small in AREA but inside the height band and under the run bar ARE a line group — Optional(0)
+```
+
+**So all six of the shape term's constants now have a fixture, and the constant-coverage campaign
+that began with `#### The owed fixture` on 2026-08-22 is complete.**
+
+⛔ **BUT THE RESULT WORTH THE SESSION IS THE RUN THAT CAME FIRST, AND IT IS A `SURVIVED`.** The
+queue box for this step was written to ask a question rather than to build a thing — *"ask whether
+`shapeMinimumArea` is already pinned before building it a fixture"* — because this constant is the
+only one of the six that is **live in two places**: `textShaped`'s first guard
+(`Sources/Flattener.swift:2135`) and the calibration's `sized` filter (`:2267`), which is upstream
+of `glyphHeight` and `glyphRun` and therefore upstream of every bar the other five constants are
+multiplied into. A move of it can in principle imitate a move of any of them, by moving what they
+are a ratio of. So the mutant was catalogued and run against **the suite as it stood**:
+
+```
+const/shapeMinimumArea	SURVIVED	293	1371/1371 passed
+```
+
+**Nothing in the tree objected.** That is what licenses everything below, and it replaces an
+argument with a measurement in the one place the argument did not reach.
+
+##### What the `SURVIVED` run actually measured, which is more than "no fixture existed"
+
+⚠️ **The calibration does not move at 99, and this is a reading rather than a derivation.** The
+suite holds **four** calibration readings over three checks — `c28Cal` off `c28TooTall`, the
+`c28SplitCal`/`c28JoinedCal` pair asserted by one check, and `c28ShortCal` — each asserting the
+literal `height == 25.0 && run == 5.0`. All four were green at a `sized` filter of **99**.
+⛔ **That is only informative because of HOW the mirror is wired, and the point is easy to get
+backwards**: `c28Calibration` reads `Flattener.shapeMinimumArea` itself, so the mirror filtered at
+99 too — the two copies moved together, exactly as that helper's own doc comment warns. What makes
+the comparison mean something is the **literal 25.0 / 5.0**, which is the third party and did not
+move. So the helper is blind to a calibration change only where the assertion compares the two
+copies; against a literal it is not blind at all.
+
+⚠️ **The mechanism is reasoned and must not be quoted as measured with it.** At a 44 px Helvetica em
+the only stencil components carrying under 99 px of ink should be the i-dots — three a line, 42
+over `c28Dense`'s fourteen — with the thinnest letter an `l` at ~4 × 34 = 136 and an `i` stem at
+~4.5 × 25 = 112, so dropping the dots moves neither median. **No component census was taken.** What
+is measured is that the medians hold.
+
+⛔ **A DRAFT OF THIS SECTION SAID THE MUTANT IS "MONOTONE IN THE REFUSING DIRECTION, SO EVERY CHECK
+ASSERTING ZERO GROUPS IS UNFALSIFIABLE UNDER IT", AND THE ADVERSARIAL REVIEW OF THIS DIFF REFUTED IT
+FROM THIS SUITE'S OWN TEXT 110 LINES BELOW THE CLAIM.** `Tests/main.swift` already records the
+standard — *"does the mutant change this check's INPUT"* — and records in terms that *"a
+monotonicity argument does not meet it"*; `CLAUDE.md` already records why, `textLines` banding
+greedily off each band's **last** member so that removing a component can SPLIT one run into two
+groups or let a later component join a band it previously started. The count is **not** monotone in
+the accepted set.
+⚠️ **What survives, at the strength it has**: every mark DRAWN on those pages clears 99 with room —
+the too-wide 600, the too-tall 600, the gap-split 150 each, `c28Border`'s outside `interiorWindow`
+altogether — and `c28TooShort`'s four 5×8 marks are refused by the **height floor** at the shipped
+value and by the **area floor** at 99 (40 < 99), its answer holding while the reason underneath
+changes silently. But those pages also carry RIM ink, and a rim fleck under 99 px is exactly what
+the filter drops, so on `c28GroupsBoxed` in particular the input does move and **its green is not
+established as unable to fail by anything here.**
+⛔ **AND THE SET IS EIGHT, NOT SEVEN** — the draft's list omitted `c28BorderGroups` in four files:
+`c28TooWide`, `c28TooTall`, `c28TooShort`, `c28GapSplit`, `c28GroupsBoxed`, `c28GroupsBar`,
+`c28GroupsC26`, `c28BorderGroups`. The omitted one is the safest member, its page reading
+`inkOutside == 0` so the term returns 0 at `guard outside > 0` before any constant is read.
+⛔ **AND THE KILL SURFACE WAS NEVER THREE CHECKS, which makes the survival MORE informative than the
+draft claimed rather than less.** A draft said *"only a check asserting ≥ 1 could ever have killed
+this mutant, and the three that existed all held"*; `Tools/mutation-log.tsv`'s
+`const/lineMinimumMembers` row is the counter-example, its **six** being those three group checks
+**plus the three `c28Missed` WIRING rows**, which assert a background width, a foreground width and
+a flag rather than a count and red whenever that page's term reads 0. So at least **six** checks
+could have killed it and none did. `value.` still grouped — measured, those checks being green —
+though **which** of its components the filter dropped is printed by nothing, so *"it loses only its
+full stop and keeps five members"* is the reasoning that predicted the green, not a reading of it.
+
+##### The fixture, and what its attribution does and does not rest on
+
+`c28TooSmall` is `c28Dashes(4, 16)`: `c28Stroke`'s four marks at the same four x positions and the
+same baseline, **4 px wide and 16 px tall**. At this page's own asserted `glyphHeight` 25.0 and
+`glyphRun` 5.0, **every other term accepts them and only the area guard can refuse**:
+
+| term | value | bar | verdict |
+|---|---|---|---|
+| area | 64 | `shapeMinimumArea` 4 → **99** | 64 ≥ 4 accepts, 64 < 99 refuses |
+| height floor | 16 | `0.5 × 25.0` = 12.5 | accepts |
+| height ceiling | 16 | `3.0 × 25.0` = 75.0 | accepts |
+| run | `medianRun` 4 | `2.0 × 5.0` = 10 | accepts |
+| gap | `260 − 203` = 57 | `3.0 × 25.0` = 75 | one run of four |
+| members | 4 | `lineMinimumMembers` 4 | one group |
+
+so the term reads **1** shipped and **0** at 99. The rows come out of the same derivation as the
+two fixtures above it — a bar at bitmap `y = 200` of height `h` occupies top-down rows
+`[1384 − h, 1384)`, so `[1368, 1384)` here, 109 rows below box 13's padded region — and x 200…383
+is inside `interiorWindow`'s `[76, 1148)`.
+
+⛔ **THE PAIR DIFFERS IN TWO DIMENSIONS AND THAT IS UNAVOIDABLE RATHER THAN SLOPPY.** Every other
+fixture in this campaign differs from its inverse row in ONE quantity — `c28TooShort` in height
+alone, `c28GapSplit` in one x position — and this one cannot: **area is a PRODUCT**, so no pair of
+rectangles differs in area alone, and 4×16 against `c28Stroke`'s 5×30 changes both width and
+height. What makes the check attributable is the mutant's kill set and not the geometry.
+
+⛔ **AND THE KILL SET IS A SINGLETON BUT THE CHECK IS NOT EXCLUSIVE — predicted in writing before the
+run rather than found after it, and it must not be written as the disjointness `c28TooShort` got.**
+This check asserts **1**, so it is also red under the two COLLAPSING grouping mutants,
+`const/lineMinimumMembers` (4 → 99, four members are no group at 99) and `const/lineGapFactor`
+(3.0 → 0.0, a 57 px gap flushes after every member) — exactly as `c28GapJoined` is. ⚠️ **Those two
+were NOT re-run here, so their published six-check rows now understate them by one and that is
+reasoned rather than measured**; a later session re-running either should expect seven.
+✅ **What IS measured is the attribution that matters: the five singleton kill sets the term's
+constants now carry are pairwise disjoint from EACH OTHER**, read off five log rows — ⚠️ **with the
+symmetric hedge the draft gave only to the other two, added on review: four of those five rows were
+measured against suites that did not contain `c28TooSmall`** (1,247 / 1,247 / 1,371 / 1,371), so
+that they are still singletons WITH it is reasoned — at 99.0 / 99.0 / 0.0 / 99.0 the 4×16 marks
+stay accepted and grouped, so the new check stays green — and not re-measured —
+
+| constant | mutant | fixture | kill set |
+|---|---|---|---|
+| `shapeRunHigh` | 2.0 → 99.0 | too-wide | 1 |
+| `shapeHeightHigh` | 3.0 → 99.0 | too-tall | 1 |
+| `shapeHeightLow` | 0.5 → 0.0 | too-short | 1 |
+| `lineGapFactor` | 3.0 → 99.0 | gap-split | 1 |
+| `shapeMinimumArea` | 4 → 99 | **too-small** | **1** |
+
+— so **five of the six** constants have a mutant whose reds are one named check, and
+`lineMinimumMembers` is still the one that does not, its only entry sharing six checks byte for byte
+with `lineGapFactor`'s lowering entry. ⛔ **Five here is a count of SINGLETONS and is a different
+predicate from the "FOUR pairwise-disjoint" this entry published earlier on 2026-09-11 and from the
+"five constants with an ENTRY" it corrected the same day** — three predicates, three counts, and the
+register has already published one of them under another's name. Re-derive each from
+`Tools/mutation-log.tsv`, never from a sentence.
+
+##### The prediction, and the second time it held on every element
+
+**Both runs were predicted in a file written before either**
+(`$STATE/c28-area-prediction-2026-09-11.md`), and both held:
+
+- **Stage one**, written before the catalogue entry existed: `SURVIVED`, **zero** objecting checks,
+  `mutant total == baseline total == 1371`, with a fixture-by-fixture cross-table giving a reason
+  per row and a named list of what would red if the calibration moved. Every element held.
+- **Stage two**, written before the fixture was built: `killed`, ~295 s, baseline `1374 checks,
+  green`, mutant **`1373/1374 passed`**, by **exactly one** check, **named in full with its
+  `Optional(0)` detail string**. Measured: `killed`, **294 s**, `1374 checks, green`,
+  `1373/1374 passed`, one check, the name and detail string byte for byte.
+
+⚠️ **The ink literals are DERIVED and not measured, which is a step down from the too-short page's
+and is said rather than hidden.** That page's comment solves `inkOutsideText`'s two measured
+literals for a text ink of `T ≈ 114,800`; here `A = 4 × 64 = 256`, so `inkOut ≈ 256 / 115,056` =
+**0.002225** and the ratio to the strokes **0.42797** against a pure area ratio `256/600` = 0.426667
+— a 0.305% excess that is the denominator again. The band `[0.0019, 0.0025]` and the ratio
+`256/600 ± 0.005` were both written from that model and both passed on the real code, which
+corroborates the model on a third page but is **not** the same as reading the number out of a
+deliberately-failing run. Three marks of four would read 0.001670 (outside the band), marks 17 px
+tall 0.002364 (inside the band, caught by the ratio at 5.6x the tolerance) and marks 5 px wide
+0.002780 (outside both), so the two halves still catch different things.
+
+##### What is still not pinned, now that all six have a fixture
+
+⚠️ **The LOWERING direction of this constant (4 → 0 or 1) is asked by no mutant and no check.** It
+admits 1-3 px specks, which could manufacture groups out of scanner noise. It is the **cheap**
+direction — more accepted components means more groups means the term refuses MORE pages and keeps
+MORE resolution, so its worst case is bytes — and it is partly imitable already, since
+`const/shapeHeightLow-lowered` at 0.0 makes this guard the only lower bound in `textShaped`.
+✅ **AND THE NEW CHECK TIGHTENS THE NEIGHBOURING CONSTANT'S BRACKET AS A SIDE EFFECT, which the
+review of this diff found and which neither entry would otherwise record.** It needs its 16 px
+marks to clear the height floor, `16 >= f * 25`, so it reds above **f = 0.64**: the suite's green
+interval for `shapeHeightLow`, published in `#### The height floor's own fixture` as *"at most
+(0.32, 1.2] … reasoned from the typeface, not measured"*, is now at most **(0.32, 0.64]**, and that
+endpoint is DERIVED from a drawn rect rather than reasoned from a typeface. ⚠️ This constant's own
+bracket is one-sided in the other direction: the suite bounds `shapeMinimumArea` above at 64 and not
+at all below.
+✅ **The old comment's redundancy argument survives in exactly one narrow form and is now correctly
+labelled**: `area >= height >= shapeHeightLow * glyphHeight` holds above an 8 px median glyph **and**
+at a non-zero `shapeHeightLow`, so it was never an argument about the raising direction at all —
+which is what the `SURVIVED` run measured rather than assumed. ⚠️ Nothing in `Sources/` moved, no
+page gained or lost a text layer, and no committed artefact changes.
+
+⚠️ **Bookkeeping, re-derived from the tool and not from a sentence**: catalogue **107 → 108**,
+coverage **86 of 107 → 87 of 108**, log **105 → 107** rows (this step wrote **two**, the `SURVIVED`
+and the `killed`, and both are kept because the first is the measurement that says the second was
+needed), never-run census **still 21** a fourth time, `0 survivor(s)` unchanged, suite
+**1,371 → 1,374**.
+
+⚠️ **Estimator: the ELEVENTH reading, and it is the FIFTH outside the printed range — 6 inside + 5
+outside = 11.** The second run printed `10-10` off a window reading `291-296 s each` and measured
+**05:30:05 → 05:39:57 = 592 s = 9.87 min**, clocked from a `date` written in the same command as the
+launch. That is exactly the top of the unrounded `[582, 592] s` span and **8 s (1.3%) below the
+printed 600 s floor** — A11.1's failure mode a **FOURTH** time. ⛔ **Fourth and not fifth, and the
+two counters must not be conflated: *fifth outside the range* and *fourth degenerate printed range*
+are different predicates**, which is the correction `const/shapeHeightLow-lowered`'s own write-up
+made in the other direction one paragraph under its own arithmetic. ⛔ **And do NOT write that the
+degenerate line accounts for every reading outside the range — a draft did, and it erases the one
+reading that went the other way**: 2026-08-29's `logic/R25-depth-aware-prune` re-run printed a
+NON-degenerate `9-10` and measured **800 s, 33.3% OVER**. Four of the five outside are degenerate
+and below; the fifth is above. ⛔ **The FIRST run is NOT a
+reading and the tally did not move for it**, which is this register's own rule being kept rather
+than a gap: its start (05:16:02) was written by a **previous** tool call, not by the one that
+launched it, so the gap between them is unmeasured and `05:16:02 → 05:25:55 = 593 s` is an upper
+bound rather than a duration. Do not count it, and do not read its 593 s as having exceeded its own
+`[578, 592] s` span.
 
 #### What this entry is NOT
 

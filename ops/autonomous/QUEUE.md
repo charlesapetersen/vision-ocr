@@ -510,15 +510,15 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-area-fixture` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-members-lowered` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-area-fixture` SUB-BOX — SEARCH FOR THAT TAG, IT IS
-      ~340 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-members-lowered` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ~350 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
@@ -541,7 +541,14 @@ happens.**
       `const/shapeHeightLow-lowered` is `killed` by one check disjoint from all five of the term's other
       mutants, and every element of the prediction held — so the successor `c28-area-fixture` is the
       last of the constant-coverage sub-boxes and the one after it must come from the entry's own open
-      questions rather than from this list.** This box exists because every session
+      questions rather than from this list.** ⚠️ **Re-pointed a SEVENTH time 2026-09-11 by
+      `c28-area-fixture`, now ticked, and the constant-coverage campaign is COMPLETE — all six have a
+      fixture and an entry.** ⛔ **But the successor is NOT what that ticked box predicted**: it
+      nominated the two-sided grouping trade, and the run itself nominated something sharper and
+      cheaper — `lineMinimumMembers` is the one constant of the six still without an attributable kill,
+      and the fixture that can see it LOWERED (`c28GapSplit`, two runs of two) is already in the tree,
+      so `c28-members-lowered` costs a mutant and no new page. The trade stays as the step AFTER it.
+      This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
       box's FIRST PHYSICAL LINE, so a wrap moves the pointer where the resolver cannot see it.
@@ -863,60 +870,95 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-area-fixture** — **ASK WHETHER `shapeMinimumArea` IS ALREADY PINNED BEFORE BUILDING IT A
-      FIXTURE, BECAUSE IT IS THE FIRST OF THE SIX THAT IS LIVE IN TWO PLACES AT ONCE.**
-      ✅ **Written 2026-09-11 by `c28-heightlow-fixture` out of that run's own leftovers.**
-      `shapeMinimumArea` is now the LAST of the shape term's six constants with no catalogue entry —
-      `shapeHeightLow` got one the same day (`BUGS.md` C28 `#### The height floor's own fixture`) — and
-      its reason for having none is an ARGUMENT rather than a check, which is the weaker kind this
-      campaign keeps retracting.
-      ⛔ **THE ARGUMENT IS ALREADY KNOWN TO BE CONDITIONAL, and on the constant the previous box
-      moved.** `BUGS.md` `#### The owed fixture` says the area guard cannot be the deciding term because
-      `area >= height >= shapeHeightLow * glyphHeight`, so it is satisfied above an 8 px median glyph.
-      That is conditional on the 8 px (72-DPI corpus scans fall under it) AND on `shapeHeightLow` — at
-      the 0.0 the new mutant substitutes, the area guard is the ONLY lower bound in `textShaped`. So the
-      argument holds at shipped values and says nothing about the constant being *watched*.
-      ⛔ **ASK THE DIRECTION QUESTION FIRST — that is now this campaign's standing rule and it has paid
-      twice** (`CONTRIBUTING.md` §4a). Which other constant can imitate a move of `shapeMinimumArea`?
-      In `textShaped` the answer is **none**, and the reason is sharper than the height case: area is
-      not a function of height or of `medianRun`, so a component that is **inside** the height band and
-      **under** the run bar and yet small in area — 4 × 16 = 64 px, height 16 ≥ 12.5, `medianRun` 4 ≤ 10
-      — is refused by `shapeMinimumArea` **alone**. Four of those at `c28Dashes`' positions (gap
-      `260 - 203` = **57** ≤ 75) group at the shipped 4 and are refused at 99.
-      ⛔ **BUT THE CONFOUND IS REAL AND IS WHY THIS BOX ASKS BEFORE BUILDING: `shapeMinimumArea` IS LIVE
-      IN THE CALIBRATION TOO.** `textLineGroupsOutsideText` filters the stencil's glyph components by
-      `$0.area >= shapeMinimumArea` before taking `glyphHeight` and `glyphRun`
-      (`Sources/Flattener.swift:2267`), and `c28Calibration` mirrors that filter, so at 99 the median
-      glyph height and run may both MOVE — which moves every bar the whole block's literals sit
-      against. **So step one is a cheap question with a large answer: run
-      `("Flattener.swift", "shapeMinimumArea", "4", "99")` and see whether the calibration checks that
-      already exist kill it** — ⚠️ **THREE checks over FOUR readings, and do not write "four checks":
-      `c28Cal` is one, the `c28SplitCal`/`c28JoinedCal` pair is asserted by a single check, and
-      `c28ShortCal` is one. If they do,
-      the constant is pinned in the raising direction by checks already in the tree, the entry is one
-      line, and what is left is an attribution question — is the kill the calibration's or
-      `textShaped`'s — which `BUGS.md` names as **unmeasured** in two places. **Only build a fixture if
-      the run says one is needed.** That keeps it one commit either way.
-      ⚠️ **Predict the cross-table in writing BEFORE the run and name what you did not check** — the
-      previous two boxes both did and both predictions held on every element, which is what makes a
-      surprise mean something. Note that `shapeMinimumArea` is an `Int`, so the replacement is `99` and
-      not `99.0`; no fifth-element id override is needed unless a second direction is added later.
-      ⛔ **DO NOT run the full catalogue** (107 entries), **do not edit `Sources/` while `mutate.py`
+- [ ] **c28-members-lowered** — **THE ONE CONSTANT OF THE SIX WITH NO ATTRIBUTABLE KILL, AND THE
+      FIXTURE THAT CAN SEE IT ALREADY EXISTS.**
+      ✅ **Written 2026-09-11 by `c28-area-fixture` out of that run's own leftovers, and it is the first
+      C28 sub-box since 2026-09-02 that is NOT a constant-coverage step** — all six constants now have a
+      fixture and an entry (`BUGS.md` C28 `#### The area floor's own fixture`).
+      `lineMinimumMembers` is the last of the six whose catalogued mutant's reds belong to it alone:
+      `const/lineMinimumMembers` (4 → 99) is `killed` by SIX checks **byte for byte identical** to
+      `const/lineGapFactor`'s (3.0 → 0.0), so neither red set says which constant moved.
+      ⛔ **ASK THE DIRECTION QUESTION FIRST — the campaign's standing rule, now paid for THREE times**
+      (`CONTRIBUTING.md` §4a). Which other constant can imitate LOWERING `lineMinimumMembers`? The
+      entry already records the answer in passing: `c28GapSplit` puts four accepted 5×30 marks at
+      200 / 260 / 420 / 480, so the band breaks into two runs of TWO, and at
+      `lineMinimumMembers` = 2 each run IS a group — the page reads **2** where its check asserts **0**.
+      No value of `lineGapFactor` produces that, because lowering it splits runs further (more runs of
+      one, still no group at 4) and raising it JOINS the two runs into one group of four, which is the
+      existing `lineGapFactor-raised` entry and reads 1 rather than 2. So the two stop agreeing in the
+      lowering direction, and that is where the disjoint set should be.
+      ⚠️ **Predict the cross-table in writing BEFORE the run and name what you did not check** — the last
+      three boxes all did and all three held on every element, which is what makes a surprise mean
+      something. Catalogue it as
+      `("Flattener.swift", "lineMinimumMembers", "4", "2", "lineMinimumMembers-lowered")` — ⛔ **the
+      fifth element is REQUIRED**, `already_done()` being keyed on the id and last-row-wins, so without
+      it the new mutant shares `const/lineMinimumMembers`'s row and is silently skipped; that is the
+      defect `c28-gap-fixture` found and `--self-test` now asserts against.
+      ⛔ **THE HAZARD IS REAL AND BIGGER THAN THE LAST THREE, SO ENUMERATE IT BEFORE THE RUN RATHER THAN
+      DISCOVERING IT IN THE KILL SET.** Lowering the member floor is the ADMITTING direction, so it can
+      manufacture groups out of **pairs** of rim-of-recognised-type components on any fixture whose page
+      reaches term 3 — which is exactly the class `c28GroupsMissed`'s rim flecks, R50's text page, the
+      MRC end-to-end yellow wash and `c26Small` sit in. A kill set of one is the hope; a kill set of
+      five with four of them collateral is the likely outcome and is still informative, **provided the
+      collateral is named first**. List every check asserting a page IS all text or IS shrunk, and say
+      which you expect to move.
+      ⚠️ It is also the CONTENT-SAFE direction — more groups means the term refuses MORE pages and keeps
+      MORE resolution, so its worst case is bytes — which is what makes it cheap to be wrong about.
+      ⛔ **DO NOT run the full catalogue** (108 entries), **do not edit `Sources/` while `mutate.py`
       runs**, and **check `ops/autonomous/test-lock.sh status` first — `mutate.py` does not take the
       lock.** Budget a baseline suite plus ~295 s; read the startup estimate off the tool and ⛔ **never
-      read a single-value range as precision** — the tally is **ten** readings, six inside the printed
-      range, and the three outside were all degenerate `10-10` lines that the measurement sat below.
-      ⚠️ If the answer needs no new fixture the commit may not touch `Tests/main.swift` at all, in which
-      case it is `Tools/` plus documents and still pays the full suite through the hook. One commit.
+      read a single-value range as precision** — the tally is **eleven** readings, six inside the printed
+      range, and **four** of the five outside were degenerate `10-10` lines the measurement sat just
+      below — ⛔ **not all five: 2026-08-29's `logic/R25-depth-aware-prune` re-run printed a
+      NON-degenerate `9-10` and measured 800 s, 33.3% OVER, and a draft of this box erased it in the
+      reassuring direction.**
+      ⚠️ **A second, smaller debt rides along and should be taken only if it is free**: the new
+      `c28TooSmall` check asserts 1, so it reds under `const/lineMinimumMembers` (4 → 99) and
+      `const/lineGapFactor` (3.0 → 0.0) too, whose published SIX-check rows therefore understate them by
+      one. That is REASONED, not measured. If this box's run leaves budget, `--rerun --only
+      lineMinimumMembers` settles it; if not, leave it and say so.
       ⛔ **Whoever ticks this box writes C28's next sub-box before stopping** (the campaign's standing
-      rule). ⚠️ **And this is the LAST of the constant-coverage sub-boxes**, so the successor has to come
-      from somewhere else: the two candidates the entry names itself are `lineMinimumMembers`'s missing
-      attribution (its only catalogued mutant shares six checks byte for byte with `lineGapFactor`'s, and
-      `c28GapSplit` is measured able to see it LOWERED — a direction no entry asks) and the campaign's
-      standing two-sided trade, whether relaxing the grouping rescues C26's two cartoons and what it
-      costs on a printer's ornament.
-      (context: BUGS.md C28 `#### The height floor's own fixture` and `#### The owed fixture` —
+      rule). ⚠️ **And when this one is ticked the constant-attribution question is closed entirely**, so
+      the successor must come from the entry's open questions: the standing two-sided trade (does
+      relaxing the grouping rescue C26's two cartoons, and what does it cost on a printer's ornament) is
+      the one the entry names most often and has never been priced.
+      (context: BUGS.md C28 `#### The area floor's own fixture` and `#### The gap term's own fixture` —
       `context:` and not `origin:`, because C28 stays OPEN by design while its sub-steps close)
+- [x] **c28-area-fixture** — **DONE 2026-09-11, AND THE RESULT WORTH QUOTING IS THE RUN THAT CAME
+      FIRST.** The box asked whether `shapeMinimumArea` was already pinned before building it a fixture,
+      because it is the only one of the six live in TWO places — `textShaped`'s first guard and the
+      calibration's `sized` filter, upstream of every bar the other five are multiplied into. Run
+      against the suite as it stood, `const/shapeMinimumArea` (4 → 99) came back **`SURVIVED`, 293 s,
+      `1371/1371 passed`, nothing objecting** — so the argument standing in the constant's place was
+      about a different direction, and a fixture was needed.
+      ⛔ **THE MEASUREMENT INSIDE THAT SURVIVAL IS THE FINDING: all FOUR calibration readings held at
+      25.0 / 5.0 with the filter at 99, so the calibration does not move — and it is informative only
+      because of HOW the mirror is wired.** `c28Calibration` reads the constant itself, so the two
+      copies moved together exactly as its doc comment warns; the **literal** is the third party that
+      makes the comparison mean something. That helper is blind where an assertion compares the two
+      copies and NOT blind against a literal. ⚠️ The mechanism (only i-dots fall under 99 px of ink) is
+      reasoned — no component census was taken — and must not be quoted with the medians.
+      ⛔ **AND IT RE-DESCRIBES THE WHOLE BLOCK**: with the calibration fixed the mutant is MONOTONE in
+      the refusing direction, so seven C28 checks asserting ZERO groups are unfalsifiable under it —
+      ⛔ **REFUTED by the review of that diff from the suite's own text (the standing test is whether
+      the mutant changes the check's INPUT, and `textLines`' banding makes the count non-monotone),
+      and the set is EIGHT anyway, `c28BorderGroups` having been omitted** —
+      and `c28TooShort` keeps its answer while the reason under it changes silently (height floor at 4,
+      area floor at 99). ✅ The fixture is `c28Dashes(4, 16)` — four marks every other term accepts,
+      refused by area alone — **`killed`, 294 s, baseline `1374 checks, green`, `1373/1374`, EXACTLY
+      ONE** check, every element of a two-stage prediction written to a file first holding including the
+      check's name and its `Optional(0)` detail string. ⛔ **Its kill set is a SINGLETON but the check is
+      NOT exclusive, predicted rather than discovered**: it asserts 1, so the two collapsing grouping
+      mutants red it too — ⚠️ neither re-run, so their six-check rows understate by one, reasoned.
+      **FIVE pairwise-disjoint singletons, SIX constants with an entry, and `lineMinimumMembers` is the
+      one still without an attributable kill** (⚠️ four of those five rows predate `c28TooSmall`, so
+      that they are STILL singletons with it in the suite is reasoned, not re-measured) — which is the successor box above. ⚠️ The pair differs in
+      TWO dimensions and cannot differ in one (area is a product), and the ink literals are DERIVED from
+      the too-short page's `T ≈ 114,800` model rather than read out of a deliberately-failing run.
+      Catalogue **107 → 108**, coverage **86 of 107 → 87 of 108**, census **still 21** a fourth time, log
+      **105 → 107** (two rows; the `SURVIVED` is kept because it is what says the fixture was needed),
+      suite **1,371 → 1,374**, `0 survivor(s)` unchanged. Nothing in `Sources/` moved.
+      (context: BUGS.md C28 `#### The area floor's own fixture`)
 - [x] **c28-heightlow-fixture** — **DONE 2026-09-11.** `const/shapeHeightLow-lowered` (0.5 → 0.0) is
       `killed`, **291 s**, `1370/1371`, by **EXACTLY ONE** check — the too-short page's — and its kill
       set intersects the term's five other mutants' in **nothing**, so the shape term now carries **four
