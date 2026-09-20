@@ -1525,7 +1525,28 @@ page-wide-Otsu speckle in a grey endpaper reading mean 107.5 / sd 2.88 against a
 ⛔ **The sharper half is the other direction — it reads 0 on TWO pages whose loss C26 measured at 1:1**:
 `1954 - Why` p6 and p7, whose cartoons are 92% and 100% of their out-of-stencil ink and give 372 and 785
 `textish` px that never reach four members on a baseline. The miss is the *grouping*
-(`lineMinimumMembers` / `lineGapFactor`), not the component test — and **p4's one group is a HIT on the
+(`lineMinimumMembers` / `lineGapFactor`), not the component test.
+✅ **THE CONTAMINATION WORRY IS CLOSED ON ALL THREE RECTS AS OF 2026-09-20 AND IS ZERO EVERYWHERE**
+(`BUGS.md` C28 `#### The other two drawing rects, SUBTRACTED`): the clipped body text in p6's and p7's
+rects contributes **0 map px** and **0 painted `textish` px**, with both text bands derived from each
+page's own ink profile rather than carried over from p4's (p6's rect is the page CORNER and its text
+is a column down the RIGHT edge — columns 219-229 empty — where p4's is at the top and left).
+⛔ **BUT THE SENTENCE ABOVE IS REFUTED FOR p6 BY THE SAME RUN, AND THAT IS THE FINDING: the miss there
+is NOT the grouping, because 3,513 px — 44.02% of that drawing's ink — never reach it.**
+`textLineGroupsOutsideText` builds its map only inside `Flattener.interiorWindow`
+(`Flattener.swift:2263-2275`), the outer sixteenth on every side (`mx` 76, `my` 59 on this 1224x946
+render), and p6's rect is the page corner, so **53.5% of its area is blanked** — read at 3x, the
+figure's head and shoulders, the top of the bookshelf, three flying books, the floor line and the book
+stack. So *"the term reads 0 on p6"* is a statement about **56%** of that drawing, and 3b's two-way
+split — component test against grouping — is missing a term. ⚠️ **The mechanism was on record (3b's
+own p4 row discounts 76 of 254 columns for it) and the MAGNITUDE is what is new**; whether those
+3,513 px would reach four members is UNMEASURED, because the window is not a knob and answering it
+with a replica of the rule is the `alltext-replica` mistake. ⛔ **The direction the queue box sent the
+session for is the SMALL one**: drawing ink INSIDE `region` — the fragments Vision boxed as words — is
+**79 px on p7, 1.09%**, and **0 on p6**; it TRUNCATES two of p7's 30 drawing components (188 → 180
+rows, 30 → 29) and removes none, and both sit above `shapeHeightHigh`'s 3.0 × 9 = **27** at either
+height, so **no component's height verdict changes**. p7's other 1.45% is the rect's right-hand 37
+columns, outside the window. And **p4's one group is a HIT on the
 lost cartoon**, `27x17+1121+685` inside the published `254x240+970+595`, not a false positive.
 ✅ **READ AT 8x AND CONFIRMED 2026-09-20, where until then that was CONTAINMENT ALONE inside a rect
 this register had already published, read at 1:1, as holding clipped BODY TEXT and "nothing of the
@@ -1559,9 +1580,15 @@ the dumped `-textish.png`'s PAINTED counts and not the accepted set**: p4 measur
 painted components against `txtPx` 444 in 12** — three components and 33 px manufactured, because the
 painter paints `bbox ∩ map` and can enclose pixels of components the rule REFUSED — and p6/p7's exceed
 their columns' 357 and 761 by 4.2% and 3.2% (measured on p4, inferred on the other two).
+✅ **BOTH ARE MEASURED AS OF 2026-09-20 — p6 is 372 px in 7 painted components against 357 in 4, p7 is
+792 in 20 against 761 in 12** — ⛔ **and the 3.2% was a POPULATION MIX, not a measurement: 785 is
+painted px inside the drawing rect and 761 is the whole page's accepted total, so like for like p7
+reads 4.1%, the same gap as p4 and p6 rather than a smaller one.**
 ⛔ **So *"a pixel or two"*, the characterisation carried over from the ornament's 666-against-664, is
-refuted with a number.** ✅ One published sentence gets stronger: painted `textish` over the whole page
-is **477** as well, so every such pixel on p4 is inside the drawing rect.
+refuted with a number.** ⚠️ One published sentence gets stronger on p4 and **is FALSE on p7**: painted
+`textish` over the whole page is **477** on p4 as well, so every such pixel there is inside the
+drawing rect, but p7's page reads 792 against 785 in the rect — one component, `1x7+607+709`, a
+1-px-wide vertical stroke on blank paper, sits outside it.
 ⛔ **So "blind to a hand-made mark by construction" is REFUTED**: measured, 0 on four hand-made marks
 and firing on three, which is exactly the *"four blobs of a broken pen stroke"* case the last review
 predicted. ✅ **`Tools/README.md` is corrected as of 2026-08-21**, riding along on the suite-paying
@@ -1666,7 +1693,9 @@ printer's-ornament rect says the same: map 666 px, accepted components **664**, 
 was a first draft caught by the review). `lineMinimumMembers` / `lineGapFactor` are **the same two
 constants** 3b named for the term's false negatives on C26's cartoons (`textish` 372 and 785 px — ⛔ **PAINTED;
 the accepted columns read 357 and 761, corrected 2026-09-20** — 0
-groups), and `lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values — so relaxing
+groups) — ⛔ **though on p6 those two constants are not the whole miss, measured 2026-09-20: 44.02%
+of that drawing's ink is outside the interior window and never reaches the grouping at all** — and
+`lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values — so relaxing
 it is a measured two-sided trade, not a fix. ⛔ **THAT PAIRING IS SUPERSEDED ON THIS RECT AS OF
 2026-09-20 AND IT IS `lineGapFactor` ALONE**: the three components sit 289 and 230 px apart against a
 bar of `3.0 × glyphH 8` = 24, so no member floor ≥ 2 can group a singleton here at any value, and

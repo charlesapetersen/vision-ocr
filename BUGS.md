@@ -574,7 +574,12 @@ real caption Vision *did* recognise (12 groups, none on the caption), a pen orna
 threshold by ±3 levels. ⛔ **But the sharper half is the other direction: it reads 0 on two pages whose
 loss C26 measured at 1:1** — `1954 - Why` p6 and p7, whose drawings are 92% and 100% of their pages'
 out-of-stencil ink and yield 372 and 785 `textish` px that never reach four members on a baseline. So
-the miss is `lineMinimumMembers`/`lineGapFactor`, not the component test, and **p4's single group is a
+the miss is `lineMinimumMembers`/`lineGapFactor`, not the component test — ⛔ **on p6 that is a
+statement about 56% of the drawing and the other 44% is a THIRD mechanism, `inkOutsideText`'s
+interior window, which `textLineGroupsOutsideText` blanks out of the map; measured 2026-09-20 at
+3,513 px of 7,980, against 1.45% on p7** (`#### The other two drawing rects, SUBTRACTED`), where the
+clipped body text in both rects contributes **0** map px and **0** painted `textish` px, so the
+subtraction that question was opened for is ZERO on all three pages — and **p4's single group is a
 hit on the lost cartoon** (`27x17+1121+685` lies inside the published `254x240+970+595`), not a false
 positive — ✅ **READ AT 8x AND CONFIRMED 2026-09-20, where until then the evidence was CONTAINMENT
 ALONE inside a rect published as holding clipped body text**: the four members are the figure's hand
@@ -584,7 +589,9 @@ and the map is `ink AND NOT region` (`#### The cartoon's own 59 pixels, READ`). 
 group is a band across TWO drawn objects 14 px apart against a 27 px bar, so the hit is the ink's and
 not a stroke the term recognised; and the `textish px` figures quoted here and in 3b's own per-rect
 table are the dumped PNG's PAINTED counts — 477 / 372 / 785 against the tool's own `txtPx` of
-444 / 357 / 761.** ⛔ **"Blind to a hand-made mark by construction" is therefore REFUTED** — measured, it reads 0
+444 / 357 / 761, ⚠️ **and the 785 is an IN-RECT count against a WHOLE-PAGE denominator: p7's page
+reads 792, so like for like the gap is 4.1%, measured 2026-09-20.** ⛔ **"Blind to a hand-made mark
+by construction" is therefore REFUTED** — measured, it reads 0
 on four hand-made marks and fires on three — exactly the *"four blobs of a broken pen stroke"* case the
 previous section's own review named as the one to try. On `Wilcox` p2 it is wrong both ways: 0 accepted
 pixels over the hand-lettered *"Harry W. Wilcox"*, 1,694 on the decoration. Four more scalars refused
@@ -9109,8 +9116,13 @@ the map, over each page's own published drawing rect:
 established 2026-09-20** (`#### The cartoon's own 59 pixels, READ`): the painter paints `bbox ∩ map`
 per accepted component, so it can enclose pixels of components the rule REFUSED and those can
 fragment. Measured on p4 — **477 px in 15 painted components against 444 px in 12** accepted, three
-components and 33 px (7.4%) manufactured. p6 and p7 are INFERRED: only that each prose figure exceeds
-its own column, by 4.2% and 3.2%, in the same direction. ⚠️ The p4 row's map figure is reproduced
+components and 33 px (7.4%) manufactured. ⚠️ p6 and p7 were INFERRED here — only that each prose
+figure exceeds its own column, by 4.2% and 3.2%, in the same direction — ✅ **and both are MEASURED
+as of 2026-09-20: p6 is 372 px in 7 painted components against 357 in 4, and p7 is 792 px in 20
+against 761 in 12** (`#### The other two drawing rects, SUBTRACTED`). ⛔ **The 3.2% was wrong and
+the reason is a population mix, not a measurement**: 785 is painted px inside the drawing rect and
+761 is the whole page's accepted total, so like for like p7 reads **4.1%**, the same gap as p4 and
+p6 rather than a smaller one. ⚠️ The p4 row's map figure is reproduced
 exactly through a changed binary (**5,757**), as is the whole-page `outPx` 5,983 — and painted
 `textish` over the whole page is **477** too, so every one of those pixels is inside the drawing rect.
 ⚠️ **Discount the rect's right-hand 30%**: `inkOutsideText`'s interior window puts the map's ink bbox at
@@ -9119,8 +9131,13 @@ test. 894 columns of live page could have carried textish ink and do not, which 
 rests on.
 ✅ **And p4's row is the one whose contamination has been subtracted: it is ZERO** — the clipped body
 text at the rect's top and left edges contributes **0 map px**, measured per row, so *"96% of 5,983"*
-is 96% of drawing. p6's and p7's rects have never been asked (the queue's
-`c28-drawing-rect-contamination`).
+is 96% of drawing. ✅ **p6's and p7's were asked 2026-09-20 and are ZERO too** — 0 map px and 0
+painted `textish` px from the clipped text on both, so all three rows are shares of drawing
+(`#### The other two drawing rects, SUBTRACTED`). ⛔ **But that section found the reason p6 reads 0
+is not in this table's two-way split at all: 3,513 px — 44.02% of that rect's drawing ink — lie
+outside `inkOutsideText`'s interior window, which `textLineGroupsOutsideText` blanks, so this row is
+a statement about 56% of that drawing.** ⛔ **And the `785` in the row below is painted px INSIDE
+the rect while `761` is the WHOLE PAGE's accepted total: like for like p7 reads 792 against 761.**
 
 **So the drawing is essentially the whole out-of-stencil map on all three, `textish` accepts several
 hundred pixels of it on all three, and only p4 reaches four members on a shared baseline.** The
@@ -10180,7 +10197,10 @@ section read "all 666" off the mask; the review of this diff caught it, and this
 `lineMinimumMembers` / `lineGapFactor` does.** The wiring's zero picture false positives over these 73
 pages rests entirely on those two constants — and they are **the same two** 3b named as the cause of the
 term's two false negatives on `1954 - Why` p6 and p7, where `textish` accepts 372 and 785 px of cartoon (⛔ **those two are the dump's PAINTED counts; the accepted columns read 357 and 761 — 2026-09-20**)
-and **0** reach a group. The tension is now measured on named pages in both directions:
+and **0** reach a group. ⛔ **On p6 those two constants are NOT the whole cause, measured 2026-09-20:
+44.02% of that drawing's ink lies outside the interior window and never reaches the grouping**
+(`#### The other two drawing rects, SUBTRACTED`), so the symmetry stated here is exact for p7 and
+partial for p6. The tension is now measured on named pages in both directions:
 `lineMinimumMembers = 4` already **costs** content (it drops `0.09`, `0.04` and the diagonal `1` from
 `Xin Qu` p20's thirteen values, so the term names 10 of 13), and lowering it to 3 would admit 666 px of
 ornament on the Boxoffice page. There is no free move there, and this is the first measurement that
@@ -14060,7 +14080,10 @@ other side when it found `textLines`' banding non-monotone on a real page.
 
 ⛔ **The published per-rect table reads `textish px` **477 / 372 / 785** for p4 / p6 / p7 and the tool's
 own `txtPx` column reads **444 / 357 / 761** — so all three prose figures are the dumped
-`-textish.png`'s painted pixels, not the accepted set.** Measured on p4: the painted PNG holds
+`-textish.png`'s painted pixels, not the accepted set.** ⛔ **And on p7 the two are not even the same
+POPULATION, measured 2026-09-20: 785 is painted px inside the drawing rect where the whole page reads
+792, so the like-for-like gap is 4.1% and not the 3.2% inferred below**
+(`#### The other two drawing rects, SUBTRACTED`). Measured on p4: the painted PNG holds
 **477 px in 15 components** against the columns' **444 px in 12**, so the painter manufactures **three
 whole components and 33 px, 7.4%**. ⛔ **The queue box's characterisation of that trap — *"a pixel or
 two"*, from the ornament's 666-against-664 — is refuted with a number: here it is 33 px and three
@@ -14136,6 +14159,10 @@ needs nothing: it states the claim and its retraction in the same cell.
   separately records drawing fragments Vision boxed AS WORDS, and those are outside the map by
   construction, so *"100% of that page's `outPx`"* does not say the map holds the whole drawing. That
   direction is unmeasured on all three pages, p4 included.
+  ✅ **BOTH HALVES WERE DONE FOR p6 AND p7 ON 2026-09-20** (`#### The other two drawing rects,
+  SUBTRACTED`): the contamination is **0** on both, and the second half is **79 px on p7 and 0 on
+  p6**, changing no component's height verdict. ⚠️ **p4's second half is still unmeasured**, so
+  *"unmeasured on all three pages"* is now unmeasured on one.
 - ⚠️ **Nothing BEHAVIOURAL moves.** No verdict, no byte figure, no committed artefact, no check added
   or removed, no constant touched; p4 is `barVerdict=picture` and the term is never consulted on it in
   production. ⛔ *"Nothing in `Sources/`"* stood here and is FALSE of this commit, caught by the
@@ -14144,10 +14171,180 @@ needs nothing: it states the claim and its retraction in the same cell.
   the docs-only exit. **Comment- and document-only: nothing shipped moves.**
 - ⚠️ **It says nothing about p6 and p7**, the two pages of the same document whose drawings the term
   reads **0** on — which is the half of 3b that matters for content and is the grouping's, not the
-  component test's.
+  component test's. ✅ **Both were measured 2026-09-20 and their contamination is 0 too**, so this
+  step's method carries; ⛔ **but *"is the grouping's"* is refuted for p6 by the same run — 44.02%
+  of that drawing's ink never reaches the grouping because `inkOutsideText`'s interior window
+  blanks it** (`#### The other two drawing rects, SUBTRACTED`).
 - ⚠️ **"The drawing's ink" is not "the reader's loss".** These 59 px are four small marks of a cartoon
   C26 measured whole at 612 px and a smudge at 153; the term firing says the page would be refused the
   shrink, not that these particular pixels are what a reader misses.
+
+#### The other two drawing rects, SUBTRACTED — the body-text contamination is ZERO on both, so 3b's inference stands; but the dominant reason p6 reads 0 is a THIRD mechanism no sentence in this entry counts, and it is `inkOutsideText`'s own interior window blanking 44% of that drawing — MEASURED 2026-09-20
+
+`#### The same shape term on PICTURES`'s per-rect table says the three `1954 - Why` cartoons hold
+**5,757 / 4,467 / 7,057** map px — *"96% / 92% / 100% of that page's `outPx`"* — and that `textish`
+accepts **477 / 372 / 785** px of them, from which it concludes *"the miss is the GROUPING, not the
+component test"*. ⛔ **All three rects are eye-chosen around the drawings and
+`#### The rendered proof on the founding pages` records that each holds clipped BODY-TEXT words
+besides.** p4's was subtracted on 2026-09-20 at **0 px**; these are p6's and p7's, the two pages
+3b reads **0** on and therefore the two that matter for content.
+
+One invocation of the same tool, built from `dad9dbc`:
+
+```sh
+SHAPEDUMP=/tmp/c28-p67 /tmp/score-shape-term "testdocs/book/1954 - Why.pdf" 6 7
+```
+
+##### The answer to the question asked, on both pages: ZERO
+
+The text bands were **derived from each page's own ink profile before anything was subtracted**, not
+carried over from p4 — the queue box's warning, and it was the right one, because p6's rect is the
+page's top-left CORNER and its clipped text is a column down its **right** edge where p4's is at its
+top and left:
+
+| page | rect | the clipped text in it | how the band's edge was fixed |
+|---|---|---|---|
+| p6 | `240x185+0+0` | a letter column, `x ∈ [230, 240)` | rect columns **219-229 hold no ink at all**; the drawing's last inked column is 218 |
+| p7 | `260x250+925+540` | a whole body-text line, `y ∈ [540, 559)`, plus a letter column `x ∈ [925, 935)` below it | rows **559-563** empty; columns **935-947** empty below the line |
+
+Over those bands, on **both** pages, **text ink in the map is 0 px** — and painted `textish` px are
+0 there too, ⛔ **which is the SAME FACT and not a second one**: `textish ⊆ map` is verified with 0
+violations on both pages, so the second follows from the first with no independent content. The
+adversarial verification of this run caught it as the eleventh-check pattern.
+✅ **What the zero rests on is a denominator**: **269** live in-window text px on p6 and **1,030** on
+p7 all landed inside `region`, and this entry separately records rims of recognised type REACHING
+the map on three pages of the 73, so it could have come out otherwise.
+The clipped text carries **324 px** on p6 and **1,058 px** on p7 in total and contributes
+nothing to either number, so *"92% of 4,851"* and *"100% of 7,080"* are 92% and 100% **of drawing**,
+and 3b's *"`textish` accepts several hundred pixels of it on all three"* survives the subtraction on
+all three. ⚠️ **And the 92% is not short by drawing**: p6's other 8% is the page FOLD, 384 map px in
+a near-vertical strip at `x ∈ [600, 605]`, `y ∈ [280, 751]`, nowhere near the rect.
+
+##### (b), the direction the box said to spend the session on — and it is small
+
+⛔ **Drawing ink INSIDE `region` is absent from the map by construction, so *"100% of the page's
+out-of-stencil ink is in the drawing rect"* does not say the map holds the whole drawing.** p7 is the
+page this entry separately records as having *"two small fragments of the drawing that Vision boxed as
+words"*. Measured, that is **79 px — 1.09% of p7's 7,241 drawing px**, and p6's is **0**.
+
+⛔ **And it changes no verdict, which is the part to quote.** Of the **30** 8-connected drawing ink
+components in p7's rect (inside the window, outside the text bands), `region` alters exactly **two**
+and removes **none** — it **truncates** them: the whole bookshelf, one 8-connected object of
+**5,225** px at `+948+564`, loses 76 px off the top of two of its uprights and goes `188 → 180` rows,
+and a **238**-px flying book at `+1023+571` loses 3 px and goes `30 → 29`. Read at 20x over
+`34x22+962+560`, the in-region piece and the map piece are the top and the bottom of the same two
+uprights, not two different marks. p7's `glyphH` is **9**, so
+`textShaped`'s height band is `[0.5, 3.0] × 9` = **[4.5, 27]**, and both components are above **27**
+at both heights: **0 components change their height verdict** — and that survives the one sensitivity
+it is exposed to, the 30-row component sitting only 2 px above the ceiling: a flip needs
+`3 × glyphH ∈ [29, 30)`, i.e. `glyphH ∈ [9.67, 10)`, and `glyphH` is an integer median, so **no
+integer value of it flips either component** (at 8 both are refused, at 10 both admitted).
+⚠️ On p6, 0 of the 13 drawing components inside the window hold a pixel inside `region` — which is
+**entailed** by the page's 0 and is the 13 restated, not a second measurement.
+
+##### ⛔ The finding worth more than the answer: a THIRD mechanism, and on p6 it is 44%
+
+`textLineGroupsOutsideText` builds its map only inside `Flattener.interiorWindow`
+(`Flattener.swift:2263-2275`) — the outer sixteenth on every side, `mx` **76** and `my` **59** on this
+document's 1224x946 render — and blanks it everywhere else. **p6's published drawing rect is the page
+CORNER, so 53.5% of its area and 3,513 px of its ink are in that blanked border**: measured,
+
+| page | drawing ink in the rect | the term sees (map) | inside `region` | outside the window |
+|---|---|---|---|---|
+| p6 | 7,980 | 4,467 — **55.98%** | **0** | **3,513 — 44.02%** |
+| p7 | 7,241 | 7,057 — **97.46%** | 79 — 1.09% | 105 — 1.45% |
+
+Read at 3x, p6's blanked 3,513 px are **the figure's head and shoulders, the top of the bookshelf,
+three flying books, the floor line and the stack of books at bottom left** — the drawing, not an
+edge artefact. So *"the term reads 0 on p6"* is a statement about **56%** of that drawing, and 3b's
+two-way split — component test against grouping — is missing a term. p7's 105 px are the rect's
+right-hand **37** columns (`x ∈ [1148, 1184]`, inclusive on both ends), the far-right flying book.
+
+⚠️ **The mechanism is on record and the MAGNITUDE is what is new.** 3b's own p4 row already says
+*"Discount the rect's right-hand 30%… 76 of the rect's 254 columns can hold no map px at any
+threshold"*. What no sentence anywhere says is that on p6 the same inset removes **44% of the
+drawing's own ink**, or that it belongs in the list of reasons the term answers 0.
+⚠️ **Whether those 3,513 px would reach four members is UNMEASURED**, and no seam in this tool can
+ask: the window is not a knob. It is not the `alltext-replica` mistake to answer it with a replica of
+the rule — it is the reason not to, so the question is named and left.
+
+##### The painted-count gap, measured where it was inferred — and the p7 figure mixes two populations
+
+`#### The cartoon's own 59 pixels, READ` measured the painted-against-accepted gap on p4 (477 px in
+15 painted components against `txtPx` 444 in `txtN` 12) and **inferred** it for p6 and p7 from the
+prose figures alone. Measured now, whole page:
+
+| page | painted px | painted components | `txtPx` | `txtN` | gap |
+|---|---|---|---|---|---|
+| p6 | **372** | **7** | 357 | 4 | +15 px (4.2%), **+3 components** |
+| p7 | **792** | **20** | 761 | 12 | +31 px (4.1%), **+8 components** |
+
+⛔ **So the published *"by 4.2% and 3.2%"* is right about p6 and wrong about p7, because its
+numerator and denominator are different populations**: the table's **785** is painted px *inside the
+drawing rect* and 761 is the *whole page's* accepted total. Like for like it is **792 against 761,
+4.1%** either way — 792/761 whole page, 785/754 in rect — the same gap p6 and p4 show, not a smaller
+one. ⛔ **And the seven px of the difference break p4's other statement, and by more than
+*painted***: `1x7+607+709` is one of the **12 ACCEPTED** components, so p7's 761 accepted px are
+**754 inside the rect and 7 outside** — *"painted `textish` over the whole page is 477 too, so every
+one of those pixels is inside the drawing rect"* holds on p4 and on p6 and is **false on p7**. Read
+at 1:1 it is a 1-px-wide, 7-row vertical stroke on otherwise blank paper, on the same page FOLD the
+92% note above names.
+
+##### Controls
+
+- ✅ **All twelve shared columns reproduce `SHAPETERM-PICTURES-2026-08-21.tsv`'s p6 and p7 rows digit
+  for digit** — `otsu` 140/139, `inkPx` 98,348/107,273, `outPx` 4,851/7,080, `inkOut` 0.0493/0.0660,
+  `glyphN` 2013/2255, `glyphH` 9/9, `glyphRun` 2/2, `ccN` 20/40, `txtN` 4/12, `txtPx` 357/761,
+  `lineN` 0/0 — through a changed binary 30 days later.
+- ✅ **The "inside region" arithmetic is the tool's own complement and not a proxy for it**:
+  `ink AND NOT map` inside the window reads **93,497** on p6 and **100,193** on p7, which is exactly
+  `inkPx − outPx` on both. This is the control that could have failed and is what licenses every
+  figure in the tables above.
+- ✅ The four classes — text seen, text unseen, drawing seen, drawing unseen — sum to each rect's own
+  total ink, **8,304** on p6 and **8,299** on p7.
+- ✅ Map px inside each published rect reproduce the table's own **4,467** and **7,057**.
+- ✅ `--self-test` **ok (11 checks)**, `port agreed on 2`, `SHAPEDUMP p6: 7 of 7` and
+  `SHAPEDUMP p7: 7 of 7`.
+- ✅ **Every figure above was re-derived by an adversarial verification pass from the PNGs alone,
+  through three independent implementations, and all ten claims came back CONFIRMED.** It also
+  pinned the instrument in both directions, which nothing here had: the map and `textish` PNGs are
+  strictly `{0, 255}`; `map ⊆ ink` and `textish ⊆ map` with **0** violations; the map holds **0** px
+  outside the interior window; and the printed `otsu` is EXACT rather than approximate, because at
+  `otsu − 1` the containment breaks (37 and 63 violations) and `inkPx` matches `run.log` only at the
+  printed value (98,348 at 140 against 99,058 at 141). ✅ **And the band edges are not a judgement
+  call**: the gutters are genuinely empty runs (11 columns, 5 rows, 13 columns), and re-running the
+  classification with each edge at either end of its gutter leaves all twelve numbers **bit-identical**.
+
+##### The sibling sweep
+
+⛔ **`grep -rn '372 and 785'` finds TWELVE copies, and the claim that needed correcting in each is
+not the pixel counts — the previous step already marked those PAINTED everywhere — but the sentence
+they support, *"the miss is the grouping"*.** It is exact for p7 and partial for p6. The four
+load-bearing copies are annotated: this file's own header, 3b's per-rect table and
+`#### Are there PICTURES in the sub-bar 73?`, and `CLAUDE.md`'s two. `HANDOFF.md`'s carries it as
+well. ⚠️ **Residue, named rather than swept**: four `ops/autonomous/QUEUE.md` copies state it
+unqualified, in the `c28-shape-gap-mutant`, `c28-pictures` and `c28-subbarpix` boxes — all three
+ticked and kept for what they asked — and this section is what a reader following their pointer
+arrives at.
+⛔ **Neither code comment needs anything** — `Sources/Flattener.swift`'s `lineMinimumMembers` and
+`Tools/score-shape-term.swift`'s `GroupingArm` had their quantities **dropped** on 2026-09-20 rather
+than restated, so neither carries a share this run moves. **That is why this commit is docs-only.**
+
+##### What this does NOT settle
+
+- ⚠️ **The component pass used for ATTRIBUTION is a replica**, labelled as such (`alltext-replica`'s
+  shape): every shipped answer quoted here is a tool column (`txtN`, `txtPx`, `lineN`, `outPx`), and
+  the replica is used only to say which ink belongs to which component. A replica disagreeing with
+  `shapeComponents` would move the 30, the 13 and the two truncations; it cannot move the pixel
+  counts, which are set arithmetic over three PNGs.
+- ⚠️ **Two pages, one document**, and the denominators are *drawing ink inside C26's eye-chosen
+  rect*, not *the drawing*. A larger rect moves both the numerator and the 44%.
+- ⚠️ **Nothing behavioural moves**: no verdict, no byte figure, no constant, no check, no committed
+  artefact, and nothing in `Sources/` or `Tools/`. p6 and p7 are `barVerdict=picture`, so the term is
+  never consulted on either in production today.
+- ⚠️ The 79 px are **1.09% of one page's drawing**; the entry should not be read as saying drawing
+  ink inside `region` is negligible in general, which is unmeasured on every page but these two and
+  p4.
 
 #### What this entry is NOT
 

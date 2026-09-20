@@ -510,15 +510,29 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-drawing-rect-contamination` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-window-blindness` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-drawing-rect-contamination` SUB-BOX — SEARCH FOR THAT TAG,
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-window-blindness` SUB-BOX — SEARCH FOR THAT TAG,
       IT IS ~450 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      ⛔ **RE-POINTED A THIRTEENTH TIME 2026-09-20, AND ITS PREDECESSOR'S BOX SAID NOT TO — so here
+      is why the condition it set was not met.** `c28-drawing-rect-contamination` said: if the
+      subtraction leaves both pages' claims standing, then all four remaining §4b attributions are
+      controls rather than content and this campaign has nothing session-actionable left, so mark
+      the parent for the owner instead of re-pointing it. **The antecedent held** — the
+      contamination is 0 on both pages — **and the consequent does not, for two reasons written
+      down rather than assumed.** (1) That same box had already PROMOTED `1029x10+106+206` on
+      evidence two paragraphs later, so *"all four are controls"* was refuted inside the box that
+      stated it; it now has a box of its own, `c28-table-rule-rect`. (2) The run found a mechanism
+      that is not a §4b attribution at all: the term is structurally blind to the outer sixteenth
+      of every page, which on `1954 - Why` p6 is **44% of a drawing whose loss C26 measured at
+      1:1**. That is a content question about `Sources/`, not a documentation one, and it is what
+      `c28-window-blindness` asks. ⚠️ **Neither is the bar or the grouping constants**, which remain
+      the owner's values and are not what either successor touches.
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
@@ -974,7 +988,85 @@ happens.**
       load-bearing where this one was not.
       (context: BUGS.md C28 `#### The footer rect, and the device in it reaches nothing`)
 
-- [ ] **c28-drawing-rect-contamination** — **ASK WHAT p6's 92% AND p7's 100% ARE ACTUALLY 92% AND 100% OF.
+- [ ] **c28-window-blindness** — **THE SHAPE TERM CANNOT SEE THE OUTER SIXTEENTH OF ANY PAGE, AND ON
+      ONE MEASURED CONTENT-LOSING DRAWING THAT IS 44% OF IT. ASK HOW OFTEN THAT MATTERS.**
+      ✅ **Written 2026-09-20 by `c28-drawing-rect-contamination`, which found it while answering a
+      different question.** `textLineGroupsOutsideText` builds its map only inside
+      `Flattener.interiorWindow` (`Flattener.swift:2263-2275`) — `w/16` and `h/16` dropped on every
+      side — and blanks it everywhere else, so no component there can be accepted, grouped or
+      counted at any value of any of the term's six constants. Measured on `1954 - Why` p6, whose
+      published drawing rect `240x185+0+0` is the page CORNER: **3,513 px of its 7,980 drawing px,
+      44.02%**, are in that blanked border, and read at 3x they are the figure's head and shoulders,
+      the top of the bookshelf, three flying books, the floor line and the book stack. So the
+      register's *"the miss is the GROUPING, not the component test"* is, on that page, a statement
+      about 56% of the drawing (`BUGS.md` C28 `#### The other two drawing rects, SUBTRACTED`).
+      ⛔ **THIS IS A QUESTION ABOUT HOW OFTEN, NOT A PROPOSAL TO CHANGE THE WINDOW.** The inset
+      exists to keep scanner edges out of `inkOutsideText`, `interiorWindow` has ONE copy on purpose
+      (its own doc comment records why), and C9's lesson — one number charged twice — applies: the
+      term and the ink fraction read the same window, so moving it moves both.
+      **THE STEP**: add ONE column to `Tools/score-shape-term.swift` — `outWinPx`, the count of
+      pixels below the page's own `otsu` that lie OUTSIDE `interiorWindow` — and read it over the
+      73 sub-bar pages plus the two cartoons, the population `C28-GROUPING-2026-09-20.tsv` already
+      names. Then answer two things off it: (1) on how many of the 73 does the blanked border hold
+      ink at all, and what share of each page's total; (2) on the **16 labelled content-losers**, is
+      the lost content in the border? Only (2) decides anything — (1) is the denominator.
+      ⚠️ **The column is APPENDED**, like `C28-BARPILOT`'s and `GROUPING=`'s before it, because
+      `sweep-ink-bar.py`'s `TOOL_COLUMNS` compares a header for exact equality and widening it red
+      15 of that tool's 71 self-test checks last time this was tried (`c28-bar-attribution`).
+      ⚠️ **What it cannot answer, stated in advance so nobody claims it**: whether the blanked ink
+      WOULD group. The window is not a knob, and answering it with a replica of the shape rule is
+      the `alltext-replica` mistake this register has already paid for twice. A borderless variant
+      would need a seam in `Sources/`, which C28 rejects for anything without a caller.
+      ⚠️ Budget: build the tool (~90 s), one 75-page run. The `Tools/` edit makes the commit pay the
+      full suite.
+      (context: BUGS.md C28 `#### The other two drawing rects, SUBTRACTED` for the p6 measurement
+      and the interior-window arithmetic, `#### The same shape term on PICTURES` for the per-rect
+      table it qualifies, and C26 `#### The rendered proof on the founding pages` for what p6 loses)
+
+- [ ] **c28-table-rule-rect** — **READ `1029x10+106+206`. A DARKEST-PIXEL-IN-RECT OVER A BAND 1,029 px
+      WIDE IS ATTRIBUTED TO A TABLE RULE, AND A `min` NEEDS ONLY ONE DARK PIXEL ANYWHERE IN THE BAND
+      TO READ AS THE RULE.**
+      ✅ **Promoted 2026-09-20 by `c28-drawing-rect-contamination`'s predecessor, on evidence rather
+      than on suspicion**: it is the same sub-class `c28-cartoon-hit-rect` committed and caught in
+      its own draft — a total over a band wide or tall enough to hold the named mark AND something
+      else, attributed to the mark. That draft's 180 px came from a 40-row band holding type at the
+      top and a bookshelf 12 rows lower, and the per-row scan is what separated them.
+      **THE STEP**: find the rect's own citation (`grep -rn '1029x10+106+206'`), re-derive the
+      quantity it carries PER ROW and PER COLUMN rather than over the band, and say whether the
+      named mark produced it. ⛔ **A `min` over a band cannot be subtracted the way a sum can** — the
+      per-row scan that settled p4 gives a profile, not a correction — so the deliverable is which
+      row the darkest pixel is on and what is on that row.
+      ⚠️ Docs-only if nothing in `Tools/` moves.
+      ⚠️ **Two other §4b attributions remain and are NOT this box**: the six densest bands and two
+      round-number controls behind the 0.52-0.57 stencil ratio, and `140x205+1660+2125`, 44 px
+      attributed to pencil script — the latter **direction-safe**, an over-count strengthening its
+      own claim.
+      (context: BUGS.md C28 `#### The cartoon's own 59 pixels, READ` for the method and for the
+      class this belongs to)
+
+- [x] **c28-drawing-rect-contamination-asked** — the box as written 2026-09-20, kept for what it asked.
+      ✅ **ANSWERED 2026-09-20 AND THE ANSWER TO BOTH HALVES IS SMALL — (a) the clipped body text
+      contributes 0 map px and 0 painted `textish` px on BOTH pages, and (b) drawing ink inside
+      `region` is 79 px on p7 (1.09%) and 0 on p6, truncating two of p7's 30 drawing components
+      (188 → 180 rows, 30 → 29) and flipping no height verdict against a 27-row ceiling.** So 3b's
+      *"92% / 100% of `outPx`"* are shares of drawing on all three rects and its
+      *"`textish` accepts several hundred pixels of it"* survives the subtraction.
+      ⛔ **THE FINDING IS THE THIRD MECHANISM THE BOX DID NOT ASK ABOUT: on p6, 3,513 px — 44.02% of
+      that drawing's ink — lie OUTSIDE `inkOutsideText`'s interior window, which
+      `textLineGroupsOutsideText` blanks out of its map (`Flattener.swift:2263-2275`), because the
+      published rect is the page CORNER.** Read at 3x that is the figure's head and shoulders, the
+      top of the bookshelf, three flying books, the floor line and the book stack — so *"the miss is
+      the GROUPING"* is a statement about 56% of that drawing, and 3b's two-way split is missing a
+      term. The mechanism was on record (3b's own p4 row discounts 76 of 254 columns for it); the
+      MAGNITUDE is new. Successor: `c28-window-blindness`.
+      ⚠️ Free corrections: p6 and p7's painted-against-accepted gaps are MEASURED where they were
+      inferred (372 px in 7 components against 357 in 4; **792** in 20 against 761 in 12), and the
+      published *"3.2%"* for p7 is a population mix — 785 is IN-RECT, the page reads 792, so like
+      for like it is 4.1%. The seven px of that difference are ONE component, `1x7+607+709`, outside
+      the drawing rect, so p4's *"every one of those pixels is inside the drawing rect"* is false
+      on p7.
+      `BUGS.md` C28 `#### The other two drawing rects, SUBTRACTED`.
+      **ASK WHAT p6's 92% AND p7's 100% ARE ACTUALLY 92% AND 100% OF.
       It is `c28-cartoon-hit-rect`'s own measurement carried to the two pages that matter for
       CONTENT, and it is the remaining half of that step's strongest §4b item.**
       ✅ **Written 2026-09-20 by `c28-cartoon-hit-rect`, which supplied both the method and one of the
