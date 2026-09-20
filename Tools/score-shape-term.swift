@@ -351,10 +351,25 @@ let lineGapFactor = 3.0
 ///
 /// C28 names `lineMinimumMembers` and `lineGapFactor` as the term's two-sided trade more
 /// often than anything else in the entry and has never priced it: they are what read **0**
-/// on C26's two founding cartoons (372 and 785 accepted `textish` px that never reach four
+/// on C26's two founding cartoons (whose accepted `textish` components never reach four
 /// members on a baseline) and they are also what keeps a printer's ornament — 664 accepted
-/// components, 0 groups — from firing. Relaxing them moves both at once, so the
-/// deliverable is a table and not a value.
+/// PIXELS in THREE components, 0 groups — from firing. Relaxing them moves both at once, so
+/// the deliverable is a table and not a value.
+///
+/// ⛔ **Two numerals were wrong here and both are corrected 2026-09-20.** The ornament read
+/// *"664 accepted components"*: it is 664 **pixels in three components**, a units error that
+/// made the refusal sound like a crowd rather than a singleton and two neighbours — and
+/// `lineGapFactor` refuses that rect too, so *"they are also what keeps"* is right about the
+/// pair and would be wrong about either alone (`BUGS.md` C28 `#### The ornament's own rect
+/// at a relaxed floor`). And the cartoons' *"372 and 785"* were **this file's own
+/// `SHAPEDUMP` output's painted pixels, not its `txtPx` column**, which reads **357** and
+/// **761** in `SHAPETERM-PICTURES-2026-08-21.tsv` — `paint(_:_:_:through:)` below fills
+/// `bbox ∩ map` per accepted component, so it can enclose pixels of components `textish`
+/// REFUSED and those can fragment into extra components. Measured on p4 of the same
+/// document (477 painted in 15 against 444 accepted in 12) and inferred for these two,
+/// whose dumps were not re-run: `BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`.
+/// The quantities are dropped rather than restated, because what this pair's cost turns on
+/// is that neither page reaches four members.
 struct GroupingArm: Equatable {
     let members: Int
     let gapFactor: Double

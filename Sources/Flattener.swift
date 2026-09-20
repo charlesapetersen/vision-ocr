@@ -1976,11 +1976,27 @@ enum Flattener {
     /// two letters do not make a line out of noise.
     ///
     /// ⚠️ Measured cost, both directions: at 4 the term reads 0 on C26's two founding
-    /// cartoons (`1954 - Why` p6/p7 give 372 and 785 accepted pixels that never reach
-    /// four members on a baseline) and it is also what stops a printer's ornament of
-    /// **664** accepted components from grouping at all. So this is a two-sided trade
+    /// cartoons (`1954 - Why` p6/p7, whose out-of-stencil ink never reaches four members
+    /// on a baseline) and it is also what stops a printer's ornament of **664 accepted
+    /// PIXELS** from grouping at all. So this is a two-sided trade
     /// and not a value to relax casually — `BUGS.md` C28
     /// `#### Are there PICTURES in the sub-bar 73?` is the measurement.
+    ///
+    /// ⛔ **Two numerals were wrong here and both are corrected 2026-09-20.** The ornament
+    /// is 664 **pixels in THREE components**, not "664 accepted components" — a units error
+    /// that made the refusal sound like a crowd being rejected when it is a singleton and
+    /// two neighbours (`#### The ornament's own rect at a relaxed floor`, which also
+    /// establishes that `lineGapFactor` refuses it too, so neither constant alone admits it
+    /// and this comment's "it is also what stops" overstates this one's part). And the two
+    /// cartoons' *"372 and 785 accepted pixels"* were the dumped `-textish.png`'s PAINTED
+    /// counts: `score-shape-term`'s own `txtPx` column reads **357** and **761**
+    /// (`SHAPETERM-PICTURES-2026-08-21.tsv`), because the dump paints `bbox ∩ map` per
+    /// accepted component and can enclose pixels of components the rule REFUSED. Measured
+    /// on p4 of the same document — 477 painted in 15 components against 444 accepted in 12
+    /// — and inferred here, those two dumps not having been re-run
+    /// (`#### The cartoon's own 59 pixels, READ`). The quantities are dropped rather than
+    /// restated: what this constant's cost turns on is that neither page reaches four
+    /// members, not how many pixels it declines.
     static let lineMinimumMembers = 4
     /// …and no gap between adjacent members wider than this many glyph heights, which
     /// is what stops a mark at each margin from being read as one line spanning the page.

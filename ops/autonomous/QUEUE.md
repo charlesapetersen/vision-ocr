@@ -510,15 +510,15 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-cartoon-hit-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-drawing-rect-contamination` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-cartoon-hit-rect` SUB-BOX — SEARCH FOR THAT TAG, IT IS
-      ~450 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-drawing-rect-contamination` SUB-BOX — SEARCH FOR THAT TAG,
+      IT IS ~450 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
@@ -586,6 +586,15 @@ happens.**
       attributions — the strongest being `1954 - Why` p4's *"a HIT on the lost cartoon"*, whose only
       evidence is containment in a rect already read at 1:1 as holding clipped body text, and which
       is replicated into `CLAUDE.md` and two boxes of this queue.
+      ⚠️ **Re-pointed a TWELFTH time 2026-09-20 by `c28-cartoon-hit-rect`, now ticked, and this time the
+      claim under test HELD**: the 59 px are drawn ink (the figure's hand and two of the flying book's
+      leaf strokes), so the refutation of *"blind to a hand-made mark by construction"* keeps all three
+      of its firings. The successor, `c28-drawing-rect-contamination`, is the remaining half of the SAME
+      §4b sweep's strongest item and it is the one that touches CONTENT rather than a control: p4's
+      drawing rect was measured to hold **0** map px of body-text contamination, so *"96% of 5,983"* is
+      96% of drawing there — and the same subtraction has never been made on **p6 and p7**, the two
+      pages of that document the term reads **0** on and the only two in this sample whose loss C26
+      measured at 1:1.
       This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
@@ -965,7 +974,82 @@ happens.**
       load-bearing where this one was not.
       (context: BUGS.md C28 `#### The footer rect, and the device in it reaches nothing`)
 
-- [ ] **c28-cartoon-hit-rect** — **READ THE 59 PIXELS. It is the same defect as
+- [ ] **c28-drawing-rect-contamination** — **ASK WHAT p6's 92% AND p7's 100% ARE ACTUALLY 92% AND 100% OF.
+      It is `c28-cartoon-hit-rect`'s own measurement carried to the two pages that matter for
+      CONTENT, and it is the remaining half of that step's strongest §4b item.**
+      ✅ **Written 2026-09-20 by `c28-cartoon-hit-rect`, which supplied both the method and one of the
+      three answers.** `#### The same shape term on PICTURES`'s per-rect table says the drawing rect
+      holds **5,757 / 4,467 / 7,057** map px on p4 / p6 / p7 — *"96% / 92% / 100% of that page's
+      `outPx`"*, glossed as *"essentially the whole out-of-stencil map on all three"*. ⛔ **The rects
+      are eye-chosen around the drawings and `#### The rendered proof on the founding pages` records
+      that p4's and p6's also hold clipped BODY-TEXT words at their top and left edges, with p7's
+      holding clipped text PLUS drawing fragments Vision boxed as words — and that contamination has
+      never been subtracted from any of the three.** On p4 it now has been and the answer is **ZERO**:
+      the top text line inks rows y 595-608 at a source minimum of 1-33 and the map holds **0 px on
+      every one of them**, the left letter column `20x240+970+595` **0** as well, because the type is
+      inside `region` while the map is `ink AND NOT region`. So *"96% of 5,983"* is 96% of drawing.
+      **THE STEP, and it needs no sweep, no new tool and no new artefact**: `SHAPEDUMP=<dir>` on
+      `1954 - Why` p6 and p7, locate each rect's clipped-text rows off `-source.png` at 8x FIRST
+      (do not guess them from p4's — p6's rect is `240x185+0+0`, the page CORNER, so its edges are the
+      sheet's and not a text column's), then scan map and `textish` px **PER ROW** across those rows.
+      ⛔ **PER ROW AND NOT PER BAND: this step's parent published 180 map px from a 40-row band as
+      body-text rim, and they were the top of the bookshelf 12 rows below the type.** A band that
+      straddles type and drawing cannot answer the question; the per-row scan is what separated them.
+      ⛔ **THE REASON IT IS WORTH A SESSION IS THE CONTENT QUESTION, NOT THE TIDINESS — and p4's zero
+      makes the LIVE direction the opposite one.** p6 and p7 are the two pages 3b reads **0** on, and
+      the published inference from that is *"the miss is the GROUPING, not the component test"*, resting
+      on `textish` accepting **372 and 785** px of *the drawing*. Two ways that can be wrong, and p4
+      only rules out the first: (a) body-text rim inflating those counts — **0 on p4, so expect 0** and
+      say so if it is; (b) ⛔ **drawing ink INSIDE `region`, which p7 is separately recorded as having**
+      (*"two small fragments of the drawing that Vision boxed as words"*) — that ink is absent from the
+      map by construction, so *"100% of the page's out-of-stencil ink is in the drawing rect"* does
+      **not** say the map holds the whole drawing, and how much of p7's drawing the term never sees is
+      unasked. **(b) is the question to spend the session on.** The 3b table's own `textish` column is
+      the wrong number to test either with besides (see the ⛔ below).
+      ⚠️ **Read the two instrument facts `c28-cartoon-hit-rect` established before quoting anything**:
+      (1) ⛔ **the table's `textish px` column is the dumped PNG's PAINTED count, not the accepted
+      set** — 477 / 372 / 785 against the tool's own `txtPx` of **444 / 357 / 761**, because the
+      painter paints `bbox ∩ map` and can enclose pixels of components the rule REFUSED and fragment
+      them; on p4 that manufactured **three components and 33 px (7.4%)**, so *"a pixel or two"* is
+      refuted and p6/p7's own gaps (4.2%, 3.2%) are measured only as gaps, their dumps never re-run.
+      (2) `-textish.png` is identical across every `GROUPING=` arm by construction.
+      ⚠️ **Budget**: build the tool first (~90 s — copy to `main.swift`, exclude `App.swift`; recipe in
+      the tool's header), then one two-page run. Docs-only if nothing in `Tools/` moves.
+      ⛔ **THIS BOX CARRIES C28's PARENT-POINTER DECISION.** If the subtraction leaves both pages'
+      claims standing, then all four remaining §4b attributions are controls rather than content and
+      C28 has nothing session-actionable left: give the parent the owner-only marker this file's §HOLD
+      describes — the bar and the grouping constants are both the owner's values — rather than re-point
+      it a thirteenth time. ⛔ **Do NOT spell that marker out here: `next-item.sh` tests an item's WHOLE
+      SPAN, so a box quoting it resolves `hold` and is never offered. Measured on this very box's first
+      draft, which is the THIRD occurrence** (2026-08-30, then `c28-ornament-rect`'s successor).
+      ⚠️ **The four that would remain, recorded so they are not lost**: the six densest bands and two
+      round-number controls behind the 0.52-0.57 stencil ratio; `1029x10+106+206`, a
+      darkest-pixel-in-rect attributed to a table rule over a band 1,029 px wide; `140x205+1660+2125`,
+      44 px attributed to pencil script (**direction-safe** — an over-count strengthens its claim);
+      and the two unsubtracted rects this box does not reach if it is scoped to p6/p7 alone.
+      ⛔ **`1029x10+106+206` IS PROMOTED, on evidence rather than on suspicion: it is exactly the
+      sub-class `c28-cartoon-hit-rect` committed and caught in its own draft** — a total over a band
+      wide or tall enough to hold the named mark AND something else, attributed to the mark. That draft's
+      180 px came from a 40-row band holding type at the top and a bookshelf 12 rows lower. A
+      darkest-pixel over 1,029 px of one page's width is the same shape with a `min` instead of a sum,
+      and a `min` needs only ONE dark pixel anywhere in the band to read as the rule.
+      (context: BUGS.md C28 `#### The cartoon's own 59 pixels, READ` for the method and p4's answer,
+      `#### The same shape term on PICTURES` for the table, and C26's
+      `#### The rendered proof on the founding pages` for the contamination)
+
+- [x] **c28-cartoon-hit-rect-asked** — the box as written 2026-09-20, kept for what it asked.
+      ✅ **ANSWERED 2026-09-20: the 59 px ARE the drawing's ink and the claim HOLDS** — the four members
+      are the figure's hand (`6x9+1121+693`, `2x6+1126+691`) and two leaf strokes of the flying book
+      (`3x10+1141+685`, `3x11+1145+689`), darkest pixels 96/99/87/99 against the page Otsu of 139 and
+      207 on blank paper in the same rect; the clipped body text inside the containing rect contributes
+      **0 map px**, measured per row. So *"0 on four hand-made marks and firing on
+      three"* keeps all three firings and the collar's liveness control keeps its subject.
+      ⛔ **Two corrections came out of it**: the group is a band across TWO drawn objects 14 px apart
+      against a 27 px bar, so the hit is the INK's and not a stroke the term recognised; and the 3b
+      table's `textish px` column is the PAINTED count (477/372/785 against `txtPx` 444/357/761), which
+      refutes this box's own *"a pixel or two"* with 33 px and three manufactured components.
+      `BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`.
+      **READ THE 59 PIXELS. It is the same defect as
       `c28-scott-footer-rect`'s with the OPPOSITE SIGN, and unlike that one it is load-bearing in
       three documents.**
       ✅ **Written 2026-09-20 by `c28-scott-footer-rect`, out of the §4b sibling sweep of its own
@@ -1605,7 +1689,8 @@ happens.**
       put the term's false negatives on C26's two cartoons down to *"the **grouping**
       (`lineMinimumMembers` / `lineGapFactor`), not the component test"* — `textish` 372 and 785 px, **0
       groups** — and `SUBBARPIX` (2026-08-22) found a printer's ornament with **664 accepted components
-      and 0 grouped**. `C28`'s own summary says in terms that *"`lineGapFactor` has no catalogue entry at
+      and 0 grouped**. (⛔ **Both numerals corrected 2026-09-20: the ornament is 664 PIXELS in THREE
+      components, and 372/785 are PAINTED counts whose accepted columns read 357 and 761.**) `C28`'s own summary says in terms that *"`lineGapFactor` has no catalogue entry at
       all"* and that the **lowering** direction is unmeasured. The other two already carry recorded
       reasons for their state (`shapeMinimumArea`'s narrow satisfied-before-it-is-asked argument under
       `#### The owed fixture`, restated at `Tools/mutate.py:469-479`; `shapeHeightLow` is exercised by
@@ -2352,6 +2437,22 @@ happens.**
       `lineMinimumMembers = 4` / `lineGapFactor = 3.0`, not the component test — and **p4's single group
       is a HIT on its lost cartoon**, `27x17+1121+685` inside the published `254x240+970+595`, so it must
       not be counted as a false positive.
+      ✅ **READ AT 8x AND CONFIRMED 2026-09-20 by `c28-cartoon-hit-rect`, where until then the evidence
+      was CONTAINMENT ALONE inside a rect already published as holding clipped BODY TEXT**: the four
+      members are the figure's hand (`6x9+1121+693`, `2x6+1126+691`) and two leaf strokes of the flying
+      book (`3x10+1141+685`, `3x11+1145+689`), darkest pixels 96/99/87/99 against the page Otsu of 139
+      and 207 on blank paper in the same rect. ⛔ **The clipped text contributes ZERO map px** — measured
+      per row over its own inked rows y 595-608, and 0 down the left letter column — because the type is
+      inside `region` while the map is `ink AND NOT region`, i.e. the earlier 1:1 read was of the
+      STENCIL. ⛔ **That step's own first draft published 180 map px in a 40-row band as "the rim of that
+      text", committing the defect under test; the three components sit at y ≥ 620 against the text's
+      last inked row at 608 and are the TOP OF THE BOOKSHELF.**
+      ⛔ **Two further corrections: the group is a band across TWO
+      drawn objects 14 px apart against a 27 px bar — a CHAIN whose hand-against-book pair fails
+      directly (overlap 2 against 4.5) and whose links hold by one pixel twice — so the hit is the INK's
+      and not a stroke the term recognised; and the `372 and 785` above are the dumped PNG's PAINTED
+      counts, not the accepted set (p4: 477 px in 15 painted components against `txtPx` 444 in 12;
+      p6/p7's columns read 357 and 761).** `BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`.
       ⛔ **AND THIS REFUTES "blind to a hand-made mark by construction"**, in the exact case the previous
       review predicted (*"four blobs of a broken pen stroke on a diagonal"*): 17 and 11 groups on a pen
       ornament. Measured, the term reads 0 on **four** hand-made marks (p16's bracket, `Atkinson_1939`
@@ -2541,6 +2642,9 @@ happens.**
       2,468 and `inkOut` 0.0540, so `1 - inkOut` puts the padded region over 94.6% of its interior ink, and its accepted
       group — 59 px at `27x17+1121+685`, inside the published cartoon rect `254x240+970+595` — is
       unchanged in count, area *and* rect at r=1/2/3, because the group is in the middle of the drawing).
+      ✅ **Both halves firmer 2026-09-20, no figure moving**: `-rim1/2/3-lines.png` are byte-identical to
+      `-lines.png` (the three numbers asserted over every pixel), and *"in the middle of the drawing"* is
+      now a READING — the hand and the flying book's leaves — not an inference from containment.
       Controls: all **23** columns shared with `SHAPETERM-PICTURES-2026-08-21.tsv` plus `verdict` are
       **byte-identical on 11 of 11 rows**, the SKIP row included — ✅ **and that is a stronger additivity
       control than the 73-page arm's**, because that file was produced by a binary with no rim sweep in
@@ -2816,8 +2920,8 @@ happens.**
       that page's out-of-stencil map — and only `lineN = 0` refuses it. A printer's-ornament rect on
       `_1967_Yearly Increase … Boxoffice` p1 says the same: map **666** px, accepted components **664**,
       grouped **0**. ⛔ **So `lineMinimumMembers` / `lineGapFactor` carry the whole bound, and they are the
-      same two constants behind the term's false negatives on C26's cartoons** (`textish` 372 and 785 px,
-      0 groups); `lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values, so
+      same two constants behind the term's false negatives on C26's cartoons** (`textish` 372 and 785 px —
+      ⛔ **PAINTED; accepted are 357 and 761, corrected 2026-09-20** — 0 groups); `lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values, so
       lowering it to 3 rescues three matrix values and admits 664 px of ornament. **First measurement that
       prices both sides.**
       ✅ **The register's "all three false positives are the RIM of recognised type" is confirmed

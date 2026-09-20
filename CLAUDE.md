@@ -1527,6 +1527,35 @@ page-wide-Otsu speckle in a grey endpaper reading mean 107.5 / sd 2.88 against a
 `textish` px that never reach four members on a baseline. The miss is the *grouping*
 (`lineMinimumMembers` / `lineGapFactor`), not the component test — and **p4's one group is a HIT on the
 lost cartoon**, `27x17+1121+685` inside the published `254x240+970+595`, not a false positive.
+✅ **READ AT 8x AND CONFIRMED 2026-09-20, where until then that was CONTAINMENT ALONE inside a rect
+this register had already published, read at 1:1, as holding clipped BODY TEXT and "nothing of the
+cartoon"** (`BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`): the four members are the figure's
+hand (`6x9+1121+693`, `2x6+1126+691`) and two leaf strokes of the flying book (`3x10+1141+685`,
+`3x11+1145+689`), darkest pixels **96 / 99 / 87 / 99** against the page's Otsu of **139** and **207** on
+blank paper in the same rect. ⛔ **And the contamination that would have refuted it contributes ZERO to
+the map**, measured per row: the top text line inks y 595-608 at a source minimum of 1-33 and the map
+holds **0 px on every one of those rows**, the left letter column **0** as well — because the type is
+inside `region` and the map is `ink AND NOT region`, i.e. the earlier 1:1 read was of the STENCIL and
+these are two different images. ⛔ **THE FIRST DRAFT OF THAT SENTENCE COMMITTED THE VERY DEFECT THE STEP
+IS ABOUT: it published 180 map px in a 40-row band as "the rim of that text, 3.1%", and those three
+components sit at y ≥ 620 against the text's last inked row at 608 and are the TOP OF THE BOOKSHELF.**
+Caught one edit before the commit by looking at the band instead of quoting its total.
+⛔ **TWO MORE CORRECTIONS RIDE WITH THE CONFIRMATION.** (1) **The group is a band across TWO
+drawn objects** — hand and book, **14** px apart against `3.0 × glyphH 9` = **27**, four members
+against a floor of 4 — so the hit is the INK's and not a stroke the term recognised. ⛔ **And the band
+is a CHAIN whose two ends never touch**: `textLines` admits on `overlap >= 0.5 * min(height)` against
+the band's LAST member, the three links read **6 against 5.0, 6 against 3.0, 4 against 3.0** — two of
+them holding by ONE pixel — and the direct hand-against-book pair **FAILS at 2 against 4.5**, so the
+group exists only through the greedy last-member rule this register already records as non-monotone
+(⚠️ derived from `Flattener.swift:2163-2176`/`:2198` over the measured rects; the tool prints one group
+and no link margins). (2) ⛔ **The `372 and 785` above, and the 477 in 3b's own per-rect table, are
+the dumped `-textish.png`'s PAINTED counts and not the accepted set**: p4 measures **477 px in 15
+painted components against `txtPx` 444 in 12** — three components and 33 px manufactured, because the
+painter paints `bbox ∩ map` and can enclose pixels of components the rule REFUSED — and p6/p7's exceed
+their columns' 357 and 761 by 4.2% and 3.2% (measured on p4, inferred on the other two).
+⛔ **So *"a pixel or two"*, the characterisation carried over from the ornament's 666-against-664, is
+refuted with a number.** ✅ One published sentence gets stronger: painted `textish` over the whole page
+is **477** as well, so every such pixel on p4 is inside the drawing rect.
 ⛔ **So "blind to a hand-made mark by construction" is REFUTED**: measured, 0 on four hand-made marks
 and firing on three, which is exactly the *"four blobs of a broken pen stroke"* case the last review
 predicted. ✅ **`Tools/README.md` is corrected as of 2026-08-21**, riding along on the suite-paying
@@ -1597,7 +1626,10 @@ is 2595, and ⚠️ *not* the interior blanking, whose bounds on that 3,642-px-w
 3415)), and it is **not idle for want of a `region` to dilate** (`1954 - Why` p4 has `glyphN` 2,468 and
 `inkOut` 0.0540, so `1 - inkOut` puts the padded region over **94.6%** of its interior ink, and its
 accepted group is unchanged in count, area *and* rect at r=1/2/3, because the group is in the middle of
-the drawing). ⚠️ Not settled: the collar's effect on the **map**
+the drawing). ✅ **Both halves of that second control are firmer as of 2026-09-20 and no figure moves**:
+`-rim1/2/3-lines.png` are **byte-identical to `-lines.png`**, i.e. the three-number claim asserted over
+every pixel, and *"in the middle of the drawing"* is now a READING (the hand and the flying book's
+leaves) rather than an inference from containment. ⚠️ Not settled: the collar's effect on the **map**
 rather than on accepted lines is not printed, so "0 accepted-line pixels removed" is not "0 map pixels
 removed" on the **nine** pages whose columns did not move; radii above 3 are still unrun; the sample is
 still 3 true plates of 10 and the seam is ~181 layered pages of which the collar has now been asked
@@ -1626,7 +1658,8 @@ map and only `lineN = 0` refuses it. ⛔ **So the bound is the GROUPING, not the
 printer's-ornament rect says the same: map 666 px, accepted components **664**, grouped **0** (⚠️ the
 `-textish.png` mask *paints* 666 because it paints `bbox ∩ map`; 664 is the accepted set, and "all 666"
 was a first draft caught by the review). `lineMinimumMembers` / `lineGapFactor` are **the same two
-constants** 3b named for the term's false negatives on C26's cartoons (`textish` 372 and 785 px, 0
+constants** 3b named for the term's false negatives on C26's cartoons (`textish` 372 and 785 px — ⛔ **PAINTED;
+the accepted columns read 357 and 761, corrected 2026-09-20** — 0
 groups), and `lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values — so relaxing
 it is a measured two-sided trade, not a fix. ⛔ **THAT PAIRING IS SUPERSEDED ON THIS RECT AS OF
 2026-09-20 AND IT IS `lineGapFactor` ALONE**: the three components sit 289 and 230 px apart against a

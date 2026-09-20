@@ -363,7 +363,9 @@ whose caption Vision *did* recognise and which is therefore not among the twelve
 ornament's feather strokes, and 10,438 px of page-wide-Otsu speckle in a blank grey endpaper.
 ⛔ **The half that matters more is that it reads 0 on TWO pages whose content loss is measured** —
 `1954 - Why` p6 and p7, C26's own founding cartoons, where the drawing is 92% and 100% of the page's
-out-of-stencil ink and `textish` accepts 372 and 785 px that never reach four members on a baseline. So
+out-of-stencil ink and `textish` accepts 372 and 785 px that never reach four members on a baseline
+(⛔ **those two are the dump's PAINTED counts; the accepted columns read 357 and 761 — corrected
+2026-09-20, `BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`**). So
 the misses are the *grouping* constants, and p4's single group is a **hit** on its lost cartoon rather
 than a false positive. ⛔ **This also refutes "blind to a hand-made mark by construction"** — the term
 fires 17 and 11 groups on a pen ornament, which is precisely the case the previous review named as the
