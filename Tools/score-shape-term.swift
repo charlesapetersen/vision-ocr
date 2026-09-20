@@ -190,6 +190,8 @@
 //   <stem>-textish.png  only the components the shape rule accepts
 //   <stem>-lines.png    only the components in an accepted line group
 //   <stem>-rim<r>-lines.png   the same, per rim radius: one file for each of `rimRadii`
+//   <stem>-g<m>x<f>-lines.png under `GROUPING=` only: the same, per relaxed arm, named
+//                             with that arm's own tag — see the ⛔ below
 //   <stem>-stencil-ship.png   under `WIDENBYTES=1` only: the 1-bit stencil `mrcLayers`
 //   <stem>-stencil-wide.png   built each way, copied rather than rebuilt, so the byte
 //                             columns and the picture are the same two files
@@ -199,6 +201,15 @@
 // that page lost, or something else the same size. `-rim<r>-lines.png` is that same
 // control at the radius under consideration, which is what says whether a surviving
 // group still names the lost words or only a fragment of them.
+//
+// ⛔ **`-g<tag>-lines.png` is the third of those and it was MISSING until 2026-09-20**,
+// which is the one thing to know before quoting an older dumping run. `SHAPEDUMP` and
+// `GROUPING=` shipped a day apart and did not meet: a dump under `GROUPING=3:3,2:3` wrote
+// **7 files**, all of them the SHIPPED arm's, so `-lines.png` answered a question about
+// `4:3` while the columns beside it answered one about `3:3` and `2:3`. Nothing printed
+// said so. The queue box that found it (`c28-ornament-rect`) had prescribed exactly that
+// command and a 1:1 reading of exactly those two files. `BUGS.md` C28
+// `#### The ornament's own rect at a relaxed floor`.
 //
 // `WIDENBYTES=1` prices C28's question 4 at the `textRegionMask` seam: what it costs, in
 // published bytes, to let the accepted line groups into the 1-bit stencil.
@@ -235,7 +246,9 @@
 // `GROUPING=<members>:<gapFactor>[,…]` prices C28's **two-sided grouping trade** — the
 // pair the entry names more often than anything else in it and had never measured. Each
 // arm regroups the page's OWN accepted components at its own two constants and adds
-// `lineN_<tag>` and `linePx_<tag>` beside the shipped `lineN`. ⚠️ With `GROUPING` unset
+// `lineN_<tag>` and `linePx_<tag>` beside the shipped `lineN` — and, under `SHAPEDUMP`,
+// one `-<tag>-lines.png` each, which is what makes a column's answer readable at 1:1
+// instead of only countable. ⚠️ With `GROUPING` unset
 // the TSV is byte-identical — no column, no filler, no row wider by a tab — but the
 // SUMMARY line gains `; grouping shipped only` unconditionally, so "changes nothing at
 // all" is false and a draft of this said it. The clause is deliberate (a total with no
@@ -419,11 +432,42 @@ func parseGrouping(_ raw: String) -> GroupingSpec {
 func groupingFieldsFor(_ arms: [GroupingArm], _ comps: [Comp], accepted: [Int],
                        glyphHeight: Double) -> [String]? {
     guard !arms.isEmpty else { return nil }
-    return arms.flatMap { arm -> [String] in
-        let g = lines(comps, accepted: accepted, glyphHeight: glyphHeight,
-                      members: arm.members, gapFactor: arm.gapFactor)
-        return ["\(g.count)", "\(g.reduce(0) { $0 + $1.area })"]
+    return groupingLinesFor(arms, comps, accepted: accepted, glyphHeight: glyphHeight)
+        .flatMap { ["\($0.lines.count)", "\($0.lines.reduce(0) { $0 + $1.area })"] }
+}
+
+/// Each arm's own line groups — what the columns COUNT and what the dump PAINTS.
+///
+/// ⛔ **Extracted 2026-09-20 so the picture and the number cannot disagree.** The per-arm
+/// `-lines` dump needs the `Line`s themselves and `groupingFieldsFor` returns only
+/// strings, so the obvious way to add that dump is a second call to `lines(…)` beside this
+/// one — two copies of an arithmetic, one of which supplies the evidence for the other,
+/// which is this register's most repeated instrument defect and is exactly what the port
+/// check refuses one level up. One function, two readers. ⚠️ **The sharing is STRUCTURAL and
+/// UNWATCHED, corrected by the adversarial review of this diff**: 11(e) and 11(f) assert the
+/// two functions against the same literals on one fixture, so restoring a second `lines(…)`
+/// call inside `groupingFieldsFor` — the exact drift this comment says is refused — leaves the
+/// whole self-test green. It is the call graph that guarantees it, not a check.
+func groupingLinesFor(_ arms: [GroupingArm], _ comps: [Comp], accepted: [Int],
+                      glyphHeight: Double) -> [(arm: GroupingArm, lines: [Line])] {
+    arms.map { arm in
+        (arm, lines(comps, accepted: accepted, glyphHeight: glyphHeight,
+                    members: arm.members, gapFactor: arm.gapFactor))
     }
+}
+
+/// The per-arm dump's file names, generated from the SAME array in the SAME order as
+/// `groupingColumns` — so a picture is not labelled with another arm's tag. ⚠️ **"can never"
+/// was the first draft and is too strong**: no check reaches the `zip` call site, so handing
+/// it a reordered array there passes every clause of 11(f) and row F of `fault_shape_dump`
+/// while swapping the pictures. True today, watched by nothing.
+///
+/// A free function for `groupingFieldsFor`'s own reason: the dump block is top-level code,
+/// so a name built inline there is unreachable from `--self-test`, and a mislabelled
+/// picture is the least visible way this knob could lie — the file opens, it holds ink,
+/// and the ink belongs to a different rule than the tag says.
+func groupingDumpNames(_ arms: [GroupingArm], stem: String) -> [String] {
+    arms.map { "\(stem)-\($0.tag)-lines.png" }
 }
 
 /// The rim candidate's radii, in map pixels, swept in one pass so that one run over a
@@ -1270,6 +1314,38 @@ func selfTest() -> [String] {
     if groupingFieldsFor([], gGlyphs, accepted: gThree, glyphHeight: 10) != nil {
         bad.append("grouping: an empty arm list produced fields")
     }
+    // (f) ⛔ THE PER-ARM DUMP, added 2026-09-20, and it is two assertions because the two
+    //     ways it can lie are unrelated. One: the FILE NAMES, in the same order and with
+    //     the same tags as the columns — a picture labelled with another arm's tag opens,
+    //     holds ink, and is read as that arm's answer, which is the least visible failure
+    //     this knob has. Two: the grouping the dump PAINTS is the grouping the columns
+    //     COUNT — one function, asserted rather than assumed, because a second call to
+    //     `lines(…)` beside the first is what this file's port check exists to refuse one
+    //     level up.
+    //     ⚠️ The expected list is written out in full for (e)'s reason: computing it here
+    //     would be the mirror `c28Calibration`'s comment warns about.
+    if groupingDumpNames(armPair, stem: "x-p1")
+        != ["x-p1-g4x3-lines.png", "x-p1-g3x3-lines.png"] {
+        bad.append("grouping: the dump names are "
+                   + "\(groupingDumpNames(armPair, stem: "x-p1"))")
+    }
+    let armLines = groupingLinesFor(armPair, gGlyphs, accepted: gThree, glyphHeight: 10)
+    //     ⛔ TWO FURTHER ASSERTIONS WERE DRAFTED HERE AND NEITHER COULD FAIL; the
+    //     adversarial review of this diff caught both, and they are recorded rather than
+    //     deleted in silence. `armLines.map(\\.arm) != armPair` is `arms == arms`, the
+    //     tuple's `.arm` being the map's own input element; and `!groupingDumpNames([],
+    //     …).isEmpty` cannot fire because that function is a bare `arms.map` with no guard
+    //     to break, so an empty input is empty by the stdlib. Its apparent mirror on
+    //     `groupingFieldsFor` IS informative, because that one has an explicit
+    //     `guard !arms.isEmpty else { return nil }` a sabotage can remove.
+    // The same two numbers (e) asserts, off the function the DUMP reads rather than off
+    // the one the row reads. It reddens under an arm ignored or the arms permuted.
+    if armLines.map({ "\($0.lines.count)" }) != ["0", "1"]
+        || armLines.map({ "\($0.lines.reduce(0) { $0 + $1.area })" }) != ["0", "60"] {
+        bad.append("grouping: the dump's per-arm lines read "
+                   + "\(armLines.map { ($0.lines.count, $0.lines.reduce(0) { $0 + $1.area }) }), "
+                   + "not [(0, 0), (1, 60)]")
+    }
 
     return bad
 }
@@ -1291,6 +1367,10 @@ if args.contains("--self-test") {
         // ⚠️ ELEVEN from 2026-09-19: `GROUPING=` added group 11, which IS a new group and
         // not more guards inside an old one, so this literal moves. Counted by reading
         // the numbered comments, not by incrementing the previous figure.
+        // ⚠️ Still ELEVEN after 2026-09-20, and deliberately — the per-arm dump's checks went
+        // in as sub-group 11(f), guards inside an existing group, which is 2026-08-22's case
+        // exactly. Recorded because the block above says a count that does not move when a
+        // check is added reads as corroboration and is worth less than no count.
         print("score-shape-term: self-test ok (11 checks)")
         exit(0)
     }
@@ -1786,6 +1866,31 @@ for index in pages {
             var rimOnly = [Bool](repeating: false, count: w * h)
             paint(&rimOnly, entry.comps, entry.lines.flatMap(\.members), through: trimmed)
             promised.append(("\(stem)-rim\(entry.radius)-lines.png", { maskPNG(rimOnly) }))
+        }
+        // ⛔ One `-lines` per relaxed `GROUPING` arm, and the reason is a MEASURED gap
+        // rather than symmetry with the rim sweep. Until 2026-09-20 a dumping run under
+        // `GROUPING=` wrote the SHIPPED arm's groups and nothing else: `SHAPEDUMP=<dir>
+        // GROUPING=3:3,2:3` on the Boxoffice masthead page wrote **7 files** and not one
+        // held a relaxed arm's answer, so `-lines.png` answered a question about the
+        // shipped pair while the columns beside it answered a different one. The queue box
+        // `c28-ornament-rect` prescribed exactly that command and that reading, and it
+        // could not have answered its own question. `BUGS.md` C28
+        // `#### The ornament's own rect at a relaxed floor`.
+        //
+        // Painted through `map` and NOT through a trimmed mask: an arm changes the
+        // GROUPING and never the components, so the rim files' hazard — collar pixels the
+        // radius removed reappearing inside a surviving bounding box — cannot arise here.
+        // `groupingLinesFor` is the same function the columns are counted from, so a
+        // picture and the number beside it cannot describe different groupings.
+        for (entry, name) in zip(groupingLinesFor(groupingArms, comps, accepted: accepted,
+                                                  glyphHeight: glyphH),
+                                 groupingDumpNames(groupingArms, stem: stem)) {
+            // ⚠️ One full-page mask stays live per arm until the write loop runs, as the rim
+            // loop's own comment budgets for — and unlike `rimRadii` the count here is the
+            // caller's: five arms on a 3307x4409 page is ~73 MB of these beside the rim's ~44.
+            var armOnly = [Bool](repeating: false, count: w * h)
+            paint(&armOnly, comps, entry.lines.flatMap(\.members), through: map)
+            promised.append((name, { maskPNG(armOnly) }))
         }
         // C28 question 4's positive control: production's own two stencils, copied rather
         // than rebuilt here, so what a reader looks at is the PNG `mrcLayers` handed to

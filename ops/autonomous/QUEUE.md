@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-ornament-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-scott-footer-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-ornament-rect` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-scott-footer-rect` SUB-BOX — SEARCH FOR THAT TAG, IT IS
       ~350 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
@@ -563,6 +563,18 @@ happens.**
       claim is about the ornament BAND's own rect (664 accepted components, 0 groups). So
       `c28-ornament-rect` is one page, one dump and a 1:1 reading, and it carries the two
       `fault-inject.sh` rows `GROUPING=`'s refusals are owed.**
+      ⚠️ **Re-pointed a TENTH time 2026-09-20 by `c28-ornament-rect`, now ticked. The rect read CLEAN —
+      the 664 components still group into 0 at a member floor of 3 and of 2 — so that box's own closing
+      instruction applies: *"if the rect reads clean, the honest successor is NOT another instrument
+      step."* ⛔ It is being re-pointed anyway, and the reason is CONTRIBUTING §4b and not a new
+      question: that run CORRECTED the entry (the constant refusing the ornament is `lineGapFactor`
+      alone, not the pair the entry blames) and `#### Are there PICTURES in the sub-bar 73?` names a
+      SECOND device rect that reaches the map — `Scott_TK` p3's Google-wordmark footer, 208 map px,
+      110 accepted, 0 grouped — which the correction was not swept over. A correction whose sibling is
+      named and unchecked is exactly what §4b exists for. `c28-scott-footer-rect` is that sweep, one
+      page and one dump, and it carries the PARENT-POINTER DECISION: if that rect is also refused by
+      the gap term alone, C28 has no session-actionable measurement left and this box must be marked
+      owner-only rather than re-pointed an eleventh time.**
       This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
@@ -885,7 +897,112 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-ornament-rect** — **RE-DUMP THE ORNAMENT'S OWN RECT — the ONE place `c28-grouping-trade`
+- [ ] **c28-scott-footer-rect** — **THE SIBLING SWEEP `c28-ornament-rect`'s CORRECTION IS OWED, and
+      the box that carries C28's parent-pointer decision.**
+      ✅ **Written 2026-09-20 by `c28-ornament-rect`, and it exists for CONTRIBUTING §4b rather than
+      for a new question.** That step corrected the entry: `#### Are there PICTURES in the sub-bar
+      73?` blames `lineMinimumMembers` / `lineGapFactor` JOINTLY for keeping the Boxoffice printer's
+      ornament out of a line group, and measured, it is **`lineGapFactor` alone** — the three accepted
+      components sit 289 and 230 px apart against a bar of `3.0 × glyphH 8` = 24, so no member floor
+      ≥ 2 can group a singleton there at any value, and admitting the ornament needs a gap factor of
+      **28.75, 9.58x** the shipped 3.0 (measured at both endpoints). ⛔ **That correction was made on ⛔ **RETRACTED IN PART BY THE REVIEW OF THIS DIFF, and the retraction is kept above the claim: the rect holds THREE accepted components, so the shipped `lineMinimumMembers` = 4 refuses it at EVERY gap factor too. Each constant alone suffices to refuse and NEITHER alone suffices to admit — the pair must move together — and admitting the WHOLE ornament is `3:36.125`, **12.04x**, not 9.58x, since 28.75 leaves the 43-px component out. "664 accepted components" is also a units error: 664 PIXELS in THREE components.**
+      ONE rect and the entry names a SECOND that reaches the map, which was not swept**: `Scott_TK` p3's
+      `Digitized by Google` footer strip, `1020x150+0+1107` of a 1,020x1,257 page — **208 map px, 110
+      passing the component test, 0 grouped** — filed in the entry as *"the same thing more weakly"*.
+      Whether it is the same thing at all is now an open question, because "the same thing" was just
+      shown to be two different constants' worth of claim.
+      **THE STEP, and it needs no sweep, no new tool and no new artefact**: `SHAPEDUMP=<dir>
+      GROUPING=3:3,2:3` on that one page, then read `-lines.png`, `-g3x3-lines.png` and
+      `-g2x3-lines.png` at the footer rect at 1:1 — ✅ **and unlike last time the per-arm files EXIST**,
+      which is the other half of what `c28-ornament-rect` landed. Derive the component geometry from
+      `-connected-components 8` over the crop of `-textish.png` FIRST and predict the answer from the
+      gaps against `lineGapFactor * glyphH` before running any arm; that is what made the ornament
+      reading attributable rather than suggestive.
+      ⚠️ **Read the dump's own two traps**: `-textish.png` paints `bbox ∩ map`, so the painted count
+      exceeds the accepted set by a pixel or two (666 against 664 on the ornament), and `-textish.png`
+      is **identical across every arm by construction** — an arm changes the grouping and never the
+      components — so it is not a per-arm reading and never was.
+      ⛔ **THIS BOX CARRIES THE PARENT-POINTER DECISION AND MUST MAKE IT.** If the footer is also
+      refused by the gap term alone, then the correction generalises, C28 has **no session-actionable
+      measurement left** — what remains is the owner's two decisions (the bar value and the grouping
+      value) and the three hand-made marks the shipped term cannot reach, one of which
+      (`_1939_Former students` p2, `outPx` **0**) is measured unreachable by any of them — and the
+      **C28 parent box must then be marked owner-only, not re-pointed an eleventh time.** If it
+      is refused by the member floor instead, say so: that is a real disagreement between two rects of
+      the same class and it is worth a paragraph and a successor.
+      ⛔ **WHEN YOU DO THAT, COPY THE MARKER OFF THE `taborder` BOX AND DO NOT TYPE IT HERE.
+      `next-item.sh:100` tests an item's WHOLE SPAN, so a box that merely NAMES the marker holds
+      ITSELF** — ⚠️ **already recorded ~250 lines above (the `campaign-next-step` box's (b) bullet,
+      measured 2026-08-30 the same way), and this is the SECOND time, not a new finding**: the first
+      draft of this paragraph spelled the two tokens out and both this box and the C28 parent
+      resolved `hold`, which would have made the queue's head inert for exactly the reason the parent
+      box says it exists. Twice in three weeks is a property of the warning's placement, not of the
+      two sessions.
+      ⚠️ **Budget**: build the tool first (~90 s — copy to `main.swift`, exclude `App.swift`; the
+      recipe is in the tool's own header). If the box lands docs-only it pays no suite; if it touches
+      `Tools/` it pays the full suite (~300 s).
+      (context: BUGS.md C28 `#### The ornament's own rect at a relaxed floor` and
+      `#### Are there PICTURES in the sub-bar 73?`)
+
+- [x] **c28-ornament-rect** — **DONE 2026-09-20. The rect reads CLEAN — the ornament's 664 accepted
+      components still group into ZERO at a member floor of 3 and of 2 — ⛔ but the INSTRUMENT WAS
+      BLIND FIRST, and that is worth more than the verdict.**
+      ⛔ **This box prescribed `SHAPEDUMP=<dir> GROUPING=3:3,2:3` and a 1:1 read of `-textish.png` and
+      `-lines.png`. Run verbatim against the tool as it stood, that wrote SEVEN files and not one of
+      them held a relaxed arm's answer**: `SHAPEDUMP` and `GROUPING=` shipped a day apart and never
+      met, so `-lines.png` answers a question about `4:3` while the columns beside it answer one about
+      `3:3` and `2:3`, and nothing printed says so. `-textish.png` is worse in a quieter way — it is
+      **identical across every arm by construction**, an arm changing the grouping and never the
+      components, so a reader comparing it arm to arm is comparing a file with itself. ✅ Fixed in the
+      same commit: one `<stem>-<tag>-lines.png` per arm from the same `groupingLinesFor` the columns
+      are counted from, **7 files → 9**, with `groupingDumpNames` a free function so self-test group
+      11(f) pins the names against the columns in order. `--self-test` stays **11** groups (guards
+      inside group 11, not a twelfth).
+      ✅ **THE VERDICT WAS PREDICTED IN WRITING FROM THE COMMITTED ROW ALONE, BEFORE ANY DUMP**:
+      `Line.area` sums its members, so `linePx` 319 → 365 is a new group of **46 px**, and 46 is no
+      subset sum of {488, 133, 43}. Held — rect black px **0 / 0 / 0** over shipped / `3:3` / `2:3`,
+      and `-g2x3-lines.png` is **pixel-identical** to `-g3x3-lines.png`. The page's third group is a
+      **third rim fragment on that page** (a draft said *fourth*, over no stated denominator): 46 px at
+      `21x5+738+1407`, read at 4x as the glyph tops of the word
+      `The` — three components, which is exactly why a floor of 3 admits it and 4 does not — on the
+      same line as the shipped `topLine`. ✅ The 2026-08-22 rect reading reproduces **digit for digit**
+      through a different binary 29 days later: map 666, three accepted components 488 / 133 / 43 =
+      **664**, painted 666.
+      ⛔ **THE FINDING, and it corrects the sentence the whole trade was argued from: the entry blames
+      the two grouping constants JOINTLY and it is `lineGapFactor` ALONE.** Gaps of **289** and **230**
+      px against a bar of `3.0 × glyphH 8` = **24**, so every run in that band has ONE member and no
+      floor ≥ 2 can group it. Bracketed from the geometry, then measured at both endpoints with the
+      arms chosen before the run: `2:28.7` → 0 in the rect, `2:28.75` → 623 painted / **+621** in the
+      column; `3:36.1` → 0, `3:36.125` → 666 / **+664**. So *"lowering it to 3 would admit 666 px of ⛔ **RETRACTED IN PART BY THE REVIEW OF THIS DIFF, and the retraction is kept above the claim: the rect holds THREE accepted components, so the shipped `lineMinimumMembers` = 4 refuses it at EVERY gap factor too. Each constant alone suffices to refuse and NEITHER alone suffices to admit — the pair must move together — and admitting the WHOLE ornament is `3:36.125`, **12.04x**, not 9.58x, since 28.75 leaves the 43-px component out. "664 accepted components" is also a units error: 664 PIXELS in THREE components.**
+      ornament on the Boxoffice page"* is **measured false** — it admits 0, and so does 2. ⚠️ The one
+      member floor that reaches it is **1**, where `linePx` reads **1,089** = `txtPx` and the term
+      degenerates into the component test.
+      ✅ **The owed `fault-inject.sh` rows landed with it: `shape_dump` 3 rows → 6, `6 passed, 0
+      failed`, and each new row was watched reddening ALONE under its own one-token sabotage** — the
+      repeat guard returning `.malformed` (the sabotage this box named), the malformed guard returning
+      `.ok([])`, and the per-arm dump loop handed `[]`. All three predicted in writing, including the
+      failure text, and all three held. ⛔ **The third sabotage is the one to quote: with the malformed
+      guard silently accepting, the tool exits 0 and prints `grouping shipped only` — exactly the
+      *"the relaxed rule changes nothing"* fabrication the tool's own header says the refusal exists to
+      prevent.** ⚠️ The dump-loop sabotage leaves `--self-test` green, correctly: the loop is top-level
+      code and no check can reach it, which is why the case row is what gates it.
+      ⚠️ **Carried forward and handed to `c28-scott-footer-rect`**: the correction was made on ONE
+      rect and the entry names a second that reaches the map (`Scott_TK` p3's footer, 208/110/0) which
+      was not swept. ⚠️ Nothing in `Sources/` moved, no committed artefact moves and no new one was
+      written — the run's row is byte-identical to `C28-GROUPING-2026-09-20.tsv`'s on all **46**
+      shared fields (42 tool columns plus the four of the two arms re-run; that file carries five).
+      ⚠️ A draft of this said 50 in three files and the number was never derived — corrected by
+      counting the fields. Suite 1,374/1,374, hook-run.
+      (context: BUGS.md C28 `#### The ornament's own rect at a relaxed floor`)
+
+- [x] **c28-ornament-rect-asked** — the box as written 2026-09-20, kept for what it asked.
+      ⚠️ **The tag carries a suffix on purpose**: the two earlier "kept for what it asked" boxes put
+      the qualifier in parentheses AFTER the tag, and `check-queue-coherence.sh` reads the first token
+      only, so both read as DUPLICATE-TAG — `(blocked-on: …)` then resolves ambiguously and
+      `next-item.sh` takes whichever comes first. Fixed here and on `c28-grouping-trade-asked` in the
+      same commit; the warning pre-dated this session by one box and is the sibling of this one.
+      **RE-DUMP THE
+      ORNAMENT'S OWN RECT — the ONE place `c28-grouping-trade`
       measured at the wrong grain, and the cheapest sub-box this campaign has had.**
       ✅ **Written 2026-09-20 by `c28-grouping-trade`, out of its own "what it does not settle".**
       That step priced the grouping pair over all 75 pages and answered *"what does it cost on the
@@ -980,7 +1097,9 @@ happens.**
       caller; /private/tmp had swept its files, so the rescue patch was the only copy.
       (context: BUGS.md C28 `#### The two-sided grouping trade, PRICED`)
 
-- [x] **c28-grouping-trade (the box as written 2026-09-11, kept for what it asked)** — **PRICE THE
+- [x] **c28-grouping-trade-asked** — the box as written 2026-09-11, kept for what it asked (tag
+      suffixed 2026-09-20 to clear a standing `DUPLICATE-TAG` warning; see `c28-ornament-rect-asked`).
+      **PRICE THE
       TWO-SIDED TRADE THE ENTRY NAMES MOST OFTEN AND HAS NEVER
       PRICED. The constant campaign is over; this is a PRODUCT question and the first C28 sub-box
       since 2026-09-02 that is not about a mutant.**

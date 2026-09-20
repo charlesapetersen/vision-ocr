@@ -1061,6 +1061,10 @@ PY
 # than its own: the subject is a `Tools/` tool. One of its three rows sabotages anything —
 # the read-only dump directory, this file's `chmod -x` technique pointed at a destination
 # instead of a program — and the other two are the premise and the inverse.
+# ⚠️ **SIX rows from 2026-09-20, not three**: D, E and F were added for `GROUPING=`'s two
+# exit-2 refusals and its per-arm dump, and none of the three sabotages anything either —
+# they drive the shipped tool with a refused or a well-formed `GROUPING`. So the sentence
+# above still describes the whole of what this case breaks; only its arithmetic moved.
 #
 # ⛔ WHY `tonal-plate.pdf` AND NOT `text-only.pdf`, measured 2026-08-26 rather than assumed:
 # this tool needs `.jpeg` page content (its `guard case .jpeg = first.content` — cited by
@@ -1215,6 +1219,94 @@ fault_shape_dump() {
   # three counts still agree, and this is the only clause that objects.
   elif grep -q "FAILED TO WRITE" <<<"$out"; then
     bad "$name" "exit 0 with a failure named in the summary: $(tail -1 <<<"$out")"
+  else
+    ok "$name"
+  fi
+  local basePromised="$promised"
+
+  # --- D and E. `GROUPING=`'s two exit-2 refusals ------------------------------
+  # The debt `c28-grouping-trade` shipped and named: that knob added TWO refusals and no
+  # case row, where C27 (b)'s commit discharged the same debt with eight `mrc_refuses`
+  # rows. Both are startup refusals, so neither costs a page.
+  #
+  # ⛔ EACH ROW ASSERTS ITS OWN MESSAGE, not merely the exit code, and that is the whole
+  # design: `parseGrouping` returns THREE distinguishable cases precisely so that one
+  # sabotage cannot leave both green — C27's `MRC_PAGES` review found a shared refusal
+  # message under which a sabotage of the repeat guard reddened nothing. Two rows keyed on
+  # `exit 2` alone would reproduce that defect here.
+  name="a malformed GROUPING arm is exit 2, and says which piece it could not read"
+  out="$(GROUPING=4 "$tool" "$page" 1 2>&1)"; rc=$?
+  if [ "$rc" -ne 2 ]; then
+    bad "$name" "exit $rc, wanted 2: $(tail -1 <<<"$out")"
+  elif ! grep -q 'is not members:gapFactor' <<<"$out"; then
+    bad "$name" "exit 2 without the malformed message: $(head -1 <<<"$out")"
+  elif ! grep -q '"4"' <<<"$out"; then
+    bad "$name" "exit 2 but the message does not name the piece it refused"
+  # ⛔ There is deliberately NO "…and was not refused as a repeat" clause, and the
+  # adversarial review of this diff is why: `groupingArms` writes ONE message and exits, so
+  # no output can hold both, and such a clause could never be the reporter — a tool that
+  # refused a malformed arm as a repeat reds the clause ABOVE instead. It WAS drafted here,
+  # it could not fail, and that is recorded rather than deleted in silence. What carries the
+  # distinctness the comment above promises is the two rows' own message greps.
+  else
+    ok "$name"
+  fi
+
+  # ⚠️ `2:3,2:3` is two IDENTICAL arms, which is the easy case. The guard keys on the TAG
+  # rather than on the arm, because `%g` prints six significant digits: the case that
+  # caught the first version was `4:3.0000001,4:3.0000002`, two DISTINCT arms with one
+  # column name. Asserted here so a guard re-keyed onto the arm reddens.
+  name="two GROUPING arms sharing a column name are exit 2, distinguishably from malformed"
+  out="$(GROUPING=2:3,2:3 "$tool" "$page" 1 2>&1)"; rc=$?
+  local distinctOut distinctRc
+  distinctOut="$(GROUPING=4:3.0000001,4:3.0000002 "$tool" "$page" 1 2>&1)"; distinctRc=$?
+  if [ "$rc" -ne 2 ]; then
+    bad "$name" "exit $rc, wanted 2: $(tail -1 <<<"$out")"
+  elif ! grep -q 'two arms are both named g2x3' <<<"$out"; then
+    bad "$name" "exit 2 without the repeat message: $(head -1 <<<"$out")"
+  # ⛔ Same as row D: the mirror clause `grep 'is not members:gapFactor'` was drafted here
+  # and CANNOT FAIL, one refusal message being written per run. The live half is the grep
+  # above; the row below is what actually separates the two guards.
+  elif [ "$distinctRc" -ne 2 ] || ! grep -q 'both named g4x3' <<<"$distinctOut"; then
+    bad "$name" "two distinct arms with one %g tag were not refused: exit $distinctRc"
+  else
+    ok "$name"
+  fi
+
+  # --- F. the per-arm dump, and it is the row this case did not have -----------
+  # ⛔ `SHAPEDUMP` and `GROUPING=` shipped a day apart and did not meet: until 2026-09-20 a
+  # dumping run under `GROUPING=` wrote the SHIPPED arm's `-lines.png` and nothing else, so
+  # the picture and the columns beside it described different rules and nothing printed
+  # said so. Measured on the Boxoffice masthead page — 7 files, none of them a relaxed
+  # arm's. `BUGS.md` C28 `#### The ornament's own rect at a relaxed floor`.
+  #
+  # ⚠️ The count is asserted as a DELTA against row C's own `promised`, not as a literal:
+  # `rimRadii` decides the baseline and a literal here would redden on a change that is not
+  # a defect. Two arms, exactly two more files — which is also what says the arms did not
+  # quietly replace the shipped `-lines.png` with one of their own.
+  name="…and each GROUPING arm gets its own -lines dump, named for that arm"
+  local armdir="$SB/arm-dump" armPromised armWrote
+  mkdir -p "$armdir"
+  out="$(SHAPEDUMP="$armdir" GROUPING=3:3,2:3 "$tool" "$page" 1 2>&1)"; rc=$?
+  armWrote="$(sed -n 's/^SHAPEDUMP p1: \([0-9]*\) of \([0-9]*\) file.*/\1/p' <<<"$out")"
+  armPromised="$(sed -n 's/^SHAPEDUMP p1: \([0-9]*\) of \([0-9]*\) file.*/\2/p' <<<"$out")"
+  missing=""
+  for base in lines g3x3-lines g2x3-lines; do
+    [ -s "$armdir/tonal-plate-p1-$base.png" ] || missing="$missing tonal-plate-p1-$base.png"
+  done
+  if [ "$rc" -ne 0 ]; then
+    bad "$name" "exit $rc, wanted 0: $(tail -1 <<<"$out")"
+  elif [ -n "$missing" ]; then
+    bad "$name" "reported $armWrote of $armPromised written, but missing or empty:$missing"
+  # ⚠️ Entailed by the `rc -ne 0` clause above — `stop(4)` fires whenever `dumpMissing` is
+  # non-empty — and kept, as row C keeps it, so a change to that coupling is loud. Row C's
+  # `ondisk == promised` clause is NOT carried here, so this row cannot see two arms whose
+  # names collided into one file; self-test 11(f)'s name list is what covers that, which is
+  # a gap rather than a hole. Both from the adversarial review of this diff.
+  elif [ "$armWrote" != "$armPromised" ]; then
+    bad "$name" "wrote $armWrote of $armPromised promised file(s)"
+  elif [ -z "$basePromised" ] || [ "$armPromised" != "$((basePromised + 2))" ]; then
+    bad "$name" "two arms promised $armPromised file(s) against ${basePromised:-no} without them"
   else
     ok "$name"
   fi

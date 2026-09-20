@@ -655,6 +655,44 @@ pass-through is unreachable from `--self-test` and is observed by the run instea
 joined rather than re-measured (0 pages unpriced); the ornament is read at PAGE level, not at the
 664-component rect the entry quotes; and 73 sub-bar pages plus 2 is **not** a corpus figure — do not pool
 it, C26 measured a pooled scale-up 5.96x high on this corpus.
+✅ **BOTH OF THOSE ARE DISCHARGED 2026-09-20 AND THE RECT IS READ — the ornament's 664 components STILL
+GROUP INTO 0 at a member floor of 3 and of 2, so C28's cost half has no failure mode the page-level
+table could not see** (`BUGS.md` C28 `#### The ornament's own rect at a relaxed floor`; `shape_dump`
+**3 rows → 6**, each new row watched reddening ALONE under its own one-token sabotage).
+⛔ **THE INSTRUMENT WAS BLIND FIRST AND THAT IS WORTH MORE THAN THE VERDICT: `SHAPEDUMP` and `GROUPING=`
+shipped a day apart and never met.** The successor box prescribed *"`SHAPEDUMP=<dir> GROUPING=3:3,2:3`
+on that one page, then read `-textish.png` and `-lines.png`"* — run verbatim, that wrote **7 files, all
+of them the SHIPPED arm's**, so `-lines.png` answers a question about `4:3` while the columns beside it
+answer one about `3:3` and `2:3`, and nothing printed says so; `-textish.png` is worse in a quieter way,
+being **identical across every arm by construction** because an arm changes the grouping and never the
+components. ✅ One `-<tag>-lines.png` per arm now, from the same `groupingLinesFor` the columns are
+counted from (**7 → 9**), with `groupingDumpNames` free so group 11(f) pins the names against the
+columns in order. ✅ **The verdict was PREDICTED IN WRITING from the committed row alone before the
+dump**: `linePx` 319 → 365 is a new group of **46 px** and 46 is no subset sum of {488, 133, 43}. Held —
+rect black px **0 / 0 / 0** over shipped / `3:3` / `2:3`, and `-g2x3-lines.png` is pixel-identical to
+`-g3x3-lines.png`. The page's third group is a **third rim fragment on this page** (⚠️ a draft said *fourth*, an
+ordinal over no stated denominator), 46 px at `21x5+738+1407`, read
+at 4x as the glyph tops of the word `The` — three components, which is exactly why a floor of 3 admits
+it — on the same line as the shipped `topLine`, so *"all three of those firings are the RIM of
+recognised type"* extends to the relaxed arms. ✅ The 2026-08-22 rect reading reproduces **digit for
+digit** through a different binary 29 days later: map 666, three accepted components **488 / 133 / 43 =
+664**, painted 666, the `bbox ∩ map` trap at 99.7% again.
+⛔ **AND IT CORRECTS THE SENTENCE THE WHOLE TRADE WAS ARGUED FROM: the entry blames the two grouping
+constants JOINTLY for this rect and it is `lineGapFactor` ALONE.** The three components sit **289** and
+**230** px apart against a bar of `3.0 × glyphH 8` = **24**, so every run in that band has ONE member
+and no floor ≥ 2 can group a singleton at any value. Derived from the geometry, then measured at both
+endpoints with the arms chosen before the run: `2:28.7` → **0** in the rect, `2:28.75` → **623** painted
+and **+621** in the column (133 + 488); `3:36.1` → **0**, `3:36.125` → **666** and **+664**. So admitting
+the ornament needs `lineGapFactor` ≥ **28.75, 9.58x** the shipped 3.0 — and `#### Are there PICTURES in ⛔ **RETRACTED IN PART BY THE REVIEW OF THIS DIFF, and the retraction is kept above the claim: the rect holds THREE accepted components, so the shipped `lineMinimumMembers` = 4 refuses it at EVERY gap factor too. Each constant alone suffices to refuse and NEITHER alone suffices to admit — the pair must move together — and admitting the WHOLE ornament is `3:36.125`, **12.04x**, not 9.58x, since 28.75 leaves the 43-px component out. "664 accepted components" is also a units error: 664 PIXELS in THREE components.**
+the sub-bar 73?`'s *"lowering it to 3 would admit 666 px of ornament on the Boxoffice page"* is
+**measured FALSE**: it admits 0, and so does 2. ⚠️ **The one member floor that reaches it is 1, and there
+the term stops being a term** — `GROUPING=1:3` reads `linePx` **1,089**, exactly `txtPx`, i.e. the whole
+accepted set, so the honest form is *no member floor ≥ 2*. ⚠️ One page and one rect: `Scott_TK` p3's
+footer strip, the entry's second device rect that reaches the map, was **not** re-dumped, so which
+constant refuses that one is still unasked. ⚠️ The four bracket arms are a **bracket and not
+candidates**, no committed artefact moves, no new one was written — the run's row is byte-identical to
+`C28-GROUPING-2026-09-20.tsv`'s on all **46** shared fields (42 tool columns plus the four of the two
+arms re-run; that file carries five arms) — and nothing in `Sources/` moved.
 ⚠️ `lineNAtBar`'s `dense` and `n/a` tokens appear on 0 of the 80 rows — ⛔ **but NOT in the same sense,
 corrected on adoption: `n/a`'s absence is measured and `dense`'s is BY CONSTRUCTION**, since `mrcLayers`
 passes no `runLimit` and the tool's own header records that `dense` is producible by no run of it.
@@ -1559,7 +1597,13 @@ printer's-ornament rect says the same: map 666 px, accepted components **664**, 
 was a first draft caught by the review). `lineMinimumMembers` / `lineGapFactor` are **the same two
 constants** 3b named for the term's false negatives on C26's cartoons (`textish` 372 and 785 px, 0
 groups), and `lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values — so relaxing
-it is a measured two-sided trade, not a fix. ⚠️ **There is no plate control below 40% of a page**, so "0
+it is a measured two-sided trade, not a fix. ⛔ **THAT PAIRING IS SUPERSEDED ON THIS RECT AS OF
+2026-09-20 AND IT IS `lineGapFactor` ALONE**: the three components sit 289 and 230 px apart against a
+bar of `3.0 × glyphH 8` = 24, so no member floor ≥ 2 can group a singleton here at any value, and
+admitting the ornament needs a gap factor of **28.75, 9.58x** the shipped 3.0 (measured at both ⛔ **RETRACTED IN PART BY THE REVIEW OF THIS DIFF, and the retraction is kept above the claim: the rect holds THREE accepted components, so the shipped `lineMinimumMembers` = 4 refuses it at EVERY gap factor too. Each constant alone suffices to refuse and NEITHER alone suffices to admit — the pair must move together — and admitting the WHOLE ornament is `3:36.125`, **12.04x**, not 9.58x, since 28.75 leaves the 43-px component out. "664 accepted components" is also a units error: 664 PIXELS in THREE components.**
+endpoints). The tension stays real about the cartoons and `Xin Qu` p20 and is **not** real about this
+ornament — see the ✅ block ~940 lines above and `BUGS.md` C28 `#### The ornament's own rect at a
+relaxed floor`. ⚠️ **There is no plate control below 40% of a page**, so "0
 plates" means "no plate the size of the three plate controls"; ~3% is the smallest control, **not** an
 instrument floor (pass 2 found marks at 1%). ⛔ **And it corrected a description of this campaign's**:
 `Gitlin_2000` p1's "photograph frame" is a ProQuest *"Blocked due to copyright"* placeholder box —
