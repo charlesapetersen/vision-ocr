@@ -177,6 +177,7 @@
 //   /tmp/score-shape-term "<pdf>" [page…]              # 1-indexed; default: a spread
 //   SHAPEDUMP=/tmp/look /tmp/score-shape-term "<pdf>" 3
 //   WIDENBYTES=1 /tmp/score-shape-term "<pdf>" 3       # + the eleven byte columns
+//   GROUPING=2:3,4:6 /tmp/score-shape-term "<pdf>" 3   # + two columns per relaxed arm
 //
 // ⚠️ The copied file must be named `main.swift` or swiftc rejects top-level code with a
 // pile of misleading errors about the expressions themselves — recorded in C28's 2b
@@ -231,7 +232,43 @@
 // that rect. A recognised word box already does that; it makes every byte figure an upper
 // bound on the widening rather than an estimate of it.
 //
-// Exit codes: 1 unreadable PDF, 2 a refused `SHAPEDUMP` or `WIDENBYTES`, **3 `WIDENBYTES`
+// `GROUPING=<members>:<gapFactor>[,…]` prices C28's **two-sided grouping trade** — the
+// pair the entry names more often than anything else in it and had never measured. Each
+// arm regroups the page's OWN accepted components at its own two constants and adds
+// `lineN_<tag>` and `linePx_<tag>` beside the shipped `lineN`. ⚠️ With `GROUPING` unset
+// the TSV is byte-identical — no column, no filler, no row wider by a tab — but the
+// SUMMARY line gains `; grouping shipped only` unconditionally, so "changes nothing at
+// all" is false and a draft of this said it. The clause is deliberate (a total with no
+// arm label records no decision, C27's `MRC_COLOUR` lesson) and it is the whole of the
+// difference.
+//
+// ⛔ **Why a knob and not two binaries one token apart**, which is what every earlier C28
+// byte figure used. One pass shares the render, the recognition, the Otsu, the components
+// and the calibration across all the arms, so the difference between an arm and the
+// shipped column beside it is the GROUPING and provably nothing else. Recognition on this
+// path is measured NOT to be a pure function of the page (C27: `saturation(of:)` reads
+// 0.02831 cold and 0.03033 warm on one page; C30: the recogniser's output varies with the
+// image handed to the request), so a two-binary comparison would carry that confound
+// exactly where the answer is small. ⚠️ It is also cheaper, the shared half being the
+// expensive one — **reasoned from what is shared, not timed**, so no factor is quoted.
+//
+// ⛔ **And the port check stays ARMED, which is the part to check before trusting a
+// column.** The obvious way to build this knob is to vary this file's copy of the rule —
+// and that is exactly what the port check refuses. Instead the two constants are DEFAULT
+// ARGUMENTS of `lines(…)`: the call the port check compares is still the no-argument one,
+// byte-identical to what it has always been, and an arm is an ADDITIONAL call beside it.
+// So no arm is exempt, no page is exempt, and `port agreed on N` means what it always did.
+//
+// ⚠️ Naming the shipped pair explicitly (`GROUPING=4:3`) is legal and is the cheapest
+// control this knob offers: that column must equal `lineN` on every row. ⛔ **It is an
+// IDENTITY, not a determinism control** — the same function, same arguments, same data,
+// same process — and it does **not** observe the per-arm pass-through: the review of this
+// diff built an "arm ignored" defect and `GROUPING=4:3` passed on it, as it must. It
+// catches an argument SWAP (4:3 is not 3:4) and nothing else. What covers the
+// pass-through is `groupingFieldsFor`, self-test group 11(e).
+//
+// Exit codes: 1 unreadable PDF, 2 a refused `SHAPEDUMP`, `WIDENBYTES` or `GROUPING`,
+// **3 `WIDENBYTES`
 // was asked for and no jbig2 was found**, **4 a `SHAPEDUMP` that did not write everything
 // it promised** — the rows are still printed and still valid on a 4, because only the dump
 // failed — 5 a failed self-test, **6 the identity above failed on some page** — the rows
@@ -294,6 +331,100 @@ let lineMinimumMembers = 4
 /// …and no gap between adjacent members wider than this many glyph heights, which is
 /// what stops a mark at each margin from being read as one line spanning the page.
 let lineGapFactor = 3.0
+
+// MARK: - C28's two-sided grouping trade, `GROUPING=`
+
+/// One relaxed setting of the two GROUPING constants, measured beside the shipped pair.
+///
+/// C28 names `lineMinimumMembers` and `lineGapFactor` as the term's two-sided trade more
+/// often than anything else in the entry and has never priced it: they are what read **0**
+/// on C26's two founding cartoons (372 and 785 accepted `textish` px that never reach four
+/// members on a baseline) and they are also what keeps a printer's ornament — 664 accepted
+/// components, 0 groups — from firing. Relaxing them moves both at once, so the
+/// deliverable is a table and not a value.
+struct GroupingArm: Equatable {
+    let members: Int
+    let gapFactor: Double
+    /// The arm names ITSELF in every column header it produces. C27's `MRC_COLOUR` review
+    /// found a summary block printing no arm label, so a pasted total carried no record of
+    /// which decision produced it; a column name is the cheapest place to keep that.
+    /// `%g` so 3.0 reads `3` and 4.5 reads `4.5` — a header field, not a number anything
+    /// parses back.
+    var tag: String { "g\(members)x" + String(format: "%g", gapFactor) }
+}
+
+/// What `GROUPING=` said, or why it is being refused.
+///
+/// A function returning a case rather than a closure that exits, for the reason C27's
+/// SWIFT review gave about `MRC_PAGES`: a parse that calls `exit` from inside a top-level
+/// closure is unreachable from `--self-test`, so its refusals are asserted by nothing. The
+/// three cases are DISTINGUISHABLE so that one sabotage cannot leave every row green —
+/// that same review's other finding, where one shared refusal message meant a sabotage of
+/// the repeat guard reddened nothing.
+enum GroupingSpec: Equatable {
+    case ok([GroupingArm])
+    case malformed(String)
+    /// ⛔ A repeat is REFUSED rather than de-duplicated. Two identical arms print two
+    /// identical column names under one header, which is the field/header disagreement
+    /// T14, A12.3 and T18 each are; and `MRC_PAGES=1,1,1` double-counting one page is this
+    /// register's measured precedent for accepting a repeat quietly.
+    case repeated(String)
+}
+
+func parseGrouping(_ raw: String) -> GroupingSpec {
+    var arms: [GroupingArm] = []
+    var tags: Set<String> = []
+    for piece in raw.split(separator: ",", omittingEmptySubsequences: false) {
+        let parts = piece.split(separator: ":", omittingEmptySubsequences: false)
+        guard parts.count == 2,
+              let m = Int(parts[0]), let g = Double(parts[1]),
+              m >= 1, g >= 0, g.isFinite
+        else { return .malformed(String(piece)) }
+        let arm = GroupingArm(members: m, gapFactor: g)
+        // ⛔ Keyed on the TAG and not on the arm, corrected by the adversarial review of
+        // this diff. The harm the refusal exists to prevent is TWO IDENTICAL COLUMN
+        // NAMES, and the name is `%g` — six significant digits — so `4:3.0000001,
+        // 4:3.0000002` is two DISTINCT arms with ONE tag: an arm-keyed guard let it
+        // through and printed `lineN_g4x3` twice under one header. Measured on a replica
+        // of this function before the change.
+        if !tags.insert(arm.tag).inserted { return .repeated(arm.tag) }
+        arms.append(arm)
+    }
+    // ⛔ There is NO `arms.isEmpty` guard here and that is deliberate, measured rather
+    // than reasoned: `"".split(separator: ",", omittingEmptySubsequences: false)` returns
+    // `[""]` and not `[]`, so the loop body always runs at least once and always either
+    // returns or appends — a guard here could never fire. CONTRIBUTING 4c calls an error
+    // branch that has never executed R31/R32/H2, and this file's own header cites it.
+    // What stands in its place is group 11's `""` row: if `omittingEmptySubsequences`
+    // ever became `true`, an empty input would parse to `.ok([])` — zero arms, zero
+    // columns, silently — and that row is what reddens.
+    return .ok(arms)
+}
+
+/// One arm's two fields, and the ONLY place an arm is turned into printed columns.
+///
+/// ⛔ **A free function purely so a check can reach it**, which is the finding of this
+/// diff's adversarial review and is worth more than the knob. The main loop is top-level
+/// code, so everything between `arm` and the printed field used to be unreachable from
+/// `--self-test`: the two fixtures below call `lines(…)` directly with literal arguments,
+/// which proves `lines` honours its parameters and says **nothing** about whether the
+/// arm's values ever get there. Four count-preserving defects passed the whole self-test
+/// — the arm ignored (`members: lineMinimumMembers`), the two fields swapped, the two
+/// columns swapped, and the arm order permuted — and the first of those makes every
+/// column a copy of `lineN`, which this file's header calls the one answer the knob
+/// exists to test and the worst to fabricate.
+///
+/// ⚠️ It takes `arms` rather than one arm so that ARM ORDER is inside what the check
+/// pins; `groupingColumns` is generated from the same array in the same order.
+func groupingFieldsFor(_ arms: [GroupingArm], _ comps: [Comp], accepted: [Int],
+                       glyphHeight: Double) -> [String]? {
+    guard !arms.isEmpty else { return nil }
+    return arms.flatMap { arm -> [String] in
+        let g = lines(comps, accepted: accepted, glyphHeight: glyphHeight,
+                      members: arm.members, gapFactor: arm.gapFactor)
+        return ["\(g.count)", "\(g.reduce(0) { $0 + $1.area })"]
+    }
+}
 
 /// The rim candidate's radii, in map pixels, swept in one pass so that one run over a
 /// population answers the question at every radius rather than three runs at one each.
@@ -526,7 +657,23 @@ func textish(_ comps: [Comp], glyphHeight: Double, glyphRun: Double) -> [Int] {
 ///
 /// The band test is vertical *overlap* rather than a shared centre line, because a
 /// descender and a cap on the same line of type do not share a centre.
-func lines(_ comps: [Comp], accepted: [Int], glyphHeight: Double) -> [Line] {
+///
+/// ⛔ **The two grouping constants are PARAMETERS defaulting to the shipped values, and
+/// that is what keeps the port check armed** (`GROUPING=`, 2026-09-19). The queue box
+/// that asked for this measurement expected the knob to vary this copy of the rule and
+/// the port check to be *disarmed* for the varied constant — but a default argument means
+/// the call the port check compares is the one written with no arguments, byte-identical
+/// to what it has always been, so **no arm is exempt and the check runs at full strength
+/// on every page of every arm**. A relaxed arm is an ADDITIONAL call beside the shipped
+/// one, never a substitution for it. Group 11 of the self-test pins the no-op — the
+/// default path against the explicit shipped pair — so a later edit cannot make the two
+/// differ in silence. ⚠️ That is not the ONLY way it could stop being true, corrected by
+/// the review of this diff: giving the main loop's own no-argument call an argument would
+/// too, and no check reads that line. What pins it is the port check itself, at run time
+/// on every real page — diverge from the shipped rule there and the run exits 7.
+func lines(_ comps: [Comp], accepted: [Int], glyphHeight: Double,
+           members: Int = lineMinimumMembers,
+           gapFactor: Double = lineGapFactor) -> [Line] {
     guard glyphHeight > 0 else { return [] }
     let sorted = accepted.sorted { comps[$0].minY < comps[$1].minY }
     var bands: [[Int]] = []
@@ -552,7 +699,7 @@ func lines(_ comps: [Comp], accepted: [Int], glyphHeight: Double) -> [Line] {
         let ordered = band.sorted { comps[$0].minX < comps[$1].minX }
         var run: [Int] = []
         func flush() {
-            if run.count >= lineMinimumMembers {
+            if run.count >= members {
                 var l = Line()
                 for i in run {
                     let c = comps[i]
@@ -568,7 +715,7 @@ func lines(_ comps: [Comp], accepted: [Int], glyphHeight: Double) -> [Line] {
         for i in ordered {
             if let prev = run.last {
                 let gap = comps[i].minX - comps[prev].maxX
-                if Double(gap) > lineGapFactor * glyphHeight { flush() }
+                if Double(gap) > gapFactor * glyphHeight { flush() }
             }
             run.append(i)
         }
@@ -912,7 +1059,7 @@ func selfTest() -> [String] {
     // check's sensitivity to move with it, and it will not.
     //
     // ⛔ **MEASURED, not reasoned — three binaries, `shasum`-distinct, all `rc=0`:**
-    // shipped reads `ok (10 checks)` with all three baselines in and exits 0;
+    // shipped reads `ok (11 checks)` with all three baselines in and exits 0;
     // `shapeHeightLow = 0.0` exits **5** with the rim line plus three port lines; and the
     // same constant with THIS baseline's `for y in 30..<33` emptied to `30..<30` still
     // exits **5** with the **identical** rim message. The rim failure survives the 3x3
@@ -1010,6 +1157,120 @@ func selfTest() -> [String] {
         bad.append("port: a run limit of 1 did not truncate")
     }
 
+    // 11. `GROUPING=`, C28's two-sided grouping trade. Three properties, and the order
+    //     matters: the parse, then that varying the pair is a NO-OP at the shipped
+    //     values, then that it is NOT a no-op anywhere else.
+    //
+    //     ⛔ The third is the one that cannot be skipped. A knob wired to nothing —
+    //     columns generated, arms parsed, and `lines` called with the shipped constants
+    //     whatever the arm says — would print a full table of numbers that are all the
+    //     shipped column repeated. That is this register's tenth-check-that-could-not-
+    //     fail shape exactly, in a tool whose output is meant to price a product
+    //     decision. So both halves of the pair get a fixture on which relaxing them
+    //     changes the answer, reusing group 5's geometry so the two groups cannot drift
+    //     apart — AND the arm-to-column mapping itself is checked through
+    //     `groupingFieldsFor`, because the two `lines` fixtures pin `lines` and are blind
+    //     to whether an arm's values ever reach it. The adversarial review of this diff
+    //     built that defect and watched the whole self-test pass; see (e).
+    let gGlyphs = glyphs                                  // four 3x10 marks, 12 px pitch
+    let gThree = Array(gGlyphs.indices.prefix(3))
+    // (a) the no-op. The default path and the explicit shipped pair, same fixture, same
+    //     answer. ⚠️ **It is credited with less than a draft of this claimed**: the two
+    //     calls are the same expression by construction — the defaults ARE these two
+    //     globals — so it only reddens if a later edit stops the default arguments
+    //     naming them. It does NOT say the port check still speaks for the arms'
+    //     baseline; what says that is the no-argument call site in the main loop, which
+    //     no check here reads. The pin on THAT is the port check itself, at run time on
+    //     real pages: give the main loop's `found` an argument and the shipped rule and
+    //     this copy diverge and the run exits 7.
+    if lines(gGlyphs, accepted: Array(gGlyphs.indices), glyphHeight: 10).count
+        != lines(gGlyphs, accepted: Array(gGlyphs.indices), glyphHeight: 10,
+                 members: lineMinimumMembers, gapFactor: lineGapFactor).count {
+        bad.append("grouping: the default path and the explicit shipped pair disagree")
+    }
+    // (b) the member floor moves and the answer moves with it. Three marks are 0 at the
+    //     shipped floor of 4 (group 5 asserts that) and 1 at a floor of 3.
+    if lines(gGlyphs, accepted: gThree, glyphHeight: 10, members: 3, gapFactor: lineGapFactor)
+        .count != 1 {
+        bad.append("grouping: three glyphs at members=3 did not make one line")
+    }
+    // (c) the gap factor moves and the answer moves with it. `far`'s 365-px gap is a
+    //     split at the shipped 3.0 (group 5 asserts that) and not at 40.0, where the bar
+    //     is 400 px. ⚠️ Both directions of the pair, because a knob wired to only the
+    //     member argument would pass (b) alone.
+    if lines(far, accepted: Array(gGlyphs.indices), glyphHeight: 10,
+             members: lineMinimumMembers, gapFactor: 40.0).count != 1 {
+        bad.append("grouping: a 365-px gap still split the line at gapFactor 40")
+    }
+    // (d) the parse. `.ok` on a well-formed pair list, and each refusal DISTINGUISHABLE
+    //     from the others — C27's `MRC_PAGES` review found one shared refusal message
+    //     under which a sabotage of the repeat guard reddened nothing.
+    //     ⚠️ An `if case`, not a `guard … else { return bad }`: an early return here
+    //     would hide every check below it behind one parse failure, which is the
+    //     opposite of what a self-test listing all its complaints is for.
+    if case .ok(let armsOK) = parseGrouping("2:3,4:6.5") {
+        if armsOK != [GroupingArm(members: 2, gapFactor: 3),
+                      GroupingArm(members: 4, gapFactor: 6.5)] {
+            bad.append("grouping: 2:3,4:6.5 parsed to \(armsOK)")
+        }
+        if armsOK.map(\.tag) != ["g2x3", "g4x6.5"] {
+            bad.append("grouping: tags are \(armsOK.map(\.tag)), not [g2x3, g4x6.5]")
+        }
+    } else {
+        bad.append("grouping: 2:3,4:6.5 did not parse")
+    }
+    for raw in ["4", "4:", ":3", "4:x", "x:3", "0:3", "4:-1", "4:inf", "2:3,", ""] {
+        if case .malformed = parseGrouping(raw) { continue }
+        bad.append("grouping: \(raw.isEmpty ? "<empty>" : raw) was accepted")
+    }
+    // A repeat is REFUSED and not de-duplicated, and it is its OWN case: two identical
+    // arms print two identical column names under one header, which is the field/header
+    // disagreement T14, A12.3 and T18 each are, and `MRC_PAGES=1,1,1` double-counting one
+    // page is this register's measured precedent for accepting a repeat quietly.
+    if case .repeated(let tag) = parseGrouping("2:3,2:3") {
+        if tag != "g2x3" { bad.append("grouping: the repeat named \(tag), not g2x3") }
+    } else {
+        bad.append("grouping: 2:3,2:3 was not refused as a repeat")
+    }
+    // ⚠️ 4:3 IS the shipped pair and is deliberately legal — naming it explicitly is how
+    //    a run asks for a determinism control, a column that must equal `lineN` on every
+    //    row. Refusing it would remove the cheapest check this knob can offer.
+    if case .ok = parseGrouping("4:3") {} else {
+        bad.append("grouping: the shipped pair 4:3 was refused")
+    }
+    // (e) ⛔ THE ARM-TO-COLUMN MAPPING, which is what the whole knob comes down to and
+    //     what (a)-(d) are all blind to. Two arms over group 5's three-glyph fixture:
+    //     `4:3` is the shipped floor and refuses them (0 groups, 0 px); `3:3` accepts
+    //     them as one line of three 2x10 marks — 20 px each, so 60. The expected list is
+    //     written out in full rather than computed, because computing it here would be
+    //     the mirror `c28Calibration`'s comment warns about.
+    //
+    //     This reddens under all FOUR count-preserving defects the review of this diff
+    //     built and watched the rest of the self-test survive: the arm ignored
+    //     (`members: lineMinimumMembers`) → `["0","0","0","0"]`; the two fields swapped
+    //     → `["0","0","60","1"]`; the arm ORDER permuted → `["1","60","0","0"]`; and a
+    //     `groupingColumns` reordered away from this list, which the width row below
+    //     catches. ⚠️ A repeat of (b) in the count it asserts, deliberately: what is new
+    //     is the PATH, not the arithmetic.
+    let armPair = [GroupingArm(members: 4, gapFactor: 3), GroupingArm(members: 3, gapFactor: 3)]
+    let mapped = groupingFieldsFor(armPair, gGlyphs, accepted: gThree, glyphHeight: 10)
+    if mapped != ["0", "0", "1", "60"] {
+        bad.append("grouping: the arm-to-column mapping read "
+                   + "\(mapped.map { "\($0)" } ?? "nil"), not [0, 0, 1, 60]")
+    }
+    // And the width, in the same place as the values: two fields an arm, in step with
+    // the header `groupingColumns` builds from the same array. T14, A12.3 and T18 are
+    // three separate defects from a header and a row disagreeing about field count, and
+    // `row()`'s `precondition` only fires once a page has been measured.
+    if (mapped?.count ?? -1) != armPair.count * 2 {
+        bad.append("grouping: \(armPair.count) arms produced "
+                   + "\(mapped?.count ?? -1) fields, not \(armPair.count * 2)")
+    }
+    // No arms is no columns, which is what makes `GROUPING` unset byte-identical.
+    if groupingFieldsFor([], gGlyphs, accepted: gThree, glyphHeight: 10) != nil {
+        bad.append("grouping: an empty arm list produced fields")
+    }
+
     return bad
 }
 
@@ -1027,7 +1288,10 @@ if args.contains("--self-test") {
         // group 10 rather than an eleventh group, and this literal counts groups. A draft
         // read 11 and made the number uncountable — the exact failure the comment above
         // describes, committed in the same hour as the comment.
-        print("score-shape-term: self-test ok (10 checks)")
+        // ⚠️ ELEVEN from 2026-09-19: `GROUPING=` added group 11, which IS a new group and
+        // not more guards inside an old one, so this literal moves. Counted by reading
+        // the numbered comments, not by incrementing the previous figure.
+        print("score-shape-term: self-test ok (11 checks)")
         exit(0)
     }
     FileHandle.standardError.write(Data(
@@ -1113,6 +1377,38 @@ let jbig2Tool: String? = {
     return found
 }()
 
+/// C28's two-sided grouping trade. The relaxed arms to measure beside the shipped pair.
+///
+/// `GROUPING=2:3,4:6` — `members:gapFactor`, comma-separated, one extra pair of columns
+/// each. Absent, the tool prints exactly what it always did.
+///
+/// ⛔ Refused loudly on anything it cannot parse, for `WIDENBYTES`'s reason and
+/// `INKBAR`'s: a mistyped arm that silently printed no columns reads as *"the relaxed
+/// rule changes nothing"*, which is the one answer this knob exists to test and the
+/// worst one to fabricate. Exit 2 is the configuration exit these tools share.
+let groupingArms: [GroupingArm] = {
+    guard let raw = ProcessInfo.processInfo.environment["GROUPING"], !raw.isEmpty
+    else { return [] }
+    switch parseGrouping(raw) {
+    case .ok(let arms):
+        return arms
+    case .malformed(let piece):
+        FileHandle.standardError.write(Data(
+            ("GROUPING=\(raw): \"\(piece)\" is not members:gapFactor with members >= 1 "
+             + "and a finite gapFactor >= 0\n").utf8))
+        exit(2)
+    case .repeated(let tag):
+        FileHandle.standardError.write(Data(
+            // ⚠️ "two arms" and not "two identical arms": the guard keys on the TAG, so the
+            // pair reaching here need not be equal — `4:3.0000001` and `4:3.0000002` are
+            // distinct arms with one `%g` name, and they are exactly the case an arm-keyed
+            // guard let through.
+            ("GROUPING=\(raw): two arms are both named \(tag); they would print two "
+             + "identical column names under one header\n").utf8))
+        exit(2)
+    }
+}()
+
 func bytes(_ url: URL) -> Int { (try? Data(contentsOf: url).count) ?? 0 }
 
 /// One page, alone in its own PDF: `Flattener.flatten` takes a document, and the
@@ -1137,12 +1433,21 @@ func isolate(_ index: Int) -> URL? {
 let wideColumns = ["wideN", "wideInkOut", "stenPx", "wideStenPx",
                    "shipSten", "wideSten", "shipBytes", "wideBytes", "byteDelta",
                    "shipBg", "wideBg"]
+/// The relaxed arms' columns, generated from `groupingArms` for the reason the rim's and
+/// the byte columns are generated: a header typed beside a row is T14, A12.3 and T18.
+/// Each arm NAMES ITSELF in both of its column headers, so a pasted column carries the
+/// setting that produced it — C27's `MRC_COLOUR` review found a summary block printing no
+/// arm label and a total that therefore recorded no decision.
+/// ⚠️ Appended AFTER `wideColumns`, so the 42-column prefix every committed
+/// `SHAPETERM-*.tsv` was written against stays byte-identical; with `GROUPING` unset this
+/// is empty and the row's filler is zero-wide.
+let groupingColumns = groupingArms.flatMap { ["lineN_\($0.tag)", "linePx_\($0.tag)"] }
 let columns = ["page", "w", "h", "otsu", "inkPx", "outPx", "inkOut", "mapFrac",
                "stenFrac", "stenD3", "glyphN", "glyphH", "glyphRun",
                "ccN", "txtN", "txtPx", "txtShare",
                "lineN", "linePx", "lineShare", "topLine"]
     + rimRadii.flatMap { ["rim\($0)N", "rim\($0)Px", "rim\($0)Top"] }
-    + ["verdict"] + wideColumns
+    + ["verdict"] + wideColumns + groupingColumns
 func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
          inkPx: String = "-", outPx: String = "-", inkOut: String = "-",
          mapFrac: String = "-", stenFrac: String = "-", stenD3: String = "-",
@@ -1150,13 +1455,14 @@ func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
          ccN: String = "-", txtN: String = "-", txtPx: String = "-", txtShare: String = "-",
          lineN: String = "-", linePx: String = "-", lineShare: String = "-",
          topLine: String = "-", rim: [String]? = nil, verdict: String,
-         wide: [String]? = nil) {
+         wide: [String]? = nil, grouping: [String]? = nil) {
     let fields = ["p\(page)", w, h, otsu, inkPx, outPx, inkOut, mapFrac,
                   stenFrac, stenD3, glyphN, glyphH, glyphRun,
                   ccN, txtN, txtPx, txtShare, lineN, linePx, lineShare, topLine]
         + (rim ?? [String](repeating: "-", count: rimRadii.count * 3))
         + [verdict.replacingOccurrences(of: "\t", with: " ")]
         + (wide ?? [String](repeating: "-", count: wideColumns.count))
+        + (grouping ?? [String](repeating: "-", count: groupingColumns.count))
     precondition(fields.count == columns.count)
     print(fields.joined(separator: "\t"))
 }
@@ -1278,6 +1584,21 @@ for index in pages {
     let txtPx = accepted.reduce(0) { $0 + comps[$1].area }
     let found = lines(comps, accepted: accepted, glyphHeight: glyphH)
     let linePx = found.reduce(0) { $0 + $1.area }
+
+    // C28's two-sided grouping trade, `GROUPING=`. Each relaxed arm regroups THIS PAGE'S
+    // OWN `comps` and `accepted` at its own two constants — so the only thing that
+    // differs between an arm and the shipped column beside it is the grouping, and the
+    // render, the recognition, the Otsu, the components and the calibration are shared
+    // by construction rather than by two runs agreeing.
+    //
+    // ⛔ That sharing is the reason this is a knob and not two binaries one token apart,
+    // which is what every earlier C28 byte figure used. Recognition is measured NOT to be
+    // a pure function of the page on this path (C27: `saturation(of:)` reads 0.02831 cold
+    // and 0.03033 after a full-resolution render; C30: the recogniser's own output varies
+    // with the image handed to the request), so a two-binary comparison would carry a
+    // confound exactly where the answer is small. Within one run it cannot.
+    let groupingFields = groupingFieldsFor(groupingArms, comps, accepted: accepted,
+                                           glyphHeight: glyphH)
     let biggest = found.max { $0.area < $1.area }
     func rect(_ l: Line) -> String {
         "\(l.maxX - l.minX + 1)x\(l.maxY - l.minY + 1)+\(l.minX)+\(l.minY)"
@@ -1412,7 +1733,7 @@ for index in pages {
         topLine: topLine, rim: rimFields,
         verdict: identity ? "ok"
             : String(format: "⛔ mapFrac %.6f != inkOut %.6f", mapFrac, inkOut),
-        wide: wideFields)
+        wide: wideFields, grouping: groupingFields)
 
     if let dump = dumpDirectory {
         let stem = "\(src.deletingPathExtension().lastPathComponent.prefix(40))-p\(index)"
@@ -1496,6 +1817,13 @@ for index in pages {
 print("")
 print("pages measured \(measured)"
       + "; port agreed on \(portAgreed)"
+      // The arms name themselves in the summary as well as in the headers: C27's
+      // `MRC_COLOUR` review found a summary block with no arm label, so a pasted total
+      // carried no record of which decision produced it. `shipped` when the knob is off,
+      // rather than nothing, so the two cases are told apart by what is printed and not
+      // by what is absent.
+      + "; grouping " + (groupingArms.isEmpty ? "shipped only"
+                         : "shipped + " + groupingArms.map(\.tag).joined(separator: " "))
       + (identityFailed > 0 ? "; ⛔ IDENTITY FAILED on \(identityFailed)" : "")
       + (portDisagreed > 0 ? "; ⛔ PORT DISAGREED on \(portDisagreed)" : "")
       + (wideRefused > 0 ? "; ⚠️ widening not priced on \(wideRefused)" : "")

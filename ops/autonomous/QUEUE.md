@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-grouping-trade` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-ornament-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-grouping-trade` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-ornament-rect` SUB-BOX — SEARCH FOR THAT TAG, IT IS
       ~350 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
@@ -556,6 +556,13 @@ happens.**
       SINGLETONS go to SIX, and what separates the two constants is the DETAIL STRING (`Optional(2)`
       against `Optional(1)`) rather than the set.** So the successor is the one the box before last
       nominated and the box before this one deferred: the two-sided grouping trade, `c28-grouping-trade`.
+      ⚠️ **Re-pointed a NINTH time 2026-09-20 by `c28-grouping-trade`, now ticked, and the successor is
+      its own residue rather than a nomination: it priced the pair over all 75 pages and found
+      `lineGapFactor` INERT AT THE DECISION and the whole benefit of relaxing landing in the
+      hand-made-mark bucket — but it answered the ornament question at PAGE level where the entry's
+      claim is about the ornament BAND's own rect (664 accepted components, 0 groups). So
+      `c28-ornament-rect` is one page, one dump and a 1:1 reading, and it carries the two
+      `fault-inject.sh` rows `GROUPING=`'s refusals are owed.**
       This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
@@ -878,7 +885,103 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-grouping-trade** — **PRICE THE TWO-SIDED TRADE THE ENTRY NAMES MOST OFTEN AND HAS NEVER
+- [ ] **c28-ornament-rect** — **RE-DUMP THE ORNAMENT'S OWN RECT — the ONE place `c28-grouping-trade`
+      measured at the wrong grain, and the cheapest sub-box this campaign has had.**
+      ✅ **Written 2026-09-20 by `c28-grouping-trade`, out of its own "what it does not settle".**
+      That step priced the grouping pair over all 75 pages and answered *"what does it cost on the
+      ornament?"* at PAGE level: `magazineArticle/_1967_Yearly Increase of 15% Expected by
+      Ampex_Boxoffice…` p1 **already fires at the shipped pair** (`lineN` 2, from rim ink, on a page
+      labelled `nothing`) and goes to **3** at a member floor of 3 or of 2 — so relaxing costs
+      nothing there. ⛔ **But the entry's claim is about the ornament BAND's own rect — *"map 666 px,
+      accepted components 664, grouped 0"* (`#### Are there PICTURES in the sub-bar 73?`) — and 664
+      accepted components grouping into ZERO lines is the most extreme non-grouping in this register.
+      Nobody has asked what that rect does at a member floor of 2.** The page-level 2 → 3 bounds it at
+      *at most one new group on that page*, which is suggestive and is not the reading.
+      **THE STEP, and it needs no sweep, no new tool and no new artefact**: `SHAPEDUMP=<dir>
+      GROUPING=3:3,2:3` on that one page, then read `-textish.png` and `-lines.png` at the band's rect
+      at 1:1, exactly as `#### The rim fix, MEASURED` read its three false positives. Both outcomes
+      are worth having — the 664 still group into 0, which makes the shipped `lineN` 2 attributable to
+      the rim alone and the ornament immune to relaxation; or they do not, and C28's cost half has a
+      failure mode the page-level table could not see.
+      ⚠️ **Read the dump's own trap first**: `-textish.png` paints `bbox ∩ map`, which is why the
+      entry's own numbers are 666 painted against 664 accepted — that discrepancy IS the trap, already
+      recorded there. Count the accepted set, not the paint.
+      ⛔ **Do NOT re-run the 73** — `C28-GROUPING-2026-09-20.tsv` already holds that page's five arms.
+      One page, one dump, a 1:1 reading, and a paragraph in the entry.
+      ✅ **Take the owed `fault-inject.sh` rows with it, which is why this box is not docs-only**:
+      `GROUPING=` shipped with TWO new exit-2 refusals (malformed, repeated) and NO case rows, where
+      C27 (b)'s commit discharged the same debt with eight `mrc_refuses` rows. `shape_dump` is the
+      case to extend; the two messages are distinguishable on purpose, so one sabotage of the repeat
+      guard must red only the repeat row.
+      ⚠️ **Budget**: build the tool first (~90 s — copy to `main.swift`, exclude `App.swift`; the
+      recipe is in the tool's own header). A `Tools/` commit pays the full suite (~300 s).
+      ⛔ **Whoever ticks this box writes C28's next sub-box before stopping** (the campaign's standing
+      rule). ⚠️ If the rect reads clean, the honest successor is NOT another instrument step: what is
+      left under C28 is the owner's two decisions (the bar, the grouping value) and the three
+      hand-made marks the shipped term cannot reach — one of which, `_1939_Former students` p2 at
+      `outPx` 0, is now measured unreachable from the grouping pair as well. Say so rather than
+      inventing a measurement.
+      (context: BUGS.md C28 `#### The two-sided grouping trade, PRICED` and
+      `#### Are there PICTURES in the sub-bar 73?`)
+
+- [x] **c28-grouping-trade** — **DONE 2026-09-20, AND BOTH HEADLINE FINDINGS INVERT THE ENTRY'S OWN
+      FRAMING OF THE QUESTION THIS BOX ASKED.** `C28-GROUPING-2026-09-20.tsv`, 75 rows in 23
+      documents, five arms of `Tools/score-shape-term.swift`'s new `GROUPING=`; **nothing in
+      `Sources/` moved**, as the box required.
+      ⛔ **(1) `lineGapFactor` IS INERT AT THE DECISION, so the constant this entry blames jointly is
+      the wrong half.** 3.0 → 6.0 moves the group count on **4 of 75** rows and in BOTH directions —
+      `Herbert Marks` p11 **1 → 2** at a *wider* gap bar, the greedy banding's non-monotonicity
+      measured on a real page for the first time after three assertions of it from the code; p12
+      2 → 1; `Atkinson_1939` p3 3 → 2; `Jones` p7 holding at 3 while `linePx` goes 1,897 → 1,939 — and
+      **not one of the four crosses the 0/≥1 boundary**: 16 pages fire either way, the same 16, for
+      the same +2,362,625 B and the same 15.5%. On this population the "two-sided" trade is ONE-sided.
+      ⛔ **(2) Relaxing buys NOTHING for the class the term exists for** — all **12 of 12** typeset
+      losers already fire at the shipped pair and at every arm — so the whole benefit lands in the
+      hand-made-mark bucket the term was already weakest on and the whole cost on pages that lose
+      nothing.
+      **THE TRADE, two numbers as the box demanded**: 4 → 3 rescues **1** loser and refuses **2**
+      non-losers, +610,453 B, overpay 15.5% → 25.6%. **4 → 2 rescues 2 hand-made marks AND one of
+      C26's two cartoons, refuses 6 non-losers, +1,753,917 B, spend 1.742x, overpay 37.5%.** `2:6` is
+      strictly DOMINATED by `2:3` — same rescues, one more non-loser (`Ford_1941` p5, +205,118 B).
+      ⛔ Both cartoons sit ABOVE the shipped bar (`inkOut` 0.0660 / 0.0493 against 0.045), so term 1
+      already refuses them and the term is never consulted there today; the rescue bites only in the
+      bar-raise scenario `#### The bar priced against the term` priced. ⛔ **No value proposed** — the
+      box's own instruction, and R55's precedent.
+      ⛔ **THE INSTRUMENT DECISION IS NEITHER OF THE TWO THIS BOX OFFERED, and that is the part to
+      reuse.** The box expected a knob with the **port check disarmed** for the varied constant, or
+      two binaries one token apart. Making the two constants **DEFAULT ARGUMENTS** of `lines(…)` means
+      the call the port check compares is the no-argument one, byte-identical — so **no arm is exempt
+      and the run reads `port agreed on 75 of 75`, 0 disagreements.** A knob and not two binaries
+      because one pass holds the render, the recognition, the Otsu, the components and the calibration
+      fixed, and recognition here is measured NOT to be a pure function of the page (C27, C30) — a
+      confound, not convenience.
+      ✅ **Four controls; the fourth could have failed and is the one to quote**: the `ship` arm
+      reproduces C28's published **+2,362,625 B and 15.5% on 16 of 73** exactly, off a join to
+      `SHAPETERM-BYTES-2026-08-21.tsv`. Also `lineN_g4x3` == `lineN` on 75 of 75, `lineN` reproduces
+      `SHAPETERM-73-2026-08-21.tsv` on 73 of 73 across 30 days and two binaries, and the port check.
+      ⛔ **THE ADVERSARIAL REVIEW SAID *REJECT* AND IT WAS RIGHT, on the finding this box should
+      carry**: the `4:3` control does NOT observe the per-arm pass-through — the review built the
+      "arm ignored" defect and `4:3` passed on it, as it must — and the two `lines` fixtures pin
+      `lines` and are blind to whether an arm's values ever reach it. **FOUR count-preserving defects
+      passed the entire pre-fix self-test** (arm ignored, the two fields swapped, the two columns
+      swapped, the arm order permuted), the first of which makes every column a copy of `lineN`. Fixed
+      by hoisting the mapping into `groupingFieldsFor` and checking it — group 11(e) — and the review
+      also found the repeat guard keyed on the ARM where the harm is a duplicate TAG
+      (`4:3.0000001,4:3.0000002` printed `lineN_g4x3` twice), plus an `arms.isEmpty` guard that no
+      input can reach (`"".split(omittingEmptySubsequences: false)` is `[""]`, not `[]`).
+      ✅ **Watched failing**: two one-token sabotages of `lines`, each reddening **exactly one** check,
+      disjointly — one per half of the pair — plus two more of the mapping, each reddening (e).
+      `--self-test` **10 → 11** groups.
+      ⚠️ **Carried forward**: the byte column is joined, not re-measured (0 pages unpriced, no encoder
+      ran); **the ornament was read at PAGE level, not at the 664-component rect** — the successor box
+      `c28-ornament-rect`; and the two new exit-2 refusals have **no `fault-inject.sh` row**, also
+      handed to that box. ⚠️ 73 sub-bar pages plus 2, one Photo detail, **not** a corpus figure.
+      ⚠️ Adopted from stranded worktree `vo-20260911-071128-90225`, which held the parse layer and no
+      caller; /private/tmp had swept its files, so the rescue patch was the only copy.
+      (context: BUGS.md C28 `#### The two-sided grouping trade, PRICED`)
+
+- [x] **c28-grouping-trade (the box as written 2026-09-11, kept for what it asked)** — **PRICE THE
+      TWO-SIDED TRADE THE ENTRY NAMES MOST OFTEN AND HAS NEVER
       PRICED. The constant campaign is over; this is a PRODUCT question and the first C28 sub-box
       since 2026-09-02 that is not about a mutant.**
       ✅ **Written 2026-09-11 by `c28-members-lowered`, and it is the successor `c28-area-fixture`

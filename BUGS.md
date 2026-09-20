@@ -29,6 +29,23 @@ already calls free, and 22.2% re-destroys content** — **89.2% free on the exac
 so the numbers do not point one way; **no bar is
 recommended and the value stays the owner's.** `C28` remains `HALF FIXED` — this prices a decision rather
 than taking one, and 17 sampled rows in 10 documents of 233 is **not** a corpus figure.
+✅ **AND C28's OTHER STANDING PRODUCT QUESTION — the TWO-SIDED GROUPING TRADE, the pair the entry names
+more often than anything in it — IS PRICED AS OF 2026-09-20** (`#### The two-sided grouping trade,
+PRICED`, `C28-GROUPING-2026-09-20.tsv`, 75 rows in 23 documents, five arms, nothing in `Sources/` moved).
+⛔ **Two findings invert the entry's own framing.** (1) **`lineGapFactor` is INERT AT THE DECISION**:
+3.0 → 6.0 moves the group count on 4 of 75 rows and in BOTH directions — `Herbert Marks` p11 goes 1 → **2**
+at a *wider* bar, the greedy banding's non-monotonicity measured on a real page for the first time — and
+**not one of the four crosses the 0/≥1 boundary**, so 16 pages fire either way for the same
+**+2,362,625 B** and the same 15.5%. The trade is one-sided on this population. (2) **Relaxing the
+grouping buys NOTHING for the class the term exists for**: all **12 of 12** typeset-content losers already
+fire at the shipped pair. Lowering the member floor 4 → 2 newly rescues **2** hand-made marks and **one of
+C26's two cartoons**, and newly refuses **6** pages that lose nothing, for **+1,753,917 B** — spend
+1.742x, overpay **15.5% → 37.5%**. ⛔ Both cartoons sit ABOVE the shipped bar (`inkOut` 0.0660 and 0.0493
+against 0.045), so term 1 already refuses them and the term is never consulted there today; the rescue
+bites only in the bar-raise scenario `#### The bar priced against the term` priced. ⛔ **No value is
+proposed — the owner's, as on 2026-08-19.** ✅ The `ship` arm reproduces this entry's published
++2,362,625 B and 15.5% exactly, and the port check ran **ARMED on 75 of 75** rows because the two
+constants were made DEFAULT ARGUMENTS rather than the disarm the queue box expected.
 ✅ **`C27` HAS NO BOUNDED WORK LEFT AS OF 2026-08-26 — (c) SHIPPED, and its queue box is `[hold] needs:
 owner`** (`#### The split, SHIPPED`). `Flattener.colourSaturationThreshold` is the colour decision's own
 bar, 0.06, **equal to `pictureSaturationThreshold` so no page's output moves**; the two decisions can move
@@ -13381,6 +13398,170 @@ this file (`#### The area floor's own fixture`) and into the queue box and **not
 whose tally still read *"6 inside + 4 outside = 10"*. That is the failure this register already
 names — an undated present-tense count that `check-staleness.sh` has no arm for — and it is
 corrected there in this commit rather than left for the count to drift by two.
+
+#### The two-sided grouping trade, PRICED — the constant this entry blames most is inert at the decision, the one that moves buys three hand-made marks for six pages that lose nothing, and it buys NOTHING for the class the term exists for — MEASURED 2026-09-20
+
+The entry names `lineMinimumMembers` = 4 and `lineGapFactor` = 3.0 as its two-sided trade more
+often than anything else in it and had never measured either. Both constant campaigns are over —
+six fixtures, six catalogue entries, six singleton kill sets — and every one of them asked whether
+a check could *see* a constant move. **This asks what moving it is worth**, which is a product
+question and the first C28 sub-step since 2026-09-02 that is not about a mutant.
+`C28-GROUPING-2026-09-20.tsv`, 75 rows in 23 documents, five arms; **nothing in `Sources/` moved.**
+
+##### The instrument decision, and it is NOT the one the box expected
+
+The box gave two options — a knob in the tool with *"the port check disarmed for the varied
+constant and said so in the row"*, or two binaries one token apart, which is what every earlier
+C28 byte figure used. ✅ **Neither was needed: the two constants are DEFAULT ARGUMENTS of
+`lines(…)`, so the call the port check compares is the one written with no arguments — unchanged,
+byte for byte — and a relaxed arm is an ADDITIONAL call beside it.** So no arm is exempt, no page
+is exempt, and the run reads **`port agreed on 75 of 75`, 0 disagreements**. ⛔ **A disarmed port
+check would have made every number here a claim about code that is not running**, which is the
+defect that check exists for; do not repeat the box's framing as though the trade-off were real.
+
+⛔ **And the reason it is a knob rather than two binaries is a CONFOUND, not convenience.** One
+pass shares the render, the recognition, the Otsu, the components and the calibration across every
+arm, so the difference between an arm and the shipped column beside it is the grouping and
+provably nothing else. Recognition on this path is measured **not** to be a pure function of the
+page — C27's `saturation(of:)` reads 0.02831 cold and 0.03033 warm on one page, and C30's whole
+finding is that the recogniser's output varies with the image handed to the request — so a
+two-binary comparison would carry that confound exactly where the answer is smallest. It is also
+about 6x cheaper, the shared half being the expensive one, but that is the lesser reason.
+
+##### The table
+
+Firing means `lineN >= 1`, which is what refuses the 8x shrink. `4:3` **is** the shipped pair,
+named explicitly as a control.
+
+| class | n | ship `4:3` | `3:3` | `2:3` | `4:6` | `2:6` |
+|---|---|---|---|---|---|---|
+| loses typeset content | 12 | **12** | 12 | 12 | 12 | 12 |
+| loses a hand-made mark | 4 | 1 | 2 | **3** | 1 | 3 |
+| degraded but legible | 6 | 0 | 0 | 0 | 0 | 0 |
+| C26's two cartoons | 2 | 0 | 0 | **1** | 0 | 1 |
+| loses nothing | 51 | 3 | 5 | **9** | 3 | 10 |
+
+| arm | fires of 73 | spend | of which buys nothing | overpay |
+|---|---|---|---|---|
+| ship `4:3` | 16 | **+2,362,625 B** | 3 pages, 365,573 B | **15.5%** |
+| `3:3` | 19 | +2,973,078 B | 5 pages, 762,425 B | 25.6% |
+| `2:3` | 24 | +4,116,542 B | 9 pages, 1,544,424 B | 37.5% |
+| `4:6` | 16 | +2,362,625 B | 3 pages, 365,573 B | 15.5% |
+| `2:6` | 25 | +4,321,660 B | 10 pages, 1,749,542 B | 40.5% |
+
+**The trade as the box demanded it, two numbers and not one.** Lowering the member floor 4 → 3
+newly rescues **1** content-loser and newly refuses **2** non-losers for **+610,453 B**; 4 → 2
+newly rescues **2** content-losers *and* one of C26's two cartoons, and newly refuses **6**
+non-losers for **+1,753,917 B**, taking the spend to 1.742x and the overpay share from 15.5% to
+37.5%. ⚠️ The two spend tables exclude the cartoons, which are picture-route and carry no row in
+`SHAPETERM-BYTES-2026-08-21.tsv`; the class table counts them separately for the same reason.
+
+##### Four findings, and the first two are the ones to carry
+
+⛔ **1. `lineGapFactor` is INERT AT THE DECISION and is therefore the wrong half to blame.**
+3.0 → 6.0 changes **not one page's verdict**: 16 pages fire either way, the same 16, for the same
++2,362,625 B and the same 15.5%. ⚠️ **But do NOT write that it changes nothing — it moves the group
+count on 4 of 75 rows and it moves it in BOTH directions**: `Herbert Marks` p11 goes 1 → **2** at a
+*wider* gap bar, p12 goes 2 → 1, `Atkinson_1939` p3 goes 3 → 2, and `Jones et al_2010` p7 holds at
+3 while `linePx` goes 1,897 → 1,939. That is `textLines`' greedy banding making the count
+non-monotone in the accepted set — which this register has asserted from the code three times and
+had never measured on a real page. None of the four crosses the 0/≥1 boundary, which is why the
+decision does not move. ⛔ **So "the two-sided trade" is a fair name for the pair and a misleading
+one for this population: on these 75 pages the trade is one-sided.**
+
+⛔ **2. Relaxing the grouping buys NOTHING for the class the term exists for.** All **12 of 12**
+typeset-content losers already fire at the shipped pair and fire at every arm. Every page the
+relaxation newly rescues is a **hand-made mark** or a **cartoon** — the class C28's own wiring
+section records as the term's residue — so the entire benefit lands in the bucket the shipped term
+was already known to be weakest on, and the entire cost lands on pages that lose nothing. ⚠️ The
+degraded-but-legible six never fire at any arm.
+
+✅ **3. One of C26's two founding cartoons is reachable and the other is not.** `1954 - Why` p7
+goes **0 → 1** at a member floor of 2; p6 reads **0 at all five arms**. ⛔ **Both sit ABOVE the
+shipped bar — `inkOut` 0.0660 and 0.0493 against 0.045 — so `pageIsAllText()`'s term 1 already
+refuses them and the shape term is never consulted on either today: this buys nothing at the
+shipped bar and is not on its own a reason to move the constant.** Where it bites is the bar
+question: `#### The bar priced against the term` records these two cartoons among the **three
+outright losses** a bar of 0.08 would admit, and the term reads 0 on both. A member floor of 2
+would catch one of the three. ⚠️ **That is a fact about a bar nobody has moved**, and it is the
+only place in this measurement where the relaxation would protect a printed drawing rather than a
+pen mark.
+
+⛔ **4. `2:6` is strictly DOMINATED and no arm is recommended.** It rescues exactly what `2:3`
+rescues and refuses one page more, `Ford_1941` p5, for **+205,118 B** buying nothing. And
+`_1939_Former students` p2 reads **0 at every arm**, confirming from this side what the entry
+already says of it — `outPx` is 0, the page-wide Otsu never sees the pencil, and no grouping
+constant is downstream of that. ⛔ **No value is proposed. C26's bar move was the owner's call on a
+complete campaign (2026-08-19, R55's precedent) and this is the same shape of decision**: the
+table is the deliverable and the number is his.
+
+##### Controls
+
+✅ Four, and the last is the one that could have failed. (1) The port check, above: **75 of 75**.
+(2) `lineN_g4x3` — the shipped pair named explicitly — equals `lineN` on **75 of 75** rows.
+(3) `lineN` reproduces `SHAPETERM-73-2026-08-21.tsv`'s on **73 of 73** rows, across 30 days and two
+binaries, which is what says the parameterisation moved nothing. (4) ✅ **The `ship` arm's spend
+reproduces this entry's own published figures EXACTLY — +2,362,625 B and 15.5% on 16 of 73 pages**
+— recomputed here as a join of the new `lineN` against `SHAPETERM-BYTES-2026-08-21.tsv`'s `delta`,
+so the arithmetic, the join and the population are all validated against a number published on
+2026-08-21 before any of this existed. ⛔ **(2) alone does NOT establish that the per-arm value is
+passed through** — a knob wired to nothing would give 75 of 75 as well. What establishes it is the
+relaxed arms *differing*, which they do. ✅ **(5) Added on the review's fix: the artefact is
+BYTE-IDENTICAL across the `groupingFieldsFor` refactor** — two binaries one refactor apart,
+75 rows, 55 columns, no difference — so hoisting the mapping to make it checkable moved no
+number in the table above.
+
+##### Watched failing, and the ADVERSARIAL REVIEW said REJECT — it was right, and its finding is worth more than the table
+
+✅ The knob was built with a self-test group (11) and **two one-token sabotages of `lines(…)`**,
+each predicted in writing and each reddening **exactly one** check, disjointly: `run.count >=
+members` → `>= lineMinimumMembers` reds only *"three glyphs at members=3 did not make one line"*,
+and `gapFactor * glyphHeight` → `lineGapFactor * glyphHeight` reds only *"a 365-px gap still split
+the line at gapFactor 40"*. So each half of the pair has a check of its own.
+⛔ **AND THAT WAS NOT ENOUGH, WHICH IS THE LESSON. Those two fixtures call `lines(…)` directly with
+literal arguments: they pin `lines` and are BLIND to whether an arm's values ever reach it.** The
+review built the defect and measured it — `members: arm.members` → `members: lineMinimumMembers`
+inside the mapping — and **the entire pre-fix self-test passed, `ok (11 checks)`, exit 0**, on a
+build where every arm's column is a copy of `lineN`, i.e. the table would have read *"relaxing the
+grouping changes nothing"*, which this tool's own header calls the one answer the knob exists to
+test and the worst to fabricate. ⛔ **Four count-preserving defects passed it** — the arm ignored,
+the two fields swapped, the two columns swapped, the arm order permuted — because everything
+between an arm and a printed field was top-level code and therefore unreachable from `--self-test`.
+✅ **Fixed by hoisting that mapping into a free function, `groupingFieldsFor`, purely so a check can
+reach it** (group 11(e), asserting `["0","0","1","60"]` over two arms on group 5's three-glyph
+fixture, plus the field width and the empty-arms case). Both mapping sabotages now red it and print
+their own signature: the arm ignored reads `["0","0","0","0"]`, the fields swapped `["0","0","60","1"]`.
+⛔ **Two more of the review's findings were real defects and not wording.** (1) The repeat guard
+keyed on the **arm** where the harm is a duplicate **tag**: `%g` is six significant digits, so
+`GROUPING=4:3.0000001,4:3.0000002` is two distinct arms with one name and was **accepted**, printing
+`lineN_g4x3` twice under one header. It keys on `arm.tag` now and refuses. (2) `guard !arms.isEmpty`
+was **unreachable by any input** — `"".split(separator: ",", omittingEmptySubsequences: false)` is
+`[""]`, not `[]` — so it was CONTRIBUTING 4c's R31/R32/H2 shape; deleted, with group 11's `""` row
+standing in its place, since it is what reddens if that flag ever changes.
+⛔ **And three sentences this diff wrote were false and are corrected rather than quietly dropped.**
+*"`GROUPING=4:3` … is the only thing that observes the per-arm pass-through"* — it passes on the
+broken build, as it must, and it is an IDENTITY rather than the "determinism control" a draft called
+it. *"`GROUPING` unset changes nothing, not one column and not one byte"* — the TSV is
+byte-identical but the summary line gains `; grouping shipped only` unconditionally. And `lines(…)`'s
+own doc claimed the self-test no-op was *"the only way this argument could stop being true"*, where
+adding an argument to the main loop's no-argument call would too; what pins THAT is the port check,
+at run time on real pages. ⚠️ One debt is **not** discharged and is handed to the successor box: the
+two new exit-2 refusals have no `Tools/fault-inject.sh` row, where C27 (b)'s commit discharged the
+same debt with eight.
+
+##### What it does not settle
+
+⚠️ 73 pages in 22 documents plus 2, one Photo detail (Balanced), and **the population is the
+sub-bar 73 — the pages the term is actually consulted on today** — so nothing here is a corpus
+figure and it must not be pooled (C26 measured a pooled scale-up on this corpus **5.96x** high).
+⚠️ The byte column is `SHAPETERM-BYTES-2026-08-21.tsv`'s `delta`, joined and not re-measured; every
+newly-firing page had a committed price, so **0 pages are unpriced**, but no encoder ran in this
+step. ⚠️ **The ornament is measured at PAGE level and not at the rect level the entry quotes**:
+`_1967_…Ampex_Boxoffice` p1 already fires at the shipped pair (`lineN` 2, from rim ink) and goes
+to 3 at a floor of 3 or 2, so relaxing costs nothing there — but `#### Are there PICTURES in the
+sub-bar 73?`'s *"664 accepted components, 0 groups"* is a claim about the ornament **band's own
+rect**, and this step did not re-dump that rect. ⚠️ Only the five arms named were run; no search
+over the pair was made, and the two constants were varied together only at `2:6`.
 
 #### What this entry is NOT
 

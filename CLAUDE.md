@@ -604,6 +604,57 @@ entailed, `eq`/`ne` on one column being exact complements over one file with the
 *"summing the per-document differences, derived independently of the two totals"* is `Σ(a−b) ≡ Σa − Σb`.
 ⚠️ The three output modes round differently — `--tsv` sums to 3,955,577, `--verbose` to 3,955,574, the
 report prints 3,955,576 — and the exact-fraction retained figure is **1,435,971**.
+✅ **AND C28's OTHER STANDING PRODUCT QUESTION IS PRICED AS OF 2026-09-20 — the TWO-SIDED GROUPING TRADE,
+the pair this entry names more often than anything in it and had never measured** (`BUGS.md` C28
+`#### The two-sided grouping trade, PRICED`, `C28-GROUPING-2026-09-20.tsv`, 75 rows in 23 documents, five
+arms of `Tools/score-shape-term.swift`'s new `GROUPING=`; **nothing in `Sources/` moved**). ⛔ **TWO
+findings invert the entry's own framing and both are the thing to carry.** (1) **`lineGapFactor` is INERT
+AT THE DECISION**: 3.0 → 6.0 moves the group count on **4 of 75** rows and in BOTH directions — `Herbert
+Marks` p11 goes 1 → **2** at a *wider* gap bar, p12 2 → 1, `Atkinson_1939` p3 3 → 2, `Jones et al_2010` p7
+holds at 3 while `linePx` goes 1,897 → 1,939 — which is `textLines`' greedy banding measured
+non-monotone on a real page for the first time, this register having asserted it from the code three
+times. ⛔ **But NOT ONE of the four crosses the 0/≥1 boundary**, so 16 pages fire either way for the same
+**+2,362,625 B** and the same **15.5%** overpay: on this population the "two-sided" trade is ONE-sided,
+and the gap constant is the wrong half to blame. (2) **Relaxing the grouping buys NOTHING for the class
+the term exists for** — all **12 of 12** typeset-content losers already fire at the shipped pair and at
+every arm, so the entire benefit lands in the hand-made-mark bucket the term was already known to be
+weakest on and the entire cost lands on pages that lose nothing. The trade as two numbers: 4 → 3 rescues
+**1** loser and refuses **2** non-losers (+610,453 B, overpay 25.6%); **4 → 2 rescues 2 hand-made marks
+AND one of C26's two cartoons and refuses 6 non-losers (+1,753,917 B, spend 1.742x, overpay 37.5%)**;
+`2:6` is strictly DOMINATED by `2:3`, buying one more non-loser (`Ford_1941` p5, +205,118 B) for nothing.
+⛔ **Both cartoons sit ABOVE the shipped bar — `inkOut` 0.0660 and 0.0493 against 0.045 — so term 1
+already refuses them and the shape term is never consulted on either today**: `1954 - Why` p7 going 0 → 1
+at a floor of 2 bites only in the bar-raise scenario `#### The bar priced against the term` priced, where
+it would catch one of that section's three outright losses; p6 reads 0 at all five arms. ⚠️ And
+`_1939_Former students` p2 reads **0 at every arm**, confirming from a new side that `outPx` 0 puts it
+upstream of any grouping constant. ⛔ **No value is proposed — the owner's, as on 2026-08-19.**
+⛔ **The instrument decision is NOT the one the queue box prescribed, and the difference matters**: the
+box expected the tool's own copy of the rule to be varied with the PORT CHECK DISARMED for the varied
+constant. Instead the two constants are **DEFAULT ARGUMENTS** of `lines(…)`, so the call the port check
+compares is the no-argument one, byte-identical — **no arm is exempt and the run reads `port agreed on
+75 of 75`, 0 disagreements**. A knob rather than two binaries one token apart because one pass shares the
+render, the recognition, the Otsu, the components and the calibration, and recognition on this path is
+measured NOT to be a pure function of the page (C27's 0.02831-cold/0.03033-warm, C30's whole finding) —
+a confound, not convenience. ✅ **Four controls, and the one that could have failed is the fourth**: the
+`ship` arm reproduces this entry's own published **+2,362,625 B and 15.5% on 16 of 73** exactly, off a
+join to `SHAPETERM-BYTES-2026-08-21.tsv`; `lineN_g4x3` equals `lineN` on 75 of 75; `lineN` reproduces
+`SHAPETERM-73-2026-08-21.tsv` on 73 of 73 across 30 days and two binaries. ⛔ **The second of those does
+NOT establish pass-through on its own — a knob wired to nothing gives 75 of 75 too** — and the
+adversarial review of this diff said **REJECT** on exactly that, which is worth more than the table:
+the two `lines` sabotages each red exactly one check, disjointly, **but both fixtures call `lines`
+directly and are blind to whether an arm's values ever reach it**. The review BUILT that defect and
+the whole pre-fix self-test passed, on a build where every arm's column is a copy of `lineN`. Four
+count-preserving defects passed it (arm ignored, fields swapped, columns swapped, arm order
+permuted), because everything between an arm and a printed field was top-level code. ✅ Fixed by
+hoisting the mapping into `groupingFieldsFor` purely so a check can reach it — group 11(e) — and the
+same review found the repeat guard keyed on the ARM where the harm is a duplicate TAG
+(`4:3.0000001,4:3.0000002` printed `lineN_g4x3` twice, accepted) and an `arms.isEmpty` guard no input
+can reach. `--self-test` **10 → 11** groups. ⚠️ Two new exit-2 refusals still have **no
+`fault-inject.sh` row**, handed to the successor box. ⚠️ The main loop is top-level code, so the per-arm
+pass-through is unreachable from `--self-test` and is observed by the run instead; the byte column is
+joined rather than re-measured (0 pages unpriced); the ornament is read at PAGE level, not at the
+664-component rect the entry quotes; and 73 sub-bar pages plus 2 is **not** a corpus figure — do not pool
+it, C26 measured a pooled scale-up 5.96x high on this corpus.
 ⚠️ `lineNAtBar`'s `dense` and `n/a` tokens appear on 0 of the 80 rows — ⛔ **but NOT in the same sense,
 corrected on adoption: `n/a`'s absence is measured and `dense`'s is BY CONSTRUCTION**, since `mrcLayers`
 passes no `runLimit` and the tool's own header records that `dense` is producible by no run of it.
@@ -2336,7 +2387,8 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `GUTTER-RECONCILE-2026-08-26.tsv` + `GUTTER-SAMPLED-2026-08-26.tsv` +
 `GUTTER-BANDS-2026-08-26.tsv` + `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` and
 `C27-MASKTERMS-2026-08-26.tsv` and `C27-COLOURBYTES-2026-08-26.tsv` and
-`DRAWN-CENSUS-2026-08-26.tsv` and `C28-BARPILOT-2026-09-02.tsv` — and are
+`DRAWN-CENSUS-2026-08-26.tsv` and `C28-BARPILOT-2026-09-02.tsv` and
+`C28-GROUPING-2026-09-20.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -2443,6 +2495,21 @@ reproduces `INKBAR-2026-08-19.tsv`'s 0.045 arm digit for digit today.
 `band` / `newAdmit` / `lossClass` are appended by hand — `lossClass` an eye-read verdict from C26's render
 table, derivable from no tool in the tree. A `#` provenance header was rejected because
 `stratify-corpus.py` has no `#`-line handling and is the tool prescribed to read this file.
+⚠️ **Nor is `C28-GROUPING-2026-09-20.tsv`, a NINTH time, and here the reader's prior is finally the right
+one — it is the SECOND `C28-` file and the first is the paragraph directly above.** It comes from
+`Tools/score-shape-term.swift` under the new `GROUPING=`, a committed tool carrying a `--self-test`, so
+the count stays **five** a ninth time. ✅ It has both halves of the discipline at once, which only
+`C27-MASKTERMS` has had: re-derivable from the tree **and** checkable against earlier artefacts — its
+`lineN` reproduces `SHAPETERM-73-2026-08-21.tsv`'s on **73 of 73** rows and its shipped arm reproduces
+C28's published **+2,362,625 B / 15.5%** off a join to `SHAPETERM-BYTES-2026-08-21.tsv`. ⛔ **Three
+things a reader will get wrong.** (1) Its population is the 73 sub-bar pages **plus 2 picture-route
+cartoons** (`1954 - Why` p6/p7), so it holds **75** data rows in **23** documents where the file it was
+drawn from holds 73 in 22 — the two extra are named in its header and carry `label`/`kind` of `cartoon`,
+a value no committed verdict table assigns. (2) Its `label` and `kind` are **not tool output** —
+`SHAPETERM-73`'s own published verdicts, joined by (document, page), the same shape as `lossClass`
+above. (3) ⛔ **It is NOT a filtered artefact and `DRAWN-CENSUS`'s *"the only one in this list that
+is"* still holds**: every row the run printed is in it, and what was selected is the population, which
+every sampled artefact here already does.
 The rule this count actually draws is *"reproducible from nothing in the tree"*, and it is worth
 re-deriving from the list rather than counting prefixes. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file
