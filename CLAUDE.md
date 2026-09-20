@@ -1533,7 +1533,8 @@ cartoon"** (`BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`): the four me
 hand (`6x9+1121+693`, `2x6+1126+691`) and two leaf strokes of the flying book (`3x10+1141+685`,
 `3x11+1145+689`), darkest pixels **96 / 99 / 87 / 99** against the page's Otsu of **139** and **207** on
 blank paper in the same rect. ⛔ **And the contamination that would have refuted it contributes ZERO to
-the map**, measured per row: the top text line inks y 595-608 at a source minimum of 1-33 and the map
+the map**, measured per row: the top text line inks y 595-608 at a source minimum of 1-43 per row (1-33
+over seven two-row strips, which is the form to quote) and the map
 holds **0 px on every one of those rows**, the left letter column **0** as well — because the type is
 inside `region` and the map is `ink AND NOT region`, i.e. the earlier 1:1 read was of the STENCIL and
 these are two different images. ⛔ **THE FIRST DRAFT OF THAT SENTENCE COMMITTED THE VERY DEFECT THE STEP
@@ -1543,10 +1544,15 @@ Caught one edit before the commit by looking at the band instead of quoting its 
 ⛔ **TWO MORE CORRECTIONS RIDE WITH THE CONFIRMATION.** (1) **The group is a band across TWO
 drawn objects** — hand and book, **14** px apart against `3.0 × glyphH 9` = **27**, four members
 against a floor of 4 — so the hit is the INK's and not a stroke the term recognised. ⛔ **And the band
-is a CHAIN whose two ends never touch**: `textLines` admits on `overlap >= 0.5 * min(height)` against
-the band's LAST member, the three links read **6 against 5.0, 6 against 3.0, 4 against 3.0** — two of
-them holding by ONE pixel — and the direct hand-against-book pair **FAILS at 2 against 4.5**, so the
-group exists only through the greedy last-member rule this register already records as non-monotone
+is held by THREE LOAD-BEARING LINKS**: `textLines` admits on `overlap >= 0.5 * min(height)` against the
+band's LAST member, the three links it tests read **6 against 5.0, 6 against 3.0, 4 against 3.0**, and
+cutting any one splits the band **3 + 1** for `lineN` **0**. ⛔ **DO NOT write *"a chain whose two ends
+never touch"* — that was drafted and the adversarial review refuted it from the same rects: of the FOUR
+hand-against-book pairs THREE PASS (4 vs 3.0, 7 vs 4.5, 6 vs 3.0) and only A-C fails, so the greedy
+rule is not what creates the group and the claim generalised from n = 1.** ⚠️ The 14 px are empty only
+in the ACCEPTED set — the map holds six components and 31 px across the gap, all refused by the height
+floor — so *"two objects"* describes what the rule accepted and A/B's identification as the book's
+leaves is a reading
 (⚠️ derived from `Flattener.swift:2163-2176`/`:2198` over the measured rects; the tool prints one group
 and no link margins). (2) ⛔ **The `372 and 785` above, and the 477 in 3b's own per-rect table, are
 the dumped `-textish.png`'s PAINTED counts and not the accepted set**: p4 measures **477 px in 15

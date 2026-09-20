@@ -9113,6 +9113,10 @@ components and 33 px (7.4%) manufactured. p6 and p7 are INFERRED: only that each
 its own column, by 4.2% and 3.2%, in the same direction. ⚠️ The p4 row's map figure is reproduced
 exactly through a changed binary (**5,757**), as is the whole-page `outPx` 5,983 — and painted
 `textish` over the whole page is **477** too, so every one of those pixels is inside the drawing rect.
+⚠️ **Discount the rect's right-hand 30%**: `inkOutsideText`'s interior window puts the map's ink bbox at
+`1072x601+76+284`, so 76 of the rect's 254 columns can hold no map px at any threshold and are not a
+test. 894 columns of live page could have carried textish ink and do not, which is what the statement
+rests on.
 ✅ **And p4's row is the one whose contamination has been subtracted: it is ZERO** — the clipped body
 text at the rect's top and left edges contributes **0 map px**, measured per row, so *"96% of 5,983"*
 is 96% of drawing. p6's and p7's rects have never been asked (the queue's
@@ -13965,9 +13969,13 @@ member's bbox drawn on it.
 13 + 6 + 21 + 19 = **59**, exactly the tool's `linePx`. All four are drawn ink and **not one is type**,
 a rim of type, or a fragment of the clipped body text. Corroborated against the page's own Otsu of
 **139**: the four rects read a darkest pixel of **96 / 99 / 87 / 99**, against **207** on two
-same-sized blank-paper rects inside the same drawing rect — so every member is ink by the threshold the
-map is built from, and blank paper in that rect is 2.1x-2.4x lighter than the darkest pixel of any of
-them.
+same-sized blank-paper rects inside the same drawing rect, 2.1x-2.4x lighter than the darkest pixel of
+any member. ⛔ **Only the 207 is informative and the 96/99/87/99 CANNOT FAIL — the adversarial review of
+this diff caught it as the eleventh-check pattern.** The four members ARE map components and
+`-source.png` is written from the same `grey` buffer the Otsu and the map come from
+(`Tools/score-shape-term.swift:1851`), so `min(bbox) < 139` is ENTAILED — measured as well: the maximum
+grey anywhere under the map is **138**. The blank-paper reading could have come out otherwise and is
+what the corroboration rests on.
 
 ⛔ **The contamination worry the queue box raised cannot reach the group, and the reason is that the two
 readings are about two different images.** `#### The rendered proof on the founding pages` read the
@@ -13977,8 +13985,12 @@ and the answer is ZERO on both pieces of clipped text.** The top text line (*"pa
 Ordinarily,"*) inks rows **y 595-608** — a source minimum of **1 to 33 of 255** across seven two-row
 strips spanning the rect's full width, so it is dense type and not a faint trace — and the map holds
 **0 px on every one of those rows**. The clipped letter column down the left edge
-(`20x240+970+595`) holds **0 map px** as well. **So the body-text contamination in that rect
-contributes nothing to the map at all**, and the accepted set is drawn ink alone.
+(`20x240+970+595`) holds **0 map px** as well. ✅ **AND THE ZERO HAS A DENOMINATOR, which is what makes
+it a finding rather than an absence: those two regions hold 872 ink px at the page's own Otsu — 592 in
+`254x14+970+595` and 280 in the left column — and every one of them is inside `region`.** It could have
+come out otherwise: this entry separately records rims of recognised type REACHING the map on three
+pages of the 73. **So the body-text contamination in that rect contributes nothing to the map at all**,
+and the accepted set is drawn ink alone.
 
 ⛔ **AND THE FIRST DRAFT OF THIS SECTION COMMITTED THE DEFECT THE WHOLE STEP IS ABOUT, WHICH IS WORTH
 MORE THAN THE VERDICT.** It measured **180 map px** in the band `254x40+970+595` and published them as
@@ -14010,18 +14022,34 @@ separated by a **14 px** horizontal gap against a bar of `lineGapFactor 3.0 × g
 1141 − 1127 = 14 and not 15 — the units trap `#### The grouping's other constant` was corrected for).
 The band assembles across both, and it is exactly four members against `lineMinimumMembers` = **4**. So
 *"a hit on the cartoon"* is right about the **ink** and would be wrong about the **mechanism**: the term
-did not recognise a stroke, it banded two features that happen to sit 14 px apart in one 17-row strip.
+did not recognise a stroke, it banded two features 14 px apart in one 17-row strip.
+⛔ **And the 14 px are empty only in the ACCEPTED SET: the map holds SIX components totalling 31 px
+across that gap** (`5x4+1134+687`, `5x3+1129+697`, `4x4+1133+694`, `2x3+1136+691`, `1x3+1139+692`,
+`2x2+1130+694`), every one refused by the height floor alone — heights 2-4 against
+`shapeHeightLow 0.5 × 9` = **4.5** — and at 12x they are a near-continuous row of ticks running from
+the fist to the book. So there is ink across the whole gap and *"two features"* is a statement about
+what the rule ACCEPTED, not about the drawing. ⚠️ **Which is also why A and B's object is a READING and
+not a measurement**: the book's cover outline begins at x ≈ 1149 and its fan radiates from x ≈ 1150,
+so A (1141-1143) and B (1145-1147) are the right-hand end of that tick row, 2-6 px clear of the cover.
+Drawn ink and certainly not type — which is the load-bearing claim — but *"a leaf stroke of the fanned
+flying book"* is an interpretation of two isolated bars. Both found by the adversarial review of this
+diff.
 
-⛔ **And the band is a CHAIN, which is sharper: the hand's components and the book's never touch each
-other at all.** `textLines` bands by vertical overlap against the band's **last** member
-(`Flattener.swift:2163-2176`), admitting a candidate when `overlap >= 0.5 * min(height)`. In `minY`
-order the four arrive A(685-694, h10), B(689-699, h11), D(691-696, h6), C(693-701, h9), and the three
-links read **overlap 6 against a bar of 5.0**, **6 against 3.0**, **4 against 3.0** — so **two of the
-three hold by ONE pixel**. ⛔ **The direct A-against-C pair FAILS: overlap 2 against a bar of 4.5**, so
-the only thing joining the book's strokes to the hand's is B and D bridging them under the greedy
-last-member rule this entry already records as non-monotone. ⚠️ **Derived from the shipped expressions
-over the measured rects, not observed** — the tool prints one group and no link margins — and the
-`glyphH 9` it is computed against is the tool's own printed column.
+⛔ **And every link the code evaluates is LOAD-BEARING.** `textLines` bands by vertical overlap
+against the band's **last** member (`Flattener.swift:2163-2176`), admitting on
+`overlap >= 0.5 * min(height)`. In `minY` order the four arrive A(685-694, h10), B(689-699, h11),
+D(691-696, h6), C(693-701, h9), and the three links it actually tests read **overlap 6 against a bar of
+5.0**, **6 against 3.0**, **4 against 3.0** — cut any one and the band splits **3 + 1**, which is under
+`lineMinimumMembers` and gives `lineN` **0**.
+⛔ **DO NOT WRITE *"a chain whose two ends never touch"* — that stood here and the adversarial review of
+this diff refuted it from the same four rects.** It rested on the ONE widest-separated pair: of the
+**four** hand-against-book pairs, **three PASS** (A-D 4 against 3.0, B-C 7 against 4.5, B-D 6 against
+3.0) and only **A-C fails**, at 2 against 4.5. So the greedy last-member rule is **not** what creates
+this group — a transitive-closure banding on the same predicate would band all four too — and the
+sharper-sounding claim was a generalisation from n = 1. What survives is the load-bearing reading
+above. ⚠️ **Derived from the shipped expressions over the measured rects, not observed** — the tool
+prints one group and no link margins — and the `glyphH 9` it is computed against is the tool's own
+printed column.
 
 ⚠️ That is a refinement and not a retraction — the wiring's job is to refuse the PAGE, and it refuses
 this one on real drawn ink — but it means the hit stands on a 1-px overlap margin and a 14-px gap
@@ -14039,12 +14067,19 @@ two"*, from the ornament's 666-against-664 — is refuted with a number: here it
 components.** The mechanism is the painter's and is already on record in its own comment
 (`Tools/score-shape-term.swift:1838-1847`): it paints `bbox ∩ map` per accepted
 component, so a bbox can enclose map pixels belonging to components the rule REFUSED, and their
-intersection can fragment — visible as **four** painted pieces totalling 55 px inside one 17x29 region
-at x 994-1010 / y 720-748, where a single accepted component's bbox is the only thing that can have put
-them all in the file. ⚠️ **Which accepted component owns them is NOT established and the excess is not
-attributed to that region**: the tool prints no per-component area, so only the two totals are
-measured. (An accepted area of 22 px there would account for all 33 — arithmetically consistent, and
-that is the same equation as the totals rather than a second test of them.)
+intersection can fragment. ✅ **The excess is fully ATTRIBUTED, by matching the painted components
+against the map's own rect for rect: 12 of the 15 painted pieces are BYTE-EXACT map components and
+their areas sum to exactly 444 = `txtPx`.** The manufacture is the other three — `5x8+1031+657` 23 px,
+`3x6+1028+652` 9 px, `1x1+1000+748` 1 px, and **23 + 9 + 1 = 33**. **32 of the 33 come from ONE
+accepted component**: `8x13+1028+652`, 16 px, whose bbox encloses **48** painted px in three pieces —
+a **3.0x** inflation on a single component — and the last 1 px sits inside `4x7+997+748`'s bbox.
+⛔ **The first draft of this paragraph named the WRONG CLUSTER (four pieces at x 994-1010 / y 720-748,
+"55 px", "the excess not attributed") and it was refuted twice by the adversarial review of this
+diff**: three of those four pieces are exact accepted components, so that cluster's excess is **1 px**;
+its true span is `13x35+994+720`, not `17x29`; and *"a single accepted component's bbox is the only
+thing that can have put them all in the file"* is impossible, because `shapeHeightHigh` = 3.0 caps an
+accepted component at `3.0 × glyphH 9` = **27** rows and no bbox can span 35. The 22-px hypothesis it
+offered is refuted with it.
 ⚠️ **MEASURED on p4 and INFERRED on p6 and p7**, whose dumps were not re-run: what is measured there is
 only that both prose figures exceed their own columns, by 4.2% and 3.2%, in the same direction.
 ✅ **One published sentence gets STRONGER out of the same counts**: whole-page painted `textish` is
@@ -14090,16 +14125,23 @@ needs nothing: it states the claim and its retraction in the same cell.
 
 ##### What this does NOT settle
 
-- ⚠️ **One page and one rect.** The five other attributions CONTRIBUTING §4b's sweep found are still
-  unchecked and are named in the `c28-cartoon-hit-rect` queue box so they are not lost — including the
+- ⚠️ **One page and one rect.** The **four** other attributions CONTRIBUTING §4b's sweep found are
+  still unchecked and are named in the `c28-cartoon-hit-rect-asked` queue box so they are not lost
+  (⛔ *"five"* and the un-suffixed tag both stood here and were caught by the adversarial review of
+  this diff; the sweep found six, of which this step closed one and one is the parent's own
+  pointer) — including the
   same page's three drawing rects, whose 5,757 / 4,467 / 7,057 map px are called *"essentially the
   whole out-of-stencil map"* — and of those three only **p4's** has now had its clipped text
   subtracted, at 0 px. ⚠️ **And subtraction is only half of that question**: on p7 the register
   separately records drawing fragments Vision boxed AS WORDS, and those are outside the map by
   construction, so *"100% of that page's `outPx`"* does not say the map holds the whole drawing. That
   direction is unmeasured on all three pages, p4 included.
-- ⚠️ **Nothing moves.** No verdict, no byte figure, no committed artefact, nothing in `Sources/`, no
-  check added; p4 is `barVerdict=picture` and the term is never consulted on it in production.
+- ⚠️ **Nothing BEHAVIOURAL moves.** No verdict, no byte figure, no committed artefact, no check added
+  or removed, no constant touched; p4 is `barVerdict=picture` and the term is never consulted on it in
+  production. ⛔ *"Nothing in `Sources/`"* stood here and is FALSE of this commit, caught by the
+  adversarial review: `Sources/Flattener.swift` and `Tools/score-shape-term.swift` each gain a
+  corrected doc comment, which is why the commit pays `build.sh` and the full suite rather than taking
+  the docs-only exit. **Comment- and document-only: nothing shipped moves.**
 - ⚠️ **It says nothing about p6 and p7**, the two pages of the same document whose drawings the term
   reads **0** on — which is the half of 3b that matters for content and is the grouping's, not the
   component test's.

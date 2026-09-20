@@ -985,7 +985,7 @@ happens.**
       that p4's and p6's also hold clipped BODY-TEXT words at their top and left edges, with p7's
       holding clipped text PLUS drawing fragments Vision boxed as words — and that contamination has
       never been subtracted from any of the three.** On p4 it now has been and the answer is **ZERO**:
-      the top text line inks rows y 595-608 at a source minimum of 1-33 and the map holds **0 px on
+      the top text line inks rows y 595-608 at a source minimum of 1-43 per row and the map holds **0 px on
       every one of them**, the left letter column `20x240+970+595` **0** as well, because the type is
       inside `region` while the map is `ink AND NOT region`. So *"96% of 5,983"* is 96% of drawing.
       **THE STEP, and it needs no sweep, no new tool and no new artefact**: `SHAPEDUMP=<dir>` on
@@ -1004,7 +1004,12 @@ happens.**
       (*"two small fragments of the drawing that Vision boxed as words"*) — that ink is absent from the
       map by construction, so *"100% of the page's out-of-stencil ink is in the drawing rect"* does
       **not** say the map holds the whole drawing, and how much of p7's drawing the term never sees is
-      unasked. **(b) is the question to spend the session on.** The 3b table's own `textish` column is
+      unasked. **(b) is the question to spend the session on.** ⛔ **And it needs arithmetic, because
+      `SHAPEDUMP` writes NO STENCIL** (`-source`, `-map`, `-textish`, `-lines`, `-rim<r>-lines` only):
+      compute it as `ink AND NOT map` by thresholding `-source.png` at the printed `otsu`, **and
+      restrict it to `inkOutsideText`'s interior window** or the whole outer frame reports as drawing ink
+      inside `region` (on p4 that window is `1072x601+76+284` of a 1224x946 page). The 3b table's own
+      `textish` column is
       the wrong number to test either with besides (see the ⛔ below).
       ⚠️ **Read the two instrument facts `c28-cartoon-hit-rect` established before quoting anything**:
       (1) ⛔ **the table's `textish px` column is the dumped PNG's PAINTED count, not the accepted
@@ -1025,8 +1030,11 @@ happens.**
       ⚠️ **The four that would remain, recorded so they are not lost**: the six densest bands and two
       round-number controls behind the 0.52-0.57 stencil ratio; `1029x10+106+206`, a
       darkest-pixel-in-rect attributed to a table rule over a band 1,029 px wide; `140x205+1660+2125`,
-      44 px attributed to pencil script (**direction-safe** — an over-count strengthens its claim);
-      and the two unsubtracted rects this box does not reach if it is scoped to p6/p7 alone.
+      44 px attributed to pencil script (**direction-safe** — an over-count strengthens its claim); and
+      the drawing-rect item itself, of which p4 is done at 0 px and p6/p7 are THIS box's scope, so it
+      leaves nothing (⛔ a fourth entry reading *"the two unsubtracted rects this box does not reach"*
+      stood here and was incoherent — leftover from the pre-retraction draft, caught by the adversarial
+      review).
       ⛔ **`1029x10+106+206` IS PROMOTED, on evidence rather than on suspicion: it is exactly the
       sub-class `c28-cartoon-hit-rect` committed and caught in its own draft** — a total over a band
       wide or tall enough to hold the named mark AND something else, attributed to the mark. That draft's
@@ -2448,9 +2456,11 @@ happens.**
       text", committing the defect under test; the three components sit at y ≥ 620 against the text's
       last inked row at 608 and are the TOP OF THE BOOKSHELF.**
       ⛔ **Two further corrections: the group is a band across TWO
-      drawn objects 14 px apart against a 27 px bar — a CHAIN whose hand-against-book pair fails
-      directly (overlap 2 against 4.5) and whose links hold by one pixel twice — so the hit is the INK's
-      and not a stroke the term recognised; and the `372 and 785` above are the dumped PNG's PAINTED
+      drawn objects 14 px apart against a 27 px bar, held by three load-bearing links (cut any one and
+      the band splits 3 + 1 for `lineN` 0) — so the hit is the INK's and not a stroke the term
+      recognised. ⛔ **NOT *"a chain whose ends never touch"*: three of the four hand-against-book pairs
+      PASS, refuted by the adversarial review; and the 14 px hold six map components and 31 px refused
+      by the height floor, so *"two objects"* is about the accepted set and A/B's object is a reading.** and the `372 and 785` above are the dumped PNG's PAINTED
       counts, not the accepted set (p4: 477 px in 15 painted components against `txtPx` 444 in 12;
       p6/p7's columns read 357 and 761).** `BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`.
       ⛔ **AND THIS REFUTES "blind to a hand-made mark by construction"**, in the exact case the previous
