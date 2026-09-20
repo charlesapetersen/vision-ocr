@@ -510,15 +510,15 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-scott-footer-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-cartoon-hit-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-scott-footer-rect` SUB-BOX — SEARCH FOR THAT TAG, IT IS
-      ~350 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-cartoon-hit-rect` SUB-BOX — SEARCH FOR THAT TAG, IT IS
+      ~450 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
@@ -575,6 +575,17 @@ happens.**
       page and one dump, and it carries the PARENT-POINTER DECISION: if that rect is also refused by
       the gap term alone, C28 has no session-actionable measurement left and this box must be marked
       owner-only rather than re-pointed an eleventh time.**
+      ⚠️ **Re-pointed an ELEVENTH time 2026-09-20 by `c28-scott-footer-rect`, now ticked, and the
+      owner-only branch above did NOT fire — its antecedent is measured false.** That rect is refused
+      by `lineMinimumMembers` alone, the converse of the ornament's, so the correction does not
+      generalise; and the question's own premise fell besides, the Google wordmark being read by
+      Vision and reaching the map on **0 of 2** pages, so there is no second device rect and the
+      device census is closed at ONE. The successor, `c28-cartoon-hit-rect`, is **not** another
+      instrument step: it is the §4b sweep of that correction, which read every eye-chosen rect in
+      this repository carrying a pixel count attributed to a named mark and found **six** unverified
+      attributions — the strongest being `1954 - Why` p4's *"a HIT on the lost cartoon"*, whose only
+      evidence is containment in a rect already read at 1:1 as holding clipped body text, and which
+      is replicated into `CLAUDE.md` and two boxes of this queue.
       This box exists because every session
       from 2026-08-28 skipped this item and the queue's head went inert while the daemon ran on
       self-instrumentation. ⚠️ **Re-point this line, do not re-wrap it** — `next-item.sh` prints only a
@@ -897,7 +908,111 @@ happens.**
       and it said "FIVE consecutive sessions", which the session logs do not support (two of the four it was
       counting *were* C28 sub-steps). Corrected in place rather than quietly.
       (origin: BUGS.md C28)
-- [ ] **c28-scott-footer-rect** — **THE SIBLING SWEEP `c28-ornament-rect`'s CORRECTION IS OWED, and
+- [x] **c28-scott-footer-rect** — **DONE 2026-09-20. THE ANSWER IS THE MEMBER FLOOR, SO THE
+      ORNAMENT'S CORRECTION DOES NOT GENERALISE — IT INVERTS — ⛔ AND THE PREMISE OF THE QUESTION IS
+      FALSE BESIDES, WHICH IS WORTH MORE THAN EITHER: THERE IS NO SECOND DEVICE RECT.**
+      ✅ **Predicted in writing from the component geometry before any arm was run, and it held to the
+      pixel.** The whole page holds exactly FOUR accepted components with `maxY >= 1100`, so the
+      strip's bands cannot reach outside it: `4x4+594+1121` (10 px), `12x7+658+1132` (52),
+      `5x9+788+1133` (32), `4x6+795+1133` (16) — 110 px, the entry's own 110. Bands: the first alone,
+      the other three together. Bar `3.0 × glyphH 8` = **24**; adjacent gaps **119** (splits) and **3**
+      (holds), so the band yields runs of 1 and 2. Predicted shipped **0** / `3:3` **0** / `2:3` **one
+      group of 48 px at `11x9+788+1133`**; measured **0 / 0 / 48**, `-g3x3-lines.png` byte-identical
+      to `-lines.png`, and the 48 px exactly the two predicted components.
+      ⛔ **THE ATTRIBUTION IS THE CONVERSE OF THE ORNAMENT'S, which is the disagreement this box was
+      written to find.** `lineMinimumMembers` **alone** refuses here: the admitted pair sits **3** px
+      apart against the same 24-px bar, so the gap term does not refuse it and lowering the member
+      floor alone to 2 admits it at the SHIPPED gap factor. ✅ **The converse is MEASURED and not
+      reasoned off the band size: `4:99` and `4:9999` both read the rect at 0**, so no gap factor
+      admits anything while the floor is 4; and `3:99` reads **100** px = B + C + D exactly, so at a
+      floor of 3 the rect needs a gap factor of `119 / 8` = **14.875**. On the ornament neither
+      constant alone admits and the pair must move together.
+      ⛔ **THE FINDING: the device in that rect reaches the map NOT AT ALL.** The `Digitized by Google`
+      wordmark is INK by the page's own Otsu — **1,321** px below 149 — and **0** map px; so is
+      `Original from UNIVERSITY OF MICHIGAN`; and below y=1157 the map is empty across the full page
+      width. The map is `ink AND NOT region` by construction, so that ink is inside `region` and
+      **the shape term is never asked about it at any value of any of its six constants**. ⚠️ `region`
+      is boxes PLUS a 0.25-of-box-height collar, so *Vision read it* is the reasoned half (a collar
+      reaching this ink would need a box 240 px tall on a page whose `glyphH` is 8) and *never asked*
+      is the measured one. ✅ n = **2 of 2**: `Merriam_1913` p2, the census's other wordmark page, reads
+      **1,581** px below its Otsu of 136 and **0** map px, with the whole bottom 407 rows empty. So of
+      the census's three devices exactly **ONE** reaches the map, and *"the same thing more weakly"* is
+      not the same thing at all.
+      ⛔ **What the 208 px ARE, read at 1:1 on the source and on the arm's own dump: this page's own
+      lost TABLE MATTER** — four bands between y 1108 and 1153, the outer two the dotted leaders of
+      the `Applicant XXXIII……`/`XXXVI……` rows and the inner two the numerals — **and the 48 px are the two
+      glyphs of the value `31`.** So the member floor is leaving measured content unnamed, not keeping
+      a device out. ⚠️ No verdict moves: the page fires at the shipped pair already (`lineN` 6), so
+      what the floor costs here is coverage INSIDE a page the term already protects, and that quantity
+      is unpriced and changes nothing on the shipped wiring.
+      ⛔ **An instrument trap, measured rather than reasoned: `-textish.png` is a faithful component
+      list at the shipped floor and is NOT one at a floor of 2.** The mask paints `bbox ∩ map`, so it
+      carries 116 objects against `txtN` 114 and 5,322 px against `txtPx` 5,319 — two
+      sub-`shapeMinimumArea` fragments. Dropping both makes the prediction replica reproduce the tool
+      digit for digit on all six numbers; dropping only the 2-px one leaves 20/2,597, so **the single
+      1-px fragment `1x1+731+622` alone manufactures a whole extra group and 27 px at `2:3`** and
+      nothing at `4:3` or `3:3`.
+      ✅ Controls: a binary built fresh in this worktree 30 days on reproduces
+      `SHAPETERM-73-2026-08-21.tsv` on `outPx` 7,462 / `lineN` 6 / `linePx` 1,796 / `txtN` 114 /
+      `glyphH` 8 / `topLine` `241x5+364+150` to every digit, and the 2026-08-22 rect reading at
+      **208 / 110 / 0**; `--self-test` 11 groups and `port agreed on 1` on both pages.
+      ⚠️ Nothing in `Sources/` or `Tools/` moved, no artefact was added or changed, so no mutant and no
+      `fault-inject.sh` case is owed — docs-only.
+      ⛔ **THE PARENT-POINTER DECISION: the owner-only branch does NOT fire.** It was conditional on
+      the footer being refused by the gap term alone; it is refused by the member floor, so the
+      correction does not generalise and the parent is re-pointed an eleventh time — to
+      `c28-cartoon-hit-rect`, which the §4b sibling sweep of THIS correction found and which is
+      load-bearing where this one was not.
+      (context: BUGS.md C28 `#### The footer rect, and the device in it reaches nothing`)
+
+- [ ] **c28-cartoon-hit-rect** — **READ THE 59 PIXELS. It is the same defect as
+      `c28-scott-footer-rect`'s with the OPPOSITE SIGN, and unlike that one it is load-bearing in
+      three documents.**
+      ✅ **Written 2026-09-20 by `c28-scott-footer-rect`, out of the §4b sibling sweep of its own
+      correction** — a read of every `WxH+X+Y` rect in this repository's prose carrying a pixel count
+      attributed to a named mark, asking in each case whether the attribution was ever checked. That
+      sweep found **six** genuine instances of the class — *a rect is chosen by eye around a named
+      mark, pixels are counted inside it, and the count is attributed to the mark without checking
+      that the mark produced it* — and this is the strongest.
+      **THE CLAIM**: the 3b material says `1954 - Why` p4's one accepted line group,
+      `27x17+1121+685`, is **a HIT on the lost cartoon** and *"not a false positive"*, and that claim
+      is what refutes this entry's own *"blind to a hand-made mark by construction"* and what serves
+      as the collar's liveness control. ⛔ **Its sole evidence is CONTAINMENT** — the group's bbox lies
+      inside the published drawing rect `254x240+970+595` — **and that containing rect is already on
+      record, read at 1:1, as holding clipped BODY-TEXT words**, with the sibling p7 rect holding
+      drawing fragments Vision boxed as words besides. The 59 px are read at 1:1 **nowhere in this
+      repository**, and the conclusion is replicated verbatim into `CLAUDE.md` and into two other
+      boxes of this queue.
+      **THE STEP, and it needs no sweep, no new tool and no new artefact**: `SHAPEDUMP=<dir>` on
+      `1954 - Why` p4, then crop `27x17+1121+685` out of `-source.png` and `-lines.png` at the same
+      offsets and read both at high zoom — the two-sided positive control the tool's own header says
+      those two files exist for, and exactly what settled the `31` above. Predict from the component
+      geometry first (`-connected-components 8` over the crop of `-textish.png`) as both earlier rect
+      steps did. ⚠️ **Read the two dump traps first**: `-textish.png` paints `bbox ∩ map`, so its
+      painted count runs a pixel or two over the accepted set, and it is identical across every arm by
+      construction.
+      ⛔ **STATE THE ANSWER EITHER WAY AND CORRECT ALL THREE COPIES IN THE SAME COMMIT.** If the 59 px
+      are the cartoon, say so and the refutation firms up on a footing it does not have today. If they
+      are clipped body text — which is what the containing rect is known to hold — then *"0 on four
+      hand-made marks and firing on three"* loses one of its three, *"p4's group is a hit on its own
+      lost cartoon"* falls in `BUGS.md`, in `CLAUDE.md` and in this queue, and the collar's *"not idle
+      for want of a `region` to dilate"* control loses its subject.
+      ⚠️ **The other four the sweep found, recorded so they are not lost**: the same page's three
+      drawing rects (`254x240+970+595`, `240x185+0+0`, `260x250+925+540`) whose 5,757 / 4,467 / 7,057
+      map px are called *"essentially the whole out-of-stencil map"* with the known body-text
+      contamination never subtracted; the six densest bands and two round-number controls behind the
+      0.52-0.57 stencil ratio; `1029x10+106+206`, where a darkest-pixel-in-rect is attributed to a
+      table rule over a band 1,029 px wide; and `140x205+1660+2125`, where 44 px are attributed to
+      pencil script — that last one **direction-safe**, an over-count strengthening rather than
+      weakening its claim.
+      ⚠️ **Budget**: build the tool first (~90 s — copy to `main.swift`, exclude `App.swift`; the
+      recipe is in the tool's own header). Docs-only if nothing in `Tools/` moves; the full suite
+      (~300 s) if anything does.
+      (context: BUGS.md C28 `#### The footer rect, and the device in it reaches nothing` for the
+      defect class, and `#### The same shape term on PICTURES` for the claim itself)
+
+- [x] **c28-scott-footer-rect-asked** — the box as written 2026-09-20, kept for what it asked.
+      **THE SIBLING SWEEP `c28-ornament-rect`'s CORRECTION IS OWED, and
       the box that carries C28's parent-pointer decision.**
       ✅ **Written 2026-09-20 by `c28-ornament-rect`, and it exists for CONTRIBUTING §4b rather than
       for a new question.** That step corrected the entry: `#### Are there PICTURES in the sub-bar

@@ -62,6 +62,24 @@ review of that diff and both halves are kept: the rect holds THREE components, s
 4 refuses it at EVERY gap factor too — each constant alone refuses, NEITHER alone admits, the pair must
 move together.** What survives unqualified: *"lowering it to 3 would admit 666 px of ornament"* is
 measured **false**, it admits 0, and so does 2.
+⛔ **AND THE SIBLING RECT THAT OWED FOLLOWED 2026-09-20 AND THE CORRECTION DOES NOT GENERALISE — IT
+INVERTS** (`#### The footer rect, and the device in it reaches nothing`; nothing in `Sources/` moved,
+no tool added, no artefact written). On `Scott_TK` p3's footer strip it is **`lineMinimumMembers`
+ALONE**: the two components the `2:3` arm admits sit **3** px apart against the same 24-px bar, so
+lowering the member floor alone to 2 admits them at the SHIPPED gap factor, while at the shipped
+floor of 4 no gap factor admits anything there. ⛔ **The finding worth more: the device in that rect
+reaches the map NOT AT ALL, so the entry's *"second device rect"* does not exist and the population
+is ONE.** The `Digitized by Google` wordmark is ink by the page's own Otsu — **1,321** px below 149
+on `Scott_TK` p3, **1,581** below 136 on `Merriam_1913` p2 — and **0** map px on **2 of 2**, because
+the map is `ink AND NOT region` and it is inside `region` (⚠️ boxes *plus* `textRegionMask`'s
+0.25-of-height collar; that it is a box and not a collar is reasoned from the padding arithmetic, and
+what needs no argument is that the term is never asked about it). The strip's 208 px are four bands in
+its top 50 rows and at 1:1 every one is this page's own lost **table matter** — dotted leaders and
+numerals; the 48 px the `2:3` arm admits are the two glyphs of the table value **`31`**. ⚠️ No verdict moves — the page fires at the shipped pair already
+(`lineN` 6) — so what the floor costs here is coverage inside a page the term already protects, and
+that is unpriced. ⛔ **One instrument trap out of it: `-textish.png` is a faithful component list at
+the shipped floor and is NOT one at a floor of 2** — a single **1-px** painted fragment
+(`1x1+731+622`) manufactures a whole extra group and 27 px at `2:3` and nothing at `4:3` or `3:3`.
 ✅ **`C27` HAS NO BOUNDED WORK LEFT AS OF 2026-08-26 — (c) SHIPPED, and its queue box is `[hold] needs:
 owner`** (`#### The split, SHIPPED`). `Flattener.colourSaturationThreshold` is the colour decision's own
 bar, 0.06, **equal to `pictureSaturationThreshold` so no page's output moves**; the two decisions can move
@@ -10084,6 +10102,12 @@ The three devices, with the shape term's own columns beside them:
 ⚠️ Pass 1 called the Google wordmark `none` and pass 2 called it a device: that is a rubric difference
 about whether a wordmark is lettering, not a disagreement about what is on the sheet. The count is 3
 under the inclusive rule and 2 under the strict one, and **0 plates either way**.
+⛔ **The three `outPx` / `lineN` figures in that table are the PAGE's and not the device's, which
+reads as a distinction without a difference and is not — measured 2026-09-20, the Google wordmark
+contributes `0` of `Scott_TK` p3's 7,462, on that page and on `Merriam_1913` p2 both** (it is inside
+`region`, Vision having read it), **so of these three devices exactly ONE reaches the map at all.**
+Row 3 already says so in its own `outPx` **0**; row 2 does not. See `#### The footer rect, and the
+device in it reaches nothing`.
 
 ##### ⛔ The sharp part: where a picture DOES reach the map, `textish` accepts nearly all of it and only the GROUPING refuses it
 
@@ -10133,6 +10157,17 @@ C26's cartoons and about `Xin Qu` p20 and is **not** true about this ornament. �
 that does reach it is **1**, where the term degenerates into the component test. Read
 `#### The ornament's own rect at a relaxed floor`, which also records that the instrument this
 paragraph's own dump recipe prescribes was blind to the question until that day.
+
+⛔ **MEASURED FALSE 2026-09-20 AND THE WHOLE PARAGRAPH BELOW IS WRONG ABOUT WHICH INK IT DESCRIBES,
+kept as written because the rect and the counts are right and only the attribution is not: the
+`Digitized by Google` wordmark is INK by this page's own Otsu (1,321 px below 149) and contributes
+`0` map px — it is inside `region`, so the map, being `ink AND NOT region`, cannot hold it (⚠️ and
+`region` is boxes *plus* a 0.25-of-height collar, so *Vision read it* is the reasoned half and *the
+term is never asked about it* the measured one) — on this page and on `Merriam_1913` p2, 2 of 2. The strip's 208 map px are its top
+50 rows and they are the page's own lost TABLE MATTER. So there is no second device rect; the
+population that reaches the map is ONE. And what refuses this rect is `lineMinimumMembers` ALONE,
+the opposite attribution to the ornament's. Read `#### The footer rect, and the device in it reaches
+nothing`.**
 
 `Scott_TK` p3 says the same thing more weakly: the footer strip holding the Google wordmark
 (`1020x150+0+1107` of a 1,020x1,257 page) has **208** map px of which **110** pass the component test and
@@ -13710,6 +13745,9 @@ entry has already measured accepting **21.6%** of a continuous-tone page. So the
 ⚠️ **One page and one rect.** The gap bracket is this ornament's geometry; `Scott_TK` p3's footer
 strip — the entry's second device rect that reaches the map, 208 map px of which 110 pass the
 component test and 0 group — was **not** re-dumped, so which constant refuses *it* is still unasked.
+⛔ **It WAS re-dumped 2026-09-20 and the answer is the opposite one — and the sharper finding is that
+this sentence's own premise is false, there being no second device rect. Read
+`#### The footer rect, and the device in it reaches nothing`.**
 ⚠️ The four bracket arms are a bracket and **not candidates**: 28.75 is 9.58x the shipped value and
 nothing here proposes moving it. ⚠️ No committed artefact moves and no new one was written — the
 five arms of `C28-GROUPING-2026-09-20.tsv` already hold this page's page-level numbers, and the row
@@ -13717,6 +13755,147 @@ this run printed is **byte-identical** to the committed one on all **46** fields
 tool columns plus the four of the two arms it re-ran, the committed file carrying five arms and a
 prepended `document` and appended `label`/`kind` besides. ⚠️ Nothing
 in `Sources/` moved.
+
+#### The footer rect, and the device in it reaches nothing — the `Digitized by Google` wordmark is INK by the page's own Otsu and contributes **0** map pixels on 2 of 2 pages carrying it, so there is no second device rect; what the rect's 208 px are is this page's own lost table data, and what refuses it is `lineMinimumMembers` ALONE, the opposite attribution to the ornament's — MEASURED 2026-09-20
+
+`#### Are there PICTURES in the sub-bar 73?` closes its device census with a sentence the section
+above left standing as the one thing it had not asked: *"`Scott_TK` p3 says the same thing more
+weakly: the footer strip holding the Google wordmark (`1020x150+0+1107` of a 1,020x1,257 page) has
+**208** map px of which **110** pass the component test and **0** group — so this is the **second**
+device rect that reaches the map, not the only one."* This is that rect, re-dumped. Nothing in
+`Sources/` moved, no tool was added, no committed artefact moves and no new one was written.
+
+##### The verdict, predicted in writing from the component geometry before any arm was run
+
+The whole page holds exactly **four** accepted components with `maxY >= 1100`, so the strip's bands
+cannot reach outside it, and `-connected-components 8` over the crop of `-textish.png` gives them in
+the page's own frame:
+
+| | rect | x | y | h | area |
+|---|---|---|---|---:|---:|
+| A | `4x4+594+1121` | 594-597 | 1121-1124 | 4 | 10 |
+| B | `12x7+658+1132` | 658-669 | 1132-1138 | 7 | 52 |
+| C | `5x9+788+1133` | 788-792 | 1133-1141 | 9 | 32 |
+| D | `4x6+795+1133` | 795-798 | 1133-1138 | 6 | 16 |
+
+110 px in total, which is the entry's own 110. The band test puts A alone and `{B, C, D}` together;
+the bar is `lineGapFactor * glyphH` = 3.0 × **8** = **24**, and the two adjacent gaps in that band are
+**B→C = 119** (splits) and **C→D = 3** (holds). So the band yields runs of **1** and **2**, and the
+prediction written down before the run was: shipped **0**, `3:3` **0**, `2:3` **one group of 48 px at
+`11x9+788+1133`**.
+
+**It held to the pixel.** `SHAPEDUMP=<dir> GROUPING=3:3,2:3` on that page: the rect reads **0 / 0 /
+48**, `-g3x3-lines.png` is **byte-identical** to `-lines.png`, and the 48 px in `-g2x3-lines.png` are
+exactly the two predicted components. Page-wide `lineN` **6** / `linePx` **1,796** shipped and at
+`3:3`, **20** / **2,595** at `2:3`.
+
+⛔ **THE ATTRIBUTION IS THE OPPOSITE OF THE ORNAMENT'S, which is the disagreement the queue box was
+written to find.** Here `lineMinimumMembers` alone refuses: the C/D pair sits **3** px apart against a
+24-px bar, so the gap term does not refuse it, and lowering the member floor **alone** to 2 admits it
+at the **shipped** gap factor. ✅ **And the converse fails — MEASURED, not reasoned off the band size:
+`4:99` and `4:9999` both read the rect at 0**, so no gap factor admits anything here while the floor
+is 4. (The two constants are not independent below that: `3:99` reads **100** px, which is B + C + D
+exactly and so confirms the band as well — at a floor of 3 the rect needs a gap factor of at least
+`119 / 8` = **14.875** to fold B into the run, against the 2 that needs nothing.) On the ornament neither
+constant alone admits and the pair must move together; here one constant alone does. **So the
+ornament's correction does not generalise to the rect the entry paired it with** — ⚠️ and the
+subsection below is why the two were never a pair to begin with, so do not read this as *"the device
+class splits two ways"*.
+
+##### ⛔ The finding worth more than the verdict: the device in that rect reaches the map NOT AT ALL
+
+The rect was chosen by where the wordmark **sits on the sheet**, and the pixels it counted are not the
+wordmark's. Measured on the dumped `-source.png` and `-map.png`, in the page's own frame:
+
+- `Digitized by Google` (`250x60+175+1188`) holds **1,321** px strictly below the page's own Otsu of
+  **149** — it is INK by the guard's own test — and **0** map px.
+- `Original from UNIVERSITY OF MICHIGAN` (`380x70+630+1185`): **0** map px.
+- Below **y = 1157** the map is **empty across the full page width**. All 208 of the strip's map px
+  lie in its **top 50 rows** of 150.
+
+The mechanism is this tool's own definition rather than an inference: its map is `ink AND NOT region`,
+so ink with no map pixel is ink **inside `region`**. ⚠️ **`region` is word boxes PLUS
+`textRegionMask`'s collar, and the distinction is worth keeping** — the pad is `mrcBoxPadding` = 0.25
+of a box's own **height** (`Flattener.swift:3252`), so 0 map px says the wordmark is inside a box **or
+within a quarter of some box's height of one**, not flatly that Vision read it. Here it is a box:
+reaching the wordmark's ~60 rows from the nearest ink above (the map is empty from y 1157) would need
+a collar of 60+ px and therefore a box **240 px tall** on a page whose `glyphH` is 8 — ⚠️ that last
+step is reasoned from the padding arithmetic and the two measured y extents, not from a box list,
+because this tool prints no boxes. What needs no argument is the operative half: **the shape term is
+never asked about this ink, at any value of any of its six constants**, because it is not in the map.
+
+✅ **And that generalises across the device, n = 2 of 2.** `Merriam_1913` p2 is the other page the
+census names as carrying the same wordmark. Same measurement, different page geometry (1,808x2,807,
+Otsu **136**): the wordmark at `420x90+1215+2685` holds **1,581** px below Otsu and **0** map px, and
+the map is empty over the whole bottom **407** rows.
+
+⛔ **So the census's *"the same thing more weakly"* is false in the strongest available way — it is
+not the same thing at all, and the population of device rects that reaches the map is ONE.** Of the
+three devices that section inventories: the Boxoffice printer's ornament reaches the map (664 px in
+three components), the Google wordmark is recognised and reaches it on **0 of 2** pages, and the
+`_1939_Former students` roundel sits on a page whose `outPx` is **0**. ⚠️ The census's own *inventory*
+claim is untouched — the wordmark IS on both sheets, and `device ≥ 3` stands; what falls is the
+claim about what the shape rule sees.
+
+##### What the 208 px actually are, read at 1:1
+
+All 208 map px lie in **four bands** between y **1108** and **1153**, and every one of the four is
+table matter from the bottom of the salesmen table: the outer two are the **dotted leaders** of the
+`Applicant XXXIII……` and `Applicant XXXVI……` rows (read at 7x), and the inner two hold the four
+accepted components, which at 6x are the **numerals** `32  26  28  26.5` / `26.5  30  24  31` — A a
+fragment of the **`3` of `32`** and B the whole of `30`, both read at 16x against `-textish.png` at
+the same offsets (⚠️ *"the raised `2` of `32`"* stood in this section's draft and is this very
+section's own defect class in miniature: A's x runs 594-597 and the raised `2` begins at 599).
+⛔ **The 48 px the `2:3` arm admits are C and D, read
+at 16x on the source and on `-g2x3-lines.png` side by side: the two glyphs of the table value `31`**
+— so what the member floor refuses in this rect is a piece of this page's own **measured content
+loss**, the *"scattered subset of the numerals in four of the five columns"* the per-page render table
+has recorded against `Scott_TK` p3 since 2026-08-19. It is not a device being kept out; it is table
+data being left unnamed.
+
+⚠️ **Do not read that as the term missing the page.** `Scott_TK` p3 fires at the shipped pair already
+(`lineN` **6**), so it is refused the shrink either way and no verdict moves at any arm here. What the
+floor costs on this page is **coverage within a page the term already protects**, which is a different
+quantity from the one `#### The two-sided grouping trade, PRICED` measured and is **unpriced**.
+
+##### ⛔ An instrument trap, measured rather than reasoned: `-textish.png` is a component list at the shipped floor and is NOT one at a floor of 2
+
+The prediction above was made with a throwaway replica of `lines(…)` driven off the dumped mask's own
+connected components. Page-wide that replica reproduces the tool **exactly** at `4:3` and `3:3` and
+**over-counts at `2:3`** — 21 groups / 2,624 px against the tool's 20 / 2,595.
+
+The cause is the dump's documented painting artefact biting at a relaxed floor. `-textish.png` paints
+`bbox ∩ map`, so the mask carries **116** ink objects against `txtN` **114** and **5,322** px against
+`txtPx` **5,319**: two sub-`shapeMinimumArea` fragments, `2x1+471+292` (2 px) and `1x1+731+622`
+(**1 px**). Dropping both makes the replica reproduce the tool digit for digit on **all six** numbers
+(6/1,796, 6/1,796, 20/2,595). Dropping only the 2-px one leaves **20 / 2,597** — so **the single
+1-px fragment alone manufactures a whole extra group and 27 px at `2:3`**, by completing a run of two,
+while changing nothing at `4:3` or `3:3`. ⚠️ The remaining +2 px in every arm's painted total (1,798
+against 1,796, 2,597 against 2,595) is the other fragment, now attributed to a named object rather
+than left as a page-wide gap.
+
+✅ Two determinism controls, from a binary built fresh in this worktree 30 days after the sweep:
+`Scott_TK` p3 reproduces `SHAPETERM-73-2026-08-21.tsv` on `outPx` **7,462**, `lineN` **6**, `linePx`
+**1,796**, `txtN` **114**, `glyphH` **8** and `topLine` **`241x5+364+150`** to every digit, and the
+rect reproduces the 2026-08-22 reading at **208 / 110 / 0**. `--self-test` is **11** groups and
+`port agreed on 1` on both pages.
+
+##### What this does NOT settle
+
+- ⚠️ **Two rects and two pages.** *"The ornament's correction does not generalise"* rests on a
+  population of **two**, which is the whole device class that reaches the map — but a class of one
+  positive is not a distribution.
+- ⚠️ **The wordmark result is about the map, not about recognition quality.** `0 map px` says the ink
+  is inside some word box; nobody read what string Vision returned for it, and a box covering ink it
+  mis-read would give the same 0.
+- ⚠️ **Coverage within a firing page is unpriced.** The 48 px are one table value on one page; no
+  sweep asked how much of the 12 typeset losers' recorded loss the term NAMES at `4:3` against `2:3`,
+  and on the shipped wiring that quantity changes no verdict. It would matter at the
+  `textRegionMask` seam, where a line group becomes a synthetic box — and that is reasoned from
+  `WIDENBYTES`'s construction, not measured here.
+- ⚠️ **The replica is a prediction instrument and the tool is the authority.** It is
+  `alltext-replica`'s shape, labelled: it is validated against the tool's own shipped column before
+  its relaxed answers are read, and it is thrown away.
 
 #### What this entry is NOT
 

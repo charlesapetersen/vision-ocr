@@ -689,7 +689,38 @@ the sub-bar 73?`'s *"lowering it to 3 would admit 666 px of ornament on the Boxo
 the term stops being a term** — `GROUPING=1:3` reads `linePx` **1,089**, exactly `txtPx`, i.e. the whole
 accepted set, so the honest form is *no member floor ≥ 2*. ⚠️ One page and one rect: `Scott_TK` p3's
 footer strip, the entry's second device rect that reaches the map, was **not** re-dumped, so which
-constant refuses that one is still unasked. ⚠️ The four bracket arms are a **bracket and not
+constant refuses that one is still unasked.
+⛔ **IT WAS RE-DUMPED 2026-09-20 AND THE CORRECTION DOES NOT GENERALISE — IT INVERTS, AND THE PREMISE
+OF THE SENTENCE ABOVE IS FALSE BESIDES: THERE IS NO SECOND DEVICE RECT** (`BUGS.md` C28
+`#### The footer rect, and the device in it reaches nothing`; nothing in `Sources/` moved, no tool
+added, no artefact written). ⛔ **The `Digitized by Google` wordmark is INK by the page's own Otsu and
+contributes `0` map px on 2 of 2 pages carrying it** — 1,321 px below 149 on `Scott_TK` p3, 1,581
+below 136 on `Merriam_1913` p2 — because the map is `ink AND NOT region` and it is inside `region`,
+so the shape term is never asked about it at any value of any of its six constants. ⚠️ **`region` is
+word boxes PLUS `textRegionMask`'s 0.25-of-box-height collar**, so 0 map px measures *inside the
+region*; that it is a BOX and not a collar is reasoned from the padding arithmetic (reaching this
+ink would need a box 240 px tall on a page whose `glyphH` is 8) and the tool prints no box list. Of the census's three
+devices exactly **ONE** reaches the map: the ornament (664 px), against the wordmark's 0 of 2 and the
+roundel's `outPx` 0. ⛔ **And on that rect it is `lineMinimumMembers` ALONE** — the two components the
+`2:3` arm admits sit **3** px apart against the same 24-px bar, so lowering the member floor alone to
+2 admits them at the SHIPPED gap factor, while at the shipped floor of 4 no gap factor admits anything
+there — measured, `4:99` and `4:9999` both reading the rect at 0, not reasoned off the band size. The
+exact converse of the ornament, where neither constant alone admits. ⚠️ The two are not independent
+one floor down: `3:99` reads **100** px (B + C + D), so at a floor of 3 the rect needs a gap factor of
+`119 / 8` = **14.875**. Predicted in writing
+from the four components' geometry before any arm ran and held to the pixel — rect **0 / 0 / 48**, and
+`-g3x3-lines.png` byte-identical to `-lines.png`. ⛔ **What those 208 px ARE, read at 1:1: this page's
+own lost TABLE MATTER** — four bands between y 1108 and 1153, the outer two the dotted leaders of the
+`Applicant XXXIII……`/`XXXVI……` rows and the inner two the numerals — and the 48 px are the two glyphs
+of the value **`31`** — so the member floor is leaving measured content unnamed rather than keeping a
+device out. ⚠️ No verdict moves (`lineN` 6 already), so this is coverage inside a page the term already
+protects, and it is **unpriced**. ⛔ **One instrument trap out of it: `-textish.png` is a faithful
+component list at the shipped floor and is NOT one at a floor of 2** — a single **1-px** painted
+fragment (`1x1+731+622`) manufactures a whole extra group and 27 px at `2:3` while changing nothing at
+`4:3` or `3:3`, measured by dropping it from a replica that then reproduces the tool digit for digit on
+all six numbers. ⚠️ Two rects and two pages; and `0 map px` says the ink is inside SOME word box, not
+that Vision read it correctly.
+⚠️ The four bracket arms are a **bracket and not
 candidates**, no committed artefact moves, no new one was written — the run's row is byte-identical to
 `C28-GROUPING-2026-09-20.tsv`'s on all **46** shared fields (42 tool columns plus the four of the two
 arms re-run; that file carries five arms) — and nothing in `Sources/` moved.
