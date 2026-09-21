@@ -583,7 +583,35 @@ configurations that does — while giving 7 → 40 for the `min`, so the MEAN id
 the MIN is not reproduced even by it.** ⛔ **The same
 composite KILLS THE BRACKET** — continuous with two distinct ticks at the shipped bar, a faint broken
 smear with the ticks gone at 0.08 — which is C28's mechanism in one image: stencilled type survives, a
-background-only hand-made mark does not. ⚠️ The stencil-coverage ratios (**0.767 / 0.801 / 0.819**
+background-only hand-made mark does not.
+✅ **THAT SENTENCE IS COUNTED AS OF 2026-09-21 AND IT HOLDS, TWICE, ON TWO INDEPENDENT RUNS**
+(`BUGS.md` C28 `##### The bracket rect, READ ON THREE ARMS`, the queue's `c28-p16-bracket-rect`): over
+the mark's own zone the ink falls **842 → 202-208** (75.3-76.0% lost) while the stencilled type in the
+SAME 200x260 crop falls **3,747 → 3,561, 5.0%**, and tick B reads **0 px in 0 components** against 47
+on **every** recipe either run tried. ⛔ **The finding worth more than the confirmation is that the
+STENCIL IS A FLOOR**: in the type zone `stencil \ ink` is 14 px in the source and **0** on all three
+published arms while `ink \ stencil` goes **225 → 186 → 149 → 0**, so at the bar the ink *is* the
+stencil set exactly — what dies at every resolution is the ink the stencil does not carry, and the
+bracket is that one mechanism with its floor at zero rather than a second mechanism.
+⛔ **AND THE RECT IS NOT BACKGROUND-ONLY, which the step's own written prediction had at *"~0, most
+likely 0"*: it holds 3,561 stencil px, split cleanly at column 95** — so one crop carries both halves
+of C28's mechanism side by side, where this register had located the surviving type 750 rows away.
+⛔ **ONE THING DID NOT REPRODUCE ON THE ADOPTION AND IT IS INSTRUMENT, NOT VERDICT**: the `1/3` and
+`1/8` **bracket-zone** cells are recipe-dependent at the few-pixel level — three recipes give
+**202 / 202 / 214** against a published 208 and tick A **0 / 0 / 1** against 3, *emptier*, so the claim
+strengthens — while the `source` and `1/2` rows, all fifteen tool columns, all four type-zone counts
+and the FLOOR reproduce exactly. **Quote those two rows with their recipe.** Carried as the queue's
+`c28-composite-recipe`. ⛔ **The adoption ALSO published the spine window's `/186` as
+*"unreconstructible"* and THE ADVERSARIAL REVIEW OF THAT DIFF REFUTED IT — the window is 186 rows at
+rect rows 10..195, the bbox padded 3 above and 6 below, unique, reproducing the published longest-gap
+column on 4 of 4 arms.** The stated *"padded 2 px"* (which gives 181) is what is wrong; the figures
+were right. **Re-derive a window from the numbers before concluding the numbers are wrong** — the
+instrument to suspect first was the adoption's own, and a check written against 181 reds on the
+correct answer. ⚠️ **And one sentence four lines above this block is now refuted by the section it
+points at**: *"the MEAN identifies the recipe"* rested on Rec.709-with-rounding being the unique one
+of eight configurations to print `116.6 → 117.6`, and that section measures grey-then-resize Mitchell
+printing it too, so the mean identifies the recipe no better than the min does — which is the same
+`c28-composite-recipe` debt. ⚠️ The stencil-coverage ratios (**0.767 / 0.801 / 0.819**
 against **1.097 / 1.087 / 1.026**, C28's real losses **0.0000**) are a SCREEN saying those lines are
 stencilled at all, **not** a legibility measure. ⛔ **The only out-of-stencil TEXT on p16 is a
 three-character fragment of the FACING leaf**, and the `ink AND NOT dilate(stencil, Disk:3)` map holds

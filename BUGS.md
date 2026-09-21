@@ -136,7 +136,19 @@ sentence at the limits line and missed this copy of it) and the p16 rect the day
 (`##### The peak-contrast figure, MEASURED`), leaving `140x205+1660+2125` alone. ⛔ **And the p16 read
 is the one that INVERTED: its `~250 paper` is nowhere in its own rect (0 source px above 200), where
 p12's band reads 255.0 / 254.7 / 255.0 and `~250` is pessimistic — the same phrase, opposite errors,
-because one rect's paper was read and the other's assumed.** And
+because one rect's paper was read and the other's assumed.**
+✅ **AND p16's OTHER RECT — the BRACKET, `200x260+400+1690` — WAS READ THE SAME DAY, WHICH LEAVES THIS
+ENTRY WITH NO WHOLLY QUALITATIVE CLAIM** (`##### The bracket rect, READ ON THREE ARMS`): the mark's
+ink falls **842 → 202-208** while the stencilled type in the SAME crop falls **3,747 → 3,561, 5.0%**,
+and tick B reads **0 px in 0 components** against 47 on every recipe two independent runs tried.
+⛔ **Two findings outrank the confirmation. The rect is NOT background-only** — 3,561 stencil px split
+cleanly at column 95, refuting that step's own written prediction — **and THE STENCIL IS A FLOOR**:
+`ink \ stencil` goes **225 → 186 → 149 → 0**, so at the bar the type zone's ink IS the stencil set and
+the bracket is that one mechanism with its floor at zero, not a second one. ⚠️ **Its `1/3` and `1/8`
+bracket-zone cells are recipe-dependent** (three recipes, 202 / 202 / 214 against a published 208) —
+the queue's `c28-composite-recipe` — ⛔ **while its spine window, which the adoption first called
+*"unreconstructible"*, was solved by the adversarial review of that same diff: 186 rows at rect rows
+10..195, unique, and it is the stated *"padded 2 px"* that is wrong, not the 186.** And
 ⛔ **the 10-row band does not hold the whole rule TODAY, not merely at some further step**: the
 falloff already spills past y=215 at both downsampled factors — y=216 reads 246.1 at 1/2 and 225.9 at
 1/3, y=217 249.5 — ⛔ **and not past its FIRST row, which a draft said: y=206 reads 255.0 / 254.7 /
@@ -8729,7 +8741,14 @@ destroyed at 1/8** — so on this page the shrink is destructive at 1/8 *and* at
 ⚠️ **AND THE FIRST FIVE PAGES READ SAID THE OPPOSITE.** The drawings on `1954 - Why` p4, p6 and p7 (the
 three pages C26 was opened on) are whole and legible at 1/3 — softer, with the bookshelf hatching
 muddier, no line lost; `Riesman - 1954` p16's hand-drawn pen bracket and its two tick marks are
-continuous and unbroken at 1/3, on the page whose same mark is *"broken into blobs"* at 1/8; and
+continuous and unbroken at 1/3, on the page whose same mark is *"broken into blobs"* at 1/8
+(✅ **CONFIRMED with numbers 2026-09-21 and QUALIFIED — `##### The bracket rect, READ ON THREE ARMS`**:
+at 1/3 both ticks are single components at 60-62 and 40 px and the spine holds 171-172 of 186 rows
+— ⛔ **186 is the window's real height and the section's `padded 2 px` is what is wrong about it, 181
+being what that padding gives; corrected on the adoption** — so *continuous* is right, ⚠️ but
+*unbroken* is generous, the largest component's height falling **175 → 155**, measured identically by
+both runs, and the gaps going 2 → 3-4 against 1/2 — categorically unlike 1/8, where the spine is 64-65
+rows and one tick is gone); and
 `Atkinson_1939` p2 keeps a **whole line of unrecognised typescript** — *"…ard meeting of September 11th
 Mr.Scheuch said to four people,who have af…"*, ink that exists only in the background — fully readable
 at 1/3. A draft of this section was on course to conclude "no loss at 1/3, only softening" off those
@@ -12862,6 +12881,17 @@ run of `Tools/score-text-route.swift` on that page, built from today's tree:
   composite — the stencilled type survives and the background-only hand-made mark does not. That
   reproduces C26's *"broken into disconnected blobs"* and its *"pen bracket and its two tick marks"* from
   a different session and a different build.
+  ✅ **EVERY WORD OF THIS BULLET IS A COUNT AS OF 2026-09-21 AND ALL OF IT HELD — read
+  `##### The bracket rect, READ ON THREE ARMS`.** At the page's own Otsu of 103: *"continuous"* is
+  **175 of 181 spine rows** (⛔ **181 and not the `186` that section published — its own stated padding
+  gives 181, corrected on the adoption**); *"broken"* is **64-65 rows in 5 gaps**; *"the ticks gone"*
+  is tick B at **0 px in 0 components** against 47, on every recipe either run tried, and tick A at
+  **0-3 px** against 73. ⚠️ **Quote the ranges**: the 1/8 arm's bracket-zone cells are recipe-dependent
+  at the few-pixel level and the two runs disagree there (the mark's loss is **75.3-76.0%**), while
+  tick B's 0 and the type zone's 5.0% do not move. ⛔ **But *"the stencilled type survives"* is a statement about a
+  DIFFERENT rect in this bullet and is true of THIS one: the 200×260 holds 3,561 stencil px in columns
+  95..199 against exactly 0 in columns 0..94**, so the mechanism is in one crop rather than two — and
+  the mark's ink falls 75.3% where that crop's own type falls 5.0%.
 * **What IS outside the stencil on p16**, by the `ink AND NOT dilate(stencil, Disk:3)` map this campaign
   uses — ink being `-auto-threshold OTSU` on the dumped `-source.png`, the stencil its dumped
   `-stencil.png`, 81,531 px at r=3: the pen bracket and its two tick marks, the gutter shadow strip, the
@@ -13117,6 +13147,228 @@ groups span that range (the two free pages at 1.0000 and 2.0833; the five conten
 sampling structure, let alone computable. Bytes are one Photo detail (Balanced) and one machine. And
 ⛔ **no bar is recommended — the value is the owner's, as it was on 2026-08-19, and `#### THE DECISION`
 records why.** C28 stays **HALF FIXED**: this prices a decision at corpus scale, it does not take one.
+
+##### The bracket rect, READ ON THREE ARMS — the rect is not background-only, and the stencil is a FLOOR the type never falls below, 2026-09-21
+
+The `KILLS THE BRACKET` bullet ~250 lines above is this entry's only wholly qualitative claim —
+*"a continuous fine stroke with its two tick marks separate and distinct"* against *"a faint broken
+smear with the ticks gone"* — over the object carrying **280,066 B, 76.7%** of the bucket labelled
+*"re-destroys content outright"*. A number with an unstated denominator is what
+`##### The peak-contrast figure, MEASURED` found in the bullet beside it; **no number at all** is
+what this one had. Fresh `INKBAR=0.08 INKDUMP=<dir>` on that page, plus a second run at
+`PHOTODETAIL=smallest`, composited the way `JBIG2.assemble` draws an MRC page (background upscaled,
+foreground upscaled and masked by the stencil, drawn over) and read at 1:1 and 3x.
+
+⛔ **THE FIRST FINDING REFUTES THIS STEP'S OWN LOAD-BEARING PREDICTION AND MAKES THE RECT BETTER
+EVIDENCE, NOT WORSE: `200x260+400+1690` IS NOT BACKGROUND-ONLY.** It holds **3,561 stencil px of
+52,000 (6.85%)**, and the queue box and the prediction file both had it at *"~0, most likely 0"*. The
+split is CLEAN and vertical: the stencil occupies **columns 95..199** and columns **0..94** hold
+**exactly 0** stencil px. So one 200×260 crop holds both halves of C28's mechanism side by side —
+the destroyed hand-made mark on the left, the surviving type (`a cu` / `indi` / `qua` / `mar`, read
+at 3x) on the right — where the register locates the surviving type in a **different** rect 750 rows
+away (⚠️ **origin to origin**, 2440 − 1690; the rects' nearest edges are 490 rows apart and their
+centres 695, so quote the basis with the number). ⚠️ **No published sentence needs retracting for it**: the claim in `BUGS.md` and `CLAUDE.md` is
+that *the mark* is background-only, which is measured true (0 stencil px in its zone); it was the
+prediction, not the register, that generalised from the mark to the rect.
+
+✅ **THE THREE-POINT SERIES ON ONE MARK, at the page's own Otsu — measured EXACTLY 103, the level at
+which a `-threshold` reproduces `-auto-threshold OTSU` on the dumped `-source.png` digit for digit
+(white fraction 0.871228 at 103 against 0.873264 at 102 and 0.869240 at 104).** The bracket zone is
+columns 0..94 × 260 rows = **24,700 px**; the type zone is columns 95..199. `tickA` is the source's
+own `17x17+56+68` component and `tickB` its `13x12+64+45`, each padded 2 px so a shifted smear still
+counts; `spine` is its `20x177+75+13` padded 2 px, 186 rows.
+
+| arm | zone px | comps | top-comp h | spine rows/186 | gaps | longest gap | tick A | tick B | type-zone px |
+|---|---|---|---|---|---|---|---|---|---|
+| source | 825 | 3 | 177 | 177 | 2 | 6 | 74 px / 1c | 53 px / 1c | 3,772 |
+| **1/2, shipped** | **842** | **3** | **175** | **175** | **2** | **6** | **73 px / 1c** | **47 px / 1c** | **3,747** |
+| 1/3 (`smallest`) | 833 | 5 | 155 | 171 | 4 | 7 | 60 px / 1c | 40 px / 1c | 3,710 |
+| **1/8, at the bar** | **208** | **4** | **39** | **65** | **5** | **62** | **3 px / 1c** | **0 px / 0c** | **3,561** |
+
+⛔ **RE-MEASURED ON ADOPTION, 2026-09-21, FROM A FRESH BUILD AND FRESH DUMPS — THE `source` AND `1/2`
+ROWS REPRODUCE ON EVERY CELL AND THE `1/3` AND `1/8` ROWS DO NOT.** The session that measured this died
+before committing and retained no dumps, and prose asserting runs nobody can show is the thing an
+adoption exists to re-run. `Tools/score-text-route.swift` was rebuilt from this tree and both
+invocations re-run. Reproducing **digit for digit**: the tool row (`inkOut` 0.0565, `layered` 350342,
+`layeredAtBar` 70276, `barDelta` −280066, `lineN` `-`, `lineNAtBar` 0), the stencil sha256
+`3fde63ffe97cfff1d643…`, the Otsu level 103 and **all three** of its white fractions, P1's refutation
+(**3,561** stencil px, the split at column **95**, columns 0..94 holding **24,700** px of which not one
+is stencil), the `source` row (825 / 3 / 177 / 74 / 53 / 3,772), the `1/2` row
+(842 / 3 / 175 / 73 / 47 / 3,747) — **both rows on every cell, gaps and longest gap included, once the
+spine window is reconstructed as below** — **all fifteen** tool columns rather than the six named in
+control (1), **all four** type-zone counts, and **every number of the FLOOR finding below except its
+closing `75.3%`**, which is one of the figures that moved. ⛔ **What does NOT reproduce is the
+bracket-zone half of the two arms whose background needs a large upscale**: at the bar this run reads
+**zone 202 and tick A 0 px in 0 components** against the table's 208 and 3 px / 1c, and at 1/3
+**839 / 6 comps / tick A 62** against 833 / 5 / 60. Three recipes were tried — Mitchell with an `!`
+stretch to the page size, taken colour-then-grey and grey-then-resize (**identical to each other on
+every BRACKET-ZONE cell**, ⛔ *not* in general: the instrument paragraph below measures the two orders
+differing on four cells of the type rect), and a percentage resize (214 / 5 / tick A 1) — and **none
+lands on the table's figures**, so the composite as this section describes it does not determine them.
+⚠️ **On the two cells that carry the verdict both misses strengthen it** — tick A at the bar is
+*emptier* here than published and the mark's ink falls **842 → 202, 76.0% lost** rather than 75.3% —
+and `tickB` reads **0 px on 3 of 3** of this run's recipes at 103, as well as on the original's four
+filter configurations at ≤100 and ≤110, which is the cell the instrument paragraph names as the one
+that cannot be moved. ⛔ **Do NOT write *"every miss strengthens the verdict"*, which this paragraph
+first did and which cannot fail**: the 1/3 arm bears on no verdict at all, and its five misses run in
+**both** directions — 839 / 172 rows / 3 gaps / tick A 62 flatter it, while **6 components against 5**
+makes it measurably *more* fragmented than published. **So the `1/3` and `1/8` bracket-zone cells are
+recipe-dependent at the few-pixel level and must be quoted with their recipe; the `source` and `1/2`
+rows, the type-zone column and the FLOOR are not.**
+
+⛔ **AND THE SPINE WINDOW'S STATED CONSTRUCTION IS WRONG WHILE ITS NUMBERS ARE RIGHT — the padding is
+not 2 px, and the ⛔ THIS PARAGRAPH FIRST CARRIED, that `/186` was *"unreconstructible"*, WAS REFUTED
+BY THE ADVERSARIAL REVIEW OF THIS VERY DIFF AND IS THE MORE USEFUL HALF OF IT.** `20x177+75+13` padded
+2 px is **181** rows, so the stated recipe does not give 186 — but the window is recoverable from the
+section's own published `longest gap` column, and the adoption's first pass drew the opposite
+conclusion from that same premise one step short of solving it. **The window is 186 rows at rect rows
+10..195** — the spine bbox `y 13..189` padded **3 above and 6 below** — and it is UNIQUE in its
+neighbourhood: at that start the published longest-gap column reproduces on **4 of 4 arms**
+(6 / 6 / 7 / 62) and the gap count on 3 of 4, while a start one row earlier gives 5 / 6 / 7 / 61 and
+one row later 7 / 7 / 8 / 63, each matching **at most two**. ✅ **In that window the `source` and `1/2`
+rows reproduce on EVERY cell, gaps and longest gap included** — 177 / 2 / 6 and 175 / 2 / 6 — which is
+what the first pass's 181-row window had wrongly reported as a mismatch. ⚠️ **The x-range must be
+clipped to the bracket zone**: padding x by 2 pushes the window to column 96, two columns into the type
+zone, which inks every row and reads the source spine as 181 of 181 — an instrument trap this step hit
+and caught. ⛔ **So the defect is a STATED CONSTRUCTION that does not produce its own figures, not a
+figure nobody can rebuild**, and the transferable form is sharper than the one first written down:
+*"padded 2 px"* is nine rows short of what was run, so **re-derive a window from the numbers before
+concluding the numbers are wrong** — the instrument to suspect first was the adoption's own.
+⛔ **The same `186` appears a second time in this section and THERE it is wrong**: P4's *"the mark
+spans only 186 of the rect's 260 rows"* is the window's height, not the mark's — the three source
+components span rows **13..189 = 177** — so P4's stated reason is out by 9 rows, in the direction that
+makes its own verdict stronger.
+⛔ **AND THE COLUMN IS MISNAMED ON THE TWO ARMS WHERE IT MATTERS: it is inked rows in the WINDOW, not
+the spine's.** The window is clipped in x only, so any bracket-zone ink in a row counts. At the bar the
+four components are row-disjoint and `39 + 14 + 6 + 5 = 64` **exactly**, so **25 of those rows are tick
+and stray fragments rather than spine**; at 1/3, `155 + 6 + 9 + 2 = 172`, 17 of them. On `source` and
+`1/2` the ticks nest inside the spine's row span and the count is clean. ⚠️ So *"the spine holds 65
+rows"* reads as a statement about the spine and is not one — which is also a partial mechanism for two
+of the non-reproductions this section attributes wholly to recipe.
+⚠️ **Two further limits the adoption did NOT re-run and is not claiming.** The prediction scorecard is
+graded against `/tmp/p16-bracket-predictions.txt`, **not retained** — the same shape as the dumps, and
+the one part of this section that cannot be re-checked at all; P4 is refuted above from the adoption's
+own reproduced source row, and the other five are untested. And the limits line's *"three Photo-detail
+arms"* is **two** (Balanced and `smallest`): the `1/8` arm is `INKBAR=0.08`, and `PHOTODETAIL` does not
+change what an all-text page is stored at, which is the tool's own header.
+
+⛔ **SO THE BULLET IS CONFIRMED AND EVERY WORD OF IT IS NOW A COUNT.** *"Continuous"* is **175 of 186
+spine rows in 2 gaps of at most 6**, which is the SOURCE's own gap structure (177 / 2 / 6) reproduced
+to within two rows; *"broken"* is **65 rows in 5 gaps whose longest is 62** — a third of the stroke
+missing in one piece. *"The ticks gone"* is **tick B at 0 px in 0 components** against 47, and tick A
+at **3 px** against 73. And the mark's ink falls **842 → 208, 75.3% lost**, while the stencilled type
+in the same crop at the same threshold falls **3,747 → 3,561, 5.0% lost**. ⚠️ Quote the two retentions
+(**24.7%** and **95.0%**) and not their ratio: this register has already refused a ratio of ratios
+twice, and a *"15.1x differential"* is a claim about one crop's two arbitrary zones.
+⛔ **FIVE numerals in this paragraph moved on the adoption below and are KEPT AS WRITTEN, because what
+a reader needs is which ones are recipe-bound**: `208` is **202**, `75.3%` is **76.0%**, the derived
+`24.7%` is **24.0%**, tick A's `3 px` is **0 px in 0 components**, and `65 rows` is **64**.
+⛔ **A draft of this correction said FOUR and omitted `24.7%` — a percentage DERIVED from a numeral
+the same sentence lists as having moved — which is `2a16b9f`'s lesson landing inside the repair for
+it.** ⚠️ `/186` is NOT in this list: it is the window's real height and the section's own gap column
+reconstructs it; what is wrong there is the *stated padding*, below. ⚠️ **The scorecard's `4.05x`
+(`842/208`, **4.17x** at 202) and P6's `94.1% / 34.9% / 52.7%` move with them** and are left as
+written for the same reason. **What carries the claim did not move** — tick B's 0 against 47 on every
+recipe, and the type zone's 5.0% against the mark's three-quarters — and tick A reading 0 makes
+*"the ticks gone"* more nearly literal, not less.
+
+⛔ **THE FINDING WORTH MORE THAN THE CONFIRMATION — THE STENCIL IS A FLOOR, AND THE BRACKET IS THE
+EXTREME CASE OF ONE MECHANISM RATHER THAN A SECOND ONE.** Comparing the type zone's ink SET against
+the stencil's at 103: `stencil \ ink` is **14 px in the source** and **0 on all three published arms**,
+while `ink \ stencil` goes **225 → 186 → 149 → 0** over source / 1/2 / 1/3 / 1/8 — so at the bar the
+type zone's ink is the stencil set **exactly** (3,561 px, both differences empty, `set-equal True`).
+**What dies at every resolution is the ink the stencil does not carry; what the stencil carries does
+not move.** The bracket is that same phenomenon with the floor at **zero**, which is why its zone
+loses 75.3% where the type zone loses 5.0%. ⚠️ **Measured and able to have come out otherwise, checked
+rather than asserted**: the source's own 14-px `stencil \ ink` is the counter-example that makes the
+0 a reading, and 1/2's 186-px `ink \ stencil` is the counter-example on the other side.
+
+✅ **The 1/3 claim published under `#### Sub-step 2b` — *"p16's hand-drawn pen bracket and its two tick
+marks are continuous and unbroken at 1/3"* — is CONFIRMED and QUALIFIED by the same table, which is
+what the sibling sweep was for.** Both ticks are single components at 60 and 40 px and the spine holds
+171 of 186 rows, so *continuous* is right; ⚠️ but *unbroken* is generous — the top component's height
+falls **175 → 155** and the gaps go **2 → 4**, so 1/3 is measurably worse than 1/2 while staying
+categorically unlike 1/8. That sentence and the QUEUE's copy of it were the only other claims in the
+tree about this mark, and neither was a number.
+
+⚠️ **THE RATIO IS NOT A PROPERTY OF THE RECT, AND ITS SIGN FLIPS — this is the predecessor's blocker 1
+in a sharper form.** Over absolute thresholds ≤100 / ≤110 / ≤120 / ≤130 the bracket zone's
+shipped-over-bar ink ratio reads **7.19x / 1.85x / 1.06x / 0.71x**, crossing 1.0 between 120 and 130:
+absolutely the smear is thinner, and at a loose enough bar it is *thicker*. **Scale-matched** — each
+arm thresholded at a fixed fraction of its own modal-paper-to-own-min span (paper 153/154, min 35/94)
+— it is **0.44x / 0.50x / 0.51x** at f = 0.25 / 0.50 / 0.75, i.e. stable and *higher at the bar*,
+because a smear is wide. ⛔ **The two disagree in SIGN and that disagreement is the result, not a
+defect**; the table above is quoted at 103 because that is the campaign's own ink threshold on this
+page, not because it is a neutral choice.
+
+⚠️ **INSTRUMENT, and it NARROWS the predecessor's conclusion rather than extending it: what was
+identified is the LUMA FORMULA, not the compositing ORDER.** Over the type rect `900x150+300+2440` the
+two orders **split the published pair between them** — colour-then-grey Mitchell gives mean
+**116.542 → 117.553** (printing 116.5 → 117.6) with min **12 → 42, the published pair exactly**, and
+grey-then-resize Mitchell gives mean **116.566 → 117.620** (printing **116.6 → 117.6**, both) with min
+**12 → 41**. Neither reproduces both; the predecessor's best of eight (Rec.709 with rounding,
+116.582 → 117.566) reproduced the mean pair and gave min 7 → 40. **So this is the first run to
+reproduce the published MIN pair exactly, and it does so with the order the MEAN pair refuses** — the
+recipe is bracketed to its order, not pinned. ⚠️ Filter sensitivity, over Mitchell-colour /
+Mitchell-grey / Triangle / Lanczos: the bracket zone's ≤100 ratio reads **7.19x / 7.82x / 5.74x /
+2.20x**, a **3.6x spread with the sign invariant**, while the type zone's reads **1.047x–1.062x** on
+all four, i.e. filter-invariant. ✅ **`tickB` reads 0 px at the bar on 4 of 4 configurations at both
+≤100 and ≤110, and on both orders at 103** — that is the claim the instrument cannot move. `tickA`
+reads 0 at ≤100 on 3 of 4 (Lanczos gives 24).
+
+✅ **CONTROLS.** (1) The tool row reproduces `C28-BARPILOT-2026-09-02.tsv`'s p16 row digit for digit on
+all 15 tool columns (`inkOut` 0.0565, `layered` 350342, `layeredAtBar` 70276, `barDelta` −280066,
+`lineN` `-`, `lineNAtBar` 0) and the stencil sha256 reproduces the published
+`3fde63ffe97cfff1d643…` — ⛔ **still a determinism re-run and not a control across a code change,
+checked rather than assumed: `git diff d9486a2..HEAD` over `Sources/` and this tool is 41 lines and
+every one of them is a `//` or `///` comment.** (2) The compositor control, which could have come out
+otherwise: mean |Δ| from the source is **3.717** for the full composite over the whole rect against
+**8.639 / 86.618 / 91.540** for background-only, foreground-only and an inverted mask, and over the
+type zone **5.391** against **14.767 / 74.147 / 83.523**. ⛔ **The bracket zone's row of that control
+is ENTAILED and is labelled so rather than offered**: with 0 stencil px there the alpha is 0, so the
+full composite IS the background — measured `full − bg-only = 0.000000` exactly — which is the
+predecessor's blocker 2 landing in the zone this step did not expect it in, because P1's refutation is
+what moved it there. (3) Free and able to fail: the two runs' bar arms must be byte-identical since
+`max(3,8) == max(2,8)`, and `bg-bar.jpg`, `fg-bar.jpg`, `fg-shipped.jpg`, `-source.png` and
+`-stencil.png` are all five byte-identical across the two invocations.
+
+⚠️ **THE PREDICTION SCORECARD, from the file written before any crop (`/tmp/p16-bracket-predictions.txt`,
+not retained) — TWO of six held, one held on one side, THREE refuted.** P1 (stencil ~0 in the rect)
+**REFUTED**, 3,561 px. P2 (shipped > bar by >2x at a threshold near the page Otsu) **HELD** — 4.05x at
+103, 7.19x at ≤100 — with the sign-flip caveat above. P3 (scale-matched within 2x, possibly higher at
+the bar) **HELD**, 0.44x–0.51x. P4 (shipped top-comp height ≥ 200 of 260 rows) **REFUTED ON ITS STATED
+TEST for a reason that has nothing to do with the bar** — the mark spans only 186 of the rect's 260
+rows, so the number was wrong about the geometry; its bar half held at 103/110/120 (39/65/106 < 150)
+and failed at ≤130 (161). P5 (the ticks are NOT separate components, *"separate and distinct"* being
+merely visual) **REFUTED — it is LITERAL**: the two ticks are two separate 4-connected components on
+the source and on the shipped arm at every threshold from 100 to 120, because the bracket is not a
+`[` but a long hand-drawn curve with two detached diagonal dashes beside it. P6 held on the shipped
+side (**94.1%** of spine rows, ≥ 90% predicted) and failed at loose thresholds on the bar side
+(34.9% at 103 and 52.7% at ≤110, both under the predicted 60%; 73.7% at ≤120 and 92.5% at ≤130).
+
+⛔ **NO VERDICT AND NO BYTE FIGURE MOVES.** `7 of 7` rests on the legibility reading of the *other*
+rect and on this mark being a hand-made one, both unchanged; the bucket arithmetic (280,066 B = 76.7%
+of the 365,160 B *"re-destroys content outright"* bucket) is untouched; and the tension this entry
+already states between `7 of 7` and that bucket is the same tension, now with the mark's destruction
+counted instead of described. ⚠️ **LIMITS**: one rect, one page, one render; three Photo-detail arms of
+one document; the bracket zone is 24,700 px holding ONE thin object, so the population arguments that
+worked over the type rect's 20,910 stencilled px are weaker here and are not dressed up in the same
+form; the dumps were **NOT retained** (`/tmp/p16b-dump`, `/tmp/p16c-dump`), so every figure here is
+re-derivable only by re-running `INKBAR=0.08 INKDUMP=<dir>` — and `PHOTODETAIL=smallest` beside it —
+on that page and re-cutting the named rects and the named component boxes. Nothing in `Sources/`,
+`Helper/`, `Tests/` or `Tools/` moved and no artefact was written.
+✅ **THAT STATED PROCEDURE WAS FOLLOWED ON THE ADOPTION AND IT WORKS** — two runs, ~40 s each, and
+**SIX of the seven dumped files are byte-identical across them, `bg-shipped.jpg` being the only one
+that differs.** ⛔ **Control (3) above names five and its own list refutes *"the two invocations
+differ only in the shipped arm's background AND FOREGROUND"*, which a draft of this line carried:
+`fg-shipped.jpg` is IN that identical list, and it has to be** — the tool passes no
+`foregroundDownsample`, so both runs take `Flattener.mrcForegroundDownsample` = 4 and the tool prints
+*"the app varies only the background"*. ⚠️ So three of control (3)'s five (`fg-shipped.jpg`,
+`-source.png`, `-stencil.png`) are byte-identical **by construction** and test determinism only; the
+seventh, `-stencil-bar.png`, is identical too, which is the tool's own stated premise holding.
+⚠️ **What it does NOT give back is the composite**,
+which is where the two runs part company; that is the queue's `c28-composite-recipe`. ⚠️ The adoption's
+dumps were not retained either (`/tmp/p16-a`, `/tmp/p16-b`).
 
 #### The grouping's other constant — `lineGapFactor` had no mutant at all, and the one added for it shares a kill set with `lineMinimumMembers` byte for byte, so those five checks pin the GROUPING and neither constant — MEASURED 2026-09-10
 

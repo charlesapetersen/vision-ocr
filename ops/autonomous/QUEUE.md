@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-p16-bracket-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-composite-recipe` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-p16-bracket-rect` SUB-BOX — SEARCH FOR THAT TAG,
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-composite-recipe` SUB-BOX — SEARCH FOR THAT TAG,
       IT IS SOME HUNDREDS OF LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN
       OPEN CAMPAIGN.** (⛔ **THE DISTANCE USED TO BE A NUMBER HERE AND IS DELIBERATELY NOT ONE ANY
       MORE, 2026-09-20. It read *"~450"*, was 479 when the review of that day's diff measured it,
@@ -566,6 +566,26 @@ happens.**
       re-points in one day is why no sentence here may be read as current without its own date.**
       ⛔ **THREE, AND THAT CLAUSE IS HISTORY TOO FROM THE SAME DAY — `c28-p16-peak-contrast` RAN, is
       ticked as `c28-p16-peak-contrast-asked`, and the open sub-box is now `c28-p16-bracket-rect`.**
+      ⛔ **FOUR, SAME DAY AGAIN — `c28-p16-bracket-rect` RAN, is ticked as
+      `c28-p16-bracket-rect-asked`, and the open sub-box is now `c28-composite-recipe`. The bullet it
+      was opened on HOLDS and is now a count, and its two findings are that the rect is NOT
+      background-only (3,561 stencil px, split at column 95, refuting the box's own prediction) and
+      that THE STENCIL IS A FLOOR — `ink \ stencil` 225 → 186 → 149 → **0**, so at the bar the type
+      zone's ink IS the stencil set, and the bracket is that one mechanism with its floor at zero
+      rather than a second mechanism.**
+      ⛔ **AND THE §4b FAMILY IS EXHAUSTED — it already was BEFORE this step, which belongs to
+      neither tally — WHICH IS WHY THE SUCCESSOR IS AN INSTRUMENT BOX AND NOT ANOTHER RECT.** Of the
+      **seven** (the sweep's six plus the one the sweep itself missed), six are answered and
+      `140x205+1660+2125` is direction-safe, so reading it is a control. What the bracket step
+      produced instead is evidence that **the entry cannot rebuild its own p16 composites**: three
+      recipes over the same dumps give 202 / 202 / 214 against a published 208. ⚠️ **Its other
+      instrument finding was itself WRONG and the adversarial review of that diff refuted it**: the
+      spine window IS reconstructible (186 rows at rect rows 10..195, unique, reproducing the
+      published longest-gap column on 4 of 4 arms) and what is defective is its *stated padding*.
+      ⚠️ **Beyond that box, what is left of C28 is the bar's value and the grouping constants, which
+      are the owner's and are not session-actionable** — the condition
+      `c28-drawing-rect-contamination` set for marking this parent for the owner, arriving one
+      family later than it predicted.
       ⛔ **RE-POINTED A FIFTEENTH TIME 2026-09-21 BY THE STEP NOW TICKED AS `c28-table-rule-rect-asked`,
       WHICH RAN AND ANSWERED
       `HOLDS`.** `Jones et al_2010` p12's `1029x10+106+206` **is** the table rule it is named after:
@@ -1177,7 +1197,101 @@ happens.**
       and the interior-window arithmetic, `#### The same shape term on PICTURES` for the per-rect
       table it qualifies, and C26 `#### The rendered proof on the founding pages` for what p6 loses)
 
-- [ ] **c28-p16-bracket-rect** — **READ `Riesman - 1954` p16's `200x260+400+1690` ON BOTH ARMS. IT IS
+- [ ] **c28-composite-recipe** — **PIN THE p16 COMPOSITE RECIPE AND WRITE IT INTO THE ENTRY. THREE
+      SESSIONS HAVE NOW COMPOSITED THAT PAGE AND NO TWO AGREE, AND EVERY FIGURE C28 PUBLISHES ABOUT
+      p16 RIDES ON IT.**
+      ✅ **Promoted 2026-09-21 by `c28-p16-bracket-rect-asked`, out of evidence that step produced
+      rather than inherited.** ⚠️ **The §4b family was ALREADY exhausted before that step, which is
+      a member of neither count** — `c28-p16-peak-contrast` left `140x205+1660+2125` alone the
+      commit before, and that rect (44 px attributed to pencil script on `_1939_Former students` p2)
+      is **direction-safe**: an over-count that strengthens its own claim, so reading it is a
+      control, not content. **Do that one only if this one turns out cheap.** ⛔ **And the family is
+      SEVEN, not the six a draft of this box wrote** — `Riesman - 1954` p16's `900x150+300+2440` was
+      added to it by the sweep that answered one of it — so it is six of seven answered, and the
+      bracket rect is in neither tally, having been chosen from the bullet rather than found by the
+      sweep. Re-derive that from the ticked boxes and never from this sentence.
+      ⛔ **THE EVIDENCE THAT THIS IS REAL, ALL OF IT MEASURED.** `##### The peak-contrast figure,
+      MEASURED` could reproduce the published MEAN pair (Rec.709 + rounding) or the published MIN
+      pair (colour-then-grey Mitchell) **but not both**, and called the recipe *"bracketed to its
+      order, not pinned"*. The bracket-rect adoption then ran three more recipes over the SAME dumps
+      and got **202 / 202 / 214** where the strand published 208, and tick A **0 / 0 / 1** where it
+      published 3. So the disagreement is not one session's slip: **the entry does not contain enough
+      to rebuild its own composites.**
+      ⚠️ **THE SECOND HALF — the spine window — IS ALREADY SOLVED AND IS HERE ONLY SO THE FIX GETS
+      WRITTEN DOWN.** That section's spine column is quoted `/186` while its stated construction
+      (`20x177+75+13` *"padded 2 px"*) gives **181**. The adoption first published that as
+      *"unreconstructible"* and **its own adversarial review refuted that in the same diff**: the
+      window is 186 rows at **rect rows 10..195**, the bbox padded **3 above and 6 below**, and it is
+      unique — at that start the published longest-gap column reproduces on 4 of 4 arms
+      (6 / 6 / 7 / 62), one row either side matches at most two. **So the numbers were right and the
+      stated padding is wrong; the step here is to correct the construction in place, not the
+      figures.** ⛔ Two consequences to carry: the same `186` appears again as P4's *"the mark spans
+      only 186 of the rect's 260 rows"*, where it is the **window's** height and the mark's is 177;
+      and the transferable lesson is **re-derive a window from the numbers before concluding the
+      numbers are wrong** — the instrument to suspect first was the adoption's own.
+      **THE STEP**, and it is cheap because nothing needs rendering twice: one
+      `INKBAR=0.08 INKDUMP=<dir>` run plus a `PHOTODETAIL=smallest` one (~40 s each, and the adoption
+      measured that **SIX of the seven dumped files are byte-identical across the two, `bg-shipped.jpg`
+      being the only one that differs**, so the bar arm need not be recomputed). Then (1) enumerate the recipe as a command line — filter, resize
+      spec (`!` stretch to the page size vs `%`, which the register already measured as a one-row
+      phase shift on a different rect), greyscale formula and whether grey is taken before or after
+      the resize, and the compositing order — and (2) find the one that reproduces the published
+      `1/8` cells (208, tick A 3 px) **or** establish that none does and say so. ⚠️ **The adoption
+      measured colour-then-grey and grey-then-resize as IDENTICAL on every bracket-zone cell**, so
+      order is not the free variable there and filter or resize spec is where to look.
+      ⚠️ **What must NOT move, and get this right because the first draft of this box got it
+      BACKWARDS**: across two independent builds the `source` and `1/2` rows reproduced on every
+      cell, as did all fifteen tool columns, all four type-zone counts and every FLOOR number bar
+      its closing `75.3%`. **A recipe that moves any of those is the wrong recipe** — that is the
+      check that can fail. ⛔ **But the gap/longest-gap cells must be read in the RECONSTRUCTED
+      186-row window (rect rows 10..195, the spine bbox padded 3 above and 6 below), not the 181
+      the section's `padded 2 px` describes**: in the stated window the source row reads longest
+      gap 2 against a published 6, so a check written against 181 reds on the correct answer. The
+      adoption made exactly that mistake and its own reviewer caught it.
+      ⛔ **Nothing in `Sources/` is in scope and no bar is to be proposed** — the bar and the grouping
+      constants are the owner's values, and what is left of C28 beyond this family is his call.
+      (context: BUGS.md C28 `##### The bracket rect, READ ON THREE ARMS` and
+      `##### The peak-contrast figure, MEASURED` directly above it)
+
+- [x] **c28-p16-bracket-rect-asked** — the box as written 2026-09-21, kept for what it asked.
+      ⛔ **ANSWERED 2026-09-21: THE BULLET HOLDS AND EVERY WORD OF IT IS NOW A COUNT — but the box's
+      own load-bearing PREDICTION is REFUTED and the finding is bigger than the confirmation.**
+      `200x260+400+1690` holds **3,561 stencil px of 52,000 (6.85%)** against the box's *"predict NOT
+      … the bracket is a background-only mark"*, split **cleanly and vertically at column 95** —
+      columns 0..94 hold 24,700 px and not one is stencil — so ONE crop carries both halves of C28's
+      mechanism side by side, where this register had located the surviving type 750 rows away.
+      ⚠️ **No published sentence retracts for it**: the claim on record is that *the mark* is
+      background-only, which is measured true (0 stencil px in its zone); the prediction generalised
+      from the mark to the rect.
+      ✅ **(a) the ink population is NOT bar-invariant the way the type's is, which is what the box
+      asked**: over the mark's zone the ink falls **842 → 202-208 (75.3-76.0% lost)** while the
+      stencilled type in the SAME crop at the SAME threshold falls **3,747 → 3,561, 5.0%**.
+      ✅ **(b) connectivity, 4-connected**: *"continuous"* is **175 spine rows in 2 gaps**, the
+      source's own structure (177) to within two rows; *"broken"* is **64-65 rows in 5 gaps** — a
+      third of the stroke gone in one piece. ✅ **(c) the ticks by name**: tick B **0 px in 0
+      components** against 47, on **every recipe either run tried**; tick A **0-3 px** against 73.
+      ⛔ **THE FINDING WORTH MORE THAN THE VERDICT — THE STENCIL IS A FLOOR AND THE BRACKET IS THE
+      EXTREME CASE OF ONE MECHANISM, NOT A SECOND ONE.** In the type zone `stencil \ ink` is **14 px
+      in the source and 0 on all three published arms**, while `ink \ stencil` goes
+      **225 → 186 → 149 → 0** — so at the bar the type zone's ink **is** the stencil set exactly. What
+      dies at every resolution is the ink the stencil does not carry; what it carries does not move.
+      The bracket is that with the floor at zero.
+      ⛔ **AND THE ADOPTION RE-RAN IT FROM A FRESH BUILD, WHICH IS WHY TWO CELLS CARRY RANGES.** The
+      `source` and `1/2` rows, all **fifteen** tool columns, the stencil sha, the Otsu level, the P1
+      refutation, all four type-zone counts and every FLOOR number bar its closing `75.3%`
+      reproduced **digit for digit**. The `1/3` and `1/8` **bracket-zone** cells did not: three
+      recipes (Mitchell `!`-stretch colour-then-grey and grey-then-resize — identical to each other
+      on the bracket zone — and a percentage resize) give **202 / 202 / 214** against the published
+      208, and tick A **0 / 0 / 1** against 3. ⚠️ On the two cells that carry the verdict both misses
+      strengthen it; the 1/3 arm's five run **both** ways and bear on no verdict.
+      ⛔ **THE ADOPTION'S OWN SECOND INSTRUMENT FINDING WAS WRONG AND ITS ADVERSARIAL REVIEW REFUTED
+      IT IN THE SAME DIFF — worth more than anything above.** It published the spine window's `/186`
+      as *"unreconstructible"* because the stated *"padded 2 px"* gives 181; the window is in fact
+      **186 rows at rect rows 10..195** (bbox padded 3 above, 6 below), unique, reproducing the
+      published longest-gap column on **4 of 4 arms**. The premise was right, the conclusion one
+      step short, and the instrument to suspect first was the adoption's own.
+      (the box as written follows)
+      **READ `Riesman - 1954` p16's `200x260+400+1690` ON BOTH ARMS. IT IS
       THIS ENTRY'S ONLY WHOLLY QUALITATIVE CLAIM — *"a continuous fine stroke with its two tick marks
       separate and distinct"* AGAINST *"a faint broken smear with the ticks gone"* — AND IT CARRIES
       280,066 B, 76.7% OF THE BUCKET LABELLED "re-destroys content outright".**
