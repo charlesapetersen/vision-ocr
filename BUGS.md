@@ -129,7 +129,14 @@ paragraph quoted the one threshold in it that favoured the conclusion.** *"Greye
 rows under a mean of 100 go **2 → 2 → 0** upsampled and **2 → 1 → 0** stored. The mechanism is PHASE,
 the same ink straddling two stored rows at 3x where it concentrated in one at 2x. ⚠️ One rect, one
 page; **three** members are untouched (the six densest bands, `140x205+1660+2125`, and
-`Riesman - 1954` p16's `900x150+300+2440`, which the step's own sibling sweep added to the class), and
+`Riesman - 1954` p16's `900x150+300+2440`, which the step's own sibling sweep added to the class) —
+⛔ **THAT COUNT IS ONE AS OF 2026-09-21 AND IT WAS ALREADY STALE WHEN WRITTEN DOWN HERE A SECOND TIME**:
+the six bands were read the next day (`##### The two control bands, READ`, which corrected the same
+sentence at the limits line and missed this copy of it) and the p16 rect the day after
+(`##### The peak-contrast figure, MEASURED`), leaving `140x205+1660+2125` alone. ⛔ **And the p16 read
+is the one that INVERTED: its `~250 paper` is nowhere in its own rect (0 source px above 200), where
+p12's band reads 255.0 / 254.7 / 255.0 and `~250` is pessimistic — the same phrase, opposite errors,
+because one rect's paper was read and the other's assumed.** And
 ⛔ **the 10-row band does not hold the whole rule TODAY, not merely at some further step**: the
 falloff already spills past y=215 at both downsampled factors — y=216 reads 246.1 at 1/2 and 225.9 at
 1/3, y=217 249.5 — ⛔ **and not past its FIRST row, which a draft said: y=206 reads 255.0 / 254.7 /
@@ -9102,6 +9109,17 @@ so the pairing that validates the `min` on this rect would fail on that one. Tha
 right — the claim there is about *peak* contrast and the mean holding is its point — but it means
 *"falls about 12.6%"* rests on one pixel of 135,000, and nothing says which. Carried into
 `c28-stencil-ratio-controls`'s successor list rather than chased here.
+⛔ **CHASED 2026-09-21 AND THE PREDICTION HELD, BUT THE SWEEP'S OWN HEDGE WAS TOO KIND: it is now
+MEASURED and its DENOMINATOR is nowhere in its own rect** (`#### The bar priced against the term`,
+`##### The peak-contrast figure, MEASURED`). ⚠️ *"Nothing says which"* is answered only as **how
+many** — 2 px at this run's shipped min of 8, **7** at the published 12, the published pair being
+reproduced by nothing tried — and
+`≤ min+10` is **54 px in 15 objects** against the bar's **6,692 in 76** — an outlier against a plateau,
+⛔ **and NOT a `124x` gap, which is a fixed absolute window over ink spans differing 2.43x; scale-matched
+it is 3.0x-5.7x.** The pairing does fail as forecast (darkest row min
+16 / median 121 / p90 132). ⛔ **And *"that may be exactly right"* is refuted from the denominator
+rather than the numerator: the rect holds 0 source px above 200, so `~250` is a paper level that is
+nowhere in it, and the same published `min` pair against the rect's own 135.7 paper reads 24.25%.**
 ⚠️ **Limits, named.** One rect on one page, and **three** members of the class are untouched — the six
 densest bands behind the 0.52–0.57 stencil ratio, `140x205+1660+2125`, and the p16 rect the sweep
 above just added, so the class grew in the commit that answered one of it.
@@ -9109,6 +9127,13 @@ above just added, so the class grew in the commit that answered one of it.
 READ` — and this sentence names the ratio wrongly besides: 0.52-0.57 is the CONTROLS' range and the
 six bands' is 0.40-0.47.** ⚠️ The same misnaming stands in `CLAUDE.md`'s copy of this line and is
 corrected there in the same commit; here it is left in place above so the correction has its subject.
+⛔ **AND THE p16 RECT WAS READ 2026-09-21, SO IT IS ONE — `140x205+1660+2125` ALONE, the
+direction-safe over-count** (`##### The peak-contrast figure, MEASURED`). ⚠️ *"One"* is the count of
+this sweep's own list and not of the class: the same step's sibling sweep over `~250 paper` found the
+phrase in **two** distinct claims, and the other — `Jones et al_2010` p12's 25 → 56 → 136 — is the one
+already measured, its band's own white row reading 255.0 / 254.7 / 255.0, so there `~250` is
+pessimistic where on p16 it is nowhere in the rect. **Same phrase, opposite errors, and the reason is
+that one rect's paper was read and the other's was assumed.**
 `darkcols` is an 8-bit quantised read through `magick … gray:-`, which is why the 8-bit reproduction
 is `57` where the unquantised one is `56.9819`. ⛔ **THE 10-ROW BAND DOES NOT HOLD THE WHOLE RULE
 TODAY** — its footprint reaches **y=215, the band's own LAST row** (mean 194.1) and spills past it at
@@ -12824,7 +12849,11 @@ run of `Tools/score-text-route.swift` on that page, built from today's tree:
   contempora…` / `the earlier group had more assu…` / `nize that there is a lot to be sa…`. What moves is
   **tone, not form**: the darkest pixel in that rect goes **12 → 42 of 255** while the rect mean barely
   moves (**116.6 → 117.6**), so peak contrast against ~250 paper falls about **12.6%** and nothing in it
-  becomes unreadable. ⚠️ That is a reading of three lines on one page, and the tone loss is real and
+  becomes unreadable. ⛔ **THE 12.6% IS SUPERSEDED IN PLACE BY `##### The peak-contrast figure,
+  MEASURED` BELOW AND THE REST OF THIS BULLET IS NOT: `~250` is not this rect's paper (0 source px above
+  200 inside it, both arms' paper rows at 135.7), this `min` of 12 is carried by 7 px of 135,000 against
+  a plateau of 6,692 near the bar's, and the defensible figure over the 20,910 stencil-ink px is
+  `9.95%`. Kept as written because it is what that section was measured against.** ⚠️ That is a reading of three lines on one page, and the tone loss is real and
   unmeasured elsewhere — it is *"degraded and still legible"*, the class C28 sub-step 2b already names,
   not *"lost"*.
 * ⛔ **The same composite KILLS THE BRACKET, and that is C28's mechanism in one image.** Over a 200×260
@@ -12871,6 +12900,168 @@ any byte figure: p16 was in the admitted set before the reading and is in it aft
 very page's bracket.** The two sentences are consistent only because `7 of 7` counts **running prose and
 table data** and the bucket counts **content of any kind**, the hand-made mark included. Read the two
 together or neither.
+
+##### The peak-contrast figure, MEASURED — the denominator is nowhere in the rect, 2026-09-21
+
+⛔ **`~250` is not this rect's paper: the source holds **0** px above 200 inside it, and the two
+composited arms' lightest row means agree at **135.7**. Against that paper the same published `min`
+pair reads 24.25%, not 12.6%.** ⛔ **And the `min` is a poor numerator besides — at this run's
+shipped min of 8 it is carried by **2** px of 135,000 (at the published 12, by **7**), while at the
+bar the near-min set is a plateau of 6,692.** Measured 2026-09-21 (the queue's
+`c28-p16-peak-contrast`) off a fresh `INKBAR=0.08 INKDUMP=<dir>` run of `Tools/score-text-route.swift`
+built from today's tree, composited the way `JBIG2.assemble` draws an MRC page (`JBIG2.swift:372-379`,
+`:440-447` — background, then foreground with the stencil as its `/SMask`) and scanned per row and per
+column. **Nothing in `Tools/` or `Sources/` moved and no artefact was written.**
+
+**What the `min` is, over `900x150+300+2440`, per arm** (PIL bilinear upscale, ITU-R 601 luma):
+
+| | shipped (bg/2, fg/4) | at 0.08 (bg/8, fg/16) |
+|---|---|---|
+| rect `min` | **8**, carried by **2** px | **40**, carried by **4** px |
+| ≤ `min`+10 | **54 px, 0.040%** | **6,692 px, 4.957%** |
+| 4-connected components | **15**, largest **8 px** (`1x8+1111+2548`) | **76**, largest **287 px** (`22x27+870+2502`) |
+| rows carrying any, of 150 | 33; most in one row **5 of 900** | 94; most in one row **174 of 900** |
+| columns carrying any, of 900 | **15**; most in one column 15 of 150 | **543**; most in one column 41 of 150 |
+| rect mean / max | 117.355 / **152** | 118.409 / **145** |
+
+⚠️ At the *published* levels rather than this run's the same counts read **7 px ≤ 12** and **36 ≤ 42**,
+so the outlier reading does not depend on which of the two `min` pairs is used.
+⛔ **So the answer to *"are they one object"* is NO on both arms, and the interesting half is that they
+are not the same KIND of not-one-object**: the shipped `min` is an outlier over 54 px whose largest
+object is a 1-px-wide sliver holding 14.8% of it, and the bar `min` is a plateau over 6,692 px whose
+largest object is a whole glyph holding 4.3% of it. The shipped near-min set touches **15 of 900
+columns**; the bar's touches **543**. Both are spread over all three of the rect's text lines
+(27 / 12 / 12 and 1,572 / 3,245 / 1,714 by band, plus 3 and 161 in the paper rows between them).
+⛔ **DO NOT QUOTE 6,692 ÷ 54 = 124x AS THE GAP, and the adversarial review of this diff refuted the
+first draft for doing it in three files.** `min`+10 is a **fixed absolute** window over two
+distributions whose ink spans differ **2.43x** (8..76 against 40..68), so part of what it measures is
+the compression that is the phenomenon under study. Scale-matched it is **5.7x** (bar at `min`+4, 307
+px) or **3.0x** (shipped at `min`+24.3, 2,261 px). **54 and 6,692 are the literal answer to the
+question asked; 3.0x-5.7x is the scale-free gap; 124x is neither.** The outlier-against-plateau
+reading survives in both matched directions, which is why it is kept and the number is not.
+
+⛔ **The pairing that validated `Jones et al_2010` p12's table rule FAILS here, exactly as the box
+predicted, and the row profile says so before any pixel is counted.** There `min` = median = p90 on the
+darkest row; here the darkest row by mean (y=2561) reads **min 16 / median 121 / p90 132** on the
+shipped arm — a **105**-level min-to-median gap — and 46 / 123 / 130 at the bar (gap 77). The row
+holding the MOST near-min pixels holds **5 of 900**. ✅ The profile is three text lines at a **~54 px**
+pitch (troughs ~2443-2472 / 2497-2525 / 2551-2578, paper rows ~135.7), which is what the prediction was
+written off — ⛔ **`~45` stood here and is derivable as wrong from this sentence's own troughs
+(2443 → 2497 → 2551), which is how the review of this diff caught it without opening a dump.**
+
+⛔ **THE DENOMINATOR IS THE LARGER ERROR AND IT RUNS IN THE REASSURING DIRECTION.** The source inside
+this rect reads **0 px ≥ 200**, one px ≥ 171, and 66 px ≥ 152; page-wide only **0.252%** of it is ≥ 240
+(⚠️ `≥ 240` is the proxy used for *"~250"*), so that level describes a quarter of one percent of the
+page and **nothing at all inside the rect**. The lightest row mean is **135.68** on the shipped arm
+(y=2441) and **135.74** at the bar (y=2440) — both print 135.7 — and that is the paper actually behind
+these glyphs. ⚠️ It is a slightly depressed estimate, that row still holding some ink (min 46), and the
+inter-line row y=2482 corroborates it at 135.36. The same published `min` pair against 135.7 gives
+**24.25%**, not 12.6% — the published figure understates by **1.92x**.
+
+✅ **BUT THE PUBLISHED ARITHMETIC REPRODUCES FROM ITS OWN INPUTS** — 12 → 42 against 250 is **12.61%** —
+so the figure is right about what it computed and wrong about what it computed it against. ⛔ **And the
+NUMERATOR is wrong the other way, which is why the published number is nearly defensible by accident**:
+
+| numerator | ÷ 250 | ÷ 135.7, the rect's own paper |
+|---|---|---|
+| `min`, published 12 → 42 | **12.61%** ← the published figure | **24.25%** |
+| `min`, this run 8 → 40 | 13.22% | 25.06% |
+| mean over the 20,910 stencil-ink px, 43.68 → 52.83 | 4.44% | **9.95%** |
+
+**Read those as three independent comparisons in one table: 12.6% is 1.92x the published-`min` cell
+against the right paper, 2.84x the population cell against the same paper it used, and 1.27x the one
+cell defensible in both.** ⛔ **Do NOT compose them as *"two errors that nearly cancel"* — a draft did,
+in two files, and the review of this diff refuted it by arithmetic**: the fall's denominator contains
+its own numerator's term, so the corrections are not separable and `12.61 × 1.92 ÷ 2.84` gives 8.52
+against the measured 9.95, 17% out. ⚠️ Taking paper anywhere in 135.7-144 (the shipped arm's own p99;
+⛔ **145 is the BAR arm's rect max, mislabelled `p99` in a draft**) moves the population figure only
+**9.12%-9.95%**, so the conclusion is not a knife-edge on that choice.
+
+✅ **THE POPULATION FORM IS THE RESULT. ⛔ IT IS NOT ALSO A CONTROL, AND A DRAFT OFFERED IT AS ONE —
+refuted by the review of this diff, and it is this register's oldest failure in a new place.** That
+draft read the stencil's **20,910** rect ink px against the shipped composite's own ≤70 population of
+**20,902** — *"agreeing to 8 px, 0.04%"* — and called it *"the letterforms are bar-invariant, measured
+rather than argued"*. **It is entailed twice over.** The compositor is
+`stencil-ink ? foreground : background` over ONE stencil file, so the two arms' ink SETS cannot differ
+whatever the layers do; and no non-ink pixel in this rect comes near 70 (the shipped background's
+minimum over them is **95**, the bar's **107**), so `{≤70} ⊆ {stencil ink}` could not have come out the
+other way. What the 8 px actually say is the only content in it: **8 of 20,910 ink px are lighter than
+70 on the shipped arm and 0 at the bar**, which is a fact about the foreground JPEG. ✅ **The control
+that CAN fail is the other one** — the composite sits a mean |Δ| of **5.46** from the source, against
+**14.96** for background-only, **64.52** for foreground-only and **74.02** with the mask inverted.
+Over the stencil's one fixed ink set the tone goes **min 8 → 40, p10 32 → 47,
+median 43 → 53, p90 56 → 59, mean 43.68 → 52.83 (+9.15, +21.0%)**, and at a fixed absolute threshold
+over the whole rect (whose dark population IS that set to 0.04%) **≤30 is 1,485 px shipped and 0 at the
+bar** while ≤40 is 8,026 against 4. ⚠️ Read that as *the darkest third of the ink loses its tone*, not
+as a legibility verdict.
+✅ Read at 8x the tone inside the strokes is what differs — dark cores on the shipped arm, flat at the
+bar (`…o be` at x≈1111, `roup h` at x≈870) — which is the readable form of the table above. ⚠️ **That
+the glyph SHAPES coincide is not evidence of anything here**: one stencil file is the mask on both
+arms, so the reading could not have come out otherwise. ⛔ **No verdict moves**: `7 of 7` rests on the
+1:1 legibility reading and on the bracket, neither of which this touches, and no byte figure is
+involved.
+
+⚠️ **INSTRUMENT, and it is a sharper version of the predecessor's resize-filter finding.** ⛔ **The tone
+layers are genuinely COLOUR** — 98.9% of `bg-shipped.jpg`'s pixels are not R=G=B, |R−G| reaching **83**
+and the full channel spread **127** — so a grey `min` on this page depends on the luma formula as well
+as on the resize filter, and neither is recorded anywhere. Over {nearest, bilinear, bicubic, lanczos}
+the shipped `min` reads **6/8/6/6** and the bar's **40/40/40/39**; over {601, 709, average,
+channel-min} at bilinear, **7/6/10/5** and **40/39/41/38**. ⚠️ **Those two sweeps disagree on the
+nominally same cell — bilinear reads 8 in the first and 7 in the second — because the first converts
+to grey and then resizes and the second resizes and then converts, and the first rounds where the
+second truncates. Neither order is recorded anywhere either; the disagreement is the finding, not a
+slip.** ⛔ **Rounding versus truncating the luma alone moves the rect mean by **0.50** on the shipped
+arm and **0.48** at the bar — half of the entire 116.6 → 117.6 delta the bullets above call *"barely
+moves"*.** ✅ **What survives all of it is the DELTA and the POPULATION RATIO**: the `min` delta reads
+31-34 against the published 30, and the near-min population ratio **28x-194x** over all eight
+configurations, never near 1.
+⛔ **AND THE EARLIER COMPOSITE'S RECIPE IS IDENTIFIABLE AFTER ALL — a draft of this paragraph said it
+was not, on a range taken from one of its own two sweeps, and the review of this diff refuted it from
+the other.** **Rec.709 luma with rounding reproduces the published `116.6 → 117.6` on BOTH arms
+(116.582 → 117.566) and is the unique one of the eight configurations that does** — 601+round gives
+117.4 → 118.4, 709+truncate 116.1 → 117.1, 601+truncate 116.9 → 117.9 — and Rec.709 is what
+ImageMagick's `-colorspace Gray` applies. ⛔ **So the *"is the source's own 116.60 the same number"*
+insinuation the draft recorded as an open note is retired: 116.60 and the 709 composite's 116.58 are a
+near-coincidence, and the parsimonious reading is a Rec.709 composite.** ✅ **What that buys is sharper
+than the retraction: the MEAN is recipe-robust enough to identify the recipe and the MIN is not
+reproduced even by the recipe that reproduces the mean** — 709+round gives **7 → 40** against the
+published 12 → 42. Over all eight configurations this run is darker on the shipped arm by **2 to 7**
+levels and at the bar by **1 to 4**, and none lands on the published pair.
+
+✅ **Controls.** The tool row reproduces `C28-BARPILOT-2026-09-02.tsv`'s p16 row **digit for digit on all
+15 tool columns** (`inkOut` 0.0565, `layered` 350,342, `layeredAtBar` 70,276, `barDelta` −280,066,
+`lineN` `-`, `lineNAtBar` 0), nineteen days on — ⛔ **still a determinism re-run and NOT a control across
+a code change**, checked rather than assumed: `git diff` over `Sources/` and this tool since `d9486a2` is
+**0 non-comment lines**. The stencil sha256 reproduces this section's published hash. And the composite
+differs from the source by a mean |Δ| of **5.46** over the rect on the shipped arm against **14.96**
+background-only, **64.52** foreground-only and **74.02** with the mask inverted — **the one control
+here that could have come out differently**, the 20,902-against-20,910 one having turned out entailed.
+⚠️ **The predictions, quoted VERBATIM from the file written after the row profile and before any crop
+or per-pixel scan, because paraphrasing them afterwards is what this device exists to prevent.**
+**P1** *"the pairing that validated `Jones et al_2010` p12 FAILS here … The min is carried by a SMALL
+set, not by a row."* **P2** *"the near-min set on the SHIPPED arm is small (order 10^1-10^2 px of
+135,000) and is NOT one object … many components, largest well under 100 px, spread over more than one
+of the three bands."* **P3** *"the BAR arm's near-min set is FEWER components and LARGER ones."*
+**P4** *"'against ~250 paper' is NOT this rect's paper … Predict that recomputing the same contrast
+ratio against the paper that is actually in the rect roughly DOUBLES the published 12.6%."* **P5**
+*"the absolute `min` will be filter-dependent and the DELTA will not … Predict the shipped-arm min
+moves more across resize filters than the bar-arm min."* Each carried its own refutation test, also
+written first; **P3**'s was *"the bar arm reading more components than the shipped arm"*.
+⛔ **P3 IS THEREFORE REFUTED BY ITS OWN STATED TEST — 76 components against 15** — while its size half
+held (largest 287 px against 8): the smooth 16x foreground's minimum region is far wider than predicted,
+so masking it by glyph ink cuts it into more pieces, not fewer. ⚠️ P5 held in sign and is thin in
+magnitude (2 levels against 1).
+✅ **SIBLING SWEEP.** ⛔ **The pattern that finds both members is NOT `~250 paper`** — that literal
+matches only this p16 claim, because the other is worded *"paper at ~250"* — so the sweep was run as
+`peak contrast|~250 paper|against ~250|paper at ~250|250 paper`, and the tag-versus-pattern lesson this
+register already records for `mutate.py:<line>` applies here too. It finds **two** distinct claims and
+**the other is already measured and unaffected**: `Jones et al_2010` p12's 25 → 56 → 136, whose band's
+own white row reads 255.0 / 254.7 / 255.0, so there `~250` is *pessimistic* where on p16 it is nowhere
+in the rect. **Same assumption, opposite errors, and the difference is that one rect's paper was read
+and the other's was assumed.** The sweep also found the *"three members untouched"* count stale in this
+file's own header, which the predecessor corrected at the limits line and not there.
+⚠️ One rect, one page, one render, one Photo detail; the bracket rect was not re-scanned; the dumps were
+written to `/tmp/p16dump2` and are not retained, so re-derive by re-running the command above.
 
 **THE CONTROLS.** (1) `--control` passed — **11 of C26's published band figures asserted off the
 committed sweep before the tool was asked anything new**, five of them estimator-sensitive. (2)

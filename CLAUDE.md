@@ -554,7 +554,33 @@ and everything uncovered from the background — and p16 crosses the bar, so `bg
 it is the same file on both.** ✅ So the page was **composited the way the PDF draws it** and read at
 1:1 on both: the last three lines are **fully legible on both**, the darkest pixel in a 900×150 rect
 going **12 → 42 of 255** while the rect mean holds (116.6 → 117.6) — tone, not form, because
-`textRegionMask` runs before the bar is read so the letterforms are bar-invariant. ⛔ **The same
+`textRegionMask` runs before the bar is read so the letterforms are bar-invariant.
+⛔ **THE *"peak contrast falls 12.6%"* DERIVED FROM THAT PAIR IS MEASURED 2026-09-21 AND ITS
+DENOMINATOR IS NOWHERE IN ITS OWN RECT** (`BUGS.md` C28 `##### The peak-contrast figure, MEASURED`,
+the queue's `c28-p16-peak-contrast`). **`~250` is not this rect's paper — the source holds 0 px above
+200 inside it and both arms' paper rows read 135.7** — so the same published `min` pair reads
+**24.25%** there, 1.92x the published figure. And the `min` is a poor numerator besides: at this run's
+shipped min it is carried by **2 px** (at the published 12, by 7), where the bar's near-min set is a
+plateau — **54 px in 15 objects against 6,692 in 76, so neither is one object**. ⛔ **Do NOT quote
+6,692 ÷ 54 = 124x as the gap, which a draft did in three files: `min`+10 is a fixed absolute window
+over ink spans differing 2.43x, and scale-matched the gap is 3.0x-5.7x.** ✅ **The defensible figure
+is over the 20,910 stencil-ink px — mean tone 43.68 → 52.83, contrast against 135.7 falling 9.95%**;
+12.6% is 1.92x one cell, 2.84x another and 1.27x that one, ⛔ **and they must NOT be composed as *"two
+errors that cancel"* — the fall's denominator holds its own numerator's term, so 12.61 × 1.92 ÷ 2.84
+gives 8.52 against the measured 9.95.** ⛔ **NOR is the 20,902-against-20,910 agreement a control: one
+stencil file masks both arms, so the ink sets cannot differ, and no non-ink px in the rect comes near
+70 (background minima 95 and 107), so the inclusion is entailed twice over — the ONE control that
+could fail is the composite sitting 5.46 from the source against 14.96 / 64.52 / 74.02 for
+background-only, foreground-only and an inverted mask.** ⛔ **No verdict moves** — `7 of 7` rests on
+the legibility reading and on the bracket — and ⚠️ **the tone layers are genuinely COLOUR (98.9% of
+`bg-shipped.jpg` is not R=G=B, channel spread to 127), so a grey `min` here depends on the luma
+formula as well as the resize filter: over four of each the shipped `min` reads 5-10 and the bar's
+38-41, and rounding versus truncating the luma moves the rect mean by 0.50, half the whole
+116.6 → 117.6 delta. Quote the DELTA (31-34 against the published 30) and the POPULATION, never the
+absolute.** ✅ **And the earlier composite's recipe IS identifiable, which a draft of this denied:
+Rec.709 luma with rounding reproduces 116.6 → 117.6 on BOTH arms and is the unique one of eight
+configurations that does — while giving 7 → 40 for the `min`, so the MEAN identifies the recipe and
+the MIN is not reproduced even by it.** ⛔ **The same
 composite KILLS THE BRACKET** — continuous with two distinct ticks at the shipped bar, a faint broken
 smear with the ticks gone at 0.08 — which is C28's mechanism in one image: stencilled type survives, a
 background-only hand-made mark does not. ⚠️ The stencil-coverage ratios (**0.767 / 0.801 / 0.819**
@@ -1632,7 +1658,14 @@ and the rect mean DISAGREE (116.6 → 117.6 against a min moving 30), so the pai
 (the six densest bands behind the 0.52–0.57 stencil ratio, `140x205+1660+2125`, and that p16 rect);
 ⛔ **IT IS TWO FROM 2026-09-21 AND THE PARENTHESIS NAMES THE RATIO WRONGLY BESIDES — 0.52-0.57 is the
 CONTROLS' range and the six bands' is 0.40-0.47** (`BUGS.md` C28 `##### The two control bands, READ`,
-the queue's `c28-stencil-ratio-controls`).
+the queue's `c28-stencil-ratio-controls`). ⛔ **AND ONE LATER THE SAME DAY: the p16 rect was read and
+`140x205+1660+2125` is alone** (`##### The peak-contrast figure, MEASURED`, the queue's
+`c28-p16-peak-contrast`). ⛔ **`not called wrong` above is superseded — it is now measured and it is
+wrong twice, in opposite directions, and the sharper half is the DENOMINATOR the sweep never
+questioned: the rect holds 0 source px above 200, so `~250 paper` is nowhere in it and the same
+published `min` pair reads 24.25%.** ⚠️ **Same phrase, opposite errors**: `Jones et al_2010` p12's own
+band reads 255.0 / 254.7 / 255.0, where `~250` is pessimistic — one rect's paper was read and the
+other's assumed, which is the transferable half.
 ⛔ **AND THE CONTROLS ARE NOT THE PROBLEM — THE BAND RECTS ARE: read per line, the separation those
 two ranges make falls from 0.035 to 0.0025 and, on the recipe this entry actually prescribes,
 INVERTS.** ✅ Both published ranges REPRODUCE at all four bounds through a different binary 31 days on

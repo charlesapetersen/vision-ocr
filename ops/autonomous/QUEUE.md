@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-p16-peak-contrast` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-p16-bracket-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-p16-peak-contrast` SUB-BOX — SEARCH FOR THAT TAG,
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-p16-bracket-rect` SUB-BOX — SEARCH FOR THAT TAG,
       IT IS SOME HUNDREDS OF LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN
       OPEN CAMPAIGN.** (⛔ **THE DISTANCE USED TO BE A NUMBER HERE AND IS DELIBERATELY NOT ONE ANY
       MORE, 2026-09-20. It read *"~450"*, was 479 when the review of that day's diff measured it,
@@ -564,6 +564,8 @@ happens.**
       THE SAME DAY — `c28-stencil-ratio-controls` RAN TOO, is ticked as
       `c28-stencil-ratio-controls-asked`, and the open sub-box is now `c28-p16-peak-contrast`. Two
       re-points in one day is why no sentence here may be read as current without its own date.**
+      ⛔ **THREE, AND THAT CLAUSE IS HISTORY TOO FROM THE SAME DAY — `c28-p16-peak-contrast` RAN, is
+      ticked as `c28-p16-peak-contrast-asked`, and the open sub-box is now `c28-p16-bracket-rect`.**
       ⛔ **RE-POINTED A FIFTEENTH TIME 2026-09-21 BY THE STEP NOW TICKED AS `c28-table-rule-rect-asked`,
       WHICH RAN AND ANSWERED
       `HOLDS`.** `Jones et al_2010` p12's `1029x10+106+206` **is** the table rule it is named after:
@@ -611,6 +613,21 @@ happens.**
       `900x150+300+2440`, where a darkest pixel over 135,000 px carries *"peak contrast falls about
       12.6%"*, is a SEVENTH member the §4b sweep missed** — so the class grew in the very commit
       that answered one of it. Both remaining members are recorded in the successor box.
+      ⛔ **RE-POINTED A SEVENTEENTH TIME 2026-09-21 BY THE STEP NOW TICKED AS
+      `c28-p16-peak-contrast-asked`, AND IT IS THIS CLASS'S SECOND INVERSION — the 12.6%'s DENOMINATOR
+      is nowhere in its own rect.** The source holds **0** px above 200 inside it and both arms' paper
+      rows read **135.7**, so the same published `min` pair reads **24.25%**, 1.92x the published
+      figure. And the `min` is a poor numerator besides: at this run's shipped min it is carried by
+      **2 px** where the bar's near-min set is a plateau — **54 px in 15 objects against 6,692 in 76,
+      so neither is one object**. ✅ The defensible figure is over the **20,910** stencil-ink px, mean
+      tone 43.68 → 52.83, contrast against 135.7 falling **9.95%**, and 12.6% lands 1.27x above it.
+      ⛔ **No verdict moves** and no byte figure is involved. ⚠️ **That step's own adversarial review
+      said REJECT on three blockers and all three were reproduced by hand before being applied** — the
+      `124x` this paragraph's draft quoted, a *"control"* that could not fail, and an instrument note
+      the same step's second sweep refuted; the ticked box carries all three.
+      The successor is **`c28-p16-bracket-rect`**, the SAME page's `200x260+400+1690` — the bullet
+      directly under the one just corrected, carrying this entry's only wholly QUALITATIVE claim
+      (*"the ticks gone"*) on the object that is 76.7% of the *"re-destroys content outright"* bucket.
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
@@ -1160,7 +1177,136 @@ happens.**
       and the interior-window arithmetic, `#### The same shape term on PICTURES` for the per-rect
       table it qualifies, and C26 `#### The rendered proof on the founding pages` for what p6 loses)
 
-- [ ] **c28-p16-peak-contrast** — **READ `Riesman - 1954` p16's `900x150+300+2440`. A DARKEST PIXEL
+- [ ] **c28-p16-bracket-rect** — **READ `Riesman - 1954` p16's `200x260+400+1690` ON BOTH ARMS. IT IS
+      THIS ENTRY'S ONLY WHOLLY QUALITATIVE CLAIM — *"a continuous fine stroke with its two tick marks
+      separate and distinct"* AGAINST *"a faint broken smear with the ticks gone"* — AND IT CARRIES
+      280,066 B, 76.7% OF THE BUCKET LABELLED "re-destroys content outright".**
+      ✅ **Promoted 2026-09-21 by `c28-p16-peak-contrast-asked`, the box directly below, which read the
+      bullet ABOVE this one on the same page and found its one number wrong twice.** That step left the
+      bracket rect deliberately unscanned and said so; this is that debt.
+      ⛔ **THE REASON IT IS WORTH A STEP is that the peak-contrast bullet's failure mode CANNOT recur
+      here and a different one can.** That bullet had a number with an unstated denominator; this one
+      has no number at all, so nothing can be checked and nothing can be wrong — which is the shape
+      `BUGS.md` calls a rumour. Give it the same treatment: per-row and per-column, on both arms.
+      **THE STEP**: `INKBAR=0.08 INKDUMP=<dir>` on that page (the dumps from the peak-contrast run were
+      NOT retained either), composite both arms the way `JBIG2.assemble` draws them, then over
+      `200x260+400+1690` report (a) the ink population and whether it is bar-invariant the way the
+      type's is — ⛔ **predict NOT: the bracket is a background-only mark, so `textRegionMask` never
+      stencils it and the 20,910-px invariance the type showed has no counterpart here, which is the
+      whole mechanism** — (b) the stroke's connectivity on each arm as 4-connected components, which is
+      what *"continuous"* and *"broken"* have to mean, and (c) the two ticks by name: their component
+      sizes and bounding boxes on each arm, so *"the ticks gone"* becomes a count.
+      ⚠️ **Five instrument facts inherited, all measured by the predecessor, and the last two are what
+      its own adversarial review had to put back.**
+      (1) **The tone layers are genuinely COLOUR** — 98.9% of `bg-shipped.jpg`'s px are not R=G=B,
+      channel spread to 127 — so every grey reading on this page depends on a luma formula nothing
+      records; over four formulas the shipped rect `min` moved 5-10. ✅ **USE Rec.709 WITH ROUNDING**:
+      it is the unique one of eight configurations that reproduces the register's published
+      `116.6 → 117.6`, so it is very probably the earlier reading's recipe (ImageMagick's
+      `-colorspace Gray`), and it still does NOT reproduce that reading's `min`.
+      (2) **Quote the DELTA and the POPULATION, never the absolute**: the `min` moved 2-5 levels over
+      resize filters and luma formulas while the delta held at 31-34, and rounding versus truncating
+      luma alone moved a rect mean by 0.50. ⚠️ Record the ORDER too — grey-then-resize and
+      resize-then-grey disagree by a level on the same nominal recipe.
+      (3) **A `min` is not a statistic on this page** — the shipped rect `min` is carried by 2 px and
+      the bar's near-min set by 6,692. ⛔ **But do NOT divide those: `min`+10 is a fixed absolute
+      window over ink spans differing 2.43x, and the predecessor's review refuted the resulting `124x`
+      down to a scale-matched 3.0x-5.7x. Scale-match or quote both counts.**
+      (4) ⛔ **A SET THAT THE COMPOSITOR CONSTRUCTS IS NOT A MEASUREMENT OF IT.** The predecessor
+      offered *"the ≤70 population is 20,902 against the stencil's 20,910"* as proof the letterforms
+      are bar-invariant; one stencil file masks both arms, so they could not have differed, and no
+      non-ink px in that rect came near 70. **Here the bracket is background-only and stencilled by
+      nothing, so the same trap has a different shape: predict what the arms share BEFORE compositing,
+      and name a control that could come out otherwise** — the predecessor's working one was the
+      composite sitting 5.46 from the source against 14.96 / 64.52 / 74.02 for background-only,
+      foreground-only and an inverted mask.
+      (5) ⚠️ **This rect is 200x260 = 52,000 px against the type rect's 135,000 and holds ONE thin
+      object, so the population arguments that worked there are weaker here; say so rather than
+      reusing the form.**
+      ⚠️ Docs-only if nothing in `Tools/` moves. ⚠️ Budget: build `score-text-route` (~60 s measured
+      2026-09-21 — copy to `main.swift`, exclude `App.swift`; recipe in the tool's own header), then
+      one `INKDUMP` run (~40 s) that writes both arms at once.
+      (context: BUGS.md C28 `#### The bar priced against the term`, the `KILLS THE BRACKET` bullet and
+      `##### The peak-contrast figure, MEASURED` directly under it)
+
+- [x] **c28-p16-peak-contrast-asked** — the box as written 2026-09-21, kept for what it asked.
+      ⛔ **ANSWERED 2026-09-21: THE 12.6%'s DENOMINATOR IS NOWHERE IN ITS OWN RECT, AND THE FIGURE
+      LANDS 1.27x ABOVE THE ONE CELL DEFENSIBLE IN BOTH NUMERATOR AND DENOMINATOR.**
+      ⛔ **AND THE ADVERSARIAL REVIEW OF THAT DIFF SAID *REJECT* ON THREE BLOCKERS, ALL THREE
+      REPRODUCED BY HAND BEFORE BEING APPLIED AND NONE OF THE REJECTED TEXT REACHING MAIN**: a `124x`
+      that was a fixed window over unequal spans, a *"control"* that could not fail, and an instrument
+      note that its own second sweep refuted. See the three ⛔ marks below.
+      ⛔ **The box asked about the numerator and the DENOMINATOR is the larger error.** The source
+      inside `900x150+300+2440` holds **0 px ≥ 200** (one ≥ 171, 66 ≥ 152) and both composited arms'
+      lightest row means read **135.7**; page-wide only **0.252%** of the source is ≥ 240. So `~250`
+      describes a quarter of one percent of the page and nothing at all inside the rect, and the same
+      published `min` pair against 135.7 reads **24.25%** — the published figure understates by
+      **1.92x**. ✅ Its arithmetic reproduces from its own inputs (12 → 42 ÷ 250 = **12.61%**), so it
+      is right about what it computed and wrong about what it computed it against.
+      ⛔ **AND THE NUMERATOR IS WRONG THE OTHER WAY.** ≤ `min`+10 is **54 px (0.040%) in 15 objects**,
+      largest `1x8+1111+2548`, on the shipped arm against **6,692 px (4.957%) in 76 objects**, largest
+      `22x27+870+2502`, at the bar — so the answer to *"one object"* is **NO on both arms** and the
+      interesting half is that they are not the same KIND of not-one-object: an outlier against a
+      plateau. 15 of 900 columns carry any on the shipped arm; **543** at the bar. ⛔ **BLOCKER 1 OF
+      THE REVIEW: a draft divided those and published `124x` in three files. `min`+10 is a FIXED
+      ABSOLUTE window over ink spans differing 2.43x (8..76 against 40..68), so it partly measures the
+      very compression under study — scale-matched it is 5.7x (bar at `min`+4, 307 px) or 3.0x
+      (shipped at `min`+24.3, 2,261 px). Quote 54 and 6,692, or 3.0x-5.7x; never 124x.** The reading
+      survives both matched directions, which is why it is kept and the number is not.
+      ✅ **The predecessor's pairing FAILS as the box forecast**: the darkest row (y=2561) reads min 16
+      / median 121 / p90 132 shipped (gap **105**) and 46 / 123 / 130 at the bar, and the row holding
+      the most near-min px holds **5 of 900**. ⚠️ The line pitch is **54 px**, not the ~45 a draft
+      wrote — derivable as wrong from that draft's own trough list.
+      ✅ **THE POPULATION FORM IS THE RESULT.** Over the stencil's 20,910 rect ink px the tone goes
+      median **43 → 53**, mean **43.68 → 52.83** (+21.0%), and ≤30 goes **1,485 px → 0**; contrast
+      against 135.7 falls **9.95%**. ⛔ **BLOCKER 2: it is NOT also a control, and a draft called the
+      20,902-against-20,910 agreement *"the letterforms are bar-invariant, measured rather than
+      argued"*. It is entailed twice — one stencil file masks both arms so the ink sets cannot differ,
+      and no non-ink px in the rect comes near 70 (background minima 95 and 107). All it says is that
+      8 of 20,910 ink px exceed 70 on the shipped arm and 0 do at the bar.**
+      ⚠️ **Instrument, and it is the predecessor's resize-filter finding one level sharper**: the tone
+      layers are COLOUR (98.9% of `bg-shipped.jpg` non-grey, channel spread to 127), so the grey `min`
+      depends on the luma formula too — 5-10 shipped and 38-41 at the bar over four formulas and four
+      filters, while the DELTA held at 31-34 against the published 30 and the population ratio at
+      28x-194x. ⛔ **Rounding versus truncating luma moves the rect mean by 0.50 shipped / 0.48 at the
+      bar, half of the whole 116.6 → 117.6 delta the bullets call *"barely moves"*.**
+      ⛔ **BLOCKER 3, and it is the one that turned a doubt into a finding: a draft wrote that no
+      composite reproduces the published rect means and hung an open note on the predecessor's
+      instrument — the range it quoted was the filter sweep alone, and the LUMA sweep refutes it.
+      Rec.709 with rounding gives 116.582 → 117.566, printing the published `116.6 → 117.6` on BOTH
+      arms, uniquely among the eight.** ✅ So the recipe is identifiable (Rec.709 = ImageMagick's
+      `-colorspace Gray`), the source-mean coincidence is retired, and what survives is sharper: **the
+      MEAN identifies the recipe and the MIN is not reproduced even by it** (709+round gives 7 → 40
+      against 12 → 42; this run is 2-7 levels darker shipped and 1-4 at the bar in all eight).
+      ✅ **Controls**: the tool row reproduces `C28-BARPILOT-2026-09-02.tsv`'s p16 row digit for digit
+      on all 15 tool columns, nineteen days on — ⛔ **still a determinism re-run and NOT a control
+      across a code change, checked rather than assumed** (`git diff d9486a2..HEAD` over `Sources/` and
+      this tool is **0 non-comment lines**) — the stencil sha256 reproduces the register's published
+      `3fde63ff…`, and the shipped composite sits a mean |Δ| of **5.46** from the source against
+      **14.96 / 64.52 / 74.02** for background-only, foreground-only and an inverted mask, which is
+      **the one control here that could have come out differently**.
+      ⚠️ **Predictions quoted VERBATIM in the register from the file written before any crop, because
+      a draft paraphrased them afterwards and the review called that out: four of five held. P3 is
+      REFUTED BY ITS OWN STATED TEST** — it predicted FEWER components at the bar and there are **76
+      against 15** — while its size half held (largest 287 px against 8).
+      ✅ **SIBLING SWEEP found TWO distinct claims assuming ~250 paper and the other is already
+      measured and NOT affected**: `Jones et al_2010` p12's band reads 255.0 / 254.7 / 255.0, so there
+      `~250` is pessimistic. **Same assumption, opposite errors, because one rect's paper was read and
+      the other's assumed.** ⛔ **The literal `~250 paper` finds only the p16 claim — the other is
+      worded *"paper at ~250"* — so the pattern run was
+      `peak contrast|~250 paper|against ~250|paper at ~250|250 paper`; sweep the shape, not the
+      phrase, which is the `mutate.py:<line>` lesson again.** It also found the *"three members
+      untouched"* count stale in `BUGS.md`'s file header, where the previous step corrected only the
+      limits line.
+      ⛔ **No verdict moves**: `7 of 7` rests on the legibility reading and the bracket, and no byte
+      figure is involved. ⛔ **Nor do the three corrections compose as *"two errors that cancel"*, which
+      a draft claimed in two files**: the fall's denominator holds its own numerator's term, so
+      12.61 × 1.92 ÷ 2.84 = 8.52 against the measured 9.95. Read the table as three independent
+      comparisons. ⚠️ One rect, one page, one render, one Photo detail; the bracket rect was NOT
+      re-scanned; nothing in `Tools/` or `Sources/` moved and no artefact was written.
+      Successor: `c28-p16-bracket-rect`.
+      `BUGS.md` C28 `##### The peak-contrast figure, MEASURED — the denominator is nowhere in the rect`.
+      **READ `Riesman - 1954` p16's `900x150+300+2440`. A DARKEST PIXEL
       OVER 135,000 px CARRIES *"peak contrast against ~250 paper falls about 12.6%"*, AND THE
       OBJECT-LEVEL STATISTIC PRINTED BESIDE IT DISAGREES WITH IT.**
       ✅ **Promoted 2026-09-21 by `c28-stencil-ratio-controls-asked`, the box directly below. The rect
