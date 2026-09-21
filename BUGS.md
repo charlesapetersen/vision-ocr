@@ -80,6 +80,23 @@ numerals; the 48 px the `2:3` arm admits are the two glyphs of the table value *
 that is unpriced. ⛔ **One instrument trap out of it: `-textish.png` is a faithful component list at
 the shipped floor and is NOT one at a floor of 2** — a single **1-px** painted fragment
 (`1x1+731+622`) manufactures a whole extra group and 27 px at `2:3` and nothing at `4:3` or `3:3`.
+✅ **AND THE THIRD MECHANISM THOSE READINGS TURNED UP — the shape term being blind to the outer
+sixteenth of every page — IS MEASURED OVER THE WHOLE POPULATION 2026-09-20, AND THE SIGN INVERTS**
+(`#### The blanked border, MEASURED over the whole population`, `C28-WINDOW-2026-09-20.tsv`, the same
+75 rows in 23 documents; two appended columns on `Tools/score-shape-term.swift`, nothing in `Sources/`
+moved). ⛔ **The blanked border holds a HIGHER share of the unboxed ink on the 51 pages that lose
+NOTHING than on the 16 that lose content — median 0.9584 against 0.4079** — because that border is
+where the platen edge, the gutter shadow and the page trim are, all unboxed by construction, which is
+what `interiorWindow` exists for. ⛔ **The queue box prescribed ONE column and one cannot answer**:
+most of `outWinPx` is *recognised* type on a page whose type runs to the margin, so `outWinMapPx` —
+the subset `region` does not cover — is the half that is about the term. ✅ **TWO of the sixteen are
+REFUTED outright, which is the one thing the column does decisively** — `_1958_Executive Pay` p3 and
+p5 read **0** against 44,896 and 43,243 px of border ink. ⛔ **A draft said FIVE and the review of
+that diff refuted three: 24, 96 and 280 px are small, not zero, and `Jones et al_2010` p2's whole
+in-window map is 155 px with a confirmed one-word loss in it.** ⛔ **And the other fourteen are not
+candidates in proportion to the number, because `1976 - Regis McKenna Papers` p4 loses nothing and
+reads 82.42% of its whole ink out there: the column refutes border involvement and cannot establish
+it without a reading.**
 ✅ **`C27` HAS NO BOUNDED WORK LEFT AS OF 2026-08-26 — (c) SHIPPED, and its queue box is `[hold] needs:
 owner`** (`#### The split, SHIPPED`). `Flattener.colourSaturationThreshold` is the colour decision's own
 bar, 0.06, **equal to `pictureSaturationThreshold` so no page's output moves**; the two decisions can move
@@ -14513,12 +14530,185 @@ its own and nothing in this repo validates a `####` cite. ⛔ **The draft publis
 lines … only TWO carry the marker, so 18 are short"*, and that triple is internally consistent while
 matching NEITHER commit: at `3300fa5` it is 19 lines with ONE marked and 18 short, and after this
 diff 22 with TWO and 20.** The `18` was right at the base by arithmetic on two figures that were
-both wrong here — the shape a re-run catches and a re-read never does. (2) `--self-test ok (11 checks)` is quoted in the controls above and is
+both wrong here — the shape a re-run catches and a re-read never does. ⚠️ **And this commit moves
+that triple, so it is re-derived rather than left to go stale a third time: `c28-window-blindness`
+adds two cites inside the census's four files (`BUGS.md` 12 → 13, `QUEUE.md` 9) and BOTH carry the
+marker, giving 24 / 4 / **20 short** — the shortfall unchanged because the two additions are on the
+right side of the finding.** (⚠️ It also adds one in `CLAUDE.md`, which is outside the census's four
+files and so enters no figure here.) (2) `--self-test ok (11 checks)` is quoted in the controls above and is
 **not in the retained `run.log`**, which holds the two measured rows, the two `SHAPEDUMP … 7 of 7`
 lines and the `pages measured 2; port agreed on 2; grouping shipped only` summary — plus a 42-field
 header row, so *"and nothing else"* was loose — and it was a separate invocation, so it is a claim
 about a run nobody can now check, unlike the four figures beside it. Verified 2026-09-20 by reading
 that file.
+
+#### The blanked border, MEASURED over the whole population — the shape term is offered a MINORITY of the unboxed ink on the median page, and the finding is that this runs the OTHER WAY from the worry: the 51 pages that lose nothing hide **95.8%** of their unboxed ink out there against the 16 losers' **40.8%**, so the blanked border is where the scanner edge is and not where the losses are — MEASURED 2026-09-20
+
+`#### The other two drawing rects, SUBTRACTED` found that `textLineGroupsOutsideText` builds its
+map inside `Flattener.interiorWindow` alone (`Flattener.swift:2263-2275`, the outer sixteenth
+dropped on all four sides) and blanks it everywhere else, so **no component out there can be
+accepted, grouped or counted at any value of any of the term's six constants** — and that on
+`1954 - Why` p6, whose published drawing rect is the page CORNER, that took **3,513 px, 44.02%** of
+the rect's drawing ink before the grouping was ever asked. That was one page and one rect. This is
+the question *how often*, over the population C28 already names.
+
+`Tools/score-shape-term.swift` gains **two appended columns**, and the pair is the decision worth
+quoting:
+
+|              | what it counts |
+|---           |--- |
+| `outWinPx`   | pixels below the page's own `otsu` that lie OUTSIDE `interiorWindow` |
+| `outWinMapPx`| the subset of those that `region` does not cover — exactly what `inkOutsideMap` would have put in the map had the window not blanked them |
+
+⛔ **The queue box prescribed ONE column and one cannot answer the question it was opened for.**
+On a page whose type runs into the margin most of `outWinPx` is *recognised* type, which says
+nothing at all about what the term missed; `outWinMapPx` is the half that is about the term. They
+are also a partition against the columns already there — `outWinPx + inkPx` is the page's whole ink,
+the two loops being complements over one buffer — which the new self-test group asserts as its third
+line. ⛔ **The reason the first draft gave for that line was BACKWARDS and the review of this diff
+refuted it by containment**: it said a literal pair can agree with a drifted window where a partition
+cannot, and on this fixture the opposite holds — the two literals pin both terms exactly, so
+`{partition red} ⊊ {literal red}` and **the partition cannot red alone**, which both sabotages below
+show. It is kept for the narrow thing it does do: it is the only one of the three not hand-copied
+from the output, so it catches a literal UPDATED TO MATCH a buggy build.
+
+```sh
+/tmp/score-shape-term "<pdf>" <page…>          # unconditional; no knob to set
+```
+
+##### (1) The denominator: every page has blanked ink, and most of it is scanner furniture
+
+**`outWinPx > 0` on 75 of 75 rows**, from **0.17%** of the page's total ink
+(`Xin Qu et al_2018` p3) to **82.42%** (`1976 - Regis McKenna Papers` p4, a photographed sheet with
+its surround in frame), median **6.90%**. `outWinMapPx > 0` on **55 of 75**; the 20 reading exactly
+0 are 13 `nothing`, 5 `degraded` and 2 `loses`.
+
+Taken as a share of ALL the page's unboxed ink — `outWinMapPx / (outWinMapPx + outPx)`, i.e. how
+much of what the term is *about* it never sees — the median row reads **0.8422**. ⛔ **Read that
+as the window working, not as blindness**: the border is where the platen edge, the gutter shadow
+and the page trim are, all of them unboxed by construction, and keeping them out of
+`inkOutsideText` is the stated reason `interiorWindow` exists. (1) is the denominator, exactly as
+the box said; only (2) decides anything.
+
+⚠️ **One property of that ratio, disclosed because this tool's own README row already flags the
+shape ("a small-denominator candidate that is not measured"): 21 of the 51 `nothing` rows have
+`outPx` = 0**, so their share is 1.0000 or 0.0000 over a zero denominator — **9** of them are among
+the 29 reading ≥ 0.90. ⛔ **The finding is robust to dropping them and that is why the disclosure is
+free**: over the 30 `nothing` rows with a non-zero denominator the median is **0.9693**, and the
+losers' is unchanged over their 15. (⚠️ The review of this diff put that last count at *"21 of the
+29"*; re-derived here it is **9** — the other 12 read `outWinMapPx` 0 as well and so score 0, not 1.)
+
+##### (2) The 16 labelled content-losers, and the answer inverts the worry
+
+| class | n | median share of unboxed ink that is blanked | ≥ 0.90 | aggregate blanked / seen |
+|--- |--- |--- |--- |--- |
+| `nothing` | 51 | **0.9584** | 29 of 51 | 3,776,621 / 95,406 — **97.5%** |
+| `loses`   | 16 | **0.4079** | 6 of 16  | 836,593 / 87,889 — **90.5%** |
+| `degraded`| 6  | 0.0000 | 0 of 6 | 50,339 / 2,044 — 96.1% |
+| `cartoon` | 2  | 0.4469 folded into `loses`, n = 18 | 0 of 2 | — |
+
+⛔ **All four classes are here because the first draft's table had only the two while the prose
+around it said *"75 rows"* throughout — 8 rows outside a two-way split, two of them C26's founding
+cartoons, which every other sentence in this register calls content losses.** Folding the cartoons
+into the loser arm gives n = 18 and a median of **0.4469**, so the inversion holds either way and
+the disclosure was free. Caught by the adversarial review of this diff.
+⚠️ **And the `loses` median is the mean of the 8th and 9th of 16** (0.3359 and 0.4798). The first
+draft published **0.3359** in nine places — the LOWER median, an even-n convention the `nothing`
+arm's odd n = 51 never needed — so the two sides of the headline were computed two different ways
+and the bent one was the side the finding wants small. Also the review's.
+
+⛔ **THE FINDING: the blanked border holds a HIGHER share of the unboxed ink on the pages that lose
+NOTHING than on the pages that lose content — 0.9584 against 0.4079, and 29 of 51 against 6 of 16
+at a bar of 0.90.** The sign is the opposite of what the p6 reading invites, and the mechanism is
+the same one (1) records: a page that loses nothing is typically a clean page whose only unboxed
+ink IS the scanner edge, so nearly all of it is out there; a page that loses content has real marks
+inside the window, which is where the loss is. **On this population the window is not where the
+losses are.**
+
+✅ **TWO of the sixteen are REFUTED outright, and only two** — a page with NO unboxed ink in the
+border cannot have lost content there, and zero is the only reading that carries that:
+
+| page | `outWinPx` | `outWinMapPx` | share |
+|--- |--- |--- |--- |
+| `_1958_Executive Pay` p3 | 44,896 | **0** | 0.0000 |
+| `_1958_Executive Pay` p5 | 43,243 | **0** | 0.0000 |
+| `Herbert Marks papers` p11 | 1,381 | 24 | 0.0179 |
+| `Williams_1958` p1 | 252,381 | 96 | 0.0342 |
+| `Atkinson_1939` p3 | 7,504 | 280 | 0.0141 |
+
+⛔ **THE FIRST DRAFT CALLED ALL FIVE REFUTED AND THE ADVERSARIAL REVIEW OF THIS DIFF REFUTED THREE
+OF THEM FROM THIS FILE'S OWN COLUMNS, WHICH IS WORTH MORE THAN THE COUNT.** Only
+`_1958_Executive Pay` p3 and p5 read **0**; 24, 96 and 280 px are *small*, and smallness here is an
+unstated judgement that this population contradicts — **`Jones et al_2010` p2's whole in-window map
+is 155 px**, and the register records its loss as the single word `value.`, so a confirmed content
+loss on these very pages fits inside 155 px. `Atkinson_1939` p3's 280 is **1.81x** that, and its
+`kind` is `type+hand`, the class likeliest to sit in a margin. So those three are **small, not
+zero**, and are filed as such rather than as answers.
+✅ What the two that ARE refuted carry is sharp: **44,896** and **43,243** px of border ink with the
+recogniser having boxed **all** of it, so the term loses nothing to the window on either page.
+⛔ **The other fourteen are NOT confirmed and must not be read as candidates in proportion to the
+number**: `Broadhead` p3 reads 307,371 blanked unboxed px and `Ford_1941` p1 reads 221,931, but
+`1976 - Regis McKenna Papers` p4 — which loses nothing — reads 82.42% of its whole ink out there,
+so the quantity is dominated by how the sheet was photographed and not by what was missed.
+**This column can refute border involvement on a page; it cannot establish it without a reading.**
+
+##### The two cartoons, and a cross-check against the earlier rect measurement that could have failed
+
+`1954 - Why` p6 reads `outWinMapPx` **4,020** and p7 **5,576**, 45.3% and 44.1% of each page's
+unboxed ink — so the pages this box was opened on are close to the population median for losers'
+*siblings* and well below the non-losers'.
+
+✅ **And p6's two halves close against `#### The other two drawing rects, SUBTRACTED` exactly.**
+That section measured, from the PNG dumps and a different binary, that C26's eye-chosen rect holds
+**7,980** drawing px of which **3,513** are blanked; `#### ⛔ The same shape term on PICTURES`
+published that same rect's map at **4,467** px. `7,980 − 3,513 = 4,467`, and this run's
+`outWinMapPx` bounds the blanked half the right way round — **4,020 ≥ 3,513**, 507 px of slack —
+across two binaries and two instruments (that 3,513 was counted off the PNG dumps). ⛔ **The
+OTHER half is ENTAILED and the first draft offered it as a second check**: `outPx` **4,851 ≥
+4,467** cannot fail, because 4,467 was published *as* 92% of that same 4,851 and `outPx` is inside
+the 2-43 prefix this run separately asserts is byte-identical — the same number compared against a
+fraction of itself. Caught by the adversarial review of this diff; one check, not two.
+
+##### Controls, and what this does not say
+
+✅ **The control that could fail: tool columns 2-43 of `C28-WINDOW-2026-09-20.tsv` are BYTE-IDENTICAL
+to `C28-GROUPING-2026-09-20.tsv`'s on 75 of 75 rows**, across two binaries — so appending the pair
+moved nothing in the 42 columns every committed `SHAPETERM-*.tsv` shares. `verdict` is `ok` on 75 of
+75, i.e. the map identity against production's own `inkOutsideText` held on every row; 23
+invocations, rc=0 on 23 of 23.
+✅ The new self-test group is **watched failing twice, on NESTED sets** — ⛔ **not "disjoint", which
+the first draft said and this diff's own sabotage output refutes**: the window bound
+`x >= win.x0` → `x > win.x0` reds the literal AND the partition (`(6, 5)` for `(5, 4)`, and
+`6 + 4 != 9`), and `!region[…]` → `true` reds the literal ALONE (`(5, 5)` for `(5, 4)`), which is
+what says `outWinMapPx` is not a copy of `outWinPx`. Neither reddens any other group, which is
+structural — `borderInk` has exactly two callers, `main` and this group. ⚠️ **The middle assertion,
+the interior arm's `4/3`, is watched by neither sabotage**, both being confined to `borderInk`.
+`--self-test` **11 → 12** groups.
+⛔ **The column is APPENDED AFTER the `GROUPING` columns, not before them.** ⚠️ **Field numbers here
+are the FILE's, `document` being field 1** — the first draft mixed that convention with the tool's
+own 1-42 in four places and the two collide exactly at 43, which the review of this diff caught. In
+the file's numbering the shared prefix is **fields 2-43** and this run's new pair is **44-45**,
+while `C28-GROUPING-2026-09-20.tsv` carries five arms at FIELDS 44-53; inserting ahead of
+those would shift all ten, so a file compared to it by POSITION would read one arm's count as
+another's. ⚠️ The `TOOL_COLUMNS` hazard the box cited is real and is **not** this tool's — ⛔ **though the
+first draft's reason for that was false and the review of this diff caught it**: `score-shape-term`
+DOES have a Python reader, `Tools/stratify-corpus.py`, whose `--rows` example names
+`SHAPETERM-BYTES-2026-08-21.tsv`. What makes it safe is that it parses **by column name**
+(`dict(zip(header, cells))` plus `need_columns`) and skips `#` lines, so an appended column cannot
+shift it, where `sweep-ink-bar.py` compares a header list for exact equality — and that tool reads
+`score-text-route`, not this one.
+⚠️ **What it does NOT say, stated in advance**: whether the blanked ink would have been accepted,
+grouped or counted. The window is not a knob, and answering that with a replica of the shape rule is
+the `alltext-replica` mistake this register has paid for twice. ⚠️ It is also a page-level count,
+so it cannot say *where* on a page the blanked ink is; the five refutations work because zero is
+zero, and the eleven non-refutations are exactly where that limit bites. ⚠️ 75 rows in 23 documents
+at one Photo detail — the population `C28-GROUPING-2026-09-20.tsv` names — not a corpus figure, and
+this corpus has already made a pooled scale-up **5.96x** high. ⚠️ **Nothing in `Sources/` moved**,
+no constant changed, no page gained or lost a text layer, and no earlier artefact moves.
+⚠️ One lead recorded rather than followed: `_1939_Former students` p2, the page this entry says no
+value of any constant can reach because its `outPx` is **0**, has **8,973** px of unboxed ink in its
+blanked border. Whether any of it is the pencilled annotation is **unmeasured**, and this entry's own
+mechanism — the page-wide Otsu being blind to pale pencil — predicts not.
 
 #### What this entry is NOT
 

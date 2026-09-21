@@ -1547,7 +1547,36 @@ of a fifth, the floor line and the book stack (⛔ *"three flying books"* stood 
 a term. ⚠️ **The mechanism was on record (3b's
 own p4 row discounts 76 of 254 columns for it) and the MAGNITUDE is what is new**; whether those
 3,513 px would reach four members is UNMEASURED, because the window is not a knob and answering it
-with a replica of the rule is the `alltext-replica` mistake. ⛔ **The direction the queue box sent the
+with a replica of the rule is the `alltext-replica` mistake.
+✅ **AND *"HOW OFTEN"* IS ANSWERED OVER THE WHOLE POPULATION AS OF 2026-09-20, AND THE SIGN IS THE
+OPPOSITE OF WHAT p6 INVITES** (`BUGS.md` C28 `#### The blanked border, MEASURED over the whole
+population`, `C28-WINDOW-2026-09-20.tsv`, the same 75 rows in 23 documents;
+`Tools/score-shape-term.swift` gains two appended columns and **nothing in `Sources/` moved**).
+⛔ **The blanked border holds a HIGHER share of the unboxed ink on the 51 pages that lose NOTHING than
+on the 16 that lose content — median 0.9584 against 0.4079, 29 of 51 against 6 of 16 at a bar of
+0.90** — because that border is where the platen edge, the gutter shadow and the page trim are, all
+unboxed by construction, which is the stated reason `interiorWindow` exists. **On this population the
+window is not where the losses are.** ⛔ **The queue box prescribed ONE column and one cannot answer**:
+`outWinPx` (ink outside the window) is mostly *recognised* type on a page whose type runs to the
+margin, so `outWinMapPx` — the subset `region` does not cover — is the half that is about the term,
+and the two are a PARTITION against `inkPx` that the new self-test group asserts as a third line — ⚠️ one
+that CANNOT red alone, the literals pinning both terms, so it is kept only for catching a literal
+updated to match a buggy build (a draft argued the reverse and the review of that diff refuted it). ✅ **TWO of the sixteen are REFUTED outright
+and that is the one thing this column does decisively** — `_1958_Executive Pay` p3 and p5 read
+`outWinMapPx` **0** against 44,896 and 43,243 px of border ink, i.e. the recogniser boxed all of it.
+⛔ **A draft said FIVE and the adversarial review of that diff refuted three from this file's own
+columns**: 24, 96 and 280 px are *small*, and `Jones et al_2010` p2's whole in-window map is **155**
+px carrying a confirmed one-word loss, so `Atkinson_1939` p3's 280 is 1.81x a size this population
+has already lost content inside. Small, not zero. ⛔ **The other fourteen are NOT candidates in
+proportion to the number**: `1976 - Regis McKenna Papers` p4 loses nothing and
+reads **82.42%** of its whole ink out there, so the quantity tracks how the sheet was photographed —
+**the column can refute border involvement on a page and cannot establish it without a reading.**
+✅ The cross-check that could have failed: p6's page-wide `outWinMapPx` **4,020 ≥ 3,513** and `outPx`
+**4,851 ≥ 4,467**, and `7,980 − 3,513 = 4,467` is the rect map figure `#### ⛔ The same shape term on
+PICTURES` published — three numbers from two earlier binaries closing against this run's two.
+⚠️ One lead recorded rather than followed: `_1939_Former students` p2, the page no constant reaches
+because its `outPx` is 0, has **8,973** unboxed px in its border; whether any is the pencil is
+unmeasured and this entry's own Otsu mechanism predicts not. ⛔ **The direction the queue box sent the
 session for is the SMALL one**: drawing ink INSIDE `region` — the fragments Vision boxed as words — is
 **79 px on p7, 1.09%**, and **0 on p6**; it TRUNCATES two of p7's 30 drawing components (188 → 180
 rows, 30 → 29) and removes none, and both sit above `shapeHeightHigh`'s 3.0 × 9 = **27** at either
@@ -2540,7 +2569,7 @@ targeted `GUTTER-CENSUS-2026-08-20.tsv`, `SHAPETERM-PICTURES-2026-08-21.tsv`,
 `GUTTER-BANDS-2026-08-26.tsv` + `GUTTER-BANDS-SHIPPED-2026-08-26.tsv` and
 `C27-MASKTERMS-2026-08-26.tsv` and `C27-COLOURBYTES-2026-08-26.tsv` and
 `DRAWN-CENSUS-2026-08-26.tsv` and `C28-BARPILOT-2026-09-02.tsv` and
-`C28-GROUPING-2026-09-20.tsv` — and are
+`C28-GROUPING-2026-09-20.tsv` and `C28-WINDOW-2026-09-20.tsv` — and are
 evidence for one run, not
 claims about the present. ⛔ **FIVE of these have no instrument in the tree at all, and all five say so by
 decision rather than by neglect** (it was four until 2026-08-25, when `C29-CORPUS-2026-08-25.tsv` — a
@@ -2662,6 +2691,18 @@ a value no committed verdict table assigns. (2) Its `label` and `kind` are **not
 above. (3) ⛔ **It is NOT a filtered artefact and `DRAWN-CENSUS`'s *"the only one in this list that
 is"* still holds**: every row the run printed is in it, and what was selected is the population, which
 every sampled artefact here already does.
+⚠️ **Nor is `C28-WINDOW-2026-09-20.tsv`, a TENTH time — THIRD `C28-` file, same tool as the second, same
+day as both, so by now the prior is settled and the count stays five.** Same population and the same
+joined `label`/`kind`, so (1) and (2) of the three traps above are its as well. ✅ Its cross-artefact
+check is an EQUALITY over a whole prefix rather than a reproduction of one column: fields 2-43 are
+**byte-identical to `C28-GROUPING-2026-09-20.tsv`'s on 75 of 75 rows** across two binaries — **42
+columns x 75 rows, the widest such equality in this list**. ⛔ **Not "the strongest", which a draft
+said and the review of that diff refused as unswept**: `SHAPETERM-PICTURES-RIM-2026-08-21.tsv`
+carries 23 shared columns plus `verdict` on 11 of 11 rows across a binary that gained *the whole rim
+sweep*, where this one's code delta is two appended counting loops — wider is not stronger. ⛔ **One thing a reader will get
+wrong: its two new columns sit at 44-45, where `C28-GROUPING`'s 44-53 are the five grouping arms** — the
+two files' column 44 is `outWinPx` in one and `lineN_g4x3` in the other, so they line up on the shared
+42 and NOT beyond it.
 The rule this count actually draws is *"reproducible from nothing in the tree"*, and it is worth
 re-deriving from the list rather than counting prefixes. That also spends the reason the other two are outside: the tool version C30 was asking for now
 exists, so a future C30 measurement has no excuse to be unreproducible from the tree — and the tiles file

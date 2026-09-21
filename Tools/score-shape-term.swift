@@ -280,6 +280,38 @@
 // catches an argument SWAP (4:3 is not 3:4) and nothing else. What covers the
 // pass-through is `groupingFieldsFor`, self-test group 11(e).
 //
+// `outWinPx` / `outWinMapPx` — UNCONDITIONAL, the last two columns, added 2026-09-20 for
+// `c28-window-blindness`. Every other number this tool prints is computed inside
+// `Flattener.interiorWindow` — the outer sixteenth dropped on all four sides — so nothing
+// here could say how much of a page the shape term is never offered. These two say it:
+//
+//   outWinPx     pixels below the page's own `otsu` that lie OUTSIDE that window
+//   outWinMapPx  the subset of those that `region` does not cover — i.e. exactly the
+//                pixels `inkOutsideMap` would have put in the map had the window not
+//                blanked them, which is the term's blind spot
+//
+// ⛔ **TWO columns because one cannot answer.** On a page whose type runs into the margin
+// most of `outWinPx` is *recognised* type, which says nothing about what the term missed;
+// `outWinMapPx` is the half that is about the term. The pair is also a partition against
+// the existing columns — `outWinPx + inkPx` is the page's whole ink — which self-test
+// group 12 asserts as its third line; ⚠️ that line cannot red ALONE (see `borderInk`) and
+// is kept for catching a literal updated to match a buggy build.
+//
+// ⛔ **They do NOT say that ink would have been accepted, grouped or counted.** The window
+// is not a knob, and answering that question with a replica of the shape rule is the
+// `alltext-replica` mistake this register has paid for twice. They say what the term was
+// never offered, and on this population (`C28-WINDOW-2026-09-20.tsv`) the answer runs the
+// other way from the worry: the 51 pages that lose NOTHING carry a median **95.8%** of
+// their unboxed ink out there against the 16 losers' **40.8%**, because the blanked border
+// is where the scanner edge and the gutter shadow live — which is what the window is for. Two of
+// the sixteen losers are REFUTED outright (`outWinMapPx` 0); three more read 24/96/280 px and are
+// small rather than zero, which is a judgement and not an answer.
+//
+// ⚠️ **Appended AFTER the `GROUPING` columns, not before them.** The 42-column prefix is
+// what every committed `SHAPETERM-*.tsv` shares, but `C28-GROUPING-2026-09-20.tsv` also
+// carries five arms at FIELDS 44-53; inserting ahead of those would shift all ten, so a file
+// compared to it BY POSITION would read one arm's count as another's.
+//
 // Exit codes: 1 unreadable PDF, 2 a refused `SHAPEDUMP`, `WIDENBYTES` or `GROUPING`,
 // **3 `WIDENBYTES`
 // was asked for and no jbig2 was found**, **4 a `SHAPEDUMP` that did not write everything
@@ -648,6 +680,47 @@ func rimSubtract(_ map: [Bool], region: [Bool], width w: Int, height h: Int,
     var out = map
     for i in 0..<(w * h) where grown[i] { out[i] = false }
     return out
+}
+
+/// The ink `interiorWindow` BLANKS: how much of the page's ink the shape term can never
+/// see, and how much of that the recogniser did not already box.
+///
+/// ⛔ **Two numbers, because one cannot answer the question the column was added for.**
+/// `all` is the box's own prescription — every pixel below the page's own Otsu outside
+/// the window — and on a page whose type runs into the margin most of it is *recognised*
+/// type, which says nothing about what the term missed. `outsideRegion` is the subset
+/// that is also outside `region`, i.e. exactly the pixels `inkOutsideMap` would have put
+/// in the map had the window not blanked them, and it is the term's blind spot.
+///
+/// ⚠️ It does NOT say those pixels would have been accepted, grouped or counted — the
+/// window is not a knob and answering that with a replica of the shape rule is the
+/// `alltext-replica` mistake. It says only what the term was never offered.
+///
+/// The complement of `inkOutsideMap`'s own loop by construction: that one walks
+/// `win.y0..<win.y1` x `win.x0..<win.x1`, this one walks the whole page and skips it, so
+/// `all + inkOutsideMap(…).ink` is the page's total ink. Group 12 asserts that partition
+/// beside the two literals — ⛔ **not because "a literal pair can agree with a drifted
+/// window and a partition cannot", which is BACKWARDS and is what a draft of this said**:
+/// on that fixture the literals pin both terms exactly, so `{partition red}` is a SUBSET
+/// of `{literal red}` and the partition cannot red alone (both sabotages show it). It is
+/// kept for the one thing it does do — it is the only assertion not hand-copied from the
+/// output, so it catches a literal UPDATED TO MATCH a buggy build.
+func borderInk(_ grey: [UInt8], region: [Bool], width w: Int, height h: Int,
+               threshold: UInt8) -> (all: Int, outsideRegion: Int) {
+    guard w > 0, h > 0, grey.count >= w * h, region.count >= w * h else { return (0, 0) }
+    let win = interiorWindow(width: w, height: h)
+    var all = 0, outside = 0
+    for y in 0..<h {
+        let base = y * w
+        let inRows = y >= win.y0 && y < win.y1
+        for x in 0..<w {
+            if inRows && x >= win.x0 && x < win.x1 { continue }
+            guard grey[base + x] < threshold else { continue }
+            all += 1
+            if !region[base + x] { outside += 1 }
+        }
+    }
+    return (all, outside)
 }
 
 /// The exact map: interior ink that `region` does not cover, in the page's own frame.
@@ -1118,7 +1191,9 @@ func selfTest() -> [String] {
     // check's sensitivity to move with it, and it will not.
     //
     // ⛔ **MEASURED, not reasoned — three binaries, `shasum`-distinct, all `rc=0`:**
-    // shipped reads `ok (11 checks)` with all three baselines in and exits 0;
+    // shipped read `ok (11 checks)` with all three baselines in and exited 0 — ⚠️ **that
+    // is the count ON THE DAY, 2026-08-22, and it is 12 from 2026-09-20**; what the run
+    // established is the rim line's attribution, not a total;
     // `shapeHeightLow = 0.0` exits **5** with the rim line plus three port lines; and the
     // same constant with THIS baseline's `for y in 30..<33` emptied to `30..<30` still
     // exits **5** with the **identical** rim message. The rim failure survives the 3x3
@@ -1362,6 +1437,42 @@ func selfTest() -> [String] {
                    + "not [(0, 0), (1, 60)]")
     }
 
+    // 12. ⛔ THE BLANKED BORDER, `c28-window-blindness`. Three assertions, and the third
+    //     is the one that catches a drifted window: two literals can agree with a wrong
+    //     boundary if the fixture happens to have no ink on it, while the PARTITION
+    //     — border ink plus interior ink equals the page's total ink — cannot, the two
+    //     loops being complements over the same buffer.
+    //     The scene is 32x32, so `interiorWindow` is mx = my = 2 and the window is
+    //     x,y in [2, 30). Nine inked pixels, placed to pin all four boundaries in both
+    //     directions: (2,2) is the first interior column AND row, (29,29) the last, and
+    //     (30,30) the first blanked one past them. A `<=` for a `<` at either end moves
+    //     one of those three and reddens the literals; a wholesale collapse reddens the
+    //     partition.
+    var bGrey = [UInt8](repeating: 255, count: 32 * 32)
+    let bBorder = [(0, 0), (1, 5), (5, 1), (30, 30), (31, 31)]
+    let bInterior = [(2, 2), (5, 5), (10, 10), (29, 29)]
+    for (x, y) in bBorder + bInterior { bGrey[y * 32 + x] = 0 }
+    //     `region` covers one pixel on each side of the boundary, so neither number is
+    //     the other's copy: the border's (0,0) is the only one `outsideRegion` drops,
+    //     and the interior's (5,5) is the only one the map drops.
+    var bRegion = [Bool](repeating: false, count: 32 * 32)
+    bRegion[0 * 32 + 0] = true
+    bRegion[5 * 32 + 5] = true
+    let border = borderInk(bGrey, region: bRegion, width: 32, height: 32, threshold: 128)
+    if border.all != 5 || border.outsideRegion != 4 {
+        bad.append("border: outWinPx/outWinMapPx read \(border), not (5, 4)")
+    }
+    let bMap = inkOutsideMap(bGrey, region: bRegion, width: 32, height: 32, threshold: 128)
+    if bMap.ink != 4 || bMap.outside != 3 {
+        bad.append("border: the interior arm reads \(bMap.ink)/\(bMap.outside), not 4/3")
+    }
+    //     The partition, against a total counted here by a third loop that knows nothing
+    //     about the window at all.
+    let bTotal = bGrey.filter { $0 < 128 }.count
+    if border.all + bMap.ink != bTotal {
+        bad.append("border: \(border.all) + \(bMap.ink) != \(bTotal) total ink")
+    }
+
     return bad
 }
 
@@ -1386,7 +1497,7 @@ if args.contains("--self-test") {
         // in as sub-group 11(f), guards inside an existing group, which is 2026-08-22's case
         // exactly. Recorded because the block above says a count that does not move when a
         // check is added reads as corroboration and is worth less than no count.
-        print("score-shape-term: self-test ok (11 checks)")
+        print("score-shape-term: self-test ok (12 checks)")
         exit(0)
     }
     FileHandle.standardError.write(Data(
@@ -1537,12 +1648,20 @@ let wideColumns = ["wideN", "wideInkOut", "stenPx", "wideStenPx",
 /// `SHAPETERM-*.tsv` was written against stays byte-identical; with `GROUPING` unset this
 /// is empty and the row's filler is zero-wide.
 let groupingColumns = groupingArms.flatMap { ["lineN_\($0.tag)", "linePx_\($0.tag)"] }
+/// `c28-window-blindness`: the ink the interior window blanks, and the subset of it the
+/// recogniser did not already box. See `borderInk` for why one number cannot answer.
+/// ⛔ **Appended AFTER `groupingColumns`, not before them.** The 42-column prefix is what
+/// every committed `SHAPETERM-*.tsv` shares, but `C28-GROUPING-2026-09-20.tsv` also has
+/// five arms' columns at FIELDS 44-53, and inserting here would shift all ten — so a file
+/// compared to it BY POSITION would read one arm's count as another's. Last is the only
+/// place that leaves both prefixes byte-identical.
+let borderColumns = ["outWinPx", "outWinMapPx"]
 let columns = ["page", "w", "h", "otsu", "inkPx", "outPx", "inkOut", "mapFrac",
                "stenFrac", "stenD3", "glyphN", "glyphH", "glyphRun",
                "ccN", "txtN", "txtPx", "txtShare",
                "lineN", "linePx", "lineShare", "topLine"]
     + rimRadii.flatMap { ["rim\($0)N", "rim\($0)Px", "rim\($0)Top"] }
-    + ["verdict"] + wideColumns + groupingColumns
+    + ["verdict"] + wideColumns + groupingColumns + borderColumns
 func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
          inkPx: String = "-", outPx: String = "-", inkOut: String = "-",
          mapFrac: String = "-", stenFrac: String = "-", stenD3: String = "-",
@@ -1550,7 +1669,7 @@ func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
          ccN: String = "-", txtN: String = "-", txtPx: String = "-", txtShare: String = "-",
          lineN: String = "-", linePx: String = "-", lineShare: String = "-",
          topLine: String = "-", rim: [String]? = nil, verdict: String,
-         wide: [String]? = nil, grouping: [String]? = nil) {
+         wide: [String]? = nil, grouping: [String]? = nil, border: [String]? = nil) {
     let fields = ["p\(page)", w, h, otsu, inkPx, outPx, inkOut, mapFrac,
                   stenFrac, stenD3, glyphN, glyphH, glyphRun,
                   ccN, txtN, txtPx, txtShare, lineN, linePx, lineShare, topLine]
@@ -1558,6 +1677,7 @@ func row(_ page: Int, w: String = "-", h: String = "-", otsu: String = "-",
         + [verdict.replacingOccurrences(of: "\t", with: " ")]
         + (wide ?? [String](repeating: "-", count: wideColumns.count))
         + (grouping ?? [String](repeating: "-", count: groupingColumns.count))
+        + (border ?? [String](repeating: "-", count: borderColumns.count))
     precondition(fields.count == columns.count)
     print(fields.joined(separator: "\t"))
 }
@@ -1650,6 +1770,12 @@ for index in pages {
     // full precision: this is the whole claim that the map is the guard's own set.
     let identity = abs(mapFrac - inkOut) <= 1e-12
     if !identity { identityFailed += 1 }
+
+    // `c28-window-blindness`: the ink outside that window, which no value of any of the
+    // term's six constants can reach. Unconditional — it is two counting loops over
+    // buffers already in hand, so there is no knob to gate it behind and no page where
+    // its absence would be cheaper than a dash.
+    let border = borderInk(grey, region: region, width: w, height: h, threshold: otsu)
 
     // The two candidates from `score-text-route`'s header, each as a fraction directly
     // comparable to `inkOut`.
@@ -1828,7 +1954,8 @@ for index in pages {
         topLine: topLine, rim: rimFields,
         verdict: identity ? "ok"
             : String(format: "⛔ mapFrac %.6f != inkOut %.6f", mapFrac, inkOut),
-        wide: wideFields, grouping: groupingFields)
+        wide: wideFields, grouping: groupingFields,
+        border: ["\(border.all)", "\(border.outsideRegion)"])
 
     if let dump = dumpDirectory {
         let stem = "\(src.deletingPathExtension().lastPathComponent.prefix(40))-p\(index)"

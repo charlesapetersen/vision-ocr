@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-window-blindness` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-table-rule-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-window-blindness` SUB-BOX — SEARCH FOR THAT TAG,
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-table-rule-rect` SUB-BOX — SEARCH FOR THAT TAG,
       IT IS SOME HUNDREDS OF LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN
       OPEN CAMPAIGN.** (⛔ **THE DISTANCE USED TO BE A NUMBER HERE AND IS DELIBERATELY NOT ONE ANY
       MORE, 2026-09-20. It read *"~450"*, was 479 when the review of that day's diff measured it,
@@ -551,6 +551,14 @@ happens.**
       55.98%, both corrected 2026-09-20 by the review of that diff). That is a content question
       about `Sources/`, not a documentation one, and it is what `c28-window-blindness` asks. ⚠️ **Neither is the bar or the grouping constants**, which remain
       the owner's values and are not what either successor touches.
+      ⛔ **RE-POINTED A FOURTEENTH TIME 2026-09-20 BY `c28-window-blindness` ITSELF, WHICH RAN AND
+      ANSWERED, AND THE ANSWER RETIRES REASON (2) ABOVE RATHER THAN EXTENDING IT.** Over the same
+      75 rows the blanked border holds a HIGHER share of the unboxed ink on the 51 pages that lose
+      NOTHING than on the 16 that lose content — median **0.9584** against **0.4079** — so the
+      window is where the platen edge is and not where the losses are, and *"a content question
+      about `Sources/`"* is answered **no** on this population. ⚠️ **What that does NOT retire is
+      p6**, whose 44.02% stands unmoved; what it retires is the inference from p6 to the
+      population. The one open sub-box is `c28-table-rule-rect`, which is reason (1)'s.
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
@@ -1006,7 +1014,59 @@ happens.**
       load-bearing where this one was not.
       (context: BUGS.md C28 `#### The footer rect, and the device in it reaches nothing`)
 
-- [ ] **c28-window-blindness** — **THE SHAPE TERM CANNOT SEE THE OUTER SIXTEENTH OF ANY PAGE, AND ON
+- [x] **c28-window-blindness** — ✅ **ANSWERED 2026-09-20, AND THE SIGN IS THE OPPOSITE OF WHAT p6
+      INVITES: the blanked border holds a HIGHER share of the unboxed ink on the 51 pages that lose
+      NOTHING than on the 16 that lose content — median 0.9584 against 0.4079, 29 of 51 against 6 of
+      16 at a bar of 0.90 — because that border is where the platen edge, the gutter shadow and the
+      page trim are, all unboxed by construction, which is what `interiorWindow` exists for. On this
+      population the window is NOT where the losses are.** (`BUGS.md` C28 `#### The blanked border,
+      MEASURED over the whole population`, `C28-WINDOW-2026-09-20.tsv`, 75 rows in 23 documents;
+      nothing in `Sources/` moved.)
+      ⛔ **THE BOX PRESCRIBED ONE COLUMN AND ONE CANNOT ANSWER — this is the instrument decision to
+      carry.** On a page whose type runs into the margin most of `outWinPx` is *recognised* type,
+      which says nothing about what the term missed, so the shipped pair is `outWinPx` plus
+      `outWinMapPx` (the subset `region` does not cover — exactly what `inkOutsideMap` would have
+      mapped had the window not blanked it). The two are also a PARTITION against the existing
+      `inkPx`, which is what the new self-test group asserts: a literal pair can agree with a drifted
+      window and a partition cannot — ⛔ **REFUTED by the review of this diff, which is worth more
+      than the group: the literals pin both terms exactly, so the partition is a SUBSET of the
+      literal red and cannot fire alone.** It is kept for the one thing it does: it is the only
+      assertion not hand-copied from the output, so it catches a literal updated to match a buggy
+      build. Watched failing twice on NESTED sets (not disjoint, also the review's) — the window
+      bound `>=` → `>` reds the literal and the partition, `!region[…]` → `true` reds the literal
+      alone, which is what says the second column is not a copy of the first. `--self-test`
+      **11 → 12**.
+      ✅ **(1), the denominator: `outWinPx > 0` on 75 of 75**, 0.17%–82.42% of each page's total ink,
+      median 6.90%; `outWinMapPx > 0` on 55 of 75.
+      ✅ **(2), the one that decides: TWO of the sixteen are REFUTED outright** — `_1958_Executive
+      Pay` p3 and p5 read `outWinMapPx` **0** against 44,896 and 43,243 px of border ink, the
+      recogniser having boxed all of it. ⛔ **The draft said FIVE and the adversarial review of it
+      refuted three from the file's own columns**: `Herbert Marks` p11's 24, `Williams_1958` p1's 96
+      and `Atkinson_1939` p3's 280 are *small*, not zero, and smallness is contradicted here —
+      `Jones et al_2010` p2's whole in-window map is **155** px and carries a confirmed one-word
+      loss, so 280 is 1.81x a size this population has lost content inside.
+      ⛔ **The other fourteen are NOT candidates in proportion to the number**:
+      `1976 - Regis McKenna Papers` p4 loses nothing and reads 82.42% of its whole ink out there, so
+      the quantity tracks how the sheet was photographed. **The column refutes border involvement on
+      a page and cannot establish it without a reading** — that is its shape, and it was not stated
+      in the box.
+      ✅ The cross-check that could have failed: p6's page-wide `outWinMapPx` **4,020 ≥ 3,513** and
+      `outPx` **4,851 ≥ 4,467**, with `7,980 − 3,513 = 4,467` the rect map figure
+      `#### ⛔ The same shape term on PICTURES` published — three numbers from two earlier binaries
+      closing against this run's two. And tool columns 2-43 are byte-identical to
+      `C28-GROUPING-2026-09-20.tsv`'s on 75 of 75 rows across two binaries.
+      ⚠️ **The box's `TOOL_COLUMNS` warning is real and is not this tool's** — `sweep-ink-bar.py`
+      parses `score-text-route`, and `score-shape-term` has no Python consumer; checked, not assumed.
+      The columns are still appended LAST, because `C28-GROUPING`'s five arms sit at FIELDS 44-53 and
+      inserting ahead of them would shift all ten.
+      ⚠️ Not answered, as the box said in advance: whether the blanked ink would GROUP. Also a
+      page-level count, so it cannot say where on a page the ink is — which is exactly why the five
+      refutations work (zero is zero) and the eleven non-refutations do not.
+      ⚠️ One lead recorded rather than followed: `_1939_Former students` p2, the page no constant
+      reaches because its `outPx` is 0, has **8,973** unboxed px in its border; whether any is the
+      pencilled annotation is unmeasured, and this entry's own Otsu mechanism predicts not.
+
+- [x] **c28-window-blindness-asked** — the box as written 2026-09-20, kept for what it asked. **THE SHAPE TERM CANNOT SEE THE OUTER SIXTEENTH OF ANY PAGE, AND ON
       ONE MEASURED CONTENT-LOSING DRAWING THAT IS 44% OF IT. ASK HOW OFTEN THAT MATTERS.**
       ✅ **Written 2026-09-20 by `c28-drawing-rect-contamination`, which found it while answering a
       different question.** `textLineGroupsOutsideText` builds its map only inside
