@@ -1531,22 +1531,30 @@ page-wide-Otsu speckle in a grey endpaper reading mean 107.5 / sd 2.88 against a
 rects contributes **0 map px** and **0 painted `textish` px**, with both text bands derived from each
 page's own ink profile rather than carried over from p4's (p6's rect is the page CORNER and its text
 is a column down the RIGHT edge — columns 219-229 empty — where p4's is at the top and left).
-⛔ **BUT THE SENTENCE ABOVE IS REFUTED FOR p6 BY THE SAME RUN, AND THAT IS THE FINDING: the miss there
-is NOT the grouping, because 3,513 px — 44.02% of that drawing's ink — never reach it.**
+⛔ **BUT THE SENTENCE ABOVE IS INCOMPLETE FOR p6 BY THE SAME RUN, AND THAT IS THE FINDING: 3,513 px —
+44.02% of the drawing ink inside C26's eye-chosen rect — never reach the grouping at all.**
+⛔ **It read *"the miss there is NOT the grouping"* and *"of that drawing's ink"* until 2026-09-20,
+and the adversarial review of that diff refuted BOTH: 44.02% is the MINORITY share, so for the other
+55.98% the grouping is exactly what answers 0** (`txtN` **4**, `lineN` **0**) — and the denominator
+is that rect, not the drawing, so a larger rect moves the numerator and the percentage together.
 `textLineGroupsOutsideText` builds its map only inside `Flattener.interiorWindow`
 (`Flattener.swift:2263-2275`), the outer sixteenth on every side (`mx` 76, `my` 59 on this 1224x946
-render), and p6's rect is the page corner, so **53.5% of its area is blanked** — read at 3x, the
-figure's head and shoulders, the top of the bookshelf, three flying books, the floor line and the book
-stack. So *"the term reads 0 on p6"* is a statement about **56%** of that drawing, and 3b's two-way
-split — component test against grouping — is missing a term. ⚠️ **The mechanism was on record (3b's
+render), and p6's rect is the page corner, so **53.5% of its area is blanked** — read at 4x, the
+figure's head and shoulders, the top of the bookshelf, **four** whole flying books plus the left 66 px
+of a fifth, the floor line and the book stack (⛔ *"three flying books"* stood here; the one missed is
+`25x21+120+0`, 181 px, clipped by the page top). So *"the term reads 0 on p6"* is a statement about
+**56%** of that rect's drawing, and 3b's two-way split — component test against grouping — is missing
+a term. ⚠️ **The mechanism was on record (3b's
 own p4 row discounts 76 of 254 columns for it) and the MAGNITUDE is what is new**; whether those
 3,513 px would reach four members is UNMEASURED, because the window is not a knob and answering it
 with a replica of the rule is the `alltext-replica` mistake. ⛔ **The direction the queue box sent the
 session for is the SMALL one**: drawing ink INSIDE `region` — the fragments Vision boxed as words — is
 **79 px on p7, 1.09%**, and **0 on p6**; it TRUNCATES two of p7's 30 drawing components (188 → 180
 rows, 30 → 29) and removes none, and both sit above `shapeHeightHigh`'s 3.0 × 9 = **27** at either
-height, so **no component's height verdict changes**. p7's other 1.45% is the rect's right-hand 37
-columns, outside the window. And **p4's one group is a HIT on the
+height, so **no component's height verdict changes**. ⛔ **p7's other 1.45% is ONE component cut in
+two by the inset — `20x27+1137+632`, a flying book of 225 px of which 105 fall outside the window,
+occupying 9 rect columns (`x ∈ [1148, 1156]`); the *"right-hand 37 columns"* published here is the
+blanked SPAN, and its other 28 columns hold no ink at all.** And **p4's one group is a HIT on the
 lost cartoon**, `27x17+1121+685` inside the published `254x240+970+595`, not a false positive.
 ✅ **READ AT 8x AND CONFIRMED 2026-09-20, where until then that was CONTAINMENT ALONE inside a rect
 this register had already published, read at 1:1, as holding clipped BODY TEXT and "nothing of the
@@ -1694,7 +1702,8 @@ was a first draft caught by the review). `lineMinimumMembers` / `lineGapFactor` 
 constants** 3b named for the term's false negatives on C26's cartoons (`textish` 372 and 785 px — ⛔ **PAINTED;
 the accepted columns read 357 and 761, corrected 2026-09-20** — 0
 groups) — ⛔ **though on p6 those two constants are not the whole miss, measured 2026-09-20: 44.02%
-of that drawing's ink is outside the interior window and never reaches the grouping at all** — and
+of the drawing ink inside C26's own rect is outside the interior window and never reaches the
+grouping at all — ⚠️ the MINORITY share, so they still answer for the other 55.98%** — and
 `lineMinimumMembers = 4` already costs three of `Xin Qu` p20's thirteen values — so relaxing
 it is a measured two-sided trade, not a fix. ⛔ **THAT PAIRING IS SUPERSEDED ON THIS RECT AS OF
 2026-09-20 AND IT IS `lineGapFactor` ALONE**: the three components sit 289 and 230 px apart against a

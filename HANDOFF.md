@@ -367,12 +367,17 @@ out-of-stencil ink and `textish` accepts 372 and 785 px that never reach four me
 (⛔ **those two are the dump's PAINTED counts; the accepted columns read 357 and 761 — corrected
 2026-09-20, `BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`; ⚠️ and p7's 785 is an IN-RECT
 count where its whole page reads 792, so the like-for-like gap is 4.1% and not 3.2%**). So
-the misses are the *grouping* constants — ⛔ **on p6 that is REFUTED as of 2026-09-20: 44.02% of that
-drawing's ink is outside `inkOutsideText`'s interior window, which `textLineGroupsOutsideText` blanks
-out of its map, so the grouping is never asked about it and the 0 is a statement about 56% of the
-drawing** (`BUGS.md` C28 `#### The other two drawing rects, SUBTRACTED`; the clipped body text in both
+the misses are the *grouping* constants — ⛔ **on p6 that is INCOMPLETE as of 2026-09-20: 44.02% of
+the drawing ink inside C26's eye-chosen rect is outside `inkOutsideText`'s interior window, which
+`textLineGroupsOutsideText` blanks out of its map, so the grouping is never asked about it and the 0
+is a statement about 56% of that rect's drawing** (`BUGS.md` C28
+`#### The other two drawing rects, SUBTRACTED`; the clipped body text in both
 rects contributes **0** map px and **0** painted `textish` px, and drawing ink inside `region` is
-**79 px on p7 and 0 on p6**, flipping no component's height verdict) — and p4's single group is a
+**79 px on p7 and 0 on p6**, flipping no component's height verdict). ⛔ **This paragraph said
+*"REFUTED"* and *"that drawing's ink"* until the adversarial review of that diff corrected both the
+same day: 44.02% is the MINORITY share and the denominator is a rect rather than the drawing, so for
+the other 55.98% the grouping IS what returns 0 — `txtN` 4 accepted components, `lineN` 0 groups.**
+And p4's single group is a
 **hit** on its lost cartoon rather than a false positive. ⛔ **This also refutes "blind to a hand-made mark by construction"** — the term
 fires 17 and 11 groups on a pen ornament, which is precisely the case the previous review named as the
 one to try; measured, it reads 0 on four hand-made marks and fires on three. On `1881 - Harry Wilcox` p2

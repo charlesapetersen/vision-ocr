@@ -1982,21 +1982,21 @@ enum Flattener {
     /// and not a value to relax casually — `BUGS.md` C28
     /// `#### Are there PICTURES in the sub-bar 73?` is the measurement.
     ///
-    /// ⛔ **Two numerals were wrong here and both are corrected 2026-09-20.** The ornament
-    /// is 664 **pixels in THREE components**, not "664 accepted components" — a units error
-    /// that made the refusal sound like a crowd being rejected when it is a singleton and
-    /// two neighbours (`#### The ornament's own rect at a relaxed floor`, which also
-    /// establishes that `lineGapFactor` refuses it too, so neither constant alone admits it
-    /// and this comment's "it is also what stops" overstates this one's part). And the two
-    /// cartoons' *"372 and 785 accepted pixels"* were the dumped `-textish.png`'s PAINTED
-    /// counts: `score-shape-term`'s own `txtPx` column reads **357** and **761**
-    /// (`SHAPETERM-PICTURES-2026-08-21.tsv`), because the dump paints `bbox ∩ map` per
-    /// accepted component and can enclose pixels of components the rule REFUSED. Measured
-    /// on p4 of the same document — 477 painted in 15 components against 444 accepted in 12
-    /// — and inferred here, those two dumps not having been re-run
-    /// (`#### The cartoon's own 59 pixels, READ`). The quantities are dropped rather than
-    /// restated: what this constant's cost turns on is that neither page reaches four
-    /// members, not how many pixels it declines.
+    /// ⛔ **THREE corrections, and (3) is about the paragraph ABOVE — 2026-09-20.**
+    /// (1) The ornament is 664 **pixels in THREE components**, not "664 accepted
+    /// components": a units error making a singleton and two neighbours sound like a
+    /// crowd, and `lineGapFactor` refuses that rect too, so "it is also what stops"
+    /// overstates THIS constant's part (`#### The ornament's own rect at a relaxed floor`).
+    /// (2) The cartoons' *"372 and 785 accepted pixels"* were the dumped `-textish.png`'s
+    /// PAINTED counts — the dump fills `bbox ∩ map` per accepted component and can enclose
+    /// pixels the rule REFUSED — where `score-shape-term`'s `txtPx` reads **357**/**761**.
+    /// Inferred when this was written; MEASURED since, p6 372-in-7 against 357-in-4 and p7
+    /// 792-in-20 against 761-in-12. (3) ⛔ **"whose out-of-stencil ink never reaches four
+    /// members" credits this constant with p6's whole 0 and only **4.47%** of that rect's
+    /// drawing ink ever reaches it**: the term maps ink inside `interiorWindow` ALONE and
+    /// p6's drawing is the page CORNER, so 3,513 px (**44.02%**) never reach the term at
+    /// all and the component test refuses 4,110 more (**51.50%**), leaving `txtPx` **357**
+    /// in `txtN` **4** for the grouping to answer 0 on. Quantify by ink, not by verdict.
     static let lineMinimumMembers = 4
     /// …and no gap between adjacent members wider than this many glyph heights, which
     /// is what stops a mark at each margin from being read as one line spanning the page.

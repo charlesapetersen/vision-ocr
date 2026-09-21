@@ -575,9 +575,10 @@ threshold by ±3 levels. ⛔ **But the sharper half is the other direction: it r
 loss C26 measured at 1:1** — `1954 - Why` p6 and p7, whose drawings are 92% and 100% of their pages'
 out-of-stencil ink and yield 372 and 785 `textish` px that never reach four members on a baseline. So
 the miss is `lineMinimumMembers`/`lineGapFactor`, not the component test — ⛔ **on p6 that is a
-statement about 56% of the drawing and the other 44% is a THIRD mechanism, `inkOutsideText`'s
+statement about 56% of that RECT's drawing ink and the other 44% is a THIRD mechanism, `inkOutsideText`'s
 interior window, which `textLineGroupsOutsideText` blanks out of the map; measured 2026-09-20 at
-3,513 px of 7,980, against 1.45% on p7** (`#### The other two drawing rects, SUBTRACTED`), where the
+3,513 px of the 7,980 inside C26's own eye-chosen rect — ⚠️ **that rect is the denominator, not "the
+drawing"** — against 1.45% on p7** (`#### The other two drawing rects, SUBTRACTED`), where the
 clipped body text in both rects contributes **0** map px and **0** painted `textish` px, so the
 subtraction that question was opened for is ZERO on all three pages — and **p4's single group is a
 hit on the lost cartoon** (`27x17+1121+685` lies inside the published `254x240+970+595`), not a false
@@ -9133,10 +9134,12 @@ rests on.
 text at the rect's top and left edges contributes **0 map px**, measured per row, so *"96% of 5,983"*
 is 96% of drawing. ✅ **p6's and p7's were asked 2026-09-20 and are ZERO too** — 0 map px and 0
 painted `textish` px from the clipped text on both, so all three rows are shares of drawing
-(`#### The other two drawing rects, SUBTRACTED`). ⛔ **But that section found the reason p6 reads 0
-is not in this table's two-way split at all: 3,513 px — 44.02% of that rect's drawing ink — lie
+(`#### The other two drawing rects, SUBTRACTED`). ⛔ **But that section found a reason p6 reads 0
+that is not in this table's two-way split: 3,513 px — 44.02% of that rect's drawing ink — lie
 outside `inkOutsideText`'s interior window, which `textLineGroupsOutsideText` blanks, so this row is
-a statement about 56% of that drawing.** ⛔ **And the `785` in the row below is painted px INSIDE
+a statement about 56% of that RECT's drawing ink.** ⚠️ **Not *"the reason … at all"*, which stood
+here until 2026-09-20: 44.02% is the MINORITY share, and of the 55.98% this row does see the
+COMPONENT TEST refuses 51.50 points and the grouping only ever sees 4.47.** ⛔ **And the `785` in the row below is painted px INSIDE
 the rect while `761` is the WHOLE PAGE's accepted total: like for like p7 reads 792 against 761.**
 
 **So the drawing is essentially the whole out-of-stencil map on all three, `textish` accepts several
@@ -10198,9 +10201,10 @@ section read "all 666" off the mask; the review of this diff caught it, and this
 pages rests entirely on those two constants — and they are **the same two** 3b named as the cause of the
 term's two false negatives on `1954 - Why` p6 and p7, where `textish` accepts 372 and 785 px of cartoon (⛔ **those two are the dump's PAINTED counts; the accepted columns read 357 and 761 — 2026-09-20**)
 and **0** reach a group. ⛔ **On p6 those two constants are NOT the whole cause, measured 2026-09-20:
-44.02% of that drawing's ink lies outside the interior window and never reaches the grouping**
-(`#### The other two drawing rects, SUBTRACTED`), so the symmetry stated here is exact for p7 and
-partial for p6. The tension is now measured on named pages in both directions:
+44.02% of the drawing ink inside C26's own rect lies outside the interior window and never reaches
+the grouping** (`#### The other two drawing rects, SUBTRACTED`), so the symmetry stated here is
+exact for p7 and partial for p6 — ⚠️ **partial rather than wrong: for the other 55.98% the grouping
+IS what answers 0, `txtN` 4 against `lineN` 0.** The tension is now measured on named pages in both directions:
 `lineMinimumMembers = 4` already **costs** content (it drops `0.09`, `0.04` and the diagonal `1` from
 `Xin Qu` p20's thirteen values, so the term names 10 of 13), and lowering it to 3 would admit 666 px of
 ornament on the Boxoffice page. There is no free move there, and this is the first measurement that
@@ -14172,14 +14176,20 @@ needs nothing: it states the claim and its retraction in the same cell.
 - ⚠️ **It says nothing about p6 and p7**, the two pages of the same document whose drawings the term
   reads **0** on — which is the half of 3b that matters for content and is the grouping's, not the
   component test's. ✅ **Both were measured 2026-09-20 and their contamination is 0 too**, so this
-  step's method carries; ⛔ **but *"is the grouping's"* is refuted for p6 by the same run — 44.02%
-  of that drawing's ink never reaches the grouping because `inkOutsideText`'s interior window
-  blanks it** (`#### The other two drawing rects, SUBTRACTED`).
+  step's method carries; ⛔ **and *"is the grouping's"* is INCOMPLETE for p6 by the same run — 44.02%
+  of that RECT's drawing ink never reaches the grouping at all, because `inkOutsideText`'s interior window
+  blanks it** (`#### The other two drawing rects, SUBTRACTED`). ⛔ **Not *"refuted"* — the word was
+  `HANDOFF.md`'s alone and `CLAUDE.md` carried the equivalent *"the miss there is NOT the
+  grouping"*, both corrected 2026-09-20 by the review of that diff** (⚠️ *"three propagated FILES"*
+  is right and *"three said REFUTED"* is not): for the **56%** the term does see, the grouping is
+  what returns the page's 0 — `txtN` **4**, `lineN` **0** — ⚠️ **though by INK that is a credit of
+  4.47% and not 55.98%, the component test refusing 4,110 px of the 4,467 the term maps.** So the
+  published attribution is right about the verdict and wrong about the share.
 - ⚠️ **"The drawing's ink" is not "the reader's loss".** These 59 px are four small marks of a cartoon
   C26 measured whole at 612 px and a smudge at 153; the term firing says the page would be refused the
   shrink, not that these particular pixels are what a reader misses.
 
-#### The other two drawing rects, SUBTRACTED — the body-text contamination is ZERO on both, so 3b's inference stands; but the dominant reason p6 reads 0 is a THIRD mechanism no sentence in this entry counts, and it is `inkOutsideText`'s own interior window blanking 44% of that drawing — MEASURED 2026-09-20
+#### The other two drawing rects, SUBTRACTED — the body-text contamination is ZERO on both, so 3b's inference stands; but a THIRD mechanism no sentence in this entry counts takes 44% of p6's drawing before the grouping is asked, and it is `inkOutsideText`'s own interior window — MEASURED 2026-09-20 (⛔ this heading read *"the dominant reason p6 reads 0"* until 2026-09-20, which its own table refutes: 44.02% is the MINORITY share and the grouping still answers for the other 55.98%)
 
 `#### The same shape term on PICTURES`'s per-rect table says the three `1954 - Why` cartoons hold
 **5,757 / 4,467 / 7,057** map px — *"96% / 92% / 100% of that page's `outPx`"* — and that `textish`
@@ -14254,11 +14264,29 @@ CORNER, so 53.5% of its area and 3,513 px of its ink are in that blanked border*
 | p6 | 7,980 | 4,467 — **55.98%** | **0** | **3,513 — 44.02%** |
 | p7 | 7,241 | 7,057 — **97.46%** | 79 — 1.09% | 105 — 1.45% |
 
-Read at 3x, p6's blanked 3,513 px are **the figure's head and shoulders, the top of the bookshelf,
-three flying books, the floor line and the stack of books at bottom left** — the drawing, not an
-edge artefact. So *"the term reads 0 on p6"* is a statement about **56%** of that drawing, and 3b's
-two-way split — component test against grouping — is missing a term. p7's 105 px are the rect's
-right-hand **37** columns (`x ∈ [1148, 1184]`, inclusive on both ends), the far-right flying book.
+Read at 4x, p6's blanked 3,513 px are **the figure's head and shoulders, the top of the bookshelf,
+FOUR whole flying books plus the left 66 px of a fifth, the floor line and the stack of books at
+bottom left** — the drawing, not an edge artefact. So *"the term reads 0 on p6"* is a statement about
+**56%** of that RECT's drawing ink, and 3b's two-way split — component test against grouping — is missing a
+term.
+⛔ **That reading said *"three flying books"* and it is FOUR, corrected 2026-09-20 by the review of
+that diff and re-read here against the component list rather than against the prose.** The blanked
+ink is **twelve** 8-connected components, and the one the first reading missed is `25x21+120+0`,
+**181 px**, the book at top centre **clipped by the page top** — the least likely of the four to be
+noticed by eye and the easiest to take for an edge artefact, which is exactly the class this section
+is arguing about. The four whole books are `21x27+13+53` (287 px), `29x21+40+35` (254),
+`24x19+40+81` (198) and `25x21+120+0` (181); ⚠️ **a FIFTH is cut by the window edge rather than by
+the page** — `7x21+69+112`, 66 px, its left 7 columns blanked and its body inside — which no
+published reading of this rect has named, so *"four"* is whole books and not the count of books the
+inset touches. The other four components are the bookshelf top (`46x59+173+0`, 1,178 px), the head
+and shoulders (`104x41+70+18`, 672), the book stack (`37x21+32+146`, 500) and the floor line
+(`39x3+37+135`, 114), plus two slivers of the figure's own outline and a 1-px speck.
+⛔ **And *"p7's 105 px are the rect's right-hand 37 columns"* conflates the BLANKED SPAN with the INK
+IN IT, corrected the same way.** 37 is the count of rect columns the window blanks
+(`x ∈ [1148, 1184]`); the 105 px occupy **9** of them, `x ∈ [1148, 1156]`, and they are the blanked
+tail of **one** component, `20x27+1137+632`, **225 px** of which 105 are outside the window — so the
+far-right flying book is **cut in two by the inset at 47%**, not merely clipped at its edge. The
+remaining 28 columns of the blanked span hold no ink at all.
 
 ⚠️ **The mechanism is on record and the MAGNITUDE is what is new.** 3b's own p4 row already says
 *"Discount the rect's right-hand 30%… 76 of the rect's 254 columns can hold no map px at any
@@ -14292,16 +14320,33 @@ at 1:1 it is a 1-px-wide, 7-row vertical stroke on otherwise blank paper, on the
 
 ##### Controls
 
-- ✅ **All twelve shared columns reproduce `SHAPETERM-PICTURES-2026-08-21.tsv`'s p6 and p7 rows digit
-  for digit** — `otsu` 140/139, `inkPx` 98,348/107,273, `outPx` 4,851/7,080, `inkOut` 0.0493/0.0660,
-  `glyphN` 2013/2255, `glyphH` 9/9, `glyphRun` 2/2, `ccN` 20/40, `txtN` 4/12, `txtPx` 357/761,
-  `lineN` 0/0 — through a changed binary 30 days later.
+- ✅ **All shared columns reproduce `SHAPETERM-PICTURES-2026-08-21.tsv`'s p6 and p7 rows digit for
+  digit, through a changed binary 30 days later** — `otsu` 140/139, `inkPx` 98,348/107,273, `outPx`
+  4,851/7,080, `inkOut` 0.0493/0.0660, `glyphN` 2013/2255, `glyphH` 9/9, `glyphRun` 2/2, `ccN` 20/40,
+  `txtN` 4/12, `txtPx` 357/761, `lineN` 0/0.
+  ⛔ **This bullet said *"All twelve"* and listed ELEVEN, and the true shared count is 22 — corrected
+  2026-09-20 by the review of that diff and re-derived here by set-intersecting the two headers rather
+  than by counting the prose.** The committed TSV has **24** columns and the tool's own `run.log`
+  header has **42**; their intersection is **22** — the TSV's 24 less `document` and `arm`, which are
+  prepended by hand — and the run.log's other 20 are the 9 `rim*` columns and the 11 of the
+  widening block (⚠️ only **6** of which begin `wide`; the others are `stenPx`, `shipSten`,
+  `shipBytes`, `byteDelta` and `shipBg`, so a reader re-deriving the 20 by glob gets 15) that file
+  does not carry. Compared field by field, **0 mismatches on both pages over all 22**, so the control
+  is **1.83x wider than it was published as** and the enumeration above is a sample of it: it also
+  covers `page`, `w`, `h`, `mapFrac`, `stenFrac`, `stenD3`, `txtShare`, `linePx`, `lineShare`,
+  `topLine` and `verdict`.
 - ✅ **The "inside region" arithmetic is the tool's own complement and not a proxy for it**:
   `ink AND NOT map` inside the window reads **93,497** on p6 and **100,193** on p7, which is exactly
   `inkPx − outPx` on both. This is the control that could have failed and is what licenses every
   figure in the tables above.
-- ✅ The four classes — text seen, text unseen, drawing seen, drawing unseen — sum to each rect's own
-  total ink, **8,304** on p6 and **8,299** on p7.
+- ⚠️ **UNABLE TO FAIL, relabelled 2026-09-20 — it was published with a ✅ and it is arithmetic.** The
+  four classes — text seen, text unseen, drawing seen, drawing unseen — sum to each rect's own total
+  ink, **8,304** on p6 and **8,299** on p7. They are a **partition of the rect's ink by two binary
+  predicates** (text-or-drawing × seen-or-unseen), so every pixel falls in exactly one class and the
+  sum is the total by construction, at any values whatever. It is worth printing as a transcription
+  check on the four numerals and is worth nothing as evidence. This register's own recurring defect,
+  caught here by the review of the diff rather than after it landed. ⚠️ No ordinal is claimed —
+  re-derive it, never count sentences.
 - ✅ Map px inside each published rect reproduce the table's own **4,467** and **7,057**.
 - ✅ `--self-test` **ok (11 checks)**, `port agreed on 2`, `SHAPEDUMP p6: 7 of 7` and
   `SHAPEDUMP p7: 7 of 7`.
@@ -14317,18 +14362,69 @@ at 1:1 it is a 1-px-wide, 7-row vertical stroke on otherwise blank paper, on the
 
 ##### The sibling sweep
 
-⛔ **`grep -rn '372 and 785'` finds TWELVE copies, and the claim that needed correcting in each is
-not the pixel counts — the previous step already marked those PAINTED everywhere — but the sentence
-they support, *"the miss is the grouping"*.** It is exact for p7 and partial for p6. The four
-load-bearing copies are annotated: this file's own header, 3b's per-rect table and
-`#### Are there PICTURES in the sub-bar 73?`, and `CLAUDE.md`'s two. `HANDOFF.md`'s carries it as
-well. ⚠️ **Residue, named rather than swept**: four `ops/autonomous/QUEUE.md` copies state it
-unqualified, in the `c28-shape-gap-mutant`, `c28-pictures` and `c28-subbarpix` boxes — all three
-ticked and kept for what they asked — and this section is what a reader following their pointer
-arrives at.
-⛔ **Neither code comment needs anything** — `Sources/Flattener.swift`'s `lineMinimumMembers` and
-`Tools/score-shape-term.swift`'s `GroupingArm` had their quantities **dropped** on 2026-09-20 rather
-than restated, so neither carries a share this run moves. **That is why this commit is docs-only.**
+⛔ **`grep '372 and 785'` reaches **16 lines in 6 files**, of which **14 are copies** — the other two
+are this paragraph's own quoted grep and the previous step's count — and the claim that needed
+correcting in each is not the pixel counts, which that step already marked PAINTED everywhere, but
+the sentence they support, *"the miss is the grouping"*.** It is exact for p7 and partial for p6.
+⛔ **This paragraph said TWELVE and the figure was INHERITED rather than re-derived — corrected
+2026-09-20 by the review of that diff, and re-derived here over tracked files with `git grep -c` at
+each commit.** Twelve was never this tree's number: at `c10ee6a`, the base the previous step ran its
+own sweep from, the tracked count is **11 lines**; at `6151a84` and `dad9dbc` it is **15**; at
+`3300fa5` it is **16**. ⚠️ A count that grows because the sweep writes about itself is the one shape
+a re-run always disagrees with, so quote the commit beside it or quote nothing.
+✅ **SIX copies are annotated, not the four this paragraph claimed while enumerating five** (⚠️ **on
+the SENTENCE axis this paragraph states, it is FIVE: `CLAUDE.md:1586` carries the PAINTED correction
+and no *"miss is the grouping"* claim, so it is annotated on the axis the sentence above rejects —
+the same class as the defect being fixed, caught by the review of this diff**), and the
+sixth is `CLAUDE.md`'s third: this file's own header (`:576`),
+`#### Are there PICTURES in the sub-bar 73?` (`:10202`), `CLAUDE.md`'s **three** (`:1526`, `:1586`,
+`:1702`) and `HANDOFF.md`'s (`:366`) — plus 3b's per-rect table region, which carries the two figures
+as a TABLE and so matches no grep for this string, which is why it fell out of the count.
+⚠️ **Residue, named rather than swept, and it is FIVE copies in FOUR boxes rather than the four in
+three published here** — `c28-drawing-rect-contamination-asked` (`:1135`, the box that asked this
+very question, omitted by the first sweep), `c28-shape-gap-mutant` (`:1832`), `c28-pictures`
+(`:2578` and `:2597`) and `c28-subbarpix` (`:3067`), all four ticked and kept for what they asked —
+and this section is what a reader following their pointer arrives at.
+⛔ **ALL ELEVEN line cites above are AS THIS COMMIT LEAVES THE TREE, and the draft wrote them at
+`3300fa5` — which this very diff moves, so EIGHT of the eleven would have been stale ON ARRIVAL.**
+`:10199`, `:1578`, `:1694` and all five QUEUE numbers (`:1093`, `:1790`, `:2536`, `:2555`, `:3025`)
+were pre-diff values; the QUEUE five shifted +42 under this commit's own additions to that file.
+That is the `mutate.py:<line>` sweep's own closing finding — *"one this very commit BROKE by adding
+two lines"* — reproduced inside the paragraph that cites it, and it is why these were re-derived
+AFTER the edits and re-checked after the last of them. ⛔ **The distance figure that used to head
+the C28 parent box was the same defect and took THREE stale drafts before it was deleted rather
+than fixed; a cite whose own commit moves it is only safe if nothing edits above it again, which is
+why that one is now *"SEARCH THE TAG"*.** ⚠️ `:576`, `:1526` and `:366` sit above every hunk in
+their files and did not move.
+⛔ **BOTH CODE COMMENTS DID NEED SOMETHING, AND *"neither needs anything"* WAS THE JUSTIFICATION FOR
+CALLING THE COMMIT DOCS-ONLY — REFUTED BY THE REVIEW OF THAT DIFF AND FIXED 2026-09-20 IN A
+SUITE-PAYING FOLLOW-UP.** The sweep's own axis is the SENTENCE and not the pixel counts, and both
+comments carried that sentence: `Sources/Flattener.swift`'s `lineMinimumMembers` says *"at 4 the term
+reads 0 on C26's two founding cartoons … whose out-of-stencil ink never reaches four members"* and
+CLOSED, before this commit rewrote the block, *"what this constant's cost turns on is that neither page reaches four members"*, and
+`Tools/score-shape-term.swift`'s `GroupingArm` closes with the same clause. On p6 that is a
+statement about **56%** of that RECT's drawing ink — and, by ink, a credit of only **4.47%**, since
+the component test refuses 51.50 of those 55.98 points — so both were crediting this constant with a refusal the
+interior window had already made for 44.02% of the ink — which is the defect this section exists to
+name, live in `Sources/`. ⛔ **And a SECOND, plainer staleness the axis argument hid**: both say the
+painted-against-accepted gap is *"inferred here, those two dumps not having been re-run"*, and the
+dumps WERE re-run in this very section (p6 **372 in 7** against 357 in 4, p7 **792 in 20** against
+761 in 12), so both carried a hedge that had stopped being true one section earlier.
+⛔ **Both annotations are LINE-COUNT-NEUTRAL by construction, and the reason is a cost nobody had
+counted: at `3300fa5` this tree holds 64 occurrences of a `Flattener.swift:<line>` citation below
+`lineMinimumMembers` (`:2000`), and five of `score-shape-term.swift:<line>` below `GroupingArm`
+(`:373`).** A first draft appended 20 lines to the one and 16 to the other, which would have staled
+every one of the 69 silently — the `mutate.py:<line>` sweep's finding (nine cites, eight wrong, one broken by the very
+commit that repaired the others) with a 7.7x larger blast radius. ⚠️ **69 is the figure at the BASE,
+which is what that first draft would have staled; the number a FUTURE appending edit stales is 72,
+this diff itself adding three `Flattener.swift:<line>` cites at or past `:2000`.** So each block was **rewritten in
+place at exactly its own length**, 15 for 15 and 14 for 14, verified with `git diff --numstat` and by
+re-reading `Flattener.swift:2263`, which still lands on the `interiorWindow` call this section cites.
+⚠️ **The price is that the wrong sentences are GONE from both files rather than struck through**,
+which is not this register's usual habit: they survive here, quoted. ⚠️ **Not *"and the comments
+quote them too"*, which stood here and is false — each comment quotes the sentence that SURVIVES
+above it (`Flattener.swift:1978-1979`, `score-shape-term.swift:354-355`), not the deleted closing
+clause; only this section holds that.**
 
 ##### What this does NOT settle
 
@@ -14340,11 +14436,89 @@ than restated, so neither carries a share this run moves. **That is why this com
 - ⚠️ **Two pages, one document**, and the denominators are *drawing ink inside C26's eye-chosen
   rect*, not *the drawing*. A larger rect moves both the numerator and the 44%.
 - ⚠️ **Nothing behavioural moves**: no verdict, no byte figure, no constant, no check, no committed
-  artefact, and nothing in `Sources/` or `Tools/`. p6 and p7 are `barVerdict=picture`, so the term is
-  never consulted on either in production today.
+  artefact. ⛔ *"and nothing in `Sources/` or `Tools/`"* stood here and is FALSE of the follow-up —
+  both grouping comments were annotated 2026-09-20 and that commit paid the full suite. Nothing
+  SHIPPED moves: comment- and document-only. p6 and p7 are `barVerdict=picture`, so the term is never
+  consulted on either in production today.
 - ⚠️ The 79 px are **1.09% of one page's drawing**; the entry should not be read as saying drawing
   ink inside `region` is negligible in general, which is unmeasured on every page but these two and
   p4.
+- ⚠️ **It does NOT say the window is why p6 reads 0.** For the **56%** the term does see, the miss
+  IS the grouping: `txtN` is **4** and `lineN` is **0**, so four components were accepted and no band
+  held four. ⛔ **And *"never reaches four members"* is therefore about the BAND and not about a
+  shortage of components** — p6's accepted set sits exactly AT `lineMinimumMembers`, so on that page
+  any split at all, by `textLines`' y-banding or by `lineGapFactor`, refuses it. ⚠️ Derived from the
+  two columns and `Flattener.swift:2171-2222` (⛔ published as `:2171-2215` and truncated — `:2215` is
+  the `lineGapFactor` test, the `flush()` is `:2219` and the `return` `:2221`), not measured: the tool prints no band list, so which
+  of the two split them is unasked.
+
+##### The review of that diff — 12 findings, 2 BLOCKERS, and the MEASUREMENT came through unharmed
+
+The adversarial review of `3300fa5` finished after it was pushed and returned **REJECT**. ✅ **What it
+did not touch is the arithmetic**: it recomputed every pixel figure independently from the PNGs and
+all of them matched, the partition sums, the 30/13 component counts and the two truncations included.
+**What it rejected is the prose**, and the two blockers are the pair this register keeps re-learning —
+a control that cannot fail, and a docs-only justification that cleared the code on an axis the same
+paragraph had just rejected. Both are worked above, in place.
+⛔ **THE TRANSFERABLE ONE: the numerals it found wrong are concentrated in the section's own
+CONTROLS and READINGS, not in its measurements.** Four of the twelve are counts of things the author
+enumerated by eye — twelve shared columns that were 22, three flying books that were four, twelve
+grep copies that were fourteen, four annotated copies that were six — and every one is a number that
+could have been produced by the same script that produced the measured ones and was instead written
+down from memory of the prose. **A count in a control is a measurement and deserves the instrument
+the measurement got.**
+⛔ **AND THE FIX FOR THAT LESSON BROKE IT FOUR MORE TIMES — found on the ADOPTION, 2026-09-20, by
+running the instrument over the paragraph that states it.** The working tree this section was
+written in was stranded mid-session and adopted by a later one, which re-derived every count in it
+before committing: (1) the `Flattener.swift:<line>` blast radius read **65** and is **64** at
+`3300fa5`, so the "70" it is summed into is **69**; (2) three of the six annotated-copy cites and
+(3) all five QUEUE residue cites were written at the base commit while this diff MOVES them, so
+eight cites carried eight stale numbers; (4) the PICTURES-cite triple, `20 / TWO / 18`, matches
+neither commit — 19/1/18 at the base, 22/2/20 after. ⚠️ **All four are in the same class as the four
+above and one is the same class twice over**: the author of the paragraph naming the
+`mutate.py:<line>` finding reproduced that finding in the paragraph's own cites. ✅ **What did NOT
+move is anything measured from pixels** — the adoption re-ran the two grep-count histories (11 / 15 /
+15 / 16 across four commits) and the line-count-neutrality claim (`--numstat` 15/15 and 14/14 — ⚠️
+with ONE balanced hunk per file that ENTAILS `Flattener.swift:2263` still landing on the
+`interiorWindow` call, so the two are one verification and not two) and all of those reproduced
+exactly. The split the paragraph above draws — controls and readings wrong, measurements right —
+held a second time, over a different author and a different reviewer.
+⚠️ **All FOUR of the REVIEW's four moved in the direction that UNDERSTATED the work** — 22 shared
+columns against 12, six annotated copies against four, 14 grep copies against 12, and four flying
+books against three — which is the harmless direction and is why none was caught by re-reading.
+⛔ **A draft said *"Three of the four"* with no stated antecedent, next to the adoption's four; the
+review of THIS diff caught both the count and the dangling referent.**
+
+⛔ **AND THE REVIEW OF THE ADOPTION FOUND THE SAME CLASS A THIRD TIME, ONE LEVEL DOWN — three
+blockers, and the one worth carrying is that the REPLACEMENT sentence mis-attributed by ink exactly
+as the sentence it replaced did.** *"For the other 55.98% the grouping IS what answers 0"* quantifies
+over INK and credits the GROUPING, but of p6's 7,980 rect drawing px the grouping only ever sees
+**357 — 4.47%**, in `txtN` 4: the component test refuses **4,110 — 51.50%** of them. So the repair
+for *"this constant is credited with a refusal the window had already made"* credited it with a
+refusal the COMPONENT TEST had already made, and it had reached `Sources/` before the review caught
+it. Both code comments now quantify by ink. ⚠️ The verdict-level reading — *what produces the page's
+final 0 is the grouping* — is TRUE and is not what the sentence said. ✅ The measurement survived a
+THIRD independent implementation from the PNGs, every figure exact, the 12-component partition of
+p6's 3,513 blanked px included. The other two blockers were a `18`/`20` disagreement between
+`QUEUE.md` and this section inside one diff, and five `BUGS.md` copies of the *"of that drawing"*
+denominator left standing while all three propagated files were corrected — two of the five in text
+this diff ADDED.
+⚠️ **Two findings of the twelve are recorded rather than fixed, with the reason.** (1) The cite
+`#### The same shape term on PICTURES` is not a prefix of the real heading, which begins
+`#### ⛔ The same shape term on PICTURES` — **pre-existing, and re-derived here at 22 matching lines
+in four files (`BUGS.md` 12, `ops/autonomous/QUEUE.md` 8, `Tools/README.md` 1,
+`Tools/score-shape-term.swift` 1) as this commit leaves the tree, of which TWO carry the marker —
+the heading itself and one cite this diff adds — so **20 are short** — repairing it is a sweep of
+its own and nothing in this repo validates a `####` cite. ⛔ **The draft published *"20 matching
+lines … only TWO carry the marker, so 18 are short"*, and that triple is internally consistent while
+matching NEITHER commit: at `3300fa5` it is 19 lines with ONE marked and 18 short, and after this
+diff 22 with TWO and 20.** The `18` was right at the base by arithmetic on two figures that were
+both wrong here — the shape a re-run catches and a re-read never does. (2) `--self-test ok (11 checks)` is quoted in the controls above and is
+**not in the retained `run.log`**, which holds the two measured rows, the two `SHAPEDUMP … 7 of 7`
+lines and the `pages measured 2; port agreed on 2; grouping shipped only` summary — plus a 42-field
+header row, so *"and nothing else"* was loose — and it was a separate invocation, so it is a claim
+about a run nobody can now check, unlike the four figures beside it. Verified 2026-09-20 by reading
+that file.
 
 #### What this entry is NOT
 

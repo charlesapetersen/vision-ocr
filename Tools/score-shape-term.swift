@@ -356,20 +356,20 @@ let lineGapFactor = 3.0
 /// PIXELS in THREE components, 0 groups — from firing. Relaxing them moves both at once, so
 /// the deliverable is a table and not a value.
 ///
-/// ⛔ **Two numerals were wrong here and both are corrected 2026-09-20.** The ornament read
-/// *"664 accepted components"*: it is 664 **pixels in three components**, a units error that
-/// made the refusal sound like a crowd rather than a singleton and two neighbours — and
-/// `lineGapFactor` refuses that rect too, so *"they are also what keeps"* is right about the
-/// pair and would be wrong about either alone (`BUGS.md` C28 `#### The ornament's own rect
-/// at a relaxed floor`). And the cartoons' *"372 and 785"* were **this file's own
-/// `SHAPEDUMP` output's painted pixels, not its `txtPx` column**, which reads **357** and
-/// **761** in `SHAPETERM-PICTURES-2026-08-21.tsv` — `paint(_:_:_:through:)` below fills
-/// `bbox ∩ map` per accepted component, so it can enclose pixels of components `textish`
-/// REFUSED and those can fragment into extra components. Measured on p4 of the same
-/// document (477 painted in 15 against 444 accepted in 12) and inferred for these two,
-/// whose dumps were not re-run: `BUGS.md` C28 `#### The cartoon's own 59 pixels, READ`.
-/// The quantities are dropped rather than restated, because what this pair's cost turns on
-/// is that neither page reaches four members.
+/// ⛔ **THREE corrections, the third about the paragraph ABOVE — 2026-09-20.** The ornament
+/// read *"664 accepted components"*: it is 664 **pixels in three components**, a units error
+/// making a singleton and two neighbours sound like a crowd — and `lineGapFactor` refuses
+/// that rect too, so *"they are also what keeps"* is right about the pair and wrong about
+/// either alone (`BUGS.md` C28 `#### The ornament's own rect at a relaxed floor`). The
+/// cartoons' *"372 and 785"* were this file's own `SHAPEDUMP` painted pixels, not `txtPx`,
+/// which reads **357**/**761**: `paint(_:_:_:through:)` fills `bbox ∩ map` per accepted
+/// component and can enclose ones `textish` REFUSED. Once inferred for these two, MEASURED
+/// since — p6 372-in-7 against 357-in-4, p7 792-in-20 against 761-in-12. ⛔ **And on p6 only
+/// 4.47% of that rect's drawing ink ever reaches this pair: this tool's map, like the shipped
+/// one, is built inside `interiorWindow` ALONE, and that drawing is the page CORNER — 3,513 px
+/// (44.02%) reach no arm `GROUPING=` can express, the component test refuses 4,110 more
+/// (51.50%), and `txtPx` 357 in `txtN` 4 is all the pair answers 0 on.** So *"never reach four
+/// members"* credits it with the verdict and not the ink. `#### The other two drawing rects, SUBTRACTED`.
 struct GroupingArm: Equatable {
     let members: Int
     let gapFactor: Double

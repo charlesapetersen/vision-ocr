@@ -518,7 +518,16 @@ happens.**
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
       ✅ **THE NEXT BOUNDED STEP IS THE `c28-window-blindness` SUB-BOX — SEARCH FOR THAT TAG,
-      IT IS ~450 LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN OPEN CAMPAIGN.**
+      IT IS SOME HUNDREDS OF LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN
+      OPEN CAMPAIGN.** (⛔ **THE DISTANCE USED TO BE A NUMBER HERE AND IS DELIBERATELY NOT ONE ANY
+      MORE, 2026-09-20. It read *"~450"*, was 479 when the review of that day's diff measured it,
+      and THREE successive drafts of the repair each shipped a stale figure** — 480, the pre-diff
+      479 rounded rather than measured; then 484, measured and invalidated by the two lines the
+      measurement was written on; then 486, invalidated the same way by three more. A count of the
+      distance to a tag *in the same file* is self-referential: it has to be re-derived after the
+      edit that states it, and the next edit above the tag breaks it again. **SEARCH THE TAG.**
+      That is the transferable form of the `mutate.py:<line>` finding — a cite that its own commit
+      invalidates — and the cheapest fix for it is not to write the number down.)
       ⛔ **RE-POINTED A THIRTEENTH TIME 2026-09-20, AND ITS PREDECESSOR'S BOX SAID NOT TO — so here
       is why the condition it set was not met.** `c28-drawing-rect-contamination` said: if the
       subtraction leaves both pages' claims standing, then all four remaining §4b attributions are
@@ -527,11 +536,20 @@ happens.**
       contamination is 0 on both pages — **and the consequent does not, for two reasons written
       down rather than assumed.** (1) That same box had already PROMOTED `1029x10+106+206` on
       evidence two paragraphs later, so *"all four are controls"* was refuted inside the box that
-      stated it; it now has a box of its own, `c28-table-rule-rect`. (2) The run found a mechanism
+      stated it; it now has a box of its own, `c28-table-rule-rect`. ⚠️ **WHO promoted it, settled
+      2026-09-20 because this box and that one said different things and the review of the diff
+      flagged the conflict**: the promotion paragraph was WRITTEN by `c28-cartoon-hit-rect`, the
+      predecessor session, INTO the `c28-drawing-rect-contamination` box it was drafting — so
+      *"that same box"* is right about the LOCATION and `c28-table-rule-rect`'s *"by its
+      predecessor"* is right about the AUTHOR, and reason (1) needs only the location, because
+      what it rests on is one box contradicting itself.
+      (2) The run found a mechanism
       that is not a §4b attribution at all: the term is structurally blind to the outer sixteenth
-      of every page, which on `1954 - Why` p6 is **44% of a drawing whose loss C26 measured at
-      1:1**. That is a content question about `Sources/`, not a documentation one, and it is what
-      `c28-window-blindness` asks. ⚠️ **Neither is the bar or the grouping constants**, which remain
+      of every page, which on `1954 - Why` p6 is **44% of the drawing ink inside C26's eye-chosen
+      rect, on a page whose loss C26 measured at 1:1** (⚠️ that rect is the denominator and not
+      "the drawing", and 44.02% is the MINORITY share — the grouping still answers for the other
+      55.98%, both corrected 2026-09-20 by the review of that diff). That is a content question
+      about `Sources/`, not a documentation one, and it is what `c28-window-blindness` asks. ⚠️ **Neither is the bar or the grouping constants**, which remain
       the owner's values and are not what either successor touches.
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
@@ -996,10 +1014,17 @@ happens.**
       side — and blanks it everywhere else, so no component there can be accepted, grouped or
       counted at any value of any of the term's six constants. Measured on `1954 - Why` p6, whose
       published drawing rect `240x185+0+0` is the page CORNER: **3,513 px of its 7,980 drawing px,
-      44.02%**, are in that blanked border, and read at 3x they are the figure's head and shoulders,
-      the top of the bookshelf, three flying books, the floor line and the book stack. So the
-      register's *"the miss is the GROUPING, not the component test"* is, on that page, a statement
-      about 56% of the drawing (`BUGS.md` C28 `#### The other two drawing rects, SUBTRACTED`).
+      44.02%**, are in that blanked border, and read at 4x they are the figure's head and shoulders,
+      the top of the bookshelf, **four** whole flying books plus the left 66 px of a fifth, the
+      floor line and the book stack. So the register's *"the miss is the GROUPING, not the
+      component test"* is, on that page, a statement about 56% of that RECT's drawing ink
+      (`BUGS.md` C28 `#### The other two drawing rects, SUBTRACTED`).
+      ⚠️ **Three of those numerals were corrected 2026-09-20 by the review of that diff and this
+      box carried the first draft's**: *"three flying books"* is four (the missed one is
+      `25x21+120+0`, 181 px, clipped by the page top); the denominator is C26's eye-chosen rect and
+      not "the drawing"; and **44.02% is the MINORITY share**, so for the other 55.98% the grouping
+      IS what answers 0 (`txtN` 4 accepted components, `lineN` 0 groups) — the register's sentence
+      is INCOMPLETE on p6, not refuted.
       ⛔ **THIS IS A QUESTION ABOUT HOW OFTEN, NOT A PROPOSAL TO CHANGE THE WINDOW.** The inset
       exists to keep scanner edges out of `inkOutsideText`, `interiorWindow` has ONE copy on purpose
       (its own doc comment records why), and C9's lesson — one number charged twice — applies: the
@@ -1026,8 +1051,11 @@ happens.**
 - [ ] **c28-table-rule-rect** — **READ `1029x10+106+206`. A DARKEST-PIXEL-IN-RECT OVER A BAND 1,029 px
       WIDE IS ATTRIBUTED TO A TABLE RULE, AND A `min` NEEDS ONLY ONE DARK PIXEL ANYWHERE IN THE BAND
       TO READ AS THE RULE.**
-      ✅ **Promoted 2026-09-20 by `c28-drawing-rect-contamination`'s predecessor, on evidence rather
-      than on suspicion**: it is the same sub-class `c28-cartoon-hit-rect` committed and caught in
+      ✅ **Promoted 2026-09-20 by `c28-cartoon-hit-rect`, which wrote the promotion INTO the
+      `c28-drawing-rect-contamination` box it was drafting — so the C28 parent's *"that same box
+      had already PROMOTED it"* and this line are the LOCATION and the AUTHOR of one act, not two
+      claims (settled 2026-09-20, the review of that diff having flagged them as a conflict).** On
+      evidence rather than on suspicion: it is the same sub-class `c28-cartoon-hit-rect` committed and caught in
       its own draft — a total over a band wide or tall enough to hold the named mark AND something
       else, attributed to the mark. That draft's 180 px came from a 40-row band holding type at the
       top and a bookshelf 12 rows lower, and the per-row scan is what separated them.
@@ -1052,13 +1080,17 @@ happens.**
       *"92% / 100% of `outPx`"* are shares of drawing on all three rects and its
       *"`textish` accepts several hundred pixels of it"* survives the subtraction.
       ⛔ **THE FINDING IS THE THIRD MECHANISM THE BOX DID NOT ASK ABOUT: on p6, 3,513 px — 44.02% of
-      that drawing's ink — lie OUTSIDE `inkOutsideText`'s interior window, which
-      `textLineGroupsOutsideText` blanks out of its map (`Flattener.swift:2263-2275`), because the
-      published rect is the page CORNER.** Read at 3x that is the figure's head and shoulders, the
-      top of the bookshelf, three flying books, the floor line and the book stack — so *"the miss is
-      the GROUPING"* is a statement about 56% of that drawing, and 3b's two-way split is missing a
+      the drawing ink inside C26's eye-chosen rect — lie OUTSIDE `inkOutsideText`'s interior window,
+      which `textLineGroupsOutsideText` blanks out of its map (`Flattener.swift:2263-2275`), because
+      the published rect is the page CORNER.** Read at 4x that is the figure's head and shoulders,
+      the top of the bookshelf, **four** whole flying books plus the left 66 px of a fifth, the
+      floor line and the book stack — so *"the miss is the GROUPING"* is a statement about 56% of
+      that rect's drawing, and 3b's two-way split is missing a
       term. The mechanism was on record (3b's own p4 row discounts 76 of 254 columns for it); the
-      MAGNITUDE is new. Successor: `c28-window-blindness`.
+      MAGNITUDE is new. Successor: `c28-window-blindness`. ⚠️ **Corrected 2026-09-20 by the review
+      of that diff — this box was written with the first draft's numerals: four books not three,
+      the rect as the denominator, and 44.02% read as the MINORITY share, so the register's
+      sentence is INCOMPLETE on p6 rather than refuted.**
       ⚠️ Free corrections: p6 and p7's painted-against-accepted gaps are MEASURED where they were
       inferred (372 px in 7 components against 357 in 4; **792** in 20 against 761 in 12), and the
       published *"3.2%"* for p7 is a population mix — 785 is IN-RECT, the page reads 792, so like
@@ -1066,6 +1098,16 @@ happens.**
       the drawing rect, so p4's *"every one of those pixels is inside the drawing rect"* is false
       on p7.
       `BUGS.md` C28 `#### The other two drawing rects, SUBTRACTED`.
+      ✅ **THE ADVERSARIAL REVIEW OF THAT DIFF LANDED AFTER THE PUSH, SAID REJECT ON 12 FINDINGS
+      WITH 2 BLOCKERS, AND ALL 12 ARE WORKED AS OF 2026-09-20 — do not re-open it.** The
+      MEASUREMENT came through unharmed (every pixel figure re-derived from the PNGs matched); what
+      it rejected was the prose. Both blockers are fixed in place — a ✅ control that was a
+      partition and so could not fail, and a *"neither code comment needs anything"* that cleared
+      `Sources/Flattener.swift` and `Tools/score-shape-term.swift` on the very axis the same
+      paragraph had chosen. Two findings are recorded rather than fixed and both are named in
+      `##### The review of that diff` in that section: the `#### The same shape term on PICTURES`
+      cite drops the heading's `⛔` in 20 places, and `--self-test ok (11 checks)` is not in the
+      retained `run.log`.
       **ASK WHAT p6's 92% AND p7's 100% ARE ACTUALLY 92% AND 100% OF.
       It is `c28-cartoon-hit-rect`'s own measurement carried to the two pages that matter for
       CONTENT, and it is the remaining half of that step's strongest §4b item.**
