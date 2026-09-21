@@ -7934,6 +7934,113 @@ that such a bar would sit in a **0.21-to-0.40 gap established on two pages**, un
 copies of this note in `Tools/score-text-route.swift` and `QUEUE.md` state the limit without the
 interleaving claim. This entry's three *measured refusals* remain `inkOutsideText`, the map's pixel
 count and the map's fraction — this ratio is a candidate, not a fourth refusal.
+⛔ **Both ranges in that sentence REPRODUCE at all four bounds and the SEPARATION BETWEEN THEM DOES
+NOT SURVIVE being measured per line — see the sub-section below, 2026-09-21.**
+
+##### The two control bands, READ — and the separation is the BANDS' framing, 2026-09-21
+
+⛔ **THE CONTROLS ARE NOT THE PROBLEM AND THE BAND RECTS ARE. Read per line, the 0.40-0.47 / 0.52-0.57
+separation that makes the candidate bar's `0.21-to-0.40` gap a gap falls from **0.0352 to 0.0025**
+page-wide and, on the recipe this entry actually prescribes, from **0.0414 to −0.0074** — it
+INVERTS.** The step asked whether `600x30+300+600` and
+`600x30+300+1300` — the only two rects in this entry chosen around no mark at all — read **0.52-0.57**
+as an artefact of their own emptiness. They do not, and the reason they do not is the finding.
+
+✅ **First, both published ranges REPRODUCE, through a different binary 31 days on, at all four
+bounds** — bands **0.3957-0.4742** and controls **0.5156-0.5671**, i.e. `0.40-0.47` and `0.52-0.57`
+exactly. ⛔ **But only through the header's own recipe, which crops FIRST and takes Otsu PER CROP, and
+that had to be established rather than assumed.** A page-wide Otsu (213/255) on the same eight rects
+gives **0.3942-0.4804** and **0.5156-0.5533**, moving **six of the eight** by up to 0.020 and two
+(`722x19`, `600x30+300+1300`) not at all. **The four-of-four reproduction is the whole argument and
+needs nothing else** — ⚠️ a second one corroborates it with its own limit named: on this page the
+stencil is a **measured strict subset of the page-wide ink map (0 of 57,308 px outside)**, which
+would cap the ratio at 1, while this entry's own `Williams_1958` p1 survivors read **1.09 and 1.06**
+— ⛔ **but the subset property is measured on p12 ONLY and is not structural** (Sauvola is adaptive
+and a global Otsu need not contain it), so that half is an inference about Williams p1 and not a
+reading of it. Either way a re-measurement must say which recipe it used.
+
+✅ **Read at 4x, both controls hold ONE LINE of the page's own typescript** — `in the matter of` and
+`of the Public Uti`, on the right 52% and 55% of their 600 px — and **all eight rects hold the same
+material**, 1940s typewriter type on one sheet: no rule, no half-tone, no paper-only rect. So the
+worry's literal form is refused by the reading. ⚠️ Five of the eight were read at 4x, the other three
+at 2.5x in one montage.
+
+⛔ **Blank paper inside a rect is NOT ratio-neutral on the prescribed recipe, and the obvious test of
+that CANNOT FAIL on the other one.** Page-wide, tightening each control to its own inked box leaves
+numerator and denominator as the *same integers* — 1,314/727 and 1,346/694 — so 0.5533 and 0.5156 come
+back unchanged **by entailment, not by measurement**, the stencil being a subset of the ink map and
+the discarded margin having no ink by construction. Per crop the same tightening moves
+**0.5671 → 0.5747** and **0.5156 → 0.5226**, because blank paper shifts the crop's own Otsu: +0.008
+and +0.007, about **18% of the 0.0414 per-crop band-to-control gap**, and in the direction that makes
+a loose control read LOW. The controls are loose — `600x30+300+600` discards **47.7%** of its columns
+(inked 265…578) and 23% of its rows, `600x30+300+1300` **44.7%** and 17% — so the effect is real,
+small, and does not rescue the published gap.
+
+⛔ **WHAT DOES DESTROY IT IS THAT NONE OF THE SIX BANDS IS A LINE.** Four straddle two lines, carrying
+a sheared glyph-top of the line above (`702x37`, `709x35`, `709x37`, `528x36`), and the other two
+(`533x20`, `722x19`) are single-line windows that still clip their line's ascenders and descenders —
+`533x20+526+907` sits inside a line inking y 902…932. Both controls, by contrast, contain their line
+whole with blank rows above and below. Re-read per line from each rect's own row profile, all six
+against both controls:
+
+| reading | b533 | b722 | b702 | b709a | b709b | **b528** | ctrl1 | ctrl2 | gap |
+|---|---|---|---|---|---|---|---|---|---|
+| as published (rects), per crop | 0.4056 | 0.4594 | 0.4051 | 0.4742 | 0.3957 | 0.4412 | 0.5671 | 0.5156 | **0.0414** |
+| per line, per crop | 0.4274 | 0.4696 | 0.4293 | 0.4829 | 0.4115 | **0.5230** | 0.5671 | 0.5156 | **−0.0074** |
+| per line, page-wide | 0.4209 | 0.4696 | 0.4397 | 0.4829 | 0.4236 | **0.5131** | 0.5533 | 0.5156 | **0.0025** |
+
+⛔ **So on the prescribed recipe the highest band's own line reads 0.5230 against the lower control's
+0.5156 and the two populations cross; page-wide they are 0.0025 apart, which is a fourteenth of the
+published 0.035.** ⛔ **And the row that does it — `528x36+772+1083`, whose line inks y 1104…1131 — is
+one of the two bands a first draft of this sub-section never split**, that draft having split only
+`709x37` and `709x35` and concluded from them that the separation *widened* to 0.055. It does not; the
+adversarial review of that diff found the unsplit row and the whole finding inverted.
+⚠️ **The asymmetry is what the published comparison is measuring, and it is exact**: restoring the line
+raises the ratio on **6 of 6** bands (per crop **+0.009 to +0.082**, page-wide +0.003 to +0.057) and on
+**0 of 2** controls, which move by **0.0000** — the controls' rows are trimmed in that table at the
+same full rect width as the bands', so the two arms get the same treatment, and the controls already
+contained their line. ⚠️ Trimming the controls' *width* as well is a different operation and does move
+them, per crop, to 0.5747 and 0.5226; the table does not do it, because the bands cannot be
+width-trimmed — all six have an ink bounding box equal to their own rect.
+⚠️ Every line span is read off that rect's own row profile between troughs, verified for all six
+(`902…932`, `969…998`, `462…494`, `736…764`, `1003…1032`, `1104…1131`).
+
+⚠️ **The threshold is worth less than a draft of this claimed, in both directions.** The ratio moves
+**~0.0067 per grey level** of the page-wide Otsu, measured per rect over 209/213/217 as
+**0.0055-0.0079** — not the 0.011 a draft printed, which is 1.6x the mean and 1.4x the maximum and
+came of reading a two-level step as one. ⛔ **And the movement is COMMON MODE, so the gap is nearly
+threshold-invariant**: bandMax/ctrlMin read 0.5104/0.5482, 0.4804/0.5156, 0.4576/0.4912 and the gap
+0.0378/0.0352/0.0336 — **0.00053 per level, so ~67 levels would be needed to close it**. Dividing the
+gap by the within-rect slope, which gave a draft's *"the whole gap is 3.2 grey levels wide"*, is a
+units error that draws the opposite conclusion from the same sweep. ⚠️ The band/control **partition**
+holds at all three thresholds; the full eight-rect **ordering** does not — `722x19` and `528x36` swap
+between 209 and 213, which printing only bandMax/ctrlMin hides.
+
+⛔ **The step's own box named the wrong rect for the upper end**: `709x37+628+990` reads **0.3957**
+per crop, the **lowest** of the six, where the maximum is `709x35+568+722` at **0.4742**. Both were
+read anyway.
+✅ **A cross-artefact control that could have failed, and a stale-news trap avoided**: the run prints
+`verdict picture`, `lineN` **2**, `layered` **92,052 B**, which reproduces
+`SHAPETERM-BYTES-2026-08-21.tsv`'s p12 row and this entry's own table at
+`| 0.0041 | Herbert Marks papers p12 | 23,452 -> 92,052 (3.93x) |` **digit for digit across 31 days
+and two binaries**. ⛔ A draft reported it as the discovery that *"p12 no longer routes as the
+paragraph above describes"*; it was published a month ago, p12 being one of the 16 pages the shape
+term's wiring already refuses. ⚠️ `INKBAR-2026-08-19.tsv`'s `layered` is the 0.08 arm and is only
+comparable because `inkOut` 0.0041 sits below both bars.
+
+⚠️ **Predictions, and the one that was wrong.** Four were written down before any crop was rendered,
+off the source-ink column alone. (1) *not blank paper* — held, 1,314 and 1,346 source-ink px against
+the bands' 2,027-3,231. (2) *type that does not fill the band* — held exactly. (3) *not a rule* —
+held. (4) *the comparison stays confounded* — **held in substance and wrong in its mechanism**: the
+draft predicted a DENSITY confound (controls 7.30%/7.48% against bands 12.08-20.11%) and then
+retracted it on the tightening test, which is the test that cannot fail; per line the confound is real
+and is **line-clipping**, not density. ⛔ **The retraction was the error, not the prediction.**
+⚠️ One page, eight rects, one document, one render; the entry's other page (`Williams_1958` p1, a
+different document) was not re-read, and **no bar is proposed** — this ratio is still a candidate and
+not this entry's fourth refusal. Nothing in `Sources/` moved and no artefact was written. Reproduce
+with `INKDUMP=<dir> score-text-route "testdocs/document/Herbert Marks papers.pdf" 12`, then
+`magick <rect-crop> -auto-threshold OTSU -negate` **per crop** over `-source.png`, against the plain
+black-pixel count of `-stencil.png` in the same rect.
 
 ⛔ **THE MAP'S FRACTION IS REFUSED AGAIN AND THIS TIME FROM THE TOP — the same third refusal
 reproduced in a fresh population, not a fourth one.** `Herbert Marks` p12
@@ -8998,6 +9105,10 @@ right — the claim there is about *peak* contrast and the mean holding is its p
 ⚠️ **Limits, named.** One rect on one page, and **three** members of the class are untouched — the six
 densest bands behind the 0.52–0.57 stencil ratio, `140x205+1660+2125`, and the p16 rect the sweep
 above just added, so the class grew in the commit that answered one of it.
+⛔ **THE FIRST OF THOSE THREE WAS READ THE NEXT DAY AND IT IS TWO — `##### The two control bands,
+READ` — and this sentence names the ratio wrongly besides: 0.52-0.57 is the CONTROLS' range and the
+six bands' is 0.40-0.47.** ⚠️ The same misnaming stands in `CLAUDE.md`'s copy of this line and is
+corrected there in the same commit; here it is left in place above so the correction has its subject.
 `darkcols` is an 8-bit quantised read through `magick … gray:-`, which is why the 8-bit reproduction
 is `57` where the unquantised one is `56.9819`. ⛔ **THE 10-ROW BAND DOES NOT HOLD THE WHOLE RULE
 TODAY** — its footprint reaches **y=215, the band's own LAST row** (mean 194.1) and spills past it at

@@ -1630,6 +1630,51 @@ carries *"peak contrast falls about 12.6%"*** — not called wrong, not measured
 and the rect mean DISAGREE (116.6 → 117.6 against a min moving 30), so the pairing that validates the
 `min` here would fail on it. ⚠️ One rect on one page; **three** members of the class are now untouched
 (the six densest bands behind the 0.52–0.57 stencil ratio, `140x205+1660+2125`, and that p16 rect);
+⛔ **IT IS TWO FROM 2026-09-21 AND THE PARENTHESIS NAMES THE RATIO WRONGLY BESIDES — 0.52-0.57 is the
+CONTROLS' range and the six bands' is 0.40-0.47** (`BUGS.md` C28 `##### The two control bands, READ`,
+the queue's `c28-stencil-ratio-controls`).
+⛔ **AND THE CONTROLS ARE NOT THE PROBLEM — THE BAND RECTS ARE: read per line, the separation those
+two ranges make falls from 0.035 to 0.0025 and, on the recipe this entry actually prescribes,
+INVERTS.** ✅ Both published ranges REPRODUCE at all four bounds through a different binary 31 days on
+— bands **0.3957-0.4742**, controls **0.5156-0.5671** — ⛔ **but only through the header's own recipe,
+which crops FIRST and takes Otsu PER CROP, and that had to be established rather than assumed**: a
+page-wide Otsu (213) gives 0.3942-0.4804 / 0.5156-0.5533, six of the eight moving by up to 0.020.
+**The four-of-four reproduction is the whole argument**; ⚠️ a second one corroborates it — the stencil
+is a **measured strict subset of the page-wide ink map (0 of 57,308 px outside)**, which would cap the
+ratio at 1 where `Williams_1958` p1's survivors read **1.09 and 1.06** — ⛔ **but that subset is
+measured on p12 only and is not structural, so its Williams half is an inference.** ✅ Read at 4x
+both controls hold ONE LINE of the page's own typescript (`in the matter of`, `of the Public Uti`, on
+the right 52% and 55% of their 600 px) and **all eight rects hold the same 1940s typewriter type** —
+no rule, no half-tone, no paper-only rect — so the worry's literal form is refused by the reading.
+⛔ **Blank paper is NOT ratio-neutral on the prescribed recipe, and the obvious test of that CANNOT
+FAIL on the other one**: page-wide, tightening a control to its inked box leaves numerator and
+denominator the SAME INTEGERS (1,314/727 and 1,346/694), so 0.5533 and 0.5156 return by entailment;
+per crop the same tightening moves **0.5671 → 0.5747** and **0.5156 → 0.5226**, ~18% of the 0.0414
+gap, in the direction that makes a loose control read low.
+⛔ **WHAT DESTROYS THE GAP IS THAT NONE OF THE SIX BANDS IS A LINE** — four straddle two lines and two
+are single-line windows clipping their own ascenders and descenders, while both controls contain
+their line whole. Per line, all six: per crop **0.4274 / 0.4696 / 0.4293 / 0.4829 / 0.4115 / 0.5230**
+against controls 0.5671 / 0.5156, so the highest band **crosses** the lower control; page-wide
+**0.4209 / 0.4696 / 0.4397 / 0.4829 / 0.4236 / 0.5131** against 0.5533 / 0.5156, a gap of **0.0025**.
+⛔ **The row that does it, `528x36+772+1083`, is one of the two a first draft never split — that draft
+split only two bands and concluded the separation WIDENED to 0.055, and the adversarial review of the
+diff found the unsplit row and inverted the whole finding.** ⚠️ Restoring the line raises the ratio on
+**6 of 6** bands (+0.009 to +0.082 per crop) and **0 of 2** controls.
+⚠️ **The threshold is worth less than a draft claimed in both directions: ~0.0067 per grey level**
+(0.0055-0.0079 per rect), not 0.011 — ⛔ **and the movement is COMMON MODE, so the gap is nearly
+threshold-invariant at 0.00053/level, ~67 levels to close it; dividing the gap by the within-rect
+slope, which gave a draft's "3.2 grey levels", is a units error drawing the opposite conclusion from
+the same sweep.** ⚠️ The band/control partition holds at 209/213/217; the eight-rect ordering does not
+(`722x19` and `528x36` swap). ⛔ The box named the wrong rect for the upper end — `709x37+628+990` is
+the **lowest** of the six per crop at 0.3957, the maximum being `709x35+568+722` — and ✅ the run
+reproduces `SHAPETERM-BYTES-2026-08-21.tsv`'s p12 row and this register's own table (`picture`,
+`lineN` 2, **92,052 B**) digit for digit across 31 days and two binaries, ⛔ **which a draft reported
+as the fresh discovery that p12 no longer routes as described; it was published a month ago.**
+⚠️ Of four predictions written before any crop, three held and the fourth — *the comparison stays
+confounded* — **held in substance with its mechanism wrong**: it named DENSITY and was then retracted
+on the test that cannot fail, where per line the confound is real and is line-clipping. ⚠️ One page,
+eight rects, one document, one render; `Williams_1958` p1 was not re-read, **no bar is proposed**,
+nothing in `Sources/` moved and no artefact was written.
 ⛔ **and the 10-row band does not hold the whole rule TODAY, not merely at a further step**: the
 falloff spills past y=215 at both downsampled factors (y=216 reads 246.1 at 1/2, 225.9 at 1/3, y=217
 249.5) — ⛔ **and not past its FIRST row, which a draft said: y=206 reads 255.0 / 254.7 / 255.0, clean

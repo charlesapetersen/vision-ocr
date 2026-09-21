@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-stencil-ratio-controls` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-p16-peak-contrast` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-stencil-ratio-controls` SUB-BOX — SEARCH FOR THAT TAG,
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-p16-peak-contrast` SUB-BOX — SEARCH FOR THAT TAG,
       IT IS SOME HUNDREDS OF LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN
       OPEN CAMPAIGN.** (⛔ **THE DISTANCE USED TO BE A NUMBER HERE AND IS DELIBERATELY NOT ONE ANY
       MORE, 2026-09-20. It read *"~450"*, was 479 when the review of that day's diff measured it,
@@ -560,7 +560,10 @@ happens.**
       p6**, whose 44.02% stands unmoved; what it retires is the inference from p6 to the
       population. The one open sub-box was `c28-table-rule-rect`, which is reason (1)'s — ⛔ **that
       is history from 2026-09-21: it ran, it is ticked as `c28-table-rule-rect-asked`, and the open
-      sub-box is now `c28-stencil-ratio-controls`.**
+      sub-box is now `c28-stencil-ratio-controls`.** ⛔ **THAT LAST CLAUSE IS ITSELF HISTORY FROM
+      THE SAME DAY — `c28-stencil-ratio-controls` RAN TOO, is ticked as
+      `c28-stencil-ratio-controls-asked`, and the open sub-box is now `c28-p16-peak-contrast`. Two
+      re-points in one day is why no sentence here may be read as current without its own date.**
       ⛔ **RE-POINTED A FIFTEENTH TIME 2026-09-21 BY THE STEP NOW TICKED AS `c28-table-rule-rect-asked`,
       WHICH RAN AND ANSWERED
       `HOLDS`.** `Jones et al_2010` p12's `1029x10+106+206` **is** the table rule it is named after:
@@ -578,6 +581,24 @@ happens.**
       The successor is **`c28-stencil-ratio-controls`**, the two round-number control bands behind
       the 0.52-0.57 stencil ratio — the same class with the named mark *removed*, a rect chosen
       around nothing whose ratio sets the upper side of the only candidate bar's gap.
+      ⛔ **RE-POINTED A SIXTEENTH TIME LATER THE SAME DAY BY THE STEP NOW TICKED AS
+      `c28-stencil-ratio-controls-asked`, AND ITS ANSWER INVERTS THE QUESTION: THE CONTROLS ARE NOT
+      THE PROBLEM AND THE BAND RECTS ARE.** Both published ranges reproduce at all four bounds
+      (bands 0.3957-0.4742, controls 0.5156-0.5671) — ⛔ **but only through the tool header's own
+      recipe, which crops FIRST and takes Otsu PER CROP** — the four-bound reproduction being the
+      argument, corroborated (⚠️ on p12 only, and not structurally) by the stencil there being a
+      measured strict subset of the page-wide ink map, which would cap the ratio at 1 where the
+      entry's own `Williams_1958` p1 survivors read 1.09 and 1.06.
+      ⛔ **And read per line the separation those two ranges make falls from 0.035 to 0.0025 and
+      INVERTS on the prescribed recipe**, because none of the six band rects is a line — four
+      straddle two and two clip their own ascenders — while both controls contain their line whole:
+      restoring it raises the ratio on **6 of 6** bands and **0 of 2** controls. ⚠️ **No bar is
+      proposed and the ratio is still a candidate, not this entry's fourth refusal** — what moved is
+      that its one published separation is now known to be substantially a framing artefact.
+      The successor is **`c28-p16-peak-contrast`**, `Riesman - 1954` p16's 900x150 rect, the member
+      of the darkest-pixel class `c28-table-rule-rect-asked`'s sibling sweep found and handed
+      forward — the only one printing an object-level statistic beside its `min`, and there the two
+      disagree.
       ⛔ **TWO THINGS A DRAFT OF THIS PARAGRAPH GOT WRONG, kept because they are what a reader would
       re-derive incorrectly.** (1) It called this *"the first member of the class to survive its own
       audit"*, and the ticked boxes refute it: `c28-cartoon-hit-rect` answered *"the 59 px ARE the
@@ -1139,7 +1160,105 @@ happens.**
       and the interior-window arithmetic, `#### The same shape term on PICTURES` for the per-rect
       table it qualifies, and C26 `#### The rendered proof on the founding pages` for what p6 loses)
 
-- [ ] **c28-stencil-ratio-controls** — **READ THE TWO ROUND-NUMBER CONTROL BANDS. `600x30+300+600` AND
+- [ ] **c28-p16-peak-contrast** — **READ `Riesman - 1954` p16's `900x150+300+2440`. A DARKEST PIXEL
+      OVER 135,000 px CARRIES *"peak contrast against ~250 paper falls about 12.6%"*, AND THE
+      OBJECT-LEVEL STATISTIC PRINTED BESIDE IT DISAGREES WITH IT.**
+      ✅ **Promoted 2026-09-21 by `c28-stencil-ratio-controls-asked`, the box directly below. The rect
+      itself was written down a step earlier, by `c28-table-rule-rect-asked`, whose sibling sweep over
+      every *"darkest pixel"* claim in the tree found it and handed it forward** — this successor did
+      not find it, and `BUGS.md`'s own limits line says so in terms (*"Carried into
+      `c28-stencil-ratio-controls`'s successor list rather than chased here"*).
+      ⛔ **It is NOT called wrong — nobody has measured it** — but on this rect the rect mean moves
+      **116.6 → 117.6**, one grey level, while the `min` moves **30**, so the pairing that validated
+      the `min` on `Jones et al_2010` p12's table rule (`c28-table-rule-rect-asked`: min 25 = median
+      25 = p90 25, 1,026 of 1,029 columns within 10 levels) would FAIL here. That may be the point —
+      the claim is about *peak* contrast — but 12.6% rests on one pixel of 135,000 and nothing on
+      record says which, or how many pixels carry it. ⚠️ Not a superlative: it is the only member of
+      the class that PRINTS an object-level statistic beside its `min` at all, so "the only one where
+      the two disagree" is a population of one.
+      **THE STEP**: `INKBAR=0.08 INKDUMP=<dir>` on `Riesman - 1954` p16 — which
+      `#### The bar priced against the term` already says to re-run, its dumps not having been
+      retained — then a per-row and per-column scan of `900x150+300+2440` on **both** arms, reporting
+      how many pixels sit within 10 grey levels of each arm's `min` and whether they are one object.
+      ⛔ **Predict from the row profile BEFORE reading any crop**, as its predecessors did, and state
+      the answer either way. ⛔ **AND READ THE COMPOSITE, NOT THE STENCIL**: that section already
+      records that `stencil.png` and `stencil-bar.png` are byte-identical there and say nothing about
+      either arm, because an MRC page draws background then foreground and the stencil is the
+      foreground's `/SMask` — p16 crosses the bar, so `bgFactor` 2 → 8 and `fgFactor` 4 → 16.
+      ⚠️ **Three instrument facts the predecessor established the hard way and this step inherits.**
+      (1) **A rect that is not a LINE reads differently from one that is** — on `Herbert Marks` p12
+      restoring the clipped line moved 6 of 6 band rects and 0 of 2 controls, which is what destroyed
+      that step's own first conclusion; derive any row window from the rect's own profile between
+      troughs, never from the published rect. (2) **`-auto-threshold OTSU` must be applied PER CROP,
+      not page-wide**, or the stencil becomes a strict subset of the ink map and the statistic is
+      capped at 1. (3) **A page-wide-Otsu-derived ratio moves ~0.0067 per grey level but the movement
+      is COMMON MODE**, so quote the threshold beside an absolute value and do NOT divide a
+      between-rect gap by a within-rect slope — that units error published a "3.2 grey levels" that
+      its own sweep refuted at ~67.
+      ⚠️ Docs-only if nothing in `Tools/` moves. ⚠️ Budget: build `score-text-route` first (~90 s —
+      copy to `main.swift`, exclude `App.swift`; the recipe is in the tool's own header), then one
+      `INKDUMP` run per arm.
+      (context: BUGS.md C28 `#### The bar priced against the term`, the `Riesman - 1954` p16
+      paragraph and its stencil-coverage ratios 0.767 / 0.801 / 0.819)
+
+- [x] **c28-stencil-ratio-controls-asked** — the box as written 2026-09-21, kept for what it asked.
+      ⛔ **ANSWERED 2026-09-21: THE CONTROLS ARE NOT THE PROBLEM AND THE BAND RECTS ARE. Read per
+      line, the 0.40-0.47 / 0.52-0.57 separation that makes this entry's `0.21-to-0.40` gap a gap
+      falls from 0.035 to 0.0025 and, on the recipe the entry actually prescribes, INVERTS.**
+      ✅ **First, both published ranges REPRODUCE at all four bounds** through a different binary 31
+      days on — bands **0.3957-0.4742**, controls **0.5156-0.5671**. ⛔ **But only through the tool
+      header's own recipe, which crops FIRST and takes Otsu PER CROP, and that had to be established
+      rather than assumed**: page-wide Otsu (213) gives 0.3942-0.4804 / 0.5156-0.5533, six of the eight
+      moving by up to 0.020 and two not at all. **The four-of-four reproduction is the whole
+      argument**; ⚠️ the stencil being a **measured strict subset of the page-wide ink map (0 of
+      57,308 px outside)** corroborates it, capping the ratio at 1 where the entry's own
+      `Williams_1958` p1 survivors read **1.09 and 1.06** — ⛔ **but that subset is measured on p12
+      only and is not structural, so its Williams half is an inference.**
+      ✅ Read at 4x both controls hold **one line of the page's own typescript** — `in the matter of`
+      and `of the Public Uti`, on the right 52% and 55% of their 600 px — and **all eight rects hold
+      the same 1940s typewriter type**: no rule, no half-tone, no paper-only rect. So the worry's
+      literal form is refused by the reading. ⚠️ Five of the eight read at 4x, three at 2.5x.
+      ⛔ **Blank paper is NOT ratio-neutral on the prescribed recipe, and the obvious test of it
+      CANNOT FAIL on the other one.** Page-wide, tightening a control to its inked box leaves
+      numerator and denominator the SAME INTEGERS (1,314/727 and 1,346/694), so 0.5533 and 0.5156
+      return by **entailment**; per crop the same tightening moves **0.5671 → 0.5747** and
+      **0.5156 → 0.5226**, ~18% of the 0.0414 gap, in the direction that makes a loose control read
+      LOW. The controls are loose — 47.7% of `600x30+300+600`'s columns and 23% of its rows,
+      44.7% and 17% for the other.
+      ⛔ **WHAT DESTROYS THE GAP IS THAT NONE OF THE SIX BANDS IS A LINE**: four straddle two lines,
+      and `533x20`/`722x19` are single-line windows that still clip ascenders and descenders, while
+      both controls contain their line whole. Per line, all six: per crop **0.4274 / 0.4696 / 0.4293
+      / 0.4829 / 0.4115 / 0.5230** against controls 0.5671 / 0.5156 — the highest band CROSSES the
+      lower control — and page-wide **0.4209 / 0.4696 / 0.4397 / 0.4829 / 0.4236 / 0.5131** against
+      0.5533 / 0.5156, a gap of **0.0025**. ⛔ **The row that does it, `528x36+772+1083`, is one of
+      the two bands a first draft never split — that draft split only `709x37` and `709x35` and
+      concluded the separation WIDENED to 0.055; the adversarial review of the diff found the
+      unsplit row and inverted the whole finding, and nothing rejected reached main.**
+      ⚠️ Restoring the line raises the ratio on **6 of 6** bands (+0.009 to +0.082 per crop) and
+      **0 of 2** controls.
+      ⚠️ **The threshold is worth less than a draft claimed in both directions: ~0.0067 per grey
+      level** (0.0055-0.0079 per rect), not the 0.011 it printed — ⛔ **and the movement is COMMON
+      MODE, so the gap is nearly threshold-invariant at 0.00053/level, ~67 levels to close it.
+      Dividing the gap by the within-rect slope, which gave a draft's "the whole gap is 3.2 grey
+      levels wide", is a units error drawing the opposite conclusion from the same sweep.**
+      ⚠️ The band/control partition holds at 209/213/217; the eight-rect ordering does not —
+      `722x19` and `528x36` swap between 209 and 213, which printing only bandMax/ctrlMin hides.
+      ⛔ **This box named the wrong rect for the upper end**: `709x37+628+990` reads 0.3957 per crop,
+      the **lowest** of the six; the maximum is `709x35+568+722` at 0.4742. Both were read anyway.
+      ✅ **A cross-artefact control that could have failed**: the run reproduces
+      `SHAPETERM-BYTES-2026-08-21.tsv`'s p12 row and the register's own per-page table —
+      `picture`, `lineN` 2, **92,052 B** — digit for digit across 31 days and two binaries.
+      ⛔ A draft reported that as the fresh discovery that *"p12 no longer routes as described"*; it
+      was published a month ago, p12 being one of the 16 pages the shape term already refuses.
+      ⚠️ Four predictions were written before any crop; three held, and the fourth — *the comparison
+      stays confounded* — **held in substance with its mechanism wrong**, naming DENSITY and then
+      being retracted on the test that cannot fail. ⛔ **The retraction was the error, not the
+      prediction.**
+      ⚠️ One page, eight rects, one document, one render; `Williams_1958` p1 was not re-read,
+      **no bar is proposed**, nothing in `Sources/` moved and no artefact was written.
+      Successor: `c28-p16-peak-contrast`.
+      `BUGS.md` C28 `##### The two control bands, READ — and the separation is the BANDS' framing`.
+      **READ THE TWO ROUND-NUMBER CONTROL BANDS. `600x30+300+600` AND
       `600x30+300+1300` ARE THE ONLY RECTS IN THIS ENTRY CHOSEN AROUND NO MARK AT ALL, AND THEY SET
       THE UPPER SIDE OF THE 0.21-TO-0.40 GAP THE STENCIL RATIO'S ONLY CANDIDATE BAR WOULD SIT IN.**
       ✅ **Promoted 2026-09-21 by `c28-table-rule-rect-asked`, and this is the last member of the ORIGINAL

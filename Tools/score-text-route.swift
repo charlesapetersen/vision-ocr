@@ -190,6 +190,25 @@
 // register said "seven densest" over six enumerated rects until the review of that diff counted
 // them; twelve rects in the whole sample, not thirteen.)
 //
+// ⛔ **"in the same tight rect" and "on each" are LOAD-BEARING: crop FIRST, Otsu PER CROP.** Verified
+// 2026-09-21 by re-measuring all eight of p12's rects both ways. Per crop they reproduce the
+// published ranges at all four bounds (bands **0.3957-0.4742**, controls **0.5156-0.5671**); a
+// page-wide Otsu instead gives 0.3942-0.4804 and 0.5156-0.5533, six of the eight moving by up to
+// 0.020 and two (`722x19`, `600x30+300+1300`) not at all. ⚠️ **A second argument corroborates that, with its limit named**:
+// on that page the stencil is a measured strict SUBSET of the page-wide ink map (0 of 57,308 px
+// outside), which would cap the ratio at 1 — and the `Williams_1958` p1 survivors above read 1.09
+// and 1.06. ⛔ That subset is measured on p12 only and is not structural (Sauvola is adaptive), so
+// the Williams half is an inference; the four-bound reproduction is what carries the point.
+// ⚠️ Blank paper inside the rect is therefore NOT ratio-neutral: it shifts the crop's own Otsu, and
+// tightening either of p12's two round-number control rects to its inked box moves the ratio by
+// +0.007 to +0.008. (It IS exactly neutral page-wide, which is why that check cannot fail there.)
+// ⛔ **AND "compare a rect against its own line" is the whole of it — a rect that is not a line reads
+// LOW.** None of p12's six band rects is a line: four straddle two, two clip their own ascenders and
+// descenders. Re-cut per line they read 0.4274 / 0.4696 / 0.4293 / 0.4829 / 0.4115 / **0.5230**, up
+// on 6 of 6, while the two controls — which contain their line whole — do not move at all, and the
+// band/control separation the register's "0.21-to-0.40 gap" rests on crosses over.
+// BUGS.md C28 `##### The two control bands, READ`.
+//
 //   mkdir -p /tmp/h && cp Tools/score-text-route.swift /tmp/h/main.swift
 //   swiftc -O -o /tmp/score-text-route -target "$(uname -m)-apple-macos13.0" \
 //     $(ls Sources/*.swift | grep -v App.swift) /tmp/h/main.swift
