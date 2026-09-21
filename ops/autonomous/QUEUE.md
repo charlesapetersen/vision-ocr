@@ -510,7 +510,7 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-composite-recipe` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — [hold] **PARKED BY THE OWNER 2026-09-21.** The product fix shipped 2026-08-22 (the shape term wired, 13 of 16 measured losses rescued) and the month since has been audit of this entry's own published figures: 0 non-comment lines in `Sources/` since 2026-09-02, while the sub-box count went 18 -> 41 with the ticked count one behind at every sample, because each answered step promotes the next. Resume by deleting this marker; nothing here is blocked or unanswerable. NEXT BOUNDED STEP WHEN IT RESUMES: the `c28-composite-recipe` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
@@ -1197,7 +1197,7 @@ happens.**
       and the interior-window arithmetic, `#### The same shape term on PICTURES` for the per-rect
       table it qualifies, and C26 `#### The rendered proof on the founding pages` for what p6 loses)
 
-- [ ] **c28-composite-recipe** — **PIN THE p16 COMPOSITE RECIPE AND WRITE IT INTO THE ENTRY. THREE
+- [ ] **c28-composite-recipe** — [hold] **PARKED WITH C28 2026-09-21**; a session already answered this in the strand rescued to `$STATE/rescue/vo-20260921-080042-95562.patch`, so read that patch before re-running it. **PIN THE p16 COMPOSITE RECIPE AND WRITE IT INTO THE ENTRY. THREE
       SESSIONS HAVE NOW COMPOSITED THAT PAGE AND NO TWO AGREE, AND EVERY FIGURE C28 PUBLISHES ABOUT
       p16 RIDES ON IT.**
       ✅ **Promoted 2026-09-21 by `c28-p16-bracket-rect-asked`, out of evidence that step produced
