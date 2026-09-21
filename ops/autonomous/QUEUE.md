@@ -510,14 +510,14 @@ happens.**
       asked for on 2026-08-30 after the auto-park, not a new investigation. `context:` and not `origin:`
       because it is a repair to this file, and closes when the three next steps exist — not when any
       campaign does)
-- [ ] **C28** — NEXT BOUNDED STEP: the `c28-table-rule-rect` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
+- [ ] **C28** — NEXT BOUNDED STEP: the `c28-stencil-ratio-controls` sub-box below. The defect: the 1-bit stencil is the intersection of the page's ink with Vision's word boxes, so
       prose the recogniser missed is in neither the stencil nor the text layer and survives only in a
       background stored at **1/8** on a page read as all text. Invariant 1: measured over 13 corpus
       pages in C26 sub-step 4, **7 lose whole lines of running prose or table data** and nothing
       reports it. ⛔ **This is the entry C26's campaign surfaced, not a re-run of C26** — C26's bar
       move is shipped and is a page-wide proxy for this; read `BUGS.md` C28, then C26's
       sub-step 4 section ("the benefit"), and do NOT re-derive either.
-      ✅ **THE NEXT BOUNDED STEP IS THE `c28-table-rule-rect` SUB-BOX — SEARCH FOR THAT TAG,
+      ✅ **THE NEXT BOUNDED STEP IS THE `c28-stencil-ratio-controls` SUB-BOX — SEARCH FOR THAT TAG,
       IT IS SOME HUNDREDS OF LINES BELOW AND NOT ADJACENT. TAKE IT — DO NOT SKIP THIS ITEM AS AN
       OPEN CAMPAIGN.** (⛔ **THE DISTANCE USED TO BE A NUMBER HERE AND IS DELIBERATELY NOT ONE ANY
       MORE, 2026-09-20. It read *"~450"*, was 479 when the review of that day's diff measured it,
@@ -558,7 +558,38 @@ happens.**
       window is where the platen edge is and not where the losses are, and *"a content question
       about `Sources/`"* is answered **no** on this population. ⚠️ **What that does NOT retire is
       p6**, whose 44.02% stands unmoved; what it retires is the inference from p6 to the
-      population. The one open sub-box is `c28-table-rule-rect`, which is reason (1)'s.
+      population. The one open sub-box was `c28-table-rule-rect`, which is reason (1)'s — ⛔ **that
+      is history from 2026-09-21: it ran, it is ticked as `c28-table-rule-rect-asked`, and the open
+      sub-box is now `c28-stencil-ratio-controls`.**
+      ⛔ **RE-POINTED A FIFTEENTH TIME 2026-09-21 BY THE STEP NOW TICKED AS `c28-table-rule-rect-asked`,
+      WHICH RAN AND ANSWERED
+      `HOLDS`.** `Jones et al_2010` p12's `1029x10+106+206` **is** the table rule it is named after:
+      the band's ten source rows mean
+      `255 / 255 / 255 / 255 / 255 / 152.2 / 25.5 / 40.5 / 168.2 / 255`, the darkest pixel is on row
+      y=212, and on that row **1,026 of 1,029 columns sit within 10 grey levels of the min in one
+      contiguous run** — so the `min` that box distrusted is carried by 1,026 pixels and not one.
+      ⛔ **What it DID find is a different instrument problem the register does not state: the 1/2
+      figure swings 24–60 over five ImageMagick resize filters and 57-against-64 between two resize
+      specs, and the entry's instrument-facts bullet names the wrong filter** (the bare `-resize`
+      default is Mitchell, sha-identical over the whole upsample, not the Lanczos its *"kinder of
+      the two"* argument rests on) — while the conclusion (*"about 60% of the contrast 1/2 keeps"*)
+      survives at 60.2% by min and 60.5% by darkest-row mean, those two agreeing being what says the
+      `min` is representative.
+      The successor is **`c28-stencil-ratio-controls`**, the two round-number control bands behind
+      the 0.52-0.57 stencil ratio — the same class with the named mark *removed*, a rect chosen
+      around nothing whose ratio sets the upper side of the only candidate bar's gap.
+      ⛔ **TWO THINGS A DRAFT OF THIS PARAGRAPH GOT WRONG, kept because they are what a reader would
+      re-derive incorrectly.** (1) It called this *"the first member of the class to survive its own
+      audit"*, and the ticked boxes refute it: `c28-cartoon-hit-rect` answered *"the 59 px ARE the
+      drawing's ink and the claim HOLDS"* and `c28-drawing-rect-contamination` left both its pages'
+      claims standing, so **of the four members answered, exactly ONE inverted** — `Scott_TK` p3's
+      footer, where the device reaches the map not at all. **Holding is the norm in this class, not
+      the exception**; re-derive the tally from the ticked boxes and never from a sentence here.
+      (2) It said that after the successor only the direction-safe `140x205+1660+2125` remains, and
+      the same step's sibling sweep had already made that false: **`Riesman - 1954` p16's
+      `900x150+300+2440`, where a darkest pixel over 135,000 px carries *"peak contrast falls about
+      12.6%"*, is a SEVENTH member the §4b sweep missed** — so the class grew in the very commit
+      that answered one of it. Both remaining members are recorded in the successor box.
       (⛔ *"IMMEDIATELY AFTER THIS BOX'S CITE LINE"* stood here and was false of `c28-bar-pilot` too —
       corrected on adoption 2026-09-10 by looking, not by re-pointing it a third time. The sibling
       phrasing in the `text-layer-recall` box was the same and is fixed with it.) Written 2026-09-02 by
@@ -1108,7 +1139,92 @@ happens.**
       and the interior-window arithmetic, `#### The same shape term on PICTURES` for the per-rect
       table it qualifies, and C26 `#### The rendered proof on the founding pages` for what p6 loses)
 
-- [ ] **c28-table-rule-rect** — **READ `1029x10+106+206`. A DARKEST-PIXEL-IN-RECT OVER A BAND 1,029 px
+- [ ] **c28-stencil-ratio-controls** — **READ THE TWO ROUND-NUMBER CONTROL BANDS. `600x30+300+600` AND
+      `600x30+300+1300` ARE THE ONLY RECTS IN THIS ENTRY CHOSEN AROUND NO MARK AT ALL, AND THEY SET
+      THE UPPER SIDE OF THE 0.21-TO-0.40 GAP THE STENCIL RATIO'S ONLY CANDIDATE BAR WOULD SIT IN.**
+      ✅ **Promoted 2026-09-21 by `c28-table-rule-rect-asked`, and this is the last member of the ORIGINAL
+      SIX that is not direction-safe** — that sweep found six, four are now answered (`Scott_TK`
+      p3's footer, `1954 - Why` p4's 59 px, p6/p7's drawing rects, `Jones` p12's table rule) and the
+      sixth (`140x205+1660+2125`, 44 px attributed to pencil script) is an over-count that
+      strengthens rather than weakens its own claim. ⛔ **"Last" is scoped to those six on purpose:
+      the same step's sibling sweep found a SEVENTH the §4b sweep missed** — see the ⚠️ below.
+      ⛔ **THIS ONE IS THE CLASS WITH THE MARK REMOVED, WHICH IS WHY IT IS WORTH ASKING LAST.** The
+      other five are *a rect chosen by eye around a named mark, with the count attributed to the
+      mark*. These two are round numbers at round offsets on `Herbert Marks` p12, named in
+      `BUGS.md` C28 as **controls** for the six densest map bands, and nothing on record says what
+      ink is inside them — a "control" band landing on white paper, on a half-empty line or across
+      a rule would produce a stencil/source ratio that is an artefact of its own emptiness, and
+      **0.52-0.57 is the figure that makes the candidate bar's 0.21-to-0.40 gap a gap.**
+      **THE STEP**: `INKDUMP=<dir>` on `Herbert Marks papers` p12 (or `SHAPEDUMP=`, whichever gives
+      `-source.png` and `-stencil.png` on that page), then for each of the two control rects report
+      the **source ink fraction** first — a control with very little ink has a small denominator and
+      its ratio means nothing — and read the rect at 4x to say what is in it. Do the same for at
+      least the extreme members of the six densest bands (`533x20+526+907` and `709x37+628+990`) so
+      the two ends of 0.40-0.47 have a reading too. ⛔ **Predict from the source-ink column BEFORE
+      reading the crops**, as all four predecessors did, and state the answer either way.
+      ⚠️ The gap's LOWER side is `Williams_1958` p1's two lost rects at 0.17 and 0.21 and is NOT in
+      scope: those are named marks with a 1:1 reading already.
+      ⚠️ **AND THE CLASS HAS A MEMBER THE §4b SWEEP DID NOT LIST, found by `c28-table-rule-rect-asked`'s own
+      sibling sweep 2026-09-21 and recorded here so it is not lost**: `#### The bar priced against the
+      term`'s `Riesman - 1954` p16 reading takes *"the darkest pixel in that rect goes 12 → 42 of
+      255"* over a **900×150 rect — 135,000 px** — and derives *"peak contrast against ~250 paper
+      falls about 12.6%"* from it. ⛔ It is NOT called wrong (nobody measured it) and it already
+      prints an object-level statistic beside the `min`, **but the two DISAGREE there** — the rect
+      mean moves 116.6 → 117.6, one grey level, while the min moves 30 — so the pairing that
+      validated the `min` on the table rule would fail on this one. That may be the point (the claim
+      is about *peak* contrast), but the 12.6% rests on one pixel of 135,000 and nothing says which.
+      **This is the successor to `c28-stencil-ratio-controls`, and it is cheap**: `INKBAR=0.08
+      INKDUMP=<dir>` on `Riesman - 1954` p16 — which that section already says to re-run because its
+      dumps were not retained — then a per-row scan of `900x150+300+2440` on both arms.
+      ⚠️ Docs-only if nothing in `Tools/` moves. ⚠️ Nothing here proposes a bar — the ratio is a
+      *candidate*, not this entry's fourth refusal, and that framing must survive the step.
+      ⚠️ **Budget**: build the tool first (~90 s — copy to `main.swift`, exclude `App.swift`; the
+      recipe is in the tool's own header).
+      (context: BUGS.md C28, the `stencil/source` table and the paragraph beginning *"But it is a
+      WITHIN-PAGE contrast"*, for the six bands, the two controls and the six/twelve miscount the
+      review of that diff already corrected)
+
+- [x] **c28-table-rule-rect-asked** — the box as written 2026-09-20, kept for what it asked.
+      ✅ **ANSWERED 2026-09-21 AND THE ATTRIBUTION HOLDS.** ⛔ **A draft called it *"the first member
+      of this class to survive its own audit"* and the two boxes above refute that: the 59 px HELD and
+      both drawing rects' claims stood — one of the four answered members has inverted, not three.**
+      The band holds the rule and **nothing else**: its ten source rows mean
+      `255 / 255 / 255 / 255 / 255 / 152.2 / 25.5 / 40.5 / 168.2 / 255`. **The darkest pixel is on
+      row y=212 and what is on that row is the rule across essentially the whole band** — min 25 =
+      median 25 = p90 25, mean 25.5, with **1,026 of 1,029 columns within 10 grey levels of the
+      min**, in **one contiguous run x 107…1132**; the three that are not are the rect's own
+      overhang. **So the `min` is carried by 1,026 pixels, not one.** Read at 2x the rect is the
+      thick middle rule of three in the paper's regression table, between the
+      `(1) Pooled OLS … (5) System GMM` header block and the `Comfac` / `CRS` body rows.
+      ✅ **The published 25 / 56 / 136 reproduces DIGIT FOR DIGIT**: 8-bit `25 / 57 / 136`, and
+      unquantised `%[fx:minima*255]` reads **56.9819** and **136.45**, byte for byte the full
+      readings the section's own review item 8 recorded 31 days earlier. ⛔ **Only one (filter, spec)
+      pair yields 56.9819, so this PINS the 2026-08-21 pipeline** — default/Mitchell 56.9819,
+      Triangle 60.1759, Lanczos 35.0668, Point 24.0000, default at `200%` 63.8803.
+      ⛔ **THE FINDING IS A DIFFERENT INSTRUMENT PROBLEM FROM THE ONE THIS BOX WENT LOOKING FOR: the
+      1/2 figure swings 24–60 over five ImageMagick resize filters and reads 57 against 64 between
+      `-resize 1240x1647!` and `-resize 200%`** — a one-row phase shift, 620x823 doubling to 1646
+      against a 1647-row source. 1/3 reads 118–136 and is spec-invariant.
+      ✅ **The conclusion survives and the reason is measured rather than argued: 1/3 keeps 60.2% of
+      1/2's contrast by band-min and 60.5% by darkest-row mean, and those agreeing to 0.3 points is
+      what says the `min` is representative.**
+      ⛔ **One clause falls — *"the line is thinner and greyer"* is measured false in the UPSAMPLED
+      frame the bullet is written in, where the rule is WIDER at 1/3 at every mean threshold it has
+      rows at**: over the RECT, 250/240/220/200/180 give `1/2` 7/6/4/4/4 against `1/3` 8/7/7/6/5;
+      over a 30-row window y=196-225 (wider on purpose — the falloff already leaves the rect at both
+      factors) 8/6/4/4/4 against 10/8/7/6/5. Same sign at all five either way. ⛔ **A draft published
+      only the WINDOW pair under the rect's name; the review of that diff caught it.**
+      ⛔ **The STORED frame must not be quoted, and this box's own first draft quoted it at the one
+      threshold in it that favoured the conclusion** — raw 3-against-2 at 250–220, 1-against-2 at
+      200–180, and 6-against-6 then 2-against-6 once normalised for pixel pitch. Confounded by the
+      pitch and by the threshold both. ✅ *"Greyer"* is right and sharper: rows under a mean of 100 go
+      2 → 2 → 0 upsampled and 2 → 1 → 0 stored. The mechanism is **phase** — the same ink concentrating
+      in one stored row at 2x and straddling two at 3x. ✅ *"Continuous at both factors"* becomes a
+      number: 1,028 of 1,029 columns below 200, longest run 1,028, at every factor.
+      Successor: `c28-stencil-ratio-controls`.
+      `BUGS.md` C28 `#### The same loss at 1/3 …`'s
+      `##### The table rule's own rect, READ PER ROW AND PER COLUMN`.
+      **READ `1029x10+106+206`. A DARKEST-PIXEL-IN-RECT OVER A BAND 1,029 px
       WIDE IS ATTRIBUTED TO A TABLE RULE, AND A `min` NEEDS ONLY ONE DARK PIXEL ANYWHERE IN THE BAND
       TO READ AS THE RULE.**
       ✅ **Promoted 2026-09-20 by `c28-cartoon-hit-rect`, which wrote the promotion INTO the

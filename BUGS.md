@@ -97,6 +97,43 @@ in-window map is 155 px with a confirmed one-word loss in it.** ⛔ **And the ot
 candidates in proportion to the number, because `1976 - Regis McKenna Papers` p4 loses nothing and
 reads 82.42% of its whole ink out there: the column refutes border involvement and cannot establish
 it without a reading.**
+✅ **AND ANOTHER MEMBER OF THE §4b ATTRIBUTION CLASS IS READ 2026-09-21 AND IT HOLDS —
+`Jones et al_2010` p12's `1029x10+106+206` IS its table rule, and the `min` is carried by 1,026 pixels
+rather than one** (⛔ **no ordinal: a draft said *"the third"* and *"the first to hold"*, and both are
+refuted by the boxes above — the 59 px held and the drawing rects' claims stood, so of the four
+answered members exactly one, `Scott_TK` p3's footer, inverted**) (`#### The same loss at 1/3 …`'s `##### The table rule's own rect, READ PER ROW AND
+PER COLUMN`; nothing in `Tools/` or `Sources/` moved, no artefact written). The band's ten source rows
+mean `255 / 255 / 255 / 255 / 255 / 152.2 / 25.5 / 40.5 / 168.2 / 255`, so it holds one object and
+five clear rows above it; on the darkest row, **y=212**, min 25 = median 25 = p90 25 and **1,026 of
+1,029 columns** sit within 10 levels of the min, in **one contiguous run x 107…1132** — the three that
+do not are the rect's own overhang. ✅ The published **25 / 56 / 136** reproduces (8-bit `25 / 57 /
+136`; the review's own full readings are 25 / **56.9819** / 136.45, so 56 is truncated and 57 rounded).
+⛔ **The instrument problem is real but it is a DIFFERENT one: the 1/2 figure swings 24–60 over five
+ImageMagick resize filters and 57-against-64 between `-resize 1240x1647!` and `-resize 200%`** (a
+one-row phase shift, 620x823 doubling to 1646 against a 1647-row source), where 1/3 reads 118–136 and
+is spec-invariant. ⛔ **And that section's instrument-facts bullet NAMES THE WRONG FILTER: the bare
+`-resize` default is `Mitchell`, sha256-identical over the whole upsample, not the Lanczos its
+*"kinder of the two"* argument rests on** — default 57 against Triangle 60 against Lanczos 35, so it
+is barely kinder rather than notably so. ⚠️ The `Xin Qu` p20 verdict does **not** move with it. ✅ **The conclusion survives and the reason is measured: 1/3 keeps 60.2% of 1/2's
+contrast by band-min and 60.5% by darkest-row mean, and those agreeing to 0.3 points is what says the
+`min` is representative** — paper taken from the band's own y=206 (255.0 / 254.7 / 255.0, so the
+register's "~250" is pessimistic). ✅ *"Continuous at both factors"* becomes a number: **1,028 of 1,029
+columns below 200, longest run 1,028, at every factor.** ⛔ **The one clause that falls is *"thinner"*:
+in the UPSAMPLED frame the bullet is written in, the rule is WIDER at 1/3 at every mean threshold it
+has rows at** — over the RECT, 250/240/220/200/180 give `1/2` 7/6/4/4/4 against `1/3` 8/7/7/6/5, and
+over a 30-row window y=196-225 (wider on purpose: the falloff already leaves the rect at both
+factors) 8/6/4/4/4 against 10/8/7/6/5, same sign at all five either way — ⛔ **while the
+STORED frame must not be quoted, because it is confounded by pixel pitch AND by the threshold (3-vs-2
+raw rows at 250–220, 1-vs-2 at 200–180; normalised, 6-vs-6 then 2-vs-6) and the first draft of this
+paragraph quoted the one threshold in it that favoured the conclusion.** *"Greyer"* is right and sharp:
+rows under a mean of 100 go **2 → 2 → 0** upsampled and **2 → 1 → 0** stored. The mechanism is PHASE,
+the same ink straddling two stored rows at 3x where it concentrated in one at 2x. ⚠️ One rect, one
+page; **three** members are untouched (the six densest bands, `140x205+1660+2125`, and
+`Riesman - 1954` p16's `900x150+300+2440`, which the step's own sibling sweep added to the class), and
+⛔ **the 10-row band does not hold the whole rule TODAY, not merely at some further step**: the
+falloff already spills past y=215 at both downsampled factors — y=216 reads 246.1 at 1/2 and 225.9 at
+1/3, y=217 249.5 — ⛔ **and not past its FIRST row, which a draft said: y=206 reads 255.0 / 254.7 /
+255.0, clean paper at every factor, and at 1/3 the first inked row is 208.**
 ✅ **`C27` HAS NO BOUNDED WORK LEFT AS OF 2026-08-26 — (c) SHIPPED, and its queue box is `[hold] needs:
 owner`** (`#### The split, SHIPPED`). `Flattener.colourSaturationThreshold` is the colour decision's own
 bar, 0.06, **equal to `pictureSaturationThreshold` so no page's output moves**; the two decisions can move
@@ -8606,6 +8643,9 @@ separate.**
   `1029x10+106+206` after upsampling both backgrounds to the source's pixel size: the darkest pixel of
   the rule reads **25 in the source, 56 at 1/2 and 136 at 1/3** against paper at ~250, so it keeps
   about 60% of the contrast 1/2 keeps. Nothing is broken; the line is thinner and greyer.
+  ✅ **RE-DERIVED PER ROW AND PER COLUMN 2026-09-21 — the attribution HOLDS and the `min` is carried by
+  1,026 pixels rather than one, but *"thinner"* is measured FALSE in both frames. Read
+  `##### The table rule's own rect, READ PER ROW AND PER COLUMN` before quoting this bullet.**
 
 **Five read clean, one is a scan artefact, and three windows said nothing.** The five clean are the
 three `1954 - Why` cartoons, `Riesman - 1954` p16's bracket and `Atkinson_1939` p2's typescript line.
@@ -8706,6 +8746,13 @@ also executed: `PHOTODETAIL=bogus` and `PHOTODETAIL=maximum INKBAR=0.02` each ex
   `#### The same loss at 1/2` used. Lanczos preserves more apparent detail than bilinear, so it is the
   *kinder* of the two to the downsampled image — which cuts in favour of the `Xin Qu` verdict and
   against the five clean ones. Neither was checked against a real viewer.
+  ⛔ **THE FILTER IS MISIDENTIFIED AND THE KINDNESS ARGUMENT GOES WITH IT, measured 2026-09-21 on
+  ImageMagick 7.1.2-27: the bare `-resize` default is `Mitchell`, not Lanczos** — the whole upsample
+  is sha256-identical to `-filter Mitchell` and differs from `-filter Lanczos`. On `Jones` p12's rule
+  the default and Triangle read **57 and 60** while Lanczos reads **35**, so the default is barely
+  kinder than Triangle rather than notably so. ⚠️ **The `Xin Qu` p20 verdict does NOT move** — it is
+  carried by a 1:1 crop and a stencil ink of 0.0000, both in the *Could not refute* list below.
+  See `##### The table rule's own rect, READ PER ROW AND PER COLUMN`.
 - ⚠️ `magick montage` dies with `unable to read font ''` on this machine, so the side-by-side and
   stacked crops are `+append` / `-append` with a red separator bar instead of labelled tiles. A labelled
   montage is not available here.
@@ -8798,6 +8845,171 @@ mutants firing their intended check, the parser's immunity to the new summary li
 order making the `maximum`+`INKBAR` refusal reachable, the `keepEveryPixel` mirror matching
 `Flattener.swift:2738`/`2759` with no other replica in the file needing it, and that no test asserts on
 `PhotoDetail.blurb`.
+
+##### The table rule's own rect, READ PER ROW AND PER COLUMN — 2026-09-21
+
+The queue's `c28-table-rule-rect` — ticked as `c28-table-rule-rect-asked`, which is the tag that now
+`grep`s to a box — promoted 2026-09-20 as a member of the class
+`#### The cartoon's own 59 pixels, READ` names: **a total over a band wide or tall enough to hold the
+named mark AND something else, attributed to the mark.** The suspicion was specific — a `min` over a
+band 1,029 px wide needs **one** dark pixel anywhere in it to read as the rule.
+
+⛔ **THE SUSPICION IS REFUTED AND THE ATTRIBUTION HOLDS: the band holds the rule and nothing else, and
+the `min` is carried by 1,026 pixels rather than one.** In the source render (1240x1647) the ten rows
+of `1029x10+106+206` read, as row means, `255.0 / 255.0 / 255.0 / 255.0 / 255.0 / 152.2 / 25.5 / 40.5 / 168.2 / 255.0` — five rows of unbroken white above the rule, one below it, and no second object
+anywhere in the band. **The darkest pixel is on row y=212, and what is on that row is the rule across
+essentially the whole band**: min **25**, p10 25, median **25**, p90 **25**, mean **25.5**, with
+**1,026 of the 1,029 columns at or within 10 grey levels of the min**. ⚠️ **A second and different
+statistic also reads 1,026 and the two must not be run together as if one corroborated the other**:
+the first is on row y=212 alone, while the per-column minimum over the whole 10-row band is below 100
+in **one contiguous run, x 107…1132 — also 1,026 columns**. The three columns that are not dark are
+the rect's own overhang, 1 left and 2 right (entailed by the run's endpoints inside 106…1134, not a
+third reading).
+⛔ **AND 1,026 IS THE SOURCE ARM'S FIGURE, while the numbers the register publishes at 1/2 and 1/3
+are less well carried**: on each arm's own darkest row the count within min+10 is **896 of 1,029** at
+1/2 (median 63, p90 147) and **898** at 1/3 (p90 171). Three orders off the one-pixel suspicion either
+way — so the attribution is safe on all three arms — but the `min` is near-exact on the source and
+only roughly representative on the two arms the 56 and the 136 come from.
+
+✅ **And the rect is the mark it is named after, read at 2x**: it is the **thick middle rule of three**
+in the paper's regression table, between the `(1) Pooled OLS … (5) System GMM` header block and the
+`Comfac` / `CRS` body rows. ✅ **And the band's isolation is measured, not eyeballed**: over the rect's
+own x-range the nearest inked row outside it is **12 rows away on either side** — y=194 above (the
+`Pooled OLS` header line's last row, mean 247.4) and y=227 below (the `Comfac` row, 248.5) — while the
+two neighbouring rules sit at **y=151** (mean 118.3) and **y=278** (57.5), **55 and 63 rows outside**
+the band. Nothing can reach into a 10-row window at 2x or 3x from there. ⚠️ Those two are also what
+says the middle rule is the page's darkest: 25.5 against 118.3 and 57.5.
+
+✅ **THE TRIPLE REPRODUCES DIGIT FOR DIGIT, AND THE CONTROL IS SHARPER THAN A RE-RUN.** The 8-bit
+readings are **25 / 57 / 136** against the published 25 / **56** / 136, and the one-level gap at 1/2
+is not a discrepancy: unquantised, `%[fx:minima*255]` over the same band reads **56.9819** and
+**136.45** — **byte for byte the full readings this section's own review item 8 recorded**, four
+decimal places and two, thirty-one days and two sessions apart. `56` is that value truncated and `57`
+is it rounded through an 8-bit path. ⛔ **And because only ONE (filter, spec) pair produces 56.9819,
+that agreement PINS the original session's pipeline rather than merely agreeing with it**: `default`
+and `Mitchell` give 56.9819, `Triangle` 60.1759, `Lanczos` 35.0668, `Point` 24.0000, and the default
+under `-resize 200%` gives **63.8803**. So the 2026-08-21 run used the bare default at an exact
+`1240x1647` — which is what makes the two paragraphs below claims about *that* run and not only
+about this one.
+
+⛔ **THE FINDING IS A DIFFERENT INSTRUMENT PROBLEM FROM THE ONE THE BOX WENT LOOKING FOR, AND THE
+REGISTER DOES NOT STATE IT: the 1/2 figure is an artefact of the upscale at the scale it is quoted
+to.** Over five ImageMagick resize filters the band min at 1/2 reads **Point 24, Lanczos 35,
+default 57, Mitchell 57, Triangle 60** — a **36-level spread on a published 56** — and the resize
+*spec* moves it too: **57 for `-resize 1240x1647!` against 64 for `-resize 200%`**, because 620x823
+doubles to 1240x**1646** against a 1647-row source and the one-row difference shifts the sampling phase
+(the darkest row moves y213 → y212). The 1/3 figure is far steadier: **118–136** over the same five
+filters and **identical** under both specs.
+⛔ **AND THE INSTRUMENT-FACTS LIST ABOVE MISIDENTIFIES THAT DEFAULT, measured on ImageMagick 7.1.2-27:
+`-resize` with no `-filter` is `Mitchell` here, NOT Lanczos.** The bullet reads *"the upscale filter
+here is ImageMagick's `-resize` default, not `-filter Triangle` … Lanczos preserves more apparent
+detail than bilinear, so it is the kinder of the two to the downsampled image — which cuts in favour
+of the `Xin Qu` verdict"*, and the identification is refutable without any band statistic: the whole
+1240x1647 upsample under the bare default is **sha256-identical to `-filter Mitchell`**
+(`807f842c…`) and differs from `-filter Lanczos` (`421627ff…`). ⛔ **And it is a statement about the
+2026-08-21 run and not only about this one, because that run's own recorded 56.9819 is reproduced by
+`default`/`Mitchell` and by no other filter** — 60.1759 Triangle, 35.0668 Lanczos, 24.0000 Point.
+⛔ **So the kindness argument does not
+survive its own premise, and the direction is the reassuring one being wrong**: on this band the
+default and Triangle read **57 and 60** — all but the same — while Lanczos reads **35**, so the
+instrument is barely kinder than `#### The same loss at 1/2`'s Triangle rather than notably kinder.
+⚠️ **This does NOT move the `Xin Qu` p20 verdict and must not be read as doing so** — that page was
+not measured here, and its verdict is carried by a 1:1 crop and a stencil-ink reading of 0.0000 that
+this section's own review list records as independently checked. What falls is the filter's name and
+the argument built on it. What else is new is the size of the spread, and that the *spec*, not only
+the filter, is load-bearing.
+
+✅ **WHAT SURVIVES ALL OF IT IS THE CONCLUSION, AND THE REASON IS MEASURED RATHER THAN ARGUED.**
+Taking paper from the band's **own** white row (y=206, measured 255.0 / 254.7 / 255.0 — the register's
+"~250" is a little pessimistic), 1/3 keeps **60.2%** of the contrast 1/2 keeps by band-min and
+**60.5%** by darkest-row mean. ⚠️ **Those two agreeing to 0.3 points is evidence the `min` is
+representative and NOT the "direct statement" a draft called it — the review of this diff was right
+that the two are COUPLED, the row-mean being taken on the row the `min` itself selected.** The
+independent evidence is the per-column profile above, which is near-exact on the source and weaker at
+896 / 898 on the two arms. ⛔ **The stronger form is that they agree at EVERY filter, which is
+the form to quote**: over `default` / `Triangle` / `Mitchell` / `Lanczos` / `Point` the min-based ratio
+reads **60.2 / 61.8 / 60.2 / 62.9 / 52.5 %** and the row-mean-based one **60.5 / 61.3 / 60.5 / 62.8 /
+52.0 %** — never more than **0.5** points apart, on readings whose own inputs span 36 grey levels. So the
+three distinct smooth filters put it at **60.2–62.9%** and only nearest-neighbour drops it, to 52.5%.
+*"About 60% of the contrast 1/2 keeps"* holds. ⚠️ `default` and `Mitchell` return **identical** figures
+on both arms, so the five settings are **four** distinct readings — and ⛔ **a draft of this paragraph
+published `59.1 / 60.5 / 61.4` for the smooth three, and the review of this diff found it was worse
+than one wrong convention: it MIXED TWO.** `59.1` and `61.4` are `default` and `Lanczos` computed by
+hand against the register's nominal paper of 250, `60.5` is `default`'s **measured-paper row-mean**
+figure spliced into the middle, and `Triangle`'s own paper-250 value, 61.1, was dropped — which is why
+no single recomputation reproduces the triple.
+
+✅ **"Continuous at both factors" holds exactly**, and this is the first time it is a number: on the
+darkest row, **1,028 of 1,029 columns read below 200 at every factor, in a longest unbroken run of
+1,028** — source, 1/2 and 1/3 alike.
+
+⛔ **THE ONE CORRECTION THE PER-ROW SCAN FORCES IS *"thinner"*, AND IT IS MEASURED FALSE IN THE FRAME
+THE BULLET IS WRITTEN IN.** That bullet reads the rect *"after upsampling both backgrounds to the
+source's pixel size"*, so the upsampled frame is the one its adjectives are about, and there the rule
+is **wider at 1/3 at every mean threshold it has any rows at**. Over **the rect itself**, rows under a
+mean of 250 / 240 / 220 / 200 / 180 go `1/2` **7 / 6 / 4 / 4 / 4** against `1/3` **8 / 7 / 7 / 6 / 5**;
+over a **30-row window y=196–225** they go **8 / 6 / 4 / 4 / 4** against **10 / 8 / 7 / 6 / 5**. Same
+sign at all five thresholds either way.
+⛔ **BOTH ARE PRINTED BECAUSE THE FIRST DRAFT PUBLISHED ONLY THE WINDOW PAIR, UNDER THE RECT'S NAME —
+three of those ten numerals are not readings of the rect, which is this step's own class committed
+inside the step that exists to catch it, found by the adversarial review of this diff.** The wider
+window is not a mistake in itself and is why it was used: **the rule's falloff already leaves the
+10-row rect at both downsampled factors** — y=216 reads 246.1 at 1/2, and 225.9 with y=217 at 249.5 at
+1/3, against paper of ~255 — so the rect cannot hold the whole rule *today*, not merely at some
+further downsample step. ⛔ **Below that the counts invert (2 against 1 at 150, 2 against 0 at 100) and
+that is NOT a width reading**: the 1/3 arm runs out of rows because it has no dark ones left, which is
+the *"greyer"* half of the same clause.
+⛔ **AND THE STORED FRAME MUST NOT BE QUOTED — the first draft of this paragraph quoted it, at the one
+threshold in it that favours the conclusion, which is this register's own recurring defect committed
+inside the step that exists to catch it.** Stored, the rule reads **3 rows at 1/2 against 2 at 1/3** at
+thresholds 250–220 — which reads as *"thinner"* — and **1 against 2** at 200–180, the reading the draft
+published alone. It is confounded twice over: by **pixel pitch**, a 1/2 row spanning 2 source rows and
+a 1/3 row spanning 3, which normalises those to **6 against 6** (equal) and **2 against 6**; and by the
+threshold, which flips the raw sign. One frame answers and the other does not.
+✅ **What is true is *"greyer"*, and the sharp form is the core**: rows under a mean of **100** go
+**2 → 2 → 0** upsampled and **2 → 1 → 0** stored — ⚠️ two frames and two sequences, printed together
+because quoting one as the other is the defect above — so on either, at 1/3 **no row of the rule
+reaches a mean of 100 at all**. ⛔ **The mechanism is PHASE, not ink** — the rule's ink lands mostly on
+one stored row at 2x and is split evenly across two at 3x — ⛔ **though "concentrate into ONE" is too
+strong and a draft said it: at 2x the ink occupies THREE stored rows (deficits 53.6 / 212.1 / 38.5
+against paper), and what concentrates is the SHARE, 69.5% in the darkest row against 55.0% at 3x.**
+⚠️ The *"not ink"* half is corroborated but not settled: total ink deficit over the window, scaled to
+source-row units, is **610.3 at 1/2 against 603.6 at 1/3** (1.1% apart), so little is lost — but
+⚠️ **JPEG block structure is an untested competing mechanism** (the backgrounds are lossy JPEGs and at
+1/3 the rule's core ends on the block-8 boundary at stored row 71), raised by the review of this diff,
+so PHASE stays reasoned. The verdict on the page (*"nothing is
+broken"*, degraded and still legible) is unaffected; the descriptive clause is not.
+
+✅ **SIBLING SWEEP, and it found a FOURTH instance of the `min`-over-a-band shape that the §4b sweep
+did not list.** Every *"darkest pixel"* claim in the tree was read. The 25 / 56 / 136 triple has three
+further summary copies (`BUGS.md`'s file header, `CLAUDE.md`, and `QUEUE.md`'s 2b box) and **none of
+them carries the *"thinner"* clause** — all three say only *"degraded and still legible"*, which this
+step confirms — so nothing else needed correcting, and `QUEUE.md`'s *"continuous throughout"* is the
+clause this step turns into a number. ⛔ **But `#### The bar priced against the term`'s `Riesman - 1954`
+p16 reading is the same shape and is in no list: *"the darkest pixel in that rect goes 12 → 42 of
+255"* over a **900×150** rect — 135,000 px — with *"peak contrast against ~250 paper falls about
+12.6%"* derived from it.** ⚠️ **It is NOT being called wrong here — it was not measured** — and unlike
+`1029x10` it already prints an object-level statistic beside the `min`. ⛔ **The catch is that there
+the two DISAGREE: the rect mean moves 116.6 → 117.6, a single grey level, while the `min` moves 30**,
+so the pairing that validates the `min` on this rect would fail on that one. That may be exactly
+right — the claim there is about *peak* contrast and the mean holding is its point — but it means
+*"falls about 12.6%"* rests on one pixel of 135,000, and nothing says which. Carried into
+`c28-stencil-ratio-controls`'s successor list rather than chased here.
+⚠️ **Limits, named.** One rect on one page, and **three** members of the class are untouched — the six
+densest bands behind the 0.52–0.57 stencil ratio, `140x205+1660+2125`, and the p16 rect the sweep
+above just added, so the class grew in the commit that answered one of it.
+`darkcols` is an 8-bit quantised read through `magick … gray:-`, which is why the 8-bit reproduction
+is `57` where the unquantised one is `56.9819`. ⛔ **THE 10-ROW BAND DOES NOT HOLD THE WHOLE RULE
+TODAY** — its footprint reaches **y=215, the band's own LAST row** (mean 194.1) and spills past it at
+both downsampled factors, y=216 reading **246.1** at 1/2 and **225.9** at 1/3 with y=217 at 249.5, so
+*"could not hold it at a further downsample step"* (a draft's phrasing) is the present tense stated as
+the future. ⛔ **And it does not reach the band's FIRST row, which the same draft said: y=206 reads
+255.0 / 254.7 / 255.0 — clean paper at every factor — and at 1/3 the first inked row is 208, two rows
+inside.** Invisible to a `min` either way, and the one thing the per-row scan found that argues
+against the rect rather than for it. Nothing in `Tools/` moved, no new artefact was written, and
+no page's verdict changes. Reproduce with
+`PHOTODETAIL=balanced|smallest INKDUMP=<dir>` on `Jones et al_2010` p12, then
+`magick <bg> -resize 1240x1647! …` and a per-row scan of `1029x10+106+206`.
 
 #### A shape term, MEASURED over 13 labelled pages — the first term of this entry that does NOT interleave, and it reads 0 on this sample's hand-made mark — 2026-08-21 (⛔ "blind to a hand-made mark BY CONSTRUCTION" was refuted the same day: see `#### The same shape term on PICTURES`)
 
