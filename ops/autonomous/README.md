@@ -4,6 +4,13 @@ A way to run Vision OCR maintenance overnight that survives usage cutoffs, conte
 laptop lid. It fires a fresh headless `claude -p` every cycle to advance the queue by **one bounded item**,
 then that session commits, pushes and stops.
 
+**Reset 2026-09-24.** The queue (`QUEUE.md`), the session prompt (`resume-prompt.txt`) and the repo's
+`CLAUDE.md` were rewritten short, with the old versions kept in `docs/history/`. The daemon's shell code
+was not changed. The reasons: the three files had grown to about 1 MB between them, `CLAUDE.md` alone was
+308 KB and loaded into every session, and the queue had filled with work on the project's own
+instruments while owner-reported defects waited. The new queue holds product work only and its header
+states the rules that keep it that way.
+
 Scaled down from the Archive Suite daemon (`~/Claude/Archive Suite/ops/autonomous/`). §*What this
 deliberately does not have* records what was cut and why, because the reasons are the useful part.
 
