@@ -148,10 +148,14 @@ MAXRUN="${VISIONOCR_MAXRUN:-14400}"       # OUTER wall-clock backstop (4 h). The
 # $15 of headroom is deliberately more than that — a session that has done its work must never be unable to
 # AFFORD to land it. If this stops helping, the next lever is item size, not another raise.
 BUDGET="${VISIONOCR_BUDGET:-35}"
-EFFORT="${VISIONOCR_EFFORT:-xhigh}"       # low|medium|high|xhigh|max. xhigh, not max: it is the documented
-                                          # sweet spot for agentic coding work, while max overthinks for
-                                          # diminishing returns AND reaches the usage cap sooner — which on
-                                          # this laptop costs COMPLETED ITEMS per window, not quality.
+EFFORT="${VISIONOCR_EFFORT:-medium}"      # low|medium|high|xhigh|max. medium since 2026-09-24, when the run
+                                          # moved to Opus 5.5 (the `opus` alias resolves to claude-opus-5-5).
+                                          # Anthropic's Opus 5.5 guidance: "Start at `medium`" and "Reserve
+                                          # `xhigh` and `max` for work where you've measured a quality gain";
+                                          # medium matched or beat Opus 5 at high on agentic coding, and 5.5
+                                          # thinks more per turn at xhigh. The earlier xhigh came from the Opus
+                                          # 4.7/4.8 advice and was never measured here. If sessions fall short
+                                          # on hard items, try high before anything higher.
                                           # NOTE both this and --model resolve BEFORE the session picks its
                                           # item, so per-ITEM tuning is not expressible here. What a session
                                           # CAN vary per task is its SUBAGENTS' model/effort; the resume

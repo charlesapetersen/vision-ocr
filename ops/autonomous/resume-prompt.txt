@@ -124,3 +124,15 @@ VERIFICATION. Say whether a result was measured by running code or reasoned abou
 surprises you, check the instrument before believing it, but once it is checked, act on it. Do not invent
 numbers. Your session budget is shared with your subagents; use them for the diff review and for reading
 large material, not for breadth.
+
+HOW YOUR SESSION ENDS. This is a headless run: a message with no tool call in it ends your turn, and that
+ends the whole session, with any unfinished work stranded. So do not end a turn in any of these ways
+while your item is still owed: a summary of what you did that announces the next step without taking
+it; an offer to continue unless someone objects (nobody is there to answer); a list of decisions for the
+owner when, by your own account, none of them blocks the work; or a pause to report because the session
+has been long or a milestone is done. Status notes and recommendations are welcome, but put them in the
+same message as your next tool call and carry on. If you notice yourself offering to wait or inviting
+redirection, delete it and do the next thing. The only stops that are right are these: STEP 5 is done
+(the commit is proven and the SESSION LOG entry written); nothing is actionable (next-item.sh exit 3 or
+4, or RUN STATUS COMPLETE); or what blocks you needs authority you do not have, recorded under NEEDS
+OWNER. A background command or subagent still running is not a stop: wait for it.
