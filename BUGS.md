@@ -18043,6 +18043,9 @@ or one half under 0.4 of its width's share. The review set those bars; the first
 **Left:** a rule printed down the gutter keeps a fused line whole, and a page with more fused rows than
 a tenth of its lines finds no gutter. A table whose cells hold wide lines of text reads column by column.
 `in in-` at a left column's foot still joins the next page's first line (it did before).
+2026-09-26, `corpus-stress`: New York Stock Exchange 1956 p24, a ruled table, reads in blocks of about
+four rows, one column at a time within each block, so copying a row does not keep its cells together.
+Nothing is lost. Tables have no right order under this scheme, so this is not opened as an entry.
 
 ### C35 · Some already-OCR'd files come out several times larger than they went in — FIXED
 
@@ -18092,6 +18095,67 @@ bitmap. That needs a new route through `flatten` and the recogniser, and it woul
 owners report pre-compressed scans as a pattern.
 Noted by the review and not fixed: a bookmark aimed at a *rotated* or off-origin passthrough page keeps
 the right page, but its /XYZ point is in the rebuilt page's space, so it may land elsewhere on that page.
+2026-09-26, `corpus-stress`: pre-compressed scans are a pattern in the corpus after all. See C37.
+
+### C36 · Text that reads sideways on the published page, including landscape pages under `/Rotate`, gets a text layer laid flat and squashed to about 1.5 pt, so it can be found but not selected where it is printed — OPEN
+
+*(found 2026-09-26 by `corpus-stress`'s reading of `STRESS-2026-09-26.tsv`; the per-page list is the
+`sideways` rows of `STRESS-READING-2026-09-26.tsv`.)*
+
+Koh 2008 p127 is a table printed at a quarter turn on a portrait page (a thesis's landscape table).
+Vision reads it: PDFKit finds 16 lines and 1,490 characters, and the numbers are right. But 92% of the
+page's ink lies outside every selectable line. `pdftotext -bbox` shows why: every word is drawn
+horizontally. `1.07 n.s. (0.14)` gets a box 12 pt wide and 5 pt tall over ink that runs about 60 pt
+vertically, and the notes' long lines are drawn **1.5 pt tall**. So Find works, but a drag over a printed
+line selects nothing, and a hit highlights a sliver. [measured]
+
+Extent: 21 pages in 8 documents have more than 30% squashed words, and 66 pages have more than 10%. A
+word counts as squashed if it has at least 3 characters and is drawn under 2.5 pt tall, or with a width
+per character under 0.15 of its height. The 21 pages have two sources. [measured]
+- **13 pages are Koh's**: pp71-73, 90-92, 125-129 and 168-169. Each is a landscape source page with
+  `/Rotate 270`: p127's MediaBox is 792.96x615.84, and its image is 3304x2566. The published page is
+  derotated to 615.84x792.96 at `rot 0`, with a 2566x3304 image. So the rebuild bakes the turn into the
+  bitmap, and Vision reads the page's text sideways. In the MediaBox's own frame that text is upright,
+  and the source's existing layer runs along its lines (`pdftotext` reads it cleanly). So this half is a
+  regression against the source.
+- **8 pages are `rot 0` pages** where the print itself is sideways: Mintzberg p57, Surani p32, Lemieux
+  p44, Doermann p10, Mudge p145, Burke pp14 and 16, and a 1939 letter p5. Mintzberg p22's sideways
+  table is covered properly, so not every such block fails.
+
+Cause, inferred from the code rather than traced: `SearchableWriter` has no case for rotated text. It
+fits each observation's string horizontally into its box, so a tall, narrow box yields a tiny font.
+For the `/Rotate` pages, recognising in the unrotated frame and drawing the layer there may be enough. For
+sideways print, the run has to be drawn rotated to its box, and Vision's per-character boxes
+(`boundingBox(for:)`) give the reading direction.
+
+### C37 · Scans that arrive as 1-bit JBIG2 are re-encoded at up to 2.5x the bytes — OPEN
+
+*(found 2026-09-26 by `corpus-stress`; the `jbig2-source` rows of `STRESS-READING-2026-09-26.tsv`.)*
+
+51 of the 232 distinct corpus documents are at least 90% 1-bit JBIG2 images at the source: ProQuest
+theses, JSTOR and Google scans, NBER papers. The TSV has 52 rows because `w7787` is there twice. At
+default settings they go from **219.9 MB to 258.8 MB**. 31 come out larger, 158.5 → 216.9 MB between
+them, and 6 of those at 2x or more:
+- Fisch 2019: 1.75 → 4.43 MB
+- Cooley 2008: 5.43 → 12.50 MB
+- Koh 2008: 2.41 → 5.52 MB
+- Hayek 1978: 24.56 → 37.18 MB
+- Engstrom 2005: 15.17 → 20.76 MB
+
+20 get smaller. Some of those are layered sources, where the JBIG2 is a mask over a JPX picture (Gibbs,
+3.81 → 0.93 MB), which the 90% filter also counts. C35 already measured the growth as the encoder mode:
+generic-region coding, because R37 refuses symbol mode. It rejected reusing the source's stream until
+pre-compressed scans proved a pattern, and at a fifth of the corpus they have. [measured]
+
+A fix keeps the source's JBIG2 stream, and its `/JBIG2Globals` if it has any, when the rebuilt bitmap is
+that same image. Koh's streams carry their symbol dictionary in-stream, so keeping them adds no
+substitution the source did not already have. "The same image" has to be proved, not assumed:
+- the image fills the page as the only drawing, with `/Decode`, `/ImageMask` and placement accounted for;
+- the rebuild did not crop, clean or resample it;
+- the page has no `/Rotate`, or the kept stream is placed under the source's own turn. C36 shows the
+  rebuild transposes Koh's `/Rotate 270` pages.
+
+Recognition and the text layer are unchanged.
 
 ## Robustness and correctness of reporting
 

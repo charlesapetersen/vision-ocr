@@ -192,7 +192,7 @@ say so in the commit.
       the size is the price of something wanted.
       BOUND: one docs commit for the investigation, one code commit if a fix follows.
       (origin: BUGS.md C35)
-- [ ] **corpus-stress** — stress-test the app on the whole corpus and turn what it finds into queued work.
+- [x] **corpus-stress** — stress-test the app on the whole corpus and turn what it finds into queued work.
       Run the production pipeline end to end at default settings over every document in `testdocs/`
       (233 files) and the owner's test folder, `~/Desktop/Zotero PDF Transfer folder/` (read only; write
       outputs to scratch). For each page record: route taken, crash or error, time, output bytes against
@@ -212,6 +212,48 @@ say so in the commit.
       their source. Colour loss depends on the floor: 4 pages at srcColour > 0.05 with out < src/3, and
       46-58 at a floor of 0.01-0.02 with out < src/10. `owner/1954 - Why.pdf` is the same file as the
       testdocs copy, so it is counted twice.
+      2026-09-26, the reading: about 40 of the worst pages on each measure were rendered and looked at.
+      Two defect classes became C36 (sideways text, 21 pages) and C37 (JBIG2 sources re-encoded, 31
+      documents grown), queued below; the evidence is `STRESS-READING-2026-09-26.tsv`.
+      No new class of unread body text was found after C30/C33. The `bareText` pages that were looked at
+      are scanner borders (Boltanski, every page), table rules, dotted plots, photographs and chart marks.
+      A few chart and axis labels go unread, and no item was opened for them. What the instruments got
+      wrong, one line each:
+      - `bareText` and `gutter` are void on layered pages: at 100 dpi CoreGraphics renders the stencil's
+        text lighter than 128, so only the picture counts as ink (Ehrenreich p4: 3,955 characters, 100%
+        bare).
+      - Borders past the 3% margin count as text.
+      - `warnDigitalText` is off in the gate, so born-digital files were rasterised, which the app would
+        ask about first (the Silicon Valley transcript's colour loss).
+      Colour otherwise: the Jane Stanford typescript's paper tint goes to grey, as decided in R33. Tables
+      after C34: one line in that entry. Speed: single newspaper pages take 40-60 s, and the median is
+      3.7 s a page.
+- [ ] **c36-sideways-text** — give text that reads sideways on the published page a text layer that lies
+      along the printed line, at the printed size. Today it is drawn flat and squashed to about 1.5 pt,
+      so Find works but a drag over the line selects nothing (`BUGS.md` C36). There are two sources:
+      Koh 2008's `/Rotate 270` landscape pages (pp71-73, 90-92, 125-129, 168-169), and 8 `rot 0` pages
+      with sideways print. Either half alone is an acceptable first commit if the other is recorded as left.
+      DONE WHEN, measured on the published PDF:
+      * on Koh p127, PDFKit's selection boxes for the sideways lines lie over their printed ink, and the
+        text extracts in reading order;
+      * re-measured with the squashed-word count of C36, none of the 21 pages is above 10%;
+      * upright pages' layers are unchanged on a named sample, and invariant 3 holds;
+      * each new check goes red without the change.
+      BOUND: one code commit.
+      (origin: BUGS.md C36)
+- [ ] **c37-keep-jbig2** — publish a page whose source image is already 1-bit JBIG2 with that stream
+      (and its `/JBIG2Globals`, if any) kept as it is, when the rebuilt bitmap is provably the same image.
+      Today those pages are re-encoded: 51 documents go from 219.9 to 258.8 MB, and 31 of them grow, by up
+      to 2.5x (`BUGS.md` C37).
+      DONE WHEN:
+      * the `jbig2-source` documents are re-published and measured;
+      * every kept page's rendered pixels are identical to the source's;
+      * no page's image stream grows, and the 31 larger documents shrink, with the total stated;
+      * no page whose rebuild differs from its source image (cropped, cleaned, resampled, or turned by
+        `/Rotate` without the turn restored) takes the new route;
+      * a check goes red without the change.
+      BOUND: one code commit.
+      (origin: BUGS.md C37)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
