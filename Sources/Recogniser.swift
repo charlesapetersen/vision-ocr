@@ -499,6 +499,8 @@ enum Recogniser {
         let handler = VNImageRequestHandler(cgImage: image, orientation: orientation,
                                             options: [:])
         try handler.perform([request])
+        // Vision's normalised space is the oriented image, whose sides swap here.
+        let sideways = [.left, .right, .leftMirrored, .rightMirrored].contains(orientation)
 
         var out: [SearchableWriter.Observation] = []
         for case let observation as VNRecognizedTextObservation in request.results ?? [] {
@@ -523,9 +525,29 @@ enum Recogniser {
                     width: box.size.width,
                     height: box.size.height),
                 text: candidate.string,
-                confidence: Double(observation.confidence)))
+                confidence: Double(observation.confidence),
+                quarterTurns: quarterTurns(from: observation.topLeft, to: observation.topRight,
+                                           width: sideways ? image.height : image.width,
+                                           height: sideways ? image.width : image.height)))
         }
         return out
+    }
+
+    /// Which way a line reads, from its quad's top edge (`topLeft` to `topRight`, in
+    /// Vision's normalised bottom-left space over an image `width` x `height` pixels):
+    /// the nearest quarter turn anticlockwise, nil for upright.
+    ///
+    /// The axis-aligned `boundingBox` cannot say this. A line printed up the page
+    /// gets a tall, narrow box, and the writer fitted its string across that box at
+    /// about 1.5 pt (C36). The quad's corners follow the text: on Koh 2008 p127, a
+    /// `/Rotate 270` table, every line's top edge runs straight up the page.
+    static func quarterTurns(from topLeft: CGPoint, to topRight: CGPoint,
+                             width: Int, height: Int) -> Int? {
+        let dx = Double(topRight.x - topLeft.x) * Double(width)
+        let dy = Double(topRight.y - topLeft.y) * Double(height)
+        guard dx.isFinite, dy.isFinite, dx != 0 || dy != 0 else { return nil }
+        if abs(dx) >= abs(dy) { return dx > 0 ? nil : 2 }
+        return dy > 0 ? 1 : 3
     }
 
     // MARK: - Recognising a page again in bands (C30)
@@ -731,7 +753,8 @@ enum Recogniser {
                                 y: (Double(rect.top) + p.boundingBox.y * rows) / Double(h),
                                 width: p.boundingBox.width,
                                 height: p.boundingBox.height * rows / Double(h)),
-                            text: p.text, confidence: p.confidence)
+                            text: p.text, confidence: p.confidence,
+                            quarterTurns: p.quarterTurns)
                     }
                 let read = Double(piece.reduce(0) { $0 + $1.text.count })
                 guard !piece.isEmpty, read >= 0.4 * s.width / b.width * Double(o.text.count)
@@ -782,7 +805,7 @@ enum Recogniser {
                     y: $0.boundingBox.y,
                     width: $0.boundingBox.width * scale,
                     height: $0.boundingBox.height),
-                text: $0.text, confidence: $0.confidence)
+                text: $0.text, confidence: $0.confidence, quarterTurns: $0.quarterTurns)
         }, crop.top, crop.bottom)
     }
 
@@ -1159,7 +1182,8 @@ enum Recogniser {
                 if band.bottom < h, bottom > bandHeight - margin { continue }
                 if bottom - top > 2 * Double(line) { continue }
                 candidates.append(SearchableWriter.Observation(boundingBox: box, text: o.text,
-                                                               confidence: o.confidence))
+                                                               confidence: o.confidence,
+                                                               quarterTurns: o.quarterTurns))
             }
         }
         /// Whether kept box `k` is on the line of the box whose middle half is `middle`.

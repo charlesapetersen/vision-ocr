@@ -152,6 +152,11 @@ enum SearchableWriter {
         let boundingBox: BoundingBox
         let text: String
         let confidence: Double
+        /// Which way the line reads, in quarter turns anticlockwise from upright:
+        /// 1 reads up the page, 2 is upside down, 3 reads down. Nil is upright, and
+        /// is left out of the JSON, so an upright page's observations encode as before.
+        /// `compose` draws a turned line in a frame turned with it (C36).
+        var quarterTurns: Int? = nil
     }
 
     /// Normalised to the page, with a top-left origin.
@@ -300,17 +305,22 @@ enum SearchableWriter {
             // The text, invisible, over the top.
             pdf.saveGState()
             pdf.setTextDrawingMode(.invisible)
-            let lines = prepared(byPage[index + 1] ?? [], nextPage: byPage[index + 2] ?? [],
-                                 in: region, joinHyphenated: joinHyphenated)
-            for (position, observation) in lines.enumerated() {
-                if let reason = draw(observation, in: region,
-                                     ceiling: headroom(for: position, among: lines, in: region),
-                                     rightLimit: rightLimit(for: position, among: lines,
-                                                            in: region),
-                                     font: base, into: pdf) {
-                    skipped.append(Unplaced(page: index + 1, text: observation.text,
-                                            reason: reason))
+            for layer in layers(byPage[index + 1] ?? [], nextPage: byPage[index + 2] ?? [],
+                                in: region, joinHyphenated: joinHyphenated) {
+                let (lines, frame) = (layer.lines, layer.region)
+                pdf.saveGState()
+                if let turn = layer.transform { pdf.concatenate(turn) }
+                for (position, observation) in lines.enumerated() {
+                    if let reason = draw(observation, in: frame,
+                                         ceiling: headroom(for: position, among: lines, in: frame),
+                                         rightLimit: rightLimit(for: position, among: lines,
+                                                                in: frame),
+                                         font: base, into: pdf) {
+                        skipped.append(Unplaced(page: index + 1, text: observation.text,
+                                                reason: reason))
+                    }
                 }
+                pdf.restoreGState()
             }
             pdf.restoreGState()
 
@@ -359,6 +369,74 @@ enum SearchableWriter {
                                  aspect: region.width > 0 ? Double(region.height / region.width) : 1)
             .prefix(SearchableWriter.continuationCandidates)
         return joiningHyphenatedWords(lines, in: region, continuation: Array(next))
+    }
+
+    // MARK: - Turned lines (C36)
+
+    /// A page's text layer as the groups `compose` draws: the upright lines as they
+    /// always were (no transform), then each group of turned lines, `prepared` in a
+    /// frame turned so that they read upright, with the transform onto the page. An
+    /// instrument that measures the layer should start here, as `prepared` says.
+    ///
+    /// Turns are reduced mod 4 before the split, so no value can fall between the
+    /// groups and leave a line undrawn and unreported (invariant 1).
+    static func layers(_ raw: [Observation], nextPage: [Observation] = [], in region: CGRect,
+                       joinHyphenated: Bool = true)
+        -> [(lines: [Observation], region: CGRect, transform: CGAffineTransform?)] {
+        func turn(_ o: Observation) -> Int { (((o.quarterTurns ?? 0) % 4) + 4) % 4 }
+        var out = [(lines: prepared(raw.filter { turn($0) == 0 },
+                                    nextPage: nextPage.filter { turn($0) == 0 },
+                                    in: region, joinHyphenated: joinHyphenated),
+                    region: region, transform: CGAffineTransform?.none)]
+        for turns in 1...3 {
+            let group = raw.filter { turn($0) == turns }
+            guard !group.isEmpty else { continue }
+            let frame = turnedFrame(turns, of: region)
+            out.append((prepared(group.map { uprighted($0, turns) }, in: frame.region,
+                                 joinHyphenated: joinHyphenated),
+                        frame.region, frame.transform))
+        }
+        return out
+    }
+
+    /// The frame in which lines turned `turns` quarter turns anticlockwise read
+    /// upright: a region at the origin, `region`'s sides swapped for an odd turn, and
+    /// the transform that takes it onto `region` on the page. Concatenated onto the
+    /// context, it lets `prepared`, `headroom`, `rightLimit` and `draw` lay out a
+    /// sideways table exactly as they lay out an upright one, so each run is drawn
+    /// along its printed line and at the printed size.
+    static func turnedFrame(_ turns: Int, of region: CGRect)
+        -> (region: CGRect, transform: CGAffineTransform) {
+        let w = region.width, h = region.height
+        switch ((turns % 4) + 4) % 4 {
+        case 1:
+            return (CGRect(x: 0, y: 0, width: h, height: w),
+                    CGAffineTransform(a: 0, b: 1, c: -1, d: 0, tx: region.maxX, ty: region.minY))
+        case 2:
+            return (CGRect(x: 0, y: 0, width: w, height: h),
+                    CGAffineTransform(a: -1, b: 0, c: 0, d: -1, tx: region.maxX, ty: region.maxY))
+        case 3:
+            return (CGRect(x: 0, y: 0, width: h, height: w),
+                    CGAffineTransform(a: 0, b: -1, c: 1, d: 0, tx: region.minX, ty: region.maxY))
+        default:
+            return (CGRect(origin: .zero, size: region.size),
+                    CGAffineTransform(translationX: region.minX, y: region.minY))
+        }
+    }
+
+    /// `o`'s box restated in `turnedFrame(turns, …)`'s region, still normalised with
+    /// a top-left origin, so the line it holds reads left to right there.
+    static func uprighted(_ o: Observation, _ turns: Int) -> Observation {
+        let b = o.boundingBox
+        let box: BoundingBox
+        switch ((turns % 4) + 4) % 4 {
+        case 1: box = BoundingBox(x: 1 - b.y - b.height, y: b.x, width: b.height, height: b.width)
+        case 2: box = BoundingBox(x: 1 - b.x - b.width, y: 1 - b.y - b.height,
+                                  width: b.width, height: b.height)
+        case 3: box = BoundingBox(x: b.y, y: 1 - b.x - b.width, width: b.height, height: b.width)
+        default: box = b
+        }
+        return Observation(boundingBox: box, text: o.text, confidence: o.confidence)
     }
 
     /// One entry of a document outline, detached from PDFKit.
@@ -1053,7 +1131,8 @@ enum SearchableWriter {
             note("    -> join\(chosenAcrossPage ? " ACROSS PAGE" : ""): \(stem)+\(word)")
             out[i] = Observation(boundingBox: out[i].boundingBox,
                                  text: stem + word,
-                                 confidence: out[i].confidence)
+                                 confidence: out[i].confidence,
+                                 quarterTurns: out[i].quarterTurns)
         }
         return out
     }

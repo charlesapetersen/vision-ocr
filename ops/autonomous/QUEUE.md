@@ -228,7 +228,7 @@ say so in the commit.
       Colour otherwise: the Jane Stanford typescript's paper tint goes to grey, as decided in R33. Tables
       after C34: one line in that entry. Speed: single newspaper pages take 40-60 s, and the median is
       3.7 s a page.
-- [ ] **c36-sideways-text** — give text that reads sideways on the published page a text layer that lies
+- [x] **c36-sideways-text** — give text that reads sideways on the published page a text layer that lies
       along the printed line, at the printed size. Today it is drawn flat and squashed to about 1.5 pt,
       so Find works but a drag over the line selects nothing (`BUGS.md` C36). There are two sources:
       Koh 2008's `/Rotate 270` landscape pages (pp71-73, 90-92, 125-129, 168-169), and 8 `rot 0` pages

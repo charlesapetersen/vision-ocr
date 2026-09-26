@@ -5224,6 +5224,126 @@ do {
     resetPrefs()
 }
 
+// MARK: - C36: sideways text is selectable along its printed line
+
+print("\nsideways text gets a layer along its printed line (C36)")
+
+do {
+    resetPrefs()
+    typealias Box = SearchableWriter.BoundingBox
+    // The quad's top edge says which way a line reads (Koh 2008 p127's lines run up).
+    check("C36: a line whose top edge runs right is upright",
+          Recogniser.quarterTurns(from: CGPoint(x: 0.1, y: 0.5), to: CGPoint(x: 0.6, y: 0.52),
+                                  width: 1000, height: 1300) == nil)
+    check("C36: …up the page is one quarter turn, down it three, leftward two",
+          Recogniser.quarterTurns(from: CGPoint(x: 0.174, y: 0.093), to: CGPoint(x: 0.176, y: 0.202),
+                                  width: 1553, height: 1999) == 1
+              && Recogniser.quarterTurns(from: CGPoint(x: 0.5, y: 0.8), to: CGPoint(x: 0.5, y: 0.2),
+                                         width: 1000, height: 1000) == 3
+              && Recogniser.quarterTurns(from: CGPoint(x: 0.8, y: 0.5), to: CGPoint(x: 0.2, y: 0.5),
+                                         width: 1000, height: 1000) == 2)
+    // `uprighted` and `turnedFrame` agree: a box's corners come back to the page where
+    // they started, for every turn, on a region that is not at the origin.
+    let region = CGRect(x: 30, y: 40, width: 500, height: 700)
+    func onPage(_ b: Box, _ r: CGRect) -> [CGPoint] {
+        [CGPoint(x: r.minX + b.x * r.width, y: r.maxY - b.y * r.height),
+         CGPoint(x: r.minX + (b.x + b.width) * r.width, y: r.maxY - (b.y + b.height) * r.height)]
+    }
+    let tall = SearchableWriter.Observation(boundingBox: Box(x: 0.2, y: 0.3, width: 0.05, height: 0.4),
+                                            text: "a line", confidence: 1)
+    var roundTrips = true
+    for turns in 1...3 {
+        let frame = SearchableWriter.turnedFrame(turns, of: region)
+        let back = onPage(SearchableWriter.uprighted(tall, turns).boundingBox, frame.region)
+            .map { $0.applying(frame.transform) }
+        let want = onPage(tall.boundingBox, region)
+        let xs = Set(back.map { Int($0.x.rounded()) }), ys = Set(back.map { Int($0.y.rounded()) })
+        if xs != Set(want.map { Int($0.x.rounded()) }) || ys != Set(want.map { Int($0.y.rounded()) }) {
+            roundTrips = false
+        }
+    }
+    check("C36: a turned box maps back onto the page where it was", roundTrips)
+    check("C36: …and a tall box on a quarter turn is wide in its own frame",
+          SearchableWriter.uprighted(tall, 1).boundingBox.width
+              * Double(SearchableWriter.turnedFrame(1, of: region).region.width) > 200)
+
+    // Through the whole pipeline: an upright page, the same page under `/Rotate 90`
+    // (Koh's case: upright on the sheet, sideways as displayed) and a landscape page
+    // printed up the sheet, of differing sizes.
+    let dir = tmp.appendingPathComponent("c36")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let lines = ["Hello OCR World", "Invoice 98765", "Total 420.00"]
+    let plain = dir.appendingPathComponent("plain.pdf"), up = dir.appendingPathComponent("up.pdf")
+    makeScannedPDF(at: plain, lines: lines)
+    makeSidewaysPDF(at: up, text: "SIDEWAYS SCAN TEXT")
+    let src = dir.appendingPathComponent("sideways-source.pdf")
+    if let doc = PDFDocument(url: plain), let turned = PDFDocument(url: plain)?.page(at: 0),
+       let upPage = PDFDocument(url: up)?.page(at: 0) {
+        turned.rotation = 90
+        doc.insert(turned, at: 1)
+        doc.insert(upPage, at: 2)
+        doc.write(to: src)
+    }
+    let out = dir.appendingPathComponent("sideways.ocr.pdf")
+    var outcome: Runner.Result.Outcome?
+    OCRModel.makeSearchablePDF(file: src, output: out, rebuild: true, rebuildMode: .auto,
+                               password: nil, control: RunControl(),
+                               progress: { _, _ in }, report: { o, _ in outcome = o })
+    let published = PDFDocument(url: out)
+    check("C36: the sideways fixture publishes", outcome == .succeeded && published?.pageCount == 3,
+          "\(String(describing: outcome))")
+    /// The selection box of `word` on page `index`, in that page's space.
+    func found(_ word: String, on index: Int) -> CGRect? {
+        guard let doc = published, let page = doc.page(at: index) else { return nil }
+        return doc.findString(word, withOptions: [])
+            .first { $0.pages.contains(page) }?.bounds(for: page)
+    }
+    let flat = found("Invoice", on: 0), down = found("Invoice", on: 1)
+    let rising = found("SIDEWAYS", on: 2)
+    check("C36: on the upright page a found word's box is wide, as before",
+          (flat?.width ?? 0) > 2 * (flat?.height ?? 1), "\(String(describing: flat))")
+    // "Invoice" is 7 characters at 22 pt: about 75 pt of ink along the line.
+    check("C36: under /Rotate the found word's box runs down the page, at the printed size",
+          (down?.height ?? 0) > 50 && (down?.height ?? 0) > 2 * (down?.width ?? 1),
+          "\(String(describing: down))")
+    check("C36: on a page printed up the sheet the box runs up it, at the printed size",
+          (rising?.height ?? 0) > 150 && (rising?.height ?? 0) > 2 * (rising?.width ?? 1),
+          "\(String(describing: rising))")
+    // The line starts 100 pt up the sheet and reads upward, so its first word sits at
+    // the foot of the line; a frame turned the wrong way would put it at the top.
+    check("C36: …with its first word at the foot of the line, where it is printed",
+          (rising?.minY ?? 999) < 130 && (rising?.maxY ?? 0) > 240 && (rising?.maxY ?? 999) < 330,
+          "\(String(describing: rising))")
+    // A turn outside 0...3 (from a decoded helper page, say) is reduced, not dropped:
+    // the partition must leave no line both undrawn and unreported.
+    let oddTurn = dir.appendingPathComponent("odd-turn.pdf")
+    let unplaced = try? SearchableWriter.compose(
+        visible: plain, observations: [1: [SearchableWriter.Observation(
+            boundingBox: Box(x: 0.1, y: 0.2, width: 0.6, height: 0.03), text: "Out of range turn",
+            confidence: 1, quarterTurns: 4)]], to: oddTurn)
+    check("C36: a line with an out-of-range turn is still drawn",
+          (PDFDocument(url: oddTurn)?.page(at: 0)?.string ?? "").contains("Out of range turn")
+              && unplaced?.isEmpty == true,
+          PDFDocument(url: oddTurn)?.page(at: 0)?.string ?? "nil")
+    // The box lies over the word's ink: on the published page the second line of a
+    // page turned a quarter to the right is the second column from the right, and a
+    // line starting 65 pt into the sheet starts 65 pt below the top, so "Invoice"
+    // covers about 472-547 pt up the page.
+    if let down, let page = published?.page(at: 1) {
+        let w = page.bounds(for: .mediaBox).width
+        check("C36: …over the second printed line, along its first word",
+              down.midX > w * 0.6 && down.midX < w * 0.95 && down.minY < 490 && down.maxY > 530,
+              "\(down) on a page \(Int(w)) wide")
+    } else {
+        check("C36: …over the second printed line, along its first word", false, "no selection")
+    }
+    let turnedText = published?.page(at: 1)?.string ?? ""
+    let order = lines.compactMap { turnedText.range(of: $0)?.lowerBound }
+    check("C36: the turned page's text extracts whole and in reading order",
+          order.count == 3 && order == order.sorted(), turnedText.replacingOccurrences(of: "\n", with: " / "))
+    resetPrefs()
+}
+
 // MARK: - Same-named inputs are tracked separately
 
 // stages and inFlight were keyed by file *name*. Two inputs called scan.pdf in

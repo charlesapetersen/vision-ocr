@@ -14,6 +14,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Text printed sideways, such as a landscape table in a thesis or a chart's axis title, can now be
+  selected by dragging along its printed line. It used to be findable only as a sliver across the line
+  (C36).
+
 - Scans that already carry an outline and a born-digital cover page, such as JSTOR downloads, are no
   longer published several times larger than they need to be, and the outline is kept. One test book
   went from 17.6 MB to 2.6 MB and an article from 3.0 MB to 0.9 MB (C35).

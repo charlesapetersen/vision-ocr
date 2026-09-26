@@ -18097,7 +18097,7 @@ Noted by the review and not fixed: a bookmark aimed at a *rotated* or off-origin
 the right page, but its /XYZ point is in the rebuilt page's space, so it may land elsewhere on that page.
 2026-09-26, `corpus-stress`: pre-compressed scans are a pattern in the corpus after all. See C37.
 
-### C36 · Text that reads sideways on the published page, including landscape pages under `/Rotate`, gets a text layer laid flat and squashed to about 1.5 pt, so it can be found but not selected where it is printed — OPEN
+### C36 · Text that reads sideways on the published page, including landscape pages under `/Rotate`, gets a text layer laid flat and squashed to about 1.5 pt, so it can be found but not selected where it is printed — FIXED
 
 *(found 2026-09-26 by `corpus-stress`'s reading of `STRESS-2026-09-26.tsv`; the per-page list is the
 `sideways` rows of `STRESS-READING-2026-09-26.tsv`.)*
@@ -18127,6 +18127,33 @@ fits each observation's string horizontally into its box, so a tall, narrow box 
 For the `/Rotate` pages, recognising in the unrotated frame and drawing the layer there may be enough. For
 sideways print, the run has to be drawn rotated to its box, and Vision's per-character boxes
 (`boundingBox(for:)`) give the reading direction.
+
+**Fix, 2026-09-26.** One change covers both sources. The observation's own quad gives the reading
+direction: on p127 every line's top edge runs straight up the page. `Recogniser.quarterTurns` records it
+as `Observation.quarterTurns`. `compose` draws upright lines exactly as before, and each group of
+turned lines through the same writer (`prepared`, `headroom`, `rightLimit`, `draw`) in a frame turned
+with them (`turnedFrame`, `uprighted`). So a sideways table is laid out as an upright one would be, and
+drawn along its lines. Rejected: recognising `/Rotate` pages in the MediaBox frame. It would fix only
+Koh's 13 pages and would need the rebuild to stop baking in the turn.
+
+Before → after, measured on the published PDFs by running `score-gate` old and new over 10 documents,
+per page in `C36-SIDEWAYS-2026-09-26.tsv`: [measured]
+- On the 21 pages, the squashed share falls to 0% on 20. The share uses the rule above made
+  orientation-blind (short side and long side), because a word correctly turned is tall and narrow.
+- Koh p127: ink under PDFKit's selectable lines goes 5.6% → 96.4%, and the lines are the table's rows,
+  in order. Koh's 13 pages are all 85–98% after.
+- Mintzberg p57: 6.4% → 81.4%. Lemieux p44: 15.8% → 82.0%.
+- Surani p32 stays at 52%. It is not sideways: it is a born-digital page whose screenshot has tiny
+  print, the layer is the source's own, and it is identical old and new. The stress reading misfiled it.
+- Upright pages: `pdftotext -bbox` is identical on every page without a turned line in all 10
+  documents. The pages that changed carry genuinely sideways labels (axis titles, library stamps), or
+  are written sideways (the 1939 letter p2, 3.9% → 37.7%).
+- Invariant 3 holds on upright text by construction, since that path is unchanged. A turned line runs
+  through the same code.
+
+Left, from the review: turned lines extract after the page's upright text, and they are not joined
+across a page break. `Tools/score-run-width` still sends every line through the upright frame; the
+writer's groups are `SearchableWriter.layers`, which the tool should call when it is next used.
 
 ### C37 · Scans that arrive as 1-bit JBIG2 are re-encoded at up to 2.5x the bytes — OPEN
 
