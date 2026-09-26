@@ -128,6 +128,9 @@ say so in the commit.
       Then C33 closes `FIXED`, with a `CHANGELOG.md` line under a new `## Unreleased` heading.
       BOUND: one code commit per face if they turn out separate, plus one for the PDFKit tool, plus free
       docs commits.
+      2026-09-26: both faces fixed and the tool landed (`Tools/pdfkit-lines`). One pattern is left and
+      is the rest of this item: a band's whole line refused beside a half-line fragment the page kept.
+      See C33 `#### MOSTLY FIXED`.
       (origin: BUGS.md C33)
 - [x] **c31-colour-text** — make body text on a page the layered colour route keeps legible again. This
       is a regression in the released 1.14.0, so it comes before C28.

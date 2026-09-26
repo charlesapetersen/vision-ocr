@@ -17867,6 +17867,64 @@ which property of `CLAUDE.md` invariant 3 it breaks (runs overlapping vertically
 inferred. [inferred] C30's done-criteria were measured by word count and void share, which neither
 instrument reads through PDFKit's selection.
 
+#### MOSTLY FIXED 2026-09-26: both faces found in the code and fixed, one pattern left
+
+**Causes, confirmed by dumping the observations `recognisePage` merged.** The inference above was wrong.
+- *Voids:* on Bird p3 the bands never ran. The trigger was row-wise, and the left column covered every row.
+- *Junk:* the garbage came from the **whole-page** request, not from the bands. It returns one tall box
+  fusing two lines (1.4–2.8 line heights, at confidence 0.3, 0.5 and **1.0**). The merge kept every
+  whole-page box, so its cover test let the junk refuse the bands' clean readings of the same lines.
+  Fused boxes like these are on pages of all four of the owner's documents. A fused box also covers its
+  own rows, so a page with no other void never started the bands at all (Leland p2).
+
+**Fix, `Sources/Recogniser.swift`.**
+- The void test also runs over four vertical strips inside the outer sixteenths (`inkedStrips`,
+  `hasVoid(inkedStrips:)`).
+- A box over 1.4 line heights tall and over eight wide also starts the bands (`hasFusedLine`).
+- `mergeBands` drops a whole-page box of that shape when the kept lines inside it read at least two
+  lines, one of them a band's, spanning 80% of its width, and no line leaves text unread (`replaces`).
+  Unread means ink on the page (`hasInk`), or anything a band saw at any confidence, in the stretch a
+  line's kept boxes leave open. Each box whose replacement was not admitted is put back, until none is.
+- The same-line refusal needs a sideways overlap of over a tenth of the narrower box, not any overlap.
+  A 17 px overlap (5%) from `Women's Bureau,` had refused `WOMEN IN HIGHER-LEVEL POSITIONS…`.
+
+**Measured on published PDFs, old code and new, with the new `Tools/pdfkit-lines --diff`.** Every line
+that changed was junk replaced by the real text, or text recovered. No correct line was lost in any of
+the six documents.
+- Bird p3: all 14 missing lines are back, plus lines on pp4, 6, 7, 9, 11, 12 and 13 (5,026 → 5,328 words).
+- Briefer: junk lines replaced on every page, 26 lines recovered (3,493 → 3,600 words).
+- Leland: p2's garbled footnotes and p5's missing footnote lines are back, and junk is replaced on
+  pp4, 8, 10 and 19 (9,594 → 9,724).
+- Hughes p3's two-line block is back (4,708 → 4,723).
+- C30's bars on Briefer still hold: at least 3,300 words, and void share at most 0.0264 (p6).
+- Invariant 3 on Briefer: starts and ends 98% → 98%, overlap 2/147 → 2/153, `merged=0/143`,
+  `welded=0/19`, no slivers, minshare 0.82 → 0.82. `runaway` rose 0.0% → 0.8%, but no welded line
+  caused it: read by hand, every extracted line over 92 characters is one printed line. The old 0.0%
+  sat beside three welded lines of 103–122 characters, which the reference had welded too.
+- Canby_1915 and Gitlin_2000: no line lost; four new edge or punctuation fragments (`be`, `::`).
+- Time: Bird 10 → 26 s, Leland 13 → 33 s, Hughes 13 → 25 s, Briefer 14 → 17 s, Gitlin 1 → 3 s,
+  Canby 14 → 11 s. The bands cost about 2x on a page that starts them.
+
+**The review of the first draft** found that `replaces` pooled width across lines. So one full line and a
+fragment of the other displaced the box, and the rest of the second line went with the junk, read by
+nothing. That happened on real pages: on Leland pp6 and 16 the ink test finds type in the half-line
+the first draft dropped. Those two boxes now stay. The review also caught a word printed twice at a 25%
+overlap threshold. A second review found the middle line of a three-line box unasked, and `hasInk`
+answering "blank" when it could not measure. Both were fixed with checks, and no figure here changed.
+
+**Rejected.**
+- Running the fused trigger in the first pass only saves about 20%, but Leland p2's footnotes come
+  back as junk. Only the second pass reads them.
+- A width per line instead of the unread test: the last line of a paragraph spans 30–45% of the box on
+  Leland, and a fragment can be as wide.
+
+**Left, and why C33 stays OPEN.** A band's whole line is refused when the page kept a fragment of it.
+When that line lies under a fused box, the box stays, because the rest of the line is unread. Briefer p3
+keeps two junk lines this way (`WOMEN IN HICHER LAbOr…`, `1.D. Second Edition, She C. VoMesby…`), and
+lacks the lines `WOMEN IN HIGHER-LEVEL POSITIONS…` and `EYES AND INDUSTRY…`. On Leland p2,
+`Effects of Fair Employment Legislation in the` stops at mid-width. The next step is to let a band's
+line that runs well past a kept fragment replace that fragment.
+
 ### C34 · The text layer is written across the page row by row, so selection jumps between columns, and some Vision lines span the gutter — OPEN
 
 *(found 2026-09-25 by the owner in 1.14.0: `1954 - Why.pdf` p5, a two-page spread, and

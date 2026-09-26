@@ -531,8 +531,9 @@ enum Recogniser {
     // MARK: - Recognising a page again in bands (C30)
 
     /// One page's text as the searchable pipeline recognises it: the whole page,
-    /// then — only when that leaves inked rows with no word over them — the page
-    /// again in overlapping horizontal bands, merged in.
+    /// then — only when that leaves inked rows with no word over them, or a box
+    /// shaped like two fused lines — the page again in overlapping horizontal
+    /// bands, merged in.
     ///
     /// **Why.** One request over a whole scanned page skips blocks of clean body
     /// type: on `BUGS.md` C30's document 15–43% of each page's ink had no word box,
@@ -542,11 +543,13 @@ enum Recogniser {
     /// at their edges; these do, and the merge keeps a band's line only where the
     /// page has no line.
     ///
-    /// A page the whole-page request reads fully costs one ink scan and nothing
-    /// more, and its observations come back exactly as `recognise` returned them.
+    /// A page the whole-page request reads fully, with no box shaped like two
+    /// fused lines (`hasFusedLine`), costs one ink scan and nothing more, and its observations come back exactly as `recognise` returned them.
     /// A page with a picture on it also starts the bands, and pays their time.
-    /// The trigger is row-wise (`hasVoid`), so a missed block standing *beside*
-    /// recognised text on the same rows does not start them.
+    /// The trigger is asked of the whole width and of four vertical strips
+    /// (`voidStrips`), so a missed block standing *beside* recognised text on the
+    /// same rows starts them too (C33: `Bird` p3 lost 14 lines of its right-hand
+    /// column that way while the left column covered every row).
     ///
     /// `isCancelled` is asked between bands, and a cancelled page returns what it
     /// has merged so far; the caller's own check between pages then throws.
@@ -562,15 +565,20 @@ enum Recogniser {
         let w = image.width, h = image.height
         let line = lineHeight(of: whole, pageHeight: h)
         guard !settings.fast, !bandPlan(height: h, lineHeight: line).isEmpty,
-              let inked = inkedRows(of: image) else { return whole }
+              let scan = inkScan(of: image) else { return whole }
+        let inked = scan.rows
         // Two passes at most, the second with the seams moved half a stride, and
-        // only while a void remains. Vision's reading of a block depends on the
-        // window it is shown: on C30's page 1 one set of bands read `members of
-        // the Department…` cleanly and another, whose bands were 32 rows taller,
-        // returned a 215-px box of junk over it.
+        // only while a void or a possibly fused box remains. Vision's reading of a
+        // block depends on the window it is shown: on C30's page 1 one set of bands
+        // read `members of the Department…` cleanly and another, whose bands were
+        // 32 rows taller, returned a 215-px box of junk over it. (C33: the second
+        // pass alone recovered `Leland` p2's footnotes, so a page with a tall
+        // heading pays for both.)
         var merged = whole
         for pass in 0..<2 {
-            guard hasVoid(inked: inked, observations: merged, pageHeight: h, lineHeight: line)
+            guard hasVoid(inkedStrips: inked, observations: merged, pageHeight: h,
+                          lineHeight: line)
+                    || hasFusedLine(merged, pageWidth: w, pageHeight: h, lineHeight: line)
             else { break }
             let plan = bandPlan(height: h, lineHeight: line, shifted: pass == 1)
             guard !plan.isEmpty else { break }
@@ -593,7 +601,9 @@ enum Recogniser {
                 else { continue }
                 bands.append((read, band.top, band.bottom))
             }
-            merged = mergeBands(whole: merged, bands: bands, pageHeight: h, lineHeight: line)
+            merged = mergeBands(whole: merged, bands: bands, pageHeight: h, lineHeight: line,
+                                pageWidth: w,
+                                hasInk: { hasInk(in: $0, of: image, level: scan.level) })
         }
         return merged
     }
@@ -663,6 +673,31 @@ enum Recogniser {
     /// 400-megapixel page through, and a Swift array that cannot be allocated is
     /// a crash, not an error (R24).
     static func inkedRows(of image: CGImage) -> [Bool]? {
+        inkedStrips(of: image, strips: [(0, 1)])?.first
+    }
+
+    /// The horizontal extents, as fractions of the width, the void trigger is
+    /// asked over: the whole width, which is the test C30 shipped, and then four
+    /// quarters, so a block missed beside a column the request did read is still
+    /// a void in its own strip (C33). The quarters leave out the outer sixteenth
+    /// each side, as `Flattener.interiorWindow` does: a quarter's rows are covered
+    /// only by boxes reaching into it, so a scan's edge shadow in a margin no text
+    /// reaches would be a void there that no band can fill, and every such page
+    /// would pay for both passes.
+    static let voidStrips: [(from: Double, to: Double)] =
+        [(0, 1), (0.0625, 0.25), (0.25, 0.5), (0.5, 0.75), (0.75, 0.9375)]
+
+    /// `inkedRows`, once for each strip: which rows hold ink within it. A row of a
+    /// strip is inked at the same absolute count as a row of the page, 0.5% of the
+    /// *page's* width, so a strip needs as much ink on a row as the page did.
+    static func inkedStrips(of image: CGImage,
+                            strips: [(from: Double, to: Double)] = voidStrips) -> [[Bool]]? {
+        inkScan(of: image, strips: strips)?.rows
+    }
+
+    /// `inkedStrips`, with the Otsu level it judged ink by.
+    static func inkScan(of image: CGImage, strips: [(from: Double, to: Double)] = voidStrips)
+        -> (rows: [[Bool]], level: UInt8)? {
         let w = image.width, h = image.height
         guard w > 0, h > 0,
               Double(w) * Double(h) <= Double(Flattener.maximumPageMegapixels) * 1_000_000
@@ -692,21 +727,65 @@ enum Recogniser {
         }
         let level = Flattener.otsuThreshold(histogram: histogram)
         let need = max(1, w / 200)
-        var out = [Bool](repeating: false, count: h)
+        let spans = strips.map { s -> Range<Int> in
+            let from = min(w, max(0, Int((s.from * Double(w)).rounded())))
+            return from..<min(w, max(from, Int((s.to * Double(w)).rounded())))
+        }
+        var out = [[Bool]](repeating: [Bool](repeating: false, count: h), count: spans.count)
         for top in stride(from: 0, to: h, by: strip) {
             let rows = min(strip, h - top)
             guard draw(top, rows) else { return nil }
             for y in 0..<rows {
-                var dark = 0
                 let base = y * w
-                for x in 0..<w where grey[base + x] <= level {
-                    dark += 1
-                    if dark >= need { break }
+                for (s, span) in spans.enumerated() {
+                    var dark = 0
+                    for x in span where grey[base + x] <= level {
+                        dark += 1
+                        if dark >= need { break }
+                    }
+                    out[s][top + y] = dark >= need
                 }
-                out[top + y] = dark >= need
             }
         }
-        return out
+        return (out, level)
+    }
+
+    /// Whether at least 1% of `box` (normalised, top-left origin) is at or below
+    /// `level`: printed text rather than paper. Type fills several percent of any
+    /// stretch of a line; a blank margin or the end of a short line holds none.
+    ///
+    /// A box it cannot measure — off the page, not finite, a crop or a context that
+    /// fails — answers **true**. `replaces` reads "no ink" as licence to drop a
+    /// junk box, so not knowing has to keep it (invariant 1).
+    static func hasInk(in box: SearchableWriter.BoundingBox, of image: CGImage,
+                       level: UInt8) -> Bool {
+        let w = image.width, h = image.height
+        /// A normalised edge in pixels, clamped before the `Int` conversion, which
+        /// traps outside `Int`'s range.
+        func pixel(_ v: Double, _ size: Int, _ rule: FloatingPointRoundingRule) -> Int? {
+            let p = v * Double(size)
+            guard p.isFinite else { return nil }
+            return Int(min(max(p, 0), Double(size)).rounded(rule))
+        }
+        guard let x0 = pixel(box.x, w, .down), let y0 = pixel(box.y, h, .down),
+              let x1 = pixel(box.x + box.width, w, .up), let y1 = pixel(box.y + box.height, h, .up),
+              x1 > x0, y1 > y0,
+              let piece = image.cropping(to: CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0))
+        else { return true }
+        let pw = x1 - x0, ph = y1 - y0
+        var grey = [UInt8](repeating: 255, count: pw * ph)
+        let drawn = grey.withUnsafeMutableBytes { raw -> Bool in
+            guard let base = raw.baseAddress, let ctx = CGContext(
+                data: base, width: pw, height: ph, bitsPerComponent: 8, bytesPerRow: pw,
+                space: CGColorSpaceCreateDeviceGray(),
+                bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+            ctx.setFillColor(gray: 1, alpha: 1)
+            ctx.fill(CGRect(x: 0, y: 0, width: pw, height: ph))
+            ctx.draw(piece, in: CGRect(x: 0, y: 0, width: pw, height: ph))
+            return true
+        }
+        guard drawn else { return true }
+        return grey.lazy.filter { $0 <= level }.count * 100 >= grey.count
     }
 
     /// Whether the whole-page result leaves a void: a run of rows no observation
@@ -739,11 +818,47 @@ enum Recogniser {
         return false
     }
 
+    /// Whether the page holds a box that may be two lines read as one: over 1.4
+    /// line heights tall and over eight wide, the shape of every fused reading on
+    /// C33's pages (`since nhe dades indicated: meitlapolis…`, 1.7 line heights at
+    /// full confidence, on `Leland` p2). Such a box covers its rows, so it leaves
+    /// no void, and without this the bands that can replace it never run. A tall
+    /// heading has the same shape and costs a page its bands; `replaces` keeps it.
+    static func hasFusedLine(_ observations: [SearchableWriter.Observation],
+                             pageWidth w: Int, pageHeight h: Int, lineHeight line: Int) -> Bool {
+        observations.contains {
+            $0.boundingBox.height * Double(h) > 1.4 * Double(line)
+                && $0.boundingBox.width * Double(w) > 8 * Double(line)
+        }
+    }
+
+    /// `hasVoid` over each of `voidStrips`, with `inkedStrips`' rows: a strip's
+    /// rows are covered only by the observations that reach into it sideways.
+    static func hasVoid(inkedStrips: [[Bool]], observations: [SearchableWriter.Observation],
+                        pageHeight h: Int, lineHeight line: Int,
+                        strips: [(from: Double, to: Double)] = voidStrips) -> Bool {
+        for (rows, strip) in zip(inkedStrips, strips) {
+            let reaching = observations.filter {
+                min($0.boundingBox.x + $0.boundingBox.width, strip.to) > max($0.boundingBox.x, strip.from)
+            }
+            if hasVoid(inked: rows, observations: reaching, pageHeight: h, lineHeight: line) {
+                return true
+            }
+        }
+        return false
+    }
+
     /// The whole-page observations, with every band observation that adds a line
-    /// the page does not already have.
+    /// the page does not already have, less any fused box those lines replace.
     ///
-    /// - **Whole-page observations are all kept**, in their order; nothing here can
-    ///   remove text the single request found.
+    /// - **Whole-page observations are kept**, in their order, with one exception:
+    ///   a box of `hasFusedLine`'s shape (over 1.4 line heights tall, over eight
+    ///   wide) that the kept lines, one of them a band's, read as two lines or
+    ///   more (`replaces` has the rule). Vision fuses two
+    ///   lines into one garbled box, at any confidence; on C33's `Briefer` p3 four
+    ///   such boxes (`WOMEN IN HICHER LAbOr, aahizrn…`, 1.8–2.7 line heights) hid
+    ///   seven lines the bands had read cleanly, and PDFKit printed the junk.
+    ///   Each one is put back unless the lines that replace it were admitted.
     /// - **A band observation is admitted only at full confidence.** On C30's
     ///   document 150 of the 151 band lines this merge added read 1.0, and the
     ///   one at 0.5 was garbled (`the comnane or the mimhor nf`), as was every
@@ -767,18 +882,22 @@ enum Recogniser {
     ///   test over the whole box read 57% for the real line `Prepared by Mildred
     ///   Strunk…` and dropped it; its middle half reads 14%.
     /// - **And one is dropped when any kept box on the same line overlaps it
-    ///   sideways at all** — "on the same line" meaning the kept box's vertical
-    ///   centre falls in its middle half, which a neighbouring line's never does.
-    ///   So a band's whole line never repeats a fragment the page kept, however
-    ///   the two readings split or spell it (`witbin` against `within`): the
+    ///   sideways by over a tenth of the narrower box's width** — "on the same
+    ///   line" meaning the kept box's vertical centre falls in its middle half,
+    ///   which a neighbouring line's never does. Not at all, as it was: on C33's
+    ///   `Briefer` p3 the fragment `Women's Bureau,` reached 17 px (5% of its
+    ///   width) into the box of `WOMEN IN HIGHER-LEVEL POSITIONS. Bulletin No.
+    ///   236.`, the rest of its own line, and refused it. A tenth, because one
+    ///   shared word is more than that on any fragment a few words long, so a
+    ///   band's line still does not repeat a fragment the page kept, however the
+    ///   two readings split or spell it (`witbin` against `within`): the
     ///   whole-page reading wins, and the rest of that line stays unread, as it
     ///   was. Kept boxes taller than two line heights are left out of this test,
     ///   so a narrow junk box of the page's own (a one-word `ASSAME` 115 px tall)
     ///   does not veto the lines it crosses. A tall kept box that covers half a
     ///   band line's middle still refuses it through the cover test above, which
-    ///   is what keeps out a band's copy of part of a tall heading; so a
-    ///   full-width junk box hides the lines under it, as it did before bands —
-    ///   its rows count as covered for the trigger too.
+    ///   is what keeps out a band's copy of part of a tall heading; so a narrow
+    ///   or unreplaced junk box hides the lines under it, as it did before bands.
     ///
     /// Kept band observations join the set compared against, so two bands reading
     /// one line in their overlap add it once. Each band's observations are taken
@@ -794,14 +913,20 @@ enum Recogniser {
         whole: [SearchableWriter.Observation],
         bands: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)],
         pageHeight h: Int,
-        lineHeight given: Int? = nil
+        lineHeight given: Int? = nil,
+        /// For `hasFusedLine`'s width test; a square page when not given.
+        pageWidth: Int? = nil,
+        /// Whether a normalised stretch of the page holds ink, for `replaces`.
+        hasInk: ((SearchableWriter.BoundingBox) -> Bool)? = nil
     ) -> [SearchableWriter.Observation] {
         guard h > 0 else { return whole }
         let line = given ?? lineHeight(of: whole, pageHeight: h)
         let margin = Double(seamMargin(lineHeight: line))
         let tallest = 2 * Double(line) / Double(h)
-        var kept = whole.map(\.boundingBox)
-        var added: [SearchableWriter.Observation] = []
+        // Every band observation that may be admitted, lifted into the page's frame,
+        // in the order they are tried.
+        var candidates: [SearchableWriter.Observation] = []
+        var seen: [SearchableWriter.BoundingBox] = []
         for band in bands {
             let bandHeight = Double(band.bottom - band.top)
             guard bandHeight > 0 else { continue }
@@ -819,38 +944,75 @@ enum Recogniser {
                 if aTall != bTall { return !aTall }
                 return a.width * a.height > b.width * b.height
             }
-            for o in ordered where o.confidence >= 1 {
+            for o in ordered {
                 let top = o.boundingBox.y * bandHeight
                 let bottom = (o.boundingBox.y + o.boundingBox.height) * bandHeight
                 guard top.isFinite, bottom.isFinite, o.boundingBox.x.isFinite,
                       o.boundingBox.width.isFinite, o.boundingBox.width > 0, bottom > top,
                       !o.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 else { continue }
-                if band.top > 0, top < margin { continue }
-                if band.bottom < h, bottom > bandHeight - margin { continue }
-                if bottom - top > 2 * Double(line) { continue }
                 let box = SearchableWriter.BoundingBox(
                     x: o.boundingBox.x,
                     y: (Double(band.top) + top) / Double(h),
                     width: o.boundingBox.width,
                     height: (bottom - top) / Double(h))
+                // Whatever a band saw of ordinary height, at any confidence and cut
+                // or not, is evidence of text for `replaces`.
+                if bottom - top <= 1.4 * Double(line) { seen.append(box) }
+                guard o.confidence >= 1 else { continue }
+                if band.top > 0, top < margin { continue }
+                if band.bottom < h, bottom > bandHeight - margin { continue }
+                if bottom - top > 2 * Double(line) { continue }
+                candidates.append(SearchableWriter.Observation(boundingBox: box, text: o.text,
+                                                               confidence: o.confidence))
+            }
+        }
+        /// The candidates admitted over the page's kept boxes `base`, in order.
+        func admit(over base: [SearchableWriter.BoundingBox]) -> [SearchableWriter.Observation] {
+            var kept = base
+            var added: [SearchableWriter.Observation] = []
+            for o in candidates {
+                let box = o.boundingBox
                 let middle = middleHalf(of: box)
                 guard coveredShare(of: middle, by: kept) < 0.5,
                       !kept.contains(where: { k in
                           let centre = k.y + k.height / 2
                           return k.height <= tallest
                               && centre >= middle.y && centre <= middle.y + middle.height
-                              && overlapsSideways(k, box)
+                              && sidewaysOverlap(k, box) > min(k.width, box.width) / 10
                       })
                 else { continue }
                 kept.append(box)
-                added.append(SearchableWriter.Observation(boundingBox: box, text: o.text,
-                                                          confidence: o.confidence))
+                added.append(o)
             }
+            return added
         }
-        guard !added.isEmpty else { return whole }
+        // A whole-page box of `hasFusedLine`'s shape may be two lines
+        // fused into one reading (C33). Try the merge without all of them, then put
+        // back each one the result does not replace, until none needs putting back.
+        var displaced = Set(whole.indices.filter {
+            hasFusedLine([whole[$0]], pageWidth: pageWidth ?? h, pageHeight: h, lineHeight: line)
+        })
+        var added: [SearchableWriter.Observation] = []
+        while true {
+            let base = whole.indices.filter { !displaced.contains($0) }.map { whole[$0].boundingBox }
+            added = admit(over: base)
+            let restore = displaced.filter { i in
+                !replaces(whole[i].boundingBox,
+                          with: base + added.map(\.boundingBox),
+                          added: added.map(\.boundingBox), seen: seen,
+                          lineHeight: Double(line) / Double(h),
+                          // Half a line height across: about one character.
+                          minimumWord: 0.5 * Double(line) / Double(pageWidth ?? h),
+                          hasInk: hasInk)
+            }
+            if restore.isEmpty { break }
+            displaced.subtract(restore)
+        }
+        let page = whole.indices.filter { !displaced.contains($0) }.map { whole[$0] }
+        guard !added.isEmpty else { return page }
 
-        // Each added line's anchor: the index in `whole` it goes after, or nil for
+        // Each added line's anchor: the index in `page` it goes after, or nil for
         // "before the first whole-page line lower than it". Chosen against the
         // whole-page lines only, and added lines sharing an anchor keep their order
         // down the page, so a run of recovered lines in one column stays together.
@@ -859,15 +1021,15 @@ enum Recogniser {
         var loose: [SearchableWriter.Observation] = []
         for a in sortedAdded {
             var anchor: Int?
-            for (i, o) in whole.enumerated()
+            for (i, o) in page.enumerated()
             where o.boundingBox.y < a.boundingBox.y && overlapsSideways(o.boundingBox, a.boundingBox) {
-                if anchor.map({ whole[$0].boundingBox.y < o.boundingBox.y }) ?? true { anchor = i }
+                if anchor.map({ page[$0].boundingBox.y < o.boundingBox.y }) ?? true { anchor = i }
             }
             if let anchor { after[anchor, default: []].append(a) } else { loose.append(a) }
         }
         var out: [SearchableWriter.Observation] = []
         var pending = loose[...]
-        for (i, o) in whole.enumerated() {
+        for (i, o) in page.enumerated() {
             while let next = pending.first, next.boundingBox.y < o.boundingBox.y {
                 out.append(next)
                 pending = pending.dropFirst()
@@ -879,10 +1041,128 @@ enum Recogniser {
         return out
     }
 
+    /// Whether the boxes in `kept` read the rows of the whole-page box `fused` as
+    /// two lines or more, with at least one of them a band's (`added`), spanning
+    /// 80% of its width between them, and leaving no text unread inside it. Then
+    /// `fused` is two lines Vision read as one, and the kept boxes are the better
+    /// reading of it.
+    ///
+    /// A box's line is where its vertical centre falls, taken within the middle
+    /// 80% of `fused`'s rows so a neighbouring line just touching it does not
+    /// count; a centre half a line height below a line's first starts a new one.
+    /// A tall heading read correctly has one line in it.
+    ///
+    /// **Unread** means ink on the page (`hasInk`, over the middle half of the
+    /// rows), or a box a band saw of ordinary height at any confidence, cut at a
+    /// seam or not (`seen`), in either of two places: the stretch of a line's
+    /// width its kept boxes leave open, wider than `minimumWord`; or rows of
+    /// `fused`, half a line or more, that no line reaches — the middle line of
+    /// three (the second review of C33's draft).
+    ///
+    /// **The unread test, not a width per line.** The review of C33's first draft
+    /// found the width pooled across lines, so one full line and any fragment of
+    /// the other passed, and the rest of the second line went with the junk box
+    /// unread: on `Leland` pp6 and 16 the ink test finds type in the half-line that
+    /// draft dropped. A width per line cannot tell that from the short last line
+    /// of a paragraph (30–45% of the box on the same pages); whether anything is
+    /// there can.
+    static func replaces(_ fused: SearchableWriter.BoundingBox,
+                         with kept: [SearchableWriter.BoundingBox],
+                         added: [SearchableWriter.BoundingBox],
+                         seen: [SearchableWriter.BoundingBox] = [],
+                         lineHeight line: Double,
+                         minimumWord: Double = 0.02,
+                         hasInk: ((SearchableWriter.BoundingBox) -> Bool)? = nil) -> Bool {
+        let top = fused.y + fused.height * 0.1, bottom = fused.y + fused.height * 0.9
+        func inside(_ b: SearchableWriter.BoundingBox) -> Bool {
+            let centre = b.y + b.height / 2
+            return b.height < fused.height && centre >= top && centre <= bottom
+                && overlapsSideways(b, fused)
+        }
+        guard added.contains(where: inside) else { return false }
+        /// The stretches of `fused`'s width that `boxes` leave open.
+        func gaps(_ boxes: [SearchableWriter.BoundingBox]) -> [(from: Double, to: Double)] {
+            let spans = boxes.map { (max($0.x, fused.x), min($0.x + $0.width, fused.x + fused.width)) }
+                .sorted { $0.0 < $1.0 }
+            var out: [(from: Double, to: Double)] = []
+            var reach = fused.x
+            for (from, to) in spans where to > reach {
+                if from > reach { out.append((reach, from)) }
+                reach = to
+            }
+            if reach < fused.x + fused.width { out.append((reach, fused.x + fused.width)) }
+            return out
+        }
+        func span(_ boxes: [SearchableWriter.BoundingBox]) -> Double {
+            fused.width - gaps(boxes).reduce(0) { $0 + $1.to - $1.from }
+        }
+        let within = kept.filter(inside).sorted { $0.y + $0.height / 2 < $1.y + $1.height / 2 }
+        var lines: [[SearchableWriter.BoundingBox]] = []
+        var first = -Double.infinity
+        for b in within {
+            let centre = b.y + b.height / 2
+            if lines.isEmpty || centre - first >= line / 2 {
+                lines.append([b])
+                first = centre
+            } else {
+                lines[lines.count - 1].append(b)
+            }
+        }
+        guard lines.count >= 2, span(within) >= 0.8 * fused.width else { return false }
+        /// Whether anything shows text in `open` stretches of the rows `top..<bottom`.
+        func unread(top: Double, bottom: Double, open: [(from: Double, to: Double)]) -> Bool {
+            guard !open.isEmpty, bottom > top else { return false }
+            // The middle half of the rows, clear of the neighbouring lines' glyphs.
+            let quarter = (bottom - top) / 4
+            if let hasInk, open.contains(where: {
+                hasInk(SearchableWriter.BoundingBox(x: $0.from, y: top + quarter,
+                                                    width: $0.to - $0.from, height: 2 * quarter))
+            }) { return true }
+            return seen.contains { s in
+                let centre = s.y + s.height / 2
+                guard centre >= top, centre <= bottom else { return false }
+                // A band's re-reading of a kept line, which spans it and the gap
+                // beside it alike, says nothing about the gap.
+                let rereads = within.contains { k in
+                    centre >= k.y && centre <= k.y + k.height
+                        && sidewaysOverlap(k, s) > s.width / 2
+                }
+                if rereads { return false }
+                return open.contains { min($0.to, s.x + s.width) - max($0.from, s.x) > minimumWord }
+            }
+        }
+        // Beside each line, where its kept boxes do not reach.
+        for row in lines {
+            let rowTop = row.map(\.y).min() ?? 0
+            let rowBottom = row.map { $0.y + $0.height }.max() ?? 0
+            if unread(top: rowTop, bottom: rowBottom,
+                      open: gaps(row).filter { $0.to - $0.from > minimumWord }) { return false }
+        }
+        // And across rows of `fused` no line reaches, half a line or more.
+        let reached = lines.map { row in
+            (row.map(\.y).min() ?? 0, row.map { $0.y + $0.height }.max() ?? 0)
+        }.sorted { $0.0 < $1.0 }
+        var reach = top
+        for (from, to) in reached + [(bottom, bottom)] {
+            if from - reach >= line / 2,
+               unread(top: reach, bottom: from, open: [(fused.x, fused.x + fused.width)]) {
+                return false
+            }
+            reach = max(reach, to)
+        }
+        return true
+    }
+
     /// Whether two boxes share any horizontal extent.
     static func overlapsSideways(_ a: SearchableWriter.BoundingBox,
                                  _ b: SearchableWriter.BoundingBox) -> Bool {
-        min(a.x + a.width, b.x + b.width) > max(a.x, b.x)
+        sidewaysOverlap(a, b) > 0
+    }
+
+    /// How much horizontal extent two boxes share, or a negative gap between them.
+    static func sidewaysOverlap(_ a: SearchableWriter.BoundingBox,
+                                _ b: SearchableWriter.BoundingBox) -> Double {
+        min(a.x + a.width, b.x + b.width) - max(a.x, b.x)
     }
 
     /// The rows of a box between a quarter and three quarters of its height.

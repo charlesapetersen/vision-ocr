@@ -17,6 +17,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 - Text on pages layered in colour or grey is dark and solid again instead of a mottled, washed-out
   fill, and those pages come out slightly smaller. This was a regression in 1.14.0 on the pages it
   began keeping in colour (C31).
+- More of each scanned page can be selected in Preview. A block of text missed beside a column that
+  was read is now recognised, and lines that recognition had fused into one line of garbled words,
+  which Preview showed as junk or skipped, come out as the real lines. Pages where this happens take
+  about twice as long to recognise (C33).
 
 ## 1.14.0 — 2026-09-25
 

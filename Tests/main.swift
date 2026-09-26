@@ -6739,6 +6739,132 @@ do {
           columnMerge.map(\.text) == ["L1", "L2", "R1", "R1.5", "R2"],
           "\(columnMerge.map(\.text))")
 
+    // C33. The whole-page request fused two lines into one garbled box at full
+    // confidence (Briefer p3: `1.D. Second Edition, She C. VoMesby…`, 1.8 line
+    // heights), and a band read both lines cleanly. The band's lines replace it.
+    let fusedPage = [obs("line above", x: 0.1, top: 900, width: 0.8, height: 60, page: 4000),
+                     obs("pave arisen frorn eler tho", x: 0.1, top: 1000, width: 0.8, height: 110,
+                         page: 4000),
+                     obs("line below", x: 0.1, top: 1160, width: 0.8, height: 60, page: 4000)]
+    let unfused = Recogniser.mergeBands(
+        whole: fusedPage,
+        bands: [(observations: [one("the upper real line", x: 0.1, top: 1000, width: 0.8,
+                                    height: 55),
+                                one("the lower real line", x: 0.1, top: 1055, width: 0.8,
+                                    height: 55)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C33: a whole-page box fusing two lines is replaced by the band's two real lines",
+          unfused.map(\.text) == ["line above", "the upper real line", "the lower real line",
+                                  "line below"],
+          "\(unfused.map(\.text))")
+    // …but not when the band lines span only part of it: its other words would be lost.
+    let halfRead = Recogniser.mergeBands(
+        whole: fusedPage,
+        bands: [(observations: [one("the upper real", x: 0.1, top: 1000, width: 0.35,
+                                    height: 55),
+                                one("the lower real", x: 0.1, top: 1055, width: 0.35,
+                                    height: 55)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C33: …not when the band's lines span under 80% of its width",
+          halfRead.map(\.text).contains("pave arisen frorn eler tho"), "\(halfRead.map(\.text))")
+    // …nor when one line is read in full and the other only in part while the rest
+    // of it holds text nobody read: ink on the page, or a band's reading below full
+    // confidence (the review of C33's first draft, which pooled the width across
+    // lines and so dropped such a rest with the junk box).
+    let partialBand = [one("the upper real line", x: 0.1, top: 1000, width: 0.8, height: 55),
+                       one("L2 left", x: 0.1, top: 1055, width: 0.2, height: 55)]
+    let inkAfter = Recogniser.mergeBands(
+        whole: fusedPage, bands: [(observations: partialBand, top: 800, bottom: 1800)],
+        pageHeight: 4000, hasInk: { _ in true })
+    check("C33: …nor when the rest of its second line holds ink nothing read",
+          inkAfter.map(\.text).contains("pave arisen frorn eler tho"), "\(inkAfter.map(\.text))")
+    let readBelowFull = Recogniser.mergeBands(
+        whole: fusedPage,
+        bands: [(observations: partialBand + [one("rest of line two", x: 0.3, top: 1055,
+                                                  width: 0.6, height: 55, confidence: 0.9)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C33: …or text a band read below full confidence",
+          readBelowFull.map(\.text).contains("pave arisen frorn eler tho"),
+          "\(readBelowFull.map(\.text))")
+    // …nor when it fuses three lines and the middle one, which no kept box reaches,
+    // holds ink (the second review of C33's draft).
+    let threeLines = [obs("line above", x: 0.1, top: 840, width: 0.8, height: 60, page: 4000),
+                      obs("tbree lirnes of jurk", x: 0.1, top: 1000, width: 0.8, height: 165,
+                          page: 4000),
+                      obs("line below", x: 0.1, top: 1220, width: 0.8, height: 60, page: 4000)]
+    let middleInk = Recogniser.mergeBands(
+        whole: threeLines,
+        bands: [(observations: [one("L1", x: 0.1, top: 1000, width: 0.8, height: 55),
+                                one("L3", x: 0.1, top: 1110, width: 0.8, height: 55)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000,
+        hasInk: { box in box.y * 4000 < 1110 && box.y * 4000 + box.height * 4000 > 1055 })
+    check("C33: …nor when its middle line of three, which nothing kept reaches, holds ink",
+          middleInk.map(\.text).contains("tbree lirnes of jurk"), "\(middleInk.map(\.text))")
+    let blankAfter = Recogniser.mergeBands(
+        whole: fusedPage, bands: [(observations: partialBand, top: 800, bottom: 1800)],
+        pageHeight: 4000, hasInk: { _ in false })
+    check("C33: …but a short last line with blank paper after it replaces it like a full one",
+          blankAfter.map(\.text) == ["line above", "the upper real line", "L2 left", "line below"],
+          "\(blankAfter.map(\.text))")
+    let tallHeading = Recogniser.mergeBands(
+        whole: [obs("A TALL HEADING", x: 0.2, top: 1000, width: 0.6, height: 110, page: 4000)]
+            + fusedPage.filter { $0.text != "pave arisen frorn eler tho" },
+        bands: [(observations: [one("A TALL HEADTNG", x: 0.2, top: 1020, width: 0.6,
+                                    height: 70)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C33: …and a tall heading a band reads as one line is kept",
+          tallHeading.map(\.text) == ["A TALL HEADING", "line above", "line below"],
+          "\(tallHeading.map(\.text))")
+
+    // C33: a kept fragment reaching a sliver into a band line's box is the next
+    // fragment of the same row, not the same words (Briefer p3: `Women's Bureau,`
+    // 17 px into `WOMEN IN HIGHER-LEVEL POSITIONS. Bulletin No. 236.`).
+    let sliver = Recogniser.mergeBands(
+        whole: [obs("Women's Bureau,", x: 0.70, top: 1000, width: 0.14, height: 60, page: 4000)],
+        bands: [(observations: [one("WOMEN IN HIGHER-LEVEL POSITIONS.", x: 0.19, top: 1000,
+                                    width: 0.517, height: 60)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C33: a band line a kept fragment overlaps by a sliver is still added",
+          sliver.map(\.text).contains("WOMEN IN HIGHER-LEVEL POSITIONS."), "\(sliver.map(\.text))")
+
+    // C33: the trigger sees a block missed beside a column the request read. The
+    // left column's line covers every row, so the whole-width test finds no void.
+    let stripRows = 1000
+    var leftInk = [Bool](repeating: false, count: stripRows)
+    var rightInk = [Bool](repeating: false, count: stripRows)
+    for y in 100..<400 { leftInk[y] = true; rightInk[y] = true }
+    let leftColumn = (0..<10).map {
+        obs("left \($0)", x: 0.1, top: 100 + Double($0) * 30, width: 0.3, height: 20, page: 1000)
+    }
+    let strips = [leftInk] + [leftInk, leftInk, rightInk, rightInk]
+    check("C33: a block missed beside a recognised column is a void in its own strip",
+          !Recogniser.hasVoid(inked: leftInk, observations: leftColumn, pageHeight: stripRows,
+                              lineHeight: 20)
+              && Recogniser.hasVoid(inkedStrips: strips, observations: leftColumn,
+                                    pageHeight: stripRows, lineHeight: 20))
+    let rightColumn = leftColumn.map {
+        Obs(boundingBox: Box(x: 0.55, y: $0.boundingBox.y, width: 0.35,
+                             height: $0.boundingBox.height), text: "right", confidence: 1)
+    }
+    check("C33: …and not once the other column is read too",
+          !Recogniser.hasVoid(inkedStrips: strips, observations: leftColumn + rightColumn,
+                              pageHeight: stripRows, lineHeight: 20))
+    // …and a fused box, which covers its own rows and so leaves no void, starts the
+    // bands by its shape: over 1.4 line heights tall and eight wide.
+    check("C33: a wide box over 1.4 line heights tall starts the bands",
+          Recogniser.hasFusedLine(fusedPage, pageWidth: 3000, pageHeight: 4000, lineHeight: 60)
+              && !Recogniser.hasFusedLine(fusedPage.filter { $0.boundingBox.height * 4000 < 100 },
+                                          pageWidth: 3000, pageHeight: 4000, lineHeight: 60)
+              && !Recogniser.hasFusedLine([obs("7", x: 0.9, top: 100, width: 0.02, height: 110,
+                                               page: 4000)],
+                                          pageWidth: 3000, pageHeight: 4000, lineHeight: 60))
+
     // End to end through real crops. A page of clean lines plus a solid block: the
     // block is ink no word covers, so the bands run, and every line they return is one
     // the whole-page request already read. A wrong crop or remap lands a band's copy
@@ -6775,6 +6901,19 @@ do {
                   && Recogniser.hasVoid(inked: rows, observations: whole, pageHeight: height,
                                         lineHeight: line),
               "\(whole.count) observations, line \(line)")
+        // C33's ink test, on real pixels: type in a line's box, none in the blank
+        // stretch after the line ends.
+        if let scan = Recogniser.inkScan(of: image),
+           let top = whole.min(by: { $0.boundingBox.y < $1.boundingBox.y }) {
+            let after = Box(x: 0.9, y: top.boundingBox.y, width: 0.08,
+                            height: top.boundingBox.height)
+            check("C33: the ink test finds type in a line's box and none after the line ends",
+                  Recogniser.hasInk(in: top.boundingBox, of: image, level: scan.level)
+                      && !Recogniser.hasInk(in: after, of: image, level: scan.level),
+                  "line \(top.boundingBox)")
+        } else {
+            check("C33: the fixture scans for ink and has a first line", false)
+        }
         // A real crop, recognised and lifted back: the band holding the first line
         // returns it where the whole page put it. This is what a wrong crop or remap
         // would break, and it runs whether or not the merge later refuses the copy.
