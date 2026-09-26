@@ -105,6 +105,30 @@ say so in the commit.
       real pages from the stains, close C27 `WONTFIX` with the measurement as the reason. Record the
       corpus byte cost either way. BOUND: one code commit.
       (origin: BUGS.md C27)
+- [ ] **c33-unselectable-blocks** — make every printed line on the owner's five reported pages
+      selectable in Preview. The owner found these in the released 1.14.0, and making text selectable is
+      what the app is for, so this comes first.
+      THE DEFECT, which may be two. `BUGS.md` C33 has what was checked. (a) Real voids: on `Bird` p3 two
+      blocks of the right-hand column, 14 lines in all, have no text layer at all, so C30's trigger or
+      bands did not recover them. (b) Lines present but broken: on `Briefer` p3 and `Leland` p2 and p5,
+      poppler finds a word box over every line, but PDFKit's selection drops some lines and returns
+      garbage for others. Those lines sit where band observations overlap whole-page ones; that C30's
+      merge causes it is inferred. Find the cause of each face in the code before fixing either.
+      THE PAGES. `1951 - Briefer Book Notes` p3, `Leland - 1952 - We Believe in Employment on Merit, but`
+      p2, p5 and p6, `Bird - 1963 - More Room at the Top …` p3, and the two-line block on
+      `Hughes - The Knitting of Racial Groups in Industry` p3. Sources are in
+      `~/.local/state/visionocr-autonomous/owner-supplied/`.
+      THE INSTRUMENT HAS TO BE PDFKIT. Poppler read these pages as covered, and it is not what the
+      owner uses. Measure selection with PDFKit (`PDFPage.selection(for:)`, `selectionsByLine()`),
+      checking each line of the page's printed text against what PDFKit returns. That tool is part of
+      this item and is reused by `corpus-stress`.
+      DONE WHEN, on the published PDF: every printed line on those six pages comes back from PDFKit
+      whole and correct; C30's Briefer figures (at least 3,300 words, void share at most 0.05) still
+      hold; the four properties of `CLAUDE.md` invariant 3 hold; the new checks go red without the change.
+      Then C33 closes `FIXED`, with a `CHANGELOG.md` line under a new `## Unreleased` heading.
+      BOUND: one code commit per face if they turn out separate, plus one for the PDFKit tool, plus free
+      docs commits.
+      (origin: BUGS.md C33)
 - [x] **c31-colour-text** — make body text on a page the layered colour route keeps legible again. This
       is a regression in the released 1.14.0, so it comes before C28.
       THE DEFECT. On `1954 - Why.pdf` (source and 1.14.0 output in
@@ -128,6 +152,56 @@ say so in the commit.
       has been cut).
       BOUND: one code commit, plus free docs commits for measurements.
       (origin: BUGS.md C31)
+- [ ] **c32-heading-colour** — keep the colour of red headings on pages that carry little other colour.
+      On `1954 - Why.pdf`, pages 5, 8 and 9 have red headings in the source and come out black and
+      white (`BUGS.md` C32). Find out why C27's `sheetFrac` route misses them, and change the colour
+      decision so that pages like these keep their colour without admitting paper stains (the 1891
+      typescript's foxing stays the negative case). Do this after C31, because it moves pages onto the
+      layered route whose text fill C31 repairs.
+      DONE WHEN: the headings on those three pages are red in the published PDF and the body text is
+      as legible as the source; the pages the change newly moves across the corpus are counted, a sample
+      is looked at, and the byte cost is stated; a new check goes red without the change. If no rule
+      separates them from stains, close C32 `WONTFIX` with the measurement.
+      BOUND: one code commit.
+      (origin: BUGS.md C32)
+- [ ] **c34-columns** — write the text layer in reading order, column by column, so a drag selection
+      stays inside one column. On `1954 - Why.pdf` p5 (a two-page spread) PDFKit's line order
+      interleaves the two pages; on `Hughes - The Knitting of Racial Groups in Industry` p3 three Vision
+      lines cross the gutter and join the two columns (`BUGS.md` C34). The owner asks for the columns to
+      be distinguished harder. Detect columns from the page's observations (a gutter no line should
+      cross), split observations that cross one, and emit runs column by column. `Tools/score-reading-order`
+      exists; check what it measures before relying on it.
+      DONE WHEN, measured through PDFKit on the published PDF: selecting down one column of those two
+      pages never takes text from the other; no run crosses the gutter; single-column pages across a
+      corpus sample are unchanged; invariant 3 holds; a new check goes red without the change.
+      BOUND: one code commit.
+      (origin: BUGS.md C34)
+- [ ] **c35-file-size** — find out why some already-OCR'd files come out several times larger than they
+      went in: Dobbin 2.6 → 17.6 MB, Delton 0.95 → 8.3 MB, Hughes 0.5 → 3.0 MB, all made by Acrobat's
+      Paper Capture (`BUGS.md` C35; the outputs are in `~/Desktop/Zotero PDF Transfer folder/` and the three
+      sources in `$STATE/owner-supplied/`). Establish which route each
+      page took and where the bytes go, and whether the growth buys anything (a better text layer). If
+      it buys nothing, fix it in the same item: for example, a page whose rebuilt image is larger than
+      the source's own could reuse it, or the rebuild resolution could follow the source. If it does
+      buy something, say what and close C35 with the trade stated for the owner.
+      DONE WHEN: a per-page table of route and bytes for the three files is committed, and either the
+      outputs are no larger than needed with a check that goes red without the fix, or C35 records why
+      the size is the price of something wanted.
+      BOUND: one docs commit for the investigation, one code commit if a fix follows.
+      (origin: BUGS.md C35)
+- [ ] **corpus-stress** — stress-test the app on the whole corpus and turn what it finds into queued work.
+      Run the production pipeline end to end at default settings over every document in `testdocs/`
+      (233 files) and the owner's test folder, `~/Desktop/Zotero PDF Transfer folder/` (read only; write
+      outputs to scratch). For each page record: route taken, crash or error, time, output bytes against
+      source bytes, text selectable through PDFKit against the ink on the page (the tool from
+      `c33-unselectable-blocks`, not poppler), whether PDFKit's line order crosses columns, and whether
+      colour in the source is lost in the output. Render a sample of the worst pages on each measure at
+      1:1 and look at them, because C31 was a defect no number caught.
+      OUTPUT: a TSV committed at the root, and for each confirmed defect class a short `BUGS.md` entry and
+      a queue item placed above `c28-first-principles`, ranked by how much of a reader's text or content
+      it loses. Findings that are already queued get one line in their existing entry, not a new one.
+      BOUND: one step per session (the run itself, then the reading of it), each with its output committed.
+      (context: owner request 2026-09-25, after the 1.14.0 test folder turned up six defects)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation

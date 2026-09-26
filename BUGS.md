@@ -17824,6 +17824,76 @@ build reproduces the owner's 1.14.0 file byte for byte, 470,958 B), rendered at 
 Limit: red ink within about 8 px of black is judged against it, so a red underline under black descenders
 darkens. Checks: `C31:` in `Tests/main.swift`; three of them are red on the old code.
 
+### C32 · Pages whose only colour is red headings are published black and white, so a pamphlet loses its heading colour on most of its pages — OPEN
+
+*(found 2026-09-25 by the owner, on `1954 - Why.pdf` in 1.14.0; files in `$STATE/owner-supplied/`.)*
+
+C27's second colour route keeps a page in colour when `sheetSaturatedFraction` > 0.01. On this
+document, pages 5, 8 and 9 carry red headings in the source and come out as a single 1-bit JBIG2 image
+with black headings. Measured on 50 dpi renders of the source, the share of pixels with HSL saturation
+above 0.35 is 0.015, 0.033 and 0.016 on those pages (page 3: 0.002). That is a different measure from
+`sheetFrac`, so why these pages miss the route has not been established. [measured: the black
+headings and the shares; not measured: the pages' own `sheetFrac`]
+
+Fixing this moves pages onto the layered route, where C31's washed-out text fill is, so C31 comes first.
+
+### C33 · Blocks of text still cannot be selected after C30: some pages keep whole uncovered blocks, and on others the lines exist but PDFKit drops or garbles them — OPEN
+
+*(found 2026-09-25 by the owner in 1.14.0: `1951 - Briefer Book Notes` p3 (C30's own founding document),
+`Leland - 1952 - We Believe in Employment on Merit, but` p2, p5 and p6, `Bird - 1963 - More Room at the Top …`
+p3, and a two-line block on `Hughes - The Knitting of Racial Groups in Industry` p3. The outputs are in
+`~/Desktop/Zotero PDF Transfer folder/`; the `Hughes`, `Briefer`, `Leland` and `Bird` sources are also in `$STATE/owner-supplied/`.)*
+
+**Two different faces, possibly two causes.**
+
+**Real voids.** On Bird p3 neither poppler nor PDFKit finds any text over two blocks of the right-hand
+column: five lines from "accept this change?" to "it into practice were explored.", and nine lines
+from "search was extended until a drafts-" to the foot of the column. The page is clean, legible type.
+So C30's trigger did not fire there, or its bands did not recover those lines. [measured]
+
+**Lines present but not selectable.**
+Poppler (`pdftotext -bbox`) finds a word box over every printed line on Briefer p3 and Leland p2. PDFKit,
+which is what Preview and the owner use, does not. `page.selection(for: mediaBox).selectionsByLine()` on
+Briefer p3 has no line for "WOMEN IN HIGHER-LEVEL POSITIONS. Bulletin No. 236.", none for "EYES AND
+INDUSTRY …", none for "A comprehensive review of the visual problems …", and it returns garbage for the
+line after it ("1.D. Second Edition, She C. VoMesby Compay, 32pt Wanington Bivd.") and for the last
+body line ("York, to or pages a Big the Cultural do one on tec Mon"). On Leland p2 four footnote lines
+are missing and one is garbled ("since the daces indicated: mentapolis, 1947, Patindelphth, 1908");
+Leland p5 is missing lines in its footnotes. [measured]
+
+The lines that fail are on or next to lines where the poppler overlay shows two boxes overlapping, the
+pattern a band observation added beside a whole-page one would leave. That C30's merge is the cause, and
+which property of `CLAUDE.md` invariant 3 it breaks (runs overlapping vertically is the likely one), is
+inferred. [inferred] C30's done-criteria were measured by word count and void share, which neither
+instrument reads through PDFKit's selection.
+
+### C34 · The text layer is written across the page row by row, so selection jumps between columns, and some Vision lines span the gutter — OPEN
+
+*(found 2026-09-25 by the owner in 1.14.0: `1954 - Why.pdf` p5, a two-page spread, and
+`Hughes - The Knitting of Racial Groups in Industry` p3, a two-column journal page.)*
+
+PDFKit's line order on Why p5 interleaves the two pages in blocks: four lines of the left page, two of
+the right, one of the left, and so on, so a drag selection jumps from column to column. On Hughes p3,
+three rows are single runs about 382-384 pt wide that cross the gutter and join a line of the left
+column to a line of the right ("tion whether the races will work well to- ployes sort themselves accor…").
+[measured] The owner asks for the columns to be distinguished harder.
+
+### C35 · Some already-OCR'd files come out several times larger than they went in — OPEN
+
+*(found 2026-09-25 in the owner's test folder, `~/Desktop/Zotero PDF Transfer folder/`, 1.14.0 at
+default settings. The owner asked for it to be investigated.)*
+
+Source → output: `Dobbin_2009_Inventing equal opportunity` 2.6 MB → 17.6 MB (321 pages),
+`Delton - 2007 - Before the EEOC` 0.95 MB → 8.3 MB (28 pages), `Hughes - The Knitting of Racial Groups
+in Industry` 0.5 MB → 3.0 MB (9 pages). All three sources were produced by "Adobe Acrobat 26 Paper
+Capture Plug-in". Dobbin's source holds one image and 1,291 fonts over 321 pages, which looks like
+Acrobat's ClearScan: the scan replaced by synthesised vector fonts, drawn visibly. Delton's pages hold
+600 dpi 1-bit JBIG2 images. [measured: sizes, producer, image and font counts; inferred: ClearScan]
+
+Not known: which route each page took, where the bytes go in the output, and whether the growth buys
+anything (a better text layer) that the owner would want to pay for. Other files in the same folder
+grew little or shrank.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED
