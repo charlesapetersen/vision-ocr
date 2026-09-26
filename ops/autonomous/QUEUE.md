@@ -81,7 +81,7 @@ say so in the commit.
       BOUND: one code commit for the fix and its tests, one for the instrument if it needs changing, and
       free docs commits for measurements. Do not build a setting for it unless the time cost forces one.
       (origin: BUGS.md C30)
-- [ ] **c29-short-page** — finish C29: a born-digital page with fewer than 120 characters of text is
+- [x] **c29-short-page** — finish C29: a born-digital page with fewer than 120 characters of text is
       still rasterised and re-OCR'd, and no report line names it. Decide the rule for a short page yourself
       from the evidence in `BUGS.md` C29, implement it with a test that fails without it, and close C29
       `FIXED`. The danger runs the other way too: a page wrongly passed through is never recognised, and

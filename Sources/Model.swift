@@ -1993,9 +1993,10 @@ final class OCRModel: ObservableObject {
             // page extractions for a note nobody would ever see. Cancelled here
             // means an empty set, which is the pre-C29 behaviour, and `flatten`
             // breaks out of its own loop on the next line anyway.
-            let passThrough: Set<Int> = control.isCancelled
-                ? []
-                : Set(Flattener.digitalTextPages(in: file, password: password))
+            let routes: (passThrough: [Int], rasterisedExact: [Int]) = control.isCancelled
+                ? ([], [])
+                : Flattener.digitalPageRoutes(in: file, password: password)
+            let passThrough = Set(routes.passThrough)
             do {
                 bitmaps = try Flattener.flatten(
                     file, to: rebuilt, mode: rebuildMode, password: password,
@@ -2084,7 +2085,10 @@ final class OCRModel: ObservableObject {
                     if case .passthrough = page.content { return index + 1 }
                     return nil
                 }
-                digitalTextPages = passThrough.subtracting(passedThroughPages).sorted()
+                // Plus the short pages that kept exact text but drew an image, which
+                // `bornDigitalVerdict` rebuilds rather than trust (C29, 2026-09-25).
+                digitalTextPages = passThrough.subtracting(passedThroughPages)
+                    .union(routes.rasterisedExact).sorted()
             } catch {
                 // Same as below: a cancelled jbig2 child surfaces here as a
                 // throw, and is a cancellation, not a broken file.
@@ -2819,23 +2823,9 @@ final class OCRModel: ObservableObject {
     /// out `AMFAKAN FOCAX ONCAL ASSOXUTION`, so a bar in this function would drop
     /// pages on a quantity that does not order them.
     ///
-    /// ⛔ **But membership is NOT unfiltered, and a draft of this comment said it
-    /// was.** `Flattener.pageHasDigitalText` requires 120 characters, so a
-    /// born-digital half-title of seventy characters is rasterised, loses its exact
-    /// text, and is never named — the same "any filter drops a known loser" shape C28
-    /// rejected, inherited here from a bar chosen for a different question. Refuted by
-    /// the adversarial review of this diff, which is why the sentence now says which
-    /// stage has no bar.
-    ///
-    /// ⛔ **That bar is now the routing's bar too, and it is STILL not raised.** The
-    /// same 120 characters that keep a short born-digital page out of this report keep
-    /// it out of `passThrough`, so it is rasterised and loses its exact text and no
-    /// note anywhere mentions it. The routing commit was supposed to be where that
-    /// became measurable, and it is not measured: lowering the bar admits part titles
-    /// and plate captions to the passthrough, where a false positive costs a page
-    /// nothing ever recognises rather than a spurious line in a log. That trade needs
-    /// a population and has none. `BUGS.md` C29 carries it as what the fix does not
-    /// reach.
+    /// ✅ **That bar no longer decides alone, 2026-09-25.** A short page that proves it
+    /// holds no picture is passed through, and a short page with exact visible text
+    /// that draws an image is rebuilt and named here — `Flattener.bornDigitalVerdict`.
     ///
     /// Three at most and then `…`, the shape `unplacedSummary` and
     /// `shrunkTextPageSummary` already use, and for their reason: this line goes into
@@ -2855,7 +2845,8 @@ final class OCRModel: ObservableObject {
     ///
     /// ⛔ **Since the passthrough landed this names the RESIDUE, not the population.**
     /// Every page `Flattener.digitalTextPages` finds is asked for as a passthrough, so
-    /// the only way to reach this string is a page `flatten` could not honour — one
+    /// this string is reached by the pages `Flattener.bornDigitalVerdict` calls
+    /// `.rasterisedExact`, and by a page `flatten` could not honour — one
     /// PDFKit hands over with no `CGPDFPage` behind it, the same state `renderGrey`
     /// has a fallback for. That page really did lose its exact text, so the wording
     /// stays exactly as it was; what changed is how rare it is. The pages that WERE

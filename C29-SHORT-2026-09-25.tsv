@@ -1,0 +1,21 @@
+kind	document	page	chars	route	profile	largestImagePx
+CHANGE	Boltanski_2006_On justification_Princeton University Press.pdf	p203	chars=2741	old-through -> rebuild	Optional(ContentProfile(visibleShows: 0, invisibleShows: 438, inlineImages: 0, xObjects: 3, paintedPaths: 0, unreadPaint: 0))	img=872
+CHANGE	Falasca-Zamponi_2004_The »Culture« of Personality.pdf	p3	chars=108	old-rebuild -> rasterisedExact	Optional(ContentProfile(visibleShows: 4, invisibleShows: 0, inlineImages: 0, xObjects: 2, paintedPaths: 0, unreadPaint: 0))	img=843
+CHANGE	Kazin_1955_The Writer and the .pdf	p2	chars=89	old-rebuild -> rasterisedExact	Optional(ContentProfile(visibleShows: 15, invisibleShows: 0, inlineImages: 0, xObjects: 1, paintedPaths: 1, unreadPaint: 0))	img=28
+CHANGE	full chapter.pdf	p1	chars=77	old-rebuild -> rasterisedExact	Optional(ContentProfile(visibleShows: 14, invisibleShows: 0, inlineImages: 0, xObjects: 1, paintedPaths: 0, unreadPaint: 0))	img=774
+CHANGE	Zipkin_2000_Management.pdf	p2	chars=102	old-rebuild -> rasterisedExact	Optional(ContentProfile(visibleShows: 1, invisibleShows: 0, inlineImages: 0, xObjects: 9, paintedPaths: 0, unreadPaint: 0))	img=460
+CHANGE	_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y..pdf	p4	chars=102	old-rebuild -> rasterisedExact	Optional(ContentProfile(visibleShows: 1, invisibleShows: 0, inlineImages: 0, xObjects: 3, paintedPaths: 0, unreadPaint: 0))	img=448
+CHANGE	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	p2	chars=2	old-rebuild -> passThrough	Optional(ContentProfile(visibleShows: 5, invisibleShows: 0, inlineImages: 0, xObjects: 0, paintedPaths: 0, unreadPaint: 0))	img=-1
+CHANGE	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	p6	chars=4	old-rebuild -> passThrough	Optional(ContentProfile(visibleShows: 3, invisibleShows: 0, inlineImages: 0, xObjects: 0, paintedPaths: 0, unreadPaint: 0))	img=-1
+CHANGE	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	p8	chars=1	old-rebuild -> passThrough	Optional(ContentProfile(visibleShows: 3, invisibleShows: 0, inlineImages: 0, xObjects: 0, paintedPaths: 0, unreadPaint: 0))	img=-1
+CHANGE	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	p54	chars=2	old-rebuild -> passThrough	Optional(ContentProfile(visibleShows: 3, invisibleShows: 0, inlineImages: 0, xObjects: 0, paintedPaths: 0, unreadPaint: 0))	img=-1
+CHANGE	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	p119	chars=3	old-rebuild -> passThrough	Optional(ContentProfile(visibleShows: 4, invisibleShows: 0, inlineImages: 0, xObjects: 0, paintedPaths: 0, unreadPaint: 0))	img=-1
+CHANGE	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	p168	chars=3	old-rebuild -> passThrough	Optional(ContentProfile(visibleShows: 3, invisibleShows: 0, inlineImages: 0, xObjects: 0, paintedPaths: 0, unreadPaint: 0))	img=-1
+CHANGE	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	p226	chars=3	old-rebuild -> passThrough	Optional(ContentProfile(visibleShows: 3, invisibleShows: 0, inlineImages: 0, xObjects: 0, paintedPaths: 0, unreadPaint: 0))	img=-1
+CHANGE	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech.pdf	p268	chars=3	old-rebuild -> passThrough	Optional(ContentProfile(visibleShows: 3, invisibleShows: 0, inlineImages: 0, xObjects: 0, paintedPaths: 0, unreadPaint: 0))	img=-1
+TALLY	old-rebuild -> passThrough	8
+TALLY	old-rebuild -> rasterisedExact	5
+TALLY	old-rebuild -> rebuild	16582
+TALLY	old-through -> passThrough	391
+TALLY	old-through -> rebuild	1
+docs=233 pages=16987 changed=14

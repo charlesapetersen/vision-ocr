@@ -6,9 +6,9 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Three open: `C27`, `C28` and `C29` — and TWO of them are `HALF FIXED`: `C28` as of 2026-08-22, its
+**Two open: `C27` and `C28` — and `C28` is `HALF FIXED` as of 2026-08-22, its
 shape term WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were
-measured, and `C29` as of 2026-08-25, its born-digital page now COPIED THROUGH instead of rasterised.**
+measured. `C29` closed `FIXED` 2026-09-25.**
 ✅ **`C28`'s ONE REMAINING MEASUREMENT IS TAKEN AS OF 2026-09-02 AND IT IS THE MOVE THE ENTRY CALLS *"the
 outcome worth aiming at"*** (`#### The bar priced against the term`, `C28-BARPILOT-2026-09-02.tsv`, no
 sweep): of the **16** sampled pages a `textPageInkOutsideThreshold` of 0.08 would newly admit, the shape
@@ -15499,7 +15499,38 @@ mechanism — the page-wide Otsu being blind to pale pencil — predicts not.
   hand-drawn mark. ⚠️ Those are two different counts and this bullet conflated them in its first
   draft — caught by the numbers audit of this diff.
 
-### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — HALF FIXED
+### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — FIXED
+
+✅ **FIXED 2026-09-25: the short page, and the two `pageIsAnImage` misses.** `Flattener.bornDigitalVerdict`
+now decides each page, reading a new `contentProfile` of its operators (Form XObjects entered, render mode
+tracked across `q`/`Q`):
+- **Long pages (≥120 chars)** keep the old two terms plus a third: refused when invisible text shows
+  (mode 3/7) outnumber visible ones. An already-OCR'd scan under 900 px, or drawn inline, used to be passed
+  through and **never recognised**. It is now rebuilt. When visible text is also present it is reported.
+- **Short pages (1–119 chars)** pass through only if they have visible text, no invisible text, no XObject,
+  no inline image, no shading, pattern or Type 3 font, at most 20 painted paths and no non-link annotation.
+  A short page with exact text that fails one of those, over no page-sized raster, is rebuilt and **named**
+  in the run report (`.rasterisedExact`).
+- **Rejected:** lowering the 120 bar under the old two terms. Those are exactly the terms with the known
+  misses, and a false passthrough loses a page silently.
+
+**Measured by running code, `C29-SHORT-2026-09-25.tsv`, all 16,987 corpus pages, old rule against new.** 14
+pages change route:
+- 8 short pages of one born-digital book now pass through (1–4 characters each);
+- 5 short pages are newly reported;
+- 1 page (Boltanski p203: 2,741 chars, 438 invisible shows, 0 visible) was passed through by the old rule
+  unrecognised and is now rebuilt. That was a real instance of the invariant-1 loss the queue warned of;
+- none of the other 391 old passthroughs changed.
+
+Fixture `makeShortPagesPDF`: 18 pages, one per case, with two sizes and one page rotated. The old rule
+passed five of its already-OCR'd scans through (inline, narrow, a Form-held layer, `3.0 Tr`, and one with a
+visible banner). Suite 1418/1418.
+
+**Limits:**
+- The report is wrong in the loud direction on ProQuest scans whose only vector text is the
+  "Reproduced with permission" banner over a 448–460 px image (2 of the 5).
+- A narrow or inline scan whose text layer is drawn *visibly* is still passed through.
+- A long page whose text is all invisible is now rebuilt without a report, even if it is born digital.
 
 ⛔ **HALF FIXED as of 2026-08-25: the page is no longer rasterised — see `#### (A) SHIPPED`.** A born-digital
 page is copied through with `drawPDFPage` and keeps its exact text; the loss this entry was opened for does

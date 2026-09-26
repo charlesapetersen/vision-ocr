@@ -438,11 +438,262 @@ enum Flattener {
     /// the 392 firings were read at all, so nothing excludes the class. Found by the
     /// adversarial review of the adoption that pushed `591d3f3`, which is the second
     /// review to add a blindness to this list.
+    ///
+    /// ✅ **Both blindnesses are closed for the already-OCR'd scan, 2026-09-25**, by
+    /// the third term: a page whose own content stream shows more text invisibly
+    /// (render mode 3 or 7) than visibly is an OCR layer over a picture, whatever
+    /// `pageIsAnImage` made of the picture, Form XObjects included. What stays open
+    /// is a narrow or inline scan whose text layer is drawn VISIBLY (under the
+    /// picture, say), or that has none and 120 characters of vector text on it.
     static func pageHasDigitalText(_ page: PDFPage) -> Bool {
         // 120 characters is about two lines. Below that a page is a plate, a
-        // blank, or a part title, and says nothing either way.
+        // blank, or a part title, and `bornDigitalVerdict` asks a stricter
+        // question of it.
         let text = page.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return text.count >= 120 && !pageIsAnImage(page)
+        return text.count >= 120 && !pageIsAnImage(page) && !carriesAnOCRLayer(page)
+    }
+
+    /// Does the page draw most of its text invisibly? That is
+    /// what an OCR layer is. An unreadable stream answers yes: this term can only
+    /// keep a page off the passthrough, and a page nothing recognises is the loss
+    /// the passthrough must never cause.
+    static func carriesAnOCRLayer(_ page: PDFPage) -> Bool {
+        guard let profile = contentProfile(page) else { return true }
+        return profile.invisibleShows > profile.visibleShows
+    }
+
+    /// What `digitalPageRoutes` does with one page.
+    enum BornDigitalVerdict: Equatable {
+        /// Copied through with its own text, fonts and images.
+        case passThrough
+        /// Rasterised and recognised although it carried exact text of its own,
+        /// so the run report names it.
+        case rasterisedExact
+        /// Rasterised and recognised, and nothing is said: a scan, a blank page,
+        /// or an OCR layer being replaced.
+        case rebuild
+    }
+
+    /// C29's per-page rule, including the page under 120 characters.
+    ///
+    /// A long page is `pageHasDigitalText`'s. A SHORT page — a half-title, a part
+    /// title, "this page intentionally left blank" — is passed through only when its
+    /// content stream proves it holds no picture at all: text shown visibly, none
+    /// shown invisibly, no XObject invoked and no inline image.
+    /// That shuts both doors `pageIsAnImage` leaves open (a scan under 900 px
+    /// across, and a scan drawn inline with `BI`/`ID`/`EI`), because a short page
+    /// is never trusted to that width bar at all, and it shuts out every
+    /// already-OCR'd scan by its render mode 3 layer.
+    ///
+    /// Rejected: lowering the 120 bar under the same two terms. A passthrough
+    /// page is never recognised, so a false positive loses the page's text
+    /// silently (invariant 1), and those two terms are exactly the ones with the
+    /// known misses.
+    ///
+    /// A short page with exact visible text that draws an image anyway — a
+    /// half-title with a printer's ornament, or a narrow scan with a vector stamp
+    /// — is still rebuilt, since the picture may be the page, and is REPORTED,
+    /// which is wrong in the loud direction when the picture is a scan. One whose
+    /// image `pageIsAnImage` calls page-sized is rebuilt quietly: that is a scan
+    /// with a stamp on it, the app's main input.
+    ///
+    /// The same caution covers the places a picture hides without an XObject: a
+    /// shading, a pattern fill, a Type 3 font (whose glyphs may be bitmaps), an
+    /// annotation other than a link, and type outlined as paths — more than
+    /// `shortPagePathLimit` painted paths. Each sends the page to the report instead.
+    ///
+    /// A LONG page refused only because its text is mostly invisible, but with some
+    /// text drawn visibly and no page-sized picture, is reported too: that is either
+    /// a narrow scan with a vector banner or a born-digital page with hidden text,
+    /// and the second would otherwise lose its exact text in silence.
+    static func bornDigitalVerdict(_ page: PDFPage) -> BornDigitalVerdict {
+        let text = page.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if text.count >= 120 {
+            if pageHasDigitalText(page) { return .passThrough }
+            guard let profile = contentProfile(page), profile.visibleShows > 0,
+                  !pageIsAnImage(page) else { return .rebuild }
+            return .rasterisedExact
+        }
+        guard !text.isEmpty, let profile = contentProfile(page),
+              profile.visibleShows > 0, profile.invisibleShows == 0 else { return .rebuild }
+        let annotated = page.annotations.contains { $0.type != "Link" }
+        if profile.xObjects == 0 && profile.inlineImages == 0 && profile.unreadPaint == 0
+            && profile.paintedPaths <= shortPagePathLimit && !annotated { return .passThrough }
+        return pageIsAnImage(page) ? .rebuild : .rasterisedExact
+    }
+
+    /// Painted paths a short page may carry and still pass through. A part title's
+    /// rules and ornaments are a handful; a line of outlined type is a path a glyph.
+    static let shortPagePathLimit = 20
+
+    /// Counts over the operators a page draws, Form XObjects entered (an OCR layer
+    /// is often drawn inside one) to a depth of 8. Type 3 glyph procedures, tiling
+    /// patterns and annotation appearances are not entered; the fields below say
+    /// when one was used, so a caller can refuse what this could not read.
+    struct ContentProfile: Equatable {
+        /// Text-showing operators (`Tj`, `TJ`, `'`, `"`) under a visible render mode.
+        var visibleShows = 0
+        /// The same under render mode 3 (invisible) or 7 (clip only).
+        var invisibleShows = 0
+        /// Inline images, `BI` … `EI`, which `drawsAnyXObject` cannot see.
+        var inlineImages = 0
+        /// `Do` operators: images and forms alike.
+        var xObjects = 0
+        /// Paths painted (`f`, `S`, `B` and their variants): outlined type is paths.
+        var paintedPaths = 0
+        /// Shadings (`sh`), pattern colour spaces and Type 3 fonts selected — the
+        /// places a picture can hide that are not read here.
+        var unreadPaint = 0
+    }
+
+    /// `nil` when the stream could not be read — no operator of any kind came back,
+    /// `drawsAnyXObject`'s rule.
+    static func contentProfile(_ page: PDFPage) -> ContentProfile? {
+        guard let cgPage = page.pageRef, let table = CGPDFOperatorTableCreate() else { return nil }
+        final class State {
+            var profile = ContentProfile()
+            var operators = 0
+            // The render mode is graphics state, so `q`/`Q` save and restore it.
+            var mode: CGPDFReal = 0
+            var saved: [CGPDFReal] = []
+            var depth = 0
+            let table: CGPDFOperatorTableRef
+            init(table: CGPDFOperatorTableRef) { self.table = table }
+            func show() {
+                operators += 1
+                if mode == 3 || mode == 7 { profile.invisibleShows += 1 } else { profile.visibleShows += 1 }
+            }
+        }
+        let state = State(table: table)
+        // One literal closure per operator: a C callback cannot capture.
+        for op in ["Tj", "TJ", "'", "\""] {
+            CGPDFOperatorTableSetCallback(table, op) { _, info in
+                guard let info else { return }
+                Unmanaged<State>.fromOpaque(info).takeUnretainedValue().show()
+            }
+        }
+        CGPDFOperatorTableSetCallback(table, "Tr") { scanner, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.operators += 1
+            // A number, not an integer: `3.0 Tr` is legal and `PopInteger` refuses it.
+            var mode: CGPDFReal = 0
+            if CGPDFScannerPopNumber(scanner, &mode) { s.mode = mode.rounded() }
+        }
+        CGPDFOperatorTableSetCallback(table, "Tf") { scanner, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.operators += 1
+            var size: CGPDFReal = 0
+            var name: UnsafePointer<CChar>?
+            guard CGPDFScannerPopNumber(scanner, &size), CGPDFScannerPopName(scanner, &name),
+                  let name,
+                  let font = CGPDFContentStreamGetResource(
+                      CGPDFScannerGetContentStream(scanner), "Font", name) else { return }
+            var dict: CGPDFDictionaryRef?
+            var subtype: UnsafePointer<CChar>?
+            if CGPDFObjectGetValue(font, .dictionary, &dict), let dict,
+               CGPDFDictionaryGetName(dict, "Subtype", &subtype), let subtype,
+               String(cString: subtype) == "Type3" { s.profile.unreadPaint += 1 }
+        }
+        for op in ["cs", "CS"] {
+            CGPDFOperatorTableSetCallback(table, op) { scanner, info in
+                guard let info else { return }
+                let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+                s.operators += 1
+                var name: UnsafePointer<CChar>?
+                guard CGPDFScannerPopName(scanner, &name), let name else { return }
+                let key = String(cString: name)
+                if key == "Pattern" { s.profile.unreadPaint += 1; return }
+                // A named colour space may itself be a pattern space.
+                guard let space = CGPDFContentStreamGetResource(
+                        CGPDFScannerGetContentStream(scanner), "ColorSpace", name) else { return }
+                var array: CGPDFArrayRef?
+                var family: UnsafePointer<CChar>?
+                var bare: UnsafePointer<CChar>?
+                if CGPDFObjectGetValue(space, .array, &array), let array,
+                   CGPDFArrayGetName(array, 0, &family), let family,
+                   String(cString: family) == "Pattern" { s.profile.unreadPaint += 1 }
+                if CGPDFObjectGetValue(space, .name, &bare), let bare,
+                   String(cString: bare) == "Pattern" { s.profile.unreadPaint += 1 }
+            }
+        }
+        CGPDFOperatorTableSetCallback(table, "sh") { _, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.operators += 1
+            s.profile.unreadPaint += 1
+        }
+        for op in ["f", "F", "f*", "S", "s", "B", "B*", "b", "b*"] {
+            CGPDFOperatorTableSetCallback(table, op) { _, info in
+                guard let info else { return }
+                let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+                s.operators += 1
+                s.profile.paintedPaths += 1
+            }
+        }
+        CGPDFOperatorTableSetCallback(table, "q") { _, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.operators += 1
+            s.saved.append(s.mode)
+        }
+        CGPDFOperatorTableSetCallback(table, "Q") { _, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.operators += 1
+            if let mode = s.saved.popLast() { s.mode = mode }
+        }
+        CGPDFOperatorTableSetCallback(table, "Do") { scanner, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.operators += 1
+            s.profile.xObjects += 1
+            // Enter a form, the way the renderer does: inside an implicit `q`/`Q`,
+            // with its own resources and the caller's as the fallback.
+            var name: UnsafePointer<CChar>?
+            guard s.depth < 8, CGPDFScannerPopName(scanner, &name), let name else { return }
+            let parent = CGPDFScannerGetContentStream(scanner)
+            var stream: CGPDFStreamRef?
+            var subtype: UnsafePointer<CChar>?
+            guard let object = CGPDFContentStreamGetResource(parent, "XObject", name),
+                  CGPDFObjectGetValue(object, .stream, &stream), let stream,
+                  let dict = CGPDFStreamGetDictionary(stream),
+                  CGPDFDictionaryGetName(dict, "Subtype", &subtype), let subtype,
+                  String(cString: subtype) == "Form" else { return }
+            var resources: CGPDFDictionaryRef?
+            _ = CGPDFDictionaryGetDictionary(dict, "Resources", &resources)
+            let child = CGPDFContentStreamCreateWithStream(stream, resources ?? dict, parent)
+            let inner = CGPDFScannerCreate(child, s.table, info)
+            let mode = s.mode, saved = s.saved
+            s.depth += 1
+            CGPDFScannerScan(inner)
+            s.depth -= 1
+            s.mode = mode; s.saved = saved
+            CGPDFScannerRelease(inner)
+            CGPDFContentStreamRelease(child)
+        }
+        // CoreGraphics hands an inline image to the `EI` callback whole; `BI` and
+        // `ID` never fire (measured 2026-09-25).
+        CGPDFOperatorTableSetCallback(table, "EI") { _, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.operators += 1
+            s.profile.inlineImages += 1
+        }
+        for op in ["BT", "cm", "re", "gs"] {
+            CGPDFOperatorTableSetCallback(table, op) { _, info in
+                guard let info else { return }
+                Unmanaged<State>.fromOpaque(info).takeUnretainedValue().operators += 1
+            }
+        }
+        let stream = CGPDFContentStreamCreateWithPage(cgPage)
+        let scanner = CGPDFScannerCreate(stream, table, Unmanaged.passUnretained(state).toOpaque())
+        CGPDFScannerScan(scanner)
+        CGPDFScannerRelease(scanner)
+        CGPDFContentStreamRelease(stream)
+        CGPDFOperatorTableRelease(table)
+        return state.operators > 0 ? state.profile : nil
     }
 
     /// The 1-based numbers of the pages a rebuild rasterises **even though they
@@ -485,7 +736,18 @@ enum Flattener {
     /// fourth `open` of the same URL in `makeSearchablePDF`. Do not call it on the
     /// non-rebuild route — nothing is replaced there, so there is nothing to report —
     /// and the caller guards it on cancellation.
+    ///
+    /// ⚠️ Since 2026-09-25 a page under the bar pays one content-stream scan too, and
+    /// the pages over it a second (`carriesAnOCRLayer`) when `pageIsAnImage` said no.
     static func digitalTextPages(in url: URL, password: String? = nil) -> [Int] {
+        digitalPageRoutes(in: url, password: password).passThrough
+    }
+
+    /// `bornDigitalVerdict` over every page, in one walk: the 1-based pages to copy
+    /// through, and the short pages rasterised although they carried exact text,
+    /// which the run report names beside the passthrough's residue.
+    static func digitalPageRoutes(in url: URL, password: String? = nil)
+        -> (passThrough: [Int], rasterisedExact: [Int]) {
         // ⛔ `[]` on a file that will not open is a SILENT answer, and the DIRECTION is
         // what a draft of this got wrong: it was justified as "`hasEmbeddedText`'s
         // existing convention", but that function returning `false` on failure makes
@@ -497,11 +759,17 @@ enum Flattener {
         // reaches it only on a file that stopped being readable mid-run — but it is a
         // LIMIT, not an inherited convention, and nothing checks it. Refuted by the
         // adversarial review of the adoption that pushed `591d3f3`.
-        guard let doc = open(url, password: password) else { return [] }
-        return (0..<doc.pageCount).compactMap { index in
-            guard let page = doc.page(at: index), pageHasDigitalText(page) else { return nil }
-            return index + 1
+        guard let doc = open(url, password: password) else { return ([], []) }
+        var through: [Int] = [], exact: [Int] = []
+        for index in 0..<doc.pageCount {
+            guard let page = doc.page(at: index) else { continue }
+            switch bornDigitalVerdict(page) {
+            case .passThrough: through.append(index + 1)
+            case .rasterisedExact: exact.append(index + 1)
+            case .rebuild: break
+            }
         }
+        return (through, exact)
     }
 
     /// `wanted` page indices spread through a document of `count` pages, in
@@ -578,7 +846,7 @@ enum Flattener {
         for i in indices {
             guard let page = doc.page(at: i) else { continue }
             sampled += 1
-            // Through `pageHasDigitalText`, not a copy of its two terms: C29's
+            // Through `pageHasDigitalText`, not a copy of its terms: C29's
             // report asks the same question of every page, and two copies of one
             // rule is how `classify-source.swift` came to disagree with this
             // function for a week (A12.4, cited above).

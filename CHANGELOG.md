@@ -22,6 +22,15 @@ found is not added a second time. On that document the selectable words went fro
 read fully the first time cost almost nothing extra; pages that needed the second reading took about three
 seconds longer each, and so may a page with a picture on it (BUGS.md C30).
 
+**Short born-digital pages keep their exact text, and a low-resolution scan with an old text layer is read
+again instead of kept as it was.** A part title, half-title or nearly blank page with only a few words of
+real text used to be turned into a picture and re-read. It is now kept as it is, provided nothing on it
+could be a picture: no image, pattern, note or outlined lettering. A short page that does carry one of
+those is still re-read, and the run report now names it. The other half of the fix matters more. The test
+for "this page is already a picture" missed scans under 900 pixels wide and scans whose image is written
+inline. When such a scan carried an earlier OCR layer, it was taken for a born-digital page, kept with its
+old text, and never read by the app. Pages whose text is mostly invisible are now always re-read (BUGS.md C29).
+
 **A mixed PDF — born-digital pages among scanned ones — now keeps the compact page compression for its
 scanned pages.** Until now, one page kept as it is turned that compression off for the whole file, and the
 layered-image saving with it, so a mixed file came out much larger: measured on a ten-page book with a
@@ -49,7 +58,8 @@ being re-read. Two more limits (the first of which the entry above now removes f
 with the older, larger page compression and loses the layered-image saving with it, so it can come out
 noticeably bigger; and a *short* born-digital page — under
 about two lines of text — is still rebuilt, because two lines is the bar the app uses to tell a real page of
-text from a plate or a part title (BUGS.md C29).
+text from a plate or a part title (BUGS.md C29). *(The first caveat, for scans with an old invisible text
+layer, and the short-page limit are both removed by the short-page entry above.)*
 
 **The run report now tells you when a page that already had real text of its own was turned into a picture
 and re-read.** Some PDFs are a mixture: a library or a publisher puts born-digital pages — a download cover

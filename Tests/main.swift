@@ -11457,6 +11457,114 @@ func makeBornDigitalCoverPDF(at url: URL, coverPages: Int = 1, scanPages: Int) {
     pdf.closePDF()
 }
 
+/// C29's SHORT page, 2026-09-25: one page per verdict `Flattener.bornDigitalVerdict`
+/// can reach, written as raw PDF because CoreGraphics cannot write an inline image
+/// (`BI`/`ID`/`EI`), and an inline scan is one of the two doors the rule must shut.
+/// Scans are all-white 1-bit rasters; the verdict reads operators and sizes, not ink.
+/// Returns the verdict each page should get, 1-based order. Two page sizes and a
+/// rotated page, per invariant 5.
+@discardableResult
+func makeShortPagesPDF(at url: URL) -> [Flattener.BornDigitalVerdict] {
+    // Three lines, not one: a single line this long runs off the page and PDFKit
+    // extracts only the part inside the box (68 characters, measured).
+    let long = "This text was recognised before) Tj 0 -24 Td (and sits over the scan as "
+        + "a layer) Tj 0 -24 Td (long enough to clear the bar of one hundred and twenty characters."
+    // An all-white 1-bit image of `w` x `h`, run-length coded so the fixture stays
+    // small: each row is runs of at most 128 copies of 0xFF, then end-of-data.
+    func scan(_ w: Int, _ h: Int) -> String {
+        let rowBytes = (w + 7) / 8
+        var bytes: [UInt8] = []
+        for _ in 0..<h {
+            var left = rowBytes
+            while left > 0 { let n = min(128, left); bytes += [UInt8(257 - n), 0xFF]; left -= n }
+        }
+        bytes.append(128)
+        let data = String(bytes: bytes, encoding: .isoLatin1) ?? ""
+        return "<< /Type /XObject /Subtype /Image /Width \(w) /Height \(h) /BitsPerComponent 1 "
+            + "/ColorSpace /DeviceGray /Filter /RunLengthDecode /Length \(bytes.count) >>\n"
+            + "stream\n" + data + "\nendstream"
+    }
+    let inline = "BI /W 8 /H 8 /BPC 8 /CS /G /F /AHx ID "
+        + String(repeating: "FF", count: 64) + "> EI"
+    func text(_ s: String, mode: String = "0") -> String { "BT /F1 18 Tf \(mode) Tr 72 400 Td (\(s)) Tj ET" }
+    // A form drawing an invisible OCR layer, with no /Resources of its own: it
+    // finds /F1 through the page's, as a renderer does.
+    let ocrForm = { () -> String in
+        let body = text(long, mode: "3")
+        return "<< /Type /XObject /Subtype /Form /BBox [0 0 612 792] "
+            + "/Length \(body.unicodeScalars.count) >>\nstream\n\(body)\nendstream"
+    }()
+    let manyPaths = String(repeating: "72 300 10 10 re f ", count: 30)
+    let full = "q 612 0 0 792 0 0 cm "
+    // (content, media box, rotate, image object, expected)
+    let pages: [(String, String, Int, String?, Flattener.BornDigitalVerdict)] = [
+        (text("Part Two") + " 72 380 468 1 re f", "0 0 612 792", 0, nil, .passThrough),
+        (text("Half-title"), "0 0 420 595", 90, nil, .passThrough),
+        // `q 3 Tr Q` leaves the mode visible again: the render mode is saved state.
+        ("q 3 Tr Q " + text("Chapter Three"), "0 0 612 792", 0, nil, .passThrough),
+        // An 800 px scan, under `pageIsAnImage`'s width bar, with an OCR'd heading.
+        (full + "/Im1 Do Q " + text("Chapter Four", mode: "3"), "0 0 612 792", 0, scan(800, 1035), .rebuild),
+        // The same scan with a visible vector stamp: exact text, but a picture too.
+        (full + "/Im1 Do Q " + text("Stamped"), "0 0 612 792", 0, scan(800, 1035), .rasterisedExact),
+        (full + inline + " Q " + text("Chapter Six", mode: "3"), "0 0 612 792", 0, nil, .rebuild),
+        (full + inline + " Q " + text("Inline stamp"), "0 0 612 792", 0, nil, .rasterisedExact),
+        // The two known misses at full length, which `pageHasDigitalText` passed through.
+        (full + "/Im1 Do Q " + text(long, mode: "3"), "0 0 612 792", 0, scan(800, 1035), .rebuild),
+        (full + inline + " Q " + text(long, mode: "7"), "0 0 612 792", 0, nil, .rebuild),
+        ("q Q", "0 0 612 792", 0, nil, .rebuild),
+        // A page-sized scan with a vector stamp: the app's main input, rebuilt quietly.
+        (full + "/Im1 Do Q " + text("Digitised"), "0 0 612 792", 0, scan(1224, 1584), .rebuild),
+        (text(long), "0 0 612 792", 0, nil, .passThrough),
+        // The OCR layer inside a Form XObject over a narrow scan, and one written
+        // `3.0 Tr`: both passed through until the adversarial review found them.
+        (full + "/Im1 Do Q q /Fm1 Do Q", "0 0 612 792", 0, scan(800, 1035), .rebuild),
+        (full + "/Im1 Do Q " + text(long, mode: "3.0"), "0 0 612 792", 0, scan(800, 1035), .rebuild),
+        // A short page painting through a pattern, and one of outlined type.
+        ("/Pattern cs /P0 scn 0 0 612 792 re f " + text("Plate"), "0 0 612 792", 0, nil, .rasterisedExact),
+        (manyPaths + text("12"), "0 0 612 792", 0, nil, .rasterisedExact),
+        // A narrow scan with a visible banner over its OCR layer: loud, not quiet.
+        (full + "/Im1 Do Q " + text(long, mode: "3") + " BT /F1 8 Tf 0 Tr 72 40 Td (Reproduced) Tj ET",
+         "0 0 612 792", 0, scan(800, 1035), .rasterisedExact),
+        // A short page carrying a note: annotations are not read, so not trusted.
+        (text("Notes"), "0 0 612 792", 0, nil, .rasterisedExact),
+    ]
+    var objects = ["<< /Type /Catalog /Pages 2 0 R >>", "",
+                   "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica "
+                       + "/Encoding /WinAnsiEncoding >>"]
+    var kids: [String] = []
+    for (number, (content, box, rotate, image, _)) in pages.enumerated() {
+        var xobject = ""
+        if let image {
+            objects.append(image)
+            xobject = " /XObject << /Im1 \(objects.count) 0 R"
+            if number == 12 { objects.append(ocrForm); xobject += " /Fm1 \(objects.count) 0 R" }
+            xobject += " >>"
+        }
+        let annots = number == 17
+            ? " /Annots [<< /Type /Annot /Subtype /Square /Rect [300 300 400 400] >>]" : ""
+        objects.append("<< /Length \(content.unicodeScalars.count) >>\nstream\n\(content)\nendstream")
+        let contents = objects.count
+        objects.append("<< /Type /Page /Parent 2 0 R /MediaBox [\(box)] /Rotate \(rotate) "
+                       + "/Resources << /Font << /F1 3 0 R >>\(xobject) >> /Contents \(contents) 0 R\(annots) >>")
+        kids.append("\(objects.count) 0 R")
+    }
+    objects[1] = "<< /Type /Pages /Kids [\(kids.joined(separator: " "))] /Count \(kids.count) >>"
+    // Offsets in BYTES of the Latin-1 file, which is one per scalar: `utf8.count`
+    // would count the scans' 0xFF bytes twice.
+    var pdf = "%PDF-1.4\n"
+    var offsets: [Int] = []
+    for (i, body) in objects.enumerated() {
+        offsets.append(pdf.unicodeScalars.count)
+        pdf += "\(i + 1) 0 obj\n\(body)\nendobj\n"
+    }
+    let xref = pdf.unicodeScalars.count
+    pdf += "xref\n0 \(objects.count + 1)\n0000000000 65535 f \n"
+    for o in offsets { pdf += String(format: "%010d 00000 n \n", o) }
+    pdf += "trailer\n<< /Size \(objects.count + 1) /Root 1 0 R >>\nstartxref\n\(xref)\n%%EOF\n"
+    try? pdf.write(to: url, atomically: true, encoding: .isoLatin1)
+    return pages.map { $0.4 }
+}
+
 /// Copies `source` into a fresh PDF page by page, the way the **Flate route**
 /// publishes: page 1 either drawn through with `drawPDFPage` — the passthrough
 /// C29's routing fix needs — or rasterised at 200 DPI, which is what
@@ -12101,6 +12209,85 @@ do {
               + "bar and a page-sized raster — so it controls for neither term alone",
               c29Quiet.isEmpty && ocrdChars < 120,
               "pages=\(c29Quiet) chars=\(ocrdChars)")
+
+        // 4b. C29's SHORT page, 2026-09-25. Until then a born-digital page under 120
+        //     characters was rasterised and named by no report line, and a narrow or
+        //     inline scan over 120 with an OCR layer was PASSED THROUGH and never
+        //     recognised. One page per verdict; `makeShortPagesPDF` says why each.
+        let shortSrc = dir.appendingPathComponent("c29-short-pages.pdf")
+        let shortWanted = makeShortPagesPDF(at: shortSrc)
+        if let doc = PDFDocument(url: shortSrc), doc.pageCount == shortWanted.count {
+            let got = (0..<doc.pageCount).map { doc.page(at: $0).map(Flattener.bornDigitalVerdict) }
+            let wrong = zip(got, shortWanted).enumerated()
+                .filter { $0.element.0 != $0.element.1 }
+                .map { "p\($0.offset + 1)=\(String(describing: $0.element.0))" }
+            check("C29: every short-page fixture page gets its verdict — a picture-free "
+                  + "short page passes through, a scan never does, inline or narrow",
+                  wrong.isEmpty, wrong.joined(separator: " "))
+            // The premises, or the rows above could pass over a fixture PDFKit reads
+            // differently: the short pages really are short and have text, the long
+            // ones really clear the bar, and the two narrow scans are a real XObject
+            // `pageIsAnImage` does NOT call a page — the blindness being closed.
+            let counts = (0..<doc.pageCount).map {
+                (doc.page(at: $0)?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines).count
+            }
+            let narrow = doc.page(at: 7).flatMap(Flattener.largestImage(of:))?.pixelWidth
+            check("…over pages that are what they say: short 1-7, 11, 15, 16 and 18, long 8, 9, 12-14 and 17, "
+                  + "blank 10, and an 800 px scan that pageIsAnImage misses",
+                  counts[0..<7].allSatisfy { $0 > 0 && $0 < 120 } && counts[10] > 0
+                      && counts[10] < 120 && [7, 8, 11, 12, 13, 16].allSatisfy { counts[$0] >= 120 }
+                      && [14, 15, 17].allSatisfy { counts[$0] > 0 && counts[$0] < 120 }
+                      && counts[9] == 0 && narrow == 800
+                      && doc.page(at: 7).map(Flattener.pageIsAnImage) == false
+                      && doc.page(at: 10).map(Flattener.pageIsAnImage) == true,
+                  "chars=\(counts) narrow=\(narrow ?? -1)")
+            if let inlinePage = doc.page(at: 5) {
+                check("…and the inline scan's image is seen only as an inline image",
+                      Flattener.contentProfile(inlinePage)
+                          == Flattener.ContentProfile(visibleShows: 0, invisibleShows: 1,
+                                                      inlineImages: 1, xObjects: 0),
+                      String(describing: Flattener.contentProfile(inlinePage)))
+            }
+        } else {
+            check("C29: the short-page fixture opens with every page", false,
+                  "pages=\(PDFDocument(url: shortSrc)?.pageCount ?? -1)")
+        }
+        let shortRoutes = Flattener.digitalPageRoutes(in: shortSrc)
+        check("…and the routes production reads are those verdicts, 1-based",
+              shortRoutes.passThrough == [1, 2, 3, 12]
+                  && shortRoutes.rasterisedExact == [5, 7, 15, 16, 17, 18]
+                  && Flattener.digitalTextPages(in: shortSrc) == [1, 2, 3, 12],
+              "through=\(shortRoutes.passThrough) exact=\(shortRoutes.rasterisedExact)")
+        // End to end, so the routes are what Model's own call site hands `flatten` and
+        // the rasterised short pages reach the run report. The Flate route, so no
+        // jbig2enc gate: the routing is the same on both.
+        do {
+            resetPrefs()
+            d.set(false, forKey: Prefs.useJBIG2)
+            let out = dir.appendingPathComponent("c29-short-pages.ocr.pdf")
+            var outcome: Runner.Result.Outcome?
+            var notes: [String] = []
+            OCRModel.makeSearchablePDF(
+                file: shortSrc, output: out, rebuild: true, rebuildMode: .auto,
+                password: nil, control: RunControl(), progress: { _, _ in },
+                digitalTextPageNote: { notes.append($0) },
+                report: { o, _ in outcome = o })
+            resetPrefs()
+            let published = PDFDocument(url: out)
+            func pageText(_ i: Int) -> String {
+                (published?.page(at: i)?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            check("C29: a short born-digital page PUBLISHES with its exact text, on both "
+                  + "page sizes and the rotated one, and every page is kept",
+                  outcome == .succeeded && published?.pageCount == 18
+                      && pageText(0) == "Part Two" && pageText(1) == "Half-title"
+                      && pageText(2) == "Chapter Three",
+                  "outcome=\(String(describing: outcome)) pages=\(published?.pageCount ?? -1) "
+                      + "p1=\(pageText(0)) p2=\(pageText(1)) p3=\(pageText(2))")
+            check("…and the short pages rebuilt over their exact text are named in the report",
+                  notes.contains { $0.hasPrefix("6 page(s) already carried text") && $0.hasSuffix(": p5; p7; p15 …") },
+                  notes.joined(separator: " | "))
+        }
 
         // ⛔ SUPERSEDED HEADER: (A) shipped 2026-08-25, so "priced rather than started" and
         //    "nothing here routes anything" are both spent — block 3b above routes, and the
