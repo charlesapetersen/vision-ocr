@@ -118,6 +118,9 @@ STALE="${VISIONOCR_STALE:-1800}"          # 30 missed 60-second heartbeats. NOT 
 MAXRUN="${VISIONOCR_MAXRUN:-14400}"       # OUTER wall-clock backstop (4 h). The health watchdog below is
                                           # the PRIMARY killer; this only fires if that fails or a session is
                                           # productive-but-endless.
+MAXRUN_MAX="${VISIONOCR_MAXRUN_MAX:-28800}" # the same backstop for a session at max effort (3e): 8 h, twice the
+                                          # default (owner, 2026-09-26). The health watchdog still kills a
+                                          # wedged one early.
 # ⚠️ RAISED 9000 -> 14400 on 2026-08-19, for the same reason the budget went 20 -> 35 above: A SESSION MUST
 # SURVIVE ITS OWN COMMIT. Sized the way the README says to size these -- the WORST row in
 # $STATE/suite-timings.tsv you are willing to survive, plus headroom; never the mean, never one run. That
@@ -1619,7 +1622,8 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     eff_set="$(printf '%s\n' "$head_span" | grep -oE '\(effort: (low|medium|high|xhigh|max)\)' | head -1 | sed -E 's/.*: ([a-z]+)\)/\1/')"
     [ -n "$eff_set" ] && eff="$eff_set"
   fi
-  local budget="$BUDGET"; [ "$eff" = max ] && budget="$BUDGET_MAX"
+  local budget="$BUDGET" maxrun="$MAXRUN"
+  [ "$eff" = max ] && { budget="$BUDGET_MAX"; maxrun="$MAXRUN_MAX"; }
   export VISIONOCR_HEAD_ITEM="$head_tag" VISIONOCR_ATTEMPTS="$head_attempts" VISIONOCR_SESSION_EFFORT="$eff"
 
   # 3d. Snapshot the decision surface BEFORE the session, so afterwards we can tell whether it actually
@@ -1649,7 +1653,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # about — reported as bogus results rather than as an error.
   export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-  log "launching fresh resume session (backstop ${MAXRUN}s, budget \$$budget, effort $eff for ${head_tag:-no item} after $head_attempts attempts, health-wd on)…"
+  log "launching fresh resume session (backstop ${maxrun}s, budget \$$budget, effort $eff for ${head_tag:-no item} after $head_attempts attempts, health-wd on)…"
   cd "$REPO" || { log "cannot cd $REPO — skip."; kill "$hb" 2>/dev/null; rm -f "$LOCK"; return 0; }
   # Fresh per-session log (keep one previous). stream-json is larger than text, so don't append forever; a
   # fresh file also gives the watchdog a clean zero baseline.
@@ -1681,7 +1685,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # it self-exits promptly when the session ends AND never fires _terminate_tree against a stale/reused pid
   # if the daemon dies uncleanly.
   ( waited=0
-    while [ "$waited" -lt "$MAXRUN" ]; do
+    while [ "$waited" -lt "$maxrun" ]; do
       kill -0 "$cpid" 2>/dev/null || exit 0
       sleep "$HB_POLL"; waited=$(( waited + HB_POLL ))
     done

@@ -41,7 +41,7 @@ say so in the commit.
 7. **Attempts and effort.** The daemon counts the sessions it runs on an item that end with the item
    still open, and adds the item's `(attempts: N)` marker, which records failures found later, by the
    owner or a check. From the third attempt the session runs at `max` effort instead of the default
-   `medium`, with a $70 budget cap instead of $35. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
+   `medium`, with a $70 budget cap instead of $35 and an 8-hour time limit instead of 4. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
    fixed, reopen it or queue its successor with `(attempts: N)` carried over.
 
 ## The queue
