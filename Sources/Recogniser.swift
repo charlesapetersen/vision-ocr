@@ -563,8 +563,21 @@ enum Recogniser {
     /// (measured on C30's page 1: 61 of 61 whole-page lines, 88 of 89 band lines,
     /// the other 0.3), so the merge's full-confidence gate would admit nothing and
     /// the bands would be time spent for no text.
+    ///
+    /// Last, a line read straight across a column gutter is read again as its two
+    /// halves (`splitAtGutter`, C34). A page with a candidate for that pays a
+    /// further pass over its pixels for the ink level, and two small requests a line.
     static func recognisePage(_ image: CGImage, settings: Prefs.Snapshot,
                               isCancelled: () -> Bool = { false })
+        throws -> [SearchableWriter.Observation] {
+        splitAtGutter(try recogniseInBands(image, settings: settings, isCancelled: isCancelled),
+                      of: image, settings: settings, isCancelled: isCancelled)
+    }
+
+    /// `recognisePage` before `splitAtGutter`: the whole page, the bands and the
+    /// unread stretches.
+    static func recogniseInBands(_ image: CGImage, settings: Prefs.Snapshot,
+                                 isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
         let whole = try recognise(image, settings: settings)
         let w = image.width, h = image.height
@@ -644,6 +657,91 @@ enum Recogniser {
                           lineHeight: line, pageWidth: w,
                           hasInk: { hasInk(in: $0, of: image, level: scan.level) },
                           continuing: last.stretches)
+    }
+
+    /// `observations` with each line that runs across the page's column gutter
+    /// (`SearchableWriter.columnGutter`) over no ink there replaced by its two
+    /// halves, each recognised on its own as an unread stretch is (C34). On
+    /// `Hughes` p3 Vision read three rows as single boxes 0.8 of the page wide,
+    /// joining a line of the left column to the line beside it in the right
+    /// (`tion whether the races will work well to- ployes sort themselves…`), and
+    /// no ordering of the text layer can put half a box in each column.
+    ///
+    /// Vision's per-word boxes cannot place the split: on that page every gap
+    /// between words, the gutter included, read 0.12-0.13 of the line's height.
+    /// So the test is the paper: a heading or running head set across both columns
+    /// has ink in the gutter and is left whole. Only a line starting at the left
+    /// column's margin is a candidate, which a centred heading with blank paper
+    /// over the gutter is not. And a line is kept whole whose halves do not both
+    /// read, read under 0.8 of its characters between them, or one of them under
+    /// 0.4 of its share by width (invariant 1: the fused reading is kept rather
+    /// than lose its text). The halves are cut at the gutter's middle, so the end
+    /// of a long left line reaching into it stays with its half. A rule printed
+    /// down the gutter keeps every line whole.
+    static func splitAtGutter(_ observations: [SearchableWriter.Observation], of image: CGImage,
+                              settings: Prefs.Snapshot, isCancelled: () -> Bool = { false })
+        -> [SearchableWriter.Observation] {
+        let w = image.width, h = image.height
+        guard w > 0, h > 0,
+              let g = SearchableWriter.columnGutter(of: observations,
+                                                    aspect: Double(h) / Double(w))
+        else { return observations }
+        let line = lineHeight(of: observations, pageHeight: h)
+        let lineX = Double(line) / Double(w)
+        let margins = observations.map(\.boundingBox)
+            .filter { $0.x < g.from && $0.x + $0.width <= g.to && $0.width >= 10 * lineX }
+            .map(\.x).sorted()
+        guard !margins.isEmpty else { return observations }
+        let margin = margins[margins.count / 2]
+        let middle = (g.from + g.to) / 2
+        var level: UInt8??
+        var out: [SearchableWriter.Observation] = []
+        for o in observations {
+            let b = o.boundingBox
+            guard !isCancelled(), SearchableWriter.crosses(b, g), b.x <= margin + 3 * lineX
+            else { out.append(o); continue }
+            if level == nil { level = inkScan(of: image, strips: [])?.level }
+            guard let known = level ?? nil,
+                  !hasInk(in: SearchableWriter.BoundingBox(x: g.from, y: b.y,
+                                                           width: g.to - g.from, height: b.height),
+                          of: image, level: known)
+            else { out.append(o); continue }
+            var halves: [SearchableWriter.Observation] = []
+            for s in [SearchableWriter.BoundingBox(x: b.x, y: b.y, width: middle - b.x,
+                                                   height: b.height),
+                      SearchableWriter.BoundingBox(x: middle, y: b.y, width: b.x + b.width - middle,
+                                                   height: b.height)] {
+                guard let rect = stretchCrop(s, pageWidth: w, pageHeight: h, lineHeight: line),
+                      let crop = image.cropping(to: CGRect(x: rect.left, y: rect.top,
+                                                           width: rect.right - rect.left,
+                                                           height: rect.bottom - rect.top))
+                else { halves = []; break }
+                var local = settings
+                local.minTextHeight = min(1, settings.minTextHeight * Double(h)
+                                            / Double(rect.bottom - rect.top))
+                // `stretchPiece` leaves y in the crop's rows, which `mergeBands` lifts;
+                // nothing merges these, so they are lifted here.
+                let rows = Double(rect.bottom - rect.top)
+                let piece = stretchPiece((try? recognise(crop, settings: local)) ?? [], of: s,
+                                         crop: rect, pageWidth: w, pageHeight: h).observations
+                    .map { p in
+                        SearchableWriter.Observation(
+                            boundingBox: SearchableWriter.BoundingBox(
+                                x: p.boundingBox.x,
+                                y: (Double(rect.top) + p.boundingBox.y * rows) / Double(h),
+                                width: p.boundingBox.width,
+                                height: p.boundingBox.height * rows / Double(h)),
+                            text: p.text, confidence: p.confidence)
+                    }
+                let read = Double(piece.reduce(0) { $0 + $1.text.count })
+                guard !piece.isEmpty, read >= 0.4 * s.width / b.width * Double(o.text.count)
+                else { halves = []; break }
+                halves += piece
+            }
+            let read = Double(halves.reduce(0) { $0 + $1.text.count })
+            out += !halves.isEmpty && read >= 0.8 * Double(o.text.count) ? halves : [o]
+        }
+        return out
     }
 
     /// The pixel rect, top-left origin, recognised for an unread stretch: a line
@@ -806,6 +904,7 @@ enum Recogniser {
             for value in grey[0..<(w * rows)] { histogram[Int(value)] += 1 }
         }
         let level = Flattener.otsuThreshold(histogram: histogram)
+        guard !strips.isEmpty else { return ([], level) }
         let need = max(1, w / 200)
         let spans = strips.map { s -> Range<Int> in
             let from = min(w, max(0, Int((s.from * Double(w)).rounded())))

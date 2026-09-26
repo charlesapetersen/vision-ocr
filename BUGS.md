@@ -18000,7 +18000,7 @@ band joined them; a check holds the gutter case. It also found stale stretches f
 first round, and small stretches refusing larger ones. Both are fixed, without a check of their own:
 each only wasted a crop.
 
-### C34 · The text layer is written across the page row by row, so selection jumps between columns, and some Vision lines span the gutter — OPEN
+### C34 · The text layer is written across the page row by row, so selection jumps between columns, and some Vision lines span the gutter — FIXED
 
 *(found 2026-09-25 by the owner in 1.14.0: `1954 - Why.pdf` p5, a two-page spread, and
 `Hughes - The Knitting of Racial Groups in Industry` p3, a two-column journal page.)*
@@ -18010,6 +18010,39 @@ the right, one of the left, and so on, so a drag selection jumps from column to 
 three rows are single runs about 382-384 pt wide that cross the gutter and join a line of the left
 column to a line of the right ("tion whether the races will work well to- ployes sort themselves accor…").
 [measured] The owner asks for the columns to be distinguished harder.
+
+#### FIXED 2026-09-26
+
+**Causes.** `compose` drew runs in recognition order. Vision's per-word boxes cannot place a split:
+on Hughes p3 every gap between words, the gutter included, read 0.12-0.13 of the line height. [measured]
+Current main (after C33's merge ordering) already read Why p5 in order; 1.14.0 did not.
+
+**Fix.** `SearchableWriter.columnGutter` finds a gutter from the boxes: a strip at least a third of a
+line wide that at most a tenth of the lines (or two) cross, with three or more lines ten line heights
+wide on each side, side by side. `columnOrdered` (called by `prepared`, before hyphen joining and on the
+next page's candidates) first cuts the page at full-width blank bands over 1.5 line heights, then emits
+each slab's columns left to right, with crossing lines as section breaks. A page with no gutter in any
+slab keeps its order exactly. `Recogniser.splitAtGutter` re-reads a box that starts at the left
+column's margin and crosses the gutter over blank paper as its two halves, cut at the gutter's middle.
+A line with ink in the gutter stays whole, and so does one whose halves read under 0.8 of its characters,
+or one half under 0.4 of its width's share. The review set those bars; the first draft accepted half.
+
+**Measured**, gate old → new, PDFKit lines (`Tools/pdfkit-lines --diff`), 16 documents, 218 pages:
+- 206 pages identical, including every page of Briefer, Leland, Borges, Dickens, Gilroy, Zheng (76 pp).
+- Hughes pp2/3/7/8: the fused rows split (+2 to +5 lines), no run crosses the gutter, words unchanged.
+  Hyphen joins now find the right tail (`recognizable`, `membership`, `question`), where the old
+  order joined across columns (`fruittion`, `managetion`).
+- WSJ 1969 p1: 214 → 243 lines, fused cross-column rows split; a few stretches still alternate.
+- Donahue p1, Washington Monthly pp1-3: fused rows split, joins restored. Fairchild p22: captions keep
+  their joins. Why p9: two folios now print as one PDFKit line.
+- Invariant 3 (Hughes, Borges, Washington Monthly): start/end 100%, overlap 0, merged 0, welded 0,
+  words 100%, all unchanged. Runaway 2.4% → 0% and 1.1% → 0%. Borges identical in every column.
+  `skipped` pairs 0 → 4 and 4 → 6: the halves give the instrument no unique anchor, and none is lost.
+- Sizes within 0.1%, time unchanged.
+
+**Left:** a rule printed down the gutter keeps a fused line whole, and a page with more fused rows than
+a tenth of its lines finds no gutter. A table whose cells hold wide lines of text reads column by column.
+`in in-` at a left column's foot still joins the next page's first line (it did before).
 
 ### C35 · Some already-OCR'd files come out several times larger than they went in — OPEN
 

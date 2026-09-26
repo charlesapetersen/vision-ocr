@@ -345,13 +345,18 @@ enum SearchableWriter {
         func usable(_ lines: [Observation]) -> [Observation] {
             lines.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         }
-        let lines = deduplicated(usable(raw), in: region)
+        // Column order before joining, so the line after a hyphen is the next line
+        // of its own column (C34).
+        let lines = columnOrdered(deduplicated(usable(raw), in: region),
+                                  aspect: region.width > 0 ? Double(region.height / region.width) : 1)
         guard joinHyphenated else { return lines }
         // The next page's topmost lines, so a word carried over a page break can
         // be joined. The caller already holds them — no extra render, no extra
-        // recognition.
-        let next = usable(nextPage)
-            .sorted { $0.boundingBox.y < $1.boundingBox.y }
+        // recognition. In column order, so the first column's top line comes before
+        // the one beside it (C34: on `Hughes` p2 the right column's `ployes` took
+        // `ques-`, whose tail `tion` opens the left).
+        let next = columnOrdered(usable(nextPage).sorted { $0.boundingBox.y < $1.boundingBox.y },
+                                 aspect: region.width > 0 ? Double(region.height / region.width) : 1)
             .prefix(SearchableWriter.continuationCandidates)
         return joiningHyphenatedWords(lines, in: region, continuation: Array(next))
     }
@@ -730,6 +735,165 @@ enum SearchableWriter {
             if !isDuplicate { kept.append(line) }
         }
         return kept
+    }
+
+    // MARK: - Columns (C34)
+
+    /// A vertical strip of the page, in normalised x, that separates two columns
+    /// of text.
+    struct Gutter: Equatable {
+        let from, to: Double
+    }
+
+    /// The gutter between two columns of `lines`, or nil when they are one column.
+    ///
+    /// Found from the boxes alone: a run of x that at most a tenth of the lines,
+    /// or two, cross (headings, a running head, a line Vision read across both columns),
+    /// at least a third of a line height wide, with three or more column-wide
+    /// lines — ten line heights or more — wholly on each side at the same height.
+    /// Boxes under two line heights wide (a folio, a stray mark in the gutter) are
+    /// left out of the count, so they neither make nor break one. The width and
+    /// the side-by-side test are what keep an indent, a centred heading or a
+    /// table of figures from reading as columns; a table whose cells hold lines
+    /// of text that wide is read as columns, and a page with more fused rows
+    /// than the allowance finds no gutter. Of several candidates, the one with
+    /// the most lines on its lesser side wins.
+    ///
+    /// `aspect` is the page's height over its width, to state widths in line
+    /// heights. On `Hughes` p3 the gutter is 0.018 of the width, 0.75 of a line.
+    static func columnGutter(of lines: [Observation], aspect: Double) -> Gutter? {
+        let heights = lines.map(\.boundingBox.height).filter { $0.isFinite && $0 > 0 }.sorted()
+        guard !heights.isEmpty, aspect.isFinite, aspect > 0 else { return nil }
+        let line = heights[heights.count / 2] * aspect
+        let boxes = lines.map(\.boundingBox).filter {
+            $0.x.isFinite && $0.width.isFinite && $0.y.isFinite && $0.height.isFinite
+                && $0.width >= 2 * line
+        }
+        guard boxes.count >= 6 else { return nil }
+        let bins = 400
+        var cover = [Int](repeating: 0, count: bins)
+        for b in boxes {
+            // Clamped before the `Int` conversion, which traps outside `Int`'s range.
+            let left = min(max(b.x, 0), 1), right = min(max(b.x + b.width, 0), 1)
+            let first = Int((left * Double(bins)).rounded(.down))
+            let last = min(bins - 1, Int((right * Double(bins)).rounded(.up)) - 1)
+            if first <= last { for i in first...last { cover[i] += 1 } }
+        }
+        let allowed = max(2, boxes.count / 10)
+        var best: (gutter: Gutter, score: Int)?
+        var i = 0
+        while i < bins {
+            guard cover[i] <= allowed else { i += 1; continue }
+            var j = i
+            while j + 1 < bins, cover[j + 1] <= allowed { j += 1 }
+            let g = Gutter(from: Double(i) / Double(bins), to: Double(j + 1) / Double(bins))
+            i = j + 1
+            guard g.to - g.from >= line / 3 else { continue }
+            let wide = boxes.filter { $0.width >= 10 * line }
+            let left = wide.filter { $0.x + $0.width <= g.to && $0.x < g.from }
+            let right = wide.filter { $0.x >= g.from && $0.x + $0.width > g.to }
+            guard left.count >= 3, right.count >= 3 else { continue }
+            // Side by side: each side's lines lie within the other side's height.
+            func span(_ s: [BoundingBox]) -> (Double, Double) {
+                (s.map(\.y).min()!, s.map { $0.y + $0.height }.max()!)
+            }
+            let (lt, lb) = span(left), (rt, rb) = span(right)
+            let beside = { (s: [BoundingBox], top: Double, bottom: Double) in
+                s.filter { $0.y + $0.height / 2 > top && $0.y + $0.height / 2 < bottom }.count
+            }
+            guard beside(left, rt, rb) >= 3, beside(right, lt, lb) >= 3 else { continue }
+            let score = min(left.count, right.count)
+            if best.map({ score > $0.score }) ?? true { best = (g, score) }
+        }
+        return best?.gutter
+    }
+
+    /// Whether a box runs across the whole of a gutter.
+    static func crosses(_ b: BoundingBox, _ g: Gutter) -> Bool {
+        b.x < g.from && b.x + b.width > g.to
+    }
+
+    /// `lines` in reading order column by column, so a drag selection down one
+    /// column stays in it (C34). PDFKit selects in the order runs are drawn, and
+    /// they were drawn in the order recognition returned them, which on `1954 -
+    /// Why` p5 (a two-page spread) took four lines of one page, two of the other,
+    /// one of the first, and so on.
+    ///
+    /// First the page is cut into slabs at every blank band across its whole width
+    /// over one and a half line heights tall, top to bottom, and each slab is
+    /// ordered on its own: a block of picture captions under a two-column story
+    /// has columns of its own, and against the story's gutter a caption crossing
+    /// it cut the text between `type-` and `writer` (`Fairchild` 1950 p22).
+    ///
+    /// With a gutter (`columnGutter`), the lines crossing it — headings, running
+    /// heads, anything set across both columns — cut the slab into sections, top
+    /// to bottom. Each section is its left column then its right, each column
+    /// ordered again the same way (a third column), and each crossing line comes
+    /// before the section under it. Within a column, and on a page where no slab
+    /// has a gutter, the order is the one given: a single-column page comes back
+    /// unchanged.
+    static func columnOrdered(_ lines: [Observation], aspect: Double) -> [Observation] {
+        guard lines.allSatisfy({ o in
+            [o.boundingBox.x, o.boundingBox.y, o.boundingBox.width, o.boundingBox.height]
+                .allSatisfy(\.isFinite)
+        }) else { return lines }
+        return reordered(lines, aspect: aspect, depth: 0) ?? lines
+    }
+
+    /// `columnOrdered`'s work, nil when no gutter was found anywhere in `lines`.
+    private static func reordered(_ lines: [Observation], aspect: Double,
+                                  depth: Int) -> [Observation]? {
+        guard depth < 8, lines.count >= 6 else { return nil }
+        let slabs = horizontalSlabs(of: lines)
+        if slabs.count > 1 {
+            let parts = slabs.map { reordered($0, aspect: aspect, depth: depth + 1) }
+            guard parts.contains(where: { $0 != nil }) else { return nil }
+            return zip(parts, slabs).flatMap { $0 ?? $1 }
+        }
+        guard let g = columnGutter(of: lines, aspect: aspect) else { return nil }
+        func middle(_ o: Observation) -> Double { o.boundingBox.y + o.boundingBox.height / 2 }
+        let across = lines.filter { crosses($0.boundingBox, g) }
+            .enumerated().sorted { (middle($0.1), $0.0) < (middle($1.1), $1.0) }.map(\.1)
+        let cuts = across.map(middle)
+        let centre = (g.from + g.to) / 2
+        var left = [[Observation]](repeating: [], count: across.count + 1)
+        var right = left
+        for o in lines where !crosses(o.boundingBox, g) {
+            let section = cuts.filter { $0 < middle(o) }.count
+            if o.boundingBox.x + o.boundingBox.width / 2 < centre {
+                left[section].append(o)
+            } else {
+                right[section].append(o)
+            }
+        }
+        var out: [Observation] = []
+        for section in 0...across.count {
+            if section > 0 { out.append(across[section - 1]) }
+            out += reordered(left[section], aspect: aspect, depth: depth + 1) ?? left[section]
+            out += reordered(right[section], aspect: aspect, depth: depth + 1) ?? right[section]
+        }
+        return out
+    }
+
+    /// `lines` in groups, top to bottom, split wherever no line covers a band of
+    /// the page over one and a half median line heights tall; each group in the
+    /// order given.
+    static func horizontalSlabs(of lines: [Observation]) -> [[Observation]] {
+        let heights = lines.map(\.boundingBox.height).sorted()
+        guard !heights.isEmpty else { return [] }
+        let gap = 1.5 * heights[heights.count / 2]
+        var slab = [Int](repeating: 0, count: lines.count)
+        var count = 0
+        var bottom = -Double.greatestFiniteMagnitude
+        for i in lines.indices.sorted(by: { lines[$0].boundingBox.y < lines[$1].boundingBox.y }) {
+            let b = lines[i].boundingBox
+            if count == 0 || b.y - bottom > gap { count += 1 }
+            slab[i] = count - 1
+            bottom = max(bottom, b.y + b.height)
+        }
+        var out = [[Observation]](repeating: [], count: count)
+        for (i, o) in lines.enumerated() { out[slab[i]].append(o) }
+        return out
     }
 
     // MARK: - Words broken across a line

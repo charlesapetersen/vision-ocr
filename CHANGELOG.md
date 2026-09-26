@@ -14,6 +14,11 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- On pages set in two or more columns, a drag selection now runs down one column before moving to the
+  next, instead of jumping between them. A line that recognition had read straight across both columns
+  is split into its two real lines, and words broken at the end of a column now join up with the right
+  half, so they can be found by search (C34).
+
 - Text on pages layered in colour or grey is dark and solid again instead of a mottled, washed-out
   fill, and those pages come out slightly smaller. This was a regression in 1.14.0 on the pages it
   began keeping in colour (C31).

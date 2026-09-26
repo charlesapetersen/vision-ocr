@@ -167,7 +167,7 @@ say so in the commit.
       separates them from stains, close C32 `WONTFIX` with the measurement.
       BOUND: one code commit.
       (origin: BUGS.md C32)
-- [ ] **c34-columns** — write the text layer in reading order, column by column, so a drag selection
+- [x] **c34-columns** — write the text layer in reading order, column by column, so a drag selection
       stays inside one column. On `1954 - Why.pdf` p5 (a two-page spread) PDFKit's line order
       interleaves the two pages; on `Hughes - The Knitting of Racial Groups in Industry` p3 three Vision
       lines cross the gutter and join the two columns (`BUGS.md` C34). The owner asks for the columns to

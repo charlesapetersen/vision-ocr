@@ -7136,6 +7136,249 @@ do {
     resetPrefs()
 }
 
+// MARK: - C34: the text layer reads down each column
+
+print("\nthe text layer reads down each column, not across them (C34)")
+
+do {
+    resetPrefs()
+    typealias Box = SearchableWriter.BoundingBox
+    typealias Obs = SearchableWriter.Observation
+    func o(_ t: String, x: Double, y: Double, w: Double, h: Double = 0.012) -> Obs {
+        Obs(boundingBox: Box(x: x, y: y, width: w, height: h), text: t, confidence: 1)
+    }
+    let letter = 792.0 / 612
+    // A two-column page as recognition returned `1954 - Why` p5: in blocks from
+    // each column by turns, with a heading and a footer across both and a folio.
+    let head = o("A HEADING SET ACROSS BOTH COLUMNS", x: 0.2, y: 0.05, w: 0.6)
+    let lefts = (0..<8).map { o("left \($0)", x: 0.08, y: 0.1 + Double($0) * 0.02, w: 0.4) }
+    let rights = (0..<8).map { o("right \($0)", x: 0.52, y: 0.1 + Double($0) * 0.02, w: 0.4) }
+    let folio = o("6", x: 0.1, y: 0.95, w: 0.02)
+    let footer = o("This content downloaded on a Friday", x: 0.2, y: 0.97, w: 0.6)
+    var mixed: [Obs] = []
+    for i in stride(from: 0, to: 8, by: 2) {
+        mixed += [lefts[i], lefts[i + 1], rights[i]]
+        if i == 0 { mixed.append(head) }
+        mixed.append(rights[i + 1])
+    }
+    mixed += [folio, footer]
+    let ordered = SearchableWriter.columnOrdered(mixed, aspect: letter)
+    let expected = [head] + lefts + rights + [folio, footer]
+    check("C34: a two-column page is written heading, left column, right column, foot",
+          ordered.map(\.text) == expected.map(\.text), "\(ordered.map(\.text))")
+    check("C34: …through `prepared`, which is what the writer draws",
+          SearchableWriter.prepared(mixed, in: CGRect(x: 0, y: 0, width: 612, height: 792))
+              .map(\.text) == expected.map(\.text))
+    // A word broken at the foot of a page continues at the top of the next page's
+    // first column, even when the line beside it sits a hair higher (`Hughes` p2).
+    var nextPage: [Obs] = []
+    for r in 0..<8 {
+        let y = 0.1 + Double(r) * 0.02
+        nextPage.append(o(r == 0 ? "tion whether the races" : "left \(r)", x: 0.08, y: y, w: 0.4))
+        nextPage.append(o(r == 0 ? "ployes sort themselves" : "right \(r)", x: 0.52, y: y - 0.001,
+                          w: 0.4))
+    }
+    check("C34: a word broken at a page's foot is joined to the next page's first column",
+          SearchableWriter.prepared([o("and dislikes have no bearing on the ques-", x: 0.52,
+                                       y: 0.9, w: 0.4)],
+                                    nextPage: nextPage,
+                                    in: CGRect(x: 0, y: 0, width: 612, height: 792))
+              .first?.text == "and dislikes have no bearing on the question")
+    // Picture captions under the columns are a slab of their own, with their own
+    // columns, so a caption crossing the story's gutter does not cut the caption
+    // beside it in two (`Fairchild` 1950 p22: `type-` / `writer`).
+    // Given row by row, as recognition may return them: only the captions' own
+    // gutter puts `writer` after `type-`.
+    let captions = [o("The Fairchild Lithotype has a type-", x: 0.0, y: 0.86, w: 0.3),
+                    o("Hundreds of thousands of readers are", x: 0.35, y: 0.858, w: 0.3),
+                    o("writer keyboard and its operation", x: 0.0, y: 0.875, w: 0.3),
+                    o("informed and entertained with pic-", x: 0.35, y: 0.873, w: 0.3),
+                    o("requires no special skill at all", x: 0.0, y: 0.89, w: 0.3),
+                    o("tures made from Scan-a-Gravings.", x: 0.35, y: 0.888, w: 0.28)]
+    let story = lefts + rights.map { o($0.text, x: 0.5, y: $0.boundingBox.y, w: 0.45) }
+    let joinedCaptions = SearchableWriter.prepared(story + captions,
+                                                   in: CGRect(x: 0, y: 0, width: 612, height: 792))
+        .map(\.text)
+    check("C34: captions under a two-column story keep their own columns and their joins",
+          joinedCaptions.contains("The Fairchild Lithotype has a typewriter")
+              && joinedCaptions.contains("informed and entertained with pictures")
+              && joinedCaptions.firstIndex(of: "left 7")! < joinedCaptions.firstIndex(of: "right 0")!,
+          "\(joinedCaptions)")
+    // Headings set close over and between the columns, in one slab with them, cut it
+    // into sections: each section's left column, then its right, then the heading.
+    let close = o("A HEADING CLOSE OVER THE COLUMNS", x: 0.2, y: 0.086, w: 0.6)
+    let between = o("A HEADING BETWEEN THE SECTIONS", x: 0.2, y: 0.18, w: 0.6)
+    let upperL = (0..<4).map { o("upper left \($0)", x: 0.08, y: 0.1 + Double($0) * 0.02, w: 0.4) }
+    let upperR = (0..<4).map { o("upper right \($0)", x: 0.52, y: 0.1 + Double($0) * 0.02, w: 0.4) }
+    let lowerL = (0..<4).map { o("lower left \($0)", x: 0.08, y: 0.2 + Double($0) * 0.02, w: 0.4) }
+    let lowerR = (0..<4).map { o("lower right \($0)", x: 0.52, y: 0.2 + Double($0) * 0.02, w: 0.4) }
+    var rowWise: [Obs] = [close]
+    for i in 0..<4 { rowWise += [upperL[i], upperR[i]] }
+    rowWise.append(between)
+    for i in 0..<4 { rowWise += [lowerL[i], lowerR[i]] }
+    check("C34: headings in one slab with the columns cut it into sections",
+          SearchableWriter.horizontalSlabs(of: rowWise).count == 1
+              && SearchableWriter.columnOrdered(rowWise, aspect: letter).map(\.text)
+                  == ([close] + upperL + upperR + [between] + lowerL + lowerR).map(\.text),
+          "\(SearchableWriter.columnOrdered(rowWise, aspect: letter).map(\.text))")
+    // A third column is ordered the same way, inside its section.
+    let thirds = (0..<6).flatMap { r in (0..<3).map { c in
+        o("c\(c)r\(r)", x: 0.06 + Double(c) * 0.31, y: 0.1 + Double(r) * 0.02, w: 0.28) } }
+    check("C34: three columns are read one after another",
+          SearchableWriter.columnOrdered(thirds, aspect: letter).map(\.text)
+              == (0..<3).flatMap { c in (0..<6).map { "c\(c)r\($0)" } },
+          "\(SearchableWriter.columnOrdered(thirds, aspect: letter).map(\.text))")
+
+    // What must stay as it was: one column with an indented quotation, a centred
+    // heading, short last lines and a folio, given out of order on purpose; a table
+    // of figures; and two blocks one above the other rather than side by side.
+    let single = [o("body one", x: 0.1, y: 0.2, w: 0.8), o("CHAPTER", x: 0.42, y: 0.1, w: 0.16),
+                  o("body two", x: 0.1, y: 0.22, w: 0.8), o("end.", x: 0.1, y: 0.24, w: 0.3),
+                  o("quoted one", x: 0.25, y: 0.28, w: 0.6), o("quoted two", x: 0.25, y: 0.30, w: 0.6),
+                  o("quoted three", x: 0.25, y: 0.32, w: 0.6), o("body three", x: 0.1, y: 0.36, w: 0.8),
+                  o("7", x: 0.49, y: 0.95, w: 0.02), o("body four", x: 0.1, y: 0.38, w: 0.8)]
+    let table = (0..<10).flatMap { r in (0..<3).map { c in
+        o("\(r * 3 + c)", x: 0.1 + Double(c) * 0.3, y: 0.1 + Double(r) * 0.02, w: 0.08) } }
+    let stacked = (0..<5).map { o("top \($0)", x: 0.08, y: 0.1 + Double($0) * 0.02, w: 0.4) }
+        + (0..<5).map { o("low \($0)", x: 0.52, y: 0.5 + Double($0) * 0.02, w: 0.4) }
+    for (name, page) in [("one column", single), ("a table of figures", table),
+                         ("two blocks one above the other", stacked)] {
+        check("C34: \(name) has no gutter and keeps its order",
+              SearchableWriter.columnGutter(of: page, aspect: letter) == nil
+                  && SearchableWriter.columnOrdered(page, aspect: letter).map(\.text)
+                      == page.map(\.text))
+    }
+
+    // Through PDFKit, which selects in the order runs are drawn: down the left
+    // column before any of the right. Two pages of differing size (invariant 5).
+    do {
+        let dir = tmp.appendingPathComponent("c34-columns")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let src = dir.appendingPathComponent("blank.pdf")
+        var first = CGRect(x: 0, y: 0, width: 612, height: 792)
+        if let c = CGContext(src as CFURL, mediaBox: &first, nil) {
+            c.beginPDFPage(nil); c.endPDFPage()
+            var second = CGRect(x: 0, y: 0, width: 500, height: 700)
+            let data = withUnsafeBytes(of: &second) { Data($0) } as CFData
+            c.beginPDFPage([kCGPDFContextMediaBox as String: data] as CFDictionary)
+            c.endPDFPage()
+            c.closePDF()
+        }
+        let out = dir.appendingPathComponent("columns.pdf")
+        _ = try? SearchableWriter.compose(visible: src, observations: [1: mixed, 2: mixed],
+                                          to: out, drawImages: false)
+        let doc = PDFDocument(url: out)
+        for n in 0..<2 {
+            let lines = doc?.page(at: n).flatMap { p in
+                p.selection(for: p.bounds(for: .mediaBox))?.selectionsByLine()
+                    .compactMap { $0.string?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            } ?? []
+            let lastLeft = lines.lastIndex { $0.hasPrefix("left") }
+            let firstRight = lines.firstIndex { $0.hasPrefix("right") }
+            check("C34: PDFKit selects page \(n + 1)'s left column wholly before its right",
+                  lastLeft != nil && firstRight != nil && lastLeft! < firstRight!
+                      && lines.filter { $0.hasPrefix("left") }.count == 8
+                      && !lines.contains { $0.contains("left") && $0.contains("right") },
+                  "\(lines)")
+        }
+    }
+
+    // A line Vision read across the gutter is read again as its halves, on real
+    // pixels; a heading printed across the gutter is left whole.
+    let width = 2000, height = 2600
+    let leftText = ["the workers of the plant came from far", "and many of them had never met",
+                    "they were joined by others in town", "who had worked in the mills before",
+                    "and some came from the farms nearby"]
+    let rightText = ["the union asked nothing of them", "except their dues and their votes",
+                     "at the meetings it held each month", "in the hall behind the old church",
+                     "where the members sat by their shops"]
+    let lonely = "and they stayed on for the rest of it"
+    var drawn: CGImage?
+    if let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                           bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(),
+                           bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        ctx.setFillColor(gray: 0, alpha: 1)
+        let font = CTFontCreateWithName("Times-Roman" as CFString, 44, nil)
+        func put(_ s: String, _ x: Int, _ top: Int) {
+            ctx.textPosition = CGPoint(x: CGFloat(x), y: CGFloat(height - top))
+            CTLineDraw(CTLineCreateWithAttributedString(
+                NSAttributedString(string: s, attributes: [.font: font])), ctx)
+        }
+        put("THE KNITTING OF RACIAL GROUPS IN INDUSTRY", 400, 250)
+        for i in 0..<5 {
+            put(leftText[i], 120, 450 + i * 110)
+            put(rightText[i], 1100, 450 + i * 110)
+        }
+        put(lonely, 120, 450 + 5 * 110)
+        drawn = ctx.makeImage()
+    }
+    if let image = drawn {
+        let settings = Prefs.Snapshot.current()
+        let whole = (try? Recogniser.recognise(image, settings: settings)) ?? []
+        let texts = Set(whole.map { $0.text.lowercased() })
+        let heading = whole.first { $0.text.uppercased().contains("KNITTING") }
+        func read(_ s: String) -> Obs? { whole.first { $0.text.lowercased() == s } }
+        if let l = read(leftText[2]), let r = read(rightText[2]), let heading,
+           leftText.allSatisfy(texts.contains), rightText.allSatisfy(texts.contains) {
+            // Fuse the middle row as Vision fused three on `Hughes` p3.
+            let fused = Obs(boundingBox: Box(x: l.boundingBox.x,
+                                             y: min(l.boundingBox.y, r.boundingBox.y),
+                                             width: r.boundingBox.x + r.boundingBox.width
+                                                 - l.boundingBox.x,
+                                             height: max(l.boundingBox.height, r.boundingBox.height)),
+                            text: "they were joined by at the meetings", confidence: 1)
+            let given = whole.filter { $0.text != l.text && $0.text != r.text } + [fused]
+            let split = Recogniser.splitAtGutter(given, of: image, settings: settings)
+            let got = split.map { $0.text.lowercased() }
+            check("C34: a line read across the gutter is replaced by its two halves",
+                  !got.contains(fused.text) && got.contains(leftText[2])
+                      && got.contains(rightText[2]) && split.count == given.count + 1,
+                  "\(got)")
+            // …where the page printed them, not where the crop held them.
+            let placed = [(l, leftText[2]), (r, rightText[2])].allSatisfy { was, text in
+                // Centres within half a line; a crop's read is a few pixels tighter.
+                split.first { $0.text.lowercased() == text }.map {
+                    abs(($0.boundingBox.y + $0.boundingBox.height / 2)
+                            - (was.boundingBox.y + was.boundingBox.height / 2))
+                        < was.boundingBox.height / 2
+                        && abs($0.boundingBox.x - was.boundingBox.x) * Double(width) < 20
+                        && $0.boundingBox.height < 1.5 * was.boundingBox.height
+                } ?? false
+            }
+            check("C34: …each where the page printed it", placed,
+                  "\(split.filter { [leftText[2], rightText[2]].contains($0.text.lowercased()) }.map(\.boundingBox)) was \(l.boundingBox) \(r.boundingBox)")
+            check("C34: …and a heading printed across the gutter is left whole",
+                  split.contains { $0.text == heading.text
+                                       && $0.boundingBox.width == heading.boundingBox.width })
+            // A line whose right half is blank paper does not read as two halves, so
+            // the fused reading is kept rather than lose the words it holds.
+            if let alone = read(lonely) {
+                let reaching = Obs(boundingBox: Box(x: alone.boundingBox.x, y: alone.boundingBox.y,
+                                                    width: r.boundingBox.x + r.boundingBox.width
+                                                        - alone.boundingBox.x,
+                                                    height: alone.boundingBox.height),
+                                   text: lonely + " and words past the gutter", confidence: 1)
+                let kept = Recogniser.splitAtGutter(whole.filter { $0.text != alone.text } + [reaching],
+                                                    of: image, settings: settings)
+                check("C34: a line whose halves do not both read is kept whole",
+                      kept.contains { $0.text == reaching.text }
+                          && !kept.contains { $0.text.lowercased() == lonely },
+                      "\(kept.map(\.text))")
+            } else {
+                check("C34: the fixture's lone left line reads", false, "\(whole.map(\.text))")
+            }
+        } else {
+            check("C34: the two-column fixture reads as ten lines and a heading", false,
+                  "\(whole.map(\.text))")
+        }
+    } else {
+        check("C34: the two-column fixture draws", false)
+    }
+    resetPrefs()
+}
+
 print("\nthe revision we pin is the revision Vision uses")
 
 do {
