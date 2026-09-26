@@ -24,7 +24,7 @@ lines. State a finding once, in the place that owns it, and do not restate old c
 ## Where things live
 
 - `BUGS.md` — the defect register (2 MB). Read one entry with `ops/autonomous/bugs-entry.sh <TAG>`;
-  never read the file whole. Open entries: C28 (parked by the owner 2026-09-21).
+  never read the file whole. Open entries: C28 (back in the queue 2026-09-25 as `c28-first-principles`).
 - `ops/autonomous/QUEUE.md` — the work order for autonomous sessions, and a short one on purpose.
 - `CHANGELOG.md` — `## Unreleased` holds user-visible changes awaiting the next release.
 - `ARCHITECTURE.md` — the call path and where the risk sits. `CONTRIBUTING.md` — the change process

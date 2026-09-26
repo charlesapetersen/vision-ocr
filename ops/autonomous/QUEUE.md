@@ -105,6 +105,40 @@ say so in the commit.
       real pages from the stains, close C27 `WONTFIX` with the measurement as the reason. Record the
       corpus byte cost either way. BOUND: one code commit.
       (origin: BUGS.md C27)
+- [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
+      parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
+      THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
+      intersected with the geometry of the words Vision recognised (`textRegionMask`,
+      `Sources/Flattener.swift`). So ink the recogniser did not box as a word is in neither the stencil
+      nor the text layer. It survives only in the background, which on a page read as all text is stored
+      at 1/8 of the page's resolution and is illegible there. Of the 73 pages the all-text route
+      shrinks, 16 lose content. Twelve lose type (numbers from a correlation matrix, lines of prose,
+      words, an equation) and five lose a hand-made mark (a signature, pencil annotations, a cartoon);
+      one page is in both groups. The `label` column of `SHAPETERM-73-2026-08-21.tsv` names them. The
+      shape term that shipped 2026-08-22 routes 13 of the 16 away from the shrink. Three hand-made
+      marks are still lost, and the term also fires on pages that lose nothing.
+      FIRST PRINCIPLES means this. Read only the C28 entry's opening, up to and including "The
+      one-sentence statement", and its `#### The wiring, SHIPPED` section. Do not read or continue the
+      measurement sections, mutants or grouping-constant trades after them; they audited a route
+      choice for a month and changed no code. Start from the code and ask what a correct stencil would
+      hold. Consider fixes at the mechanism, meaning what goes into the stencil or how unboxed ink is
+      stored, as well as fixes to the route choice. Keeping, replacing or removing the shape term is
+      your call. Record the approaches you rejected in one line each.
+      DONE WHEN, measured on the PUBLISHED PDF rendered at 1:1 and looked at, not on a tool's proxy:
+        * the content each of the 16 pages loses today is legible, including the three marks the
+          shape term misses;
+        * pages that lose nothing today are not visibly worse, checked on a sample you name;
+        * the corpus byte cost of the change is measured and stated;
+        * the four text-layer properties of `CLAUDE.md` invariant 3 still hold, and the new checks go
+          red without the change.
+      If the three marks cannot be reached at a reasonable cost, ship the version that reaches the
+      most and state the price of the rest. If nothing beats the shipped shape term, close C28
+      `WONTFIX` with the measurement as the reason. Either way add a `CHANGELOG.md` Unreleased line for
+      a shipped change. A sub-step finished before the park is filed at
+      `$STATE/rescue/PARKED-C28-vo-20260921-080042-95562.patch.bak`. It belongs to the old campaign; you
+      do not have to apply it, and leave the file where it is.
+      BOUND: one code commit, plus free docs commits for measurements. Rule 4 applies.
+      (origin: BUGS.md C28)
 - [ ] **annot-r3** — the third adversarial review round on the annotation-preservation feature (on
       `main`, off by default, unadvertised). Rounds one and two are recorded in `TODO.md`. Run the review
       by subagent, fix what it finds that is real, and record the verdict on whether the feature is fit to
@@ -119,13 +153,8 @@ say so in the commit.
 
 ## Parked
 
-- [ ] **C28** — [hold] PARKED BY THE OWNER 2026-09-21. The shape-term fix shipped 2026-08-22 and rescues
-      13 of 16 measured losses; the campaign afterwards audited its own measurements for a month. The
-      remaining decision (whether three hand-made marks are worth six pages that lose nothing) waits for
-      the owner. A finished answer to one of its sub-steps, from the stranded worktree
-      `vo-20260921-080042-95562`, is filed at `$STATE/rescue/PARKED-C28-vo-20260921-080042-95562.patch.bak`
-      (removed from `/private/tmp` 2026-09-24 after proving the patch reproduces it); leave it there.
-      (origin: BUGS.md C28)
+Nothing. C28 was parked here from 2026-09-21 until the owner brought it back into the queue on
+2026-09-25 as `c28-first-principles`.
 
 ## HOLD — owner-only, never auto-executed
 
