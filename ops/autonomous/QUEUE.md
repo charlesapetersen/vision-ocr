@@ -37,7 +37,7 @@ say so in the commit.
 
 ## The queue
 
-- [ ] **c30-tiled-recall** — make Vision read the blocks it currently skips, by recognising a page again
+- [x] **c30-tiled-recall** — make Vision read the blocks it currently skips, by recognising a page again
       in overlapping horizontal bands when the whole-page pass leaves inked areas with no words.
       THE DEFECT. The owner reported that on JSTOR/ProQuest scans only about half of a page is selectable.
       On `1951 - Briefer Book Notes.pdf` (6 pages, now at

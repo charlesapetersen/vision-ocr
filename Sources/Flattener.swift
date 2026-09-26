@@ -1248,7 +1248,15 @@ enum Flattener {
     static func otsuThreshold(of grey: [UInt8]) -> UInt8 {
         var histogram = [Int](repeating: 0, count: 256)
         for value in grey { histogram[Int(value)] += 1 }
-        let total = grey.count
+        return otsuThreshold(histogram: histogram)
+    }
+
+    /// The same threshold from a 256-bin histogram already counted, for a caller
+    /// that reads the page in strips rather than holding it whole
+    /// (`Recogniser.inkedRows`).
+    static func otsuThreshold(histogram: [Int]) -> UInt8 {
+        guard histogram.count == 256 else { return 186 }
+        let total = histogram.reduce(0, +)
         guard total > 0 else { return 186 }
 
         var sum = 0.0

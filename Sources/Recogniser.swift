@@ -204,7 +204,8 @@ enum Recogniser {
                 guard let image = loadImage(at: item.image) else {
                     throw Failure.unreadablePage(item.page)
                 }
-                byPage[item.page] = try recognise(image, settings: settings)
+                byPage[item.page] = try recognisePage(image, settings: settings,
+                                                      isCancelled: isCancelled)
             }
             onPage(total, total)
             return byPage
@@ -229,7 +230,8 @@ enum Recogniser {
             guard let image = render(page, settings: settings) else {
                 throw Failure.unreadablePage(index + 1)
             }
-            byPage[index + 1] = try recognise(image, settings: settings)
+            byPage[index + 1] = try recognisePage(image, settings: settings,
+                                                  isCancelled: isCancelled)
         }
         onPage(total, total)
         return byPage
@@ -524,6 +526,386 @@ enum Recogniser {
                 confidence: Double(observation.confidence)))
         }
         return out
+    }
+
+    // MARK: - Recognising a page again in bands (C30)
+
+    /// One page's text as the searchable pipeline recognises it: the whole page,
+    /// then — only when that leaves inked rows with no word over them — the page
+    /// again in overlapping horizontal bands, merged in.
+    ///
+    /// **Why.** One request over a whole scanned page skips blocks of clean body
+    /// type: on `BUGS.md` C30's document 15–43% of each page's ink had no word box,
+    /// and the same pixels cut into eight bands recovered almost all of it
+    /// (`C30-TILES-2026-08-25.tsv`: 2,080 words to 3,577, void share 21–45% down
+    /// to at most 6.8%). That experiment's bands did not overlap, so it cut lines
+    /// at their edges; these do, and the merge keeps a band's line only where the
+    /// page has no line.
+    ///
+    /// A page the whole-page request reads fully costs one ink scan and nothing
+    /// more, and its observations come back exactly as `recognise` returned them.
+    /// A page with a picture on it also starts the bands, and pays their time.
+    /// The trigger is row-wise (`hasVoid`), so a missed block standing *beside*
+    /// recognised text on the same rows does not start them.
+    ///
+    /// `isCancelled` is asked between bands, and a cancelled page returns what it
+    /// has merged so far; the caller's own check between pages then throws.
+    ///
+    /// **Not in fast mode.** The fast recogniser reports 0.5 on every line
+    /// (measured on C30's page 1: 61 of 61 whole-page lines, 88 of 89 band lines,
+    /// the other 0.3), so the merge's full-confidence gate would admit nothing and
+    /// the bands would be time spent for no text.
+    static func recognisePage(_ image: CGImage, settings: Prefs.Snapshot,
+                              isCancelled: () -> Bool = { false })
+        throws -> [SearchableWriter.Observation] {
+        let whole = try recognise(image, settings: settings)
+        let w = image.width, h = image.height
+        let line = lineHeight(of: whole, pageHeight: h)
+        guard !settings.fast, !bandPlan(height: h, lineHeight: line).isEmpty,
+              let inked = inkedRows(of: image) else { return whole }
+        // Two passes at most, the second with the seams moved half a stride, and
+        // only while a void remains. Vision's reading of a block depends on the
+        // window it is shown: on C30's page 1 one set of bands read `members of
+        // the Department…` cleanly and another, whose bands were 32 rows taller,
+        // returned a 215-px box of junk over it.
+        var merged = whole
+        for pass in 0..<2 {
+            guard hasVoid(inked: inked, observations: merged, pageHeight: h, lineHeight: line)
+            else { break }
+            let plan = bandPlan(height: h, lineHeight: line, shifted: pass == 1)
+            guard !plan.isEmpty else { break }
+            var bands: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)] = []
+            for band in plan {
+                if isCancelled() { return merged }
+                let bandHeight = band.bottom - band.top
+                // `minimumTextHeight` is a fraction of the image handed to Vision, so a
+                // band has to ask for the same absolute height the page did.
+                var local = settings
+                local.minTextHeight = min(1, settings.minTextHeight * Double(h) / Double(bandHeight))
+                // `cropping(to:)` takes a TOP-left pixel rect: `Tools/score-text-voids`
+                // group 11 measured it rather than reasoning about it. A band that will
+                // not crop or whose request fails adds nothing, which leaves the page
+                // exactly as the whole-page request read it — never worse than before
+                // the bands existed, so it is not a reason to fail the document.
+                guard let crop = image.cropping(to: CGRect(x: 0, y: band.top,
+                                                           width: w, height: bandHeight)),
+                      let read = try? recognise(crop, settings: local)
+                else { continue }
+                bands.append((read, band.top, band.bottom))
+            }
+            merged = mergeBands(whole: merged, bands: bands, pageHeight: h, lineHeight: line)
+        }
+        return merged
+    }
+
+    /// The median observation height in pixels, the unit every length below is
+    /// stated in. A page with no observations gets a sixtieth of its height —
+    /// about 11 pt on a letter page — so the plan and the trigger still have a
+    /// scale when the whole-page request returned nothing at all.
+    static func lineHeight(of observations: [SearchableWriter.Observation],
+                           pageHeight h: Int) -> Int {
+        let heights = observations.map { $0.boundingBox.height * Double(h) }
+            .filter { $0.isFinite && $0 > 0 }.sorted()
+        guard !heights.isEmpty else { return max(1, h / 60) }
+        return max(1, Int(min(heights[heights.count / 2], Double(h)).rounded()))
+    }
+
+    /// How close to an interior band edge a band's box may come before it counts
+    /// as cut: a quarter line, and never under two rows. A cut box ends on the
+    /// edge; a whole one clears it.
+    static func seamMargin(lineHeight line: Int) -> Int { max(2, line / 4) }
+
+    /// The bands to recognise, as half-open row ranges from the top of the image.
+    ///
+    /// **The rule.** Eight bands' worth of stride — the band count that did best on
+    /// C30's ~4,400-row pages, about 550 rows each — but never under 256 rows or
+    /// four line heights, so a small image or large type is not cut into slivers.
+    /// Each band runs one stride plus an overlap into the next of **two line
+    /// heights and a seam margin either side**, so any line up to two line heights
+    /// tall lies inside some band clear of both its seam margins, and survives the
+    /// merge's cut test there. A last band shorter than a stride is folded into the
+    /// one before it rather than sent as a sliver. `shifted` moves every interior
+    /// seam down half a
+    /// stride — the first band grows by that much — for the second pass. Empty for
+    /// an image under 1,024 rows, four of the
+    /// shortest bands, where every loss C30 measured was on pages of 3,300–4,500
+    /// rows; and whenever one band would be the whole page, since that is the
+    /// request already made.
+    static func bandPlan(height h: Int, lineHeight line: Int,
+                         shifted: Bool = false) -> [(top: Int, bottom: Int)] {
+        guard h >= 1024, line > 0, line <= h else { return [] }
+        let overlap = 2 * line + 2 * seamMargin(lineHeight: line)
+        let stride = max((h + 7) / 8, 4 * line, 256)
+        var out: [(top: Int, bottom: Int)] = []
+        var top = 0
+        var next = stride + (shifted ? stride / 2 : 0)
+        while true {
+            let bottom = min(h, next + overlap)
+            out.append((top, bottom))
+            if bottom == h { break }
+            top = next
+            next += stride
+        }
+        if out.count > 1, let last = out.last, last.bottom - last.top < stride {
+            out.removeLast()
+            out[out.count - 1].bottom = h
+        }
+        return out.count > 1 ? out : []
+    }
+
+    /// Which rows of the image hold ink: at least 0.5% of the row's pixels at or
+    /// below the page's Otsu level. The fraction and the level are
+    /// `Tools/score-text-voids`' (`artefact.py`'s), the measure C30 was found with.
+    ///
+    /// Read in strips of 256 rows, twice — once for the histogram, once for the
+    /// rows — so the scan never holds a grey copy of the whole page beside the
+    /// image and Vision's own buffers: `Flattener.maximumPageMegapixels` lets a
+    /// 400-megapixel page through, and a Swift array that cannot be allocated is
+    /// a crash, not an error (R24).
+    static func inkedRows(of image: CGImage) -> [Bool]? {
+        let w = image.width, h = image.height
+        guard w > 0, h > 0,
+              Double(w) * Double(h) <= Double(Flattener.maximumPageMegapixels) * 1_000_000
+        else { return nil }
+        let strip = min(256, h)
+        var grey = [UInt8](repeating: 255, count: w * strip)
+        /// Draws rows `top..<top + rows` into `grey`, top row first.
+        func draw(_ top: Int, _ rows: Int) -> Bool {
+            guard let piece = image.cropping(to: CGRect(x: 0, y: top, width: w, height: rows))
+            else { return false }
+            return grey.withUnsafeMutableBytes { raw -> Bool in
+                guard let base = raw.baseAddress, let ctx = CGContext(
+                    data: base, width: w, height: rows, bitsPerComponent: 8, bytesPerRow: w,
+                    space: CGColorSpaceCreateDeviceGray(),
+                    bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+                ctx.setFillColor(gray: 1, alpha: 1)
+                ctx.fill(CGRect(x: 0, y: 0, width: w, height: rows))
+                ctx.draw(piece, in: CGRect(x: 0, y: 0, width: w, height: rows))
+                return true
+            }
+        }
+        var histogram = [Int](repeating: 0, count: 256)
+        for top in stride(from: 0, to: h, by: strip) {
+            let rows = min(strip, h - top)
+            guard draw(top, rows) else { return nil }
+            for value in grey[0..<(w * rows)] { histogram[Int(value)] += 1 }
+        }
+        let level = Flattener.otsuThreshold(histogram: histogram)
+        let need = max(1, w / 200)
+        var out = [Bool](repeating: false, count: h)
+        for top in stride(from: 0, to: h, by: strip) {
+            let rows = min(strip, h - top)
+            guard draw(top, rows) else { return nil }
+            for y in 0..<rows {
+                var dark = 0
+                let base = y * w
+                for x in 0..<w where grey[base + x] <= level {
+                    dark += 1
+                    if dark >= need { break }
+                }
+                out[top + y] = dark >= need
+            }
+        }
+        return out
+    }
+
+    /// Whether the whole-page result leaves a void: a run of rows no observation
+    /// covers that holds at least **two line heights of inked rows**.
+    ///
+    /// Boxes cover their rows padded by a quarter line, so the gap between a word
+    /// box's x-height and its line's ascenders is not a void. Two lines' worth and
+    /// not one, so a stray rule or a lone missed page number does not buy eight
+    /// more requests; C30's voids were 171 rows at 100 dpi, many lines each.
+    static func hasVoid(inked: [Bool], observations: [SearchableWriter.Observation],
+                        pageHeight h: Int, lineHeight line: Int) -> Bool {
+        guard h > 0, inked.count >= h else { return false }
+        var covered = [Bool](repeating: false, count: h)
+        let pad = Double(max(1, line / 4))
+        for o in observations {
+            let top = o.boundingBox.y * Double(h) - pad
+            let bottom = (o.boundingBox.y + o.boundingBox.height) * Double(h) + pad
+            guard top.isFinite, bottom.isFinite else { continue }
+            // Clamped before the `Int` conversion, which traps outside `Int`'s range.
+            let first = max(0, Int(min(max(top, -1), Double(h)).rounded(.down)))
+            let last = min(h - 1, Int(min(max(bottom, -1), Double(h)).rounded(.up)))
+            if first <= last { for y in first...last { covered[y] = true } }
+        }
+        let need = 2 * line
+        var ink = 0
+        for y in 0..<h {
+            if covered[y] { ink = 0; continue }
+            if inked[y] { ink += 1; if ink >= need { return true } }
+        }
+        return false
+    }
+
+    /// The whole-page observations, with every band observation that adds a line
+    /// the page does not already have.
+    ///
+    /// - **Whole-page observations are all kept**, in their order; nothing here can
+    ///   remove text the single request found.
+    /// - **A band observation is admitted only at full confidence.** On C30's
+    ///   document 150 of the 151 band lines this merge added read 1.0, and the
+    ///   one at 0.5 was garbled (`the comnane or the mimhor nf`), as was every
+    ///   junk read found while building it. A band read is a supplement, so the
+    ///   bar for it is higher than for the page's own; `settings.confidence`
+    ///   has already been applied to both.
+    /// - **One touching an interior band edge is dropped** (`seamMargin`). Its line
+    ///   was cut, and the overlap guarantees a neighbouring band holds it clear.
+    /// - **One taller than two line heights is dropped.** The plan guarantees only
+    ///   lines up to that height lie whole in a band, so a taller box is cut or is
+    ///   several lines read as one: on C30's page 5 a band returned a 201-px box
+    ///   on a 48-px line reading `no industral angering derange`, over three real
+    ///   lines. Taller type is left to the whole-page request, which reads large
+    ///   type well; C30's losses were body text.
+    /// - **One is dropped when kept boxes cover half of its middle half** — the
+    ///   rows between a quarter and three quarters of its height. The same line
+    ///   read again fills that strip, and so does a junk box spanning lines the
+    ///   page already has (C30's page 1: `Can Lat`, 152 px over three lines). A
+    ///   *different* line does not: its neighbours' boxes reach only its top and
+    ///   bottom edges. On that page, where boxes are 72–88 px on a 55-px pitch, a
+    ///   test over the whole box read 57% for the real line `Prepared by Mildred
+    ///   Strunk…` and dropped it; its middle half reads 14%.
+    /// - **And one is dropped when any kept box on the same line overlaps it
+    ///   sideways at all** — "on the same line" meaning the kept box's vertical
+    ///   centre falls in its middle half, which a neighbouring line's never does.
+    ///   So a band's whole line never repeats a fragment the page kept, however
+    ///   the two readings split or spell it (`witbin` against `within`): the
+    ///   whole-page reading wins, and the rest of that line stays unread, as it
+    ///   was. Kept boxes taller than two line heights are left out of this test,
+    ///   so a narrow junk box of the page's own (a one-word `ASSAME` 115 px tall)
+    ///   does not veto the lines it crosses. A tall kept box that covers half a
+    ///   band line's middle still refuses it through the cover test above, which
+    ///   is what keeps out a band's copy of part of a tall heading; so a
+    ///   full-width junk box hides the lines under it, as it did before bands —
+    ///   its rows count as covered for the trigger too.
+    ///
+    /// Kept band observations join the set compared against, so two bands reading
+    /// one line in their overlap add it once. Each band's observations are taken
+    /// **ordinary-height boxes first, largest first within each tier** (see the
+    /// sort below), so a band's whole line is kept before a fragment of it or a
+    /// fused box across it, and those are the ones refused.
+    ///
+    /// **Order.** An added line goes in after the lowest line above it in its own
+    /// column — the lowest kept line above it that it overlaps sideways — so the
+    /// text layer reads down each column rather than across them. With no such
+    /// line it goes before the first whole-page line lower than itself.
+    static func mergeBands(
+        whole: [SearchableWriter.Observation],
+        bands: [(observations: [SearchableWriter.Observation], top: Int, bottom: Int)],
+        pageHeight h: Int,
+        lineHeight given: Int? = nil
+    ) -> [SearchableWriter.Observation] {
+        guard h > 0 else { return whole }
+        let line = given ?? lineHeight(of: whole, pageHeight: h)
+        let margin = Double(seamMargin(lineHeight: line))
+        let tallest = 2 * Double(line) / Double(h)
+        var kept = whole.map(\.boundingBox)
+        var added: [SearchableWriter.Observation] = []
+        for band in bands {
+            let bandHeight = Double(band.bottom - band.top)
+            guard bandHeight > 0 else { continue }
+            // Two tiers, each largest first: boxes of ordinary height for this band,
+            // then the ones more than a third taller than its median, which are
+            // where Vision fuses two lines into one (C30's page 1: 118- and 129-px
+            // boxes of garbled text among 85-px lines, all at full confidence). The
+            // real lines are kept first and refuse the fused box that crosses them.
+            let heights = band.observations.map(\.boundingBox.height)
+                .filter { $0.isFinite && $0 > 0 }.sorted()
+            let usual = heights.isEmpty ? 0 : heights[heights.count / 2] * 4 / 3
+            let ordered = band.observations.sorted {
+                let (a, b) = ($0.boundingBox, $1.boundingBox)
+                let (aTall, bTall) = (a.height > usual, b.height > usual)
+                if aTall != bTall { return !aTall }
+                return a.width * a.height > b.width * b.height
+            }
+            for o in ordered where o.confidence >= 1 {
+                let top = o.boundingBox.y * bandHeight
+                let bottom = (o.boundingBox.y + o.boundingBox.height) * bandHeight
+                guard top.isFinite, bottom.isFinite, o.boundingBox.x.isFinite,
+                      o.boundingBox.width.isFinite, o.boundingBox.width > 0, bottom > top,
+                      !o.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                else { continue }
+                if band.top > 0, top < margin { continue }
+                if band.bottom < h, bottom > bandHeight - margin { continue }
+                if bottom - top > 2 * Double(line) { continue }
+                let box = SearchableWriter.BoundingBox(
+                    x: o.boundingBox.x,
+                    y: (Double(band.top) + top) / Double(h),
+                    width: o.boundingBox.width,
+                    height: (bottom - top) / Double(h))
+                let middle = middleHalf(of: box)
+                guard coveredShare(of: middle, by: kept) < 0.5,
+                      !kept.contains(where: { k in
+                          let centre = k.y + k.height / 2
+                          return k.height <= tallest
+                              && centre >= middle.y && centre <= middle.y + middle.height
+                              && overlapsSideways(k, box)
+                      })
+                else { continue }
+                kept.append(box)
+                added.append(SearchableWriter.Observation(boundingBox: box, text: o.text,
+                                                          confidence: o.confidence))
+            }
+        }
+        guard !added.isEmpty else { return whole }
+
+        // Each added line's anchor: the index in `whole` it goes after, or nil for
+        // "before the first whole-page line lower than it". Chosen against the
+        // whole-page lines only, and added lines sharing an anchor keep their order
+        // down the page, so a run of recovered lines in one column stays together.
+        let sortedAdded = added.sorted { $0.boundingBox.y < $1.boundingBox.y }
+        var after: [Int: [SearchableWriter.Observation]] = [:]
+        var loose: [SearchableWriter.Observation] = []
+        for a in sortedAdded {
+            var anchor: Int?
+            for (i, o) in whole.enumerated()
+            where o.boundingBox.y < a.boundingBox.y && overlapsSideways(o.boundingBox, a.boundingBox) {
+                if anchor.map({ whole[$0].boundingBox.y < o.boundingBox.y }) ?? true { anchor = i }
+            }
+            if let anchor { after[anchor, default: []].append(a) } else { loose.append(a) }
+        }
+        var out: [SearchableWriter.Observation] = []
+        var pending = loose[...]
+        for (i, o) in whole.enumerated() {
+            while let next = pending.first, next.boundingBox.y < o.boundingBox.y {
+                out.append(next)
+                pending = pending.dropFirst()
+            }
+            out.append(o)
+            out.append(contentsOf: after[i] ?? [])
+        }
+        out.append(contentsOf: pending)
+        return out
+    }
+
+    /// Whether two boxes share any horizontal extent.
+    static func overlapsSideways(_ a: SearchableWriter.BoundingBox,
+                                 _ b: SearchableWriter.BoundingBox) -> Bool {
+        min(a.x + a.width, b.x + b.width) > max(a.x, b.x)
+    }
+
+    /// The rows of a box between a quarter and three quarters of its height.
+    static func middleHalf(of box: SearchableWriter.BoundingBox) -> SearchableWriter.BoundingBox {
+        SearchableWriter.BoundingBox(x: box.x, y: box.y + box.height / 4,
+                                     width: box.width, height: box.height / 2)
+    }
+
+    /// How much of `box` the `others` cover between them, as a fraction of its
+    /// area: the sum of the pairwise intersections, capped at 1. The sum
+    /// over-counts where the others overlap each other, which errs toward
+    /// refusing a band line, never toward printing one twice.
+    static func coveredShare(of box: SearchableWriter.BoundingBox,
+                             by others: [SearchableWriter.BoundingBox]) -> Double {
+        let area = box.width * box.height
+        guard area > 0 else { return 0 }
+        var shared = 0.0
+        for b in others {
+            let wide = min(box.x + box.width, b.x + b.width) - max(box.x, b.x)
+            let high = min(box.y + box.height, b.y + b.height) - max(box.y, b.y)
+            if wide > 0, high > 0 { shared += wide * high }
+        }
+        return min(1, shared / area)
     }
 
     // MARK: - Recognition in helper processes (R40)

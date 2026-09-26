@@ -125,7 +125,7 @@ for (index, line) in pages.enumerated() {
     }
     let observations: [SearchableWriter.Observation]
     do {
-        observations = try Recogniser.recognise(image, settings: settings)
+        observations = try Recogniser.recognisePage(image, settings: settings)
     } catch {
         die(.recognitionFailed,
             "page \(index + 1) could not be recognised: \(error.localizedDescription)")

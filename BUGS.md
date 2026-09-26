@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Four open: `C27`, `C28`, `C29` and `C30` — and TWO of them are `HALF FIXED`: `C28` as of 2026-08-22, its
+**Three open: `C27`, `C28` and `C29` — and TWO of them are `HALF FIXED`: `C28` as of 2026-08-22, its
 shape term WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were
 measured, and `C29` as of 2026-08-25, its born-digital page now COPIED THROUGH instead of rasterised.**
 ✅ **`C28`'s ONE REMAINING MEASUREMENT IS TAKEN AS OF 2026-09-02 AND IT IS THE MOVE THE ENTRY CALLS *"the
@@ -426,7 +426,7 @@ production recognises `Flattener.flatten`'s REBUILT BITMAPS (`Model.swift:1919`/
 reads `jbig2` on all six pages, so the bitmap arm demonstrably ran rather than
 `Recogniser.swift:141`'s render fallback) while
 `make-observations` recognises a plain render, so every instrument C30 has used measures a different
-image than the app does.** C30 stays **OPEN**: the fork is not the fix, and **23** lines of clean 1951
+image than the app does.** C30 stayed open until **2026-09-25**, when it was FIXED (see the entry): the fork was not the fix, and **23** lines of clean 1951
 type on page 5 have no text layer over them at all — **13** of them missed by *both* paths.
 ✅ **AND IT HAS AN INSTRUMENT IN THE TREE AS OF 2026-08-25 — `Tools/score-text-voids.swift`, the tool
 `#### What a fix has to satisfy` has asked for since 2026-08-22 and the first C30 measurement taken on the
@@ -16691,7 +16691,42 @@ else, which is `score-text-route`'s `verdict` column's failure mode (three repai
 every end-to-end run in this entry has had one passthrough page. Nothing here executed a splice, so that is a
 population fact and not a verification.
 
-### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — OPEN
+### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — FIXED 2026-09-25, by recognising the page again in overlapping bands wherever one request leaves a void
+
+#### FIXED 2026-09-25 — the page is read again in overlapping bands, and the merge adds only lines it lacks
+
+`Recogniser.recognisePage` is now what `recogniseDocument` (both arms) and the helper call. It runs the
+whole-page request as before; if that leaves a run of uncovered rows holding two line heights of ink, it
+recognises eight overlapping horizontal bands (stride `max(h/8, 4 lines, 256)`, overlap two line heights
+plus a seam margin each side, a short last band folded into the one before, none under 1,024 rows; not in
+fast mode, whose every line reads 0.5), merges, and if a void remains does one more pass with the seams
+moved half a stride. The merge keeps every whole-page observation and adds a band observation
+only at full confidence, clear of a seam by a quarter line, at most two line heights tall, with under half
+of its middle half covered, and with no kept box on its own line overlapping it sideways. A band's
+ordinary-height boxes are taken before its tall ones, so a box fusing two lines is refused by the lines.
+
+Measured on the **published PDF** from `makeSearchablePDF`, run in code, `C30-BANDS-2026-09-25.tsv`:
+**2,075 → 3,526 selectable words** (`pdftotext`), **no repeated line on any page**. The void share
+(`score-text-voids`, now `PRODUCTION=1` to score `recognisePage`) was 0.22–0.45 per page and is at most
+**0.0309** (p4; 0.0081 p1, 0.0264 p6, 0 on the other three). Invariant 3 on this output: line starts
+97→98%, ends 95→98%, overlap 2/95→2/147, `merged=0/133`, `welded=0/16`; on `Canby_1915` and `Gitlin_2000` every
+column of `score-corpus`, `score-line-separation` and `score-run-width` is identical before and after
+(neither triggers). Time for the 6-page document: 9.5 s → 27–31 s (about +3–3.5 s a page that triggers);
+a page with no void pays one ink scan. Two runs of an earlier draft under load average ~22 took 298 s and 686 s and
+did not recur in six runs after; not explained. No setting: the cost falls only on pages that lose text.
+
+Vision's reading of a block depends on the window: widening the overlap by the seam margins (the review's
+finding that the guarantee was really 1.5 lines) moved the crops and dropped the words from 3,613 to 3,525
+and p1's void to 0.080, through lines fused into one full-confidence box and a 0.30 junk box over a clean
+paragraph. The height tiers and the second, shifted pass are the answer to that (3,566), not a tuning of
+it; folding the short last band then moved the crops again, to 3,526, still inside every bar.
+Rejected: tiling every page (doubles time on pages that read fully); IoU and text-substring tests for
+duplicates (a re-read splits and spells differently: `witbin`, overlapping fragments); coverage over the
+whole box, which dropped the real line `Prepared by Mildred Strunk…` on this 55-px pitch.
+Not covered: the trigger is row-wise, so a lost column beside a read one does not start the bands; a
+picture with no text starts them and pays the time; Extract Text mode still makes one request per page.
+The whole-page baseline has drifted since 2026-08-25 (p2 41 → 46 observations; pages 2–6 now rebuild at
+3,307 rows, not 4,409), which changes no figure here.
 
 *(found 2026-08-20 by the owner, on a second JSTOR/ProQuest download and reported as "only about half
 of the first page is actually selectable, and significant non-selectable text on all the other pages".

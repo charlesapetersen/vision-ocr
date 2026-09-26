@@ -6399,6 +6399,326 @@ do {
     resetPrefs()
 }
 
+// MARK: - C30: a page Vision half-reads is read again in overlapping bands
+
+print("\nrecognising a page again in overlapping bands (C30)")
+
+do {
+    resetPrefs()
+    typealias Box = SearchableWriter.BoundingBox
+    typealias Obs = SearchableWriter.Observation
+    func obs(_ text: String, x: Double, top: Double, width: Double, height: Double,
+             page h: Double) -> Obs {
+        Obs(boundingBox: Box(x: x, y: top / h, width: width, height: height / h),
+            text: text, confidence: 1)
+    }
+
+    // The plan. C30's document has two page heights at 400 dpi, 4488 and 4409 rows
+    // (invariant 5), and a landscape page is banded on its own, shorter, height.
+    for (h, line) in [(4488, 65), (4409, 48), (2480, 48)] {
+        let plan = Recogniser.bandPlan(height: h, lineHeight: line)
+        let covers = plan.first?.top == 0 && plan.last?.bottom == h
+        let overlaps = zip(plan, plan.dropFirst()).allSatisfy { $0.bottom - $1.top >= 2 * line }
+        let ordered = zip(plan, plan.dropFirst()).allSatisfy { $0.top < $1.top && $0.bottom < $1.bottom }
+        check("the band plan for a \(h)-row page covers it from the first row to the last",
+              covers, "\(plan)")
+        check("…each band overlaps the next by at least two line heights",
+              plan.count > 1 && overlaps && ordered, "\(plan)")
+        // Every line up to two line heights tall lies inside some band clear of that
+        // band's seam margins, which is where the merge will accept it.
+        let m = Recogniser.seamMargin(lineHeight: line)
+        let clear = stride(from: 0, to: h - 2 * line, by: 7).allSatisfy { top in
+            plan.contains { band in
+                top >= (band.top == 0 ? 0 : band.top + m)
+                    && top + 2 * line <= (band.bottom == h ? h : band.bottom - m)
+            }
+        }
+        check("…so every line up to two line heights tall lies in some band clear of its seams",
+              clear)
+    }
+    // The second pass moves every interior seam half a stride and still covers the page.
+    let straight = Recogniser.bandPlan(height: 4409, lineHeight: 48)
+    let moved = Recogniser.bandPlan(height: 4409, lineHeight: 48, shifted: true)
+    let movedOverlaps = zip(moved, moved.dropFirst()).allSatisfy { $0.bottom - $1.top >= 2 * 48 }
+    let seamsMoved = Set(straight.dropFirst().map(\.top))
+        .isDisjoint(with: moved.dropFirst().map(\.top))
+    check("the shifted plan covers the page, overlaps as the first does, and moves every seam",
+          moved.first?.top == 0 && moved.last?.bottom == 4409 && moved.count > 1
+              && movedOverlaps && seamsMoved,
+          "straight \(straight) moved \(moved)")
+    // A last band shorter than a stride is folded into the one before, not sent as a
+    // sliver: 1,300 rows at a 1-row line would otherwise end in a 20-row band.
+    let slivers = [false, true].flatMap { Recogniser.bandPlan(height: 1300, lineHeight: 1,
+                                                              shifted: $0) }
+    check("no band in a plan is shorter than the shortest stride",
+          !slivers.isEmpty && slivers.allSatisfy { $0.bottom - $0.top >= 256 }, "\(slivers)")
+    check("the plan for C30's 4488-row page is eight bands of about 550 rows plus overlap",
+          Recogniser.bandPlan(height: 4488, lineHeight: 65).count == 8,
+          "\(Recogniser.bandPlan(height: 4488, lineHeight: 65).count)")
+    check("an image under 1,024 rows is not banded",
+          Recogniser.bandPlan(height: 1000, lineHeight: 20).isEmpty,
+          "\(Recogniser.bandPlan(height: 1000, lineHeight: 20))")
+
+    // The trigger. 1,000 rows, a 20-row line height: two lines' worth is 40 rows.
+    let h = 1000
+    var inked = [Bool](repeating: false, count: h)
+    for y in 100..<120 { inked[y] = true }           // a line the request read
+    for y in 300..<360 { inked[y] = true }           // a block it did not
+    let read = [obs("read", x: 0.1, top: 100, width: 0.8, height: 20, page: 1000)]
+    check("a run of inked rows with no word over it, three lines deep, is a void",
+          Recogniser.hasVoid(inked: inked, observations: read, pageHeight: h, lineHeight: 20))
+    let both = read + [obs("also read", x: 0.1, top: 300, width: 0.8, height: 60, page: 1000)]
+    check("…and the same page with a word over that block is not",
+          !Recogniser.hasVoid(inked: inked, observations: both, pageHeight: h, lineHeight: 20))
+    var single = [Bool](repeating: false, count: h)
+    for y in 500..<520 { single[y] = true }
+    check("…nor is one missed line, which is not worth eight more requests",
+          !Recogniser.hasVoid(inked: single, observations: [], pageHeight: h, lineHeight: 20))
+
+    // The merge, on one 1,000-row page cut into two bands overlapping over 400..<600.
+    // Band boxes are normalised to their band, as Vision returns them.
+    let bandA = (top: 0, bottom: 600), bandB = (top: 400, bottom: 1000)
+    func inBand(_ text: String, x: Double = 0.1, top: Double, width: Double = 0.8,
+                height: Double = 20, band: (top: Int, bottom: Int)) -> Obs {
+        let bh = Double(band.bottom - band.top)
+        return Obs(boundingBox: Box(x: x, y: (top - Double(band.top)) / bh, width: width,
+                                    height: height / bh), text: text, confidence: 1)
+    }
+    let wholeLines = [obs("the first line", x: 0.1, top: 50, width: 0.8, height: 20, page: 1000),
+                      obs("a line in the overlap", x: 0.1, top: 450, width: 0.8, height: 20,
+                          page: 1000)]
+    let merged = Recogniser.mergeBands(
+        whole: wholeLines,
+        bands: [(observations: [inBand("a lime in the overlap", top: 451, band: bandA),
+                                inBand("a line only band A read", top: 200, band: bandA),
+                                inBand("a line only the bands read", top: 520, band: bandA),
+                                inBand("cut in ha", top: 588, height: 12, band: bandA)],
+                 top: bandA.top, bottom: bandA.bottom),
+                (observations: [inBand("a line in the overlap", top: 450, band: bandB),
+                                inBand("a line only the bands read", top: 520, band: bandB),
+                                inBand("cut in half by the seam", top: 590, band: bandB),
+                                inBand("cut at the top", top: 401, height: 15, band: bandB),
+                                inBand("the last line", top: 900, band: bandB)],
+                 top: bandB.top, bottom: bandB.bottom)],
+        pageHeight: 1000)
+    let texts = merged.map(\.text)
+    check("every whole-page observation survives the merge unchanged",
+          texts.contains("the first line") && texts.contains("a line in the overlap")
+              && !texts.contains("a lime in the overlap"), "\(texts)")
+    check("…a band's re-read of a line the page already has is dropped, even misspelt",
+          texts.filter { $0.contains("overlap") }.count == 1, "\(texts)")
+    check("…a line only a band read is added",
+          texts.filter { $0 == "a line only band A read" }.count == 1, "\(texts)")
+    check("…once, though both bands returned it from their overlap",
+          texts.filter { $0 == "a line only the bands read" }.count == 1, "\(texts)")
+    check("…a box touching a seam is dropped and the neighbour band's whole line is kept",
+          !texts.contains("cut in ha") && texts.contains("cut in half by the seam"), "\(texts)")
+    check("…at a band's top edge as well as its bottom",
+          !texts.contains("cut at the top"), "\(texts)")
+    check("…and the text runs down the page",
+          merged.map(\.boundingBox.y) == merged.map(\.boundingBox.y).sorted(), "\(texts)")
+    if let added = merged.first(where: { $0.text == "the last line" }) {
+        check("…with a band's box lifted back into the page's frame",
+              abs(added.boundingBox.y * 1000 - 900) < 1e-6
+                  && abs(added.boundingBox.height * 1000 - 20) < 1e-6,
+              "\(added.boundingBox)")
+    } else {
+        check("a line only the second band read is added", false, "\(texts)")
+    }
+
+    // Tight leading: Vision's boxes on C30's page 1 are 72-88 rows on a 55-row pitch,
+    // so a line's neighbours overlap its own box top and bottom.
+    let tight = [obs("line above", x: 0.1, top: 1000, width: 0.8, height: 80, page: 4000),
+                 obs("line below", x: 0.1, top: 1110, width: 0.8, height: 80, page: 4000)]
+    let between = Recogniser.mergeBands(
+        whole: tight,
+        bands: [(observations: [Obs(boundingBox: Box(x: 0.1, y: (1055.0 - 800) / 800,
+                                                    width: 0.8, height: 72.0 / 800),
+                                    text: "the line between", confidence: 1)],
+                 top: 800, bottom: 1600)],
+        pageHeight: 4000)
+    check("a band line whose neighbours' boxes overlap its top and bottom is still added",
+          between.map(\.text).contains("the line between"), "\(between.map(\.text))")
+
+    // Junk: a box several lines tall over lines the page has, and a fragment of a line.
+    let page = [obs("one", x: 0.1, top: 1000, width: 0.8, height: 60, page: 4000),
+                obs("two", x: 0.1, top: 1060, width: 0.8, height: 60, page: 4000),
+                obs("three", x: 0.1, top: 1120, width: 0.8, height: 60, page: 4000),
+                obs("patterns havo", x: 0.6, top: 1400, width: 0.3, height: 60, page: 4000)]
+    func one(_ text: String, x: Double, top: Double, width: Double, height: Double,
+             confidence: Double = 1) -> Obs {
+        Obs(boundingBox: Box(x: x, y: (top - 800) / 1000, width: width, height: height / 1000),
+            text: text, confidence: confidence)
+    }
+    let junk = Recogniser.mergeBands(
+        whole: page,
+        bands: [(observations: [one("Can Lat", x: 0.1, top: 1010, width: 0.1, height: 110),
+                                one("no industral angering", x: 0.3, top: 1500, width: 0.3,
+                                    height: 200),
+                                one("Negro ghetto segregation patterns havo", x: 0.1,
+                                    top: 1400, width: 0.8, height: 60),
+                                one("Angeles area, and the city", x: 0.85, top: 1400,
+                                    width: 0.1, height: 60),
+                                one("a garbled novel lime", x: 0.1, top: 1600, width: 0.8,
+                                    height: 60, confidence: 0.5)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("a band box spanning lines the page already has is dropped",
+          !junk.map(\.text).contains("Can Lat"), "\(junk.map(\.text))")
+    check("…as is one taller than two line heights, which no band holds whole",
+          !junk.map(\.text).contains("no industral angering"), "\(junk.map(\.text))")
+    check("…and a band's whole line never repeats the words of a fragment the page kept",
+          !junk.map(\.text).contains("Negro ghetto segregation patterns havo"),
+          "\(junk.map(\.text))")
+    check("…nor does a fragment overlapping it sideways on the same line, however it splits",
+          !junk.map(\.text).contains("Angeles area, and the city"), "\(junk.map(\.text))")
+    check("…and a band read below full confidence is not admitted",
+          !junk.map(\.text).contains("a garbled novel lime") && junk.count == page.count,
+          "\(junk.map(\.text))")
+
+    // A short neighbour whose box reaches into a novel line's rows is not the same line.
+    let shortNeighbour = Recogniser.mergeBands(
+        whole: [obs("a", x: 0.1, top: 1000, width: 0.02, height: 60, page: 4000),
+                obs("line three", x: 0.1, top: 1120, width: 0.8, height: 60, page: 4000)],
+        bands: [(observations: [one("a novel line nobody read", x: 0.1, top: 1048,
+                                    width: 0.8, height: 60)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("a novel line is added though a one-letter neighbour's box reaches into it",
+          shortNeighbour.map(\.text).contains("a novel line nobody read"),
+          "\(shortNeighbour.map(\.text))")
+
+    // A junk box of the page's own, one word wide and three lines tall, does not veto
+    // every line it crosses (C30's page 5 once had a 115-px `ASSAME` over 98 rows).
+    let tallJunk = Recogniser.mergeBands(
+        whole: [obs("ASSAME", x: 0.05, top: 1000, width: 0.04, height: 180, page: 4000),
+                obs("line one", x: 0.1, top: 900, width: 0.8, height: 60, page: 4000),
+                obs("line five", x: 0.1, top: 1300, width: 0.8, height: 60, page: 4000)],
+        bands: [(observations: [one("a line under the junk", x: 0.02, top: 1060, width: 0.9,
+                                    height: 60)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("a junk box three lines tall in the page's own reading does not veto a line it crosses",
+          tallJunk.map(\.text).contains("a line under the junk"), "\(tallJunk.map(\.text))")
+
+    // …but a band re-reading part of a tall heading the page has is still refused, by
+    // the cover test, because the same-line test leaves tall kept boxes out.
+    let heading = Recogniser.mergeBands(
+        whole: [obs("A TALL HEADING", x: 0.2, top: 1000, width: 0.6, height: 150, page: 4000),
+                obs("body", x: 0.1, top: 1300, width: 0.8, height: 60, page: 4000),
+                obs("body two", x: 0.1, top: 1400, width: 0.8, height: 60, page: 4000)],
+        bands: [(observations: [one("TALL HEADING", x: 0.35, top: 1020, width: 0.4,
+                                    height: 110)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("…and a band's copy of part of a tall heading the page has is refused",
+          heading.count == 3, "\(heading.map(\.text))")
+
+    // Vision sometimes fuses two lines into one box at full confidence. A band's
+    // ordinary-height lines are taken before its unusually tall boxes, so the two real
+    // lines are kept and the fused box across them refused — largest-first alone would
+    // keep the fused box and refuse both.
+    let fused = Recogniser.mergeBands(
+        whole: [obs("far line", x: 0.1, top: 3000, width: 0.8, height: 60, page: 4000)],
+        bands: [(observations: [one("pave arisen from eler", x: 0.1, top: 1000, width: 0.8,
+                                    height: 110),
+                                one("the upper real line", x: 0.1, top: 1000, width: 0.8,
+                                    height: 60),
+                                one("the lower real line", x: 0.1, top: 1050, width: 0.8,
+                                    height: 60)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("a band's two real lines are kept and the fused box across them is refused",
+          fused.map(\.text).contains("the upper real line")
+              && fused.map(\.text).contains("the lower real line")
+              && !fused.map(\.text).contains("pave arisen from eler"),
+          "\(fused.map(\.text))")
+
+    // Two columns, read column by column. A line a band recovers in the right column
+    // goes after the right column's line above it, not into the left column's run.
+    let columns = [obs("L1", x: 0.1, top: 1000, width: 0.35, height: 50, page: 4000),
+                   obs("L2", x: 0.1, top: 1200, width: 0.35, height: 50, page: 4000),
+                   obs("R1", x: 0.55, top: 1000, width: 0.35, height: 50, page: 4000),
+                   obs("R2", x: 0.55, top: 1200, width: 0.35, height: 50, page: 4000)]
+    let columnMerge = Recogniser.mergeBands(
+        whole: columns,
+        bands: [(observations: [one("R1.5", x: 0.55, top: 1100, width: 0.35, height: 50)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("a line recovered in the right column is placed in the right column's run",
+          columnMerge.map(\.text) == ["L1", "L2", "R1", "R1.5", "R2"],
+          "\(columnMerge.map(\.text))")
+
+    // End to end through real crops. A page of clean lines plus a solid block: the
+    // block is ink no word covers, so the bands run, and every line they return is one
+    // the whole-page request already read. A wrong crop or remap lands a band's copy
+    // somewhere else, where it is added a second time.
+    let width = 1700, height = 2200
+    var drawn: CGImage?
+    if let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                           bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(),
+                           bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        ctx.setFillColor(gray: 0, alpha: 1)
+        let font = CTFontCreateWithName("Times-Roman" as CFString, 40, nil)
+        let sentences = ["Recognition runs over the whole page first",
+                         "and then again in bands when it leaves a void",
+                         "so that clean type is never skipped in blocks",
+                         "while nothing the first pass read is lost",
+                         "and no line is printed twice by the merge"]
+        for (i, s) in sentences.enumerated() {
+            ctx.textPosition = CGPoint(x: 150, y: CGFloat(height - 300 - i * 380))
+            CTLineDraw(CTLineCreateWithAttributedString(
+                NSAttributedString(string: s, attributes: [.font: font])), ctx)
+        }
+        ctx.fill(CGRect(x: 150, y: 150, width: 1400, height: 180))   // ink with no words
+        drawn = ctx.makeImage()
+    }
+    if let image = drawn {
+        let settings = Prefs.Snapshot.current()
+        let whole = (try? Recogniser.recognise(image, settings: settings)) ?? []
+        let line = Recogniser.lineHeight(of: whole, pageHeight: height)
+        let rows = Recogniser.inkedRows(of: image) ?? []
+        check("the fixture's solid block is a void the whole-page request leaves",
+              whole.count >= 5
+                  && Recogniser.hasVoid(inked: rows, observations: whole, pageHeight: height,
+                                        lineHeight: line),
+              "\(whole.count) observations, line \(line)")
+        // A real crop, recognised and lifted back: the band holding the first line
+        // returns it where the whole page put it. This is what a wrong crop or remap
+        // would break, and it runs whether or not the merge later refuses the copy.
+        let plan = Recogniser.bandPlan(height: height, lineHeight: line)
+        if let first = whole.min(by: { $0.boundingBox.y < $1.boundingBox.y }),
+           let band = plan.first(where: {
+               Double($0.top) <= first.boundingBox.y * Double(height) - Double(line)
+                   && (first.boundingBox.y + first.boundingBox.height) * Double(height)
+                       + Double(line) <= Double($0.bottom) }),
+           let crop = image.cropping(to: CGRect(x: 0, y: band.top, width: width,
+                                                height: band.bottom - band.top)),
+           let read = try? Recogniser.recognise(crop, settings: settings) {
+            let lifted = Recogniser.mergeBands(whole: [], bands: [(read, band.top, band.bottom)],
+                                               pageHeight: height)
+            let twin = lifted.first { $0.text == first.text }
+            check("a band's crop returns the page's first line where the whole page put it",
+                  twin.map { abs($0.boundingBox.y - first.boundingBox.y) * Double(height)
+                                 < Double(line) / 2 } ?? false,
+                  "whole \(first.boundingBox) band \(band) lifted \(lifted.map { "\($0.text) \($0.boundingBox)" })")
+        } else {
+            check("a band holds the fixture's first line and recognises it", false,
+                  "plan \(plan) whole \(whole.map(\.text))")
+        }
+        let paged = (try? Recogniser.recognisePage(image, settings: settings)) ?? []
+        let counts = Dictionary(grouping: paged.map { $0.text.lowercased() }, by: { $0 })
+        check("…so the bands run, and every line they return merges into the one already read",
+              paged.count == whole.count && counts.values.allSatisfy { $0.count == 1 },
+              "whole \(whole.map(\.text)) paged \(paged.map(\.text))")
+    } else {
+        check("the banding fixture draws", false)
+    }
+    resetPrefs()
+}
+
 print("\nthe revision we pin is the revision Vision uses")
 
 do {

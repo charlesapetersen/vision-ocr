@@ -14,6 +14,14 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+**Scanned pages where whole blocks of text could not be selected are now read in full.** Vision, given a
+whole page at once, sometimes skips entire paragraphs of clean type; on a six-page 1951 journal scan about
+half of each page had no text layer. When a page comes back with inked areas that have no words over them,
+it is now read again in overlapping strips and the missing lines are added, and a line the first reading
+found is not added a second time. On that document the selectable words went from 2,075 to 3,526. Pages
+read fully the first time cost almost nothing extra; pages that needed the second reading took about three
+seconds longer each, and so may a page with a picture on it (BUGS.md C30).
+
 **A mixed PDF — born-digital pages among scanned ones — now keeps the compact page compression for its
 scanned pages.** Until now, one page kept as it is turned that compression off for the whole file, and the
 layered-image saving with it, so a mixed file came out much larger: measured on a ten-page book with a

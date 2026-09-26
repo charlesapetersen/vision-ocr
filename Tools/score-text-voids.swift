@@ -209,8 +209,8 @@
 //     (`Sources/Recogniser.swift:423`), so with `minTextHeightOn` the two arms differ by an
 //     n-fold effective glyph floor as well. It defaults off, so the committed artefact is
 //     unaffected — but a run with it on is measuring two things.
-//   * **It is not a fix and not a seam.** Nothing in `Sources/` tiles anything;
-//     `Recogniser` has no tiling seam and this tool does not add one.
+//   * **It is not the fix.** The fix is `Recogniser.recognisePage` (2026-09-25), whose
+//     bands overlap and whose merge drops duplicates; `PRODUCTION=1` scores that instead.
 // ✅ **`TILES=1` is an identity control that runs on real pages**: one band is the whole
 // sheet, cropped to itself and remapped by the identity map, so every `t…` column must
 // equal its whole-page twin. A divergence exits **7** rather than being printed as a
@@ -876,6 +876,11 @@ let tiles: Int? = {
     return value
 }()
 
+/// `PRODUCTION=1` scores the observations production hands the writer — the whole-page
+/// request plus C30's overlapping bands wherever it left a void — instead of the single
+/// whole-page request. Every whole-page column then describes the app's own output.
+let production = ProcessInfo.processInfo.environment["PRODUCTION"] == "1"
+
 /// `TILETEXT=<dir>` writes each measured page's two recognitions as text, one observation
 /// a line: `p<N>-whole.txt` and `p<N>-tiled-<bands>.txt`.
 ///
@@ -1099,7 +1104,11 @@ for index in pages {
         continue
     }
 
-    guard let observations = try? Recogniser.recognise(image, settings: settings) else {
+    // `PRODUCTION=1` measures what the app publishes rather than one whole-page request:
+    // `Recogniser.recognisePage`, the entry point `recogniseDocument` and the helper call.
+    guard let observations = try? (production
+            ? Recogniser.recognisePage(image, settings: settings)
+            : Recogniser.recognise(image, settings: settings)) else {
         row(index, kind: kind, w: "\(w)", h: "\(h)", dpi: String(format: "%.1f", dpi),
             minRows: "\(minRows)", padRows: "\(padRows)",
             verdict: "SKIP recognition threw")
