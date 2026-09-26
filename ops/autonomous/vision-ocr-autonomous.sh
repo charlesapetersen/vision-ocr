@@ -1598,6 +1598,26 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   [ "$hg" = 9 ] && return 9
   if [ "$hg" = 10 ]; then note_progress; return 0; fi
 
+  # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue gets its session at max
+  #     effort once it has had two attempts that did not finish it. Attempts are the item's
+  #     `(attempts: N)` marker in QUEUE.md (failures found later, by the owner or a check) plus the sessions
+  #     this daemon has run on it, from $STATE/attempts.tsv. A usage-limit fast-fail is not an attempt.
+  #     `(effort: <level>)` in the item overrides both. The head is read here, before the session picks
+  #     it; STEP 2 of the resume prompt takes the same first `ok` line. A session that adopts a rescue
+  #     instead (STEP 1.5) is still counted against the head item, which can bring max one session early.
+  local head_tag head_span n_q n_d eff="$EFFORT" eff_set head_attempts=0
+  head_tag="$("$REPO/ops/autonomous/next-item.sh" "$REPO" 2>/dev/null | awk -F'\t' '$1=="ok"{print $2; exit}')"
+  if [ -n "$head_tag" ]; then
+    head_span="$(awk -v t="**$head_tag**" 'f && /^- \[/{exit} index($0,"- [")==1 && index($0,t){f=1} f' "$REPO/ops/autonomous/QUEUE.md")"
+    n_q="$(printf '%s\n' "$head_span" | grep -oE '\(attempts: [0-9]+\)' | grep -oE '[0-9]+' | head -1)"
+    n_d="$(awk -F'\t' -v t="$head_tag" '$1==t{c++} END{print c+0}' "$STATE/attempts.tsv" 2>/dev/null)"
+    head_attempts=$(( ${n_q:-0} + ${n_d:-0} ))
+    [ "$head_attempts" -ge 2 ] && eff=max
+    eff_set="$(printf '%s\n' "$head_span" | grep -oE '\(effort: (low|medium|high|xhigh|max)\)' | head -1 | sed -E 's/.*: ([a-z]+)\)/\1/')"
+    [ -n "$eff_set" ] && eff="$eff_set"
+  fi
+  export VISIONOCR_HEAD_ITEM="$head_tag" VISIONOCR_ATTEMPTS="$head_attempts" VISIONOCR_SESSION_EFFORT="$eff"
+
   # 3d. Snapshot the decision surface BEFORE the session, so afterwards we can tell whether it actually
   #     advanced the run. Also snapshot the completed-item count, to tell a checkpoint from a completion.
   local fp_before cc_before; fp_before="$(work_fingerprint)"; cc_before="$(completed_items)"
@@ -1625,7 +1645,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # about — reported as bogus results rather than as an error.
   export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-  log "launching fresh resume session (backstop ${MAXRUN}s, budget \$$BUDGET, health-wd on)…"
+  log "launching fresh resume session (backstop ${MAXRUN}s, budget \$$BUDGET, effort $eff for ${head_tag:-no item} after $head_attempts attempts, health-wd on)…"
   cd "$REPO" || { log "cannot cd $REPO — skip."; kill "$hb" 2>/dev/null; rm -f "$LOCK"; return 0; }
   # Fresh per-session log (keep one previous). stream-json is larger than text, so don't append forever; a
   # fresh file also gives the watchdog a clean zero baseline.
@@ -1638,7 +1658,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   "$CLAUDE" -p "$(cat "$PROMPT")" \
       --permission-mode default \
       --model opus --fallback-model sonnet \
-      --effort "$EFFORT" \
+      --effort "$eff" \
       --max-budget-usd "$BUDGET" \
       --output-format stream-json --verbose --include-partial-messages \
       --allowedTools "${ALLOW[@]}" \
@@ -1716,6 +1736,13 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
       log "session (rc=$rc) advanced nothing (queue + tip unchanged) — no progress."
     fi
     note_no_progress || verdict=9
+  fi
+
+  # Count the attempt for 3e: the session ran (not a usage-limit fast-fail) and the head item is still open.
+  if [ -n "$head_tag" ] && ! { [ "$rc" -ne 0 ] && [ $(( SECONDS - _t0 )) -lt 10 ]; }; then
+    if "$REPO/ops/autonomous/next-item.sh" "$REPO" 2>/dev/null | awk -F'\t' -v t="$head_tag" '$2==t{f=1} END{exit !f}'; then
+      printf '%s\t%s\t%s\t%s\n' "$head_tag" "$(date '+%Y-%m-%d %H:%M')" "$eff" "$(( SECONDS - _t0 ))" >> "$STATE/attempts.tsv" 2>/dev/null || true
+    fi
   fi
 
   kill "$hb" 2>/dev/null || true

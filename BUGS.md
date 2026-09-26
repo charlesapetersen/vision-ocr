@@ -17823,6 +17823,7 @@ build reproduces the owner's 1.14.0 file byte for byte, 470,958 B), rendered at 
 
 Limit: red ink within about 8 px of black is judged against it, so a red underline under black descenders
 darkens. Checks: `C31:` in `Tests/main.swift`; three of them are red on the old code.
+2026-09-26, owner: not fixed as the reader sees it. In Preview (PDFKit) the text on these pages is still a blur, in 1.14.0 and after this fix; the renders this entry describes match poppler. See C38.
 
 ### C32 · Pages whose only colour is red headings are published black and white, so a pamphlet loses its heading colour on most of its pages — FIXED
 
@@ -18046,6 +18047,7 @@ a tenth of its lines finds no gutter. A table whose cells hold wide lines of tex
 2026-09-26, `corpus-stress`: New York Stock Exchange 1956 p24, a ruled table, reads in blocks of about
 four rows, one column at a time within each block, so copying a row does not keep its cells together.
 Nothing is lost. Tables have no right order under this scheme, so this is not opened as an entry.
+2026-09-26, owner: Hughes p5 still joins the two columns on four rows, in the owner's Desktop copy. See C40.
 
 ### C35 · Some already-OCR'd files come out several times larger than they went in — FIXED
 
@@ -18215,6 +18217,60 @@ form, or through resources the page inherits. Rejected: keeping a stream under a
 have to reconstruct, which is more code for those 10 documents than the 21 needed.
 `JBIG2.splice` still passes a password on argv, and `Annotations.transplant`'s "the only place" comment
 is stale. [measured]
+2026-09-26, owner: Delton (954,409 → 2,487,160 B) and the Desktop copy of Hughes (490,599 → 947,326 B), built from `24a8f6a`, before this fix. Neither was re-measured here, and both are 600 dpi Acrobat JBIG2 sources; queued as `c37-owner-files`.
+
+### C38 · Text on layered pages is illegible in Preview: PDFKit draws the text stencil at the foreground image's resolution, and C31's fix was checked in poppler, which does not — OPEN
+
+*(found 2026-09-26 by the owner, on `1954 - Why.pdf` built from main at `24a8f6a`: "even more illegible"
+than 1.14.0. That output is `$STATE/owner-supplied/1954 - Why.ocr-24a8f6a.pdf`; the renders below are in
+`$STATE/owner-supplied/renders-2026-09-26/`, with the 40-line Swift renderer that made them.)*
+
+What was checked on 2026-09-26, in an interactive session:
+- Rendered through PDFKit (`PDFPage.draw` into a bitmap), and again through `CGContext.drawPDFPage` at
+  high interpolation, the body text on the layered pages is a blur. On p6 (foreground 28 ppi, stencil
+  111 ppi) it can just be read. On p5 (background 14 ppi, foreground 7 ppi) no word can be read. [measured]
+- The same pages rendered by poppler (`pdftoppm`, 300 dpi) are sharp, in 1.14.0 and now. [measured]
+- 1.14.0's p6 is the same blur in PDFKit. So what the owner reported as C31 is the PDFKit rendering, and
+  it was not fixed. C31's entry does not name its renderer; its account of the fix (strokes dark and solid
+  at 400 dpi) matches poppler's rendering and not PDFKit's. [measured: both renders; inferred: which
+  renderer C31 used]
+- It got worse because C32 moved p5, p8 and p9 from the 1-bit route onto the layered route. In 1.14.0 p5
+  was crisp in PDFKit; now it is the worst page in the file. [measured]
+- Why PDFKit blurs: the text looks sampled on the foreground image's pixel grid, so CoreGraphics
+  probably resamples an `/SMask` to its base image's size. [inferred from two pages at two foreground
+  resolutions]
+- Scale: 554 of the 17,397 pages in `STRESS-2026-09-26.tsv` took the layered route
+  (`DCT/8+DCT/8+JBIG2/1`). They are probably all affected. [not measured]
+- The stress reading saw this and recorded it as an instrument fault: "at 100 dpi CoreGraphics renders
+  the stencil's text lighter than 128, so only the picture counts as ink". That was the defect.
+
+### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN
+
+*(found 2026-09-26 by the owner: `Raskin - 1956 - New Jobs Opening to Negro in North.pdf`, one ProQuest
+*New York Times* page of 1,067 x 1,547 pt. Source and the `24a8f6a` output are in `$STATE/owner-supplied/`.
+The file was not in the stress run: the Desktop folder hung on TCC, and `owner-supplied/` did not hold it.
+The owner: "maybe fixing this just isn't feasible but we should give it a shot".)*
+
+- Source: 1-bit CCITT strips at 300 ppi, with Acrobat's text layer (80 words). Output: the layered route,
+  stencil 1,848 x 2,679 (125 ppi), foreground 31 ppi, so C38 applies to it as well. [measured]
+- PDFKit lines on the output (`Tools/pdfkit-lines`, 991 lines): runs about 300 pt wide join two columns
+  about 150 pt wide ("in tedy their humance to take branches of popular music. Bul"), some runs are 1.6 pt
+  tall, the order jumps between columns, and many words are misread ("cuse for or aname consume"). [measured]
+- Why the rebuild is 125 ppi is not known. A cap on the rebuilt bitmap's pixel count is the likely cause.
+  [inferred]
+
+### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — OPEN
+
+*(found 2026-09-26 by the owner, in a build from `24a8f6a`, after C34. The owner's Desktop copy of Hughes
+is not the one C34 and C35 measured: 490,599 B against 542,468 B, different MD5. Both are in
+`$STATE/owner-supplied/`; the Desktop one is named `(Desktop copy 2026-09-26)`.)*
+
+PDFKit lines on p5 of the output: the rows at y 604, 592, 448 and 222 are single runs 382-385 pt wide that
+join a line of the left column to a line of the right ("as by the social atmosphere created by man- these
+Negro men revealed that they were"). The other rows split correctly. A hyphen join crosses the column
+("inbonus"). [measured] The page has a diagram across both columns in its lower half, so C34's slab cut and
+its rule of three lines on each side may leave the top and the band around the figure without a gutter.
+[inferred]
 
 ## Robustness and correctness of reporting
 

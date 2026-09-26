@@ -92,6 +92,24 @@ STEP 3 — DO IT.
   * Before committing, have one subagent adversarially review your finished diff. It has caught real
     defects in this project many times. Verify each finding before acting on it.
 
+STEP 3.5 — PROVE IT IS FIXED BEFORE YOU SAY SO.
+  An item is done only when the defect is gone from what the person using the app sees. C31 was closed on
+  a render that looked nothing like the owner's, and the owner found the file worse the next day.
+  * Before you change code, reproduce the defect the way it was reported: the owner's file, or the item's
+    named files, through the production pipeline, looked at the way a reader meets it: rendered, selected
+    and searched through PDFKit, which is what Preview uses. Poppler is not evidence of what a reader sees.
+    If you cannot reproduce the report, you do not yet understand it; say so in the entry rather than
+    fixing something nearby.
+  * After the change, run the same check on the new output. The defect must be gone.
+  * Then give one subagent, not the reviewer of your diff, only the item's DONE WHEN, the owner's report
+    and the paths of the before and after outputs. It checks each criterion itself and returns pass or
+    fail for each, with what it looked at. Tell it not to run the suite or ./build.sh.
+  * Tick the box and write FIXED only if every criterion passes. Otherwise commit what you have as partial
+    work, leave the box open, and write in the entry which criteria failed and why.
+  * $VISIONOCR_ATTEMPTS is how many attempts this item had before you, and $VISIONOCR_SESSION_EFFORT is
+    your effort level. If the count is 1 or more, read those attempts' SESSION LOG entries and the entry's
+    record of what failed before you start, and do not repeat an approach that failed.
+
 STEP 4 — COMMIT AND PUSH.
   The pre-commit hook runs the full suite when a staged path matches
   `Sources/ Helper/ Tests/ Tools/ build.sh run_tests.sh`, and lets anything else through in seconds. Never

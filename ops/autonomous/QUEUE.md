@@ -35,6 +35,15 @@ say so in the commit.
    box only in the commit that finishes the work. To record a finished part of a big item, add a separate
    ticked box with its own tag after the parent's cite line, citing `context:` and not `origin:`.
 
+6. **Done means verified as the reader sees it.** A box is ticked, and an entry closed, only after the
+   item's DONE WHEN is checked on the published output through PDFKit, which is what Preview uses, by the
+   session and then by a separate verifying subagent (resume prompt STEP 3.5).
+7. **Attempts and effort.** The daemon counts the sessions it runs on an item that end with the item
+   still open, and adds the item's `(attempts: N)` marker, which records failures found later, by the
+   owner or a check. From the third attempt the session runs at `max` effort instead of the default
+   `medium`. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
+   fixed, reopen it or queue its successor with `(attempts: N)` carried over.
+
 ## The queue
 
 - [x] **c30-tiled-recall** — make Vision read the blocks it currently skips, by recognising a page again
@@ -254,6 +263,117 @@ say so in the commit.
       * a check goes red without the change.
       BOUND: one code commit.
       (origin: BUGS.md C37)
+- [ ] **c38-preview-text** — make the text on layered pages as legible in Preview as it is in the source.
+      Today it is sharp in poppler and a blur in PDFKit, which is what the owner reads with (`BUGS.md` C38).
+      C31 was closed on a poppler render, and C32 then moved three more pages of `1954 - Why.pdf` onto the
+      route, so the owner's file got worse. (attempts: 1) — C31's fix was the first attempt.
+      THE INSTRUMENT IS PDFKIT. Render the published page with `PDFPage.draw` into a bitmap, at 1x and 2x,
+      and look at it beside the source rendered the same way. `pdftoppm` is not evidence for this item.
+      A renderer is in `$STATE/owner-supplied/renders-2026-09-26/r.swift`.
+      WHAT A FIX HAS TO DO. Confirm the mechanism in the code and in PDFKit first. The obvious routes: paint
+      the text through the stencil at the stencil's own resolution (an `/ImageMask`, or the stencil as a
+      clip over the foreground) instead of as an `/SMask` on a small image; raise the foreground to the
+      stencil's resolution; or send text pages back to the 1-bit route. The choice is yours, with the
+      rejected ones recorded in one line each.
+      DONE WHEN, on the published PDF rendered through PDFKit at 1:1 and 2x and looked at:
+        * the body text on every layered page of `1954 - Why.pdf` is as legible as the source, and the red
+          headings are still red;
+        * the same holds on a sample of other layered pages that you name, Schwaller photographs, the
+          Surani map and Raskin included;
+        * the same pages are no worse in poppler;
+        * the corpus byte cost is measured and stated;
+        * a new check that renders through PDFKit goes red without the change.
+      Then C38 closes `FIXED`, with a `CHANGELOG.md` line under `## Unreleased`.
+      BOUND: one code commit, plus free docs commits for measurements.
+      (origin: BUGS.md C38)
+- [ ] **c39-newspaper-page** — make a large newspaper page readable and selectable, or show that it cannot
+      be done at a reasonable cost. On `Raskin - 1956` (one NYT page, 1,067 x 1,547 pt, 300 ppi source) the
+      rebuild is 125 ppi and the text layer is misread, crosses columns and has runs 1.6 pt tall
+      (`BUGS.md` C39). The owner asks for an attempt and accepts that it may fail.
+      Find out first why the rebuild is 125 ppi, and what Vision reads at the source's own resolution, as a
+      whole page and in tiles. Then fix what the evidence supports.
+      DONE WHEN, on the published PDF, through PDFKit:
+        * three paragraphs you name, checked by hand against the source, are selectable and read correctly
+          apart from a stated number of misread words;
+        * selecting down one column never takes text from the next, and no run crosses a column;
+        * time for the page, and bytes, are stated before and after;
+        * a new check goes red without the change.
+      If the page cannot be made usable at a reasonable cost, ship the best improvement the evidence
+      supports and state what is left, or close C39 `WONTFIX` with the measurement.
+      BOUND: one code commit, plus free docs commits.
+      (origin: BUGS.md C39)
+- [ ] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
+      (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter
+      detection misses this page before changing it.
+      DONE WHEN, through PDFKit on the published PDF: no run on p5 crosses the gutter, a drag down either
+      column stays in it, and the 206 pages C34 measured as unchanged are still unchanged
+      (`Tools/pdfkit-lines --diff`); invariant 3 holds; a new check goes red without the change.
+      BOUND: one code commit.
+      (origin: BUGS.md C40)
+- [ ] **c37-owner-files** — measure the owner's two grown files after C37 and shrink them if C37 did not.
+      Delton (954,409 → 2,487,160 B) and the Desktop copy of Hughes (490,599 → 947,326 B) were built from
+      `24a8f6a`, before C37 landed. Both are Acrobat Paper Capture scans with 600 dpi 1-bit JBIG2 pages
+      (`BUGS.md` C35). Re-publish both Hughes copies and Delton, and state bytes per page against the source.
+      If a page does not keep its stream, find which of C37's conditions refused it, and fix it if the
+      refusal is not needed.
+      DONE WHEN: each file is no larger than its source plus its text layer, or the entry states what the
+      extra bytes buy; a new check goes red without a fix, if one is made.
+      BOUND: one docs commit, and one code commit if a fix follows.
+      (context: BUGS.md C35 and C37 — both closed; the owner reported the size 2026-09-26)
+- [ ] **ux-harness** — build the instrument for a usability stress test measured the way a reader meets
+      the file: opened in Preview. PDFKit and CoreGraphics are the only renderers and text readers that
+      count. `pdftoppm`, `pdftotext` and poppler word boxes are not evidence, because C31 was closed on a
+      poppler render that looked nothing like Preview (`BUGS.md` C38).
+      WHAT IT MEASURES, per page, comparing the published PDF with its source:
+        * legibility: render both through PDFKit at 1x and 2x. Run Vision on the two renders and compare
+          the words it reads, as a proxy for whether a person can read the output as well as the source.
+          Also compare how dark and solid the strokes are. Save the renders, so a page can be looked at.
+        * colour: whether colour visible in the source's render is visible in the output's.
+        * find: take a sample of words Vision reads from a high-resolution render of the source, search for
+          them with `PDFDocument.findString`, and check that each hit's bounds lie over that word's ink.
+        * selection: for each column seen in the source render, drag from its top to its bottom with
+          `PDFPage.selection(from:to:)`. Record whether the selection stays inside the column, covers
+          every line in it, and whether its boxes lie over the ink.
+        * copy: the selection's `string` against the words read from the source: word error rate, words
+          split by stray spaces, hyphen joins that are wrong or missed, and line breaks in mid-sentence.
+        * orientation and size: the page's displayed rotation, media and crop boxes against the source's.
+        * time: PDFKit render time per page at 1x.
+      And per document: the time to open it, and whether it opens without complaint (`PDFDocument` loads,
+      `qpdf --check` is clean); the outline, page labels, links, annotations and document title against
+      the source's; the page count; bytes against the source's.
+      IT MUST BE SHOWN TO CATCH WHAT THE OWNER CAUGHT. Before it is used, it goes red on each of these,
+      all in `$STATE/owner-supplied/`: Why at `24a8f6a` pp5-6 (legibility), Why at 1.14.0 p5 (colour of the
+      red headings), Raskin at `24a8f6a` (selection, columns, misread words), and Hughes (Desktop copy)
+      at `24a8f6a` p5 (a selection that leaves its column). It stays green on a named sample of pages
+      that look right in Preview. Record each of those results.
+      BOUND: one commit for the tool and its self-test.
+      (context: owner request 2026-09-26, after the defects the first stress test missed)
+- [ ] **ux-run** — run `ux-harness` over every document in `testdocs/` and every file the owner has
+      supplied, at default settings, through the production pipeline. The owner's Desktop folder hung on
+      TCC last time, so use `$STATE/owner-supplied/`, and list each owner file with the result it got.
+      A file that is skipped or fails is a row in the output, not an omission.
+      OUTPUT: a TSV committed at the root, one row per page, plus the per-document table.
+      BOUND: one session, with its output committed. (blocked-on: ux-harness)
+      (context: owner request 2026-09-26)
+- [ ] **ux-read** — read the `ux-run` output and turn what it finds into queued work. Look at the worst
+      pages on each measure, and also at a random sample of pages drawn from the whole run, because a
+      defect that no number catches is found only by looking. Look at them the way a reader would: the
+      PDFKit render at 1x beside the source's, with a drag selection and a Find shown on it.
+      Do not explain away a bad reading as the instrument's fault without showing it. The first stress
+      test recorded C38 as a quirk of CoreGraphics.
+      OUTPUT: for each confirmed defect class, a short `BUGS.md` entry and a queue item placed above
+      `c28-first-principles`, ranked by how much of a reader's text or content it costs them.
+      A finding that is already queued gets one line in its existing entry.
+      BOUND: one session. (blocked-on: ux-run)
+      (context: owner request 2026-09-26)
+- [ ] **ux-regression-set** — make a fixed set of pages that every product item's check must pass, so a
+      fix cannot make another page worse without anyone seeing it, as C32 did to C31's pages. Pick about
+      30 pages from the `ux-run` output: every page the owner has reported, plus one page for each route
+      and each defect class. `ux-harness` scores the set in minutes, and records a baseline. Add one line to
+      this file's rules: an item that changes `Sources/` is done only when that set is no worse on any
+      measure, or the regression is stated and accepted in the item's `BUGS.md` entry.
+      BOUND: one commit. (blocked-on: ux-run)
+      (context: owner request 2026-09-26)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
