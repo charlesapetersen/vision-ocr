@@ -18044,7 +18044,7 @@ or one half under 0.4 of its width's share. The review set those bars; the first
 a tenth of its lines finds no gutter. A table whose cells hold wide lines of text reads column by column.
 `in in-` at a left column's foot still joins the next page's first line (it did before).
 
-### C35 · Some already-OCR'd files come out several times larger than they went in — OPEN
+### C35 · Some already-OCR'd files come out several times larger than they went in — FIXED
 
 *(found 2026-09-25 in the owner's test folder, `~/Desktop/Zotero PDF Transfer folder/`, 1.14.0 at
 default settings. The owner asked for it to be investigated.)*
@@ -18059,6 +18059,39 @@ Acrobat's ClearScan: the scan replaced by synthesised vector fonts, drawn visibl
 Not known: which route each page took, where the bytes go in the output, and whether the growth buys
 anything (a better text layer) that the owner would want to pay for. Other files in the same folder
 grew little or shrank.
+
+**Cause, measured 2026-09-26 by running the pipeline (`score-gate`) on the three sources.** All three
+have an outline (Delton 68 entries, Dobbin 39, Hughes 39) and one page that passes through: the JSTOR
+cover on Delton and Hughes, and every page but the cover on Dobbin, which is a born-digital ebook and not
+ClearScan. C29 (B) refused the splice to any document with both, because `qpdf --empty --pages` drops
+`/Outlines`. They took the Flate route, which bought nothing:
+- Delton's and Hughes' 600 dpi 1-bit pages were published as Flate, at 230-410 KB a page.
+- Dobbin's 320 born-digital pages were redrawn through CoreGraphics, which embeds each page's fonts
+  again (1,443 font objects).
+
+Per-page route and bytes: `C35-SIZES-2026-09-26.tsv`.
+
+**Fix.** `JBIG2.setOutline` writes the outline onto the spliced file through qpdf's JSON update, the
+same way `setCropBoxes` sets the crop box. It reads the catalogue back, adds the new objects, and checks
+that every entry's title and page read back, before it replaces the file. `overlay` keeps the outline.
+The refusal now applies only to a qpdf without JSON update. A failed write publishes without the outline and says so
+on the result line. Old → new, with character counts equal or
+higher and outlines identical (titles, nesting, pages):
+
+| document | source | 1.14.0 | now |
+|---|---|---|---|
+| Dobbin | 2,568,873 | 17,591,723 | 2,607,036 |
+| Delton | 954,409 | 8,271,678 | 2,487,160 |
+| Hughes | 542,468 | 3,016,246 | 945,890 |
+
+**Left, and it is the price of something wanted:** Delton and Hughes are still 2.6x and 1.7x their
+sources. Acrobat compressed their pages with symbol-mode JBIG2 at about 6 KB a page, and the app writes
+lossless generic-region JBIG2 at about 80 KB. R37 already refuses symbol mode, because it can swap
+digits. Rejected option: reusing the source's own JBIG2 stream on a page whose rebuild is the same
+bitmap. That needs a new route through `flatten` and the recogniser, and it would be worth doing only if
+owners report pre-compressed scans as a pattern.
+Noted by the review and not fixed: a bookmark aimed at a *rotated* or off-origin passthrough page keeps
+the right page, but its /XYZ point is in the rebuilt page's space, so it may land elsewhere on that page.
 
 ## Robustness and correctness of reporting
 

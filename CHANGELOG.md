@@ -14,6 +14,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Scans that already carry an outline and a born-digital cover page, such as JSTOR downloads, are no
+  longer published several times larger than they need to be, and the outline is kept. One test book
+  went from 17.6 MB to 2.6 MB and an article from 3.0 MB to 0.9 MB (C35).
+
 - On pages set in two or more columns, a drag selection now runs down one column before moving to the
   next, instead of jumping between them. A line that recognition had read straight across both columns
   is split into its two real lines, and words broken at the end of a column now join up with the right

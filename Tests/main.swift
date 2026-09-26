@@ -13295,8 +13295,65 @@ do {
             check("the skip census figure for C29 (B)'s route pair is still right",
                   checks - checksBeforeC29B + 1 == 13,
                   "\(checks - checksBeforeC29B + 1) checks, census says 13")
+
+            // C35. The same mixed document with an outline — every JSTOR download
+            // has both — was refused the splice and took the Flate route, at 3.2x
+            // the bytes on Hughes and 6.7x on Dobbin. Now `setOutline` writes the
+            // outline onto the spliced file. Nested, with a label that points
+            // nowhere and a non-ASCII title, because those are what real outlines
+            // hold and what a hand-written JSON patch could get wrong.
+            let outlinedSrc = e2eDir.appendingPathComponent("outlined.pdf")
+            var outlinedBuilt = false
+            if let source = PDFDocument(url: mixedSrc), source.pageCount == 3 {
+                let root = PDFOutline()
+                func entry(_ title: String, _ page: Int?) -> PDFOutline {
+                    let item = PDFOutline()
+                    item.label = title
+                    if let page, let p = source.page(at: page) {
+                        item.destination = PDFDestination(page: p, at: CGPoint(x: 0, y: 700))
+                    }
+                    return item
+                }
+                let contents = entry("Contents", nil)
+                contents.insertChild(entry("Cover", 0), at: 0)
+                contents.insertChild(entry("Scans \u{2014} \u{00E9}t\u{00E9}", 2), at: 1)
+                root.insertChild(contents, at: 0)
+                root.insertChild(entry("Last page", 2), at: 1)
+                source.outlineRoot = root
+                outlinedBuilt = source.write(to: outlinedSrc)
+            }
+            func outlineShape(_ url: URL) -> [String] {
+                func walk(_ items: [SearchableWriter.OutlineItem]) -> [String] {
+                    items.flatMap { ["\($0.title)@\($0.pageIndex.map(String.init) ?? "-")"]
+                        + walk($0.children) }
+                }
+                return walk(SearchableWriter.readOutline(from: url))
+            }
+            let wantedOutline = ["Contents@-", "Cover@0", "Scans \u{2014} \u{00E9}t\u{00E9}@2",
+                                 "Last page@2"]
+            check("C35: the outlined fixture was built with its outline and a "
+                  + "born-digital cover, or the rows below prove nothing",
+                  outlinedBuilt && outlineShape(outlinedSrc) == wantedOutline,
+                  "built=\(outlinedBuilt) outline=\(outlineShape(outlinedSrc))")
+            let outlinedRun = publish(outlinedSrc, label: "outlined", jbig2: true)
+            check("C35: a document with an outline and a born-digital page takes "
+                  + "the JBIG2 route, with every page and the scans' two streams",
+                  outlinedRun.ok && outlinedRun.tookJBIG2 && outlinedRun.pages == 3
+                      && jbig2Streams("outlined") == 2,
+                  "ok=\(outlinedRun.ok) tookJBIG2=\(outlinedRun.tookJBIG2) "
+                      + "pages=\(outlinedRun.pages) streams=\(jbig2Streams("outlined"))")
+            let publishedOutline = outlineShape(e2eDir.appendingPathComponent("outlined.ocr.pdf"))
+            check("C35: …and publishes the outline whole: titles, nesting and "
+                  + "each entry's page, the cover's included",
+                  publishedOutline == wantedOutline,
+                  "published=\(publishedOutline)")
+            check("C35: …with the cover's exact text kept",
+                  outlinedRun.page1 == mixedCoverText,
+                  "outlined=\(outlinedRun.page1.count) source=\(mixedCoverText.count)")
         } else {
             skipBlock("C29 (B)'s end-to-end route pair", checks: 13,
+                      because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
+            skipBlock("C35's outlined mixed document", checks: 4,
                       because: "jbig2enc/qpdf not installed (\(JBIG2.installHint))")
         }
         resetPrefs()

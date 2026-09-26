@@ -2156,6 +2156,8 @@ final class OCRModel: ObservableObject {
         var marksNote: String?
         // A13.2. Set when every page came back with no observations at all.
         var emptyDocumentNote: String?
+        // C35. Set when the outline could not be written after the splice.
+        var outlineNote: String?
 
         // Read the expected page count now, while everything still exists. The
         // scratch intermediates get deleted as they're spent, so asking later
@@ -2264,17 +2266,14 @@ final class OCRModel: ObservableObject {
                 .filter { encoded[$0].stream.isPassthrough }
                 .map { $0 + 1 }
 
-            // `outline.isEmpty || carriedThrough.isEmpty` is C29 (B)'s one
-            // refusal, and it is the honest half of the fix rather than an
-            // oversight. `JBIG2.splice` runs `qpdf --empty --pages`, which drops
+            // `outline.isEmpty || carriedThrough.isEmpty` was C29 (B)'s one
+            // refusal. `JBIG2.splice` runs `qpdf --empty --pages`, which drops
             // the `/Outlines` tree, so an outline written into the
-            // assembled file would be lost — and the alternative, renumbering
-            // every destination across a page that is not in that file, has
-            // nowhere to send an entry that points AT the passthrough page. A
-            // document with both keeps exactly today's behaviour: the Flate
-            // route, correct and larger. Measured on the population that matters
-            // (`C29-CORPUS-2026-08-25.tsv`, 42 documents), so the price is in
-            // `BUGS.md` rather than guessed at here.
+            // assembled file would be lost — and the assembled file has no page
+            // for an entry that points AT the passthrough page. Since C35 the
+            // outline is written onto the spliced file instead, where every page
+            // exists; only a qpdf too old for a JSON update still sends such a
+            // document down the Flate route, correct and larger.
             //
             // `encoded.count > carriedThrough.count` because `assemble` refuses
             // an empty page list, and an all-passthrough document would hand it
@@ -2309,9 +2308,15 @@ final class OCRModel: ObservableObject {
             // transplant is the only writer — is better and is not this commit:
             // it puts another qpdf JSON pass on the publish path, which is where
             // C23 bit twice.
+            //
+            // C35 lifted the outline refusal wherever qpdf takes a JSON update, the
+            // same capability `canCarryCrop` asks about: `JBIG2.setOutline` writes
+            // the outline onto the spliced file. Refused, every JSTOR download
+            // (born-digital cover, article outline) took the Flate route at 6-9x
+            // the bytes.
             if wantJBIG2, encoded.count == expected,
                encoded.count == bitmaps.count,
-               outline.isEmpty || carriedThrough.isEmpty,
+               outline.isEmpty || carriedThrough.isEmpty || canCarryCrop,
                !Annotations.anyCopiableMark(in: file, password: password,
                                             onPages: carriedThrough),
                encoded.count > carriedThrough.count, let qpdf = JBIG2.merger {
@@ -2542,8 +2547,12 @@ final class OCRModel: ObservableObject {
                 // user's own file. `splice` puts them back below, so this file is
                 // short by exactly `carriedThrough.count` pages and is not what
                 // gets published.
+                // C35. Not with a passthrough page: this file is short, so the
+                // outline's page numbers would land one page out, and the splice
+                // would drop it anyway. `setOutline` writes it after the splice.
                 try JBIG2.assemble(encoded.filter { !$0.stream.isPassthrough },
-                                   outline: outline, to: imagesOnly)
+                                   outline: carriedThrough.isEmpty ? outline : [],
+                                   to: imagesOnly)
                 for page in encoded { for u in page.stream.urls { try? FileManager.default.removeItem(at: u) } }
                 // C29 (B). The born-digital pages back in their own places,
                 // straight out of the user's file: qpdf copies a page object as
@@ -2571,6 +2580,20 @@ final class OCRModel: ObservableObject {
                             + "\(splicedPages) of \(expected) pages; nothing was "
                             + "written.")
                         return
+                    }
+                    // C35. Onto the spliced file, before the merge: `overlay` keeps
+                    // its base file's catalogue. Best effort, like the Flate route's
+                    // `copyOutline`: an outline is worth having, never worth the
+                    // OCR, and `setOutline` leaves the file untouched when it fails.
+                    // Said, though: the Flate route this replaces kept the outline.
+                    do {
+                        try control.adopting { register in
+                            try JBIG2.setOutline(outline, in: spliced, using: qpdf,
+                                                 register: register)
+                        }
+                    } catch {
+                        outlineNote = "the original's outline could not be carried "
+                            + "across, so this copy has none"
                     }
                     imagesForLayer = spliced
                 }
@@ -2756,7 +2779,7 @@ final class OCRModel: ObservableObject {
         // rather than nil unless the copy grew, so joining on it put a leading " — " in
         // front of the message every ordinary run showed the user.
         report(.succeeded, [sizeNote(from: inputFile, to: output),
-                            emptyDocumentNote ?? "", marksNote ?? ""]
+                            emptyDocumentNote ?? "", outlineNote ?? "", marksNote ?? ""]
                              .filter { !$0.isEmpty }.joined(separator: " — "))
     }
 

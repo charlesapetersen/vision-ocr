@@ -117,6 +117,7 @@ enum JBIG2 {
         /// to keep those pages out and to splice them in afterwards.
         case cannotAssemblePassthrough(page: Int)
         case spliceFailed(String)
+        case outlineFailed(String)
 
         var errorDescription: String? {
             switch self {
@@ -136,6 +137,8 @@ enum JBIG2 {
                     + "assembled from an image stream; nothing was written."
             case .spliceFailed(let m):
                 return "Putting the original pages back in failed: \(m)"
+            case .outlineFailed(let m):
+                return "Carrying the outline onto the compressed copy failed: \(m)"
             }
         }
     }
@@ -1018,6 +1021,175 @@ enum JBIG2 {
               fingerprint(after) == fingerprint(before) else {
             throw Failure.cropBoxFailed(
                 "the page contents changed while the displayed area was being set")
+        }
+
+        try FileManager.default.removeItem(at: file)
+        try FileManager.default.moveItem(at: patched, to: file)
+    }
+
+    // MARK: - The outline, after the splice — C35
+
+    /// Writes `outline` into a finished file's catalogue, in place.
+    ///
+    /// C35. `splice` runs `qpdf --empty --pages`, which drops `/Outlines`, and a
+    /// document with an outline and one born-digital page was kept off this route
+    /// for that reason. Every JSTOR download is one: its cover is born digital and
+    /// its outline is the article's. The Flate route it took drew each page again
+    /// through CoreGraphics — 1-bit pages as Flate at ~50x their JBIG2 size, and
+    /// born-digital pages with their fonts embedded once per page — so Hughes grew
+    /// 0.5 → 3.0 MB and Dobbin 2.6 → 17.6 MB.
+    ///
+    /// So the outline goes on after the splice, through qpdf's own JSON, the same
+    /// way `setCropBoxes` puts the crop box on, and `overlay` then keeps it
+    /// because it keeps the base file's catalogue. The catalogue is read back and
+    /// handed back with one key added (`setCropBoxes` says why nothing here may
+    /// author a whole object), and the result is verified before it replaces
+    /// anything: every entry's title and page must read back as written, and every
+    /// page's content objects must be unchanged.
+    static func setOutline(_ outline: [SearchableWriter.OutlineItem], in file: URL,
+                           using qpdf: String,
+                           register: (Process) -> Void = { _ in }) throws {
+        guard !outline.isEmpty else { return }
+
+        func json(_ url: URL, _ keys: [String]) throws -> [String: Any] {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: qpdf)
+            process.arguments = [url.path, "--json=2", "--json-stream-data=none"]
+                + keys.map { "--json-key=\($0)" }
+            let out = Pipe(), err = Pipe()
+            process.standardOutput = out
+            process.standardError = err
+            try process.run()
+            register(process)
+            let data = out.fileHandleForReading.readDataToEndOfFile()
+            _ = err.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 || process.terminationStatus == 3,
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else { throw Failure.outlineFailed("qpdf could not describe the file") }
+            return parsed
+        }
+        /// Not object numbers: qpdf renumbers on write, and the outline, reached
+        /// from the catalogue before `/Pages`, now numbers ahead of every page.
+        func fingerprint(_ described: [String: Any]) -> [String] {
+            ((described["pages"] as? [[String: Any]]) ?? []).map { page in
+                let contents = (page["contents"] as? [Any] ?? []).count
+                let images = (page["images"] as? [[String: Any]] ?? []).map { image in
+                    "\(image["width"] ?? "?")x\(image["height"] ?? "?")"
+                        + "\(image["filter"] ?? "")"
+                }.joined(separator: ",")
+                return "\(page["pageposfrom1"] as? Int ?? -1):\(contents):\(images)"
+            }
+        }
+
+        let before = try json(file, ["pages"])
+        guard let pages = before["pages"] as? [[String: Any]], !pages.isEmpty else {
+            throw Failure.outlineFailed("qpdf listed no pages")
+        }
+        var pageObjects: [String] = []
+        for (i, page) in pages.enumerated() {
+            guard page["pageposfrom1"] as? Int == i + 1,
+                  let object = page["object"] as? String else {
+                throw Failure.outlineFailed("qpdf's page list is not in order")
+            }
+            pageObjects.append(object)
+        }
+        let described = try json(file, ["qpdf"])
+        guard let qpdfKey = described["qpdf"] as? [Any], qpdfKey.count == 2,
+              let header = qpdfKey[0] as? [String: Any],
+              let all = qpdfKey[1] as? [String: Any],
+              let trailer = (all["trailer"] as? [String: Any])?["value"] as? [String: Any],
+              let rootRef = trailer["/Root"] as? String,
+              var catalog = (all["obj:\(rootRef)"] as? [String: Any])?["value"] as? [String: Any]
+        else { throw Failure.outlineFailed("qpdf's JSON is not the shape this expects") }
+
+        // New objects numbered past every one the file has.
+        var highest = header["maxobjectid"] as? Int ?? 0
+        for key in all.keys where key.hasPrefix("obj:") {
+            let number = key.dropFirst(4).split(separator: " ").first.flatMap { Int($0) } ?? 0
+            highest = max(highest, number)
+        }
+        let root = highest + 1
+        let flat = flatten(outline, from: root + 1, parent: root, pageCount: pageObjects.count)
+        guard let first = flat.first(where: { $0.parent == root }),
+              let last = flat.last(where: { $0.parent == root }) else { return }
+
+        func ref(_ n: Int) -> String { "\(n) 0 R" }
+        var patch: [String: Any] = [:]
+        catalog["/Outlines"] = ref(root)
+        patch["obj:\(rootRef)"] = ["value": catalog]
+        patch["obj:\(ref(root))"] = ["value": [
+            "/Type": "/Outlines", "/First": ref(first.number), "/Last": ref(last.number),
+            "/Count": flat.count] as [String: Any]]
+        for node in flat {
+            // "u:" is qpdf's marker for a text string it encodes itself.
+            var value: [String: Any] = ["/Title": "u:" + node.title, "/Parent": ref(node.parent)]
+            if let prev = node.prev { value["/Prev"] = ref(prev) }
+            if let next = node.next { value["/Next"] = ref(next) }
+            if let a = node.firstChild, let b = node.lastChild {
+                value["/First"] = ref(a)
+                value["/Last"] = ref(b)
+                value["/Count"] = node.descendants
+            }
+            if let page = node.pageIndex {
+                // null for what the source left unspecified, as `assemble` writes it.
+                func number(_ v: CGFloat?) -> Any {
+                    v.flatMap(coordinate).flatMap(Double.init) ?? NSNull()
+                }
+                value["/Dest"] = [pageObjects[page], "/XYZ", number(node.left),
+                                  number(node.top), NSNull()]
+            }
+            patch["obj:\(ref(node.number))"] = ["value": value]
+        }
+
+        let work = file.deletingLastPathComponent()
+        let patchURL = work.appendingPathComponent("outline-\(UUID().uuidString).json")
+        let patched = work.appendingPathComponent("outlined-\(UUID().uuidString).pdf")
+        defer {
+            try? FileManager.default.removeItem(at: patchURL)
+            try? FileManager.default.removeItem(at: patched)
+        }
+        let document: [String: Any] = ["qpdf": [
+            ["jsonversion": 2, "pdfversion": header["pdfversion"] ?? "1.4"], patch]]
+        guard let body = try? JSONSerialization.data(withJSONObject: document),
+              (try? body.write(to: patchURL)) != nil else {
+            throw Failure.outlineFailed("could not write the outline update")
+        }
+
+        let apply = Process()
+        apply.executableURL = URL(fileURLWithPath: qpdf)
+        apply.arguments = [file.path, "--update-from-json=\(patchURL.path)", patched.path]
+        let err = Pipe()
+        apply.standardError = err
+        apply.standardOutput = FileHandle.nullDevice
+        try apply.run()
+        register(apply)
+        let errorText = err.fileHandleForReading.readDataToEndOfFile()
+        apply.waitUntilExit()
+        guard apply.terminationStatus == 0 || apply.terminationStatus == 3,
+              FileManager.default.fileExists(atPath: patched.path) else {
+            let message = String(decoding: errorText, as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            throw Failure.outlineFailed(message.isEmpty
+                ? "qpdf exited with code \(apply.terminationStatus)" : message)
+        }
+
+        // Read back from the file about to replace this one: the entries in
+        // order, each with its title and page, and the pages untouched.
+        func entries(_ items: [[String: Any]]) -> [String] {
+            items.flatMap { item -> [String] in
+                let page = (item["destpageposfrom1"] as? Int).map(String.init) ?? "-"
+                return ["\(item["title"] as? String ?? "?")@\(page)"]
+                    + entries(item["kids"] as? [[String: Any]] ?? [])
+            }
+        }
+        let wanted = flat.map { "\($0.title)@\($0.pageIndex.map { String($0 + 1) } ?? "-")" }
+        let after = try json(patched, ["pages", "outlines"])
+        guard fingerprint(after) == fingerprint(before) else {
+            throw Failure.outlineFailed("the pages changed while the outline was written")
+        }
+        guard entries(after["outlines"] as? [[String: Any]] ?? []) == wanted else {
+            throw Failure.outlineFailed("the outline did not read back as written")
         }
 
         try FileManager.default.removeItem(at: file)

@@ -179,7 +179,7 @@ say so in the commit.
       corpus sample are unchanged; invariant 3 holds; a new check goes red without the change.
       BOUND: one code commit.
       (origin: BUGS.md C34)
-- [ ] **c35-file-size** — find out why some already-OCR'd files come out several times larger than they
+- [x] **c35-file-size** — find out why some already-OCR'd files come out several times larger than they
       went in: Dobbin 2.6 → 17.6 MB, Delton 0.95 → 8.3 MB, Hughes 0.5 → 3.0 MB, all made by Acrobat's
       Paper Capture (`BUGS.md` C35; the outputs are in `~/Desktop/Zotero PDF Transfer folder/` and the three
       sources in `$STATE/owner-supplied/`). Establish which route each
