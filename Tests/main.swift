@@ -188,7 +188,8 @@ func inkFractionMRC(of url: URL, page index: Int) -> Double {
 /// it. Four rectangles is the smallest thing that can.
 func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white,
                     figure: NSRect? = nil, extra: (String, CGFloat)? = nil,
-                    bars: [NSRect] = []) {
+                    bars: [NSRect] = [], lineColours: [NSColor] = [],
+                    colourBars: [(NSRect, NSColor)] = []) {
     let w = 1224, h = 1584
     guard let rep = NSBitmapImageRep(
         bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
@@ -205,8 +206,10 @@ func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white,
         .foregroundColor: NSColor.black,
     ]
     var y = CGFloat(h - 220)
-    for line in lines {
-        (line as NSString).draw(at: NSPoint(x: 130, y: y), withAttributes: attrs)
+    for (i, line) in lines.enumerated() {
+        var a = attrs
+        if i < lineColours.count { a[.foregroundColor] = lineColours[i] }
+        (line as NSString).draw(at: NSPoint(x: 130, y: y), withAttributes: a)
         y -= 78
     }
     if let extra {
@@ -219,6 +222,10 @@ func makeScannedPDF(at url: URL, lines: [String], paper: NSColor = .white,
     if !bars.isEmpty {
         NSColor.black.setFill()
         for bar in bars { bar.fill() }
+    }
+    for (bar, colour) in colourBars {
+        colour.setFill()
+        bar.fill()
     }
     NSGraphicsContext.current?.flushGraphics()
     NSGraphicsContext.restoreGraphicsState()
@@ -1375,6 +1382,105 @@ do {
           kinds(darkPage, mode: .blackAndWhite, into: "d3") == ["bilevel"])
     check("forcing greyscale overrides the text check",
           kinds(textPage, mode: .grayscale, into: "t3") == ["jpeg"])
+
+    // C32: red headings on a page `isPicture` sends to 1-bit. The route used to
+    // ask about colour only on picture pages, so the headings came out black.
+    let red = NSColor(deviceRed: 0.8, green: 0.1, blue: 0.2, alpha: 1)
+    let headingPage = tmp.appendingPathComponent("auto-red-headings.pdf")
+    makeScannedPDF(at: headingPage,
+                   lines: ["WHAT SHOULD I DO NOW?", "WHY GO LOOKING FOR IT?",
+                           "an ordinary page of text", "with a second line of it",
+                           "and a third for good measure", "HOW SHOULD I PREPARE?",
+                           "WILL THEY QUIT OVER IT?"],
+                   lineColours: [red, red, .black, .black, .black, red, red])
+    let headingOut = pngs.appendingPathComponent("h")
+    try? FileManager.default.createDirectory(at: headingOut, withIntermediateDirectories: true)
+    let headingPages = (try? Flattener.flatten(headingPage,
+                                               to: dir.appendingPathComponent("h.pdf"),
+                                               mode: .auto, pngDirectory: headingOut)) ?? []
+    let headingMeasures = PDFDocument(url: headingPage)?.page(at: 0)
+        .map { Flattener.colourMeasures(of: $0) }
+    check("a text page with red headings keeps its colour (C32)",
+          headingPages.count == 1 && headingPages[0].isColour,
+          "\(headingPages.map { "\($0.content) colour=\($0.isColour)" }), "
+            + "measures \(headingMeasures.map { "\($0)" } ?? "nil")")
+    check("…and Black & White still makes it 1-bit",
+          kinds(headingPage, mode: .blackAndWhite, into: "h2") == ["bilevel"])
+    // The same headings in brown, the hue of toned paper and ink (`paperHues`):
+    // 1-bit, as every such page was before C32.
+    let brown = NSColor(deviceRed: 0.6, green: 0.4, blue: 0.1, alpha: 1)
+    let brownPage = tmp.appendingPathComponent("auto-brown-headings.pdf")
+    makeScannedPDF(at: brownPage,
+                   lines: ["WHAT SHOULD I DO NOW?", "WHY GO LOOKING FOR IT?",
+                           "an ordinary page of text", "with a second line of it",
+                           "and a third for good measure", "HOW SHOULD I PREPARE?",
+                           "WILL THEY QUIT OVER IT?"],
+                   lineColours: [brown, brown, .black, .black, .black, brown, brown])
+    let brownSheet = PDFDocument(url: brownPage)?.page(at: 0)
+        .map { Flattener.colourMeasures(of: $0).sheetFraction } ?? 0
+    check("…but brown headings, the colour of toned paper, stay 1-bit",
+          kinds(brownPage, mode: .auto, into: "h3") == ["bilevel"]
+            && brownSheet > Flattener.colourSheetFractionThreshold,
+          String(format: "sheetFrac counting every hue %.4f", brownSheet))
+    check("…and Grayscale makes the red-heading page grey, not colour",
+          kinds(headingPage, mode: .grayscale, into: "h4") == ["jpeg"])
+    // Through the whole pipeline, where `spotColourPriceLimit` can still send
+    // the page back to 1-bit: red headings are cheap, so the colour survives.
+    func publishedRGB(_ src: URL, _ name: String) -> Int {
+        let out = dir.appendingPathComponent("c32-\(name).ocr.pdf")
+        var outcome: Runner.Result.Outcome?
+        OCRModel.makeSearchablePDF(file: src, output: out, rebuild: true, rebuildMode: .auto,
+                                   password: nil, control: RunControl(),
+                                   progress: { _, _ in }, report: { o, _ in outcome = o })
+        guard outcome == .succeeded, let data = try? Data(contentsOf: out) else { return -1 }
+        return String(decoding: data, as: UTF8.self)
+            .components(separatedBy: "/DeviceRGB").count - 1
+    }
+    let rgbHeadings = publishedRGB(headingPage, "red"), rgbBlack = publishedRGB(textPage, "black")
+    check("…and the published PDF carries the red headings in colour",
+          rgbBlack >= 0 && rgbHeadings > rgbBlack, "red \(rgbHeadings), black \(rgbBlack)")
+    // A banner shading red to blue costs far more in colour than as 1-bit, so the
+    // price limit sends the page back to 1-bit.
+    let bannerPage = tmp.appendingPathComponent("auto-banner.pdf")
+    let crimson = NSColor(deviceRed: 0.8, green: 0.1, blue: 0.2, alpha: 1)
+    makeScannedPDF(at: bannerPage, lines: ["an ordinary page of text",
+                                          "with a second line of it",
+                                          "and a third for good measure"],
+                   colourBars: (0..<60).map { i in
+                       (NSRect(x: 100 + i * 17, y: 1584 - 160, width: 17, height: 110),
+                        crimson.blended(withFraction: CGFloat(i) / 80, of: .blue) ?? crimson)
+                   })
+    let bannerOut = pngs.appendingPathComponent("b")
+    try? FileManager.default.createDirectory(at: bannerOut, withIntermediateDirectories: true)
+    let bannerPages = (try? Flattener.flatten(bannerPage,
+                                              to: dir.appendingPathComponent("b.pdf"),
+                                              mode: .auto, pngDirectory: bannerOut)) ?? []
+    let rgbBanner = publishedRGB(bannerPage, "banner")
+    check("…but a page whose colour is too dear goes back to 1-bit (spotColourPriceLimit)",
+          bannerPages.first?.bilevelFallback != nil && rgbBanner == rgbBlack,
+          "fallback \(bannerPages.first?.bilevelFallback != nil), banner \(rgbBanner), "
+            + "black \(rgbBlack)")
+    // flatten's own PDF is what publishes off the JBIG2 route, where nothing
+    // layers the colour: the page is 1-bit there.
+    let flatRaw = String(decoding: (try? Data(contentsOf: dir.appendingPathComponent("h.pdf")))
+                            ?? Data(), as: UTF8.self)
+    check("…and flatten's own PDF holds the red-heading page 1-bit",
+          flatRaw.contains("/BitsPerComponent 1") && !flatRaw.contains("/DeviceRGB"))
+    check("a spot-colour page past four times its 1-bit bytes goes back to 1-bit",
+          Flattener.spotColourPriceLimit == 4
+            && !Flattener.spotColourTooDear(colour: 4000, bilevel: 1000)
+            && Flattener.spotColourTooDear(colour: 4001, bilevel: 1000)
+            && !Flattener.spotColourTooDear(colour: 4001, bilevel: 0))
+    let colourBound = Double(Flattener.maximumColourPageMegapixels) * 1_000_000
+    check("spotColourLeavesBilevel needs Automatic, the sheet bar and the colour bound",
+          Flattener.spotColourLeavesBilevel(mode: .auto, sheetFraction: 0.02, pixels: 1000)
+            && !Flattener.spotColourLeavesBilevel(mode: .auto,
+                                                  sheetFraction: Flattener.colourSheetFractionThreshold,
+                                                  pixels: 1000)
+            && !Flattener.spotColourLeavesBilevel(mode: .auto, sheetFraction: 0.02,
+                                                  pixels: colourBound + 1)
+            && !Flattener.spotColourLeavesBilevel(mode: .blackAndWhite, sheetFraction: 0.02,
+                                                  pixels: 1000))
 
     // MARK: The allocation bounds, which are arithmetic over constants (A11.5)
     //
@@ -15129,6 +15235,35 @@ do {
         check("a mark touching the \(side) border is not on the sheet", f == 0,
               "\(f.map { "\($0)" } ?? "nil")")
     }
+    // C32: the hue beside the saturation, and `paperHues` out of the mask. The
+    // same 4x4 mark as `markBuf`, in orange (hue 40) and in red.
+    // Six coloured pixels, then white paper so the paper correction is identity.
+    var hues: [Double] = []
+    let hueBuf: [UInt8] = [255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255,
+                           204, 136, 0, 255, 128, 128, 128, 255, 255, 0, 128, 255]
+        + [UInt8](repeating: 255, count: 58 * 4)
+    Flattener.forEachColour(ofRGBA: hueBuf, width: 8, height: 8) { _, h in hues.append(h) }
+    check("forEachColour gives each pixel's hue in degrees (C32)",
+          hues.count == 64 && hues[0] == 0 && hues[1] == 120 && hues[2] == 240
+            && abs(hues[3] - 40) < 0.001 && hues[4] == 0 && abs(hues[5] - 329.88) < 0.01,
+          "\(hues)")
+    let orangeBuf: [UInt8] = (0..<1024).flatMap { i -> [UInt8] in
+        let x = i % 32, y = i / 32
+        return (10..<14).contains(x) && (20..<24).contains(y) ? [255, 170, 0, 255]
+                                                               : [255, 255, 255, 255]
+    }
+    let orangeAll = Flattener.sheetSaturatedFraction(ofRGBA: orangeBuf, width: 32, height: 32,
+                                                     above: 0.25)
+    let orangeCut = Flattener.sheetSaturatedFraction(ofRGBA: orangeBuf, width: 32, height: 32,
+                                                     above: 0.25,
+                                                     excludingHues: Flattener.paperHues)
+    let redCut = Flattener.sheetSaturatedFraction(ofRGBA: markBuf, width: 32, height: 32,
+                                                  above: 0.25,
+                                                  excludingHues: Flattener.paperHues)
+    check("…and excluding paperHues drops an orange mark but keeps a red one",
+          orangeAll == 0.015625 && orangeCut == 0 && redCut == 0.015625,
+          "\(String(describing: orangeAll)) \(String(describing: orangeCut)) "
+            + "\(String(describing: redCut))")
     // …and one pixel in from every side is still the sheet: pins `> 0` against
     // `> 1` and `< width - 1` against `< width - 2`. Two 4x4 marks, 32/1024.
     let insetBuf = sheetBuffer { x, y in

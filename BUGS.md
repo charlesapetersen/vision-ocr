@@ -17824,7 +17824,7 @@ build reproduces the owner's 1.14.0 file byte for byte, 470,958 B), rendered at 
 Limit: red ink within about 8 px of black is judged against it, so a red underline under black descenders
 darkens. Checks: `C31:` in `Tests/main.swift`; three of them are red on the old code.
 
-### C32 · Pages whose only colour is red headings are published black and white, so a pamphlet loses its heading colour on most of its pages — OPEN
+### C32 · Pages whose only colour is red headings are published black and white, so a pamphlet loses its heading colour on most of its pages — FIXED
 
 *(found 2026-09-25 by the owner, on `1954 - Why.pdf` in 1.14.0; files in `$STATE/owner-supplied/`.)*
 
@@ -17836,6 +17836,42 @@ above 0.35 is 0.015, 0.033 and 0.016 on those pages (page 3: 0.002). That is a d
 headings and the shares; not measured: the pages' own `sheetFrac`]
 
 Fixing this moves pages onto the layered route, where C31's washed-out text fill is, so C31 comes first.
+
+#### FIXED 2026-09-26
+
+**Cause, measured with `Tools/score-routing-census` and a probe over production functions:** pp5/8/9 route
+1-bit (`isPicture` false), and `flatten` asked both colour questions only of picture-route pages. Their
+`sheetFrac` is 0.019-0.026, above the 0.01 bar; the 1-bit route never measured it.
+
+**Fix.** In Automatic, a page bound for 1-bit measures `sheetFrac` too, and `spotColourLeavesBilevel`
+keeps it in colour above the bar. Three limits, each measured:
+- **`paperHues` (30-90°) is left out of that measure.** Without it 118 corpus 1-bit pages moved,
+  41 of them plain black type: `Levy and Temin` (37, ~67% of saturated pixels at 30-60°) and
+  `HarpersMagazine-1938-05` (4, 95-99% at 60-90°), both read by eye. With it 76 pages move in 12
+  documents. 14 were looked at, one or two per document, and all carry real colour: the Why
+  headings, a red banner, publisher logos, coloured links and figures.
+- **`spotColourPriceLimit` (4x).** After layering, a moved page goes back to 1-bit if its colour costs
+  more than 4x its own JBIG2. Per page, Why pp5/8 cost 1.18x, p9 3.43x, the transcript's banner
+  4.3-4.8x, and `AI 2027` 7.4-10.6x. With no limit the transcript grew 957 KB → 3.68 MB and
+  `AI 2027` 7.9 → 19.0 MB. That option was rejected.
+- **Off the JBIG2 route the page stays 1-bit.** `flatten`'s own PDF draws it 1-bit, because a single
+  colour JPEG cost 7.3-10.5x the 1-bit page on every moved page, Why's included. There is no
+  separation there without layering.
+
+**Result, by running the pipeline old → new:** `1954 - Why` 458,801 → 513,375 B (1.12x). Its
+pp5/8/9 headings are red and the body text is as legible as the source (read at 90 dpi); p9's
+drawing is red too. Transcript 956,618 → 951,109 B, `AI 2027` 7,913,432 → 7,909,897 B, and
+`_1973_Committee Against Racism_` 248,743 → 256,005 B (its p1 keeps its colour). The other nine are
+identical or within 0.02%, and Levy & Temin, the control, is byte-identical. The 13 documents total
+89,454,737 → 89,503,723 B (+0.05%). Suite 1465/1465.
+
+⚠️ The moved pages that stay in colour take on C28's exposure. `pageIsAllText` stores their tone layers
+at 1/8, so ink Vision did not box goes soft. On Why p5 that softened the small gutter marks, which
+1-bit had kept sharp. `shrunkTextPages` still reports such pages. ⚠️ `Tools/score-routing-census`'s
+`route` column and `score-mrc`'s gate do not know about `spotColourLeavesBilevel`, and
+`colourMeasures` returns the unfiltered sheet.
+⚠️ So wherever the JBIG2 route is refused (no jbig2enc or qpdf, or an outline or marks on a
+passthrough page), the headings are still black. The Flate route has no layering to make colour cheap.
 
 ### C33 · Blocks of text still cannot be selected after C30: some pages keep whole uncovered blocks, and on others the lines exist but PDFKit drops or garbles them — FIXED
 

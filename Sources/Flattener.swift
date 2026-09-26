@@ -138,7 +138,8 @@ enum Flattener {
     /// `shouldKeepColour` on their tone or their ink and are published grey
     /// today, and it adds no page to the picture route — `wantColour` is
     /// `!useBilevel && shouldKeepColour(…)`, and `useBilevel` is `isPicture`'s
-    /// answer, which this constant is not in.
+    /// answer or `spotColourLeavesBilevel`'s (C32, which reads only the sheet),
+    /// and this constant is in neither.
     ///
     /// ⛔ **DO NOT QUOTE C27 (b)'s +93.0 KB / 1.048x AS WHAT LOWERING THIS
     /// BUYS — no legal value of this constant selects that set.** Those 13 are
@@ -170,8 +171,8 @@ enum Flattener {
     ///
     /// It does not reach the three pages of C27's ten that are 1-bit today: a
     /// page off the picture route never asks this question, because `&&`
-    /// short-circuits on `!useBilevel`, and `colourSheetFractionThreshold` (the
-    /// second way in, 2026-09-25) does not reach them either. ⛔ The register said
+    /// short-circuits on `!useBilevel`. Since C32 `colourSheetFractionThreshold`
+    /// does, through `spotColourLeavesBilevel`. ⛔ The register said
     /// those three were *"(c)'s ground"*; measured off this call site, they are
     /// not, and that sentence is corrected in C27's `#### The byte price, MEASURED`.
     ///
@@ -195,6 +196,10 @@ enum Flattener {
     /// one page, and was rejected. An addition to the mean bar, never a
     /// replacement: `Atkinson_1939` p2 keeps its colour on the mean at a
     /// `sheetFrac` of 0.0066.
+    ///
+    /// Since C32 it also takes a page off the 1-bit route
+    /// (`spotColourLeavesBilevel`), which the population above did not include;
+    /// C32 has that population's count.
     static let colourSheetFractionThreshold = 0.01
 
     /// The per-pixel saturation a pixel must exceed to count toward
@@ -202,6 +207,32 @@ enum Flattener {
     /// with no spot colour puts ~0.12% of itself above it, black on cream reads
     /// 0.118 per pixel.
     static let colourSheetPixelFloor = 0.25
+
+    /// C32: yellow to orange, the hue of aged paper and of ink toned by it.
+    /// Pixels of these hues do not count toward the sheet fraction that takes a
+    /// page off the 1-bit route. Without it the fraction put 41 corpus pages of
+    /// plain black type in colour (`HarpersMagazine-1938-05` pp3-9 read 95-99%
+    /// of their saturated pixels at 60-90°, `Levy and Temin` ~67% at 30-60°),
+    /// against red headings at 330-30°. A yellow or orange spot ink on a 1-bit
+    /// page stays black and white, as it did before C32.
+    static let paperHues: Range<Double> = 30..<90
+
+    /// C32: a page `spotColourLeavesBilevel` kept in colour is published in
+    /// colour only while its image costs at most this many times its own 1-bit
+    /// encoding; past it, it goes back to 1-bit, its answer before C32. Measured
+    /// by running the pipeline: red headings on `1954 - Why` pp5/8 cost 1.18x
+    /// and p9 (headings and a red drawing) 3.43x, while a colour banner costs
+    /// 4.3-4.8x on every page of `2013 - Silicon Valley Program Transcript` and
+    /// 7.4-10.6x on `AI 2027`, which without the limit grew those documents
+    /// 3.84x and 2.40x. Rejected: no limit, for those two growths.
+    static let spotColourPriceLimit = 4.0
+
+    /// Whether a C32 page's colour image, `colour` bytes, is past
+    /// `spotColourPriceLimit` against its `bilevel`-byte 1-bit encoding. An empty
+    /// 1-bit encoding is not a price, and the colour stays.
+    static func spotColourTooDear(colour: Int, bilevel: Int) -> Bool {
+        bilevel > 0 && Double(colour) > spotColourPriceLimit * Double(bilevel)
+    }
 
     /// A pixel this bright is paper rather than ink, for the purpose of working
     /// out what colour the paper is.
@@ -1029,6 +1060,10 @@ enum Flattener {
         /// crop belongs on the **published** page and nowhere else, which is
         /// where `compose` and `JBIG2.assemble` put it. See `BUGS.md` C23.
         var sourceCropBox: CGRect?
+        /// C32: the 1-bit rendering of a page `spotColourLeavesBilevel` kept in
+        /// colour, so the compressed build can go back to it when the colour
+        /// costs more than `spotColourPriceLimit` times as much.
+        var bilevelFallback: URL? = nil
     }
 
     /// Rebuilds `source` into `destination` as image-only pages.
@@ -1241,13 +1276,20 @@ enum Flattener {
             // rebuilds grey, exactly as it used to.
             //
             // `sheetFrac` (C27) only where it can change the answer: a picture
-            // page the mean has not already kept. Labelling components on every
-            // thumbnail costs ~2 s on a pathological dot field at the 4,000 px edge.
-            let sheet = !useBilevel && sat <= colourSaturationThreshold
+            // page the mean has not already kept, or a page bound for 1-bit
+            // (C32), which counts no pixel of `paperHues`. Labelling components
+            // on every thumbnail costs ~2 s on a pathological dot field at the
+            // 4,000 px edge.
+            let sheet = mode == .auto && (useBilevel || sat <= colourSaturationThreshold)
                 ? thumb.flatMap { sheetSaturatedFraction(ofRGBA: $0.buffer, width: $0.width,
                                                          height: $0.height,
-                                                         above: colourSheetPixelFloor) } ?? 0
+                                                         above: colourSheetPixelFloor,
+                                                         excludingHues: useBilevel
+                                                             ? paperHues : nil) } ?? 0
                 : 0
+            let spotMoved = useBilevel
+                && spotColourLeavesBilevel(mode: mode, sheetFraction: sheet, pixels: wide * high)
+            if spotMoved { useBilevel = false }
             let wantColour = !useBilevel
                 && shouldKeepColour(mode: mode, saturation: sat,
                                     sheetFraction: sheet, pixels: wide * high)
@@ -1271,6 +1313,12 @@ enum Flattener {
                 jpegBytes = encoded.data
                 image = encoded.image
                 isColour = true
+            } else if spotMoved {
+                // A page C32 took off 1-bit for its colour goes back to 1-bit, its
+                // old answer, rather than to a grey JPEG several times the size.
+                useBilevel = true
+                image = bilevelImage(from: grey, width: width, height: height,
+                                     threshold: threshold)
             } else {
                 let encoded = jpeg(from: grey, width: width, height: height,
                                    quality: pictureJPEGQuality)
@@ -1278,6 +1326,14 @@ enum Flattener {
                 image = encoded?.image
             }
             guard let image else { throw Failure.pageFailed(page: index + 1, of: count) }
+            // C32. A page kept in colour only for its spot colour is 1-bit in this
+            // PDF, which is what publishes when the JBIG2 route is not taken: there
+            // is no layering there, and the colour JPEG alone cost 7.3-10.5x the
+            // 1-bit page on every such page measured. The JBIG2 route gets the
+            // colour with this as `bilevelFallback`, and prices it after layering.
+            let spotBilevel = spotMoved && isColour
+                ? bilevelImage(from: grey, width: width, height: height, threshold: threshold)
+                : nil
 
             // Per-page media box: page sizes vary across a scanned book, and an
             // A5 page stamped into a Letter box comes out visibly stretched.
@@ -1288,7 +1344,7 @@ enum Flattener {
             var pageBox = CGRect(origin: .zero, size: box.size)
             let boxData = withUnsafeBytes(of: &pageBox) { Data($0) } as CFData
             pdf.beginPDFPage([kCGPDFContextMediaBox as String: boxData] as CFDictionary)
-            pdf.draw(image, in: pageBox)
+            pdf.draw(spotBilevel ?? image, in: pageBox)
             pdf.endPDFPage()
 
             // C23. Carried, not declared — `RebuiltPage.sourceCropBox` says why
@@ -1320,15 +1376,24 @@ enum Flattener {
                 } else {
                     // Literally the bytes embedded in the PDF above, not a second
                     // encode of the same buffer, so the compressed build and the
-                    // fallback build cannot drift apart.
+                    // fallback build cannot drift apart. The one exception is a
+                    // C32 page, which the PDF above holds as `spotBilevel`.
                     let jpeg = pngDirectory.appendingPathComponent(stem + ".jpg")
                     guard let data = jpegBytes,
                           (try? data.write(to: jpeg)) != nil else {
                         throw Failure.pageFailed(page: index + 1, of: count)
                     }
+                    var fallback: URL?
+                    if let bilevel = spotBilevel {
+                        // Best effort: without it the page keeps its colour at
+                        // whatever it costs, which is still a correct page.
+                        let png = pngDirectory.appendingPathComponent(stem + "-1bit.png")
+                        if writePNG(bilevel, to: png) { fallback = png }
+                    }
                     let entry = RebuiltPage(content: .jpeg(jpeg), pixelWidth: width,
                                             pixelHeight: height, boxSize: box.size,
-                                            isColour: isColour, sourceCropBox: sourceCrop)
+                                            isColour: isColour, sourceCropBox: sourceCrop,
+                                            bilevelFallback: fallback)
                     rebuilt.append(entry)
                     try onPage?(entry)
                 }
@@ -1439,6 +1504,8 @@ enum Flattener {
     }
 
     /// Whether a page already routed away from 1-bit should keep its colour.
+    /// Since C32 `spotColourLeavesBilevel` also asks it of a page still bound
+    /// for 1-bit, through the sheet term alone.
     ///
     /// Extracted from `flatten` so the megapixel bound can be checked without
     /// allocating the page it describes — a check that has to render 100 MP to
@@ -1475,6 +1542,19 @@ enum Flattener {
         guard saturation > colourSaturationThreshold
                 || sheetFraction > colourSheetFractionThreshold else { return false }
         return pixels <= Double(maximumColourPageMegapixels) * 1_000_000
+    }
+
+    /// C32: a page `isPicture` sends to 1-bit is kept in colour instead when its
+    /// sheet carries spot colour — red headings on a text page, which 1-bit
+    /// turns black. The sheet term only, never the mean: on a text page the
+    /// mean is mostly the paper's cast. The caller measures the sheet with
+    /// `paperHues` excluded. `1954 - Why` pp5/8/9 read 0.018-0.026; C32 has the corpus
+    /// count of pages this moves.
+    static func spotColourLeavesBilevel(mode: Mode, sheetFraction: Double,
+                                        pixels: Double) -> Bool {
+        sheetFraction > colourSheetFractionThreshold
+            && shouldKeepColour(mode: mode, saturation: 0, sheetFraction: sheetFraction,
+                                pixels: pixels)
     }
 
     /// 8-bit RGBA render of one page, for the pages that have colour worth
@@ -1750,15 +1830,19 @@ enum Flattener {
     ///
     /// `nil` when `shapeComponents` exceeds `runLimit`, or the buffer is short;
     /// the caller reads that as no spot colour, which is the behaviour before C27.
+    ///
+    /// `excludingHues` leaves pixels of those hues out of the mask (C32,
+    /// `paperHues`).
     static func sheetSaturatedFraction(ofRGBA buffer: [UInt8], width: Int, height: Int,
                                        above floor: Double,
+                                       excludingHues: Range<Double>? = nil,
                                        runLimit: Int = maximumShapeRuns) -> Double? {
         let pixels = width * height
         guard pixels > 0, buffer.count >= pixels * 4 else { return nil }
         var mask = [Bool](repeating: false, count: pixels)
         var i = 0
-        forEachSaturation(ofRGBA: buffer, width: width, height: height) {
-            if $0 > floor { mask[i] = true }
+        forEachColour(ofRGBA: buffer, width: width, height: height) { s, hue in
+            if s > floor, excludingHues.map({ !$0.contains(hue) }) ?? true { mask[i] = true }
             i += 1
         }
         guard let comps = shapeComponents(mask, width: width, height: height,
@@ -1915,6 +1999,14 @@ enum Flattener {
     /// `Double` is exact, so the mean is unchanged bit for bit.
     static func forEachSaturation(ofRGBA buffer: [UInt8], width: Int, height: Int,
                                   _ body: (Double) -> Void) {
+        forEachColour(ofRGBA: buffer, width: width, height: height) { s, _ in body(s) }
+    }
+
+    /// `forEachSaturation`'s walk with each pixel's hue beside its saturation, in
+    /// degrees [0, 360) of the same paper-corrected colour (0 where the pixel is
+    /// grey). C32 reads the hue; the correction stays here, once.
+    static func forEachColour(ofRGBA buffer: [UInt8], width: Int, height: Int,
+                              _ body: (_ saturation: Double, _ hue: Double) -> Void) {
         let pixels = width * height
         guard pixels > 0, buffer.count >= pixels * 4 else { return }
         var kr = 1.0, kg = 1.0, kb = 1.0
@@ -1932,7 +2024,14 @@ enum Flattener {
             let g = Double(buffer[i + 1]) * kg
             let b = Double(buffer[i + 2]) * kb
             let hi = max(r, max(g, b)), lo = min(r, min(g, b))
-            body(hi > 0 ? (hi - lo) / hi : 0)
+            var hue = 0.0
+            if hi > lo {
+                let c = hi - lo
+                hue = hi == r ? (g - b) / c : hi == g ? 2 + (b - r) / c : 4 + (r - g) / c
+                hue *= 60
+                if hue < 0 { hue += 360 }
+            }
+            body(hi > 0 ? (hi - lo) / hi : 0, hue)
         }
     }
 

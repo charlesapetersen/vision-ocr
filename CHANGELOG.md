@@ -23,6 +23,9 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
   about twice as long to recognise (C33).
 - Lines that were only half selectable, stopping partway across the page, are now whole. The rest of
   such a line is recognised on its own, and that also clears the last garbled lines on these pages (C33).
+- Red headings on scanned text pages keep their colour instead of coming out black. A page is kept
+  in colour only where that costs little and JBIG2 compression is in use; otherwise it stays black and
+  white as before (C32).
 
 ## 1.14.0 — 2026-09-25
 

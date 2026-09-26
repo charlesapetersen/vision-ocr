@@ -1935,6 +1935,9 @@ final class OCRModel: ObservableObject {
         // still to read. Only these: the JPEGs in the same directory are the
         // picture pages' actual streams and the assembly reads them later.
         var spentBitmaps: [URL] = []
+        /// C32. Index into `encoded` → the 1-bit rendering of a page kept in colour
+        /// for its spot colour alone (`RebuiltPage.bilevelFallback`).
+        var spotFallbacks: [Int: URL] = [:]
         /// C23. Where each page's crop box lands on the published sheet, for the
         /// pages whose source hid part of it. Empty on the non-rebuild route,
         /// where `compose` reads the real thing off the user's own file.
@@ -1976,6 +1979,8 @@ final class OCRModel: ObservableObject {
             // any resolution, which is the whole of R39 removed rather than
             // worked around. The CoreGraphics route pays one PNG per page for
             // it, on a fallback that only runs when jbig2/qpdf are missing.
+            // Except a C32 page published 1-bit: Vision read its colour JPEG, the
+            // same render at the same size, and the 1-bit image is its threshold.
             try? FileManager.default.createDirectory(at: pngDir,
                                                      withIntermediateDirectories: true)
             // C29. Which pages to keep rather than rasterise, decided BEFORE the
@@ -2029,6 +2034,9 @@ final class OCRModel: ObservableObject {
                                 stream: .jbig2(out), pixelWidth: page.pixelWidth,
                                 pixelHeight: page.pixelHeight, boxSize: page.boxSize))
                         case .jpeg(let jpeg):
+                            if let fallback = page.bilevelFallback {
+                                spotFallbacks[encoded.count] = fallback
+                            }
                             encoded.append(JBIG2.Page(
                                 stream: .jpeg(jpeg), pixelWidth: page.pixelWidth,
                                 pixelHeight: page.pixelHeight, boxSize: page.boxSize,
@@ -2432,6 +2440,42 @@ final class OCRModel: ObservableObject {
                         if layers.shrunkAsAllText {
                             shrunkTextPages.append((index + 1, layers.inkOutsideText))
                         }
+                    }
+                    // C32. A page kept in colour only for its spot colour goes back
+                    // to 1-bit, its answer before C32, when the colour costs more
+                    // than `spotColourPriceLimit` times that. After the layering,
+                    // because the layers are what it would cost.
+                    for (index, png) in spotFallbacks.sorted(by: { $0.key < $1.key }) {
+                        if control.isCancelled { break }
+                        let streams: [URL]
+                        switch encoded[index].stream {
+                        case .jpeg(let u): streams = [u]
+                        case .mrc(let m): streams = [m.mask, m.background, m.foreground]
+                        default: continue
+                        }
+                        let out = pngDir.appendingPathComponent(
+                            String(format: "f%05d.jbig2", index + 1))
+                        do {
+                            try control.adopting { register in
+                                try JBIG2.encode(png: png, to: out, using: jb,
+                                                 register: register)
+                            }
+                        } catch { continue }
+                        let colour = streams.reduce(0) { $0 + fileSize($1) }
+                        let bilevel = fileSize(out)
+                        guard Flattener.spotColourTooDear(colour: colour,
+                                                          bilevel: bilevel) else {
+                            try? FileManager.default.removeItem(at: out)
+                            continue
+                        }
+                        if case .mrc = encoded[index].stream { relayered -= 1 }
+                        savedBytes += colour - bilevel
+                        encoded[index] = JBIG2.Page(
+                            stream: .jbig2(out), pixelWidth: encoded[index].pixelWidth,
+                            pixelHeight: encoded[index].pixelHeight,
+                            boxSize: encoded[index].boxSize)
+                        for u in streams { try? FileManager.default.removeItem(at: u) }
+                        shrunkTextPages.removeAll { $0.page == index + 1 }
                     }
                     if relayered > 0 {
                         progress("Layered \(relayered) picture page"

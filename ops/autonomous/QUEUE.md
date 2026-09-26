@@ -155,7 +155,7 @@ say so in the commit.
       has been cut).
       BOUND: one code commit, plus free docs commits for measurements.
       (origin: BUGS.md C31)
-- [ ] **c32-heading-colour** — keep the colour of red headings on pages that carry little other colour.
+- [x] **c32-heading-colour** — keep the colour of red headings on pages that carry little other colour.
       On `1954 - Why.pdf`, pages 5, 8 and 9 have red headings in the source and come out black and
       white (`BUGS.md` C32). Find out why C27's `sheetFrac` route misses them, and change the colour
       decision so that pages like these keep their colour without admitting paper stains (the 1891
