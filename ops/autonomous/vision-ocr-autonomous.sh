@@ -148,6 +148,9 @@ MAXRUN="${VISIONOCR_MAXRUN:-14400}"       # OUTER wall-clock backstop (4 h). The
 # $15 of headroom is deliberately more than that — a session that has done its work must never be unable to
 # AFFORD to land it. If this stops helping, the next lever is item size, not another raise.
 BUDGET="${VISIONOCR_BUDGET:-35}"
+BUDGET_MAX="${VISIONOCR_BUDGET_MAX:-70}"  # a session at max effort (3e) gets twice the cap (owner, 2026-09-26):
+                                          # it thinks more per turn, and one that dies at $35 would only
+                                          # spend another attempt at the same effort.
 EFFORT="${VISIONOCR_EFFORT:-medium}"      # low|medium|high|xhigh|max. medium since 2026-09-24, when the run
                                           # moved to Opus 5.5 (the `opus` alias resolves to claude-opus-5-5).
                                           # Anthropic's Opus 5.5 guidance: "Start at `medium`" and "Reserve
@@ -1616,6 +1619,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     eff_set="$(printf '%s\n' "$head_span" | grep -oE '\(effort: (low|medium|high|xhigh|max)\)' | head -1 | sed -E 's/.*: ([a-z]+)\)/\1/')"
     [ -n "$eff_set" ] && eff="$eff_set"
   fi
+  local budget="$BUDGET"; [ "$eff" = max ] && budget="$BUDGET_MAX"
   export VISIONOCR_HEAD_ITEM="$head_tag" VISIONOCR_ATTEMPTS="$head_attempts" VISIONOCR_SESSION_EFFORT="$eff"
 
   # 3d. Snapshot the decision surface BEFORE the session, so afterwards we can tell whether it actually
@@ -1645,7 +1649,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # about — reported as bogus results rather than as an error.
   export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-  log "launching fresh resume session (backstop ${MAXRUN}s, budget \$$BUDGET, effort $eff for ${head_tag:-no item} after $head_attempts attempts, health-wd on)…"
+  log "launching fresh resume session (backstop ${MAXRUN}s, budget \$$budget, effort $eff for ${head_tag:-no item} after $head_attempts attempts, health-wd on)…"
   cd "$REPO" || { log "cannot cd $REPO — skip."; kill "$hb" 2>/dev/null; rm -f "$LOCK"; return 0; }
   # Fresh per-session log (keep one previous). stream-json is larger than text, so don't append forever; a
   # fresh file also gives the watchdog a clean zero baseline.
@@ -1659,7 +1663,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
       --permission-mode default \
       --model opus --fallback-model sonnet \
       --effort "$eff" \
-      --max-budget-usd "$BUDGET" \
+      --max-budget-usd "$budget" \
       --output-format stream-json --verbose --include-partial-messages \
       --allowedTools "${ALLOW[@]}" \
       --disallowedTools "${DENY[@]}" \
