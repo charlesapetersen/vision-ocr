@@ -2367,7 +2367,7 @@ enum Flattener {
     /// page, and `maximumMRCPageMegapixels` allows 100 MP — an alternating pixel field
     /// at that size is 50 million runs, which is 1.2 GB of `Run` plus 400 MB of parent
     /// on top of the ~500 MB this function's caller is already holding in `grey`,
-    /// `mask`, `region` and `inverse`. Both R24 and R29 were an allocation bounded in
+    /// `mask` and `region` (`fgHoles` is built after it returns). Both R24 and R29 were an allocation bounded in
     /// one place and left unbounded in its twin.
     ///
     /// 8,000,000 caps `runs` at 192 MB and `parent` at 64 MB. ⛔ **That pair is NOT the peak, and a
@@ -3437,7 +3437,7 @@ enum Flattener {
     /// Peak bytes per pixel while layering a *colour* page.
     ///
     /// Colour layering holds, at peak: the grey render the stencil comes from (1),
-    /// the RGBA render (4), the stencil, the text-region map and its inverse (3),
+    /// the RGBA render (4), the stencil, the text-region map and `fgHoles` (3),
     /// the channel plane being worked on and its filled copy (2), and inside
     /// `fillHoles` a second copy of that plane plus two flag arrays (4) — 14 so far.
     /// The three planes are taken and released one at a time, which is why this is
@@ -3458,7 +3458,7 @@ enum Flattener {
     ///
     /// | buffer | bytes a pixel |
     /// |---|---|
-    /// | `grey`, `mask`, `region`, `inverse`, `maskPixels` | 5 |
+    /// | `grey`, `mask`, `region`, `fgHoles`, `maskPixels` | 5 |
     /// | `rgba` from `renderRGB`, w·h·4 | 4 |
     /// | `plane`, `filledBG`, `bgPlane`, `filledFG`, `fgPlane` | 5 |
     /// | `background` w·h·4, `foreground` w·h·4 | 8 |
@@ -3735,6 +3735,75 @@ enum Flattener {
         return rep.representation(using: .png, properties: [:])
     }
 
+    /// Where the foreground is NOT sampled: everything except the dark core of the
+    /// strokes under `stencil`.
+    ///
+    /// C31. The foreground used to be filled from every stencil pixel, and Sauvola
+    /// admits a stroke's light anti-aliased edge along with its core. On `1954 -
+    /// Why.pdf` p6 at 111 ppi the source under the stencil reads 24 at the 5th
+    /// percentile and 108 at the median, so the averaged ink came out about twice
+    /// as light as the type and varied cell to cell — body text painted through a
+    /// solid stencil in a mottled grey-brown. Here a stencil pixel is kept only
+    /// when it is no lighter than the mean of the kept pixels around it, and that
+    /// is done twice, which leaves roughly the darkest quarter of each stroke.
+    ///
+    /// Local, not a page-wide percentile, so a red heading keeps its own core
+    /// rather than being judged against black body text. The window is the 3x3
+    /// `block` cells around a pixel, and `block` is a fixed 4 px, not the
+    /// foreground's shrink factor: a first version used the factor, and at the
+    /// all-text shrink of 16 its 48 px window judged a short red word between black
+    /// ones against the black and painted it black (found by the review of this
+    /// change). At 4 px only ink within about 8 px of darker ink is judged against
+    /// it — a red underline under black descenders darkens. Block sums rather than
+    /// integral images keep the added memory at 12 / block² bytes a pixel.
+    ///
+    /// Rejected: painting the stencil a flat colour per glyph (a connected-component
+    /// pass over the full render, and it discards genuine colour variation within a
+    /// word); a finer foreground (costs bytes and keeps the mixing, only finer);
+    /// giving an emptied cell its own darker half back (on thin type most cells hold
+    /// only halo, so it restored the halo everywhere — measured, body 22 -> 112);
+    /// comparing each pixel only with its own ink class by largest channel (a pale
+    /// halo of brown or blue-black ink falls below any chroma floor into the neutral
+    /// class and survives, as does colour fringing on black type — the review's
+    /// simulation — and at 4 px it changed no red-beside-black layout tried).
+    static let foregroundCoreBlock = 4
+
+    static func foregroundHoles(_ grey: [UInt8], stencil: [Bool], width w: Int, height h: Int,
+                                block: Int = foregroundCoreBlock, passes: Int = 2) -> [Bool] {
+        guard w > 0, h > 0, grey.count >= w * h, stencil.count >= w * h else {
+            return stencil.map { !$0 }
+        }
+        var holes = stencil.map { !$0 }
+        let b = max(block, 1)
+        let bw = (w + b - 1) / b, bh = (h + b - 1) / b
+        for _ in 0..<passes {
+            var sum = [Int](repeating: 0, count: bw * bh)
+            var count = [Int32](repeating: 0, count: bw * bh)
+            for y in 0..<h {
+                let row = (y / b) * bw
+                for x in 0..<w where !holes[y * w + x] {
+                    sum[row + x / b] += Int(grey[y * w + x]); count[row + x / b] += 1
+                }
+            }
+            for y in 0..<h {
+                let by = y / b
+                let y0 = max(by - 1, 0), y1 = min(by + 1, bh - 1)
+                for x in 0..<w where !holes[y * w + x] {
+                    let bx = x / b
+                    let x0 = max(bx - 1, 0), x1 = min(bx + 1, bw - 1)
+                    var s = 0, n = 0
+                    for yy in y0...y1 {
+                        for xx in x0...x1 { s += sum[yy * bw + xx]; n += Int(count[yy * bw + xx]) }
+                    }
+                    // Compared as products so nothing is rounded. The pixel is in
+                    // its own window, so one darkest in its own window is always kept.
+                    if Int(grey[y * w + x]) * n > s { holes[y * w + x] = true }
+                }
+            }
+        }
+        return holes
+    }
+
     /// Build the three layers for one page, or nil when the page should keep the
     /// single image it already has.
     ///
@@ -3796,8 +3865,6 @@ enum Flattener {
         // A stencil with nothing in it is not a layering, it is a downsampled
         // page. Refuse it the same way an empty box list is refused.
         guard mask.contains(true) else { return nil }
-
-        let inverse = mask.map { !$0 }
 
         // R50. A page whose ink is all text has nothing in its tone layers worth
         // full resolution, so both are shrunk far harder. See
@@ -3913,6 +3980,9 @@ enum Flattener {
                                  foregroundDownsample: foregroundDownsample,
                                  inColour: false)
             }
+            // C31. The foreground is sampled from the dark core of the strokes, not
+            // from every stencil pixel. See `foregroundHoles`.
+            let fgHoles = foregroundHoles(grey, stencil: mask, width: w, height: h)
             var background: [UInt8] = [], foreground: [UInt8] = []
             var sizes: (bw: Int, bh: Int, fw: Int, fh: Int) = (0, 0, 0, 0)
             for channel in 0..<3 {
@@ -3923,7 +3993,7 @@ enum Flattener {
                 let filledBG = fillHoles(plane, holes: mask, width: w, height: h, radius: 10)
                 let (bgPlane, pbw, pbh) = downsample(filledBG, width: w, height: h,
                                                      by: max(bgFactor, 1))
-                let filledFG = fillHoles(plane, holes: inverse, width: w, height: h, radius: 3)
+                let filledFG = fillHoles(plane, holes: fgHoles, width: w, height: h, radius: 3)
                 let (fgPlane, pfw, pfh) = downsample(filledFG, width: w, height: h,
                                                      by: max(fgFactor, 1))
                 if channel == 0 {
@@ -3949,7 +4019,8 @@ enum Flattener {
             let bgFull = fillHoles(grey, holes: mask, width: w, height: h, radius: 10)
             let (bg, gbw, gbh) = downsample(bgFull, width: w, height: h,
                                             by: max(bgFactor, 1))
-            let fgFull = fillHoles(grey, holes: inverse, width: w, height: h, radius: 3)
+            let fgHoles = foregroundHoles(grey, stencil: mask, width: w, height: h)
+            let fgFull = fillHoles(grey, holes: fgHoles, width: w, height: h, radius: 3)
             let (fg, gfw, gfh) = downsample(fgFull, width: w, height: h,
                                             by: max(fgFactor, 1))
             bw = gbw; bh = gbh; fw = gfw; fh = gfh

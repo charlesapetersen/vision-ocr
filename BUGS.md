@@ -17759,7 +17759,7 @@ the same reason.
   currently the project's headline claim about its own text layer and it does not mean what it appears
   to mean.
 
-### C31 · A page C27 now keeps in colour prints its body text in a blotchy, washed-out fill, because the layered route's foreground layer mixes paper into the ink — OPEN
+### C31 · A page C27 now keeps in colour prints its body text in a blotchy, washed-out fill, because the layered route's foreground layer mixes paper into the ink — FIXED 2026-09-25
 
 *(found 2026-09-25 by the owner, on `1954 - Why.pdf` processed by 1.14.0 at default settings. The
 source and the 1.14.0 output are in `~/.local/state/visionocr-autonomous/owner-supplied/`.)*
@@ -17786,6 +17786,43 @@ What was checked on 2026-09-25, by rendering and by extracting the layers with `
 
 C27 moved 100 corpus pages onto this route, 89 of them Schwaller photographs, so the same defect is
 probably on others. That is not yet measured.
+
+#### FIXED 2026-09-25
+
+**Mechanism, confirmed in the code.** `mrcLayers` filled the foreground from every stencil pixel
+(`fillHoles(plane, holes: inverse)`), and Sauvola admits a stroke's light anti-aliased edge along with its
+core. On p6 the source under the stencil reads 24 at the 5th percentile and 108 at the median. [measured]
+JPEG at 28 ppi was not the cause.
+
+**Fix.** `Flattener.foregroundHoles` keeps a stencil pixel only where it is no lighter than the mean of the
+kept stencil pixels in its 3x3 window of 4 px cells, twice over. That leaves roughly the darkest quarter of
+each stroke, and the foreground is filled from that alone, on both the colour and the grey route.
+The stencil, the background and the byte-level route are unchanged.
+
+**Measured on the published PDF** (built by running `makeSearchablePDF` on the old and new code; the old
+build reproduces the owner's 1.14.0 file byte for byte, 470,958 B), rendered at 1:1 and 400 dpi and looked at:
+- Pages 2, 4, 6 and 7: the body text is dark and solid like the source, the red headings are still red,
+  and the drawings are identical. Page 10 was layered in grey before and after, and was left as it is.
+- Other C27 pages looked at: Schwaller p30, p101, p150, p220 and p257 (photographs unchanged, text
+  darker), the Surani p16 map (its labels keep their colour), Ehrenreich p4 (a grey pull-quote is closer to
+  the source), and Black p3.
+
+**Bytes.**
+- `1954 - Why.pdf`: 470,958 → 458,801 B.
+- The seven C27 documents: 4,615,046 → 4,196,063 B, 0.909x, with none larger.
+- A seeded random corpus sample: 15 documents, 3 changed, −53,005 B, 0.9992x. It was cut from 20 to 15
+  because the five 132–372-page books would have taken hours.
+
+**Rejected, one line each.**
+- Using the foreground's shrink factor as the block: at 16 its 48 px window painted a red word between
+  black ones black. The review found this, and the new check reads r 23 on that version.
+- Giving an emptied cell its own darker half back: it restored the halo on thin type (body mean 22 → 112).
+- Ink classes by largest channel: the review simulated it bringing back the halo of brown or blue-black ink
+  and of colour-fringed black type, and it changed nothing at 4 px.
+- A flat colour per glyph, or a finer foreground.
+
+Limit: red ink within about 8 px of black is judged against it, so a red underline under black descenders
+darkens. Checks: `C31:` in `Tests/main.swift`; three of them are red on the old code.
 
 ## Robustness and correctness of reporting
 

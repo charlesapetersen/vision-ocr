@@ -105,7 +105,7 @@ say so in the commit.
       real pages from the stains, close C27 `WONTFIX` with the measurement as the reason. Record the
       corpus byte cost either way. BOUND: one code commit.
       (origin: BUGS.md C27)
-- [ ] **c31-colour-text** — make body text on a page the layered colour route keeps legible again. This
+- [x] **c31-colour-text** — make body text on a page the layered colour route keeps legible again. This
       is a regression in the released 1.14.0, so it comes before C28.
       THE DEFECT. On `1954 - Why.pdf` (source and 1.14.0 output in
       `~/.local/state/visionocr-autonomous/owner-supplied/`), the pages C27 now keeps in colour print

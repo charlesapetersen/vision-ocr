@@ -1260,6 +1260,58 @@ func makeColourPlatePDF(at url: URL) {
     pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
 }
 
+/// C31. Text whose strokes are a dark core inside a light anti-aliased halo, as
+/// type scanned at ~110 ppi is: black body bars and one row of red heading bars.
+func makeHaloTextPDF(at url: URL) {
+    var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+    guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
+    let w = 1224, h = 1584
+    guard let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h,
+        bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+        let ctx = NSGraphicsContext(bitmapImageRep: rep) else { return }
+    NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = ctx
+    NSColor(deviceWhite: 0.92, alpha: 1).setFill(); NSRect(x: 0, y: 0, width: w, height: h).fill()
+    // Row 0 is all red; row 1 is black with every third stroke red, the inline
+    // coloured word that a wide comparison window painted black.
+    for row in 0..<10 {
+        let y = Double(h - 200 - row * 60)
+        var x = 140.0, stroke = 0
+        while x < Double(w) - 200 {
+            let red = row == 0 || (row == 1 && stroke % 3 == 2)
+            let core = red ? NSColor(deviceRed: 0.75, green: 0.05, blue: 0.08, alpha: 1)
+                           : NSColor(deviceWhite: 0.06, alpha: 1)
+            let halo = red ? NSColor(deviceRed: 0.85, green: 0.45, blue: 0.45, alpha: 1)
+                           : NSColor(deviceWhite: 0.45, alpha: 1)
+            halo.setFill(); NSRect(x: x, y: y - 3, width: 10, height: 26).fill()
+            core.setFill(); NSRect(x: x + 3, y: y, width: 4, height: 20).fill()
+            x += 16; stroke += 1
+        }
+    }
+    NSGraphicsContext.current?.flushGraphics(); NSGraphicsContext.restoreGraphicsState()
+    guard let cg = rep.cgImage else { return }
+    pdf.beginPDFPage(nil); pdf.draw(cg, in: box); pdf.endPDFPage(); pdf.closePDF()
+}
+
+/// Mean RGB of a decoded layer image, over the rows `rows` (0 = top) or all of it.
+func meanRGBOfLayer(_ url: URL, rows: ClosedRange<Double> = 0...1)
+    -> (r: Double, g: Double, b: Double)? {
+    guard let data = try? Data(contentsOf: url), let rep = NSBitmapImageRep(data: data),
+          rep.pixelsWide > 0, rep.pixelsHigh > 0 else { return nil }
+    let y0 = Int(rows.lowerBound * Double(rep.pixelsHigh))
+    let y1 = min(max(Int(rows.upperBound * Double(rep.pixelsHigh)), y0 + 1), rep.pixelsHigh)
+    var r = 0.0, g = 0.0, b = 0.0, n = 0.0
+    for y in y0..<y1 {
+        for x in 0..<rep.pixelsWide {
+            guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+            r += Double(c.redComponent); g += Double(c.greenComponent)
+            b += Double(c.blueComponent); n += 1
+        }
+    }
+    return n > 0 ? (r / n * 255, g / n * 255, b / n * 255) : nil
+}
+
 func makeDarkPDF(at url: URL) {
     var box = CGRect(x: 0, y: 0, width: 612, height: 792)
     guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
@@ -2176,6 +2228,44 @@ do {
                 }
             } else {
                 check("the MRC fixture produces layers", false, "mrcLayers returned nil")
+            }
+
+            // C31 · the foreground carries the ink's colour, not ink mixed with paper.
+            // Sauvola admits a stroke's light halo to the stencil with its core, and a
+            // foreground averaged over both painted 1954 - Why.pdf's body text at
+            // about twice the lightness of the type. Core 15, halo 115, paper 235.
+            let halo = tmp.appendingPathComponent("mrc-halo-text.pdf")
+            makeHaloTextPDF(at: halo)
+            let hboxes = (0..<10).map { row in
+                SearchableWriter.BoundingBox(x: 0.10, y: (175.0 + Double(row) * 60) / 1584,
+                                             width: 0.78, height: 32.0 / 1584)
+            }
+            if let hpage = PDFDocument(url: halo)?.page(at: 0) {
+                for colour in [false, true] {
+                    let arm = colour ? "colour" : "grey"
+                    guard let l = Flattener.mrcLayers(for: hpage, boxes: hboxes, into: mrcDir,
+                                                      stem: "halo-\(arm)", inColour: colour),
+                          let body = meanRGBOfLayer(l.foreground, rows: 0.2...0.45),
+                          let head = meanRGBOfLayer(l.foreground, rows: 0.115...0.128),
+                          let mixed = meanRGBOfLayer(l.foreground, rows: 0.152...0.164)
+                    else { check("the C31 fixture layers (\(arm))", false, "nil"); continue }
+                    let bodyGrey = (body.r + body.g + body.b) / 3
+                    check("C31: body text's foreground is the stroke's dark core (\(arm))",
+                          bodyGrey < 45, String(format: "mean %.0f, core 15, halo 115", bodyGrey))
+                    if colour {
+                        check("C31: …and a red heading's stays red, and dark (\(arm))",
+                              head.r - head.b > 110 && head.g < 50,
+                              String(format: "r %.0f g %.0f b %.0f", head.r, head.g, head.b))
+                        // A third of this row's strokes are red, and a shrink of 16
+                        // averages them with the black: about 55 if they kept their
+                        // colour, near 0 if they were judged against the black.
+                        check("C31: …and red strokes inline with black ones stay red (\(arm))",
+                              mixed.r - mixed.b > 30,
+                              String(format: "r %.0f g %.0f b %.0f", mixed.r, mixed.g, mixed.b))
+                    }
+                }
+            } else {
+                check("the C31 fixture opens", false, "nil")
             }
         }
 

@@ -12,6 +12,12 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
+## Unreleased
+
+- Text on pages layered in colour or grey is dark and solid again instead of a mottled, washed-out
+  fill, and those pages come out slightly smaller. This was a regression in 1.14.0 on the pages it
+  began keeping in colour (C31).
+
 ## 1.14.0 — 2026-09-25
 
 **Scanned pages printed with a spot colour keep it.** A page with a red rule, a coloured banner or a
