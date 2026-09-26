@@ -87,6 +87,7 @@
 // The baseline it establishes is recorded in HANDOFF.md.
 
 import AppKit
+import Combine
 import PDFKit
 
 // The full-corpus gate, driven through OCRModel.start() at the app's own
@@ -109,6 +110,12 @@ final class Harness: NSObject, NSApplicationDelegate {
     /// hang requirement 1 exists to prevent arriving through another door
     /// (A12.6).
     var idleTicks = 0
+    /// When each document entered `inFlight`, and how long it took to reach an
+    /// outcome. Written to `timings.tsv` beside `per-document.tsv`; the model's log
+    /// goes to `log.txt`. Added for `corpus-stress`, which needed both per file.
+    var began: [URL: Date] = [:]
+    var took: [URL: Double] = [:]
+    var watchers: [AnyCancellable] = []
 
     // MARK: - Pixels
 
@@ -530,6 +537,16 @@ final class Harness: NSObject, NSApplicationDelegate {
         }
         fflush(stdout)
         started = Date()
+        watchers.append(model.$inFlight.sink { [weak self] urls in
+            guard let self else { return }
+            for u in urls where self.began[u] == nil { self.began[u] = Date() }
+        })
+        watchers.append(model.$outcomes.sink { [weak self] outcomes in
+            guard let self else { return }
+            for u in outcomes.keys where self.took[u] == nil {
+                self.took[u] = Date().timeIntervalSince(self.began[u] ?? self.started)
+            }
+        })
         model.start()
 
         Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] t in
@@ -578,6 +595,14 @@ final class Harness: NSObject, NSApplicationDelegate {
         for (url, o) in model.outcomes {
             if case .succeeded = o { succeeded.insert(url) } else { failed += 1 }
         }
+        let timings = ["file\tseconds\toutcome"] + model.files.map { u in
+            "\(u.path)\t\(took[u].map { String(format: "%.1f", $0) } ?? "")"
+            + "\t\(model.outcomes[u].map { "\($0)" } ?? "none")"
+        }
+        try? Data(timings.joined(separator: "\n").appending("\n").utf8)
+            .write(to: outDir.appendingPathComponent("timings.tsv"), options: .atomic)
+        try? Data(model.log.map(\.text).joined(separator: "\n").appending("\n").utf8)
+            .write(to: outDir.appendingPathComponent("log.txt"), options: .atomic)
         report(inputs: model.files, succeeded: succeeded, didRun: true, minutes: minutes,
                failed: failed)
     }

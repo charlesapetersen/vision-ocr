@@ -205,6 +205,13 @@ say so in the commit.
       it loses. Findings that are already queued get one line in their existing entry, not a new one.
       BOUND: one step per session (the run itself, then the reading of it), each with its output committed.
       (context: owner request 2026-09-25, after the 1.14.0 test folder turned up six defects)
+      2026-09-26: the run is done, `STRESS-2026-09-26.tsv` (tools `score-stress`, `stress-join.py`). 233/233
+      corpus documents and 7/7 owner files succeeded, 17,397 pages, 161 min. The owner's Desktop folder hung
+      on TCC, so the 7 files in `owner-supplied/` stood in for it. Left: the reading step. Crude first
+      counts: 882 pages bareText > 0.3, 209 with a line across a gutter, and 64 documents larger than
+      their source. Colour loss depends on the floor: 4 pages at srcColour > 0.05 with out < src/3, and
+      46-58 at a floor of 0.01-0.02 with out < src/10. `owner/1954 - Why.pdf` is the same file as the
+      testdocs copy, so it is counted twice.
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
