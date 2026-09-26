@@ -12,7 +12,7 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
-## Unreleased
+## 1.14.0 — 2026-09-25
 
 **Scanned pages printed with a spot colour keep it.** A page with a red rule, a coloured banner or a
 colour photograph on a page of type was published in grey, because only pages with a lot of colour
