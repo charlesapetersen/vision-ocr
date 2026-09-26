@@ -5344,6 +5344,323 @@ do {
     resetPrefs()
 }
 
+// MARK: - C37: a scan that is already 1-bit JBIG2 keeps its own stream
+
+print("\na 1-bit JBIG2 source page keeps its own stream (C37)")
+
+do {
+    resetPrefs()
+    // The rules on qpdf's description, without qpdf: its pages, and its objects with
+    // each stream's dictionary as written to `datafile`.
+    let c37parse = tmp.appendingPathComponent("c37-parse")
+    try? FileManager.default.createDirectory(at: c37parse, withIntermediateDirectories: true)
+    func datafile(_ name: String, _ bytes: Int) -> String {
+        let url = c37parse.appendingPathComponent(name)
+        try? Data(repeating: 1, count: bytes).write(to: url)
+        return url.path
+    }
+    func image(_ n: Int, _ dict: [String: Any] = [:]) -> [String: Any] {
+        ["stream": ["dict": ["/Filter": "/JBIG2Decode"].merging(dict) { $1 },
+                    "datafile": datafile("s\(n)", 50)]]
+    }
+    let objects: [String: Any] = [
+        "obj:3 0 R": image(3, ["/DecodeParms": ["/JBIG2Globals": "20 0 R"]]),
+        "obj:20 0 R": ["stream": ["dict": [String: Any](), "datafile": datafile("s20", 9)]],
+        "obj:4 0 R": image(4, ["/Filter": ["/JBIG2Decode"], "/DecodeParms": [NSNull()]]),
+        "obj:6 0 R": image(6, ["/Filter": ["/FlateDecode", "/JBIG2Decode"]]),
+        "obj:7 0 R": image(7, ["/DecodeParms": ["/JBIG2Globals": "20 0 R", "/Other": 1]]),
+        // Globals stored under another filter are refused, and an empty one is no
+        // globals; Flate ones, as qpdf writes them, are kept as they are.
+        "obj:8 0 R": image(8, ["/DecodeParms": ["/JBIG2Globals": "21 0 R"]]),
+        "obj:21 0 R": ["stream": ["dict": ["/Filter": "/LZWDecode"], "datafile": datafile("s21", 9)]],
+        "obj:10 0 R": image(10, ["/DecodeParms": ["/JBIG2Globals": "23 0 R"]]),
+        "obj:23 0 R": ["stream": ["dict": ["/Filter": ["/FlateDecode"]], "datafile": datafile("s23", 9)]],
+        "obj:9 0 R": image(9, ["/DecodeParms": ["/JBIG2Globals": "22 0 R"]]),
+        "obj:22 0 R": ["stream": ["dict": [String: Any](), "datafile": datafile("s22", 0)]],
+        "obj:5 0 R": ["stream": ["dict": ["/Filter": "/DCTDecode"], "datafile": datafile("s5", 9)]],
+    ]
+    func pageWith(_ refs: String...) -> [String: Any] {
+        ["images": refs.map { ["object": $0, "width": 10, "height": 20] }]
+    }
+    let parsed = JBIG2.parseSourceImages(
+        [pageWith("3 0 R"), pageWith("4 0 R"), pageWith("4 0 R", "5 0 R"), pageWith("6 0 R"),
+         pageWith("7 0 R"), pageWith("8 0 R"), pageWith("9 0 R"), pageWith("10 0 R")],
+        objects: objects)
+    check("C37: a page's one JBIG2 image is found with its raw bytes and its globals",
+          parsed[0]?.data.lastPathComponent == "s3" && parsed[0]?.globals?.lastPathComponent == "s20"
+              && parsed[1]?.data.lastPathComponent == "s4" && parsed[1]?.globals == nil,
+          "\(parsed)")
+    check("C37: …and a second image, a filter chain or an unknown parameter keeps a page out",
+          parsed[2] == nil && parsed[3] == nil && parsed[4] == nil, "\(parsed)")
+    check("C37: …as do globals under another filter, while empty globals count as none",
+          parsed[5] == nil && parsed[6] != nil && parsed[6]?.globals == nil, "\(parsed)")
+    check("C37: …and Flate globals are kept, and marked Flate",
+          parsed[7]?.globals?.lastPathComponent == "s23" && parsed[7]?.globalsAreFlate == true
+              && parsed[0]?.globalsAreFlate == false, "\(parsed)")
+
+    // The bit comparison, over a width that is not a whole number of bytes.
+    let w = 13, h = 2
+    var grey = [UInt8](repeating: 255, count: w * h)
+    grey[3] = 0; grey[w + 12] = 0
+    var rows = Data([0xEF, 0xF8, 0xFF, 0xF0])      // ink at (3,0) and (12,1), 1 = white
+    check("C37: a rebuild equal to its source image, bit for bit, matches",
+          Flattener.sourceBitmapMatches((w, h, rows), grey: grey, width: w, height: h,
+                                        threshold: 128))
+    rows[3] = 0xF7                                  // differs only in the row's pad bits
+    check("C37: …whatever the decoder left in the pad bits",
+          Flattener.sourceBitmapMatches((w, h, rows), grey: grey, width: w, height: h,
+                                        threshold: 128))
+    grey[5] = 0
+    check("C37: one pixel of other ink is a different image",
+          !Flattener.sourceBitmapMatches((w, h, rows), grey: grey, width: w, height: h,
+                                         threshold: 128))
+    check("C37: …and so is an image of another size",
+          !Flattener.sourceBitmapMatches((w, h, rows), grey: [UInt8](repeating: 255, count: w * 3),
+                                         width: w, height: 3, threshold: 128))
+    // A stream CoreGraphics fails to decode comes back white, and so does its render.
+    check("C37: a blank decode has no digest, so a page that failed to decode is not kept",
+          Flattener.bitmapDigest((w, h, Data([0xFF, 0xF8, 0xFF, 0xF8]))) == nil
+              && Flattener.bitmapDigest((w, h, rows)) != nil)
+    check("C37: …and the digest ignores pad bits",
+          Flattener.bitmapDigest((w, h, Data([0xEF, 0xF8, 0xFF, 0xF7])))
+              == Flattener.bitmapDigest((w, h, Data([0xEF, 0xFF, 0xFF, 0xF0]))))
+
+    if JBIG2.isAvailable, let jb = JBIG2.encoder, let qpdf = JBIG2.merger {
+        // A source made the way ProQuest and JSTOR make theirs: every page one 1-bit
+        // JBIG2 image. Page 1 landscape and generic-region coded with TPGD, page 2
+        // portrait, dense with repeated words and symbol coded against `/JBIG2Globals`
+        // (the case where globals pay for themselves), page 3 page 1 under `/Rotate 90`.
+        let dir = tmp.appendingPathComponent("c37")
+        try? FileManager.default.removeItem(at: dir)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let dense = dir.appendingPathComponent("dense.pdf"), wide = dir.appendingPathComponent("wide.pdf")
+        makeScannedPDF(at: dense, lines: ["Invoice 98765 Total 420.00"]
+                           + Array(repeating: "Hello OCR World Hello OCR World", count: 15))
+        makeSidewaysPDF(at: wide, text: "GENERIC CODED PAGE")
+        var pages: [JBIG2.Page] = []
+        for (n, url) in [wide, dense].enumerated() {
+            let pngs = dir.appendingPathComponent("png\(n)")
+            try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+            guard let b = (try? Flattener.flatten(url, to: dir.appendingPathComponent("r\(n).pdf"),
+                                                  mode: .blackAndWhite, pngDirectory: pngs))?.first,
+                  case .bilevel(let png) = b.content else { continue }
+            let stream = dir.appendingPathComponent("s\(n).jbig2")
+            var globals: URL?
+            if n == 0 {
+                // With TPGD (`-d`): the same pixels, losslessly, in bytes the app's
+                // own `-p` encoding does not write — so a re-encode cannot pass for
+                // a kept stream.
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: jb)
+                p.arguments = ["-d", "-p", png.path]
+                FileManager.default.createFile(atPath: stream.path, contents: nil)
+                p.standardOutput = try? FileHandle(forWritingTo: stream)
+                p.standardError = FileHandle.nullDevice
+                try? p.run(); p.waitUntilExit()
+            } else {
+                let root = dir.appendingPathComponent("sym").path
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: jb)
+                p.arguments = ["-s", "-p", "-b", root, png.path]
+                p.standardOutput = FileHandle.nullDevice; p.standardError = FileHandle.nullDevice
+                try? p.run(); p.waitUntilExit()
+                try? FileManager.default.moveItem(atPath: root + ".0000", toPath: stream.path)
+                globals = URL(fileURLWithPath: root + ".sym")
+            }
+            var page = JBIG2.Page(stream: .jbig2(stream), pixelWidth: b.pixelWidth,
+                                  pixelHeight: b.pixelHeight, boxSize: b.boxSize)
+            page.globals = globals
+            pages.append(page)
+        }
+        pages.append(pages[0])
+        let unturned = dir.appendingPathComponent("unturned.pdf")
+        let src = dir.appendingPathComponent("jbig2-source.pdf")
+        try? JBIG2.assemble(pages, to: unturned)
+        let turn = Process()
+        turn.executableURL = URL(fileURLWithPath: qpdf)
+        turn.arguments = [unturned.path, "--rotate=+90:3", src.path]
+        try? turn.run(); turn.waitUntilExit()
+        let sources = JBIG2.sourceImages(in: src, password: nil, using: qpdf,
+                                         streamsInto: dir.appendingPathComponent("streams"))
+        check("C37: the fixture is three JBIG2 pages, the second against globals",
+              PDFDocument(url: src)?.pageCount == 3 && sources.count == 3
+                  && sources[1]?.globals != nil && sources[0]?.globals == nil
+                  // qpdf's rewrite stored them Flate, which is how they are kept.
+                  && sources[1]?.globalsAreFlate == true
+                  && PDFDocument(url: src)?.page(at: 2)?.rotation == 90,
+              "\(sources)")
+        // The assembled source must itself decode: it is the only thing that
+        // exercises `assemble`'s globals object before the published file does.
+        let srcDoc = PDFDocument(url: src)
+        check("C37: a page assembled against globals decodes to its image",
+              srcDoc?.page(at: 1).flatMap { Flattener.sourceBitmap(of: $0) }.map {
+                  $0.rows.contains { $0 != 0xFF }
+              } == true)
+
+        let pngs = dir.appendingPathComponent("pages")
+        try? FileManager.default.createDirectory(at: pngs, withIntermediateDirectories: true)
+        let rebuilt = (try? Flattener.flatten(src, to: dir.appendingPathComponent("rebuilt.pdf"),
+                                              mode: .blackAndWhite, pngDirectory: pngs,
+                                              keepSourceJBIG2: true)) ?? []
+        check("C37: the rebuild of each unturned page is its source image, bit for bit",
+              rebuilt.count == 3 && rebuilt[0].matchesSourceJBIG2 && rebuilt[1].matchesSourceJBIG2,
+              rebuilt.map { "\($0.matchesSourceJBIG2)" }.joined(separator: ","))
+        check("C37: …and the turned one is not taken, since the rebuild bakes the turn in",
+              rebuilt.count == 3 && !rebuilt[2].matchesSourceJBIG2)
+        let unasked = (try? Flattener.flatten(src, to: dir.appendingPathComponent("unasked.pdf"),
+                                              mode: .blackAndWhite, pngDirectory: pngs)) ?? []
+        check("C37: …and a build that cannot keep a stream is not charged for the proof",
+              unasked.count == 3 && !unasked.contains { $0.matchesSourceJBIG2 })
+        // Noble 1977's case: the scan stretched onto a sheet two rows taller than its
+        // own aspect, so a render at the scan's resolution resamples it. Rebuilt at
+        // the image's own size it is the image again.
+        let stretched = dir.appendingPathComponent("stretched.pdf")
+        let scale = CGFloat(pages[0].pixelWidth) / pages[0].boxSize.width
+        try? JBIG2.assemble([JBIG2.Page(
+            stream: pages[0].stream, pixelWidth: pages[0].pixelWidth,
+            pixelHeight: pages[0].pixelHeight,
+            boxSize: CGSize(width: pages[0].boxSize.width,
+                            height: pages[0].boxSize.height + 2 / scale))], to: stretched)
+        let stretchedPNGs = dir.appendingPathComponent("stretched-pages")
+        try? FileManager.default.createDirectory(at: stretchedPNGs, withIntermediateDirectories: true)
+        let restored = (try? Flattener.flatten(
+            stretched, to: dir.appendingPathComponent("stretched-rebuilt.pdf"),
+            mode: .blackAndWhite, pngDirectory: stretchedPNGs, keepSourceJBIG2: true))?.first
+        check("C37: a scan stretched by a row or two is rebuilt at its own size, as itself",
+              restored?.matchesSourceJBIG2 == true
+                  && restored?.pixelHeight == pages[0].pixelHeight,
+              "\(String(describing: restored?.pixelHeight)) rows for a \(pages[0].pixelHeight)-row scan")
+
+        let out = dir.appendingPathComponent("jbig2-source.ocr.pdf")
+        var outcome: Runner.Result.Outcome?
+        OCRModel.makeSearchablePDF(file: src, output: out, rebuild: true, rebuildMode: .auto,
+                                   password: nil, control: RunControl(),
+                                   progress: { _, _ in }, report: { o, _ in outcome = o })
+        check("C37: the JBIG2 source publishes", outcome == .succeeded
+                  && PDFDocument(url: out)?.pageCount == 3, "\(String(describing: outcome))")
+        // `qpdf --overlay` moves each page's content into a form XObject, so the
+        // published page lists no image of its own: every JBIG2 stream in the file,
+        // raw, and every globals stream, decoded.
+        func streams(_ file: URL) -> (images: [Data], globals: [Data]) {
+            let dump = dir.appendingPathComponent("dump-" + file.lastPathComponent)
+            try? FileManager.default.createDirectory(at: dump, withIntermediateDirectories: true)
+            let p = Process(), pipe = Pipe()
+            p.executableURL = URL(fileURLWithPath: qpdf)
+            p.arguments = ["--json", "--json-key=qpdf", "--json-stream-data=file",
+                           "--json-stream-prefix=\(dump.path)/s", file.path]
+            p.standardOutput = pipe; p.standardError = FileHandle.nullDevice
+            try? p.run()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile(); p.waitUntilExit()
+            guard let top = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  let objects = (top["qpdf"] as? [Any])?.last as? [String: Any] else { return ([], []) }
+            func body(_ key: String) -> (dict: [String: Any], data: Data)? {
+                guard let s = (objects[key] as? [String: Any])?["stream"] as? [String: Any],
+                      let dict = s["dict"] as? [String: Any], let f = s["datafile"] as? String,
+                      let d = try? Data(contentsOf: URL(fileURLWithPath: f)) else { return nil }
+                return (dict, d)
+            }
+            var images: [Data] = [], globals: [Data] = []
+            for key in objects.keys {
+                guard let (dict, d) = body(key),
+                      "\(dict["/Filter"] ?? "")".contains("/JBIG2Decode") else { continue }
+                images.append(d)
+                if let g = (dict["/DecodeParms"] as? [String: Any])?["/JBIG2Globals"] as? String,
+                   let gd = body("obj:" + g) {
+                    globals.append(gd.data)
+                }
+            }
+            return (images, globals)
+        }
+        let published = streams(out)
+        let source0 = sources[0].flatMap { try? Data(contentsOf: $0.data) }
+        let source1 = sources[1].flatMap { try? Data(contentsOf: $0.data) }
+        // Both files read the same way, globals decoded: the source's came through
+        // qpdf above, which stores them Flate, and are published the same.
+        let sourceGlobals = streams(src).globals.first
+        check("C37: an unturned page publishes the source's own stream, byte for byte",
+              source0 != nil && published.images.filter { $0 == source0 }.count == 1,
+              "\(published.images.map(\.count)) vs \(source0?.count ?? -1) B")
+        check("C37: …and a page coded against globals keeps its stream and its globals",
+              source1 != nil && published.images.contains(source1!)
+                  && sourceGlobals != nil && published.globals == [sourceGlobals!],
+              "\(published.globals.map(\.count)) vs \(sourceGlobals?.count ?? -1) B")
+        // Page 3 is page 1's stream under a turn: kept, it would be a second copy of
+        // it, where encoded afresh it is a stream of its own.
+        check("C37: …while the turned page is encoded afresh, as before",
+              published.images.count == 3 && Set(published.images).count == 3,
+              "\(published.images.count) images")
+        // What a reader sees: the kept pages render to the source's pixels, on the
+        // same sheet, at the scan's own resolution.
+        let outDoc = PDFDocument(url: out)
+        for i in 0..<2 {
+            guard let a = srcDoc?.page(at: i), let b = outDoc?.page(at: i) else {
+                check("C37: page \(i + 1) renders to the source's pixels", false, "no page"); continue
+            }
+            let box = a.bounds(for: .mediaBox), scale = CGFloat(pages[i].pixelWidth) / box.width
+            let w = pages[i].pixelWidth, h = pages[i].pixelHeight
+            let ra = Flattener.renderGrey(a, box: box, scale: scale, width: w, height: h, from: .mediaBox)
+            let rb = Flattener.renderGrey(b, box: b.bounds(for: .mediaBox), scale: scale,
+                                          width: w, height: h, from: .mediaBox)
+            check("C37: page \(i + 1) renders to the source's pixels, on the source's sheet",
+                  ra != nil && ra == rb && b.bounds(for: .mediaBox) == box,
+                  "\(zip(ra ?? [], rb ?? []).filter { $0 != $1 }.count) pixels differ")
+        }
+        // The other side of the price: a page whose stream and globals together
+        // outweigh the app's own encoding keeps the encoding, even though it is
+        // provably the same image — a line of glyphs that never repeat, symbol
+        // coded, carries a dictionary as large as the page (665 B generic against
+        // 122 + 574 B, measured).
+        let dearPNGs = dir.appendingPathComponent("dear-pages")
+        try? FileManager.default.createDirectory(at: dearPNGs, withIntermediateDirectories: true)
+        let alphabet = dir.appendingPathComponent("alphabet.pdf")
+        makeScannedPDF(at: alphabet, lines: ["abcdefghijklmnopqrstuvwxyz"])
+        if let b = (try? Flattener.flatten(alphabet, to: dir.appendingPathComponent("dear-r.pdf"),
+                                           mode: .blackAndWhite, pngDirectory: dearPNGs))?.first,
+           case .bilevel(let png) = b.content {
+            let root = dir.appendingPathComponent("dear").path
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: jb)
+            p.arguments = ["-s", "-p", "-b", root, png.path]
+            p.standardOutput = FileHandle.nullDevice; p.standardError = FileHandle.nullDevice
+            try? p.run(); p.waitUntilExit()
+            var page = JBIG2.Page(stream: .jbig2(URL(fileURLWithPath: root + ".0000")),
+                                  pixelWidth: b.pixelWidth, pixelHeight: b.pixelHeight,
+                                  boxSize: b.boxSize)
+            page.globals = URL(fileURLWithPath: root + ".sym")
+            let dear = dir.appendingPathComponent("dear.pdf")
+            try? JBIG2.assemble([page], to: dear)
+            let generic = dir.appendingPathComponent("dear-generic.jbig2")
+            try? JBIG2.encode(png: png, to: generic, using: jb)
+            let symbolBytes = [root + ".0000", root + ".sym"].reduce(0) {
+                $0 + ((try? Data(contentsOf: URL(fileURLWithPath: $1)))?.count ?? 0)
+            }
+            let genericBytes = (try? Data(contentsOf: generic))?.count ?? 0
+            let dearOut = dir.appendingPathComponent("dear.ocr.pdf")
+            var dearOutcome: Runner.Result.Outcome?
+            OCRModel.makeSearchablePDF(file: dear, output: dearOut, rebuild: true,
+                                       rebuildMode: .auto, password: nil, control: RunControl(),
+                                       progress: { _, _ in }, report: { o, _ in dearOutcome = o })
+            let dearStreams = streams(dearOut)
+            check("C37: a kept stream that would cost more than the app's own encoding is not kept",
+                  symbolBytes > genericBytes && dearOutcome == .succeeded
+                      && dearStreams.images.count == 1 && dearStreams.globals.isEmpty
+                      && dearStreams.images.first?.count == genericBytes,
+                  "symbol \(symbolBytes) B, generic \(genericBytes) B, published "
+                    + "\(dearStreams.images.map(\.count)) + \(dearStreams.globals.map(\.count))")
+        } else {
+            check("C37: a kept stream that would cost more than the app's own encoding is not kept",
+                  false, "no bitmap")
+        }
+        check("C37: …and keeps a text layer",
+              (outDoc?.page(at: 1)?.string ?? "").contains("Invoice"),
+              outDoc?.page(at: 1)?.string ?? "nil")
+    } else {
+        skipBlock("C37's JBIG2 source end to end", checks: 14,
+                  because: "jbig2 or qpdf is not installed, so no page takes the JBIG2 route")
+    }
+    resetPrefs()
+}
+
 // MARK: - Same-named inputs are tracked separately
 
 // stages and inFlight were keyed by file *name*. Two inputs called scan.pdf in

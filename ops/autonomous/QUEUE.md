@@ -241,7 +241,7 @@ say so in the commit.
       * each new check goes red without the change.
       BOUND: one code commit.
       (origin: BUGS.md C36)
-- [ ] **c37-keep-jbig2** — publish a page whose source image is already 1-bit JBIG2 with that stream
+- [x] **c37-keep-jbig2** — publish a page whose source image is already 1-bit JBIG2 with that stream
       (and its `/JBIG2Globals`, if any) kept as it is, when the rebuilt bitmap is provably the same image.
       Today those pages are re-encoded: 51 documents go from 219.9 to 258.8 MB, and 31 of them grow, by up
       to 2.5x (`BUGS.md` C37).

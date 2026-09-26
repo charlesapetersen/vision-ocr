@@ -18155,7 +18155,7 @@ Left, from the review: turned lines extract after the page's upright text, and t
 across a page break. `Tools/score-run-width` still sends every line through the upright frame; the
 writer's groups are `SearchableWriter.layers`, which the tool should call when it is next used.
 
-### C37 · Scans that arrive as 1-bit JBIG2 are re-encoded at up to 2.5x the bytes — OPEN
+### C37 · Scans that arrive as 1-bit JBIG2 are re-encoded at up to 2.5x the bytes — FIXED
 
 *(found 2026-09-26 by `corpus-stress`; the `jbig2-source` rows of `STRESS-READING-2026-09-26.tsv`.)*
 
@@ -18183,6 +18183,38 @@ substitution the source did not already have. "The same image" has to be proved,
   rebuild transposes Koh's `/Rotate 270` pages.
 
 Recognition and the text layer are unchanged.
+
+#### Fixed 2026-09-26
+
+A 1-bit page now publishes its source's own JBIG2 stream, and its `/JBIG2Globals`, when three things
+hold. First, CoreGraphics decodes the page's one XObject to exactly the threshold of the page's render
+(`Flattener.sourceBitmapMatches`). Second, the stream qpdf hands over (`JBIG2.sourceImages`, one
+`--decode-level=none` pass) decodes back to that image from a one-page file of its own. Third, the stream
+plus its share of the globals is no larger than jbig2enc's encoding of the page. The render comparison is
+the proof: placement, `/Decode`, `/ImageMask`, crops and other ink all change the render. A blank decode
+is refused, because that is what a failed decode looks like. `/Rotate` pages are refused. When a render
+is within 0.5% a side of the image's size, as with a scan stretched onto its sheet (Noble 1977, 2763x4365
+on a page that renders 2763x4367), the page is re-rendered at the image's own size, so it is not
+resampled. [measured]
+
+Default settings, 51 documents, before (`STRESS-READING`'s run) → after (`C37-KEEP-JBIG2-2026-09-26.tsv`):
+- **All 51: 258.8 → 197.5 MB**, against 219.9 MB of sources. 4,353 of 5,591 pages keep their stream.
+- **The 31 that grew: 216.9 → 159.0 MB** (sources 158.5). 21 shrink by 5-60%. Examples: Cooley 12.50 → 5.37,
+  Koh 5.52 → 2.73, Hayek 37.18 → 22.54, Engstrom 20.76 → 14.55, Noble 22.51 → 17.23.
+- **Pixels:** 111 of 111 sampled kept pages decode identically under poppler (`pdfimages`), on the
+  same page box to 0.02 pt. The gate passed 51/51, with 12,547,267 → 12,547,246 characters.
+- The run predates the size rule. Against the old outputs, 35 kept pages had grown by 12,309 B in all,
+  and the rule sends those back to the encoder. So the committed code keeps 4,318 pages and is 12,309 B
+  under the figures above. That is derived, not re-run. The run also predates `--decode-level=none` and
+  the password file, which change no byte of these 51: all 79 of their globals streams are unfiltered.
+
+The other 10 are unchanged, to within 600 B of text layer. Fisch, Robin_Stephens, New Materialisms,
+Eyal-Cohen and w5093 place their image rather than filling or stretching it over the sheet, so keeping
+it would need placement. Morgenthau is `/Rotate`. Lyons, Nogales, Mintzberg and Gilroy draw through a
+form, or through resources the page inherits. Rejected: keeping a stream under a placement the proof would
+have to reconstruct, which is more code for those 10 documents than the 21 needed.
+`JBIG2.splice` still passes a password on argv, and `Annotations.transplant`'s "the only place" comment
+is stale. [measured]
 
 ## Robustness and correctness of reporting
 

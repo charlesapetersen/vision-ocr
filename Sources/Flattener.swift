@@ -1,6 +1,7 @@
 import AppKit
 import CoreImage
 import Foundation
+import CryptoKit
 import PDFKit
 
 /// Rebuilds a PDF as pages of pure image, so no text layer survives.
@@ -1064,6 +1065,13 @@ enum Flattener {
         /// colour, so the compressed build can go back to it when the colour
         /// costs more than `spotColourPriceLimit` times as much.
         var bilevelFallback: URL? = nil
+        /// C37: set when this bilevel page is, bit for bit, the source page's own
+        /// 1-bit JBIG2 image (`sourceBitmapMatches`), so the compressed build can
+        /// keep that stream instead of re-encoding the same pixels at up to 2.5x.
+        /// It is `bitmapDigest` of the image, which the build checks the kept
+        /// stream against once it has decoded it back out of its own file.
+        var sourceJBIG2Digest: Data? = nil
+        var matchesSourceJBIG2: Bool { sourceJBIG2Digest != nil }
     }
 
     /// Rebuilds `source` into `destination` as image-only pages.
@@ -1103,6 +1111,7 @@ enum Flattener {
         password: String? = nil,
         pngDirectory: URL? = nil,
         passThrough: Set<Int> = [],
+        keepSourceJBIG2: Bool = false,
         isCancelled: () -> Bool = { false },
         progress: (Int, Int) -> Void = { _, _ in },
         onPage: ((RebuiltPage) throws -> Void)? = nil
@@ -1231,10 +1240,10 @@ enum Flattener {
                                            megapixels: safeInt(wide * high / 1_000_000),
                                            dpi: safeInt(dpi.rounded()))
             }
-            let width = max(Int(wide), 1)
-            let height = max(Int(high), 1)
+            var width = max(Int(wide), 1)
+            var height = max(Int(high), 1)
 
-            guard let grey = renderGrey(page, box: box, scale: scale,
+            guard var grey = renderGrey(page, box: box, scale: scale,
                                         width: width, height: height,
                                         from: .mediaBox) else {
                 throw Failure.pageFailed(page: index + 1, of: count)
@@ -1250,7 +1259,7 @@ enum Flattener {
             // `isPicture` reads the grey buffer, not the bilevel one, so the
             // threshold pass was pure waste on exactly the pages that also pay
             // for a JPEG.
-            let threshold = otsuThreshold(of: grey)
+            var threshold = otsuThreshold(of: grey)
             var useBilevel = mode != .grayscale
             // Measured once and used twice: as one of the three picture signals,
             // and to decide whether the picture it found is a colour one.
@@ -1293,6 +1302,20 @@ enum Flattener {
             let wantColour = !useBilevel
                 && shouldKeepColour(mode: mode, saturation: sat,
                                     sheetFraction: sheet, pixels: wide * high)
+
+            // C37. A 1-bit page that is, bit for bit, its source's own JBIG2 image,
+            // so the compressed build can keep that stream. Possibly at the image's
+            // own size rather than this render's, which is then the rebuild: the
+            // same pixels, not resampled by the pixel or two the sheet's aspect
+            // differs by. Only when the caller will keep such a stream: the
+            // decode and a possible second render are not free.
+            var sourceDigest: Data?
+            if useBilevel, keepSourceJBIG2, pngDirectory != nil,
+               let kept = sourceImageRebuild(of: page, box: box, grey: grey, width: width,
+                                             height: height, threshold: threshold) {
+                grey = kept.grey; width = kept.width; height = kept.height
+                threshold = kept.threshold; sourceDigest = kept.digest
+            }
 
             // Encoded once, whichever way it goes. The JPEG bytes are reused for
             // the stream file below rather than encoded a second time.
@@ -1370,7 +1393,8 @@ enum Flattener {
                     // (A3.4) — two conditionals that read as gates and were not.
                     let entry = RebuiltPage(content: .bilevel(png), pixelWidth: width,
                                             pixelHeight: height, boxSize: box.size,
-                                            sourceCropBox: sourceCrop)
+                                            sourceCropBox: sourceCrop,
+                                            sourceJBIG2Digest: sourceDigest)
                     rebuilt.append(entry)
                     try onPage?(entry)
                 } else {
@@ -1473,9 +1497,13 @@ enum Flattener {
     /// `from` must be the box `box` was measured with, or the page is drawn to
     /// the wrong scale: pass `.mediaBox` alongside `fullBox`, `.cropBox`
     /// alongside `displayBox`.
+    ///
+    /// `scaleY`, when given, is the vertical scale and `scale` the horizontal one.
+    /// Only C37 asks for it: a scan drawn onto a sheet whose aspect differs from
+    /// its own by a pixel or two, rendered at the scan's own size.
     static func renderGrey(
         _ page: PDFPage, box: CGRect, scale: CGFloat, width: Int, height: Int,
-        from pdfBox: CGPDFBox = .mediaBox
+        from pdfBox: CGPDFBox = .mediaBox, scaleY: CGFloat? = nil
     ) -> [UInt8]? {
         var buffer = [UInt8](repeating: 255, count: width * height)
         let ok = buffer.withUnsafeMutableBytes { raw -> Bool in
@@ -1489,11 +1517,11 @@ enum Flattener {
 
             guard let cgPage = page.pageRef else {
                 // No CGPDFPage (unlikely): fall back to PDFKit's own drawing.
-                ctx.scaleBy(x: scale, y: scale)
+                ctx.scaleBy(x: scale, y: scaleY ?? scale)
                 page.draw(with: pdfBox == .cropBox ? .cropBox : .mediaBox, to: ctx)
                 return true
             }
-            ctx.scaleBy(x: scale, y: scale)
+            ctx.scaleBy(x: scale, y: scaleY ?? scale)
             ctx.concatenate(cgPage.getDrawingTransform(
                 pdfBox, rect: CGRect(origin: .zero, size: box.size),
                 rotate: 0, preserveAspectRatio: true))
@@ -1690,6 +1718,158 @@ enum Flattener {
             bytesPerRow: rowBytes, space: CGColorSpaceCreateDeviceGray(),
             bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
             decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+    }
+
+    /// C37. The page's one image, decoded, when that image is 1-bit JBIG2: the
+    /// packed rows CoreGraphics decodes it to, 1 = white, the same layout
+    /// `bilevelImage` writes. nil for anything else — two XObjects, a form, another
+    /// filter, a filter chain, or bytes that are not one row per line.
+    ///
+    /// Only half of the proof. What the page *draws* is `sourceBitmapMatches`'s
+    /// question, asked of the render.
+    static func sourceBitmap(of page: PDFPage) -> (width: Int, height: Int, rows: Data)? {
+        guard let dict = page.pageRef?.dictionary else { return nil }
+        var resources: CGPDFDictionaryRef?, xobjects: CGPDFDictionaryRef?
+        guard CGPDFDictionaryGetDictionary(dict, "Resources", &resources), let resources,
+              CGPDFDictionaryGetDictionary(resources, "XObject", &xobjects), let xobjects,
+              CGPDFDictionaryGetCount(xobjects) == 1 else { return nil }
+        final class Found { var stream: CGPDFStreamRef? }
+        let found = Found()
+        CGPDFDictionaryApplyBlock(xobjects, { _, object, info in
+            var stream: CGPDFStreamRef?
+            if CGPDFObjectGetValue(object, .stream, &stream), let info {
+                Unmanaged<Found>.fromOpaque(info).takeUnretainedValue().stream = stream
+            }
+            return false
+        }, Unmanaged.passUnretained(found).toOpaque())
+        guard let stream = found.stream, let image = CGPDFStreamGetDictionary(stream) else {
+            return nil
+        }
+        var subtype: UnsafePointer<Int8>?, filter: UnsafePointer<Int8>?
+        var filters: CGPDFArrayRef?
+        var width: CGPDFInteger = 0, height: CGPDFInteger = 0
+        // One filter, as a name or as a one-entry array: `[/FlateDecode
+        // /JBIG2Decode]` is a chain whose raw bytes are not a JBIG2 stream, and
+        // keeping them as one would publish noise.
+        if !CGPDFDictionaryGetName(image, "Filter", &filter),
+           CGPDFDictionaryGetArray(image, "Filter", &filters), let filters,
+           CGPDFArrayGetCount(filters) == 1 {
+            _ = CGPDFArrayGetName(filters, 0, &filter)
+        }
+        guard CGPDFDictionaryGetName(image, "Subtype", &subtype), let subtype,
+              String(cString: subtype) == "Image",
+              let filter, String(cString: filter) == "JBIG2Decode",
+              CGPDFDictionaryGetInteger(image, "Width", &width),
+              CGPDFDictionaryGetInteger(image, "Height", &height),
+              width > 0, height > 0, width * height <= maximumPageMegapixels * 1_000_000
+        else { return nil }
+        var format = CGPDFDataFormat.raw
+        guard let data = CGPDFStreamCopyData(stream, &format) as Data?, format == .raw,
+              data.count == (width + 7) / 8 * height else { return nil }
+        return (width, height, data)
+    }
+
+    /// C37. A digest of a decoded 1-bit image's pixels, pad bits excluded, or nil
+    /// for an image with no ink in it.
+    ///
+    /// nil for a blank one because that is also what a stream CoreGraphics
+    /// *failed* to decode looks like — the right number of bytes, all white — and
+    /// a render of the same failure is white too, so the two would "match" over a
+    /// page that shows nothing. A page that really is blank costs the encoder a
+    /// few hundred bytes, so it loses nothing by going there.
+    static func bitmapDigest(_ image: (width: Int, height: Int, rows: Data)) -> Data? {
+        let rowBytes = (image.width + 7) / 8
+        guard image.rows.count == rowBytes * image.height else { return nil }
+        let tail = image.width % 8 == 0 ? UInt8(0xFF) : UInt8(0xFF) << UInt8(8 - image.width % 8)
+        var rows = image.rows
+        var ink = false
+        rows.withUnsafeMutableBytes { raw in
+            let bytes = raw.bindMemory(to: UInt8.self)
+            for y in 0..<image.height {
+                let last = y * rowBytes + rowBytes - 1
+                bytes[last] |= ~tail                  // pad bits read as white
+                if !ink {
+                    for i in (y * rowBytes)...last where bytes[i] != 0xFF { ink = true; break }
+                }
+            }
+        }
+        return ink ? Data(SHA256.hash(data: rows)) : nil
+    }
+
+    /// C37. The rebuild of a 1-bit page when it is, bit for bit, the page's own
+    /// JBIG2 image: this render if it already is, or a render at the image's own
+    /// size when the render differs from it by at most half a percent a side and
+    /// that one is. nil otherwise, and the page keeps the render it has.
+    ///
+    /// The second case is a scan the source stretched onto its sheet: Noble 1977's
+    /// 2763x4365 image on a page that renders 2763x4367 at the scan's resolution,
+    /// so the rebuild resampled it by two rows. Drawn at its own size the page is
+    /// the image again, and `sourceBitmapMatches` still has the last word — an
+    /// image *placed* with a margin rather than stretched does not match.
+    ///
+    /// Only an unturned page: the rebuild bakes `/Rotate` in, and a kept stream
+    /// would be drawn unturned.
+    static func sourceImageRebuild(of page: PDFPage, box: CGRect, grey: [UInt8],
+                                   width: Int, height: Int, threshold: UInt8)
+        -> (grey: [UInt8], width: Int, height: Int, threshold: UInt8, digest: Data)? {
+        guard page.rotation % 360 == 0, let source = sourceBitmap(of: page) else { return nil }
+        if source.width == width, source.height == height {
+            guard sourceBitmapMatches(source, grey: grey, width: width, height: height,
+                                      threshold: threshold),
+                  let digest = bitmapDigest(source) else { return nil }
+            return (grey, width, height, threshold, digest)
+        }
+        guard abs(source.width - width) * 200 <= width,
+              abs(source.height - height) * 200 <= height,
+              box.width > 0, box.height > 0,
+              let exact = renderGrey(page, box: box, scale: CGFloat(source.width) / box.width,
+                                     width: source.width, height: source.height,
+                                     from: .mediaBox,
+                                     scaleY: CGFloat(source.height) / box.height)
+        else { return nil }
+        let t = otsuThreshold(of: exact)
+        guard sourceBitmapMatches(source, grey: exact, width: source.width,
+                                  height: source.height, threshold: t),
+              let digest = bitmapDigest(source) else { return nil }
+        return (exact, source.width, source.height, t, digest)
+    }
+
+    /// C37. Whether the rebuild of this page is, bit for bit, its source's own
+    /// 1-bit image — so publishing the source's JBIG2 stream publishes the same
+    /// pixels as re-encoding the rebuild would.
+    ///
+    /// Compared against the threshold of the *render*, which is what the page
+    /// draws: an image placed off the sheet, scaled, cropped, inverted by
+    /// `/Decode`, painted in a colour through `/ImageMask`, or drawn under other
+    /// ink all fail here, because the rendered page then differs from the image.
+    /// That is the whole of the proof, and it is why no one of those cases needs a
+    /// rule of its own. A turned page is refused by the caller, since the
+    /// rebuild bakes `/Rotate` in and the kept stream would not.
+    static func sourceBitmapMatches(_ source: (width: Int, height: Int, rows: Data),
+                                    grey: [UInt8], width: Int, height: Int,
+                                    threshold: UInt8) -> Bool {
+        guard source.width == width, source.height == height,
+              grey.count >= width * height else { return false }
+        let rowBytes = (width + 7) / 8
+        // The pad bits at the end of each row are not pixels, and a decoder is
+        // free to leave anything in them.
+        let tail = width % 8 == 0 ? UInt8(0xFF) : UInt8(0xFF) << UInt8(8 - width % 8)
+        return source.rows.withUnsafeBytes { raw -> Bool in
+            let rows = raw.bindMemory(to: UInt8.self)
+            var row = [UInt8](repeating: 0, count: rowBytes)
+            for y in 0..<height {
+                for i in 0..<rowBytes { row[i] = 0 }
+                let src = y * width, dst = y * rowBytes
+                for x in 0..<width where grey[src + x] >= threshold {
+                    row[x >> 3] |= UInt8(0x80) >> UInt8(x & 7)
+                }
+                for i in 0..<rowBytes {
+                    let mask = i == rowBytes - 1 ? tail : 0xFF
+                    if (row[i] ^ rows[dst + i]) & mask != 0 { return false }
+                }
+            }
+            return true
+        }
     }
 
     /// Is this page a picture rather than text? Three signals, because each

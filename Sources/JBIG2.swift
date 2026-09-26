@@ -100,6 +100,157 @@ enum JBIG2 {
         let boxSize: CGSize
         /// True when `stream` is a three-channel JPEG.
         var isColour = false
+        /// C37. The `/JBIG2Globals` a kept source stream decodes against, on a
+        /// `.jbig2` page only. Pages that share one URL share one object, as
+        /// they did in the source.
+        var globals: URL? = nil
+        /// C37. Whether `globals` is stored Flate-compressed, as a file that has
+        /// been through qpdf has it, and is written that way.
+        var globalsAreFlate = false
+    }
+
+    /// C37. A source page's one image, when it is a JBIG2 stream this file can
+    /// carry as it stands: the only image on the page, `/JBIG2Decode` alone, and
+    /// no decode parameter but `/JBIG2Globals`. `data` holds its bytes exactly as
+    /// the source stored them, and `globals` its globals, likewise — unfiltered
+    /// or Flate, and `globalsAreFlate` says which. nil when there are none, or
+    /// when the source's globals stream is empty, which decodes exactly as none.
+    struct SourceImage: Equatable {
+        let width: Int
+        let height: Int
+        let data: URL
+        let globals: URL?
+        var globalsAreFlate = false
+    }
+
+    /// C37. `SourceImage`s by 0-based page, with every stream of `file` written
+    /// raw into `directory` in one qpdf pass. Empty when qpdf cannot say, which
+    /// sends every page down the encoder as before.
+    ///
+    /// One pass, not one `--show-object` a page: qpdf re-reads the whole file
+    /// each time it runs, and on a file whose cross-reference table it has to
+    /// rebuild (Hayek 1978, 574 pages) that was 1.18 s a call against the 0.07 s
+    /// encode it replaced. Exit 3, qpdf's warning, is accepted because that file
+    /// always earns one; what a damaged stream would cost is caught by `Model`
+    /// decoding the kept stream before it is used.
+    ///
+    /// Only the streams of a page whose own dictionary names its resources are
+    /// looked at by `Flattener.sourceBitmap`, so a page inheriting them from
+    /// `/Pages` is not kept. That costs bytes, never content.
+    static func sourceImages(in file: URL, password: String?, using qpdf: String,
+                             streamsInto directory: URL,
+                             register: (Process) -> Void = { _ in }) -> [Int: SourceImage] {
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        // `--decode-level=none`: every stream exactly as stored. Decoding would
+        // write a Flate scan page out at its full 8-bit size — 40 MB against 28 MB
+        // for Hayek, and gigabytes on a book of such pages.
+        var arguments = ["--json", "--json-key=pages", "--json-key=qpdf",
+                         "--json-stream-data=file", "--decode-level=none",
+                         "--json-stream-prefix=\(directory.appendingPathComponent("s").path)"]
+        // In a file, not in argv, where `ps` would show it to every local user for
+        // as long as qpdf runs — `Annotations.transplant`'s reason, and its route.
+        if let password, !password.isEmpty {
+            let path = directory.appendingPathComponent("pw")
+            guard (try? Data(password.utf8).write(to: path)) != nil else { return [:] }
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600],
+                                                   ofItemAtPath: path.path)
+            arguments.insert("--password-file=" + path.path, at: 0)
+        }
+        defer { try? FileManager.default.removeItem(at: directory.appendingPathComponent("pw")) }
+        arguments.append(file.path)
+        guard let out = try? runQPDF(arguments, using: qpdf, register: register),
+              let top = (try? JSONSerialization.jsonObject(with: out)) as? [String: Any],
+              let pages = top["pages"] as? [[String: Any]],
+              let objects = (top["qpdf"] as? [Any])?.last as? [String: Any] else { return [:] }
+        return parseSourceImages(pages, objects: objects)
+    }
+
+    /// The pure half of `sourceImages`, so the rules can be pinned without qpdf.
+    /// `objects` is qpdf's `obj:N G R` map, whose stream dictionaries describe
+    /// the data as it was written: a filter qpdf decoded would be gone from them,
+    /// and with nothing decoded every filter is still there.
+    static func parseSourceImages(_ pages: [[String: Any]], objects: [String: Any])
+        -> [Int: SourceImage] {
+        func stream(_ ref: Any?) -> (dict: [String: Any], data: URL)? {
+            guard let ref = ref as? String,
+                  let s = (objects["obj:" + ref] as? [String: Any])?["stream"] as? [String: Any],
+                  let dict = s["dict"] as? [String: Any],
+                  let file = s["datafile"] as? String else { return nil }
+            return (dict, URL(fileURLWithPath: file))
+        }
+        func filters(_ dict: [String: Any]) -> [String] {
+            if let one = dict["/Filter"] as? String { return [one] }
+            return dict["/Filter"] as? [String] ?? []
+        }
+        var found: [Int: SourceImage] = [:]
+        for (index, page) in pages.enumerated() {
+            guard let images = page["images"] as? [[String: Any]], images.count == 1,
+                  let image = images.first,
+                  let width = image["width"] as? Int, let height = image["height"] as? Int,
+                  let data = stream(image["object"]),
+                  // Still filtered in the file qpdf wrote, so these are the raw bytes.
+                  filters(data.dict) == ["/JBIG2Decode"] else { continue }
+            var globals: URL?
+            var globalsAreFlate = false
+            var parms = data.dict["/DecodeParms"]
+            if let list = parms as? [Any] {
+                guard list.count == 1 else { continue }
+                parms = list[0] is NSNull ? nil : list[0]
+            }
+            if let parms, !(parms is NSNull) {
+                guard let dict = parms as? [String: Any],
+                      Set(dict.keys).isSubset(of: ["/JBIG2Globals"]) else { continue }
+                if let ref = dict["/JBIG2Globals"] {
+                    // Unfiltered or Flate, with no parameters, which is every way
+                    // the corpus stores them and what qpdf writes by default: the
+                    // bytes are kept with their one filter. Anything else is not
+                    // written as data. Neither is proof the segments are whole — a
+                    // truncated stream looks the same — which is why `Model` decodes
+                    // the kept page again before it is used.
+                    guard let g = stream(ref), g.dict["/DecodeParms"] == nil else { continue }
+                    let kind = filters(g.dict)
+                    guard kind.isEmpty || kind == ["/FlateDecode"] else { continue }
+                    let size = (try? FileManager.default.attributesOfItem(
+                        atPath: g.data.path)[.size] as? Int) ?? nil
+                    guard let size else { continue }
+                    if size > 0 { globals = g.data; globalsAreFlate = !kind.isEmpty }
+                }
+            }
+            found[index] = SourceImage(width: width, height: height, data: data.data,
+                                       globals: globals, globalsAreFlate: globalsAreFlate)
+        }
+        return found
+    }
+
+    /// qpdf's stdout, or a throw. 3 is its warning exit and still an answer.
+    private static func runQPDF(_ arguments: [String], using qpdf: String,
+                                register: (Process) -> Void = { _ in }) throws -> Data {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: qpdf)
+        process.arguments = arguments
+        let outPipe = Pipe(), errPipe = Pipe()
+        process.standardOutput = outPipe
+        process.standardError = errPipe
+        try process.run()
+        register(process)
+        // Both pipes drained before the wait, and concurrently: a child that
+        // fills the one nobody is reading blocks forever.
+        var err = Data()
+        let group = DispatchGroup()
+        group.enter()
+        DispatchQueue.global().async {
+            err = errPipe.fileHandleForReading.readDataToEndOfFile(); group.leave()
+        }
+        let out = outPipe.fileHandleForReading.readDataToEndOfFile()
+        group.wait()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 || process.terminationStatus == 3 else {
+            let message = String(decoding: err, as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            throw Failure.encoderFailed(message.isEmpty
+                ? "qpdf exited with code \(process.terminationStatus)" : message)
+        }
+        return out
     }
 
     enum Failure: LocalizedError {
@@ -296,13 +447,21 @@ enum JBIG2 {
         // describing the old layout. That produces a file that opens and is
         // wrong, which is the failure mode this file exists to avoid.
         var pageObjects: [Int] = [], contentObjects: [Int] = [], imageObjects: [[Int]] = []
+        // C37. One object per distinct globals stream, numbered right after the
+        // first page that uses it, which is also where it is written.
+        var globalsObjects: [URL: Int] = [:], globalsFirstWrittenBy: [Int: URL] = [:]
         var nextObject = 3
-        for page in pages {
+        for (i, page) in pages.enumerated() {
             pageObjects.append(nextObject); nextObject += 1
             contentObjects.append(nextObject); nextObject += 1
             let count = page.stream.imageCount
             imageObjects.append(Array(nextObject..<(nextObject + count)))
             nextObject += count
+            if case .jbig2 = page.stream, let globals = page.globals,
+               globalsObjects[globals] == nil {
+                globalsObjects[globals] = nextObject; nextObject += 1
+                globalsFirstWrittenBy[i] = globals
+            }
         }
         func pageObject(_ i: Int) -> Int { pageObjects[i] }
         func contentObject(_ i: Int) -> Int { contentObjects[i] }
@@ -395,7 +554,8 @@ enum JBIG2 {
             /// middle of a book.
             func writeImage(_ number: Int, from url: URL, width: Int, height: Int,
                             filter: String, bits: Int, space: String,
-                            smask: Int? = nil, decode: String? = nil) throws {
+                            smask: Int? = nil, decode: String? = nil,
+                            parms: String? = nil) throws {
                 guard let bytes = try? Data(contentsOf: url), !bytes.isEmpty else {
                     throw Failure.encoderFailed("page \(i + 1) produced no image data")
                 }
@@ -405,6 +565,7 @@ enum JBIG2 {
                 /Height \(height) /ColorSpace \(space) \
                 /BitsPerComponent \(bits) /Filter \(filter) \
                 \(decode.map { "/Decode \($0) " } ?? "")\
+                \(parms.map { "/DecodeParms \($0) " } ?? "")\
                 \(smask.map { "/SMask \($0) 0 R " } ?? "")/Length \(bytes.count) >>
                 stream\n
                 """)
@@ -419,9 +580,21 @@ enum JBIG2 {
             let space = page.isColour ? "/DeviceRGB" : "/DeviceGray"
             switch page.stream {
             case .jbig2(let u):
+                let globals = page.globals.flatMap { globalsObjects[$0] }
                 try writeImage(objects[0], from: u, width: page.pixelWidth,
                                height: page.pixelHeight, filter: "/JBIG2Decode",
-                               bits: 1, space: space)
+                               bits: 1, space: space,
+                               parms: globals.map { "<< /JBIG2Globals \($0) 0 R >>" })
+                if let url = globalsFirstWrittenBy[i], let number = globalsObjects[url] {
+                    guard let bytes = try? Data(contentsOf: url), !bytes.isEmpty else {
+                        throw Failure.encoderFailed("page \(i + 1)'s JBIG2 globals are empty")
+                    }
+                    try beginObject(number)
+                    let filter = page.globalsAreFlate ? " /Filter /FlateDecode" : ""
+                    try write("<< /Length \(bytes.count)\(filter) >>\nstream\n")
+                    try emit(bytes)
+                    try write("\nendstream\nendobj\n")
+                }
             case .jpeg(let u):
                 try writeImage(objects[0], from: u, width: page.pixelWidth,
                                height: page.pixelHeight, filter: "/DCTDecode",

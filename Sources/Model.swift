@@ -1938,6 +1938,51 @@ final class OCRModel: ObservableObject {
         /// C32. Index into `encoded` → the 1-bit rendering of a page kept in colour
         /// for its spot colour alone (`RebuiltPage.bilevelFallback`).
         var spotFallbacks: [Int: URL] = [:]
+        /// C37. What `keptSourceStream` did: nothing, or kept the page's source
+        /// stream — with the globals file it decodes against, if it has one.
+        enum KeptSource { case notKept, kept(JBIG2.SourceImage) }
+        var sourceJBIG2: [Int: JBIG2.SourceImage]?
+        let sourceStreams = work.appendingPathComponent("source-streams")
+        /// C37. What a kept stream costs its page: its own bytes, and its globals
+        /// divided among the pages that decode against them.
+        func keptBytes(_ image: JBIG2.SourceImage) -> Double {
+            var bytes = Double(fileSize(image.data))
+            if let globals = image.globals {
+                let users = sourceJBIG2?.values.filter { $0.globals == globals }.count ?? 1
+                bytes += Double(fileSize(globals)) / Double(max(users, 1))
+            }
+            return bytes
+        }
+        /// C37. Page `index`'s own JBIG2 stream from the user's file. Asked only of
+        /// a page `Flattener` found to be that image bit for bit, and it proves the
+        /// bytes as well: qpdf and CoreGraphics read the file separately, so the
+        /// stream qpdf hands over is decoded again, out of a one-page file of its
+        /// own, and must be the image `Flattener` compared. That catches another
+        /// page's stream, and globals qpdf could only partly read.
+        func keptSourceStream(page index: Int, _ page: Flattener.RebuiltPage) -> KeptSource {
+            guard let qpdf = JBIG2.merger, let digest = page.sourceJBIG2Digest else {
+                return .notKept
+            }
+            if sourceJBIG2 == nil {
+                sourceJBIG2 = control.adopting { register in
+                    JBIG2.sourceImages(in: file, password: password, using: qpdf,
+                                       streamsInto: sourceStreams, register: register)
+                }
+            }
+            guard let image = sourceJBIG2?[index], image.width == page.pixelWidth,
+                  image.height == page.pixelHeight else { return .notKept }
+            var kept = JBIG2.Page(stream: .jbig2(image.data), pixelWidth: page.pixelWidth,
+                                  pixelHeight: page.pixelHeight, boxSize: page.boxSize)
+            kept.globals = image.globals
+            kept.globalsAreFlate = image.globalsAreFlate
+            let check = work.appendingPathComponent("kept-check.pdf")
+            defer { try? FileManager.default.removeItem(at: check) }
+            guard (try? JBIG2.assemble([kept], to: check)) != nil,
+                  let decoded = PDFDocument(url: check)?.page(at: 0)
+                      .flatMap(Flattener.sourceBitmap(of:)),
+                  Flattener.bitmapDigest(decoded) == digest else { return .notKept }
+            return .kept(image)
+        }
         /// C23. Where each page's crop box lands on the published sheet, for the
         /// pages whose source hid part of it. Empty on the non-rebuild route,
         /// where `compose` reads the real thing off the user's own file.
@@ -2006,6 +2051,8 @@ final class OCRModel: ObservableObject {
                 bitmaps = try Flattener.flatten(
                     file, to: rebuilt, mode: rebuildMode, password: password,
                     pngDirectory: pngDir, passThrough: passThrough,
+                    // C37. Only the compressed build can keep a source's stream.
+                    keepSourceJBIG2: wantJBIG2 && JBIG2.isAvailable,
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Rebuilding page \(d) of \(t)", rebuildShare(d, t)) },
                     // Compress and discard each page as it is produced. Holding
@@ -2015,8 +2062,13 @@ final class OCRModel: ObservableObject {
                         guard let jb = JBIG2.encoder else { return }
                         switch page.content {
                         case .bilevel(let png):
-                            let out = scratch.appendingPathComponent(
+                            var out = scratch.appendingPathComponent(
                                 String(format: "s%05d.jbig2", encoded.count))
+                            // C37. The source's own stream when the rebuild is
+                            // provably its image; otherwise, or on any failure
+                            // to read it out, the encoder as before.
+                            let kept = page.matchesSourceJBIG2
+                                ? keptSourceStream(page: encoded.count, page) : .notKept
                             // adopting, not adopt: one child per page, and an
                             // unpaired adopt held every one of them for the
                             // whole batch.
@@ -2024,15 +2076,28 @@ final class OCRModel: ObservableObject {
                                 try JBIG2.encode(png: png, to: out, using: jb,
                                                  register: register)
                             }
+                            // Encoded even so, because the kept stream has to be
+                            // no larger than this: 35 of the corpus's 4,353 kept
+                            // pages were, by a few hundred bytes each. Globals are
+                            // charged by the share of pages that use them.
+                            var source: JBIG2.SourceImage?
+                            if case .kept(let image) = kept,
+                               keptBytes(image) <= Double(fileSize(out)) {
+                                try? FileManager.default.removeItem(at: out)
+                                out = image.data; source = image
+                            }
                             // Not deleted here any more: recognition has still
                             // to read it. It goes once the observations are in
                             // hand, which costs ~110 KB a page of scratch until
                             // then — 60 MB on a 600-page book, and no longer
                             // "for nothing".
                             spentBitmaps.append(png)
-                            encoded.append(JBIG2.Page(
+                            var entry = JBIG2.Page(
                                 stream: .jbig2(out), pixelWidth: page.pixelWidth,
-                                pixelHeight: page.pixelHeight, boxSize: page.boxSize))
+                                pixelHeight: page.pixelHeight, boxSize: page.boxSize)
+                            entry.globals = source?.globals
+                            entry.globalsAreFlate = source?.globalsAreFlate ?? false
+                            encoded.append(entry)
                         case .jpeg(let jpeg):
                             if let fallback = page.bilevelFallback {
                                 spotFallbacks[encoded.count] = fallback
@@ -2554,6 +2619,9 @@ final class OCRModel: ObservableObject {
                                    outline: carriedThrough.isEmpty ? outline : [],
                                    to: imagesOnly)
                 for page in encoded { for u in page.stream.urls { try? FileManager.default.removeItem(at: u) } }
+                // C37. The kept streams and their globals, which the loop above
+                // may have shared between pages and so did not own one by one.
+                try? FileManager.default.removeItem(at: sourceStreams)
                 // C29 (B). The born-digital pages back in their own places,
                 // straight out of the user's file: qpdf copies a page object as
                 // it stands, so the page keeps its fonts, its own images, its
