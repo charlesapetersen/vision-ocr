@@ -105,6 +105,29 @@ say so in the commit.
       real pages from the stains, close C27 `WONTFIX` with the measurement as the reason. Record the
       corpus byte cost either way. BOUND: one code commit.
       (origin: BUGS.md C27)
+- [ ] **c31-colour-text** — make body text on a page the layered colour route keeps legible again. This
+      is a regression in the released 1.14.0, so it comes before C28.
+      THE DEFECT. On `1954 - Why.pdf` (source and 1.14.0 output in
+      `~/.local/state/visionocr-autonomous/owner-supplied/`), the pages C27 now keeps in colour print
+      their text in a mottled, washed-out fill. The owner calls it illegible. The stencil is complete;
+      the 28 ppi foreground layer holds paper-coloured samples mixed in with the ink, so glyphs painted
+      through the stencil come out broken and light. `BUGS.md` C31 has what was checked. Why the
+      foreground mixes in paper is an inference; confirm the mechanism in the code before fixing it.
+      WHAT A FIX HAS TO DO. Text drawn through the stencil should come out as dark and solid as in the
+      source, and a coloured heading should stay coloured. A foreground built only from the ink under
+      the stencil, a finer foreground, or a flat colour per glyph or region are the obvious routes; the
+      choice is yours, with the rejected options recorded in one line each.
+      DONE WHEN, measured on the PUBLISHED PDF rendered at 1:1 and at 400 dpi and looked at:
+        * the body text on pages 2, 4, 6, 7 and 10 of `1954 - Why.pdf` is as legible as the source,
+          the red headings are still red, and the drawings on pages 4 and 6 are unchanged;
+        * the same holds on a sample of the other C27 pages you name, Schwaller photographs included,
+          so the fix is not tuned to one pamphlet;
+        * the corpus byte cost is measured and stated;
+        * a new check goes red without the change.
+      Then C31 closes `FIXED`, with a `CHANGELOG.md` line under a new `## Unreleased` heading (1.14.0
+      has been cut).
+      BOUND: one code commit, plus free docs commits for measurements.
+      (origin: BUGS.md C31)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation

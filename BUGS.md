@@ -17759,6 +17759,34 @@ the same reason.
   currently the project's headline claim about its own text layer and it does not mean what it appears
   to mean.
 
+### C31 · A page C27 now keeps in colour prints its body text in a blotchy, washed-out fill, because the layered route's foreground layer mixes paper into the ink — OPEN
+
+*(found 2026-09-25 by the owner, on `1954 - Why.pdf` processed by 1.14.0 at default settings. The
+source and the 1.14.0 output are in `~/.local/state/visionocr-autonomous/owner-supplied/`.)*
+
+The owner's report: the pages now keep their colour and the drawing looks good, but the text is
+illegible. This is a regression from C27's fix on the document C26 and C27 were founded on.
+
+What was checked on 2026-09-25, by rendering and by extracting the layers with `pdfimages`:
+
+- Pages 2, 4, 6, 7 and 10 of the output are layered (MRC): a background JPEG at 56 ppi, a foreground
+  JPEG at 28 ppi (306x236 on an 11x8.5 in page), and a 1-bit JBIG2 stencil at the source's own 111 ppi.
+  Pages 3, 5, 8 and 9 are a single 1-bit JBIG2 image and their text is crisp black.
+- The stencil on page 6 is complete: every line of body text and every heading is in it.
+- The foreground on page 6 is the fault. Over the body text it is a speckled mix of dark ink and light
+  paper-coloured samples (values run 0.06 to 0.68), so glyphs painted through the stencil come out
+  mottled and much lighter than in the source. Seen at 400 dpi beside the source crop, the source's
+  strokes are solid and the output's are broken and brownish. [measured]
+- Why the foreground mixes paper in is inferred, not measured: most likely each foreground sample
+  averages every source pixel in its cell, ink and paper alike, and then JPEG at 28 ppi smears it
+  further. [inferred]
+- Before C27 these pages took the grey route; page 3's treatment is what they would have got, and
+  its text is legible. C27's measurements covered colour and bytes, not the legibility of the text on
+  the pages it moved.
+
+C27 moved 100 corpus pages onto this route, 89 of them Schwaller photographs, so the same defect is
+probably on others. That is not yet measured.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED
