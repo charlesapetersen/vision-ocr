@@ -21,6 +21,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
   was read is now recognised, and lines that recognition had fused into one line of garbled words,
   which Preview showed as junk or skipped, come out as the real lines. Pages where this happens take
   about twice as long to recognise (C33).
+- Lines that were only half selectable, stopping partway across the page, are now whole. The rest of
+  such a line is recognised on its own, and that also clears the last garbled lines on these pages (C33).
 
 ## 1.14.0 — 2026-09-25
 

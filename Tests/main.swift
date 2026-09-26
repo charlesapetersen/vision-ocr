@@ -6833,6 +6833,88 @@ do {
     check("C33: a band line a kept fragment overlaps by a sliver is still added",
           sliver.map(\.text).contains("WOMEN IN HIGHER-LEVEL POSITIONS."), "\(sliver.map(\.text))")
 
+    // C33: the rest of a line nothing read is reported, for `recognisePage` to read on
+    // its own. `Briefer` p3's shape: a fused box whose second line is kept only in part,
+    // and the rest of that line holds ink.
+    var fusedRest: [Box] = []
+    _ = Recogniser.mergeBands(
+        whole: fusedPage, bands: [(observations: partialBand, top: 800, bottom: 1800)],
+        pageHeight: 4000, hasInk: { _ in true }, unread: { fusedRest.append($0) })
+    check("C33: the unread rest of a fused box's line is reported",
+          fusedRest.count == 1 && abs(fusedRest[0].x - 0.3) < 1e-6
+              && abs(fusedRest[0].width - 0.6) < 1e-6 && abs(fusedRest[0].y * 4000 - 1055) < 1e-6,
+          "\(fusedRest)")
+    // `Leland` p2's shape: the page kept `Effects of Fair Employment Legislation in the`,
+    // and the band's whole line, refused because it repeats those words, runs on.
+    let effects = [obs("line above", x: 0.1, top: 900, width: 0.8, height: 40, page: 4000),
+                   obs("Effects in the", x: 0.1, top: 1000, width: 0.4, height: 40, page: 4000),
+                   obs("line below", x: 0.1, top: 1100, width: 0.8, height: 40, page: 4000)]
+    let effectsBand = [(observations: [one("Effects in the States and Municipalities,", x: 0.1,
+                                           top: 1000, width: 0.8, height: 40)],
+                        top: 800, bottom: 1800)]
+    var beyond: [Box] = []
+    let refused = Recogniser.mergeBands(whole: effects, bands: effectsBand, pageHeight: 4000,
+                                        hasInk: { _ in true }, unread: { beyond.append($0) })
+    check("C33: a band line refused beside a kept fragment reports the stretch past it",
+          refused.map(\.text) == effects.map(\.text) && beyond.count == 1
+              && abs(beyond[0].x - 0.5) < 1e-6 && abs(beyond[0].width - 0.4) < 1e-6,
+          "\(refused.map(\.text)) \(beyond)")
+    var blankBeyond: [Box] = []
+    _ = Recogniser.mergeBands(whole: effects, bands: effectsBand, pageHeight: 4000,
+                              hasInk: { _ in false }, unread: { blankBeyond.append($0) })
+    var copyBeyond: [Box] = []
+    _ = Recogniser.mergeBands(
+        whole: effects,
+        bands: [(observations: [one("Effects in tho", x: 0.1, top: 1000, width: 0.405, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000, hasInk: { _ in true }, unread: { copyBeyond.append($0) })
+    check("C33: …but not over blank paper, nor for a band's copy of the fragment alone",
+          blankBeyond.isEmpty && copyBeyond.isEmpty, "\(blankBeyond) \(copyBeyond)")
+    // The stretch's own reading goes straight after the fragment it continues, and a
+    // second piece after the first, not after the line above in the column.
+    let continued = Recogniser.mergeBands(
+        whole: effects,
+        bands: [(observations: [one("States and", x: 0.505, top: 1000, width: 0.15, height: 40),
+                                one("Municipalities,", x: 0.66, top: 1000, width: 0.2, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000, continuing: [Box(x: 0.5, y: 0.25, width: 0.4, height: 0.01)])
+    check("C33: the rest of a line is placed after the fragment it continues, left to right",
+          continued.map(\.text) == ["line above", "Effects in the", "States and", "Municipalities,",
+                                    "line below"],
+          "\(continued.map(\.text))")
+    // …but a line the bands recovered in a column across a narrow gutter, which no
+    // stretch holds, stays in its own column's run (the review of this change).
+    let gutter = Recogniser.mergeBands(
+        whole: [obs("L1", x: 0.1, top: 1000, width: 0.395, height: 40, page: 4000),
+                obs("L2", x: 0.1, top: 1100, width: 0.395, height: 40, page: 4000),
+                obs("R1", x: 0.5, top: 1000, width: 0.395, height: 40, page: 4000)],
+        bands: [(observations: [one("R2", x: 0.5, top: 1100, width: 0.395, height: 40)],
+                 top: 800, bottom: 1800)],
+        pageHeight: 4000)
+    check("C33: …while a band line across a narrow gutter stays in its own column",
+          gutter.map(\.text) == ["L1", "L2", "R1", "R2"], "\(gutter.map(\.text))")
+    // The crop for a stretch, and its reads lifted back: a line height clear above and
+    // below, an eighth to either side, and only the reads centred on its own rows.
+    let stretch = Box(x: 0.5, y: 0.25, width: 0.4, height: 0.01)
+    let rect = Recogniser.stretchCrop(stretch, pageWidth: 4000, pageHeight: 4000, lineHeight: 40)
+    check("C33: a stretch is recognised a line clear above and below and an eighth to the sides",
+          rect.map { [$0.left, $0.top, $0.right, $0.bottom] } == [1995, 960, 3605, 1080],
+          "\(String(describing: rect))")
+    if let rect {
+        let piece = Recogniser.stretchPiece(
+            [Obs(boundingBox: Box(x: 0, y: 40.0 / 120, width: 1, height: 40.0 / 120),
+                 text: "States and Municipalities,", confidence: 1),
+             Obs(boundingBox: Box(x: 0.1, y: 0, width: 0.8, height: 20.0 / 120),
+                 text: "uoromont Pintino", confidence: 1)],
+            of: stretch, crop: rect, pageWidth: 4000, pageHeight: 4000)
+        check("C33: …its reads are lifted into the page's columns, less the neighbours' halves",
+              piece.observations.map(\.text) == ["States and Municipalities,"]
+                  && abs(piece.observations[0].boundingBox.x * 4000 - 1995) < 1e-6
+                  && abs(piece.observations[0].boundingBox.width * 4000 - 1610) < 1e-6
+                  && piece.top == 960 && piece.bottom == 1080,
+              "\(piece)")
+    }
+
     // C33: the trigger sees a block missed beside a column the request read. The
     // left column's line covers every row, so the whole-width test finds no void.
     let stripRows = 1000

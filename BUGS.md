@@ -17837,7 +17837,7 @@ headings and the shares; not measured: the pages' own `sheetFrac`]
 
 Fixing this moves pages onto the layered route, where C31's washed-out text fill is, so C31 comes first.
 
-### C33 · Blocks of text still cannot be selected after C30: some pages keep whole uncovered blocks, and on others the lines exist but PDFKit drops or garbles them — OPEN
+### C33 · Blocks of text still cannot be selected after C30: some pages keep whole uncovered blocks, and on others the lines exist but PDFKit drops or garbles them — FIXED
 
 *(found 2026-09-25 by the owner in 1.14.0: `1951 - Briefer Book Notes` p3 (C30's own founding document),
 `Leland - 1952 - We Believe in Employment on Merit, but` p2, p5 and p6, `Bird - 1963 - More Room at the Top …`
@@ -17924,6 +17924,45 @@ keeps two junk lines this way (`WOMEN IN HICHER LAbOr…`, `1.D. Second Edition,
 lacks the lines `WOMEN IN HIGHER-LEVEL POSITIONS…` and `EYES AND INDUSTRY…`. On Leland p2,
 `Effects of Fair Employment Legislation in the` stops at mid-width. The next step is to let a band's
 line that runs well past a kept fragment replace that fragment.
+
+#### FIXED 2026-09-26: the unread rest of a line is recognised on its own
+
+**Cause, confirmed by dumping the merge on both pages.** It was not what the paragraph above guessed. On
+Briefer p3 neither fused box was displaced. Each held one line whose rest *nothing* had read:
+- `1950. 86 pages. 25 cents. Avail-` beside the kept `United States Department of Labor, Washington, D. C.,`;
+- `M.D. Second Edition. The C. V. Mosby Company,` beside the kept `3207 Washington Blvd.…`.
+
+So `replaces` rightly kept the box, and its cover refused the band's clean lines. On Leland p2 the band's
+`…in the States and Municipalities,` was refused by the **cover** test (the kept fragment is 65% of it).
+Replacing the fragment with it was rejected: the band's copy misreads words the fragment has right
+(`Leguslation`).
+
+**Fix, `Sources/Recogniser.swift`.** `mergeBands` reports each unread stretch:
+- the stretches that block a fused box (`replaces(unread:)`);
+- the part of a refused band line that runs over two line heights past every kept box on its line, over
+  ink, into rows nothing covers.
+
+`recognisePage` then recognises each stretch as a crop (`stretchCrop`: a line clear above and below, an
+eighth of one to the sides). It keeps the reads centred on the stretch's rows (`stretchPiece`), since
+Vision reads the neighbours' halves as junk at 1.0. Then it reruns the last merge with those reads as
+bands. The rest of a line is ordered straight after the fragment it continues.
+
+**Measured, published PDFs, old → new (`Tools/pdfkit-lines --diff`).** Every removed line is junk, or a
+line that now appears joined into a longer one.
+- Briefer p3: all four lines are whole.
+- Leland p2 reads `…in the States and Municibalitics,` (Vision's spelling).
+- Words: Briefer 3,600 → 3,753, Leland 9,724 → 9,765, Bird 5,328 → 5,343, Hughes 4,723 → 4,723.
+- Canby_1915 and Gitlin_2000 are identical, and time is unchanged (±1 s).
+- C30's bars hold: void share at most 0.0264.
+- Invariant 3 on Briefer: starts and ends 98%, overlap 2/153 → 3/155, `merged=0/154`, `welded=0/37`,
+  runaway 0.8%, no slivers.
+
+**The review** found that chaining any added line to a box on its left would thread a column across a
+narrow gutter into its neighbour's. Chaining now needs a stretch's read, or a band that read both boxes
+as one line. That leaves `Intergroup…, D. C.,` / `Nov., 1952…` split as before, since only pass 0's
+band joined them; a check holds the gutter case. It also found stale stretches from the restore loop's
+first round, and small stretches refusing larger ones. Both are fixed, without a check of their own:
+each only wasted a crop.
 
 ### C34 · The text layer is written across the page row by row, so selection jumps between columns, and some Vision lines span the gutter — OPEN
 

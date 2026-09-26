@@ -105,7 +105,7 @@ say so in the commit.
       real pages from the stains, close C27 `WONTFIX` with the measurement as the reason. Record the
       corpus byte cost either way. BOUND: one code commit.
       (origin: BUGS.md C27)
-- [ ] **c33-unselectable-blocks** — make every printed line on the owner's five reported pages
+- [x] **c33-unselectable-blocks** — make every printed line on the owner's five reported pages
       selectable in Preview. The owner found these in the released 1.14.0, and making text selectable is
       what the app is for, so this comes first.
       THE DEFECT, which may be two. `BUGS.md` C33 has what was checked. (a) Real voids: on `Bird` p3 two
