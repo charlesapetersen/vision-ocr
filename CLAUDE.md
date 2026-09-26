@@ -24,7 +24,7 @@ lines. State a finding once, in the place that owns it, and do not restate old c
 ## Where things live
 
 - `BUGS.md` — the defect register (2 MB). Read one entry with `ops/autonomous/bugs-entry.sh <TAG>`;
-  never read the file whole. Open entries: C27, C28 (parked by the owner 2026-09-21).
+  never read the file whole. Open entries: C28 (parked by the owner 2026-09-21).
 - `ops/autonomous/QUEUE.md` — the work order for autonomous sessions, and a short one on purpose.
 - `CHANGELOG.md` — `## Unreleased` holds user-visible changes awaiting the next release.
 - `ARCHITECTURE.md` — the call path and where the risk sits. `CONTRIBUTING.md` — the change process
@@ -50,7 +50,7 @@ lets anything else through in seconds.
 ```sh
 ./build.sh            # build -> build/VisionOCR.app
 ./build.sh --install  # + install to /Applications
-./run_tests.sh        # 1,418 checks, no skips
+./run_tests.sh        # 1,431 checks, no skips
 ```
 
 The count on the `./run_tests.sh` line stays undated and current, because `check-staleness.sh` reads it

@@ -14,6 +14,12 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+**Scanned pages printed with a spot colour keep it.** A page with a red rule, a coloured banner or a
+colour photograph on a page of type was published in grey, because only pages with a lot of colour
+overall kept theirs. Automatic now also keeps colour when enough of the sheet itself is coloured,
+ignoring a coloured scanner border. Across the test library 100 pages keep their colour this way, at
+about 7% more bytes each.
+
 **Scanned pages where whole blocks of text could not be selected are now read in full.** Vision, given a
 whole page at once, sometimes skips entire paragraphs of clean type; on a six-page 1951 journal scan about
 half of each page had no text layer. When a page comes back with inked areas that have no words over them,

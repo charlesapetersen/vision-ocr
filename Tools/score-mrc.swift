@@ -761,7 +761,7 @@ func measure(_ page: PDFPage, label: String, index: Int,
         return outcome
     }
     let threshold = Flattener.otsuThreshold(of: grey)
-    let saturation = Flattener.saturation(of: page)
+    let (saturation, sheetFraction) = Flattener.colourMeasures(of: page)
     guard Flattener.isPicture(page, grey: grey, width: w, height: h,
                               threshold: threshold, saturation: saturation)
     else { return outcome }
@@ -771,6 +771,7 @@ func measure(_ page: PDFPage, label: String, index: Int,
     // Automatic keeps the colour and both colour steps succeed, grey otherwise —
     // including the fall-through, which is a real path and not a formality.
     let shipWantsColour = Flattener.shouldKeepColour(mode: .auto, saturation: saturation,
+                                                     sheetFraction: sheetFraction,
                                                      pixels: wide * high)
     outcome.shipWantsColour = shipWantsColour
     // C27 (b). `shipped` is the app's own answer; the two forcing arms are how the

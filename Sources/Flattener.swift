@@ -170,15 +170,38 @@ enum Flattener {
     ///
     /// It does not reach the three pages of C27's ten that are 1-bit today: a
     /// page off the picture route never asks this question, because `&&`
-    /// short-circuits on `!useBilevel`. Those want the route bar, or a statistic
-    /// other than a mean — C27 measures `sheetFrac` and `topPx` and refuses each
-    /// of them as a single bar. ⛔ The register said those three were *"(c)'s
-    /// ground"*; measured off this call site, they are not, and that sentence is
-    /// corrected in C27's `#### The byte price, MEASURED`.
+    /// short-circuits on `!useBilevel`, and `colourSheetFractionThreshold` (the
+    /// second way in, 2026-09-25) does not reach them either. ⛔ The register said
+    /// those three were *"(c)'s ground"*; measured off this call site, they are
+    /// not, and that sentence is corrected in C27's `#### The byte price, MEASURED`.
     ///
-    /// ⚠️ The value is the owner's and not a session's (R55's precedent). The
-    /// split is the structural half; nothing here proposes a number.
+    /// The value was left at 0.06 by C27's window measurement: no value beats it.
     static let colourSaturationThreshold = 0.06
+
+    /// C27, the second way a picture-route page keeps its colour: more than this
+    /// share of the thumbnail saturated above `colourSheetPixelFloor`, counting
+    /// only components that do not touch the render's border (`sheetFrac`).
+    ///
+    /// A mean cannot see spot colour — a red rule and a banner are 3-4% of a page
+    /// and need ~8% to reach 0.06 — so this counts coloured pixels instead, and
+    /// drops the border-connected ones because a photographed scanner surround is
+    /// saturated and is not the page (`Ford_1941` p5, `satFrac` 0.041 → 0.0045).
+    /// Measured in `C27-MASKTERMS-2026-08-26.tsv`: over the 48 grey picture-route
+    /// pages of the sample, the six eye-read real-colour pages read 0.0133-0.064
+    /// and every other page reads at most 0.0077 (`Stanford_1891` p3, brown
+    /// foxing). 0.01 sits between the two, ~1.3x from each. It misses
+    /// `Glazer_2002` p1 (a red rule and banner, 0.0055), which sits below two
+    /// artefacts; a rule-shape refinement that reached it would be fitted to that
+    /// one page, and was rejected. An addition to the mean bar, never a
+    /// replacement: `Atkinson_1939` p2 keeps its colour on the mean at a
+    /// `sheetFrac` of 0.0066.
+    static let colourSheetFractionThreshold = 0.01
+
+    /// The per-pixel saturation a pixel must exceed to count toward
+    /// `colourSheetFractionThreshold`. 0.25 is the floor C27 measured at: a scan
+    /// with no spot colour puts ~0.12% of itself above it, black on cream reads
+    /// 0.118 per pixel.
+    static let colourSheetPixelFloor = 0.25
 
     /// A pixel this bright is paper rather than ink, for the purpose of working
     /// out what colour the paper is.
@@ -1196,7 +1219,9 @@ enum Flattener {
             var useBilevel = mode != .grayscale
             // Measured once and used twice: as one of the three picture signals,
             // and to decide whether the picture it found is a colour one.
-            let sat = mode == .auto ? saturation(of: page) : 0
+            let thumb = mode == .auto ? saturationThumbnail(of: page) : nil
+            let sat = thumb.map { saturation(ofRGBA: $0.buffer, width: $0.width,
+                                             height: $0.height) } ?? 0
             if useBilevel, mode == .auto,
                isPicture(page, grey: grey, width: width, height: height,
                          threshold: threshold, saturation: sat) {
@@ -1214,8 +1239,18 @@ enum Flattener {
             // Bounded by megapixels because the colour path costs ~3.5x the
             // peak memory of the grey one, measured. Over the bound the page
             // rebuilds grey, exactly as it used to.
+            //
+            // `sheetFrac` (C27) only where it can change the answer: a picture
+            // page the mean has not already kept. Labelling components on every
+            // thumbnail costs ~2 s on a pathological dot field at the 4,000 px edge.
+            let sheet = !useBilevel && sat <= colourSaturationThreshold
+                ? thumb.flatMap { sheetSaturatedFraction(ofRGBA: $0.buffer, width: $0.width,
+                                                         height: $0.height,
+                                                         above: colourSheetPixelFloor) } ?? 0
+                : 0
             let wantColour = !useBilevel
-                && shouldKeepColour(mode: mode, saturation: sat, pixels: wide * high)
+                && shouldKeepColour(mode: mode, saturation: sat,
+                                    sheetFraction: sheet, pixels: wide * high)
 
             // Encoded once, whichever way it goes. The JPEG bytes are reused for
             // the stream file below rather than encoded a second time.
@@ -1431,9 +1466,14 @@ enum Flattener {
     /// which noted that the draft had named the one harmless reader in
     /// `score-mrc` and walked past the two false statements twenty lines above
     /// it. **Do not restate the enumeration as exhaustive.**
-    static func shouldKeepColour(mode: Mode, saturation: Double, pixels: Double) -> Bool {
+    ///
+    /// `sheetFraction` is the second way in (C27, `colourSheetFractionThreshold`):
+    /// spot colour on the sheet that the mean cannot reach.
+    static func shouldKeepColour(mode: Mode, saturation: Double, sheetFraction: Double,
+                                 pixels: Double) -> Bool {
         guard mode == .auto else { return false }
-        guard saturation > colourSaturationThreshold else { return false }
+        guard saturation > colourSaturationThreshold
+                || sheetFraction > colourSheetFractionThreshold else { return false }
         return pixels <= Double(maximumColourPageMegapixels) * 1_000_000
     }
 
@@ -1693,6 +1733,45 @@ enum Flattener {
         return saturation(ofRGBA: t.buffer, width: t.width, height: t.height)
     }
 
+    /// Both colour signals `flatten` reads, from one thumbnail: the mean
+    /// (`saturation(of:)`, which `isPicture` also reads) and `sheetFrac`
+    /// (`sheetSaturatedFraction`). One render so the two describe the same pixels.
+    static func colourMeasures(of page: PDFPage) -> (saturation: Double, sheetFraction: Double) {
+        guard let t = saturationThumbnail(of: page) else { return (0, 0) }
+        return (saturation(ofRGBA: t.buffer, width: t.width, height: t.height),
+                sheetSaturatedFraction(ofRGBA: t.buffer, width: t.width, height: t.height,
+                                       above: colourSheetPixelFloor) ?? 0)
+    }
+
+    /// The share of the buffer saturated above `floor`, after discarding every
+    /// 8-connected component that touches the buffer's border — a scanner
+    /// surround or a photographed page edge, rather than ink on the sheet. The
+    /// same computation as `Tools/score-threshold-loss`'s `sheetFrac` column.
+    ///
+    /// `nil` when `shapeComponents` exceeds `runLimit`, or the buffer is short;
+    /// the caller reads that as no spot colour, which is the behaviour before C27.
+    static func sheetSaturatedFraction(ofRGBA buffer: [UInt8], width: Int, height: Int,
+                                       above floor: Double,
+                                       runLimit: Int = maximumShapeRuns) -> Double? {
+        let pixels = width * height
+        guard pixels > 0, buffer.count >= pixels * 4 else { return nil }
+        var mask = [Bool](repeating: false, count: pixels)
+        var i = 0
+        forEachSaturation(ofRGBA: buffer, width: width, height: height) {
+            if $0 > floor { mask[i] = true }
+            i += 1
+        }
+        guard let comps = shapeComponents(mask, width: width, height: height,
+                                          x0: 0, y0: 0, x1: width, y1: height,
+                                          runLimit: runLimit) else { return nil }
+        var sheet = 0
+        for c in comps where c.minX > 0 && c.minY > 0
+                             && c.maxX < width - 1 && c.maxY < height - 1 {
+            sheet += c.area
+        }
+        return Double(sheet) / Double(pixels)
+    }
+
     /// The ~40 DPI RGBA thumbnail every colour signal is measured on — the page
     /// the routing decision actually describes.
     ///
@@ -1862,7 +1941,10 @@ enum Flattener {
     /// paper-corrected saturation is **strictly above** `floor`, matching
     /// `shouldKeepColour`'s own strict comparison against the mean.
     ///
-    /// **C27 is the whole reason this exists, and no shipped decision reads it.**
+    /// **C27 is the whole reason this exists.** No shipped decision reads this
+    /// whole-sheet fraction; the one that ships is `sheetSaturatedFraction`, the
+    /// same count with border-connected components dropped, at the shipped floor
+    /// `colourSheetPixelFloor`. The rest of this comment predates that.
     /// The route and the colour decision both read the mean — two constants
     /// since 2026-08-26 (C27 (c)), both of them means, so the split changes
     /// nothing about this paragraph, and 0.06 is still both their values — and

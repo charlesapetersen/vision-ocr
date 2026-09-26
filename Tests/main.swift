@@ -14679,9 +14679,9 @@ do {
     let underBound = Double(Flattener.maximumColourPageMegapixels) * 1_000_000 - 1
     let overBound = Double(Flattener.maximumColourPageMegapixels) * 1_000_000 + 1
     check("a colourful page inside the memory bound keeps its colour",
-          Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, pixels: underBound))
+          Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, sheetFraction: 0, pixels: underBound))
     check("…and past it gives the colour up rather than the four-byte allocation",
-          !Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, pixels: overBound))
+          !Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, sheetFraction: 0, pixels: overBound))
     // This check replaces one that asserted the bound was "a quarter of the grey
     // one, so peak memory is unchanged". Both halves were false: the grey buffer
     // is still alive when the RGBA one is allocated, and both are copied again
@@ -14698,10 +14698,10 @@ do {
     check("…and the colour path is still recorded as the more expensive one",
           Flattener.measuredColourBytesPerPixel > Flattener.measuredGreyBytesPerPixel)
     check("a grey page is never promoted to colour, whatever its size",
-          !Flattener.shouldKeepColour(mode: .auto, saturation: 0, pixels: 1000))
+          !Flattener.shouldKeepColour(mode: .auto, saturation: 0, sheetFraction: 0, pixels: 1000))
     check("…and colour is Automatic's decision alone",
-          !Flattener.shouldKeepColour(mode: .grayscale, saturation: 0.3, pixels: 1000)
-            && !Flattener.shouldKeepColour(mode: .blackAndWhite, saturation: 0.3, pixels: 1000))
+          !Flattener.shouldKeepColour(mode: .grayscale, saturation: 0.3, sheetFraction: 0, pixels: 1000)
+            && !Flattener.shouldKeepColour(mode: .blackAndWhite, saturation: 0.3, sheetFraction: 0, pixels: 1000))
     // C27 (c), 2026-08-26: this decision has its own bar now, and it is equal to
     // the route's, so no page's output moves. The check that used to sit here
     // read `pictureSaturationThreshold` on both sides of the comparison and was
@@ -14744,8 +14744,8 @@ do {
     // literals moved to straddle the new bar, the absolute pair reds under that
     // reversion too.
     check("the colour bar is read at its own value, not at the route's",
-          !Flattener.shouldKeepColour(mode: .auto, saturation: 0.06, pixels: 1000)
-            && Flattener.shouldKeepColour(mode: .auto, saturation: 0.07, pixels: 1000),
+          !Flattener.shouldKeepColour(mode: .auto, saturation: 0.06, sheetFraction: 0, pixels: 1000)
+            && Flattener.shouldKeepColour(mode: .auto, saturation: 0.07, sheetFraction: 0, pixels: 1000),
           String(format: "colour bar %.3f, route bar %.3f",
                  Flattener.colourSaturationThreshold,
                  Flattener.pictureSaturationThreshold))
@@ -14756,10 +14756,155 @@ do {
     check("…while the comparison against its own bar is strictly above",
           !Flattener.shouldKeepColour(mode: .auto,
                                       saturation: Flattener.colourSaturationThreshold,
-                                      pixels: 1000)
+                                      sheetFraction: 0, pixels: 1000)
             && Flattener.shouldKeepColour(mode: .auto,
                                           saturation: Flattener.colourSaturationThreshold + 0.001,
-                                          pixels: 1000))
+                                          sheetFraction: 0, pixels: 1000))
+
+    // C27: spot colour keeps a picture page in colour through `sheetFrac`, the
+    // saturated share of the sheet with border-connected components dropped.
+    check("the sheet bar is its own way in, strictly above, beside the mean",
+          !Flattener.shouldKeepColour(mode: .auto, saturation: 0,
+                                      sheetFraction: Flattener.colourSheetFractionThreshold,
+                                      pixels: 1000)
+            && Flattener.shouldKeepColour(mode: .auto, saturation: 0,
+                                          sheetFraction: Flattener.colourSheetFractionThreshold
+                                              + 0.0001, pixels: 1000),
+          String(format: "sheet bar %.4f", Flattener.colourSheetFractionThreshold))
+    check("…and it obeys the mode and the megapixel bound like the mean does",
+          !Flattener.shouldKeepColour(mode: .grayscale, saturation: 0, sheetFraction: 0.5,
+                                      pixels: 1000)
+            && !Flattener.shouldKeepColour(mode: .blackAndWhite, saturation: 0,
+                                           sheetFraction: 0.5, pixels: 1000)
+            && !Flattener.shouldKeepColour(mode: .auto, saturation: 0, sheetFraction: 0.5,
+                                           pixels: overBound))
+    check("…at a value between the real pages and the stain C27 measured",
+          Flattener.colourSheetFractionThreshold > 0.0077
+            && Flattener.colourSheetFractionThreshold < 0.01326
+            && Flattener.colourSheetPixelFloor == 0.25)
+    // Buffers: a 4x4 red mark inside a 32x32 sheet, and the same sheet with a red
+    // ring on its border. 16/1024 = 0.015625 exactly.
+    func sheetBuffer(_ red: (Int, Int) -> Bool) -> [UInt8] {
+        var out: [UInt8] = []
+        for y in 0..<32 { for x in 0..<32 {
+            out.append(contentsOf: red(x, y) ? [255, 0, 0, 255] : [255, 255, 255, 255])
+        } }
+        return out
+    }
+    let markBuf = sheetBuffer { x, y in (10..<14).contains(x) && (20..<24).contains(y) }
+    let ringBuf = sheetBuffer { x, y in
+        x == 0 || y == 0 || x == 31 || y == 31
+            || ((10..<14).contains(x) && (20..<24).contains(y))
+    }
+    let markSheet = Flattener.sheetSaturatedFraction(ofRGBA: markBuf, width: 32, height: 32,
+                                                     above: 0.25)
+    let ringSheet = Flattener.sheetSaturatedFraction(ofRGBA: ringBuf, width: 32, height: 32,
+                                                     above: 0.25)
+    check("a mark on the sheet counts toward sheetFrac",
+          markSheet == 0.015625, "\(markSheet.map { "\($0)" } ?? "nil")")
+    check("…and a border ring around it does not",
+          ringSheet == 0.015625, "\(ringSheet.map { "\($0)" } ?? "nil")")
+    // A 4x16 mark running in from each side on its own, so no one border clause can
+    // be dropped unseen.
+    let sides: [(String, (Int, Int) -> Bool)] = [
+        ("left", { x, y in x < 4 && (8..<24).contains(y) }),
+        ("top", { x, y in y < 4 && (8..<24).contains(x) }),
+        ("right", { x, y in x > 27 && (8..<24).contains(y) }),
+        ("bottom", { x, y in y > 27 && (8..<24).contains(x) }),
+    ]
+    for (side, red) in sides {
+        let f = Flattener.sheetSaturatedFraction(ofRGBA: sheetBuffer(red), width: 32,
+                                                 height: 32, above: 0.25)
+        check("a mark touching the \(side) border is not on the sheet", f == 0,
+              "\(f.map { "\($0)" } ?? "nil")")
+    }
+    // …and one pixel in from every side is still the sheet: pins `> 0` against
+    // `> 1` and `< width - 1` against `< width - 2`. Two 4x4 marks, 32/1024.
+    let insetBuf = sheetBuffer { x, y in
+        ((1..<5).contains(x) && (1..<5).contains(y))
+            || ((27..<31).contains(x) && (27..<31).contains(y))
+    }
+    let insetSheet = Flattener.sheetSaturatedFraction(ofRGBA: insetBuf, width: 32,
+                                                      height: 32, above: 0.25)
+    check("a mark one pixel in from the border is on the sheet",
+          insetSheet == 0.03125, "\(insetSheet.map { "\($0)" } ?? "nil")")
+    check("sheetFrac refuses a short buffer and an exceeded run limit",
+          Flattener.sheetSaturatedFraction(ofRGBA: [1, 2, 3], width: 32, height: 32,
+                                           above: 0.25) == nil
+            && Flattener.sheetSaturatedFraction(ofRGBA: markBuf, width: 32, height: 32,
+                                                above: 0.25, runLimit: 1) == nil
+            && Flattener.sheetSaturatedFraction(ofRGBA: [], width: 0, height: 0,
+                                                above: 0.25) == nil)
+
+    // End to end: picture-route pages (a neutral grey plate routes them by tone)
+    // carrying a red rule whose mean saturation is under the colour bar. Two page
+    // sizes and one rotated page; a page whose red is a frame on the page edge, and
+    // one with no colour at all, stay grey.
+    let spotDoc = dir.appendingPathComponent("c27-spot.pdf")
+    let spotPages: [(size: CGSize, red: String)] = [
+        (CGSize(width: 612, height: 792), "rule"),
+        (CGSize(width: 500, height: 700), "rule"),
+        (CGSize(width: 612, height: 792), "frame"),
+        (CGSize(width: 500, height: 700), "none"),
+    ]
+    if let c = CGContext(spotDoc as CFURL, mediaBox: nil, nil) {
+        for p in spotPages {
+            var mb = CGRect(origin: .zero, size: p.size)
+            let data = withUnsafeBytes(of: &mb) { Data($0) } as CFData
+            c.beginPDFPage([kCGPDFContextMediaBox as String: data] as CFDictionary)
+            c.setFillColor(CGColor(gray: 1, alpha: 1)); c.fill(mb)
+            c.setFillColor(CGColor(gray: 0.05, alpha: 1))
+            for row in 0..<6 {
+                c.fill(CGRect(x: 60, y: p.size.height - 80 - CGFloat(row) * 14,
+                              width: p.size.width - 120, height: 6))
+            }
+            for i in 0..<50 {
+                c.setFillColor(CGColor(gray: 0.08 + CGFloat(i) / 50 * 0.7, alpha: 1))
+                c.fill(CGRect(x: 70, y: 120 + CGFloat(i) * 8,
+                              width: p.size.width - 140, height: 9))
+            }
+            c.setFillColor(CGColor(red: 0.85, green: 0.05, blue: 0.05, alpha: 1))
+            if p.red == "rule" {
+                c.fill(CGRect(x: 60, y: p.size.height - 40, width: p.size.width - 120,
+                              height: 22))
+            } else if p.red == "frame" {
+                c.fill(CGRect(x: 0, y: 0, width: p.size.width, height: 6))
+                c.fill(CGRect(x: 0, y: p.size.height - 6, width: p.size.width, height: 6))
+                c.fill(CGRect(x: 0, y: 0, width: 6, height: p.size.height))
+                c.fill(CGRect(x: p.size.width - 6, y: 0, width: 6, height: p.size.height))
+            }
+            c.endPDFPage()
+        }
+        c.closePDF()
+    }
+    if let d = PDFDocument(url: spotDoc), let p1 = d.page(at: 1) {
+        p1.rotation = 90
+        d.write(to: spotDoc)
+    }
+    let spotMeasures = (0..<spotPages.count).map { i in
+        Flattener.colourMeasures(of: PDFDocument(url: spotDoc)!.page(at: i)!)
+    }
+    check("the spot-colour fixture is under the mean bar and split by the sheet bar",
+          spotMeasures.allSatisfy { $0.saturation <= Flattener.colourSaturationThreshold }
+            && spotMeasures[0].sheetFraction > Flattener.colourSheetFractionThreshold
+            && spotMeasures[1].sheetFraction > Flattener.colourSheetFractionThreshold
+            && spotMeasures[2].sheetFraction <= Flattener.colourSheetFractionThreshold
+            && spotMeasures[3].sheetFraction <= Flattener.colourSheetFractionThreshold,
+          spotMeasures.map { String(format: "%.4f/%.4f", $0.saturation, $0.sheetFraction) }
+              .joined(separator: " "))
+    let spotPNGs = dir.appendingPathComponent("c27-spot-pngs")
+    try? FileManager.default.createDirectory(at: spotPNGs, withIntermediateDirectories: true)
+    let spotOut = (try? Flattener.flatten(spotDoc,
+                                          to: dir.appendingPathComponent("c27-spot-out.pdf"),
+                                          mode: .auto, pngDirectory: spotPNGs)) ?? []
+    let spotRoutes = spotOut.map { p -> String in
+        if case .bilevel = p.content { return "1bit" }
+        return p.isColour ? "colour" : "grey"
+    }
+    check("a picture page printed with a red rule keeps its colour, rotated or not, "
+            + "while a red page-edge frame and a plain plate stay grey",
+          spotRoutes == ["colour", "colour", "grey", "grey"],
+          spotRoutes.joined(separator: ","))
 
     // And the half that renders as noise if it is wrong: a three-channel stream
     // in the JBIG2 merge has to be declared /DeviceRGB. Nothing reports this —
@@ -14872,11 +15017,11 @@ do {
     // day colour arrived. These tie the words to the behaviour, so the next
     // change to one fails on the other.
     check("Automatic's blurb mentions colour, because Automatic keeps colour",
-          Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, pixels: 1000)
+          Flattener.shouldKeepColour(mode: .auto, saturation: 0.3, sheetFraction: 0, pixels: 1000)
             == Flattener.Mode.auto.blurb.lowercased().contains("colour"),
           Flattener.Mode.auto.blurb)
     check("…and Grayscale's does not promise what Grayscale does not do",
-          !Flattener.shouldKeepColour(mode: .grayscale, saturation: 0.3, pixels: 1000)
+          !Flattener.shouldKeepColour(mode: .grayscale, saturation: 0.3, sheetFraction: 0, pixels: 1000)
             && !Flattener.Mode.grayscale.blurb.lowercased().contains("keeps colour"),
           Flattener.Mode.grayscale.blurb)
     check("no mode's blurb is empty, since one is always on screen",

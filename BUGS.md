@@ -5237,7 +5237,35 @@ observation that every word on every page survived stands untouched and untested
 2. **The 73 sampled pages in 22 documents still shrunk at 0.045**, and the 32.4% of the band's byte
    cost spent on two pages a reader cannot tell apart: both are `C28`, which is OPEN.
 
-### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — OPEN (all three bounded items are DONE as of 2026-08-26 — (a) the mask terms, (b) the byte price, (c) the constant SPLIT — and the WINDOW for the colour bar's value is MEASURED as of 2026-08-28, with a recommendation to leave 0.06 alone that FIRMED the same day when the two pages that measurement named as its own risk were READ — one carries a printed red rule and a red brand banner and one is brown foxing; the number itself is still the owner's)
+### C27 · Spot colour cannot reach a mean-saturation bar, so one pamphlet keeps its red ink on 1 page of 10 — FIXED 2026-09-25 (a second way to keep colour, `sheetFrac > 0.01`, beside the unchanged 0.06 mean bar; misses `Glazer_2002` p1 by design)
+
+#### Fixed — 2026-09-25
+
+`Flattener.shouldKeepColour` now keeps a picture-route page in colour when the mean saturation clears
+0.06 **or** `sheetSaturatedFraction` clears `colourSheetFractionThreshold` (0.01). That is the share of
+the thumbnail above a per-pixel 0.25, with every border-connected component dropped. It is the same
+computation as `score-threshold-loss`'s `sheetFrac` column, and the reviewer checked it gives the same
+integer. `flatten` computes it only on picture pages the mean has not already kept.
+
+**Why 0.01.** Over the 48 grey picture-route pages in `C27-MASKTERMS-2026-08-26.tsv`, the six eye-read
+real pages read 0.0133–0.064. Every other page reads ≤ 0.0077 (`Stanford_1891` p3, foxing). 0.01 is
+about 1.3x from each side. **Rejected:** lowering the bar, or adding a rule-shape term (`topRun`), to reach `Glazer_2002` p1
+(0.0055). It sits below `Stanford_1891` p3 and `Atkinson_1939` p3, and a shape term would be fitted to
+that one page. So Glazer p1 stays grey, as do the 1-bit pages of `1954 - Why` (p5, p8, p9), which never
+reach this decision.
+
+**Measured by running code over all 233 corpus files** (`C27-SHEET-2026-09-25.tsv`, production order:
+grey render first, then the thumbnail). 100 picture-route pages newly keep colour:
+- 89 in the Schwaller monograph (colour photographs);
+- 11 elsewhere: `1954 - Why` p4/p6/p7, `Black_0000` p3, `Ehrenreich_2000` p4/p5/p8/p9, `Davis_2005` p1
+  (a red *Nation* banner and rules), `Surani` p16 (a colour map), `AI 2027` p11 (green charts).
+
+Every page I read is real colour: all five unread non-Schwaller pages and three Schwaller pages near
+the bar. **No false positive was found**, but most of the Schwaller pages were not read. Byte cost, as
+raw picture JPEGs at `rebuildDPI` rather than published MRC size: **+5,305.5 KB over the 100, 1.069x**,
+of which **+307.9 KB over the 11, 1.058x**. Born-digital documents (Schwaller, AI 2027, Surani) may be
+passed through before this decision, so treat those figures as an upper bound. Suite 1418 → 1431, with 13 new checks.
+The two checks for this route were watched red with its clause disabled (1428/1430).
 *(found 2026-08-17 by the owner, on the same `1954 - Why.pdf` run that produced C26. Distinct
 mechanism, distinct constant, distinct harm — fixing either one does not address the other.)*
 

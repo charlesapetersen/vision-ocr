@@ -341,6 +341,8 @@ CONSTANTS = [
     # is not wrong — it is stale by ADDITION. Four of today's five killers were
     # written after it.
     ("Flattener.swift", "colourSaturationThreshold", "0.06", "0.9"),
+    # C27's second way in: a sheet bar so high it never fires is the defect put back.
+    ("Flattener.swift", "colourSheetFractionThreshold", "0.01", "0.9"),
     # R56 / R57, the shape signals. Each mutant is the *defect*, not an arbitrary
     # perturbation, which is the rule R38's entry above sets out.
     #

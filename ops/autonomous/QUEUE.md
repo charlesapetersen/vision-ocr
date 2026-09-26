@@ -92,7 +92,7 @@ say so in the commit.
       `~/.local/state/visionocr-autonomous/owner-supplied/` has a 1,022-character cover, so it is not a
       short page; the test needs a generated fixture. BOUND: one code commit.
       (origin: BUGS.md C29)
-- [ ] **c27-spot-colour** — finish C27: pages printed with a spot colour (a red rule, a red banner) lose
+- [x] **c27-spot-colour** — finish C27: pages printed with a spot colour (a red rule, a red banner) lose
       it, because the colour decision compares the page's MEAN saturation against a bar. The bar's value is
       measured 2026-08-27/28 (`BUGS.md` C27 `#### The window, MEASURED`): no value beats the shipped
       0.06, so leave the constant alone. The route left is a different measure, `sheetFrac`

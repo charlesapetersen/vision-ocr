@@ -118,11 +118,11 @@ for path in CommandLine.arguments.dropFirst() {
         // Only the pages that actually take this route. A text page would be
         // 1-bit and its codec cost is not the question.
         let threshold = Flattener.otsuThreshold(of: grey)
-        let sat = Flattener.saturation(of: page)
+        let (sat, sheet) = Flattener.colourMeasures(of: page)
         guard Flattener.isPicture(page, grey: grey, width: w, height: h,
                                   threshold: threshold, saturation: sat),
               !Flattener.shouldKeepColour(mode: .auto, saturation: sat,
-                                          pixels: wide * high)
+                                          sheetFraction: sheet, pixels: wide * high)
         else { continue }
 
         guard let jpeg = Flattener.jpegData(from: grey, width: w, height: h,
