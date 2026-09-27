@@ -8000,6 +8000,40 @@ do {
           SearchableWriter.columnOrdered(thirds, aspect: letter).map(\.text)
               == (0..<3).flatMap { c in (0..<6).map { "c\(c)r\($0)" } },
           "\(SearchableWriter.columnOrdered(thirds, aspect: letter).map(\.text))")
+    // C40, as `Hughes` p5: a running head, a figure's two caption lines and a
+    // two-line footer, all centred, and two rows Vision read across both columns.
+    // Seven crossings over 59 lines, where a tenth allows five: no gutter, and the
+    // page read row by row. The centred lines are not counted against it now.
+    func row(_ r: Int) -> Double { r < 13 ? 0.1 + Double(r) * 0.016 : 0.593 + Double(r - 13) * 0.016 }
+    let hl = (0..<26).map { o("hughes left \($0)", x: 0.103, y: row($0), w: 0.387) }
+    let hr = (0..<26).map { o("hughes right \($0)", x: 0.512, y: row($0), w: 0.387) }
+    var hughes: [Obs] = [o("THE KNITTING OF RACIAL GROUPS", x: 0.23, y: 0.068, w: 0.545)]
+    for i in 0..<26 { hughes += [hl[i], hr[i]] }
+    hughes += [o("a fused row across both columns", x: 0.101, y: 0.308, w: 0.8),
+               o("FIGURE 2. Fixing Room.", x: 0.412, y: 0.526, w: 0.179),
+               o("(Each circle is a closed work team.)", x: 0.317, y: 0.544, w: 0.368),
+               o("another fused row across both", x: 0.101, y: 0.577, w: 0.8),
+               o("This content downloaded from", x: 0.226, y: 0.968, w: 0.547),
+               o("All use subject to terms", x: 0.348, y: 0.98, w: 0.307)]
+    // Asked of the whole page, as `splitAtGutter` asks it: slab by slab the columns
+    // already had one.
+    let hughesGutter = SearchableWriter.columnGutter(of: hughes, aspect: letter)
+    check("C40: centred headings, captions and a footer do not hide a gutter",
+          hughesGutter.map { $0.from >= 0.49 && $0.to <= 0.513 } == true,
+          "\(String(describing: hughesGutter))")
+    // But a page that is mostly centred lines is not let off: verse with a caesura
+    // under a centred title and headnote stays read line by line.
+    var verse: [Obs] = [o("A TITLE", x: 0.4, y: 0.064, w: 0.2)]
+    verse += (0..<4).map { o("a centred headnote \($0)", x: 0.3, y: 0.08 + Double($0) * 0.016, w: 0.4) }
+    for r in 0..<10 {
+        verse += [o("a-verse \(r)", x: 0.15, y: 0.144 + Double(r) * 0.016, w: 0.3),
+                  o("b-verse \(r)", x: 0.55, y: 0.144 + Double(r) * 0.016, w: 0.3)]
+    }
+    check("C40: …while verse under a centred title and headnote keeps its order",
+          SearchableWriter.columnGutter(of: verse, aspect: letter) == nil
+              && SearchableWriter.columnOrdered(verse, aspect: letter).map(\.text)
+                  == verse.map(\.text),
+          "\(SearchableWriter.columnOrdered(verse, aspect: letter).map(\.text))")
 
     // What must stay as it was: one column with an indented quotation, a centred
     // heading, short last lines and a folio, given out of order on purpose; a table

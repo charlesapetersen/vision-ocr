@@ -14,6 +14,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Two-column journal pages with a centred running head, a figure caption and a download footer are now
+  read one column at a time. Before, those centred lines hid the gap between the columns. Lines were
+  joined across it, and a drag down one column in Preview picked up the other (C40).
+
 - Newspaper pages pasted up from scanned strips, as ProQuest's historical newspapers are, are read one
   strip at a time at the strips' own resolution. On a 1956 *New York Times* page, lines no longer run
   from one column into the next and far fewer words are misread. Selecting by dragging down a column

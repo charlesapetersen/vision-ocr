@@ -18341,7 +18341,7 @@ No way was found to steer PDFKit's layout of this page short of gutters of about
 because runs would leave their ink. What the reader gets: text read strip by strip, found by search, and
 selectable by line and word. A drag down one column on a dense page still picks up the next. Closed on that.
 
-### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — OPEN
+### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 
 *(found 2026-09-26 by the owner, in a build from `24a8f6a`, after C34. The owner's Desktop copy of Hughes
 is not the one C34 and C35 measured: 490,599 B against 542,468 B, different MD5. Both are in
@@ -18353,6 +18353,32 @@ Negro men revealed that they were"). The other rows split correctly. A hyphen jo
 ("inbonus"). [measured] The page has a diagram across both columns in its lower half, so C34's slab cut and
 its rule of three lines on each side may leave the top and the band around the figure without a gutter.
 [inferred]
+
+#### FIXED 2026-09-26
+
+**Cause** (measured on the bitmap production recognises, current main): the page found no gutter at all.
+Of its 75 boxes, eight cross the gutter strip: the running head, the figure's two caption lines, the two
+JSTOR footer lines and three fused rows. The allowance is a tenth, seven. The inference above was wrong: the
+slab cut was not the cause. The fourth PDFKit row (592) was two Vision boxes that touched at x 0.492.
+
+**Fix.** `columnGutter` asks once more when it finds nothing, this time not counting lines centred on the
+text block (within a line height) and under three quarters of its width. It leaves out no more of them than
+the allowance itself. The review found that without that bar, verse under a centred title and headnote read
+its half-lines one after the other. The first search is unchanged, so a page that had a gutter keeps it.
+Rejected: a looser allowance for every page. It would move the gutter on pages C34 had already settled.
+
+**Measured**, Desktop copy, PDFKit: p5 77 → 81 lines, no run crosses the gutter, words 573 → 573, joins
+right (`management`, `integrated`, `increased`, not `inbonus`). Lines outside the column in a drag down
+each column, above and below the figure: 16/15/9/18 → 0 (one right-column line starts at 236 pt).
+Invariant 3: start/end 100%, overlap 0, merged 0/132, welded 0/138, runaway 0%, all unchanged. `words=`
+reads 100% → 99% because tokens like `man-` became joined words. C34 did not record its 16 documents, so
+a set was rebuilt from the ones it names (Briefer, Leland, Borges, Dickens, Gilroy, Zheng, both Hughes, WSJ
+1969, Donahue, three Washington Monthly, Fairchild 1950, Why, Raskin). Over those 209 pages
+(`pdfkit-lines --diff`), only p5 of the two Hughes copies changed; +117 B each.
+The independent check passed all five DONE WHEN criteria.
+**Left:** one stray box far out in a margin moves the block's centre, and such a page still finds no gutter.
+Hughes p6 keeps one fused row, the same before and after (y 513, "girls of longer service … Negro help
+could be…"). Why it is kept whole was not examined.
 
 ## Robustness and correctness of reporting
 

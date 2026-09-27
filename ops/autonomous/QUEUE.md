@@ -307,7 +307,7 @@ say so in the commit.
       2026-09-26: closed `WONTFIX` for selection; Form XObjects per column and a Tagged PDF structure
       tree were tried on the real file and PDFKit ignores both (C39).
       (origin: BUGS.md C39)
-- [ ] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
+- [x] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter
       detection misses this page before changing it.
       DONE WHEN, through PDFKit on the published PDF: no run on p5 crosses the gutter, a drag down either

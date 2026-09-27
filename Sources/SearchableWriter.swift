@@ -853,6 +853,16 @@ enum SearchableWriter {
     ///
     /// `aspect` is the page's height over its width, to state widths in line
     /// heights. On `Hughes` p3 the gutter is 0.018 of the width, 0.75 of a line.
+    ///
+    /// When that finds nothing, it is asked once more without counting the lines
+    /// centred on the text block and under three quarters of its width: a running
+    /// head, a figure's caption, a footer. On `Hughes` p5 those five and three fused
+    /// rows made eight crossings, one over the allowance, and the page had no gutter
+    /// at all (C40). Only up to the allowance's number of them are left out, and
+    /// they still count in the allowance, and as crossing lines in `columnOrdered`
+    /// and `splitAtGutter`. The first question is kept as it was, so a page that
+    /// had a gutter keeps the same one. One stray box far out in a margin moves the
+    /// block's centre off them, and the page finds no gutter, as before.
     static func columnGutter(of lines: [Observation], aspect: Double) -> Gutter? {
         let heights = lines.map(\.boundingBox.height).filter { $0.isFinite && $0 > 0 }.sorted()
         guard !heights.isEmpty, aspect.isFinite, aspect > 0 else { return nil }
@@ -862,9 +872,27 @@ enum SearchableWriter {
                 && $0.width >= 2 * line
         }
         guard boxes.count >= 6 else { return nil }
+        if let g = gutter(in: boxes, counting: boxes, line: line) { return g }
+        let left = boxes.map(\.x).min()!, right = boxes.map { $0.x + $0.width }.max()!
+        let centre = (left + right) / 2
+        let body = boxes.filter {
+            abs($0.x + $0.width / 2 - centre) > line || $0.width >= 0.75 * (right - left)
+        }
+        // No more of them than the allowance itself: a verse page under a centred
+        // title and headnote, or a table with centred rows across it, is mostly
+        // such lines, and read its halves one after the other.
+        let leftOut = boxes.count - body.count
+        guard leftOut > 0, leftOut <= max(2, boxes.count / 10) else { return nil }
+        return gutter(in: boxes, counting: body, line: line)
+    }
+
+    /// `columnGutter`'s search, with the gutter's crossings counted over `counted`
+    /// and the allowance and the columns over `boxes`.
+    private static func gutter(in boxes: [BoundingBox], counting counted: [BoundingBox],
+                               line: Double) -> Gutter? {
         let bins = 400
         var cover = [Int](repeating: 0, count: bins)
-        for b in boxes {
+        for b in counted {
             // Clamped before the `Int` conversion, which traps outside `Int`'s range.
             let left = min(max(b.x, 0), 1), right = min(max(b.x + b.width, 0), 1)
             let first = Int((left * Double(bins)).rounded(.down))
