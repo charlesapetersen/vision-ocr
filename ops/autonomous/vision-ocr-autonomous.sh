@@ -150,10 +150,16 @@ MAXRUN_MAX="${VISIONOCR_MAXRUN_MAX:-28800}" # the same backstop for a session at
 # (the 05:19 session read 23.3M cached tokens over 151 turns). ~43 minutes of polling is therefore ~$4, and
 # $15 of headroom is deliberately more than that — a session that has done its work must never be unable to
 # AFFORD to land it. If this stops helping, the next lever is item size, not another raise.
-BUDGET="${VISIONOCR_BUDGET:-35}"
-BUDGET_MAX="${VISIONOCR_BUDGET_MAX:-70}"  # a session at max effort (3e) gets twice the cap (owner, 2026-09-26):
-                                          # it thinks more per turn, and one that dies at $35 would only
-                                          # spend another attempt at the same effort.
+BUDGET="${VISIONOCR_BUDGET:-70}"          # doubled 35 -> 70 by the owner 2026-09-27, when sessions began
+                                          # using more subagents, which spend from the same cap.
+BUDGET_MAX="${VISIONOCR_BUDGET_MAX:-140}" # a session at max effort (3e) gets twice the cap (owner, 2026-09-26;
+                                          # doubled 70 -> 140 on 2026-09-27): it thinks more per turn, and one
+                                          # that dies on its cap only spends another attempt at the same effort.
+WINDOW_WAIT_AT="${VISIONOCR_WINDOW_WAIT_AT:-85}" # usage window (owner, 2026-09-27): do not launch while the
+                                          # five-hour window is at or over this many per cent; wait for its
+                                          # reset instead of probing it with sessions that fail in 3 s.
+WINDOW_LAST="$STATE/usage-window.last"    # "<pct> <resetsAt>" from the latest session that reported one
+WINDOW_PAUSE="$STATE/window-pause"        # a session touches this when it stops early for the window
 EFFORT="${VISIONOCR_EFFORT:-medium}"      # low|medium|high|xhigh|max. medium since 2026-09-24, when the run
                                           # moved to Opus 5.5 (the `opus` alias resolves to claude-opus-5-5).
                                           # Anthropic's Opus 5.5 guidance: "Start at `medium`" and "Reserve
@@ -1604,6 +1610,20 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   [ "$hg" = 9 ] && return 9
   if [ "$hg" = 10 ]; then note_progress; return 0; fi
 
+  # 3d-. Usage window (owner, 2026-09-27). If the last session reported the five-hour window at or over
+  #      $WINDOW_WAIT_AT%, or paused itself for it, wait for the reset rather than launching into it. The wait
+  #      is in 60 s steps so `daemon.sh stop` is not held up, and never longer than 5 h 10 min.
+  local w_pct w_reset w_now
+  read -r w_pct w_reset < "$WINDOW_LAST" 2>/dev/null || true
+  w_now=$(date +%s)
+  if [ -n "${w_reset:-}" ] && [ "$w_reset" -gt "$w_now" ] 2>/dev/null \
+     && { [ "${w_pct:-0}" -ge "$WINDOW_WAIT_AT" ] || [ -f "$WINDOW_PAUSE" ]; }; then
+    local w_until=$(( w_reset + 120 )); [ "$w_until" -gt $(( w_now + 18600 )) ] && w_until=$(( w_now + 18600 ))
+    log "usage window ${w_pct}% used$( [ -f "$WINDOW_PAUSE" ] && echo ', and the last session paused for it') — waiting until $(date -r "$w_until" '+%H:%M') for the reset."
+    while [ "$(date +%s)" -lt "$w_until" ]; do sleep 60; done
+  fi
+  rm -f "$WINDOW_PAUSE" 2>/dev/null || true
+
   # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue gets its session at max
   #     effort once it has had two attempts that did not finish it. Attempts are the item's
   #     `(attempts: N)` marker in QUEUE.md (failures found later, by the owner or a check) plus the sessions
@@ -1714,10 +1734,15 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # needs no rc check either: a usage-limit fast-fail cannot move the fingerprint, so it lands in the else.
   # Evaluated HERE — before housekeeping and the compactor — so neither is mistaken for the run advancing.
   local fp_after cc_after; fp_after="$(work_fingerprint)"; cc_after="$(completed_items)"
-  local verdict=0
+  local verdict=0 w_line
+  w_line="$("$REPO/ops/autonomous/usage-window.sh" --raw "$SLOG" 2>/dev/null)" && echo "$w_line" > "$WINDOW_LAST"
   if [ -n "$fp_after" ] && [ "$fp_after" != "$fp_before" ]; then
     note_progress
-    note_committed "$cc_before" "$cc_after" || verdict=9
+    if [ -f "$WINDOW_PAUSE" ]; then
+      log "session paused for the usage window (${w_line:-unknown}) — not counted toward the no-completion streak."
+    else
+      note_committed "$cc_before" "$cc_after" || verdict=9
+    fi
     # The verdict above is about the RUN advancing. This is about the TREE, and a moved tip does not mean
     # nothing was stranded — an owner commit, or another session's push, moves the fingerprint too.
     report_and_rescue_orphans "the tip moved, but" || true
@@ -1747,7 +1772,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   fi
 
   # Count the attempt for 3e: the session ran (not a usage-limit fast-fail) and the head item is still open.
-  if [ -n "$head_tag" ] && ! { [ "$rc" -ne 0 ] && [ $(( SECONDS - _t0 )) -lt 10 ]; }; then
+  if [ -n "$head_tag" ] && [ ! -f "$WINDOW_PAUSE" ] && ! { [ "$rc" -ne 0 ] && [ $(( SECONDS - _t0 )) -lt 10 ]; }; then
     if "$REPO/ops/autonomous/next-item.sh" "$REPO" 2>/dev/null | awk -F'\t' -v t="$head_tag" '$2==t{f=1} END{exit !f}'; then
       printf '%s\t%s\t%s\t%s\n' "$head_tag" "$(date '+%Y-%m-%d %H:%M')" "$eff" "$(( SECONDS - _t0 ))" >> "$STATE/attempts.tsv" 2>/dev/null || true
     fi

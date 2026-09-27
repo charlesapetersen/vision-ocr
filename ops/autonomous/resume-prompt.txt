@@ -160,6 +160,21 @@ own worktree (`git worktree add` from your branch's HEAD); reproducing a report;
   * Your budget is shared with your subagents. Brief them tightly, and do not fan out work that one
     quick command answers.
 
+USAGE WINDOW (owner, 2026-09-27). The account has a five-hour usage window, shared by you, your subagents
+and anything else the owner runs. When it runs out your session dies mid-step and its work is stranded;
+four C39 sessions ended that way. `ops/autonomous/usage-window.sh` prints how much of it is spent and when
+it resets. Run it at the start, before handing out subagents, and before any step that will take long.
+  * Under 70%: work normally.
+  * 70% to 85%: start no new parallel subagents; one at a time at most, and only for what you cannot do
+    more cheaply yourself. Head for the next point where the work is committed or written down.
+  * 85% or more, or less than a step's worth left: stop at a safe point. Commit what is ready as partial
+    work with the box open (a docs commit is free; a code commit runs the suite, which spends no usage
+    while you poll it sparingly), or leave the worktree as it is, since the daemon saves and reassigns
+    it. Write the SESSION LOG entry: "paused for the usage window", where the work is, and the next step.
+    Then run `touch ~/.local/state/visionocr-autonomous/window-pause` and end the session. The daemon
+    waits for the reset before the next session, and a pause does not count as an attempt.
+  * Never wait for the reset inside the session: every poll spends the window you are waiting for.
+
 HOW YOUR SESSION ENDS. This is a headless run: a message with no tool call in it ends your turn, and that
 ends the whole session, with any unfinished work stranded. So do not end a turn in any of these ways
 while your item is still owed: a summary of what you did that announces the next step without taking
@@ -170,4 +185,5 @@ same message as your next tool call and carry on. If you notice yourself offerin
 redirection, delete it and do the next thing. The only stops that are right are these: STEP 5 is done
 (the commit is proven and the SESSION LOG entry written); nothing is actionable (next-item.sh exit 3 or
 4, or RUN STATUS COMPLETE); or what blocks you needs authority you do not have, recorded under NEEDS
-OWNER. A background command or subagent still running is not a stop: wait for it.
+OWNER; or a pause for the usage window, as USAGE WINDOW says. A background command or subagent still
+running is not a stop: wait for it.
