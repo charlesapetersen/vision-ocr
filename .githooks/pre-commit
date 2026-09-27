@@ -23,6 +23,23 @@ if [ "$touches_sources" -gt 0 ] && [ "$touches_tests" -eq 0 ] && [ "$touches_bug
   echo "      Continuing; this is a warning, not a refusal."
 fi
 
+# WONTFIX gate (owner, 2026-09-26). An unattended session may close a register entry WONTFIX only as the
+# second max-effort session on its item: this session must run at max, and $STATE/attempts.tsv must
+# already hold a max-effort attempt on the same item. The daemon exports all three variables. Interactive
+# commits (no VISIONOCR_UNATTENDED) are not affected; the owner can close anything.
+if [ "$touches_bugs" -gt 0 ] && [ "${VISIONOCR_UNATTENDED:-}" = 1 ] \
+   && git diff --cached -U0 -- BUGS.md | grep -qE '^\+### [A-Z]+[0-9]+ .*WONTFIX'; then
+  wf_state="${VISIONOCR_STATE:-$HOME/.local/state/visionocr-autonomous}"
+  wf_prior=$(awk -F'\t' -v t="${VISIONOCR_HEAD_ITEM:-}" '$1==t && $3=="max"{c++} END{print c+0}' "$wf_state/attempts.tsv" 2>/dev/null)
+  if [ "${VISIONOCR_SESSION_EFFORT:-}" != max ] || [ "${wf_prior:-0}" -lt 1 ]; then
+    echo "commit refused: this commit closes a BUGS.md entry WONTFIX, and only the second max-effort"
+    echo "  session on an item may do that (this session: effort ${VISIONOCR_SESSION_EFFORT:-unknown},"
+    echo "  ${wf_prior:-0} earlier max attempts on ${VISIONOCR_HEAD_ITEM:-no item}). Leave the entry open, write the"
+    echo "  case for WONTFIX in it, and commit the rest. QUEUE.md rule 8."
+    exit 1
+  fi
+fi
+
 # Does every staged shell script parse? BUGS.md T21 — and it is HERE, above the
 # docs-only exit below, because that exit is what made this hook the one script it
 # could not check. Measured 2026-08-27: a commit staging only .githooks/pre-commit

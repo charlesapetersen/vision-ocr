@@ -18,9 +18,9 @@ say so in the commit.
    sentence is wrong and the error does not change what gets built, it writes one line in the relevant
    `BUGS.md` entry and carries on with its item.
 4. **Three sessions, then decide.** If an item citing a `BUGS.md` entry has taken three sessions without a commit that changes
-   `Sources/` or `Helper/`, the next session ships the best fix the evidence supports, or closes the entry
-   as `WONTFIX` with the reason. It does not open another sub-step. A technical call is the session's to
-   make; record the option rejected.
+   `Sources/` or `Helper/`, the next session ships the best fix the evidence supports. It does not open
+   another sub-step. A technical call is the session's to make; record the option rejected. Closing the
+   entry `WONTFIX` instead is governed by rule 8.
 5. **Format.** One checkbox line per item, then indented prose, ending with the cite:
 
 ```
@@ -42,7 +42,14 @@ say so in the commit.
    still open, and adds the item's `(attempts: N)` marker, which records failures found later, by the
    owner or a check. From the third attempt the session runs at `max` effort instead of the default
    `medium`, with a $70 budget cap instead of $35 and an 8-hour time limit instead of 4. `(effort: <level>)` on an item sets its effort outright. When a ticked item is found not
-   fixed, reopen it or queue its successor with `(attempts: N)` carried over.
+   fixed, reopen it or queue its successor with `(attempts: N)` carried over. An item's BOUND does not stop a
+   max-effort session: it may make one more code commit than the bound allows.
+8. **No `WONTFIX` before two max-effort sessions (owner, 2026-09-26).** An unattended session may close an
+   entry `WONTFIX` only if it runs at `max` and an earlier max-effort session has already tried the item.
+   A session that concludes `WONTFIX` sooner writes its case in the entry, leaves the box open and commits
+   the rest; the attempt count then brings the item back at `max`. The pre-commit hook refuses a commit
+   that breaks this. Wording in an item that says "close it `WONTFIX`" means "make the case for it" until
+   then.
 
 ## The queue
 
@@ -286,7 +293,7 @@ say so in the commit.
       Then C38 closes `FIXED`, with a `CHANGELOG.md` line under `## Unreleased`.
       BOUND: one code commit, plus free docs commits for measurements.
       (origin: BUGS.md C38)
-- [x] **c39-newspaper-page** — make a large newspaper page readable and selectable, or show that it cannot
+- [ ] **c39-newspaper-page** — make a large newspaper page readable and selectable, or show that it cannot
       be done at a reasonable cost. On `Raskin - 1956` (one NYT page, 1,067 x 1,547 pt, 300 ppi source) the
       rebuild is 125 ppi and the text layer is misread, crosses columns and has runs 1.6 pt tall
       (`BUGS.md` C39). The owner asks for an attempt and accepts that it may fail.
@@ -306,6 +313,9 @@ say so in the commit.
       the next session should close it `WONTFIX` for selection unless it has a new idea about PDFKit's blocks.
       2026-09-26: closed `WONTFIX` for selection; Form XObjects per column and a Tagged PDF structure
       tree were tried on the real file and PDFKit ignores both (C39).
+      2026-09-26, owner: REOPENED for drag selection alone, because it was closed at medium effort (rule 8).
+      (attempts: 1) — the medium session that closed it; with the one the daemon counted, the next
+      session runs at max. Read C39's "Left" and what was tried before starting, and try something else.
       (origin: BUGS.md C39)
 - [x] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter

@@ -62,8 +62,10 @@ STEP 2 — PICK ONE ITEM.
   number or a sentence is wrong and the error does not change what you are building, write one line about
   it in the entry and keep going; do not open a new item or sub-step for it. Second, if an item citing a
   `BUGS.md` entry has already taken three sessions without a commit changing `Sources/` or `Helper/` (check the SESSION LOG and
-  `git log -- Sources Helper`), you ship the best fix the evidence supports, or close the entry `WONTFIX`
-  with its reason. Technical decisions are yours to make: the owner has said they are not in a position
+  `git log -- Sources Helper`), you ship the best fix the evidence supports. You may close an entry `WONTFIX` only if
+  $VISIONOCR_SESSION_EFFORT is max and $STATE/attempts.tsv already holds a max-effort attempt on
+  $VISIONOCR_HEAD_ITEM (QUEUE.md rule 8); otherwise write the case for it in the entry and leave the box
+  open. The pre-commit hook refuses a commit that breaks this. Technical decisions are yours to make: the owner has said they are not in a position
   to judge them and will take whatever is recommended. Record the option you rejected. Escalate to
   RUN.md's `## NEEDS OWNER` only for authority you lack: publishing a release, writing the Zotero
   library, destroying work with no durable copy.
@@ -109,6 +111,7 @@ STEP 3.5 — PROVE IT IS FIXED BEFORE YOU SAY SO.
   * $VISIONOCR_ATTEMPTS is how many attempts this item had before you, and $VISIONOCR_SESSION_EFFORT is
     your effort level. If the count is 1 or more, read those attempts' SESSION LOG entries and the entry's
     record of what failed before you start, and do not repeat an approach that failed.
+  * At max effort, an item's BOUND allows one more code commit than it says (QUEUE.md rule 7).
 
 STEP 4 — COMMIT AND PUSH.
   The pre-commit hook runs the full suite when a staged path matches

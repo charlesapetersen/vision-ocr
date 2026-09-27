@@ -18263,7 +18263,7 @@ less per layered page.
   a tiling pattern through the stencil (more machinery, same result); raising the foreground to the
   stencil's resolution (bytes); sending text pages back to the 1-bit route (loses C32's red).
 
-### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — WONTFIX *(read strip by strip since `9555c8a`; drag selection across tight columns follows PDFKit's own order)*
+### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN *(read strip by strip since `9555c8a`; drag selection across columns still leaks; reopened 2026-09-26)*
 
 *(found 2026-09-26 by the owner: `Raskin - 1956 - New Jobs Opening to Negro in North.pdf`, one ProQuest
 *New York Times* page of 1,067 x 1,547 pt. Source and the `24a8f6a` output are in `$STATE/owner-supplied/`.
@@ -18340,6 +18340,10 @@ not always apart, as "Left" had it: columns 0+1 alone leak 263 of 530 lines (2+3
 No way was found to steer PDFKit's layout of this page short of gutters of about 5 em, rejected before
 because runs would leave their ink. What the reader gets: text read strip by strip, found by search, and
 selectable by line and word. A drag down one column on a dense page still picks up the next. Closed on that.
+
+#### 2026-09-26, reopened by the owner
+
+The `WONTFIX` for drag selection was taken by the second session on the item, at medium effort. The owner ruled that no item closes `WONTFIX` before two max-effort sessions have tried it (QUEUE.md rule 8), so C39 is open again for drag selection alone. The strip-by-strip reading from `9555c8a` stands.
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 
