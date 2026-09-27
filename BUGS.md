@@ -18380,8 +18380,8 @@ that stays in it; words are those PDFKit extracts, with the share found in `web2
 | WSJ 1969 p1 | ProQuest | 5 of 50, one row fused across | 100/243 | 38.8% | 1,130, 74.3% |
 | Newsday 1973 p2 | paste-up | 3 of 15 (TV listings) | 41/196 | 29.3% | 593, 82.0% |
 | Raskin 1956 | paste-up | 0, 0 and 2 in three (above) | 316/645 | 24.6% | 2,654, 79.2% |
-| Kalispell 1939 | whole page | 11 of 27 | 290/524 | 20.9% | 2,125, 70.3% |
-| Independent Record 1950 | whole page | 4 of 33 | n/a (instrument) | n/a | 1,738, 80.5% |
+| Kalispell 1939 | whole page | about 10 of 34 (a notice) | 290/524 | 20.9% | 2,125, 70.3% |
+| Independent Record 1950 | whole page | 4 of 33 | 159/856 | 21.7% (`drag2`) | 1,738, 80.5% |
 | October 2, 1960 p24 | whole page | 3 of 40 | 463/691 | 14.9% | 3,197, 81.4% |
 | Billings Gazette 1926 | whole page | 5 of 30 | 205/1109 | 14.6% | 3,619, 73.2% |
 | Helena Independent 1941 | whole page | 20 of 100 (`Faculty Changes`) | 395/702 | 12.5% | 2,518, 73.0% |
@@ -18394,8 +18394,9 @@ over 150 times down it (157 to 233 on the five whole pages, 59 to 105 on ordinar
 strip). The patch `$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch` swaps, after the merge, each row
 of the page's lines that clean band lines read again (one row, within its extent, 80% of its width, 90% to 125%
 of its letters, Dice `likeness` 0.5 or more). With it, a 22-document sample: `___` 74.4 → 80.0% dictionary,
-`___ 2` 67.8 → 72.7%, `___ 3` 72.0 → 76.5%, Anne Foster 73.6 → 77.8%, the 1928 Helena page 53.0 → 56.9%; the
-named five +0.0 to +1.2 points; 13 documents unchanged, every ordinary one among them; suite 1565/1565. Four
+`___ 2` 67.8 → 72.7%, `___ 3` 72.0 → 76.5%, Anne Foster 73.6 → 77.8%, the 1928 Helena page 53.0 → 56.9%, the
+1947 tax story 73.0 → 73.5%; the named five +0.0 to +1.2 points; 12 documents unchanged in text, every
+ordinary one among them; suite 1565/1565. Four
 designs failed on measurement before it: the bands winning the merge (lost `Two changes in the English fac-`),
 page lines taken out before the merge (let in band boxes stretched across three columns), one page line at a
 time (55 repeated five-word runs on `___ 3`), letters without `likeness` (lost `tainly "The Second Crucifixion"
@@ -18406,12 +18407,15 @@ trailing token Vision read apart at 0.5 (`…52 to 30` → `…52 to`), so any b
 width should refuse the swap; (d) pieces from two bands that split a row differently repeat a word, so a row's
 pieces should come from one band; (e) the right-hand piece of a fused line is placed in the left column's
 order, which the writer keeps within a column. Its checks call `swappedForBands` directly, not through
-`recogniseInBands`. Also found: a hyphen join drops a line's `region`, and so does `uprighted`; neither is
+`recogniseInBands`. The independent check found more on its outputs: `Jority leader` → `Sority lender`, a
+headline run into a body line, and a garbled line kept beside its clean reading. Also found: a hyphen join drops a line's `region`, and so does `uprighted`; neither is
 read after `prepared` today, so no output changes.
 
-**Left.** Drag selection on every page (the drag column). On whole-page scans the reading order is row by
-row, many rows are fused across columns (the cross column) and misreads remain (Kalispell's notice, 11 of 27).
-The parked swap, finished against (a)-(e), is the one gain in hand for the whole-page scans.
+**Left.** Drag selection on every page (the drag column); its attempts were measured on Raskin only. On
+whole-page scans the reading order is row by row, many rows are fused across columns (the cross column) and
+misreads remain. Not attempted this session: the misreads and fused rows of the ProQuest pages (WSJ 1969's
+fused row, Zipkin, both Newsdays, Berendzen) and the fused rows of the whole-page scans. The parked swap,
+finished against (a)-(e), is the one gain in hand for the whole-page scans.
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 
