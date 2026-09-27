@@ -46,6 +46,9 @@ from [`makeSearchablePDF`](Sources/Model.swift#L438):
    [`otsuThreshold`](Sources/Flattener.swift#L464) →
    [`isPicture`](Sources/Flattener.swift#L525) → a 1-bit PNG, or a JPEG that is
    **grey or three-channel colour** (`RebuiltPage.isColour`, since 1.7.0).
+   A layered scan's 1-bit page is then rendered again at its mask's resolution and
+   published there (`resolutions`, C39), with a copy at its images' resolution written
+   beside it for step 6 (`Recogniser.recognitionImage`).
    This is what removes an old text layer. The `onPage` callback runs
    [`JBIG2.encode`](Sources/JBIG2.swift#L75) immediately and deletes the PNG, so
    bitmaps don't accumulate.
@@ -66,7 +69,7 @@ from [`makeSearchablePDF`](Sources/Model.swift#L438):
    because it needs the word boxes. R35, R38 and R49–R53 all live there, and neither it
    nor the colour route appeared anywhere in this map until 2026-08-14.
 6. **Recognise** — [`Recogniser.recogniseDocument`](Sources/Recogniser.swift),
-   over the bitmaps step 5 just wrote — **or, when `bitmaps` is empty, over a fresh
+   over the bitmaps step 5 just wrote (or the copy beside a raised 1-bit page) — **or, when `bitmaps` is empty, over a fresh
    `Recogniser.render` of the visible PDF (`Recogniser.swift:141`), which is a
    different image; BUGS.md C30 `#### Page 5, settled 2026-08-23` turns on which arm
    runs. Two routes, and they produce identical

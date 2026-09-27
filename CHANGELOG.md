@@ -14,6 +14,11 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Scanned pages stored in layers keep their type at its own resolution, where they used to be rebuilt at
+  half of it. These are pages whose type is a separate, finer black-and-white image, as on ProQuest's
+  newspaper and magazine pages. Zoomed in, the type looks like the source's instead of blocky. The text
+  is read as before. The 35 test documents with such pages grew from 54.3 to 62.5 MB (C39).
+
 - Two-column journal pages with a centred running head, a figure caption and a download footer are now
   read one column at a time. Before, those centred lines hid the gap between the columns. Lines were
   joined across it, and a drag down one column in Preview picked up the other (C40).

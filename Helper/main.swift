@@ -120,7 +120,8 @@ encoder.outputFormatting = .sortedKeys
 
 for (index, line) in pages.enumerated() {
     let path = String(line)
-    guard let image = Recogniser.loadImage(at: URL(fileURLWithPath: path)) else {
+    guard let image = Recogniser.loadImage(
+        at: Recogniser.recognitionImage(besides: URL(fileURLWithPath: path))) else {
         die(.unreadablePage, "page \(index + 1) could not be read: \(path)")
     }
     let observations: [SearchableWriter.Observation]

@@ -93,6 +93,12 @@ enum JBIG2 {
             /// failed is layered in grey. Reading the page's flag would then
             /// declare /DeviceRGB over one-channel streams and draw noise.
             var isColour = false
+            /// The stencil's pixel size, or `nil` for the page's. They differ on a
+            /// layered scan whose type is finer than its images (`BUGS.md` C39): the
+            /// page is rebuilt at its images' resolution and the stencil at its type's.
+            /// A size that disagrees with the stream is not an error any reader
+            /// reports; it draws the stencil stretched over part of the page.
+            var maskWidth: Int? = nil, maskHeight: Int? = nil
         }
         let stream: Stream
         let pixelWidth: Int
@@ -617,11 +623,12 @@ enum JBIG2 {
                                width: m.foregroundWidth, height: m.foregroundHeight,
                                filter: "/DCTDecode", bits: 8, space: toneSpace,
                                mask: objects[2])
-                // The stencil, at full page resolution: an /ImageMask, which
-                // PDFKit draws at its own resolution, where an /SMask was drawn
-                // at the foreground's (C38). Polarity: see `maskDecode`.
-                try writeImage(objects[2], from: m.mask, width: page.pixelWidth,
-                               height: page.pixelHeight, filter: "/JBIG2Decode",
+                // The stencil, at full page resolution or finer (C39): an
+                // /ImageMask, which PDFKit draws at its own resolution, where an
+                // /SMask was drawn at the foreground's (C38). Polarity: see
+                // `maskDecode`.
+                try writeImage(objects[2], from: m.mask, width: m.maskWidth ?? page.pixelWidth,
+                               height: m.maskHeight ?? page.pixelHeight, filter: "/JBIG2Decode",
                                bits: 1, space: "", isStencil: true, decode: maskDecode)
             case .passthrough:
                 throw Failure.cannotAssemblePassthrough(page: i + 1)

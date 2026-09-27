@@ -336,6 +336,10 @@ say so in the commit.
       for the next max-effort session to decide (rule 8). Reading: a swap of the bands' cleaner reading on
       whole-page scans (up to five points more words in a dictionary) is parked in `$STATE/rescue/` with the
       five defects the review found; finish it against those before shipping it.
+      2026-09-27, max effort: a layered page's type is published at its mask's resolution and read where
+      it was. Reading the 1-bit pages there too gained 4,876 dictionary words on 35 documents but lost 14
+      lines; it waits for a merge of the two readings (C39). The drag and cross measures used so far are
+      unsound (`characterBounds`); re-measure with one-character selections before deciding `WONTFIX`.
       (origin: BUGS.md C39)
 - [x] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter

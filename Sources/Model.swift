@@ -2026,6 +2026,9 @@ final class OCRModel: ObservableObject {
             // it, on a fallback that only runs when jbig2/qpdf are missing.
             // Except a C32 page published 1-bit: Vision read its colour JPEG, the
             // same render at the same size, and the 1-bit image is its threshold.
+            // And a layered scan's 1-bit page (C39): published at its mask's
+            // resolution, read from `flatten`'s copy at its images', two renders of
+            // one page box, so the observations, fractions of it, fit both.
             try? FileManager.default.createDirectory(at: pngDir,
                                                      withIntermediateDirectories: true)
             // C29. Which pages to keep rather than rasterise, decided BEFORE the
@@ -2176,7 +2179,8 @@ final class OCRModel: ObservableObject {
         //    and now they provably do: the bitmaps `flatten` produced are the
         //    images Vision reads, rather than a PDF re-rasterised by something
         //    else at a resolution of its own choosing. That round trip is what
-        //    R39 was, and what U25's DPI negotiation existed to survive.
+        //    R39 was, and what U25's DPI negotiation existed to survive. A raised
+        //    1-bit page is read from its copy at its images' resolution (C39).
         let pageTotal = bitmaps.isEmpty ? PDFPageCount(visible) : bitmaps.count
         progress("Recognising page 0 of \(max(pageTotal, 0))", ocrShare(0, pageTotal))
         // `var` only because `adopting` takes a closure and Swift will not let one
@@ -2499,7 +2503,10 @@ final class OCRModel: ObservableObject {
                                 foregroundHeight: layers.foregroundHeight,
                                 // The layers', not the page's: a colour page
                                 // whose colour render failed is layered in grey.
-                                isColour: layers.isColour)),
+                                isColour: layers.isColour,
+                                // Finer than the page on a layered scan (C39).
+                                maskWidth: layers.maskWidth,
+                                maskHeight: layers.maskHeight)),
                             pixelWidth: encoded[index].pixelWidth,
                             pixelHeight: encoded[index].pixelHeight,
                             boxSize: encoded[index].boxSize,

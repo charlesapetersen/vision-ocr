@@ -1212,8 +1212,17 @@ enum Flattener {
             // Render at the scan's own resolution: no upsampling, no lost
             // detail — but only when that resolution is believable. See
             // rebuildDPI.
-            let dpi = rebuildDPI(of: page)
-            let scale = dpi / 72.0
+            //
+            // C39. At its images' resolution first, which is where every route
+            // decision below was measured. A page bound for 1-bit is rendered again
+            // at its type's (`resolutions`): on a layered scan that is the mask its
+            // ink is drawn through, and a picture's tone has nothing finer to keep.
+            // Decided at the type's instead, Berendzen's Newsday page (`BUGS.md` C39)
+            // read a tone of 0.007 where it reads 0.044, under the 0.03 its heavy ink
+            // needs (R38), and its photograph was thresholded to black.
+            let (typeDPI, imagesDPI) = resolutions(of: page)
+            var dpi = imagesDPI
+            var scale = dpi / 72.0
 
             // Decide in Double and convert only once the value is known to be
             // small enough. `Int(_:)` traps for a Double outside Int's range,
@@ -1302,6 +1311,37 @@ enum Flattener {
             let wantColour = !useBilevel
                 && shouldKeepColour(mode: mode, saturation: sat,
                                     sheetFraction: sheet, pixels: wide * high)
+
+            // C39. The route is decided, so a 1-bit page is rendered again at its
+            // type's resolution, and published there. The recogniser is given the page
+            // as the images alone would have rebuilt it, `coarse` (see
+            // `Recogniser.recognitionImage` for what reading the finer one cost). A
+            // render that cannot be had keeps the one in hand, which is that page,
+            // rather than refusing the page.
+            var coarse: CGImage?
+            if useBilevel, typeDPI > dpi {
+                let fineScale = typeDPI / 72.0
+                let fineWide = (box.width * fineScale).rounded()
+                let fineHigh = (box.height * fineScale).rounded()
+                if fineWide.isFinite, fineHigh.isFinite, fineWide >= 1, fineHigh >= 1,
+                   fineWide * fineHigh <= Double(maximumPageMegapixels) * 1_000_000,
+                   let fine = renderGrey(page, box: box, scale: fineScale,
+                                         width: Int(fineWide), height: Int(fineHigh),
+                                         from: .mediaBox) {
+                    let copy = pngDirectory == nil ? nil
+                        : bilevelImage(from: grey, width: width, height: height,
+                                       threshold: threshold)
+                    // Without its copy the page would be read at its type's resolution,
+                    // so a copy that cannot be made keeps the page at its images'.
+                    if pngDirectory == nil || copy != nil {
+                        coarse = copy
+                        dpi = typeDPI; scale = fineScale
+                        width = Int(fineWide); height = Int(fineHigh)
+                        grey = fine
+                        threshold = otsuThreshold(of: grey)
+                    }
+                }
+            }
 
             // C37. A 1-bit page that is, bit for bit, its source's own JBIG2 image,
             // so the compressed build can keep that stream. Possibly at the image's
@@ -1398,6 +1438,14 @@ enum Flattener {
                         // 3x larger route with no explanation, on what is really
                         // a disk-full or permissions fault.
                         throw Failure.pageFailed(page: index + 1, of: count)
+                    }
+                    // C39. Without it the page would be read at its type's resolution,
+                    // so a copy that cannot be written fails the page as the bitmap does.
+                    if let coarse {
+                        guard writePNG(coarse, to: pngDirectory.appendingPathComponent(
+                            stem + Recogniser.coarseSuffix)) else {
+                            throw Failure.pageFailed(page: index + 1, of: count)
+                        }
                     }
                     // `if true {` stood here and around the JPEG branch below
                     // (A3.4) — two conditionals that read as gates and were not.
@@ -3704,6 +3752,10 @@ enum Flattener {
         /// not-asked case would credit the bar with a refusal the term made, which is
         /// the confound this field exists to remove, one level down.
         var shapeTermAnswer: ShapeTermAnswer = .notAsked
+        /// C39. The stencil's pixel size, or `nil` for the rebuilt page's. `mrcLayers`
+        /// cuts a stencil at the page's type resolution, which on a layered scan is
+        /// finer than the images the page and its tone layers are rebuilt at.
+        var maskWidth: Int? = nil, maskHeight: Int? = nil
     }
 
     /// C28. `pageIsAllText()`'s third term's answer, carried out on `MRCLayers`.
@@ -4113,14 +4165,21 @@ enum Flattener {
                           into directory: URL, stem: String,
                           backgroundDownsample: Int = mrcBackgroundDownsample,
                           foregroundDownsample: Int = mrcForegroundDownsample,
-                          inColour: Bool = false) -> MRCLayers? {
+                          inColour: Bool = false,
+                          stencil cut: (png: Data, width: Int, height: Int)? = nil) -> MRCLayers? {
         // No words means a plate with no text on it. An empty stencil would put
         // the whole page into a downsampled background — publishing a picture at
         // half its resolution for no compression benefit at all.
         guard !boxes.isEmpty else { return nil }
 
         let box = fullBox(of: page)
-        let dpi = rebuildDPI(of: page)
+        // C39. Everything below at the images' resolution, which is the JPEG's these
+        // layers replace, except the stencil, which is cut at the type's
+        // (`mrcStencil`). The downsample factors are relative to the render, so at
+        // the type's the tone layers of the 35 documents it reaches came to 25.6 MB
+        // where they are 14.2, resolution the page's images never had; and
+        // `pageIsAllText()` refused 4 pages it accepts here.
+        let (typeDPI, dpi) = resolutions(of: page)
         let scale = dpi / 72.0
         let wide = (box.width * scale).rounded(), high = (box.height * scale).rounded()
         guard wide.isFinite, high.isFinite, wide >= 1, high >= 1,
@@ -4132,6 +4191,11 @@ enum Flattener {
                              backgroundDownsample: backgroundDownsample,
                              foregroundDownsample: foregroundDownsample, inColour: false)
         }
+        // C39. The finer stencil is cut first, before anything below is allocated, so
+        // its Sauvola peak is the only one alive: `analyticMRCBytesPerPixel` at no more
+        // than `maximumMRCPageMegapixels`, the grey bound's own terms. It comes back as
+        // a PNG, and the recursion below is handed it rather than cutting it again.
+        let fine = cut ?? (typeDPI > dpi ? mrcStencil(page, box: box, boxes: boxes, dpi: typeDPI) : nil)
         let w = max(Int(wide), 1), h = max(Int(high), 1)
         guard let grey = renderGrey(page, box: box, scale: scale,
                                     width: w, height: h, from: .mediaBox) else { return nil }
@@ -4250,10 +4314,19 @@ enum Flattener {
             ? max(foregroundDownsample, textPageForegroundDownsample) : foregroundDownsample
 
         // The stencil is the same either way: it comes from the luminance render,
-        // so a colour page's text is cut out exactly as a grey one's is.
-        var maskPixels = [UInt8](repeating: 255, count: w * h)
-        for i in 0..<(w * h) where mask[i] { maskPixels[i] = 0 }
-        guard let maskPNG = greyPNG(maskPixels, width: w, height: h) else { return nil }
+        // so a colour page's text is cut out exactly as a grey one's is. `fine`, cut
+        // at the type's resolution, when there is one (C39); the tone layers below
+        // keep `mask`, at theirs.
+        let stencil: (png: Data, width: Int, height: Int)
+        if let fine {
+            stencil = fine
+        } else {
+            var maskPixels = [UInt8](repeating: 255, count: w * h)
+            for i in 0..<(w * h) where mask[i] { maskPixels[i] = 0 }
+            guard let png = greyPNG(maskPixels, width: w, height: h) else { return nil }
+            stencil = (png, w, h)
+        }
+        let maskPNG = stencil.png
 
         let bw: Int, bh: Int, fw: Int, fh: Int
         let bgData: Data, fgData: Data
@@ -4267,7 +4340,7 @@ enum Flattener {
                 return mrcLayers(for: page, boxes: boxes, into: directory, stem: stem,
                                  backgroundDownsample: backgroundDownsample,
                                  foregroundDownsample: foregroundDownsample,
-                                 inColour: false)
+                                 inColour: false, stencil: fine)
             }
             // C31. The foreground is sampled from the dark core of the strokes, not
             // from every stencil pixel. See `foregroundHoles`.
@@ -4334,7 +4407,39 @@ enum Flattener {
                          isColour: inColour,
                          shrunkAsAllText: allText,
                          inkOutsideText: measuredInkOutside,
-                         shapeTermAnswer: measuredShapeTerm)
+                         shapeTermAnswer: measuredShapeTerm,
+                         maskWidth: stencil.width, maskHeight: stencil.height)
+    }
+
+    /// `mrcLayers`' stencil cut at `dpi`, the page's type resolution, from the same
+    /// words: Sauvola at that resolution's own window, confined to `boxes`, 0 for ink,
+    /// as a PNG. nil when the page at `dpi` is past `maximumMRCPageMegapixels`, does not
+    /// render, or holds no ink inside the words, and the caller keeps the stencil it
+    /// cuts at its tone layers' resolution.
+    ///
+    /// On ProQuest's layered pages the type is a 300 DPI mask over 150 DPI images, so
+    /// this is the source's own type, where the stencil at 150 was a resampling of it.
+    static func mrcStencil(_ page: PDFPage, box: CGRect, boxes: [SearchableWriter.BoundingBox],
+                           dpi: Double) -> (png: Data, width: Int, height: Int)? {
+        let scale = dpi / 72.0
+        let wide = (box.width * scale).rounded(), high = (box.height * scale).rounded()
+        guard wide.isFinite, high.isFinite, wide >= 1, high >= 1,
+              wide * high <= Double(maximumMRCPageMegapixels) * 1_000_000 else { return nil }
+        let w = max(Int(wide), 1), h = max(Int(high), 1)
+        guard let grey = renderGrey(page, box: box, scale: scale,
+                                    width: w, height: h, from: .mediaBox) else { return nil }
+        let mask = sauvolaMask(grey, width: w, height: h,
+                               window: sauvolaWindow(dpi: dpi, width: w, height: h))
+        let region = textRegionMask(boxes, width: w, height: h)
+        guard mask.count == w * h, region.count == w * h else { return nil }
+        var pixels = [UInt8](repeating: 255, count: w * h)
+        var inked = false
+        for i in 0..<(w * h) where mask[i] && region[i] {
+            pixels[i] = 0
+            inked = true
+        }
+        guard inked, let png = greyPNG(pixels, width: w, height: h) else { return nil }
+        return (png, w, h)
     }
 
     // MARK: - Resolution
@@ -4386,8 +4491,64 @@ enum Flattener {
     /// exactly **2** pages: `Batzell` p22 (600 px, under the 900 floor) and `AI 2027` p1
     /// (245 px). Both have embedded text, so neither reaches `Model`'s marker branch; the
     /// reason to leave it is that it moves a corpus gate the owner closed on its own
-    /// arithmetic, not that it is unaffected.
-    static func rebuildDPI(of page: PDFPage) -> Double {
+    /// arithmetic, not that it is unaffected. Nor is it given the masks below: whether a
+    /// page is a raster is a question about its images.
+    ///
+    /// **Not the type's (C39).** `resolutions` lets the mask an image is drawn through
+    /// raise a 1-bit page's published resolution and a stencil's, which on a layered scan
+    /// is where the type is. This stays the resolution a page is routed and read at.
+    static func rebuildDPI(of page: PDFPage) -> Double { resolutions(of: page).images }
+
+    /// The resolution of a page's type, and the one its images alone ask for, which is
+    /// `rebuildDPI`.
+    ///
+    /// They differ only where a mask raises the first (C39, `drawnLargestMask`): a
+    /// layered scan's type is in the mask its ink is drawn through, at twice its images'
+    /// resolution on ProQuest's pages. A mask raises the resolution and never lowers it,
+    /// only when it is `minimumMaskRaise` finer, not past `maximumMaskDPI`, and not
+    /// past `maximumPageMegapixels`, counted as `flatten` counts it, so no page the
+    /// images alone would rebuild is refused for its mask. Measured over the corpus's
+    /// 16,987 pages, 603 in 35 documents have a finer mask, 586 of them about twice as
+    /// fine. Letting the mask win by area, as the images do, lowered two: `_1958_Executive
+    /// Pay` p1's 332 DPI photograph gave way to its 300 DPI mask.
+    ///
+    /// **What is made at which.** `flatten` decides a page's route at `images`, where
+    /// the route's constants were measured, and rebuilds a 1-bit page at `type`; a
+    /// picture page and `mrcLayers`' tone layers stay at `images`, and its stencil is
+    /// cut at `type`. A page C32 takes off 1-bit for a spot colour keeps its 1-bit
+    /// fallback at `images`. Every page is still read at `images`: a 1-bit page from
+    /// the copy `flatten` writes beside it (`Recogniser.recognitionImage`), a page it
+    /// does not rebuild through `Recogniser.render`. Read at `type`, the 35 corpus
+    /// documents this reaches read 4,876 more dictionary words and lost 14 printed
+    /// lines on 6 pages (`BUGS.md` C39).
+    static func resolutions(of page: PDFPage) -> (type: Double, images: Double) {
+        if let override = rebuildDPIOverride, let answer = override(page) { return (answer, answer) }
+        let images = imageDPI(of: page)
+        guard case let .largest(mask, _) = drawnLargestMask(of: page),
+              mask >= images * minimumMaskRaise
+        else { return (images, images) }
+        let raised = max(images, min(mask, maximumMaskDPI))
+        let box = fullBox(of: page)
+        let wide = (box.width * raised / 72).rounded(), high = (box.height * raised / 72).rounded()
+        guard wide.isFinite, high.isFinite, wide * high <= Double(maximumPageMegapixels) * 1_000_000
+        else { return (images, images) }
+        return (raised, images)
+    }
+
+    /// The most a mask raises a page's resolution to (`resolutions`). The corpus's
+    /// finest masks are 600 DPI (`Ibson_2006`); at this a 14.8 x 21.5 inch newspaper
+    /// sheet is 115 megapixels.
+    static let maximumMaskDPI: Double = 600
+
+    /// How much finer than a page's images its mask must be to raise the page
+    /// (`resolutions`), so that a second render buys some detail. Of the corpus's 603
+    /// pages with a finer mask, 586 are about twice as fine and 6 are under 1.25x:
+    /// three by 1.2% or less, which bought nothing but a second render, then 1.056,
+    /// 1.139 and 1.246.
+    static let minimumMaskRaise: Double = 1.2
+
+    /// `rebuildDPI` without the masks: the resolution a page's images ask for.
+    static func imageDPI(of page: PDFPage) -> Double {
         if let override = rebuildDPIOverride, let answer = override(page) { return answer }
         // A page pasted up from strips is rebuilt at the strips' own resolution. The
         // walk below divides the largest image's width by the *page's*, and on
@@ -4560,10 +4721,11 @@ enum Flattener {
     /// the same seam then ran that half's corpus gate; it is not specific to either.
     ///
     /// **One hook rather than a parameter, because there are three consumers.**
-    /// `flatten`, `mrcLayers` and `Recogniser.render` each call `rebuildDPI(of:)`
-    /// independently, and a page measured at one resolution and layered at another is a
-    /// worse instrument than no instrument. Overriding the one function they share is the
-    /// only way all three move together; see "a measurement override reaches every page
+    /// `flatten` and `mrcLayers` each call `resolutions(of:)`, and `Recogniser.render`
+    /// `rebuildDPI(of:)`, independently, and a page measured at one resolution and
+    /// layered at another is a worse instrument than no instrument. `resolutions` answers
+    /// both its resolutions from the hook, and `rebuildDPI` is one of them, so all three
+    /// move together; see "a measurement override reaches every page
     /// the rebuild renders" in the suite, which asserts exactly that rather than trusting
     /// it.
     ///
@@ -4868,6 +5030,56 @@ enum Flattener {
     /// history` puts its scan one level down inside a form on 114 of 114 pages, and
     /// scanner drivers routinely produce it.
     static func drawnLargestImage(of page: PDFPage) -> DrawnImage {
+        drawnLargest(of: page, masks: false)
+    }
+
+    /// The largest `/Mask` or `/SMask` an image the page draws is drawn through, by the
+    /// same walk as `drawnLargestImage`, with its resolution stated the same way: its
+    /// width over the page's. `.noImage` when the page draws images and none has one.
+    ///
+    /// ProQuest stores a page in layers: a 150 DPI greyscale background, and the type as
+    /// a 300 DPI JBIG2 `/Mask` on a 75 DPI image drawn over it. Measured by its images
+    /// alone, such a page was rebuilt at 150 DPI, recognised at half the resolution of
+    /// its type and published with a stencil at that half: the Newsday and *Wall Street
+    /// Journal* pages in `BUGS.md` C39, and 601 other corpus pages in 33 documents. The
+    /// mask is drawn where its image is, so its pixels are the page's detail.
+    static func drawnLargestMask(of page: PDFPage) -> DrawnImage {
+        drawnLargest(of: page, masks: true)
+    }
+
+    /// An image's declared pixel size, nil when implausible. The same guards
+    /// `largestImage` applies, for the same reason: /Width and /Height are whatever the
+    /// file declares, and nothing cross-checks them against a stream that can be three
+    /// bytes long (R24, A7.1).
+    static func declaredSize(of image: CGPDFDictionaryRef) -> (width: Int, height: Int)? {
+        var w: CGPDFInteger = 0, h: CGPDFInteger = 0
+        guard CGPDFDictionaryGetInteger(image, "Width", &w),
+              CGPDFDictionaryGetInteger(image, "Height", &h),
+              w > 0, h > 0,
+              w <= CGPDFInteger(maximumDeclaredImageSide),
+              h <= CGPDFInteger(maximumDeclaredImageSide)
+        else { return nil }
+        return (Int(w), Int(h))
+    }
+
+    /// The declared size of the larger of an image's `/Mask` and `/SMask`, or nil when
+    /// it has neither. A `/Mask` that is an array is a range of colours to leave out,
+    /// not an image, and has no size.
+    static func maskSize(of image: CGPDFDictionaryRef) -> (width: Int, height: Int)? {
+        var best: (width: Int, height: Int)?
+        for key in ["Mask", "SMask"] {
+            var mask: CGPDFStreamRef?
+            guard CGPDFDictionaryGetStream(image, key, &mask), let mask,
+                  let maskDict = CGPDFStreamGetDictionary(mask), let m = declaredSize(of: maskDict),
+                  m.width * m.height > (best.map { $0.width * $0.height } ?? 0)
+            else { continue }
+            best = m
+        }
+        return best
+    }
+
+    /// `drawnLargestImage`'s walk, over the images themselves or over their masks.
+    private static func drawnLargest(of page: PDFPage, masks: Bool) -> DrawnImage {
         // The shipped guard first, unchanged, so this cannot disagree with it about
         // whether the page draws anything — and so the two mutants protecting it still
         // protect this.
@@ -4890,6 +5102,8 @@ enum Flattener {
         final class State {
             var width = 0, height = 0
             var unreadable = false
+            /// Measure the masks images are drawn through, not the images.
+            var masks = false
             var depth = 0
             /// The shallowest depth each (form stream, scope) pair has been entered at.
             /// R25's memo for R25's *shape* — the depth cap bounds recursion and not
@@ -4904,6 +5118,7 @@ enum Flattener {
             var resources: CGPDFDictionaryRef?
         }
         let state = State()
+        state.masks = masks
         if let dict = cgPage.dictionary {
             var resources: CGPDFDictionaryRef?
             if CGPDFDictionaryGetDictionary(dict, "Resources", &resources) {
@@ -4936,19 +5151,14 @@ enum Flattener {
             }
             switch String(cString: subtype) {
             case "Image":
-                var w: CGPDFInteger = 0, h: CGPDFInteger = 0
-                // The same guards `largestImage` applies, for the same reason: /Width and
-                // /Height are whatever the file declares and nothing cross-checks them
-                // against a stream that can be three bytes long (R24, A7.1).
-                guard CGPDFDictionaryGetInteger(streamDict, "Width", &w),
-                      CGPDFDictionaryGetInteger(streamDict, "Height", &h),
-                      w > 0, h > 0,
-                      w <= CGPDFInteger(Flattener.maximumDeclaredImageSide),
-                      h <= CGPDFInteger(Flattener.maximumDeclaredImageSide)
+                // The image itself, or when asked for masks the `/Mask` or `/SMask` it
+                // is drawn through (C39, `drawnLargestMask`).
+                guard let size = s.masks ? Flattener.maskSize(of: streamDict)
+                                         : Flattener.declaredSize(of: streamDict)
                 else { return }
-                if Int(w) * Int(h) > s.width * s.height {
-                    s.width = Int(w)
-                    s.height = Int(h)
+                if size.width * size.height > s.width * s.height {
+                    s.width = size.width
+                    s.height = size.height
                 }
             case "Form":
                 // **`< 3` here and `< 4` in `largestImage` are two numbers for ONE reach on a

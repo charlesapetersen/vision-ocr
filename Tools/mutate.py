@@ -1115,10 +1115,13 @@ OPERATORS = [
     # override prints one row per candidate with the same number in each and reads as
     # "resolution makes no difference on this page". That is the false-green shape this
     # register has paid for ten times. `_ = ` rather than a deletion so it is a behaviour
-    # change and not a compile error. Killed by the enumerated doors: `rebuildDPI` itself,
-    # `flatten`'s raster, `Recogniser.render`'s and `mrcLayers`' layer widths.
+    # change and not a compile error. Anchored on `resolutions`, which answers the hook for all
+    # three doors since C39: `imageDPI`'s copy of this line is reached only after `resolutions`
+    # has asked and been declined, so ignoring it there changes nothing. Here, `imageDPI` still
+    # answers the images' half, and what goes is the answer for the mask's: killed by C39's
+    # "the rebuild-DPI override answers for both resolutions" (a masked page reads 300, not 90).
     ("Flattener.swift",
-     "        if let override = rebuildDPIOverride, let answer = override(page) { return answer }\n",
+     "        if let override = rebuildDPIOverride, let answer = override(page) { return (answer, answer) }\n",
      "        _ = rebuildDPIOverride\n",
      "C24-override-ignored"),
     # The *nearer* wrong implementation, and the one nine checks could not see: `nil` from the

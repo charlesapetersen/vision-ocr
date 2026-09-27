@@ -64,6 +64,9 @@
 // 421) and the `make-observations` plain render's on 0 of 6, off by 8 to 47 there — see `BUGS.md` C30
 // `#### The instrument, in Tools/ as of 2026-08-25`. If you change how the bitmap is obtained, that
 // control is the one to re-run.
+// ⚠️ Except on a layered scan's 1-bit page (`BUGS.md` C39): `flatten` publishes it at its mask's
+// resolution and production reads `Recogniser.recognitionImage`, a copy at its images'. This tool
+// still loads the published bitmap there, so it measures a finer image than the app reads.
 //
 // ## The two run definitions, and why both are printed
 //

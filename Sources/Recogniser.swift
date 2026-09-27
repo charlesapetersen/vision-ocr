@@ -204,7 +204,7 @@ enum Recogniser {
                 // disagree on a mixed document. Cosmetic, and recorded rather than
                 // fixed: `BUGS.md` C29 `#### (A) SHIPPED` names it.
                 onPage(item.page - 1, total)
-                guard let image = loadImage(at: item.image) else {
+                guard let image = loadImage(at: recognitionImage(besides: item.image)) else {
                     throw Failure.unreadablePage(item.page)
                 }
                 if let regions = try regions(besides: item.image) {
@@ -610,6 +610,26 @@ enum Recogniser {
     /// What `Flattener.flatten` names the file of a paste-up's regions, after the
     /// page's stem: `p00001.png` has its regions in `p00001.regions.json`.
     static let regionsSuffix = ".regions.json"
+
+    /// What `Flattener.flatten` names the copy of a 1-bit page at its images'
+    /// resolution, beside the bitmap it rebuilt at its type's (C39):
+    /// `p00001.png` has it in `p00001.coarse.png`.
+    static let coarseSuffix = ".coarse.png"
+
+    /// The bitmap to recognise for the page `flatten` wrote at `image`: the copy at its
+    /// images' resolution when there is one, else the page itself.
+    ///
+    /// A layered scan's 1-bit page is published at its type's resolution, twice its
+    /// images' on ProQuest's pages, and read where it always was. Read at the type's,
+    /// the 35 corpus documents this reaches read 4,876 more dictionary words (web2) and
+    /// lost 14 printed lines on 6 pages, found before and not after by PDFKit's search
+    /// (`_1973_Committee Against Racism` p4: 6). So nothing a reader could select
+    /// before is lost, and the gain waits for a merge of the two readings (`BUGS.md`
+    /// C39).
+    static func recognitionImage(besides image: URL) -> URL {
+        let coarse = image.deletingPathExtension().appendingPathExtension("coarse.png")
+        return FileManager.default.fileExists(atPath: coarse.path) ? coarse : image
+    }
 
     /// The regions `flatten` wrote beside the bitmap at `image`, or nil when it wrote
     /// none, which is every page but a paste-up. A file that is there and does not

@@ -6940,8 +6940,9 @@ do {
             // other resolution without a tool reproducing `flatten`'s render, which is the
             // divergence T15 charges for. `Tools/score-rebuild-dpi.swift` is the caller.
             //
-            // **Three functions read `rebuildDPI(of:)` independently** — `flatten`,
-            // `mrcLayers` and `Recogniser.render` — and a hook only one of them honours is
+            // **Three functions read the resolution independently** — `flatten` and
+            // `mrcLayers` through `resolutions(of:)`, `Recogniser.render` through
+            // `rebuildDPI(of:)`, which is its first answer — and a hook only one of them honours is
             // worse than no hook: a page rendered at 70 DPI and layered at 370 is a
             // measurement of neither. So the doors are enumerated rather than reasoned
             // about (CONTRIBUTING §4d), and the inverse row is here too — a page the
@@ -6992,8 +6993,8 @@ do {
             // the fallback, and the fixture already pins one: `drawing`'s native resolution is
             // asserted above to be strictly greater than the fallback, so the two values cannot
             // coincide however the fixture's plate is resized. Inverting the closure is enough
-            // — all three doors read `rebuildDPI(of:)`, so a wrong reading pinned there is
-            // pinned everywhere, without a second nine-check render.
+            // — all three doors read the hook through `resolutions(of:)`, so a wrong reading
+            // pinned there is pinned everywhere, without a second nine-check render.
             Flattener.rebuildDPIOverride = { page in
                 Flattener.drawsAnyXObject(page) == false ? probeDPI : nil
             }
@@ -7086,6 +7087,548 @@ do {
         } else {
             check("the shared-/Resources fixture's first two pages are readable", false)
         }
+    }
+    resetPrefs()
+}
+
+// MARK: - C39: a layered scan's type is kept at its mask's resolution
+
+print("\na layered scan's type is kept at the resolution of its mask (C39)")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("layered-\(UUID().uuidString)")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    func near(_ a: Double, _ b: Double) -> Bool { abs(a - b) < 0.01 }
+
+    // Objects 1 and 2 are the catalog and the page tree; from 3, each page, its contents
+    // and its images, in order; then the `extra` images, which the pages' image
+    // dictionaries name by number as their masks.
+    func layeredPDF(_ pages: [(box: String, rotate: Int, content: String,
+                               images: [(name: String, dict: String, data: String)])],
+                    extra: [(dict: String, data: String)] = [], to url: URL) {
+        func image(_ dict: String, _ data: String) -> String {
+            "<< /Type /XObject /Subtype /Image \(dict) /Length \(data.utf8.count) "
+                + ">>\nstream\n" + data + "\nendstream"
+        }
+        var bodies: [String] = [], kids: [String] = []
+        for p in pages {
+            let page = 3 + bodies.count
+            kids.append("\(page) 0 R")
+            let xobjects = p.images.enumerated()
+                .map { "/\($0.1.name) \(page + 2 + $0.0) 0 R" }.joined(separator: " ")
+            bodies.append("<< /Type /Page /Parent 2 0 R /MediaBox [\(p.box)] /Rotate \(p.rotate) "
+                          + "/Resources << /XObject << \(xobjects) >> >> /Contents \(page + 1) 0 R >>")
+            bodies.append("<< /Length \(p.content.utf8.count) >>\nstream\n" + p.content + "endstream")
+            bodies += p.images.map { image($0.dict, $0.data) }
+        }
+        bodies += extra.map { image($0.dict, $0.data) }
+        let objects = ["<< /Type /Catalog /Pages 2 0 R >>",
+                       "<< /Type /Pages /Kids [\(kids.joined(separator: " "))] /Count \(pages.count) >>"]
+            + bodies
+        var pdf = "%PDF-1.4\n"
+        var offsets: [Int] = []
+        for (i, body) in objects.enumerated() {
+            offsets.append(pdf.utf8.count)
+            pdf += "\(i + 1) 0 obj\n\(body)\nendobj\n"
+        }
+        let xref = pdf.utf8.count
+        pdf += "xref\n0 \(objects.count + 1)\n0000000000 65535 f \n"
+        for o in offsets { pdf += String(format: "%010d 00000 n \n", o) }
+        pdf += "trailer\n<< /Size \(objects.count + 1) /Root 1 0 R >>\nstartxref\n\(xref)\n%%EOF\n"
+        try? pdf.write(to: url, atomically: true, encoding: .isoLatin1)
+    }
+
+    // The walk reads /Width and /Height only, so these streams are stubs. ProQuest's
+    // shape on a Letter sheet: a 150 DPI background, and a 75 DPI image drawn through a
+    // 300 DPI stencil.
+    let grey = "/ColorSpace /DeviceGray /BitsPerComponent 8"
+    let draw = { (w: Int, h: Int, names: [String]) -> String in
+        names.map { "q \(w) 0 0 \(h) 0 0 cm /\($0) Do Q\n" }.joined()
+    }
+    let background = (name: "Bg", dict: "/Width 1275 /Height 1650 \(grey)", data: "abc")
+    func masked(_ key: String, _ extra: Int) -> (name: String, dict: String, data: String) {
+        (name: "Fg", dict: "/Width 638 /Height 825 \(grey) /\(key) \(extra) 0 R", data: "abc")
+    }
+    let stencil = { (w: Int, h: Int) in
+        (dict: "/Width \(w) /Height \(h) /ImageMask true /BitsPerComponent 1", data: "abc")
+    }
+    let stub = dir.appendingPathComponent("layered-stub.pdf")
+    // Nine pages of four objects each fill 3-38, so the extras are 39 to 45.
+    let pages: [(box: String, rotate: Int, content: String,
+                 images: [(name: String, dict: String, data: String)])] = [
+        // 1. The shape itself.
+        ("0 0 612 792", 0, draw(612, 792, ["Bg", "Fg"]), [background, masked("Mask", 39)]),
+        // 2. A 9 x 6 inch sheet, turned, of a coarse scan: 100 DPI images, a 200 DPI mask.
+        ("0 0 648 432", 90, draw(648, 432, ["Bg", "Fg"]),
+         [(name: "Bg", dict: "/Width 900 /Height 600 \(grey)", data: "abc"),
+          (name: "Fg", dict: "/Width 450 /Height 300 \(grey) /Mask 40 0 R", data: "abc")]),
+        // 3. A photograph wider than the mask, over less area (`_1958_Executive Pay` p1).
+        ("0 0 612 792", 0, draw(612, 792, ["Ph", "Fg"]),
+         [(name: "Ph", dict: "/Width 3000 /Height 1000 \(grey)", data: "abc"),
+          masked("Mask", 39)]),
+        // 4. A `/Mask` that is a colour-key range.
+        ("0 0 612 792", 0, draw(612, 792, ["Bg", "Fg"]),
+         [background, (name: "Fg", dict: "/Width 638 /Height 825 \(grey) /Mask [0 10]",
+                       data: "abc")]),
+        // 5. A soft mask.
+        ("0 0 612 792", 0, draw(612, 792, ["Bg", "Fg"]), [background, masked("SMask", 41)]),
+        // 6. A 1,200 DPI mask.
+        ("0 0 612 792", 0, draw(612, 792, ["Bg", "Fg"]), [background, masked("Mask", 42)]),
+        // 7. A 70-inch sheet, 110 megapixels at its images' 150 DPI and 441 at its
+        //    mask's 300, past `maximumPageMegapixels`.
+        ("0 0 5040 5040", 0, draw(5040, 5040, ["Bg", "Fg"]),
+         [(name: "Bg", dict: "/Width 10500 /Height 10500 \(grey)", data: "abc"),
+          (name: "Fg", dict: "/Width 5250 /Height 5250 \(grey) /Mask 43 0 R", data: "abc")]),
+        // 8. The review's sheet on the edge: 399,997,752 pixels at its mask's 300 DPI
+        //    before rounding, and 12,345 x 32,402 = 400,002,690 after, as `flatten` counts.
+        ("0 0 2962.8 7776.384", 0, draw(2963, 7776, ["Bg", "Fg"]),
+         [(name: "Bg", dict: "/Width 3086 /Height 8100 \(grey)", data: "abc"),
+          (name: "Fg", dict: "/Width 1543 /Height 4050 \(grey) /Mask 44 0 R", data: "abc")]),
+        // 9. A mask a tenth finer than the images, 165 DPI over 150.
+        ("0 0 612 792", 0, draw(612, 792, ["Bg", "Fg"]), [background, masked("Mask", 45)]),
+    ]
+    layeredPDF(pages, extra: [stencil(2550, 3300), stencil(1800, 1200),
+                              (dict: "/Width 2550 /Height 3300 \(grey)", data: "abc"),
+                              stencil(10200, 13200), stencil(21000, 21000),
+                              stencil(12345, 32402), stencil(1402, 1815)], to: stub)
+    let ld = PDFDocument(url: stub)
+    check("C39 — the layered-scan fixture is a readable nine-page PDF",
+          ld?.pageCount == 9, "\(ld?.pageCount ?? -1) pages")
+    if let ld, ld.pageCount == 9, let p1 = ld.page(at: 0), let p2 = ld.page(at: 1),
+       let p3 = ld.page(at: 2), let p4 = ld.page(at: 3), let p5 = ld.page(at: 4),
+       let p6 = ld.page(at: 5), let p7 = ld.page(at: 6), let p8 = ld.page(at: 7),
+       let p9 = ld.page(at: 8) {
+        // The premise: the images alone say 150, as they did before masks counted.
+        check("…whose images alone ask for 150 DPI",
+              Flattener.drawnLargestImage(of: p1) == .largest(dpi: 150, pixelWidth: 1275)
+                  && Flattener.imageDPI(of: p1) == 150,
+              "\(Flattener.drawnLargestImage(of: p1)), \(Flattener.imageDPI(of: p1))")
+        check("C39 — the largest mask a page draws through is found, with its resolution",
+              Flattener.drawnLargestMask(of: p1) == .largest(dpi: 300, pixelWidth: 2550),
+              "\(Flattener.drawnLargestMask(of: p1))")
+        check("…so a layered scan's type is at its mask's 300 DPI, over its images' 150",
+              Flattener.resolutions(of: p1) == (type: 300, images: 150),
+              "\(Flattener.resolutions(of: p1))")
+        check("…while rebuildDPI, which it is routed and read at, stays its images' 150",
+              Flattener.rebuildDPI(of: p1) == 150, "\(Flattener.rebuildDPI(of: p1))")
+        check("…and so is a turned sheet of another size, at 200 over 100",
+              near(Flattener.resolutions(of: p2).type, 200) && near(Flattener.imageDPI(of: p2), 100),
+              "\(Flattener.resolutions(of: p2))")
+        check("…a mask never lowers a page's resolution, though it covers more of it",
+              near(Flattener.resolutions(of: p3).type, 3000 / 8.5)
+                  && Flattener.drawnLargestMask(of: p3) == .largest(dpi: 300, pixelWidth: 2550),
+              "\(Flattener.resolutions(of: p3))")
+        check("…a colour-key /Mask is not an image and counts for nothing",
+              Flattener.drawnLargestMask(of: p4) == .noImage
+                  && Flattener.resolutions(of: p4) == (type: 150, images: 150),
+              "\(Flattener.drawnLargestMask(of: p4)), \(Flattener.resolutions(of: p4))")
+        check("…a soft mask counts as a mask",
+              Flattener.resolutions(of: p5).type == 300, "\(Flattener.resolutions(of: p5))")
+        check("…and a 1,200 DPI mask raises the page no further than maximumMaskDPI",
+              Flattener.drawnLargestMask(of: p6) == .largest(dpi: 1200, pixelWidth: 10200)
+                  && Flattener.resolutions(of: p6) == (type: Flattener.maximumMaskDPI, images: 150),
+              "\(Flattener.resolutions(of: p6))")
+        // A page the images alone would rebuild is never refused for its mask.
+        check("…nor past maximumPageMegapixels: a 70-inch sheet keeps its images' 150",
+              Flattener.drawnLargestMask(of: p7) == .largest(dpi: 300, pixelWidth: 21000)
+                  && Flattener.resolutions(of: p7) == (type: 150, images: 150),
+              "\(Flattener.drawnLargestMask(of: p7)), \(Flattener.resolutions(of: p7))")
+        check("…counting its pixels as `flatten` does, rounded, on a sheet at the edge",
+              near(Flattener.imageDPI(of: p8), 75)
+                  && Flattener.resolutions(of: p8).type == Flattener.imageDPI(of: p8),
+              "\(Flattener.drawnLargestMask(of: p8)), \(Flattener.resolutions(of: p8))")
+        let barely: Bool
+        if case let .largest(maskDPI, 1402) = Flattener.drawnLargestMask(of: p9) {
+            barely = near(maskDPI, 1402 / 8.5)
+        } else { barely = false }
+        check("…and a mask barely finer than the images, 165 over 150, buys no second render",
+              barely && Flattener.resolutions(of: p9) == (type: 150, images: 150),
+              "\(Flattener.drawnLargestMask(of: p9)), \(Flattener.resolutions(of: p9))")
+        // The override answers for both, so a tool that sets it measures one resolution.
+        Flattener.rebuildDPIOverride = { _ in 90 }
+        check("…and the rebuild-DPI override answers for both resolutions",
+              Flattener.resolutions(of: p1) == (type: 90, images: 90),
+              "\(Flattener.resolutions(of: p1))")
+        Flattener.rebuildDPIOverride = nil
+    }
+
+    // The route. A stencil of one-pixel checks at 300 DPI over a 150 DPI background: at
+    // 150 DPI it renders as flat grey, all tone, and at 300 as crisp black and white with
+    // none, the same fall Berendzen's Newsday page made (0.044 -> 0.007) when its
+    // photograph was thresholded to black. Two sheets of different size, the second turned.
+    // Real streams, run-length coded in hex: `runs` repeats one byte `count` times.
+    func runs(of byte: UInt8, count: Int) -> String {
+        var out = "", left = count
+        while left > 0 {
+            let n = min(128, left)
+            out += String(format: "%02X%02X", 257 - n, byte)
+            left -= n
+        }
+        return out
+    }
+    let coded = "/Interpolate true /Filter [/ASCIIHexDecode /RunLengthDecode]"
+    // "80" is the run-length code's end of data; each row of a mask is whole bytes.
+    func checks(_ w: Int, _ h: Int) -> String {
+        (0..<h).map { runs(of: $0 % 2 == 0 ? 0x55 : 0xAA, count: (w + 7) / 8) }.joined() + "80>"
+    }
+    let checker = dir.appendingPathComponent("layered-checks.pdf")
+    // Two pages of four objects fill 3-10, so the masks are 11 and 12.
+    layeredPDF([
+        ("0 0 144 144", 0, draw(144, 144, ["Bg", "Fg"]),
+         [(name: "Bg", dict: "/Width 300 /Height 300 \(grey) \(coded)",
+           data: runs(of: 0xFF, count: 300 * 300) + "80>"),
+          (name: "Fg", dict: "/Width 150 /Height 150 \(grey) \(coded) /Mask 11 0 R",
+           data: runs(of: 0x00, count: 150 * 150) + "80>")]),
+        ("0 0 216 144", 90, draw(216, 144, ["Bg", "Fg"]),
+         [(name: "Bg", dict: "/Width 450 /Height 300 \(grey) \(coded)",
+           data: runs(of: 0xFF, count: 450 * 300) + "80>"),
+          (name: "Fg", dict: "/Width 225 /Height 150 \(grey) \(coded) /Mask 12 0 R",
+           data: runs(of: 0x00, count: 225 * 150) + "80>")]),
+    ], extra: [(dict: "/Width 600 /Height 600 /ImageMask true /BitsPerComponent 1 \(coded)",
+                data: checks(600, 600)),
+               (dict: "/Width 900 /Height 600 /ImageMask true /BitsPerComponent 1 \(coded)",
+                data: checks(900, 600))], to: checker)
+    let cd = PDFDocument(url: checker)
+    if let cd, cd.pageCount == 2, let c1 = cd.page(at: 0), let c2 = cd.page(at: 1) {
+        // The premise, or the route check below proves nothing: the two resolutions must
+        // disagree about whether this is a picture.
+        func pictureAt(_ page: PDFPage, _ dpi: Double) -> Bool {
+            let box = Flattener.fullBox(of: page), scale = CGFloat(dpi / 72)
+            let w = Int((box.width * scale).rounded()), h = Int((box.height * scale).rounded())
+            guard let g = Flattener.renderGrey(page, box: box, scale: scale, width: w, height: h,
+                                               from: .mediaBox) else { return false }
+            return Flattener.isPicture(page, grey: g, width: w, height: h,
+                                       threshold: Flattener.otsuThreshold(of: g), saturation: 0)
+        }
+        check("C39 — a stencil of fine checks is a picture at 150 DPI and type at 300",
+              pictureAt(c1, 150) && !pictureAt(c1, 300) && pictureAt(c2, 150) && !pictureAt(c2, 300),
+              "p1 \(pictureAt(c1, 150))/\(pictureAt(c1, 300)), "
+              + "p2 \(pictureAt(c2, 150))/\(pictureAt(c2, 300))")
+        check("…and both sheets' type is at 300 over images at 150",
+              Flattener.resolutions(of: c1) == (type: 300, images: 150)
+                  && Flattener.resolutions(of: c2) == (type: 300, images: 150),
+              "\(Flattener.resolutions(of: c1)), \(Flattener.resolutions(of: c2))")
+        let out = dir.appendingPathComponent("checks-out")
+        try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+        let rebuilt = (try? Flattener.flatten(checker, to: dir.appendingPathComponent("checks.pdf"),
+                                              mode: .auto, pngDirectory: out)) ?? []
+        check("…and `flatten` rebuilds them on the route their images decide, so a photograph keeps its tone",
+              rebuilt.count == 2 && rebuilt.allSatisfy {
+                  if case .jpeg = $0.content { return true } else { return false }
+              }, "\(rebuilt.map(\.content))")
+        check("…at their images' resolution, since a picture's tone has nothing finer to keep",
+              rebuilt.map(\.pixelWidth) == [300, 300], "\(rebuilt.map(\.pixelWidth))")
+    } else {
+        check("C39 — the checked layered fixture is a readable two-page PDF", false,
+              "\(cd?.pageCount ?? -1) pages")
+    }
+
+    // Pages of real type, as ProQuest stores a page of print: a white 150 DPI background
+    // and a black 75 DPI image drawn through a 1-bit mask of the type at 300 DPI. Two
+    // sheets of different size, the second turned; and the same sheets over a tonal
+    // gradient below the type, which makes them pictures that are not all text.
+    func typeset(_ lines: [String], width: CGFloat, height: CGFloat) -> (grey: [UInt8], w: Int, h: Int) {
+        let s: CGFloat = 300 / 72
+        let w = Int((width * s).rounded()), h = Int((height * s).rounded())
+        var px = [UInt8](repeating: 255, count: w * h)
+        px.withUnsafeMutableBytes { raw in
+            guard let c = CGContext(data: raw.baseAddress, width: w, height: h, bitsPerComponent: 8,
+                                    bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
+                                    bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return }
+            c.scaleBy(x: s, y: s)
+            let font = CTFontCreateWithName("Times-Roman" as CFString, 12, nil)
+            var y = height - 30
+            for line in lines {
+                c.textPosition = CGPoint(x: 18, y: y)
+                CTLineDraw(CTLineCreateWithAttributedString(NSAttributedString(string: line, attributes: [
+                    .font: font, .foregroundColor: CGColor(gray: 0, alpha: 1)])), c)
+                y -= 17
+            }
+        }
+        return (px, w, h)
+    }
+    /// A mask's rows in hex, most significant bit first, ink 0: a stencil paints where
+    /// its sample is 0 (`JBIG2.maskDecode`).
+    func maskObject(_ g: (grey: [UInt8], w: Int, h: Int)) -> (dict: String, data: String) {
+        let hex = Array("0123456789ABCDEF".utf8), rowBytes = (g.w + 7) / 8
+        var out: [UInt8] = []
+        out.reserveCapacity(rowBytes * g.h * 2 + 1)
+        for y in 0..<g.h {
+            for b in 0..<rowBytes {
+                var byte: UInt8 = 0
+                for k in 0..<8 {
+                    let x = b * 8 + k
+                    byte = byte << 1 | (x >= g.w || g.grey[y * g.w + x] >= 128 ? 1 : 0)
+                }
+                out += [hex[Int(byte >> 4)], hex[Int(byte & 15)]]
+            }
+        }
+        return (dict: "/Width \(g.w) /Height \(g.h) /ImageMask true /BitsPerComponent 1 "
+                    + "/Filter /ASCIIHexDecode",
+                data: String(decoding: out + [UInt8(ascii: ">")], as: UTF8.self))
+    }
+    /// The background white down to `toneFrom` of the sheet, then a gradient from dark
+    /// grey to light, one grey a row.
+    func layeredPage(width: Int, height: Int, rotate: Int, mask: Int, toneFrom: Double = 1)
+        -> (box: String, rotate: Int, content: String,
+            images: [(name: String, dict: String, data: String)]) {
+        let bw = width * 150 / 72, bh = height * 150 / 72, top = Int(Double(bh) * toneFrom)
+        let background = (0..<bh).map {
+            runs(of: $0 < top ? 0xFF : UInt8(40 + 180 * ($0 - top) / max(bh - top, 1)), count: bw)
+        }.joined()
+        return ("0 0 \(width) \(height)", rotate, draw(width, height, ["Bg", "Fg"]),
+                [(name: "Bg", dict: "/Width \(bw) /Height \(bh) \(grey) \(coded)",
+                  data: background + "80>"),
+                 (name: "Fg", dict: "/Width \(bw / 2) /Height \(bh / 2) \(grey) \(coded) /Mask \(mask) 0 R",
+                  data: runs(of: 0x00, count: (bw / 2) * (bh / 2)) + "80>")])
+    }
+    let prose = ["The committee met on Tuesday to consider",
+                 "the report of the special subcommittee on",
+                 "wages, and after a long discussion voted",
+                 "to publish its findings in the autumn."]
+    let typeURL = dir.appendingPathComponent("layered-type.pdf")
+    let photoURL = dir.appendingPathComponent("layered-photo.pdf")
+    // Two pages of four objects fill 3-10, so the masks are 11 and 12.
+    let sheets = [maskObject(typeset(prose, width: 288, height: 216)),
+                  maskObject(typeset(prose, width: 360, height: 216))]
+    for (url, toneFrom) in [(typeURL, 1.0), (photoURL, 0.55)] {
+        layeredPDF([layeredPage(width: 288, height: 216, rotate: 0, mask: 11, toneFrom: toneFrom),
+                    layeredPage(width: 360, height: 216, rotate: 90, mask: 12, toneFrom: toneFrom)],
+                   extra: sheets, to: url)
+    }
+    let typeBitmaps = dir.appendingPathComponent("type-out")
+    try? FileManager.default.createDirectory(at: typeBitmaps, withIntermediateDirectories: true)
+    let typeRebuilt = (try? Flattener.flatten(typeURL, to: dir.appendingPathComponent("type-flat.pdf"),
+                                              mode: .auto, pngDirectory: typeBitmaps)) ?? []
+    check("C39 — a layered page of type is rebuilt in 1-bit",
+          typeRebuilt.count == 2 && typeRebuilt.allSatisfy {
+              if case .bilevel = $0.content { return true } else { return false }
+          }, "\(typeRebuilt.map(\.content))")
+    check("…at its mask's 300 DPI, where its images alone said 150, turned sheet too",
+          typeRebuilt.map { "\($0.pixelWidth)x\($0.pixelHeight)" } == ["1200x900", "900x1500"],
+          "\(typeRebuilt.map { "\($0.pixelWidth)x\($0.pixelHeight)" })")
+    // It is read where it always was. Read at its type's resolution, the corpus's layered
+    // pages lost 14 printed lines (`Recogniser.recognitionImage`), so the recogniser is
+    // handed a copy at its images' resolution, bit for bit the page it was before.
+    let typeDocument = PDFDocument(url: typeURL)
+    let typeSource = typeDocument?.page(at: 0)
+    let firstPage = typeBitmaps.appendingPathComponent("p00001.png")
+    let coarseURL = typeBitmaps.appendingPathComponent("p00001" + Recogniser.coarseSuffix)
+    let coarse = Recogniser.loadImage(at: coarseURL)
+    check("C39 — the recogniser is handed a copy of each 1-bit page at its images' 150 DPI",
+          Recogniser.recognitionImage(besides: firstPage) == coarseURL
+              && coarse?.width == 600 && coarse?.height == 450
+              && Recogniser.loadImage(at: typeBitmaps.appendingPathComponent(
+                  "p00002" + Recogniser.coarseSuffix)).map { "\($0.width)x\($0.height)" } == "450x750",
+          "\(Recogniser.recognitionImage(besides: firstPage).lastPathComponent), "
+              + "\(String(describing: coarse?.width))x\(String(describing: coarse?.height))")
+    // The page as the images alone rebuilt it: their render, at its own threshold.
+    var unlike = -1
+    if let typeSource, let coarse,
+       let grey = Flattener.renderGrey(typeSource, box: Flattener.fullBox(of: typeSource),
+                                       scale: 150 / 72, width: 600, height: 450, from: .mediaBox),
+       let c = CGContext(data: nil, width: 600, height: 450, bitsPerComponent: 8, bytesPerRow: 600,
+                         space: CGColorSpaceCreateDeviceGray(),
+                         bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+        c.draw(coarse, in: CGRect(x: 0, y: 0, width: 600, height: 450))
+        let threshold = Flattener.otsuThreshold(of: grey)
+        if let data = c.data {
+            let px = data.bindMemory(to: UInt8.self, capacity: 600 * 450)
+            unlike = (0..<(600 * 450)).filter { (grey[$0] >= threshold) != (px[$0] > 127) }.count
+        }
+    }
+    check("…bit for bit the page the images alone would have rebuilt",
+          unlike == 0, "\(unlike) pixels differ")
+    // And the copy is what is read, in the app and in the helper: a copy that says
+    // something else comes back, and the page's own words do not.
+    func writeWords(_ text: String, to url: URL) -> Bool {
+        guard let c = CGContext(data: nil, width: 600, height: 450, bitsPerComponent: 8, bytesPerRow: 600,
+                                space: CGColorSpaceCreateDeviceGray(),
+                                bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+        c.setFillColor(gray: 1, alpha: 1)
+        c.fill(CGRect(x: 0, y: 0, width: 600, height: 450))
+        c.textPosition = CGPoint(x: 40, y: 300)
+        CTLineDraw(CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [
+            .font: CTFontCreateWithName("Times-Roman" as CFString, 40, nil),
+            .foregroundColor: CGColor(gray: 0, alpha: 1)])), c)
+        guard let image = c.makeImage(),
+              let dest = CGImageDestinationCreateWithURL(url as CFURL, "public.png" as CFString, 1, nil)
+        else { return false }
+        CGImageDestinationAddImage(dest, image, nil)
+        return CGImageDestinationFinalize(dest)
+    }
+    if writeWords("Omega zebra quartz", to: coarseURL) {
+        for viaHelper in [false, true] {
+            var fellBack: [String] = []
+            let read = (try? Recogniser.recogniseDocument(
+                visible: typeURL, bitmaps: typeRebuilt, settings: Prefs.Snapshot.current(),
+                useHelper: viaHelper, onFallback: { fellBack.append($0) }))?[1]?
+                .map(\.text).joined(separator: " ") ?? ""
+            check("…and recognition reads that copy, \(viaHelper ? "through the helper" : "in the app")",
+                  read.contains("zebra") && !read.contains("committee") && fellBack.isEmpty,
+                  "\(read.prefix(80)) \(fellBack)")
+        }
+    } else {
+        check("…a copy with other words is written for the recognition check", false)
+    }
+    // A page the app does not rebuild is read from a render at the same resolution.
+    var automatic = Prefs.Snapshot.current()
+    automatic.pdfDPIAuto = true
+    let unrebuilt = withExtendedLifetime(typeDocument) {
+        typeSource.flatMap { Recogniser.render($0, settings: automatic) }
+    }
+    check("…and a page left unrebuilt is read from a render at its images' 150 DPI",
+          unrebuilt?.width == 600 && unrebuilt?.height == 450,
+          "\(String(describing: unrebuilt?.width))x\(String(describing: unrebuilt?.height))")
+
+    // The layers of a picture page: its stencil is cut at its type's resolution and its
+    // tone at its images', where the JPEG it replaces was rebuilt.
+    let photoBitmaps = dir.appendingPathComponent("photo-out")
+    try? FileManager.default.createDirectory(at: photoBitmaps, withIntermediateDirectories: true)
+    let photoRebuilt = (try? Flattener.flatten(photoURL, to: dir.appendingPathComponent("photo-flat.pdf"),
+                                               mode: .auto, pngDirectory: photoBitmaps)) ?? []
+    check("C39 — the same page over a photograph is rebuilt as a picture, at its images' 150 DPI",
+          photoRebuilt.map { "\($0.pixelWidth)x\($0.pixelHeight)" } == ["600x450", "450x750"]
+              && photoRebuilt.allSatisfy {
+                  if case .jpeg = $0.content { return true } else { return false }
+              }, "\(photoRebuilt.map { "\($0.content) \($0.pixelWidth)" })")
+    let photoImages = photoRebuilt.compactMap(Recogniser.imageURL(of:))
+    check("…and read from itself, with no copy beside it",
+          photoImages.count == 2 && photoImages.allSatisfy { Recogniser.recognitionImage(besides: $0) == $0 },
+          "\(photoImages.map { Recogniser.recognitionImage(besides: $0).lastPathComponent })")
+    let words = [SearchableWriter.BoundingBox(x: 0.06, y: 0.08, width: 0.85, height: 0.3)]
+    let photoDocument = PDFDocument(url: photoURL)
+    let photoPage = photoDocument?.page(at: 0)
+    let layers = photoPage.flatMap {
+        Flattener.mrcLayers(for: $0, boxes: words, into: photoBitmaps, stem: "c39")
+    }
+    check("…and its layers cut the stencil at the type's 300 DPI",
+          layers?.maskWidth == 1200 && layers?.maskHeight == 900,
+          "\(String(describing: layers?.maskWidth))x\(String(describing: layers?.maskHeight))")
+    // Not a page `pageIsAllText()` shrinks, so the factors are the defaults: at the type's
+    // resolution these would be 600 and 300.
+    check("…with its tone layers at the images' 150 DPI, 600 px, by the default factors",
+          layers.map { !$0.shrunkAsAllText
+              && $0.backgroundWidth == 600 / Flattener.mrcBackgroundDownsample
+              && $0.foregroundWidth == 600 / Flattener.mrcForegroundDownsample } == true,
+          "all text \(String(describing: layers?.shrunkAsAllText)), "
+              + "background \(String(describing: layers?.backgroundWidth)), "
+              + "foreground \(String(describing: layers?.foregroundWidth))")
+    let cut = photoPage.flatMap {
+        Flattener.mrcStencil($0, box: Flattener.fullBox(of: $0), boxes: words, dpi: 300)
+    }
+    let uncut = photoPage.flatMap {
+        Flattener.mrcStencil($0, box: Flattener.fullBox(of: $0), boxes: [], dpi: 300)
+    }
+    withExtendedLifetime(photoDocument) {}
+    check("…a stencil is cut at the resolution asked, and none where no word is",
+          cut?.width == 1200 && cut?.height == 900 && uncut == nil,
+          "\(String(describing: cut?.width))x\(String(describing: cut?.height)), "
+              + "no words: \(uncut == nil ? "none" : "one")")
+
+    // End to end, through the app's own pipeline and the JBIG2 route: what is published,
+    // and what PDFKit draws of it against the source.
+    /// Every image a page draws, forms walked: its width, whether it is a stencil, and
+    /// the width of the stencil it is drawn through, if any.
+    func drawnImages(_ page: PDFPage) -> [(width: Int, stencil: Bool, maskWidth: Int?)] {
+        var found: [(width: Int, stencil: Bool, maskWidth: Int?)] = []
+        func walk(_ resources: CGPDFDictionaryRef, depth: Int) {
+            var xo: CGPDFDictionaryRef?
+            guard depth < 4, CGPDFDictionaryGetDictionary(resources, "XObject", &xo), let xo
+            else { return }
+            CGPDFDictionaryApplyBlock(xo, { _, object, _ in
+                var stream: CGPDFStreamRef?
+                var subtype: UnsafePointer<Int8>?
+                guard CGPDFObjectGetValue(object, .stream, &stream), let stream,
+                      let d = CGPDFStreamGetDictionary(stream),
+                      CGPDFDictionaryGetName(d, "Subtype", &subtype), let subtype else { return true }
+                if String(cString: subtype) == "Form" {
+                    var r: CGPDFDictionaryRef?
+                    if CGPDFDictionaryGetDictionary(d, "Resources", &r), let r { walk(r, depth: depth + 1) }
+                    return true
+                }
+                var w: CGPDFInteger = 0, m: CGPDFInteger = 0
+                var isMask: CGPDFBoolean = 0
+                var mask: CGPDFStreamRef?
+                _ = CGPDFDictionaryGetInteger(d, "Width", &w)
+                _ = CGPDFDictionaryGetBoolean(d, "ImageMask", &isMask)
+                let maskWidth = CGPDFDictionaryGetStream(d, "Mask", &mask)
+                    && mask.flatMap(CGPDFStreamGetDictionary).map { CGPDFDictionaryGetInteger($0, "Width", &m) } == true
+                    ? Int(m) : nil
+                found.append((Int(w), isMask != 0, maskWidth))
+                return true
+            }, nil)
+        }
+        var resources: CGPDFDictionaryRef?
+        if let dict = page.pageRef?.dictionary,
+           CGPDFDictionaryGetDictionary(dict, "Resources", &resources), let resources {
+            walk(resources, depth: 0)
+        }
+        return found
+    }
+    /// The dark pixels of the page's top half, drawn by PDFKit at 150 DPI.
+    func inkAbove(_ page: PDFPage) -> Set<Int> {
+        let box = page.bounds(for: .mediaBox), turned = page.rotation % 180 != 0
+        let w = Int(((turned ? box.height : box.width) * 150 / 72).rounded())
+        let h = Int(((turned ? box.width : box.height) * 150 / 72).rounded())
+        guard let c = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                space: CGColorSpaceCreateDeviceGray(),
+                                bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return [] }
+        c.setFillColor(gray: 1, alpha: 1)
+        c.fill(CGRect(x: 0, y: 0, width: w, height: h))
+        c.scaleBy(x: 150 / 72, y: 150 / 72)
+        page.draw(with: .mediaBox, to: c)
+        guard let data = c.data else { return [] }
+        let px = data.bindMemory(to: UInt8.self, capacity: w * h)
+        var ink = Set<Int>()
+        for i in 0..<(w * h / 2) where px[i] < 96 { ink.insert(i) }
+        return ink
+    }
+    func likeness(_ a: Set<Int>, _ b: Set<Int>) -> Double {
+        Double(a.intersection(b).count) / Double(max(a.union(b).count, 1))
+    }
+    if JBIG2.isAvailable {
+        for (name, url) in [("type", typeURL), ("photo", photoURL)] {
+            let published = dir.appendingPathComponent("\(name).ocr.pdf")
+            var outcome: Runner.Result.Outcome?
+            OCRModel.makeSearchablePDF(file: url, output: published, rebuild: true, rebuildMode: .auto,
+                                       password: nil, control: RunControl(),
+                                       progress: { _, _ in }, report: { o, _ in outcome = o })
+            guard outcome == .succeeded, let doc = PDFDocument(url: published), doc.pageCount == 2,
+                  let p1 = doc.page(at: 0), let p2 = doc.page(at: 1),
+                  let sourceDocument = PDFDocument(url: url),
+                  let source = sourceDocument.page(at: 0) else {
+                check("C39 — the layered \(name) pages publish", false, "\(String(describing: outcome))")
+                continue
+            }
+            let one = drawnImages(p1), two = drawnImages(p2)
+            if name == "type" {
+                check("C39 — end to end, a layered page of type publishes in 1-bit at its mask's resolution",
+                      one.map(\.width) == [1200] && two.map(\.width) == [900], "\(one), \(two)")
+            } else {
+                check("C39 — end to end, a layered picture publishes its stencil at the type's resolution",
+                      one.contains { $0.stencil && $0.width == 1200 } && one.contains { $0.maskWidth == 1200 }
+                          && two.contains { $0.stencil && $0.width == 900 },
+                      "\(one), \(two)")
+                // Balanced's factors, 2 and 4, over the images' 600 and 450 px; at the type's
+                // resolution they would be twice these.
+                check("…and its tone layers at its images' resolution",
+                      one.filter { !$0.stencil }.map(\.width).sorted() == [150, 300]
+                          && two.filter { !$0.stencil }.map(\.width).sorted() == [112, 225],
+                      "\(one), \(two)")
+            }
+            let text = p1.string ?? ""
+            check("…\(name): its words are selectable",
+                  text.contains("Tuesday") && text.contains("subcommittee"), String(text.prefix(80)))
+            // A stencil declared at the page's size over a stream at twice it draws the
+            // type garbled; measured, 0.000 here, where the right size reads 0.995.
+            let alike = withExtendedLifetime(sourceDocument) { likeness(inkAbove(source), inkAbove(p1)) }
+            check("…\(name): and PDFKit draws its type where the source's is",
+                  alike > 0.9, String(format: "%.3f", alike))
+        }
+    } else {
+        skipBlock("C39 — layered pages end to end", checks: 7, because: "jbig2enc/qpdf not installed")
     }
     resetPrefs()
 }

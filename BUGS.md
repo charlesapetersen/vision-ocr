@@ -18263,7 +18263,7 @@ less per layered page.
   a tiling pattern through the stencil (more machinery, same result); raising the foreground to the
   stencil's resolution (bytes); sending text pages back to the 1-bit route (loses C32's red).
 
-### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN *(read strip by strip since `9555c8a`; drag selection across columns still leaks; reopened 2026-09-26; a first max-effort session measured ten pages and parked a recognition change)*
+### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN *(read strip by strip since `9555c8a`; reopened 2026-09-26; a layered page's type published at its mask's resolution 2026-09-27; the drag and cross measures found unsound 2026-09-27)*
 
 *(found 2026-09-26 by the owner: `Raskin - 1956 - New Jobs Opening to Negro in North.pdf`, one ProQuest
 *New York Times* page of 1,067 x 1,547 pt. Source and the `24a8f6a` output are in `$STATE/owner-supplied/`.
@@ -18416,6 +18416,101 @@ whole-page scans the reading order is row by row, many rows are fused across col
 misreads remain. Not attempted this session: the misreads and fused rows of the ProQuest pages (WSJ 1969's
 fused row, Zipkin, both Newsdays, Berendzen) and the fused rows of the whole-page scans. The parked swap,
 finished against (a)-(e), is the one gain in hand for the whole-page scans.
+
+#### 2026-09-27, `c39-newspaper-page` at max effort: a layered page's type is published at its mask's resolution
+
+**Found by the second max-effort session and reworked by the third.** Both stopped at their usage limits
+before committing, the third with its last two fixes unrun. A triage session committed it after the suite,
+a mutation run and a review (below). ProQuest stores many pages in layers: a 150 DPI grey background, and the type as a 300
+DPI 1-bit `/Mask` on a 75 DPI image drawn over it. `rebuildDPI` measured images only, so such a page was
+rebuilt, recognised and published at half its type's resolution. In the corpus, 603 pages in 35 documents
+have a mask finer than their images, 586 of them about twice as fine. Two of the ten table pages are among
+them, WSJ 1969 and Berendzen; the other eight have no mask. [measured]
+
+**Fix.** `resolutions(of:)` lets the finest drawn mask raise a page's type resolution, when it is a fifth
+finer. It never lowers it, and stops at 600 DPI and at `maximumPageMegapixels`. Every route decision is
+still taken at the images' resolution, and `rebuildDPI` stays theirs. A page going to 1-bit is rendered
+again at the type's and published there. The recogniser still reads it at the images' resolution, from a
+copy `flatten` writes beside it (`Recogniser.recognitionImage`), bit for bit the page it was. A picture
+page stays at the images'. `mrcLayers` keeps its tone layers and `pageIsAllText()` there, and cuts its
+stencil at the type's (`mrcStencil`). `JBIG2` declares the stencil's own size.
+
+**Rejected, each measured on the 35 documents through PDFKit.**
+- *Everything at the type's resolution*, the strand's version: output 51 → 74 MiB (the gate's figures, which
+  are MiB; 54.3 → about 78 MB), and 14 files larger than
+  their sources where 3 had been. The tone layers' downsampling is relative to the render, so they went
+  14.2 → 25.6 MB, detail the images never had. Deciding the route at 300 DPI thresholds Berendzen's
+  photograph to black: its tone reads 0.007 there and 0.044 at 150, and heavy ink needs 0.03 (R38).
+- *Reading the 1-bit pages at the type's resolution*, this commit's first version. Dictionary words (web2)
+  315,819 → 320,695 (76.95% → 77.97%): the 1-bit pages +4,877, 356 better and 23 worse. On WSJ 1969's
+  paragraph "The average chief executive's compensa- … a 5.9% rise in 1964" (54 words), misreads went 10 → 4,
+  and the independent check's second paragraph ("Miles Shanahan, vice president…") 6 → 1. But the check
+  found 14 printed lines on 6 pages that PDFKit's search finds before and not after, with their ink still
+  on the page. Committee Against Racism p4 lost 6 (confirmed here: 75 → 69 PDFKit lines); also
+  Falasca-Zamponi p25 2, Schaar p1 2 and p11 2, Xin Qu p27 1, NYSE 1956 p115 1. On WSJ, lines holding two
+  columns' text went 9/243 → 46/218 (the check's instrument, below). Invariant 1 rules it out as it stands.
+  To ship it: read both, merge with `mergeBands` (the coarse reading as its one band), then measure the
+  lines and the columns again.
+- *Reading picture pages at the type's resolution*: +216 words over 253 pages, 23 better and 30 worse, of
+  which +287 on one page. *1947 Corporation Tax* p2 is a whole newspaper page of small type on a grey tone.
+
+**Result, 35 documents, `4f3232f` → this commit, whole pipeline (gate).** All 1,531 pages keep their
+route, and every text layer is main's: PDFKit's lines are identical on all 35 documents but Fairchild
+1967, whose `...` on p3 and `-` on p4 come and go between two runs of main itself. So the 14 lines are
+there. Bytes 54,310,894 → 62,508,470: the 1-bit pages 24.1 → 30.9 MB and the stencils 3.28 → 4.72 MB. That
+is the type at its source's resolution (generic JBIG2 coding, lossless), and it buys what a reader sees
+zoomed in: at 3x the type is the source's, where it was blocky. Tone layers and JPEG pages are
+byte-identical. 7 files are now larger than their sources, where 3 were; Committee Against Racism 1.19x,
+Executive Pay 1.08x, Gitlin 1.05x and WSJ 1969 1.05x are new. Time 1,454 → 1,409 s. WSJ 1969: 94,317 →
+140,698 B, 9.7 → 9.7 s. Berendzen: 206,960 → 256,212 B (source 166,716), 9.6 → 10.2 s, the stencil
+48,376 → 97,628 B. Both texts are unchanged.
+
+**Review.** It ran 7 of the documents end to end and found no source ink lost and every stencil drawn at
+its size. It found three things, now fixed. A sheet at exactly 400 MP after rounding would have been
+refused, so `resolutions` now counts as `flatten` does, and `flatten` keeps the images' render if the finer
+one cannot be had. The fine stencil sat outside the colour bound's memory accounting, so it is now cut
+before the tone layers exist. Three pages raised by 0.1-1.2% paid a second render, so a mask must now be a
+fifth finer. A page C32 moves off 1-bit for a spot colour keeps its 1-bit fallback at the images'
+resolution.
+
+**Committed by triage.** A focused review of the copy found no path that changes a text layer. The third
+session fixed its two findings but never ran them: nothing checked that recognition reads the copy (now
+one check per path, each red when its path loads the page instead: 1583/1585), and a copy that could not
+be made still raised the page. Suite 1585/1585. WSJ, Berendzen and Committee Against Racism re-run on the
+final build: bytes as above, PDFKit lines identical to main's. At 4x in PDFKit, WSJ's type is the
+source's, and main's is heavy and blocky. A last review found no ink lost from copy to page (WSJ: 2 of
+387,918 coarse ink pixels) and stale claims, now corrected: `mutate.py`'s `C24-override-ignored`
+re-anchored on `resolutions`, comments in `Model` and `ARCHITECTURE.md`, and `score-text-voids`' header.
+
+**Instrument note, from the independent check.** `coldrag`, `colpara` and the parked `drag2` take a
+character's position from `characterBounds(at:)`. On these files that falls out of step with `page.string`
+after the first line: on WSJ, 7,318 of 7,375 characters disagree with a one-character selection, and Raskin,
+Zipkin and Helena are the same. So the table's "cross" column and every drag share measured with them are
+unsound. Rebuilt on one-character selections, the check's tools find Raskin's cross at 7 of 645 (table: 316)
+and WSJ's at 9 of 243 (table: 100). The third session's own WSJ figures from `coldrag` (100/238 → 95/202, drag
+33.8% → 33.9%) are void with them.
+Also: tools that re-read a finished PDF through `Recogniser.render` (`score-corpus`, `score-line-separation`,
+`make-observations`) now read a raised page at its type's resolution while its text layer came from the
+images', and `score-text-voids` with `PRODUCTION=1` loads the fine PNG, not the copy recognition reads.
+
+**Drag selection is not closed.** The case for `WONTFIX` rested on drags measured with that tool. On the
+first version, the check measured WSJ's drag down each column at 45.1% → 58.7%, and one column at 27% →
+100%. So reading better does move it, and the attempts above need measuring again with a one-character
+instrument before any session decides.
+
+**DONE WHEN: not met, and the box stays open.** The independent check failed the first version on the
+Raskin paragraphs, the columns, the table's after values and the unattempted pages, and passed its red
+check. This version changes no text layer, so those verdicts stand, less WSJ's reading gains, which were
+withdrawn with the first version.
+
+**Left.** The reading gain in hand for 1-bit pages, pending the merge above; *1947 Corporation Tax* p2; a
+layered 1-bit page could keep its source's own mask stream, as C37 keeps a 1-bit scan's, which would give
+back most of the 6.8 MB. From the last review, not done: a check that the fine render's ink matches the
+coarse one's (a blank fine render would publish a whole text layer over a blank page, where main's lost
+both), and a retry at the coarse stencil when `Model`'s price check refuses a fine one (no corpus page
+changed route). Separately, the hyphen join offers the next page's top lines to any line in a
+page's bottom quarter (`edgeOfPage` 0.25). Under the first version it wrote `selecting emsales` on Scott
+p3, from a p4 line Vision started at `sales`.
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 
