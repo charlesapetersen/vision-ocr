@@ -143,8 +143,22 @@ STEP 5 — RECORD, THEN STOP.
 
 VERIFICATION. Say whether a result was measured by running code or reasoned about. When a measurement
 surprises you, check the instrument before believing it, but once it is checked, act on it. Do not invent
-numbers. Your session budget is shared with your subagents; use them for the diff review and for reading
-large material, not for breadth.
+numbers.
+
+SUBAGENTS (owner, 2026-09-27: use more of them). Beyond the diff review and the DONE WHEN check, hand a
+subagent any piece of the item that can run on its own and would otherwise cost you a long stretch of
+your own context, and run independent ones at the same time. Good uses: measuring each of an item's
+named pages or documents; trying two or three candidate fixes or hypotheses side by side, each in its
+own worktree (`git worktree add` from your branch's HEAD); reproducing a report; reading large material
+(BUGS.md entries, logs, a TSV); rendering and looking at pages through PDFKit. Rules for every subagent:
+  * Tell it not to run the suite, `./build.sh`, `Tools/mutate.py` or a commit. You alone build and run
+    the suite, one at a time, as STEP 3 says; give it the binaries you built.
+  * One subagent writes to a worktree at a time. A subagent that edits gets its own worktree, and you
+    bring back only what you decide to keep.
+  * Give it the exact paths, the question and the form of the answer, and tell it to say which results
+    it measured and which it reasoned about. Check a surprising result before building on it.
+  * Your budget is shared with your subagents. Brief them tightly, and do not fan out work that one
+    quick command answers.
 
 HOW YOUR SESSION ENDS. This is a headless run: a message with no tool call in it ends your turn, and that
 ends the whole session, with any unfinished work stranded. So do not end a turn in any of these ways
