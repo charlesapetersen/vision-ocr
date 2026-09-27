@@ -18263,7 +18263,7 @@ less per layered page.
   a tiling pattern through the stencil (more machinery, same result); raising the foreground to the
   stencil's resolution (bytes); sending text pages back to the 1-bit route (loses C32's red).
 
-### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — PARTLY FIXED (drag selection still leaks)
+### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — WONTFIX *(read strip by strip since `9555c8a`; drag selection across tight columns follows PDFKit's own order)*
 
 *(found 2026-09-26 by the owner: `Raskin - 1956 - New Jobs Opening to Negro in North.pdf`, one ProQuest
 *New York Times* page of 1,067 x 1,547 pt. Source and the `24a8f6a` output are in `$STATE/owner-supplied/`.
@@ -18321,6 +18321,25 @@ read strip by strip.
 **DONE WHEN, checked independently on the before and after files:** paragraphs read, PASS with the misread
 counts above; column integrity FAIL (drag selection, as above; 1 PDFKit line of 645 still crosses a strip);
 time and bytes, PASS; a check red without the change, PASS (the rebuild-DPI check reads 116 on the old code).
+
+#### 2026-09-26, `c39-newspaper-page`: drag selection closed `WONTFIX`
+
+Measured again on a fresh production run of Raskin (`9555c8a`, `score-gate` with the helper): dragging from
+each column's top line to its bottom line, 1,268 of 1,879 selected lines lie in another column. Columns 0-3
+interleave row by row in PDFKit's order; the two right-hand columns, behind a wide gap, stay clean. Pairs are
+not always apart, as "Left" had it: columns 0+1 alone leak 263 of 530 lines (2+3: 0 of 184). Tried on it:
+- **Order.** The writer already emits the text column by column, except for two column-3 runs inside
+  column 2. Moving just those gives 1,169 of 1,780.
+- **One Form XObject per column**, and separately **Tagged PDF** (one `/P` structure element per column
+  under a `StructTreeRoot`, `/MarkInfo` set): 1,169 of 1,780 each, the same order line for line as the
+  re-sort alone. PDFKit ignores both. Text was intact in every variant (19,992 PDFKit characters).
+- **Bisecting by column and height** (flips = column changes between consecutive PDFKit lines; four clean
+  columns score 3): subsets score 3 to 372, with no monotone trend and no single region to blame.
+  Synthetic columns (0-5 pt gutters, staggered baselines, mixed sizes, a spanning headline) never leak (0 of
+  160).
+No way was found to steer PDFKit's layout of this page short of gutters of about 5 em, rejected before
+because runs would leave their ink. What the reader gets: text read strip by strip, found by search, and
+selectable by line and word. A drag down one column on a dense page still picks up the next. Closed on that.
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — OPEN
 

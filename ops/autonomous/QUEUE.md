@@ -286,7 +286,7 @@ say so in the commit.
       Then C38 closes `FIXED`, with a `CHANGELOG.md` line under `## Unreleased`.
       BOUND: one code commit, plus free docs commits for measurements.
       (origin: BUGS.md C38)
-- [ ] **c39-newspaper-page** — make a large newspaper page readable and selectable, or show that it cannot
+- [x] **c39-newspaper-page** — make a large newspaper page readable and selectable, or show that it cannot
       be done at a reasonable cost. On `Raskin - 1956` (one NYT page, 1,067 x 1,547 pt, 300 ppi source) the
       rebuild is 125 ppi and the text layer is misread, crosses columns and has runs 1.6 pt tall
       (`BUGS.md` C39). The owner asks for an attempt and accepts that it may fail.
@@ -304,6 +304,8 @@ say so in the commit.
       2026-09-26: the code commit is spent. Strips are read one at a time at 301 DPI and no run crosses a
       column, but drag selection in PDFKit still leaks between columns (C39 "Left"). Open for that alone;
       the next session should close it `WONTFIX` for selection unless it has a new idea about PDFKit's blocks.
+      2026-09-26: closed `WONTFIX` for selection; Form XObjects per column and a Tagged PDF structure
+      tree were tried on the real file and PDFKit ignores both (C39).
       (origin: BUGS.md C39)
 - [ ] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter
