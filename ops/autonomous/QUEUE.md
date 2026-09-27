@@ -331,6 +331,11 @@ say so in the commit.
       DONE WHEN, restated for this reopening: the table above is in C39, every page that can be improved
       is, and each page that cannot is named with what was tried. A gain on some pages ships on its own.
       `WONTFIX` applies only to what no max-effort session could improve, under rule 8.
+      2026-09-26, first max-effort session: the ten-page table is in C39, with what PDFKit does and what was
+      tried on drag selection; no page is improved yet. Drag selection: C39 makes the case for `WONTFIX`,
+      for the next max-effort session to decide (rule 8). Reading: a swap of the bands' cleaner reading on
+      whole-page scans (up to five points more words in a dictionary) is parked in `$STATE/rescue/` with the
+      five defects the review found; finish it against those before shipping it.
       (origin: BUGS.md C39)
 - [x] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter

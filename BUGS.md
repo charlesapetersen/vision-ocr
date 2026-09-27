@@ -18263,7 +18263,7 @@ less per layered page.
   a tiling pattern through the stencil (more machinery, same result); raising the foreground to the
   stencil's resolution (bytes); sending text pages back to the 1-bit route (loses C32's red).
 
-### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN *(read strip by strip since `9555c8a`; drag selection across columns still leaks; reopened 2026-09-26)*
+### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN *(read strip by strip since `9555c8a`; drag selection across columns still leaks; reopened 2026-09-26; a first max-effort session measured ten pages and parked a recognition change)*
 
 *(found 2026-09-26 by the owner: `Raskin - 1956 - New Jobs Opening to Negro in North.pdf`, one ProQuest
 *New York Times* page of 1,067 x 1,547 pt. Source and the `24a8f6a` output are in `$STATE/owner-supplied/`.
@@ -18346,6 +18346,72 @@ selectable by line and word. A drag down one column on a dense page still picks 
 The `WONTFIX` for drag selection was taken by the second session on the item, at medium effort. The owner ruled that no item closes `WONTFIX` before two max-effort sessions have tried it (QUEUE.md rule 8), so C39 is open again. It is widened from Raskin to full newspaper pages: newspaper pages vary a lot in difficulty, and
 progress on the easier ones is worth shipping even if Raskin stays hard. The item names the pages. The strip-by-strip
 reading from `9555c8a` stands.
+
+#### 2026-09-26, `c39-newspaper-page` at max effort: how PDFKit orders the page, ten pages, and dense scans
+
+**How PDFKit orders a newspaper page** (public PDFKit: `page.string`, `selectionsByLine`, `selection(from:to:)`;
+the drag, loss and synthetic tools are in `$STATE/rescue/PARKED-c39-tools-2026-09-26/`). On Raskin it reads columns 0-4 row by row, one line from each in turn, and columns
+5-6 as columns (the lanes). Synthetic columns drawn as the writer draws runs (`a 0 0 d x y Tm`) read cleanly
+with 1 pt gutters, skewed or shifted columns, varied sizes, short lines and Raskin's own sentences. They read
+row by row (40% of a drag in its column) when adjacent edges jitter ±1 pt in a 2 pt gutter, when a blank band
+separates blocks whose columns shift by a gutter's width or more, or when one run is drawn taller than 1.7
+line pitches. Invisible (`/CA 0`) vertical rules over four fifths of the column height fix the jittered
+synthetic (40% → 100%) and change nothing on Raskin, per strip boundary or as one path per gutter. Also tried
+on Raskin (share of a drag in its column, 24.6% before): a 1 em reserve at strip boundaries 36%, straight
+2 pt channels 28.7%, columns spread 40 pt apart about 25%, run edges snapped to their strip's 26%, every letter
+replaced by `n` 18.8%, so the engine reads the text as well as the geometry. Instrument note: CoreGraphics'
+`CGPDFPageGetLayout` tree merges lines across columns and welds words (`labordepartmentstore.`) that
+`page.string` does not have; selection runs on `CGPDFPageCopyPageLayout`. Measure with the public API.
+
+**The case for `WONTFIX` on drag selection**, for the next max-effort session to decide (rule 8): of the
+changes to the text layer tried here and before (order, Form XObjects, Tagged PDF, reserves, channels, rules,
+spacing, snapping), none moves Raskin's drag past 36%, and the synthetic results say PDFKit wants geometry a
+scan does not have. What does help is reading better, below.
+
+**Ten pages, through PDFKit, on current main** (nothing reader-visible changed this session). Misread words
+are counted by hand against a render of the source, in one paragraph; "cross" is PDFKit lines holding three
+or more characters of two columns (so wide headlines count); "drag" is the share of a drag down each column
+that stays in it; words are those PDFKit extracts, with the share found in `web2`. Easiest first:
+
+| page | kind | misread, one paragraph | cross | drag | words, dictionary |
+|---|---|---|---|---|---|
+| Newsday 1981 (Berendzen) | ProQuest | 1 of 45 | 13/173 | 72.5% | 1,149, 81.5% |
+| Zipkin 2000 p1 | paste-up | 3 of 33 | 12/79 | 67.8% | 336, 72.6% |
+| WSJ 1969 p1 | ProQuest | 5 of 50, one row fused across | 100/243 | 38.8% | 1,130, 74.3% |
+| Newsday 1973 p2 | paste-up | 3 of 15 (TV listings) | 41/196 | 29.3% | 593, 82.0% |
+| Raskin 1956 | paste-up | 0, 0 and 2 in three (above) | 316/645 | 24.6% | 2,654, 79.2% |
+| Kalispell 1939 | whole page | 11 of 27 | 290/524 | 20.9% | 2,125, 70.3% |
+| Independent Record 1950 | whole page | 4 of 33 | n/a (instrument) | n/a | 1,738, 80.5% |
+| October 2, 1960 p24 | whole page | 3 of 40 | 463/691 | 14.9% | 3,197, 81.4% |
+| Billings Gazette 1926 | whole page | 5 of 30 | 205/1109 | 14.6% | 3,619, 73.2% |
+| Helena Independent 1941 | whole page | 20 of 100 (`Faculty Changes`) | 395/702 | 12.5% | 2,518, 73.0% |
+
+**Dense whole-page scans read better in bands; a change is parked, not shipped.** One Vision request over a
+whole newspaper scan reads it far below its print: on the Helena page it returned 378 lines at 150, 200 and
+300 DPI alike where eight bands return 818, 70% of its words in the dictionary against the bands' 77%, and the
+merge keeps the page's reading wherever it has one (C30). A page is dense when its bands' median line fits
+over 150 times down it (157 to 233 on the five whole pages, 59 to 105 on ordinary pages, 62 on a paste-up's
+strip). The patch `$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch` swaps, after the merge, each row
+of the page's lines that clean band lines read again (one row, within its extent, 80% of its width, 90% to 125%
+of its letters, Dice `likeness` 0.5 or more). With it, a 22-document sample: `___` 74.4 → 80.0% dictionary,
+`___ 2` 67.8 → 72.7%, `___ 3` 72.0 → 76.5%, Anne Foster 73.6 → 77.8%, the 1928 Helena page 53.0 → 56.9%; the
+named five +0.0 to +1.2 points; 13 documents unchanged, every ordinary one among them; suite 1565/1565. Four
+designs failed on measurement before it: the bands winning the merge (lost `Two changes in the English fac-`),
+page lines taken out before the merge (let in band boxes stretched across three columns), one page line at a
+time (55 repeated five-word runs on `___ 3`), letters without `likeness` (lost `tainly "The Second Crucifixion"
+is far wiser`). The review then found, each by a probe, what still blocks it: (a) a row the page split at a
+gutter is re-fused when one band line reads both halves, so a swap must never join page lines; (b) a stretch
+read or pass-1 line on the row can repeat a piece's words; (c) 80% cover and 90% letters let a band drop a
+trailing token Vision read apart at 0.5 (`…52 to 30` → `…52 to`), so any band observation in the uncovered
+width should refuse the swap; (d) pieces from two bands that split a row differently repeat a word, so a row's
+pieces should come from one band; (e) the right-hand piece of a fused line is placed in the left column's
+order, which the writer keeps within a column. Its checks call `swappedForBands` directly, not through
+`recogniseInBands`. Also found: a hyphen join drops a line's `region`, and so does `uprighted`; neither is
+read after `prepared` today, so no output changes.
+
+**Left.** Drag selection on every page (the drag column). On whole-page scans the reading order is row by
+row, many rows are fused across columns (the cross column) and misreads remain (Kalispell's notice, 11 of 27).
+The parked swap, finished against (a)-(e), is the one gain in hand for the whole-page scans.
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 
