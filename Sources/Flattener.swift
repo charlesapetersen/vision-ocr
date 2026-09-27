@@ -1313,10 +1313,10 @@ enum Flattener {
                                     sheetFraction: sheet, pixels: wide * high)
 
             // C39. The route is decided, so a 1-bit page is rendered again at its
-            // type's resolution, and published there. The recogniser is given the page
-            // as the images alone would have rebuilt it, `coarse` (see
-            // `Recogniser.recognitionImage` for what reading the finer one cost). A
-            // render that cannot be had keeps the one in hand, which is that page,
+            // type's resolution, and published there. The recogniser is also given the
+            // page as the images alone would have rebuilt it, `coarse`, for its lines
+            // (`Recogniser.recognisePage(at:)`: reading the finer one alone lost lines).
+            // A render that cannot be had keeps the one in hand, which is that page,
             // rather than refusing the page.
             var coarse: CGImage?
             if useBilevel, typeDPI > dpi {
@@ -4516,11 +4516,12 @@ enum Flattener {
     /// the route's constants were measured, and rebuilds a 1-bit page at `type`; a
     /// picture page and `mrcLayers`' tone layers stay at `images`, and its stencil is
     /// cut at `type`. A page C32 takes off 1-bit for a spot colour keeps its 1-bit
-    /// fallback at `images`. Every page is still read at `images`: a 1-bit page from
-    /// the copy `flatten` writes beside it (`Recogniser.recognitionImage`), a page it
-    /// does not rebuild through `Recogniser.render`. Read at `type`, the 35 corpus
-    /// documents this reaches read 4,876 more dictionary words and lost 14 printed
-    /// lines on 6 pages (`BUGS.md` C39).
+    /// fallback at `images`. Every page's lines are still read at `images`: a 1-bit
+    /// page's from the copy `flatten` writes beside it (`Recogniser.recognitionImage`),
+    /// with their words from the page at `type` where it read the same lines
+    /// (`Recogniser.finerReading`), and a page it does not rebuild through
+    /// `Recogniser.render`. Read at `type` alone, the 35 corpus documents this reaches
+    /// read 4,876 more dictionary words and lost 14 printed lines on 6 pages (`BUGS.md` C39).
     static func resolutions(of page: PDFPage) -> (type: Double, images: Double) {
         if let override = rebuildDPIOverride, let answer = override(page) { return (answer, answer) }
         let images = imageDPI(of: page)

@@ -65,8 +65,9 @@
 // `#### The instrument, in Tools/ as of 2026-08-25`. If you change how the bitmap is obtained, that
 // control is the one to re-run.
 // ⚠️ Except on a layered scan's 1-bit page (`BUGS.md` C39): `flatten` publishes it at its mask's
-// resolution and production reads `Recogniser.recognitionImage`, a copy at its images'. This tool
-// still loads the published bitmap there, so it measures a finer image than the app reads.
+// resolution, and production takes the lines from a copy at its images' (`Recogniser.recognitionImage`)
+// and their words from the published bitmap (`Recogniser.recognisePage(at:)`). This tool loads only
+// the published bitmap there, so it measures neither reading as the app combines them.
 //
 // ## The two run definitions, and why both are printed
 //
@@ -1108,7 +1109,8 @@ for index in pages {
     }
 
     // `PRODUCTION=1` measures what the app publishes rather than one whole-page request:
-    // `Recogniser.recognisePage`, the entry point `recogniseDocument` and the helper call.
+    // `Recogniser.recognisePage` on the bitmap as one image. `recognisePage(at:)` also reads a
+    // paste-up strip by strip from the regions beside it, and a raised 1-bit page twice (C39).
     guard let observations = try? (production
             ? Recogniser.recognisePage(image, settings: settings)
             : Recogniser.recognise(image, settings: settings)) else {

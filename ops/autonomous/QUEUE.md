@@ -340,6 +340,14 @@ say so in the commit.
       it was. Reading the 1-bit pages there too gained 4,876 dictionary words on 35 documents but lost 14
       lines; it waits for a merge of the two readings (C39). The drag and cross measures used so far are
       unsound (`characterBounds`); re-measure with one-character selections before deciding `WONTFIX`.
+      2026-09-27, max effort: drag re-measured with `Tools/pdfkit-drag` (one-character selections) and
+      closed `WONTFIX` under rule 8, with what was tried in C39. A raised 1-bit page's lines come from the
+      copy and their words from the page (`finerReading`): +2,722 dictionary words on 32 documents, no line
+      lost, 28% more time; WSJ 1969's named paragraph 8 -> 4 misread words. Adopted from a session stopped
+      by its usage limit, after a review that tightened the guards. The parked band swap redone as
+      `finerReading` over clean band lines buys at most 0.3 points on the five whole-page scans (C39
+      "Left"). Still open: the rows fused across columns on
+      the whole-page scans (6 to 30 a page), and a layered picture page's finer reading (Berendzen).
       (origin: BUGS.md C39)
 - [x] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter

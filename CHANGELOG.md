@@ -14,6 +14,13 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Black-and-white pages whose type is stored at a finer resolution than the rest, as on ProQuest's
+  newspaper and magazine pages, are now also read at that finer resolution, and a line takes the clearer
+  reading's words wherever both readings found the same line. On the 32 test documents with such pages
+  about 2,700 more words read as real words (a 1956 stock-exchange study went from 70.7% to 73.5%), and
+  no line is lost, although a line whose words are swapped can pick up a new misread with its fixes.
+  Those pages take about twice as long to recognise: 28% more time over the 32 documents (C39).
+
 - Scanned pages stored in layers keep their type at its own resolution, where they used to be rebuilt at
   half of it. These are pages whose type is a separate, finer black-and-white image, as on ProQuest's
   newspaper and magazine pages. Zoomed in, the type looks like the source's instead of blocky. The text

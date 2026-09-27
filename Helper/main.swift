@@ -120,18 +120,13 @@ encoder.outputFormatting = .sortedKeys
 
 for (index, line) in pages.enumerated() {
     let path = String(line)
-    guard let image = Recogniser.loadImage(
-        at: Recogniser.recognitionImage(besides: URL(fileURLWithPath: path))) else {
-        die(.unreadablePage, "page \(index + 1) could not be read: \(path)")
-    }
     let observations: [SearchableWriter.Observation]
     do {
-        if let regions = try Recogniser.regions(besides: URL(fileURLWithPath: path)) {
-            observations = try Recogniser.recognisePage(image, regions: regions,
-                                                        settings: settings)
-        } else {
-            observations = try Recogniser.recognisePage(image, settings: settings)
+        guard let read = try Recogniser.recognisePage(at: URL(fileURLWithPath: path),
+                                                      settings: settings) else {
+            die(.unreadablePage, "page \(index + 1) could not be read: \(path)")
         }
+        observations = read
     } catch {
         die(.recognitionFailed,
             "page \(index + 1) could not be recognised: \(error.localizedDescription)")

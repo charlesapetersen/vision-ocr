@@ -204,17 +204,11 @@ enum Recogniser {
                 // disagree on a mixed document. Cosmetic, and recorded rather than
                 // fixed: `BUGS.md` C29 `#### (A) SHIPPED` names it.
                 onPage(item.page - 1, total)
-                guard let image = loadImage(at: recognitionImage(besides: item.image)) else {
+                guard let read = try recognisePage(at: item.image, settings: settings,
+                                                   isCancelled: isCancelled) else {
                     throw Failure.unreadablePage(item.page)
                 }
-                if let regions = try regions(besides: item.image) {
-                    byPage[item.page] = try recognisePage(image, regions: regions,
-                                                          settings: settings,
-                                                          isCancelled: isCancelled)
-                } else {
-                    byPage[item.page] = try recognisePage(image, settings: settings,
-                                                          isCancelled: isCancelled)
-                }
+                byPage[item.page] = read
             }
             onPage(total, total)
             return byPage
@@ -623,12 +617,244 @@ enum Recogniser {
     /// images' on ProQuest's pages, and read where it always was. Read at the type's,
     /// the 35 corpus documents this reaches read 4,876 more dictionary words (web2) and
     /// lost 14 printed lines on 6 pages, found before and not after by PDFKit's search
-    /// (`_1973_Committee Against Racism` p4: 6). So nothing a reader could select
-    /// before is lost, and the gain waits for a merge of the two readings (`BUGS.md`
-    /// C39).
+    /// (`_1973_Committee Against Racism` p4: 6). So the copy gives the page its lines,
+    /// and the page itself only their words (`recognisePage(at:)`, `BUGS.md` C39).
     static func recognitionImage(besides image: URL) -> URL {
         let coarse = image.deletingPathExtension().appendingPathExtension("coarse.png")
         return FileManager.default.fileExists(atPath: coarse.path) ? coarse : image
+    }
+
+    /// The page `flatten` wrote at `image`, recognised as the app publishes it: strip by
+    /// strip when it wrote regions beside it, else whole. Nil when the bitmap to read will
+    /// not load, which each caller reports as its own unreadable page.
+    ///
+    /// A page with a copy at its images' resolution (`recognitionImage`) is read twice
+    /// (C39): the copy gives the lines, as it did alone, and the page at its type's
+    /// resolution gives the words of every line it read the same way
+    /// (`finerReading`). Reading the page alone gained the words but lost lines and
+    /// joined columns (on WSJ 1969, lines holding two columns' text 9 -> 46); taking
+    /// its text only line for line keeps the copy's lines, boxes and order. When the
+    /// second reading fails, the copy's stands: it is what the page published before.
+    static func recognisePage(at image: URL, settings: Prefs.Snapshot,
+                              isCancelled: () -> Bool = { false })
+        throws -> [SearchableWriter.Observation]? {
+        let coarse = recognitionImage(besides: image)
+        guard let first = loadImage(at: coarse) else { return nil }
+        let regions = try regions(besides: image)
+        func read(_ bitmap: CGImage) throws -> [SearchableWriter.Observation] {
+            if let regions {
+                return try recognisePage(bitmap, regions: regions, settings: settings,
+                                         isCancelled: isCancelled)
+            }
+            return try recognisePage(bitmap, settings: settings, isCancelled: isCancelled)
+        }
+        let lines = try read(first)
+        guard coarse != image, !isCancelled(), let page = loadImage(at: image), page.width > 0,
+              let finer = try? read(page), !isCancelled() else { return lines }
+        return finerReading(of: lines, from: finer, aspect: Double(page.height) / Double(page.width))
+    }
+
+    /// `lines` with the text of each one that `finer`, a reading of the same page at a
+    /// finer resolution, read as the same line. That is one finer line overlapping it by
+    /// 0.6 of their union with both ends within 0.6 of its height, or, where there is
+    /// none and the line is upright, two or more upright finer pieces inside its row that
+    /// reach both of its ends, overlap nothing and leave no gap over `finerPieceGap`. Each
+    /// finer line may serve one line only, of its own turn. The reading must have 0.9 to
+    /// 1.15 times the line's letters, a `likeness` of a half, as many words and the same
+    /// digits in its numbers, and must not undo a hyphen join the copy's reading makes.
+    /// The line keeps its box, region and turn; only its text changes.
+    ///
+    /// Never two lines joined, and never a line split: where the copy cut a row in two
+    /// and the finer reading did not, the row stays as `lines` cut it, because a finer
+    /// line that reads two of them may be one read across a gutter (C39's parked band
+    /// swap re-fused columns that way). Pieces are gathered only inside one line's own
+    /// extent. Replayed over the saved readings of 495 of the corpus's 504 raised 1-bit
+    /// pages, dictionary words (web2) go 77.46% -> 78.98% with all 33,532 lines kept, 372
+    /// pages better and 14 worse (the worst in NYSE 1956's typescript, which the finer
+    /// bitmap reads grainier); the finer reading alone reads 79.89% in 34,166 lines, cut
+    /// differently and fused across columns (WSJ 1969: 9 -> 46 lines of two columns).
+    /// `aspect` is the page's height over its width, to measure heights across it.
+    static func finerReading(of lines: [SearchableWriter.Observation],
+                             from finer: [SearchableWriter.Observation],
+                             aspect: Double) -> [SearchableWriter.Observation] {
+        typealias Box = SearchableWriter.BoundingBox
+        func turns(_ o: SearchableWriter.Observation) -> Int { (((o.quarterTurns ?? 0) % 4) + 4) % 4 }
+        func reach(_ a: Box) -> Double { finerEdgeTolerance * a.height * aspect }
+        /// A turned line (C36) runs down the page: its height is its box's width, and its
+        /// ends are the box's top and bottom.
+        func same(_ a: Box, _ b: Box, turned: Bool) -> Bool {
+            let across = min(a.x + a.width, b.x + b.width) - max(a.x, b.x)
+            let down = min(a.y + a.height, b.y + b.height) - max(a.y, b.y)
+            guard across > 0, down > 0 else { return false }
+            let shared = across * down
+            let union = a.width * a.height + b.width * b.height - shared
+            guard union > 0, shared / union >= finerOverlap else { return false }
+            if turned {
+                let along = finerEdgeTolerance * a.width / aspect
+                return abs(a.y - b.y) <= along && abs((a.y + a.height) - (b.y + b.height)) <= along
+            }
+            return abs(a.x - b.x) <= reach(a) && abs((a.x + a.width) - (b.x + b.width)) <= reach(a)
+        }
+        /// The finer lines inside `a`'s row and ends, left to right, when there are two or
+        /// more, none overlapping the next, and together they reach both of its ends.
+        func pieces(of a: Box) -> [Int]? {
+            let inside = finer.indices.filter { j in
+                let b = finer[j].boundingBox
+                return turns(finer[j]) == 0
+                    && min(a.y + a.height, b.y + b.height) - max(a.y, b.y) >= finerOverlap * min(a.height, b.height)
+                    && b.x >= a.x - reach(a) && b.x + b.width <= a.x + a.width + reach(a)
+            }.sorted { finer[$0].boundingBox.x < finer[$1].boundingBox.x }
+            // Each piece starts where the last one ended, give or take `reach`, and no more
+            // than `finerPieceGap` line heights after it: a wider gap is a word the finer
+            // reading missed (UN-OCred p27: `(and`, 1.4 line heights between its pieces).
+            guard inside.count >= 2, let first = inside.first, let last = inside.last,
+                  abs(finer[first].boundingBox.x - a.x) <= reach(a),
+                  abs(finer[last].boundingBox.x + finer[last].boundingBox.width - (a.x + a.width)) <= reach(a),
+                  zip(inside, inside.dropFirst()).allSatisfy({ p, q in
+                      let end = finer[p].boundingBox.x + finer[p].boundingBox.width
+                      return finer[q].boundingBox.x >= end - reach(a)
+                          && finer[q].boundingBox.x - end <= finerPieceGap * a.height * aspect
+                  })
+            else { return nil }
+            return inside
+        }
+        // Each line's finer reading, and whether it is pieces; how many lines claim each.
+        var readings: [(found: [Int], pieces: Bool)] = []
+        var claimed = [Int](repeating: 0, count: finer.count)
+        for line in lines {
+            let turn = turns(line)
+            let whole = finer.indices.filter {
+                turns(finer[$0]) == turn
+                    && same(line.boundingBox, finer[$0].boundingBox, turned: turn % 2 == 1)
+            }
+            // Pieces are laid out along x, so only an upright line gathers them.
+            let reading: (found: [Int], pieces: Bool) = whole.isEmpty && turn == 0
+                ? (pieces(of: line.boundingBox).map { ($0, true) } ?? ([], false))
+                : (whole, false)
+            readings.append(reading)
+            for j in reading.found { claimed[j] += 1 }
+        }
+        func letters(_ t: String) -> Int { t.filter { $0.isLetter || $0.isNumber }.count }
+        // The hyphen joiner (`SearchableWriter.joiningHyphenatedWords`) joins a line ending in
+        // a letter and a break hyphen to a next line starting with a lower-case letter, so a
+        // reading may not lose either half where the copy had it: the copy's `$35.8 mall-`
+        // joined `lion` and the page's `$35.8 mil` did not (WSJ 1969), and `compens.-`, or
+        // `Tion` under `compensa-`, would undo a join too. One that finds a join is let
+        // through: the page's `compensa-` joins `tion` where the copy read `compensa.`.
+        func joinsAsHead(_ t: String) -> Bool {
+            guard let last = t.last, SearchableWriter.breakHyphens.contains(last) else { return false }
+            return t.dropLast().last?.isLetter ?? false
+        }
+        func joinsAsTail(_ t: String) -> Bool { t.first.map { $0.isLetter && $0.isLowercase } ?? false }
+        // Only where the line may be a tail, by the joiner's own geometry: a head is above
+        // it in its column (drawn baselines under `maximumJoinPitch` apart, sharing
+        // `minimumColumnOverlap`), or it is one of the lines the joiner offers the page
+        // before (`SearchableWriter.prepared`: the first `continuationCandidates` upright
+        // lines in column order, near the top, which passes over a folio or running head),
+        // or it is turned, which this does not place. Elsewhere a capital is let through,
+        // because there the copy misread one (NYSE 1956: `tpon payanut` read `Upon payment`,
+        // and 302 lines like it on the saved readings of 495 raised pages when the rule
+        // applied everywhere).
+        let joiner = SearchableWriter.self
+        let opening: Set<Int> = {
+            let upright = lines.indices.filter {
+                turns(lines[$0]) == 0 && !lines[$0].text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }.map { i -> SearchableWriter.Observation in
+                var tagged = lines[i]
+                tagged.region = i   // `columnOrdered` only reorders, so the tag comes back
+                return tagged
+            }.sorted { $0.boundingBox.y < $1.boundingBox.y }
+            return Set(joiner.columnOrdered(upright, aspect: aspect)
+                .prefix(joiner.continuationCandidates).compactMap(\.region))
+        }()
+        func baseline(_ a: Box) -> Double { a.y + (1 - Double(joiner.baselineFraction)) * a.height }
+        func mayContinue(_ i: Int) -> Bool {
+            guard turns(lines[i]) == 0 else { return true }
+            let b = lines[i].boundingBox
+            if opening.contains(i), b.y <= joiner.edgeOfPage { return true }
+            return lines.indices.contains { k in
+                guard k != i, turns(lines[k]) == 0, joinsAsHead(lines[k].text) else { return false }
+                let a = lines[k].boundingBox
+                let drop = baseline(b) - baseline(a)
+                return drop > 0 && drop < Double(joiner.maximumJoinPitch) * a.height
+                    && joiner.sharedWidthFraction(a, b) >= joiner.minimumColumnOverlap
+            }
+        }
+        // The numbers in a reading, as digits with the points and commas between them. A
+        // finer reading may not change their digits, since a wrong number reads as a right
+        // one (WSJ 1969: `$400,000` read `$100,000`, `1967` read `1867`), nor split one
+        // (`700,000` read `700, 000`), nor read digits into a word (NYSE 1956's typescript:
+        // `unt1l paid 1n ful1`). Signs and symbols are not compared: there the finer reading
+        // mostly finds what the copy lost (`511 529` read `511-529`, `0.332` read `-0.332`).
+        func numbers(_ t: String) -> [String] {
+            var out: [String] = [], current = "", pending = ""
+            for c in t {
+                if c.isNumber {
+                    current += pending + String(c)
+                    pending = ""
+                } else if c == "." || c == ",", !current.isEmpty, pending.isEmpty {
+                    pending = String(c)
+                } else {
+                    if !current.isEmpty { out.append(current) }
+                    (current, pending) = ("", "")
+                }
+            }
+            if !current.isEmpty { out.append(current) }
+            return out
+        }
+        // Words, as runs of letters. A finer reading must have as many: fewer is a word it
+        // missed (UN-OCred p27's `(and`, WSJ's `a` read `&`), more a word it broke up
+        // (`poration` read `por atl on`).
+        func words(_ t: String) -> Int { t.split { !$0.isLetter }.count }
+        return lines.indices.map { i in
+            let line = lines[i]
+            let (found, isPieces) = readings[i]
+            guard !found.isEmpty, isPieces || found.count == 1,
+                  found.allSatisfy({ claimed[$0] == 1 }) else { return line }
+            let text = found.map { finer[$0].text }.joined(separator: " ")
+            let (mine, theirs) = (Double(letters(line.text)), Double(letters(text)))
+            guard mine > 0, theirs >= 0.9 * mine, theirs <= 1.15 * mine,
+                  likeness(line.text, text) >= 0.5,
+                  !joinsAsHead(line.text) || joinsAsHead(text),
+                  !joinsAsTail(line.text) || joinsAsTail(text) || !mayContinue(i),
+                  numbers(text) == numbers(line.text),
+                  words(text) == words(line.text) else { return line }
+            var out = SearchableWriter.Observation(boundingBox: line.boundingBox, text: text,
+                                                   confidence: line.confidence,
+                                                   quarterTurns: line.quarterTurns)
+            out.region = line.region
+            return out
+        }
+    }
+
+    /// Of the union of two boxes, the least they must share to be one line (`finerReading`).
+    static let finerOverlap = 0.6
+    /// Of a line's height, how far apart two readings' ends may lie (`finerReading`).
+    static let finerEdgeTolerance = 0.6
+    /// In line heights, the widest gap between two finer pieces of one line (`finerReading`).
+    /// On the 504 raised pages' readings 384 of 388 gathered lines keep under it; of the
+    /// four above it, two had lost a word (`(and`, `&`).
+    static let finerPieceGap = 1.25
+
+    /// How alike two readings of one line are: the share of their pairs of adjacent
+    /// characters in common (Dice), case folded and everything but letters and digits
+    /// left out. The same line misread scores above a half (`protessor. ol.
+    /// buglisa, who` against `professor of English, who re-`, 0.57); the line below it,
+    /// with as many letters, well under (on C39's October 2, 1960 page a garbled `tainly
+    /// esthe Second Cretion is far wiser, suc` against `earnest than are nine out of ten
+    /// historical fictions.`).
+    static func likeness(_ a: String, _ b: String) -> Double {
+        func pairs(_ t: String) -> [String: Int] {
+            let c = Array(t.lowercased().filter { $0.isLetter || $0.isNumber })
+            var out: [String: Int] = [:]
+            if c.count > 1 { for i in 0..<(c.count - 1) { out[String(c[i...i + 1]), default: 0] += 1 } }
+            return out
+        }
+        let (x, y) = (pairs(a), pairs(b))
+        let total = x.values.reduce(0, +) + y.values.reduce(0, +)
+        guard total > 0 else { return 0 }
+        let shared = x.reduce(0) { $0 + min($1.value, y[$1.key] ?? 0) }
+        return 2 * Double(shared) / Double(total)
     }
 
     /// The regions `flatten` wrote beside the bitmap at `image`, or nil when it wrote
@@ -1755,7 +1981,10 @@ enum Recogniser {
     /// megapixel — a 4.9 MP book page in 1.77s — and
     /// `Flattener.maximumPageMegapixels` lets a **400 MP** page through, so the
     /// worst legitimate first page is on the order of 144s. 300s left a factor of
-    /// two against an estimate taken from ordinary book pages.
+    /// two against an estimate taken from ordinary book pages. A raised 1-bit page
+    /// (C39) is read twice, itself and a copy at least `Flattener.minimumMaskRaise`
+    /// coarser (up to 278 MP), so at most about 678 MP: 244s at that rate, and about
+    /// 610s at the 0.9s per megapixel a dense newspaper page costs (C39's Raskin).
     ///
     /// The two errors are not symmetric, which is why this is generous rather
     /// than tight. Too long costs only later detection of a genuinely wedged

@@ -2180,7 +2180,8 @@ final class OCRModel: ObservableObject {
         //    images Vision reads, rather than a PDF re-rasterised by something
         //    else at a resolution of its own choosing. That round trip is what
         //    R39 was, and what U25's DPI negotiation existed to survive. A raised
-        //    1-bit page is read from its copy at its images' resolution (C39).
+        //    1-bit page is read twice, its copy at its images' resolution for the
+        //    lines and the page itself for their words (`recognisePage(at:)`, C39).
         let pageTotal = bitmaps.isEmpty ? PDFPageCount(visible) : bitmaps.count
         progress("Recognising page 0 of \(max(pageTotal, 0))", ocrShare(0, pageTotal))
         // `var` only because `adopting` takes a closure and Swift will not let one

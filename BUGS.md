@@ -18263,7 +18263,7 @@ less per layered page.
   a tiling pattern through the stencil (more machinery, same result); raising the foreground to the
   stencil's resolution (bytes); sending text pages back to the 1-bit route (loses C32's red).
 
-### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN *(read strip by strip since `9555c8a`; reopened 2026-09-26; a layered page's type published at its mask's resolution 2026-09-27; the drag and cross measures found unsound 2026-09-27)*
+### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN *(read strip by strip since `9555c8a`; reopened 2026-09-26; a layered page's type published at its mask's resolution 2026-09-27; drag selection closed `WONTFIX` on a sound instrument, and a raised 1-bit page's words read at its type's resolution, 2026-09-27)*
 
 *(found 2026-09-26 by the owner: `Raskin - 1956 - New Jobs Opening to Negro in North.pdf`, one ProQuest
 *New York Times* page of 1,067 x 1,547 pt. Source and the `24a8f6a` output are in `$STATE/owner-supplied/`.
@@ -18511,6 +18511,116 @@ both), and a retry at the coarse stencil when `Model`'s price check refuses a fi
 changed route). Separately, the hyphen join offers the next page's top lines to any line in a
 page's bottom quarter (`edgeOfPage` 0.25). Under the first version it wrote `selecting emsales` on Scott
 p3, from a p4 line Vision started at `sales`.
+
+#### 2026-09-27, `c39-newspaper-page` at max effort: drag measured soundly and closed `WONTFIX`; a raised 1-bit page's words read at its type's resolution
+
+**A sound drag instrument.** `Tools/pdfkit-drag` takes every character's position from a one-character
+selection and needs no column finder: it follows chains of stacked PDFKit lines (the columns of text,
+article by article) and drags down each whole chain and each run of six lines. "Cross" is lines lying over
+two chains side by side (fused rows; a few table rows count too). The ten pages on `e778abc`, through PDFKit
+(the misread column of the table above was counted by hand and stands):
+
+| page | kind | lines | cross | drag down a chain | 6-line drags clean |
+|---|---|---|---|---|---|
+| Newsday 1981 (Berendzen) | ProQuest | 173 | 0 | 99.1% | 24/25 |
+| Zipkin 2000 p1 | paste-up | 79 | 0 | 100.0% | 7/7 |
+| WSJ 1969 p1 | ProQuest | 243 | 5 | 50.9% | 10/31 |
+| Newsday 1973 p2 | paste-up | 196 | 0 | 41.2% | 15/30 |
+| Raskin 1956 | paste-up | 645 | 1 | 32.0% | 33/97 |
+| Kalispell 1939 | whole page | 539 | 6 | 34.4% | 4/33 |
+| Independent Record 1950 | whole page | 856 | 10 | 20.0% | 7/33 |
+| October 2, 1960 p24 | whole page | 717 | 25 | 31.1% | 3/57 |
+| Billings Gazette 1926 | whole page | 1169 | 30 | 10.6% | 10/66 |
+| Helena Independent 1941 | whole page | 731 | 18 | 27.3% | 1/51 |
+
+**Why a drag leaks.** CoreGraphics' page layout (`CGPDFLayoutCreateWithPage`, read for diagnosis only) cuts
+WSJ into 30 horizontal zones. Wherever two columns' baselines line up it builds one layout line across the
+gutter, whatever the gap, and such a line ends the column blocks around it, so a drag down one column takes
+the next column's rows zone by zone. Berendzen's zones hold whole columns. Tried on WSJ (50.9%), each on the
+real file edited in place and measured with `pdfkit-drag`: gaps to a same-row neighbour opened to 2-16 pt,
+47-51%; glyphs 1.1-1.25x taller, 46-49%; straight rivers 6-24 pt wide at both gutters, 51-65% (24 pt breaks
+property c); run edges snapped exactly to the column margins, 46%, 51% or 80% as one margin moves by half a
+point, the quantised answer of a heuristic rather than a lever; that snapping found automatically on all ten
+pages, -5 to +7 points; vertical rules in the gutters, invisible or black, no change; a correctly tagged copy
+(MCIDs in the content, `ParentTree`, `StructParents`, `MarkInfo`), no change: CoreGraphics' tagged tree holds
+the column blocks, but `page.string` and selection ignore it. [measured] **Drag selection is closed
+`WONTFIX`** (rule 8; the fifth max-effort session, committed by the sixth): no text layer found keeps PDFKit's blocks in their
+columns on these pages. The reader has the text read column by column in the file, found by search,
+selectable by line and word, and drags that stay in their column where columns stand apart (Berendzen, Zipkin).
+
+**Fix: a raised page's copy gives its lines, the page itself their words.** `Recogniser.recognisePage(at:)`,
+now both recognition paths' one call, reads the copy at the images' resolution as before, then the published
+page at its type's, and `finerReading` takes the finer text line for line. The same line is one finer line on
+the same box (0.6 of the union, both ends within 0.6 of a line height, measured along a turned line), or, for
+an upright line without one, two or more upright pieces inside its extent that reach both ends, overlap by
+under 0.6 of a line height and leave no gap over 1.25. Each finer line serves one line. The swap needs
+0.9-1.15x the letters, a Dice `likeness` of a half, as many words, the same digits in its numbers, and no
+hyphen join lost, by the joiner's own geometry: a line ending in a letter and a break hyphen keeps both, and
+a line the joiner could take as its tail keeps its lower-case start (under such a line in its column, or
+among the first three lines it offers the page before, past a folio or running head). Nothing is joined
+or split, so lines, boxes and order stay the copy's. Rejected: the finer reading alone (loses lines, fuses
+columns, above); `mergeBands` with the copy as a band (keeps the finer reading's fused lines); a symmetric
+hyphen guard (refused `compensa.` → `compensa-`, which joins `tion`); skipping a page whose finer reading
+mixes more digits into words (lost more than it saved); a dictionary vote per line (English only); signs and
+per cent compared with the digits (on the saved readings of 495 of the 504 raised pages it refused 98 swaps,
+mostly the finer reading finding a minus or a range's hyphen the copy lost: `511 529` → `511-529`, `0.332` →
+`-0.332`); a lower-case start kept on every line (refused 302 swaps, nearly all a capital the copy missed:
+`tpon payanut` → `Upon payment`). [measured]
+
+**Review, and what changed after it.** The strand's session ran out before committing, and the adversarial
+review of its diff found its gate, suite count and several sentences described an earlier, looser set of
+guards: the final `numbers` guard refuses the `22,1952` swap its text used to explain NYSE, and the suite held
+1,600 checks, not 1,595. It also found six guards, and which way `aspect` runs, that could each be removed
+with every unit check still passing, and swaps that undo a join: `tion` → `Tion` under `compensa-`, or
+`compensa-` → `compens.-`. Both halves of a join are now guarded (the old last-character guard is subsumed).
+A second review found the cross-page half first written as "nothing above it in its column", which a folio or
+running head defeats: 13 of the replay's 17 real cross-page joins had an unguarded tail (none was undone, but a
+built page lost `question`). It now takes the joiner's own candidates, and measures drops between drawn
+baselines as the joiner does. Twelve checks pin the rest; each of 35 mutants of the guards turns one red. On
+the replay the final guards refuse 31 of the strand's 8,670 swaps (`try's` → `Iry's` under a `coun-`, a
+heading that opens a page) and cost 10 dictionary words; 6 swaps are newly allowed, all lines ending in a
+hyphen no join takes (`e=-`). Left as they are: a name the finer reading misreads differently wins (`Hanson`
+→ `Hansen` passes every guard, and web2 cannot see names; the swaps leave 372 replayed pages better and 14
+worse). A swap takes a whole line, so a line's new misreads come with its fixes (WSJ below). Pieces are
+joined with a space, so a split inside `U.S.` would read `U. S.`; the replay's ten such splits (`N.Y.` →
+`N. Y.`) are all Vision's own spacing inside one finer line. Not guarded, reasoned and not seen: across a
+page break, a swap that starts an earlier candidate lower-case could take a join from the copy's tail.
+
+**Result, gate `e778abc` → this commit, the 32 documents with a raised page (census: 598 pages, 504 of them
+1-bit with a copy).** All 32 succeed, with the gate's pixel figures unchanged. Dictionary words (web2) in
+PDFKit's text 376,007 → 378,729 (80.11% → 80.69%), no document worse: NYSE 1956 +1,605 (70.73% → 73.45%),
+Scott +233, Class Action +205, Findlay +141, Jones +135, UN-OCred +108, WSJ 1969 +31. PDFKit lines 72,489 →
+72,490: 3 pages of UN-OCred regroup, and every line before has a line after within a Dice of a half. Bytes
+58,830,649 → 58,814,705. Time is the cost: per-document seconds summed 4,295 → 5,492 (+28%), NYSE 443 → 898 s,
+WSJ 13.4 → 24.7 s, while documents with no raised page hold (Berendzen 11.4 → 11.6 s, Geiger 85.1 → 84.2 s);
+the gate's wall time 26 → 25 min. On the ten pages only WSJ changes, the only raised 1-bit page among them; a
+page without a copy is read once, and Berendzen's PDFKit text is identical. WSJ: 243 lines both, dictionary
+words 77.30% → 79.69%, drag 50.9% → 50.8%, 140,698 → 140,523 B, and the paragraph `The average chief
+executive's compensa- … a 5.9% rise in 1964` (54 words), counted by hand as words a search would miss, 8 → 4
+misread: `chief`, `history`, `in` (read `ід`) and the joined `compensation` right; `prevtous`, `secord`,
+`waa` and `recession` (its tail read `8102.`) left. The independent check, against a 400 dpi render of the
+source, found 77 lines changed on the page, about 77 words newly found and 10 correct words lost (`Reporter`
+→ `Beporter`, `talks` → `talk`, `steel` → `stee!`, `fat` → `tat`, …), no line lost and the image stream
+byte-identical. Suite 1612/1612; the two integration checks go red with the swap disabled (1598/1600), and
+each of 35 mutants of `finerReading`'s guards turns at least one of its 25 unit checks red (a harness of
+those checks). On the replay a turned line still swaps where it should (Mudge's chart title `salary namers`
+→ `salary earners`).
+
+**Left.** Reading on the whole-page scans: the parked band swap (`$STATE/rescue/PARKED-c39-dense-band-swap-
+2026-09-26.patch`) can now be `finerReading` over its clean band lines, which does away with its defects
+(a), (d) and (e) (joins and row placement). Tried on the five named scans in a scratch harness (not shipped):
+10 to 56 lines change a page and dictionary words move -0.02 to +0.26 points (Helena 76.23% → 76.49%), so on
+these five it buys almost nothing; the parked version's larger gains elsewhere (`___` 74.4% → 80.0%) came
+with its joins, and are unmeasured this way. The rows fused across columns on the whole-page scans (the
+table's cross column, 6 to 30 a page) are untried: `splitAtGutter` (C34) splits at one gutter only. A layered
+picture page (Berendzen) is still read at its images' resolution; `finerReading` over a render at its type's
+is untried. The finer reading's cost might fall with one Vision request instead of `recognisePage`'s bands
+(untried). Instrument notes: `Tools/score-text-voids` with `PRODUCTION=1` reads the fine PNG alone, while
+production now reads both. `pdfkit-drag`'s cross column over-counts: on WSJ one of its 5 is a run crossing a
+gutter (`paper and plastic products-had increases of Scott's chairman,`, x 0 to 289 pt), and the rest are
+rows split within one column and a table row (independent check, from the content stream), so "6 to 30 a
+page" above is an upper bound. WSJ's cell in the first ten-page table (5 misread of 50) is another paragraph
+and was not recounted.
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 

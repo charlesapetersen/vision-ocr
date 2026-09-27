@@ -7442,15 +7442,15 @@ do {
           unlike == 0, "\(unlike) pixels differ")
     // And the copy is what is read, in the app and in the helper: a copy that says
     // something else comes back, and the page's own words do not.
-    func writeWords(_ text: String, to url: URL) -> Bool {
-        guard let c = CGContext(data: nil, width: 600, height: 450, bitsPerComponent: 8, bytesPerRow: 600,
-                                space: CGColorSpaceCreateDeviceGray(),
+    func writeWords(_ text: String, to url: URL, scale: Int = 1) -> Bool {
+        guard let c = CGContext(data: nil, width: 600 * scale, height: 450 * scale, bitsPerComponent: 8,
+                                bytesPerRow: 600 * scale, space: CGColorSpaceCreateDeviceGray(),
                                 bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
         c.setFillColor(gray: 1, alpha: 1)
-        c.fill(CGRect(x: 0, y: 0, width: 600, height: 450))
-        c.textPosition = CGPoint(x: 40, y: 300)
+        c.fill(CGRect(x: 0, y: 0, width: 600 * scale, height: 450 * scale))
+        c.textPosition = CGPoint(x: 40 * scale, y: 300 * scale)
         CTLineDraw(CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [
-            .font: CTFontCreateWithName("Times-Roman" as CFString, 40, nil),
+            .font: CTFontCreateWithName("Times-Roman" as CFString, CGFloat(40 * scale), nil),
             .foregroundColor: CGColor(gray: 0, alpha: 1)])), c)
         guard let image = c.makeImage(),
               let dest = CGImageDestinationCreateWithURL(url as CFURL, "public.png" as CFString, 1, nil)
@@ -7471,6 +7471,200 @@ do {
         }
     } else {
         check("…a copy with other words is written for the recognition check", false)
+    }
+    // The page itself is read too, and gives the copy's lines their words where it read
+    // the same line (`Recogniser.finerReading`): one letter apart, the page's is kept.
+    if writeWords("Omega zebra quartz", to: coarseURL),
+       writeWords("Omega zebra quarts", to: firstPage, scale: 2) {
+        for viaHelper in [false, true] {
+            var fellBack: [String] = []
+            let read = (try? Recogniser.recogniseDocument(
+                visible: typeURL, bitmaps: typeRebuilt, settings: Prefs.Snapshot.current(),
+                useHelper: viaHelper, onFallback: { fellBack.append($0) }))?[1] ?? []
+            let text = read.map(\.text).joined(separator: " ")
+            check("C39 — a 1-bit page's copy gives its lines and the page their words, "
+                  + (viaHelper ? "through the helper" : "in the app"),
+                  text.contains("quarts") && !text.contains("quartz") && read.count == 1
+                      && fellBack.isEmpty,
+                  "\(read.count) lines: \(text.prefix(80)) \(fellBack)")
+        }
+    } else {
+        check("…a page and a copy one letter apart are written for the recognition check", false)
+    }
+    do {
+        typealias Box = SearchableWriter.BoundingBox
+        func line(_ x: Double, _ y: Double, _ w: Double, _ text: String, turns: Int? = nil,
+                  h: Double = 0.02) -> SearchableWriter.Observation {
+            SearchableWriter.Observation(boundingBox: Box(x: x, y: y, width: w, height: h), text: text,
+                                         confidence: 1, quarterTurns: turns)
+        }
+        var first = line(0.1, 0.1, 0.4, "Tbe quick brown fox")
+        first.region = 3
+        let lines = [first,
+                     line(0.1, 0.13, 0.4, "jumps ovcr the lazy dog"),
+                     line(0.55, 0.2, 0.15, "gutter left"), line(0.72, 0.2, 0.18, "right side"),
+                     line(0.1, 0.3, 0.4, "a line with a tail"),
+                     line(0.1, 0.4, 0.4, "Completely different words"),
+                     line(0.1, 0.5, 0.3, "sideways text here", turns: 1),
+                     line(0.1, 0.6, 0.4, "one line read whole"),
+                     line(0.1, 0.7, 0.4, "twice over"), line(0.1, 0.7, 0.4, "twice over"),
+                     line(0.1, 0.8, 0.4, "down from $35.8 mall-"),
+                     line(0.1, 0.85, 0.4, "until paid in full"),
+                     line(0.1, 0.9, 0.4, "the 15-year bistory of the McKinsey"),
+                     line(0.55, 0.9, 0.35, "executive compensa."),
+                     line(0.1, 0.95, 0.4, "one two thrce four five"),
+                     line(0.93, 0.3, 0.02, "Figure axis titel", turns: 1, h: 0.3),
+                     line(0.96, 0.3, 0.02, "Percent of all employees", turns: 1, h: 0.3),
+                     line(0.1, 0.62, 0.4, "chairman, to $400,000 in supplemental"),
+                     line(0.1, 0.65, 0.4, "was 700,000 shares"),
+                     line(0.1, 0.72, 0.4, "record, a 5.9% rise"),
+                     line(0.1, 0.75, 0.4, "the poration of it"),
+                     line(0.1, 0.78, 0.4, "one two three four"),
+                     line(0.1, 0.55, 0.4, "upside down line here", turns: 2)]
+        let finer = [line(0.101, 0.1, 0.399, "The quick brown fox"),
+                     line(0.1, 0.13, 0.4, "jumps over the lazy dog"),
+                     line(0.55, 0.2, 0.35, "gutter left right side"),
+                     line(0.1, 0.3, 0.4, "a lin wit a ta"),
+                     line(0.1, 0.4, 0.4, "Somethings else entirely"),
+                     line(0.1, 0.5, 0.3, "sideways text hare"),
+                     line(0.1, 0.6, 0.19, "one line"), line(0.31, 0.6, 0.19, "read whole"),
+                     line(0.1, 0.7, 0.4, "twice ovor"),
+                     line(0.1, 0.8, 0.4, "down from $35.8 mil"),
+                     line(0.1, 0.85, 0.4, "unt1l paid 1n ful1"),
+                     line(0.1, 0.9, 0.2, "the 15-year history"), line(0.31, 0.9, 0.19, "of the McKinsey"),
+                     line(0.55, 0.9, 0.35, "executive compensa-"),
+                     line(0.1, 0.95, 0.2, "one two three"), line(0.31, 0.95, 0.14, "four fives"),
+                     line(0.93, 0.3, 0.02, "Figure axis title", turns: 1, h: 0.3),
+                     line(0.96, 0.3, 0.02, "Percent of all employes", turns: 1, h: 0.22),
+                     line(0.1, 0.62, 0.4, "chairman, to $100,000 in supplemental"),
+                     line(0.1, 0.65, 0.4, "was 700, 000 shares"),
+                     line(0.1, 0.72, 0.4, "record, & 5.9% rise"),
+                     line(0.1, 0.75, 0.4, "the por atl on of it"),
+                     line(0.1, 0.78, 0.15, "one two"), line(0.35, 0.78, 0.15, "three fours"),
+                     line(0.1, 0.55, 0.35, "upside down line her", turns: 2)]
+        let out = Recogniser.finerReading(of: lines, from: finer, aspect: 1.5)
+        check("C39 — a line the finer reading read the same way takes its words, and keeps its box",
+              out.count == lines.count && out[0].text == "The quick brown fox"
+                  && out[1].text == "jumps over the lazy dog" && out[0].region == 3
+                  && out[0].boundingBox.x == 0.1 && out[0].boundingBox.width == 0.4,
+              "\(out.prefix(2).map(\.text)) region \(String(describing: out.first?.region))")
+        check("…but no two lines are joined, and no line is split",
+              out[2].text == "gutter left" && out[3].text == "right side"
+                  && out[7].text == "one line read whole", "\(out.map(\.text))")
+        check("…nor cut short, nor given another line's words",
+              out[4].text == "a line with a tail" && out[5].text == "Completely different words",
+              "\(out[4].text) / \(out[5].text)")
+        check("…nor matched across a turn, nor where two lines claim one reading",
+              out[6].text == "sideways text here" && out[8].text == "twice over" && out[9].text == "twice over",
+              "\(out[6].text) / \(out[8].text)")
+        check("…nor where the finer reading drops a break hyphen, or mixes digits into words",
+              out[10].text == "down from $35.8 mall-" && out[11].text == "until paid in full",
+              "\(out[10].text) / \(out[11].text)")
+        check("…but a finer reading in pieces that span the line is gathered into it, and one that finds a hyphen is kept",
+              out[12].text == "the 15-year history of the McKinsey" && out[13].text == "executive compensa-"
+                  && out[12].boundingBox.width == 0.4,
+              "\(out[12].text) / \(out[13].text)")
+        check("…while pieces that stop short of the line's end are not",
+              out[14].text == "one two thrce four five", out[14].text)
+        check("…and a turned line is matched along its own length, which runs down the page",
+              out[15].text == "Figure axis title" && out[16].text == "Percent of all employees",
+              "\(out[15].text) / \(out[16].text)")
+        check("…nor where the finer reading changes a number or splits one",
+              out[17].text == "chairman, to $400,000 in supplemental" && out[18].text == "was 700,000 shares",
+              "\(out[17].text) / \(out[18].text)")
+        check("…nor where it has fewer words or more",
+              out[19].text == "record, a 5.9% rise" && out[20].text == "the poration of it",
+              "\(out[19].text) / \(out[20].text)")
+        check("…nor from pieces with a gap between them a word could hide in",
+              out[21].text == "one two three four", out[21].text)
+        check("…and an upside-down line, whose box lies across the page, is matched end to end across it",
+              out[22].text == "upside down line here", out[22].text)
+        check("…and `likeness` scores one line misread above a half, the line below it under",
+              Recogniser.likeness("protessor. ol. buglisa, who", "professor of English, who re-") > 0.5
+                  && Recogniser.likeness("tainly esthe Second Cretion is far wiser, suc",
+                                         "earnest than are nine out of ten historical fictions.") < 0.5,
+              "\(Recogniser.likeness("protessor. ol. buglisa, who", "professor of English, who re-"))")
+    }
+    do {
+        // The guards the block above leaves unpinned (C39's reviews): the boxes' overlap, the
+        // pieces' start, overlap, turn and number, one whole match, the most letters, which
+        // way `aspect` runs, and both halves of a hyphen join, on one page and across two.
+        typealias Box = SearchableWriter.BoundingBox
+        func line(_ x: Double, _ y: Double, _ w: Double, _ text: String, turns: Int? = nil,
+                  h: Double = 0.02) -> SearchableWriter.Observation {
+            SearchableWriter.Observation(boundingBox: Box(x: x, y: y, width: w, height: h), text: text,
+                                         confidence: 1, quarterTurns: turns)
+        }
+        let lines = [line(0.1, 0.30, 0.4, "a line read lower down"),
+                     line(0.1, 0.35, 0.4, "one two three four"),
+                     line(0.1, 0.40, 0.4, "alpha beta gamma delta"),
+                     line(0.1, 0.45, 0.4, "red green blue white"),
+                     line(0.1, 0.50, 0.4, "Omega"),
+                     line(0.1, 0.55, 0.4, "cat sat on mat"),
+                     line(0.1, 0.60, 0.4, "a line that ends near"),
+                     line(0.93, 0.30, 0.02, "a turned line ends", turns: 1, h: 0.3),
+                     line(0.55, 0.30, 0.35, "executive compensa-"),
+                     line(0.55, 0.33, 0.35, "the chief executive's compensa-"),
+                     line(0.55, 0.36, 0.35, "tion jumped 9.8% in 1968"),
+                     line(0.55, 0.45, 0.35, "was a record."),
+                     line(0.55, 0.48, 0.35, "tpon payment in full"),
+                     line(0.96, 0.30, 0.02, "tion of the axis", turns: 1, h: 0.3),
+                     line(0.1, 0.65, 0.4, "left words right words"),
+                     line(0.1, 0.70, 0.4, "a line read a bit low")]
+        let finer = [line(0.1, 0.312, 0.4, "a line read lower dawn"),
+                     line(0.2, 0.35, 0.12, "one two"), line(0.33, 0.35, 0.17, "three fours"),
+                     line(0.1, 0.40, 0.2, "alpha beta"), line(0.26, 0.40, 0.24, "gamma delte"),
+                     line(0.1, 0.45, 0.18, "red green"), line(0.3, 0.45, 0.2, "blue whits", turns: 1),
+                     line(0.1, 0.50, 0.4, "Omegs"), line(0.1, 0.50, 0.4, ","),
+                     line(0.1, 0.55, 0.4, "cats sats on mats"),
+                     line(0.1, 0.60, 0.415, "a line that ends neat"),
+                     line(0.93, 0.30, 0.02, "a turned line endz", turns: 1, h: 0.31),
+                     line(0.55, 0.30, 0.35, "executive compens.-"),
+                     line(0.55, 0.36, 0.35, "Tion jumped 9.8% in 1968"),
+                     line(0.55, 0.48, 0.35, "Upon payment in full"),
+                     line(0.96, 0.30, 0.02, "Tion of the axis", turns: 1, h: 0.3),
+                     line(0.1, 0.65, 0.17, "left words"), line(0.3, 0.65, 0.2, "right wordz"),
+                     line(0.1, 0.706, 0.4, "a line read a bit law")]
+        let out = Recogniser.finerReading(of: lines, from: finer, aspect: 1.5)
+        check("C39 — a finer line lying half a line lower is not the same line",
+              out[0].text == "a line read lower down", out[0].text)
+        check("…nor are pieces that start short of the line, or overlap each other",
+              out[1].text == "one two three four" && out[2].text == "alpha beta gamma delta",
+              "\(out[1].text) / \(out[2].text)")
+        check("…nor is a turned piece gathered into an upright line, nor two readings on one box taken",
+              out[3].text == "red green blue white" && out[4].text == "Omega",
+              "\(out[3].text) / \(out[4].text)")
+        check("…nor a reading with a quarter more letters", out[5].text == "cat sat on mat", out[5].text)
+        check("…nor one finer line a third of a line lower, taken as its pieces",
+              out[15].text == "a line read a bit low", out[15].text)
+        check("…and `aspect` measures an upright line's ends and gaps across the page, a turned line's down it",
+              out[6].text == "a line that ends neat" && out[7].text == "a turned line ends"
+                  && out[14].text == "left words right wordz",
+              "\(out[6].text) / \(out[7].text) / \(out[14].text)")
+        check("…nor where a reading loses the letter before a break hyphen, or starts a capital under one",
+              out[8].text == "executive compensa-" && out[10].text == "tion jumped 9.8% in 1968",
+              "\(out[8].text) / \(out[10].text)")
+        check("…nor on a turned line, whose joins this does not place",
+              out[13].text == "tion of the axis", out[13].text)
+        check("…but under a line with no hyphen, a capital the copy missed is taken",
+              out[12].text == "Upon payment in full", out[12].text)
+        // Across a page break the joiner offers the page's first `continuationCandidates`
+        // upright lines in column order, near the top, which passes a folio and a running head.
+        let top = [line(0.45, 0.03, 0.1, "123"), line(0.2, 0.06, 0.6, "STANFORD INDUSTRIAL PARK"),
+                   line(0.1, 0.10, 0.8, "efits of the park were plain"),
+                   line(0.1, 0.13, 0.8, "and the land was leased at")]
+        let opened = Recogniser.finerReading(of: top, from: [
+            line(0.1, 0.10, 0.8, "Efits of the park were plain"),
+            line(0.1, 0.13, 0.8, "And the land was leased at")], aspect: 1.5)
+        check("…nor on the first line of text under a folio and a running head, which the page before may join",
+              opened[2].text == "efits of the park were plain", opened[2].text)
+        check("…while the line under it, which the joiner does not offer, takes the capital",
+              opened[3].text == "And the land was leased at", opened[3].text)
+        let lower = Recogniser.finerReading(of: [line(0.1, 0.40, 0.8, "tion of the trustees was")],
+                                            from: [line(0.1, 0.40, 0.8, "Tion of the trustees was")],
+                                            aspect: 1.5)
+        check("…as does a page's first line below its top quarter",
+              lower[0].text == "Tion of the trustees was", lower[0].text)
     }
     // A page the app does not rebuild is read from a render at the same resolution.
     var automatic = Prefs.Snapshot.current()
