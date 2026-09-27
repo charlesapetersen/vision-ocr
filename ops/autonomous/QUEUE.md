@@ -313,9 +313,24 @@ say so in the commit.
       the next session should close it `WONTFIX` for selection unless it has a new idea about PDFKit's blocks.
       2026-09-26: closed `WONTFIX` for selection; Form XObjects per column and a Tagged PDF structure
       tree were tried on the real file and PDFKit ignores both (C39).
-      2026-09-26, owner: REOPENED for drag selection alone, because it was closed at medium effort (rule 8).
-      (attempts: 1) — the medium session that closed it; with the one the daemon counted, the next
-      session runs at max. Read C39's "Left" and what was tried before starting, and try something else.
+      2026-09-26, owner: REOPENED, because it was closed at medium effort (rule 8), and WIDENED from
+      Raskin to full newspaper pages in general. (attempts: 1) — the medium session that closed it; with
+      the one the daemon counted, the next session runs at max. Read C39's "Left" and what was tried
+      before starting, and try something else.
+      MORE THAN ONE PAGE. Newspaper pages differ a lot in how hard they are, and progress on the easier
+      ones is worth shipping even if Raskin stays hard. Work on Raskin and at least six other full pages
+      from `testdocs/`, covering both kinds the corpus has:
+        * ProQuest paste-ups: `newspaperArticle/Zipkin_2000_Management.pdf`, the two Newsday pages
+          (`_1973_Other 67 …` and `Berendzen_1981 …`), and `JOURNAL_1969_Giving the Boss a Raise …` p1;
+        * whole-page scans of small-town papers: `_1941_Fiedler's hiring …_Helena Independent.pdf`,
+          `_1926_Clapp defends Cox_Billings Gazette.pdf`, `_1939_Kalispell resident …`,
+          `_1950_Comic_Independent Record.pdf`, and `document/October_2,_1960_(Page_24_of_25.pdf`.
+      For each page, before and after, through PDFKit: misread words in one paragraph checked by hand,
+      runs that cross a column, and the share of a drag down each column that stays in it. Rank the
+      pages from easiest to hardest in the entry.
+      DONE WHEN, restated for this reopening: the table above is in C39, every page that can be improved
+      is, and each page that cannot is named with what was tried. A gain on some pages ships on its own.
+      `WONTFIX` applies only to what no max-effort session could improve, under rule 8.
       (origin: BUGS.md C39)
 - [x] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter

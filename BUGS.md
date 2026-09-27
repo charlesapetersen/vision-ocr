@@ -18343,7 +18343,9 @@ selectable by line and word. A drag down one column on a dense page still picks 
 
 #### 2026-09-26, reopened by the owner
 
-The `WONTFIX` for drag selection was taken by the second session on the item, at medium effort. The owner ruled that no item closes `WONTFIX` before two max-effort sessions have tried it (QUEUE.md rule 8), so C39 is open again for drag selection alone. The strip-by-strip reading from `9555c8a` stands.
+The `WONTFIX` for drag selection was taken by the second session on the item, at medium effort. The owner ruled that no item closes `WONTFIX` before two max-effort sessions have tried it (QUEUE.md rule 8), so C39 is open again. It is widened from Raskin to full newspaper pages: newspaper pages vary a lot in difficulty, and
+progress on the easier ones is worth shipping even if Raskin stays hard. The item names the pages. The strip-by-strip
+reading from `9555c8a` stands.
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 
