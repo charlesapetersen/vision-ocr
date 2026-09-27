@@ -188,7 +188,7 @@ MINFREE_MB="${VISIONOCR_MINFREE_MB:-8192}" # a full disk fails EVERY build; park
 # Attempt cap — the one waste the idle backoff CANNOT catch. Backoff keys off the fingerprint MOVING, and a
 # mis-sized or subtly-failing item that commits a checkpoint each session keeps moving it, so it reads as
 # progress forever. This counts consecutive sessions that committed work but completed NO item.
-MAX_NOCOMPLETE="${VISIONOCR_MAX_NOCOMPLETE:-5}"
+MAX_NOCOMPLETE="${VISIONOCR_MAX_NOCOMPLETE:-10}"   # 5 -> 10 by the owner 2026-09-27, after C39 parked the run at 5
 
 # Health gate. Every $GATE_EVERY commits the daemon runs the gate itself — deterministic (build/test), so no
 # session and no LLM. The last-GREEN sha persists across restarts (the cadence tracks code churn, not daemon

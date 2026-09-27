@@ -310,7 +310,7 @@ the owner edits the queue or `## FOCUS`.
 **Attempt cap** — the one waste backoff cannot catch. Backoff keys off the fingerprint *moving*, and a
 mis-sized item that commits a checkpoint every session keeps it moving forever. So a second guard counts
 consecutive sessions that committed work but completed **no** item, and parks at
-`VISIONOCR_MAX_NOCOMPLETE` (5). "An item completed" means a ticked `QUEUE.md` box **or** a newly closed
+`VISIONOCR_MAX_NOCOMPLETE` (10; 5 until 2026-09-27). "An item completed" means a ticked `QUEUE.md` box **or** a newly closed
 `BUGS.md` entry — counting only the queue would read a constant through any session whose whole output was
 closing a register entry, and would then false-park a healthy run.
 
