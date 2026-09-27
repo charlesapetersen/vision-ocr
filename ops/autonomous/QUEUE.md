@@ -456,11 +456,6 @@ say so in the commit.
       do not have to apply it, and leave the file where it is.
       BOUND: one code commit, plus free docs commits for measurements. Rule 4 applies.
       (origin: BUGS.md C28)
-- [ ] **annot-r3** — the third adversarial review round on the annotation-preservation feature (on
-      `main`, off by default, unadvertised). Rounds one and two are recorded in `TODO.md`. Run the review
-      by subagent, fix what it finds that is real, and record the verdict on whether the feature is fit to
-      turn on. BOUND: one review round and its fixes.
-      (origin: TODO.md §"Preserving annotations through re-OCR")
 - [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
       allows (`BUGS.md` C41, split from C39). Start from the band swap parked at
       `$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch` and the eight defects C41 lists; fix
@@ -475,17 +470,27 @@ say so in the commit.
       the change. Drag selection is not in scope (C39 closed it).
       BOUND: one code commit, plus free docs commits.
       (origin: BUGS.md C41)
-- [ ] **zotero-2** — the Zotero library sweep: look for new classes of document the app handles badly.
+
+## Parked
+
+Potential future work, not queued. Nothing here is offered to a session: the entries have no checkbox,
+so `next-item.sh` does not read them. To queue one, move it back into the queue as a `- [ ]` item.
+(C28 was parked here from 2026-09-21 until the owner brought it back on 2026-09-25 as
+`c28-first-principles`.)
+
+- **annot-r3** — the third adversarial review round on the annotation-preservation feature (on
+      `main`, off by default, unadvertised). Rounds one and two are recorded in `TODO.md`. Run the review
+      by subagent, fix what it finds that is real, and record the verdict on whether the feature is fit to
+      turn on. BOUND: one review round and its fixes.
+      Parked by the owner 2026-09-27: potential future work, not queued.
+      (origin: TODO.md §"Preserving annotations through re-OCR")
+- **zotero-2** — the Zotero library sweep: look for new classes of document the app handles badly.
       Re-run step 1 of `TODO.md` §"2. The Zotero library sweep" first; its survey is dated. Copy
       `zotero.sqlite` before querying it, because Zotero locks it, and never write the library. BOUND: one
       step per session, with its output committed. Each confirmed defect it finds becomes a `BUGS.md` entry
       and a queue item above this one.
+      Parked by the owner 2026-09-27: potential future work, not queued.
       (origin: TODO.md §"2. The Zotero library sweep")
-
-## Parked
-
-Nothing. C28 was parked here from 2026-09-21 until the owner brought it back into the queue on
-2026-09-25 as `c28-first-principles`.
 
 ## HOLD — owner-only, never auto-executed
 
