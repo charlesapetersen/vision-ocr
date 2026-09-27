@@ -18263,7 +18263,7 @@ less per layered page.
   a tiling pattern through the stencil (more machinery, same result); raising the foreground to the
   stencil's resolution (bytes); sending text pages back to the 1-bit route (loses C32's red).
 
-### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN
+### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — PARTLY FIXED (drag selection still leaks)
 
 *(found 2026-09-26 by the owner: `Raskin - 1956 - New Jobs Opening to Negro in North.pdf`, one ProQuest
 *New York Times* page of 1,067 x 1,547 pt. Source and the `24a8f6a` output are in `$STATE/owner-supplied/`.
@@ -18276,7 +18276,51 @@ The owner: "maybe fixing this just isn't feasible but we should give it a shot".
   about 150 pt wide ("in tedy their humance to take branches of popular music. Bul"), some runs are 1.6 pt
   tall, the order jumps between columns, and many words are misread ("cuse for or aname consume"). [measured]
 - Why the rebuild is 125 ppi is not known. A cap on the rebuilt bitmap's pixel count is the likely cause.
-  [inferred]
+  [inferred] **Wrong:** no cap. The page is 30 strips, each drawn by its own `Do`, and `rebuildDPI` divided
+  the largest strip's 1,848 px by the *page's* 14.8 in, although that strip is drawn 442 pt wide. [measured]
+
+#### 2026-09-26, `c39-newspaper-page`: shipped, one criterion open
+
+**What Vision reads** (the shipped recogniser on the rebuilt bitmap): whole page at 300 DPI, 17,125 chars
+and 70 lines wider than a column (`recognise` alone: 14); at 125 DPI, 47. Strip by strip at 300 DPI: 18,591
+chars, 4 lines wider than a column (one photo caption, really that wide), 17 s against 26 s. [measured]
+
+**Fix.** `Flattener.mosaic` recognises a paste-up: upright images drawn by the page itself, no two
+overlapping more than a tenth of the smaller, none half the sheet, together at least 40% of it, at least
+4 of them 0.5% of the sheet or more, and two of those side by side. Such a page rebuilds at its largest
+strip's placed resolution, at most 600 DPI (301 here). `flatten` writes the strips
+beside the bitmap (`pNNNNN.regions.json`), so the helper sees them too. `recognisePage(_:regions:)` reads
+each strip on its own in reading order and clips each box to the strip's lane (`sideBySideLanes`: split at
+the middle of an overlap, 0.002 of the width clear on each side). It then reads the page with the strips
+painted out, for the masthead and header. Lines carry `region`, and `prepared` column-orders each strip on
+its own. The census: 5 corpus pages in 2 documents are paste-ups, both ProQuest newspapers. The review
+found the size, side-by-side and ceiling rules missing: a scan stored as full-width bands, and `full chapter`
+p11 (a figure and four symbols), qualified, as did Litt p1 (two new misreads, now gone).
+
+**Raskin, old (`3e320fd`) → new, PDFKit.** 25.8 s → 27.2 s; 444,893 → 447,031 B. PDFKit lines crossing a
+strip 148 → 2, runs under 4 pt tall 116 → 1, lines over 200 pt wide 54 → 7 (headline, header, caption,
+footer). Three paragraphs checked by hand against a 300 ppi render: "For all their headway during…"
+(6 lines) and "cated by their reluctance…" (6) read without a misread word. "branches of popular music…" (6) has 2
+(`ha:` for has, `1948` for 1949), and the hyphens that print as dots read as dots. The independent check
+chose four other paragraphs and counted 1 to 7 misread words each, most of them the hyphen join repeating a
+word's tail on the next line (`relations / lations`), which every document gets. Old: all three
+interleaved with the next column. Corpus paste-ups: Zipkin 354 → 193 KB, Newsday 328 → 309 KB, both faster,
+words 1,935 → 1,937 and 2,185 → 2,190.
+
+**Left: drag selection.** Dragged from a strip's first word to its last (`selection(from:to:)`), 1,298 of
+1,920 selected lines lie in other strips (old: 3,850 of 4,788). The file draws each strip in reading order
+(poppler's raw order reads down the columns), but PDFKit orders text by its own blocks. Synthetic columns
+through `SearchableWriter` stay apart at a 1 pt gutter, and the page's strips do too, in pairs.
+Three or more columns side by side interleave in blocks of about five lines. Removing the linkers found (runs
+overlapping at strip edges, a stray `t` in an overlap, lines Vision fused into one 18 pt box) cleared each pair
+but not the page. Rejected: shrinking runs to a wide gutter (PDFKit wanted about 5 em on synthetic text,
+which breaks "runs span the ink"). The next attempt should start from PDFKit's block rule, not from the
+recogniser. Also left: the non-rebuild route and Extract Text render at the new resolution but do not
+read strip by strip.
+
+**DONE WHEN, checked independently on the before and after files:** paragraphs read, PASS with the misread
+counts above; column integrity FAIL (drag selection, as above; 1 PDFKit line of 645 still crosses a strip);
+time and bytes, PASS; a check red without the change, PASS (the rebuild-DPI check reads 116 on the old code).
 
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — OPEN
 

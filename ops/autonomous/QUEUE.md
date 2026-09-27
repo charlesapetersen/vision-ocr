@@ -301,6 +301,9 @@ say so in the commit.
       If the page cannot be made usable at a reasonable cost, ship the best improvement the evidence
       supports and state what is left, or close C39 `WONTFIX` with the measurement.
       BOUND: one code commit, plus free docs commits.
+      2026-09-26: the code commit is spent. Strips are read one at a time at 301 DPI and no run crosses a
+      column, but drag selection in PDFKit still leaks between columns (C39 "Left"). Open for that alone;
+      the next session should close it `WONTFIX` for selection unless it has a new idea about PDFKit's blocks.
       (origin: BUGS.md C39)
 - [ ] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter

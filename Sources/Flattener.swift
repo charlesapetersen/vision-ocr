@@ -1381,6 +1381,16 @@ enum Flattener {
 
             if let pngDirectory {
                 let stem = String(format: "p%05d", index + 1)
+                // A paste-up's strips, for the recogniser to read one at a time (C39).
+                // Beside the bitmap rather than in `RebuiltPage`, so the helper process,
+                // which is handed only the bitmap's path, finds them too.
+                if let regions = mosaicRegions(of: page, box: box) {
+                    guard let data = try? JSONEncoder().encode(regions),
+                          (try? data.write(to: pngDirectory.appendingPathComponent(
+                              stem + Recogniser.regionsSuffix))) != nil else {
+                        throw Failure.pageFailed(page: index + 1, of: count)
+                    }
+                }
                 if useBilevel {
                     let png = pngDirectory.appendingPathComponent(stem + ".png")
                     guard writePNG(image, to: png) else {
@@ -4379,6 +4389,16 @@ enum Flattener {
     /// arithmetic, not that it is unaffected.
     static func rebuildDPI(of page: PDFPage) -> Double {
         if let override = rebuildDPIOverride, let answer = override(page) { return answer }
+        // A page pasted up from strips is rebuilt at the strips' own resolution. The
+        // walk below divides the largest image's width by the *page's*, and on
+        // `BUGS.md` C39's newspaper page, whose largest strip is drawn 442 pt wide
+        // on a 1,067 pt sheet, that read 125 DPI for 300 DPI scans.
+        if let tiles = mosaic(of: page), let largest = tiles.max(by: {
+            $0.rect.width * $0.rect.height < $1.rect.width * $1.rect.height }) {
+            return min(maximumMosaicDPI,
+                       rebuildDPI(from: (dpi: Double(largest.pixelWidth) / (largest.rect.width / 72),
+                                         pixelWidth: largest.pixelWidth)))
+        }
         switch drawnLargestImage(of: page) {
         case .unreadable: return rebuildDPI(from: largestImage(of: page))
         case .noImage: return rebuildDPI(from: nil)
@@ -4386,6 +4406,147 @@ enum Flattener {
             return rebuildDPI(from: (dpi: dpi, pixelWidth: pixelWidth))
         }
     }
+
+    /// One image a page draws, where it lands on the sheet and how wide it is in pixels.
+    struct Tile: Equatable {
+        /// In points, from the media box's lower-left corner.
+        let rect: CGRect
+        let pixelWidth: Int
+    }
+
+    /// The images a page is pasted up from, or nil when it is not a paste-up (C39).
+    ///
+    /// A ProQuest newspaper page is thirty-odd scanned strips, one per block of a
+    /// column, each drawn where it sat on the sheet. Vision shown the whole sheet
+    /// reads lines straight across the narrow gutters between them; shown one strip
+    /// at a time it cannot. So a page qualifies only when every question has a
+    /// clear answer: it draws images from its own content stream and no form or inline
+    /// image, all upright and unturned, no two overlapping by more than a tenth, none
+    /// covering half the sheet (that is a scan with something on it), together at least
+    /// `minimumMosaicCoverage` of it, at least `minimumMosaicTiles` of a real size, and
+    /// two of those side by side.
+    static func mosaic(of page: PDFPage) -> [Tile]? {
+        guard page.rotation % 360 == 0, let cgPage = page.pageRef else { return nil }
+        final class State {
+            var ctm = CGAffineTransform.identity
+            var stack: [CGAffineTransform] = []
+            var tiles: [Tile] = []
+            var refused = false
+        }
+        let state = State()
+        guard let table = CGPDFOperatorTableCreate() else { return nil }
+        CGPDFOperatorTableSetCallback(table, "q") { _, info in
+            let s = Unmanaged<State>.fromOpaque(info!).takeUnretainedValue()
+            s.stack.append(s.ctm)
+        }
+        CGPDFOperatorTableSetCallback(table, "Q") { _, info in
+            let s = Unmanaged<State>.fromOpaque(info!).takeUnretainedValue()
+            if let top = s.stack.popLast() { s.ctm = top } else { s.refused = true }
+        }
+        CGPDFOperatorTableSetCallback(table, "cm") { scanner, info in
+            let s = Unmanaged<State>.fromOpaque(info!).takeUnretainedValue()
+            var v = [CGPDFReal](repeating: 0, count: 6)
+            for i in (0..<6).reversed() {
+                guard CGPDFScannerPopNumber(scanner, &v[i]) else { s.refused = true; return }
+            }
+            s.ctm = CGAffineTransform(a: v[0], b: v[1], c: v[2], d: v[3], tx: v[4], ty: v[5])
+                .concatenating(s.ctm)
+        }
+        CGPDFOperatorTableSetCallback(table, "EI") { _, info in
+            Unmanaged<State>.fromOpaque(info!).takeUnretainedValue().refused = true
+        }
+        CGPDFOperatorTableSetCallback(table, "Do") { scanner, info in
+            let s = Unmanaged<State>.fromOpaque(info!).takeUnretainedValue()
+            var name: UnsafePointer<Int8>?
+            var stream: CGPDFStreamRef?
+            var subtype: UnsafePointer<Int8>?
+            var w: CGPDFInteger = 0
+            guard CGPDFScannerPopName(scanner, &name), let name,
+                  let object = CGPDFContentStreamGetResource(
+                      CGPDFScannerGetContentStream(scanner), "XObject", name),
+                  CGPDFObjectGetValue(object, .stream, &stream), let stream,
+                  let dict = CGPDFStreamGetDictionary(stream),
+                  CGPDFDictionaryGetName(dict, "Subtype", &subtype), let subtype,
+                  String(cString: subtype) == "Image",
+                  CGPDFDictionaryGetInteger(dict, "Width", &w),
+                  w > 0, w <= CGPDFInteger(Flattener.maximumDeclaredImageSide),
+                  s.ctm.b == 0, s.ctm.c == 0, s.ctm.a > 0, s.ctm.d > 0
+            else { s.refused = true; return }
+            s.tiles.append(Tile(rect: CGRect(x: 0, y: 0, width: 1, height: 1).applying(s.ctm),
+                                pixelWidth: Int(w)))
+        }
+        let content = CGPDFContentStreamCreateWithPage(cgPage)
+        let scanner = CGPDFScannerCreate(content, table, Unmanaged.passUnretained(state).toOpaque())
+        CGPDFScannerScan(scanner)
+        CGPDFScannerRelease(scanner)
+        CGPDFContentStreamRelease(content)
+        CGPDFOperatorTableRelease(table)
+
+        guard !state.refused, state.tiles.count >= minimumMosaicTiles else { return nil }
+        let media = page.bounds(for: .mediaBox)
+        let sheet = media.width * media.height
+        guard sheet > 0 else { return nil }
+        let tiles = state.tiles.map {
+            Tile(rect: $0.rect.offsetBy(dx: -media.minX, dy: -media.minY), pixelWidth: $0.pixelWidth)
+        }
+        let area = { (r: CGRect) in r.width * r.height }
+        let sheetRect = CGRect(origin: .zero, size: media.size)
+        var covered: CGFloat = 0
+        for (i, t) in tiles.enumerated() {
+            guard t.rect.width.isFinite, t.rect.height.isFinite, area(t.rect) > 0,
+                  area(t.rect) < sheet / 2,
+                  area(t.rect.intersection(sheetRect)) >= 0.9 * area(t.rect) else { return nil }
+            for u in tiles[(i + 1)...] {
+                let overlap = t.rect.intersection(u.rect)
+                // C39's strips share up to 2.4% of the smaller one at a column edge.
+                if !overlap.isNull, area(overlap) > 0.1 * min(area(t.rect), area(u.rect)) {
+                    return nil
+                }
+            }
+            covered += area(t.rect)
+        }
+        guard covered >= minimumMosaicCoverage * sheet else { return nil }
+        // Counted over tiles of a real size only, so a figure with four symbols set in
+        // its text lines (`full chapter` p11) is not a paste-up. And two of them must
+        // stand side by side: one scan stored as a stack of full-width bands passes
+        // every test above, and read band by band it would cut the lines at each seam.
+        let sizeable = tiles.filter { area($0.rect) >= minimumMosaicTileShare * sheet }
+        let sideBySide = sizeable.indices.contains { i in
+            sizeable.indices.contains { j in
+                let a = sizeable[i].rect, b = sizeable[j].rect
+                return a.maxX <= b.minX + 0.1 * min(a.width, b.width)
+                    && min(a.maxY, b.maxY) - max(a.minY, b.minY) >= 0.5 * min(a.height, b.height)
+            }
+        }
+        return sizeable.count >= minimumMosaicTiles && sideBySide ? tiles : nil
+    }
+
+    /// `mosaic`'s tiles as fractions of the rebuilt bitmap, top-left origin, clipped to
+    /// it. `box` is the rebuild's `fullBox`; a turned page is never a mosaic, so the
+    /// media box maps onto it without a turn.
+    static func mosaicRegions(of page: PDFPage, box: CGRect) -> [SearchableWriter.BoundingBox]? {
+        guard let tiles = mosaic(of: page), box.width > 0, box.height > 0 else { return nil }
+        let sheet = CGRect(origin: .zero, size: box.size)
+        return tiles.compactMap {
+            let r = $0.rect.intersection(sheet)
+            guard !r.isNull, r.width > 0, r.height > 0 else { return nil }
+            return SearchableWriter.BoundingBox(x: r.minX / box.width,
+                                                y: (box.height - r.maxY) / box.height,
+                                                width: r.width / box.width,
+                                                height: r.height / box.height)
+        }
+    }
+
+    /// Fewer images than this is a page with a few pictures on it, not a paste-up.
+    static let minimumMosaicTiles = 4
+    /// Of the sheet's area, for a tile to count towards `minimumMosaicTiles`. 21 of C39's
+    /// 30 strips reach it; the other 9 are one-line headings, and still read as strips.
+    static let minimumMosaicTileShare: CGFloat = 0.005
+    /// The most a paste-up is rebuilt at. Its strips' resolution is its own, but four
+    /// small photographs drawn from large files would otherwise ask for 1,500 DPI.
+    static let maximumMosaicDPI: Double = 600
+    /// Of the sheet's area. C39's page is 69% strips.
+    static let minimumMosaicCoverage: CGFloat = 0.4
 
     /// A substitute resolution, for a tool asking what a page **would** rebuild at.
     ///

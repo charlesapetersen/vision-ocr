@@ -5414,6 +5414,271 @@ do {
     resetPrefs()
 }
 
+// MARK: - C39: a page pasted up from strips is read one strip at a time
+
+print("\na page pasted up from scanned strips is read strip by strip (C39)")
+
+do {
+    resetPrefs()
+    let dir = tmp.appendingPathComponent("c39")
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    // Two justified Courier columns 15.3 pt apart: the gutter C34's fixture shows Vision
+    // reading straight across. Each column is scanned as two strips at 300 DPI, and the
+    // four are pasted onto a 612 x 400 sheet as a ProQuest newspaper page is.
+    let words = """
+    Newspaper columns are narrow and the gutter between two of them is often less \
+    than a line high so that a recogniser shown the whole sheet at once will read \
+    a line of one column straight on into the line beside it in the next column \
+    which is the defect this fixture exists to reproduce on a small page here.
+    """.split(separator: " ").map(String.init)
+    let other = """
+    The neighbouring column carries a different story about a different subject \
+    so that any line joining the two can be told apart from a line that belongs \
+    to either and the checks below can count the lines that cross the gutter \
+    between the columns rather than guessing at them from the published file.
+    """.split(separator: " ").map(String.init)
+    func justified(_ words: [String]) -> [String] {
+        var lines: [[String]] = [], current: [String] = [], width = 0
+        for w in words {
+            let extra = current.isEmpty ? w.count : w.count + 1
+            if width + extra > 33, !current.isEmpty {
+                lines.append(current); current = [w]; width = w.count
+            } else { current.append(w); width += extra }
+        }
+        if !current.isEmpty { lines.append(current) }
+        return lines.map { line in
+            let gaps = line.count - 1, spaces = 33 - line.reduce(0) { $0 + $1.count }
+            guard gaps > 0, spaces >= gaps else { return line.joined(separator: " ") }
+            var out = line[0]
+            for i in 1..<line.count {
+                out += String(repeating: " ", count: spaces / gaps + (i <= spaces % gaps ? 1 : 0))
+                    + line[i]
+            }
+            return out
+        }
+    }
+    let font = CTFontCreateWithName("Courier" as CFString, 12, nil)
+    let columnWidth: CGFloat = 7.2 * 33, gutter: CGFloat = 15.3, left: CGFloat = 60
+    /// One strip: `lines` set from its top, 20 pt apart, scanned at 300 DPI.
+    func strip(_ lines: [String], height: CGFloat) -> CGImage? {
+        let s: CGFloat = 300 / 72
+        let w = Int((columnWidth * s).rounded()), h = Int((height * s).rounded())
+        guard let c = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                                space: CGColorSpaceCreateDeviceGray(),
+                                bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return nil }
+        c.setFillColor(gray: 1, alpha: 1)
+        c.fill(CGRect(x: 0, y: 0, width: w, height: h))
+        c.scaleBy(x: s, y: s)
+        var y = height - 20
+        for line in lines {
+            c.textPosition = CGPoint(x: 0, y: y)
+            CTLineDraw(CTLineCreateWithAttributedString(NSAttributedString(string: line, attributes: [
+                .font: font, .foregroundColor: CGColor(gray: 0, alpha: 1)])), c)
+            y -= 20
+        }
+        return c.makeImage()
+    }
+    /// A sheet drawing `images` at `rects`, as its own content stream's `Do`s.
+    func sheet(_ name: String, _ placed: [(CGImage, CGRect)], rotate: Int = 0) -> PDFPage? {
+        let url = dir.appendingPathComponent(name)
+        var box = CGRect(x: 0, y: 0, width: 612, height: 400)
+        guard let c = CGContext(url as CFURL, mediaBox: &box, nil) else { return nil }
+        c.beginPDFPage(nil)
+        for (image, rect) in placed { c.draw(image, in: rect) }
+        c.endPDFPage(); c.closePDF()
+        let page = PDFDocument(url: url)?.page(at: 0)
+        if rotate != 0 { page?.rotation = rotate }
+        return page
+    }
+    let one = justified(words), two = justified(other)
+    let half = (one.count + 1) / 2
+    let stripHeight: CGFloat = 180
+    guard let a = strip(Array(one[..<half]), height: stripHeight),
+          let b = strip(Array(one[half...]), height: stripHeight),
+          let c = strip(Array(two[..<half]), height: stripHeight),
+          let d = strip(Array(two[half...]), height: stripHeight) else {
+        check("C39: the strips render", false); resetPrefs(); exit(1)
+    }
+    let right = left + columnWidth + gutter
+    let tiles: [(CGImage, CGRect)] = [
+        (a, CGRect(x: left, y: 210, width: columnWidth, height: stripHeight)),
+        (b, CGRect(x: left, y: 30, width: columnWidth, height: stripHeight)),
+        (c, CGRect(x: right, y: 210, width: columnWidth, height: stripHeight)),
+        (d, CGRect(x: right, y: 30, width: columnWidth, height: stripHeight))]
+    let pasteUp = sheet("paste-up.pdf", tiles)
+    let found = pasteUp.flatMap(Flattener.mosaic(of:))
+    check("C39: a sheet of four abutting strips is a paste-up of four tiles",
+          found?.count == 4, "\(String(describing: found?.count))")
+    check("C39: …each where it was drawn",
+          found.map { f in tiles.allSatisfy { t in f.contains { $0.rect.integral == t.1.integral } } } == true,
+          "\(String(describing: found?.map(\.rect)))")
+    // The defect: 990 px over the 612 pt sheet read 116 DPI for 300 DPI strips.
+    let dpi = pasteUp.map(Flattener.rebuildDPI(of:)) ?? 0
+    check("C39: the paste-up is rebuilt at its strips' 300 DPI, not their width over the sheet's",
+          abs(dpi - 300) < 2, String(format: "%.1f", dpi))
+    if let pasteUp {
+        let regions = Flattener.mosaicRegions(of: pasteUp, box: Flattener.fullBox(of: pasteUp)) ?? []
+        let top = regions.first { $0.x < 0.5 && $0.y < 0.5 }
+        check("C39: its regions are fractions of the bitmap, from the top left",
+              regions.count == 4 && top.map {
+                  abs($0.x - 60 / 612) < 1e-6 && abs($0.y - 10 / 400) < 1e-6
+                      && abs($0.height - 180 / 400) < 1e-6 } == true,
+              "\(regions)")
+    }
+
+    // Strips are read down each column, the columns left to right, whatever order the
+    // file draws them in; a strip set a little in from its column's margin stays in it.
+    typealias Box = SearchableWriter.BoundingBox
+    let shuffled = [Box(x: 0.52, y: 0.5, width: 0.4, height: 0.4), Box(x: 0.05, y: 0.5, width: 0.4, height: 0.4),
+                    Box(x: 0.5, y: 0.05, width: 0.4, height: 0.4), Box(x: 0.06, y: 0.05, width: 0.38, height: 0.4)]
+    let order = Recogniser.readingOrder(shuffled).map { "\(Int(($0.x * 100).rounded())),\(Int(($0.y * 100).rounded()))" }
+    check("C39: strips are read down the left column, then down the right",
+          order == ["6,5", "5,50", "50,5", "52,50"], "\(order)")
+    // Side by side and overlapping, the boundary moves to the overlap's middle with paper
+    // on both sides of it; a strip with nothing beside it keeps its own edges.
+    let lanes = Recogniser.sideBySideLanes([Box(x: 0.1, y: 0.1, width: 0.402, height: 0.5),
+                                            Box(x: 0.5, y: 0.2, width: 0.4, height: 0.5),
+                                            Box(x: 0.1, y: 0.75, width: 0.4, height: 0.2)])
+    check("C39: overlapping strips side by side get lanes a gap apart, split at the overlap's middle",
+          abs(lanes[1].left - lanes[0].right - Recogniser.laneGap) < 1e-9
+              && abs((lanes[0].right + lanes[1].left) / 2 - 0.501) < 1e-9, "\(lanes)")
+    check("C39: …and a strip with nothing beside it keeps its own edges",
+          abs(lanes[2].left - 0.1) < 1e-9 && abs(lanes[2].right - 0.5) < 1e-9, "\(lanes[2])")
+    // The writer keeps each strip's lines together. Two overlapping strips' rows, which
+    // no gutter separates, interleaved as a page-wide ordering puts them, come back strip
+    // by strip.
+    var rows: [SearchableWriter.Observation] = []
+    for i in 0..<8 {
+        for s in 0..<2 {
+            var o = SearchableWriter.Observation(
+                boundingBox: .init(x: 0.05 + Double(s) * 0.43, y: 0.1 + Double(i) * 0.05,
+                                   width: 0.45, height: 0.03),
+                text: "strip\(s) row\(i) words", confidence: 1)
+            o.region = s
+            rows.append(o)
+        }
+    }
+    let written = SearchableWriter.prepared(rows, in: CGRect(x: 0, y: 0, width: 612, height: 792))
+    check("C39: the writer draws each strip's lines together, in the order the strips arrive",
+          written.map { $0.region ?? -1 } == Array(repeating: 0, count: 8) + Array(repeating: 1, count: 8),
+          written.map(\.text).prefix(4).joined(separator: " / "))
+
+    // What is not a paste-up keeps the page's own route.
+    check("C39: three strips are not a paste-up",
+          sheet("three.pdf", Array(tiles.prefix(3))).flatMap(Flattener.mosaic(of:)) == nil)
+    check("C39: nor four that overlap by half",
+          sheet("overlap.pdf", tiles.enumerated().map { i, t in
+              (t.0, i == 1 ? t.1.offsetBy(dx: 0, dy: 90) : t.1) })
+              .flatMap(Flattener.mosaic(of:)) == nil)
+    check("C39: nor a scan covering the sheet with three small images on it",
+          sheet("scan.pdf", [(a, CGRect(x: 0, y: 0, width: 612, height: 400))]
+                + tiles.prefix(3).map { ($0.0, $0.1.insetBy(dx: 100, dy: 80)) })
+              .flatMap(Flattener.mosaic(of:)) == nil)
+    check("C39: nor four strips covering a third of the sheet",
+          sheet("sparse.pdf", tiles.map { ($0.0, $0.1.insetBy(dx: 40, dy: 40)) })
+              .flatMap(Flattener.mosaic(of:)) == nil)
+    // Three the adversarial review found: one scan stored as full-width bands, a figure
+    // with symbols set in the text around it, and strips that ask for more than is sane.
+    check("C39: nor one scan stored as four full-width bands, which would be cut at each seam",
+          sheet("bands.pdf", (0..<4).map { (a, CGRect(x: 0, y: CGFloat($0) * 100, width: 612, height: 100)) })
+              .flatMap(Flattener.mosaic(of:)) == nil)
+    check("C39: nor a figure with four symbols beside it",
+          sheet("figure.pdf", [(a, CGRect(x: 40, y: 50, width: 330, height: 300))]
+                + (0..<4).map { (b, CGRect(x: 400 + CGFloat($0) * 20, y: 200, width: 10, height: 10)) })
+              .flatMap(Flattener.mosaic(of:)) == nil)
+    let dense = sheet("dense.pdf", (0..<6).map { i in
+        (a, CGRect(x: 50 + CGFloat(i % 3) * 200, y: 20 + CGFloat(i / 3) * 190, width: 100, height: 170)) })
+    check("C39: a paste-up drawn from large files is rebuilt at no more than the ceiling",
+          dense.flatMap(Flattener.mosaic(of:))?.count == 6
+              && dense.map(Flattener.rebuildDPI(of:)) == Flattener.maximumMosaicDPI,
+          "\(String(describing: dense.map(Flattener.rebuildDPI(of:))))")
+    let sliver = Recogniser.sideBySideLanes([Box(x: 0.1, y: 0.1, width: 0.4, height: 0.3),
+                                             Box(x: 0.3, y: 0.398, width: 0.22, height: 0.5)])
+    check("C39: a headline whose foot touches the column under it cuts neither lane",
+          abs(sliver[0].right - 0.5) < 1e-9 && abs(sliver[1].left - 0.3) < 1e-9, "\(sliver)")
+    check("C39: nor a turned sheet",
+          sheet("turned.pdf", tiles, rotate: 90).flatMap(Flattener.mosaic(of:)) == nil)
+
+    // The regions reach the recogniser beside the bitmap, which is all the helper is given.
+    let bitmaps = dir.appendingPathComponent("bitmaps")
+    try? FileManager.default.createDirectory(at: bitmaps, withIntermediateDirectories: true)
+    let pasteURL = dir.appendingPathComponent("paste-up.pdf")
+    let rebuilt = try? Flattener.flatten(pasteURL, to: dir.appendingPathComponent("flat.pdf"),
+                                         mode: .auto, pngDirectory: bitmaps)
+    let imageURL = rebuilt?.first.flatMap(Recogniser.imageURL(of:))
+    let sidecar = imageURL.flatMap { try? Recogniser.regions(besides: $0) }
+    check("C39: flatten writes the paste-up's regions beside its bitmap",
+          sidecar?.count == 4, "\(String(describing: sidecar))")
+    let plainPage = dir.appendingPathComponent("plain-bitmap.png")
+    try? Data().write(to: plainPage)
+    func regionsRead(_ url: URL) -> String {
+        do { return try Recogniser.regions(besides: url).map { "\($0.count)" } ?? "none" }
+        catch { return "error" }
+    }
+    check("C39: a page with no regions file has no regions",
+          regionsRead(plainPage) == "none", regionsRead(plainPage))
+    try? Data("not json".utf8).write(to: dir.appendingPathComponent("plain-bitmap.regions.json"))
+    check("C39: a regions file that does not decode is an error, not a page without regions",
+          regionsRead(plainPage) == "error", regionsRead(plainPage))
+
+    // Read strip by strip, no line crosses the gutter; nothing between the strips is lost.
+    var settings = Prefs.Snapshot.current()
+    settings.languages = ""; settings.customWords = ""; settings.minTextHeightOn = false
+    settings.fast = false; settings.languageCorrection = true; settings.confidence = 0
+    if let imageURL, let image = Recogniser.loadImage(at: imageURL), let sidecar {
+        // A caption between the strips, drawn onto the bitmap, for the painted-out pass.
+        let w = image.width, h = image.height
+        let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                            space: CGColorSpaceCreateDeviceGray(),
+                            bitmapInfo: CGImageAlphaInfo.none.rawValue)
+        ctx?.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+        ctx?.scaleBy(x: CGFloat(w) / 612, y: CGFloat(h) / 400)
+        ctx?.textPosition = CGPoint(x: 60, y: 8)
+        CTLineDraw(CTLineCreateWithAttributedString(NSAttributedString(string: "MASTHEAD BELOW THE STRIPS",
+            attributes: [.font: font, .foregroundColor: CGColor(gray: 0, alpha: 1)])), ctx!)
+        let captioned = ctx?.makeImage() ?? image
+        let gutterLow = Double(left + columnWidth) / 612, gutterHigh = Double(right) / 612
+        func crossing(_ o: [SearchableWriter.Observation]) -> Int {
+            o.filter { $0.boundingBox.x < gutterLow && $0.boundingBox.x + $0.boundingBox.width > gutterHigh }
+                .count
+        }
+        // `recognise`, not `recognisePage`: C34's `splitAtGutter` mends one gutter, and a
+        // newspaper page has six.
+        let whole = (try? Recogniser.recognise(captioned, settings: settings)) ?? []
+        let strips = (try? Recogniser.recognisePage(captioned, regions: sidecar, settings: settings)) ?? []
+        let text = strips.map(\.text).joined(separator: " ")
+        // The premise: without the regions Vision does join the columns on this sheet.
+        check("C39: …Vision shown the whole sheet at once joins lines across the gutter",
+              crossing(whole) > 0, "\(crossing(whole)) of \(whole.count)")
+        check("C39: …read strip by strip, no line crosses it",
+              !strips.isEmpty && crossing(strips) == 0, "\(crossing(strips)) of \(strips.count)")
+        check("C39: …each strip's lines carry their strip, and the text between the strips none",
+              strips.contains { $0.region != nil }
+                  && strips.filter { $0.region == nil }.allSatisfy { !$0.text.contains("Newspaper") }
+                  && strips.contains { $0.region == nil && $0.text.contains("MASTHEAD") },
+              strips.map { "\($0.region.map(String.init) ?? "-"):\($0.text.prefix(12))" }
+                  .joined(separator: " | ").prefix(200).description)
+        check("C39: …and both columns and the text between the strips are read",
+              text.contains("Newspaper") && text.contains("neighbouring")
+                  && text.contains("published") && text.contains("MASTHEAD"),
+              text.prefix(200).description)
+    } else {
+        check("C39: the paste-up's bitmap and regions load", false)
+    }
+
+    // End to end, through the app's own pipeline.
+    let out = dir.appendingPathComponent("paste-up.ocr.pdf")
+    var outcome: Runner.Result.Outcome?
+    OCRModel.makeSearchablePDF(file: pasteURL, output: out, rebuild: true, rebuildMode: .auto,
+                               password: nil, control: RunControl(),
+                               progress: { _, _ in }, report: { o, _ in outcome = o })
+    let published = PDFDocument(url: out)?.page(at: 0)?.string ?? ""
+    check("C39: the paste-up publishes with both columns selectable",
+          outcome == .succeeded && published.contains("Newspaper") && published.contains("neighbouring"),
+          "\(String(describing: outcome)) \(published.prefix(120))")
+    resetPrefs()
+}
+
 // MARK: - C37: a scan that is already 1-bit JBIG2 keeps its own stream
 
 print("\na 1-bit JBIG2 source page keeps its own stream (C37)")

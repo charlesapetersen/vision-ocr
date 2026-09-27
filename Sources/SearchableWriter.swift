@@ -157,6 +157,11 @@ enum SearchableWriter {
         /// is left out of the JSON, so an upright page's observations encode as before.
         /// `compose` draws a turned line in a frame turned with it (C36).
         var quarterTurns: Int? = nil
+        /// Which strip of a pasted-up page the line was read in, counted in reading
+        /// order (`Recogniser.recognisePage(_:regions:…)`, C39). `prepared` keeps each
+        /// strip's lines together, so a selection down one column of a newspaper stays
+        /// in it. Nil everywhere else, and left out of the JSON like `quarterTurns`.
+        var region: Int? = nil
     }
 
     /// Normalised to the page, with a top-left origin.
@@ -356,9 +361,18 @@ enum SearchableWriter {
             lines.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         }
         // Column order before joining, so the line after a hyphen is the next line
-        // of its own column (C34).
-        let lines = columnOrdered(deduplicated(usable(raw), in: region),
-                                  aspect: region.width > 0 ? Double(region.height / region.width) : 1)
+        // of its own column (C34). A pasted-up page's strips are each a column
+        // already, and ordered across the page they interleave again (C39: the
+        // columns of a newspaper page are too close for any gutter to separate), so
+        // each strip is ordered on its own, in the order the strips arrive.
+        let aspect = region.width > 0 ? Double(region.height / region.width) : 1
+        var strips: [Int?] = []
+        var byStrip: [Int?: [Observation]] = [:]
+        for o in deduplicated(usable(raw), in: region) {
+            if byStrip[o.region] == nil { strips.append(o.region) }
+            byStrip[o.region, default: []].append(o)
+        }
+        let lines = strips.flatMap { columnOrdered(byStrip[$0] ?? [], aspect: aspect) }
         guard joinHyphenated else { return lines }
         // The next page's topmost lines, so a word carried over a page break can
         // be joined. The caller already holds them — no extra render, no extra

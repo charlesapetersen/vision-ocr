@@ -125,7 +125,12 @@ for (index, line) in pages.enumerated() {
     }
     let observations: [SearchableWriter.Observation]
     do {
-        observations = try Recogniser.recognisePage(image, settings: settings)
+        if let regions = try Recogniser.regions(besides: URL(fileURLWithPath: path)) {
+            observations = try Recogniser.recognisePage(image, regions: regions,
+                                                        settings: settings)
+        } else {
+            observations = try Recogniser.recognisePage(image, settings: settings)
+        }
     } catch {
         die(.recognitionFailed,
             "page \(index + 1) could not be recognised: \(error.localizedDescription)")

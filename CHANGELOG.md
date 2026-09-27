@@ -14,6 +14,11 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Newspaper pages pasted up from scanned strips, as ProQuest's historical newspapers are, are read one
+  strip at a time at the strips' own resolution. On a 1956 *New York Times* page, lines no longer run
+  from one column into the next and far fewer words are misread. Selecting by dragging down a column
+  in Preview can still pick up lines from the column beside it (C39).
+
 - Text on colour pages that keep a picture, such as a pamphlet with red headings or a map with labels, is
   sharp in Preview. It was drawn at the picture layer's low resolution and could be a blur that no
   one could read, although other PDF readers showed it sharp (C38).

@@ -49,10 +49,13 @@ enum Recogniser {
     enum Failure: LocalizedError, Equatable {
         case cancelled
         case unreadablePage(Int)
+        case unreadableRegions(String)
 
         var errorDescription: String? {
             switch self {
             case .cancelled: return "Cancelled."
+            case .unreadableRegions(let what):
+                return "The columns of a pasted-up page could not be read (\(what))."
             case .unreadablePage(let n):
                 return "Page \(n) could not be prepared for recognition. It may be "
                     + "larger than this app will render."
@@ -204,8 +207,14 @@ enum Recogniser {
                 guard let image = loadImage(at: item.image) else {
                     throw Failure.unreadablePage(item.page)
                 }
-                byPage[item.page] = try recognisePage(image, settings: settings,
-                                                      isCancelled: isCancelled)
+                if let regions = try regions(besides: item.image) {
+                    byPage[item.page] = try recognisePage(image, regions: regions,
+                                                          settings: settings,
+                                                          isCancelled: isCancelled)
+                } else {
+                    byPage[item.page] = try recognisePage(image, settings: settings,
+                                                          isCancelled: isCancelled)
+                }
             }
             onPage(total, total)
             return byPage
@@ -594,6 +603,159 @@ enum Recogniser {
         throws -> [SearchableWriter.Observation] {
         splitAtGutter(try recogniseInBands(image, settings: settings, isCancelled: isCancelled),
                       of: image, settings: settings, isCancelled: isCancelled)
+    }
+
+    // MARK: - A page pasted up from strips (C39)
+
+    /// What `Flattener.flatten` names the file of a paste-up's regions, after the
+    /// page's stem: `p00001.png` has its regions in `p00001.regions.json`.
+    static let regionsSuffix = ".regions.json"
+
+    /// The regions `flatten` wrote beside the bitmap at `image`, or nil when it wrote
+    /// none, which is every page but a paste-up. A file that is there and does not
+    /// decode is an error, not a page without regions: the page would still read,
+    /// but across its columns again, and nothing would say why.
+    static func regions(besides image: URL) throws -> [SearchableWriter.BoundingBox]? {
+        let url = image.deletingPathExtension().appendingPathExtension("regions.json")
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        guard let data = try? Data(contentsOf: url),
+              let regions = try? JSONDecoder().decode([SearchableWriter.BoundingBox].self,
+                                                      from: data)
+        else { throw Failure.unreadableRegions(url.lastPathComponent) }
+        return regions
+    }
+
+    /// `recognisePage` over a page pasted up from strips: each region on its own, then
+    /// the page with every region painted out, for what lies between them (the
+    /// masthead, a rule's caption). Every inked pixel is shown to Vision once.
+    ///
+    /// On `BUGS.md` C39's newspaper page at 300 DPI the whole-page route returned 70
+    /// lines wider than a column (`in any sizable number of new they find no welcome
+    /// in the per-`); strip by strip it returned 4, all one photograph's caption, and
+    /// 18,591 characters against 17,125, in 17 s against 26 s.
+    static func recognisePage(_ image: CGImage, regions: [SearchableWriter.BoundingBox],
+                              settings: Prefs.Snapshot, isCancelled: () -> Bool = { false })
+        throws -> [SearchableWriter.Observation] {
+        let w = Double(image.width), h = Double(image.height)
+        let full = CGRect(x: 0, y: 0, width: w, height: h)
+        var pixels: [CGRect] = []
+        var out: [SearchableWriter.Observation] = []
+        let ordered = readingOrder(regions)
+        let lanes = sideBySideLanes(ordered)
+        for (index, region) in ordered.enumerated() {
+            if isCancelled() { return out }
+            let rect = CGRect(x: region.x * w, y: region.y * h,
+                              width: region.width * w, height: region.height * h)
+                .integral.intersection(full)
+            guard !rect.isNull, rect.width >= 1, rect.height >= 1 else { continue }
+            pixels.append(rect)
+            // `cropping(to:)` takes a top-left pixel rect, as the bands do.
+            guard let crop = image.cropping(to: rect) else {
+                throw Failure.unreadableRegions("a region of the page")
+            }
+            var local = settings
+            local.minTextHeight = min(1, settings.minTextHeight * h / rect.height)
+            for o in try recognisePage(crop, settings: local, isCancelled: isCancelled) {
+                let b = o.boundingBox
+                var left = (rect.minX + b.x * rect.width) / w
+                var right = left + b.width * rect.width / w
+                // Inside the strip's lane, so no run touches the next column's: the
+                // box moves by at most the strips' overlap and the gap, never the text.
+                // A box wholly outside it was read off the pixels the two strips share,
+                // which the neighbour read as well, or off a sliver under `laneGap`
+                // wide: on C39's page a lone `t` there joined two columns for PDFKit.
+                guard min(right, lanes[index].right) > max(left, lanes[index].left) else {
+                    continue
+                }
+                left = max(left, lanes[index].left)
+                right = min(right, lanes[index].right)
+                var placed = SearchableWriter.Observation(
+                    boundingBox: .init(x: left, y: (rect.minY + b.y * rect.height) / h,
+                                       width: right - left,
+                                       height: b.height * rect.height / h),
+                    text: o.text, confidence: o.confidence)
+                placed.quarterTurns = o.quarterTurns
+                placed.region = index
+                out.append(placed)
+            }
+        }
+        guard let rest = paintedOut(pixels, of: image) else {
+            throw Failure.unreadableRegions("the page between its regions")
+        }
+        return try recognisePage(rest, settings: settings, isCancelled: isCancelled) + out
+    }
+
+    /// How far across the page each strip's lines may reach, left and right edge as
+    /// fractions of the width: its own edges, except that where two strips stand side
+    /// by side closer than `laneGap` (or overlapping, as C39's do by up to 4 pt) the
+    /// boundary between them moves to the middle, `laneGap / 2` clear on each side.
+    ///
+    /// PDFKit groups runs into blocks by the paper between them. On C39's page one
+    /// column's lines ended at 913.5 pt and the next column's began at 912.9, and
+    /// PDFKit read the two as one block, five lines of each in turn, so a selection
+    /// down either took half of the other. Strips stacked in one column are left as
+    /// they are: reading on from one into the next is right.
+    static func sideBySideLanes(_ regions: [SearchableWriter.BoundingBox])
+        -> [(left: Double, right: Double)] {
+        var lanes = regions.map { (left: $0.x, right: $0.x + $0.width) }
+        for i in regions.indices {
+            for j in regions.indices where j != i {
+                let a = regions[i], b = regions[j]
+                // Beside each other for a real share of their height, and overlapping by
+                // no more than a strip edge: a headline over a column touches its top.
+                guard min(a.y + a.height, b.y + b.height) - max(a.y, b.y)
+                        >= 0.25 * min(a.height, b.height),
+                      a.x + a.width / 2 < b.x + b.width / 2 else { continue }
+                let aRight = a.x + a.width, bLeft = b.x
+                guard bLeft - aRight < laneGap, aRight - bLeft <= maximumLaneOverlap
+                else { continue }
+                let middle = (aRight + bLeft) / 2
+                lanes[i].right = min(lanes[i].right, middle - laneGap / 2)
+                lanes[j].left = max(lanes[j].left, middle + laneGap / 2)
+            }
+        }
+        return lanes
+    }
+
+    /// Of the page's width: 2.1 pt on C39's 1,067 pt sheet. The writer's runs keep
+    /// PDFKit's columns apart at 1 pt, measured on synthetic columns.
+    static let laneGap = 0.002
+    /// Of the page's width: the most two strips may overlap and still be neighbours in
+    /// a row. C39's overlap by up to 4 pt, 0.0037.
+    static let maximumLaneOverlap = 0.01
+
+    /// A paste-up's strips in the order a reader takes them: down each column, the
+    /// columns left to right. A strip belongs to the column whose first strip's left
+    /// edge is within a quarter of the median strip's width of its own, so a strip
+    /// set a few points in from its column's margin is not a column of its own.
+    static func readingOrder(_ regions: [SearchableWriter.BoundingBox])
+        -> [SearchableWriter.BoundingBox] {
+        guard !regions.isEmpty else { return [] }
+        let widths = regions.map(\.width).sorted()
+        let tolerance = widths[widths.count / 2] / 4
+        var columns: [(left: Double, members: [SearchableWriter.BoundingBox])] = []
+        for r in regions.sorted(by: { ($0.x, $0.y) < ($1.x, $1.y) }) {
+            if let last = columns.indices.last, r.x - columns[last].left <= tolerance {
+                columns[last].members.append(r)
+            } else {
+                columns.append((r.x, [r]))
+            }
+        }
+        return columns.flatMap { $0.members.sorted { ($0.y, $0.x) < ($1.y, $1.x) } }
+    }
+
+    /// `image` in grey with `rects` (top-left pixel rects) filled white.
+    static func paintedOut(_ rects: [CGRect], of image: CGImage) -> CGImage? {
+        let w = image.width, h = image.height
+        guard let context = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8,
+                                      bytesPerRow: 0, space: CGColorSpaceCreateDeviceGray(),
+                                      bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return nil }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+        context.setFillColor(gray: 1, alpha: 1)
+        for r in rects {
+            context.fill(CGRect(x: r.minX, y: CGFloat(h) - r.maxY, width: r.width, height: r.height))
+        }
+        return context.makeImage()
     }
 
     /// `recognisePage` before `splitAtGutter`: the whole page, the bands and the
