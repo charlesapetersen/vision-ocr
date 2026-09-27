@@ -3,7 +3,7 @@
 #
 # `claude -p --output-format stream-json` writes a `rate_limit_event` into the session log as the session runs,
 # with `utilization` (0-1) and `resetsAt` (epoch seconds) for the five-hour window. This prints the latest one.
-# A session calls it to decide whether to fan out subagents, finish up, or pause (resume prompt, USAGE
+# A session calls it to decide whether to hand out subagents or work alone (resume prompt, USAGE
 # WINDOW); the daemon calls it with --raw after each session and before launching the next.
 #
 # USAGE:  usage-window.sh [--raw] [LOG]    LOG defaults to $STATE/last-session.log

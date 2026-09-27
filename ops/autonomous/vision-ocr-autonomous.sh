@@ -155,11 +155,13 @@ BUDGET="${VISIONOCR_BUDGET:-70}"          # doubled 35 -> 70 by the owner 2026-0
 BUDGET_MAX="${VISIONOCR_BUDGET_MAX:-140}" # a session at max effort (3e) gets twice the cap (owner, 2026-09-26;
                                           # doubled 70 -> 140 on 2026-09-27): it thinks more per turn, and one
                                           # that dies on its cap only spends another attempt at the same effort.
-WINDOW_WAIT_AT="${VISIONOCR_WINDOW_WAIT_AT:-85}" # usage window (owner, 2026-09-27): do not launch while the
-                                          # five-hour window is at or over this many per cent; wait for its
-                                          # reset instead of probing it with sessions that fail in 3 s.
-WINDOW_LAST="$STATE/usage-window.last"    # "<pct> <resetsAt>" from the latest session that reported one
-WINDOW_PAUSE="$STATE/window-pause"        # a session touches this when it stops early for the window
+WINDOW_WAIT_AT="${VISIONOCR_WINDOW_WAIT_AT:-95}" # usage window (owner, 2026-09-27): sessions work up to 100%,
+                                          # so launch whenever the five-hour window is under this; at or over
+                                          # it, or after a session the window cut off, wait for the reset
+                                          # instead of probing it with sessions that fail in 3 s.
+WINDOW_CUT_AT="${VISIONOCR_WINDOW_CUT_AT:-90}"   # a session that exits nonzero with the window at or over this
+                                          # was cut off by it: not an attempt, not a no-completion.
+WINDOW_LAST="$STATE/usage-window.last"    # "<pct> <resetsAt> [cut]" from the latest session that reported one
 EFFORT="${VISIONOCR_EFFORT:-medium}"      # low|medium|high|xhigh|max. medium since 2026-09-24, when the run
                                           # moved to Opus 5.5 (the `opus` alias resolves to claude-opus-5-5).
                                           # Anthropic's Opus 5.5 guidance: "Start at `medium`" and "Reserve
@@ -1610,19 +1612,18 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   [ "$hg" = 9 ] && return 9
   if [ "$hg" = 10 ]; then note_progress; return 0; fi
 
-  # 3d-. Usage window (owner, 2026-09-27). If the last session reported the five-hour window at or over
-  #      $WINDOW_WAIT_AT%, or paused itself for it, wait for the reset rather than launching into it. The wait
-  #      is in 60 s steps so `daemon.sh stop` is not held up, and never longer than 5 h 10 min.
-  local w_pct w_reset w_now
-  read -r w_pct w_reset < "$WINDOW_LAST" 2>/dev/null || true
+  # 3d-. Usage window (owner, 2026-09-27). If the last session left the five-hour window at or over
+  #      $WINDOW_WAIT_AT%, or was cut off by it, wait for the reset rather than launching into it. The wait is
+  #      in 60 s steps so `daemon.sh stop` is not held up, and never longer than 5 h 10 min.
+  local w_pct w_reset w_cut w_now
+  read -r w_pct w_reset w_cut < "$WINDOW_LAST" 2>/dev/null || true
   w_now=$(date +%s)
   if [ -n "${w_reset:-}" ] && [ "$w_reset" -gt "$w_now" ] 2>/dev/null \
-     && { [ "${w_pct:-0}" -ge "$WINDOW_WAIT_AT" ] || [ -f "$WINDOW_PAUSE" ]; }; then
+     && { [ "${w_pct:-0}" -ge "$WINDOW_WAIT_AT" ] || [ "${w_cut:-}" = cut ]; }; then
     local w_until=$(( w_reset + 120 )); [ "$w_until" -gt $(( w_now + 18600 )) ] && w_until=$(( w_now + 18600 ))
-    log "usage window ${w_pct}% used$( [ -f "$WINDOW_PAUSE" ] && echo ', and the last session paused for it') — waiting until $(date -r "$w_until" '+%H:%M') for the reset."
+    log "usage window ${w_pct}% used$( [ "${w_cut:-}" = cut ] && echo ', and the last session was cut off by it') — waiting until $(date -r "$w_until" '+%H:%M') for the reset."
     while [ "$(date +%s)" -lt "$w_until" ]; do sleep 60; done
   fi
-  rm -f "$WINDOW_PAUSE" 2>/dev/null || true
 
   # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue gets its session at max
   #     effort once it has had two attempts that did not finish it. Attempts are the item's
@@ -1734,12 +1735,20 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   # needs no rc check either: a usage-limit fast-fail cannot move the fingerprint, so it lands in the else.
   # Evaluated HERE — before housekeeping and the compactor — so neither is mistaken for the run advancing.
   local fp_after cc_after; fp_after="$(work_fingerprint)"; cc_after="$(completed_items)"
-  local verdict=0 w_line
-  w_line="$("$REPO/ops/autonomous/usage-window.sh" --raw "$SLOG" 2>/dev/null)" && echo "$w_line" > "$WINDOW_LAST"
+  # Record the window, and decide whether the window cut this session off: it exited nonzero, and either
+  # failed at once or last reported the window at $WINDOW_CUT_AT% or more. A fast-fail's log holds no
+  # window event, so the previous reading stands and is marked cut.
+  local verdict=0 w_line w_cutoff=0 w_p w_r
+  w_line="$("$REPO/ops/autonomous/usage-window.sh" --raw "$SLOG" 2>/dev/null)" || w_line="$(cut -d' ' -f1,2 "$WINDOW_LAST" 2>/dev/null)"
+  read -r w_p w_r <<< "${w_line:-0 0}"
+  if [ "$rc" -ne 0 ] && { [ $(( SECONDS - _t0 )) -lt 10 ] || [ "${w_p:-0}" -ge "$WINDOW_CUT_AT" ] 2>/dev/null; }; then
+    w_cutoff=1
+  fi
+  [ -n "$w_line" ] && echo "$w_line$( [ "$w_cutoff" = 1 ] && echo ' cut')" > "$WINDOW_LAST"
   if [ -n "$fp_after" ] && [ "$fp_after" != "$fp_before" ]; then
     note_progress
-    if [ -f "$WINDOW_PAUSE" ]; then
-      log "session paused for the usage window (${w_line:-unknown}) — not counted toward the no-completion streak."
+    if [ "$w_cutoff" = 1 ]; then
+      log "session cut off by the usage window (${w_p:-?}%) — not counted toward the no-completion streak."
     else
       note_committed "$cc_before" "$cc_after" || verdict=9
     fi
@@ -1772,7 +1781,7 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
   fi
 
   # Count the attempt for 3e: the session ran (not a usage-limit fast-fail) and the head item is still open.
-  if [ -n "$head_tag" ] && [ ! -f "$WINDOW_PAUSE" ] && ! { [ "$rc" -ne 0 ] && [ $(( SECONDS - _t0 )) -lt 10 ]; }; then
+  if [ -n "$head_tag" ] && [ "$w_cutoff" = 0 ]; then
     if "$REPO/ops/autonomous/next-item.sh" "$REPO" 2>/dev/null | awk -F'\t' -v t="$head_tag" '$2==t{f=1} END{exit !f}'; then
       printf '%s\t%s\t%s\t%s\n' "$head_tag" "$(date '+%Y-%m-%d %H:%M')" "$eff" "$(( SECONDS - _t0 ))" >> "$STATE/attempts.tsv" 2>/dev/null || true
     fi
