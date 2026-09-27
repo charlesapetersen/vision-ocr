@@ -293,7 +293,7 @@ say so in the commit.
       Then C38 closes `FIXED`, with a `CHANGELOG.md` line under `## Unreleased`.
       BOUND: one code commit, plus free docs commits for measurements.
       (origin: BUGS.md C38)
-- [ ] **c39-newspaper-page** — make a large newspaper page readable and selectable, or show that it cannot
+- [x] **c39-newspaper-page** — make a large newspaper page readable and selectable, or show that it cannot
       be done at a reasonable cost. On `Raskin - 1956` (one NYT page, 1,067 x 1,547 pt, 300 ppi source) the
       rebuild is 125 ppi and the text layer is misread, crosses columns and has runs 1.6 pt tall
       (`BUGS.md` C39). The owner asks for an attempt and accepts that it may fail.
@@ -348,6 +348,7 @@ say so in the commit.
       `finerReading` over clean band lines buys at most 0.3 points on the five whole-page scans (C39
       "Left"). Still open: the rows fused across columns on
       the whole-page scans (6 to 30 a page), and a layered picture page's finer reading (Berendzen).
+      2026-09-27, owner: SPLIT. Closed on what shipped; the whole-page scans' reading is `c41-newspaper-scans`.
       (origin: BUGS.md C39)
 - [x] **c40-columns-figure** — split the four rows on Hughes p5 that still join the two columns
       (`BUGS.md` C40). Use the owner's Desktop copy in `$STATE/owner-supplied/`. Find why C34's gutter
@@ -460,6 +461,20 @@ say so in the commit.
       by subagent, fix what it finds that is real, and record the verdict on whether the feature is fit to
       turn on. BOUND: one review round and its fixes.
       (origin: TODO.md §"Preserving annotations through re-OCR")
+- [ ] **c41-newspaper-scans** — read whole-page scans of small-town newspapers as well as their print
+      allows (`BUGS.md` C41, split from C39). Start from the band swap parked at
+      `$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch` and the eight defects C41 lists; fix
+      them, or show that the swap cannot be made safe and try something else. Read C39's record of what
+      was tried before starting.
+      THE PAGES: the five whole-page scans C41 names. Work on all five; they differ in difficulty, and a
+      gain on some of them ships on its own.
+      DONE WHEN, on the published PDF, through PDFKit, for each of the five pages before and after: misread
+      words in the paragraph C39's table used, counted by hand; rows fused across columns; words in the
+      dictionary. Every page that can be improved is, and each that cannot is named with what was tried;
+      ordinary pages across a corpus sample are unchanged; invariant 3 holds; a new check goes red without
+      the change. Drag selection is not in scope (C39 closed it).
+      BOUND: one code commit, plus free docs commits.
+      (origin: BUGS.md C41)
 - [ ] **zotero-2** — the Zotero library sweep: look for new classes of document the app handles badly.
       Re-run step 1 of `TODO.md` §"2. The Zotero library sweep" first; its survey is dated. Copy
       `zotero.sqlite` before querying it, because Zotero locks it, and never write the library. BOUND: one

@@ -18263,7 +18263,7 @@ less per layered page.
   a tiling pattern through the stencil (more machinery, same result); raising the foreground to the
   stencil's resolution (bytes); sending text pages back to the 1-bit route (loses C32's red).
 
-### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN *(read strip by strip since `9555c8a`; reopened 2026-09-26; a layered page's type published at its mask's resolution 2026-09-27; drag selection closed `WONTFIX` on a sound instrument, and a raised 1-bit page's words read at its type's resolution, 2026-09-27)*
+### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — FIXED *(split 2026-09-27: drag selection `WONTFIX`, whole-page scans' reading moved to C41; read strip by strip since `9555c8a`; reopened 2026-09-26; a layered page's type published at its mask's resolution 2026-09-27; drag selection closed `WONTFIX` on a sound instrument, and a raised 1-bit page's words read at its type's resolution, 2026-09-27)*
 
 *(found 2026-09-26 by the owner: `Raskin - 1956 - New Jobs Opening to Negro in North.pdf`, one ProQuest
 *New York Times* page of 1,067 x 1,547 pt. Source and the `24a8f6a` output are in `$STATE/owner-supplied/`.
@@ -18622,6 +18622,14 @@ rows split within one column and a table row (independent check, from the conten
 page" above is an upper bound. WSJ's cell in the first ten-page table (5 misread of 50) is another paragraph
 and was not recounted.
 
+#### 2026-09-27, split by the owner
+
+C39 closes on what shipped: paste-ups read strip by strip at their strips' resolution (`9555c8a`), layered
+type published at its mask's resolution (`e778abc`), and a raised 1-bit page's words read at its type's
+resolution (`ed6476d`). Drag selection is `WONTFIX` after five max-effort sessions (rule 8). What was left,
+the reading of whole-page scans of small-town papers, is C41, queued after the stress test. The daemon had
+parked on C39 after five sessions without closing it.
+
 ### C40 · On Hughes p5 four rows still join the two columns, above and below a figure — FIXED
 
 *(found 2026-09-26 by the owner, in a build from `24a8f6a`, after C34. The owner's Desktop copy of Hughes
@@ -18660,6 +18668,25 @@ The independent check passed all five DONE WHEN criteria.
 **Left:** one stray box far out in a margin moves the block's centre, and such a page still finds no gutter.
 Hughes p6 keeps one fused row, the same before and after (y 513, "girls of longer service … Negro help
 could be…"). Why it is kept whole was not examined.
+
+### C41 · Whole-page scans of small-town newspapers are read far below their print: misread words and rows fused across columns — OPEN
+
+*(split from C39 on 2026-09-27 by the owner. The pages, the before figures and the work so far are in C39:
+the ten-page table in `#### … how PDFKit orders the page, ten pages, and dense scans`, and the drag table in
+`#### … drag measured soundly and closed WONTFIX`.)*
+
+The five whole-page scans in `testdocs/`: Helena Independent 1941, Billings Gazette 1926, Kalispell Daily
+Inter Lake 1939, Independent Record 1950 (a comic page) and `document/October_2,_1960_(Page_24_of_25.pdf`.
+One Vision request over such a page returns far fewer lines than bands do: on Helena, 378 lines against
+818 from eight bands, 70% of words in the dictionary against 77%. Many rows are fused across columns (6 to 30
+per page on the drag table). By hand, Helena's `Faculty Changes` paragraph has 20 misread words in 100.
+[measured, in C39]
+
+The gain in hand is the band swap parked at
+`$STATE/rescue/PARKED-c39-dense-band-swap-2026-09-26.patch`: up to +5.6 points of dictionary words on a
+22-document sample, with ordinary pages unchanged, but only +0.0 to +1.2 on the five pages above. Its review found five defects, (a)-(e) in C39, and the
+independent check three more (`Jority leader` → `Sority lender`, a headline run into a body line, a garbled
+line kept beside its clean reading). Drag selection on these pages is not part of this entry; C39 closed it.
 
 ## Robustness and correctness of reporting
 
