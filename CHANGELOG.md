@@ -14,6 +14,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Text on colour pages that keep a picture, such as a pamphlet with red headings or a map with labels, is
+  sharp in Preview. It was drawn at the picture layer's low resolution and could be a blur that no
+  one could read, although other PDF readers showed it sharp (C38).
+
 - Scans that already arrive compressed as black-and-white JBIG2, such as ProQuest theses and many JSTOR
   and NBER downloads, now keep their own compression instead of being re-compressed larger. Pages look
   exactly as before. On 51 such test documents the output went from 258.8 MB to 197.5 MB, and a thesis

@@ -166,6 +166,64 @@ func inkFractionMRC(of url: URL, page index: Int) -> Double {
     return Double(dark) / Double(w * h)
 }
 
+/// C38. The share of pixels PDFKit draws dark on an MRC page whose stencil is
+/// two-pixel stripes and whose tone layers are 10x10 and in colour — a grey
+/// foreground never showed the blur, an RGB one does — rendered one device pixel
+/// per stencil pixel. About 0.5 when the stencil is drawn at its own resolution;
+/// near 0 when it is resampled to the foreground's. -1 if the fixture fails.
+func mrcStencilSharpness(in dir: URL, using jb: String) -> Double {
+    let n = 400, tone = 10
+    func image(_ w: Int, _ h: Int, rgb: Bool = false,
+               _ fill: (Int, Int) -> UInt8) -> CGImage? {
+        let c = rgb ? 3 : 1
+        var px = [UInt8](repeating: 0, count: w * h * c)
+        for y in 0..<h { for x in 0..<w { for k in 0..<c { px[(y * w + x) * c + k] = fill(x, y) } } }
+        guard let provider = CGDataProvider(data: Data(px) as CFData) else { return nil }
+        return CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 8 * c,
+                       bytesPerRow: w * c,
+                       space: rgb ? CGColorSpaceCreateDeviceRGB() : CGColorSpaceCreateDeviceGray(),
+                       bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+                       provider: provider, decode: nil, shouldInterpolate: false,
+                       intent: .defaultIntent)
+    }
+    func save(_ img: CGImage?, _ url: URL, _ type: String) -> Bool {
+        guard let img, let dest = CGImageDestinationCreateWithURL(
+            url as CFURL, type as CFString, 1, nil) else { return false }
+        CGImageDestinationAddImage(dest, img, nil)
+        return CGImageDestinationFinalize(dest)
+    }
+    let png = dir.appendingPathComponent("stripes.png")
+    let stencil = dir.appendingPathComponent("stripes.jbig2")
+    let fg = dir.appendingPathComponent("stripes-fg.jpg")
+    let bg = dir.appendingPathComponent("stripes-bg.jpg")
+    let out = dir.appendingPathComponent("stripes.pdf")
+    guard save(image(n, n) { x, _ in (x / 2) % 2 == 0 ? 0 : 255 }, png, "public.png"),
+          save(image(tone, tone, rgb: true) { _, _ in 0 }, fg, "public.jpeg"),
+          save(image(tone, tone, rgb: true) { _, _ in 255 }, bg, "public.jpeg"),
+          (try? JBIG2.encode(png: png, to: stencil, using: jb)) != nil else { return -1 }
+    let side = 288.0
+    let page = JBIG2.Page(
+        stream: .mrc(JBIG2.Page.MRC(
+            mask: stencil, background: bg, foreground: fg,
+            backgroundWidth: tone, backgroundHeight: tone,
+            foregroundWidth: tone, foregroundHeight: tone, isColour: true)),
+        pixelWidth: n, pixelHeight: n, boxSize: CGSize(width: side, height: side))
+    guard (try? JBIG2.assemble([page], to: out)) != nil,
+          let doc = PDFDocument(url: out), let p = doc.page(at: 0),
+          let ctx = CGContext(data: nil, width: n, height: n, bitsPerComponent: 8,
+                              bytesPerRow: n, space: CGColorSpaceCreateDeviceGray(),
+                              bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return -1 }
+    ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: n, height: n))
+    ctx.scaleBy(x: CGFloat(n) / side, y: CGFloat(n) / side)
+    p.draw(with: .mediaBox, to: ctx)
+    guard let data = ctx.data else { return -1 }
+    let px = data.bindMemory(to: UInt8.self, capacity: n * n)
+    var dark = 0
+    for i in 0..<(n * n) where px[i] < 96 { dark += 1 }
+    return Double(dark) / Double(n * n)
+}
+
 /// A scanned page of ordinary black text on paper of a given colour.
 ///
 /// `paper` is what separates an archival scan from a born-digital page: real
@@ -2156,11 +2214,11 @@ do {
                          as: UTF8.self)
         // MARK: MRC — three layers on one page
         //
-        // The stencil is an /SMask, and its polarity is the thing that cannot be
-        // reasoned out: JBIG2 codes ink as 1, an /SMask reads 1 as opaque, but
-        // PDF presents the decoded bitmap as DeviceGray where 1 is white. Both
-        // readings are defensible from the specification and only one draws the
-        // right picture, so it is pinned by rendering. Inverted, the foreground
+        // The stencil is the foreground's /Mask (an /SMask until C38), and its
+        // polarity is the thing that cannot be reasoned out: JBIG2 codes ink as
+        // 1, but PDF presents the decoded bitmap as DeviceGray where ink is 0.
+        // Both readings are defensible from the specification and only one draws
+        // the right picture, so it is pinned by rendering. Inverted, the foreground
         // shows everywhere *except* the text and the page comes out nearly
         // solid — which is what the ink bounds below catch.
         let mrcDir = dir.appendingPathComponent("mrc")
@@ -2207,8 +2265,10 @@ do {
                       mraw.components(separatedBy: "/Subtype /Image").count - 1
                         == (bilevelFirst == nil ? 3 : 4),
                       "\(mraw.components(separatedBy: "/Subtype /Image").count - 1)")
-                check("…the foreground carries an /SMask", mraw.contains("/SMask"))
-                check("…and the stencil is inverted for it",
+                check("…the foreground carries a stencil /Mask",
+                      mraw.contains("/Mask ") && mraw.contains("/ImageMask true")
+                        && !mraw.contains("/SMask"))
+                check("…and the stencil carries its /Decode",
                       mraw.contains("/Decode \(JBIG2.maskDecode)"))
                 check("…and the page draws both layers",
                       mraw.contains("/Im0 Do") && mraw.contains("/Im1 Do"))
@@ -2222,6 +2282,15 @@ do {
                 let ink = inkFractionMRC(of: mrcPDF, page: mixed.count - 1)
                 check("…and the stencil is the right way round",
                       ink > 0.01 && ink < 0.60, String(format: "%.3f ink", ink))
+                // C38. PDFKit drew an /SMask on its base image's grid, so text
+                // the stencil held at 111 ppi reached Preview at the 28 ppi of
+                // the foreground: a blur, while poppler drew it sharp. Two-pixel
+                // stripes through a 10x10 colour foreground: drawn at the stencil's
+                // resolution half the page is ink; resampled to the foreground's,
+                // every pixel is a mid grey and none is dark.
+                let sharp = mrcStencilSharpness(in: mrcDir, using: jb)
+                check("…and PDFKit draws the stencil at its own resolution, not the foreground's",
+                      sharp > 0.35 && sharp < 0.65, String(format: "%.3f dark", sharp))
                 // R49 · the same page layered in colour.
                 //
                 // Colour pages were excluded from layering, and that exclusion
@@ -2291,11 +2360,12 @@ do {
                     check("a colour MRC page declares /DeviceRGB tone layers",
                           craw.components(separatedBy: "/ColorSpace /DeviceRGB").count - 1 == 2,
                           "\(craw.components(separatedBy: "/ColorSpace /DeviceRGB").count - 1)")
-                    // The stencil stays one channel whatever the tone layers are:
-                    // it is a bilevel mask, not a colour image.
-                    check("…while its stencil stays /DeviceGray",
-                          craw.components(separatedBy: "/ColorSpace /DeviceGray").count - 1 == 1,
-                          "\(craw.components(separatedBy: "/ColorSpace /DeviceGray").count - 1)")
+                    // The stencil takes no colour space whatever the tone layers
+                    // are: it is a bilevel /ImageMask, not a colour image (C38).
+                    check("…while its stencil stays a colourless /ImageMask",
+                          craw.components(separatedBy: "/ImageMask true").count - 1 == 1
+                            && !craw.contains("/ColorSpace /DeviceGray"),
+                          "\(craw.components(separatedBy: "/ImageMask true").count - 1)")
                     check("…and still writes three image XObjects",
                           craw.components(separatedBy: "/Subtype /Image").count - 1 == 3,
                           "\(craw.components(separatedBy: "/Subtype /Image").count - 1)")

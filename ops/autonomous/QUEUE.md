@@ -263,7 +263,7 @@ say so in the commit.
       * a check goes red without the change.
       BOUND: one code commit.
       (origin: BUGS.md C37)
-- [ ] **c38-preview-text** — make the text on layered pages as legible in Preview as it is in the source.
+- [x] **c38-preview-text** — make the text on layered pages as legible in Preview as it is in the source.
       Today it is sharp in poppler and a blur in PDFKit, which is what the owner reads with (`BUGS.md` C38).
       C31 was closed on a poppler render, and C32 then moved three more pages of `1954 - Why.pdf` onto the
       route, so the owner's file got worse. (attempts: 1) — C31's fix was the first attempt.

@@ -18219,7 +18219,7 @@ have to reconstruct, which is more code for those 10 documents than the 21 neede
 is stale. [measured]
 2026-09-26, owner: Delton (954,409 → 2,487,160 B) and the Desktop copy of Hughes (490,599 → 947,326 B), built from `24a8f6a`, before this fix. Neither was re-measured here, and both are 600 dpi Acrobat JBIG2 sources; queued as `c37-owner-files`.
 
-### C38 · Text on layered pages is illegible in Preview: PDFKit draws the text stencil at the foreground image's resolution, and C31's fix was checked in poppler, which does not — OPEN
+### C38 · Text on layered pages is illegible in Preview: PDFKit draws the text stencil at the foreground image's resolution, and C31's fix was checked in poppler, which does not — FIXED 2026-09-26
 
 *(found 2026-09-26 by the owner, on `1954 - Why.pdf` built from main at `24a8f6a`: "even more illegible"
 than 1.14.0. That output is `$STATE/owner-supplied/1954 - Why.ocr-24a8f6a.pdf`; the renders below are in
@@ -18243,6 +18243,25 @@ What was checked on 2026-09-26, in an interactive session:
   (`DCT/8+DCT/8+JBIG2/1`). They are probably all affected. [not measured]
 - The stress reading saw this and recorded it as an instrument fault: "at 100 dpi CoreGraphics renders
   the stencil's text lighter than 128, so only the picture counts as ink". That was the defect.
+
+**Fixed 2026-09-26** (`c38-preview-text`). The stencil is now an `/ImageMask` referenced by the
+foreground's `/Mask`, with `/Decode [0 1]`, where it was an `/SMask` with `[1 0]`. Same streams, 9 bytes
+less per layered page.
+- Mechanism, corrected: CoreGraphics samples an `/SMask` on its base image's grid only when the base is
+  `/DeviceRGB`. A grey foreground was always sharp (Raskin, Ibson, Schwaller p1-3: PDFKit identical before
+  and after), so C39's "C38 applies to it as well" does not hold; Raskin is grey. [measured, hand-built
+  variants of Why p6 in PDFKit: RGB+`/SMask` blurred, grey+`/SMask`, `/Mask`, and a luminosity soft-mask
+  group all sharp]
+- Before → after, PDFKit at 1x and 2x: Why p5 (7 ppi foreground) went from no readable word to body text
+  as legible as the source; p6/p8/p9, Surani p16's map labels and Schwaller p30's body text likewise. The
+  independent check passed all five DONE WHEN criteria. Poppler renders are pixel-identical before and
+  after on all 31 sample pages, and the text layers are byte-identical. [measured]
+- Bytes: 3,401,209 → 3,401,020 on the six sample files. Corpus: −9 B × 554 layered pages ≈ −5 KB. [derived]
+- Left as found: headings on Why p5 and p8 are red but duller than the source (foregrounds 153x118 and
+  76x59, C32's resolution); Why p10's red logo is grey before and after.
+- Rejected: a luminosity soft-mask group in an ExtGState (also sharp, but three more objects per page);
+  a tiling pattern through the stencil (more machinery, same result); raising the foreground to the
+  stencil's resolution (bytes); sending text pages back to the 1-bit route (loses C32's red).
 
 ### C39 · A large newspaper page is rebuilt at 125 ppi from a 300 ppi source, and its text layer is misread, crosses columns and cannot be selected — OPEN
 

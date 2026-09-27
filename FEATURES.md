@@ -1255,7 +1255,7 @@ deleted because the reasoning below is what the shipped defaults rest on.)*
 Mixed Raster Content stores a page as three layers: a full-resolution 1-bit
 stencil of the text (JBIG2), a background holding paper and pictures
 (downsampled, JPEG or JPX), and a foreground holding ink colour. The reader
-paints the background, then the foreground through the stencil as an `/SMask`.
+paints the background, then the foreground through the stencil as a stencil `/Mask` (an `/SMask` until C38).
 
 **What the commercial tools actually do**, measured from 275 MRC files in the
 user's own library — 52 of 60 sampled were produced by ABBYY FineReader: *they
@@ -1394,7 +1394,7 @@ trade worth making. So the page images have to be built in two stages: `flatten`
 emits the picture pages as it does now, `mac-ocr` runs, and the MRC layers are
 assembled afterwards from the boxes plus a re-render. That is a real change to
 `Model.makeSearchablePDF`'s orchestration and to `JBIG2.assemble`, which grows
-from one image XObject per page to three plus an `/SMask`.
+from one image XObject per page to three, the stencil a `/Mask`.
 
 Still worth doing properly rather than quickly. An MRC page that misplaces its
 stencil damages the picture silently, which is invariant 1 territory, and the

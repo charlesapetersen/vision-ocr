@@ -32,8 +32,8 @@ enum JBIG2 {
             /// Three layers: a background holding paper and pictures, a
             /// foreground holding ink colour, and a 1-bit JBIG2 stencil that
             /// says where the foreground shows. The reader paints the
-            /// background, then the foreground through the stencil as an
-            /// `/SMask`. See `Flattener.mrcLayers`.
+            /// background, then the foreground through the stencil as a
+            /// `/Mask`. See `Flattener.mrcLayers`.
             case mrc(MRC)
 
             /// C29 (B). A page whose pixels are its own: a born-digital page
@@ -309,17 +309,21 @@ enum JBIG2 {
 
     /// The `/Decode` array on an MRC stencil.
     ///
-    /// JBIG2 codes ink as 1. An `/SMask` reads 1 as opaque, so on that reading
-    /// no inversion is needed — but PDF's JBIG2Decode filter presents the
-    /// decoded bitmap as a DeviceGray image, where 1 is *white*, and the mask
-    /// then makes the foreground show everywhere except the text. `[1 0]`
-    /// flips it back.
+    /// The stencil is an `/ImageMask`, the foreground's `/Mask`, and a stencil
+    /// mask paints where its sample is 0. PDF's JBIG2Decode filter presents ink
+    /// as 0 (DeviceGray black), so the default `[0 1]` is right, and it is
+    /// written out so that the polarity is one visible constant. `[1 0]` paints
+    /// the foreground everywhere except the text.
     ///
-    /// Established by rendering a page and looking at it, not by reading the
-    /// specification — the two readings above are each defensible from the text
-    /// and only one of them draws the right picture. `maskDecodeIsInverted`
-    /// is the check that holds it.
-    static let maskDecode = "[ 1 0 ]"
+    /// C38: this was an `/SMask` with `[1 0]` until 2026-09-26. CoreGraphics,
+    /// and so PDFKit and Preview, samples an `/SMask` on a /DeviceRGB base
+    /// image's grid (not on a /DeviceGray one), so on a 28 ppi colour foreground
+    /// the 111 ppi text came out a blur that poppler never showed. PDFKit and
+    /// poppler both draw a `/Mask` stencil at the stencil's own resolution.
+    /// Established by rendering, as the old polarity was. The ink-bounds check
+    /// in the MRC block holds the polarity, and the sharpness check the
+    /// resolution; the stripes are symmetric, so that one cannot see polarity.
+    static let maskDecode = "[ 0 1 ]"
 
     // MARK: - Encoding
 
@@ -533,7 +537,7 @@ enum JBIG2 {
 
             // Scale the unit image square to the page box. An MRC page draws
             // twice: the background, then the foreground over it — the stencil
-            // is not drawn, it is the foreground's /SMask.
+            // is not drawn, it is the foreground's /Mask.
             let content: String
             switch page.stream {
             case .mrc:
@@ -554,19 +558,19 @@ enum JBIG2 {
             /// middle of a book.
             func writeImage(_ number: Int, from url: URL, width: Int, height: Int,
                             filter: String, bits: Int, space: String,
-                            smask: Int? = nil, decode: String? = nil,
-                            parms: String? = nil) throws {
+                            mask: Int? = nil, isStencil: Bool = false,
+                            decode: String? = nil, parms: String? = nil) throws {
                 guard let bytes = try? Data(contentsOf: url), !bytes.isEmpty else {
                     throw Failure.encoderFailed("page \(i + 1) produced no image data")
                 }
                 try beginObject(number)
                 try write("""
                 << /Type /XObject /Subtype /Image /Width \(width) \
-                /Height \(height) /ColorSpace \(space) \
+                /Height \(height) \(isStencil ? "/ImageMask true" : "/ColorSpace \(space)") \
                 /BitsPerComponent \(bits) /Filter \(filter) \
                 \(decode.map { "/Decode \($0) " } ?? "")\
                 \(parms.map { "/DecodeParms \($0) " } ?? "")\
-                \(smask.map { "/SMask \($0) 0 R " } ?? "")/Length \(bytes.count) >>
+                \(mask.map { "/Mask \($0) 0 R " } ?? "")/Length \(bytes.count) >>
                 stream\n
                 """)
                 try emit(bytes)
@@ -612,15 +616,13 @@ enum JBIG2 {
                 try writeImage(objects[1], from: m.foreground,
                                width: m.foregroundWidth, height: m.foregroundHeight,
                                filter: "/DCTDecode", bits: 8, space: toneSpace,
-                               smask: objects[2])
-                // The stencil, at full page resolution. /Decode [1 0] because
-                // JBIG2 codes ink as 1 while an /SMask reads 1 as opaque and 0
-                // as transparent — without the inversion the foreground would
-                // show everywhere *except* the text. Verified by rendering, not
-                // by reading the specification.
+                               mask: objects[2])
+                // The stencil, at full page resolution: an /ImageMask, which
+                // PDFKit draws at its own resolution, where an /SMask was drawn
+                // at the foreground's (C38). Polarity: see `maskDecode`.
                 try writeImage(objects[2], from: m.mask, width: page.pixelWidth,
                                height: page.pixelHeight, filter: "/JBIG2Decode",
-                               bits: 1, space: "/DeviceGray", decode: maskDecode)
+                               bits: 1, space: "", isStencil: true, decode: maskDecode)
             case .passthrough:
                 throw Failure.cannotAssemblePassthrough(page: i + 1)
             }

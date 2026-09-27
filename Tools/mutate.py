@@ -920,8 +920,8 @@ OPERATORS = [
     # CONSTANTS because the constant pattern anchors on \b, which cannot match
     # after a closing quote: the first attempt was recorded NOT-APPLIED, the
     # harness declining to score a mutant it had not actually planted.
-    ("JBIG2.swift", 'static let maskDecode = "[ 1 0 ]"',
-     'static let maskDecode = "[ 0 1 ]"', "mrc-stencil-polarity"),
+    ("JBIG2.swift", 'static let maskDecode = "[ 0 1 ]"',
+     'static let maskDecode = "[ 1 0 ]"', "mrc-stencil-polarity"),
     # R39's mutant lived here, and it is gone with the code it perturbed: the
     # DPI negotiation existed only to talk to a subprocess that re-rasterised our
     # PDF, and recognition is in process now. Its replacement is the language
