@@ -1072,6 +1072,19 @@ enum Flattener {
         /// stream against once it has decoded it back out of its own file.
         var sourceJBIG2Digest: Data? = nil
         var matchesSourceJBIG2: Bool { sourceJBIG2Digest != nil }
+        /// C37: set with `sourceJBIG2Digest` when the image is placed on part of
+        /// the sheet, or has other ink over it (`placedSourceRebuild`). The
+        /// bitmap above is then the ordinary rebuild, which recognition reads;
+        /// the kept stream is published at `rect` with `overlay` over it.
+        var sourceJBIG2Placement: SourcePlacement? = nil
+    }
+
+    /// C37. Where a kept stream goes on a page `placedSourceRebuild` proved, and
+    /// the overlay's bitmap, written beside the page's own.
+    struct SourcePlacement {
+        let width: Int, height: Int
+        let rect: CGRect
+        var overlay: (png: URL, width: Int, height: Int, rect: CGRect)?
     }
 
     /// Rebuilds `source` into `destination` as image-only pages.
@@ -1350,11 +1363,17 @@ enum Flattener {
             // differs by. Only when the caller will keep such a stream: the
             // decode and a possible second render are not free.
             var sourceDigest: Data?
-            if useBilevel, keepSourceJBIG2, pngDirectory != nil,
-               let kept = sourceImageRebuild(of: page, box: box, grey: grey, width: width,
-                                             height: height, threshold: threshold) {
-                grey = kept.grey; width = kept.width; height = kept.height
-                threshold = kept.threshold; sourceDigest = kept.digest
+            var placedSource: PlacedSource?
+            if useBilevel, keepSourceJBIG2, pngDirectory != nil {
+                if let kept = sourceImageRebuild(of: page, box: box, grey: grey, width: width,
+                                                 height: height, threshold: threshold) {
+                    grey = kept.grey; width = kept.width; height = kept.height
+                    threshold = kept.threshold; sourceDigest = kept.digest
+                } else if let placed = placedSourceRebuild(of: page, box: box) {
+                    // The rebuild is left as it is: recognition reads the page on
+                    // the sheet's grid, and only the published pixels change.
+                    placedSource = placed; sourceDigest = placed.digest
+                }
             }
 
             // Encoded once, whichever way it goes. The JPEG bytes are reused for
@@ -1449,10 +1468,28 @@ enum Flattener {
                     }
                     // `if true {` stood here and around the JPEG branch below
                     // (A3.4) — two conditionals that read as gates and were not.
-                    let entry = RebuiltPage(content: .bilevel(png), pixelWidth: width,
+                    var entry = RebuiltPage(content: .bilevel(png), pixelWidth: width,
                                             pixelHeight: height, boxSize: box.size,
                                             sourceCropBox: sourceCrop,
                                             sourceJBIG2Digest: sourceDigest)
+                    if let placed = placedSource {
+                        var placement = SourcePlacement(width: placed.width, height: placed.height,
+                                                        rect: placed.rect)
+                        if let overlay = placed.overlay {
+                            let url = pngDirectory.appendingPathComponent(stem + "-overlay.png")
+                            // Unwritten, the page keeps its encoder rather than
+                            // publishing the image without the ink over it.
+                            if writePNG(overlay.image, to: url) {
+                                placement.overlay = (url, overlay.image.width,
+                                                     overlay.image.height, overlay.rect)
+                                entry.sourceJBIG2Placement = placement
+                            } else {
+                                entry.sourceJBIG2Digest = nil
+                            }
+                        } else {
+                            entry.sourceJBIG2Placement = placement
+                        }
+                    }
                     rebuilt.append(entry)
                     try onPage?(entry)
                 } else {
@@ -1561,7 +1598,7 @@ enum Flattener {
     /// its own by a pixel or two, rendered at the scan's own size.
     static func renderGrey(
         _ page: PDFPage, box: CGRect, scale: CGFloat, width: Int, height: Int,
-        from pdfBox: CGPDFBox = .mediaBox, scaleY: CGFloat? = nil
+        from pdfBox: CGPDFBox = .mediaBox, scaleY: CGFloat? = nil, origin: CGPoint = .zero
     ) -> [UInt8]? {
         var buffer = [UInt8](repeating: 255, count: width * height)
         let ok = buffer.withUnsafeMutableBytes { raw -> Bool in
@@ -1580,6 +1617,9 @@ enum Flattener {
                 return true
             }
             ctx.scaleBy(x: scale, y: scaleY ?? scale)
+            // `origin` is where the bitmap's corner sits on the box, in points: a
+            // grid laid on a placed image rather than on the sheet (C37).
+            ctx.translateBy(x: -origin.x, y: -origin.y)
             ctx.concatenate(cgPage.getDrawingTransform(
                 pdfBox, rect: CGRect(origin: .zero, size: box.size),
                 rotate: 0, preserveAspectRatio: true))
@@ -1890,6 +1930,159 @@ enum Flattener {
                                   height: source.height, threshold: t),
               let digest = bitmapDigest(source) else { return nil }
         return (exact, source.width, source.height, t, digest)
+    }
+
+    /// C37. A page that draws its one JBIG2 image on part of the sheet, perhaps
+    /// with other ink over it: JSTOR's shape, a scan placed 8 pt above the sheet's
+    /// foot with a "This content downloaded from…" line printed across it. The
+    /// page is then the source's stream at `rect` plus `overlay`, the ink the
+    /// image does not have, both in the published page's points.
+    struct PlacedSource {
+        let digest: Data
+        let width: Int, height: Int
+        let rect: CGRect
+        /// 1-bit, ink black, `bilevelImage`'s layout; nil when the image is all
+        /// the page draws.
+        var overlay: (image: CGImage, rect: CGRect)?
+    }
+
+    /// C37. Where the page's one image is drawn, from the transform in force at
+    /// its one `Do`, in the page's own space. nil for a turned, skewed or flipped
+    /// placement, or for an image drawn twice or not at all. A hypothesis only:
+    /// `placedSourceRebuild` renders the page and proves it.
+    static func sourceImagePlacement(of page: PDFPage) -> CGRect? {
+        guard let cgPage = page.pageRef, let table = CGPDFOperatorTableCreate() else { return nil }
+        final class State {
+            var ctm = CGAffineTransform.identity
+            var saved: [CGAffineTransform] = []
+            var draws: [CGAffineTransform] = []
+        }
+        let state = State()
+        CGPDFOperatorTableSetCallback(table, "q") { _, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.saved.append(s.ctm)
+        }
+        CGPDFOperatorTableSetCallback(table, "Q") { _, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            if let ctm = s.saved.popLast() { s.ctm = ctm }
+        }
+        CGPDFOperatorTableSetCallback(table, "cm") { scanner, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            var v = [CGPDFReal](repeating: 0, count: 6)
+            for i in (0..<6).reversed() {
+                guard CGPDFScannerPopNumber(scanner, &v[i]) else { return }
+            }
+            s.ctm = CGAffineTransform(a: v[0], b: v[1], c: v[2], d: v[3], tx: v[4], ty: v[5])
+                .concatenating(s.ctm)
+        }
+        CGPDFOperatorTableSetCallback(table, "Do") { _, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.draws.append(s.ctm)
+        }
+        let content = CGPDFContentStreamCreateWithPage(cgPage)
+        let scanner = CGPDFScannerCreate(content, table, Unmanaged.passUnretained(state).toOpaque())
+        let scanned = CGPDFScannerScan(scanner)
+        CGPDFScannerRelease(scanner)
+        CGPDFContentStreamRelease(content)
+        guard scanned, state.draws.count == 1, let m = state.draws.first,
+              m.b == 0, m.c == 0, m.a > 0, m.d > 0 else { return nil }
+        return CGRect(x: m.tx, y: m.ty, width: m.a, height: m.d)
+    }
+
+    /// C37. The page as its source's JBIG2 image at its own placement plus an
+    /// overlay of whatever else the page draws, proved by rendering: the page is
+    /// rendered on the image's own pixel grid, laid out to cover the sheet, and
+    /// every ink pixel of the image must be ink in that render. What else is ink
+    /// there is the overlay. So the image plus the overlay, drawn black, is the
+    /// render's threshold pixel for pixel. nil when the proof fails: an image
+    /// drawn under white, clipped, off its placement or off the sheet all leave
+    /// an image pixel white in the render.
+    ///
+    /// Only an unturned page, for `sourceImageRebuild`'s reason, and only on a
+    /// sheet whose media box PDFKit reports as CoreGraphics does, since the
+    /// placement is measured from the one and published on the other.
+    static func placedSourceRebuild(of page: PDFPage, box: CGRect) -> PlacedSource? {
+        guard page.rotation % 360 == 0, let cgPage = page.pageRef,
+              let source = sourceBitmap(of: page), let digest = bitmapDigest(source),
+              let placed = sourceImagePlacement(of: page) else { return nil }
+        let media = cgPage.getBoxRect(.mediaBox)
+        guard abs(media.width - box.width) < 0.01, abs(media.height - box.height) < 0.01
+        else { return nil }
+        let r = placed.offsetBy(dx: -media.minX, dy: -media.minY)
+        // On the sheet, to half a point, and at a size the grid can hold, before
+        // anything becomes an Int: a `0.0001 0 0 0.0001 cm` or a far-off `tx`
+        // would otherwise trap rather than refuse. Off the sheet is refused by the
+        // proof anyway, since the hidden part renders white.
+        guard [r.minX, r.minY, r.maxX, r.maxY].allSatisfy(\.isFinite), r.width > 0, r.height > 0,
+              r.minX >= -0.5, r.minY >= -0.5,
+              r.maxX <= box.width + 0.5, r.maxY <= box.height + 0.5 else { return nil }
+        let sx = CGFloat(source.width) / r.width, sy = CGFloat(source.height) / r.height
+        guard Double((box.width + 1) * sx) * Double((box.height + 1) * sy)
+                <= Double(maximumPageMegapixels) * 1_000_000 else { return nil }
+        // Whole pixels of sheet on each side of the image, rounded out, so the
+        // grid covers the sheet. A negative margin is an image hanging off the
+        // sheet; its hidden part renders white and the proof refuses it.
+        func margin(_ points: CGFloat, _ scale: CGFloat) -> Int {
+            max(0, Int((points * scale - 1e-6).rounded(.up)))
+        }
+        let left = margin(r.minX, sx), bottom = margin(r.minY, sy)
+        let right = margin(box.width - r.maxX, sx), top = margin(box.height - r.maxY, sy)
+        let width = left + source.width + right, height = bottom + source.height + top
+        guard width * height <= maximumPageMegapixels * 1_000_000 else { return nil }
+        let origin = CGPoint(x: r.minX - CGFloat(left) / sx, y: r.minY - CGFloat(bottom) / sy)
+        guard let grey = renderGrey(page, box: box, scale: sx, width: width, height: height,
+                                    from: .mediaBox, scaleY: sy, origin: origin)
+        else { return nil }
+        let t = otsuThreshold(of: grey)
+        let rowBytes = (source.width + 7) / 8
+        // What the overlay holds, as grey for `bilevelImage`: ink the image lacks.
+        var overlay = [UInt8](repeating: 255, count: width * height)
+        var minX = width, minY = height, maxX = -1, maxY = -1
+        let proved = source.rows.withUnsafeBytes { raw -> Bool in
+            let rows = raw.bindMemory(to: UInt8.self)
+            for y in 0..<height {
+                let iy = y - top
+                for x in 0..<width where grey[y * width + x] < t || (
+                    iy >= 0 && iy < source.height && x >= left && x < left + source.width) {
+                    let ix = x - left
+                    let inImage = iy >= 0 && iy < source.height && ix >= 0 && ix < source.width
+                    let imageInk = inImage
+                        && (rows[iy * rowBytes + (ix >> 3)] & (UInt8(0x80) >> UInt8(ix & 7))) == 0
+                    let renderInk = grey[y * width + x] < t
+                    if imageInk && !renderInk { return false }
+                    if renderInk && !imageInk {
+                        overlay[y * width + x] = 0
+                        minX = min(minX, x); maxX = max(maxX, x)
+                        minY = min(minY, y); maxY = max(maxY, y)
+                    }
+                }
+            }
+            return true
+        }
+        guard proved else { return nil }
+        var result = PlacedSource(digest: digest, width: source.width, height: source.height,
+                                  rect: r, overlay: nil)
+        if maxX >= 0 {
+            // Cropped to its ink: a stamp line is a sliver of the sheet.
+            let w = maxX - minX + 1, h = maxY - minY + 1
+            var crop = [UInt8](repeating: 255, count: w * h)
+            for y in 0..<h {
+                crop.replaceSubrange(y * w..<(y + 1) * w,
+                                     with: overlay[(minY + y) * width + minX..<(minY + y) * width + minX + w])
+            }
+            guard let image = bilevelImage(from: crop, width: w, height: h, threshold: 128)
+            else { return nil }
+            // Rows count down from the grid's top; points count up from its foot.
+            let rect = CGRect(x: origin.x + CGFloat(minX) / sx,
+                              y: origin.y + CGFloat(height - 1 - maxY) / sy,
+                              width: CGFloat(w) / sx, height: CGFloat(h) / sy)
+            result.overlay = (image, rect)
+        }
+        return result
     }
 
     /// C37. Whether the rebuild of this page is, bit for bit, its source's own

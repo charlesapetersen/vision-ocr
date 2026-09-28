@@ -18219,6 +18219,33 @@ have to reconstruct, which is more code for those 10 documents than the 21 neede
 is stale. [measured]
 2026-09-26, owner: Delton (954,409 → 2,487,160 B) and the Desktop copy of Hughes (490,599 → 947,326 B), built from `24a8f6a`, before this fix. Neither was re-measured here, and both are 600 dpi Acrobat JBIG2 sources; queued as `c37-owner-files`.
 
+#### JSTOR's placed scans, 2026-09-27 (`c37-owner-files`)
+
+On main after this fix the owner's files came out the same: Delton 2,487,160 B, Hughes 946,028 B and the
+Desktop copy 947,443 B, with no page keeping its stream. None of them is actually Acrobat's; they are
+JSTOR downloads. The scan is drawn on a rect inside a media box that starts at y = −8, and a visible
+"This content downloaded from…" line is printed across its foot. So the render is never the image, and
+the refusal is right, but keeping the stream does not need it. The page is now proved another way
+(`Flattener.placedSourceRebuild`). The one `Do`'s transform gives the image's rect. The page is rendered
+on the image's own pixel grid, laid out over the sheet, and every image ink pixel must be ink there. The
+remaining ink becomes a 1-bit overlay, cropped to its ink. The source stream is published at its rect,
+and the overlay is drawn over it as a black stencil (`JBIG2.Page.placement`/`overlay`). The price rule
+charges the overlay too. Recognition still reads the ordinary rebuild. [measured]
+
+Default settings, source → before → after, bytes per page against the source's:
+- Delton, 28 pages: 954,409 → 2,487,160 → **940,504 B** (34,086 → 33,589 B a page).
+- Hughes (Desktop copy), 9 pages: 490,599 → 947,443 → **473,556 B**.
+- Hughes: 542,468 → 946,028 → **472,141 B**.
+
+Characters are unchanged (87,708 / 28,220 / 28,212). Through PDFKit at 2x, pages 2 onward differ from
+the source by the same 1,046 px (Delton) or 1,077 px (Hughes) a page, all of it in the download line,
+which is antialiased type in the source and 1-bit in the output. Before the fix the difference was
+2.6–3.2% of the ink, spread over the page. An independent check passed every DONE WHEN criterion, and
+it looked at renders. Seven new checks; with the overlay dropped, the page-1 check goes red (`line 0 of
+586`). Rejected: re-encoding the image in symbol mode (R37). The review found a whole-page render bar that
+could not see a dropped overlay (0.88% of ink against a 1% bar), and a trap on absurd placements; both
+are fixed. Open, not fixed: on a page `typeDPI` renders finer, the overlay keeps the scan's resolution.
+
 ### C38 · Text on layered pages is illegible in Preview: PDFKit draws the text stencil at the foreground image's resolution, and C31's fix was checked in poppler, which does not — FIXED 2026-09-26
 
 *(found 2026-09-26 by the owner, on `1954 - Why.pdf` built from main at `24a8f6a`: "even more illegible"

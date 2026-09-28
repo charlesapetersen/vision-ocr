@@ -5989,8 +5989,119 @@ do {
         check("C37: …and keeps a text layer",
               (outDoc?.page(at: 1)?.string ?? "").contains("Invoice"),
               outDoc?.page(at: 1)?.string ?? "nil")
+
+        // JSTOR's shape (the owner's Delton and Hughes): the scan placed on part of
+        // a sheet whose media box starts below zero, and a visible download line
+        // printed over it. Page 2 places it inside a margin with nothing over it,
+        // on a larger sheet; page 3 paints white over it, which must not be kept.
+        if case .jbig2(let denseStream) = pages[1].stream, let denseGlobals = pages[1].globals,
+           let imageBytes = try? Data(contentsOf: denseStream),
+           let globalsBytes = try? Data(contentsOf: denseGlobals) {
+            let pw = pages[1].pixelWidth, ph = pages[1].pixelHeight
+            let w = pages[1].boxSize.width, h = pages[1].boxSize.height
+            let sheets: [(box: String, content: String)] = [
+                ("0 -8 \(w) \(h)", "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
+                    + "BT /F1 8 Tf 20 1 Td (This content downloaded from JSTOR) Tj ET\n"),
+                ("0 0 \(w + 40) \(h + 30)", "q \(w) 0 0 \(h) 20 10 cm /Im0 Do Q\n"),
+                ("0 0 \(w) \(h)", "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\nq 1 g 0 0 \(w) \(h) re f Q\n"),
+            ]
+            var pdf = Data("%PDF-1.4\n".utf8)
+            var offsets: [Int] = []
+            func object(_ n: Int, _ dict: String, _ stream: Data? = nil) {
+                offsets.append(pdf.count)
+                pdf += Data("\(n) 0 obj\n\(dict)\n".utf8)
+                if let stream { pdf += Data("stream\n".utf8) + stream + Data("\nendstream\n".utf8) }
+                pdf += Data("endobj\n".utf8)
+            }
+            let kids = sheets.indices.map { "\(6 + 2 * $0) 0 R" }.joined(separator: " ")
+            object(1, "<< /Type /Catalog /Pages 2 0 R >>")
+            object(2, "<< /Type /Pages /Count \(sheets.count) /Kids [ \(kids) ] >>")
+            object(3, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+            object(4, "<< /Type /XObject /Subtype /Image /Width \(pw) /Height \(ph) /ColorSpace /DeviceGray "
+                      + "/BitsPerComponent 1 /Filter /JBIG2Decode /DecodeParms << /JBIG2Globals 5 0 R >> "
+                      + "/Length \(imageBytes.count) >>", imageBytes)
+            object(5, "<< /Length \(globalsBytes.count) >>", globalsBytes)
+            for (i, sheet) in sheets.enumerated() {
+                object(6 + 2 * i, "<< /Type /Page /Parent 2 0 R /MediaBox [ \(sheet.box) ] "
+                               + "/Resources << /Font << /F1 3 0 R >> /XObject << /Im0 4 0 R >> >> "
+                               + "/Contents \(7 + 2 * i) 0 R >>")
+                object(7 + 2 * i, "<< /Length \(sheet.content.utf8.count) >>", Data(sheet.content.utf8))
+            }
+            let xref = pdf.count
+            pdf += Data("xref\n0 \(offsets.count + 1)\n0000000000 65535 f \n".utf8)
+            for o in offsets { pdf += Data(String(format: "%010d 00000 n \n", o).utf8) }
+            pdf += Data("trailer\n<< /Size \(offsets.count + 1) /Root 1 0 R >>\nstartxref\n\(xref)\n%%EOF\n".utf8)
+            let jstor = dir.appendingPathComponent("jstor.pdf")
+            try? pdf.write(to: jstor)
+            let jstorDoc = PDFDocument(url: jstor)
+            let jstorPNGs = dir.appendingPathComponent("jstor-pages")
+            try? FileManager.default.createDirectory(at: jstorPNGs, withIntermediateDirectories: true)
+            let placed = (try? Flattener.flatten(jstor, to: dir.appendingPathComponent("jstor-r.pdf"),
+                                                 mode: .blackAndWhite, pngDirectory: jstorPNGs,
+                                                 keepSourceJBIG2: true)) ?? []
+            check("C37: a scan placed under a download line is its image plus that line",
+                  jstorDoc?.pageCount == 3 && placed.count == 3
+                      && placed[0].matchesSourceJBIG2
+                      && placed[0].sourceJBIG2Placement?.overlay != nil
+                      && placed[0].sourceJBIG2Placement?.rect.minY == 8,
+                  placed.map { "\($0.matchesSourceJBIG2) \(String(describing: $0.sourceJBIG2Placement?.rect))" }
+                      .joined(separator: "; "))
+            check("C37: …a scan placed in a margin is its image alone, at its place",
+                  placed.count == 3 && placed[1].matchesSourceJBIG2
+                      && placed[1].sourceJBIG2Placement?.overlay == nil
+                      && placed[1].sourceJBIG2Placement?.rect == CGRect(x: 20, y: 10, width: w, height: h))
+            check("C37: …and a scan painted over in white is not its image",
+                  placed.count == 3 && !placed[2].matchesSourceJBIG2)
+            let jstorOut = dir.appendingPathComponent("jstor.ocr.pdf")
+            var jstorOutcome: Runner.Result.Outcome?
+            OCRModel.makeSearchablePDF(file: jstor, output: jstorOut, rebuild: true, rebuildMode: .auto,
+                                       password: nil, control: RunControl(),
+                                       progress: { _, _ in }, report: { o, _ in jstorOutcome = o })
+            let jstorStreams = streams(jstorOut)
+            check("C37: the placed pages publish the source's stream and globals, the white one does not",
+                  jstorOutcome == .succeeded
+                      && jstorStreams.images.filter { $0 == imageBytes }.count == 2
+                      && Set(jstorStreams.globals).count == 1,
+                  "\(String(describing: jstorOutcome)) \(jstorStreams.images.map(\.count)) B")
+            // What a reader sees: on the scan's own grid, each kept page renders to
+            // the source's pixels, the download line included.
+            let jstorOutDoc = PDFDocument(url: jstorOut)
+            for i in 0..<2 {
+                guard let a = jstorDoc?.page(at: i), let b = jstorOutDoc?.page(at: i) else {
+                    check("C37: placed page \(i + 1) renders as its source", false, "no page"); continue
+                }
+                let box = a.bounds(for: .mediaBox), scale = CGFloat(pw) / w
+                let rw = Int((box.width * scale).rounded()), rh = Int((box.height * scale).rounded())
+                let ra = Flattener.renderGrey(a, box: box, scale: scale, width: rw, height: rh) ?? []
+                let rb = Flattener.renderGrey(b, box: b.bounds(for: .mediaBox), scale: scale,
+                                              width: rw, height: rh) ?? []
+                let ink = ra.filter { $0 < 128 }.count
+                let differ = zip(ra, rb).filter { ($0 < 128) != ($1 < 128) }.count
+                // The foot of the sheet, where page 1's download line is and the scan
+                // has no ink: counted on its own, since the line is under 1% of the
+                // page's ink and a page that dropped it would pass a whole-page bar.
+                let foot = max(0, rh - Int(12 * scale)) * rw
+                let lineInk = ra.count == rw * rh ? ra[foot...].filter { $0 < 128 }.count : 0
+                let lineKept = rb.count == rw * rh ? rb[foot...].filter { $0 < 128 }.count : 0
+                // The line is antialiased in the source and 1-bit in the output, so
+                // its edges may differ; the scan must not, and page 2 is all scan.
+                check("C37: placed page \(i + 1) renders as its source, on its sheet",
+                      ra.count == rw * rh && rb.count == ra.count && ink > 0
+                          && (i == 0 ? lineInk > 0 && differ * 5 <= lineInk
+                                          && abs(lineKept - lineInk) * 5 <= lineInk
+                                     : differ == 0 && lineInk == 0)
+                          && b.bounds(for: .mediaBox).size == box.size,
+                      "\(differ) of \(ink) ink pixels differ; line \(lineKept) of \(lineInk)")
+            }
+            check("C37: …and the page under the download line keeps a text layer",
+                  (jstorOutDoc?.page(at: 0)?.string ?? "").contains("Invoice"),
+                  jstorOutDoc?.page(at: 0)?.string ?? "nil")
+        } else {
+            check("C37: a scan placed under a download line is its image plus that line",
+                  false, "no dense fixture")
+        }
     } else {
-        skipBlock("C37's JBIG2 source end to end", checks: 14,
+        skipBlock("C37's JBIG2 source end to end", checks: 21,
                   because: "jbig2 or qpdf is not installed, so no page takes the JBIG2 route")
     }
     resetPrefs()

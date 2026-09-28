@@ -113,6 +113,16 @@ enum JBIG2 {
         /// C37. Whether `globals` is stored Flate-compressed, as a file that has
         /// been through qpdf has it, and is written that way.
         var globalsAreFlate = false
+        /// C37. On a `.jbig2` page, where its stream goes, in points, and the
+        /// stream's own pixel size, when it is a kept source image placed on part
+        /// of the sheet. nil: the whole sheet, at `pixelWidth` by `pixelHeight`.
+        var placement: (rect: CGRect, width: Int, height: Int)? = nil
+        /// C37. A 1-bit JBIG2 stencil drawn black over a placed stream: the ink
+        /// the source page draws over its image, such as JSTOR's download line.
+        var overlay: (stream: URL, width: Int, height: Int, rect: CGRect)? = nil
+
+        /// Image XObjects this page writes: its stream's, and the overlay's.
+        var imageCount: Int { stream.imageCount + (overlay == nil ? 0 : 1) }
     }
 
     /// C37. A source page's one image, when it is a JBIG2 stream this file can
@@ -464,7 +474,7 @@ enum JBIG2 {
         for (i, page) in pages.enumerated() {
             pageObjects.append(nextObject); nextObject += 1
             contentObjects.append(nextObject); nextObject += 1
-            let count = page.stream.imageCount
+            let count = page.imageCount
             imageObjects.append(Array(nextObject..<(nextObject + count)))
             nextObject += count
             if case .jbig2 = page.stream, let globals = page.globals,
@@ -549,6 +559,20 @@ enum JBIG2 {
             case .mrc:
                 content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
                         + "q \(w) 0 0 \(h) 0 0 cm /Im1 Do Q\n"
+            case .jbig2 where page.placement != nil || page.overlay != nil:
+                // C37. A kept stream on its own rect, then the ink over it, black.
+                var drawn = ""
+                for (name, rect) in [("/Im0 Do", page.placement?.rect),
+                                     ("0 g /Im1 Do", page.overlay?.rect)] {
+                    guard let rect else { continue }
+                    guard let x = trimOffset(rect.minX), let y = trimOffset(rect.minY),
+                          let rw = trim(rect.width), let rh = trim(rect.height) else {
+                        throw Failure.badPageBox(page: i + 1, size: rect.size)
+                    }
+                    drawn += "q \(rw) 0 0 \(rh) \(x) \(y) cm \(name) Q\n"
+                }
+                content = page.placement == nil
+                    ? "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n" + drawn : drawn
             case .jbig2, .jpeg:
                 content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
             case .passthrough:
@@ -591,10 +615,16 @@ enum JBIG2 {
             switch page.stream {
             case .jbig2(let u):
                 let globals = page.globals.flatMap { globalsObjects[$0] }
-                try writeImage(objects[0], from: u, width: page.pixelWidth,
-                               height: page.pixelHeight, filter: "/JBIG2Decode",
-                               bits: 1, space: space,
+                try writeImage(objects[0], from: u, width: page.placement?.width ?? page.pixelWidth,
+                               height: page.placement?.height ?? page.pixelHeight,
+                               filter: "/JBIG2Decode", bits: 1, space: space,
                                parms: globals.map { "<< /JBIG2Globals \($0) 0 R >>" })
+                // Numbered after the page's stream and before any globals.
+                if let overlay = page.overlay {
+                    try writeImage(objects[1], from: overlay.stream, width: overlay.width,
+                                   height: overlay.height, filter: "/JBIG2Decode", bits: 1,
+                                   space: "", isStencil: true, decode: maskDecode)
+                }
                 if let url = globalsFirstWrittenBy[i], let number = globalsObjects[url] {
                     guard let bytes = try? Data(contentsOf: url), !bytes.isEmpty else {
                         throw Failure.encoderFailed("page \(i + 1)'s JBIG2 globals are empty")
@@ -809,6 +839,14 @@ enum JBIG2 {
     private static func trim(_ value: CGFloat) -> String? {
         let d = Double(value)
         guard d.isFinite, d > 0, d < 200_000 else { return nil }
+        return String(format: "%.4f", d)
+    }
+
+    /// `trim` for a position rather than a size: zero and negative are real
+    /// places, an overlay's grid starting a fraction of a point off the sheet.
+    private static func trimOffset(_ value: CGFloat) -> String? {
+        let d = Double(value)
+        guard d.isFinite, abs(d) < 200_000 else { return nil }
         return String(format: "%.4f", d)
     }
 

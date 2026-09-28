@@ -1969,10 +1969,13 @@ final class OCRModel: ObservableObject {
                                        streamsInto: sourceStreams, register: register)
                 }
             }
-            guard let image = sourceJBIG2?[index], image.width == page.pixelWidth,
-                  image.height == page.pixelHeight else { return .notKept }
-            var kept = JBIG2.Page(stream: .jbig2(image.data), pixelWidth: page.pixelWidth,
-                                  pixelHeight: page.pixelHeight, boxSize: page.boxSize)
+            // A placed image is its own size, not the rebuild's.
+            let width = page.sourceJBIG2Placement?.width ?? page.pixelWidth
+            let height = page.sourceJBIG2Placement?.height ?? page.pixelHeight
+            guard let image = sourceJBIG2?[index], image.width == width,
+                  image.height == height else { return .notKept }
+            var kept = JBIG2.Page(stream: .jbig2(image.data), pixelWidth: width,
+                                  pixelHeight: height, boxSize: page.boxSize)
             kept.globals = image.globals
             kept.globalsAreFlate = image.globalsAreFlate
             let check = work.appendingPathComponent("kept-check.pdf")
@@ -2083,11 +2086,28 @@ final class OCRModel: ObservableObject {
                             // no larger than this: 35 of the corpus's 4,353 kept
                             // pages were, by a few hundred bytes each. Globals are
                             // charged by the share of pages that use them.
+                            // A placed stream is charged its overlay too: the ink the
+                            // page draws over the image, encoded as the page would be.
+                            var overlay: (stream: URL, width: Int, height: Int, rect: CGRect)?
+                            if case .kept = kept, let o = page.sourceJBIG2Placement?.overlay {
+                                let url = scratch.appendingPathComponent(
+                                    String(format: "o%05d.jbig2", encoded.count))
+                                if (try? control.adopting({ register in
+                                    try JBIG2.encode(png: o.png, to: url, using: jb,
+                                                     register: register)
+                                })) != nil {
+                                    overlay = (url, o.width, o.height, o.rect)
+                                }
+                            }
                             var source: JBIG2.SourceImage?
                             if case .kept(let image) = kept,
-                               keptBytes(image) <= Double(fileSize(out)) {
+                               page.sourceJBIG2Placement?.overlay == nil || overlay != nil,
+                               keptBytes(image) + Double(overlay.map { fileSize($0.stream) } ?? 0)
+                                   <= Double(fileSize(out)) {
                                 try? FileManager.default.removeItem(at: out)
                                 out = image.data; source = image
+                            } else {
+                                overlay = nil
                             }
                             // Not deleted here any more: recognition has still
                             // to read it. It goes once the observations are in
@@ -2100,6 +2120,10 @@ final class OCRModel: ObservableObject {
                                 pixelHeight: page.pixelHeight, boxSize: page.boxSize)
                             entry.globals = source?.globals
                             entry.globalsAreFlate = source?.globalsAreFlate ?? false
+                            if source != nil, let placed = page.sourceJBIG2Placement {
+                                entry.placement = (placed.rect, placed.width, placed.height)
+                                entry.overlay = overlay
+                            }
                             encoded.append(entry)
                         case .jpeg(let jpeg):
                             if let fallback = page.bilevelFallback {

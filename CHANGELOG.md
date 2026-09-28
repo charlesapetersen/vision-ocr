@@ -14,6 +14,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- JSTOR downloads of black-and-white scans are no longer re-encoded at about twice their size. The scan
+  keeps its own compressed image, with the "This content downloaded from…" line drawn over it, so a
+  28-page article that grew from 0.95 MB to 2.49 MB now comes out at 0.94 MB.
+
 - Black-and-white pages whose type is stored at a finer resolution than the rest, as on ProQuest's
   newspaper and magazine pages, are now also read at that finer resolution, and a line takes the clearer
   reading's words wherever both readings found the same line. On the 32 test documents with such pages

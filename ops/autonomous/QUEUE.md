@@ -358,7 +358,7 @@ say so in the commit.
       (`Tools/pdfkit-lines --diff`); invariant 3 holds; a new check goes red without the change.
       BOUND: one code commit.
       (origin: BUGS.md C40)
-- [ ] **c37-owner-files** — measure the owner's two grown files after C37 and shrink them if C37 did not.
+- [x] **c37-owner-files** — measure the owner's two grown files after C37 and shrink them if C37 did not.
       Delton (954,409 → 2,487,160 B) and the Desktop copy of Hughes (490,599 → 947,326 B) were built from
       `24a8f6a`, before C37 landed. Both are Acrobat Paper Capture scans with 600 dpi 1-bit JBIG2 pages
       (`BUGS.md` C35). Re-publish both Hughes copies and Delton, and state bytes per page against the source.
