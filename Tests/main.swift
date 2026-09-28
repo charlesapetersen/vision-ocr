@@ -1718,8 +1718,12 @@ do {
         }
         check("C29 (B): splice refuses an empty page list",
               refusal([], 3).contains("no pages to put back"), refusal([], 3))
-        check("C29 (B): …refuses a document with nothing to splice into",
-              refusal([1, 2, 3], 3).contains("nothing to splice them into"),
+        check("C43: …refuses more pages than the document has",
+              refusal([1, 2, 3, 4], 3).contains("to put back into a 3-page"),
+              refusal([1, 2, 3, 4], 3))
+        check("C43: …and passes a document whose every page is put back",
+              !refusal([1, 2, 3], 3).contains("put back")
+                  && !refusal([1, 2, 3], 3).contains("do not fit"),
               refusal([1, 2, 3], 3))
         check("C29 (B): …refuses a page number off the end",
               refusal([4], 3).contains("do not fit"), refusal([4], 3))
@@ -13860,6 +13864,10 @@ func makeShortPagesPDF(at url: URL) -> [Flattener.BornDigitalVerdict] {
     let inline = "BI /W 8 /H 8 /BPC 8 /CS /G /F /AHx ID "
         + String(repeating: "FF", count: 64) + "> EI"
     func text(_ s: String, mode: String = "0") -> String { "BT /F1 18 Tf \(mode) Tr 72 400 Td (\(s)) Tj ET" }
+    // Blocks of `long` at 12 pt, visible: each is 108 characters to PDFKit, spaces aside.
+    func body(_ ys: [Int]) -> String {
+        ys.map { "BT /F1 12 Tf 0 Tr 72 \($0) Td (\(long)) Tj ET" }.joined(separator: " ")
+    }
     // A form drawing an invisible OCR layer, with no /Resources of its own: it
     // finds /F1 through the page's, as a renderer does.
     let ocrForm = { () -> String in
@@ -13877,10 +13885,11 @@ func makeShortPagesPDF(at url: URL) -> [Flattener.BornDigitalVerdict] {
         ("q 3 Tr Q " + text("Chapter Three"), "0 0 612 792", 0, nil, .passThrough),
         // An 800 px scan, under `pageIsAnImage`'s width bar, with an OCR'd heading.
         (full + "/Im1 Do Q " + text("Chapter Four", mode: "3"), "0 0 612 792", 0, scan(800, 1035), .rebuild),
-        // The same scan with a visible vector stamp: exact text, but a picture too.
-        (full + "/Im1 Do Q " + text("Stamped"), "0 0 612 792", 0, scan(800, 1035), .rasterisedExact),
+        // The same scan with a visible vector stamp. Reported until C43; a scan
+        // covering the page is rebuilt quietly, whatever its pixel width.
+        (full + "/Im1 Do Q " + text("Stamped"), "0 0 612 792", 0, scan(800, 1035), .rebuild),
         (full + inline + " Q " + text("Chapter Six", mode: "3"), "0 0 612 792", 0, nil, .rebuild),
-        (full + inline + " Q " + text("Inline stamp"), "0 0 612 792", 0, nil, .rasterisedExact),
+        (full + inline + " Q " + text("Inline stamp"), "0 0 612 792", 0, nil, .rebuild),
         // The two known misses at full length, which `pageHasDigitalText` passed through.
         (full + "/Im1 Do Q " + text(long, mode: "3"), "0 0 612 792", 0, scan(800, 1035), .rebuild),
         (full + inline + " Q " + text(long, mode: "7"), "0 0 612 792", 0, nil, .rebuild),
@@ -13895,11 +13904,35 @@ func makeShortPagesPDF(at url: URL) -> [Flattener.BornDigitalVerdict] {
         // A short page painting through a pattern, and one of outlined type.
         ("/Pattern cs /P0 scn 0 0 612 792 re f " + text("Plate"), "0 0 612 792", 0, nil, .rasterisedExact),
         (manyPaths + text("12"), "0 0 612 792", 0, nil, .rasterisedExact),
-        // A narrow scan with a visible banner over its OCR layer: loud, not quiet.
+        // A narrow scan with a visible banner over its OCR layer: loud until C43,
+        // and a scan covering the page is quiet.
         (full + "/Im1 Do Q " + text(long, mode: "3") + " BT /F1 8 Tf 0 Tr 72 40 Td (Reproduced) Tj ET",
-         "0 0 612 792", 0, scan(800, 1035), .rasterisedExact),
+         "0 0 612 792", 0, scan(800, 1035), .rebuild),
         // A short page carrying a note: annotations are not read, so not trusted.
         (text("Notes"), "0 0 612 792", 0, nil, .rasterisedExact),
+        // C43, 2026-09-28. Newsday p1: three 470 px column strips over 88% of the page,
+        // none of them 900 px across, under a vector header. It passed through unread.
+        ("q 204 0 0 700 0 0 cm /Im1 Do Q q 204 0 0 700 204 0 cm /Im1 Do Q "
+         + "q 204 0 0 700 408 0 cm /Im1 Do Q BT /F1 12 Tf 0 Tr 72 770 Td (\(long)) Tj ET",
+         "0 0 612 792", 0, scan(470, 1600), .rebuild),
+        // The Silicon Valley transcript's 1812 px banner over 5% of a page of vector
+        // text, and Surani's figure beside it: both were rasterised whole.
+        ("q 612 0 0 40 0 752 cm /Im1 Do Q " + body([600, 500, 400]), "0 0 612 792", 0,
+         scan(1812, 120), .passThrough),
+        ("q 300 0 0 200 72 100 cm /Im1 Do Q " + body([700, 600, 500]), "0 0 612 792", 0,
+         scan(1310, 870), .passThrough),
+        // A 16 px background stretched over the page is not a scan of it.
+        (full + "/Im1 Do Q " + text(long), "0 0 612 792", 0, scan(16, 16), .passThrough),
+        // Hidden text beside a figure, with a visible caption: loud, not quiet.
+        ("q 300 0 0 388 72 300 cm /Im1 Do Q " + text(long, mode: "3")
+         + " BT /F1 8 Tf 0 Tr 72 40 Td (Reproduced) Tj ET", "0 0 612 792", 0, scan(800, 1035), .rasterisedExact),
+        // Surani p16: a figure over 57% of the page with its caption beside it.
+        ("q 540 0 0 500 36 260 cm /Im1 Do Q " + body([236, 180, 124, 68]), "0 0 612 792", 0,
+         scan(1310, 1213), .passThrough),
+        // A 300 DPI clipping over 24% of a sheet under a vendor's header of two lines:
+        // a scan, though half the page is empty.
+        ("q 324 0 0 360 144 200 cm /Im1 Do Q BT /F1 12 Tf 0 Tr 72 770 Td (\(long)) Tj ET",
+         "0 0 612 792", 0, scan(1350, 1500), .rebuild),
     ]
     var objects = ["<< /Type /Catalog /Pages 2 0 R >>", "",
                    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica "
@@ -14606,9 +14639,14 @@ do {
             }
             let narrow = doc.page(at: 7).flatMap(Flattener.largestImage(of:))?.pixelWidth
             check("…over pages that are what they say: short 1-7, 11, 15, 16 and 18, long 8, 9, 12-14 and 17, "
-                  + "blank 10, and an 800 px scan that pageIsAnImage misses",
+                  + "and 19-25, blank 10, an 800 px scan and 470 px strips that pageIsAnImage misses, "
+                  + "and a banner and a figure it calls a page",
                   counts[0..<7].allSatisfy { $0 > 0 && $0 < 120 } && counts[10] > 0
-                      && counts[10] < 120 && [7, 8, 11, 12, 13, 16].allSatisfy { counts[$0] >= 120 }
+                      && counts[10] < 120
+                      && [7, 8, 11, 12, 13, 16].allSatisfy { counts[$0] >= 120 }
+                      && (18..<25).allSatisfy { counts[$0] >= 120 }
+                      && doc.page(at: 18).map(Flattener.pageIsAnImage) == false
+                      && [19, 20, 23, 24].allSatisfy { doc.page(at: $0).map(Flattener.pageIsAnImage) == true }
                       && [14, 15, 17].allSatisfy { counts[$0] > 0 && counts[$0] < 120 }
                       && counts[9] == 0 && narrow == 800
                       && doc.page(at: 7).map(Flattener.pageIsAnImage) == false
@@ -14618,7 +14656,9 @@ do {
                 check("…and the inline scan's image is seen only as an inline image",
                       Flattener.contentProfile(inlinePage)
                           == Flattener.ContentProfile(visibleShows: 0, invisibleShows: 1,
-                                                      inlineImages: 1, xObjects: 0),
+                                                      inlineImages: 1, xObjects: 0,
+                                                      scanArea: 612 * 792,
+                                                      scanRects: [CGRect(x: 0, y: 0, width: 612, height: 792)]),
                       String(describing: Flattener.contentProfile(inlinePage)))
             }
         } else {
@@ -14627,9 +14667,9 @@ do {
         }
         let shortRoutes = Flattener.digitalPageRoutes(in: shortSrc)
         check("…and the routes production reads are those verdicts, 1-based",
-              shortRoutes.passThrough == [1, 2, 3, 12]
-                  && shortRoutes.rasterisedExact == [5, 7, 15, 16, 17, 18]
-                  && Flattener.digitalTextPages(in: shortSrc) == [1, 2, 3, 12],
+              shortRoutes.passThrough == [1, 2, 3, 12, 20, 21, 22, 24]
+                  && shortRoutes.rasterisedExact == [15, 16, 18, 23]
+                  && Flattener.digitalTextPages(in: shortSrc) == [1, 2, 3, 12, 20, 21, 22, 24],
               "through=\(shortRoutes.passThrough) exact=\(shortRoutes.rasterisedExact)")
         // End to end, so the routes are what Model's own call site hands `flatten` and
         // the rasterised short pages reach the run report. The Flate route, so no
@@ -14652,14 +14692,62 @@ do {
             }
             check("C29: a short born-digital page PUBLISHES with its exact text, on both "
                   + "page sizes and the rotated one, and every page is kept",
-                  outcome == .succeeded && published?.pageCount == 18
+                  outcome == .succeeded && published?.pageCount == 25
                       && pageText(0) == "Part Two" && pageText(1) == "Half-title"
                       && pageText(2) == "Chapter Three",
                   "outcome=\(String(describing: outcome)) pages=\(published?.pageCount ?? -1) "
                       + "p1=\(pageText(0)) p2=\(pageText(1)) p3=\(pageText(2))")
             check("…and the short pages rebuilt over their exact text are named in the report",
-                  notes.contains { $0.hasPrefix("6 page(s) already carried text") && $0.hasSuffix(": p5; p7; p15 …") },
+                  notes.contains { $0.hasPrefix("4 page(s) already carried text") && $0.hasSuffix(": p15; p16; p18 …") },
                   notes.joined(separator: " | "))
+            // C43: the banner page is copied with its own visible text, and the
+            // column-strip scan is rebuilt, so its text is the writer's invisible layer.
+            let strips = published?.page(at: 18).flatMap(Flattener.contentProfile)
+            let banner = published?.page(at: 19).flatMap(Flattener.contentProfile)
+            check("C43: a page of vector text under a wide banner publishes its own text, and "
+                  + "a scan in narrow strips is rebuilt rather than passed through",
+                  pageText(19).hasPrefix("This text was recognised before")
+                      && (banner?.visibleShows ?? 0) > 0
+                      && strips?.visibleShows == 0 && (strips?.xObjects ?? 0) > 0,
+                  "strips=\(String(describing: strips)) banner=\(String(describing: banner))")
+
+            // C43: a document whose every page passes through is the source's own
+            // pages, copied by qpdf. Through the Flate route Quartz redrew them, and
+            // on Surani lost its Type 3 chart labels and doubled the bytes.
+            let allDigital = dir.appendingPathComponent("c43-all-digital.pdf")
+            let allOut = dir.appendingPathComponent("c43-all-digital.ocr.pdf")
+            if let qpdf = JBIG2.merger {
+                let cut = Process()
+                cut.executableURL = URL(fileURLWithPath: qpdf)
+                cut.arguments = ["--empty", "--pages", shortSrc.path, "1-3,12", "--", allDigital.path]
+                try? cut.run(); cut.waitUntilExit()
+            }
+            // Both settings: only the JBIG2 route fills `encoded`, and the branch
+            // must not depend on it.
+            for jbig2 in [true, false] {
+                resetPrefs()
+                d.set(jbig2, forKey: Prefs.useJBIG2)
+                try? FileManager.default.removeItem(at: allOut)
+                var allOutcome: Runner.Result.Outcome?
+                OCRModel.makeSearchablePDF(
+                    file: allDigital, output: allOut, rebuild: true, rebuildMode: .auto,
+                    password: nil, control: RunControl(), progress: { _, _ in },
+                    digitalTextPageNote: { _ in }, report: { o, _ in allOutcome = o })
+                resetPrefs()
+                let allSource = PDFDocument(url: allDigital), allPublished = PDFDocument(url: allOut)
+                let producer = allPublished?.documentAttributes?[PDFDocumentAttribute.producerAttribute]
+                    as? String ?? ""
+                check("C43: a document of born-digital pages only publishes its own pages, "
+                      + "text exact and not redrawn by Quartz (JBIG2 \(jbig2 ? "on" : "off"))",
+                      allSource?.pageCount == 4 && allOutcome == .succeeded
+                          && allPublished?.pageCount == 4
+                          && (0..<4).allSatisfy { allPublished?.page(at: $0)?.string
+                              == allSource?.page(at: $0)?.string }
+                          && allPublished?.page(at: 1)?.rotation == 90
+                          && !producer.contains("Quartz"),
+                      "outcome=\(String(describing: allOutcome)) pages=\(allPublished?.pageCount ?? -1) "
+                          + "producer=\(producer)")
+            }
         }
 
         // ⛔ SUPERSEDED HEADER: (A) shipped 2026-08-25, so "priced rather than started" and

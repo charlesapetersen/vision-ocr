@@ -14,6 +14,12 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Scanned pages are recognised when the scan is cut into narrow strips under a vendor's typed header, as
+  ProQuest newspaper pages are; their text had been left unselectable. Born-digital pages with a banner, a
+  photograph or a full-page figure keep their own text, fonts and images instead of being redrawn as a
+  picture and read back by OCR, and a file whose every page is born-digital comes out as its own pages,
+  not a redrawn copy that lost chart labels and doubled in size (C43).
+
 - On scanned pages whose visible area is not centred on the sheet, such as books scanned as two-page
   spreads, the selectable text now sits on its words again. It had been shifted by how far the visible
   area was off centre, 81 points on one book, so a drag down one page ran across the gutter and a copy

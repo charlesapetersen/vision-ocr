@@ -942,9 +942,9 @@ enum JBIG2 {
     /// and it is the one thing an interleave can get wrong silently.
     ///
     /// ⚠️ **`--empty --pages` drops the `/Outlines` tree**, so an outline written
-    /// into `assembled` would be lost here. `Model` keeps a document with both an
-    /// outline and a passthrough page off this route for that reason; it is not
-    /// something this function can repair.
+    /// into `assembled` would be lost here. `Model` writes the outline onto the
+    /// spliced file afterwards (C35), and keeps the document off this route when
+    /// its qpdf cannot; it is not something this function can repair.
     ///
     /// ⛔ Do NOT widen that to "keeps no document-level structure", which is what
     /// this comment said until 2026-08-25 and which is **measured false**: qpdf
@@ -968,9 +968,11 @@ enum JBIG2 {
         guard !passthrough.isEmpty else {
             throw Failure.spliceFailed("no pages to put back")
         }
-        guard passthrough.count < pageCount else {
-            throw Failure.spliceFailed("every page was passed through, so there "
-                                       + "is nothing to splice them into")
+        // Every page passed through is allowed since C43: the result is the
+        // source's own pages, and `assembled` is never read.
+        guard passthrough.count <= pageCount else {
+            throw Failure.spliceFailed("\(passthrough.count) pages to put back into a "
+                                       + "\(pageCount)-page document")
         }
         guard passthrough.allSatisfy({ $0 >= 1 && $0 <= pageCount }),
               Set(passthrough).count == passthrough.count else {

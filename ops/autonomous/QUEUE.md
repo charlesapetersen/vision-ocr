@@ -469,7 +469,7 @@ say so in the commit.
       Zarifa p92-p94 lie over their words in the source (within 2 pt); a drag down each page of p51's spread stays on that page;
       a regression check with a cropped, two-size, rotated fixture goes red without the fix.
       BOUND: one code commit. (origin: BUGS.md C42)
-- [ ] **c43-digital-verdict** — make the born-digital verdict read a page's pixels as well as its text:
+- [x] **c43-digital-verdict** — make the born-digital verdict read a page's pixels as well as its text:
       a page whose visible ink is mostly a scan (narrow strips included) is OCR'd; a page whose body text
       is vector is kept, whatever images sit on it.
       DONE WHEN: Newsday p1's scanned body is selectable and findable in the output; Silicon Valley

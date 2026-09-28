@@ -18758,7 +18758,7 @@ pages published with the crop removed: that spread is the one-scaled-run-per-lin
 refreshed. Test: an off-centre-cropped letter page and a rotated landscape page against the same pages
 uncropped; without the fix 'LETTER' is not found and 'SCAN' moves (-21, +201).
 
-### C43 · The born-digital verdict is wrong both ways: narrow-strip scans are passed through unread, and pages with a full-width image strip or a figure are rasterised — OPEN
+### C43 · The born-digital verdict is wrong both ways: narrow-strip scans are passed through unread, and pages with a full-width image strip or a figure are rasterised — FIXED 2026-09-28
 
 *(found 2026-09-27 by `ux-read`. The first half is the residual `Flattener.pageHasDigitalText`'s own
 comment names as open, lines 501-502; C29 is FIXED and is not reopened.)*
@@ -18775,6 +18775,43 @@ p23/p30 (vector Nimbus text beside a halftone figure) are rebuilt whole at the f
 114-173 ppi: the body type goes jagged and the figure's ad text turns to noise [measured, looked]. In the
 app a born-digital file raises the digital-text warning first (the gate turns it off), so Surani and
 Silicon Valley reach a reader only if they go on.
+
+#### The fix, 2026-09-28 (`c43-digital-verdict`)
+
+`Flattener.pageIsMostlyScan` replaces `pageIsAnImage` in `pageHasDigitalText` and `bornDigitalVerdict`.
+`contentProfile` now follows the CTM (`cm`, `q`/`Q`, form `/Matrix`) and sums the area of every image
+drawn at 50 DPI or more, inline images included. A page is a scan when that covers half the crop box, or
+a tenth with an image `pageIsAnImage` calls page-sized (a clipping on a sheet; the review's case). A
+scan still passes through when its own visible text stands beside the images, not under them:
+at least 350 non-space characters outside every image rect (250 in the 10-50% band) and at least three
+fifths of the page's text. Measured: vendor headers 156-289 characters, OCR-under-picture scans at most
+46% beside, Surani's full-page maps 378 and 587, the transcript's last page 298.
+
+Census of all 16,987 corpus pages through `bornDigitalVerdict` [measured]: 58 pages move to rebuild from
+passthrough and 3 more lose a report line, all scans by eye: Mudge 19, Findlay 22, Riesman 1992 6,
+Newsday p1/p4, 1958_E p1, Wells p1 and eight more. 280 move to passthrough, all vector body text by eye:
+Schwaller 124, AI 2027 39, Silicon Valley 38, Intellectual History Newsletter 34 (an Acrobat ClearScan, so
+its old OCR errors stay), Senate 27, Surani 12 and six more. Cost: Surani p3 and p19's figures are
+pictures of text that are no longer OCR'd.
+
+Six documents became passthrough on every page, and the splice refused that, so they took the Flate
+route: a Quartz redraw that on Surani dropped its Type 3 chart labels (p22's 56 lines) and its ToUnicode
+maps and re-encoded 46 JPEGs, 18.4 -> 33.1 MB. Such a document is now the source's pages copied by qpdf
+(`splice` accepts every page; the same refusals as the splice, so Kelly, which carries highlights, stays
+on the Flate route). Published through the production gate [measured], source / before / after:
+Newsday 241 KB / 309 / 308 with p1 205 -> 3,217 characters; Silicon Valley 509 KB / 951 / 506; Surani
+18.4 MB / 9.2 / 18.5; AI 2027 8.9 MB / 3.3 / 8.9; Senate 1.75 MB / 0.49 / 1.75; Batzell 2.18 MB / 0.73 /
+2.19. Every page of all six keeps its source text exactly. The "before" figures were smaller because
+their pages were rasterised; the "after" ones are the author's own file.
+Rejected: coverage alone (it rasterised Surani's two map pages), and a character bar without the share
+(it passes scans whose OCR layer is drawn visibly under the picture).
+
+`Tools/ux-regression.sh`: 20 better, 9 worse, all nine on the three set documents now passed through, and
+accepted (QUEUE rule 9): `bytes` is each output at its source's size; `leg1`/`leg2`/`inkLum`/`inside`
+move to parity with the source, which they now are; `find` 0.97 -> 0.87 on Silicon Valley p10 and AI
+2027 p54 is words inside a raster banner and chart panels, no longer OCR'd [reasoned from the renders,
+not traced word by word]. Baseline refreshed. The independent DONE WHEN check passed all three criteria
+on the final outputs, Surani and Silicon Valley pixel-identical to their sources at 2x.
 
 ### C44 · Copied text repeats the tail of every word hyphenated at a line end: "difference ference" — OPEN
 

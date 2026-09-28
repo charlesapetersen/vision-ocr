@@ -497,15 +497,62 @@ enum Flattener {
     /// ✅ **Both blindnesses are closed for the already-OCR'd scan, 2026-09-25**, by
     /// the third term: a page whose own content stream shows more text invisibly
     /// (render mode 3 or 7) than visibly is an OCR layer over a picture, whatever
-    /// `pageIsAnImage` made of the picture, Form XObjects included. What stays open
-    /// is a narrow or inline scan whose text layer is drawn VISIBLY (under the
-    /// picture, say), or that has none and 120 characters of vector text on it.
+    /// `pageIsAnImage` made of the picture, Form XObjects included. ✅ **And the
+    /// width bar is gone from this predicate, 2026-09-28** (C43): a narrow or inline
+    /// scan whose text layer is drawn visibly, or which has none and a vector header,
+    /// is caught by `pageIsMostlyScan`'s area instead.
     static func pageHasDigitalText(_ page: PDFPage) -> Bool {
         // 120 characters is about two lines. Below that a page is a plate, a
         // blank, or a part title, and `bornDigitalVerdict` asks a stricter
         // question of it.
         let text = page.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return text.count >= 120 && !pageIsAnImage(page) && !carriesAnOCRLayer(page)
+        return text.count >= 120 && !pageIsMostlyScan(page) && !carriesAnOCRLayer(page)
+    }
+
+    /// Is this page a scan: is its visible ink mostly images at scan resolution?
+    ///
+    /// C43. The verdict used to ask `pageIsAnImage`, whose question is one image's
+    /// pixel width, and it was wrong both ways: a Newsday page scanned as three
+    /// 448-472 px column strips (79% of the page) passed through unread under a
+    /// ProQuest header, and a transcript with a 1812 px banner over 12% of each page
+    /// was rasterised whole. Two questions replace it. How much of the page do
+    /// images drawn at 50 DPI or more cover — half, or a tenth when one of them is
+    /// page-sized by the old rule (a clipping on a sheet)? And, when that says scan,
+    /// does the page's own text stand beside the images rather than under them:
+    /// `textStandsBesideImages`, which keeps a full-page figure with its caption.
+    /// An unreadable stream falls back to the width rule.
+    static func pageIsMostlyScan(_ page: PDFPage) -> Bool {
+        let box = page.bounds(for: .cropBox)
+        let area = Double(box.width * box.height)
+        guard area > 0, let profile = contentProfile(page) else { return pageIsAnImage(page) }
+        let mostly = profile.scanArea >= 0.5 * area
+        guard mostly || (profile.scanArea >= 0.1 * area && pageIsAnImage(page)) else { return false }
+        return !textStandsBesideImages(page, images: profile.scanRects, box: box,
+                                       minimum: mostly ? 350 : 250)
+    }
+
+    /// Does the page carry at least `minimum` visible characters outside every
+    /// image, and are they three fifths of its text? An OCR layer lies under its
+    /// picture (the corpus's scans put at most 46% beside it), and a vendor's header
+    /// is two or three lines (156-289 characters on the corpus's ProQuest pages); a
+    /// caption or a page of type beside a figure is neither (Surani's full-page maps
+    /// carry 378 and 587, the Silicon Valley transcript's last page 298 beside its
+    /// banner). A character PDFKit places off the page counts as covered: a flipped
+    /// text matrix does that.
+    static func textStandsBesideImages(_ page: PDFPage, images: [CGRect], box: CGRect,
+                                       minimum: Int) -> Bool {
+        let text = (page.string ?? "") as NSString
+        var visible = 0, beside = 0
+        for i in 0..<text.length {
+            guard let scalar = Unicode.Scalar(text.character(at: i)),
+                  !CharacterSet.whitespacesAndNewlines.contains(scalar) else { continue }
+            let bounds = page.characterBounds(at: i)
+            guard !bounds.isEmpty else { continue }
+            visible += 1
+            let middle = CGPoint(x: bounds.midX, y: bounds.midY)
+            if box.contains(middle) && !images.contains(where: { $0.contains(middle) }) { beside += 1 }
+        }
+        return beside >= minimum && beside * 5 >= visible * 3
     }
 
     /// Does the page draw most of its text invisibly? That is
@@ -548,9 +595,9 @@ enum Flattener {
     /// A short page with exact visible text that draws an image anyway — a
     /// half-title with a printer's ornament, or a narrow scan with a vector stamp
     /// — is still rebuilt, since the picture may be the page, and is REPORTED,
-    /// which is wrong in the loud direction when the picture is a scan. One whose
-    /// image `pageIsAnImage` calls page-sized is rebuilt quietly: that is a scan
-    /// with a stamp on it, the app's main input.
+    /// which is wrong in the loud direction when the picture is a scan. One that
+    /// `pageIsMostlyScan` calls a scan is rebuilt quietly: that is a scan with a
+    /// stamp on it, the app's main input.
     ///
     /// The same caution covers the places a picture hides without an XObject: a
     /// shading, a pattern fill, a Type 3 font (whose glyphs may be bitmaps), an
@@ -566,7 +613,7 @@ enum Flattener {
         if text.count >= 120 {
             if pageHasDigitalText(page) { return .passThrough }
             guard let profile = contentProfile(page), profile.visibleShows > 0,
-                  !pageIsAnImage(page) else { return .rebuild }
+                  !pageIsMostlyScan(page) else { return .rebuild }
             return .rasterisedExact
         }
         guard !text.isEmpty, let profile = contentProfile(page),
@@ -574,7 +621,7 @@ enum Flattener {
         let annotated = page.annotations.contains { $0.type != "Link" }
         if profile.xObjects == 0 && profile.inlineImages == 0 && profile.unreadPaint == 0
             && profile.paintedPaths <= shortPagePathLimit && !annotated { return .passThrough }
-        return pageIsAnImage(page) ? .rebuild : .rasterisedExact
+        return pageIsMostlyScan(page) ? .rebuild : .rasterisedExact
     }
 
     /// Painted paths a short page may carry and still pass through. A part title's
@@ -599,6 +646,12 @@ enum Flattener {
         /// Shadings (`sh`), pattern colour spaces and Type 3 fonts selected — the
         /// places a picture can hide that are not read here.
         var unreadPaint = 0
+        /// Area in points² the page's images are drawn over at 50 DPI or more — each
+        /// `Do` of an image and each inline image, placed by the CTM in force. Overlaps
+        /// count twice. A stretched background or gradient of a few pixels is not a scan.
+        var scanArea: Double = 0
+        /// Where those images are drawn, each as its bounding box in page space.
+        var scanRects: [CGRect] = []
     }
 
     /// `nil` when the stream could not be read — no operator of any kind came back,
@@ -611,6 +664,8 @@ enum Flattener {
             // The render mode is graphics state, so `q`/`Q` save and restore it.
             var mode: CGPDFReal = 0
             var saved: [CGPDFReal] = []
+            var ctm = CGAffineTransform.identity
+            var savedCTM: [CGAffineTransform] = []
             var depth = 0
             let table: CGPDFOperatorTableRef
             init(table: CGPDFOperatorTableRef) { self.table = table }
@@ -692,12 +747,23 @@ enum Flattener {
             let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
             s.operators += 1
             s.saved.append(s.mode)
+            s.savedCTM.append(s.ctm)
         }
         CGPDFOperatorTableSetCallback(table, "Q") { _, info in
             guard let info else { return }
             let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
             s.operators += 1
             if let mode = s.saved.popLast() { s.mode = mode }
+            if let ctm = s.savedCTM.popLast() { s.ctm = ctm }
+        }
+        CGPDFOperatorTableSetCallback(table, "cm") { scanner, info in
+            guard let info else { return }
+            let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
+            s.operators += 1
+            var v = [CGPDFReal](repeating: 0, count: 6)
+            for i in (0..<6).reversed() { guard CGPDFScannerPopNumber(scanner, &v[i]) else { return } }
+            s.ctm = CGAffineTransform(a: v[0], b: v[1], c: v[2], d: v[3], tx: v[4], ty: v[5])
+                .concatenating(s.ctm)
         }
         CGPDFOperatorTableSetCallback(table, "Do") { scanner, info in
             guard let info else { return }
@@ -714,17 +780,35 @@ enum Flattener {
             guard let object = CGPDFContentStreamGetResource(parent, "XObject", name),
                   CGPDFObjectGetValue(object, .stream, &stream), let stream,
                   let dict = CGPDFStreamGetDictionary(stream),
-                  CGPDFDictionaryGetName(dict, "Subtype", &subtype), let subtype,
-                  String(cString: subtype) == "Form" else { return }
+                  CGPDFDictionaryGetName(dict, "Subtype", &subtype), let subtype else { return }
+            if String(cString: subtype) == "Image" {
+                let area = abs(Double(s.ctm.a * s.ctm.d - s.ctm.b * s.ctm.c))
+                var w: CGPDFInteger = 0, h: CGPDFInteger = 0
+                if area > 0, CGPDFDictionaryGetInteger(dict, "Width", &w),
+                   CGPDFDictionaryGetInteger(dict, "Height", &h),
+                   Double(w) * Double(h) * 72 * 72 >= 50 * 50 * area {
+                    s.profile.scanArea += area
+                    s.profile.scanRects.append(CGRect(x: 0, y: 0, width: 1, height: 1).applying(s.ctm))
+                }
+                return
+            }
+            guard String(cString: subtype) == "Form" else { return }
             var resources: CGPDFDictionaryRef?
             _ = CGPDFDictionaryGetDictionary(dict, "Resources", &resources)
             let child = CGPDFContentStreamCreateWithStream(stream, resources ?? dict, parent)
             let inner = CGPDFScannerCreate(child, s.table, info)
-            let mode = s.mode, saved = s.saved
+            let mode = s.mode, saved = s.saved, ctm = s.ctm, savedCTM = s.savedCTM
+            var matrix: CGPDFArrayRef?
+            var m = [CGPDFReal](repeating: 0, count: 6)
+            if CGPDFDictionaryGetArray(dict, "Matrix", &matrix), let matrix,
+               (0..<6).allSatisfy({ CGPDFArrayGetNumber(matrix, $0, &m[$0]) }) {
+                s.ctm = CGAffineTransform(a: m[0], b: m[1], c: m[2], d: m[3], tx: m[4], ty: m[5])
+                    .concatenating(s.ctm)
+            }
             s.depth += 1
             CGPDFScannerScan(inner)
             s.depth -= 1
-            s.mode = mode; s.saved = saved
+            s.mode = mode; s.saved = saved; s.ctm = ctm; s.savedCTM = savedCTM
             CGPDFScannerRelease(inner)
             CGPDFContentStreamRelease(child)
         }
@@ -735,8 +819,11 @@ enum Flattener {
             let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
             s.operators += 1
             s.profile.inlineImages += 1
+            // Its size is not read here, so it counts at any resolution.
+            s.profile.scanArea += abs(Double(s.ctm.a * s.ctm.d - s.ctm.b * s.ctm.c))
+            s.profile.scanRects.append(CGRect(x: 0, y: 0, width: 1, height: 1).applying(s.ctm))
         }
-        for op in ["BT", "cm", "re", "gs"] {
+        for op in ["BT", "re", "gs"] {
             CGPDFOperatorTableSetCallback(table, op) { _, info in
                 guard let info else { return }
                 Unmanaged<State>.fromOpaque(info).takeUnretainedValue().operators += 1

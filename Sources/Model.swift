@@ -2372,7 +2372,7 @@ final class OCRModel: ObservableObject {
             // `encoded.count > carriedThrough.count` because `assemble` refuses
             // an empty page list, and an all-passthrough document would hand it
             // one. That document needs no JBIG2 anyway — there is nothing on it
-            // to compress.
+            // to compress — and since C43 it has its own branch below.
             //
             // C29 (B)'s SECOND refusal, and it prevents a REGRESSION rather than
             // buying bytes: a spliced page arrives with the source's own
@@ -2737,6 +2737,35 @@ final class OCRModel: ObservableObject {
                 try? FileManager.default.removeItem(at: imagesOnly)
                 try? FileManager.default.removeItem(at: spliced)
                 try? FileManager.default.removeItem(at: textLayer)
+            } else if expected > 0, passedThroughPages == Array(1...expected),
+                      outline.isEmpty || canCarryCrop,
+                      !Annotations.anyCopiableMark(in: file, password: password,
+                                                   onPages: passedThroughPages),
+                      let qpdf = JBIG2.merger {
+                // C43. Every page passes through, so the source's own pages are the
+                // whole output, copied by qpdf as the splice copies them. The Flate
+                // route below redraws them through Quartz, which on Surani dropped
+                // its Type 3 chart labels and its ToUnicode maps and re-encoded its
+                // JPEGs as Flate: 18.4 MB in, 33.1 MB out. The same refusals as the
+                // splice, for the same reasons, and read off `passedThroughPages`,
+                // not `encoded`, which only the JBIG2 route fills: a grey rebuild or
+                // JBIG2 turned off is the same document. `usedJBIG2` because PDFKit's
+                // outline copy below would re-encode every image.
+                usedJBIG2 = true
+                try control.adopting { register in
+                    try JBIG2.splice(source: file, password: password, into: file,
+                                     passthrough: passedThroughPages, pageCount: expected,
+                                     to: staged, using: qpdf, register: register)
+                }
+                do {
+                    try control.adopting { register in
+                        try JBIG2.setOutline(outline, in: staged, using: qpdf,
+                                             register: register)
+                    }
+                } catch {
+                    outlineNote = "the original's outline could not be carried "
+                        + "across, so this copy has none"
+                }
             } else {
                 // The Flate route. Same setting, or a user who turned joining on
                 // would get it only when jbig2 and qpdf happened to be present —
