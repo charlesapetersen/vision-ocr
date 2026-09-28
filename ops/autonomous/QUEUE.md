@@ -476,7 +476,7 @@ say so in the commit.
       Transcript and Surani keep their own vector text and figures on every page (render compared at 2x);
       no corpus document's route changes elsewhere without a stated reason.
       BOUND: one code commit. (origin: BUGS.md C43)
-- [ ] **c51-missing-lines** — find why Bird p5's footnote lines and Xin Qu p24's coefficient column never
+- [x] **c51-missing-lines** — find why Bird p5's footnote lines and Xin Qu p24's coefficient column never
       reach the text layer, and put them there.
       DONE WHEN, through PDFKit on the published file: Find "Monograph" hits on Bird p5 over its line, and
       1.228, 3.724, 2.045 and 0.906 hit on Xin Qu p24 over their cells; a drag over each selects them; a
@@ -511,7 +511,8 @@ say so in the commit.
       rebuild reads typewritten and low-resolution pages better, and ship it if it does.
       DONE WHEN: on Ries p54, NYSE p110, GELFAND p106 and Xin Qu p24, dictionary words in the output's
       text layer are measured before and after, and the change ships only if none gets worse and the
-      named misreads ("suall", "Coeflicient") are gone. If nothing helps, make the case in C50 (rule 8).
+      named misreads ("suall", "Coeflicient") are gone, and Find "1.228" hits on Xin Qu p24 over its
+      cell (moved from C51, where the cell reads `- 1228`). If nothing helps, make the case in C50 (rule 8).
       BOUND: one code commit. (origin: BUGS.md C50)
 - [ ] **c49-meaningful-colour** — keep colour on a mostly black page when it separates chart series, and
       never let light coloured type binarise to nothing.

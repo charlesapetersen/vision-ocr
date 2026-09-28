@@ -18898,7 +18898,7 @@ production recognises the 150 ppi 1-bit rebuild, whose strokes are broken [measu
 binarisation causes the misreads is reasoned. Part of the red is shared noise: Vision's reference misreads
 some of the same words.
 
-### C51 · Lines and table cells are still missing from the text layer after C33, so they cannot be selected or found — OPEN
+### C51 · Lines and table cells are still missing from the text layer after C33, so they cannot be selected or found — FIXED 2026-09-28
 
 *(found 2026-09-27 by `ux-read`; C33 is FIXED and is not reopened.)*
 
@@ -18933,6 +18933,13 @@ bitmaps and observations (a wrapper around `visionocr-recognise`). Vision drops 
 - ux-regression: 13 better, 4 worse, all on the two pages fixed, accepted: Xin Qu p24 `prec` 0.43 -> `-`
   (not measured any more, not examined) and 39,589 -> 40,922 B for the added text; Bird p5 `prec` 0.96 -> 0.86
   (likely the 10 pt offset above) and `midBreaks` 100/113 -> 68/75. Baseline refreshed from this run.
+
+**2026-09-28, closed (second session, no code).** The bound's one code commit is `c8d1bae`. Re-measured
+through PDFKit on its published cuts: Monograph 1, 3.724/2.045/0.906 1 each, 1.228 0 and `1228` 1 over the
+same cell (x 520). Every line the entry reports missing now reaches the text layer; what 1.228 lacks is a
+decimal point Vision does not see, which is C50's question on the same page. That criterion moved to
+`c50-typewriter-reads`'s DONE WHEN rather than holding C51 open. Rejected: a second code commit here to
+re-read the cell from the grey source, which is exactly C50's experiment and exceeds this item's bound.
 
 ### C52 · A drag down one column still jumps into the next partway down — OPEN
 
