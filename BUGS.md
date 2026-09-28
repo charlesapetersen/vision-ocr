@@ -18813,7 +18813,7 @@ move to parity with the source, which they now are; `find` 0.97 -> 0.87 on Silic
 not traced word by word]. Baseline refreshed. The independent DONE WHEN check passed all three criteria
 on the final outputs, Surani and Silicon Valley pixel-identical to their sources at 2x.
 
-### C44 · Copied text repeats the tail of every word hyphenated at a line end: "difference ference" — OPEN
+### C44 · Copied text repeats the tail of every word hyphenated at a line end: "difference ference" — FIXED
 
 *(found 2026-09-27 by `ux-read`'s random sample: 14 of 25 random pages, 12 of them green.)*
 
@@ -18825,6 +18825,39 @@ mation" [measured]; Glazer p1 has 34 such tails. Every quote a reader copies fro
 junk half-words, on most of the corpus. The trade was never priced against copying. `ux-harness`'s
 `echoes` column is blind to it: it counts a tail only when the tail is not a reference word, and Vision
 reads "dif- ference" as two words, so "ference" always is one (`Tools/ux-harness.swift:536`).
+
+**2026-09-28 — FIXED.** The options the queue named were tried on synthetic PDFs through PDFKit [measured]:
+PDFKit ignores `/ActualText` (hand-written `BDC` spans; CoreGraphics also drops an empty one), drops a
+run's leading spaces (so the tail's ink selects the line below), and CoreText drops zero-width characters,
+so nothing over the tail's ink can be selectable and copy as nothing. Dropping the join loses Find. So the
+tail line gives its first token (with its punctuation) to the head and its remaining text is drawn across the
+whole tail box. When that remainder is too short to span the box (`wouldSpan`: review found `it.` over
+`ference it.` reached 52% of it, measured), the whole tail takes the word and the head gives up its stem;
+when the head's remainder cannot span either, the echo stays. Joins across a page break are unchanged (the
+next page draws its own tail). Rejected: moving the word to the tail always, since Find would hit below the
+head. Costs: words on a tail line highlight up to a word's width left of their ink; on Glazer p1
+`indi-/vidual` and `consid-/ered` are now found on the tail line, not the head. Production pipeline, PDFKit:
+Berger p18 echoes 12 → 1 in the page string and a whole-page drag (the one left, `›ducgoods / goods`, is a
+margin misread with no hyphen); Glazer p1 34 → 0. Find for difference/automation/difficult/biological still
+hits over the head; the ink of all 46 old tails is still selectable on its line. An independent DONE WHEN
+check passed all four criteria on both pages ("automation" does not occur on Glazer p1). `score-corpus` start/end
+100%, overlap 0; `score-run-width` unchanged; PDFKit line counts unchanged (80, 186). Instrument notes:
+`score-corpus` `words=` 100% → 97% counts the removed half-words; `score-line-separation` `merged=` 0/39 → 2/39
+on Berger is its substring anchor finding `ference` inside `difference` on the line above, since no extracted
+line got longer and the line count is unchanged.
+
+Placing the tail's words exactly was tried twice and rejected [measured on the regression set]: as separate runs
+(the stretched word, then the rest over its own ink) PDFKit read columns out of order, Marth p2 when heads were
+split and Hughes p5 (`inside` 1.00 → 0.71) when only tails were; as one run with the space after the next word
+widened, PDFKit does not hit-test the space, and 9 of Glazer p1's 34 tails selected nothing or the line above.
+
+`ux-regression`: 49 worse, 26 better, accepted, baseline refreshed. Better: `echoes` on 10 pages, `midBreaks` on
+11. Worse: `recall` (16), `wer` (6) and `prec` (1) score against a reference that reads `dif-` and `ference` as
+two words, so a copy reading `difference` loses on each join. `find` (23 rows, −0.03 to −0.20; red on Hyman p8,
+Bird p5, Raskin p1): most misses are samples that are tail halves (`portunity`, `gether.`, `vatives`), whose only
+hit is now inside the joined word on the line above; the rest are words on a tail line whose highlight sits left
+of their ink, the cost above. Splitting the runs, which placed those exactly, left 13 `find` rows worse, so about
+ten are this shift.
 
 ### C45 · A reader's own highlights, underlines and notes are dropped at default settings, and nothing says so — OPEN
 

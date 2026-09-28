@@ -125,6 +125,9 @@ enum SearchableWriter {
     /// argued about: `score-corpus.swift` takes it as argv[4].
     static var minimumVertical: CGFloat = 0.25
 
+    /// The text layer's one face, shared by `compose` and `wouldSpan`.
+    static let textFace = "Helvetica"
+
     /// A line the writer could not place, and why.
     ///
     /// The pipeline's only integrity check is page count, so a line abandoned
@@ -241,7 +244,7 @@ enum SearchableWriter {
 
         // One face is enough: the size adapts to each line's measured width, and
         // the height is corrected separately. See draw(_:).
-        let base = CTFontCreateWithName("Helvetica" as CFString, 12, nil)
+        let base = CTFontCreateWithName(textFace as CFString, 12, nil)
         let count = doc.pageCount
 
         for index in 0..<count {
@@ -1041,13 +1044,23 @@ enum SearchableWriter {
     /// is a lot of words, and they are disproportionately the long specific ones
     /// people search for.
     ///
-    /// The joined word is written **over the first fragment**, and the tail is
-    /// left where it is. So the tail is extractable twice: once inside the
-    /// joined word and once on its own line. That is deliberate and it is the
-    /// trade this feature is: a duplicated tail is noise in extracted text,
-    /// while an unfindable word is a document that cannot be searched. Nothing
-    /// is removed, which keeps this outside invariant 1 entirely — no path here
-    /// can drop text, only add it.
+    /// The joined word is written **over the first fragment**, and the tail line
+    /// loses its first word, so a copy reads the word once (C44). It used to be
+    /// left in place, which put `difference ference` in every copy of hyphenated
+    /// prose. When what the tail would keep is too short to span its ink
+    /// (`wouldSpan`), the word goes on the tail and the head loses its stem
+    /// instead, so no ink is left without text; when neither can, the echo
+    /// stays. Text is moved, never removed: every character recognised is still
+    /// in the layer, which keeps this within invariant 1. A word carried over a
+    /// page break keeps its tail on the next page, which this page cannot rewrite.
+    ///
+    /// The cost: the tail's remaining words are fitted to its whole box, so each
+    /// sits up to the given-up word's width left of its ink, less toward the
+    /// line's end, and Find highlights it there. Placing them exactly was tried
+    /// and measured worse: as separate runs, PDFKit read the columns of two pages
+    /// of 43 out of order (`ux-regression`, Marth p2 and Hughes p5); as one run
+    /// with a widened space, the space cannot be hit, and a click on the tail's
+    /// ink selected nothing or the line above.
     ///
     /// Geometry is untouched. `draw` fits each run to its own box by choosing a
     /// font size, so a longer string means narrower glyphs in the same
@@ -1066,9 +1079,9 @@ enum SearchableWriter {
     ///
     /// What it cannot do is tell a broken word from a real compound: `well-`
     /// followed by `known` becomes `wellknown`. That needs a dictionary this app
-    /// does not have and should not grow. The damage is bounded — the joined
-    /// form is added, both fragments remain, and a search for `well` still
-    /// matches inside `wellknown` — so it is accepted rather than guessed at.
+    /// does not have and should not grow. The damage is bounded — a copy reads
+    /// `wellknown`, and a search for `well` or `known` still matches inside
+    /// it — so it is accepted rather than guessed at.
     /// `continuation` is the first line of the *next page*, so a word broken by a
     /// page break can be joined too. Nil on the last page.
     ///
@@ -1176,14 +1189,68 @@ enum SearchableWriter {
             }
 
             guard let tailLine = chosen else { note("    -> no candidate taken"); continue }
-            let word = tailLine.text.prefix { $0.isLetter }
-            note("    -> join\(chosenAcrossPage ? " ACROSS PAGE" : ""): \(stem)+\(word)")
-            out[i] = Observation(boundingBox: out[i].boundingBox,
-                                 text: stem + word,
-                                 confidence: out[i].confidence,
-                                 quarterTurns: out[i].quarterTurns)
+            // The next page's tail is drawn by the next page, so it keeps its word:
+            // an echo there needs a copy that spans the page break.
+            guard !chosenAcrossPage else {
+                let word = tailLine.text.prefix { $0.isLetter }
+                note("    -> join ACROSS PAGE: \(stem)+\(word)")
+                out[i] = with(out[i], stem + word)
+                continue
+            }
+            // On the page, the tail gives its first word up (C44). PDFKit reads no
+            // `/ActualText` and drops a run's leading spaces, so nothing drawn over
+            // the tail's ink can be selectable and copy as nothing; the rest of the
+            // line is drawn across the whole box instead, which keeps it selectable.
+            let tail = tailLine.text
+            let token = tail.prefix { !$0.isWhitespace }
+            let rest = String(tail.dropFirst(token.count).drop { $0.isWhitespace })
+            let headWords = stem.split(separator: " ", omittingEmptySubsequences: false)
+            let broken = headWords.count > 1 ? String(headWords.last ?? "") : ""
+            let before = headWords.dropLast().joined(separator: " ")
+                .trimmingCharacters(in: .whitespaces)
+            if !rest.isEmpty, wouldSpan(rest, over: tailLine, in: box) {
+                note("    -> join: \(stem)+\(token) | \(rest.prefix(14))")
+                out[i] = with(out[i], stem + token)
+                out[i + 1] = with(out[i + 1], rest)
+            } else if !broken.isEmpty, !before.isEmpty, wouldSpan(before, over: out[i], in: box) {
+                // What the tail would keep is too short to span its ink (`it.` of
+                // `ference it.`, or nothing), so the whole word goes on the tail and
+                // the head gives up its stem.
+                note("    -> join on tail: \(before) | \(broken)+\(tail.prefix(14))")
+                out[i] = with(out[i], before)
+                out[i + 1] = with(out[i + 1], broken + tail)
+            } else {
+                // Neither line can give text up and still span its ink, so the
+                // tail keeps its echo.
+                let word = tail.prefix { $0.isLetter }
+                note("    -> join, tail kept: \(stem)+\(word)")
+                out[i] = with(out[i], stem + word)
+            }
         }
         return out
+    }
+
+    /// `o` with other text, keeping everything else about it.
+    static func with(_ o: Observation, _ text: String) -> Observation {
+        var copy = Observation(boundingBox: o.boundingBox, text: text,
+                               confidence: o.confidence, quarterTurns: o.quarterTurns)
+        copy.region = o.region
+        return copy
+    }
+
+    /// Whether `text` drawn over `o`'s box would reach its right edge. `placement`
+    /// caps a run's size at `0.86 × height / minimumVertical`, so a short string
+    /// over a wide box stops partway and the rest of the ink has no text: `it.`
+    /// over the box of `ference it.` covered 52% of it (C44). Measured in the
+    /// writer's own face; a ceiling from the line above only lowers the cap.
+    static func wouldSpan(_ text: String, over o: Observation, in box: CGRect) -> Bool {
+        let width = CGFloat(o.boundingBox.width) * box.width
+        let height = max(CGFloat(o.boundingBox.height) * box.height, 1)
+        let font = CTFontCreateWithName(textFace as CFString, height, nil)
+        let line = CTLineCreateWithAttributedString(
+            NSAttributedString(string: text, attributes: [.font: font]))
+        let advance = CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil))
+        return advance * 0.86 / minimumVertical >= width * 0.95
     }
 
     /// How far below a line its continuation may sit, in multiples of the line's

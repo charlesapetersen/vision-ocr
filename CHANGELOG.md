@@ -14,6 +14,9 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Copying text from a scan no longer repeats the second half of every word hyphenated at a line end
+  ("difference ference"). The whole word is still found by Find, and the second half can still be
+  selected (C44).
 - Footnotes in small type and table columns that recognition skipped on the first read are read again and
   can be selected and found. On one owner's file a three-line footnote had no text at all (C51).
 - Scanned pages are recognised when the scan is cut into narrow strips under a vendor's typed header, as

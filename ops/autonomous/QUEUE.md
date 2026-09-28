@@ -482,7 +482,7 @@ say so in the commit.
       1.228, 3.724, 2.045 and 0.906 hit on Xin Qu p24 over their cells; a drag over each selects them; a
       check goes red without the fix.
       BOUND: one code commit. (origin: BUGS.md C51)
-- [ ] **c44-hyphen-echo** — stop copied text from repeating hyphenated tails while Find still matches the
+- [x] **c44-hyphen-echo** — stop copied text from repeating hyphenated tails while Find still matches the
       whole word. Consider `/ActualText` spans, writing the tail's run as part of the joined word's
       string, or dropping the join; test what PDFKit's copy and Find actually do with each.
       DONE WHEN, through PDFKit on Berger p18 and Glazer p1: a drag's copy has no "word ord" echoes, Find

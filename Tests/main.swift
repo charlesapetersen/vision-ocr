@@ -708,15 +708,46 @@ do {
     check("a word broken over two lines is rejoined on the first",
           joined([line("the conditions of the merito-", y: 0.20),
                   line("cracy have been described", y: 0.25)])
-            == ["the conditions of the meritocracy", "cracy have been described"],
+            == ["the conditions of the meritocracy", "have been described"],
           joined([line("the conditions of the merito-", y: 0.20),
                   line("cracy have been described", y: 0.25)]).joined(separator: " | "))
 
-    // Nothing is removed — that is what keeps this outside invariant 1.
-    check("…and the tail is left where it was, not moved or dropped",
-          joined([line("merito-", y: 0.20), line("cracy and so on", y: 0.25)]).count == 2
-            && joined([line("merito-", y: 0.20),
-                       line("cracy and so on", y: 0.25)])[1] == "cracy and so on")
+    // C44: a tail left in place put `meritocracy cracy` in every copy. Moved, not
+    // removed — both lines stay, and every character is still in the layer.
+    check("…and the tail line gives the word up, so a copy reads it once",
+          joined([line("merito-", y: 0.20), line("cracy and so on", y: 0.25)])
+            == ["meritocracy", "and so on"],
+          joined([line("merito-", y: 0.20), line("cracy and so on", y: 0.25)])
+            .joined(separator: " | "))
+    // Widths as the words would print, since what is left of a line has to span
+    // its box: `placement` caps a short string's size, and over a wide box it
+    // stops partway.
+    check("…a tail that is only the word takes it, and the head gives up its stem",
+          joined([line("in the merito-", y: 0.20, width: 0.4),
+                  line("cracy.", y: 0.25, width: 0.1)])
+            == ["in the", "meritocracy."],
+          joined([line("in the merito-", y: 0.20, width: 0.4),
+                  line("cracy.", y: 0.25, width: 0.1)]).joined(separator: " | "))
+    // Measured through `compose` and PDFKit: `it.` over the box of `ference it.`
+    // reached 52% of it, leaving the end of the paragraph with no text.
+    check("…and so does one whose remainder is too short to span its ink",
+          joined([line("as all agree, a fundamental dif-", y: 0.20, width: 0.8),
+                  line("ference it.", y: 0.25, width: 0.24)])
+            == ["as all agree, a fundamental", "difference it."],
+          joined([line("as all agree, a fundamental dif-", y: 0.20, width: 0.8),
+                  line("ference it.", y: 0.25, width: 0.24)]).joined(separator: " | "))
+    check("…and when neither line can give text up, neither is emptied",
+          joined([line("merito-", y: 0.20), line("cracy", y: 0.25)])
+            == ["meritocracy", "cracy"])
+    check("…nor a head whose remainder is too short to span its own box",
+          joined([line("a merito-", y: 0.20), line("cracy.", y: 0.25, width: 0.1)])
+            == ["a meritocracy", "cracy."])
+    check("…and a tail that is itself a head still joins onward",
+          joined([line("the merito-", y: 0.20, width: 0.5), line("cracy of exam-", y: 0.25, width: 0.5),
+                  line("inations and more", y: 0.30, width: 0.5)])
+            == ["the meritocracy", "of examinations", "and more"],
+          joined([line("the merito-", y: 0.20, width: 0.5), line("cracy of exam-", y: 0.25, width: 0.5),
+                  line("inations and more", y: 0.30, width: 0.5)]).joined(separator: " | "))
 
     check("a Unicode hyphen counts too, which is most of an old scan",
           joined([line("merito\u{2010}", y: 0.20), line("cracy", y: 0.25)])[0] == "meritocracy")
@@ -839,10 +870,11 @@ do {
               text.contains("6130") && text.contains("CONGRESSIONAL"))
     }
 
-    // Only the alphabetic run is taken, so punctuation stays on its own line.
-    check("only the word is taken from the tail, not the rest of the line",
-          joined([line("merito-", y: 0.20), line("cracy, he wrote,", y: 0.25)])[0]
-            == "meritocracy")
+    // The tail's first word goes with its punctuation, which would otherwise
+    // open the next line of a copy: `meritocracy⏎, he wrote`.
+    check("the tail's first word is taken with its punctuation, and no more",
+          joined([line("merito-", y: 0.20, width: 0.5), line("cracy, he wrote,", y: 0.25, width: 0.5)])
+            == ["meritocracy,", "he wrote,"])
 
     // And the whole point: it has to be findable in a real PDF.
     //
@@ -873,8 +905,13 @@ do {
         check("…and cannot be, with the setting off",
               !offText.contains("meritocracy"),
               offText.replacingOccurrences(of: "\n", with: "⏎"))
-        check("…while the tail is still there either way",
-              onText.contains("cracy") && offText.contains("cracy"))
+        // C44, through PDFKit: the tail's word is read once, not twice.
+        check("…and the tail is not echoed after it",
+              onText.components(separatedBy: "cracy").count == 2
+                && onText.contains("have been described"),
+              onText.replacingOccurrences(of: "\n", with: "⏎"))
+        check("…while with the setting off the tail is where it was",
+              offText.contains("cracy have been described"))
     }
 }
 
