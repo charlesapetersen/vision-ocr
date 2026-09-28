@@ -1,0 +1,932 @@
+set	document	page	refWords	leg1	leg2	inkRatio	inkLum	srcCol	colKept	find	cols	inside	cover	overInk	wer	prec	recall	splits	welds	echoes	hyph	midBreaks	geom	msSrc	msOut	flags
+testdocs/bookSection	Allen_2011_The Origins of Political Philosophy_Oxford University Press	1	146	0.97	1.00	1.00	-3	0.0000	-	0.93	1	1.00	1.00	1.00	0.12	-	0.90	0	0	0	0/0	10/10	ok	196	157	-
+testdocs/bookSection	Allen_2011_The Origins of Political Philosophy_Oxford University Press	8	608	1.00	1.00	1.04	-17	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	40/42	ok	72	148	-
+testdocs/bookSection	Allen_2011_The Origins of Political Philosophy_Oxford University Press	15	523	1.00	1.00	1.03	-17	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	1.00	0.98	0	0	0	0/0	30/33	ok	87	141	-
+testdocs/bookSection	Allen_2011_The Origins of Political Philosophy_Oxford University Press	22	358	0.99	1.00	1.04	-18	0.0000	-	1.00	2	1.00	1.00	1.00	0.02	0.95	0.98	0	0	0	0/1	8/32	ok	80	122	-
+testdocs/bookSection	Berger_2013_Toward a Third Industrial Divide_	1	118	0.99	1.00	1.00	-0	0.0000	-	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	106	208	-
+testdocs/bookSection	Berger_2013_Toward a Third Industrial Divide_	6	465	1.00	1.00	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.04	0.86	0.78	0	2	1	0/16	63/70	ok	87	152	-
+testdocs/bookSection	Berger_2013_Toward a Third Industrial Divide_	12	546	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.03	0.93	0.91	0	0	0	1/12	71/77	ok	116	149	-
+testdocs/bookSection	Berger_2013_Toward a Third Industrial Divide_	18	485	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.03	0.93	0.87	0	0	0	0/14	70/72	ok	82	205	-
+testdocs/bookSection	Broadhead - 1994 - Regionalism and the Upper Class	1	595	1.02	0.97	1.17	6	0.0653	0.00	0.97	2	1.00	1.00	1.00	0.05	-	0.92	0	0	0	0/17	48/52	ok	46	128	colour
+testdocs/bookSection	Broadhead - 1994 - Regionalism and the Upper Class	4	783	0.99	0.96	1.17	8	0.0536	0.00	0.90	2	1.00	1.00	1.00	0.03	0.92	0.95	0	0	0	0/20	70/74	ok	34	94	colour
+testdocs/bookSection	Broadhead - 1994 - Regionalism and the Upper Class	7	774	1.01	0.99	1.18	8	0.0270	0.00	1.00	2	1.00	1.00	1.00	0.04	-	0.95	0	1	1	0/22	69/74	ok	31	84	colour
+testdocs/bookSection	Broadhead - 1994 - Regionalism and the Upper Class	10	861	1.00	1.00	1.18	8	0.0109	0.00	0.97	2	1.00	1.00	1.00	0.02	-	0.95	0	1	0	0/15	71/74	ok	25	78	colour
+testdocs/bookSection	Canby_1915_Current Literature and the Colleges_Harper & Brothers	1	158	1.00	1.15	1.14	-29	0.0000	-	0.90	2	0.15	1.00	0.96	0.15	0.86	0.93	0	0	0	0/3	23/30	ok	9	88	selection
+testdocs/bookSection	Canby_1915_Current Literature and the Colleges_Harper & Brothers	7	203	1.00	1.00	1.15	-29	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.97	0.95	0	0	0	0/6	24/26	ok	8	79	-
+testdocs/bookSection	Canby_1915_Current Literature and the Colleges_Harper & Brothers	13	218	1.02	1.00	1.14	-29	0.0000	-	0.90	1	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/2	25/26	ok	5	63	-
+testdocs/bookSection	Canby_1915_Current Literature and the Colleges_Harper & Brothers	19	187	0.98	0.99	1.12	-31	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.99	0.98	0	0	0	0/2	22/26	ok	6	74	-
+testdocs/bookSection	Canby_1929_Comment on Several Subjects	1	43	1.11	0.95	1.14	-11	0.0000	-	0.73	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	34	21	find
+testdocs/bookSection	Canby_1929_Comment on Several Subjects	2	87	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.13	1.00	-	0	0	0	0/0	10/10	ok	12	10	-
+testdocs/bookSection	Canby_1929_Comment on Several Subjects	3	633	0.94	1.00	0.99	-0	0.0186	0.00	0.97	3	0.99	1.00	1.00	0.07	0.97	0.89	0	0	0	0/9	51/63	ok	9	7	colour
+testdocs/bookSection	Falasca-Zamponi_2004_The »Culture« of Personality	1	148	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	8/10	ok	245	188	-
+testdocs/bookSection	Falasca-Zamponi_2004_The »Culture« of Personality	8	468	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.05	0.95	0.89	0	1	0	0/8	31/31	ok	152	154	-
+testdocs/bookSection	Falasca-Zamponi_2004_The »Culture« of Personality	15	481	0.89	1.00	1.01	-1	0.0000	-	0.97	1	1.00	1.00	1.00	0.07	0.95	0.95	0	0	0	0/6	39/39	ok	98	102	-
+testdocs/bookSection	Falasca-Zamponi_2004_The »Culture« of Personality	22	539	1.02	0.98	1.10	-27	0.0000	-	0.97	2	1.00	1.00	1.00	0.06	0.89	0.72	0	0	0	0/4	33/37	ok	136	158	-
+testdocs/bookSection	Findlay_1992_Stanford Industrial Park_University of California Press	1	97	1.00	1.00	1.00	0	0.0000	-	0.97	1	0.41	1.00	0.40	-	-	-	0	0	0	0/0	3/4	ok	100	95	selection
+testdocs/bookSection	Findlay_1992_Stanford Industrial Park_University of California Press	16	214	1.00	1.00	1.02	1	0.0000	-	1.00	2	1.00	1.00	1.00	0.04	0.97	0.94	0	0	0	0/4	17/18	ok	104	172	-
+testdocs/bookSection	Findlay_1992_Stanford Industrial Park_University of California Press	31	436	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.06	0.99	0.92	0	1	0	1/10	35/40	ok	104	146	-
+testdocs/bookSection	Findlay_1992_Stanford Industrial Park_University of California Press	47	417	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.06	0.98	0.90	0	4	0	1/9	35/39	ok	156	161	-
+testdocs/bookSection	Geiger et al_2018_American higher education in the postwar era, 1945-1970	1	149	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	8/10	ok	271	206	-
+testdocs/bookSection	Geiger et al_2018_American higher education in the postwar era, 1945-1970	7	460	0.99	1.00	1.34	-23	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.98	0.96	0	0	0	0/6	34/37	ok	17	152	-
+testdocs/bookSection	Geiger et al_2018_American higher education in the postwar era, 1945-1970	13	504	1.00	1.00	1.38	-13	0.0000	-	0.97	1	1.00	1.00	1.00	0.02	0.99	0.97	0	0	0	0/7	39/41	ok	12	129	-
+testdocs/bookSection	Geiger et al_2018_American higher education in the postwar era, 1945-1970	20	468	1.00	1.00	1.25	-12	0.0000	-	0.97	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/11	39/42	ok	20	238	-
+testdocs/bookSection	Gilroy - 2000 - Getting In	1	231	0.96	1.02	1.01	1	0.0000	-	0.87	3	1.00	1.00	1.00	0.05	0.96	0.92	0	0	0	0/0	30/30	ok	49	134	-
+testdocs/bookSection	Gilroy - 2000 - Getting In	6	3	-	-	0.99	-1	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	25	86	-
+testdocs/bookSection	Gilroy - 2000 - Getting In	11	440	1.05	1.00	1.01	-0	0.0000	-	0.90	1	1.00	1.00	1.00	0.02	0.99	0.97	0	1	0	0/3	30/38	ok	44	108	-
+testdocs/bookSection	Gilroy - 2000 - Getting In	17	388	1.03	1.00	1.01	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.02	0.99	0.97	0	0	0	0/2	21/25	ok	63	105	-
+testdocs/bookSection	Gregory-Huddleston_1994_Culture conflict with growth_University Press of America	1	234	0.93	1.00	1.03	-6	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	18/20	ok	363	362	-
+testdocs/bookSection	Gregory-Huddleston_1994_Culture conflict with growth_University Press of America	2	714	1.02	1.08	1.06	-5	0.0000	-	0.97	3	1.00	1.00	1.00	0.04	0.99	0.84	0	0	0	0/0	56/63	ok	244	312	-
+testdocs/bookSection	Gregory-Huddleston_1994_Culture conflict with growth_University Press of America	3	785	1.01	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.02	0.99	1.00	0	1	0	0/0	65/75	ok	261	299	-
+testdocs/bookSection	Gregory-Huddleston_1994_Culture conflict with growth_University Press of America	5	765	1.00	1.00	1.00	-0	0.0000	-	0.97	5	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/0	57/65	ok	249	289	-
+testdocs/bookSection	Hobsbawm and Ranger - 1992 - The Invention of tradition	1	14	-	-	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	72	65	-
+testdocs/bookSection	Hobsbawm and Ranger - 1992 - The Invention of tradition	81	435	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.01	1.00	0.98	0	0	1	0/2	37/40	ok	63	53	-
+testdocs/bookSection	Hobsbawm and Ranger - 1992 - The Invention of tradition	162	439	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/0	31/32	ok	151	151	-
+testdocs/bookSection	Hobsbawm and Ranger - 1992 - The Invention of tradition	243	404	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	1.00	0.97	0	0	0	0/1	34/39	ok	65	54	-
+testdocs/bookSection	Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press	1	39	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	4/5	ok	136	122	-
+testdocs/bookSection	Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press	4	333	0.98	1.02	0.99	-1	0.0000	-	0.87	3	0.99	1.00	1.00	0.13	1.00	0.80	0	0	0	0/0	19/24	ok	137	197	-
+testdocs/bookSection	Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press	8	936	1.00	1.00	0.97	-1	0.0600	0.00	0.87	3	1.00	1.00	1.00	0.03	0.98	0.96	0	1	0	0/21	66/78	ok	157	177	colour
+testdocs/bookSection	Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press	12	988	1.01	1.00	0.94	-2	0.1203	0.00	0.93	2	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/17	72/79	ok	140	148	colour
+testdocs/bookSection	Kazin_1955_The Writer and the 	1	120	1.00	1.00	1.00	0	0.0000	-	0.93	2	0.83	1.00	1.00	0.15	1.00	0.96	0	0	0	0/0	13/16	ok	17	14	selection
+testdocs/bookSection	Kazin_1955_The Writer and the 	4	134	1.00	1.00	1.00	0	0.0000	-	0.97	2	0.10	1.00	0.82	1.19	0.93	1.00	0	0	0	0/0	20/20	ok	10	8	selection
+testdocs/bookSection	Kazin_1955_The Writer and the 	8	365	1.00	1.00	1.03	0	0.1534	0.00	1.00	1	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/4	30/32	ok	55	33	colour
+testdocs/bookSection	Kazin_1955_The Writer and the 	12	355	1.00	1.00	1.03	-3	0.1931	0.00	0.90	1	1.00	1.00	1.00	0.01	0.98	0.98	1	0	0	0/4	31/32	ok	75	29	colour
+testdocs/bookSection	Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited	1	138	1.20	0.99	1.00	-5	0.0000	-	0.90	1	0.72	1.00	1.00	0.35	-	-	1	0	0	0/0	6/7	ok	134	191	selection
+testdocs/bookSection	Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited	10	443	1.10	1.00	1.63	-19	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/1	35/39	ok	10	25	-
+testdocs/bookSection	Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited	20	442	0.99	0.99	1.64	-21	0.0000	-	1.00	2	1.00	1.00	1.00	0.02	0.99	0.96	1	0	0	0/1	31/36	ok	7	32	-
+testdocs/bookSection	Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited	30	467	0.99	1.00	1.58	-22	0.0000	-	0.93	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/2	34/39	ok	5	26	-
+testdocs/bookSection	Kristol_1962_SOCIAL SCIENCES AND LAW_	1	157	0.97	1.00	1.00	-0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	209	202	-
+testdocs/bookSection	Kristol_1962_SOCIAL SCIENCES AND LAW_	8	632	1.00	1.00	1.00	-0	0.0000	-	0.97	2	0.96	1.00	1.00	0.11	0.97	0.98	0	0	0	0/4	41/49	ok	286	235	-
+testdocs/bookSection	Kristol_1962_SOCIAL SCIENCES AND LAW_	15	950	0.98	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.03	0.94	0.96	1	0	0	0/19	72/83	ok	289	270	-
+testdocs/bookSection	Kristol_1962_SOCIAL SCIENCES AND LAW_	22	1009	1.10	1.03	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	0.96	0.95	1	0	0	0/12	72/85	ok	242	234	-
+testdocs/bookSection	Lloyd-Jones_Smith_1938_Selection and Admissions	1	148	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	8/10	ok	262	193	-
+testdocs/bookSection	Lloyd-Jones_Smith_1938_Selection and Admissions	6	346	1.00	1.00	1.00	0	0.0000	-	0.87	3	1.00	1.00	1.00	0.06	0.95	0.92	0	0	0	0/4	30/32	ok	119	113	-
+testdocs/bookSection	Lloyd-Jones_Smith_1938_Selection and Admissions	12	316	1.00	1.00	1.00	-0	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	0.99	0.90	0	0	0	0/3	28/32	ok	88	109	-
+testdocs/bookSection	Lloyd-Jones_Smith_1938_Selection and Admissions	18	330	1.00	1.00	1.00	-0	0.0000	-	0.73	1	1.00	1.00	1.00	0.04	0.98	0.96	0	0	0	0/7	33/36	ok	184	113	find
+testdocs/bookSection	Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press	1	44	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	98	165	-
+testdocs/bookSection	Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press	3	898	1.00	0.99	0.98	-0	0.0894	0.00	1.00	2	1.00	1.00	1.00	0.02	0.99	0.98	0	0	0	0/9	67/76	ok	126	182	colour
+testdocs/bookSection	Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press	5	895	1.00	1.00	0.99	-0	0.0488	0.00	0.97	2	1.00	1.00	1.00	0.02	0.98	0.96	0	0	0	0/9	68/77	ok	113	191	colour
+testdocs/bookSection	Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press	8	891	1.00	1.00	0.99	-0	0.0379	0.00	1.00	2	1.00	1.00	1.00	0.02	0.98	0.97	0	1	0	0/14	69/78	ok	236	177	colour
+testdocs/bookSection	Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co	1	125	0.97	1.00	1.02	0	0.0000	-	0.93	2	0.50	1.00	1.00	0.29	1.00	1.00	0	0	0	0/0	10/10	ok	108	189	selection
+testdocs/bookSection	Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co	6	398	1.00	1.00	1.05	-10	0.0484	0.00	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	30/36	ok	48	52	colour
+testdocs/bookSection	Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co	12	385	1.00	1.00	1.06	-10	0.0600	0.00	0.97	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/7	31/36	ok	55	65	colour
+testdocs/bookSection	Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co	18	521	1.00	1.00	1.06	-11	0.0201	0.00	1.00	2	1.00	1.00	1.00	0.02	0.95	0.94	0	0	0	0/9	37/42	ok	106	67	colour
+testdocs/bookSection	Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press	1	134	1.03	0.99	1.00	-2	0.0000	-	0.83	1	0.70	1.00	1.00	0.21	-	0.92	0	0	0	0/0	7/7	ok	669	482	selection
+testdocs/bookSection	Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press	8	528	1.00	1.06	1.05	-7	0.0000	-	0.97	1	1.00	1.00	1.00	0.01	1.00	0.98	0	0	0	0/1	37/42	ok	249	230	-
+testdocs/bookSection	Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press	16	476	1.00	1.00	1.06	-8	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/9	41/41	ok	139	167	-
+testdocs/bookSection	Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press	24	385	1.00	1.00	1.00	0	0.0000	-	0.97	3	0.16	1.00	1.00	0.09	0.98	0.97	0	1	1	0/2	38/43	ok	283	157	selection
+testdocs/bookSection	Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49)	1	151	1.00	1.00	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	163	161	-
+testdocs/bookSection	Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49)	7	495	1.00	1.00	0.89	-1	0.1446	0.00	0.97	1	1.00	1.00	1.00	0.02	0.99	0.97	0	0	0	0/10	36/40	ok	68	75	colour
+testdocs/bookSection	Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49)	13	505	0.99	1.00	0.97	0	0.0689	0.00	0.97	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/9	38/40	ok	60	59	colour
+testdocs/bookSection	Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49)	19	484	1.00	1.00	0.99	-0	0.0667	0.00	0.97	1	1.00	1.00	1.00	0.01	0.99	0.98	1	0	0	0/0	29/44	ok	61	42	colour
+testdocs/bookSection	National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1	1	49	0.98	1.00	1.00	-4	0.0000	-	0.97	1	1.00	1.00	1.00	-	-	-	0	0	0	0/0	4/4	ok	153	216	-
+testdocs/bookSection	National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1	17	286	0.99	1.41	1.00	-7	0.0000	-	1.00	2	0.98	1.00	1.00	0.06	0.95	0.94	0	0	0	0/0	13/20	ok	133	201	-
+testdocs/bookSection	National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1	33	428	0.99	1.20	1.00	-3	0.0000	-	1.00	2	1.00	1.00	1.00	0.04	0.99	0.89	0	0	0	0/0	12/35	ok	167	155	-
+testdocs/bookSection	National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1	49	437	0.98	1.02	1.00	-8	0.0000	-	0.93	4	1.00	1.00	1.00	0.09	0.94	0.85	0	3	0	0/1	21/37	ok	178	190	-
+testdocs/bookSection	O'Brien_1955_The Area of Admissions in Higher Education_	1	177	1.04	0.96	1.18	-10	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	216	130	-
+testdocs/bookSection	O'Brien_1955_The Area of Admissions in Higher Education_	10	397	1.00	0.94	1.05	-10	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.98	0.96	0	1	0	0/7	36/41	ok	81	103	-
+testdocs/bookSection	O'Brien_1955_The Area of Admissions in Higher Education_	19	398	0.99	1.00	1.06	-10	0.0000	-	0.97	1	1.00	1.00	1.00	0.02	0.97	0.95	1	0	0	0/9	37/40	ok	113	83	-
+testdocs/bookSection	O'Brien_1955_The Area of Admissions in Higher Education_	28	361	1.00	1.00	1.06	-10	0.0000	-	1.00	2	1.00	1.00	1.00	0.04	0.97	0.95	0	1	0	0/12	35/37	ok	121	115	-
+testdocs/bookSection	Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press	1	146	1.00	1.00	1.00	0	0.0000	-	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	166	120	-
+testdocs/bookSection	Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press	4	363	1.08	0.97	1.03	-4	0.0000	-	0.90	3	0.99	1.00	1.00	0.09	0.89	0.89	0	0	0	0/0	26/31	ok	185	327	-
+testdocs/bookSection	Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press	8	882	0.92	1.00	0.98	-1	0.0275	0.00	0.90	2	1.00	1.00	1.00	0.03	0.96	0.96	0	0	0	0/18	72/80	ok	182	440	colour
+testdocs/bookSection	Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press	12	950	1.08	0.99	0.96	-1	0.0191	0.00	0.97	2	1.00	1.00	1.00	0.02	0.96	0.97	0	0	0	1/13	75/80	ok	148	525	colour
+testdocs/bookSection	Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_	1	146	1.01	1.02	1.00	-1	0.0000	-	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	196	202	-
+testdocs/bookSection	Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_	10	472	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.07	0.99	0.91	0	1	0	0/10	33/35	ok	155	127	-
+testdocs/bookSection	Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_	20	512	1.00	1.00	1.00	-0	0.0000	-	0.97	1	1.00	1.00	1.00	0.01	0.98	0.98	0	0	0	0/5	38/42	ok	259	122	-
+testdocs/bookSection	Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_	30	519	1.01	1.00	1.00	-0	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.99	0.98	0	0	0	0/8	40/42	ok	125	123	-
+testdocs/bookSection	Schaar, handwritten notes	1	516	0.94	0.67	1.14	-26	0.0000	-	1.00	2	0.99	1.00	1.00	0.03	0.96	0.97	1	1	1	0/6	42/49	ok	223	224	legibility
+testdocs/bookSection	Schaar, handwritten notes	3	858	0.96	0.96	1.10	-24	0.0000	-	0.90	3	1.00	1.00	1.00	0.05	0.97	0.76	1	0	0	0/5	67/75	ok	252	425	-
+testdocs/bookSection	Schaar, handwritten notes	6	828	0.95	0.98	1.13	-25	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	0.96	0.94	1	2	0	0/11	65/76	ok	386	237	-
+testdocs/bookSection	Schaar, handwritten notes	9	781	1.00	1.03	1.11	-27	0.0000	-	0.97	2	1.00	1.00	1.00	0.02	0.98	0.96	0	0	0	0/10	61/67	ok	228	203	-
+testdocs/bookSection	Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds	1	148	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	8/10	ok	293	167	-
+testdocs/bookSection	Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds	14	499	1.00	1.00	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.04	0.97	0.95	0	0	0	0/6	40/41	ok	128	81	-
+testdocs/bookSection	Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds	28	459	1.00	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.02	0.99	0.97	0	0	0	0/6	34/37	ok	81	80	-
+testdocs/bookSection	Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds	42	502	1.04	1.00	1.00	-0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.97	0.97	0	0	0	1/4	26/37	ok	114	95	-
+testdocs/bookSection	_1945_Postwar Economic Policy and Planning_	1	79	1.13	0.99	1.00	-1	0.0000	-	0.87	1	1.00	1.00	1.00	-	-	-	0	0	0	0/0	5/5	origin	225	200	-
+testdocs/bookSection	_1945_Postwar Economic Policy and Planning_	38	544	1.02	1.01	1.00	-4	0.0000	-	0.87	3	1.00	1.00	1.00	0.08	0.81	0.92	0	1	0	0/5	35/45	ok	358	218	-
+testdocs/bookSection	_1945_Postwar Economic Policy and Planning_	75	495	0.95	1.04	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.16	0.94	0.93	0	0	0	1/5	28/41	origin	228	253	-
+testdocs/bookSection	_1945_Postwar Economic Policy and Planning_	113	548	0.95	1.11	1.00	-4	0.0000	-	0.87	1	1.00	1.00	1.00	0.07	0.97	0.97	0	0	0	0/4	38/51	origin	271	259	-
+testdocs/bookSection	full chapter	1	12	-	-	1.25	-1	0.0000	-	0.75	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	23	26	find
+testdocs/bookSection	full chapter	8	305	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.05	1.00	0.93	0	0	0	1/4	25/31	ok	37	32	-
+testdocs/bookSection	full chapter	16	321	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.05	1.00	0.96	0	1	0	0/4	27/33	ok	21	32	-
+testdocs/bookSection	full chapter	24	306	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.99	0.94	0	0	0	0/4	26/29	ok	42	39	-
+testdocs/book	1954 - Why	1	188	1.00	1.00	1.00	0	0.0013	1.00	0.83	1	1.00	1.00	1.00	0.08	0.93	0.89	0	0	0	0/0	6/6	ok	4	4	-
+testdocs/book	1954 - Why	3	317	0.99	0.98	1.09	-37	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/6	26/28	ok	16	29	-
+testdocs/book	1954 - Why	5	538	0.98	0.91	1.16	-19	0.0135	1.00	1.00	3	1.00	1.00	1.00	0.02	0.95	0.98	0	0	0	0/6	41/54	ok	15	38	-
+testdocs/book	1954 - Why	8	481	1.00	0.97	1.18	-9	0.0179	1.00	0.87	2	1.00	1.00	1.00	0.02	0.97	0.96	0	0	0	0/8	37/50	ok	11	27	-
+testdocs/book	Berle_1940_New directions in the new world,_Harper	1	155	0.98	1.00	1.00	-1	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	1.00	1.00	0	0	0	0/0	6/6	ok	263	198	-
+testdocs/book	Berle_1940_New directions in the new world,_Harper	8	373	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.02	0.99	0.97	0	0	0	0/5	27/31	ok	120	96	-
+testdocs/book	Berle_1940_New directions in the new world,_Harper	16	358	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.98	0	0	0	0/3	26/30	ok	120	203	-
+testdocs/book	Berle_1940_New directions in the new world,_Harper	24	380	1.00	1.00	1.00	-0	0.0000	-	1.00	1	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/4	30/34	ok	93	86	-
+testdocs/book	Boltanski_2006_On justification_Princeton University Press	1	9	-	-	1.00	-0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	24	24	-
+testdocs/book	Boltanski_2006_On justification_Princeton University Press	51	1054	1.00	1.00	1.04	-16	0.0000	-	0.00	2	0.45	0.95	0.96	0.66	0.11	0.83	0	0	0	0/19	113/119	ok	143	256	find,selection,copy
+testdocs/book	Boltanski_2006_On justification_Princeton University Press	102	834	1.00	1.00	1.03	-16	0.0000	-	0.00	4	0.33	0.87	0.96	0.69	0.08	0.89	0	0	0	1/25	122/136	ok	634	762	find,selection,copy
+testdocs/book	Boltanski_2006_On justification_Princeton University Press	153	487	0.96	1.14	1.03	-14	0.0000	-	0.03	2	0.48	0.85	0.92	0.44	-	0.75	1	0	4	0/9	47/48	ok	929	1094	find,selection
+testdocs/book	Casey_1954_1954 pay almanac,	1	357	0.96	1.02	1.05	-11	0.0000	-	0.97	3	1.00	1.00	1.00	0.05	0.96	0.97	0	0	0	0/3	14/17	ok	145	174	-
+testdocs/book	Casey_1954_1954 pay almanac,	3	439	0.95	0.92	1.05	-11	0.0000	-	0.97	3	1.00	1.00	1.00	0.04	0.98	0.91	0	0	0	0/2	16/22	ok	218	186	-
+testdocs/book	Casey_1954_1954 pay almanac,	5	390	0.99	0.95	1.02	-10	0.0000	-	0.97	8	0.28	1.00	1.00	0.24	0.87	0.93	1	0	1	0/0	145/150	ok	183	146	selection
+testdocs/book	Casey_1954_1954 pay almanac,	8	598	0.99	1.02	1.03	-10	0.0000	-	0.97	3	1.00	1.00	1.00	0.08	0.97	0.95	0	2	0	0/3	22/27	ok	244	157	-
+testdocs/book	Cohen_1990_Making a New Deal_Cambridge University Press	1	162	1.00	1.00	1.00	0	0.0078	1.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	11	15	-
+testdocs/book	Cohen_1990_Making a New Deal_Cambridge University Press	2	400	0.97	1.00	1.01	-3	0.0009	0.00	0.93	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/8	24/28	origin	543	605	colour
+testdocs/book	Cohen_1990_Making a New Deal_Cambridge University Press	4	461	1.00	1.00	1.00	-2	0.0009	0.00	0.93	1	1.00	1.00	1.00	0.03	0.97	0.95	0	0	0	0/14	35/40	origin	446	537	colour
+testdocs/book	Cohen_1990_Making a New Deal_Cambridge University Press	6	481	1.00	1.00	1.00	-2	0.0278	0.00	0.90	1	1.00	1.00	1.00	0.04	0.97	0.96	0	0	0	0/14	38/40	origin	486	716	colour
+testdocs/book	Countryman - 2006 - Up south  civil rights and Black power in Philadelphia	1	13	-	-	1.00	-1	0.0046	1.00	0.88	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	269	151	-
+testdocs/book	Countryman - 2006 - Up south  civil rights and Black power in Philadelphia	109	491	1.03	1.00	1.00	-40	0.0000	-	0.93	2	1.00	1.00	1.00	0.03	0.98	0.96	1	0	0	0/6	38/41	ok	32	142	-
+testdocs/book	Countryman - 2006 - Up south  civil rights and Black power in Philadelphia	218	497	1.00	1.00	1.14	-49	0.0000	-	1.00	1	1.00	1.00	1.00	0.03	0.97	0.95	0	1	0	0/10	40/43	ok	26	116	-
+testdocs/book	Countryman - 2006 - Up south  civil rights and Black power in Philadelphia	327	512	1.00	1.00	1.00	-42	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/10	43/43	ok	49	115	-
+testdocs/book	Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press	1	0	-	-	1.00	-0	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	260	126	-
+testdocs/book	Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press	8	389	1.00	1.00	1.00	-0	0.0000	-	0.97	1	0.99	1.00	1.00	0.03	0.96	0.95	0	0	0	0/13	34/36	ok	238	188	-
+testdocs/book	Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press	15	384	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.96	0.98	0	0	0	0/3	33/36	ok	129	262	-
+testdocs/book	Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press	23	352	1.00	1.00	1.00	-0	0.0000	-	0.83	1	1.00	1.00	1.00	0.11	0.97	0.96	0	1	1	0/7	34/38	ok	176	172	-
+testdocs/book	Friedman_1962_Capitalism and freedom_University of Chicago Press	1	14	-	-	1.00	-1	0.2568	1.00	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	5	75	-
+testdocs/book	Friedman_1962_Capitalism and freedom_University of Chicago Press	57	388	1.00	1.00	1.00	-6	0.0000	-	1.00	1	1.00	1.00	1.00	0.03	0.98	0.96	0	1	0	0/3	33/36	ok	39	47	-
+testdocs/book	Friedman_1962_Capitalism and freedom_University of Chicago Press	113	371	1.00	1.01	1.00	-7	0.0000	-	0.93	1	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/9	36/38	ok	31	28	-
+testdocs/book	Friedman_1962_Capitalism and freedom_University of Chicago Press	170	387	1.00	0.99	1.00	-7	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.97	0.95	0	0	1	0/11	35/38	ok	32	35	-
+testdocs/book	Gowan and Demos - 1964 - The education and guidance of the ablest	1	83	1.02	1.00	1.16	-14	0.0000	-	0.90	1	1.00	1.00	1.00	0.12	-	0.97	0	0	0	0/0	10/10	ok	16	40	-
+testdocs/book	Gowan and Demos - 1964 - The education and guidance of the ablest	2	145	0.56	0.93	1.07	-13	0.0000	-	0.63	1	1.00	1.00	1.00	0.10	0.90	0.90	0	0	0	0/0	8/9	ok	10	40	legibility,find
+testdocs/book	Gowan and Demos - 1964 - The education and guidance of the ablest	3	140	0.80	0.76	1.08	-12	0.0000	-	0.87	4	1.00	1.00	1.00	0.16	0.85	0.83	0	0	0	0/0	26/32	ok	12	35	-
+testdocs/book	Gowan and Demos - 1964 - The education and guidance of the ablest	5	79	0.61	1.08	1.08	-10	0.0000	-	0.79	1	1.00	1.00	1.00	0.03	0.98	0.98	0	0	0	0/1	5/7	ok	16	33	legibility,find
+testdocs/book	Guilford_Psychometric Methods	1	583	1.01	0.96	1.01	-0	0.0000	-	0.97	1	1.00	1.00	1.00	0.05	0.99	0.98	0	0	0	0/4	42/47	ok	173	132	-
+testdocs/book	Guilford_Psychometric Methods	2	567	0.99	1.00	1.05	-25	0.0000	-	0.97	1	1.00	1.00	1.00	0.04	0.98	0.95	0	0	0	0/8	38/44	ok	140	137	-
+testdocs/book	Guilford_Psychometric Methods	3	588	0.99	0.99	1.06	-27	0.0000	-	0.93	2	1.00	1.00	1.00	0.12	0.95	0.91	0	0	0	0/7	31/41	ok	219	239	-
+testdocs/book	Guilford_Psychometric Methods	5	582	0.99	1.00	1.01	-0	0.0000	-	0.93	1	1.00	1.00	1.00	0.03	0.98	0.96	0	0	0	0/5	41/46	ok	218	180	-
+testdocs/book	Hayek_1978_The constitution of liberty_University of Chicago Press	1	15	-	-	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	262	273	-
+testdocs/book	Hayek_1978_The constitution of liberty_University of Chicago Press	144	433	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/7	37/40	ok	333	344	-
+testdocs/book	Hayek_1978_The constitution of liberty_University of Chicago Press	287	420	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.07	0.97	0.96	0	0	0	0/9	38/41	ok	380	356	-
+testdocs/book	Hayek_1978_The constitution of liberty_University of Chicago Press	431	562	1.00	1.00	1.00	0	0.0000	-	0.80	1	1.00	1.00	1.00	0.08	0.91	0.92	0	2	1	0/7	33/45	ok	386	466	-
+testdocs/book	Himanen_2001_The hacker ethic and the spirit of the information age_Random House	1	12	-	-	1.03	-25	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	141	69	-
+testdocs/book	Himanen_2001_The hacker ethic and the spirit of the information age_Random House	64	278	0.98	0.97	1.44	-63	0.0000	-	0.90	1	1.00	1.00	1.00	0.06	0.97	0.92	0	1	0	0/9	25/28	ok	67	84	-
+testdocs/book	Himanen_2001_The hacker ethic and the spirit of the information age_Random House	128	257	0.99	0.98	1.44	-63	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.98	0.93	0	0	0	0/5	23/27	ok	49	85	-
+testdocs/book	Himanen_2001_The hacker ethic and the spirit of the information age_Random House	192	223	0.99	0.98	1.45	-64	0.0000	-	0.83	2	1.00	1.00	1.00	0.06	0.96	0.91	0	0	0	1/8	22/25	ok	51	74	-
+testdocs/book	Ibson_2006_Picturing men	1	2	-	-	1.08	-22	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	rotation	449	436	-
+testdocs/book	Ibson_2006_Picturing men	66	19	-	-	1.01	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	rotation	14	37	-
+testdocs/book	Ibson_2006_Picturing men	132	305	1.00	1.00	1.06	-5	0.0000	-	1.00	2	1.00	1.00	1.00	0.04	0.95	0.95	0	0	0	0/11	35/38	rotation	19	39	-
+testdocs/book	Ibson_2006_Picturing men	198	268	1.00	0.99	1.05	-4	0.0000	-	0.93	3	1.00	1.00	1.00	0.04	0.95	0.92	1	0	0	0/9	31/32	rotation	16	36	-
+testdocs/book	JAH Review	1	160	1.00	1.00	1.00	0	0.0170	1.00	0.83	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	6	36	-
+testdocs/book	JAH Review	2	469	1.00	1.00	1.00	-2	0.0008	0.00	0.97	1	1.00	1.00	1.00	0.02	0.98	0.95	0	0	0	0/9	37/40	origin	357	570	colour
+testdocs/book	JAH Review	3	458	1.00	1.00	1.00	-2	0.0008	0.00	1.00	2	1.00	1.00	1.00	0.02	0.96	0.95	0	0	0	0/8	32/36	origin	396	365	colour
+testdocs/book	Keyssar_2000_The Right to Vote_Basic Books	1	171	1.00	1.00	1.00	0	0.0059	1.00	0.80	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	14	13	-
+testdocs/book	Keyssar_2000_The Right to Vote_Basic Books	2	1012	1.01	1.00	1.00	-0	0.0010	0.00	0.97	3	0.54	1.00	1.00	0.49	0.98	0.97	0	0	0	0/16	147/165	origin	462	659	colour,selection
+testdocs/book	Keyssar_2000_The Right to Vote_Basic Books	3	950	0.92	1.00	1.00	-0	0.0010	0.00	1.00	3	0.99	1.00	1.00	0.03	0.96	0.96	0	0	0	1/20	96/112	origin	351	539	colour
+testdocs/book	LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press	1	20	1.00	1.00	1.00	0	0.0000	-	0.91	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	242	256	-
+testdocs/book	LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press	21	704	1.00	1.00	1.00	0	0.0000	-	0.93	4	1.00	1.00	1.00	0.03	0.97	0.95	0	0	0	0/16	49/56	ok	178	225	-
+testdocs/book	LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press	41	759	1.00	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.04	0.96	0.93	0	2	0	0/19	66/69	ok	179	191	-
+testdocs/book	LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press	61	830	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.95	0.93	0	2	1	1/22	64/74	ok	214	210	-
+testdocs/book	Mintzberg - 1973 - The nature of managerial work	1	26	1.00	1.00	1.01	0	0.0000	-	0.60	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	155	244	find
+testdocs/book	Mintzberg - 1973 - The nature of managerial work	30	603	1.07	1.03	1.01	0	0.0000	-	0.90	3	1.00	1.00	1.00	0.15	0.97	0.83	0	0	0	0/11	40/44	ok	211	210	-
+testdocs/book	Mintzberg - 1973 - The nature of managerial work	60	825	1.02	0.96	1.01	0	0.0000	-	0.80	3	1.00	0.93	1.00	0.11	0.93	0.86	0	1	3	0/22	70/82	ok	186	252	-
+testdocs/book	Mintzberg - 1973 - The nature of managerial work	90	883	1.00	1.03	1.01	-0	0.0000	-	0.90	2	1.00	1.00	1.00	0.05	0.98	0.95	0	0	0	0/13	67/75	ok	192	227	-
+testdocs/book	Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press	1	7	-	-	1.00	0	0.0000	-	0.80	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	252	236	-
+testdocs/book	Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press	3	98	1.03	1.00	1.00	-0	0.0000	-	0.83	3	0.95	1.00	1.00	0.10	0.94	0.90	1	0	0	0/0	23/23	rotation	193	241	-
+testdocs/book	Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press	6	1014	1.00	1.00	0.99	-0	0.0908	0.00	1.00	2	1.00	1.00	1.00	0.02	0.96	0.97	0	1	0	0/7	72/82	ok	258	336	colour
+testdocs/book	Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press	9	599	1.00	1.00	1.00	-0	0.0000	-	1.00	2	1.00	1.00	1.00	0.05	0.96	0.95	0	0	0	0/4	40/45	ok	191	303	-
+testdocs/book	Morgan_1975_American Slavery, American Freedom_Norton	1	167	1.00	1.00	1.00	0	0.0059	1.00	0.80	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	11	16	-
+testdocs/book	Morgan_1975_American Slavery, American Freedom_Norton	2	846	0.98	1.00	1.01	-2	0.0008	0.00	0.90	5	0.55	1.00	1.00	0.16	0.95	0.88	0	1	0	0/27	94/109	origin	667	468	colour,selection
+testdocs/book	Morgan_1975_American Slavery, American Freedom_Norton	3	822	0.97	1.00	1.01	-1	0.0008	0.00	0.93	4	0.54	1.00	1.00	0.68	0.93	0.93	0	2	0	0/15	139/162	origin	583	544	colour,selection
+testdocs/book	Mudge_2018_Leftism Reinvented_Harvard University Press	1	0	-	-	1.01	-2	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	143	130	-
+testdocs/book	Mudge_2018_Leftism Reinvented_Harvard University Press	93	216	1.00	1.00	1.00	0	0.0000	-	0.67	2	1.00	1.00	1.00	0.35	0.53	0.73	15	0	0	1/1	14/17	ok	89	81	find,copy
+testdocs/book	Mudge_2018_Leftism Reinvented_Harvard University Press	186	349	1.00	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.05	0.97	0.89	1	0	0	1/8	28/32	ok	137	142	-
+testdocs/book	Mudge_2018_Leftism Reinvented_Harvard University Press	279	367	1.00	1.00	1.00	0	0.0000	-	0.87	2	1.00	1.00	1.00	0.12	0.88	0.78	0	0	0	0/2	18/32	ok	160	135	-
+testdocs/book	Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press	1	27	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	-	-	-	0	0	0	0/0	4/4	ok	58	91	-
+testdocs/book	Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press	2	323	1.00	1.00	0.99	0	0.0511	0.00	1.00	1	1.00	1.00	1.00	0.01	0.99	0.97	0	0	0	0/4	27/30	ok	41	80	colour
+testdocs/book	Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press	4	922	1.00	1.00	0.97	-1	0.0778	0.00	1.00	2	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	1/13	73/84	ok	61	86	colour
+testdocs/book	Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press	6	902	1.01	0.99	0.96	-1	0.0656	0.00	0.93	3	1.00	1.00	1.00	0.03	0.97	0.94	0	0	1	0/12	71/81	ok	56	73	colour
+testdocs/book	New York Stock Exchange_1956_Stock ownership plans for employees	1	25	0.93	1.00	1.02	-2	0.0000	-	0.75	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	149	105	find
+testdocs/book	New York Stock Exchange_1956_Stock ownership plans for employees	37	420	0.93	1.02	1.01	-3	0.0000	-	0.73	3	0.77	0.94	1.00	0.59	0.59	0.55	0	0	2	0/1	33/43	ok	141	169	find,selection,copy
+testdocs/book	New York Stock Exchange_1956_Stock ownership plans for employees	73	290	0.86	0.97	1.01	-4	0.0000	-	0.33	2	1.00	1.00	1.00	0.70	-	-	0	0	0	0/0	8/8	ok	145	130	find
+testdocs/book	New York Stock Exchange_1956_Stock ownership plans for employees	110	442	0.82	0.97	1.00	-3	0.0000	-	0.23	5	1.00	0.50	1.00	0.63	0.40	0.18	0	0	0	0/1	20/21	ok	140	124	find,selection,copy
+testdocs/book	Noble_1977_America by design	1	3	-	-	1.00	0	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	178	262	-
+testdocs/book	Noble_1977_America by design	104	421	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.06	0.97	0.94	0	1	0	0/8	34/39	ok	331	255	-
+testdocs/book	Noble_1977_America by design	207	399	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.03	0.98	0.97	1	0	0	0/8	34/38	ok	352	321	-
+testdocs/book	Noble_1977_America by design	311	422	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.03	0.98	0.96	0	0	0	0/6	34/40	ok	341	386	-
+testdocs/book	Riesman - 1954 - Individualism reconsidered, and other essays	1	2	-	-	1.00	1	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	236	94	-
+testdocs/book	Riesman - 1954 - Individualism reconsidered, and other essays	7	474	1.00	1.00	1.10	-13	0.0135	1.00	1.00	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/9	38/41	ok	183	85	-
+testdocs/book	Riesman - 1954 - Individualism reconsidered, and other essays	13	373	1.11	1.00	1.10	-6	0.0000	1.00	1.00	1	1.00	1.00	1.00	0.02	0.97	0.96	0	0	0	0/8	31/34	ok	176	75	-
+testdocs/book	Riesman - 1954 - Individualism reconsidered, and other essays	19	381	0.99	1.00	1.09	-7	0.0035	1.00	0.93	1	1.00	1.00	1.00	0.02	0.97	0.97	0	0	0	0/7	32/33	ok	156	79	-
+testdocs/book	Schumpeter_1955_Imperialism ; Social classes_World	1	10	-	-	1.00	-1	0.0032	1.00	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	28	101	-
+testdocs/book	Schumpeter_1955_Imperialism ; Social classes_World	48	383	1.00	1.00	1.00	-6	0.0000	-	0.90	1	1.00	1.00	1.00	0.02	0.98	0.98	0	0	0	0/6	36/37	ok	163	225	-
+testdocs/book	Schumpeter_1955_Imperialism ; Social classes_World	96	373	1.00	1.00	1.02	-16	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.96	0	0	0	0/8	34/37	ok	177	203	-
+testdocs/book	Schumpeter_1955_Imperialism ; Social classes_World	144	400	1.00	1.00	1.02	-14	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/8	37/38	ok	125	227	-
+testdocs/book	Shows and Burton - 1972 - Microeconomics	1	1	-	-	1.00	-0	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	134	129	-
+testdocs/book	Shows and Burton - 1972 - Microeconomics	5	466	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/4	31/39	ok	216	170	-
+testdocs/book	Shows and Burton - 1972 - Microeconomics	9	512	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/6	36/42	ok	186	180	-
+testdocs/book	Shows and Burton - 1972 - Microeconomics	14	474	1.00	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/4	32/38	ok	178	196	-
+testdocs/book	UN-OCred	1	1	-	-	0.99	-7	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	229	102	-
+testdocs/book	UN-OCred	10	430	1.14	1.00	1.01	1	0.0000	-	0.90	7	1.00	1.00	1.00	0.05	0.94	0.93	0	0	1	0/2	33/41	ok	215	114	-
+testdocs/book	UN-OCred	20	586	0.18	0.98	1.40	-65	0.0000	-	1.00	3	0.54	1.00	1.00	0.87	0.89	0.84	0	1	0	0/6	62/71	ok	194	192	legibility,selection
+testdocs/book	UN-OCred	30	574	0.36	0.99	1.27	-58	0.0000	-	0.83	4	0.32	1.00	0.93	1.15	0.77	0.76	3	2	0	0/3	24/65	ok	202	137	legibility,selection,copy
+testdocs/book	Westad_2005_The Global Cold War_Cambridge University Press	1	161	1.00	1.00	1.00	0	0.0171	1.00	0.83	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	11	25	-
+testdocs/book	Westad_2005_The Global Cold War_Cambridge University Press	2	665	1.01	0.97	1.02	-5	0.0007	0.00	0.93	3	1.00	1.00	1.00	0.05	0.91	0.84	0	1	1	0/25	74/80	origin	491	486	colour
+testdocs/book	Westad_2005_The Global Cold War_Cambridge University Press	3	767	0.99	0.98	1.03	-5	0.0007	0.00	0.93	2	0.54	1.00	1.00	0.50	0.93	0.93	0	0	2	1/25	129/139	origin	603	515	colour,selection
+testdocs/book	_2010_New Materialisms_Duke University Press	1	513	1.00	1.00	1.00	0	0.0000	-	0.80	2	1.00	1.00	1.00	0.05	0.94	0.92	1	2	1	0/10	46/50	ok	182	140	-
+testdocs/book	_2010_New Materialisms_Duke University Press	6	838	0.99	1.00	1.05	-15	0.0000	-	0.77	2	1.00	1.00	1.00	0.04	0.98	0.92	0	0	0	1/14	64/68	ok	207	281	find
+testdocs/book	_2010_New Materialisms_Duke University Press	11	798	1.01	1.01	1.02	-9	0.0000	-	0.93	2	1.00	1.00	1.00	0.06	0.96	0.91	0	4	0	0/19	69/72	ok	192	158	-
+testdocs/book	_2010_New Materialisms_Duke University Press	17	828	0.99	1.04	1.04	-10	0.0000	-	0.93	2	1.00	1.00	1.00	0.05	0.95	0.94	0	0	0	0/15	69/72	ok	172	171	-
+testdocs/document	(F) Dickens	1	398	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/0	23/31	ok	48	90	-
+testdocs/document	(F) Dickens	2	443	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.96	0.97	0	0	0	0/0	28/35	ok	68	106	-
+testdocs/document	(F) Dickens	4	364	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	0.97	0.99	0	1	0	0/1	17/26	ok	60	86	-
+testdocs/document	(F) Dickens	6	492	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/1	33/40	ok	63	93	-
+testdocs/document	1881 - Harry Wilcox	1	7	-	-	1.00	-0	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	26	158	-
+testdocs/document	1881 - Harry Wilcox	3	109	0.82	0.84	1.02	-0	0.0127	1.00	0.61	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	21	195	find
+testdocs/document	1881 - Harry Wilcox	5	119	1.00	0.88	1.05	-1	0.0124	1.00	0.53	1	1.00	1.00	1.00	0.42	-	0.65	0	0	0	0/0	5/7	ok	24	199	find
+testdocs/document	1881 - Harry Wilcox	7	110	1.19	0.80	1.04	-0	0.0148	1.00	0.40	1	0.79	0.82	1.00	0.50	-	0.66	2	0	0	0/0	10/16	ok	22	212	find,selection
+testdocs/document	1976 - Regis McKenna Papers - Early Career, 1965-1981	1	264	1.04	1.00	1.01	-5	0.0136	1.00	1.00	2	1.00	1.00	1.00	0.11	1.00	0.86	0	0	0	0/0	11/18	ok	9	216	-
+testdocs/document	1976 - Regis McKenna Papers - Early Career, 1965-1981	3	80	0.92	0.92	1.02	-69	0.0002	0.00	0.83	1	1.00	1.00	1.00	0.08	1.00	0.91	0	0	0	0/0	16/19	ok	4	265	-
+testdocs/document	1976 - Regis McKenna Papers - Early Career, 1965-1981	5	176	0.99	1.00	1.02	-6	0.0011	0.00	0.97	1	0.99	0.86	1.00	0.18	1.00	0.91	0	0	0	0/0	3/5	ok	8	229	colour,selection
+testdocs/document	1976 - Regis McKenna Papers - Early Career, 1965-1981	7	276	0.99	1.01	0.98	-4	0.0353	1.00	0.90	5	0.36	1.00	1.00	1.00	-	0.72	0	0	0	1/13	84/109	ok	11	309	selection
+testdocs/document	2008_Hoagland oral history	1	53	1.00	1.00	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	67	80	-
+testdocs/document	2008_Hoagland oral history	4	495	1.00	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.00	0.99	1.00	0	0	0	0/0	15/19	ok	98	72	-
+testdocs/document	2008_Hoagland oral history	8	564	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.99	0.98	1	0	0	0/0	29/35	ok	75	122	-
+testdocs/document	2008_Hoagland oral history	12	516	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.00	0.99	0.99	0	0	0	0/0	22/24	ok	82	81	-
+testdocs/document	2008_McIntyre oral history	1	52	1.00	1.00	1.00	0	0.0000	-	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	50	60	-
+testdocs/document	2008_McIntyre oral history	5	517	1.00	1.00	1.00	0	0.0000	-	1.00	3	0.39	0.94	1.00	0.10	0.96	0.93	0	0	0	1/1	22/30	ok	93	75	selection
+testdocs/document	2008_McIntyre oral history	9	511	1.00	1.00	1.00	0	0.0000	-	0.93	3	1.00	1.00	1.00	0.06	0.97	0.86	1	1	0	0/0	16/19	ok	94	99	-
+testdocs/document	2008_McIntyre oral history	14	422	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.01	0.99	0.99	0	1	0	0/0	7/8	ok	80	62	-
+testdocs/document	2013 - Silicon Valley Program Transcript	1	301	0.98	1.05	1.10	-49	0.0455	0.00	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	10	123	colour
+testdocs/document	2013 - Silicon Valley Program Transcript	10	381	1.00	1.00	1.11	-47	0.0445	0.00	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	3	109	colour
+testdocs/document	2013 - Silicon Valley Program Transcript	19	373	0.98	0.93	1.11	-48	0.0446	0.00	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	2	100	colour
+testdocs/document	2013 - Silicon Valley Program Transcript	29	313	0.98	0.95	1.10	-48	0.0445	0.00	0.97	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	4/4	ok	1	81	colour
+testdocs/document	2015_Gibbs oral history	1	20	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	72	67	-
+testdocs/document	2015_Gibbs oral history	18	312	1.00	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.00	0.99	0.99	0	0	0	0/0	18/18	ok	72	80	-
+testdocs/document	2015_Gibbs oral history	36	252	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	11/12	ok	72	60	-
+testdocs/document	2015_Gibbs oral history	54	237	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	4/4	ok	74	82	-
+testdocs/document	2017_Bunnell oral history, athletics	1	23	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	71	75	-
+testdocs/document	2017_Bunnell oral history, athletics	18	254	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	8/9	ok	71	67	-
+testdocs/document	2017_Bunnell oral history, athletics	35	242	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	2/5	ok	56	55	-
+testdocs/document	2017_Bunnell oral history, athletics	52	276	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.99	0.99	1	0	0	0/1	12/14	ok	98	65	-
+testdocs/document	2024 - Class Action lawsuit re need blind admissions	1	135	0.95	0.99	0.99	-3	0.0034	0.00	0.97	2	1.00	1.00	1.00	0.02	1.00	0.97	0	0	0	1/1	15/16	ok	225	205	colour
+testdocs/document	2024 - Class Action lawsuit re need blind admissions	19	262	1.00	1.00	1.00	-2	0.0035	0.00	0.97	1	1.00	1.00	1.00	0.01	1.00	0.99	0	0	0	0/0	6/7	ok	153	201	colour
+testdocs/document	2024 - Class Action lawsuit re need blind admissions	38	276	0.99	1.00	1.00	-1	0.0035	0.00	0.83	2	1.00	1.00	1.00	0.05	0.96	0.94	0	0	0	0/3	19/22	ok	226	282	colour
+testdocs/document	2024 - Class Action lawsuit re need blind admissions	57	252	1.00	1.00	1.00	-2	0.0035	0.00	0.93	3	1.00	1.00	1.00	0.01	0.99	0.96	0	0	0	0/0	10/14	ok	163	168	colour
+testdocs/document	Atkinson_1939_Atkinson on firings_	1	360	0.96	0.97	0.83	-28	0.0031	0.88	0.93	1	1.00	1.00	1.00	0.06	-	0.93	1	0	0	0/2	23/31	ok	1	145	-
+testdocs/document	Atkinson_1939_Atkinson on firings_	2	464	1.06	0.96	0.92	-25	0.0182	1.00	0.87	2	1.00	1.00	1.00	0.12	0.98	0.87	0	2	0	0/2	26/32	ok	2	146	-
+testdocs/document	Atkinson_1939_Atkinson on firings_	3	473	0.99	0.95	0.95	-29	0.0035	0.00	0.97	1	1.00	1.00	1.00	0.03	0.94	0.97	1	0	0	0/2	34/39	ok	1	131	colour
+testdocs/document	Ford_1941_Speech_	1	308	0.98	0.99	0.87	-17	0.0132	1.00	0.93	1	1.00	1.00	1.00	0.12	0.98	0.97	0	0	0	0/0	23/27	ok	2	168	-
+testdocs/document	Ford_1941_Speech_	2	328	0.97	0.96	0.86	-21	0.0037	0.99	0.97	2	1.00	1.00	1.00	0.02	1.00	0.93	0	0	0	0/0	22/25	ok	3	115	-
+testdocs/document	Ford_1941_Speech_	3	302	0.97	0.97	0.86	-29	0.0005	0.00	0.93	2	1.00	1.00	1.00	0.00	0.98	0.98	0	0	0	0/1	15/17	ok	4	145	-
+testdocs/document	Ford_1941_Speech_	5	315	0.98	0.98	0.88	-19	0.0050	0.00	1.00	2	1.00	1.00	1.00	0.00	0.99	0.99	0	0	0	0/1	22/24	ok	3	174	colour
+testdocs/document	Freud_Fetishism	1	66	1.00	1.00	1.00	0	0.0000	-	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	73	84	-
+testdocs/document	Freud_Fetishism	2	216	1.00	0.99	1.00	-0	0.0000	-	0.77	2	1.00	1.00	1.00	0.19	-	0.70	0	0	0	0/0	10/11	ok	81	95	find
+testdocs/document	Freud_Fetishism	4	581	0.99	1.03	0.98	-0	0.0694	0.00	0.87	2	1.00	1.00	1.00	0.03	0.97	0.97	0	0	1	0/5	48/54	ok	83	70	colour
+testdocs/document	Freud_Fetishism	6	878	1.06	1.00	0.96	-1	0.0519	0.00	1.00	2	1.00	1.00	1.00	0.01	0.98	0.97	0	1	0	0/2	71/79	ok	72	85	colour
+testdocs/document	Galison_1998_Trading Zone_	1	27	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	383	270	-
+testdocs/document	Galison_1998_Trading Zone_	4	1105	1.00	0.98	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.02	0.91	0.96	0	0	1	0/21	67/79	ok	358	392	-
+testdocs/document	Galison_1998_Trading Zone_	7	1290	1.00	1.00	1.00	0	0.0000	-	1.00	2	0.50	1.00	1.00	0.82	0.97	0.98	2	1	0	1/15	141/158	ok	455	342	selection
+testdocs/document	Galison_1998_Trading Zone_	11	1299	1.00	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.02	0.96	0.96	1	1	0	1/20	72/80	ok	340	377	-
+testdocs/document	Geiger oral history	1	24	1.00	1.00	1.00	0	0.0000	-	0.94	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	117	61	-
+testdocs/document	Geiger oral history	25	294	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.01	0.99	0.99	0	1	0	0/0	11/11	ok	74	62	-
+testdocs/document	Geiger oral history	50	300	1.00	1.00	1.00	0	0.0000	-	0.80	2	1.00	1.00	1.00	0.02	0.99	0.98	0	0	0	0/0	7/10	ok	106	73	-
+testdocs/document	Geiger oral history	75	307	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	13/16	ok	77	77	-
+testdocs/document	Henry Morgenthau papers	1	158	1.00	1.00	1.00	0	0.0000	-	0.97	1	0.29	1.00	1.00	-	1.00	-	0	0	0	0/0	23/24	rotation	96	78	selection
+testdocs/document	Henry Morgenthau papers	51	134	1.00	1.00	1.00	0	0.0000	-	1.00	1	0.66	1.00	1.00	0.55	0.99	-	0	1	0	0/0	34/35	rotation	206	109	selection
+testdocs/document	Henry Morgenthau papers	101	196	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.05	0.96	-	0	0	0	2/2	10/11	rotation	88	88	-
+testdocs/document	Henry Morgenthau papers	151	143	1.00	1.00	1.00	0	0.0000	-	0.97	2	0.86	1.00	1.00	0.12	1.00	1.00	0	0	0	0/0	21/21	rotation	117	78	selection
+testdocs/document	Herbert Marks papers	1	52	1.00	1.00	1.10	-18	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	rotation	9	124	-
+testdocs/document	Herbert Marks papers	4	156	0.73	0.86	9.00	-76	0.0000	-	0.77	1	0.86	1.00	1.00	0.43	-	0.85	0	0	0	0/0	6/8	rotation	10	102	legibility,find,selection
+testdocs/document	Herbert Marks papers	8	337	0.33	0.92	9.83	-77	0.0000	-	0.80	3	0.26	1.00	1.00	0.43	0.82	0.81	0	0	0	0/0	22/40	rotation	14	69	legibility,selection
+testdocs/document	Herbert Marks papers	12	185	0.54	0.53	1.63	2	0.0000	-	0.93	2	0.98	1.00	1.00	0.07	1.00	0.93	0	0	0	0/0	15/18	rotation	7	60	legibility
+testdocs/document	Intellectual History Newsletter -- Forum on Menand	1	92	1.00	1.00	1.00	0	0.0055	1.00	1.00	2	0.45	1.00	0.50	-	1.00	-	0	0	0	0/0	8/10	ok	2	5	selection
+testdocs/document	Intellectual History Newsletter -- Forum on Menand	12	630	0.99	0.98	1.11	-5	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/9	33/38	ok	7	43	-
+testdocs/document	Intellectual History Newsletter -- Forum on Menand	23	565	0.98	0.99	1.03	12	0.0000	-	0.97	2	1.00	1.00	1.00	0.03	0.97	0.95	1	0	0	0/6	31/34	ok	5	42	-
+testdocs/document	Intellectual History Newsletter -- Forum on Menand	34	599	0.98	0.97	1.01	11	0.0000	-	0.93	2	1.00	1.00	1.00	0.05	0.93	0.92	2	0	1	0/5	33/35	ok	8	43	-
+testdocs/document	Lyons oral history	1	24	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	210	290	-
+testdocs/document	Lyons oral history	29	284	1.00	1.00	1.00	0	0.0000	-	0.87	1	1.00	1.00	1.00	0.01	0.99	1.00	1	0	0	0/0	9/11	ok	251	309	-
+testdocs/document	Lyons oral history	57	295	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	10/10	ok	269	272	-
+testdocs/document	Lyons oral history	86	295	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	16/20	ok	237	294	-
+testdocs/document	Nogales oral history	1	25	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	229	260	-
+testdocs/document	Nogales oral history	12	236	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	12/12	ok	235	300	-
+testdocs/document	Nogales oral history	23	240	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	1.00	0.98	0	0	0	0/0	8/9	ok	329	270	-
+testdocs/document	Nogales oral history	35	259	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	4/4	ok	333	537	-
+testdocs/document	October_2,_1960_(Page_24_of_25	1	3380	0.76	0.79	1.07	-8	0.0000	-	0.90	26	0.18	0.40	0.85	2.77	0.88	0.62	10	4	4	1/47	1595/2084	origin	100	356	selection
+testdocs/document	RIESMAN_1942_American Law Institute Proceedings_	1	195	0.82	0.98	1.11	-32	0.0000	-	0.97	1	0.29	1.00	1.00	-	-	-	0	0	0	0/0	16/16	ok	705	830	selection
+testdocs/document	RIESMAN_1942_American Law Institute Proceedings_	3	197	1.03	1.02	1.09	-1	0.0000	-	0.77	2	0.51	1.00	0.88	0.94	0.93	0.93	0	0	0	0/0	30/30	ok	853	570	find,selection
+testdocs/document	RIESMAN_1942_American Law Institute Proceedings_	5	400	0.98	1.00	1.15	-42	0.0688	0.00	0.93	1	1.00	1.00	1.00	0.07	0.96	0.93	0	0	0	0/5	34/38	ok	809	616	colour
+testdocs/document	RIESMAN_1942_American Law Institute Proceedings_	8	388	1.01	0.99	1.09	-35	0.1296	0.00	0.80	1	0.99	1.00	1.00	0.09	0.97	0.92	0	1	0	0/8	34/36	ok	634	878	colour
+testdocs/document	Riesman_1964_From inner-directed to other- directed_	1	130	0.95	1.02	1.02	-7	0.0000	-	0.83	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	213	197	-
+testdocs/document	Riesman_1964_From inner-directed to other- directed_	5	144	1.03	1.00	1.00	-0	0.0000	-	0.93	3	0.80	1.00	1.00	0.25	1.00	0.89	0	0	0	0/0	22/22	ok	64	86	selection
+testdocs/document	Riesman_1964_From inner-directed to other- directed_	9	479	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.97	0.97	0	0	0	0/12	36/40	ok	95	132	-
+testdocs/document	Riesman_1964_From inner-directed to other- directed_	14	505	1.00	1.00	1.00	0	0.0000	-	0.87	1	1.00	1.00	1.00	0.03	0.99	0.97	0	1	0	0/9	38/43	ok	135	103	-
+testdocs/document	Riesman_1964_The New Education_	1	131	1.00	1.01	1.01	-0	0.0000	-	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	207	191	-
+testdocs/document	Riesman_1964_The New Education_	3	415	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/2	36/36	ok	97	103	-
+testdocs/document	Riesman_1964_The New Education_	6	551	1.03	1.00	1.03	-5	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.89	0.99	0	0	0	0/3	43/48	ok	355	327	-
+testdocs/document	Riesman_1964_The New Education_	9	351	0.99	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/3	24/25	ok	70	63	-
+testdocs/document	Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_	1	123	1.00	1.00	1.00	-0	0.0000	-	0.90	1	1.00	1.00	1.00	0.10	-	-	0	1	0	0/0	3/5	ok	178	169	-
+testdocs/document	Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_	8	489	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.03	0.96	0.96	0	0	0	0/2	31/36	ok	67	59	-
+testdocs/document	Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_	15	427	1.00	1.00	1.06	-11	0.0000	-	1.00	2	1.00	1.00	1.00	0.06	0.96	0.93	0	1	0	0/5	27/30	ok	84	88	-
+testdocs/document	Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_	23	544	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.03	0.97	0.95	0	1	0	0/9	38/42	ok	86	95	-
+testdocs/document	Senate, Democratic Leadership	1	348	0.91	1.00	1.07	-3	0.0010	0.00	0.87	1	1.00	1.00	1.00	0.01	1.00	1.00	0	1	0	0/0	17/18	origin	9	67	colour
+testdocs/document	Senate, Democratic Leadership	7	331	1.00	1.00	1.07	-2	0.0010	0.00	0.90	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	5/6	origin	3	72	colour
+testdocs/document	Senate, Democratic Leadership	14	168	1.02	0.99	1.06	-4	0.0014	0.00	0.97	1	0.48	1.00	1.00	-	1.00	-	0	0	0	0/0	8/8	ok	5	74	colour,selection
+testdocs/document	Senate, Democratic Leadership	21	163	1.02	0.99	1.05	-5	0.0014	0.00	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	5	66	colour
+testdocs/document	Stanford_1891_Jane Stanford opening day speech (undelivered)	1	341	0.98	1.00	0.92	7	0.5485	0.00	0.97	1	1.00	1.00	1.00	0.04	0.98	0.97	0	0	0	0/2	23/27	ok	295	220	colour
+testdocs/document	Stanford_1891_Jane Stanford opening day speech (undelivered)	2	306	0.88	0.97	0.98	5	0.3339	0.00	0.97	2	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/3	15/16	ok	195	75	colour
+testdocs/document	Stanford_1891_Jane Stanford opening day speech (undelivered)	3	374	1.01	0.99	0.99	5	0.3596	0.00	1.00	4	1.00	1.00	1.00	0.01	0.98	0.98	0	0	0	0/0	19/19	ok	136	95	colour
+testdocs/document	Stiglitz1975(onPasinetti1974)	1	131	1.00	1.00	1.00	0	0.0045	1.00	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	6	9	-
+testdocs/document	Stiglitz1975(onPasinetti1974)	2	702	1.00	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.05	0.94	0.93	0	0	0	0/30	79/95	ok	433	593	-
+testdocs/document	Stiglitz1975(onPasinetti1974)	3	709	1.00	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.03	0.95	0.96	0	0	0	0/15	80/95	ok	366	505	-
+testdocs/document	_1939_Former students to Board re Merriam_	1	224	0.98	0.97	0.92	-10	0.0425	1.00	0.97	2	1.00	1.00	1.00	0.01	1.00	1.00	0	0	0	0/0	10/10	ok	1	138	-
+testdocs/document	_1939_Former students to Board re Merriam_	5	35	0.53	-	1.01	-2	0.3806	1.00	0.15	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	2	156	legibility,find
+testdocs/document	_1939_Former students to Board re Merriam_	9	304	0.93	0.92	0.67	-23	0.0000	-	0.97	1	0.98	1.00	1.00	0.04	1.00	0.97	0	0	0	0/1	23/28	ok	2	151	-
+testdocs/document	_1939_Former students to Board re Merriam_	14	425	0.97	0.95	0.90	-31	0.0134	0.00	0.93	1	1.00	1.00	1.00	0.04	1.00	0.97	0	2	0	0/2	25/28	ok	2	128	colour
+testdocs/document	_1953_99 Cong_	1	1494	-	1.00	1.00	0	0.0000	-	0.97	14	0.42	1.00	0.95	0.72	0.84	0.78	0	3	0	2/30	244/301	ok	229	428	selection
+testdocs/document	_1953_99 Cong_	8	1644	-	1.00	1.00	0	0.0000	-	1.00	13	0.16	1.00	0.97	1.20	0.90	0.80	0	2	0	0/31	377/452	ok	305	449	selection
+testdocs/document	_1953_99 Cong_	16	1814	-	1.00	1.00	0	0.0000	-	0.90	10	1.00	1.00	1.00	0.18	0.93	0.74	0	2	2	4/66	181/212	ok	224	413	-
+testdocs/document	_1953_99 Cong_	24	1585	1.00	1.00	1.00	0	0.0000	-	0.93	7	0.14	1.00	0.94	1.84	0.93	0.77	0	3	1	2/29	406/516	ok	240	316	selection
+testdocs/document	_1953_99 Cong_ 2	1	1328	1.00	1.00	1.00	0	0.0000	-	0.97	17	0.05	1.00	0.84	1.93	0.91	0.38	0	0	0	0/26	646/814	ok	256	291	selection
+testdocs/document	_1953_99 Cong_ 2	8	1942	-	1.00	1.00	0	0.0000	-	0.90	8	0.48	1.00	1.00	0.72	0.89	0.80	0	0	1	0/21	311/379	ok	228	363	selection
+testdocs/document	_1953_99 Cong_ 2	16	1536	1.00	1.00	1.00	0	0.0000	-	0.97	11	0.05	0.00	1.00	1.03	0.90	0.25	0	1	1	1/39	309/352	ok	227	436	selection
+testdocs/document	_1953_99 Cong_ 2	24	1580	-	1.00	1.00	0	0.0000	-	0.87	8	0.51	1.00	1.00	0.74	0.94	0.87	0	0	1	0/44	206/265	ok	282	399	selection
+testdocs/document	_1953_Conspicuous Production_	1	67	1.00	1.00	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	225	151	-
+testdocs/document	_1953_Conspicuous Production_	2	1400	1.00	1.00	1.09	-13	0.0000	-	0.93	5	1.00	1.00	1.00	0.04	0.94	0.93	0	0	0	0/12	112/121	ok	265	290	-
+testdocs/document	_1953_Conspicuous Production_	3	1412	0.73	1.00	1.11	-16	0.0000	-	0.87	5	0.55	1.00	1.00	0.48	0.91	0.89	0	1	0	0/13	159/179	ok	312	258	legibility,selection
+testdocs/document	_1960_Organization and operation of the Small Business Administration_	1	105	1.00	1.00	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	152	261	-
+testdocs/document	_1960_Organization and operation of the Small Business Administration_	19	396	1.00	1.00	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.17	0.90	0.91	0	0	0	0/3	24/40	ok	139	246	-
+testdocs/document	_1960_Organization and operation of the Small Business Administration_	37	407	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	0.96	0.22	0.87	0.88	0	1	2	1/2	37/45	ok	164	240	-
+testdocs/document	_1960_Organization and operation of the Small Business Administration_	55	516	1.00	1.00	1.00	0	0.0000	-	0.87	2	1.00	1.00	1.00	0.14	0.95	0.92	0	2	0	0/6	40/49	ok	167	266	-
+testdocs/document	_1973_Committee Against Racism_	1	1055	1.01	1.00	1.00	3	0.0092	0.98	0.93	3	1.00	1.00	1.00	0.01	1.00	0.94	1	0	0	0/0	35/42	ok	290	168	-
+testdocs/document	_1973_Committee Against Racism_	2	1599	1.01	1.00	1.01	3	0.0019	0.00	0.93	5	1.00	1.00	1.00	0.04	0.95	0.95	0	0	0	0/0	44/49	ok	378	246	colour
+testdocs/document	_1973_Committee Against Racism_	3	1628	1.03	1.01	1.04	2	0.0028	0.00	0.97	3	1.00	1.00	1.00	0.01	0.98	0.96	0	0	0	0/0	56/67	ok	203	174	colour
+testdocs/document	_1979_Ideology of American Neo-Conservatism_	1	320	0.99	0.96	1.00	0	0.0000	-	0.80	1	1.00	1.00	1.00	0.14	0.83	0.93	0	0	0	1/4	29/31	ok	131	214	-
+testdocs/document	_1979_Ideology of American Neo-Conservatism_	4	508	1.01	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.08	0.94	0.94	0	0	1	0/6	38/43	ok	182	274	-
+testdocs/document	_1979_Ideology of American Neo-Conservatism_	8	496	1.00	0.98	1.00	-0	0.0000	-	0.80	3	1.00	1.00	1.00	0.08	0.93	0.91	0	0	0	1/8	36/41	ok	192	399	-
+testdocs/document	_1979_Ideology of American Neo-Conservatism_	12	471	0.97	0.99	1.00	-0	0.0000	-	0.80	3	1.00	1.00	1.00	0.09	0.88	0.81	0	1	1	0/5	38/39	ok	145	207	-
+testdocs/document	ppf_description	1	246	1.00	1.00	1.00	-0	0.0000	-	0.93	3	1.00	1.00	1.00	0.08	0.97	0.91	0	0	0	1/2	19/22	ok	95	94	-
+testdocs/document	ppf_description	2	378	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	0.95	1.00	0.12	0.97	0.95	0	0	0	2/3	38/45	ok	109	102	-
+testdocs/document	ppf_description	3	356	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	0.91	0.17	1.00	0.89	0	0	0	0/2	18/25	ok	64	72	-
+testdocs/document	ppf_description	4	245	1.00	1.00	1.00	0	0.0000	-	0.87	2	0.58	1.00	1.00	0.38	1.00	0.87	0	0	0	0/2	14/16	ok	84	77	selection
+testdocs/document	w5093	1	159	1.02	1.00	1.00	-9	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	7/8	ok	154	253	-
+testdocs/document	w5093	16	331	0.77	0.99	1.02	-6	0.0000	-	0.90	3	1.00	1.00	1.00	0.06	0.87	0.90	1	1	0	0/6	21/24	ok	125	170	-
+testdocs/document	w5093	32	295	1.00	1.00	1.00	-20	0.0000	-	0.97	1	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/1	16/17	ok	181	237	-
+testdocs/document	w5093	48	149	1.00	1.00	1.02	-15	0.0000	-	0.93	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	3/5	ok	120	174	-
+testdocs/journalArticle	1935_Title Page	1	108	1.00	1.00	1.00	0	0.0034	1.00	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	1	5	-
+testdocs/journalArticle	1935_Title Page	2	14	-	-	0.99	-3	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	94	141	-
+testdocs/journalArticle	1935_Title Page	3	0	-	-	-	-	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	122	135	-
+testdocs/journalArticle	1944_Options picking up	1	1155	0.98	0.98	1.03	4	0.0000	-	0.97	7	0.51	1.00	0.97	0.44	0.90	0.90	0	0	1	2/28	198/232	ok	265	209	selection
+testdocs/journalArticle	1944_Options picking up	2	591	1.00	1.03	1.01	1	0.0000	-	0.87	7	0.13	1.00	1.00	0.56	0.94	0.65	0	1	0	1/13	107/123	ok	428	158	selection
+testdocs/journalArticle	1944_Options picking up	3	45	1.00	1.00	1.00	0	0.0000	-	0.96	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	99	91	-
+testdocs/journalArticle	Albanese_1997_Senate Will Examine Stock Option Bill	1	690	1.25	1.00	1.23	0	0.0442	1.00	0.93	5	0.31	1.00	1.00	0.84	0.94	0.89	0	0	0	0/27	185/208	ok	12	80	selection
+testdocs/journalArticle	Albanese_1997_Senate Will Examine Stock Option Bill	2	886	1.14	0.99	1.41	-6	0.0627	1.00	0.97	4	0.53	1.00	0.96	0.48	0.96	0.93	0	0	0	1/27	191/209	ok	59	71	selection
+testdocs/journalArticle	Albanese_1997_Senate Will Examine Stock Option Bill	3	50	1.00	1.00	1.08	9	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	9	12	-
+testdocs/journalArticle	Baker_2000_The Supply-Side Effect of a Stock Market Crash	1	104	1.00	1.00	1.00	0	0.0035	1.00	0.67	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	9	13	find
+testdocs/journalArticle	Baker_2000_The Supply-Side Effect of a Stock Market Crash	3	311	0.97	1.00	1.00	-0	0.0000	-	0.97	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/7	24/29	origin	625	1011	-
+testdocs/journalArticle	Baker_2000_The Supply-Side Effect of a Stock Market Crash	6	345	0.99	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.98	0.97	0	0	0	1/4	24/27	origin	732	751	-
+testdocs/journalArticle	Baker_2000_The Supply-Side Effect of a Stock Market Crash	9	371	0.99	0.99	1.00	-0	0.0000	-	1.00	1	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/3	29/32	origin	566	608	-
+testdocs/journalArticle	Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California	1	281	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.05	0.99	0.99	0	0	0	0/0	14/16	ok	3	6	-
+testdocs/journalArticle	Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California	14	482	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.99	0.91	0	1	0	0/0	26/26	ok	2	3	-
+testdocs/journalArticle	Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California	27	524	1.00	1.00	1.00	0	0.0000	-	0.93	3	1.00	1.00	1.00	0.07	0.97	0.87	0	1	0	0/0	21/21	ok	3	4	-
+testdocs/journalArticle	Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California	41	623	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.00	1.00	0.99	0	1	0	0/0	30/37	ok	3	3	-
+testdocs/journalArticle	Borges_The Lottery in Babylon	1	531	1.00	1.00	1.00	0	0.0000	-	0.97	4	1.00	1.00	1.00	0.00	0.99	0.98	0	0	0	0/1	24/25	ok	153	149	-
+testdocs/journalArticle	Borges_The Lottery in Babylon	2	598	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/0	23/26	ok	159	139	-
+testdocs/journalArticle	Borges_The Lottery in Babylon	3	561	1.00	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.00	0.99	0.99	0	0	0	0/1	27/28	ok	176	142	-
+testdocs/journalArticle	Borges_The Lottery in Babylon	4	582	1.00	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	25/28	ok	150	127	-
+testdocs/journalArticle	Burke - The Expansion of American Higher Education	1	284	1.00	1.00	1.00	0	0.1339	1.00	0.90	2	1.00	1.00	1.00	0.04	1.00	0.97	0	0	0	2/2	15/22	ok	13	17	-
+testdocs/journalArticle	Burke - The Expansion of American Higher Education	6	177	1.23	0.99	1.01	0	0.0000	-	0.97	8	0.88	1.00	1.00	0.05	-	0.95	0	0	0	0/0	105/109	ok	210	341	selection
+testdocs/journalArticle	Burke - The Expansion of American Higher Education	12	537	1.00	1.00	1.00	-0	0.0000	-	0.93	2	1.00	1.00	1.00	0.02	0.97	0.96	0	0	0	0/12	34/37	ok	218	343	-
+testdocs/journalArticle	Burke - The Expansion of American Higher Education	18	227	1.01	0.99	1.00	0	0.0000	-	1.00	13	0.37	0.80	0.93	0.22	1.00	0.98	0	0	0	0/1	70/108	ok	227	358	selection
+testdocs/journalArticle	Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review	1	140	1.00	1.00	1.00	0	0.0049	1.00	0.80	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	24	8	-
+testdocs/journalArticle	Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review	5	784	0.98	1.00	1.00	0	0.0000	-	0.97	4	0.37	1.00	1.00	0.53	0.95	0.94	0	0	0	0/21	138/158	origin	338	566	selection
+testdocs/journalArticle	Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review	10	784	0.99	1.01	1.00	0	0.0000	-	0.97	4	0.78	1.00	1.00	0.26	0.93	0.88	0	0	0	0/31	108/116	origin	340	501	selection
+testdocs/journalArticle	Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review	15	752	1.03	0.98	1.00	0	0.0000	-	0.93	3	0.60	1.00	1.00	0.38	0.96	0.92	0	0	0	2/25	126/136	origin	358	532	selection
+testdocs/journalArticle	Crystal_2000_Option grants leave CEOs with sinking feeling	1	1236	1.00	1.00	1.00	0	0.0000	-	0.87	7	1.00	1.00	1.00	0.01	0.98	0.97	0	0	0	0/13	151/176	ok	247	470	-
+testdocs/journalArticle	Donahue - 2001 - Time to Get Serious About Talent Management	1	865	1.00	1.00	1.01	-15	0.0000	-	0.93	7	1.00	1.00	1.00	0.03	0.95	0.84	0	0	0	0/23	118/133	ok	145	170	-
+testdocs/journalArticle	Donahue - 2001 - Time to Get Serious About Talent Management	2	816	1.01	0.99	1.03	-11	0.0000	-	0.97	6	1.00	1.00	1.00	0.04	0.92	0.81	1	1	0	0/9	71/85	ok	111	153	-
+testdocs/journalArticle	Donahue - 2001 - Time to Get Serious About Talent Management	3	62	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.05	1.00	0.96	0	0	0	0/0	4/4	ok	1	1	-
+testdocs/journalArticle	Eyal-Cohen - Why Is Small Business the Chief Business of Congress	1	97	1.09	1.00	1.06	-25	0.0094	0.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	14	67	colour
+testdocs/journalArticle	Eyal-Cohen - Why Is Small Business the Chief Business of Congress	15	447	0.97	0.91	1.03	-6	0.0000	-	0.93	2	1.00	1.00	1.00	0.06	0.99	0.97	0	0	0	0/0	28/34	origin	76	141	-
+testdocs/journalArticle	Eyal-Cohen - Why Is Small Business the Chief Business of Congress	30	484	1.03	1.00	1.03	-6	0.0000	-	1.00	3	1.00	1.00	1.00	0.02	1.00	0.97	0	1	0	0/0	31/37	origin	142	159	-
+testdocs/journalArticle	Eyal-Cohen - Why Is Small Business the Chief Business of Congress	45	465	0.99	1.00	1.02	-6	0.0000	-	0.93	2	1.00	1.00	1.00	0.05	0.99	0.97	0	0	0	0/0	26/32	origin	65	304	-
+testdocs/journalArticle	Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors	1	162	1.00	1.00	1.00	0	0.0189	1.00	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	12	15	-
+testdocs/journalArticle	Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors	15	573	1.00	1.00	1.00	1	0.0000	-	1.00	2	1.00	1.00	1.00	0.03	0.98	0.93	0	0	0	0/1	35/40	origin	381	416	-
+testdocs/journalArticle	Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors	29	570	0.97	1.00	1.00	1	0.0000	-	1.00	3	1.00	1.00	1.00	0.01	0.98	0.99	0	0	0	0/1	38/46	origin	679	329	-
+testdocs/journalArticle	Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors	43	561	1.14	1.00	1.00	1	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	0.97	0.98	0	0	0	0/2	37/43	origin	337	595	-
+testdocs/journalArticle	Har - THE NECKLACE OF KALI.	1	1630	0.78	0.85	1.15	1	0.0000	-	0.83	14	0.09	0.80	0.98	1.47	0.76	0.66	0	1	0	1/20	404/496	ok	281	1023	selection,copy
+testdocs/journalArticle	Jones et al_2010_The Productivity Effects of Stock Option Schemes	1	490	1.01	1.00	1.00	-1	0.0017	0.00	0.97	2	1.00	1.00	1.00	0.02	0.98	0.96	0	0	0	0/8	39/41	ok	379	490	colour
+testdocs/journalArticle	Jones et al_2010_The Productivity Effects of Stock Option Schemes	4	585	0.99	1.00	1.00	-1	0.0003	0.00	0.97	11	0.11	1.00	0.00	0.49	0.87	0.97	1	0	0	1/5	199/202	ok	218	218	selection
+testdocs/journalArticle	Jones et al_2010_The Productivity Effects of Stock Option Schemes	8	579	1.05	1.00	1.00	-1	0.0004	0.00	0.87	7	0.07	1.00	0.61	0.72	0.96	0.50	1	0	0	0/2	94/99	ok	228	182	selection
+testdocs/journalArticle	Jones et al_2010_The Productivity Effects of Stock Option Schemes	12	715	0.99	0.99	1.00	-1	0.0011	0.00	0.93	5	1.00	1.00	1.00	0.04	0.95	0.95	0	2	0	0/10	63/69	ok	206	226	colour
+testdocs/journalArticle	Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_	1	257	1.00	1.00	1.00	-0	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.99	0.97	0	0	0	0/2	17/19	ok	79	91	-
+testdocs/journalArticle	Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_	4	498	1.00	1.00	1.00	-0	0.0000	-	1.00	2	1.00	1.00	1.00	0.02	0.97	0.95	0	0	0	0/11	37/39	ok	63	70	-
+testdocs/journalArticle	Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_	7	435	1.00	1.00	1.00	-0	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/7	36/39	ok	80	101	-
+testdocs/journalArticle	Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_	10	431	1.00	1.00	1.00	-0	0.0000	-	0.87	2	1.00	1.00	1.00	0.01	0.98	0.98	0	0	0	0/3	35/36	ok	88	122	-
+testdocs/journalArticle	Lemieux et al. - Performance Pay and Wage Inequality	1	174	1.00	1.00	1.00	0	0.0038	1.00	0.90	1	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/0	3/5	ok	11	16	-
+testdocs/journalArticle	Lemieux et al. - Performance Pay and Wage Inequality	13	239	0.99	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.01	0.99	0.99	1	0	0	0/1	16/19	origin	436	445	-
+testdocs/journalArticle	Lemieux et al. - Performance Pay and Wage Inequality	25	453	1.00	1.00	1.00	0	0.0000	-	0.87	1	1.00	1.00	1.00	0.07	0.98	0.96	0	0	0	0/8	38/41	origin	426	473	-
+testdocs/journalArticle	Lemieux et al. - Performance Pay and Wage Inequality	38	321	0.95	0.97	1.02	1	0.0000	-	0.87	2	1.00	0.80	1.00	0.07	0.99	0.97	0	0	0	0/2	21/23	origin	539	467	selection
+testdocs/journalArticle	Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks	1	257	1.05	1.06	1.02	-1	0.0000	-	1.00	2	1.00	1.00	1.00	0.02	1.00	0.96	0	0	0	0/0	15/16	ok	6	51	-
+testdocs/journalArticle	Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks	6	302	1.01	1.00	1.02	-0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/1	30/31	ok	6	48	-
+testdocs/journalArticle	Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks	12	327	1.02	1.00	1.02	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.02	0.99	0.92	0	0	0	0/2	32/33	ok	6	61	-
+testdocs/journalArticle	Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks	18	312	1.00	1.00	1.02	-1	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	0.98	0.97	0	0	0	0/2	30/31	ok	4	42	-
+testdocs/journalArticle	Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State	1	715	1.00	0.98	1.01	1	0.0000	-	0.97	2	0.56	1.00	1.00	0.48	0.91	0.94	0	3	1	0/19	106/120	ok	20	203	selection
+testdocs/journalArticle	Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State	3	671	1.00	1.00	1.00	0	0.0000	-	0.97	4	1.00	1.00	1.00	0.07	0.95	0.90	0	1	1	0/22	68/82	ok	24	230	-
+testdocs/journalArticle	Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State	6	638	1.00	0.99	1.01	1	0.0000	-	1.00	5	0.23	1.00	1.00	0.69	0.90	0.89	0	0	0	0/17	98/113	ok	19	226	selection
+testdocs/journalArticle	Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State	9	773	1.00	0.99	1.01	1	0.0000	-	1.00	3	1.00	1.00	1.00	0.05	0.94	0.92	0	0	1	0/23	76/86	ok	16	170	-
+testdocs/journalArticle	Lowell - The Government of Dependencies	1	369	1.00	1.00	1.03	-19	0.0000	-	1.00	1	1.00	1.00	1.00	0.04	0.96	0.95	0	0	0	0/6	34/39	ok	111	60	-
+testdocs/journalArticle	Lowell - The Government of Dependencies	4	423	1.07	1.00	1.02	-20	0.0000	-	1.00	1	1.00	1.00	1.00	0.06	0.96	0.97	0	0	0	0/5	40/42	ok	62	64	-
+testdocs/journalArticle	Lowell - The Government of Dependencies	7	420	0.99	1.03	1.02	-19	0.0000	-	1.00	1	1.00	1.00	1.00	0.05	0.97	0.96	0	0	0	0/5	41/42	ok	74	96	-
+testdocs/journalArticle	Lowell - The Government of Dependencies	11	421	1.08	1.01	1.02	-19	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.97	0.98	0	0	0	0/5	37/42	ok	66	104	-
+testdocs/journalArticle	McWilliams_1933_Provincialism_The Frontier and Midland	1	127	1.09	1.00	1.00	-6	0.0000	-	0.90	2	0.60	1.00	1.00	0.26	0.95	1.00	0	0	0	0/0	10/10	ok	135	231	selection
+testdocs/journalArticle	McWilliams_1933_Provincialism_The Frontier and Midland	4	384	0.94	1.02	1.06	-10	0.0000	-	0.97	14	0.76	0.86	1.00	0.09	0.90	0.90	0	0	0	0/0	99/117	ok	91	93	selection
+testdocs/journalArticle	McWilliams_1933_Provincialism_The Frontier and Midland	8	594	0.99	0.99	1.03	-10	0.0000	-	0.87	2	1.00	1.00	1.00	0.08	0.94	0.89	0	0	0	0/8	68/82	ok	99	117	-
+testdocs/journalArticle	McWilliams_1933_Provincialism_The Frontier and Midland	12	599	0.99	0.99	1.03	-9	0.0000	-	0.97	2	1.00	1.00	1.00	0.06	0.92	0.93	0	0	0	0/14	76/85	ok	78	95	-
+testdocs/journalArticle	Merriam_1920_Daughter of Pan_The Montanan (The Frontier)	1	475	1.03	0.97	0.95	-10	0.0339	1.00	0.97	1	1.00	1.00	1.00	0.21	0.98	0.89	0	0	1	2/3	18/25	ok	11	212	-
+testdocs/journalArticle	Price_1958_The Small Business Tax Revision of 1958	1	209	1.00	1.00	1.00	0	0.0049	1.00	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	3	5	-
+testdocs/journalArticle	Price_1958_The Small Business Tax Revision of 1958	10	463	0.92	1.02	1.00	3	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.98	0.94	0	1	0	0/9	36/40	origin	70	132	-
+testdocs/journalArticle	Price_1958_The Small Business Tax Revision of 1958	19	460	1.00	1.00	1.02	1	0.0000	-	0.90	1	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/2	36/41	origin	124	88	-
+testdocs/journalArticle	Price_1958_The Small Business Tax Revision of 1958	28	476	0.94	0.93	1.02	2	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.94	0.90	0	0	0	0/6	35/41	origin	74	103	-
+testdocs/journalArticle	Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43)	1	164	0.97	0.97	1.10	-15	0.0044	0.00	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	1191	814	colour
+testdocs/journalArticle	Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43)	14	560	0.98	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.11	0.92	0.91	1	1	0	1/10	35/48	ok	441	723	-
+testdocs/journalArticle	Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43)	28	500	0.99	1.00	1.00	-0	0.0000	-	0.87	1	1.00	1.00	1.00	0.08	0.98	0.89	0	1	0	0/9	34/35	ok	403	394	-
+testdocs/journalArticle	Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43)	42	677	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.10	0.98	0.91	0	0	0	2/7	41/50	ok	461	459	-
+testdocs/journalArticle	Riesman_1949_Men, Women, and Marriage_Nation	1	1143	1.00	1.00	1.00	-0	0.0000	-	0.97	3	0.50	1.00	0.97	0.65	0.97	0.94	0	2	2	0/30	250/283	ok	241	202	selection
+testdocs/journalArticle	Riesman_1949_Men, Women, and Marriage_Nation	2	1123	0.99	0.99	1.09	-15	0.0000	-	0.90	6	0.50	1.00	1.00	0.64	0.95	0.74	0	2	2	0/32	217/254	ok	195	184	selection
+testdocs/journalArticle	Riesman_1949_Men, Women, and Marriage_Nation	3	46	1.05	1.00	1.07	-18	0.0000	-	0.96	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	61	76	-
+testdocs/journalArticle	Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review	1	161	0.93	0.99	1.06	-18	0.0059	0.00	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	1065	635	colour
+testdocs/journalArticle	Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review	4	396	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/4	31/32	ok	394	377	-
+testdocs/journalArticle	Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review	8	399	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/11	32/33	ok	369	383	-
+testdocs/journalArticle	Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review	12	381	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/9	30/32	ok	398	370	-
+testdocs/journalArticle	Riesman_1976_Thoughts on the Graduate Experience_Change	1	135	0.99	0.93	1.09	-15	0.0044	0.00	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	949	609	colour
+testdocs/journalArticle	Riesman_1976_Thoughts on the Graduate Experience_Change	2	725	1.00	0.97	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.96	0.94	0	4	0	0/18	76/84	ok	754	660	-
+testdocs/journalArticle	Riesman_1976_Thoughts on the Graduate Experience_Change	4	706	1.00	1.00	1.02	-20	0.0000	-	0.97	2	0.61	1.00	1.00	0.43	0.96	0.95	0	1	0	0/22	112/119	ok	859	701	selection
+testdocs/journalArticle	Riesman_1976_Thoughts on the Graduate Experience_Change	6	901	1.00	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.96	0.94	0	1	0	0/32	100/107	ok	736	718	-
+testdocs/journalArticle	Ripley_1889_The Teaching of the English Language and Literature_Education	1	35	1.33	0.97	1.02	-4	0.0000	-	0.81	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	7	85	-
+testdocs/journalArticle	Ripley_1889_The Teaching of the English Language and Literature_Education	4	430	1.00	0.96	1.04	-9	0.0000	-	0.93	1	1.00	1.00	1.00	0.03	0.98	0.97	0	1	0	0/5	34/39	ok	9	93	-
+testdocs/journalArticle	Ripley_1889_The Teaching of the English Language and Literature_Education	8	490	1.00	1.05	1.04	-8	0.0000	-	1.00	1	1.00	1.00	1.00	0.05	0.98	0.97	0	0	0	0/6	35/41	ok	9	92	-
+testdocs/journalArticle	Ripley_1889_The Teaching of the English Language and Literature_Education	12	426	1.00	1.00	1.04	-8	0.0000	-	0.93	2	1.00	1.00	1.00	0.02	0.98	0.97	0	1	0	1/6	28/37	ok	11	78	-
+testdocs/journalArticle	Robin_Stephens_1996_Against the Grain_Social Text	1	145	1.00	1.00	1.00	0	0.0047	1.00	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	7	8	-
+testdocs/journalArticle	Robin_Stephens_1996_Against the Grain_Social Text	8	489	1.01	1.00	1.05	-4	0.0010	0.00	0.90	1	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/5	40/42	origin	570	560	colour
+testdocs/journalArticle	Robin_Stephens_1996_Against the Grain_Social Text	16	531	0.98	1.00	1.05	-4	0.0010	0.00	1.00	3	1.00	1.00	1.00	0.00	0.99	0.98	0	0	0	0/2	29/32	origin	602	608	colour
+testdocs/journalArticle	Robin_Stephens_1996_Against the Grain_Social Text	24	447	1.00	0.97	1.05	-4	0.0010	0.00	0.93	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/4	26/29	origin	479	580	colour
+testdocs/journalArticle	Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY	1	641	1.00	1.00	1.01	-5	0.0000	-	0.97	4	1.00	1.00	1.00	0.06	0.96	0.92	0	1	0	0/18	71/79	ok	231	167	-
+testdocs/journalArticle	Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY	5	735	1.00	1.00	1.00	0	0.0000	-	0.90	5	1.00	1.00	1.00	0.05	0.89	0.91	0	0	0	0/35	83/96	ok	183	193	-
+testdocs/journalArticle	Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY	9	452	1.00	1.00	1.00	0	0.0000	-	1.00	11	0.13	1.00	0.90	1.45	0.96	0.92	0	0	0	0/5	507/510	ok	144	263	selection
+testdocs/journalArticle	Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY	13	798	1.00	1.00	1.00	0	0.0000	-	0.93	3	1.00	1.00	1.00	0.03	0.97	0.95	0	0	0	0/21	98/106	ok	245	330	-
+testdocs/journalArticle	Scott_TK_The Scientific Selection of Salesmen	1	708	0.99	0.94	1.00	10	0.0000	-	0.67	7	0.34	0.60	0.95	1.17	0.74	0.50	0	0	0	1/3	117/159	ok	226	181	find,selection,copy
+testdocs/journalArticle	Scott_TK_The Scientific Selection of Salesmen	4	868	1.15	1.01	1.09	-21	0.0000	-	0.87	5	0.27	0.94	0.98	0.74	0.92	0.89	0	1	2	0/24	133/169	ok	152	127	selection
+testdocs/journalArticle	Scott_TK_The Scientific Selection of Salesmen	7	1022	0.90	0.74	1.13	-14	0.0000	-	0.53	8	0.04	0.75	0.95	1.11	0.68	0.52	0	2	0	1/1	116/152	ok	160	127	legibility,find,selection,copy
+testdocs/journalArticle	Scott_TK_The Scientific Selection of Salesmen	10	876	1.55	0.98	0.97	6	0.0000	-	0.67	6	0.02	0.83	0.98	2.64	0.87	0.82	0	0	0	0/3	185/230	ok	166	108	find,selection
+testdocs/journalArticle	Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County	1	328	1.00	1.00	1.00	0	0.0005	1.00	0.97	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	4/4	16/20	ok	3	10	-
+testdocs/journalArticle	Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County	10	693	1.06	0.91	1.05	-1	0.0050	0.00	0.97	2	1.00	1.00	1.00	0.01	0.99	0.97	1	0	0	0/0	25/30	ok	14	128	colour
+testdocs/journalArticle	Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County	19	391	0.84	0.53	1.30	-13	0.0013	0.00	0.73	4	0.98	0.67	0.80	0.42	0.99	0.07	1	0	0	0/4	22/28	ok	26	39	legibility,colour,find,selection
+testdocs/journalArticle	Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County	28	452	1.00	1.00	1.00	0	0.0045	1.00	1.00	2	1.00	1.00	1.00	0.03	1.00	0.95	0	0	0	0/0	7/11	ok	3	3	-
+testdocs/journalArticle	Wells_2015_A Long View of Shareholder Power	1	276	1.00	1.00	1.00	0	0.0051	1.00	0.03	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	36	61	find
+testdocs/journalArticle	Wells_2015_A Long View of Shareholder Power	17	512	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.03	1.00	0.95	0	0	0	0/0	32/38	ok	190	140	-
+testdocs/journalArticle	Wells_2015_A Long View of Shareholder Power	34	490	1.01	1.07	1.00	-0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.98	0.97	1	0	0	0/0	32/35	ok	166	191	-
+testdocs/journalArticle	Wells_2015_A Long View of Shareholder Power	51	422	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.06	0.99	0.97	1	1	0	0/0	30/33	ok	147	135	-
+testdocs/journalArticle	Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature	1	154	1.00	1.00	1.00	0	0.0038	1.00	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	8	11	-
+testdocs/journalArticle	Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature	2	734	0.99	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.03	0.96	0.96	0	0	0	0/18	81/97	origin	692	617	-
+testdocs/journalArticle	Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature	3	798	0.95	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.03	0.96	0.95	0	0	0	0/22	88/101	origin	510	587	-
+testdocs/journalArticle	Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO	1	250	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	7/8	ok	96	151	-
+testdocs/journalArticle	Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO	8	436	1.00	1.00	1.16	-12	0.0000	-	0.90	1	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/1	34/37	ok	104	116	-
+testdocs/journalArticle	Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO	16	331	1.01	1.00	1.24	-10	0.0000	-	0.70	15	0.11	1.00	0.71	3.64	0.91	-	0	0	0	0/0	658/658	ok	126	131	find,selection
+testdocs/journalArticle	Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO	24	265	0.93	1.03	1.13	-8	0.0000	-	0.63	15	0.01	1.00	0.96	1.14	0.43	-	4	1	0	0/0	140/145	ok	102	100	find,selection,copy
+testdocs/journalArticle	_1985_Issue 2_New Perspectives	1	289	1.00	1.00	1.00	0	0.0049	1.00	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	3	5	-
+testdocs/journalArticle	_1985_Issue 2_New Perspectives	8	388	1.00	1.06	1.00	-4	0.0000	-	0.93	1	1.00	1.00	1.00	0.07	0.98	0.93	0	1	1	0/9	30/38	origin	103	130	-
+testdocs/journalArticle	_1985_Issue 2_New Perspectives	15	429	1.00	1.00	1.00	-4	0.0000	-	0.90	2	1.00	1.00	1.00	0.02	0.97	0.96	0	0	1	0/7	36/36	origin	89	140	-
+testdocs/journalArticle	_1985_Issue 2_New Perspectives	22	419	1.00	1.06	1.00	-4	0.0000	-	1.00	1	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/7	37/40	origin	118	313	-
+testdocs/journalArticle	oster - Engagement of Anne Foster To Tucson Man Announced	1	2570	0.84	0.94	1.09	-3	0.0000	-	1.00	25	0.06	0.80	0.96	3.43	0.77	0.75	13	1	0	1/21	851/1060	ok	246	1361	selection,copy
+testdocs/magazineArticle	1947_Corporation Tax Study Due By House Body	1	90	0.93	0.94	1.04	-6	0.0006	0.00	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	260	167	colour
+testdocs/magazineArticle	1947_Corporation Tax Study Due By House Body	2	2667	0.96	0.67	0.88	3	0.0000	-	0.73	22	0.00	0.00	0.92	4.11	0.80	0.09	11	0	3	2/38	1926/2326	ok	421	243	legibility,find,selection
+testdocs/magazineArticle	1947_Corporation Tax Study Due By House Body	3	132	0.95	0.95	0.98	-3	0.0000	-	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	176	165	-
+testdocs/magazineArticle	Astin__The Challenge of Open Admissions by Alexander W_UNZ.org	1	999	1.01	0.97	1.01	-6	0.0902	0.00	0.93	3	1.00	1.00	1.00	0.05	0.95	0.92	0	0	1	0/28	129/143	ok	202	306	colour
+testdocs/magazineArticle	Astin__The Challenge of Open Admissions by Alexander W_UNZ.org	2	1107	0.99	0.91	1.02	-16	0.0619	0.00	0.93	6	0.55	1.00	1.00	0.51	0.91	0.88	0	0	0	0/33	211/229	ok	406	462	colour,selection
+testdocs/magazineArticle	Astin__The Challenge of Open Admissions by Alexander W_UNZ.org	3	867	0.91	1.00	1.01	-8	0.0009	0.00	0.97	4	0.51	1.00	1.00	0.73	0.93	0.92	0	0	0	0/30	206/225	ok	417	197	colour,selection
+testdocs/magazineArticle	Black_0000_The Scandal of Educational Testing	1	602	0.73	0.98	1.02	-0	0.0000	-	0.97	4	0.65	1.00	0.98	0.38	0.97	0.93	1	0	1	0/6	84/101	ok	145	86	legibility,selection
+testdocs/magazineArticle	Black_0000_The Scandal of Educational Testing	2	1594	0.82	1.00	1.02	3	0.0000	-	0.87	5	0.40	1.00	0.96	0.34	0.95	0.92	1	1	3	0/31	270/319	ok	205	121	selection
+testdocs/magazineArticle	Black_0000_The Scandal of Educational Testing	3	1754	0.39	1.00	1.03	5	0.0322	1.00	0.93	11	1.00	1.00	1.00	0.05	0.96	0.79	0	3	0	0/28	206/251	ok	242	147	legibility
+testdocs/magazineArticle	Bullitt_1959_The Future American Class System_Horizon	1	120	1.00	0.99	1.02	-5	0.0000	-	0.90	1	0.95	1.00	0.90	0.45	-	-	0	0	0	0/0	9/9	ok	215	155	-
+testdocs/magazineArticle	Bullitt_1959_The Future American Class System_Horizon	2	67	1.08	1.02	1.29	-37	0.0000	-	0.75	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	105	236	find
+testdocs/magazineArticle	Bullitt_1959_The Future American Class System_Horizon	4	739	1.00	1.00	1.07	-22	0.0000	-	1.00	3	1.00	1.00	1.00	0.01	0.97	0.95	0	0	0	0/3	60/68	ok	177	190	-
+testdocs/magazineArticle	Bullitt_1959_The Future American Class System_Horizon	6	1023	1.00	1.00	1.10	-13	0.0000	-	1.00	4	1.00	1.00	1.00	0.01	0.98	0.96	0	0	0	0/13	89/100	ok	169	285	-
+testdocs/magazineArticle	Davis_2005_Optimism of the Will_Nation	1	356	0.99	1.00	0.99	3	0.0114	1.00	0.87	2	1.00	1.00	1.00	0.06	0.92	0.93	2	0	0	0/11	39/50	ok	22	43	-
+testdocs/magazineArticle	Davis_2005_Optimism of the Will_Nation	2	926	1.01	0.98	1.00	0	0.0325	0.02	0.90	5	1.00	1.00	1.00	0.04	0.91	0.95	11	0	0	26/28	97/139	ok	11	11	colour
+testdocs/magazineArticle	Davis_2005_Optimism of the Will_Nation	3	580	1.02	1.00	1.00	0	0.2492	0.91	0.97	3	1.00	1.00	1.00	0.03	0.99	0.99	2	0	0	11/11	51/66	ok	15	16	-
+testdocs/magazineArticle	Davis_2005_Optimism of the Will_Nation	4	1088	1.01	1.01	1.00	0	0.0367	0.11	0.97	6	0.53	1.00	1.00	0.15	0.96	0.98	3	0	0	24/30	123/167	ok	4	5	colour,selection
+testdocs/magazineArticle	Ehrenreich_2000_Maid to order_Harper's Magazine	1	71	1.00	1.00	1.03	-1	0.0856	1.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	258	83	-
+testdocs/magazineArticle	Ehrenreich_2000_Maid to order_Harper's Magazine	4	669	1.62	0.96	1.13	0	0.1152	0.39	0.93	4	1.00	1.00	1.00	0.02	0.97	0.96	0	0	0	0/14	58/61	ok	219	63	colour
+testdocs/magazineArticle	Ehrenreich_2000_Maid to order_Harper's Magazine	7	743	0.99	0.68	2.39	-63	0.0000	-	0.97	1	1.00	1.00	1.00	0.05	0.95	0.94	3	2	2	1/23	55/59	ok	491	99	legibility
+testdocs/magazineArticle	Ehrenreich_2000_Maid to order_Harper's Magazine	10	850	0.96	0.90	2.79	-61	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.96	0.96	1	1	1	0/8	56/63	ok	401	71	-
+testdocs/magazineArticle	Glazer_2002_Higher Ed_New Republic	1	1232	1.01	1.02	1.39	-7	0.0032	0.00	0.97	6	0.98	1.00	1.00	0.04	0.95	0.73	0	1	2	0/34	167/180	ok	54	142	colour
+testdocs/magazineArticle	Glazer_2002_Higher Ed_New Republic	2	45	1.00	1.00	1.10	5	0.0000	-	0.96	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	23	25	-
+testdocs/magazineArticle	Glazer_2003_Kith and Kin_Commentary; New York	1	563	0.98	1.00	1.17	-8	0.0000	-	1.00	4	1.00	1.00	1.00	0.08	0.91	0.87	0	0	2	0/32	78/81	ok	20	248	-
+testdocs/magazineArticle	Glazer_2003_Kith and Kin_Commentary; New York	2	959	1.03	1.00	1.05	-11	0.0000	-	0.87	5	1.00	1.00	1.00	0.08	0.91	0.89	0	2	2	0/41	146/158	ok	14	146	-
+testdocs/magazineArticle	Glazer_2003_Kith and Kin_Commentary; New York	3	932	1.08	1.01	1.05	-6	0.0000	-	0.90	5	0.38	1.00	1.00	0.86	0.94	0.88	1	0	0	2/47	243/271	ok	33	175	selection
+testdocs/magazineArticle	HarpersMagazine-1938-05-0019577	1	360	1.05	0.65	1.33	-50	0.0007	0.00	0.87	2	0.55	1.00	1.00	0.56	0.91	0.92	0	1	0	0/10	63/72	ok	144	32	legibility,colour,selection
+testdocs/magazineArticle	HarpersMagazine-1938-05-0019577	3	660	0.94	1.00	1.39	-51	0.0000	-	0.90	2	1.00	1.00	1.00	0.09	0.96	0.89	1	1	1	0/22	88/100	ok	110	62	-
+testdocs/magazineArticle	HarpersMagazine-1938-05-0019577	5	691	0.99	1.00	1.34	-45	0.0010	0.00	0.97	2	1.00	1.00	1.00	0.06	0.95	0.90	1	1	0	0/23	87/100	ok	138	96	colour
+testdocs/magazineArticle	HarpersMagazine-1938-05-0019577	8	720	0.98	1.00	1.53	-54	0.0000	-	0.97	2	0.52	1.00	1.00	0.49	0.99	0.97	0	2	0	4/26	70/95	ok	142	62	selection
+testdocs/magazineArticle	Kelly_2014_Orders of Magnitude_TLS	1	1257	1.03	1.00	0.99	-0	0.0360	0.00	0.97	5	0.99	1.00	1.00	0.05	0.99	0.89	0	0	0	28/28	126/161	ok	4	5	colour
+testdocs/magazineArticle	Kelly_2014_Orders of Magnitude_TLS	2	2263	1.06	1.00	0.99	0	0.0673	0.00	0.93	5	0.96	1.00	1.00	0.01	1.00	0.96	0	0	0	45/48	239/301	ok	7	5	colour
+testdocs/magazineArticle	Kelly_2014_Orders of Magnitude_TLS	3	1378	1.07	1.02	0.99	8	0.0978	0.94	0.97	5	1.00	1.00	1.00	0.02	0.97	0.95	0	0	1	0/23	171/176	ok	26	28	-
+testdocs/magazineArticle	Kristol_1960_High, Low, and Modern_Encounter	1	473	0.98	0.98	1.11	-7	0.0030	0.00	0.97	3	1.00	1.00	1.00	0.05	0.92	0.89	0	1	0	0/14	53/57	ok	389	185	colour
+testdocs/magazineArticle	Kristol_1960_High, Low, and Modern_Encounter	3	739	0.97	0.99	1.13	-7	0.0029	0.00	0.97	5	1.00	1.00	1.00	0.05	0.95	0.94	0	0	0	0/10	83/90	ok	638	118	colour
+testdocs/magazineArticle	Kristol_1960_High, Low, and Modern_Encounter	5	741	0.99	1.00	1.07	-8	0.0029	0.00	0.97	2	1.00	1.00	1.00	0.03	0.98	0.94	0	0	0	0/9	85/98	ok	498	130	colour
+testdocs/magazineArticle	Kristol_1960_High, Low, and Modern_Encounter	8	738	0.99	0.99	1.17	-10	0.0030	0.00	0.93	3	1.00	1.00	1.00	0.05	0.94	0.91	0	1	1	0/18	87/93	ok	595	137	colour
+testdocs/magazineArticle	Lasky et al. - 1949 - Letters from readers	1	752	1.03	1.01	1.03	-9	0.0000	-	0.93	3	1.00	1.00	1.00	0.04	0.94	0.91	0	0	0	1/11	79/90	ok	14	91	-
+testdocs/magazineArticle	Lasky et al. - 1949 - Letters from readers	2	899	0.98	0.99	1.03	-12	0.0000	-	0.87	3	1.00	1.00	1.00	0.03	0.94	0.95	0	0	0	1/21	94/112	ok	17	96	-
+testdocs/magazineArticle	Lasky et al. - 1949 - Letters from readers	3	874	1.05	1.00	1.07	-12	0.0000	-	0.83	4	1.00	1.00	1.00	0.05	0.92	0.91	0	0	2	0/25	90/106	ok	43	138	-
+testdocs/magazineArticle	Lemann, Nicholas_1977_Success In America_Washington Monthly	1	524	0.97	1.00	1.00	-0	0.0000	-	0.90	3	0.51	1.00	1.00	0.96	0.97	0.96	0	0	0	0/1	162/180	ok	144	116	selection
+testdocs/magazineArticle	Lemann, Nicholas_1977_Success In America_Washington Monthly	2	587	1.01	1.00	1.00	-0	0.0000	-	0.97	5	0.54	1.00	1.00	0.61	0.97	0.85	0	0	0	0/0	128/138	ok	141	130	selection
+testdocs/magazineArticle	Lemann, Nicholas_1977_Success In America_Washington Monthly	3	607	1.01	1.00	1.00	-0	0.0000	-	1.00	4	1.00	1.00	1.00	0.09	0.96	0.85	0	0	0	0/4	94/100	ok	146	100	-
+testdocs/magazineArticle	Lemann, Nicholas_1977_Success In America_Washington Monthly	4	614	1.00	1.00	1.00	-0	0.0000	-	0.93	7	0.31	1.00	1.00	0.79	0.96	0.82	0	0	0	0/16	164/174	ok	174	108	selection
+testdocs/magazineArticle	Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York	1	519	1.07	0.97	1.02	0	0.0000	-	0.93	3	1.00	1.00	1.00	0.08	0.93	0.85	0	0	0	0/8	51/57	ok	10	65	-
+testdocs/magazineArticle	Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York	2	810	0.53	1.01	1.02	-0	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	0.96	0.94	0	1	0	0/21	101/108	ok	14	105	legibility
+testdocs/magazineArticle	Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York	3	800	0.62	1.00	1.02	0	0.0000	-	0.93	3	1.00	0.91	1.00	0.05	0.91	0.85	0	2	1	0/16	88/104	ok	8	80	legibility
+testdocs/magazineArticle	Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York	4	800	0.59	0.99	1.02	-0	0.0000	-	0.93	3	0.52	1.00	1.00	0.89	0.95	0.92	0	0	2	0/21	177/193	ok	15	90	legibility,selection
+testdocs/magazineArticle	Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York	1	526	1.25	0.92	1.02	0	0.0000	-	0.87	6	0.16	1.00	0.88	0.25	0.86	0.90	0	0	0	0/8	99/112	ok	18	131	selection
+testdocs/magazineArticle	Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York	2	851	0.70	0.98	1.04	-1	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	0.88	0.93	1	0	1	1/24	98/107	ok	14	68	legibility
+testdocs/magazineArticle	Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York	3	795	0.54	0.97	1.02	-0	0.0000	-	0.90	2	1.00	1.00	1.00	0.05	0.93	0.95	0	0	0	0/16	92/105	ok	11	112	legibility
+testdocs/magazineArticle	Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington	1	704	0.97	1.00	1.01	3	0.0000	-	0.87	8	0.33	1.00	1.00	1.43	0.89	0.71	0	0	0	0/21	230/286	ok	183	128	selection
+testdocs/magazineArticle	Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington	2	757	0.78	1.01	1.08	-1	0.0000	-	0.93	6	0.51	1.00	0.99	0.52	0.92	0.89	0	0	0	0/24	151/187	ok	133	94	selection
+testdocs/magazineArticle	Merriam_1913_Clutter of Things_The Independent	1	885	0.69	0.98	1.03	-7	0.0591	0.00	0.80	5	0.36	0.97	0.98	0.88	0.89	0.89	0	3	0	0/19	198/215	ok	44	156	legibility,colour,selection
+testdocs/magazineArticle	Merriam_1913_Clutter of Things_The Independent	2	994	1.05	1.03	1.10	-9	0.0478	0.00	0.93	4	1.00	1.00	1.00	0.11	0.79	0.74	0	0	2	0/20	110/125	ok	10	80	colour,copy
+testdocs/magazineArticle	Part Two	1	117	0.84	1.04	1.00	-3	0.0000	-	0.90	3	0.43	1.00	1.00	0.47	1.00	0.85	0	1	0	0/0	25/32	ok	227	177	selection
+testdocs/magazineArticle	Part Two	9	397	0.99	1.00	1.03	-14	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.99	0.98	0	0	0	0/6	31/37	ok	55	44	-
+testdocs/magazineArticle	Part Two	18	381	1.00	1.00	1.03	-14	0.0000	-	0.93	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/1	31/34	ok	60	86	-
+testdocs/magazineArticle	Part Two	27	414	1.00	1.00	1.04	-14	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/8	33/37	ok	56	94	-
+testdocs/magazineArticle	Peters_1989_Tilting at Windmilss_Washington Monthly	1	417	1.00	1.00	1.00	0	0.0000	-	0.93	6	1.00	1.00	1.00	0.01	0.95	0.89	0	0	0	0/0	68/78	ok	80	146	-
+testdocs/magazineArticle	Peters_1989_Tilting at Windmilss_Washington Monthly	2	686	1.00	1.00	1.00	0	0.0000	-	0.93	7	1.00	1.00	1.00	0.00	0.92	0.99	0	0	0	0/2	127/137	ok	78	137	-
+testdocs/magazineArticle	Peters_1989_Tilting at Windmilss_Washington Monthly	3	771	1.00	1.00	1.00	0	0.0000	-	0.90	7	1.00	1.00	1.00	0.00	0.96	0.98	0	0	0	1/1	135/148	ok	156	130	-
+testdocs/magazineArticle	Sherman_1986_elite institutions_The Public Interest; New York	1	374	1.00	1.22	1.03	-9	0.0000	-	0.83	2	1.00	1.00	1.00	0.19	0.95	0.93	0	0	3	0/6	28/32	ok	314	435	-
+testdocs/magazineArticle	Sherman_1986_elite institutions_The Public Interest; New York	2	475	1.00	0.98	1.01	-1	0.0000	-	0.93	1	1.00	1.00	1.00	0.06	0.98	0.95	0	1	0	0/8	38/42	ok	260	522	-
+testdocs/magazineArticle	Sherman_1986_elite institutions_The Public Interest; New York	3	494	0.99	1.01	1.02	-1	0.0000	-	1.00	1	1.00	1.00	1.00	0.03	0.98	0.95	0	1	0	0/9	40/47	ok	245	302	-
+testdocs/magazineArticle	Sherman_1986_elite institutions_The Public Interest; New York	5	523	1.00	1.03	1.01	-1	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.97	0.96	0	0	0	0/8	41/47	ok	342	382	-
+testdocs/magazineArticle	Stone_1965_England’s Revolution_The New York Review of Books	1	648	1.00	1.00	1.03	-3	0.0000	-	0.97	4	1.00	1.00	1.00	0.01	0.99	1.00	0	2	0	0/0	25/27	ok	198	210	-
+testdocs/magazineArticle	Stone_1965_England’s Revolution_The New York Review of Books	2	874	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.00	0.99	0.99	0	0	0	0/0	42/44	ok	225	173	-
+testdocs/magazineArticle	Stone_1965_England’s Revolution_The New York Review of Books	3	866	1.00	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.00	1.00	0.98	0	0	0	0/1	36/41	ok	157	179	-
+testdocs/magazineArticle	_1958_Executive Pay_Nation's Business (pre-1986); Washington	1	59	1.00	1.00	1.00	-4	0.0000	-	0.87	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	3/4	ok	184	143	-
+testdocs/magazineArticle	_1958_Executive Pay_Nation's Business (pre-1986); Washington	2	720	0.99	1.00	1.01	-4	0.0000	-	0.93	5	1.00	1.00	1.00	0.04	0.94	0.93	0	0	0	0/21	60/77	ok	157	130	-
+testdocs/magazineArticle	_1958_Executive Pay_Nation's Business (pre-1986); Washington	3	1002	1.15	1.01	1.01	2	0.0000	-	1.00	8	1.00	1.00	1.00	0.07	0.92	0.85	0	4	0	0/41	134/173	ok	130	159	-
+testdocs/magazineArticle	_1958_Executive Pay_Nation's Business (pre-1986); Washington	5	1039	0.96	1.00	1.02	0	0.0000	-	1.00	5	1.00	1.00	1.00	0.04	0.88	0.94	0	1	0	0/28	129/169	ok	257	186	-
+testdocs/magazineArticle	_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York	1	1311	1.03	1.00	0.98	6	0.0002	0.86	0.87	9	1.00	1.00	1.00	0.07	0.90	0.87	0	1	0	0/30	157/183	ok	297	163	-
+testdocs/magazineArticle	_1977_What We're About_Washington Monthly	1	372	0.99	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.09	0.94	0.86	0	0	0	0/9	48/52	ok	90	136	-
+testdocs/magazineArticle	_1977_What We're About_Washington Monthly	2	331	0.98	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.07	0.94	0.90	0	0	1	0/9	51/54	ok	85	122	-
+testdocs/magazineArticle	_1977_What We're About_Washington Monthly	3	607	1.00	1.01	1.00	-0	0.0000	-	0.97	3	0.20	1.00	0.75	0.11	0.95	0.94	0	2	0	1/14	83/88	ok	86	129	selection
+testdocs/newspaperArticle	1976_Results of Trading in Stock Options	1	729	0.81	0.94	1.02	-1	0.0000	-	0.73	18	0.00	0.00	0.00	13.96	0.51	-	0	2	4	0/1	3297/3488	ok	25	218	find,selection,copy
+testdocs/newspaperArticle	Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y.	1	1392	0.64	1.00	1.02	2	0.0000	-	0.97	6	1.00	0.94	1.00	0.11	0.91	0.86	0	3	1	0/32	123/148	ok	275	161	legibility
+testdocs/newspaperArticle	Gitlin_2000_How Our Crowd Got Lonely_New York Times	1	1627	0.98	1.01	0.99	3	0.0000	-	0.80	4	1.00	1.00	1.00	0.13	0.89	0.86	1	2	5	1/40	162/181	ok	180	115	-
+testdocs/newspaperArticle	Glazer_2003_Neoconservatives, Then and Now_New York Times	1	215	-	0.94	1.07	-12	0.0000	-	0.97	2	1.00	1.00	1.00	0.13	0.87	0.82	0	1	0	0/10	26/30	ok	7	40	-
+testdocs/newspaperArticle	JOURNAL_1969_Giving the Boss a Raise_Wall Street Journal (1923 - Current file); New York, N.Y.	1	1413	1.04	1.00	1.01	-2	0.0000	-	0.90	11	0.03	0.83	0.96	1.26	0.91	0.72	1	0	0	0/27	328/396	ok	358	238	selection
+testdocs/newspaperArticle	Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK)	1	1222	0.73	1.01	1.25	-16	0.0000	-	1.00	7	0.20	1.00	1.00	1.20	0.73	0.82	1	0	3	0/6	119/134	ok	173	154	legibility,selection,copy
+testdocs/newspaperArticle	Zipkin_2000_Management	1	427	1.09	0.99	1.02	-0	0.0000	-	0.83	4	1.00	1.00	1.00	0.10	0.93	0.90	0	0	2	0/9	44/46	ok	12	102	-
+testdocs/newspaperArticle	Zipkin_2000_Management	2	1497	1.09	1.01	1.02	-2	0.0000	-	0.97	6	0.36	0.98	1.00	0.35	0.93	0.89	0	1	5	1/44	277/306	ok	19	124	selection
+testdocs/newspaperArticle	_1926_Clapp defends Cox_Billings Gazette	1	4443	1.21	1.19	1.03	-8	0.0000	-	0.87	41	0.00	0.00	0.96	3.83	0.72	0.08	5	5	20	1/115	3211/4236	ok	327	420	selection,copy
+testdocs/newspaperArticle	_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard	1	3405	1.22	0.02	1.04	-11	0.0000	-	0.53	22	0.12	0.40	0.83	4.33	0.52	0.45	10	0	4	0/51	1185/1638	ok	345	334	legibility,find,selection,copy
+testdocs/newspaperArticle	_1926_English dept summer school_Havre Daily News Promoter	1	1815	1.06	1.07	1.01	-6	0.0000	-	0.73	18	0.06	0.75	0.89	2.22	0.61	0.58	7	0	0	0/6	537/702	ok	343	365	find,selection,copy
+testdocs/newspaperArticle	_1928_Creative writing a featured course at Summer School_Helena Daily Independent	1	3537	1.00	0.95	1.00	-6	0.0000	-	0.30	32	0.13	0.29	0.80	1.76	0.24	0.31	7	1	26	1/48	781/1002	ok	225	293	find,selection,copy
+testdocs/newspaperArticle	_1931_Again, press most excited about Frontier's history section_Helena Daily Independent	1	4646	0.87	0.89	1.00	-5	0.0000	-	0.43	46	0.04	0.57	0.80	4.67	0.39	0.43	13	5	53	2/70	2915/3773	ok	238	287	find,selection,copy
+testdocs/newspaperArticle	_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake	1	2536	0.01	1.33	1.01	-8	0.0000	-	0.70	20	0.08	0.94	0.94	2.93	0.77	0.66	1	1	0	2/28	754/1020	ok	253	423	legibility,find,selection,copy
+testdocs/newspaperArticle	_1941_Fiedler's hiring at UM announced_Helena Independent	1	2836	0.98	1.01	1.00	-3	0.0000	-	0.77	29	0.10	0.50	0.92	2.85	0.65	0.60	5	4	4	2/51	1211/1555	ok	312	371	find,selection,copy
+testdocs/newspaperArticle	_1950_Comic_Independent Record	1	2057	-	1.05	1.00	-6	0.0000	-	0.63	26	0.00	0.00	0.95	1.18	0.64	0.38	0	0	2	4/15	493/613	ok	323	488	find,selection,copy
+testdocs/newspaperArticle	_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y.	1	524	1.00	1.00	1.00	0	0.0000	-	0.03	8	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	9	10	find
+testdocs/newspaperArticle	_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y.	2	756	1.31	1.00	1.01	-1	0.0000	-	0.93	11	0.23	1.00	1.00	1.48	0.91	0.76	0	0	2	0/5	322/429	ok	12	107	selection
+testdocs/newspaperArticle	_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y.	3	800	1.16	1.00	1.02	-1	0.0000	-	1.00	8	0.21	0.94	1.00	2.46	0.95	0.87	2	0	0	0/3	453/638	ok	7	72	selection
+testdocs/newspaperArticle	___	1	3136	1.00	0.92	1.13	-7	0.0000	-	0.83	33	0.03	0.50	0.89	3.29	0.76	0.60	12	4	0	2/9	1782/2054	ok	693	1522	selection,copy
+testdocs/newspaperArticle	___ 3	1	3804	0.91	0.83	1.03	-6	0.0000	-	0.63	31	0.02	0.62	0.84	3.65	0.61	0.54	14	2	14	2/47	1705/1971	ok	206	1404	find,selection,copy
+testdocs/newspaperArticle	___ 4	1	1607	0.64	0.92	1.17	-10	0.0000	-	0.83	16	0.18	0.95	0.97	2.80	0.82	0.71	0	0	0	0/71	349/503	ok	207	301	legibility,selection
+testdocs/newspaperArticle	___ 5	1	1880	1.05	1.04	1.00	-5	0.0000	-	0.47	19	0.10	0.80	0.95	2.58	0.50	0.54	0	2	0	0/34	867/1056	ok	203	248	find,selection,copy
+owner	1951 - Briefer Book Notes	1	514	0.81	1.20	1.00	-2	0.0000	-	0.90	3	1.00	1.00	0.95	0.30	0.89	0.90	1	2	1	0/2	51/58	ok	150	190	-
+owner	1951 - Briefer Book Notes	2	531	1.00	1.00	1.00	-0	0.0000	-	0.97	1	1.00	1.00	1.00	0.15	0.98	0.96	0	0	0	0/2	33/41	ok	144	138	-
+owner	1951 - Briefer Book Notes	3	487	0.91	1.00	1.00	0	0.0000	-	0.90	4	1.00	1.00	0.89	0.19	0.89	0.88	1	1	2	1/5	34/46	ok	144	147	-
+owner	1951 - Briefer Book Notes	4	505	1.00	1.00	1.00	-0	0.0000	-	0.90	2	1.00	0.93	1.00	0.20	0.90	0.87	1	0	0	0/2	21/31	ok	143	139	-
+owner	1951 - Briefer Book Notes	5	437	1.00	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	0.93	0.19	0.93	0.89	1	6	3	1/8	30/36	ok	134	139	-
+owner	1951 - Briefer Book Notes	6	503	0.99	1.08	1.00	-0	0.0000	-	0.90	2	1.00	1.00	1.00	0.24	0.98	0.89	0	0	2	0/1	21/32	ok	108	107	-
+owner	1954 - Why	1	188	1.00	1.00	1.00	0	0.0013	1.00	0.83	1	1.00	1.00	1.00	0.08	0.93	0.89	0	0	0	0/0	6/6	ok	1	1	-
+owner	1954 - Why	2	10	-	-	1.00	-3	0.2358	1.00	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	8	22	-
+owner	1954 - Why	3	317	0.99	0.98	1.09	-37	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/6	26/28	ok	8	16	-
+owner	1954 - Why	4	498	1.00	1.02	1.12	-27	0.0116	1.00	0.87	3	1.00	1.00	1.00	0.08	0.97	0.88	0	0	0	0/9	45/53	ok	6	18	-
+owner	1954 - Why	5	538	0.98	0.91	1.16	-19	0.0135	1.00	1.00	3	1.00	1.00	1.00	0.02	0.95	0.98	0	0	0	0/6	41/54	ok	8	18	-
+owner	1954 - Why	6	442	1.00	1.03	1.12	-23	0.0192	1.00	0.90	3	1.00	1.00	1.00	0.03	0.96	0.88	0	0	0	0/8	34/50	ok	11	19	-
+owner	1954 - Why	7	459	1.00	1.00	1.11	-23	0.0220	1.00	0.97	2	1.00	1.00	1.00	0.03	0.98	0.97	0	0	0	0/4	40/51	ok	8	18	-
+owner	1954 - Why	8	481	1.00	0.97	1.18	-9	0.0179	1.00	0.87	2	1.00	1.00	1.00	0.02	0.97	0.96	0	0	0	0/8	37/50	ok	8	20	-
+owner	1954 - Why	9	441	1.00	0.85	1.11	-20	0.0170	1.00	0.93	3	0.77	1.00	1.00	0.29	0.86	0.71	0	0	0	0/10	41/55	ok	9	20	selection
+owner	1954 - Why	10	1	-	-	1.00	1	0.0034	0.00	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	7	20	colour
+owner	1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow)	1	501	1.04	1.01	1.02	-5	0.0000	-	0.93	4	1.00	1.00	1.00	0.07	0.92	0.82	0	1	0	0/10	57/63	ok	153	183	-
+owner	1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow)	2	518	1.00	0.97	1.00	-0	0.0000	-	0.90	5	1.00	1.00	1.00	0.06	0.91	0.87	1	2	0	1/11	65/76	ok	127	131	-
+owner	1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow)	3	417	1.00	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.05	0.95	0.95	0	2	1	0/8	58/65	ok	130	140	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	1	68	0.58	0.99	1.00	-2	0.0000	-	1.00	1	1.00	1.00	1.00	-	-	-	0	0	0	0/0	3/4	ok	301	297	legibility
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	2	368	1.00	1.00	1.00	-0	0.0000	-	0.97	3	1.00	1.00	1.00	0.03	0.96	0.93	0	0	0	0/11	38/41	ok	233	230	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	3	447	1.00	0.90	1.00	-0	0.0000	-	1.00	3	1.00	1.00	1.00	0.08	0.96	0.95	1	0	0	1/16	66/77	ok	196	230	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	4	439	1.00	1.04	1.00	0	0.0000	-	0.90	2	1.00	1.00	0.97	0.08	0.96	0.89	0	1	0	0/15	66/76	ok	267	254	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	5	473	1.00	1.00	1.00	-0	0.0000	-	0.80	4	0.04	1.00	0.98	0.56	0.96	0.53	0	1	2	0/14	100/113	ok	221	233	selection
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	6	478	1.00	0.97	1.00	-0	0.0000	-	1.00	4	1.00	1.00	1.00	0.04	0.96	0.94	0	0	0	0/11	64/74	ok	238	220	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	7	380	1.00	1.00	1.00	-0	0.0000	-	0.93	3	1.00	1.00	1.00	0.03	0.91	0.94	0	0	0	0/7	41/45	ok	194	273	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	8	374	1.00	1.00	1.00	-0	0.0000	-	0.90	3	1.00	1.00	1.00	0.01	0.97	0.92	0	0	0	0/4	44/51	ok	387	226	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	9	558	1.00	0.99	1.00	-0	0.0000	-	1.00	3	1.00	1.00	1.00	0.06	0.95	0.93	0	0	1	1/19	77/85	ok	185	203	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	10	445	1.00	1.00	1.00	-0	0.0000	-	1.00	3	1.00	1.00	1.00	0.05	0.94	0.94	0	0	0	0/18	67/74	ok	249	194	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	11	415	1.00	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.08	0.95	0.90	0	0	0	0/19	71/78	ok	177	270	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	12	435	1.00	1.00	1.00	-0	0.0000	-	0.97	4	1.00	1.00	1.00	0.07	0.93	0.91	0	1	1	0/19	66/74	ok	184	242	-
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	13	403	1.00	1.00	1.00	-0	0.0000	-	1.00	4	1.00	1.00	1.00	0.07	0.92	0.88	0	0	1	0/22	60/65	ok	239	366	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	1	182	1.00	1.00	1.00	0	0.0038	1.00	0.93	1	1.00	1.00	1.00	0.00	1.00	0.97	0	0	0	0/0	3/6	ok	7	8	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	2	367	0.96	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.05	0.95	0.94	0	0	0	1/9	22/28	origin	241	322	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	3	483	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.02	0.98	0.98	0	0	0	1/7	37/41	origin	301	279	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	4	491	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.96	0.96	0	0	0	0/10	39/43	origin	371	374	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	5	447	0.97	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/10	33/37	origin	288	416	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	6	532	1.04	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/11	40/45	origin	317	367	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	7	462	1.03	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.04	0.96	0.97	0	0	0	0/12	37/41	origin	303	400	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	8	476	0.98	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.03	0.97	0.94	0	0	0	0/10	35/41	origin	354	287	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	9	489	0.98	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.97	0.97	0	0	0	0/11	37/43	origin	407	315	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	10	465	0.97	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.98	0	0	0	0/8	37/40	origin	315	274	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	11	499	1.03	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.03	0.97	0.92	0	0	0	0/8	37/42	origin	295	348	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	12	500	1.01	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.02	0.98	0.96	0	0	0	0/8	37/41	origin	314	301	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	13	496	0.97	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.97	0.95	0	1	0	0/10	38/40	origin	308	297	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	14	461	1.04	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.06	0.96	0.93	0	0	0	0/16	34/41	origin	454	315	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	15	456	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.03	0.97	0.95	0	0	0	0/13	37/40	origin	265	266	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	16	465	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/10	37/42	origin	260	310	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	17	456	1.01	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.97	0.94	0	1	0	0/12	33/37	origin	234	261	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	18	493	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.98	0.96	1	0	0	0/10	35/36	origin	218	251	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	19	458	1.01	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.04	0.96	0.94	1	0	0	0/16	38/42	origin	227	237	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	20	482	1.02	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.03	0.98	0.96	1	0	0	0/8	40/44	origin	266	326	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	21	461	1.01	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.04	0.98	0.96	0	0	0	0/11	37/40	origin	273	251	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	22	512	1.02	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.97	0.95	0	0	0	0/15	40/45	origin	250	221	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	23	501	0.99	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.07	0.97	0.92	0	0	1	0/12	37/42	origin	265	232	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	24	482	0.97	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.05	0.96	0.93	0	0	0	0/16	37/40	origin	257	399	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	25	463	1.01	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.05	0.96	0.95	0	0	0	0/15	37/42	origin	268	295	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	26	481	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	0.96	0.93	0	0	0	0/14	36/40	origin	208	238	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	27	445	0.97	1.00	1.00	0	0.0000	-	0.97	2	0.98	1.00	1.00	0.03	0.97	0.96	0	0	0	0/9	35/38	origin	224	242	-
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	28	438	0.97	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.03	0.96	0.96	0	0	0	1/12	35/38	origin	248	245	-
+owner	Dobbin_2009_Inventing equal opportunity_Princeton University Press	1	7	-	-	1.00	0	0.0701	1.00	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	1	15	-
+owner	Dobbin_2009_Inventing equal opportunity_Princeton University Press	81	441	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	12/13	26/42	ok	1	1	-
+owner	Dobbin_2009_Inventing equal opportunity_Princeton University Press	161	459	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	9/9	32/43	ok	2	2	-
+owner	Dobbin_2009_Inventing equal opportunity_Princeton University Press	241	436	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.03	0.98	0.97	0	1	0	10/10	29/42	ok	1	1	-
+owner	Hughes - The Knitting of Racial Groups in Industry	1	141	1.00	1.00	1.00	0	0.0050	1.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	5	7	-
+owner	Hughes - The Knitting of Racial Groups in Industry	2	642	1.00	1.00	1.00	0	0.0000	-	0.97	4	1.00	1.00	1.00	0.04	0.92	0.86	0	0	0	0/16	72/83	origin	228	238	-
+owner	Hughes - The Knitting of Racial Groups in Industry	3	763	1.00	1.01	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.08	0.97	0.90	1	1	0	1/17	92/97	origin	229	234	-
+owner	Hughes - The Knitting of Racial Groups in Industry	4	80	1.00	0.97	0.99	1	0.0000	-	0.77	0	-	-	-	-	-	-	0	0	0	0/0	0/0	origin	360	394	find
+owner	Hughes - The Knitting of Racial Groups in Industry	5	574	1.00	1.00	1.00	0	0.0000	-	1.00	4	1.00	1.00	1.00	0.10	0.94	0.84	0	0	0	0/13	50/53	origin	417	336	-
+owner	Hughes - The Knitting of Racial Groups in Industry	6	320	1.01	0.99	1.00	0	0.0000	-	0.90	4	0.54	1.00	1.00	0.43	0.94	0.92	0	0	0	0/7	30/31	origin	405	354	selection
+owner	Hughes - The Knitting of Racial Groups in Industry	7	808	1.00	1.00	1.00	0	0.0000	-	0.93	5	1.00	1.00	1.00	0.07	0.96	0.87	0	0	0	0/11	74/88	origin	298	318	-
+owner	Hughes - The Knitting of Racial Groups in Industry	8	789	1.01	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.04	0.97	0.95	0	0	0	0/19	79/97	origin	339	340	-
+owner	Hughes - The Knitting of Racial Groups in Industry	9	639	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.96	0.95	0	0	0	0/19	79/83	origin	323	323	-
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	1	141	1.00	1.00	1.00	0	0.0050	1.00	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	5	7	-
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	2	642	1.00	1.00	1.00	0	0.0000	-	0.97	4	1.00	1.00	1.00	0.04	0.92	0.86	0	0	0	0/16	72/83	origin	228	223	-
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	3	763	1.00	1.01	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.08	0.97	0.90	1	1	0	1/17	92/97	origin	237	232	-
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	4	80	1.00	0.97	0.99	1	0.0000	-	0.77	0	-	-	-	-	-	-	0	0	0	0/0	0/0	origin	379	422	find
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	5	574	1.00	1.00	1.00	0	0.0000	-	1.00	4	1.00	1.00	1.00	0.10	0.94	0.84	0	0	0	0/13	50/53	origin	312	474	-
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	6	320	1.01	0.99	1.00	0	0.0000	-	0.90	4	0.54	1.00	1.00	0.43	0.94	0.92	0	0	0	0/7	30/31	origin	337	400	selection
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	7	808	1.00	1.00	1.00	0	0.0000	-	0.93	5	1.00	1.00	1.00	0.07	0.96	0.87	0	0	0	0/11	74/88	origin	340	444	-
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	8	789	1.01	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.04	0.97	0.95	0	0	0	0/19	79/97	origin	333	437	-
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	9	639	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.96	0.95	0	0	0	0/19	79/83	origin	319	327	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	1	297	1.05	1.00	1.00	0	0.0044	1.00	0.90	1	1.00	1.00	1.00	0.03	0.99	1.00	0	0	0	0/0	3/4	ok	3	7	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	2	342	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.07	0.97	0.95	0	0	1	0/2	29/34	ok	91	108	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	3	427	1.00	1.00	1.00	-0	0.0000	-	0.97	1	1.00	1.00	1.00	0.01	0.98	0.97	0	0	0	0/5	32/40	ok	125	129	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	4	459	1.00	1.00	1.00	-0	0.0000	-	0.97	1	1.00	1.00	1.00	0.11	0.97	0.94	0	1	1	0/10	38/42	ok	115	185	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	5	454	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.04	0.98	0.95	0	0	0	0/6	38/41	ok	128	166	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	6	435	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	0.97	1.00	0.03	0.99	0.99	0	0	0	0/4	36/39	ok	145	131	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	7	429	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.08	0.97	0.96	0	1	1	1/10	37/40	ok	137	154	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	8	437	1.00	1.00	1.00	-0	0.0000	-	0.97	1	1.00	1.00	1.00	0.06	0.99	0.96	0	1	0	0/3	35/38	ok	157	110	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	9	441	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/1	34/40	ok	233	142	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	10	448	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.02	0.97	0.96	0	1	0	0/6	38/40	ok	151	96	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	11	423	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/2	37/40	ok	145	134	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	12	439	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/2	37/40	ok	194	155	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	13	434	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.97	0.96	0	0	0	0/6	36/40	ok	199	163	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	14	440	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.98	0.96	0	0	0	0/7	38/40	ok	102	171	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	15	407	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.99	0.97	0	1	2	0/5	38/40	ok	101	334	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	16	417	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.97	0.95	0	2	2	0/8	36/40	ok	111	115	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	17	422	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.03	0.98	0.96	0	0	0	0/8	37/40	ok	129	124	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	18	423	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.97	0.95	0	0	0	0/11	38/40	ok	99	90	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	19	440	1.00	1.00	1.00	0	0.0000	-	0.90	1	1.00	1.00	1.00	0.12	0.95	0.91	0	2	1	0/9	36/44	ok	94	102	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	20	426	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.03	0.98	0.96	0	1	1	0/7	36/40	ok	107	103	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	21	422	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.98	0.97	0	0	1	0/9	36/40	ok	112	108	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	22	401	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.05	0.97	0.96	1	0	1	0/9	36/43	ok	201	87	-
+owner	Leland - 1952 - We Believe in Employment on Merit, but	23	290	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	0.96	1.00	0.05	0.97	0.94	0	0	1	0/8	26/27	ok	132	136	-
+owner	Raskin - 1956 - New Jobs Opening to Negro in North	1	2042	0.72	1.03	1.02	0	0.0000	-	0.80	12	0.18	0.50	0.66	2.94	0.79	0.65	1	2	8	0/15	403/507	ok	115	738	legibility,selection,copy
+owner	Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970	1	237	1.00	1.00	1.01	1	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	35	445	-
+owner	Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970	82	411	0.81	1.00	1.01	1	0.0000	-	0.93	2	1.00	1.00	1.00	0.03	0.96	0.97	0	0	0	0/1	26/30	ok	17	180	-
+owner	Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970	163	275	1.00	1.00	1.01	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.04	0.99	0.94	0	0	0	0/1	11/14	ok	7	203	-
+owner	Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970	244	360	1.00	0.99	1.01	1	0.0000	-	1.00	3	1.00	1.00	1.00	0.03	1.00	0.98	0	0	0	0/0	21/24	ok	16	154	-
+testdocs/report	1957_Allied Chemical & Dye Corporation Annual Report -- 1957	1	37	0.82	0.96	1.40	-16	0.0000	-	0.91	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	286	283	-
+testdocs/report	1957_Allied Chemical & Dye Corporation Annual Report -- 1957	9	98	1.01	1.02	1.00	-1	0.0000	-	0.93	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	5/6	ok	373	221	-
+testdocs/report	1957_Allied Chemical & Dye Corporation Annual Report -- 1957	18	128	1.00	1.00	1.00	-0	0.0000	-	0.70	1	1.00	1.00	1.00	0.19	0.86	0.84	0	0	0	0/5	11/18	ok	220	212	find
+testdocs/report	1957_Allied Chemical & Dye Corporation Annual Report -- 1957	27	168	1.01	1.00	1.00	-0	0.0000	-	0.87	2	1.00	1.00	1.00	0.05	0.93	0.87	0	0	0	0/2	11/11	ok	129	125	-
+testdocs/report	1958_CiT Financial Corporation Annual Report -- 1958	1	36	1.50	1.00	1.00	0	0.0000	-	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	99	157	-
+testdocs/report	1958_CiT Financial Corporation Annual Report -- 1958	11	316	1.00	1.00	1.00	-0	0.0000	-	0.83	2	1.00	1.00	1.00	0.10	0.91	0.86	0	2	1	0/4	17/20	ok	110	114	-
+testdocs/report	1958_CiT Financial Corporation Annual Report -- 1958	21	153	1.03	1.04	1.00	0	0.0000	-	0.73	2	0.61	1.00	1.00	0.64	0.86	0.91	0	0	0	0/0	34/39	ok	156	127	find,selection
+testdocs/report	1958_CiT Financial Corporation Annual Report -- 1958	31	307	1.00	1.00	1.00	0	0.0000	-	0.93	3	0.47	1.00	0.80	0.17	0.99	0.96	0	0	0	0/1	26/28	ok	119	116	selection
+testdocs/report	1958_E	1	53	1.00	1.00	1.00	0	0.0000	-	0.76	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	52	52	find
+testdocs/report	1958_E	13	357	1.00	1.00	1.00	-0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/2	29/31	ok	99	131	-
+testdocs/report	1958_E	25	302	1.01	1.00	1.00	-0	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.98	0.95	0	0	0	0/3	23/25	ok	62	72	-
+testdocs/report	1958_E	38	339	0.98	1.00	1.00	-0	0.0000	-	0.87	2	1.00	1.00	1.00	0.05	0.95	0.90	0	0	0	0/1	13/14	ok	87	102	-
+testdocs/report	1958_General Foods Corporation Annual Report -- 1958	1	29	1.00	1.00	1.00	-0	0.0000	-	0.86	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	98	98	-
+testdocs/report	1958_General Foods Corporation Annual Report -- 1958	7	13	-	-	1.00	1	0.0000	-	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	495	251	-
+testdocs/report	1958_General Foods Corporation Annual Report -- 1958	14	246	1.00	1.01	1.00	1	0.0000	-	0.77	3	0.93	1.00	1.00	0.15	0.88	0.85	0	0	1	0/11	22/31	ok	207	140	find
+testdocs/report	1958_General Foods Corporation Annual Report -- 1958	21	152	1.01	0.99	1.00	-0	0.0000	-	0.83	1	1.00	1.00	1.00	0.13	0.90	0.90	0	0	0	0/1	10/11	ok	113	91	-
+testdocs/report	1958_The Anaconda Company Annual Report -- 1958	1	34	1.07	1.03	1.00	-2	0.0000	-	0.91	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	234	128	-
+testdocs/report	1958_The Anaconda Company Annual Report -- 1958	9	456	0.98	1.00	1.00	-1	0.0000	-	0.97	3	1.00	1.00	1.00	0.06	0.94	0.90	0	0	1	0/14	46/60	ok	149	114	-
+testdocs/report	1958_The Anaconda Company Annual Report -- 1958	17	157	0.88	1.00	1.00	-0	0.0000	-	1.00	2	1.00	1.00	1.00	0.06	0.95	0.96	0	1	1	0/3	15/17	ok	397	234	-
+testdocs/report	1958_The Anaconda Company Annual Report -- 1958	26	185	0.98	1.01	1.00	0	0.0000	-	0.80	4	1.00	1.00	1.00	0.38	-	-	0	0	0	0/0	25/25	ok	157	123	-
+testdocs/report	1958_The Goodyear Tire & Rubber Company Annual Report -- 1958	1	43	1.00	1.00	1.00	-1	0.0000	-	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	172	132	-
+testdocs/report	1958_The Goodyear Tire & Rubber Company Annual Report -- 1958	11	186	0.99	1.00	1.00	-0	0.0000	-	1.00	3	0.82	1.00	1.00	0.32	0.95	-	0	0	0	0/0	14/16	ok	215	259	selection
+testdocs/report	1958_The Goodyear Tire & Rubber Company Annual Report -- 1958	22	226	1.01	1.00	1.00	-1	0.0000	-	0.93	1	1.00	1.00	1.00	0.02	0.99	0.96	1	0	0	0/1	14/19	ok	339	150	-
+testdocs/report	1958_The Goodyear Tire & Rubber Company Annual Report -- 1958	33	214	1.01	1.00	0.99	-4	0.0000	-	0.87	1	1.00	1.00	1.00	0.07	0.95	0.95	0	0	1	0/4	17/24	ok	408	220	-
+testdocs/report	AI 2027	1	26	1.04	1.09	0.99	4	0.0488	1.00	0.80	1	1.00	1.00	1.00	-	-	-	0	0	0	0/0	5/5	ok	2	175	-
+testdocs/report	AI 2027	18	596	0.99	0.87	1.21	-2	0.0001	0.97	0.83	5	1.00	1.00	1.00	0.02	0.92	0.96	0	0	0	1/2	33/40	ok	27	80	-
+testdocs/report	AI 2027	36	710	1.00	1.00	1.00	0	0.0000	-	0.97	6	1.00	1.00	0.95	0.03	0.97	0.93	0	0	0	6/7	40/58	ok	4	7	-
+testdocs/report	AI 2027	54	303	0.96	1.13	1.02	5	0.0016	0.00	0.97	3	1.00	0.88	1.00	0.18	0.96	0.93	0	0	0	0/0	14/17	ok	48	302	colour,selection
+testdocs/report	Autor et al_2020_Extending the Race between Education and Technology	1	206	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.05	1.00	0.98	0	0	0	0/0	4/4	ok	231	129	-
+testdocs/report	Autor et al_2020_Extending the Race between Education and Technology	5	430	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.00	0.99	0.98	0	0	0	0/0	18/23	ok	168	162	-
+testdocs/report	Autor et al_2020_Extending the Race between Education and Technology	10	107	1.01	0.99	1.05	-4	0.0055	0.00	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	708	387	colour
+testdocs/report	Autor et al_2020_Extending the Race between Education and Technology	15	405	1.00	1.00	1.00	0	0.0000	-	0.97	4	0.21	1.00	0.97	0.32	1.00	0.99	0	0	0	0/0	123/124	ok	162	349	selection
+testdocs/report	Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research	1	18	-	-	1.00	-1	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	137	197	-
+testdocs/report	Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research	20	382	1.00	1.00	1.03	-5	0.0000	-	0.93	3	1.00	1.00	1.00	0.03	1.00	0.91	0	0	0	0/1	14/15	ok	187	370	-
+testdocs/report	Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research	40	289	1.00	1.00	1.03	-8	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	0.99	1.00	0	0	0	0/0	10/13	ok	322	164	-
+testdocs/report	Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research	60	243	1.07	1.02	1.06	-8	0.0000	-	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	226	182	-
+testdocs/report	Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research	1	196	1.44	1.00	1.00	-17	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	8/10	ok	94	232	-
+testdocs/report	Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research	16	142	1.01	1.04	1.04	-10	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	174	161	-
+testdocs/report	Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research	32	193	1.00	0.99	1.04	-10	0.0000	-	0.87	1	1.00	1.00	1.00	0.04	0.96	0.93	1	0	0	0/0	4/4	ok	105	195	-
+testdocs/report	Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research	48	294	1.01	1.00	1.00	-15	0.0000	-	0.97	2	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/0	14/15	ok	108	224	-
+testdocs/report	Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ	1	10	-	-	1.00	-1	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	67	119	-
+testdocs/report	Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ	17	237	0.99	0.90	1.09	-32	0.0000	-	0.93	3	0.96	1.00	1.00	0.03	0.94	0.86	1	0	0	0/1	13/13	ok	61	237	-
+testdocs/report	Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ	33	308	1.00	1.00	1.03	-12	0.0000	-	0.97	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	18/22	ok	49	199	-
+testdocs/report	Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ	50	71	1.06	1.00	1.04	-14	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	52	188	-
+testdocs/report	Temin_1997_The American Business Elite in Historical Perspective	1	164	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	1.00	0.99	0	0	0	0/0	7/8	ok	261	401	-
+testdocs/report	Temin_1997_The American Business Elite in Historical Perspective	13	314	1.00	1.00	1.02	-5	0.0000	-	0.97	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	16/19	ok	149	160	-
+testdocs/report	Temin_1997_The American Business Elite in Historical Perspective	25	307	1.00	1.00	1.02	-3	0.0000	-	0.97	3	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/0	16/17	ok	171	215	-
+testdocs/report	Temin_1997_The American Business Elite in Historical Perspective	37	51	0.98	1.00	1.04	-4	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	230	148	-
+testdocs/report	_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports	1	96	1.15	0.99	0.98	-0	0.0000	-	0.87	1	1.00	1.00	1.00	0.08	0.95	0.93	0	0	0	0/1	5/5	ok	5	61	-
+testdocs/report	_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports	6	536	0.89	0.98	1.01	1	0.0000	-	0.90	1	1.00	1.00	1.00	0.20	0.83	0.85	0	0	1	0/1	34/41	ok	12	120	-
+testdocs/report	_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports	12	272	0.99	1.03	1.01	0	0.0000	-	0.80	1	0.99	1.00	1.00	0.11	0.93	0.88	0	1	0	0/0	12/17	ok	15	139	-
+testdocs/report	_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports	18	271	1.02	0.97	1.00	0	0.0000	-	0.80	2	0.87	1.00	1.00	0.20	0.92	0.89	0	0	1	0/5	22/25	ok	22	160	selection
+testdocs/report	_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports	1	52	0.81	1.05	1.04	2	0.0000	-	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	11	116	-
+testdocs/report	_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports	7	350	0.95	1.00	1.02	-0	0.0000	-	0.80	5	0.53	1.00	1.00	0.43	0.90	0.69	0	1	0	0/15	53/61	ok	9	79	selection
+testdocs/report	_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports	13	488	1.14	1.00	1.02	-2	0.0000	-	1.00	4	0.52	1.00	1.00	0.95	0.95	0.87	0	0	0	0/11	93/112	ok	5	110	selection
+testdocs/report	_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports	19	205	0.92	0.99	1.04	-0	0.0000	-	1.00	5	0.79	1.00	1.00	0.21	0.94	0.90	0	0	0	0/0	59/60	ok	5	83	selection
+testdocs/report	_1958_Small Business Investment Act_	1	52	1.00	1.00	1.00	0	0.0000	-	0.96	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	117	165	-
+testdocs/report	_1958_Small Business Investment Act_	7	31	1.00	1.00	1.00	0	0.0000	-	0.91	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	288	185	-
+testdocs/report	_1958_Small Business Investment Act_	14	432	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.13	0.95	0.94	0	0	1	0/8	34/43	ok	147	240	-
+testdocs/report	_1958_Small Business Investment Act_	21	419	1.00	1.00	1.00	0	0.0000	-	0.80	4	1.00	1.00	1.00	0.19	0.88	0.74	0	0	0	0/2	29/33	ok	164	191	-
+testdocs/report	_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports	1	39	0.40	1.00	1.01	0	0.0000	-	0.89	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	124	77	legibility
+testdocs/report	_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports	10	530	1.00	1.00	1.00	-0	0.0000	-	0.90	5	1.00	1.00	1.00	0.05	0.94	0.90	0	0	0	0/4	38/40	ok	303	138	-
+testdocs/report	_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports	19	329	1.03	0.97	1.00	2	0.0000	-	0.90	2	1.00	1.00	1.00	0.05	0.89	0.91	0	0	0	0/4	27/34	ok	350	172	-
+testdocs/report	_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports	29	293	0.96	1.00	1.00	-3	0.0000	-	0.93	2	1.00	1.00	1.00	0.06	0.99	0.92	0	1	0	0/2	16/19	ok	322	161	-
+testdocs/report	_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports	1	42	1.17	1.00	1.00	1	0.0000	-	0.87	1	1.00	1.00	1.00	-	-	-	0	0	0	0/0	4/4	ok	335	185	-
+testdocs/report	_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports	9	245	1.01	1.00	1.00	-1	0.0000	-	0.93	1	1.00	1.00	1.00	0.19	0.82	0.84	1	1	0	0/3	22/27	ok	446	279	-
+testdocs/report	_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports	17	125	1.08	1.00	1.00	-2	0.0000	-	0.37	2	1.00	1.00	1.00	0.75	0.31	0.46	0	1	1	0/2	10/10	ok	341	166	find,copy
+testdocs/report	_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports	26	732	0.99	0.98	1.00	0	0.0000	-	0.73	3	0.57	1.00	1.00	0.63	0.83	0.75	0	1	2	0/4	68/105	ok	255	190	find,selection
+testdocs/report	_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports	1	36	1.00	1.00	1.00	1	0.0000	-	0.85	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	701	255	-
+testdocs/report	_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports	8	103	1.00	0.99	1.00	0	0.0000	-	0.77	1	1.00	1.00	1.00	0.24	0.82	0.80	0	0	0	0/1	6/8	ok	352	226	find
+testdocs/report	_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports	15	389	1.00	1.01	1.00	0	0.0000	-	0.97	4	1.00	1.00	1.00	0.05	0.94	0.90	0	0	0	0/15	43/47	ok	840	158	-
+testdocs/report	_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports	23	164	1.01	0.99	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	170	196	-
+testdocs/report	_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports	1	35	0.86	0.97	1.00	-9	0.0000	-	0.92	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	373	162	-
+testdocs/report	_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports	6	222	1.00	1.00	1.00	0	0.0000	-	0.90	5	0.38	1.00	1.00	0.27	0.85	0.93	0	0	0	0/0	48/51	ok	175	152	selection
+testdocs/report	_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports	11	80	1.08	0.97	1.00	-1	0.0000	-	0.90	1	1.00	1.00	1.00	0.11	0.88	0.87	0	0	0	0/0	5/5	ok	347	328	-
+testdocs/report	_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports	17	207	0.99	1.00	1.00	-0	0.0000	-	0.97	4	0.25	1.00	1.00	0.71	0.98	0.97	0	0	0	0/0	39/42	ok	185	385	selection
+testdocs/report	_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports	1	51	1.71	1.00	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	7	182	-
+testdocs/report	_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports	5	498	1.02	0.95	1.05	-3	0.0000	-	0.93	4	1.00	1.00	1.00	0.06	0.95	0.91	0	0	1	1/2	87/92	ok	8	204	-
+testdocs/report	_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports	10	705	1.03	1.00	1.02	-1	0.0000	-	0.87	3	1.00	1.00	1.00	0.02	0.96	0.96	0	0	0	0/14	120/133	ok	38	170	-
+testdocs/report	_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports	15	203	1.04	1.01	1.03	-1	0.0000	-	1.00	5	0.28	1.00	0.45	1.58	0.95	-	0	0	0	0/0	63/68	ok	16	284	selection
+testdocs/report	_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports	1	38	1.03	1.00	1.08	-1	0.0000	-	0.96	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	58	297	-
+testdocs/report	_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports	10	472	1.29	1.02	1.07	-2	0.0000	-	0.97	6	0.70	0.80	1.00	0.13	0.88	0.91	0	0	0	1/12	49/56	ok	8	120	selection
+testdocs/report	_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports	20	348	1.07	1.01	1.05	-2	0.0000	-	0.93	7	0.19	1.00	0.89	1.83	1.00	1.00	0	0	0	0/0	151/152	ok	10	155	selection
+testdocs/report	_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports	30	241	0.97	1.00	1.05	-4	0.0000	-	1.00	4	0.21	1.00	1.00	1.65	0.97	1.00	0	0	0	0/0	110/118	ok	13	254	selection
+testdocs/report	w7787	1	144	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	0.98	0	0	0	0/0	5/6	ok	87	187	-
+testdocs/report	w7787	8	288	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/0	20/21	ok	89	56	-
+testdocs/report	w7787	15	277	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	0.96	0	0	0	0/0	16/20	ok	65	69	-
+testdocs/report	w7787	23	274	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	12/15	ok	45	37	-
+testdocs/report	w7787 2	1	144	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	0.98	0	0	0	0/0	5/6	ok	121	400	-
+testdocs/report	w7787 2	8	288	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/0	20/21	ok	109	71	-
+testdocs/report	w7787 2	15	277	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	0.96	0	0	0	0/0	16/20	ok	54	51	-
+testdocs/report	w7787 2	23	274	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	12/15	ok	99	106	-
+testdocs/thesis	Anderson_1997_Legacy of the American Frontier_California State University, Fresno	1	238	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	5/6	ok	145	160	-
+testdocs/thesis	Anderson_1997_Legacy of the American Frontier_California State University, Fresno	40	69	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	111	407	-
+testdocs/thesis	Anderson_1997_Legacy of the American Frontier_California State University, Fresno	80	306	1.00	1.00	1.00	-0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	21/21	ok	163	265	-
+testdocs/thesis	Anderson_1997_Legacy of the American Frontier_California State University, Fresno	120	215	1.10	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	-	1.00	0	0	0	0/0	3/5	ok	161	162	-
+testdocs/thesis	BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning	1	47	0.98	1.00	1.00	1	0.0000	-	0.93	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	208	224	-
+testdocs/thesis	BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning	33	253	1.00	1.00	1.00	0	0.0000	-	0.83	2	1.00	1.00	1.00	0.05	0.96	0.91	0	1	1	0/5	18/20	ok	155	214	-
+testdocs/thesis	BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning	66	328	0.99	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.04	0.97	0.94	0	1	1	0/4	21/24	ok	187	183	-
+testdocs/thesis	BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning	99	181	1.02	1.01	1.00	-1	0.0000	-	0.93	2	0.55	1.00	1.00	0.85	-	-	0	0	0	0/0	23/23	ok	95	170	selection
+testdocs/thesis	Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm	1	58	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	244	123	-
+testdocs/thesis	Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm	101	324	1.00	1.00	1.00	-0	0.0000	-	1.00	2	1.00	1.00	1.00	0.02	1.00	0.91	0	0	0	0/0	17/18	ok	375	350	-
+testdocs/thesis	Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm	202	262	1.00	1.00	1.00	-1	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	0.99	0.98	0	0	0	0/0	18/19	ok	242	164	-
+testdocs/thesis	Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm	303	242	1.00	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.00	0.99	0.99	0	0	0	0/1	16/16	ok	206	153	-
+testdocs/thesis	CAMFIELD_Psychologists at War	1	60	1.05	1.00	1.02	-0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	13	156	-
+testdocs/thesis	CAMFIELD_Psychologists at War	84	28	1.00	1.00	1.02	-0	0.0000	-	0.86	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	7	135	-
+testdocs/thesis	CAMFIELD_Psychologists at War	167	238	0.99	1.00	1.02	0	0.0000	-	0.93	3	1.00	1.00	1.00	0.00	0.98	0.98	0	0	0	0/1	21/21	ok	7	180	-
+testdocs/thesis	CAMFIELD_Psychologists at War	251	242	1.01	1.00	1.01	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/3	19/22	ok	7	193	-
+testdocs/thesis	CARTWRIGHT_Legislation Against Discrimination in Employment in New York State	1	87	1.00	1.00	1.00	-0	0.0000	-	0.93	1	1.00	1.00	1.00	0.00	-	0.96	0	0	0	0/0	4/4	ok	122	367	-
+testdocs/thesis	CARTWRIGHT_Legislation Against Discrimination in Employment in New York State	100	233	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.10	0.95	0.88	0	2	2	0/5	14/17	ok	133	176	-
+testdocs/thesis	CARTWRIGHT_Legislation Against Discrimination in Employment in New York State	199	197	1.01	1.00	1.00	-1	0.0000	-	0.83	1	1.00	1.00	1.00	0.04	0.98	0.93	0	0	0	0/0	12/13	ok	94	189	-
+testdocs/thesis	CARTWRIGHT_Legislation Against Discrimination in Employment in New York State	299	136	1.01	1.00	1.00	1	0.0000	-	0.93	1	1.00	0.92	1.00	0.12	0.96	0.88	0	0	0	0/3	12/12	ok	182	231	-
+testdocs/thesis	Clark_The graphic rating scale at Northwestern University	1	17	-	-	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	209	375	-
+testdocs/thesis	Clark_The graphic rating scale at Northwestern University	28	289	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/0	17/20	ok	462	374	-
+testdocs/thesis	Clark_The graphic rating scale at Northwestern University	55	182	0.99	0.99	1.00	1	0.0000	-	0.90	2	0.24	1.00	1.00	0.29	0.95	0.97	0	0	0	0/2	19/25	ok	475	297	selection
+testdocs/thesis	Clark_The graphic rating scale at Northwestern University	83	276	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/1	22/23	ok	432	370	-
+testdocs/thesis	Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972	1	66	1.00	1.00	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	112	97	-
+testdocs/thesis	Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972	94	402	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	1.00	0.99	1	0	0	0/0	24/27	ok	189	96	-
+testdocs/thesis	Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972	188	414	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	0.99	0.99	0	0	0	0/0	20/23	ok	137	162	-
+testdocs/thesis	Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972	282	368	1.00	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.03	0.99	0.95	0	0	0	0/1	20/24	ok	77	119	-
+testdocs/thesis	Corson_Current practices in student guidance and personnel administration in liberal	1	48	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	356	279	-
+testdocs/thesis	Corson_Current practices in student guidance and personnel administration in liberal	59	207	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.11	0.89	0.94	0	0	0	0/4	12/13	ok	368	624	-
+testdocs/thesis	Corson_Current practices in student guidance and personnel administration in liberal	117	196	1.00	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.06	0.96	0.95	0	0	0	0/4	16/17	ok	418	329	-
+testdocs/thesis	Corson_Current practices in student guidance and personnel administration in liberal	176	188	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.04	0.96	0.95	0	0	0	0/0	5/5	ok	493	564	-
+testdocs/thesis	DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa	1	55	0.83	0.94	1.00	0	0.0000	-	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	191	259	-
+testdocs/thesis	DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa	79	105	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	7/7	ok	108	154	-
+testdocs/thesis	DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa	158	194	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	13/14	ok	115	139	-
+testdocs/thesis	DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa	237	104	1.00	1.01	1.00	1	0.0000	-	0.92	8	1.00	1.00	1.00	0.00	-	-	0	0	0	0/0	32/32	ok	106	359	-
+testdocs/thesis	DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas	1	47	1.00	0.98	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	165	265	-
+testdocs/thesis	DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas	70	209	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.04	0.97	0.95	0	0	1	0/5	19/20	ok	183	218	-
+testdocs/thesis	DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas	140	74	1.00	1.00	1.00	1	0.0000	-	1.00	2	0.26	1.00	1.00	0.76	0.96	0.96	0	0	0	0/0	15/26	ok	123	361	selection
+testdocs/thesis	DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas	210	223	1.00	1.00	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.03	0.93	0.96	0	0	0	0/2	14/18	ok	205	304	-
+testdocs/thesis	Doermann_1967_The market for college education in the United States	1	151	0.94	1.04	1.00	-5	0.0000	-	0.83	3	0.96	1.00	1.00	0.16	-	0.74	0	0	0	0/0	18/23	ok	184	205	-
+testdocs/thesis	Doermann_1967_The market for college education in the United States	7	323	1.08	0.83	1.56	-72	0.0000	-	0.60	2	1.00	1.00	1.00	0.24	0.84	0.75	0	0	1	0/3	24/30	ok	19	344	find
+testdocs/thesis	Doermann_1967_The market for college education in the United States	14	262	0.96	0.89	1.38	-68	0.0000	-	0.70	1	1.00	1.00	1.00	0.21	0.82	0.79	0	0	0	0/1	5/5	ok	41	208	find
+testdocs/thesis	Doermann_1967_The market for college education in the United States	21	396	1.60	0.95	1.24	-11	0.0000	-	0.93	1	1.00	1.00	1.00	0.14	0.96	0.92	0	0	0	0/3	35/47	ok	33	295	-
+testdocs/thesis	Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II	1	119	1.01	0.98	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	4/4	ok	294	204	-
+testdocs/thesis	Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II	60	337	1.00	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.01	0.99	0.96	0	0	0	0/0	18/22	ok	274	285	-
+testdocs/thesis	Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II	120	311	1.00	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.95	0.99	0	0	0	0/0	18/21	ok	211	215	-
+testdocs/thesis	Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II	180	316	1.00	0.99	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.01	0.98	1.00	0	0	0	0/0	21/21	ok	162	190	-
+testdocs/thesis	ERICKSON - 1952 - The Taxation of Investment Companies in the United States	1	51	-	1.00	1.00	-0	0.0000	-	0.96	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	115	189	-
+testdocs/thesis	ERICKSON - 1952 - The Taxation of Investment Companies in the United States	170	318	0.99	1.03	1.00	-1	0.0000	-	0.90	3	0.79	1.00	1.00	0.10	0.91	0.87	0	0	1	0/7	32/36	ok	132	251	selection
+testdocs/thesis	ERICKSON - 1952 - The Taxation of Investment Companies in the United States	340	186	1.00	1.00	1.00	-0	0.0000	-	1.00	2	1.00	1.00	1.00	0.02	0.96	0.97	0	0	0	0/3	12/13	ok	103	205	-
+testdocs/thesis	ERICKSON - 1952 - The Taxation of Investment Companies in the United States	510	236	1.00	1.00	1.00	-1	0.0000	-	1.00	1	1.00	1.00	1.00	0.04	0.96	0.96	0	0	0	0/5	16/17	ok	198	131	-
+testdocs/thesis	Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po	1	64	1.00	1.00	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	147	165	-
+testdocs/thesis	Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po	121	492	1.00	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/0	25/27	ok	297	250	-
+testdocs/thesis	Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po	242	294	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	16/17	ok	191	188	-
+testdocs/thesis	Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po	363	439	1.00	1.00	1.00	0	0.0000	-	0.93	3	1.00	1.00	1.00	0.01	0.99	0.98	1	1	0	0/1	23/25	ok	221	184	-
+testdocs/thesis	GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University	1	7	-	-	1.00	0	0.0000	-	-	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	134	195	-
+testdocs/thesis	GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University	53	169	1.00	1.00	1.00	0	0.0000	-	0.73	2	1.00	1.00	1.00	0.19	0.85	0.81	0	0	0	0/3	14/16	ok	187	209	find
+testdocs/thesis	GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University	106	163	0.98	1.07	1.00	0	0.0000	-	0.60	1	1.00	1.00	1.00	0.30	0.79	0.76	0	0	0	0/2	13/15	ok	115	449	find,copy
+testdocs/thesis	GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University	159	194	1.01	1.00	1.00	0	0.0000	-	0.67	2	1.00	1.00	1.00	0.21	0.75	0.86	1	0	1	1/4	17/18	ok	97	215	find,copy
+testdocs/thesis	GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities	1	321	1.00	1.01	1.00	-0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	18/21	ok	155	166	-
+testdocs/thesis	GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities	56	279	1.00	1.00	1.00	-0	0.0000	-	0.90	2	1.00	1.00	1.00	0.02	0.95	0.92	0	0	0	0/4	18/18	ok	139	157	-
+testdocs/thesis	GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities	111	183	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.02	0.97	0.96	0	0	0	0/3	9/10	ok	88	163	-
+testdocs/thesis	GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities	166	271	0.99	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/0	20/22	ok	143	153	-
+testdocs/thesis	GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling	1	323	1.00	1.00	1.00	-0	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	0.98	0.93	0	0	0	0/1	13/18	ok	122	201	-
+testdocs/thesis	GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling	82	269	1.00	1.00	1.00	-0	0.0000	-	0.90	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/2	21/23	ok	122	361	-
+testdocs/thesis	GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling	164	341	1.00	0.88	1.00	-0	0.0000	-	0.90	2	0.98	1.00	1.00	0.04	0.98	0.97	0	0	0	0/2	31/33	ok	108	186	-
+testdocs/thesis	GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling	246	285	1.00	1.00	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.06	0.99	0.88	0	0	0	0/1	19/20	ok	102	194	-
+testdocs/thesis	Ho_Useful fiction	1	33	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	139	138	-
+testdocs/thesis	Ho_Useful fiction	80	309	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/0	16/20	ok	141	192	-
+testdocs/thesis	Ho_Useful fiction	160	292	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/0	16/19	ok	119	164	-
+testdocs/thesis	Ho_Useful fiction	240	277	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.00	1.00	0.99	0	0	0	0/1	14/15	ok	134	201	-
+testdocs/thesis	Jensen_The rise of an African-American Left	1	176	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.12	1.00	0.94	0	0	0	0/0	5/5	ok	150	194	-
+testdocs/thesis	Jensen_The rise of an African-American Left	143	256	1.00	1.00	1.00	-0	0.0000	-	1.00	2	1.00	1.00	1.00	0.02	0.97	0.96	0	0	0	0/0	18/21	ok	145	179	-
+testdocs/thesis	Jensen_The rise of an African-American Left	286	236	1.00	1.00	1.00	-1	0.0000	-	0.93	2	1.00	1.00	1.00	0.11	1.00	0.84	0	0	0	0/0	23/24	ok	139	209	-
+testdocs/thesis	Jensen_The rise of an African-American Left	429	336	0.98	1.00	1.00	1	0.0000	-	0.90	3	1.00	1.00	1.00	0.13	0.94	0.95	0	0	0	0/0	31/34	ok	139	179	-
+testdocs/thesis	Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California	1	45	1.02	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	160	287	-
+testdocs/thesis	Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California	47	255	1.00	1.00	1.00	0	0.0000	-	0.93	3	1.00	1.00	1.00	0.02	0.98	0.97	0	0	0	0/3	16/17	ok	99	259	-
+testdocs/thesis	Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California	94	53	1.00	1.00	1.00	0	0.0000	-	0.91	1	0.72	1.00	1.00	-	1.00	-	0	0	0	0/0	17/17	ok	206	181	selection
+testdocs/thesis	Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California	141	251	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.03	0.96	0.95	0	0	0	0/3	15/16	ok	133	236	-
+testdocs/thesis	Koh - 2008 - Essays on stock options expensing and stock option	1	74	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.00	-	-	0	0	0	0/0	4/4	ok	117	126	-
+testdocs/thesis	Koh - 2008 - Essays on stock options expensing and stock option	48	278	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	18/18	ok	162	148	-
+testdocs/thesis	Koh - 2008 - Essays on stock options expensing and stock option	95	313	1.00	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	13/14	ok	157	105	-
+testdocs/thesis	Koh - 2008 - Essays on stock options expensing and stock option	142	267	1.00	1.00	1.00	0	0.0000	-	0.93	3	1.00	1.00	1.00	0.00	0.98	0.98	0	0	0	0/0	17/17	ok	103	116	-
+testdocs/thesis	MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University	1	323	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	9/9	ok	151	218	-
+testdocs/thesis	MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University	43	244	0.99	1.00	1.00	1	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	0.99	1.00	0	0	0	0/0	20/20	ok	129	271	-
+testdocs/thesis	MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University	86	272	1.00	1.00	1.00	1	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/2	19/20	ok	104	255	-
+testdocs/thesis	MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University	129	294	1.00	1.00	1.00	-1	0.0000	-	0.97	1	1.00	1.00	1.00	0.04	0.99	0.96	0	0	0	0/0	20/25	ok	140	146	-
+testdocs/thesis	NAYLOR_Arthur E	1	187	1.00	0.99	1.00	1	0.0000	-	0.97	3	1.00	1.00	1.00	0.08	0.98	0.91	0	0	0	0/0	15/17	ok	141	185	-
+testdocs/thesis	NAYLOR_Arthur E	67	401	1.03	1.00	1.00	1	0.0000	-	0.97	3	1.00	1.00	1.00	0.21	0.99	0.83	0	0	0	0/4	34/37	ok	118	176	-
+testdocs/thesis	NAYLOR_Arthur E	133	249	1.00	1.00	1.00	1	0.0000	-	0.97	1	1.00	1.00	1.00	0.10	0.94	0.93	0	0	0	0/8	20/25	ok	108	329	-
+testdocs/thesis	NAYLOR_Arthur E	200	177	1.00	1.00	1.00	-1	0.0000	-	0.90	2	1.00	1.00	1.00	0.02	0.97	0.97	0	0	0	0/4	16/16	ok	128	184	-
+testdocs/thesis	PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign	1	40	1.00	1.00	1.00	0	0.0000	-	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	120	183	-
+testdocs/thesis	PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign	50	215	1.00	1.00	1.00	0	0.0000	-	0.80	2	1.00	1.00	1.00	0.04	0.96	0.96	0	0	0	0/3	15/15	ok	98	218	-
+testdocs/thesis	PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign	100	234	1.00	1.00	1.00	0	0.0000	-	0.90	2	1.00	1.00	1.00	0.02	0.99	0.95	0	0	0	0/0	21/24	ok	199	171	-
+testdocs/thesis	PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign	150	216	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/1	18/19	ok	138	139	-
+testdocs/thesis	PRICE_A History of the American College Personnel Association	1	34	1.00	1.00	1.00	-0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	128	118	-
+testdocs/thesis	PRICE_A History of the American College Personnel Association	43	191	1.01	0.99	1.00	-0	0.0000	-	0.97	2	0.94	1.00	1.00	0.05	0.98	0.95	0	0	0	0/3	21/25	ok	161	236	-
+testdocs/thesis	PRICE_A History of the American College Personnel Association	86	201	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	0.98	0.93	0	0	0	0/2	16/18	ok	139	175	-
+testdocs/thesis	PRICE_A History of the American College Personnel Association	129	216	1.00	0.99	1.00	-1	0.0000	-	0.97	2	0.97	1.00	1.00	0.04	0.94	0.98	0	0	0	1/1	20/24	ok	159	154	-
+testdocs/thesis	Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967	1	53	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	180	176	-
+testdocs/thesis	Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967	66	286	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.01	1.00	0.99	0	0	0	0/0	11/14	ok	248	178	-
+testdocs/thesis	Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967	131	257	1.00	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	17/17	ok	178	204	-
+testdocs/thesis	Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967	196	316	1.00	1.00	1.00	0	0.0000	-	0.87	2	1.00	1.00	1.00	0.06	0.99	0.95	0	0	0	0/0	18/19	ok	195	233	-
+testdocs/thesis	Ries_Marshall_1955_web	1	25	1.00	1.00	1.00	0	0.0000	-	0.90	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	1	2	-
+testdocs/thesis	Ries_Marshall_1955_web	27	296	0.95	0.89	1.13	-21	0.0000	-	0.80	2	1.00	1.00	1.00	0.10	0.84	0.84	0	0	0	0/1	17/21	ok	22	49	-
+testdocs/thesis	Ries_Marshall_1955_web	54	221	0.78	0.86	1.10	-23	0.0000	-	0.80	3	1.00	1.00	1.00	0.23	0.74	0.56	0	0	0	0/0	15/16	ok	6	33	copy
+testdocs/thesis	Ries_Marshall_1955_web	81	262	0.96	0.83	1.15	-22	0.0000	-	0.77	2	1.00	1.00	1.00	0.17	0.87	0.78	0	0	0	0/2	18/19	ok	12	66	find
+testdocs/thesis	Robertson_1990_Organizational adaptation to environmental change_Stanford University copy	1	275	1.02	0.95	1.06	-20	0.0000	-	0.93	1	1.00	1.00	1.00	0.10	0.96	0.96	0	0	0	0/2	23/28	ok	46	52	-
+testdocs/thesis	Robertson_1990_Organizational adaptation to environmental change_Stanford University copy	50	226	1.00	1.00	1.06	-15	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.99	0.99	0	0	0	0/1	16/17	ok	43	41	-
+testdocs/thesis	Robertson_1990_Organizational adaptation to environmental change_Stanford University copy	100	237	1.00	1.00	1.05	-13	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.99	1.00	0	0	0	0/0	18/18	ok	36	28	-
+testdocs/thesis	Robertson_1990_Organizational adaptation to environmental change_Stanford University copy	150	224	0.99	1.00	1.04	-13	0.0000	-	0.97	2	1.00	1.00	1.00	0.01	0.99	1.00	0	0	0	0/0	14/15	ok	37	66	-
+testdocs/thesis	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech	1	48	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	0	1	-
+testdocs/thesis	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech	75	486	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.02	0.99	0.98	0	2	0	0/0	25/26	ok	2	2	-
+testdocs/thesis	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech	150	345	1.00	1.00	1.00	0	0.0031	1.00	0.97	3	1.00	1.00	1.00	0.02	0.99	0.91	0	0	0	1/1	16/20	ok	3	3	-
+testdocs/thesis	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech	225	319	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/0	15/15	ok	1	1	-
+testdocs/thesis	Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California	1	51	1.00	1.00	1.00	-0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	153	162	-
+testdocs/thesis	Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California	42	195	1.00	1.00	1.00	-1	0.0000	-	1.00	2	1.00	1.00	1.00	0.01	0.99	0.97	0	0	0	0/2	16/17	ok	101	151	-
+testdocs/thesis	Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California	83	229	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.05	0.99	0.90	0	0	0	0/2	19/23	ok	138	252	-
+testdocs/thesis	Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California	124	183	0.99	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.04	0.97	0.96	0	0	0	0/3	10/10	ok	107	265	-
+testdocs/thesis	TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign	1	327	1.00	1.00	1.00	0	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	1.00	0.98	0	0	0	0/0	8/8	ok	117	169	-
+testdocs/thesis	TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign	60	224	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	11/11	ok	99	140	-
+testdocs/thesis	TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign	119	213	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	6/8	ok	93	132	-
+testdocs/thesis	TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign	178	219	1.00	1.00	1.00	0	0.0000	-	1.00	2	1.00	1.00	1.00	0.03	0.99	1.00	0	0	0	0/0	14/16	ok	94	139	-
+testdocs/thesis	TROTMAN - 1976 - Race, Iq, and the Middle-Class.	1	333	-	1.00	1.00	0	0.0000	-	0.97	3	1.00	1.00	1.00	0.08	0.97	0.90	0	0	0	0/0	12/14	ok	172	205	-
+testdocs/thesis	TROTMAN - 1976 - Race, Iq, and the Middle-Class.	30	228	1.03	1.00	1.01	-2	0.0000	-	0.97	3	0.99	1.00	1.00	0.04	0.96	0.91	0	0	0	0/5	13/14	ok	104	154	-
+testdocs/thesis	TROTMAN - 1976 - Race, Iq, and the Middle-Class.	60	175	-	1.00	1.00	0	0.0000	-	0.93	1	1.00	1.00	1.00	0.06	0.95	0.93	0	0	0	0/5	8/10	ok	100	155	-
+testdocs/thesis	TROTMAN - 1976 - Race, Iq, and the Middle-Class.	90	39	-	0.81	1.00	0	0.0000	-	0.83	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	129	173	-
+testdocs/thesis	WITTE_1978_Democracy, Authority and Alienation in Work_Yale University	1	346	1.00	1.03	1.00	-0	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	1.00	0.90	0	0	0	0/0	9/9	ok	73	96	-
+testdocs/thesis	WITTE_1978_Democracy, Authority and Alienation in Work_Yale University	104	240	1.01	1.00	1.00	-0	0.0000	-	0.97	2	1.00	1.00	1.00	0.05	0.96	0.95	0	0	0	0/3	13/17	ok	71	110	-
+testdocs/thesis	WITTE_1978_Democracy, Authority and Alienation in Work_Yale University	207	296	1.00	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.05	0.97	0.94	0	0	0	0/6	26/28	ok	73	114	-
+testdocs/thesis	WITTE_1978_Democracy, Authority and Alienation in Work_Yale University	310	264	1.00	1.00	1.00	0	0.0000	-	0.97	1	1.00	1.00	1.00	0.04	0.99	0.94	0	0	0	0/5	23/25	ok	70	114	-
+testdocs/thesis	Wu - 2003 - Employee stock option design and valuation	1	91	0.98	1.00	1.00	-0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	118	158	-
+testdocs/thesis	Wu - 2003 - Employee stock option design and valuation	28	226	1.00	1.00	1.00	0	0.0000	-	0.87	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	111	153	-
+testdocs/thesis	Wu - 2003 - Employee stock option design and valuation	55	229	1.00	1.00	1.00	-1	0.0000	-	0.93	2	1.00	1.00	1.00	0.04	0.97	0.95	0	1	0	0/2	14/16	ok	115	153	-
+testdocs/thesis	Wu - 2003 - Employee stock option design and valuation	83	370	0.99	1.00	1.00	0	0.0000	-	0.97	2	1.00	1.00	1.00	0.04	0.97	0.94	0	0	0	0/2	11/12	ok	92	142	-
+testdocs/thesis	Zarifa_2008_Emerging Forms of Stratification in Higher Education_	1	13	-	-	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	83	80	-
+testdocs/thesis	Zarifa_2008_Emerging Forms of Stratification in Higher Education_	65	566	1.00	1.00	1.00	0	0.0000	-	1.00	1	1.00	1.00	1.00	0.02	1.00	1.00	0	0	0	0/0	37/43	ok	98	98	-
+testdocs/thesis	Zarifa_2008_Emerging Forms of Stratification in Higher Education_	129	58	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	98	102	-
+testdocs/thesis	Zarifa_2008_Emerging Forms of Stratification in Higher Education_	194	82	1.00	1.00	1.00	0	0.0000	-	0.97	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	102	101	-
+testdocs/thesis	Zheng - 2003 - Six -month -one -day employee stock option reprici	1	23	1.00	1.00	1.00	0	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	99	142	-
+testdocs/thesis	Zheng - 2003 - Six -month -one -day employee stock option reprici	19	201	1.00	0.99	1.00	1	0.0000	-	1.00	2	1.00	1.00	1.00	0.00	1.00	1.00	0	0	0	0/0	8/9	ok	103	142	-
+testdocs/thesis	Zheng - 2003 - Six -month -one -day employee stock option reprici	38	116	1.00	1.00	1.00	-1	0.0000	-	1.00	0	-	-	-	-	-	-	0	0	0	0/0	0/0	ok	91	125	-
+testdocs/thesis	Zheng - 2003 - Six -month -one -day employee stock option reprici	57	314	1.01	1.00	1.00	0	0.0000	-	1.00	3	1.00	1.00	1.00	0.01	0.99	0.98	0	0	0	0/0	15/15	ok	101	135	-

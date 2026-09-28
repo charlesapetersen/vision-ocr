@@ -1,0 +1,249 @@
+set	document	result	srcPages	sampled	redPages	redReasons	scoreSec	pages	bytes	openMs	open	qpdf	outline	labels	links	annots	title	flags
+testdocs/bookSection	Allen_2011_The Origins of Political Philosophy_Oxford University Press	green	29	1,8,15,22	0	-	70	29>29	2023134>1479052	1	yes	clean	29>29	same	0>0	0>0	same	-
+testdocs/bookSection	Berger_2013_Toward a Third Industrial Divide_	red	24	1,6,12,18	0	-	69	24>24	2161818>1238820	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/bookSection	Broadhead - 1994 - Regionalism and the Upper Class	red	13	1,4,7,10	4	colour:4	88	13>13	9612313>1187882	1	yes	clean	2>2	same	0>0	81>0	same	annots
+testdocs/bookSection	Canby_1915_Current Literature and the Colleges_Harper & Brothers	red	25	1,7,13,19	1	selection:1	36	25>25	5910594>643407	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/bookSection	Canby_1929_Comment on Several Subjects	red	4	1,2,3	2	colour:1,find:1	26	4>4	151331>145592	2	yes	clean	0>0	same	0>0	19>0	same	annots
+testdocs/bookSection	Falasca-Zamponi_2004_The »Culture« of Personality	red	29	1,8,15,22	0	-	62	29>29	1071445>1018182	1	yes	clean	0>0	same	1>0	0>0	same	links
+testdocs/bookSection	Findlay_1992_Stanford Industrial Park_University of California Press	red	62	1,16,31,47	1	selection:1	53	62>62	3242692>2849676	1	yes	clean	0>0	same	31>0	0>0	same	links
+testdocs/bookSection	Geiger et al_2018_American higher education in the postwar era, 1945-1970	green	26	1,7,13,20	0	-	65	26>26	18944815>1355056	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/bookSection	Gilroy - 2000 - Getting In	red	22	1,6,11,17	0	-	44	22>22	624919>627742	1	yes	clean	0>0	same	18>0	0>0	same	links
+testdocs/bookSection	Gregory-Huddleston_1994_Culture conflict with growth_University Press of America	green	6	1,2,3,5	0	-	82	6>6	2115140>398613	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/bookSection	Hobsbawm and Ranger - 1992 - The Invention of tradition	red	324	1,81,162,243	0	-	57	324>324	7295301>6807635	2	yes	clean	10>10	differ	3>0	0>0	same	labels,links
+testdocs/bookSection	Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press	red	15	1,4,8,12	2	colour:2	73	15>15	3502790>359144	17	yes	clean	2>2	same	0>0	121>0	same	annots
+testdocs/bookSection	Kazin_1955_The Writer and the 	red	16	1,4,8,12	4	colour:2,selection:2	43	16>16	820929>983888	1	yes	clean	0>0	same	0>0	43>0	same	annots
+testdocs/bookSection	Krippner__The political economy of financial exuberance_Emerald Group Publishing Limited	red	40	1,10,20,30	1	selection:1	59	40>40	5411795>1424020	1	yes	clean	40>40	same	0>0	0>0	same	-
+testdocs/bookSection	Kristol_1962_SOCIAL SCIENCES AND LAW_	red	29	1,8,15,22	0	-	77	29>29	2727035>2496131	1	yes	clean	0>0	same	7>0	0>0	same	links
+testdocs/bookSection	Lloyd-Jones_Smith_1938_Selection and Admissions	red	23	1,6,12,18	1	find:1	46	23>23	621896>547301	1	yes	clean	0>0	same	3>0	0>0	same	links
+testdocs/bookSection	Maclean_2008_Southern Dominance in Borrowed Language_School for Advanced Research Press	red	10	1,3,5,8	3	colour:3	87	10>10	1273179>825319	1	yes	clean	2>2	same	0>0	39>0	same	annots
+testdocs/bookSection	Merriam, H. G_1948_Does the Northwest Believe in Itself_Macmillan Co	red	23	1,6,12,18	4	colour:3,selection:1	59	23>23	1184967>616626	1	yes	clean	0>0	same	0>0	37>0	same	annots
+testdocs/bookSection	Miller_1952_The Business Elite in Business Bureaucracies_Harvard University Press	red	31	1,8,16,24	2	selection:2	69	31>31	5255825>1154178	1	yes	clean	0>0	same	5>0	0>0	same	links
+testdocs/bookSection	Moyn_2014_Imaginary Intellectual History_Oxford University Press, 2014 (2015-03-31 16-01-49)	red	25	1,7,13,19	3	colour:3	68	25>25	3679715>500624	1	yes	clean	2>2	same	0>0	117>0	same	annots
+testdocs/bookSection	National Association for the Advancement of Colored People - 1993 - Papers of the NAACP. Pt. 15 Ser. A Segration and discrimination, complaints and responses, 1940 - 1	green	65	1,17,33,49	0	-	53	65>65	2589313>2531178	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/bookSection	O'Brien_1955_The Area of Admissions in Higher Education_	red	37	1,10,19,28	0	-	57	37>37	9130003>1575606	1	yes	clean	0>0	same	1>0	0>0	same	links
+testdocs/bookSection	Phillips-Fein_Zelizer_2012_What's good for business _Oxford University Press	red	15	1,4,8,12	2	colour:2	81	15>15	1273601>1078989	1	yes	clean	2>2	same	0>0	48>0	same	annots
+testdocs/bookSection	Riesman_1992_My Education in Soc 2 and My Efforts to Adapt It in the Harvard Setting_	red	40	1,10,20,30	0	-	67	40>40	1459834>1271714	2	yes	clean	0>0	same	1>0	0>0	same	links
+testdocs/bookSection	Schaar, handwritten notes	red	11	1,3,6,9	1	legibility:1	95	11>11	918905>781238	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/bookSection	Strickland and Ambrose - 1985 - The Baby Boom, Prosperity, and the Changing Worlds	red	56	1,14,28,42	0	-	63	56>56	2079983>1760968	1	yes	clean	0>0	same	3>0	0>0	same	links
+testdocs/bookSection	_1945_Postwar Economic Policy and Planning_	green	150	1,38,75,113	0	-	78	150>150	11915582>11849085	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/bookSection	full chapter	red	32	1,8,16,24	1	find:1	36	32>32	1366113>1421378	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/book	1954 - Why	green	10	1,3,5,8	0	-	61	10>10	2120107>513312	1	yes	clean	0>0	same	2>2	0>0	same	-
+testdocs/book	Berle_1940_New directions in the new world,_Harper	red	31	1,8,16,24	0	-	65	31>31	752753>655654	1	yes	clean	0>0	same	1>0	0>0	same	links
+testdocs/book	Boltanski_2006_On justification_Princeton University Press	red	203	1,51,102,153	3	copy:2,find:3,selection:3	83	203>203	16863381>25639003	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/book	Casey_1954_1954 pay almanac,	red	10	1,3,5,8	1	selection:1	76	10>10	669620>418185	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/book	Cohen_1990_Making a New Deal_Cambridge University Press	red	8	1,2,4,6	3	colour:3	85	8>8	679813>663300	1	yes	clean	38>38	differ	11>4	1>0	differ	labels,links,annots,title
+testdocs/book	Countryman - 2006 - Up south  civil rights and Black power in Philadelphia	red	436	1,109,218,327	0	-	71	436>436	27964410>25645106	1	yes	clean	0>0	differ	0>0	0>0	differ	labels,title
+testdocs/book	Eurich_Academy for Educational Development._1968_Campus 1980; the shape of the future in American higher education_Delacorte Press	red	30	1,8,15,23	0	-	62	30>30	1077091>942938	1	yes	clean	0>0	same	10>0	0>0	same	links
+testdocs/book	Friedman_1962_Capitalism and freedom_University of Chicago Press	red	226	1,57,113,170	0	-	55	226>226	8154195>6030836	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/book	Gowan and Demos - 1964 - The education and guidance of the ablest	red	6	1,2,3,5	2	find:2,legibility:2	29	6>6	1013488>121559	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/book	Guilford_Psychometric Methods	green	6	1,2,3,5	0	-	106	6>6	353890>313804	3	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/book	Hayek_1978_The constitution of liberty_University of Chicago Press	red	574	1,144,287,431	0	-	74	574>574	24563880>22518810	1	yes	clean	0>0	same	23>0	0>0	differ	links,title
+testdocs/book	Himanen_2001_The hacker ethic and the spirit of the information age_Random House	red	255	1,64,128,192	0	-	49	255>255	11396124>5921736	1	yes	clean	0>0	same	115>0	0>0	same	links
+testdocs/book	Ibson_2006_Picturing men	green	263	1,66,132,198	0	-	32	263>263	70348989>19901051	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/book	JAH Review	red	3	1,2,3	2	colour:2	52	3>3	276279>255525	1	yes	clean	70>70	differ	6>4	0>0	differ	labels,links,title
+testdocs/book	Keyssar_2000_The Right to Vote_Basic Books	red	3	1,2,3	2	colour:2,selection:1	86	3>3	140354>410688	1	yes	clean	251>251	differ	7>5	0>0	differ	labels,links,title
+testdocs/book	LaVaque-Manty_2009_The Playing Fields of Eton_University of Michigan Press	red	81	1,21,41,61	0	-	72	81>81	8671536>8203747	1	yes	clean	2>2	same	0>0	73>0	same	annots
+testdocs/book	Mintzberg - 1973 - The nature of managerial work	red	119	1,30,60,90	1	find:1	74	119>119	9836554>11865407	1	yes	clean	0>0	same	81>0	0>0	same	links
+testdocs/book	Mitchell_1958_Stanford University, 1916-1941_Stanford Unoversity Press	red	12	1,3,6,9	1	colour:1	64	12>12	3226252>1144890	1	yes	clean	0>0	same	0>0	25>0	differ	annots,title
+testdocs/book	Morgan_1975_American Slavery, American Freedom_Norton	red	3	1,2,3	2	colour:2,selection:2	71	3>3	431841>439754	1	yes	clean	353>353	differ	7>5	0>0	differ	labels,links,title
+testdocs/book	Mudge_2018_Leftism Reinvented_Harvard University Press	red	372	1,93,186,279	1	copy:1,find:1	42	372>372	11544927>11204295	0	yes	clean	3>3	same	185>0	0>0	same	links
+testdocs/book	Nedelsky_1990_Private property and the limits of American constitutionalism_University of Chicago Press	red	7	1,2,4,6	3	colour:3	65	7>7	2355341>416698	1	yes	clean	0>0	same	0>0	54>0	same	annots
+testdocs/book	New York Stock Exchange_1956_Stock ownership plans for employees	red	146	1,37,73,110	4	copy:2,find:4,selection:2	46	146>146	4734049>4691576	1	yes	clean	146>146	same	0>0	0>0	same	-
+testdocs/book	Noble_1977_America by design	red	414	1,104,207,311	0	-	63	414>414	17797276>17226939	1	yes	clean	29>29	differ	6>0	0>0	same	labels,links
+testdocs/book	Riesman - 1954 - Individualism reconsidered, and other essays	red	25	1,7,13,19	0	-	46	25>25	8579958>2988839	0	yes	clean	25>25	same	27>0	0>0	same	links
+testdocs/book	Schumpeter_1955_Imperialism ; Social classes_World	red	191	1,48,96,144	0	-	56	191>191	14331269>9969443	1	yes	clean	17>17	same	0>0	0>0	differ	title
+testdocs/book	Shows and Burton - 1972 - Microeconomics	green	18	1,5,9,14	0	-	65	18>18	670210>633199	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/book	UN-OCred	red	40	1,10,20,30	2	copy:1,legibility:2,selection:2	61	40>40	2909223>2783008	0	yes	clean	0>0	same	29>0	0>0	same	links
+testdocs/book	Westad_2005_The Global Cold War_Cambridge University Press	red	3	1,2,3	2	colour:2,selection:1	53	3>3	339339>334296	1	yes	clean	219>219	differ	6>4	0>0	differ	labels,links,title
+testdocs/book	_2010_New Materialisms_Duke University Press	red	22	1,6,11,17	1	find:1	91	22>22	1289707>1444500	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	(F) Dickens	green	8	1,2,4,6	0	-	62	8>8	280442>247250	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	1881 - Harry Wilcox	red	9	1,3,5,7	3	find:3,selection:1	30	9>9	10981324>3344330	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/document	1976 - Regis McKenna Papers - Early Career, 1965-1981	red	9	1,3,5,7	2	colour:1,selection:2	93	9>9	21428198>2200069	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	2008_Hoagland oral history	green	15	1,4,8,12	0	-	54	15>15	1306662>191244	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	2008_McIntyre oral history	red	18	1,5,9,14	1	selection:1	53	18>18	1590869>227522	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	2013 - Silicon Valley Program Transcript	red	38	1,10,19,29	4	colour:4	48	38>38	508846>951109	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/document	2015_Gibbs oral history	red	71	1,18,36,54	0	-	35	71>71	3811654>539561	1	yes	clean	0>0	same	1>0	0>0	same	links
+testdocs/document	2017_Bunnell oral history, athletics	red	69	1,18,35,52	0	-	32	69>69	3492489>500519	1	yes	clean	0>0	same	1>0	0>0	same	links
+testdocs/document	2024 - Class Action lawsuit re need blind admissions	red	75	1,19,38,57	4	colour:4	44	75>75	2387973>2319751	1	yes	clean	0>0	same	232>0	0>0	differ	links,title
+testdocs/document	Atkinson_1939_Atkinson on firings_	red	3	1,2,3	1	colour:1	83	3>3	1561280>614875	1	yes	clean	0>0	differ	0>0	0>0	same	labels
+testdocs/document	Ford_1941_Speech_	red	6	1,2,3,5	1	colour:1	91	6>6	3087361>467617	1	yes	clean	0>0	differ	0>0	0>0	same	labels
+testdocs/document	Freud_Fetishism	red	7	1,2,4,6	3	colour:2,find:1	61	7>7	439315>307998	1	yes	clean	0>0	same	0>0	34>0	same	annots
+testdocs/document	Galison_1998_Trading Zone_	red	14	1,4,7,11	1	selection:1	123	14>14	3011234>3043117	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	Geiger oral history	red	99	1,25,50,75	0	-	35	99>99	5128595>738978	1	yes	clean	0>0	same	1>0	0>0	same	links
+testdocs/document	Henry Morgenthau papers	red	201	1,51,101,151	3	selection:3	36	201>201	2704879>2791401	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	Herbert Marks papers	red	15	1,4,8,12	3	find:1,legibility:3,selection:2	43	15>15	2904003>408265	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	Intellectual History Newsletter -- Forum on Menand	red	45	1,12,23,34	1	selection:1	69	45>45	865006>1309605	1	yes	clean	44>44	same	0>0	0>0	same	-
+testdocs/document	Lyons oral history	red	114	1,29,57,86	0	-	35	114>114	1581769>2295099	1	yes	clean	0>0	same	9>0	0>0	same	links
+testdocs/document	Nogales oral history	red	46	1,12,23,35	0	-	37	46>46	764942>1131913	1	yes	clean	0>0	same	7>0	0>0	same	links
+testdocs/document	October_2,_1960_(Page_24_of_25	red	1	1	1	selection:1	67	1>1	651360>784681	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	RIESMAN_1942_American Law Institute Proceedings_	red	10	1,3,5,8	4	colour:2,find:1,selection:2	74	10>10	12952569>1480408	1	yes	clean	0>0	same	0>0	17>0	same	annots
+testdocs/document	Riesman_1964_From inner-directed to other- directed_	red	18	1,5,9,14	1	selection:1	53	18>18	946352>475295	1	yes	clean	0>0	same	29>0	0>0	same	links
+testdocs/document	Riesman_1964_The New Education_	red	12	1,3,6,9	0	-	57	12>12	2249805>420915	1	yes	clean	0>0	same	2>0	0>0	same	links
+testdocs/document	Riesman_1973_THEMES OF WORK AND PLAY IN THE STRUCTURE OF FREUD S THOUGHT_	red	30	1,8,15,23	0	-	59	30>30	9549661>1522289	1	yes	clean	0>0	same	13>0	0>0	same	links
+testdocs/document	Senate, Democratic Leadership	red	27	1,7,14,21	4	colour:4,selection:1	44	27>27	1750842>486213	1	yes	clean	1>1	same	35>0	0>0	differ	links,title
+testdocs/document	Stanford_1891_Jane Stanford opening day speech (undelivered)	red	4	1,2,3	3	colour:3	37	4>4	469085>236263	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	Stiglitz1975(onPasinetti1974)	red	3	1,2,3	0	-	55	3>3	112811>294191	1	yes	clean	100>100	differ	3>3	0>0	differ	labels,title
+testdocs/document	_1939_Former students to Board re Merriam_	red	18	1,5,9,14	2	colour:1,find:1,legibility:1	80	18>18	9386724>2781297	1	yes	clean	0>0	differ	0>0	0>0	same	labels
+testdocs/document	_1953_99 Cong_	red	32	1,8,16,24	3	selection:3	183	32>32	6830702>5611651	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	_1953_99 Cong_ 2	red	31	1,8,16,24	4	selection:4	176	31>31	6596383>5402001	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	_1953_Conspicuous Production_	red	3	1,2,3	1	legibility:1,selection:1	82	3>3	1391184>294060	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	_1960_Organization and operation of the Small Business Administration_	green	73	1,19,37,55	0	-	63	73>73	6992753>5436715	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	_1973_Committee Against Racism_	red	4	1,2,3	2	colour:2	136	4>4	342513>409201	1	yes	clean	0>0	same	4>0	0>0	same	links
+testdocs/document	_1979_Ideology of American Neo-Conservatism_	green	16	1,4,8,12	0	-	72	16>16	1452485>1133253	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	ppf_description	red	5	1,2,3,4	1	selection:1	54	5>5	148988>155902	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/document	w5093	red	64	1,16,32,48	0	-	45	64>64	720482>1602841	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/journalArticle	1935_Title Page	green	3	1,2,3	0	-	12	3>3	28940>31129	1	yes	clean	0>0	same	2>2	0>0	same	-
+testdocs/journalArticle	1944_Options picking up	red	3	1,2,3	2	selection:2	66	3>3	441512>370089	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Albanese_1997_Senate Will Examine Stock Option Bill	red	3	1,2,3	2	selection:2	47	3>3	1530411>434399	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/journalArticle	Baker_2000_The Supply-Side Effect of a Stock Market Crash	red	12	1,3,6,9	1	find:1	60	12>12	1004111>960507	1	yes	clean	26>26	differ	1>1	0>0	differ	labels,title
+testdocs/journalArticle	Batzell - Free Labor, Capitalism and the Antislavery Origins of Chinese Labor Exclusion in 1870s California	red	54	1,14,27,41	0	-	68	54>54	2180785>725688	1	yes	clean	0>0	same	248>240	0>0	same	links
+testdocs/journalArticle	Borges_The Lottery in Babylon	green	5	1,2,3,4	0	-	79	5>5	78826>75604	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Burke - The Expansion of American Higher Education	red	24	1,6,12,18	2	selection:2	50	24>24	1715356>1075677	1	yes	clean	0>0	differ	3>3	0>0	same	labels
+testdocs/journalArticle	Collins_1971_Functional and Conflict Theories of Educational Stratification_American Sociological Review	red	19	1,5,10,15	3	selection:3	98	19>19	3244958>2108828	1	yes	clean	115>115	same	0>0	0>0	differ	title
+testdocs/journalArticle	Crystal_2000_Option grants leave CEOs with sinking feeling	red	1	1	0	-	37	1>1	379209>284010	2	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/journalArticle	Donahue - 2001 - Time to Get Serious About Talent Management	green	3	1,2,3	0	-	57	3>3	235146>176029	3	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Eyal-Cohen - Why Is Small Business the Chief Business of Congress	red	59	1,15,30,45	1	colour:1	60	59>59	1315852>2461433	1	yes	clean	3>3	same	5>0	0>0	differ	links,title
+testdocs/journalArticle	Fisch et al. - 2019 - The New Titans of Wall Street A Theoretical Framework for Passive Investors	red	57	1,15,29,43	0	-	85	57>57	1752113>1695764	1	yes	clean	69>69	same	0>0	0>0	differ	title
+testdocs/journalArticle	Har - THE NECKLACE OF KALI.	red	1	1	1	copy:1,selection:1	76	1>1	8256788>1726757	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Jones et al_2010_The Productivity Effects of Stock Option Schemes	red	15	1,4,8,12	4	colour:2,selection:2	102	15>15	983694>744374	1	yes	clean	0>0	same	3>0	0>0	differ	links,title
+testdocs/journalArticle	Kristol_1970_When virtue loses all her loveliness --some reflections on capitalism and_	green	13	1,4,7,10	0	-	68	13>13	683184>545246	4	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Lemieux et al. - Performance Pay and Wage Inequality	red	50	1,13,25,38	1	selection:1	51	50>50	3977184>3668078	1	yes	clean	65>65	same	0>0	0>0	differ	title
+testdocs/journalArticle	Litt_1974_Liberty Above Equality The Counterreformation in Higher Education Policy_The American Behavioral Scientist (pre-1986); Thousand Oaks	green	24	1,6,12,18	0	-	38	24>24	957004>820034	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Longenecker et al_1987_Behind The Mask_The Academy of Management Executive; Mississippi State	red	11	1,3,6,9	2	selection:2	98	11>11	937626>781071	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Lowell - The Government of Dependencies	red	14	1,4,7,11	0	-	72	14>14	749571>565270	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/journalArticle	McWilliams_1933_Provincialism_The Frontier and Midland	red	15	1,4,8,12	2	selection:2	79	15>15	1110605>685630	2	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Merriam_1920_Daughter of Pan_The Montanan (The Frontier)	green	1	1	0	-	34	1>1	2045712>286134	14	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Price_1958_The Small Business Tax Revision of 1958	green	37	1,10,19,28	0	-	61	37>37	2090528>1560027	1	yes	clean	0>0	same	3>3	0>0	same	-
+testdocs/journalArticle	Riesman_1942_Democracy and Defamation_Columbia Law Review (2017-04-04 13-44-43)	red	55	1,14,28,42	1	colour:1	72	55>55	4554568>2682865	1	yes	clean	0>0	same	58>0	64>0	same	links,annots
+testdocs/journalArticle	Riesman_1949_Men, Women, and Marriage_Nation	red	3	1,2,3	2	selection:2	69	3>3	679401>236050	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Riesman_1958_Who Will and Who Should Pay for Higher Education_The School Review	red	15	1,4,8,12	1	colour:1	59	15>15	1706675>403824	1	yes	clean	0>0	same	18>0	0>0	same	links
+testdocs/journalArticle	Riesman_1976_Thoughts on the Graduate Experience_Change	red	7	1,2,4,6	2	colour:1,selection:1	94	7>7	5174876>1150461	1	yes	clean	0>0	same	9>0	0>0	differ	links,title
+testdocs/journalArticle	Ripley_1889_The Teaching of the English Language and Literature_Education	green	16	1,4,8,12	0	-	48	16>16	6730472>664323	1	yes	clean	2>2	same	0>0	0>0	same	-
+testdocs/journalArticle	Robin_Stephens_1996_Against the Grain_Social Text	red	32	1,8,16,24	3	colour:3	70	32>32	2372077>2392191	1	yes	clean	50>50	differ	35>4	0>0	differ	labels,links,title
+testdocs/journalArticle	Sanders_2001_BEHAVIORAL RESPONSES OF CEOs TO STOCK OWNERSHIP AND STOCK OPTION PAY	red	17	1,5,9,13	1	selection:1	98	17>17	950729>635602	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	Scott_TK_The Scientific Selection of Salesmen	red	13	1,4,7,10	4	copy:2,find:3,legibility:1,selection:4	102	13>13	1356347>1182148	1	yes	clean	0>0	same	59>0	0>0	same	links
+testdocs/journalArticle	Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County	red	37	1,10,19,28	2	colour:2,find:1,legibility:1,selection:1	72	37>37	18449725>9169271	1	yes	clean	34>34	same	341>251	0>0	same	links
+testdocs/journalArticle	Wells_2015_A Long View of Shareholder Power	red	67	1,17,34,51	1	find:1	66	67>67	2326271>1934842	2	yes	clean	0>0	same	43>0	0>0	same	links
+testdocs/journalArticle	Wilson_1975_Review of The Welfare State and Equality_Journal of Economic Literature	green	4	1,2,3	0	-	60	4>4	548248>498648	1	yes	clean	101>101	same	0>0	0>0	same	-
+testdocs/journalArticle	Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO	red	32	1,8,16,24	2	copy:1,find:2,selection:2	56	32>32	1612188>1155896	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/journalArticle	_1985_Issue 2_New Perspectives	green	29	1,8,15,22	0	-	63	29>29	1702055>1239058	1	yes	clean	0>0	same	3>3	0>0	same	-
+testdocs/journalArticle	oster - Engagement of Anne Foster To Tucson Man Announced	red	1	1	1	copy:1,selection:1	103	1>1	16581073>3338468	1	yes	clean	0>0	same	5>0	0>0	same	links
+testdocs/magazineArticle	1947_Corporation Tax Study Due By House Body	red	4	1,2,3	2	colour:1,find:1,legibility:1,selection:1	79	4>4	398303>333228	1	yes	clean	0>0	same	2>0	0>0	same	links
+testdocs/magazineArticle	Astin__The Challenge of Open Admissions by Alexander W_UNZ.org	red	3	1,2,3	3	colour:3,selection:2	103	3>3	949235>332033	1	yes	clean	0>0	same	0>0	19>0	differ	annots,title
+testdocs/magazineArticle	Black_0000_The Scandal of Educational Testing	red	3	1,2,3	3	legibility:2,selection:2	100	3>3	424647>588315	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Bullitt_1959_The Future American Class System_Horizon	red	8	1,2,4,6	1	find:1	77	8>8	575934>441218	1	yes	clean	0>0	same	6>0	0>0	same	links
+testdocs/magazineArticle	Davis_2005_Optimism of the Will_Nation	red	5	1,2,3,4	2	colour:2,selection:1	101	5>5	1638545>951054	2	yes	exit3	0>0	same	0>0	8>0	differ	qpdf,annots,title
+testdocs/magazineArticle	Ehrenreich_2000_Maid to order_Harper's Magazine	red	13	1,4,7,10	2	colour:1,legibility:1	104	13>13	5400848>1200776	1	yes	clean	0>0	same	0>0	11>0	same	annots
+testdocs/magazineArticle	Glazer_2002_Higher Ed_New Republic	red	2	1,2	1	colour:1	42	2>2	822744>283519	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Glazer_2003_Kith and Kin_Commentary; New York	red	3	1,2,3	1	selection:1	85	3>3	2680907>228057	2	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	HarpersMagazine-1938-05-0019577	red	10	1,3,5,8	3	colour:2,legibility:1,selection:2	107	10>10	2368301>421174	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Kelly_2014_Orders of Magnitude_TLS	red	3	1,2,3	2	colour:2	155	3>3	1473802>1571885	1	yes	exit3	0>0	same	0>0	28>0	differ	qpdf,annots,title
+testdocs/magazineArticle	Kristol_1960_High, Low, and Modern_Encounter	red	10	1,3,5,8	4	colour:4	107	10>10	10061243>624711	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Lasky et al. - 1949 - Letters from readers	green	3	1,2,3	0	-	95	3>3	2095124>228000	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Lemann, Nicholas_1977_Success In America_Washington Monthly	red	5	1,2,3,4	3	selection:3	96	5>5	676009>670929	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Lipset_Luethy_1955_European traditions and American sociology_Commentary (pre-1986); New York	red	5	1,2,3,4	3	legibility:3,selection:1	101	5>5	292658>292861	10	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Luethy_1955_Social mobility again--And elites_Commentary (pre-1986); New York	red	4	1,2,3	3	legibility:2,selection:1	73	4>4	229586>231541	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington	red	2	1,2	2	selection:2	58	2>2	149256>325846	16	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Merriam_1913_Clutter of Things_The Independent	red	2	1,2	2	colour:2,copy:1,legibility:1,selection:1	63	2>2	1686591>189391	6	yes	clean	0>0	same	0>0	6>0	differ	annots,title
+testdocs/magazineArticle	Part Two	red	35	1,9,18,27	1	selection:1	66	35>35	1981367>1177405	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Peters_1989_Tilting at Windmilss_Washington Monthly	green	4	1,2,3	0	-	62	4>4	312139>253793	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	Sherman_1986_elite institutions_The Public Interest; New York	red	6	1,2,3,5	0	-	80	6>6	765903>464827	1	yes	clean	0>0	differ	0>0	0>0	same	labels
+testdocs/magazineArticle	Stone_1965_England’s Revolution_The New York Review of Books	red	4	1,2,3	0	-	95	4>4	211702>190229	1	yes	clean	0>0	same	4>0	0>0	differ	links,title
+testdocs/magazineArticle	_1958_Executive Pay_Nation's Business (pre-1986); Washington	green	6	1,2,3,5	0	-	96	6>6	452699>486577	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	_1967_Yearly Increase of 15% Expected by Ampex_Boxoffice (Archive 1920-2000); New York	green	1	1	0	-	37	1>1	166776>112361	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/magazineArticle	_1977_What We're About_Washington Monthly	red	3	1,2,3	1	selection:1	52	3>3	207222>167453	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	1976_Results of Trading in Stock Options	red	1	1	1	copy:1,find:1,selection:1	25	1>1	162646>215512	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y.	red	1	1	1	legibility:1	34	1>1	166716>256212	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	Gitlin_2000_How Our Crowd Got Lonely_New York Times	green	1	1	0	-	38	1>1	111460>117229	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	Glazer_2003_Neoconservatives, Then and Now_New York Times	green	1	1	0	-	7	1>1	138293>33517	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	JOURNAL_1969_Giving the Boss a Raise_Wall Street Journal (1923 - Current file); New York, N.Y.	red	1	1	1	selection:1	42	1>1	133585>140523	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	Williams_1958_DEMOCRACY OR MERITOCRACY_The Manchester Guardian (1901-1959); Manchester (UK)	red	1	1	1	copy:1,legibility:1,selection:1	36	1>1	406576>167911	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	Zipkin_2000_Management	red	2	1,2	1	selection:1	50	2>2	216212>192787	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1926_Clapp defends Cox_Billings Gazette	red	1	1	1	copy:1,selection:1	81	1>1	553393>435988	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1926_Cox resigns, following most severe public criticism that ever has been_Anaconda Standard	red	1	1	1	copy:1,find:1,legibility:1,selection:1	77	1>1	352727>264523	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1926_English dept summer school_Havre Daily News Promoter	red	1	1	1	copy:1,find:1,selection:1	63	1>1	441635>365514	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1928_Creative writing a featured course at Summer School_Helena Daily Independent	red	1	1	1	copy:1,find:1,selection:1	129	1>1	442321>372030	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1931_Again, press most excited about Frontier's history section_Helena Daily Independent	red	1	1	1	copy:1,find:1,selection:1	146	1>1	421224>343443	2	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1939_Kalispell resident offering private creative writing courses, out of her home_Kalispell Daily Inter Lake	red	1	1	1	copy:1,find:1,legibility:1,selection:1	68	1>1	626114>414405	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1941_Fiedler's hiring at UM announced_Helena Independent	red	1	1	1	copy:1,find:1,selection:1	87	1>1	439171>341948	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1950_Comic_Independent Record	red	1	1	1	copy:1,find:1,selection:1	61	1>1	488240>411397	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	_1973_Other 67 -- No Title_Newsday (1940-1988), Nassau ed.; Long Island, N.Y.	red	4	1,2,3	3	find:1,selection:2	63	4>4	240804>308962	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	___	red	1	1	1	copy:1,selection:1	121	1>1	15465598>3472087	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/newspaperArticle	___ 2	harness-crashed: CoreGraphics trapped in PDFPage selectionFromPoint:toPoint: on the output page (its text layer holds Arabic letters, Arabic-Indic digits and U+202B)	1	1	0	-	86	-	-	-	-	-	-	-	-	-	-	-
+testdocs/newspaperArticle	___ 3	red	1	1	1	copy:1,find:1,selection:1	117	1>1	11874943>3150731	1	yes	clean	0>0	same	6>0	0>0	same	links
+testdocs/newspaperArticle	___ 4	red	1	1	1	legibility:1,selection:1	48	1>1	453597>494195	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/newspaperArticle	___ 5	red	1	1	1	copy:1,find:1,selection:1	59	1>1	309444>253710	1	yes	clean	0>0	same	0>0	0>0	same	-
+owner	1951 - Briefer Book Notes	red	6	1,2,3,4,5,6	0	-	61	6>6	516633>467056	0	yes	clean	0>0	differ	0>0	0>0	same	labels
+owner	1954 - Why	red	10	1,2,3,4,5,6,7,8,9,10	2	colour:1,selection:1	59	10>10	2120107>513312	0	yes	clean	0>0	same	2>2	0>0	same	-
+owner	1957 - Employment on Merit The Continuing Challenge to Business (Joseph J. Morrow)	red	3	1,2,3	0	-	33	3>3	212928>174568	0	yes	clean	0>0	differ	0>0	0>0	same	labels
+owner	Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs	red	13	1,2,3,4,5,6,7,8,9,10,11,12,13	2	legibility:1,selection:1	229	13>13	706196>658649	1	yes	clean	0>0	differ	0>0	0>0	same	labels
+owner	Delton - 2007 - Before the EEOC How Management Integrated the Workplace	red	28	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28	0	-	576	28>28	954409>940504	1	yes	clean	68>68	same	0>0	0>0	differ	title
+owner	Dobbin_2009_Inventing equal opportunity_Princeton University Press	red	321	1,81,161,241	0	-	40	321>321	2568873>2607027	1	yes	clean	39>39	differ	42>42	0>0	differ	labels,title
+owner	Hughes - The Knitting of Racial Groups in Industry	red	9	1,2,3,4,5,6,7,8,9	2	find:1,selection:1	163	9>9	542468>472141	0	yes	clean	39>39	same	0>0	0>0	differ	title
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26)	red	9	1,2,3,4,5,6,7,8,9	2	find:1,selection:1	156	9>9	490599>473556	0	yes	clean	39>39	same	0>0	0>0	differ	title
+owner	Leland - 1952 - We Believe in Employment on Merit, but	green	23	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23	0	-	410	23>23	999740>1007176	1	yes	clean	0>0	same	2>2	0>0	same	-
+owner	Raskin - 1956 - New Jobs Opening to Negro in North	red	1	1	1	copy:1,legibility:1,selection:1	79	1>1	528335>447029	0	yes	clean	0>0	same	0>0	0>0	same	-
+owner	Sewell - 1999 - Contracting racial equality Affirmative action policy and practice in the United States, 1945-1970	green	325	1,82,163,244	0	-	57	325>325	13114337>10784537	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	1957_Allied Chemical & Dye Corporation Annual Report -- 1957	red	35	1,9,18,27	1	find:1	34	35>35	2629442>1573840	1	yes	clean	0>0	same	18>0	0>0	same	links
+testdocs/report	1958_CiT Financial Corporation Annual Report -- 1958	red	41	1,11,21,31	2	find:1,selection:2	43	41>41	1911340>1328657	1	yes	clean	0>0	same	15>0	0>0	same	links
+testdocs/report	1958_E	red	50	1,13,25,38	1	find:1	47	50>50	1545684>953932	1	yes	clean	0>0	same	23>0	0>0	same	links
+testdocs/report	1958_General Foods Corporation Annual Report -- 1958	red	28	1,7,14,21	1	find:1	31	28>28	1866282>1111339	1	yes	clean	0>0	same	17>0	0>0	same	links
+testdocs/report	1958_The Anaconda Company Annual Report -- 1958	green	34	1,9,17,26	0	-	45	34>34	1859238>1216171	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	1958_The Goodyear Tire & Rubber Company Annual Report -- 1958	red	43	1,11,22,33	1	selection:1	43	43>43	5196058>3374812	1	yes	clean	0>0	same	20>0	0>0	same	links
+testdocs/report	AI 2027	red	71	1,18,36,54	1	colour:1,selection:1	62	71>71	8863479>3289472	1	yes	clean	62>62	same	476>242	0>0	same	links
+testdocs/report	Autor et al_2020_Extending the Race between Education and Technology	red	20	1,5,10,15	2	colour:1,selection:1	55	20>20	1493890>679148	1	yes	clean	0>0	same	2>0	0>0	differ	links,title
+testdocs/report	Hoxby_1997_How the Changing Market Structure of U_National Bureau of Economic Research	red	80	1,20,40,60	0	-	45	80>80	32198888>2320980	1	yes	clean	0>0	same	4>0	0>0	same	links
+testdocs/report	Kremer_Maskin_1996_Wage Inequality and Segregation by Skill_National Bureau of Economic Research	red	63	1,16,32,48	0	-	40	63>63	1992858>1437547	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/report	Levy and Temin - 2007 - Inequality and Institutions in 20th Century Americ	red	66	1,17,33,50	0	-	30	66>66	3493202>5503499	1	yes	clean	0>0	differ	0>0	0>0	differ	labels,title
+testdocs/report	Temin_1997_The American Business Elite in Historical Perspective	red	49	1,13,25,37	0	-	42	49>49	2305095>1314026	1	yes	clean	0>0	same	5>0	0>0	same	links
+testdocs/report	_1950_Fairchild Camera and Instrument Corporation Annual Report -- 1950_ProQuest Annual Reports	red	24	1,6,12,18	1	selection:1	48	24>24	1023534>924585	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	_1953_Fairchild Camera and Instrument Corporation Annual Report -- 1953_ProQuest Annual Reports	red	25	1,7,13,19	3	selection:3	47	25>25	1340564>1109262	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	_1958_Small Business Investment Act_	green	28	1,7,14,21	0	-	43	28>28	2330626>1776261	8	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	_1961_Fairchild Camera and Instrument Corporation Annual Report -- 1961_ProQuest Annual Reports	red	38	1,10,19,29	1	legibility:1	58	38>38	2798128>2194750	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	_1963_Fairchild Camera and Instrument Corporation Annual Report -- 1963_ProQuest Annual Reports	red	34	1,9,17,26	2	copy:1,find:2,selection:1	56	34>34	2287987>2364641	1	yes	clean	0>0	same	44>0	0>0	same	links
+testdocs/report	_1966_Fairchild Camera and Instrument Corporation Annual Report -- 1966_ProQuest Annual Reports	red	30	1,8,15,23	1	find:1	51	30>30	3738207>2382138	1	yes	clean	0>0	same	25>0	0>0	same	links
+testdocs/report	_1967_Fairchild Camera and Instrument Corporation Annual Report -- 1967_ProQuest Annual Reports	red	22	1,6,11,17	2	selection:2	41	22>22	1416210>887187	1	yes	clean	0>0	same	14>0	0>0	same	links
+testdocs/report	_1971_Fairchild Camera and Instrument Corporation Annual Report -- 1971_ProQuest Annual Reports	red	19	1,5,10,15	1	selection:1	68	19>19	1076959>880378	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	_1976_Fairchild Camera and Instrument Corporation Annual Report -- 1976_ProQuest Annual Reports	red	39	1,10,20,30	3	selection:3	57	39>39	5722213>5295277	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	w7787	green	30	1,8,15,23	0	-	45	30>30	316460>382403	2	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/report	w7787 2	green	30	1,8,15,23	0	-	45	30>30	316460>382403	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/thesis	Anderson_1997_Legacy of the American Frontier_California State University, Fresno	red	160	1,40,80,120	0	-	47	160>160	6966051>5074561	2	yes	clean	0>0	same	40>0	0>0	same	links
+testdocs/thesis	BOYD_The Relative Prognostic Value of Selected Criteria in Predicting Beginning	red	132	1,33,66,99	1	selection:1	48	132>132	6029916>4941392	2	yes	clean	0>0	same	59>0	0>0	differ	links,title
+testdocs/thesis	Banks - 2006 - “The last bastion of discrimination” The New York City building trades and the struggle over affirm	red	403	1,101,202,303	0	-	46	403>403	11179569>10814271	1	yes	clean	0>0	same	8>0	0>0	same	links
+testdocs/thesis	CAMFIELD_Psychologists at War	green	334	1,84,167,251	0	-	37	334>334	14952606>13190751	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/thesis	CARTWRIGHT_Legislation Against Discrimination in Employment in New York State	red	398	1,100,199,299	0	-	44	398>398	16850909>13038452	2	yes	clean	0>0	same	8>0	0>0	differ	links,title
+testdocs/thesis	Clark_The graphic rating scale at Northwestern University	red	110	1,28,55,83	1	selection:1	52	110>110	4963094>4781117	1	yes	clean	0>0	same	65>0	0>0	same	links
+testdocs/thesis	Cooley - 2008 - Moving up, moving out Race and social mobility in Chicago, 1914–1972	red	375	1,94,188,282	0	-	59	375>375	5427963>5365046	2	yes	clean	0>0	same	2>0	0>0	differ	links,title
+testdocs/thesis	Corson_Current practices in student guidance and personnel administration in liberal	red	234	1,59,117,176	0	-	51	234>234	11700139>11383344	1	yes	clean	0>0	same	121>0	0>0	same	links
+testdocs/thesis	DAUTEN_1954_The Economic Impact and Significance of Substantial Stock Sales by Individual_The University of Iowa	red	316	1,79,158,237	0	-	37	316>316	9543961>7190391	5	yes	clean	0>0	same	15>0	0>0	differ	links,title
+testdocs/thesis	DOBBS_1955_A Technique for the Development and Validation of Job Evaluation Cases_University of North Texas	red	280	1,70,140,210	1	selection:1	44	280>280	12543124>9869635	2	yes	clean	0>0	same	72>0	0>0	same	links
+testdocs/thesis	Doermann_1967_The market for college education in the United States	red	27	1,7,14,21	2	find:2	55	27>27	25005383>2433033	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/thesis	Drumright - 2005 - A river for war, a watershed to change The Tennessee Valley Authority during World War II	red	240	1,60,120,180	0	-	55	240>240	10980323>10631286	1	yes	clean	0>0	same	9>0	0>0	same	links
+testdocs/thesis	ERICKSON - 1952 - The Taxation of Investment Companies in the United States	red	679	1,170,340,510	1	selection:1	52	679>679	31336010>24504149	1	yes	clean	0>0	same	292>0	0>0	differ	links,title
+testdocs/thesis	Engstrom - 2005 - The lost origins of American fair employment law State fair employment practices bureaus and the po	red	484	1,121,242,363	0	-	53	484>484	15173824>14549761	1	yes	clean	0>0	same	26>0	0>0	same	links
+testdocs/thesis	GELFAND_1956_The Avoidance of Federal Personal Income Taxes in the United States_New York University	red	212	1,53,106,159	3	copy:2,find:3	41	212>212	8954229>7098645	4	yes	clean	0>0	same	20>0	0>0	differ	links,title
+testdocs/thesis	GIERHAN_The Role of Head Student Personnel Administrators in the Big Eight Universities	red	221	1,56,111,166	0	-	52	221>221	8590422>6339750	2	yes	clean	0>0	same	103>0	0>0	same	links
+testdocs/thesis	GRUMET_The Menorah Idea and the Apprenticeship of Lionel Trilling	red	328	1,82,164,246	0	-	66	328>328	14848772>11965675	1	yes	clean	0>0	same	9>0	0>0	differ	links,title
+testdocs/thesis	Ho_Useful fiction	red	319	1,80,160,240	0	-	43	319>319	14882106>10953198	2	yes	clean	0>0	same	25>0	0>0	differ	links,title
+testdocs/thesis	Jensen_The rise of an African-American Left	red	571	1,143,286,429	0	-	52	571>571	28882859>21088932	1	yes	clean	0>0	same	11>0	0>0	same	links
+testdocs/thesis	Kiernan_1959_Job evaluation for precision optical craftsmen_University of Southern California	red	188	1,47,94,141	1	selection:1	37	188>188	10868560>8526231	1	yes	clean	0>0	same	132>0	0>0	differ	links,title
+testdocs/thesis	Koh - 2008 - Essays on stock options expensing and stock option	red	189	1,48,95,142	0	-	46	189>189	2414097>2729254	0	yes	clean	0>0	same	26>0	0>0	differ	links,title
+testdocs/thesis	MENDELSON_1974_The Ideological Debate in the Public School Guidance Movement, 1900-1970_New York University	red	171	1,43,86,129	0	-	54	171>171	8477276>6421382	1	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/thesis	NAYLOR_Arthur E	red	266	1,67,133,200	0	-	51	266>266	10577098>8064432	0	yes	clean	0>0	same	14>0	0>0	differ	links,title
+testdocs/thesis	PANG_1971_An Optimizing Approach to Educational Planning in Singapore_University of Illinois at Urbana-Champaign	red	200	1,50,100,150	0	-	46	200>200	7612439>6068631	1	yes	clean	0>0	same	1>0	0>0	differ	links,title
+testdocs/thesis	PRICE_A History of the American College Personnel Association	red	172	1,43,86,129	0	-	42	172>172	7615064>5897025	1	yes	clean	0>0	same	7>0	0>0	differ	links,title
+testdocs/thesis	Pianko_Diaspora Jewish nationalism and identity in America, 1914–1967	red	261	1,66,131,196	0	-	43	261>261	7376682>5854257	2	yes	clean	0>0	same	8>0	0>0	same	links
+testdocs/thesis	Ries_Marshall_1955_web	red	107	1,27,54,81	2	copy:1,find:1	42	107>107	14451862>1955161	1	yes	clean	0>0	same	0>0	0>0	same	-
+testdocs/thesis	Robertson_1990_Organizational adaptation to environmental change_Stanford University copy	red	200	1,50,100,150	0	-	43	200>200	53792332>3092156	1	yes	clean	0>0	same	0>0	31>0	same	annots
+testdocs/thesis	Schwaller - 2026 - Silicon Valley Landscapes Architecture and the Soft Power of Big Tech	red	300	1,75,150,225	0	-	26	300>300	66573877>23211700	0	yes	clean	0>0	same	0>0	0>0	differ	title
+testdocs/thesis	Silberman_1961_A study of industry policy considerations in the transition from airplane to_University of Southern California	red	165	1,42,83,124	0	-	33	165>165	8116160>6317739	1	yes	clean	0>0	same	59>0	0>0	differ	links,title
+testdocs/thesis	TO_1985_Variations in Earnings in the Work Settings_University of Illinois at Urbana-Champaign	red	237	1,60,119,178	0	-	34	237>237	7690558>5957662	0	yes	clean	0>0	same	1>0	0>0	same	links
+testdocs/thesis	TROTMAN - 1976 - Race, Iq, and the Middle-Class.	red	119	1,30,60,90	0	-	27	119>119	4494872>3380178	0	yes	clean	0>0	same	109>0	0>0	same	links
+testdocs/thesis	WITTE_1978_Democracy, Authority and Alienation in Work_Yale University	red	413	1,104,207,310	0	-	28	413>413	17633883>13617398	0	yes	clean	0>0	same	98>0	0>0	same	links
+testdocs/thesis	Wu - 2003 - Employee stock option design and valuation	red	110	1,28,55,83	0	-	30	110>110	7294842>4896042	1	yes	clean	0>0	same	142>0	0>0	same	links
+testdocs/thesis	Zarifa_2008_Emerging Forms of Stratification in Higher Education_	red	258	1,65,129,194	0	-	22	258>258	11016935>9677815	0	yes	clean	1>1	same	33>0	0>0	differ	links,title
+testdocs/thesis	Zheng - 2003 - Six -month -one -day employee stock option reprici	red	76	1,19,38,57	0	-	21	76>76	3410471>2269615	0	yes	clean	0>0	same	35>0	0>0	same	links
+owner	1954 - Why.ocr-1.14.0.pdf	not-scored: an earlier app output the owner supplied as evidence, not a source	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-
+owner	1954 - Why.ocr-24a8f6a.pdf	not-scored: an earlier app output the owner supplied as evidence, not a source	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-
+owner	Hughes - The Knitting of Racial Groups in Industry (Desktop copy).ocr-24a8f6a.pdf	not-scored: an earlier app output the owner supplied as evidence, not a source	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-
+owner	Raskin - 1956 - New Jobs Opening to Negro in North.ocr-24a8f6a.pdf	not-scored: an earlier app output the owner supplied as evidence, not a source	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-

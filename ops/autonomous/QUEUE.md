@@ -404,13 +404,25 @@ say so in the commit.
       Briefer's copy echoes a hyphenated word's tail ("practices tices"). About 8 s a page: `ux-run`
       over 17,000 pages needs a page sample per document.
       (context: owner request 2026-09-26, after the defects the first stress test missed)
-- [ ] **ux-run** — run `ux-harness` over every document in `testdocs/` and every file the owner has
+- [x] **ux-run** — run `ux-harness` over every document in `testdocs/` and every file the owner has
       supplied, at default settings, through the production pipeline. The owner's Desktop folder hung on
       TCC last time, so use `$STATE/owner-supplied/`, and list each owner file with the result it got.
       A file that is skipped or fails is a row in the output, not an omission.
       OUTPUT: a TSV committed at the root, one row per page, plus the per-document table.
       BOUND: one session, with its output committed. (blocked-on: ux-harness)
       (context: owner request 2026-09-26)
+      DONE 2026-09-27: `UX-RUN-2026-09-27-pages.tsv` (931 pages) and `UX-RUN-2026-09-27-documents.tsv`
+      (248 rows). `Tools/score-gate.swift` and `Tools/ux-harness.swift` at `b17ff79` ran 233/233 corpus
+      documents and the 11 owner sources at default settings. The 4 earlier app outputs the owner
+      supplied are rows marked not-scored. Pages sampled: every page of owner files of 28 pages or fewer,
+      and pages 1, n/4, n/2 and 3n/4 otherwise (`ops/autonomous/ux-run/`). Documents: 36 green, 207 red,
+      1 harness crash. Red pages 259/931: selection 137, colour 92, find 58, legibility 31, copy 30.
+      Document flags: links 92, title 60, labels 21, annots 21, qpdf 2. 68 red documents have no red page.
+      For `ux-read`, first: a drag on `newspaperArticle/___ 2.pdf` p1's output traps CoreGraphics
+      (`PDFPage selectionFromPoint:toPoint:` → `PageLayout::convertRTLTextRangeIndexToStringRangeIndex`).
+      Vision read Arabic letters, Arabic-Indic digits and U+202B into its text layer. Preview uses the
+      same call; untested there because nothing may draw on the display. Also: `score-gate` spun at
+      100% CPU after printing "233 of 233 succeeded" and had to be killed.
 - [ ] **ux-read** — read the `ux-run` output and turn what it finds into queued work. Look at the worst
       pages on each measure, and also at a random sample of pages drawn from the whole run, because a
       defect that no number catches is found only by looking. Look at them the way a reader would: the
