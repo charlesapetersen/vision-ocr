@@ -50,6 +50,11 @@ say so in the commit.
    the rest; the attempt count then brings the item back at `max`. The pre-commit hook refuses a commit
    that breaks this. Wording in an item that says "close it `WONTFIX`" means "make the case for it" until
    then.
+9. **The regression set must not get worse (2026-09-28).** An item that changes `Sources/` or `Helper/` is
+   done only when `Tools/ux-regression.sh` reports nothing worse on `ops/ux-regression/set.tsv`, or the
+   item's `BUGS.md` entry states each regression it reports and why it is accepted. A commit that makes a
+   set page better, or accepts a regression, refreshes the baseline with `--baseline` and says so. Exit 3
+   (the owner's files or the corpus absent) is not a pass. It runs the pipeline: run it alone, like the suite.
 
 ## The queue
 
@@ -440,7 +445,7 @@ say so in the commit.
       then bytes. One line each in C28, C29, C33, C34, C37, C40, C41. All sit above `c28-first-principles`
       and `c41-newspaper-scans`, as FOCUS asks for the stress test's findings. The reader's own marks dropped at default are C45; wrapper `Link`s dropped by
       design were left alone.
-- [ ] **ux-regression-set** — make a fixed set of pages that every product item's check must pass, so a
+- [x] **ux-regression-set** — make a fixed set of pages that every product item's check must pass, so a
       fix cannot make another page worse without anyone seeing it, as C32 did to C31's pages. Pick about
       30 pages from the `ux-run` output: every page the owner has reported, plus one page for each route
       and each defect class. `ux-harness` scores the set in minutes, and records a baseline. Add one line to
@@ -454,6 +459,10 @@ say so in the commit.
       drag's end sits near a narrow gutter, and the sources' own text layers score the same there.
       BOUND: one commit. (blocked-on: ux-run)
       (context: owner request 2026-09-26)
+      DONE 2026-09-28: `ops/ux-regression/set.tsv`, 43 pages of 30 documents, and `Tools/ux-regression.sh`,
+      about 5 minutes; rule 9 above. Large documents are cut to their pages, which scored identically to
+      the whole-document run on all 34 pages both measured. A second run on unchanged code read 0 worse.
+      `___ 2.pdf` p1 is a harness crash in the baseline (C46), so it guards only its crash; C28 names no page.
 - [ ] **c42-spread-offset** — put Boltanski's text layer back on its ink: the text form must reach qpdf's
       overlay without the crop box, or be merged so the crop cannot centre it.
       DONE WHEN, through PDFKit on the published file: Find hits on Boltanski p51, p102 and p153 and on

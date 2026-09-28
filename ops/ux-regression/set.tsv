@@ -1,0 +1,39 @@
+# The ux regression set: pages every product item's check must leave no worse (QUEUE.md rule 9).
+# Read by Tools/ux-regression.sh. Columns, tab-separated:
+#   source  `owner/<file>` is in $STATE/owner-supplied/; anything else is under testdocs/
+#   pages   source page numbers, comma-separated
+#   mode    whole: publish the whole document (its document row means what the owner sees)
+#           pages: publish only these pages, cut out with `qpdf --empty --pages`. Measured 2026-09-28 on
+#           Boltanski p51, GELFAND p106, Xin Qu p24 and Surani p10: every harness column but the render
+#           times equal the whole-document run's in UX-RUN-2026-09-27-pages.tsv.
+#   why     what the page stands for: an owner report, a defect class or a route
+owner/1954 - Why.pdf	2,5,6,8,9,10	whole	owner: C38 legibility, C31/C32 colour; p2 p6 layered (C31's p4 p7 are the same route, left out); p8 p9 C32 headings; p9 column leak; p10 red logo grey
+owner/1951 - Briefer Book Notes.pdf	1,3	whole	owner: C30 half unselectable, C33 p3; C48 page labels lost
+owner/Raskin - 1956 - New Jobs Opening to Negro in North.pdf	1	whole	owner: C34/C39 drags cross columns
+owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	1,3,5,6	whole	owner: C33 p3, C34 p5, row-by-row layer p6; C48 title; C37 kept JBIG2; p1 the JSTOR cover passed through
+owner/Bird - 1963 - More Room at the Top Company Experiences in Employing Negroes in Professional and Management Jobs.pdf	3,5	whole	owner: C33 voids p3; C51 footnote lines p5
+owner/Leland - 1952 - We Believe in Employment on Merit, but.pdf	2,5,6	whole	owner: C33 footnotes not selectable
+owner/Delton - 2007 - Before the EEOC How Management Integrated the Workplace.pdf	1,2	whole	owner: C35/C37 bytes, JSTOR scan kept under the download line; p1 the cover passed through
+owner/Dobbin_2009_Inventing equal opportunity_Princeton University Press.pdf	81	whole	owner: C35 bytes; route: born-digital ebook kept (whole, since its outline decides the route; 5 s to publish)
+book/Boltanski_2006_On justification_Princeton University Press.pdf	51	pages	C42 text layer off its ink (spread)
+thesis/Zarifa_2008_Emerging Forms of Stratification in Higher Education_.pdf	92	pages	C42 offset 7-14 pt
+newspaperArticle/Berendzen_1981_The Soaring Lesson of America in Space_Newsday (1940-1990), Nassau ed.; Long Island, N.Y..pdf	1	whole	C43 scanned body read as born-digital; C47 layered JPX grows
+document/2013 - Silicon Valley Program Transcript.pdf	10	pages	C43 vector page rasterised
+journalArticle/Surani et al. - AI for Scaling Legal Reform Mapping and Redacting Racial Covenants in Santa Clara County.pdf	10	pages	C43 vector page rasterised; C49 icons lose colour
+journalArticle/Xin Qu et al_2018_Executive stock option vesting conditions, corporate governance and CEO.pdf	24	pages	C51 coefficient column missing; C50 low resolution
+bookSection/Berger_2013_Toward a Third Industrial Divide_.pdf	18	pages	C44 hyphen tails echoed
+magazineArticle/Glazer_2002_Higher Ed_New Republic.pdf	1	whole	C44 hyphen tails echoed
+newspaperArticle/___ 2.pdf	1	whole	C46 RTL noise: a drag traps CoreGraphics (harness crash)
+bookSection/Hyman_2012_Rethinking the Postwar Corporation_Oxford University Press.pdf	8	pages	C45 reader's highlights dropped
+journalArticle/Riesman_1949_Men, Women, and Marriage_Nation.pdf	2	whole	C52 column jumps
+magazineArticle/Marth_1982_Why Unions Lose At Many Companies_Nation's Business (pre-1986); Washington.pdf	2	whole	C52 column jumps; C47 bytes x2.18
+document/_1953_99 Cong_ 2.pdf	16	pages	C52 column jumps
+thesis/Ries_Marshall_1955_web.pdf	54	pages	C50 typewriter misreads
+book/New York Stock Exchange_1956_Stock ownership plans for employees.pdf	110	pages	C50 typewriter misreads
+magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	pages	C49 pink notice removed
+report/AI 2027.pdf	54	pages	C49 chart series turn one grey
+newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	whole	C41 whole-page newspaper scan
+document/_1939_Former students to Board re Merriam_.pdf	9	pages	legibility blind spot: broken strokes scored green
+bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	pages	route: green scan
+newspaperArticle/Glazer_2003_Neoconservatives, Then and Now_New York Times.pdf	1	whole	route: green newspaper page
+book/Ibson_2006_Picturing men.pdf	66	pages	route: source /Rotate differs from the output's
