@@ -1,0 +1,656 @@
+import PDFKit
+import Vision
+import AppKit
+import Foundation
+
+// ux-harness — a published PDF against its source, measured the way a reader meets it in Preview.
+//
+//   ux-harness <source.pdf> <output.pdf> <outdir> [pages=all]   pages: `5`, `5-6`, `1,3,5-7`
+//   ux-harness --header                                          the two header lines
+//
+// PDFKit and CoreGraphics are the only renderers and text readers here. Poppler is not evidence of what
+// Preview shows (BUGS.md C38: C31 was closed on a poppler render). Every page is drawn with
+// `PDFPage.draw(with: .cropBox, to:)`, and the reference for what the page SAYS is Vision reading the
+// SOURCE's render at 3x (216 dpi), whole and in overlapping bands, never the output's text layer, so a line the app dropped cannot vanish
+// from the reference along with the text.
+//
+// Writes `<outdir>/pages.tsv` and `<outdir>/document.tsv` (header plus rows, also printed on stdout), and
+// the renders as `<outdir>/renders/p<N>-{src,out}-{1x,2x}.png` so any page can be looked at.
+//
+// Per page (`pages.tsv`); a column is `-` when the page has too little text for it to mean anything:
+//   refWords   words Vision reads in the source at 3x: the reference
+//   leg1 leg2  legibility. Of the reference words, how many Vision reads in the OUTPUT's render at 1x (2x),
+//              divided by how many it reads in the SOURCE's render at the same scale. 1.00 = as legible.
+//   inkRatio   pixels darker than 128 at 2x, output over source: strokes as solid as the source's
+//   inkLum     mean luminance of those pixels, output minus source: positive = greyer strokes
+//   srcCol     share of the source's 1x pixels that are coloured (chroma > 60 of 255)
+//   colKept    of those pixels, the share still coloured (chroma > 30) in the output, allowing 1 px of shift
+//   find       of up to 30 reference words (5+ letters), the share `PDFDocument.findString` finds on this
+//              page with a hit whose bounds lie over that word in the source
+//   cols       columns: chains of 5+ reference lines, each over the next
+//   inside     worst column: share of the drag's selected area inside the column (column drag leaks out)
+//   cover      worst column: share of the column's lines the drag selects
+//   overInk    worst column: share of the drag's line boxes that lie over a reference line
+//   prec recall  worst column: share of the copy's words that a reading of the page (the source's three,
+//              or either document's 1x/2x render) reads at that line's place / share of the words two
+//              source readings agree on in the column that the copy has
+//   wer        word error rate of the drags' `string` against the reference lines in each column, over all
+//              columns; each column against the best of Vision's readings of the source at 2x, 3x and 4x
+//   splits welds  words split by a stray space / two reference words welded into one, in the drags' text
+//   echoes     a word followed by its own tail, "practices tices": a line-end hyphenation written whole on
+//              the first line with the continuation kept on the next
+//   hyph       line-end hyphens in the reference kept as "xx- yy" in the copy (join missed), of all seen
+//   midBreaks  line breaks inside a sentence in the copy, over all line breaks
+//   geom       `ok`; `size` when the displayed page (crop box, rotation applied) differs from the source's,
+//              which is red; `rotation` (/Rotate differs) and `origin` (a box moved), which are not
+//   msSrc msOut  PDFKit render time at 1x, milliseconds
+//   flags      the red reasons, `-` when green
+//
+// A page is red when (thresholds set on the owner's reports and the green sample, `Tools/ux-harness-selftest.sh`):
+//   legibility  leg1 or leg2 < 0.75                   faint     inkRatio < 0.60 or inkLum > 40
+//   colour      srcCol >= 0.0005 and colKept < 0.50    find      find < 0.80
+//   selection   inside < 0.90 or cover < 0.90 or overInk < 0.80
+//   copy        prec < 0.80                            geometry  the displayed page's size
+//   unmeasured  a Vision request failed on one of the page's renders
+// `wer` and `recall` are reported and never red: against a reference read by Vision they are noisy
+// (good pages read 0.02-0.30 and 0.84-0.98). `prec` put Raskin at 24a8f6a at 0.63 and every green page
+// at 0.89 or more; the owner's other reports are drags that leave their column, and `inside` has them.
+//
+// Per document (`document.tsv`): pages, bytes, open time, whether PDFDocument opens and `qpdf --check`
+// is clean, outline entries, page labels, links, other annotations and the document title, each output
+// against source. Red: `open`, `qpdf`, `pages`, `outline`, `labels`, `links`, `annots`, `title`.
+//
+// Blind spots, stated: the reference is Vision's reading of the source, so a word Vision misreads in the
+// source is a "miss" in every column; columns are found only where Vision read 5+ stacked lines, and a
+// page with `cols` 0 has had neither selection nor copy measured, whatever its flags say; a real
+// compound's hyphen joined away ("well- known" copied "wellknown") is not told from a right join; the
+// legibility proxy is a machine reader, and a person reads worse type than Vision does at 1x.
+//
+// Cost: about 8 s a page on an M-series Mac, nearly all of it seven Vision readings (three of the source,
+// banded, for the reference; four of the 1x/2x renders). A corpus run wants a page sample per document.
+// `findString` searches the whole document once per sampled word, so long documents cost more.
+// UX_VERBOSE=1 prints each column's drag, the lines it missed or took from outside, the reference and
+// copied words, and each Find miss, on stderr. UX_REFSCALE sets the reference render's scale (default 3).
+//
+// Build: swiftc -O -o /tmp/ux-harness Tools/ux-harness.swift
+// Self-test: Tools/ux-harness-selftest.sh (the owner's reports go red, a sample of good pages stays green)
+// Exit: 0 every page and the document green · 1 something red · 2 usage or a PDF will not open.
+
+let pageHeader = "page\trefWords\tleg1\tleg2\tinkRatio\tinkLum\tsrcCol\tcolKept\tfind\tcols\tinside\tcover\toverInk\twer\tprec\trecall\tsplits\twelds\techoes\thyph\tmidBreaks\tgeom\tmsSrc\tmsOut\tflags"
+let docHeader = "pages\tbytes\topenMs\topen\tqpdf\toutline\tlabels\tlinks\tannots\ttitle\tflags"
+
+func fail(_ s: String, _ code: Int32) -> Never {
+    FileHandle.standardError.write("ux-harness: \(s)\n".data(using: .utf8)!)
+    exit(code)
+}
+
+let args = CommandLine.arguments
+if args.count == 2 && args[1] == "--header" { print(pageHeader); print(docHeader); exit(0) }
+guard args.count >= 4 else {
+    fail("usage: ux-harness <source.pdf> <output.pdf> <outdir> [pages]  |  ux-harness --header", 2)
+}
+let srcURL = URL(fileURLWithPath: args[1]), outURL = URL(fileURLWithPath: args[2])
+let outDir = URL(fileURLWithPath: args[3])
+let verbose = ProcessInfo.processInfo.environment["UX_VERBOSE"] == "1"   // per-column detail on stderr
+let refScale = CGFloat(Double(ProcessInfo.processInfo.environment["UX_REFSCALE"] ?? "") ?? 3)
+try? FileManager.default.createDirectory(at: outDir.appendingPathComponent("renders"), withIntermediateDirectories: true)
+
+// MARK: - Rendering, as Preview draws
+
+struct Raster {
+    let w: Int, h: Int
+    let px: [UInt8]   // RGBA
+    func rgb(_ x: Int, _ y: Int) -> (Int, Int, Int) {   // y from the top
+        let i = (y * w + x) * 4
+        return (Int(px[i]), Int(px[i + 1]), Int(px[i + 2]))
+    }
+}
+
+func displaySize(_ page: PDFPage) -> CGSize {
+    let b = page.bounds(for: .cropBox)
+    return (page.rotation % 180 == 0) ? b.size : CGSize(width: b.height, height: b.width)
+}
+
+func render(_ page: PDFPage, scale: CGFloat) -> (CGImage, Raster, Double) {
+    let size = displaySize(page)
+    let W = max(1, Int((size.width * scale).rounded())), H = max(1, Int((size.height * scale).rounded()))
+    let ctx = CGContext(data: nil, width: W, height: H, bitsPerComponent: 8, bytesPerRow: W * 4,
+                        space: CGColorSpaceCreateDeviceRGB(),
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: W, height: H))
+    ctx.scaleBy(x: scale, y: scale)
+    let t0 = Date()
+    page.draw(with: .cropBox, to: ctx)
+    let ms = Date().timeIntervalSince(t0) * 1000
+    let img = ctx.makeImage()!
+    let data = ctx.data!.assumingMemoryBound(to: UInt8.self)
+    let px = Array(UnsafeBufferPointer(start: data, count: W * H * 4))
+    return (img, Raster(w: W, h: H, px: px), ms)
+}
+
+func savePNG(_ img: CGImage, _ name: String) {
+    let rep = NSBitmapImageRep(cgImage: img)
+    if let d = rep.representation(using: .png, properties: [:]) {
+        try? d.write(to: outDir.appendingPathComponent("renders").appendingPathComponent(name))
+    }
+}
+
+// MARK: - Reading, with Vision
+
+struct Word { let text: String; let box: CGRect }          // box normalised, origin bottom-left
+struct Line { let words: [Word]; let box: CGRect; let text: String }
+
+/// Vision over the whole image, then over overlapping horizontal bands, keeping every whole-image line and
+/// each band line that does not overlap one already kept. A whole-page request drops clean blocks of type
+/// on these scans (BUGS.md C30); a reference with holes in it would count the copy's words as invented.
+/// Bands of 600 px advancing by 400: at 3x a line is 20-40 px, so every line lies whole inside some band.
+func readBanded(_ img: CGImage) -> [Line]? {
+    guard var kept = read(img) else { return nil }
+    let H = img.height, W = img.width
+    guard H > 900 else { return kept }
+    var y0 = 0
+    while y0 < H {
+        let y1 = min(H, y0 + 600)
+        if let band = img.cropping(to: CGRect(x: 0, y: y0, width: W, height: y1 - y0)) {
+            let fy = CGFloat(H - y1) / CGFloat(H), fh = CGFloat(y1 - y0) / CGFloat(H)
+            func up(_ r: CGRect) -> CGRect { CGRect(x: r.minX, y: fy + r.minY * fh, width: r.width, height: r.height * fh) }
+            guard let lines = read(band) else { return nil }
+            let bandH = CGFloat(y1 - y0)
+            for l in lines {
+                // a line the band's inner edge cuts is read in part; the next band reads it whole
+                if y0 > 0, (1 - l.box.maxY) * bandH < 15 { continue }
+                if y1 < H, l.box.minY * bandH < 15 { continue }
+                let box = up(l.box)
+                let clash = kept.contains { k in
+                    let i = k.box.intersection(box)
+                    return !i.isNull && i.width * i.height > 0.3 * min(k.box.width * k.box.height, box.width * box.height)
+                }
+                if !clash { kept.append(Line(words: l.words.map { Word(text: $0.text, box: up($0.box)) }, box: box, text: l.text)) }
+            }
+        }
+        if y1 == H { break }
+        y0 += 400
+    }
+    return kept
+}
+
+/// nil when Vision fails, so a page it could not read is `unmeasured`, never green by default.
+func read(_ img: CGImage) -> [Line]? {
+    let req = VNRecognizeTextRequest()
+    req.recognitionLevel = .accurate
+    req.usesLanguageCorrection = true
+    do { try VNImageRequestHandler(cgImage: img, options: [:]).perform([req]) } catch { return nil }
+    var lines: [Line] = []
+    for obs in req.results ?? [] {
+        guard let cand = obs.topCandidates(1).first else { continue }
+        let s = cand.string
+        var words: [Word] = []
+        var i = s.startIndex
+        while i < s.endIndex {
+            while i < s.endIndex, s[i].isWhitespace { i = s.index(after: i) }
+            guard i < s.endIndex else { break }
+            var j = i
+            while j < s.endIndex, !s[j].isWhitespace { j = s.index(after: j) }
+            if let b = try? cand.boundingBox(for: i..<j)?.boundingBox {
+                words.append(Word(text: String(s[i..<j]), box: b))
+            }
+            i = j
+        }
+        lines.append(Line(words: words, box: obs.boundingBox, text: s))
+    }
+    return lines
+}
+
+/// A word as compared: lower case, letters and digits only; empty for punctuation.
+func norm(_ s: String) -> String {
+    String(s.lowercased().unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) })
+}
+func tokens(_ s: String) -> [String] {
+    s.split(whereSeparator: { $0.isWhitespace }).map { norm(String($0)) }.filter { !$0.isEmpty }
+}
+
+/// How many of `ref`'s words (a multiset) appear in `got`.
+func matched(_ ref: [String], _ got: [String]) -> Int {
+    var bag: [String: Int] = [:]
+    for w in got { bag[w, default: 0] += 1 }
+    var n = 0
+    for w in ref where (bag[w] ?? 0) > 0 { bag[w]! -= 1; n += 1 }
+    return n
+}
+
+func editDistance(_ a: [String], _ b: [String]) -> Int {
+    if a.isEmpty { return b.count }
+    if b.isEmpty { return a.count }
+    var prev = Array(0...b.count), cur = [Int](repeating: 0, count: b.count + 1)
+    for i in 1...a.count {
+        cur[0] = i
+        for j in 1...b.count {
+            cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1))
+        }
+        swap(&prev, &cur)
+    }
+    return prev[b.count]
+}
+
+// MARK: - Geometry
+// Every measure works in DISPLAY space: points on the page as shown, rotation applied, origin bottom
+// left, so a line runs left to right and the next line is below it on a rotated page too. PDFKit's
+// calls take and give PAGE space, and are converted at the call.
+
+func toDisp(_ page: PDFPage, _ r: CGRect) -> CGRect {   // Vision's normalised box -> display points
+    let size = displaySize(page)
+    return CGRect(x: r.minX * size.width, y: r.minY * size.height, width: r.width * size.width, height: r.height * size.height)
+}
+func pageToDisp(_ page: PDFPage, _ r: CGRect) -> CGRect { r.applying(page.transform(for: .cropBox)) }
+func dispToPage(_ page: PDFPage, _ r: CGRect) -> CGRect { r.applying(page.transform(for: .cropBox).inverted()) }
+func dispToPage(_ page: PDFPage, _ p: CGPoint) -> CGPoint { p.applying(page.transform(for: .cropBox).inverted()) }
+
+// MARK: - Measures
+
+func f2(_ x: Double?) -> String { x.map { String(format: "%.2f", $0) } ?? "-" }
+func f4(_ x: Double?) -> String { x.map { String(format: "%.4f", $0) } ?? "-" }
+
+func inkStats(_ r: Raster) -> (count: Int, lum: Double) {
+    var n = 0, sum = 0.0
+    for y in 0..<r.h { for x in 0..<r.w {
+        let (R, G, B) = r.rgb(x, y)
+        let l = 0.299 * Double(R) + 0.587 * Double(G) + 0.114 * Double(B)
+        if l < 128 { n += 1; sum += l }
+    } }
+    return (n, n > 0 ? sum / Double(n) : 0)
+}
+
+func colour(_ s: Raster, _ o: Raster) -> (share: Double, kept: Double?) {
+    // over the area both renders cover: a crop box within 1 pt can round to a pixel more or less
+    let W = min(s.w, o.w), H = min(s.h, o.h)
+    func chroma(_ r: Raster, _ x: Int, _ y: Int) -> Int { let (R, G, B) = r.rgb(x, y); return max(R, G, B) - min(R, G, B) }
+    var n = 0, kept = 0
+    for y in 0..<H { for x in 0..<W where chroma(s, x, y) > 60 {
+        n += 1
+        var best = 0
+        for dy in -1...1 { for dx in -1...1 {
+            let xx = x + dx, yy = y + dy
+            if xx >= 0, yy >= 0, xx < W, yy < H { best = max(best, chroma(o, xx, yy)) }
+        } }
+        if best > 30 { kept += 1 }
+    } }
+    return (Double(n) / Double(W * H), n > 0 ? Double(kept) / Double(n) : nil)
+}
+
+/// Columns: chains of reference lines, each line's successor the nearest line below that overlaps it by
+/// 0.7 of the wider width within 2.5 line heights (centre to centre). In display space.
+func columns(_ lines: [CGRect]) -> [[CGRect]] {
+    let order = lines.indices.sorted { lines[$0].midY > lines[$1].midY }
+    var next = [Int?](repeating: nil, count: lines.count), hasPrev = [Bool](repeating: false, count: lines.count)
+    for i in order {
+        let a = lines[i]
+        var best: Int? = nil, bestD = CGFloat.infinity
+        for j in lines.indices where j != i {
+            let b = lines[j]
+            guard b.midY < a.midY else { continue }
+            let ov = min(a.maxX, b.maxX) - max(a.minX, b.minX)
+            // 0.7 of the WIDER line: a heading or a fragment across the gutter spans two columns, and
+            // with 0.6 of the narrower it chained them, so the "column" was both and its drag selected
+            // nothing (Hughes p5). A paragraph's short last line is skipped; the chain goes past it.
+            guard ov >= 0.7 * max(a.width, b.width) else { continue }
+            let d = a.midY - b.midY
+            guard d <= 2.5 * max(a.height, b.height) else { continue }
+            if d < bestD { bestD = d; best = j }
+        }
+        if let b = best, !hasPrev[b] { next[i] = b; hasPrev[b] = true }
+    }
+    var chains: [[CGRect]] = []
+    for i in order where !hasPrev[i] {
+        var c: [CGRect] = [], k: Int? = i
+        while let kk = k { c.append(lines[kk]); k = next[kk] }
+        if c.count >= 5 { chains.append(c) }
+    }
+    return chains
+}
+
+func area(_ r: CGRect) -> CGFloat { r.isNull ? 0 : r.width * r.height }
+
+/// Does selected line box `b` select reference line `l`? Half of `l`'s width, and half the shorter
+/// height: Vision sometimes reads two printed lines as one box, and that box's middle lies between them.
+func selects(_ b: CGRect, _ l: CGRect) -> Bool {
+    min(b.maxY, l.maxY) - max(b.minY, l.minY) >= 0.5 * min(b.height, l.height) &&
+        min(b.maxX, l.maxX) - max(b.minX, l.minX) >= 0.5 * l.width
+}
+
+// MARK: - Main
+
+guard let src = PDFDocument(url: srcURL) else { fail("cannot open \(args[1])", 2) }
+let t0 = Date()
+let out = PDFDocument(url: outURL)
+let openMs = Date().timeIntervalSince(t0) * 1000
+
+func pageList(_ spec: String?, _ n: Int) -> [Int] {
+    guard let spec = spec, spec != "all" else { return Array(1...max(1, n)) }
+    var r: [Int] = []
+    for part in spec.split(separator: ",") {
+        let ends = part.split(separator: "-").compactMap { Int($0) }
+        if ends.count == 1 { r.append(ends[0]) } else if ends.count == 2, ends[0] <= ends[1] { r += Array(ends[0]...ends[1]) }
+    }
+    return r.filter { $0 >= 1 && $0 <= n }
+}
+
+var anyRed = false
+var pageRows: [String] = []
+
+if let out = out {
+    let pages = pageList(args.count > 4 ? args[4] : nil, min(src.pageCount, out.pageCount))
+    if pages.isEmpty { fail("no page of `\(args.count > 4 ? args[4] : "all")` is in both documents", 2) }
+    for p in pages {
+        guard let sp = src.page(at: p - 1), let op = out.page(at: p - 1) else { continue }
+        var flags: [String] = []
+
+        // Seven Vision readings, most of a page's time. Run side by side they took as long (155% CPU
+        // either way), so they run one after another.
+        let (sHi, _, _) = render(sp, scale: refScale)
+        let (s4i, _, _) = render(sp, scale: 4)
+        let (s1i, s1r, msS) = render(sp, scale: 1), (o1i, o1r, msO) = render(op, scale: 1)
+        let (s2i, s2r, _) = render(sp, scale: 2), (o2i, o2r, _) = render(op, scale: 2)
+        for (img, name) in [(s1i, "src-1x"), (o1i, "out-1x"), (s2i, "src-2x"), (o2i, "out-2x")] { savePNG(img, "p\(p)-\(name).png") }
+        let jobs: [(CGImage, Bool)] = [(sHi, true), (s2i, true), (s4i, true), (s1i, false), (o1i, false), (s2i, false), (o2i, false)]
+        var readings = [[Line]](repeating: [], count: jobs.count)
+        var failed = false
+        for k in jobs.indices {
+            if let r = jobs[k].1 ? readBanded(jobs[k].0) : read(jobs[k].0) { readings[k] = r } else { failed = true }
+        }
+        if failed { flags.append("unmeasured") }
+        let ref = readings[0]
+        // copy is scored against the best of three readings: one Vision reading of a scan is unstable
+        // (Briefer p5: 236 to 481 words at 2x-5x), and a copy that is really wrong is wrong against all
+        let otherRefs = [readings[1], readings[2]]
+        let refWords = ref.flatMap { $0.words.map { norm($0.text) } }.filter { !$0.isEmpty }
+        let enough = refWords.count >= 20
+
+        var leg: [Double?] = []
+        for (sRead, oRead) in [(readings[3], readings[4]), (readings[5], readings[6])] {
+            let sm2 = matched(refWords, sRead.flatMap { tokens($0.text) })
+            let om2 = matched(refWords, oRead.flatMap { tokens($0.text) })
+            leg.append(enough && sm2 >= 10 ? Double(om2) / Double(sm2) : nil)
+        }
+        if leg.contains(where: { ($0 ?? 1) < 0.75 }) { flags.append("legibility") }
+        let s1: Raster? = s1r, o1: Raster? = o1r, s2: Raster? = s2r, o2: Raster? = o2r
+
+        let si = inkStats(s2!), oi = inkStats(o2!)
+        let inkRatio: Double? = si.count > 500 ? Double(oi.count) / Double(si.count) : nil
+        let inkLum: Double? = si.count > 500 && oi.count > 0 ? oi.lum - si.lum : nil
+        if (inkRatio ?? 1) < 0.60 || (inkLum ?? 0) > 40 { flags.append("faint") }
+
+        let col = colour(s1!, o1!)
+        if col.share >= 0.0005, (col.kept ?? 1) < 0.50 { flags.append("colour") }
+
+        // find
+        var findShare: Double? = nil
+        let candidates = ref.flatMap { $0.words }.filter { w in
+            let n = norm(w.text); return n.count >= 5 && n.allSatisfy { $0.isLetter }
+        }
+        if candidates.count >= 5 {
+            let step = max(1, candidates.count / 30)
+            let sample = stride(from: 0, to: candidates.count, by: step).prefix(30).map { candidates[$0] }
+            var ok = 0
+            for w in sample {
+                let box = toDisp(op, w.box)
+                let pad = box.height * 0.5
+                let hits = out.findString(norm(w.text), withOptions: [.caseInsensitive])
+                if hits.contains(where: { h in
+                    guard h.pages.contains(where: { out.index(for: $0) == p - 1 }) else { return false }
+                    let hb = pageToDisp(op, h.bounds(for: op))
+                    return box.insetBy(dx: -pad, dy: -pad).contains(CGPoint(x: hb.midX, y: hb.midY))
+                }) { ok += 1 } else if verbose {
+                    FileHandle.standardError.write(String(format: "p%d find miss %@ at x%.0f y%.0f, %d hits\n", p, w.text, box.midX, box.midY, hits.count).data(using: .utf8)!)
+                }
+            }
+            findShare = Double(ok) / Double(sample.count)
+            if findShare! < 0.80 { flags.append("find") }
+        }
+
+        // selection and copy, per column
+        let refLines = ref.map { toDisp(op, $0.box) }
+        let chains = columns(refLines)
+        var inside: Double? = nil, cover: Double? = nil, overInk: Double? = nil, precision: Double? = nil, recall: Double? = nil
+        var werNum = 0, werDen = 0, splits = 0, welds = 0, echoes = 0, hyphMiss = 0, hyphAll = 0, mid = 0, breaks = 0
+        let refSet = Set(refWords)
+        // every reading's lines in display space, for judging a copied line where it lies
+        // (pairs per reading, not a map keyed by box: two readings of one image give identical boxes)
+        let allReadings: [[(box: CGRect, words: [String])]] = readings.map { reading in
+            reading.map { (toDisp(op, $0.box), tokens($0.text)) }
+        }
+        for chain in chains {
+            let first = chain.first!, last = chain.last!
+            let colRect = chain.reduce(CGRect.null) { $0.union($1) }
+            let h = chain.map { $0.height }.sorted()[chain.count / 2]
+            // cover asks about the drag, so a line with no text under it at all (a void, or type inside a
+            // picture) is left out: `find` and the voids instruments own that question. A column with no
+            // text under any line (a diagram's stacked labels) is left out whole, for the same reason.
+            let withText = chain.filter { l in
+                !(op.selection(for: dispToPage(op, l))?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            if withText.isEmpty { continue }
+            // a drag over lines that have text, selecting nothing: worst on every count
+            guard let sel = op.selection(from: dispToPage(op, CGPoint(x: first.minX + 1, y: first.midY)),
+                                         to: dispToPage(op, CGPoint(x: last.maxX - 1, y: last.midY))),
+                  !(sel.string ?? "").isEmpty else {
+                inside = 0; cover = 0; overInk = 0; precision = 0
+                continue
+            }
+            let lineBoxes = sel.selectionsByLine().map { pageToDisp(op, $0.bounds(for: op)) }.filter { area($0) > 0 }
+            let total = lineBoxes.reduce(0) { $0 + area($1) }
+            let grown = colRect.insetBy(dx: -h, dy: -h * 0.5)
+            let inArea = lineBoxes.reduce(0) { $0 + area($1.intersection(grown)) }
+            let ins = total > 0 ? Double(inArea / total) : 0
+            let cov = Double(withText.filter { l in
+                lineBoxes.contains { b in
+                    selects(b, l)
+                }
+            }.count) / Double(withText.count)
+            let over = lineBoxes.isEmpty ? 0 : Double(lineBoxes.filter { b in
+                refLines.contains { $0.insetBy(dx: -h * 0.5, dy: -h * 0.5).contains(CGPoint(x: b.midX, y: b.midY)) }
+            }.count) / Double(lineBoxes.count)
+            inside = min(inside ?? 1, ins); cover = min(cover ?? 1, cov); overInk = min(overInk ?? 1, over)
+            if verbose {
+                let t = (sel.string ?? "").replacingOccurrences(of: "\n", with: "|")
+                FileHandle.standardError.write(String(format: "p%d col x%.0f-%.0f y%.0f-%.0f lines %d inside %.2f cover %.2f over %.2f  %@\n",
+                    p, colRect.minX, colRect.maxX, colRect.minY, colRect.maxY, chain.count, ins, cov, over,
+                    String(t.prefix(160))).data(using: .utf8)!)
+                for l in withText where !lineBoxes.contains(where: { b in
+                    selects(b, l)
+                }) {
+                    FileHandle.standardError.write(String(format: "    missed x%.0f-%.0f y%.0f-%.0f  %@\n", l.minX, l.maxX, l.minY, l.maxY,
+                        (op.selection(for: dispToPage(op, l))?.string ?? "").replacingOccurrences(of: "\n", with: "|")).data(using: .utf8)!)
+                }
+                for b in lineBoxes where area(b.intersection(grown)) < 0.5 * area(b) {
+                    FileHandle.standardError.write(String(format: "    outside x%.0f-%.0f y%.0f-%.0f  %@\n", b.minX, b.maxX, b.minY, b.maxY,
+                        (op.selection(for: dispToPage(op, b))?.string ?? "").replacingOccurrences(of: "\n", with: "|")).data(using: .utf8)!)
+                }
+            }
+
+            // the reference text of this column, in order: every reference line inside it, not only the
+            // chain's, which skips a paragraph's short last line and would count its words as insertions
+            func inColumn(_ reading: [Line]) -> [Line] {
+                reading.filter { l in
+                    let r = toDisp(op, l.box); return grown.contains(CGPoint(x: r.midX, y: r.midY))
+                }.sorted { toDisp(op, $0.box).midY > toDisp(op, $1.box).midY }
+            }
+            let chainLines = inColumn(ref)
+            let text = sel.string ?? ""
+            let got = tokens(text)
+            var refTok = chainLines.flatMap { tokens($0.text) }
+            var best = editDistance(refTok, got)
+            for other in otherRefs {
+                let t = inColumn(other).flatMap { tokens($0.text) }
+                let d = editDistance(t, got)
+                if t.count >= 20, Double(d) / Double(t.count) < Double(best) / Double(max(1, refTok.count)) { best = d; refTok = t }
+            }
+            werNum += best; werDen += refTok.count
+            // precision: copied words that some reading of the source has in this column (a misread, or a
+            // line from the next column, is not); recall: words two readings agree on, found in the copy
+            let readings = ([chainLines] + otherRefs.map(inColumn)).map { Set($0.flatMap { tokens($0.text) }) }
+            let union = readings.reduce(Set<String>()) { $0.union($1) }
+            let stable = union.filter { w in readings.filter { $0.contains(w) }.count >= 2 }
+            // Precision is judged line by line, where the words are: each selected line's words against
+            // what the readings that cover it read there. Vision drops different lines at every scale and
+            // band (Briefer p1: a clean paragraph absent from all three source readings), so a page-wide
+            // vocabulary has holes, and the copy's right words fell into them. A reading counts for a line
+            // when its lines over it span 0.8 of the line's width; a line no reading covers is not judged.
+            // Each word counts as often as the best reading has it, so a line copied twice is not precise.
+            // Where the text sits is selection's question; this one is whether the words are right.
+            var judged = 0, right = 0
+            for ls in sel.selectionsByLine() {
+                let b = pageToDisp(op, ls.bounds(for: op))
+                let lineTok = tokens(ls.string ?? "")
+                guard area(b) > 0, !lineTok.isEmpty else { continue }
+                var best: Int? = nil
+                for reading in allReadings {
+                    // centre within the line's box: a merged two-line box, or the line above, is not this line
+                    let over = reading.filter { e in
+                        let r = e.box
+                        return abs(r.midY - b.midY) <= 0.5 * b.height && r.height <= 1.6 * b.height &&
+                            min(r.maxX, b.maxX) > max(r.minX, b.minX)
+                    }
+                    let span = over.reduce(CGFloat(0)) { $0 + max(0, min($1.box.maxX, b.maxX) - max($1.box.minX, b.minX)) }
+                    guard span >= 0.8 * b.width else { continue }
+                    let there = over.flatMap { $0.words }
+                    best = max(best ?? 0, matched(lineTok, there))
+                }
+                guard let m = best else { continue }
+                judged += lineTok.count; right += m
+                if verbose && m < lineTok.count {
+                    FileHandle.standardError.write("    WRONG \(m)/\(lineTok.count)  \(ls.string ?? "")\n".data(using: .utf8)!)
+                }
+            }
+            if judged >= 20 { precision = min(precision ?? 1, Double(right) / Double(judged)) }
+            if stable.count >= 20 {
+                recall = min(recall ?? 1, Double(stable.intersection(Set(got)).count) / Double(stable.count))
+            }
+            if verbose {
+                FileHandle.standardError.write("    REF \(refTok.joined(separator: " "))\n    GOT \(got.joined(separator: " "))\n".data(using: .utf8)!)
+            }
+            for i in got.indices.dropLast() {
+                let a = got[i], b = got[i + 1]
+                if refSet.contains(a + b) && !(refSet.contains(a) && refSet.contains(b)) { splits += 1 }
+                // a line-end word written whole with its continuation kept: "practices tices"
+                if b.count >= 3, a.count > b.count, a.hasSuffix(b), !refSet.contains(b) { echoes += 1 }
+            }
+            // a hyphen join across a line end is right, so it is not a weld
+            var joins = Set<String>()
+            for (k, l) in chainLines.enumerated() where k + 1 < chainLines.count {
+                if let a = l.words.last?.text, a.hasSuffix("-"), let b = chainLines[k + 1].words.first?.text {
+                    joins.insert(norm(a) + norm(b))
+                }
+            }
+            let refPairs = Set(refTok.indices.dropLast().map { refTok[$0] + refTok[$0 + 1] })
+            welds += got.filter { !refSet.contains($0) && !joins.contains($0) && refPairs.contains($0) }.count
+            for (k, l) in chainLines.enumerated() where k + 1 < chainLines.count {
+                guard let lastW = l.words.last?.text, lastW.hasSuffix("-"), lastW.count > 2,
+                      let nextW = chainLines[k + 1].words.first?.text else { continue }
+                hyphAll += 1
+                let stem = norm(lastW), rest = norm(nextW)
+                let g = text.replacingOccurrences(of: "\n", with: " ").lowercased()
+                if g.range(of: "\(stem)- \(rest)") != nil || g.range(of: "\(stem) - \(rest)") != nil { hyphMiss += 1 }
+            }
+            let chars = Array(text)
+            for (k, c) in chars.enumerated() where c == "\n" {
+                breaks += 1
+                let prev = chars[..<k].last { !$0.isWhitespace }
+                if let pc = prev, !".:;!?-\u{2014}\"\u{201D}".contains(pc) { mid += 1 }
+            }
+        }
+        if (inside ?? 1) < 0.90 || (cover ?? 1) < 0.90 || (overInk ?? 1) < 0.80 { flags.append("selection") }
+        let wer: Double? = werDen >= 20 ? Double(werNum) / Double(werDen) : nil
+        if (precision ?? 1) < 0.80 { flags.append("copy") }
+
+        var geom: [String] = []
+        // Red only for what a reader sees: the page's displayed size. A page drawn sideways under /Rotate 90
+        // is published upright under /Rotate 0 at the same displayed size, and a box moved with its content
+        // (JSTOR's y=-8 media boxes, published from 0: Hughes) looks the same; both are noted, not red.
+        // Content turned the wrong way at the same size is caught by legibility, find and selection,
+        // which all compare against the source's display.
+        let sd = displaySize(sp), od = displaySize(op)
+        if abs(sd.width - od.width) >= 1 || abs(sd.height - od.height) >= 1 { geom.append("size"); flags.append("geometry") }
+        if sp.rotation != op.rotation { geom.append("rotation") }
+        let sm = sp.bounds(for: .mediaBox), om = op.bounds(for: .mediaBox)
+        let sc = sp.bounds(for: .cropBox), oc = op.bounds(for: .cropBox)
+        if abs(sm.minX - om.minX) >= 1 || abs(sm.minY - om.minY) >= 1 ||
+            abs((sc.minX - sm.minX) - (oc.minX - om.minX)) >= 1 || abs((sc.minY - sm.minY) - (oc.minY - om.minY)) >= 1 {
+            geom.append("origin")
+        }
+
+        if !flags.isEmpty { anyRed = true }
+        let row = [String(p), String(refWords.count), f2(leg[0]), f2(leg[1]), f2(inkRatio),
+                   inkLum.map { String(format: "%.0f", $0) } ?? "-", f4(col.share), f2(col.kept), f2(findShare),
+                   String(chains.count), f2(inside), f2(cover), f2(overInk), f2(wer), f2(precision), f2(recall), String(splits), String(welds), String(echoes),
+                   "\(hyphMiss)/\(hyphAll)", "\(mid)/\(breaks)", geom.isEmpty ? "ok" : geom.joined(separator: "+"),
+                   String(format: "%.0f", msS), String(format: "%.0f", msO),
+                   flags.isEmpty ? "-" : flags.joined(separator: ",")].joined(separator: "\t")
+        pageRows.append(row)
+        print(row)
+        fflush(stdout)
+    }
+}
+
+// MARK: - Document
+
+func outlineCount(_ o: PDFOutline?) -> Int {
+    guard let o = o else { return 0 }
+    var n = 0
+    for i in 0..<o.numberOfChildren { if let c = o.child(at: i) { n += 1 + outlineCount(c) } }
+    return n
+}
+func annots(_ d: PDFDocument) -> (links: Int, other: Int, labels: [String]) {
+    var l = 0, o = 0, labels: [String] = []
+    for i in 0..<d.pageCount {
+        guard let pg = d.page(at: i) else { continue }
+        labels.append(pg.label ?? "")
+        for a in pg.annotations { if a.type == "Link" { l += 1 } else { o += 1 } }
+    }
+    return (l, o, labels)
+}
+func qpdfClean(_ url: URL) -> String {
+    let qpdf = ["/opt/homebrew/bin/qpdf", "/usr/local/bin/qpdf"].first { FileManager.default.isExecutableFile(atPath: $0) }
+    guard let q = qpdf else { return "absent" }
+    let t = Process()
+    t.executableURL = URL(fileURLWithPath: q)
+    t.arguments = ["--check", url.path]
+    t.standardOutput = FileHandle.nullDevice
+    t.standardError = FileHandle.nullDevice
+    do { try t.run() } catch { return "absent" }
+    t.waitUntilExit()
+    return t.terminationStatus == 0 ? "clean" : "exit\(t.terminationStatus)"
+}
+func bytes(_ u: URL) -> Int { ((try? FileManager.default.attributesOfItem(atPath: u.path))?[.size] as? Int) ?? 0 }
+
+var dflags: [String] = []
+let sa = annots(src)
+var cells: [String]
+if let out = out {
+    let oa = annots(out)
+    let q = qpdfClean(outURL)
+    if q.hasPrefix("exit") { dflags.append("qpdf") }
+    if src.pageCount != out.pageCount { dflags.append("pages") }
+    let so = outlineCount(src.outlineRoot), oo = outlineCount(out.outlineRoot)
+    if so != oo { dflags.append("outline") }
+    if sa.labels != oa.labels { dflags.append("labels") }
+    if sa.links != oa.links { dflags.append("links") }
+    if sa.other != oa.other { dflags.append("annots") }
+    let st = src.documentAttributes?[PDFDocumentAttribute.titleAttribute] as? String ?? ""
+    let ot = out.documentAttributes?[PDFDocumentAttribute.titleAttribute] as? String ?? ""
+    if !st.isEmpty && st != ot { dflags.append("title") }
+    cells = ["\(src.pageCount)>\(out.pageCount)", "\(bytes(srcURL))>\(bytes(outURL))", String(format: "%.0f", openMs),
+             "yes", q, "\(so)>\(oo)", sa.labels == oa.labels ? "same" : "differ", "\(sa.links)>\(oa.links)",
+             "\(sa.other)>\(oa.other)", st == ot ? "same" : "differ"]
+} else {
+    dflags.append("open")
+    cells = ["\(src.pageCount)>-", "\(bytes(srcURL))>\(bytes(outURL))", "-", "no", "-", "-", "-", "-", "-", "-"]
+}
+if !dflags.isEmpty { anyRed = true }
+let docRow = (cells + [dflags.isEmpty ? "-" : dflags.joined(separator: ",")]).joined(separator: "\t")
+print("DOC\t" + docRow)
+try? ([pageHeader] + pageRows).joined(separator: "\n").appending("\n")
+    .write(to: outDir.appendingPathComponent("pages.tsv"), atomically: true, encoding: .utf8)
+try? [docHeader, docRow].joined(separator: "\n").appending("\n")
+    .write(to: outDir.appendingPathComponent("document.tsv"), atomically: true, encoding: .utf8)
+exit(anyRed ? 1 : 0)

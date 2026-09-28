@@ -368,7 +368,7 @@ say so in the commit.
       extra bytes buy; a new check goes red without a fix, if one is made.
       BOUND: one docs commit, and one code commit if a fix follows.
       (context: BUGS.md C35 and C37 — both closed; the owner reported the size 2026-09-26)
-- [ ] **ux-harness** — build the instrument for a usability stress test measured the way a reader meets
+- [x] **ux-harness** — build the instrument for a usability stress test measured the way a reader meets
       the file: opened in Preview. PDFKit and CoreGraphics are the only renderers and text readers that
       count. `pdftoppm`, `pdftotext` and poppler word boxes are not evidence, because C31 was closed on a
       poppler render that looked nothing like Preview (`BUGS.md` C38).
@@ -395,6 +395,14 @@ say so in the commit.
       at `24a8f6a` p5 (a selection that leaves its column). It stays green on a named sample of pages
       that look right in Preview. Record each of those results.
       BOUND: one commit for the tool and its self-test.
+      DONE 2026-09-27: `Tools/ux-harness.swift`, `Tools/ux-harness-selftest.sh`; results per page in
+      `UX-HARNESS-SELFTEST-2026-09-27.tsv`. Red on all four reports for the named reason; green on Why
+      pp3-8, Briefer pp1-6 and Hughes pp1-3, 5, 7-9 from the current pipeline, and on a rotated fixture.
+      Found on the current pipeline while calibrating, for `ux-read`: Why p9 and Hughes p6 drags take
+      the other column (inside 0.77, 0.54); Briefer loses its page labels (A-F become 1-6); Hughes loses
+      its document title; Hughes p4's diagram labels are not findable; Why p10's logo is grey (C38);
+      Briefer's copy echoes a hyphenated word's tail ("practices tices"). About 8 s a page: `ux-run`
+      over 17,000 pages needs a page sample per document.
       (context: owner request 2026-09-26, after the defects the first stress test missed)
 - [ ] **ux-run** — run `ux-harness` over every document in `testdocs/` and every file the owner has
       supplied, at default settings, through the production pipeline. The owner's Desktop folder hung on
