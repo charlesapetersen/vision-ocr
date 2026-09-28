@@ -489,7 +489,7 @@ say so in the commit.
       for "difference" and "automation" still hits over the head fragment, and the tail's ink is still
       selectable; the four text-layer properties of invariant 3 still hold.
       BOUND: one code commit. (origin: BUGS.md C44)
-- [ ] **c46-rtl-noise** — keep Vision's misread Arabic/Hebrew out of the text layers of pages that are
+- [x] **c46-rtl-noise** — keep Vision's misread Arabic/Hebrew out of the text layers of pages that are
       otherwise Latin, and never write a zero-size run a click can land on.
       DONE WHEN: `___ 2.pdf` p1's output survives a click grid over the whole page, including x≈738,
       y 5-48, in a separate process; the 59 outputs with RTL letters are recounted and each remaining one

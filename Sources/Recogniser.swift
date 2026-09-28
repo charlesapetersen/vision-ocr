@@ -277,7 +277,7 @@ enum Recogniser {
                 guard let page = doc.page(at: index), let image = render(page, settings: settings)
                 else { throw Failure.unreadablePage(index + 1) }
                 out.append(PageOut(page: index + 1, width: image.width, height: image.height,
-                                   observations: try recognise(image, settings: settings)))
+                                   observations: withoutStrayScript(try recognise(image, settings: settings))))
             }
         } else {
             // An image input, which the drop box accepts alongside PDFs. This
@@ -294,8 +294,8 @@ enum Recogniser {
             out.append(PageOut(page: 1,
                                width: sideways ? image.height : image.width,
                                height: sideways ? image.width : image.height,
-                               observations: try recognise(image, orientation: orientation,
-                                                           settings: settings)))
+                               observations: withoutStrayScript(
+                                   try recognise(image, orientation: orientation, settings: settings))))
         }
 
         func object(_ p: PageOut) -> [String: Any] {
@@ -595,8 +595,79 @@ enum Recogniser {
     static func recognisePage(_ image: CGImage, settings: Prefs.Snapshot,
                               isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
-        splitAtGutter(try recogniseInBands(image, settings: settings, isCancelled: isCancelled),
-                      of: image, settings: settings, isCancelled: isCancelled)
+        withoutStrayScript(
+            splitAtGutter(try recogniseInBands(image, settings: settings, isCancelled: isCancelled),
+                          of: image, settings: settings, isCancelled: isCancelled))
+    }
+
+    // MARK: - Arabic and Hebrew misread on a Latin page (C46)
+
+    /// Whether `s` is a Hebrew or Arabic letter or digit: the scripts PDFKit lays out
+    /// right to left.
+    static func isRightToLeft(_ s: Unicode.Scalar) -> Bool {
+        switch s.value {
+        case 0x0590...0x08FF, 0xFB1D...0xFDFF, 0xFE70...0xFEFF: return true
+        default: return false
+        }
+    }
+
+    /// `observations` without the lines Vision's language detection read as Arabic or
+    /// Hebrew on a page that is Latin (C46).
+    ///
+    /// With no language named, Vision detects one per line, and a smudge or a cartoon
+    /// signature on an English page comes back as Arabic: `___ 2.pdf` p1 carried
+    /// `م٢٨٣٩ ٢٨ tcopnم ٦٦T` at 0.3 in a 4 pt gap between two lines already read.
+    /// The cost is not only noise. With a right-to-left run anywhere on the page,
+    /// PDFKit's `selection(from:to:)` exits SIGTRAP in
+    /// `convertRTLTextRangeIndexToStringRangeIndex` on a click at the right end of
+    /// another line (x≈738, `1-2下RIEKAAR`), and Preview makes the same call.
+    ///
+    /// A page is Latin unless a quarter of its letters, and a line's worth
+    /// (`strayScriptLetters`), are right to left: a figure page's eight-letter ghost
+    /// beside `Fig. 3` does not make it Arabic. On a Latin page, a line with any
+    /// right-to-left letter goes when Vision was unsure of it (below full confidence)
+    /// or when its own letters are not mostly right to left, the mixed strings no
+    /// script is written in; the other lines lose any bidirectional control character
+    /// (Vision wrote U+202B into the corpus). A confident line that is Arabic or Hebrew
+    /// stays: a quotation on an English page is text. Arabic-Indic digits alone are
+    /// not one: `Sewell` p325's microfilm target read its `1.0` as `١٠`. Dropped, not
+    /// reported, like the confidence threshold's lines: a Latin line with a Hebrew
+    /// word in it goes too, because Vision writes Hebrew only when it read the whole
+    /// line as Hebrew.
+    /// Rejected: naming the user's languages for them, which would stop a French or
+    /// German page being detected as what it is; and filtering in the writer, where
+    /// the lines could be reported, because `finerReading` would by then have put an
+    /// Arabic reading over a line the coarse copy had read in English.
+    static func withoutStrayScript(_ observations: [SearchableWriter.Observation])
+        -> [SearchableWriter.Observation] {
+        func letters(_ o: SearchableWriter.Observation) -> (all: Int, rtl: Int, words: Bool) {
+            var all = 0, rtl = 0, words = false
+            for s in o.text.unicodeScalars where s.properties.isAlphabetic || s.properties.numericType != nil {
+                all += 1
+                if isRightToLeft(s) { rtl += 1; words = words || s.properties.isAlphabetic }
+            }
+            return (all, rtl, words)
+        }
+        let counts = observations.map(letters)
+        let rtl = counts.reduce(0) { $0 + $1.rtl }
+        if rtl >= strayScriptLetters, rtl * 4 >= counts.reduce(0, { $0 + $1.all }) { return observations }
+        return zip(observations, counts).compactMap { o, n in
+            guard n.rtl == 0 else { return o.confidence >= 1 && n.words && n.rtl * 2 > n.all ? o : nil }
+            guard o.text.unicodeScalars.contains(where: isBidiControl) else { return o }
+            return SearchableWriter.with(o, String(String.UnicodeScalarView(
+                o.text.unicodeScalars.filter { !isBidiControl($0) })))
+        }
+    }
+
+    /// Right-to-left letters a page needs before it can be read as Arabic or Hebrew.
+    static let strayScriptLetters = 40
+
+    /// The marks and embeddings that turn on PDFKit's right-to-left layout.
+    static func isBidiControl(_ s: Unicode.Scalar) -> Bool {
+        switch s.value {
+        case 0x061C, 0x200E, 0x200F, 0x202A...0x202E, 0x2066...0x2069: return true
+        default: return false
+        }
     }
 
     // MARK: - A page pasted up from strips (C39)
@@ -643,16 +714,20 @@ enum Recogniser {
         let regions = try regions(besides: image)
         func read(_ bitmap: CGImage) throws -> [SearchableWriter.Observation] {
             if let regions {
-                return try recognisePage(bitmap, regions: regions, settings: settings,
-                                         isCancelled: isCancelled)
+                // Again over the whole page: each strip was judged Latin on its own.
+                return withoutStrayScript(try recognisePage(bitmap, regions: regions,
+                                                            settings: settings,
+                                                            isCancelled: isCancelled))
             }
             return try recognisePage(bitmap, settings: settings, isCancelled: isCancelled)
         }
         let lines = try read(first)
         guard coarse != image, !isCancelled(), let page = loadImage(at: image), page.width > 0,
               let finer = try? read(page), !isCancelled() else { return lines }
-        return finerReading(of: lines, from: finer, aspect: Double(page.height) / Double(page.width))
-            + linesOnlyFiner(lines, finer, aspect: Double(page.height) / Double(page.width))
+        // Each reading was judged on its own letters; the page is judged on what it keeps.
+        return withoutStrayScript(
+            finerReading(of: lines, from: finer, aspect: Double(page.height) / Double(page.width))
+                + linesOnlyFiner(lines, finer, aspect: Double(page.height) / Double(page.width)))
     }
 
     /// The lines of `finer` that the copy's reading has nothing over: each at full

@@ -7834,6 +7834,40 @@ do {
         let added = Recogniser.linesOnlyFiner(copy, offered, aspect: 1.5)
         check("C51 — the finer reading's lines the copy has nothing over are added, but not a guess or two lines fused",
               added.map(\.text) == ["3.724", "2.045", "0.906"], "\(added.map(\.text))")
+
+        // C46: `___ 2.pdf` p1 carried a 0.3 reading in Arabic between two English lines,
+        // and with it on the page PDFKit trapped on a click at the end of a signature.
+        let english = [line(0.1, 0.30, 0.6, "tions. They are now trying to pass the buck to the"),
+                       line(0.1, 0.34, 0.6, "coming from Meade but am a little amazed that")]
+        var ghost = english
+        ghost.insert(SearchableWriter.Observation(
+            boundingBox: Box(x: 0.1, y: 0.32, width: 0.6, height: 0.004),
+            text: "٦٦T ret :nr or مtcopn م٢٨٣٩ ٢٨", confidence: 0.3), at: 1)
+        ghost.append(line(0.1, 0.38, 0.6, "tcopnم ret or"))
+        let kept = Recogniser.withoutStrayScript(ghost)
+        check("C46 — on a Latin page, Arabic read at low confidence or mixed into Latin letters is left out",
+              kept.map(\.text) == english.map(\.text), "\(kept.map(\.text))")
+        func unsure(_ y: Double, _ text: String) -> SearchableWriter.Observation {
+            SearchableWriter.Observation(boundingBox: Box(x: 0.1, y: y, width: 0.6, height: 0.02),
+                                         text: text, confidence: 0.5)
+        }
+        let quoted = english + [line(0.1, 0.42, 0.3, "مرحبا بكم")]
+        check("…but a confident line in Arabic on it is a quotation, and stays",
+              Recogniser.withoutStrayScript(quoted).map(\.text) == quoted.map(\.text))
+        check("…though Arabic-Indic digits alone are a misread number, not a quotation",
+              Recogniser.withoutStrayScript(english + [line(0.1, 0.42, 0.05, "١٠")]).map(\.text)
+                == english.map(\.text))
+        let marked = Recogniser.withoutStrayScript(
+            english + [line(0.1, 0.42, 0.6, "\u{202B}the next line\u{202C}"), unsure(0.46, "مرحبا")])
+        check("…and a Latin line loses the right-to-left embedding Vision wrote into it",
+              marked.map(\.text) == english.map(\.text) + ["the next line"], "\(marked.map(\.text))")
+        let figure = Recogniser.withoutStrayScript([line(0.1, 0.9, 0.1, "Fig. 3"), unsure(0.5, "مرحبا بكم")])
+        check("…and a few ghost letters do not make a sparse figure page Arabic",
+              figure.map(\.text) == ["Fig. 3"], "\(figure.map(\.text))")
+        let arabic = [line(0.1, 0.22, 0.6, "مرحبا بكم في المدينة"), line(0.1, 0.26, 0.6, "مرحبا بكم في المدينة"),
+                      line(0.1, 0.30, 0.6, "مرحبا بكم في المدينة"), unsure(0.34, "في المدينة")]
+        check("…and a page written in Arabic keeps every line",
+              Recogniser.withoutStrayScript(arabic).count == 4)
     }
     // A page the app does not rebuild is read from a render at the same resolution.
     var automatic = Prefs.Snapshot.current()

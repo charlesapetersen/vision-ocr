@@ -18872,7 +18872,7 @@ run report hints at it. Checked by type [measured]: Hyman 57 Highlights, 35 Unde
 Invariant 1 applies to a reader's marks as much as to a line of text (`TODO.md`'s own words), so the
 defect is the silence, whatever the default. `annot-r3` covers the feature itself.
 
-### C46 · Vision's automatic language detection writes Arabic into English pages' text layers, and one such run traps PDFKit on a click — OPEN
+### C46 · Vision's automatic language detection writes Arabic into English pages' text layers, and one such run traps PDFKit on a click — FIXED 2026-09-28
 
 *(found 2026-09-27: the `ux-run` harness crash, reproduced by `ux-read`.)*
 
@@ -18883,6 +18883,34 @@ source does not trap. [measured, separate process] Preview goes through the same
 there [reasoned]. The line "trying to pass the buck to the" also carries a second, 4.9 pt reading
 `م٢٨٣٩ ٢٨ tcopnم ٦٦T…`. 59 run outputs hold Arabic or Hebrew letters. The default languages setting is
 empty (`Prefs.swift:527`), so `Recogniser.swift:460-468` turns on `automaticallyDetectsLanguage`.
+
+#### Fix (2026-09-28)
+
+The "zero-size boxes" were the instrument: PDFKit's `characterBounds(at:)` returns zero for the last
+509 characters of this page's string (and the last 2 of a synthetic three-line page), while
+`selection(for:)` over `RIEKAAR` gives a 37 x 13 pt box at x 702-740, so x≈738 is that run's right end.
+Nothing zero-size is written; `placement` already refuses boxes under 0.5 pt. [measured] The trap needs
+the Arabic line on the page: output built without it survives the same click grid.
+
+`Recogniser.withoutStrayScript`, applied to every page's reading (and again to the strips' and to the
+coarse-plus-finer result, and to Extract Text): a page is Latin unless a quarter of its letters and 40
+of them are right to left; on it a line with an Arabic or Hebrew letter goes unless it is at full
+confidence, mostly right to left and holds a letter (Arabic-Indic digits alone are a misread number),
+and the other lines lose bidi controls (U+202B). Rejected: naming
+languages for the user (a French page would stop being detected), and filtering in the writer where
+dropped lines could be reported as `Unplaced` (`finerReading` would already have put an Arabic reading
+over a line the coarse copy read in English). Dropped lines are not reported, as the confidence
+threshold's are not; a Latin line with a Hebrew word in it goes too.
+
+`___ 2.pdf` p1, 1 pt click grid plus drags, separate process: before exit 133 (SIGTRAP), 10 RTL letters;
+after exit 0, 0 RTL letters, 17,746 -> 17,715 characters. [measured]
+
+Recount through PDFKit over a fresh run with the fix, 206 outputs (194 of the 233 corpus documents, all but
+`thesis/` and three long books, which the session's time did not reach, plus the 11 owner sources): 1 holds
+right-to-left characters or bidi controls, against the `ux-run`'s 59 over all 244, and that one, `Sewell` p325's microfilm test target
+(`١٠` for `1.0`), is 0 with the digits rule added after it. [measured] Scratch: `/private/tmp/c46s`. DONE WHEN checked by a separate
+subagent: both pass (its own grid, 0.25 pt over x 728-748, y 0-52: before exit 133, after exit 0 in 1,446,546 calls;
+the p325 source render shows no Arabic). The 39 documents not recounted are the open limit.
 
 ### C47 · Outputs come out larger than their sources on already-compact scans: JBIG2 re-encoded and JPX layers turned into JPEG — OPEN
 

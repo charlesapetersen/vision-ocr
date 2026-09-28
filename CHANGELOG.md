@@ -14,6 +14,9 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- English pages no longer carry stray Arabic letters that recognition read from smudges and cartoon
+  lettering. On one newspaper page such a line made Preview's text selection crash on a click at the
+  end of a cartoon's signature (C46).
 - Copying text from a scan no longer repeats the second half of every word hyphenated at a line end
   ("difference ference"). The whole word is still found by Find, and the second half can still be
   selected (C44).
