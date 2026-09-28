@@ -6,7 +6,7 @@ unless marked *reasoned* or *unverified*.
 
 Status: `OPEN` · `FIXED` · `WONTFIX` (with a reason)
 
-**Two open: `C27` and `C28` — and `C28` is `HALF FIXED` as of 2026-08-22, its
+**13 open (2026-09-27): `C28`, `C41`, and `C42`-`C52` from `ux-read`. `C27` closed `FIXED` 2026-09-25, and `C28` is `HALF FIXED` as of 2026-08-22, its
 shape term WIRED into `pageIsAllText()` as a third refusal condition once all five of its questions were
 measured. `C29` closed `FIXED` 2026-09-25.**
 ✅ **`C28`'s ONE REMAINING MEASUREMENT IS TAKEN AS OF 2026-09-02 AND IT IS THE MOVE THE ENTRY CALLS *"the
@@ -15527,6 +15527,8 @@ mechanism — the page-wide Otsu being blind to pale pencil — predicts not.
   hand-drawn mark. ⚠️ Those are two different counts and this bullet conflated them in its first
   draft — caught by the numbers audit of this diff.
 
+*(2026-09-27, `ux-read`: more of the same loss off the layered route too. `Scott_TK` p7, a Google MRC scan on the bilevel route, loses half a signature and the grey "Digitized by Google" footer, whose ink lived in the 150/75 ppi layers; `Schaar` p1 and `Stanford 1891` p2 lose pencil notes and a pencil folio; `Casey` p1, `Stone` p1 and `Riesman` p1 lose light-grey text, a rule and shaded bands (speckle left); `_1939_Former students` p9 breaks faint typewriter strokes on a 72 ppi mask. [looked])*
+
 ### C29 · A born-digital cover page is rasterised and re-OCR'd, and `hasDigitalText` never even looks at it — FIXED
 
 ✅ **FIXED 2026-09-25: the short page, and the two `pageIsAnImage` misses.** `Flattener.bornDigitalVerdict`
@@ -16749,6 +16751,8 @@ else, which is `score-text-route`'s `verdict` column's failure mode (three repai
 `Schwaller - 2026` is **167 passthrough pages of 300** and `Batzell` **51 of 54**, both `splice=yes`, where
 every end-to-end run in this entry has had one passthrough page. Nothing here executed a splice, so that is a
 population fact and not a verification.
+
+*(2026-09-27, `ux-read`: its named residual is live, and the opposite error too; both are C43.)*
 
 ### C30 · Whole blocks of clean body text get no text layer, and every instrument that could see it starts from the words Vision returned — FIXED 2026-09-25, by recognising the page again in overlapping bands wherever one request leaves a void
 
@@ -18001,6 +18005,8 @@ band joined them; a check holds the gutter case. It also found stale stretches f
 first round, and small stretches refusing larger ones. Both are fixed, without a check of their own:
 each only wasted a crop.
 
+*(2026-09-27, `ux-read`: text is still missing from the text layer on current main; it is C51.)*
+
 ### C34 · The text layer is written across the page row by row, so selection jumps between columns, and some Vision lines span the gutter — FIXED
 
 *(found 2026-09-25 by the owner in 1.14.0: `1954 - Why.pdf` p5, a two-page spread, and
@@ -18048,6 +18054,8 @@ a tenth of its lines finds no gutter. A table whose cells hold wide lines of tex
 four rows, one column at a time within each block, so copying a row does not keep its cells together.
 Nothing is lost. Tables have no right order under this scheme, so this is not opened as an entry.
 2026-09-26, owner: Hughes p5 still joins the two columns on four rows, in the owner's Desktop copy. See C40.
+
+*(2026-09-27, `ux-read`: drags still jump columns on current main; it is C52.)*
 
 ### C35 · Some already-OCR'd files come out several times larger than they went in — FIXED
 
@@ -18245,6 +18253,8 @@ it looked at renders. Seven new checks; with the overlay dropped, the page-1 che
 586`). Rejected: re-encoding the image in symbol mode (R37). The review found a whole-page render bar that
 could not see a dropped overlay (0.88% of ink against a 1% bar), and a trap on absurd placements; both
 are fixed. Open, not fixed: on a page `typeDPI` renders finer, the overlay keeps the scan's resolution.
+
+*(2026-09-27, `ux-read`: other already-compact scans still grow, up to x2.93 on Keyssar; they are C47.)*
 
 ### C38 · Text on layered pages is illegible in Preview: PDFKit draws the text stencil at the foreground image's resolution, and C31's fix was checked in poppler, which does not — FIXED 2026-09-26
 
@@ -18696,6 +18706,8 @@ The independent check passed all five DONE WHEN criteria.
 Hughes p6 keeps one fused row, the same before and after (y 513, "girls of longer service … Negro help
 could be…"). Why it is kept whole was not examined.
 
+*(2026-09-27, `ux-read`: the same fusion across a narrow gutter on `_1953_Fairchild` p7/p13: "military con- pact camera represents". [measured])*
+
 ### C41 · Whole-page scans of small-town newspapers are read far below their print: misread words and rows fused across columns — OPEN
 
 *(split from C39 on 2026-09-27 by the owner. The pages, the before figures and the work so far are in C39:
@@ -18714,6 +18726,150 @@ The gain in hand is the band swap parked at
 22-document sample, with ordinary pages unchanged, but only +0.0 to +1.2 on the five pages above. Its review found five defects, (a)-(e) in C39, and the
 independent check three more (`Jority leader` → `Sority lender`, a headline run into a body line, a garbled
 line kept beside its clean reading). Drag selection on these pages is not part of this entry; C39 closed it.
+
+*(2026-09-27, `ux-read`: about 15 of the run's selection-red and 12 of its find-red pages are these scans (e.g. `_1928_Creative writing` p1).)*
+
+### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — OPEN
+
+*(found 2026-09-27 by `ux-read`, from `UX-RUN-2026-09-27-pages.tsv`: Boltanski p51/p102/p153 red on
+selection, find 0.00-0.03, prec 0.08-0.11.)*
+
+`book/Boltanski_2006_On justification_Princeton University Press.pdf`: 201 of 203 output pages draw the
+text form at `1 0 0 1 81 -31.5 cm`, although its glyphs are already in page coordinates. That is qpdf
+`--overlay` centring a CROPPED form on the media box: (1031-779)/2 - 45 = 81, (727-628)/2 - 81 = -31.5.
+The text layer reaches the merge still carrying the crop `SearchableWriter.swift:290-295` sets, which
+`JBIG2.swift:1080-1091` says must be applied only after the merge. Find hits in source and output differ
+by a steady (+79..+82, -31..-33) on four of five words. [measured] Looked at through PDFKit: a drag
+down the left page starts mid-line and runs across the gutter; copying the right page gives the left
+page's text. The source's own text layer was placed correctly and the app replaced it. [measured] It is
+C23's mechanism back. Any off-centre crop shifts, by how far it is off centre: `thesis/Zarifa_2008` has
+off-centre crops on 108 of 258 pages, and on p92-p94 Find hits land 7-14 pt left of the source's
+("McMaster" -10.5, -13.7) [measured by the diff's review]. Centred crops shift by nothing, which is why
+other cropped outputs look right.
+
+### C43 · The born-digital verdict is wrong both ways: narrow-strip scans are passed through unread, and pages with a full-width image strip or a figure are rasterised — OPEN
+
+*(found 2026-09-27 by `ux-read`. The first half is the residual `Flattener.pageHasDigitalText`'s own
+comment names as open, lines 501-502; C29 is FIXED and is not reopened.)*
+
+Passed through unread [measured: the output's text equals the source's]: `_1973_Other 67 Newsday` p1 is
+three column strips 448-472 px wide, so no image passes the 900 px bar, and 205 characters of ProQuest
+header vector text make it "digital". The whole scanned body gets no text and nothing says so. Also
+`Wells_2015` p1 (an 800 px cover), `Mudge_2018` p93 (646 px at 100 ppi) and `1958_E` p1, which keep the
+source's garbled OCR ("ccntcrlcft").
+Rasterised the other way: `2013 - Silicon Valley Program Transcript` (embedded Georgia/Trebuchet text)
+comes out one 1-bit JBIG2 per page at 1.87x the bytes, its red banner black and its real text replaced by
+OCR; full-width 1812 px header/footer strips are the likely trigger [reasoned]. `Surani et al.` p15/p19/
+p23/p30 (vector Nimbus text beside a halftone figure) are rebuilt whole at the figure's pixel width,
+114-173 ppi: the body type goes jagged and the figure's ad text turns to noise [measured, looked]. In the
+app a born-digital file raises the digital-text warning first (the gate turns it off), so Surani and
+Silicon Valley reach a reader only if they go on.
+
+### C44 · Copied text repeats the tail of every word hyphenated at a line end: "difference ference" — OPEN
+
+*(found 2026-09-27 by `ux-read`'s random sample: 14 of 25 random pages, 12 of them green.)*
+
+`joiningHyphenatedWords` (`SearchableWriter.swift:1037`) writes the joined word over the first fragment
+and leaves the tail on its own line, deliberately, so Find matches the whole word; its comment calls the
+duplicate "noise in extracted text". Through PDFKit the noise is in every copy: Berger p18's page string
+reads "fundamental difference / ference", "difficult / ficult", "biological / logical", "automation /
+mation" [measured]; Glazer p1 has 34 such tails. Every quote a reader copies from hyphenated prose carries
+junk half-words, on most of the corpus. The trade was never priced against copying. `ux-harness`'s
+`echoes` column is blind to it: it counts a tail only when the tail is not a reference word, and Vision
+reads "dif- ference" as two words, so "ference" always is one (`Tools/ux-harness.swift:536`).
+
+### C45 · A reader's own highlights, underlines and notes are dropped at default settings, and nothing says so — OPEN
+
+*(found 2026-09-27 by `ux-read`: `annots` red on 21 documents, and 38 of the 92 `colour` pages.)*
+
+With *Keep highlights and notes* off, which is the default, the output carries none of the source's
+marks, and `marksNote` is set only inside `if settings.preserveAnnotations` (`Model.swift:2804-2826`), so
+no status line, outcome or report row says anything was left. Only "Keep highlights and notes: off" in the
+run report hints at it. Checked by type [measured]: Hyman 57 Highlights, 35 Underlines, 9 Text notes and
+20 Stamps; Broadhead 35 Highlights and 31 Ink; Freud 11 Highlights, 6 Underlines, 17 Popups; Nedelsky 54
+(highlights looked at on p2); Kazin 43; Moyn 117. These are Zotero readers' marks, not wrapper `Link`s.
+Invariant 1 applies to a reader's marks as much as to a line of text (`TODO.md`'s own words), so the
+defect is the silence, whatever the default. `annot-r3` covers the feature itself.
+
+### C46 · Vision's automatic language detection writes Arabic into English pages' text layers, and one such run traps PDFKit on a click — OPEN
+
+*(found 2026-09-27: the `ux-run` harness crash, reproduced by `ux-read`.)*
+
+`newspaperArticle/___ 2.pdf` p1: `selection(from:to:)` exits SIGTRAP in
+`PageLayout::convertRTLTextRangeIndexToStringRangeIndex` when a click or a drag's end lands in a strip
+about 2 x 45 pt at x≈738, the cartoon signature Vision read as "1-2下RIEKAA" with zero-size boxes. The
+source does not trap. [measured, separate process] Preview goes through the same call, so it would crash
+there [reasoned]. The line "trying to pass the buck to the" also carries a second, 4.9 pt reading
+`م٢٨٣٩ ٢٨ tcopnم ٦٦T…`. 59 run outputs hold Arabic or Hebrew letters. The default languages setting is
+empty (`Prefs.swift:527`), so `Recogniser.swift:460-468` turns on `automaticallyDetectsLanguage`.
+
+### C47 · Outputs come out larger than their sources on already-compact scans: JBIG2 re-encoded and JPX layers turned into JPEG — OPEN
+
+*(found 2026-09-27 by `ux-read`: 41 of 244 documents grow, `UX-RUN-2026-09-27-documents.tsv`.)*
+
+Already-OCR'd JBIG2 sources re-encoded bigger, which C37 fixed for the owner's JSTOR files: Keyssar
+140,354 → 410,688 B (x2.93), Stiglitz x2.61 (a page stream 17.8K → 97.8K), w5093 x2.22, Eyal-Cohen x1.87,
+Boltanski x1.52 (p20 16K → 134K), IHN x1.51 [measured]. Stiglitz draws its scan inside a Form XObject and
+has no download line, which may be why C37's keep test misses it [reasoned]. Layered ProQuest scans:
+Berendzen x1.54 (JPX layers 26K + 20K become one 111K JPEG, mask 77K → 97K), Marth x2.18, Levy/Temin
+x1.58 (full-resolution 2362x3122 JPEGs) [measured].
+
+### C48 · Page labels and the document title are lost — OPEN
+
+*(found 2026-09-27 by `ux-read`: `labels` on 21 documents, `title` on 60, and no output has a title.)*
+
+Nothing in `Sources/` writes `/PageLabels`. When every page is rebuilt the output has none: Hobsbawm
+i-iv,1-320 becomes 1-324, Noble i-388 becomes 1-414, Bird A-M becomes 1-13, and the owner's Briefer and
+1957 Morrow lose theirs. When some pages pass through, qpdf's merge keeps the source's labels and gives the
+rebuilt pages `{/St n}` with no style, an empty label (Cohen, JAH, Keyssar, Morgan, Westad: "Cover Page,
+p. 530" becomes "Cover Page, '', ''"). [measured] Preview's page field and Go To Page stop using the printed
+numbers. The title and author are never written: `SearchableWriter.swift:237` creates the context with no
+info dictionary and the merges start from `--empty`. 60 titles go to nil, and Preview, Spotlight and
+Zotero lose them. [measured]
+
+### C49 · Colour that carries meaning on a mostly black page is lost: chart series turn one grey, a pink notice vanishes — OPEN
+
+*(found 2026-09-27 by `ux-read`, from the 92 `colour` pages; 46 are real losses, 38 of them C45's marks.)*
+
+`AI 2027` p54: three density curves become black and their shading goes, so the legend cannot tell them
+apart; `Autor` p10: two lines differ only by grey; `Surani` p10 icons lose colour [looked]. `Kristol`
+p1/p3/p5/p8 and `Astin` p3: the pink "PRODUCED BY UNZ.ORG / ELECTRONIC REPRODUCTION PROHIBITED" box is
+gone entirely, not greyed, which is text removed without a report [looked]. The page is published grey
+because too little of it is coloured for C27's page-wide bar [reasoned]. The other 37 colour-flagged pages
+lose only link, logo or banner colour, and 9 only paper tint, rightly.
+
+### C50 · Typewritten and low-resolution pages are misread more than the source's own reading allows — OPEN
+
+*(found 2026-09-27 by `ux-read`: most of the 88 `find`/`copy` red pages that are not C41's.)*
+
+Looked at: `NYSE_1956` p110, `GELFAND` p106, `Doermann` p7, `Ries` p54, `Fairchild_1963` p17. The copy
+reads "baden fox loans aridenced", "suall firms", "Govorment agencios"; list numerals ("2.", "8.") are
+dropped. `Xin Qu_2018` p24, a clean 300 ppi table, copies "11.(H10", "Coeflicient", a Thai "ถ.120", while
+Vision reads the source's same cells correctly [measured]; the page's missing column is C51's. On Ries the source is a 150 ppi grey JPEG and
+production recognises the 150 ppi 1-bit rebuild, whose strokes are broken [measured, looked]; that the
+binarisation causes the misreads is reasoned. Part of the red is shared noise: Vision's reference misreads
+some of the same words.
+
+### C51 · Lines and table cells are still missing from the text layer after C33, so they cannot be selected or found — OPEN
+
+*(found 2026-09-27 by `ux-read`; C33 is FIXED and is not reopened.)*
+
+`Bird 1963` p5 (the owner's file): three footnote lines ("tices. By Paul H. Norgren…", "…Monograph No.
+17…") cannot be selected, and Find "Monograph" gets 0 hits. `Xin Qu_2018` p24: the whole Hurdle_Cliff
+Model (2) coefficient column is gone; Find 1.228, 3.724, 2.045 and 0.906 gets 0, where the source's own
+text layer finds all four. [measured] Nothing reports the loss (invariant 1). Why these lines are
+dropped, by Vision or after it, was not examined.
+
+### C52 · A drag down one column still jumps into the next partway down — OPEN
+
+*(found 2026-09-27 by `ux-read`; C34 is FIXED and is not reopened.)*
+
+`Riesman_1949` p2: after "cannot be confined within" the copy runs into the right column's "November
+24, 1848…"; `Marth_1982` p2: column 3's lower block lands between two paragraphs of column 2;
+`_1953_99 Cong_ 2` p16: a drag of the right column takes none of its lines; `1947_Corporation Tax` p2: a
+drag inside one column takes 348 lines. On Riesman and Marth the source's own text layer gives the clean
+column for the same drag, so the order the app writes is at fault. [measured] About 40 of the run's 137
+selection-red pages look like this [estimated from 17 looked at].
 
 ## Robustness and correctness of reporting
 

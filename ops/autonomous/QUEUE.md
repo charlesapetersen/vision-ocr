@@ -423,7 +423,7 @@ say so in the commit.
       Vision read Arabic letters, Arabic-Indic digits and U+202B into its text layer. Preview uses the
       same call; untested there because nothing may draw on the display. Also: `score-gate` spun at
       100% CPU after printing "233 of 233 succeeded" and had to be killed.
-- [ ] **ux-read** — read the `ux-run` output and turn what it finds into queued work. Look at the worst
+- [x] **ux-read** — read the `ux-run` output and turn what it finds into queued work. Look at the worst
       pages on each measure, and also at a random sample of pages drawn from the whole run, because a
       defect that no number catches is found only by looking. Look at them the way a reader would: the
       PDFKit render at 1x beside the source's, with a drag selection and a Find shown on it.
@@ -434,14 +434,92 @@ say so in the commit.
       A finding that is already queued gets one line in its existing entry.
       BOUND: one session. (blocked-on: ux-run)
       (context: owner request 2026-09-26)
+      DONE 2026-09-27: C42-C52 entered and queued below, ranked by what a reader loses: a whole document's
+      text misplaced, whole pages unsearchable, lines unfindable, every copy corrupted, a crash, marks
+      dropped unreported, drags that jump columns, misread words, lost colour meaning, lost page labels,
+      then bytes. One line each in C28, C29, C33, C34, C37, C40, C41. All sit above `c28-first-principles`
+      and `c41-newspaper-scans`, as FOCUS asks for the stress test's findings. The reader's own marks dropped at default are C45; wrapper `Link`s dropped by
+      design were left alone.
 - [ ] **ux-regression-set** — make a fixed set of pages that every product item's check must pass, so a
       fix cannot make another page worse without anyone seeing it, as C32 did to C31's pages. Pick about
       30 pages from the `ux-run` output: every page the owner has reported, plus one page for each route
       and each defect class. `ux-harness` scores the set in minutes, and records a baseline. Add one line to
       this file's rules: an item that changes `Sources/` is done only when that set is no worse on any
       measure, or the regression is stated and accepted in the item's `BUGS.md` entry.
+      What `ux-read` found the harness gets wrong, so pick pages and read columns with it in mind:
+      `legibility` was red on 15 of 19 pages that read as well as the source when looked at, and green on
+      the one with broken strokes (`_1939_Former students` p9); `find` strips all punctuation before
+      searching (`norm()`, line 206), so "Supply-Side" or "delegate's" can never hit; `echoes` cannot see
+      C44; `colour` counts C45's highlight pixels; `selection`'s `inside` goes red on tables and where the
+      drag's end sits near a narrow gutter, and the sources' own text layers score the same there.
       BOUND: one commit. (blocked-on: ux-run)
       (context: owner request 2026-09-26)
+- [ ] **c42-spread-offset** — put Boltanski's text layer back on its ink: the text form must reach qpdf's
+      overlay without the crop box, or be merged so the crop cannot centre it.
+      DONE WHEN, through PDFKit on the published file: Find hits on Boltanski p51, p102 and p153 and on
+      Zarifa p92-p94 lie over their words in the source (within 2 pt); a drag down each page of p51's spread stays on that page;
+      a regression check with a cropped, two-size, rotated fixture goes red without the fix.
+      BOUND: one code commit. (origin: BUGS.md C42)
+- [ ] **c43-digital-verdict** — make the born-digital verdict read a page's pixels as well as its text:
+      a page whose visible ink is mostly a scan (narrow strips included) is OCR'd; a page whose body text
+      is vector is kept, whatever images sit on it.
+      DONE WHEN: Newsday p1's scanned body is selectable and findable in the output; Silicon Valley
+      Transcript and Surani keep their own vector text and figures on every page (render compared at 2x);
+      no corpus document's route changes elsewhere without a stated reason.
+      BOUND: one code commit. (origin: BUGS.md C43)
+- [ ] **c51-missing-lines** — find why Bird p5's footnote lines and Xin Qu p24's coefficient column never
+      reach the text layer, and put them there.
+      DONE WHEN, through PDFKit on the published file: Find "Monograph" hits on Bird p5 over its line, and
+      1.228, 3.724, 2.045 and 0.906 hit on Xin Qu p24 over their cells; a drag over each selects them; a
+      check goes red without the fix.
+      BOUND: one code commit. (origin: BUGS.md C51)
+- [ ] **c44-hyphen-echo** — stop copied text from repeating hyphenated tails while Find still matches the
+      whole word. Consider `/ActualText` spans, writing the tail's run as part of the joined word's
+      string, or dropping the join; test what PDFKit's copy and Find actually do with each.
+      DONE WHEN, through PDFKit on Berger p18 and Glazer p1: a drag's copy has no "word ord" echoes, Find
+      for "difference" and "automation" still hits over the head fragment, and the tail's ink is still
+      selectable; the four text-layer properties of invariant 3 still hold.
+      BOUND: one code commit. (origin: BUGS.md C44)
+- [ ] **c46-rtl-noise** — keep Vision's misread Arabic/Hebrew out of the text layers of pages that are
+      otherwise Latin, and never write a zero-size run a click can land on.
+      DONE WHEN: `___ 2.pdf` p1's output survives a click grid over the whole page, including x≈738,
+      y 5-48, in a separate process; the 59 outputs with RTL letters are recounted and each remaining one
+      is a page whose source really shows that script.
+      BOUND: one code commit. (origin: BUGS.md C46)
+- [ ] **c45-marks-reported** — when *Keep highlights and notes* is off and the source has a reader's
+      marks, say so on the outcome and in the run report ("left 121 highlights and notes"), the way the
+      transplant's own summary does. Do not advertise the setting: `annot-r3`, which rules on whether the
+      feature is fit to turn on, is parked.
+      DONE WHEN: converting Hyman at default settings reports the marks it left, by type; a document with
+      only wrapper `Link`s reports nothing; a check goes red without it.
+      BOUND: one code commit. (origin: BUGS.md C45)
+- [ ] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses.
+      DONE WHEN, through PDFKit: a drag down each column of Riesman_1949 p2, Marth_1982 p2 and
+      `_1953_99 Cong_ 2` p16 copies that column's lines in order and nothing from its neighbour, checked
+      against the source's own text layer's drag; C34's pages are no worse.
+      BOUND: one code commit. (origin: BUGS.md C52)
+- [ ] **c50-typewriter-reads** — find out whether recognising the grey source instead of the 1-bit
+      rebuild reads typewritten and low-resolution pages better, and ship it if it does.
+      DONE WHEN: on Ries p54, NYSE p110, GELFAND p106 and Xin Qu p24, dictionary words in the output's
+      text layer are measured before and after, and the change ships only if none gets worse and the
+      named misreads ("suall", "Coeflicient") are gone. If nothing helps, make the case in C50 (rule 8).
+      BOUND: one code commit. (origin: BUGS.md C50)
+- [ ] **c49-meaningful-colour** — keep colour on a mostly black page when it separates chart series, and
+      never let light coloured type binarise to nothing.
+      DONE WHEN: AI 2027 p54's three curves are distinguishable at 1x and Kristol p1's pink notice is
+      legible in the output; pages that lose only paper tint stay grey; bytes stated.
+      BOUND: one code commit. (origin: BUGS.md C49)
+- [ ] **c48-labels-title** — carry `/PageLabels` onto every output page and the source's `/Title` and
+      `/Author` into the output's info dictionary.
+      DONE WHEN: `PDFPage.label` on the outputs of Hobsbawm, Bird and Cohen equals the source's on every
+      page, and `documentAttributes` Title equals the source's on Countryman and Friedman.
+      BOUND: one code commit. (origin: BUGS.md C48)
+- [ ] **c47-compact-sources** — keep a compact source's image streams when the rebuild would be larger:
+      JBIG2 in a Form XObject (Stiglitz, Keyssar), and JPX layers (Berendzen).
+      DONE WHEN: Keyssar, Stiglitz, w5093 and Berendzen publish no larger than their sources plus the size
+      of the text layer the app adds (state both), with PDFKit
+      renders at 2x not visibly worse; corpus bytes before and after are stated.
+      BOUND: one code commit. (origin: BUGS.md C47)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
