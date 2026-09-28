@@ -14,6 +14,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- When a document's highlights, underlines and notes are not carried into the searchable copy, the
+  result now says how many were left and of which kinds, and the run report keeps it (C45).
 - English pages no longer carry stray Arabic letters that recognition read from smudges and cartoon
   lettering. On one newspaper page such a line made Preview's text selection crash on a click at the
   end of a cartoon's signature (C46).

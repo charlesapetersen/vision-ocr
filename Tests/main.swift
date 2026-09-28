@@ -18800,6 +18800,51 @@ do {
     }
     check("the annotation fixture wrote", built.write(to: annotated))
 
+    // C45. With *Keep highlights and notes* off, the default, the marks are left and
+    // the outcome says so by type; a document with only wrapper links says nothing.
+    do {
+        let counted = Annotations.readersMarks(in: annotated, password: nil)
+        check("C45: the source's marks are counted by type, links and fields not",
+              counted.values.reduce(0, +) == expectedCopied && counted["/Link"] == nil
+                && counted["/Widget"] == nil && counted["/Highlight"] == 1,
+              "\(counted)")
+        check("C45: the note names what was left",
+              Annotations.leftBehindSummary(["/Highlight": 57, "/Text": 9])
+                == "left the reader's 66 marks (57 Highlight, 9 Text)"
+                && Annotations.leftBehindSummary([:]).isEmpty)
+        let linked = dir.appendingPathComponent("c45-links.pdf")
+        let wrapper = PDFDocument()
+        for (i, size) in [CGSize(width: 612, height: 792), CGSize(width: 420, height: 595)]
+            .enumerated() {
+            let page = PDFPage()
+            page.setBounds(CGRect(origin: .zero, size: size), for: .mediaBox)
+            let link = PDFAnnotation(bounds: CGRect(x: 40, y: 40, width: 200, height: 20),
+                                     forType: .link, withProperties: nil)
+            link.url = URL(string: "https://www.jstor.org/stable/\(i)")
+            page.addAnnotation(link)
+            wrapper.insert(page, at: i)
+        }
+        check("C45: the link fixture wrote", wrapper.write(to: linked))
+        var settings = Prefs.Snapshot.current()
+        settings.preserveAnnotations = false
+        func outcome(_ src: URL, _ name: String) -> (Runner.Result.Outcome?, String) {
+            let out = dir.appendingPathComponent("c45-\(name).ocr.pdf")
+            var result: (Runner.Result.Outcome?, String) = (nil, "")
+            OCRModel.makeSearchablePDF(file: src, output: out, rebuild: true, rebuildMode: .auto,
+                                       password: nil, settings: settings, control: RunControl(),
+                                       progress: { _, _ in }, report: { o, m in result = (o, m) })
+            return result
+        }
+        let marked = outcome(annotated, "marked"), links = outcome(linked, "links")
+        check("C45: a document whose marks were left says so on its outcome, by type",
+              marked.0 == .succeeded
+                && marked.1.contains("left the reader's \(expectedCopied) marks (1 Circle, "),
+              "\(String(describing: marked.0)): \(marked.1)")
+        check("C45: a document with only wrapper links reports no marks",
+              links.0 == .succeeded && !links.1.contains("the reader's"),
+              "\(String(describing: links.0)): \(links.1)")
+    }
+
     if let qpdf = JBIG2.merger {
         // The rebuilt file, made the way the app makes it: pages as images, no marks.
         let rebuilt = dir.appendingPathComponent("rebuilt.pdf")

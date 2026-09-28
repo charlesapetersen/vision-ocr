@@ -2863,6 +2863,13 @@ final class OCRModel: ObservableObject {
                         + "from \(expected) to \(after); nothing was written.")
                     return
                 }
+            } else {
+                // C45. Off is the default, and the rebuild carries no annotation, so
+                // every highlight and note on the source was left without a word.
+                // Invariant 1: say so, by type, on the outcome the run report keeps.
+                let left = Annotations.leftBehindSummary(
+                    Annotations.readersMarks(in: file, password: password))
+                if !left.isEmpty { marksNote = left }
             }
             // Last thing before the user's disk is touched.
             //

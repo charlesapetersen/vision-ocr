@@ -265,6 +265,51 @@ enum Annotations {
         return CGPDFArrayGetCount(array)
     }
 
+    /// The reader's marks on `file`, by subtype with its slash, counted off each page's
+    /// own `/Annots` — what `transplant` would copy, for a run that does not copy them.
+    ///
+    /// C45: with *Keep highlights and notes* off, which is the default, a document's
+    /// marks were left without a word. CoreGraphics rather than PDFKit because it is
+    /// one dictionary read per mark, and it reads `/Subtype` off the dictionary the
+    /// way qpdf does, so a type PDFKit does not model is still counted. `/Popup` is
+    /// not in `copiedSubtypes`, so a note's popup is not counted as a second mark.
+    /// A file that cannot be opened or unlocked answers empty: it fails the run
+    /// long before this is asked.
+    static func readersMarks(in file: URL, password: String?) -> [String: Int] {
+        guard let document = CGPDFDocument(file as CFURL) else { return [:] }
+        if document.isEncrypted, !document.unlockWithPassword("") {
+            guard let password, document.unlockWithPassword(password) else { return [:] }
+        }
+        var counts: [String: Int] = [:]
+        guard document.numberOfPages > 0 else { return counts }
+        for number in 1...document.numberOfPages {
+            var annots: CGPDFArrayRef?
+            guard let page = document.page(at: number)?.dictionary,
+                  CGPDFDictionaryGetArray(page, "Annots", &annots), let annots else { continue }
+            for index in 0..<CGPDFArrayGetCount(annots) {
+                var mark: CGPDFDictionaryRef?
+                var subtype: UnsafePointer<CChar>?
+                guard CGPDFArrayGetDictionary(annots, index, &mark), let mark,
+                      CGPDFDictionaryGetName(mark, "Subtype", &subtype), let subtype
+                else { continue }
+                let name = "/" + String(cString: subtype)
+                if copiedSubtypes.contains(name) { counts[name, default: 0] += 1 }
+            }
+        }
+        return counts
+    }
+
+    /// The outcome's line for marks `readersMarks` found and the run did not carry:
+    /// "left the reader's 121 marks (57 Highlight, 20 Stamp, 9 Text, 35 Underline)".
+    /// Empty when there are none, so a document with only wrapper `Link`s says nothing.
+    static func leftBehindSummary(_ counts: [String: Int]) -> String {
+        let total = counts.values.reduce(0, +)
+        guard total > 0 else { return "" }
+        let list = counts.sorted { $0.key < $1.key }
+            .map { "\($0.value) \($0.key.dropFirst())" }.joined(separator: ", ")
+        return "left the reader's \(total) mark\(total == 1 ? "" : "s") (\(list))"
+    }
+
     /// The annotation keys whose numbers live in the *page's* coordinate space, and so
     /// have to move when the page's origin does.
     ///

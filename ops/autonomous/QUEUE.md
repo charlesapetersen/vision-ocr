@@ -495,7 +495,7 @@ say so in the commit.
       y 5-48, in a separate process; the 59 outputs with RTL letters are recounted and each remaining one
       is a page whose source really shows that script.
       BOUND: one code commit. (origin: BUGS.md C46)
-- [ ] **c45-marks-reported** — when *Keep highlights and notes* is off and the source has a reader's
+- [x] **c45-marks-reported** — when *Keep highlights and notes* is off and the source has a reader's
       marks, say so on the outcome and in the run report ("left 121 highlights and notes"), the way the
       transplant's own summary does. Do not advertise the setting: `annot-r3`, which rules on whether the
       feature is fit to turn on, is parked.

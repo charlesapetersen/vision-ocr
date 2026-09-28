@@ -18859,7 +18859,7 @@ hit is now inside the joined word on the line above; the rest are words on a tai
 of their ink, the cost above. Splitting the runs, which placed those exactly, left 13 `find` rows worse, so about
 ten are this shift.
 
-### C45 · A reader's own highlights, underlines and notes are dropped at default settings, and nothing says so — OPEN
+### C45 · A reader's own highlights, underlines and notes are dropped at default settings, and nothing says so — FIXED 2026-09-28
 
 *(found 2026-09-27 by `ux-read`: `annots` red on 21 documents, and 38 of the 92 `colour` pages.)*
 
@@ -18871,6 +18871,18 @@ run report hints at it. Checked by type [measured]: Hyman 57 Highlights, 35 Unde
 (highlights looked at on p2); Kazin 43; Moyn 117. These are Zotero readers' marks, not wrapper `Link`s.
 Invariant 1 applies to a reader's marks as much as to a line of text (`TODO.md`'s own words), so the
 defect is the silence, whatever the default. `annot-r3` covers the feature itself.
+
+**Fixed 2026-09-28.** With the setting off, `Annotations.readersMarks` counts the source's marks of
+`copiedSubtypes` off each page's raw `/Annots` (CoreGraphics, so a type PDFKit does not model still
+counts; `/Popup` and `/Link` do not), and the outcome, which the log and the run report keep, gains
+"left the reader's N marks (by type)". The setting is not named. Measured through the production pipeline
+at default settings: Hyman's outcome was empty before, and after reads "left the reader's 121 marks (57
+Highlight, 20 Stamp, 9 Text, 35 Underline)", matching PDFKit's count of the source; Riesman_1976 (9 `Link`s
+only) gains nothing. Rejected: counting with PDFKit, which the splice gate uses, because it builds an
+object per annotation and cannot see a subtype it does not surface. Routes checked by the review: no route
+keeps a source mark on the output while this says it was left (the splice refuses pages with marks).
+Checks: the count by type on the marks fixture, the wording, and the outcome on the marks and links-only
+fixtures; the outcome check is red without the `Model.swift` change (1646/1647).
 
 ### C46 · Vision's automatic language detection writes Arabic into English pages' text layers, and one such run traps PDFKit on a click — FIXED 2026-09-28
 
