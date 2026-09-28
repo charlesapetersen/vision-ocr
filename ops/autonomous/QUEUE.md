@@ -463,7 +463,7 @@ say so in the commit.
       about 5 minutes; rule 9 above. Large documents are cut to their pages, which scored identically to
       the whole-document run on all 34 pages both measured. A second run on unchanged code read 0 worse.
       `___ 2.pdf` p1 is a harness crash in the baseline (C46), so it guards only its crash; C28 names no page.
-- [ ] **c42-spread-offset** — put Boltanski's text layer back on its ink: the text form must reach qpdf's
+- [x] **c42-spread-offset** — put Boltanski's text layer back on its ink: the text form must reach qpdf's
       overlay without the crop box, or be merged so the crop cannot centre it.
       DONE WHEN, through PDFKit on the published file: Find hits on Boltanski p51, p102 and p153 and on
       Zarifa p92-p94 lie over their words in the source (within 2 pt); a drag down each page of p51's spread stays on that page;

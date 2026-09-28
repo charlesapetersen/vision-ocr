@@ -2597,7 +2597,8 @@ final class OCRModel: ObservableObject {
                     visible: visible, observations: byPage, to: textLayer,
                     drawImages: false, password: password,
                     joinHyphenated: settings.joinHyphenated,
-                    cropBoxes: sourceCropBoxes,
+                    // No crop boxes (C42): the merge would centre them on the
+                    // media box and move the text. `setCropBoxes` adds them after.
                     isCancelled: { control.isCancelled },
                     progress: { d, t in progress("Writing text layer \(d) of \(t)",
                                                  layerShare(d, t)) })

@@ -18729,7 +18729,7 @@ line kept beside its clean reading). Drag selection on these pages is not part o
 
 *(2026-09-27, `ux-read`: about 15 of the run's selection-red and 12 of its find-red pages are these scans (e.g. `_1928_Creative writing` p1).)*
 
-### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — OPEN
+### C42 · A page whose crop box is not centred on its media box gets its text layer shifted off the ink, 81 pt on a two-page book spread — FIXED
 
 *(found 2026-09-27 by `ux-read`, from `UX-RUN-2026-09-27-pages.tsv`: Boltanski p51/p102/p153 red on
 selection, find 0.00-0.03, prec 0.08-0.11.)*
@@ -18746,6 +18746,17 @@ C23's mechanism back. Any off-centre crop shifts, by how far it is off centre: `
 off-centre crops on 108 of 258 pages, and on p92-p94 Find hits land 7-14 pt left of the source's
 ("McMaster" -10.5, -13.7) [measured by the diff's review]. Centred crops shift by nothing, which is why
 other cropped outputs look right.
+
+**FIXED 2026-09-28.** `compose` writes no crop box on a layer (`drawImages` false), and the JBIG2 route
+no longer passes it any; `setCropBoxes` still adds them after the merge. Measured through PDFKit on
+page cuts of Boltanski p51/p102/p153 and Zarifa p92-p94, median Find-hit offset from the source's
+(left edge, vertical centre): Boltanski (+80, -33) -> (-1.4, -1.1); Zarifa (-6..-10, -1..-2) ->
+(-0.9..-1.3, -1.0..-1.9). A drag down each half of p51's spread now keeps to its page (before: 39 of
+41 lines crossed the gutter). Per word, 30-81% of hits are within 2 pt, and exactly as many on the same
+pages published with the crop removed: that spread is the one-scaled-run-per-line geometry, not C42.
+`Tools/ux-regression.sh`: 0 worse, 13 better (p51 find 0.00 -> 0.97, prec 0.11 -> 0.94); baseline
+refreshed. Test: an off-centre-cropped letter page and a rotated landscape page against the same pages
+uncropped; without the fix 'LETTER' is not found and 'SCAN' moves (-21, +201).
 
 ### C43 · The born-digital verdict is wrong both ways: narrow-strip scans are passed through unread, and pages with a full-width image strip or a figure are rasterised — OPEN
 

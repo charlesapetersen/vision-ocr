@@ -12709,11 +12709,70 @@ do {
             check("…while keeping the whole sheet", false, "no output")
             check("…and the page still has its ink, all of it", false, "no output")
         }
+
+        // C42. The TEXT layer, not the image. It used to reach the merge carrying
+        // the crop too, so `--overlay` centred it and every run moved by how far
+        // the crop sat off centre: 81 pt on Boltanski's spreads. Two sizes and a
+        // rotated page (invariant 5), each cropped off centre, against the same
+        // pages published uncropped, where the centring moves nothing.
+        let c42 = PDFDocument()
+        let c42Crops = [CGRect(x: 20, y: 300, width: 400, height: 250),   // 612x792
+                        CGRect(x: 30, y: 60, width: 330, height: 450)]    // 792x612, turned
+        let c42Letter = dir.appendingPathComponent("c42-letter.pdf")
+        let c42Side = dir.appendingPathComponent("c42-side.pdf")
+        mixedPage(c42Letter, w: 612, h: 792, text: "PAGE ONE LETTER")
+        makeSidewaysPDF(at: c42Side, text: "SIDEWAYS SCAN TEXT")
+        for (i, url) in [c42Letter, c42Side].enumerated() {
+            if let p = PDFDocument(url: url)?.page(at: 0) {
+                if i == 1 { p.rotation = 270 }
+                c42.insert(p, at: c42.pageCount)
+            }
+        }
+        let c42Bare = dir.appendingPathComponent("c42-bare.pdf")
+        c42.write(to: c42Bare)
+        for i in 0..<c42.pageCount { c42.page(at: i)?.setBounds(c42Crops[i], for: .cropBox) }
+        let c42Cropped = dir.appendingPathComponent("c42-cropped.pdf")
+        c42.write(to: c42Cropped)
+        var c42Hits: [[CGRect]] = []
+        var c42Routes: [String] = []
+        for (n, input) in [c42Bare, c42Cropped].enumerated() {
+            let out = dir.appendingPathComponent("c42-out-\(n).pdf")
+            var outcome: Runner.Result.Outcome?
+            OCRModel.makeSearchablePDF(
+                file: input, output: out, rebuild: true, rebuildMode: .auto,
+                password: nil, control: RunControl(), progress: { _, _ in },
+                report: { o, _ in outcome = o })
+            let doc = PDFDocument(url: out)
+            c42Hits.append(zip(["LETTER", "SCAN"], 0..<2).map { word, i in
+                guard let doc, let page = doc.page(at: i),
+                      let hit = doc.findString(word, withOptions: [])
+                        .first(where: { $0.pages.first == page }) else { return .null }
+                return hit.bounds(for: page)
+            })
+            let compressed = ((try? Data(contentsOf: out)) ?? Data())
+                .firstRange(of: Array("/JBIG2Decode".utf8)) != nil
+            c42Routes.append(outcome == .succeeded ? (compressed ? "jbig2" : "flate") : "failed")
+        }
+        // Both on the merging route, or the comparison is across routes. On a qpdf
+        // too old to carry a crop the cropped copy cannot take it, and C42 cannot
+        // happen; the checks below then compare the Flate route with JBIG2.
+        check("C42: both fixtures published, the cropped one on the merging route "
+              + "whenever this qpdf can carry its crop",
+              c42Routes[0] == "jbig2" && c42Routes[1] == (carries ? "jbig2" : "flate"),
+              "routes \(c42Routes), this qpdf can carry the crop: \(carries)")
+        for (i, word) in ["LETTER", "SCAN"].enumerated() {
+            let bare = c42Hits[0][i], cropped = c42Hits[1][i]
+            check("C42: '\(word)' is found over the same ink whether or not the page is cropped",
+                  !bare.isNull && !cropped.isNull
+                  && abs(bare.midX - cropped.midX) < 4 && abs(bare.midY - cropped.midY) < 4,
+                  "uncropped \(bare), cropped \(cropped)")
+        }
+
         check("the skip census figure for the JBIG2 crop block is still right",
-              checks - checksBeforeJBIG2Crop + 1 == 6,
-              "\(checks - checksBeforeJBIG2Crop + 1) checks, census says 6")
+              checks - checksBeforeJBIG2Crop + 1 == 9,
+              "\(checks - checksBeforeJBIG2Crop + 1) checks, census says 9")
     } else {
-        skipBlock("the crop box on the JBIG2 route", checks: 6,
+        skipBlock("the crop box on the JBIG2 route", checks: 9,
                   because: "jbig2enc/qpdf not installed")
     }
 

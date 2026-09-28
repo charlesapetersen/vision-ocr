@@ -14,6 +14,11 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- On scanned pages whose visible area is not centred on the sheet, such as books scanned as two-page
+  spreads, the selectable text now sits on its words again. It had been shifted by how far the visible
+  area was off centre, 81 points on one book, so a drag down one page ran across the gutter and a copy
+  gave the other page's text (C42).
+
 - JSTOR downloads of black-and-white scans are no longer re-encoded at about twice their size. The scan
   keeps its own compressed image, with the "This content downloaded from…" line drawn over it, so a
   28-page article that grew from 0.95 MB to 2.49 MB now comes out at 0.94 MB.

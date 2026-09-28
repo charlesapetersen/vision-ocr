@@ -199,7 +199,8 @@ enum SearchableWriter {
     /// `visible` must be what was OCR'd, or the boxes won't line up with the ink.
     /// When `drawImages` is false, the pages carry only the invisible text and
     /// stay transparent — a layer to be merged over separately-compressed page
-    /// images. `visible` is still needed, for page count and geometry.
+    /// images. `visible` is still needed, for page count and geometry. A layer
+    /// never carries a crop box, whatever `cropBoxes` says (C42).
     /// Returns the lines it could not place — empty means every line landed.
     @discardableResult
     static func compose(
@@ -287,8 +288,14 @@ enum SearchableWriter {
             //
             // Deliberately two different rectangles, because they answer two
             // questions: where the text goes, and what the reader is shown.
+            //
+            // C42: never on a layer (`drawImages` false). `qpdf --overlay` wraps
+            // a stamped page in a form whose `/BBox` is its crop box and centres
+            // that box on the media box, so a layer carrying an off-centre crop
+            // was drawn shifted by how far off centre it was: 81 pt on a book
+            // spread. The crop goes on after the merge (`JBIG2.setCropBoxes`).
             let displayed = cropBoxes[index + 1] ?? region
-            if displayed != pageBox {
+            if drawImages, displayed != pageBox {
                 var cropRect = displayed
                 let cropData = withUnsafeBytes(of: &cropRect) { Data($0) } as CFData
                 pageInfo[kCGPDFContextCropBox as String] = cropData
