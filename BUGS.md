@@ -19023,7 +19023,58 @@ re-read the cell from the grey source, which is exactly C50's experiment and exc
 `_1953_99 Cong_ 2` p16: a drag of the right column takes none of its lines; `1947_Corporation Tax` p2: a
 drag inside one column takes 348 lines. On Riesman and Marth the source's own text layer gives the clean
 column for the same drag, so the order the app writes is at fault. [measured] About 40 of the run's 137
-selection-red pages look like this [estimated from 17 looked at].
+selection-red pages look like this [estimated from 17 looked at]. *(2026-09-28: not quite: the source's
+own layer leaks too on Riesman's left column, 0.52, and Marth's, 0.73.)*
+
+#### Partly fixed 2026-09-28 — box left open
+
+**Cause** [measured]. PDFKit does not select in the order runs are drawn. CoreGraphics' own layout
+analysis groups a page's lines into blocks from where they lie and reads the blocks by their tops, so a
+column cut into two blocks takes the next column's in between; drawn in strict column order, Riesman p2
+read exactly as before. A column stays one block only while no run reaches into the next column's width:
+on a synthetic page with a 6 pt gutter, two runs in thirty drawn 2 pt into the next column made PDFKit
+read the whole page line by line, and 3 pt, inside the gutter, did nothing. Vision's boxes overshoot the
+ink by 1-5 pt (Riesman p2: the middle column's ink ends by 397.9 pt, its boxes by 402.8, the right
+column's boxes start at 400.0). The ordering also missed columns: 400 bins rounded 99 Cong p16's 0.0068
+gutter to one bin, under the third of a line asked; seven chart labels across Marth p2's lower gutter
+were over the allowance; rows read across a three-column page's second gutter were never split (one
+gutter asked, with the first column's margin); a line overshooting the gutter by 0.002 read as a heading.
+PDFKit's blocks also break where a line is drawn taller or thinner than its column, and flip with small
+changes: one re-read row 2 pt taller split Hughes p3's right column.
+
+**Fix.** `columnGutter` at 4,000 bins. A slab with no gutter takes the nearest slab's where its own
+lines fit it. `readsAcross`: a crossing lying almost all on one side is that side's line. `prepared` cuts
+boxes back from each gutter's middle (`cleared`). `splitAtGutter` asks every gutter (`columnGutters`),
+with a margin per gutter and a row's leading fragment (`rowStart`), and cuts in blank paper found from
+the pixels (`blankGutter`) at least as wide as the gutter: the strip the boxes gave started on Riesman
+p2's first fused row's last letter. `fittedToGutters` brings boxes reaching into a gutter in to their
+ink, once a page's readings are merged. `ceilings` caps a column's lines at its 90th percentile height.
+
+**Measured** (ux-harness, worst column's drag `inside`, before → after):
+- Riesman_1949 p2: 0.50 → 1.00 on all six drags, copy WER 0.65 → 0.11; PDFKit reads `L63 M58 R61`
+  where it read `M6 R6 M8 R9 M9 R9 …`.
+- _1953_99 Cong_ 2 p16: 0.05 → 0.14, cover 0.00 → 0.30, WER 1.02 → 0.86; the left column one block,
+  its five drags 1.00. The source's own layer: 1.00 on every drag.
+- Marth_1982 p2: 0.51, unchanged.
+- ux-regression: 15 better, 6 worse, accepted and baseline refreshed. The six are word counts: one or
+  two more welds on Riesman, Cong, `___ 2` and Fiedler, and two more splits on `___ 2`, where the drags
+  now copy more of each column (Riesman's copies weld the same 18 words, all hyphen joins, before and
+  after), and Fiedler p1's copy WER 2.82 → 3.17, a C41 newspaper page whose drags cross columns either
+  way (worst drag 0.10 → 0.08, precision 0.65 → 0.67).
+- C34's pages (Hughes pp2/3/7/8, Donahue p1, WSJ 1969 p1, the three Washington Monthly articles pp1-3,
+  Fairchild 1950 p22; the regression set holds Hughes' Desktop copy, Why and Raskin): unchanged but WSJ
+  0.03 → 0.17 and Lemann p1/p2 0.51 → 0.38 and 0.54 → 0.35. Lemann's drags leaked on every column
+  before; of its eight, three now read whole or nearly (0.53 → 0.69, 0.60 → 1.00, 0.95 → 1.00) and two
+  lose. **Criterion not met.**
+- DONE WHEN not met on Marth or Cong, so no verifying subagent was run and the box stays open.
+
+**Left.** Cong p16's middle and right columns still alternate in blocks: capped at the median instead,
+they read `M70 R72` and the page 0.50, but Donahue p1 then broke (above). Marth p2: its lower columns
+break at a paragraph and at a C44 hyphen tail (the rest re-fitted to its box at a larger size), and the
+left column at its drop cap (its tall box puts the line 4 pt above the next; both are squashed to 2.8
+pt). Not shipped: baselines snapped to a grid per column (Cong worse than the cap); lower caps (Marth read
+line by line at the minimum); every run at 0.6 of the median (helps Cong and Marth, thins every
+selection); every edge near a gutter fitted (163 boxes moved on Riesman for the 31 needed).
 
 ## Robustness and correctness of reporting
 

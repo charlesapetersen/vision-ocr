@@ -99,6 +99,8 @@ func census(of raw: [SearchableWriter.Observation], nextPage: [SearchableWriter.
     var c = Census()
     c.pages = 1
     let lines = SearchableWriter.prepared(raw, nextPage: nextPage, in: region)
+    // The ceilings `compose` draws under: `headroom`, capped in a column (C52).
+    let ceilings = SearchableWriter.ceilings(for: lines, in: region)
     for (position, observation) in lines.enumerated() {
         let limit = SearchableWriter.rightLimit(for: position, among: lines, in: region)
         // The REAL ceiling, from the app's own `headroom`, not an unbounded one.
@@ -106,7 +108,7 @@ func census(of raw: [SearchableWriter.Observation], nextPage: [SearchableWriter.
         // argued it could only understate — true for the width, and it made the
         // tool blind to C20's symptom, which is a run losing both directions at
         // once. Measuring what the app draws is never the harder defence.
-        let ceiling = SearchableWriter.headroom(for: position, among: lines, in: region)
+        let ceiling = ceilings[position]
         switch SearchableWriter.placement(of: observation, in: region, ceiling: ceiling,
                                           rightLimit: limit, font: font) {
         case .refused:

@@ -14,6 +14,9 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- On more two- and three-column scans, a drag down one column stays in that column in Preview. The
+  searchable layer now keeps the printed gutter clear of text, and rows that recognition read across a
+  narrow gutter, or a three-column page's second gutter, are read again as their two halves (C52, in part).
 - When a document's highlights, underlines and notes are not carried into the searchable copy, the
   result now says how many were left and of which kinds, and the run report keeps it (C45).
 - English pages no longer carry stray Arabic letters that recognition read from smudges and cartoon

@@ -325,9 +325,10 @@ enum SearchableWriter {
                 let (lines, frame) = (layer.lines, layer.region)
                 pdf.saveGState()
                 if let turn = layer.transform { pdf.concatenate(turn) }
+                let ceilings = ceilings(for: lines, in: frame)
                 for (position, observation) in lines.enumerated() {
                     if let reason = draw(observation, in: frame,
-                                         ceiling: headroom(for: position, among: lines, in: frame),
+                                         ceiling: ceilings[position],
                                          rightLimit: rightLimit(for: position, among: lines,
                                                                 in: frame),
                                          font: base, into: pdf) {
@@ -374,7 +375,8 @@ enum SearchableWriter {
         // of its own column (C34). A pasted-up page's strips are each a column
         // already, and ordered across the page they interleave again (C39: the
         // columns of a newspaper page are too close for any gutter to separate), so
-        // each strip is ordered on its own, in the order the strips arrive.
+        // each strip is ordered on its own, in the order the strips arrive. The boxes
+        // are cleared of every gutter found, so that PDFKit finds the columns too (C52).
         let aspect = region.width > 0 ? Double(region.height / region.width) : 1
         var strips: [Int?] = []
         var byStrip: [Int?: [Observation]] = [:]
@@ -382,7 +384,9 @@ enum SearchableWriter {
             if byStrip[o.region] == nil { strips.append(o.region) }
             byStrip[o.region, default: []].append(o)
         }
-        let lines = strips.flatMap { columnOrdered(byStrip[$0] ?? [], aspect: aspect) }
+        let lines = strips.flatMap {
+            columnOrdered(byStrip[$0] ?? [], aspect: aspect, clearingGutters: true)
+        }
         guard joinHyphenated else { return lines }
         // The next page's topmost lines, so a word carried over a page break can
         // be joined. The caller already holds them — no extra render, no extra
@@ -874,9 +878,7 @@ enum SearchableWriter {
     /// had a gutter keeps the same one. One stray box far out in a margin moves the
     /// block's centre off them, and the page finds no gutter, as before.
     static func columnGutter(of lines: [Observation], aspect: Double) -> Gutter? {
-        let heights = lines.map(\.boundingBox.height).filter { $0.isFinite && $0 > 0 }.sorted()
-        guard !heights.isEmpty, aspect.isFinite, aspect > 0 else { return nil }
-        let line = heights[heights.count / 2] * aspect
+        guard let line = lineWidth(of: lines, aspect: aspect) else { return nil }
         let boxes = lines.map(\.boundingBox).filter {
             $0.x.isFinite && $0.width.isFinite && $0.y.isFinite && $0.height.isFinite
                 && $0.width >= 2 * line
@@ -896,19 +898,36 @@ enum SearchableWriter {
         return gutter(in: boxes, counting: body, line: line)
     }
 
-    /// `columnGutter`'s search, with the gutter's crossings counted over `counted`
-    /// and the allowance and the columns over `boxes`.
-    private static func gutter(in boxes: [BoundingBox], counting counted: [BoundingBox],
-                               line: Double) -> Gutter? {
-        let bins = 400
-        var cover = [Int](repeating: 0, count: bins)
-        for b in counted {
+    /// How finely `columnGutter` resolves the width of the page. At 400 a strip's
+    /// edges were rounded out to the next four-hundredth on both sides: on `_1953_99
+    /// Cong_ 2` p16 that made a strip 0.0068 of the page wide one bin, 0.0025, under
+    /// the third of a line (0.0035) it asks, and two of the page's three columns read
+    /// as one (C52).
+    static let gutterBins = 4000
+
+    /// How many of `boxes` cover each of `gutterBins` strips of the width.
+    private static func coverage(of boxes: [BoundingBox]) -> [Int] {
+        let bins = gutterBins
+        var change = [Int](repeating: 0, count: bins + 1)
+        for b in boxes {
             // Clamped before the `Int` conversion, which traps outside `Int`'s range.
             let left = min(max(b.x, 0), 1), right = min(max(b.x + b.width, 0), 1)
             let first = Int((left * Double(bins)).rounded(.down))
             let last = min(bins - 1, Int((right * Double(bins)).rounded(.up)) - 1)
-            if first <= last { for i in first...last { cover[i] += 1 } }
+            if first <= last { change[first] += 1; change[last + 1] -= 1 }
         }
+        var cover = [Int](repeating: 0, count: bins)
+        var running = 0
+        for i in 0..<bins { running += change[i]; cover[i] = running }
+        return cover
+    }
+
+    /// `columnGutter`'s search, with the gutter's crossings counted over `counted`
+    /// and the allowance and the columns over `boxes`.
+    private static func gutter(in boxes: [BoundingBox], counting counted: [BoundingBox],
+                               line: Double) -> Gutter? {
+        let bins = gutterBins
+        let cover = coverage(of: counted)
         let allowed = max(2, boxes.count / 10)
         var best: (gutter: Gutter, score: Int)?
         var i = 0
@@ -918,29 +937,56 @@ enum SearchableWriter {
             while j + 1 < bins, cover[j + 1] <= allowed { j += 1 }
             let g = Gutter(from: Double(i) / Double(bins), to: Double(j + 1) / Double(bins))
             i = j + 1
-            guard g.to - g.from >= line / 3 else { continue }
-            let wide = boxes.filter { $0.width >= 10 * line }
-            let left = wide.filter { $0.x + $0.width <= g.to && $0.x < g.from }
-            let right = wide.filter { $0.x >= g.from && $0.x + $0.width > g.to }
-            guard left.count >= 3, right.count >= 3 else { continue }
-            // Side by side: each side's lines lie within the other side's height.
-            func span(_ s: [BoundingBox]) -> (Double, Double) {
-                (s.map(\.y).min()!, s.map { $0.y + $0.height }.max()!)
-            }
-            let (lt, lb) = span(left), (rt, rb) = span(right)
-            let beside = { (s: [BoundingBox], top: Double, bottom: Double) in
-                s.filter { $0.y + $0.height / 2 > top && $0.y + $0.height / 2 < bottom }.count
-            }
-            guard beside(left, rt, rb) >= 3, beside(right, lt, lb) >= 3 else { continue }
-            let score = min(left.count, right.count)
+            guard g.to - g.from >= line / 3, let score = columnsBeside(g, in: boxes, line: line)
+            else { continue }
             if best.map({ score > $0.score }) ?? true { best = (g, score) }
         }
         return best?.gutter
     }
 
+    /// Whether three or more column-wide lines, ten line heights or more, stand wholly
+    /// on each side of `g` at the same height as three of the other side's: the lesser
+    /// side's count when they do, which ranks candidates, and nil when they do not.
+    private static func columnsBeside(_ g: Gutter, in boxes: [BoundingBox], line: Double) -> Int? {
+        let wide = boxes.filter { $0.width >= 10 * line }
+        let left = wide.filter { $0.x + $0.width <= g.to && $0.x < g.from }
+        let right = wide.filter { $0.x >= g.from && $0.x + $0.width > g.to }
+        guard left.count >= 3, right.count >= 3 else { return nil }
+        // Side by side: each side's lines lie within the other side's height.
+        func span(_ s: [BoundingBox]) -> (Double, Double) {
+            (s.map(\.y).min()!, s.map { $0.y + $0.height }.max()!)
+        }
+        let (lt, lb) = span(left), (rt, rb) = span(right)
+        let beside = { (s: [BoundingBox], top: Double, bottom: Double) in
+            s.filter { $0.y + $0.height / 2 > top && $0.y + $0.height / 2 < bottom }.count
+        }
+        guard beside(left, rt, rb) >= 3, beside(right, lt, lb) >= 3 else { return nil }
+        return min(left.count, right.count)
+    }
+
     /// Whether a box runs across the whole of a gutter.
     static func crosses(_ b: BoundingBox, _ g: Gutter) -> Bool {
         b.x < g.from && b.x + b.width > g.to
+    }
+
+    /// Whether a box runs across a gutter as a heading or a fused row does: across the
+    /// whole of it, and not lying almost all on one side. A box reaching under `reach`
+    /// past one edge and over it past the other belongs to that other side's column
+    /// and overshoots its ink into the gutter: on `Riesman_1949` p2 the middle column's
+    /// last line ran 0.002 of the page past the gutter, and read as a heading it cut
+    /// the right column's lines off from the rest of their column (C52). A short line
+    /// centred over the gutter (`Fig. 3`) reaches little past both edges and still
+    /// reads across.
+    static func readsAcross(_ b: BoundingBox, _ g: Gutter, reach: Double) -> Bool {
+        crosses(b, g) && (g.from - b.x > reach) == (b.x + b.width - g.to > reach)
+    }
+
+    /// The median line height of `lines` in widths of the page, the unit
+    /// `columnGutter` states its lengths in; nil when no box has a height.
+    static func lineWidth(of lines: [Observation], aspect: Double) -> Double? {
+        let heights = lines.map(\.boundingBox.height).filter { $0.isFinite && $0 > 0 }.sorted()
+        guard !heights.isEmpty, aspect.isFinite, aspect > 0 else { return nil }
+        return heights[heights.count / 2] * aspect
     }
 
     /// `lines` in reading order column by column, so a drag selection down one
@@ -959,50 +1005,172 @@ enum SearchableWriter {
     /// heads, anything set across both columns — cut the slab into sections, top
     /// to bottom. Each section is its left column then its right, each column
     /// ordered again the same way (a third column), and each crossing line comes
-    /// before the section under it. Within a column, and on a page where no slab
-    /// has a gutter, the order is the one given: a single-column page comes back
-    /// unchanged.
-    static func columnOrdered(_ lines: [Observation], aspect: Double) -> [Observation] {
-        guard lines.allSatisfy({ o in
-            [o.boundingBox.x, o.boundingBox.y, o.boundingBox.width, o.boundingBox.height]
-                .allSatisfy(\.isFinite)
-        }) else { return lines }
-        return reordered(lines, aspect: aspect, depth: 0) ?? lines
+    /// before the section under it. A line crossing a gutter by less than a line
+    /// height is not a crossing line but its column's (`readsAcross`). A slab with no
+    /// gutter of its own takes the nearest slab's when its lines stand on both sides of
+    /// it. Within a column, and on a page where no slab has a gutter, the order is the
+    /// one given: a single-column page comes back unchanged.
+    ///
+    /// `clearingGutters` also cuts back every box that reaches past a gutter's middle
+    /// (`cleared`), which is what makes PDFKit keep the columns apart; `prepared` asks
+    /// for it. Without it this only reorders, which `Recogniser` relies on.
+    static func columnOrdered(_ lines: [Observation], aspect: Double,
+                              clearingGutters: Bool = false) -> [Observation] {
+        guard allFinite(lines) else { return lines }
+        return reordered(lines, aspect: aspect, depth: 0, clearing: clearingGutters)?.lines ?? lines
     }
 
-    /// `columnOrdered`'s work, nil when no gutter was found anywhere in `lines`.
-    private static func reordered(_ lines: [Observation], aspect: Double,
-                                  depth: Int) -> [Observation]? {
-        guard depth < 8, lines.count >= 6 else { return nil }
-        let slabs = horizontalSlabs(of: lines)
-        if slabs.count > 1 {
-            let parts = slabs.map { reordered($0, aspect: aspect, depth: depth + 1) }
-            guard parts.contains(where: { $0 != nil }) else { return nil }
-            return zip(parts, slabs).flatMap { $0 ?? $1 }
+    /// Every gutter `columnOrdered` orders `lines` by, outermost first, each with the
+    /// lines it was found among. `Recogniser.splitAtGutter` asks each of them for the
+    /// lines Vision read across it (C52: on `Riesman_1949` p2, a three-column page,
+    /// the fused rows crossed the second gutter, and only the first was asked).
+    static func columnGutters(of lines: [Observation], aspect: Double)
+        -> [(gutter: Gutter, among: [Observation])] {
+        guard allFinite(lines) else { return [] }
+        var found: [(gutter: Gutter, among: [Observation])] = []
+        _ = reordered(lines, aspect: aspect, depth: 0, clearing: false,
+                      visit: { found.append(($0, $1)) })
+        return found
+    }
+
+    /// For each of `lines`, the column `columnOrdered` reads it in, counted in reading
+    /// order: one side of a gutter within one section, not cut again. Nil for a line
+    /// read across a gutter, and for every line of a page, or a slab, with none.
+    static func columnMembers(of lines: [Observation], aspect: Double) -> [Int?] {
+        var out = [Int?](repeating: nil, count: lines.count)
+        guard allFinite(lines) else { return out }
+        let tagged = lines.enumerated().map { i, o -> Observation in
+            var t = o
+            t.region = i
+            return t
         }
-        guard let g = columnGutter(of: lines, aspect: aspect) else { return nil }
+        var count = 0
+        _ = reordered(tagged, aspect: aspect, depth: 0, clearing: false, leaf: { part in
+            for o in part { if let i = o.region { out[i] = count } }
+            count += 1
+        })
+        return out
+    }
+
+    private static func allFinite(_ lines: [Observation]) -> Bool {
+        lines.allSatisfy { o in
+            [o.boundingBox.x, o.boundingBox.y, o.boundingBox.width, o.boundingBox.height]
+                .allSatisfy(\.isFinite)
+        }
+    }
+
+    /// `columnOrdered`'s work, nil when no gutter was found anywhere in `lines`, with
+    /// the gutter `lines` were cut at when they were cut at one. `given` is a
+    /// neighbouring slab's gutter to try instead of searching; `visit` hears of each
+    /// gutter used, with the lines it was used on, and `leaf` of each column, a side of
+    /// a gutter in one section that is not cut again.
+    private static func reordered(_ lines: [Observation], aspect: Double, depth: Int,
+                                  clearing: Bool, given: Gutter? = nil,
+                                  visit: ((Gutter, [Observation]) -> Void)? = nil,
+                                  leaf: (([Observation]) -> Void)? = nil)
+        -> (lines: [Observation], gutter: Gutter?)? {
+        guard depth < 8, lines.count >= 6 else { return nil }
+        let slabs = given == nil ? horizontalSlabs(of: lines) : [lines]
+        if slabs.count > 1 {
+            var parts = slabs.map {
+                reordered($0, aspect: aspect, depth: depth + 1, clearing: clearing, visit: visit,
+                          leaf: leaf)
+            }
+            // A slab with no gutter of its own is tried at the nearest slab's, and takes
+            // it when column-wide lines stand on both sides of it: a chart set across
+            // two columns crosses their gutter without joining them. On `Marth` 1982 p2
+            // seven of a chart's labels crossed the gutter of the columns under it, two
+            // over the allowance, and those columns read into each other; the slab
+            // above the chart had found the same gutter (C52).
+            let own = parts.map { $0?.gutter }
+            for k in parts.indices where parts[k] == nil {
+                guard let n = own.indices.filter({ own[$0] != nil })
+                        .min(by: { abs($0 - k) < abs($1 - k) }),
+                      let g = own[n] else { continue }
+                parts[k] = reordered(slabs[k], aspect: aspect, depth: depth + 1,
+                                     clearing: clearing, given: g, visit: visit, leaf: leaf)
+            }
+            guard parts.contains(where: { $0 != nil }) else { return nil }
+            return (zip(parts, slabs).flatMap { $0?.lines ?? $1 }, nil)
+        }
+        guard let line = lineWidth(of: lines, aspect: aspect) else { return nil }
+        let g: Gutter
+        if let given {
+            // Taken only where this slab's own lines fit it: column lines on both sides,
+            // no more lines read across it than stand on either side, and no more reaching
+            // past its middle than a gutter found here would allow. A gutter from a slab
+            // laid out otherwise (three columns over two) crosses this slab's lines and is
+            // refused, rather than read row by row or cleared through their ink.
+            let boxes = lines.map(\.boundingBox).filter { $0.width >= 2 * line }
+            let middle = (given.from + given.to) / 2
+            guard let beside = columnsBeside(given, in: boxes, line: line),
+                  boxes.filter({ readsAcross($0, given, reach: line) }).count <= beside,
+                  boxes.filter({ $0.x < middle && $0.x + $0.width > middle
+                                    && !readsAcross($0, given, reach: line) }).count
+                      <= max(2, boxes.count / 10)
+            else { return nil }
+            g = given
+        } else {
+            guard let found = columnGutter(of: lines, aspect: aspect) else { return nil }
+            g = found
+        }
+        visit?(g, lines)
         func middle(_ o: Observation) -> Double { o.boundingBox.y + o.boundingBox.height / 2 }
-        let across = lines.filter { crosses($0.boundingBox, g) }
+        let across = lines.filter { readsAcross($0.boundingBox, g, reach: line) }
             .enumerated().sorted { (middle($0.1), $0.0) < (middle($1.1), $1.0) }.map(\.1)
         let cuts = across.map(middle)
         let centre = (g.from + g.to) / 2
         var left = [[Observation]](repeating: [], count: across.count + 1)
         var right = left
-        for o in lines where !crosses(o.boundingBox, g) {
+        for o in lines where !readsAcross(o.boundingBox, g, reach: line) {
             let section = cuts.filter { $0 < middle(o) }.count
-            if o.boundingBox.x + o.boundingBox.width / 2 < centre {
-                left[section].append(o)
-            } else {
-                right[section].append(o)
-            }
+            let onLeft = o.boundingBox.x + o.boundingBox.width / 2 < centre
+            let kept = clearing ? cleared(o, of: g, onLeft: onLeft, line: line) : o
+            if onLeft { left[section].append(kept) } else { right[section].append(kept) }
         }
         var out: [Observation] = []
         for section in 0...across.count {
             if section > 0 { out.append(across[section - 1]) }
-            out += reordered(left[section], aspect: aspect, depth: depth + 1) ?? left[section]
-            out += reordered(right[section], aspect: aspect, depth: depth + 1) ?? right[section]
+            for part in [left[section], right[section]] {
+                if let cut = reordered(part, aspect: aspect, depth: depth + 1, clearing: clearing,
+                                       visit: visit, leaf: leaf) {
+                    out += cut.lines
+                } else {
+                    if !part.isEmpty { leaf?(part) }
+                    out += part
+                }
+            }
         }
-        return out
+        return (out, g)
+    }
+
+    /// `o` cut back to its own side of `g`'s middle, less a clearance, so that no run
+    /// reaches across the gutter into the other column's width (C52).
+    ///
+    /// PDFKit, and so Preview, finds a page's columns from where the text lies, and
+    /// one run reaching into the next column's width loses them. On a two-column page
+    /// with a 6 pt gutter, two runs in thirty drawn 8 pt past their column made PDFKit
+    /// read the whole page line by line across both columns; 3 pt, still inside the
+    /// gutter, changed nothing [measured, synthetic]. Vision's boxes overshoot the
+    /// ink: on `Riesman_1949` p2 the middle column's ink ends by 397.9 pt and its boxes
+    /// by 402.8, and the right column's boxes start at 400.0. With every box cleared
+    /// of the middle by 0.3 pt and the fused rows split, each of that page's three
+    /// columns selected as one [measured]. The clearance is a thousandth of the page,
+    /// or a quarter of the gutter when that is less, so a line ending at the gutter's
+    /// edge is untouched. A box under two line heights wide (a folio, a mark in the
+    /// gutter) is left as it is, and so is one that would lose half its width.
+    private static func cleared(_ o: Observation, of g: Gutter, onLeft: Bool,
+                                line: Double) -> Observation {
+        let b = o.boundingBox
+        guard b.width >= 2 * line else { return o }
+        let middle = (g.from + g.to) / 2, clearance = min(0.001, (g.to - g.from) / 4)
+        var left = b.x, right = b.x + b.width
+        if onLeft { right = min(right, middle - clearance) } else { left = max(left, middle + clearance) }
+        guard right - left < b.width, right - left >= b.width / 2 else { return o }
+        return Observation(boundingBox: BoundingBox(x: left, y: b.y, width: right - left,
+                                                    height: b.height),
+                           text: o.text, confidence: o.confidence,
+                           quarterTurns: o.quarterTurns, region: o.region)
     }
 
     /// `lines` in groups, top to bottom, split wherever no line covers a band of
@@ -1444,6 +1612,38 @@ enum SearchableWriter {
     /// the ceiling squashed it — and C20 is the entry about a pair getting both
     /// treatments at once, so an instrument that can see only one of them cannot
     /// see C20 at all.
+    /// The ceiling each of `lines` is drawn under, as `compose` draws them: its
+    /// `headroom`, and for a line in a column (`columnMembers`) no more than the height
+    /// nine in ten of its column's lines would be drawn at (C52).
+    ///
+    /// PDFKit reads a page's blocks by where their tops are, so a column cut into two
+    /// blocks takes the next column's in between, and a line drawn taller than its
+    /// column can start a block. Drawn heights follow Vision's boxes and each line's
+    /// headroom: 0.8 to 1.6 of the median over the body lines of one column on the
+    /// pages C52 names. On `Hughes` p3 one line read with a box 2 pt taller split the
+    /// right column in two, and capped it selects column by column again [measured].
+    /// Only the tallest tenth: capped at the median, Hughes p3 and `_1953_99 Cong_ 2`
+    /// p16 read better still, but `Donahue` p1's left column, drawn thinner, broke at a
+    /// paragraph space and read into the next one (1.00 -> 0.50) [measured]. A line
+    /// outside every column, a heading across the columns or any line of a page with
+    /// none, keeps its own ceiling.
+    static func ceilings(for lines: [Observation], in box: CGRect) -> [CGFloat] {
+        var ceilings = lines.indices.map { headroom(for: $0, among: lines, in: box) }
+        let columns = columnMembers(of: lines,
+                                    aspect: box.width > 0 ? Double(box.height / box.width) : 1)
+        var drawn: [Int: [CGFloat]] = [:]
+        for (i, column) in columns.enumerated() {
+            guard let column else { continue }
+            let wanted = CGFloat(lines[i].boundingBox.height) * box.height * 0.86
+            drawn[column, default: []].append(min(wanted, ceilings[i]))
+        }
+        let caps = drawn.mapValues { heights in heights.sorted()[heights.count * 9 / 10] }
+        for (i, column) in columns.enumerated() {
+            if let column, let cap = caps[column] { ceilings[i] = min(ceilings[i], cap) }
+        }
+        return ceilings
+    }
+
     static func headroom(for position: Int, among lines: [Observation],
                          in box: CGRect) -> CGFloat {
         func baseline(_ o: Observation) -> CGFloat { drawnBaseline(o, in: box) }

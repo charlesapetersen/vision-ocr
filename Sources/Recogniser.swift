@@ -233,8 +233,9 @@ enum Recogniser {
             guard let image = render(page, settings: settings) else {
                 throw Failure.unreadablePage(index + 1)
             }
-            byPage[index + 1] = try recognisePage(image, settings: settings,
-                                                  isCancelled: isCancelled)
+            byPage[index + 1] = fittedToGutters(try recognisePage(image, settings: settings,
+                                                                  isCancelled: isCancelled),
+                                                of: image, isCancelled: isCancelled)
         }
         onPage(total, total)
         return byPage
@@ -592,6 +593,8 @@ enum Recogniser {
     /// Last, a line read straight across a column gutter is read again as its two
     /// halves (`splitAtGutter`, C34). A page with a candidate for that pays a
     /// further pass over its pixels for the ink level, and two small requests a line.
+    /// The boxes reaching into a gutter are brought in to their ink by the callers,
+    /// once a page's readings are merged (`fittedToGutters`, C52).
     static func recognisePage(_ image: CGImage, settings: Prefs.Snapshot,
                               isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation] {
@@ -706,6 +709,9 @@ enum Recogniser {
     /// joined columns (on WSJ 1969, lines holding two columns' text 9 -> 46); taking
     /// its text only line for line keeps the copy's lines, boxes and order. When the
     /// second reading fails, the copy's stands: it is what the page published before.
+    /// The boxes reaching into a column gutter are brought in to their ink last, on the
+    /// merged lines (`fittedToGutters`): fitted reading by reading, a box moved in one
+    /// and not the other could fall outside `finerReading`'s match.
     static func recognisePage(at image: URL, settings: Prefs.Snapshot,
                               isCancelled: () -> Bool = { false })
         throws -> [SearchableWriter.Observation]? {
@@ -723,11 +729,14 @@ enum Recogniser {
         }
         let lines = try read(first)
         guard coarse != image, !isCancelled(), let page = loadImage(at: image), page.width > 0,
-              let finer = try? read(page), !isCancelled() else { return lines }
+              let finer = try? read(page), !isCancelled() else {
+            return fittedToGutters(lines, of: first, isCancelled: isCancelled)
+        }
         // Each reading was judged on its own letters; the page is judged on what it keeps.
-        return withoutStrayScript(
+        let merged = withoutStrayScript(
             finerReading(of: lines, from: finer, aspect: Double(page.height) / Double(page.width))
                 + linesOnlyFiner(lines, finer, aspect: Double(page.height) / Double(page.width)))
+        return fittedToGutters(merged, of: page, isCancelled: isCancelled)
     }
 
     /// The lines of `finer` that the copy's reading has nothing over: each at full
@@ -1202,41 +1211,61 @@ enum Recogniser {
     /// Vision's per-word boxes cannot place the split: on that page every gap
     /// between words, the gutter included, read 0.12-0.13 of the line's height.
     /// So the test is the paper: a heading or running head set across both columns
-    /// has ink in the gutter and is left whole. Only a line starting at the left
-    /// column's margin is a candidate, which a centred heading with blank paper
-    /// over the gutter is not. And a line is kept whole whose halves do not both
+    /// has ink in the gutter and is left whole. Only a line starting at a margin of
+    /// the column on the gutter's left is a candidate, which a centred heading with
+    /// blank paper over the gutter is not: three or more of that side's column-wide
+    /// lines start within three line heights of where it starts, or of where the
+    /// fragment before it on its row starts (`_1953_99 Cong_ 2` p16 read `Mr. HILL`
+    /// on its own and the rest of that row on into the next column). And a line is
+    /// kept whole whose halves do not both
     /// read, read under 0.8 of its characters between them, or one of them under
     /// 0.4 of its share by width (invariant 1: the fused reading is kept rather
-    /// than lose its text). The halves are cut at the gutter's middle, so the end
-    /// of a long left line reaching into it stays with its half. A rule printed
-    /// down the gutter keeps every line whole.
+    /// than lose its text). The halves are cut in the middle of the blank paper
+    /// (`blankGutter`), so the end of a long left line reaching into the gutter stays
+    /// with its half. A rule printed down the gutter keeps every line whole.
+    ///
+    /// Every gutter the writer orders the page by is asked, not only the page's
+    /// widest-backed one (`SearchableWriter.columnGutters`): on `Riesman_1949` p2, three
+    /// columns, the four rows read across the second gutter started at the middle
+    /// column's margin, and the page had one margin, the first column's (C52). A line
+    /// crossing a gutter by under a line height is its own column's, overshooting
+    /// (`SearchableWriter.readsAcross`), and is not read again.
     static func splitAtGutter(_ observations: [SearchableWriter.Observation], of image: CGImage,
                               settings: Prefs.Snapshot, isCancelled: () -> Bool = { false })
         -> [SearchableWriter.Observation] {
         let w = image.width, h = image.height
-        guard w > 0, h > 0,
-              let g = SearchableWriter.columnGutter(of: observations,
-                                                    aspect: Double(h) / Double(w))
-        else { return observations }
+        guard w > 0, h > 0 else { return observations }
         let line = lineHeight(of: observations, pageHeight: h)
         let lineX = Double(line) / Double(w)
-        let margins = observations.map(\.boundingBox)
-            .filter { $0.x < g.from && $0.x + $0.width <= g.to && $0.width >= 10 * lineX }
-            .map(\.x).sorted()
-        guard !margins.isEmpty else { return observations }
-        let margin = margins[margins.count / 2]
-        let middle = (g.from + g.to) / 2
+        // Tagged with their places, since `columnGutters` hands back the lines each
+        // gutter was found among and `columnOrdered` without clearing only reorders.
+        let tagged = observations.enumerated().map { i, o -> SearchableWriter.Observation in
+            var t = o
+            t.region = i
+            return t
+        }
+        var across: [Int: SearchableWriter.Gutter] = [:]
+        for (g, among) in SearchableWriter.columnGutters(of: tagged, aspect: Double(h) / Double(w)) {
+            let margins = among.map(\.boundingBox)
+                .filter { $0.x < g.from && $0.x + $0.width <= g.to && $0.width >= 10 * lineX }
+                .map(\.x)
+            for o in among {
+                guard let i = o.region, across[i] == nil,
+                      SearchableWriter.readsAcross(o.boundingBox, g, reach: lineX) else { continue }
+                let start = rowStart(of: i, in: observations, lineX: lineX)
+                guard margins.filter({ abs($0 - start) <= 3 * lineX }).count >= 3 else { continue }
+                across[i] = g
+            }
+        }
+        guard !across.isEmpty else { return observations }
         var level: UInt8??
         var out: [SearchableWriter.Observation] = []
-        for o in observations {
+        for (index, o) in observations.enumerated() {
             let b = o.boundingBox
-            guard !isCancelled(), SearchableWriter.crosses(b, g), b.x <= margin + 3 * lineX
-            else { out.append(o); continue }
+            guard !isCancelled(), let g = across[index] else { out.append(o); continue }
             if level == nil { level = inkScan(of: image, strips: [])?.level }
             guard let known = level ?? nil,
-                  !hasInk(in: SearchableWriter.BoundingBox(x: g.from, y: b.y,
-                                                           width: g.to - g.from, height: b.height),
-                          of: image, level: known)
+                  let middle = blankGutter(under: b, near: g, of: image, level: known, lineX: lineX)
             else { out.append(o); continue }
             var halves: [SearchableWriter.Observation] = []
             for s in [SearchableWriter.BoundingBox(x: b.x, y: b.y, width: middle - b.x,
@@ -1275,6 +1304,190 @@ enum Recogniser {
             out += !halves.isEmpty && read >= 0.8 * Double(o.text.count) ? halves : [o]
         }
         return out
+    }
+
+    /// Where a line read across `g` is cut: the middle of a run of blank paper under its
+    /// row `b`, within a line height of the gutter, at least as wide as the gutter and a
+    /// third of a line, and covering half of it or more; of several, the one covering
+    /// most. Nil when there is none: the row has ink across the gutter, as a heading
+    /// does, whose word spaces are narrower than the gutter between its columns.
+    ///
+    /// Found from the pixels because a gutter found from the boxes can sit off the
+    /// paper: on `Riesman_1949` p2 the right column's boxes overshoot further than the
+    /// middle column's, the strip found started at 0.6405, and the fused first row's
+    /// `more` ends at 0.6441, so a test of the whole strip read its last letter as ink
+    /// in the gutter and the row stayed whole (C52). The blank paper runs to 0.6634
+    /// there. A rule printed down the gutter leaves a run beside it, and a row read
+    /// across it is cut there when that run is as wide as the gutter found. A pixel
+    /// column is blank with under one pixel in 25 at or under `level`, which lets a speck
+    /// of dirt pass.
+    static func blankGutter(under b: SearchableWriter.BoundingBox, near g: SearchableWriter.Gutter,
+                            of image: CGImage, level: UInt8, lineX: Double) -> Double? {
+        let w = image.width, h = image.height
+        let from = max(0, g.from - lineX), to = min(1, g.to + lineX)
+        let top = max(0, b.y), bottom = min(1, b.y + b.height)
+        guard [from, to, top, bottom].allSatisfy(\.isFinite), to > from, bottom > top else { return nil }
+        let x0 = Int((from * Double(w)).rounded(.down)), x1 = Int((to * Double(w)).rounded(.up))
+        let y0 = Int((top * Double(h)).rounded(.down)), y1 = Int((bottom * Double(h)).rounded(.up))
+        guard let grey = greyPixels(of: image, x0: x0, y0: y0, x1: x1, y1: y1) else { return nil }
+        let pw = x1 - x0, ph = y1 - y0
+        let gutter = g.to - g.from
+        var best: (middle: Double, covering: Double)?
+        var start = 0
+        for column in 0...pw {
+            var blank = false
+            if column < pw {
+                var dark = 0
+                for row in 0..<ph where grey[row * pw + column] <= level { dark += 1 }
+                blank = dark * 25 < ph
+            }
+            if blank { continue }
+            // The run `start..<column`, in widths of the page.
+            let from = Double(x0 + start) / Double(w), to = Double(x0 + column) / Double(w)
+            let covering = min(to, g.to) - max(from, g.from)
+            if to - from >= max(lineX / 3, gutter), covering >= gutter / 2,
+               covering > (best?.covering ?? 0) {
+                best = ((from + to) / 2, covering)
+            }
+            start = column + 1
+        }
+        return best?.middle
+    }
+
+    /// The pixels `x0..<x1` by `y0..<y1` of `image` as 8-bit grey, row by row from the
+    /// top; nil when the rect is empty or will not draw.
+    private static func greyPixels(of image: CGImage, x0: Int, y0: Int, x1: Int, y1: Int) -> [UInt8]? {
+        guard x1 > x0, y1 > y0,
+              let piece = image.cropping(to: CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0))
+        else { return nil }
+        let pw = x1 - x0, ph = y1 - y0
+        var grey = [UInt8](repeating: 255, count: pw * ph)
+        let drawn = grey.withUnsafeMutableBytes { raw -> Bool in
+            guard let base = raw.baseAddress, let ctx = CGContext(
+                data: base, width: pw, height: ph, bitsPerComponent: 8, bytesPerRow: pw,
+                space: CGColorSpaceCreateDeviceGray(),
+                bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+            ctx.setFillColor(gray: 1, alpha: 1)
+            ctx.fill(CGRect(x: 0, y: 0, width: pw, height: ph))
+            ctx.draw(piece, in: CGRect(x: 0, y: 0, width: pw, height: ph))
+            return true
+        }
+        return drawn ? grey : nil
+    }
+
+    /// `observations` with the side of each line that faces a column gutter brought in to
+    /// the line's ink (C52), so that the text layer's gutter is the page's.
+    ///
+    /// PDFKit, and so Preview, finds a page's columns from where the text lies, and
+    /// keeps them apart only across a clear gap. Vision's boxes overshoot the ink by a
+    /// point or two, and by five on some lines, and a box read from a crop more: on
+    /// `Riesman_1949` p2 the gutter between the middle and right columns is 7-10 pt of
+    /// paper, and the boxes left 3 pt of it. There PDFKit read the two columns in turns,
+    /// eight lines of one and then eight of the other, and one box moved by a fraction
+    /// of a point could change where [measured]. With the right column's lines starting
+    /// where their ink does, it read each column whole at every clearance tried
+    /// [measured]. So each line on one side of a gutter (`SearchableWriter.
+    /// columnGutters`) whose box reaches into it has that edge moved to its ink, found
+    /// over the box's whole height within three line heights of the edge, plus a
+    /// sixteenth of a line. Only those: moving every edge near a gutter to its ink, 73
+    /// of `Hughes` p3's, gained nothing there, and every box moved is a new layout for
+    /// PDFKit to read. A box is only ever narrowed, never by half its width, and not at
+    /// all where its ink reaches the edge or none is found: this cannot uncover a letter.
+    /// Lines read across a gutter are `splitAtGutter`'s, and a page with no gutter is
+    /// returned as it came.
+    static func fittedToGutters(_ observations: [SearchableWriter.Observation], of image: CGImage,
+                                isCancelled: () -> Bool = { false }) -> [SearchableWriter.Observation] {
+        let w = image.width, h = image.height
+        guard w > 0, h > 0 else { return observations }
+        let line = lineHeight(of: observations, pageHeight: h)
+        let lineX = Double(line) / Double(w)
+        let tagged = observations.enumerated().map { i, o -> SearchableWriter.Observation in
+            var t = o
+            t.region = i
+            return t
+        }
+        let gutters = SearchableWriter.columnGutters(of: tagged, aspect: Double(h) / Double(w))
+        guard !gutters.isEmpty, let level = inkScan(of: image, strips: [])?.level else {
+            return observations
+        }
+        var out = observations
+        for (g, among) in gutters {
+            let middle = (g.from + g.to) / 2
+            for o in among {
+                guard !isCancelled(), let i = o.region else { continue }
+                let b = out[i].boundingBox
+                guard b.width >= 2 * lineX, !SearchableWriter.readsAcross(b, g, reach: lineX)
+                else { continue }
+                let onLeft = b.x + b.width / 2 < middle
+                guard onLeft ? b.x + b.width > g.from : b.x < g.to,
+                      let ink = inkEdge(of: b, facingRight: onLeft, in: image, level: level,
+                                        lineX: lineX)
+                else { continue }
+                var left = b.x, right = b.x + b.width
+                if onLeft { right = min(right, ink + lineX / 16) } else { left = max(left, ink - lineX / 16) }
+                guard right - left < b.width, right - left >= b.width / 2 else { continue }
+                let was = out[i]
+                out[i] = SearchableWriter.Observation(
+                    boundingBox: SearchableWriter.BoundingBox(x: left, y: b.y, width: right - left,
+                                                              height: b.height),
+                    text: was.text, confidence: was.confidence, quarterTurns: was.quarterTurns,
+                    region: was.region)
+            }
+        }
+        return out
+    }
+
+    /// The x, in widths of the page, where the ink of the line in `b` ends on its right
+    /// (`facingRight`) or starts on its left: the outermost pixel column holding two dark
+    /// pixels or more over the box's height, within three line heights of that edge. Nil
+    /// when there is none, or when the ink reaches the edge and may go on past it. The
+    /// whole height, so a closing quote or a comma counts; ink of the line above or
+    /// below inside the box can only hold the edge further out.
+    static func inkEdge(of b: SearchableWriter.BoundingBox, facingRight: Bool, in image: CGImage,
+                        level: UInt8, lineX: Double) -> Double? {
+        let w = image.width, h = image.height
+        let near = facingRight ? b.x + b.width : b.x
+        let from = max(0, max(b.x, facingRight ? near - 3 * lineX : near))
+        let to = min(1, min(b.x + b.width, facingRight ? near : near + 3 * lineX))
+        let top = max(0, b.y), bottom = min(1, b.y + b.height)
+        guard [from, to, top, bottom].allSatisfy(\.isFinite), to > from, bottom > top else { return nil }
+        let x0 = Int((from * Double(w)).rounded(.down)), x1 = Int((to * Double(w)).rounded(.up))
+        let y0 = Int((top * Double(h)).rounded(.down)), y1 = Int((bottom * Double(h)).rounded(.up))
+        guard let grey = greyPixels(of: image, x0: x0, y0: y0, x1: x1, y1: y1) else { return nil }
+        let pw = x1 - x0, ph = y1 - y0
+        func inked(_ column: Int) -> Bool {
+            var dark = 0
+            for row in 0..<ph where grey[row * pw + column] <= level {
+                dark += 1
+                if dark >= 2 { return true }
+            }
+            return false
+        }
+        let columns = facingRight ? Array((0..<pw).reversed()) : Array(0..<pw)
+        guard let first = columns.first(where: inked), first != columns.first else { return nil }
+        return Double(x0 + (facingRight ? first + 1 : first)) / Double(w)
+    }
+
+    /// Where the row of `observations[i]` starts: its own left edge, or the left edge of
+    /// the fragment that ends within a third of a line height of where it starts on the
+    /// same row, followed leftwards. Vision reads a speaker's name or a first word on its
+    /// own and the rest of the row as another box (`Mr. HILL` / `That is right. But I do
+    /// not…`). A third of a line is under any gutter (`columnGutter`), so this does not
+    /// step into the column beside it.
+    static func rowStart(of i: Int, in observations: [SearchableWriter.Observation],
+                         lineX: Double) -> Double {
+        let me = observations[i].boundingBox
+        let centre = me.y + me.height / 2
+        var start = me.x
+        for _ in 0..<8 {
+            guard let before = observations.first(where: { o in
+                let b = o.boundingBox
+                return abs(b.y + b.height / 2 - centre) < me.height / 2 && b.x < start
+                    && abs(b.x + b.width - start) < lineX / 3
+            }) else { break }
+            start = before.boundingBox.x
+        }
+        return start
     }
 
     /// The pixel rect, top-left origin, recognised for an unread stretch: a line

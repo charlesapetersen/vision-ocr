@@ -9138,6 +9138,311 @@ do {
     resetPrefs()
 }
 
+// MARK: - C52: a drag down one column stays in it
+
+print("\na drag down one column stays in it, as PDFKit selects (C52)")
+
+do {
+    resetPrefs()
+    typealias Box = SearchableWriter.BoundingBox
+    typealias Obs = SearchableWriter.Observation
+    func o(_ t: String, x: Double, y: Double, w: Double, h: Double = 0.012) -> Obs {
+        Obs(boundingBox: Box(x: x, y: y, width: w, height: h), text: t, confidence: 1)
+    }
+    let letter = 792.0 / 612
+
+    // A gutter the old 1/400 resolution could not see (`_1953_99 Cong_ 2` p16): 0.0048 of
+    // the page between the columns' boxes, over the third of a line asked (0.0043), with the
+    // two edges in neighbouring four-hundredths, so no whole bin was left uncovered.
+    let narrow = (0..<8).flatMap { r in
+        [o("narrow left \(r)", x: 0.08, y: 0.1 + Double(r) * 0.016, w: 0.2726, h: 0.010),
+         o("narrow right \(r)", x: 0.3574, y: 0.1 + Double(r) * 0.016, w: 0.3, h: 0.010)]
+    }
+    let narrowGutter = SearchableWriter.columnGutter(of: narrow, aspect: letter)
+    check("C52: a gutter narrower than a four-hundredth of the page is found",
+          narrowGutter.map { $0.from >= 0.3526 && $0.to <= 0.3574 } == true,
+          "\(String(describing: narrowGutter))")
+    check("C52: …and its columns are read one after the other",
+          SearchableWriter.columnOrdered(narrow, aspect: letter).map(\.text)
+              == (0..<8).map { "narrow left \($0)" } + (0..<8).map { "narrow right \($0)" },
+          "\(SearchableWriter.columnOrdered(narrow, aspect: letter).map(\.text))")
+
+    // A chart set across two columns crosses their gutter without joining them (`Marth`
+    // 1982 p2): seven labels over the columns under the chart, where the allowance is two.
+    // The slab above the chart has the gutter, and the columns under it take it.
+    var marth: [Obs] = []
+    for r in 0..<6 {
+        marth += [o("upper left \(r)", x: 0.05, y: 0.05 + Double(r) * 0.016, w: 0.42),
+                  o("upper right \(r)", x: 0.53, y: 0.05 + Double(r) * 0.016, w: 0.42)]
+    }
+    let labels = (0..<7).map { o("chart label \($0)", x: 0.3, y: 0.2 + Double($0) * 0.016, w: 0.4) }
+    marth += labels
+    for r in 0..<8 {
+        marth += [o("lower left \(r)", x: 0.05, y: 0.32 + Double(r) * 0.016, w: 0.42),
+                  o("lower right \(r)", x: 0.53, y: 0.32 + Double(r) * 0.016, w: 0.42)]
+    }
+    let marthOrder = SearchableWriter.columnOrdered(marth, aspect: letter).map(\.text)
+    check("C52: columns under a chart across their gutter take the gutter of the slab above",
+          marthOrder == (0..<6).map { "upper left \($0)" } + (0..<6).map { "upper right \($0)" }
+              + labels.map(\.text) + (0..<8).map { "lower left \($0)" }
+              + (0..<8).map { "lower right \($0)" },
+          "\(marthOrder)")
+
+    // A line whose box runs a hair past the gutter is its own column's, and does not cut
+    // the columns like a heading (`Riesman_1949` p2's `not enough sustained concentration on`).
+    var over: [Obs] = []
+    for r in 0..<8 {
+        over += [o("over left \(r)", x: 0.05, y: 0.1 + Double(r) * 0.016, w: r == 3 ? 0.482 : 0.42),
+                 o("over right \(r)", x: 0.53, y: 0.1 + Double(r) * 0.016, w: 0.42)]
+    }
+    check("C52: a line overshooting the gutter stays in its column",
+          SearchableWriter.columnOrdered(over, aspect: letter).map(\.text)
+              == (0..<8).map { "over left \($0)" } + (0..<8).map { "over right \($0)" },
+          "\(SearchableWriter.columnOrdered(over, aspect: letter).map(\.text))")
+    // …while a short label centred over the gutter, crossing it by a little on both
+    // sides, still cuts the columns as a heading does.
+    let label = o("Fig. 3", x: 0.465, y: 0.1 + 3.5 * 0.016, w: 0.07)
+    let labelled = over.filter { $0.text != "over left 3" } + [label]
+    check("C52: …and a short label centred over the gutter still cuts the columns",
+          SearchableWriter.columnOrdered(labelled, aspect: letter).map(\.text)
+              == (0..<4).filter { $0 != 3 }.map { "over left \($0)" } + (0..<4).map { "over right \($0)" }
+                  + ["Fig. 3"] + (4..<8).map { "over left \($0)" } + (4..<8).map { "over right \($0)" },
+          "\(SearchableWriter.columnOrdered(labelled, aspect: letter).map(\.text))")
+    // A slab does not take a gutter from a slab laid out otherwise: three columns over
+    // two, whose own gutter the chart hides. Three short lines stand wholly left of the
+    // upper gutter, and every full line of the lower left column runs across it, so the
+    // lower slab keeps its order rather than read row by row about the wrong gutter.
+    var mixed: [Obs] = []
+    for r in 0..<6 {
+        for (c, x) in [0.05, 0.37, 0.69].enumerated() {
+            mixed.append(o("third \(c) \(r)", x: x, y: 0.05 + Double(r) * 0.016, w: 0.25))
+        }
+    }
+    mixed += (0..<7).map { o("chart label \($0)", x: 0.3, y: 0.2 + Double($0) * 0.016, w: 0.4) }
+    var lower: [Obs] = []
+    for r in 0..<8 {
+        lower += [o("half left \(r)", x: 0.05, y: 0.32 + Double(r) * 0.016, w: r % 3 == 1 ? 0.23 : 0.42),
+                  o("half right \(r)", x: 0.53, y: 0.32 + Double(r) * 0.016, w: 0.42)]
+    }
+    mixed += lower
+    let mixedOrder = SearchableWriter.columnOrdered(mixed, aspect: letter).map(\.text)
+    check("C52: a slab refuses a gutter its own lines run across",
+          Array(mixedOrder.suffix(lower.count)) == lower.map(\.text), "\(mixedOrder)")
+
+    // Through PDFKit. Two left lines of thirty whose boxes run 8 pt past their column, 2 pt
+    // into the next, made PDFKit read a whole synthetic page line by line across both
+    // columns [measured]; cleared of the gutter's middle, the page reads column by column.
+    // Two pages of differing size (invariant 5).
+    var spilling: [Obs] = []
+    for r in 0..<30 {
+        let y = (80 + Double(r) * 12) / 792
+        spilling += [o("left \(r) the quick brown fox jumps over lazy dogs", x: 50.0 / 612, y: y,
+                       w: (253.0 + (r % 15 == 2 ? 8 : 0)) / 612, h: 9.5 / 792),
+                     o("right \(r) and then some more words follow here", x: 309.0 / 612, y: y,
+                       w: 253.0 / 612, h: 9.5 / 792)]
+    }
+    let cleared = SearchableWriter.prepared(spilling, in: CGRect(x: 0, y: 0, width: 612, height: 792))
+    let rightStart = cleared.filter { $0.text.hasPrefix("right") }.map(\.boundingBox.x).min() ?? 0
+    check("C52: no left box reaches into the right column once cleared of the gutter",
+          cleared.count == spilling.count
+              && cleared.filter { $0.text.hasPrefix("left") }
+                  .allSatisfy { $0.boundingBox.x + $0.boundingBox.width < rightStart },
+          "\(cleared.filter { $0.text.hasPrefix("left") }.map { $0.boundingBox.x + $0.boundingBox.width }.max() ?? 0) vs \(rightStart)")
+    do {
+        let dir = tmp.appendingPathComponent("c52-columns")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let src = dir.appendingPathComponent("blank.pdf")
+        var first = CGRect(x: 0, y: 0, width: 612, height: 792)
+        if let c = CGContext(src as CFURL, mediaBox: &first, nil) {
+            c.beginPDFPage(nil); c.endPDFPage()
+            var second = CGRect(x: 0, y: 0, width: 500, height: 700)
+            let data = withUnsafeBytes(of: &second) { Data($0) } as CFData
+            c.beginPDFPage([kCGPDFContextMediaBox as String: data] as CFDictionary)
+            c.endPDFPage()
+            c.closePDF()
+        }
+        let out = dir.appendingPathComponent("columns.pdf")
+        _ = try? SearchableWriter.compose(visible: src, observations: [1: spilling, 2: spilling],
+                                          to: out, drawImages: false)
+        let doc = PDFDocument(url: out)
+        for n in 0..<2 {
+            let lines = doc?.page(at: n).flatMap { p in
+                p.selection(for: p.bounds(for: .mediaBox))?.selectionsByLine()
+                    .compactMap { $0.string?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            } ?? []
+            let lastLeft = lines.lastIndex { $0.hasPrefix("left") }
+            let firstRight = lines.firstIndex { $0.hasPrefix("right") }
+            check("C52: PDFKit selects page \(n + 1)'s left column wholly before its right",
+                  lastLeft != nil && firstRight != nil && lastLeft! < firstRight!
+                      && lines.filter { $0.hasPrefix("left") }.count == 30
+                      && lines.filter { $0.hasPrefix("right") }.count == 30,
+                  "\(lines.map { String($0.prefix(8)) })")
+        }
+
+        // A column's lines are drawn no taller than nine in ten of them, so one read with a
+        // taller box (`Hughes` p3's first row, 2 pt taller) does not stand out of its column
+        // for PDFKit to cut it there; a heading across the columns keeps its height, and so
+        // does the same line on a page of one column.
+        let heading = o("A HEADING SET ACROSS BOTH COLUMNS", x: 0.2, y: 0.05, w: 0.6, h: 0.02)
+        var twoColumns: [Obs] = [heading], oneColumn: [Obs] = [heading]
+        for r in 0..<12 {
+            let y = 0.1 + Double(r) * 0.018, h = r == 11 ? 0.017 : 0.011
+            twoColumns += [o("tall left \(r) the quick brown fox", x: 0.08, y: y, w: 0.4, h: h),
+                           o("tall right \(r) the quick brown fox", x: 0.52, y: y, w: 0.4, h: 0.011)]
+            oneColumn.append(o("tall left \(r) the quick brown fox jumps over", x: 0.08, y: y, w: 0.84, h: h))
+        }
+        let heightsOut = dir.appendingPathComponent("heights.pdf")
+        _ = try? SearchableWriter.compose(visible: src, observations: [1: twoColumns, 2: oneColumn],
+                                          to: heightsOut, drawImages: false)
+        let heightsDoc = PDFDocument(url: heightsOut)
+        func heights(_ n: Int) -> [(text: String, height: CGFloat)] {
+            guard let p = heightsDoc?.page(at: n) else { return [] }
+            return (p.selection(for: p.bounds(for: .mediaBox))?.selectionsByLine() ?? []).map {
+                (($0.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines), $0.bounds(for: p).height)
+            }
+        }
+        func height(_ lines: [(text: String, height: CGFloat)], _ prefix: String) -> CGFloat? {
+            lines.first { $0.text.hasPrefix(prefix) }?.height
+        }
+        let two = heights(0), one = heights(1)
+        let body = (0..<11).compactMap { height(two, "tall left \($0) ") }.sorted()
+        let median = body.count == 11 ? body[5] : 0
+        check("C52: a column's tallest-read line is drawn no taller than the column",
+              median > 0 && (height(two, "tall left 11 ") ?? 99) <= median * 1.05
+                  && (height(two, "A HEADING SET") ?? 0) >= 1.4 * median,
+              "\(two.map { "\($0.text.prefix(13)) \($0.height)" })")
+        check("C52: …while the same line on a page of one column keeps its height",
+              median > 0 && (height(one, "tall left 11 ") ?? 0) >= 1.3 * median,
+              "\(one.map { "\($0.text.prefix(13)) \($0.height)" })")
+    }
+
+    // On pixels: three columns, and a row Vision read from the middle column across the
+    // second gutter into the right one. The right column's boxes overshoot to the left, as
+    // a crop's reading does, so the gutter found from the boxes starts on the fused row's
+    // last letter; the blank paper beside it is where the row is cut.
+    let width = 2700, height = 1000
+    let font = CTFontCreateWithName("Times-Roman" as CFString, 40, nil)
+    func ink(_ s: String) -> Double {
+        Double(CTLineGetTypographicBounds(CTLineCreateWithAttributedString(
+            NSAttributedString(string: s, attributes: [.font: font])), nil, nil, nil))
+    }
+    let columnText = [
+        ["in the first column the lines of type", "run on down the page and they are all",
+         "read one after another by the people", "who come to it early in the morning",
+         "and then they turn the page over to", "find out the rest of the whole story"],
+        ["the middle column carries a second", "story about the town and its people",
+         "and their work in the mills and yards", "and the longest line of the middle one",
+         "was set in the mills along the river", "before the war came to them all at last"],
+        ["the right column is a third story", "about the harbour and all of its boats",
+         "that came in each day at noon or so", "with the whole catch from the banks",
+         "where the men had fished for years", "until the fish were all of them gone"]]
+    let lefts = [60.0, 930, 1810]
+    // And a heading set at the middle column's margin across the second gutter, in type
+    // whose word spaces are a third of a line wide or more.
+    let headingText = "THE TOWN AND ITS MILLS AND BOATS"
+    let headingFont = CTFontCreateWithName("Times-Roman" as CFString, 72, nil)
+    var drawn: CGImage?
+    if let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                           bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(),
+                           bitmapInfo: CGImageAlphaInfo.none.rawValue) {
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        ctx.setFillColor(gray: 0, alpha: 1)
+        for (c, texts) in columnText.enumerated() {
+            for (r, s) in texts.enumerated() {
+                ctx.textPosition = CGPoint(x: lefts[c], y: Double(height - (150 + r * 110)))
+                CTLineDraw(CTLineCreateWithAttributedString(
+                    NSAttributedString(string: s, attributes: [.font: font])), ctx)
+            }
+        }
+        ctx.textPosition = CGPoint(x: lefts[1], y: Double(height - 880))
+        CTLineDraw(CTLineCreateWithAttributedString(
+            NSAttributedString(string: headingText, attributes: [.font: headingFont])), ctx)
+        drawn = ctx.makeImage()
+    }
+    // Boxes from the drawn lines: the first two columns hug their ink, the third starts
+    // 70 px before its ink. Row 3 of the middle and right columns is one box.
+    func box(_ c: Int, _ r: Int, from: Double? = nil, to: Double? = nil) -> Box {
+        let x0 = from ?? (c == 2 ? lefts[c] - 70 : lefts[c] - 4)
+        let x1 = to ?? (lefts[c] + ink(columnText[c][r]) + 4)
+        return Box(x: x0 / Double(width), y: Double(150 + r * 110 - 36) / Double(height),
+                   width: (x1 - x0) / Double(width), height: 50 / Double(height))
+    }
+    var threeColumns: [Obs] = []
+    for c in 0..<3 {
+        for r in 0..<6 where !(r == 3 && c > 0) {
+            threeColumns.append(Obs(boundingBox: box(c, r), text: columnText[c][r], confidence: 1))
+        }
+    }
+    let fusedRow = Obs(boundingBox: box(1, 3, to: lefts[2] + ink(columnText[2][3]) + 4),
+                       text: columnText[1][3] + " " + columnText[2][3], confidence: 1)
+    let headingWidth = Double(CTLineGetTypographicBounds(CTLineCreateWithAttributedString(
+        NSAttributedString(string: headingText, attributes: [.font: headingFont])), nil, nil, nil))
+    let heading = Obs(boundingBox: Box(x: (lefts[1] - 4) / Double(width), y: 820 / Double(height),
+                                       width: (headingWidth + 8) / Double(width),
+                                       height: 80 / Double(height)),
+                      text: headingText, confidence: 1)
+    if let image = drawn {
+        let settings = Prefs.Snapshot.current()
+        let split = Recogniser.splitAtGutter(threeColumns + [heading, fusedRow], of: image,
+                                             settings: settings)
+        let got = split.map { $0.text.lowercased() }
+        check("C52: a row read across a three-column page's second gutter is read again as its halves",
+              !got.contains(fusedRow.text) && got.contains(columnText[1][3])
+                  && got.contains(columnText[2][3]) && split.count == threeColumns.count + 3,
+              "\(got)")
+        check("C52: …and a heading set across it from the margin is left whole",
+              split.contains { $0.text == headingText && $0.boundingBox.width == heading.boundingBox.width },
+              "\(got)")
+        // The boxes reaching into a gutter are brought in to their ink on its side: two of
+        // the right column's, 120 px wide of their ink where the rest are 20 px, start
+        // within a sixteenth of a line of it; the rest, which make the gutter's edge, are
+        // left as they were. No box is narrowed past its own ink, and an outer edge is
+        // left alone.
+        let unfused = threeColumns.map { o -> Obs in
+            guard o.boundingBox.x > 0.6, let r = columnText[2].firstIndex(of: o.text) else { return o }
+            return Obs(boundingBox: box(2, r, from: lefts[2] - (r < 2 ? 120 : 20)), text: o.text,
+                       confidence: 1)
+        } + [1, 2].map { c in
+            Obs(boundingBox: box(c, 3, from: c == 2 ? lefts[2] - 20 : nil), text: columnText[c][3],
+                confidence: 1)
+        }
+        let fitted = Recogniser.fittedToGutters(unfused, of: image)
+        let px = { (v: Double) in v * Double(width) }
+        let rightColumn = fitted.filter { $0.boundingBox.x > 0.6 }
+        let reaching = Set(columnText[2].prefix(2))
+        check("C52: boxes reaching into a gutter are brought in to their ink",
+              rightColumn.count == 6 && rightColumn.allSatisfy {
+                  reaching.contains($0.text)
+                      ? px($0.boundingBox.x) > lefts[2] - 6 && px($0.boundingBox.x) <= lefts[2] + 1
+                      : abs(px($0.boundingBox.x) - (lefts[2] - 20)) < 0.5
+              },
+              "\(rightColumn.map { px($0.boundingBox.x) })")
+        check("C52: …never past a letter, and an edge facing no gutter is left as it was",
+              zip(unfused, fitted).allSatisfy { was, now in
+                  let c = columnText.firstIndex { $0.contains(was.text) } ?? 0
+                  return px(now.boundingBox.x + now.boundingBox.width) >= lefts[c] + ink(was.text)
+                      && px(now.boundingBox.x) <= lefts[c] + 1
+                      && (c != 0 || now.boundingBox.x == was.boundingBox.x)
+              },
+              "\(zip(unfused, fitted).map { (px($0.boundingBox.x), px($1.boundingBox.x), px($1.boundingBox.x + $1.boundingBox.width)) })")
+    } else {
+        check("C52: the three-column fixture draws", false)
+    }
+
+    // A row Vision read as a speaker's name and the rest (`Mr. HILL` / `That is right…`,
+    // `_1953_99 Cong_ 2` p16) starts where the name does; a line of the column before it,
+    // ending a line height away, is not part of the row.
+    let named = [o("Mr. HILL.", x: 0.17, y: 0.5, w: 0.06, h: 0.01),
+                 o("That is right. But I do not work to include", x: 0.23, y: 0.5, w: 0.37, h: 0.01)]
+    let alongside = [o("the column before ends here", x: 0.05, y: 0.5, w: 0.3, h: 0.01),
+                     o("a row read across the next gutter", x: 0.363, y: 0.5, w: 0.5, h: 0.01)]
+    check("C52: a row read in two pieces starts where its first piece does",
+          Recogniser.rowStart(of: 1, in: named, lineX: 0.013) == 0.17
+              && Recogniser.rowStart(of: 1, in: alongside, lineX: 0.013) == 0.363)
+    resetPrefs()
+}
+
 print("\nthe revision we pin is the revision Vision uses")
 
 do {
