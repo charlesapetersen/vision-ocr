@@ -14,6 +14,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Footnotes in small type and table columns that recognition skipped on the first read are read again and
+  can be selected and found. On one owner's file a three-line footnote had no text at all (C51).
 - Scanned pages are recognised when the scan is cut into narrow strips under a vendor's typed header, as
   ProQuest newspaper pages are; their text had been left unselectable. Born-digital pages with a banner, a
   photograph or a full-page figure keep their own text, fonts and images instead of being redrawn as a

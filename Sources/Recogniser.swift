@@ -652,6 +652,33 @@ enum Recogniser {
         guard coarse != image, !isCancelled(), let page = loadImage(at: image), page.width > 0,
               let finer = try? read(page), !isCancelled() else { return lines }
         return finerReading(of: lines, from: finer, aspect: Double(page.height) / Double(page.width))
+            + linesOnlyFiner(lines, finer, aspect: Double(page.height) / Double(page.width))
+    }
+
+    /// The lines of `finer` that the copy's reading has nothing over: each at full
+    /// confidence, with a box meeting none of `lines`' (C51). The copy is read for its
+    /// lines, and on `Xin Qu_2018` p24 it skipped a whole column of a table the finer
+    /// reading held cell by cell (`3.724`, `2.045`, `0.906`); the void test cannot see a
+    /// column missed beside another column on the same rows. A line that touches no
+    /// line of the copy cannot be two of its lines joined across a gutter, which is
+    /// what `finerReading` refuses the finer reading for. A box of `hasFusedLine`'s
+    /// shape, over 1.4 of the copy's median line height tall and eight wide, is left
+    /// out: that is how Vision reads two lines as one garbled one, at full confidence.
+    /// `aspect` is the page's height over its width, as `finerReading`'s.
+    static func linesOnlyFiner(_ lines: [SearchableWriter.Observation],
+                               _ finer: [SearchableWriter.Observation],
+                               aspect: Double) -> [SearchableWriter.Observation] {
+        func meets(_ a: SearchableWriter.BoundingBox, _ b: SearchableWriter.BoundingBox) -> Bool {
+            min(a.x + a.width, b.x + b.width) > max(a.x, b.x)
+                && min(a.y + a.height, b.y + b.height) > max(a.y, b.y)
+        }
+        let heights = lines.map(\.boundingBox.height).filter { $0.isFinite && $0 > 0 }.sorted()
+        let line = heights.isEmpty ? 1.0 / 60 : heights[heights.count / 2]
+        return finer.filter { f in
+            f.confidence >= 1 && !f.text.trimmingCharacters(in: .whitespaces).isEmpty
+                && !(f.boundingBox.height > 1.4 * line && f.boundingBox.width > 8 * line * aspect)
+                && !lines.contains { meets($0.boundingBox, f.boundingBox) }
+        }
     }
 
     /// `lines` with the text of each one that `finer`, a reading of the same page at a
@@ -1405,6 +1432,14 @@ enum Recogniser {
     /// box's x-height and its line's ascenders is not a void. Two lines' worth and
     /// not one, so a stray rule or a lone missed page number does not buy eight
     /// more requests; C30's voids were 171 rows at 100 dpi, many lines each.
+    ///
+    /// **Or two lines, counted as lines** (C51): two runs of inked rows, each a
+    /// quarter line tall, with blank rows between them. The line height is the
+    /// page's median, body type; the three footnote lines `Bird` p5's request
+    /// skipped held 79 inked rows against the 106 two body lines ask for, and the
+    /// bands that read them never ran. A rule is one short run, a page number one;
+    /// and the two must be lines of one block, under a line height of paper apart,
+    /// so a page number below a scan's dark edge does not buy the bands either.
     static func hasVoid(inked: [Bool], observations: [SearchableWriter.Observation],
                         pageHeight h: Int, lineHeight line: Int) -> Bool {
         guard h > 0, inked.count >= h else { return false }
@@ -1420,10 +1455,18 @@ enum Recogniser {
             if first <= last { for y in first...last { covered[y] = true } }
         }
         let need = 2 * line
-        var ink = 0
+        let tallRun = max(2, line / 4)
+        var ink = 0, runs = 0, run = 0, blank = 0
         for y in 0..<h {
-            if covered[y] { ink = 0; continue }
-            if inked[y] { ink += 1; if ink >= need { return true } }
+            if covered[y] { ink = 0; runs = 0; run = 0; blank = 0; continue }
+            if inked[y] {
+                ink += 1; run += 1; blank = 0
+                if ink >= need { return true }
+                if run == tallRun { runs += 1; if runs >= 2 { return true } }
+            } else {
+                run = 0; blank += 1
+                if blank > line { runs = 0 }
+            }
         }
         return false
     }

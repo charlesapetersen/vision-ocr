@@ -18908,6 +18908,32 @@ Model (2) coefficient column is gone; Find 1.228, 3.724, 2.045 and 0.906 gets 0,
 text layer finds all four. [measured] Nothing reports the loss (invariant 1). Why these lines are
 dropped, by Vision or after it, was not examined.
 
+**2026-09-28, `c51-missing-lines` — two causes, both fixed; 1.228 still misread.** Captured the helper's own
+bitmaps and observations (a wrapper around `visionocr-recognise`). Vision drops the lines; nothing after it does.
+- *Bird p5*: the three footnote lines are clean on the bitmap. The request skipped them, and the uncovered
+  stretch held 79 inked rows against `hasVoid`'s 106 (two *body* line heights, 53 rows), so the bands never
+  ran. `hasVoid` now also counts two separate runs of inked rows, each a quarter line tall, as a void. The
+  bands then read all three lines.
+- *Xin Qu p24*: the page has a C39 `.coarse.png` (150 dpi), and the coarse reading skipped the Model (2)
+  column; the column beside it at x 0.855 covers the same rows of the same void strip, so no void. The finer
+  reading held the column cell by cell, and `finerReading` only replaces text. `linesOnlyFiner` now adds the
+  finer lines at full confidence that meet no box of the coarse reading. Rejected: narrower void strips, which
+  would still share rows with the neighbouring column and cost every table page the bands.
+- Before -> after, PDFKit Find on the published cuts [measured]: Monograph 0 -> 1 (over its line), "Paul H.
+  Norgren" 0 -> 1; 3.724, 2.045, 0.906 0 -> 1 each, within 2 pt of the source's own text layer. **1.228 stays 0**:
+  the finer reading has the cell as `- 1228` at confidence 1, because the decimal point is a faint pixel at
+  300 dpi as well. It is a misread, not a missing line (C50's ground).
+- Review: two runs must be under a line height of paper apart (a scan edge plus a page number no longer buys
+  the bands), and `linesOnlyFiner` leaves out fused-shape boxes. Not done: added lines are appended, so on a
+  page with no gutter they come last in copied text rather than in place.
+- DONE WHEN check (separate agent, PDFKit, measured): Monograph PASS, 3.724/2.045/0.906 PASS for Find and
+  drag, **1.228 FAIL** (drag selects `- 1228`). The box stays open; what remains is the one misread.
+  Side note from it: the new Bird hits sit ~10 pt left of their ink, and the hyphen-joined `Industrial`
+  appears on both lines (C44's echo).
+- ux-regression: 13 better, 4 worse, all on the two pages fixed, accepted: Xin Qu p24 `prec` 0.43 -> `-`
+  (not measured any more, not examined) and 39,589 -> 40,922 B for the added text; Bird p5 `prec` 0.96 -> 0.86
+  (likely the 10 pt offset above) and `midBreaks` 100/113 -> 68/75. Baseline refreshed from this run.
+
 ### C52 · A drag down one column still jumps into the next partway down — OPEN
 
 *(found 2026-09-27 by `ux-read`; C34 is FIXED and is not reopened.)*

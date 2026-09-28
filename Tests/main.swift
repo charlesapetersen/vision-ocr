@@ -7556,7 +7556,7 @@ do {
     check("…bit for bit the page the images alone would have rebuilt",
           unlike == 0, "\(unlike) pixels differ")
     // And the copy is what is read, in the app and in the helper: a copy that says
-    // something else comes back, and the page's own words do not.
+    // something else comes back, first and unchanged.
     func writeWords(_ text: String, to url: URL, scale: Int = 1) -> Bool {
         guard let c = CGContext(data: nil, width: 600 * scale, height: 450 * scale, bitsPerComponent: 8,
                                 bytesPerRow: 600 * scale, space: CGColorSpaceCreateDeviceGray(),
@@ -7581,7 +7581,8 @@ do {
                 useHelper: viaHelper, onFallback: { fellBack.append($0) }))?[1]?
                 .map(\.text).joined(separator: " ") ?? ""
             check("…and recognition reads that copy, \(viaHelper ? "through the helper" : "in the app")",
-                  read.contains("zebra") && !read.contains("committee") && fellBack.isEmpty,
+                  // The page's own lines follow it: they lie where the copy read nothing (C51).
+                  read.hasPrefix("Omega zebra quartz") && fellBack.isEmpty,
                   "\(read.prefix(80)) \(fellBack)")
         }
     } else {
@@ -7780,6 +7781,22 @@ do {
                                             aspect: 1.5)
         check("…as does a page's first line below its top quarter",
               lower[0].text == "Tion of the trustees was", lower[0].text)
+
+        // C51: `Xin Qu_2018` p24's copy read two columns of a table and skipped the one
+        // between them, which the finer reading held cell by cell.
+        let copy = [line(0.70, 0.30, 0.04, "-0.430"), line(0.85, 0.30, 0.04, "1.180"),
+                    line(0.70, 0.50, 0.04, "1.320"), line(0.85, 0.50, 0.04, "0.120")]
+        let finerCells = [line(0.70, 0.30, 0.04, "-0.430"), line(0.78, 0.30, 0.03, "3.724"),
+                          line(0.78, 0.50, 0.03, "2.045"), line(0.84, 0.50, 0.05, "0.120"),
+                          line(0.78, 0.60, 0.03, "0.906"), line(0.78, 0.70, 0.03, "0.9O6"),
+                          line(0.10, 0.80, 0.60, "tlie wnen mnrs anre oa", h: 0.05)]
+        let guessed = SearchableWriter.Observation(boundingBox: finerCells[5].boundingBox,
+                                                   text: "0.9O6", confidence: 0.5)
+        var offered = finerCells
+        offered[5] = guessed
+        let added = Recogniser.linesOnlyFiner(copy, offered, aspect: 1.5)
+        check("C51 — the finer reading's lines the copy has nothing over are added, but not a guess or two lines fused",
+              added.map(\.text) == ["3.724", "2.045", "0.906"], "\(added.map(\.text))")
     }
     // A page the app does not rebuild is read from a render at the same resolution.
     var automatic = Prefs.Snapshot.current()
@@ -8294,6 +8311,19 @@ do {
     for y in 500..<520 { single[y] = true }
     check("…nor is one missed line, which is not worth eight more requests",
           !Recogniser.hasVoid(inked: single, observations: [], pageHeight: h, lineHeight: 20))
+    // C51: `Bird` p5's three missed footnote lines, in type smaller than the body's.
+    var footnotes = [Bool](repeating: false, count: h)
+    for top in [600, 620] { for y in top..<(top + 12) { footnotes[y] = true } }
+    check("C51 — two missed lines of small type are a void, though under two line heights of ink",
+          Recogniser.hasVoid(inked: footnotes, observations: read, pageHeight: h, lineHeight: 20))
+    var specks = [Bool](repeating: false, count: h)
+    for top in [700, 710, 720] { for y in top..<(top + 4) { specks[y] = true } }
+    check("…while rules and specks under a quarter line tall are not",
+          !Recogniser.hasVoid(inked: specks, observations: [], pageHeight: h, lineHeight: 20))
+    var apart = [Bool](repeating: false, count: h)
+    for top in [600, 800] { for y in top..<(top + 12) { apart[y] = true } }
+    check("…nor two marks with paper between them, a scan's edge and a page number",
+          !Recogniser.hasVoid(inked: apart, observations: [], pageHeight: h, lineHeight: 20))
 
     // The merge, on one 1,000-row page cut into two bands overlapping over 400..<600.
     // Band boxes are normalised to their band, as Vision returns them.
