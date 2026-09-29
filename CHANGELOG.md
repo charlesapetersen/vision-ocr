@@ -12,7 +12,7 @@ edits its own history is worth less than one that reads slightly awkwardly. Wher
 an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 "Window ▸ Vision OCR Window"; nothing else moved.
 
-## Unreleased
+## 1.15.0 — 2026-09-29
 
 - Already-compact JBIG2 scans that were drawn through a form or upside down, such as JSTOR reviews and
   NBER papers, keep their own image streams instead of being re-encoded at two to three times the size.
