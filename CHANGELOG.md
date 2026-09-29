@@ -24,6 +24,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 - Typewritten and low-resolution grey scans read more words correctly: each line of a page rebuilt in
   black and white is also read from the grey scan, and the better reading is kept. Such pages take up
   to twice as long to recognise (C50, in part).
+- Numbers in scanned tables read correctly where the black-and-white reading garbled them ("ถ.120"
+  becomes "0.120"), and two table cells read as one no longer lose the upper cell (C50).
 - On more two- and three-column scans, a drag down one column stays in that column in Preview. The
   searchable layer now keeps the printed gutter clear of text, and rows that recognition read across a
   narrow gutter, or a three-column page's second gutter, are read again as their two halves (C52, in part).

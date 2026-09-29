@@ -697,14 +697,136 @@ enum Recogniser {
     /// by dictionary, over 28 sampled corpus pages and 4 named ones no page lost a
     /// dictionary word, and published, the 1928 page gained 74, Doermann p7 15, Ries p54
     /// 11 and NYSE 1956 p110 11.
+    ///
+    /// Two more for tables, where there are no words to count (`Xin Qu_2018` p24, C50).
+    /// A line's numbers may change only from garbled to clean (`isGarbledNumber`):
+    /// `ถ.120` and `n.490` take the grey `0.120` and `0.490`, and `1s` `is`, while every
+    /// clean number stays, in order, so `$400,000` never becomes `$100,000` (the finer
+    /// reading's misread that `finerReading` refuses), nor a 1928 typescript's `summer
+    /// of 1921, b1` the grey `summer of 1911, bul`. And a
+    /// line over `fusedHeight` median line heights tall that holds two or more grey
+    /// lines stacked one under the other is two cells read as one: `- 1228` over the
+    /// grey `0.081` and `-1.228`, which it is replaced by, each on its own box.
     static func greyReading(of lines: [SearchableWriter.Observation],
                             from grey: [SearchableWriter.Observation],
                             aspect: Double) -> [SearchableWriter.Observation] {
         let matched = finerReading(of: lines, from: grey, aspect: aspect)
-        return zip(lines, matched).map { line, candidate in
-            dictionaryWords(in: candidate.text) > dictionaryWords(in: line.text) ? candidate : line
+        let renumbered = finerReading(of: lines, from: grey, aspect: aspect, keepingNumbers: false)
+        let heights = lines.map(\.boundingBox.height).filter { $0.isFinite && $0 > 0 }.sorted()
+        let median = heights.isEmpty ? 1.0 / 60 : heights[heights.count / 2]
+        return lines.indices.flatMap { i -> [SearchableWriter.Observation] in
+            let line = lines[i]
+            if let cells = stacked(grey, in: i, of: lines, lineHeight: median, aspect: aspect) {
+                return cells
+            }
+            let mine = dictionaryWords(in: line.text)
+            if dictionaryWords(in: matched[i].text) > mine { return [matched[i]] }
+            let candidate = renumbered[i], theirs = dictionaryWords(in: candidate.text)
+            if numbers(in: candidate.text) == numbers(in: line.text) { return [line] }
+            // Word by word: a garbled word may become a clean number, or a dictionary word
+            // where each digit touches a lower-case letter (`1s`, `t1m`, `st1ll`, not a
+            // label's `A1`), and every other word keeps its numbers.
+            let (was, now) = (line.text.split(whereSeparator: \.isWhitespace),
+                              candidate.text.split(whereSeparator: \.isWhitespace))
+            guard theirs >= mine, was.count == now.count, was.contains(where: isGarbledNumber),
+                  !now.contains(where: isGarbledNumber) else { return [line] }
+            let fair = zip(was, now).allSatisfy { w, n in
+                guard isGarbledNumber(w) else { return numbers(in: String(w)) == numbers(in: String(n)) }
+                if n.contains(where: \.isNumber) { return true }
+                let c = Array(w)
+                return c.indices.allSatisfy { k in
+                    !c[k].isNumber || (k > 0 && c[k - 1].isLowercase)
+                        || (k + 1 < c.count && c[k + 1].isLowercase)
+                } && n.split { !$0.isLetter }.allSatisfy { $0.count < 2 || isWord($0.lowercased()) }
+            }
+            return [fair ? candidate : line]
         }
     }
+
+    /// Of the median line height, how tall a line must be for `greyReading` to look for
+    /// two cells in it: `linesOnlyFiner`'s fused shape, without its width.
+    static let fusedHeight = 1.4
+
+    /// The grey lines `lines[i]` holds when it is two or more cells read as one
+    /// (`greyReading`): upright, over `fusedHeight` line heights tall, holding two or
+    /// more upright grey lines, each centred in its box and wholly inside it give or take
+    /// a line height's fifth, meeting no other line of `lines`, and stacked with no two
+    /// sharing more than 0.4 of the shorter's height (adjacent rows' grey boxes share a
+    /// third on Xin Qu). Together they must have at least its letters and digits, its
+    /// dictionary words, its numbers' digits in order and a `likeness` of a half, so
+    /// nothing it read is lost and a tall heading read the same way twice is not split.
+    /// Each keeps its own box and text and takes the line's confidence and region.
+    /// `aspect` is the page's height over its width.
+    static func stacked(_ grey: [SearchableWriter.Observation], in i: Int,
+                        of lines: [SearchableWriter.Observation],
+                        lineHeight: Double, aspect: Double) -> [SearchableWriter.Observation]? {
+        let line = lines[i], a = line.boundingBox
+        guard (line.quarterTurns ?? 0) % 4 == 0, a.height > fusedHeight * lineHeight else { return nil }
+        let slack = lineHeight / 5, across = slack * aspect
+        // Boxes of adjacent rows touch (`-1.228`'s grey box reaches 0.08% of the page into
+        // `0.540`'s), so meeting is sharing a quarter of the shorter one's height.
+        func meets(_ p: SearchableWriter.BoundingBox, _ q: SearchableWriter.BoundingBox) -> Bool {
+            min(p.x + p.width, q.x + q.width) > max(p.x, q.x)
+                && min(p.y + p.height, q.y + q.height) - max(p.y, q.y) > 0.25 * min(p.height, q.height)
+        }
+        let inside = grey.filter { g in
+            let b = g.boundingBox
+            return (g.quarterTurns ?? 0) % 4 == 0
+                && !g.text.trimmingCharacters(in: .whitespaces).isEmpty
+                && b.x >= a.x - across && b.x + b.width <= a.x + a.width + across
+                && b.y >= a.y - slack && b.y + b.height <= a.y + a.height + slack
+                && (a.x...(a.x + a.width)).contains(b.x + b.width / 2)
+                && (a.y...(a.y + a.height)).contains(b.y + b.height / 2)
+                && !lines.indices.contains { $0 != i && meets(lines[$0].boundingBox, b) }
+        }.sorted { $0.boundingBox.y < $1.boundingBox.y }
+        guard inside.count >= 2,
+              zip(inside, inside.dropFirst()).allSatisfy({ p, q in
+                  let shared = p.boundingBox.y + p.boundingBox.height - q.boundingBox.y
+                  return shared <= 0.4 * min(p.boundingBox.height, q.boundingBox.height)
+              })
+        else { return nil }
+        func letters(_ t: String) -> Int { t.filter { $0.isLetter || $0.isNumber }.count }
+        let text = inside.map(\.text).joined(separator: " ")
+        func digits(_ t: String) -> [String] { numbers(in: t).map { $0.filter(\.isNumber) } }
+        var rest = digits(text)[...]
+        let kept = digits(line.text).allSatisfy { n in
+            guard let k = rest.firstIndex(of: n) else { return false }
+            rest = rest[(k + 1)...]
+            return true
+        }
+        guard kept, letters(text) >= letters(line.text), likeness(line.text, text) >= 0.5,
+              dictionaryWords(in: text) >= dictionaryWords(in: line.text) else { return nil }
+        return inside.map { g in
+            var out = SearchableWriter.Observation(boundingBox: g.boundingBox, text: g.text,
+                                                   confidence: line.confidence,
+                                                   quarterTurns: line.quarterTurns)
+            out.region = line.region
+            return out
+        }
+    }
+
+    /// Whether `word` holds a digit and is not a number: after the signs, brackets,
+    /// quotes and currency before it and the brackets, stars, percent sign and
+    /// punctuation after it, none of `numberShapes`. `ถ.120`, `n.490`, `0.20X1`,
+    /// `1.29(1*`, `unt1l` and `A1` are; `-1.228`, `$400,000`, `(.023)`, `3,14`, `2nd`,
+    /// `1990s`, `1990-91`, `3:15`, `12%` and `1967,` are not, nor is any word holding a
+    /// digit other than 0-9 (`10³`, `½`, Arabic-Indic), which this cannot judge.
+    static func isGarbledNumber(_ word: Substring) -> Bool {
+        guard word.contains(where: \.isNumber),
+              !word.contains(where: { $0.isNumber && !("0"..."9").contains($0) }) else { return false }
+        let leading = Set("+-−–($£€[\"'“‘"), trailing = Set(")*%,.;:†‡]?!\"'”’")
+        var core = word
+        while let c = core.first, leading.contains(c) { core = core.dropFirst() }
+        while let c = core.last, trailing.contains(c) { core = core.dropLast() }
+        return !numberShapes.contains { core.range(of: $0, options: .regularExpression) != nil }
+    }
+
+    /// What `isGarbledNumber` takes for a number: grouped in threes or not, with a point;
+    /// a point first; a decimal comma; an ordinal or a decade; a range or date; a time
+    /// (not `2:900`, a point misread on Xin Qu).
+    static let numberShapes = [#"^([0-9]{1,3}(,[0-9]{3})+|[0-9]+)(\.[0-9]+)?$"#, #"^\.[0-9]+$"#,
+                               #"^[0-9]+,[0-9]{1,2}$"#, #"^[0-9]+(st|nd|rd|th|d)$"#, #"^[0-9]{2,}s$"#,
+                               #"^[0-9]+([-–—/][0-9]+)+$"#, #"^[0-9]{1,2}:[0-9]{2}$"#]
 
     /// How many of `text`'s runs of two or more letters are words of the system's word
     /// list, `/usr/share/dict/words` (web2 on macOS), in any case, or one of its words
@@ -757,8 +879,8 @@ enum Recogniser {
     /// joined columns (on WSJ 1969, lines holding two columns' text 9 -> 46); taking
     /// its text only line for line keeps the copy's lines, boxes and order. When the
     /// second reading fails, the copy's stands: it is what the page published before.
-    /// A grey render written beside it (`greySuffix`) is read last, for words only
-    /// (`greyReading`, C50). The boxes reaching into a column gutter are brought in to their ink last, on the
+    /// A grey render written beside it (`greySuffix`) is read last, for words, garbled
+    /// numbers and cells read as one (`greyReading`, C50). The boxes reaching into a column gutter are brought in to their ink last, on the
     /// merged lines (`fittedToGutters`): fitted reading by reading, a box moved in one
     /// and not the other could fall outside `finerReading`'s match.
     static func recognisePage(at image: URL, settings: Prefs.Snapshot,
@@ -831,7 +953,8 @@ enum Recogniser {
     /// finer line may serve one line only, of its own turn. The reading must have 0.9 to
     /// 1.15 times the line's letters, a `likeness` of a half, as many words and the same
     /// digits in its numbers, and must not undo a hyphen join the copy's reading makes.
-    /// The line keeps its box, region and turn; only its text changes.
+    /// The line keeps its box, region and turn; only its text changes. With
+    /// `keepingNumbers` false the digits may change, for `greyReading` to judge.
     ///
     /// Never two lines joined, and never a line split: where the copy cut a row in two
     /// and the finer reading did not, the row stays as `lines` cut it, because a finer
@@ -845,7 +968,8 @@ enum Recogniser {
     /// `aspect` is the page's height over its width, to measure heights across it.
     static func finerReading(of lines: [SearchableWriter.Observation],
                              from finer: [SearchableWriter.Observation],
-                             aspect: Double) -> [SearchableWriter.Observation] {
+                             aspect: Double,
+                             keepingNumbers: Bool = true) -> [SearchableWriter.Observation] {
         typealias Box = SearchableWriter.BoundingBox
         func turns(_ o: SearchableWriter.Observation) -> Int { (((o.quarterTurns ?? 0) % 4) + 4) % 4 }
         func reach(_ a: Box) -> Double { finerEdgeTolerance * a.height * aspect }
@@ -949,32 +1073,16 @@ enum Recogniser {
                     && joiner.sharedWidthFraction(a, b) >= joiner.minimumColumnOverlap
             }
         }
-        // The numbers in a reading, as digits with the points and commas between them. A
-        // finer reading may not change their digits, since a wrong number reads as a right
-        // one (WSJ 1969: `$400,000` read `$100,000`, `1967` read `1867`), nor split one
-        // (`700,000` read `700, 000`), nor read digits into a word (NYSE 1956's typescript:
-        // `unt1l paid 1n ful1`). Signs and symbols are not compared: there the finer reading
-        // mostly finds what the copy lost (`511 529` read `511-529`, `0.332` read `-0.332`).
-        func numbers(_ t: String) -> [String] {
-            var out: [String] = [], current = "", pending = ""
-            for c in t {
-                if c.isNumber {
-                    current += pending + String(c)
-                    pending = ""
-                } else if c == "." || c == ",", !current.isEmpty, pending.isEmpty {
-                    pending = String(c)
-                } else {
-                    if !current.isEmpty { out.append(current) }
-                    (current, pending) = ("", "")
-                }
-            }
-            if !current.isEmpty { out.append(current) }
-            return out
-        }
         // Words, as runs of letters. A finer reading must have as many: fewer is a word it
         // missed (UN-OCred p27's `(and`, WSJ's `a` read `&`), more a word it broke up
-        // (`poration` read `por atl on`).
-        func words(_ t: String) -> Int { t.split { !$0.isLetter }.count }
+        // (`poration` read `por atl on`). Where numbers may change, a word holding a digit
+        // counts once, garbled or not: `ถ.120` is as many words as `0.120`, `1s` as `is`.
+        func words(_ t: String) -> Int {
+            guard !keepingNumbers else { return t.split { !$0.isLetter }.count }
+            return t.split(whereSeparator: \.isWhitespace).map {
+                $0.contains(where: \.isNumber) ? 1 : $0.split { !$0.isLetter }.count
+            }.reduce(0, +)
+        }
         return lines.indices.map { i in
             let line = lines[i]
             let (found, isPieces) = readings[i]
@@ -986,7 +1094,7 @@ enum Recogniser {
                   likeness(line.text, text) >= 0.5,
                   !joinsAsHead(line.text) || joinsAsHead(text),
                   !joinsAsTail(line.text) || joinsAsTail(text) || !mayContinue(i),
-                  numbers(text) == numbers(line.text),
+                  !keepingNumbers || numbers(in: text) == numbers(in: line.text),
                   words(text) == words(line.text) else { return line }
             var out = SearchableWriter.Observation(boundingBox: line.boundingBox, text: text,
                                                    confidence: line.confidence,
@@ -994,6 +1102,29 @@ enum Recogniser {
             out.region = line.region
             return out
         }
+    }
+
+    /// The numbers in a reading, as digits with the points and commas between them. A
+    /// finer reading may not change their digits, since a wrong number reads as a right
+    /// one (WSJ 1969: `$400,000` read `$100,000`, `1967` read `1867`), nor split one
+    /// (`700,000` read `700, 000`), nor read digits into a word (NYSE 1956's typescript:
+    /// `unt1l paid 1n ful1`). Signs and symbols are not compared: there the finer reading
+    /// mostly finds what the copy lost (`511 529` read `511-529`, `0.332` read `-0.332`).
+    static func numbers(in t: String) -> [String] {
+        var out: [String] = [], current = "", pending = ""
+        for c in t {
+            if c.isNumber {
+                current += pending + String(c)
+                pending = ""
+            } else if c == "." || c == ",", !current.isEmpty, pending.isEmpty {
+                pending = String(c)
+            } else {
+                if !current.isEmpty { out.append(current) }
+                (current, pending) = ("", "")
+            }
+        }
+        if !current.isEmpty { out.append(current) }
+        return out
     }
 
     /// Of the union of two boxes, the least they must share to be one line (`finerReading`).

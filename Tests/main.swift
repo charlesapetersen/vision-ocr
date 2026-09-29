@@ -7916,6 +7916,55 @@ do {
                   && Recogniser.dictionaryWords(in: "the firms grew") == 3
                   && Recogniser.dictionaryWords(in: "Carried studies xqzvtks") == 2,
               "\(taken.map(\.text)) \(kept.map(\.text))")
+        // A number changes only from garbled to clean, and every clean number stays.
+        func grey(_ copy: String, _ grey: String) -> String {
+            Recogniser.greyReading(of: [obs(copy)], from: [obs(grey)], aspect: 1).map(\.text)
+                .joined(separator: "|")
+        }
+        let cases: [(copy: String, grey: String, want: String)] = [
+            ("ถ.120", "0.120", "0.120"), ("n.490", "0.490", "0.490"), ("1.29(1*", "1.290*", "1.290*"),
+            ("Upon paymant 1a 1ul1", "Upon payment in full", "Upon payment in full"),
+            ("$400,000", "$100,000", "$400,000"), ("- 3.845", "- 3.895", "- 3.845"),
+            ("summer of 1921, b1", "summer of 1911, bul", "summer of 1921, b1"),
+            ("until paid in full", "unt1l paid 1n ful1", "until paid in full"),
+            ("the price ถ.120", "the prico 0.120", "the price ถ.120"),
+            ("ถ.120 0.120", "0.120 0.720", "ถ.120 0.120"), ("Table A1 shows", "Table Al shows", "Table A1 shows"),
+            ("(.081)", "(0.031)", "(.081)"), ("-2:900**", "-2.900**", "-2.900**"),
+            ("at 3:15 on", "at 3.15 on", "at 3:15 on"), ("10³ m", "103 m", "10³ m"),
+            ("atapus 1s a", "katapus is a", "katapus is a"),
+            ("36\"A\" atudents", "36\"' students", "36\"A\" atudents"),
+        ]
+        let wrong = cases.filter { grey($0.copy, $0.grey) != $0.want }
+        check("C50 — greyReading takes a clean number only for a garbled one, keeping every clean number",
+              wrong.isEmpty, "\(wrong.map { "\($0.copy) -> \(grey($0.copy, $0.grey))" })")
+    }
+    do {
+        // Xin Qu_2018 p24: the copy's `- 1228` is two table cells in one tall box, which the
+        // grey reading reads as `0.081` over `-1.228`.
+        typealias Box = SearchableWriter.BoundingBox
+        func cell(_ y: Double, _ h: Double, _ text: String, x: Double = 0.7834,
+                  w: Double = 0.0291) -> SearchableWriter.Observation {
+            SearchableWriter.Observation(boundingBox: Box(x: x, y: y, width: w, height: h), text: text,
+                                         confidence: 1, quarterTurns: nil)
+        }
+        let column = [cell(0.3026, 0.0220, "- 3.845", x: 0.7776, w: 0.0349),
+                      cell(0.3369, 0.0494, "- 1228", x: 0.7757, w: 0.0386),
+                      cell(0.3791, 0.0218, "0.540"), cell(0.3987, 0.0218, "0.486")]
+        let greyColumn = [cell(0.3026, 0.0220, "- 3.895", x: 0.7776, w: 0.0349),
+                          cell(0.3420, 0.0240, "0.081", x: 0.7820, w: 0.0305),
+                          cell(0.3587, 0.0212, "-1.228", x: 0.7789, w: 0.0338),
+                          cell(0.3813, 0.0196, "0.540"), cell(0.3987, 0.0218, "0.486")]
+        let split = Recogniser.greyReading(of: column, from: greyColumn, aspect: 1.4)
+        // A tall heading the grey reading reads as one line is left as it is.
+        let heading = [cell(0.1, 0.05, "Results", x: 0.2, w: 0.3), cell(0.3, 0.02, "0.540"),
+                       cell(0.33, 0.02, "0.486")]
+        let whole = Recogniser.greyReading(of: heading, from: [cell(0.1, 0.05, "Results", x: 0.2, w: 0.3)],
+                                           aspect: 1.4)
+        check("C50 — greyReading replaces two stacked cells read as one tall line with the grey cells",
+              split.map(\.text) == ["- 3.845", "0.081", "-1.228", "0.540", "0.486"]
+                  && abs(split[2].boundingBox.y - 0.3587) < 1e-9
+                  && whole.map(\.text) == heading.map(\.text),
+              "\(split.map(\.text)) \(whole.map(\.text))")
     }
     do {
         typealias Box = SearchableWriter.BoundingBox

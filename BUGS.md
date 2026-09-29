@@ -19045,7 +19045,7 @@ unsearchable. `Autor` p10 and `Surani` p10 (series and icons told apart by colou
 this, were not measured, and are outside the DONE WHEN. A separate checker passed all four DONE WHEN
 criteria against the before and after outputs.
 
-### C50 · Typewritten and low-resolution pages are misread more than the source's own reading allows — OPEN
+### C50 · Typewritten and low-resolution pages are misread more than the source's own reading allows — FIXED 2026-09-29
 
 *(found 2026-09-27 by `ux-read`: most of the 88 `find`/`copy` red pages that are not C41's.)*
 
@@ -19086,6 +19086,25 @@ lossless grey at 150 and 300 ppi, so that one is fragile. The grey reading has "
 `finerReading` refuses any change to a number's points, on purpose (WSJ 1969's `$400,000` ->
 `$100,000`). The earlier "Vision reads the source's cells correctly" was at the harness's 216 dpi, a
 resolution production never reads at.
+
+**2026-09-29, fixed (`c50-typewriter-reads`, second session).** The reason given above was wrong: the grey
+reading has `0.081` and `-1.228` as two lines, and production's `- 1228` is one box 2.4 line heights tall
+over both cells, so `finerReading` matched neither, and `0.081` was missing from the text layer as well
+[measured, helper readings dumped]. Two changes in `greyReading`. A line over 1.4 median line heights tall
+holding two or more stacked grey lines is replaced by them (`stacked`), provided the grey lines keep its digits,
+letters and dictionary words. And a word's number may change only from garbled to clean (`isGarbledNumber`:
+`ถ.120`, `n.490`, `1s`), word by word, with every other word's numbers unchanged. The first version compared
+the whole line and turned the 1928 page's `summer of 1921, b1` into `1911`; the review found `ถ.120 0.120` could
+become `0.120 0.720` and `A1` become `Al`, both now refused and tested.
+PDFKit, published cuts, web2 words before -> after: Ries p54 167 -> 167, NYSE p110 259 -> 264 ("Upon
+payment in full"), GELFAND p106 93 -> 93, Xin Qu p24 82 -> 83, Doermann p7 229 -> 232, 1928 p1 2193 -> 2194.
+On Xin Qu, Find 1.228 0 -> 1 at (519,275), where the source's own layer has it at (520,274); 0.081 0 -> 1; 0.120,
+0.490, 1.290, 0.318 and the footnote's 0.01/0.05 come right. On the 28 sampled pages, text changed only on Doermann and 1928,
+every change a correction. Not fixed: clean-for-clean misreads (`- 3.845` for the source's `-3.895`, `0.314` for `0.214`), which the
+grey reading had right. There is no way to tell them apart from WSJ's `$100,000`, so they stay (rejected:
+taking the grey number whenever the two readings differ). `C'oellicient` and `11.(H10` in the other
+columns stay too (no grey line matches them). DONE WHEN subagent (PDFKit, final outputs): all three pass; the
+named "suall"/"Coeflicient" were already gone before this change (6281f02). Suite 1693/1693.
 
 ### C51 · Lines and table cells are still missing from the text layer after C33, so they cannot be selected or found — FIXED 2026-09-28
 

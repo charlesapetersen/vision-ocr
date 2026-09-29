@@ -512,7 +512,7 @@ say so in the commit.
       DONE WHEN: `PDFPage.label` on the outputs of Hobsbawm, Bird and Cohen equals the source's on every
       page, and `documentAttributes` Title equals the source's on Countryman and Friedman.
       BOUND: one code commit. (origin: BUGS.md C48)
-- [ ] **c50-typewriter-reads** — find out whether recognising the grey source instead of the 1-bit
+- [x] **c50-typewriter-reads** — find out whether recognising the grey source instead of the 1-bit
       rebuild reads typewritten and low-resolution pages better, and ship it if it does.
       DONE WHEN: on Ries p54, NYSE p110, GELFAND p106 and Xin Qu p24, dictionary words in the output's
       text layer are measured before and after, and the change ships only if none gets worse and the
@@ -522,6 +522,8 @@ say so in the commit.
       What is left is Find "1.228" on Xin Qu p24, which C50 shows is not binarisation but
       `finerReading`'s number guard. Next: make the case in C50, or let a table cell's reading gain a
       decimal point its column's other cells have. BOUND: one code commit.
+      2026-09-29: done. The cell was two cells in one box; the grey reading now splits it and fixes
+      garbled numbers, and Find 1.228 hits over its cell.
       (origin: BUGS.md C50)
 - [ ] **c47-compact-sources** — keep a compact source's image streams when the rebuild would be larger:
       JBIG2 in a Form XObject (Stiglitz, Keyssar), and JPX layers (Berendzen).
