@@ -162,6 +162,10 @@ WINDOW_WAIT_AT="${VISIONOCR_WINDOW_WAIT_AT:-95}" # usage window (owner, 2026-09-
 WINDOW_CUT_AT="${VISIONOCR_WINDOW_CUT_AT:-90}"   # a session that exits nonzero with the window at or over this
                                           # was cut off by it: not an attempt, not a no-completion.
 WINDOW_LAST="$STATE/usage-window.last"    # "<pct> <resetsAt> [cut]" from the latest session that reported one
+USAGE_LOG="$STATE/usage-window.tsv"       # one row per session and per reset wait (owner, 2026-09-28): how much
+                                          # of each five-hour window the run spent, so unused headroom shows.
+                                          # usage-window.last keeps only the latest reading, and session logs
+                                          # are overwritten, so without this the history is lost.
 EFFORT="${VISIONOCR_EFFORT:-medium}"      # low|medium|high|xhigh|max. medium since 2026-09-24, when the run
                                           # moved to Opus 5.5 (the `opus` alias resolves to claude-opus-5-5).
                                           # Anthropic's Opus 5.5 guidance: "Start at `medium`" and "Reserve
@@ -329,6 +333,22 @@ else
 fi
 
 log() { printf '%s  %s\n' "$(date '+%F %T')" "$*" >> "$LOG"; }
+# usage_row KIND START END ITEM EFFORT RC FIRST PEAKS CUT — append to $USAGE_LOG, header first.
+# FIRST is the first window reading "PCT RESET". PEAKS is the highest reading of each window the session saw,
+# "PCT RESET" pairs separated by ";" (a session that spans a reset saw two). A `wait` row passes the reading
+# that caused the wait as FIRST and no PEAKS. A usage-limit fast-fail has no readings, so both are blank.
+usage_row() {
+  local k="$1" t0="$2" t1="$3" item="$4" eff="$5" rc="$6" f="$7" pk="$8" cut="$9" fp fr peaks=""
+  read -r fp fr <<< "$f"
+  if [ -n "$pk" ]; then
+    peaks="$(printf '%s\n' "$pk" | tr ';' '\n' | while read -r p r; do
+      [ -n "$r" ] && printf '%s%% (resets %s), ' "$p" "$(date -r "$r" '+%H:%M')"; done)"; peaks="${peaks%, }"
+  fi
+  [ -s "$USAGE_LOG" ] || printf 'kind\tstart\tend\tminutes\titem\teffort\trc\tfirst_pct\tfirst_reset\twindow_peaks\tcut\n' > "$USAGE_LOG"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$k" "$(date -r "$t0" '+%F %H:%M')" "$(date -r "$t1" '+%F %H:%M')" \
+    "$(( (t1 - t0 + 30) / 60 ))" "$item" "$eff" "$rc" "${fp:-}" "${fr:+$(date -r "$fr" '+%H:%M')}" \
+    "$peaks" "$cut" >> "$USAGE_LOG" 2>/dev/null || true
+}
 
 # Regenerate the one-screen $STATE/STATUS.md digest. Cheap, read-only, never fatal. Written to a temp then
 # mv'd so a concurrent reader never sees a half-written file.
@@ -1622,7 +1642,9 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
      && { [ "${w_pct:-0}" -ge "$WINDOW_WAIT_AT" ] || [ "${w_cut:-}" = cut ]; }; then
     local w_until=$(( w_reset + 120 )); [ "$w_until" -gt $(( w_now + 18600 )) ] && w_until=$(( w_now + 18600 ))
     log "usage window ${w_pct}% used$( [ "${w_cut:-}" = cut ] && echo ', and the last session was cut off by it') — waiting until $(date -r "$w_until" '+%H:%M') for the reset."
+    local w_t0; w_t0=$(date +%s)
     while [ "$(date +%s)" -lt "$w_until" ]; do sleep 60; done
+    usage_row wait "$w_t0" "$(date +%s)" - - - "${w_pct:-} ${w_reset:-}" "" "${w_cut:-}"
   fi
 
   # 3e. Effort per item (owner, 2026-09-26). The item at the head of the queue gets its session at max
@@ -1745,6 +1767,17 @@ culprits are per-worktree build/ directories and Tools/mutation-out/. Free some 
     w_cutoff=1
   fi
   [ -n "$w_line" ] && echo "$w_line$( [ "$w_cutoff" = 1 ] && echo ' cut')" > "$WINDOW_LAST"
+  # Usage ledger row: the session's first window reading, and the peak of each window it saw (a session
+  # that spans a reset saw two). A fast-fail has no reading and leaves both blank.
+  local u_all u_end; u_end=$(date +%s)
+  u_all="$(grep -o '"five_hour":{"utilization":[0-9.]*,"resetsAt":[0-9]*' "$SLOG" 2>/dev/null \
+    | sed -E 's/.*"utilization":([0-9.]*),"resetsAt":([0-9]*)/\1 \2/' \
+    | awk '{printf "%d %s\n", $1*100 + 0.5, $2}')"
+  usage_row session "$(( u_end - (SECONDS - _t0) ))" "$u_end" "${head_tag:--}" "$eff" "$rc" \
+    "$(printf '%s\n' "$u_all" | head -1)" \
+    "$(printf '%s\n' "$u_all" | awk 'NF==2{if(!($2 in m)){o[++n]=$2; m[$2]=$1} else if($1>m[$2]) m[$2]=$1}
+                                    END{for(i=1;i<=n;i++) printf "%s%s %s", (i>1?";":""), m[o[i]], o[i]}')" \
+    "$( [ "$w_cutoff" = 1 ] && echo cut)"
   if [ -n "$fp_after" ] && [ "$fp_after" != "$fp_before" ]; then
     note_progress
     if [ "$w_cutoff" = 1 ]; then
