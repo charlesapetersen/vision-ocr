@@ -1,20 +1,42 @@
 # truth-calibrate, 2026-09-29. App at 246f3d5 (score-gate, default settings) on scans made by ops/truth/make-scans.sh.
 # Truth: the source's own PDFKit text (real) or synth-pages' .txt (synthetic). wer is order-sensitive; bag is order-free lost words.
-# reader_* columns: the procedure (ops/truth/procedure.md v1) has NOT been run yet; pending the next session.
+# reader_* columns: see the per-page block below (procedure v2, one page per layout and kind). Real-book rows: the truth is Canby's own layer, which is old OCR (ERACE, gUINN 1::), so the app's real-book figures above are against a flawed truth.
 scan	layout	pages	truth_words	app_wer	app_bag_lost	app_missing_lines	reader_wer	reader_skipped_lines	usage_per_page
-clean	foot	4	3511	0.54%	0.54%	0	pending	pending	pending
-clean	one	4	3600	1.00%	1.00%	0	pending	pending	pending
-clean	real-book	4	1339	32.19%	2.69%	1	pending	pending	pending
-clean	real-magazine	4	2807	26.86%	3.67%	11	pending	pending	pending
-clean	small	4	3600	0.14%	0.14%	0	pending	pending	pending
-clean	table	4	908	53.41%	30.62%	92	pending	pending	pending
-clean	three	4	6312	0.06%	0.06%	0	pending	pending	pending
-clean	two	4	4361	0.05%	0.05%	0	pending	pending	pending
-hard	foot	4	3511	2.93%	2.93%	0	pending	pending	pending
-hard	one	4	3600	0.50%	0.47%	0	pending	pending	pending
-hard	real-book	4	1339	7.84%	4.18%	2	pending	pending	pending
-hard	real-magazine	4	2807	17.99%	5.27%	14	pending	pending	pending
-hard	small	4	3600	21.03%	20.83%	0	pending	pending	pending
-hard	table	4	908	30.18%	20.15%	38	pending	pending	pending
-hard	three	4	6312	7.79%	7.76%	0	pending	pending	pending
-hard	two	4	4361	0.80%	0.80%	0	pending	pending	pending
+clean	foot	4	3511	0.54%	0.54%	0	per-page	per-page	per-page
+clean	one	4	3600	1.00%	1.00%	0	per-page	per-page	per-page
+clean	real-book	4	1339	32.19%	2.69%	1	per-page	per-page	per-page
+clean	real-magazine	4	2807	26.86%	3.67%	11	per-page	per-page	per-page
+clean	small	4	3600	0.14%	0.14%	0	per-page	per-page	per-page
+clean	table	4	908	53.41%	30.62%	92	per-page	per-page	per-page
+clean	three	4	6312	0.06%	0.06%	0	per-page	per-page	per-page
+clean	two	4	4361	0.05%	0.05%	0	per-page	per-page	per-page
+hard	foot	4	3511	2.93%	2.93%	0	per-page	per-page	per-page
+hard	one	4	3600	0.50%	0.47%	0	per-page	per-page	per-page
+hard	real-book	4	1339	7.84%	4.18%	2	per-page	per-page	per-page
+hard	real-magazine	4	2807	17.99%	5.27%	14	per-page	per-page	per-page
+hard	small	4	3600	21.03%	20.83%	0	per-page	per-page	per-page
+hard	table	4	908	30.18%	20.15%	38	per-page	per-page	per-page
+hard	three	4	6312	7.79%	7.76%	0	per-page	per-page	per-page
+hard	two	4	4361	0.80%	0.80%	0	per-page	per-page	per-page
+
+# Per page, 2026-09-29 second session: one page (seed 1, or p2 for real) per layout and kind. fair_lost = order-free lost truth words after folding case and punctuation,
+# splitting on dashes and merging truth fragments (apply-check.py). reader_fair_lost is procedure v2, over uncontested words only; reader_nocheck is the transcript before any check.
+# checked = reader words that differed from the app's reading and were cross-checked; contested = v2 words left unscored; 'not run' = no cross-check (v2 can only lower the error).
+# reader_missing_lines = truth lines of 3+ words with under half their words in the transcript. Usage: reader subagent tokens and seconds (a check reader: ~37k tokens per 50 words).
+scan	page	truth_words	reader_fair_lost	reader_nocheck	app_fair_lost	checked	contested_v2	reader_fair_lost_v1_check	reader_missing_lines	reader_tokens	reader_seconds	fit
+clean	canby-2	82	8.54%	8.54%	7.32%	not run	not run	not run	0	45362	46	not calibrated: the source layer is old OCR, so no truth; transcript matches the page by eye
+hard	canby-2	82	8.54%	8.54%	14.63%	not run	not run	not run	0	45769	50	not calibrated: the source layer is old OCR, so no truth; transcript matches the page by eye
+clean	davis-2	889	0.22%	0.22%	0.45%	not run	not run	not run	0	53786	97	waiver: fails as written; both lost words are one scorer artefact (jour- at a column end), which the app loses too
+hard	davis-2	889	0.22%	0.22%	1.23%	not run	not run	not run	0	52128	95	yes
+clean	foot-1	856	0.00%	0.00%	0.47%	not run	not run	not run	0	50120	77	yes
+hard	foot-1	856	0.00%	0.00%	1.75%	24	14	0.47%	0	52894	93	yes
+clean	one-1	900	0.00%	0.00%	3.89%	35	1	0.11%	0	48021	54	yes
+hard	one-1	900	0.00%	0.00%	0.44%	not run	not run	not run	0	53400	98	yes
+clean	small-1	900	0.00%	0.00%	0.00%	not run	not run	not run	0	46927	53	yes
+hard	small-1	900	0.66%	1.22%	17.67%	208	144	11.55%	0	53605	76	yes
+clean	table-1	227	0.00%	0.00%	26.87%	not run	not run	not run	0	45879	41	yes
+hard	table-1	227	0.00%	0.00%	30.84%	not run	not run	not run	0	46492	54	yes
+clean	three-1	1588	0.00%	0.00%	0.00%	not run	not run	not run	0	52995	117	yes
+hard	three-1	1588	0.32%	0.44%	4.91%	111	40	2.77%	0	58687	119	yes
+clean	two-1	1092	0.00%	0.00%	0.00%	not run	not run	not run	0	46852	60	yes
+hard	two-1	1092	0.09%	0.09%	0.46%	8	1	0.18%	0	51381	95	yes

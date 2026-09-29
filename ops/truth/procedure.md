@@ -1,4 +1,4 @@
-# The reading procedure — version 1 (2026-09-29, draft, not yet calibrated)
+# The reading procedure — version 2 (2026-09-29, calibrated by `truth-calibrate`)
 
 `truth-calibrate` measures this procedure against known text; `truth-set` uses it unchanged. A transcript
 records the version it was made with. Change the version number with any change to a prompt, a size or a
@@ -15,10 +15,17 @@ resolution, and measure again.
 3. Give the reader the READER prompt below, the crop list and a crop command. Give it nothing else: not
    the PDF, its text layer, Vision's output or the app's output.
 4. Cross-check: align the transcript with Vision's reading of the source render and with the source's own
-   text layer where there is one. For each word where they differ, and each line only one of them has, cut
-   a tight crop (the word's box plus 10 px) and give a fresh reader the CHECK prompt. Its reading stands.
-   `?` from it marks the word `contested`; contested words are not scored. This applies to words, never to
-   pages.
+   text layer where there is one (`xcheck.py spots`). For each reader word where they differ, cut a crop of
+   that word's ink plus 10 px (`wordcrops.py`, which finds the word from gaps in the line's ink, enlarged
+   2.5x when under 100 px tall). Shuffle the crops of all pages together and give each fresh reader about 50
+   of them with the CHECK prompt, so no reader sees a sentence. **The check never replaces a word.** Where
+   its reading differs from the reader's (case and punctuation folded), or is `?`, the word is `contested`
+   and is not scored (`apply-check.py`, `V2=1`). This applies to words, never to pages.
+
+   Version 1 let the check reading stand. Measured on five scans it made every one worse (three-column
+   hard 10 -> 57 lost words, 6.5 pt hard 36 -> 128), because a single word read "character for character"
+   off a 1-bit scan copies the broken glyphs (`funcral`, `Lifc`, `hccl`) that the reader, seeing the line,
+   read correctly. See `TRUTH-CALIBRATE-2026-09-29.tsv`.
 
 ## READER prompt (verbatim)
 
@@ -49,3 +56,8 @@ resolution, and measure again.
 
 `$STATE/truth/<doc>/p<N>/transcript.txt`, `objects.txt`, `contested.tsv`, and `meta.txt` holding the
 procedure version, the source file's SHA-256, the dpi and the reader's usage.
+
+Measured cost (2026-09-29, 16 pages): a reader uses 45-59k subagent tokens and 1-2 minutes a page, about
+$0.40; a check reader about 37k tokens per 50 words. Scoring against a source layer: fold case and
+punctuation, split on dashes, and merge truth fragments whose join the transcript holds (`apply-check.py`),
+because PDFKit extracts some born-digital layers with words broken apart (Davis: `Cali for nia`).

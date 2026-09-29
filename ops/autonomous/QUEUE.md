@@ -538,7 +538,7 @@ say so in the commit.
       (origin: BUGS.md C47)
   - [x] **c47-jbig2-forms** — JBIG2 scans drawn through a form, drawn upside down, or hanging off the sheet
         keep their stream, and finished files pack their objects. (context: BUGS.md C47)
-- [ ] **truth-calibrate** — test the reading procedure on pages whose text is known, and fix it, before any
+- [x] **truth-calibrate** — test the reading procedure on pages whose text is known, and fix it, before any
       truth is made. (effort: medium)
       WHY. Both stress tests so far (`corpus-stress`, `ux-run`) took Vision's reading of the source as the
       reference for Find and Copy, so a word Vision misreads the same way in source and output passes. The
@@ -587,6 +587,11 @@ say so in the commit.
       PROGRESS 2026-09-29: the tools, the 64 scans and the app half are done (`ops/truth/STATUS.md`,
       `TRUTH-CALIBRATE-2026-09-29.tsv`). `testdocs/` has only 9 born-digital pages, so 24 are synthetic. The
       reader half is not yet run. Found: clean tables lose 27-35% of cells from the text layer.
+      DONE 2026-09-29, second session, one page per kind: procedure v2 is fit for every synthetic layout
+      and the magazine page (reader 0-0.66% lost against the app's 0-30.8%, no skipped line; Davis clean
+      on a waiver for a scorer artefact). v1's cross-check made readings worse and is replaced. Canby's
+      layer is old OCR, so real-book pages are not calibrated: `truth-set` scores them only for lost lines
+      and blocks (`ops/truth/STATUS.md`).
 - [ ] **truth-set** — make the truth for about 220 real pages with the procedure `truth-calibrate` fixed.
       (blocked-on: truth-calibrate) (effort: medium)
       THE PAGES, committed first as `TRUTH-PAGES-<date>.tsv` (document, page, why chosen, status):
