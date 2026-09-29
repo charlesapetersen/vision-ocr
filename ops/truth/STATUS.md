@@ -74,3 +74,11 @@ with no check. The rate is an upper bound for that reason. Why p4's 7 are two li
 missed and a crop edge split; Briefer's 7 are broken glyphs and `(11" x 17")`. Cost: about 1% of the
 window a page. **Next:** Hughes 2 and 8 (the selftest's last two), then the testdocs pages of the
 regression set, then the draws in list order; Hughes p3 again.
+
+**Batch 3 (b3), 2026-09-29 (started at 92% of the window, so no subagents):** the selftest's last two
+pages, Hughes 2 and 8, read in-session as in b2 (`reader_tokens=session-inline`, spots unchecked, so
+counted contested). 1,400 words, 9 contested (0.64%): Hughes 8's 6 are the dots of two ellipses, which
+`wordcrops.py` crops as lone `.` tokens; Hughes 2's 3 are `vari-`, `continued` (a stray mark beside it) and
+`Work-`/`ers`. All 8 selftest pages are now done. Rate by route over every done page: dct 0/182, jbig2
+10/6,131 (0.16%), layered 12/2,926 (0.41%), no-image 1/435 (0.23%), unknown 57/5,602 (1.02%). **Next:** the
+16 testdocs pages of the regression set (Zarifa 92 first, in list order), then the draws; Hughes p3 again.
