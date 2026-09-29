@@ -618,6 +618,10 @@ say so in the commit.
       blocked the reader twice). 11,015 words, 57 contested (0.52%; 0.13% without the newspaper page); the
       rate by route is in `ops/truth/STATUS.md`, with the tools, the cost (about 32% of the five-hour window
       for 21 pages) and the next batch. (context: truth-set)
+- [x] **truth-set-b2** — batch 2: six of the eight `ux-harness-selftest` pages (Why 3, 4, 7; Briefer 2,
+      5, 6). 3,218 words, 14 contested (0.44%), read in-session and with the spots unchecked because the
+      session started at 86% of the window (`ops/truth/STATUS.md`). Hughes 2 and 8 move to batch 3.
+      (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

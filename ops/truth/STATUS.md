@@ -63,3 +63,14 @@ again; `prep-page.sh` needs `TESTDOCS=/Users/cp1/Claude/vision-ocr/testdocs` whe
 - The contested rate is high on dense newsprint (Raskin) partly from the instrument: where the ink gaps do
   not match the line's word count, `wordcrops.py` cuts the nearest gap, often the word beside the spot.
   Those crops are contested 14 of 41 times against 17 of 182. Safe (the word is not scored), not fixed.
+
+**Batch 2 (b2), 2026-09-29 (a session that started at 86% of the window, so no subagents):** six of
+the eight selftest pages: Why 3, 4, 7 and Briefer 2, 5, 6. 3,218 words, 14 contested (0.44%). Two
+departures from the procedure, both recorded in each page's `meta.txt` as `reader_tokens=session-inline`:
+the session read the crops itself with the READER prompt instead of a reader subagent (it opened only
+the crops and never the page's Vision or layer text before writing the transcript), and no check
+subagent read the 14 spots, so every one counts as contested, as `contest.py` already does for a spot
+with no check. The rate is an upper bound for that reason. Why p4's 7 are two lines page-level Vision
+missed and a crop edge split; Briefer's 7 are broken glyphs and `(11" x 17")`. Cost: about 1% of the
+window a page. **Next:** Hughes 2 and 8 (the selftest's last two), then the testdocs pages of the
+regression set, then the draws in list order; Hughes p3 again.

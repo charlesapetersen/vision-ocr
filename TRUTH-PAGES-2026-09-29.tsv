@@ -189,12 +189,12 @@ magazineArticle/Kristol_1960_High, Low, and Modern_Encounter.pdf	1	ux-regression
 report/AI 2027.pdf	54	ux-regression set	jbig2	todo
 newspaperArticle/_1941_Fiedler's hiring at UM announced_Helena Independent.pdf	1	ux-regression set	newspaper	todo
 bookSection/Allen_2011_The Origins of Political Philosophy_Oxford University Press.pdf	8	ux-regression set	jbig2	todo
-owner/1954 - Why.pdf	3	ux-harness selftest	jbig2	todo
-owner/1954 - Why.pdf	4	ux-harness selftest	layered	todo
-owner/1954 - Why.pdf	7	ux-harness selftest	layered	todo
-owner/1951 - Briefer Book Notes.pdf	2	ux-harness selftest	jbig2	todo
-owner/1951 - Briefer Book Notes.pdf	5	ux-harness selftest	jbig2	todo
-owner/1951 - Briefer Book Notes.pdf	6	ux-harness selftest	jbig2	todo
+owner/1954 - Why.pdf	3	ux-harness selftest	jbig2	done b2: words=312 contested=0
+owner/1954 - Why.pdf	4	ux-harness selftest	layered	done b2: words=514 contested=7
+owner/1954 - Why.pdf	7	ux-harness selftest	layered	done b2: words=483 contested=0
+owner/1951 - Briefer Book Notes.pdf	2	ux-harness selftest	jbig2	done b2: words=672 contested=3
+owner/1951 - Briefer Book Notes.pdf	5	ux-harness selftest	jbig2	done b2: words=588 contested=4
+owner/1951 - Briefer Book Notes.pdf	6	ux-harness selftest	jbig2	done b2: words=649 contested=0
 owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	2	ux-harness selftest	unknown	todo
 owner/Hughes - The Knitting of Racial Groups in Industry (Desktop copy 2026-09-26).pdf	8	ux-harness selftest	unknown	todo
 document/Stanford_1891_Jane Stanford opening day speech (undelivered).pdf	4	non-text candidate, source colour 0.78	layered	todo
