@@ -19120,6 +19120,19 @@ where the source's own layer is 38 (a band over the lower two fifths of the lett
 `___ 2`'s headline 8.4. `headroom` divides the gap to the nearest baseline by 1.5 whatever the two lines'
 sizes, as 1.14.0 did; it is not the cap.
 
+#### 2026-09-28, third session (medium effort): bound spent, item moved behind the queue's other product items
+
+The item's BOUND is one code commit, and max effort allows one more (QUEUE.md rule 7); ff25f3b and 4657cff
+used both, so no third code commit is allowed on it. This session made no measurement. The two pages still
+failing, Marth p2 and Cong p16, fail inside PDFKit's own block grouping, which breaks where a line is
+taller or thinner than its column and flips with changes of 2 pt (above). **Recommended next approach**
+[reasoned]: give each column's lines one height and one baseline pitch in the writer, chosen per column,
+instead of per-line ceilings, so PDFKit sees a uniform block; then fix Marth's drop cap and C44 tail
+separately. Rejected in this session: a third commit under the spent bound; closing `WONTFIX` (not allowed
+before a second max-effort session, rule 8, and Riesman shows the defect is reachable). The item now sits
+after `c41-newspaper-scans`, so that c50, c49, c48, c47, c28 and c41, none of which has been attempted, come
+first. It comes back with a new bound when it reaches the head of the queue again.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

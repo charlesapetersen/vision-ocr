@@ -502,11 +502,6 @@ say so in the commit.
       DONE WHEN: converting Hyman at default settings reports the marks it left, by type; a document with
       only wrapper `Link`s reports nothing; a check goes red without it.
       BOUND: one code commit. (origin: BUGS.md C45)
-- [ ] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses.
-      DONE WHEN, through PDFKit: a drag down each column of Riesman_1949 p2, Marth_1982 p2 and
-      `_1953_99 Cong_ 2` p16 copies that column's lines in order and nothing from its neighbour, checked
-      against the source's own text layer's drag; C34's pages are no worse.
-      BOUND: one code commit. (origin: BUGS.md C52)
 - [ ] **c50-typewriter-reads** — find out whether recognising the grey source instead of the 1-bit
       rebuild reads typewritten and low-resolution pages better, and ship it if it does.
       DONE WHEN: on Ries p54, NYSE p110, GELFAND p106 and Xin Qu p24, dictionary words in the output's
@@ -578,6 +573,14 @@ say so in the commit.
       the change. Drag selection is not in scope (C39 closed it).
       BOUND: one code commit, plus free docs commits.
       (origin: BUGS.md C41)
+- [ ] **c52-column-jumps** — make a drag down one column stay in it on the pages C34 still misses.
+      Riesman p2 is fixed (ff25f3b, 4657cff); Marth p2 and Cong p16 are not. The first bound was spent
+      by those two commits, and the item was moved here on 2026-09-28 so the unattempted items above go
+      first. Start from C52's recommended next approach (one height and pitch per column).
+      DONE WHEN, through PDFKit: a drag down each column of Riesman_1949 p2, Marth_1982 p2 and
+      `_1953_99 Cong_ 2` p16 copies that column's lines in order and nothing from its neighbour, checked
+      against the source's own text layer's drag; C34's pages are no worse.
+      BOUND: one code commit. (origin: BUGS.md C52)
 
 ## Parked
 
