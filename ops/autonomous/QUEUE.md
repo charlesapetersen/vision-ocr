@@ -584,6 +584,9 @@ say so in the commit.
       exact-truth result in their own right.
       BOUND: one session, and one more if the procedure has to be changed and measured again.
       (context: owner request 2026-09-29)
+      PROGRESS 2026-09-29: the tools, the 64 scans and the app half are done (`ops/truth/STATUS.md`,
+      `TRUTH-CALIBRATE-2026-09-29.tsv`). `testdocs/` has only 9 born-digital pages, so 24 are synthetic. The
+      reader half is not yet run. Found: clean tables lose 27-35% of cells from the text layer.
 - [ ] **truth-set** — make the truth for about 220 real pages with the procedure `truth-calibrate` fixed.
       (blocked-on: truth-calibrate) (effort: medium)
       THE PAGES, committed first as `TRUTH-PAGES-<date>.tsv` (document, page, why chosen, status):

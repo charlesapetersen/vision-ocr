@@ -1,0 +1,20 @@
+# truth-calibrate, 2026-09-29. App at 246f3d5 (score-gate, default settings) on scans made by ops/truth/make-scans.sh.
+# Truth: the source's own PDFKit text (real) or synth-pages' .txt (synthetic). wer is order-sensitive; bag is order-free lost words.
+# reader_* columns: the procedure (ops/truth/procedure.md v1) has NOT been run yet; pending the next session.
+scan	layout	pages	truth_words	app_wer	app_bag_lost	app_missing_lines	reader_wer	reader_skipped_lines	usage_per_page
+clean	foot	4	3511	0.54%	0.54%	0	pending	pending	pending
+clean	one	4	3600	1.00%	1.00%	0	pending	pending	pending
+clean	real-book	4	1339	32.19%	2.69%	1	pending	pending	pending
+clean	real-magazine	4	2807	26.86%	3.67%	11	pending	pending	pending
+clean	small	4	3600	0.14%	0.14%	0	pending	pending	pending
+clean	table	4	908	53.41%	30.62%	92	pending	pending	pending
+clean	three	4	6312	0.06%	0.06%	0	pending	pending	pending
+clean	two	4	4361	0.05%	0.05%	0	pending	pending	pending
+hard	foot	4	3511	2.93%	2.93%	0	pending	pending	pending
+hard	one	4	3600	0.50%	0.47%	0	pending	pending	pending
+hard	real-book	4	1339	7.84%	4.18%	2	pending	pending	pending
+hard	real-magazine	4	2807	17.99%	5.27%	14	pending	pending	pending
+hard	small	4	3600	21.03%	20.83%	0	pending	pending	pending
+hard	table	4	908	30.18%	20.15%	38	pending	pending	pending
+hard	three	4	6312	7.79%	7.76%	0	pending	pending	pending
+hard	two	4	4361	0.80%	0.80%	0	pending	pending	pending
