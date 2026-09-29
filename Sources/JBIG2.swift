@@ -116,7 +116,8 @@ enum JBIG2 {
         /// C37. On a `.jbig2` page, where its stream goes, in points, and the
         /// stream's own pixel size, when it is a kept source image placed on part
         /// of the sheet. nil: the whole sheet, at `pixelWidth` by `pixelHeight`.
-        var placement: (rect: CGRect, width: Int, height: Int)? = nil
+        /// `flipped`: drawn upside down, as the source drew it (C47).
+        var placement: (rect: CGRect, width: Int, height: Int, flipped: Bool)? = nil
         /// C37. A 1-bit JBIG2 stencil drawn black over a placed stream: the ink
         /// the source page draws over its image, such as JSTOR's download line.
         var overlay: (stream: URL, width: Int, height: Int, rect: CGRect)? = nil
@@ -198,10 +199,35 @@ enum JBIG2 {
             if let one = dict["/Filter"] as? String { return [one] }
             return dict["/Filter"] as? [String] ?? []
         }
+        /// A dictionary, direct or by reference.
+        func dictionary(_ value: Any?) -> [String: Any]? {
+            if let ref = value as? String, ref.hasSuffix(" R") {
+                let object = objects["obj:" + ref] as? [String: Any]
+                return object?["value"] as? [String: Any]
+                    ?? (object?["stream"] as? [String: Any])?["dict"] as? [String: Any]
+            }
+            return value as? [String: Any]
+        }
+        /// C47. qpdf lists only the images a page names itself. A page whose own
+        /// resources name one form, whose own resources name one image, draws
+        /// that image: `Flattener.soleImageStream`'s rule, which the render proves.
+        func formImage(_ page: [String: Any]) -> [String: Any]? {
+            let resources = dictionary(dictionary(page["object"])?["/Resources"])
+            guard let xobjects = dictionary(resources?["/XObject"]), xobjects.count == 1,
+                  let formRef = xobjects.values.first,
+                  let form = dictionary(formRef), form["/Subtype"] as? String == "/Form",
+                  let inner = dictionary(dictionary(form["/Resources"])?["/XObject"]),
+                  inner.count == 1, let imageRef = inner.values.first as? String,
+                  let image = dictionary(imageRef), image["/Subtype"] as? String == "/Image"
+            else { return nil }
+            return ["object": imageRef, "width": image["/Width"] as Any,
+                    "height": image["/Height"] as Any]
+        }
         var found: [Int: SourceImage] = [:]
         for (index, page) in pages.enumerated() {
-            guard let images = page["images"] as? [[String: Any]], images.count == 1,
-                  let image = images.first,
+            let listed = page["images"] as? [[String: Any]] ?? []
+            guard let image = listed.count == 1 ? listed.first
+                      : listed.isEmpty ? formImage(page) : nil,
                   let width = image["width"] as? Int, let height = image["height"] as? Int,
                   let data = stream(image["object"]),
                   // Still filtered in the file qpdf wrote, so these are the raw bytes.
@@ -565,14 +591,18 @@ enum JBIG2 {
             case .jbig2 where page.placement != nil || page.overlay != nil:
                 // C37. A kept stream on its own rect, then the ink over it, black.
                 var drawn = ""
-                for (name, rect) in [("/Im0 Do", page.placement?.rect),
-                                     ("0 g /Im1 Do", page.overlay?.rect)] {
+                for (name, rect, flipped) in [("/Im0 Do", page.placement?.rect,
+                                               page.placement?.flipped ?? false),
+                                              ("0 g /Im1 Do", page.overlay?.rect, false)] {
                     guard let rect else { continue }
-                    guard let x = trimOffset(rect.minX), let y = trimOffset(rect.minY),
+                    // C47. A flipped stream is drawn as its source drew it: from
+                    // the rect's top, downwards, so its first row lands at the foot.
+                    guard let x = trimOffset(rect.minX),
+                          let y = trimOffset(flipped ? rect.maxY : rect.minY),
                           let rw = trim(rect.width), let rh = trim(rect.height) else {
                         throw Failure.badPageBox(page: i + 1, size: rect.size)
                     }
-                    drawn += "q \(rw) 0 0 \(rh) \(x) \(y) cm \(name) Q\n"
+                    drawn += "q \(rw) 0 0 \(flipped ? "-" : "")\(rh) \(x) \(y) cm \(name) Q\n"
                 }
                 content = page.placement == nil
                     ? "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n" + drawn : drawn
@@ -1651,5 +1681,45 @@ enum JBIG2 {
 
         // One step, so a failed swap cannot leave the finished file deleted.
         _ = try FileManager.default.replaceItemAt(file, withItemAt: patched)
+    }
+
+    /// C47. The finished file with its dictionaries packed into object streams,
+    /// as the compact sources store theirs: Keyssar 184,799 -> 155,630 B, most of
+    /// it the page, font and outline dictionaries this build writes out plain.
+    /// Kept only when qpdf succeeds without a warning, every page's contents and
+    /// images read back the same, and the file is smaller;
+    /// otherwise the file is left as it was, since nothing in it is lost either way.
+    static func packObjects(in file: URL, using qpdf: String,
+                            register: (Process) -> Void = { _ in }) {
+        let packed = file.deletingLastPathComponent()
+            .appendingPathComponent("packed-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: packed) }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: qpdf)
+        process.arguments = ["--object-streams=generate", file.path, packed.path]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return }
+        register(process)
+        process.waitUntilExit()
+        func size(_ url: URL) -> Int {
+            ((try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? Int) ?? 0
+        }
+        // Every page's contents and images, as `carryDocumentInfo` checks its own
+        // rewrite: a page count alone would pass a page qpdf had to repair.
+        func fingerprint(_ url: URL) -> [String]? {
+            guard let out = try? runQPDF([url.path, "--json=2", "--json-stream-data=none",
+                                          "--json-key=pages"], using: qpdf, register: register),
+                  let described = (try? JSONSerialization.jsonObject(with: out)) as? [String: Any]
+            else { return nil }
+            return pageFingerprint(described)
+        }
+        guard process.terminationStatus == 0,
+              size(packed) > 0, size(packed) < size(file),
+              let before = CGPDFDocument(file as CFURL)?.numberOfPages,
+              CGPDFDocument(packed as CFURL)?.numberOfPages == before,
+              let was = fingerprint(file), was.count == before, fingerprint(packed) == was
+        else { return }
+        _ = try? FileManager.default.replaceItemAt(file, withItemAt: packed)
     }
 }

@@ -6212,12 +6212,163 @@ do {
             check("C37: …and the page under the download line keeps a text layer",
                   (jstorOutDoc?.page(at: 0)?.string ?? "").contains("Invoice"),
                   jstorOutDoc?.page(at: 0)?.string ?? "nil")
+
+            // C47. The same stream three more ways the corpus draws it: through a
+            // form with its own /Matrix (Keyssar, Stiglitz), upside down (w5093), and
+            // hanging 0.6 pt over the sheet's edge (w5093 p5). Each was re-encoded.
+            let c47Sheets: [(box: String, resources: String, content: String)] = [
+                ("0 0 \(w + 40) \(h + 30)", "/XObject << /Fm0 6 0 R >>", "q /Fm0 Do Q\n"),
+                ("0 0 \(w) \(h)", "/XObject << /Im0 4 0 R >>", "q \(w) 0 0 -\(h) 0 \(h) cm /Im0 Do Q\n"),
+                ("0 0 \(w - 0.6) \(h)", "/XObject << /Im0 4 0 R >>", "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"),
+            ]
+            pdf = Data("%PDF-1.4\n".utf8); offsets = []
+            let formContent = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
+            let c47Kids = c47Sheets.indices.map { "\(7 + 2 * $0) 0 R" }.joined(separator: " ")
+            object(1, "<< /Type /Catalog /Pages 2 0 R >>")
+            object(2, "<< /Type /Pages /Count \(c47Sheets.count) /Kids [ \(c47Kids) ] >>")
+            object(3, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+            object(4, "<< /Type /XObject /Subtype /Image /Width \(pw) /Height \(ph) /ColorSpace /DeviceGray "
+                      + "/BitsPerComponent 1 /Filter /JBIG2Decode /DecodeParms << /JBIG2Globals 5 0 R >> "
+                      + "/Length \(imageBytes.count) >>", imageBytes)
+            object(5, "<< /Length \(globalsBytes.count) >>", globalsBytes)
+            object(6, "<< /Type /XObject /Subtype /Form /BBox [ 0 0 \(w) \(h) ] /Matrix [ 1 0 0 1 20 10 ] "
+                      + "/Resources << /XObject << /Im0 4 0 R >> >> /Length \(formContent.utf8.count) >>",
+                   Data(formContent.utf8))
+            for (i, sheet) in c47Sheets.enumerated() {
+                object(7 + 2 * i, "<< /Type /Page /Parent 2 0 R /MediaBox [ \(sheet.box) ] "
+                               + "/Resources << \(sheet.resources) >> /Contents \(8 + 2 * i) 0 R >>")
+                object(8 + 2 * i, "<< /Length \(sheet.content.utf8.count) >>", Data(sheet.content.utf8))
+            }
+            let c47Xref = pdf.count
+            pdf += Data("xref\n0 \(offsets.count + 1)\n0000000000 65535 f \n".utf8)
+            for o in offsets { pdf += Data(String(format: "%010d 00000 n \n", o).utf8) }
+            pdf += Data("trailer\n<< /Size \(offsets.count + 1) /Root 1 0 R >>\nstartxref\n\(c47Xref)\n%%EOF\n".utf8)
+            let c47 = dir.appendingPathComponent("c47.pdf")
+            try? pdf.write(to: c47)
+            let c47Doc = PDFDocument(url: c47)
+            let c47PNGs = dir.appendingPathComponent("c47-pages")
+            try? FileManager.default.createDirectory(at: c47PNGs, withIntermediateDirectories: true)
+            let kept = (try? Flattener.flatten(c47, to: dir.appendingPathComponent("c47-r.pdf"),
+                                               mode: .blackAndWhite, pngDirectory: c47PNGs,
+                                               keepSourceJBIG2: true)) ?? []
+            let described = kept.map {
+                "\($0.matchesSourceJBIG2) \(String(describing: $0.sourceJBIG2Placement?.rect)) "
+                    + "\(String(describing: $0.sourceJBIG2Placement?.flipped))"
+            }.joined(separator: "; ")
+            check("C47: a scan drawn through a form is its image, at the form's place",
+                  c47Doc?.pageCount == 3 && kept.count == 3 && kept[0].matchesSourceJBIG2
+                      && kept[0].sourceJBIG2Placement?.rect == CGRect(x: 20, y: 10, width: w, height: h)
+                      && kept[0].sourceJBIG2Placement?.flipped == false, described)
+            check("C47: …a scan drawn upside down is its image, flipped",
+                  kept.count == 3 && kept[1].matchesSourceJBIG2
+                      && kept[1].sourceJBIG2Placement?.flipped == true, described)
+            check("C47: …and a scan hanging 0.6 pt over the sheet's edge is its image",
+                  kept.count == 3 && kept[2].matchesSourceJBIG2, described)
+            let c47Out = dir.appendingPathComponent("c47.ocr.pdf")
+            var c47Outcome: Runner.Result.Outcome?
+            OCRModel.makeSearchablePDF(file: c47, output: c47Out, rebuild: true, rebuildMode: .auto,
+                                       password: nil, control: RunControl(),
+                                       progress: { _, _ in }, report: { o, _ in c47Outcome = o })
+            let c47Streams = streams(c47Out)
+            check("C47: all three publish the source's stream",
+                  c47Outcome == .succeeded && c47Streams.images.count == 3
+                      && c47Streams.images.allSatisfy { $0 == imageBytes },
+                  "\(String(describing: c47Outcome)) \(c47Streams.images.map(\.count)) B")
+            let c47OutDoc = PDFDocument(url: c47Out)
+            var c47Renders: [String] = []
+            for i in 0..<3 {
+                guard let a = c47Doc?.page(at: i), let b = c47OutDoc?.page(at: i) else {
+                    c47Renders.append("no page \(i + 1)"); continue
+                }
+                let box = a.bounds(for: .mediaBox), scale = CGFloat(pw) / w
+                let rw = Int((box.width * scale).rounded()), rh = Int((box.height * scale).rounded())
+                let ra = Flattener.renderGrey(a, box: box, scale: scale, width: rw, height: rh) ?? []
+                let rb = Flattener.renderGrey(b, box: b.bounds(for: .mediaBox), scale: scale,
+                                              width: rw, height: rh) ?? []
+                let ink = ra.filter { $0 < 128 }.count
+                let differ = zip(ra, rb).filter { ($0 < 128) != ($1 < 128) }.count
+                if ra.count != rw * rh || rb.count != ra.count || ink == 0 || differ != 0
+                    || b.bounds(for: .mediaBox).size != box.size {
+                    c47Renders.append("page \(i + 1): \(differ) of \(ink) ink pixels differ")
+                }
+            }
+            check("C47: …and each renders as its source, pixel for pixel", c47Renders.isEmpty,
+                  c47Renders.joined(separator: "; "))
+            let c47Bytes = (try? Data(contentsOf: c47Out)) ?? Data()
+            check("C47: the finished file packs its dictionaries into object streams",
+                  c47Bytes.range(of: Data("/ObjStm".utf8)) != nil && c47OutDoc?.pageCount == 3
+                      && (c47OutDoc?.page(at: 0)?.string ?? "").contains("Invoice"),
+                  "\(c47Bytes.count) B")
+
+            // C47's review. The fixture above has no ink where it hangs off the sheet,
+            // so this one has a bar down its right edge: 1.2 px of it off a sheet
+            // 0.6 pt narrower than the image, and clipped there. And beside the same scan, a pink notice
+            // that a grey proof reads as paper: keeping the stream would drop it.
+            let (ew, eh) = (600, 800)
+            var edgePixels = [UInt8](repeating: 255, count: ew * eh)
+            for y in 40..<(eh - 40) {
+                for x in (ew - 12)..<ew { edgePixels[y * ew + x] = 0 }
+                if y % 40 < 14 { for x in 60..<420 where x % 30 < 22 { edgePixels[y * ew + x] = 0 } }
+            }
+            let edgePNG = dir.appendingPathComponent("c47-edge.png")
+            let edgeStream = dir.appendingPathComponent("c47-edge.jbig2")
+            if let provider = CGDataProvider(data: Data(edgePixels) as CFData),
+               let edgeImage = CGImage(width: ew, height: eh, bitsPerComponent: 8, bitsPerPixel: 8,
+                                       bytesPerRow: ew, space: CGColorSpaceCreateDeviceGray(),
+                                       bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
+                                       decode: nil, shouldInterpolate: false, intent: .defaultIntent),
+               let dest = CGImageDestinationCreateWithURL(edgePNG as CFURL, "public.png" as CFString,
+                                                           1, nil) {
+                CGImageDestinationAddImage(dest, edgeImage, nil)
+                _ = CGImageDestinationFinalize(dest)
+            }
+            try? JBIG2.encode(png: edgePNG, to: edgeStream, using: jb)
+            let edgeBytes = (try? Data(contentsOf: edgeStream)) ?? Data()
+            let edgeSheets: [(box: String, content: String)] = [
+                // Clipped at the sheet's edge, as w5093 clips: the render is not.
+                ("0 0 299.4 400", "q 0 0 299.4 400 re W n q 300 0 0 400 0 0 cm /Im0 Do Q Q\n"),
+                ("0 0 340 440", "q 300 0 0 400 20 20 cm /Im0 Do Q\n"
+                    // Grey ~152, paper to the proof; darkest channel ~102, ink to C49.
+                    // Short, as C49's own fixture is: more colour leaves 1-bit (C32).
+                    + "BT 1 0.4 0.55 rg /F1 12 Tf 22 426 Td (UNZ.ORG) Tj ET\n"),
+            ]
+            pdf = Data("%PDF-1.4\n".utf8); offsets = []
+            object(1, "<< /Type /Catalog /Pages 2 0 R >>")
+            object(2, "<< /Type /Pages /Count 2 /Kids [ 5 0 R 7 0 R ] >>")
+            object(3, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+            object(4, "<< /Type /XObject /Subtype /Image /Width \(ew) /Height \(eh) /ColorSpace /DeviceGray "
+                      + "/BitsPerComponent 1 /Filter /JBIG2Decode /Length \(edgeBytes.count) >>", edgeBytes)
+            for (i, sheet) in edgeSheets.enumerated() {
+                object(5 + 2 * i, "<< /Type /Page /Parent 2 0 R /MediaBox [ \(sheet.box) ] "
+                               + "/Resources << /Font << /F1 3 0 R >> /XObject << /Im0 4 0 R >> >> "
+                               + "/Contents \(6 + 2 * i) 0 R >>")
+                object(6 + 2 * i, "<< /Length \(sheet.content.utf8.count) >>", Data(sheet.content.utf8))
+            }
+            let edgeXref = pdf.count
+            pdf += Data("xref\n0 \(offsets.count + 1)\n0000000000 65535 f \n".utf8)
+            for o in offsets { pdf += Data(String(format: "%010d 00000 n \n", o).utf8) }
+            pdf += Data("trailer\n<< /Size \(offsets.count + 1) /Root 1 0 R >>\nstartxref\n\(edgeXref)\n%%EOF\n".utf8)
+            let edgeFile = dir.appendingPathComponent("c47-edge.pdf")
+            try? pdf.write(to: edgeFile)
+            let edgePNGs = dir.appendingPathComponent("c47-edge-pages")
+            try? FileManager.default.createDirectory(at: edgePNGs, withIntermediateDirectories: true)
+            let edged = edgeBytes.isEmpty ? [] : (try? Flattener.flatten(
+                edgeFile, to: dir.appendingPathComponent("c47-edge-r.pdf"), mode: .auto,
+                pngDirectory: edgePNGs, keepSourceJBIG2: true)) ?? []
+            check("C47: a scan whose inked edge hangs off the sheet is its image",
+                  edged.count == 2 && edged[0].matchesSourceJBIG2,
+                  "\(edgeBytes.count) B stream, \(edged.map(\.matchesSourceJBIG2))")
+            var pinkIsBilevel = false
+            if edged.count == 2, case .bilevel = edged[1].content { pinkIsBilevel = true }
+            check("C47: …but a scan with a pink notice beside it is rebuilt, keeping the notice",
+                  pinkIsBilevel && !edged[1].matchesSourceJBIG2,
+                  "bilevel \(pinkIsBilevel), \(edged.map(\.matchesSourceJBIG2))")
         } else {
             check("C37: a scan placed under a download line is its image plus that line",
                   false, "no dense fixture")
         }
     } else {
-        skipBlock("C37's JBIG2 source end to end", checks: 21,
+        skipBlock("C37's JBIG2 source end to end", checks: 29,
                   because: "jbig2 or qpdf is not installed, so no page takes the JBIG2 route")
     }
     resetPrefs()

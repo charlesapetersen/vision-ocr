@@ -512,12 +512,6 @@ say so in the commit.
       DONE WHEN: `PDFPage.label` on the outputs of Hobsbawm, Bird and Cohen equals the source's on every
       page, and `documentAttributes` Title equals the source's on Countryman and Friedman.
       BOUND: one code commit. (origin: BUGS.md C48)
-- [ ] **c47-compact-sources** — keep a compact source's image streams when the rebuild would be larger:
-      JBIG2 in a Form XObject (Stiglitz, Keyssar), and JPX layers (Berendzen).
-      DONE WHEN: Keyssar, Stiglitz, w5093 and Berendzen publish no larger than their sources plus the size
-      of the text layer the app adds (state both), with PDFKit
-      renders at 2x not visibly worse; corpus bytes before and after are stated.
-      BOUND: one code commit. (origin: BUGS.md C47)
 - [ ] **c50-typewriter-reads** — find out whether recognising the grey source instead of the 1-bit
       rebuild reads typewritten and low-resolution pages better, and ship it if it does.
       DONE WHEN: on Ries p54, NYSE p110, GELFAND p106 and Xin Qu p24, dictionary words in the output's
@@ -529,6 +523,17 @@ say so in the commit.
       `finerReading`'s number guard. Next: make the case in C50, or let a table cell's reading gain a
       decimal point its column's other cells have. BOUND: one code commit.
       (origin: BUGS.md C50)
+- [ ] **c47-compact-sources** — keep a compact source's image streams when the rebuild would be larger:
+      JBIG2 in a Form XObject (Stiglitz, Keyssar), and JPX layers (Berendzen).
+      DONE WHEN: Keyssar, Stiglitz, w5093 and Berendzen publish no larger than their sources plus the size
+      of the text layer the app adds (state both), with PDFKit
+      renders at 2x not visibly worse; corpus bytes before and after are stated.
+      2026-09-29: the JBIG2 half shipped (Keyssar, Stiglitz, w5093 and Eyal-Cohen pass), and the bound is
+      spent, so the item moved behind c50. What is left is Berendzen's layered page (Marth and Levy/Temin
+      are the same shape), and the corpus bytes. C47 names the route a subagent proposed. BOUND: one code commit.
+      (origin: BUGS.md C47)
+  - [x] **c47-jbig2-forms** — JBIG2 scans drawn through a form, drawn upside down, or hanging off the sheet
+        keep their stream, and finished files pack their objects. (context: BUGS.md C47)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation

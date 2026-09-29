@@ -18935,6 +18935,51 @@ has no download line, which may be why C37's keep test misses it [reasoned]. Lay
 Berendzen x1.54 (JPX layers 26K + 20K become one 111K JPEG, mask 77K → 97K), Marth x2.18, Levy/Temin
 x1.58 (full-resolution 2362x3122 JPEGs) [measured].
 
+#### JBIG2 half, 2026-09-29 (`c47-compact-sources`, partial)
+
+Reproduced on main through `score-gate`: Keyssar 140,354 → 410,506 B, Stiglitz 112,811 → 294,258, w5093
+720,482 → 1,600,281, Berendzen 166,716 → 255,909. Three causes, all in C37's keep test [measured]:
+- Keyssar and Stiglitz draw the scan through a form (`/Fm0 Do`, the form `504 0 0 744 0 0 cm /Im0 Do`).
+  `sourceBitmap`, `sourceImagePlacement` and `parseSourceImages` looked only at the page's own XObjects;
+  qpdf lists no image for such a page. `Flattener.soleImageStream` and `JBIG2.parseSourceImages` now follow
+  one form to one image, and the placement composes the form's `/Matrix` with its own `cm`.
+- w5093 draws every scan upside down (`614.4 0 0 -785.76 0 785.52 cm`). A flipped placement is now proved
+  with its rows reversed and published with the same flipped `cm`.
+- 14 of w5093's pages hang up to 0.56 pt off the sheet, and clip there. The edge allowance is now 2 pt,
+  and the proof skips image pixels whose centre is off the sheet, which the published page hides as the
+  source does.
+
+Also: every finished file now goes through `qpdf --object-streams=generate` last (`JBIG2.packObjects`),
+kept only when smaller and its pages fingerprint the same. The review found that a kept page skipped C49,
+so a pink notice a grey proof reads as paper would have vanished. C49's darkening now runs first, on a copy,
+and a page is not kept when it finds ink standing apart from the grey page's (`Flattener.inkApart`).
+Refusing every page with colour ink was tried first and rejected: it un-kept Keyssar (381,372 B), whose
+blue JSTOR link only gains 244 edge pixels, none of them apart.
+
+Source → before → after, and the text layer the app adds (its text forms and font):
+- Keyssar: 140,354 → 410,506 → **155,630 B**; text layer 33,265 B. Scans kept, plus two 2,510 B
+  download-line overlays.
+- Stiglitz: 112,811 → 294,258 → **124,896 B**; text layer 29,163 B. Image streams byte-identical.
+- w5093: 720,482 → 1,600,281 → **791,240 B**; text layer 192,933 B. 63 of 64 scans kept. p57 went back to
+  the encoder, which was 140 B smaller.
+- Characters: 128,005 → 128,004 over the four documents.
+- Also: Eyal-Cohen 1,315,852 → 2,496,684 → **1,267,658 B**, characters 170,641 → 170,638. Boltanski,
+  Levy/Temin and Marth are within 0.3% of before. Boltanski draws a dozen small JPX and Flate patches beside
+  each page's JBIG2, so it is not the one-image shape.
+- ux-regression: 0 worse, 6 better, all on bytes (Dobbin 2,607,114 → 1,495,656 B). Baseline refreshed.
+- DONE WHEN subagent, working from the PDFKit renders at 2x and Find: pass for Keyssar, Stiglitz and w5093. Stiglitz, and 63 of w5093's 64
+  pages, render pixel for pixel as their sources. Keyssar p2 and p3 differ on 0.04% of pixels, in the
+  download line, which is antialiased in the source and 1-bit in the overlay, as in C37. Fail for Berendzen,
+  and corpus bytes are not measured.
+
+**Not fixed: Berendzen**, 255,909 → 254,769 B. Its page is a layered colour scan: two JPX layers and a
+JBIG2 `/Mask`, with ProQuest's visible text under them. It is rebuilt through `mrcLayers`, which has no keep
+path. A subagent read the code (reasoned, not run) and proposed a fix: recognise the page as now, splice the
+source page through as `JBIG2.splice` does for passthrough pages, drop ProQuest's text stream, and overlay
+the app's text layer. That comes to about 189 KB. The rejected alternative was passing such pages through
+unrecognised: 166,716 B, but it keeps ProQuest's OCR instead of the app's. Marth and Levy/Temin are the same
+shape. Corpus-wide bytes are not yet measured.
+
 ### C48 · Page labels and the document title are lost — FIXED 2026-09-29
 
 *(found 2026-09-27 by `ux-read`: `labels` on 21 documents, `title` on 60, and no output has a title.)*

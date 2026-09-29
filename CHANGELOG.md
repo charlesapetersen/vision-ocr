@@ -14,6 +14,9 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- Already-compact JBIG2 scans that were drawn through a form or upside down, such as JSTOR reviews and
+  NBER papers, keep their own image streams instead of being re-encoded at two to three times the size.
+  Every searchable copy is also written more compactly (C47).
 - The searchable copy keeps the original's printed page numbers (i-iv, A-M, "p. 530"), so Preview's page
   field and Go To Page use them, and it keeps the title and author that Preview, Spotlight and Zotero show (C48).
 - In Automatic mode, light coloured type on a page rebuilt in black and white, such as a pink "PRODUCED

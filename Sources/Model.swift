@@ -2123,7 +2123,8 @@ final class OCRModel: ObservableObject {
                             entry.globals = source?.globals
                             entry.globalsAreFlate = source?.globalsAreFlate ?? false
                             if source != nil, let placed = page.sourceJBIG2Placement {
-                                entry.placement = (placed.rect, placed.width, placed.height)
+                                entry.placement = (placed.rect, placed.width, placed.height,
+                                                   placed.flipped)
                                 entry.overlay = overlay
                             }
                             encoded.append(entry)
@@ -2894,6 +2895,10 @@ final class OCRModel: ObservableObject {
                     if control.isCancelled { report(.cancelled, "Cancelled."); return }
                     infoNote = "the original's page numbers and title could not be "
                         + "carried across"
+                }
+                // C47. Last, so no later rewrite unpacks it again.
+                control.adopting { register in
+                    JBIG2.packObjects(in: finished, using: qpdf, register: register)
                 }
             }
             // Last thing before the user's disk is touched.

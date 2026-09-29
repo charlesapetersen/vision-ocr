@@ -1189,6 +1189,7 @@ enum Flattener {
     struct SourcePlacement {
         let width: Int, height: Int
         let rect: CGRect
+        var flipped = false
         var overlay: (png: URL, width: Int, height: Int, rect: CGRect)?
     }
 
@@ -1472,9 +1473,29 @@ enum Flattener {
             // same pixels, not resampled by the pixel or two the sheet's aspect
             // differs by. Only when the caller will keep such a stream: the
             // decode and a possible second render are not free.
+            //
+            // C49 first, on a copy. Coloured type on a page bound for 1-bit is
+            // thresholded by its darkest channel, so a pink notice turns black rather
+            // than vanishing. A page where that finds ink standing apart from the grey
+            // page's is not kept (C47's review): the proofs threshold a grey render,
+            // where the notice is paper, so the kept stream would drop it. Keyssar's
+            // blue JSTOR link only gains edge pixels (244, none apart) and stays kept,
+            // the link in its overlay.
             var sourceDigest: Data?
             var placedSource: PlacedSource?
-            if useBilevel, keepSourceJBIG2, pngDirectory != nil {
+            var inked: [UInt8]?
+            if useBilevel || spotMoved, let thumb,
+               colourInkWorthReading(ofRGBA: thumb.buffer, width: thumb.width,
+                                     height: thumb.height) {
+                var copy = grey
+                if darkenColourInk(&copy, page: page, box: box, scale: scale,
+                                   width: width, height: height, threshold: threshold) > 0 {
+                    inked = copy
+                }
+            }
+            if useBilevel, keepSourceJBIG2, pngDirectory != nil,
+               inked.map({ inkApart(grey, $0, width: width, height: height,
+                                    threshold: threshold) == 0 }) ?? true {
                 if let kept = sourceImageRebuild(of: page, box: box, grey: grey, width: width,
                                                  height: height, threshold: threshold) {
                     grey = kept.grey; width = kept.width; height = kept.height
@@ -1486,19 +1507,15 @@ enum Flattener {
                 }
             }
 
-            // C49. Coloured type on a page bound for 1-bit is thresholded by its
-            // darkest channel, so a pink notice turns black rather than vanishing.
-            // The recogniser takes its lines from the page as it was, `coarse`, and
-            // the words and the lines only this one holds from this: inked, the
-            // notice moved Vision's boxes all over `Kristol_1960` p1, and PDFKit
-            // then read its two columns interleaved (ux-regression wer 0.08 -> 0.77).
-            if useBilevel || spotMoved, sourceDigest == nil, let thumb,
-               colourInkWorthReading(ofRGBA: thumb.buffer, width: thumb.width,
-                                     height: thumb.height) {
+            // C49. The recogniser takes its lines from the page as it was, `coarse`,
+            // and the words and the lines only this one holds from the inked page:
+            // inked, the notice moved Vision's boxes all over `Kristol_1960` p1, and
+            // PDFKit then read its two columns interleaved (ux-regression wer 0.08 ->
+            // 0.77). Never on a kept page, whose pixels are its stream's.
+            if let inked, sourceDigest == nil {
                 let plain = grey
-                if darkenColourInk(&grey, page: page, box: box, scale: scale,
-                                   width: width, height: height, threshold: threshold) > 0,
-                   coarse == nil, pngDirectory != nil {
+                grey = inked
+                if coarse == nil, pngDirectory != nil {
                     coarse = bilevelImage(from: plain, width: width, height: height,
                                           threshold: threshold)
                 }
@@ -1612,7 +1629,7 @@ enum Flattener {
                                             sourceJBIG2Digest: sourceDigest)
                     if let placed = placedSource {
                         var placement = SourcePlacement(width: placed.width, height: placed.height,
-                                                        rect: placed.rect)
+                                                        rect: placed.rect, flipped: placed.flipped)
                         if let overlay = placed.overlay {
                             let url = pngDirectory.appendingPathComponent(stem + "-overlay.png")
                             // Unwritten, the page keeps its encoder rather than
@@ -1993,23 +2010,8 @@ enum Flattener {
     /// Only half of the proof. What the page *draws* is `sourceBitmapMatches`'s
     /// question, asked of the render.
     static func sourceBitmap(of page: PDFPage) -> (width: Int, height: Int, rows: Data)? {
-        guard let dict = page.pageRef?.dictionary else { return nil }
-        var resources: CGPDFDictionaryRef?, xobjects: CGPDFDictionaryRef?
-        guard CGPDFDictionaryGetDictionary(dict, "Resources", &resources), let resources,
-              CGPDFDictionaryGetDictionary(resources, "XObject", &xobjects), let xobjects,
-              CGPDFDictionaryGetCount(xobjects) == 1 else { return nil }
-        final class Found { var stream: CGPDFStreamRef? }
-        let found = Found()
-        CGPDFDictionaryApplyBlock(xobjects, { _, object, info in
-            var stream: CGPDFStreamRef?
-            if CGPDFObjectGetValue(object, .stream, &stream), let info {
-                Unmanaged<Found>.fromOpaque(info).takeUnretainedValue().stream = stream
-            }
-            return false
-        }, Unmanaged.passUnretained(found).toOpaque())
-        guard let stream = found.stream, let image = CGPDFStreamGetDictionary(stream) else {
-            return nil
-        }
+        guard let stream = soleImageStream(of: page)?.image,
+              let image = CGPDFStreamGetDictionary(stream) else { return nil }
         var subtype: UnsafePointer<Int8>?, filter: UnsafePointer<Int8>?
         var filters: CGPDFArrayRef?
         var width: CGPDFInteger = 0, height: CGPDFInteger = 0
@@ -2032,6 +2034,46 @@ enum Flattener {
         guard let data = CGPDFStreamCopyData(stream, &format) as Data?, format == .raw,
               data.count == (width + 7) / 8 * height else { return nil }
         return (width, height, data)
+    }
+
+    /// C37. The one XObject a page's own resources name, when it is an image, or
+    /// when it is a form whose own resources name one XObject and that is an
+    /// image (C47: JSTOR's Keyssar and Stiglitz draw their scan through a form).
+    /// `form` is that form, so `sourceImagePlacement` can follow the draw into it.
+    /// One level only; `sourceBitmap` still checks the image is one it can keep.
+    static func soleImageStream(of page: PDFPage) -> (image: CGPDFStreamRef, form: CGPDFStreamRef?)? {
+        func sole(_ resources: CGPDFDictionaryRef) -> CGPDFStreamRef? {
+            var xobjects: CGPDFDictionaryRef?
+            guard CGPDFDictionaryGetDictionary(resources, "XObject", &xobjects), let xobjects,
+                  CGPDFDictionaryGetCount(xobjects) == 1 else { return nil }
+            final class Found { var stream: CGPDFStreamRef? }
+            let found = Found()
+            CGPDFDictionaryApplyBlock(xobjects, { _, object, info in
+                var stream: CGPDFStreamRef?
+                if CGPDFObjectGetValue(object, .stream, &stream), let info {
+                    Unmanaged<Found>.fromOpaque(info).takeUnretainedValue().stream = stream
+                }
+                return false
+            }, Unmanaged.passUnretained(found).toOpaque())
+            return found.stream
+        }
+        func subtype(_ stream: CGPDFStreamRef) -> String? {
+            var name: UnsafePointer<Int8>?
+            guard let dict = CGPDFStreamGetDictionary(stream),
+                  CGPDFDictionaryGetName(dict, "Subtype", &name), let name else { return nil }
+            return String(cString: name)
+        }
+        guard let dict = page.pageRef?.dictionary else { return nil }
+        var resources: CGPDFDictionaryRef?
+        guard CGPDFDictionaryGetDictionary(dict, "Resources", &resources), let resources,
+              let first = sole(resources) else { return nil }
+        if subtype(first) != "Form" { return (first, nil) }
+        var formResources: CGPDFDictionaryRef?
+        guard let formDict = CGPDFStreamGetDictionary(first),
+              CGPDFDictionaryGetDictionary(formDict, "Resources", &formResources),
+              let formResources, let inner = sole(formResources),
+              subtype(inner) == "Image" else { return nil }
+        return (inner, first)
     }
 
     /// C37. A digest of a decoded 1-bit image's pixels, pad bits excluded, or nil
@@ -2108,17 +2150,23 @@ enum Flattener {
         let digest: Data
         let width: Int, height: Int
         let rect: CGRect
+        /// Drawn upside down, as the source drew it (C47).
+        var flipped = false
         /// 1-bit, ink black, `bilevelImage`'s layout; nil when the image is all
         /// the page draws.
         var overlay: (image: CGImage, rect: CGRect)?
     }
 
     /// C37. Where the page's one image is drawn, from the transform in force at
-    /// its one `Do`, in the page's own space. nil for a turned, skewed or flipped
-    /// placement, or for an image drawn twice or not at all. A hypothesis only:
+    /// its one `Do`, in the page's own space, and through the form's `/Matrix` and
+    /// its own one `Do` when the page draws its image through a form. `flipped`
+    /// when it is drawn upside down, rows counting up from the rect's foot, as
+    /// w5093's scans are (C47). nil for a turned, skewed or mirrored placement, or
+    /// for an image drawn twice or not at all. A hypothesis only:
     /// `placedSourceRebuild` renders the page and proves it.
-    static func sourceImagePlacement(of page: PDFPage) -> CGRect? {
-        guard let cgPage = page.pageRef, let table = CGPDFOperatorTableCreate() else { return nil }
+    static func sourceImagePlacement(of page: PDFPage) -> (rect: CGRect, flipped: Bool)? {
+        guard let cgPage = page.pageRef, let sole = soleImageStream(of: page),
+              let table = CGPDFOperatorTableCreate() else { return nil }
         final class State {
             var ctm = CGAffineTransform.identity
             var saved: [CGAffineTransform] = []
@@ -2150,14 +2198,39 @@ enum Flattener {
             let s = Unmanaged<State>.fromOpaque(info).takeUnretainedValue()
             s.draws.append(s.ctm)
         }
+        func scan(_ content: CGPDFContentStreamRef) -> Bool {
+            let scanner = CGPDFScannerCreate(content, table,
+                                             Unmanaged.passUnretained(state).toOpaque())
+            defer { CGPDFScannerRelease(scanner) }
+            return CGPDFScannerScan(scanner)
+        }
         let content = CGPDFContentStreamCreateWithPage(cgPage)
-        let scanner = CGPDFScannerCreate(content, table, Unmanaged.passUnretained(state).toOpaque())
-        let scanned = CGPDFScannerScan(scanner)
-        CGPDFScannerRelease(scanner)
-        CGPDFContentStreamRelease(content)
-        guard scanned, state.draws.count == 1, let m = state.draws.first,
-              m.b == 0, m.c == 0, m.a > 0, m.d > 0 else { return nil }
-        return CGRect(x: m.tx, y: m.ty, width: m.a, height: m.d)
+        defer { CGPDFContentStreamRelease(content) }
+        guard scan(content), state.draws.count == 1, var m = state.draws.first else { return nil }
+        if let form = sole.form {
+            // The form's own `Do`, under its `/Matrix` and the page's transform.
+            var resources: CGPDFDictionaryRef?, matrix: CGPDFArrayRef?
+            guard let dict = CGPDFStreamGetDictionary(form),
+                  CGPDFDictionaryGetDictionary(dict, "Resources", &resources), let resources
+            else { return nil }
+            var f = CGAffineTransform.identity
+            if CGPDFDictionaryGetArray(dict, "Matrix", &matrix), let matrix {
+                var v = [CGPDFReal](repeating: 0, count: 6)
+                guard CGPDFArrayGetCount(matrix) == 6,
+                      (0..<6).allSatisfy({ CGPDFArrayGetNumber(matrix, $0, &v[$0]) }) else { return nil }
+                f = CGAffineTransform(a: v[0], b: v[1], c: v[2], d: v[3], tx: v[4], ty: v[5])
+            }
+            let inner = CGPDFContentStreamCreateWithStream(form, resources, content)
+            defer { CGPDFContentStreamRelease(inner) }
+            state.ctm = f.concatenating(m); state.saved = []; state.draws = []
+            guard scan(inner), state.draws.count == 1, let drawn = state.draws.first
+            else { return nil }
+            m = drawn
+        }
+        guard m.b == 0, m.c == 0, m.a > 0, m.d != 0 else { return nil }
+        return m.d > 0
+            ? (CGRect(x: m.tx, y: m.ty, width: m.a, height: m.d), false)
+            : (CGRect(x: m.tx, y: m.ty + m.d, width: m.a, height: -m.d), true)
     }
 
     /// C37. The page as its source's JBIG2 image at its own placement plus an
@@ -2179,20 +2252,20 @@ enum Flattener {
         let media = cgPage.getBoxRect(.mediaBox)
         guard abs(media.width - box.width) < 0.01, abs(media.height - box.height) < 0.01
         else { return nil }
-        let r = placed.offsetBy(dx: -media.minX, dy: -media.minY)
-        // On the sheet, to half a point, and at a size the grid can hold, before
+        let r = placed.rect.offsetBy(dx: -media.minX, dy: -media.minY)
+        // On the sheet, to two points, and at a size the grid can hold, before
         // anything becomes an Int: a `0.0001 0 0 0.0001 cm` or a far-off `tx`
-        // would otherwise trap rather than refuse. Off the sheet is refused by the
-        // proof anyway, since the hidden part renders white.
+        // would otherwise trap rather than refuse. The part off the sheet is
+        // hidden on both pages alike, so the proof below does not ask about it.
         guard [r.minX, r.minY, r.maxX, r.maxY].allSatisfy(\.isFinite), r.width > 0, r.height > 0,
-              r.minX >= -0.5, r.minY >= -0.5,
-              r.maxX <= box.width + 0.5, r.maxY <= box.height + 0.5 else { return nil }
+              r.minX >= -2, r.minY >= -2,
+              r.maxX <= box.width + 2, r.maxY <= box.height + 2 else { return nil }
         let sx = CGFloat(source.width) / r.width, sy = CGFloat(source.height) / r.height
         guard Double((box.width + 1) * sx) * Double((box.height + 1) * sy)
                 <= Double(maximumPageMegapixels) * 1_000_000 else { return nil }
         // Whole pixels of sheet on each side of the image, rounded out, so the
         // grid covers the sheet. A negative margin is an image hanging off the
-        // sheet; its hidden part renders white and the proof refuses it.
+        // sheet, by at most the two points above.
         func margin(_ points: CGFloat, _ scale: CGFloat) -> Int {
             max(0, Int((points * scale - 1e-6).rounded(.up)))
         }
@@ -2212,7 +2285,8 @@ enum Flattener {
         let proved = source.rows.withUnsafeBytes { raw -> Bool in
             let rows = raw.bindMemory(to: UInt8.self)
             for y in 0..<height {
-                let iy = y - top
+                // A flipped image's first row is drawn at the rect's foot.
+                let iy = placed.flipped ? top + source.height - 1 - y : y - top
                 for x in 0..<width where grey[y * width + x] < t || (
                     iy >= 0 && iy < source.height && x >= left && x < left + source.width) {
                     let ix = x - left
@@ -2220,7 +2294,14 @@ enum Flattener {
                     let imageInk = inImage
                         && (rows[iy * rowBytes + (ix >> 3)] & (UInt8(0x80) >> UInt8(ix & 7))) == 0
                     let renderInk = grey[y * width + x] < t
-                    if imageInk && !renderInk { return false }
+                    // C47. Except off the sheet, where the published page, at the
+                    // same place on the same box, hides the pixel as the source did:
+                    // w5093's scans hang up to 0.56 pt over an edge.
+                    if imageInk && !renderInk {
+                        let px = origin.x + (CGFloat(x) + 0.5) / sx
+                        let py = origin.y + (CGFloat(height - y) - 0.5) / sy
+                        if px > 0, py > 0, px < box.width, py < box.height { return false }
+                    }
                     if renderInk && !imageInk {
                         overlay[y * width + x] = 0
                         minX = min(minX, x); maxX = max(maxX, x)
@@ -2232,7 +2313,7 @@ enum Flattener {
         }
         guard proved else { return nil }
         var result = PlacedSource(digest: digest, width: source.width, height: source.height,
-                                  rect: r, overlay: nil)
+                                  rect: r, flipped: placed.flipped, overlay: nil)
         if maxX >= 0 {
             // Cropped to its ink: a stamp line is a sliver of the sheet.
             let w = maxX - minX + 1, h = maxY - minY + 1
@@ -2643,6 +2724,28 @@ enum Flattener {
             if s > colourSheetPixelFloor, !paperHues.contains(hue) { n += 1 }
         }
         return Double(n) / Double(pixels) > colourInkThumbnailFloor
+    }
+
+    /// C47. How many pixels `inked` has below `threshold` that `grey` has not, with
+    /// no pixel of `grey`'s own ink beside them: ink C49 found that the grey page
+    /// lacks altogether, such as a pink notice, rather than the antialiased edge of
+    /// type that was already there, such as JSTOR's blue link.
+    static func inkApart(_ grey: [UInt8], _ inked: [UInt8], width: Int, height: Int,
+                         threshold: UInt8) -> Int {
+        guard grey.count >= width * height, inked.count >= width * height else { return 0 }
+        var apart = 0
+        for y in 0..<height {
+            for x in 0..<width where inked[y * width + x] < threshold
+                && grey[y * width + x] >= threshold {
+                var beside = false
+                for ny in max(0, y - 1)...min(height - 1, y + 1) where !beside {
+                    for nx in max(0, x - 1)...min(width - 1, x + 1)
+                    where grey[ny * width + nx] < threshold { beside = true; break }
+                }
+                if !beside { apart += 1 }
+            }
+        }
+        return apart
     }
 
     /// C49. `darkenColourInk` over a colour render of `page` at `grey`'s size, for
