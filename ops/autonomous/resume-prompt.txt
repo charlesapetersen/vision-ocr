@@ -91,6 +91,11 @@ STEP 3 — DO IT.
     there and never commit them (they are third-party copyrighted, and the repository is public).
   * Nothing may draw on the owner's display: no `open`, `osascript`, `./build.sh --install` or `--run`.
     For a visible change, `Tools/vm-gui-check.sh` runs checks in a VM; exit 3 is a skip, not a pass.
+  * Run one PDFKit, Vision or corpus process at a time, yours and your subagents' together. The Mac has
+    18 GB. On 2026-09-28 a session ran eight copies of a scratch PDFKit hit-test tool in parallel, each
+    grew to 4-9 GB, and the machine ran out of memory and panicked. Run a new scratch tool once on one
+    page first and watch its memory with `ps -o rss= -p <pid>`. If it passes 2 GB, fix the tool (wrap
+    each iteration in `autoreleasepool`) rather than run more of it.
   * Before committing, have one subagent adversarially review your finished diff. It has caught real
     defects in this project many times. Verify each finding before acting on it.
 
