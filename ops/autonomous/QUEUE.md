@@ -613,6 +613,11 @@ say so in the commit.
       commits nothing reads to the daemon as idle, and ten sessions without a ticked box park the run.
       Readers only look at images, so they may run in parallel; rendering and Vision stay one process at a
       time. (context: owner request 2026-09-29)
+- [x] **truth-set-b1** — batch 1: the page list (`TRUTH-PAGES-2026-09-29.tsv`, 215 pages) and the 21 owner
+      pages of the regression set. 20 have a transcript and a list; Hughes p3 has none (the content filter
+      blocked the reader twice). 11,015 words, 57 contested (0.52%; 0.13% without the newspaper page); the
+      rate by route is in `ops/truth/STATUS.md`, with the tools, the cost (about 32% of the five-hour window
+      for 21 pages) and the next batch. (context: truth-set)
 - [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
       and run it on today's pipeline. (blocked-on: truth-set)
       TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from

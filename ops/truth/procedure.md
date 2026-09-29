@@ -27,6 +27,23 @@ resolution, and measure again.
    off a 1-bit scan copies the broken glyphs (`funcral`, `Lifc`, `hccl`) that the reader, seeing the line,
    read correctly. See `TRUTH-CALIBRATE-2026-09-29.tsv`.
 
+   **As `truth-set` runs step 4 (2026-09-29; no prompt, size or resolution changed, so still v2):**
+   `prep-page.sh` makes the image, the crops, Vision's reading (`vision-read`, a plain render, revision 3)
+   and the source layer; `spots-page.sh` aligns line by line (`xcheck.py lspots`), because on real pages
+   the whole-page alignment made 268 of Hughes p5's 573 words spots where Vision had read all of them, in
+   another column order; a neighbouring line may confirm only the words at the matching edge of a line.
+   A word is a spot only when no other reading confirms it: it differs from Vision
+   and from Vision run on each crop at full resolution (`vision-crops.txt`: on a 300 dpi newspaper page
+   Vision over the whole image read 1,047 of 3,315 words, which made 2,075 spots; over the crops, 223),
+   and, where the layer holds at least half the reader's word count, from the layer too (the Why scans'
+   vendor layers hold 25 words a page, so they are not asked). A spot with no check reading is contested
+   (`contest.py`), and a word joined across a line-end hyphen passes only when both halves are checked
+   (`<k>.png` and `<k>t.png`). Not measured: whether the extra readings confirm reader errors that Vision's
+   language correction shares. The bound is the unchecked reader, which calibration found fit (0-1.22%).
+   `wordcrops.py` does not enlarge small crops, whatever the paragraph above says; it never has.
+   Reader pages go out one subagent each with the READER prompt and the crop list; check readers get the
+   CHECK prompt in a brief file of about 40 shuffled crops.
+
 ## READER prompt (verbatim)
 
 > You are transcribing one printed page from images. The page is cut into crops listed below with their

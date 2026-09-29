@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """wordcrops.py <rd-dir>: for each spot in spots.tsv, find the word's ink box in page.png inside the reader's
-line box (word gaps from a column ink profile) and cut it plus 10 px to check/<idx>.png. Writes check/list.tsv."""
+line box (word gaps from a column ink profile) and cut it plus 10 px to check/<idx>.png; a word joined across
+a line-end hyphen also gets check/<idx>t.png, its second half. Writes check/list.tsv."""
 import os, re, subprocess, sys
 sys.path.insert(0, os.path.dirname(__file__))
 import xcheck
@@ -15,9 +16,9 @@ joined = []
 for li, (_, t) in enumerate(ls):
     for wi, wd in enumerate(t.split()):
         if joined and re.search(r"\w-$", joined[-1][0]) and ls[joined[-1][1]][0][1] < ls[li][0][1] and wd[:1].isalnum():
-            joined[-1] = (joined[-1][0][:-1] + wd, joined[-1][1], joined[-1][2])
+            joined[-1] = (joined[-1][0][:-1] + wd, joined[-1][1], joined[-1][2], li)
         else:
-            joined.append((wd, li, wi))
+            joined.append((wd, li, wi, None))
 prof = {}
 
 
@@ -47,7 +48,7 @@ rows = []
 for line in open(f"{d}/spots.tsv"):
     k, wd, ex, ey, ew, eh = line.rstrip("\n").split("\t")
     k = int(k); ex, ey, ew, eh = map(int, (ex, ey, ew, eh))
-    _, li, wi = joined[k]
+    _, li, wi, tli = joined[k]
     x, y, w, h = ls[li][0]
     segs = segments(li)
     nwords = len(ls[li][1].split())
@@ -62,5 +63,14 @@ for line in open(f"{d}/spots.tsv"):
     cw, ch = e - s + 21, h + 20
     subprocess.run([M, page, "-crop", f"{cw}x{ch}+{cx}+{cy}", "+repage", f"{d}/check/{k}.png"])
     rows.append(f"{k}\t{wd}\t{cx}\t{cy}\t{cw}\t{ch}\t{'exact' if len(segs) == nwords else 'nearest'}")
+    if tli is not None:
+        # A word joined across a line-end hyphen: the crop above shows its first line only, so its second
+        # half, the first word of the next line, gets a crop of its own (check/<k>t.png).
+        tx, ty, tw, th = ls[tli][0]
+        ts = segments(tli)
+        s, e = ts[0] if ts else (0, min(tw, max(th * 3, 60)))
+        cx, cy, cw, ch = max(tx + s - 10, 0), max(ty - 10, 0), e - s + 21, th + 20
+        subprocess.run([M, page, "-crop", f"{cw}x{ch}+{cx}+{cy}", "+repage", f"{d}/check/{k}t.png"])
+        rows.append(f"{k}t\t{ls[tli][1].split()[0]}\t{cx}\t{cy}\t{cw}\t{ch}\ttail")
 open(f"{d}/check/list.tsv", "w").write("\n".join(rows) + "\n")
 print(d, len(rows), sum(r.endswith("exact") for r in rows), "exact")

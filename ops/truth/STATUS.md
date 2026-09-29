@@ -26,3 +26,40 @@
 - Tools, all in this directory: `render-page`, `img2pdf`, `cut-crops`, `synth-pages` (swiftc -O),
   `score-words.py`, `xcheck.py` (transcript text; reader-vs-Vision spots), `wordcrops.py` (word crops from
   ink gaps), `apply-check.py` (applies checks, v1 or `V2=1`, and the fair score).
+
+# truth-set — working status
+
+The list is `TRUTH-PAGES-2026-09-29.tsv` at the root (`make-list.py`, fixed seed; 215 pages). Its status
+column is filled by `page-status.py`, which also prints the contested rate by route. Per page, with
+`swiftc -O` builds of `render-page`, `cut-crops`, `vision-read` and `Tools/pdf-page-text.swift` (as
+`page-text`) in one bin directory:
+
+1. `prep-page.sh <bin> <document> <page>` (one at a time: it renders and runs Vision).
+2. One reader subagent per page, given the READER prompt, the crop list and the crop command (the
+   `brief.txt` it writes); many may run at once.
+3. `spots-page.sh <page-dir>`, then shuffle every page's `check/<idx>.png` into briefs of about 40 with the
+   CHECK prompt, one check subagent each, writing `path<TAB>reading` to `chk-*.out`.
+4. `finish-page.sh <page-dir> <checks-dir> <reader-tokens>`, which deletes the page image and crops.
+   A page with no transcript goes in `$STATE/truth/none.tsv` with its reason.
+
+Measured cost, batch 1 (21 owner pages of the regression set, 2026-09-29): readers 34-50k tokens a page,
+99k for the newspaper page; checks 33-38k per 40 words; the batch used about 32% of the five-hour window,
+so a session holds about 40 pages from a fresh window.
+
+**Batch 1 (b1), 2026-09-29:** 20 of 21 pages done, 11,015 words, 57 contested (0.52%); without the
+newspaper page 7,826 words, 10 contested (0.13%). Contested rate by route (`page-status.py`): dct 0/182,
+jbig2 3/3,910 (0.08%), layered 5/1,929 (0.26%), no-image 1/435 (0.23%), unknown 48/4,202 (1.14%;
+Raskin's newspaper page is 47 of them). **Next:** batch 2 = the 8 selftest pages (Why 3, 4, 7; Briefer 2,
+5, 6; Hughes 2, 8) and the testdocs pages of the regression set, then the draws in list order; Hughes p3
+again; `prep-page.sh` needs `TESTDOCS=/Users/cp1/Claude/vision-ocr/testdocs` when run from a worktree.
+
+- **The grey render hides colour.** `render-page` draws grey, so the OBJECTS lists name every coloured
+  heading "dark grey" (Why p5). Kinds and boxes stand; `truth-harness` should take colour from the source's
+  pixels inside each object's box, not from the list.
+- **Vision on a full page misses most of a newspaper** (Raskin p1, 300 dpi: 1,047 words against the
+  reader's 3,315) and half of Briefer p1 and p3 (273 of 631, 302 of 664) — both on a plain render, not the
+  app's pipeline. `vision-read` over the crops finds them; noted for `truth-read`, not measured on the app.
+- The content filter blocked the reader's output on Hughes p3 twice.
+- The contested rate is high on dense newsprint (Raskin) partly from the instrument: where the ink gaps do
+  not match the line's word count, `wordcrops.py` cuts the nearest gap, often the word beside the spot.
+  Those crops are contested 14 of 41 times against 17 of 182. Safe (the word is not scored), not fixed.
