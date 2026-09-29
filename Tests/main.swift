@@ -6374,6 +6374,318 @@ do {
     resetPrefs()
 }
 
+// MARK: - A layered scan keeps its own images (C47)
+
+print("\na layered scan keeps its own images, without its text (C47)")
+
+do {
+    resetPrefs()
+    // The text operators out, every other byte kept: ProQuest's shape (text drawn
+    // under the scan, then the layers), the Internet Archive's (invisible text before
+    // its images, the text state set outside the text object), and a text object that
+    // holds colour and marked content, which stay.
+    func without(_ streams: String...) -> [String]? {
+        JBIG2.removingText(from: streams.map { Data($0.utf8) })?
+            .map { String(decoding: $0, as: UTF8.self) }
+    }
+    check("C47: ProQuest's hidden text comes out of its stream, and the layers stay as written",
+          without("q/Span<</MCID 0>>BDC/F_0 10 Tf BT 5.19 953.79 TD[(ab)-43(c)]TJ ET EMC Q",
+                  "q 598 0 0 965 0 0 cm/Bg Do/CL Do Q")
+              == ["q/Span<</MCID 0>>BDC\n \n \n\n \n EMC Q", "q 598 0 0 965 0 0 cm/Bg Do/CL Do Q"])
+    check("C47: …as does the Internet Archive's invisible text, and its state",
+          without("q 3 Tr 0.24 0 0 0.24 0 0 cm /F1 56 Tf BT 1 0 0 1 610 1645 Tm (Digitized)Tj ET Q "
+                  + "q 566 0 0 748 0 0 cm /img1 Do /Im001 Do Q")
+              == ["q \n 0.24 0 0 0.24 0 0 cm \n \n \n \n \n Q q 566 0 0 748 0 0 cm /img1 Do /Im001 Do Q"])
+    check("C47: colour and marked content set inside a text object stay",
+          without("BT 1 0 0 rg /Span <</ActualText (x)>> BDC (Hi) Tj EMC ET 0 0 9 9 re f")
+              == ["\n 1 0 0 rg /Span <</ActualText (x)>> BDC \n EMC \n 0 0 9 9 re f"])
+    check("C47: a string holding `ET` and escaped parentheses is read whole",
+          without("BT (a \\) ET (b) Tj) Tj <4554> Tj 1 2 (x) \" (y) ' ET q Q")
+              == ["\n \n \n \n \n \n q Q"])
+    check("C47: a text object may open in one stream and close in the next",
+          without("q BT /F1 1 Tf", " (x) Tj ET Q") == ["q \n \n", " \n \n Q"])
+    let refused = [["BT BT ET ET"], ["ET"], ["BT (x) Tj"], ["(x) Tj"],
+                   ["q BI /W 1 /H 1 /BPC 8 /CS /G ID \u{0} EI Q"], ["BT (x Tj ET"],
+                   ["q 1 0 0", " 1 0 0 cm Q"], ["/P << /A [ 1 >> ] BDC EMC"]]
+        .filter { JBIG2.removingText(from: $0.map { Data($0.utf8) }) != nil }
+    check("C47: nested, unclosed or stray text, an inline image, an open string, or a stream "
+            + "cut mid-operand is refused", refused.isEmpty, "read: \(refused)")
+
+    if JBIG2.isAvailable, let qpdf = JBIG2.merger {
+        let dir = tmp.appendingPathComponent("c47-layered")
+        try? FileManager.default.removeItem(at: dir)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        // A scan the way ProQuest stores one: a JPEG 2000 image of the page, at 144 dpi,
+        // type and a photograph on it, compressed harder than the app's rebuild can be.
+        func scan(width: Int, height: Int, lines: [String]) -> Data? {
+            guard let grey = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                                       bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(),
+                                       bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return nil }
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(cgContext: grey, flipped: false)
+            NSColor.white.setFill()
+            NSRect(x: 0, y: 0, width: width, height: height).fill()
+            var y = CGFloat(height - 160)
+            for line in lines {
+                (line as NSString).draw(at: NSPoint(x: 90, y: y), withAttributes: [
+                    .font: NSFont(name: "Helvetica", size: 40) ?? NSFont.systemFont(ofSize: 40),
+                    .foregroundColor: NSColor.black])
+                y -= 72
+            }
+            // The photograph: a tone field with texture, over the lower half.
+            var seed: UInt32 = 12345
+            let photo = NSRect(x: 90, y: 90, width: CGFloat(width - 180), height: CGFloat(height / 2 - 120))
+            for row in stride(from: Int(photo.minY), to: Int(photo.maxY), by: 6) {
+                for col in stride(from: Int(photo.minX), to: Int(photo.maxX), by: 6) {
+                    seed = seed &* 1_103_515_245 &+ 12345
+                    let tone = 0.25 + 0.5 * Double(col - Int(photo.minX)) / Double(photo.width)
+                        + Double(seed >> 16 & 0xFF) / 255 * 0.2
+                    NSColor(white: CGFloat(min(tone, 1)), alpha: 1).setFill()
+                    NSRect(x: col, y: row, width: 6, height: 6).fill()
+                }
+            }
+            NSGraphicsContext.current?.flushGraphics()
+            NSGraphicsContext.restoreGraphicsState()
+            guard let image = grey.makeImage() else { return nil }
+            let data = NSMutableData()
+            guard let dest = CGImageDestinationCreateWithData(data, "public.jpeg-2000" as CFString,
+                                                              1, nil) else { return nil }
+            // 0.03: 21 KB for page 1's scan, and pages 1 and 2 kept cost 42 KB less
+            // than their rebuilds. At 0.1 (69 KB) the app's own layers came out
+            // smaller, and neither was kept.
+            CGImageDestinationAddImage(dest, image,
+                                       [kCGImageDestinationLossyCompressionQuality: 0.03] as CFDictionary)
+            return CGImageDestinationFinalize(dest) ? data as Data : nil
+        }
+        let letter = scan(width: 1224, height: 1584,
+                          lines: ["Invoice 98765", "Total 420.00", "Hello OCR World"])
+        let small = scan(width: 1000, height: 1400, lines: ["Receipt 24680", "Paid in full"])
+        if let letter, let small {
+            // Page 1 hides its text under the scan, as ProQuest does; page 2, smaller,
+            // draws invisible text over it, as the Internet Archive does, and carries a
+            // link; page 3 is page 1 turned, which the rebuild bakes in; page 4 prints a
+            // footer over the scan, which a reader sees, so it cannot be kept. Pages 5
+            // and 6 are page 1 on a sheet 30 pt below the origin, where a reader's marks
+            // would move, and under a crop box larger than the sheet, which PDFKit clips
+            // to the sheet and `overlay` does not. Pages 4 to 6 each draw a second copy of
+            // the scan, so a kept one would publish it twice.
+            let pages: [(box: String, extra: String, image: String, content: String)] = [
+                ("0 0 612 792", "", "/Im0 4 0 R",
+                 "BT /F1 12 Tf 72 700 Td (vendor words under the scan) Tj ET\n"
+                    + "q 612 0 0 792 0 0 cm /Im0 Do Q\n"),
+                ("0 0 500 700", "/Annots [ << /Type /Annot /Subtype /Link /Rect [ 10 10 90 40 ] "
+                    + "/A << /S /URI /URI (https://example.org) >> >> ] ", "/Im1 5 0 R",
+                 "q 500 0 0 700 0 0 cm /Im1 Do Q\nBT 3 Tr /F1 12 Tf 72 600 Td (vendor invisible layer) Tj ET\n"),
+                ("0 0 612 792", "/Rotate 90 ", "/Im0 4 0 R",
+                 "BT /F1 12 Tf 72 700 Td (vendor words under the scan) Tj ET\n"
+                    + "q 612 0 0 792 0 0 cm /Im0 Do Q\n"),
+                ("0 0 612 792", "", "/Im3 19 0 R",
+                 "q 612 0 0 792 0 0 cm /Im3 Do Q\n"
+                    + "BT /F1 16 Tf 72 30 Td (Reproduced with permission) Tj ET\n"),
+                ("0 -30 612 762", "", "/Im2 18 0 R",
+                 "BT /F1 12 Tf 72 670 Td (vendor words under the scan) Tj ET\n"
+                    + "q 612 0 0 792 0 -30 cm /Im2 Do Q\n"),
+                ("0 0 612 792", "/CropBox [ 0 0 700 900 ] ", "/Im2 18 0 R",
+                 "BT /F1 12 Tf 72 700 Td (vendor words under the scan) Tj ET\n"
+                    + "q 612 0 0 792 0 0 cm /Im2 Do Q\n"),
+            ]
+            var pdf = Data("%PDF-1.5\n".utf8)
+            var offsets: [Int] = []
+            func object(_ n: Int, _ dict: String, _ stream: Data? = nil) {
+                offsets.append(pdf.count)
+                pdf += Data("\(n) 0 obj\n\(dict)\n".utf8)
+                if let stream { pdf += Data("stream\n".utf8) + stream + Data("\nendstream\n".utf8) }
+                pdf += Data("endobj\n".utf8)
+            }
+            let kids = pages.indices.map { "\(6 + 2 * $0) 0 R" }.joined(separator: " ")
+            object(1, "<< /Type /Catalog /Pages 2 0 R >>")
+            object(2, "<< /Type /Pages /Count \(pages.count) /Kids [ \(kids) ] >>")
+            object(3, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+            object(4, "<< /Type /XObject /Subtype /Image /Width 1224 /Height 1584 /Filter /JPXDecode "
+                      + "/Length \(letter.count) >>", letter)
+            object(5, "<< /Type /XObject /Subtype /Image /Width 1000 /Height 1400 /Filter /JPXDecode "
+                      + "/Length \(small.count) >>", small)
+            for (i, page) in pages.enumerated() {
+                object(6 + 2 * i, "<< /Type /Page /Parent 2 0 R /MediaBox [ \(page.box) ] \(page.extra)"
+                               + "/Resources << /Font << /F1 3 0 R >> /XObject << \(page.image) >> >> "
+                               + "/Contents \(7 + 2 * i) 0 R >>")
+                object(7 + 2 * i, "<< /Length \(page.content.utf8.count) >>", Data(page.content.utf8))
+            }
+            for n in [18, 19] {
+                object(n, "<< /Type /XObject /Subtype /Image /Width 1224 /Height 1584 /Filter /JPXDecode "
+                          + "/Length \(letter.count) >>", letter)
+            }
+            let xref = pdf.count
+            pdf += Data("xref\n0 \(offsets.count + 1)\n0000000000 65535 f \n".utf8)
+            for o in offsets { pdf += Data(String(format: "%010d 00000 n \n", o).utf8) }
+            pdf += Data("trailer\n<< /Size \(offsets.count + 1) /Root 1 0 R >>\nstartxref\n\(xref)\n%%EOF\n".utf8)
+            let src = dir.appendingPathComponent("layered.pdf")
+            try? pdf.write(to: src)
+            let srcDoc = PDFDocument(url: src)
+
+            // The copy, on its own: with room for every page, each it may keep loses its
+            // text and its link, and the turned, lowered and over-cropped sheets are left
+            // as they were; with no room, nothing is written.
+            let copy = dir.appendingPathComponent("layered-textless.pdf")
+            let all = (try? JBIG2.textlessCopy(of: src, password: nil,
+                                               budgets: Dictionary(uniqueKeysWithValues:
+                                                   (1...6).map { ($0, 1 << 30) }),
+                                               to: copy, using: qpdf)) ?? [:]
+            let copyDoc = PDFDocument(url: copy)
+            let copyText = (0..<6).map { (copyDoc?.page(at: $0)?.string ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines) }
+            check("C47: the copy takes the text and the link off each page it may keep, costed",
+                  all.keys.sorted() == [1, 2, 4] && copyDoc?.pageCount == 6
+                      && copyText.map(\.isEmpty) == [true, true, false, true, false, false]
+                      && copyDoc?.page(at: 1)?.annotations.isEmpty == true
+                      && srcDoc?.page(at: 1)?.annotations.count == 1
+                      && (all[1] ?? 0) >= letter.count && (all[2] ?? 0) >= small.count,
+                  "\(all) \(copyText)")
+            let none = (try? JBIG2.textlessCopy(of: src, password: nil, budgets: [1: 100, 2: 100],
+                                                to: dir.appendingPathComponent("none.pdf"),
+                                                using: qpdf)) ?? [0: 0]
+            check("C47: …and none whose drawing costs more than its budget",
+                  none.isEmpty && !FileManager.default.fileExists(
+                      atPath: dir.appendingPathComponent("none.pdf").path), "\(none)")
+            // The proof: hidden and invisible text change no pixel; the footer does.
+            let alike = [0, 1, 3].map { i -> Bool in
+                guard let a = srcDoc?.page(at: i), let b = copyDoc?.page(at: i) else { return false }
+                return Flattener.drawsAlike(a, b)
+            }
+            check("C47: text under the scan or drawn invisible changes no pixel; a footer over it does",
+                  alike == [true, true, false], "\(alike)")
+
+            // A password travels in a file and the copy comes out decrypted.
+            let locked = dir.appendingPathComponent("layered-locked.pdf")
+            let encrypt = Process()
+            encrypt.executableURL = URL(fileURLWithPath: qpdf)
+            encrypt.arguments = ["--encrypt", "user-pw", "owner-pw", "256", "--", src.path, locked.path]
+            encrypt.standardError = FileHandle.nullDevice
+            try? encrypt.run(); encrypt.waitUntilExit()
+            let unlockedCopy = dir.appendingPathComponent("layered-unlocked.pdf")
+            let fromLocked = (try? JBIG2.textlessCopy(of: locked, password: "user-pw", budgets: [1: 1 << 30],
+                                                      to: unlockedCopy, using: qpdf)) ?? [:]
+            let unlockedDoc = PDFDocument(url: unlockedCopy)
+            check("C47: an encrypted source gives an unencrypted copy",
+                  PDFDocument(url: locked)?.isLocked == true && fromLocked.keys.sorted() == [1]
+                      && unlockedDoc?.isLocked == false && unlockedDoc?.pageCount == 6,
+                  "\(fromLocked) locked \(String(describing: unlockedDoc?.isLocked))")
+
+            // The sheets `overlay` would move the scan on, and content that is not the
+            // page's alone. Page 1 is plain; page 2 has its own trim box; page 3 inherits a
+            // crop box from the `/Pages` node above it; pages 4 and 5 share one content
+            // array, by reference, so taking the text off one would take it off both.
+            let content = Data("BT /F1 12 Tf 72 600 Td (vendor) Tj ET q 500 0 0 700 0 0 cm /Im0 Do Q\n".utf8)
+            pdf = Data("%PDF-1.5\n".utf8); offsets = []
+            object(1, "<< /Type /Catalog /Pages 2 0 R >>")
+            object(2, "<< /Type /Pages /Count 5 /Kids [ 6 0 R 7 0 R 3 0 R 9 0 R 10 0 R ] "
+                      + "/MediaBox [ 0 0 500 700 ] /Resources << /Font << /F1 4 0 R >> "
+                      + "/XObject << /Im0 5 0 R >> >> >>")
+            object(3, "<< /Type /Pages /Parent 2 0 R /Count 1 /Kids [ 8 0 R ] /CropBox [ 0 0 400 600 ] >>")
+            object(4, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+            object(5, "<< /Type /XObject /Subtype /Image /Width 1000 /Height 1400 /Filter /JPXDecode "
+                      + "/Length \(small.count) >>", small)
+            object(6, "<< /Type /Page /Parent 2 0 R /Contents 11 0 R >>")
+            object(7, "<< /Type /Page /Parent 2 0 R /TrimBox [ 20 20 480 680 ] /Contents 12 0 R >>")
+            object(8, "<< /Type /Page /Parent 3 0 R /Contents 13 0 R >>")
+            object(9, "<< /Type /Page /Parent 2 0 R /Contents 14 0 R >>")
+            object(10, "<< /Type /Page /Parent 2 0 R /Contents 14 0 R >>")
+            for n in 11...13 { object(n, "<< /Length \(content.count) >>", content) }
+            object(14, "[ 15 0 R ]")
+            object(15, "<< /Length \(content.count) >>", content)
+            let boxesXref = pdf.count
+            pdf += Data("xref\n0 \(offsets.count + 1)\n0000000000 65535 f \n".utf8)
+            for o in offsets { pdf += Data(String(format: "%010d 00000 n \n", o).utf8) }
+            pdf += Data("trailer\n<< /Size \(offsets.count + 1) /Root 1 0 R >>\nstartxref\n\(boxesXref)\n%%EOF\n".utf8)
+            let boxes = dir.appendingPathComponent("boxes.pdf")
+            try? pdf.write(to: boxes)
+            let boxesTaken = (try? JBIG2.textlessCopy(
+                of: boxes, password: nil,
+                budgets: Dictionary(uniqueKeysWithValues: (1...5).map { ($0, 1 << 30) }),
+                to: dir.appendingPathComponent("boxes-textless.pdf"), using: qpdf)) ?? [:]
+            check("C47: a trim box, an inherited crop box or a shared content array keeps a page off",
+                  PDFDocument(url: boxes)?.pageCount == 5 && boxesTaken.keys.sorted() == [1],
+                  "\(boxesTaken)")
+
+            // End to end, at the app's defaults.
+            let out = dir.appendingPathComponent("layered.ocr.pdf")
+            var outcome: Runner.Result.Outcome?
+            OCRModel.makeSearchablePDF(file: src, output: out, rebuild: true, rebuildMode: .auto,
+                                       password: nil, control: RunControl(),
+                                       progress: { _, _ in }, report: { o, _ in outcome = o })
+            let outDoc = PDFDocument(url: out)
+            // Every JPEG 2000 stream in the published file, raw.
+            func jpx(_ file: URL) -> [Data] {
+                let dump = dir.appendingPathComponent("dump-" + file.lastPathComponent)
+                try? FileManager.default.createDirectory(at: dump, withIntermediateDirectories: true)
+                let p = Process(), pipe = Pipe()
+                p.executableURL = URL(fileURLWithPath: qpdf)
+                p.arguments = ["--json", "--json-key=qpdf", "--json-stream-data=file", "--decode-level=none",
+                               "--json-stream-prefix=\(dump.path)/s", file.path]
+                p.standardOutput = pipe; p.standardError = FileHandle.nullDevice
+                try? p.run()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile(); p.waitUntilExit()
+                guard let top = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                      let objects = (top["qpdf"] as? [Any])?.last as? [String: Any] else { return [] }
+                return objects.values.compactMap { value -> Data? in
+                    guard let s = (value as? [String: Any])?["stream"] as? [String: Any],
+                          let dict = s["dict"] as? [String: Any],
+                          "\(dict["/Filter"] ?? "")".contains("/JPXDecode"),
+                          let f = s["datafile"] as? String else { return nil }
+                    return try? Data(contentsOf: URL(fileURLWithPath: f))
+                }
+            }
+            let published = jpx(out)
+            check("C47: the hidden-text and invisible-text pages publish the source's own JPX scans",
+                  outcome == .succeeded && outDoc?.pageCount == 6
+                      && published.sorted { $0.count < $1.count } == [small, letter].sorted { $0.count < $1.count },
+                  "\(String(describing: outcome)) \(published.map(\.count)) B of JPX, sources "
+                    + "\(letter.count) and \(small.count) B")
+            let outText = (0..<6).map { outDoc?.page(at: $0)?.string ?? "" }
+            check("C47: …each with the app's text and none of the vendor's",
+                  outText[0].contains("Invoice") && outText[1].contains("Receipt")
+                      && !outText.contains { $0.contains("vendor") }, "\(outText)")
+            // Where the layer lands: on the kept page as on page 4, rebuilt from the same
+            // scan on the same sheet. The render cannot see it, since the layer is invisible.
+            let invoice = outDoc?.findString("Invoice", withOptions: []) ?? []
+            func found(on index: Int) -> CGRect? {
+                guard let page = outDoc?.page(at: index) else { return nil }
+                return invoice.first { $0.pages.contains(page) }?.bounds(for: page)
+            }
+            let keptBox = found(on: 0), rebuiltBox = found(on: 3)
+            check("C47: …with its text layer where a rebuilt page's lies, over the same words",
+                  keptBox.map { k in rebuiltBox.map { r in
+                      abs(k.minX - r.minX) <= 2 && abs(k.minY - r.minY) <= 2
+                          && abs(k.maxX - r.maxX) <= 2 && abs(k.maxY - r.maxY) <= 2 } ?? false } ?? false,
+                  "kept \(String(describing: keptBox)), rebuilt \(String(describing: rebuiltBox))")
+            var renders: [String] = []
+            for i in 0..<2 {
+                guard let a = srcDoc?.page(at: i), let b = outDoc?.page(at: i) else {
+                    renders.append("no page \(i + 1)"); continue
+                }
+                if !Flattener.drawsAlike(a, b) { renders.append("page \(i + 1) differs") }
+            }
+            check("C47: …and each renders as its source, pixel for pixel at 2x", renders.isEmpty,
+                  renders.joined(separator: "; "))
+            check("C47: …without the link its copy dropped, as the rebuild drops one",
+                  outDoc?.page(at: 1)?.annotations.isEmpty == true)
+            // Turned, it would keep its /Rotate; rebuilt, the turn is baked into its sheet.
+            check("C47: the turned page and the page with a footer over it are rebuilt, the footer read",
+                  outText[3].contains("Reproduced") && outDoc?.page(at: 2)?.rotation == 0
+                      && outDoc?.page(at: 2)?.bounds(for: .mediaBox).size == CGSize(width: 792, height: 612)
+                      && outDoc?.page(at: 0)?.bounds(for: .mediaBox).size == CGSize(width: 612, height: 792)
+                      && outDoc?.page(at: 1)?.bounds(for: .mediaBox).size == CGSize(width: 500, height: 700),
+                  "\(outText[3]) rotation \(String(describing: outDoc?.page(at: 2)?.rotation))")
+        } else {
+            check("C47: the JPEG 2000 fixture could be made", false, "no JPX encoder")
+        }
+    } else {
+        skipBlock("C47's layered scan end to end", checks: 11,
+                  because: "jbig2 or qpdf is not installed, so no page takes the JBIG2 route")
+    }
+    resetPrefs()
+}
+
 // MARK: - Same-named inputs are tracked separately
 
 // stages and inFlight were keyed by file *name*. Two inputs called scan.pdf in

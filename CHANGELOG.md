@@ -17,6 +17,10 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 - Already-compact JBIG2 scans that were drawn through a form or upside down, such as JSTOR reviews and
   NBER papers, keep their own image streams instead of being re-encoded at two to three times the size.
   Every searchable copy is also written more compactly (C47).
+- Scanned pages whose own images are already smaller than the app's rebuild would be, such as ProQuest's
+  layered newspaper and magazine pages and the Internet Archive's book scans, keep those images. They look
+  exactly as they did and carry the app's text in place of the vendor's. ProQuest pages that came out 1.5
+  to 2.2 times their original size now come out at about the original's size (C47).
 - The searchable copy keeps the original's printed page numbers (i-iv, A-M, "p. 530"), so Preview's page
   field and Go To Page use them, and it keeps the title and author that Preview, Spotlight and Zotero show (C48).
 - In Automatic mode, light coloured type on a page rebuilt in black and white, such as a pink "PRODUCED

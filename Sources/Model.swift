@@ -2425,6 +2425,9 @@ final class OCRModel: ObservableObject {
                                             onPages: carriedThrough),
                encoded.count > carriedThrough.count, let qpdf = JBIG2.merger {
                 usedJBIG2 = true
+                // C47: counted even when every page is kept as its source drew it and
+                // nothing is assembled. Such a file took this route, not the Flate one,
+                // and the report's other answer is that its pages are Flate compressed.
                 tookJBIG2 = true
 
                 // Re-layer the picture pages now that the recogniser has said
@@ -2440,9 +2443,14 @@ final class OCRModel: ObservableObject {
                 // in place. MRC is an improvement on a working page, never a
                 // requirement, and a page that costs more is a far better
                 // outcome than one that fails or draws wrong.
+                // C47. The source with the text taken off the pages that keep their
+                // own drawing, which the splice below takes them from.
+                let textless = work.appendingPathComponent("textless.pdf")
                 if let jb = JBIG2.encoder,
                    let source = Flattener.open(inputFile, password: password) {
                     var relayered = 0, savedBytes = 0
+                    // What layering saved on each page, for C47 to take back.
+                    var layeredSaving: [Int: Int] = [:]
                     // C28. The pages this loop publishes with their tone layers at an
                     // eighth because `pageIsAllText()` accepted them. Collected here
                     // and not inside `mrcLayers`, because the layering is only a
@@ -2549,6 +2557,7 @@ final class OCRModel: ObservableObject {
                         try? FileManager.default.removeItem(at: existing)
                         relayered += 1
                         savedBytes += before - after
+                        layeredSaving[index] = before - after
                         if layers.shrunkAsAllText {
                             shrunkTextPages.append((index + 1, layers.inkOutsideText))
                         }
@@ -2588,6 +2597,65 @@ final class OCRModel: ObservableObject {
                             boxSize: encoded[index].boxSize)
                         for u in streams { try? FileManager.default.removeItem(at: u) }
                         shrunkTextPages.removeAll { $0.page == index + 1 }
+                    }
+                    // C47. A page whose own drawing costs no more than what the loops
+                    // above made of it keeps that drawing, its text taken out, and is
+                    // stamped with the text layer like any other page. A layered scan's
+                    // JPX layers came out as a JPEG and a stencil 1.6x their size:
+                    // Berendzen 166,716 -> 254,769 B. Only on a sheet the layer lands on
+                    // as it lands on the rebuild, which `textlessCopy` decides from the
+                    // page's own dictionary. Not C37's pages, whose stream it already
+                    // kept or found dearer. And only a page that draws from the copy
+                    // exactly what it drew from the source, and reads no text there.
+                    if canCarryCrop {
+                        var budgets: [Int: Int] = [:]
+                        for index in encoded.indices
+                        where !bitmaps[index].matchesSourceJBIG2 && !encoded[index].stream.isFromSource {
+                            budgets[index + 1] = encoded[index].stream.urls.reduce(0) {
+                                $0 + fileSize($1)
+                            } + (encoded[index].overlay.map { fileSize($0.stream) } ?? 0)
+                        }
+                        let stripped = budgets.isEmpty ? [:] : ((try? control.adopting { register in
+                            try JBIG2.textlessCopy(of: file, password: password, budgets: budgets,
+                                                   to: textless, using: qpdf, register: register)
+                        }) ?? [:])
+                        var kept = 0, keptSaving = 0
+                        if !stripped.isEmpty, let copy = PDFDocument(url: textless) {
+                            for (number, cost) in stripped.sorted(by: { $0.key < $1.key }) {
+                                if control.isCancelled { break }
+                                let alike: Bool = autoreleasepool {
+                                    guard let a = source.page(at: number - 1),
+                                          let b = copy.page(at: number - 1),
+                                          (b.string ?? "").trimmingCharacters(
+                                              in: .whitespacesAndNewlines).isEmpty
+                                    else { return false }
+                                    return Flattener.drawsAlike(a, b)
+                                }
+                                guard alike else { continue }
+                                let index = number - 1
+                                if case .mrc = encoded[index].stream {
+                                    relayered -= 1
+                                    savedBytes -= layeredSaving[index] ?? 0
+                                }
+                                keptSaving += (budgets[number] ?? cost) - cost
+                                for u in encoded[index].stream.urls {
+                                    try? FileManager.default.removeItem(at: u)
+                                }
+                                encoded[index] = JBIG2.Page(
+                                    stream: .sourcePage, pixelWidth: encoded[index].pixelWidth,
+                                    pixelHeight: encoded[index].pixelHeight,
+                                    boxSize: encoded[index].boxSize)
+                                shrunkTextPages.removeAll { $0.page == number }
+                                kept += 1
+                            }
+                        }
+                        if kept > 0 {
+                            progress("Kept \(kept) page\(kept == 1 ? "" : "s") as the original "
+                                     + "drew \(kept == 1 ? "it" : "them"), saving "
+                                     + "\(keptSaving / 1024) KB", layerShare(0, 1))
+                        } else {
+                            try? FileManager.default.removeItem(at: textless)
+                        }
                     }
                     if relayered > 0 {
                         progress("Layered \(relayered) picture page"
@@ -2658,9 +2726,18 @@ final class OCRModel: ObservableObject {
                 // C35. Not with a passthrough page: this file is short, so the
                 // outline's page numbers would land one page out, and the splice
                 // would drop it anyway. `setOutline` writes it after the splice.
-                try JBIG2.assemble(encoded.filter { !$0.stream.isPassthrough },
-                                   outline: carriedThrough.isEmpty ? outline : [],
-                                   to: imagesOnly)
+                // C47. Nor with a page kept as its source drew it, which is spliced
+                // the same way; and with no page left to assemble, nothing is.
+                let keptSource = encoded.indices.filter {
+                    if case .sourcePage = encoded[$0].stream { return true }
+                    return false
+                }.map { $0 + 1 }
+                let fromSource = (carriedThrough + keptSource).sorted()
+                let assembled = encoded.filter { !$0.stream.isFromSource }
+                if !assembled.isEmpty {
+                    try JBIG2.assemble(assembled, outline: fromSource.isEmpty ? outline : [],
+                                       to: imagesOnly)
+                }
                 for page in encoded { for u in page.stream.urls { try? FileManager.default.removeItem(at: u) } }
                 // C37. The kept streams and their globals, which the loop above
                 // may have shared between pages and so did not own one by one.
@@ -2670,12 +2747,18 @@ final class OCRModel: ObservableObject {
                 // it stands, so the page keeps its fonts, its own images, its
                 // `/Rotate` and its boxes, with nothing scaled and nothing
                 // re-encoded. `imagesForLayer` is what the merge runs on.
+                // C47. Out of the copy with the kept pages' text taken off when there
+                // are any: it holds every other page as the user's file does, and it
+                // is decrypted, so it needs no password.
                 var imagesForLayer = imagesOnly
                 let spliced = work.appendingPathComponent("spliced.pdf")
-                if !carriedThrough.isEmpty {
+                if !fromSource.isEmpty {
+                    let pagesFrom = keptSource.isEmpty ? file : textless
                     try control.adopting { register in
-                        try JBIG2.splice(source: file, password: password,
-                                         into: imagesOnly, passthrough: carriedThrough,
+                        try JBIG2.splice(source: pagesFrom,
+                                         password: keptSource.isEmpty ? password : nil,
+                                         into: assembled.isEmpty ? pagesFrom : imagesOnly,
+                                         passthrough: fromSource,
                                          pageCount: expected, to: spliced,
                                          using: qpdf, register: register)
                     }
@@ -2741,11 +2824,12 @@ final class OCRModel: ObservableObject {
                 // what the source had.
                 try control.adopting { register in
                     try JBIG2.setCropBoxes(
-                        sourceCropBoxes.filter { !carriedThrough.contains($0.key) },
+                        sourceCropBoxes.filter { !fromSource.contains($0.key) },
                         in: staged, using: qpdf, register: register)
                 }
                 try? FileManager.default.removeItem(at: imagesOnly)
                 try? FileManager.default.removeItem(at: spliced)
+                try? FileManager.default.removeItem(at: textless)
                 try? FileManager.default.removeItem(at: textLayer)
             } else if expected > 0, passedThroughPages == Array(1...expected),
                       outline.isEmpty || canCarryCrop,

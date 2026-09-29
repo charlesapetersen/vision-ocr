@@ -18924,7 +18924,7 @@ right-to-left characters or bidi controls, against the `ux-run`'s 59 over all 24
 subagent: both pass (its own grid, 0.25 pt over x 728-748, y 0-52: before exit 133, after exit 0 in 1,446,546 calls;
 the p325 source render shows no Arabic). The 39 documents not recounted are the open limit.
 
-### C47 · Outputs come out larger than their sources on already-compact scans: JBIG2 re-encoded and JPX layers turned into JPEG — OPEN
+### C47 · Outputs come out larger than their sources on already-compact scans: JBIG2 re-encoded and JPX layers turned into JPEG — FIXED 2026-09-29
 
 *(found 2026-09-27 by `ux-read`: 41 of 244 documents grow, `UX-RUN-2026-09-27-documents.tsv`.)*
 
@@ -18979,6 +18979,69 @@ source page through as `JBIG2.splice` does for passthrough pages, drop ProQuest'
 the app's text layer. That comes to about 189 KB. The rejected alternative was passing such pages through
 unrecognised: 166,716 B, but it keeps ProQuest's OCR instead of the app's. Marth and Levy/Temin are the same
 shape. Corpus-wide bytes are not yet measured.
+
+#### Layered half, 2026-09-29 (`c47-compact-sources`, max effort) — FIXED
+
+Reproduced at `be1b26b` through `score-gate`: Berendzen 166,716 → 254,769 B, Marth 149,256 → 324,670,
+Levy/Temin 3,493,202 → 5,483,193 [measured]. Berendzen's own images are 134,168 B; the rebuild published
+them as 220,048. ProQuest draws its OCR text first, in fill mode, under an opaque full-page JPX; the
+Internet Archive draws it in `3 Tr` under a JPX with a JBIG2 `/SMask`.
+
+Shipped, as the subagent's route proposed: a page whose own drawing costs no more than what the rebuild
+made of it keeps that drawing, with its text taken out, and is stamped with the app's text layer.
+- `JBIG2.removingText` takes every text operator and its operands out of the content streams and keeps
+  every other byte. It refuses nesting, unclosed or stray text, inline images and unterminated tokens.
+- `JBIG2.textlessCopy` writes a decrypted copy of the source with those pages' text, links and unused fonts
+  removed. A page qualifies when every stream its resources reach costs no more than the rebuild's streams,
+  and its sheet takes the layer as a rebuilt one does: no turn, no crop or trim box but the sheet, the
+  sheet within 0.5 pt of the origin, and no optional content in the document.
+- `Flattener.drawsAlike` is the proof: the copy's page must render at 2x exactly as the source's, and read
+  no text. Otherwise the page keeps its rebuild. `Model` splices kept pages from the copy with the
+  passthrough pages, and stamps them.
+
+Source → before → after, and the text layer the app adds (its text forms and font):
+- Berendzen: 166,716 → 254,769 → **169,637 B**; text layer 32,683 B. Images are the source's, byte for byte.
+- Marth: 149,256 → 324,670 → **145,294 B**; text layer 33,177 B. Images are the source's, byte for byte.
+- Levy/Temin: 3,493,202 → 5,483,193 → **2,369,543 B**; text layer 178,480 B. 12 of 66 pages kept; the
+  other 54 stay 1-bit rebuilds, smaller than their layers.
+- Keyssar, Stiglitz, w5093 and Eyal-Cohen are the same size as at `be1b26b`. Characters are unchanged on all
+  seven. Every kept page renders at 2x, pixel for pixel, as its source: Berendzen p1, Marth p1-2 and
+  Levy/Temin's 12, all at 0 differing pixels.
+- ux-regression: 0 worse, 13 better. This change: Berendzen p1 leg1 0.64 → 1.00 with its legibility flag
+  gone, Marth p2 leg1 0.78 → 1.00, and bytes on Berendzen, Marth and Riesman_1949, whose p1 now keeps its
+  JBIG2 scan and figure. C50's `be1b26b`: NYSE p110, Xin Qu p24 and Ries p54. Baseline refreshed.
+- Corpus, 233 documents (sources 1,257,952,770 B): **758,667,196 → 746,779,460 B** (-11,887,736 B, -1.57%)
+  [measured]. Before: every document published at `be1b26b`. After: the 55 documents where a run of the
+  same decision over every before-output kept a page, plus four controls, re-published by this build;
+  the other 174 are unchanged by construction, since production keeps a subset of what that run keeps.
+  336 pages kept in 55 documents. No document grew. Documents larger than their source: 27 → 20. Largest
+  savings: Levy/Temin 3.11 MB, Countryman 25,518,779 → 23,220,381 B, NYSE 4,624,365 → 3,782,610, Fairchild
+  1963 2,348,898 → 1,571,864. The controls (Keyssar, Stiglitz, w5093, Eyal-Cohen) are the same size.
+- The 336 kept pages in the published files, at 2x: 268 render pixel for pixel as their sources, 1 was
+  rebuilt by production, and 67 differ only within 3 pt of the sheet's edge, where the overlay clips a
+  partly covered pixel. Every pixel further in is identical on all 67 [measured]. The proof itself
+  compares the copy, before the splice and overlay, so these edge pixels are the only change it does not see.
+- DONE WHEN subagent, from PDFKit renders at 2x, the text and the files: pass on all four named documents
+  (Berendzen 169,637 B against 166,716 + 32,356; Keyssar 155,630 against 173,619; Stiglitz 124,896 against
+  141,974; w5093 791,240 against 914,344), renders pass, and the corpus sums check to the byte.
+- Seen on the way, not this change's: an input given as a symlink gets a false "larger than the original"
+  note (`Model.fileSize` reads the link); w5093's equation pages read Cyrillic and Thai words; Levy/Temin
+  p17's grey chart bars binarise to black and speckle.
+
+Two reviews; their findings were fixed. `transplant` moves marks by the source's media-box offset, so
+offset sheets are refused. PDFKit clips a crop box to the sheet, so boxes are read from qpdf's own
+dictionary. The splice drops `/OCProperties`, so documents with optional content are refused. Two pages
+sharing one indirect `/Contents` array would both lose their text, so a shared array is refused. The cost
+walk stops at the budget. Also fixed: an indirect `/UserUnit`, and a resource named `/P` that was never
+charged. The fixture's footer page gained its own scan, so keeping it would show. An all-kept file still
+counts in the run report's JBIG2 row: counting only assembled files would print that its pages are Flate
+compressed.
+
+Rejected: rebuilding the source's image objects inside `assemble`, a second writer for what the splice
+copies whole; proving hidden text from the graphics state, when a render asks the reader's question
+directly; and qpdf's `--remove-unreferenced-resources` on the splice, which would also act on passthrough
+pages whose forms lean on the page's resources. A pre-existing gap, unchanged: a passthrough page on an
+offset sheet takes outline destinations placed as if at the origin, and loses `/OCProperties` in the splice.
 
 ### C48 · Page labels and the document title are lost — FIXED 2026-09-29
 

@@ -49,6 +49,13 @@ enum JBIG2 {
             /// a field here would be a second place for that to be true.
             case passthrough
 
+            /// C47. The source page's own drawing, with its text taken out: a
+            /// layered scan whose images cost no more than the rebuild's, such as
+            /// Berendzen's two JPX layers under a JBIG2 mask. `splice` takes it
+            /// from `textlessCopy`'s file, as it takes a passthrough page, but it
+            /// was recognised, so unlike one it is stamped with the text layer.
+            case sourcePage
+
             /// Every file this stream owns, so the caller can clean up without
             /// knowing which kind it is. This was `url` returning one file, and
             /// an MRC page would have leaked the two it did not name.
@@ -56,7 +63,7 @@ enum JBIG2 {
                 switch self {
                 case .jbig2(let u), .jpeg(let u): return [u]
                 case .mrc(let m): return [m.mask, m.background, m.foreground]
-                case .passthrough: return []
+                case .passthrough, .sourcePage: return []
                 }
             }
 
@@ -66,15 +73,24 @@ enum JBIG2 {
                 switch self {
                 case .jbig2, .jpeg: return 1
                 case .mrc: return 3
-                case .passthrough: return 0
+                case .passthrough, .sourcePage: return 0
                 }
             }
 
-            /// Whether this page has to come out of the source file rather than
-            /// out of an encoded stream.
+            /// Whether this page keeps the source's own text, so takes no text
+            /// layer. Only a passthrough page does.
             var isPassthrough: Bool {
                 if case .passthrough = self { return true }
                 return false
+            }
+
+            /// Whether this page has to come out of a source file rather than
+            /// out of an encoded stream.
+            var isFromSource: Bool {
+                switch self {
+                case .passthrough, .sourcePage: return true
+                default: return false
+                }
             }
         }
 
@@ -312,6 +328,7 @@ enum JBIG2 {
         case spliceFailed(String)
         case outlineFailed(String)
         case documentInfoFailed(String)
+        case textlessCopyFailed(String)
 
         var errorDescription: String? {
             switch self {
@@ -335,6 +352,8 @@ enum JBIG2 {
                 return "Carrying the outline onto the compressed copy failed: \(m)"
             case .documentInfoFailed(let m):
                 return "Carrying the page numbers and title across failed: \(m)"
+            case .textlessCopyFailed(let m):
+                return "Taking the original's text off its own pages failed: \(m)"
             }
         }
     }
@@ -434,7 +453,7 @@ enum JBIG2 {
         // a document whose page count and whose page numbering both look right
         // and whose text layer lands one page out from page N onward, which is
         // the class of failure invariant 1 exists to stop.
-        if let bad = pages.firstIndex(where: { $0.stream.isPassthrough }) {
+        if let bad = pages.firstIndex(where: { $0.stream.isFromSource }) {
             throw Failure.cannotAssemblePassthrough(page: bad + 1)
         }
 
@@ -608,7 +627,7 @@ enum JBIG2 {
                     ? "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n" + drawn : drawn
             case .jbig2, .jpeg:
                 content = "q \(w) 0 0 \(h) 0 0 cm /Im0 Do Q\n"
-            case .passthrough:
+            case .passthrough, .sourcePage:
                 // Refused at the top of this function; the case is here so that
                 // adding a fourth stream kind cannot compile against a default.
                 throw Failure.cannotAssemblePassthrough(page: i + 1)
@@ -693,7 +712,7 @@ enum JBIG2 {
                 try writeImage(objects[2], from: m.mask, width: m.maskWidth ?? page.pixelWidth,
                                height: m.maskHeight ?? page.pixelHeight, filter: "/JBIG2Decode",
                                bits: 1, space: "", isStencil: true, decode: maskDecode)
-            case .passthrough:
+            case .passthrough, .sourcePage:
                 throw Failure.cannotAssemblePassthrough(page: i + 1)
             }
         }
@@ -1037,6 +1056,447 @@ enum JBIG2 {
             throw Failure.spliceFailed(message.isEmpty
                 ? "qpdf exited with code \(process.terminationStatus)" : message)
         }
+    }
+
+    // MARK: - A source page without its text — C47
+
+    /// C47. The operators that set, place or show text. Taking out these and their
+    /// operands, and nothing else, leaves the rest of a page's drawing as it was:
+    /// every other operator a text object may hold (colour, `gs`, marked content)
+    /// is legal outside one and sets the state it set.
+    static let textOperators: Set<String> = [
+        "BT", "ET", "Tc", "Tw", "Tz", "TL", "Tf", "Tr", "Ts", "Td", "TD", "Tm", "T*",
+        "Tj", "TJ", "'", "\"",
+    ]
+
+    /// C47. A page's content streams with every text operator and its operands
+    /// taken out, each replaced by a newline, and every other byte kept. Read as
+    /// one, as a reader draws them, so a text object may open in one stream and
+    /// close in the next.
+    ///
+    /// nil when a stream cannot be read with certainty: a text object that nests or
+    /// does not close, text shown outside one, a stream that ends inside an array,
+    /// a dictionary or an operator's operands while another follows, an
+    /// unterminated string, or an inline image, whose data a scan for `EI` can
+    /// misread. nil keeps the page on the rebuild, which is what it had before.
+    static func removingText(from streams: [Data]) -> [Data]? {
+        func isSpace(_ c: UInt8) -> Bool {
+            c == 0x00 || c == 0x09 || c == 0x0A || c == 0x0C || c == 0x0D || c == 0x20
+        }
+        func isDelimiter(_ c: UInt8) -> Bool {
+            c == 0x28 || c == 0x29 || c == 0x3C || c == 0x3E || c == 0x5B || c == 0x5D
+                || c == 0x7B || c == 0x7D || c == 0x2F || c == 0x25
+        }
+        var inText = false
+        var result: [Data] = []
+        for (number, content) in streams.enumerated() {
+            let bytes = [UInt8](content), n = bytes.count
+            var out = Data(capacity: n)
+            var copied = 0              // bytes before this are in `out`, or taken out
+            var operands: Int?          // where the next operator's operands begin
+            var open: [UInt8] = []      // `[` or `<` for each array or dictionary open
+            var i = 0
+            while i < n {
+                let c = bytes[i]
+                if isSpace(c) { i += 1; continue }
+                if c == 0x25 {          // a comment, to the end of its line
+                    while i < n, bytes[i] != 0x0A, bytes[i] != 0x0D { i += 1 }
+                    continue
+                }
+                let start = i
+                switch c {
+                case 0x28:              // a string: parentheses balance, `\` escapes a byte
+                    var level = 0
+                    while true {
+                        guard i < n else { return nil }
+                        let b = bytes[i]
+                        i += 1
+                        if b == 0x5C {
+                            i += 1
+                        } else if b == 0x28 {
+                            level += 1
+                        } else if b == 0x29 {
+                            level -= 1
+                            if level == 0 { break }
+                        }
+                    }
+                case 0x3C where i + 1 < n && bytes[i + 1] == 0x3C:
+                    open.append(0x3C)
+                    i += 2
+                case 0x3C:              // a hex string
+                    while i < n, bytes[i] != 0x3E { i += 1 }
+                    guard i < n else { return nil }
+                    i += 1
+                case 0x3E:              // `>>` closes a dictionary; a lone `>` is malformed
+                    guard i + 1 < n, bytes[i + 1] == 0x3E, open.last == 0x3C else { return nil }
+                    open.removeLast()
+                    i += 2
+                case 0x5B:
+                    open.append(0x5B)
+                    i += 1
+                case 0x5D:
+                    guard open.last == 0x5B else { return nil }
+                    open.removeLast()
+                    i += 1
+                case 0x29, 0x7B, 0x7D:  // a stray `)`, or a PostScript procedure
+                    return nil
+                case 0x2F:              // a name
+                    i += 1
+                    while i < n, !isSpace(bytes[i]), !isDelimiter(bytes[i]) { i += 1 }
+                default:                // a number, a keyword or an operator
+                    while i < n, !isSpace(bytes[i]), !isDelimiter(bytes[i]) { i += 1 }
+                    let first = bytes[start]
+                    let word = String(decoding: bytes[start..<i], as: UTF8.self)
+                    if !open.isEmpty || word == "true" || word == "false" || word == "null"
+                        || (0x30...0x39).contains(first) || first == 0x2B || first == 0x2D
+                        || first == 0x2E {
+                        break
+                    }
+                    // An operator, which takes every operand since the one before it.
+                    if word == "BI" || word == "ID" || word == "EI" { return nil }
+                    let from = operands ?? start
+                    operands = nil
+                    guard textOperators.contains(word) else { continue }
+                    switch word {
+                    case "BT":
+                        guard !inText else { return nil }
+                        inText = true
+                    case "ET":
+                        guard inText else { return nil }
+                        inText = false
+                    case "Tj", "TJ", "'", "\"":
+                        guard inText else { return nil }
+                    default:
+                        break
+                    }
+                    out.append(contentsOf: bytes[copied..<from])
+                    out.append(0x0A)
+                    copied = i
+                    continue
+                }
+                // Whatever reached here is an operand of the next operator.
+                if operands == nil { operands = start }
+            }
+            // A stream ends between tokens, so an operand left over would belong to
+            // an operator in the next one, which this reads on its own.
+            guard open.isEmpty, operands == nil || number == streams.count - 1 else { return nil }
+            out.append(contentsOf: bytes[copied..<n])
+            result.append(out)
+        }
+        return inText ? nil : result
+    }
+
+    /// C47. A copy of `file`, decrypted, in which each page in `budgets` whose own
+    /// drawing costs no more than its budget in bytes has had its text taken out
+    /// (`removingText`), its `/Annots` dropped and the fonts it no longer uses
+    /// unlisted. Returns those pages, numbered from 1, with what each costs; every
+    /// other page is as it was.
+    ///
+    /// A page costs what `splice` would carry into the finished file for it: every
+    /// stream its resources reach, the fonts it no longer uses aside, and its
+    /// content. The caller's budget is what the rebuild would publish, so a page
+    /// leaves the rebuild only when keeping it costs no more. Berendzen's two JPX
+    /// layers under their JBIG2 mask, and its two JPX photographs, come to 134 KB
+    /// against the rebuild's 220 KB.
+    ///
+    /// Its annotations go because the rebuild carries none either: the transplant
+    /// adds them back when the reader asks for them, and a page that kept its own
+    /// would be given each mark twice (`Model`'s passthrough refusal says so).
+    ///
+    /// Only a page on a sheet the rebuild would have left as it is is taken: no
+    /// turn, no crop or trim box but the sheet, the sheet at the origin (the guard
+    /// below says why each), and no optional content anywhere in the document.
+    ///
+    /// ⚠️ Nothing here proves the copy draws what the source drew, and no page of it
+    /// may be published without that proof: `Model` renders each returned page from
+    /// both files and keeps only those that match, pixel for pixel
+    /// (`Flattener.drawsAlike`). The page dictionaries are read back from qpdf's own
+    /// JSON and handed back with keys removed, never authored, for `setCropBoxes`'s
+    /// reason.
+    static func textlessCopy(of file: URL, password: String?, budgets: [Int: Int],
+                             to destination: URL, using qpdf: String,
+                             register: (Process) -> Void = { _ in }) throws -> [Int: Int] {
+        guard !budgets.isEmpty else { return [:] }
+        let work = destination.deletingLastPathComponent()
+        // In a file, not in argv, for `sourceImages`'s reason.
+        let passwordFile = work.appendingPathComponent("pw-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: passwordFile) }
+        var unlock: [String] = []
+        if let password, !password.isEmpty {
+            guard (try? Data(password.utf8).write(to: passwordFile)) != nil else {
+                throw Failure.textlessCopyFailed("could not hand qpdf the password")
+            }
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600],
+                                                   ofItemAtPath: passwordFile.path)
+            unlock = ["--password-file=" + passwordFile.path]
+        }
+        func run(_ arguments: [String]) throws -> Data {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: qpdf)
+            process.arguments = arguments
+            // Warnings to a file, not a pipe, for `carryDocumentInfo`'s reason: a
+            // child blocked on a full stderr never closes stdout.
+            let errURL = work.appendingPathComponent("qpdf-\(UUID().uuidString).err")
+            defer { try? FileManager.default.removeItem(at: errURL) }
+            FileManager.default.createFile(atPath: errURL.path, contents: nil)
+            let err = try FileHandle(forWritingTo: errURL)
+            defer { try? err.close() }
+            let out = Pipe()
+            process.standardOutput = out
+            process.standardError = err
+            try process.run()
+            register(process)
+            let data = out.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 || process.terminationStatus == 3 else {
+                let message = String(decoding: (try? Data(contentsOf: errURL)) ?? Data(),
+                                     as: UTF8.self)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                throw Failure.textlessCopyFailed(message.isEmpty
+                    ? "qpdf exited with code \(process.terminationStatus)" : message)
+            }
+            return data
+        }
+        func json(_ arguments: [String]) throws -> [String: Any] {
+            guard let parsed = try? JSONSerialization.jsonObject(with: run(arguments))
+                    as? [String: Any] else {
+                throw Failure.textlessCopyFailed("qpdf could not describe the file")
+            }
+            return parsed
+        }
+        func isRef(_ s: String) -> Bool {
+            let parts = s.split(separator: " ")
+            return parts.count == 3 && parts[2] == "R" && Int(parts[0]) != nil
+                && Int(parts[1]) != nil
+        }
+
+        let described = try json(unlock + [file.path, "--json=2", "--json-stream-data=none",
+                                            "--json-key=pages", "--json-key=qpdf"])
+        guard let pages = described["pages"] as? [[String: Any]],
+              let qpdfKey = described["qpdf"] as? [Any], qpdfKey.count == 2,
+              let header = qpdfKey[0] as? [String: Any],
+              let all = qpdfKey[1] as? [String: Any] else {
+            throw Failure.textlessCopyFailed("qpdf's JSON is not the shape this expects")
+        }
+        func object(_ ref: String) -> [String: Any]? { all["obj:" + ref] as? [String: Any] }
+        func resolve(_ value: Any?) -> Any? {
+            guard let ref = value as? String, isRef(ref) else { return value }
+            let o = object(ref)
+            return o?["value"] ?? (o?["stream"] as? [String: Any])?["dict"]
+        }
+        func length(_ ref: String) -> Int? {
+            guard let dict = (object(ref)?["stream"] as? [String: Any])?["dict"]
+                    as? [String: Any] else { return nil }
+            return (dict["/Length"] as? Int) ?? (resolve(dict["/Length"]) as? Int)
+        }
+        /// A rectangle as four numbers, lower-left first, or nil.
+        func rect(_ value: Any?) -> [Double]? {
+            guard let array = resolve(value) as? [Any], array.count == 4 else { return nil }
+            let n = array.compactMap { (resolve($0) as? NSNumber)?.doubleValue }
+            guard n.count == 4 else { return nil }
+            return [min(n[0], n[2]), min(n[1], n[3]), max(n[0], n[2]), max(n[1], n[3])]
+        }
+        /// What a page inherits: its own entry, or the nearest `/Pages` node's above it.
+        func inherited(_ key: String, _ page: [String: Any]) -> Any? {
+            var node: [String: Any]? = page
+            for _ in 0..<64 {
+                guard let n = node else { return nil }
+                if let v = n[key] { return resolve(v) }
+                node = resolve(n["/Parent"]) as? [String: Any]
+            }
+            return nil
+        }
+        // A document with optional content is left alone: `splice` does not carry the
+        // catalogue's `/OCProperties`, so a layer it hides would show on a kept page.
+        if let trailer = (all["trailer"] as? [String: Any])?["value"] as? [String: Any],
+           let catalog = resolve(trailer["/Root"]) as? [String: Any],
+           catalog["/OCProperties"] != nil {
+            return [:]
+        }
+        // How often each object is named anywhere in the file. A content stream or a
+        // resource dictionary that anything else names cannot change for one page.
+        var named: [String: Int] = [:]
+        var pending: [Any] = Array(all.values)
+        while let value = pending.popLast() {
+            if let s = value as? String {
+                if isRef(s) { named[s, default: 0] += 1 }
+            } else if let a = value as? [Any] {
+                pending.append(contentsOf: a)
+            } else if let d = value as? [String: Any] {
+                // An object's own entry names nothing: its "value", or its stream's "dict".
+                pending.append(contentsOf: d.filter { $0.key != "datafile" }.values)
+            }
+        }
+        /// Every stream `roots` reach, in bytes: what the splice carries for them. Not
+        /// up a page tree, which belongs to the document; nil past `budget`, past a
+        /// bound, or at a stream whose length qpdf does not give. Stopping at the budget
+        /// keeps a book whose pages share one resource dictionary naming every image
+        /// from walking every image once per page.
+        func cost(of roots: [Any], within budget: Int) -> Int? {
+            var seen = Set<String>(), stack = roots, total = 0, steps = 0
+            while let value = stack.popLast() {
+                steps += 1
+                if steps > 200_000 { return nil }
+                if let s = value as? String {
+                    guard isRef(s), seen.insert(s).inserted, let o = object(s) else { continue }
+                    if let stream = o["stream"] as? [String: Any] {
+                        guard let bytes = length(s) else { return nil }
+                        total += bytes
+                        if total > budget { return nil }
+                        if let dict = stream["dict"] { stack.append(dict) }
+                    } else if let v = o["value"] {
+                        // A page reached from a resource is another page's to carry, and
+                        // the structure tree and the catalogue are the document's.
+                        if let type = (v as? [String: Any])?["/Type"] as? String,
+                           ["/Page", "/Pages", "/StructElem", "/StructTreeRoot", "/Catalog"]
+                               .contains(type) { continue }
+                        stack.append(v)
+                    }
+                } else if let a = value as? [Any] {
+                    stack.append(contentsOf: a)
+                } else if let d = value as? [String: Any] {
+                    for (key, v) in d where key != "/Parent" { stack.append(v) }
+                }
+            }
+            return total
+        }
+
+        struct Candidate {
+            let page: Int, ref: String, value: [String: Any], contents: [String]
+            /// The page's own resources, when no other object names them, so their
+            /// `/Font` can go: `ref` nil when they are written in the page itself.
+            let resources: (ref: String?, dict: [String: Any])?
+            let cost: Int
+        }
+        var candidates: [Candidate] = []
+        for (number, budget) in budgets.sorted(by: { $0.key < $1.key }) {
+            guard number >= 1, number <= pages.count,
+                  pages[number - 1]["pageposfrom1"] as? Int == number,
+                  let ref = pages[number - 1]["object"] as? String,
+                  let value = object(ref)?["value"] as? [String: Any],
+                  let contents = pages[number - 1]["contents"] as? [String], !contents.isEmpty,
+                  contents.allSatisfy({ named[$0] == 1 }),
+                  // An array of them, by reference, is shared as surely as a stream is.
+                  (value["/Contents"] as? String).map({ !isRef($0) || named[$0] == 1 }) ?? true,
+                  (resolve(value["/UserUnit"]) as? NSNumber).map({ $0.doubleValue == 1 }) ?? true
+            else { continue }
+            // The text layer lands on a kept page as it lands on a rebuilt one only on a
+            // sheet the rebuild would not have changed. Asked here, of the page's own
+            // dictionary: PDFKit clips a crop box to the media box, so one larger than the
+            // sheet read as equal to it, and `overlay` then centred the scan in it.
+            //  - No turn: the rebuild bakes a `/Rotate` in, and the layer is drawn upright.
+            //  - No crop or trim box but the sheet: `overlay` fits the layer into the trim
+            //    box and moves the page's own drawing to centre it there (C23).
+            //  - A sheet at the origin, to half a point: the reader's marks and the outline
+            //    are placed as on a rebuilt page, which starts there (`transplant` moves
+            //    them by the source's offset: -24.69 pt on `Cohen_1990`).
+            let turn = (inherited("/Rotate", value) as? NSNumber)?.intValue ?? 0
+            guard turn % 360 == 0, let sheet = rect(inherited("/MediaBox", value)),
+                  abs(sheet[0]) <= 0.5, abs(sheet[1]) <= 0.5,
+                  [inherited("/CropBox", value), value["/TrimBox"]].allSatisfy({ box in
+                      guard box != nil else { return true }
+                      guard let r = rect(box) else { return false }
+                      return zip(r, sheet).allSatisfy { abs($0 - $1) <= 0.01 }
+                  })
+            else { continue }
+            var resources: (ref: String?, dict: [String: Any])?
+            if let dict = value["/Resources"] as? [String: Any] {
+                resources = (nil, dict)
+            } else if let r = value["/Resources"] as? String, isRef(r), named[r] == 1,
+                      let dict = object(r)?["value"] as? [String: Any] {
+                resources = (r, dict)
+            }
+            // Inherited or shared, the fonts stay, and are charged: the splice carries them.
+            var roots: [Any] = []
+            if var own = resources?.dict {
+                own.removeValue(forKey: "/Font")
+                roots.append(own)
+            } else if let shared = inherited("/Resources", value) {
+                roots.append(shared)
+            }
+            // And whatever else the page names, a thumbnail or `/PieceInfo`: the splice
+            // carries it. Not its content, charged below, nor what the copy drops.
+            for (key, v) in value where !["/Parent", "/Contents", "/Resources", "/Annots", "/B"]
+                .contains(key) {
+                roots.append(v)
+            }
+            guard let bytes = cost(of: roots, within: budget) else { continue }
+            candidates.append(Candidate(page: number, ref: ref, value: value, contents: contents,
+                                        resources: resources, cost: bytes))
+        }
+        guard !candidates.isEmpty else { return [:] }
+
+        // The content streams alone, decoded: every stream would write a Flate scan out
+        // at its full size (`sourceImages` measured 40 MB against 28 MB for Hayek).
+        let wanted = candidates.flatMap(\.contents).map { ref -> String in
+            let parts = ref.split(separator: " ")
+            return "--json-object=\(parts[0]),\(parts[1])"
+        }
+        let fetched = try json(unlock + [file.path, "--json=2", "--json-key=qpdf",
+                                         "--json-stream-data=inline",
+                                         "--decode-level=generalized"] + wanted)
+        guard let streams = (fetched["qpdf"] as? [Any])?.last as? [String: Any] else {
+            throw Failure.textlessCopyFailed("qpdf did not give the pages' content")
+        }
+        var patch: [String: Any] = [:]
+        var stripped: [Int: Int] = [:]
+        for candidate in candidates {
+            var dicts: [[String: Any]] = [], datas: [Data] = []
+            for ref in candidate.contents {
+                // Still filtered means qpdf could not decode it, and it cannot be read.
+                guard let s = (streams["obj:" + ref] as? [String: Any])?["stream"]
+                        as? [String: Any],
+                      let dict = s["dict"] as? [String: Any], dict["/Filter"] == nil,
+                      let data = Data(base64Encoded: s["data"] as? String ?? "") else { break }
+                dicts.append(dict)
+                datas.append(data)
+            }
+            guard datas.count == candidate.contents.count,
+                  let without = removingText(from: datas) else { continue }
+            let cost = candidate.cost + without.reduce(0, { $0 + $1.count })
+            guard cost <= budgets[candidate.page] ?? 0 else { continue }
+            for (k, ref) in candidate.contents.enumerated() {
+                patch["obj:" + ref] = ["stream": ["dict": dicts[k],
+                                                  "data": without[k].base64EncodedString()]]
+            }
+            var value = candidate.value
+            value.removeValue(forKey: "/Annots")
+            if let resources = candidate.resources {
+                var dict = resources.dict
+                dict.removeValue(forKey: "/Font")
+                if let r = resources.ref { patch["obj:" + r] = ["value": dict] }
+                else { value["/Resources"] = dict }
+            }
+            patch["obj:" + candidate.ref] = ["value": value]
+            stripped[candidate.page] = cost
+        }
+        guard !stripped.isEmpty else { return [:] }
+
+        let patchURL = work.appendingPathComponent("textless-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: patchURL) }
+        let document: [String: Any] = ["qpdf": [
+            ["jsonversion": 2, "pdfversion": header["pdfversion"] ?? "1.4"], patch]]
+        guard let body = try? JSONSerialization.data(withJSONObject: document),
+              (try? body.write(to: patchURL)) != nil else {
+            throw Failure.textlessCopyFailed("could not write the page update")
+        }
+        try? FileManager.default.removeItem(at: destination)
+        // Every stream as it was stored: by default qpdf compresses one the source kept
+        // raw, and, told not to, writes out decoded every stream it can decode. Either
+        // reads below as a page changed. The splice compresses the new content.
+        _ = try run(unlock + [file.path, "--decrypt", "--decode-level=none",
+                              "--compress-streams=n", "--update-from-json=\(patchURL.path)",
+                              destination.path])
+        // Every page's content objects and images as they were: only bytes of the
+        // content streams, and keys of the page dictionaries, may have changed.
+        let after = try json([destination.path, "--json=2", "--json-stream-data=none",
+                              "--json-key=pages"])
+        guard FileManager.default.fileExists(atPath: destination.path),
+              pageFingerprint(after) == pageFingerprint(described) else {
+            try? FileManager.default.removeItem(at: destination)
+            throw Failure.textlessCopyFailed("the pages changed while their text was taken out")
+        }
+        return stripped
     }
 
     // MARK: - Merging the text layer

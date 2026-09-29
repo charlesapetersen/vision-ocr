@@ -525,7 +525,7 @@ say so in the commit.
       2026-09-29: done. The cell was two cells in one box; the grey reading now splits it and fixes
       garbled numbers, and Find 1.228 hits over its cell.
       (origin: BUGS.md C50)
-- [ ] **c47-compact-sources** — keep a compact source's image streams when the rebuild would be larger:
+- [x] **c47-compact-sources** — keep a compact source's image streams when the rebuild would be larger:
       JBIG2 in a Form XObject (Stiglitz, Keyssar), and JPX layers (Berendzen).
       DONE WHEN: Keyssar, Stiglitz, w5093 and Berendzen publish no larger than their sources plus the size
       of the text layer the app adds (state both), with PDFKit
@@ -533,6 +533,8 @@ say so in the commit.
       2026-09-29: the JBIG2 half shipped (Keyssar, Stiglitz, w5093 and Eyal-Cohen pass), and the bound is
       spent, so the item moved behind c50. What is left is Berendzen's layered page (Marth and Levy/Temin
       are the same shape), and the corpus bytes. C47 names the route a subagent proposed. BOUND: one code commit.
+      2026-09-29: done. A page whose own drawing costs no more than its rebuild keeps it, text taken out,
+      and is stamped with the app's text layer; Berendzen 169,637 B, Marth 145,294, Levy/Temin 2,369,543.
       (origin: BUGS.md C47)
   - [x] **c47-jbig2-forms** — JBIG2 scans drawn through a form, drawn upside down, or hanging off the sheet
         keep their stream, and finished files pack their objects. (context: BUGS.md C47)

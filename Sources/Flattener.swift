@@ -1905,6 +1905,32 @@ enum Flattener {
         return ok ? buffer : nil
     }
 
+    /// C47. Whether two pages draw the same pixels: a source page and its copy with
+    /// the text taken out (`JBIG2.textlessCopy`). Rendered as `renderRGB` renders, at
+    /// 2x, as a reader on a Retina display meets them, and compared exactly. Text
+    /// hidden under an opaque image, as ProQuest hides it, or drawn invisible, as the
+    /// Internet Archive draws it, changes nothing: 0 pixels on Berendzen, Marth and
+    /// eight pages of Levy/Temin. Anything a reader could see, such as a footer
+    /// printed over the scan, changes pixels, and the page keeps its rebuild.
+    ///
+    /// A sheet larger than `drawsAlikePixels` at 2x is compared at the scale that
+    /// fits, which bounds the two buffers at 64 MB each.
+    static func drawsAlike(_ a: PDFPage, _ b: PDFPage) -> Bool {
+        let box = fullBox(of: a)
+        guard fullBox(of: b) == box, box.width >= 1, box.height >= 1 else { return false }
+        let fit = (drawsAlikePixels / Double(box.width * box.height)).squareRoot()
+        let scale = CGFloat(min(2, fit))
+        let width = Int((box.width * scale).rounded()), height = Int((box.height * scale).rounded())
+        guard width >= 1, height >= 1,
+              let ra = renderRGB(a, box: box, scale: scale, width: width, height: height),
+              let rb = renderRGB(b, box: box, scale: scale, width: width, height: height)
+        else { return false }
+        return ra == rb
+    }
+
+    /// The most pixels `drawsAlike` renders a page at: 16 MP, a broadsheet at 2x.
+    static let drawsAlikePixels = 16_000_000.0
+
     /// JPEG-encode an RGBA buffer as three-channel colour, giving back the bytes
     /// and an image over them — the colour twin of `jpeg(from:)`.
     ///
