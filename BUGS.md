@@ -19076,6 +19076,50 @@ pt). Not shipped: baselines snapped to a grid per column (Cong worse than the ca
 line by line at the minimum); every run at 0.6 of the median (helps Cong and Marth, thins every
 selection); every edge near a gutter fitted (163 boxes moved on Riesman for the 31 needed).
 
+#### Second commit 2026-09-28: headings inside a column keep their size — box left open
+
+Adopted from the first attempt's worktree, which the usage window cut off before it committed.
+
+**Cause** [measured]. The cap also reached headlines, bylines and pull quotes set inside one column and
+drew them at the body's height, the larger ones narrower too. Through PDFKit on ff25f3b's outputs:
+`Raskin` p1's headline selected 10.3 pt tall (23.1 uncapped), `Glazer_2002` p1's `DIARIST` 117 pt of
+160 wide, 34 lines of `Fiedler` p1.
+
+**Fix.** `ceilings` leaves a box over 1.5x its column's median height at its own ceiling, and no cap
+goes below `minimumVertical` of the size the run is drawn at under its own ceiling, so the cap never
+narrows a run. Three checks, red on origin/main; with either half removed, its own check goes red.
+
+**Measured** (production outputs, ff25f3b → this, PDFKit `selectionsByLine` and the ux-harness):
+- 63 pages (the regression set's 43, C34's 16, Corporation Tax's 4): 55 lines drawn taller, 3 wider,
+  none shorter or narrower, 7,931 unchanged, and two fragments of a Fiedler advertisement now one line.
+  By their text: headlines, bylines, pull quotes, a drop cap, advertisements, and a few body lines Vision
+  read over 1.5x (Riesman's `not enough sustained concentration on` 8.3 → 9.3 pt).
+- Column drags, per column: unchanged on Raskin, Glazer, Riesman, Cong, Donahue, Lemann, Peters and
+  Hughes; one `___ 2` column 0.42 → 0.48; `Fiedler` p1 23 of 29 columns better (four to 1.00), two worse
+  (0.17 → 0.10, 0.29 → 0.13). C34's pages and Corporation Tax: every harness column identical.
+- ux-regression 3 better (Fiedler WER 3.17 → 2.46, `___ 2` WER 1.12 → 1.08 and splits 8 → 6), 1 worse,
+  accepted: Fiedler's recall 0.60 → 0.52 is its worst column's, and the worst column changed (the 0.08 one
+  now reads 1.00). Baseline refreshed.
+- Invariant 3, over the 11 changed pages in 10 files: `score-run-width` identical on 8, Hughes p2 and
+  Peters p2 less squashed; `score-line-separation` identical on 9, and on Fiedler merged 2/188 → 1/188
+  and runaway 0 → 1.2%: a caption's first line now runs on into its own second line (209 characters)
+  where it ran into the next column's (133, under the page's 144). `score-corpus` and the probes not
+  run: nothing drew shorter or narrower.
+- Rejected: no floor (identical on all 63 pages, so the evidence cannot choose; kept because without it
+  the cap narrows a sparse row below what 1.14.0 drew); headings left out of the nine in ten (drew
+  Donahue p1's pull quote, eleven Fiedler headline and advertisement lines and Peters p2's running foot
+  thinner, Fiedler precision 0.65 → 0.62, none better).
+- DONE WHEN, checked by a separate subagent on these outputs: Riesman p2 passes (six drags at 1.00, the
+  first commit's); Marth p2 (0.51, four of column 3's lines between two of column 2's paragraphs) and
+  Cong p16 (0.14) fail, unchanged here; C34's pages have byte-identical text before and after this
+  commit, and against the outputs from before the item WSJ reads better (0.03 → 0.17) and Lemann p1/p2
+  still worse (0.51 → 0.38, 0.54 → 0.35). **Box left open.**
+
+**Left.** A heading with a line close under it is still drawn under its headroom: `Higher Ed` 15.2 pt,
+where the source's own layer is 38 (a band over the lower two fifths of the letters), and the last line of
+`___ 2`'s headline 8.4. `headroom` divides the gap to the nearest baseline by 1.5 whatever the two lines'
+sizes, as 1.14.0 did; it is not the cap.
+
 ## Robustness and correctness of reporting
 
 ### R1 · jbig2 and qpdf children are never registered for cancellation — FIXED

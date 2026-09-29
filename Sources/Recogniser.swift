@@ -1222,7 +1222,9 @@ enum Recogniser {
     /// 0.4 of its share by width (invariant 1: the fused reading is kept rather
     /// than lose its text). The halves are cut in the middle of the blank paper
     /// (`blankGutter`), so the end of a long left line reaching into the gutter stays
-    /// with its half. A rule printed down the gutter keeps every line whole.
+    /// with its half. A row read across a rule printed down the gutter is cut beside
+    /// the rule where the paper there is as wide as the gutter found, and kept whole
+    /// where it is not.
     ///
     /// Every gutter the writer orders the page by is asked, not only the page's
     /// widest-backed one (`SearchableWriter.columnGutters`): on `Riesman_1949` p2, three

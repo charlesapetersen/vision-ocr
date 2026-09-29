@@ -1486,13 +1486,6 @@ enum SearchableWriter {
     static var continuationCandidates: Int = 3
 
 
-    /// How tall this line's glyphs may be before they collide with the nearest
-    /// line above or below.
-    ///
-    /// Necessary because Vision's lines sit much closer together than a naive
-    /// font size implies — a superscript footnote marker can be 8 pt from the
-    /// line beneath it. Where invisible runs overlap, Preview stops treating them
-    /// as separate lines and a drag-selection runs straight past one.
     /// Where this observation's text is actually *drawn*, not where its box
     /// bottom sits. Comparing box bottoms over-estimates the gap by 0.22 x the
     /// height difference, which let a short superscript overlap a taller line —
@@ -1607,14 +1600,10 @@ enum SearchableWriter {
         return abs(drawnBaseline(a, in: box) - drawnBaseline(b, in: box)) < tolerance
     }
 
-    /// Not `private`, for the reason `rightLimit` is not: `Tools/score-run-width`
-    /// measures both halves of the fight — how wide a run is drawn and how far
-    /// the ceiling squashed it — and C20 is the entry about a pair getting both
-    /// treatments at once, so an instrument that can see only one of them cannot
-    /// see C20 at all.
     /// The ceiling each of `lines` is drawn under, as `compose` draws them: its
-    /// `headroom`, and for a line in a column (`columnMembers`) no more than the height
-    /// nine in ten of its column's lines would be drawn at (C52).
+    /// `headroom`, and for a body line in a column (`columnMembers`) no more than the
+    /// height nine in ten of its column's lines would be drawn at, unless that would
+    /// narrow its run (C52).
     ///
     /// PDFKit reads a page's blocks by where their tops are, so a column cut into two
     /// blocks takes the next column's in between, and a line drawn taller than its
@@ -1624,26 +1613,63 @@ enum SearchableWriter {
     /// right column in two, and capped it selects column by column again [measured].
     /// Only the tallest tenth: capped at the median, Hughes p3 and `_1953_99 Cong_ 2`
     /// p16 read better still, but `Donahue` p1's left column, drawn thinner, broke at a
-    /// paragraph space and read into the next one (1.00 -> 0.50) [measured]. A line
-    /// outside every column, a heading across the columns or any line of a page with
-    /// none, keeps its own ceiling.
+    /// paragraph space and read into the next one (1.00 -> 0.50) [measured].
+    ///
+    /// A line outside every column (a heading across the columns, any line of a page
+    /// with none) keeps its own ceiling, and so does a heading inside one: a box over
+    /// one and a half of its column's median height. Capped, headlines, bylines and pull
+    /// quotes were drawn at the body's height, and the larger ones narrower: PDFKit
+    /// selected `Raskin` p1's headline 10 pt tall, 23 pt uncapped, and `Glazer_2002`
+    /// p1's `DIARIST` over 73% of the width it has uncapped [measured], and the suite's
+    /// 48 pt headline in one column over 76% of its box. Headings still count among the
+    /// nine in ten: left out, the cap drew `Donahue` p1's pull quote, eleven lines of
+    /// `Fiedler`'s headlines and advertisements and `Peters` p2's running foot thinner,
+    /// and no drag read better [measured]. No cap goes below what keeps a run the size it is drawn
+    /// at under its own ceiling (`minimumVertical` of it), or `placement` would shrink
+    /// the run to keep the glyphs short: a sparse row such as `1 24` would lose a
+    /// quarter of its width (invariant 3) [measured on the suite's fixture].
+    ///
+    /// Not `private`, for the reason `rightLimit` is not: `Tools/score-run-width`
+    /// measures both halves of the fight — how wide a run is drawn and how far
+    /// the ceiling squashed it — and C20 is the entry about a pair getting both
+    /// treatments at once, so an instrument that can see only one of them cannot
+    /// see C20 at all.
     static func ceilings(for lines: [Observation], in box: CGRect) -> [CGFloat] {
         var ceilings = lines.indices.map { headroom(for: $0, among: lines, in: box) }
         let columns = columnMembers(of: lines,
                                     aspect: box.width > 0 ? Double(box.height / box.width) : 1)
-        var drawn: [Int: [CGFloat]] = [:]
+        var drawn: [Int: [CGFloat]] = [:], boxes: [Int: [Double]] = [:]
         for (i, column) in columns.enumerated() {
             guard let column else { continue }
             let wanted = CGFloat(lines[i].boundingBox.height) * box.height * 0.86
             drawn[column, default: []].append(min(wanted, ceilings[i]))
+            boxes[column, default: []].append(lines[i].boundingBox.height)
         }
         let caps = drawn.mapValues { heights in heights.sorted()[heights.count * 9 / 10] }
+        let medians = boxes.mapValues { heights in heights.sorted()[heights.count / 2] }
+        let font = CTFontCreateWithName(textFace as CFString, 12, nil)
         for (i, column) in columns.enumerated() {
-            if let column, let cap = caps[column] { ceilings[i] = min(ceilings[i], cap) }
+            guard let column, let cap = caps[column], cap < ceilings[i],
+                  let median = medians[column], lines[i].boundingBox.height <= 1.5 * median
+            else { continue }
+            var floor: CGFloat = 0
+            if case .placed(let run) = placement(of: lines[i], in: box, ceiling: ceilings[i],
+                                                 rightLimit: rightLimit(for: i, among: lines, in: box),
+                                                 font: font) {
+                floor = minimumVertical * run.size
+            }
+            ceilings[i] = min(ceilings[i], max(cap, floor))
         }
         return ceilings
     }
 
+    /// How tall this line's glyphs may be before they collide with the nearest
+    /// line above or below.
+    ///
+    /// Necessary because Vision's lines sit much closer together than a naive
+    /// font size implies — a superscript footnote marker can be 8 pt from the
+    /// line beneath it. Where invisible runs overlap, Preview stops treating them
+    /// as separate lines and a drag-selection runs straight past one.
     static func headroom(for position: Int, among lines: [Observation],
                          in box: CGRect) -> CGFloat {
         func baseline(_ o: Observation) -> CGFloat { drawnBaseline(o, in: box) }

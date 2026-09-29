@@ -9286,7 +9286,7 @@ do {
         let heading = o("A HEADING SET ACROSS BOTH COLUMNS", x: 0.2, y: 0.05, w: 0.6, h: 0.02)
         var twoColumns: [Obs] = [heading], oneColumn: [Obs] = [heading]
         for r in 0..<12 {
-            let y = 0.1 + Double(r) * 0.018, h = r == 11 ? 0.017 : 0.011
+            let y = 0.1 + Double(r) * 0.018, h = r == 11 ? 0.015 : 0.011
             twoColumns += [o("tall left \(r) the quick brown fox", x: 0.08, y: y, w: 0.4, h: h),
                            o("tall right \(r) the quick brown fox", x: 0.52, y: y, w: 0.4, h: 0.011)]
             oneColumn.append(o("tall left \(r) the quick brown fox jumps over", x: 0.08, y: y, w: 0.84, h: h))
@@ -9311,9 +9311,89 @@ do {
               median > 0 && (height(two, "tall left 11 ") ?? 99) <= median * 1.05
                   && (height(two, "A HEADING SET") ?? 0) >= 1.4 * median,
               "\(two.map { "\($0.text.prefix(13)) \($0.height)" })")
+        let oneBody = (0..<11).compactMap { height(one, "tall left \($0) ") }.sorted()
         check("C52: …while the same line on a page of one column keeps its height",
-              median > 0 && (height(one, "tall left 11 ") ?? 0) >= 1.3 * median,
+              oneBody.count == 11 && (height(one, "tall left 11 ") ?? 0) >= 1.2 * oneBody[5],
               "\(one.map { "\($0.text.prefix(13)) \($0.height)" })")
+        // A headline set inside one column, the other column's text beside it, keeps its
+        // own ceiling and its width: capped to the body's height it was shrunk to 76% of
+        // its ink [measured].
+        var headed: [Obs] = []
+        for r in 0..<14 {
+            let y = 0.1 + Double(r) * 0.016
+            headed += [o("headed left \(r) the quick brown fox", x: 0.08, y: r < 7 ? y : y + 0.07, w: 0.4),
+                       o("headed right \(r) the quick brown fox", x: 0.52, y: y, w: 0.4)]
+        }
+        headed.append(o("HEADLINE", x: 0.08, y: 0.212, w: 0.35, h: 0.06))
+        let page = CGRect(x: 0, y: 0, width: 612, height: 792)
+        let layer = SearchableWriter.prepared(headed, in: page)
+        let layerCeilings = SearchableWriter.ceilings(for: layer, in: page)
+        let layerColumns = SearchableWriter.columnMembers(of: layer, aspect: letter)
+        if let i = layer.firstIndex(where: { $0.text == "HEADLINE" }),
+           let body = layer.firstIndex(where: { $0.text.hasPrefix("headed left 3 ") }),
+           case .placed(let run) = SearchableWriter.placement(
+               of: layer[i], in: page, ceiling: layerCeilings[i],
+               rightLimit: SearchableWriter.rightLimit(for: i, among: layer, in: page),
+               font: CTFontCreateWithName(SearchableWriter.textFace as CFString, 12, nil)) {
+            check("C52: a headline inside one column keeps its height and its width",
+                  layerColumns[i] != nil && layerColumns[i] == layerColumns[body]
+                      && run.drawnHeight > layerCeilings[body] + 1 && run.widthShare > 0.99
+                      && layerCeilings[i] == SearchableWriter.headroom(for: i, among: layer, in: page),
+                  "column \(String(describing: layerColumns[i])), width \(run.widthShare), ceiling "
+                      + "\(layerCeilings[i]), drawn \(run.drawnHeight) over a cap of \(layerCeilings[body])")
+        } else {
+            check("C52: the headline fixture is placed", false)
+        }
+        // …as PDFKit selects it: the line runs the width of its box and stands taller than
+        // the body beside it.
+        let headedOut = dir.appendingPathComponent("headed.pdf")
+        _ = try? SearchableWriter.compose(visible: src, observations: [1: headed],
+                                          to: headedOut, drawImages: false)
+        let headedLines = PDFDocument(url: headedOut)?.page(at: 0).flatMap { p in
+            p.selection(for: p.bounds(for: .mediaBox))?.selectionsByLine().map {
+                (text: ($0.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines), bounds: $0.bounds(for: p))
+            }
+        } ?? []
+        let headlineBounds = headedLines.first { $0.text == "HEADLINE" }?.bounds
+        let bodyHeight = headedLines.first { $0.text.hasPrefix("headed left 3 ") }?.bounds.height
+        check("C52: …and PDFKit selects the headline across its box, taller than the column's lines",
+              (headlineBounds?.width ?? 0) >= 0.97 * 0.35 * 612
+                  && (headlineBounds?.height ?? 0) >= 1.5 * (bodyHeight ?? .greatestFiniteMagnitude),
+              "headline \(String(describing: headlineBounds)), body line height \(String(describing: bodyHeight))")
+        // A sparse row in a column, under one and a half of its median height and drawn
+        // taller than the column's cap, keeps its size: already squashed as far as
+        // `placement` goes, capped it was drawn smaller, over less of its box.
+        var sparse: [Obs] = []
+        for r in 0..<12 {
+            let y = 0.1 + Double(r) * 0.024
+            sparse += [o(r == 5 ? "1 24" : "sparse left \(r) the quick brown fox", x: 0.08, y: y,
+                         w: 0.4, h: r == 5 ? 0.015 : 0.011),
+                       o("sparse right \(r) the quick brown fox", x: 0.52, y: y, w: 0.4, h: 0.011)]
+        }
+        let sparseLayer = SearchableWriter.prepared(sparse, in: page)
+        let sparseCeilings = SearchableWriter.ceilings(for: sparseLayer, in: page)
+        let sparseColumns = SearchableWriter.columnMembers(of: sparseLayer, aspect: letter)
+        let helvetica = CTFontCreateWithName(SearchableWriter.textFace as CFString, 12, nil)
+        if let i = sparseLayer.firstIndex(where: { $0.text == "1 24" }),
+           let body = sparseLayer.firstIndex(where: { $0.text.hasPrefix("sparse left 4 ") }),
+           case .placed(let capped) = SearchableWriter.placement(
+               of: sparseLayer[i], in: page, ceiling: sparseCeilings[i],
+               rightLimit: SearchableWriter.rightLimit(for: i, among: sparseLayer, in: page),
+               font: helvetica),
+           case .placed(let own) = SearchableWriter.placement(
+               of: sparseLayer[i], in: page,
+               ceiling: SearchableWriter.headroom(for: i, among: sparseLayer, in: page),
+               rightLimit: SearchableWriter.rightLimit(for: i, among: sparseLayer, in: page),
+               font: helvetica) {
+            check("C52: a sparse row drawn taller than its column's cap keeps its size",
+                  sparseColumns[i] != nil && sparseColumns[i] == sparseColumns[body]
+                      && own.drawnHeight > sparseCeilings[body] + 1 && own.widthShare < 0.5
+                      && abs(capped.size - own.size) < 0.001,
+                  "size \(capped.size) against \(own.size), width \(capped.widthShare) against "
+                      + "\(own.widthShare), drawn \(own.drawnHeight) over a cap of \(sparseCeilings[body])")
+        } else {
+            check("C52: the sparse-row fixture is placed", false)
+        }
     }
 
     // On pixels: three columns, and a row Vision read from the middle column across the
