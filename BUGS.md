@@ -18971,6 +18971,36 @@ production recognises the 150 ppi 1-bit rebuild, whose strokes are broken [measu
 binarisation causes the misreads is reasoned. Part of the red is shared noise: Vision's reference misreads
 some of the same words.
 
+**2026-09-28, partly fixed (`c50-typewriter-reads`, box left open).** Measured, Vision on the grey render
+at the 1-bit page's own grid against production's reading: grey alone reads more words per line on Ries
+and Doermann but drops lines (NYSE p110: 113 -> 88 lines, 249 -> 191 dictionary words), so it cannot
+replace the 1-bit reading. Taking its text for every line `finerReading` matches lost 30 words on
+`_1928_Creative writing` p1; Vision's confidence could not choose (equal on both readings). Shipped:
+`flatten` writes the grey render beside a 1-bit page (`p00001.grey.jpg`, JPEG 0.9, since a lossless one
+is megabytes a page and every page's waits for recognition) unless the page kept its source JBIG2 or the
+render has under 0.1% mid-tones (a 1-bit source: 0.0000 on every such sampled page), and
+`Recogniser.greyReading` takes a line's grey text only with more web2 words, plural and verb endings
+allowed (web2 has `firm`, not `firms`). PDFKit text layer of the published pages, web2 words before ->
+after: Ries p54 156 -> 167 (Find "suall" 1 -> 0, "small firms" 0 -> 1), NYSE p110 248 -> 259, GELFAND
+p106 93 -> 93 (renders 1-bit, no copy), Xin Qu p24 81 -> 82 (Find "Coeflicient" 1 -> 0, "Coefficient"
+0 -> 1, same box), Doermann p7 214 -> 229, 1928 p1 2119 -> 2193. On 28 sampled corpus pages (scratch
+replay, lossless grey) none lost a word. Cost: a second Vision pass on grey-sourced 1-bit pages, 1928 p1
+34.8 -> 55.1 s, Ries 2.2 -> 3.0 s; 1-bit sources unchanged. Rejected: re-reading only weak lines' regions
+(more machinery than one commit). `ux-regression`: 14 better (Ries p54 find 0.80 -> 0.97, wer 0.23 ->
+0.16), 2 worse and accepted, baseline refreshed: NYSE p110 find 0.23 -> 0.20 (one of its ~30 sampled
+reference words, on a page whose web2 words rose 248 -> 259) and Fiedler p1 welds 6 -> 7 (one word).
+The chooser is scored by the same word list it chooses with; its
+changes on 1928 p1 were read and are mostly real corrections ("WEEK-END EXCURSIONS", "teachers in
+mind"), a few one garble for another.
+DONE WHEN subagent (PDFKit): counts and both named misreads pass; word by word, NYSE lost one right
+word ("price on the" -> "price o the") in a line that gained others, and every other lost word was a
+misread corrected. **Still failing:** Find "1.228" on Xin Qu p24. Its type is 1-bit at 300 ppi in the source, so this page
+is not binarisation; "Coefficient" came right from the JPEG copy's pixels, and Vision read it wrong on
+lossless grey at 150 and 300 ppi, so that one is fragile. The grey reading has "- 1.228" but
+`finerReading` refuses any change to a number's points, on purpose (WSJ 1969's `$400,000` ->
+`$100,000`). The earlier "Vision reads the source's cells correctly" was at the harness's 216 dpi, a
+resolution production never reads at.
+
 ### C51 · Lines and table cells are still missing from the text layer after C33, so they cannot be selected or found — FIXED 2026-09-28
 
 *(found 2026-09-27 by `ux-read`; C33 is FIXED and is not reopened.)*

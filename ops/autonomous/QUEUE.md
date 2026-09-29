@@ -502,13 +502,6 @@ say so in the commit.
       DONE WHEN: converting Hyman at default settings reports the marks it left, by type; a document with
       only wrapper `Link`s reports nothing; a check goes red without it.
       BOUND: one code commit. (origin: BUGS.md C45)
-- [ ] **c50-typewriter-reads** — find out whether recognising the grey source instead of the 1-bit
-      rebuild reads typewritten and low-resolution pages better, and ship it if it does.
-      DONE WHEN: on Ries p54, NYSE p110, GELFAND p106 and Xin Qu p24, dictionary words in the output's
-      text layer are measured before and after, and the change ships only if none gets worse and the
-      named misreads ("suall", "Coeflicient") are gone, and Find "1.228" hits on Xin Qu p24 over its
-      cell (moved from C51, where the cell reads `- 1228`). If nothing helps, make the case in C50 (rule 8).
-      BOUND: one code commit. (origin: BUGS.md C50)
 - [ ] **c49-meaningful-colour** — keep colour on a mostly black page when it separates chart series, and
       never let light coloured type binarise to nothing.
       DONE WHEN: AI 2027 p54's three curves are distinguishable at 1x and Kristol p1's pink notice is
@@ -525,6 +518,17 @@ say so in the commit.
       of the text layer the app adds (state both), with PDFKit
       renders at 2x not visibly worse; corpus bytes before and after are stated.
       BOUND: one code commit. (origin: BUGS.md C47)
+- [ ] **c50-typewriter-reads** — find out whether recognising the grey source instead of the 1-bit
+      rebuild reads typewritten and low-resolution pages better, and ship it if it does.
+      DONE WHEN: on Ries p54, NYSE p110, GELFAND p106 and Xin Qu p24, dictionary words in the output's
+      text layer are measured before and after, and the change ships only if none gets worse and the
+      named misreads ("suall", "Coeflicient") are gone, and Find "1.228" hits on Xin Qu p24 over its
+      cell (moved from C51, where the cell reads `- 1228`). If nothing helps, make the case in C50 (rule 8).
+      2026-09-28: the grey reading shipped and its bound is spent; moved behind the unattempted items.
+      What is left is Find "1.228" on Xin Qu p24, which C50 shows is not binarisation but
+      `finerReading`'s number guard. Next: make the case in C50, or let a table cell's reading gain a
+      decimal point its column's other cells have. BOUND: one code commit.
+      (origin: BUGS.md C50)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation

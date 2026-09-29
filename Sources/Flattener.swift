@@ -1419,6 +1419,11 @@ enum Flattener {
             // A render that cannot be had keeps the one in hand, which is that page,
             // rather than refusing the page.
             var coarse: CGImage?
+            // C50. The render the page is read at, before the threshold, for the
+            // recogniser's second reading (`Recogniser.greySuffix`).
+            let readGrey = useBilevel && pngDirectory != nil
+                && midtoneShare(of: grey) >= minimumGreyReadingMidtones
+                ? (pixels: grey, width: width, height: height) : nil
             if useBilevel, typeDPI > dpi {
                 let fineScale = typeDPI / 72.0
                 let fineWide = (box.width * fineScale).rounded()
@@ -1553,6 +1558,16 @@ enum Flattener {
                             throw Failure.pageFailed(page: index + 1, of: count)
                         }
                     }
+                    // C50. The same render in grey, where it has greys to give: a page
+                    // that is its source's own JBIG2 image, or renders with none, reads
+                    // the same either way. Best effort, since without it the page is
+                    // read as it was before.
+                    if sourceDigest == nil, let readGrey {
+                        _ = writeGreyJPEG(readGrey.pixels, width: readGrey.width,
+                                          height: readGrey.height,
+                                          to: pngDirectory.appendingPathComponent(
+                                              stem + Recogniser.greySuffix))
+                    }
                     // `if true {` stood here and around the JPEG branch below
                     // (A3.4) — two conditionals that read as gates and were not.
                     var entry = RebuiltPage(content: .bilevel(png), pixelWidth: width,
@@ -1610,6 +1625,35 @@ enum Flattener {
         pdf.closePDF()
         finished = true
         return rebuilt
+    }
+
+    /// The share of a grey render's pixels in the middle of the scale, 64 to 191 (C50).
+    /// A page whose source is 1-bit renders with none: 0.0000 on every such page of 28
+    /// sampled, and 0.005 to 0.13 on every 1-bit page a grey reading improved.
+    static func midtoneShare(of grey: [UInt8]) -> Double {
+        guard !grey.isEmpty else { return 0 }
+        var mid = 0
+        for v in grey where v >= 64 && v < 192 { mid += 1 }
+        return Double(mid) / Double(grey.count)
+    }
+
+    /// Below this `midtoneShare`, a 1-bit page is not given a grey copy to be read from.
+    static let minimumGreyReadingMidtones = 0.001
+
+    /// A grey render written as a JPEG at 0.9, for the recogniser only (C50): a lossless
+    /// PNG of a 300 dpi scan is megabytes, and every page's is on disk until recognition.
+    static func writeGreyJPEG(_ pixels: [UInt8], width: Int, height: Int, to url: URL) -> Bool {
+        guard width > 0, height > 0, pixels.count == width * height,
+              let provider = CGDataProvider(data: Data(pixels) as CFData),
+              let image = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 8,
+                                  bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(),
+                                  bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
+                                  decode: nil, shouldInterpolate: false, intent: .defaultIntent),
+              let dest = CGImageDestinationCreateWithURL(
+                  url as CFURL, "public.jpeg" as CFString, 1, nil) else { return false }
+        CGImageDestinationAddImage(dest, image, [kCGImageDestinationLossyCompressionQuality: 0.9]
+                                   as CFDictionary)
+        return CGImageDestinationFinalize(dest)
     }
 
     /// CGImageDestination widens the 1-bit image to 8-bit grey on the way out,

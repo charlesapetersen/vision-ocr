@@ -2239,7 +2239,12 @@ final class OCRModel: ObservableObject {
         // The bilevel bitmaps have been read and compressed; nothing wants them
         // again. Deliberately not the whole directory — the picture pages' JPEGs
         // sit beside them and are the streams the assembly is about to embed.
-        for png in spentBitmaps { try? FileManager.default.removeItem(at: png) }
+        // Their grey renders too, read for words only (C50).
+        for png in spentBitmaps {
+            try? FileManager.default.removeItem(at: png)
+            try? FileManager.default.removeItem(at: png.deletingPathExtension()
+                .appendingPathExtension(String(Recogniser.greySuffix.dropFirst())))
+        }
 
         // 3. Write the PDF. The destination was reserved up front, so two inputs
         //    with the same base name cannot collide here.

@@ -684,6 +684,54 @@ enum Recogniser {
     /// `p00001.png` has it in `p00001.coarse.png`.
     static let coarseSuffix = ".coarse.png"
 
+    /// What `Flattener.flatten` names the grey render a 1-bit page was thresholded
+    /// from, on the grid it is read at (C50): `p00001.png` has it in `p00001.grey.jpg`.
+    static let greySuffix = ".grey.jpg"
+
+    /// `lines`, with the text of each line that `grey`, a reading of the page's grey
+    /// render, reads as the same line (`finerReading`) and with more dictionary words
+    /// (`dictionaryWords`). The 1-bit page keeps its lines, boxes and order; the grey
+    /// render reads strokes the threshold broke. Taken for every line `finerReading`
+    /// matched, the grey reading lost 30 words on a 1928 typescript's 1,246 lines, and
+    /// Vision's confidence could not choose (it is the same on both readings). Chosen
+    /// by dictionary, over 28 sampled corpus pages and 4 named ones no page lost a
+    /// dictionary word, and published, the 1928 page gained 74, Doermann p7 15, Ries p54
+    /// 11 and NYSE 1956 p110 11.
+    static func greyReading(of lines: [SearchableWriter.Observation],
+                            from grey: [SearchableWriter.Observation],
+                            aspect: Double) -> [SearchableWriter.Observation] {
+        let matched = finerReading(of: lines, from: grey, aspect: aspect)
+        return zip(lines, matched).map { line, candidate in
+            dictionaryWords(in: candidate.text) > dictionaryWords(in: line.text) ? candidate : line
+        }
+    }
+
+    /// How many of `text`'s runs of two or more letters are words of the system's word
+    /// list, `/usr/share/dict/words` (web2 on macOS), in any case, or one of its words
+    /// with a plural or verb ending: web2 has `firm` and not `firms`, and a reading of
+    /// "firms" must not lose to one of "firm". Zero on every text when the list is
+    /// absent, so `greyReading` then changes nothing.
+    static func dictionaryWords(in text: String) -> Int {
+        text.split { !$0.isLetter }.filter { $0.count >= 2 && isWord($0.lowercased()) }.count
+    }
+
+    private static func isWord(_ word: String) -> Bool {
+        if wordList.contains(word) { return true }
+        for (ending, stems) in [("ies", ["y"]), ("es", [""]), ("s", [""]), ("ed", ["", "e"]),
+                                ("ing", ["", "e"])]
+        where word.count > ending.count + 2 && word.hasSuffix(ending) {
+            let root = String(word.dropLast(ending.count))
+            if stems.contains(where: { wordList.contains(root + $0) }) { return true }
+        }
+        return false
+    }
+
+    private static let wordList: Set<String> = {
+        guard let list = try? String(contentsOfFile: "/usr/share/dict/words", encoding: .utf8)
+        else { return [] }
+        return Set(list.split(separator: "\n").map { $0.lowercased() })
+    }()
+
     /// The bitmap to recognise for the page `flatten` wrote at `image`: the copy at its
     /// images' resolution when there is one, else the page itself.
     ///
@@ -709,7 +757,8 @@ enum Recogniser {
     /// joined columns (on WSJ 1969, lines holding two columns' text 9 -> 46); taking
     /// its text only line for line keeps the copy's lines, boxes and order. When the
     /// second reading fails, the copy's stands: it is what the page published before.
-    /// The boxes reaching into a column gutter are brought in to their ink last, on the
+    /// A grey render written beside it (`greySuffix`) is read last, for words only
+    /// (`greyReading`, C50). The boxes reaching into a column gutter are brought in to their ink last, on the
     /// merged lines (`fittedToGutters`): fitted reading by reading, a box moved in one
     /// and not the other could fall outside `finerReading`'s match.
     static func recognisePage(at image: URL, settings: Prefs.Snapshot,
@@ -728,15 +777,24 @@ enum Recogniser {
             return try recognisePage(bitmap, settings: settings, isCancelled: isCancelled)
         }
         let lines = try read(first)
-        guard coarse != image, !isCancelled(), let page = loadImage(at: image), page.width > 0,
-              let finer = try? read(page), !isCancelled() else {
-            return fittedToGutters(lines, of: first, isCancelled: isCancelled)
+        var merged = lines, fitOn = first
+        if coarse != image, !isCancelled(), let page = loadImage(at: image), page.width > 0,
+           let finer = try? read(page), !isCancelled() {
+            // Each reading was judged on its own letters; the page is judged on what it keeps.
+            merged = withoutStrayScript(
+                finerReading(of: lines, from: finer, aspect: Double(page.height) / Double(page.width))
+                    + linesOnlyFiner(lines, finer, aspect: Double(page.height) / Double(page.width)))
+            fitOn = page
         }
-        // Each reading was judged on its own letters; the page is judged on what it keeps.
-        let merged = withoutStrayScript(
-            finerReading(of: lines, from: finer, aspect: Double(page.height) / Double(page.width))
-                + linesOnlyFiner(lines, finer, aspect: Double(page.height) / Double(page.width)))
-        return fittedToGutters(merged, of: page, isCancelled: isCancelled)
+        // C50. The grey render the copy was thresholded from, on the copy's own grid.
+        let greyURL = image.deletingPathExtension().appendingPathExtension("grey.jpg")
+        if !isCancelled(), let grey = loadImage(at: greyURL),
+           grey.width == first.width, grey.height == first.height,
+           let greyLines = try? read(grey), !isCancelled() {
+            merged = greyReading(of: merged, from: greyLines,
+                                 aspect: Double(first.height) / Double(first.width))
+        }
+        return fittedToGutters(merged, of: fitOn, isCancelled: isCancelled)
     }
 
     /// The lines of `finer` that the copy's reading has nothing over: each at full

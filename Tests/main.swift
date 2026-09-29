@@ -7644,6 +7644,53 @@ do {
     } else {
         check("…a page and a copy one letter apart are written for the recognition check", false)
     }
+    // C50. The grey render the copy was thresholded from is written beside it, on its grid,
+    // and read for words: a line takes the grey reading's text only with more dictionary words.
+    let greyURL = typeBitmaps.appendingPathComponent("p00001" + Recogniser.greySuffix)
+    let greyCopy = Recogniser.loadImage(at: greyURL)
+    check("C50 — a 1-bit page rendered with greys has its grey render beside it, on the copy's grid",
+          greyCopy?.width == 600 && greyCopy?.height == 450 && greyCopy?.bitsPerPixel == 8,
+          "\(String(describing: greyCopy?.width))x\(String(describing: greyCopy?.height))")
+    check("…and a render with no greys, a 1-bit source's, gets none",
+          Flattener.midtoneShare(of: [0, 255, 0, 255, 255, 0]) == 0
+              && Flattener.midtoneShare(of: [0, 128, 255, 255]) == 0.25
+              && Flattener.midtoneShare(of: [0, 128, 255, 255]) >= Flattener.minimumGreyReadingMidtones,
+          "\(Flattener.midtoneShare(of: [0, 128, 255, 255]))")
+    for (copyText, greyText, want) in [("Omega zebra xqzvtk", "Omega zebra quartz", "quartz"),
+                                       ("Omega zebra quartz", "Omega zebra xqzvtk", "quartz")] {
+        guard writeWords(copyText, to: coarseURL), writeWords(copyText, to: firstPage, scale: 2),
+              writeWords(greyText, to: greyURL) else {
+            check("…the copy, page and grey render are written for the C50 check", false)
+            continue
+        }
+        for viaHelper in [false, true] {
+            var fellBack: [String] = []
+            let read = (try? Recogniser.recogniseDocument(
+                visible: typeURL, bitmaps: typeRebuilt, settings: Prefs.Snapshot.current(),
+                useHelper: viaHelper, onFallback: { fellBack.append($0) }))?[1] ?? []
+            let text = read.map(\.text).joined(separator: " ")
+            check("C50 — \(copyText) read beside a grey \(greyText) publishes \(want), "
+                  + (viaHelper ? "through the helper" : "in the app"),
+                  text.contains(want) && read.count == 1 && fellBack.isEmpty,
+                  "\(read.count) lines: \(text.prefix(80)) \(fellBack)")
+        }
+    }
+    do {
+        let box = SearchableWriter.BoundingBox(x: 0.1, y: 0.5, width: 0.6, height: 0.03)
+        func obs(_ t: String) -> SearchableWriter.Observation {
+            SearchableWriter.Observation(boundingBox: box, text: t, confidence: 1, quarterTurns: nil)
+        }
+        let taken = Recogniser.greyReading(of: [obs("the suall firms")], from: [obs("the small firms")],
+                                           aspect: 1)
+        let kept = Recogniser.greyReading(of: [obs("the small firms")], from: [obs("the suall firms")],
+                                          aspect: 1)
+        check("C50 — greyReading takes the line with more dictionary words, and keeps a better one",
+              taken.map(\.text) == ["the small firms"] && kept.map(\.text) == ["the small firms"]
+                  && Recogniser.dictionaryWords(in: "the suall firms") == 2
+                  && Recogniser.dictionaryWords(in: "the firms grew") == 3
+                  && Recogniser.dictionaryWords(in: "Carried studies xqzvtks") == 2,
+              "\(taken.map(\.text)) \(kept.map(\.text))")
+    }
     do {
         typealias Box = SearchableWriter.BoundingBox
         func line(_ x: Double, _ y: Double, _ w: Double, _ text: String, turns: Int? = nil,
