@@ -538,6 +538,114 @@ say so in the commit.
       (origin: BUGS.md C47)
   - [x] **c47-jbig2-forms** — JBIG2 scans drawn through a form, drawn upside down, or hanging off the sheet
         keep their stream, and finished files pack their objects. (context: BUGS.md C47)
+- [ ] **truth-calibrate** — test the reading procedure on pages whose text is known, and fix it, before any
+      truth is made. (effort: medium)
+      WHY. Both stress tests so far (`corpus-stress`, `ux-run`) took Vision's reading of the source as the
+      reference for Find and Copy, so a word Vision misreads the same way in source and output passes. The
+      owner asked for a model's reading as the reference instead. This item and the three `truth-` items
+      after it are instruments by the owner's request. Rules 1 and 3 do not apply to them, because
+      `truth-read` turns what they find into product work.
+      THE PROCEDURE, written to `ops/truth/procedure.md` and used unchanged by `truth-set`:
+      * The session renders the page through PDFKit to an image at 400 dpi, or 300 dpi for a page over 14 in
+        on a side. The reader is given that image and a crop command. It is never given the PDF, its text
+        layer, Vision's output or the app's output, and is told to open nothing else.
+      * The session cuts the image into crops that cover all of it, placing the cuts in white space found in
+        the pixels. It never uses Vision's layout, so a block Vision skips is still read. Claude Code shows an
+        image at most 2,000 px on the long edge (measured 2026-09-29: a 2,560 px image arrived at 2,000), so
+        no crop is larger; the Read result states the displayed size, so check it. The reader reads every
+        crop in order and may cut closer crops to check a word.
+      * The reader writes one line per printed line, with the line's box in the crop's pixels. Words are
+        written as printed: no corrections, hyphens and line-end breaks kept, `[?]` for a word it cannot
+        read. It then lists the columns in reading order. Text inside figures and tables, and handwriting,
+        are transcribed and marked as such.
+      * In the same pass it lists everything on the page that is not text: what it is (photograph, drawing,
+        diagram, chart series, rule, stamp, seal, signature, handwriting, pencil or pale mark, highlight,
+        underline, marginal note, coloured heading or text), its box, its colour by name, whether it is
+        faint, and whether its colour carries meaning (a chart series, a red notice, a highlight). It adds
+        the paper tint, and lists scanner borders and dust as `ignore`.
+      * Cross-check. The transcript is aligned with the readings the source already has: Vision's reading of
+        the source render, and the source's own text layer where there is one. Every word where they differ,
+        and every line only one of them has, is read again by a fresh reader shown only a tight crop of that
+        spot, without the sentence around it and without the candidate readings. That reading stands. A word
+        it cannot settle is `contested` and is not scored. Contested applies to words, never to whole pages.
+      * Prompts are passed verbatim from `procedure.md`, and each transcript records the version it was made
+        with.
+      THE TEST. Take about 30 born-digital pages from `testdocs/` whose text layer reads correctly (one and
+      several columns, tables, footnotes, small type). Make two scans of each with the text layer removed: a
+      clean 300 dpi greyscale one on grey paper, and a hard one at 150 dpi, 1-bit, low-quality JPEG, with a
+      slight skew. The text layers are the truth. Run the procedure on the scans, and run the app on the same
+      scans at default settings.
+      DONE WHEN, committed as `TRUTH-CALIBRATE-<date>.tsv`: the procedure's word error after the cross-check
+      and the app's word error, per scan kind and layout, both measured against the known text; the lines the
+      reader skipped; and the usage per page. The procedure is fit for a kind of page where its error is a
+      quarter of the app's or less, or under 0.2% of words, and it skips no line. Where it is not, change the
+      crop size, resolution or prompt and measure again. A kind of page that still fails is scored in
+      `truth-set` only for lost lines and blocks, and this item says which. The app's figures are an
+      exact-truth result in their own right.
+      BOUND: one session, and one more if the procedure has to be changed and measured again.
+      (context: owner request 2026-09-29)
+- [ ] **truth-set** — make the truth for about 220 real pages with the procedure `truth-calibrate` fixed.
+      (blocked-on: truth-calibrate) (effort: medium)
+      THE PAGES, committed first as `TRUTH-PAGES-<date>.tsv` (document, page, why chosen, status):
+      * about 100 drawn at random from `ux-run`'s green pages, spread over the routes (JBIG2, DCT, layered
+        colour, newspaper, typewritten, table), because what the old test missed is on pages it passed;
+      * about 40 of its red pages, a few from each measure, to show how often it was wrong the other way;
+      * every page of `ops/ux-regression/set.tsv`, and every page `Tools/ux-harness-selftest.sh` uses;
+      * about 25 chosen for what is not text: photographs, drawings, maps, charts, forms, stamps, signatures,
+        highlights, marginal notes, pale pencil on typescript.
+      A born-digital page whose own text layer reads correctly is its own truth. One whose layer is garbled
+      is read like a scan. Kinds of page `truth-calibrate` found unfit are kept and scored as it says.
+      KEEP IT PRIVATE. The corpus is third-party. Transcripts and lists live in `$STATE/truth/<doc>/p<N>/`,
+      each stamped with the source file's hash, and are never committed. Delete each page image once its
+      page is done: they are large, and the daemon parks below 8 GB of free disk.
+      DONE WHEN: every listed page has a transcript and a list, or a recorded reason it has none, and the
+      contested-word rate is stated by route.
+      BOUND: batches sized from `truth-calibrate`'s usage per page, so that one fits a session. Each batch
+      commits the page list's updated status column and a ticked sub-box for itself (rule 5). A session that
+      commits nothing reads to the daemon as idle, and ten sessions without a ticked box park the run.
+      Readers only look at images, so they may run in parallel; rendering and Vision stay one process at a
+      time. (context: owner request 2026-09-29)
+- [ ] **truth-harness** — measure published outputs against the truth set, text and everything else alike,
+      and run it on today's pipeline. (blocked-on: truth-set)
+      TEXT, in `Tools/ux-harness.swift --truth <dir>`. (a) Copy: drag each column the transcript lists, from
+      its line boxes, so a column Vision never found is still dragged, and align the selection's `string`
+      word by word with that column's transcript: words wrong, missing and added, split words, wrong hyphen
+      joins. (b) Find: search for words drawn from the transcript; each occurrence must have a hit inside its
+      line box. (c) Column order. Figure text and handwriting are scored apart from body text, and contested
+      words are not scored. Also report, per page, how far Vision's reading of the source is from the
+      transcript. Without `--truth` the tool is unchanged.
+      BEFORE A WORD COUNTS AGAINST THE APP, the session has it read again blind on a tight crop, as in the
+      cross-check. Where that shows the transcript was wrong, the transcript is corrected in place and the
+      correction logged.
+      EVERYTHING ELSE, AND LEGIBILITY. The tool renders source and output through PDFKit at the same scale and
+      writes matching crop pairs. A Swift tool cannot call a model, so the session gives each page's pairs to
+      one judge subagent, with the page's element list as a checklist. Each pair is shown as A and B in
+      random order, and the judge is not told which is the output. It says what is in one and missing,
+      faded, harder to read or changed in colour in the other, and its answer is the verdict. Text and
+      non-text losses are reported side by side and never merged into one score, so a change that gains
+      words by losing a drawing shows as a loss.
+      SHOWN TO WORK FIRST: red on the owner's reports (Raskin p1 and Why pp5-6 at `24a8f6a`, Why p5 at 1.14.0
+      for the red headings, Hughes p5 at `24a8f6a`), green on the pages the 2026-09-27 self-test named green.
+      THEN: run it on the truth pages' outputs from the current pipeline at default settings, with the old
+      measures run on the same outputs. Commit `TRUTH-RUN-<date>-pages.tsv` and a per-document table, numbers
+      only, with the pages the old measures pass and the truth fails, and the reverse, by route. Last, make
+      `Tools/ux-regression.sh` score Copy and Find against the transcripts of the set's pages, and check each
+      listed element's box for ink and colour. The regression check makes no model calls, so it gives the
+      same answer every time.
+      BOUND: one commit for the tool, its self-test and the regression change; then the run, in batches like
+      `truth-set`'s. (context: owner request 2026-09-29)
+- [ ] **truth-read** — read `truth-harness`'s output and turn what it finds into queued work.
+      (blocked-on: truth-harness)
+      Start with the pages the old measures pass and the truth fails, since those hold the defects the old
+      test could not see. Then look at the worst pages on each measure, and at a random sample of the whole
+      run, the way a reader would: PDFKit at 1x beside the source, with a drag and a Find shown on it. A lost
+      drawing, pale mark, image or meaningful colour ranks with lost words. Do not blame a bad result on the
+      transcript without showing the page.
+      OUTPUT: for each confirmed defect class not already in `BUGS.md`, a short entry and a queue item, ranked
+      by what a reader loses and placed above `c28-first-principles`. A finding already queued gets one line
+      in its entry. State how many words Vision misread the same way in source and output, since the old
+      test could not have found any of them.
+      BOUND: one session. (context: owner request 2026-09-29)
 - [ ] **c28-first-principles** — fix C28 again, starting from first principles. The owner took it off the
       parked list on 2026-09-25 and asked for a fresh attempt, not a continuation of the old campaign.
       THE DEFECT. On the layered (MRC) route, the 1-bit stencil is the page's adaptive binarisation
