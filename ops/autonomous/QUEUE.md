@@ -502,7 +502,7 @@ say so in the commit.
       DONE WHEN: converting Hyman at default settings reports the marks it left, by type; a document with
       only wrapper `Link`s reports nothing; a check goes red without it.
       BOUND: one code commit. (origin: BUGS.md C45)
-- [ ] **c49-meaningful-colour** — keep colour on a mostly black page when it separates chart series, and
+- [x] **c49-meaningful-colour** — keep colour on a mostly black page when it separates chart series, and
       never let light coloured type binarise to nothing.
       DONE WHEN: AI 2027 p54's three curves are distinguishable at 1x and Kristol p1's pink notice is
       legible in the output; pages that lose only paper tint stay grey; bytes stated.

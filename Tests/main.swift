@@ -1519,6 +1519,81 @@ do {
           String(format: "sheetFrac counting every hue %.4f", brownSheet))
     check("…and Grayscale makes the red-heading page grey, not colour",
           kinds(headingPage, mode: .grayscale, into: "h4") == ["jpeg"])
+    // C49: a short pink line, too little colour to leave 1-bit, rendered at a
+    // luminance above the page's Otsu. It used to binarise to nothing.
+    func darkPixels(of src: URL, _ sub: String) -> (route: [String], dark: Int) {
+        let route = kinds(src, mode: .auto, into: sub)
+        let png = pngs.appendingPathComponent(sub).appendingPathComponent("p00001.png")
+        guard let data = try? Data(contentsOf: png),
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return (route, -1) }
+        var buf = [UInt8](repeating: 255, count: image.width * image.height)
+        buf.withUnsafeMutableBytes { raw in
+            CGContext(data: raw.baseAddress, width: image.width, height: image.height,
+                      bitsPerComponent: 8, bytesPerRow: image.width,
+                      space: CGColorSpaceCreateDeviceGray(),
+                      bitmapInfo: CGImageAlphaInfo.none.rawValue)?
+                .draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        }
+        return (route, buf.filter { $0 < 128 }.count)
+    }
+    let pink = NSColor(deviceRed: 0.99, green: 0.39, blue: 0.41, alpha: 1)
+    let noticeLines = ["an ordinary page of text", "with a second line of it",
+                       "and a third for good measure", "PRODUCED BY UNZ.ORG"]
+    let pinkPage = tmp.appendingPathComponent("auto-pink-notice.pdf")
+    makeScannedPDF(at: pinkPage, lines: noticeLines, lineColours: [.black, .black, .black, pink])
+    let blackNotice = tmp.appendingPathComponent("auto-black-notice.pdf")
+    makeScannedPDF(at: blackNotice, lines: noticeLines)
+    let noNotice = tmp.appendingPathComponent("auto-no-notice.pdf")
+    makeScannedPDF(at: noNotice, lines: Array(noticeLines.dropLast()))
+    let pinkInk = darkPixels(of: pinkPage, "c49p"), blackInk = darkPixels(of: blackNotice, "c49b")
+    let noInk = darkPixels(of: noNotice, "c49n")
+    let noticeInk = blackInk.dark - noInk.dark
+    check("a pink line on a 1-bit page comes out black, not white (C49)",
+          pinkInk.route == ["bilevel"] && noticeInk > 0
+            && Double(pinkInk.dark - noInk.dark) > 0.7 * Double(noticeInk),
+          "route \(pinkInk.route), dark pixels pink \(pinkInk.dark) black \(blackInk.dark) "
+            + "none \(noInk.dark)")
+    // …and its lines are read from the page as it was, so the inked line moves no
+    // other line's box: a copy beside it, as C39's, on that page and no other.
+    func hasCoarse(_ sub: String) -> Bool {
+        FileManager.default.fileExists(atPath: pngs.appendingPathComponent(sub)
+            .appendingPathComponent("p00001" + Recogniser.coarseSuffix).path)
+    }
+    check("…with its lines read from the page as it was (C49)",
+          hasCoarse("c49p") && !hasCoarse("c49b") && !hasCoarse("c49n"))
+    // A coloured field is not type: turned black it would bury the words in it.
+    do {
+        // Under `colourInkShareLimit` together (1.25% of the sheet), so the field
+        // test is what refuses it.
+        let w = 400, h = 300
+        var grey = [UInt8](repeating: 255, count: w * h)
+        var rgba = [UInt8](repeating: 255, count: w * h * 4)
+        for y in 0..<h { for x in 0..<w {
+            let j = y * w + x, inField = x >= 100 && x < 130 && y >= 100 && y < 130
+            let stroke = x == 5 || x == 6
+            guard inField || stroke else { continue }
+            rgba[j * 4] = 252; rgba[j * 4 + 1] = 100; rgba[j * 4 + 2] = 105
+            grey[j] = 145
+        } }
+        var fieldGrey = grey
+        var strokeGrey = grey
+        for j in 0..<(w * h) where strokeGrey[j] == 145 && !(j % w == 5 || j % w == 6) {
+            strokeGrey[j] = 255
+        }
+        var strokeRGBA = rgba
+        for j in 0..<(w * h) where !(j % w == 5 || j % w == 6) {
+            strokeRGBA[j * 4] = 255; strokeRGBA[j * 4 + 1] = 255; strokeRGBA[j * 4 + 2] = 255
+        }
+        let fieldCrossed = Flattener.darkenColourInk(&fieldGrey, rgba: rgba, width: w, height: h,
+                                                     threshold: 128, field: 3)
+        let strokeCrossed = Flattener.darkenColourInk(&strokeGrey, rgba: strokeRGBA, width: w,
+                                                      height: h, threshold: 128, field: 3)
+        check("…a pink stroke is darkened below the threshold",
+              strokeCrossed == 2 * h && strokeGrey[5] < 128, "crossed \(strokeCrossed)")
+        check("…but a pink field is left alone, and so is the stroke beside it",
+              fieldCrossed == 0 && fieldGrey == grey, "crossed \(fieldCrossed)")
+    }
     // Through the whole pipeline, where `spotColourPriceLimit` can still send
     // the page back to 1-bit: red headings are cheap, so the colour survives.
     func publishedRGB(_ src: URL, _ name: String) -> Int {

@@ -14,6 +14,8 @@ an older entry mentions "Window ▸ Vision Reader Window", the menu item is now
 
 ## Unreleased
 
+- In Automatic mode, light coloured type on a page rebuilt in black and white, such as a pink "PRODUCED
+  BY UNZ.ORG" notice, now comes out black and can be selected and searched, where it used to vanish (C49).
 - Typewritten and low-resolution grey scans read more words correctly: each line of a page rebuilt in
   black and white is also read from the grey scan, and the better reading is kept. Such pages take up
   to twice as long to recognise (C50, in part).

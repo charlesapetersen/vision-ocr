@@ -18948,7 +18948,7 @@ numbers. The title and author are never written: `SearchableWriter.swift:237` cr
 info dictionary and the merges start from `--empty`. 60 titles go to nil, and Preview, Spotlight and
 Zotero lose them. [measured]
 
-### C49 · Colour that carries meaning on a mostly black page is lost: chart series turn one grey, a pink notice vanishes — OPEN
+### C49 · Colour that carries meaning on a mostly black page is lost: chart series turn one grey, a pink notice vanishes — FIXED 2026-09-29
 
 *(found 2026-09-27 by `ux-read`, from the 92 `colour` pages; 46 are real losses, 38 of them C45's marks.)*
 
@@ -18958,6 +18958,33 @@ p1/p3/p5/p8 and `Astin` p3: the pink "PRODUCED BY UNZ.ORG / ELECTRONIC REPRODUCT
 gone entirely, not greyed, which is text removed without a report [looked]. The page is published grey
 because too little of it is coloured for C27's page-wide bar [reasoned]. The other 37 colour-flagged pages
 lose only link, logo or banner colour, and 9 only paper tint, rightly.
+
+#### Fixed 2026-09-29 — measured through the production pipeline, read with PDFKit
+
+`AI 2027` p54 no longer reproduces: since ad7fb8e the page carries its own text and is copied through
+byte for byte (499,115 B in and out), so its curves are the source's. The UNZ notice did reproduce: the
+pink (252,96,102 at its core, luminance 143-190) sits above Otsu and the 1-bit page lost it. Now a page
+bound for 1-bit whose thumbnail holds non-paper colour (`colourInkWorthReading`) is rendered in RGB, and
+each saturated pixel outside `paperHues` is thresholded by its darkest channel (`darkenColourInk`), unless
+what that turns black is over 2% of the page or over a fifth of it inside a 4 pt field (a panel or a
+highlighter band would bury its words). Kristol p1: notice legible, found by PDFKit search (0 -> 1),
+60,727 -> 62,212 B; Astin p3: "PRODUCED 2005 BY UNZ.ORG" found (its second line is cut off by the source's
+page edge), 144,495 -> 145,202 B.
+
+Inking the notice moved Vision's boxes across the whole of Kristol p1, and PDFKit then read its columns
+interleaved (ux-regression `wer` 0.08 -> 0.77). So a darkened page also gets an undarkened copy as C39's
+`coarse`: lines from the page as it was, words and the notice's own lines (`linesOnlyFiner`) from the inked
+one. The page text is then the old text plus the two notice lines. ux-regression: 2 worse, both accepted
+(Kristol p1 `inkRatio` 1.11 -> 1.14, the notice's ink; its bytes +1,485).
+
+Census of every corpus page, ignoring the route: 592 pass the thumbnail gate and 430 in 55 documents would
+be darkened. On the real route, six of the highest scanned pages (Riesman 1954 pp19/23, Wilcox 1881 p7,
+Countryman p1, Merriam 1939 p2, Davis 2005 p3) came out byte-identical, because they keep their source's
+image or take the picture route. So the stamp-over-type case the review raised is possible but was not
+found. Rejected: publishing the darkened page and recognising the old one, which leaves the notice
+unsearchable. `Autor` p10 and `Surani` p10 (series and icons told apart by colour alone) are not reached by
+this, were not measured, and are outside the DONE WHEN. A separate checker passed all four DONE WHEN
+criteria against the before and after outputs.
 
 ### C50 · Typewritten and low-resolution pages are misread more than the source's own reading allows — OPEN
 

@@ -228,6 +228,24 @@ enum Flattener {
     /// 3.84x and 2.40x. Rejected: no limit, for those two growths.
     static let spotColourPriceLimit = 4.0
 
+    /// C49: a 1-bit page's coloured ink is thresholded by its darkest channel,
+    /// not its luminance, so pink or light red type turns black rather than
+    /// white. `Kristol_1960` p1's pink UNZ notice renders at luminance 143-190,
+    /// above the page's Otsu, and was removed. The saturation bar is
+    /// `colourSheetPixelFloor`'s, and `paperHues` are left alone as C32 leaves them.
+    ///
+    /// Only while the ink it would turn black is type-shaped: past this share of
+    /// the page, or with more than `colourInkFieldLimit` of it inside a field
+    /// `colourInkFieldPoints` thick, the page is thresholded on luminance as
+    /// before, because a coloured panel or highlighter band would otherwise
+    /// become a black block over the words in it.
+    static let colourInkShareLimit = 0.02
+    static let colourInkFieldLimit = 0.2
+    static let colourInkFieldPoints = 2.0
+    /// The thumbnail share of such ink under which a page skips the colour render
+    /// the darkening needs. See `colourInkWorthReading`.
+    static let colourInkThumbnailFloor = 0.0005
+
     /// Whether a C32 page's colour image, `colour` bytes, is past
     /// `spotColourPriceLimit` against its `bilevel`-byte 1-bit encoding. An empty
     /// 1-bit encoding is not a price, and the colour stays.
@@ -1468,6 +1486,24 @@ enum Flattener {
                 }
             }
 
+            // C49. Coloured type on a page bound for 1-bit is thresholded by its
+            // darkest channel, so a pink notice turns black rather than vanishing.
+            // The recogniser takes its lines from the page as it was, `coarse`, and
+            // the words and the lines only this one holds from this: inked, the
+            // notice moved Vision's boxes all over `Kristol_1960` p1, and PDFKit
+            // then read its two columns interleaved (ux-regression wer 0.08 -> 0.77).
+            if useBilevel || spotMoved, sourceDigest == nil, let thumb,
+               colourInkWorthReading(ofRGBA: thumb.buffer, width: thumb.width,
+                                     height: thumb.height) {
+                let plain = grey
+                if darkenColourInk(&grey, page: page, box: box, scale: scale,
+                                   width: width, height: height, threshold: threshold) > 0,
+                   coarse == nil, pngDirectory != nil {
+                    coarse = bilevelImage(from: plain, width: width, height: height,
+                                          threshold: threshold)
+                }
+            }
+
             // Encoded once, whichever way it goes. The JPEG bytes are reused for
             // the stream file below rather than encoded a second time.
             var jpegBytes: Data?
@@ -2595,6 +2631,73 @@ enum Flattener {
             }
             body(hi > 0 ? (hi - lo) / hi : 0, hue)
         }
+    }
+
+    /// C49. Whether a 1-bit page's thumbnail holds enough non-paper colour to be
+    /// worth a colour render for `darkenColourInk`: most 1-bit pages hold none.
+    static func colourInkWorthReading(ofRGBA buffer: [UInt8], width: Int, height: Int) -> Bool {
+        let pixels = width * height
+        guard pixels > 0 else { return false }
+        var n = 0
+        forEachColour(ofRGBA: buffer, width: width, height: height) { s, hue in
+            if s > colourSheetPixelFloor, !paperHues.contains(hue) { n += 1 }
+        }
+        return Double(n) / Double(pixels) > colourInkThumbnailFloor
+    }
+
+    /// C49. `darkenColourInk` over a colour render of `page` at `grey`'s size, for
+    /// a page bound for 1-bit. Leaves `grey` as it is, and returns 0, when the
+    /// render cannot be had.
+    static func darkenColourInk(_ grey: inout [UInt8], page: PDFPage, box: CGRect,
+                                scale: CGFloat, width: Int, height: Int,
+                                threshold: UInt8) -> Int {
+        guard Double(width * height) <= Double(maximumColourPageMegapixels) * 1_000_000,
+              let rgba = renderRGB(page, box: box, scale: scale,
+                                   width: width, height: height, from: .mediaBox) else { return 0 }
+        return darkenColourInk(&grey, rgba: rgba, width: width, height: height,
+                               threshold: threshold,
+                               field: Int((colourInkFieldPoints * Double(scale)).rounded()))
+    }
+
+    /// C49. Lowers each coloured pixel of `grey` to its darkest channel in `rgba`,
+    /// the same page at the same size, so type that is coloured but light still
+    /// falls below `threshold`. Returns how many pixels crossed `threshold`, or 0
+    /// with `grey` untouched when that ink is not type-shaped: more than
+    /// `colourInkShareLimit` of the page, or more than `colourInkFieldLimit` of it
+    /// with the pixels `field` away on all four sides crossing too.
+    @discardableResult
+    static func darkenColourInk(_ grey: inout [UInt8], rgba: [UInt8], width: Int, height: Int,
+                                threshold: UInt8, field: Int) -> Int {
+        let pixels = width * height
+        guard pixels > 0, grey.count >= pixels, rgba.count >= pixels * 4 else { return 0 }
+        var dark = [UInt8](repeating: 255, count: pixels)
+        var i = 0
+        forEachColour(ofRGBA: rgba, width: width, height: height) { s, hue in
+            if s > colourSheetPixelFloor, !paperHues.contains(hue) {
+                let p = i * 4
+                dark[i] = min(rgba[p], min(rgba[p + 1], rgba[p + 2]))
+            }
+            i += 1
+        }
+        var crossed = [Bool](repeating: false, count: pixels)
+        var count = 0
+        for j in 0..<pixels where dark[j] < threshold && grey[j] >= threshold {
+            crossed[j] = true; count += 1
+        }
+        guard count > 0, Double(count) <= colourInkShareLimit * Double(pixels) else { return 0 }
+        let d = max(field, 1)
+        var inside = 0
+        if width > 2 * d, height > 2 * d {
+            for y in d..<(height - d) {
+                for x in d..<(width - d) where crossed[y * width + x] {
+                    if crossed[y * width + x - d], crossed[y * width + x + d],
+                       crossed[(y - d) * width + x], crossed[(y + d) * width + x] { inside += 1 }
+                }
+            }
+        }
+        guard Double(inside) <= colourInkFieldLimit * Double(count) else { return 0 }
+        for j in 0..<pixels where dark[j] < grey[j] { grey[j] = dark[j] }
+        return count
     }
 
     /// How much of the page carries ink of its own colour, rather than how much
